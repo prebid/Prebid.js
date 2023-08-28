@@ -10,6 +10,10 @@ const ADAPTER_CODE = 'zeta_global_ssp';
 const BASE_URL = 'https://ssp.disqus.com/prebid/event';
 const LOG_PREFIX = 'ZetaGlobalSsp-Analytics: ';
 
+const cache = {
+  auctions: {}
+};
+
 /// /////////// VARIABLES ////////////////////////////////////
 
 let publisherId; // int
@@ -24,11 +28,40 @@ function sendEvent(eventType, event) {
   );
 }
 
+function getZetaParams(event) {
+  if (event.adUnits) {
+    event.adUnits.forEach(unit => {
+      if (unit.bids) {
+        unit.bids.forEach(bid => {
+          if (bid.bidder === ADAPTER_CODE && bid.params) {
+            return bid.params;
+          }
+        })
+      }
+    })
+  }
+  return null;
+}
+
 /// /////////// ADAPTER EVENT HANDLER FUNCTIONS //////////////
 
 function adRenderSucceededHandler(args) {
   let eventType = CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED
   logInfo(LOG_PREFIX + 'handle ' + eventType + ' event');
+
+  if (args.bid) {
+    // cleanup object
+    delete args.bid.metrics;
+    delete args.bid.ad;
+
+    // set zetaParams from cache
+    if (args.bid.auctionId) {
+      const zetaParams = cache.auctions[args.bid.auctionId];
+      if (zetaParams) {
+        args.bid.params = [ zetaParams ];
+      }
+    }
+  }
 
   sendEvent(eventType, args);
 }
@@ -36,6 +69,25 @@ function adRenderSucceededHandler(args) {
 function auctionEndHandler(args) {
   let eventType = CONSTANTS.EVENTS.AUCTION_END;
   logInfo(LOG_PREFIX + 'handle ' + eventType + ' event');
+
+  // cleanup object
+  delete args.metrics;
+  if (args.bidderRequests) {
+    args.bidderRequests.forEach(requests => {
+      delete requests.metrics;
+      if (requests.bids) {
+        requests.bids.forEach(bid => {
+          delete bid.metrics;
+        })
+      }
+    })
+  }
+
+  // save zetaParams to cache
+  const zetaParams = getZetaParams(args);
+  if (zetaParams && args.auctionId) {
+    cache.auctions[args.auctionId] = zetaParams;
+  }
 
   sendEvent(eventType, args);
 }
