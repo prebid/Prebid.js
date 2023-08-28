@@ -2636,6 +2636,18 @@ describe('the rubicon adapter', function () {
               expect(request.data.imp).to.have.nested.property('[0].native');
             });
 
+            it('should not break if position is set and no video MT', function () {
+              const bidReq = addNativeToBidRequest(bidderRequest);
+              delete bidReq.bids[0].mediaTypes.banner;
+              bidReq.bids[0].params = {
+                position: 'atf'
+              }
+              let [request] = spec.buildRequests(bidReq.bids, bidReq);
+              expect(request.method).to.equal('POST');
+              expect(request.url).to.equal('https://prebid-server.rubiconproject.com/openrtb2/auction');
+              expect(request.data.imp).to.have.nested.property('[0].native');
+            });
+
             describe('that contains also a banner mediaType', function () {
               it('should send the banner to fastlane BUT NOT the native bid because missing params.video', function() {
                 const bidReq = addNativeToBidRequest(bidderRequest);
