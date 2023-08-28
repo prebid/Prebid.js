@@ -258,7 +258,7 @@ function getItems(validBidRequests, bidderRequest) {
           format: sizes,
         },
         ext: {},
-        tagid: globals['tagid'],
+        tagid: req.params && req.params.tagid
       };
     }
     itemMaps[id] = {
@@ -301,6 +301,7 @@ function getParam(validBidRequests, bidderRequest) {
 
   if (items && items.length) {
     let c = {
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       id: 'pp_hbjs_' + auctionId,
       test: +isTest,
       at: 1,

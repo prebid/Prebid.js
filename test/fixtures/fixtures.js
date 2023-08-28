@@ -798,13 +798,6 @@ export function getAdUnits() {
           }
         },
         {
-          'bidder': 'aol',
-          'params': {
-            'network': '112345.45',
-            'placement': 12345
-          }
-        },
-        {
           'bidder': 'sovrn',
           'params': {
             'tagid': '123556'

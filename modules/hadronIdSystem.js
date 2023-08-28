@@ -110,6 +110,12 @@ export const hadronIdSubmodule = {
       ajax(url, callbacks, undefined, {method: 'GET'});
     };
     return {callback: resp};
+  },
+  eids: {
+    'hadronId': {
+      source: 'audigent.com',
+      atype: 1
+    },
   }
 };
 

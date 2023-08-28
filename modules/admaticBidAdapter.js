@@ -195,6 +195,11 @@ function buildRequestObject(bid) {
     reqObj.type = 'video';
     reqObj.mediatype = bid.mediaTypes.video;
   }
+
+  if (deepAccess(bid, 'ortb2Imp.ext')) {
+    reqObj.ext = bid.ortb2Imp.ext;
+  }
+
   reqObj.id = getBidIdParameter('bidId', bid);
 
   enrichSlotWithFloors(reqObj, bid);

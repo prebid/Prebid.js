@@ -48,7 +48,11 @@ describe('ConcertAdapter', function () {
         },
         adUnitCode: 'desktop_leaderboard_variable',
         bidId: 'foo',
-        transactionId: '',
+        ortb2Imp: {
+          ext: {
+            tid: ''
+          }
+        },
         sizes: [[1030, 590]]
       }
     ];
@@ -112,7 +116,7 @@ describe('ConcertAdapter', function () {
       expect(payload).to.have.property('meta');
       expect(payload).to.have.property('slots');
 
-      const metaRequiredFields = ['prebidVersion', 'pageUrl', 'screen', 'debug', 'uid', 'optedOut', 'adapterVersion', 'uspConsent', 'gdprConsent', 'gppConsent'];
+      const metaRequiredFields = ['prebidVersion', 'pageUrl', 'screen', 'debug', 'uid', 'optedOut', 'adapterVersion', 'uspConsent', 'gdprConsent', 'gppConsent', 'browserLanguage'];
       const slotsRequiredFields = ['name', 'bidId', 'transactionId', 'sizes', 'partnerId', 'slotType'];
 
       metaRequiredFields.forEach(function(field) {

@@ -111,6 +111,7 @@ export const spec = {
         device: device,
         site: site,
         imp: imp,
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: bid.auctionId,
         adUnitCode: bid.adUnitCode,
         bidderRequestId: bid.bidderRequestId,

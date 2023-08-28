@@ -25,7 +25,11 @@ describe('Richaudience adapter tests', function () {
     auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
     bidRequestsCount: 1,
     bidderRequestId: '1858b7382993ca',
-    transactionId: '29df2112-348b-4961-8863-1b33684d95e6',
+    ortb2Imp: {
+      ext: {
+        tid: '29df2112-348b-4961-8863-1b33684d95e6',
+      }
+    },
     user: {}
   }];
 

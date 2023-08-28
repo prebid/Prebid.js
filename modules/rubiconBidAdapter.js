@@ -20,13 +20,14 @@ import {
   mergeDeep,
   parseSizesInput, _each
 } from '../src/utils.js';
+import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
 const DEFAULT_RENDERER_URL = 'https://video-outstream.rubiconproject.com/apex-2.2.1.js';
 // renderer code at https://github.com/rubicon-project/apex2
 
-let rubiConf = {};
+let rubiConf = config.getConfig('rubicon') || {};
 // we are saving these as global to this module so that if a pub accidentally overwrites the entire
 // rubicon object, then we do not lose other data
 config.getConfig('rubicon', config => {
@@ -168,7 +169,7 @@ export const converter = ortbConverter({
       deepSetValue(data, 'ext.prebid.analytics', {'rubicon': {'client-analytics': true}});
     }
 
-    addOrtbFirstPartyData(data, bidRequests);
+    addOrtbFirstPartyData(data, bidRequests, bidderRequest.ortb2);
 
     delete data?.ext?.prebid?.storedrequest;
 
@@ -195,9 +196,13 @@ export const converter = ortbConverter({
     if (config.getConfig('s2sConfig.defaultTtl')) {
       imp.exp = config.getConfig('s2sConfig.defaultTtl');
     };
-    bidRequest.params.position === 'atf' && (imp.video.pos = 1);
-    bidRequest.params.position === 'btf' && (imp.video.pos = 3);
+    bidRequest.params.position === 'atf' && imp.video && (imp.video.pos = 1);
+    bidRequest.params.position === 'btf' && imp.video && (imp.video.pos = 3);
     delete imp.ext?.prebid?.storedrequest;
+
+    if (bidRequest.params.bidonmultiformat === true && bidRequestType.length > 1) {
+      deepSetValue(imp, 'ext.prebid.bidder.rubicon.formats', bidRequestType);
+    }
 
     setBidFloors(bidRequest, imp);
 
@@ -317,7 +322,7 @@ export const spec = {
         )
       );
     });
-    if (config.getConfig('rubicon.singleRequest') !== true) {
+    if (rubiConf.singleRequest !== true) {
       // bids are not grouped if single request mode is not enabled
       requests = filteredHttpRequest.concat(bannerBidRequests.map(bidRequest => {
         const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
@@ -382,6 +387,8 @@ export const spec = {
       'gdpr',
       'gdpr_consent',
       'us_privacy',
+      'gpp',
+      'gpp_sid',
       'rp_schain',
     ].concat(Object.keys(params).filter(item => containsUId.test(item)))
       .concat([
@@ -468,8 +475,8 @@ export const spec = {
       'rp_floor': (params.floor = parseFloat(params.floor)) >= 0.01 ? params.floor : undefined,
       'rp_secure': '1',
       'tk_flint': `${rubiConf.int_type || DEFAULT_INTEGRATION}_v$prebid.version$`,
-      'x_source.tid': bidRequest.transactionId,
-      'x_imp.ext.tid': bidRequest.transactionId,
+      'x_source.tid': bidderRequest.ortb2?.source?.tid,
+      'x_imp.ext.tid': bidRequest.ortb2Imp?.ext?.tid,
       'l_pb_bid_id': bidRequest.bidId,
       'p_screen_res': _getScreenResolution(),
       'tk_user_key': params.userId,
@@ -492,6 +499,11 @@ export const spec = {
         logError('Rubicon: getFloor threw an error: ', e);
       }
       data['rp_hard_floor'] = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
+    }
+
+    // Send multiformat data if requested
+    if (params.bidonmultiformat === true && deepAccess(bidRequest, 'mediaTypes') && Object.keys(bidRequest.mediaTypes).length > 1) {
+      data['p_formats'] = Object.keys(bidRequest.mediaTypes).join(',');
     }
 
     // add p_pos only if specified and valid
@@ -551,6 +563,11 @@ export const spec = {
 
     if (bidderRequest.uspConsent) {
       data['us_privacy'] = encodeURIComponent(bidderRequest.uspConsent);
+    }
+
+    if (bidderRequest.gppConsent?.gppString) {
+      data['gpp'] = bidderRequest.gppConsent.gppString;
+      data['gpp_sid'] = bidderRequest.gppConsent?.applicableSections?.toString();
     }
 
     data['rp_maxbids'] = bidderRequest.bidLimit || 1;
@@ -695,7 +712,7 @@ export const spec = {
       return (adB.cpm || 0.0) - (adA.cpm || 0.0);
     });
   },
-  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
       // data is only assigned if params are available to pass to syncEndpoint
       let params = {};
@@ -711,6 +728,11 @@ export const spec = {
 
       if (uspConsent) {
         params['us_privacy'] = encodeURIComponent(uspConsent);
+      }
+
+      if (gppConsent?.gppString) {
+        params['gpp'] = gppConsent.gppString;
+        params['gpp_sid'] = gppConsent.applicableSections?.toString();
       }
 
       params = Object.keys(params).length ? `?${formatQS(params)}` : '';
@@ -1191,9 +1213,9 @@ function setBidFloors(bidRequest, imp) {
   }
 }
 
-function addOrtbFirstPartyData(data, nonBannerRequests) {
+function addOrtbFirstPartyData(data, nonBannerRequests, ortb2) {
   let fpd = {};
-  const keywords = new Set();
+  const keywords = getAllOrtbKeywords(ortb2, ...nonBannerRequests.map(req => req.params.keywords))
   nonBannerRequests.forEach(bidRequest => {
     const bidFirstPartyData = {
       user: {ext: {data: {...bidRequest.params.visitor}}},
@@ -1208,10 +1230,6 @@ function addOrtbFirstPartyData(data, nonBannerRequests) {
       }
     }
 
-    if (bidRequest.params.keywords) {
-      const keywordsArray = (!Array.isArray(bidRequest.params.keywords) ? bidRequest.params.keywords.split(',') : bidRequest.params.keywords);
-      keywordsArray.forEach(keyword => keywords.add(keyword));
-    }
     fpd = mergeDeep(fpd, bidRequest.ortb2 || {}, bidFirstPartyData);
 
     // add user.id from config.
@@ -1222,8 +1240,8 @@ function addOrtbFirstPartyData(data, nonBannerRequests) {
 
   mergeDeep(data, fpd);
 
-  if (keywords && keywords.size) {
-    deepSetValue(data, 'site.keywords', Array.from(keywords.values()).join(','));
+  if (keywords && keywords.length) {
+    deepSetValue(data, 'site.keywords', keywords.join(','));
   }
   delete data?.ext?.prebid?.storedrequest;
 }

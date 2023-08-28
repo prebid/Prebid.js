@@ -5,6 +5,7 @@ import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { userSync } from '../src/userSync.js';
 import { bidderSettings } from '../src/bidderSettings.js';
+import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
 const PAGEVIEW_ID = generateUUID();
@@ -38,8 +39,8 @@ export const spec = {
         return false;
       }
     } else if (deepAccess(bid, 'mediaTypes.video')) {
-      if (deepAccess(bid, 'mediaTypes.video.context') === 'outstream' && !bid.params.sizes) {
-        // bids.params.sizes is required for outstream video adUnits
+      if (deepAccess(bid, 'mediaTypes.video.context') === 'outstream' && !deepAccess(bid, 'mediaTypes.video.playerSize')) {
+        // playerSize is required for outstream video adUnits
         return false;
       }
       if (deepAccess(bid, 'mediaTypes.video.context') === 'instream' && !deepAccess(bid, 'mediaTypes.video.playerSize')) {
@@ -140,7 +141,7 @@ export const spec = {
       payload.eids = JSON.stringify(eids);
     }
 
-    let keywords = validBidRequests[0].params.keywords; // a CSV of keywords
+    let keywords = getAllOrtbKeywords(bidderRequest.ortb2, ...validBidRequests.map(br => br.params.keywords)).join(',');
 
     if (keywords) {
       payload.kw = keywords;
@@ -247,10 +248,7 @@ export const spec = {
             bidRequest,
             'renderer.options'
           ));
-          let videoSize = deepAccess(bidRequest, 'params.sizes');
-          if (Array.isArray(videoSize) && Array.isArray(videoSize[0])) { // handle case of multiple sizes
-            videoSize = videoSize[0]; // Only take the first size for outstream
-          }
+          let videoSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
           if (videoSize) {
             bids.width = videoSize[0];
             bids.height = videoSize[1];

@@ -63,6 +63,7 @@ export const spec = {
     // convert Native ORTB definition to old-style prebid native definition
     bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
     let hasVideo = false;
+    let eids;
     const payload = {
       Version: VERSION,
       Bids: bidRequests.reduce((accumulator, bidReq) => {
@@ -71,7 +72,7 @@ export const spec = {
         let size = getSize(sizesArray);
         accumulator[bidReq.bidId] = {};
         accumulator[bidReq.bidId].PlacementID = bidReq.params.placement;
-        accumulator[bidReq.bidId].TransactionID = bidReq.transactionId;
+        accumulator[bidReq.bidId].TransactionID = bidReq.ortb2Imp?.ext?.tid;
         accumulator[bidReq.bidId].Width = size.width;
         accumulator[bidReq.bidId].Height = size.height;
         accumulator[bidReq.bidId].AvailableSizes = sizesArray.join(',');
@@ -80,6 +81,9 @@ export const spec = {
         }
         if (bidReq.schain) {
           accumulator[bidReq.bidId].SChain = bidReq.schain;
+        }
+        if (!eids && bidReq.userIdAsEids && bidReq.userIdAsEids.length) {
+          eids = bidReq.userIdAsEids;
         }
         if (mediatype === NATIVE) {
           let nativeReq = bidReq.mediaTypes.native;
@@ -120,9 +124,8 @@ export const spec = {
     if (bidderRequest.ortb2) {
       payload.ortb2 = bidderRequest.ortb2;
     }
-
-    if (deepAccess(bidderRequest, 'userIdAsEids')) {
-      payload.userId = bidderRequest.userIdAsEids;
+    if (eids) {
+      payload.eids = eids;
     }
 
     payload.pbjs_version = '$prebid.version$';
