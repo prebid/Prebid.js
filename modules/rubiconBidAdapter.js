@@ -196,8 +196,8 @@ export const converter = ortbConverter({
     if (config.getConfig('s2sConfig.defaultTtl')) {
       imp.exp = config.getConfig('s2sConfig.defaultTtl');
     };
-    bidRequest.params.position === 'atf' && (imp.video.pos = 1);
-    bidRequest.params.position === 'btf' && (imp.video.pos = 3);
+    bidRequest.params.position === 'atf' && imp.video && (imp.video.pos = 1);
+    bidRequest.params.position === 'btf' && imp.video && (imp.video.pos = 3);
     delete imp.ext?.prebid?.storedrequest;
 
     if (bidRequest.params.bidonmultiformat === true && bidRequestType.length > 1) {
