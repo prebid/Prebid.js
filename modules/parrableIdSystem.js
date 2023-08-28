@@ -332,7 +332,9 @@ export const parrableIdSubmodule = {
    */
   getId(config, gdprConsentData, currentStoredId) {
     const configParams = (config && config.params) || {};
-    return fetchId(configParams, gdprConsentData);
+    // Parrable has paused its activity temporarily, thus we are returning an empty EID until the service restarts again
+    // return fetchId(configParams, gdprConsentData);
+    return { optout: false, ibaOptout: false, ccpaOptout: false, eid: null };
   }
 };
 
