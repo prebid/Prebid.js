@@ -390,11 +390,11 @@ export const spec = {
       if (uspConsent && typeof uspConsent.consentString === 'string') {
         consentParams.push(`usp=${uspConsent.consentString}`);
       }
-      if(gppConsent && typeof gppConsent === 'object'){
-        if(gppConsent.gppString && typeof gppConsent.gppString === 'string'){
+      if (gppConsent && typeof gppConsent === 'object') {
+        if (gppConsent.gppString && typeof gppConsent.gppString === 'string') {
           consentParams.push(`gpp=${gppConsent.gppString}`);
         }
-        if(gppConsent.applicableSections && typeof gppConsent.applicableSections === 'object'){
+        if (gppConsent.applicableSections && typeof gppConsent.applicableSections === 'object') {
           consentParams.push(`gpp_sid=${gppConsent.applicableSections}`);
         }
       }

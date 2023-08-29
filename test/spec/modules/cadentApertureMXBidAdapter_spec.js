@@ -834,11 +834,11 @@ describe('cadent_aperture_mx Adapter', function () {
       expect(syncs[0].url).to.contains('usp=test');
       expect(syncs[0].url).to.equal('https://biddr.brealtime.com/check.html?gdpr=1&gdpr_consent=test&usp=test')
     });
-    
-    it('should pass gpp string and section id' , function(){
-      let syncs = spec.getUserSyncs({iframeEnabled: true}, {}, {},{}, {
+
+    it('should pass gpp string and section id', function() {
+      let syncs = spec.getUserSyncs({iframeEnabled: true}, {}, {}, {}, {
         gppString: 'abcdefgs',
-        applicableSections: [1,2,4]
+        applicableSections: [1, 2, 4]
       });
       expect(syncs).to.not.be.an('undefined');
       expect(syncs[0].url).to.contains('gpp=abcdefgs')
@@ -856,9 +856,9 @@ describe('cadent_aperture_mx Adapter', function () {
         },
         {
           gppString: 'abcdefgs',
-          applicableSections: [1,2,4]
+          applicableSections: [1, 2, 4]
         }
-        );
+      );
       expect(syncs).to.not.be.an('undefined');
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('iframe');
