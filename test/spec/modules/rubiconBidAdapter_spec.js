@@ -1578,7 +1578,7 @@ describe('the rubicon adapter', function () {
               expect(data['eid_catchall']).to.equal('11111^2');
             });
 
-            it('should send rubiconproejct special case', function () {
+            it('should send rubiconproject special case', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
               // Hardcoding userIdAsEids since createEidsArray returns empty array if source not found in eids.js
               clonedBid.userIdAsEids = [{
