@@ -239,6 +239,7 @@ function _getORTBVideo(bidRequest) {
   } catch (err) {
     logWarn('Video size not defined', err);
   }
+  // honor existing publisher settings
   if (video.context === 'instream') {
     if (!video.placement) {
       video.placement = 1;
