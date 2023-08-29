@@ -374,7 +374,7 @@ export const spec = {
     }
     return cadentBidResponses;
   },
-  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     const syncs = [];
     const consentParams = [];
     if (syncOptions.iframeEnabled) {
@@ -389,6 +389,14 @@ export const spec = {
       }
       if (uspConsent && typeof uspConsent.consentString === 'string') {
         consentParams.push(`usp=${uspConsent.consentString}`);
+      }
+      if(gppConsent && typeof gppConsent === 'object'){
+        if(gppConsent.gppString && typeof gppConsent.gppString === 'string'){
+          consentParams.push(`gpp=${gppConsent.gppString}`);
+        }
+        if(gppConsent.applicableSections && typeof gppConsent.applicableSections === 'object'){
+          consentParams.push(`gpp_sid=${gppConsent.applicableSections}`);
+        }
       }
       if (consentParams.length > 0) {
         url = url + '?' + consentParams.join('&');
