@@ -6,13 +6,20 @@ import { server } from 'test/mocks/xhr.js';
 const partner = 10;
 const pai = '11';
 const pcid = '12';
+const userPercentage = 0;
+const defaultPercentage = 100;
 const enableCookieStorage = true;
 const defaultConfigParams = { params: { partner: partner } };
 const paiConfigParams = { params: { partner: partner, pai: pai } };
 const pcidConfigParams = { params: { partner: partner, pcid: pcid } };
-const enableCookieConfigParams = { params: { partner: partner, enableCookieStorage: enableCookieStorage } };
 const allConfigParams = { params: { partner: partner, pai: pai, pcid: pcid, enableCookieStorage: enableCookieStorage } };
 const responseHeader = { 'Content-Type': 'application/json' }
+
+const percentageConfigParams = { params: { partner: partner, percentage: userPercentage } };
+const PERCENT_LS_KEY = '_iiq_percent'
+const GROUP_LS_KEY = '_iiq_group'
+const WITH_IIQ = 'A'
+const WITHOUT_IIQ = 'B'
 
 describe('IntentIQ tests', function () {
   let logErrorStub;
@@ -168,9 +175,10 @@ describe('IntentIQ tests', function () {
     expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&iiqidtype=2&iiqpcid=');
     request.respond(
       204,
-      responseHeader,
+      responseHeader
     );
     expect(callBackSpy.calledOnce).to.be.true;
+    expect(request.response).to.equal(undefined);
   });
 
   it('should log an error and continue to callback if ajax request errors', function () {
@@ -259,5 +267,30 @@ describe('IntentIQ tests', function () {
     expect(server.requests.length).to.be.equal(0);
     expect(callBackSpy.calledOnce).to.be.true;
     expect(callBackSpy.args[0][0]).to.be.equal(testLSValueWithData.data);
+  });
+
+  it('Default percentage and group without user config 100 %', function () {
+    localStorage.clear();
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
+    if (submoduleCallback) {
+      submoduleCallback(callBackSpy);
+    }
+    let ls_percent_data = localStorage.getItem(PERCENT_LS_KEY + '_' + partner)
+    let ls_group_data = localStorage.getItem(GROUP_LS_KEY + '_' + partner)
+    expect(ls_group_data).to.be.equal(WITH_IIQ);
+    expect(ls_percent_data).to.be.equal(defaultPercentage + '');
+    expect(server.requests.length).to.be.equal(1);
+  });
+
+  it('User configuration percentage 0 %', function () {
+    localStorage.clear();
+    let submoduleCallback = intentIqIdSubmodule.getId(percentageConfigParams).callback;
+    expect(submoduleCallback).to.be.undefined;
+    let ls_percent_data = localStorage.getItem(PERCENT_LS_KEY + '_' + partner)
+    let ls_group_data = localStorage.getItem(GROUP_LS_KEY + '_' + partner)
+    expect(ls_group_data).to.be.equal(WITHOUT_IIQ);
+    expect(ls_percent_data).to.be.equal(userPercentage + '');
+    expect(server.requests.length).to.be.equal(0);
   });
 });

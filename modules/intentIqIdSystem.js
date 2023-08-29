@@ -16,10 +16,19 @@ const PCID_EXPIRY = 365;
 const MODULE_NAME = 'intentIqId';
 export const FIRST_PARTY_KEY = '_iiq_fdata';
 export var FIRST_PARTY_DATA_KEY = '_iiq_fdata';
+export var GROUP_LS_KEY = '_iiq_group';
+export var WITH_IIQ = 'A';
+export var WITHOUT_IIQ = 'B';
+export var PERCENT_LS_KEY = '_iiq_percent';
+export var DEFAULT_PERCENTAGE = 100;
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 const INVALID_ID = 'INVALID_ID';
+
+function getRandom(start, end) {
+  return Math.floor(Math.random() * (end - start + 1) + start);
+}
 
 /**
  * Generate standard UUID string
@@ -120,6 +129,32 @@ export const intentIqIdSubmodule = {
       return;
     }
     const cookieStorageEnabled = typeof configParams.enableCookieStorage === 'boolean' ? configParams.enableCookieStorage : false
+
+    if (isNaN(configParams.percentage)) {
+      logInfo(MODULE_NAME + ' AB Testing percentage is not defined. Setting default value = ' + DEFAULT_PERCENTAGE);
+      configParams.percentage = DEFAULT_PERCENTAGE;
+    }
+
+    if (isNaN(configParams.percentage) || configParams.percentage < 0 || configParams.percentage > 100) {
+      logError(MODULE_NAME + 'Percentage - intentIqId submodule requires a valid percentage value');
+      return false;
+    }
+
+    configParams.group = readData(GROUP_LS_KEY + '_' + configParams.partner);
+    let percentage = readData(PERCENT_LS_KEY + '_' + configParams.partner);
+
+    if (!configParams.group || !percentage || isNaN(percentage) || percentage != configParams.percentage) {
+      logInfo(MODULE_NAME + 'Generating new Group. Current test group: ' + configParams.group + ', current percentage: ' + percentage + ' , configured percentage: ' + configParams.percentage);
+      if (configParams.percentage > getRandom(1, 100)) { configParams.group = WITH_IIQ; } else configParams.group = WITHOUT_IIQ;
+      storeData(GROUP_LS_KEY + '_' + configParams.partner, configParams.group)
+      storeData(PERCENT_LS_KEY + '_' + configParams.partner, configParams.percentage + '')
+      logInfo(MODULE_NAME + 'New group: ' + configParams.group)
+    }
+    if (configParams.group == WITHOUT_IIQ) {
+      logInfo(MODULE_NAME + 'Group "B". Passive Mode ON.');
+      return true;
+    }
+
     if (!FIRST_PARTY_DATA_KEY.includes(configParams.partner)) { FIRST_PARTY_DATA_KEY += '_' + configParams.partner; }
     let rrttStrtTime = 0;
 
@@ -159,6 +194,9 @@ export const intentIqIdSubmodule = {
             if ('cttl' in respJson) {
               partnerData.cttl = respJson.cttl;
               shouldUpdateLs = true;
+            }
+            if ('eidl' in respJson) {
+              partnerData.eidl = respJson.eidl;
             }
             // If should save and data is empty, means we should save as INVALID_ID
             if (respJson.data == '') {
