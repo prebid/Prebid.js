@@ -85,6 +85,12 @@ export const adtelligentIdModule = {
       }
 
     }
+  },
+  eids: {
+    'adtelligentId': {
+      source: 'adtelligent.com',
+      atype: 3
+    },
   }
 };
 

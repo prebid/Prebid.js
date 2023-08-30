@@ -1,12 +1,12 @@
 import {expect} from 'chai';
-import {spec} from 'modules/kulturemediaBidAdapter.js';
+import {spec} from 'modules/dxkultureBidAdapter.js';
 
 const BANNER_REQUEST = {
-  'bidderCode': 'kulturemedia',
+  'bidderCode': 'dxkulture',
   'auctionId': 'auctionId-56a2-4f71-9098-720a68f2f708',
   'bidderRequestId': 'requestId',
   'bidRequest': [{
-    'bidder': 'kulturemedia',
+    'bidder': 'dxkulture',
     'params': {
       'placementId': 123456,
     },
@@ -17,7 +17,7 @@ const BANNER_REQUEST = {
     'auctionId': 'auctionId-56a2-4f71-9098-720a68f2f708'
   },
   {
-    'bidder': 'kulturemedia',
+    'bidder': 'dxkulture',
     'params': {
       'placementId': 123456,
     },
@@ -98,7 +98,7 @@ const RESPONSE = {
             }
           }
         ],
-        'seat': 'kulturemedia'
+        'seat': 'dxkulture'
       }
     ],
     'ext': {
@@ -131,11 +131,11 @@ const RESPONSE = {
 
 const DEFAULT_NETWORK_ID = 1;
 
-describe('kulturemediaBidAdapter:', function () {
+describe('dxkultureBidAdapter:', function () {
   let videoBidRequest;
 
   const VIDEO_REQUEST = {
-    'bidderCode': 'kulturemedia',
+    'bidderCode': 'dxkulture',
     'auctionId': 'e158486f-8c7f-472f-94ce-b0cbfbb50ab4',
     'bidderRequestId': '34feaad34lkj2',
     'bids': videoBidRequest,
@@ -158,7 +158,7 @@ describe('kulturemediaBidAdapter:', function () {
           playerSize: [[640, 480]],
         }
       },
-      bidder: 'kulturemedia',
+      bidder: 'dxkulture',
       sizes: [640, 480],
       bidId: '30b3efwfwe1e',
       adUnitCode: 'video1',
@@ -192,7 +192,7 @@ describe('kulturemediaBidAdapter:', function () {
       beforeEach(function () {
         // Basic Valid BidRequest
         this.bid = {
-          bidder: 'kulturemedia',
+          bidder: 'dxkulture',
           mediaTypes: {
             banner: {
               sizes: [[250, 300]]
@@ -223,7 +223,7 @@ describe('kulturemediaBidAdapter:', function () {
     context('banner validation', function () {
       it('returns true when banner sizes are defined', function () {
         const bid = {
-          bidder: 'kulturemedia',
+          bidder: 'dxkulture',
           mediaTypes: {
             banner: {
               sizes: [[250, 300]]
@@ -248,7 +248,7 @@ describe('kulturemediaBidAdapter:', function () {
 
         invalidSizes.forEach((sizes) => {
           const bid = {
-            bidder: 'kulturemedia',
+            bidder: 'dxkulture',
             mediaTypes: {
               banner: {
                 sizes
@@ -269,7 +269,7 @@ describe('kulturemediaBidAdapter:', function () {
       beforeEach(function () {
         // Basic Valid BidRequest
         this.bid = {
-          bidder: 'kulturemedia',
+          bidder: 'dxkulture',
           mediaTypes: {
             video: {
               playerSize: [[300, 50]],
@@ -509,7 +509,7 @@ describe('kulturemediaBidAdapter:', function () {
               price: 6.01,
               adm: '<VAST></VAST>',
               adomain: [
-                'kulturemedia.com'
+                'dxkulture.com'
               ],
               w: 640,
               h: 480,
@@ -530,6 +530,7 @@ describe('kulturemediaBidAdapter:', function () {
         let o = {
           requestId: serverResponse.seatbid[0].bid[0].impid,
           ad: '<VAST></VAST>',
+          bidderCode: spec.code,
           cpm: serverResponse.seatbid[0].bid[0].price,
           creativeId: serverResponse.seatbid[0].bid[0].crid,
           vastXml: serverResponse.seatbid[0].bid[0].adm,
@@ -540,7 +541,7 @@ describe('kulturemediaBidAdapter:', function () {
           ttl: 300,
           netRevenue: true,
           meta: {
-            advertiserDomains: ['kulturemedia.com']
+            advertiserDomains: ['dxkulture.com']
           }
         };
         expect(bidResponse[0]).to.deep.equal(o);

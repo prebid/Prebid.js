@@ -259,6 +259,18 @@ export const novatiqIdSubmodule = {
       srcId = configParams.sourceid;
     }
     return srcId;
+  },
+  eids: {
+    'novatiq': {
+      getValue: function(data) {
+        if (data.snowflake.id === undefined) {
+          return data.snowflake;
+        }
+
+        return data.snowflake.id;
+      },
+      source: 'novatiq.com',
+    },
   }
 };
 submodule('userId', novatiqIdSubmodule);

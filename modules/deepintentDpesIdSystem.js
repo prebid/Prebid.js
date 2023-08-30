@@ -39,8 +39,13 @@ export const deepintentDpesSubmodule = {
    */
   getId(config, consentData, cacheIdObj) {
     return cacheIdObj;
-  }
-
+  },
+  eids: {
+    'deepintentId': {
+      source: 'deepintent.com',
+      atype: 3
+    },
+  },
 };
 
 submodule('userId', deepintentDpesSubmodule);

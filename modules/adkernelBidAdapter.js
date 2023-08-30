@@ -100,7 +100,9 @@ export const spec = {
     {code: 'bidbuddy'},
     {code: 'adliveconnect'},
     {code: 'didnadisplay'},
-    {code: 'qortex'}
+    {code: 'qortex'},
+    {code: 'adpluto'},
+    {code: 'headbidder'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -456,7 +458,9 @@ function makeUser(bidderRequest, fpd) {
   if (eids) {
     deepSetValue(user, 'ext.eids', eids);
   }
-  if (!isEmpty(user)) { return {user: user}; }
+  if (!isEmpty(user)) {
+    return {user: user};
+  }
 }
 
 /**
@@ -465,12 +469,16 @@ function makeUser(bidderRequest, fpd) {
  * @returns {{regs: Object} | undefined}
  */
 function makeRegulations(bidderRequest) {
-  let {gdprConsent, uspConsent} = bidderRequest;
+  let {gdprConsent, uspConsent, gppConsent} = bidderRequest;
   let regs = {};
   if (gdprConsent) {
     if (gdprConsent.gdprApplies !== undefined) {
       deepSetValue(regs, 'regs.ext.gdpr', ~~gdprConsent.gdprApplies);
     }
+  }
+  if (gppConsent) {
+    deepSetValue(regs, 'regs.gpp', gppConsent.gppString);
+    deepSetValue(regs, 'regs.gpp_sid', gppConsent.applicableSections);
   }
   if (uspConsent) {
     deepSetValue(regs, 'regs.ext.us_privacy', uspConsent);

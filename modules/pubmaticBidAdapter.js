@@ -630,7 +630,7 @@ function _addJWPlayerSegmentData(imp, bid) {
   ext && ext.key_val === undefined ? ext.key_val = jwPlayerData : ext.key_val += '|' + jwPlayerData;
 }
 
-function _createImpressionObject(bid) {
+function _createImpressionObject(bid, bidderRequest) {
   var impObj = {};
   var bannerObj;
   var videoObj;
@@ -638,6 +638,7 @@ function _createImpressionObject(bid) {
   var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
   var mediaTypes = '';
   var format = [];
+  var isFledgeEnabled = bidderRequest?.fledgeEnabled;
 
   impObj = {
     id: bid.bidId,
@@ -708,9 +709,24 @@ function _createImpressionObject(bid) {
 
   _addFloorFromFloorModule(impObj, bid);
 
+  _addFledgeflag(impObj, bid, isFledgeEnabled)
+
   return impObj.hasOwnProperty(BANNER) ||
           impObj.hasOwnProperty(NATIVE) ||
           (FEATURES.VIDEO && impObj.hasOwnProperty(VIDEO)) ? impObj : UNDEFINED;
+}
+
+function _addFledgeflag(impObj, bid, isFledgeEnabled) {
+  if (isFledgeEnabled) {
+    impObj.ext = impObj.ext || {};
+    if (bid?.ortb2Imp?.ext?.ae !== undefined) {
+      impObj.ext.ae = bid.ortb2Imp.ext.ae;
+    }
+  } else {
+    if (impObj.ext?.ae) {
+      delete impObj.ext.ae;
+    }
+  }
 }
 
 function _addImpressionFPD(imp, bid) {
@@ -1095,7 +1111,7 @@ export const spec = {
       if (bid.params.hasOwnProperty('acat') && isArray(bid.params.acat)) {
         allowedIabCategories = allowedIabCategories.concat(bid.params.acat);
       }
-      var impObj = _createImpressionObject(bid);
+      var impObj = _createImpressionObject(bid, bidderRequest);
       if (impObj) {
         payload.imp.push(impObj);
       }
@@ -1134,10 +1150,7 @@ export const spec = {
     payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
     payload.user.geo = {};
     // TODO: fix lat and long to only come from request object, not params
-    payload.user.geo.lat = _parseSlotParam('lat', 0);
-    payload.user.geo.lon = _parseSlotParam('lon', 0);
     payload.user.yob = _parseSlotParam('yob', conf.yob);
-    payload.device.geo = payload.user.geo;
     payload.site.page = conf.kadpageurl.trim() || payload.site.page.trim();
     payload.site.domain = _getDomainFromURL(payload.site.page);
 
@@ -1178,6 +1191,15 @@ export const spec = {
       deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
+    // Attaching GPP Consent Params
+    if (bidderRequest?.gppConsent?.gppString) {
+      deepSetValue(payload, 'regs.gpp', bidderRequest.gppConsent.gppString);
+      deepSetValue(payload, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
+    } else if (bidderRequest?.ortb2?.regs?.gpp) {
+      deepSetValue(payload, 'regs.gpp', bidderRequest.ortb2.regs.gpp);
+      deepSetValue(payload, 'regs.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
+    }
+
     // coppa compliance
     if (config.getConfig('coppa') === true) {
       deepSetValue(payload, 'regs.coppa', 1);
@@ -1187,22 +1209,32 @@ export const spec = {
 
     // First Party Data
     const commonFpd = (bidderRequest && bidderRequest.ortb2) || {};
-    if (commonFpd.site) {
+    const { user, device, site, bcat } = commonFpd;
+    if (site) {
       const { page, domain, ref } = payload.site;
-      mergeDeep(payload, {site: commonFpd.site});
+      mergeDeep(payload, {site: site});
       payload.site.page = page;
       payload.site.domain = domain;
       payload.site.ref = ref;
     }
-    if (commonFpd.user) {
-      mergeDeep(payload, {user: commonFpd.user});
+    if (user) {
+      mergeDeep(payload, {user: user});
     }
-    if (commonFpd.bcat) {
-      blockedIabCategories = blockedIabCategories.concat(commonFpd.bcat);
+    if (bcat) {
+      blockedIabCategories = blockedIabCategories.concat(bcat);
     }
     // check if fpd ortb2 contains device property with sua object
-    if (commonFpd.device?.sua) {
-      payload.device.sua = commonFpd.device?.sua;
+    if (device?.sua) {
+      payload.device.sua = device?.sua;
+    }
+
+    if (user?.geo && device?.geo) {
+      payload.device.geo = { ...payload.device.geo, ...device.geo };
+      payload.user.geo = { ...payload.user.geo, ...user.geo };
+    } else {
+      if (user?.geo || device?.geo) {
+        payload.user.geo = payload.device.geo = (user?.geo ? { ...payload.user.geo, ...user.geo } : { ...payload.user.geo, ...device.geo });
+      }
     }
 
     if (commonFpd.ext?.prebid?.bidderparams?.[bidderRequest.bidderCode]?.acat) {
@@ -1336,7 +1368,7 @@ export const spec = {
   /**
    * Register User Sync.
    */
-  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
     let syncurl = '' + publisherId;
 
     // Attaching GDPR Consent Params in UserSync url
@@ -1348,6 +1380,12 @@ export const spec = {
     // CCPA
     if (uspConsent) {
       syncurl += '&us_privacy=' + encodeURIComponent(uspConsent);
+    }
+
+    // GPP Consent
+    if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+      syncurl += '&gpp=' + encodeURIComponent(gppConsent.gppString);
+      syncurl += '&gpp_sid=' + encodeURIComponent(gppConsent?.applicableSections?.join(','));
     }
 
     // coppa compliance

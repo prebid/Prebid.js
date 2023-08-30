@@ -4,7 +4,7 @@ import { submodule } from '../src/hook.js';
 
 const MODULE_NAME = 'greenbidsRtdProvider';
 const MODULE_VERSION = '1.0.0';
-const ENDPOINT = 'https://europe-west1-greenbids-357713.cloudfunctions.net/partner-selection';
+const ENDPOINT = 'https://t.greenbids.ai';
 
 const auctionInfo = {};
 const rtdOptions = {};

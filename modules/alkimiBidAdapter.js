@@ -1,18 +1,20 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepAccess, deepClone} from '../src/utils.js';
+import {deepAccess, deepClone, getDNT, generateUUID} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'alkimi';
+const GVLID = 1169;
 export const ENDPOINT = 'https://exchange.alkimi-onboarding.com/bid?prebid=true';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
-    return !!(bid.params && bid.params.bidFloor && bid.params.token);
+    return !!(bid.params && bid.params.token);
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -28,12 +30,15 @@ export const spec = {
 
       bids.push({
         token: bidRequest.params.token,
-        pos: bidRequest.params.pos,
+        instl: bidRequest.params.instl,
+        exp: bidRequest.params.exp,
         bidFloor: getBidFloor(bidRequest, formatTypes),
         sizes: prepareSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes')),
         playerSizes: prepareSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize')),
         impMediaTypes: formatTypes,
-        adUnitCode: bidRequest.adUnitCode
+        adUnitCode: bidRequest.adUnitCode,
+        video: deepAccess(bidRequest, 'mediaTypes.video'),
+        banner: deepAccess(bidRequest, 'mediaTypes.banner')
       })
       bidIds.push(bidRequest.bidId)
     })
@@ -41,14 +46,23 @@ export const spec = {
     const alkimiConfig = config.getConfig('alkimi');
 
     let payload = {
-      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-      requestId: bidderRequest.auctionId,
+      requestId: generateUUID(),
       signRequest: {bids, randomUUID: alkimiConfig && alkimiConfig.randomUUID},
       bidIds,
       referer: bidderRequest.refererInfo.page,
       signature: alkimiConfig && alkimiConfig.signature,
       schain: validBidRequests[0].schain,
-      cpp: config.getConfig('coppa') ? 1 : 0
+      cpp: config.getConfig('coppa') ? 1 : 0,
+      device: {
+        dnt: getDNT() ? 1 : 0,
+        w: screen.width,
+        h: screen.height
+      },
+      ortb2: {
+        at: bidderRequest.ortb2?.at,
+        bcat: bidderRequest.ortb2?.bcat,
+        wseat: bidderRequest.ortb2?.wseat
+      }
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {

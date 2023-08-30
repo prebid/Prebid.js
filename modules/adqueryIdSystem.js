@@ -8,7 +8,7 @@
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
-import { isFn, isStr, isPlainObject, logError } from '../src/utils.js';
+import {isFn, isPlainObject, isStr, logError, logInfo} from '../src/utils.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'qid';
@@ -51,11 +51,7 @@ export const adqueryIdSubmodule = {
    * @returns {{qid:Object}}
    */
   decode(value) {
-    let qid = storage.getDataFromLocalStorage('qid');
-    if (isStr(qid)) {
-      return {qid: qid};
-    }
-    return (value && typeof value['qid'] === 'string') ? { 'qid': value['qid'] } : undefined;
+    return {qid: value}
   },
   /**
    * performs action to obtain id and return a value in the callback's response argument
@@ -64,40 +60,59 @@ export const adqueryIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config) {
+    logInfo('adqueryIdSubmodule getId');
     if (!isPlainObject(config.params)) {
       config.params = {};
     }
-    const url = paramOrDefault(config.params.url,
+
+    const url = paramOrDefault(
+      config.params.url,
       `https://bidder.adquery.io/prebid/qid`,
-      config.params.urlArg);
+      config.params.urlArg
+    );
 
     const resp = function (callback) {
-      let qid = storage.getDataFromLocalStorage('qid');
-      if (isStr(qid)) {
-        const responseObj = {qid: qid};
-        callback(responseObj);
-      } else {
-        const callbacks = {
-          success: response => {
-            let responseObj;
-            if (response) {
-              try {
-                responseObj = JSON.parse(response);
-              } catch (error) {
-                logError(error);
-              }
-            }
-            callback(responseObj);
-          },
-          error: error => {
-            logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
-            callback();
-          }
-        };
-        ajax(url, callbacks, undefined, {method: 'GET'});
+      let qid = window.qid;
+
+      if (!qid) {
+        const ramdomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
+        qid = ramdomValues.map(val => val.toString(36)).join('').substring(0, 20);
+
+        logInfo('adqueryIdSubmodule ID QID GENERTAED:', qid);
       }
+      logInfo('adqueryIdSubmodule ID QID:', qid);
+
+      const callbacks = {
+        success: response => {
+          let responseObj;
+          if (response) {
+            try {
+              responseObj = JSON.parse(response);
+            } catch (error) {
+              logError(error);
+            }
+          }
+          if (responseObj.qid) {
+            let myQid = responseObj.qid;
+            storage.setDataInLocalStorage('qid', myQid);
+            return callback(myQid);
+          }
+          callback();
+        },
+        error: error => {
+          logError(`${MODULE_NAME}: ID fetch encountered an error`, error);
+          callback();
+        }
+      };
+      ajax(url + '?qid=' + qid, callbacks, undefined, {method: 'GET'});
     };
     return {callback: resp};
+  },
+  eids: {
+    'qid': {
+      source: 'adquery.io',
+      atype: 1
+    },
   }
 };
 
