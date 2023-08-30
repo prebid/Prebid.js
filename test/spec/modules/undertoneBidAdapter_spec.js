@@ -39,6 +39,11 @@ const videoBidReq = [{
       maxDuration: 30
     }
   },
+  ortb2Imp: {
+    ext: {
+      gpid: '/1111/gpid#728x90',
+    }
+  },
   mediaTypes: {video: {
     context: 'outstream',
     playerSize: [640, 480],
@@ -55,6 +60,13 @@ const videoBidReq = [{
   params: {
     placementId: '10433395',
     publisherId: 12345
+  },
+  ortb2Imp: {
+    ext: {
+      data: {
+        pbadslot: '/1111/pbadslot#728x90'
+      }
+    }
   },
   mediaTypes: {video: {
     context: 'outstream',
@@ -463,12 +475,14 @@ describe('Undertone Adapter', () => {
       expect(bidVideo.video.skippable).to.equal(true);
       expect(bidVideo.video.placement).to.equal(1);
       expect(bidVideo.video.plcmt).to.equal(1);
+      expect(bidVideo.gpid).to.equal('/1111/gpid#728x90');
 
       expect(bidVideo2.video.skippable).to.equal(null);
       expect(bidVideo2.video.maxDuration).to.equal(null);
       expect(bidVideo2.video.playbackMethod).to.equal(null);
       expect(bidVideo2.video.placement).to.equal(null);
       expect(bidVideo2.video.plcmt).to.equal(null);
+      expect(bidVideo2.gpid).to.equal('/1111/pbadslot#728x90');
     });
     it('should send all userIds data to server', function () {
       const request = spec.buildRequests(bidReqUserIds, bidderReq);
