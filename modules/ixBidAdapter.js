@@ -76,7 +76,9 @@ const SOURCE_RTI_MAPPING = {
   'audigent.com': '', // Hadron ID from Audigent, hadronId
   'pubcid.org': '', // SharedID, pubcid
   'utiq.com': '', // Utiq
-  'intimatemerger.com': ''
+  'intimatemerger.com': '',
+  '33across.com': '',
+  'liveintent.indexexchange.com': '',
 };
 const PROVIDERS = [
   'britepoolid',
@@ -166,6 +168,7 @@ const MEDIA_TYPES = {
 function bidToBannerImp(bid) {
   const imp = bidToImp(bid, BANNER);
   imp.banner = {};
+  imp.adunitCode = bid.adUnitCode;
   const impSize = deepAccess(bid, 'params.size');
   if (impSize) {
     imp.banner.w = impSize[0];
@@ -177,6 +180,41 @@ function bidToBannerImp(bid) {
   _applyFloor(bid, imp, BANNER);
 
   return imp;
+}
+
+/**
+ * Sets imp.displaymanager
+ *
+ * @param {object} imp
+ * @param {object} bid
+ */
+function setDisplayManager(imp, bid) {
+  if (deepAccess(bid, 'mediaTypes.video.context') === OUTSTREAM) {
+    let renderer = deepAccess(bid, 'mediaTypes.video.renderer');
+    if (!renderer) {
+      renderer = deepAccess(bid, 'renderer');
+    }
+
+    if (deepAccess(bid, 'schain', false)) {
+      imp.displaymanager = 'pbjs_wrapper';
+    } else if (renderer && typeof (renderer) === 'object') {
+      if (renderer.url !== undefined) {
+        let domain = '';
+        try {
+          domain = new URL(renderer.url).hostname
+        } catch {
+          return;
+        }
+        if (domain.includes('js-sec.indexww')) {
+          imp.displaymanager = 'ix';
+        } else {
+          imp.displaymanager = renderer.url;
+        }
+      }
+    } else {
+      imp.displaymanager = 'ix';
+    }
+  }
 }
 
 /**
@@ -198,8 +236,10 @@ export function bidToVideoImp(bid) {
   // populate imp level transactionId
   imp.ext.tid = deepAccess(bid, 'ortb2Imp.ext.tid');
 
+  setDisplayManager(imp, bid);
+
   // AdUnit-Specific First Party Data
-  addAdUnitFPD(imp, bid)
+  addAdUnitFPD(imp, bid);
 
   // copy all video properties to imp object
   for (const adUnitProperty in videoAdUnitRef) {
@@ -305,7 +345,6 @@ function bidToImp(bid, mediaType) {
   imp.id = bid.bidId;
 
   imp.ext = {};
-
   if (deepAccess(bid, `params.${mediaType}.siteId`) && !isNaN(Number(bid.params[mediaType].siteId))) {
     switch (mediaType) {
       case BANNER:
@@ -697,6 +736,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
     const isLastAdUnit = adUnitIndex === impKeys.length - 1;
 
+    r = addDeviceInfo(r);
     r = deduplicateImpExtFields(r);
     r = removeSiteIDs(r);
 
@@ -915,10 +955,10 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
 
   if (bannerImpressions.length > 0) {
     const bannerImpsKeyed = bannerImpressions.reduce((acc, bannerImp) => {
-      if (!acc[bannerImp.id]) {
-        acc[bannerImp.id] = []
+      if (!acc[bannerImp.adunitCode]) {
+        acc[bannerImp.adunitCode] = []
       }
-      acc[bannerImp.id].push(bannerImp);
+      acc[bannerImp.adunitCode].push(bannerImp);
       return acc;
     }, {});
     for (const impId in bannerImpsKeyed) {
@@ -2015,6 +2055,21 @@ function getFormatCount(imp) {
     formatCount += 1;
   }
   return formatCount;
+}
+
+/**
+ * Adds device.w / device.h info
+ * @param {object} r
+ * @returns object
+ */
+export function addDeviceInfo(r) {
+  if (r.device == undefined) {
+    r.device = {};
+  }
+  r.device.h = window.screen.height;
+  r.device.w = window.screen.width;
+
+  return r;
 }
 
 registerBidder(spec);

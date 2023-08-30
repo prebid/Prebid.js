@@ -200,6 +200,14 @@ function bidToTag(bidRequests, adapterRequest) {
     tag.DMPId = window.adtDmp.getUID();
   }
 
+  if (adapterRequest.gppConsent) {
+    tag.GPP = adapterRequest.gppConsent.gppString;
+    tag.GPPSid = adapterRequest.gppConsent.applicableSections?.toString();
+  } else if (adapterRequest.ortb2?.regs?.gpp) {
+    tag.GPP = adapterRequest.ortb2.regs.gpp;
+    tag.GPPSid = adapterRequest.ortb2.regs.gpp_sid;
+  }
+
   // end publisher env
   const bids = [];
 

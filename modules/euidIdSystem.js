@@ -103,6 +103,15 @@ export const euidIdSubmodule = {
     _logInfo(`EUID getId returned`, result);
     return result;
   },
+  eids: {
+    'euid': {
+      source: 'euid.eu',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      }
+    },
+  },
 };
 
 function decodeImpl(value) {

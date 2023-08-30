@@ -1,4 +1,4 @@
-import {ConsentHandler, gvlidRegistry} from '../../../../src/consentHandler.js';
+import {ConsentHandler, gvlidRegistry, multiHandler} from '../../../../src/consentHandler.js';
 
 describe('Consent data handler', () => {
   let handler;
@@ -56,6 +56,88 @@ describe('Consent data handler', () => {
       })
     })
   });
+
+  describe('getHash', () => {
+    it('is defined when null', () => {
+      expect(handler.hash).be.a('string');
+    });
+    it('changes when a field is updated', () => {
+      const h1 = handler.hash;
+      handler.setConsentData({field: 'value', enabled: false});
+      const h2 = handler.hash;
+      expect(h2).to.not.eql(h1);
+      handler.setConsentData({field: 'value', enabled: true});
+      const h3 = handler.hash;
+      expect(h3).to.not.eql(h2);
+      expect(h3).to.not.eql(h1);
+    });
+    it('does not change when fields are unchanged', () => {
+      handler.setConsentData({field: 'value', enabled: true});
+      const h1 = handler.hash;
+      handler.setConsentData({field: 'value', enabled: true});
+      expect(handler.hash).to.eql(h1);
+    });
+    it('does not change when non-hashFields are updated', () => {
+      handler.hashFields = ['field', 'enabled'];
+      handler.setConsentData({field: 'value', enabled: true});
+      const h1 = handler.hash;
+      handler.setConsentData({field: 'value', enabled: true, other: 'data'});
+      expect(handler.hash).to.eql(h1);
+    })
+  })
+});
+
+describe('multiHandler', () => {
+  let handlers, multi;
+  beforeEach(() => {
+    handlers = {h1: {}, h2: {}};
+    multi = multiHandler(handlers);
+  });
+
+  ['getConsentData', 'getConsentMeta'].forEach(method => {
+    describe(method, () => {
+      it('combines results from underlying handlers', () => {
+        handlers.h1[method] = () => 'one';
+        handlers.h2[method] = () => 'two';
+        expect(multi[method]()).to.eql({
+          h1: 'one',
+          h2: 'two',
+        })
+      });
+    });
+  });
+
+  describe('.promise', () => {
+    it('resolves all underlying promises', (done) => {
+      handlers.h1.promise = Promise.resolve('one');
+      let resolver, result;
+      handlers.h2.promise = new Promise((resolve) => { resolver = resolve });
+      multi.promise.then((val) => {
+        result = val;
+        expect(result).to.eql({
+          h1: 'one',
+          h2: 'two'
+        });
+        done();
+      })
+      handlers.h1.promise.then(() => {
+        expect(result).to.not.exist;
+        resolver('two');
+      });
+    })
+  });
+
+  describe('.hash', () => {
+    ['h1', 'h2'].forEach((handler, i) => {
+      it(`changes when handler #${i + 1} changes hash`, () => {
+        handlers.h1.hash = 'one';
+        handlers.h2.hash = 'two'
+        const first = multi.hash;
+        handlers[handler].hash = 'new';
+        expect(multi.hash).to.not.eql(first);
+      })
+    })
+  })
 })
 
 describe('gvlidRegistry', () => {

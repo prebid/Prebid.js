@@ -3,7 +3,7 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import { hasPurpose1Consent } from '../src/utils/gpdr.js';
 
 const GVLID = 816;
 const BIDDER_CODE = 'nobid';
@@ -62,6 +62,19 @@ function nobidBuildRequests(bids, bidderRequest) {
         uspConsent = bidderRequest.uspConsent;
       }
       return uspConsent;
+    }
+    var gppConsent = function(bidderRequest) {
+      let gppConsent = null;
+      if (bidderRequest?.gppConsent?.gppString && bidderRequest?.gppConsent?.applicableSections) {
+        gppConsent = {};
+        gppConsent.gpp = bidderRequest.gppConsent.gppString;
+        gppConsent.gpp_sid = Array.isArray(bidderRequest.gppConsent.applicableSections) ? bidderRequest.gppConsent.applicableSections : [];
+      } else if (bidderRequest?.ortb2?.regs?.gpp && bidderRequest?.ortb2.regs?.gpp_sid) {
+        gppConsent = {};
+        gppConsent.gpp = bidderRequest.ortb2.regs.gpp;
+        gppConsent.gpp_sid = Array.isArray(bidderRequest.ortb2.regs.gpp_sid) ? bidderRequest.ortb2.regs.gpp_sid : [];
+      }
+      return gppConsent;
     }
     var schain = function(bids) {
       if (bids && bids.length > 0) {
@@ -145,6 +158,9 @@ function nobidBuildRequests(bids, bidderRequest) {
     if (cop) state['coppa'] = cop;
     const eids = getEIDs(deepAccess(bids, '0.userIdAsEids'));
     if (eids && eids.length > 0) state['eids'] = eids;
+    const gpp = gppConsent(bidderRequest);
+    if (gpp?.gpp) state['gpp'] = gpp.gpp;
+    if (gpp?.gpp_sid) state['gpp_sid'] = gpp.gpp_sid;
     if (bidderRequest && bidderRequest.ortb2) state['ortb2'] = bidderRequest.ortb2;
     return state;
   };
@@ -230,9 +246,9 @@ function nobidBuildRequests(bids, bidderRequest) {
     siteId = (typeof bid.params['siteId'] != 'undefined' && bid.params['siteId']) ? bid.params['siteId'] : siteId;
     var placementId = bid.params['placementId'];
 
-    var adType = 'banner';
+    let adType = 'banner';
     const videoMediaType = deepAccess(bid, 'mediaTypes.video');
-    const context = deepAccess(bid, 'mediaTypes.video.context');
+    const context = deepAccess(bid, 'mediaTypes.video.context') || '';
     if (bid.mediaType === VIDEO || (videoMediaType && (context === 'instream' || context === 'outstream'))) {
       adType = 'video';
     }
@@ -246,7 +262,8 @@ function nobidBuildRequests(bids, bidderRequest) {
         placementId: placementId,
         ad_type: adType,
         params: bid.params,
-        floor: floor
+        floor: floor,
+        ctx: context
       },
       adunits);
     }
@@ -369,6 +386,7 @@ export const spec = {
     function resolveEndpoint() {
       var ret = 'https://ads.servenobid.com/';
       var env = (typeof getParameterByName === 'function') && (getParameterByName('nobid-env'));
+      env = window.location.href.indexOf('nobid-env=dev') > 0 ? 'dev' : env;
       if (!env) ret = 'https://ads.servenobid.com/';
       else if (env == 'beta') ret = 'https://beta.servenobid.com/';
       else if (env == 'dev') ret = '//localhost:8282/';
@@ -421,7 +439,7 @@ export const spec = {
      * @param {ServerResponse[]} serverResponses List of server's responses.
      * @return {UserSync[]} The user syncs which should be dropped.
      */
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, usPrivacy) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, usPrivacy, gppConsent) {
     if (syncOptions.iframeEnabled) {
       let params = '';
       if (gdprConsent && typeof gdprConsent.consentString === 'string') {
@@ -436,6 +454,12 @@ export const spec = {
         if (params.length > 0) params += '&';
         else params += '?';
         params += 'usp_consent=' + usPrivacy;
+      }
+      if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+        if (params.length > 0) params += '&';
+        else params += '?';
+        params += 'gpp=' + encodeURIComponent(gppConsent.gppString);
+        params += 'gpp_sid=' + encodeURIComponent(gppConsent.applicableSections.join(','));
       }
       return [{
         type: 'iframe',

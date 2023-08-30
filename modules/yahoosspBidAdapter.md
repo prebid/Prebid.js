@@ -1,10 +1,10 @@
 # Overview
-**Module Name:** yahoossp Bid Adapter
+**Module Name:** Yahoo Advertising Bid Adapter
 **Module Type:** Bidder Adapter
 **Maintainer:** hb-fe-tech@yahooinc.com
 
 # Description
-The Yahoo SSP Bid Adapter is an OpenRTB interface that consolidates all previous "Oath.inc" adapters such as: "aol", "oneMobile", "oneDisplay" & "oneVideo" supply-side platforms.
+The Yahoo Advertising Bid Adapter is an OpenRTB interface that consolidates all previous "Oath.inc" adapters such as: "aol", "oneMobile", "oneDisplay" & "oneVideo" supply-side platforms.
 
 # Supported Features:
 * Media Types: Banner & Video
@@ -21,49 +21,51 @@ The Yahoo SSP Bid Adapter is an OpenRTB interface that consolidates all previous
 
 
 # Adapter Request mode
-Since the yahoossp adapter now supports both Banner and Video adUnits a controller was needed to allow you to define when the adapter should generate a bid-requests to our Yahoo SSP.
+Since the Yahoo Advertising bid adapter supports both Banner and Video adUnits, a controller was needed to allow you to define when the adapter should generate a bid-requests to the Yahoo bid endpoint.
 
 **Important!** By default the adapter mode is set to "banner" only.
-This means that you do not need to explicitly declare the yahoossp.mode in the Global config to initiate banner adUnit requests.
+This means that you do not need to explicitly declare the `yahooAds.mode` property in the global config to initiate banner adUnit requests.
 
 ## Request modes:
 * **undefined** - (Default) Will generate bid-requests for "Banner" formats only.
 * **banner** - Will generate bid-requests for "Banner" formats only (Explicit declaration).
 * **video** - Will generate bid-requests for "Video" formats only (Explicit declaration).
-* **all** - Will generate bid-requests for both "Banner" & "Video" formats
+* **all** - Will generate bid-requests for both "Banner" & "Video" formats.
 
-**Important!** When setting yahoossp.mode = 'all' Make sure your Yahoo SSP Placement (pos id) supports both Banner & Video placements.
-If it does not, the Yahoo SSP will respond only in the format it is set too.
+**Important!** When setting `yahooAds.mode` to `'all'`, make sure your Yahoo Placement (pos id) supports both Banner & Video placements.
+If it does not, the Yahoo bid server will respond only in the format it is set too.
 
+### Example: explicitly setting the request mode
 ```javascript
 pbjs.setConfig({
-    yahoossp: {
+    yahooAds: {
         mode: 'banner' // 'all', 'video', 'banner' (default)
     }
 });
 ```
+
 # Integration Options
-The `yahoossp` bid adapter supports 2 types of integration:
+The Yahoo Advertising bid adapter supports 2 types of integration:
 1. **dcn & pos** DEFAULT (Site/App & Position targeting) - For Display partners/publishers.
-2. **pubId** (Publisher ID) - For legacy "oneVideo" AND New partners/publishers.
-**Important:** pubId integration (option 2) is only possible when your Seller account is setup for "Inventory Mapping".
+2. **pubId** (Publisher ID) - For legacy "oneVideo" AND new partners/publishers.
+**Important:** pubId integration (option 2) is only possible when your seller account is setup for "Inventory Mapping".
 
 **Please Note:** Most examples in this file are using dcn & pos.
 
 ## Who is currently eligible for "pubId" integration
 At this time, only the following partners/publishers are eligble for pubId integration:
-1. New partners/publishers that do not have any existing accounts on Yahoo SSP (aka: aol, oneMobile, oneDisplay).
+1. New partners/publishers that do not have an existing account with Yahoo Advertising (aka: aol, oneMobile, oneDisplay).
 2. Video SSP (oneVideo) partners/publishers that
    A. Do not have any display/banner inventory.
-   B. Do not have any existing accounts on Yahoo SSP (aka: aol, oneMobile, oneDisplay).
+   B. Do not have an existing account with Yahoo Advertising (aka: aol, oneMobile, oneDisplay).
 
 # Mandatory Bidder Parameters
 ## dcn & pos (DEFAULT)
-The minimal requirements for the 'yahoossp' bid adapter to generate an outbound bid-request to our Yahoo SSP are:
+The minimal requirements for the Yahoo Advertising bid adapter to generate an outbound bid-request to Yahoo's bid endpoint are:
 1. At least 1 adUnit including mediaTypes: banner or video
 2. **bidder.params** object must include:
-    A. **dcn:** Yahoo SSP Site/App inventory parameter.
-    B. **pos:** Yahoo SSP position inventory parameter.
+    A. **dcn:** Yahoo Advertising Site/App inventory parameter.
+    B. **pos:** Yahoo Advertising position inventory parameter.
 
 ### Example: dcn & pos Mandatory Parameters (Single banner adUnit)
 ```javascript
@@ -76,10 +78,10 @@ const adUnits = [{
         },
     bids: [
         {
-            bidder: 'yahoossp',
+            bidder: 'yahooAds',
             params: {
-                dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided from SSP
-                pos: '8a969978017a7aaabab4ab0bc01a0009' // Placement ID provided from SSP
+                dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided by Yahoo Advertising
+                pos: '8a969978017a7aaabab4ab0bc01a0009' // Placement ID provided by Yahoo Advertising
             }
         }
     ]
@@ -87,10 +89,10 @@ const adUnits = [{
 ```
 
 ## pubId
-The minimal requirements for the 'yahoossp' bid adapter to generate an outbound bid-request to our Yahoo SSP are:
+The minimal requirements for the Yahoo Advertising bid adapter to generate an outbound bid-request to Yahoo's bid endpoint are:
 1. At least 1 adUnit including mediaTypes: banner or video
 2. **bidder.params** object must include:
-    A. **pubId:** Yahoo SSP Publisher ID (AKA oneVideo pubId/Exchange name)
+    A. **pubId:** Yahoo Advertising Publisher ID (AKA oneVideo pubId/Exchange name)
 
 ### Example: pubId Mandatory Parameters (Single banner adUnit)
 ```javascript
@@ -103,14 +105,15 @@ const adUnits = [{
         },
     bids: [
         {
-            bidder: 'yahoossp',
+            bidder: 'yahooAds',
             params: {
-                pubId: 'DemoPublisher', // Publisher External ID provided from Yahoo SSP.
+                pubId: 'DemoPublisher', // Publisher defined external ID as configured by Yahoo Advertising.
             }
         }
     ]
 }];
 ```
+
 # Advanced adUnit Examples:
 ## Banner
 ```javascript
@@ -124,21 +127,22 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahoossp',
+        bidder: 'yahooAds',
         params: {
-            dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided from Yahoo SSP
-            pos: '8a969978017a7aaabab4ab0bc01a0009', // Placement ID provided from Yahoo SSP
+            dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided by Yahoo Advertising
+            pos: '8a969978017a7aaabab4ab0bc01a0009', // Placement ID provided by Yahoo Advertising
             }
         }
     }]
 }];
 ```
+
 ## Video Instream
-**Important!** Make sure that the Yahoo SSP Placement type (in-stream) matches the adUnit video inventory type.
+**Important!** Make sure that the Yahoo Advertising Placement type (in-stream) matches the adUnit video inventory type.
 **Note:** Make sure to set the adapter mode to allow video requests by setting it to mode: 'video' OR mode: 'all'.
 ```javascript
 pbjs.setConfig({
-    yahoossp: {
+    yahooAds: {
         mode: 'video'
     }
 });
@@ -156,20 +160,21 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahoossp',
+        bidder: 'yahooAds',
         params: {
-            dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided from Yahoo SSP
-            pos: '8a96958a017a7a57ac375d50c0c700cc', // Placement ID provided from Yahoo SSP
+            dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided by Yahoo Advertising
+            pos: '8a96958a017a7a57ac375d50c0c700cc', // Placement ID provided by Yahoo Advertising
         }
     }]
 }];
+
 ```
 ## Video Outstream
-**Important!** Make sure that the Yahoo SSP Placement type (in-feed/ in-article) matches the adUnit video inventory type.
+**Important!** Make sure that the Yahoo Advertsing placement type (in-feed/ in-article) matches the adUnit video inventory type.
 **Note:** Make sure to set the adapter mode to allow video requests by setting it to mode: 'video' OR mode: 'all'
 ```javascript
 pbjs.setConfig({
-    yahoossp: {
+    yahooAds: {
         mode: 'video'
     }
 });
@@ -187,22 +192,22 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahoossp',
+        bidder: 'yahooAds',
         params: {
-            dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided from Yahoo SSP
-            pos: '8a96958a017a7a57ac375d50c0c700cc', // Placement ID provided from Yahoo SSP
+            dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided by Yahoo Advertising
+            pos: '8a96958a017a7a57ac375d50c0c700cc', // Placement ID provided by Yahoo Advertising
         }
     }]
 }];
+
 ```
 ## Multi-Format
-**Important!** If you intend to use the yahoossp bidder for both Banner and Video formats please make sure:
-1. Set the adapter as mode: 'all' - to call the Yahoo SSP for both banner & video formats.
-2. Make sure the Yahoo SSP placement (pos id) supports both banner & video format requests.
-
+**Important!** If you intend to use the Yahoo Advertising bidder for both Banner and Video formats please make sure:
+1. Set the adapter as mode: 'all' - to configure the bid adapter to call the bid endpoint for both banner & video formats.
+2. Make sure the Yahoo Advertising placement (pos id) supports both banner & video format requests.
 ```javascript
 pbjs.setConfig({
-    yahoossp: {
+    yahooAds: {
         mode: 'all'
     }
 });
@@ -223,19 +228,18 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahoossp',
+        bidder: 'yahooAds',
         params: {
-            dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided from Yahoo SSP
-            pos: '8a96958a017a7a57ac375d50c0c700cc', // Placement ID provided from Yahoo SSP
+            dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided by Yahoo Advertising
+            pos: '8a96958a017a7a57ac375d50c0c700cc', // Placement ID provided by Yahoo Advertising
         }
     }]
 }];
 ```
 
 # Optional: Schain module support
-The yahoossp adapter supports the Prebid.org Schain module and will pass it through to our Yahoo SSP
+The Yahoo Advertising bid adapter supports the Prebid.org Schain module and will pass it through to our bid endpoint.
 For further details please see, https://docs.prebid.org/dev-docs/modules/schain.html
-
 ## Global Schain Example:
 ```javascript
         pbjs.setConfig({
@@ -256,7 +260,7 @@ For further details please see, https://docs.prebid.org/dev-docs/modules/schain.
 ## Bidder Specific Schain Example:
 ```javascript
         pbjs.setBidderConfig({
-            "bidders": ['yahoossp'], // can list more bidders here if they share the same config
+            "bidders": ['yahooAds'], // can list more bidders here if they share the same config
             "config": {
             "schain": {
                 "validation": "strict",
@@ -275,12 +279,10 @@ For further details please see, https://docs.prebid.org/dev-docs/modules/schain.
 ```
 
 # Optional: Price floors module & bidfloor
-The yahoossp adapter supports the Prebid.org Price Floors module and will use it to define the outbound bidfloor and currency.
-By default the adapter will always check the existance of Module price floor.
-If a module price floor does not exist you can set a custom bid floor for your impression using "params.bidOverride.imp.bidfloor".
+The Yahoo Advertising bid adapter supports the Prebid.org Price Floors module and will use it to define the outbound bidfloor and currency, if the relevant floors have been defined in the configuration.
+A cusom method for defining bid floors is also supported, this can be enabled by setting the `params.bidOverride.imp.bidfloor` bidder parameter.
 
 **Note:** All override params apply to all requests generated using this configuration regardless of format type.
-
 ```javascript
 const adUnits = [{
     code: 'override-pricefloor',
@@ -292,10 +294,10 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahoossp',
+        bidder: 'yahooAds',
         params: {
-            dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided from Yahoo SSP
-            pos: '8a969978017a7aaabab4ab0bc01a0009', // Placement ID provided from Yahoo SSP
+            dcn: '8a969516017a7a396ec539d97f540011', // Site/App ID provided by Yahoo Advertising
+            pos: '8a969978017a7aaabab4ab0bc01a0009', // Placement ID provided by Yahoo Advertising
             bidOverride :{
                 imp: {
                     bidfloor: 5.00 // bidOverride priceFloor
@@ -310,21 +312,21 @@ const adUnits = [{
 For further details please see, https://docs.prebid.org/dev-docs/modules/floors.html
 
 # Optional: Self-served E2E testing mode
-If you want to see how the yahoossp adapter works and loads you are invited to try it out using our testing mode.
+If you want to see how the Yahoo Advertising bid adapter works and loads you are invited to try it out using our testing mode.
 This is useful for integration testing and response parsing when checking banner vs video capabilities.
 
 ## How to use E2E test mode:
-1. Set the yahoossp global config mode to either 'banner' or 'video' - depending on the adUnit you want to test.
+1. Set the `yahooAds` global config mode to either `'banner'` or `'video'` - depending on the adUnit you want to test.
 2. Add params.testing.e2etest: true to your adUnit bidder config - See examples below.
 
 **Note:** When using E2E Test Mode you do not need to pass mandatory bidder params dcn or pos.
 
-**Important!** E2E Testing Mode only works when the Bidder Request Mode is set explicitly to either 'banner' or 'video'.
+**Important!** E2E Testing Mode only works when the Bidder Request Mode is set explicitly to either `'banner'` or `'video'`.
 
 ## Activating E2E Test for "Banner"
  ```javascript
 pbjs.setConfig({
-    yahoossp: {
+    yahooAds: {
         mode: 'banner' // select 'banner' or 'video' to define what response to load
     }
 });
@@ -338,7 +340,7 @@ const adUnits = [{
         },
     bids: [
         {
-            bidder: 'yahoossp',
+            bidder: 'yahooAds',
             params: {
                 testing: {
                     e2etest: true // Activate E2E Test mode
@@ -353,7 +355,7 @@ const adUnits = [{
 **Note:** We recommend using Video Outstream as it would load the video response using our Outstream Renderer feature
  ```javascript
 pbjs.setConfig({
-    yahoossp: {
+    yahooAds: {
         mode: 'video'
     }
 });
@@ -371,7 +373,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahoossp',
+        bidder: 'yahooAds',
         params: {
             testing: {
                 e2etest: true // Activate E2E Test mode
@@ -382,8 +384,8 @@ const adUnits = [{
 ```
 
 # Optional: First Party Data
-The yahoossp adapter now supports first party data passed via:
-1. Global ortb2 object using pbjs.setConfig()
+The Yahoo Advertising bid adapter supports first party data passed via:
+1. Global ortb2 object using `pbjs.setConfig()`
 2. adUnit ortb2Imp object declared within an adUnit.
 For further details please see, https://docs.prebid.org/features/firstPartyData.html
 ## Global First Party Data "ortb2"
@@ -392,15 +394,15 @@ For further details please see, https://docs.prebid.org/features/firstPartyData.
 pbjs.setConfig({
             ortb2: {
                 site: {
-                    name: 'yahooAdTech',
-                    domain: 'yahooadtech.com',
+                    name: 'Yahoo Advertising',
+                    domain: 'yahooadvertising.com',
                     cat: ['IAB2'],
                     sectioncat: ['IAB2-2'],
                     pagecat: ['IAB2-2'],
-                    page: 'https://page.yahooadtech.com/here.html',
-                    ref: 'https://ref.yahooadtech.com/there.html',
+                    page: 'https://page.yahooadvertising.com.com/here.html',
+                    ref: 'https://ref.yahooadvertising.com.com/there.html',
                     keywords:'yahoo, ad, tech',
-                    search: 'SSP',
+                    search: 'header bidding',
                     content: {
                         id: '1234',
                         title: 'Title',
@@ -521,7 +523,7 @@ pbjs.setConfig({
 
 ## AdUnit First Party Data "ortb2Imp"
 Most DSPs are adopting the Global Placement ID (GPID).
-Please pass your placement specific GPID value to Yahoo SSP using `adUnit.ortb2Imp.ext.data.pbadslot`.
+Please pass your placement specific GPID value by setting `adUnit.ortb2Imp.ext.data.pbadslot`.
 ```javascript
 const adUnits = [{
                 code: 'placement',
@@ -541,7 +543,7 @@ const adUnits = [{
                     }
                 },
                 bids: [{
-                    bidder: 'yahoossp',
+                    bidder: 'yahooAds',
                     params: {
                         pubdId: 'DemoPublisher'
                     }
@@ -551,7 +553,7 @@ const adUnits = [{
 ```
 
 # Optional: Bidder bidOverride Parameters
-The yahoossp adapter allows passing override data to the outbound bid-request in that overrides First Party Data.
+The Yahoo Advertising bid adapter allows passing override data to the outbound bid-request that overrides First Party Data.
 **Important!** We highly recommend using prebid modules to pass data instead of bidder speicifc overrides.
 The use of these parameters are a last resort to force a specific feature or use case in your implementation.
 
@@ -577,7 +579,6 @@ Currently the bidOverride object only accepts the following:
 * device
   * ip
 
-
 ```javascript
 const adUnits = [{
     code: 'bidOverride-adUnit',
@@ -590,7 +591,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahoossp',
+        bidder: 'yahooAds',
         params: {
             dcn: '8a969516017a7a396ec539d97f540011',
             pos: '8a96958a017a7a57ac375d50c0c700cc',
@@ -615,7 +616,7 @@ const adUnits = [{
                     }
                 },
                 site: {
-                    page: 'https://yahoossp-bid-adapter.com',
+                    page: 'https://yahooAdvertising-bid-adapter.com',
                 },
                 device: {
                     ip: "1.2.3.4"
@@ -630,7 +631,7 @@ const adUnits = [{
 Custom key-value paris can be used for both inventory targeting and reporting.
 You must set up key-value pairs in the Yahoo SSP before sending them via the adapter otherwise the Ad Server will not be listening and picking them up.
 
-Important! Key-value pairs can only contain values of types: String, Number, Array of strings OR Array of numbers
+Important! Key-value pairs can only contain values of the following data types: String, Number, Array of strings OR Array of numbers
 
 ```javascript
 const adUnits = [{
@@ -644,7 +645,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahoossp',
+        bidder: 'yahooAds',
         params: {
             dcn: '8a969516017a7a396ec539d97f540011',
             pos: '8a96958a017a7a57ac375d50c0c700cc',
@@ -660,14 +661,14 @@ const adUnits = [{
 ```
 
 # Optional: Custom Cache Time To Live (ttl):
-The yahoossp adapter supports passing of "Time To Live" (ttl) that indicates to prebid chache for how long to keep the chaced winning bid alive. Value is Number in seconds and you can enter any number between 1 - 3600 (seconds).
-The setting can be defined globally using setConfig or within the adUnit.params.
-Global level setConfig overrides adUnit.params.
+The Yahoo Advertising bid adapter supports passing of "Time To Live" (ttl) to indicate to prebid how long the bid response from Yahoo Advertising should be retained by Prebid for. This configuration value must be a Number in seconds, with the valid range being 1 - 3600 inclusive.
+The setting can be defined globally using `setConfig` or within the adUnit.params.
+Global level `setConfig` overrides adUnit.params.
 If no value is being passed default is 300 seconds.
 ## Global TTL
 ```javascript
 pbjs.setConfig({
-    yahoossp: {
+    yahooAds: {
         ttl: 300
     }
 });
@@ -683,7 +684,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahoossp',
+        bidder: 'yahooAds',
         params: {
             dcn: '8a969516017a7a396ec539d97f540011',
             pos: '8a96958a017a7a57ac375d50c0c700cc',
@@ -702,7 +703,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahoossp',
+        bidder: 'yahooAds',
         params: {
             dcn: '8a969516017a7a396ec539d97f540011',
             pos: '8a96958a017a7a57ac375d50c0c700cc',
@@ -710,10 +711,11 @@ const adUnits = [{
         }
     }]
 }]
+
 ```
 # Optional: Video Features
 ## Rewarded video flag
-To indicate to Yahoo SSP that this adUnit is a rewarded video you can pass the following in the params.bidOverride.imp.video.rewarded: 1
+To indicate to Yahoo Advertising that this adUnit is a rewarded video you can set the `params.bidOverride.imp.video.rewarded` property to `1`
 
 ```javascript
 const adUnits = [{
@@ -727,7 +729,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahoossp',
+        bidder: 'yahooAds',
         params: {
             dcn: '8a969516017a7a396ec539d97f540011',
             pos: '8a96958a017a7a57ac375d50c0c700cc',
@@ -744,7 +746,7 @@ const adUnits = [{
 ```
 
 ## Site/App Targeting for "pubId" Inventory Mapping
-To target your adUnit explicitly to a specific Site/App Object in Yahoo SSP, you can pass one of the following:
+To target your adUnit explicitly to a specific Site/App Object in Yahoo Advertising, you can pass one of the following:
 1. params.siteId = External Site ID || Video SSP RTBIS Id (in String format).
 2. params.bidOverride.site.id = External Site ID || Video SSP RTBIS Id (in String format).
 **Important:** Site override is a only supported when using "pubId" mode.
@@ -762,7 +764,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahoossp',
+        bidder: 'yahooAds',
         params: {
             pubId: 'DemoPublisher',
             siteId: '1234567';
@@ -772,13 +774,13 @@ const adUnits = [{
 ```
 
 ## Placement Targeting for "pubId" Inventory Mapping
-To target your adUnit explicitly to a specific Placement within a Site/App Object in Yahoo SSP, you can pass the following params.placementId = External Placement ID || Placement Alias
+To target your adUnit explicitly to a specific Placement within a Site/App Object in Yahoo Advertising, you can pass the following params.placementId = External Placement ID || Placement Alias
 
 **Important!** Placement override is a only supported when using "pubId" mode.
-**Important!** It is highly recommended that you pass both `siteId` AND `placementId` together to avoid inventory miss matching.
+**Important!** It is highly recommended that you pass both `siteId` AND `placementId` together to avoid inventory mismatching.
 
 ### Site & Placement override
-**Important!** If the placement ID does not reside under the defined Site/App object, the request will not resolve and no response will be sent back from the ad-server.
+**Important!** If the placement ID does not reside under the defined Site/App object, the request will not resolve and no response will be sent back from the bid-server.
 ```javascript
 const adUnits = [{
     code: 'pubId-site-targeting-adUnit',
@@ -791,7 +793,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahoossp',
+        bidder: 'yahooAds',
         params: {
             pubId: 'DemoPublisher',
             siteId: '1234567',
@@ -801,7 +803,7 @@ const adUnits = [{
 }]
 ```
 ### Placement only override
-**Important!** Using this method is not advised if you have multiple Site/Apps that are broken out of a Run Of Network (RON) Site/App. If the placement ID does not reside under a matching Site/App object, the request will not resolve and no response will be sent back from the ad-server.
+**Important!** Using this method is not advised if you have multiple Site/Apps that are broken out of a Run Of Network (RON) Site/App. If the placement ID does not reside under a matching Site/App object, the request will not resolve and no response will be sent back from the bid-server.
 ```javascript
 const adUnits = [{
     code: 'pubId-site-targeting-adUnit',
@@ -814,7 +816,7 @@ const adUnits = [{
         }
     },
     bids: [{
-        bidder: 'yahoossp',
+        bidder: 'yahooAds',
         params: {
             pubId: 'DemoPublisher',
             placementId: 'header-250x300'
@@ -824,9 +826,8 @@ const adUnits = [{
 ```
 
 # Optional: Legacy override Parameters
-This adapter does not support passing legacy overrides via 'bidder.params.ext' since most of the data should be passed using prebid modules (First Party Data, Schain, Price Floors etc.).
+This adapter does not support passing legacy overrides via `bidder.params.ext` since most of the data should be passed using prebid modules (First Party Data, Schain, Price Floors etc.).
 If you do not know how to pass a custom parameter that you previously used, please contact us using the information provided above.
 
 Thank you,
-Yahoo SSP
-
+Yahoo Advertsing

@@ -12,13 +12,14 @@ const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const GVLID = 676;
 const TMAX = 450;
-const BIDDER_VERSION = '5.8';
+const BIDDER_VERSION = '5.9';
 const DEFAULT_CURRENCY = 'PLN';
 const W = window;
 const { navigator } = W;
 const oneCodeDetection = {};
 const adUnitsCalled = {};
 const adSizesCalled = {};
+const bidderRequestsMap = {};
 const pageView = {};
 var consentApiVersion;
 
@@ -93,19 +94,17 @@ const getNotificationPayload = bidData => {
     const bids = isArray(bidData) ? bidData : [bidData];
     if (bids.length > 0) {
       let result = {
-        requestId: undefined,
         siteId: [],
         slotId: [],
         tagid: [],
       }
       bids.forEach(bid => {
-        const { adUnitCode, auctionId, cpm, creativeId, meta, params: bidParams, requestId, timeout } = bid;
+        const { adUnitCode, cpm, creativeId, meta, mediaType, params: bidParams, bidderRequestId, requestId, timeout } = bid;
         const params = unpackParams(bidParams);
 
         // basic notification data
         const bidBasicData = {
-          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-          requestId: auctionId || result.requestId,
+          requestId: bidderRequestId || bidderRequestsMap[requestId],
           timeout: timeout || result.timeout,
           pvid: pageView.id,
         }
@@ -127,12 +126,14 @@ const getNotificationPayload = bidData => {
 
         if (cpm) {
           // non-empty bid data
+          const { advertiserDomains = [], networkName, pricepl } = meta;
           const bidNonEmptyData = {
             cpm,
-            cpmpl: meta && meta.pricepl,
+            cpmpl: pricepl,
             creativeId,
-            adomain: meta && meta.advertiserDomains && meta.advertiserDomains[0],
-            networkName: meta && meta.networkName,
+            adomain: advertiserDomains[0],
+            adtype: mediaType,
+            networkName,
           }
           result = { ...result, ...bidNonEmptyData }
         }
@@ -447,9 +448,14 @@ var mapVideo = (slot, videoFromBid) => {
 };
 
 const mapImpression = slot => {
-  const { adUnitCode, bidId, params = {}, ortb2Imp = {} } = slot;
+  const { adUnitCode, bidderRequestId, bidId, params = {}, ortb2Imp = {} } = slot;
   const { id, siteId, video } = params;
   const { ext = {} } = ortb2Imp;
+
+  /*
+    store bidId <-> bidderRequestId mapping for bidWon notification
+  */
+  bidderRequestsMap[bidId] = bidderRequestId;
 
   /*
      check max size for this imp, and check/store number this size was called (for current view)
@@ -494,15 +500,20 @@ const isNativeAd = bid => {
   return bid.admNative || (bid.adm && bid.adm.match(xmlTester));
 }
 
-const parseNative = (nativeData) => {
+const parseNative = (nativeData, adUnitCode) => {
   const { link = {}, imptrackers: impressionTrackers, jstracker } = nativeData;
   const { url: clickUrl, clicktrackers: clickTrackers = [] } = link;
+  const macroReplacer = tracker => tracker.replace(new RegExp('%native_dom_id%', 'g'), adUnitCode);
+  let javascriptTrackers = isArray(jstracker) ? jstracker : jstracker && [jstracker];
+
+  // replace known macros in js trackers
+  javascriptTrackers = javascriptTrackers && javascriptTrackers.map(macroReplacer);
 
   const result = {
     clickUrl,
     clickTrackers,
     impressionTrackers,
-    javascriptTrackers: isArray(jstracker) ? jstracker : jstracker && [jstracker],
+    javascriptTrackers,
   };
 
   nativeData.assets.forEach(asset => {
@@ -627,6 +638,8 @@ const spec = {
     return true;
   },
   buildRequests(validBidRequests, bidderRequest) {
+    logWarn('DEBUG: buildRequests', bidderRequest.auctionId, bidderRequest.bidderRequestId);
+
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
@@ -644,7 +657,7 @@ const spec = {
     const ref = bidderRequest.refererInfo.ref;
 
     const payload = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       site: {
         id: siteId ? `${siteId}` : undefined,
         publisher: publisherId ? { id: publisherId } : undefined,
@@ -725,6 +738,7 @@ const spec = {
 
           if (bidRequest && site.id && !strIncludes(site.id, 'bidid')) {
             // found a matching request; add this bid
+            const { adUnitCode } = bidRequest;
 
             // store site data for future notification
             oneCodeDetection[bidId] = [site.id, site.slot];
@@ -760,7 +774,7 @@ const spec = {
               // check native object
               try {
                 const nativeData = serverBid.admNative || JSON.parse(serverBid.adm).native;
-                bid.native = parseNative(nativeData);
+                bid.native = parseNative(nativeData, adUnitCode);
                 bid.width = 1;
                 bid.height = 1;
               } catch (err) {
@@ -802,6 +816,15 @@ const spec = {
     const payload = getNotificationPayload(timeoutData);
     if (payload) {
       payload.event = 'timeout';
+      sendNotification(payload);
+      return payload;
+    }
+  },
+
+  onBidViewable(bid) {
+    const payload = getNotificationPayload(bid);
+    if (payload) {
+      payload.event = 'bidViewable';
       sendNotification(payload);
       return payload;
     }
