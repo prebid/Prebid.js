@@ -30,15 +30,17 @@ function sendEvent(eventType, event) {
 
 function getZetaParams(event) {
   if (event.adUnits) {
-    event.adUnits.forEach(unit => {
+    for (const i in event.adUnits) {
+      const unit = event.adUnits[i];
       if (unit.bids) {
-        unit.bids.forEach(bid => {
+        for (const j in unit.bids) {
+          const bid = unit.bids[j];
           if (bid.bidder === ADAPTER_CODE && bid.params) {
             return bid.params;
           }
-        })
+        }
       }
-    })
+    }
   }
   return null;
 }
