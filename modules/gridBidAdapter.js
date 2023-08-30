@@ -91,7 +91,7 @@ export const spec = {
     let {bidderRequestId, gdprConsent, uspConsent, timeout, refererInfo, gppConsent} = bidderRequest || {};
 
     const referer = refererInfo ? encodeURIComponent(refererInfo.page) : '';
-    const tmax = timeout;
+    const tmax = parseInt(timeout, 10) || null;
     const imp = [];
     const bidsMap = {};
     const requests = [];
@@ -485,7 +485,7 @@ export const spec = {
  */
 function _getFloor (mediaTypes, bid) {
   const curMediaType = mediaTypes.video ? 'video' : 'banner';
-  let floor = bid.params.bidFloor || bid.params.floorcpm || 0;
+  let floor = parseFloat(bid.params.bidFloor || bid.params.floorcpm || 0) || null;
 
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({
