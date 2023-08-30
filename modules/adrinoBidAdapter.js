@@ -35,6 +35,7 @@ export const spec = {
     let bids = [];
     for (let i = 0; i < validBidRequests.length; i++) {
       let requestData = {
+        adUnitCode: validBidRequests[i].adUnitCode,
         bidId: validBidRequests[i].bidId,
         placementHash: validBidRequests[i].params.hash,
         userId: validBidRequests[i].userId,

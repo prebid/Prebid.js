@@ -291,7 +291,7 @@ function generateBidParameters(bid, bidderRequest) {
     bidId: getBidIdParameter('bidId', bid),
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
     loop: getBidIdParameter('bidderRequestsCount', bid),
-    transactionId: getBidIdParameter('transactionId', bid),
+    transactionId: bid.ortb2Imp?.ext?.tid,
     coppa: 0
   };
 
@@ -417,7 +417,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
     device_type: getDeviceType(navigator.userAgent),
     ua: navigator.userAgent,
     is_wrapper: !!generalBidParams.isWrapper,
-    session_id: generalBidParams.sessionId || getBidIdParameter('auctionId', generalObject),
+    session_id: generalBidParams.sessionId || getBidIdParameter('bidderRequestId', generalObject),
     tmax: timeout
   };
 

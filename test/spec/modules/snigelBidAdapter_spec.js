@@ -20,6 +20,7 @@ const makeBidRequest = function (overrides) {
 };
 
 const BASE_BIDDER_REQUEST = {
+  auctionId: 'test',
   bidderRequestId: 'test',
   refererInfo: {
     canonicalUrl: 'https://localhost',
@@ -53,8 +54,8 @@ describe('snigelBidAdapter', function () {
     it('should build a single request for every impression and its placement', function () {
       const bidderRequest = Object.assign({}, BASE_BIDDER_REQUEST);
       const bidRequests = [
-        makeBidRequest({bidId: 'a', params: {placement: 'top_leaderboard'}}),
-        makeBidRequest({bidId: 'b', params: {placement: 'bottom_leaderboard'}}),
+        makeBidRequest({bidId: 'a', adUnitCode: 'au_a', params: {placement: 'top_leaderboard'}}),
+        makeBidRequest({bidId: 'b', adUnitCode: 'au_b', params: {placement: 'bottom_leaderboard'}}),
       ];
 
       const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -70,9 +71,9 @@ describe('snigelBidAdapter', function () {
       expect(data).to.have.property('page').and.to.equal('https://localhost');
       expect(data).to.have.property('placements');
       expect(data.placements.length).to.equal(2);
-      expect(data.placements[0].uuid).to.equal('a');
+      expect(data.placements[0].id).to.equal('au_a');
       expect(data.placements[0].name).to.equal('top_leaderboard');
-      expect(data.placements[1].uuid).to.equal('b');
+      expect(data.placements[1].id).to.equal('au_b');
       expect(data.placements[1].name).to.equal('bottom_leaderboard');
     });
 
@@ -127,6 +128,56 @@ describe('snigelBidAdapter', function () {
       const data = JSON.parse(request.data);
       expect(data).to.have.property('coppa').and.to.equal(true);
     });
+
+    it('should forward refresh information', function () {
+      const bidderRequest = Object.assign({}, BASE_BIDDER_REQUEST);
+      const topLeaderboard = makeBidRequest({adUnitCode: 'top_leaderboard'});
+      const bottomLeaderboard = makeBidRequest({adUnitCode: 'bottom_leaderboard'});
+      const sidebar = makeBidRequest({adUnitCode: 'sidebar'});
+
+      // first auction, no refresh
+      let request = spec.buildRequests([topLeaderboard, bottomLeaderboard], bidderRequest);
+      expect(request).to.have.property('data');
+      let data = JSON.parse(request.data);
+      expect(data).to.have.property('placements');
+      expect(data.placements.length).to.equal(2);
+      expect(data.placements[0].id).to.equal('top_leaderboard');
+      expect(data.placements[0].refresh).to.be.undefined;
+      expect(data.placements[1].id).to.equal('bottom_leaderboard');
+      expect(data.placements[1].refresh).to.be.undefined;
+
+      // second auction for top leaderboard, was refreshed
+      request = spec.buildRequests([topLeaderboard, sidebar], bidderRequest);
+      expect(request).to.have.property('data');
+      data = JSON.parse(request.data);
+      expect(data).to.have.property('placements');
+      expect(data.placements.length).to.equal(2);
+      expect(data.placements[0].id).to.equal('top_leaderboard');
+      expect(data.placements[0].refresh).to.not.be.undefined;
+      expect(data.placements[0].refresh.count).to.equal(1);
+      expect(data.placements[0].refresh.time).to.be.greaterThanOrEqual(0);
+      expect(data.placements[1].id).to.equal('sidebar');
+      expect(data.placements[1].refresh).to.be.undefined;
+
+      // third auction, all units refreshed at some point
+      request = spec.buildRequests([topLeaderboard, bottomLeaderboard, sidebar], bidderRequest);
+      expect(request).to.have.property('data');
+      data = JSON.parse(request.data);
+      expect(data).to.have.property('placements');
+      expect(data.placements.length).to.equal(3);
+      expect(data.placements[0].id).to.equal('top_leaderboard');
+      expect(data.placements[0].refresh).to.not.be.undefined;
+      expect(data.placements[0].refresh.count).to.equal(2);
+      expect(data.placements[0].refresh.time).to.be.greaterThanOrEqual(0);
+      expect(data.placements[1].id).to.equal('bottom_leaderboard');
+      expect(data.placements[1].refresh).to.not.be.undefined;
+      expect(data.placements[1].refresh.count).to.equal(1);
+      expect(data.placements[1].refresh.time).to.be.greaterThanOrEqual(0);
+      expect(data.placements[2].id).to.equal('sidebar');
+      expect(data.placements[2].refresh).to.not.be.undefined;
+      expect(data.placements[2].refresh.count).to.equal(1);
+      expect(data.placements[2].refresh.time).to.be.greaterThanOrEqual(0);
+    });
   });
 
   describe('interpretResponse', function () {
@@ -146,7 +197,7 @@ describe('snigelBidAdapter', function () {
           cur: 'USD',
           bids: [
             {
-              uuid: BASE_BID_REQUEST.bidId,
+              id: BASE_BID_REQUEST.adUnitCode,
               price: 0.0575,
               ad: '<html><body><h1>Test Ad</h1></body></html>',
               width: 728,
@@ -160,7 +211,7 @@ describe('snigelBidAdapter', function () {
         },
       };
 
-      const bids = spec.interpretResponse(serverResponse, {});
+      const bids = spec.interpretResponse(serverResponse, {bidderRequest: {bids: [BASE_BID_REQUEST]}});
       expect(bids.length).to.equal(1);
       const bid = bids[0];
       expect(isValid(BASE_BID_REQUEST.adUnitCode, bid)).to.be.true;

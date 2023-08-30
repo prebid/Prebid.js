@@ -72,6 +72,12 @@ export const admixerIdSubmodule = {
     };
 
     return { callback: resp };
+  },
+  eids: {
+    'admixerId': {
+      source: 'admixer.net',
+      atype: 3
+    },
   }
 };
 function retrieveVisitorId(url, callback) {

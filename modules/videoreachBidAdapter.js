@@ -21,8 +21,9 @@ export const spec = {
           adUnitCode: getBidIdParameter('adUnitCode', bid),
           bidId: getBidIdParameter('bidId', bid),
           bidderRequestId: getBidIdParameter('bidderRequestId', bid),
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           auctionId: getBidIdParameter('auctionId', bid),
-          transactionId: getBidIdParameter('transactionId', bid)
+          transactionId: bid.ortb2Imp?.ext?.tid,
         }
       })
     };
