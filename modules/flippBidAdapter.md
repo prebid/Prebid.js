@@ -33,7 +33,6 @@ var adUnits = [
                     siteId: 1192075, // Required
                     zoneIds: [260678], // Optional
                     userKey: "", // Optional
-                    creativeType: 'NativeX', // Optional
                     options: {
                         startCompact: true // Optional, default to true
                     }
