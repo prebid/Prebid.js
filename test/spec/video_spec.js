@@ -114,7 +114,7 @@ describe('video.js', function () {
     trackers = getVastTrackers({'cpm': 1.0});
     expect(trackers).to.be.a('map');
     expect(trackers.get('impressions')).to.exists;
-    expect(trackers.get('impressions')[0]).to.equal('https://vasttracking.mydomain.com/vast?cpm=1');
+    expect(trackers.get('impressions').has('https://vasttracking.mydomain.com/vast?cpm=1')).to.be.true;
   });
 
   it('insert trackers in vastXml', function() {
@@ -128,6 +128,6 @@ describe('video.js', function () {
     const trackers = addImpUrlToTrackers({'vastImpUrl': 'imptracker.com'}, getVastTrackers({'cpm': 1.0}));
     expect(trackers).to.be.a('map');
     expect(trackers.get('impressions')).to.exists;
-    expect(trackers.get('impressions')[1]).to.equal('imptracker.com');
+    expect(trackers.get('impressions').has('imptracker.com')).to.be.true;
   });
 });

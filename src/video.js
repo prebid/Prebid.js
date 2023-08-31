@@ -118,8 +118,8 @@ function isValidVastTracker(trackers, trackerToAdd) {
 
 function trackersToMap(trackers) {
   return trackers.reduce((map, {url, event}) => {
-    !map.has(event) && map.set(event, [])
-    map.get(event).push(url);
+    !map.has(event) && map.set(event, new Set())
+    map.get(event).add(url);
     return map;
   }, new Map())
 }
@@ -127,8 +127,8 @@ function trackersToMap(trackers) {
 export function addImpUrlToTrackers(bid, trackersMap) {
   if (bid.vastImpUrl) {
     if (!trackersMap) { trackersMap = new Map(); }
-    if (!trackersMap.get('impressions')) { trackersMap.set('impressions', []); }
-    trackersMap.get('impressions').push(bid.vastImpUrl);
+    if (!trackersMap.get('impressions')) { trackersMap.set('impressions', new Set()); }
+    trackersMap.get('impressions').add(bid.vastImpUrl);
   }
   return trackersMap;
 }
