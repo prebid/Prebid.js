@@ -3,14 +3,13 @@ import * as hook from '../../../src/hook.js'
 import * as events from '../../../src/events.js';
 import CONSTANTS from '../../../src/constants.json';
 
-import { 
+import {
   MediaFilter,
   MEDIAFILTER_EVENT_TYPE,
   MEDIAFILTER_BASE_URL
 } from '../../../modules/mediafilterRtdProvider.js';
 
 describe('The Media Filter RTD module', function () {
-  
   describe('register()', function() {
     let submoduleSpy, generateInitHandlerSpy;
 
@@ -145,6 +144,4 @@ describe('The Media Filter RTD module', function () {
       expect(eventsEmitSpy.called).to.be.false;
     });
   });
-
 });
-
