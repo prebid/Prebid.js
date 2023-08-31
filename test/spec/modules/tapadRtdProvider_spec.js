@@ -4,7 +4,7 @@ import {
   TAPAD_RTD_STALE_KEY,
   SUBMODULE_NAME,
   tapadRtdObj,
-  tapadRtdSubmodule
+  tapadRtdSubmodule, TAPAD_RTD_NO_TRACK_KEY
 } from '../../../modules/tapadRtdProvider.js';
 import { getStorageManager } from '../../../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../../../src/activities/modules';
@@ -23,6 +23,7 @@ describe('Tapad realtime module', () => {
     storage.removeDataFromLocalStorage(TAPAD_RTD_DATA_KEY, null)
     storage.removeDataFromLocalStorage(TAPAD_RTD_EXPIRATION_KEY, null)
     storage.removeDataFromLocalStorage(TAPAD_RTD_STALE_KEY, null)
+    storage.removeDataFromLocalStorage(TAPAD_RTD_NO_TRACK_KEY, null)
   })
   afterEach(() => {
     sandbox.restore();
@@ -39,18 +40,18 @@ describe('Tapad realtime module', () => {
   };
   describe('init', () => {
     it('succeeds when params have accountId', () => {
-      const initResult = tapadRtdSubmodule.init({ accountId: 123 })
+      const initResult = tapadRtdSubmodule.init({ accountId: 'ZylatYg' })
       expect(initResult).to.be.true;
     })
 
     it('fails when params don\'t have accountId', () => {
-      const initResult = tapadRtdSubmodule.init({ accountId: 'invalid' })
+      const initResult = tapadRtdSubmodule.init({ })
       expect(initResult).to.be.false;
     })
   })
 
   describe('getBidRequestData', () => {
-    describe('when local storage has data, isn\'t stale and isn\'t expired', () => {
+    describe('when local storage has data, isn\'t no track, isn\'t stale and isn\'t expired', () => {
       beforeEach(() => {
         const now = timestamp()
         storage.setDataInLocalStorage(TAPAD_RTD_DATA_KEY, JSON.stringify([
@@ -178,6 +179,77 @@ describe('Tapad realtime module', () => {
         tapadRtdSubmodule.getBidRequestData(bidsConfig, sinon.stub, moduleConfig, userConsent)
         sandbox.assert.calledWithExactly(dataEnvelopeSpy, moduleConfig, userConsent)
         expect(alterBidsSpy.called).to.be.false;
+      })
+    })
+    describe('when local storage has no track and is expired', () => {
+      beforeEach(() => {
+        const now = timestamp()
+        storage.setDataInLocalStorage(TAPAD_RTD_NO_TRACK_KEY, 'no_track', null)
+
+        storage.setDataInLocalStorage(TAPAD_RTD_EXPIRATION_KEY, new Date(now - 50000).toISOString(), null)
+        storage.setDataInLocalStorage(TAPAD_RTD_STALE_KEY, new Date(now - 100000).toISOString(), null)
+      })
+      it('requests data envelope, and doesn\'t alter bids', () => {
+        const bidsConfig = {
+          ortb2Fragments: {
+            bidder: {}
+          }
+        }
+        const userConsent = {gdpr: {}, uspConsent: {}}
+        const moduleConfig = { accountId: 123, bidders: ['pubmatic', 'sovrn'] }
+        const dataEnvelopeSpy = sandbox.spy(tapadRtdObj, 'requestDataEnvelope')
+        const alterBidsSpy = sandbox.spy(tapadRtdObj, 'alterBids')
+        tapadRtdSubmodule.getBidRequestData(bidsConfig, sinon.stub, moduleConfig, userConsent)
+        sandbox.assert.calledWithExactly(dataEnvelopeSpy, moduleConfig, userConsent)
+        expect(alterBidsSpy.called).to.be.false;
+      })
+    })
+
+    describe('when local storage has no track and is stale', () => {
+      beforeEach(() => {
+        const now = timestamp()
+        storage.setDataInLocalStorage(TAPAD_RTD_NO_TRACK_KEY, 'no_track', null)
+
+        storage.setDataInLocalStorage(TAPAD_RTD_EXPIRATION_KEY, new Date(now + 100000).toISOString(), null)
+        storage.setDataInLocalStorage(TAPAD_RTD_STALE_KEY, new Date(now - 50000).toISOString(), null)
+      })
+      it('requests data envelope, and doesn\'t alter bids', () => {
+        const bidsConfig = {
+          ortb2Fragments: {
+            bidder: {}
+          }
+        }
+        const userConsent = {gdpr: {}, uspConsent: {}}
+        const moduleConfig = { accountId: 123, bidders: ['pubmatic', 'sovrn'] }
+        const dataEnvelopeSpy = sandbox.spy(tapadRtdObj, 'requestDataEnvelope')
+        const alterBidsSpy = sandbox.spy(tapadRtdObj, 'alterBids')
+        tapadRtdSubmodule.getBidRequestData(bidsConfig, sinon.stub, moduleConfig, userConsent)
+        sandbox.assert.calledWithExactly(dataEnvelopeSpy, moduleConfig, userConsent)
+        expect(alterBidsSpy.called).to.be.false;
+      })
+    })
+
+    describe('when local storage has no track and isn\'t expired or stale', () => {
+      beforeEach(() => {
+        const now = timestamp()
+        storage.setDataInLocalStorage(TAPAD_RTD_NO_TRACK_KEY, 'no_track', null)
+
+        storage.setDataInLocalStorage(TAPAD_RTD_EXPIRATION_KEY, new Date(now + 100000).toISOString(), null)
+        storage.setDataInLocalStorage(TAPAD_RTD_STALE_KEY, new Date(now + 50000).toISOString(), null)
+      })
+      it('doesn\'t alter bids and doesn\'t request data envelope', () => {
+        const bidsConfig = {
+          ortb2Fragments: {
+            bidder: {}
+          }
+        }
+        const userConsent = {gdpr: {}, uspConsent: {}}
+        const moduleConfig = { accountId: 123, bidders: ['pubmatic', 'sovrn'] }
+        const dataEnvelopeSpy = sandbox.spy(tapadRtdObj, 'requestDataEnvelope')
+        const alterBidsSpy = sandbox.spy(tapadRtdObj, 'alterBids')
+        tapadRtdSubmodule.getBidRequestData(bidsConfig, sinon.stub, moduleConfig, userConsent)
+        expect(alterBidsSpy.called).to.be.false;
+        expect(dataEnvelopeSpy.called).to.be.false;
       })
     })
   })

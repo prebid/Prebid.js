@@ -28,11 +28,12 @@ This module is configured as part of the `realTimeData.dataProviders`
 ```javascript
 pbjs.setConfig({
   realTimeData: {
+    auctionDelay: 300,
     dataProviders: [{
       name: 'tapad_rtd',
       waitForIt: true,
       params: {
-        accountId: 123,
+        accountId: 'ZylatYg',
         bidders: ['sovrn', 'pubmatic'],
         ids: { maid: ['424', '2982'], hem: 'my-hem' }
       }
@@ -42,10 +43,10 @@ pbjs.setConfig({
 ```
 
 ### Parameters
-| Name             | Type                                    | Description                                                      | Default            |
-|:-----------------|:----------------------------------------|:-----------------------------------------------------------------|:-------------------|
-| name             | String                                  | Real time data module name                                       | Always 'tapad_rtd' |
-| waitForIt        | Boolean                                 | Should be `true` if there's an `auctionDelay` defined (optional) | `false`            |
-| params.accountId | String                                  | Your account id issued by Tapad                                  |                    |
-| params.bidders   | Array<string>                           | List of bidders for which you would like data to be set          |                    |
-| params.ids       | Record<string, Array<string> or string> | Additional identifiers to send to Tapad RTID endpoint            |                    |
+| Name             | Type                                    | Description                                                                  | Default            |
+|:-----------------|:----------------------------------------|:-----------------------------------------------------------------------------|:-------------------|
+| name             | String                                  | Real time data module name                                                   | Always 'tapad_rtd' |
+| waitForIt        | Boolean                                 | Set to true to maximize chance for bidder enrichment, used with auctionDelay | `false`            |
+| params.accountId | String                                  | Your account id issued by Tapad                                              |                    |
+| params.bidders   | Array<string>                           | List of bidders for which you would like data to be set                      |                    |
+| params.ids       | Record<string, Array<string> or string> | Additional identifiers to send to Tapad RTID endpoint                        |                    |
