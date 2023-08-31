@@ -117,15 +117,11 @@ function isValidVastTracker(trackers, trackerToAdd) {
 }
 
 function trackersToMap(trackers) {
-  let trackersMap = new Map();
-  trackers.forEach(tracker => {
-    if (!trackersMap.get(tracker['event'])) {
-      trackersMap.set(tracker['event'], [tracker['url']])
-    } else {
-      trackersMap.get(tracker['event']).push(tracker['url']);
-    }
-  });
-  return trackersMap;
+  return trackers.reduce((map, {url, event}) => {
+    !map.has(event) && map.set(event, [])
+    map.get(event).push(url);
+    return map;
+  }, new Map())
 }
 
 export function addImpUrlToTrackers(bid, trackersMap) {
