@@ -1,0 +1,98 @@
+/**
+ * The {@link module:modules/realTimeData} module is required
+ * @module modules/dynamicAdBoost
+ * @requires module:modules/realTimeData
+ */
+
+import { submodule } from '../src/hook.js'
+import { loadExternalScript } from '../src/adloader.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { deepAccess, deepSetValue, isEmptyStr } from '../src/utils.js';
+
+const MODULE_NAME = 'dynamicAdBoost';
+const SCRIPT_URL = 'https://adxbid.info';
+// Options for the Intersection Observer
+const dabOptions = {
+  threshold: 0.5 // Trigger callback when 50% of the element is visible
+};
+
+// Create an Intersection Observer instance
+const observer = new IntersectionObserver(dabHandleIntersection, dabOptions);
+
+// Array of div IDs to track
+var dynamicAdBoostAdUnits = {};
+var dabStartDate = new Date();
+var dabStartTime = dabStartDate.getTime();
+
+function init(config, userConsent) {
+  if (config.params.keyId) {
+    let keyId = config.params.keyId;
+    if (keyId && !isEmptyStr(keyId)) {
+      let dabDivIdsToTrack = config.params.adUnits;
+      var dabInterval = setInterval(function() {
+        // Observe each div by its ID
+        dabDivIdsToTrack.forEach(divId => {
+          let div = document.getElementById(divId);
+          if (div) {
+            observer.observe(div);
+          }
+        });
+
+        var dabDateNow = new Date();
+        var dabTimeNow = dabDateNow.getTime();
+        var dabElapsedSeconds = Math.floor((dabTimeNow - dabStartTime) / 1000);
+        let elapsedThreshold = 30;
+        if (config.params.threshold) {
+          elapsedThreshold = config.params.threshold;
+        }
+        if (dabElapsedSeconds >= elapsedThreshold) {
+          clearInterval(dabInterval); // Stop
+          loadLmScript(keyId);
+        }
+      }, 1000);
+
+      return true;
+    }
+  }
+  return false;
+}
+
+function loadLmScript(keyId) {
+  let viewableAdUnits = Object.keys(dynamicAdBoostAdUnits);
+  let viewableAdUnitsCSV = viewableAdUnits.join(',');
+  const scriptUrl = `${SCRIPT_URL}/${keyId}.js?viewableAdUnits=${viewableAdUnitsCSV}`;
+  loadExternalScript(scriptUrl, MODULE_NAME);
+}
+
+function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
+  const reqAdUnits = reqBidsConfigObj.adUnits || getGlobal().adUnits;
+
+  if (Array.isArray(reqAdUnits)) {
+    reqAdUnits.forEach(adunit => {
+      let gptCode = deepAccess(adunit, 'code');
+      if (dynamicAdBoostAdUnits.hasOwnProperty(gptCode)) {
+        // AdUnits has reached target viewablity at some point
+        deepSetValue(adunit, `ortb2Imp.ext.data.${MODULE_NAME}.${gptCode}`, dynamicAdBoostAdUnits[gptCode]);
+      }
+    });
+  }
+  callback();
+}
+
+// Callback function when an observed element becomes visible
+function dabHandleIntersection(entries) {
+  entries.forEach(entry => {
+    if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
+      dynamicAdBoostAdUnits[entry.target.id] = entry.intersectionRatio;
+    }
+  });
+}
+
+/** @type {RtdSubmodule} */
+export const subModuleObj = {
+  name: MODULE_NAME,
+  init,
+  getBidRequestData
+};
+
+submodule('realTimeData', subModuleObj);
