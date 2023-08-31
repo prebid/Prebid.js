@@ -71,7 +71,9 @@ export const checkVideoBidSetup = hook('sync', function(bid, adUnit, videoMediaT
 }, 'checkVideoBidSetup');
 
 export function registerVastTrackers(moduleType, moduleName, trackerFn) {
-  if (typeof trackerFn == 'function') { vastTrackers.push({'moduleType': moduleType, 'moduleName': moduleName, 'trackerFn': trackerFn}); }
+  if (typeof trackerFn === 'function') {
+    vastTrackers.push({'moduleType': moduleType, 'moduleName': moduleName, 'trackerFn': trackerFn});
+  }
 }
 
 export function insertVastTrackers(trackers, vastXml) {
@@ -111,15 +113,7 @@ export function getVastTrackers(bid) {
 };
 
 function isValidVastTracker(trackers, trackerToAdd) {
-  if (!trackerToAdd.hasOwnProperty('event') || !trackerToAdd.hasOwnProperty('url')) { return false; }
-  return true;
-}
-
-// need to add this othersize gulp test for test/spec/video_spec.js and test/spec/videoCache_spec.js duplicates their trackings
-function isTrackingDuplicate(trackersMap, trackingEvent, trackingUrl) {
-  const urls = trackersMap.get(trackingEvent);
-  if (Array.isArray(urls) && urls.includes(trackingUrl)) { return true; }
-  return false;
+  return trackerToAdd.hasOwnProperty('event') && trackerToAdd.hasOwnProperty('url');
 }
 
 function trackersToMap(trackers) {
@@ -127,7 +121,7 @@ function trackersToMap(trackers) {
   trackers.forEach(tracker => {
     if (!trackersMap.get(tracker['event'])) {
       trackersMap.set(tracker['event'], [tracker['url']])
-    } else if (!isTrackingDuplicate(trackersMap, tracker['event'], tracker['url'])) {
+    } else {
       trackersMap.get(tracker['event']).push(tracker['url']);
     }
   });

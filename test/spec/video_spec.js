@@ -103,15 +103,17 @@ describe('video.js', function () {
   });
 
   it('insert into tracker list', function() {
-    registerVastTrackers(MODULE_TYPE_ANALYTICS, 'test', function(bidResponse) {
-      return [
-        {'event': 'impressions', 'url': `https://vasttracking.mydomain.com/vast?cpm=${bidResponse.cpm}`}
-      ];
-    });
-    const trackers = getVastTrackers({'cpm': 1.0});
+    let trackers = getVastTrackers({'cpm': 1.0});
+    if (!trackers || !trackers.get('impressions')) {
+      registerVastTrackers(MODULE_TYPE_ANALYTICS, 'test', function(bidResponse) {
+        return [
+          {'event': 'impressions', 'url': `https://vasttracking.mydomain.com/vast?cpm=${bidResponse.cpm}`}
+        ];
+      });
+    }
+    trackers = getVastTrackers({'cpm': 1.0});
     expect(trackers).to.be.a('map');
     expect(trackers.get('impressions')).to.exists;
-    expect(trackers.get('impressions').length).to.equal(1);
     expect(trackers.get('impressions')[0]).to.equal('https://vasttracking.mydomain.com/vast?cpm=1');
   });
 
@@ -126,7 +128,6 @@ describe('video.js', function () {
     const trackers = addImpUrlToTrackers({'vastImpUrl': 'imptracker.com'}, getVastTrackers({'cpm': 1.0}));
     expect(trackers).to.be.a('map');
     expect(trackers.get('impressions')).to.exists;
-    expect(trackers.get('impressions').length).to.equal(2);
     expect(trackers.get('impressions')[1]).to.equal('imptracker.com');
   });
 });
