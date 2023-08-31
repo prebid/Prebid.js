@@ -1,10 +1,10 @@
 import {
-  TAPAD_RTD_DATA_KEY,
-  TAPAD_RTD_EXPIRATION_KEY,
-  TAPAD_RTD_STALE_KEY,
+  TAPAD_RTID_DATA_KEY,
+  TAPAD_RTID_EXPIRATION_KEY,
+  TAPAD_RTID_STALE_KEY,
   SUBMODULE_NAME,
   tapadRtdObj,
-  tapadRtdSubmodule, TAPAD_RTD_NO_TRACK_KEY
+  tapadRtdSubmodule, TAPAD_RTID_NO_TRACK_KEY
 } from '../../../modules/tapadRtdProvider.js';
 import { getStorageManager } from '../../../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../../../src/activities/modules';
@@ -20,10 +20,10 @@ describe('Tapad realtime module', () => {
     xhr.onCreate = (request) => {
       requests.push(request);
     }
-    storage.removeDataFromLocalStorage(TAPAD_RTD_DATA_KEY, null)
-    storage.removeDataFromLocalStorage(TAPAD_RTD_EXPIRATION_KEY, null)
-    storage.removeDataFromLocalStorage(TAPAD_RTD_STALE_KEY, null)
-    storage.removeDataFromLocalStorage(TAPAD_RTD_NO_TRACK_KEY, null)
+    storage.removeDataFromLocalStorage(TAPAD_RTID_DATA_KEY, null)
+    storage.removeDataFromLocalStorage(TAPAD_RTID_EXPIRATION_KEY, null)
+    storage.removeDataFromLocalStorage(TAPAD_RTID_STALE_KEY, null)
+    storage.removeDataFromLocalStorage(TAPAD_RTID_NO_TRACK_KEY, null)
   })
   afterEach(() => {
     sandbox.restore();
@@ -54,7 +54,7 @@ describe('Tapad realtime module', () => {
     describe('when local storage has data, isn\'t no track, isn\'t stale and isn\'t expired', () => {
       beforeEach(() => {
         const now = timestamp()
-        storage.setDataInLocalStorage(TAPAD_RTD_DATA_KEY, JSON.stringify([
+        storage.setDataInLocalStorage(TAPAD_RTID_DATA_KEY, JSON.stringify([
           {
             bidder: 'pubmatic',
             data: {
@@ -71,8 +71,8 @@ describe('Tapad realtime module', () => {
           }
         ]), null)
 
-        storage.setDataInLocalStorage(TAPAD_RTD_EXPIRATION_KEY, new Date(now + 100000).toISOString(), null)
-        storage.setDataInLocalStorage(TAPAD_RTD_STALE_KEY, new Date(now + 50000).toISOString(), null)
+        storage.setDataInLocalStorage(TAPAD_RTID_EXPIRATION_KEY, new Date(now + 100000).toISOString(), null)
+        storage.setDataInLocalStorage(TAPAD_RTID_STALE_KEY, new Date(now + 50000).toISOString(), null)
       })
       it('doesn\'t request data envelope, and alters bids', () => {
         const bidsConfig = {
@@ -92,7 +92,7 @@ describe('Tapad realtime module', () => {
     describe('when local storage has data but it is stale', () => {
       beforeEach(() => {
         const now = timestamp()
-        storage.setDataInLocalStorage(TAPAD_RTD_DATA_KEY, JSON.stringify([
+        storage.setDataInLocalStorage(TAPAD_RTID_DATA_KEY, JSON.stringify([
           {
             bidder: 'pubmatic',
             data: {
@@ -109,8 +109,8 @@ describe('Tapad realtime module', () => {
           }
         ]), null)
 
-        storage.setDataInLocalStorage(TAPAD_RTD_EXPIRATION_KEY, new Date(now + 100000).toISOString(), null)
-        storage.setDataInLocalStorage(TAPAD_RTD_STALE_KEY, new Date(now - 50000).toISOString(), null)
+        storage.setDataInLocalStorage(TAPAD_RTID_EXPIRATION_KEY, new Date(now + 100000).toISOString(), null)
+        storage.setDataInLocalStorage(TAPAD_RTID_STALE_KEY, new Date(now - 50000).toISOString(), null)
       })
       it('it requests data envelope and alters bids', () => {
         const bidsConfig = {
@@ -130,7 +130,7 @@ describe('Tapad realtime module', () => {
     describe('when local storage has data but it is expired', () => {
       beforeEach(() => {
         const now = timestamp()
-        storage.setDataInLocalStorage(TAPAD_RTD_DATA_KEY, JSON.stringify([
+        storage.setDataInLocalStorage(TAPAD_RTID_DATA_KEY, JSON.stringify([
           {
             bidder: 'pubmatic',
             data: {
@@ -147,8 +147,8 @@ describe('Tapad realtime module', () => {
           }
         ]), null)
 
-        storage.setDataInLocalStorage(TAPAD_RTD_EXPIRATION_KEY, new Date(now - 50000).toISOString(), null)
-        storage.setDataInLocalStorage(TAPAD_RTD_STALE_KEY, new Date(now - 100000).toISOString(), null)
+        storage.setDataInLocalStorage(TAPAD_RTID_EXPIRATION_KEY, new Date(now - 50000).toISOString(), null)
+        storage.setDataInLocalStorage(TAPAD_RTID_STALE_KEY, new Date(now - 100000).toISOString(), null)
       })
       it('requests data envelope, and doesn\'t alter bids', () => {
         const bidsConfig = {
@@ -184,10 +184,10 @@ describe('Tapad realtime module', () => {
     describe('when local storage has no track and is expired', () => {
       beforeEach(() => {
         const now = timestamp()
-        storage.setDataInLocalStorage(TAPAD_RTD_NO_TRACK_KEY, 'no_track', null)
+        storage.setDataInLocalStorage(TAPAD_RTID_NO_TRACK_KEY, 'no_track', null)
 
-        storage.setDataInLocalStorage(TAPAD_RTD_EXPIRATION_KEY, new Date(now - 50000).toISOString(), null)
-        storage.setDataInLocalStorage(TAPAD_RTD_STALE_KEY, new Date(now - 100000).toISOString(), null)
+        storage.setDataInLocalStorage(TAPAD_RTID_EXPIRATION_KEY, new Date(now - 50000).toISOString(), null)
+        storage.setDataInLocalStorage(TAPAD_RTID_STALE_KEY, new Date(now - 100000).toISOString(), null)
       })
       it('requests data envelope, and doesn\'t alter bids', () => {
         const bidsConfig = {
@@ -208,10 +208,10 @@ describe('Tapad realtime module', () => {
     describe('when local storage has no track and is stale', () => {
       beforeEach(() => {
         const now = timestamp()
-        storage.setDataInLocalStorage(TAPAD_RTD_NO_TRACK_KEY, 'no_track', null)
+        storage.setDataInLocalStorage(TAPAD_RTID_NO_TRACK_KEY, 'no_track', null)
 
-        storage.setDataInLocalStorage(TAPAD_RTD_EXPIRATION_KEY, new Date(now + 100000).toISOString(), null)
-        storage.setDataInLocalStorage(TAPAD_RTD_STALE_KEY, new Date(now - 50000).toISOString(), null)
+        storage.setDataInLocalStorage(TAPAD_RTID_EXPIRATION_KEY, new Date(now + 100000).toISOString(), null)
+        storage.setDataInLocalStorage(TAPAD_RTID_STALE_KEY, new Date(now - 50000).toISOString(), null)
       })
       it('requests data envelope, and doesn\'t alter bids', () => {
         const bidsConfig = {
@@ -232,10 +232,10 @@ describe('Tapad realtime module', () => {
     describe('when local storage has no track and isn\'t expired or stale', () => {
       beforeEach(() => {
         const now = timestamp()
-        storage.setDataInLocalStorage(TAPAD_RTD_NO_TRACK_KEY, 'no_track', null)
+        storage.setDataInLocalStorage(TAPAD_RTID_NO_TRACK_KEY, 'no_track', null)
 
-        storage.setDataInLocalStorage(TAPAD_RTD_EXPIRATION_KEY, new Date(now + 100000).toISOString(), null)
-        storage.setDataInLocalStorage(TAPAD_RTD_STALE_KEY, new Date(now + 50000).toISOString(), null)
+        storage.setDataInLocalStorage(TAPAD_RTID_EXPIRATION_KEY, new Date(now + 100000).toISOString(), null)
+        storage.setDataInLocalStorage(TAPAD_RTID_STALE_KEY, new Date(now + 50000).toISOString(), null)
       })
       it('doesn\'t alter bids and doesn\'t request data envelope', () => {
         const bidsConfig = {
@@ -258,7 +258,7 @@ describe('Tapad realtime module', () => {
     describe('data envelope has every bidder from config', () => {
       beforeEach(() => {
         const now = timestamp()
-        storage.setDataInLocalStorage(TAPAD_RTD_DATA_KEY, JSON.stringify([
+        storage.setDataInLocalStorage(TAPAD_RTID_DATA_KEY, JSON.stringify([
           {
             bidder: 'pubmatic',
             data: {
@@ -275,8 +275,8 @@ describe('Tapad realtime module', () => {
           }
         ]), null)
 
-        storage.setDataInLocalStorage(TAPAD_RTD_EXPIRATION_KEY, new Date(now + 100000).toISOString(), null)
-        storage.setDataInLocalStorage(TAPAD_RTD_STALE_KEY, new Date(now + 50000).toISOString(), null)
+        storage.setDataInLocalStorage(TAPAD_RTID_EXPIRATION_KEY, new Date(now + 100000).toISOString(), null)
+        storage.setDataInLocalStorage(TAPAD_RTID_STALE_KEY, new Date(now + 50000).toISOString(), null)
       })
 
       it('alters bids for the bidders in the module config', () => {
@@ -296,7 +296,7 @@ describe('Tapad realtime module', () => {
     describe('data envelope is missing bidders from config', () => {
       beforeEach(() => {
         const now = timestamp()
-        storage.setDataInLocalStorage(TAPAD_RTD_DATA_KEY, JSON.stringify([
+        storage.setDataInLocalStorage(TAPAD_RTID_DATA_KEY, JSON.stringify([
           {
             bidder: 'sovrn',
             data: {
@@ -306,8 +306,8 @@ describe('Tapad realtime module', () => {
           }
         ]), null)
 
-        storage.setDataInLocalStorage(TAPAD_RTD_EXPIRATION_KEY, new Date(now + 100000).toISOString(), null)
-        storage.setDataInLocalStorage(TAPAD_RTD_STALE_KEY, new Date(now + 50000).toISOString(), null)
+        storage.setDataInLocalStorage(TAPAD_RTID_EXPIRATION_KEY, new Date(now + 100000).toISOString(), null)
+        storage.setDataInLocalStorage(TAPAD_RTID_STALE_KEY, new Date(now + 50000).toISOString(), null)
       })
 
       it('alters bids for the bidders in the module config', () => {
@@ -338,9 +338,9 @@ describe('Tapad realtime module', () => {
       )
 
       expect(requests[0].url).to.equal('https://rtid.tapad.com/acc/123/ids?gdpr=0&gdpr_consent=wow&us_privacy=1YYY')
-      expect(safeJSONParse(storage.getDataFromLocalStorage(TAPAD_RTD_DATA_KEY, null))).to.deep.equal([{bidder: 'pubmatic', data: {key: 'pubmatic-encryption-key-1', data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='}}, {bidder: 'sovrn', data: {key: 'sovrn-encryption-key-1', data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='}}])
-      expect(storage.getDataFromLocalStorage(TAPAD_RTD_STALE_KEY)).to.equal('2023-06-01T00:00:00')
-      expect(storage.getDataFromLocalStorage(TAPAD_RTD_EXPIRATION_KEY)).to.equal('2023-06-03T00:00:00')
+      expect(safeJSONParse(storage.getDataFromLocalStorage(TAPAD_RTID_DATA_KEY, null))).to.deep.equal([{bidder: 'pubmatic', data: {key: 'pubmatic-encryption-key-1', data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='}}, {bidder: 'sovrn', data: {key: 'sovrn-encryption-key-1', data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='}}])
+      expect(storage.getDataFromLocalStorage(TAPAD_RTID_STALE_KEY)).to.equal('2023-06-01T00:00:00')
+      expect(storage.getDataFromLocalStorage(TAPAD_RTID_EXPIRATION_KEY)).to.equal('2023-06-03T00:00:00')
     })
   })
 

@@ -11,12 +11,12 @@ import {
 } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 
-export const SUBMODULE_NAME = 'tapad_rtd';
-export const TAPAD_RTD_DATA_KEY = 'tapad_rtd_data';
-export const TAPAD_RTD_EXPIRATION_KEY = 'tapad_rtd_expiration';
-export const TAPAD_RTD_STALE_KEY = 'tapad_rtd_stale';
-export const TAPAD_RTD_NO_TRACK_KEY = 'tapad_rtd_no_track';
-const TAPAD_RTD_URL = 'https://rtid.tapad.com'
+export const SUBMODULE_NAME = 'tapad_rtid';
+export const TAPAD_RTID_DATA_KEY = 'tapad_rtid_data';
+export const TAPAD_RTID_EXPIRATION_KEY = 'tapad_rtid_expiration';
+export const TAPAD_RTID_STALE_KEY = 'tapad_rtid_stale';
+export const TAPAD_RTID_NO_TRACK_KEY = 'tapad_rtid_no_track';
+const TAPAD_RTID_URL = 'https://rtid.tapad.com'
 const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
 
 export const tapadRtdObj = {
@@ -28,10 +28,10 @@ export const tapadRtdObj = {
    * @param {UserConsentData} userConsent
    */
   getBidRequestData(reqBidsConfigObj, done, config, userConsent) {
-    const dataEnvelope = storage.getDataFromLocalStorage(TAPAD_RTD_DATA_KEY, null);
-    const stale = storage.getDataFromLocalStorage(TAPAD_RTD_STALE_KEY, null);
-    const expired = storage.getDataFromLocalStorage(TAPAD_RTD_EXPIRATION_KEY, null);
-    const noTrack = storage.getDataFromLocalStorage(TAPAD_RTD_NO_TRACK_KEY, null);
+    const dataEnvelope = storage.getDataFromLocalStorage(TAPAD_RTID_DATA_KEY, null);
+    const stale = storage.getDataFromLocalStorage(TAPAD_RTID_STALE_KEY, null);
+    const expired = storage.getDataFromLocalStorage(TAPAD_RTID_EXPIRATION_KEY, null);
+    const noTrack = storage.getDataFromLocalStorage(TAPAD_RTID_NO_TRACK_KEY, null);
     const now = timestamp()
     if (now > new Date(expired).getTime() || (noTrack == null && dataEnvelope == null)) {
       // request data envelope and don't manipulate bids
@@ -53,7 +53,7 @@ export const tapadRtdObj = {
   },
 
   alterBids(reqBidsConfigObj, config) {
-    const dataEnvelope = safeJSONParse(storage.getDataFromLocalStorage(TAPAD_RTD_DATA_KEY, null));
+    const dataEnvelope = safeJSONParse(storage.getDataFromLocalStorage(TAPAD_RTID_DATA_KEY, null));
     if (dataEnvelope == null) {
       return;
     }
@@ -68,19 +68,19 @@ export const tapadRtdObj = {
     function storeDataEnvelopeResponse(response) {
       const responseJson = safeJSONParse(response);
       if (responseJson != null) {
-        storage.setDataInLocalStorage(TAPAD_RTD_STALE_KEY, responseJson.staleAt, null);
-        storage.setDataInLocalStorage(TAPAD_RTD_EXPIRATION_KEY, responseJson.expiresAt, null);
+        storage.setDataInLocalStorage(TAPAD_RTID_STALE_KEY, responseJson.staleAt, null);
+        storage.setDataInLocalStorage(TAPAD_RTID_EXPIRATION_KEY, responseJson.expiresAt, null);
         if (responseJson.status === 'no_track') {
-          storage.setDataInLocalStorage(TAPAD_RTD_NO_TRACK_KEY, 'no_track', null);
-          storage.removeDataFromLocalStorage(TAPAD_RTD_DATA_KEY, null);
+          storage.setDataInLocalStorage(TAPAD_RTID_NO_TRACK_KEY, 'no_track', null);
+          storage.removeDataFromLocalStorage(TAPAD_RTID_DATA_KEY, null);
         } else {
-          storage.setDataInLocalStorage(TAPAD_RTD_DATA_KEY, JSON.stringify(responseJson.data), null);
-          storage.removeDataFromLocalStorage(TAPAD_RTD_NO_TRACK_KEY, null);
+          storage.setDataInLocalStorage(TAPAD_RTID_DATA_KEY, JSON.stringify(responseJson.data), null);
+          storage.removeDataFromLocalStorage(TAPAD_RTID_NO_TRACK_KEY, null);
         }
       }
     }
     const queryString = tapadRtdObj.extractConsentQueryString(config, userConsent)
-    const fullUrl = queryString == null ? `${TAPAD_RTD_URL}/acc/${config.accountId}/ids` : `${TAPAD_RTD_URL}/acc/${config.accountId}/ids${queryString}`
+    const fullUrl = queryString == null ? `${TAPAD_RTID_URL}/acc/${config.accountId}/ids` : `${TAPAD_RTID_URL}/acc/${config.accountId}/ids${queryString}`
     ajax(fullUrl, storeDataEnvelopeResponse, null, { withCredentials: true, contentType: 'application/json' })
   },
   extractConsentQueryString(config, userConsent) {
