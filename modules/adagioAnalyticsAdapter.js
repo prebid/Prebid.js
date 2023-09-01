@@ -214,6 +214,8 @@ function handlerAuctionInit(event) {
       dvc: params.environment,
       pgtyp: params.pagetype,
       plcmt: params.placement,
+      tname: params.testName || null,
+      tvname: params.testVariationName || null,
       mts: mediaTypesKeys.join(','),
       ban_szs: bannerSizes.join(','),
       bdrs: bidders.map(bidder => getAdapterNameForAlias(bidder.bidder)).sort().join(','),
