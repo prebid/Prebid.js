@@ -2,6 +2,7 @@ import adagioAnalyticsAdapter from 'modules/adagioAnalyticsAdapter.js';
 import { expect } from 'chai';
 import * as utils from 'src/utils.js';
 import { getGlobal } from 'src/prebidGlobal.js';
+import { server } from 'test/mocks/xhr.js';
 
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
@@ -412,15 +413,9 @@ const MOCK = {
 
 describe('adagio analytics adapter', () => {
   let sandbox;
-  let xhr;
-  let requests;
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
-
-    xhr = sandbox.useFakeXMLHttpRequest();
-    requests = [];
-    xhr.onCreate = request => requests.push(request);
 
     sandbox.stub(events, 'getEvents').returns([]);
 
@@ -464,9 +459,9 @@ describe('adagio analytics adapter', () => {
       events.emit(constants.EVENTS.BID_WON, MOCK.BID_WON.another);
       events.emit(constants.EVENTS.AD_RENDER_SUCCEEDED, MOCK.AD_RENDER_SUCCEEDED);
 
-      expect(requests.length).to.equal(3);
+      expect(server.requests.length).to.equal(3);
       {
-        const { protocol, hostname, pathname, search } = utils.parseUrl(requests[0].url);
+        const { protocol, hostname, pathname, search } = utils.parseUrl(server.requests[0].url);
         expect(protocol).to.equal('https');
         expect(hostname).to.equal('c.4dex.io');
         expect(pathname).to.equal('/pba.gif');
@@ -488,7 +483,7 @@ describe('adagio analytics adapter', () => {
       }
 
       {
-        const { protocol, hostname, pathname, search } = utils.parseUrl(requests[1].url);
+        const { protocol, hostname, pathname, search } = utils.parseUrl(server.requests[1].url);
         expect(protocol).to.equal('https');
         expect(hostname).to.equal('c.4dex.io');
         expect(pathname).to.equal('/pba.gif');
@@ -508,7 +503,7 @@ describe('adagio analytics adapter', () => {
       }
 
       {
-        const { protocol, hostname, pathname, search } = utils.parseUrl(requests[2].url);
+        const { protocol, hostname, pathname, search } = utils.parseUrl(server.requests[2].url);
         expect(protocol).to.equal('https');
         expect(hostname).to.equal('c.4dex.io');
         expect(pathname).to.equal('/pba.gif');
