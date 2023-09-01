@@ -40,7 +40,7 @@ describe('Tapad realtime module', () => {
   };
   describe('init', () => {
     it('succeeds when params have accountId', () => {
-      const initResult = tapadRtdSubmodule.init({ accountId: 'ZylatYg' })
+      const initResult = tapadRtdSubmodule.init({ params: { accountId: 'ZylatYg' } })
       expect(initResult).to.be.true;
     })
 
@@ -80,7 +80,7 @@ describe('Tapad realtime module', () => {
             bidder: {}
           }
         }
-        const moduleConfig = { accountId: 123, bidders: ['pubmatic', 'sovrn'] }
+        const moduleConfig = { params: { accountId: 'ZylatYg', bidders: ['pubmatic', 'sovrn'] } }
         const dataEnvelopeSpy = sandbox.spy(tapadRtdObj, 'requestDataEnvelope')
         const alterBidsSpy = sandbox.spy(tapadRtdObj, 'alterBids')
         tapadRtdSubmodule.getBidRequestData(bidsConfig, sinon.stub, moduleConfig)
@@ -119,7 +119,7 @@ describe('Tapad realtime module', () => {
           }
         }
         const userConsent = {gdpr: {}, uspConsent: {}}
-        const moduleConfig = { accountId: 123, bidders: ['pubmatic', 'sovrn'] }
+        const moduleConfig = { params: { accountId: 'ZylatYg', bidders: ['pubmatic', 'sovrn'] } }
         const dataEnvelopeSpy = sandbox.spy(tapadRtdObj, 'requestDataEnvelope')
         const alterBidsSpy = sandbox.spy(tapadRtdObj, 'alterBids')
         tapadRtdSubmodule.getBidRequestData(bidsConfig, sinon.stub, moduleConfig, userConsent)
@@ -157,7 +157,7 @@ describe('Tapad realtime module', () => {
           }
         }
         const userConsent = {gdpr: {}, uspConsent: {}}
-        const moduleConfig = { accountId: 123, bidders: ['pubmatic', 'sovrn'] }
+        const moduleConfig = { params: { accountId: 'ZylatYg', bidders: ['pubmatic', 'sovrn'] } }
         const dataEnvelopeSpy = sandbox.spy(tapadRtdObj, 'requestDataEnvelope')
         const alterBidsSpy = sandbox.spy(tapadRtdObj, 'alterBids')
         tapadRtdSubmodule.getBidRequestData(bidsConfig, sinon.stub, moduleConfig, userConsent)
@@ -173,7 +173,7 @@ describe('Tapad realtime module', () => {
           }
         }
         const userConsent = {gdpr: {}, uspConsent: {}}
-        const moduleConfig = { accountId: 123, bidders: ['pubmatic', 'sovrn'] }
+        const moduleConfig = { params: { accountId: 'ZylatYg', bidders: ['pubmatic', 'sovrn'] } }
         const dataEnvelopeSpy = sandbox.spy(tapadRtdObj, 'requestDataEnvelope')
         const alterBidsSpy = sandbox.spy(tapadRtdObj, 'alterBids')
         tapadRtdSubmodule.getBidRequestData(bidsConfig, sinon.stub, moduleConfig, userConsent)
@@ -196,7 +196,7 @@ describe('Tapad realtime module', () => {
           }
         }
         const userConsent = {gdpr: {}, uspConsent: {}}
-        const moduleConfig = { accountId: 123, bidders: ['pubmatic', 'sovrn'] }
+        const moduleConfig = { params: { accountId: 'ZylatYg', bidders: ['pubmatic', 'sovrn'] } }
         const dataEnvelopeSpy = sandbox.spy(tapadRtdObj, 'requestDataEnvelope')
         const alterBidsSpy = sandbox.spy(tapadRtdObj, 'alterBids')
         tapadRtdSubmodule.getBidRequestData(bidsConfig, sinon.stub, moduleConfig, userConsent)
@@ -220,7 +220,7 @@ describe('Tapad realtime module', () => {
           }
         }
         const userConsent = {gdpr: {}, uspConsent: {}}
-        const moduleConfig = { accountId: 123, bidders: ['pubmatic', 'sovrn'] }
+        const moduleConfig = { params: { accountId: 'ZylatYg', bidders: ['pubmatic', 'sovrn'] } }
         const dataEnvelopeSpy = sandbox.spy(tapadRtdObj, 'requestDataEnvelope')
         const alterBidsSpy = sandbox.spy(tapadRtdObj, 'alterBids')
         tapadRtdSubmodule.getBidRequestData(bidsConfig, sinon.stub, moduleConfig, userConsent)
@@ -244,7 +244,7 @@ describe('Tapad realtime module', () => {
           }
         }
         const userConsent = {gdpr: {}, uspConsent: {}}
-        const moduleConfig = { accountId: 123, bidders: ['pubmatic', 'sovrn'] }
+        const moduleConfig = { params: { accountId: 'ZylatYg', bidders: ['pubmatic', 'sovrn'] } }
         const dataEnvelopeSpy = sandbox.spy(tapadRtdObj, 'requestDataEnvelope')
         const alterBidsSpy = sandbox.spy(tapadRtdObj, 'alterBids')
         tapadRtdSubmodule.getBidRequestData(bidsConfig, sinon.stub, moduleConfig, userConsent)
@@ -285,7 +285,7 @@ describe('Tapad realtime module', () => {
             bidder: {}
           }
         }
-        const moduleConfig = { accountId: 123, bidders: ['pubmatic'] }
+        const moduleConfig = { params: { accountId: 'ZylatYg', bidders: ['pubmatic'] } }
         tapadRtdObj.alterBids(bidsConfig, moduleConfig);
         expect(bidsConfig.ortb2Fragments.bidder).to.deep.equal({pubmatic: {
           key: 'pubmatic-encryption-key-1',
@@ -316,7 +316,7 @@ describe('Tapad realtime module', () => {
             bidder: {}
           }
         }
-        const moduleConfig = { accountId: 123, bidders: ['pubmatic', 'sovrn'] }
+        const moduleConfig = { params: { accountId: 'ZylatYg', bidders: ['pubmatic', 'sovrn'] } }
         tapadRtdObj.alterBids(bidsConfig, moduleConfig);
         expect(bidsConfig.ortb2Fragments.bidder).to.deep.equal({
           sovrn: {
@@ -329,7 +329,7 @@ describe('Tapad realtime module', () => {
 
   describe('requestDataEnvelope', () => {
     it('sends request to tapad rtd and stores response', () => {
-      const moduleConfig = { accountId: 123, bidders: ['pubmatic', 'sovrn'] }
+      const moduleConfig = { params: { accountId: 'ZylatYg', bidders: ['pubmatic', 'sovrn'] } }
       tapadRtdObj.requestDataEnvelope(moduleConfig, { gdpr: { gdprApplies: 0, consentString: 'wow' }, uspConsent: '1YYY' })
       requests[0].respond(
         200,
@@ -337,7 +337,7 @@ describe('Tapad realtime module', () => {
         '{"staleAt":"2023-06-01T00:00:00","expiresAt":"2023-06-03T00:00:00","status":"ok","data":[{"bidder":"pubmatic","data":{"key":"pubmatic-encryption-key-1","data":"IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=="}},{"bidder":"sovrn","data":{"key":"sovrn-encryption-key-1","data":"IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=="}}]}'
       )
 
-      expect(requests[0].url).to.equal('https://rtid.tapad.com/acc/123/ids?gdpr=0&gdpr_consent=wow&us_privacy=1YYY')
+      expect(requests[0].url).to.equal('https://rtid.tapad.com/acc/ZylatYg/ids?gdpr=0&gdpr_consent=wow&us_privacy=1YYY')
       expect(safeJSONParse(storage.getDataFromLocalStorage(TAPAD_RTID_DATA_KEY, null))).to.deep.equal([{bidder: 'pubmatic', data: {key: 'pubmatic-encryption-key-1', data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='}}, {bidder: 'sovrn', data: {key: 'sovrn-encryption-key-1', data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='}}])
       expect(storage.getDataFromLocalStorage(TAPAD_RTID_STALE_KEY)).to.equal('2023-06-01T00:00:00')
       expect(storage.getDataFromLocalStorage(TAPAD_RTID_EXPIRATION_KEY)).to.equal('2023-06-03T00:00:00')
@@ -361,7 +361,7 @@ describe('Tapad realtime module', () => {
 
     describe('when config.ids exists', () => {
       it('builds query string', () => {
-        expect(tapadRtdObj.extractConsentQueryString({ ids: { maid: ['424', '2982'], hem: 'my-hem' } }, { gdpr: { gdprApplies: 1, consentString: 'this-is-something' }, uspConsent: '1YYY' }))
+        expect(tapadRtdObj.extractConsentQueryString({ params: { accountId: 'ZylatYg', ids: { maid: ['424', '2982'], hem: 'my-hem' } } }, { gdpr: { gdprApplies: 1, consentString: 'this-is-something' }, uspConsent: '1YYY' }))
           .to.equal('?gdpr=1&gdpr_consent=this-is-something&us_privacy=1YYY&id.maid=424&id.maid=2982&id.hem=my-hem')
       })
     })

@@ -2,6 +2,7 @@ import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import {
+  deepAccess,
   isArray,
   isPlainObject,
   isStr,
@@ -57,7 +58,7 @@ export const tapadRtdObj = {
     if (dataEnvelope == null) {
       return;
     }
-    config.bidders.forEach((bidderCode) => {
+    deepAccess(config, 'params.bidders').forEach((bidderCode) => {
       const bidderData = dataEnvelope.find(({ bidder }) => bidder === bidderCode)
       if (bidderData != null) {
         mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {[bidderCode]: bidderData.data})
@@ -80,7 +81,7 @@ export const tapadRtdObj = {
       }
     }
     const queryString = tapadRtdObj.extractConsentQueryString(config, userConsent)
-    const fullUrl = queryString == null ? `${TAPAD_RTID_URL}/acc/${config.accountId}/ids` : `${TAPAD_RTID_URL}/acc/${config.accountId}/ids${queryString}`
+    const fullUrl = queryString == null ? `${TAPAD_RTID_URL}/acc/${deepAccess(config, 'params.accountId')}/ids` : `${TAPAD_RTID_URL}/acc/${deepAccess(config, 'params.accountId')}/ids${queryString}`
     ajax(fullUrl, storeDataEnvelopeResponse, null, { withCredentials: true, contentType: 'application/json' })
   },
   extractConsentQueryString(config, userConsent) {
@@ -98,8 +99,8 @@ export const tapadRtdObj = {
     const consentQueryString = Object.entries(queryObj).map(([key, val]) => `${key}=${val}`).join('&');
 
     let idsString = '';
-    if (config.ids != null && isPlainObject(config.ids)) {
-      idsString = Object.entries(config.ids).map(([idType, val]) => {
+    if (deepAccess(config, 'params.ids') != null && isPlainObject(deepAccess(config, 'params.ids'))) {
+      idsString = Object.entries(deepAccess(config, 'params.ids')).map(([idType, val]) => {
         if (isArray(val)) {
           return val.map((singleVal) => `id.${idType}=${singleVal}`).join('&')
         } else {
@@ -120,7 +121,7 @@ export const tapadRtdObj = {
    * @return {boolean} false to remove sub module
    */
   init(config, userConsent) {
-    return isStr(config.accountId);
+    return isStr(deepAccess(config, 'params.accountId'));
   }
 }
 
