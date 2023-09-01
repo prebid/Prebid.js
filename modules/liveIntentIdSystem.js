@@ -66,6 +66,7 @@ function parseLiveIntentCollectorConfig(collectConfig) {
   collectConfig.fpiStorageStrategy && (config.storageStrategy = collectConfig.fpiStorageStrategy);
   collectConfig.fpiExpirationDays && (config.expirationDays = collectConfig.fpiExpirationDays);
   collectConfig.collectorUrl && (config.collectorUrl = collectConfig.collectorUrl);
+  config.ajaxTimeout = collectConfig.ajaxTimeout || DEFAULT_AJAX_TIMEOUT;
   return config;
 }
 
@@ -101,9 +102,9 @@ function initializeLiveConnect(configParams) {
     identityResolutionConfig.url = configParams.url
   }
 
-  const liveConnectConfig = parseLiveIntentCollectorConfig(configParams.liCollectConfig);
+  identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout || DEFAULT_AJAX_TIMEOUT;
 
-  liveConnectConfig.ajaxTimeout = configParams.ajaxTimeout || DEFAULT_AJAX_TIMEOUT;
+  const liveConnectConfig = parseLiveIntentCollectorConfig(configParams.liCollectConfig);
 
   if (!liveConnectConfig.appId && configParams.distributorId) {
     liveConnectConfig.distributorId = configParams.distributorId;
