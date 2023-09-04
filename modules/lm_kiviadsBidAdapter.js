@@ -19,8 +19,8 @@ function isBidRequestValid(req) {
     return false;
   }
 
-  if (!getBidIdParameter('env', req.params) || !getBidIdParameter('placement', req.params)) {
-    logError('Env or placement is not present in bidder params');
+  if (!getBidIdParameter('env', req.params) || !getBidIdParameter('pid', req.params)) {
+    logError('Env or pid is not present in bidder params');
     return false;
   }
 
@@ -62,7 +62,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     };
     request.env = {
       env: req.params.env,
-      placement: req.params.placement
+      pid: req.params.pid
     };
     request.ortb2 = req.ortb2;
     request.ortb2Imp = req.ortb2Imp;

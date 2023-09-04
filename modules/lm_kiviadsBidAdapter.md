@@ -25,7 +25,7 @@ var adUnits = [
                 bidder: 'lm_kiviads',
                 params: {
                     env: 'lm_kiviads',
-                    placement: '40',
+                    pid: '40',
                     ext: {}
                 }
             }
@@ -45,7 +45,7 @@ var adUnits = [
             bidder: 'lm_kiviads',
             params: {
                 env: 'lm_kiviads',
-                placement: '40',
+                pid: '40',
                 ext: {}
             }
         }]

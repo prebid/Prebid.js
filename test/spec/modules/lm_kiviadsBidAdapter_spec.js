@@ -30,7 +30,7 @@ const defaultRequest = {
   bidder: 'lm_kiviads',
   params: {
     env: 'lm_kiviads',
-    placement: '40',
+    pid: '40',
     ext: {}
   },
   bidRequestsCount: 1
@@ -58,9 +58,9 @@ describe('lm_kiviadsBidAdapter', () => {
       expect(spec.isBidRequestValid(invalidRequest)).to.equal(false);
     });
 
-    it('should return false when required placement param is missing', function () {
+    it('should return false when required pid param is missing', function () {
       const invalidRequest = deepClone(defaultRequest);
-      delete invalidRequest.params.placement;
+      delete invalidRequest.params.pid;
       expect(spec.isBidRequestValid(invalidRequest)).to.equal(false);
     });
 
@@ -106,7 +106,7 @@ describe('lm_kiviadsBidAdapter', () => {
       expect(request).to.have.property('ext').and.to.deep.equal({});
       expect(request).to.have.property('env').and.to.deep.equal({
         env: 'lm_kiviads',
-        placement: '40'
+        pid: '40'
       });
       expect(request).to.have.property('device').and.to.deep.equal({
         ua: navigator.userAgent,
