@@ -16,7 +16,7 @@ const PANGLE_COOKIE = '_pangle_id';
 const COOKIE_EXP = 86400 * 1000 * 365 * 1; // 1 year
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: BIDDER_CODE })
 
-export function isValidUuid (uuid) {
+export function isValidUuid(uuid) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     uuid
   );
@@ -52,27 +52,27 @@ const converter = ortbConverter({
   }
 });
 
-function getDeviceType() {
-  if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(navigator.userAgent.toLowerCase()))) {
-    return 5; // 'tablet'
-  }
-  if ((/iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(navigator.userAgent.toLowerCase()))) {
-    return 4; // 'mobile'
-  }
-  return 2; // 'desktop'
-}
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
 
+  getDeviceType: function (ua) {
+    if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(ua.toLowerCase()))) {
+      return 5; // 'tablet'
+    }
+    if ((/iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(ua.toLowerCase()))) {
+      return 4; // 'mobile'
+    }
+    return 2; // 'desktop'
+  },
+
   isBidRequestValid: function (bid) {
-    return !!bid.params.token;
+    return Boolean(bid.params.token);
   },
 
   buildRequests(bidRequests, bidderRequest) {
-    const data = converter.toORTB({bidRequests, bidderRequest})
-    const devicetype = getDeviceType();
+    const data = converter.toORTB({ bidRequests, bidderRequest })
+    const devicetype = spec.getDeviceType(navigator.userAgent);
     deepSetValue(data, 'device.devicetype', devicetype);
     if (bidderRequest.userId && typeof bidderRequest.userId === 'object') {
       const pangleId = getPangleCookieId();
@@ -97,7 +97,7 @@ export const spec = {
       method: 'POST',
       url: ENDPOINT,
       data,
-      options: {contentType: 'application/json', withCredentials: true}
+      options: { contentType: 'application/json', withCredentials: true }
     }]
   },
 

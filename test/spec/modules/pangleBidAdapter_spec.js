@@ -109,8 +109,7 @@ describe('pangle bid adapter', function () {
       let bid = {
         bidder: 'pangle',
         params: {
-          placementid: 999,
-          appid: 111,
+          token: 'xxx',
         }
       };
       expect(spec.isBidRequestValid(bid)).to.equal(true);
