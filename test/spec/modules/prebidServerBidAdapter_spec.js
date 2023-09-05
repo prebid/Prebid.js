@@ -437,6 +437,7 @@ const RESPONSE_OPENRTB_VIDEO = {
                 bid_ad_type: 1,
               },
             },
+            rendererurl: 'www.rendererurl.com'
           },
         },
       ],
@@ -3140,6 +3141,7 @@ describe('S2S Adapter', function () {
         expect(response).to.have.property('bidderCode', 'appnexus');
         expect(response).to.have.property('requestId', '123');
         expect(response).to.have.property('cpm', 10);
+        expect(response).to.have.property('rendererurl', 'www.rendererurl.com');
       });
 
       it('handles response cache from ext.prebid.cache.vastXml', function () {

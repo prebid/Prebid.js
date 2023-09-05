@@ -78,7 +78,7 @@ import {
   logMessage,
   logWarn,
   parseUrl,
-  timestamp
+  timestamp,
 } from './utils.js';
 import {getPriceBucketString} from './cpmBucketManager.js';
 import {getNativeTargeting, isNativeResponse, setNativeResponseProperties} from './native.js';
@@ -697,6 +697,15 @@ function getPreparedBidForAuction(bid, {index = auctionManager.index} = {}) {
     // be aware, an adapter could already have installed the bidder, in which case this overwrite's the existing adapter
     bid.renderer = Renderer.install({ url: renderer.url, config: renderer.options });// rename options to config, to make it consistent?
     bid.renderer.setRender(renderer.render);
+  }
+
+  if (bid.rendererurl) {
+    bid.renderer = Renderer.install({ url: bid.rendererurl });
+    bid.renderer.setRender((bid) => {
+      bid.renderer.push(() => {
+        window.renderAd(bid);
+      })
+    })
   }
 
   // Use the config value 'mediaTypeGranularity' if it has been defined for mediaType, else use 'customPriceBucket'
