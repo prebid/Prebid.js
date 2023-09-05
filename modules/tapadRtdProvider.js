@@ -61,7 +61,7 @@ export const tapadRtdObj = {
     deepAccess(config, 'params.bidders').forEach((bidderCode) => {
       const bidderData = dataEnvelope.find(({ bidder }) => bidder === bidderCode)
       if (bidderData != null) {
-        mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {[bidderCode]: bidderData.data})
+        mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, { [bidderCode]: { tapadRtidKey: bidderData.data.key, tapadRtidData: bidderData.data.data } })
       }
     })
   },

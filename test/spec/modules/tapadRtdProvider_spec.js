@@ -288,8 +288,8 @@ describe('Tapad realtime module', () => {
         const moduleConfig = { params: { accountId: 'ZylatYg', bidders: ['pubmatic'] } }
         tapadRtdObj.alterBids(bidsConfig, moduleConfig);
         expect(bidsConfig.ortb2Fragments.bidder).to.deep.equal({pubmatic: {
-          key: 'pubmatic-encryption-key-1',
-          data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='
+          tapadRtidKey: 'pubmatic-encryption-key-1',
+          tapadRtidData: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='
         }})
       })
     })
@@ -320,8 +320,8 @@ describe('Tapad realtime module', () => {
         tapadRtdObj.alterBids(bidsConfig, moduleConfig);
         expect(bidsConfig.ortb2Fragments.bidder).to.deep.equal({
           sovrn: {
-            key: 'sovrn-encryption-key-1',
-            data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='
+            tapadRtidKey: 'sovrn-encryption-key-1',
+            tapadRtidData: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='
           }})
       })
     })
