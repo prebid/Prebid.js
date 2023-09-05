@@ -210,6 +210,7 @@ const applyTopics = (validBidRequest, ortbRequest) => {
   if (topicsData) {
     topicsData.id = `${topicsData.ext.segtax}`;
     topicsData.name = 'topics';
+    topicsData.segment.forEach(seg => seg.id = parseInt(seg.id, 10));
     delete (topicsData.ext);
     ortbRequest.user.data.push(topicsData);
   }
