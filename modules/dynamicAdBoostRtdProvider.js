@@ -11,6 +11,8 @@ import { deepAccess, deepSetValue, isEmptyStr } from '../src/utils.js';
 
 const MODULE_NAME = 'dynamicAdBoost';
 const SCRIPT_URL = 'https://adxbid.info';
+const CLIENT_SUPPORTS_IO = window.IntersectionObserver && window.IntersectionObserverEntry && window.IntersectionObserverEntry.prototype &&
+    'intersectionRatio' in window.IntersectionObserverEntry.prototype;
 // Options for the Intersection Observer
 const dabOptions = {
   threshold: 0.5 // Trigger callback when 50% of the element is visible
@@ -25,6 +27,9 @@ var dabStartDate = new Date();
 var dabStartTime = dabStartDate.getTime();
 
 function init(config, userConsent) {
+  if (!CLIENT_SUPPORTS_IO) {
+    return false;
+  }
   if (config.params.keyId) {
     let keyId = config.params.keyId;
     if (keyId && !isEmptyStr(keyId)) {
@@ -62,6 +67,7 @@ function loadLmScript(keyId) {
   let viewableAdUnitsCSV = viewableAdUnits.join(',');
   const scriptUrl = `${SCRIPT_URL}/${keyId}.js?viewableAdUnits=${viewableAdUnitsCSV}`;
   loadExternalScript(scriptUrl, MODULE_NAME);
+  observer.disconnect();
 }
 
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
@@ -84,6 +90,7 @@ function dabHandleIntersection(entries) {
   entries.forEach(entry => {
     if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
       dynamicAdBoostAdUnits[entry.target.id] = entry.intersectionRatio;
+      observer.unobserve(entry.target);
     }
   });
 }
