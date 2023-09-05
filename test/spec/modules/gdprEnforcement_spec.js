@@ -1,13 +1,12 @@
 import {
   accessDeviceRule,
-  deviceAccessHook,
-  enforcementRules,
   enrichEidsRule,
   fetchBidsRule,
   transmitEidsRule,
+  transmitPreciseGeoRule,
   getGvlid,
   getGvlidFromAnalyticsAdapter,
-  RULES,
+  ACTIVE_RULES,
   reportAnalyticsRule,
   setEnforcementConfig,
   STRICT_STORAGE_ENFORCEMENT,
@@ -698,6 +697,37 @@ describe('gdpr enforcement', function () {
     })
   });
 
+  describe('transmitPreciseGeoRule', () => {
+    const BIDDER = 'mockBidder';
+    let cd;
+
+    function runRule() {
+      return transmitPreciseGeoRule(activityParams(MODULE_TYPE_BIDDER, BIDDER))
+    }
+
+    beforeEach(() => {
+      cd = setupConsentData();
+      setEnforcementConfig({
+        gdpr: {
+          rules: [{
+            purpose: 'transmitPreciseGeo',
+            enforcePurpose: true,
+            enforceVendor: false
+          }]
+        }
+      })
+    });
+
+    it('should allow when special feature 1 consent is given', () => {
+      cd.vendorData.specialFeatureOptins[1] = true;
+      expectAllow(true, runRule());
+    })
+    it('should deny when configured, but consent is missing', () => {
+      cd.vendorData.specialFeatureOptins[1] = false;
+      expectAllow(false, runRule());
+    });
+  });
+
   describe('validateRules', function () {
     const createGdprRule = (purposeName = 'storage', enforcePurpose = true, enforceVendor = true, vendorExceptions = [], softVendorExceptions = []) => ({
       purpose: purposeName,
@@ -855,7 +885,8 @@ describe('gdpr enforcement', function () {
       });
 
       expect(logWarnSpy.calledOnce).to.equal(true);
-      expect(enforcementRules).to.deep.equal(DEFAULT_RULES);
+      expect(ACTIVE_RULES.purpose[1]).to.deep.equal(DEFAULT_RULES[0]);
+      expect(ACTIVE_RULES.purpose[2]).to.deep.equal(DEFAULT_RULES[1]);
     });
 
     it('should enforce TCF2 Purpose 2 also if only Purpose 1 is defined in "rules"', function () {
@@ -871,8 +902,8 @@ describe('gdpr enforcement', function () {
         }
       });
 
-      expect(RULES[1]).to.deep.equal(purpose1RuleDefinedInConfig);
-      expect(RULES[2]).to.deep.equal(DEFAULT_RULES[1]);
+      expect(ACTIVE_RULES.purpose[1]).to.deep.equal(purpose1RuleDefinedInConfig);
+      expect(ACTIVE_RULES.purpose[2]).to.deep.equal(DEFAULT_RULES[1]);
     });
 
     it('should enforce TCF2 Purpose 1 also if only Purpose 2 is defined in "rules"', function () {
@@ -888,8 +919,8 @@ describe('gdpr enforcement', function () {
         }
       });
 
-      expect(RULES[1]).to.deep.equal(DEFAULT_RULES[0]);
-      expect(RULES[2]).to.deep.equal(purpose2RuleDefinedInConfig);
+      expect(ACTIVE_RULES.purpose[1]).to.deep.equal(DEFAULT_RULES[0]);
+      expect(ACTIVE_RULES.purpose[2]).to.deep.equal(purpose2RuleDefinedInConfig);
     });
 
     it('should use the "rules" defined in config if a definition found', function() {
@@ -903,8 +934,8 @@ describe('gdpr enforcement', function () {
         enforceVendor: false
       }]
       setEnforcementConfig({gdpr: { rules }});
-
-      expect(enforcementRules).to.deep.equal(rules);
+      expect(ACTIVE_RULES.purpose[1]).to.deep.equal(rules[0]);
+      expect(ACTIVE_RULES.purpose[2]).to.deep.equal(rules[1]);
     });
   });
 
