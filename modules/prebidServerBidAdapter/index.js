@@ -18,9 +18,9 @@ import {
   deepAccess,
 } from '../../src/utils.js';
 import CONSTANTS from '../../src/constants.json';
-import adapterManager from '../../src/adapterManager.js';
+import adapterManager, {s2sActivityParams} from '../../src/adapterManager.js';
 import {config} from '../../src/config.js';
-import {isValid} from '../../src/adapters/bidderFactory.js';
+import {addComponentAuction, isValid} from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
 import {includes} from '../../src/polyfill.js';
 import {S2S_VENDORS} from './config.js';
@@ -29,6 +29,8 @@ import {hook} from '../../src/hook.js';
 import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
 import {buildPBSRequest, interpretPBSResponse} from './ortbConverter.js';
 import {useMetrics} from '../../src/utils/perfMetrics.js';
+import {isActivityAllowed} from '../../src/activities/rules.js';
+import {ACTIVITY_TRANSMIT_UFPD} from '../../src/activities/activities.js';
 
 const getConfig = config.getConfig;
 
@@ -96,10 +98,8 @@ export const s2sDefaultConfig = {
   adapterOptions: {},
   syncUrlModifier: {},
   ortbNative: {
-    context: 1,
-    plcmttype: 1,
     eventtrackers: [
-      {event: 1, methods: [1]}
+      {event: 1, methods: [1, 2]}
     ],
   }
 };
@@ -260,9 +260,7 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig) 
   }
 
   if (gppConsent) {
-    // proposing the following formatting, can adjust if needed...
-    // update - leaving this param as an array, since it's part of a POST payload where the [] characters shouldn't matter too much
-    payload.gpp_sid = gppConsent.applicableSections
+    payload.gpp_sid = gppConsent.applicableSections.join();
     // should we add check if applicableSections was not equal to -1 (where user was out of scope)?
     //   this would be similar to what was done above for TCF
     payload.gpp = gppConsent.gppString;
@@ -474,7 +472,13 @@ export function PrebidServer() {
             bidRequests.forEach(bidderRequest => events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest));
           }
           if (shouldEmitNonbids(s2sBidRequest.s2sConfig, response)) {
-            emitNonBids(response.ext.seatnonbid, bidRequests[0].auctionId);
+            events.emit(CONSTANTS.EVENTS.SEAT_NON_BID, {
+              seatnonbid: response.ext.seatnonbid,
+              auctionId: bidRequests[0].auctionId,
+              requestedBidders,
+              response,
+              adapterMetrics
+            });
           }
           done();
           doClientSideSyncs(requestedBidders, gdprConsent, uspConsent, gppConsent);
@@ -496,6 +500,9 @@ export function PrebidServer() {
               addBidResponse.reject(adUnit, bid, CONSTANTS.REJECTION_REASON.INVALID);
             }
           }
+        },
+        onFledge: ({adUnitCode, config}) => {
+          addComponentAuction(adUnitCode, config);
         }
       })
     }
@@ -521,7 +528,7 @@ export function PrebidServer() {
  * @param onError {function(String, {})} invoked on HTTP failure - with status message and XHR error
  * @param onBid {function({})} invoked once for each bid in the response - with the bid as returned by interpretResponse
  */
-export const processPBSRequest = hook('sync', function (s2sBidRequest, bidRequests, ajax, {onResponse, onError, onBid}) {
+export const processPBSRequest = hook('sync', function (s2sBidRequest, bidRequests, ajax, {onResponse, onError, onBid, onFledge}) {
   let { gdprConsent } = getConsentData(bidRequests);
   const adUnits = deepClone(s2sBidRequest.ad_units);
 
@@ -545,8 +552,11 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
           let result;
           try {
             result = JSON.parse(response);
-            const bids = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request).bids);
+            const {bids, fledgeAuctionConfigs} = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request));
             bids.forEach(onBid);
+            if (fledgeAuctionConfigs) {
+              fledgeAuctionConfigs.forEach(onFledge);
+            }
           } catch (error) {
             logError(error);
           }
@@ -563,7 +573,11 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
         }
       },
       requestJson,
-      {contentType: 'text/plain', withCredentials: true}
+      {
+        contentType: 'text/plain',
+        withCredentials: true,
+        browsingTopics: isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, s2sActivityParams(s2sBidRequest.s2sConfig))
+      }
     );
   } else {
     logError('PBS request not made.  Check endpoints.');
@@ -572,13 +586,6 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
 
 function shouldEmitNonbids(s2sConfig, response) {
   return s2sConfig?.extPrebid?.returnallbidstatus && response?.ext?.seatnonbid;
-}
-
-function emitNonBids(seatnonbid, auctionId) {
-  events.emit(CONSTANTS.EVENTS.SEAT_NON_BID, {
-    seatnonbid,
-    auctionId
-  });
 }
 
 /**

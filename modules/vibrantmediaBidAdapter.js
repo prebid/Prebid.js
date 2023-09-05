@@ -72,7 +72,7 @@ const transformBidRequests = function(bidRequests) {
     const transformedBidRequest = {
       code: bidRequest.adUnitCode || bidRequest.code,
       id: bidRequest.placementId || params.placementId || params.invCode,
-      requestId: bidRequest.bidId || bidRequest.transactionId,
+      requestId: bidRequest.bidId,
       bidder: bidRequest.bidder,
       mediaTypes: bidRequest.mediaTypes,
       bids: bidRequest.bids,

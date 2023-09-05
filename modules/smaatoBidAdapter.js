@@ -1,8 +1,21 @@
-import { deepAccess, isNumber, getDNT, deepSetValue, logInfo, logError, isEmpty, getAdUnitSizes, fill, chunk, getMaxValueFromArray, getMinValueFromArray } from '../src/utils.js';
+import {
+  chunk,
+  deepAccess,
+  deepSetValue,
+  fill,
+  getAdUnitSizes,
+  getDNT,
+  getMaxValueFromArray,
+  getMinValueFromArray,
+  isEmpty,
+  isNumber,
+  logError,
+  logInfo
+} from '../src/utils.js';
 import {find} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
-import {ADPOD, BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
+import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import CONSTANTS from '../src/constants.json';
 
 const { NATIVE_IMAGE_TYPES } = CONSTANTS;
@@ -13,7 +26,7 @@ const CURRENCY = 'USD';
 
 const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
   const requestTemplate = {
-    id: bidderRequest.auctionId,
+    id: bidderRequest.bidderRequestId,
     at: 1,
     cur: [CURRENCY],
     tmax: bidderRequest.timeout,
@@ -68,11 +81,23 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
     deepSetValue(requestTemplate, 'regs.ext.gpp_sid', ortb2.regs.gpp_sid);
   }
 
+  if (ortb2.device?.ifa !== undefined) {
+    deepSetValue(requestTemplate, 'device.ifa', ortb2.device.ifa);
+  }
+
+  if (ortb2.device?.geo !== undefined) {
+    deepSetValue(requestTemplate, 'device.geo', ortb2.device.geo);
+  }
+
   if (deepAccess(bidRequest, 'params.app')) {
-    const geo = deepAccess(bidRequest, 'params.app.geo');
-    deepSetValue(requestTemplate, 'device.geo', geo);
-    const ifa = deepAccess(bidRequest, 'params.app.ifa');
-    deepSetValue(requestTemplate, 'device.ifa', ifa);
+    if (!deepAccess(requestTemplate, 'device.geo')) {
+      const geo = deepAccess(bidRequest, 'params.app.geo');
+      deepSetValue(requestTemplate, 'device.geo', geo);
+    }
+    if (!deepAccess(requestTemplate, 'device.ifa')) {
+      const ifa = deepAccess(bidRequest, 'params.app.ifa');
+      deepSetValue(requestTemplate, 'device.ifa', ifa);
+    }
   }
 
   const eids = deepAccess(bidRequest, 'userIdAsEids');

@@ -1,29 +1,23 @@
 import adapterManager from '../../../src/adapterManager.js';
 import id5AnalyticsAdapter from '../../../modules/id5AnalyticsAdapter.js';
 import { expect } from 'chai';
-import sinon from 'sinon';
 import * as events from '../../../src/events.js';
 import constants from '../../../src/constants.json';
 import { generateUUID } from '../../../src/utils.js';
+import {server} from '../../mocks/xhr.js';
 
 const CONFIG_URL = 'https://api.id5-sync.com/analytics/12349/pbjs';
 const INGEST_URL = 'https://test.me/ingest';
 
 describe('ID5 analytics adapter', () => {
-  let server;
   let config;
 
   beforeEach(() => {
-    server = sinon.createFakeServer();
     config = {
       options: {
         partnerId: 12349,
       }
     };
-  });
-
-  afterEach(() => {
-    server.restore();
   });
 
   it('registers itself with the adapter manager', () => {

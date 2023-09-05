@@ -105,6 +105,7 @@ export const spec = {
         keywords: keywords.join(','),
         zone_id: req.params.zoneId,
         bid_id: req.bidId,
+        // TODO: fix transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
         imp_id: req.transactionId,
         sizes: req.sizes,
         force_bid: req.params.forceBid,

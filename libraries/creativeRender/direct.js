@@ -35,12 +35,14 @@ export function renderAdDirect(doc, adId, options) {
     } else {
       bid = auctionManager.findBidByAdId(adId);
 
-      // TODO: could the video module implement this as a custom renderer, rather than a special case in here?
-      const adUnit = bid && auctionManager.index.getAdUnit(bid);
-      const videoModule = getGlobal().videoModule;
-      if (adUnit?.video && videoModule) {
-        videoModule.renderBid(adUnit.video.divId, bid);
-        return;
+      if (FEATURES.VIDEO) {
+        // TODO: could the video module implement this as a custom renderer, rather than a special case in here?
+        const adUnit = bid && auctionManager.index.getAdUnit(bid);
+        const videoModule = getGlobal().videoModule;
+        if (adUnit?.video && videoModule) {
+          videoModule.renderBid(adUnit.video.divId, bid);
+          return;
+        }
       }
 
       if ((doc === document && !inIframe())) {

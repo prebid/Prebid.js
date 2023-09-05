@@ -83,7 +83,7 @@ function handleNativeRequest(reply, data, adObject) {
   //   adId: '%%PATTERN:hb_adid%%'
   // }), '*');
   if (adObject == null) {
-    logError(`Cannot find ad '${data.adId}' for x-origin event request`);
+    logError(`Cannot find ad for x-origin event request: '${data.adId}'`);
     return;
   }
 

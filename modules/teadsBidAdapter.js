@@ -12,7 +12,7 @@ const gdprStatus = {
   CMP_NOT_FOUND_OR_ERROR: 22
 };
 const FP_TEADS_ID_COOKIE_NAME = '_tfpvi';
-export const storage = getStorageManager({gvlid: GVL_ID, bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -49,6 +49,8 @@ export const spec = {
     const payload = {
       referrer: getReferrerInfo(bidderRequest),
       pageReferrer: document.referrer,
+      pageTitle: getPageTitle().slice(0, 300),
+      pageDescription: getPageDescription().slice(0, 300),
       networkBandwidth: getConnectionDownLink(window.navigator),
       timeToFirstByte: getTimeToFirstByte(window),
       data: bids,
@@ -170,6 +172,30 @@ function getReferrerInfo(bidderRequest) {
   return ref;
 }
 
+function getPageTitle() {
+  try {
+    return window.top.document.title || document.title;
+  } catch (e) {
+    return document.title;
+  }
+}
+
+function getPageDescription() {
+  let element;
+
+  try {
+    element = window.top.document.querySelector('meta[name="description"]') ||
+      window.top.document.querySelector('meta[property="og:description"]') ||
+      document.querySelector('meta[name="description"]') ||
+      document.querySelector('meta[property="og:description"]')
+  } catch (e) {
+    element = document.querySelector('meta[name="description"]') ||
+      document.querySelector('meta[property="og:description"]')
+  }
+
+  return (element && element.content) || '';
+}
+
 function getConnectionDownLink(nav) {
   return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : '';
 }
@@ -220,6 +246,7 @@ function buildRequestObject(bid) {
   let placementId = getValue(bid.params, 'placementId');
   let pageId = getValue(bid.params, 'pageId');
   const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
+  const videoPlcmt = deepAccess(bid, 'mediaTypes.video.plcmt');
 
   reqObj.sizes = getSizes(bid);
   reqObj.bidId = getBidIdParameter('bidId', bid);
@@ -227,9 +254,9 @@ function buildRequestObject(bid) {
   reqObj.placementId = parseInt(placementId, 10);
   reqObj.pageId = parseInt(pageId, 10);
   reqObj.adUnitCode = getBidIdParameter('adUnitCode', bid);
-  reqObj.auctionId = getBidIdParameter('auctionId', bid);
-  reqObj.transactionId = getBidIdParameter('transactionId', bid);
+  reqObj.transactionId = bid.ortb2Imp?.ext?.tid || '';
   if (gpid) { reqObj.gpid = gpid; }
+  if (videoPlcmt) { reqObj.videoPlcmt = videoPlcmt; }
   return reqObj;
 }
 

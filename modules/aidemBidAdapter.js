@@ -1,4 +1,15 @@
-import {_each, contains, deepAccess, deepSetValue, getDNT, isBoolean, isStr, isNumber, logError, logInfo} from '../src/utils.js';
+import {
+  _each,
+  contains,
+  deepAccess,
+  deepSetValue,
+  getDNT,
+  isBoolean,
+  isNumber,
+  isStr,
+  logError,
+  logInfo
+} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -152,6 +163,8 @@ function getPageUrl(bidderRequest) {
 
 function buildWinNotice(bid) {
   const params = bid.params[0];
+  const app = deepAccess(bid, 'meta.ext.app')
+  const winNoticeExt = deepAccess(bid, 'meta.ext.win_notice_ext')
   return {
     publisherId: params.publisherId,
     siteId: params.siteId,
@@ -162,11 +175,16 @@ function buildWinNotice(bid) {
     impid: deepAccess(bid, 'meta.impid'),
     dsp_id: deepAccess(bid, 'meta.dsp_id'),
     adUnitCode: bid.adUnitCode,
+    // TODO: fix auctionId/transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auctionId: bid.auctionId,
     transactionId: bid.transactionId,
     ttl: bid.ttl,
     requestTimestamp: bid.requestTimestamp,
     responseTimestamp: bid.responseTimestamp,
+    mediatype: bid.mediaType,
+    environment: app ? 'app' : 'web',
+    ...app,
+    ext: winNoticeExt,
   };
 }
 
@@ -195,7 +213,7 @@ function getMediaType(bidRequest) {
 function getPrebidRequestFields(bidderRequest, bidRequests) {
   const payload = {};
   // Base Payload Data
-  deepSetValue(payload, 'id', bidderRequest.auctionId);
+  deepSetValue(payload, 'id', bidderRequest.bidderRequestId);
   // Impressions
   setPrebidImpressionObject(bidRequests, payload);
   // Device
@@ -225,7 +243,8 @@ function setPrebidImpressionObject(bidRequests, payload) {
     // Placement or ad tag used to initiate the auction
     deepSetValue(impressionObject, 'id', bidRequest.bidId);
     // Transaction id
-    deepSetValue(impressionObject, 'tid', deepAccess(bidRequest, 'transactionId'));
+    // TODO: `imp.tid` is not ORTB, is this intentional?
+    deepSetValue(impressionObject, 'tid', deepAccess(bidRequest, 'ortb2Imp.ext.tid'));
     // placement id
     deepSetValue(impressionObject, 'tagid', deepAccess(bidRequest, 'params.placementId', null));
     // Publisher id
@@ -348,6 +367,7 @@ function getPrebidResponseBidObject(openRTBResponseBidObject) {
 function setPrebidResponseBidObjectMeta(prebidResponseBidObject, openRTBResponseBidObject) {
   logInfo('AIDEM Bid Adapter meta', openRTBResponseBidObject);
   deepSetValue(prebidResponseBidObject, 'meta.advertiserDomains', deepAccess(openRTBResponseBidObject, 'meta.advertiserDomains'));
+  deepSetValue(prebidResponseBidObject, 'meta.ext', deepAccess(openRTBResponseBidObject, 'meta.ext'));
   if (openRTBResponseBidObject.cat && Array.isArray(openRTBResponseBidObject.cat)) {
     const primaryCatId = openRTBResponseBidObject.cat.shift();
     deepSetValue(prebidResponseBidObject, 'meta.primaryCatId', primaryCatId);
