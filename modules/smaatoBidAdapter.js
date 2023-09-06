@@ -1,16 +1,4 @@
-import {
-  chunk,
-  deepAccess,
-  deepSetValue,
-  fill,
-  getDNT,
-  getMaxValueFromArray,
-  getMinValueFromArray,
-  isEmpty,
-  isNumber,
-  logError,
-  logInfo
-} from '../src/utils.js';
+import {chunk, deepAccess, deepSetValue, fill, getDNT, isEmpty, isNumber, logError, logInfo} from '../src/utils.js';
 import {find} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
@@ -466,7 +454,7 @@ function createAdPodImp(bidRequest, videoMediaType) {
     });
   } else {
     // all maxdurations should be the same
-    const maxDuration = getMaxValueFromArray(durationRangeSec);
+    const maxDuration = Math.max(...durationRangeSec);
     imps.map((imp, index) => {
       const sequence = index + 1;
       imp.video.maxduration = maxDuration
@@ -481,7 +469,7 @@ function createAdPodImp(bidRequest, videoMediaType) {
 
 function getAdPodNumberOfPlacements(videoMediaType) {
   const {adPodDurationSec, durationRangeSec, requireExactDuration} = videoMediaType
-  const minAllowedDuration = getMinValueFromArray(durationRangeSec)
+  const minAllowedDuration = Math.min(...durationRangeSec)
   const numberOfPlacements = Math.floor(adPodDurationSec / minAllowedDuration)
 
   return requireExactDuration

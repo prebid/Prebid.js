@@ -1084,14 +1084,6 @@ export function chunk(array, size) {
   return newArray;
 }
 
-export function getMinValueFromArray(array) {
-  return Math.min(...array);
-}
-
-export function getMaxValueFromArray(array) {
-  return Math.max(...array);
-}
-
 export function parseQS(query) {
   return !query ? {} : query
     .replace(/^\?/, '')
