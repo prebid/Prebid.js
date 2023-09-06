@@ -11,7 +11,6 @@ import {
   getMinValueFromArray,
   getParameterByName,
   getUniqueIdentifierStr,
-  getWindowFromDocument,
   isArray,
   isArrayOfNums,
   isEmpty,
@@ -1142,7 +1141,7 @@ function outstreamRender(bid, doc) {
   hideSASIframe(bid.adUnitCode);
   // push to render queue because ANOutstreamVideo may not be loaded yet
   bid.renderer.push(() => {
-    const win = getWindowFromDocument(doc) || window;
+    const win = doc?.defaultView || window;
     win.ANOutstreamVideo.renderAd({
       tagId: bid.adResponse.tag_id,
       sizes: [bid.getSize().split('x')],

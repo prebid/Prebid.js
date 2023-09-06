@@ -1272,15 +1272,6 @@ export function cyrb53Hash(str, seed = 0) {
 }
 
 /**
- * returns a window object, which holds the provided document or null
- * @param {Document} doc
- * @returns {Window}
- */
-export function getWindowFromDocument(doc) {
-  return (doc) ? doc.defaultView : null;
-}
-
-/**
  * returns the result of `JSON.parse(data)`, or undefined if that throws an error.
  * @param data
  * @returns {any}
