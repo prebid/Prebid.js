@@ -4,7 +4,6 @@ import {
   deepClone,
   deepSetValue,
   generateUUID,
-  getGptSlotInfoForAdUnitCode,
   getParameterByName,
   isNumber,
   logError,
@@ -29,6 +28,7 @@ import {IMP, PBS, registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.js';
 import {beConvertCurrency} from '../src/utils/currency.js';
 import {adjustCpm} from '../src/utils/cpm.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 /**
  * @summary This Module is intended to provide users with the ability to dynamically set and enforce price floors on a per auction basis.

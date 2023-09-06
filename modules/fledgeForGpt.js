@@ -4,8 +4,9 @@
  */
 import { config } from '../src/config.js';
 import { getHook } from '../src/hook.js';
-import { getGptSlotForAdUnitCode, logInfo, logWarn } from '../src/utils.js';
+import { logInfo, logWarn } from '../src/utils.js';
 import {IMP, PBS, registerOrtbProcessor, RESPONSE} from '../src/pbjsORTB.js';
+import {getGptSlotForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 const MODULE = 'fledgeForGpt'
 

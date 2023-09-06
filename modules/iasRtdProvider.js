@@ -3,6 +3,7 @@ import * as utils from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -90,7 +91,7 @@ function stringifySlot(bidRequest, adUnitPath) {
   const sizes = getAdUnitSizes(bidRequest);
   const id = bidRequest.code;
   const ss = stringifySlotSizes(sizes);
-  const adSlot = utils.getGptSlotInfoForAdUnitCode(bidRequest.code);
+  const adSlot = getGptSlotInfoForAdUnitCode(bidRequest.code);
   const p = getAdUnitPath(adSlot, bidRequest, adUnitPath);
   const slot = { id, ss, p };
   const keyValues = Object.keys(slot).map(function (key) {

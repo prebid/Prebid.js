@@ -1,6 +1,6 @@
 import {config} from './config.js';
 import clone from 'just-clone';
-import {find, includes} from './polyfill.js';
+import {includes} from './polyfill.js';
 import CONSTANTS from './constants.json';
 import {GreedyPromise} from './utils/promise.js';
 import {getGlobal} from './prebidGlobal.js';
@@ -786,7 +786,7 @@ export function getDNT() {
   return navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNotTrack === '1' || navigator.doNotTrack === 'yes';
 }
 
-const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() === adUnitCode || slot.getSlotElementId() === adUnitCode;
+export const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() === adUnitCode || slot.getSlotElementId() === adUnitCode;
 
 /**
  * Returns filter function to match adUnitCode in slot
@@ -796,41 +796,6 @@ const compareCodeAndSlot = (slot, adUnitCode) => slot.getAdUnitPath() === adUnit
 export function isAdUnitCodeMatchingSlot(slot) {
   return (adUnitCode) => compareCodeAndSlot(slot, adUnitCode);
 }
-
-/**
- * Returns filter function to match adUnitCode in slot
- * @param {string} adUnitCode AdUnit code
- * @return {function} filter function
- */
-export function isSlotMatchingAdUnitCode(adUnitCode) {
-  return (slot) => compareCodeAndSlot(slot, adUnitCode);
-}
-
-/**
- * @summary Uses the adUnit's code in order to find a matching gpt slot object on the page
- */
-export function getGptSlotForAdUnitCode(adUnitCode) {
-  let matchingSlot;
-  if (isGptPubadsDefined()) {
-    // find the first matching gpt slot on the page
-    matchingSlot = find(window.googletag.pubads().getSlots(), isSlotMatchingAdUnitCode(adUnitCode));
-  }
-  return matchingSlot;
-};
-
-/**
- * @summary Uses the adUnit's code in order to find a matching gptSlot on the page
- */
-export function getGptSlotInfoForAdUnitCode(adUnitCode) {
-  const matchingSlot = getGptSlotForAdUnitCode(adUnitCode);
-  if (matchingSlot) {
-    return {
-      gptSlot: matchingSlot.getAdUnitPath(),
-      divId: matchingSlot.getSlotElementId()
-    }
-  }
-  return {};
-};
 
 /**
  * Constructs warning message for when unsupported bidders are dropped from an adunit
