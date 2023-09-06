@@ -291,6 +291,9 @@ export function createInvisibleIframe() {
   f.frameBorder = '0';
   f.src = 'about:blank';
   f.style.display = 'none';
+  f.style.height = '0px';
+  f.style.width = '0px';
+  f.allowtransparency = 'true';
   return f;
 }
 
@@ -467,27 +470,14 @@ export function insertHtmlIntoIframe(htmlCode) {
   if (!htmlCode) {
     return;
   }
-
-  let iframe = document.createElement('iframe');
-  iframe.id = getUniqueIdentifierStr();
-  iframe.width = 0;
-  iframe.height = 0;
-  iframe.hspace = '0';
-  iframe.vspace = '0';
-  iframe.marginWidth = '0';
-  iframe.marginHeight = '0';
-  iframe.style.display = 'none';
-  iframe.style.height = '0px';
-  iframe.style.width = '0px';
-  iframe.scrolling = 'no';
-  iframe.frameBorder = '0';
-  iframe.allowtransparency = 'true';
-
+  const iframe = createInvisibleIframe();
   internal.insertElement(iframe, document, 'body');
 
-  iframe.contentWindow.document.open();
-  iframe.contentWindow.document.write(htmlCode);
-  iframe.contentWindow.document.close();
+  ((doc) => {
+    doc.open();
+    doc.write(htmlCode);
+    doc.close();
+  })(iframe.contentWindow.document);
 }
 
 /**
