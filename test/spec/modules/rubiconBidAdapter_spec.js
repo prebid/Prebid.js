@@ -1577,6 +1577,22 @@ describe('the rubicon adapter', function () {
 
               expect(data['eid_catchall']).to.equal('11111^2');
             });
+
+            it('should send rubiconproject special case', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              // Hardcoding userIdAsEids since createEidsArray returns empty array if source not found in eids.js
+              clonedBid.userIdAsEids = [{
+                source: 'rubiconproject.com',
+                uids: [{
+                  id: 'some-cool-id',
+                  atype: 3
+                }]
+              }]
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              let data = parseQuery(request.data);
+
+              expect(data['eid_rubiconproject.com']).to.equal('some-cool-id');
+            });
           });
 
           describe('Config user.id support', function () {
@@ -2629,6 +2645,18 @@ describe('the rubicon adapter', function () {
               const bidReq = addNativeToBidRequest(bidderRequest);
               bidReq.bids[0].params = {
                 video: {}
+              }
+              let [request] = spec.buildRequests(bidReq.bids, bidReq);
+              expect(request.method).to.equal('POST');
+              expect(request.url).to.equal('https://prebid-server.rubiconproject.com/openrtb2/auction');
+              expect(request.data.imp).to.have.nested.property('[0].native');
+            });
+
+            it('should not break if position is set and no video MT', function () {
+              const bidReq = addNativeToBidRequest(bidderRequest);
+              delete bidReq.bids[0].mediaTypes.banner;
+              bidReq.bids[0].params = {
+                position: 'atf'
               }
               let [request] = spec.buildRequests(bidReq.bids, bidReq);
               expect(request.method).to.equal('POST');

@@ -25,7 +25,6 @@ export const spec = {
 
     let winTop = window;
     let location;
-
     // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
     try {
       location = new URL(bidderRequest.refererInfo.page)
@@ -65,6 +64,7 @@ export const spec = {
 
         return item
       }),
+
       'site': site,
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
@@ -92,6 +92,7 @@ export const spec = {
       method: 'POST',
       url: AD_URL,
       data: request,
+
     };
   },
 
@@ -159,5 +160,6 @@ function getBidFloor(bid) {
     return 0
   }
 }
+
 
 registerBidder(spec);

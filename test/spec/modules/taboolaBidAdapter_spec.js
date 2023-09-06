@@ -173,7 +173,7 @@ describe('Taboola Adapter', function () {
 
       const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
 
-      expect(res.url).to.equal(`${END_POINT_URL}/${commonBidRequest.params.publisherId}`);
+      expect(res.url).to.equal(`${END_POINT_URL}?publisher=${commonBidRequest.params.publisherId}`);
       expect(res.data).to.deep.equal(JSON.stringify(expectedData));
     });
 
