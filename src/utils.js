@@ -563,19 +563,6 @@ export function getValue(obj, key) {
   return obj[key];
 }
 
-/**
- * Get the key of an object for a given value
- */
-export function getKeyByValue(obj, value) {
-  for (let prop in obj) {
-    if (obj.hasOwnProperty(prop)) {
-      if (obj[prop] === value) {
-        return prop;
-      }
-    }
-  }
-}
-
 export function getBidderCodes(adUnits = pbjsInstance.adUnits) {
   // this could memoize adUnits
   return adUnits.map(unit => unit.bids.map(bid => bid.bidder)
