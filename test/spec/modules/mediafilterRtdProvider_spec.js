@@ -23,7 +23,7 @@ describe('The Media Filter RTD module', function () {
       generateInitHandlerSpy.restore();
     });
 
-    it('should register call the submodule function(s)', function () {
+    it('should register and call the submodule function(s)', function () {
       MediaFilter.register();
 
       expect(submoduleSpy.calledOnceWithExactly('realTimeData', sinon.match.object)).to.be.true;
