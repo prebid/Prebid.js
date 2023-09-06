@@ -3,7 +3,7 @@ import {expect} from 'chai';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
 import {deepEqual, memoize, waitForElementToLoad} from 'src/utils.js';
-import {tryAppendQueryString} from '../../libraries/urlUtils/urlUtils.js';
+import {getAdUnitSizes} from '../../libraries/sizeUtils/sizeUtils.js';
 
 var assert = require('assert');
 
@@ -730,34 +730,6 @@ describe('Utils', function () {
       let var2 = 'my_test_value';
       let test2 = utils.convertCamelToUnderscore(var2);
       expect(test2).to.equal(var2);
-    });
-  });
-
-  describe('getAdUnitSizes', function () {
-    it('returns an empty response when adUnits is undefined', function () {
-      let sizes = utils.getAdUnitSizes();
-      expect(sizes).to.be.undefined;
-    });
-
-    it('returns an empty array when invalid data is present in adUnit object', function () {
-      let sizes = utils.getAdUnitSizes({ sizes: 300 });
-      expect(sizes).to.deep.equal([]);
-    });
-
-    it('retuns an array of arrays when reading from adUnit.sizes', function () {
-      let sizes = utils.getAdUnitSizes({ sizes: [300, 250] });
-      expect(sizes).to.deep.equal([[300, 250]]);
-
-      sizes = utils.getAdUnitSizes({ sizes: [[300, 250], [300, 600]] });
-      expect(sizes).to.deep.equal([[300, 250], [300, 600]]);
-    });
-
-    it('returns an array of arrays when reading from adUnit.mediaTypes.banner.sizes', function () {
-      let sizes = utils.getAdUnitSizes({ mediaTypes: { banner: { sizes: [300, 250] } } });
-      expect(sizes).to.deep.equal([[300, 250]]);
-
-      sizes = utils.getAdUnitSizes({ mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } } });
-      expect(sizes).to.deep.equal([[300, 250], [300, 600]]);
     });
   });
 

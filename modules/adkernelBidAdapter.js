@@ -5,7 +5,6 @@ import {
   createTrackPixelHtml,
   deepAccess,
   deepSetValue,
-  getAdUnitSizes,
   getDefinedParams,
   getDNT,
   isArray,
@@ -22,6 +21,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {find} from '../src/polyfill.js';
 import {config} from '../src/config.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 /*
  * In case you're AdKernel whitelable platform's client who needs branded adapter to

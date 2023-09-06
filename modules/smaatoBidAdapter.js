@@ -3,7 +3,6 @@ import {
   deepAccess,
   deepSetValue,
   fill,
-  getAdUnitSizes,
   getDNT,
   getMaxValueFromArray,
   getMinValueFromArray,
@@ -17,6 +16,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import CONSTANTS from '../src/constants.json';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 const { NATIVE_IMAGE_TYPES } = CONSTANTS;
 const BIDDER_CODE = 'smaato';

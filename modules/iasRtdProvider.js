@@ -1,7 +1,8 @@
-import { submodule } from '../src/hook.js';
+import {submodule} from '../src/hook.js';
 import * as utils from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+import {ajax} from '../src/ajax.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -86,7 +87,7 @@ function getAdUnitPath(adSlot, bidRequest, adUnitPath) {
 }
 
 function stringifySlot(bidRequest, adUnitPath) {
-  const sizes = utils.getAdUnitSizes(bidRequest);
+  const sizes = getAdUnitSizes(bidRequest);
   const id = bidRequest.code;
   const ss = stringifySlotSizes(sizes);
   const adSlot = utils.getGptSlotInfoForAdUnitCode(bidRequest.code);
