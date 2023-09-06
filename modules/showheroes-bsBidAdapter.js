@@ -1,6 +1,5 @@
 import {
   deepAccess,
-  getBidIdParameter,
   getWindowTop,
   triggerPixel,
   logInfo,
@@ -11,6 +10,7 @@ import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { loadExternalScript } from '../src/adloader.js';
+import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const PROD_ENDPOINT = 'https://bs.showheroes.com/api/v1/bid';
 const STAGE_ENDPOINT = 'https://bid-service.stage.showheroes.com/api/v1/bid';

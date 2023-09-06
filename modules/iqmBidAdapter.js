@@ -1,7 +1,8 @@
-import {_each, deepAccess, getBidIdParameter, isArray} from '../src/utils.js';
+import {_each, deepAccess, isArray} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {INSTREAM} from '../src/video.js';
+import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'iqm';
 const VERSION = 'v.1.0.0';

@@ -2,7 +2,8 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
-import {deepAccess, getBidIdParameter, logError} from '../src/utils.js';
+import {deepAccess, logError} from '../src/utils.js';
+import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'viant';
 const ENDPOINT = 'https://bidders-us-east-1.adelphic.net/d/rtb/v25/prebid/bidder_test'

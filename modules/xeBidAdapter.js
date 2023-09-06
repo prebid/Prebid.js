@@ -1,7 +1,8 @@
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getAdUnitSizes, parseSizesInput, isFn, deepAccess, getBidIdParameter, logError, isArray } from '../src/utils.js';
+import { getAdUnitSizes, parseSizesInput, isFn, deepAccess, logError, isArray } from '../src/utils.js';
+import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const CUR = 'USD';
 const BIDDER_CODE = 'xe';

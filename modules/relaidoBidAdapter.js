@@ -1,9 +1,10 @@
-import { deepAccess, logWarn, getBidIdParameter, parseQueryStringParameters, triggerPixel, generateUUID, isArray, isNumber, parseSizesInput } from '../src/utils.js';
+import { deepAccess, logWarn, parseQueryStringParameters, triggerPixel, generateUUID, isArray, isNumber, parseSizesInput } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { getStorageManager } from '../src/storageManager.js';
 import sha1 from 'crypto-js/sha1';
+import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'relaido';
 const BIDDER_DOMAIN = 'api.relaido.jp';

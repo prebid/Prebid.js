@@ -1,7 +1,8 @@
 // ADRIVER BID ADAPTER for Prebid 1.13
-import { logInfo, getWindowLocation, getBidIdParameter, _each } from '../src/utils.js';
+import { logInfo, getWindowLocation, _each } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
+import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'adriver';
 const ADRIVER_BID_URL = 'https://pb.adriver.ru/cgi-bin/bid.cgi';

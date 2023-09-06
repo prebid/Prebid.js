@@ -1,7 +1,6 @@
 import {
   _each,
   createTrackPixelHtml,
-  getBidIdParameter,
   getUniqueIdentifierStr,
   getWindowSelf,
   getWindowTop,
@@ -13,6 +12,7 @@ import {
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
+import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'onomagic';
 const URL = 'https://bidder.onomagic.com/hb';

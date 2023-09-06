@@ -1,7 +1,6 @@
 import {
   deepAccess,
   deepSetValue,
-  getBidIdParameter,
   isStr,
   logMessage,
   triggerPixel,
@@ -11,6 +10,7 @@ import CONSTANTS from '../src/constants.json';
 import {BANNER} from '../src/mediaTypes.js';
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'holid'
 const GVLID = 1177

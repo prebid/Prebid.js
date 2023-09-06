@@ -1,4 +1,4 @@
-import { deepAccess, getBidIdParameter, isArray, getUniqueIdentifierStr, contains, isFn, isPlainObject } from '../src/utils.js';
+import { deepAccess, isArray, getUniqueIdentifierStr, contains, isFn, isPlainObject } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -6,6 +6,7 @@ import { createBid } from '../src/bidfactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import CONSTANTS from '../src/constants.json';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
+import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'datawrkz';
 const ALIASES = [];

@@ -2,7 +2,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {
   logInfo,
   logError,
-  getBidIdParameter,
   _each,
   getValue,
   isFn,
@@ -12,6 +11,7 @@ import {
   isNumber,
 } from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
+import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'otm';
 const OTM_BID_URL = 'https://ssp.otm-r.com/adjson';

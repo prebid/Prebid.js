@@ -102,14 +102,6 @@ function _getRandomData() {
   }
 }
 
-export function getBidIdParameter(key, paramsObj) {
-  if (paramsObj && paramsObj[key]) {
-    return paramsObj[key];
-  }
-
-  return '';
-}
-
 export function tryAppendQueryString(existingUrl, key, value) {
   if (value) {
     return existingUrl + key + '=' + encodeURIComponent(value) + '&';

@@ -1,5 +1,4 @@
 import {
-  getBidIdParameter,
   isArray,
   getWindowTop,
   getUniqueIdentifierStr,
@@ -15,6 +14,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {ajax} from '../src/ajax.js';
+import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'bcmssp';
 const URL = 'https://rt.marphezis.com/hb';

@@ -1,6 +1,5 @@
 import {
   deepAccess,
-  getBidIdParameter,
   isArray,
   isFn,
   isNumber,
@@ -14,6 +13,7 @@ import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 import {find} from '../src/polyfill.js';
+import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'nextroll';
 const BIDDER_ENDPOINT = 'https://d.adroll.com/bid/prebid/';

@@ -1,4 +1,4 @@
-import { logError, deepAccess, isArray, getBidIdParameter, getDNT, generateUUID, isEmpty, _each, logMessage, logWarn, isFn, isPlainObject } from '../src/utils.js';
+import { logError, deepAccess, isArray, getDNT, generateUUID, isEmpty, _each, logMessage, logWarn, isFn, isPlainObject } from '../src/utils.js';
 import {
   Renderer
 } from '../src/Renderer.js';
@@ -8,6 +8,7 @@ import {
 import {
   VIDEO
 } from '../src/mediaTypes.js';
+import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 const BIDDER_CODE = 'smartx';
 const URL = 'https://bid.sxp.smartclip.net/bid/1000';
 const GVLID = 115;

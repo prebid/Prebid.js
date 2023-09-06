@@ -3,7 +3,6 @@ import {
   isStr,
   deepAccess,
   isArray,
-  getBidIdParameter,
   deepSetValue,
   isEmpty,
   _each,
@@ -19,6 +18,7 @@ import {
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 // Maintainer: mediapsr@epsilon.com
 

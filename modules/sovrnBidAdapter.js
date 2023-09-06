@@ -1,6 +1,5 @@
 import {
   _each,
-  getBidIdParameter,
   isArray,
   getUniqueIdentifierStr,
   deepSetValue,
@@ -15,6 +14,7 @@ import {
   BANNER,
   VIDEO
 } from '../src/mediaTypes.js'
+import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),

@@ -2,7 +2,6 @@ import {
   deepAccess,
   deepClone,
   deepSetValue,
-  getBidIdParameter,
   inIframe,
   isArray,
   isEmpty,
@@ -17,6 +16,7 @@ import {
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
+import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'mediasniper';
 const DEFAULT_BID_TTL = 360;

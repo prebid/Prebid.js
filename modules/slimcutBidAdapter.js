@@ -1,10 +1,11 @@
-import { getValue, parseSizesInput, getBidIdParameter } from '../src/utils.js';
+import { getValue, parseSizesInput} from '../src/utils.js';
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
 import {
   ajax
 } from '../src/ajax.js';
+import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 const BIDDER_CODE = 'slimcut';
 const ENDPOINT_URL = 'https://sb.freeskreen.com/pbr';
 export const spec = {

@@ -1,7 +1,8 @@
-import { logWarn, logInfo, isArray, isFn, deepAccess, isEmpty, contains, timestamp, getBidIdParameter, triggerPixel, isInteger } from '../src/utils.js';
+import { logWarn, logInfo, isArray, isFn, deepAccess, isEmpty, contains, timestamp, triggerPixel, isInteger } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const BIDDER_ENDPOINT = 'https://hb.kueezssp.com/hb-kz-multi';
 const BIDDER_TEST_ENDPOINT = 'https://hb.kueezssp.com/hb-multi-kz-test'

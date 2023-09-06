@@ -1,9 +1,10 @@
-import { logError, deepAccess, isArray, getBidIdParameter, getDNT, deepSetValue, isEmpty, _each, logMessage, logWarn, isBoolean, isNumber, isPlainObject, isFn, setScriptAttributes } from '../src/utils.js';
+import { logError, deepAccess, isArray, getDNT, deepSetValue, isEmpty, _each, logMessage, logWarn, isBoolean, isNumber, isPlainObject, isFn, setScriptAttributes } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
 import { loadExternalScript } from '../src/adloader.js';
+import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'spotx';
 const URL = 'https://search.spotxchange.com/openrtb/2.3/dados/';
