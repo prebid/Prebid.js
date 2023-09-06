@@ -370,22 +370,7 @@ export function _each(object, fn) {
 }
 
 export function contains(a, obj) {
-  if (isEmpty(a)) {
-    return false;
-  }
-
-  if (isFn(a.indexOf)) {
-    return a.indexOf(obj) !== -1;
-  }
-
-  var i = a.length;
-  while (i--) {
-    if (a[i] === obj) {
-      return true;
-    }
-  }
-
-  return false;
+  return isFn(a?.includes) && a.includes(obj);
 }
 
 /**
@@ -396,14 +381,8 @@ export function contains(a, obj) {
  * @return {Array}
  */
 export function _map(object, callback) {
-  if (isEmpty(object)) return [];
-  if (isFn(object.map)) return object.map(callback);
-  var output = [];
-  _each(object, function (value, key) {
-    output.push(callback(value, key, object));
-  });
-
-  return output;
+  if (isFn(object?.map)) return object.map(callback);
+  return Object.entries(object || {}).map(([k, v]) => callback(v, k, object))
 }
 
 export function hasOwn(objectToCheck, propertyToCheckFor) {

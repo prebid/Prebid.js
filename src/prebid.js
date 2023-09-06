@@ -4,7 +4,6 @@ import {getGlobal} from './prebidGlobal.js';
 import {
   adUnitsFilter,
   callBurl,
-  contains,
   createInvisibleIframe,
   deepAccess,
   deepClone,
@@ -89,7 +88,7 @@ function checkDefinedPlacement(id) {
     .reduce(flatten)
     .filter(uniques);
 
-  if (!contains(adUnitCodes, id)) {
+  if (!adUnitCodes.includes(id)) {
     logError('The "' + id + '" placement is not defined.');
     return;
   }

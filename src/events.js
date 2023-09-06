@@ -9,9 +9,7 @@ var push = Array.prototype.push;
 
 // define entire events
 // var allEvents = ['bidRequested','bidResponse','bidWon','bidTimeout'];
-var allEvents = utils._map(CONSTANTS.EVENTS, function (v) {
-  return v;
-});
+var allEvents = Object.values(CONSTANTS.EVENTS)
 
 var idPaths = CONSTANTS.EVENT_ID_PATHS;
 
@@ -34,9 +32,7 @@ const _public = (function () {
     var idPath = idPaths[eventString];
     var key = eventPayload[idPath];
     var event = _handlers[eventString] || { que: [] };
-    var eventKeys = utils._map(event, function (v, k) {
-      return k;
-    });
+    var eventKeys = Object.keys(event)
 
     var callbacks = [];
 
@@ -54,7 +50,7 @@ const _public = (function () {
      * each function in the `que` array as an argument to push to the
      * `callbacks` array
      * */
-    if (key && utils.contains(eventKeys, key)) {
+    if (key && eventKeys.includes(key)) {
       push.apply(callbacks, event[key].que);
     }
 
@@ -73,7 +69,7 @@ const _public = (function () {
   }
 
   function _checkAvailableEvent(event) {
-    return utils.contains(allEvents, event);
+    return allEvents.includes(event)
   }
 
   _public.on = function (eventString, handler, id) {
