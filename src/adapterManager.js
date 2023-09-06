@@ -2,7 +2,6 @@
 
 import {
   _each,
-  bind,
   deepAccess,
   deepClone,
   flatten,
@@ -31,12 +30,7 @@ import {hook} from './hook.js';
 import {find, includes} from './polyfill.js';
 import {adunitCounter} from './adUnits.js';
 import {getRefererInfo} from './refererDetection.js';
-import {
-  GDPR_GVLIDS,
-  gdprDataHandler,
-  uspDataHandler,
-  gppDataHandler,
-} from './consentHandler.js';
+import {GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler,} from './consentHandler.js';
 import * as events from './events.js';
 import CONSTANTS from './constants.json';
 import {useMetrics} from './utils/perfMetrics.js';
@@ -465,8 +459,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
     try {
       config.runWithBidder(
         bidRequest.bidderCode,
-        bind.call(
-          adapter.callBids,
+        adapter.callBids.bind(
           adapter,
           bidRequest,
           addBidResponse,

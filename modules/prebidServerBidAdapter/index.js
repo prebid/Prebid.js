@@ -1,6 +1,6 @@
 import Adapter from '../../src/adapter.js';
 import {
-  bind,
+  deepAccess,
   deepClone,
   flatten,
   generateUUID,
@@ -15,7 +15,6 @@ import {
   logWarn,
   triggerPixel,
   uniques,
-  deepAccess,
 } from '../../src/utils.js';
 import CONSTANTS from '../../src/constants.json';
 import adapterManager, {s2sActivityParams} from '../../src/adapterManager.js';
@@ -297,7 +296,7 @@ function doAllSyncs(bidders, s2sConfig) {
 
   // if PBS reports this bidder doesn't have an ID, then call the sync and recurse to the next sync entry
   if (thisSync.no_cookie) {
-    doPreBidderSync(thisSync.usersync.type, thisSync.usersync.url, thisSync.bidder, bind.call(doAllSyncs, null, bidders, s2sConfig), s2sConfig);
+    doPreBidderSync(thisSync.usersync.type, thisSync.usersync.url, thisSync.bidder, doAllSyncs.bind(null, bidders, s2sConfig), s2sConfig);
   } else {
     // bidder already has an ID, so just recurse to the next sync entry
     doAllSyncs(bidders, s2sConfig);
@@ -356,8 +355,7 @@ function doClientSideSyncs(bidders, gdprConsent, uspConsent, gppConsent) {
     if (clientAdapter && clientAdapter.registerSyncs) {
       config.runWithBidder(
         bidder,
-        bind.call(
-          clientAdapter.registerSyncs,
+        clientAdapter.registerSyncs.bind(
           clientAdapter,
           [],
           gdprConsent,

@@ -12,11 +12,20 @@
  * @property {(string|Object)} [video-outstream]
  */
 
-import { isValidPriceConfig } from './cpmBucketManager.js';
-import {find, includes, arrayFrom as from} from './polyfill.js';
+import {isValidPriceConfig} from './cpmBucketManager.js';
+import {arrayFrom as from, find, includes} from './polyfill.js';
 import {
-  mergeDeep, deepClone, getParameterByName, isPlainObject, logMessage, logWarn, logError,
-  isArray, isStr, isBoolean, deepAccess, bind
+  deepAccess,
+  deepClone,
+  getParameterByName,
+  isArray,
+  isBoolean,
+  isPlainObject,
+  isStr,
+  logError,
+  logMessage,
+  logWarn,
+  mergeDeep
 } from './utils.js';
 import CONSTANTS from './constants.json';
 
@@ -505,7 +514,7 @@ export function newConfig() {
     return function(cb) {
       return function(...args) {
         if (typeof cb === 'function') {
-          return runWithBidder(bidder, bind.call(cb, this, ...args))
+          return runWithBidder(bidder, cb.bind(this, ...args))
         } else {
           logWarn('config.callbackWithBidder callback is not a function');
         }

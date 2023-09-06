@@ -60,7 +60,6 @@
 import {
   _each,
   adUnitsFilter,
-  bind,
   deepAccess,
   flatten,
   generateUUID,
@@ -216,7 +215,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
           if (_callback != null) {
             const adUnitCodes = _adUnitCodes;
             const bids = _bidsReceived
-              .filter(bind.call(adUnitsFilter, this, adUnitCodes))
+              .filter(adUnitsFilter.bind(this, adUnitCodes))
               .reduce(groupByPlacement, {});
             _callback.apply(pbjsInstance, [bids, timedOut, _auctionId]);
             _callback = null;
