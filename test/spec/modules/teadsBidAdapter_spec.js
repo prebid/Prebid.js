@@ -288,6 +288,18 @@ describe('teadsBidAdapter', () => {
         expect(payload.pageTitle).to.exist;
         expect(payload.pageTitle).to.have.length(300);
       });
+
+      it('should add pageTitle info to payload when fallbacking from window.top', function () {
+        const testText = 'This is a fallback title';
+        sandbox.stub(window.top.document, 'querySelector').throws();
+        sandbox.stub(document, 'title').value(testText);
+
+        const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.pageTitle).to.exist;
+        expect(payload.pageTitle).to.deep.equal(testText);
+      });
     });
 
     describe('pageDescription', function () {
@@ -322,6 +334,18 @@ describe('teadsBidAdapter', () => {
 
         expect(payload.pageDescription).to.exist;
         expect(payload.pageDescription).to.have.length(300);
+      });
+
+      it('should add pageDescription info to payload when fallbacking from window.top', function () {
+        const testText = 'This is a fallback description';
+        sandbox.stub(window.top.document, 'querySelector').throws();
+        sandbox.stub(document, 'querySelector').withArgs('meta[name="description"]').returns({ content: testText });
+
+        const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.pageDescription).to.exist;
+        expect(payload.pageDescription).to.deep.equal(testText);
       });
     });
 
