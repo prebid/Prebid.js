@@ -818,13 +818,7 @@ export function unsupportedBidderMessage(adUnit, bidder) {
  * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isInteger
  * @param {*} value
  */
-export function isInteger(value) {
-  if (Number.isInteger) {
-    return Number.isInteger(value);
-  } else {
-    return typeof value === 'number' && isFinite(value) && Math.floor(value) === value;
-  }
-}
+export const isInteger = Number.isInteger.bind(Number);
 
 /**
  * Converts a string value in camel-case to underscore eg 'placementId' becomes 'placement_id'
