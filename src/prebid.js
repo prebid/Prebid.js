@@ -2,7 +2,6 @@
 
 import {getGlobal} from './prebidGlobal.js';
 import {
-  adUnitsFilter,
   callBurl,
   createInvisibleIframe,
   deepAccess,
@@ -336,7 +335,7 @@ pbjsInstance.getConsentMetadata = function () {
 
 function getBids(type) {
   const responses = auctionManager[type]()
-    .filter(adUnitsFilter.bind(this, auctionManager.getAdUnitCodes()))
+    .filter(bid => auctionManager.getAdUnitCodes().includes(bid.adUnitCode))
 
   // find the last auction id to get responses for most recent auction only
   const currentAuctionId = auctionManager.getLastAuctionId();

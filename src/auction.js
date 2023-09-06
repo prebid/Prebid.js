@@ -58,7 +58,6 @@
  */
 
 import {
-  adUnitsFilter,
   deepAccess,
   flatten,
   generateUUID,
@@ -212,9 +211,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       bidsBackCallback(_adUnits, function () {
         try {
           if (_callback != null) {
-            const adUnitCodes = _adUnitCodes;
             const bids = _bidsReceived
-              .filter(adUnitsFilter.bind(this, adUnitCodes))
+              .filter(bid => _adUnitCodes.includes(bid.adUnitCode))
               .reduce(groupByPlacement, {});
             _callback.apply(pbjsInstance, [bids, timedOut, _auctionId]);
             _callback = null;

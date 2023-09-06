@@ -627,10 +627,6 @@ export function shuffle(array) {
   return array;
 }
 
-export function adUnitsFilter(filter, bid) {
-  return includes(filter, bid && bid.adUnitCode);
-}
-
 export function deepClone(obj) {
   return clone(obj);
 }
