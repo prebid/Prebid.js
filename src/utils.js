@@ -121,8 +121,8 @@ export function parseQueryStringParameters(queryObj) {
 export function transformAdServerTargetingObj(targeting) {
   // we expect to receive targeting for a single slot at a time
   if (targeting && Object.getOwnPropertyNames(targeting).length > 0) {
-    return getKeys(targeting)
-      .map(key => `${key}=${encodeURIComponent(getValue(targeting, key))}`).join('&');
+    return Object.keys(targeting)
+      .map(key => `${key}=${encodeURIComponent(targeting[key])}`).join('&');
   } else {
     return '';
   }
@@ -543,19 +543,6 @@ export function createTrackPixelIframeHtml(url, encodeUri = true, sandbox = '') 
     </iframe>`;
 }
 
-export function getValueString(param, val, defaultValue) {
-  if (val === undefined || val === null) {
-    return defaultValue;
-  }
-  if (isStr(val)) {
-    return val;
-  }
-  if (isNumber(val)) {
-    return val.toString();
-  }
-  internal.logWarn('Unsuported type for param: ' + param + ' required type: String');
-}
-
 export function uniques(value, index, arry) {
   return arry.indexOf(value) === index;
 }
@@ -577,10 +564,6 @@ export function getBidRequest(id, bidderRequests) {
     return result;
   });
   return bidRequest;
-}
-
-export function getKeys(obj) {
-  return Object.keys(obj);
 }
 
 export function getValue(obj, key) {

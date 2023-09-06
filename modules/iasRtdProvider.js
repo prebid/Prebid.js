@@ -93,7 +93,7 @@ function stringifySlot(bidRequest, adUnitPath) {
   const adSlot = utils.getGptSlotInfoForAdUnitCode(bidRequest.code);
   const p = getAdUnitPath(adSlot, bidRequest, adUnitPath);
   const slot = { id, ss, p };
-  const keyValues = utils.getKeys(slot).map(function (key) {
+  const keyValues = Object.keys(slot).map(function (key) {
     return [key, slot[key]].join(':');
   });
   return '{' + keyValues.join(',') + '}';
