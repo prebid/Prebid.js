@@ -275,18 +275,18 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig) 
 
   syncEndPoint = replaceSyncEndpointMacros(syncEndPoint, s2sConfig.extSyncMacros);
   ajax(syncEndPoint, (response) => {
-      try {
-        response = JSON.parse(response);
-        doAllSyncs(response.bidder_status, s2sConfig);
-      } catch (e) {
-        logError(e);
-      }
-    },
-    jsonPayload,
-    {
-      contentType: 'text/plain',
-      withCredentials: true
-    });
+    try {
+      response = JSON.parse(response);
+      doAllSyncs(response.bidder_status, s2sConfig);
+    } catch (e) {
+      logError(e);
+    }
+  },
+  jsonPayload,
+  {
+    contentType: 'text/plain',
+    withCredentials: true
+  });
 }
 
 function replaceSyncEndpointMacros(url, extSyncMacros) {
