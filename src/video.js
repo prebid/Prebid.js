@@ -11,7 +11,7 @@ export function fillVideoDefaults(adUnit) {
   if (video != null && video.plcmt == null) {
     if (video.context === OUTSTREAM || [2, 3, 4].includes(video.placement)) {
       video.plcmt = 4;
-    } else if (video.context !== OUTSTREAM && [2, 6].includes(video.playmethod)) {
+    } else if (video.context !== OUTSTREAM && [2, 6].includes(video.playbackmethod)) {
       video.plcmt = 2;
     }
   }

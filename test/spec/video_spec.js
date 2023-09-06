@@ -31,10 +31,10 @@ describe('video.js', function () {
       });
     });
     describe('should set plcmt = 2 when', () => {
-      [2, 6].forEach(playmethod => {
-        it(`playmethod is "${playmethod}"`, () => {
-          expect(fillDefaults({playmethod})).to.eql({
-            playmethod,
+      [2, 6].forEach(playbackmethod => {
+        it(`playbackmethod is "${playbackmethod}"`, () => {
+          expect(fillDefaults({playbackmethod})).to.eql({
+            playbackmethod,
             plcmt: 2,
           });
         });
