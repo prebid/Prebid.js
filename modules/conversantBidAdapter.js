@@ -6,7 +6,6 @@ import {
     deepSetValue,
     isEmpty,
     _each,
-    convertTypes,
     parseUrl,
     mergeDeep,
     buildUrl,
@@ -18,6 +17,7 @@ import {
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
 // Maintainer: mediapsr@epsilon.com
 

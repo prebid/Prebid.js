@@ -1,10 +1,8 @@
 import {
   chunk,
-  convertTypes,
   createTrackPixelHtml,
   deepAccess,
   deepClone,
-  fill,
   getBidRequest,
   getParameterByName,
   getUniqueIdentifierStr,
@@ -37,7 +35,8 @@ import {
   getANKeywordParam,
   transformBidderParamKeywords
 } from '../libraries/appnexusUtils/anKeywords.js';
-import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
+import {convertCamelToUnderscore, fill} from '../libraries/appnexusUtils/anUtils.js';
+import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
 const BIDDER_CODE = 'appnexus';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
