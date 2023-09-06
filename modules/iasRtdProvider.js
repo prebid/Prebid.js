@@ -77,7 +77,7 @@ function getAdUnitPath(adSlot, bidRequest, adUnitPath) {
   if (!utils.isEmpty(adSlot)) {
     p = adSlot.gptSlot;
   } else {
-    if (!utils.isEmpty(adUnitPath) && utils.hasOwn(adUnitPath, bidRequest.code)) {
+    if (!utils.isEmpty(adUnitPath) && adUnitPath.hasOwnProperty(bidRequest.code)) {
       if (utils.isStr(adUnitPath[bidRequest.code]) && !utils.isEmpty(adUnitPath[bidRequest.code])) {
         p = adUnitPath[bidRequest.code];
       }

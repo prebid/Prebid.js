@@ -145,9 +145,9 @@ export function parseSizesInput(sizeObj) {
     // start of line, at least 1 number, an "x" , then at least 1 number, and the then end of the line
     var sizeRegex = /^(\d)+x(\d)+$/i;
     if (sizes) {
-      for (var curSizePos in sizes) {
-        if (hasOwn(sizes, curSizePos) && sizes[curSizePos].match(sizeRegex)) {
-          parsedSizes.push(sizes[curSizePos]);
+      for (const size of sizes) {
+        if (size.match(sizeRegex)) {
+          parsedSizes.push(size);
         }
       }
     }
@@ -384,14 +384,6 @@ export function _map(object, callback) {
   if (isFn(object?.map)) return object.map(callback);
   return Object.entries(object || {}).map(([k, v]) => callback(v, k, object))
 }
-
-export function hasOwn(objectToCheck, propertyToCheckFor) {
-  if (objectToCheck.hasOwnProperty) {
-    return objectToCheck.hasOwnProperty(propertyToCheckFor);
-  } else {
-    return (typeof objectToCheck[propertyToCheckFor] !== 'undefined') && (objectToCheck.constructor.prototype[propertyToCheckFor] !== objectToCheck[propertyToCheckFor]);
-  }
-};
 
 /*
 * Inserts an element(elm) as targets child, by default as first child
