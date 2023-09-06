@@ -271,8 +271,10 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig) 
   }
 
   const jsonPayload = JSON.stringify(payload);
-  ajax(getMatchingConsentUrl(s2sConfig.syncEndpoint, gdprConsent),
-    (response) => {
+  let syncEndPoint = getMatchingConsentUrl(s2sConfig.syncEndpoint, gdprConsent);
+
+  syncEndPoint = replaceSyncEndpointMacros(syncEndPoint, s2sConfig.extSyncMacros);
+  ajax(syncEndPoint, (response) => {
       try {
         response = JSON.parse(response);
         doAllSyncs(response.bidder_status, s2sConfig);
@@ -285,6 +287,17 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig) 
       contentType: 'text/plain',
       withCredentials: true
     });
+}
+
+function replaceSyncEndpointMacros(url, extSyncMacros) {
+  for (const macro in extSyncMacros) {
+    if (extSyncMacros.hasOwnProperty(macro)) {
+        const replacement = extSyncMacros[macro];
+        const macroPattern = new RegExp(`{{${macro}}}`, 'g');
+        url = url.replace(macroPattern, replacement);
+    }
+  }
+  return url;
 }
 
 function doAllSyncs(bidders, s2sConfig) {
