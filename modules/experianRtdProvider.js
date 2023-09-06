@@ -12,15 +12,15 @@ import {
 } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 
-export const SUBMODULE_NAME = 'tapad_rtid';
-export const TAPAD_RTID_DATA_KEY = 'tapad_rtid_data';
-export const TAPAD_RTID_EXPIRATION_KEY = 'tapad_rtid_expiration';
-export const TAPAD_RTID_STALE_KEY = 'tapad_rtid_stale';
-export const TAPAD_RTID_NO_TRACK_KEY = 'tapad_rtid_no_track';
-const TAPAD_RTID_URL = 'https://rtid.tapad.com'
+export const SUBMODULE_NAME = 'experian_rtid';
+export const EXPERIAN_RTID_DATA_KEY = 'experian_rtid_data';
+export const EXPERIAN_RTID_EXPIRATION_KEY = 'experian_rtid_expiration';
+export const EXPERIAN_RTID_STALE_KEY = 'experian_rtid_stale';
+export const EXPERIAN_RTID_NO_TRACK_KEY = 'experian_rtid_no_track';
+const EXPERIAN_RTID_URL = 'https://rtid.tapad.com'
 const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
 
-export const tapadRtdObj = {
+export const experianRtdObj = {
   /**
    * @summary modify bid request data
    * @param {Object} reqBidsConfigObj
@@ -29,39 +29,39 @@ export const tapadRtdObj = {
    * @param {UserConsentData} userConsent
    */
   getBidRequestData(reqBidsConfigObj, done, config, userConsent) {
-    const dataEnvelope = storage.getDataFromLocalStorage(TAPAD_RTID_DATA_KEY, null);
-    const stale = storage.getDataFromLocalStorage(TAPAD_RTID_STALE_KEY, null);
-    const expired = storage.getDataFromLocalStorage(TAPAD_RTID_EXPIRATION_KEY, null);
-    const noTrack = storage.getDataFromLocalStorage(TAPAD_RTID_NO_TRACK_KEY, null);
+    const dataEnvelope = storage.getDataFromLocalStorage(EXPERIAN_RTID_DATA_KEY, null);
+    const stale = storage.getDataFromLocalStorage(EXPERIAN_RTID_STALE_KEY, null);
+    const expired = storage.getDataFromLocalStorage(EXPERIAN_RTID_EXPIRATION_KEY, null);
+    const noTrack = storage.getDataFromLocalStorage(EXPERIAN_RTID_NO_TRACK_KEY, null);
     const now = timestamp()
     if (now > new Date(expired).getTime() || (noTrack == null && dataEnvelope == null)) {
       // request data envelope and don't manipulate bids
-      tapadRtdObj.requestDataEnvelope(config, userConsent)
+      experianRtdObj.requestDataEnvelope(config, userConsent)
       done();
       return false;
     }
     if (now > new Date(stale).getTime()) {
       // request data envelope and manipulate bids
-      tapadRtdObj.requestDataEnvelope(config, userConsent);
+      experianRtdObj.requestDataEnvelope(config, userConsent);
     }
     if (noTrack != null) {
       done();
       return false;
     }
-    tapadRtdObj.alterBids(reqBidsConfigObj, config);
+    experianRtdObj.alterBids(reqBidsConfigObj, config);
     done()
     return true;
   },
 
   alterBids(reqBidsConfigObj, config) {
-    const dataEnvelope = safeJSONParse(storage.getDataFromLocalStorage(TAPAD_RTID_DATA_KEY, null));
+    const dataEnvelope = safeJSONParse(storage.getDataFromLocalStorage(EXPERIAN_RTID_DATA_KEY, null));
     if (dataEnvelope == null) {
       return;
     }
     deepAccess(config, 'params.bidders').forEach((bidderCode) => {
       const bidderData = dataEnvelope.find(({ bidder }) => bidder === bidderCode)
       if (bidderData != null) {
-        mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, { [bidderCode]: { tapadRtidKey: bidderData.data.key, tapadRtidData: bidderData.data.data } })
+        mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, { [bidderCode]: { experianRtidKey: bidderData.data.key, experianRtidData: bidderData.data.data } })
       }
     })
   },
@@ -69,19 +69,19 @@ export const tapadRtdObj = {
     function storeDataEnvelopeResponse(response) {
       const responseJson = safeJSONParse(response);
       if (responseJson != null) {
-        storage.setDataInLocalStorage(TAPAD_RTID_STALE_KEY, responseJson.staleAt, null);
-        storage.setDataInLocalStorage(TAPAD_RTID_EXPIRATION_KEY, responseJson.expiresAt, null);
+        storage.setDataInLocalStorage(EXPERIAN_RTID_STALE_KEY, responseJson.staleAt, null);
+        storage.setDataInLocalStorage(EXPERIAN_RTID_EXPIRATION_KEY, responseJson.expiresAt, null);
         if (responseJson.status === 'no_track') {
-          storage.setDataInLocalStorage(TAPAD_RTID_NO_TRACK_KEY, 'no_track', null);
-          storage.removeDataFromLocalStorage(TAPAD_RTID_DATA_KEY, null);
+          storage.setDataInLocalStorage(EXPERIAN_RTID_NO_TRACK_KEY, 'no_track', null);
+          storage.removeDataFromLocalStorage(EXPERIAN_RTID_DATA_KEY, null);
         } else {
-          storage.setDataInLocalStorage(TAPAD_RTID_DATA_KEY, JSON.stringify(responseJson.data), null);
-          storage.removeDataFromLocalStorage(TAPAD_RTID_NO_TRACK_KEY, null);
+          storage.setDataInLocalStorage(EXPERIAN_RTID_DATA_KEY, JSON.stringify(responseJson.data), null);
+          storage.removeDataFromLocalStorage(EXPERIAN_RTID_NO_TRACK_KEY, null);
         }
       }
     }
-    const queryString = tapadRtdObj.extractConsentQueryString(config, userConsent)
-    const fullUrl = queryString == null ? `${TAPAD_RTID_URL}/acc/${deepAccess(config, 'params.accountId')}/ids` : `${TAPAD_RTID_URL}/acc/${deepAccess(config, 'params.accountId')}/ids${queryString}`
+    const queryString = experianRtdObj.extractConsentQueryString(config, userConsent)
+    const fullUrl = queryString == null ? `${EXPERIAN_RTID_URL}/acc/${deepAccess(config, 'params.accountId')}/ids` : `${EXPERIAN_RTID_URL}/acc/${deepAccess(config, 'params.accountId')}/ids${queryString}`
     ajax(fullUrl, storeDataEnvelopeResponse, null, { withCredentials: true, contentType: 'application/json' })
   },
   extractConsentQueryString(config, userConsent) {
@@ -126,10 +126,10 @@ export const tapadRtdObj = {
 }
 
 /** @type {RtdSubmodule} */
-export const tapadRtdSubmodule = {
+export const experianRtdSubmodule = {
   name: SUBMODULE_NAME,
-  getBidRequestData: tapadRtdObj.getBidRequestData,
-  init: tapadRtdObj.init
+  getBidRequestData: experianRtdObj.getBidRequestData,
+  init: experianRtdObj.init
 }
 
-submodule('realTimeData', tapadRtdSubmodule);
+submodule('realTimeData', experianRtdSubmodule);
