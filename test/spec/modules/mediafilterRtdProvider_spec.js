@@ -144,5 +144,4 @@ describe('The Media Filter RTD module', function () {
       expect(eventsEmitSpy.called).to.be.false;
     });
   });
-
 });
