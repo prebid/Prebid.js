@@ -1,12 +1,12 @@
 import {
-    _each,
-    deepAccess, getBidIdParameter,
-    isArray,
-    isFn,
-    isPlainObject,
-    isStr,
-    logError,
-    logWarn
+  _each,
+  deepAccess, getBidIdParameter,
+  isArray,
+  isFn,
+  isPlainObject,
+  isStr,
+  logError,
+  logWarn
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';

@@ -1,12 +1,12 @@
 import {
-    deepAccess, getBidIdParameter,
-    isArray,
-    isFn,
-    isNumber,
-    isPlainObject,
-    isStr,
-    parseUrl,
-    replaceAuctionPrice,
+  deepAccess, getBidIdParameter,
+  isArray,
+  isFn,
+  isNumber,
+  isPlainObject,
+  isStr,
+  parseUrl,
+  replaceAuctionPrice,
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';

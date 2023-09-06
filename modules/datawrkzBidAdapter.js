@@ -1,11 +1,11 @@
 import {
-    deepAccess,
-    isArray,
-    getUniqueIdentifierStr,
-    contains,
-    isFn,
-    isPlainObject,
-    getBidIdParameter
+  deepAccess,
+  isArray,
+  getUniqueIdentifierStr,
+  contains,
+  isFn,
+  isPlainObject,
+  getBidIdParameter
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';

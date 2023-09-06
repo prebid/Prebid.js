@@ -1,12 +1,12 @@
 import {
-    _each,
-    isArray,
-    getUniqueIdentifierStr,
-    deepSetValue,
-    logError,
-    deepAccess,
-    isInteger,
-    logWarn, getBidIdParameter
+  _each,
+  isArray,
+  getUniqueIdentifierStr,
+  deepSetValue,
+  logError,
+  deepAccess,
+  isInteger,
+  logWarn, getBidIdParameter
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import {

@@ -1,15 +1,15 @@
 import {
-    _each,
-    createTrackPixelHtml,
-    deepAccess, getBidIdParameter,
-    getDefinedParams,
-    getWindowTop,
-    isArray,
-    isStr,
-    logMessage,
-    parseGPTSingleSizeArrayToRtbSize,
-    parseUrl,
-    triggerPixel,
+  _each,
+  createTrackPixelHtml,
+  deepAccess, getBidIdParameter,
+  getDefinedParams,
+  getWindowTop,
+  isArray,
+  isStr,
+  logMessage,
+  parseGPTSingleSizeArrayToRtbSize,
+  parseUrl,
+  triggerPixel,
 } from '../src/utils.js';
 
 import CONSTANTS from '../src/constants.json';

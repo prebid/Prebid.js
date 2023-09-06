@@ -1,9 +1,9 @@
 import {
-    deepAccess,
-    deepSetValue, getBidIdParameter,
-    isStr,
-    logMessage,
-    triggerPixel,
+  deepAccess,
+  deepSetValue, getBidIdParameter,
+  isStr,
+  logMessage,
+  triggerPixel,
 } from '../src/utils.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';

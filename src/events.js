@@ -58,7 +58,7 @@ const _public = (function () {
     push.apply(callbacks, event.que);
 
     /** call each of the callbacks */
-    callbacks?.forEach(function (fn) {
+    (callbacks || []).forEach(function (fn) {
       if (!fn) return;
       try {
         fn.apply(null, args);
@@ -107,14 +107,14 @@ const _public = (function () {
     }
 
     if (id) {
-      event[id].que?.forEach(function (_handler) {
+      (event[id].que || []).forEach(function (_handler) {
         var que = event[id].que;
         if (_handler === handler) {
           que.splice(que.indexOf(_handler), 1);
         }
       });
     } else {
-      event.que?.forEach(function (_handler) {
+      (event.que || []).forEach(function (_handler) {
         var que = event.que;
         if (_handler === handler) {
           que.splice(que.indexOf(_handler), 1);

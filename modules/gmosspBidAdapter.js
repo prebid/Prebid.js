@@ -1,11 +1,11 @@
 import {
-    createTrackPixelHtml,
-    deepAccess,
-    deepSetValue, getBidIdParameter,
-    getDNT,
-    getWindowTop,
-    isEmpty,
-    logError
+  createTrackPixelHtml,
+  deepAccess,
+  deepSetValue, getBidIdParameter,
+  getDNT,
+  getWindowTop,
+  isEmpty,
+  logError
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';

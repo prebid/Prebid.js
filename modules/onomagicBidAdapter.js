@@ -1,14 +1,14 @@
 import {
-    _each,
-    createTrackPixelHtml, getBidIdParameter,
-    getUniqueIdentifierStr,
-    getWindowSelf,
-    getWindowTop,
-    isArray,
-    isFn,
-    isPlainObject,
-    logError,
-    logWarn
+  _each,
+  createTrackPixelHtml, getBidIdParameter,
+  getUniqueIdentifierStr,
+  getWindowSelf,
+  getWindowTop,
+  isArray,
+  isFn,
+  isPlainObject,
+  logError,
+  logWarn
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';

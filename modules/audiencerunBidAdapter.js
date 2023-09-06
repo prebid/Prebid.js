@@ -1,12 +1,12 @@
 import {
-    _each,
-    deepAccess,
-    formatQS, getBidIdParameter,
-    getValue,
-    isArray,
-    isFn,
-    logError,
-    triggerPixel,
+  _each,
+  deepAccess,
+  formatQS, getBidIdParameter,
+  getValue,
+  isArray,
+  isFn,
+  logError,
+  triggerPixel,
 } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';

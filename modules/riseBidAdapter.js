@@ -1,15 +1,15 @@
 import {
-    logWarn,
-    logInfo,
-    isArray,
-    isFn,
-    deepAccess,
-    isEmpty,
-    contains,
-    timestamp,
-    triggerPixel,
-    isInteger,
-    getBidIdParameter
+  logWarn,
+  logInfo,
+  isArray,
+  isFn,
+  deepAccess,
+  isEmpty,
+  contains,
+  timestamp,
+  triggerPixel,
+  isInteger,
+  getBidIdParameter
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';

@@ -1,9 +1,9 @@
 import {
-    deepAccess,
-    getWindowTop,
-    triggerPixel,
-    logInfo,
-    logError, getBidIdParameter
+  deepAccess,
+  getWindowTop,
+  triggerPixel,
+  logInfo,
+  logError, getBidIdParameter
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';

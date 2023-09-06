@@ -1,11 +1,11 @@
 import {
-    buildUrl,
-    deepAccess, getBidIdParameter,
-    getValue,
-    isArray,
-    logInfo,
-    logWarn,
-    triggerPixel
+  buildUrl,
+  deepAccess, getBidIdParameter,
+  getValue,
+  isArray,
+  logInfo,
+  logWarn,
+  triggerPixel
 } from '../src/utils.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';

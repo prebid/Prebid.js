@@ -1,19 +1,19 @@
 import {
-    logError,
-    deepAccess,
-    isArray,
-    getDNT,
-    deepSetValue,
-    isEmpty,
-    _each,
-    logMessage,
-    logWarn,
-    isBoolean,
-    isNumber,
-    isPlainObject,
-    isFn,
-    setScriptAttributes,
-    getBidIdParameter
+  logError,
+  deepAccess,
+  isArray,
+  getDNT,
+  deepSetValue,
+  isEmpty,
+  _each,
+  logMessage,
+  logWarn,
+  isBoolean,
+  isNumber,
+  isPlainObject,
+  isFn,
+  setScriptAttributes,
+  getBidIdParameter
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
