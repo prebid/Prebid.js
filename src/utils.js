@@ -102,14 +102,6 @@ function _getRandomData() {
   }
 }
 
-export function tryAppendQueryString(existingUrl, key, value) {
-  if (value) {
-    return existingUrl + key + '=' + encodeURIComponent(value) + '&';
-  }
-
-  return existingUrl;
-}
-
 // parse a query string object passed in bid params
 // bid params should be an object such as {key: "value", key1 : "value1"}
 // aliases to formatQS

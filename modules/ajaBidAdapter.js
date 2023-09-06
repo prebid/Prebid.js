@@ -1,8 +1,9 @@
-import { tryAppendQueryString, createTrackPixelHtml, logError, logWarn, deepAccess } from '../src/utils.js';
+import { createTrackPixelHtml, logError, logWarn, deepAccess } from '../src/utils.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER, NATIVE } from '../src/mediaTypes.js';
 import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 const BidderCode = 'aja';
 const URL = 'https://ad.as.amanad.adtdp.com/v2/prebid';

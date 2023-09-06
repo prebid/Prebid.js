@@ -3,7 +3,7 @@ import {expect} from 'chai';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
 import {deepEqual, memoize, waitForElementToLoad} from 'src/utils.js';
-import {getBidIdParameter} from '../../libraries/bidderUtils/bidderUtils.js';
+import {tryAppendQueryString} from '../../libraries/urlUtils/urlUtils.js';
 
 var assert = require('assert');
 
@@ -19,29 +19,6 @@ describe('Utils', function () {
     type_object = 'Object',
     type_array = 'Array',
     type_function = 'Function';
-
-
-  describe('tryAppendQueryString', function () {
-    it('should append query string to existing url', function () {
-      var url = 'www.a.com?';
-      var key = 'b';
-      var value = 'c';
-
-      var output = utils.tryAppendQueryString(url, key, value);
-
-      var expectedResult = url + key + '=' + encodeURIComponent(value) + '&';
-      assert.equal(output, expectedResult);
-    });
-
-    it('should return existing url, if the value is empty', function () {
-      var url = 'www.a.com?';
-      var key = 'b';
-      var value = '';
-
-      var output = utils.tryAppendQueryString(url, key, value);
-      assert.equal(output, url);
-    });
-  });
 
   describe('parseQueryStringParameters', function () {
     it('should append query string to existing using the input obj', function () {
