@@ -115,7 +115,7 @@ describe('The Media Filter RTD module', function () {
 
       const mockEvent = {
         data: {
-          type: MEDIAFILTER_EVENT_TYPE.concat(configurationHash)
+          type: MEDIAFILTER_EVENT_TYPE.concat('.', configurationHash)
         }
       };
 
