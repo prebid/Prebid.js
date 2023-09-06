@@ -17,12 +17,12 @@ describe('PrecisoAdapter', function () {
         sizes: [[DEFAULT_BANNER_WIDTH, DEFAULT_BANNER_HEIGHT]]
       }
     },
-
     params: {
       host: 'prebid',
       sourceid: '0',
       publisherId: '0',
       mediaType: 'banner',
+
       region: 'prebid-eu'
 
     }
@@ -55,7 +55,9 @@ describe('PrecisoAdapter', function () {
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
       expect(data).to.be.an('object');
+
       // expect(data).to.have.all.keys('bidId', 'imp', 'site', 'deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'coppa');
+
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
       expect(data.coppa).to.be.a('number');
@@ -67,7 +69,9 @@ describe('PrecisoAdapter', function () {
     it('Returns empty data if no valid requests are passed', function () {
       serverRequest = spec.buildRequests([]);
       let data = serverRequest.data;
+
       expect(data.imp).to.be.an('array').that.is.empty;
+
     });
   });
 
@@ -90,7 +94,9 @@ describe('PrecisoAdapter', function () {
   describe('interpretResponse', function () {
     it('should get correct bid response', function () {
       let response = {
+
         bidderRequestId: 'f6adb85f-4e19-45a0-b41e-2a5b9a48f23a',
+
         seatbid: [
           {
             bid: [

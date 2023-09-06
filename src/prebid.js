@@ -45,12 +45,13 @@ import {executeRenderer, isRendererRequired} from './Renderer.js';
 import {createBid} from './bidfactory.js';
 import {storageCallbacks} from './storageManager.js';
 import {emitAdRenderFail, emitAdRenderSucceeded} from './adRendering.js';
-import {default as adapterManager, gdprDataHandler, getS2SBidderSet, gppDataHandler, uspDataHandler} from './adapterManager.js';
+import {default as adapterManager, getS2SBidderSet} from './adapterManager.js';
 import CONSTANTS from './constants.json';
 import * as events from './events.js';
 import {newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {defer, GreedyPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
+import {allConsent} from './consentHandler.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -330,23 +331,9 @@ pbjsInstance.getAdserverTargeting = function (adUnitCode) {
   return targeting.getAllTargeting(adUnitCode);
 };
 
-/**
- * returns all consent data
- * @return {Object} Map of consent types and data
- * @alias module:pbjs.getConsentData
- */
-function getConsentMetadata() {
-  return {
-    gdpr: gdprDataHandler.getConsentMeta(),
-    usp: uspDataHandler.getConsentMeta(),
-    gpp: gppDataHandler.getConsentMeta(),
-    coppa: !!(config.getConfig('coppa'))
-  }
-}
-
 pbjsInstance.getConsentMetadata = function () {
   logInfo('Invoking $$PREBID_GLOBAL$$.getConsentMetadata');
-  return getConsentMetadata();
+  return allConsent.getConsentMeta()
 };
 
 function getBids(type) {
