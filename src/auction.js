@@ -58,7 +58,6 @@
  */
 
 import {
-  _each,
   adUnitsFilter,
   deepAccess,
   flatten,
@@ -960,7 +959,7 @@ function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
   var targeting = bidderSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];
   custBidObj.size = custBidObj.getSize();
 
-  _each(targeting, function (kvPair) {
+  targeting?.forEach(function (kvPair) {
     var key = kvPair.key;
     var value = kvPair.val;
 

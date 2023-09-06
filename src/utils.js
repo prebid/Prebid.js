@@ -8,7 +8,6 @@ import {getGlobal} from './prebidGlobal.js';
 export { default as deepAccess } from 'dlv/index.js';
 export { dset as deepSetValue } from 'dset';
 
-var tArr = 'Array';
 var tStr = 'String';
 var tFn = 'Function';
 var tNumb = 'Number';
@@ -322,9 +321,7 @@ export function isStr(object) {
   return isA(object, tStr);
 }
 
-export function isArray(object) {
-  return isA(object, tArr);
-}
+export const isArray = Array.isArray.bind(Array);
 
 export function isNumber(object) {
   return isA(object, tNumb);
@@ -349,12 +346,7 @@ export function isEmpty(object) {
   if (isArray(object) || isStr(object)) {
     return !(object.length > 0);
   }
-
-  for (var k in object) {
-    if (hasOwnProperty.call(object, k)) return false;
-  }
-
-  return true;
+  return Object.keys(object).length <= 0;
 }
 
 /**
@@ -373,19 +365,8 @@ export function isEmptyStr(str) {
  * @param {Function(value, key, object)} fn
  */
 export function _each(object, fn) {
-  if (isEmpty(object)) return;
-  if (isFn(object.forEach)) return object.forEach(fn, this);
-
-  var k = 0;
-  var l = object.length;
-
-  if (l > 0) {
-    for (; k < l; k++) fn(object[k], k, object);
-  } else {
-    for (k in object) {
-      if (hasOwnProperty.call(object, k)) fn.call(this, object[k], k);
-    }
-  }
+  if (isFn(object?.forEach)) return object.forEach(fn, this);
+  Object.entries(object || {}).forEach(([k, v]) => fn.call(this, v, k));
 }
 
 export function contains(a, obj) {

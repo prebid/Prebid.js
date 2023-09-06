@@ -62,7 +62,7 @@ const _public = (function () {
     push.apply(callbacks, event.que);
 
     /** call each of the callbacks */
-    utils._each(callbacks, function (fn) {
+    callbacks?.forEach(function (fn) {
       if (!fn) return;
       try {
         fn.apply(null, args);
@@ -111,14 +111,14 @@ const _public = (function () {
     }
 
     if (id) {
-      utils._each(event[id].que, function (_handler) {
+      event[id].que?.forEach(function (_handler) {
         var que = event[id].que;
         if (_handler === handler) {
           que.splice(que.indexOf(_handler), 1);
         }
       });
     } else {
-      utils._each(event.que, function (_handler) {
+      event.que?.forEach(function (_handler) {
         var que = event.que;
         if (_handler === handler) {
           que.splice(que.indexOf(_handler), 1);
@@ -143,7 +143,7 @@ const _public = (function () {
    */
   _public.getEvents = function () {
     var arrayCopy = [];
-    utils._each(eventsFired, function (value) {
+    eventsFired.forEach(function (value) {
       var newProp = Object.assign({}, value);
       arrayCopy.push(newProp);
     });

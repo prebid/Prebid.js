@@ -1,7 +1,6 @@
 /** @module adaptermanger */
 
 import {
-  _each,
   deepAccess,
   deepClone,
   flatten,
@@ -584,7 +583,7 @@ adapterManager.enableAnalytics = function (config) {
     config = [config];
   }
 
-  _each(config, adapterConfig => {
+  config.forEach(adapterConfig => {
     const entry = _analyticsRegistry[adapterConfig.provider];
     if (entry && entry.adapter) {
       if (dep.isAllowed(ACTIVITY_REPORT_ANALYTICS, activityParams(MODULE_TYPE_ANALYTICS, adapterConfig.provider, {[ACTIVITY_PARAM_ANL_CONFIG]: adapterConfig}))) {
