@@ -12,6 +12,8 @@ export class Uid2ApiClient {
     this._clientVersion = clientId;
     this._logInfo = logInfo;
     this._logWarn = logWarn;
+    this._serverPublicKey = opts.serverPublicKey;
+    this._subscriptionId = opts.subscriptionId;
   }
   createArrayBuffer(text) {
     const arrayBuffer = new Uint8Array(text.length);
@@ -81,6 +83,111 @@ export class Uid2ApiClient {
     req.send(refreshDetails.refresh_token);
     return promise;
   }
+
+  callCstgApi(data) {
+    const request =
+      "emailHash" in data
+        ? { email_hash: data.emailHash }
+        : { phone_hash: data.phoneHash };
+    this._logInfo('Building Cstg request for', request);
+    return this._buildCstgRequest(request)
+      .then(this._callCstgApi)
+  }
+
+  _buildCstgRequest(request) {
+    UID2CstgBox
+      .build(stripPublicKeyPrefix(this._serverPublicKey))
+      .then((box) => {
+        const encoder = new TextEncoder();
+        const now = Date.now();
+        return Promise.all([
+          box.encrypt(
+            encoder.encode(JSON.stringify(request)),
+            encoder.encode(JSON.stringify([now]))
+          ),
+          exportPublicKey(box.clientPublicKey)
+        ])
+      })
+      .then(([{iv, ciphertext}, exportedPublicKey]) => ({
+        payload: bytesToBase64(new Uint8Array(ciphertext)),
+        iv: bytesToBase64(new Uint8Array(iv)),
+        public_key: bytesToBase64(new Uint8Array(exportedPublicKey)),
+        timestamp: now,
+        subscription_id: this._subscriptionId,
+      }))
+  }
+
+  _callCstgApi(requestBody) {
+    const url = this._baseUrl + "/v2/token/client-generate";
+    const req = new XMLHttpRequest();
+    this._requestsInFlight.push(req);
+    req.overrideMimeType("text/plain");
+    req.open("POST", url, true);
+
+    let resolvePromise;
+    let rejectPromise;
+    const promise = new Promise((resolve, reject) => {
+      resolvePromise = resolve;
+      rejectPromise = reject;
+    });
+
+    req.onreadystatechange = async () => {
+      if (req.readyState !== req.DONE) return;
+      this._requestsInFlight = this._requestsInFlight.filter((r) => r !== req);
+      try {
+        if (req.status === 200) {
+          const encodedResp = base64ToBytes(req.responseText);
+          const decrypted = await box.decrypt(
+            encodedResp.slice(0, 12),
+            encodedResp.slice(12)
+          );
+          const decryptedResponse = new TextDecoder().decode(decrypted);
+          const response = JSON.parse(decryptedResponse);
+          if (isCstgApiSuccessResponse(response)) {
+            resolvePromise({
+              status: "success",
+              identity: response.body,
+            });
+          } else {
+            // A 200 should always be a success response.
+            // Something has gone wrong.
+            rejectPromise(
+              `API error: Response body was invalid for HTTP status 200: ${decryptedResponse}`
+            );
+          }
+        } else if (req.status === 400) {
+          const response = JSON.parse(req.responseText);
+          if (isCstgApiClientErrorResponse(response)) {
+            rejectPromise(`Client error: ${response.message}`);
+          } else {
+            // A 400 should always be a client error.
+            // Something has gone wrong.
+            rejectPromise(
+              `API error: Response body was invalid for HTTP status 400: ${req.responseText}`
+            );
+          }
+        } else if (req.status === 403) {
+          const response = JSON.parse(req.responseText);
+          if (isCstgApiForbiddenResponse(response)) {
+            rejectPromise(`Forbidden: ${response.message}`);
+          } else {
+            // A 403 should always be a forbidden response.
+            // Something has gone wrong.
+            rejectPromise(
+              `API error: Response body was invalid for HTTP status 403: ${req.responseText}`
+            );
+          }
+        } else {
+          rejectPromise(`API error: Unexpected HTTP status ${req.status}`);
+        }
+      } catch (err) {
+        rejectPromise(err);
+      }
+    };
+    this._logInfo('Sending Cstg request', JSON.stringify(requestBody));
+    req.send(JSON.stringify(requestBody));
+    return promise;
+  }
 }
 export class Uid2StorageManager {
   constructor(storage, preferLocalStorage, storageName, logInfo) {
@@ -148,6 +255,42 @@ export class Uid2StorageManager {
       }
     }
     return storedValue;
+  }
+}
+
+class UID2CstgBox {
+  _namedCurve = "P-256"
+  constructor(clientPublicKey, sharedKey) {
+      this._clientPublicKey = clientPublicKey;
+      this._sharedKey = sharedKey;
+  }
+  static build(serverPublicKey) {
+    return Promise.all([generateKeyPair(this._namedCurve), importPublicKey(serverPublicKey, this._namedCurve)])
+      .then(([clientKeyPair, importedServerPublicKey]) => {
+        return deriveKey(importedServerPublicKey, clientKeyPair.privateKey)
+          .then((sharedKey) => new UID2CstgBox(clientKeyPair.publicKey, sharedKey))
+      });
+  }
+
+  encrypt(plaintext, additionalData) {
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    return window.crypto.subtle.encrypt({
+        name: "AES-GCM",
+        iv,
+        additionalData,
+      }, this._sharedKey, plaintext)
+      .then((ciphertext) => ({iv, ciphertext}));
+  }
+
+  decrypt(iv, ciphertext) {
+    return window.crypto.subtle.decrypt({
+      name: "AES-GCM",
+      iv
+    }, this._sharedKey, ciphertext);
+  }
+
+  get clientPublicKey() {
+    return this._clientPublicKey;
   }
 }
 
@@ -229,4 +372,80 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   };
   storageManager.storeValue(tokens);
   return { id: tokens };
+}
+
+function base64ToBytes(base64) {
+  const binString = atob(base64);
+  return Uint8Array.from(binString, (m) => m.codePointAt(0));
+}
+
+function bytesToBase64(bytes) {
+  const binString = Array.from(bytes, (x) => String.fromCodePoint(x)).join("");
+  return btoa(binString);
+}
+
+function generateKeyPair(namedCurve) {
+  const params = {
+      name: "ECDH",
+      namedCurve: namedCurve,
+  };
+  return window.crypto.subtle.generateKey(params, false, ["deriveKey"]);
+}
+
+function importPublicKey(publicKey, namedCurve) {
+  const params = {
+      name: "ECDH",
+      namedCurve: namedCurve,
+  };
+  return window.crypto.subtle.importKey("spki", base64ToBytes(publicKey), params, false, []);
+}
+
+function exportPublicKey(publicKey) {
+  return window.crypto.subtle.exportKey("spki", publicKey);
+}
+
+function deriveKey(serverPublicKey, clientPrivateKey) {
+  return window.crypto.subtle.deriveKey({
+      name: "ECDH",
+      public: serverPublicKey,
+  }, clientPrivateKey, {
+      name: "AES-GCM",
+      length: 256,
+  }, false, ["encrypt", "decrypt"]);
+}
+
+const SERVER_PUBLIC_KEY_PREFIX_LENGTH = 9;
+
+function stripPublicKeyPrefix(serverPublicKey) {
+  return serverPublicKey.substring(SERVER_PUBLIC_KEY_PREFIX_LENGTH);
+}
+
+function isClientSideIdentityOptionsOrThrow(
+  maybeOpts
+) {
+  if (typeof maybeOpts !== "object" || maybeOpts === null) {
+    throw new TypeError("opts must be an object");
+  }
+
+  const opts = maybeOpts;
+  if (typeof opts.serverPublicKey !== "string") {
+    throw new TypeError("opts.serverPublicKey must be a string");
+  }
+  const serverPublicKeyPrefix = /^UID2-X-[A-Z]-.+/;
+  if (!serverPublicKeyPrefix.test(opts.serverPublicKey)) {
+    throw new TypeError(
+      `opts.serverPublicKey must match the regular expression ${serverPublicKeyPrefix}`
+    );
+  }
+  // We don't do any further validation of the public key, as we will find out
+  // later if it's valid by using importKey.
+
+  if (typeof opts.subscriptionId !== "string") {
+    throw new TypeError("opts.subscriptionId must be a string");
+  }
+  if (opts.subscriptionId.length === 0) {
+    throw new TypeError("opts.subscriptionId is empty");
+  }
+
+  return true;
 }
