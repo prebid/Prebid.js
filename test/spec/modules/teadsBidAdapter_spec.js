@@ -277,6 +277,17 @@ describe('teadsBidAdapter', () => {
         expect(payload.pageTitle).to.exist;
         expect(payload.pageTitle).to.deep.equal(testText);
       });
+
+      it('should add pageTitle info to payload sliced on 300 first characters', function () {
+        const testText = Array(500).join('a');
+        sandbox.stub(window.top.document, 'title').value(testText);
+
+        const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.pageTitle).to.exist;
+        expect(payload.pageTitle).to.have.length(300);
+      });
     });
 
     describe('pageDescription', function () {
@@ -300,6 +311,17 @@ describe('teadsBidAdapter', () => {
 
         expect(payload.pageDescription).to.exist;
         expect(payload.pageDescription).to.deep.equal(testText);
+      });
+
+      it('should add pageDescription info to payload sliced on 300 first characters', function () {
+        const testText = Array(500).join('a');
+        sandbox.stub(window.top.document, 'querySelector').withArgs('meta[name="description"]').returns({ content: testText });
+
+        const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.pageDescription).to.exist;
+        expect(payload.pageDescription).to.have.length(300);
       });
     });
 
