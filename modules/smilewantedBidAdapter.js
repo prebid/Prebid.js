@@ -4,9 +4,12 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
+const GVL_ID = 639;
+
 export const spec = {
   code: 'smilewanted',
   aliases: ['smile', 'sw'],
+  gvlid: GVL_ID,
   supportedMediaTypes: [BANNER, VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
