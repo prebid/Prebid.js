@@ -37,7 +37,6 @@ import {includes} from './polyfill.js';
 import {adunitCounter} from './adUnits.js';
 import {createBid} from './bidfactory.js';
 import {storageCallbacks} from './storageManager.js';
-import {emitAdRenderFail, emitAdRenderSucceeded} from './adRendering.js';
 import {default as adapterManager, getS2SBidderSet} from './adapterManager.js';
 import CONSTANTS from './constants.json';
 import * as events from './events.js';
