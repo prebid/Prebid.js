@@ -821,24 +821,11 @@ export function unsupportedBidderMessage(adUnit, bidder) {
 export const isInteger = Number.isInteger.bind(Number);
 
 /**
- * Converts a string value in camel-case to underscore eg 'placementId' becomes 'placement_id'
- * @param {string} value string value to convert
- */
-export function convertCamelToUnderscore(value) {
-  return value.replace(/(?:^|\.?)([A-Z])/g, function (x, y) { return '_' + y.toLowerCase() }).replace(/^_/, '');
-}
-
-/**
  * Returns a new object with undefined properties removed from given object
  * @param obj the object to clean
  */
 export function cleanObj(obj) {
-  return Object.keys(obj).reduce((newObj, key) => {
-    if (typeof obj[key] !== 'undefined') {
-      newObj[key] = obj[key];
-    }
-    return newObj;
-  }, {})
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => typeof v !== 'undefined'))
 }
 
 /**

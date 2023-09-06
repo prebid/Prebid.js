@@ -3,6 +3,7 @@ import {expect} from 'chai';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
 import {deepEqual, memoize, waitForElementToLoad} from 'src/utils.js';
+import {convertCamelToUnderscore} from '../../libraries/appnexusUtils/anUtils.js';
 
 var assert = require('assert');
 
@@ -743,11 +744,11 @@ describe('Utils', function () {
   describe('convertCamelToUnderscore', function () {
     it('returns converted string value using underscore syntax instead of camelCase', function () {
       let var1 = 'placementIdTest';
-      let test1 = utils.convertCamelToUnderscore(var1);
+      let test1 = convertCamelToUnderscore(var1);
       expect(test1).to.equal('placement_id_test');
 
       let var2 = 'my_test_value';
-      let test2 = utils.convertCamelToUnderscore(var2);
+      let test2 = convertCamelToUnderscore(var2);
       expect(test2).to.equal(var2);
     });
   });
