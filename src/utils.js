@@ -866,26 +866,6 @@ export function isArrayOfNums(val, size) {
   return (isArray(val)) && ((size) ? val.length === size : true) && (val.every(v => isInteger(v)));
 }
 
-/**
- * http://npm.im/chunk
- * Returns an array with *size* chunks from given array
- *
- * Example:
- * ['a', 'b', 'c', 'd', 'e'] chunked by 2 =>
- * [['a', 'b'], ['c', 'd'], ['e']]
- */
-export function chunk(array, size) {
-  let newArray = [];
-
-  for (let i = 0; i < Math.ceil(array.length / size); i++) {
-    let start = i * size;
-    let end = start + size;
-    newArray.push(array.slice(start, end));
-  }
-
-  return newArray;
-}
-
 export function parseQS(query) {
   return !query ? {} : query
     .replace(/^\?/, '')

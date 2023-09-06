@@ -1,6 +1,5 @@
 import {Renderer} from '../src/Renderer.js';
 import {
-  chunk,
   createTrackPixelHtml,
   deepAccess,
   deepClone,
@@ -22,6 +21,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import {getANKeywordParam, transformBidderParamKeywords} from '../libraries/appnexusUtils/anKeywords.js';
 import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
 import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
+import {chunk} from '../libraries/chunk/chunk.js';
 
 const BIDDER_CODE = 'adrelevantis';
 const URL = 'https://ssp.adrelevantis.com/prebid';

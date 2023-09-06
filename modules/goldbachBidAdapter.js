@@ -1,6 +1,5 @@
 import {Renderer} from '../src/Renderer.js';
 import {
-  chunk,
   createTrackPixelHtml,
   deepAccess,
   deepClone,
@@ -29,6 +28,7 @@ import {APPNEXUS_CATEGORY_MAPPING} from '../libraries/categoryTranslationMapping
 import {getANKeywordParam, transformBidderParamKeywords} from '../libraries/appnexusUtils/anKeywords.js';
 import {convertCamelToUnderscore, fill} from '../libraries/appnexusUtils/anUtils.js';
 import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
+import {chunk} from '../libraries/chunk/chunk.js';
 
 const BIDDER_CODE = 'goldbach';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
