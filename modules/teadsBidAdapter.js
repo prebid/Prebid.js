@@ -1,7 +1,6 @@
-import { getValue, logError, deepAccess, parseSizesInput, isArray } from '../src/utils.js';
+import {getValue, logError, deepAccess, parseSizesInput, isArray, getBidIdParameter} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'teads';
 const GVL_ID = 132;

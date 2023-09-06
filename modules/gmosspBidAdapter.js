@@ -1,16 +1,15 @@
 import {
-  createTrackPixelHtml,
-  deepAccess,
-  deepSetValue,
-  getDNT,
-  getWindowTop,
-  isEmpty,
-  logError
+    createTrackPixelHtml,
+    deepAccess,
+    deepSetValue, getBidIdParameter,
+    getDNT,
+    getWindowTop,
+    isEmpty,
+    logError
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 const BIDDER_CODE = 'gmossp';

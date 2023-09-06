@@ -1,12 +1,12 @@
 import {
-  _each,
-  isArray,
-  getUniqueIdentifierStr,
-  deepSetValue,
-  logError,
-  deepAccess,
-  isInteger,
-  logWarn
+    _each,
+    isArray,
+    getUniqueIdentifierStr,
+    deepSetValue,
+    logError,
+    deepAccess,
+    isInteger,
+    logWarn, getBidIdParameter
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import {
@@ -14,7 +14,6 @@ import {
   BANNER,
   VIDEO
 } from '../src/mediaTypes.js'
-import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),

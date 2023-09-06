@@ -1,8 +1,7 @@
-import { getValue, logError, isEmpty, deepAccess, isArray } from '../src/utils.js';
+import {getValue, logError, isEmpty, deepAccess, isArray, getBidIdParameter} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 let SYNC_URL = '';
 const BIDDER_CODE = 'admatic';
 export const spec = {

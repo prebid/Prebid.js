@@ -1,8 +1,7 @@
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { parseSizesInput, isFn, deepAccess, logError, isArray } from '../src/utils.js';
-import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
+import {parseSizesInput, isFn, deepAccess, logError, isArray, getBidIdParameter} from '../src/utils.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 const CUR = 'USD';

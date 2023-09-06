@@ -1,7 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {_each, getValue, logError, logInfo} from '../src/utils.js';
-import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
+import {_each, getBidIdParameter, getValue, logError, logInfo} from '../src/utils.js';
 
 const BIDDER_CODE = 'videonow';
 const RTB_URL = 'https://adx.videonow.ru/yhb'

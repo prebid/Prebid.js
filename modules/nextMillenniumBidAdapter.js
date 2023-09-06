@@ -1,15 +1,15 @@
 import {
-  _each,
-  createTrackPixelHtml,
-  deepAccess,
-  getDefinedParams,
-  getWindowTop,
-  isArray,
-  isStr,
-  logMessage,
-  parseGPTSingleSizeArrayToRtbSize,
-  parseUrl,
-  triggerPixel,
+    _each,
+    createTrackPixelHtml,
+    deepAccess, getBidIdParameter,
+    getDefinedParams,
+    getWindowTop,
+    isArray,
+    isStr,
+    logMessage,
+    parseGPTSingleSizeArrayToRtbSize,
+    parseUrl,
+    triggerPixel,
 } from '../src/utils.js';
 
 import CONSTANTS from '../src/constants.json';
@@ -19,7 +19,6 @@ import * as events from '../src/events.js';
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
-import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';

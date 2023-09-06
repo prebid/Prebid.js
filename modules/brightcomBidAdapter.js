@@ -1,8 +1,20 @@
-import { _each, isArray, getWindowTop, getUniqueIdentifierStr, deepSetValue, logError, logWarn, createTrackPixelHtml, getWindowSelf, isFn, isPlainObject } from '../src/utils.js';
+import {
+    _each,
+    isArray,
+    getWindowTop,
+    getUniqueIdentifierStr,
+    deepSetValue,
+    logError,
+    logWarn,
+    createTrackPixelHtml,
+    getWindowSelf,
+    isFn,
+    isPlainObject,
+    getBidIdParameter
+} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'brightcom';
 const URL = 'https://brightcombid.marphezis.com/hb';

@@ -1,18 +1,17 @@
 import {
-  _each,
-  createTrackPixelHtml,
-  getUniqueIdentifierStr,
-  getWindowSelf,
-  getWindowTop,
-  isArray,
-  isFn,
-  isPlainObject,
-  logError,
-  logWarn
+    _each,
+    createTrackPixelHtml, getBidIdParameter,
+    getUniqueIdentifierStr,
+    getWindowSelf,
+    getWindowTop,
+    isArray,
+    isFn,
+    isPlainObject,
+    logError,
+    logWarn
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'onomagic';
 const URL = 'https://bidder.onomagic.com/hb';

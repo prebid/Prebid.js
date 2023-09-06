@@ -1,9 +1,8 @@
-import {deepAccess} from '../src/utils.js';
+import {deepAccess, getBidIdParameter} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
-import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 import {escapeUnsafeChars} from '../libraries/htmlEscape/htmlEscape.js';
 

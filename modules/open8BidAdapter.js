@@ -1,9 +1,8 @@
 import { Renderer } from '../src/Renderer.js';
 import {ajax} from '../src/ajax.js';
-import { createTrackPixelHtml, logError, logWarn} from '../src/utils.js';
+import {createTrackPixelHtml, getBidIdParameter, logError, logWarn} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
-import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 const BIDDER_CODE = 'open8';

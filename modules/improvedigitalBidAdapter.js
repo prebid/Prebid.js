@@ -1,4 +1,4 @@
-import {deepAccess, deepSetValue, getUniqueIdentifierStr, logWarn, mergeDeep} from '../src/utils.js';
+import {deepAccess, deepSetValue, getBidIdParameter, getUniqueIdentifierStr, logWarn, mergeDeep} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
@@ -6,7 +6,6 @@ import {Renderer} from '../src/Renderer.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {loadExternalScript} from '../src/adloader.js';
-import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'improvedigital';
 const CREATIVE_TTL = 300;

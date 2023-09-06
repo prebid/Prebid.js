@@ -1,18 +1,18 @@
 import {
-  _each,
-  deepAccess,
-  isPlainObject,
-  isArray,
-  isStr,
-  logInfo,
-  parseUrl,
-  isEmpty,
-  triggerPixel,
-  logWarn,
-  isFn,
-  isNumber,
-  isBoolean,
-  isInteger, deepSetValue,
+    _each,
+    deepAccess,
+    isPlainObject,
+    isArray,
+    isStr,
+    logInfo,
+    parseUrl,
+    isEmpty,
+    triggerPixel,
+    logWarn,
+    isFn,
+    isNumber,
+    isBoolean,
+    isInteger, deepSetValue, getBidIdParameter,
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
@@ -20,7 +20,6 @@ import {config} from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import {USERSYNC_DEFAULT_CONFIG} from '../src/userSync.js';
-import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const GVLID = 358;
 const DEFAULT_CUR = 'USD';

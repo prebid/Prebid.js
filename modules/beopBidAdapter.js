@@ -1,17 +1,16 @@
 import {
-  buildUrl,
-  deepAccess,
-  getValue,
-  isArray,
-  logInfo,
-  logWarn,
-  triggerPixel
+    buildUrl,
+    deepAccess, getBidIdParameter,
+    getValue,
+    isArray,
+    logInfo,
+    logWarn,
+    triggerPixel
 } from '../src/utils.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
-import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'beop';
 const ENDPOINT_URL = 'https://hb.beop.io/bid';

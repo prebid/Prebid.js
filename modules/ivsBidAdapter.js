@@ -1,9 +1,8 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { deepAccess, deepSetValue, logError } from '../src/utils.js';
+import {deepAccess, deepSetValue, getBidIdParameter, logError} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
 import { INSTREAM } from '../src/video.js';
-import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'ivs';
 const ENDPOINT_URL = 'https://a.ivstracker.net/prod/openrtb/2.5';

@@ -3,7 +3,6 @@ import {expect} from 'chai';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
 import {deepEqual, memoize, waitForElementToLoad} from 'src/utils.js';
-import {getAdUnitSizes} from '../../libraries/sizeUtils/sizeUtils.js';
 
 var assert = require('assert');
 
@@ -19,6 +18,26 @@ describe('Utils', function () {
     type_object = 'Object',
     type_array = 'Array',
     type_function = 'Function';
+
+  describe('getBidIdParameter', function () {
+    it('should return value of the key in input object', function () {
+      var obj = {
+        a: 'valueA',
+        b: 'valueB'
+      };
+      var output = utils.getBidIdParameter('a', obj);
+      assert.equal(output, 'valueA');
+    });
+
+    it('should return empty string, if the key is not existsed in the object', function () {
+      var obj = {
+        a: 'valueA',
+        b: 'valueB'
+      };
+      var output = utils.getBidIdParameter('c', obj);
+      assert.equal(output, '');
+    });
+  });
 
   describe('parseQueryStringParameters', function () {
     it('should append query string to existing using the input obj', function () {

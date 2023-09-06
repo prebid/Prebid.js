@@ -1,19 +1,18 @@
 import {
-  _each,
-  deepAccess,
-  isArray,
-  isFn,
-  isPlainObject,
-  isStr,
-  logError,
-  logWarn
+    _each,
+    deepAccess, getBidIdParameter,
+    isArray,
+    isFn,
+    isPlainObject,
+    isStr,
+    logError,
+    logWarn
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {find, includes} from '../src/polyfill.js';
 import {parseDomain} from '../src/refererDetection.js';
-import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'cadent_aperture_mx';
 const ENDPOINT = 'hb.emxdgt.com';

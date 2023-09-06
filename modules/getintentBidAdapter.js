@@ -1,6 +1,5 @@
-import { isFn, isInteger } from '../src/utils.js';
+import {getBidIdParameter, isFn, isInteger} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import {getBidIdParameter} from '../libraries/bidderUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'getintent';
 const IS_NET_REVENUE = true;

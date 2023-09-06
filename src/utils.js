@@ -102,6 +102,10 @@ function _getRandomData() {
   }
 }
 
+export function getBidIdParameter(key, paramsObj) {
+  return paramsObj?.[key] || '';
+}
+
 // parse a query string object passed in bid params
 // bid params should be an object such as {key: "value", key1 : "value1"}
 // aliases to formatQS
