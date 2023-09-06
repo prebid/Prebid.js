@@ -159,27 +159,14 @@ export function validateRules(rule, consentData, currentModule, gvlId) {
   if ((rule.vendorExceptions || []).includes(currentModule)) {
     return true;
   }
-  const vendorConsentRequred = !((gvlId === VENDORLESS_GVLID || (rule.softVendorExceptions || []).includes(currentModule)));
+  const vendorConsentRequred = rule.enforceVendor && !((gvlId === VENDORLESS_GVLID || (rule.softVendorExceptions || []).includes(currentModule)));
 
-  // get data from the consent string
-  const purposeConsent = deepAccess(consentData, `vendorData.purpose.consents.${purposeId}`);
-  const vendorConsent = vendorConsentRequred ? deepAccess(consentData, `vendorData.vendor.consents.${gvlId}`) : true;
-  const liTransparency = deepAccess(consentData, `vendorData.purpose.legitimateInterests.${purposeId}`);
+  let purposeAllowed = !rule.enforcePurpose || !!deepAccess(consentData, `vendorData.purpose.consents.${purposeId}`);
+  let vendorAllowed = !vendorConsentRequred || !!deepAccess(consentData, `vendorData.vendor.consents.${gvlId}`);
 
-  /*
-    Since vendor exceptions have already been handled, the purpose as a whole is allowed if it's not being enforced
-    or the user has consented. Similar with vendors.
-  */
-  const purposeAllowed = rule.enforcePurpose === false || purposeConsent === true;
-  const vendorAllowed = rule.enforceVendor === false || vendorConsent === true;
-
-  /*
-    Few if any vendors should be declaring Legitimate Interest for Device Access (Purpose 1), but some are claiming
-    LI for Basic Ads (Purpose 2). Prebid.js can't check to see who's declaring what legal basis, so if LI has been
-    established for Purpose 2, allow the auction to take place and let the server sort out the legal basis calculation.
-  */
   if (purposeId === 2) {
-    return (purposeAllowed && vendorAllowed) || (liTransparency === true);
+    purposeAllowed ||= !!deepAccess(consentData, `vendorData.purpose.legitimateInterests.${purposeId}`);
+    vendorAllowed ||= !!deepAccess(consentData, `vendorData.vendor.legitimateInterests.${gvlId}`);
   }
 
   return purposeAllowed && vendorAllowed;

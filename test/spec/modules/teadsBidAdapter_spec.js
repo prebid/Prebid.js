@@ -257,6 +257,22 @@ describe('teadsBidAdapter', () => {
       expect(payload.pageReferrer).to.deep.equal(document.referrer);
     });
 
+    it('should add pageTitle info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.pageTitle).to.exist;
+      expect(payload.pageTitle).to.deep.equal(window.top.document.title || document.title);
+    });
+
+    it('should add pageDescription info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.pageDescription).to.exist;
+      expect(payload.pageDescription).to.deep.equal('');
+    });
+
     it('should add timeToFirstByte info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
