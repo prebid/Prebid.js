@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from '../../../modules/precisoBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from '../../../modules/precisoBidAdapter.js';
 import { config } from '../../../src/config.js';
 
 const DEFAULT_PRICE = 1
@@ -71,13 +71,13 @@ describe('PrecisoAdapter', function () {
     });
   });
 
-  describe('with COPPA', function() {
-    beforeEach(function() {
+  describe('with COPPA', function () {
+    beforeEach(function () {
       sinon.stub(config, 'getConfig')
         .withArgs('coppa')
         .returns(true);
     });
-    afterEach(function() {
+    afterEach(function () {
       config.getConfig.restore();
     });
 
