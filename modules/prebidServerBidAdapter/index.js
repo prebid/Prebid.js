@@ -292,9 +292,9 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig) 
 function replaceSyncEndpointMacros(url, extSyncMacros) {
   for (const macro in extSyncMacros) {
     if (extSyncMacros.hasOwnProperty(macro)) {
-      const replacemnt = extSyncMacros[macro];
+      const replacement = extSyncMacros[macro];
       const macroPattern = new RegExp(`{{${macro}}}`, 'g');
-      url = url.replace(macroPattern, replacemnt);
+      url = url.replace(macroPattern, replacement);
     }
   }
   return url;
