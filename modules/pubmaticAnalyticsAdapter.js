@@ -273,7 +273,8 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
         'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0,
         'di': bid.bidResponse ? (bid.bidResponse.dealId || OPEN_AUCTION_DEAL_ID) : OPEN_AUCTION_DEAL_ID,
         'dc': bid.bidResponse ? (bid.bidResponse.dealChannel || EMPTY_STRING) : EMPTY_STRING,
-        'l1': bid.bidResponse ? bid.clientLatencyTimeMs : 0,
+        'l1': bid.bidResponse ? bid.partnerTimeToRespond : 0,
+        'ol1': bid.bidResponse ? bid.clientLatencyTimeMs : 0,
         'l2': 0,
         'adv': bid.bidResponse ? getAdDomain(bid.bidResponse) || undefined : undefined,
         'ss': isS2SBidder(bid.bidder),
@@ -507,6 +508,10 @@ function bidResponseHandler(args) {
   bid.adId = args.adId;
   bid.source = formatSource(bid.source || args.source);
   setBidStatus(bid, args);
+  const latency = args?.timeToRespond || Date.now() - cache.auctions[args.auctionId].timestamp;
+  // Checking if latency is greater than auctiontime+100, if yes instead of logging actual latency log
+  // auctiontime+100 to keep actual values and to keep avarage latency in expected range.
+  bid.partnerTimeToRespond = window.PWT?.versionDetails?.timeout ? (latency > (window.PWT.versionDetails.timeout + 100) ? (window.PWT.versionDetails.timeout + 100) : latency) : latency;
   bid.clientLatencyTimeMs = Date.now() - cache.auctions[args.auctionId].timestamp;
   bid.bidResponse = parseBidResponse(args);
 }
