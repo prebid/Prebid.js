@@ -69,9 +69,7 @@ describe('PrecisoAdapter', function () {
     it('Returns empty data if no valid requests are passed', function () {
       serverRequest = spec.buildRequests([]);
       let data = serverRequest.data;
-
       expect(data.imp).to.be.an('array').that.is.empty;
-
     });
   });
 

@@ -161,5 +161,4 @@ function getBidFloor(bid) {
   }
 }
 
-
 registerBidder(spec);
