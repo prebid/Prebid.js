@@ -62,11 +62,11 @@ describe('video.js', function () {
             placement: 1
           }
         },
-        'it was set by pub (playmethod=2)': {
+        'it was set by pub (playbackmethod=2)': {
           expected: 1,
           video: {
             plcmt: 1,
-            playmethod: 2
+            playbackmethod: 2
           }
         }
       }).forEach(([t, {expected, video}]) => {
