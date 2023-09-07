@@ -9,17 +9,15 @@ import {
 import { getStorageManager } from '../../../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../../../src/activities/modules';
 import { safeJSONParse, timestamp } from '../../../src/utils';
+import {server} from '../../mocks/xhr.js';
 
 describe('Experian realtime module', () => {
   const sandbox = sinon.createSandbox();
-  const xhr = sinon.useFakeXMLHttpRequest();
+  let requests;
 
-  let requests = [];
   const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME })
   beforeEach(() => {
-    xhr.onCreate = (request) => {
-      requests.push(request);
-    }
+    requests = server.requests;
     storage.removeDataFromLocalStorage(EXPERIAN_RTID_DATA_KEY, null)
     storage.removeDataFromLocalStorage(EXPERIAN_RTID_EXPIRATION_KEY, null)
     storage.removeDataFromLocalStorage(EXPERIAN_RTID_STALE_KEY, null)
@@ -27,8 +25,6 @@ describe('Experian realtime module', () => {
   })
   afterEach(() => {
     sandbox.restore();
-    xhr.restore();
-    requests = [];
   })
   // Bid request config
   const reqBidsConfigObj = {
