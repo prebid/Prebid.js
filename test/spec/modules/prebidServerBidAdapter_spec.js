@@ -1778,6 +1778,27 @@ describe('S2S Adapter', function () {
         return JSON.parse(server.requests[0].requestBody);
       }
 
+      function getCookieSyncRequestObj() {
+        const s2sBidRequest = utils.deepClone(REQUEST);
+        s2sBidRequest.s2sConfig = s2sConfig;
+        config.setConfig({ s2sConfig: s2sConfig });
+        adapter.callBids(s2sBidRequest, bidderReqs, addBidResponse, done, ajax);
+        return server.requests[0];
+      }
+
+      describe('extSyncMacros', function () {
+        it('correctly replaces macro in syncEndpoint if s2sConfig.extSyncMacros is present in the config', function () {
+          s2sConfig.syncEndpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync?pubId={{PUBID}}' };
+          s2sConfig.extSyncMacros = { PUBID: '12345' };
+          expect(getCookieSyncRequestObj().url).to.be.equal('https://prebid.adnxs.com/pbs/v1/cookie_sync?pubId=12345');
+        });
+
+        it('does not modify syncEndpoint if s2sConfig.extSyncMacros is not present in the config', function () {
+          s2sConfig.syncEndpoint = { p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync' };
+          expect(getCookieSyncRequestObj().url).to.be.equal('https://prebid.adnxs.com/pbs/v1/cookie_sync');
+        })
+      });
+
       describe('filterSettings', function () {
         it('correctly adds filterSettings to the cookie_sync request if userSync.filterSettings is present in the config and only the all key is present in userSync.filterSettings', function () {
           config.setConfig({
@@ -3796,6 +3817,16 @@ describe('S2S Adapter', function () {
         }
       });
       expect(typeof config.getConfig('s2sConfig').syncUrlModifier.appnexus).to.equal('function')
+    });
+
+    it('should set extSyncMacros', function () {
+      config.setConfig({
+        s2sConfig: {
+          extSyncMacros: {
+          }
+        }
+      });
+      expect(typeof config.getConfig('s2sConfig').extSyncMacros).to.equal('object')
     });
 
     it('should set correct bidder names to bidders property when using an alias for that bidder', function () {
