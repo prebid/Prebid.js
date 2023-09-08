@@ -9,8 +9,8 @@ import {
   isNumber,
   isPlainObject,
   logError,
-  triggerPixel,
-  pick
+  pick,
+  triggerPixel
 } from './utils.js';
 import {includes} from './polyfill.js';
 import {auctionManager} from './auctionManager.js';
@@ -23,7 +23,7 @@ export const NATIVE_TARGETING_KEYS = Object.keys(CONSTANTS.NATIVE_KEYS).map(
   key => CONSTANTS.NATIVE_KEYS[key]
 );
 
-const IMAGE = {
+export const IMAGE = {
   ortb: {
     ver: '1.2',
     assets: [
@@ -385,28 +385,19 @@ export function getNativeTargeting(bid, {index = auctionManager.index} = {}) {
   return keyValues;
 }
 
-const getNativeRequest = (bidResponse) => auctionManager.index.getAdUnit(bidResponse)?.nativeOrtbRequest;
-
-function assetsMessage(data, adObject, keys, {getNativeReq = getNativeRequest} = {}) {
+function assetsMessage(data, adObject, keys, {index = auctionManager.index} = {}) {
   const message = {
     message: 'assetResponse',
     adId: data.adId,
   };
 
-  // Pass to Prebid Universal Creative all assets, the legacy ones + the ortb ones (under ortb property)
-  const ortbRequest = getNativeReq(adObject);
+  const adUnit = index.getAdUnit(adObject);
   let nativeResp = adObject.native;
-  const ortbResponse = adObject.native?.ortb;
-  let legacyResponse = {};
-  if (ortbRequest && ortbResponse) {
-    legacyResponse = toLegacyResponse(ortbResponse, ortbRequest);
-    nativeResp = {
-      ...adObject.native,
-      ...legacyResponse
-    };
-  }
+
   if (adObject.native.ortb) {
     message.ortb = adObject.native.ortb;
+  } else if (adUnit.mediaTypes?.native?.ortb) {
+    message.ortb = toOrtbNativeResponse(adObject.native, adUnit.nativeOrtbRequest);
   }
   message.assets = [];
 
@@ -435,13 +426,13 @@ function assetsMessage(data, adObject, keys, {getNativeReq = getNativeRequest} =
  * Constructs a message object containing asset values for each of the
  * requested data keys.
  */
-export function getAssetMessage(data, adObject, {getNativeReq = getNativeRequest} = {}) {
+export function getAssetMessage(data, adObject) {
   const keys = data.assets.map((k) => getKeyByValue(CONSTANTS.NATIVE_KEYS, k));
-  return assetsMessage(data, adObject, keys, {getNativeReq});
+  return assetsMessage(data, adObject, keys);
 }
 
-export function getAllAssetsMessage(data, adObject, {getNativeReq = getNativeRequest} = {}) {
-  return assetsMessage(data, adObject, null, {getNativeReq});
+export function getAllAssetsMessage(data, adObject) {
+  return assetsMessage(data, adObject, null);
 }
 
 /**
@@ -486,6 +477,11 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
     if (NATIVE_KEYS_THAT_ARE_NOT_ASSETS.includes(key)) continue;
     if (!NATIVE_KEYS.hasOwnProperty(key)) {
       logError(`Unrecognized native asset code: ${key}. Asset will be ignored.`);
+      continue;
+    }
+
+    if (key === 'privacyLink') {
+      ortb.privacy = 1;
       continue;
     }
 
@@ -566,6 +562,21 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
 }
 
 /**
+ * Greatest common divisor between two positive integers
+ * https://en.wikipedia.org/wiki/Euclidean_algorithm
+ */
+function gcd(a, b) {
+  while (a && b && a !== b) {
+    if (a > b) {
+      a = a - b;
+    } else {
+      b = b - a;
+    }
+  }
+  return a || b;
+}
+
+/**
  * This function converts an OpenRTB native request object to Prebid proprietary
  * format. The purpose of this function is to help adapters to handle the
  * transition phase where publishers may be using OpenRTB objects but the
@@ -593,12 +604,13 @@ export function fromOrtbNativeRequest(openRTBRequest) {
       if (asset.img.w && asset.img.h) {
         image.sizes = [asset.img.w, asset.img.h];
       } else if (asset.img.wmin && asset.img.hmin) {
-        image.aspect_ratios = {
+        const scale = gcd(asset.img.wmin, asset.img.hmin)
+        image.aspect_ratios = [{
           min_width: asset.img.wmin,
           min_height: asset.img.hmin,
-          ratio_width: asset.img.wmin,
-          ratio_height: asset.img.hmin
-        }
+          ratio_width: asset.img.wmin / scale,
+          ratio_height: asset.img.hmin / scale
+        }]
       }
 
       if (asset.img.type === NATIVE_IMAGE_TYPES.MAIN) {
@@ -615,6 +627,9 @@ export function fromOrtbNativeRequest(openRTBRequest) {
       if (asset.data.len) {
         oldNativeObject[prebidAssetName].len = asset.data.len;
       }
+    }
+    if (openRTBRequest.privacy) {
+      oldNativeObject.privacyLink = { required: false };
     }
     // video was not supported by old prebid assets
   }
@@ -689,8 +704,11 @@ export function legacyPropertiesToOrtbNative(legacyNative) {
         // in general, native trackers seem to be neglected and/or broken
         response.jstracker = Array.isArray(value) ? value.join('') : value;
         break;
+      case 'privacyLink':
+        response.privacy = value;
+        break;
     }
-  })
+  });
   return response;
 }
 
@@ -710,7 +728,7 @@ export function toOrtbNativeResponse(legacyResponse, ortbRequest) {
   }
 
   Object.keys(legacyResponse).filter(key => !!legacyResponse[key]).forEach(key => {
-    const value = legacyResponse[key];
+    const value = getAssetValue(legacyResponse[key]);
     switch (key) {
       // process titles
       case 'title':
@@ -749,7 +767,7 @@ export function toOrtbNativeResponse(legacyResponse, ortbRequest) {
  * @param {*} ortbRequest the ortb request, useful to match ids.
  * @returns an object containing the response in legacy native format: { title: "this is a title", image: ... }
  */
-function toLegacyResponse(ortbResponse, ortbRequest) {
+export function toLegacyResponse(ortbResponse, ortbRequest) {
   const legacyResponse = {};
   const requestAssets = ortbRequest?.assets || [];
   legacyResponse.clickUrl = ortbResponse.link.url;
@@ -759,11 +777,38 @@ function toLegacyResponse(ortbResponse, ortbRequest) {
     if (asset.title) {
       legacyResponse.title = asset.title.text;
     } else if (asset.img) {
-      legacyResponse[requestAsset.img.type === NATIVE_IMAGE_TYPES.MAIN ? 'image' : 'icon'] = asset.img.url;
+      legacyResponse[requestAsset.img.type === NATIVE_IMAGE_TYPES.MAIN ? 'image' : 'icon'] = {
+        url: asset.img.url,
+        width: asset.img.w,
+        height: asset.img.h
+      };
     } else if (asset.data) {
       legacyResponse[PREBID_NATIVE_DATA_KEYS_TO_ORTB_INVERSE[NATIVE_ASSET_TYPES_INVERSE[requestAsset.data.type]]] = asset.data.value;
     }
   }
+
+  // Handle trackers
+  legacyResponse.impressionTrackers = [];
+  let jsTrackers = [];
+
+  if (ortbResponse.imptrackers) {
+    legacyResponse.impressionTrackers.push(...ortbResponse.imptrackers);
+  }
+  for (const eventTracker of ortbResponse?.eventtrackers || []) {
+    if (eventTracker.event === TRACKER_EVENTS.impression && eventTracker.method === TRACKER_METHODS.img) {
+      legacyResponse.impressionTrackers.push(eventTracker.url);
+    }
+    if (eventTracker.event === TRACKER_EVENTS.impression && eventTracker.method === TRACKER_METHODS.js) {
+      jsTrackers.push(eventTracker.url);
+    }
+  }
+
+  jsTrackers = jsTrackers.map(url => `<script async src="${url}"></script>`);
+  if (ortbResponse?.jstracker) { jsTrackers.push(ortbResponse.jstracker); }
+  if (jsTrackers.length) {
+    legacyResponse.javascriptTrackers = jsTrackers.join('\n');
+  }
+
   return legacyResponse;
 }
 

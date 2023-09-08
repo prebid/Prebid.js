@@ -9,14 +9,17 @@
 	},
 
 	"postCreateCommand": "bash .devcontainer/postCreate.sh",
-
+	// Make is-docker work again
+	"postStartCommand": "test -f /.dockerenv || sudo touch /.dockerenv",
+	
 	// Set *default* container specific settings.json values on container create.
 	"settings": {},
 
 
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
-		"nickdodd79.gulptasks"
+		"nickdodd79.gulptasks",
+		"dbaeumer.vscode-eslint"
 	],
 
 	// 9999 is web server, 9876 is karma

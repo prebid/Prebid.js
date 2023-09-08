@@ -24,6 +24,7 @@ const VAST_INSTREAM = 1;
 const VAST_OUTSTREAM = 2;
 const VAST_VERSION_DEFAULT = 3;
 const DEFAULT_SIZE_VAST = '640x480';
+const MAX_LEN_URL = 255;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -60,7 +61,7 @@ export const spec = {
       params = {
         rnd: rnd,
         e: spaces.str,
-        ur: pageUrl || FILE,
+        ur: cutUrl(pageUrl || FILE),
         pbv: '$prebid.version$',
         ncb: '1',
         vs: spaces.vs
@@ -70,7 +71,7 @@ export const spec = {
       }
 
       if (referrerUrl) {
-        params.fr = referrerUrl;
+        params.fr = cutUrl(referrerUrl);
       }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
@@ -128,9 +129,9 @@ export const spec = {
                 advertiserDomains: ad.adom
               };
             }
-            if (isVastResponse(ad)) {
+            if (request && request.data && request.data.vv) {
               bidResponse.vastXml = ad.adm;
-              bidResponse.mediaTypes = VIDEO;
+              bidResponse.mediaType = VIDEO;
             } else {
               bidResponse.ad = ad.adm;
             }
@@ -266,6 +267,21 @@ function cleanName(name) {
   return name.replace(/_|\.|-|\//g, '').replace(/\)\(|\(|\)|:/g, '_').replace(/^_+|_+$/g, '');
 }
 
+function getFloorStr(bid) {
+  if (typeof bid.getFloor === 'function') {
+    let bidFloor = bid.getFloor({
+      currency: DOLLAR_CODE,
+      mediaType: '*',
+      size: '*'
+    });
+
+    if (bidFloor.floor) {
+      return '|' + encodeURIComponent(bidFloor.floor);
+    }
+  }
+  return '';
+}
+
 function getSpaces(bidRequests, ml) {
   let impType = bidRequests.reduce((previousBits, bid) => (bid.mediaTypes && bid.mediaTypes[VIDEO]) ? (bid.mediaTypes[VIDEO].context == 'outstream' ? (previousBits | 2) : (previousBits | 1)) : previousBits, 0);
   // Only one type of auction is supported at a time
@@ -285,7 +301,7 @@ function getSpaces(bidRequests, ml) {
       let sizeVast = firstSize ? firstSize.join('x') : DEFAULT_SIZE_VAST;
       name = 'video_' + sizeVast + '_' + i;
       es.map[name] = bid.bidId;
-      return name + ':' + sizeVast + ';1';
+      return name + ':' + sizeVast + ';1' + getFloorStr(bid);
     }
 
     if (ml) {
@@ -295,7 +311,7 @@ function getSpaces(bidRequests, ml) {
     }
 
     es.map[name] = bid.bidId;
-    return name + ':' + getSize(bid);
+    return name + ':' + getSize(bid) + getFloorStr(bid);
   }).join('+')).join('+');
   return es;
 }
@@ -491,6 +507,17 @@ function visibilityHandler(obj) {
   }
 }
 
+function cutUrl (url) {
+  if (url.length > MAX_LEN_URL) {
+    url = url.split('?')[0];
+    if (url.length > MAX_LEN_URL) {
+      url = url.slice(0, MAX_LEN_URL);
+    }
+  }
+
+  return url;
+}
+
 function registerAuction(storageID) {
   let value;
   try {
@@ -502,10 +529,6 @@ function registerAuction(storageID) {
   }
 
   return true;
-}
-
-function isVastResponse(bid) {
-  return bid.adm.match(/^(<VAST)|(<VideoAdServingTemplate)/gmi);
 }
 
 registerBidder(spec);

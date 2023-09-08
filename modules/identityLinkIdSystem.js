@@ -9,8 +9,13 @@ import * as utils from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
-export const storage = getStorageManager();
+const MODULE_NAME = 'identityLink';
+
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+
+const liverampEnvelopeName = '_lr_env';
 
 /** @type {Submodule} */
 export const identityLinkSubmodule = {
@@ -18,7 +23,7 @@ export const identityLinkSubmodule = {
    * used to link submodule with config
    * @type {string}
    */
-  name: 'identityLink',
+  name: MODULE_NAME,
   /**
    * used to specify vendor id
    * @type {number}
@@ -71,11 +76,24 @@ export const identityLinkSubmodule = {
           }
         });
       } else {
-        getEnvelope(url, callback, configParams);
+        // try to get envelope directly from storage if ats lib is not present on a page
+        let envelope = getEnvelopeFromStorage();
+        if (envelope) {
+          utils.logInfo('identityLink: LiveRamp envelope successfully retrieved from storage!');
+          callback(JSON.parse(envelope).envelope);
+        } else {
+          getEnvelope(url, callback, configParams);
+        }
       }
     };
 
     return { callback: resp };
+  },
+  eids: {
+    'idl_env': {
+      source: 'liveramp.com',
+      atype: 3
+    },
   }
 };
 // return envelope from third party endpoint
@@ -116,6 +134,11 @@ function setEnvelopeSource(src) {
   let now = new Date();
   now.setTime(now.getTime() + 2592000000);
   storage.setCookie('_lr_env_src_ats', src, now.toUTCString());
+}
+
+export function getEnvelopeFromStorage() {
+  let rawEnvelope = storage.getCookie(liverampEnvelopeName) || storage.getDataFromLocalStorage(liverampEnvelopeName);
+  return rawEnvelope ? window.atob(rawEnvelope) : undefined;
 }
 
 submodule('userId', identityLinkSubmodule);

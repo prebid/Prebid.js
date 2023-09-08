@@ -44,7 +44,11 @@ describe('Adyoulike Adapter', function () {
         'params': {
           'placement': 'placement_0'
         },
-        'transactionId': 'bid_id_0_transaction_id'
+        'ortb2Imp': {
+          'ext': {
+            'tid': 'bid_id_0_transaction_id'
+          }
+        },
       }
     ],
   };
@@ -108,7 +112,11 @@ describe('Adyoulike Adapter', function () {
           ]
         }
       },
-      'transactionId': 'bid_id_0_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_0_transaction_id'
+        }
+      }
     }
   ];
 
@@ -142,7 +150,11 @@ describe('Adyoulike Adapter', function () {
           },
         }
       },
-      'transactionId': 'bid_id_0_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_0_transaction_id'
+        }
+      },
     }
   ];
 
@@ -162,7 +174,11 @@ describe('Adyoulike Adapter', function () {
           'playerSize': [[ 640, 480 ]]
         }
       },
-      'transactionId': 'bid_id_0_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_0_transaction_id'
+        }
+      },
     }
   ];
 
@@ -185,7 +201,11 @@ describe('Adyoulike Adapter', function () {
           }
         },
       },
-      'transactionId': 'bid_id_0_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_0_transaction_id'
+        }
+      },
     }
   ];
 
@@ -286,7 +306,11 @@ describe('Adyoulike Adapter', function () {
           {'sizes': ['300x250']
           }
         },
-      'transactionId': 'bid_id_0_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_0_transaction_id'
+        }
+      },
     }
   ];
 
@@ -304,7 +328,11 @@ describe('Adyoulike Adapter', function () {
           {'sizes': ['300x250']
           }
         },
-      'transactionId': 'bid_id_0_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_0_transaction_id'
+        }
+      },
     },
     {
       'bidId': 'bid_id_1',
@@ -319,7 +347,11 @@ describe('Adyoulike Adapter', function () {
           {'sizes': ['300x600']
           }
         },
-      'transactionId': 'bid_id_1_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_1_transaction_id'
+        }
+      },
     },
     {
       'bidId': 'bid_id_2',
@@ -327,7 +359,11 @@ describe('Adyoulike Adapter', function () {
       'placementCode': 'adunit/hb-2',
       'params': {},
       'sizes': '300x400',
-      'transactionId': 'bid_id_2_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_2_transaction_id'
+        }
+      },
     },
     {
       'bidId': 'bid_id_3',
@@ -336,7 +372,11 @@ describe('Adyoulike Adapter', function () {
       'params': {
         'placement': 'placement_3'
       },
-      'transactionId': 'bid_id_3_transaction_id'
+      ortb2Imp: {
+        ext: {
+          tid: 'bid_id_3_transaction_id'
+        }
+      },
     }
   ];
 
@@ -667,30 +707,21 @@ describe('Adyoulike Adapter', function () {
       expect(payload.gdprConsent.consentRequired).to.be.null;
     });
 
-    it('should add userid eids information to the request', function () {
-      let bidderRequest = {
-        'auctionId': '1d1a030790a475',
-        'bidderRequestId': '22edbae2733bf6',
-        'timeout': 3000,
-        'userId': {
-          pubcid: '01EAJWWNEPN3CYMM5N8M5VXY22',
-          unsuported: '666'
-        }
-      };
-
-      bidderRequest.bids = bidRequestWithSinglePlacement;
-
-      const request = spec.buildRequests(bidRequestWithSinglePlacement, bidderRequest);
-      const payload = JSON.parse(request.data);
-
-      expect(payload.userId).to.exist;
-      expect(payload.userId).to.deep.equal([{
+    it('should add eids eids information to the request', function () {
+      let bidRequest = bidRequestWithSinglePlacement;
+      bidRequest[0].userIdAsEids = [{
         'source': 'pubcid.org',
         'uids': [{
           'atype': 1,
           'id': '01EAJWWNEPN3CYMM5N8M5VXY22'
         }]
-      }]);
+      }]
+
+      const request = spec.buildRequests(bidRequest, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.eids).to.exist;
+      expect(payload.eids).to.deep.equal(bidRequest[0].userIdAsEids);
     });
 
     it('sends bid request to endpoint with single placement', function () {
@@ -722,6 +753,7 @@ describe('Adyoulike Adapter', function () {
       expect(payload.Version).to.equal('1.0');
       expect(payload.Bids['bid_id_0'].PlacementID).to.be.equal('placement_0');
       expect(payload.PageRefreshed).to.equal(false);
+      expect(payload.pbjs_version).to.equal('$prebid.version$');
       expect(payload.Bids['bid_id_0'].TransactionID).to.be.equal('bid_id_0_transaction_id');
     });
 
@@ -736,6 +768,7 @@ describe('Adyoulike Adapter', function () {
       expect(payload.Version).to.equal('1.0');
       expect(payload.Bids['bid_id_0'].PlacementID).to.be.equal('placement_0');
       expect(payload.PageRefreshed).to.equal(false);
+      expect(payload.pbjs_version).to.equal('$prebid.version$');
       expect(payload.Bids['bid_id_0'].TransactionID).to.be.equal('bid_id_0_transaction_id');
     });
 
@@ -758,6 +791,7 @@ describe('Adyoulike Adapter', function () {
       expect(payload.Bids['bid_id_1'].TransactionID).to.be.equal('bid_id_1_transaction_id');
       expect(payload.Bids['bid_id_3'].TransactionID).to.be.equal('bid_id_3_transaction_id');
       expect(payload.PageRefreshed).to.equal(false);
+      expect(payload.pbjs_version).to.equal('$prebid.version$');
     });
 
     it('sends bid request to endpoint setted by parameters', function () {

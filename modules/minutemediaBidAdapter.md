@@ -20,7 +20,7 @@ The adapter supports Video(instream) & Banner.
 
 | Name | Scope | Type | Description | Example
 | ---- | ----- | ---- | ----------- | -------
-| `org` | required | String |  MinuteMedia publisher Id provided by your MinuteMedia representative  | "56f91cd4d3e3660002000033"
+| `org` | required | String |  MinuteMedia publisher Id provided by your MinuteMedia representative  | "1234567890abcdef12345678"
 | `floorPrice` | optional | Number |  Minimum price in USD. Misuse of this parameter can impact revenue | 2.00
 | `placementId` | optional | String |  A unique placement identifier  | "12345678"
 | `testMode` | optional | Boolean |  This activates the test mode  | false
@@ -43,7 +43,7 @@ var adUnits = [{
         bids: [{
             bidder: 'minutemedia',
             params: {
-                org: '56f91cd4d3e3660002000033', // Required
+                org: '1234567890abcdef12345678', // Required
                 floorPrice: 2.00, // Optional
                 placementId: 'video-test', // Optional
                 testMode: false // Optional
@@ -65,7 +65,7 @@ var adUnits = [{
         bids: [{
             bidder: 'minutemedia',
             params: {
-                org: '56f91cd4d3e3660002000033', // Required
+                org: '1234567890abcdef12345678', // Required
                 floorPrice: 2.00, // Optional
                 placementId: 'banner-test', // Optional
                 testMode: false // Optional

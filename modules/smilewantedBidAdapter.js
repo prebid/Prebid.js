@@ -4,9 +4,12 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
+const GVL_ID = 639;
+
 export const spec = {
   code: 'smilewanted',
   aliases: ['smile', 'sw'],
+  gvlid: GVL_ID,
   supportedMediaTypes: [BANNER, VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
@@ -34,8 +37,8 @@ export const spec = {
           w: size[0],
           h: size[1]
         })),
-        transactionId: bid.transactionId,
-        timeout: config.getConfig('bidderTimeout'),
+        transactionId: bid.ortb2Imp?.ext?.tid,
+        timeout: bidderRequest?.timeout,
         bidId: bid.bidId,
         /** positionType is undocumented
         It is unclear what this parameter means.
@@ -63,6 +66,11 @@ export const spec = {
         payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
         payload.gdpr = bidderRequest.gdprConsent.gdprApplies; // we're handling the undefined case server side
       }
+
+      if (bid && bid.userIdAsEids) {
+        payload.eids = bid.userIdAsEids;
+      }
+
       var payloadString = JSON.stringify(payload);
       return {
         method: 'POST',

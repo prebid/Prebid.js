@@ -71,6 +71,8 @@ describe('IncrementX', function () {
         cpm: '0.7',
         ad: '<html><h1>Ad from IncrementX</h1></html>',
         slotBidId: 'bid-id-123456',
+        adType: '1',
+        settings: '1,2',
         nurl: 'htt://nurl.com',
         statusText: 'Success'
       }
@@ -80,6 +82,8 @@ describe('IncrementX', function () {
       requestId: 'bid-id-123456',
       cpm: '0.7',
       currency: 'USD',
+      adType: '1',
+      settings: '1,2',
       netRevenue: false,
       width: '300',
       height: '250',

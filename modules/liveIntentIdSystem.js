@@ -7,13 +7,15 @@
 import { triggerPixel, logError } from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import { LiveConnect } from 'live-connect-js/esm/initializer.js';
+import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
 import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { MinimalLiveConnect } from 'live-connect-js/esm/minimal-live-connect.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
+const EVENTS_TOPIC = 'pre_lips'
 const MODULE_NAME = 'liveIntentId';
-export const storage = getStorageManager({gvlid: null, moduleName: MODULE_NAME});
+const LI_PROVIDER_DOMAIN = 'liveintent.com';
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 const defaultRequestedAttributes = {'nonId': true}
 const calls = {
   ajaxGet: (url, onSuccess, onError, timeout) => {
@@ -40,12 +42,20 @@ let liveConnect = null;
  * This function is used in tests
  */
 export function reset() {
-  if (window && window.liQ) {
-    window.liQ = [];
+  if (window && window.liQ_instances) {
+    window.liQ_instances.forEach(i => i.eventBus.off(EVENTS_TOPIC, setEventFiredFlag))
+    window.liQ_instances = [];
   }
   liveIntentIdSubmodule.setModuleMode(null)
   eventFired = false;
   liveConnect = null;
+}
+
+/**
+ * This function is also used in tests
+ */
+export function setEventFiredFlag() {
+  eventFired = true;
 }
 
 function parseLiveIntentCollectorConfig(collectConfig) {
@@ -83,24 +93,29 @@ function initializeLiveConnect(configParams) {
 
   const publisherId = configParams.publisherId || 'any';
   const identityResolutionConfig = {
-    source: 'prebid',
     publisherId: publisherId,
     requestedAttributes: parseRequestedAttributes(configParams.requestedAttributesOverrides)
   };
   if (configParams.url) {
     identityResolutionConfig.url = configParams.url
   }
-  if (configParams.partner) {
-    identityResolutionConfig.source = configParams.partner
-  }
   if (configParams.ajaxTimeout) {
     identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout;
   }
 
   const liveConnectConfig = parseLiveIntentCollectorConfig(configParams.liCollectConfig);
+
+  if (!liveConnectConfig.appId && configParams.distributorId) {
+    liveConnectConfig.distributorId = configParams.distributorId;
+    identityResolutionConfig.source = configParams.distributorId;
+  } else {
+    identityResolutionConfig.source = configParams.partner || 'prebid'
+  }
+
   liveConnectConfig.wrapperName = 'prebid';
   liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
+  liveConnectConfig.fireEventDelay = configParams.fireEventDelay;
   const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString) {
     liveConnectConfig.usPrivacyString = usPrivacyString;
@@ -122,8 +137,14 @@ function initializeLiveConnect(configParams) {
 
 function tryFireEvent() {
   if (!eventFired && liveConnect) {
-    liveConnect.fire();
-    eventFired = true;
+    const eventDelay = liveConnect.config.fireEventDelay || 500
+    setTimeout(() => {
+      const instances = window.liQ_instances
+      instances.forEach(i => i.eventBus.once(EVENTS_TOPIC, setEventFiredFlag))
+      if (!eventFired && liveConnect) {
+        liveConnect.fire();
+      }
+    }, eventDelay)
   }
 }
 
@@ -140,7 +161,7 @@ export const liveIntentIdSubmodule = {
     this.moduleMode = mode
   },
   getInitializer() {
-    return this.moduleMode === 'minimal' ? MinimalLiveConnect : LiveConnect
+    return (liveConnectConfig, storage, calls) => LiveConnect(liveConnectConfig, storage, calls, this.moduleMode)
   },
 
   /**
@@ -169,7 +190,23 @@ export const liveIntentIdSubmodule = {
       // As adapters are applied in lexicographical order, we will always
       // be overwritten by the 'proper' uid2 module if it is present.
       if (value.uid2) {
-        result.uid2 = { 'id': value.uid2 }
+        result.uid2 = { 'id': value.uid2, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.bidswitch) {
+        result.bidswitch = { 'id': value.bidswitch, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.medianet) {
+        result.medianet = { 'id': value.medianet, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.magnite) {
+        result.magnite = { 'id': value.magnite, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.index) {
+        result.index = { 'id': value.index, ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
       return result
@@ -209,6 +246,70 @@ export const liveIntentIdSubmodule = {
     }
 
     return { callback: result };
+  },
+  eids: {
+    'lipb': {
+      getValue: function(data) {
+        return data.lipbid;
+      },
+      source: 'liveintent.com',
+      atype: 3,
+      getEidExt: function(data) {
+        if (Array.isArray(data.segments) && data.segments.length) {
+          return {
+            segments: data.segments
+          };
+        }
+      }
+    },
+    'bidswitch': {
+      source: 'bidswitch.net',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'medianet': {
+      source: 'media.net',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'magnite': {
+      source: 'rubiconproject.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'index': {
+      source: 'liveintent.indexexchange.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    }
   }
 };
 
