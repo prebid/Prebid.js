@@ -1,4 +1,4 @@
-import { logInfo, logError } from '../src/utils.js';
+import {logInfo, logError, deepClone} from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
@@ -47,7 +47,8 @@ function getZetaParams(event) {
 
 /// /////////// ADAPTER EVENT HANDLER FUNCTIONS //////////////
 
-function adRenderSucceededHandler(args) {
+function adRenderSucceededHandler(originalArgs) {
+  const args = deepClone(originalArgs);
   let eventType = CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED
   logInfo(LOG_PREFIX + 'handle ' + eventType + ' event');
 
@@ -68,7 +69,8 @@ function adRenderSucceededHandler(args) {
   sendEvent(eventType, args);
 }
 
-function auctionEndHandler(args) {
+function auctionEndHandler(originalArgs) {
+  const args = deepClone(originalArgs);
   let eventType = CONSTANTS.EVENTS.AUCTION_END;
   logInfo(LOG_PREFIX + 'handle ' + eventType + ' event');
 
