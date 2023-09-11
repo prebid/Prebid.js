@@ -32,6 +32,19 @@ function createLogger(logger, prefix) {
     logger(prefix + ' ', ...strings);
   }
 }
+
+function extractIdentityFromParams(params) {
+  const keysToCheck = ['emailHash', 'phoneHash', 'email', 'phone'];
+
+  for (let key of keysToCheck) {
+    if (params.hasOwnProperty(key)) {
+      return { [key]: params[key] };
+    }
+  }
+
+  return {}; 
+}
+
 const _logInfo = createLogger(logInfo, LOG_PRE_FIX);
 const _logWarn = createLogger(logWarn, LOG_PRE_FIX);
 
@@ -70,11 +83,18 @@ export const uid2IdSubmodule = {
       return;
     }
 
+    let mappedCstgConfig = {
+      serverPublicKey: config?.params?.serverPublicKey,
+      subscriptionId: config?.params?.subscriptionId,
+      ...extractIdentityFromParams(config?.params ?? {})
+    }
+
     const mappedConfig = {
       apiBaseUrl: config?.params?.uid2ApiBase ?? UID2_BASE_URL,
       paramToken: config?.params?.uid2Token,
       serverCookieName: config?.params?.uid2Cookie ?? config?.params?.uid2ServerCookie,
       storage: config?.params?.storage ?? 'localStorage',
+      cstg: mappedCstgConfig,
       clientId: UID2_CLIENT_ID,
       internalStorage: ADVERTISING_COOKIE
     }
