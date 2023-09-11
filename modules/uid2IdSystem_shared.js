@@ -63,7 +63,7 @@ function isCSTGOptionsAndGetIdentity(
   }
 
   if (opts.phoneHash) {
-    if (isBase64Hash(opts.phoneHash)) {
+    if (!isBase64Hash(opts.phoneHash)) {
       _logWarn('CSTG opts.phoneHash is invalid');
       return false;
     }
@@ -597,9 +597,9 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
     }
   }
 
-  if (cstgIdentity && storedTokens.originalIdentity) {
+  if (cstgIdentity && storedTokens) {
     const identityKey = Object.keys(cstgIdentity)[0]
-    if (storedTokens.originalIdentity[identityKey] !== cstgIdentity.identityKey) {
+    if (!storedTokens.originalIdentity || storedTokens.originalIdentity[identityKey] !== cstgIdentity.identityKey) {
       _logInfo('CSTG supplied new identity - ignoring stored value.', storedTokens.originalIdentity, cstgIdentity);
       // Stored token wasn't originally sourced from the provided identity - ignore the stored value. A new user has logged in?
       storedTokens = null;
@@ -612,7 +612,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
     _logInfo('Generate token using CSTG');
     return { callback: (cb) => {
       promise.then((result) => {
-        _logInfo('Generation responded, passing the new token on.', result);
+        _logInfo('Token generation responded, passing the new token on.', result);
         cb(result);
       });
     } };
