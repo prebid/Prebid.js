@@ -280,7 +280,21 @@ describe('SmartyadsAdapter', function () {
     });
 
     it('should send a valid bid won notice', function () {
-      spec.onBidWon(bidResponse);
+      const bid = {
+        'c': 'o',
+        'm': 'prebid',
+        'secret_key': 'prebid_js',
+        'winTest': '1',
+        'postData': [{
+          'bidder': 'smartyads',
+          'params': [
+            {'host': 'prebid',
+              'accountid': '123',
+              'sourceid': '12345'
+            }]
+        }]
+      };
+      spec.onBidWon(bid);
       expect(server.requests.length).to.equal(1);
     });
   });
@@ -291,7 +305,21 @@ describe('SmartyadsAdapter', function () {
     });
 
     it('should send a valid bid timeout notice', function () {
-      spec.onTimeout({});
+      const bid = {
+        'c': 'o',
+        'm': 'prebid',
+        'secret_key': 'prebid_js',
+        'bidTimeout': '1',
+        'postData': [{
+          'bidder': 'smartyads',
+          'params': [
+            {'host': 'prebid',
+              'accountid': '123',
+              'sourceid': '12345'
+            }]
+        }]
+      };
+      spec.onTimeout(bid);
       expect(server.requests.length).to.equal(1);
     });
   });
@@ -302,7 +330,21 @@ describe('SmartyadsAdapter', function () {
     });
 
     it('should send a valid bidder error notice', function () {
-      spec.onBidderError({});
+      const bid = {
+        'c': 'o',
+        'm': 'prebid',
+        'secret_key': 'prebid_js',
+        'bidderError': '1',
+        'postData': [{
+          'bidder': 'smartyads',
+          'params': [
+            {'host': 'prebid',
+              'accountid': '123',
+              'sourceid': '12345'
+            }]
+        }]
+      };
+      spec.onBidderError(bid);
       expect(server.requests.length).to.equal(1);
     });
   });
