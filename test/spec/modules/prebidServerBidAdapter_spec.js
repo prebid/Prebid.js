@@ -712,8 +712,8 @@ describe('S2S Adapter', function () {
       beforeEach(() => {
         s2sReq = {
           ...REQUEST,
-          ortb2Fragments: {global: {source: {tid: 'mock-tid'}}},
-          ad_units: REQUEST.ad_units.map(au => ({...au, ortb2Imp: {ext: {tid: 'mock-tid'}}}))
+          ortb2Fragments: {global: {}},
+          ad_units: REQUEST.ad_units.map(au => ({...au, ortb2Imp: {ext: {tid: 'mock-tid'}}})),
         };
         BID_REQUESTS[0].bids[0].ortb2Imp = {ext: {tid: 'mock-tid'}};
       });
@@ -726,15 +726,15 @@ describe('S2S Adapter', function () {
       it('should not be set when transmitTid is not allowed, with ext.prebid.createtids: false', () => {
         config.setConfig({ s2sConfig: CONFIG, enableTIDs: false });
         const req = makeRequest();
-        expect(req.source.tid).to.not.exist;
-        expect(req.imp[0].ext.tid).to.not.exist;
+        expect(req.source?.tid).to.not.exist;
+        expect(req.imp[0].ext?.tid).to.not.exist;
         expect(req.ext.prebid.createtids).to.equal(false);
       });
 
-      it('should be picked from FPD otherwise', () => {
+      it('should be set to auction ID otherwise', () => {
         config.setConfig({s2sConfig: CONFIG, enableTIDs: true});
         const req = makeRequest();
-        expect(req.source.tid).to.eql('mock-tid');
+        expect(req.source.tid).to.eql(BID_REQUESTS[0].auctionId);
         expect(req.imp[0].ext.tid).to.eql('mock-tid');
       })
     })

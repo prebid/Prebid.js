@@ -1,19 +1,18 @@
 import {
-  deepAccess,
   deepSetValue,
-  isArray,
+  logInfo,
+  deepAccess,
+  logError,
   isFn,
-  isNumber,
   isPlainObject,
   isStr,
-  logError,
-  logInfo,
-  logMessage
+  isNumber,
+  isArray, logMessage
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
-const BIDDER_CODE = 'kulturemedia';
+const BIDDER_CODE = 'dxkulture';
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_NET_REVENUE = true;
@@ -134,13 +133,13 @@ export const spec = {
         }
       })
     } else {
-      logInfo('kulturemedia.interpretResponse :: no valid responses to interpret');
+      logInfo('dxkulture.interpretResponse :: no valid responses to interpret');
     }
     return bidResponses;
   },
 
   getUserSyncs: function (syncOptions, serverResponses) {
-    logInfo('kulturemedia.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses);
+    logInfo('dxkulture.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses);
     let syncs = [];
 
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
@@ -172,7 +171,7 @@ export const spec = {
         }
       }
     });
-    logInfo('kulturemedia.getUserSyncs result=%o', syncs);
+    logInfo('dxkulture.getUserSyncs result=%o', syncs);
     return syncs;
   },
 
@@ -392,7 +391,7 @@ function buildVideoRequestData(bidRequest, bidderRequest) {
           videoParams.content[contentKey].every(catStr => isStr(catStr)))) {
         openrtbRequest.site.content[contentKey] = videoParams.content[contentKey];
       } else {
-        logMessage('KultureMedia bid adapter validation error: ', contentKey, ' is either not supported is OpenRTB V2.5 or value is undefined');
+        logMessage('DXKulture bid adapter validation error: ', contentKey, ' is either not supported is OpenRTB V2.5 or value is undefined');
       }
     }
   }
@@ -424,7 +423,7 @@ function buildBannerRequestData(bidRequests, bidderRequest) {
   }));
 
   const openrtbRequest = {
-    id: bidderRequest.bidderRequestId,
+    id: bidderRequest.auctionId,
     imp: impr,
     site: {
       domain: bidderRequest.refererInfo?.domain,
@@ -441,6 +440,7 @@ function _createBidResponse(bid) {
     bid.adomain && bid.adomain.length;
   const bidResponse = {
     requestId: bid.impid,
+    bidderCode: spec.code,
     cpm: bid.price,
     width: bid.w,
     height: bid.h,

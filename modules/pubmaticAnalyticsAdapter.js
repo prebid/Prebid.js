@@ -22,6 +22,7 @@ const ERROR = 'error';
 const REQUEST_ERROR = 'request-error';
 const TIMEOUT_ERROR = 'timeout-error';
 const EMPTY_STRING = '';
+const OPEN_AUCTION_DEAL_ID = '-1';
 const MEDIA_TYPE_BANNER = 'banner';
 const CURRENCY_USD = 'USD';
 const BID_PRECISION = 2;
@@ -270,7 +271,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
         'psz': bid.bidResponse ? (bid.bidResponse.dimensions.width + 'x' + bid.bidResponse.dimensions.height) : '0x0',
         'eg': bid.bidResponse ? bid.bidResponse.bidGrossCpmUSD : 0,
         'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0,
-        'di': bid.bidResponse ? (bid.bidResponse.dealId || EMPTY_STRING) : EMPTY_STRING,
+        'di': bid.bidResponse ? (bid.bidResponse.dealId || OPEN_AUCTION_DEAL_ID) : OPEN_AUCTION_DEAL_ID,
         'dc': bid.bidResponse ? (bid.bidResponse.dealChannel || EMPTY_STRING) : EMPTY_STRING,
         'l1': bid.bidResponse ? bid.clientLatencyTimeMs : 0,
         'l2': 0,
@@ -428,6 +429,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&eg=' + enc(winningBid.bidResponse.bidGrossCpmUSD);
   pixelURL += '&kgpv=' + enc(getValueForKgpv(winningBid, adUnitId));
   pixelURL += '&piid=' + enc(winningBid.bidResponse.partnerImpId || EMPTY_STRING);
+  pixelURL += '&di=' + enc(winningBid?.bidResponse?.dealId || OPEN_AUCTION_DEAL_ID);
 
   pixelURL += '&plt=' + enc(getDevicePlatform());
   pixelURL += '&psz=' + enc((winningBid?.bidResponse?.dimensions?.width || '0') + 'x' +
@@ -507,6 +509,16 @@ function bidResponseHandler(args) {
   setBidStatus(bid, args);
   bid.clientLatencyTimeMs = Date.now() - cache.auctions[args.auctionId].timestamp;
   bid.bidResponse = parseBidResponse(args);
+}
+
+function bidRejectedHandler(args) {
+  // If bid is rejected due to floors value did not met
+  // make cpm as 0, status as bidRejected and forward the bid for logging
+  if (args.rejectionReason === CONSTANTS.REJECTION_REASON.FLOOR_NOT_MET) {
+    args.cpm = 0;
+    args.status = CONSTANTS.BID_STATUS.BID_REJECTED;
+    bidResponseHandler(args);
+  }
 }
 
 function bidderDoneHandler(args) {
@@ -606,6 +618,9 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
         break;
       case CONSTANTS.EVENTS.BID_RESPONSE:
         bidResponseHandler(args);
+        break;
+      case CONSTANTS.EVENTS.BID_REJECTED:
+        bidRejectedHandler(args)
         break;
       case CONSTANTS.EVENTS.BIDDER_DONE:
         bidderDoneHandler(args);

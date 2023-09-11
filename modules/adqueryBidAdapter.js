@@ -53,6 +53,9 @@ export const spec = {
    * @return {Bid[]}
    */
   interpretResponse: (response, request) => {
+    logInfo(request);
+    logInfo(response);
+
     const res = response && response.body && response.body.data;
     let bidResponses = [];
 
@@ -113,8 +116,12 @@ export const spec = {
    */
   onBidWon: (bid) => {
     logInfo('onBidWon', bid);
+
     const bidString = JSON.stringify(bid);
-    const encodedBuf = window.btoa(bidString);
+    let copyOfBid = JSON.parse(bidString);
+    delete copyOfBid.ad;
+    const shortBidString = JSON.stringify(bid);
+    const encodedBuf = window.btoa(shortBidString);
 
     let params = {
       q: encodedBuf,
@@ -170,7 +177,6 @@ export const spec = {
       url: syncUrl
     }];
   }
-
 };
 
 function buildRequest(validBidRequests, bidderRequest) {
@@ -188,9 +194,9 @@ function buildRequest(validBidRequests, bidderRequest) {
 
   if (!userId) {
     // onetime User ID
-    const randomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
-    userId = randomValues.map(it => it.toString(36)).join().substring(20);
-
+    const ramdomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
+    userId = ramdomValues.map(val => val.toString(36)).join('').substring(0, 20);
+    logInfo('generated onetime User ID: ', userId);
     window.qid = userId;
   }
 

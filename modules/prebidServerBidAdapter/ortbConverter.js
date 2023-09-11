@@ -168,6 +168,10 @@ const PBS_CONVERTER = ortbConverter({
         // FPD is handled different for PBS - the base request will only contain global FPD;
         // bidder-specific values are set in ext.prebid.bidderconfig
 
+        if (context.transmitTids) {
+          deepSetValue(ortbRequest, 'source.tid', proxyBidderRequest.auctionId);
+        }
+
         mergeDeep(ortbRequest, context.s2sBidRequest.ortb2Fragments?.global);
 
         // also merge in s2sConfig.extPrebid
