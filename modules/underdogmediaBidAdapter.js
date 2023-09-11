@@ -93,7 +93,7 @@ export const spec = {
       let element = _getAdSlotHTMLElement(adUnitCode)
       let minSize = _getMinSize(bidParamSizes)
 
-      placementObject.sizes = parseSizesInput(bidParamSizes)``
+      placementObject.sizes = parseSizesInput(bidParamSizes)
       placementObject.adUnitCode = adUnitCode
       placementObject.productId = PRODUCT[bidParam.params.productId] || PRODUCT.standard
       if (deepAccess(bidParam, 'params.productId')) {
