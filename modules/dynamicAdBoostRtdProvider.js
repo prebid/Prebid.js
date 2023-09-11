@@ -85,12 +85,18 @@ function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
   callback();
 }
 
+let markViewed = (entry, observer) => {
+  return () => {
+    observer.unobserve(entry.target);
+  }
+}
+
 // Callback function when an observed element becomes visible
 function dabHandleIntersection(entries) {
   entries.forEach(entry => {
     if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
       dynamicAdBoostAdUnits[entry.target.id] = entry.intersectionRatio;
-      observer.unobserve(entry.target);
+      markViewed(entry, observer)
     }
   });
 }
@@ -99,7 +105,8 @@ function dabHandleIntersection(entries) {
 export const subModuleObj = {
   name: MODULE_NAME,
   init,
-  getBidRequestData
+  getBidRequestData,
+  markViewed
 };
 
 submodule('realTimeData', subModuleObj);
