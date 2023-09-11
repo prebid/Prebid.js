@@ -116,7 +116,7 @@ describe('ConcertAdapter', function () {
       expect(payload).to.have.property('meta');
       expect(payload).to.have.property('slots');
 
-      const metaRequiredFields = ['prebidVersion', 'pageUrl', 'screen', 'debug', 'uid', 'optedOut', 'adapterVersion', 'uspConsent', 'gdprConsent', 'gppConsent'];
+      const metaRequiredFields = ['prebidVersion', 'pageUrl', 'screen', 'debug', 'uid', 'optedOut', 'adapterVersion', 'uspConsent', 'gdprConsent', 'gppConsent', 'browserLanguage'];
       const slotsRequiredFields = ['name', 'bidId', 'transactionId', 'sizes', 'partnerId', 'slotType'];
 
       metaRequiredFields.forEach(function(field) {

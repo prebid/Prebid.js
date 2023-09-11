@@ -170,6 +170,22 @@ export const cadentAdapter = {
 
     return cadentData;
   },
+
+  getGpp: (bidRequest, cadentData) => {
+    if (bidRequest.gppConsent) {
+      const {gppString: gpp, applicableSections: gppSid} = bidRequest.gppConsent;
+      if (cadentData.regs) {
+        cadentData.regs.gpp = gpp;
+        cadentData.regs.gpp_sid = gppSid;
+      } else {
+        cadentData.regs = {
+          gpp: gpp,
+          gpp_sid: gppSid
+        }
+      }
+    }
+    return cadentData;
+  },
   getSupplyChain: (bidderRequest, cadentData) => {
     if (bidderRequest.bids[0] && bidderRequest.bids[0].schain) {
       cadentData.source = {
@@ -290,6 +306,7 @@ export const spec = {
     };
 
     cadentData = cadentAdapter.getGdpr(bidderRequest, Object.assign({}, cadentData));
+    cadentData = cadentAdapter.getGpp(bidderRequest, Object.assign({}, cadentData));
     cadentData = cadentAdapter.getSupplyChain(bidderRequest, Object.assign({}, cadentData));
     if (bidderRequest && bidderRequest.uspConsent) {
       cadentData.us_privacy = bidderRequest.uspConsent;
@@ -357,7 +374,7 @@ export const spec = {
     }
     return cadentBidResponses;
   },
-  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     const syncs = [];
     const consentParams = [];
     if (syncOptions.iframeEnabled) {
@@ -372,6 +389,14 @@ export const spec = {
       }
       if (uspConsent && typeof uspConsent.consentString === 'string') {
         consentParams.push(`usp=${uspConsent.consentString}`);
+      }
+      if (gppConsent && typeof gppConsent === 'object') {
+        if (gppConsent.gppString && typeof gppConsent.gppString === 'string') {
+          consentParams.push(`gpp=${gppConsent.gppString}`);
+        }
+        if (gppConsent.applicableSections && typeof gppConsent.applicableSections === 'object') {
+          consentParams.push(`gpp_sid=${gppConsent.applicableSections}`);
+        }
       }
       if (consentParams.length > 0) {
         url = url + '?' + consentParams.join('&');

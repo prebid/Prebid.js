@@ -27,7 +27,7 @@ const DEFAULT_PBS_INTEGRATION = 'pbjs';
 const DEFAULT_RENDERER_URL = 'https://video-outstream.rubiconproject.com/apex-2.2.1.js';
 // renderer code at https://github.com/rubicon-project/apex2
 
-let rubiConf = {};
+let rubiConf = config.getConfig('rubicon') || {};
 // we are saving these as global to this module so that if a pub accidentally overwrites the entire
 // rubicon object, then we do not lose other data
 config.getConfig('rubicon', config => {
@@ -196,8 +196,8 @@ export const converter = ortbConverter({
     if (config.getConfig('s2sConfig.defaultTtl')) {
       imp.exp = config.getConfig('s2sConfig.defaultTtl');
     };
-    bidRequest.params.position === 'atf' && (imp.video.pos = 1);
-    bidRequest.params.position === 'btf' && (imp.video.pos = 3);
+    bidRequest.params.position === 'atf' && imp.video && (imp.video.pos = 1);
+    bidRequest.params.position === 'btf' && imp.video && (imp.video.pos = 3);
     delete imp.ext?.prebid?.storedrequest;
 
     if (bidRequest.params.bidonmultiformat === true && bidRequestType.length > 1) {
@@ -322,7 +322,7 @@ export const spec = {
         )
       );
     });
-    if (config.getConfig('rubicon.singleRequest') !== true) {
+    if (rubiConf.singleRequest !== true) {
       // bids are not grouped if single request mode is not enabled
       requests = filteredHttpRequest.concat(bannerBidRequests.map(bidRequest => {
         const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
@@ -537,7 +537,9 @@ export const spec = {
             data['eid_id5-sync.com'] = `${eid.uids[0].id}^${eid.uids[0].atype}^${(eid.uids[0].ext && eid.uids[0].ext.linkType) || ''}`;
           } else {
             // add anything else with this generic format
-            data[`eid_${eid.source}`] = `${eid.uids[0].id}^${eid.uids[0].atype || ''}`;
+            // if rubicon drop ^
+            const id = eid.source === 'rubiconproject.com' ? eid.uids[0].id : `${eid.uids[0].id}^${eid.uids[0].atype || ''}`
+            data[`eid_${eid.source}`] = id;
           }
           // send AE "ppuid" signal if exists, and hasn't already been sent
           if (!data['ppuid']) {
