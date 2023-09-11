@@ -71,7 +71,7 @@ export const spec = {
     let data = {
       dt: 10,
       gdpr: {},
-      pbTimeout: config.getConfig('bidderTimeout'),
+      pbTimeout: +config.getConfig('bidderTimeout') || 3001, // KP: convert to number and if NaN we default to 3001. Particular value to let us know that there was a problem in converting pbTimeout
       pbjsVersion: prebidVersion,
       placements: [],
       ref: deepAccess(bidderRequest, 'refererInfo.page') ? bidderRequest.refererInfo.page : undefined,
@@ -93,7 +93,7 @@ export const spec = {
       let element = _getAdSlotHTMLElement(adUnitCode)
       let minSize = _getMinSize(bidParamSizes)
 
-      placementObject.sizes = parseSizesInput(bidParamSizes)
+      placementObject.sizes = parseSizesInput(bidParamSizes)``
       placementObject.adUnitCode = adUnitCode
       placementObject.productId = PRODUCT[bidParam.params.productId] || PRODUCT.standard
       if (deepAccess(bidParam, 'params.productId')) {
