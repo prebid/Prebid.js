@@ -42,7 +42,7 @@ function extractIdentityFromParams(params) {
     }
   }
 
-  return {}; 
+  return {};
 }
 
 const _logInfo = createLogger(logInfo, LOG_PRE_FIX);

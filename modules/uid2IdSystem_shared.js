@@ -96,8 +96,10 @@ export class Uid2ApiClient {
     this._clientVersion = clientId;
     this._logInfo = logInfo;
     this._logWarn = logWarn;
-    this._serverPublicKey = opts.cstg.serverPublicKey;
-    this._subscriptionId = opts.cstg.subscriptionId;
+    if (opts.cstg) {
+      this._serverPublicKey = opts.cstg.serverPublicKey;
+      this._subscriptionId = opts.cstg.subscriptionId;
+    }
   }
   createArrayBuffer(text) {
     const arrayBuffer = new Uint8Array(text.length);
@@ -186,35 +188,31 @@ export class Uid2ApiClient {
     return promise;
   }
 
-  callCstgApi(request) {
+  async callCstgApi(request) {
     this._logInfo('Building Cstg request for', request);
-    UID2CstgBox
-      .build(stripPublicKeyPrefix(this._serverPublicKey))
-      .then((box) => {
-        const encoder = new TextEncoder();
-        const now = Date.now();
-        return Promise.all([
-          box.encrypt(
-            encoder.encode(JSON.stringify(request)),
-            encoder.encode(JSON.stringify([now]))
-          ),
-          UID2CstgCrypto.exportPublicKey(box.clientPublicKey)
-        ])
-          .then(([{iv, ciphertext}, exportedPublicKey]) => ({
-            payload: UID2CstgCrypto.bytesToBase64(new Uint8Array(ciphertext)),
-            iv: UID2CstgCrypto.bytesToBase64(new Uint8Array(iv)),
-            public_key: UID2CstgCrypto.bytesToBase64(new Uint8Array(exportedPublicKey)),
-            timestamp: now,
-            subscription_id: this._subscriptionId,
-          }))
-          .then((responseBody) => this._callCstgApi(responseBody, box))
-      })
+    const box = await UID2CstgBox.build(stripPublicKeyPrefix(this._serverPublicKey))
+    const encoder = new TextEncoder();
+    const now = Date.now();
+    const { iv, ciphertext } = await box.encrypt(
+      encoder.encode(JSON.stringify(request)),
+      encoder.encode(JSON.stringify([now]))
+    );
+
+    const exportedPublicKey = await UID2CstgCrypto.exportPublicKey(box.clientPublicKey);
+
+    const requestBody = {
+      payload: UID2CstgCrypto.bytesToBase64(new Uint8Array(ciphertext)),
+      iv: UID2CstgCrypto.bytesToBase64(new Uint8Array(iv)),
+      public_key: UID2CstgCrypto.bytesToBase64(new Uint8Array(exportedPublicKey)),
+      timestamp: now,
+      subscription_id: this.subscriptionId,
+    };
+    return this._callCstgApi(requestBody, box)
   }
 
   _callCstgApi(requestBody, box) {
     const url = this._baseUrl + '/v2/token/client-generate';
     const req = new XMLHttpRequest();
-    this._requestsInFlight.push(req);
     req.overrideMimeType('text/plain');
     req.open('POST', url, true);
 
@@ -227,7 +225,6 @@ export class Uid2ApiClient {
 
     req.onreadystatechange = async () => {
       if (req.readyState !== req.DONE) return;
-      this._requestsInFlight = this._requestsInFlight.filter((r) => r !== req);
       try {
         if (req.status === 200) {
           const encodedResp = UID2CstgCrypto.base64ToBytes(req.responseText);
@@ -353,31 +350,36 @@ export class Uid2StorageManager {
 }
 
 class UID2CstgBox {
-  _namedCurve = 'P-256'
+  static _namedCurve = 'P-256'
   constructor(clientPublicKey, sharedKey) {
     this._clientPublicKey = clientPublicKey;
     this._sharedKey = sharedKey;
   }
 
-  static build(serverPublicKey) {
-    return Promise.all([UID2CstgCrypto.generateKeyPair(this._namedCurve), UID2CstgCrypto.importPublicKey(serverPublicKey, this._namedCurve)])
-      .then(([clientKeyPair, importedServerPublicKey]) => {
-        return UID2CstgCrypto.deriveKey(importedServerPublicKey, clientKeyPair.privateKey)
-          .then((sharedKey) => new UID2CstgBox(clientKeyPair.publicKey, sharedKey))
-      });
+  static async build(serverPublicKey) {
+    const clientKeyPair = await UID2CstgCrypto.generateKeyPair(UID2CstgBox._namedCurve);
+    const importedServerPublicKey = await UID2CstgCrypto.importPublicKey(
+      serverPublicKey,
+      this._namedCurve
+    );
+    const sharedKey = await UID2CstgCrypto.deriveKey(
+      importedServerPublicKey,
+      clientKeyPair.privateKey
+    );
+    return new UID2CstgBox(clientKeyPair.publicKey, sharedKey);
   }
 
-  encrypt(plaintext, additionalData) {
+  async encrypt(plaintext, additionalData) {
     const iv = window.crypto.getRandomValues(new Uint8Array(12));
-    return window.crypto.subtle.encrypt({
+    const ciphertext = await window.crypto.subtle.encrypt({
       name: 'AES-GCM',
       iv,
       additionalData,
     }, this._sharedKey, plaintext)
-      .then((ciphertext) => ({iv, ciphertext}));
+    return { iv, ciphertext }
   }
 
-  decrypt(iv, ciphertext) {
+  async decrypt(iv, ciphertext) {
     return window.crypto.subtle.decrypt({
       name: 'AES-GCM',
       iv
@@ -400,7 +402,7 @@ class UID2CstgCrypto {
     return btoa(binString);
   }
 
-  static generateKeyPair(namedCurve) {
+  static async generateKeyPair(namedCurve) {
     const params = {
       name: 'ECDH',
       namedCurve: namedCurve,
@@ -408,7 +410,7 @@ class UID2CstgCrypto {
     return window.crypto.subtle.generateKey(params, false, ['deriveKey']);
   }
 
-  static importPublicKey(publicKey, namedCurve) {
+  static async importPublicKey(publicKey, namedCurve) {
     const params = {
       name: 'ECDH',
       namedCurve: namedCurve,
@@ -420,7 +422,7 @@ class UID2CstgCrypto {
     return window.crypto.subtle.exportKey('spki', publicKey);
   }
 
-  static deriveKey(serverPublicKey, clientPrivateKey) {
+  static async deriveKey(serverPublicKey, clientPrivateKey) {
     return window.crypto.subtle.deriveKey({
       name: 'ECDH',
       public: serverPublicKey,
@@ -430,13 +432,12 @@ class UID2CstgCrypto {
     }, false, ['encrypt', 'decrypt']);
   }
 
-  static hash(value) {
-    return window.crypto.subtle.digest(
+  static async hash(value) {
+    const hash = await window.crypto.subtle.digest(
       'SHA-256',
       new TextEncoder().encode(value)
-    ).then(hash => {
-      return this.bytesToBase64(new Uint8Array(hash));
-    })
+    );
+    return this.bytesToBase64(new Uint8Array(hash));
   }
 }
 
@@ -526,35 +527,33 @@ function normalizeEmail(email) {
   return addressPartToUse + '@' + domainPart;
 }
 
-function generateRequest(cstgIdentity) {
+async function generateRequest(cstgIdentity) {
   if ('email_hash' in cstgIdentity || 'phone_hash' in cstgIdentity) {
-    return Promise.resolve(cstgIdentity)
+    return cstgIdentity;
   }
   if ('email' in cstgIdentity) {
-    return UID2CstgCrypto.hash(cstgIdentity.email)
-      .then(emailHash => ({ email_hash: emailHash }));
+    const emailHash = await UID2CstgCrypto.hash(cstgIdentity.email)
+    return { email_hash: emailHash };
   }
   if ('phone' in cstgIdentity) {
-    return UID2CstgCrypto.hash(cstgIdentity.email)
-      .then(phoneHash => ({ phone_hash: phoneHash }));
+    const phoneHash = await UID2CstgCrypto.hash(cstgIdentity.phone)
+    return {phone_hash: phoneHash}
   }
 }
 
-function generateTokenAndStore(baseUrl, cstgOpts, cstgIdentity, clientId, storageManager, _logInfo, _logWarn) {
+async function generateTokenAndStore(baseUrl, cstgOpts, cstgIdentity, clientId, storageManager, _logInfo, _logWarn) {
   _logInfo('UID2 cstg opts provided: ', JSON.stringify(cstgOpts));
 
   const client = new Uid2ApiClient({baseUrl, cstg: cstgOpts}, clientId, _logInfo, _logWarn);
-  return generateRequest(cstgIdentity)
-    .then(client.callCstgApi)
-    .then((response) => {
-      _logInfo('CSTG endpoint responded with:', response);
-      const tokens = {
-        originalIdentity: cstgIdentity,
-        latestToken: response.identity,
-      };
-      storageManager.storeValue(tokens);
-      return tokens;
-    });
+  const request = await generateRequest(cstgIdentity);
+  const response = await client.callCstgApi(request)
+  _logInfo('CSTG endpoint responded with:', response);
+  const tokens = {
+    originalIdentity: cstgIdentity,
+    latestToken: response.identity,
+  };
+  storageManager.storeValue(tokens);
+  return tokens;
 }
 
 export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
