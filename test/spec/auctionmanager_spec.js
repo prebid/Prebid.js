@@ -763,9 +763,10 @@ describe('auctionmanager.js', function () {
   });
 
   describe('createAuction', () => {
-    let adUnits, stubMakeBidRequests, stubCallAdapters
+    let adUnits, stubMakeBidRequests, stubCallAdapters, bids;
 
     beforeEach(() => {
+      bids = [];
       stubMakeBidRequests = sinon.stub(adapterManager, 'makeBidRequests').returns([{
         bidderCode: BIDDER_CODE,
         bids: [{
@@ -773,6 +774,7 @@ describe('auctionmanager.js', function () {
         }]
       }]);
       stubCallAdapters = sinon.stub(adapterManager, 'callBids').callsFake((au, reqs, addBid, done) => {
+        bids.forEach(bid => addBid(bid.adUnitCode, bid));
         reqs.forEach(r => done.apply(r));
       });
       adUnits = [{
@@ -787,6 +789,7 @@ describe('auctionmanager.js', function () {
     afterEach(() => {
       stubMakeBidRequests.restore();
       stubCallAdapters.restore();
+      auctionManager.clearAllAuctions();
     });
 
     it('passes global and bidder ortb2 to the auction', () => {
@@ -814,6 +817,79 @@ describe('auctionmanager.js', function () {
       });
       expect(auction.getNonBids()[0]).to.equal('test');
     });
+
+    describe('stale auctions', () => {
+      let clock, auction;
+      beforeEach(() => {
+        clock = sinon.useFakeTimers();
+        auction = auctionManager.createAuction({adUnits});
+        indexAuctions.push(auction);
+      });
+      afterEach(() => {
+        clock.restore();
+        config.resetConfig();
+      });
+
+      it('are dropped after their last bid becomes stale (if minBidCacheTTL is set)', () => {
+        config.setConfig({
+          minBidCacheTTL: 0
+        });
+        bids = [
+          {
+            adUnitCode: ADUNIT_CODE,
+            transactionId: ADUNIT_CODE,
+            ttl: 10
+          }, {
+            adUnitCode: ADUNIT_CODE,
+            transactionId: ADUNIT_CODE,
+            ttl: 100
+          }
+        ];
+        auction.callBids();
+        return auction.end.then(() => {
+          clock.tick(50 * 1000);
+          expect(auctionManager.getBidsReceived().length).to.equal(2);
+          clock.tick(56 * 1000);
+          expect(auctionManager.getBidsReceived()).to.eql([]);
+        });
+      });
+
+      it('are dropped after `minBidCacheTTL` seconds if they had no bid', () => {
+        auction.callBids();
+        config.setConfig({
+          minBidCacheTTL: 2
+        });
+        return auction.end.then(() => {
+          expect(auctionManager.getNoBids().length).to.eql(1);
+          clock.tick(10 * 10000);
+          expect(auctionManager.getNoBids().length).to.eql(0);
+        })
+      });
+
+      Object.entries({
+        'bids': {
+          bd: [{
+            adUnitCode: ADUNIT_CODE,
+            transactionId: ADUNIT_CODE,
+            ttl: 10
+          }],
+          entries: () => auctionManager.getBidsReceived()
+        },
+        'no bids': {
+          bd: [],
+          entries: () => auctionManager.getNoBids()
+        }
+      }).forEach(([t, {bd, entries}]) => {
+        it(`with ${t} are never dropped if minBidCacheTTL is not set`, () => {
+          bids = bd;
+          auction.callBids();
+          return auction.end.then(() => {
+            clock.tick(100 * 1000);
+            expect(entries().length > 0).to.be.true;
+          })
+        })
+      });
+    })
   });
 
   describe('addBidResponse #1', function () {
@@ -1024,36 +1100,47 @@ describe('auctionmanager.js', function () {
         assert.strictEqual(addedBid.renderer.url, myBid.renderer.url);
       });
 
-      it('bid for a regular unit and a video unit', function() {
-        let renderer = {
-          url: 'renderer.js',
-          render: (bid) => bid
-        };
-        Object.assign(adUnits[0], {renderer});
-        // make sure that if the renderer is only on the second ad unit, prebid
-        // still correctly uses it
-        let bid = mockBid();
-        let bidRequests = [mockBidRequest(bid, {auctionId: auction.getAuctionId()})];
+      describe('bid for a regular unit and a video unit', () => {
+        beforeEach(() => {
+          const renderer = {
+            url: 'renderer.js',
+            render: (bid) => bid
+          };
+          Object.assign(adUnits[0], {renderer});
+          // make sure that if the renderer is only on the second ad unit, prebid
+          // still correctly uses it
+          let bid = mockBid();
+          let bidRequests = [mockBidRequest(bid, {auctionId: auction.getAuctionId()})];
 
-        bidRequests[0].bids[1] = Object.assign({
-          bidId: utils.getUniqueIdentifierStr()
-        }, bidRequests[0].bids[0]);
-        Object.assign(bidRequests[0].bids[0], {
-          adUnitCode: ADUNIT_CODE1,
-          transactionId: ADUNIT_CODE1,
+          bidRequests[0].bids[1] = Object.assign({
+            bidId: utils.getUniqueIdentifierStr()
+          }, bidRequests[0].bids[0]);
+          Object.assign(bidRequests[0].bids[0], {
+            adUnitCode: ADUNIT_CODE1,
+            transactionId: ADUNIT_CODE1,
+          });
+
+          makeRequestsStub.returns(bidRequests);
+
+          // this should correspond with the second bid in the bidReq because of the ad unit code
+          bid.mediaType = 'video-outstream';
+          spec.interpretResponse.returns(bid);
         });
 
-        makeRequestsStub.returns(bidRequests);
+        it('should use renderers on bid response', () => {
+          auction.callBids();
 
-        // this should correspond with the second bid in the bidReq because of the ad unit code
-        bid.mediaType = 'video-outstream';
-        spec.interpretResponse.returns(bid);
+          const addedBid = find(auction.getBidsReceived(), bid => bid.adUnitCode === ADUNIT_CODE);
+          assert.equal(addedBid.renderer.url, 'renderer.js');
+        });
 
-        auction.callBids();
-
-        const addedBid = find(auction.getBidsReceived(), bid => bid.adUnitCode == ADUNIT_CODE);
-        assert.equal(addedBid.renderer.url, 'renderer.js');
-      });
+        it('should resolve .end', () => {
+          auction.callBids();
+          return auction.end.then(() => {
+            expect(auction.getBidsReceived().length).to.eql(1);
+          })
+        })
+      })
 
       it('sets bidResponse.ttlBuffer from adUnit.ttlBuffer', () => {
         adUnits[0].ttlBuffer = 0;
@@ -1087,15 +1174,33 @@ describe('auctionmanager.js', function () {
         events.emit.restore();
       });
 
+      function respondToRequest(requestIndex) {
+        server.requests[requestIndex].respond(200, {}, 'response body');
+      }
+
+      it('resolves .end on timeout', (done) => {
+        registerBidder(mockBidder(BIDDER_CODE, [bids[0]]));
+        registerBidder(mockBidder(BIDDER_CODE1, [bids[1]]));
+        let endResolved = false;
+        function callback() {
+          expect(endResolved).to.be.true;
+          done()
+        }
+        auction = auctionModule.newAuction({adUnits, adUnitCodes, callback, cbTimeout: 20});
+        setupBids(auction.getAuctionId());
+        auction.callBids();
+        respondToRequest(0);
+        auction.end.then(() => {
+          endResolved = true;
+        })
+      })
+
       it('should emit BID_TIMEOUT and AUCTION_END for timed out bids', function (done) {
         const spec1 = mockBidder(BIDDER_CODE, [bids[0]]);
         registerBidder(spec1);
         const spec2 = mockBidder(BIDDER_CODE1, [bids[1]]);
         registerBidder(spec2);
 
-        function respondToRequest(requestIndex) {
-          server.requests[requestIndex].respond(200, {}, 'response body');
-        }
         function auctionCallback() {
           const bidTimeoutCall = eventsEmitSpy.withArgs(CONSTANTS.EVENTS.BID_TIMEOUT).getCalls()[0];
           const timedOutBids = bidTimeoutCall.args[1];
@@ -1117,6 +1222,7 @@ describe('auctionmanager.js', function () {
         auction.callBids();
         respondToRequest(0);
       });
+
       it('should NOT emit BID_TIMEOUT when all bidders responded in time', function (done) {
         const spec1 = mockBidder(BIDDER_CODE, [bids[0]]);
         registerBidder(spec1);
@@ -1142,9 +1248,6 @@ describe('auctionmanager.js', function () {
         const spec2 = mockBidder(BIDDER_CODE1, []);
         registerBidder(spec2);
 
-        function respondToRequest(requestIndex) {
-          server.requests[requestIndex].respond(200, {}, 'response body');
-        }
         function auctionCallback() {
           const bidTimeoutCall = eventsEmitSpy.withArgs(CONSTANTS.EVENTS.BID_TIMEOUT).getCalls()[0];
           const timedOutBids = bidTimeoutCall.args[1];

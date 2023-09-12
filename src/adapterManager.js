@@ -545,6 +545,9 @@ adapterManager.aliasBidAdapter = function (bidderCode, alias, options) {
         } else {
           let spec = bidAdapter.getSpec();
           let gvlid = options && options.gvlid;
+          if (spec.gvlid != null && gvlid == null) {
+            logWarn(`Alias '${alias}' will NOT re-use the GVL ID of the original adapter ('${spec.code}', gvlid: ${spec.gvlid}). Functionality that requires TCF consent may not work as expected.`)
+          }
           let skipPbsAliasing = options && options.skipPbsAliasing;
           newAdapter = newBidder(Object.assign({}, spec, { code: alias, gvlid, skipPbsAliasing }));
           _aliasRegistry[alias] = bidderCode;
