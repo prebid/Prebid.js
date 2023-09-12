@@ -329,7 +329,7 @@ function buildVideoRequestData(bidRequest, bidderRequest) {
 
   // Placement Inference Rules:
   // - If no placement is defined then default to 1 (In Stream)
-  video.placement = video.placement || 2;
+  video.placement = video.placement || 1;
 
   // - If product is instream (for instream context) then override placement to 1
   if (params.context === 'instream') {
