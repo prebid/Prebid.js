@@ -152,37 +152,45 @@ export class Uid2ApiClient {
     });
     this._logInfo('Sending refresh request', refreshDetails);
     ajax(url, {
-      success: (responseText, xhr) => {
-        if (!refreshDetails.refresh_response_key) {
-          this._logInfo('No response decryption key available, assuming unencrypted JSON');
-          const response = JSON.parse(responseText);
-          const result = this.ResponseToRefreshResult(response);
-          if (typeof result === 'string') { rejectPromise(result); } else { resolvePromise(result); }
-        } else {
-          this._logInfo('Decrypting refresh API response');
-          const encodeResp = this.createArrayBuffer(atob(responseText));
-          window.crypto.subtle.importKey('raw', this.createArrayBuffer(atob(refreshDetails.refresh_response_key)), { name: 'AES-GCM' }, false, ['decrypt']).then((key) => {
-            this._logInfo('Imported decryption key')
-            // returns the symmetric key
-            window.crypto.subtle.decrypt({
-              name: 'AES-GCM',
-              iv: encodeResp.slice(0, 12),
-              tagLength: 128, // The tagLength you used to encrypt (if any)
-            }, key, encodeResp.slice(12)).then((decrypted) => {
-              const decryptedResponse = String.fromCharCode(...new Uint8Array(decrypted));
-              this._logInfo('Decrypted to:', decryptedResponse);
-              const response = JSON.parse(decryptedResponse);
-              const result = this.ResponseToRefreshResult(response);
-              if (typeof result === 'string') { rejectPromise(result); } else { resolvePromise(result); }
+      success: (responseText) => {
+        try {
+          if (!refreshDetails.refresh_response_key) {
+            this._logInfo('No response decryption key available, assuming unencrypted JSON');
+            const response = JSON.parse(responseText);
+            const result = this.ResponseToRefreshResult(response);
+            if (typeof result === 'string') { rejectPromise(result); } else { resolvePromise(result); }
+          } else {
+            this._logInfo('Decrypting refresh API response');
+            const encodeResp = this.createArrayBuffer(atob(responseText));
+            window.crypto.subtle.importKey('raw', this.createArrayBuffer(atob(refreshDetails.refresh_response_key)), { name: 'AES-GCM' }, false, ['decrypt']).then((key) => {
+              this._logInfo('Imported decryption key')
+              // returns the symmetric key
+              window.crypto.subtle.decrypt({
+                name: 'AES-GCM',
+                iv: encodeResp.slice(0, 12),
+                tagLength: 128, // The tagLength you used to encrypt (if any)
+              }, key, encodeResp.slice(12)).then((decrypted) => {
+                const decryptedResponse = String.fromCharCode(...new Uint8Array(decrypted));
+                this._logInfo('Decrypted to:', decryptedResponse);
+                const response = JSON.parse(decryptedResponse);
+                const result = this.ResponseToRefreshResult(response);
+                if (typeof result === 'string') { rejectPromise(result); } else { resolvePromise(result); }
+              }, (reason) => this._logWarn(`Call to UID2 API failed`, reason));
             }, (reason) => this._logWarn(`Call to UID2 API failed`, reason));
-          }, (reason) => this._logWarn(`Call to UID2 API failed`, reason));
+          }
+        } catch (_err) {
+          rejectPromise(responseText);
         }
       },
-      error: (_error, xhr) => {
-        this._logInfo('Error status, assuming unencrypted JSON');
-        const response = JSON.parse(xhr.responseText);
-        const result = this.ResponseToRefreshResult(response);
-        if (typeof result === 'string') { rejectPromise(result); } else { resolvePromise(result); }
+      error: (error, xhr) => {
+        try {
+          this._logInfo('Error status, assuming unencrypted JSON');
+          const response = JSON.parse(xhr.responseText);
+          const result = this.ResponseToRefreshResult(response);
+          if (typeof result === 'string') { rejectPromise(result); } else { resolvePromise(result); }
+        } catch (_e) {
+          rejectPromise(error)
+        }
       }
     }, refreshDetails.refresh_token, { method: 'POST',
       customHeaders: {
@@ -250,30 +258,34 @@ export class Uid2ApiClient {
         }
       },
       error: (error, xhr) => {
-        if (xhr.status === 400) {
-          const response = JSON.parse(xhr.responseText);
-          if (this.isCstgApiClientErrorResponse(response)) {
-            rejectPromise(`Client error: ${response.message}`);
+        try {
+          if (xhr.status === 400) {
+            const response = JSON.parse(xhr.responseText);
+            if (this.isCstgApiClientErrorResponse(response)) {
+              rejectPromise(`Client error: ${response.message}`);
+            } else {
+              // A 400 should always be a client error.
+              // Something has gone wrong.
+              rejectPromise(
+                `API error: Response body was invalid for HTTP status 400: ${xhr.responseText}`
+              );
+            }
+          } else if (xhr.status === 403) {
+            const response = JSON.parse(xhr.responseText);
+            if (this.isCstgApiForbiddenResponse(xhr)) {
+              rejectPromise(`Forbidden: ${response.message}`);
+            } else {
+              // A 403 should always be a forbidden response.
+              // Something has gone wrong.
+              rejectPromise(
+                `API error: Response body was invalid for HTTP status 403: ${xhr.responseText}`
+              );
+            }
           } else {
-            // A 400 should always be a client error.
-            // Something has gone wrong.
-            rejectPromise(
-              `API error: Response body was invalid for HTTP status 400: ${xhr.responseText}`
-            );
+            rejectPromise(`API error: Unexpected HTTP status ${xhr.status}: ${error}`);
           }
-        } else if (xhr.status === 403) {
-          const response = JSON.parse(xhr.responseText);
-          if (this.isCstgApiForbiddenResponse(response)) {
-            rejectPromise(`Forbidden: ${response.message}`);
-          } else {
-            // A 403 should always be a forbidden response.
-            // Something has gone wrong.
-            rejectPromise(
-              `API error: Response body was invalid for HTTP status 403: ${xhr.responseText}`
-            );
-          }
-        } else {
-          rejectPromise(`API error: Unexpected HTTP status ${xhr.status}: ${error}`);
+        } catch (_e) {
+          rejectPromise(error)
         }
       }
     }, JSON.stringify(requestBody), { method: 'POST',
