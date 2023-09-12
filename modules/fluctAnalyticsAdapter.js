@@ -33,12 +33,7 @@ const url = 'https://an.adingo.jp';
 /** @typedef {{ fbs_adid: string, fbs_adomain: string, fbs_bidder: string, fbs_format: string, fbs_pb: string, fbs_size: string, fbs_source: string }} AdserverTargeting */
 
 /** Prebid Events */
-/** @typedef
- * {
- *    { auctionId: string,
- *    auctionStart: number,
- *    bidderCode: string,
- *    bidderRequestId: string, bids: BidRequest[], refererInfo: { referer: string, reachedTop: boolean, isAmp: boolean, numIframes: number, stack: string[], start: number, timeout: number }}} BidRequestedEvent */
+/** @typedef {{ auctionId: string, auctionStart: number, bidderCode: string, bidderRequestId: string, bids: BidRequest[], refererInfo: { referer: string, reachedTop: boolean, isAmp: boolean, numIframes: number, stack: string[], start: number, timeout: number }}} BidRequestedEvent */
 /** @typedef {(Bid & { bidId: string, params: Params })[]} BidTimeoutEvent */
 /** @typedef { BidRequest } NoBidEvent */
 /** @typedef {{ adUnitCodes: string[], adUnits: AdUnit[], auctionEnd: number, auctionId: string, auctionStatus: string, bidderRequests: BidRequestedEvent[], bidsReceived: BidResponse[], labels?: string, noBids: BidRequest[], timeout: number, timestamp: number, winningBids: BidResponse[] }} AuctionEvent */
