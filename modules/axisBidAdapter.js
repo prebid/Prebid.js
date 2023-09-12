@@ -29,13 +29,12 @@ function isBidResponseValid(bid) {
 function getPlacementReqData(bid) {
   const { params, bidId, mediaTypes } = bid;
   const schain = bid.schain || {};
-  const { integration, token, iabCat } = params;
+  const { integration, token } = params;
   const bidfloor = getBidFloor(bid);
 
   const placement = {
     integration,
     token,
-    iabCat,
     bidId,
     schain,
     bidfloor
@@ -150,10 +149,11 @@ export const spec = {
       host,
       page,
       placements,
+      iabCat: deepAccess(bidderRequest, 'ortb2.site.cat'),
       coppa: deepAccess(bidderRequest, 'ortb2.regs.coppa') ? 1 : 0,
       ccpa: bidderRequest.uspConsent || undefined,
       gdpr: bidderRequest.gdprConsent || undefined,
-      tmax: bidderRequest.timeout,
+      tmax: bidderRequest.timeout || 3000,
     };
 
     const len = validBidRequests.length;

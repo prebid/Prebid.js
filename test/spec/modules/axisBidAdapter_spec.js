@@ -18,8 +18,7 @@ describe('AxisBidAdapter', function () {
       },
       params: {
         integration: '000000',
-        token: '000000',
-        iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3']
+        token: '000000'
       }
     },
     {
@@ -35,8 +34,7 @@ describe('AxisBidAdapter', function () {
       },
       params: {
         integration: '000000',
-        token: '000000',
-        iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3']
+        token: '000000'
       }
     },
     {
@@ -60,8 +58,7 @@ describe('AxisBidAdapter', function () {
       },
       params: {
         integration: '000000',
-        token: '000000',
-        iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3']
+        token: '000000'
       }
     }
   ];
@@ -84,6 +81,11 @@ describe('AxisBidAdapter', function () {
     gdprConsent: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
     refererInfo: {
       referer: 'https://test.com'
+    },
+    ortb2: {
+      site: {
+        cat: ['IAB24']
+      }
     }
   };
 
@@ -124,6 +126,7 @@ describe('AxisBidAdapter', function () {
         'host',
         'page',
         'placements',
+        'iabCat',
         'coppa',
         'ccpa',
         'gdpr',
@@ -139,6 +142,7 @@ describe('AxisBidAdapter', function () {
       expect(data.gdpr).to.be.a('string');
       expect(data.ccpa).to.be.a('string');
       expect(data.tmax).to.be.a('number');
+      expect(data.iabCat).to.have.lengthOf(1);
       expect(data.placements).to.have.lengthOf(3);
     });
 
@@ -150,7 +154,6 @@ describe('AxisBidAdapter', function () {
         expect(placement.bidId).to.be.a('string');
         expect(placement.integration).to.be.a('string');
         expect(placement.token).to.be.a('string');
-        expect(placement.iabCat).to.be.an('array');
         expect(placement.schain).to.be.an('object');
         expect(placement.bidfloor).to.exist.and.to.equal(0);
 

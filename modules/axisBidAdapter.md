@@ -28,8 +28,7 @@ Axis bid adapter supports Banner, Video (instream and outstream) and Native.
                             bidder: 'axis',
                             params: {
                                 integration: '000000',
-                                token: '000000',
-                                iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3']
+                                token: '000000'
                             }
                         }
                     ]
@@ -49,8 +48,7 @@ Axis bid adapter supports Banner, Video (instream and outstream) and Native.
                             bidder: 'axis',
                             params: {
                                 integration: '000000',
-                                token: '000000',
-                                iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3']
+                                token: '000000'
                             }
                         }
                     ]
@@ -76,8 +74,7 @@ Axis bid adapter supports Banner, Video (instream and outstream) and Native.
                             bidder: 'axis',
                             params: {
                                 integration: '000000',
-                                token: '000000',
-                                iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3']
+                                token: '000000'
                             }
                         }
                     ]
