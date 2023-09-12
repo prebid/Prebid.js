@@ -163,6 +163,7 @@
     "MAIN": 3
   },
   "NATIVE_KEYS_THAT_ARE_NOT_ASSETS": [
+    "privacyIcon",
     "clickUrl",
     "sendTargetingKeys",
     "adTemplate",

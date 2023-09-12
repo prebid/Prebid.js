@@ -1,11 +1,11 @@
 import adapterManager from 'src/adapterManager.js';
 import analyticsAdapter from 'modules/adlooxAnalyticsAdapter.js';
-import { ajax } from 'src/ajax.js';
 import { buildVideoUrl } from 'modules/adlooxAdServerVideo.js';
 import { expect } from 'chai';
 import * as events from 'src/events.js';
 import { targeting } from 'src/targeting.js';
 import * as utils from 'src/utils.js';
+import {server} from '../../mocks/xhr.js';
 
 const analyticsAdapterName = 'adloox';
 
@@ -199,11 +199,9 @@ describe('Adloox Ad Server Video', function () {
     });
 
     describe('process VAST', function () {
-      let server = null;
       let BID = null;
       let getWinningBidsStub;
       beforeEach(function () {
-        server = sinon.createFakeServer();
         BID = utils.deepClone(bid);
         getWinningBidsStub = sinon.stub(targeting, 'getWinningBids')
         getWinningBidsStub.withArgs(adUnit.code).returns([ BID ]);
@@ -212,8 +210,6 @@ describe('Adloox Ad Server Video', function () {
         getWinningBidsStub.restore();
         getWinningBidsStub = undefined;
         BID = null;
-        server.restore();
-        server = null;
       });
 
       it('should return URL unchanged for non-VAST', function (done) {
