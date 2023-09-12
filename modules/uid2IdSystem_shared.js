@@ -23,7 +23,7 @@ function isBase64Hash(value) {
   }
 }
 
-function isCSTGOptionsAndGetIdentity(
+function isCSTGOptions(
   maybeOpts,
   _logWarn
 ) {
@@ -55,11 +55,14 @@ function isCSTGOptionsAndGetIdentity(
     _logWarn('CSTG opts.subscriptionId is empty');
     return false;
   }
+  return true
+}
 
+function getValidIdentity(opts, _logWarn) {
   if (opts.emailHash) {
     if (!isBase64Hash(opts.emailHash)) {
       _logWarn('CSTG opts.emailHash is invalid');
-      return false;
+      return;
     }
     return { email_hash: opts.emailHash }
   }
@@ -67,7 +70,7 @@ function isCSTGOptionsAndGetIdentity(
   if (opts.phoneHash) {
     if (!isBase64Hash(opts.phoneHash)) {
       _logWarn('CSTG opts.phoneHash is invalid');
-      return false;
+      return;
     }
     return { phone_hash: opts.phoneHash }
   }
@@ -76,7 +79,7 @@ function isCSTGOptionsAndGetIdentity(
     const normalizedEmail = normalizeEmail(opts.email);
     if (normalizedEmail === undefined) {
       _logWarn('CSTG opts.email is invalid');
-      return false
+      return;
     }
     return { email: opts.email }
   }
@@ -84,11 +87,10 @@ function isCSTGOptionsAndGetIdentity(
   if (opts.phone) {
     if (!isNormalizedPhone(opts.phone)) {
       _logWarn('CSTG opts.phone is invalid');
-      return false
+      return;
     }
     return { phone: opts.phone }
   }
-  return false
 }
 
 // This is extracted from an in-progress API client. Once it's available via NPM, this class should be replaced with the NPM package.
@@ -200,7 +202,7 @@ export class Uid2ApiClient {
   }
 
   async callCstgApi(request) {
-    this._logInfo('Building Cstg request for', request);
+    this._logInfo('Building CSTG request for', request);
     const box = await UID2CstgBox.build(stripPublicKeyPrefix(this._serverPublicKey))
     const encoder = new TextEncoder();
     const now = Date.now();
@@ -573,12 +575,13 @@ async function generateTokenAndStore(baseUrl, cstgOpts, cstgIdentity, clientId, 
 
 export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   let suppliedToken = null;
-  const cstgIdentity = config.cstg && isCSTGOptionsAndGetIdentity(config.cstg, _logWarn);
+  const cstgIdentity = getValidIdentity(config.cstg);
+  const isUsingCstg = config.cstg && isCSTGOptions(config.cstg, _logWarn) && cstgIdentity;
   const preferLocalStorage = (config.storage !== 'cookie');
   const storageManager = new Uid2StorageManager(prebidStorageManager, preferLocalStorage, config.internalStorage, _logInfo);
   _logInfo(`Module is using ${preferLocalStorage ? 'local storage' : 'cookies'} for internal storage.`);
 
-  if (cstgIdentity) {
+  if (isUsingCstg) {
     // Ignores config.paramToken and config.serverCookieName if any is provided
     suppliedToken = null;
   } else if (config.paramToken) {
@@ -594,7 +597,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   if (storedTokens && typeof storedTokens === 'string') {
     // Stored value is a plain token - if no token is supplied, just use the stored value.
 
-    if (!suppliedToken && !cstgIdentity) {
+    if (!suppliedToken && !isUsingCstg) {
       _logInfo('Returning legacy cookie value.');
       return { id: storedTokens };
     }
@@ -611,25 +614,24 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
     }
   }
 
-  if (cstgIdentity && storedTokens) {
-    const identityKey = Object.keys(cstgIdentity)[0]
-    if (!storedTokens.originalIdentity || storedTokens.originalIdentity[identityKey] !== cstgIdentity.identityKey) {
-      _logInfo('CSTG supplied new identity - ignoring stored value.', storedTokens.originalIdentity, cstgIdentity);
-      // Stored token wasn't originally sourced from the provided identity - ignore the stored value. A new user has logged in?
-      storedTokens = null;
+  if (isUsingCstg) {
+    if (storedTokens) {
+      const identityKey = Object.keys(cstgIdentity)[0]
+      if (!storedTokens.originalIdentity || storedTokens.originalIdentity[identityKey] !== cstgIdentity.identityKey) {
+        _logInfo('CSTG supplied new identity - ignoring stored value.', storedTokens.originalIdentity, cstgIdentity);
+        // Stored token wasn't originally sourced from the provided identity - ignore the stored value. A new user has logged in?
+        storedTokens = null;
+      }
+    } else {
+      const promise = generateTokenAndStore(config.apiBaseUrl, config.cstg, cstgIdentity, config.clientId, storageManager, _logInfo, _logWarn);
+      _logInfo('Generate token using CSTG');
+      return { callback: (cb) => {
+        promise.then((result) => {
+          _logInfo('Token generation responded, passing the new token on.', result);
+          cb(result);
+        });
+      } };
     }
-  }
-
-  // At this point, any legacy values or superseded stored tokens have been nulled out.
-  if (cstgIdentity && !storedTokens) {
-    const promise = generateTokenAndStore(config.apiBaseUrl, config.cstg, cstgIdentity, config.clientId, storageManager, _logInfo, _logWarn);
-    _logInfo('Generate token using CSTG');
-    return { callback: (cb) => {
-      promise.then((result) => {
-        _logInfo('Token generation responded, passing the new token on.', result);
-        cb(result);
-      });
-    } };
   }
   const useSuppliedToken = !(storedTokens?.latestToken) || (suppliedToken && suppliedToken.identity_expires > storedTokens.latestToken.identity_expires);
   const newestAvailableToken = useSuppliedToken ? suppliedToken : storedTokens.latestToken;
@@ -653,11 +655,11 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
     _logInfo(`Refreshing token in background with low priority.`);
     refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, _logInfo, _logWarn);
   }
-  const tokens = {
-    originalIdentity: cstgIdentity ?? storedTokens?.originalIdentity,
+  let tokens = {
     originalToken: suppliedToken ?? storedTokens?.originalToken,
     latestToken: newestAvailableToken,
   };
+  if (isUsingCstg) tokens.originalIdentity = storedTokens?.originalIdentity
   storageManager.storeValue(tokens);
   return { id: tokens };
 }
