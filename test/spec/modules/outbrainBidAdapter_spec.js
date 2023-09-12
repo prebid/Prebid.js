@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/outbrainBidAdapter.js';
+import { spec, storage } from 'modules/outbrainBidAdapter.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr';
 
@@ -213,6 +213,8 @@ describe('Outbrain Adapter', function () {
     })
 
     describe('buildRequests', function () {
+      let getDataFromLocalStorageStub;
+
       before(() => {
         config.setConfig({
           outbrain: {
@@ -520,6 +522,25 @@ describe('Outbrain Adapter', function () {
         expect(resData.user.ext.eids).to.deep.equal([
           { source: 'liveramp.com', uids: [{ id: 'id-value', atype: 3 }] }
         ]);
+      });
+
+      it('should pass OB user token', function () {
+        getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+        getDataFromLocalStorageStub.returns('12345');
+
+        let bidRequest = {
+          bidId: 'bidId',
+          params: {},
+          ...commonBidRequest,
+        };
+
+        let res = spec.buildRequests([bidRequest], commonBidderRequest);
+        const resData = JSON.parse(res.data)
+        expect(resData.user.ext.obusertoken).to.equal('12345')
+        expect(getDataFromLocalStorageStub.calledOnce).to.be.true;
+        sinon.assert.calledWith(getDataFromLocalStorageStub, 'OB-USER-TOKEN');
+
+        getDataFromLocalStorageStub.restore();
       });
 
       it('should pass bidfloor', function () {

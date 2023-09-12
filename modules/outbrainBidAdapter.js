@@ -26,7 +26,7 @@ const NATIVE_PARAMS = {
 const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 const OB_USER_TOKEN_KEY = 'OB-USER-TOKEN';
 
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
