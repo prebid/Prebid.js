@@ -40,10 +40,13 @@ const MODULE_NAME = 'Price Floors';
  */
 const ajax = ajaxBuilder(10000);
 
+// eslint-disable-next-line symbol-description
+const SYN_FIELD = Symbol();
+
 /**
  * @summary Allowed fields for rules to have
  */
-export let allowedFields = ['gptSlot', 'adUnitCode', 'size', 'domain', 'mediaType'];
+export let allowedFields = [SYN_FIELD, 'gptSlot', 'adUnitCode', 'size', 'domain', 'mediaType'];
 
 /**
  * @summary This is a flag to indicate if a AJAX call is processing for a floors request
@@ -104,6 +107,7 @@ function getAdUnitCode(request, response, {index = auctionManager.index} = {}) {
  * @summary floor field types with their matching functions to resolve the actual matched value
  */
 export let fieldMatchingFunctions = {
+  [SYN_FIELD]: () => '*',
   'size': (bidRequest, bidResponse) => parseGPTSingleSizeArray(bidResponse.size) || '*',
   'mediaType': (bidRequest, bidResponse) => bidResponse.mediaType || 'banner',
   'gptSlot': (bidRequest, bidResponse) => getGptSlotFromAdUnit((bidRequest || bidResponse).transactionId) || getGptSlotInfoForAdUnitCode(getAdUnitCode(bidRequest, bidResponse)).gptSlot,
@@ -117,6 +121,7 @@ export let fieldMatchingFunctions = {
  * Returns array of Tuple [exact match, catch all] for each field in rules file
  */
 function enumeratePossibleFieldValues(floorFields, bidObject, responseObject) {
+  if (!floorFields.length) return [];
   // generate combination of all exact matches and catch all for each field type
   return floorFields.reduce((accum, field) => {
     let exactMatch = fieldMatchingFunctions[field](bidObject, responseObject) || '*';
@@ -132,7 +137,9 @@ function enumeratePossibleFieldValues(floorFields, bidObject, responseObject) {
  */
 export function getFirstMatchingFloor(floorData, bidObject, responseObject = {}) {
   let fieldValues = enumeratePossibleFieldValues(deepAccess(floorData, 'schema.fields') || [], bidObject, responseObject);
-  if (!fieldValues.length) return { matchingFloor: floorData.default };
+  if (!fieldValues.length) {
+    return {matchingFloor: undefined}
+  }
 
   // look to see if a request for this context was made already
   let matchingInput = fieldValues.map(field => field[0]).join('-');
@@ -146,9 +153,9 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
 
   let matchingData = {
     floorMin: floorData.floorMin || 0,
-    floorRuleValue: isNaN(floorData.values[matchingRule]) ? floorData.default : floorData.values[matchingRule],
+    floorRuleValue: floorData.values[matchingRule],
     matchingData: allPossibleMatches[0], // the first possible match is an "exact" so contains all data relevant for anlaytics adapters
-    matchingRule
+    matchingRule: matchingRule === floorData.meta?.defaultRule ? undefined : matchingRule
   };
   // use adUnit floorMin as priority!
   const floorMin = deepAccess(bidObject, 'ortb2Imp.ext.prebid.floors.floorMin');
@@ -443,7 +450,26 @@ function validateRules(floorsData, numFields, delimiter) {
   return Object.keys(floorsData.values).length > 0;
 }
 
+export function normalizeDefault(model) {
+  if (isNumber(model.default)) {
+    let defaultRule = '*';
+    const numFields = (model.schema?.fields || []).length;
+    if (!numFields) {
+      deepSetValue(model, 'schema.fields', [SYN_FIELD]);
+    } else {
+      defaultRule = Array(numFields).fill('*').join(model.schema?.delimiter || '|');
+    }
+    model.values = model.values || {};
+    if (model.values[defaultRule] == null) {
+      model.values[defaultRule] = model.default;
+      model.meta = {defaultRule};
+    }
+  }
+  return model;
+}
+
 function modelIsValid(model) {
+  model = normalizeDefault(model);
   // schema.fields has only allowed attributes
   if (!validateSchemaFields(deepAccess(model, 'schema.fields'))) {
     return false;
