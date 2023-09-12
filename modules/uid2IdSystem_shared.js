@@ -1,4 +1,6 @@
 /* eslint-disable no-console */
+import { ajax } from '../src/ajax.js';
+
 export const Uid2CodeVersion = '1.1';
 
 function isValidIdentity(identity) {
@@ -142,27 +144,23 @@ export class Uid2ApiClient {
   }
   callRefreshApi(refreshDetails) {
     const url = this._baseUrl + '/v2/token/refresh';
-    const req = new XMLHttpRequest();
-    req.overrideMimeType('text/plain');
-    req.open('POST', url, true);
-    req.setRequestHeader('X-UID2-Client-Version', this._clientVersion);
     let resolvePromise;
     let rejectPromise;
     const promise = new Promise((resolve, reject) => {
       resolvePromise = resolve;
       rejectPromise = reject;
     });
-    req.onreadystatechange = () => {
-      if (req.readyState !== req.DONE) { return; }
-      try {
-        if (!refreshDetails.refresh_response_key || req.status !== 200) {
-          this._logInfo('Error status OR no response decryption key available, assuming unencrypted JSON');
-          const response = JSON.parse(req.responseText);
+    this._logInfo('Sending refresh request', refreshDetails);
+    ajax(url, {
+      success: (responseText, xhr) => {
+        if (!refreshDetails.refresh_response_key) {
+          this._logInfo('No response decryption key available, assuming unencrypted JSON');
+          const response = JSON.parse(responseText);
           const result = this.ResponseToRefreshResult(response);
           if (typeof result === 'string') { rejectPromise(result); } else { resolvePromise(result); }
         } else {
           this._logInfo('Decrypting refresh API response');
-          const encodeResp = this.createArrayBuffer(atob(req.responseText));
+          const encodeResp = this.createArrayBuffer(atob(responseText));
           window.crypto.subtle.importKey('raw', this.createArrayBuffer(atob(refreshDetails.refresh_response_key)), { name: 'AES-GCM' }, false, ['decrypt']).then((key) => {
             this._logInfo('Imported decryption key')
             // returns the symmetric key
@@ -179,12 +177,17 @@ export class Uid2ApiClient {
             }, (reason) => this._logWarn(`Call to UID2 API failed`, reason));
           }, (reason) => this._logWarn(`Call to UID2 API failed`, reason));
         }
-      } catch (err) {
-        rejectPromise(err);
+      },
+      error: (_error, xhr) => {
+        this._logInfo('Error status, assuming unencrypted JSON');
+        const response = JSON.parse(xhr.responseText);
+        const result = this.ResponseToRefreshResult(response);
+        if (typeof result === 'string') { rejectPromise(result); } else { resolvePromise(result); }
       }
-    };
-    this._logInfo('Sending refresh request', refreshDetails);
-    req.send(refreshDetails.refresh_token);
+    }, refreshDetails.refresh_token, { method: 'POST',
+      customHeaders: {
+        'X-UID2-Client-Version': this._clientVersion
+      } });
     return promise;
   }
 
@@ -199,23 +202,18 @@ export class Uid2ApiClient {
     );
 
     const exportedPublicKey = await UID2CstgCrypto.exportPublicKey(box.clientPublicKey);
-
     const requestBody = {
       payload: UID2CstgCrypto.bytesToBase64(new Uint8Array(ciphertext)),
       iv: UID2CstgCrypto.bytesToBase64(new Uint8Array(iv)),
       public_key: UID2CstgCrypto.bytesToBase64(new Uint8Array(exportedPublicKey)),
       timestamp: now,
-      subscription_id: this.subscriptionId,
+      subscription_id: this._subscriptionId,
     };
     return this._callCstgApi(requestBody, box)
   }
 
   _callCstgApi(requestBody, box) {
     const url = this._baseUrl + '/v2/token/client-generate';
-    const req = new XMLHttpRequest();
-    req.overrideMimeType('text/plain');
-    req.open('POST', url, true);
-
     let resolvePromise;
     let rejectPromise;
     const promise = new Promise((resolve, reject) => {
@@ -223,60 +221,65 @@ export class Uid2ApiClient {
       rejectPromise = reject;
     });
 
-    req.onreadystatechange = async () => {
-      if (req.readyState !== req.DONE) return;
-      try {
-        if (req.status === 200) {
-          const encodedResp = UID2CstgCrypto.base64ToBytes(req.responseText);
-          const decrypted = await box.decrypt(
+    this._logInfo('Sending CSTG request', requestBody);
+    ajax(url, {
+      success: async(responseText, xhr) => {
+        try {
+          const encodedResp = UID2CstgCrypto.base64ToBytes(responseText);
+          box.decrypt(
             encodedResp.slice(0, 12),
             encodedResp.slice(12)
-          );
-          const decryptedResponse = new TextDecoder().decode(decrypted);
-          const response = JSON.parse(decryptedResponse);
-          if (this.isCstgApiSuccessResponse(response)) {
-            resolvePromise({
-              status: 'success',
-              identity: response.body,
-            });
-          } else {
-            // A 200 should always be a success response.
-            // Something has gone wrong.
-            rejectPromise(
-              `API error: Response body was invalid for HTTP status 200: ${decryptedResponse}`
-            );
-          }
-        } else if (req.status === 400) {
-          const response = JSON.parse(req.responseText);
+          ).then(decrypted => {
+            const decryptedResponse = new TextDecoder().decode(decrypted);
+            const response = JSON.parse(decryptedResponse);
+            if (this.isCstgApiSuccessResponse(response)) {
+              resolvePromise({
+                status: 'success',
+                identity: response.body,
+              });
+            } else {
+              // A 200 should always be a success response.
+              // Something has gone wrong.
+              rejectPromise(
+                `API error: Response body was invalid for HTTP status 200: ${decryptedResponse}`
+              );
+            }
+          })
+        } catch (err) {
+          rejectPromise(err);
+        }
+      },
+      error: (error, xhr) => {
+        if (xhr.status === 400) {
+          const response = JSON.parse(xhr.responseText);
           if (this.isCstgApiClientErrorResponse(response)) {
             rejectPromise(`Client error: ${response.message}`);
           } else {
             // A 400 should always be a client error.
             // Something has gone wrong.
             rejectPromise(
-              `API error: Response body was invalid for HTTP status 400: ${req.responseText}`
+              `API error: Response body was invalid for HTTP status 400: ${xhr.responseText}`
             );
           }
-        } else if (req.status === 403) {
-          const response = JSON.parse(req.responseText);
+        } else if (xhr.status === 403) {
+          const response = JSON.parse(xhr.responseText);
           if (this.isCstgApiForbiddenResponse(response)) {
             rejectPromise(`Forbidden: ${response.message}`);
           } else {
             // A 403 should always be a forbidden response.
             // Something has gone wrong.
             rejectPromise(
-              `API error: Response body was invalid for HTTP status 403: ${req.responseText}`
+              `API error: Response body was invalid for HTTP status 403: ${xhr.responseText}`
             );
           }
         } else {
-          rejectPromise(`API error: Unexpected HTTP status ${req.status}`);
+          rejectPromise(`API error: Unexpected HTTP status ${xhr.status}: ${error}`);
         }
-      } catch (err) {
-        rejectPromise(err);
       }
-    };
-    this._logInfo('Sending Cstg request', JSON.stringify(requestBody));
-    req.send(JSON.stringify(requestBody));
+    }, JSON.stringify(requestBody), { method: 'POST',
+      customHeaders: {
+        'X-UID2-Client-Version': this._clientVersion
+      } });
     return promise;
   }
 }
