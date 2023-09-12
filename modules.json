@@ -38,6 +38,7 @@
     "minutemediaBidAdapter",
     "sharethroughBidAdapter",
     "insticatorBidAdapter",
+    "sonobiBidAdapter",
     "adpod",
     "consentManagement",
     "gdprEnforcement",
