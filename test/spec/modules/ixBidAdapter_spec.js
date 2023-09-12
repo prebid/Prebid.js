@@ -1966,6 +1966,38 @@ describe('IndexexchangeAdapter', function () {
       });
     });
 
+    it('multi-configured size params should have the correct imp[].banner.format[].ext.siteID', function () {
+      const bid1 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      const bid2 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid1.params.siteId = 1234;
+      bid1.bidId = '27fc897708d826';
+      bid2.params.siteId = 4321;
+      bid2.bidId = '34df030c33dc68';
+      bid2.params.size = [300, 600];
+      request = spec.buildRequests([bid1, bid2], DEFAULT_OPTION)[0];
+
+      const payload = extractPayload(request);
+      expect(payload.imp.length).to.equal(1);
+      expect(payload.imp[0].banner.format[0].ext.siteID).to.equal('1234');
+      expect(payload.imp[0].banner.format[1].ext.siteID).to.equal('4321');
+    });
+
+    it('multi-configured size params should be added to the imp[].banner.format[] array', function () {
+      const bid1 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      const bid2 = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      bid1.params.siteId = 1234;
+      bid1.bidId = '27fc897708d826';
+      bid2.params.siteId = 4321;
+      bid2.bidId = '34df030c33dc68';
+      bid2.params.size = [300, 600];
+      request = spec.buildRequests([bid1, bid2], DEFAULT_OPTION)[0];
+
+      const payload = extractPayload(request);
+      expect(payload.imp[0].banner.format.length).to.equal(2);
+      expect(`${payload.imp[0].banner.format[0].w}x${payload.imp[0].banner.format[0].h}`).to.equal('300x250');
+      expect(`${payload.imp[0].banner.format[1].w}x${payload.imp[0].banner.format[1].h}`).to.equal('300x600');
+    });
+
     describe('build requests with price floors', () => {
       const highFloor = 4.5;
       const lowFloor = 3.5;
@@ -4009,7 +4041,7 @@ describe('IndexexchangeAdapter', function () {
         expect(extractPayload(request[0]).imp[0].bidfloor).to.equal(2.05);
         expect(extractPayload(request[0]).imp[0].bidfloorcur).to.equal('USD');
         expect(extractPayload(request[0]).imp[0].native.ext.bidfloor).to.equal(2.05);
-        bids[1].adUnitCode = tid;
+        bids[1].transactionId = tid;
       });
 
       it('multiformat banner / native - bid floors, banner imp less', function () {
