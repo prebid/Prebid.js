@@ -11,6 +11,7 @@ import { configureTimerInterceptors } from 'test/mocks/timers.js';
 import { cookieHelpers, runAuction, apiHelpers, setGdprApplies } from './uid2IdSystem_helpers.js';
 import {hook} from 'src/hook.js';
 import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
+import {server} from 'test/mocks/xhr';
 
 let expect = require('chai').expect;
 
@@ -23,10 +24,12 @@ const auctionDelayMs = 10;
 const initialToken = `initial-advertising-token`;
 const legacyToken = 'legacy-advertising-token';
 const refreshedToken = 'refreshed-advertising-token';
+const clientSideGeneratedToken = 'client-side-generated-advertising-token';
 
 const legacyConfigParams = {storage: null};
 const serverCookieConfigParams = { uid2ServerCookie: publisherCookieName };
 const newServerCookieConfigParams = { uid2Cookie: publisherCookieName };
+const cstgConfigParams = { serverPublicKey: 'UID2-X-I-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEtXJdTSZAYHvoRDWiehMHoWF1BNPuqLs5w2ZHiAZ1IJc7O4/z0ojPTB0V+KYX/wxQK0hxx6kxCvHj335eI/ZQsQ==', subscriptionId: 'subscription-id' }
 
 const makeUid2IdentityContainer = (token) => ({uid2: {id: token}});
 let useLocalStorage = false;
@@ -46,15 +49,18 @@ const expectGlobalToHaveToken = (token) => expect(getGlobal().getUserIds()).to.d
 const expectGlobalToHaveNoUid2 = () => expect(getGlobal().getUserIds()).to.not.haveOwnProperty('uid2');
 const expectNoLegacyToken = (bid) => expect(bid.userId).to.not.deep.include(makeUid2IdentityContainer(legacyToken));
 const expectModuleStorageEmptyOrMissing = () => expect(getFromAppropriateStorage()).to.be.null;
-const expectModuleStorageToContain = (initialIdentity, latestIdentity) => {
+const expectModuleStorageToContain = (originalAdvertisingToken, latestAdvertisingToken, originalIdentity) => {
   const cookie = JSON.parse(getFromAppropriateStorage());
-  if (initialIdentity) expect(cookie.originalToken.advertising_token).to.equal(initialIdentity);
-  if (latestIdentity) expect(cookie.latestToken.advertising_token).to.equal(latestIdentity);
+  if (originalAdvertisingToken) expect(cookie.originalToken.advertising_token).to.equal(originalAdvertisingToken);
+  if (latestAdvertisingToken) expect(cookie.latestToken.advertising_token).to.equal(latestAdvertisingToken);
+  if (originalIdentity) expect(cookie.originalIdentity).to.eql(originalIdentity);
 }
 
-const apiUrl = 'https://prod.uidapi.com/v2/token/refresh';
+const apiUrl = 'https://prod.uidapi.com/v2/token'
+const refreshApiUrl = `${apiUrl}/refresh`;
 const headers = { 'Content-Type': 'application/json' };
-const makeSuccessResponseBody = () => btoa(JSON.stringify({ status: 'success', body: { ...apiHelpers.makeTokenResponse(initialToken), advertising_token: refreshedToken } }));
+const makeSuccessResponseBody = (responseToken) => btoa(JSON.stringify({ status: 'success', body: { ...apiHelpers.makeTokenResponse(initialToken), advertising_token: responseToken } }));
+const cstgApiUrl = `${apiUrl}/client-generate`;
 
 const testCookieAndLocalStorage = (description, test, only = false) => {
   const describeFn = only ? describe.only : describe;
@@ -76,7 +82,7 @@ const testCookieAndLocalStorage = (description, test, only = false) => {
 };
 
 describe(`UID2 module`, function () {
-  let server, suiteSandbox, testSandbox, timerSpy, fullTestTitle, restoreSubtleToUndefined = false;
+  let suiteSandbox, testSandbox, timerSpy, fullTestTitle, restoreSubtleToUndefined = false;
   before(function () {
     timerSpy = configureTimerInterceptors(debugOutput);
     hook.ready();
@@ -87,10 +93,17 @@ describe(`UID2 module`, function () {
     // I've confirmed it's available in Firefox since v34 (it seems to be unavailable on BrowserStack in Firefox v106).
     if (typeof window.crypto.subtle === 'undefined') {
       restoreSubtleToUndefined = true;
-      window.crypto.subtle = { importKey: () => {}, decrypt: () => {} };
+      window.crypto.subtle = { importKey: () => {}, decrypt: () => {}, deriveKey: () => {}, encrypt: () => {}, generateKey: () => {}, exportKey: () => {} };
     }
     suiteSandbox.stub(window.crypto.subtle, 'importKey').callsFake(() => Promise.resolve());
     suiteSandbox.stub(window.crypto.subtle, 'decrypt').callsFake((settings, key, data) => Promise.resolve(new Uint8Array([...settings.iv, ...data])));
+    suiteSandbox.stub(window.crypto.subtle, 'deriveKey').callsFake(() => Promise.resolve());
+    suiteSandbox.stub(window.crypto.subtle, 'exportKey').callsFake(() => Promise.resolve());
+    suiteSandbox.stub(window.crypto.subtle, 'encrypt').callsFake(() => Promise.resolve(new ArrayBuffer()));
+    suiteSandbox.stub(window.crypto.subtle, 'generateKey').callsFake(() => Promise.resolve({
+      privateKey: {},
+      publicKey: {}
+    }));
   });
 
   after(function () {
@@ -99,18 +112,18 @@ describe(`UID2 module`, function () {
     if (restoreSubtleToUndefined) window.crypto.subtle = undefined;
   });
 
-  const configureUid2Response = (httpStatus, response) => server.respondWith('POST', apiUrl, (xhr) => xhr.respond(httpStatus, headers, response));
-  const configureUid2ApiSuccessResponse = () => configureUid2Response(200, makeSuccessResponseBody());
-  const configureUid2ApiFailResponse = () => configureUid2Response(500, 'Error');
+  const configureUid2Response = (apiUrl, httpStatus, response) => server.respondWith('POST', apiUrl, (xhr) => xhr.respond(httpStatus, headers, response));
+  const configureUid2ApiSuccessResponse = (apiUrl, responseToken) => configureUid2Response(apiUrl, 200, makeSuccessResponseBody(responseToken));
+  const configureUid2ApiFailResponse = (apiUrl) => configureUid2Response(apiUrl, 500, 'Error');
   // Runs the provided test twice - once with a successful API mock, once with one which returns a server error
-  const testApiSuccessAndFailure = (act, testDescription, failTestDescription, only = false) => {
+  const testApiSuccessAndFailure = (act, apiUrl, testDescription, failTestDescription, only = false, responseToken = refreshedToken) => {
     const testFn = only ? it.only : it;
     testFn(`API responds successfully: ${testDescription}`, async function() {
-      configureUid2ApiSuccessResponse();
+      configureUid2ApiSuccessResponse(apiUrl, responseToken);
       await act(true);
     });
     testFn(`API responds with an error: ${failTestDescription ?? testDescription}`, async function() {
-      configureUid2ApiFailResponse();
+      configureUid2ApiFailResponse(apiUrl);
       await act(false);
     });
   }
@@ -123,8 +136,6 @@ describe(`UID2 module`, function () {
     debugOutput(fullTestTitle);
     testSandbox = sinon.sandbox.create();
     testSandbox.stub(utils, 'logWarn');
-    server = sinon.createFakeServer();
-
     init(config);
     setSubmoduleRegistry([uid2IdSubmodule]);
   });
@@ -238,7 +249,7 @@ describe(`UID2 module`, function () {
         cookieHelpers.setPublisherCookie(publisherCookieName, token);
         config.setConfig(makePrebidConfig(serverCookieConfigParams, extraConfig));
       },
-    }
+    },
   ]
 
   scenarios.forEach(function(scenario) {
@@ -252,7 +263,7 @@ describe(`UID2 module`, function () {
 
             if (apiSucceeds) expectToken(bid, refreshedToken);
             else expectNoIdentity(bid);
-          }, 'it should be used in the auction', 'the auction should have no uid2');
+          }, refreshApiUrl, 'it should be used in the auction', 'the auction should have no uid2');
 
           testApiSuccessAndFailure(async function(apiSucceeds) {
             scenario.setConfig(apiHelpers.makeTokenResponse(initialToken, true, true));
@@ -264,14 +275,14 @@ describe(`UID2 module`, function () {
             } else {
               expectModuleStorageEmptyOrMissing();
             }
-          }, 'the refreshed token should be stored in the module storage', 'the module storage should not be set');
+          }, refreshApiUrl, 'the refreshed token should be stored in the module storage', 'the module storage should not be set');
         });
         describe(`when the response doesn't arrive before the auction timer`, function() {
           testApiSuccessAndFailure(async function() {
             scenario.setConfig(apiHelpers.makeTokenResponse(initialToken, true, true));
             const bid = await runAuction();
             expectNoIdentity(bid);
-          }, 'it should run the auction');
+          }, refreshApiUrl, 'it should run the auction');
 
           testApiSuccessAndFailure(async function(apiSucceeds) {
             scenario.setConfig(apiHelpers.makeTokenResponse(initialToken, true, true));
@@ -283,7 +294,7 @@ describe(`UID2 module`, function () {
             await promise;
             if (apiSucceeds) expectGlobalToHaveToken(refreshedToken);
             else expectGlobalToHaveNoUid2();
-          }, 'it should update the userId after the auction', 'there should be no global identity');
+          }, refreshApiUrl, 'it should update the userId after the auction', 'there should be no global identity');
         })
         describe('and there is a refreshed token in the module cookie', function() {
           it('the refreshed value from the cookie is used', async function() {
@@ -322,7 +333,7 @@ describe(`UID2 module`, function () {
           apiHelpers.respondAfterDelay(10, server);
           const bid = await runAuction();
           expectToken(bid, initialToken);
-        }, 'it should not be refreshed before the auction runs');
+        }, refreshApiUrl, 'it should not be refreshed before the auction runs');
 
         testApiSuccessAndFailure(async function(success) {
           const promise = apiHelpers.respondAfterDelay(1, server);
@@ -333,12 +344,135 @@ describe(`UID2 module`, function () {
           } else {
             expectModuleStorageToContain(initialToken, initialToken);
           }
-        }, 'the refreshed token should be stored in the module cookie after the auction runs', 'the module cookie should only have the original token');
+        }, refreshApiUrl, 'the refreshed token should be stored in the module cookie after the auction runs', 'the module cookie should only have the original token');
 
         it('it should use the current token in the auction', async function() {
           const bid = await runAuction();
           expectToken(bid, initialToken);
         });
+      });
+    });
+  });
+
+  describe('When CSTG config provided', function () {
+    let scenarios = [
+      {
+        name: 'email provided in config',
+        identity: { email: 'test@example.com' },
+        setConfig: function (extraConfig) { config.setConfig(makePrebidConfig({ ...cstgConfigParams, ...this.identity }, extraConfig)) },
+        setInvalidConfig: (extraConfig) => config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: '123' }, extraConfig))
+      },
+      {
+        name: 'phone provided in config',
+        identity: { phone: '+12345678910' },
+        setConfig: function (extraConfig) { config.setConfig(makePrebidConfig({ ...cstgConfigParams, ...this.identity }, extraConfig)) },
+        setInvalidConfig: (extraConfig) => config.setConfig(makePrebidConfig({ ...cstgConfigParams, phone: 'test123' }, extraConfig))
+      },
+      {
+        name: 'email hash provided in config',
+        identity: { email_hash: 'lz3+Rj7IV4X1+Vr1ujkG7tstkxwk5pgkqJ6mXbpOgTs=' },
+        setConfig: function (extraConfig) { config.setConfig(makePrebidConfig({ ...cstgConfigParams, emailHash: this.identity.email_hash }, extraConfig)) },
+        setInvalidConfig: (extraConfig) => config.setConfig(makePrebidConfig({ ...cstgConfigParams, emailHash: 'test@example.com' }, extraConfig))
+      },
+      {
+        name: 'phone hash provided in config',
+        identity: { phone_hash: 'kVJ+4ilhrqm3HZDDnCQy4niZknvCoM4MkoVzZrQSdJw=' },
+        setConfig: function (extraConfig) { config.setConfig(makePrebidConfig({ ...cstgConfigParams, phoneHash: this.identity.phone_hash }, extraConfig)) },
+        setInvalidConfig: (extraConfig) => config.setConfig(makePrebidConfig({ ...cstgConfigParams, phoneHash: '614332222111' }, extraConfig))
+      },
+    ]
+    scenarios.forEach(function(scenario) {
+      describe(`And ${scenario.name}`, function() {
+        describe(`When invalid identity is provided`, function() {
+          it('the auction should have no uid2', async function () {
+            scenario.setInvalidConfig()
+            const bid = await runAuction();
+            expectNoIdentity(bid);
+            expectGlobalToHaveNoUid2();
+            expectModuleStorageEmptyOrMissing();
+          })
+        });
+
+        describe('When valid identity is provided, and the auction is set to run immediately', function() {
+          it('it should ignores token provided in config, and the auction should have no uid2', async function() {
+            scenario.setConfig({ uid2Token: apiHelpers.makeTokenResponse(initialToken), auctionDelay: 0, syncDelay: 1 });
+            const bid = await runAuction();
+            expectNoIdentity(bid);
+            expectGlobalToHaveNoUid2();
+            expectModuleStorageEmptyOrMissing();
+          })
+
+          it('it should ignores token provided in server-set cookie', async function() {
+            cookieHelpers.setPublisherCookie(publisherCookieName, initialToken);
+            scenario.setConfig({ ...newServerCookieConfigParams, auctionDelay: 0, syncDelay: 1 })
+            const bid = await runAuction();
+            expectNoIdentity(bid);
+            expectGlobalToHaveNoUid2();
+            expectModuleStorageEmptyOrMissing();
+          })
+
+          describe('When the token generated in time', function() {
+            testApiSuccessAndFailure(async function(apiSucceeds) {
+              scenario.setConfig();
+              apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
+              const bid = await runAuction();
+
+              if (apiSucceeds) expectToken(bid, clientSideGeneratedToken);
+              else expectNoIdentity(bid);
+            }, cstgApiUrl, 'it should be used in the auction', 'the auction should have no uid2', false, clientSideGeneratedToken);
+
+            testApiSuccessAndFailure(async function(apiSucceeds) {
+              scenario.setConfig();
+              apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
+
+              await runAuction();
+              if (apiSucceeds) {
+                expectModuleStorageToContain(undefined, clientSideGeneratedToken, scenario.identity);
+              } else {
+                expectModuleStorageEmptyOrMissing();
+              }
+            }, cstgApiUrl, 'the generated token should be stored in the module storage', 'the module storage should not be set', false, clientSideGeneratedToken);
+          });
+          describe(`when the response doesn't arrive before the auction timer`, function() {
+            testApiSuccessAndFailure(async function() {
+              scenario.setConfig();
+              const bid = await runAuction();
+              expectNoIdentity(bid);
+            }, cstgApiUrl, 'it should run the auction', undefined, false, clientSideGeneratedToken);
+
+            testApiSuccessAndFailure(async function(apiSucceeds) {
+              scenario.setConfig();
+              const promise = apiHelpers.respondAfterDelay(auctionDelayMs * 2, server);
+
+              const bid = await runAuction();
+              expectNoIdentity(bid);
+              expectGlobalToHaveNoUid2();
+              await promise;
+              if (apiSucceeds) expectGlobalToHaveToken(clientSideGeneratedToken);
+              else expectGlobalToHaveNoUid2();
+            }, cstgApiUrl, 'it should update the userId after the auction', 'there should be no global identity', false, clientSideGeneratedToken);
+          })
+
+          describe('when there is a token in the module cookie', function() {
+            it('when originalIdentity matches, the value from the cookie is used', async function() {
+              const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken);
+              const moduleCookie = {originalIdentity: scenario.identity, latestToken: refreshedIdentity};
+              coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
+              scenario.setConfig({ auctionDelay: 0, syncDelay: 1 });
+              const bid = await runAuction();
+              expectToken(bid, refreshedToken);
+            });
+
+            it('when originalIdentity not match, the auction should have no uid2', async function() {
+              const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken);
+              const moduleCookie = {originalIdentity: '123', latestToken: refreshedIdentity};
+              coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
+              scenario.setConfig({ auctionDelay: 0, syncDelay: 1 });
+              const bid = await runAuction();
+              expectNoIdentity(bid);
+            });
+          })
+        })
       });
     });
   });

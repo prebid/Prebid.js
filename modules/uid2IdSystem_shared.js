@@ -468,7 +468,7 @@ function refreshTokenAndStore(baseUrl, token, clientId, storageManager, _logInfo
       latestToken: response.identity,
     };
     let storedTokens = storageManager.getStoredValueWithFallback();
-    if (storedTokens.originalIdentity) tokens.originalIdentity = storedTokens.originalIdentity;
+    if (storedTokens?.originalIdentity) tokens.originalIdentity = storedTokens.originalIdentity;
     storageManager.storeValue(tokens);
     return tokens;
   });
@@ -544,7 +544,7 @@ function normalizeEmail(email) {
   return addressPartToUse + '@' + domainPart;
 }
 
-async function generateRequest(cstgIdentity) {
+async function generateCstgRequest(cstgIdentity) {
   if ('email_hash' in cstgIdentity || 'phone_hash' in cstgIdentity) {
     return cstgIdentity;
   }
@@ -562,7 +562,7 @@ async function generateTokenAndStore(baseUrl, cstgOpts, cstgIdentity, clientId, 
   _logInfo('UID2 cstg opts provided: ', JSON.stringify(cstgOpts));
 
   const client = new Uid2ApiClient({baseUrl, cstg: cstgOpts}, clientId, _logInfo, _logWarn);
-  const request = await generateRequest(cstgIdentity);
+  const request = await generateCstgRequest(cstgIdentity);
   const response = await client.callCstgApi(request)
   _logInfo('CSTG endpoint responded with:', response);
   const tokens = {
@@ -617,12 +617,13 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   if (isUsingCstg) {
     if (storedTokens) {
       const identityKey = Object.keys(cstgIdentity)[0]
-      if (!storedTokens.originalIdentity || storedTokens.originalIdentity[identityKey] !== cstgIdentity.identityKey) {
+      if (!storedTokens.originalIdentity || storedTokens.originalIdentity[identityKey] !== cstgIdentity[identityKey]) {
         _logInfo('CSTG supplied new identity - ignoring stored value.', storedTokens.originalIdentity, cstgIdentity);
         // Stored token wasn't originally sourced from the provided identity - ignore the stored value. A new user has logged in?
         storedTokens = null;
       }
-    } else {
+    }
+    if (!storedTokens) {
       const promise = generateTokenAndStore(config.apiBaseUrl, config.cstg, cstgIdentity, config.clientId, storageManager, _logInfo, _logWarn);
       _logInfo('Generate token using CSTG');
       return { callback: (cb) => {
