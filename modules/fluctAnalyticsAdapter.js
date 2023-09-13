@@ -65,35 +65,63 @@ const isBrowsiId = (id) => Boolean(id.match(/^browsi_/g));
  */
 const getAdUnitMap = () => window.googletag.pubads().getSlots().reduce((prev, slot) => Object.assign(prev, { [slot.getSlotElementId()]: slot.getAdUnitPath() }), {});
 
-/** @type {(_adUnit: AdUnit, adUnits: AdUnit[], slots: { [divId: string]: string }) => AdUnit} */
-export const convertReplicatedAdUnit = (_adUnit, adUnits = $$PREBID_GLOBAL$$.adUnits, slots = getAdUnitMap()) => {
-  /** @type {AdUnit} */
-  const adUnit = deepClone(_adUnit);
-
-  /** @deprecated browsi枠: */
-  if (!adUnit.analytics) {
-    /** `adUnit.analytics`が存在しない場合、`adUnit.path`も存在しない */
-    const adUnitPath = slots[adUnit.code];
-    try {
-      /**
-       * browsi枠は`adUnit.path`を持たない
-       * 共通のadUnitPathを持つ（複製元の）枠を探す
-       */
-      const { analytics, bids, code, mediaTypes: { banner: { name } } } = find(adUnits, adUnit => adUnitPath.match(new RegExp(`${adUnit.path}$`)));
-      adUnit.analytics = analytics;
-      adUnit.bids = bids;
-      adUnit.originalCode = adUnit.code; /** 変換前: `browsi_ad_..` */
-      adUnit.code = code;
-      adUnit.mediaTypes.banner.name = name;
-    } catch (_error) {
-      logError(JSON.stringify({
-        message: '対応するDWIDを持つ枠が見つかりませんでした。',
-        adUnitCode: adUnit.code,
-        adUnitPath,
-      }));
-    }
+/**
+ * Browsiが新たに枠を生成してオークションを行った場合、その枠にはanalytics (各bidderのDWID情報) の情報が紐づかない
+ * そのため、新たに生成された枠に対して、複製元の枠のanalytics情報をコピーする
+ * @param {AdUnit} adUnit - 複製元の枠
+ * @param {AdUnit[]} [adUnits=$$PREBID_GLOBAL$$.adUnits] - 複製元の枠を含む全ての枠
+ * @param {{ [divId: string]: string }} [divIdToUnitPathMap=getAdUnitMap()] - 紐付けに使用する複製元の枠を含む全ての枠のdivIdとadUnitPathのマッピング
+ * @returns {AdUnit | undefined} - 複製元の枠のanalytics情報をコピーした枠
+ * */
+export const convertReplicatedAdUnit = (adUnit, adUnits = $$PREBID_GLOBAL$$.adUnits, divIdToUnitPathMap = getAdUnitMap()) => {
+  /** 既にanalytics情報が紐付けられている場合は何もしない */
+  if (adUnit.analytics) {
+    return adUnit;
   }
-  return adUnit;
+
+  /** `adUnit.analytics`が存在しない場合、GAMの広告ユニットのフルパス (adUnitPath) を用いて紐付けを行う */
+  const adUnitPath = divIdToUnitPathMap[adUnit.code];
+  if (!adUnitPath) {
+    logError(JSON.stringify({
+      message: `複製枠のdivId (${adUnit.code}) に対応するGAMユニットのフルパスを取得できません。`,
+      adUnitCode: adUnit.code,
+    }));
+    return adUnit;
+  }
+
+    /** `複製枠と共通のadUnitPathを持つ配信設定を探す */
+  const originalAdUnit = find(adUnits, adUnit => adUnitPath.match(new RegExp(`${adUnit.path}$`)));
+  if (!originalAdUnit) {
+    logError(JSON.stringify({
+      message: `複製枠のadUnitPath (${adUnitPath}) を元に複製元の配信設定が取得できません。`,
+      replicationAdUnitCode: adUnit.code,
+      replicationAdUnitPath: adUnitPath,
+    }));
+    return adUnit;
+  }
+
+
+  /** @type {AdUnit} */
+  const _adUnit = deepClone(adUnit);
+  try {
+    const { analytics, bids, code, mediaTypes: { banner: { name } } } = originalAdUnit;
+    _adUnit.analytics = analytics;
+    _adUnit.bids = bids;
+    _adUnit.originalCode = adUnit.code; /** 変換前: `browsi_ad_..` */
+    _adUnit.code = code;
+    _adUnit.mediaTypes.banner.name = name;
+  } catch (_error) {
+    logError(JSON.stringify({
+      message: '複製元枠のanalytics情報を複製枠に移し替える際に問題が発生しました。',
+      error: {
+        name: _error.name,
+        message: _error.message
+      },
+      adUnitCode: _adUnit.code,
+      adUnitPath,
+    }));
+  }
+  return _adUnit;
 };
 
 /** @type {(event: { slot: { getSlotElementId: () => string }}) => void} */
