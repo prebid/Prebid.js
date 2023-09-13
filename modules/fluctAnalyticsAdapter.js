@@ -15,7 +15,7 @@ import {
   logInfo,
 } from '../src/utils.js';
 /** @type {<T>(array: T[], predicate: (value: T, index: number, obj: T[]) => boolean, thisArg?: any) => T} */
-
+const MODULE_NAME = 'fluctAnalyticsAdapter';
 const url = 'https://an.adingo.jp';
 
 /** AdUnit */
@@ -82,21 +82,23 @@ export const convertReplicatedAdUnit = (adUnit, adUnits = $$PREBID_GLOBAL$$.adUn
   /** `adUnit.analytics`が存在しない場合、GAMの広告ユニットのフルパス (adUnitPath) を用いて紐付けを行う */
   const adUnitPath = divIdToUnitPathMap[adUnit.code];
   if (!adUnitPath) {
-    logError(JSON.stringify({
+    logError({
       message: `複製枠のdivId (${adUnit.code}) に対応するGAMユニットのフルパスを取得できません。`,
       adUnitCode: adUnit.code,
-    }));
+      module: MODULE_NAME,
+    });
     return adUnit;
   }
 
     /** `複製枠と共通のadUnitPathを持つ配信設定を探す */
   const originalAdUnit = find(adUnits, adUnit => adUnitPath.match(new RegExp(`${adUnit.path}$`)));
   if (!originalAdUnit) {
-    logError(JSON.stringify({
+    logError({
       message: `複製枠のadUnitPath (${adUnitPath}) を元に複製元の配信設定が取得できません。`,
       replicationAdUnitCode: adUnit.code,
       replicationAdUnitPath: adUnitPath,
-    }));
+      module: MODULE_NAME,
+    });
     return adUnit;
   }
 
@@ -111,7 +113,7 @@ export const convertReplicatedAdUnit = (adUnit, adUnits = $$PREBID_GLOBAL$$.adUn
     _adUnit.code = code;
     _adUnit.mediaTypes.banner.name = name;
   } catch (_error) {
-    logError(JSON.stringify({
+    logError({
       message: '複製元枠のanalytics情報を複製枠に移し替える際に問題が発生しました。',
       error: {
         name: _error.name,
@@ -119,7 +121,8 @@ export const convertReplicatedAdUnit = (adUnit, adUnits = $$PREBID_GLOBAL$$.adUn
       },
       adUnitCode: _adUnit.code,
       adUnitPath,
-    }));
+      module: MODULE_NAME,
+    });
   }
   return _adUnit;
 };
@@ -237,7 +240,7 @@ let fluctAnalyticsAdapter = Object.assign(
       }
     } catch (error) {
       // console.error({ eventType, args, error })
-      logError({ eventType, args, error });
+      logError({ eventType, args, error, module: MODULE_NAME });
     }
   }
 });
