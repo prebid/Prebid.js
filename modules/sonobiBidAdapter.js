@@ -342,9 +342,13 @@ function _validateMediaType(bidRequest) {
     if (deepAccess(bidRequest, 'mediaTypes.video.playbackmethod')) {
       mediaTypeValidation = `${mediaTypeValidation}pm=${deepAccess(bidRequest, 'mediaTypes.video.playbackmethod').join(':')},`;
     }
-    if (deepAccess(bidRequest, 'mediaTypes.video.placement') || deepAccess(bidRequest, 'mediaTypes.video.plcmt')) {
-      let placement = deepAccess(bidRequest, 'mediaTypes.video.placement') || deepAccess(bidRequest, 'mediaTypes.video.plcmt');
+    if (deepAccess(bidRequest, 'mediaTypes.video.placement')) {
+      let placement = deepAccess(bidRequest, 'mediaTypes.video.placement');
       mediaTypeValidation = `${mediaTypeValidation}p=${placement},`;
+    }
+    if (deepAccess(bidRequest, 'mediaTypes.video.plcmt')) {
+      let plcmt = deepAccess(bidRequest, 'mediaTypes.video.plcmt');
+      mediaTypeValidation = `${mediaTypeValidation}pl=${plcmt},`;
     }
   } else if (mediaType === 'display') {
     mediaTypeValidation = 'c=d,';
