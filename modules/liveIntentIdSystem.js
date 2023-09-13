@@ -210,6 +210,9 @@ export const liveIntentIdSubmodule = {
         result.index = { 'id': value.index, ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
+      if (value.pubmatic) {
+        result.pubmatic = { 'id': value.pubmatic, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
       return result
     }
 
@@ -265,6 +268,18 @@ export const liveIntentIdSubmodule = {
     },
     'bidswitch': {
       source: 'bidswitch.net',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'pubmatic': {
+      source: 'pubmatic.com',
       atype: 3,
       getValue: function(data) {
         return data.id;
