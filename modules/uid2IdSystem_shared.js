@@ -575,13 +575,12 @@ async function generateTokenAndStore(baseUrl, cstgOpts, cstgIdentity, clientId, 
 
 export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   let suppliedToken = null;
-  const cstgIdentity = getValidIdentity(config.cstg);
-  const isUsingCstg = config.cstg && isCSTGOptions(config.cstg, _logWarn) && cstgIdentity;
+  const cstgIdentity = config.cstg && isCSTGOptions(config.cstg, _logWarn) && getValidIdentity(config.cstg);
   const preferLocalStorage = (config.storage !== 'cookie');
   const storageManager = new Uid2StorageManager(prebidStorageManager, preferLocalStorage, config.internalStorage, _logInfo);
   _logInfo(`Module is using ${preferLocalStorage ? 'local storage' : 'cookies'} for internal storage.`);
 
-  if (isUsingCstg) {
+  if (cstgIdentity) {
     // Ignores config.paramToken and config.serverCookieName if any is provided
     suppliedToken = null;
   } else if (config.paramToken) {
@@ -597,7 +596,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   if (storedTokens && typeof storedTokens === 'string') {
     // Stored value is a plain token - if no token is supplied, just use the stored value.
 
-    if (!suppliedToken && !isUsingCstg) {
+    if (!suppliedToken && !cstgIdentity) {
       _logInfo('Returning legacy cookie value.');
       return { id: storedTokens };
     }
@@ -614,7 +613,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
     }
   }
 
-  if (isUsingCstg) {
+  if (cstgIdentity) {
     if (storedTokens) {
       const identityKey = Object.keys(cstgIdentity)[0]
       if (!storedTokens.originalIdentity || storedTokens.originalIdentity[identityKey] !== cstgIdentity[identityKey]) {
@@ -660,7 +659,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
     originalToken: suppliedToken ?? storedTokens?.originalToken,
     latestToken: newestAvailableToken,
   };
-  if (isUsingCstg) tokens.originalIdentity = storedTokens?.originalIdentity
+  if (cstgIdentity) tokens.originalIdentity = storedTokens?.originalIdentity
   storageManager.storeValue(tokens);
   return { id: tokens };
 }
