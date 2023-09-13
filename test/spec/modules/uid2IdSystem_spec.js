@@ -162,13 +162,13 @@ describe(`UID2 module`, function () {
     it('When no baseUrl is provided in config, the module calls the production endpoint', function() {
       const uid2Token = apiHelpers.makeTokenResponse(initialToken, true, true);
       config.setConfig(makePrebidConfig({uid2Token}));
-      expect(server.requests[0]?.url).to.have.string('https://prod.uidapi.com/');
+      expect(server.requests[0]?.url).to.have.string('https://prod.uidapi.com/v2/token/refresh');
     });
 
     it('When a baseUrl is provided in config, the module calls the provided endpoint', function() {
       const uid2Token = apiHelpers.makeTokenResponse(initialToken, true, true);
       config.setConfig(makePrebidConfig({uid2Token, uid2ApiBase: 'https://operator-integ.uidapi.com'}));
-      expect(server.requests[0]?.url).to.have.string('https://operator-integ.uidapi.com/');
+      expect(server.requests[0]?.url).to.have.string('https://operator-integ.uidapi.com/v2/token/refresh');
     });
   });
 
@@ -433,47 +433,85 @@ describe(`UID2 module`, function () {
               }
             }, cstgApiUrl, 'the generated token should be stored in the module storage', 'the module storage should not be set', false, clientSideGeneratedToken);
           });
-          describe(`when the response doesn't arrive before the auction timer`, function() {
-            testApiSuccessAndFailure(async function() {
-              scenario.setConfig();
-              const bid = await runAuction();
-              expectNoIdentity(bid);
-            }, cstgApiUrl, 'it should run the auction', undefined, false, clientSideGeneratedToken);
-
-            testApiSuccessAndFailure(async function(apiSucceeds) {
-              scenario.setConfig();
-              const promise = apiHelpers.respondAfterDelay(auctionDelayMs * 2, server);
-
-              const bid = await runAuction();
-              expectNoIdentity(bid);
-              expectGlobalToHaveNoUid2();
-              await promise;
-              if (apiSucceeds) expectGlobalToHaveToken(clientSideGeneratedToken);
-              else expectGlobalToHaveNoUid2();
-            }, cstgApiUrl, 'it should update the userId after the auction', 'there should be no global identity', false, clientSideGeneratedToken);
-          })
-
-          describe('when there is a token in the module cookie', function() {
-            it('when originalIdentity matches, the value from the cookie is used', async function() {
-              const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken);
-              const moduleCookie = {originalIdentity: scenario.identity, latestToken: refreshedIdentity};
-              coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
-              scenario.setConfig({ auctionDelay: 0, syncDelay: 1 });
-              const bid = await runAuction();
-              expectToken(bid, refreshedToken);
-            });
-
-            it('when originalIdentity not match, the auction should have no uid2', async function() {
-              const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken);
-              const moduleCookie = {originalIdentity: '123', latestToken: refreshedIdentity};
-              coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
-              scenario.setConfig({ auctionDelay: 0, syncDelay: 1 });
-              const bid = await runAuction();
-              expectNoIdentity(bid);
-            });
-          })
-        })
+        });
       });
     });
+    describe(`when the response doesn't arrive before the auction timer`, function() {
+      testApiSuccessAndFailure(async function() {
+        config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com' }));
+        const bid = await runAuction();
+        expectNoIdentity(bid);
+      }, cstgApiUrl, 'it should run the auction', undefined, false, clientSideGeneratedToken);
+
+      testApiSuccessAndFailure(async function(apiSucceeds) {
+        config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com' }));
+        const promise = apiHelpers.respondAfterDelay(auctionDelayMs * 2, server);
+
+        const bid = await runAuction();
+        expectNoIdentity(bid);
+        expectGlobalToHaveNoUid2();
+        await promise;
+        if (apiSucceeds) expectGlobalToHaveToken(clientSideGeneratedToken);
+        else expectGlobalToHaveNoUid2();
+      }, cstgApiUrl, 'it should update the userId after the auction', 'there should be no global identity', false, clientSideGeneratedToken);
+    })
+
+    describe('when there is a token in the module cookie', function() {
+      describe('when originalIdentity matches', function() {
+        describe('When the storedToken is valid', function() {
+          it('it should use the stored token in the auction', async function() {
+            const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken);
+            const moduleCookie = {originalIdentity: {email: 'test@test.com'}, latestToken: refreshedIdentity};
+            coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
+            config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com', auctionDelay: 0, syncDelay: 1 }));
+            const bid = await runAuction();
+            expectToken(bid, refreshedToken);
+          });
+        })
+
+        describe('When the storedToken is expired and can be refreshed ', function() {
+          it('it should calls refresh API', function() {
+            testApiSuccessAndFailure(async function(apiSucceeds) {
+              const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken, true, true);
+              const moduleCookie = {originalIdentity: {email: 'test@test.com'}, latestToken: refreshedIdentity};
+              coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
+              config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com' }));
+              apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
+
+              const bid = await runAuction();
+
+              if (apiSucceeds) expectToken(bid, refreshedToken);
+              else expectNoIdentity(bid);
+            }, refreshApiUrl, 'it should use refreshed token in the auction', 'the auction should have no uid2');
+          });
+        })
+
+        describe('When the storedToken is expired for refresh', function() {
+          it('it should calls CSTG API and not use the stored token', function() {
+            testApiSuccessAndFailure(async function(apiSucceeds) {
+              const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken, true, true, true);
+              const moduleCookie = {originalIdentity: {email: 'test@test.com'}, latestToken: refreshedIdentity};
+              coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
+              config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com' }));
+              apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
+
+              const bid = await runAuction();
+
+              if (apiSucceeds) expectToken(bid, clientSideGeneratedToken);
+              else expectNoIdentity(bid);
+            }, cstgApiUrl, 'it should use generated token in the auction', 'the auction should have no uid2', false, clientSideGeneratedToken);
+          });
+        })
+      })
+
+      it('when originalIdentity not match, the auction should have no uid2', async function() {
+        const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken);
+        const moduleCookie = {originalIdentity: '123', latestToken: refreshedIdentity};
+        coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
+        config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com' }));
+        const bid = await runAuction();
+        expectNoIdentity(bid);
+      });
+    })
   });
 });

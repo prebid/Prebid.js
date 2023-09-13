@@ -581,6 +581,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   _logInfo(`Module is using ${preferLocalStorage ? 'local storage' : 'cookies'} for internal storage.`);
 
   if (cstgIdentity) {
+    _logInfo(`Module is using client-side token generation.`);
     // Ignores config.paramToken and config.serverCookieName if any is provided
     suppliedToken = null;
   } else if (config.paramToken) {
@@ -622,7 +623,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
         storedTokens = null;
       }
     }
-    if (!storedTokens) {
+    if (!storedTokens || Date.now() > storedTokens.latestToken.refresh_expires) {
       const promise = generateTokenAndStore(config.apiBaseUrl, config.cstg, cstgIdentity, config.clientId, storageManager, _logInfo, _logWarn);
       _logInfo('Generate token using CSTG');
       return { callback: (cb) => {
