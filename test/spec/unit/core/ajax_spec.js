@@ -1,7 +1,8 @@
-import {dep, attachCallbacks, fetcherFactory, toFetchRequest} from '../../../../src/ajax.js';
+import {attachCallbacks, dep, fetcherFactory, toFetchRequest} from '../../../../src/ajax.js';
 import {config} from 'src/config.js';
 import {server} from '../../../mocks/xhr.js';
-import {sandbox} from 'sinon';
+import * as utils from 'src/utils.js';
+import {logError} from 'src/utils.js';
 
 const EXAMPLE_URL = 'https://www.example.com';
 
@@ -312,13 +313,24 @@ describe('attachCallbacks', () => {
     const cbType = success ? 'success' : 'error';
 
     describe(`for ${t}`, () => {
-      let response, body;
+      let sandbox, response, body;
       beforeEach(() => {
+        sandbox = sinon.sandbox.create();
+        sandbox.spy(utils, 'logError');
         ({response, body} = makeResponse());
       });
 
+      afterEach(() => {
+        sandbox.restore();
+      })
+
       function checkXHR(xhr) {
-        sinon.assert.match(xhr, {
+        utils.logError.resetHistory();
+        const serialized = JSON.parse(JSON.stringify(xhr))
+        // serialization of `responseXML` should not generate console messages
+        sinon.assert.notCalled(utils.logError);
+
+        sinon.assert.match(serialized, {
           readyState: XMLHttpRequest.DONE,
           status: response.status,
           statusText: response.statusText,
@@ -330,7 +342,7 @@ describe('attachCallbacks', () => {
         if (xml) {
           expect(xhr.responseXML.querySelectorAll('*').length > 0).to.be.true;
         } else {
-          expect(xhr.responseXML).to.not.exist;
+          expect(serialized.responseXML).to.not.exist;
         }
         Array.from(response.headers.entries()).forEach(([name, value]) => {
           expect(xhr.getResponseHeader(name)).to.eql(value);
