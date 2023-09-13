@@ -1,4 +1,4 @@
-import {deepAccess, isArray, logError, mergeDeep, deepSetValue, logWarn, deepClone} from '../src/utils.js';
+import {deepAccess, isArray, logError, mergeDeep, deepSetValue} from '../src/utils.js';
 import {getOrigin} from '../libraries/getOrigin/index.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -41,17 +41,17 @@ export const OPENRTB = {
   }
 };
 
-const converter = ortbConverter({     
+const converter = ortbConverter({
   context: {
-      netRevenue: true,
-      ttl: TTL,
-      currency: DEFAULT_CURRENCY_ARR[0]
+    netRevenue: true,
+    ttl: TTL,
+    currency: DEFAULT_CURRENCY_ARR[0]
   },
   imp(buildImp, bidRequest, context) {
     const { bidderRequest } = context;
     const imp = buildImp(bidRequest, context);
     deepSetValue(imp, 'tagid', bidRequest.adUnitCode.toString());
-    
+
     mergeDeep(imp, mapImpression(bidRequest, bidderRequest));
     if (!imp.bidfloor && bidRequest.params.bidfloor) {
       imp.bidfloor = parseFloat(bidRequest.params.bidfloor);
@@ -60,26 +60,26 @@ const converter = ortbConverter({
     return imp;
   },
   bidResponse(buildBidResponse, bid, context) {
-    if(!('price' in bid)) return;
+    if (!('price' in bid)) return;
     if (bid.adm.indexOf('{') === 0) {
       // native bid, adding mtype bc the bidder doesn't provide it
       bid.mtype = 4; // ORTB native value
-      const parsedBidAdm = JSON.parse(bid.adm);
-      if(parsedBidAdm.native) {
+      let parsedBidAdm = JSON.parse(bid.adm);
+      if (parsedBidAdm.native) {
         parsedBidAdm = parsedBidAdm.native;
       }
       bid.adm = parsedBidAdm;
     }
     const bidResponse = buildBidResponse(bid, context);
     bidResponse.creativeId = bid.adid;
-    
+
     if (bid.ext) mergeDeep(bidResponse.ext, bid.ext);
 
     return bidResponse;
   },
   response(buildResponse, bidResponses, ortbResponse, context) {
     const response = buildResponse(bidResponses, ortbResponse, context);
-    
+
     if (ortbResponse.bidid && isArray(ortbResponse?.ext?.igbid)) {
       // we have fledge response
 
@@ -92,14 +92,14 @@ const converter = ortbConverter({
           perBuyerSignals[buyerItem.igdomain] = buyerItem.buyersignal
         });
         fledgeAuctionConfigsObj[igbid.impid] = {
-            seller,
-            decisionLogicUrl,
-            interestGroupBuyers: Object.keys(perBuyerSignals),
-            perBuyerSignals,
-          };
-        if(sellerTimeout) fledgeAuctionConfigsObj[igbid.impid].sellerTimeout = sellerTimeout;
+          seller,
+          decisionLogicUrl,
+          interestGroupBuyers: Object.keys(perBuyerSignals),
+          perBuyerSignals,
+        };
+        if (sellerTimeout) fledgeAuctionConfigsObj[igbid.impid].sellerTimeout = sellerTimeout;
       });
- 
+
       const fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigsObj).map(([bidId, cfg]) => {
         return {
           bidId,
@@ -156,7 +156,7 @@ export const spec = {
       deepSetValue(ortbRequest, 'ext.fledge_config', fledgeConfig);
       computedEndpointUrl = FLEDGE_ENDPOINT_URL;
     }
-  
+
     return {
       method: 'POST',
       url: 'https://' + firstBidRequest.params.region + '.' + computedEndpointUrl,
@@ -183,8 +183,8 @@ export const spec = {
 registerBidder(spec);
 
 function mapImpression(bidRequest) {
-  if(isBannerBid(bidRequest)) return {banner: mapBanner(bidRequest)}
-  if(isNativeBid(bidRequest)) return {native: mapNative(bidRequest)}
+  if (isBannerBid(bidRequest)) return {banner: mapBanner(bidRequest)}
+  if (isNativeBid(bidRequest)) return {native: mapNative(bidRequest)}
 }
 
 function isBannerBid(bidRequest) {
@@ -196,7 +196,7 @@ function isNativeBid(bidRequest) {
 
 function mapBanner(bidRequest) {
   const banner = {};
-  if(isBannerBid(bidRequest)) {
+  if (isBannerBid(bidRequest)) {
     let sizes = deepAccess(bidRequest, `mediaTypes.${BANNER}.sizes`);
 
     if (sizes) {
@@ -268,7 +268,7 @@ function validateSchain(schain) {
  */
 function mapNative(bidRequest) {
   const native = {}
-  if(isNativeBid(bidRequest)) {
+  if (isNativeBid(bidRequest)) {
     mergeDeep(native, {
       request: {
         assets: mapNativeAssets(bidRequest),
