@@ -13,7 +13,8 @@ import {
   mergeDeep,
   parseGPTSingleSizeArray,
   parseUrl,
-  pick
+  pick,
+  deepEqual
 } from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {config} from '../src/config.js';
@@ -307,10 +308,13 @@ function normalizeRulesForAuction(floorData, adUnitCode) {
  * Only called if no set config or fetch level data has returned
  */
 export function getFloorDataFromAdUnits(adUnits) {
-  let schemaDef;
+  const schemaAu = adUnits.find(au => au.floors?.schema != null);
   return adUnits.reduce((accum, adUnit) => {
-    if (schemaDef == null) schemaDef = adUnit.floors;
-    const floors = Object.assign({}, schemaDef, adUnit.floors)
+    if (adUnit.floors?.schema != null && !deepEqual(adUnit.floors.schema, schemaAu?.floors?.schema)) {
+      logError(`${MODULE_NAME}: adUnit '${adUnit.code}' declares a different schema from one previously declared by adUnit '${schemaAu.code}'. Floor config for '${adUnit.code}' will be ignored.`)
+      return accum;
+    }
+    const floors = Object.assign({}, schemaAu?.floors, {values: undefined}, adUnit.floors)
     if (isFloorsDataValid(floors)) {
       // if values already exist we want to not overwrite them
       if (!accum.values) {

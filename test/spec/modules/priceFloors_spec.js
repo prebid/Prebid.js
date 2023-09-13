@@ -12,7 +12,7 @@ import {
   isFloorsDataValid,
   addBidResponseHook,
   fieldMatchingFunctions,
-  allowedFields, parseFloorData, normalizeDefault
+  allowedFields, parseFloorData, normalizeDefault, getFloorDataFromAdUnits
 } from 'modules/priceFloors.js';
 import * as events from 'src/events.js';
 import * as mockGpt from '../integration/faker/googletag.js';
@@ -151,6 +151,67 @@ describe('the price floors module', function () {
       expect(getFirstMatchingFloor(fd, {}, {}).matchingFloor).to.eql(1.23);
     });
   });
+
+  describe('getFloorDataFromAdUnits', () => {
+    let adUnits;
+
+    function setFloorValues(rule) {
+      adUnits.forEach((au, i) => {
+        au.floors = {
+          values: {
+            [rule]: i + 1
+          }
+        }
+      })
+    }
+
+    beforeEach(() => {
+      adUnits = ['au1', 'au2', 'au3'].map(getAdUnitMock);
+    })
+
+    it('should use one schema for all adUnits', () => {
+      setFloorValues('*;*')
+      adUnits[1].floors.schema = {
+        fields: ['mediaType', 'gptSlot'],
+        delimiter: ';'
+      }
+      sinon.assert.match(getFloorDataFromAdUnits(adUnits), {
+        schema: {
+          fields: ['adUnitCode', 'mediaType', 'gptSlot'],
+          delimiter: ';'
+        },
+        values: {
+          'au1;*;*': 1,
+          'au2;*;*': 2,
+          'au3;*;*': 3
+        }
+      })
+    });
+    it('should ignore adUnits that declare different schema', () => {
+      setFloorValues('*|*');
+      adUnits[0].floors.schema = {
+        fields: ['mediaType', 'gptSlot']
+      };
+      adUnits[2].floors.schema = {
+        fields: ['gptSlot', 'mediaType']
+      };
+      expect(getFloorDataFromAdUnits(adUnits).values).to.eql({
+        'au1|*|*': 1,
+        'au2|*|*': 2
+      })
+    });
+    it('should ignore adUnits that declare no values', () => {
+      setFloorValues('*');
+      adUnits[0].floors.schema = {
+        fields: ['mediaType']
+      };
+      delete adUnits[2].floors.values;
+      expect(getFloorDataFromAdUnits(adUnits).values).to.eql({
+        'au1|*': 1,
+        'au2|*': 2,
+      })
+    })
+  })
 
   describe('getFloorsDataForAuction', function () {
     it('converts basic input floor data into a floorData map for the auction correctly', function () {
