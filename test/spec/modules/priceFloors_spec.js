@@ -731,6 +731,22 @@ describe('the price floors module', function () {
           adUnits[0].floors = {default: 1};
           adUnits[1].floors = {default: 2};
           expectFloors([1, 2])
+        });
+        it('on an adUnit with hidden schema', () => {
+          handleSetFloorsConfig({
+            ...basicFloorConfig,
+            data: undefined
+          });
+          adUnits[0].floors = {
+            schema: {
+              fields: ['mediaType', 'gptSlot'],
+            },
+            default: 1
+          }
+          adUnits[1].floors = {
+            default: 2
+          }
+          expectFloors([1, 2]);
         })
       });
       describe('should NOT be used when a star rule exists', () => {
@@ -756,19 +772,16 @@ describe('the price floors module', function () {
           });
           adUnits[0].floors = {
             schema: {
-              fields: ['mediaType'],
+              fields: ['mediaType', 'gptSlot'],
             },
             values: {
-              '*': 1
+              '*|*': 1
             },
             default: 3
           };
           adUnits[1].floors = {
-            schema: {
-              fields: ['gptSlot'],
-            },
             values: {
-              '*': 2
+              '*|*': 2
             },
             default: 4
           }

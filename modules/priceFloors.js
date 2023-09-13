@@ -307,14 +307,17 @@ function normalizeRulesForAuction(floorData, adUnitCode) {
  * Only called if no set config or fetch level data has returned
  */
 export function getFloorDataFromAdUnits(adUnits) {
+  let schemaDef;
   return adUnits.reduce((accum, adUnit) => {
-    if (isFloorsDataValid(adUnit.floors)) {
+    if (schemaDef == null) schemaDef = adUnit.floors;
+    const floors = Object.assign({}, schemaDef, adUnit.floors)
+    if (isFloorsDataValid(floors)) {
       // if values already exist we want to not overwrite them
       if (!accum.values) {
-        accum = getFloorsDataForAuction(adUnit.floors, adUnit.code);
+        accum = getFloorsDataForAuction(floors, adUnit.code);
         accum.location = 'adUnit';
       } else {
-        let newRules = getFloorsDataForAuction(adUnit.floors, adUnit.code).values;
+        let newRules = getFloorsDataForAuction(floors, adUnit.code).values;
         // copy over the new rules into our values object
         Object.assign(accum.values, newRules);
       }
