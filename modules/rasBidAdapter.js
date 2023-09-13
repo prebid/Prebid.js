@@ -129,6 +129,36 @@ const getGdprParams = (bidderRequest) => {
   return queryString;
 };
 
+const parseAuctionConfigs = (serverResponse, bidRequest) => {
+  if (isEmpty(serverResponse) || isEmpty(bidRequest)) {
+    return null;
+  }
+  let auctionConfigs = [];
+  const bidConfigs = Object.fromEntries(bidRequest.bidIds.map(x => [x.bidId, x]));
+
+  serverResponse.ads.filter(bid => bidConfigs.hasOwnProperty(bid.id) && bidConfigs[bid.id].fledgeEnabled).forEach((bid) => {
+    auctionConfigs.push({
+      'bidId': bidConfigs[bid.id].bidId,
+      'config': {
+        'seller': 'https://csr.onet.pl',
+        'decisionLogicUrl': `https://csr.onet.pl/${bidConfigs[bid.id].network}/v1/protected-audience-api/decision-logic.js`,
+        'interestGroupBuyers': ['https://csr.onet.pl'],
+        'auctionSignals': {
+          'site': bidConfigs[bid.id].site,
+          'kvismobile': bidConfigs[bid.id].isMobile,
+          'iusizes': bidConfigs[bid.id].iusizes
+        }
+      }
+    });
+  });
+
+  if (auctionConfigs.length === 0) {
+    return null;
+  } else {
+    return auctionConfigs;
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
@@ -145,8 +175,18 @@ export const spec = {
     const slotsQuery = getSlots(bidRequests);
     const contextQuery = getContextParams(bidRequests, bidderRequest);
     const gdprQuery = getGdprParams(bidderRequest);
-    const bidIds = bidRequests.map((bid) => ({ slot: bid.params.slot, bidId: bid.bidId }));
+    const fledgeEligible = Boolean(bidderRequest && bidderRequest.fledgeEnabled);
     const network = bidRequests[0].params.network;
+    const bidIds = bidRequests.map((bid) => ({
+      slot: bid.params.slot,
+      bidId: bid.bidId,
+      network: network,
+      site: bid.params.site,
+      isMobile: Boolean(bid.params.pageContext?.keyValues?.ismobile),
+      iusizes: getAdUnitSizes(bid),
+      fledgeEnabled: fledgeEligible
+    }));
+
     return [{
       method: 'GET',
       url: getEndpoint(network) + contextQuery + slotsQuery + gdprQuery,
@@ -159,7 +199,16 @@ export const spec = {
     if (!response || !response.ads || response.ads.length === 0) {
       return [];
     }
-    return response.ads.map(buildBid).filter((bid) => !isEmpty(bid));
+
+    const fledgeAuctionConfigs = parseAuctionConfigs(response, bidRequest);
+    const bids = response.ads.map(buildBid).filter((bid) => !isEmpty(bid));
+
+    if (fledgeAuctionConfigs) {
+      // Return a tuple of bids and auctionConfigs. It is possible that bids could be null.
+      return {bids, fledgeAuctionConfigs};
+    } else {
+      return bids;
+    }
   }
 };
 
