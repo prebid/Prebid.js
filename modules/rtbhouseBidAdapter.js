@@ -1,9 +1,9 @@
-import {deepAccess, isArray, logError, logInfo, mergeDeep} from '../src/utils.js';
+import {deepAccess, isArray, logError, mergeDeep, deepSetValue, logWarn, deepClone} from '../src/utils.js';
 import {getOrigin} from '../libraries/getOrigin/index.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {includes} from '../src/polyfill.js';
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'rtbhouse';
@@ -41,6 +41,82 @@ export const OPENRTB = {
   }
 };
 
+const converter = ortbConverter({     
+  context: {
+      netRevenue: true,
+      ttl: TTL,
+      currency: DEFAULT_CURRENCY_ARR[0]
+  },
+  imp(buildImp, bidRequest, context) {
+    const { bidderRequest } = context;
+    const imp = buildImp(bidRequest, context);
+    deepSetValue(imp, 'tagid', bidRequest.adUnitCode.toString());
+    
+    mergeDeep(imp, mapImpression(bidRequest, bidderRequest));
+    if (!imp.bidfloor && bidRequest.params.bidfloor) {
+      imp.bidfloor = parseFloat(bidRequest.params.bidfloor);
+      imp.bidfloorcur = DEFAULT_CURRENCY_ARR[0];
+    }
+    return imp;
+  },
+  bidResponse(buildBidResponse, bid, context) {
+    if(!('price' in bid)) return;
+    if (bid.adm.indexOf('{') === 0) {
+      // native bid, adding mtype bc the bidder doesn't provide it
+      bid.mtype = 4; // ORTB native value
+      const parsedBidAdm = JSON.parse(bid.adm);
+      if(parsedBidAdm.native) {
+        parsedBidAdm = parsedBidAdm.native;
+      }
+      bid.adm = parsedBidAdm;
+    }
+    const bidResponse = buildBidResponse(bid, context);
+    bidResponse.creativeId = bid.adid;
+    
+    if (bid.ext) mergeDeep(bidResponse.ext, bid.ext);
+
+    return bidResponse;
+  },
+  response(buildResponse, bidResponses, ortbResponse, context) {
+    const response = buildResponse(bidResponses, ortbResponse, context);
+    
+    if (ortbResponse.bidid && isArray(ortbResponse?.ext?.igbid)) {
+      // we have fledge response
+
+      const fledgeAuctionConfigsObj = {};
+      const { seller, decisionLogicUrl, sellerTimeout } = ortbResponse.ext;
+
+      ortbResponse.ext.igbid.forEach((igbid) => {
+        const perBuyerSignals = {};
+        igbid.igbuyer.forEach(buyerItem => {
+          perBuyerSignals[buyerItem.igdomain] = buyerItem.buyersignal
+        });
+        fledgeAuctionConfigsObj[igbid.impid] = {
+            seller,
+            decisionLogicUrl,
+            interestGroupBuyers: Object.keys(perBuyerSignals),
+            perBuyerSignals,
+          };
+        if(sellerTimeout) fledgeAuctionConfigsObj[igbid.impid].sellerTimeout = sellerTimeout;
+      });
+ 
+      const fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigsObj).map(([bidId, cfg]) => {
+        return {
+          bidId,
+          config: Object.assign({
+            auctionSignals: {}
+          }, cfg)
+        }
+      });
+      return {
+        bids: response.bids,
+        fledgeAuctionConfigs,
+      }
+    }
+    return response.bids;
+  }
+});
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
@@ -50,52 +126,26 @@ export const spec = {
     return !!(includes(REGIONS, bid.params.region) && bid.params.publisherId);
   },
   buildRequests: function (validBidRequests, bidderRequest) {
-    // convert Native ORTB definition to old-style prebid native definition
-    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-
-    const request = {
-      id: bidderRequest.bidderRequestId,
-      imp: validBidRequests.map(slot => mapImpression(slot, bidderRequest)),
-      site: mapSite(validBidRequests, bidderRequest),
-      cur: DEFAULT_CURRENCY_ARR,
-      test: validBidRequests[0].params.test || 0,
-      source: mapSource(validBidRequests[0], bidderRequest),
-    };
-
+    const ortbRequest = converter.toORTB({ validBidRequests, bidderRequest });
+    let computedEndpointUrl = ENDPOINT_URL;
+    const firstBidRequest = validBidRequests[0];
+    mergeDeep(ortbRequest, {
+      site: mapSite(validBidRequests),
+      test: firstBidRequest.params.test || 0,
+    });
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
       const consentStr = (bidderRequest.gdprConsent.consentString)
         ? bidderRequest.gdprConsent.consentString.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') : '';
       const gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
-      request.regs = {ext: {gdpr: gdpr}};
-      request.user = {ext: {consent: consentStr}};
+      deepSetValue(ortbRequest, 'regs.ext.gdpr', gdpr);
+      deepSetValue(ortbRequest, 'user.ext.consent', consentStr);
     }
-    if (validBidRequests[0].schain) {
-      const schain = mapSchain(validBidRequests[0].schain);
+    if (firstBidRequest.schain) {
+      const schain = mapSchain(firstBidRequest.schain);
       if (schain) {
-        request.ext = {
-          schain: schain,
-        };
+        deepSetValue(ortbRequest, 'ext.schain', schain);
       }
     }
-
-    if (validBidRequests[0].userIdAsEids) {
-      const eids = { eids: validBidRequests[0].userIdAsEids };
-      if (request.user && request.user.ext) {
-        request.user.ext = { ...request.user.ext, ...eids };
-      } else {
-        request.user = {ext: eids};
-      }
-    }
-
-    const ortb2Params = bidderRequest?.ortb2 || {};
-    ['site', 'user', 'device', 'bcat', 'badv'].forEach(entry => {
-      const ortb2Param = ortb2Params[entry];
-      if (ortb2Param) {
-        mergeDeep(request, { [entry]: ortb2Param });
-      }
-    });
-
-    let computedEndpointUrl = ENDPOINT_URL;
 
     if (bidderRequest.fledgeEnabled) {
       const fledgeConfig = config.getConfig('fledgeConfig') || {
@@ -103,173 +153,65 @@ export const spec = {
         decisionLogicUrl: FLEDGE_DECISION_LOGIC_URL,
         sellerTimeout: 500
       };
-      mergeDeep(request, { ext: { fledge_config: fledgeConfig } });
+      deepSetValue(ortbRequest, 'ext.fledge_config', fledgeConfig);
       computedEndpointUrl = FLEDGE_ENDPOINT_URL;
     }
-
+  
     return {
       method: 'POST',
-      url: 'https://' + validBidRequests[0].params.region + '.' + computedEndpointUrl,
-      data: JSON.stringify(request)
+      url: 'https://' + firstBidRequest.params.region + '.' + computedEndpointUrl,
+      data: ortbRequest
     };
   },
-  interpretOrtbResponse: function (serverResponse, originalRequest) {
-    const responseBody = serverResponse.body;
-    if (!isArray(responseBody)) {
-      return [];
-    }
 
-    const bids = [];
-    responseBody.forEach(serverBid => {
-      if (!serverBid.price) { // price may exist and is === 0 or there's no price prop at all (fledge req case)
-        return;
-      }
-
-      let interpretedBid;
-
-      // try...catch would be risky cause JSON.parse throws SyntaxError
-      if (serverBid.adm.indexOf('{') === 0) {
-        interpretedBid = interpretNativeBid(serverBid);
-      } else {
-        interpretedBid = interpretBannerBid(serverBid);
-      }
-      if (serverBid.ext) interpretedBid.ext = serverBid.ext;
-
-      bids.push(interpretedBid);
-    });
-    return bids;
-  },
   interpretResponse: function (serverResponse, originalRequest) {
-    let bids;
-
-    const responseBody = serverResponse.body;
-    let fledgeAuctionConfigs = null;
-
-    if (responseBody.bidid && isArray(responseBody?.ext?.igbid)) {
-      // we have fledge response
-      // mimic the original response ([{},...])
-      bids = this.interpretOrtbResponse({ body: responseBody.seatbid[0]?.bid }, originalRequest);
-
-      const seller = responseBody.ext.seller;
-      const decisionLogicUrl = responseBody.ext.decisionLogicUrl;
-      const sellerTimeout = 'sellerTimeout' in responseBody.ext ? { sellerTimeout: responseBody.ext.sellerTimeout } : {};
-      responseBody.ext.igbid.forEach((igbid) => {
-        const perBuyerSignals = {};
-        igbid.igbuyer.forEach(buyerItem => {
-          perBuyerSignals[buyerItem.igdomain] = buyerItem.buyersignal
-        });
-        fledgeAuctionConfigs = fledgeAuctionConfigs || {};
-        fledgeAuctionConfigs[igbid.impid] = mergeDeep(
-          {
-            seller,
-            decisionLogicUrl,
-            interestGroupBuyers: Object.keys(perBuyerSignals),
-            perBuyerSignals,
-          },
-          sellerTimeout
-        );
-      });
-    } else {
-      bids = this.interpretOrtbResponse(serverResponse, originalRequest);
-    }
-
-    if (fledgeAuctionConfigs) {
-      fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
-        return {
-          bidId,
-          config: Object.assign({
-            auctionSignals: {}
-          }, cfg)
-        }
-      });
-      logInfo('Response with FLEDGE:', { bids, fledgeAuctionConfigs });
-      return {
-        bids,
-        fledgeAuctionConfigs,
+    if (!serverResponse.body) {
+      serverResponse.body = {nbr: 0};
+    } else if (isArray(serverResponse.body)) {
+      // normalize response body (array of bids) to form an OpenRTB response object
+      const seatbidBid = serverResponse.body;
+      serverResponse.body = {
+        seatbid: [{
+          bid: seatbidBid,
+          seat: BIDDER_CODE
+        }]
       }
     }
-    return bids;
+    return converter.fromORTB({response: serverResponse.body, request: originalRequest.data})
   }
 };
 registerBidder(spec);
 
-/**
- * @param {object} slot Ad Unit Params by Prebid
- * @returns {int} floor by imp type
- */
-function applyFloor(slot) {
-  const floors = [];
-  if (typeof slot.getFloor === 'function') {
-    Object.keys(slot.mediaTypes).forEach(type => {
-      if (includes(SUPPORTED_MEDIA_TYPES, type)) {
-        floors.push(slot.getFloor({ currency: DEFAULT_CURRENCY_ARR[0], mediaType: type, size: slot.sizes || '*' }).floor);
-      }
-    });
-  }
-  return floors.length > 0 ? Math.max(...floors) : parseFloat(slot.params.bidfloor);
+function mapImpression(bidRequest) {
+  if(isBannerBid(bidRequest)) return {banner: mapBanner(bidRequest)}
+  if(isNativeBid(bidRequest)) return {native: mapNative(bidRequest)}
 }
 
-/**
- * @param {object} slot Ad Unit Params by Prebid
- * @returns {object} Imp by OpenRTB 2.5 §3.2.4
- */
-function mapImpression(slot, bidderRequest) {
-  const imp = {
-    id: slot.bidId,
-    banner: mapBanner(slot),
-    native: mapNative(slot),
-    tagid: slot.adUnitCode.toString()
-  };
+function isBannerBid(bidRequest) {
+  return deepAccess(bidRequest, `mediaTypes.${BANNER}`)
+}
+function isNativeBid(bidRequest) {
+  return deepAccess(bidRequest, `mediaTypes.${NATIVE}`)
+}
 
-  const bidfloor = applyFloor(slot);
-  if (bidfloor) {
-    imp.bidfloor = bidfloor;
-  }
+function mapBanner(bidRequest) {
+  const banner = {};
+  if(isBannerBid(bidRequest)) {
+    let sizes = deepAccess(bidRequest, `mediaTypes.${BANNER}.sizes`);
 
-  if (bidderRequest.fledgeEnabled) {
-    imp.ext = imp.ext || {};
-    imp.ext.ae = slot?.ortb2Imp?.ext?.ae
-  } else {
-    if (imp.ext?.ae) {
-      delete imp.ext.ae;
+    if (sizes) {
+      banner.w = sizes[0][0];
+      banner.h = sizes[0][1];
     }
   }
-
-  const tid = deepAccess(slot, 'ortb2Imp.ext.tid');
-  if (tid) {
-    imp.ext = imp.ext || {};
-    imp.ext.tid = tid;
-  }
-
-  return imp;
+  return { ...banner }
 }
 
 /**
  * @param {object} slot Ad Unit Params by Prebid
- * @returns {object} Banner by OpenRTB 2.5 §3.2.6
- */
-function mapBanner(slot) {
-  if (slot.mediaType === 'banner' ||
-    deepAccess(slot, 'mediaTypes.banner') ||
-    (!slot.mediaType && !slot.mediaTypes)) {
-    var sizes = slot.sizes || slot.mediaTypes.banner.sizes;
-    return {
-      w: sizes[0][0],
-      h: sizes[0][1],
-      format: sizes.map(size => ({
-        w: size[0],
-        h: size[1]
-      }))
-    };
-  }
-}
-
-/**
- * @param {object} slot Ad Unit Params by Prebid
- * @param {object} bidderRequest by Prebid
  * @returns {object} Site by OpenRTB 2.5 §3.2.13
  */
-function mapSite(slot, bidderRequest) {
+function mapSite(slot) {
   let pubId = 'unknown';
   let channel = null;
   if (slot && slot.length > 0) {
@@ -283,25 +225,12 @@ function mapSite(slot, bidderRequest) {
     publisher: {
       id: pubId.toString(),
     },
-    page: bidderRequest.refererInfo.page,
     name: getOrigin()
   };
   if (channel) {
     siteData.channel = channel;
   }
   return siteData;
-}
-
-/**
- * @param {object} slot Ad Unit Params by Prebid
- * @returns {object} Source by OpenRTB 2.5 §3.2.2
- */
-function mapSource(slot, bidderRequest) {
-  const source = {
-    tid: bidderRequest?.auctionId || '',
-  };
-
-  return source;
 }
 
 /**
@@ -337,15 +266,17 @@ function validateSchain(schain) {
  * @param {object} slot Ad Unit Params by Prebid
  * @returns {object} Request by OpenRTB Native Ads 1.1 §4
  */
-function mapNative(slot) {
-  if (slot.mediaType === 'native' || deepAccess(slot, 'mediaTypes.native')) {
-    return {
+function mapNative(bidRequest) {
+  const native = {}
+  if(isNativeBid(bidRequest)) {
+    mergeDeep(native, {
       request: {
-        assets: mapNativeAssets(slot)
+        assets: mapNativeAssets(bidRequest),
       },
-      ver: '1.1'
-    }
+      ver: '1.2'
+    })
   }
+  return { ...native }
 }
 
 /**
@@ -425,96 +356,9 @@ function mapNativeImage(image, type) {
     img.hmin = (minWidth / ratio.ratio_width * ratio.ratio_height);
   }
   if (image.sizes) {
-    const size = Array.isArray(image.sizes[0]) ? image.sizes[0] : image.sizes;
+    const size = isArray(image.sizes[0]) ? image.sizes[0] : image.sizes;
     img.w = size[0];
     img.h = size[1];
   }
   return img
-}
-
-/**
- * @param {object} serverBid Bid by OpenRTB 2.5 §4.2.3
- * @returns {object} Prebid banner bidObject
- */
-function interpretBannerBid(serverBid) {
-  return {
-    requestId: serverBid.impid,
-    mediaType: BANNER,
-    cpm: serverBid.price,
-    creativeId: serverBid.adid,
-    ad: serverBid.adm,
-    width: serverBid.w,
-    height: serverBid.h,
-    ttl: TTL,
-    meta: {
-      advertiserDomains: serverBid.adomain
-    },
-    netRevenue: true,
-    currency: 'USD'
-  }
-}
-
-/**
- * @param {object} serverBid Bid by OpenRTB 2.5 §4.2.3
- * @returns {object} Prebid native bidObject
- */
-function interpretNativeBid(serverBid) {
-  return {
-    requestId: serverBid.impid,
-    mediaType: NATIVE,
-    cpm: serverBid.price,
-    creativeId: serverBid.adid,
-    width: 1,
-    height: 1,
-    ttl: TTL,
-    meta: {
-      advertiserDomains: serverBid.adomain
-    },
-    netRevenue: true,
-    currency: 'USD',
-    native: interpretNativeAd(serverBid.adm),
-  }
-}
-
-/**
- * @param {string} adm JSON-encoded Request by OpenRTB Native Ads 1.1 §4.1
- * @returns {object} Prebid bidObject.native
- */
-function interpretNativeAd(adm) {
-  const native = JSON.parse(adm).native;
-  const result = {
-    clickUrl: encodeURI(native.link.url),
-    impressionTrackers: native.imptrackers
-  };
-  native.assets.forEach(asset => {
-    switch (asset.id) {
-      case OPENRTB.NATIVE.ASSET_ID.TITLE:
-        result.title = asset.title.text;
-        break;
-      case OPENRTB.NATIVE.ASSET_ID.IMAGE:
-        result.image = {
-          url: encodeURI(asset.img.url),
-          width: asset.img.w,
-          height: asset.img.h
-        };
-        break;
-      case OPENRTB.NATIVE.ASSET_ID.ICON:
-        result.icon = {
-          url: encodeURI(asset.img.url),
-          width: asset.img.w,
-          height: asset.img.h
-        };
-        break;
-      case OPENRTB.NATIVE.ASSET_ID.BODY:
-        result.body = asset.data.value;
-        break;
-      case OPENRTB.NATIVE.ASSET_ID.SPONSORED:
-        result.sponsoredBy = asset.data.value;
-        break;
-      case OPENRTB.NATIVE.ASSET_ID.CTA:
-        result.cta = asset.data.value;
-        break;
-    }
-  });
-  return result;
 }
