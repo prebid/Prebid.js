@@ -380,13 +380,13 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
     return;
   }
 
-  let [clientBidderReqs, serverBidRequests] = bidRequests.reduce((partitions, bidRequest) => {
+  let [clientBidderRequests, serverBidderRequests] = bidRequests.reduce((partitions, bidRequest) => {
     partitions[Number(typeof bidRequest.src !== 'undefined' && bidRequest.src === CONSTANTS.S2S.SRC)].push(bidRequest);
     return partitions;
   }, [[], []]);
 
   var uniqueServerBidRequests = [];
-  serverBidRequests.forEach(serverBidRequest => {
+  serverBidderRequests.forEach(serverBidRequest => {
     var index = -1;
     for (var i = 0; i < uniqueServerBidRequests.length; ++i) {
       if (serverBidRequest.uniquePbsTid === uniqueServerBidRequests[i].uniquePbsTid) {
@@ -413,7 +413,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       let uniquePbsTid = uniqueServerBidRequests[counter].uniquePbsTid;
       let adUnitsS2SCopy = uniqueServerBidRequests[counter].adUnitsS2SCopy;
 
-      let uniqueServerRequests = serverBidRequests.filter(serverBidRequest => serverBidRequest.uniquePbsTid === uniquePbsTid);
+      let uniqueServerRequests = serverBidderRequests.filter(serverBidRequest => serverBidRequest.uniquePbsTid === uniquePbsTid);
 
       if (s2sAdapter) {
         let s2sBidRequest = {'ad_units': adUnitsS2SCopy, s2sConfig, ortb2Fragments};
@@ -438,7 +438,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
           // make bid requests
           s2sAdapter.callBids(
             s2sBidRequest,
-            serverBidRequests,
+            serverBidderRequests,
             addBidResponse,
             () => doneCbs.forEach(done => done()),
             s2sAjax
@@ -452,7 +452,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
   });
 
   // handle client adapter requests
-  clientBidderReqs.forEach(bidderRequest => {
+  clientBidderRequests.forEach(bidderRequest => {
     bidderRequest.start = timestamp();
     // TODO : Do we check for bid in pool from here and skip calling adapter again ?
     const adapter = _bidderRegistry[bidderRequest.bidderCode];

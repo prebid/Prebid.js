@@ -190,12 +190,12 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       clearTimeout(_timeoutTimer);
     }
     if (_auctionEnd === undefined) {
-      let timedOutReqs = [];
+      let timedOutRequests = [];
       if (timedOut) {
         logMessage(`Auction ${_auctionId} timedOut`);
-        timedOutReqs = _bidderRequests.filter(rq => !_timelyRequests.has(rq.bidderRequestId)).flatMap(br => br.bids)
-        if (timedOutReqs.length) {
-          events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutReqs);
+        timedOutRequests = _bidderRequests.filter(rq => !_timelyRequests.has(rq.bidderRequestId)).flatMap(br => br.bids)
+        if (timedOutRequests.length) {
+          events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutRequests);
         }
       }
 
@@ -221,8 +221,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
           logError('Error executing bidsBackHandler', null, e);
         } finally {
           // Calling timed out bidders
-          if (timedOutReqs.length) {
-            adapterManager.callTimedOutBidders(adUnits, timedOutReqs, _timeout);
+          if (timedOutRequests.length) {
+            adapterManager.callTimedOutBidders(adUnits, timedOutRequests, _timeout);
           }
           // Only automatically sync if the publisher has not chosen to "enableOverride"
           let userSyncConfig = config.getConfig('userSync') || {};
