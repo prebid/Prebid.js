@@ -2876,6 +2876,15 @@ describe('S2S Adapter', function () {
       events.emit.restore();
     });
 
+    it('triggers BIDDER_ERROR on server error', () => {
+      config.setConfig({ s2sConfig: CONFIG });
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.requests[0].respond(400, {}, {});
+      BID_REQUESTS.forEach(bidderRequest => {
+        sinon.assert.calledWith(events.emit, CONSTANTS.EVENTS.BIDDER_ERROR, sinon.match({bidderRequest}))
+      })
+    })
+
     // TODO: test dependent on pbjs_api_spec.  Needs to be isolated
     it('does not call addBidResponse and calls done when ad unit not set', function () {
       config.setConfig({ s2sConfig: CONFIG });
