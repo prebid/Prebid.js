@@ -216,14 +216,15 @@ describe('Outbrain Adapter', function () {
       let getDataFromLocalStorageStub;
 
       before(() => {
+        getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage')
         config.setConfig({
           outbrain: {
             bidderUrl: 'https://bidder-url.com',
           }
-        }
-        )
+        })
       })
       after(() => {
+        getDataFromLocalStorageStub.restore()
         config.resetConfig()
       })
 
@@ -525,7 +526,6 @@ describe('Outbrain Adapter', function () {
       });
 
       it('should pass OB user token', function () {
-        getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
         getDataFromLocalStorageStub.returns('12345');
 
         let bidRequest = {
@@ -537,10 +537,8 @@ describe('Outbrain Adapter', function () {
         let res = spec.buildRequests([bidRequest], commonBidderRequest);
         const resData = JSON.parse(res.data)
         expect(resData.user.ext.obusertoken).to.equal('12345')
-        expect(getDataFromLocalStorageStub.calledOnce).to.be.true;
+        expect(getDataFromLocalStorageStub.called).to.be.true;
         sinon.assert.calledWith(getDataFromLocalStorageStub, 'OB-USER-TOKEN');
-
-        getDataFromLocalStorageStub.restore();
       });
 
       it('should pass bidfloor', function () {
