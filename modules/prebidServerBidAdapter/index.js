@@ -506,7 +506,7 @@ export function PrebidServer() {
           }
         },
         onFledge: ({adUnitCode, config}) => {
-          addComponentAuction(adUnitCode, config);
+          addComponentAuction(bidRequests[0].auctionId, adUnitCode, config);
         }
       })
     }
