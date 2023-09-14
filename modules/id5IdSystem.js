@@ -20,6 +20,7 @@ import {submodule} from '../src/hook.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {uspDataHandler} from '../src/adapterManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'id5Id';
 const GVLID = 131;
@@ -34,7 +35,7 @@ const ID5_API_CONFIG_URL = 'https://id5-sync.com/api/config/prebid';
 // cookie in the array is the most preferred to use
 const LEGACY_COOKIE_NAMES = ['pbjs-id5id', 'id5id.1st', 'id5id'];
 
-export const storage = getStorageManager({gvlid: GVLID, moduleName: MODULE_NAME});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 /** @type {Submodule} */
 export const id5IdSubmodule = {
@@ -59,11 +60,11 @@ export const id5IdSubmodule = {
    */
   decode(value, config) {
     let universalUid;
-    let linkType = 0;
+    let ext = {};
 
     if (value && typeof value.universal_uid === 'string') {
       universalUid = value.universal_uid;
-      linkType = value.link_type || linkType;
+      ext = value.ext || ext;
     } else {
       return undefined;
     }
@@ -71,9 +72,7 @@ export const id5IdSubmodule = {
     let responseObj = {
       id5id: {
         uid: universalUid,
-        ext: {
-          linkType: linkType
-        }
+        ext: ext
       }
     };
 
@@ -109,7 +108,12 @@ export const id5IdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(submoduleConfig, consentData, cacheIdObj) {
-    if (!hasRequiredConfig(submoduleConfig)) {
+    if (!validateConfig(submoduleConfig)) {
+      return undefined;
+    }
+
+    if (!hasWriteConsentToLocalStorage(consentData)) {
+      logInfo(LOG_PREFIX + 'Skipping ID5 local storage write because no consent given.')
       return undefined;
     }
 
@@ -138,14 +142,31 @@ export const id5IdSubmodule = {
    * @return {(IdResponse|function(callback:function))} A response object that contains id and/or callback.
    */
   extendId(config, consentData, cacheIdObj) {
-    hasRequiredConfig(config);
+    if (!hasWriteConsentToLocalStorage(consentData)) {
+      logInfo(LOG_PREFIX + 'No consent given for ID5 local storage writing, skipping nb increment.')
+      return cacheIdObj;
+    }
 
-    const partnerId = (config && config.params && config.params.partner) || 0;
+    const partnerId = validateConfig(config) ? config.params.partner : 0;
     incrementNb(partnerId);
 
     logInfo(LOG_PREFIX + 'using cached ID', cacheIdObj);
     return cacheIdObj;
-  }
+  },
+  eids: {
+    'id5id': {
+      getValue: function(data) {
+        return data.uid
+      },
+      source: 'id5-sync.com',
+      atype: 1,
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+  },
 };
 
 class IdFetchFlow {
@@ -247,11 +268,14 @@ class IdFetchFlow {
       'gdpr': hasGdpr,
       'nbPage': nbPage,
       'o': 'pbjs',
-      'rf': referer.topmostLocation,
+      'tml': referer.topmostLocation,
+      'ref': referer.ref,
+      'cu': referer.canonicalUrl,
       'top': referer.reachedTop ? 1 : 0,
       'u': referer.stack[0] || window.location.href,
       'v': '$prebid.version$',
-      'storage': this.submoduleConfig.storage
+      'storage': this.submoduleConfig.storage,
+      'localStorage': storage.localStorageIsEnabled() ? 1 : 0
     };
 
     // pass in optional data, but only if populated
@@ -281,9 +305,23 @@ class IdFetchFlow {
   }
 }
 
-function hasRequiredConfig(config) {
-  if (!config || !config.params || !config.params.partner || typeof config.params.partner !== 'number') {
-    logError(LOG_PREFIX + 'partner required to be defined as a number');
+function validateConfig(config) {
+  if (!config || !config.params || !config.params.partner) {
+    logError(LOG_PREFIX + 'partner required to be defined');
+    return false;
+  }
+
+  const partner = config.params.partner
+  if (typeof partner === 'string' || partner instanceof String) {
+    let parsedPartnerId = parseInt(partner);
+    if (isNaN(parsedPartnerId) || parsedPartnerId < 0) {
+      logError(LOG_PREFIX + 'partner required to be a number or a String parsable to a positive integer');
+      return false;
+    } else {
+      config.params.partner = parsedPartnerId;
+    }
+  } else if (typeof partner !== 'number') {
+    logError(LOG_PREFIX + 'partner required to be a number or a String parsable to a positive integer');
     return false;
   }
 
@@ -372,6 +410,21 @@ export function getFromLocalStorage(key) {
 export function storeInLocalStorage(key, value, expDays) {
   storage.setDataInLocalStorage(`${key}_exp`, expDaysStr(expDays));
   storage.setDataInLocalStorage(`${key}`, value);
+}
+
+/**
+ * Check to see if we can write to local storage based on purpose consent 1, and that we have vendor consent (ID5=131)
+ * @param {ConsentData} consentData
+ * @returns {boolean}
+ */
+function hasWriteConsentToLocalStorage(consentData) {
+  const hasGdpr = consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies;
+  const localstorageConsent = deepAccess(consentData, `vendorData.purpose.consents.1`)
+  const id5VendorConsent = deepAccess(consentData, `vendorData.vendor.consents.${GVLID.toString()}`)
+  if (hasGdpr && (!localstorageConsent || !id5VendorConsent)) {
+    return false;
+  }
+  return true;
 }
 
 submodule('userId', id5IdSubmodule);

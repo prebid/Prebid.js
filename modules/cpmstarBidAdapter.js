@@ -47,7 +47,8 @@ export const spec = {
 
     for (var i = 0; i < validBidRequests.length; i++) {
       var bidRequest = validBidRequests[i];
-      var referer = encodeURIComponent(bidderRequest.refererInfo.referer);
+      var referer = bidderRequest.refererInfo.page ? bidderRequest.refererInfo.page : bidderRequest.refererInfo.domain;
+      referer = encodeURIComponent(referer);
       var e = utils.getBidIdParameter('endpoint', bidRequest.params);
       var ENDPOINT = e == 'dev' ? ENDPOINT_DEV : e == 'staging' ? ENDPOINT_STAGING : ENDPOINT_PRODUCTION;
       var mediaType = spec.getMediaType(bidRequest);

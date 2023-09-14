@@ -3,8 +3,9 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import * as utils from '../src/utils.js';
 import CONSTANTS from '../src/constants.json';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 import {getRefererInfo} from '../src/refererDetection.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 /**
  * hadronAnalyticsAdapter.js - Audigent Hadron Analytics Adapter
@@ -14,8 +15,9 @@ const HADRON_ANALYTICS_URL = 'https://analytics.hadron.ad.gt/api/v1/analytics';
 const HADRONID_ANALYTICS_VER = 'pbadgt0';
 const DEFAULT_PARTNER_ID = 0;
 const AU_GVLID = 561;
+const MODULE_CODE = 'hadronAnalytics';
 
-export const storage = getStorageManager();
+export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
 
 var viewId = utils.generateUUID();
 
@@ -191,7 +193,7 @@ function sendEvent(event) {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: hadronAnalyticsAdapter,
-  code: 'hadronAnalytics',
+  code: MODULE_CODE,
   gvlid: AU_GVLID
 });
 

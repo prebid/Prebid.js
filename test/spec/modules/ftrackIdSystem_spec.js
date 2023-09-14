@@ -275,10 +275,55 @@ describe('FTRACK ID System', () => {
 
   describe(`decode() method`, () => {
     it(`should respond with an object with the key 'ftrackId'`, () => {
-      expect(ftrackIdSubmodule.decode('value', configMock)).to.deep.equal({
+      const MOCK_VALUE_STRINGS = {
+          HHID: 'household_test_id',
+          DeviceID: 'device_test_id',
+          SingleDeviceID: 'single_device_test_id'
+        },
+        MOCK_VALUE_ARRAYS = {
+          HHID: ['household_test_id', 'a', 'b'],
+          DeviceID: ['device_test_id', 'c', 'd'],
+          SingleDeviceID: ['single_device_test_id', 'e', 'f']
+        },
+        MOCK_VALUE_BOTH = {
+          foo: ['foo', 'a', 'b'],
+          bar: 'bar',
+          baz: ['baz', 'baz', 'baz']
+        };
+
+      // strings are just passed through
+      expect(ftrackIdSubmodule.decode(MOCK_VALUE_STRINGS, configMock)).to.deep.equal({
         ftrackId: {
-          ext: { 0: 'v', 1: 'a', 2: 'l', 3: 'u', 4: 'e' },
-          uid: undefined,
+          ext: {
+            HHID: 'household_test_id',
+            DeviceID: 'device_test_id',
+            SingleDeviceID: 'single_device_test_id'
+          },
+          uid: 'device_test_id',
+        },
+      });
+
+      // arrays are converted to strings
+      expect(ftrackIdSubmodule.decode(MOCK_VALUE_ARRAYS, configMock)).to.deep.equal({
+        ftrackId: {
+          ext: {
+            HHID: 'household_test_id|a|b',
+            DeviceID: 'device_test_id|c|d',
+            SingleDeviceID: 'single_device_test_id|e|f'
+          },
+          uid: 'device_test_id|c|d',
+        },
+      });
+
+      // mix of both but uid should be empty string because DeviceId is not defined
+      expect(ftrackIdSubmodule.decode(MOCK_VALUE_BOTH, configMock)).to.deep.equal({
+        ftrackId: {
+          ext: {
+            foo: 'foo|a|b',
+            bar: 'bar',
+            baz: 'baz|baz|baz'
+          },
+          uid: '',
         },
       });
     });
@@ -309,56 +354,40 @@ describe('FTRACK ID System', () => {
   });
 
   describe('pbjs "get id" methods', () => {
-    // The full set of ftrack IDs to test against
-    let expectedIds = {
-      HHID: ['household_test_id'],
-      DeviceID: ['device_test_id'],
-      SingleDeviceID: ['single_device_test_id']
-    };
-    // The full config mock
-    let userSyncConfigMock = {
-      userSync: {
-        auctionDelay: 10,
-        userIds: [{
-          name: 'ftrack',
-          value: {
-            ftrackId: expectedIds
-          }
-        }]
-      }
-    };
-    // The full eids response
-    let expectedEids = [{
-      id: 'device_test_id',
-      atype: 1,
-      ext: {
-        HHID: expectedIds.HHID.join('|'),
-        DeviceID: expectedIds.DeviceID.join('|'),
-        SingleDeviceID: expectedIds.SingleDeviceID.join('|')
-      }
-    }];
-
     beforeEach(() => {
       init(config);
       setSubmoduleRegistry([ftrackIdSubmodule]);
     });
 
-    afterEach(() => {
-      // Reset expectedIds to the default values because some tests overwrite them
-      expectedIds = {
-        HHID: ['household_test_id'],
-        DeviceID: ['device_test_id'],
-        SingleDeviceID: ['single_device_test_id']
-      };
-    });
-
     describe('pbjs.getUserIdsAsync()', () => {
-      it('should return the IDs in the correct schema', () => {
-        config.setConfig(userSyncConfigMock);
+      it('should return the IDs in the correct schema - flat schema', () => {
+        config.setConfig({
+          userSync: {
+            auctionDelay: 10,
+            userIds: [{
+              name: 'ftrack',
+              value: {
+                ftrackId: {
+                  uid: 'device_test_id',
+                  ext: {
+                    HHID: 'household_test_id',
+                    DeviceID: 'device_test_id',
+                    SingleDeviceID: 'single_device_test_id'
+                  }
+                }
+              }
+            }]
+          }
+        });
 
         getGlobal().getUserIdsAsync().then(ids => {
           expect(ids).to.deep.equal({
-            ftrackId: expectedIds
+            uid: 'device_test_id',
+            ftrackId: {
+              HHID: 'household_test_id',
+              DeviceID: 'device_test_id',
+              SingleDeviceID: 'single_device_test_id'
+            }
           });
         });
       });
@@ -366,73 +395,166 @@ describe('FTRACK ID System', () => {
 
     describe('pbjs.getUserIds()', () => {
       it('should return the IDs in the correct schema', () => {
-        config.setConfig(userSyncConfigMock);
+        config.setConfig({
+          userSync: {
+            auctionDelay: 10,
+            userIds: [{
+              name: 'ftrack',
+              value: {
+                ftrackId: {
+                  uid: 'device_test_id',
+                  ext: {
+                    HHID: 'household_test_id',
+                    DeviceID: 'device_test_id',
+                    SingleDeviceID: 'single_device_test_id'
+                  }
+                }
+              }
+            }]
+          }
+        });
 
         expect(getGlobal().getUserIds()).to.deep.equal({
-          'ftrackId': expectedIds
+          ftrackId: {
+            uid: 'device_test_id',
+            ext: {
+              HHID: 'household_test_id',
+              DeviceID: 'device_test_id',
+              SingleDeviceID: 'single_device_test_id'
+            }
+          }
         });
       });
     });
 
     describe('pbjs.getUserIdsAsEids()', () => {
-      it('should return the correct EIDs schema', () => {
-        let userSyncConfig = Object.assign({}, userSyncConfigMock);
+      it('should return the correct EIDs schema ', () => {
+        // Pass all three IDs
+        config.setConfig({
+          userSync: {
+            auctionDelay: 10,
+            userIds: [{
+              name: 'ftrack',
+              value: {
+                ftrackId: {
+                  uid: 'device_test_id',
+                  ext: {
+                    HHID: 'household_test_id',
+                    DeviceID: 'device_test_id',
+                    SingleDeviceID: 'single_device_test_id'
+                  }
+                }
+              }
+            }]
+          }
+        });
 
-        config.setConfig(userSyncConfig);
-
-        expect(getGlobal().getUserIdsAsEids()).to.deep.equal(expectedEids);
+        expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
+          source: 'flashtalking.com',
+          uids: [{
+            id: 'device_test_id',
+            atype: 1,
+            ext: {
+              HHID: 'household_test_id',
+              DeviceID: 'device_test_id',
+              SingleDeviceID: 'single_device_test_id'
+            }
+          }]
+        }]);
       });
 
       describe('by ID type:', () => {
         it('- DeviceID', () => {
-          let userSyncConfig = Object.assign({}, userSyncConfigMock);
+          // Pass DeviceID only
+          config.setConfig({
+            userSync: {
+              auctionDelay: 10,
+              userIds: [{
+                name: 'ftrack',
+                value: {
+                  ftrackId: {
+                    uid: 'device_test_id',
+                    ext: {
+                      DeviceID: 'device_test_id',
+                    }
+                  }
+                }
+              }]
+            }
+          });
 
-          userSyncConfig.userSync.userIds[0].value.ftrackId = {
-            DeviceID: ['device_test_id']
-          };
-
-          let expectedEidsClone = expectedEids.slice();
-          expectedEidsClone[0].ext = {
-            DeviceID: expectedIds.DeviceID.join('|')
-          };
-
-          config.setConfig(userSyncConfig);
-
-          expect(getGlobal().getUserIdsAsEids()).to.deep.equal(expectedEidsClone);
+          expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
+            source: 'flashtalking.com',
+            uids: [{
+              id: 'device_test_id',
+              atype: 1,
+              ext: {
+                DeviceID: 'device_test_id'
+              }
+            }]
+          }]);
         });
 
         it('- HHID', () => {
-          let userSyncConfig = Object.assign({}, userSyncConfigMock);
-          userSyncConfig.userSync.userIds[0].value.ftrackId = {
-            HHID: ['household_test_id']
-          };
+          // Pass HHID only
+          config.setConfig({
+            userSync: {
+              auctionDelay: 10,
+              userIds: [{
+                name: 'ftrack',
+                value: {
+                  ftrackId: {
+                    uid: '',
+                    ext: {
+                      HHID: 'household_test_id'
+                    }
+                  }
+                }
+              }]
+            }
+          });
 
-          let expectedEidsClone = expectedEids.slice();
-          expectedEidsClone[0].id = '';
-          expectedEidsClone[0].ext = {
-            HHID: expectedIds.HHID.join('|')
-          };
-
-          config.setConfig(userSyncConfig);
-
-          expect(getGlobal().getUserIdsAsEids()).to.deep.equal(expectedEidsClone);
+          expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
+            source: 'flashtalking.com',
+            uids: [{
+              id: '',
+              atype: 1,
+              ext: {
+                HHID: 'household_test_id'
+              }
+            }]
+          }]);
         });
 
         it('- SingleDeviceID', () => {
-          let userSyncConfig = Object.assign({}, userSyncConfigMock);
-          userSyncConfig.userSync.userIds[0].value.ftrackId = {
-            SingleDeviceID: ['single_device_test_id']
-          };
+          // Pass SingleDeviceID only
+          config.setConfig({
+            userSync: {
+              auctionDelay: 10,
+              userIds: [{
+                name: 'ftrack',
+                value: {
+                  ftrackId: {
+                    uid: '',
+                    ext: {
+                      SingleDeviceID: 'single_device_test_id'
+                    }
+                  }
+                }
+              }]
+            }
+          });
 
-          let expectedEidsClone = expectedEids.slice();
-          expectedEidsClone[0].id = '';
-          expectedEidsClone[0].ext = {
-            SingleDeviceID: expectedIds.SingleDeviceID.join('|')
-          };
-
-          config.setConfig(userSyncConfig);
-
-          expect(getGlobal().getUserIdsAsEids()).to.deep.equal(expectedEidsClone);
+          expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
+            source: 'flashtalking.com',
+            uids: [{
+              id: '',
+              atype: 1,
+              ext: {
+                SingleDeviceID: 'single_device_test_id'
+              }
+            }]
+          }]);
         });
       });
     });

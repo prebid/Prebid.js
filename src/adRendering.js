@@ -23,7 +23,7 @@ export function emitAdRenderFail({ reason, message, bid, id }) {
 
 /**
  * Emit the AD_RENDER_SUCCEEDED event.
- *
+ * (Note: Invocation of this function indicates that the render function did not generate an error, it does not guarantee that tracking for this event has occurred yet.)
  * @param doc document object that was used to `.write` the ad. Should be `null` if unavailable (e.g. for documents in
  * a cross-origin frame).
  * @param bid bid response object for the ad that was rendered

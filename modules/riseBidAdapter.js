@@ -291,7 +291,8 @@ function generateBidParameters(bid, bidderRequest) {
     bidId: getBidIdParameter('bidId', bid),
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
     loop: getBidIdParameter('bidderRequestsCount', bid),
-    transactionId: getBidIdParameter('transactionId', bid),
+    transactionId: bid.ortb2Imp?.ext?.tid,
+    coppa: 0
   };
 
   const pos = deepAccess(bid, `mediaTypes.${mediaType}.pos`);
@@ -307,6 +308,26 @@ function generateBidParameters(bid, bidderRequest) {
   const placementId = params.placementId || deepAccess(bid, `mediaTypes.${mediaType}.name`);
   if (placementId) {
     bidObject.placementId = placementId;
+  }
+
+  const mimes = deepAccess(bid, `mediaTypes.${mediaType}.mimes`);
+  if (mimes) {
+    bidObject.mimes = mimes;
+  }
+
+  const api = deepAccess(bid, `mediaTypes.${mediaType}.api`);
+  if (api) {
+    bidObject.api = api;
+  }
+
+  const sua = deepAccess(bid, `ortb2.device.sua`);
+  if (sua) {
+    bidObject.sua = sua;
+  }
+
+  const coppa = deepAccess(bid, `ortb2.regs.coppa`)
+  if (coppa) {
+    bidObject.coppa = 1;
   }
 
   if (mediaType === VIDEO) {
@@ -349,6 +370,16 @@ function generateBidParameters(bid, bidderRequest) {
     if (linearity) {
       bidObject.linearity = linearity;
     }
+
+    const protocols = deepAccess(bid, `mediaTypes.video.protocols`);
+    if (protocols) {
+      bidObject.protocols = protocols;
+    }
+
+    const plcmt = deepAccess(bid, `mediaTypes.video.plcmt`);
+    if (plcmt) {
+      bidObject.plcmt = plcmt;
+    }
   }
 
   return bidObject;
@@ -369,7 +400,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
   const {syncEnabled, filterSettings} = config.getConfig('userSync') || {};
   const {bidderCode} = bidderRequest;
   const generalBidParams = generalObject.params;
-  const timeout = config.getConfig('bidderTimeout');
+  const timeout = bidderRequest.timeout;
 
   // these params are snake_case instead of camelCase to allow backwards compatability on the server.
   // in the future, these will be converted to camelCase to match our convention.
@@ -385,7 +416,8 @@ function generateGeneralParams(generalObject, bidderRequest) {
     dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
     device_type: getDeviceType(navigator.userAgent),
     ua: navigator.userAgent,
-    session_id: getBidIdParameter('auctionId', generalObject),
+    is_wrapper: !!generalBidParams.isWrapper,
+    session_id: generalBidParams.sessionId || getBidIdParameter('bidderRequestId', generalObject),
     tmax: timeout
   };
 

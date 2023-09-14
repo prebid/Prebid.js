@@ -1,9 +1,10 @@
 import pubperfAnalytics from 'modules/pubperfAnalyticsAdapter.js';
-import { expect } from 'chai';
-import { server } from 'test/mocks/xhr.js';
+import {expect} from 'chai';
+import {server} from 'test/mocks/xhr.js';
+import {expectEvents, fireEvents} from '../../helpers/analytics.js';
+
 let events = require('src/events');
 let utils = require('src/utils.js');
-let constants = require('src/constants.json');
 
 describe('Pubperf Analytics Adapter', function() {
   describe('Prebid Manager Analytic tests', function() {
@@ -22,13 +23,7 @@ describe('Pubperf Analytics Adapter', function() {
         provider: 'pubperf'
       });
 
-      events.emit(constants.EVENTS.AUCTION_INIT, {});
-      events.emit(constants.EVENTS.BID_REQUESTED, {});
-      events.emit(constants.EVENTS.BID_RESPONSE, {});
-      events.emit(constants.EVENTS.BID_WON, {});
-      events.emit(constants.EVENTS.AUCTION_END, {});
-      events.emit(constants.EVENTS.BID_TIMEOUT, {});
-
+      fireEvents();
       expect(server.requests.length).to.equal(0);
       expect(utils.logError.called).to.equal(true);
     });
@@ -42,15 +37,7 @@ describe('Pubperf Analytics Adapter', function() {
         provider: 'pubperf'
       });
 
-      events.emit(constants.EVENTS.AUCTION_INIT, {});
-      events.emit(constants.EVENTS.BID_REQUESTED, {});
-      events.emit(constants.EVENTS.BID_RESPONSE, {});
-      events.emit(constants.EVENTS.BID_WON, {});
-      events.emit(constants.EVENTS.AUCTION_END, {});
-      events.emit(constants.EVENTS.BID_TIMEOUT, {});
-
-      // 6 Pubperf events + 1 Clean.io event
-      sinon.assert.callCount(pubperfAnalytics.track, 7);
+      expectEvents().to.beTrackedBy(pubperfAnalytics.track);
     });
   });
 });

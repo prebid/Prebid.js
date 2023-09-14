@@ -18,6 +18,10 @@
 import { submodule } from '../src/hook.js';
 import { ajax } from '../src/ajax.js';
 import { generateUUID, insertElement, isEmpty, logError } from '../src/utils.js';
+import * as events from '../src/events.js';
+import CONSTANTS from '../src/constants.json';
+import { loadExternalScript } from '../src/adloader.js';
+import { auctionManager } from '../src/auctionManager.js';
 
 /** @type {string} */
 const SUBMODULE_NAME = 'geoedge';
@@ -31,9 +35,13 @@ const PV_ID = generateUUID();
 /** @type {string} */
 const HOST_NAME = 'https://rumcdn.geoedge.be';
 /** @type {string} */
-const FILE_NAME = 'grumi.js';
+const FILE_NAME_CLIENT = 'grumi.js';
+/** @type {string} */
+const FILE_NAME_INPAGE = 'grumi-ip.js';
 /** @type {function} */
-export let getClientUrl = (key) => `${HOST_NAME}/${key}/${FILE_NAME}`;
+export let getClientUrl = (key) => `${HOST_NAME}/${key}/${FILE_NAME_CLIENT}`;
+/** @type {function} */
+export let getInPageUrl = (key) => `${HOST_NAME}/${key}/${FILE_NAME_INPAGE}`;
 /** @type {string} */
 export let wrapper
 /** @type {boolean} */;
@@ -105,6 +113,7 @@ function getMacros(bid, key) {
     '%%PATTERN:hb_bidder%%': bid.bidderCode,
     '%_isHb!': true,
     '%_hbcid!': bid.creativeId || '',
+    '%_hbadomains': bid.meta && bid.meta.advertiserDomains,
     '%%PATTERN:hb_pb%%': bid.pbHg,
     '%%SITE%%': location.hostname,
     '%_pimp%': PV_ID
@@ -174,7 +183,8 @@ function isSupportedBidder(bidder, paramsBidders) {
 function shouldWrap(bid, params) {
   let supportedBidder = isSupportedBidder(bid.bidderCode, params.bidders);
   let donePreload = params.wap ? preloaded : true;
-  return wrapperReady && supportedBidder && donePreload;
+  let isGPT = params.gpt;
+  return wrapperReady && supportedBidder && donePreload && !isGPT;
 }
 
 function conditionallyWrap(bidResponse, config, userConsent) {
@@ -184,13 +194,56 @@ function conditionallyWrap(bidResponse, config, userConsent) {
   }
 }
 
+function isBillingMessage(data, params) {
+  return data.key === params.key && data.impression;
+}
+
+/**
+ * Fire billable events when our client sends a message
+ * Messages will be sent only when:
+ * a. applicable bids are wrapped
+ * b. our code laoded and executed sucesfully
+ */
+function fireBillableEventsForApplicableBids(params) {
+  window.addEventListener('message', function (message) {
+    let data = message.data;
+    if (isBillingMessage(data, params)) {
+      let winningBid = auctionManager.findBidByAdId(data.adId);
+      events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
+        vendor: SUBMODULE_NAME,
+        billingId: data.impressionId,
+        type: winningBid ? 'impression' : data.type,
+        transactionId: winningBid?.transactionId || data.transactionId,
+        auctionId: winningBid?.auctionId || data.auctionId,
+        bidId: winningBid?.requestId || data.requestId
+      });
+    }
+  });
+}
+
+/**
+ * Loads Geoedge in page script that monitors all ad slots created by GPT
+ * @param {Object} params
+ */
+function setupInPage(params) {
+  window.grumi = params;
+  window.grumi.fromPrebid = true;
+  loadExternalScript(getInPageUrl(params.key), SUBMODULE_NAME);
+}
+
 function init(config, userConsent) {
   let params = config.params;
   if (!params || !params.key) {
     logError('missing key for geoedge RTD module provider');
     return false;
   }
-  preloadClient(params.key);
+  if (params.gpt) {
+    setupInPage(params);
+  } else {
+    fetchWrapper(setWrapper);
+    preloadClient(params.key);
+  }
+  fireBillableEventsForApplicableBids(params);
   return true;
 }
 
@@ -205,9 +258,4 @@ export const geoedgeSubmodule = {
   onBidResponseEvent: conditionallyWrap
 };
 
-export function beforeInit() {
-  fetchWrapper(setWrapper);
-  submodule('realTimeData', geoedgeSubmodule);
-}
-
-beforeInit();
+submodule('realTimeData', geoedgeSubmodule);

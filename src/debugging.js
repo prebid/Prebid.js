@@ -70,14 +70,22 @@ export function debuggingControls({load = debuggingModuleLoader(), hook = getHoo
 const ctl = debuggingControls();
 export const reset = ctl.reset;
 
-export function loadSession({storage = window.sessionStorage, debugging = ctl} = {}) {
-  let config = null;
+export function loadSession() {
+  let storage = null;
   try {
-    config = storage.getItem(DEBUG_KEY);
+    storage = window.sessionStorage;
   } catch (e) {}
-  if (config != null) {
-    // just make sure the module runs; it will take care of parsing the config (and disabling itself if necessary)
-    debugging.enable();
+
+  if (storage !== null) {
+    let debugging = ctl;
+    let config = null;
+    try {
+      config = storage.getItem(DEBUG_KEY);
+    } catch (e) {}
+    if (config !== null) {
+      // just make sure the module runs; it will take care of parsing the config (and disabling itself if necessary)
+      debugging.enable();
+    }
   }
 }
 

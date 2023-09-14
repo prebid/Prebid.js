@@ -182,6 +182,54 @@ describe('AduptechBidAdapter', () => {
       });
     });
 
+    describe('getFloor', () => {
+      let bidRequest;
+
+      beforeEach(() => {
+        bidRequest = {
+          getFloor: sinon.stub()
+        };
+      });
+
+      it('should handle empty or invalid bidRequest', () => {
+        expect(internal.getFloor(null)).to.be.null;
+        expect(internal.getFloor({})).to.be.null;
+        expect(internal.getFloor({ getFloor: 'foo' })).to.be.null;
+      });
+
+      it('should detect floor via getFloor()', () => {
+        const result = {
+          floor: 1.11,
+          currency: 'USD'
+        };
+
+        const options = {
+          mediaType: BANNER,
+          size: '*'
+        }
+
+        bidRequest.getFloor.returns(result);
+
+        expect(internal.getFloor(bidRequest, options)).to.deep.equal(result);
+        expect(bidRequest.getFloor.calledOnceWith(options)).to.be.true;
+      });
+
+      it('should handle empty, invalid or faulty getFloor() results', () => {
+        bidRequest.getFloor
+          .onCall(0).returns({})
+          .onCall(1).returns({ floor: 'foo' })
+          .onCall(2).returns('bar')
+          .onCall(3).throws(new Error('baz'));
+
+        expect(internal.getFloor(bidRequest, {})).to.be.null;
+        expect(internal.getFloor(bidRequest, {})).to.be.null;
+        expect(internal.getFloor(bidRequest, {})).to.be.null;
+        expect(internal.getFloor(bidRequest, {})).to.be.null;
+
+        expect(bidRequest.getFloor.callCount).to.equal(4);
+      });
+    });
+
     describe('groupBidRequestsByPublisher', () => {
       it('should handle empty bidRequests', () => {
         expect(internal.groupBidRequestsByPublisher(null)).to.deep.equal({});
@@ -421,7 +469,11 @@ describe('AduptechBidAdapter', () => {
           {
             bidId: 'bidId1',
             adUnitCode: 'adUnitCode1',
-            transactionId: 'transactionId1',
+            ortb2Imp: {
+              ext: {
+                tid: 'transactionId1',
+              }
+            },
             mediaTypes: {
               banner: {
                 sizes: [[100, 200], [300, 400]]
@@ -435,7 +487,11 @@ describe('AduptechBidAdapter', () => {
           {
             bidId: 'bidId2',
             adUnitCode: 'adUnitCode2',
-            transactionId: 'transactionId2',
+            ortb2Imp: {
+              ext: {
+                tid: 'transactionId2',
+              }
+            },
             mediaTypes: {
               banner: {
                 sizes: [[100, 200]]
@@ -449,7 +505,13 @@ describe('AduptechBidAdapter', () => {
           {
             bidId: 'bidId3',
             adUnitCode: 'adUnitCode3',
-            transactionId: 'transactionId3',
+            ortb2Imp: {
+              ext: {
+                tid: {
+                  transactionId: 'transactionId3',
+                }
+              }
+            },
             mediaTypes: {
               native: {
                 image: {
@@ -488,14 +550,14 @@ describe('AduptechBidAdapter', () => {
               imp: [
                 {
                   bidId: validBidRequests[0].bidId,
-                  transactionId: validBidRequests[0].transactionId,
+                  transactionId: validBidRequests[0].ortb2Imp.ext.tid,
                   adUnitCode: validBidRequests[0].adUnitCode,
                   params: validBidRequests[0].params,
                   banner: validBidRequests[0].mediaTypes.banner
                 },
                 {
                   bidId: validBidRequests[1].bidId,
-                  transactionId: validBidRequests[1].transactionId,
+                  transactionId: validBidRequests[1].ortb2Imp.ext.tid,
                   adUnitCode: validBidRequests[1].adUnitCode,
                   params: validBidRequests[1].params,
                   banner: validBidRequests[1].mediaTypes.banner
@@ -517,7 +579,7 @@ describe('AduptechBidAdapter', () => {
               imp: [
                 {
                   bidId: validBidRequests[2].bidId,
-                  transactionId: validBidRequests[2].transactionId,
+                  transactionId: validBidRequests[2].ortb2Imp.ext.tid,
                   adUnitCode: validBidRequests[2].adUnitCode,
                   params: validBidRequests[2].params,
                   native: validBidRequests[2].mediaTypes.native
@@ -541,34 +603,39 @@ describe('AduptechBidAdapter', () => {
           }
         };
 
-        const getFloorResponse = {
-          currency: 'USD',
-          floor: '1.23'
+        const bidRequest = {
+          bidId: 'bidId1',
+          adUnitCode: 'adUnitCode1',
+          ortb2Imp: {
+            ext: {
+              tid: 'transactionId1',
+            }
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [[100, 200], [300, 400]]
+            },
+            native: {
+              image: {
+                required: true
+              },
+            }
+          },
+          params: {
+            publisher: 'publisher1',
+            placement: 'placement1'
+          },
+          getFloor: sinon.stub()
+            .onCall(0).returns({ floor: 1.11, currency: 'USD' })
+            .onCall(1).returns({ floor: 2.22, currency: 'EUR' })
+            .onCall(2).returns({ floor: 3.33, currency: 'USD' })
+            .onCall(3).returns({ floor: 4.44, currency: 'GBP' })
+            .onCall(4).returns({ floor: 5.55, currency: 'EUR' })
         };
 
-        const validBidRequests = [
+        expect(spec.buildRequests([bidRequest], bidderRequest)).to.deep.equal([
           {
-            bidId: 'bidId1',
-            adUnitCode: 'adUnitCode1',
-            transactionId: 'transactionId1',
-            mediaTypes: {
-              banner: {
-                sizes: [[100, 200], [300, 400]]
-              }
-            },
-            params: {
-              publisher: 'publisher1',
-              placement: 'placement1'
-            },
-            getFloor: () => {
-              return getFloorResponse
-            }
-          }
-        ];
-
-        expect(spec.buildRequests(validBidRequests, bidderRequest)).to.deep.equal([
-          {
-            url: internal.buildEndpointUrl(validBidRequests[0].params.publisher),
+            url: internal.buildEndpointUrl(bidRequest.params.publisher),
             method: ENDPOINT_METHOD,
             data: {
               auctionId: bidderRequest.auctionId,
@@ -580,17 +647,39 @@ describe('AduptechBidAdapter', () => {
               },
               imp: [
                 {
-                  bidId: validBidRequests[0].bidId,
-                  transactionId: validBidRequests[0].transactionId,
-                  adUnitCode: validBidRequests[0].adUnitCode,
-                  params: validBidRequests[0].params,
-                  banner: validBidRequests[0].mediaTypes.banner,
-                  floorPrice: getFloorResponse.floor
+                  bidId: bidRequest.bidId,
+                  transactionId: bidRequest.ortb2Imp.ext.tid,
+                  adUnitCode: bidRequest.adUnitCode,
+                  params: bidRequest.params,
+                  banner: {
+                    sizes: [
+                      [100, 200, 1.11, 'USD'],
+                      [300, 400, 2.22, 'EUR'],
+                    ],
+                    floorPrice: 3.33,
+                    floorCurrency: 'USD'
+                  },
+                  native: {
+                    image: {
+                      required: true
+                    },
+                    floorPrice: 4.44,
+                    floorCurrency: 'GBP'
+                  },
+                  floorPrice: 5.55,
+                  floorCurrency: 'EUR'
                 }
               ]
             }
           }
         ]);
+
+        expect(bidRequest.getFloor.callCount).to.equal(5);
+        expect(bidRequest.getFloor.getCall(0).calledWith({ mediaType: BANNER, size: bidRequest.mediaTypes.banner.sizes[0] })).to.be.true;
+        expect(bidRequest.getFloor.getCall(1).calledWith({ mediaType: BANNER, size: bidRequest.mediaTypes.banner.sizes[1] })).to.be.true;
+        expect(bidRequest.getFloor.getCall(2).calledWith({ mediaType: BANNER, size: '*' })).to.be.true;
+        expect(bidRequest.getFloor.getCall(3).calledWith({ mediaType: NATIVE, size: '*' })).to.be.true;
+        expect(bidRequest.getFloor.getCall(4).calledWith({ mediaType: '*', size: '*' })).to.be.true;
       });
     });
 

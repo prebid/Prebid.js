@@ -39,10 +39,19 @@ const videoBidReq = [{
       maxDuration: 30
     }
   },
-  mediaTypes: {video: {
-    context: 'outstream',
-    playerSize: [640, 480]
-  }},
+  ortb2Imp: {
+    ext: {
+      gpid: '/1111/gpid#728x90',
+    }
+  },
+  mediaTypes: {
+    video: {
+      context: 'outstream',
+      playerSize: [640, 480],
+      placement: 1,
+      plcmt: 1
+    }
+  },
   sizes: [[300, 250], [300, 600]],
   bidId: '263be71e91dd9d',
   auctionId: '9ad1fa8d-2297-4660-a018-b39945054746'
@@ -54,10 +63,19 @@ const videoBidReq = [{
     placementId: '10433395',
     publisherId: 12345
   },
-  mediaTypes: {video: {
-    context: 'outstream',
-    playerSize: [640, 480]
-  }},
+  ortb2Imp: {
+    ext: {
+      data: {
+        pbadslot: '/1111/pbadslot#728x90'
+      }
+    }
+  },
+  mediaTypes: {
+    video: {
+      context: 'outstream',
+      playerSize: [640, 480]
+    }
+  },
   sizes: [[300, 250], [300, 600]],
   bidId: '263be71e91dd9d',
   auctionId: '9ad1fa8d-2297-4660-a018-b39945054746'
@@ -182,6 +200,31 @@ const bidderReqCcpaAndGdpr = {
     consentString: 'acdefgh'
   },
   uspConsent: 'NY12'
+};
+
+const bidderReqGpp = {
+  refererInfo: {
+    topmostLocation: 'http://prebid.org/dev-docs/bidder-adaptor.html'
+  },
+  gppConsent: {
+    gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
+    applicableSections: [7]
+  }
+};
+
+const bidderReqFullGppCcpaGdpr = {
+  refererInfo: {
+    topmostLocation: 'http://prebid.org/dev-docs/bidder-adaptor.html'
+  },
+  gppConsent: {
+    gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
+    applicableSections: [7]
+  },
+  gdprConsent: {
+    gdprApplies: true,
+    consentString: 'gdprConsent'
+  },
+  uspConsent: '1YNN'
 };
 
 const validBidRes = {
@@ -381,6 +424,31 @@ describe('Undertone Adapter', () => {
       expect(request.url).to.equal(REQ_URL);
       expect(request.method).to.equal('POST');
     });
+    it(`should have gppConsent fields`, function () {
+      const request = spec.buildRequests(bidReq, bidderReqGpp);
+      const domainStart = bidderReq.refererInfo.topmostLocation.indexOf('//');
+      const domainEnd = bidderReq.refererInfo.topmostLocation.indexOf('/', domainStart + 2);
+      const domain = bidderReq.refererInfo.topmostLocation.substring(domainStart + 2, domainEnd);
+      const gppStr = bidderReqGpp.gppConsent.gppString;
+      const gppSid = bidderReqGpp.gppConsent.applicableSections;
+      const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}&gpp=${gppStr}&gpp_sid=${gppSid}`;
+      expect(request.url).to.equal(REQ_URL);
+      expect(request.method).to.equal('POST');
+    });
+    it(`should have gpp, ccpa and gdpr fields`, function () {
+      const request = spec.buildRequests(bidReq, bidderReqFullGppCcpaGdpr);
+      const domainStart = bidderReq.refererInfo.topmostLocation.indexOf('//');
+      const domainEnd = bidderReq.refererInfo.topmostLocation.indexOf('/', domainStart + 2);
+      const domain = bidderReq.refererInfo.topmostLocation.substring(domainStart + 2, domainEnd);
+      const gppStr = bidderReqFullGppCcpaGdpr.gppConsent.gppString;
+      const gppSid = bidderReqFullGppCcpaGdpr.gppConsent.applicableSections;
+      const ccpa = bidderReqFullGppCcpaGdpr.uspConsent;
+      const gdpr = bidderReqFullGppCcpaGdpr.gdprConsent.gdprApplies ? 1 : 0;
+      const gdprStr = bidderReqFullGppCcpaGdpr.gdprConsent.consentString;
+      const REQ_URL = `${URL}?pid=${bidReq[0].params.publisherId}&domain=${domain}&gdpr=${gdpr}&gdprstr=${gdprStr}&ccpa=${ccpa}&gpp=${gppStr}&gpp_sid=${gppSid}`;
+      expect(request.url).to.equal(REQ_URL);
+      expect(request.method).to.equal('POST');
+    });
     it('should have all relevant fields', function () {
       const request = spec.buildRequests(bidReq, bidderReq);
       const bid1 = JSON.parse(request.data)['x-ut-hb-params'][0];
@@ -409,10 +477,16 @@ describe('Undertone Adapter', () => {
       expect(bidVideo.video.playbackMethod).to.equal(2);
       expect(bidVideo.video.maxDuration).to.equal(30);
       expect(bidVideo.video.skippable).to.equal(true);
+      expect(bidVideo.video.placement).to.equal(1);
+      expect(bidVideo.video.plcmt).to.equal(1);
+      expect(bidVideo.gpid).to.equal('/1111/gpid#728x90');
 
       expect(bidVideo2.video.skippable).to.equal(null);
       expect(bidVideo2.video.maxDuration).to.equal(null);
       expect(bidVideo2.video.playbackMethod).to.equal(null);
+      expect(bidVideo2.video.placement).to.equal(null);
+      expect(bidVideo2.video.plcmt).to.equal(null);
+      expect(bidVideo2.gpid).to.equal('/1111/pbadslot#728x90');
     });
     it('should send all userIds data to server', function () {
       const request = spec.buildRequests(bidReqUserIds, bidderReq);

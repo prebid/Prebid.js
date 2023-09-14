@@ -1,7 +1,7 @@
-import { config } from 'src/config.js';
-import { deepAccess } from 'src/utils.js';
-import { getAdUnits } from '../../fixtures/fixtures.js';
+import {config} from 'src/config.js';
+import {deepAccess} from 'src/utils.js';
 import * as agRTD from 'modules/airgridRtdProvider.js';
+import {loadExternalScript} from '../../../src/adloader.js';
 
 const MATCHED_AUDIENCES = ['travel', 'sport'];
 const RTD_CONFIG = {
@@ -40,6 +40,7 @@ describe('airgrid RTD Submodule', function () {
       expect(agRTD.airgridSubmodule.init(RTD_CONFIG.dataProviders[0])).to.equal(
         true
       );
+      expect(loadExternalScript.called).to.be.true
     });
 
     it('should attach script to DOM with correct config', function () {
@@ -69,67 +70,24 @@ describe('airgrid RTD Submodule', function () {
   });
 
   describe('Add matched audiences', function () {
-    it('merges matched audiences on appnexus AdUnits', function () {
-      const adUnits = getAdUnits();
-      getDataFromLocalStorageStub
-        .withArgs(agRTD.AG_AUDIENCE_IDS_KEY)
-        .returns(JSON.stringify(MATCHED_AUDIENCES));
-      agRTD.passAudiencesToBidders({ adUnits }, () => {}, {}, {});
-
-      adUnits.forEach((adUnit) => {
-        adUnit.bids.forEach((bid) => {
-          const { bidder, params } = bid;
-          if (bidder === 'appnexus') {
-            expect(deepAccess(params, 'keywords.perid')).to.eql(
-              MATCHED_AUDIENCES
-            );
-          }
-        });
-      });
-    });
-
-    it('does not merge audiences on appnexus adunits, since none are matched', function () {
-      const adUnits = getAdUnits();
-      getDataFromLocalStorageStub
-        .withArgs(agRTD.AG_AUDIENCE_IDS_KEY)
-        .returns(undefined);
-      agRTD.passAudiencesToBidders({ adUnits }, () => {}, {}, {});
-
-      adUnits.forEach((adUnit) => {
-        adUnit.bids.forEach((bid) => {
-          const { bidder, params } = bid;
-          if (bidder === 'appnexus') {
-            expect(deepAccess(params, 'keywords.perid')).to.be.undefined;
-          }
-        });
-      });
-    });
-
     it('sets bidder specific ORTB2 config', function () {
       getDataFromLocalStorageStub
         .withArgs(agRTD.AG_AUDIENCE_IDS_KEY)
         .returns(JSON.stringify(MATCHED_AUDIENCES));
       const audiences = agRTD.getMatchedAudiencesFromStorage();
-      const bidderOrtb2 = agRTD.getAudiencesAsBidderOrtb2(RTD_CONFIG.dataProviders[0], audiences);
 
-      const bidders = RTD_CONFIG.dataProviders[0].params.bidders;
-      Object.keys(bidderOrtb2).forEach((bidder) => {
-        if (bidders.indexOf(bidder) === -1) return;
-        expect(deepAccess(bidderOrtb2[bidder], 'ortb2.user.ext.data.airgrid')).to.eql(MATCHED_AUDIENCES);
+      const bidderOrtb2 = {};
+
+      agRTD.setAudiencesAsBidderOrtb2({ortb2Fragments: {bidder: bidderOrtb2}}, RTD_CONFIG.dataProviders[0], audiences);
+
+      const bidders = RTD_CONFIG.dataProviders[0].params.bidders
+
+      bidders.forEach((bidder) => {
+        const ortb2 = bidderOrtb2[bidder];
+        MATCHED_AUDIENCES.forEach((audience) => {
+          expect(ortb2.user.data[0].segment.find(segment => segment.id === audience)).to.exist;
+        })
       });
-    });
-
-    it('sets audiences using appnexus auction level keywords', function () {
-      getDataFromLocalStorageStub
-        .withArgs(agRTD.AG_AUDIENCE_IDS_KEY)
-        .returns(JSON.stringify(MATCHED_AUDIENCES));
-      const audiences = agRTD.getMatchedAudiencesFromStorage();
-      agRTD.setAudiencesUsingAppNexusAuctionKeywords(audiences);
-
-      const bidderConfig = config.getConfig();
-      expect(deepAccess(bidderConfig, 'appnexusAuctionKeywords.perid')).to.eql(
-        MATCHED_AUDIENCES
-      );
     });
   });
 });

@@ -49,9 +49,17 @@ function saveDebuggingConfig(debugConfig, {sessionStorage = window.sessionStorag
   }
 }
 
-export function getConfig(debugging, {sessionStorage = window.sessionStorage, DEBUG_KEY, config, hook, logger} = {}) {
+export function getConfig(debugging, {getStorage = () => window.sessionStorage, DEBUG_KEY, config, hook, logger} = {}) {
   if (debugging == null) return;
-  saveDebuggingConfig(debugging, {sessionStorage, DEBUG_KEY});
+  let sessionStorage;
+  try {
+    sessionStorage = getStorage();
+  } catch (e) {
+    logger.logError(`sessionStorage is not available: debugging configuration will not persist on page reload`, e);
+  }
+  if (sessionStorage != null) {
+    saveDebuggingConfig(debugging, {sessionStorage, DEBUG_KEY});
+  }
   if (!debugging.enabled) {
     disableDebugging({hook, logger});
   } else {

@@ -274,8 +274,7 @@ export function getContentSegments(segments) {
 
   const formattedSegments = segments.reduce((convertedSegments, rawSegment) => {
     convertedSegments.push({
-      id: rawSegment,
-      value: rawSegment
+      id: rawSegment
     });
     return convertedSegments;
   }, []);

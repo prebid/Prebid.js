@@ -178,7 +178,6 @@ describe('slimcutBidAdapter', function() {
         'ad': AD_SCRIPT,
         'requestId': '3ede2a3fa0db94',
         'creativeId': 'er2ee',
-        'transactionId': 'deadb33f',
         'winUrl': 'https://sb.freeskreen.com/win',
         'meta': {
           'advertiserDomains': []

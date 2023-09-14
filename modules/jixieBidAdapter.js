@@ -6,7 +6,6 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {ajax} from '../src/ajax.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {Renderer} from '../src/Renderer.js';
-import {createEidsArray} from './userId/eids.js';
 
 const BIDDER_CODE = 'jixie';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
@@ -44,7 +43,8 @@ function fetchIds_() {
     client_id_c: '',
     client_id_ls: '',
     session_id_c: '',
-    session_id_ls: ''
+    session_id_ls: '',
+    jxeids: {}
   };
   try {
     let tmp = storage.getCookie('_jxx');
@@ -56,6 +56,10 @@ function fetchIds_() {
     if (tmp) ret.client_id_ls = tmp;
     tmp = storage.getDataFromLocalStorage('_jxxs');
     if (tmp) ret.session_id_ls = tmp;
+    ['_jxtoko', '_jxifo', '_jxtdid', '__uid2_advertising_token'].forEach(function(n) {
+      tmp = storage.getCookie(n);
+      if (tmp) ret.jxeids[n] = tmp;
+    });
   } catch (error) {}
   return ret;
 }
@@ -131,17 +135,6 @@ function getMiscDims_() {
   return ret;
 }
 
-/* function addUserId(eids, id, source, rti) {
-  if (id) {
-    if (rti) {
-      eids.push({ source, id, rti_partner: rti });
-    } else {
-      eids.push({ source, id });
-    }
-  }
-  return eids;
-} */
-
 // easier for replacement in the unit test
 export const internal = {
   getDevice: getDevice_,
@@ -169,13 +162,16 @@ export const spec = {
 
     let bids = [];
     validBidRequests.forEach(function(one) {
-      bids.push({
+      let gpid = deepAccess(one, 'ortb2Imp.ext.gpid', deepAccess(one, 'ortb2Imp.ext.data.pbadslot', ''));
+      let tmp = {
         bidId: one.bidId,
         adUnitCode: one.adUnitCode,
         mediaTypes: (one.mediaTypes === 'undefined' ? {} : one.mediaTypes),
         sizes: (one.sizes === 'undefined' ? [] : one.sizes),
         params: one.params,
-      });
+        gpid: gpid
+      };
+      bids.push(tmp);
     });
 
     let jixieCfgBlob = config.getConfig('jixie');
@@ -188,20 +184,18 @@ export const spec = {
     let miscDims = internal.getMiscDims();
     let schain = deepAccess(validBidRequests[0], 'schain');
 
+    let eids1 = validBidRequests[0].userIdAsEids
     // all available user ids are sent to our backend in the standard array layout:
-    if (validBidRequests[0].userId) {
-      let eids1 = createEidsArray(validBidRequests[0].userId);
-      if (eids1.length) {
-        eids = eids1;
-      }
+    if (eids1 && eids1.length) {
+      eids = eids1;
     }
     // we want to send this blob of info to our backend:
     let pg = config.getConfig('priceGranularity');
     if (!pg) {
       pg = {};
     }
-
     let transformedParams = Object.assign({}, {
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auctionid: bidderRequest.auctionId,
       timeout: bidderRequest.timeout,
       currency: currency,

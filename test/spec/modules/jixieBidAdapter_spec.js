@@ -71,6 +71,17 @@ describe('jixie Adapter', function () {
 
     const clientIdTest1_ = '1aba6a40-f711-11e9-868c-53a2ae972xxx';
     const sessionIdTest1_ = '1594782644-1aba6a40-f711-11e9-868c-53a2ae972xxx';
+    const jxtokoTest1_ = 'eyJJRCI6ImFiYyJ9';
+    const jxifoTest1_ = 'fffffbbbbbcccccaaaaae890606aaaaa';
+    const jxtdidTest1_ = '222223d1-1111-2222-3333-b9f129299999';
+    const __uid2_advertising_token_Test1 = 'AAAAABBBBBCCCCCDDDDDEEEEEUkkZPQfifpkPnnlJhtsa4o+gf4nfqgN5qHiTVX73ymTSbLT9jz1nf+Q7QdxNh9nTad9UaN5pzfHMt/rs1woQw72c1ip+8heZXPfKGZtZP7ldJesYhlo3/0FVcL/wl9ZlAo1jYOEfHo7Y9zFzNXABbbbbb==';
+
+    const refJxEids_ = {
+      '_jxtoko': jxtokoTest1_,
+      '_jxifo': jxifoTest1_,
+      '_jxtdid': jxtdidTest1_,
+      '__uid2_advertising_token': __uid2_advertising_token_Test1
+    };
 
     // to serve as the object that prebid will call jixie buildRequest with: (param2)
     const bidderRequest_ = {
@@ -89,7 +100,12 @@ describe('jixie Adapter', function () {
         'adUnitCode': adUnitCode0_,
         'bidId': bidId0_,
         'bidderRequestId': bidderRequestId_,
-        'auctionId': auctionId_
+        'auctionId': auctionId_,
+        'ortb2Imp': {
+          'ext': {
+            'gpid': 'SUPERNEWS#DESKTOP#div-gpt-ad-Top_1-1'
+          }
+        }
       },
       {
         'bidder': 'jixie',
@@ -108,7 +124,12 @@ describe('jixie Adapter', function () {
         'adUnitCode': adUnitCode1_,
         'bidId': bidId1_,
         'bidderRequestId': bidderRequestId_,
-        'auctionId': auctionId_
+        'auctionId': auctionId_,
+        'ortb2Imp': {
+          'ext': {
+            'gpid': 'SUPERNEWS#DESKTOP#div-gpt-ad-Top_1-2'
+          }
+        }
       },
       {
         'bidder': 'jixie',
@@ -127,7 +148,12 @@ describe('jixie Adapter', function () {
         'adUnitCode': adUnitCode2_,
         'bidId': bidId2_,
         'bidderRequestId': bidderRequestId_,
-        'auctionId': auctionId_
+        'auctionId': auctionId_,
+        'ortb2Imp': {
+          'ext': {
+            'gpid': 'SUPERNEWS#DESKTOP#div-gpt-ad-Top_1-3'
+          }
+        }
       }
     ];
 
@@ -140,7 +166,8 @@ describe('jixie Adapter', function () {
         'sizes': [[300, 250], [300, 600]],
         'params': {
           'unit': 'prebidsampleunit'
-        }
+        },
+        'gpid': 'SUPERNEWS#DESKTOP#div-gpt-ad-Top_1-1'
       },
       {
         'bidId': bidId1_,
@@ -156,7 +183,8 @@ describe('jixie Adapter', function () {
         'sizes': [[300, 250]],
         'params': {
           'unit': 'prebidsampleunit'
-        }
+        },
+        'gpid': 'SUPERNEWS#DESKTOP#div-gpt-ad-Top_1-2'
       },
       {
         'bidId': bidId2_,
@@ -172,7 +200,8 @@ describe('jixie Adapter', function () {
         'sizes': [[300, 250], [300, 600]],
         'params': {
           'unit': 'prebidsampleunit'
-        }
+        },
+        'gpid': 'SUPERNEWS#DESKTOP#div-gpt-ad-Top_1-3'
       }
     ];
 
@@ -199,6 +228,18 @@ describe('jixie Adapter', function () {
       let getCookieStub = sinon.stub(storage, 'getCookie');
       let getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       getCookieStub
+        .withArgs('_jxtoko')
+        .returns(jxtokoTest1_);
+      getCookieStub
+        .withArgs('_jxifo')
+        .returns(jxifoTest1_);
+      getCookieStub
+        .withArgs('_jxtdid')
+        .returns(jxtdidTest1_);
+      getCookieStub
+        .withArgs('__uid2_advertising_token')
+        .returns(__uid2_advertising_token_Test1);
+      getCookieStub
         .withArgs('_jxx')
         .returns(clientIdTest1_);
       getCookieStub
@@ -220,6 +261,7 @@ describe('jixie Adapter', function () {
       it('sends bid request to ENDPOINT via POST', function () {
         expect(request.method).to.equal('POST')
       })
+
       expect(request.data).to.be.an('string');
       const payload = JSON.parse(request.data);
       expect(payload).to.have.property('auctionid', auctionId_);
@@ -227,6 +269,7 @@ describe('jixie Adapter', function () {
       expect(payload).to.have.property('client_id_ls', clientIdTest1_);
       expect(payload).to.have.property('session_id_c', sessionIdTest1_);
       expect(payload).to.have.property('session_id_ls', sessionIdTest1_);
+      expect(payload).to.have.property('jxeids').that.deep.equals(refJxEids_);
       expect(payload).to.have.property('device', device_);
       expect(payload).to.have.property('domain', domain_);
       expect(payload).to.have.property('pageurl', pageurl_);
@@ -304,71 +347,53 @@ describe('jixie Adapter', function () {
 
     it('should populate eids when supported userIds are available', function () {
       const oneSpecialBidReq = Object.assign({}, bidRequests_[0], {
-        userId: {
-          tdid: '11111111-2222-3333-4444-555555555555',
-          uid2: { id: 'AbCdEfGhIjKlMnO9qdQBW7qtMw8f1WTUvtkHe6u+fqLfhbtsqrJ697Z6YoI3IB9klGUv1wvlFIbwH7ELDlqQBGtj8AC1v7fMJ/Q45E7W90dts7UQLTDMLNmtHBRDXVb0Fpas4Vh3yN1jGVQNhzXC/RpGIVtZE8dCxcjfa7VfcTNcvxxxxx==' },
-          pubProvidedId: [{
-            source: 'puburl1.com',
-            uids: [{
-              id: 'pubid1',
-              atype: 1,
-              ext: {
-                stype: 'ppuid'
+        userIdAsEids: [
+          {
+            'source': 'adserver.org',
+            'uids': [
+              {
+                'id': '11111111-2222-3333-4444-555555555555',
+                'atype': 1,
+                'ext': {
+                  'rtiPartner': 'TDID'
+                }
               }
-            }]
-          }, {
-            source: 'puburl2.com',
-            uids: [{
-              id: 'pubid2'
-            }]
-          }]
-        }
+            ]
+          },
+          {
+            'source': 'uidapi.com',
+            'uids': [
+              {
+                'id': 'AbCdEfGhIjKlMnO9qdQBW7qtMw8f1WTUvtkHe6u+fqLfhbtsqrJ697Z6YoI3IB9klGUv1wvlFIbwH7ELDlqQBGtj8AC1v7fMJ/Q45E7W90dts7UQLTDMLNmtHBRDXVb0Fpas4Vh3yN1jGVQNhzXC/RpGIVtZE8dCxcjfa7VfcTNcvxxxxx==',
+                'atype': 3
+              }
+            ]
+          },
+          {
+            'source': 'puburl1.com',
+            'uids': [
+              {
+                'id': 'pubid1',
+                'atype': 1,
+                'ext': {
+                  'stype': 'ppuid'
+                }
+              }
+            ]
+          },
+          {
+            'source': 'puburl2.com',
+            'uids': [
+              {
+                'id': 'pubid2'
+              }
+            ]
+          },
+        ],
       });
       const request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
       const payload = JSON.parse(request.data);
-      expect(payload.eids).to.deep.include({
-        'source': 'adserver.org',
-        'uids': [
-          {
-            'id': '11111111-2222-3333-4444-555555555555',
-            'atype': 1,
-            'ext': {
-              'rtiPartner': 'TDID'
-            }
-          }
-        ]
-      });
-      expect(payload.eids).to.deep.include({
-        'source': 'uidapi.com',
-        'uids': [
-          {
-            'id': 'AbCdEfGhIjKlMnO9qdQBW7qtMw8f1WTUvtkHe6u+fqLfhbtsqrJ697Z6YoI3IB9klGUv1wvlFIbwH7ELDlqQBGtj8AC1v7fMJ/Q45E7W90dts7UQLTDMLNmtHBRDXVb0Fpas4Vh3yN1jGVQNhzXC/RpGIVtZE8dCxcjfa7VfcTNcvxxxxx==',
-            'atype': 3
-          }
-        ]
-      });
-
-      expect(payload.eids).to.deep.include({
-        'source': 'puburl1.com',
-        'uids': [
-          {
-            'id': 'pubid1',
-            'atype': 1,
-            'ext': {
-              'stype': 'ppuid'
-            }
-          }
-        ]
-      });
-
-      expect(payload.eids).to.deep.include({
-        'source': 'puburl2.com',
-        'uids': [
-          {
-            'id': 'pubid2'
-          }
-        ]
-      });
+      expect(payload.eids).to.eql(oneSpecialBidReq.userIdAsEids);
     });
   });// describe
 

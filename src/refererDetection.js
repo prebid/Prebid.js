@@ -11,8 +11,6 @@
 import { config } from './config.js';
 import {logWarn} from './utils.js';
 
-let RI = new WeakMap();
-
 /**
  * Prepend a URL with the page's protocol (http/https), if necessary.
  */
@@ -54,6 +52,26 @@ export function parseDomain(url, {noLeadingWww = false, noPort = false} = {}) {
 }
 
 /**
+ * This function returns canonical URL which refers to an HTML link element, with the attribute of rel="canonical", found in the <head> element of your webpage
+ *
+ * @param {Object} doc document
+ * @returns {string|null}
+ */
+function getCanonicalUrl(doc) {
+  try {
+    const element = doc.querySelector("link[rel='canonical']");
+
+    if (element !== null) {
+      return element.href;
+    }
+  } catch (e) {
+    // Ignore error
+  }
+
+  return null;
+}
+
+/**
  * @param {Window} win Window
  * @returns {Function}
  */
@@ -75,26 +93,6 @@ export function detectReferer(win) {
     } catch (e) {
       // Ignore error
     }
-  }
-
-  /**
-   * This function returns canonical URL which refers to an HTML link element, with the attribute of rel="canonical", found in the <head> element of your webpage
-   *
-   * @param {Object} doc document
-   * @returns {string|null}
-   */
-  function getCanonicalUrl(doc) {
-    try {
-      const element = doc.querySelector("link[rel='canonical']");
-
-      if (element !== null) {
-        return element.href;
-      }
-    } catch (e) {
-      // Ignore error
-    }
-
-    return null;
   }
 
   // TODO: the meaning of "reachedTop" seems to be intentionally ambiguous - best to leave them out of
@@ -122,6 +120,7 @@ export function detectReferer(win) {
     const stack = [];
     const ancestors = getAncestorOrigins(win);
     const maxNestedIframes = config.getConfig('maxNestedIframes');
+
     let currentWindow;
     let bestLocation;
     let bestCanonicalUrl;
@@ -228,7 +227,11 @@ export function detectReferer(win) {
 
     const location = reachedTop || hasTopLocation ? bestLocation : null;
     const canonicalUrl = config.getConfig('pageUrl') || bestCanonicalUrl || null;
-    const page = ensureProtocol(canonicalUrl, win) || location;
+    let page = config.getConfig('pageUrl') || location || ensureProtocol(canonicalUrl, win);
+
+    if (location && location.indexOf('?') > -1 && page.indexOf('?') === -1) {
+      page = `${page}${location.substring(location.indexOf('?'))}`;
+    }
 
     return {
       reachedTop,
@@ -254,19 +257,28 @@ export function detectReferer(win) {
     };
   }
 
-  return function() {
-    if (!RI.has(win)) {
-      RI.set(win, Object.freeze(refererInfo()));
+  return refererInfo;
+}
+
+// cache result of fn (= referer info) as long as:
+// - we are the top window
+// - canonical URL tag and window location have not changed
+export function cacheWithLocation(fn, win = window) {
+  if (win.top !== win) return fn;
+  let canonical, href, value;
+  return function () {
+    const newCanonical = getCanonicalUrl(win.document);
+    const newHref = win.location.href;
+    if (canonical !== newCanonical || newHref !== href) {
+      canonical = newCanonical;
+      href = newHref;
+      value = fn();
     }
-    return RI.get(win);
+    return value;
   }
 }
 
 /**
  * @type {function(): refererInfo}
  */
-export const getRefererInfo = detectReferer(window);
-
-export function resetRefererInfo() {
-  RI = new WeakMap();
-}
+export const getRefererInfo = cacheWithLocation(detectReferer(window));

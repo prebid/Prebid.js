@@ -3,7 +3,7 @@
 ```
 Module Name: Dianomi Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: eng@dianomi.com
+Maintainer: prebid-maintainer@dianomi.com
 ```
 
 # Description
