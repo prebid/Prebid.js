@@ -12,6 +12,7 @@ import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
+const DEFAULT_AJAX_TIMEOUT = 5000
 const EVENTS_TOPIC = 'pre_lips'
 const MODULE_NAME = 'liveIntentId';
 const LI_PROVIDER_DOMAIN = 'liveintent.com';
@@ -65,6 +66,7 @@ function parseLiveIntentCollectorConfig(collectConfig) {
   collectConfig.fpiStorageStrategy && (config.storageStrategy = collectConfig.fpiStorageStrategy);
   collectConfig.fpiExpirationDays && (config.expirationDays = collectConfig.fpiExpirationDays);
   collectConfig.collectorUrl && (config.collectorUrl = collectConfig.collectorUrl);
+  config.ajaxTimeout = collectConfig.ajaxTimeout || DEFAULT_AJAX_TIMEOUT;
   return config;
 }
 
@@ -99,9 +101,8 @@ function initializeLiveConnect(configParams) {
   if (configParams.url) {
     identityResolutionConfig.url = configParams.url
   }
-  if (configParams.ajaxTimeout) {
-    identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout;
-  }
+
+  identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout || DEFAULT_AJAX_TIMEOUT;
 
   const liveConnectConfig = parseLiveIntentCollectorConfig(configParams.liCollectConfig);
 
