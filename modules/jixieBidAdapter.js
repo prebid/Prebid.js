@@ -14,7 +14,6 @@ const JX_OUTSTREAM_RENDERER_URL = 'https://scripts.jixie.media/jxhbrenderer.1.1.
 const REQUESTS_URL = 'https://hb.jixie.io/v2/hbpost';
 const sidTTLMins_ = 30;
 
-
 /**
  * Get bid floor from Price Floors Module
  *
@@ -35,7 +34,7 @@ function getBidFloor(bid) {
   }
   return null;
 }
-  
+
 /**
  * Own miscellaneous support functions:
  */

@@ -347,19 +347,19 @@ describe('jixie Adapter', function () {
     });
 
     it('it should populate the floor info when available', function () {
-        let oneSpecialBidReq = deepClone(bidRequests_[0]);
-        let request, payload = null;
-        // 1 floor is not set
-        request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
-        payload = JSON.parse(request.data);
-        expect(payload.bids[0].bidFloor).to.not.exist;
-        
-        // 2 floor is set
-        let getFloorResponse = { currency: 'USD', floor: 2.1 };
-        oneSpecialBidReq.getFloor = () => getFloorResponse;
-        request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
-        payload = JSON.parse(request.data);
-        expect(payload.bids[0].bidFloor).to.exist.and.to.equal(2.1);
+      let oneSpecialBidReq = deepClone(bidRequests_[0]);
+      let request, payload = null;
+      // 1 floor is not set
+      request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
+      payload = JSON.parse(request.data);
+      expect(payload.bids[0].bidFloor).to.not.exist;
+
+      // 2 floor is set
+      let getFloorResponse = { currency: 'USD', floor: 2.1 };
+      oneSpecialBidReq.getFloor = () => getFloorResponse;
+      request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
+      payload = JSON.parse(request.data);
+      expect(payload.bids[0].bidFloor).to.exist.and.to.equal(2.1);
     });
 
     it('should populate eids when supported userIds are available', function () {
