@@ -99,7 +99,10 @@ describe('adnuntiusBidAdapter', function() {
 
   const videoBidRequest = {
     bid: videoBidderRequest,
-    bidder: 'adnuntius'
+    bidder: 'adnuntius',
+    params: {
+      bidType: 'justsomestuff-error-handling'
+    }
   }
 
   const deals = [
@@ -749,12 +752,20 @@ describe('adnuntiusBidAdapter', function() {
 
   describe('interpretResponse', function() {
     it('should return valid response when passed valid server response', function() {
-      const interpretedResponse = spec.interpretResponse(serverResponse, singleBidRequest);
+      config.setBidderConfig({
+        bidders: ['adnuntius'],
+        config: {
+          bidType: 'netBid',
+          maxDeals: 1
+        }
+      });
+
+      const interpretedResponse = config.runWithBidder('adnuntius', () => spec.interpretResponse(serverResponse, singleBidRequest));
       expect(interpretedResponse).to.have.lengthOf(2);
 
       const deal = serverResponse.body.adUnits[0].deals[0];
       expect(interpretedResponse[0].bidderCode).to.equal('adnuntius');
-      expect(interpretedResponse[0].cpm).to.equal(deal.bid.amount * 1000);
+      expect(interpretedResponse[0].cpm).to.equal(deal.netBid.amount * 1000);
       expect(interpretedResponse[0].width).to.equal(Number(deal.creativeWidth));
       expect(interpretedResponse[0].height).to.equal(Number(deal.creativeHeight));
       expect(interpretedResponse[0].creativeId).to.equal(deal.creativeId);
@@ -770,7 +781,7 @@ describe('adnuntiusBidAdapter', function() {
 
       const ad = serverResponse.body.adUnits[0].ads[0];
       expect(interpretedResponse[1].bidderCode).to.equal('adnuntius');
-      expect(interpretedResponse[1].cpm).to.equal(ad.bid.amount * 1000);
+      expect(interpretedResponse[1].cpm).to.equal(ad.netBid.amount * 1000);
       expect(interpretedResponse[1].width).to.equal(Number(ad.creativeWidth));
       expect(interpretedResponse[1].height).to.equal(Number(ad.creativeHeight));
       expect(interpretedResponse[1].creativeId).to.equal(ad.creativeId);
@@ -808,6 +819,9 @@ describe('adnuntiusBidAdapter', function() {
           {
             bidder: 'adn-alt',
             bidId: 'adn-0000000000000551',
+            params: {
+              bidType: 'netBid'
+            }
           }
         ]
       };
@@ -818,7 +832,7 @@ describe('adnuntiusBidAdapter', function() {
 
       const ad = serverResponse.body.adUnits[0].ads[0];
       expect(interpretedResponse[0].bidderCode).to.equal('adn-alt');
-      expect(interpretedResponse[0].cpm).to.equal(ad.bid.amount * 1000);
+      expect(interpretedResponse[0].cpm).to.equal(ad.netBid.amount * 1000);
       expect(interpretedResponse[0].width).to.equal(Number(ad.creativeWidth));
       expect(interpretedResponse[0].height).to.equal(Number(ad.creativeHeight));
       expect(interpretedResponse[0].creativeId).to.equal(ad.creativeId);

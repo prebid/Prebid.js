@@ -27,8 +27,8 @@ import {bidderSettings} from '../src/bidderSettings.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {IMP, PBS, registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.js';
-import {beConvertCurrency} from '../src/utils/currency.js';
 import {adjustCpm} from '../src/utils/cpm.js';
+import {convertCurrency} from '../libraries/currencyUtils/currency.js';
 
 /**
  * @summary This Module is intended to provide users with the ability to dynamically set and enforce price floors on a per auction basis.
@@ -794,8 +794,8 @@ export function setImpExtPrebidFloors(imp, bidRequest, context) {
     if (floorMinCur == null) { floorMinCur = imp.bidfloorcur }
     const ortb2ImpFloorCur = imp.ext?.prebid?.floors?.floorMinCur || imp.ext?.prebid?.floorMinCur || floorMinCur;
     const ortb2ImpFloorMin = imp.ext?.prebid?.floors?.floorMin || imp.ext?.prebid?.floorMin;
-    const convertedFloorMinValue = beConvertCurrency(imp.bidfloor, imp.bidfloorcur, floorMinCur);
-    const convertedOrtb2ImpFloorMinValue = ortb2ImpFloorMin && ortb2ImpFloorCur ? beConvertCurrency(ortb2ImpFloorMin, ortb2ImpFloorCur, floorMinCur) : false;
+    const convertedFloorMinValue = convertCurrency(imp.bidfloor, imp.bidfloorcur, floorMinCur);
+    const convertedOrtb2ImpFloorMinValue = ortb2ImpFloorMin && ortb2ImpFloorCur ? convertCurrency(ortb2ImpFloorMin, ortb2ImpFloorCur, floorMinCur) : false;
 
     const lowestImpFloorMin = convertedOrtb2ImpFloorMinValue && convertedOrtb2ImpFloorMinValue < convertedFloorMinValue
       ? convertedOrtb2ImpFloorMinValue

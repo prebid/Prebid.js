@@ -729,26 +729,6 @@ export function isApnGetTagDefined() {
   }
 }
 
-// This function will get highest cpm value bid, in case of tie it will return the bid with lowest timeToRespond
-export const getHighestCpm = getHighestCpmCallback('timeToRespond', (previous, current) => previous > current);
-
-// This function will get the oldest hightest cpm value bid, in case of tie it will return the bid which came in first
-// Use case for tie: https://github.com/prebid/Prebid.js/issues/2448
-export const getOldestHighestCpmBid = getHighestCpmCallback('responseTimestamp', (previous, current) => previous > current);
-
-// This function will get the latest hightest cpm value bid, in case of tie it will return the bid which came in last
-// Use case for tie: https://github.com/prebid/Prebid.js/issues/2539
-export const getLatestHighestCpmBid = getHighestCpmCallback('responseTimestamp', (previous, current) => previous < current);
-
-function getHighestCpmCallback(useTieBreakerProperty, tieBreakerCallback) {
-  return (previous, current) => {
-    if (previous.cpm === current.cpm) {
-      return tieBreakerCallback(previous[useTieBreakerProperty], current[useTieBreakerProperty]) ? current : previous;
-    }
-    return previous.cpm < current.cpm ? current : previous;
-  }
-}
-
 /**
  * Fisher–Yates shuffle
  * http://stackoverflow.com/a/6274398
@@ -925,8 +905,7 @@ export function isValidMediaTypes(mediaTypes) {
 export function getUserConfiguredParams(adUnits, adUnitCode, bidder) {
   return adUnits
     .filter(adUnit => adUnit.code === adUnitCode)
-    .map((adUnit) => adUnit.bids)
-    .reduce(flatten, [])
+    .flatMap((adUnit) => adUnit.bids)
     .filter((bidderData) => bidderData.bidder === bidder)
     .map((bidderData) => bidderData.params || {});
 }
@@ -1408,3 +1387,31 @@ export const escapeUnsafeChars = (() => {
     return str.replace(/[<>\b\f\n\r\t\0\u2028\u2029\\]/g, x => escapes[x])
   }
 })();
+
+/**
+ * Perform a binary search for `el` on an ordered array `arr`.
+ *
+ * @returns the lowest nonnegative integer I that satisfies:
+ *   key(arr[i]) >= key(el) for each i between I and arr.length
+ *
+ *   (if one or more matches are found for `el`, returns the index of the first;
+ *   if the element is not found, return the index of the first element that's greater;
+ *   if no greater element exists, return `arr.length`)
+ */
+export function binarySearch(arr, el, key = (el) => el) {
+  let left = 0;
+  let right = arr.length && arr.length - 1;
+  const target = key(el);
+  while (right - left > 1) {
+    const middle = left + Math.round((right - left) / 2);
+    if (target > key(arr[middle])) {
+      left = middle;
+    } else {
+      right = middle;
+    }
+  }
+  while (arr.length > left && target > key(arr[left])) {
+    left++;
+  }
+  return left;
+}
