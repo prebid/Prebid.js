@@ -15,15 +15,9 @@ const HOST_GETTERS = {
       return 'ghb' + subdomainSuffixes[num++ % subdomainSuffixes.length] + '.adtelligent.com';
     }
   }()),
-  navelix: () => 'ghb.hb.navelix.com',
-  appaloosa: () => 'ghb.hb.appaloosa.media',
-  onefiftytwomedia: () => 'ghb.ads.152media.com',
-  bidsxchange: () => 'ghb.hbd.bidsxchange.com',
   streamkey: () => 'ghb.hb.streamkey.net',
   janet: () => 'ghb.bidder.jmgads.com',
-  pgam: () => 'ghb.pgamssp.com',
   ocm: () => 'ghb.cenarius.orangeclickmedia.com',
-  vidcrunchllc: () => 'ghb.platform.vidcrunch.com',
   '9dotsmedia': () => 'ghb.platform.audiodots.com',
   copper6: () => 'ghb.app.copper6.com'
 }
@@ -42,16 +36,10 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 410,
   aliases: [
-    'onefiftytwomedia',
-    'appaloosa',
-    'bidsxchange',
     'streamkey',
     'janet',
     { code: 'selectmedia', gvlid: 775 },
-    { code: 'navelix', gvlid: 380 },
-    'pgam',
     { code: 'ocm', gvlid: 1148 },
-    { code: 'vidcrunchllc', gvlid: 1145 },
     '9dotsmedia',
     'copper6',
   ],

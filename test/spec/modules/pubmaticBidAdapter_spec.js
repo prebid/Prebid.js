@@ -1133,7 +1133,19 @@ describe('PubMatic adapter', function () {
           ortb2: {
             source: {
               tid: 'source-tid'
-            }
+            },
+            device: {
+              geo: {
+                lat: '36.5189',
+                lon: '-76.4063'
+              }
+            },
+            user: {
+              geo: {
+                lat: '26.8915',
+                lon: '-56.6340'
+              }
+            },
           }
         });
         let data = JSON.parse(request.data);
@@ -1144,10 +1156,10 @@ describe('PubMatic adapter', function () {
   		  expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
   		  expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
   		  expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
-  		  expect(data.device.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-  		  expect(data.device.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
-  		  expect(data.user.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-  		  expect(data.user.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+  		  expect(data.device.geo.lat).to.equal('36.5189'); // Latitude
+  		  expect(data.device.geo.lon).to.equal('-76.4063'); // Lognitude
+  		  expect(data.user.geo.lat).to.equal('26.8915'); // Latitude
+  		  expect(data.user.geo.lon).to.equal('-56.6340'); // Lognitude
   		  expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
   		  expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
         expect(data.source.tid).to.equal('source-tid'); // Prebid TransactionId
@@ -1387,7 +1399,21 @@ describe('PubMatic adapter', function () {
       it('Request params check: without adSlot', function () {
         delete bidRequests[0].params.adSlot;
         let request = spec.buildRequests(bidRequests, {
-          auctionId: 'new-auction-id'
+          auctionId: 'new-auction-id',
+		  ortb2: {
+            device: {
+              geo: {
+                lat: '36.5189',
+                lon: '-76.4063'
+              }
+            },
+            user: {
+              geo: {
+                lat: '26.8915',
+                lon: '-56.6340'
+              }
+            },
+          }
         });
         let data = JSON.parse(request.data);
         expect(data.at).to.equal(1); // auction type
@@ -1397,10 +1423,10 @@ describe('PubMatic adapter', function () {
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
         expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
         expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
-        expect(data.device.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.device.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
-        expect(data.user.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.user.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+        expect(data.device.geo.lat).to.equal('36.5189'); // Latitude
+        expect(data.device.geo.lon).to.equal('-76.4063'); // Lognitude
+        expect(data.user.geo.lat).to.equal('26.8915'); // Latitude
+        expect(data.user.geo.lon).to.equal('-56.6340'); // Lognitude
         expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
         expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
         expect(data.ext.wrapper.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
@@ -1596,7 +1622,21 @@ describe('PubMatic adapter', function () {
 
       it('Pass auctiondId as wiid if wiid is not passed in params', function () {
         let bidRequest = {
-          auctionId: 'new-auction-id'
+          auctionId: 'new-auction-id',
+		  ortb2: {
+            device: {
+              geo: {
+                lat: '36.5189',
+                lon: '-76.4063'
+              }
+            },
+            user: {
+              geo: {
+                lat: '26.8915',
+                lon: '-56.6340'
+              }
+            },
+          }
         };
         delete bidRequests[0].params.wiid;
         let request = spec.buildRequests(bidRequests, bidRequest);
@@ -1608,10 +1648,10 @@ describe('PubMatic adapter', function () {
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
         expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
         expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
-        expect(data.device.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.device.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Longitude
-        expect(data.user.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.user.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Longitude
+        expect(data.device.geo.lat).to.equal('36.5189'); // Latitude
+  		  expect(data.device.geo.lon).to.equal('-76.4063'); // Lognitude
+  		  expect(data.user.geo.lat).to.equal('26.8915'); // Latitude
+  		  expect(data.user.geo.lon).to.equal('-56.6340'); // Lognitude
         expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
         expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
         expect(data.ext.wrapper.wiid).to.equal('new-auction-id'); // OpenWrap: Wrapper Impression ID
@@ -1631,6 +1671,20 @@ describe('PubMatic adapter', function () {
           gdprConsent: {
             consentString: 'kjfdniwjnifwenrif3',
             gdprApplies: true
+          },
+		  ortb2: {
+            device: {
+              geo: {
+                lat: '36.5189',
+                lon: '-76.4063'
+              }
+            },
+            user: {
+              geo: {
+                lat: '26.8915',
+                lon: '-56.6340'
+              }
+            },
           }
         };
   		  let request = spec.buildRequests(bidRequests, bidRequest);
@@ -1644,10 +1698,10 @@ describe('PubMatic adapter', function () {
   		  expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
   		  expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
   		  expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
-  		  expect(data.device.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-  		  expect(data.device.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
-  		  expect(data.user.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-  		  expect(data.user.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+  		  expect(data.device.geo.lat).to.equal('36.5189'); // Latitude
+  		  expect(data.device.geo.lon).to.equal('-76.4063'); // Lognitude
+  		  expect(data.user.geo.lat).to.equal('26.8915'); // Latitude
+  		  expect(data.user.geo.lon).to.equal('-56.6340'); // Lognitude
   		  expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
   		  expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
   		  expect(data.ext.wrapper.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
@@ -1664,7 +1718,21 @@ describe('PubMatic adapter', function () {
 
       it('Request params check with USP/CCPA Consent', function () {
         let bidRequest = {
-          uspConsent: '1NYN'
+          uspConsent: '1NYN',
+		  ortb2: {
+            device: {
+              geo: {
+                lat: '36.5189',
+                lon: '-76.4063'
+              }
+            },
+            user: {
+              geo: {
+                lat: '26.8915',
+                lon: '-56.6340'
+              }
+            },
+          }
         };
         let request = spec.buildRequests(bidRequests, bidRequest);
         let data = JSON.parse(request.data);
@@ -1676,10 +1744,10 @@ describe('PubMatic adapter', function () {
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
         expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
         expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
-        expect(data.device.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.device.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
-        expect(data.user.geo.lat).to.not.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.user.geo.lon).to.not.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+        expect(data.device.geo.lat).to.equal('36.5189'); // Latitude
+  		  expect(data.device.geo.lon).to.equal('-76.4063'); // Lognitude
+  		  expect(data.user.geo.lat).to.equal('26.8915'); // Latitude
+  		  expect(data.user.geo.lon).to.equal('-56.6340'); // Lognitude
         expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
         expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
         expect(data.ext.wrapper.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
@@ -2325,7 +2393,21 @@ describe('PubMatic adapter', function () {
 
         it('Request params check for 1 banner and 1 video ad', function () {
           let request = spec.buildRequests(multipleMediaRequests, {
-            auctionId: 'new-auction-id'
+            auctionId: 'new-auction-id',
+            ortb2: {
+              device: {
+				  geo: {
+                  lat: '36.5189',
+                  lon: '-76.4063'
+				  }
+              },
+              user: {
+				  geo: {
+                  lat: '26.8915',
+                  lon: '-56.6340'
+				  }
+              },
+			  }
           });
           let data = JSON.parse(request.data);
 
@@ -2339,10 +2421,10 @@ describe('PubMatic adapter', function () {
           expect(data.site.publisher.id).to.equal(multipleMediaRequests[0].params.publisherId); // publisher Id
           expect(data.user.yob).to.equal(parseInt(multipleMediaRequests[0].params.yob)); // YOB
           expect(data.user.gender).to.equal(multipleMediaRequests[0].params.gender); // Gender
-          expect(data.device.geo.lat).to.not.equal(parseFloat(multipleMediaRequests[0].params.lat)); // Latitude
-          expect(data.device.geo.lon).to.not.equal(parseFloat(multipleMediaRequests[0].params.lon)); // Lognitude
-          expect(data.user.geo.lat).to.not.equal(parseFloat(multipleMediaRequests[0].params.lat)); // Latitude
-          expect(data.user.geo.lon).to.not.equal(parseFloat(multipleMediaRequests[0].params.lon)); // Lognitude
+          expect(data.device.geo.lat).to.equal('36.5189'); // Latitude
+  		  expect(data.device.geo.lon).to.equal('-76.4063'); // Lognitude
+  		  expect(data.user.geo.lat).to.equal('26.8915'); // Latitude
+  		  expect(data.user.geo.lon).to.equal('-56.6340'); // Lognitude
           expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
           expect(data.ext.wrapper.transactionId).to.equal(multipleMediaRequests[0].transactionId); // Prebid TransactionId
           expect(data.ext.wrapper.wiid).to.equal(multipleMediaRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID

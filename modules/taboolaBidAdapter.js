@@ -136,7 +136,7 @@ export const spec = {
       }
     };
 
-    const url = [END_POINT_URL, publisherId].join('/');
+    const url = END_POINT_URL + '?publisher=' + publisherId;
 
     return {
       url,
