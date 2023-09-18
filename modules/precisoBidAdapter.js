@@ -1,5 +1,5 @@
-import { logMessage } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { logMessage, isFn, deepAccess } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
@@ -33,16 +33,38 @@ export const spec = {
       location = winTop.location;
       logMessage(e);
     };
-    let placements = [];
-    let imp = [];
+
     let site = {
       'domain': location.domain || '',
       'page': location || ''
     }
 
     let request = {
-      'id': '123456',
-      'imp': imp,
+      id: '123456678',
+      imp: validBidRequests.map(request => {
+        const { bidId, sizes, mediaType } = request
+        const item = {
+          id: bidId,
+          region: request.params.region,
+          traffic: mediaType,
+          bidFloor: getBidFloor(request)
+        }
+
+        if (request.mediaTypes.banner) {
+          item.banner = {
+            format: (request.mediaTypes.banner.sizes || sizes).map(size => {
+              return { w: size[0], h: size[1] }
+            }),
+          }
+        }
+
+        if (request.schain) {
+          item.schain = request.schain;
+        }
+
+        return item
+      }),
+
       'site': site,
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
@@ -50,9 +72,9 @@ export const spec = {
       'secure': 1,
       'host': location.host,
       'page': location.pathname,
-      'coppa': config.getConfig('coppa') === true ? 1 : 0,
-      'placements': placements
+      'coppa': config.getConfig('coppa') === true ? 1 : 0
     };
+
     request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
     if (bidderRequest) {
       if (bidderRequest.uspConsent) {
@@ -66,32 +88,11 @@ export const spec = {
       }
     }
 
-    const len = validBidRequests.length;
-
-    for (let i = 0; i < len; i++) {
-      let bid = validBidRequests[i];
-      let traff = bid.params.traffic || BANNER
-      placements.push({
-        region: bid.params.region,
-        bidId: bid.bidId,
-        sizes: bid.mediaTypes && bid.mediaTypes[traff] && bid.mediaTypes[traff].sizes ? bid.mediaTypes[traff].sizes : [],
-        traffic: traff,
-        publisherId: bid.params.publisherId
-      });
-      imp.push({
-        id: bid.bidId,
-        sizes: bid.mediaTypes && bid.mediaTypes[traff] && bid.mediaTypes[traff].sizes ? bid.mediaTypes[traff].sizes : [],
-        traffic: traff,
-        publisherId: bid.params.publisherId
-      })
-      if (bid.schain) {
-        placements.schain = bid.schain;
-      }
-    }
     return {
       method: 'POST',
       url: AD_URL,
-      data: request
+      data: request,
+
     };
   },
 
@@ -142,5 +143,22 @@ export const spec = {
   }
 
 };
+
+function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return deepAccess(bid, 'params.bidFloor', 0);
+  }
+
+  try {
+    const bidFloor = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*',
+    });
+    return bidFloor.floor;
+  } catch (_) {
+    return 0
+  }
+}
 
 registerBidder(spec);

@@ -1,6 +1,6 @@
 # Overview
 ```
-Module Name: Optimera Real Time Date Module
+Module Name: Optimera Real Time Data Module
 Module Type: RTD Module
 Maintainer: mcallari@optimera.nyc
 ```
@@ -26,7 +26,8 @@ Configuration example for using RTD module with `optimera` provider
           params: {
             clientID: '9999',
             optimeraKeyName: 'optimera',
-            device: 'de'
+            device: 'de',
+            apiVersion: 'v0',
           }
         }
       ]
@@ -42,3 +43,4 @@ Contact Optimera to get assistance with the params.
 | clientID  | string  | required | Optimera Client ID |
 | optimeraKeyName  | string  | optional |  GAM key name for Optimera. If migrating from the Optimera bidder adapter this will default to hb_deal_optimera and can be ommitted from the configuration. |
 | device  | string  | optional | Device type code for mobile, tablet, or desktop. Either mo, tb, de |
+| apiVersion  | string  | optional | Optimera API Versions. Either v0, or v1. ** Note: v1 wll need to be enabled specifically for your account, otherwise use v0.
