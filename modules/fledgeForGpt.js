@@ -4,10 +4,15 @@
  */
 import { config } from '../src/config.js';
 import { getHook } from '../src/hook.js';
-import { getGptSlotForAdUnitCode, logInfo, logWarn } from '../src/utils.js';
+import {deepSetValue, getGptSlotForAdUnitCode, logInfo, logWarn, mergeDeep} from '../src/utils.js';
 import {IMP, PBS, registerOrtbProcessor, RESPONSE} from '../src/pbjsORTB.js';
+import * as events from '../src/events.js'
+import CONSTANTS from '../src/constants.json';
+import {currencyCompare} from '../libraries/currencyUtils/currency.js';
+import {maximum, minimum} from '../src/utils/reducers.js';
 
 const MODULE = 'fledgeForGpt'
+const PENDING = {};
 
 export let isEnabled = false;
 
@@ -21,6 +26,8 @@ export function init(cfg) {
     if (!isEnabled) {
       getHook('addComponentAuction').before(addComponentAuctionHook);
       getHook('makeBidRequests').after(markForFledge);
+      events.on(CONSTANTS.EVENTS.AUCTION_INIT, onAuctionInit);
+      events.on(CONSTANTS.EVENTS.AUCTION_END, onAuctionEnd);
       isEnabled = true;
     }
     logInfo(`${MODULE} enabled (browser ${isFledgeSupported() ? 'supports' : 'does NOT support'} fledge)`, cfg);
@@ -28,28 +35,74 @@ export function init(cfg) {
     if (isEnabled) {
       getHook('addComponentAuction').getHooks({hook: addComponentAuctionHook}).remove();
       getHook('makeBidRequests').getHooks({hook: markForFledge}).remove()
+      events.off(CONSTANTS.EVENTS.AUCTION_INIT, onAuctionInit);
+      events.off(CONSTANTS.EVENTS.AUCTION_END, onAuctionEnd);
       isEnabled = false;
     }
     logInfo(`${MODULE} disabled`, cfg);
   }
 }
 
-export function addComponentAuctionHook(next, adUnitCode, componentAuctionConfig) {
-  const seller = componentAuctionConfig.seller;
+function setComponentAuction(adUnitCode, auctionConfigs) {
   const gptSlot = getGptSlotForAdUnitCode(adUnitCode);
   if (gptSlot && gptSlot.setConfig) {
     gptSlot.setConfig({
-      componentAuction: [{
-        configKey: seller,
-        auctionConfig: componentAuctionConfig
-      }]
+      componentAuction: auctionConfigs.map(cfg => ({
+        configKey: cfg.seller,
+        auctionConfig: cfg
+      }))
     });
-    logInfo(MODULE, `register component auction config for: ${adUnitCode} x ${seller}: ${gptSlot.getAdUnitPath()}`, componentAuctionConfig);
+    logInfo(MODULE, `register component auction configs for: ${adUnitCode}: ${gptSlot.getAdUnitPath()}`, auctionConfigs);
   } else {
-    logWarn(MODULE, `unable to register component auction config for: ${adUnitCode} x ${seller}.`);
+    logWarn(MODULE, `unable to register component auction config for ${adUnitCode}`, auctionConfigs);
   }
+}
 
-  next(adUnitCode, componentAuctionConfig);
+function onAuctionInit({auctionId}) {
+  PENDING[auctionId] = {};
+}
+
+function getSlotSignals(bidsReceived = [], bidRequests = []) {
+  let bidfloor, bidfloorcur;
+  if (bidsReceived.length > 0) {
+    const bestBid = bidsReceived.reduce(maximum(currencyCompare(bid => [bid.cpm, bid.currency])));
+    bidfloor = bestBid.cpm;
+    bidfloorcur = bestBid.currency;
+  } else {
+    const floors = bidRequests.map(bid => typeof bid.getFloor === 'function' && bid.getFloor()).filter(f => f);
+    const minFloor = floors.length && floors.reduce(minimum(currencyCompare(floor => [floor.floor, floor.currency])))
+    bidfloor = minFloor?.floor;
+    bidfloorcur = minFloor?.currency;
+  }
+  const cfg = {};
+  if (bidfloor) {
+    deepSetValue(cfg, 'auctionSignals.prebid.bidfloor', bidfloor);
+    bidfloorcur && deepSetValue(cfg, 'auctionSignals.prebid.bidfloorcur', bidfloorcur);
+  }
+  return cfg;
+}
+
+function onAuctionEnd({auctionId, bidsReceived, bidderRequests}) {
+  try {
+    const allReqs = bidderRequests?.flatMap(br => br.bids);
+    Object.entries(PENDING[auctionId]).forEach(([adUnitCode, auctionConfigs]) => {
+      const forThisAdUnit = (bid) => bid.adUnitCode === adUnitCode;
+      const slotSignals = getSlotSignals(bidsReceived?.filter(forThisAdUnit), allReqs?.filter(forThisAdUnit));
+      setComponentAuction(adUnitCode, auctionConfigs.map(cfg => mergeDeep({}, slotSignals, cfg)))
+    })
+  } finally {
+    delete PENDING[auctionId];
+  }
+}
+
+export function addComponentAuctionHook(next, auctionId, adUnitCode, componentAuctionConfig) {
+  if (PENDING.hasOwnProperty(auctionId)) {
+    !PENDING[auctionId].hasOwnProperty(adUnitCode) && (PENDING[auctionId][adUnitCode] = []);
+    PENDING[auctionId][adUnitCode].push(componentAuctionConfig);
+  } else {
+    logWarn(MODULE, `Received component auction config for auction that has closed (auction '${auctionId}', adUnit '${adUnitCode}')`, componentAuctionConfig)
+  }
+  next(auctionId, adUnitCode, componentAuctionConfig);
 }
 
 function isFledgeSupported() {

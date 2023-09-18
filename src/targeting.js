@@ -1,8 +1,6 @@
 import {
   deepAccess,
   deepClone,
-  getHighestCpm,
-  getOldestHighestCpmBid,
   groupBy,
   isAdUnitCodeMatchingSlot,
   isArray,
@@ -24,6 +22,7 @@ import {hook} from './hook.js';
 import {bidderSettings} from './bidderSettings.js';
 import {find, includes} from './polyfill.js';
 import CONSTANTS from './constants.json';
+import {getHighestCpm, getOldestHighestCpmBid} from './utils/reducers.js';
 import {getTTL} from './bidTTL.js';
 
 var pbTargetingKeys = [];

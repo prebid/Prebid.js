@@ -2,6 +2,7 @@ import {getAdServerTargeting} from 'test/fixtures/fixtures.js';
 import {expect} from 'chai';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
+import {getHighestCpm, getLatestHighestCpmBid, getOldestHighestCpmBid} from '../../src/utils/reducers.js';
 import {binarySearch, deepEqual, memoize, waitForElementToLoad} from 'src/utils.js';
 
 var assert = require('assert');
@@ -535,72 +536,6 @@ describe('Utils', function () {
 
     it('return iframe - style', function () {
       assert.ok(output.style);
-    });
-  });
-
-  describe('getHighestCpm', function () {
-    it('should pick the existing highest cpm', function () {
-      let previous = {
-        cpm: 2,
-        timeToRespond: 100
-      };
-      let current = {
-        cpm: 1,
-        timeToRespond: 100
-      };
-      assert.equal(utils.getHighestCpm(previous, current), previous);
-    });
-
-    it('should pick the new highest cpm', function () {
-      let previous = {
-        cpm: 1,
-        timeToRespond: 100
-      };
-      let current = {
-        cpm: 2,
-        timeToRespond: 100
-      };
-      assert.equal(utils.getHighestCpm(previous, current), current);
-    });
-
-    it('should pick the fastest cpm in case of tie', function () {
-      let previous = {
-        cpm: 1,
-        timeToRespond: 100
-      };
-      let current = {
-        cpm: 1,
-        timeToRespond: 50
-      };
-      assert.equal(utils.getHighestCpm(previous, current), current);
-    });
-
-    it('should pick the oldest in case of tie using responseTimeStamp', function () {
-      let previous = {
-        cpm: 1,
-        timeToRespond: 100,
-        responseTimestamp: 1000
-      };
-      let current = {
-        cpm: 1,
-        timeToRespond: 50,
-        responseTimestamp: 2000
-      };
-      assert.equal(utils.getOldestHighestCpmBid(previous, current), previous);
-    });
-
-    it('should pick the latest in case of tie using responseTimeStamp', function () {
-      let previous = {
-        cpm: 1,
-        timeToRespond: 100,
-        responseTimestamp: 1000
-      };
-      let current = {
-        cpm: 1,
-        timeToRespond: 50,
-        responseTimestamp: 2000
-      };
-      assert.equal(utils.getLatestHighestCpmBid(previous, current), current);
     });
   });
 
