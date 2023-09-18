@@ -1,11 +1,11 @@
 import { isFn, isPlainObject } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
-const storageManager = getStorageManager({bidderCode: 'orbidder'});
+const storageManager = getStorageManager({ bidderCode: 'orbidder' });
 
 /**
  * Determines whether or not the given bid response is valid.
@@ -69,7 +69,7 @@ export const spec = {
     return !!(bid.sizes && bid.bidId && bid.params &&
       (bid.params.accountId && (typeof bid.params.accountId === 'string')) &&
       (bid.params.placementId && (typeof bid.params.placementId === 'string')) &&
-      ((typeof bid.params.profile === 'undefined') || (typeof bid.params.profile === 'object')));
+      ((typeof bid.params.keyValues === 'undefined') || (typeof bid.params.keyValues === 'object')));
   },
 
   /**
