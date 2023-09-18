@@ -422,7 +422,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
             bidRequest.start = timestamp();
             return function () {
               onTimelyResponse(bidRequest.bidderRequestId);
-              doneCbs.apply(bidRequest, arguments);
+              doneCb.apply(bidRequest, arguments);
             }
           });
 
