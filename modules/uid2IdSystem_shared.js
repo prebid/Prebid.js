@@ -236,25 +236,24 @@ export class Uid2ApiClient {
       success: async(responseText, xhr) => {
         try {
           const encodedResp = UID2CstgCrypto.base64ToBytes(responseText);
-          box.decrypt(
+          const decrypted = await box.decrypt(
             encodedResp.slice(0, 12),
             encodedResp.slice(12)
-          ).then(decrypted => {
-            const decryptedResponse = new TextDecoder().decode(decrypted);
-            const response = JSON.parse(decryptedResponse);
-            if (this.isCstgApiSuccessResponse(response)) {
-              resolvePromise({
-                status: 'success',
-                identity: response.body,
-              });
-            } else {
-              // A 200 should always be a success response.
-              // Something has gone wrong.
-              rejectPromise(
-                `API error: Response body was invalid for HTTP status 200: ${decryptedResponse}`
-              );
-            }
-          })
+          )
+          const decryptedResponse = new TextDecoder().decode(decrypted);
+          const response = JSON.parse(decryptedResponse);
+          if (this.isCstgApiSuccessResponse(response)) {
+            resolvePromise({
+              status: 'success',
+              identity: response.body,
+            });
+          } else {
+            // A 200 should always be a success response.
+            // Something has gone wrong.
+            rejectPromise(
+              `API error: Response body was invalid for HTTP status 200: ${decryptedResponse}`
+            );
+          }
         } catch (err) {
           rejectPromise(err);
         }
@@ -656,7 +655,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
     _logInfo(`Refreshing token in background with low priority.`);
     refreshTokenAndStore(config.apiBaseUrl, newestAvailableToken, config.clientId, storageManager, _logInfo, _logWarn);
   }
-  let tokens = {
+  const tokens = {
     originalToken: suppliedToken ?? storedTokens?.originalToken,
     latestToken: newestAvailableToken,
   };
