@@ -25,7 +25,6 @@ import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {createBid} from '../../../src/bidfactory.js';
 import {enrichFPD} from '../../../src/fpd/enrichment.js';
 import {mockFpdEnrichments} from '../../helpers/fpd.js';
-
 var assert = require('chai').assert;
 var expect = require('chai').expect;
 
@@ -43,13 +42,12 @@ var adUnits = getAdUnits();
 var adUnitCodes = getAdUnits().map(unit => unit.code);
 var bidsBackHandler = function() {};
 const timeout = 2000;
-var auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout: timeout});
-auction.getBidRequests = getBidRequests;
-auction.getBidsReceived = getBidResponses;
-auction.getAdUnits = getAdUnits;
-auction.getAuctionStatus = function() { return auctionModule.AUCTION_COMPLETED }
+let auction;
 
 function resetAuction() {
+  if (auction == null) {
+    auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout: timeout});
+  }
   $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: false });
   auction.getBidRequests = getBidRequests;
   auction.getBidsReceived = getBidResponses;

@@ -29,18 +29,19 @@ import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
  *
  * Please contact prebid@adkernel.com and we'll add your adapter as an alias.
  */
-const VIDEO_PARAMS = ['pos', 'context', 'placement', 'api', 'mimes', 'protocols', 'playbackmethod', 'minduration', 'maxduration',
+const VIDEO_PARAMS = ['pos', 'context', 'placement', 'plcmt', 'api', 'mimes', 'protocols', 'playbackmethod', 'minduration', 'maxduration',
   'startdelay', 'linearity', 'skip', 'skipmin', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackend', 'boxingallowed'];
 const VIDEO_FPD = ['battr', 'pos'];
 const NATIVE_FPD = ['battr', 'api'];
+const BANNER_PARAMS = ['pos'];
 const BANNER_FPD = ['btype', 'battr', 'pos', 'api'];
 const VERSION = '1.6';
 const SYNC_IFRAME = 1;
 const SYNC_IMAGE = 2;
-const SYNC_TYPES = Object.freeze({
+const SYNC_TYPES = {
   1: 'iframe',
   2: 'image'
-});
+};
 const GVLID = 14;
 
 const NATIVE_MODEL = [
@@ -98,7 +99,6 @@ export const spec = {
     {code: 'displayioads'},
     {code: 'rtbdemand_com'},
     {code: 'bidbuddy'},
-    {code: 'adliveconnect'},
     {code: 'didnadisplay'},
     {code: 'qortex'},
     {code: 'adpluto'},
@@ -276,33 +276,37 @@ function buildImp(bidRequest, secure) {
   var mediaType;
   var sizes = [];
 
-  if (deepAccess(bidRequest, 'mediaTypes.banner')) {
+  if (bidRequest.mediaTypes?.banner) {
     sizes = getAdUnitSizes(bidRequest);
+    let pbBanner = bidRequest.mediaTypes.banner;
     imp.banner = {
+      ...getDefinedParamsOrEmpty(bidRequest.ortb2Imp, BANNER_FPD),
+      ...getDefinedParamsOrEmpty(pbBanner, BANNER_PARAMS),
       format: sizes.map(wh => parseGPTSingleSizeArrayToRtbSize(wh)),
       topframe: 0
     };
-    populateImpFpd(imp.banner, bidRequest, BANNER_FPD);
     mediaType = BANNER;
-  } else if (deepAccess(bidRequest, 'mediaTypes.video')) {
-    let video = deepAccess(bidRequest, 'mediaTypes.video');
-    imp.video = getDefinedParams(video, VIDEO_PARAMS);
-    populateImpFpd(imp.video, bidRequest, VIDEO_FPD);
-    if (video.playerSize) {
-      sizes = video.playerSize[0];
+  } else if (bidRequest.mediaTypes?.video) {
+    let pbVideo = bidRequest.mediaTypes.video;
+    imp.video = {
+      ...getDefinedParamsOrEmpty(bidRequest.ortb2Imp, VIDEO_FPD),
+      ...getDefinedParamsOrEmpty(pbVideo, VIDEO_PARAMS)
+    };
+    if (pbVideo.playerSize) {
+      sizes = pbVideo.playerSize[0];
       imp.video = Object.assign(imp.video, parseGPTSingleSizeArrayToRtbSize(sizes) || {});
-    } else if (video.w && video.h) {
-      imp.video.w = video.w;
-      imp.video.h = video.h;
+    } else if (pbVideo.w && pbVideo.h) {
+      imp.video.w = pbVideo.w;
+      imp.video.h = pbVideo.h;
     }
     mediaType = VIDEO;
-  } else if (deepAccess(bidRequest, 'mediaTypes.native')) {
+  } else if (bidRequest.mediaTypes?.native) {
     let nativeRequest = buildNativeRequest(bidRequest.mediaTypes.native);
     imp.native = {
+      ...getDefinedParamsOrEmpty(bidRequest.ortb2Imp, NATIVE_FPD),
       ver: '1.1',
       request: JSON.stringify(nativeRequest)
     };
-    populateImpFpd(imp.native, bidRequest, NATIVE_FPD);
     mediaType = NATIVE;
   } else {
     throw new Error('Unsupported bid received');
@@ -315,6 +319,13 @@ function buildImp(bidRequest, secure) {
     imp.secure = 1;
   }
   return imp;
+}
+
+function getDefinedParamsOrEmpty(object, params) {
+  if (object === undefined) {
+    return {};
+  }
+  return getDefinedParams(object, params);
 }
 
 /**
@@ -344,19 +355,6 @@ function buildNativeRequest(nativeReq) {
     request.assets.push(assetRoot);
   }
   return request;
-}
-
-/**
- * Populate impression-level FPD from bid request
- * @param target {Object}
- * @param bidRequest {BidRequest}
- * @param props {String[]}
- */
-function populateImpFpd(target, bidRequest, props) {
-  if (bidRequest.ortb2Imp === undefined) {
-    return;
-  }
-  Object.assign(target, getDefinedParams(bidRequest.ortb2Imp, props));
 }
 
 /**

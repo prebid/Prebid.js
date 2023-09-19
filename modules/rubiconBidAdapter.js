@@ -139,7 +139,9 @@ var sizeMap = {
   576: '610x877',
   578: '980x552',
   580: '505x656',
-  622: '192x160'
+  622: '192x160',
+  632: '1200x450',
+  634: '340x450'
 };
 
 _each(sizeMap, (item, key) => sizeMap[item] = key);
@@ -537,7 +539,9 @@ export const spec = {
             data['eid_id5-sync.com'] = `${eid.uids[0].id}^${eid.uids[0].atype}^${(eid.uids[0].ext && eid.uids[0].ext.linkType) || ''}`;
           } else {
             // add anything else with this generic format
-            data[`eid_${eid.source}`] = `${eid.uids[0].id}^${eid.uids[0].atype || ''}`;
+            // if rubicon drop ^
+            const id = eid.source === 'rubiconproject.com' ? eid.uids[0].id : `${eid.uids[0].id}^${eid.uids[0].atype || ''}`
+            data[`eid_${eid.source}`] = id;
           }
           // send AE "ppuid" signal if exists, and hasn't already been sent
           if (!data['ppuid']) {
