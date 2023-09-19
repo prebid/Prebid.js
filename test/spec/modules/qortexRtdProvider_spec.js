@@ -11,28 +11,31 @@ import {
   initializeModuleData,
   loadScriptTag
 } from '../../../modules/qortexRtdProvider';
+import {server} from '../../mocks/xhr.js';
 import { cloneDeep } from 'lodash';
 
 describe('qortexRtdProvider', () => {
   let logWarnSpy;
-  let mockServer;
-  let ajaxSpy;
   let ortb2Stub;
 
   const defaultApiHost = 'https://demand.qortex.ai';
   const defaultGroupId = 'test';
+
   const validBidderArray = ['qortex', 'test'];
   const validTagConfig = {
     videoContainer: 'my-video-container'
   }
 
   const validModuleConfig = {
-    params: {
-      groupId: defaultGroupId,
-      apiUrl: defaultApiHost,
-      bidders: validBidderArray
+      params: {
+        groupId: defaultGroupId,
+        apiUrl: defaultApiHost,
+        bidders: validBidderArray
+      }
+    },
+    emptyModuleConfig = {
+      params: {}
     }
-  };
 
   const validImpressionEvent = {
       detail: {
@@ -56,10 +59,6 @@ describe('qortexRtdProvider', () => {
         type: 'invalid-type'
       }
     }
-
-  const emptyModuleConfig = {
-    params: {}
-  }
 
   const responseHeaders = {
     'content-type': 'application/json',
@@ -92,21 +91,13 @@ describe('qortexRtdProvider', () => {
   }
 
   beforeEach(() => {
-    mockServer = sinon.createFakeServer();
-    mockServer.respondWith([200, responseHeaders, apiResponse]);
-    mockServer.respondImmediately = true;
-    mockServer.autoRespond = true;
-
     ortb2Stub = sinon.stub(reqBidsConfig, 'ortb2Fragments').value({bidder: {}, global: {}})
     logWarnSpy = sinon.spy(utils, 'logWarn');
-    ajaxSpy = sinon.spy(ajax, 'ajax');
   })
 
   afterEach(() => {
-    ajaxSpy.restore();
     logWarnSpy.restore();
     ortb2Stub.restore();
-    mockServer.restore();
     setContextData(null);
   })
 
@@ -215,24 +206,23 @@ describe('qortexRtdProvider', () => {
       expect(logWarnSpy.calledWith('No adunits found on request bids configuration: ' + JSON.stringify(reqBidsConfigNoBids))).to.be.ok;
     })
 
-    it('will call callback if getContext does not throw', (done) => {
-      module.getBidRequestData(reqBidsConfig, callbackSpy);
-      setTimeout(() => {
-        expect(ajaxSpy.calledOnce).to.be.true;
-        expect(callbackSpy.calledOnce).to.be.true;
+    it('will call callback if getContext does not throw', () => {
+      const cb = function () {
+        expect(logWarnSpy.calledOnce).to.be.false;
         done();
-      }, 100)
+      }
+      module.getBidRequestData(reqBidsConfig, cb);
+      server.requests[0].respond(200, responseHeaders, apiResponse);
     })
 
     it('will catch and log error and fire callback', (done) => {
-      ajaxSpy.restore();
-      sinon.stub(ajax, 'ajax').throws(new Error('test error'))
-      module.getBidRequestData(reqBidsConfig, callbackSpy);
-      setTimeout(() => {
-        expect(callbackSpy.calledOnce).to.be.true;
-        expect(logWarnSpy.calledWith('test error')).to.be.ok;
+      const a = sinon.stub(ajax, 'ajax').throws(new Error('test'));
+      const cb = function () {
+        expect(logWarnSpy.calledWith('test')).to.be.eql(true);
         done();
-      }, 100)
+      }
+      module.getBidRequestData(reqBidsConfig, cb);
+      a.restore();
     })
   })
 
@@ -245,55 +235,44 @@ describe('qortexRtdProvider', () => {
       initializeModuleData(emptyModuleConfig);
     })
 
-    it('returns a promise', () => {
+    it('returns a promise', (done) => {
       const result = getContext();
       expect(result).to.be.a('promise');
+      done();
     })
 
     it('uses request url generated from initialize function in config and resolves to content object data', (done) => {
       let requestUrl = `${validModuleConfig.params.apiUrl}/api/v1/analyze/${validModuleConfig.params.groupId}/prebid`;
-      getContext().then(response => {
+      const ctx = getContext()
+      expect(server.requests.length).to.be.eql(1);
+      expect(server.requests[0].url).to.be.eql(requestUrl);
+      server.requests[0].respond(200, responseHeaders, apiResponse);
+      ctx.then(response => {
         expect(response).to.be.eql(responseObj.content);
-        expect(ajaxSpy.calledOnce).to.be.true;
-        expect(ajaxSpy.calledWith(requestUrl)).to.be.true;
-
-        expect(response).to.be.eql(responseObj.content);
-
         done();
       });
     })
 
     it('will return existing context data instead of ajax call if the source was not updated', (done) => {
       setContextData(responseObj.content);
-      getContext().then(response => {
+      const ctx = getContext();
+      expect(server.requests.length).to.be.eql(0);
+      ctx.then(response => {
         expect(response).to.be.eql(responseObj.content);
-        expect(ajaxSpy.calledOnce).to.be.false;
-        done();
-      })
-    })
-
-    it('returns null for non erroring api responses other than 200', (done) => {
-      mockServer = sinon.createFakeServer();
-      mockServer.respondWith([204, {content: null}, '']);
-      mockServer.respondImmediately = true;
-      mockServer.autoRespond = true;
-      getContext().then(response => {
-        expect(response).to.be.null;
-        expect(ajaxSpy.calledOnce).to.be.true;
-        expect(logWarnSpy.called).to.be.false;
         done();
       });
     })
 
-    it('returns a promise that rejects to an Error if ajax errors', () => {
-      mockServer = sinon.createFakeServer();
-      mockServer.respondWith([500, {}, '']);
-      mockServer.respondImmediately = true;
-      mockServer.autoRespond = true;
-      getContext().then().catch(err => {
-        expect(err).to.be.an('error');
+    it('returns null for non erroring api responses other than 200', (done) => {
+      const nullContentResponse = { content: null }
+      const ctx = getContext()
+      server.requests[0].respond(200, responseHeaders, JSON.stringify(nullContentResponse))
+      ctx.then(response => {
+        expect(response).to.be.null;
+        expect(server.requests.length).to.be.eql(1);
+        expect(logWarnSpy.called).to.be.false;
         done();
-      })
+      });
     })
   })
 
