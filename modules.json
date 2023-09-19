@@ -35,5 +35,6 @@
   "id5IdSystem",
   "intersectionRtdProvider",
   "mediasquareBidAdapter",
-  "shortcutBidAdapter"
+  "shortcutBidAdapter",
+  "unifiedIdHubvisorSystem"
 ]
