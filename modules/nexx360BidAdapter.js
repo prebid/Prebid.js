@@ -190,7 +190,7 @@ function interpretResponse(serverResponse) {
           demandSource: bid.ext.ssp,
         },
       };
-      if (allowAlternateBidderCodes) response.bidderCode = `n360-${bid.ext.ssp}`;
+      if (allowAlternateBidderCodes) response.bidderCode = `n360_${bid.ext.ssp}`;
 
       if (bid.ext.mediaType === BANNER) {
         if (bid.adm) {

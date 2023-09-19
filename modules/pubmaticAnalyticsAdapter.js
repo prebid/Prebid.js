@@ -22,6 +22,7 @@ const ERROR = 'error';
 const REQUEST_ERROR = 'request-error';
 const TIMEOUT_ERROR = 'timeout-error';
 const EMPTY_STRING = '';
+const OPEN_AUCTION_DEAL_ID = '-1';
 const MEDIA_TYPE_BANNER = 'banner';
 const CURRENCY_USD = 'USD';
 const BID_PRECISION = 2;
@@ -270,9 +271,10 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
         'psz': bid.bidResponse ? (bid.bidResponse.dimensions.width + 'x' + bid.bidResponse.dimensions.height) : '0x0',
         'eg': bid.bidResponse ? bid.bidResponse.bidGrossCpmUSD : 0,
         'en': bid.bidResponse ? bid.bidResponse.bidPriceUSD : 0,
-        'di': bid.bidResponse ? (bid.bidResponse.dealId || EMPTY_STRING) : EMPTY_STRING,
+        'di': bid.bidResponse ? (bid.bidResponse.dealId || OPEN_AUCTION_DEAL_ID) : OPEN_AUCTION_DEAL_ID,
         'dc': bid.bidResponse ? (bid.bidResponse.dealChannel || EMPTY_STRING) : EMPTY_STRING,
-        'l1': bid.bidResponse ? bid.clientLatencyTimeMs : 0,
+        'l1': bid.bidResponse ? bid.partnerTimeToRespond : 0,
+        'ol1': bid.bidResponse ? bid.clientLatencyTimeMs : 0,
         'l2': 0,
         'adv': bid.bidResponse ? getAdDomain(bid.bidResponse) || undefined : undefined,
         'ss': isS2SBidder(bid.bidder),
@@ -428,6 +430,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&eg=' + enc(winningBid.bidResponse.bidGrossCpmUSD);
   pixelURL += '&kgpv=' + enc(getValueForKgpv(winningBid, adUnitId));
   pixelURL += '&piid=' + enc(winningBid.bidResponse.partnerImpId || EMPTY_STRING);
+  pixelURL += '&di=' + enc(winningBid?.bidResponse?.dealId || OPEN_AUCTION_DEAL_ID);
 
   pixelURL += '&plt=' + enc(getDevicePlatform());
   pixelURL += '&psz=' + enc((winningBid?.bidResponse?.dimensions?.width || '0') + 'x' +
@@ -505,6 +508,10 @@ function bidResponseHandler(args) {
   bid.adId = args.adId;
   bid.source = formatSource(bid.source || args.source);
   setBidStatus(bid, args);
+  const latency = args?.timeToRespond || Date.now() - cache.auctions[args.auctionId].timestamp;
+  const auctionTime = cache.auctions[args.auctionId].timeout;
+  // Check if latency is greater than auctiontime+150, then log auctiontime+150 to avoid large numbers
+  bid.partnerTimeToRespond = latency > (auctionTime + 150) ? (auctionTime + 150) : latency;
   bid.clientLatencyTimeMs = Date.now() - cache.auctions[args.auctionId].timestamp;
   bid.bidResponse = parseBidResponse(args);
 }

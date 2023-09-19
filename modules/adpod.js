@@ -28,7 +28,6 @@ import {
 import {
   addBidToAuction,
   AUCTION_IN_PROGRESS,
-  doCallbacksIfTimedout,
   getPriceByGranularity,
   getPriceGranularity
 } from '../src/auction.js';
@@ -212,9 +211,6 @@ function firePrebidCacheCall(auctionInstance, bidList, afterBidAdded) {
   store(bidList, function (error, cacheIds) {
     if (error) {
       logWarn(`Failed to save to the video cache: ${error}. Video bid(s) must be discarded.`);
-      for (let i = 0; i < bidList.length; i++) {
-        doCallbacksIfTimedout(auctionInstance, bidList[i]);
-      }
     } else {
       for (let i = 0; i < cacheIds.length; i++) {
         // when uuid in response is empty string then the key already existed, so this bid wasn't cached

@@ -3,23 +3,38 @@
  */
 import * as utils from './utils.js'
 import CONSTANTS from './constants.json';
+import {ttlCollection} from './utils/ttlCollection.js';
+import {config} from './config.js';
+const TTL_CONFIG = 'eventHistoryTTL';
 
-var slice = Array.prototype.slice;
-var push = Array.prototype.push;
-
-// define entire events
-// var allEvents = ['bidRequested','bidResponse','bidWon','bidTimeout'];
-var allEvents = utils._map(CONSTANTS.EVENTS, function (v) {
-  return v;
-});
-
-var idPaths = CONSTANTS.EVENT_ID_PATHS;
+let eventTTL = null;
 
 // keep a record of all events fired
-var eventsFired = [];
+const eventsFired = ttlCollection({
+  monotonic: true,
+  ttl: () => eventTTL,
+})
+
+config.getConfig(TTL_CONFIG, (val) => {
+  const previous = eventTTL;
+  val = val?.[TTL_CONFIG];
+  eventTTL = typeof val === 'number' ? val * 1000 : null;
+  if (previous !== eventTTL) {
+    eventsFired.refresh();
+  }
+});
+
+let slice = Array.prototype.slice;
+let push = Array.prototype.push;
+
+// define entire events
+let allEvents = Object.values(CONSTANTS.EVENTS);
+
+const idPaths = CONSTANTS.EVENT_ID_PATHS;
+
 const _public = (function () {
-  var _handlers = {};
-  var _public = {};
+  let _handlers = {};
+  let _public = {};
 
   /**
    *
@@ -30,18 +45,18 @@ const _public = (function () {
   function _dispatch(eventString, args) {
     utils.logMessage('Emitting event for: ' + eventString);
 
-    var eventPayload = args[0] || {};
-    var idPath = idPaths[eventString];
-    var key = eventPayload[idPath];
-    var event = _handlers[eventString] || { que: [] };
-    var eventKeys = utils._map(event, function (v, k) {
+    let eventPayload = args[0] || {};
+    let idPath = idPaths[eventString];
+    let key = eventPayload[idPath];
+    let event = _handlers[eventString] || { que: [] };
+    let eventKeys = utils._map(event, function (v, k) {
       return k;
     });
 
-    var callbacks = [];
+    let callbacks = [];
 
     // record the event:
-    eventsFired.push({
+    eventsFired.add({
       eventType: eventString,
       args: eventPayload,
       id: key,
@@ -79,7 +94,7 @@ const _public = (function () {
   _public.on = function (eventString, handler, id) {
     // check whether available event or not
     if (_checkAvailableEvent(eventString)) {
-      var event = _handlers[eventString] || { que: [] };
+      let event = _handlers[eventString] || { que: [] };
 
       if (id) {
         event[id] = event[id] || { que: [] };
@@ -95,12 +110,12 @@ const _public = (function () {
   };
 
   _public.emit = function (event) {
-    var args = slice.call(arguments, 1);
+    let args = slice.call(arguments, 1);
     _dispatch(event, args);
   };
 
   _public.off = function (eventString, handler, id) {
-    var event = _handlers[eventString];
+    let event = _handlers[eventString];
 
     if (utils.isEmpty(event) || (utils.isEmpty(event.que) && utils.isEmpty(event[id]))) {
       return;
@@ -112,14 +127,14 @@ const _public = (function () {
 
     if (id) {
       utils._each(event[id].que, function (_handler) {
-        var que = event[id].que;
+        let que = event[id].que;
         if (_handler === handler) {
           que.splice(que.indexOf(_handler), 1);
         }
       });
     } else {
       utils._each(event.que, function (_handler) {
-        var que = event.que;
+        let que = event.que;
         if (_handler === handler) {
           que.splice(que.indexOf(_handler), 1);
         }
@@ -142,13 +157,7 @@ const _public = (function () {
    * @return {Array} array of events fired
    */
   _public.getEvents = function () {
-    var arrayCopy = [];
-    utils._each(eventsFired, function (value) {
-      var newProp = Object.assign({}, value);
-      arrayCopy.push(newProp);
-    });
-
-    return arrayCopy;
+    return eventsFired.toArray().map(val => Object.assign({}, val))
   };
 
   return _public;
@@ -159,5 +168,5 @@ utils._setEventEmitter(_public.emit.bind(_public));
 export const {on, off, get, getEvents, emit, addEvents} = _public;
 
 export function clearEvents() {
-  eventsFired.length = 0;
+  eventsFired.clear();
 }
