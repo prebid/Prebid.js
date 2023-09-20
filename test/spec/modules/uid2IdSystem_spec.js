@@ -29,7 +29,7 @@ const clientSideGeneratedToken = 'client-side-generated-advertising-token';
 const legacyConfigParams = {storage: null};
 const serverCookieConfigParams = { uid2ServerCookie: publisherCookieName };
 const newServerCookieConfigParams = { uid2Cookie: publisherCookieName };
-const cstgConfigParams = { serverPublicKey: 'UID2-X-I-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEtXJdTSZAYHvoRDWiehMHoWF1BNPuqLs5w2ZHiAZ1IJc7O4/z0ojPTB0V+KYX/wxQK0hxx6kxCvHj335eI/ZQsQ==', subscriptionId: 'subscription-id' }
+const cstgConfigParams = { serverPublicKey: 'UID2-X-L-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEtXJdTSZAYHvoRDWiehMHoWF1BNPuqLs5w2ZHiAZ1IJc7O4/z0ojPTB0V+KYX/wxQK0hxx6kxCvHj335eI/ZQsQ==', subscriptionId: 'subscription-id' }
 
 const makeUid2IdentityContainer = (token) => ({uid2: {id: token}});
 let useLocalStorage = false;
@@ -504,7 +504,7 @@ describe(`UID2 module`, function () {
         })
       })
 
-      it('when originalIdentity not match, the auction should have no uid2', async function() {
+      it('when originalIdentity not match, the auction should has no uid2', async function() {
         const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken);
         const moduleCookie = {originalIdentity: '123', latestToken: refreshedIdentity};
         coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
@@ -514,4 +514,32 @@ describe(`UID2 module`, function () {
       });
     })
   });
+
+  describe('When neither token nor CSTG config provided', function () {
+    describe('when there is a token in the module cookie', function () {
+      it('the auction use stored token if it is valid', async function () {
+        const originalIdentity = apiHelpers.makeTokenResponse(initialToken);
+        const moduleCookie = {originalToken: originalIdentity, latestToken: originalIdentity};
+        coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
+        config.setConfig(makePrebidConfig({}));
+        const bid = await runAuction();
+        expectToken(bid, initialToken);
+      })
+
+      it('the auction should has no uid2 if stored token is invalid', async function () {
+        const originalIdentity = apiHelpers.makeTokenResponse(initialToken, true, true, true);
+        const moduleCookie = {originalToken: originalIdentity, latestToken: originalIdentity};
+        coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
+        config.setConfig(makePrebidConfig({}));
+        const bid = await runAuction();
+        expectNoIdentity(bid);
+      })
+    })
+
+    it('the auction should has no uid2', async function () {
+      config.setConfig(makePrebidConfig({}));
+      const bid = await runAuction();
+      expectNoIdentity(bid);
+    })
+  })
 });
