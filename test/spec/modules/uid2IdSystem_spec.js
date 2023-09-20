@@ -516,7 +516,7 @@ describe(`UID2 module`, function () {
   });
 
   describe('When neither token nor CSTG config provided', function () {
-    describe('when there is a token in the module cookie', function () {
+    describe('when there is a non-cstg-derived token in the module cookie', function () {
       it('the auction use stored token if it is valid', async function () {
         const originalIdentity = apiHelpers.makeTokenResponse(initialToken);
         const moduleCookie = {originalToken: originalIdentity, latestToken: originalIdentity};
@@ -529,6 +529,26 @@ describe(`UID2 module`, function () {
       it('the auction should has no uid2 if stored token is invalid', async function () {
         const originalIdentity = apiHelpers.makeTokenResponse(initialToken, true, true, true);
         const moduleCookie = {originalToken: originalIdentity, latestToken: originalIdentity};
+        coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
+        config.setConfig(makePrebidConfig({}));
+        const bid = await runAuction();
+        expectNoIdentity(bid);
+      })
+    })
+
+    describe('when there is a cstg-derived token in the module cookie', function () {
+      it('the auction use stored token if it is valid', async function () {
+        const originalIdentity = apiHelpers.makeTokenResponse(initialToken);
+        const moduleCookie = {originalIdentity: '123', originalToken: originalIdentity, latestToken: originalIdentity};
+        coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
+        config.setConfig(makePrebidConfig({}));
+        const bid = await runAuction();
+        expectToken(bid, initialToken);
+      })
+
+      it('the auction should has no uid2 if stored token is invalid', async function () {
+        const originalIdentity = apiHelpers.makeTokenResponse(initialToken, true, true, true);
+        const moduleCookie = {originalIdentity: '123', originalToken: originalIdentity, latestToken: originalIdentity};
         coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
         config.setConfig(makePrebidConfig({}));
         const bid = await runAuction();
