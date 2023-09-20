@@ -481,7 +481,11 @@ export function PrebidServer() {
           done();
           doClientSideSyncs(requestedBidders, gdprConsent, uspConsent, gppConsent);
         },
-        onError: done,
+        onError(msg, error) {
+          logError(`Prebid server call failed: '${msg}'`, error);
+          bidRequests.forEach(bidderRequest => events.emit(CONSTANTS.EVENTS.BIDDER_ERROR, {error, bidderRequest}));
+          done();
+        },
         onBid: function ({adUnit, bid}) {
           const metrics = bid.metrics = s2sBidRequest.metrics.fork().renameWith();
           metrics.checkpoint('addBidResponse');
@@ -500,7 +504,7 @@ export function PrebidServer() {
           }
         },
         onFledge: ({adUnitCode, config}) => {
-          addComponentAuction(adUnitCode, config);
+          addComponentAuction(bidRequests[0].auctionId, adUnitCode, config);
         }
       })
     }

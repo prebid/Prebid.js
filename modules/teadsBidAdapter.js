@@ -174,9 +174,13 @@ function getReferrerInfo(bidderRequest) {
 
 function getPageTitle() {
   try {
-    return window.top.document.title || document.title;
+    const ogTitle = window.top.document.querySelector('meta[property="og:title"]')
+
+    return window.top.document.title || (ogTitle && ogTitle.content) || '';
   } catch (e) {
-    return document.title;
+    const ogTitle = document.querySelector('meta[property="og:title"]')
+
+    return document.title || (ogTitle && ogTitle.content) || '';
   }
 }
 
@@ -185,9 +189,7 @@ function getPageDescription() {
 
   try {
     element = window.top.document.querySelector('meta[name="description"]') ||
-      window.top.document.querySelector('meta[property="og:description"]') ||
-      document.querySelector('meta[name="description"]') ||
-      document.querySelector('meta[property="og:description"]')
+      window.top.document.querySelector('meta[property="og:description"]')
   } catch (e) {
     element = document.querySelector('meta[name="description"]') ||
       document.querySelector('meta[property="og:description"]')

@@ -79,6 +79,7 @@ const SOURCE_RTI_MAPPING = {
   'intimatemerger.com': '',
   '33across.com': '',
   'liveintent.indexexchange.com': '',
+  'google.com': ''
 };
 const PROVIDERS = [
   'britepoolid',
@@ -89,7 +90,8 @@ const PROVIDERS = [
   'connectid',
   'tapadId',
   'quantcastId',
-  'pubProvidedId'
+  'pubProvidedId',
+  'pairId'
 ];
 const REQUIRED_VIDEO_PARAMS = ['mimes', 'minduration', 'maxduration']; // note: protocol/protocols is also reqd
 const VIDEO_PARAMS_ALLOW_LIST = [

@@ -276,7 +276,7 @@ export const spec = {
       let isVideo = !!bid.mediaTypes.video;
       let data = {
         id: bid.bidId,
-        tid: bid.transactionId,
+        tid: bid.ortb2Imp?.ext?.tid,
         tagid,
         secure
       };
@@ -296,7 +296,7 @@ export const spec = {
     });
 
     let cadentData = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.auctionId ?? bidderRequest.bidderRequestId,
       imp: cadentImps,
       device,
       site,
