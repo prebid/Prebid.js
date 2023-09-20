@@ -12,7 +12,7 @@ export const META_DESCRIPTION = 'description'
 
 const VIDEO = 'video'
 const BANNER = 'banner'
-
+window.bliinkBid = window.bliinkBid || {};
 const supportedMediaTypes = [BANNER, VIDEO]
 const aliasBidderCode = ['bk']
 
@@ -23,6 +23,37 @@ function getCoppa() {
   return config.getConfig('coppa') === true ? 1 : 0;
 }
 
+/**
+ * Retrieves the effective connection type from the browser's Navigator API.
+ * @returns {string} The effective connection type or 'unsupported' if unavailable.
+ */
+export function getEffectiveConnectionType() {
+  /**
+   * The effective connection type obtained from the browser's Navigator API.
+   * @type {string|undefined}
+   */
+  const navigatorEffectiveType = navigator?.connection?.effectiveType;
+
+  if (navigatorEffectiveType) {
+    return navigatorEffectiveType;
+  }
+
+  return 'unsupported';
+}
+
+/**
+ * Retrieves the user IDs as EIDs from the first valid bid request.
+ *
+ * @param {Array} validBidRequests - Array of valid bid requests
+ * @returns {Array|undefined} - Array of user IDs as EIDs, or undefined if not found
+ */
+export function getUserIds(validBidRequests) {
+  /** @type {Object} */
+  const firstBidRequest = validBidRequests?.[0]
+  if (firstBidRequest?.userIds) {
+    return firstBidRequest.userIds
+  }
+}
 export function getMetaList(name) {
   if (!name || name.length === 0) return []
 
@@ -151,13 +182,16 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
   if (!validBidRequests || !bidderRequest || !bidderRequest.bids) return null
 
   const tags = bidderRequest.bids.map((bid) => {
+    const id = bid.params.tagId
     return {
       sizes: bid.sizes.map((size) => ({ w: size[0], h: size[1] })),
-      id: bid.params.tagId,
+      id,
       // TODO: bidId is globally unique, is it a good choice for transaction ID (vs ortb2Imp.ext.tid)?
       transactionId: bid.bidId,
       mediaTypes: Object.keys(bid.mediaTypes),
       imageUrl: deepAccess(bid, 'params.imageUrl', ''),
+      videoUrl: deepAccess(bid, 'params.videoUrl', ''),
+      refresh: (window.bliinkBid[id] = (window.bliinkBid[id] ?? -1) + 1) || undefined,
     };
   });
 
@@ -167,10 +201,16 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
     pageUrl: deepAccess(bidderRequest, 'refererInfo.page'),
     pageDescription: getMetaValue(META_DESCRIPTION),
     keywords: getKeywords().join(','),
+    ect: getEffectiveConnectionType(),
   };
+
   const schain = deepAccess(validBidRequests[0], 'schain')
+  const userIds = getUserIds(validBidRequests)
   if (schain) {
     request.schain = schain
+  }
+  if (userIds) {
+    request.userIds = userIds
   }
   const gdprConsent = deepAccess(bidderRequest, 'gdprConsent');
   if (!!gdprConsent && gdprConsent.gdprApplies) {
@@ -183,7 +223,6 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
   if (bidderRequest.uspConsent) {
     deepSetValue(request, 'uspConsent', bidderRequest.uspConsent);
   }
-
   return {
     method: 'POST',
     url: BLIINK_ENDPOINT_ENGINE,

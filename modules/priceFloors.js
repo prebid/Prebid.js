@@ -13,7 +13,8 @@ import {
   mergeDeep,
   parseGPTSingleSizeArray,
   parseUrl,
-  pick
+  pick,
+  deepEqual
 } from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {config} from '../src/config.js';
@@ -27,8 +28,8 @@ import {bidderSettings} from '../src/bidderSettings.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {IMP, PBS, registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.js';
-import {beConvertCurrency} from '../src/utils/currency.js';
 import {adjustCpm} from '../src/utils/cpm.js';
+import {convertCurrency} from '../libraries/currencyUtils/currency.js';
 
 /**
  * @summary This Module is intended to provide users with the ability to dynamically set and enforce price floors on a per auction basis.
@@ -40,10 +41,13 @@ const MODULE_NAME = 'Price Floors';
  */
 const ajax = ajaxBuilder(10000);
 
+// eslint-disable-next-line symbol-description
+const SYN_FIELD = Symbol();
+
 /**
  * @summary Allowed fields for rules to have
  */
-export let allowedFields = ['gptSlot', 'adUnitCode', 'size', 'domain', 'mediaType'];
+export let allowedFields = [SYN_FIELD, 'gptSlot', 'adUnitCode', 'size', 'domain', 'mediaType'];
 
 /**
  * @summary This is a flag to indicate if a AJAX call is processing for a floors request
@@ -104,6 +108,7 @@ function getAdUnitCode(request, response, {index = auctionManager.index} = {}) {
  * @summary floor field types with their matching functions to resolve the actual matched value
  */
 export let fieldMatchingFunctions = {
+  [SYN_FIELD]: () => '*',
   'size': (bidRequest, bidResponse) => parseGPTSingleSizeArray(bidResponse.size) || '*',
   'mediaType': (bidRequest, bidResponse) => bidResponse.mediaType || 'banner',
   'gptSlot': (bidRequest, bidResponse) => getGptSlotFromAdUnit((bidRequest || bidResponse).transactionId) || getGptSlotInfoForAdUnitCode(getAdUnitCode(bidRequest, bidResponse)).gptSlot,
@@ -117,6 +122,7 @@ export let fieldMatchingFunctions = {
  * Returns array of Tuple [exact match, catch all] for each field in rules file
  */
 function enumeratePossibleFieldValues(floorFields, bidObject, responseObject) {
+  if (!floorFields.length) return [];
   // generate combination of all exact matches and catch all for each field type
   return floorFields.reduce((accum, field) => {
     let exactMatch = fieldMatchingFunctions[field](bidObject, responseObject) || '*';
@@ -132,7 +138,9 @@ function enumeratePossibleFieldValues(floorFields, bidObject, responseObject) {
  */
 export function getFirstMatchingFloor(floorData, bidObject, responseObject = {}) {
   let fieldValues = enumeratePossibleFieldValues(deepAccess(floorData, 'schema.fields') || [], bidObject, responseObject);
-  if (!fieldValues.length) return { matchingFloor: floorData.default };
+  if (!fieldValues.length) {
+    return {matchingFloor: undefined}
+  }
 
   // look to see if a request for this context was made already
   let matchingInput = fieldValues.map(field => field[0]).join('-');
@@ -146,9 +154,9 @@ export function getFirstMatchingFloor(floorData, bidObject, responseObject = {})
 
   let matchingData = {
     floorMin: floorData.floorMin || 0,
-    floorRuleValue: isNaN(floorData.values[matchingRule]) ? floorData.default : floorData.values[matchingRule],
+    floorRuleValue: floorData.values[matchingRule],
     matchingData: allPossibleMatches[0], // the first possible match is an "exact" so contains all data relevant for anlaytics adapters
-    matchingRule
+    matchingRule: matchingRule === floorData.meta?.defaultRule ? undefined : matchingRule
   };
   // use adUnit floorMin as priority!
   const floorMin = deepAccess(bidObject, 'ortb2Imp.ext.prebid.floors.floorMin');
@@ -300,14 +308,20 @@ function normalizeRulesForAuction(floorData, adUnitCode) {
  * Only called if no set config or fetch level data has returned
  */
 export function getFloorDataFromAdUnits(adUnits) {
+  const schemaAu = adUnits.find(au => au.floors?.schema != null);
   return adUnits.reduce((accum, adUnit) => {
-    if (isFloorsDataValid(adUnit.floors)) {
+    if (adUnit.floors?.schema != null && !deepEqual(adUnit.floors.schema, schemaAu?.floors?.schema)) {
+      logError(`${MODULE_NAME}: adUnit '${adUnit.code}' declares a different schema from one previously declared by adUnit '${schemaAu.code}'. Floor config for '${adUnit.code}' will be ignored.`)
+      return accum;
+    }
+    const floors = Object.assign({}, schemaAu?.floors, {values: undefined}, adUnit.floors)
+    if (isFloorsDataValid(floors)) {
       // if values already exist we want to not overwrite them
       if (!accum.values) {
-        accum = getFloorsDataForAuction(adUnit.floors, adUnit.code);
+        accum = getFloorsDataForAuction(floors, adUnit.code);
         accum.location = 'adUnit';
       } else {
-        let newRules = getFloorsDataForAuction(adUnit.floors, adUnit.code).values;
+        let newRules = getFloorsDataForAuction(floors, adUnit.code).values;
         // copy over the new rules into our values object
         Object.assign(accum.values, newRules);
       }
@@ -443,7 +457,26 @@ function validateRules(floorsData, numFields, delimiter) {
   return Object.keys(floorsData.values).length > 0;
 }
 
+export function normalizeDefault(model) {
+  if (isNumber(model.default)) {
+    let defaultRule = '*';
+    const numFields = (model.schema?.fields || []).length;
+    if (!numFields) {
+      deepSetValue(model, 'schema.fields', [SYN_FIELD]);
+    } else {
+      defaultRule = Array(numFields).fill('*').join(model.schema?.delimiter || '|');
+    }
+    model.values = model.values || {};
+    if (model.values[defaultRule] == null) {
+      model.values[defaultRule] = model.default;
+      model.meta = {defaultRule};
+    }
+  }
+  return model;
+}
+
 function modelIsValid(model) {
+  model = normalizeDefault(model);
   // schema.fields has only allowed attributes
   if (!validateSchemaFields(deepAccess(model, 'schema.fields'))) {
     return false;
@@ -794,8 +827,8 @@ export function setImpExtPrebidFloors(imp, bidRequest, context) {
     if (floorMinCur == null) { floorMinCur = imp.bidfloorcur }
     const ortb2ImpFloorCur = imp.ext?.prebid?.floors?.floorMinCur || imp.ext?.prebid?.floorMinCur || floorMinCur;
     const ortb2ImpFloorMin = imp.ext?.prebid?.floors?.floorMin || imp.ext?.prebid?.floorMin;
-    const convertedFloorMinValue = beConvertCurrency(imp.bidfloor, imp.bidfloorcur, floorMinCur);
-    const convertedOrtb2ImpFloorMinValue = ortb2ImpFloorMin && ortb2ImpFloorCur ? beConvertCurrency(ortb2ImpFloorMin, ortb2ImpFloorCur, floorMinCur) : false;
+    const convertedFloorMinValue = convertCurrency(imp.bidfloor, imp.bidfloorcur, floorMinCur);
+    const convertedOrtb2ImpFloorMinValue = ortb2ImpFloorMin && ortb2ImpFloorCur ? convertCurrency(ortb2ImpFloorMin, ortb2ImpFloorCur, floorMinCur) : false;
 
     const lowestImpFloorMin = convertedOrtb2ImpFloorMinValue && convertedOrtb2ImpFloorMinValue < convertedFloorMinValue
       ? convertedOrtb2ImpFloorMinValue
