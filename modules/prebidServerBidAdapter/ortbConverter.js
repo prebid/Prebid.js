@@ -17,13 +17,14 @@ import {pbsExtensions} from '../../libraries/pbsExtensions/pbsExtensions.js';
 import {setImpBidParams} from '../../libraries/pbsExtensions/processors/params.js';
 import {SUPPORTED_MEDIA_TYPES} from '../../libraries/pbsExtensions/processors/mediaType.js';
 import {IMP, REQUEST, RESPONSE} from '../../src/pbjsORTB.js';
-import {beConvertCurrency} from '../../src/utils/currency.js';
 import {redactor} from '../../src/activities/redactor.js';
 import {s2sActivityParams} from '../../src/adapterManager.js';
 import {activityParams} from '../../src/activities/activityParams.js';
 import {MODULE_TYPE_BIDDER} from '../../src/activities/modules.js';
 import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_TRANSMIT_TID} from '../../src/activities/activities.js';
+import {currencyCompare} from '../../libraries/currencyUtils/currency.js';
+import {minimum} from '../../src/utils/reducers.js';
 
 const DEFAULT_S2S_TTL = 60;
 const DEFAULT_S2S_CURRENCY = 'USD';
@@ -141,6 +142,7 @@ const PBS_CONVERTER = ortbConverter({
       bidfloor(orig, imp, proxyBidRequest, context) {
         // for bid floors, we pass each bidRequest associated with this imp through normal bidfloor processing,
         // and aggregate all of them into a single, minimum floor to put in the request
+        const getMin = minimum(currencyCompare(floor => [floor.bidfloor, floor.bidfloorcur]));
         let min;
         for (const req of context.actualBidRequests.values()) {
           const floor = {};
@@ -149,14 +151,8 @@ const PBS_CONVERTER = ortbConverter({
           if (floor.bidfloorcur == null || floor.bidfloor == null) {
             min = null;
             break;
-          } else if (min == null) {
-            min = floor;
-          } else {
-            const value = beConvertCurrency(floor.bidfloor, floor.bidfloorcur, min.bidfloorcur);
-            if (value != null && value < min.bidfloor) {
-              min = floor;
-            }
           }
+          min = min == null ? floor : getMin(min, floor);
         }
         if (min != null) {
           Object.assign(imp, min);
@@ -167,6 +163,10 @@ const PBS_CONVERTER = ortbConverter({
       fpd(orig, ortbRequest, proxyBidderRequest, context) {
         // FPD is handled different for PBS - the base request will only contain global FPD;
         // bidder-specific values are set in ext.prebid.bidderconfig
+
+        if (context.transmitTids) {
+          deepSetValue(ortbRequest, 'source.tid', proxyBidderRequest.auctionId);
+        }
 
         mergeDeep(ortbRequest, context.s2sBidRequest.ortb2Fragments?.global);
 

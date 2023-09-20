@@ -2,7 +2,8 @@ import {getAdServerTargeting} from 'test/fixtures/fixtures.js';
 import {expect} from 'chai';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
-import {deepEqual, memoize, waitForElementToLoad} from 'src/utils.js';
+import {getHighestCpm, getLatestHighestCpmBid, getOldestHighestCpmBid} from '../../src/utils/reducers.js';
+import {binarySearch, deepEqual, memoize, waitForElementToLoad} from 'src/utils.js';
 
 var assert = require('assert');
 
@@ -535,72 +536,6 @@ describe('Utils', function () {
 
     it('return iframe - style', function () {
       assert.ok(output.style);
-    });
-  });
-
-  describe('getHighestCpm', function () {
-    it('should pick the existing highest cpm', function () {
-      let previous = {
-        cpm: 2,
-        timeToRespond: 100
-      };
-      let current = {
-        cpm: 1,
-        timeToRespond: 100
-      };
-      assert.equal(utils.getHighestCpm(previous, current), previous);
-    });
-
-    it('should pick the new highest cpm', function () {
-      let previous = {
-        cpm: 1,
-        timeToRespond: 100
-      };
-      let current = {
-        cpm: 2,
-        timeToRespond: 100
-      };
-      assert.equal(utils.getHighestCpm(previous, current), current);
-    });
-
-    it('should pick the fastest cpm in case of tie', function () {
-      let previous = {
-        cpm: 1,
-        timeToRespond: 100
-      };
-      let current = {
-        cpm: 1,
-        timeToRespond: 50
-      };
-      assert.equal(utils.getHighestCpm(previous, current), current);
-    });
-
-    it('should pick the oldest in case of tie using responseTimeStamp', function () {
-      let previous = {
-        cpm: 1,
-        timeToRespond: 100,
-        responseTimestamp: 1000
-      };
-      let current = {
-        cpm: 1,
-        timeToRespond: 50,
-        responseTimestamp: 2000
-      };
-      assert.equal(utils.getOldestHighestCpmBid(previous, current), previous);
-    });
-
-    it('should pick the latest in case of tie using responseTimeStamp', function () {
-      let previous = {
-        cpm: 1,
-        timeToRespond: 100,
-        responseTimestamp: 1000
-      };
-      let current = {
-        cpm: 1,
-        timeToRespond: 50,
-        responseTimestamp: 2000
-      };
-      assert.equal(utils.getLatestHighestCpmBid(previous, current), current);
     });
   });
 
@@ -1233,5 +1168,44 @@ describe('memoize', () => {
     mem('one', 'three');
     expect(mem('one', 'three')).to.eql(['one', 'three']);
     expect(fn.callCount).to.eql(2);
-  })
+  });
+
+  describe('binarySearch', () => {
+    [
+      {
+        arr: [],
+        tests: [
+          ['any', 0]
+        ]
+      },
+      {
+        arr: [10],
+        tests: [
+          [5, 0],
+          [10, 0],
+          [20, 1],
+        ],
+      },
+      {
+        arr: [10, 20, 30, 30, 40],
+        tests: [
+          [5, 0],
+          [15, 1],
+          [10, 0],
+          [30, 2],
+          [35, 4],
+          [40, 4],
+          [100, 5]
+        ]
+      }
+    ].forEach(({arr, tests}) => {
+      describe(`on ${arr}`, () => {
+        tests.forEach(([el, pos]) => {
+          it(`finds index for ${el} => ${pos}`, () => {
+            expect(binarySearch(arr, el)).to.equal(pos);
+          });
+        });
+      });
+    })
+  });
 })

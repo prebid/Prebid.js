@@ -380,13 +380,13 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
     return;
   }
 
-  let [clientBidRequests, serverBidRequests] = bidRequests.reduce((partitions, bidRequest) => {
+  let [clientBidderRequests, serverBidderRequests] = bidRequests.reduce((partitions, bidRequest) => {
     partitions[Number(typeof bidRequest.src !== 'undefined' && bidRequest.src === CONSTANTS.S2S.SRC)].push(bidRequest);
     return partitions;
   }, [[], []]);
 
   var uniqueServerBidRequests = [];
-  serverBidRequests.forEach(serverBidRequest => {
+  serverBidderRequests.forEach(serverBidRequest => {
     var index = -1;
     for (var i = 0; i < uniqueServerBidRequests.length; ++i) {
       if (serverBidRequest.uniquePbsTid === uniqueServerBidRequests[i].uniquePbsTid) {
@@ -413,14 +413,17 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       let uniquePbsTid = uniqueServerBidRequests[counter].uniquePbsTid;
       let adUnitsS2SCopy = uniqueServerBidRequests[counter].adUnitsS2SCopy;
 
-      let uniqueServerRequests = serverBidRequests.filter(serverBidRequest => serverBidRequest.uniquePbsTid === uniquePbsTid);
+      let uniqueServerRequests = serverBidderRequests.filter(serverBidRequest => serverBidRequest.uniquePbsTid === uniquePbsTid);
 
       if (s2sAdapter) {
         let s2sBidRequest = {'ad_units': adUnitsS2SCopy, s2sConfig, ortb2Fragments};
         if (s2sBidRequest.ad_units.length) {
           let doneCbs = uniqueServerRequests.map(bidRequest => {
             bidRequest.start = timestamp();
-            return doneCb.bind(bidRequest);
+            return function () {
+              onTimelyResponse(bidRequest.bidderRequestId);
+              doneCb.apply(bidRequest, arguments);
+            }
           });
 
           const bidders = getBidderCodes(s2sBidRequest.ad_units).filter((bidder) => adaptersServerSide.includes(bidder));
@@ -435,7 +438,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
           // make bid requests
           s2sAdapter.callBids(
             s2sBidRequest,
-            serverBidRequests,
+            serverBidderRequests,
             addBidResponse,
             () => doneCbs.forEach(done => done()),
             s2sAjax
@@ -449,35 +452,35 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
   });
 
   // handle client adapter requests
-  clientBidRequests.forEach(bidRequest => {
-    bidRequest.start = timestamp();
+  clientBidderRequests.forEach(bidderRequest => {
+    bidderRequest.start = timestamp();
     // TODO : Do we check for bid in pool from here and skip calling adapter again ?
-    const adapter = _bidderRegistry[bidRequest.bidderCode];
-    config.runWithBidder(bidRequest.bidderCode, () => {
+    const adapter = _bidderRegistry[bidderRequest.bidderCode];
+    config.runWithBidder(bidderRequest.bidderCode, () => {
       logMessage(`CALLING BIDDER`);
-      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidRequest);
+      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);
     });
     let ajax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
-      request: requestCallbacks.request.bind(null, bidRequest.bidderCode),
+      request: requestCallbacks.request.bind(null, bidderRequest.bidderCode),
       done: requestCallbacks.done
     } : undefined);
-    const adapterDone = doneCb.bind(bidRequest);
+    const adapterDone = doneCb.bind(bidderRequest);
     try {
       config.runWithBidder(
-        bidRequest.bidderCode,
+        bidderRequest.bidderCode,
         bind.call(
           adapter.callBids,
           adapter,
-          bidRequest,
+          bidderRequest,
           addBidResponse,
           adapterDone,
           ajax,
-          onTimelyResponse,
-          config.callbackWithBidder(bidRequest.bidderCode)
+          () => onTimelyResponse(bidderRequest.bidderRequestId),
+          config.callbackWithBidder(bidderRequest.bidderCode)
         )
       );
     } catch (e) {
-      logError(`${bidRequest.bidderCode} Bid Adapter emitted an uncaught error when parsing their bidRequest`, {e, bidRequest});
+      logError(`${bidderRequest.bidderCode} Bid Adapter emitted an uncaught error when parsing their bidRequest`, {e, bidRequest: bidderRequest});
       adapterDone();
     }
   });
@@ -545,6 +548,9 @@ adapterManager.aliasBidAdapter = function (bidderCode, alias, options) {
         } else {
           let spec = bidAdapter.getSpec();
           let gvlid = options && options.gvlid;
+          if (spec.gvlid != null && gvlid == null) {
+            logWarn(`Alias '${alias}' will NOT re-use the GVL ID of the original adapter ('${spec.code}', gvlid: ${spec.gvlid}). Functionality that requires TCF consent may not work as expected.`)
+          }
           let skipPbsAliasing = options && options.skipPbsAliasing;
           newAdapter = newBidder(Object.assign({}, spec, { code: alias, gvlid, skipPbsAliasing }));
           _aliasRegistry[alias] = bidderCode;
