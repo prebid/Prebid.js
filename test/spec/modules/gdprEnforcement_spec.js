@@ -640,7 +640,7 @@ describe('gdpr enforcement', function () {
             rules: [
               Object.assign({
                 purpose: 'personalizedAds',
-                eidsRequireP4consent: true,
+                eidsRequireP4Consent: true,
                 enforcePurpose: true,
                 enforceVendor: true,
               }, cfg)

@@ -259,7 +259,7 @@ export const transmitEidsRule = exceptPrebidModules((() => {
   const defaultBehavior = gdprRule('2-10', check2to10Consent, eidsBlocked);
   const p4Behavior = singlePurposeGdprRule(4, eidsBlocked);
   return function () {
-    const fn = ACTIVE_RULES.purpose[4]?.eidsRequireP4consent ? p4Behavior : defaultBehavior;
+    const fn = ACTIVE_RULES.purpose[4]?.eidsRequireP4Consent ? p4Behavior : defaultBehavior;
     return fn.apply(this, arguments);
   };
 })());
