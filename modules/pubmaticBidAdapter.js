@@ -1373,7 +1373,7 @@ export const spec = {
           bids: bidResponses,
           fledgeAuctionConfigs,
         }
-      } 
+      }
     } catch (error) {
       logError(error);
     }
