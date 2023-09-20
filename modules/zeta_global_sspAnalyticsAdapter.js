@@ -1,4 +1,4 @@
-import {logInfo, logError, deepClone} from '../src/utils.js';
+import {logInfo, logError} from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
