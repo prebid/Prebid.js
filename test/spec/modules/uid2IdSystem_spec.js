@@ -36,6 +36,10 @@ let useLocalStorage = false;
 const makePrebidConfig = (params = null, extraSettings = {}, debug = false) => ({
   userSync: { auctionDelay: auctionDelayMs, userIds: [{name: 'uid2', params: {storage: useLocalStorage ? 'localStorage' : 'cookie', ...params}}] }, debug, ...extraSettings
 });
+const makeOriginalIdentity = (identity, salt = 1) => ({
+  identity: utils.cyrb53Hash(identity, salt),
+  salt
+})
 
 const getFromAppropriateStorage = () => {
   if (useLocalStorage) return coreStorage.getDataFromLocalStorage(moduleCookieName);
@@ -53,7 +57,7 @@ const expectModuleStorageToContain = (originalAdvertisingToken, latestAdvertisin
   const cookie = JSON.parse(getFromAppropriateStorage());
   if (originalAdvertisingToken) expect(cookie.originalToken.advertising_token).to.equal(originalAdvertisingToken);
   if (latestAdvertisingToken) expect(cookie.latestToken.advertising_token).to.equal(latestAdvertisingToken);
-  if (originalIdentity) expect(cookie.originalIdentity).to.eql(originalIdentity);
+  if (originalIdentity) expect(cookie.originalIdentity).to.eql(makeOriginalIdentity(Object.values(originalIdentity)[0], cookie.originalIdentity.salt));
 }
 
 const apiUrl = 'https://prod.uidapi.com/v2/token'
@@ -461,7 +465,7 @@ describe(`UID2 module`, function () {
         describe('When the storedToken is valid', function() {
           it('it should use the stored token in the auction', async function() {
             const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken);
-            const moduleCookie = {originalIdentity: {email: 'test@test.com'}, latestToken: refreshedIdentity};
+            const moduleCookie = {originalIdentity: makeOriginalIdentity('test@test.com'), latestToken: refreshedIdentity};
             coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
             config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com', auctionDelay: 0, syncDelay: 1 }));
             const bid = await runAuction();
@@ -473,7 +477,7 @@ describe(`UID2 module`, function () {
           it('it should calls refresh API', function() {
             testApiSuccessAndFailure(async function(apiSucceeds) {
               const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken, true, true);
-              const moduleCookie = {originalIdentity: {email: 'test@test.com'}, latestToken: refreshedIdentity};
+              const moduleCookie = {originalIdentity: makeOriginalIdentity('test@test.com'), latestToken: refreshedIdentity};
               coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
               config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com' }));
               apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
@@ -490,7 +494,7 @@ describe(`UID2 module`, function () {
           it('it should calls CSTG API and not use the stored token', function() {
             testApiSuccessAndFailure(async function(apiSucceeds) {
               const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken, true, true, true);
-              const moduleCookie = {originalIdentity: {email: 'test@test.com'}, latestToken: refreshedIdentity};
+              const moduleCookie = {originalIdentity: makeOriginalIdentity('test@test.com'), latestToken: refreshedIdentity};
               coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
               config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com' }));
               apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
@@ -506,7 +510,7 @@ describe(`UID2 module`, function () {
 
       it('when originalIdentity not match, the auction should has no uid2', async function() {
         const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken);
-        const moduleCookie = {originalIdentity: '123', latestToken: refreshedIdentity};
+        const moduleCookie = {originalIdentity: makeOriginalIdentity('123@test.com'), latestToken: refreshedIdentity};
         coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
         config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com' }));
         const bid = await runAuction();
@@ -539,7 +543,7 @@ describe(`UID2 module`, function () {
     describe('when there is a cstg-derived token in the module cookie', function () {
       it('the auction use stored token if it is valid', async function () {
         const originalIdentity = apiHelpers.makeTokenResponse(initialToken);
-        const moduleCookie = {originalIdentity: '123', originalToken: originalIdentity, latestToken: originalIdentity};
+        const moduleCookie = {originalIdentity: makeOriginalIdentity('123@test.com'), originalToken: originalIdentity, latestToken: originalIdentity};
         coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
         config.setConfig(makePrebidConfig({}));
         const bid = await runAuction();
@@ -548,7 +552,7 @@ describe(`UID2 module`, function () {
 
       it('the auction should has no uid2 if stored token is invalid', async function () {
         const originalIdentity = apiHelpers.makeTokenResponse(initialToken, true, true, true);
-        const moduleCookie = {originalIdentity: '123', originalToken: originalIdentity, latestToken: originalIdentity};
+        const moduleCookie = {originalIdentity: makeOriginalIdentity('123@test.com'), originalToken: originalIdentity, latestToken: originalIdentity};
         coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
         config.setConfig(makePrebidConfig({}));
         const bid = await runAuction();

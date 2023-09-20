@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 import { ajax } from '../src/ajax.js';
+import { cyrb53Hash } from '../src/utils.js';
 
 export const Uid2CodeVersion = '1.1';
 
@@ -565,11 +566,25 @@ async function generateTokenAndStore(baseUrl, cstgOpts, cstgIdentity, clientId, 
   const response = await client.callCstgApi(request)
   _logInfo('CSTG endpoint responded with:', response);
   const tokens = {
-    originalIdentity: cstgIdentity,
+    originalIdentity: encodeOriginalIdentity(cstgIdentity),
     latestToken: response.identity,
   };
   storageManager.storeValue(tokens);
   return tokens;
+}
+
+function encodeOriginalIdentity(identity) {
+  const identityValue = Object.values(identity)[0];
+  const salt = Math.floor(Math.random() * Math.pow(2, 32));
+  return {
+    identity: cyrb53Hash(identityValue, salt),
+    salt
+  }
+}
+
+function storedTokenFromSameIdentity(storedTokens, identity) {
+  if (!storedTokens.originalIdentity) return false;
+  return cyrb53Hash(identity, storedTokens.originalIdentity.salt) === storedTokens.originalIdentity.identity
 }
 
 export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
@@ -615,8 +630,8 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
 
   if (cstgIdentity) {
     if (storedTokens) {
-      const identityKey = Object.keys(cstgIdentity)[0]
-      if (!storedTokens.originalIdentity || storedTokens.originalIdentity[identityKey] !== cstgIdentity[identityKey]) {
+      const identity = Object.values(cstgIdentity)[0]
+      if (!storedTokenFromSameIdentity(storedTokens, identity)) {
         _logInfo('CSTG supplied new identity - ignoring stored value.', storedTokens.originalIdentity, cstgIdentity);
         // Stored token wasn't originally sourced from the provided identity - ignore the stored value. A new user has logged in?
         storedTokens = null;
