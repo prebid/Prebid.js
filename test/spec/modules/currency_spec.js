@@ -14,6 +14,7 @@ import {
 } from 'modules/currency.js';
 import {createBid} from '../../../src/bidfactory.js';
 import CONSTANTS from '../../../src/constants.json';
+import {server} from '../../mocks/xhr.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -30,12 +31,11 @@ describe('currency', function () {
   }
 
   beforeEach(function () {
-    fakeCurrencyFileServer = sinon.fakeServer.create();
+    fakeCurrencyFileServer = server;
     ready.reset();
   });
 
   afterEach(function () {
-    fakeCurrencyFileServer.restore();
     setConfig({});
   });
 

@@ -214,6 +214,12 @@ export const quantcastIdSubmodule = {
     }
 
     return { id: fpa ? { quantcastId: fpa } : undefined };
+  },
+  eids: {
+    'quantcastId': {
+      source: 'quantcast.com',
+      atype: 1
+    },
   }
 };
 

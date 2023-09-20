@@ -3,6 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'smartyads';
 const AD_URL = 'https://n1.smartyads.com/?c=o&m=prebid&secret_key=prebid_js';
@@ -66,6 +67,9 @@ export const spec = {
       if (bidderRequest.gdprConsent) {
         request.gdpr = bidderRequest.gdprConsent
       }
+      if (bidderRequest.gppConsent) {
+        request.gpp = bidderRequest.gppConsent;
+      }
     }
     const len = validBidRequests.length;
 
@@ -102,24 +106,46 @@ export const spec = {
     return response;
   },
 
-  getUserSyncs: (syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '') => {
+  getUserSyncs: (syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '', gppConsent = '') => {
     let syncs = [];
     let { gdprApplies, consentString = '' } = gdprConsent;
 
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: `${URL_SYNC}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&type=iframe&us_privacy=${uspConsent}`
+        url: `${URL_SYNC}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&type=iframe&us_privacy=${uspConsent}&gpp=${gppConsent}`
       });
     } else {
       syncs.push({
         type: 'image',
-        url: `${URL_SYNC}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&type=image&us_privacy=${uspConsent}`
+        url: `${URL_SYNC}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&type=image&us_privacy=${uspConsent}&gpp=${gppConsent}`
       });
     }
 
     return syncs
-  }
+  },
+
+  onBidWon: function(bid) {
+    if (bid.winUrl) {
+      ajax(bid.winUrl, () => {}, JSON.stringify(bid));
+    } else {
+      if (bid?.postData && bid?.postData[0] && bid?.postData[0].params && bid?.postData[0].params[0].host == 'prebid') {
+        ajax('https://et-nd43.itdsmr.com/?c=o&m=prebid&secret_key=prebid_js&winTest=1', () => {}, JSON.stringify(bid));
+      }
+    }
+  },
+
+  onTimeout: function(bid) {
+    if (bid?.postData && bid?.postData[0] && bid?.postData[0].params && bid?.postData[0].params[0].host == 'prebid') {
+      ajax('https://et-nd43.itdsmr.com/?c=o&m=prebid&secret_key=prebid_js&bidTimeout=1', () => {}, JSON.stringify(bid));
+    }
+  },
+
+  onBidderError: function(bid) {
+    if (bid?.postData && bid?.postData[0] && bid?.postData[0].params && bid?.postData[0].params[0].host == 'prebid') {
+      ajax('https://et-nd43.itdsmr.com/?c=o&m=prebid&secret_key=prebid_js&bidderError=1', () => {}, JSON.stringify(bid));
+    }
+  },
 
 };
 
