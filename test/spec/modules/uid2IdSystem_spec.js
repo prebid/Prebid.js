@@ -29,7 +29,7 @@ const clientSideGeneratedToken = 'client-side-generated-advertising-token';
 const legacyConfigParams = {storage: null};
 const serverCookieConfigParams = { uid2ServerCookie: publisherCookieName };
 const newServerCookieConfigParams = { uid2Cookie: publisherCookieName };
-const cstgConfigParams = { serverPublicKey: 'UID2-X-L-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEtXJdTSZAYHvoRDWiehMHoWF1BNPuqLs5w2ZHiAZ1IJc7O4/z0ojPTB0V+KYX/wxQK0hxx6kxCvHj335eI/ZQsQ==', subscriptionId: 'subscription-id' }
+const cstgConfigParams = { serverPublicKey: 'UID2-X-L-24B8a/eLYBmRkXA9yPgRZt+ouKbXewG2OPs23+ov3JC8mtYJBCx6AxGwJ4MlwUcguebhdDp2CvzsCgS9ogwwGA==', subscriptionId: 'subscription-id' }
 
 const makeUid2IdentityContainer = (token) => ({uid2: {id: token}});
 let useLocalStorage = false;
