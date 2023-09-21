@@ -112,7 +112,15 @@ describe('alkimiBidAdapter', function () {
         vendorData: {},
         gdprApplies: true
       },
-      uspConsent: 'uspConsent'
+      uspConsent: 'uspConsent',
+      ortb2: {
+        site: {
+          keywords: 'test1, test2'
+        },
+        at: 2,
+        bcat: ['BSW1', 'BSW2'],
+        wseat: ['16', '165']
+      }
     }
     const bidderRequest = spec.buildRequests(bidRequests, requestData)
 
@@ -138,6 +146,7 @@ describe('alkimiBidAdapter', function () {
       expect(bidderRequest.data.signRequest.randomUUID).to.equal(undefined)
       expect(bidderRequest.data.bidIds).to.deep.contains('456')
       expect(bidderRequest.data.signature).to.equal(undefined)
+      expect(bidderRequest.data.ortb2).to.deep.contains({ at: 2, wseat: ['16', '165'], bcat: ['BSW1', 'BSW2'], site: { keywords: 'test1, test2' }, })
       expect(bidderRequest.options.customHeaders).to.deep.equal({ 'Rtb-Direct': true })
       expect(bidderRequest.options.contentType).to.equal('application/json')
       expect(bidderRequest.url).to.equal(ENDPOINT)
