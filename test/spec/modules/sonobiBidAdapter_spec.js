@@ -1,9 +1,9 @@
-import { expect } from 'chai'
-import { spec, _getPlatform } from 'modules/sonobiBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
-import { userSync } from '../../../src/userSync.js';
-import { config } from 'src/config.js';
-import * as utils from '../../../src/utils.js';
+import {expect} from 'chai';
+import {_getPlatform, spec} from 'modules/sonobiBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import {userSync} from '../../../src/userSync.js';
+import {config} from 'src/config.js';
+import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
 
 describe('SonobiBidAdapter', function () {
   const adapter = newBidder(spec)
@@ -248,13 +248,13 @@ describe('SonobiBidAdapter', function () {
     let sandbox;
     beforeEach(function () {
       sinon.stub(userSync, 'canBidderRegisterSync');
-      sinon.stub(utils, 'getGptSlotInfoForAdUnitCode')
+      sinon.stub(gptUtils, 'getGptSlotInfoForAdUnitCode')
         .onFirstCall().returns({ gptSlot: '/123123/gpt_publisher/adunit-code-3', divId: 'adunit-code-3-div-id' });
       sandbox = sinon.createSandbox();
     });
     afterEach(function () {
       userSync.canBidderRegisterSync.restore();
-      utils.getGptSlotInfoForAdUnitCode.restore();
+      gptUtils.getGptSlotInfoForAdUnitCode.restore();
       sandbox.restore();
     });
     let bidRequest = [{
