@@ -1,8 +1,9 @@
-import { tryAppendQueryString, logMessage, logError, isEmpty, isStr, isPlainObject, isArray, logWarn } from '../src/utils.js';
+import { logMessage, logError, isEmpty, isStr, isPlainObject, isArray, logWarn } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 const GVLID = 28;
 const BIDDER_CODE = 'triplelift';

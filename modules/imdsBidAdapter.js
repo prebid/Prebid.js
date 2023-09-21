@@ -1,10 +1,11 @@
 'use strict';
 
-import {deepAccess, deepSetValue, getAdUnitSizes, isFn, isPlainObject, logWarn, mergeDeep} from '../src/utils.js';
+import {deepAccess, deepSetValue, isFn, isPlainObject, logWarn, mergeDeep} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {includes} from '../src/polyfill.js';
 import {config} from '../src/config.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 const BID_SCHEME = 'https://';
 const BID_DOMAIN = 'technoratimedia.com';

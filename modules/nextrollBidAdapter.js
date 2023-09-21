@@ -1,6 +1,5 @@
 import {
-  deepAccess,
-  getBidIdParameter,
+  deepAccess, getBidIdParameter,
   isArray,
   isFn,
   isNumber,
