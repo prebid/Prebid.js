@@ -1,4 +1,4 @@
-import {deepAccess, isArray, logError, mergeDeep, deepSetValue} from '../src/utils.js';
+import {deepAccess, isArray, logError, mergeDeep, deepSetValue, logWarn} from '../src/utils.js';
 import {getOrigin} from '../libraries/getOrigin/index.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -53,9 +53,10 @@ const converter = ortbConverter({
     deepSetValue(imp, 'tagid', bidRequest.adUnitCode.toString());
 
     mergeDeep(imp, mapImpression(bidRequest, bidderRequest));
-    if (!imp.bidfloor && bidRequest.params.bidfloor) {
-      imp.bidfloor = parseFloat(bidRequest.params.bidfloor);
-      imp.bidfloorcur = DEFAULT_CURRENCY_ARR[0];
+    // manually applied floors due to some issues with multi-format requests (no .bidfloor is set then)
+    const bidfloor = applyFloor(bidRequest);
+    if (bidfloor) {
+      imp.bidfloor = bidfloor;
     }
     return imp;
   },
@@ -181,6 +182,22 @@ export const spec = {
   }
 };
 registerBidder(spec);
+
+/**
+ * @param {object} bidRequest Ad Unit Params by Prebid
+ * @returns {int} floor by imp type
+ */
+function applyFloor(bidRequest) {
+  const floors = [];
+  if (typeof bidRequest.getFloor === 'function') {
+    Object.keys(bidRequest.mediaTypes).forEach(type => {
+      if (includes(SUPPORTED_MEDIA_TYPES, type)) {
+        floors.push(bidRequest.getFloor({ currency: DEFAULT_CURRENCY_ARR[0], mediaType: type, size: bidRequest.sizes || '*' }).floor);
+      }
+    });
+  }
+  return floors.length > 0 ? Math.max(...floors) : parseFloat(bidRequest.params.bidfloor);
+}
 
 function mapImpression(bidRequest) {
   if (isBannerBid(bidRequest)) return {banner: mapBanner(bidRequest)}
