@@ -1,6 +1,6 @@
-import {expect} from 'chai';
-import {spec} from 'modules/orbidderBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
+import { expect } from 'chai';
+import { spec } from 'modules/orbidderBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as _ from 'lodash';
 import { BANNER, NATIVE } from '../../../src/mediaTypes.js';
 
@@ -59,7 +59,7 @@ describe('orbidderBidAdapter', () => {
     }
   };
 
-  const deepClone = function (val) {
+  const deepClone = function(val) {
     return JSON.parse(JSON.stringify(val));
   };
 
@@ -91,15 +91,15 @@ describe('orbidderBidAdapter', () => {
       expect(spec.isBidRequestValid(defaultBidRequestNative)).to.equal(true);
     });
 
-    it('banner: accepts optional profile object', () => {
+    it('banner: accepts optional keyValues object', () => {
       const bidRequest = deepClone(defaultBidRequestBanner);
-      bidRequest.params.profile = {'key': 'value'};
+      bidRequest.params.keyValues = { 'key': 'value' };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
-    it('native: accepts optional profile object', () => {
+    it('native: accepts optional keyValues object', () => {
       const bidRequest = deepClone(defaultBidRequestNative);
-      bidRequest.params.profile = {'key': 'value'};
+      bidRequest.params.keyValues = { 'key': 'value' };
       expect(spec.isBidRequestValid(bidRequest)).to.equal(true);
     });
 
@@ -115,15 +115,15 @@ describe('orbidderBidAdapter', () => {
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
-    it('banner: doesn\'t accept malformed profile', () => {
+    it('banner: doesn\'t accept malformed keyValues', () => {
       const bidRequest = deepClone(defaultBidRequestBanner);
-      bidRequest.params.profile = 'another not usable string';
+      bidRequest.params.keyValues = 'another not usable string';
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
-    it('native: doesn\'t accept malformed profile', () => {
+    it('native: doesn\'t accept malformed keyValues', () => {
       const bidRequest = deepClone(defaultBidRequestNative);
-      bidRequest.params.profile = 'another not usable string';
+      bidRequest.params.keyValues = 'another not usable string';
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false);
     });
 
@@ -347,7 +347,7 @@ describe('orbidderBidAdapter', () => {
         }
       ];
 
-      const result = spec.interpretResponse({body: serverResponse});
+      const result = spec.interpretResponse({ body: serverResponse });
       expect(result.length).to.equal(expectedResponse.length);
       expect(_.isEqual(expectedResponse, serverResponse)).to.be.true;
     });
@@ -387,7 +387,7 @@ describe('orbidderBidAdapter', () => {
         }
       ];
 
-      const result = spec.interpretResponse({body: serverResponse});
+      const result = spec.interpretResponse({ body: serverResponse });
 
       expect(result.length).to.equal(expectedResponse.length);
       Object.keys(expectedResponse[0]).forEach((key) => {
@@ -454,7 +454,7 @@ describe('orbidderBidAdapter', () => {
         }
       ];
 
-      const result = spec.interpretResponse({body: serverResponse});
+      const result = spec.interpretResponse({ body: serverResponse });
 
       expect(result.length).to.equal(expectedResponse.length);
       expect(_.isEqual(expectedResponse, serverResponse)).to.be.true;
@@ -474,7 +474,7 @@ describe('orbidderBidAdapter', () => {
           'netRevenue': true,
         }
       ];
-      const result = spec.interpretResponse({body: serverResponse});
+      const result = spec.interpretResponse({ body: serverResponse });
       expect(result.length).to.equal(0);
     });
 
@@ -492,7 +492,7 @@ describe('orbidderBidAdapter', () => {
           'creativeId': '29681110',
         }
       ];
-      const result = spec.interpretResponse({body: serverResponse});
+      const result = spec.interpretResponse({ body: serverResponse });
       expect(result.length).to.equal(0);
     });
 
@@ -518,13 +518,13 @@ describe('orbidderBidAdapter', () => {
           }
         }
       ];
-      const result = spec.interpretResponse({body: serverResponse});
+      const result = spec.interpretResponse({ body: serverResponse });
       expect(result.length).to.equal(0);
     });
 
     it('handles nobid responses', () => {
       const serverResponse = [];
-      const result = spec.interpretResponse({body: serverResponse});
+      const result = spec.interpretResponse({ body: serverResponse });
       expect(result.length).to.equal(0);
     });
   });
