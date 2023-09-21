@@ -527,7 +527,7 @@ describe('auctionmanager.js', function () {
         s2sConfig: {
           accountId: '1',
           enabled: true,
-          defaultVendor: 'appnexus',
+          defaultVendor: 'appnexuspsp',
           bidders: ['appnexus'],
           timeout: 1000,
           adapter: 'prebidServer'
