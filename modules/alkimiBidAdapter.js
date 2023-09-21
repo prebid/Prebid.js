@@ -5,10 +5,12 @@ import {VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'alkimi';
+const GVLID = 1169;
 export const ENDPOINT = 'https://exchange.alkimi-onboarding.com/bid?prebid=true';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
@@ -57,6 +59,9 @@ export const spec = {
         h: screen.height
       },
       ortb2: {
+        site: {
+          keywords: bidderRequest.ortb2?.site?.keywords
+        },
         at: bidderRequest.ortb2?.at,
         bcat: bidderRequest.ortb2?.bcat,
         wseat: bidderRequest.ortb2?.wseat

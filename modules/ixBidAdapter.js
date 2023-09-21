@@ -1,10 +1,8 @@
 import {
   contains,
-  convertTypes,
   deepAccess,
   deepClone,
   deepSetValue,
-  getGptSlotInfoForAdUnitCode,
   inIframe,
   isArray,
   isEmpty,
@@ -24,6 +22,8 @@ import { find } from '../src/polyfill.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
 const BIDDER_CODE = 'ix';
 const ALIAS_BIDDER_CODE = 'roundel';
@@ -79,6 +79,7 @@ const SOURCE_RTI_MAPPING = {
   'intimatemerger.com': '',
   '33across.com': '',
   'liveintent.indexexchange.com': '',
+  'google.com': ''
 };
 const PROVIDERS = [
   'britepoolid',
@@ -89,7 +90,8 @@ const PROVIDERS = [
   'connectid',
   'tapadId',
   'quantcastId',
-  'pubProvidedId'
+  'pubProvidedId',
+  'pairId'
 ];
 const REQUIRED_VIDEO_PARAMS = ['mimes', 'minduration', 'maxduration']; // note: protocol/protocols is also reqd
 const VIDEO_PARAMS_ALLOW_LIST = [

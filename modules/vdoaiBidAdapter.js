@@ -1,6 +1,6 @@
-import {getAdUnitSizes} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 const BIDDER_CODE = 'vdoai';
 const ENDPOINT_URL = 'https://prebid.vdo.ai/auction';
