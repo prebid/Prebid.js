@@ -290,10 +290,7 @@ export class Uid2ApiClient {
           rejectPromise(error)
         }
       }
-    }, JSON.stringify(requestBody), { method: 'POST',
-      customHeaders: {
-        'X-UID2-Client-Version': this._clientVersion
-      } });
+    }, JSON.stringify(requestBody), { method: 'POST' });
     return promise;
   }
 }
