@@ -311,6 +311,30 @@ function buildRequests(validBidRequests, bidderRequest) {
     data.lt = lt;
     data.to = to;
 
+    // ADSS-1701 IntetIQ userIDs in prebid
+    function stringifyJsonWithMaxLength(pubProvidedIdObject, maxLength) {
+      const jsonStringifiedArray = [];
+      let currentLength = 0;
+      for (const item of pubProvidedIdObject) {
+        // Stringify the current item and add its length to the current total
+        const itemJson = JSON.stringify(item);
+        const itemLength = itemJson.length;
+        // Check if adding the current item would exceed the maxLength
+        if (currentLength + itemLength <= maxLength) {
+          jsonStringifiedArray.push(itemJson);
+          currentLength += itemLength;
+        } else {
+          // Stop adding items once the maxLength is reached
+          break;
+        }
+      }
+      // Combine the JSON strings into a single JSON array string
+      const finalJsonArrayString = `[${jsonStringifiedArray.join(',')}]`;
+      return finalJsonArrayString;
+    }
+    if (userId && userId.pubProvidedId) {
+      data.pubProvidedId = stringifyJsonWithMaxLength(userId.pubProvidedId, 2083) || '';
+    }
     // ADJS-1286 Read id5 id linktype field
     if (userId && userId.id5id && userId.id5id.uid && userId.id5id.ext) {
       data.id5Id = userId.id5id.uid || null
