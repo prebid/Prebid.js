@@ -3,22 +3,21 @@ import {
   isStr,
   deepAccess,
   isArray,
-  getBidIdParameter,
   deepSetValue,
   isEmpty,
   _each,
-  convertTypes,
   parseUrl,
   mergeDeep,
   buildUrl,
   _map,
   logError,
   isFn,
-  isPlainObject,
+  isPlainObject, getBidIdParameter,
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
 // Maintainer: mediapsr@epsilon.com
 

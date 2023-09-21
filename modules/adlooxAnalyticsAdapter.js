@@ -14,7 +14,6 @@ import {find} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {
   deepAccess,
-  getGptSlotInfoForAdUnitCode,
   getUniqueIdentifierStr,
   insertElement,
   isFn,
@@ -28,6 +27,7 @@ import {
   mergeDeep,
   parseUrl
 } from '../src/utils.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 const MODULE = 'adlooxAnalyticsAdapter';
 

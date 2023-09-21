@@ -59,6 +59,9 @@ export const spec = {
         h: screen.height
       },
       ortb2: {
+        site: {
+          keywords: bidderRequest.ortb2?.site?.keywords
+        },
         at: bidderRequest.ortb2?.at,
         bcat: bidderRequest.ortb2?.bcat,
         wseat: bidderRequest.ortb2?.wseat

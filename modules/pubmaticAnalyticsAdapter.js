@@ -1,10 +1,11 @@
-import { _each, pick, logWarn, isStr, isArray, logError, getGptSlotInfoForAdUnitCode } from '../src/utils.js';
+import {_each, isArray, isStr, logError, logWarn, pick} from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
-import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+import {ajax} from '../src/ajax.js';
+import {config} from '../src/config.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 /// /////////// CONSTANTS //////////////
 const ADAPTER_CODE = 'pubmatic';
