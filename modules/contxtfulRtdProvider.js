@@ -77,7 +77,6 @@ function initCustomer(version, customer) {
     protocol: 'https',
     host: CONTXTFUL_RECEPTIVITY_DOMAIN,
     pathname: `/${version}/prebid/${customer}/connector/p.js`,
-    search: { id: customer }
   });
 
   const externalScript = loadExternalScript(CONNECTOR_URL, MODULE_NAME);

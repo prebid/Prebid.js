@@ -7,7 +7,7 @@ import * as events from '../../../src/events';
 const _ = null;
 const VERSION = 'v1';
 const CUSTOMER = 'CUSTOMER';
-const CONTXTFUL_CONNECTOR_ENDPOINT = `https://api.receptivity.io/${VERSION}/prebid/${CUSTOMER}/connector/p.js?id=${CUSTOMER}`;
+const CONTXTFUL_CONNECTOR_ENDPOINT = `https://api.receptivity.io/${VERSION}/prebid/${CUSTOMER}/connector/p.js`;
 const INITIAL_RECEPTIVITY = { ReceptivityState: 'INITIAL_RECEPTIVITY' };
 const INITIAL_RECEPTIVITY_EVENT = new CustomEvent('initialReceptivity', { detail: INITIAL_RECEPTIVITY });
 
