@@ -57,27 +57,26 @@ describe('Nobid Adapter', function () {
       'auctionId': '1d1a030790a475',
     };
 
-    it('should return true when required params found', function () {
+    it('should return true when required params found 1', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return true when required params found', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+    it('should return true when required params found 2', function () {
+      let mybid = Object.assign({}, bid);
+      delete mybid.params;
+      mybid.params = {
         'siteId': 2
       };
-
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      expect(spec.isBidRequestValid(mybid)).to.equal(true);
     });
 
     it('should return false when required params are not passed', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let mybid = Object.assign({}, bid);
+      delete mybid.params;
+      mybid.params = {
         'siteId': 0
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(mybid)).to.equal(false);
     });
   });
 
