@@ -5,6 +5,7 @@ import {config} from 'src/config.js';
 import {setConfig} from 'modules/currency.js';
 import {server} from '../../mocks/xhr.js';
 import 'src/prebid.js';
+// import * as prebidGlobal from 'src/prebidGlobal';
 
 let events = require('src/events');
 let ajax = require('src/ajax');
@@ -300,6 +301,10 @@ describe('pubmatic analytics adapter', function () {
         bidders: ['pubmatic']
       }
     })
+    // let getGlobalStub = {
+    //   version: 'vX.Y.Z'
+    // };
+    // sandbox.stub(prebidGlobal, 'getGlobal').returns(getGlobalStub); // getGlobal does not seem to be available in testing so need to mock it
   });
 
   afterEach(function () {
@@ -367,6 +372,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.tgid).to.equal(15);
       expect(data.fmv).to.equal('floorModelTest');
       expect(data.ft).to.equal(1);
+      expect(data.pbv).not.to.be.null;
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
       // slot 1
@@ -574,6 +580,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.pid).to.equal('1111');
       expect(data.fmv).to.equal('floorModelTest');
       expect(data.ft).to.equal(1);
+      expect(data.pbv).not.to.be.null;
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
       expect(data.tgid).to.equal(0);
@@ -648,6 +655,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.tgid).to.equal(0);// test group id should be between 0-15 else set to 0
       expect(data.fmv).to.equal('floorModelTest');
       expect(data.ft).to.equal(1);
+      expect(data.pbv).not.to.be.null;
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
       // slot 1
@@ -1184,6 +1192,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.tst).to.equal(1519767016);
       expect(data.tgid).to.equal(15);
       expect(data.fmv).to.equal('floorModelTest');
+      expect(data.pbv).not.to.be.null;
       expect(data.ft).to.equal(1);
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
@@ -1305,6 +1314,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.tst).to.equal(1519767016);
       expect(data.tgid).to.equal(15);
       expect(data.fmv).to.equal('floorModelTest');
+      expect(data.pbv).not.to.be.null;
       expect(data.ft).to.equal(1);
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
