@@ -209,6 +209,10 @@ export const liveIntentIdSubmodule = {
         result.index = { 'id': value.index, ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
+      if (value.openx) {
+        result.openx = { 'id': value.openx, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
       return result
     }
 

@@ -304,6 +304,39 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
+  it('openx',function () {
+    const userId = {
+      openx: { 'id': 'sample_id' }
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'opex.com',
+      uids: [{
+        id: 'sample_id',
+        atype: 3
+      }]
+    });
+  });
+
+  it('openx with ext',function () {
+    const userId = {
+      openx: { 'id': 'sample_id','ext': { 'provider': 'some.provider.com' } }
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'opex.com',
+      uids: [{
+        id: 'sample_id',
+        atype: 3,
+        ext: {
+          provider: 'some.provider.com'
+        }
+      }]
+    });
+  });
+  
   it('liveIntentId; getValue call and NO ext', function() {
     const userId = {
       lipb: {
