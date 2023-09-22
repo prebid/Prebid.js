@@ -503,7 +503,7 @@ function onBidResponse({ requestId, auctionId, cpm, currency, originalCpm, floor
         cpm,
         cur: currency,
         cpmOrig: originalCpm,
-        cpmFloor: floorData?.cpmAfterAdjustments,
+        cpmFloor: floorData?.floorValue,
         mediaType,
         size
       },
