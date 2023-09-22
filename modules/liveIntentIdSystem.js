@@ -9,14 +9,14 @@ import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
 import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const EVENTS_TOPIC = 'pre_lips'
 const MODULE_NAME = 'liveIntentId';
 const LI_PROVIDER_DOMAIN = 'liveintent.com';
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
-const defaultRequestedAttributes = { 'nonId': true }
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+const defaultRequestedAttributes = {'nonId': true}
 const calls = {
   ajaxGet: (url, onSuccess, onError, timeout) => {
     ajaxBuilder(timeout)(
@@ -79,7 +79,7 @@ function parseRequestedAttributes(overrides) {
     return Object.entries(config).flatMap(([k, v]) => (typeof v === 'boolean' && v) ? [k] : []);
   }
   if (typeof overrides === 'object') {
-    return createParameterArray({ ...defaultRequestedAttributes, ...overrides })
+    return createParameterArray({...defaultRequestedAttributes, ...overrides})
   } else {
     return createParameterArray(defaultRequestedAttributes);
   }
@@ -209,10 +209,6 @@ export const liveIntentIdSubmodule = {
         result.index = { 'id': value.index, ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
-      if (value.openx) {
-        result.openx = { 'id': value.openx, ext: { provider: LI_PROVIDER_DOMAIN } }
-      }
-
       return result
     }
 
@@ -237,7 +233,7 @@ export const liveIntentIdSubmodule = {
       return;
     }
     tryFireEvent();
-    const result = function (callback) {
+    const result = function(callback) {
       liveConnect.resolve(
         response => {
           callback(response);
@@ -253,12 +249,12 @@ export const liveIntentIdSubmodule = {
   },
   eids: {
     'lipb': {
-      getValue: function (data) {
+      getValue: function(data) {
         return data.lipbid;
       },
       source: 'liveintent.com',
       atype: 3,
-      getEidExt: function (data) {
+      getEidExt: function(data) {
         if (Array.isArray(data.segments) && data.segments.length) {
           return {
             segments: data.segments
@@ -269,10 +265,10 @@ export const liveIntentIdSubmodule = {
     'bidswitch': {
       source: 'bidswitch.net',
       atype: 3,
-      getValue: function (data) {
+      getValue: function(data) {
         return data.id;
       },
-      getUidExt: function (data) {
+      getUidExt: function(data) {
         if (data.ext) {
           return data.ext;
         }
@@ -281,10 +277,10 @@ export const liveIntentIdSubmodule = {
     'medianet': {
       source: 'media.net',
       atype: 3,
-      getValue: function (data) {
+      getValue: function(data) {
         return data.id;
       },
-      getUidExt: function (data) {
+      getUidExt: function(data) {
         if (data.ext) {
           return data.ext;
         }
@@ -293,10 +289,10 @@ export const liveIntentIdSubmodule = {
     'magnite': {
       source: 'rubiconproject.com',
       atype: 3,
-      getValue: function (data) {
+      getValue: function(data) {
         return data.id;
       },
-      getUidExt: function (data) {
+      getUidExt: function(data) {
         if (data.ext) {
           return data.ext;
         }
@@ -305,22 +301,10 @@ export const liveIntentIdSubmodule = {
     'index': {
       source: 'liveintent.indexexchange.com',
       atype: 3,
-      getValue: function (data) {
+      getValue: function(data) {
         return data.id;
       },
-      getUidExt: function (data) {
-        if (data.ext) {
-          return data.ext;
-        }
-      }
-    },
-    'openx': {
-      source: 'opex.com',
-      atype: 3,
-      getValue: function (data) {
-        return data.id;
-      },
-      getUidExt: function (data) {
+      getUidExt: function(data) {
         if (data.ext) {
           return data.ext;
         }
