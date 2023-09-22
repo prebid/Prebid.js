@@ -315,7 +315,7 @@ export const liveIntentIdSubmodule = {
       }
     },
     'openx': {
-      source: 'opex.com',
+      source: 'openx.com',
       atype: 3,
       getValue: function (data) {
         return data.id;
