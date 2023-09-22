@@ -418,6 +418,7 @@ describe(`UID2 module`, function () {
           describe('When the token generated in time', function() {
             testApiSuccessAndFailure(async function(apiSucceeds) {
               scenario.setConfig();
+              console.log('Test When the token generated in time', scenario.identity)
               apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
               const bid = await runAuction();
 

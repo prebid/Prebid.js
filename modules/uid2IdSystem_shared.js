@@ -557,7 +557,7 @@ async function generateCstgRequest(cstgIdentity) {
 
 async function generateTokenAndStore(baseUrl, cstgOpts, cstgIdentity, clientId, storageManager, _logInfo, _logWarn) {
   _logInfo('UID2 cstg opts provided: ', JSON.stringify(cstgOpts));
-
+  console.log('UID2 cstg opts provided: ', JSON.stringify(cstgOpts))
   const client = new Uid2ApiClient({baseUrl, cstg: cstgOpts}, clientId, _logInfo, _logWarn);
   const request = await generateCstgRequest(cstgIdentity);
   const response = await client.callCstgApi(request)
@@ -637,9 +637,11 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
     if (!storedTokens || Date.now() > storedTokens.latestToken.refresh_expires) {
       const promise = generateTokenAndStore(config.apiBaseUrl, config.cstg, cstgIdentity, config.clientId, storageManager, _logInfo, _logWarn);
       _logInfo('Generate token using CSTG');
+      console.log('Generate token using CSTG')
       return { callback: (cb) => {
         promise.then((result) => {
           _logInfo('Token generation responded, passing the new token on.', result);
+          console.log('Token generation responded, passing the new token on.', result)
           cb(result);
         });
       } };
