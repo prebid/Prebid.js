@@ -304,7 +304,7 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('openx',function () {
+  it('openx', function () {
     const userId = {
       openx: { 'id': 'sample_id' }
     };
@@ -319,9 +319,9 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('openx with ext',function () {
+  it('openx with ext', function () {
     const userId = {
-      openx: { 'id': 'sample_id','ext': { 'provider': 'some.provider.com' } }
+      openx: { 'id': 'sample_id', 'ext': { 'provider': 'some.provider.com' } }
     };
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);
@@ -336,7 +336,7 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
-  
+
   it('liveIntentId; getValue call and NO ext', function() {
     const userId = {
       lipb: {
