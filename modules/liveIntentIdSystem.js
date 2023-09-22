@@ -4,21 +4,21 @@
  * @module modules/liveIntentIdSystem
  * @requires module:modules/userId
  */
-import { triggerPixel, logError } from '../src/utils.js';
+import { triggerPixel,logError } from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
-import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
+import { gdprDataHandler,uspDataHandler } from '../src/adapterManager.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 const EVENTS_TOPIC = 'pre_lips'
 const MODULE_NAME = 'liveIntentId';
 const LI_PROVIDER_DOMAIN = 'liveintent.com';
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID,moduleName: MODULE_NAME });
 const defaultRequestedAttributes = { 'nonId': true }
 const calls = {
-  ajaxGet: (url, onSuccess, onError, timeout) => {
+  ajaxGet: (url,onSuccess,onError,timeout) => {
     ajaxBuilder(timeout)(
       url,
       {
@@ -32,7 +32,7 @@ const calls = {
       }
     )
   },
-  pixelGet: (url, onload) => triggerPixel(url, onload)
+  pixelGet: (url,onload) => triggerPixel(url,onload)
 }
 
 let eventFired = false;
@@ -43,7 +43,7 @@ let liveConnect = null;
  */
 export function reset() {
   if (window && window.liQ_instances) {
-    window.liQ_instances.forEach(i => i.eventBus.off(EVENTS_TOPIC, setEventFiredFlag))
+    window.liQ_instances.forEach(i => i.eventBus.off(EVENTS_TOPIC,setEventFiredFlag))
     window.liQ_instances = [];
   }
   liveIntentIdSubmodule.setModuleMode(null)
@@ -76,10 +76,10 @@ function parseLiveIntentCollectorConfig(collectConfig) {
  */
 function parseRequestedAttributes(overrides) {
   function createParameterArray(config) {
-    return Object.entries(config).flatMap(([k, v]) => (typeof v === 'boolean' && v) ? [k] : []);
+    return Object.entries(config).flatMap(([k,v]) => (typeof v === 'boolean' && v) ? [k] : []);
   }
   if (typeof overrides === 'object') {
-    return createParameterArray({ ...defaultRequestedAttributes, ...overrides })
+    return createParameterArray({ ...defaultRequestedAttributes,...overrides })
   } else {
     return createParameterArray(defaultRequestedAttributes);
   }
@@ -128,7 +128,7 @@ function initializeLiveConnect(configParams) {
 
   // The second param is the storage object, LS & Cookie manipulation uses PBJS
   // The third param is the ajax and pixel object, the ajax and pixel use PBJS
-  liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls);
+  liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig,storage,calls);
   if (configParams.emailHash) {
     liveConnect.push({ hash: configParams.emailHash })
   }
@@ -140,11 +140,11 @@ function tryFireEvent() {
     const eventDelay = liveConnect.config.fireEventDelay || 500
     setTimeout(() => {
       const instances = window.liQ_instances
-      instances.forEach(i => i.eventBus.once(EVENTS_TOPIC, setEventFiredFlag))
+      instances.forEach(i => i.eventBus.once(EVENTS_TOPIC,setEventFiredFlag))
       if (!eventFired && liveConnect) {
         liveConnect.fire();
       }
-    }, eventDelay)
+    },eventDelay)
   }
 }
 
@@ -161,7 +161,7 @@ export const liveIntentIdSubmodule = {
     this.moduleMode = mode
   },
   getInitializer() {
-    return (liveConnectConfig, storage, calls) => LiveConnect(liveConnectConfig, storage, calls, this.moduleMode)
+    return (liveConnectConfig,storage,calls) => LiveConnect(liveConnectConfig,storage,calls,this.moduleMode)
   },
 
   /**
@@ -173,7 +173,7 @@ export const liveIntentIdSubmodule = {
    * @param {SubmoduleConfig|undefined} config
    * @returns {{lipb:Object}}
    */
-  decode(value, config) {
+  decode(value,config) {
     const configParams = (config && config.params) || {};
     function composeIdObject(value) {
       const result = {};
@@ -190,27 +190,23 @@ export const liveIntentIdSubmodule = {
       // As adapters are applied in lexicographical order, we will always
       // be overwritten by the 'proper' uid2 module if it is present.
       if (value.uid2) {
-        result.uid2 = { 'id': value.uid2, ext: { provider: LI_PROVIDER_DOMAIN } }
+        result.uid2 = { 'id': value.uid2,ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
       if (value.bidswitch) {
-        result.bidswitch = { 'id': value.bidswitch, ext: { provider: LI_PROVIDER_DOMAIN } }
+        result.bidswitch = { 'id': value.bidswitch,ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
       if (value.medianet) {
-        result.medianet = { 'id': value.medianet, ext: { provider: LI_PROVIDER_DOMAIN } }
+        result.medianet = { 'id': value.medianet,ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
       if (value.magnite) {
-        result.magnite = { 'id': value.magnite, ext: { provider: LI_PROVIDER_DOMAIN } }
+        result.magnite = { 'id': value.magnite,ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
       if (value.index) {
-        result.index = { 'id': value.index, ext: { provider: LI_PROVIDER_DOMAIN } }
-      }
-
-      if (value.openx) {
-        result.openx = { 'id': value.openx, ext: { provider: LI_PROVIDER_DOMAIN } }
+        result.index = { 'id': value.index,ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
       return result
@@ -243,7 +239,7 @@ export const liveIntentIdSubmodule = {
           callback(response);
         },
         error => {
-          logError(`${MODULE_NAME}: ID fetch encountered an error: `, error);
+          logError(`${MODULE_NAME}: ID fetch encountered an error: `,error);
           callback();
         }
       )
@@ -329,4 +325,4 @@ export const liveIntentIdSubmodule = {
   }
 };
 
-submodule('userId', liveIntentIdSubmodule);
+submodule('userId',liveIntentIdSubmodule);
