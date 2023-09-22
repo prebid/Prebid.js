@@ -100,6 +100,7 @@ describe(`UID2 module`, function () {
       window.crypto.subtle = { importKey: () => {}, decrypt: () => {}, deriveKey: () => {}, encrypt: () => {}, generateKey: () => {}, exportKey: () => {} };
     }
     suiteSandbox.stub(window.crypto.subtle, 'importKey').callsFake(() => Promise.resolve());
+    suiteSandbox.stub(window.crypto.subtle, 'digest').callsFake(() => Promise.resolve('hashed_value'));
     suiteSandbox.stub(window.crypto.subtle, 'decrypt').callsFake((settings, key, data) => Promise.resolve(new Uint8Array([...settings.iv, ...data])));
     suiteSandbox.stub(window.crypto.subtle, 'deriveKey').callsFake(() => Promise.resolve());
     suiteSandbox.stub(window.crypto.subtle, 'exportKey').callsFake(() => Promise.resolve());
@@ -417,9 +418,8 @@ describe(`UID2 module`, function () {
 
           describe('When the token generated in time', function() {
             testApiSuccessAndFailure(async function(apiSucceeds) {
-              scenario.setConfig({ auctionDelay: 50 });
-              console.log('Test When the token generated in time', scenario.identity)
-              apiHelpers.respondAfterDelay(0, server);
+              scenario.setConfig();
+              apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
               const bid = await runAuction();
 
               if (apiSucceeds) expectToken(bid, clientSideGeneratedToken);
