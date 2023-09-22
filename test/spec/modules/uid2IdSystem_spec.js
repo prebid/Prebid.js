@@ -97,7 +97,7 @@ describe(`UID2 module`, function () {
     // I've confirmed it's available in Firefox since v34 (it seems to be unavailable on BrowserStack in Firefox v106).
     if (typeof window.crypto.subtle === 'undefined') {
       restoreSubtleToUndefined = true;
-      window.crypto.subtle = { importKey: () => {}, decrypt: () => {}, deriveKey: () => {}, encrypt: () => {}, generateKey: () => {}, exportKey: () => {} };
+      window.crypto.subtle = { importKey: () => {}, digest: () => {}, decrypt: () => {}, deriveKey: () => {}, encrypt: () => {}, generateKey: () => {}, exportKey: () => {} };
     }
     suiteSandbox.stub(window.crypto.subtle, 'importKey').callsFake(() => Promise.resolve());
     suiteSandbox.stub(window.crypto.subtle, 'digest').callsFake(() => Promise.resolve('hashed_value'));
