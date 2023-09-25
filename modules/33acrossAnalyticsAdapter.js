@@ -576,7 +576,7 @@ function setBidStatus(bid, status = BidStatus.AVAILABLE) {
     },
   }
 
-  const winningStatuses = [BidStatus.TARGETING_SET, BidStatus.RENDERED];
+  const winningStatuses = [BidStatus.RENDERED];
 
   if (statusStates[bid.status].next.includes(status)) {
     bid.status = status;
