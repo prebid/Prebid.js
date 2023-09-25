@@ -226,7 +226,6 @@ describe('lkqdBidAdapter', () => {
           'utcoffset': -420,
         },
         'dnt': 0,
-        'ip': '184.103.177.205',
         'ifa': 'f4254ada-4174-6cfd-83c7-2f999c457c1d'
       },
       'user': {

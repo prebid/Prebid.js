@@ -94,8 +94,8 @@ describe('IDx ID System', () => {
       adUnits = [getAdUnitMock()];
       init(config);
       setSubmoduleRegistry([idxIdSubmodule]);
-      config.setConfig(getConfigMock());
       getCookieStub.withArgs(IDX_COOKIE_NAME).returns(IDX_COOKIE_STORED);
+      config.setConfig(getConfigMock());
     });
 
     afterEach(() => {

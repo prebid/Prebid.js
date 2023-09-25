@@ -5,9 +5,8 @@ import {
   createTrackPixelHtml,
   deepAccess,
   deepSetValue,
-  getAdUnitSizes,
+  getDefinedParams,
   getDNT,
-  inIframe,
   isArray,
   isArrayOfNums,
   isEmpty,
@@ -15,13 +14,14 @@ import {
   isPlainObject,
   isStr,
   mergeDeep,
-  parseGPTSingleSizeArrayToRtbSize,
-  parseUrl
+  parseGPTSingleSizeArrayToRtbSize
 } from '../src/utils.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {find, includes} from '../src/polyfill.js';
+import {find} from '../src/polyfill.js';
 import {config} from '../src/config.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 /*
  * In case you're AdKernel whitelable platform's client who needs branded adapter to
@@ -29,17 +29,19 @@ import {config} from '../src/config.js';
  *
  * Please contact prebid@adkernel.com and we'll add your adapter as an alias.
  */
-
-const VIDEO_TARGETING = Object.freeze(['mimes', 'minduration', 'maxduration', 'protocols',
-  'startdelay', 'linearity', 'boxingallowed', 'playbackmethod', 'delivery',
-  'pos', 'api', 'ext']);
+const VIDEO_PARAMS = ['pos', 'context', 'placement', 'plcmt', 'api', 'mimes', 'protocols', 'playbackmethod', 'minduration', 'maxduration',
+  'startdelay', 'linearity', 'skip', 'skipmin', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackend', 'boxingallowed'];
+const VIDEO_FPD = ['battr', 'pos'];
+const NATIVE_FPD = ['battr', 'api'];
+const BANNER_PARAMS = ['pos'];
+const BANNER_FPD = ['btype', 'battr', 'pos', 'api'];
 const VERSION = '1.6';
 const SYNC_IFRAME = 1;
 const SYNC_IMAGE = 2;
-const SYNC_TYPES = Object.freeze({
+const SYNC_TYPES = {
   1: 'iframe',
   2: 'image'
-});
+};
 const GVLID = 14;
 
 const NATIVE_MODEL = [
@@ -78,7 +80,6 @@ export const spec = {
     {code: 'audiencemedia'},
     {code: 'waardex_ak'},
     {code: 'roqoon'},
-    {code: 'andbeyond'},
     {code: 'adbite'},
     {code: 'houseofpubs'},
     {code: 'torchad'},
@@ -90,11 +91,18 @@ export const spec = {
     {code: 'denakop'},
     {code: 'rtbanalytica'},
     {code: 'unibots'},
-    {code: 'catapultx'},
     {code: 'ergadx'},
     {code: 'turktelekom'},
     {code: 'felixads'},
-    {code: 'motionspots'}
+    {code: 'motionspots'},
+    {code: 'sonic_twist'},
+    {code: 'displayioads'},
+    {code: 'rtbdemand_com'},
+    {code: 'bidbuddy'},
+    {code: 'didnadisplay'},
+    {code: 'qortex'},
+    {code: 'adpluto'},
+    {code: 'headbidder'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -120,6 +128,9 @@ export const spec = {
    * @returns {ServerRequest[]}
    */
   buildRequests: function (bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     let impGroups = groupImpressionsByHostZone(bidRequests, bidderRequest.refererInfo);
     let requests = [];
     let schain = bidRequests[0].schain;
@@ -226,7 +237,7 @@ registerBidder(spec);
  * @param refererInfo {refererInfo}
  */
 function groupImpressionsByHostZone(bidRequests, refererInfo) {
-  let secure = (refererInfo && refererInfo.referer.indexOf('https:') === 0);
+  let secure = (refererInfo && refererInfo.page?.indexOf('https:') === 0);
   return Object.values(
     bidRequests.map(bidRequest => buildImp(bidRequest, secure))
       .reduce((acc, curr, index) => {
@@ -265,29 +276,34 @@ function buildImp(bidRequest, secure) {
   var mediaType;
   var sizes = [];
 
-  if (deepAccess(bidRequest, 'mediaTypes.banner')) {
+  if (bidRequest.mediaTypes?.banner) {
     sizes = getAdUnitSizes(bidRequest);
+    let pbBanner = bidRequest.mediaTypes.banner;
     imp.banner = {
+      ...getDefinedParamsOrEmpty(bidRequest.ortb2Imp, BANNER_FPD),
+      ...getDefinedParamsOrEmpty(pbBanner, BANNER_PARAMS),
       format: sizes.map(wh => parseGPTSingleSizeArrayToRtbSize(wh)),
       topframe: 0
     };
     mediaType = BANNER;
-  } else if (deepAccess(bidRequest, 'mediaTypes.video')) {
-    let video = deepAccess(bidRequest, 'mediaTypes.video');
-    imp.video = {};
-    if (video.playerSize) {
-      sizes = video.playerSize[0];
+  } else if (bidRequest.mediaTypes?.video) {
+    let pbVideo = bidRequest.mediaTypes.video;
+    imp.video = {
+      ...getDefinedParamsOrEmpty(bidRequest.ortb2Imp, VIDEO_FPD),
+      ...getDefinedParamsOrEmpty(pbVideo, VIDEO_PARAMS)
+    };
+    if (pbVideo.playerSize) {
+      sizes = pbVideo.playerSize[0];
       imp.video = Object.assign(imp.video, parseGPTSingleSizeArrayToRtbSize(sizes) || {});
-    }
-    if (bidRequest.params.video) {
-      Object.keys(bidRequest.params.video)
-        .filter(key => includes(VIDEO_TARGETING, key))
-        .forEach(key => imp.video[key] = bidRequest.params.video[key]);
+    } else if (pbVideo.w && pbVideo.h) {
+      imp.video.w = pbVideo.w;
+      imp.video.h = pbVideo.h;
     }
     mediaType = VIDEO;
-  } else if (deepAccess(bidRequest, 'mediaTypes.native')) {
+  } else if (bidRequest.mediaTypes?.native) {
     let nativeRequest = buildNativeRequest(bidRequest.mediaTypes.native);
     imp.native = {
+      ...getDefinedParamsOrEmpty(bidRequest.ortb2Imp, NATIVE_FPD),
       ver: '1.1',
       request: JSON.stringify(nativeRequest)
     };
@@ -303,6 +319,13 @@ function buildImp(bidRequest, secure) {
     imp.secure = 1;
   }
   return imp;
+}
+
+function getDefinedParamsOrEmpty(object, params) {
+  if (object === undefined) {
+    return {};
+  }
+  return getDefinedParams(object, params);
 }
 
 /**
@@ -433,7 +456,9 @@ function makeUser(bidderRequest, fpd) {
   if (eids) {
     deepSetValue(user, 'ext.eids', eids);
   }
-  if (!isEmpty(user)) { return {user: user}; }
+  if (!isEmpty(user)) {
+    return {user: user};
+  }
 }
 
 /**
@@ -442,12 +467,16 @@ function makeUser(bidderRequest, fpd) {
  * @returns {{regs: Object} | undefined}
  */
 function makeRegulations(bidderRequest) {
-  let {gdprConsent, uspConsent} = bidderRequest;
+  let {gdprConsent, uspConsent, gppConsent} = bidderRequest;
   let regs = {};
   if (gdprConsent) {
     if (gdprConsent.gdprApplies !== undefined) {
       deepSetValue(regs, 'regs.ext.gdpr', ~~gdprConsent.gdprApplies);
     }
+  }
+  if (gppConsent) {
+    deepSetValue(regs, 'regs.gpp', gppConsent.gppString);
+    deepSetValue(regs, 'regs.gpp_sid', gppConsent.applicableSections);
   }
   if (uspConsent) {
     deepSetValue(regs, 'regs.ext.us_privacy', uspConsent);
@@ -468,9 +497,9 @@ function makeRegulations(bidderRequest) {
  * @returns
  */
 function makeBaseRequest(bidderRequest, imps, fpd) {
-  let {auctionId, timeout} = bidderRequest;
+  let {timeout} = bidderRequest;
   let request = {
-    'id': auctionId,
+    'id': bidderRequest.bidderRequestId,
     'imp': imps,
     'at': 1,
     'tmax': parseInt(timeout)
@@ -506,7 +535,7 @@ function makeSyncInfo(bidderRequest) {
  * @return {Object} Complete rtb request
  */
 function buildRtbRequest(imps, bidderRequest, schain) {
-  let fpd = config.getConfig('ortb2') || {};
+  let fpd = bidderRequest.ortb2 || {};
 
   let req = mergeDeep(
     makeBaseRequest(bidderRequest, imps, fpd),
@@ -535,14 +564,13 @@ function getLanguage() {
  * Creates site description object
  */
 function createSite(refInfo, fpd) {
-  let url = parseUrl(refInfo.referer);
   let site = {
-    'domain': url.hostname,
-    'page': `${url.protocol}://${url.hostname}${url.pathname}`
+    'domain': refInfo.domain,
+    'page': refInfo.page
   };
   mergeDeep(site, fpd.site);
-  if (!inIframe() && document.referrer) {
-    site.ref = document.referrer;
+  if (refInfo.ref != null) {
+    site.ref = refInfo.ref;
   } else {
     delete site.ref;
   }

@@ -7,7 +7,10 @@
  */
 
 import { submodule } from '../src/hook.js';
+import { loadExternalScript } from '../src/adloader.js';
 import { logError, generateUUID, insertElement } from '../src/utils.js';
+import * as events from '../src/events.js';
+import CONSTANTS from '../src/constants.json';
 
 // ============================ MODULE STATE ===============================
 
@@ -50,10 +53,7 @@ function pageInitStepPreloadScript(scriptURL) {
  * @param {string} scriptURL The script URL to add to the page for protection
  */
 function pageInitStepProtectPage(scriptURL) {
-  const scriptElement = document.createElement('script');
-  scriptElement.type = 'text/javascript';
-  scriptElement.src = scriptURL;
-  insertElement(scriptElement);
+  loadExternalScript(scriptURL, 'clean.io');
 }
 
 /**
@@ -147,6 +147,25 @@ function readConfig(config) {
   }
 }
 
+/**
+ * The function to be called upon module init
+ * Defined as a variable to be able to reset it naturally
+ */
+let startBillableEvents = function() {
+  // Upon clean.io submodule initialization, every winner bid is considered to be protected
+  // and therefore, subjected to billing
+  events.on(CONSTANTS.EVENTS.BID_WON, winnerBidResponse => {
+    events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
+      vendor: 'clean.io',
+      billingId: generateUUID(),
+      type: 'impression',
+      auctionId: winnerBidResponse.auctionId,
+      transactionId: winnerBidResponse.transactionId,
+      bidId: winnerBidResponse.requestId,
+    });
+  });
+}
+
 // ============================ MODULE REGISTRATION ===============================
 
 /**
@@ -160,6 +179,13 @@ function beforeInit() {
       try {
         readConfig(config);
         onModuleInit();
+
+        // Subscribing once to ensure no duplicate events
+        // in case module initialization code runs multiple times
+        // This should have been a part of submodule definition, but well...
+        // The assumption here is that in production init() will be called exactly once
+        startBillableEvents();
+        startBillableEvents = () => {};
         return true;
       } catch (err) {
         if (err instanceof ConfigError) {

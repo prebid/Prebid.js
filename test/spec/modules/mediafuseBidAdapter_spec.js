@@ -811,8 +811,8 @@ describe('MediaFuseAdapter', function () {
         sha1udid: '4DFAA92388699AC6539885AEF1719293879985BF',
         windowsadid: '750c6be243f1c4b5c9912b95a5742fc5'
       });
-      expect(payload.device.geo).to.exist;
-      expect(payload.device.geo).to.deep.equal({
+      expect(payload.device.geo).to.not.exist;
+      expect(payload.device.geo).to.not.deep.equal({
         lat: 40.0964439,
         lng: -75.3009142
       });
@@ -822,7 +822,7 @@ describe('MediaFuseAdapter', function () {
       const bidRequest = Object.assign({}, bidRequests[0])
       const bidderRequest = {
         refererInfo: {
-          referer: 'https://example.com/page.html',
+          topmostLocation: 'https://example.com/page.html',
           reachedTop: true,
           numIframes: 2,
           stack: [
@@ -939,11 +939,7 @@ describe('MediaFuseAdapter', function () {
           uid2: { id: 'sample-uid2-value' },
           criteoId: 'sample-criteo-userid',
           netId: 'sample-netId-userid',
-          idl_env: 'sample-idl-userid',
-          flocId: {
-            id: 'sample-flocid-value',
-            version: 'chrome.1.0'
-          }
+          idl_env: 'sample-idl-userid'
         }
       });
 
@@ -958,11 +954,6 @@ describe('MediaFuseAdapter', function () {
       expect(payload.eids).to.deep.include({
         source: 'criteo.com',
         id: 'sample-criteo-userid',
-      });
-
-      expect(payload.eids).to.deep.include({
-        source: 'chrome.com',
-        id: 'sample-flocid-value'
       });
 
       expect(payload.eids).to.deep.include({
@@ -1030,16 +1021,13 @@ describe('MediaFuseAdapter', function () {
   })
 
   describe('interpretResponse', function () {
-    let bfStub;
     let bidderSettingsStorage;
 
     before(function() {
-      bfStub = sinon.stub(bidderFactory, 'getIabSubCategory');
       bidderSettingsStorage = $$PREBID_GLOBAL$$.bidderSettings;
     });
 
     after(function() {
-      bfStub.restore();
       $$PREBID_GLOBAL$$.bidderSettings = bidderSettingsStorage;
     });
 
@@ -1284,7 +1272,6 @@ describe('MediaFuseAdapter', function () {
           }
         }]
       };
-      bfStub.returns('1');
 
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result[0]).to.have.property('vastUrl');

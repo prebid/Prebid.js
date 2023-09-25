@@ -1,7 +1,7 @@
-import { expect } from 'chai';
-import { spec } from 'modules/operaadsBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
+import {expect} from 'chai';
+import {spec} from 'modules/operaadsBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from 'src/mediaTypes.js';
 
 describe('Opera Ads Bid Adapter', function () {
   describe('Test isBidRequestValid', function () {
@@ -49,7 +49,7 @@ describe('Opera Ads Bid Adapter', function () {
       bidderCode: 'myBidderCode',
       bidderRequestId: '15246a574e859f',
       refererInfo: {
-        referer: 'http://example.com',
+        page: 'http://example.com',
         stack: ['http://example.com']
       },
       gdprConsent: {
@@ -234,7 +234,7 @@ describe('Opera Ads Bid Adapter', function () {
           requestData = JSON.parse(req.data);
         }).to.not.throw();
 
-        expect(requestData.id).to.equal(bidderRequest.auctionId);
+        expect(requestData.id).to.exist;
         expect(requestData.tmax).to.equal(bidderRequest.timeout);
         expect(requestData.test).to.equal(0);
         expect(requestData.imp).to.be.an('array').that.have.lengthOf(1);
@@ -242,7 +242,7 @@ describe('Opera Ads Bid Adapter', function () {
         expect(requestData.site).to.be.an('object');
         expect(requestData.site.id).to.equal(bidRequest.params.publisherId);
         expect(requestData.site.domain).to.not.be.empty;
-        expect(requestData.site.page).to.equal(bidderRequest.refererInfo.referer);
+        expect(requestData.site.page).to.equal(bidderRequest.refererInfo.page);
         expect(requestData.at).to.equal(1);
         expect(requestData.bcat).to.be.an('array').that.is.empty;
         expect(requestData.cur).to.be.an('array').that.not.be.empty;

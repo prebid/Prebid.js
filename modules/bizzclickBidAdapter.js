@@ -1,7 +1,9 @@
-import { logMessage, getDNT, deepSetValue, deepAccess, _map, logWarn } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import {_map, deepAccess, deepSetValue, getDNT, logMessage, logWarn} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+
 const BIDDER_CODE = 'bizzclick';
 const ACCOUNTID_MACROS = '[account_id]';
 const URL_ENDPOINT = `https://us-e-node1.bizzclick.com/bid?rtb_seat_id=prebidjs&secret_key=${ACCOUNTID_MACROS}`;
@@ -57,13 +59,16 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     if (validBidRequests && validBidRequests.length === 0) return []
     let accuontId = validBidRequests[0].params.accountId;
     const endpointURL = URL_ENDPOINT.replace(ACCOUNTID_MACROS, accuontId);
     let winTop = window;
     let location;
     try {
-      location = new URL(bidderRequest.refererInfo.referer)
+      location = new URL(bidderRequest.refererInfo.page)
       winTop = window.top;
     } catch (e) {
       location = winTop.location;
@@ -88,13 +93,14 @@ export const spec = {
           host: location.host
         },
         source: {
-          tid: bidRequest.transactionId,
+          tid: bidRequest.ortb2Imp?.ext?.tid,
           ext: {
             schain: {}
           }
         },
         regs: {
           coppa: config.getConfig('coppa') === true ? 1 : 0,
+          ext: {}
         },
         user: {
           ext: {}
@@ -106,25 +112,15 @@ export const spec = {
         imp: [impObject],
       };
 
-      if (bidderRequest && bidderRequest.uspConsent) {
-        data.regs.ext.us_privacy = bidderRequest.uspConsent;
-      }
-
-      if (bidderRequest && bidderRequest.gdprConsent) {
-        let { gdprApplies, consentString } = bidderRequest.gdprConsent;
-        data.regs.ext.gdpr = gdprApplies ? 1 : 0;
-        data.user.ext.consent = consentString;
-      }
-
-      if (bidRequest.schain) {
-        deepSetValue(data, 'source.ext.schain', bidRequest.schain);
-      }
-
       let connection = navigator.connection || navigator.webkitConnection;
       if (connection && connection.effectiveType) {
         data.device.connectiontype = connection.effectiveType;
       }
       if (bidRequest) {
+        if (bidRequest.schain) {
+          deepSetValue(data, 'source.ext.schain', bidRequest.schain);
+        }
+
         if (bidRequest.gdprConsent && bidRequest.gdprConsent.gdprApplies) {
           deepSetValue(data, 'regs.ext.gdpr', bidRequest.gdprConsent.gdprApplies ? 1 : 0);
           deepSetValue(data, 'user.ext.consent', bidRequest.gdprConsent.consentString);
@@ -239,7 +235,9 @@ const prepareImpObject = (bidRequest) => {
 };
 const addNativeParameters = bidRequest => {
   let impObject = {
-    id: bidRequest.transactionId,
+    // TODO: top-level ID is not in ORTB native 1.2, is this intentional?
+    // (despite the name, this appears to be an ORTB native request - not an imp - object)
+    id: bidRequest.bidId,
     ver: NATIVE_VERSION,
   };
   const assets = _map(bidRequest.mediaTypes.native, (bidParams, key) => {
@@ -261,7 +259,7 @@ const addNativeParameters = bidRequest => {
         wmin = sizes[0];
         hmin = sizes[1];
       }
-      asset[props.name] = {}
+      asset[props.name] = {};
       if (bidParams.len) asset[props.name]['len'] = bidParams.len;
       if (props.type) asset[props.name]['type'] = props.type;
       if (wmin) asset[props.name]['wmin'] = wmin;

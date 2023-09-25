@@ -1,9 +1,9 @@
 import {buildUrl, deepAccess, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
-import {createEidsArray} from './userId/eids.js';
+import { config } from '../src/config.js';
 import {find} from '../src/polyfill.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const VERSION = '1.0';
 const BIDDER_CODE = 'adyoulike';
@@ -61,7 +61,10 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
     let hasVideo = false;
+    let eids;
     const payload = {
       Version: VERSION,
       Bids: bidRequests.reduce((accumulator, bidReq) => {
@@ -70,12 +73,18 @@ export const spec = {
         let size = getSize(sizesArray);
         accumulator[bidReq.bidId] = {};
         accumulator[bidReq.bidId].PlacementID = bidReq.params.placement;
-        accumulator[bidReq.bidId].TransactionID = bidReq.transactionId;
+        accumulator[bidReq.bidId].TransactionID = bidReq.ortb2Imp?.ext?.tid;
         accumulator[bidReq.bidId].Width = size.width;
         accumulator[bidReq.bidId].Height = size.height;
         accumulator[bidReq.bidId].AvailableSizes = sizesArray.join(',');
         if (typeof bidReq.getFloor === 'function') {
           accumulator[bidReq.bidId].Pricing = getFloor(bidReq, size, mediatype);
+        }
+        if (bidReq.schain) {
+          accumulator[bidReq.bidId].SChain = bidReq.schain;
+        }
+        if (!eids && bidReq.userIdAsEids && bidReq.userIdAsEids.length) {
+          eids = bidReq.userIdAsEids;
         }
         if (mediatype === NATIVE) {
           let nativeReq = bidReq.mediaTypes.native;
@@ -113,9 +122,14 @@ export const spec = {
       payload.uspConsent = bidderRequest.uspConsent;
     }
 
-    if (deepAccess(bidderRequest, 'userId')) {
-      payload.userId = createEidsArray(bidderRequest.userId);
+    if (bidderRequest.ortb2) {
+      payload.ortb2 = bidderRequest.ortb2;
     }
+    if (eids) {
+      payload.eids = eids;
+    }
+
+    payload.pbjs_version = '$prebid.version$';
 
     const data = JSON.stringify(payload);
     const options = {
@@ -153,6 +167,50 @@ export const spec = {
       }
     });
     return bidResponses;
+  },
+
+  /**
+   * List user sync endpoints.
+   * Legal information have to be added to the request.
+   * Only iframe syncs are supported.
+   *
+   * @param {*} syncOptions Publisher prebid configuration.
+   * @param {*} serverResponses A successful response from the server.
+   * @return {syncs[]} An array of syncs that should be executed.
+   */
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+    if (!syncOptions.iframeEnabled) {
+      return [];
+    }
+
+    let params = '';
+
+    // GDPR
+    if (gdprConsent) {
+      params += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+      params += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
+    }
+
+    // coppa compliance
+    if (config.getConfig('coppa') === true) {
+      params += '&coppa=1';
+    }
+
+    // CCPA
+    if (uspConsent) {
+      params += '&us_privacy=' + encodeURIComponent(uspConsent);
+    }
+
+    // GPP
+    if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+      params += '&gpp=' + encodeURIComponent(gppConsent.gppString);
+      params += '&gpp_sid=' + encodeURIComponent(gppConsent?.applicableSections?.join(','));
+    }
+
+    return [{
+      type: 'iframe',
+      url: `https://visitor.omnitagjs.com/visitor/isync?uid=19340f4f097d16f41f34fc0274981ca4${params}`
+    }];
   }
 }
 
@@ -161,23 +219,6 @@ function getHostname(bidderRequest) {
   let dcHostname = find(bidderRequest, bid => bid.params.DC);
   if (dcHostname) {
     return ('-' + dcHostname.params.DC);
-  }
-  return '';
-}
-
-/* Get current page canonical url */
-function getCanonicalUrl() {
-  let link;
-  if (window.self !== window.top) {
-    try {
-      link = window.top.document.head.querySelector('link[rel="canonical"][href]');
-    } catch (e) { }
-  } else {
-    link = document.head.querySelector('link[rel="canonical"][href]');
-  }
-
-  if (link) {
-    return link.href;
   }
   return '';
 }
@@ -233,25 +274,32 @@ function createEndpoint(bidRequests, bidderRequest, hasVideo) {
 /* Create endpoint query string */
 function createEndpointQS(bidderRequest) {
   const qs = {};
-
   if (bidderRequest) {
     const ref = bidderRequest.refererInfo;
     if (ref) {
-      qs.RefererUrl = encodeURIComponent(ref.referer);
-      if (ref.numIframes > 0) {
-        qs.SafeFrame = true;
+      if (ref.location) {
+        // RefererUrl will be removed in a future version.
+        qs.RefererUrl = encodeURIComponent(ref.location);
+        if (!ref.reachedTop) {
+          qs.SafeFrame = true;
+        }
       }
+
+      qs.PageUrl = encodeURIComponent(ref.topmostLocation);
+      qs.PageReferrer = encodeURIComponent(ref.location);
+    }
+
+    // retreive info from ortb2 object if present (prebid7)
+    const siteInfo = bidderRequest.ortb2?.site;
+    if (siteInfo) {
+      qs.PageUrl = encodeURIComponent(siteInfo.page || ref?.topmostLocation);
+      qs.PageReferrer = encodeURIComponent(siteInfo.ref || ref?.location);
     }
   }
 
-  const can = getCanonicalUrl();
+  const can = bidderRequest?.refererInfo?.canonicalUrl;
   if (can) {
     qs.CanonicalUrl = encodeURIComponent(can);
-  }
-
-  const domain = config.getConfig('publisherDomain');
-  if (domain) {
-    qs.PublisherDomain = encodeURIComponent(domain);
   }
 
   return qs;
@@ -348,14 +396,6 @@ function getTrackers(eventsArray, jsTrackers) {
     }
   });
   return result;
-}
-
-function getVideoAd(response) {
-  var adJson = {};
-  if (typeof response.Ad === 'string' && response.Ad.indexOf('\/\*PREBID\*\/') > 0) {
-    adJson = JSON.parse(response.Ad.match(/\/\*PREBID\*\/(.*)\/\*PREBID\*\//)[1]);
-    return deepAccess(adJson, 'Content.MainVideo.Vast');
-  }
 }
 
 function getNativeAssets(response, nativeConfig) {
@@ -459,7 +499,7 @@ function getNativeAssets(response, nativeConfig) {
 /* Create bid from response */
 function createBid(response, bidRequests) {
   if (!response || (!response.Ad && !response.Native && !response.Vast)) {
-    return
+    return;
   }
 
   const request = bidRequests && bidRequests[response.BidID];
@@ -486,7 +526,7 @@ function createBid(response, bidRequests) {
   };
 
   // retreive video response if present
-  const vast64 = response.Vast || getVideoAd(response);
+  const vast64 = response.Vast;
   if (vast64) {
     bid.width = response.Width;
     bid.height = response.Height;

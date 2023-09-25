@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {spec} from '../../../modules/e_volutionBidAdapter.js';
 
 describe('EvolutionTechBidAdapter', function () {
-  let bid = {
+  let bids = [{
     bidId: '23fhj33i987f',
     bidder: 'e_volution',
     params: {
@@ -12,21 +12,55 @@ describe('EvolutionTechBidAdapter', function () {
       banner: {
         sizes: [[300, 250]],
       }
+    },
+    userId: {
+      id5id: 'id5id'
     }
+  }, {
+    bidId: '23fhj33i987f',
+    bidder: 'e_volution',
+    params: {
+      placementId: 0
+    },
+    mediaTypes: {
+      video: {
+        playerSize: [300, 250]
+      }
+    },
+    userId: {
+      id5id: 'id5id'
+    }
+  }, {
+    bidId: '23fhj33i987f',
+    bidder: 'e_volution',
+    params: {
+      placementId: 0
+    },
+    mediaTypes: {
+      native: {}
+    },
+    userId: {
+      id5id: 'id5id'
+    }
+  }];
+
+  const bidderRequest = {
+    uspConsent: 'uspConsent',
+    gdprConsent: 'gdprConsent'
   };
 
   describe('isBidRequestValid', function () {
     it('Should return true if there are bidId, params and placementId parameters present', function () {
-      expect(spec.isBidRequestValid(bid)).to.be.true;
+      expect(spec.isBidRequestValid(bids[0])).to.be.true;
     });
     it('Should return false if at least one of parameters is not present', function () {
-      delete bid.params.placementId;
-      expect(spec.isBidRequestValid(bid)).to.be.false;
+      delete bids[0].params.placementId;
+      expect(spec.isBidRequestValid(bids[0])).to.be.false;
     });
   });
 
   describe('buildRequests', function () {
-    let serverRequest = spec.buildRequests([bid]);
+    let serverRequest = spec.buildRequests(bids, bidderRequest);
     it('Creates a ServerRequest object with method, URL and data', function () {
       expect(serverRequest).to.exist;
       expect(serverRequest.method).to.exist;
@@ -42,18 +76,35 @@ describe('EvolutionTechBidAdapter', function () {
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
       expect(data).to.be.an('object');
-      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements');
+      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'ccpa', 'gdpr');
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
       expect(data.language).to.be.a('string');
       expect(data.secure).to.be.within(0, 1);
       expect(data.host).to.be.a('string');
       expect(data.page).to.be.a('string');
+      expect(data.ccpa).to.be.equal('uspConsent');
+      expect(data.gdpr).to.be.equal('gdprConsent');
+
       let placement = data['placements'][0];
-      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes', 'bidfloor');
+      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'sizes', 'bidfloor', 'eids');
       expect(placement.placementId).to.equal(0);
       expect(placement.bidId).to.equal('23fhj33i987f');
       expect(placement.traffic).to.equal('banner');
+
+      placement = data['placements'][1];
+      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'bidfloor', 'eids', 'wPlayer', 'hPlayer',
+        'minduration', 'maxduration', 'mimes', 'protocols', 'startdelay', 'placement', 'skip', 'skipafter', 'minbitrate',
+        'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity');
+      expect(placement.placementId).to.equal(0);
+      expect(placement.bidId).to.equal('23fhj33i987f');
+      expect(placement.traffic).to.equal('video');
+
+      placement = data['placements'][2];
+      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'bidfloor', 'eids', 'native');
+      expect(placement.placementId).to.equal(0);
+      expect(placement.bidId).to.equal('23fhj33i987f');
+      expect(placement.traffic).to.equal('native');
     });
     it('Returns empty data if no valid requests are passed', function () {
       serverRequest = spec.buildRequests([]);
@@ -76,7 +127,9 @@ describe('EvolutionTechBidAdapter', function () {
           netRevenue: true,
           currency: 'USD',
           dealId: '1',
-          meta: {}
+          meta: {
+            adomain: [ 'example.com' ]
+          }
         }]
       };
       let bannerResponses = spec.interpretResponse(banner);
@@ -106,7 +159,9 @@ describe('EvolutionTechBidAdapter', function () {
           netRevenue: true,
           currency: 'USD',
           dealId: '1',
-          meta: {}
+          meta: {
+            adomain: [ 'example.com' ]
+          }
         }]
       };
       let videoResponses = spec.interpretResponse(video);
@@ -139,7 +194,9 @@ describe('EvolutionTechBidAdapter', function () {
           creativeId: '2',
           netRevenue: true,
           currency: 'USD',
-          meta: {}
+          meta: {
+            adomain: [ 'example.com' ]
+          }
         }]
       };
       let nativeResponses = spec.interpretResponse(native);

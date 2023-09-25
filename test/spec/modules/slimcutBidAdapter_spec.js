@@ -106,7 +106,7 @@ describe('slimcutBidAdapter', function() {
       const bidRequest = Object.assign({}, bidRequests[0])
       const bidderRequest = {
         refererInfo: {
-          referer: 'https://example.com/page.html',
+          page: 'https://example.com/page.html',
           reachedTop: true,
           numIframes: 2
         }
@@ -178,7 +178,6 @@ describe('slimcutBidAdapter', function() {
         'ad': AD_SCRIPT,
         'requestId': '3ede2a3fa0db94',
         'creativeId': 'er2ee',
-        'transactionId': 'deadb33f',
         'winUrl': 'https://sb.freeskreen.com/win',
         'meta': {
           'advertiserDomains': []

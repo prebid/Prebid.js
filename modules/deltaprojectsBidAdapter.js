@@ -1,7 +1,14 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
 import {
-  _each, _map, isFn, isNumber, createTrackPixelHtml, deepAccess, parseUrl, logWarn, logError
+  _each,
+  _map,
+  createTrackPixelHtml,
+  deepAccess,
+  isFn,
+  isNumber,
+  logError,
+  logWarn
 } from '../src/utils.js';
 import {config} from '../src/config.js';
 
@@ -29,17 +36,16 @@ function isBidRequestValid(bid) {
 function buildRequests(validBidRequests, bidderRequest) {
   /** == shared ==**/
   // -- build id
-  const id = bidderRequest.auctionId;
+  const id = bidderRequest.bidderRequestId;
 
   // -- build site
-  const loc = parseUrl(bidderRequest.refererInfo.referer);
   const publisherId = setOnAny(validBidRequests, 'params.publisherId');
   const siteId = setOnAny(validBidRequests, 'params.siteId');
   const site = {
     id: siteId,
-    domain: loc.hostname,
-    page: loc.href,
-    ref: loc.href,
+    domain: bidderRequest.refererInfo.domain,
+    page: bidderRequest.refererInfo.page,
+    ref: bidderRequest.refererInfo.ref,
     publisher: { id: publisherId },
   };
 
@@ -93,7 +99,7 @@ function buildOpenRTBRequest(validBidRequest, id, site, device, user, tmax, regs
 
   // build source
   const source = {
-    tid: validBidRequest.transactionId,
+    tid: validBidRequest.auctionId,
     fd: 1,
   }
 

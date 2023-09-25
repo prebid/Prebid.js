@@ -1,7 +1,7 @@
-import { tryAppendQueryString } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 const BIDDER_CODE = 'doceree';
 const END_POINT = 'https://bidder.doceree.com'
 
@@ -24,6 +24,7 @@ export const spec = {
   buildRequests: (validBidRequests) => {
     const serverRequests = [];
     const { data } = config.getConfig('doceree.user')
+    // TODO: this should probably look at refererInfo
     const { page, domain, token } = config.getConfig('doceree.context')
     const encodedUserInfo = window.btoa(encodeURIComponent(JSON.stringify(data)))
 

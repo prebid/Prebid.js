@@ -154,7 +154,8 @@ function buildRequests(validBidRequests, bidderRequest) {
 
   // RefererInfo
   if (bidderRequest && bidderRequest.refererInfo) {
-    commonPayload.referer = bidderRequest.refererInfo.referer;
+    // TODO: is 'topmostLocation' the right value here?
+    commonPayload.referer = bidderRequest.refererInfo.topmostLocation;
     commonPayload.numIframes = bidderRequest.refererInfo.numIframes;
   }
   // GDPR handling
@@ -178,6 +179,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 
     const bidPayload = {
       adUnitCode: bid.adUnitCode,
+      // TODO: fix auctionId/transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auctionId: bid.auctionId,
       bidder: bid.bidder,
       bidderRequestId: bid.bidderRequestId,

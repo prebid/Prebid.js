@@ -47,5 +47,22 @@ Module that connects to boldwin demand sources
                         }
                     ]
                 }
+                // Will return static test banner
+                {
+                    code: 'endpointId_0',
+                    mediaTypes: {
+                        banner: {
+                            sizes: [[300, 250]],
+                        }
+                    },
+                    bids: [
+                        {
+                            bidder: 'boldwin',
+                            params: {
+                                endpointId: 'testBanner',
+                            }
+                        }
+                    ]
+                },
             ];
 ```

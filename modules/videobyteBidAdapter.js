@@ -90,7 +90,6 @@ export const spec = {
       if (bid.adm && bid.price) {
         let bidResponse = {
           requestId: response.id,
-          bidderCode: spec.code,
           cpm: bid.price,
           width: bid.w,
           height: bid.h,
@@ -221,9 +220,9 @@ function buildRequestData(bidRequest, bidderRequest) {
       }
     ],
     site: {
-      domain: window.location.hostname,
-      page: window.location.href,
-      ref: bidRequest.refererInfo ? bidRequest.refererInfo.referer || null : null
+      domain: bidderRequest.refererInfo.domain,
+      page: bidderRequest.refererInfo.page,
+      ref: bidderRequest.refererInfo.ref,
     },
     ext: {
       hb: 1,

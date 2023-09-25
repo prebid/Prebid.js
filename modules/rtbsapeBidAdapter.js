@@ -39,11 +39,13 @@ export const spec = {
       url: ENDPOINT,
       method: 'POST',
       data: {
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: bidderRequest.auctionId,
         requestId: bidderRequest.bidderRequestId,
         bids: validBidRequests,
         timezone: (tz > 0 ? '-' : '+') + padInt(Math.floor(Math.abs(tz) / 60)) + ':' + padInt(Math.abs(tz) % 60),
-        refererInfo: bidderRequest.refererInfo
+        // TODO: please do not send internal data structures over the network
+        refererInfo: bidderRequest.refererInfo.legacy
       },
     }
   },

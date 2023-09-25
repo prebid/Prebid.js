@@ -95,9 +95,10 @@ Example:
             content: {
                 id: 'jw_abc123',
                 data: [{
-                    name: 'jwplayer',
+                    name: 'jwplayer.com',
                     ext: {
-                        segtax: 502
+                        segtax: 502,
+                        cids: ['abc123']
                     },
                     segment: [{ 
                         id: '123'
@@ -117,8 +118,9 @@ where:
     - `content` is an object containing metadata for the media. It may contain the following information: 
       - `id` is a unique identifier for the specific media asset
       - `data` is an array containing segment taxonomy objects that have the following parameters:
-        - `name` is the `jwplayer` string indicating the provider name
+        - `name` is the `jwplayer.com` string indicating the provider name
         - `ext.segtax` whose `502` value is the unique identifier for JW Player's proprietary taxonomy
+        - `ext.cids` is an array containing the list of extended content ids as defined in [oRTB's community extensions](https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/extensions/community_extensions/extended-content-ids.md#example---content-id-and-seller-defined-context). 
         - `segment` is an array containing the segment taxonomy values as an object where:
           - `id` is the string representation of the data segment value. 
   

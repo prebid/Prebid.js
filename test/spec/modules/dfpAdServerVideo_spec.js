@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 
 import parse from 'url-parse';
-import { buildDfpVideoUrl, buildAdpodVideoUrl } from 'modules/dfpAdServerVideo.js';
+import {buildDfpVideoUrl, buildAdpodVideoUrl, dep} from 'modules/dfpAdServerVideo.js';
 import adUnit from 'test/fixtures/video/adUnit.json';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
@@ -10,6 +10,10 @@ import { auctionManager } from 'src/auctionManager.js';
 import { gdprDataHandler, uspDataHandler } from 'src/adapterManager.js';
 import * as adpod from 'modules/adpod.js';
 import { server } from 'test/mocks/xhr.js';
+import * as adServer from 'src/adserver.js';
+import {deepClone} from 'src/utils.js';
+import {hook} from '../../../src/hook.js';
+import {getRefererInfo} from '../../../src/refererDetection.js';
 
 const bid = {
   videoCacheKey: 'abc',
@@ -20,6 +24,44 @@ const bid = {
 };
 
 describe('The DFP video support module', function () {
+  before(() => {
+    hook.ready();
+  });
+
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.sandbox.create();
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
+  Object.entries({
+    params: {
+      params: {
+        'iu': 'my/adUnit'
+      }
+    },
+    url: {
+      url: 'https://some-example-url.com'
+    }
+  }).forEach(([t, options]) => {
+    describe(`when using ${t}`, () => {
+      it('should use page location as default for description_url', () => {
+        sandbox.stub(dep, 'ri').callsFake(() => ({page: 'example.com'}));
+
+        const url = parse(buildDfpVideoUrl(Object.assign({
+          adUnit: adUnit,
+          bid: bid,
+        }, options)));
+        const prm = utils.parseQS(url.query);
+        expect(prm.description_url).to.eql('example.com');
+      })
+    })
+  })
+
   it('should make a legal request URL when given the required params', function () {
     const url = parse(buildDfpVideoUrl({
       adUnit: adUnit,
@@ -56,9 +98,6 @@ describe('The DFP video support module', function () {
     }));
 
     expect(url.host).to.equal('video.adserver.example');
-
-    const queryObject = utils.parseQS(url.query);
-    expect(queryObject.description_url).to.equal('vastUrl.example');
   });
 
   it('requires a params object or url', function () {
@@ -225,6 +264,44 @@ describe('The DFP video support module', function () {
     expect(queryObject.addtl_consent).to.equal(undefined);
     gdprDataHandlerStub.restore();
   });
+
+  describe('GAM PPID', () => {
+    let ppid;
+    let getPPIDStub;
+    beforeEach(() => {
+      getPPIDStub = sinon.stub(adServer, 'getPPID').callsFake(() => ppid);
+    });
+    afterEach(() => {
+      getPPIDStub.restore();
+    });
+
+    Object.entries({
+      'params': {params: {'iu': 'mock/unit'}},
+      'url': {url: 'https://video.adserver.mock/', params: {'iu': 'mock/unit'}}
+    }).forEach(([t, opts]) => {
+      describe(`when using ${t}`, () => {
+        function buildUrlAndGetParams() {
+          const url = parse(buildDfpVideoUrl(Object.assign({
+            adUnit: adUnit,
+            bid: deepClone(bid),
+          }, opts)));
+          return utils.parseQS(url.query);
+        }
+
+        it('should be included if available', () => {
+          ppid = 'mockPPID';
+          const q = buildUrlAndGetParams();
+          expect(q.ppid).to.equal('mockPPID');
+        });
+
+        it('should not be included if not available', () => {
+          ppid = undefined;
+          const q = buildUrlAndGetParams();
+          expect(q.hasOwnProperty('ppid')).to.be.false;
+        })
+      })
+    })
+  })
 
   describe('special targeting unit test', function () {
     const allTargetingData = {

@@ -1,4 +1,4 @@
-import { getBidIdParameter, isFn, isInteger } from '../src/utils.js';
+import {getBidIdParameter, isFn, isInteger} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'getintent';
@@ -97,7 +97,7 @@ export const spec = {
     return bids;
   }
 
-}
+};
 
 function buildUrl(bid) {
   return 'https://' + BID_HOST + (bid.is_video ? BID_VIDEO_PATH : BID_BANNER_PATH);
