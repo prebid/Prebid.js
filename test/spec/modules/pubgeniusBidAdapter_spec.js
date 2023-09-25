@@ -5,6 +5,7 @@ import { config } from 'src/config.js';
 import { VIDEO } from 'src/mediaTypes.js';
 import { deepClone, parseQueryStringParameters } from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
+import * as utils from 'src/utils.js';
 
 const {
   code,
@@ -175,7 +176,7 @@ describe('pubGENIUS adapter', () => {
         method: 'POST',
         url: 'https://auction.adpearl.io/prebid/auction',
         data: {
-          id: 'fake-auction-id',
+          id: 'fakebidderrequestid',
           imp: [
             {
               id: 'fakebidid',

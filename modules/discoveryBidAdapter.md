@@ -1,15 +1,15 @@
 # Overview
 
 ```
-Module Name: DiscoveryDSP Bid Adapter
+Module Name: discovery Bid Adapter
 Module Type: Bidder Adapter
 ```
 
 # Description
 
-Module that connects to popIn's demand sources
+Module that connects to popIn's demand sources.
 
-The DiscoveryDSP Bidding adapter requires setup before beginning. Please contact us at <media-support@popin.cc>
+The discovery Bidding adapter requires setup before beginning. Please contact us at <media-support@popin.cc>
 
 # Test Parameters
 ```
@@ -32,7 +32,8 @@ The DiscoveryDSP Bidding adapter requires setup before beginning. Please contact
             bidder: "discovery",
             params: {
               token: "a1b067897e4ae093d1f94261e0ddc6c9",
-              media: 'test_media' // your media host
+              tagid: 'test_tagid',
+              publisher: 'test_publisher'
             },
           },
         ],
@@ -45,13 +46,13 @@ The DiscoveryDSP Bidding adapter requires setup before beginning. Please contact
             sizes: [[300, 250]],
           },
         },
-        // Replace this object to test a new adapter!
         bids: [
           {
             bidder: "discovery",
             params: {
               token: "d0f4902b616cc5c38cbe0a08676d0ed9",
-              media: 'test_media' // your media host
+              tagid: 'test_tagid',
+              publisher: 'test_publisher'
             },
           },
         ],

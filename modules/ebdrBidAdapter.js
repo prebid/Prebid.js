@@ -1,4 +1,4 @@
-import { logInfo, getBidIdParameter } from '../src/utils.js';
+import {getBidIdParameter, logInfo} from '../src/utils.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'ebdr';
@@ -36,8 +36,9 @@ export const spec = {
         w: whArr[0],
         h: whArr[1]
       };
-      ebdrParams['latitude'] = getBidIdParameter('latitude', bid.params);
-      ebdrParams['longitude'] = getBidIdParameter('longitude', bid.params);
+      // TODO: fix lat and long to only come from request
+      ebdrParams['latitude'] = '0';
+      ebdrParams['longitude'] = '0';
       ebdrParams['ifa'] = (getBidIdParameter('IDFA', bid.params).length > getBidIdParameter('ADID', bid.params).length) ? getBidIdParameter('IDFA', bid.params) : getBidIdParameter('ADID', bid.params);
     });
     let ebdrBidReq = {

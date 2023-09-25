@@ -2,7 +2,7 @@ import { thirthyThreeAcrossIdSubmodule } from 'modules/33acrossIdSystem.js';
 import * as utils from 'src/utils.js';
 
 import { server } from 'test/mocks/xhr.js';
-import { uspDataHandler } from 'src/adapterManager.js';
+import { uspDataHandler, coppaDataHandler, gppDataHandler } from 'src/adapterManager.js';
 
 describe('33acrossIdSystem', () => {
   describe('name', () => {
@@ -43,7 +43,10 @@ describe('33acrossIdSystem', () => {
 
       expect(request.method).to.equal('GET');
       expect(request.withCredentials).to.be.true;
-      expect(request.url).to.contain('https://lexicon.33across.com/v1/envelope?pid=12345');
+
+      const regExp = new RegExp('https://lexicon.33across.com/v1/envelope\\?pid=12345&gdpr=\\d&src=pbjs&ver=$prebid.version$');
+
+      expect(request.url).to.match(regExp);
       expect(completeCallback.calledOnceWithExactly('foo')).to.be.true;
     });
 
@@ -64,42 +67,17 @@ describe('33acrossIdSystem', () => {
 
         expect(request.url).to.contain('gdpr=1');
       });
-
-      context('and the consent string is given', () => {
-        it('should call endpoint with the GDPR consent string', () => {
-          [
-            { consentString: '', expected: '' },
-            { consentString: undefined, expected: '' },
-            { consentString: 'foo', expected: 'foo' }
-          ].forEach(({ consentString, expected }, index) => {
-            const completeCallback = () => {};
-            const { callback } = thirthyThreeAcrossIdSubmodule.getId({
-              params: {
-                pid: '12345'
-              }
-            }, {
-              gdprApplies: true,
-              consentString
-            });
-
-            callback(completeCallback);
-
-            expect(server.requests[index].url).to.contain(`gdpr_consent=${expected}`);
-          });
-        });
-      });
     });
 
     context('when GDPR doesn\'t apply', () => {
-      it('should call endpoint with \'gdpr=0\' and no GDPR consent string parameter', () => {
+      it('should call endpoint with \'gdpr=0\'', () => {
         const completeCallback = () => {};
         const { callback } = thirthyThreeAcrossIdSubmodule.getId({
           params: {
             pid: '12345'
           }
         }, {
-          gdprApplies: false,
-          consentString: 'foo'
+          gdprApplies: false
         });
 
         callback(completeCallback);
@@ -107,7 +85,25 @@ describe('33acrossIdSystem', () => {
         const [request] = server.requests;
 
         expect(request.url).to.contain('gdpr=0');
-        expect(request.url).not.to.contain('gdpr_consent');
+      });
+    });
+
+    context('when the GDPR consent string is given', () => {
+      it('should call endpoint with the GDPR consent string', () => {
+        const completeCallback = () => {};
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          }
+        }, {
+          consentString: 'foo'
+        });
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).to.contain('gdpr_consent=foo');
       });
     });
 
@@ -151,6 +147,108 @@ describe('33acrossIdSystem', () => {
         expect(request.url).not.to.contain('us_privacy');
 
         uspDataHandler.getConsentData.restore();
+      });
+    });
+
+    context('when coppa is enabled', () => {
+      it('should call endpoint with an enabled coppa signal', () => {
+        const completeCallback = () => {};
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          }
+        });
+
+        sinon.stub(coppaDataHandler, 'getCoppa').returns(true);
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).to.contain('coppa=1');
+
+        coppaDataHandler.getCoppa.restore();
+      });
+    });
+
+    context('when coppa is not enabled', () => {
+      it('should call endpoint with coppa signal not enabled', () => {
+        const completeCallback = () => {};
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          }
+        });
+
+        sinon.stub(coppaDataHandler, 'getCoppa').returns(false);
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).to.contain('coppa=0');
+
+        coppaDataHandler.getCoppa.restore();
+      });
+    });
+
+    context('when a GPP consent string is given', () => {
+      beforeEach(() => {
+        sinon.stub(gppDataHandler, 'getConsentData');
+      });
+
+      afterEach(() => {
+        gppDataHandler.getConsentData.restore();
+      });
+
+      it('should call endpoint with the GPP consent string', () => {
+        [
+          { gppString: '', expected: '' },
+          { gppString: undefined, expected: '' },
+          { gppString: 'foo', expected: 'foo' },
+        ].forEach(({ gppString, expected }, index) => {
+          const completeCallback = () => {};
+          const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345'
+            }
+          });
+
+          gppDataHandler.getConsentData.onCall(index).returns({
+            gppString
+          });
+
+          callback(completeCallback);
+
+          expect(server.requests[index].url).to.contain(`gpp=${expected}`);
+        });
+      });
+
+      it('should call endpoint with the GPP applicable sections', () => {
+        const gppString = 'foo';
+
+        [
+          { applicableSections: [], expected: '' },
+          { applicableSections: undefined, expected: '' },
+          { applicableSections: ['1'], expected: '1' },
+          { applicableSections: ['1', '2'], expected: '1%2C2' },
+        ].forEach(({ applicableSections, expected }, index) => {
+          const completeCallback = () => {};
+          const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345'
+            }
+          });
+
+          gppDataHandler.getConsentData.onCall(index).returns({
+            gppString: 'foo',
+            applicableSections
+          });
+
+          callback(completeCallback);
+
+          expect(server.requests[index].url).to.contain(`gpp_sid=${expected}`);
+        });
       });
     });
 
@@ -279,7 +377,7 @@ describe('33acrossIdSystem', () => {
           error: 'foo'
         }));
 
-        expect(logErrorSpy.calledOnceWithExactly(`${thirthyThreeAcrossIdSubmodule.name}: Unsuccessful response`)).to.be.true;
+        expect(logErrorSpy.calledOnceWithExactly(`${thirthyThreeAcrossIdSubmodule.name}: Unsuccessful response foo`)).to.be.true;
 
         logErrorSpy.restore();
       });

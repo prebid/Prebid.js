@@ -450,13 +450,16 @@ describe('FTRACK ID System', () => {
         });
 
         expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
-          id: 'device_test_id',
-          atype: 1,
-          ext: {
-            HHID: 'household_test_id',
-            DeviceID: 'device_test_id',
-            SingleDeviceID: 'single_device_test_id'
-          }
+          source: 'flashtalking.com',
+          uids: [{
+            id: 'device_test_id',
+            atype: 1,
+            ext: {
+              HHID: 'household_test_id',
+              DeviceID: 'device_test_id',
+              SingleDeviceID: 'single_device_test_id'
+            }
+          }]
         }]);
       });
 
@@ -481,11 +484,14 @@ describe('FTRACK ID System', () => {
           });
 
           expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
-            id: 'device_test_id',
-            atype: 1,
-            ext: {
-              DeviceID: 'device_test_id'
-            }
+            source: 'flashtalking.com',
+            uids: [{
+              id: 'device_test_id',
+              atype: 1,
+              ext: {
+                DeviceID: 'device_test_id'
+              }
+            }]
           }]);
         });
 
@@ -509,11 +515,14 @@ describe('FTRACK ID System', () => {
           });
 
           expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
-            id: '',
-            atype: 1,
-            ext: {
-              HHID: 'household_test_id'
-            }
+            source: 'flashtalking.com',
+            uids: [{
+              id: '',
+              atype: 1,
+              ext: {
+                HHID: 'household_test_id'
+              }
+            }]
           }]);
         });
 
@@ -537,11 +546,14 @@ describe('FTRACK ID System', () => {
           });
 
           expect(getGlobal().getUserIdsAsEids()).to.deep.equal([{
-            id: '',
-            atype: 1,
-            ext: {
-              SingleDeviceID: 'single_device_test_id'
-            }
+            source: 'flashtalking.com',
+            uids: [{
+              id: '',
+              atype: 1,
+              ext: {
+                SingleDeviceID: 'single_device_test_id'
+              }
+            }]
           }]);
         });
       });

@@ -1,8 +1,8 @@
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
-import { transformBidderParamKeywords } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
 
 const BIDDER_CODE = 'prisma';
 const BIDDER_URL = 'https://prisma.nexx360.io/prebid';
@@ -70,12 +70,13 @@ export const spec = {
         tagId: adunitValue.params.tagId,
         label: adunitValue.adUnitCode,
         bidId: adunitValue.bidId,
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: adunitValue.auctionId,
-        transactionId: adunitValue.transactionId,
+        transactionId: adunitValue.ortb2Imp?.ext?.tid,
         mediatypes: adunitValue.mediaTypes,
         bidfloor: 0,
         bidfloorCurrency: 'USD',
-        keywords: adunitValue.params.keywords ? transformBidderParamKeywords(adunitValue.params.keywords) : [],
+        keywords: getANKeywordParam(bidderRequest.ortb2, adunitValue.params.keywords)
       }
       adUnits.push(foo);
       if (adunitValue.userIdAsEids) userEids = adunitValue.userIdAsEids;

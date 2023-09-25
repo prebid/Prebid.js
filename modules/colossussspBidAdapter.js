@@ -87,6 +87,11 @@ export const spec = {
       logMessage(e);
     }
 
+    const firstPartyData = bidderRequest.ortb2 || {};
+    const userObj = firstPartyData.user;
+    const siteObj = firstPartyData.site;
+    const appObj = firstPartyData.app;
+
     // TODO: does the fallback to window.location make sense?
     const location = refferLocation || winLocation;
     let placements = [];
@@ -97,6 +102,9 @@ export const spec = {
       secure: location.protocol === 'https:' ? 1 : 0,
       host: location.host,
       page: location.pathname,
+      userObj,
+      siteObj,
+      appObj,
       placements: placements
     };
 
@@ -108,6 +116,15 @@ export const spec = {
         request.gdpr_consent = bidderRequest.gdprConsent.consentString || 'ALL';
         request.gdpr_require = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
       }
+
+      // Add GPP consent
+      if (bidderRequest.gppConsent) {
+        request.gpp = bidderRequest.gppConsent.gppString;
+        request.gpp_sid = bidderRequest.gppConsent.applicableSections;
+      } else if (bidderRequest.ortb2?.regs?.gpp) {
+        request.gpp = bidderRequest.ortb2.regs.gpp;
+        request.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
+      }
     }
 
     for (let i = 0; i < validBidRequests.length; i++) {
@@ -117,7 +134,7 @@ export const spec = {
         placementId: bid.params.placement_id,
         groupId: bid.params.group_id,
         bidId: bid.bidId,
-        tid: bid.transactionId,
+        tid: bid.ortb2Imp?.ext?.tid,
         eids: [],
         floor: {}
       };
@@ -214,7 +231,7 @@ export const spec = {
   },
 
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    let syncType = syncOptions.iframeEnabled ? 'html' : 'hms.gif';
+    let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
     let syncUrl = G_URL_SYNC + `/${syncType}?pbjs=1`;
     if (gdprConsent && gdprConsent.consentString) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {

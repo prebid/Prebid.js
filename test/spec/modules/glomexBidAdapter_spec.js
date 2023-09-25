@@ -49,6 +49,10 @@ const RESPONSE = {
 describe('glomexBidAdapter', function () {
   const adapter = newBidder(spec)
 
+  it('should expose gvlid', function() {
+    expect(spec.gvlid).to.equal(967)
+  });
+
   describe('inherited functions', function () {
     it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function')
