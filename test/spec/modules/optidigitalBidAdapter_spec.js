@@ -479,6 +479,28 @@ describe('optidigitalAdapterTests', function () {
       expect(payload.imp[0].bidFloor).to.exist;
     });
 
+    it('should add userEids to payload', function() {
+      const userIdAsEids = [{
+        source: 'pubcid.org',
+        uids: [{
+          id: '121213434342343',
+          atype: 1
+        }]
+      }];
+      validBidRequests[0].userIdAsEids = userIdAsEids;
+      bidderRequest.userIdAsEids = userIdAsEids;
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.user.eids).to.deep.equal(userIdAsEids);
+    });
+
+    it('should not add userIdAsEids to payload when userIdAsEids is not present', function() {
+      validBidRequests[0].userIdAsEids = undefined;
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.user).to.deep.equal(undefined);
+    });
+
     function returnBannerSizes(mediaTypes, expectedSizes) {
       const bidRequest = Object.assign(validBidRequests[0], mediaTypes);
       const request = spec.buildRequests([bidRequest], bidderRequest);

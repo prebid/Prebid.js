@@ -87,6 +87,12 @@ export const spec = {
       payload.uspConsent = bidderRequest.uspConsent;
     }
 
+    if (_getEids(validBidRequests[0])) {
+      payload.user = {
+        eids: _getEids(validBidRequests[0])
+      }
+    }
+
     const payloadObject = JSON.stringify(payload);
     return {
       method: 'POST',
@@ -219,6 +225,12 @@ function _getFloor (bid, sizes, currency) {
     } catch (err) {}
   }
   return floor !== null ? floor : bid.params.floor;
+}
+
+function _getEids(bidRequest) {
+  if (deepAccess(bidRequest, 'userIdAsEids')) {
+    return bidRequest.userIdAsEids;
+  }
 }
 
 export function resetSync() {
