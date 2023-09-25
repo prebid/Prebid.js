@@ -384,6 +384,38 @@ describe('33acrossAnalyticsAdapter:', function () {
       });
     });
 
+    context('when a BID_REJECTED event is received', function () {
+      it(`marks the rejected bid as "rejected"`, function () {
+        this.enableAnalytics();
+
+        const auction = getMockEvents().prebid[0];
+
+        // Start the auction
+        events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
+        for (let bidRequestedEvent of auction.BID_REQUESTED) {
+          events.emit(EVENTS.BID_REQUESTED, bidRequestedEvent);
+        };
+
+        // Reject first bid
+        const bidToReject = auction.BID_REQUESTED[0].bids[0];
+        events.emit(EVENTS.BID_REJECTED, auction.BID_REJECTED[0]);
+
+        // Accept remaining bids
+        for (let i = 1; i < auction.BID_RESPONSE.length; ++i) {
+          events.emit(EVENTS.BID_RESPONSE, auction.BID_RESPONSE[i]);
+        };
+
+        // Complete the auction
+        events.emit(EVENTS.AUCTION_END, auction.AUCTION_END);
+
+        sandbox.clock.tick(this.defaultTimeout + 1);
+
+        // Verify that we detected that the first bid was rejected
+        const expectedRejectedBid = JSON.parse(navigator.sendBeacon.firstCall.args[1]).auctions[0].adUnits[0].bids[0];
+        assert.strictEqual(expectedRejectedBid.status, 'rejected');
+      });
+    });
+
     context('when a transaction does not reach its complete state', function () {
       context('and a timeout config value has been given', function () {
         context('and the timeout value has elapsed', function () {
@@ -1051,6 +1083,23 @@ function getMockEvents() {
         source: 'client',
         status: 'rendered',
         transactionId: 'b43e7487-0a52-4689-a0f7-d139d08b1f9f',
+      }],
+      BID_REJECTED: [{
+        auctionId,
+        cpm: 1.5,
+        currency: 'USD',
+        floorData: {
+          floorValue: 2
+        },
+        mediaType: 'banner',
+        originalCpm: 1.5,
+        requestId: '20661fc5fbb5d9b',
+        width: 300,
+        height: 250,
+        source: 'client',
+        transactionId: 'ef947609-7b55-4420-8407-599760d0e373',
+        statusMessage: 'Bid available',
+        rejectionReason: 'Bid does not meet price floor',
       }],
       AUCTION_END: {
         auctionId,
