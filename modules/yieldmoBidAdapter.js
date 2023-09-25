@@ -432,12 +432,12 @@ function openRtbImpression(bidRequest) {
     }
   };
 
-  const mediaTypesParams = deepAccess(bidRequest, 'mediaTypes.video');
+  const mediaTypesParams = deepAccess(bidRequest, 'mediaTypes.video', {});
   Object.keys(mediaTypesParams)
     .filter(param => includes(OPENRTB_VIDEO_BIDPARAMS, param))
     .forEach(param => imp.video[param] = mediaTypesParams[param]);
 
-  const videoParams = deepAccess(bidRequest, 'params.video');
+  const videoParams = deepAccess(bidRequest, 'params.video', {});
   Object.keys(videoParams)
     .filter(param => includes(OPENRTB_VIDEO_BIDPARAMS, param))
     .forEach(param => imp.video[param] = videoParams[param]);
@@ -607,8 +607,14 @@ function validateVideoParams(bid) {
     }
 
     validate('video.protocols', val => isDefined(val), paramRequired);
-    validate('video.protocols', val => isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),
-      paramInvalid, 'array of numbers, ex: [2,3]');
+    validate(
+      'video.protocols',
+      (val) =>
+        isArrayOfNums(val) &&
+        val.every((v) => v >= 1 && v <= 12 && v != 9 && v != 10), // 9 and 10 are for DAST which are not supported.
+      paramInvalid,
+      'array of numbers between 1 and 12 except for 9 or 10 , ex: [2,3, 7, 11]'
+    );
 
     validate('video.api', val => isDefined(val), paramRequired);
     validate('video.api', val => isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),

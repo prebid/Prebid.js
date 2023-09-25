@@ -374,7 +374,7 @@ describe('Nexx360 bid adapter tests', function () {
         expect(requestContent.imp[1].tagid).to.be.eql('div-2-abcd');
         expect(requestContent.imp[1].ext.adUnitCode).to.be.eql('div-2-abcd');
         expect(requestContent.imp[1].ext.divId).to.be.eql('div-2-abcd');
-        expect(requestContent.ext.bidderVersion).to.be.eql('2.0');
+        expect(requestContent.ext.bidderVersion).to.be.eql('3.0');
         expect(requestContent.ext.source).to.be.eql('prebid.js');
       });
 
