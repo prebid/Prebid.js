@@ -1,5 +1,6 @@
 import {buildUrl, deepAccess, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
 import {find} from '../src/polyfill.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
@@ -166,6 +167,50 @@ export const spec = {
       }
     });
     return bidResponses;
+  },
+
+  /**
+   * List user sync endpoints.
+   * Legal information have to be added to the request.
+   * Only iframe syncs are supported.
+   *
+   * @param {*} syncOptions Publisher prebid configuration.
+   * @param {*} serverResponses A successful response from the server.
+   * @return {syncs[]} An array of syncs that should be executed.
+   */
+  getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
+    if (!syncOptions.iframeEnabled) {
+      return [];
+    }
+
+    let params = '';
+
+    // GDPR
+    if (gdprConsent) {
+      params += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+      params += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
+    }
+
+    // coppa compliance
+    if (config.getConfig('coppa') === true) {
+      params += '&coppa=1';
+    }
+
+    // CCPA
+    if (uspConsent) {
+      params += '&us_privacy=' + encodeURIComponent(uspConsent);
+    }
+
+    // GPP
+    if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+      params += '&gpp=' + encodeURIComponent(gppConsent.gppString);
+      params += '&gpp_sid=' + encodeURIComponent(gppConsent?.applicableSections?.join(','));
+    }
+
+    return [{
+      type: 'iframe',
+      url: `https://visitor.omnitagjs.com/visitor/isync?uid=19340f4f097d16f41f34fc0274981ca4${params}`
+    }];
   }
 }
 

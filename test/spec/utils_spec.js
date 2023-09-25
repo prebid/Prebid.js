@@ -4,6 +4,7 @@ import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
 import {getHighestCpm, getLatestHighestCpmBid, getOldestHighestCpmBid} from '../../src/utils/reducers.js';
 import {binarySearch, deepEqual, memoize, waitForElementToLoad} from 'src/utils.js';
+import {convertCamelToUnderscore} from '../../libraries/appnexusUtils/anUtils.js';
 
 var assert = require('assert');
 
@@ -37,28 +38,6 @@ describe('Utils', function () {
       };
       var output = utils.getBidIdParameter('c', obj);
       assert.equal(output, '');
-    });
-  });
-
-  describe('tryAppendQueryString', function () {
-    it('should append query string to existing url', function () {
-      var url = 'www.a.com?';
-      var key = 'b';
-      var value = 'c';
-
-      var output = utils.tryAppendQueryString(url, key, value);
-
-      var expectedResult = url + key + '=' + encodeURIComponent(value) + '&';
-      assert.equal(output, expectedResult);
-    });
-
-    it('should return existing url, if the value is empty', function () {
-      var url = 'www.a.com?';
-      var key = 'b';
-      var value = '';
-
-      var output = utils.tryAppendQueryString(url, key, value);
-      assert.equal(output, url);
     });
   });
 
@@ -700,40 +679,12 @@ describe('Utils', function () {
   describe('convertCamelToUnderscore', function () {
     it('returns converted string value using underscore syntax instead of camelCase', function () {
       let var1 = 'placementIdTest';
-      let test1 = utils.convertCamelToUnderscore(var1);
+      let test1 = convertCamelToUnderscore(var1);
       expect(test1).to.equal('placement_id_test');
 
       let var2 = 'my_test_value';
-      let test2 = utils.convertCamelToUnderscore(var2);
+      let test2 = convertCamelToUnderscore(var2);
       expect(test2).to.equal(var2);
-    });
-  });
-
-  describe('getAdUnitSizes', function () {
-    it('returns an empty response when adUnits is undefined', function () {
-      let sizes = utils.getAdUnitSizes();
-      expect(sizes).to.be.undefined;
-    });
-
-    it('returns an empty array when invalid data is present in adUnit object', function () {
-      let sizes = utils.getAdUnitSizes({ sizes: 300 });
-      expect(sizes).to.deep.equal([]);
-    });
-
-    it('retuns an array of arrays when reading from adUnit.sizes', function () {
-      let sizes = utils.getAdUnitSizes({ sizes: [300, 250] });
-      expect(sizes).to.deep.equal([[300, 250]]);
-
-      sizes = utils.getAdUnitSizes({ sizes: [[300, 250], [300, 600]] });
-      expect(sizes).to.deep.equal([[300, 250], [300, 600]]);
-    });
-
-    it('returns an array of arrays when reading from adUnit.mediaTypes.banner.sizes', function () {
-      let sizes = utils.getAdUnitSizes({ mediaTypes: { banner: { sizes: [300, 250] } } });
-      expect(sizes).to.deep.equal([[300, 250]]);
-
-      sizes = utils.getAdUnitSizes({ mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } } });
-      expect(sizes).to.deep.equal([[300, 250], [300, 600]]);
     });
   });
 

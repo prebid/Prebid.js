@@ -5,6 +5,7 @@ import * as fledge from 'modules/fledgeForGpt.js';
 import {config} from '../../../src/config.js';
 import adapterManager from '../../../src/adapterManager.js';
 import * as utils from '../../../src/utils.js';
+import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
 import {hook} from '../../../src/hook.js';
 import 'modules/appnexusBidAdapter.js';
 import 'modules/rubiconBidAdapter.js';
@@ -40,7 +41,7 @@ describe('fledgeForGpt module', () => {
           setConfig: sinon.stub(),
           getAdUnitPath: () => 'mock/gpt/au'
         };
-        sandbox.stub(utils, 'getGptSlotForAdUnitCode').callsFake(() => mockGptSlot);
+        sandbox.stub(gptUtils, 'getGptSlotForAdUnitCode').callsFake(() => mockGptSlot);
       });
 
       it('should call next()', function () {
@@ -55,8 +56,8 @@ describe('fledgeForGpt module', () => {
         fledge.addComponentAuctionHook(nextFnSpy, 'aid', 'au1', cf1);
         fledge.addComponentAuctionHook(nextFnSpy, 'aid', 'au2', cf2);
         events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId: 'aid'});
-        sinon.assert.calledWith(utils.getGptSlotForAdUnitCode, 'au1');
-        sinon.assert.calledWith(utils.getGptSlotForAdUnitCode, 'au2');
+        sinon.assert.calledWith(gptUtils.getGptSlotForAdUnitCode, 'au1');
+        sinon.assert.calledWith(gptUtils.getGptSlotForAdUnitCode, 'au2');
         sinon.assert.calledWith(mockGptSlot.setConfig, {
           componentAuction: [{
             configKey: 'b1',

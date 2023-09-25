@@ -6,7 +6,6 @@ import {
   deepClone,
   generateUUID,
   getDNT,
-  getGptSlotInfoForAdUnitCode,
   getUniqueIdentifierStr,
   getWindowSelf,
   getWindowTop,
@@ -34,6 +33,7 @@ import {OUTSTREAM} from '../src/video.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { userSync } from '../src/userSync.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 const BIDDER_CODE = 'adagio';
 const LOG_PREFIX = 'Adagio:';
