@@ -1,9 +1,9 @@
 import pubmaticAnalyticsAdapter, {getMetadata} from 'modules/pubmaticAnalyticsAdapter.js';
 import adapterManager from 'src/adapterManager.js';
 import CONSTANTS from 'src/constants.json';
-import {config} from 'src/config.js';
-import {setConfig} from 'modules/currency.js';
-import {server} from '../../mocks/xhr.js';
+import { config } from 'src/config.js';
+import { setConfig } from 'modules/currency.js';
+import { server } from '../../mocks/xhr.js';
 import 'src/prebid.js';
 import { getGlobal } from 'src/prebidGlobal';
 
