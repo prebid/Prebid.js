@@ -23,8 +23,8 @@ var adUnits = [
         bids: [{
             bidder: 'integr8',
             params: {
-                propertyId: '105109',   //Required
-                placementId: '846835',  //Required,
+                propertyId: '105135',   //Required
+                placementId: '846837',  //Required,
                 deliveryUrl: 'https://central.sea.integr8.digital/bid', //Optional
                 data: {                 //Optional
                     catalogs: [{
@@ -49,8 +49,8 @@ var adUnits = [
         bids: [{
             bidder: 'integr8',
             params: {
-                propertyId: '105109',  //Required
-                placementId: '846830', //Required,
+                propertyId: '105135',  //Required
+                placementId: '846835', //Required,
                 deliveryUrl: 'https://central.sea.integr8.digital/bid', //Optional
                 data: {                //Optional
                     catalogs: [{
