@@ -993,12 +993,12 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
       }
 
       if (dfpAdUnitCode || gpid || tid || sid || fledgeEnabled) {
-        _bannerImpression.ext = _bannerImpression.ext || {};
+        _bannerImpression.ext = {};
 
-        if (dfpAdUnitCode) _bannerImpression.ext.dfp_ad_unit_code = dfpAdUnitCode;
-        if (gpid) _bannerImpression.ext.gpid = gpid;
-        if (tid) _bannerImpression.ext.tid = tid;
-        if (sid) _bannerImpression.ext.sid = sid;
+        _bannerImpression.ext.dfp_ad_unit_code = dfpAdUnitCode;
+        _bannerImpression.ext.gpid = gpid;
+        _bannerImpression.ext.tid = tid;
+        _bannerImpression.ext.sid = sid;
 
         // enable fledge auction
         if (fledgeEnabled) _bannerImpression.ext.ae = 1;
