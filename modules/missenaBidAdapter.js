@@ -1,12 +1,85 @@
-import { buildUrl, formatQS, logInfo, triggerPixel } from '../src/utils.js';
-import { BANNER } from '../src/mediaTypes.js';
+import {
+  isFn,
+  deepAccess,
+  formatQS,
+  logInfo,
+  parseSizesInput,
+} from '../src/utils.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'missena';
 const ENDPOINT_URL = 'https://bid.missena.io/';
 const EVENTS_DOMAIN = 'events.missena.io';
 const EVENTS_DOMAIN_DEV = 'events.staging.missena.xyz';
 
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+
+/* Get mediatype from bidRequest */
+function getMediatype(bidRequest) {
+  if (deepAccess(bidRequest, 'mediaTypes.banner')) {
+    return BANNER;
+  }
+  if (deepAccess(bidRequest, 'mediaTypes.video')) {
+    return VIDEO;
+  }
+  if (deepAccess(bidRequest, 'mediaTypes.native')) {
+    return NATIVE;
+  }
+}
+
+function getSize(sizesArray) {
+  const firstSize = sizesArray[0];
+  if (typeof firstSize !== 'string') return {};
+
+  const [widthStr, heightStr] = firstSize.toUpperCase().split('X');
+  return {
+    width: parseInt(widthStr, 10) || undefined,
+    height: parseInt(heightStr, 10) || undefined,
+  };
+}
+
+/* Get Floor price information */
+function getFloor(bidRequest, size, mediaType) {
+  if (!isFn(bidRequest.getFloor)) {
+    return deepAccess(bidRequest, 'params.bidfloor', 0);
+  }
+
+  const bidFloors = bidRequest.getFloor({
+    currency: 'USD',
+    mediaType,
+    size: [size.width, size.height],
+  });
+
+  if (!isNaN(bidFloors.floor)) {
+    return bidFloors;
+  }
+}
+
+function getSizeArray(bid) {
+  let inputSize = deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes || [];
+
+  if (Array.isArray(bid.params?.size)) {
+    inputSize = !Array.isArray(bid.params.size[0])
+      ? [bid.params.size]
+      : bid.params.size;
+  }
+
+  return parseSizesInput(inputSize);
+}
+
+function notify(bid, event) {
+  const hostname = bid.params[0].baseUrl ? EVENTS_DOMAIN_DEV : EVENTS_DOMAIN;
+  const headers = {
+    type: 'application/json',
+  };
+  const blob = new Blob([JSON.stringify(event)], headers);
+  navigator.sendBeacon(
+    `https://${hostname}/v1/events?t=${bid.params[0].apiKey}`,
+    blob,
+  );
+}
 export const spec = {
   aliases: ['msna'],
   code: BIDDER_CODE,
@@ -30,6 +103,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    tryGetMissenaSecondBid();
     return validBidRequests.map((bidRequest) => {
       const payload = {
         adunit: bidRequest.adUnitCode,
@@ -61,6 +135,16 @@ export const spec = {
         payload.is_internal = bidRequest.params.isInternal;
       }
       payload.userEids = bidRequest.userIdAsEids || [];
+      if (window.MISSENA_SECOND_BID && window.MISSENA_SECOND_BID.cpm) {
+        payload.floor = window.MISSENA_SECOND_BID.cpm;
+      }
+
+      let mediatype = getMediatype(bidRequest);
+      let sizesArray = getSizeArray(bidRequest);
+      let size = getSize(sizesArray);
+
+      payload.prebidFloor = getFloor(bidRequest, size, mediatype);
+
       return {
         method: 'POST',
         url: baseUrl + '?' + formatQS({ t: bidRequest.params.apiKey }),
@@ -77,7 +161,25 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
-    const response = serverResponse.body;
+    let response = serverResponse.body;
+    if (typeof response !== 'object' || response === null) {
+      response = {};
+    }
+    const secondBid = window.MISSENA_SECOND_BID;
+    const isSecondBidHigher =
+      secondBid && (secondBid.cpm > response.cpm || !response.cpm);
+    if (isSecondBidHigher) {
+      response.requestId = JSON.parse(bidRequest.data).request_id;
+      Object.assign(response, {
+        cpm: secondBid.cpm,
+        ad: '<script>window.top.__MISSENA__.renderFromBid(window.top.MISSENA_SECOND_BID, "criteo-prebid-native")</script>',
+        creativeId: '',
+        currency: '',
+        dealId: '',
+        netRevenue: false,
+        ttl: 60,
+      });
+    }
 
     if (response && !response.timeout && !!response.ad) {
       bidResponses.push(response);
@@ -89,7 +191,7 @@ export const spec = {
     syncOptions,
     serverResponses,
     gdprConsent,
-    uspConsent
+    uspConsent,
   ) {
     if (!syncOptions.iframeEnabled) {
       return [];
@@ -113,26 +215,53 @@ export const spec = {
    * Register bidder specific code, which will execute if bidder timed out after an auction
    * @param {data} Containing timeout specific data
    */
-  onTimeout: function onTimeout(timeoutData) {
-    logInfo('Missena - Timeout from adapter', timeoutData);
+  onTimeout: (data) => {
+    data.forEach((bid) => {
+      notify(bid, {
+        name: 'timeout',
+        parameters: {
+          bidder: BIDDER_CODE,
+          placement: bid.params[0].placement,
+          t: bid.params[0].apiKey,
+        },
+      });
+    });
+    logInfo('Missena - Timeout from adapter', data);
   },
 
   /**
    * Register bidder specific code, which@ will execute if a bid from this bidder won the auction
    * @param {Bid} The bid that won the auction
    */
-  onBidWon: function (bid) {
-    const hostname = bid.params[0].baseUrl ? EVENTS_DOMAIN_DEV : EVENTS_DOMAIN;
-    triggerPixel(
-      buildUrl({
-        protocol: 'https',
-        hostname,
-        pathname: '/v1/bidsuccess',
-        search: { t: bid.params[0].apiKey, provider: bid.meta?.networkName, cpm: bid.cpm, currency: bid.currency },
-      })
-    );
+  onBidWon: (bid) => {
+    notify(bid, {
+      name: 'bidsuccess',
+      provider: bid.meta?.networkName,
+      parameters: {
+        t: bid.params[0].apiKey,
+        placement: bid.params[0].placement,
+        commission: {
+          value: bid.cpm,
+          currency: bid.currency,
+        },
+      },
+    });
     logInfo('Missena - Bid won', bid);
   },
 };
+
+export function tryGetMissenaSecondBid() {
+  try {
+    const secondBidStorageKey = 'msna_script';
+    const secondBidFromStorage =
+      storage.getDataFromLocalStorage(secondBidStorageKey);
+
+    if (secondBidFromStorage !== null) {
+      eval(secondBidFromStorage); // eslint-disable-line no-eval
+    }
+  } catch (e) {
+    // Unable to get second bid
+  }
+}
 
 registerBidder(spec);
