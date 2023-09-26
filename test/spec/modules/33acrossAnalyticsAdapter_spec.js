@@ -970,7 +970,7 @@ function getMockEvents() {
         cpm: 1.5,
         currency: 'USD',
         floorData: {
-          cpmAfterAdjustments: 1
+          floorValue: 1
         },
         mediaType: 'banner',
         originalCpm: 1.5,
@@ -984,7 +984,7 @@ function getMockEvents() {
         cpm: 1.5,
         currency: 'USD',
         floorData: {
-          cpmAfterAdjustments: 1
+          floorValue: 1
         },
         mediaType: 'banner',
         originalCpm: 1.5,
@@ -998,7 +998,7 @@ function getMockEvents() {
         cpm: 1.5,
         currency: 'USD',
         floorData: {
-          cpmAfterAdjustments: 1
+          floorValue: 1
         },
         mediaType: 'banner',
         originalCpm: 1.5,
@@ -1012,7 +1012,7 @@ function getMockEvents() {
         cpm: 1.5,
         currency: 'USD',
         floorData: {
-          cpmAfterAdjustments: 1
+          floorValue: 1
         },
         mediaType: 'banner',
         originalCpm: 1.5,
@@ -1027,7 +1027,7 @@ function getMockEvents() {
         cpm: 1.5,
         currency: 'USD',
         floorData: {
-          cpmAfterAdjustments: 1
+          floorValue: 1
         },
         mediaType: 'banner',
         originalCpm: 1.5,
@@ -1042,7 +1042,7 @@ function getMockEvents() {
         cpm: 1.5,
         currency: 'USD',
         floorData: {
-          cpmAfterAdjustments: 1
+          floorValue: 1
         },
         mediaType: 'banner',
         originalCpm: 1.5,
