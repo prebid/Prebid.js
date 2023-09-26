@@ -4,7 +4,6 @@ import {
   getWindowSelf,
   getWindowTop,
   isGptPubadsDefined,
-  isSlotMatchingAdUnitCode,
   logInfo,
   logMessage,
   logWarn,
@@ -12,6 +11,7 @@ import {
 } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 const BIDDER_CODE = 'underdogmedia';
 const UDM_ADAPTER_VERSION = '7.30V';

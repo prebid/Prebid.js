@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec, internal as jixieaux, storage } from 'modules/jixieBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
+import { deepClone } from 'src/utils.js';
 
 describe('jixie Adapter', function () {
   const pageurl_ = 'https://testdomain.com/testpage.html';
@@ -74,13 +75,13 @@ describe('jixie Adapter', function () {
     const jxtokoTest1_ = 'eyJJRCI6ImFiYyJ9';
     const jxifoTest1_ = 'fffffbbbbbcccccaaaaae890606aaaaa';
     const jxtdidTest1_ = '222223d1-1111-2222-3333-b9f129299999';
-    const __uid2_advertising_token_Test1 = 'AAAAABBBBBCCCCCDDDDDEEEEEUkkZPQfifpkPnnlJhtsa4o+gf4nfqgN5qHiTVX73ymTSbLT9jz1nf+Q7QdxNh9nTad9UaN5pzfHMt/rs1woQw72c1ip+8heZXPfKGZtZP7ldJesYhlo3/0FVcL/wl9ZlAo1jYOEfHo7Y9zFzNXABbbbbb==';
+    const jxcompTest1_ = 'AAAAABBBBBCCCCCDDDDDEEEEEUkkZPQfifpkPnnlJhtsa4o+gf4nfqgN5qHiTVX73ymTSbLT9jz1nf+Q7QdxNh9nTad9UaN5pzfHMt/rs1woQw72c1ip+8heZXPfKGZtZP7ldJesYhlo3/0FVcL/wl9ZlAo1jYOEfHo7Y9zFzNXABbbbbb==';
 
     const refJxEids_ = {
       '_jxtoko': jxtokoTest1_,
       '_jxifo': jxifoTest1_,
       '_jxtdid': jxtdidTest1_,
-      '__uid2_advertising_token': __uid2_advertising_token_Test1
+      '_jxcomp': jxcompTest1_
     };
 
     // to serve as the object that prebid will call jixie buildRequest with: (param2)
@@ -237,8 +238,8 @@ describe('jixie Adapter', function () {
         .withArgs('_jxtdid')
         .returns(jxtdidTest1_);
       getCookieStub
-        .withArgs('__uid2_advertising_token')
-        .returns(__uid2_advertising_token_Test1);
+        .withArgs('_jxcomp')
+        .returns(jxcompTest1_);
       getCookieStub
         .withArgs('_jxx')
         .returns(clientIdTest1_);
@@ -343,6 +344,22 @@ describe('jixie Adapter', function () {
       const payload = JSON.parse(request.data);
       expect(payload.schain).to.deep.equal(schain);
       expect(payload.schain).to.deep.include(schain);
+    });
+
+    it('it should populate the floor info when available', function () {
+      let oneSpecialBidReq = deepClone(bidRequests_[0]);
+      let request, payload = null;
+      // 1 floor is not set
+      request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
+      payload = JSON.parse(request.data);
+      expect(payload.bids[0].bidFloor).to.not.exist;
+
+      // 2 floor is set
+      let getFloorResponse = { currency: 'USD', floor: 2.1 };
+      oneSpecialBidReq.getFloor = () => getFloorResponse;
+      request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
+      payload = JSON.parse(request.data);
+      expect(payload.bids[0].bidFloor).to.exist.and.to.equal(2.1);
     });
 
     it('should populate eids when supported userIds are available', function () {

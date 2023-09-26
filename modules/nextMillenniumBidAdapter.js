@@ -1,8 +1,7 @@
 import {
   _each,
   createTrackPixelHtml,
-  deepAccess,
-  getBidIdParameter,
+  deepAccess, getBidIdParameter,
   getDefinedParams,
   getWindowTop,
   isArray,
