@@ -1,9 +1,8 @@
 import { submodule } from '../src/hook.js'
-import { deepAccess, logInfo, logError } from '../src/utils.js'
+import { logInfo, logError } from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
 import adapterManager from '../src/adapterManager.js';
 
-const oxxionRtdSearchFor = [ 'adUnitCode', 'auctionId', 'bidder', 'bidderCode', 'bidId', 'cpm', 'creativeId', 'currency', 'width', 'height', 'mediaType', 'netRevenue', 'originalCpm', 'originalCurrency', 'requestId', 'size', 'source', 'status', 'timeToRespond', 'transactionId', 'ttl', 'sizes', 'mediaTypes', 'src', 'userId', 'labelAny', 'adId' ];
 const LOG_PREFIX = 'oxxionRtdProvider submodule: ';
 
 const bidderAliasRegistry = adapterManager.aliasRegistry || {};
@@ -68,17 +67,22 @@ function getPromisifiedAjax (url, data = {}, options = {}) {
 
 function getFilteredAdUnitsOnBidRates (bidsRateInterests, adUnits, params, useSampling) {
   const { threshold, samplingRate } = params;
+  const sampling = getRandomNumber(100) < samplingRate && useSampling;
   const filteredBids = [];
   // Separate bidsRateInterests in two groups against threshold & samplingRate
-  const { interestingBidsRates, uninterestingBidsRates } = bidsRateInterests.reduce((acc, interestingBid) => {
+  const { interestingBidsRates, uninterestingBidsRates, sampledBidsRates } = bidsRateInterests.reduce((acc, interestingBid) => {
     const isBidRateUpper = typeof threshold == 'number' ? interestingBid.rate === true || interestingBid.rate > threshold : interestingBid.suggestion;
-    const isBidInteresting = isBidRateUpper || (getRandomNumber(100) < samplingRate && useSampling);
+    const isBidInteresting = isBidRateUpper || sampling;
     const key = isBidInteresting ? 'interestingBidsRates' : 'uninterestingBidsRates';
     acc[key].push(interestingBid);
+    if (!isBidRateUpper && sampling) {
+      acc['sampledBidsRates'].push(interestingBid);
+    }
     return acc;
   }, {
     interestingBidsRates: [],
-    uninterestingBidsRates: [] // Do something with later
+    uninterestingBidsRates: [], // Do something with later
+    sampledBidsRates: []
   });
   logInfo(LOG_PREFIX, 'getFilteredAdUnitsOnBidRates()', interestingBidsRates, uninterestingBidsRates);
   // Filter bids and adUnits against interesting bids rates
@@ -95,10 +99,18 @@ function getFilteredAdUnitsOnBidRates (bidsRateInterests, adUnits, params, useSa
             delete tmpBid.floorData;
           }
           filteredBids.push(tmpBid);
+          bid['ova'] = 'filtered';
+        } else {
+          if (sampledBidsRates.findIndex(({ id }) => id === bid._id)) {
+            bid['ova'] = 'sampled';
+          } else {
+            bid['ova'] = 'cleared';
+          }
         }
         delete bid._id;
         return index !== -1;
       } else {
+        bid['ova'] = 'protected';
         return true;
       }
     });
