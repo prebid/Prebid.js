@@ -218,6 +218,7 @@ export const criteoIdSubmodule = {
     }
   },
   eids: {
+
     'criteoId': {
       source: 'criteo.com',
       atype: 1
