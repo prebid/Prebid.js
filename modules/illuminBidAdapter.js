@@ -26,15 +26,15 @@ export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
 }
 
 export function extractCID(params) {
-  return params.cId || params.CID || params.cID || params.CId || params.cid || params.ciD || params.Cid || params.CiD;
+  return params.cId;
 }
 
 export function extractPID(params) {
-  return params.pId || params.PID || params.pID || params.PId || params.pid || params.piD || params.Pid || params.PiD;
+  return params.pId;
 }
 
 export function extractSubDomain(params) {
-  return params.subDomain || params.SubDomain || params.Subdomain || params.subdomain || params.SUBDOMAIN || params.subDOMAIN;
+  return params.subDomain;
 }
 
 function isBidRequestValid(bid) {
