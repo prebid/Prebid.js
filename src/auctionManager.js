@@ -19,12 +19,16 @@
  * @property {function(): void} clearAllAuctions - clear all auctions for testing
  */
 
-import { uniques, flatten, logWarn } from './utils.js';
+import { uniques, logWarn } from './utils.js';
 import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js';
-import {find} from './polyfill.js';
 import {AuctionIndex} from './auctionIndex.js';
 import CONSTANTS from './constants.json';
 import {useMetrics} from './utils/perfMetrics.js';
+import {ttlCollection} from './utils/ttlCollection.js';
+import {getTTL, onTTLBufferChange} from './bidTTL.js';
+import {config} from './config.js';
+
+const CACHE_TTL_SETTING = 'minBidCacheTTL';
 
 /**
  * Creates new instance of auctionManager. There will only be one instance of auctionManager but
@@ -33,15 +37,42 @@ import {useMetrics} from './utils/perfMetrics.js';
  * @returns {AuctionManager} auctionManagerInstance
  */
 export function newAuctionManager() {
-  const _auctions = [];
+  let minCacheTTL = null;
+
+  const _auctions = ttlCollection({
+    startTime: (au) => au.end.then(() => au.getAuctionEnd()),
+    ttl: (au) => minCacheTTL == null ? null : au.end.then(() => {
+      return Math.max(minCacheTTL, ...au.getBidsReceived().map(getTTL)) * 1000
+    }),
+  });
+
+  onTTLBufferChange(() => {
+    if (minCacheTTL != null) _auctions.refresh();
+  })
+
+  config.getConfig(CACHE_TTL_SETTING, (cfg) => {
+    const prev = minCacheTTL;
+    minCacheTTL = cfg?.[CACHE_TTL_SETTING];
+    minCacheTTL = typeof minCacheTTL === 'number' ? minCacheTTL : null;
+    if (prev !== minCacheTTL) {
+      _auctions.refresh();
+    }
+  })
+
   const auctionManager = {};
+
+  function getAuction(auctionId) {
+    for (const auction of _auctions) {
+      if (auction.getAuctionId() === auctionId) return auction;
+    }
+  }
 
   auctionManager.addWinningBid = function(bid) {
     const metrics = useMetrics(bid.metrics);
     metrics.checkpoint('bidWon');
     metrics.timeBetween('auctionEnd', 'bidWon', 'render.pending');
     metrics.timeBetween('requestBids', 'bidWon', 'render.e2e');
-    const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
+    const auction = getAuction(bid.auctionId);
     if (auction) {
       bid.status = CONSTANTS.BID_STATUS.RENDERED;
       auction.addWinningBid(bid);
@@ -50,46 +81,42 @@ export function newAuctionManager() {
     }
   };
 
-  auctionManager.getAllWinningBids = function() {
-    return _auctions.map(auction => auction.getWinningBids())
-      .reduce(flatten, []);
-  };
-
-  auctionManager.getBidsRequested = function() {
-    return _auctions.map(auction => auction.getBidRequests())
-      .reduce(flatten, []);
-  };
-
-  auctionManager.getNoBids = function() {
-    return _auctions.map(auction => auction.getNoBids())
-      .reduce(flatten, []);
-  };
-
-  auctionManager.getBidsReceived = function() {
-    return _auctions.map((auction) => {
-      if (auction.getAuctionStatus() === AUCTION_COMPLETED) {
-        return auction.getBidsReceived();
+  Object.entries({
+    getAllWinningBids: {
+      name: 'getWinningBids',
+    },
+    getBidsRequested: {
+      name: 'getBidRequests'
+    },
+    getNoBids: {},
+    getAdUnits: {},
+    getBidsReceived: {
+      pre(auction) {
+        return auction.getAuctionStatus() === AUCTION_COMPLETED;
       }
-    }).reduce(flatten, [])
-      .filter(bid => bid);
-  };
+    },
+    getAdUnitCodes: {
+      post: uniques,
+    }
+  }).forEach(([mgrMethod, {name = mgrMethod, pre, post}]) => {
+    const mapper = pre == null
+      ? (auction) => auction[name]()
+      : (auction) => pre(auction) ? auction[name]() : [];
+    const filter = post == null
+      ? (items) => items
+      : (items) => items.filter(post)
+    auctionManager[mgrMethod] = () => {
+      return filter(_auctions.toArray().flatMap(mapper));
+    }
+  })
+
+  function allBidsReceived() {
+    return _auctions.toArray().flatMap(au => au.getBidsReceived())
+  }
 
   auctionManager.getAllBidsForAdUnitCode = function(adUnitCode) {
-    return _auctions.map((auction) => {
-      return auction.getBidsReceived();
-    }).reduce(flatten, [])
+    return allBidsReceived()
       .filter(bid => bid && bid.adUnitCode === adUnitCode)
-  };
-
-  auctionManager.getAdUnits = function() {
-    return _auctions.map(auction => auction.getAdUnits())
-      .reduce(flatten, []);
-  };
-
-  auctionManager.getAdUnitCodes = function() {
-    return _auctions.map(auction => auction.getAdUnitCodes())
-      .reduce(flatten, [])
-      .filter(uniques);
   };
 
   auctionManager.createAuction = function(opts) {
@@ -99,7 +126,8 @@ export function newAuctionManager() {
   };
 
   auctionManager.findBidByAdId = function(adId) {
-    return find(_auctions.map(auction => auction.getBidsReceived()).reduce(flatten, []), bid => bid.adId === adId);
+    return allBidsReceived()
+      .find(bid => bid.adId === adId);
   };
 
   auctionManager.getStandardBidderAdServerTargeting = function() {
@@ -111,24 +139,25 @@ export function newAuctionManager() {
     if (bid) bid.status = status;
 
     if (bid && status === CONSTANTS.BID_STATUS.BID_TARGETING_SET) {
-      const auction = find(_auctions, auction => auction.getAuctionId() === bid.auctionId);
+      const auction = getAuction(bid.auctionId);
       if (auction) auction.setBidTargeting(bid);
     }
   }
 
   auctionManager.getLastAuctionId = function() {
-    return _auctions.length && _auctions[_auctions.length - 1].getAuctionId()
+    const auctions = _auctions.toArray();
+    return auctions.length && auctions[auctions.length - 1].getAuctionId()
   };
 
   auctionManager.clearAllAuctions = function() {
-    _auctions.length = 0;
+    _auctions.clear();
   }
 
   function _addAuction(auction) {
-    _auctions.push(auction);
+    _auctions.add(auction);
   }
 
-  auctionManager.index = new AuctionIndex(() => _auctions);
+  auctionManager.index = new AuctionIndex(() => _auctions.toArray());
 
   return auctionManager;
 }

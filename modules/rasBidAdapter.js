@@ -1,7 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { isEmpty, getAdUnitSizes, parseSizesInput, deepAccess } from '../src/utils.js';
+import { isEmpty, parseSizesInput, deepAccess } from '../src/utils.js';
 import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 const BIDDER_CODE = 'ras';
 const VERSION = '1.0';

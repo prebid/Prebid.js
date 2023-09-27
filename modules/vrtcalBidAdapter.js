@@ -67,7 +67,7 @@ export const spec = {
           name: 'VRTCAL_FILLED',
           cat: deepAccess(bid, 'ortb2.site.cat', []),
           domain: decodeURIComponent(window.location.href).replace('https://', '').replace('http://', '').split('/')[0],
-          page: bid.refererInfo.page
+          page: window.location.href
         },
         device: {
           language: navigator.language,

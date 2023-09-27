@@ -1,6 +1,7 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { deepAccess, parseSizesInput, getAdUnitSizes } from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {deepAccess, parseSizesInput} from '../src/utils.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 const BIDDER_CODE = 'optidigital';
 const GVL_ID = 915;
@@ -88,6 +89,12 @@ export const spec = {
 
     if (bidderRequest && bidderRequest.uspConsent) {
       payload.uspConsent = bidderRequest.uspConsent;
+    }
+
+    if (_getEids(validBidRequests[0])) {
+      payload.user = {
+        eids: _getEids(validBidRequests[0])
+      }
     }
 
     const payloadObject = JSON.stringify(payload);
@@ -221,6 +228,12 @@ function _getFloor (bid, sizes, currency) {
     } catch (err) {}
   }
   return floor !== null ? floor : bid.params.floor;
+}
+
+function _getEids(bidRequest) {
+  if (deepAccess(bidRequest, 'userIdAsEids')) {
+    return bidRequest.userIdAsEids;
+  }
 }
 
 export function resetSync() {
