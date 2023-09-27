@@ -16,8 +16,9 @@ import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
 import {BANNER, VIDEO} from '../../../src/mediaTypes';
 import {config} from '../../../src/config';
+import {deepAccess} from 'src/utils.js';
 
-export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
+export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId', 'digitrustid'];
 
 const SUB_DOMAIN = 'exchange';
 
@@ -96,8 +97,10 @@ const BIDDER_REQUEST = {
     'consentString': 'consent_string',
     'gdprApplies': true
   },
-  'gppString': 'gpp_string',
-  'gppSid': [7],
+  'gppConsent': {
+    'gppString': 'gpp_string',
+    'applicableSections': [7]
+  },
   'uspConsent': 'consent_string',
   'refererInfo': {
     'page': 'https://www.greatsite.com',
@@ -508,6 +511,8 @@ describe('ShinezRtbBidAdapter', function () {
 
       const userId = (function () {
         switch (idSystemProvider) {
+          case 'digitrustid':
+            return {data: {id}};
           case 'lipb':
             return {lipbid: id};
           case 'parrableId':
