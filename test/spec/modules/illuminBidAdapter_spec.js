@@ -541,6 +541,9 @@ describe('IlluminBidAdapter', function () {
     });
 
     it('should return value when param supported', function () {
+      const cid = extractCID({'cId': '1'});
+      const pid = extractPID({'pId': '2'});
+      const subDomain = extractSubDomain({'subDomain': 'prebid'});
       expect(cid).to.be.equal('1');
       expect(pid).to.be.equal('2');
       expect(subDomain).to.be.equal('prebid');
