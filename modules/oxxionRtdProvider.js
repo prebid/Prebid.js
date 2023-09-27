@@ -87,7 +87,7 @@ function getFilteredAdUnitsOnBidRates (bidsRateInterests, adUnits, params, useSa
   logInfo(LOG_PREFIX, 'getFilteredAdUnitsOnBidRates()', interestingBidsRates, uninterestingBidsRates);
   // Filter bids and adUnits against interesting bids rates
   const newAdUnits = adUnits.filter(({ bids = [] }, adUnitIndex) => {
-    adUnits[adUnitIndex].bids = bids.filter(bid => {
+    adUnits[adUnitIndex].bids = bids.filter((bid, bidIndex) => {
       if (!params.bidders || params.bidders.includes(bid.bidder)) {
         const index = interestingBidsRates.findIndex(({ id }) => id === bid._id);
         if (index == -1) {
@@ -99,18 +99,19 @@ function getFilteredAdUnitsOnBidRates (bidsRateInterests, adUnits, params, useSa
             delete tmpBid.floorData;
           }
           filteredBids.push(tmpBid);
-          bid['ova'] = 'filtered';
+          adUnits[adUnitIndex].bids[bidIndex]['ova'] = 'filtered';
         } else {
-          if (sampledBidsRates.findIndex(({ id }) => id === bid._id)) {
-            bid['ova'] = 'sampled';
+          if (sampledBidsRates.findIndex(({ id }) => id === bid._id) == -1) {
+            adUnits[adUnitIndex].bids[bidIndex]['ova'] = 'cleared';
           } else {
-            bid['ova'] = 'cleared';
+            adUnits[adUnitIndex].bids[bidIndex]['ova'] = 'sampled';
+            logInfo(LOG_PREFIX + ' sampled ! ');
           }
         }
         delete bid._id;
         return index !== -1;
       } else {
-        bid['ova'] = 'protected';
+        adUnits[adUnitIndex].bids[bidIndex]['ova'] = 'protected';
         return true;
       }
     });
