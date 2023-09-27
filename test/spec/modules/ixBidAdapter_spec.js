@@ -3220,21 +3220,7 @@ describe('IndexexchangeAdapter', function () {
 
   describe('buildRequestFledge', function () {
     it('impression should have ae=1 in ext when fledge is enabled through ad unit', function () {
-      config.setConfig({
-        fledgeForGpt: {
-          enabled: true
-        }
-      });
-
-      config.setBidderConfig({
-        bidders: ['ix'],
-        config: {
-          fledgeEnabled: true,
-        }
-      });
-
       const bidderRequest = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
-
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0]);
       const requestBidFloor = spec.buildRequests([bid], bidderRequest)[0];
       const impression = extractPayload(requestBidFloor).imp[0];
@@ -3243,23 +3229,7 @@ describe('IndexexchangeAdapter', function () {
     });
 
     it('impression should have ae=1 in ext when fledge is enabled globaly through setConfig', function () {
-      config.setConfig({
-        fledgeForGpt: {
-          enabled: true,
-          defaultForSlots: 1
-        }
-      });
-
-      config.setBidderConfig({
-        bidders: ['ix'],
-        config: {
-          fledgeEnabled: true,
-          defaultForSlots: 1
-        }
-      });
-
       const bidderRequest = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED_GLOBALLY);
-
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       const requestBidFloor = spec.buildRequests([bid], bidderRequest)[0];
       const impression = extractPayload(requestBidFloor).imp[0];
@@ -3267,24 +3237,21 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.ext.ae).to.equal(1);
     });
 
-    it('should contain correct IXdiag ae property for Fledge', function () {
-      config.setConfig({
-        fledgeForGpt: {
-          enabled: true
-        }
-      });
+    it('impression should not have ae=1 in ext when fledge is enabled globaly through setConfig but overriden at ad unit level', function () {
+      const bidderRequest = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      const requestBidFloor = spec.buildRequests([bid], bidderRequest)[0];
+      const impression = extractPayload(requestBidFloor).imp[0];
 
-      config.setBidderConfig({
-        bidders: ['ix'],
-        config: {
-          fledgeEnabled: true,
-          defaultForSlots: 1
-        }
-      });
+      expect(impression.ext.ae).to.be.undefined;
+    });
+
+    it('should contain correct IXdiag ae property for Fledge', function () {
       const bid = DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0];
-      const request = spec.buildRequests([bid], {});
+      const bidderRequestWithFledgeEnabled = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
+      const request = spec.buildRequests([bid], bidderRequestWithFledgeEnabled);
       const diagObj = extractPayload(request[0]).ext.ixdiag;
-      expect(diagObj.ae).to.equal(true); // Check if Fledge flag is set to true
+      expect(diagObj.ae).to.equal(true);
     });
   });
 

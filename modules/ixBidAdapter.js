@@ -696,7 +696,8 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   r = addRequestedFeatureToggles(r, FEATURE_TOGGLES.REQUESTED_FEATURE_TOGGLES)
 
   // getting ixdiags for adunits of the video, outstream & multi format (MF) style
-  let ixdiag = buildIXDiag(validBidRequests);
+  const fledgeEnabled = deepAccess(bidderRequest, 'fledgeEnabled')
+  let ixdiag = buildIXDiag(validBidRequests, fledgeEnabled);
   for (var key in ixdiag) {
     r.ext.ixdiag[key] = ixdiag[key];
   }
@@ -1225,10 +1226,11 @@ function _getUserIds(bidRequest) {
 /**
  * Calculates IX diagnostics values and packages them into an object
  *
- * @param {array} validBidRequests  The valid bid requests from prebid
+ * @param {array} validBidRequests - The valid bid requests from prebid
+ * @param {bool} fledgeEnabled - Flag indicating if protected audience (fledge) is enabled
  * @return {Object} IX diag values for ad units
  */
-function buildIXDiag(validBidRequests) {
+function buildIXDiag(validBidRequests, fledgeEnabled) {
   var adUnitMap = validBidRequests
     .map(bidRequest => bidRequest.adUnitCode)
     .filter((value, index, arr) => arr.indexOf(value) === index);
@@ -1245,7 +1247,7 @@ function buildIXDiag(validBidRequests) {
     userIds: _getUserIds(validBidRequests[0]),
     url: window.location.href.split('?')[0],
     vpd: defaultVideoPlacement,
-    ae: false
+    ae: fledgeEnabled
   };
 
   // create ad unit map and collect the required diag properties
@@ -1275,10 +1277,6 @@ function buildIXDiag(validBidRequests) {
 
       if (deepAccess(bid, 'mediaTypes.video.context') === 'instream') {
         ixdiag.iu++;
-      }
-
-      if (deepAccess(bid, 'ortb2Imp.ext.ae') === 1) {
-        ixdiag.ae = true;
       }
 
       ixdiag.allu++;
@@ -1377,11 +1375,17 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidde
   bannerImps[validBidRequest.adUnitCode].pos = deepAccess(validBidRequest, 'mediaTypes.banner.pos');
 
   // Add Fledge flag if enabled
-  if (deepAccess(bidderRequest, 'fledgeEnabled')) {
+  const fledgeEnabled = deepAccess(bidderRequest, 'fledgeEnabled')
+  if (fledgeEnabled) {
     if (bidderRequest.defaultForSlots == 1) {
       bannerImps[validBidRequest.adUnitCode].ae = 1
     } else {
-      bannerImps[validBidRequest.adUnitCode].ae = deepAccess(validBidRequest, 'ortb2Imp.ext.ae');
+      const auctionEnvironment = deepAccess(validBidRequest, 'ortb2Imp.ext.ae')
+      if (isInteger(auctionEnvironment)) {
+        bannerImps[validBidRequest.adUnitCode].ae = auctionEnvironment;
+      } else {
+        logWarn('error setting auction environment flag - must be an integer')
+      }
     }
   }
 
