@@ -1,30 +1,19 @@
 import {
-  isFn,
+  buildUrl,
   deepAccess,
   formatQS,
+  isFn,
   logInfo,
   parseSizesInput,
+  triggerPixel,
 } from '../src/utils.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'missena';
 const ENDPOINT_URL = 'https://bid.missena.io/';
 const EVENTS_DOMAIN = 'events.missena.io';
 const EVENTS_DOMAIN_DEV = 'events.staging.missena.xyz';
-
-/* Get mediatype from bidRequest */
-function getMediatype(bidRequest) {
-  if (deepAccess(bidRequest, 'mediaTypes.banner')) {
-    return BANNER;
-  }
-  if (deepAccess(bidRequest, 'mediaTypes.video')) {
-    return VIDEO;
-  }
-  if (deepAccess(bidRequest, 'mediaTypes.native')) {
-    return NATIVE;
-  }
-}
 
 function getSize(sizesArray) {
   const firstSize = sizesArray[0];
@@ -38,14 +27,16 @@ function getSize(sizesArray) {
 }
 
 /* Get Floor price information */
-function getFloor(bidRequest, size, mediaType) {
+function getFloor(bidRequest) {
   if (!isFn(bidRequest.getFloor)) {
-    return deepAccess(bidRequest, 'params.bidfloor', 0);
+    return {};
   }
+  const sizesArray = getSizeArray(bidRequest);
+  const size = getSize(sizesArray);
 
   const bidFloors = bidRequest.getFloor({
     currency: 'USD',
-    mediaType,
+    mediaType: BANNER,
     size: [size.width, size.height],
   });
 
@@ -66,17 +57,6 @@ function getSizeArray(bid) {
   return parseSizesInput(inputSize);
 }
 
-function notify(bid, event) {
-  const hostname = bid.params[0].baseUrl ? EVENTS_DOMAIN_DEV : EVENTS_DOMAIN;
-  const headers = {
-    type: 'application/json',
-  };
-  const blob = new Blob([JSON.stringify(event)], headers);
-  navigator.sendBeacon(
-    `https://${hostname}/v1/events?t=${bid.params[0].apiKey}`,
-    blob,
-  );
-}
 export const spec = {
   aliases: ['msna'],
   code: BIDDER_CODE,
@@ -132,11 +112,9 @@ export const spec = {
       }
       payload.userEids = bidRequest.userIdAsEids || [];
 
-      let mediatype = getMediatype(bidRequest);
-      let sizesArray = getSizeArray(bidRequest);
-      let size = getSize(sizesArray);
-
-      payload.prebidFloor = getFloor(bidRequest, size, mediatype);
+      const bidFloor = getFloor(bidRequest);
+      payload.floor = bidFloor?.floor;
+      payload.floor_currency = bidFloor?.currency;
 
       return {
         method: 'POST',
@@ -190,37 +168,29 @@ export const spec = {
    * Register bidder specific code, which will execute if bidder timed out after an auction
    * @param {data} Containing timeout specific data
    */
-  onTimeout: (data) => {
-    data.forEach((bid) => {
-      notify(bid, {
-        name: 'timeout',
-        parameters: {
-          bidder: BIDDER_CODE,
-          placement: bid.params[0].placement,
-          t: bid.params[0].apiKey,
-        },
-      });
-    });
-    logInfo('Missena - Timeout from adapter', data);
+  onTimeout: function onTimeout(timeoutData) {
+    logInfo('Missena - Timeout from adapter', timeoutData);
   },
 
   /**
    * Register bidder specific code, which@ will execute if a bid from this bidder won the auction
    * @param {Bid} The bid that won the auction
    */
-  onBidWon: (bid) => {
-    notify(bid, {
-      name: 'bidsuccess',
-      provider: bid.meta?.networkName,
-      parameters: {
-        t: bid.params[0].apiKey,
-        placement: bid.params[0].placement,
-        commission: {
-          value: bid.cpm,
-          currency: bid.currency,
+  onBidWon: function (bid) {
+    const hostname = bid.params[0].baseUrl ? EVENTS_DOMAIN_DEV : EVENTS_DOMAIN;
+    triggerPixel(
+      buildUrl({
+        protocol: 'https',
+        hostname,
+        pathname: '/v1/bidsuccess',
+        search: {
+          t: bid.params[0].apiKey,
+          provider: bid.meta?.networkName,
+          cpm: bid.originalCpm,
+          currency: bid.originalCurrency,
         },
-      },
-    });
+      }),
+    );
     logInfo('Missena - Bid won', bid);
   },
 };
