@@ -129,16 +129,22 @@ export const spec = {
     if (bid.winUrl) {
       ajax(bid.winUrl, () => {}, JSON.stringify(bid));
     } else {
-      ajax('https://et-nd43.itdsmr.com/?c=o&m=prebid&secret_key=prebid_js&winTest=1', () => {}, JSON.stringify(bid));
+      if (bid?.postData && bid?.postData[0] && bid?.postData[0].params && bid?.postData[0].params[0].host == 'prebid') {
+        ajax('https://et-nd43.itdsmr.com/?c=o&m=prebid&secret_key=prebid_js&winTest=1', () => {}, JSON.stringify(bid));
+      }
     }
   },
 
   onTimeout: function(bid) {
-    ajax('https://et-nd43.itdsmr.com/?c=o&m=prebid&secret_key=prebid_js&bidTimeout=1', () => {}, JSON.stringify(bid));
+    if (bid?.postData && bid?.postData[0] && bid?.postData[0].params && bid?.postData[0].params[0].host == 'prebid') {
+      ajax('https://et-nd43.itdsmr.com/?c=o&m=prebid&secret_key=prebid_js&bidTimeout=1', () => {}, JSON.stringify(bid));
+    }
   },
 
   onBidderError: function(bid) {
-    ajax('https://et-nd43.itdsmr.com/?c=o&m=prebid&secret_key=prebid_js&bidderError=1', () => {}, JSON.stringify(bid));
+    if (bid?.postData && bid?.postData[0] && bid?.postData[0].params && bid?.postData[0].params[0].host == 'prebid') {
+      ajax('https://et-nd43.itdsmr.com/?c=o&m=prebid&secret_key=prebid_js&bidderError=1', () => {}, JSON.stringify(bid));
+    }
   },
 
 };

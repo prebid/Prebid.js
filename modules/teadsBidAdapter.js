@@ -1,4 +1,4 @@
-import { getValue, logError, deepAccess, getBidIdParameter, parseSizesInput, isArray } from '../src/utils.js';
+import {getValue, logError, deepAccess, parseSizesInput, isArray, getBidIdParameter} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 
@@ -49,6 +49,8 @@ export const spec = {
     const payload = {
       referrer: getReferrerInfo(bidderRequest),
       pageReferrer: document.referrer,
+      pageTitle: getPageTitle().slice(0, 300),
+      pageDescription: getPageDescription().slice(0, 300),
       networkBandwidth: getConnectionDownLink(window.navigator),
       timeToFirstByte: getTimeToFirstByte(window),
       data: bids,
@@ -168,6 +170,32 @@ function getReferrerInfo(bidderRequest) {
     ref = bidderRequest.refererInfo.page;
   }
   return ref;
+}
+
+function getPageTitle() {
+  try {
+    const ogTitle = window.top.document.querySelector('meta[property="og:title"]')
+
+    return window.top.document.title || (ogTitle && ogTitle.content) || '';
+  } catch (e) {
+    const ogTitle = document.querySelector('meta[property="og:title"]')
+
+    return document.title || (ogTitle && ogTitle.content) || '';
+  }
+}
+
+function getPageDescription() {
+  let element;
+
+  try {
+    element = window.top.document.querySelector('meta[name="description"]') ||
+      window.top.document.querySelector('meta[property="og:description"]')
+  } catch (e) {
+    element = document.querySelector('meta[name="description"]') ||
+      document.querySelector('meta[property="og:description"]')
+  }
+
+  return (element && element.content) || '';
 }
 
 function getConnectionDownLink(nav) {

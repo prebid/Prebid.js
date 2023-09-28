@@ -6,7 +6,6 @@ import {
   deepClone,
   generateUUID,
   getDNT,
-  getGptSlotInfoForAdUnitCode,
   getUniqueIdentifierStr,
   getWindowSelf,
   getWindowTop,
@@ -34,6 +33,7 @@ import {OUTSTREAM} from '../src/video.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { userSync } from '../src/userSync.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 const BIDDER_CODE = 'adagio';
 const LOG_PREFIX = 'Adagio:';
@@ -996,7 +996,7 @@ export const spec = {
     const aucId = generateUUID()
 
     const adUnits = _map(validBidRequests, (rawBidRequest) => {
-      const bidRequest = {...rawBidRequest}
+      const bidRequest = deepClone(rawBidRequest);
 
       // Fix https://github.com/prebid/Prebid.js/issues/9781
       bidRequest.auctionId = aucId
@@ -1130,14 +1130,22 @@ export const spec = {
       // remove useless props
       delete adUnitCopy.floorData;
       delete adUnitCopy.params.siteId;
-      delete adUnitCopy.userId
-      delete adUnitCopy.userIdAsEids
+      delete adUnitCopy.userId;
+      delete adUnitCopy.userIdAsEids;
 
       groupedAdUnits[adUnitCopy.params.organizationId] = groupedAdUnits[adUnitCopy.params.organizationId] || [];
       groupedAdUnits[adUnitCopy.params.organizationId].push(adUnitCopy);
 
       return groupedAdUnits;
     }, {});
+
+    // Adding more params on the original bid object.
+    // Those params are not sent to the server.
+    // They are used for further operations on analytics adapter.
+    validBidRequests.forEach(rawBidRequest => {
+      rawBidRequest.params.adagioAuctionId = aucId
+      rawBidRequest.params.pageviewId = pageviewId
+    });
 
     // Build one request per organizationId
     const requests = _map(Object.keys(groupedAdUnits), organizationId => {

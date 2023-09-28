@@ -1,7 +1,7 @@
 import {includes} from '../src/polyfill.js';
 import {config} from '../src/config.js';
 import {getHook} from '../src/hook.js';
-import {_each, deepAccess, deepClone, hasOwn, isArray, isPlainObject, isStr, logError, logWarn} from '../src/utils.js';
+import {_each, deepAccess, deepClone, isArray, isPlainObject, isStr, logError, logWarn} from '../src/utils.js';
 import {timedBidResponseHook} from '../src/utils/perfMetrics.js';
 
 const shouldBeAString = ' should be a string';
@@ -49,7 +49,7 @@ export function checkDchainSyntax(bid, mode) {
     appendFailMsg(`dchain.ver` + shouldBeAString);
   }
 
-  if (hasOwn(dchainObj, 'ext')) {
+  if (dchainObj.hasOwnProperty('ext')) {
     if (!isPlainObject(dchainObj.ext)) {
       appendFailMsg(`dchain.ext` + shouldBeAnObject);
     }

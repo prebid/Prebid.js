@@ -1,13 +1,19 @@
-import { expect } from 'chai';
-import { targeting as targetingInstance, filters, getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrCpm } from 'src/targeting.js';
-import { config } from 'src/config.js';
-import { createBidReceived } from 'test/fixtures/fixtures.js';
+import {expect} from 'chai';
+import {
+  filters,
+  getHighestCpmBidsFromBidPool,
+  sortByDealAndPriceBucketOrCpm,
+  targeting as targetingInstance
+} from 'src/targeting.js';
+import {config} from 'src/config.js';
+import {createBidReceived} from 'test/fixtures/fixtures.js';
 import CONSTANTS from 'src/constants.json';
-import { auctionManager } from 'src/auctionManager.js';
+import {auctionManager} from 'src/auctionManager.js';
 import * as utils from 'src/utils.js';
 import {deepClone} from 'src/utils.js';
 import {createBid} from '../../../../src/bidfactory.js';
 import {hook} from '../../../../src/hook.js';
+import {getHighestCpm} from '../../../../src/utils/reducers.js';
 
 function mkBid(bid, status = CONSTANTS.STATUS.GOOD) {
   return Object.assign(createBid(status), bid);
@@ -451,7 +457,7 @@ describe('targeting tests', function () {
           }
         });
 
-        const bids = getHighestCpmBidsFromBidPool(bidsReceived, utils.getHighestCpm, 2);
+        const bids = getHighestCpmBidsFromBidPool(bidsReceived, getHighestCpm, 2);
 
         expect(bids.length).to.equal(3);
         expect(bids[0].adId).to.equal('8383838');
@@ -467,7 +473,7 @@ describe('targeting tests', function () {
           }
         });
 
-        const bids = getHighestCpmBidsFromBidPool(bidsReceived, utils.getHighestCpm, 2);
+        const bids = getHighestCpmBidsFromBidPool(bidsReceived, getHighestCpm, 2);
 
         expect(bids.length).to.equal(3);
         expect(bids[0].adId).to.equal('8383838');
