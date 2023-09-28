@@ -1,8 +1,6 @@
 /** @module adaptermanger */
 
 import {
-  _each,
-  bind,
   deepAccess,
   deepClone,
   flatten,
@@ -31,12 +29,7 @@ import {hook} from './hook.js';
 import {find, includes} from './polyfill.js';
 import {adunitCounter} from './adUnits.js';
 import {getRefererInfo} from './refererDetection.js';
-import {
-  GDPR_GVLIDS,
-  gdprDataHandler,
-  uspDataHandler,
-  gppDataHandler,
-} from './consentHandler.js';
+import {GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler, } from './consentHandler.js';
 import * as events from './events.js';
 import CONSTANTS from './constants.json';
 import {useMetrics} from './utils/perfMetrics.js';
@@ -468,8 +461,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
     try {
       config.runWithBidder(
         bidderRequest.bidderCode,
-        bind.call(
-          adapter.callBids,
+        adapter.callBids.bind(
           adapter,
           bidderRequest,
           addBidResponse,
@@ -597,7 +589,7 @@ adapterManager.enableAnalytics = function (config) {
     config = [config];
   }
 
-  _each(config, adapterConfig => {
+  config.forEach(adapterConfig => {
     const entry = _analyticsRegistry[adapterConfig.provider];
     if (entry && entry.adapter) {
       if (dep.isAllowed(ACTIVITY_REPORT_ANALYTICS, activityParams(MODULE_TYPE_ANALYTICS, adapterConfig.provider, {[ACTIVITY_PARAM_ANL_CONFIG]: adapterConfig}))) {

@@ -4,12 +4,13 @@
  */
 import { config } from '../src/config.js';
 import { getHook } from '../src/hook.js';
-import {deepSetValue, getGptSlotForAdUnitCode, logInfo, logWarn, mergeDeep} from '../src/utils.js';
+import {deepSetValue, logInfo, logWarn, mergeDeep} from '../src/utils.js';
 import {IMP, PBS, registerOrtbProcessor, RESPONSE} from '../src/pbjsORTB.js';
 import * as events from '../src/events.js'
 import CONSTANTS from '../src/constants.json';
 import {currencyCompare} from '../libraries/currencyUtils/currency.js';
 import {maximum, minimum} from '../src/utils/reducers.js';
+import {getGptSlotForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 const MODULE = 'fledgeForGpt'
 const PENDING = {};

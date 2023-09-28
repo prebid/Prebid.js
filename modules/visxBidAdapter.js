@@ -1,9 +1,11 @@
-import { triggerPixel, parseSizesInput, deepAccess, logError, getGptSlotInfoForAdUnitCode } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { INSTREAM as VIDEO_INSTREAM } from '../src/video.js';
+import {deepAccess, logError, parseSizesInput, triggerPixel} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {INSTREAM as VIDEO_INSTREAM} from '../src/video.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+
 const BIDDER_CODE = 'visx';
 const GVLID = 154;
 const BASE_URL = 'https://t.visx.net';

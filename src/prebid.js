@@ -2,10 +2,7 @@
 
 import {getGlobal} from './prebidGlobal.js';
 import {
-  adUnitsFilter,
-  bind,
   callBurl,
-  contains,
   createInvisibleIframe,
   deepAccess,
   deepClone,
@@ -91,7 +88,7 @@ function checkDefinedPlacement(id) {
     .reduce(flatten)
     .filter(uniques);
 
-  if (!contains(adUnitCodes, id)) {
+  if (!adUnitCodes.includes(id)) {
     logError('The "' + id + '" placement is not defined.');
     return;
   }
@@ -345,7 +342,7 @@ pbjsInstance.getConsentMetadata = function () {
 
 function getBids(type) {
   const responses = auctionManager[type]()
-    .filter(bind.call(adUnitsFilter, this, auctionManager.getAdUnitCodes()));
+    .filter(bid => auctionManager.getAdUnitCodes().includes(bid.adUnitCode))
 
   // find the last auction id to get responses for most recent auction only
   const currentAuctionId = auctionManager.getLastAuctionId();
