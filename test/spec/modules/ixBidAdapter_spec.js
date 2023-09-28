@@ -3219,16 +3219,16 @@ describe('IndexexchangeAdapter', function () {
   });
 
   describe('buildRequestFledge', function () {
-    it('impression should have ae=1 in ext when fledge is enabled through ad unit', function () {
+    it('impression should have ae=1 in ext when fledge module is enabled and ae is set in ad unit', function () {
       const bidderRequest = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0]);
       const requestBidFloor = spec.buildRequests([bid], bidderRequest)[0];
       const impression = extractPayload(requestBidFloor).imp[0];
 
-      expect(impression.ext.ae).to.equal(1); // Check that ae=1 is added to the impression ext
+      expect(impression.ext.ae).to.equal(1);
     });
 
-    it('impression should have ae=1 in ext when fledge is enabled globaly through setConfig', function () {
+    it('impression should have ae=1 in ext when fledge module is enabled globally and default is set through setConfig', function () {
       const bidderRequest = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED_GLOBALLY);
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       const requestBidFloor = spec.buildRequests([bid], bidderRequest)[0];
@@ -3237,8 +3237,26 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.ext.ae).to.equal(1);
     });
 
-    it('impression should not have ae=1 in ext when fledge is enabled globaly through setConfig but overriden at ad unit level', function () {
+    it('impression should have ae=1 in ext when fledge module is enabled globally but no default set through setConfig but set at ad unit level', function () {
       const bidderRequest = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0]);
+      const requestBidFloor = spec.buildRequests([bid], bidderRequest)[0];
+      const impression = extractPayload(requestBidFloor).imp[0];
+
+      expect(impression.ext.ae).to.equal(1);
+    });
+
+    it('impression should not have ae=1 in ext when fledge module is enabled globally through setConfig but overidden at ad unit level', function () {
+      const bidderRequest = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      const requestBidFloor = spec.buildRequests([bid], bidderRequest)[0];
+      const impression = extractPayload(requestBidFloor).imp[0];
+
+      expect(impression.ext.ae).to.be.undefined;
+    });
+
+    it('impression should not have ae=1 in ext when fledge module is disabled', function () {
+      const bidderRequest = deepClone(DEFAULT_OPTION);
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
       const requestBidFloor = spec.buildRequests([bid], bidderRequest)[0];
       const impression = extractPayload(requestBidFloor).imp[0];

@@ -1377,15 +1377,15 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidde
   // Add Fledge flag if enabled
   const fledgeEnabled = deepAccess(bidderRequest, 'fledgeEnabled')
   if (fledgeEnabled) {
-    if (bidderRequest.defaultForSlots == 1) {
-      bannerImps[validBidRequest.adUnitCode].ae = 1
-    } else {
-      const auctionEnvironment = deepAccess(validBidRequest, 'ortb2Imp.ext.ae')
+    const auctionEnvironment = deepAccess(validBidRequest, 'ortb2Imp.ext.ae')
+    if (auctionEnvironment) {
       if (isInteger(auctionEnvironment)) {
         bannerImps[validBidRequest.adUnitCode].ae = auctionEnvironment;
       } else {
         logWarn('error setting auction environment flag - must be an integer')
       }
+    } else if (deepAccess(bidderRequest, 'defaultForSlots') == 1) {
+      bannerImps[validBidRequest.adUnitCode].ae = 1
     }
   }
 
