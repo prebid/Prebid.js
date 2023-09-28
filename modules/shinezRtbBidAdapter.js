@@ -22,7 +22,7 @@ function getTopWindowQueryParams() {
 }
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
-  return `https://${subDomain}.hb.sweetgum.io`;
+  return `https://${subDomain}.sweetgum.io`;
 }
 
 export function extractCID(params) {
@@ -257,13 +257,13 @@ function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '')
   if (iframeEnabled) {
     syncs.push({
       type: 'iframe',
-      url: `https://sync.hb.sweetgum.io/api/sync/iframe/${params}`
+      url: `https://sync.sweetgum.io/api/sync/iframe/${params}`
     });
   }
   if (pixelEnabled) {
     syncs.push({
       type: 'image',
-      url: `https://sync.hb.sweetgum.io/api/sync/image/${params}`
+      url: `https://sync.sweetgum.io/api/sync/image/${params}`
     });
   }
   return syncs;

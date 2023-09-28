@@ -159,7 +159,7 @@ const VIDEO_SERVER_RESPONSE = {
     'cid': '635509f7ff6642d368cb9837',
     'results': [{
       'ad': '<VAST version=\"3.0\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"></VAST>',
-      'advertiserDomains': ['hb.sweetgum.io'],
+      'advertiserDomains': ['sweetgum.io'],
       'exp': 60,
       'width': 545,
       'height': 307,
@@ -405,7 +405,7 @@ describe('ShinezRtbBidAdapter', function () {
 
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://sync.hb.sweetgum.io/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
+        url: 'https://sync.sweetgum.io/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
       }]);
     });
 
@@ -413,7 +413,7 @@ describe('ShinezRtbBidAdapter', function () {
       const result = adapter.getUserSyncs({iframeEnabled: true}, [SERVER_RESPONSE]);
       expect(result).to.deep.equal([{
         type: 'iframe',
-        url: 'https://sync.hb.sweetgum.io/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
+        url: 'https://sync.sweetgum.io/api/sync/iframe/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy='
       }]);
     });
 
@@ -421,7 +421,7 @@ describe('ShinezRtbBidAdapter', function () {
       const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE]);
 
       expect(result).to.deep.equal([{
-        'url': 'https://sync.hb.sweetgum.io/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=',
+        'url': 'https://sync.sweetgum.io/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=',
         'type': 'image'
       }]);
     })
@@ -465,12 +465,12 @@ describe('ShinezRtbBidAdapter', function () {
     it('should get meta from response metaData', function () {
       const serverResponse = utils.deepClone(SERVER_RESPONSE);
       serverResponse.body.results[0].metaData = {
-        advertiserDomains: ['hb.sweetgum.io'],
+        advertiserDomains: ['sweetgum.io'],
         agencyName: 'Agency Name',
       };
       const responses = adapter.interpretResponse(serverResponse, REQUEST);
       expect(responses[0].meta).to.deep.equal({
-        advertiserDomains: ['hb.sweetgum.io'],
+        advertiserDomains: ['sweetgum.io'],
         agencyName: 'Agency Name'
       });
     });
@@ -490,7 +490,7 @@ describe('ShinezRtbBidAdapter', function () {
         ttl: 60,
         vastXml: '<VAST version=\"3.0\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"></VAST>',
         meta: {
-          advertiserDomains: ['hb.sweetgum.io']
+          advertiserDomains: ['sweetgum.io']
         }
       });
     });
