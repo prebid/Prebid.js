@@ -62,4 +62,4 @@ The `contxtfulRtdProvider` module loads an external JavaScript file and authenti
 }
 ```
 
-This module also integrates seamlessly with Google Ad Manager, ensuring that the `ReceptivityState` is available as early as possible in the ad serving process.con
+This module also integrates seamlessly with Google Ad Manager, ensuring that the `ReceptivityState` is available as early as possible in the ad serving process.
