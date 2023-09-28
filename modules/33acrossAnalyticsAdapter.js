@@ -393,7 +393,7 @@ function analyticEventHandler({ eventType, args }) {
       onBidResponse(args);
       break;
     case EVENTS.BID_REJECTED:
-      setCachedBidStatus(args.auctionId, args.bidId, BidStatus.REJECTED);
+      onBidRejected(args);
       break;
     case EVENTS.NO_BID:
     case EVENTS.SEAT_NON_BID:
@@ -506,6 +506,29 @@ function onBidResponse({ requestId, auctionId, cpm, currency, originalCpm, floor
         cpmFloor: floorData?.floorValue,
         mediaType,
         size
+      },
+      source
+    }
+  );
+}
+
+/****************
+ * BID_REJECTED *
+ ***************/
+function onBidRejected({ requestId, auctionId, cpm, currency, originalCpm, floorData, mediaType, width, height, source }) {
+  const bid = getCachedBid(auctionId, requestId);
+  if (!bid) return;
+
+  setBidStatus(bid, BidStatus.REJECTED);
+  Object.assign(bid,
+    {
+      bidResponse: {
+        cpm,
+        cur: currency,
+        cpmOrig: originalCpm,
+        cpmFloor: floorData?.floorValue,
+        mediaType,
+        size: `${width}x${height}`
       },
       source
     }
