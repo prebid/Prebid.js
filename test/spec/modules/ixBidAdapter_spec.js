@@ -3275,7 +3275,7 @@ describe('IndexexchangeAdapter', function () {
     it('should log warning for non integer auction environment in ad unit for fledge', () => {
       const logWarnSpy = sinon.spy(utils, 'logWarn');
       const bid = DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0];
-      bid.ortb2Imp.ext.ae = "malformed"
+      bid.ortb2Imp.ext.ae = 'malformed'
       const bidderRequestWithFledgeEnabled = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
       spec.buildRequests([bid], bidderRequestWithFledgeEnabled);
       expect(logWarnSpy.calledWith('error setting auction environment flag - must be an integer')).to.be.true;
