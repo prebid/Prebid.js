@@ -362,6 +362,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['pdvid'] = '' + profileVersionId;
   outputObj['dvc'] = {'plt': getDevicePlatform()};
   outputObj['tgid'] = getTgId();
+  outputObj['pbv'] = getGlobal()?.version || '-1';
 
   if (floorData && fetchStatus) {
     outputObj['fmv'] = floorData.floorRequestData ? floorData.floorRequestData.modelVersion || undefined : undefined;

@@ -174,6 +174,7 @@ describe('dxkultureBidAdapter:', function () {
           sid: 134,
           rewarded: 1,
           placement: 1,
+          plcmt: 1,
           hp: 1,
           inventoryid: 123
         },
@@ -403,6 +404,8 @@ describe('dxkultureBidAdapter:', function () {
         expect(data.imp[0].video.w).to.equal(width);
         expect(data.imp[0].video.h).to.equal(height);
         expect(data.imp[0].bidfloor).to.equal(videoBidRequest.params.bidfloor);
+        expect(data.imp[0]['video']['placement']).to.equal(videoBidRequest.params.video['placement']);
+        expect(data.imp[0]['video']['plcmt']).to.equal(videoBidRequest.params.video['plcmt']);
         expect(data.ext.prebidver).to.equal('$prebid.version$');
         expect(data.ext.adapterver).to.equal(spec.VERSION);
       });
