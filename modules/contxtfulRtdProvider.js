@@ -96,7 +96,6 @@ function addExternalScriptEventListener(script) {
     let receptivityState = detail?.ReceptivityState;
     if (isStr(receptivityState) && !isEmptyStr(receptivityState)) {
       initialReceptivity = receptivityState;
-      setGoogletagTargetingData(getReceptivity());
     }
   });
 
@@ -113,35 +112,6 @@ function getReceptivity() {
   return {
     ReceptivityState: contxtfulModule?.GetReceptivity()?.ReceptivityState || initialReceptivity
   };
-}
-
-/**
- * Call googletag manager to add the ReceptivityState as a targeting data for the page
- * @param { { ReceptivityState: String } } receptivity
- */
-function setGoogletagTargetingData({ReceptivityState: receptivityState}) {
-  if (!window.googletag) {
-    return;
-  }
-
-  window.googletag.cmd = window.googletag.cmd || []
-  window.googletag.cmd.push(() => {
-    window.googletag.pubads().setTargeting('ReceptivityState', receptivityState);
-  })
-}
-
-/**
- * Add targeting data for GAM before bid request
- * @param {*} _reqBidsConfigObj
- * @param { Function } callback
- * @param {*} _config
- * @param {*} _userConsent
- */
-function getBidRequestData(_reqBidsConfigObj, callback, _config, _userConsent) {
-  logInfo(MODULE, 'getBidRequestData');
-  setGoogletagTargetingData(getReceptivity());
-
-  callback();
 }
 
 /**
@@ -172,7 +142,6 @@ export const contxtfulSubmodule = {
   name: MODULE_NAME,
   init,
   extractParameters,
-  getBidRequestData,
   getTargetingData,
 };
 

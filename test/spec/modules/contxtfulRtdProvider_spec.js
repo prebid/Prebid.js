@@ -26,23 +26,10 @@ function buildInitConfig(version, customer) {
 
 describe('contxtfulRtdProvider', function () {
   let sandbox = sinon.sandbox.create();
-  let googletagStub;
-  let pubAdsServiceStub;
   let loadExternalScriptTag;
   let eventsEmitSpy;
 
-  function setupGoogletag() {
-    googletagStub = { pubads: sinon.stub(), cmd: [] };
-    pubAdsServiceStub = { setTargeting: sinon.stub() };
-    googletagStub.pubads.callsFake(() => pubAdsServiceStub);
-    sinon.stub(googletagStub.cmd, 'push').callsFake((callback) => callback());
-
-    window.googletag = googletagStub;
-  }
-
   beforeEach(() => {
-    setupGoogletag();
-
     loadExternalScriptTag = document.createElement('script');
     loadExternalScriptStub.callsFake((_url, _moduleName) => loadExternalScriptTag);
 
@@ -141,19 +128,6 @@ describe('contxtfulRtdProvider', function () {
     });
   });
 
-  describe('initial receptivity from external script', function () {
-    it('set googletag page targeting data', () => {
-      contxtfulSubmodule.init(buildInitConfig(VERSION, CUSTOMER));
-      loadExternalScriptTag.dispatchEvent(INITIAL_RECEPTIVITY_EVENT);
-
-      expect(googletagStub.pubads.calledOnce).to.be.true;
-      expect(pubAdsServiceStub.setTargeting.calledOnce).to.be.true;
-      expect(pubAdsServiceStub.setTargeting.args[0][0]).to.be.equal(
-        'ReceptivityState'
-      );
-    });
-  });
-
   describe('rxEngine from external script', function () {
     it('use rxEngine api to get receptivity', () => {
       contxtfulSubmodule.init(buildInitConfig(VERSION, CUSTOMER));
@@ -221,57 +195,6 @@ describe('contxtfulRtdProvider', function () {
           expected
         );
       });
-    });
-  });
-
-  describe('getBidRequestData', function () {
-    beforeEach(() => {
-      contxtfulSubmodule.init(buildInitConfig(VERSION, CUSTOMER));
-    })
-
-    describe('googletag does not exists', function () {
-      it('does not set googletag page targeting data ', (done) => {
-        delete window.googletag;
-        contxtfulSubmodule.getBidRequestData(_, sinon.mock(), _, _);
-
-        setTimeout(() => {
-          expect(googletagStub.pubads.calledOnce).to.be.false;
-          expect(pubAdsServiceStub.setTargeting.calledOnce).to.be.false;
-          done();
-        }, 10);
-      });
-    })
-
-    describe('googletag cmd does not exists', function () {
-      it('create cmd and push in it', () => {
-        delete window.googletag.cmd;
-        contxtfulSubmodule.getBidRequestData(_, sinon.mock(), _, _);
-
-        expect(window.googletag.cmd.length).to.equal(1);
-      });
-    })
-
-    it('set googletag page targeting data', (done) => {
-      contxtfulSubmodule.getBidRequestData(_, sinon.mock(), _, _);
-
-      setTimeout(() => {
-        expect(googletagStub.pubads.calledOnce).to.be.true;
-        expect(pubAdsServiceStub.setTargeting.calledOnce).to.be.true;
-        expect(pubAdsServiceStub.setTargeting.args[0][0]).to.be.equal(
-          'ReceptivityState'
-        );
-        done();
-      }, 10);
-    });
-
-    it('invoke the callback', (done) => {
-      let callback = sinon.mock();
-      contxtfulSubmodule.getBidRequestData(_, callback, _, _);
-
-      setTimeout(() => {
-        expect(callback.calledOnce).to.be.true;
-        done();
-      }, 10);
     });
   });
 });
