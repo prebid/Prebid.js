@@ -18,7 +18,7 @@ const NAME = 'precisoId';
 const GVL_ID = 874;
 const ID_KEY = NAME;
 const version = '2.0';
-const SYNC_URL = 'https://ck.2trk.info/rtb/user/';
+const SYNC_URL = 'https://ck.2trk.info/rtb/user/usersync.aspx';
 const AJAX_TIMEOUT = 1000;
 const AJAX_OPTIONS = {method: 'GET', withCredentials: true, contentType: 'text/plain'};
 

@@ -56,13 +56,12 @@
                     userIds: [{
                         name: 'precisoId',
                         storage: {
-                            name: 'precisoId',
-                            type: 'html5',
-                            expires: 10
+                            type: "cookie",
+                            name: "_precisoId",         // create a cookie with this name
+                            expires: 365             // expires in 1 years
                         }
-                        
                     }],
-                    
+
                     filterSettings: {
                         iframe: {
                             bidders: ['preciso'],
