@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/impactifyBidAdapter.js';
+import { spec, storage } from 'modules/impactifyBidAdapter.js';
 import * as utils from 'src/utils.js';
 
 const BIDDER_CODE = 'impactify';
@@ -173,6 +173,9 @@ describe('ImpactifyAdapter', function () {
     });
   });
   describe('buildRequests', function () {
+    let getLocalStorageStub;
+    let localStorageIsEnabledStub;
+
     let videoBidRequests = [
       {
         bidder: 'impactify',
@@ -221,11 +224,42 @@ describe('ImpactifyAdapter', function () {
         referer: 'https://impactify.io'
       }
     };
-
+    afterEach(function() {
+      localStorageIsEnabledStub.restore();
+      getLocalStorageStub.restore();
+    });
     it('sends video bid request to ENDPOINT via POST', function () {
+      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
+      localStorageIsEnabledStub.returns(true);
+
+      getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+      getLocalStorageStub.returns('testValue');
+
       const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
+
       expect(request.url).to.equal(ORIGIN + AUCTIONURI);
       expect(request.method).to.equal('POST');
+      expect(request.options.customHeaders['x-impact']).to.equal('testValue');
+    });
+
+    it('should set header value from localstorage correctly', function () {
+      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
+      localStorageIsEnabledStub.returns(true);
+
+      getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+      getLocalStorageStub.returns('testValue');
+      const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
+
+      expect(request.options.customHeaders['x-impact']).to.equal('testValue');
+    });
+
+    it('should set header value to empty if localstorage is not enabled', function () {
+      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
+      localStorageIsEnabledStub.returns(false);
+
+      const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
+
+      expect(request.options.customHeaders['x-impact']).to.equal('');
     });
   });
   describe('interpretResponse', function () {

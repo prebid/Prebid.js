@@ -4,6 +4,7 @@ import { deepAccess, deepSetValue, generateUUID } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { ajax } from '../src/ajax.js';
+import {getStorageManager} from '../src/storageManager.js'
 import { createEidsArray } from './userId/eids.js';
 
 const BIDDER_CODE = 'impactify';
@@ -17,7 +18,8 @@ const AUCTIONURI = '/bidder';
 const COOKIESYNCURI = '/static/cookie_sync.html';
 const GVLID = 606;
 const GETCONFIG = config.getConfig;
-
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const STORAGE_KEY = '_im_str'
 /**
  * Helpers object
  * @type {{getExtParamsFromBid(*): {impactify: {appId}}, createOrtbImpVideoObj(*): {context: string, playerSize: [number,number], id: string, mimes: [string]}, getDeviceType(): (number), createOrtbImpBannerObj(*, *): {format: [], id: string}}}
@@ -87,7 +89,12 @@ const helpers = {
       return parseFloat(floorInfo.floor);
     }
     return null;
+  },
+
+  getLocalStorage() {
+    return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(STORAGE_KEY) : '';
   }
+
 }
 
 /**
@@ -208,6 +215,7 @@ export const spec = {
   gvlid: GVLID,
   supportedMediaTypes: ['video', 'banner'],
   aliases: BIDDER_ALIAS,
+  local_storage_key: STORAGE_KEY,
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -247,11 +255,18 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     // Create a clean openRTB request
     let request = createOpenRtbRequest(validBidRequests, bidderRequest);
+    const imStr = helpers.getLocalStorage();
+    const options = {
+      customHeaders: {
+        'x-impact': imStr,
+      }
+    }
 
     return {
       method: 'POST',
       url: ORIGIN + AUCTIONURI,
       data: JSON.stringify(request),
+      options
     };
   },
 
