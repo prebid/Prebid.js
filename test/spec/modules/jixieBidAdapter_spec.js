@@ -211,15 +211,14 @@ describe('jixie Adapter', function () {
 
     const testJixieCfg_ = {
       genids: [
-        { id: 'pubid1', ck: 'ckname1'},
-        { id: 'pubid2', ck: 'ckname2'},
-        { id: '_jxtoko'},
+        { id: 'pubid1', ck: 'ckname1' },
+        { id: 'pubid2', ck: 'ckname2' },
+        { id: '_jxtoko' },
         { id: '_jxifo' },
-        { id: '_jxtdid'},
-        { id: '_jxcomp'}
+        { id: '_jxtdid' },
+        { id: '_jxcomp' }
       ]
     };
-    
 
     it('should attach valid params to the adserver endpoint (1)', function () {
       // this one we do not intercept the cookie stuff so really don't know
@@ -376,7 +375,7 @@ describe('jixie Adapter', function () {
       expect(payload.schain).to.deep.equal(schain);
       expect(payload.schain).to.deep.include(schain);
     });
-    
+
     it('it should populate the floor info when available', function () {
       let oneSpecialBidReq = deepClone(bidRequests_[0]);
       let request, payload = null;
@@ -394,27 +393,26 @@ describe('jixie Adapter', function () {
     });
 
     it('it should populate the aid field when available', function () {
-        let oneSpecialBidReq = deepClone(bidRequests_[0]);
-        // 1 aid is not set in the jixie config
-        let request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
-        let payload = JSON.parse(request.data);
-        expect(payload.aid).to.eql(''); 
+      let oneSpecialBidReq = deepClone(bidRequests_[0]);
+      // 1 aid is not set in the jixie config
+      let request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
+      let payload = JSON.parse(request.data);
+      expect(payload.aid).to.eql('');
 
-        // 2 aid is set in the jixie config
-        let getConfigStub = sinon.stub(config, 'getConfig');
-        getConfigStub.callsFake(function fakeFn(prop) {
+      // 2 aid is set in the jixie config
+      let getConfigStub = sinon.stub(config, 'getConfig');
+      getConfigStub.callsFake(function fakeFn(prop) {
         if (prop == 'jixie') {
-          return { aid: '11223344556677889900'};
+          return { aid: '11223344556677889900' };
         }
         return null;
-        });
-        // 2 aid is set in the jixie config
-        request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
-        payload = JSON.parse(request.data);
-        expect(payload.aid).to.exist.and.to.equal('11223344556677889900');
-        getConfigStub.restore();
+      });
+      request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
+      payload = JSON.parse(request.data);
+      expect(payload.aid).to.exist.and.to.equal('11223344556677889900');
+      getConfigStub.restore();
     });
-  
+
     it('should populate eids when supported userIds are available', function () {
       const oneSpecialBidReq = Object.assign({}, bidRequests_[0], {
         userIdAsEids: [

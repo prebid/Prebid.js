@@ -63,15 +63,15 @@ function setIds_(clientId, sessionId) {
 
 /**
  * fetch some ids from cookie, LS.
- * @returns 
+ * @returns
  */
 const defaultGenIds_ = [
-  { id: '_jxtoko'},
+  { id: '_jxtoko' },
   { id: '_jxifo' },
-  { id: '_jxtdid'},
-  { id: '_jxcomp'}
+  { id: '_jxtdid' },
+  { id: '_jxcomp' }
 ];
-    
+
 function fetchIds_(cfg) {
   let ret = {
     client_id_c: '',
@@ -90,11 +90,11 @@ function fetchIds_(cfg) {
     if (tmp) ret.client_id_ls = tmp;
     tmp = storage.getDataFromLocalStorage('_jxxs');
     if (tmp) ret.session_id_ls = tmp;
-    
-    let arr = cfg.genids ? cfg.genids: defaultGenIds_;
+
+    let arr = cfg.genids ? cfg.genids : defaultGenIds_;
     arr.forEach(function(o) {
-        tmp = storage.getCookie(o.ck ? o.ck: o.id);
-        if (tmp) ret.jxeids[o.id] = tmp;      
+      tmp = storage.getCookie(o.ck ? o.ck : o.id);
+      if (tmp) ret.jxeids[o.id] = tmp;
     });
   } catch (error) {}
   return ret;
@@ -170,7 +170,7 @@ export const internal = {
   ajax: ajax,
   getMiscDims: getMiscDims_
 };
-      
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
@@ -205,7 +205,7 @@ export const spec = {
       bids.push(tmp);
     });
     let jxCfg = config.getConfig('jixie') || {};
-   
+
     let ids = fetchIds_(jxCfg);
     let eids = [];
     let miscDims = internal.getMiscDims();
@@ -233,8 +233,8 @@ export const spec = {
       schain: schain,
       pricegranularity: (config.getConfig('priceGranularity') || {}),
       ver: ADAPTER_VERSION,
-      pbjsver: PREBID_VERSION, 
-      cfg: jxCfg 
+      pbjsver: PREBID_VERSION,
+      cfg: jxCfg
     }, ids);
     return Object.assign({}, {
       method: 'POST',
@@ -257,8 +257,8 @@ export const spec = {
       });
     }
     logInfo(
-        `jixie adapter won the auction. Bid id: ${bid.bidId}, Ad Unit Id: ${bid.adUnitId}`
-      );
+      `jixie adapter won the auction. Bid id: ${bid.bidId}, Ad Unit Id: ${bid.adUnitId}`
+    );
   },
 
   interpretResponse: function(response, bidRequest) {
