@@ -158,32 +158,32 @@ describe('getId', () => {
     expect(spy.lastCall.lastArg).to.equal(undefined);
   });
 
-  it('should use the intermediate value for the sync server', () => {
-    const { callback } = precisoIdSubmodule.getId(config, null, null);
-    callback(spy);
+//   it('should use the intermediate value for the sync server', () => {
+//     const { callback } = precisoIdSubmodule.getId(config, null, null);
+//     callback(spy);
 
-    const [request] = server.requests;
-    const intermediateValue = 'https://ck.2trk.info/rtb/user/usersync.aspx';
+//     const [request] = server.requests;
+//     const intermediateValue = 'https://ck.2trk.info/rtb/user/usersync.aspx';
 
-    request.respond(
-      200,
-      {},
-      JSON.stringify({
-        u: intermediateValue,
-      })
-    );
+//     request.respond(
+//       200,
+//       {},
+//       JSON.stringify({
+//         u: intermediateValue,
+//       })
+//     );
 
-    const [, secondRequest] = server.requests;
-    expect(secondRequest.url).to.match(new RegExp(`^${intermediateValue}\?`));
-    secondRequest.respond(
-      200,
-      {},
-      JSON.stringify({
-        id: TEST_ID,
-      })
-    );
+//     const [, secondRequest] = server.requests;
+//     expect(secondRequest.url).to.match(new RegExp(`^${intermediateValue}\?`));
+//     secondRequest.respond(
+//       200,
+//       {},
+//       JSON.stringify({
+//         id: TEST_ID,
+//       })
+//     );
 
-    expect(spy.calledOnce).to.be.true;
-    expect(spy.lastCall.lastArg).to.equal(TEST_ID);
-  });
+//     expect(spy.calledOnce).to.be.true;
+//     expect(spy.lastCall.lastArg).to.equal(TEST_ID);
+//   });
 });

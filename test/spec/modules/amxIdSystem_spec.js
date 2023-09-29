@@ -155,7 +155,7 @@ describe('getId', () => {
     request.respond(200, {}, '{,,}');
 
     expect(spy.calledOnce).to.be.true;
-    expect(spy.lastCall.lastArg).to.equal(undefined);
+    expect(spy.lastCall.lastArg).to.equal(undefined);s
   });
 
   it('should use the intermediate value for the sync server', () => {
