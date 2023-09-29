@@ -20,7 +20,11 @@ function isBidResponseValid(bid) {
     case VIDEO:
       return Boolean(bid.vastUrl) || Boolean(bid.vastXml);
     case NATIVE:
-      return Boolean(bid.native && bid.native.title && bid.native.image && bid.native.impressionTrackers);
+      if (bid.responseType === 'rtb') {
+        return Boolean(bid.native && bid.native.assets?.length && bid.native.imptrackers?.length);
+      } else {
+        return Boolean(bid.width && bid.height && bid.ad);
+      }
     default:
       return false;
   }
@@ -75,12 +79,14 @@ export const spec = {
 
     for (let i = 0; i < len; i++) {
       let bid = validBidRequests[i];
-      let traff = bid.params.traffic || BANNER
+      let traff = bid.params.traffic || BANNER;
+      let responseType = bid.params.responseType || undefined;
       placements.push({
         placementId: bid.params.sourceid,
         bidId: bid.bidId,
         sizes: bid.mediaTypes && bid.mediaTypes[traff] && bid.mediaTypes[traff].sizes ? bid.mediaTypes[traff].sizes : [],
         traffic: traff,
+        responseType,
         publisherId: bid.params.accountid
       });
       if (bid.schain) {
