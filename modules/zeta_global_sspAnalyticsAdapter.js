@@ -55,6 +55,13 @@ function adRenderSucceededHandler(args) {
     adId: args.adId,
     bid: {
       adId: args.bid?.adId,
+      auctionId: args.bid?.auctionId,
+      adUnitCode: args.bid?.adUnitCode,
+      bidId: args.bid?.bidId,
+      requestId: args.bid?.requestId,
+      bidderCode: args.bid?.bidderCode,
+      mediaTypes: args.bid?.mediaTypes,
+      sizes: args.bid?.sizes,
       adserverTargeting: args.bid?.adserverTargeting,
       cpm: args.bid?.cpm,
       creativeId: args.bid?.creativeId,
