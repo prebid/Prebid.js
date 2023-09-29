@@ -216,12 +216,12 @@ export const sharethroughAdapterSpec = {
     });
   },
 
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent, gppConsent) => {
+  getUserSyncs: (syncOptions, serverResponses) => {
     const shouldCookieSync =
       syncOptions.pixelEnabled && deepAccess(serverResponses, '0.body.cookieSyncUrls') !== undefined;
 
     return shouldCookieSync
-      ? serverResponses[0].body.cookieSyncUrls.map((url) => ({ type: 'image', url: url + syncurl }))
+      ? serverResponses[0].body.cookieSyncUrls.map((url) => ({ type: 'image', url: url }))
       : [];
   },
 
