@@ -26,12 +26,9 @@
 
             // Replace this object to test a new Adapter!
             bids: [{
-                bidder: 'preciso',
+                bidder: 'appnexus',
                 params: {
-                    host: 'prebid',
-                    publisherId: '0',
-                    region: 'prebid-eu',
-                    traffic: 'banner'
+                    placementId: 13144370
                 }
             }]
 
@@ -51,52 +48,7 @@
 
         pbjs.que.push(function () {
             pbjs.addAdUnits(adUnits);
-            pbjs.setConfig({
-                userSync: {
-                    userIds: [{
-                        name: 'precisoId',
-                        storage: {
-                            type: "cookie",
-                            name: "_precisoId",         // create a cookie with this name
-                            expires: 365             // expires in 1 years
-                        }
-                    }],
 
-                    filterSettings: {
-                        iframe: {
-                            bidders: ['preciso'],
-                            filter: 'include'
-                        },
-                        image: {
-                            bidders: ['preciso'],
-                            filter: 'include'
-                        }
-                    },
-                    enableOverride: true
-                },
-                realTimeData: {
-                    dataProviders: [{
-                        "name": "geolocation",
-                        "waitForIt": true,
-                        "params": {
-                            "requestPermission": true
-                        }
-                    }]
-                },
-                floors: {
-
-                    floorMin: 0.32,
-                    currency: 'USD'
-
-
-
-                },
-                firstPartyData: {
-                    skipEnrichments: true   // defaults to false
-                },
-                deviceAccess: true,
-                enableTIDs: true
-            })
             pbjs.requestBids({
                 bidsBackHandler: sendAdserverRequest,
                 timeout: PREBID_TIMEOUT
