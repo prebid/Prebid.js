@@ -383,15 +383,11 @@ function buildRequests(validBidRequests, bidderRequest) {
       data.uspConsent = uspConsent;
     }
     if (gppConsent) {
-      data.gppConsent = {
-        gppString: bidderRequest.gppConsent.gppString,
-        gpp_sid: bidderRequest.gppConsent.applicableSections
-      }
+      data.gppString = bidderRequest.gppConsent.gppString ? bidderRequest.gppConsent.gppString : ''
+      data.gppSid = Array.isArray(bidderRequest.gppConsent.applicableSections) ? bidderRequest.gppConsent.applicableSections.join(',') : ''
     } else if (!gppConsent && bidderRequest?.ortb2?.regs?.gpp) {
-      data.gppConsent = {
-        gppString: bidderRequest.ortb2.regs.gpp,
-        gpp_sid: bidderRequest.ortb2.regs.gpp_sid
-      };
+      data.gppString = bidderRequest.ortb2.regs.gpp
+      data.gppSid = Array.isArray(bidderRequest.ortb2.regs.gpp_sid) ? bidderRequest.ortb2.regs.gpp_sid.join(',') : ''
     }
     if (coppa) {
       data.coppa = coppa;
