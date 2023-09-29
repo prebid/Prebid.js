@@ -68,7 +68,8 @@ function adRenderSucceededHandler(args) {
       mediaType: args.bid?.mediaType,
       renderer: args.bid?.renderer,
       size: args.bid?.size,
-      timeToRespond: args.bid?.timeToRespond
+      timeToRespond: args.bid?.timeToRespond,
+      params: args.bid?.params
     },
     doc: {
       location: args.doc?.location
