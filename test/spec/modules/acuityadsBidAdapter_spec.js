@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/acuityAdsBidAdapter';
+import { spec } from '../../../modules/acuityadsBidAdapter';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
@@ -77,7 +77,8 @@ describe('AcuityAdsBidAdapter', function () {
     refererInfo: {
       referer: 'https://test.com'
     },
-    timeout: 500
+    timeout: 500,
+    ortb2: {}
   };
 
   describe('isBidRequestValid', function () {
@@ -185,6 +186,34 @@ describe('AcuityAdsBidAdapter', function () {
       expect(data.ccpa).to.be.a('string');
       expect(data.ccpa).to.equal(bidderRequest.uspConsent);
       expect(data.gdpr).to.not.exist;
+    });
+
+    describe('Returns data with gppConsent', function () {
+      it('bidderRequest.gppConsent', () => {
+        bidderRequest.gppConsent = {
+          gppString: 'abc123',
+          applicableSections: [8]
+        };
+
+        serverRequest = spec.buildRequests(bids, bidderRequest);
+        let data = serverRequest.data;
+        expect(data).to.be.an('object');
+        expect(data).to.have.property('gpp');
+        expect(data).to.have.property('gpp_sid');
+        delete bidderRequest.gppConsent;
+      })
+
+      it('bidderRequest.ortb2.regs.gpp', () => {
+        bidderRequest.ortb2.regs = bidderRequest.ortb2.regs || {};
+        bidderRequest.ortb2.regs.gpp = 'abc123';
+        bidderRequest.ortb2.regs.gpp_sid = [8];
+
+        serverRequest = spec.buildRequests(bids, bidderRequest);
+        let data = serverRequest.data;
+        expect(data).to.be.an('object');
+        expect(data).to.have.property('gpp');
+        expect(data).to.have.property('gpp_sid');
+      })
     });
 
     it('Returns empty data if no valid requests are passed', function () {

@@ -4,7 +4,6 @@ import {
   deepClone,
   deepSetValue,
   generateUUID,
-  getGptSlotInfoForAdUnitCode,
   getParameterByName,
   isNumber,
   logError,
@@ -29,6 +28,7 @@ import {auctionManager} from '../src/auctionManager.js';
 import {IMP, PBS, registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.js';
 import {adjustCpm} from '../src/utils/cpm.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {convertCurrency} from '../libraries/currencyUtils/currency.js';
 
 /**

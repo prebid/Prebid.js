@@ -1,9 +1,10 @@
 'use strict';
 
 import {BANNER} from '../src/mediaTypes.js';
-import {getAdUnitSizes, getWindowSelf, getWindowTop, isFn, logWarn} from '../src/utils.js';
+import {getWindowSelf, getWindowTop, isFn, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {ajax} from '../src/ajax.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 const BIDDER_CODE = 'ogury';
 const GVLID = 31;

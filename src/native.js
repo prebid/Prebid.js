@@ -1,7 +1,6 @@
 import {
   deepAccess,
   deepClone,
-  getKeyByValue,
   insertHtmlIntoIframe,
   isArray,
   isBoolean,
@@ -422,12 +421,14 @@ function assetsMessage(data, adObject, keys, {index = auctionManager.index} = {}
   return message;
 }
 
+const NATIVE_KEYS_INVERTED = Object.fromEntries(Object.entries(CONSTANTS.NATIVE_KEYS).map(([k, v]) => [v, k]));
+
 /**
  * Constructs a message object containing asset values for each of the
  * requested data keys.
  */
 export function getAssetMessage(data, adObject) {
-  const keys = data.assets.map((k) => getKeyByValue(CONSTANTS.NATIVE_KEYS, k));
+  const keys = data.assets.map((k) => NATIVE_KEYS_INVERTED[k]);
   return assetsMessage(data, adObject, keys);
 }
 

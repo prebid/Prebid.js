@@ -1,4 +1,20 @@
-import { logError, deepAccess, isArray, getBidIdParameter, getDNT, deepSetValue, isEmpty, _each, logMessage, logWarn, isBoolean, isNumber, isPlainObject, isFn, setScriptAttributes } from '../src/utils.js';
+import {
+  logError,
+  deepAccess,
+  isArray,
+  getDNT,
+  deepSetValue,
+  isEmpty,
+  _each,
+  logMessage,
+  logWarn,
+  isBoolean,
+  isNumber,
+  isPlainObject,
+  isFn,
+  setScriptAttributes,
+  getBidIdParameter
+} from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
