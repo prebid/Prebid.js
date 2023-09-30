@@ -953,7 +953,7 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
   const dfpAdUnitCode = impressions[impKeys[adUnitIndex]].dfp_ad_unit_code;
   const tid = impressions[impKeys[adUnitIndex]].tid;
   const sid = impressions[impKeys[adUnitIndex]].sid;
-  const fledgeEnabled = impressions[impKeys[adUnitIndex]].ae;
+  const auctionEnvironment = impressions[impKeys[adUnitIndex]].ae;
   const bannerImpressions = impressionObjects.filter(impression => BANNER in impression);
   const otherImpressions = impressionObjects.filter(impression => !(BANNER in impression));
 
@@ -993,7 +993,7 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
         _bannerImpression.banner.pos = position;
       }
 
-      if (dfpAdUnitCode || gpid || tid || sid || fledgeEnabled) {
+      if (dfpAdUnitCode || gpid || tid || sid || auctionEnvironment) {
         _bannerImpression.ext = {};
 
         _bannerImpression.ext.dfp_ad_unit_code = dfpAdUnitCode;
@@ -1002,7 +1002,9 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
         _bannerImpression.ext.sid = sid;
 
         // enable fledge auction
-        if (fledgeEnabled) _bannerImpression.ext.ae = 1;
+        if (auctionEnvironment == 1) {
+          _bannerImpression.ext.ae = 1;
+        }
       }
 
       if ('bidfloor' in bannerImps[0]) {
