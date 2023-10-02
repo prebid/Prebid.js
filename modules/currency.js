@@ -3,7 +3,7 @@ import {getGlobal} from '../src/prebidGlobal.js';
 import CONSTANTS from '../src/constants.json';
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
-import {getHook, hook} from '../src/hook.js';
+import {getHook} from '../src/hook.js';
 import {defer} from '../src/utils/promise.js';
 import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {timedBidResponseHook} from '../src/utils/perfMetrics.js';
@@ -173,9 +173,9 @@ function resetCurrency() {
   responseReady = defer();
 }
 
-export const responsesReadyHook = hook('sync', function (next, ready) {
+function responsesReadyHook(next, ready) {
   next(ready.then(() => responseReady.promise));
-});
+}
 
 export const addBidResponseHook = timedBidResponseHook('currency', function addBidResponseHook(fn, adUnitCode, bid, reject) {
   if (!bid) {
