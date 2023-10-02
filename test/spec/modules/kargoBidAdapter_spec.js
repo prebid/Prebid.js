@@ -144,6 +144,10 @@ describe('kargo adapter tests', function () {
               }
             }
           },
+          site: {
+            id: '1234',
+            name: 'SiteName'
+          },
           ortb2Imp: {
             ext: {
               tid: '10101',
@@ -438,6 +442,10 @@ describe('kargo adapter tests', function () {
             model: 'model',
             source: 1
           },
+        },
+        site: {
+          id: '1234',
+          name: 'SiteName'
         },
         imp: [
           {
