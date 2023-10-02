@@ -7,6 +7,7 @@ import {
   parseSizesInput,
   triggerPixel,
 } from '../src/utils.js';
+import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
@@ -115,6 +116,7 @@ export const spec = {
       const bidFloor = getFloor(bidRequest);
       payload.floor = bidFloor?.floor;
       payload.floor_currency = bidFloor?.currency;
+      payload.currency = config.getConfig('currency.adServerCurrency') || 'EUR';
 
       return {
         method: 'POST',
