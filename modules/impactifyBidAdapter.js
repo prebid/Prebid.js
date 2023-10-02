@@ -215,7 +215,6 @@ export const spec = {
   gvlid: GVLID,
   supportedMediaTypes: ['video', 'banner'],
   aliases: BIDDER_ALIAS,
-  local_storage_key: STORAGE_KEY,
 
   /**
    * Determines whether or not the given bid request is valid.
