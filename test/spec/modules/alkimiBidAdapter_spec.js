@@ -68,7 +68,7 @@ const BIDDER_VIDEO_RESPONSE = {
     'ttl': 200,
     'creativeId': 2,
     'netRevenue': true,
-    'winUrl': 'http://test.com',
+    'winUrl': 'http://test.com?price=${AUCTION_PRICE}',
     'mediaType': 'video',
     'adomain': ['test.com']
   }]
@@ -195,9 +195,9 @@ describe('alkimiBidAdapter', function () {
       expect(result[0]).to.have.property('ttl').equal(200)
       expect(result[0]).to.have.property('creativeId').equal(2)
       expect(result[0]).to.have.property('netRevenue').equal(true)
-      expect(result[0]).to.have.property('winUrl').equal('http://test.com')
+      expect(result[0]).to.have.property('winUrl').equal('http://test.com?price=${AUCTION_PRICE}')
       expect(result[0]).to.have.property('mediaType').equal('video')
-      expect(result[0]).to.have.property('vastXml').equal('<xml>vast</xml>')
+      expect(result[0]).to.have.property('vastUrl').equal('http://test.com?price=800.4')
       expect(result[0].meta).to.exist.property('advertiserDomains')
       expect(result[0].meta).to.have.property('advertiserDomains').lengthOf(1)
     })
