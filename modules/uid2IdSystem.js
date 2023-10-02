@@ -14,6 +14,7 @@ import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 // RE below lint exception: UID2 and EUID are separate modules, but the protocol is the same and shared code makes sense here.
 // eslint-disable-next-line prebid/validate-imports
 import { Uid2GetId, Uid2CodeVersion } from './uid2IdSystem_shared.js';
+import {UID2_EIDS} from '../libraries/uid2Eids/uid2Eids.js';
 
 const MODULE_NAME = 'uid2';
 const MODULE_REVISION = Uid2CodeVersion;
@@ -83,20 +84,7 @@ export const uid2IdSubmodule = {
     _logInfo(`UID2 getId returned`, result);
     return result;
   },
-  eids: {
-    'uid2': {
-      source: 'uidapi.com',
-      atype: 3,
-      getValue: function(data) {
-        return data.id;
-      },
-      getUidExt: function(data) {
-        if (data.ext) {
-          return data.ext;
-        }
-      }
-    },
-  },
+  eids: UID2_EIDS
 };
 
 function decodeImpl(value) {
