@@ -4,7 +4,7 @@ import { deepAccess, deepSetValue, generateUUID } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { ajax } from '../src/ajax.js';
-import {getStorageManager} from '../src/storageManager.js'
+import { getStorageManager } from '../src/storageManager.js'
 import { createEidsArray } from './userId/eids.js';
 
 const BIDDER_CODE = 'impactify';
