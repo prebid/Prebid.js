@@ -130,23 +130,23 @@ const getGdprParams = (bidderRequest) => {
 };
 
 const parseAuctionConfigs = (serverResponse, bidRequest) => {
-  if (isEmpty(serverResponse) || isEmpty(bidRequest)) {
+  if (isEmpty(bidRequest)) {
     return null;
   }
-  let auctionConfigs = [];
-  const bidConfigs = Object.fromEntries(bidRequest.bidIds.map(x => [x.bidId, x]));
+  const auctionConfigs = [];
+  const gctx = serverResponse && serverResponse.body?.gctx;
 
-  serverResponse.ads.filter(bid => bidConfigs.hasOwnProperty(bid.id) && bidConfigs[bid.id].fledgeEnabled).forEach((bid) => {
+  bidRequest.bidIds.filter(bid => bid.fledgeEnabled).forEach((bid) => {
     auctionConfigs.push({
-      'bidId': bidConfigs[bid.id].bidId,
+      'bidId': bid.bidId,
       'config': {
         'seller': 'https://csr.onet.pl',
-        'decisionLogicUrl': `https://csr.onet.pl/${bidConfigs[bid.id].network}/v1/protected-audience-api/decision-logic.js`,
+        'decisionLogicUrl': `https://csr.onet.pl/${encodeURIComponent(bid.params.network)}/v1/protected-audience-api/decision-logic.js`,
         'interestGroupBuyers': ['https://csr.onet.pl'],
         'auctionSignals': {
-          'site': bidConfigs[bid.id].site,
-          'kvismobile': bidConfigs[bid.id].isMobile,
-          'iusizes': bidConfigs[bid.id].iusizes
+          'params': bid.params,
+          'sizes': bid.sizes,
+          'gctx': gctx
         }
       }
     });
@@ -180,10 +180,8 @@ export const spec = {
     const bidIds = bidRequests.map((bid) => ({
       slot: bid.params.slot,
       bidId: bid.bidId,
-      network: network,
-      site: bid.params.site,
-      isMobile: Boolean(bid.params.pageContext?.keyValues?.ismobile),
-      iusizes: getAdUnitSizes(bid),
+      sizes: getAdUnitSizes(bid),
+      params: bid.params,
       fledgeEnabled: fledgeEligible
     }));
 
@@ -196,12 +194,9 @@ export const spec = {
 
   interpretResponse: function (serverResponse, bidRequest) {
     const response = serverResponse.body;
-    if (!response || !response.ads || response.ads.length === 0) {
-      return [];
-    }
 
-    const fledgeAuctionConfigs = parseAuctionConfigs(response, bidRequest);
-    const bids = response.ads.map(buildBid).filter((bid) => !isEmpty(bid));
+    const fledgeAuctionConfigs = parseAuctionConfigs(serverResponse, bidRequest);
+    const bids = (!response || !response.ads || response.ads.length === 0) ? [] : response.ads.map(buildBid).filter((bid) => !isEmpty(bid));
 
     if (fledgeAuctionConfigs) {
       // Return a tuple of bids and auctionConfigs. It is possible that bids could be null.
