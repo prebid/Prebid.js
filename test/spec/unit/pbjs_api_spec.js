@@ -1206,6 +1206,8 @@ describe('Unit: Prebid Module', function () {
     var spyAddWinningBid;
     var inIframe = true;
     var triggerPixelStub;
+    let indexStub;
+    let auctionManagerInstance;
 
     function pushBidResponseToAuction(obj) {
       adResponse = Object.assign({
@@ -1251,6 +1253,10 @@ describe('Unit: Prebid Module', function () {
       inIframe = true;
       sinon.stub(utils, 'inIframe').callsFake(() => inIframe);
       triggerPixelStub = sinon.stub(utils.internal, 'triggerPixel');
+
+      indexStub = sinon.stub(auctionManager, 'index');
+      auctionManagerInstance = newAuctionManager();
+      indexStub.get(() => auctionManagerInstance.index);
     });
 
     afterEach(function () {
@@ -1261,6 +1267,7 @@ describe('Unit: Prebid Module', function () {
       utils.inIframe.restore();
       triggerPixelStub.restore();
       spyAddWinningBid.restore();
+      indexStub.restore();
     });
 
     it('should require doc and id params', function () {
