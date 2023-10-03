@@ -17,6 +17,7 @@ const CLIENT_SUPPORTS_IO = window.IntersectionObserver && window.IntersectionObs
 const dabOptions = {
   threshold: 0.5 // Trigger callback when 50% of the element is visible
 };
+var observer;
 
 // Array of div IDs to track
 var dynamicAdBoostAdUnits = {};
@@ -28,7 +29,7 @@ function init(config, userConsent) {
     return false;
   }
   // Create an Intersection Observer instance
-  const observer = new IntersectionObserver(dabHandleIntersection, dabOptions);
+  observer = new IntersectionObserver(dabHandleIntersection, dabOptions);
   if (config.params.keyId) {
     let keyId = config.params.keyId;
     if (keyId && !isEmptyStr(keyId)) {
