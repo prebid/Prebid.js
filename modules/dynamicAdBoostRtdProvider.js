@@ -17,12 +17,12 @@ const CLIENT_SUPPORTS_IO = window.IntersectionObserver && window.IntersectionObs
 const dabOptions = {
   threshold: 0.5 // Trigger callback when 50% of the element is visible
 };
-var observer;
+let observer;
 
 // Array of div IDs to track
-var dynamicAdBoostAdUnits = {};
-var dabStartDate = new Date();
-var dabStartTime = dabStartDate.getTime();
+let dynamicAdBoostAdUnits = {};
+let dabStartDate = new Date();
+let dabStartTime = dabStartDate.getTime();
 
 function init(config, userConsent) {
   if (!CLIENT_SUPPORTS_IO) {
@@ -34,7 +34,7 @@ function init(config, userConsent) {
     let keyId = config.params.keyId;
     if (keyId && !isEmptyStr(keyId)) {
       let dabDivIdsToTrack = config.params.adUnits;
-      var dabInterval = setInterval(function() {
+      let dabInterval = setInterval(function() {
         // Observe each div by its ID
         dabDivIdsToTrack.forEach(divId => {
           let div = document.getElementById(divId);
@@ -43,9 +43,9 @@ function init(config, userConsent) {
           }
         });
 
-        var dabDateNow = new Date();
-        var dabTimeNow = dabDateNow.getTime();
-        var dabElapsedSeconds = Math.floor((dabTimeNow - dabStartTime) / 1000);
+        let dabDateNow = new Date();
+        let dabTimeNow = dabDateNow.getTime();
+        let dabElapsedSeconds = Math.floor((dabTimeNow - dabStartTime) / 1000);
         let elapsedThreshold = 30;
         if (config.params.threshold) {
           elapsedThreshold = config.params.threshold;
