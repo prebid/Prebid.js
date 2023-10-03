@@ -1,4 +1,5 @@
 import oxxionAnalytics from 'modules/oxxionAnalyticsAdapter.js';
+import {dereferenceWithoutRenderer} from 'modules/oxxionAnalyticsAdapter.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
 let adapterManager = require('src/adapterManager').default;
@@ -155,7 +156,7 @@ describe('Oxxion Analytics', function () {
         'requestId': '34a63e5d5378a3',
         'transactionId': 'de664ccb-e18b-4436-aeb0-362382eb1b40',
         'auctionId': '1e8b993d-8f0a-4232-83eb-3639ddf3a44b',
-        'mediaType': 'banner',
+        'mediaType': 'video',
         'source': 'client',
         'cpm': 27.4276,
         'creativeId': '158534630',
@@ -166,8 +167,10 @@ describe('Oxxion Analytics', function () {
         'meta': {
           'advertiserDomains': [
             'example.com'
-          ]
+          ],
+	  'demandSource': 'something'
         },
+        'renderer': 'something',
         'originalCpm': 25.02521,
         'originalCurrency': 'EUR',
         'responseTimestamp': 1647424261559,
@@ -221,6 +224,7 @@ describe('Oxxion Analytics', function () {
         'example.com'
       ]
     },
+    'renderer': 'something',
     'originalCpm': 25.02521,
     'originalCurrency': 'EUR',
     'responseTimestamp': 1647424261558,
@@ -267,7 +271,24 @@ describe('Oxxion Analytics', function () {
       oxxionAnalytics.disableAnalytics();
       oxxionAnalytics.track.restore();
     });
+    it('test dereferenceWithoutRenderer', function () {
+      adapterManager.registerAnalyticsAdapter({
+        code: 'oxxion',
+        adapter: oxxionAnalytics
+      });
 
+      adapterManager.enableAnalytics({
+        provider: 'oxxion',
+        options: {
+          domain: 'test'
+        }
+      });
+      let resultBidWon = JSON.parse(dereferenceWithoutRenderer(bidWon));
+      expect(resultBidWon).not.to.have.property('renderer');
+      let resultBid = JSON.parse(dereferenceWithoutRenderer(auctionEnd));
+      expect(resultBid).to.have.property('bidsReceived').and.to.have.lengthOf(1);
+      expect(resultBid.bidsReceived[0]).not.to.have.property('renderer');
+    });
     it('test auctionEnd', function () {
       adapterManager.registerAnalyticsAdapter({
         code: 'oxxion',
@@ -293,14 +314,16 @@ describe('Oxxion Analytics', function () {
       expect(message.auctionEnd[0].bidsReceived[0]).not.to.have.property('ad');
       expect(message.auctionEnd[0].bidsReceived[0]).to.have.property('meta');
       expect(message.auctionEnd[0].bidsReceived[0].meta).to.have.property('advertiserDomains');
+      expect(message.auctionEnd[0].bidsReceived[0].meta).to.have.property('demandSource');
       expect(message.auctionEnd[0].bidsReceived[0]).to.have.property('adId');
       expect(message.auctionEnd[0]).to.have.property('bidderRequests').and.to.have.lengthOf(1);
       expect(message.auctionEnd[0].bidderRequests[0]).to.have.property('gdprConsent');
       expect(message.auctionEnd[0].bidderRequests[0].gdprConsent).not.to.have.property('vendorData');
-      sinon.assert.callCount(oxxionAnalytics.track, 5);
+      expect(message.auctionEnd[0].bidderRequests[0]).to.have.property('oxxionMode');
     });
 
     it('test bidWon', function() {
+      window.OXXION_MODE = {'abtest': true};
       adapterManager.registerAnalyticsAdapter({
         code: 'oxxion',
         adapter: oxxionAnalytics
@@ -318,6 +341,7 @@ describe('Oxxion Analytics', function () {
       expect(message).not.to.have.property('ad');
       expect(message).to.have.property('adId')
       expect(message).to.have.property('cpmIncrement').and.to.equal(27.4276);
+      expect(message).to.have.property('oxxionMode').and.to.have.property('abtest').and.to.equal(true);
       // sinon.assert.callCount(oxxionAnalytics.track, 1);
     });
   });

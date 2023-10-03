@@ -99,6 +99,79 @@ describe('fluctAdapter', function () {
       expect(request.data.page).to.eql('http://example.com');
     });
 
+    it('sends no transactionId by default', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.transactionId).to.eql(undefined);
+    });
+
+    it('sends ortb2Imp.ext.tid as transactionId', function () {
+      const request = spec.buildRequests(bidRequests.map((req) => ({
+        ...req,
+        ortb2Imp: {
+          ext: {
+            tid: 'tid',
+          }
+        },
+      })), bidderRequest)[0];
+      expect(request.data.transactionId).to.eql('tid');
+    });
+
+    it('sends no gpid by default', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[0];
+      expect(request.data.gpid).to.eql(undefined);
+    });
+
+    it('sends ortb2Imp.ext.gpid as gpid', function () {
+      const request = spec.buildRequests(bidRequests.map((req) => ({
+        ...req,
+        ortb2Imp: {
+          ext: {
+            gpid: 'gpid',
+            data: {
+              pbadslot: 'data-pbadslot',
+              adserver: {
+                adslot: 'data-adserver-adslot',
+              },
+            },
+          },
+        },
+      })), bidderRequest)[0];
+      expect(request.data.gpid).to.eql('gpid');
+    });
+
+    it('sends ortb2Imp.ext.data.pbadslot as gpid', function () {
+      const request = spec.buildRequests(bidRequests.map((req) => ({
+        ...req,
+        ortb2Imp: {
+          ext: {
+            data: {
+              pbadslot: 'data-pbadslot',
+              adserver: {
+                adslot: 'data-adserver-adslot',
+              },
+            },
+          },
+        },
+      })), bidderRequest)[0];
+      expect(request.data.gpid).to.eql('data-pbadslot');
+    });
+
+    it('sends ortb2Imp.ext.data.adserver.adslot as gpid', function () {
+      const request = spec.buildRequests(bidRequests.map((req) => ({
+        ...req,
+        ortb2Imp: {
+          ext: {
+            data: {
+              adserver: {
+                adslot: 'data-adserver-adslot',
+              },
+            },
+          },
+        },
+      })), bidderRequest)[0];
+      expect(request.data.gpid).to.eql('data-adserver-adslot');
+    });
+
     it('includes data.user.eids = [] by default', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.data.user.eids).to.eql([]);
@@ -119,14 +192,14 @@ describe('fluctAdapter', function () {
       expect(request.data.regs).to.eql(undefined);
     });
 
-    it('includes filtered user.eids if any exist', function () {
+    it('includes filtered user.eids if any exists', function () {
       const bidRequests2 = bidRequests.map(
-        (bidReq) => Object.assign(bidReq, {
+        (bidReq) => Object.assign({}, bidReq, {
           userIdAsEids: [
             {
               source: 'foobar.com',
               uids: [
-                { id: 'foobar-id' }
+                { id: 'foobar-id' },
               ],
             },
             {
@@ -138,19 +211,19 @@ describe('fluctAdapter', function () {
             {
               source: 'criteo.com',
               uids: [
-                { id: 'criteo-id' }
+                { id: 'criteo-id' },
               ],
             },
             {
               source: 'intimatemerger.com',
               uids: [
-                { id: 'imuid' }
+                { id: 'imuid' },
               ],
             },
             {
               source: 'liveramp.com',
               uids: [
-                { id: 'idl-env' }
+                { id: 'idl-env' },
               ],
             },
           ],
@@ -159,35 +232,95 @@ describe('fluctAdapter', function () {
       const request = spec.buildRequests(bidRequests2, bidderRequest)[0];
       expect(request.data.user.eids).to.eql([
         {
+          source: 'foobar.com',
+          uids: [
+            { id: 'foobar-id' },
+          ],
+        },
+        {
           source: 'adserver.org',
           uids: [
-            { id: 'tdid' }
+            { id: 'tdid' },
           ],
         },
         {
           source: 'criteo.com',
           uids: [
-            { id: 'criteo-id' }
+            { id: 'criteo-id' },
           ],
         },
         {
           source: 'intimatemerger.com',
           uids: [
-            { id: 'imuid' }
+            { id: 'imuid' },
           ],
         },
         {
           source: 'liveramp.com',
           uids: [
-            { id: 'idl-env' }
+            { id: 'idl-env' },
           ],
         },
       ]);
     });
 
+    it('includes user.data if any exists', function () {
+      const bidderRequest2 = Object.assign({}, bidderRequest, {
+        ortb2: {
+          user: {
+            data: [
+              {
+                name: 'a1mediagroup.com',
+                ext: {
+                  segtax: 900,
+                },
+                segment: [
+                  { id: 'seg-1' },
+                  { id: 'seg-2' },
+                ],
+              },
+            ],
+            ext: {
+              eids: [
+                {
+                  source: 'a1mediagroup.com',
+                  uids: [
+                    { id: 'aud-1' }
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      });
+      const request = spec.buildRequests(bidRequests, bidderRequest2)[0];
+      expect(request.data.user).to.eql({
+        data: [
+          {
+            name: 'a1mediagroup.com',
+            ext: {
+              segtax: 900,
+            },
+            segment: [
+              { id: 'seg-1' },
+              { id: 'seg-2' },
+            ],
+          },
+        ],
+        eids: [
+          {
+            source: 'a1mediagroup.com',
+            uids: [
+              { id: 'aud-1' }
+            ],
+          },
+        ],
+      });
+    });
+
     it('includes data.params.kv if any exists', function () {
       const bidRequests2 = bidRequests.map(
-        (bidReq) => Object.assign(bidReq, {
+        (bidReq) => Object.assign({}, bidReq, {
           params: {
             kv: {
               imsids: ['imsid1', 'imsid2']
@@ -204,7 +337,7 @@ describe('fluctAdapter', function () {
     it('includes data.schain if any exists', function () {
       // this should be done by schain.js
       const bidRequests2 = bidRequests.map(
-        (bidReq) => Object.assign(bidReq, {
+        (bidReq) => Object.assign({}, bidReq, {
           schain: {
             ver: '1.0',
             complete: 1,
@@ -271,7 +404,7 @@ describe('fluctAdapter', function () {
     });
   });
 
-  describe('interpretResponse', function() {
+  describe('should interpretResponse', function() {
     const callBeaconSnippet = '<script type="application/javascript">' +
       '(function() { var img = new Image(); img.src = ' +
       '"https://i.adingo.jp/?test=1&et=hb&bidid=237f4d1a293f99"' +
@@ -319,7 +452,6 @@ describe('fluctAdapter', function () {
 
       const expectedResponse = [
         {
-          bidderCode: 'fluct',
           requestId: '237f4d1a293f99',
           currency: 'JPY',
           cpm: 100,
@@ -376,7 +508,6 @@ describe('fluctAdapter', function () {
 
       const expectedResponse = [
         {
-          bidderCode: 'fluct',
           requestId: '237f4d1a293f99',
           currency: 'JPY',
           cpm: 100,

@@ -1,10 +1,8 @@
-import { expect } from 'chai';
-import { spec } from 'modules/bluebillywigBidAdapter.js';
-import * as bidderFactory from 'src/adapters/bidderFactory.js';
-import { auctionManager } from 'src/auctionManager.js';
-import { deepClone, deepAccess } from 'src/utils.js';
-import { config } from 'src/config.js';
-import { VIDEO } from 'src/mediaTypes.js';
+import {expect} from 'chai';
+import {spec} from 'modules/bluebillywigBidAdapter.js';
+import {deepAccess, deepClone} from 'src/utils.js';
+import {config} from 'src/config.js';
+import {VIDEO} from 'src/mediaTypes.js';
 
 const BB_CONSTANTS = {
   BIDDER_CODE: 'bluebillywig',
@@ -254,7 +252,11 @@ describe('BlueBillywigAdapter', () => {
     const baseValidBidRequests = [baseValidBid];
 
     const validBidderRequest = {
-      auctionId: '12abc345-67d8-9012-e345-6f78901a2b34',
+      ortb2: {
+        source: {
+          tid: '12abc345-67d8-9012-e345-6f78901a2b34',
+        }
+      },
       auctionStart: 1585918458868,
       bidderCode: BB_CONSTANTS.BIDDER_CODE,
       bidderRequestId: '1a2345b67c8d9e0',
@@ -293,9 +295,9 @@ describe('BlueBillywigAdapter', () => {
       const request = spec.buildRequests(baseValidBidRequests, validBidderRequest);
       const payload = JSON.parse(request.data);
 
-      expect(payload.id).to.equal(validBidderRequest.auctionId);
+      expect(payload.id).to.exist;
       expect(payload.source).to.be.an('object');
-      expect(payload.source.tid).to.equal(validBidderRequest.auctionId);
+      expect(payload.source.tid).to.equal(validBidderRequest.ortb2.source.tid);
       expect(payload.tmax).to.equal(BB_CONSTANTS.DEFAULT_TIMEOUT);
       expect(payload.imp).to.be.an('array');
       expect(payload.test).to.be.a('number');

@@ -57,6 +57,12 @@ export const idxIdSubmodule = {
       }
     }
     return undefined;
+  },
+  eids: {
+    'idx': {
+      source: 'idx.lat',
+      atype: 1
+    },
   }
 };
 submodule('userId', idxIdSubmodule);

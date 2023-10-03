@@ -45,10 +45,13 @@ export const spec = {
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
-    const bidResponsesFromServer = serverResponse.body.bidResponses;
-    const firstDummy = bidResponsesFromServer[0]
-    const firstSeat = firstDummy.ads[0]
     const bidResponses = [];
+    const bidResponsesFromServer = serverResponse.body.bidResponses;
+    if (Array.isArray(bidResponsesFromServer) && bidResponsesFromServer.length === 0) {
+      return bidResponses
+    }
+    const firstBid = bidResponsesFromServer[0]
+    const firstSeat = firstBid.ads[0]
     const bidResponse = {
       requestId: firstSeat.requestId,
       cpm: firstSeat.cpm,

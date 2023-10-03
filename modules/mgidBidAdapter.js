@@ -9,11 +9,10 @@ import {
   isEmpty,
   triggerPixel,
   logWarn,
-  getBidIdParameter,
   isFn,
   isNumber,
   isBoolean,
-  isInteger, deepSetValue,
+  isInteger, deepSetValue, getBidIdParameter,
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';

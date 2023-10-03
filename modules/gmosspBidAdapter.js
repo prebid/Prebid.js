@@ -1,17 +1,16 @@
 import {
   createTrackPixelHtml,
   deepAccess,
-  deepSetValue,
-  getBidIdParameter,
+  deepSetValue, getBidIdParameter,
   getDNT,
   getWindowTop,
   isEmpty,
-  logError,
-  tryAppendQueryString
+  logError
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER} from '../src/mediaTypes.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 const BIDDER_CODE = 'gmossp';
 const ENDPOINT = 'https://sp.gmossp-sp.jp/hb/prebid/query.ad';
@@ -47,7 +46,7 @@ export const spec = {
       let queryString = '';
 
       const request = validBidRequests[i];
-      const tid = request.transactionId;
+      const tid = request.ortb2Imp?.ext?.tid;
       const bid = request.bidId;
       const imuid = deepAccess(request, 'userId.imuid');
       const sharedId = deepAccess(request, 'userId.pubcid');

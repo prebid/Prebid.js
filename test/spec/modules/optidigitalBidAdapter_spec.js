@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/optidigitalBidAdapter.js';
+import { spec, resetSync } from 'modules/optidigitalBidAdapter.js';
 import * as utils from 'src/utils.js';
 
 const ENDPOINT = 'https://pbs.optidigital.com/bidder';
@@ -479,6 +479,28 @@ describe('optidigitalAdapterTests', function () {
       expect(payload.imp[0].bidFloor).to.exist;
     });
 
+    it('should add userEids to payload', function() {
+      const userIdAsEids = [{
+        source: 'pubcid.org',
+        uids: [{
+          id: '121213434342343',
+          atype: 1
+        }]
+      }];
+      validBidRequests[0].userIdAsEids = userIdAsEids;
+      bidderRequest.userIdAsEids = userIdAsEids;
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.user.eids).to.deep.equal(userIdAsEids);
+    });
+
+    it('should not add userIdAsEids to payload when userIdAsEids is not present', function() {
+      validBidRequests[0].userIdAsEids = undefined;
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.user).to.deep.equal(undefined);
+    });
+
     function returnBannerSizes(mediaTypes, expectedSizes) {
       const bidRequest = Object.assign(validBidRequests[0], mediaTypes);
       const request = spec.buildRequests([bidRequest], bidderRequest);
@@ -497,6 +519,7 @@ describe('optidigitalAdapterTests', function () {
     let test;
     beforeEach(function () {
       test = sinon.sandbox.create();
+      resetSync();
     });
     afterEach(function() {
       test.restore();
@@ -508,16 +531,22 @@ describe('optidigitalAdapterTests', function () {
       }]);
     });
 
-    it('should return appropriate URL', function() {
+    it('should return appropriate URL with GDPR equals to 1 and GDPR consent', function() {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, undefined)).to.deep.equal([{
         type: 'iframe', url: `${syncurlIframe}&gdpr=1&gdpr_consent=foo`
       }]);
+    });
+    it('should return appropriate URL with GDPR equals to 0 and GDPR consent', function() {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: false, consentString: 'foo'}, undefined)).to.deep.equal([{
         type: 'iframe', url: `${syncurlIframe}&gdpr=0&gdpr_consent=foo`
       }]);
+    });
+    it('should return appropriate URL with GDPR equals to 1 and no consent', function() {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: undefined}, undefined)).to.deep.equal([{
         type: 'iframe', url: `${syncurlIframe}&gdpr=1&gdpr_consent=`
       }]);
+    });
+    it('should return appropriate URL with GDPR equals to 1, GDPR consent and CCPA consent', function() {
       expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, {consentString: 'fooUsp'})).to.deep.equal([{
         type: 'iframe', url: `${syncurlIframe}&gdpr=1&gdpr_consent=foo&ccpa_consent=fooUsp`
       }]);
@@ -557,7 +586,6 @@ describe('optidigitalAdapterTests', function () {
       let expectedResponse = [
         {
           'placementId': 'Billboard_Top',
-          'transactionId': 'cf5faec3-fcee-4f26-80ae-fc8b6cf23b7d',
           'requestId': '83fb53a5e67f49',
           'ttl': 150,
           'creativeId': 'mobile_pos_2',
@@ -572,7 +600,6 @@ describe('optidigitalAdapterTests', function () {
           }
         }, {
           'placementId': 'Billboard_Bottom',
-          'transactionId': 'df5faec3-fcee-4f26-80ae-fc8b6cf23b7d',
           'requestId': '93fb53a5e67f49',
           'ttl': 150,
           'creativeId': 'mobile_pos_2',
