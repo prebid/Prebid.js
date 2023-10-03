@@ -78,26 +78,26 @@ export const spec = {
     }
     timeoutData.forEach(td => {
       const encodedBuf = window.btoa(encodeURIComponent(JSON.stringify({
-          bidId: td.bidId,
-          timeout: td.timeout,
+        bidId: td.bidId,
+        timeout: td.timeout,
       })));
-      triggerPixel(TRACKING_END_POINT + "/v1/hbTimeout?adp=prebidjs&data="+encodedBuf);
+      triggerPixel(TRACKING_END_POINT + '/v1/hbTimeout?adp=prebidjs&data=' + encodedBuf);
     })
   },
-  onBidWon: function (bidWon) {  
+  onBidWon: function (bidWon) {
     if (bidWon == null) {
       return;
     }
     const encodedBuf = window.btoa(encodeURIComponent(JSON.stringify({
-          requestId: bidWon.requestId,
-          cpm: bidWon.cpm,
-          adId: bidWon.adId,
-          currency: bidWon.currency,
-          netRevenue:bidWon.netRevenue,
-          status: bidWon.status,
-          hb_pb: bidWon.adserverTargeting && bidWon.adserverTargeting.hb_pb,
-      })));
-    triggerPixel(TRACKING_END_POINT +"/v1/hbBidWon?adp=prebidjs&data="+encodedBuf);
+      requestId: bidWon.requestId,
+      cpm: bidWon.cpm,
+      adId: bidWon.adId,
+      currency: bidWon.currency,
+      netRevenue: bidWon.netRevenue,
+      status: bidWon.status,
+      hb_pb: bidWon.adserverTargeting && bidWon.adserverTargeting.hb_pb,
+    })));
+    triggerPixel(TRACKING_END_POINT + '/v1/hbBidWon?adp=prebidjs&data=' + encodedBuf);
   }
 };
 
