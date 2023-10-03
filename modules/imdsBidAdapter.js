@@ -224,7 +224,6 @@ export const spec = {
     };
 
     if (!serverResponse.body || typeof serverResponse.body != 'object') {
-      logWarn('IMDS: server returned empty/non-json response: ' + JSON.stringify(serverResponse.body));
       return;
     }
     const {id, seatbid: seatbids} = serverResponse.body;
