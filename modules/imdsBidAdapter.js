@@ -324,7 +324,7 @@ export const spec = {
       });
     } else if (syncOptions.pixelEnabled) {
       syncs.push({
-        type: 'pixel',
+        type: 'image',
         url: `${USER_SYNC_PIXEL_URL}?srv=cs&${queryParams.join('&')}`
       });
     }
