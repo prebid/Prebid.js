@@ -49,6 +49,7 @@ export const spec = {
         uspConsent: bidderRequest.uspConsent,
         gdprConsent: bidderRequest.gdprConsent,
         gppConsent: bidderRequest.gppConsent,
+        tdid: getTdid(bidderRequest, validBidRequests),
       }
     };
 
@@ -262,4 +263,12 @@ function getOffset(el) {
       top: rect.top + window.scrollY
     };
   }
+}
+
+function getTdid(bidderRequest, validBidRequests) {
+  if (hasOptedOutOfPersonalization() || !consentAllowsPpid(bidderRequest)) {
+    return null;
+  }
+
+  return deepAccess(validBidRequests[0], 'userId.tdid') || null;
 }
