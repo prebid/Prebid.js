@@ -216,26 +216,13 @@ export const sharethroughAdapterSpec = {
     });
   },
 
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent, gppConsent) => {
+  getUserSyncs: (syncOptions, serverResponses) => {
     const shouldCookieSync =
       syncOptions.pixelEnabled && deepAccess(serverResponses, '0.body.cookieSyncUrls') !== undefined;
 
-    let syncurl = '';
-
-    // Attaching GDPR Consent Params in UserSync url
-    if (gdprConsent) {
-      syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
-      syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
-    }
-    if (gppConsent) {
-      syncurl += '&gpp=' + encodeURIComponent(gppConsent?.gppString);
-      syncurl += '&gpp_sid=' + encodeURIComponent(gppConsent?.applicableSections?.join(','));
-    }
-
-    return shouldCookieSync ? serverResponses[0].body.cookieSyncUrls.map((url) => (
-      { type: 'image',
-        url: url + syncurl
-      })) : [];
+    return shouldCookieSync
+      ? serverResponses[0].body.cookieSyncUrls.map((url) => ({ type: 'image', url: url }))
+      : [];
   },
 
   // Empty implementation for prebid core to be able to find it

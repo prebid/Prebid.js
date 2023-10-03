@@ -11,6 +11,7 @@ import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/val
 import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import {UID2_EIDS} from '../libraries/uid2Eids/uid2Eids.js';
 
 const DEFAULT_AJAX_TIMEOUT = 5000
 const EVENTS_TOPIC = 'pre_lips'
@@ -249,6 +250,7 @@ export const liveIntentIdSubmodule = {
     return { callback: result };
   },
   eids: {
+    ...UID2_EIDS,
     'lipb': {
       getValue: function(data) {
         return data.lipbid;

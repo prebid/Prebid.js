@@ -3635,33 +3635,6 @@ describe('S2S Adapter', function () {
       sinon.assert.calledOnce(logErrorSpy);
     });
 
-    it('should configure the s2sConfig object with appnexus vendor defaults unless specified by user', function () {
-      const options = {
-        accountId: '123',
-        bidders: ['appnexus'],
-        defaultVendor: 'appnexus',
-        timeout: 750
-      };
-
-      config.setConfig({ s2sConfig: options });
-      sinon.assert.notCalled(logErrorSpy);
-
-      let vendorConfig = config.getConfig('s2sConfig');
-      expect(vendorConfig).to.have.property('accountId', '123');
-      expect(vendorConfig).to.have.property('adapter', 'prebidServer');
-      expect(vendorConfig.bidders).to.deep.equal(['appnexus']);
-      expect(vendorConfig.enabled).to.be.true;
-      expect(vendorConfig.endpoint).to.deep.equal({
-        p1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
-        noP1Consent: 'https://prebid.adnxs-simple.com/pbs/v1/openrtb2/auction'
-      });
-      expect(vendorConfig.syncEndpoint).to.deep.equal({
-        p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync',
-        noP1Consent: 'https://prebid.adnxs-simple.com/pbs/v1/cookie_sync'
-      });
-      expect(vendorConfig).to.have.property('timeout', 750);
-    });
-
     it('should configure the s2sConfig object with appnexuspsp vendor defaults unless specified by user', function () {
       const options = {
         accountId: '123',
@@ -3682,7 +3655,10 @@ describe('S2S Adapter', function () {
         p1Consent: 'https://ib.adnxs.com/openrtb2/prebid',
         noP1Consent: 'https://ib.adnxs-simple.com/openrtb2/prebid'
       });
-      expect(vendorConfig.syncEndpoint).to.be.undefined;
+      expect(vendorConfig.syncEndpoint).to.deep.equal({
+        p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync',
+        noP1Consent: 'https://prebid.adnxs-simple.com/pbs/v1/cookie_sync'
+      });
       expect(vendorConfig).to.have.property('timeout', 750);
     });
 
