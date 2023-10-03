@@ -195,7 +195,7 @@ export function getBidFloor(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['kivi', 'kiviads'],
+  aliases: ['kivi'],
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
   buildRequests,
