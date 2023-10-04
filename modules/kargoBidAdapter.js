@@ -97,8 +97,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids, bidderRequest.gppConsent),
   });
 
-  if (firstBidRequest.ortb2.site != null) {
-    krakenParams.site = firstBidRequest.ortb2.site
+  if (firstBidRequest.ortb2 != null) {
+    krakenParams.site = {
+      cat: firstBidRequest.ortb2.site.cat
+    }
   }
 
   if (firstBidRequest.schain && firstBidRequest.schain.nodes) {
