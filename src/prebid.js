@@ -2,17 +2,13 @@
 
 import {getGlobal} from './prebidGlobal.js';
 import {
-  adUnitsFilter,
-  bind,
   callBurl,
-  contains,
   createInvisibleIframe,
   deepAccess,
   deepClone,
   deepSetValue,
   flatten,
   generateUUID,
-  getHighestCpm,
   inIframe,
   insertElement,
   isArray,
@@ -52,6 +48,7 @@ import {newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {defer, GreedyPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
 import {allConsent} from './consentHandler.js';
+import {getHighestCpm} from './utils/reducers.js';
 import {fillVideoDefaults} from './video.js';
 
 const pbjsInstance = getGlobal();
@@ -91,7 +88,7 @@ function checkDefinedPlacement(id) {
     .reduce(flatten)
     .filter(uniques);
 
-  if (!contains(adUnitCodes, id)) {
+  if (!adUnitCodes.includes(id)) {
     logError('The "' + id + '" placement is not defined.');
     return;
   }
@@ -345,7 +342,7 @@ pbjsInstance.getConsentMetadata = function () {
 
 function getBids(type) {
   const responses = auctionManager[type]()
-    .filter(bind.call(adUnitsFilter, this, auctionManager.getAdUnitCodes()));
+    .filter(bid => auctionManager.getAdUnitCodes().includes(bid.adUnitCode))
 
   // find the last auction id to get responses for most recent auction only
   const currentAuctionId = auctionManager.getLastAuctionId();

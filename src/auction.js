@@ -58,11 +58,7 @@
  */
 
 import {
-  _each,
-  adUnitsFilter,
-  bind,
   deepAccess,
-  flatten,
   generateUUID,
   getValue,
   isEmpty,
@@ -142,7 +138,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   const _adUnitCodes = adUnitCodes;
   const _auctionId = auctionId || generateUUID();
   const _timeout = cbTimeout;
-  const _timelyBidders = new Set();
+  const _timelyRequests = new Set();
   const done = defer();
   let _bidsRejected = [];
   let _callback = callback;
@@ -152,7 +148,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   let _winningBids = [];
   let _auctionStart;
   let _auctionEnd;
-  let _timer;
+  let _timeoutTimer;
   let _auctionStatus;
   let _nonBids = [];
 
@@ -183,24 +179,20 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   }
 
   function startAuctionTimer() {
-    const timedOut = true;
-    const timeoutCallback = executeCallback.bind(null, timedOut);
-    let timer = setTimeout(timeoutCallback, _timeout);
-    _timer = timer;
+    _timeoutTimer = setTimeout(() => executeCallback(true), _timeout);
   }
 
-  function executeCallback(timedOut, cleartimer) {
-    // clear timer when done calls executeCallback
-    if (cleartimer) {
-      clearTimeout(_timer);
+  function executeCallback(timedOut) {
+    if (!timedOut) {
+      clearTimeout(_timeoutTimer);
     }
     if (_auctionEnd === undefined) {
-      let timedOutBidders = [];
+      let timedOutRequests = [];
       if (timedOut) {
         logMessage(`Auction ${_auctionId} timedOut`);
-        timedOutBidders = getTimedOutBids(_bidderRequests, _timelyBidders);
-        if (timedOutBidders.length) {
-          events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutBidders);
+        timedOutRequests = _bidderRequests.filter(rq => !_timelyRequests.has(rq.bidderRequestId)).flatMap(br => br.bids)
+        if (timedOutRequests.length) {
+          events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, timedOutRequests);
         }
       }
 
@@ -215,9 +207,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       bidsBackCallback(_adUnits, function () {
         try {
           if (_callback != null) {
-            const adUnitCodes = _adUnitCodes;
             const bids = _bidsReceived
-              .filter(bind.call(adUnitsFilter, this, adUnitCodes))
+              .filter(bid => _adUnitCodes.includes(bid.adUnitCode))
               .reduce(groupByPlacement, {});
             _callback.apply(pbjsInstance, [bids, timedOut, _auctionId]);
             _callback = null;
@@ -226,8 +217,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
           logError('Error executing bidsBackHandler', null, e);
         } finally {
           // Calling timed out bidders
-          if (timedOutBidders.length) {
-            adapterManager.callTimedOutBidders(adUnits, timedOutBidders, _timeout);
+          if (timedOutRequests.length) {
+            adapterManager.callTimedOutBidders(adUnits, timedOutRequests, _timeout);
           }
           // Only automatically sync if the publisher has not chosen to "enableOverride"
           let userSyncConfig = config.getConfig('userSync') || {};
@@ -245,11 +236,11 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     // when all bidders have called done callback atleast once it means auction is complete
     logInfo(`Bids Received for Auction with id: ${_auctionId}`, _bidsReceived);
     _auctionStatus = AUCTION_COMPLETED;
-    executeCallback(false, true);
+    executeCallback(false);
   }
 
-  function onTimelyResponse(bidderCode) {
-    _timelyBidders.add(bidderCode);
+  function onTimelyResponse(bidderRequestId) {
+    _timelyRequests.add(bidderRequestId);
   }
 
   function callBids() {
@@ -387,7 +378,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     addBidReceived,
     addBidRejected,
     addNoBid,
-    executeCallback,
     callBids,
     addWinningBid,
     setBidTargeting,
@@ -420,6 +410,14 @@ export const addBidResponse = hook('sync', function(adUnitCode, bid, reject) {
   this.dispatch.call(null, adUnitCode, bid);
 }, 'addBidResponse');
 
+/**
+ * Delay hook for adapter responses.
+ *
+ * `ready` is a promise; auctions wait for it to resolve before closing. Modules can hook into this
+ * to delay the end of auctions while they perform initialization that does not need to delay their start.
+ */
+export const responsesReady = hook('sync', (ready) => ready, 'responsesReady');
+
 export const addBidderRequests = hook('sync', function(bidderRequests) {
   this.dispatch.call(this.context, bidderRequests);
 }, 'addBidderRequests');
@@ -435,32 +433,6 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
   let allAdapterCalledDone = false;
   let bidderRequestsDone = new Set();
   let bidResponseMap = {};
-  const ready = {};
-
-  function waitFor(requestId, result) {
-    if (ready[requestId] == null) {
-      ready[requestId] = GreedyPromise.resolve();
-    }
-    ready[requestId] = ready[requestId].then(() => GreedyPromise.resolve(result).catch(() => {}))
-  }
-
-  function guard(bidderRequest, fn) {
-    let timeout = bidderRequest.timeout;
-    if (timeout == null || timeout > auctionInstance.getTimeout()) {
-      timeout = auctionInstance.getTimeout();
-    }
-    const timeRemaining = auctionInstance.getAuctionStart() + timeout - Date.now();
-    const wait = ready[bidderRequest.bidderRequestId];
-    const orphanWait = ready['']; // also wait for "orphan" responses that are not associated with any request
-    if ((wait != null || orphanWait != null) && timeRemaining > 0) {
-      GreedyPromise.race([
-        GreedyPromise.timeout(timeRemaining),
-        GreedyPromise.resolve(orphanWait).then(() => wait)
-      ]).then(fn);
-    } else {
-      fn();
-    }
-  }
 
   function afterBidAdded() {
     outstandingBidsAdded--;
@@ -535,8 +507,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
   return {
     addBidResponse: (function () {
       function addBid(adUnitCode, bid) {
-        const bidderRequest = index.getBidderRequest(bid);
-        waitFor((bidderRequest && bidderRequest.bidderRequestId) || '', addBidResponse.call({
+        addBidResponse.call({
           dispatch: acceptBidResponse,
         }, adUnitCode, bid, (() => {
           let rejected = false;
@@ -546,20 +517,14 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
               rejected = true;
             }
           }
-        })()));
+        })())
       }
       addBid.reject = rejectBidResponse;
       return addBid;
     })(),
     adapterDone: function () {
-      guard(this, adapterDone.bind(this))
+      responsesReady(GreedyPromise.resolve()).finally(() => adapterDone.call(this));
     }
-  }
-}
-
-export function doCallbacksIfTimedout(auctionInstance, bidResponse) {
-  if (bidResponse.timeToRespond > auctionInstance.getTimeout() + config.getConfig('timeoutBuffer')) {
-    auctionInstance.executeCallback(true);
   }
 }
 
@@ -570,8 +535,6 @@ export function addBidToAuction(auctionInstance, bidResponse) {
   useMetrics(bidResponse.metrics).timeSince('addBidResponse', 'addBidResponse.total');
   auctionInstance.addBidReceived(bidResponse);
   events.emit(CONSTANTS.EVENTS.BID_RESPONSE, bidResponse);
-
-  doCallbacksIfTimedout(auctionInstance, bidResponse);
 }
 
 // Video bids may fail if the cache is down, or there's trouble on the network.
@@ -618,16 +581,11 @@ const _storeInCache = (batch) => {
       const { auctionInstance, bidResponse, afterBidAdded } = batch[i];
       if (error) {
         logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
-
-        doCallbacksIfTimedout(auctionInstance, bidResponse);
       } else {
         if (cacheId.uuid === '') {
           logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
-
-          doCallbacksIfTimedout(auctionInstance, bidResponse);
         } else {
           bidResponse.videoCacheKey = cacheId.uuid;
-
           if (!bidResponse.vastUrl) {
             bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
           }
@@ -964,7 +922,7 @@ function setKeys(keyValues, bidderSettings, custBidObj, bidReq) {
   var targeting = bidderSettings[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];
   custBidObj.size = custBidObj.getSize();
 
-  _each(targeting, function (kvPair) {
+  (targeting || []).forEach(function (kvPair) {
     var key = kvPair.key;
     var value = kvPair.val;
 
@@ -1016,25 +974,4 @@ function groupByPlacement(bidsByPlacement, bid) {
   if (!bidsByPlacement[bid.adUnitCode]) { bidsByPlacement[bid.adUnitCode] = { bids: [] }; }
   bidsByPlacement[bid.adUnitCode].bids.push(bid);
   return bidsByPlacement;
-}
-
-/**
- * Returns a list of bids that we haven't received a response yet where the bidder did not call done
- * @param {BidRequest[]} bidderRequests List of bids requested for auction instance
- * @param {Set} timelyBidders Set of bidders which responded in time
- *
- * @typedef {Object} TimedOutBid
- * @property {string} bidId The id representing the bid
- * @property {string} bidder The string name of the bidder
- * @property {string} adUnitCode The code used to uniquely identify the ad unit on the publisher's page
- * @property {string} auctionId The id representing the auction
- *
- * @return {Array<TimedOutBid>} List of bids that Prebid hasn't received a response for
- */
-function getTimedOutBids(bidderRequests, timelyBidders) {
-  const timedOutBids = bidderRequests
-    .map(bid => (bid.bids || []).filter(bid => !timelyBidders.has(bid.bidder)))
-    .reduce(flatten, []);
-
-  return timedOutBids;
 }

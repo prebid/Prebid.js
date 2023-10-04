@@ -10,7 +10,7 @@ import {
   addBidResponseHook,
   currencySupportEnabled,
   currencyRates,
-  ready
+  responseReady
 } from 'modules/currency.js';
 import {createBid} from '../../../src/bidfactory.js';
 import CONSTANTS from '../../../src/constants.json';
@@ -32,7 +32,6 @@ describe('currency', function () {
 
   beforeEach(function () {
     fakeCurrencyFileServer = server;
-    ready.reset();
   });
 
   afterEach(function () {
@@ -321,29 +320,26 @@ describe('currency', function () {
 
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
 
-      var bid = { 'cpm': 1, 'currency': 'USD' };
+      const bid = { 'cpm': 1, 'currency': 'USD' };
 
       setConfig({ 'adServerCurrency': 'JPY' });
 
-      var marker = false;
-      let promiseResolved = false;
+      let responseAdded = false;
+      let isReady = false;
+      responseReady.promise.then(() => { isReady = true });
+
       addBidResponseHook(Object.assign(function() {
-        marker = true;
-      }, {
-        bail: function (promise) {
-          promise.then(() => promiseResolved = true);
-        }
+        responseAdded = true;
       }), 'elementId', bid);
 
-      expect(marker).to.equal(false);
-
       setTimeout(() => {
-        expect(promiseResolved).to.be.false;
+        expect(responseAdded).to.equal(false);
+        expect(isReady).to.equal(false);
         fakeCurrencyFileServer.respond();
 
         setTimeout(() => {
-          expect(marker).to.equal(true);
-          expect(promiseResolved).to.be.true;
+          expect(responseAdded).to.equal(true);
+          expect(isReady).to.equal(true);
           done();
         });
       });

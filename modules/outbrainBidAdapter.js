@@ -3,6 +3,7 @@
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
 import {OUTSTREAM} from '../src/video.js';
 import {_map, deepAccess, deepSetValue, isArray, logWarn, replaceAuctionPrice} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
@@ -23,6 +24,9 @@ const NATIVE_PARAMS = {
   cta: { id: 1, type: 12, name: 'data' }
 };
 const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
+const OB_USER_TOKEN_KEY = 'OB-USER-TOKEN';
+
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -128,6 +132,11 @@ export const spec = {
     if (test) {
       request.is_debug = !!test;
       request.test = 1;
+    }
+
+    const obUserToken = storage.getDataFromLocalStorage(OB_USER_TOKEN_KEY)
+    if (obUserToken) {
+      deepSetValue(request, 'user.ext.obusertoken', obUserToken)
     }
 
     if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
