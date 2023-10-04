@@ -282,6 +282,12 @@ export const spec = {
             perBuyerSignals[buyerItem.origin] = buyerItem.buyerdata;
           });
           const bidRequest = find(request.bidRequests, b => b.bidId === igbid.impid);
+          if (!sellerSignals.floor && bidRequest.params.bidFloor) {
+            sellerSignals.floor = bidRequest.params.bidFloor;
+          }
+          if (!sellerSignals.sellerCurrency && bidRequest.params.bidFloorCur) {
+            sellerSignals.sellerCurrency = bidRequest.params.bidFloorCur;
+          }
           const bidId = bidRequest.bidId;
           fledgeAuctionConfigs.push({
             bidId,
