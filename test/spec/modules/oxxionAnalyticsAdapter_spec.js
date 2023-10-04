@@ -344,7 +344,6 @@ describe('Oxxion Analytics', function () {
       expect(message).to.have.property('cpmIncrement').and.to.equal(27.4276);
       expect(message).to.have.property('oxxionMode').and.to.have.property('abtest').and.to.equal(true);
       expect(message).to.have.property('ova').and.to.equal('cleared');
-      // sinon.assert.callCount(oxxionAnalytics.track, 1);
     });
   });
 });
