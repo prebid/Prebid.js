@@ -95,8 +95,11 @@ function buildRequests(validBidRequests, bidderRequest) {
     },
     imp: impressions,
     user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids, bidderRequest.gppConsent),
-    site: firstBidRequest.ortb2.site
   });
+
+  if (firstBidRequest.ortb2.site != null) {
+    krakenParams.site = firstBidRequest.ortb2.site
+  }
 
   if (firstBidRequest.schain && firstBidRequest.schain.nodes) {
     krakenParams.schain = firstBidRequest.schain
