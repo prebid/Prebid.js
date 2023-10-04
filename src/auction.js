@@ -90,7 +90,7 @@ import {bidderSettings} from './bidderSettings.js';
 import * as events from './events.js';
 import adapterManager from './adapterManager.js';
 import CONSTANTS from './constants.json';
-import {GreedyPromise} from './utils/promise.js';
+import {defer, GreedyPromise} from './utils/promise.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {adjustCpm} from './utils/cpm.js';
 import {getGlobal} from './prebidGlobal.js';
@@ -143,6 +143,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   const _auctionId = auctionId || generateUUID();
   const _timeout = cbTimeout;
   const _timelyBidders = new Set();
+  const done = defer();
   let _bidsRejected = [];
   let _callback = callback;
   let _bidderRequests = [];
@@ -193,7 +194,6 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     if (cleartimer) {
       clearTimeout(_timer);
     }
-
     if (_auctionEnd === undefined) {
       let timedOutBidders = [];
       if (timedOut) {
@@ -209,6 +209,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
       metrics.checkpoint('auctionEnd');
       metrics.timeBetween('requestBids', 'auctionEnd', 'requestBids.total');
       metrics.timeBetween('callBids', 'auctionEnd', 'requestBids.callBids');
+      done.resolve();
 
       events.emit(CONSTANTS.EVENTS.AUCTION_END, getProperties());
       bidsBackCallback(_adUnits, function () {
@@ -392,6 +393,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     setBidTargeting,
     getWinningBids: () => _winningBids,
     getAuctionStart: () => _auctionStart,
+    getAuctionEnd: () => _auctionEnd,
     getTimeout: () => _timeout,
     getAuctionId: () => _auctionId,
     getAuctionStatus: () => _auctionStatus,
@@ -403,6 +405,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
     getNonBids: () => _nonBids,
     getFPD: () => ortb2Fragments,
     getMetrics: () => metrics,
+    end: done.promise
   };
 }
 

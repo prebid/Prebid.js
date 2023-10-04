@@ -2526,10 +2526,7 @@ describe('The Criteo bidding adapter', function () {
               sizes: [[728, 90]]
             }
           },
-          params: {
-            bidFloor: 1,
-            bidFloorCur: 'EUR'
-          }
+          params: {}
         },
       ];
       const request = spec.buildRequests(bidRequests, bidderRequest);
@@ -2557,8 +2554,6 @@ describe('The Criteo bidding adapter', function () {
           sellerTimeout: 500,
           sellerSignals: {
             foo: 'bar',
-            floor: 1,
-            sellerCurrency: 'EUR',
           },
         },
       });

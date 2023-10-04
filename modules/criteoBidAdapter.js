@@ -272,36 +272,31 @@ export const spec = {
         }
       });
 
-    if (isArray(body.ext?.igbid)) {
-      const seller = body.ext.seller || FLEDGE_SELLER_DOMAIN;
-      const sellerTimeout = body.ext.sellerTimeout || FLEDGE_SELLER_TIMEOUT;
-      const sellerSignals = body.ext.sellerSignals || {};
-      body.ext.igbid.forEach((igbid) => {
-        const perBuyerSignals = {};
-        igbid.igbuyer.forEach(buyerItem => {
-          perBuyerSignals[buyerItem.origin] = buyerItem.buyerdata;
+      if (isArray(body.ext?.igbid)) {
+        const seller = body.ext.seller || FLEDGE_SELLER_DOMAIN;
+        const sellerTimeout = body.ext.sellerTimeout || FLEDGE_SELLER_TIMEOUT;
+        const sellerSignals = body.ext.sellerSignals || {};
+        body.ext.igbid.forEach((igbid) => {
+          const perBuyerSignals = {};
+          igbid.igbuyer.forEach(buyerItem => {
+            perBuyerSignals[buyerItem.origin] = buyerItem.buyerdata;
+          });
+          const bidRequest = find(request.bidRequests, b => b.bidId === igbid.impid);
+          const bidId = bidRequest.bidId;
+          fledgeAuctionConfigs.push({
+            bidId,
+            config: {
+              seller,
+              sellerSignals,
+              sellerTimeout,
+              perBuyerSignals,
+              auctionSignals: {},
+              decisionLogicUrl: FLEDGE_DECISION_LOGIC_URL,
+              interestGroupBuyers: Object.keys(perBuyerSignals),
+            },
+          });
         });
-        const bidRequest = find(request.bidRequests, b => b.bidId === igbid.impid);
-        const bidId = bidRequest.bidId;
-        if (!sellerSignals.floor && bidRequest.params.bidFloor) {
-          sellerSignals.floor = bidRequest.params.bidFloor;
-        }
-        if (!sellerSignals.sellerCurrency && bidRequest.params.bidFloorCur) {
-          sellerSignals.sellerCurrency = bidRequest.params.bidFloorCur;
-        }
-        fledgeAuctionConfigs.push({
-          bidId,
-          config: {
-            seller,
-            sellerSignals,
-            sellerTimeout,
-            perBuyerSignals,
-            auctionSignals: {},
-            decisionLogicUrl: FLEDGE_DECISION_LOGIC_URL,
-            interestGroupBuyers: Object.keys(perBuyerSignals),
-          },
-        });
-      });
+      }
     }
 
     if (fledgeAuctionConfigs.length) {
