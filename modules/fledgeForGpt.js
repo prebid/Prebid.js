@@ -114,25 +114,21 @@ export function markForFledge(next, bidderRequests) {
   if (isFledgeSupported()) {
     const globalFledgeConfig = config.getConfig('fledgeForGpt');
     const bidders = globalFledgeConfig?.bidders ?? [];
-    bidderRequests.forEach((req) => {
-      const useGlobalConfig = globalFledgeConfig?.enabled && (bidders.length == 0 || bidders.includes(req.bidderCode));
-      Object.assign(req, config.runWithBidder(req.bidderCode, () => {
-        return {
-          fledgeEnabled: config.getConfig('fledgeEnabled') ?? (useGlobalConfig ? globalFledgeConfig.enabled : undefined),
-          defaultForSlots: config.getConfig('defaultForSlots') ?? (useGlobalConfig ? globalFledgeConfig?.defaultForSlots : undefined)
-        }
-      }));
+    bidderRequests.forEach((bidderReq) => {
+      const useGlobalConfig = globalFledgeConfig?.enabled && (bidders.length === 0 || bidders.includes(bidderReq.bidderCode));
+      config.runWithBidder(bidderReq.bidderCode, () => {
+        const fledgeEnabled = config.getConfig('fledgeEnabled') ?? (useGlobalConfig ? globalFledgeConfig.enabled : undefined);
+        const defaultForSlots = config.getConfig('defaultForSlots') ?? (useGlobalConfig ? globalFledgeConfig?.defaultForSlots : undefined);
+        Object.assign(bidderReq, {fledgeEnabled});
+        bidderReq.bids.forEach(bidReq => { deepSetValue(bidReq, 'ortb2Imp.ext.ae', bidReq.ortb2Imp?.ext?.ae ?? defaultForSlots) })
+      })
     });
   }
   next(bidderRequests);
 }
 
 export function setImpExtAe(imp, bidRequest, context) {
-  if (context.bidderRequest.fledgeEnabled) {
-    imp.ext = Object.assign(imp.ext || {}, {
-      ae: imp.ext?.ae ?? context.bidderRequest.defaultForSlots
-    })
-  } else {
+  if (imp.ext?.ae && !context.bidderRequest.fledgeEnabled) {
     delete imp.ext?.ae;
   }
 }
