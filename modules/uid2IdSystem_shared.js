@@ -1,97 +1,10 @@
 /* eslint-disable no-console */
 import { ajax } from '../src/ajax.js';
-import { cyrb53Hash } from '../src/utils.js';
 
 export const Uid2CodeVersion = '1.1';
 
-function isValidIdentity(identity) {
+export function isValidIdentity(identity) {
   return !!(typeof identity === 'object' && identity !== null && identity.advertising_token && identity.identity_expires && identity.refresh_from && identity.refresh_token && identity.refresh_expires);
-}
-
-function isNormalizedPhone(phone) {
-  return /^\+[0-9]{10,15}$/.test(phone);
-}
-
-function isBase64Hash(value) {
-  if (!(value && value.length === 44)) {
-    return false;
-  }
-
-  try {
-    return btoa(atob(value)) === value;
-  } catch (err) {
-    return false;
-  }
-}
-
-function isCSTGOptions(
-  maybeOpts,
-  _logWarn
-) {
-  if (typeof maybeOpts !== 'object' || maybeOpts === null) {
-    _logWarn('CSTG opts must be an object');
-    return false;
-  }
-
-  const opts = maybeOpts;
-  if (typeof opts.serverPublicKey !== 'string') {
-    _logWarn('CSTG opts.serverPublicKey must be a string');
-    return false;
-  }
-  const serverPublicKeyPrefix = /^UID2-X-[A-Z]-.+/;
-  if (!serverPublicKeyPrefix.test(opts.serverPublicKey)) {
-    _logWarn(
-      `CSTG opts.serverPublicKey must match the regular expression ${serverPublicKeyPrefix}`
-    );
-    return false;
-  }
-  // We don't do any further validation of the public key, as we will find out
-  // later if it's valid by using importKey.
-
-  if (typeof opts.subscriptionId !== 'string') {
-    _logWarn('CSTG opts.subscriptionId must be a string');
-    return false;
-  }
-  if (opts.subscriptionId.length === 0) {
-    _logWarn('CSTG opts.subscriptionId is empty');
-    return false;
-  }
-  return true
-}
-
-function getValidIdentity(opts, _logWarn) {
-  if (opts.emailHash) {
-    if (!isBase64Hash(opts.emailHash)) {
-      _logWarn('CSTG opts.emailHash is invalid');
-      return;
-    }
-    return { email_hash: opts.emailHash }
-  }
-
-  if (opts.phoneHash) {
-    if (!isBase64Hash(opts.phoneHash)) {
-      _logWarn('CSTG opts.phoneHash is invalid');
-      return;
-    }
-    return { phone_hash: opts.phoneHash }
-  }
-
-  if (opts.email) {
-    const normalizedEmail = normalizeEmail(opts.email);
-    if (normalizedEmail === undefined) {
-      _logWarn('CSTG opts.email is invalid');
-      return;
-    }
-    return { email: opts.email }
-  }
-
-  if (opts.phone) {
-    if (!isNormalizedPhone(opts.phone)) {
-      _logWarn('CSTG opts.phone is invalid');
-      return;
-    }
-    return { phone: opts.phone }
-  }
 }
 
 // This is extracted from an in-progress API client. Once it's available via NPM, this class should be replaced with the NPM package.
@@ -119,24 +32,6 @@ export class Uid2ApiClient {
   isValidRefreshResponse(response) {
     return this.hasStatusResponse(response) && (
       response.status === 'optout' || response.status === 'expired_token' || (response.status === 'success' && response.body && isValidIdentity(response.body))
-    );
-  }
-  isCstgApiSuccessResponse(response) {
-    return this.hasStatusResponse(response) && (
-      response.status === 'success' &&
-      isValidIdentity(response.body)
-    );
-  }
-  isCstgApiClientErrorResponse(response) {
-    return this.hasStatusResponse(response) && (
-      response.status === 'client_error' &&
-      typeof response.message === 'string'
-    );
-  }
-  isCstgApiForbiddenResponse(response) {
-    return this.hasStatusResponse(response) && (
-      response.status === 'invalid_http_origin' &&
-      typeof response.message === 'string'
     );
   }
   ResponseToRefreshResult(response) {
@@ -199,98 +94,6 @@ export class Uid2ApiClient {
       customHeaders: {
         'X-UID2-Client-Version': this._clientVersion
       } });
-    return promise;
-  }
-
-  async callCstgApi(request) {
-    this._logInfo('Building CSTG request for', request);
-    const box = await UID2CstgBox.build(stripPublicKeyPrefix(this._serverPublicKey))
-    const encoder = new TextEncoder();
-    const now = Date.now();
-    const { iv, ciphertext } = await box.encrypt(
-      encoder.encode(JSON.stringify(request)),
-      encoder.encode(JSON.stringify([now]))
-    );
-
-    const exportedPublicKey = await UID2CstgCrypto.exportPublicKey(box.clientPublicKey);
-    const requestBody = {
-      payload: UID2CstgCrypto.bytesToBase64(new Uint8Array(ciphertext)),
-      iv: UID2CstgCrypto.bytesToBase64(new Uint8Array(iv)),
-      public_key: UID2CstgCrypto.bytesToBase64(new Uint8Array(exportedPublicKey)),
-      timestamp: now,
-      subscription_id: this._subscriptionId,
-    };
-    return this._callCstgApi(requestBody, box)
-  }
-
-  _callCstgApi(requestBody, box) {
-    const url = this._baseUrl + '/v2/token/client-generate';
-    let resolvePromise;
-    let rejectPromise;
-    const promise = new Promise((resolve, reject) => {
-      resolvePromise = resolve;
-      rejectPromise = reject;
-    });
-
-    this._logInfo('Sending CSTG request', requestBody);
-    ajax(url, {
-      success: async(responseText, xhr) => {
-        try {
-          const encodedResp = UID2CstgCrypto.base64ToBytes(responseText);
-          const decrypted = await box.decrypt(
-            encodedResp.slice(0, 12),
-            encodedResp.slice(12)
-          )
-          const decryptedResponse = new TextDecoder().decode(decrypted);
-          const response = JSON.parse(decryptedResponse);
-          if (this.isCstgApiSuccessResponse(response)) {
-            resolvePromise({
-              status: 'success',
-              identity: response.body,
-            });
-          } else {
-            // A 200 should always be a success response.
-            // Something has gone wrong.
-            rejectPromise(
-              `API error: Response body was invalid for HTTP status 200: ${decryptedResponse}`
-            );
-          }
-        } catch (err) {
-          rejectPromise(err);
-        }
-      },
-      error: (error, xhr) => {
-        try {
-          if (xhr.status === 400) {
-            const response = JSON.parse(xhr.responseText);
-            if (this.isCstgApiClientErrorResponse(response)) {
-              rejectPromise(`Client error: ${response.message}`);
-            } else {
-              // A 400 should always be a client error.
-              // Something has gone wrong.
-              rejectPromise(
-                `API error: Response body was invalid for HTTP status 400: ${xhr.responseText}`
-              );
-            }
-          } else if (xhr.status === 403) {
-            const response = JSON.parse(xhr.responseText);
-            if (this.isCstgApiForbiddenResponse(xhr)) {
-              rejectPromise(`Forbidden: ${response.message}`);
-            } else {
-              // A 403 should always be a forbidden response.
-              // Something has gone wrong.
-              rejectPromise(
-                `API error: Response body was invalid for HTTP status 403: ${xhr.responseText}`
-              );
-            }
-          } else {
-            rejectPromise(`API error: Unexpected HTTP status ${xhr.status}: ${error}`);
-          }
-        } catch (_e) {
-          rejectPromise(error)
-        }
-      }
-    }, JSON.stringify(requestBody), { method: 'POST' });
     return promise;
   }
 }
@@ -363,97 +166,6 @@ export class Uid2StorageManager {
   }
 }
 
-class UID2CstgBox {
-  static _namedCurve = 'P-256'
-  constructor(clientPublicKey, sharedKey) {
-    this._clientPublicKey = clientPublicKey;
-    this._sharedKey = sharedKey;
-  }
-
-  static async build(serverPublicKey) {
-    const clientKeyPair = await UID2CstgCrypto.generateKeyPair(UID2CstgBox._namedCurve);
-    const importedServerPublicKey = await UID2CstgCrypto.importPublicKey(
-      serverPublicKey,
-      this._namedCurve
-    );
-    const sharedKey = await UID2CstgCrypto.deriveKey(
-      importedServerPublicKey,
-      clientKeyPair.privateKey
-    );
-    return new UID2CstgBox(clientKeyPair.publicKey, sharedKey);
-  }
-
-  async encrypt(plaintext, additionalData) {
-    const iv = window.crypto.getRandomValues(new Uint8Array(12));
-    const ciphertext = await window.crypto.subtle.encrypt({
-      name: 'AES-GCM',
-      iv,
-      additionalData,
-    }, this._sharedKey, plaintext)
-    return { iv, ciphertext }
-  }
-
-  async decrypt(iv, ciphertext) {
-    return window.crypto.subtle.decrypt({
-      name: 'AES-GCM',
-      iv
-    }, this._sharedKey, ciphertext);
-  }
-
-  get clientPublicKey() {
-    return this._clientPublicKey;
-  }
-}
-
-class UID2CstgCrypto {
-  static base64ToBytes(base64) {
-    const binString = atob(base64);
-    return Uint8Array.from(binString, (m) => m.codePointAt(0));
-  }
-
-  static bytesToBase64(bytes) {
-    const binString = Array.from(bytes, (x) => String.fromCodePoint(x)).join('');
-    return btoa(binString);
-  }
-
-  static async generateKeyPair(namedCurve) {
-    const params = {
-      name: 'ECDH',
-      namedCurve: namedCurve,
-    };
-    return window.crypto.subtle.generateKey(params, false, ['deriveKey']);
-  }
-
-  static async importPublicKey(publicKey, namedCurve) {
-    const params = {
-      name: 'ECDH',
-      namedCurve: namedCurve,
-    };
-    return window.crypto.subtle.importKey('spki', this.base64ToBytes(publicKey), params, false, []);
-  }
-
-  static exportPublicKey(publicKey) {
-    return window.crypto.subtle.exportKey('spki', publicKey);
-  }
-
-  static async deriveKey(serverPublicKey, clientPrivateKey) {
-    return window.crypto.subtle.deriveKey({
-      name: 'ECDH',
-      public: serverPublicKey,
-    }, clientPrivateKey, {
-      name: 'AES-GCM',
-      length: 256,
-    }, false, ['encrypt', 'decrypt']);
-  }
-
-  static async hash(value) {
-    const hash = await window.crypto.subtle.digest(
-      'SHA-256',
-      new TextEncoder().encode(value)
-    );
-    return this.bytesToBase64(new Uint8Array(hash));
-  }
-}
 
 function refreshTokenAndStore(baseUrl, token, clientId, storageManager, _logInfo, _logWarn) {
   _logInfo('UID2 base url provided: ', baseUrl);
@@ -471,126 +183,14 @@ function refreshTokenAndStore(baseUrl, token, clientId, storageManager, _logInfo
   });
 }
 
-function normalizeEmail(email) {
-  if (email == undefined || email.length <= 0) {
-    return undefined;
-  }
-
-  const STARTING_STATE = 'Starting';
-  const SUBDOMAIN_STATE = 'SubDomain'
-
-  let preSb = '';
-  let preSbSpecialized = '';
-  let sb = '';
-  let wsBuffer = '';
-
-  let parsingState = STARTING_STATE;
-  let inExtension = false;
-
-  for (const cGiven of email) {
-    let c = cGiven;
-    if (cGiven >= 'A' && cGiven < 'Z') {
-      c = String.fromCharCode(c.charCodeAt(0) + 32);
-    }
-
-    switch (parsingState) {
-      case STARTING_STATE:
-        if (c == ' ') {
-          break;
-        }
-        if (c == '@') {
-          parsingState = SUBDOMAIN_STATE;
-        } else if (c == '.') {
-          preSb += c;
-        } else if (c == '+') {
-          preSb += c;
-          inExtension = true;
-        } else {
-          preSb += c;
-          if (!inExtension) {
-            preSbSpecialized += c;
-          }
-        }
-        break;
-      case SUBDOMAIN_STATE:
-        if (c == '@') {
-          return undefined;
-        } else if (c == ' ') {
-          wsBuffer += c;
-          break;
-        } else if (wsBuffer.length > 0) {
-          sb += wsBuffer;
-          wsBuffer = '';
-        }
-        sb += c;
-    }
-  }
-
-  if (sb.length == 0) {
-    return undefined;
-  }
-
-  let domainPart = sb;
-  const GMAILDOMAIN = 'gmail.com';
-
-  let addressPartToUse = domainPart == GMAILDOMAIN ? preSbSpecialized : preSb;
-  if (addressPartToUse.length == 0) {
-    return undefined;
-  }
-
-  return addressPartToUse + '@' + domainPart;
-}
-
-async function generateCstgRequest(cstgIdentity) {
-  if ('email_hash' in cstgIdentity || 'phone_hash' in cstgIdentity) {
-    return cstgIdentity;
-  }
-  if ('email' in cstgIdentity) {
-    const emailHash = await UID2CstgCrypto.hash(cstgIdentity.email)
-    return { email_hash: emailHash };
-  }
-  if ('phone' in cstgIdentity) {
-    const phoneHash = await UID2CstgCrypto.hash(cstgIdentity.phone)
-    return {phone_hash: phoneHash}
-  }
-}
-
-async function generateTokenAndStore(baseUrl, cstgOpts, cstgIdentity, clientId, storageManager, _logInfo, _logWarn) {
-  _logInfo('UID2 cstg opts provided: ', JSON.stringify(cstgOpts));
-  const client = new Uid2ApiClient({baseUrl, cstg: cstgOpts}, clientId, _logInfo, _logWarn);
-  const request = await generateCstgRequest(cstgIdentity);
-  const response = await client.callCstgApi(request)
-  _logInfo('CSTG endpoint responded with:', response);
-  const tokens = {
-    originalIdentity: encodeOriginalIdentity(cstgIdentity),
-    latestToken: response.identity,
-  };
-  storageManager.storeValue(tokens);
-  return tokens;
-}
-
-function encodeOriginalIdentity(identity) {
-  const identityValue = Object.values(identity)[0];
-  const salt = Math.floor(Math.random() * Math.pow(2, 32));
-  return {
-    identity: cyrb53Hash(identityValue, salt),
-    salt
-  }
-}
-
-function storedTokenFromSameIdentity(storedTokens, identity) {
-  if (!storedTokens.originalIdentity) return false;
-  return cyrb53Hash(identity, storedTokens.originalIdentity.salt) === storedTokens.originalIdentity.identity
-}
-
-export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
+export function Uid2GetId(config, prebidStorageManager, uid2Cstg, _logInfo, _logWarn) {
   let suppliedToken = null;
-  const cstgIdentity = config.cstg && isCSTGOptions(config.cstg, _logWarn) && getValidIdentity(config.cstg);
+  const isCstgEnabled = config.cstg && uid2Cstg;
   const preferLocalStorage = (config.storage !== 'cookie');
   const storageManager = new Uid2StorageManager(prebidStorageManager, preferLocalStorage, config.internalStorage, _logInfo);
   _logInfo(`Module is using ${preferLocalStorage ? 'local storage' : 'cookies'} for internal storage.`);
 
-  if (cstgIdentity) {
+  if (isCstgEnabled) {
     _logInfo(`Module is using client-side token generation.`);
     // Ignores config.paramToken and config.serverCookieName if any is provided
     suppliedToken = null;
@@ -607,7 +207,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   if (storedTokens && typeof storedTokens === 'string') {
     // Stored value is a plain token - if no token is supplied, just use the stored value.
 
-    if (!suppliedToken && !cstgIdentity) {
+    if (!suppliedToken && !isCstgEnabled) {
       _logInfo('Returning legacy cookie value.');
       return { id: storedTokens };
     }
@@ -624,26 +224,26 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
     }
   }
 
-  if (cstgIdentity) {
-    if (storedTokens) {
-      const identity = Object.values(cstgIdentity)[0]
-      if (!storedTokenFromSameIdentity(storedTokens, identity)) {
-        _logInfo('CSTG supplied new identity - ignoring stored value.', storedTokens.originalIdentity, cstgIdentity);
-        // Stored token wasn't originally sourced from the provided identity - ignore the stored value. A new user has logged in?
+  if (isCstgEnabled) {
+    const cstgIdentity = uid2Cstg.getValidIdentity(config.cstg, _logWarn);
+    if (cstgIdentity) {
+      if (storedTokens && !uid2Cstg.isStoredTokenInvalid(cstgIdentity, storedTokens, _logInfo, _logWarn)) {
         storedTokens = null;
       }
-    }
-    if (!storedTokens || Date.now() > storedTokens.latestToken.refresh_expires) {
-      const promise = generateTokenAndStore(config.apiBaseUrl, config.cstg, cstgIdentity, config.clientId, storageManager, _logInfo, _logWarn);
-      _logInfo('Generate token using CSTG');
-      return { callback: (cb) => {
-        promise.then((result) => {
-          _logInfo('Token generation responded, passing the new token on.', result);
-          cb(result);
-        });
-      } };
+
+      if (!storedTokens || Date.now() > storedTokens.latestToken.refresh_expires) {
+        const promise = uid2Cstg.generateTokenAndStore(config.apiBaseUrl, config.cstg, cstgIdentity, config.clientId, storageManager, _logInfo, _logWarn);
+        _logInfo('Generate token using CSTG');
+        return { callback: (cb) => {
+          promise.then((result) => {
+            _logInfo('Token generation responded, passing the new token on.', result);
+            cb(result);
+          });
+        } };
+      }
     }
   }
+
   const useSuppliedToken = !(storedTokens?.latestToken) || (suppliedToken && suppliedToken.identity_expires > storedTokens.latestToken.identity_expires);
   const newestAvailableToken = useSuppliedToken ? suppliedToken : storedTokens.latestToken;
   _logInfo('UID2 module selected latest token', useSuppliedToken, newestAvailableToken);
@@ -670,13 +270,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
     originalToken: suppliedToken ?? storedTokens?.originalToken,
     latestToken: newestAvailableToken,
   };
-  if (cstgIdentity) tokens.originalIdentity = storedTokens?.originalIdentity
+  if (isCstgEnabled) tokens.originalIdentity = storedTokens?.originalIdentity
   storageManager.storeValue(tokens);
   return { id: tokens };
-}
-
-const SERVER_PUBLIC_KEY_PREFIX_LENGTH = 9;
-
-function stripPublicKeyPrefix(serverPublicKey) {
-  return serverPublicKey.substring(SERVER_PUBLIC_KEY_PREFIX_LENGTH);
 }

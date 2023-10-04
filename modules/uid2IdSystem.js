@@ -50,6 +50,8 @@ const _logWarn = createLogger(logWarn, LOG_PRE_FIX);
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
+let uid2Cstg;
+
 /** @type {Submodule} */
 export const uid2IdSubmodule = {
   /**
@@ -99,7 +101,7 @@ export const uid2IdSubmodule = {
       internalStorage: ADVERTISING_COOKIE
     }
     _logInfo(`UID2 configuration loaded and mapped.`, mappedConfig);
-    const result = Uid2GetId(mappedConfig, storage, _logInfo, _logWarn);
+    const result = Uid2GetId(mappedConfig, storage, uid2Cstg, _logInfo, _logWarn);
     _logInfo(`UID2 getId returned`, result);
     return result;
   },
@@ -133,3 +135,9 @@ function decodeImpl(value) {
 
 // Register submodule for userId
 submodule('userId', uid2IdSubmodule);
+
+try {
+  uid2Cstg = await import('./uid2Cstg.js');
+} catch (error) {
+  console.log('Module not found or failed to load', error);
+}

@@ -309,8 +309,8 @@ function testTaskMaker(options = {}) {
     }
   }
 }
-
 const test = testTaskMaker();
+// const test = testTaskMaker({file: 'test/spec/modules/userid_spec.js'});
 
 function runWebdriver({file}) {
   process.env.TEST_SERVER_HOST = argv.host || 'localhost';
@@ -451,6 +451,9 @@ gulp.task('build-bundle-verbose', gulp.series(makeWebpackPkg({
 gulp.task('test-only', test);
 gulp.task('test-all-features-disabled', testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false}));
 gulp.task('test', gulp.series(clean, lint, gulp.series('test-all-features-disabled', 'test-only')));
+// gulp.task('test-watch', testTaskMaker({watch: true, file: ['test/spec/modules/uid2idsystem_spec.js', 'test/spec/modules/euididsystem_spec.js', 'test/spec/modules/userid_spec.js']}));
+// // gulp.task('test-watch', testTaskMaker({watch: true, file: ['test/spec/modules/euididsystem_spec.js']}));
+// gulp.task('test-all-features-disabled', testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false, file: 'test/spec/modules/userid_spec.js'}));
 
 gulp.task('test-coverage', gulp.series(clean, testCoverage));
 gulp.task(viewCoverage);
