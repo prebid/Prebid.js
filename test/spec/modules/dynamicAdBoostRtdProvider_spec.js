@@ -17,6 +17,15 @@ const configWithoutRequiredParams = {
 };
 
 describe('dynamicAdBoost', function() {
+  let clock;
+  let sandbox;
+  beforeEach(function () {
+    sandbox = sinon.sandbox.create();
+    clock = sandbox.useFakeTimers(Date.now());
+  });
+  afterEach(function () {
+    sandbox.restore();
+  });
   describe('init', function() {
     describe('initialize without expected params', function() {
       it('fails initalize when keyId is not present', function() {
