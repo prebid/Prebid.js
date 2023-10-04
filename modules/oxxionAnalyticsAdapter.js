@@ -244,7 +244,8 @@ let oxxionAnalytics = Object.assign(adapter({url, analyticsType}), {
         addTimeout(args);
         break;
     }
-  }});
+  }
+});
 
 // save the base class function
 oxxionAnalytics.originEnableAnalytics = oxxionAnalytics.enableAnalytics;
