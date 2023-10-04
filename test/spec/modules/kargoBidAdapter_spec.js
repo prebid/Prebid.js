@@ -142,11 +142,11 @@ describe('kargo adapter tests', function () {
                 model: 'model',
                 source: 1,
               }
+            },
+            site: {
+              id: '1234',
+              name: 'SiteName'
             }
-          },
-          site: {
-            id: '1234',
-            name: 'SiteName'
           },
           ortb2Imp: {
             ext: {

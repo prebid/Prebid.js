@@ -95,7 +95,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     },
     imp: impressions,
     user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids, bidderRequest.gppConsent),
-    site: firstBidRequest.site
+    site: firstBidRequest.ortb2.site
   });
 
   if (firstBidRequest.schain && firstBidRequest.schain.nodes) {
