@@ -27,9 +27,8 @@ describe('dynamicAdBoost', function() {
     describe('initialize with expected params', function() {
       it('successfully initialize with load script', function() {
         expect(rtdProvider.init(configWithParams)).to.be.true;
-        setTimeout(function() {
-          expect(loadExternalScript.called).to.be.true;
-        }, 5000);
+        clock.tick(1000);
+        expect(loadExternalScript.called).to.be.true;
       })
     });
   });
