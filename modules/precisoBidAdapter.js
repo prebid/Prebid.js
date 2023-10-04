@@ -23,7 +23,7 @@ export const spec = {
   buildRequests: (validBidRequests = [], bidderRequest) => {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-    // userId = validBidRequests[0].userId.pubcid;
+    userId = validBidRequests[0].userId.pubcid;
     let winTop = window;
     let location;
     var offset = new Date().getTimezoneOffset();
@@ -89,8 +89,8 @@ export const spec = {
       city: city,
       'host': location.host,
       'page': location.pathname,
-      'coppa': config.getConfig('coppa') === true ? 1 : 0
-      // userId: validBidRequests[0].userId
+      'coppa': config.getConfig('coppa') === true ? 1 : 0,
+      userId: validBidRequests[0].userId
     };
 
     request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
