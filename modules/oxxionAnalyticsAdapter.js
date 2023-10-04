@@ -175,9 +175,6 @@ function handleBidWon(args) {
       if (auction['auctionId'] == args['auctionId'] && typeof auction['bidsReceived'] == 'object') {
         auction['bidsReceived'].forEach((bid) => {
           if (bid['transactionId'] == args['transactionId'] && bid['adId'] != args['adId']) {
-            if ('ova' in bid) {
-              args['ova'] = bid['ova'];
-            }
             if (args['cpm'] < bid['cpm']) {
               increment = 0;
             } else if (increment > args['cpm'] - bid['cpm']) {
