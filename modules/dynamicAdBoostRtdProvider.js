@@ -18,13 +18,15 @@ const dabOptions = {
   threshold: 0.5 // Trigger callback when 50% of the element is visible
 };
 let observer;
+let dabStartDate;
+let dabStartTime;
 
 // Array of div IDs to track
 let dynamicAdBoostAdUnits = {};
-let dabStartDate = new Date();
-let dabStartTime = dabStartDate.getTime();
 
 function init(config, userConsent) {
+  dabStartDate = new Date();
+  dabStartTime = dabStartDate.getTime();
   if (!CLIENT_SUPPORTS_IO) {
     return false;
   }
