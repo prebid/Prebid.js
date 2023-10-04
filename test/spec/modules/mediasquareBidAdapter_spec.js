@@ -170,7 +170,7 @@ describe('MediaSquare bid adapter tests', function () {
     expect(bid.mediasquare.context).to.exist;
     expect(bid.mediasquare.context).to.equal('instream');
     expect(bid.mediasquare.increment).to.exist;
-    expect(bid.mediasquare.increment).to.equal(1.0);	  
+    expect(bid.mediasquare.increment).to.equal(1.0);
     expect(bid.mediasquare.code).to.equal([DEFAULT_PARAMS[0].params.owner, DEFAULT_PARAMS[0].params.code].join('/'));
     expect(bid.mediasquare.ova).to.exist.and.to.equal('cleared');
     expect(bid.meta).to.exist;
