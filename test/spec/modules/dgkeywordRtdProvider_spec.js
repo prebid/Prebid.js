@@ -91,6 +91,22 @@ describe('Digital Garage Keyword Module', function () {
       expect(dgRtd.getTargetBidderOfDgKeywords(adUnits_no_target)).an('array')
         .that.is.empty;
     });
+    it('convertKeywordsToString method unit test', function () {
+      const keywordsTest = [
+        { keywords: { param1: 'keywords1' }, result: 'param1=keywords1' },
+        { keywords: { param1: 'keywords1', param2: 'keywords2' }, result: 'param1=keywords1,param2=keywords2' },
+        { keywords: { p1: 'k1', p2: 'k2', p: 'k' }, result: 'p1=k1,p2=k2,p=k' },
+        { keywords: { p1: 'k1', p2: 'k2', p: ['k'] }, result: 'p1=k1,p2=k2,p=k' },
+        { keywords: { p1: 'k1', p2: ['k21', 'k22'], p: ['k'] }, result: 'p1=k1,p2=k21,p2=k22,p=k' },
+        { keywords: { p1: ['k11', 'k12', 'k13'], p2: ['k21', 'k22'], p: ['k'] }, result: 'p1=k11,p1=k12,p1=k13,p2=k21,p2=k22,p=k' },
+        { keywords: { p1: [], p2: ['', ''], p: [''] }, result: 'p1,p2,p' },
+        { keywords: { p1: 1, p2: [1, 'k2'], p: '' }, result: 'p1,p2=k2,p' },
+        { keywords: { p1: ['k1', 2, 'k3'], p2: [1, 2], p: 3 }, result: 'p1=k1,p1=k3,p2,p' },
+      ];
+      for (const test of keywordsTest) {
+        expect(dgRtd.convertKeywordsToString(test.keywords)).equal(test.result);
+      }
+    })
     it('should have targets', function () {
       const adUnits_targets = [
         {

@@ -160,13 +160,18 @@ export function convertKeywordsToString(keywords) {
         result += `${key},`;
       }
     } else if (isArray(keywords[key])) {
-      if (keywords[key][0] === '') {
-        result += `${key},`
-      } else {
-        keywords[key].forEach(val => {
+      let isValSet = false
+      keywords[key].forEach(val => {
+        if (isStr(val) && val) {
           result += `${key}=${val},`
-        });
+          isValSet = true
+        }
+      });
+      if (!isValSet) {
+        result += `${key},`
       }
+    } else {
+      result += `${key},`
     }
   });
 
