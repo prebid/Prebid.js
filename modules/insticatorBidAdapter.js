@@ -244,12 +244,12 @@ function buildBid(bid, bidderRequest) {
     height: bid.h,
     adUnitCode: originalBid.adUnitCode,
     ad: bid.adm,
-    mediaType: "banner",
+    mediaType: 'banner',
     ...(Object.keys(meta).length > 0 ? {meta} : {})
   };
 
-  if(originalBid.mediaTypes?.video) {
-    bidResponse.mediaType = "video";
+  if (originalBid.mediaTypes?.video) {
+    bidResponse.mediaType = 'video';
     bidResponse.vastXml = bid.adm;
   }
 
