@@ -233,7 +233,7 @@ function buildBid(bid, bidderRequest) {
     meta.advertiserDomains = bid.adomain
   }
 
-  return {
+  const bidResponse = {
     requestId: bid.impid,
     creativeId: bid.crid,
     cpm: bid.price,
@@ -242,11 +242,18 @@ function buildBid(bid, bidderRequest) {
     ttl: bid.exp || config.getConfig('insticator.bidTTL') || BID_TTL,
     width: bid.w,
     height: bid.h,
-    mediaType: 'banner',
-    ad: bid.adm,
     adUnitCode: originalBid.adUnitCode,
+    ad: bid.adm,
+    mediaType: "banner",
     ...(Object.keys(meta).length > 0 ? {meta} : {})
   };
+
+  if(originalBid.mediaTypes?.video) {
+    bidResponse.mediaType = "video";
+    bidResponse.vastXml = bid.adm;
+  }
+
+  return bidResponse;
 }
 
 function buildBidSet(seatbid, bidderRequest) {
