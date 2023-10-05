@@ -1,9 +1,9 @@
 /* eslint-disable no-console */
 
-import {coreStorage, init, setSubmoduleRegistry, requestBidsHook} from 'modules/userId/index.js';
+import {coreStorage, init, setSubmoduleRegistry} from 'modules/userId/index.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import { uid2IdSubmodule } from 'modules/uid2IdSystem.js';
+import { uid2IdSubmodule, attachTokenGenerator } from 'modules/uid2IdSystem.js';
 import 'src/prebid.js';
 import 'modules/consentManagement.js';
 import { getGlobal } from 'src/prebidGlobal.js';
@@ -12,6 +12,7 @@ import { cookieHelpers, runAuction, apiHelpers, setGdprApplies } from './uid2IdS
 import {hook} from 'src/hook.js';
 import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
 import {server} from 'test/mocks/xhr';
+import { clientSideTokenGenerator } from '../../../modules/uid2Cstg.js';
 
 let expect = require('chai').expect;
 
@@ -91,6 +92,7 @@ describe(`UID2 module`, function () {
     timerSpy = configureTimerInterceptors(debugOutput);
     hook.ready();
     uninstallGdprEnforcement();
+    attachTokenGenerator();
 
     suiteSandbox = sinon.sandbox.create();
     // I'm unable to find an authoritative source, but apparently subtle isn't available in some test stacks for security reasons.
@@ -359,7 +361,11 @@ describe(`UID2 module`, function () {
     });
   });
 
-  describe('When CSTG config provided', function () {
+  describe('When CSTG is enabled provided', function () {
+    before(() => {
+      attachTokenGenerator(clientSideTokenGenerator);
+    })
+
     let scenarios = [
       {
         name: 'email provided in config',

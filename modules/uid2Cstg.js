@@ -10,75 +10,115 @@ import { ajax } from '../src/ajax.js';
 
 // eslint-disable-next-line prebid/validate-imports
 import { isValidIdentity } from './uid2IdSystem_shared.js';
+import { submodule } from '../src/hook.js';
 
-export function getValidIdentity(opts, _logWarn) {
-  if (!opts || isCSTGOptionsValid(opts, _logWarn)) return
-
-  if (opts.emailHash) {
-    if (!isBase64Hash(opts.emailHash)) {
-      _logWarn('CSTG opts.emailHash is invalid');
-      return;
+export const clientSideTokenGenerator = {
+  isCSTGOptionsValid(maybeOpts, _logWarn) {
+    if (typeof maybeOpts !== 'object' || maybeOpts === null) {
+      _logWarn('CSTG opts must be an object');
+      return false;
     }
-    return { email_hash: opts.emailHash };
-  }
 
-  if (opts.phoneHash) {
-    if (!isBase64Hash(opts.phoneHash)) {
-      _logWarn('CSTG opts.phoneHash is invalid');
-      return;
+    const opts = maybeOpts;
+    if (typeof opts.serverPublicKey !== 'string') {
+      _logWarn('CSTG opts.serverPublicKey must be a string');
+      return false;
     }
-    return { phone_hash: opts.phoneHash };
-  }
-
-  if (opts.email) {
-    const normalizedEmail = normalizeEmail(opts.email);
-    if (normalizedEmail === undefined) {
-      _logWarn('CSTG opts.email is invalid');
-      return;
+    const serverPublicKeyPrefix = /^UID2-X-[A-Z]-.+/;
+    if (!serverPublicKeyPrefix.test(opts.serverPublicKey)) {
+      _logWarn(
+        `CSTG opts.serverPublicKey must match the regular expression ${serverPublicKeyPrefix}`
+      );
+      return false;
     }
-    return { email: opts.email };
-  }
+    // We don't do any further validation of the public key, as we will find out
+    // later if it's valid by using importKey.
 
-  if (opts.phone) {
-    if (!isNormalizedPhone(opts.phone)) {
-      _logWarn('CSTG opts.phone is invalid');
-      return;
+    if (typeof opts.subscriptionId !== 'string') {
+      _logWarn('CSTG opts.subscriptionId must be a string');
+      return false;
     }
-    return { phone: opts.phone };
-  }
-}
+    if (opts.subscriptionId.length === 0) {
+      _logWarn('CSTG opts.subscriptionId is empty');
+      return false;
+    }
+    return true;
+  },
 
-function isCSTGOptionsValid(maybeOpts, _logWarn) {
-  if (typeof maybeOpts !== 'object' || maybeOpts === null) {
-    _logWarn('CSTG opts must be an object');
+  getValidIdentity(opts, _logWarn) {
+    if (opts.emailHash) {
+      if (!isBase64Hash(opts.emailHash)) {
+        _logWarn('CSTG opts.emailHash is invalid');
+        return;
+      }
+      return { email_hash: opts.emailHash };
+    }
+
+    if (opts.phoneHash) {
+      if (!isBase64Hash(opts.phoneHash)) {
+        _logWarn('CSTG opts.phoneHash is invalid');
+        return;
+      }
+      return { phone_hash: opts.phoneHash };
+    }
+
+    if (opts.email) {
+      const normalizedEmail = normalizeEmail(opts.email);
+      if (normalizedEmail === undefined) {
+        _logWarn('CSTG opts.email is invalid');
+        return;
+      }
+      return { email: opts.email };
+    }
+
+    if (opts.phone) {
+      if (!isNormalizedPhone(opts.phone)) {
+        _logWarn('CSTG opts.phone is invalid');
+        return;
+      }
+      return { phone: opts.phone };
+    }
+  },
+
+  isStoredTokenInvalid(cstgIdentity, storedTokens, _logInfo, _logWarn) {
+    if (storedTokens) {
+      const identity = Object.values(cstgIdentity)[0]
+      if (!isStoredTokenFromSameIdentity(storedTokens, identity)) {
+        _logInfo('CSTG supplied new identity - ignoring stored value.', storedTokens.originalIdentity, cstgIdentity);
+        // Stored token wasn't originally sourced from the provided identity - ignore the stored value. A new user has logged in?
+        return true;
+      }
+    }
     return false;
-  }
+  },
 
-  const opts = maybeOpts;
-  if (typeof opts.serverPublicKey !== 'string') {
-    _logWarn('CSTG opts.serverPublicKey must be a string');
-    return false;
-  }
-  const serverPublicKeyPrefix = /^UID2-X-[A-Z]-.+/;
-  if (!serverPublicKeyPrefix.test(opts.serverPublicKey)) {
-    _logWarn(
-      `CSTG opts.serverPublicKey must match the regular expression ${serverPublicKeyPrefix}`
+  async generateTokenAndStore(
+    baseUrl,
+    cstgOpts,
+    cstgIdentity,
+    storageManager,
+    _logInfo,
+    _logWarn
+  ) {
+    _logInfo('UID2 cstg opts provided: ', JSON.stringify(cstgOpts));
+    const client = new UID2CstgApiClient(
+      { baseUrl, cstg: cstgOpts },
+      _logInfo,
+      _logWarn
     );
-    return false;
+    const response = await client.generateToken(cstgIdentity);
+    _logInfo('CSTG endpoint responded with:', response);
+    const tokens = {
+      originalIdentity: encodeOriginalIdentity(cstgIdentity),
+      latestToken: response.identity,
+    };
+    storageManager.storeValue(tokens);
+    return tokens;
   }
-  // We don't do any further validation of the public key, as we will find out
-  // later if it's valid by using importKey.
 
-  if (typeof opts.subscriptionId !== 'string') {
-    _logWarn('CSTG opts.subscriptionId must be a string');
-    return false;
-  }
-  if (opts.subscriptionId.length === 0) {
-    _logWarn('CSTG opts.subscriptionId is empty');
-    return false;
-  }
-  return true;
 }
+
+submodule('uid2IdSystem', clientSideTokenGenerator);
 
 function isBase64Hash(value) {
   if (!(value && value.length === 44)) {
@@ -152,48 +192,12 @@ function normalizeAddressPart(
   return parsedAddress;
 }
 
-export async function isStoredTokenInvalid(cstgIdentity, storedTokens, _logInfo, _logWarn) {
-  if (storedTokens) {
-    const identity = Object.values(cstgIdentity)[0]
-    if (!isStoredTokenFromSameIdentity(storedTokens, identity)) {
-      _logInfo('CSTG supplied new identity - ignoring stored value.', storedTokens.originalIdentity, cstgIdentity);
-      // Stored token wasn't originally sourced from the provided identity - ignore the stored value. A new user has logged in?
-      return true;
-    }
-  }
-  return false;
-}
-
 function isStoredTokenFromSameIdentity(storedTokens, identity) {
   if (!storedTokens.originalIdentity) return false;
   return (
     cyrb53Hash(identity, storedTokens.originalIdentity.salt) ===
     storedTokens.originalIdentity.identity
   );
-}
-
-export async function generateTokenAndStore(
-  baseUrl,
-  cstgOpts,
-  cstgIdentity,
-  storageManager,
-  _logInfo,
-  _logWarn
-) {
-  _logInfo('UID2 cstg opts provided: ', JSON.stringify(cstgOpts));
-  const client = new UID2CstgApiClient(
-    { baseUrl, cstg: cstgOpts },
-    _logInfo,
-    _logWarn
-  );
-  const response = await client.generateToken(cstgIdentity);
-  _logInfo('CSTG endpoint responded with:', response);
-  const tokens = {
-    originalIdentity: encodeOriginalIdentity(cstgIdentity),
-    latestToken: response.identity,
-  };
-  storageManager.storeValue(tokens);
-  return tokens;
 }
 
 function encodeOriginalIdentity(identity) {
@@ -211,13 +215,17 @@ function stripPublicKeyPrefix(serverPublicKey) {
   return serverPublicKey.substring(SERVER_PUBLIC_KEY_PREFIX_LENGTH);
 }
 
-export class UID2CstgApiClient {
+class UID2CstgApiClient {
   constructor(opts, logInfo, logWarn) {
     this._baseUrl = opts.baseUrl;
     this._serverPublicKey = opts.cstg.serverPublicKey;
     this._subscriptionId = opts.cstg.subscriptionId;
     this._logInfo = logInfo;
     this._logWarn = logWarn;
+  }
+
+  hasStatusResponse(response) {
+    return typeof (response) === 'object' && response && response.status;
   }
 
   isCstgApiSuccessResponse(response) {
@@ -365,7 +373,7 @@ export class UID2CstgApiClient {
   }
 }
 
-export class UID2CstgBox {
+class UID2CstgBox {
   static _namedCurve = 'P-256';
   constructor(clientPublicKey, sharedKey) {
     this._clientPublicKey = clientPublicKey;
@@ -417,7 +425,7 @@ export class UID2CstgBox {
   }
 }
 
-export class UID2CstgCrypto {
+class UID2CstgCrypto {
   static base64ToBytes(base64) {
     const binString = atob(base64);
     return Uint8Array.from(binString, (m) => m.codePointAt(0));

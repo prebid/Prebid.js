@@ -99,7 +99,7 @@ export const euidIdSubmodule = {
       internalStorage: ADVERTISING_COOKIE
     };
 
-    const result = Uid2GetId(mappedConfig, storage, _logInfo, _logWarn);
+    const result = Uid2GetId(mappedConfig, storage, undefined, _logInfo, _logWarn);
     _logInfo(`EUID getId returned`, result);
     return result;
   },

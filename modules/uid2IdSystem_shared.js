@@ -166,7 +166,6 @@ export class Uid2StorageManager {
   }
 }
 
-
 function refreshTokenAndStore(baseUrl, token, clientId, storageManager, _logInfo, _logWarn) {
   _logInfo('UID2 base url provided: ', baseUrl);
   const client = new Uid2ApiClient({baseUrl}, clientId, _logInfo, _logWarn);
@@ -183,9 +182,9 @@ function refreshTokenAndStore(baseUrl, token, clientId, storageManager, _logInfo
   });
 }
 
-export function Uid2GetId(config, prebidStorageManager, uid2Cstg, _logInfo, _logWarn) {
+export function Uid2GetId(config, prebidStorageManager, clientSideTokenGenerator, _logInfo, _logWarn) {
   let suppliedToken = null;
-  const isCstgEnabled = config.cstg && uid2Cstg;
+  const isCstgEnabled = clientSideTokenGenerator && clientSideTokenGenerator.isCSTGOptionsValid(config.cstg, _logWarn);
   const preferLocalStorage = (config.storage !== 'cookie');
   const storageManager = new Uid2StorageManager(prebidStorageManager, preferLocalStorage, config.internalStorage, _logInfo);
   _logInfo(`Module is using ${preferLocalStorage ? 'local storage' : 'cookies'} for internal storage.`);
@@ -225,14 +224,14 @@ export function Uid2GetId(config, prebidStorageManager, uid2Cstg, _logInfo, _log
   }
 
   if (isCstgEnabled) {
-    const cstgIdentity = uid2Cstg.getValidIdentity(config.cstg, _logWarn);
+    const cstgIdentity = clientSideTokenGenerator.getValidIdentity(config.cstg, _logWarn);
     if (cstgIdentity) {
-      if (storedTokens && !uid2Cstg.isStoredTokenInvalid(cstgIdentity, storedTokens, _logInfo, _logWarn)) {
+      if (storedTokens && clientSideTokenGenerator.isStoredTokenInvalid(cstgIdentity, storedTokens, _logInfo, _logWarn)) {
         storedTokens = null;
       }
 
       if (!storedTokens || Date.now() > storedTokens.latestToken.refresh_expires) {
-        const promise = uid2Cstg.generateTokenAndStore(config.apiBaseUrl, config.cstg, cstgIdentity, config.clientId, storageManager, _logInfo, _logWarn);
+        const promise = clientSideTokenGenerator.generateTokenAndStore(config.apiBaseUrl, config.cstg, cstgIdentity, storageManager, _logInfo, _logWarn);
         _logInfo('Generate token using CSTG');
         return { callback: (cb) => {
           promise.then((result) => {
