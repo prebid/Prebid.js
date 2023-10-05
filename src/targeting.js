@@ -464,19 +464,17 @@ export function newTargeting(auctionManager) {
       if (typeof filterFunction === 'function') {
         bidsReceived = bidsReceived.filter(bid => latestAuctionForAdUnit[bid.adUnitCode] === bid.auctionId || !!filterFunction(bid))
       }
-
-      bidsReceived = bidsReceived
-        .map(bid => {
-          if (latestAuctionForAdUnit[bid.adUnitCode] !== bid.auctionId) {
-            bid.latestAuctionForAdUnit = latestAuctionForAdUnit[bid.adUnitCode];
-          }
-          return bid;
-        });
     }
 
     bidsReceived = bidsReceived
       .filter(bid => deepAccess(bid, 'video.context') !== ADPOD)
       .filter(isBidUsable);
+
+    bidsReceived
+      .forEach(bid => {
+        bid.latestTargetedAuctionId = latestAuctionForAdUnit[bid.adUnitCode];
+        return bid;
+      });
 
     return getHighestCpmBidsFromBidPool(bidsReceived, getOldestHighestCpmBid);
   }

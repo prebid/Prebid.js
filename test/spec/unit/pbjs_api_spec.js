@@ -3316,7 +3316,7 @@ describe('Unit: Prebid Module', function () {
       const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids(adUnitcode);
       expect(highestCpmBids.length).to.equal(1);
       const expectedBid = auctionManager.getBidsReceived()[1];
-      expectedBid.latestAuctionForAdUnit = auctionId;
+      expectedBid.latestTargetedAuctionId = auctionId;
       expect(highestCpmBids[0]).to.deep.equal(expectedBid);
     });
 
