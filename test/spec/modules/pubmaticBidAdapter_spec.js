@@ -1922,7 +1922,7 @@ describe('PubMatic adapter', function () {
               }
             });
 
-            it('should send if imp[].ext.gpid is specified', function() {
+            it('should gpid send if imp[].ext.gpid is specified', function() {
               bidRequests[0].ortb2Imp = {
                 ext: {
                   gpid: 'ortb2Imp.ext.gpid'
