@@ -3,7 +3,7 @@
 ```
 Module Name: AcuityAds Bidder Adapter
 Module Type: AcuityAds Bidder Adapter
-Maintainer: sa-support@brightcom.com
+Maintainer: rafi.babler@acuityads.com
 ```
 
 # Description

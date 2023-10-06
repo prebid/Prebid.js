@@ -64,6 +64,29 @@ describe('sovrnBidAdapter', function() {
 
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false)
     })
+
+    it('should return true when minduration is not passed', function() {
+      const width = 300
+      const height = 250
+      const mimes = ['video/mp4', 'application/javascript']
+      const protocols = [2, 5]
+      const maxduration = 60
+      const startdelay = 0
+      const videoBidRequest = {
+        ...baseBidRequest,
+        mediaTypes: {
+          video: {
+            mimes,
+            protocols,
+            playerSize: [[width, height], [360, 240]],
+            maxduration,
+            startdelay
+          }
+        }
+      }
+
+      expect(spec.isBidRequestValid(videoBidRequest)).to.equal(true)
+    })
   })
 
   describe('buildRequests', function () {
