@@ -39,6 +39,7 @@
     "sharethroughBidAdapter",
     "insticatorBidAdapter",
     "sonobiBidAdapter",
+    "pgamsspBidAdapter",
     "adpod",
     "consentManagement",
     "gdprEnforcement",
