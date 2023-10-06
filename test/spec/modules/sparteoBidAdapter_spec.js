@@ -3,7 +3,7 @@ import { deepClone, mergeDeep } from 'src/utils';
 import {spec as adapter} from 'modules/sparteoBidAdapter';
 
 const CURRENCY = 'EUR';
-const TTL = 30;
+const TTL = 60;
 const HTTP_METHOD = 'POST';
 const REQUEST_URL = 'https://bid.sparteo.com/auction';
 

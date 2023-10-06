@@ -5,6 +5,7 @@ import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 
 const BIDDER_CODE = 'sparteo';
 const GVLID = 1028;
+const TTL = 60;
 const HTTP_METHOD = 'POST';
 const REQUEST_URL = 'https://bid.sparteo.com/auction';
 
@@ -12,7 +13,7 @@ const converter = ortbConverter({
   context: {
     // `netRevenue` and `ttl` are required properties of bid responses - provide a default for them
     netRevenue: true, // or false if your adapter should set bidResponse.netRevenue = false
-    ttl: 30 // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)
+    ttl: TTL // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)
   },
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
