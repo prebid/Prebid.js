@@ -91,12 +91,12 @@ export const spec = {
     return true;
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
-    const payload = converter.toORTB({validBidRequests, bidderRequest})
+  buildRequests: function(bidRequests, bidderRequest) {
+    const payload = converter.toORTB({bidRequests, bidderRequest})
 
     return {
       method: HTTP_METHOD,
-      url: validBidRequests[0].params.endpoint ? validBidRequests[0].params.endpoint : REQUEST_URL,
+      url: bidRequests[0].params.endpoint ? bidRequests[0].params.endpoint : REQUEST_URL,
       data: payload
     };
   },
