@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec, internal as jixieaux, storage } from 'modules/jixieBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
+import { deepClone } from 'src/utils.js';
 
 describe('jixie Adapter', function () {
   const pageurl_ = 'https://testdomain.com/testpage.html';
@@ -72,6 +73,16 @@ describe('jixie Adapter', function () {
     const clientIdTest1_ = '1aba6a40-f711-11e9-868c-53a2ae972xxx';
     const sessionIdTest1_ = '1594782644-1aba6a40-f711-11e9-868c-53a2ae972xxx';
     const jxtokoTest1_ = 'eyJJRCI6ImFiYyJ9';
+    const jxifoTest1_ = 'fffffbbbbbcccccaaaaae890606aaaaa';
+    const jxtdidTest1_ = '222223d1-1111-2222-3333-b9f129299999';
+    const jxcompTest1_ = 'AAAAABBBBBCCCCCDDDDDEEEEEUkkZPQfifpkPnnlJhtsa4o+gf4nfqgN5qHiTVX73ymTSbLT9jz1nf+Q7QdxNh9nTad9UaN5pzfHMt/rs1woQw72c1ip+8heZXPfKGZtZP7ldJesYhlo3/0FVcL/wl9ZlAo1jYOEfHo7Y9zFzNXABbbbbb==';
+
+    const refJxEids_ = {
+      '_jxtoko': jxtokoTest1_,
+      '_jxifo': jxifoTest1_,
+      '_jxtdid': jxtdidTest1_,
+      '_jxcomp': jxcompTest1_
+    };
 
     // to serve as the object that prebid will call jixie buildRequest with: (param2)
     const bidderRequest_ = {
@@ -90,7 +101,12 @@ describe('jixie Adapter', function () {
         'adUnitCode': adUnitCode0_,
         'bidId': bidId0_,
         'bidderRequestId': bidderRequestId_,
-        'auctionId': auctionId_
+        'auctionId': auctionId_,
+        'ortb2Imp': {
+          'ext': {
+            'gpid': 'SUPERNEWS#DESKTOP#div-gpt-ad-Top_1-1'
+          }
+        }
       },
       {
         'bidder': 'jixie',
@@ -109,7 +125,12 @@ describe('jixie Adapter', function () {
         'adUnitCode': adUnitCode1_,
         'bidId': bidId1_,
         'bidderRequestId': bidderRequestId_,
-        'auctionId': auctionId_
+        'auctionId': auctionId_,
+        'ortb2Imp': {
+          'ext': {
+            'gpid': 'SUPERNEWS#DESKTOP#div-gpt-ad-Top_1-2'
+          }
+        }
       },
       {
         'bidder': 'jixie',
@@ -128,7 +149,12 @@ describe('jixie Adapter', function () {
         'adUnitCode': adUnitCode2_,
         'bidId': bidId2_,
         'bidderRequestId': bidderRequestId_,
-        'auctionId': auctionId_
+        'auctionId': auctionId_,
+        'ortb2Imp': {
+          'ext': {
+            'gpid': 'SUPERNEWS#DESKTOP#div-gpt-ad-Top_1-3'
+          }
+        }
       }
     ];
 
@@ -141,7 +167,8 @@ describe('jixie Adapter', function () {
         'sizes': [[300, 250], [300, 600]],
         'params': {
           'unit': 'prebidsampleunit'
-        }
+        },
+        'gpid': 'SUPERNEWS#DESKTOP#div-gpt-ad-Top_1-1'
       },
       {
         'bidId': bidId1_,
@@ -157,7 +184,8 @@ describe('jixie Adapter', function () {
         'sizes': [[300, 250]],
         'params': {
           'unit': 'prebidsampleunit'
-        }
+        },
+        'gpid': 'SUPERNEWS#DESKTOP#div-gpt-ad-Top_1-2'
       },
       {
         'bidId': bidId2_,
@@ -173,7 +201,8 @@ describe('jixie Adapter', function () {
         'sizes': [[300, 250], [300, 600]],
         'params': {
           'unit': 'prebidsampleunit'
-        }
+        },
+        'gpid': 'SUPERNEWS#DESKTOP#div-gpt-ad-Top_1-3'
       }
     ];
 
@@ -203,6 +232,15 @@ describe('jixie Adapter', function () {
         .withArgs('_jxtoko')
         .returns(jxtokoTest1_);
       getCookieStub
+        .withArgs('_jxifo')
+        .returns(jxifoTest1_);
+      getCookieStub
+        .withArgs('_jxtdid')
+        .returns(jxtdidTest1_);
+      getCookieStub
+        .withArgs('_jxcomp')
+        .returns(jxcompTest1_);
+      getCookieStub
         .withArgs('_jxx')
         .returns(clientIdTest1_);
       getCookieStub
@@ -224,6 +262,7 @@ describe('jixie Adapter', function () {
       it('sends bid request to ENDPOINT via POST', function () {
         expect(request.method).to.equal('POST')
       })
+
       expect(request.data).to.be.an('string');
       const payload = JSON.parse(request.data);
       expect(payload).to.have.property('auctionid', auctionId_);
@@ -231,7 +270,7 @@ describe('jixie Adapter', function () {
       expect(payload).to.have.property('client_id_ls', clientIdTest1_);
       expect(payload).to.have.property('session_id_c', sessionIdTest1_);
       expect(payload).to.have.property('session_id_ls', sessionIdTest1_);
-      expect(payload).to.have.property('jxtoko_id', jxtokoTest1_);
+      expect(payload).to.have.property('jxeids').that.deep.equals(refJxEids_);
       expect(payload).to.have.property('device', device_);
       expect(payload).to.have.property('domain', domain_);
       expect(payload).to.have.property('pageurl', pageurl_);
@@ -305,6 +344,22 @@ describe('jixie Adapter', function () {
       const payload = JSON.parse(request.data);
       expect(payload.schain).to.deep.equal(schain);
       expect(payload.schain).to.deep.include(schain);
+    });
+
+    it('it should populate the floor info when available', function () {
+      let oneSpecialBidReq = deepClone(bidRequests_[0]);
+      let request, payload = null;
+      // 1 floor is not set
+      request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
+      payload = JSON.parse(request.data);
+      expect(payload.bids[0].bidFloor).to.not.exist;
+
+      // 2 floor is set
+      let getFloorResponse = { currency: 'USD', floor: 2.1 };
+      oneSpecialBidReq.getFloor = () => getFloorResponse;
+      request = spec.buildRequests([oneSpecialBidReq], bidderRequest_);
+      payload = JSON.parse(request.data);
+      expect(payload.bids[0].bidFloor).to.exist.and.to.equal(2.1);
     });
 
     it('should populate eids when supported userIds are available', function () {

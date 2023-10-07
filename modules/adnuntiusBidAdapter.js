@@ -14,6 +14,7 @@ const ENDPOINT_URL_EUROPE = 'https://europe.delivery.adnuntius.com/i';
 const GVLID = 855;
 const DEFAULT_VAST_VERSION = 'vast4'
 const MAXIMUM_DEALS_LIMIT = 5;
+const VALID_BID_TYPES = ['netBid', 'grossBid'];
 
 const checkSegment = function (segment) {
   if (isStr(segment)) return segment;
@@ -46,6 +47,10 @@ const getUsi = function (meta, ortb2, bidderRequest) {
   let usi = (meta !== null && meta.usi) ? meta.usi : false;
   if (ortb2 && ortb2.user && ortb2.user.id) { usi = ortb2.user.id }
   return usi
+}
+
+const validateBidType = function(bidTypeOption) {
+  return VALID_BID_TYPES.indexOf(bidTypeOption || '') > -1 ? bidTypeOption : 'bid';
 }
 
 const AU_ID_REGEX = new RegExp('^[0-9A-Fa-f]{1,20}$');
@@ -126,6 +131,15 @@ export const spec = {
   interpretResponse: function (serverResponse, bidRequest) {
     const adUnits = serverResponse.body.adUnits;
 
+    let validatedBidType = validateBidType(config.getConfig().bidType);
+    if (bidRequest.bid) {
+      bidRequest.bid.forEach(b => {
+        if (b.params && b.params.bidType) {
+          validatedBidType = validateBidType(b.params.bidType);
+        }
+      });
+    }
+
     function buildAdResponse(bidderCode, ad, adUnit, dealCount) {
       const destinationUrls = ad.destinationUrls || {};
       const advertiserDomains = [];
@@ -135,7 +149,7 @@ export const spec = {
       const adResponse = {
         bidderCode: bidderCode,
         requestId: adUnit.targetId,
-        cpm: (ad.bid) ? ad.bid.amount * 1000 : 0,
+        cpm: ad[validatedBidType] ? ad[validatedBidType].amount * 1000 : 0,
         width: Number(ad.creativeWidth),
         height: Number(ad.creativeHeight),
         creativeId: ad.creativeId,

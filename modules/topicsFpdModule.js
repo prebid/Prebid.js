@@ -12,6 +12,7 @@ import {MODULE_TYPE_BIDDER} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'topicsFpd';
 const DEFAULT_EXPIRATION_DAYS = 21;
+const DEFAULT_FETCH_RATE_IN_DAYS = 1;
 let LOAD_TOPICS_INITIALISE = false;
 
 export function reset() {
@@ -85,6 +86,7 @@ export function getTopicsData(name, topics, taxonomies = TAXONOMIES) {
           if (name != null) {
             datum.name = name;
           }
+
           return datum;
         })
     );
@@ -96,6 +98,7 @@ function isTopicsSupported(doc = document) {
 
 export function getTopics(doc = document) {
   let topics = null;
+
   try {
     if (isTopicsSupported(doc)) {
       topics = GreedyPromise.resolve(doc.browsingTopics());
@@ -106,6 +109,7 @@ export function getTopics(doc = document) {
   if (topics == null) {
     topics = GreedyPromise.resolve([]);
   }
+
   return topics;
 }
 
@@ -165,7 +169,7 @@ export function receiveMessage(evt) {
       let data = safeJSONParse(evt.data);
       if (includes(getLoadedIframeURL(), evt.origin) && data && data.segment && !isEmpty(data.segment.topics)) {
         const {domain, topics, bidder} = data.segment;
-        const iframeTopicsData = getTopicsData(domain, topics)[0];
+        const iframeTopicsData = getTopicsData(domain, topics);
         iframeTopicsData && storeInLocalStorage(bidder, iframeTopicsData);
       }
     } catch (err) { }
@@ -178,13 +182,15 @@ Function to store Topics data recieved from iframe in storage(name: "prebid:topi
 */
 export function storeInLocalStorage(bidder, topics) {
   const storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
-  if (storedSegments.has(bidder)) {
-    storedSegments.get(bidder)[topics['ext']['segclass']] = topics;
-    storedSegments.get(bidder)[lastUpdated] = new Date().getTime();
-    storedSegments.set(bidder, storedSegments.get(bidder));
-  } else {
-    storedSegments.set(bidder, {[topics.ext.segclass]: topics, [lastUpdated]: new Date().getTime()})
-  }
+  const topicsObj = {
+    [lastUpdated]: new Date().getTime()
+  };
+
+  topics.forEach((topic) => {
+    topicsObj[topic.ext.segclass] = topic;
+  });
+
+  storedSegments.set(bidder, topicsObj);
   coreStorage.setDataInLocalStorage(topicStorageName, JSON.stringify([...storedSegments]));
 }
 
@@ -215,10 +221,11 @@ function listenMessagesFromTopicIframe() {
 export function loadTopicsForBidders(doc = document) {
   if (!isTopicsSupported(doc)) return;
   const topics = config.getConfig('userSync.topics') || bidderIframeList;
+
   if (topics) {
     listenMessagesFromTopicIframe();
     const randomBidders = getRandomBidders(topics.bidders || [], topics.maxTopicCaller || 1)
-    randomBidders && randomBidders.forEach(({ bidder, iframeURL }) => {
+    randomBidders && randomBidders.forEach(({ bidder, iframeURL, fetchUrl, fetchRate }) => {
       if (bidder && iframeURL) {
         let ifrm = doc.createElement('iframe');
         ifrm.name = 'ifrm_'.concat(bidder);
@@ -226,6 +233,25 @@ export function loadTopicsForBidders(doc = document) {
         ifrm.style.display = 'none';
         setLoadedIframeURL(new URL(iframeURL).origin);
         iframeURL && doc.documentElement.appendChild(ifrm);
+      }
+
+      if (bidder && fetchUrl) {
+        let storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
+        const bidderLsEntry = storedSegments.get(bidder);
+
+        if (!bidderLsEntry || (bidderLsEntry && isCachedDataExpired(bidderLsEntry[lastUpdated], fetchRate || DEFAULT_FETCH_RATE_IN_DAYS))) {
+          window.fetch(`${fetchUrl}?bidder=${bidder}`, {browsingTopics: true})
+            .then(response => {
+              return response.json();
+            })
+            .then(data => {
+              if (data && data.segment && !isEmpty(data.segment.topics)) {
+                const {domain, topics, bidder} = data.segment;
+                const fetchTopicsData = getTopicsData(domain, topics);
+                fetchTopicsData && storeInLocalStorage(bidder, fetchTopicsData);
+              }
+            });
+        }
       }
     })
   } else {

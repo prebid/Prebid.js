@@ -11,7 +11,9 @@ import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/val
 import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import {UID2_EIDS} from '../libraries/uid2Eids/uid2Eids.js';
 
+const DEFAULT_AJAX_TIMEOUT = 5000
 const EVENTS_TOPIC = 'pre_lips'
 const MODULE_NAME = 'liveIntentId';
 const LI_PROVIDER_DOMAIN = 'liveintent.com';
@@ -65,6 +67,7 @@ function parseLiveIntentCollectorConfig(collectConfig) {
   collectConfig.fpiStorageStrategy && (config.storageStrategy = collectConfig.fpiStorageStrategy);
   collectConfig.fpiExpirationDays && (config.expirationDays = collectConfig.fpiExpirationDays);
   collectConfig.collectorUrl && (config.collectorUrl = collectConfig.collectorUrl);
+  config.ajaxTimeout = collectConfig.ajaxTimeout || DEFAULT_AJAX_TIMEOUT;
   return config;
 }
 
@@ -99,9 +102,8 @@ function initializeLiveConnect(configParams) {
   if (configParams.url) {
     identityResolutionConfig.url = configParams.url
   }
-  if (configParams.ajaxTimeout) {
-    identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout;
-  }
+
+  identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout || DEFAULT_AJAX_TIMEOUT;
 
   const liveConnectConfig = parseLiveIntentCollectorConfig(configParams.liCollectConfig);
 
@@ -205,6 +207,18 @@ export const liveIntentIdSubmodule = {
         result.magnite = { 'id': value.magnite, ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
+      if (value.index) {
+        result.index = { 'id': value.index, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.openx) {
+        result.openx = { 'id': value.openx, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.pubmatic) {
+        result.pubmatic = { 'id': value.pubmatic, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
       return result
     }
 
@@ -244,6 +258,7 @@ export const liveIntentIdSubmodule = {
     return { callback: result };
   },
   eids: {
+    ...UID2_EIDS,
     'lipb': {
       getValue: function(data) {
         return data.lipbid;
@@ -294,7 +309,42 @@ export const liveIntentIdSubmodule = {
         }
       }
     },
-
+    'index': {
+      source: 'liveintent.indexexchange.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'openx': {
+      source: 'openx.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'pubmatic': {
+      source: 'pubmatic.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    }
   }
 };
 

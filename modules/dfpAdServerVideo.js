@@ -249,7 +249,9 @@ export function buildAdpodVideoUrl({code, params, callback} = {}) {
  */
 function buildUrlFromAdserverUrlComponents(components, bid, options) {
   const descriptionUrl = getDescriptionUrl(bid, components, 'search');
-  if (descriptionUrl) { components.search.description_url = descriptionUrl; }
+  if (descriptionUrl) {
+    components.search.description_url = descriptionUrl;
+  }
 
   components.search.cust_params = getCustParams(bid, options, components.search.cust_params);
   return buildUrl(components);
@@ -264,7 +266,7 @@ function buildUrlFromAdserverUrlComponents(components, bid, options) {
  * @return {string | undefined} The encoded vast url if it exists, or undefined
  */
 function getDescriptionUrl(bid, components, prop) {
-  return deepAccess(components, `${prop}.description_url`) || dep.ri().page;
+  return deepAccess(components, `${prop}.description_url`) || encodeURIComponent(dep.ri().page);
 }
 
 /**
