@@ -54,7 +54,7 @@ const converter = ortbConverter({
   },
   bidResponse(buildBidResponse, bid, context) {
     let resMediaType;
-    if (bid.adm.search(/^(  <VAST)/i) !== -1) {
+    if (bid.adm.startsWith("<VAST") || bid.adm.startsWith("  <VAST")) {
       resMediaType = VIDEO;
     } else {
       resMediaType = BANNER;
