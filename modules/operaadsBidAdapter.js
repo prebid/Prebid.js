@@ -70,7 +70,7 @@ const NATIVE_DEFAULTS = {
 
 export const spec = {
   code: BIDDER_CODE,
-
+  gvlid: 1135,
   // short code
   aliases: ['opera'],
 
