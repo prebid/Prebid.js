@@ -7,7 +7,7 @@
  */
 
 import { logInfo, logWarn } from '../src/utils.js';
-import { module, submodule } from '../src/hook.js';
+import { submodule } from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
@@ -50,7 +50,6 @@ const _logWarn = createLogger(logWarn, LOG_PRE_FIX);
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
-let tokenGenerator;
 /** @type {Submodule} */
 export const uid2IdSubmodule = {
   /**
@@ -84,23 +83,23 @@ export const uid2IdSubmodule = {
       return;
     }
 
-    let mappedCstgConfig = {
-      serverPublicKey: config?.params?.serverPublicKey,
-      subscriptionId: config?.params?.subscriptionId,
-      ...extractIdentityFromParams(config?.params ?? {})
-    }
-
-    const mappedConfig = {
+    let mappedConfig = {
       apiBaseUrl: config?.params?.uid2ApiBase ?? UID2_BASE_URL,
       paramToken: config?.params?.uid2Token,
       serverCookieName: config?.params?.uid2Cookie ?? config?.params?.uid2ServerCookie,
       storage: config?.params?.storage ?? 'localStorage',
-      cstg: mappedCstgConfig,
       clientId: UID2_CLIENT_ID,
       internalStorage: ADVERTISING_COOKIE
     }
+    if (FEATURES.UID2_CSTG) {
+      mappedConfig.cstg = {
+        serverPublicKey: config?.params?.serverPublicKey,
+        subscriptionId: config?.params?.subscriptionId,
+        ...extractIdentityFromParams(config?.params ?? {})
+      }
+    }
     _logInfo(`UID2 configuration loaded and mapped.`, mappedConfig);
-    const result = Uid2GetId(mappedConfig, storage, tokenGenerator, _logInfo, _logWarn);
+    const result = Uid2GetId(mappedConfig, storage, _logInfo, _logWarn);
     _logInfo(`UID2 getId returned`, result);
     return result;
   },
@@ -121,10 +120,6 @@ export const uid2IdSubmodule = {
 
 };
 
-export function attachTokenGenerator(tokenGeneratorModule) {
-  tokenGenerator = tokenGeneratorModule
-}
-
 function decodeImpl(value) {
   if (typeof value === 'string') {
     _logInfo('Found server-only token. Refresh is unavailable for this token.');
@@ -139,4 +134,3 @@ function decodeImpl(value) {
 
 // Register submodule for userId
 submodule('userId', uid2IdSubmodule);
-module('uid2IdSystem', attachTokenGenerator);
