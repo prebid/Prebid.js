@@ -117,7 +117,6 @@ export const uid2IdSubmodule = {
       }
     },
   },
-
 };
 
 function decodeImpl(value) {
