@@ -1,7 +1,8 @@
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getAdUnitSizes, parseSizesInput, isFn, deepAccess, getBidIdParameter, logError, isArray } from '../src/utils.js';
+import {parseSizesInput, isFn, deepAccess, logError, isArray, getBidIdParameter} from '../src/utils.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 const CUR = 'USD';
 const BIDDER_CODE = 'xe';
@@ -44,8 +45,9 @@ function buildRequests(validBidRequests, bidderRequest) {
     const request = {};
     request.bidId = req.bidId;
     request.banner = deepAccess(req, 'mediaTypes.banner');
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     request.auctionId = req.auctionId;
-    request.transactionId = req.transactionId;
+    request.transactionId = req.ortb2Imp?.ext?.tid;
     request.sizes = parseSizesInput(getAdUnitSizes(req));
     request.schain = req.schain;
     request.location = {

@@ -1,8 +1,7 @@
 import {
   deepAccess,
   deepClone,
-  deepSetValue,
-  getBidIdParameter,
+  deepSetValue, getBidIdParameter,
   inIframe,
   isArray,
   isEmpty,
@@ -59,7 +58,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const payload = createOrtbTemplate();
 
-    deepSetValue(payload, 'id', bidderRequest.auctionId);
+    deepSetValue(payload, 'id', bidderRequest.bidderRequestId);
 
     validBidRequests.forEach((validBid) => {
       let bid = deepClone(validBid);
@@ -116,7 +115,6 @@ export const spec = {
           bidderSeat.bid.forEach((bid) => {
             const newBid = {
               requestId: bid.impid,
-              bidderCode: spec.code,
               cpm: bid.price || 0,
               width: bid.w,
               height: bid.h,

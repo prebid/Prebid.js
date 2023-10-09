@@ -1,7 +1,21 @@
 import { deepAccess, isEmpty } from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER } from '../src/mediaTypes.js'
-// import { config } from 'src/config'
+import { getGlobal } from '../src/prebidGlobal.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+
+const converter = ortbConverter({
+  context: {
+    // `netRevenue` and `ttl` are required properties of bid responses - provide a default for them
+    netRevenue: true, // or false if your adapter should set bidResponse.netRevenue = false
+    ttl: 30 // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)
+  },
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+    imp.tagid = bidRequest.adUnitCode
+    return imp;
+  }
+});
 
 const BIDDER_CODE = 'nativo'
 const BIDDER_ENDPOINT = 'https://exchange.postrelease.com/prebid'
@@ -13,6 +27,8 @@ const TIME_TO_LIVE = 360
 const SUPPORTED_AD_TYPES = [BANNER]
 const FLOOR_PRICE_CURRENCY = 'USD'
 const PRICE_FLOOR_WILDCARD = '*'
+
+const localPbjsRef = getGlobal()
 
 /**
  * Keep track of bid data by keys
@@ -133,6 +149,10 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    // Get OpenRTB Data
+    const openRTBData = converter.toORTB({bidRequests: validBidRequests, bidderRequest})
+    const openRTBDataString = JSON.stringify(openRTBData)
+
     const requestData = new RequestData()
     requestData.addBidRequestDataSource(new UserEIDs())
 
@@ -179,6 +199,10 @@ export const spec = {
 
     // Build basic required QS Params
     let params = [
+      // Prebid version
+      {
+        key: 'ntv_pbv', value: localPbjsRef.version
+      },
       // Prebid request id
       { key: 'ntv_pb_rid', value: bidderRequest.bidderRequestId },
       // Ad unit data
@@ -264,8 +288,9 @@ export const spec = {
     const requestUrl = buildRequestUrl(BIDDER_ENDPOINT, qsParamStrings)
 
     let serverRequest = {
-      method: 'GET',
-      url: requestUrl
+      method: 'POST',
+      url: requestUrl,
+      data: openRTBDataString,
     }
 
     return serverRequest
@@ -413,13 +438,6 @@ export const spec = {
   },
 
   /**
-   * Will be called when an adpater timed out for an auction.
-   * Adapter can fire a ajax or pixel call to register a timeout at thier end.
-   * @param {Object} timeoutData - Timeout specific data
-   */
-  onTimeout: function (timeoutData) { },
-
-  /**
    * Will be called when a bid from the adapter won the auction.
    * @param {Object} bid - The bid that won the auction
    */
@@ -432,12 +450,6 @@ export const spec = {
     appendFilterData(advertisersToFilter, ext.advertisersToFilter)
     appendFilterData(campaignsToFilter, ext.campaignsToFilter)
   },
-
-  /**
-   * Will be called when the adserver targeting has been set for a bid from the adapter.
-   * @param {Object} bidder - The bid of which the targeting has been set
-   */
-  onSetTargeting: function (bid) { },
 
   /**
    * Maps Prebid's bidId to Nativo's placementId values per unique bidderRequestId

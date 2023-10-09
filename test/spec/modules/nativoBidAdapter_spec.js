@@ -112,7 +112,7 @@ describe('nativoBidAdapterTests', function () {
       bidRequests = [JSON.parse(bidRequestString)]
     })
 
-    it('url should contain query string parameters', function () {
+    it('Request should be POST, with JSON string payload and QS params should be added to the url', function () {
       const request = spec.buildRequests(bidRequests, {
         bidderRequestId: 123456,
         refererInfo: {
@@ -120,10 +120,16 @@ describe('nativoBidAdapterTests', function () {
         },
       })
 
+      expect(request.method).to.equal('POST')
+
+      expect(request.data).to.exist
+      expect(request.data).to.be.a('string')
+
       expect(request.url).to.exist
       expect(request.url).to.be.a('string')
 
       expect(request.url).to.include('?')
+      expect(request.url).to.include('ntv_pbv')
       expect(request.url).to.include('ntv_ptd')
       expect(request.url).to.include('ntv_pb_rid')
       expect(request.url).to.include('ntv_ppc')
@@ -786,13 +792,13 @@ describe('UserEIDs', () => {
     it('Processes bid request without eids', () => {
       userEids.processBidRequestData({})
 
-      expect(userEids.values).to.be.empty
+      expect(userEids.eids).to.be.empty
     })
 
     it('Processed bid request with eids', () => {
       userEids.processBidRequestData({ userIdAsEids: eids })
 
-      expect(userEids.values).to.not.be.empty
+      expect(userEids.eids).to.not.be.empty
     })
   })
 
@@ -809,7 +815,7 @@ describe('UserEIDs', () => {
   })
 })
 
-describe.only('buildRequestUrl', () => {
+describe('buildRequestUrl', () => {
   const baseUrl = 'https://www.testExchange.com'
   it('Returns baseUrl if no QS strings passed', () => {
     const url = buildRequestUrl(baseUrl)

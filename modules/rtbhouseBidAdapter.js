@@ -1,15 +1,18 @@
-import {deepAccess, mergeDeep, isArray, logError, logInfo} from '../src/utils.js';
-import { getOrigin } from '../libraries/getOrigin/index.js';
+import {deepAccess, isArray, logError, logInfo, mergeDeep} from '../src/utils.js';
+import {getOrigin} from '../libraries/getOrigin/index.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {includes} from '../src/polyfill.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { config } from '../src/config.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'rtbhouse';
 const REGIONS = ['prebid-eu', 'prebid-us', 'prebid-asia'];
 const ENDPOINT_URL = 'creativecdn.com/bidder/prebid/bids';
 const FLEDGE_ENDPOINT_URL = 'creativecdn.com/bidder/prebidfledge/bids';
+const FLEDGE_SELLER_URL = 'https://fledge-ssp.creativecdn.com';
+const FLEDGE_DECISION_LOGIC_URL = 'https://fledge-ssp.creativecdn.com/component-seller-prebid.js';
+
 const DEFAULT_CURRENCY_ARR = ['USD']; // NOTE - USD is the only supported currency right now; Hardcoded for bids
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
 const TTL = 55;
@@ -51,12 +54,12 @@ export const spec = {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
     const request = {
-      id: validBidRequests[0].auctionId,
+      id: bidderRequest.bidderRequestId,
       imp: validBidRequests.map(slot => mapImpression(slot, bidderRequest)),
       site: mapSite(validBidRequests, bidderRequest),
       cur: DEFAULT_CURRENCY_ARR,
       test: validBidRequests[0].params.test || 0,
-      source: mapSource(validBidRequests[0]),
+      source: mapSource(validBidRequests[0], bidderRequest),
     };
 
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
@@ -85,20 +88,21 @@ export const spec = {
     }
 
     const ortb2Params = bidderRequest?.ortb2 || {};
-    if (ortb2Params.site) {
-      mergeDeep(request, { site: ortb2Params.site });
-    }
-    if (ortb2Params.user) {
-      mergeDeep(request, { user: ortb2Params.user });
-    }
-    if (ortb2Params.device) {
-      mergeDeep(request, { device: ortb2Params.device });
-    }
+    ['site', 'user', 'device', 'bcat', 'badv'].forEach(entry => {
+      const ortb2Param = ortb2Params[entry];
+      if (ortb2Param) {
+        mergeDeep(request, { [entry]: ortb2Param });
+      }
+    });
 
     let computedEndpointUrl = ENDPOINT_URL;
 
-    const fledgeConfig = config.getConfig('fledgeConfig');
-    if (bidderRequest.fledgeEnabled && fledgeConfig) {
+    if (bidderRequest.fledgeEnabled) {
+      const fledgeConfig = config.getConfig('fledgeConfig') || {
+        seller: FLEDGE_SELLER_URL,
+        decisionLogicUrl: FLEDGE_DECISION_LOGIC_URL,
+        sellerTimeout: 500
+      };
       mergeDeep(request, { ext: { fledge_config: fledgeConfig } });
       computedEndpointUrl = FLEDGE_ENDPOINT_URL;
     }
@@ -171,10 +175,12 @@ export const spec = {
 
     if (fledgeAuctionConfigs) {
       fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
-        return Object.assign({
+        return {
           bidId,
-          auctionSignals: {}
-        }, cfg);
+          config: Object.assign({
+            auctionSignals: {}
+          }, cfg)
+        }
       });
       logInfo('Response with FLEDGE:', { bids, fledgeAuctionConfigs });
       return {
@@ -228,6 +234,13 @@ function mapImpression(slot, bidderRequest) {
       delete imp.ext.ae;
     }
   }
+
+  const tid = deepAccess(slot, 'ortb2Imp.ext.tid');
+  if (tid) {
+    imp.ext = imp.ext || {};
+    imp.ext.tid = tid;
+  }
+
   return imp;
 }
 
@@ -283,9 +296,9 @@ function mapSite(slot, bidderRequest) {
  * @param {object} slot Ad Unit Params by Prebid
  * @returns {object} Source by OpenRTB 2.5 §3.2.2
  */
-function mapSource(slot) {
+function mapSource(slot, bidderRequest) {
   const source = {
-    tid: slot.transactionId,
+    tid: bidderRequest?.auctionId || '',
   };
 
   return source;
@@ -470,7 +483,7 @@ function interpretNativeBid(serverBid) {
 function interpretNativeAd(adm) {
   const native = JSON.parse(adm).native;
   const result = {
-    clickUrl: encodeURIComponent(native.link.url),
+    clickUrl: encodeURI(native.link.url),
     impressionTrackers: native.imptrackers
   };
   native.assets.forEach(asset => {
@@ -480,14 +493,14 @@ function interpretNativeAd(adm) {
         break;
       case OPENRTB.NATIVE.ASSET_ID.IMAGE:
         result.image = {
-          url: encodeURIComponent(asset.img.url),
+          url: encodeURI(asset.img.url),
           width: asset.img.w,
           height: asset.img.h
         };
         break;
       case OPENRTB.NATIVE.ASSET_ID.ICON:
         result.icon = {
-          url: encodeURIComponent(asset.img.url),
+          url: encodeURI(asset.img.url),
           width: asset.img.w,
           height: asset.img.h
         };

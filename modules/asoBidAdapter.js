@@ -7,14 +7,14 @@ import {
   isArray,
   isFn,
   logWarn,
-  parseSizesInput,
-  tryAppendQueryString
+  parseSizesInput
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { parseDomain } from '../src/refererDetection.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 const BIDDER_CODE = 'aso';
 const DEFAULT_SERVER_URL = 'https://srv.aso1.net';
@@ -28,7 +28,8 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
   aliases: [
-    {code: 'bcmint'}
+    {code: 'bcmint'},
+    {code: 'bidgency'}
   ],
 
   isBidRequestValid: bid => {
@@ -299,7 +300,7 @@ function createBasePayload(bidRequest, bidderRequest) {
   const urlsInfo = getUrlsInfo(bidderRequest);
 
   const payload = {
-    id: bidRequest.auctionId + '_' + bidRequest.bidId,
+    id: bidRequest.bidId,
     at: 1,
     tmax: bidderRequest.timeout,
     site: {

@@ -1,24 +1,32 @@
-import {logError, logWarn, mergeDeep, isEmpty, safeJSONParse, logInfo, hasDeviceAccess} from '../src/utils.js';
+import {isEmpty, logError, logWarn, mergeDeep, safeJSONParse} from '../src/utils.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {submodule} from '../src/hook.js';
 import {GreedyPromise} from '../src/utils/promise.js';
 import {config} from '../src/config.js';
 import {getCoreStorageManager} from '../src/storageManager.js';
 import {includes} from '../src/polyfill.js';
-import {gdprDataHandler} from '../src/adapterManager.js';
+import {isActivityAllowed} from '../src/activities/rules.js';
+import {ACTIVITY_ENRICH_UFPD} from '../src/activities/activities.js';
+import {activityParams} from '../src/activities/activityParams.js';
+import {MODULE_TYPE_BIDDER} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'topicsFpd';
 const DEFAULT_EXPIRATION_DAYS = 21;
-const TCF_REQUIRED_PURPOSES = ['1', '2', '3', '4'];
-let HAS_GDPR_CONSENT = true;
+const DEFAULT_FETCH_RATE_IN_DAYS = 1;
 let LOAD_TOPICS_INITIALISE = false;
-const HAS_DEVICE_ACCESS = hasDeviceAccess();
+
+export function reset() {
+  LOAD_TOPICS_INITIALISE = false;
+}
 
 const bidderIframeList = {
-  maxTopicCaller: 1,
+  maxTopicCaller: 2,
   bidders: [{
     bidder: 'pubmatic',
     iframeURL: 'https://ads.pubmatic.com/AdServer/js/topics/topics_frame.html'
+  }, {
+    bidder: 'rtbhouse',
+    iframeURL: 'https://topics.authorizedvault.com/topicsapi.html'
   }]
 }
 export const coreStorage = getCoreStorageManager(MODULE_NAME);
@@ -28,7 +36,10 @@ export const lastUpdated = 'lastUpdated';
 const iframeLoadedURL = [];
 const TAXONOMIES = {
   // map from topic taxonomyVersion to IAB segment taxonomy
-  '1': 600
+  '1': 600,
+  '2': 601,
+  '3': 602,
+  '4': 603
 }
 
 function partitionBy(field, items) {
@@ -75,15 +86,21 @@ export function getTopicsData(name, topics, taxonomies = TAXONOMIES) {
           if (name != null) {
             datum.name = name;
           }
+
           return datum;
         })
     );
 }
 
+function isTopicsSupported(doc = document) {
+  return 'browsingTopics' in doc && doc.featurePolicy.allowsFeature('browsing-topics')
+}
+
 export function getTopics(doc = document) {
   let topics = null;
+
   try {
-    if ('browsingTopics' in doc && doc.featurePolicy.allowsFeature('browsing-topics')) {
+    if (isTopicsSupported(doc)) {
       topics = GreedyPromise.resolve(doc.browsingTopics());
     }
   } catch (e) {
@@ -92,6 +109,7 @@ export function getTopics(doc = document) {
   if (topics == null) {
     topics = GreedyPromise.resolve([]);
   }
+
   return topics;
 }
 
@@ -120,19 +138,16 @@ export function processFpd(config, {global}, {data = topicsData} = {}) {
  */
 export function getCachedTopics() {
   let cachedTopicData = [];
-  if (!HAS_GDPR_CONSENT || !HAS_DEVICE_ACCESS) {
-    return cachedTopicData;
-  }
   const topics = config.getConfig('userSync.topics') || bidderIframeList;
   const bidderList = topics.bidders || [];
   let storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
   storedSegments && storedSegments.forEach((value, cachedBidder) => {
     // Check bidder exist in config for cached bidder data and then only retrieve the cached data
-    let bidderConfigObj = bidderList.find(({bidder}) => cachedBidder == bidder)
-    if (bidderConfigObj) {
+    let bidderConfigObj = bidderList.find(({bidder}) => cachedBidder === bidder)
+    if (bidderConfigObj && isActivityAllowed(ACTIVITY_ENRICH_UFPD, activityParams(MODULE_TYPE_BIDDER, cachedBidder))) {
       if (!isCachedDataExpired(value[lastUpdated], bidderConfigObj?.expiry || DEFAULT_EXPIRATION_DAYS)) {
         Object.keys(value).forEach((segData) => {
-          segData != lastUpdated && cachedTopicData.push(value[segData]);
+          segData !== lastUpdated && cachedTopicData.push(value[segData]);
         })
       } else {
         // delete the specific bidder map from the store and store the updated maps
@@ -154,7 +169,7 @@ export function receiveMessage(evt) {
       let data = safeJSONParse(evt.data);
       if (includes(getLoadedIframeURL(), evt.origin) && data && data.segment && !isEmpty(data.segment.topics)) {
         const {domain, topics, bidder} = data.segment;
-        const iframeTopicsData = getTopicsData(domain, topics)[0];
+        const iframeTopicsData = getTopicsData(domain, topics);
         iframeTopicsData && storeInLocalStorage(bidder, iframeTopicsData);
       }
     } catch (err) { }
@@ -167,13 +182,15 @@ Function to store Topics data recieved from iframe in storage(name: "prebid:topi
 */
 export function storeInLocalStorage(bidder, topics) {
   const storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
-  if (storedSegments.has(bidder)) {
-    storedSegments.get(bidder)[topics['ext']['segclass']] = topics;
-    storedSegments.get(bidder)[lastUpdated] = new Date().getTime();
-    storedSegments.set(bidder, storedSegments.get(bidder));
-  } else {
-    storedSegments.set(bidder, {[topics.ext.segclass]: topics, [lastUpdated]: new Date().getTime()})
-  }
+  const topicsObj = {
+    [lastUpdated]: new Date().getTime()
+  };
+
+  topics.forEach((topic) => {
+    topicsObj[topic.ext.segclass] = topic;
+  });
+
+  storedSegments.set(bidder, topicsObj);
   coreStorage.setDataInLocalStorage(topicStorageName, JSON.stringify([...storedSegments]));
 }
 
@@ -198,55 +215,43 @@ function listenMessagesFromTopicIframe() {
   window.addEventListener('message', receiveMessage, false);
 }
 
-function checkTCFv2(vendorData, requiredPurposes = TCF_REQUIRED_PURPOSES) {
-  const {gdprApplies, purpose} = vendorData;
-  if (!gdprApplies || !purpose) {
-    return true;
-  }
-  return requiredPurposes.map((purposeNo) => {
-    const purposeConsent = purpose.consents ? purpose.consents[purposeNo] : false;
-    if (purposeConsent) {
-      return true;
-    }
-    return false;
-  }).reduce((a, b) => a && b, true);
-}
-
-export function hasGDPRConsent() {
-  // Check for GDPR consent for purpose 1,2,3,4 and return false if consent has not been given
-  const gdprConsent = gdprDataHandler.getConsentData();
-  const hasGdpr = (gdprConsent && typeof gdprConsent.gdprApplies === 'boolean' && gdprConsent.gdprApplies) ? 1 : 0;
-  const gdprConsentString = hasGdpr ? gdprConsent.consentString : '';
-  if (hasGdpr) {
-    if ((!gdprConsentString || gdprConsentString === '') || !gdprConsent.vendorData) {
-      return false;
-    }
-    return checkTCFv2(gdprConsent.vendorData);
-  }
-  return true;
-}
-
 /**
  * function to load the iframes of the bidder to load the topics data
  */
-function loadTopicsForBidders() {
-  HAS_GDPR_CONSENT = hasGDPRConsent();
-  if (!HAS_GDPR_CONSENT || !HAS_DEVICE_ACCESS) {
-    logInfo('Topics Module : Consent string is required to fetch the topics from third party domains.');
-    return;
-  }
+export function loadTopicsForBidders(doc = document) {
+  if (!isTopicsSupported(doc)) return;
   const topics = config.getConfig('userSync.topics') || bidderIframeList;
+
   if (topics) {
     listenMessagesFromTopicIframe();
     const randomBidders = getRandomBidders(topics.bidders || [], topics.maxTopicCaller || 1)
-    randomBidders && randomBidders.forEach(({ bidder, iframeURL }) => {
+    randomBidders && randomBidders.forEach(({ bidder, iframeURL, fetchUrl, fetchRate }) => {
       if (bidder && iframeURL) {
-        let ifrm = document.createElement('iframe');
+        let ifrm = doc.createElement('iframe');
         ifrm.name = 'ifrm_'.concat(bidder);
         ifrm.src = ''.concat(iframeURL, '?bidder=').concat(bidder);
         ifrm.style.display = 'none';
         setLoadedIframeURL(new URL(iframeURL).origin);
-        iframeURL && window.document.documentElement.appendChild(ifrm);
+        iframeURL && doc.documentElement.appendChild(ifrm);
+      }
+
+      if (bidder && fetchUrl) {
+        let storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
+        const bidderLsEntry = storedSegments.get(bidder);
+
+        if (!bidderLsEntry || (bidderLsEntry && isCachedDataExpired(bidderLsEntry[lastUpdated], fetchRate || DEFAULT_FETCH_RATE_IN_DAYS))) {
+          window.fetch(`${fetchUrl}?bidder=${bidder}`, {browsingTopics: true})
+            .then(response => {
+              return response.json();
+            })
+            .then(data => {
+              if (data && data.segment && !isEmpty(data.segment.topics)) {
+                const {domain, topics, bidder} = data.segment;
+                const fetchTopicsData = getTopicsData(domain, topics);
+                fetchTopicsData && storeInLocalStorage(bidder, fetchTopicsData);
+              }
+            });
+        }
       }
     })
   } else {
