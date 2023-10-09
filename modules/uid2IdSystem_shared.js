@@ -752,7 +752,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
     originalToken: suppliedToken ?? storedTokens?.originalToken,
     latestToken: newestAvailableToken,
   };
-  if (FEATURES.UID2_CSTG) {
+  if (FEATURES.UID2_CSTG && isCstgEnabled) {
     tokens.originalIdentity = storedTokens?.originalIdentity;
   }
   storageManager.storeValue(tokens);
