@@ -32,6 +32,7 @@
     pbjs.que = pbjs.que || [];
   </script>
   <script type="text/javascript" src="../../build/dev/prebid.js" async></script>
+
   <script>
     function getHashedEmail() { }
     var googletag = googletag || {};
@@ -252,12 +253,11 @@
               "params": {
                 "uid2ApiBase": "https://operator-integ.uidapi.com", // Omit this setting for production
                 "uid2Token": {
-                  "advertising_token": "AgAAAGUDyiAlEsDngQxDgzXTcmIRvOYJ4r8WKdu6977JIArk24iBKKCc/HaxseaIHnzJQ/9V/ZS+GC7uHz3umt3re6Qny8Uf4UPX+HQW26dSdhqgtMBBgXVLmLIHzbDsVgjeyID2qbQwHyHPh48Y8Fka2UwDQ+76/ht2/rWuMuGkA3BijQ==",
+                  "advertising_token": "advertising token goes here",
                   "identity_expires": Date.now() + 60*1000, // These timestamps should be from the token generate response
                   "refresh_from": Date.now() - 10*1000,
                   "refresh_expires": Date.now() + 12*60*60*1000,
-"refresh_response_key" : "b6JVLdIx/E9GSODhFkqFR3aOOAEadIyz3+Z9T4E9f0g=",
-"refresh_token": "AAAAAGa7gwGms1JNqj/In1UOklMt6I4nTK1BY0vQfRWi0ga0Al9iVSdbqcW44OGL4KPDbA51ZCEzl5om3RzuzUzHLzG/6Q702rS5fHOI8Ox/+4a0EBBnUooKES6L0zZep8S0eNyEVly/2I9QxRc6ovFTbtvMqjWyzotn4p3sVvO6F5XRBEMKvLpxwBAFFZ5zPo42Ruf/q6BnakgRBPFf1qLwLlMSeDibi2H5R/9MLxIb2FnP3ylpWM32MHIZA3MxkupyT2QWuBhjKYeLtl+mPINCZVtffWFp5WWen+ATO2K56NVqzQfvWQmznYMsAfECTRxlrirO+6VdpLfnwbarBVpqa/V6pmnNmnAsWnlkXE25TxQ53iEh287ZuLRGJJvP19Xm"
+                  "refresh_response_key": "refresh key goes here"
                 }
               }
             },
