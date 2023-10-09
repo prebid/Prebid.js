@@ -15,7 +15,6 @@ const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
 const NET_REVENUE = false;
-let adUnitId = 0;
 let NATIVE_ASSET_ID_TO_KEY_MAP = {};
 const DATA_TYPES = {
   'NUMBER': 'number', 'STRING': 'string', 'BOOLEAN': 'boolean', 'ARRAY': 'array', 'OBJECT': 'object'
@@ -65,12 +64,6 @@ const NATIVE_ASSETS = {
   'DISPLAYURL': {ID: 21, KEY: 'displayurl', TYPE: 11},
   'CTA': {ID: 22, KEY: 'cta', TYPE: 12}
 };
-
-function _getDomainFromURL(url) {
-  let anchor = document.createElement('a');
-  anchor.href = url;
-  return anchor.hostname;
-}
 
 let platform = (function getPlatform() {
   var ua = navigator.userAgent;
@@ -322,6 +315,13 @@ function _checkMediaType(adm, newBid) {
   }
 }
 
+function _getFloor(bid) {
+  if (bid && typeof bid.getFloor === 'function' && bid.getFloor().floor) {
+    return bid.getFloor().floor;
+  }
+  return null;
+}
+
 function _createImpressionObject(bid, conf) {
   var impObj = {};
   var bannerObj;
@@ -333,7 +333,7 @@ function _createImpressionObject(bid, conf) {
   impObj = {
     id: bid.bidId,
     tagid: bid.params.adUnitId,
-    bidfloor: bid.params.floor,
+    bidfloor: _getFloor(bid),
     secure: 1,
     ext: {},
     bidfloorcur: CURRENCY
@@ -380,7 +380,6 @@ function _createImpressionObject(bid, conf) {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: ['banner', 'video'],
-
   isBidRequestValid: function (bid) {
     if (bid && bid.params) {
       if (!bid.params.adUnitId) {
@@ -414,8 +413,7 @@ export const spec = {
 
       conf.adUnitId = conf.adUnitId || bid.params.adUnitId;
       conf.floor = conf.floor || bid.params.floor;
-
-      conf.transactionId = bid.transactionId;
+      conf.transactionId = bid.bidderRequestId;
       if (bidCurrency === '') {
         bidCurrency = bid.params.currency || UNDEFINED;
       } else if (bid.params.hasOwnProperty('currency') && bidCurrency !== bid.params.currency) {
@@ -431,27 +429,18 @@ export const spec = {
     if (payload.imp.length == 0) {
       return;
     }
-    adUnitId = conf.adUnitId;
-
     payload.site.publisher.id = conf.adUnitId;
     payload.ext.wrapper = {};
 
     payload.ext.wrapper.transactionId = conf.transactionId;
-    payload.ext.wrapper.wiid = conf.wiid || bidderRequest.auctionId;
     payload.ext.wrapper.wp = 'pbjs';
 
     payload.user.geo = {};
+    payload.device.ua = navigator.userAgent;
+    payload.device.ip = navigator.ip;
     payload.device.geo = payload.user.geo;
-    payload.site.page = conf.pageURL;
-    payload.site.domain = _getDomainFromURL(payload.site.page);
-
-    if (typeof config.getConfig('content') === 'object') {
-      payload.site.content = config.getConfig('content');
-    }
-
-    if (typeof config.getConfig('device') === 'object') {
-      payload.device = Object.assign(payload.device, config.getConfig('device'));
-    }
+    payload.site.page = bidderRequest.refererInfo.page;
+    payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
     deepSetValue(payload, 'source.tid', conf.transactionId);
     // test bids
     if (window.location.href.indexOf('premiumadsTest=true') !== -1) {
@@ -470,6 +459,14 @@ export const spec = {
     // CCPA
     if (bidderRequest && bidderRequest.uspConsent) {
       deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
+    // Attaching GPP Consent Params
+    if (bidderRequest?.gppConsent?.gppString) {
+      deepSetValue(payload, 'regs.gpp', bidderRequest.gppConsent.gppString);
+      deepSetValue(payload, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
+    } else if (bidderRequest?.ortb2?.regs?.gpp) {
+      deepSetValue(payload, 'regs.gpp', bidderRequest.ortb2.regs.gpp);
+      deepSetValue(payload, 'regs.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
     }
     // coppa compliance
     if (config.getConfig('coppa') === true) {
@@ -532,12 +529,6 @@ export const spec = {
               newBid.meta.advertiserDomains = bid.adomain;
               newBid.meta.clickUrl = bid.adomain[0];
             }
-            // adserverTargeting
-            if (seatbidder.ext && seatbidder.ext.buyid) {
-              newBid.adserverTargeting = {
-                'hb_buyid_premiumads': seatbidder.ext.buyid
-              };
-            }
             bidResponses.push(newBid);
           });
         });
@@ -561,7 +552,7 @@ export const spec = {
         let cookieSyncObjects = cookieSyncs.map(cookieSync => {
           return {
             type: SYNC_TYPES[cookieSync.type],
-            url: cookieSync.url + '&adUnitId=' + adUnitId + '&gdpr=' + (gdprConsent && gdprConsent.gdprApplies ? 1 : 0) + '&gdpr_consent=' + encodeURIComponent((gdprConsent ? gdprConsent.consentString : '')) + '&us_privacy=' + encodeURIComponent((uspConsent || '')) + '&coppa=' + (config.getConfig('coppa') === true ? 1 : 0)
+            url: cookieSync.url
           };
         });
         return accum.concat(cookieSyncObjects);
