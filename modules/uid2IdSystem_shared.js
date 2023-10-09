@@ -706,7 +706,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
     }
   }
 
-  if (FEATURES.UID2_CSTG) {
+  if (FEATURES.UID2_CSTG && isCstgEnabled) {
     const cstgIdentity = clientSideTokenGenerator.getValidIdentity(config.cstg, _logWarn);
     if (cstgIdentity) {
       if (storedTokens && clientSideTokenGenerator.isStoredTokenInvalid(cstgIdentity, storedTokens, _logInfo, _logWarn)) {
