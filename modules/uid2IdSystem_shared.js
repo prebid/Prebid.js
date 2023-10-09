@@ -4,7 +4,7 @@ import { cyrb53Hash } from '../src/utils.js';
 
 export const Uid2CodeVersion = '1.1';
 
-export function isValidIdentity(identity) {
+function isValidIdentity(identity) {
   return !!(typeof identity === 'object' && identity !== null && identity.advertising_token && identity.identity_expires && identity.refresh_from && identity.refresh_token && identity.refresh_expires);
 }
 
@@ -665,22 +665,13 @@ if (FEATURES.UID2_CSTG) {
 
 export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   let suppliedToken = null;
-  const isCstgEnabled =
-    clientSideTokenGenerator &&
-    clientSideTokenGenerator.isCSTGOptionsValid(config.cstg, _logWarn);
-  const preferLocalStorage = config.storage !== 'cookie';
-  const storageManager = new Uid2StorageManager(
-    prebidStorageManager,
-    preferLocalStorage,
-    config.internalStorage,
-    _logInfo
-  );
-  _logInfo(
-    `Module is using ${
-      preferLocalStorage ? 'local storage' : 'cookies'
-    } for internal storage.`
-  );
+  const preferLocalStorage = (config.storage !== 'cookie');
+  const storageManager = new Uid2StorageManager(prebidStorageManager, preferLocalStorage, config.internalStorage, _logInfo);
+  _logInfo(`Module is using ${preferLocalStorage ? 'local storage' : 'cookies'} for internal storage.`);
 
+  const isCstgEnabled =
+  clientSideTokenGenerator &&
+  clientSideTokenGenerator.isCSTGOptionsValid(config.cstg, _logWarn);
   if (isCstgEnabled) {
     _logInfo(`Module is using client-side token generation.`);
     // Ignores config.paramToken and config.serverCookieName if any is provided
