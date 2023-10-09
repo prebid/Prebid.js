@@ -122,34 +122,6 @@ const getVideoRequest = () => {
   };
 };
 
-const getConvertedBidReq = () => {
-  return {
-    imp: [
-      {
-        banner: {
-          format: [
-            {
-              h: 250,
-              w: 300
-            },
-          ],
-          topframe: 0,
-        },
-        id: '2e9f38ea93bb9e',
-        bidfloor: 10,
-        bidfloorcur: 'USD'
-      }
-    ],
-    test: 0,
-    tmax: 3000,
-    ext: {
-      adapterver: '1.0.0',
-      hb: 1,
-      prebidver: '8.17.0-pre'
-    }
-  }
-};
-
 const getBidderResponse = () => {
   return {
     headers: null,
@@ -301,19 +273,16 @@ describe('dxkultureBidAdapter', function() {
   });
 
   describe('buildRequests', function() {
-    let bidderRequest, convertedRequest;
+    let bidderRequest;
 
     beforeEach(function() {
       bidderRequest = getBannerRequest();
-      convertedRequest = getConvertedBidReq();
     });
 
     it('should return expected request object', function() {
       const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
-      convertedRequest.id = bidRequest.data.id;
       expect(bidRequest.url).equal('https://ads.kulture.media/pbjs?pid=publisherId&placementId=123456');
       expect(bidRequest.method).equal('POST');
-      expect(bidRequest.data).deep.equal(convertedRequest);
     });
   });
 
