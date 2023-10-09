@@ -714,7 +714,7 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
       }
 
       if (!storedTokens || Date.now() > storedTokens.latestToken.refresh_expires) {
-        const promise = clientSideTokenGenerator.generateTokenAndStore(config.apiBaseUrl, config.cstg, cstgIdentity, config.clientId, storageManager, _logInfo, _logWarn);
+        const promise = clientSideTokenGenerator.generateTokenAndStore(config.apiBaseUrl, config.cstg, cstgIdentity, storageManager, _logInfo, _logWarn);
         _logInfo('Generate token using CSTG');
         return { callback: (cb) => {
           promise.then((result) => {
