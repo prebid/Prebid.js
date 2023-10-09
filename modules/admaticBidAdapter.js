@@ -1,4 +1,4 @@
-import { getValue, logError, isEmpty, deepAccess, getBidIdParameter, isArray } from '../src/utils.js';
+import {getValue, logError, isEmpty, deepAccess, isArray, getBidIdParameter} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
@@ -195,6 +195,11 @@ function buildRequestObject(bid) {
     reqObj.type = 'video';
     reqObj.mediatype = bid.mediaTypes.video;
   }
+
+  if (deepAccess(bid, 'ortb2Imp.ext')) {
+    reqObj.ext = bid.ortb2Imp.ext;
+  }
+
   reqObj.id = getBidIdParameter('bidId', bid);
 
   enrichSlotWithFloors(reqObj, bid);

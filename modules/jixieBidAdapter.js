@@ -1,4 +1,4 @@
-import {deepAccess, getDNT, isArray, logWarn} from '../src/utils.js';
+import {deepAccess, getDNT, isArray, logWarn, isFn, isPlainObject} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -13,6 +13,27 @@ const EVENTS_URL = 'https://hbtra.jixie.io/sync/hb?';
 const JX_OUTSTREAM_RENDERER_URL = 'https://scripts.jixie.media/jxhbrenderer.1.1.min.js';
 const REQUESTS_URL = 'https://hb.jixie.io/v2/hbpost';
 const sidTTLMins_ = 30;
+
+/**
+ * Get bid floor from Price Floors Module
+ *
+ * @param {Object} bid
+ * @returns {float||null}
+ */
+function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return null;
+  }
+  let floor = bid.getFloor({
+    currency: 'USD',
+    mediaType: '*',
+    size: '*'
+  });
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return null;
+}
 
 /**
  * Own miscellaneous support functions:
@@ -43,7 +64,8 @@ function fetchIds_() {
     client_id_c: '',
     client_id_ls: '',
     session_id_c: '',
-    session_id_ls: ''
+    session_id_ls: '',
+    jxeids: {}
   };
   try {
     let tmp = storage.getCookie('_jxx');
@@ -55,8 +77,10 @@ function fetchIds_() {
     if (tmp) ret.client_id_ls = tmp;
     tmp = storage.getDataFromLocalStorage('_jxxs');
     if (tmp) ret.session_id_ls = tmp;
-    tmp = storage.getCookie('_jxtoko');
-    if (tmp) ret.jxtoko_id = tmp;
+    ['_jxtoko', '_jxifo', '_jxtdid', '_jxcomp'].forEach(function(n) {
+      tmp = storage.getCookie(n);
+      if (tmp) ret.jxeids[n] = tmp;
+    });
   } catch (error) {}
   return ret;
 }
@@ -132,17 +156,6 @@ function getMiscDims_() {
   return ret;
 }
 
-/* function addUserId(eids, id, source, rti) {
-  if (id) {
-    if (rti) {
-      eids.push({ source, id, rti_partner: rti });
-    } else {
-      eids.push({ source, id });
-    }
-  }
-  return eids;
-} */
-
 // easier for replacement in the unit test
 export const internal = {
   getDevice: getDevice_,
@@ -170,15 +183,21 @@ export const spec = {
 
     let bids = [];
     validBidRequests.forEach(function(one) {
-      bids.push({
+      let gpid = deepAccess(one, 'ortb2Imp.ext.gpid', deepAccess(one, 'ortb2Imp.ext.data.pbadslot', ''));
+      let tmp = {
         bidId: one.bidId,
         adUnitCode: one.adUnitCode,
         mediaTypes: (one.mediaTypes === 'undefined' ? {} : one.mediaTypes),
         sizes: (one.sizes === 'undefined' ? [] : one.sizes),
         params: one.params,
-      });
+        gpid: gpid
+      };
+      let bidFloor = getBidFloor(one);
+      if (bidFloor) {
+        tmp.bidFloor = bidFloor;
+      }
+      bids.push(tmp);
     });
-
     let jixieCfgBlob = config.getConfig('jixie');
     if (!jixieCfgBlob) {
       jixieCfgBlob = {};
@@ -199,8 +218,8 @@ export const spec = {
     if (!pg) {
       pg = {};
     }
-
     let transformedParams = Object.assign({}, {
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auctionid: bidderRequest.auctionId,
       timeout: bidderRequest.timeout,
       currency: currency,

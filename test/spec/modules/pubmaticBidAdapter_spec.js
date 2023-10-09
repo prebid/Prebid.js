@@ -79,7 +79,11 @@ describe('PubMatic adapter', function () {
         bidId: '23acc48ad47af5',
         requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
         bidderRequestId: '1c56ad30b9b8ca8',
-        transactionId: '92489f71-1bf2-49a0-adf9-000cea934729',
+        ortb2Imp: {
+          ext: {
+            tid: '92489f71-1bf2-49a0-adf9-000cea934729',
+          }
+        },
         schain: schainConfig
       }
     ];
@@ -111,6 +115,7 @@ describe('PubMatic adapter', function () {
             battr: [13, 14],
             linearity: 1,
             placement: 2,
+            plcmt: 1,
             minbitrate: 10,
             maxbitrate: 10
           }
@@ -162,6 +167,7 @@ describe('PubMatic adapter', function () {
             battr: [13, 14],
             linearity: 1,
             placement: 2,
+            plcmt: 1,
             minbitrate: 100,
             maxbitrate: 4096
           }
@@ -382,6 +388,7 @@ describe('PubMatic adapter', function () {
             battr: [13, 14],
             linearity: 1,
             placement: 2,
+            plcmt: 1,
             minbitrate: 100,
             maxbitrate: 4096
           }
@@ -508,6 +515,7 @@ describe('PubMatic adapter', function () {
             battr: [13, 14],
             linearity: 1,
             placement: 2,
+            plcmt: 1,
             minbitrate: 100,
             maxbitrate: 4096
           }
@@ -577,6 +585,7 @@ describe('PubMatic adapter', function () {
             battr: [13, 14],
             linearity: 1,
             placement: 2,
+            plcmt: 1,
             minbitrate: 100,
             maxbitrate: 4096
           }
@@ -1120,7 +1129,24 @@ describe('PubMatic adapter', function () {
 
   		it('Request params check', function () {
         let request = spec.buildRequests(bidRequests, {
-          auctionId: 'new-auction-id'
+          auctionId: 'new-auction-id',
+          ortb2: {
+            source: {
+              tid: 'source-tid'
+            },
+            device: {
+              geo: {
+                lat: '36.5189',
+                lon: '-76.4063'
+              }
+            },
+            user: {
+              geo: {
+                lat: '26.8915',
+                lon: '-56.6340'
+              }
+            },
+          }
         });
         let data = JSON.parse(request.data);
   		  expect(data.at).to.equal(1); // auction type
@@ -1130,13 +1156,13 @@ describe('PubMatic adapter', function () {
   		  expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
   		  expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
   		  expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
-  		  expect(data.device.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-  		  expect(data.device.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
-  		  expect(data.user.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-  		  expect(data.user.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+  		  expect(data.device.geo.lat).to.equal('36.5189'); // Latitude
+  		  expect(data.device.geo.lon).to.equal('-76.4063'); // Lognitude
+  		  expect(data.user.geo.lat).to.equal('26.8915'); // Latitude
+  		  expect(data.user.geo.lon).to.equal('-56.6340'); // Lognitude
   		  expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
-  		  expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
-        expect(data.source.tid).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
+  		  expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
+        expect(data.source.tid).to.equal('source-tid'); // Prebid TransactionId
   		  expect(data.ext.wrapper.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
   		  expect(data.ext.wrapper.profile).to.equal(parseInt(bidRequests[0].params.profId)); // OpenWrap: Wrapper Profile ID
   		  expect(data.ext.wrapper.version).to.equal(parseInt(bidRequests[0].params.verId)); // OpenWrap: Wrapper Profile Version ID
@@ -1373,7 +1399,21 @@ describe('PubMatic adapter', function () {
       it('Request params check: without adSlot', function () {
         delete bidRequests[0].params.adSlot;
         let request = spec.buildRequests(bidRequests, {
-          auctionId: 'new-auction-id'
+          auctionId: 'new-auction-id',
+		  ortb2: {
+            device: {
+              geo: {
+                lat: '36.5189',
+                lon: '-76.4063'
+              }
+            },
+            user: {
+              geo: {
+                lat: '26.8915',
+                lon: '-56.6340'
+              }
+            },
+          }
         });
         let data = JSON.parse(request.data);
         expect(data.at).to.equal(1); // auction type
@@ -1383,12 +1423,12 @@ describe('PubMatic adapter', function () {
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
         expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
         expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
-        expect(data.device.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.device.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
-        expect(data.user.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.user.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+        expect(data.device.geo.lat).to.equal('36.5189'); // Latitude
+        expect(data.device.geo.lon).to.equal('-76.4063'); // Lognitude
+        expect(data.user.geo.lat).to.equal('26.8915'); // Latitude
+        expect(data.user.geo.lon).to.equal('-56.6340'); // Lognitude
         expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
-        expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
+        expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
         expect(data.ext.wrapper.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
         expect(data.ext.wrapper.profile).to.equal(parseInt(bidRequests[0].params.profId)); // OpenWrap: Wrapper Profile ID
         expect(data.ext.wrapper.version).to.equal(parseInt(bidRequests[0].params.verId)); // OpenWrap: Wrapper Profile Version ID
@@ -1582,7 +1622,21 @@ describe('PubMatic adapter', function () {
 
       it('Pass auctiondId as wiid if wiid is not passed in params', function () {
         let bidRequest = {
-          auctionId: 'new-auction-id'
+          auctionId: 'new-auction-id',
+		  ortb2: {
+            device: {
+              geo: {
+                lat: '36.5189',
+                lon: '-76.4063'
+              }
+            },
+            user: {
+              geo: {
+                lat: '26.8915',
+                lon: '-56.6340'
+              }
+            },
+          }
         };
         delete bidRequests[0].params.wiid;
         let request = spec.buildRequests(bidRequests, bidRequest);
@@ -1594,12 +1648,12 @@ describe('PubMatic adapter', function () {
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
         expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
         expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
-        expect(data.device.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.device.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
-        expect(data.user.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.user.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+        expect(data.device.geo.lat).to.equal('36.5189'); // Latitude
+  		  expect(data.device.geo.lon).to.equal('-76.4063'); // Lognitude
+  		  expect(data.user.geo.lat).to.equal('26.8915'); // Latitude
+  		  expect(data.user.geo.lon).to.equal('-56.6340'); // Lognitude
         expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
-        expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
+        expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
         expect(data.ext.wrapper.wiid).to.equal('new-auction-id'); // OpenWrap: Wrapper Impression ID
         expect(data.ext.wrapper.profile).to.equal(parseInt(bidRequests[0].params.profId)); // OpenWrap: Wrapper Profile ID
         expect(data.ext.wrapper.version).to.equal(parseInt(bidRequests[0].params.verId)); // OpenWrap: Wrapper Profile Version ID
@@ -1617,6 +1671,20 @@ describe('PubMatic adapter', function () {
           gdprConsent: {
             consentString: 'kjfdniwjnifwenrif3',
             gdprApplies: true
+          },
+		  ortb2: {
+            device: {
+              geo: {
+                lat: '36.5189',
+                lon: '-76.4063'
+              }
+            },
+            user: {
+              geo: {
+                lat: '26.8915',
+                lon: '-56.6340'
+              }
+            },
           }
         };
   		  let request = spec.buildRequests(bidRequests, bidRequest);
@@ -1630,12 +1698,12 @@ describe('PubMatic adapter', function () {
   		  expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
   		  expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
   		  expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
-  		  expect(data.device.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-  		  expect(data.device.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
-  		  expect(data.user.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-  		  expect(data.user.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+  		  expect(data.device.geo.lat).to.equal('36.5189'); // Latitude
+  		  expect(data.device.geo.lon).to.equal('-76.4063'); // Lognitude
+  		  expect(data.user.geo.lat).to.equal('26.8915'); // Latitude
+  		  expect(data.user.geo.lon).to.equal('-56.6340'); // Lognitude
   		  expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
-  		  expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
+  		  expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
   		  expect(data.ext.wrapper.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
         expect(data.ext.wrapper.profile).to.equal(parseInt(bidRequests[0].params.profId)); // OpenWrap: Wrapper Profile ID
   		  expect(data.ext.wrapper.version).to.equal(parseInt(bidRequests[0].params.verId)); // OpenWrap: Wrapper Profile Version ID
@@ -1650,7 +1718,21 @@ describe('PubMatic adapter', function () {
 
       it('Request params check with USP/CCPA Consent', function () {
         let bidRequest = {
-          uspConsent: '1NYN'
+          uspConsent: '1NYN',
+		  ortb2: {
+            device: {
+              geo: {
+                lat: '36.5189',
+                lon: '-76.4063'
+              }
+            },
+            user: {
+              geo: {
+                lat: '26.8915',
+                lon: '-56.6340'
+              }
+            },
+          }
         };
         let request = spec.buildRequests(bidRequests, bidRequest);
         let data = JSON.parse(request.data);
@@ -1662,12 +1744,12 @@ describe('PubMatic adapter', function () {
         expect(data.site.publisher.id).to.equal(bidRequests[0].params.publisherId); // publisher Id
         expect(data.user.yob).to.equal(parseInt(bidRequests[0].params.yob)); // YOB
         expect(data.user.gender).to.equal(bidRequests[0].params.gender); // Gender
-        expect(data.device.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.device.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
-        expect(data.user.geo.lat).to.equal(parseFloat(bidRequests[0].params.lat)); // Latitude
-        expect(data.user.geo.lon).to.equal(parseFloat(bidRequests[0].params.lon)); // Lognitude
+        expect(data.device.geo.lat).to.equal('36.5189'); // Latitude
+  		  expect(data.device.geo.lon).to.equal('-76.4063'); // Lognitude
+  		  expect(data.user.geo.lat).to.equal('26.8915'); // Latitude
+  		  expect(data.user.geo.lon).to.equal('-56.6340'); // Lognitude
         expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
-        expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
+        expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].ortb2Imp.ext.tid); // Prebid TransactionId
         expect(data.ext.wrapper.wiid).to.equal(bidRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
         expect(data.ext.wrapper.profile).to.equal(parseInt(bidRequests[0].params.profId)); // OpenWrap: Wrapper Profile ID
         expect(data.ext.wrapper.version).to.equal(parseInt(bidRequests[0].params.verId)); // OpenWrap: Wrapper Profile Version ID
@@ -2146,7 +2228,7 @@ describe('PubMatic adapter', function () {
         sandbox.restore();
       });
 
-      describe('AdsrvrOrgId from userId module', function() {
+      describe('userIdAsEids', function() {
         let sandbox;
         beforeEach(() => {
           sandbox = sinon.sandbox.create();
@@ -2156,13 +2238,10 @@ describe('PubMatic adapter', function () {
           sandbox.restore();
         });
 
-        it('Request should have AdsrvrOrgId config params', function() {
+        it('Request should have EIDs', function() {
           bidRequests[0].userId = {};
           bidRequests[0].userId.tdid = 'TTD_ID_FROM_USER_ID_MODULE';
-          bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-          let request = spec.buildRequests(bidRequests, {});
-          let data = JSON.parse(request.data);
-          expect(data.user.eids).to.deep.equal([{
+          bidRequests[0].userIdAsEids = [{
             'source': 'adserver.org',
             'uids': [{
               'id': 'TTD_ID_FROM_USER_ID_MODULE',
@@ -2171,380 +2250,16 @@ describe('PubMatic adapter', function () {
                 'rtiPartner': 'TDID'
               }
             }]
-          }]);
-        });
-
-        it('Request should have adsrvrOrgId from UserId Module if config and userId module both have TTD ID', function() {
-          sandbox.stub(config, 'getConfig').callsFake((key) => {
-            var config = {
-              adsrvrOrgId: {
-                'TDID': 'TTD_ID_FROM_CONFIG',
-                'TDID_LOOKUP': 'TRUE',
-                'TDID_CREATED_AT': '2018-10-01T07:05:40'
-              }
-            };
-            return config[key];
-          });
-          bidRequests[0].userId = {};
-          bidRequests[0].userId.tdid = 'TTD_ID_FROM_USER_ID_MODULE';
-          bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
+          }];
           let request = spec.buildRequests(bidRequests, {});
           let data = JSON.parse(request.data);
-          expect(data.user.eids).to.deep.equal([{
-            'source': 'adserver.org',
-            'uids': [{
-              'id': 'TTD_ID_FROM_USER_ID_MODULE',
-              'atype': 1,
-              'ext': {
-                'rtiPartner': 'TDID'
-              }
-            }]
-          }]);
+          expect(data.user.eids).to.deep.equal(bidRequests[0].userIdAsEids);
         });
 
-        it('Request should NOT have adsrvrOrgId params if userId is NOT object', function() {
+        it('Request should NOT have EIDs userIdAsEids is NOT object', function() {
           let request = spec.buildRequests(bidRequests, {});
           let data = JSON.parse(request.data);
           expect(data.user.eids).to.deep.equal(undefined);
-        });
-
-        it('Request should NOT have adsrvrOrgId params if userId.tdid is NOT string', function() {
-          bidRequests[0].userId = {
-            tdid: 1234
-          };
-          let request = spec.buildRequests(bidRequests, {});
-          let data = JSON.parse(request.data);
-          expect(data.user.eids).to.deep.equal(undefined);
-        });
-      });
-
-      describe('UserIds from request', function() {
-        describe('pubcommon Id', function() {
-          it('send the pubcommon id if it is present', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.pubcid = 'pub_common_user_id';
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.deep.equal([{
-              'source': 'pubcid.org',
-              'uids': [{
-                'id': 'pub_common_user_id',
-                'atype': 1
-              }]
-            }]);
-          });
-
-          it('do not pass if not string', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.pubcid = 1;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.pubcid = [];
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.pubcid = null;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.pubcid = {};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-          });
-        });
-
-        describe('ID5 Id', function() {
-          it('send the id5 id if it is present', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.id5id = { uid: 'id5-user-id' };
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.deep.equal([{
-              'source': 'id5-sync.com',
-              'uids': [{
-                'id': 'id5-user-id',
-                'atype': 1
-              }]
-            }]);
-          });
-
-          it('do not pass if not string', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.id5id = { uid: 1 };
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.id5id = { uid: [] };
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.id5id = { uid: null };
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.id5id = { uid: {} };
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-          });
-        });
-
-        describe('Criteo Id', function() {
-          it('send the criteo id if it is present', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.criteoId = 'criteo-user-id';
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.deep.equal([{
-              'source': 'criteo.com',
-              'uids': [{
-                'id': 'criteo-user-id',
-                'atype': 1
-              }]
-            }]);
-          });
-
-          it('do not pass if not string', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.criteoId = 1;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.criteoId = [];
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.criteoId = null;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.criteoId = {};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-          });
-        });
-
-        describe('IdentityLink Id', function() {
-          it('send the identity-link id if it is present', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.idl_env = 'identity-link-user-id';
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.deep.equal([{
-              'source': 'liveramp.com',
-              'uids': [{
-                'id': 'identity-link-user-id',
-                'atype': 3
-              }]
-            }]);
-          });
-
-          it('do not pass if not string', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.idl_env = 1;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.idl_env = [];
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.idl_env = null;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.idl_env = {};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-          });
-        });
-
-        describe('LiveIntent Id', function() {
-          it('send the LiveIntent id if it is present', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.lipb = { lipbid: 'live-intent-user-id' };
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.deep.equal([{
-              'source': 'liveintent.com',
-              'uids': [{
-                'id': 'live-intent-user-id',
-                'atype': 3
-              }]
-            }]);
-          });
-
-          it('do not pass if not string', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.lipb = { lipbid: 1 };
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.lipb.lipbid = [];
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.lipb.lipbid = null;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.lipb.lipbid = {};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-          });
-        });
-
-        describe('Parrable Id', function() {
-          it('send the Parrable id if it is present', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.parrableId = { eid: 'parrable-user-id' };
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.deep.equal([{
-              'source': 'parrable.com',
-              'uids': [{
-                'id': 'parrable-user-id',
-                'atype': 1
-              }]
-            }]);
-          });
-
-          it('do not pass if not object with eid key', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.parrableid = 1;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.parrableid = [];
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.parrableid = null;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.parrableid = {};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-          });
-        });
-
-        describe('Britepool Id', function() {
-          it('send the Britepool id if it is present', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.britepoolid = 'britepool-user-id';
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.deep.equal([{
-              'source': 'britepool.com',
-              'uids': [{
-                'id': 'britepool-user-id',
-                'atype': 3
-              }]
-            }]);
-          });
-
-          it('do not pass if not string', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.britepoolid = 1;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.britepoolid = [];
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.britepoolid = null;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.britepoolid = {};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-          });
-        });
-
-        describe('NetId', function() {
-          it('send the NetId if it is present', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.netId = 'netid-user-id';
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.deep.equal([{
-              'source': 'netid.de',
-              'uids': [{
-                'id': 'netid-user-id',
-                'atype': 1
-              }]
-            }]);
-          });
-
-          it('do not pass if not string', function() {
-            bidRequests[0].userId = {};
-            bidRequests[0].userId.netId = 1;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            let request = spec.buildRequests(bidRequests, {});
-            let data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.netId = [];
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.netId = null;
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-            bidRequests[0].userId.netId = {};
-            bidRequests[0].userIdAsEids = createEidsArray(bidRequests[0].userId);
-            request = spec.buildRequests(bidRequests, {});
-            data = JSON.parse(request.data);
-            expect(data.user.eids).to.equal(undefined);
-          });
         });
       });
 
@@ -2678,7 +2393,21 @@ describe('PubMatic adapter', function () {
 
         it('Request params check for 1 banner and 1 video ad', function () {
           let request = spec.buildRequests(multipleMediaRequests, {
-            auctionId: 'new-auction-id'
+            auctionId: 'new-auction-id',
+            ortb2: {
+              device: {
+				  geo: {
+                  lat: '36.5189',
+                  lon: '-76.4063'
+				  }
+              },
+              user: {
+				  geo: {
+                  lat: '26.8915',
+                  lon: '-56.6340'
+				  }
+              },
+			  }
           });
           let data = JSON.parse(request.data);
 
@@ -2692,10 +2421,10 @@ describe('PubMatic adapter', function () {
           expect(data.site.publisher.id).to.equal(multipleMediaRequests[0].params.publisherId); // publisher Id
           expect(data.user.yob).to.equal(parseInt(multipleMediaRequests[0].params.yob)); // YOB
           expect(data.user.gender).to.equal(multipleMediaRequests[0].params.gender); // Gender
-          expect(data.device.geo.lat).to.equal(parseFloat(multipleMediaRequests[0].params.lat)); // Latitude
-          expect(data.device.geo.lon).to.equal(parseFloat(multipleMediaRequests[0].params.lon)); // Lognitude
-          expect(data.user.geo.lat).to.equal(parseFloat(multipleMediaRequests[0].params.lat)); // Latitude
-          expect(data.user.geo.lon).to.equal(parseFloat(multipleMediaRequests[0].params.lon)); // Lognitude
+          expect(data.device.geo.lat).to.equal('36.5189'); // Latitude
+  		  expect(data.device.geo.lon).to.equal('-76.4063'); // Lognitude
+  		  expect(data.user.geo.lat).to.equal('26.8915'); // Latitude
+  		  expect(data.user.geo.lon).to.equal('-56.6340'); // Lognitude
           expect(data.ext.wrapper.wv).to.equal($$REPO_AND_VERSION$$); // Wrapper Version
           expect(data.ext.wrapper.transactionId).to.equal(multipleMediaRequests[0].transactionId); // Prebid TransactionId
           expect(data.ext.wrapper.wiid).to.equal(multipleMediaRequests[0].params.wiid); // OpenWrap: Wrapper Impression ID
@@ -2738,6 +2467,7 @@ describe('PubMatic adapter', function () {
 
           expect(data.imp[1]['video']['linearity']).to.equal(multipleMediaRequests[1].params.video['linearity']);
           expect(data.imp[1]['video']['placement']).to.equal(multipleMediaRequests[1].params.video['placement']);
+          expect(data.imp[1]['video']['plcmt']).to.equal(multipleMediaRequests[1].params.video['plcmt']);
           expect(data.imp[1]['video']['minbitrate']).to.equal(multipleMediaRequests[1].params.video['minbitrate']);
           expect(data.imp[1]['video']['maxbitrate']).to.equal(multipleMediaRequests[1].params.video['maxbitrate']);
 
@@ -3033,6 +2763,7 @@ describe('PubMatic adapter', function () {
 
           expect(data.imp[0]['video']['linearity']).to.equal(videoBidRequests[0].params.video['linearity']);
           expect(data.imp[0]['video']['placement']).to.equal(videoBidRequests[0].params.video['placement']);
+          expect(data.imp[0]['video']['plcmt']).to.equal(videoBidRequests[0].params.video['plcmt']);
           expect(data.imp[0]['video']['minbitrate']).to.equal(videoBidRequests[0].params.video['minbitrate']);
           expect(data.imp[0]['video']['maxbitrate']).to.equal(videoBidRequests[0].params.video['maxbitrate']);
 
@@ -3040,6 +2771,101 @@ describe('PubMatic adapter', function () {
           expect(data.imp[0]['video']['h']).to.equal(videoBidRequests[0].mediaTypes.video.playerSize[1]);
         });
       }
+
+      describe('GPP', function() {
+        it('Request params check with GPP Consent', function () {
+          let bidRequest = {
+            gppConsent: {
+              'gppString': 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
+              'fullGppData': {
+                'sectionId': 3,
+                'gppVersion': 1,
+                'sectionList': [
+                  5,
+                  7
+                ],
+                'applicableSections': [
+                  5
+                ],
+                'gppString': 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
+                'pingData': {
+                  'cmpStatus': 'loaded',
+                  'gppVersion': '1.0',
+                  'cmpDisplayStatus': 'visible',
+                  'supportedAPIs': [
+                    'tcfca',
+                    'usnat',
+                    'usca',
+                    'usva',
+                    'usco',
+                    'usut',
+                    'usct'
+                  ],
+                  'cmpId': 31
+                },
+                'eventName': 'sectionChange'
+              },
+              'applicableSections': [
+                5
+              ],
+              'apiVersion': 1
+            }
+          };
+          let request = spec.buildRequests(bidRequests, bidRequest);
+          let data = JSON.parse(request.data);
+          expect(data.regs.gpp).to.equal('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN');
+          expect(data.regs.gpp_sid[0]).to.equal(5);
+        });
+
+        it('Request params check without GPP Consent', function () {
+          let bidRequest = {};
+          let request = spec.buildRequests(bidRequests, bidRequest);
+          let data = JSON.parse(request.data);
+          expect(data.regs).to.equal(undefined);
+        });
+
+        it('Request params check with GPP Consent read from ortb2', function () {
+          let bidRequest = {
+            ortb2: {
+              regs: {
+                'gpp': 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
+                'gpp_sid': [
+                  5
+                ]
+              }
+            }
+          };
+          let request = spec.buildRequests(bidRequests, bidRequest);
+          let data = JSON.parse(request.data);
+          expect(data.regs.gpp).to.equal('DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN');
+          expect(data.regs.gpp_sid[0]).to.equal(5);
+        });
+      });
+
+      describe('Fledge', function() {
+        it('should not send imp.ext.ae when FLEDGE is disabled, ', function () {
+          let bidRequest = Object.assign([], bidRequests);
+          bidRequest[0].ortb2Imp = {
+            ext: { ae: 1 }
+          };
+          const req = spec.buildRequests(bidRequest, { ...bidRequest, fledgeEnabled: false });
+          let data = JSON.parse(req.data);
+          if (data.imp[0].ext) {
+            expect(data.imp[0].ext).to.not.have.property('ae');
+          }
+        });
+
+        it('when FLEDGE is enabled, should send whatever is set in ortb2imp.ext.ae in all bid requests', function () {
+          let bidRequest = Object.assign([], bidRequests);
+          delete bidRequest[0].params.test;
+          bidRequest[0].ortb2Imp = {
+            ext: { ae: 1 }
+          };
+          const req = spec.buildRequests(bidRequest, { ...bidRequest, fledgeEnabled: true });
+          let data = JSON.parse(req.data);
+          expect(data.imp[0].ext.ae).to.equal(1);
+        });
+      });
   	});
 
     it('Request params dctr check', function () {
@@ -3775,6 +3601,89 @@ describe('PubMatic adapter', function () {
       }
     });
 
+    describe('Fledge Auction config Response', function () {
+      let response;
+      let bidRequestConfigs = [
+        {
+          bidder: 'pubmatic',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90], [160, 600]]
+            }
+          },
+          params: {
+            publisherId: '5670',
+            adSlot: '/15671365/DMDemo@300x250:0',
+            kadfloor: '1.2',
+            pmzoneid: 'aabc, ddef',
+            kadpageurl: 'www.publisher.com',
+            yob: '1986',
+            gender: 'M',
+            lat: '12.3',
+            lon: '23.7',
+            wiid: '1234567890',
+            profId: '100',
+            verId: '200',
+            currency: 'AUD',
+            dctr: 'key1:val1,val2|key2:val1'
+          },
+          placementCode: '/19968336/header-bid-tag-1',
+          sizes: [[300, 250], [300, 600]],
+          bidId: 'test_bid_id',
+          requestId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
+          bidderRequestId: '1c56ad30b9b8ca8',
+          ortb2Imp: {
+            ext: {
+              tid: '92489f71-1bf2-49a0-adf9-000cea934729',
+              ae: 1
+            }
+          },
+        }
+      ];
+
+      let bidRequest = spec.buildRequests(bidRequestConfigs, {});
+      let bidResponse = {
+        seatbid: [{
+          bid: [{
+            impid: 'test_bid_id',
+            price: 2,
+            w: 728,
+            h: 250,
+            crid: 'test-creative-id',
+            dealid: 'test-deal-id',
+            adm: 'test-ad-markup'
+          }]
+        }],
+        cur: 'AUS',
+        ext: {
+          fledge_auction_configs: {
+            'test_bid_id': {
+              seller: 'ads.pubmatic.com',
+              interestGroupBuyers: ['dsp1.com'],
+              sellerTimeout: 0,
+              perBuyerSignals: {
+                'dsp1.com': {
+                  bid_macros: 0.1,
+                  disallowed_adv_ids: [
+                    '5678',
+                    '5890'
+                  ],
+                }
+              }
+            }
+          }
+        }
+      };
+
+      response = spec.interpretResponse({ body: bidResponse }, bidRequest);
+      it('should return FLEDGE auction_configs alongside bids', function () {
+        expect(response).to.have.property('bids');
+        expect(response).to.have.property('fledgeAuctionConfigs');
+        expect(response.fledgeAuctionConfigs.length).to.equal(1);
+        expect(response.fledgeAuctionConfigs[0].bidId).to.equal('test_bid_id');
+      });
+    });
+
     describe('Preapare metadata', function () {
       it('Should copy all fields from ext to meta', function () {
         const bid = {
@@ -3949,6 +3858,55 @@ describe('PubMatic adapter', function () {
         expect(spec.getUserSyncs({ iframeEnabled: false }, {}, {gdprApplies: true, consentString: 'foo'}, '1NYN')).to.deep.equal([{
           type: 'image', url: `${syncurl_image}&gdpr=1&gdpr_consent=foo&us_privacy=1NYN&coppa=1`
         }]);
+      });
+
+      describe('GPP', function() {
+        it('should return userSync url without Gpp consent if gppConsent is undefined', () => {
+          const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, undefined);
+          expect(result).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}`
+          }]);
+        });
+
+        it('should return userSync url without Gpp consent if gppConsent.gppString is undefined', () => {
+          const gppConsent = { applicableSections: ['5'] };
+          const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, gppConsent);
+          expect(result).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}`
+          }]);
+        });
+
+        it('should return userSync url without Gpp consent if gppConsent.applicableSections is undefined', () => {
+          const gppConsent = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN' };
+          const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, gppConsent);
+          expect(result).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}`
+          }]);
+        });
+
+        it('should return userSync url without Gpp consent if gppConsent.applicableSections is an empty array', () => {
+          const gppConsent = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN', applicableSections: [] };
+          const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, gppConsent);
+          expect(result).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}`
+          }]);
+        });
+
+        it('should concatenate gppString and applicableSections values in the returned userSync iframe url', () => {
+          const gppConsent = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN', applicableSections: [5] };
+          const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, gppConsent);
+          expect(result).to.deep.equal([{
+            type: 'iframe', url: `${syncurl_iframe}&gpp=${encodeURIComponent(gppConsent.gppString)}&gpp_sid=${encodeURIComponent(gppConsent.applicableSections)}`
+          }]);
+        });
+
+        it('should concatenate gppString and applicableSections values in the returned userSync image url', () => {
+          const gppConsent = { gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN', applicableSections: [5] };
+          const result = spec.getUserSyncs({iframeEnabled: false}, undefined, undefined, undefined, gppConsent);
+          expect(result).to.deep.equal([{
+            type: 'image', url: `${syncurl_image}&gpp=${encodeURIComponent(gppConsent.gppString)}&gpp_sid=${encodeURIComponent(gppConsent.applicableSections)}`
+          }]);
+        });
       });
     });
 

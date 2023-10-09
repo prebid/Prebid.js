@@ -115,11 +115,6 @@ export function GenericAnalytics() {
         }
       },
       track(event) {
-        if (event.eventType === CONSTANTS.EVENTS.AUCTION_INIT && event.args.hasOwnProperty('config')) {
-          // clean up auctionInit event
-          // TODO: remove this special case in v8
-          delete event.args.config;
-        }
         const datum = translate(event);
         if (datum != null) {
           batch.push(datum);
