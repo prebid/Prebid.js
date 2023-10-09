@@ -361,7 +361,7 @@ describe('PremiumAdsBidAdapter', function () {
     it('execute as per config', function () {
       expect(spec.getUserSyncs({iframeEnabled: true}, [bidResponses], undefined, undefined)).to.deep.equal([{
         type: 'iframe',
-        url: 'https://bid.premiumads.net/prebid/usersync?bidder=premiumads&adUnitId=1123568438&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
+        url: 'https://bid.premiumads.net/prebid/usersync?bidder=premiumads'
       }]);
     });
     // Multiple user sync output
@@ -369,11 +369,11 @@ describe('PremiumAdsBidAdapter', function () {
       expect(spec.getUserSyncs({iframeEnabled: true}, [bidResponses2], undefined, undefined)).to.deep.equal([
         {
           type: 'iframe',
-          url: 'https://bid.premiumads.net/prebid/usersync?bidder=premiumads&adUnitId=1123568438&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
+          url: 'https://bid.premiumads.net/prebid/usersync?bidder=premiumads'
         },
         {
           type: 'iframe',
-          url: 'https://bid.premiumads.net/prebid/usersync?bidder=appnexus&adUnitId=1123568438&gdpr=0&gdpr_consent=&us_privacy=&coppa=0'
+          url: 'https://bid.premiumads.net/prebid/usersync?bidder=appnexus'
         }
       ]);
     });
