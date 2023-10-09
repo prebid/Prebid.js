@@ -1,7 +1,7 @@
 /**
  * This module adds Utiq provided by Utiq SA/NV to the User ID module
  * The {@link module:modules/userId} module is required
- * @module modules/utiqSystem
+ * @module modules/utiqIdSystem
  * @requires module:modules/userId
  */
 import { logInfo } from '../src/utils.js';
@@ -9,7 +9,7 @@ import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
-const MODULE_NAME = 'utiq';
+const MODULE_NAME = 'utiqId';
 const LOG_PREFIX = 'Utiq module';
 
 export const storage = getStorageManager({
@@ -56,7 +56,7 @@ function getUtiqFromStorage() {
 }
 
 /** @type {Submodule} */
-export const utiqSubmodule = {
+export const utiqIdSubmodule = {
   /**
    * Used to link submodule with config
    * @type {string}
@@ -135,4 +135,4 @@ export const utiqSubmodule = {
   }
 };
 
-submodule('userId', utiqSubmodule);
+submodule('userId', utiqIdSubmodule);
