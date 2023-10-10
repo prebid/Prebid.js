@@ -1,4 +1,4 @@
-import {deepAccess, getDNT, isArray, logWarn} from '../src/utils.js';
+import {deepAccess, getDNT, isArray, logWarn, isFn, isPlainObject} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -13,6 +13,27 @@ const EVENTS_URL = 'https://hbtra.jixie.io/sync/hb?';
 const JX_OUTSTREAM_RENDERER_URL = 'https://scripts.jixie.media/jxhbrenderer.1.1.min.js';
 const REQUESTS_URL = 'https://hb.jixie.io/v2/hbpost';
 const sidTTLMins_ = 30;
+
+/**
+ * Get bid floor from Price Floors Module
+ *
+ * @param {Object} bid
+ * @returns {float||null}
+ */
+function getBidFloor(bid) {
+  if (!isFn(bid.getFloor)) {
+    return null;
+  }
+  let floor = bid.getFloor({
+    currency: 'USD',
+    mediaType: '*',
+    size: '*'
+  });
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return null;
+}
 
 /**
  * Own miscellaneous support functions:
@@ -56,7 +77,7 @@ function fetchIds_() {
     if (tmp) ret.client_id_ls = tmp;
     tmp = storage.getDataFromLocalStorage('_jxxs');
     if (tmp) ret.session_id_ls = tmp;
-    ['_jxtoko', '_jxifo', '_jxtdid', '__uid2_advertising_token'].forEach(function(n) {
+    ['_jxtoko', '_jxifo', '_jxtdid', '_jxcomp'].forEach(function(n) {
       tmp = storage.getCookie(n);
       if (tmp) ret.jxeids[n] = tmp;
     });
@@ -171,9 +192,12 @@ export const spec = {
         params: one.params,
         gpid: gpid
       };
+      let bidFloor = getBidFloor(one);
+      if (bidFloor) {
+        tmp.bidFloor = bidFloor;
+      }
       bids.push(tmp);
     });
-
     let jixieCfgBlob = config.getConfig('jixie');
     if (!jixieCfgBlob) {
       jixieCfgBlob = {};

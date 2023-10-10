@@ -4,6 +4,7 @@ import * as utils from '../src/utils.js';
 import {mergeDeep} from '../src/utils.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
 const bidderConfig = 'hb_pb_ortb';
 const bidderVersion = '2.0';
@@ -12,6 +13,7 @@ export const SYNC_URL = 'https://u.openx.net/w/1.0/pd';
 export const DEFAULT_PH = '2d1251ae-7f3a-47cf-bd2a-2f288854a0ba';
 export const spec = {
   code: 'openx',
+  gvlid: 69,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
   buildRequests,
@@ -149,7 +151,7 @@ const converter = ortbConverter({
 });
 
 function transformBidParams(params, isOpenRtb) {
-  return utils.convertTypes({
+  return convertTypes({
     'unit': 'string',
     'customFloor': 'number'
   }, params);

@@ -1,4 +1,4 @@
-import {_each, deepAccess, getValueString, isArray, isStr, mergeDeep, isNumber} from '../../src/utils.js';
+import {_each, deepAccess, isArray, isNumber, isStr, mergeDeep, logWarn} from '../../src/utils.js';
 import {getAllOrtbKeywords} from '../keywords/keywords.js';
 import {CLIENT_SECTIONS} from '../../src/fpd/oneClient.js';
 
@@ -11,6 +11,19 @@ const ORTB_SEGTAX_KEY_MAP = {
 const ORTB_SEG_PATHS = ['user.data'].concat(
   CLIENT_SECTIONS.map((prefix) => `${prefix}.content.data`)
 );
+
+function getValueString(param, val, defaultValue) {
+  if (val === undefined || val === null) {
+    return defaultValue;
+  }
+  if (isStr(val)) {
+    return val;
+  }
+  if (isNumber(val)) {
+    return val.toString();
+  }
+  logWarn('Unsuported type for param: ' + param + ' required type: String');
+}
 
 /**
  * Converts an object of arrays (either strings or numbers) into an array of objects containing key and value properties
