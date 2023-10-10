@@ -3,7 +3,7 @@
 <head>
     <link rel="icon" type="image/png" href="/favicon.png">
     <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
-    <script type="text/javascript"  src="../../build/dev/prebid.js" async></script>
+    <script async src="prebid.js"></script>
 
     <script>
         var div_1_sizes = [
@@ -95,7 +95,7 @@
                             encrypt: false
                         }, {
                             source: ['pubmatic.com'],
-                            // Custom sources can be identified if customFunc is defined
+                            //Custom sources can be identified if customFunc is defined
                             customFunc: () => {
                                 return '{"keywords":["tech","auto"]}';
                             },
