@@ -119,14 +119,13 @@ describe('freewheelSSP BidAdapter Test', () => {
     ];
 
     it('should get correct value from content object', () => {
-      const cfg = {};
-      cfg[content] = {
-        'title': 'freewheel',
-        'series': 'abc',
-        'id': 'iris_5e7'
-      };
-
-      config.setConfig(cfg);
+      config.setConfig({
+        content: {
+          'title': 'freewheel',
+          'series': 'abc',
+          'id': 'iris_5e7'
+        }
+      });
 
       const request = spec.buildRequests(bidRequests);
       const payload = request[0].data;
