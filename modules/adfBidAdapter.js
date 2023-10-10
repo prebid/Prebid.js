@@ -69,8 +69,11 @@ export const spec = {
       bid.netRevenue = pt;
 
       const floorInfo = bid.getFloor ? bid.getFloor({
-        currency: currency || 'USD'
+        currency: currency || 'USD',
+        size: '*',
+        mediaType: '*'
       }) : {};
+
       const bidfloor = floorInfo.floor;
       const bidfloorcur = floorInfo.currency;
       const { mid, inv, mname } = bid.params;
