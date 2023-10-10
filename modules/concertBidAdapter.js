@@ -41,6 +41,7 @@ export const spec = {
         prebidVersion: '$prebid.version$',
         pageUrl: bidderRequest.refererInfo.page,
         screen: [window.screen.width, window.screen.height].join('x'),
+        browserLanguage: window.navigator.language,
         debug: debugTurnedOn(),
         uid: getUid(bidderRequest, validBidRequests),
         optedOut: hasOptedOutOfPersonalization(),
@@ -48,6 +49,7 @@ export const spec = {
         uspConsent: bidderRequest.uspConsent,
         gdprConsent: bidderRequest.gdprConsent,
         gppConsent: bidderRequest.gppConsent,
+        tdid: getTdid(bidderRequest, validBidRequests),
       }
     };
 
@@ -261,4 +263,12 @@ function getOffset(el) {
       top: rect.top + window.scrollY
     };
   }
+}
+
+function getTdid(bidderRequest, validBidRequests) {
+  if (hasOptedOutOfPersonalization() || !consentAllowsPpid(bidderRequest)) {
+    return null;
+  }
+
+  return deepAccess(validBidRequests[0], 'userId.tdid') || null;
 }

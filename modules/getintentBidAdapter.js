@@ -1,4 +1,4 @@
-import { getBidIdParameter, isFn, isInteger } from '../src/utils.js';
+import {getBidIdParameter, isFn, isInteger} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'getintent';

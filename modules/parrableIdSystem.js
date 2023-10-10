@@ -7,7 +7,17 @@
 
 // ci trigger: 1
 
-import {contains, deepClone, inIframe, isEmpty, isPlainObject, logError, logWarn, timestamp} from '../src/utils.js';
+import {
+  contains,
+  deepClone,
+  inIframe,
+  isEmpty,
+  isPlainObject,
+  logError,
+  logWarn,
+  pick,
+  timestamp
+} from '../src/utils.js';
 import {find} from '../src/polyfill.js';
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
@@ -368,7 +378,33 @@ export const parrableIdSubmodule = {
   getId(config, gdprConsentData, currentStoredId) {
     const configParams = (config && config.params) || {};
     return fetchId(configParams, gdprConsentData);
-  }
+  },
+  eids: {
+    'parrableId': {
+      source: 'parrable.com',
+      atype: 1,
+      getValue: function(parrableId) {
+        if (parrableId.eid) {
+          return parrableId.eid;
+        }
+        if (parrableId.ccpaOptout) {
+          // If the EID was suppressed due to a non consenting ccpa optout then
+          // we still wish to provide this as a reason to the adapters
+          return '';
+        }
+        return null;
+      },
+      getUidExt: function(parrableId) {
+        const extendedData = pick(parrableId, [
+          'ibaOptout',
+          'ccpaOptout'
+        ]);
+        if (Object.keys(extendedData).length) {
+          return extendedData;
+        }
+      }
+    },
+  },
 };
 
 submodule('userId', parrableIdSubmodule);

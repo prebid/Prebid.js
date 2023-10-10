@@ -102,7 +102,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       cat: firstBidRequest.ortb2.site.cat
     }
   }
-
+  
   if (firstBidRequest.schain && firstBidRequest.schain.nodes) {
     krakenParams.schain = firstBidRequest.schain
   }

@@ -70,7 +70,7 @@ const NATIVE_DEFAULTS = {
 
 export const spec = {
   code: BIDDER_CODE,
-
+  gvlid: 1135,
   // short code
   aliases: ['opera'],
 
@@ -680,6 +680,11 @@ function mapNativeImage(image, type) {
  * @returns {String} userId
  */
 function getUserId(bidRequest) {
+  let operaId = deepAccess(bidRequest, 'userId.operaId');
+  if (operaId) {
+    return operaId;
+  }
+
   let sharedId = deepAccess(bidRequest, 'userId.sharedid.id');
   if (sharedId) {
     return sharedId;

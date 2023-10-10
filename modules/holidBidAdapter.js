@@ -1,7 +1,6 @@
 import {
   deepAccess,
-  deepSetValue,
-  getBidIdParameter,
+  deepSetValue, getBidIdParameter,
   isStr,
   logMessage,
   triggerPixel,
