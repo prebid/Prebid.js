@@ -83,7 +83,7 @@ export const uid2IdSubmodule = {
       return;
     }
 
-    let mappedConfig = {
+    const mappedConfig = {
       apiBaseUrl: config?.params?.uid2ApiBase ?? UID2_BASE_URL,
       paramToken: config?.params?.uid2Token,
       serverCookieName: config?.params?.uid2Cookie ?? config?.params?.uid2ServerCookie,
@@ -91,6 +91,7 @@ export const uid2IdSubmodule = {
       clientId: UID2_CLIENT_ID,
       internalStorage: ADVERTISING_COOKIE
     }
+
     if (FEATURES.UID2_CSTG) {
       mappedConfig.cstg = {
         serverPublicKey: config?.params?.serverPublicKey,
