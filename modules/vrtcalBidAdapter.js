@@ -159,7 +159,7 @@ export const spec = {
     const usPrivacy = `&us_privacy=${encodeURIComponent(uspConsent)}`;
     const gpp = gppConsent.gppString ? gppConsent.gppString : '';
     const gppSid = Array.isArray(gppConsent.applicableSections) ? gppConsent.applicableSections.join(',') : '';
-    var vrtcalSyncURL = ''
+    let vrtcalSyncURL = ''
 
     if (syncOptions.iframeEnabled) {
       vrtcalSyncURL = `${VRTCAL_USER_SYNC_URL_IFRAME}${usPrivacy}${gdprFlag}${gdprString}&gpp=${gpp}&gpp_sid=${gppSid}&surl=`;
