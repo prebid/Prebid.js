@@ -1,14 +1,14 @@
 import { expect } from 'chai';
 import { spec } from 'modules/discoveryBidAdapter.js';
 
-describe('DiscoveryDSP:BidAdapterTests', function () {
+describe('discovery:BidAdapterTests', function () {
   let bidRequestData = {
-    bidderCode: 'DiscoveryDSP',
+    bidderCode: 'discovery',
     auctionId: 'ff66e39e-4075-4d18-9854-56fde9b879ac',
     bidderRequestId: '4fec04e87ad785',
     bids: [
       {
-        bidder: 'DiscoveryDSP',
+        bidder: 'discovery',
         params: {
           token: 'd0f4902b616cc5c38cbe0a08676d0ed9',
         },
@@ -32,25 +32,26 @@ describe('DiscoveryDSP:BidAdapterTests', function () {
   };
   let request = [];
 
-  it('DiscoveryDSP:validate_pub_params', function () {
+  it('discovery:validate_pub_params', function () {
     expect(
       spec.isBidRequestValid({
-        bidder: 'DiscoveryDSP',
+        bidder: 'discovery',
         params: {
           token: ['d0f4902b616cc5c38cbe0a08676d0ed9'],
-          media: ['test_media']
+          tagid: ['test_tagid'],
+          publisher: ['test_publisher']
         },
       })
     ).to.equal(true);
   });
 
-  it('DiscoveryDSP:validate_generated_params', function () {
+  it('discovery:validate_generated_params', function () {
     request = spec.buildRequests(bidRequestData.bids, bidRequestData);
     let req_data = JSON.parse(request.data);
     expect(req_data.imp).to.have.lengthOf(1);
   });
 
-  it('DiscoveryDSP:validate_response_params', function () {
+  it('discovery:validate_response_params', function () {
     let tempAdm = '<link rel=\"stylesheet\" href=\"https://cdn.mediago.io/js/style/style_banner_336x280_standard.css\"><div id=\"mgcontainer-e1746bcc817beaba9d63bd4254aad533\" class=\"mediago-placement_46ee9c c336x280_standard_46ee9c mediago-placement c336x280_standard\" style=\"width:336px;height:280px;overflow:hidden\"><a class=\"mediago-placement-track_46ee9c mediago-placement-track\" title=\"秘密のしかけのネックレスをプレゼントした男性。2年後に彼女は中身に気付いて悲鳴を上げた\" href=\"https://trace.mediago.cc/api/bidder/track?tn=d0f4902b616cc5c38cbe0a08676d0ed9&price=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&evt=102&rid=3f6700b5e61e1476bed629b6ea6c7a4d&campaignid=1366258&impid=50-3663.infoseek.co.jp.336x280-1&offerid=28316825&test=0&time=1660811542&cp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&clickid=50_3f6700b5e61e1476bed629b6ea6c7a4d_50-3663.infoseek.co.jp.336x280-1&acid=1120&trackingid=e1746bcc817beaba9d63bd4254aad533&uid=7544198412013119947&jt=2&url=O7fi1nLA9qLQjcPq7rIDvxMyybMbcc2iUh-TuaqiVSD1Dj4cKrR82gRYdWy1Ao22yhq2FoY79tmyI3X_bsO3CusXggmpW8bZvwTlHPxfOxekArClcRSpWmkVorlnMSYf7yM6QBVTuTLCCP-cK8eXMZnQVR7PdOImYZGJis6q9Xx9MToxvPkWRVa13OaCtKVeqzGdglYH3G2mqo1qLP1RCCZJHE1Fq8fgCYmLJ0Xli-nLvFZjt3g0HIui_IvyZi6YtXS97p9ohgfgDJnqcGH6l053AP0cO7ZQDHtS2_9P9UqgaA47gmltDVEDkSThX7js&bm=50&la=ja&cn=jp&cid=4215873&info=x_ME1qzmB7TY6hTSn_XUw5s6N-EkBgxcE4qJ0fd9amgsJzO3-Gtm2Nja777SyGlpkF6k_tSzbcLYYecYQlHncOAAIyuNaT2rvqrhxrQPfC7opZUGQ8WMx4Rwkx8R2k0nDiBI8xnegLWYTvY-Fc99Rw&sid=38__149__12__24__144__163__47__1__99&sp=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&scp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&acu=JPY&scu=USD&sgcp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&gprice=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&gcp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&ah=&pb=m&de=infoseek.co.jp&cat=&iv=0\" target=\"_blank\"><div class=\"mediago-placement-top_46ee9c mediago-placement-top\" style=\"background-image:url(https://d2cli4kgl5uxre.cloudfront.net/ML/d8e9b4aa20fae1739d2aad8c926d3f15__scv1__306x304.png)\"></div></a><div class=\"mediago-placement-bottom_46ee9c mediago-placement-bottom\"><div class=\"mediago-middle_46ee9c mediago-middle\"><a class=\"mediago-placement-track_46ee9c mediago-placement-track\" title=\"秘密のしかけのネックレスをプレゼントした男性。2年後に彼女は中身に気付いて悲鳴を上げた\" href=\"https://trace.mediago.cc/api/bidder/track?tn=d0f4902b616cc5c38cbe0a08676d0ed9&price=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&evt=102&rid=3f6700b5e61e1476bed629b6ea6c7a4d&campaignid=1366258&impid=50-3663.infoseek.co.jp.336x280-1&offerid=28316825&test=0&time=1660811542&cp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&clickid=50_3f6700b5e61e1476bed629b6ea6c7a4d_50-3663.infoseek.co.jp.336x280-1&acid=1120&trackingid=e1746bcc817beaba9d63bd4254aad533&uid=7544198412013119947&jt=2&url=O7fi1nLA9qLQjcPq7rIDvxMyybMbcc2iUh-TuaqiVSD1Dj4cKrR82gRYdWy1Ao22yhq2FoY79tmyI3X_bsO3CusXggmpW8bZvwTlHPxfOxekArClcRSpWmkVorlnMSYf7yM6QBVTuTLCCP-cK8eXMZnQVR7PdOImYZGJis6q9Xx9MToxvPkWRVa13OaCtKVeqzGdglYH3G2mqo1qLP1RCCZJHE1Fq8fgCYmLJ0Xli-nLvFZjt3g0HIui_IvyZi6YtXS97p9ohgfgDJnqcGH6l053AP0cO7ZQDHtS2_9P9UqgaA47gmltDVEDkSThX7js&bm=50&la=ja&cn=jp&cid=4215873&info=x_ME1qzmB7TY6hTSn_XUw5s6N-EkBgxcE4qJ0fd9amgsJzO3-Gtm2Nja777SyGlpkF6k_tSzbcLYYecYQlHncOAAIyuNaT2rvqrhxrQPfC7opZUGQ8WMx4Rwkx8R2k0nDiBI8xnegLWYTvY-Fc99Rw&sid=38__149__12__24__144__163__47__1__99&sp=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&scp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&acu=JPY&scu=USD&sgcp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&gprice=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&gcp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&ah=&pb=m&de=infoseek.co.jp&cat=&iv=0\" target=\"_blank\"><div class=\"mediago-title_46ee9c mediago-title\">秘密のしかけのネックレスをプレゼントした男性。2年後に彼女は中身に気付いて悲鳴を上げた</div></a><div style=\"margin-top:10px;\"><a class=\"mediago-ad-icon_46ee9c mediago-ad-icon\" title=\"ad\" href=\"//www.mediago.io/privacy\" target=\"_blank\">AD</a> <a class=\"mediago-placement-track_46ee9c mediago-placement-track\" title=\"秘密のしかけのネックレスをプレゼントした男性。2年後に彼女は中身に気付いて悲鳴を上げた\" href=\"https://trace.mediago.cc/api/bidder/track?tn=d0f4902b616cc5c38cbe0a08676d0ed9&price=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&evt=102&rid=3f6700b5e61e1476bed629b6ea6c7a4d&campaignid=1366258&impid=50-3663.infoseek.co.jp.336x280-1&offerid=28316825&test=0&time=1660811542&cp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&clickid=50_3f6700b5e61e1476bed629b6ea6c7a4d_50-3663.infoseek.co.jp.336x280-1&acid=1120&trackingid=e1746bcc817beaba9d63bd4254aad533&uid=7544198412013119947&jt=2&url=O7fi1nLA9qLQjcPq7rIDvxMyybMbcc2iUh-TuaqiVSD1Dj4cKrR82gRYdWy1Ao22yhq2FoY79tmyI3X_bsO3CusXggmpW8bZvwTlHPxfOxekArClcRSpWmkVorlnMSYf7yM6QBVTuTLCCP-cK8eXMZnQVR7PdOImYZGJis6q9Xx9MToxvPkWRVa13OaCtKVeqzGdglYH3G2mqo1qLP1RCCZJHE1Fq8fgCYmLJ0Xli-nLvFZjt3g0HIui_IvyZi6YtXS97p9ohgfgDJnqcGH6l053AP0cO7ZQDHtS2_9P9UqgaA47gmltDVEDkSThX7js&bm=50&la=ja&cn=jp&cid=4215873&info=x_ME1qzmB7TY6hTSn_XUw5s6N-EkBgxcE4qJ0fd9amgsJzO3-Gtm2Nja777SyGlpkF6k_tSzbcLYYecYQlHncOAAIyuNaT2rvqrhxrQPfC7opZUGQ8WMx4Rwkx8R2k0nDiBI8xnegLWYTvY-Fc99Rw&sid=38__149__12__24__144__163__47__1__99&sp=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&scp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&acu=JPY&scu=USD&sgcp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&gprice=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&gcp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&ah=&pb=m&de=infoseek.co.jp&cat=&iv=0\" target=\"_blank\"><div class=\"mediago-brand-name_46ee9c mediago-brand-name\">Factable</div></a></div></div></div></div>'
     tempAdm += '%3Cscr';
     tempAdm += 'ipt%3E';

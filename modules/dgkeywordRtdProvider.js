@@ -6,8 +6,7 @@
  * @module modules/dgkeywordProvider
  * @requires module:modules/realTimeData
  */
-
-import {logMessage, deepSetValue, logError, logInfo, mergeDeep} from '../src/utils.js';
+import { logMessage, deepSetValue, logError, logInfo, isStr, isArray } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { getGlobal } from '../src/prebidGlobal.js';
@@ -41,7 +40,7 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
   } else {
     logMessage('[dgkeyword sub module] dgkeyword targets:', setKeywordTargetBidders);
     logMessage('[dgkeyword sub module] get targets from profile api start.');
-    ajax(getProfileApiUrl(moduleConfig?.params?.url, moduleConfig?.params?.disableReadFpid), {
+    ajax(getProfileApiUrl(moduleConfig?.params?.url, moduleConfig?.params?.enableReadFpid), {
       success: function(response) {
         const res = JSON.parse(response);
         if (!isFinish) {
@@ -57,19 +56,11 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
             if (Object.keys(keywords).length > 0) {
               const targetBidKeys = {};
               for (let bid of setKeywordTargetBidders) {
-                // set keywords to params
-                bid.params.keywords = keywords;
+                // set keywords to ortb2Imp
+                deepSetValue(bid, 'ortb2Imp.ext.data.keywords', convertKeywordsToString(keywords));
                 if (!targetBidKeys[bid.bidder]) {
                   targetBidKeys[bid.bidder] = true;
                 }
-              }
-
-              if (!reqBidsConfigObj._ignoreSetOrtb2) {
-                // set keywrods to ortb2
-                let addOrtb2 = {};
-                deepSetValue(addOrtb2, 'site.keywords', keywords);
-                deepSetValue(addOrtb2, 'user.keywords', keywords);
-                mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, Object.fromEntries(Object.keys(targetBidKeys).map(bidder => [bidder, addOrtb2])));
               }
             }
           }
@@ -96,9 +87,9 @@ export function getDgKeywordsAndSet(reqBidsConfigObj, callback, moduleConfig, us
   }
 }
 
-export function getProfileApiUrl(customeUrl, disableReadFpid) {
+export function getProfileApiUrl(customeUrl, enableReadFpid) {
   const URL = 'https://mediaconsortium.profiles.tagger.opecloud.com/api/v1';
-  const fpid = (disableReadFpid) ? '' : readFpidFromLocalStrage();
+  const fpid = (enableReadFpid) ? readFpidFromLocalStrage() : '';
   let url = customeUrl || URL;
   url = url + '?url=' + encodeURIComponent(window.location.href) + ((fpid) ? `&fpid=${fpid}` : '');
   return url;
@@ -156,4 +147,37 @@ function init(moduleConfig) {
 function registerSubModule() {
   submodule('realTimeData', dgkeywordSubmodule);
 }
+
+// keywords: { 'genre': ['rock', 'pop'], 'pets': ['dog'] } goes to 'genre=rock,genre=pop,pets=dog'
+export function convertKeywordsToString(keywords) {
+  let result = '';
+  Object.keys(keywords).forEach(key => {
+    // if 'text' or ''
+    if (isStr(keywords[key])) {
+      if (keywords[key] !== '') {
+        result += `${key}=${keywords[key]},`
+      } else {
+        result += `${key},`;
+      }
+    } else if (isArray(keywords[key])) {
+      let isValSet = false
+      keywords[key].forEach(val => {
+        if (isStr(val) && val) {
+          result += `${key}=${val},`
+          isValSet = true
+        }
+      });
+      if (!isValSet) {
+        result += `${key},`
+      }
+    } else {
+      result += `${key},`
+    }
+  });
+
+  // remove last trailing comma
+  result = result.substring(0, result.length - 1);
+  return result;
+}
+
 registerSubModule();

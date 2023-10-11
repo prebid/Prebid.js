@@ -10,10 +10,11 @@ import {
   addBidResponseHook,
   currencySupportEnabled,
   currencyRates,
-  ready
+  responseReady
 } from 'modules/currency.js';
 import {createBid} from '../../../src/bidfactory.js';
 import CONSTANTS from '../../../src/constants.json';
+import {server} from '../../mocks/xhr.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -30,12 +31,10 @@ describe('currency', function () {
   }
 
   beforeEach(function () {
-    fakeCurrencyFileServer = sinon.fakeServer.create();
-    ready.reset();
+    fakeCurrencyFileServer = server;
   });
 
   afterEach(function () {
-    fakeCurrencyFileServer.restore();
     setConfig({});
   });
 
@@ -321,29 +320,26 @@ describe('currency', function () {
 
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
 
-      var bid = { 'cpm': 1, 'currency': 'USD' };
+      const bid = { 'cpm': 1, 'currency': 'USD' };
 
       setConfig({ 'adServerCurrency': 'JPY' });
 
-      var marker = false;
-      let promiseResolved = false;
+      let responseAdded = false;
+      let isReady = false;
+      responseReady.promise.then(() => { isReady = true });
+
       addBidResponseHook(Object.assign(function() {
-        marker = true;
-      }, {
-        bail: function (promise) {
-          promise.then(() => promiseResolved = true);
-        }
+        responseAdded = true;
       }), 'elementId', bid);
 
-      expect(marker).to.equal(false);
-
       setTimeout(() => {
-        expect(promiseResolved).to.be.false;
+        expect(responseAdded).to.equal(false);
+        expect(isReady).to.equal(false);
         fakeCurrencyFileServer.respond();
 
         setTimeout(() => {
-          expect(marker).to.equal(true);
-          expect(promiseResolved).to.be.true;
+          expect(responseAdded).to.equal(true);
+          expect(isReady).to.equal(true);
           done();
         });
       });
@@ -351,6 +347,11 @@ describe('currency', function () {
   });
 
   describe('currency.addBidResponseDecorator', function () {
+    let reject;
+    beforeEach(() => {
+      reject = sinon.stub().returns({status: 'rejected'});
+    });
+
     it('should leave bid at 1 when currency support is not enabled and fromCurrency is USD', function () {
       setConfig({});
       var bid = makeBid({ 'cpm': 1, 'currency': 'USD' });
@@ -361,15 +362,16 @@ describe('currency', function () {
       expect(innerBid.cpm).to.equal(1);
     });
 
-    it('should result in NO_BID when currency support is not enabled and fromCurrency is not USD', function () {
+    it('should reject bid when currency support is not enabled and fromCurrency is not USD', function () {
       setConfig({});
 
       var bid = makeBid({ 'cpm': 1, 'currency': 'GBP' });
-      var innerBid;
+      let bidAdded = false;
       addBidResponseHook(function(adCodeId, bid) {
-        innerBid = bid;
-      }, 'elementId', bid);
-      expect(innerBid.statusMessage).to.equal('Bid returned empty or error response');
+        bidAdded = true;
+      }, 'elementId', bid, reject);
+      expect(bidAdded).to.be.false;
+      expect(reject.calledOnce).to.be.true;
     });
 
     it('should not buffer bid when currency is already in desired currency', function () {
@@ -384,7 +386,7 @@ describe('currency', function () {
       expect(bid).to.equal(innerBid);
     });
 
-    it('should result in NO_BID when fromCurrency is not supported in file', function () {
+    it('should reject bid when fromCurrency is not supported in file', function () {
       // RESET to request currency file
       setConfig({ 'adServerCurrency': undefined });
 
@@ -392,23 +394,25 @@ describe('currency', function () {
       setConfig({ 'adServerCurrency': 'JPY' });
       fakeCurrencyFileServer.respond();
       var bid = makeBid({ 'cpm': 1, 'currency': 'ABC' });
-      var innerBid;
+      let bidAdded = false;
       addBidResponseHook(function(adCodeId, bid) {
-        innerBid = bid;
-      }, 'elementId', bid);
-      expect(innerBid.statusMessage).to.equal('Bid returned empty or error response');
+        bidAdded = true;
+      }, 'elementId', bid, reject);
+      expect(bidAdded).to.be.false;
+      expect(reject.calledOnce).to.be.true;
     });
 
-    it('should result in NO_BID when adServerCurrency is not supported in file', function () {
+    it('should reject bid when adServerCurrency is not supported in file', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
       setConfig({ 'adServerCurrency': 'ABC' });
       fakeCurrencyFileServer.respond();
       var bid = makeBid({ 'cpm': 1, 'currency': 'GBP' });
-      var innerBid;
+      let bidAdded = false;
       addBidResponseHook(function(adCodeId, bid) {
-        innerBid = bid;
-      }, 'elementId', bid);
-      expect(innerBid.statusMessage).to.equal('Bid returned empty or error response');
+        bidAdded = true;
+      }, 'elementId', bid, reject);
+      expect(bidAdded).to.be.false;
+      expect(reject.calledOnce).to.be.true;
     });
 
     it('should return 1 when currency support is enabled and same currency code is requested as is set to adServerCurrency', function () {
