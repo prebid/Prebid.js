@@ -4,8 +4,8 @@ import { deepAccess, deepSetValue, generateUUID } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { ajax } from '../src/ajax.js';
-import { getStorageManager } from '../src/storageManager.js'
-import { createEidsArray } from './userId/eids.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { createEidsArray } from 'modules/userId/eids.js';
 
 const BIDDER_CODE = 'impactify';
 const BIDDER_ALIAS = ['imp'];
@@ -14,12 +14,13 @@ const DEFAULT_VIDEO_WIDTH = 640;
 const DEFAULT_VIDEO_HEIGHT = 360;
 const ORIGIN = 'https://sonic.impactify.media';
 const LOGGER_URI = 'https://logger.impactify.media';
-const AUCTIONURI = '/bidder';
-const COOKIESYNCURI = '/static/cookie_sync.html';
-const GVLID = 606;
-const GETCONFIG = config.getConfig;
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const AUCTION_URI = '/bidder';
+const COOKIE_SYNC_URI = '/static/cookie_sync.html';
+const GVL_ID = 606;
+const GET_CONFIG = config.getConfig;
+const STORAGE = getStorageManager({gvlid: GVL_ID, bidderCode: BIDDER_CODE});
 const STORAGE_KEY = '_im_str'
+
 /**
  * Helpers object
  * @type {{getExtParamsFromBid(*): {impactify: {appId}}, createOrtbImpVideoObj(*): {context: string, playerSize: [number,number], id: string, mimes: [string]}, getDeviceType(): (number), createOrtbImpBannerObj(*, *): {format: [], id: string}}}
@@ -50,6 +51,7 @@ const helpers = {
 
     return ext;
   },
+
   getDeviceType() {
     // OpenRTB Device type
     if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(navigator.userAgent.toLowerCase()))) {
@@ -60,6 +62,7 @@ const helpers = {
     }
     return 2;
   },
+
   createOrtbImpBannerObj(bid, size) {
     let sizes = size.split('x');
 
@@ -71,6 +74,7 @@ const helpers = {
       }]
     }
   },
+
   createOrtbImpVideoObj(bid) {
     return {
       id: 'video-' + bid.bidId,
@@ -79,6 +83,7 @@ const helpers = {
       mimes: ['video/mp4'],
     }
   },
+
   getFloor(bid) {
     const floorInfo = bid.getFloor({
       currency: DEFAULT_CURRENCY,
@@ -91,8 +96,8 @@ const helpers = {
     return null;
   },
 
-  getLocalStorage() {
-    return storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(STORAGE_KEY) : '';
+  getImStrFromLocalStorage() {
+    return STORAGE.localStorageIsEnabled(false) ? STORAGE.getDataFromLocalStorage(STORAGE_KEY, false) : '';
   }
 
 }
@@ -161,7 +166,7 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
     this.syncStore.uspConsent = bidderRequest.uspConsent;
   }
 
-  if (GETCONFIG('coppa') == true) deepSetValue(request, 'regs.coppa', 1);
+  if (GET_CONFIG('coppa') == true) deepSetValue(request, 'regs.coppa', 1);
 
   if (bidderRequest.uspConsent) {
     deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent);
@@ -212,9 +217,10 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
  */
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
+  gvlid: GVL_ID,
   supportedMediaTypes: ['video', 'banner'],
   aliases: BIDDER_ALIAS,
+  storageAllowed: true,
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -254,16 +260,18 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     // Create a clean openRTB request
     let request = createOpenRtbRequest(validBidRequests, bidderRequest);
-    const imStr = helpers.getLocalStorage();
-    const options = {
-      customHeaders: {
-        'x-impact': imStr,
-      }
+    const imStr = helpers.getImStrFromLocalStorage();
+    const options = {}
+
+    if (imStr) {
+      options.customHeaders = {
+        'x-impact': imStr
+      };
     }
 
     return {
       method: 'POST',
-      url: ORIGIN + AUCTIONURI,
+      url: ORIGIN + AUCTION_URI,
       data: JSON.stringify(request),
       options
     };
@@ -355,7 +363,7 @@ export const spec = {
 
     return [{
       type: 'iframe',
-      url: ORIGIN + COOKIESYNCURI + params
+      url: ORIGIN + COOKIE_SYNC_URI + params
     }];
   },
 
@@ -364,7 +372,7 @@ export const spec = {
    * @param {Bid} The bid that won the auction
   */
   onBidWon: function(bid) {
-    ajax(`${LOGGER_URI}/log/bidder/won`, null, JSON.stringify(bid), {
+    ajax(`${LOGGER_URI}/prebid/won`, null, JSON.stringify(bid), {
       method: 'POST',
       contentType: 'application/json'
     });
@@ -377,7 +385,7 @@ export const spec = {
    * @param {data} Containing timeout specific data
   */
   onTimeout: function(data) {
-    ajax(`${LOGGER_URI}/log/bidder/timeout`, null, JSON.stringify(data[0]), {
+    ajax(`${LOGGER_URI}/prebid/timeout`, null, JSON.stringify(data[0]), {
       method: 'POST',
       contentType: 'application/json'
     });

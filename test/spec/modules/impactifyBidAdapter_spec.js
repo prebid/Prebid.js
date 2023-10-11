@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec, storage } from 'modules/impactifyBidAdapter.js';
 import * as utils from 'src/utils.js';
+import sinon from 'sinon';
 
 const BIDDER_CODE = 'impactify';
 const BIDDER_ALIAS = ['imp'];
@@ -19,6 +20,15 @@ var gdprData = {
 };
 
 describe('ImpactifyAdapter', function () {
+  beforeEach(function () {
+    $$PREBID_GLOBAL$$.bidderSettings = {
+      impactify: {
+        storageAllowed: true
+      }
+    };
+    sinon.stub(document.body, 'appendChild');
+  });
+
   describe('isBidRequestValid', function () {
     let validBids = [
       {
