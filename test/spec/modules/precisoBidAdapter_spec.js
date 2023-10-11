@@ -26,7 +26,7 @@ describe('PrecisoAdapter', function () {
 
     },
     userId: {
-      pubcid: '12355454test'
+      pubcid: '27e21631-975a-4410-85f3-c08b1f1c469f'
 
     },
     geo: 'NA',
@@ -73,6 +73,7 @@ describe('PrecisoAdapter', function () {
 
       expect(data.city).to.be.a('string');
       expect(data.geo).to.be.a('object');
+      expect(data.userId).to.be.a('object');
       // expect(data.userId).to.be.a('string');
       // expect(data.imp).to.be.a('object');
     });
@@ -145,7 +146,7 @@ describe('PrecisoAdapter', function () {
     })
   })
   describe('getUserSyncs', function () {
-    const syncUrl = 'https://ck.2trk.info/rtb/user/usersync.aspx?id=12355454test&gdpr=0&gdpr_consent=&us_privacy=&t=4';
+    const syncUrl = 'https://ck.2trk.info/rtb/user/usersync.aspx?id=27e21631-975a-4410-85f3-c08b1f1c469f&gdpr=0&gdpr_consent=&us_privacy=&t=4';
     const syncOptions = {
       iframeEnabled: true
     };
