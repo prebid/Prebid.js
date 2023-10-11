@@ -1935,9 +1935,7 @@ describe('PubMatic adapter', function () {
             });
 
             it('should not send if imp[].ext.gpid is not specified', function() {
-              bidRequests[0].ortb2Imp = {
-                ext: {}
-              };
+              bidRequests[0].ortb2Imp = { ext: { } };
               const request = spec.buildRequests(bidRequests, {});
               let data = JSON.parse(request.data);
               expect(data.imp[0].ext).to.not.have.property('gpid');
