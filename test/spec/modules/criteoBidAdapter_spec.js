@@ -2477,14 +2477,6 @@ describe('The Criteo bidding adapter', function () {
     it('should properly parse a bid response with FLEDGE auction configs', function () {
       const response = {
         body: {
-          slots: [{
-            impid: 'bid-123',
-            cpm: 1.23,
-            creative: 'test-ad',
-            width: 728,
-            height: 90,
-            zoneid: 123,
-          }],
           ext: {
             igbid: [{
               impid: 'test-bidId',
@@ -2536,8 +2528,7 @@ describe('The Criteo bidding adapter', function () {
       const interpretedResponse = spec.interpretResponse(response, request);
       expect(interpretedResponse).to.have.property('bids');
       expect(interpretedResponse).to.have.property('fledgeAuctionConfigs');
-      expect(interpretedResponse.bids).to.have.lengthOf(1);
-      expect(interpretedResponse.bids[0].requestId).to.equal('test-bidId');
+      expect(interpretedResponse.bids).to.have.lengthOf(0);
       expect(interpretedResponse.fledgeAuctionConfigs).to.have.lengthOf(1);
       expect(interpretedResponse.fledgeAuctionConfigs[0]).to.deep.equal({
         bidId: 'test-bidId',
