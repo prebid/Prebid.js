@@ -142,6 +142,11 @@ describe('kargo adapter tests', function () {
                 model: 'model',
                 source: 1,
               }
+            },
+            site: {
+              id: '1234',
+              name: 'SiteName',
+              cat: ['IAB1', 'IAB2', 'IAB3']
             }
           },
           ortb2Imp: {
@@ -438,6 +443,9 @@ describe('kargo adapter tests', function () {
             model: 'model',
             source: 1
           },
+        },
+        site: {
+          cat: ['IAB1', 'IAB2', 'IAB3']
         },
         imp: [
           {
