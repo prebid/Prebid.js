@@ -71,6 +71,7 @@ export const spec = {
         device,
         site,
         imp: [],
+        test: 1,
       };
 
       const imp = {
