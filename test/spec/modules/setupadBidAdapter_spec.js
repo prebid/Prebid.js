@@ -82,29 +82,20 @@ describe('SetupadAdapter', function () {
         'BOtmiBKOtmiBKABABAENAFAAAAACeAAA'
       );
       expect(JSON.parse(request[0].data).regs.ext.gdpr).to.equal(1);
-      expect(JSON.parse(request[0].data).regs.ext.us_privacy).to.equal(
-        'usp-context-string'
-      );
+      expect(JSON.parse(request[0].data).regs.ext.us_privacy).to.equal('usp-context-string');
     });
 
     it('check request params without GDPR', function () {
       let bidRequestsWithoutGDPR = Object.assign({}, bidRequests[0]);
       delete bidRequestsWithoutGDPR.gdprConsent;
-      const request = spec.buildRequests(
-        [bidRequestsWithoutGDPR],
-        bidRequestsWithoutGDPR
-      );
+      const request = spec.buildRequests([bidRequestsWithoutGDPR], bidRequestsWithoutGDPR);
       expect(JSON.parse(request[0].data).regs.ext.gdpr).to.be.undefined;
-      expect(JSON.parse(request[0].data).regs.ext.us_privacy).to.equal(
-        'usp-context-string'
-      );
+      expect(JSON.parse(request[0].data).regs.ext.us_privacy).to.equal('usp-context-string');
     });
 
     it('should return correct storedrequest id if account_id is provided', function () {
       const request = spec.buildRequests(bidRequests, bidRequests[0]);
-      expect(JSON.parse(request[0].data).ext.prebid.storedrequest.id).to.equal(
-        'test-account-id'
-      );
+      expect(JSON.parse(request[0].data).ext.prebid.storedrequest.id).to.equal('test-account-id');
     });
 
     it('should return correct storedrequest id if account_id is not provided', function () {
@@ -114,9 +105,7 @@ describe('SetupadAdapter', function () {
         [bidRequestsWithoutAccountId],
         bidRequestsWithoutAccountId
       );
-      expect(JSON.parse(request[0].data).ext.prebid.storedrequest.id).to.equal(
-        'default'
-      );
+      expect(JSON.parse(request[0].data).ext.prebid.storedrequest.id).to.equal('default');
     });
 
     it('validate generated params', function () {
@@ -132,9 +121,7 @@ describe('SetupadAdapter', function () {
 
     it('check if elOffsets was added', function () {
       const request = spec.buildRequests(bidRequests);
-      expect(JSON.parse(request[0].data).ext.setupad.elOffsets).to.be.an(
-        'object'
-      );
+      expect(JSON.parse(request[0].data).ext.setupad.elOffsets).to.be.an('object');
     });
 
     it('check if imp object was added', function () {
@@ -173,12 +160,7 @@ describe('SetupadAdapter', function () {
         },
       ];
 
-      const userSyncs = spec.getUserSyncs(
-        syncOptions,
-        responses,
-        gdprConsent,
-        uspConsent
-      );
+      const userSyncs = spec.getUserSyncs(syncOptions, responses, gdprConsent, uspConsent);
 
       expect(userSyncs).to.deep.equal(expectedUserSyncs);
     });
@@ -202,12 +184,7 @@ describe('SetupadAdapter', function () {
       const uspConsent = 'mkjvbiniwot4827obfoy8sdg8203gb';
       const expectedUserSyncs = [];
 
-      const userSyncs = spec.getUserSyncs(
-        syncOptions,
-        responses,
-        gdprConsent,
-        uspConsent
-      );
+      const userSyncs = spec.getUserSyncs(syncOptions, responses, gdprConsent, uspConsent);
 
       expect(userSyncs).to.deep.equal(expectedUserSyncs);
     });
@@ -230,8 +207,7 @@ describe('SetupadAdapter', function () {
   });
 
   describe('getPixelUrl', function () {
-    const REPORT_ENDPOINT =
-      'https://adapter-analytics.azurewebsites.net/api/adapter-analytics';
+    const REPORT_ENDPOINT = 'https://adapter-analytics.azurewebsites.net/api/adapter-analytics';
     const mockData = [
       {
         timestamp: 123456789,

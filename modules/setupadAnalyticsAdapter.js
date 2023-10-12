@@ -5,7 +5,7 @@ import adapterManager from '../src/adapterManager.js';
 import { getGptSlotInfoForAdUnitCode, logError, logInfo } from '../src/utils.js';
 
 const analyticsType = 'endpoint';
-const url =
+const setupadAnalyticsEndpoint =
   'https://function-analytics-setupad-adapter.azurewebsites.net/api/function-analytics-setupad-adapter';
 
 let initOptions = {};
@@ -71,7 +71,7 @@ function bidTimeoutHandler(args) {
   });
 }
 
-let setupadAnalyticsAdapter = Object.assign(adapter({ url, analyticsType }), {
+let setupadAnalyticsAdapter = Object.assign(adapter({ setupadAnalyticsEndpoint, analyticsType }), {
   track({ eventType, args }) {
     switch (eventType) {
       case CONSTANTS.EVENTS.AUCTION_INIT:
@@ -105,7 +105,7 @@ let setupadAnalyticsAdapter = Object.assign(adapter({ url, analyticsType }), {
 function call() {
   if (eventQueue.length > 0) {
     ajax(
-      url,
+      setupadAnalyticsEndpoint,
       () => logInfo('SETUPAD_ANALYTICS_BATCH_SEND'),
       JSON.stringify({ data: eventQueue, adUnitCodes: adUnitCodesCache }),
       {
@@ -119,25 +119,29 @@ function call() {
   }
 }
 
+function handleAdUnitCodes(adUnitCodes) {
+  if (!Array.isArray(adUnitCodes)) return [];
+  return adUnitCodes.map((code) => {
+    const gamPath = getGptSlotInfoForAdUnitCode(code)?.gptSlot ?? code;
+    return {
+      adUnitCode: code,
+      gamPath,
+    };
+  });
+}
+
 function sendEvent(data) {
   eventQueue.push(data);
   if (data.eventType === CONSTANTS.EVENTS.AUCTION_INIT) {
-    adUnitCodesCache = data.args.adUnitCodes.map((code) => {
-      const gamPath = getGptSlotInfoForAdUnitCode(code)?.gptSlot || code;
-      return {
-        adUnitCode: code,
-        gamPath,
-      };
-    });
+    adUnitCodesCache = handleAdUnitCodes(data?.args?.adUnitCodes);
   }
-
   if (data.eventType === CONSTANTS.EVENTS.AUCTION_END) call();
 }
 
 function bidWonCall(data) {
   const formatAdUnitCode = getGptSlotInfoForAdUnitCode(data.adUnitCode)?.gptSlot || data.adUnitCode;
   ajax(
-    `${url}?bidWon=true`,
+    `${setupadAnalyticsEndpoint}?bidWon=true`,
     () => logInfo('SETUPAD_ANALYTICS_BATCH_SEND'),
     JSON.stringify({ data, adUnitCode: formatAdUnitCode }),
     {
@@ -153,14 +157,17 @@ setupadAnalyticsAdapter.originEnableAnalytics = setupadAnalyticsAdapter.enableAn
 // override enableAnalytics so we can get access to the config passed in from the page
 setupadAnalyticsAdapter.enableAnalytics = function (config) {
   initOptions = config ? config.options : {};
-  setupadAnalyticsAdapter.originEnableAnalytics(config); // call the base class function
-
   if (!initOptions.pid) return logError('enableAnalytics missing config object with "pid"');
+
+  setupadAnalyticsAdapter.originEnableAnalytics(config); // call the base class function
 };
 
 adapterManager.registerAnalyticsAdapter({
   adapter: setupadAnalyticsAdapter,
   code: 'setupadAnalyticsAdapter',
 });
+
+// export for testing
+export { handleAdUnitCodes };
 
 export default setupadAnalyticsAdapter;

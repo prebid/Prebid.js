@@ -16,8 +16,7 @@ import CONSTANTS from '../src/constants.json';
 const BIDDER_CODE = 'setupad';
 const ENDPOINT = 'https://prebid.setupad.io/openrtb2/auction';
 const SYNC_ENDPOINT = 'https://cookie.stpd.cloud/sync?';
-const REPORT_ENDPOINT =
-  'https://adapter-analytics.azurewebsites.net/api/adapter-analytics';
+const REPORT_ENDPOINT = 'https://adapter-analytics.azurewebsites.net/api/adapter-analytics';
 const GVLID = 1060;
 const TIME_TO_LIVE = 360;
 let seat = null;
@@ -40,8 +39,7 @@ export const spec = {
     const requests = [];
     window.nmmRefreshCounts = window.nmmRefreshCounts || {};
     _each(validBidRequests, function (bid) {
-      window.nmmRefreshCounts[bid.adUnitCode] =
-        window.nmmRefreshCounts[bid.adUnitCode] || 0;
+      window.nmmRefreshCounts[bid.adUnitCode] = window.nmmRefreshCounts[bid.adUnitCode] || 0;
       const id = getBidIdParameter('placement_id', bid.params);
       const accountId = getBidIdParameter('account_id', bid.params);
       const auctionId = bid.auctionId;
@@ -216,8 +214,7 @@ export const spec = {
       placementIdsArray.push(param.placement_id);
     });
 
-    const placementIds =
-      (placementIdsArray.length && placementIdsArray.join(';')) || '';
+    const placementIds = (placementIdsArray.length && placementIdsArray.join(';')) || '';
 
     if (!placementIds) return;
 
@@ -323,8 +320,7 @@ function initSendingDataStatistic() {
     eventHendlers = {};
 
     initEvents() {
-      this.disabledSending =
-        !!config.getBidderConfig()?.setupad?.disabledSendingStatisticData;
+      this.disabledSending = !!config.getBidderConfig()?.setupad?.disabledSendingStatisticData;
       if (this.disabledSending) {
         this.removeEvents();
       } else {
