@@ -76,6 +76,8 @@ const SOURCE_RTI_MAPPING = {
   'audigent.com': '', // Hadron ID from Audigent, hadronId
   'pubcid.org': '', // SharedID, pubcid
   'utiq.com': '', // Utiq
+  'criteo.com': '', // Criteo
+  'euid.eu': '', // EUID
   'intimatemerger.com': '',
   '33across.com': '',
   'liveintent.indexexchange.com': '',

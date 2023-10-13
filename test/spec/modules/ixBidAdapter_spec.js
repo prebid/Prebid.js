@@ -760,7 +760,9 @@ describe('IndexexchangeAdapter', function () {
     // similar to uid2, but id5's getValue takes .uid
     id5id: { uid: 'testid5id' }, // ID5
     imuid: 'testimuid',
-    '33acrossId': { envelope: 'v1.5fs.1000.fjdiosmclds' }
+    '33acrossId': { envelope: 'v1.5fs.1000.fjdiosmclds' },
+    'criteoID': { envelope: 'testcriteoID' },
+    'euidID': { envelope: 'testeuid' }
   };
 
   const DEFAULT_USERIDASEIDS_DATA = createEidsArray(DEFAULT_USERID_DATA);
@@ -820,6 +822,16 @@ describe('IndexexchangeAdapter', function () {
       source: '33across.com',
       uids: [{
         id: DEFAULT_USERID_DATA['33acrossId'].envelope
+      }]
+    }, {
+      source: 'criteo.com',
+      uids: [{
+        id: DEFAULT_USERID_DATA['criteoID'].envelope
+      }]
+    }, {
+      source: 'euid.eu',
+      uids: [{
+        id: DEFAULT_USERID_DATA['euidID'].envelope
       }]
     }
   ];
@@ -1225,7 +1237,7 @@ describe('IndexexchangeAdapter', function () {
         const payload = extractPayload(request[0]);
         expect(request).to.be.an('array');
         expect(request).to.have.lengthOf.above(0); // should be 1 or more
-        expect(payload.user.eids).to.have.lengthOf(8);
+        expect(payload.user.eids).to.have.lengthOf(10);
         expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
       });
     });
@@ -1413,7 +1425,7 @@ describe('IndexexchangeAdapter', function () {
       cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = extractPayload(request);
-      expect(payload.user.eids).to.have.lengthOf(8);
+      expect(payload.user.eids).to.have.lengthOf(10);
       expect(payload.user.eids).to.have.deep.members(DEFAULT_USERID_PAYLOAD);
     });
 
@@ -1546,7 +1558,7 @@ describe('IndexexchangeAdapter', function () {
       })
 
       expect(payload.user).to.exist;
-      expect(payload.user.eids).to.have.lengthOf(10);
+      expect(payload.user.eids).to.have.lengthOf(12);
 
       expect(payload.user.eids).to.have.deep.members(validUserIdPayload);
     });
@@ -1588,7 +1600,7 @@ describe('IndexexchangeAdapter', function () {
       });
 
       const payload = extractPayload(request);
-      expect(payload.user.eids).to.have.lengthOf(9);
+      expect(payload.user.eids).to.have.lengthOf(11);
       expect(payload.user.eids).to.have.deep.members(validUserIdPayload);
     });
   });
