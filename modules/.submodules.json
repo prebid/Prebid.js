@@ -75,6 +75,7 @@
       "oneKeyRtdProvider",
       "optimeraRtdProvider",
       "permutiveRtdProvider",
+      "qortexRtdProvider",
       "reconciliationRtdProvider",
       "sirdataRtdProvider",
       "timeoutRtdProvider",
