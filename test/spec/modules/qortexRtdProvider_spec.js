@@ -168,21 +168,21 @@ describe('qortexRtdProvider', () => {
       dispatchEvent(new CustomEvent('qortex-rtd', validImpressionEvent));
       dispatchEvent(new CustomEvent('qortex-rtd', validImpressionEvent));
       expect(billableEvents.length).to.be.equal(1);
-      expect(logWarnSpy.calledWith('recieved invalid billable event due to duplicate uid: qx-impression')).to.be.ok;
+      expect(logWarnSpy.calledWith('received invalid billable event due to duplicate uid: qx-impression')).to.be.ok;
     })
 
     it('will not allow events with missing uid', () => {
       loadScriptTag(config);
       dispatchEvent(new CustomEvent('qortex-rtd', missingIdImpressionEvent));
       expect(billableEvents.length).to.be.equal(0);
-      expect(logWarnSpy.calledWith('recieved invalid billable event due to missing uid: qx-impression')).to.be.ok;
+      expect(logWarnSpy.calledWith('received invalid billable event due to missing uid: qx-impression')).to.be.ok;
     })
 
     it('will not allow events with unavailable type', () => {
       loadScriptTag(config);
       dispatchEvent(new CustomEvent('qortex-rtd', invalidTypeQortexEvent));
       expect(billableEvents.length).to.be.equal(0);
-      expect(logWarnSpy.calledWith('recieved invalid billable event: invalid-type')).to.be.ok;
+      expect(logWarnSpy.calledWith('received invalid billable event: invalid-type')).to.be.ok;
     })
   })
 
@@ -281,7 +281,7 @@ describe('qortexRtdProvider', () => {
       initializeModuleData(validModuleConfig);
       addContextToRequests(reqBidsConfig);
       expect(logWarnSpy.calledOnce).to.be.true;
-      expect(logWarnSpy.calledWith('No context data recieved at this time')).to.be.ok;
+      expect(logWarnSpy.calledWith('No context data received at this time')).to.be.ok;
       expect(reqBidsConfig.ortb2Fragments.global).to.be.eql({});
       expect(reqBidsConfig.ortb2Fragments.bidder).to.be.eql({});
     })
