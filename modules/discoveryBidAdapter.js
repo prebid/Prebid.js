@@ -261,6 +261,16 @@ function getItems(validBidRequests, bidderRequest) {
         tagid: req.params && req.params.tagid
       };
     }
+
+    try {
+      ret.ext = {
+        adUnitCode: getKv(req, 'adUnitCode'),
+        adslot: getKv(req, 'ortb2Imp', 'ext', 'data', 'adserver', 'adslot'),
+        gpid: getKv(req, 'ortb2Imp', 'ext', 'gpid'),
+        token: getKv(req, 'params', 'token'),
+      };
+    } catch (e) {}
+
     itemMaps[id] = {
       req,
       ret,
