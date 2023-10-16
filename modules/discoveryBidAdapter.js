@@ -223,13 +223,12 @@ function getItems(validBidRequests, bidderRequest) {
     let ret = {};
     // eslint-disable-next-line no-debugger
     let mediaTypes = getKv(req, 'mediaTypes');
-    const auc = getKv(req, 'adUnitCode');
 
     const bidFloor = getBidFloor(req);
     let id = '' + (i + 1);
 
     if (mediaTypes.native) {
-      ret = { ...NATIVERET, ...{ id, bidFloor, auc } };
+      ret = { ...NATIVERET, ...{ id, bidFloor } };
     }
     // banner
     if (mediaTypes.banner) {
@@ -260,9 +259,22 @@ function getItems(validBidRequests, bidderRequest) {
         },
         ext: {},
         tagid: req.params && req.params.tagid,
-        auc,
       };
     }
+
+    // 追加公用ret.ext参数
+    try {
+      const otherExt = {
+        adUnitCode: getKv(req, 'adUnitCode'),
+        adslot: getKv(req, 'ortb2Imp', 'ext', 'data', 'adserver', 'adslot'),
+        gpid: getKv(req, 'ortb2Imp', 'ext', 'gpid'),
+        token: getKv(req, 'params', 'token'),
+      };
+      Object.assign(ret.ext, otherExt);
+    } catch (error) {
+      console.error(error);
+    }
+
     itemMaps[id] = {
       req,
       ret,
