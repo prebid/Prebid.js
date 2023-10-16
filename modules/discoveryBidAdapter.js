@@ -262,7 +262,7 @@ function getItems(validBidRequests, bidderRequest) {
       };
     }
 
-    // 追加公用ret.ext参数
+    // add common params ret.ext
     try {
       const otherExt = {
         adUnitCode: getKv(req, 'adUnitCode'),
