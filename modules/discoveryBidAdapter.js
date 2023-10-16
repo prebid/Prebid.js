@@ -262,7 +262,6 @@ function getItems(validBidRequests, bidderRequest) {
       };
     }
 
-    // add common params ret.ext
     try {
       const otherExt = {
         adUnitCode: getKv(req, 'adUnitCode'),
