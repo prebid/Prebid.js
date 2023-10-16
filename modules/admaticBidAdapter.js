@@ -106,6 +106,7 @@ export const spec = {
           netRevenue: true,
           creativeId: bid.creative_id,
           meta: {
+            model: bid.mime_type,
             advertiserDomains: bid && bid.adomain ? bid.adomain : []
           },
           bidder: bid.bidder,
