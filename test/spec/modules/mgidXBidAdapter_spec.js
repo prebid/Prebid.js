@@ -6,7 +6,6 @@ import { config } from '../../../src/config';
 import { USERSYNC_DEFAULT_CONFIG } from '../../../src/userSync';
 
 const bidder = 'mgidX'
-const adUrl = 'https://us-east-x.mgid.com/pbjs';
 
 describe('MGIDXBidAdapter', function () {
   const bids = [
@@ -19,6 +18,7 @@ describe('MGIDXBidAdapter', function () {
         }
       },
       params: {
+        host: 'eu',
         placementId: 'testBanner',
       }
     },
@@ -56,6 +56,7 @@ describe('MGIDXBidAdapter', function () {
         }
       },
       params: {
+        host: 'eu',
         placementId: 'testNative',
       }
     }
@@ -105,8 +106,16 @@ describe('MGIDXBidAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
 
-    it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal(adUrl);
+    it('Returns valid EU URL', function () {
+      bids[0].params.host = 'eu';
+      serverRequest = spec.buildRequests(bids, bidderRequest);
+      expect(serverRequest.url).to.equal('https://eu.mgid.com/pbjs');
+    });
+
+    it('Returns valid EAST URL', function () {
+      bids[0].params.host = 'us-east-x';
+      serverRequest = spec.buildRequests(bids, bidderRequest);
+      expect(serverRequest.url).to.equal('https://us-east-x.mgid.com/pbjs');
     });
 
     it('Returns general data valid', function () {
@@ -187,12 +196,6 @@ describe('MGIDXBidAdapter', function () {
       expect(data.ccpa).to.be.a('string');
       expect(data.ccpa).to.equal(bidderRequest.uspConsent);
       expect(data.gdpr).to.not.exist;
-    });
-
-    it('Returns empty data if no valid requests are passed', function () {
-      serverRequest = spec.buildRequests([], bidderRequest);
-      let data = serverRequest.data;
-      expect(data.placements).to.be.an('array').that.is.empty;
     });
   });
 

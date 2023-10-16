@@ -17,7 +17,7 @@ import { USERSYNC_DEFAULT_CONFIG } from '../src/userSync.js';
 
 const BIDDER_CODE = 'mgidX';
 const GVLID = 358;
-const AD_URL = 'https://us-east-x.mgid.com/pbjs';
+const AD_URL = 'https://#{REGION}#.mgid.com/pbjs';
 const PIXEL_SYNC_URL = 'https://cm.mgid.com/i.gif';
 const IFRAME_SYNC_URL = 'https://cm.mgid.com/i.html';
 
@@ -111,7 +111,7 @@ export const spec = {
 
   isBidRequestValid: (bid = {}) => {
     const { params, bidId, mediaTypes } = bid;
-    let valid = Boolean(bidId && params && (params.placementId || params.endpointId));
+    let valid = Boolean(bidId && params && (params.placementId || params.endpointId) && params.host);
 
     if (mediaTypes && mediaTypes[BANNER]) {
       valid = valid && Boolean(mediaTypes[BANNER] && mediaTypes[BANNER].sizes);
@@ -176,9 +176,11 @@ export const spec = {
       placements.push(getPlacementReqData(bid));
     }
 
+    const url = AD_URL.replace('#{REGION}#', validBidRequests[0].params?.host)
+
     return {
       method: 'POST',
-      url: AD_URL,
+      url: url,
       data: request
     };
   },
