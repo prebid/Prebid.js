@@ -1,10 +1,8 @@
 import {
   buildUrl,
-  deepAccess,
   formatQS,
   isFn,
   logInfo,
-  parseSizesInput,
   triggerPixel,
 } from '../src/utils.js';
 import { config } from '../src/config.js';
@@ -16,46 +14,20 @@ const ENDPOINT_URL = 'https://bid.missena.io/';
 const EVENTS_DOMAIN = 'events.missena.io';
 const EVENTS_DOMAIN_DEV = 'events.staging.missena.xyz';
 
-function getSize(sizesArray) {
-  const firstSize = sizesArray[0];
-  if (typeof firstSize !== 'string') return {};
-
-  const [widthStr, heightStr] = firstSize.toUpperCase().split('X');
-  return {
-    width: parseInt(widthStr, 10) || undefined,
-    height: parseInt(heightStr, 10) || undefined,
-  };
-}
-
 /* Get Floor price information */
 function getFloor(bidRequest) {
   if (!isFn(bidRequest.getFloor)) {
     return {};
   }
-  const sizesArray = getSizeArray(bidRequest);
-  const size = getSize(sizesArray);
 
   const bidFloors = bidRequest.getFloor({
     currency: 'USD',
-    mediaType: BANNER,
-    size: [size.width, size.height],
+    mediaType: BANNER
   });
 
   if (!isNaN(bidFloors.floor)) {
     return bidFloors;
   }
-}
-
-function getSizeArray(bid) {
-  let inputSize = deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes || [];
-
-  if (Array.isArray(bid.params?.size)) {
-    inputSize = !Array.isArray(bid.params.size[0])
-      ? [bid.params.size]
-      : bid.params.size;
-  }
-
-  return parseSizesInput(inputSize);
 }
 
 export const spec = {
