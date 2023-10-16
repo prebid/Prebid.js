@@ -160,7 +160,7 @@ export function getCachedTopics() {
 }
 
 /**
- * Recieve messages from iframe loaded for bidders to fetch topic
+ * Receive messages from iframe loaded for bidders to fetch topic
  * @param {MessageEvent} evt
  */
 export function receiveMessage(evt) {
@@ -177,7 +177,7 @@ export function receiveMessage(evt) {
 }
 
 /**
-Function to store Topics data recieved from iframe in storage(name: "prebid:topics")
+Function to store Topics data received from iframe in storage(name: "prebid:topics")
 * @param {Topics} topics
 */
 export function storeInLocalStorage(bidder, topics) {
