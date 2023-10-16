@@ -4,7 +4,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {isNumber} from '../src/utils.js';
 
-const BIDADAPTERVERSION = 'TTD-PREBID-2022.06.28';
+const BIDADAPTERVERSION = 'TTD-PREBID-2023.09.05';
 const BIDDER_CODE = 'ttd';
 const BIDDER_CODE_LONG = 'thetradedesk';
 const BIDDER_ENDPOINT = 'https://direct.adsrvr.org/bid/bidder/';
@@ -66,9 +66,9 @@ function getBidFloor(bid) {
   return null;
 }
 
-function getSource(validBidRequests) {
+function getSource(validBidRequests, bidderRequest) {
   let source = {
-    tid: validBidRequests[0].auctionId
+    tid: bidderRequest?.ortb2?.source?.tid,
   };
   if (validBidRequests[0].schain) {
     utils.deepSetValue(source, 'ext.schain', validBidRequests[0].schain);
@@ -406,7 +406,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const firstPartyData = bidderRequest.ortb2 || {};
     let topLevel = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       imp: validBidRequests.map(bidRequest => getImpression(bidRequest)),
       site: getSite(bidderRequest, firstPartyData),
       device: getDevice(firstPartyData),
@@ -414,7 +414,7 @@ export const spec = {
       at: 1,
       cur: ['USD'],
       regs: getRegs(bidderRequest),
-      source: getSource(validBidRequests),
+      source: getSource(validBidRequests, bidderRequest),
       ext: getExt(firstPartyData)
     }
 

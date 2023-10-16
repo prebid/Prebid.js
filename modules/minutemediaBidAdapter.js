@@ -1,4 +1,16 @@
-import { logWarn, logInfo, isArray, isFn, deepAccess, isEmpty, contains, timestamp, getBidIdParameter, triggerPixel, isInteger } from '../src/utils.js';
+import {
+  logWarn,
+  logInfo,
+  isArray,
+  isFn,
+  deepAccess,
+  isEmpty,
+  contains,
+  timestamp,
+  triggerPixel,
+  isInteger,
+  getBidIdParameter
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -288,7 +300,7 @@ function generateBidParameters(bid, bidderRequest) {
     bidId: getBidIdParameter('bidId', bid),
     loop: getBidIdParameter('bidderRequestsCount', bid),
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
-    transactionId: getBidIdParameter('transactionId', bid),
+    transactionId: bid.ortb2Imp?.ext?.tid || '',
     coppa: 0
   };
 
@@ -305,6 +317,15 @@ function generateBidParameters(bid, bidderRequest) {
   const placementId = params.placementId || deepAccess(bid, `mediaTypes.${mediaType}.name`);
   if (placementId) {
     bidObject.placementId = placementId;
+  }
+
+  const mimes = deepAccess(bid, `mediaTypes.${mediaType}.mimes`);
+  if (mimes) {
+    bidObject.mimes = mimes;
+  }
+  const api = deepAccess(bid, `mediaTypes.${mediaType}.api`);
+  if (api) {
+    bidObject.api = api;
   }
 
   const sua = deepAccess(bid, `ortb2.device.sua`);
@@ -358,6 +379,11 @@ function generateBidParameters(bid, bidderRequest) {
       bidObject.linearity = linearity;
     }
 
+    const protocols = deepAccess(bid, `mediaTypes.video.protocols`);
+    if (protocols) {
+      bidObject.protocols = protocols;
+    }
+
     const plcmt = deepAccess(bid, `mediaTypes.video.plcmt`);
     if (plcmt) {
       bidObject.plcmt = plcmt;
@@ -398,7 +424,8 @@ function generateGeneralParams(generalObject, bidderRequest) {
     dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
     device_type: getDeviceType(navigator.userAgent),
     ua: navigator.userAgent,
-    session_id: getBidIdParameter('auctionId', generalObject),
+    is_wrapper: !!generalBidParams.isWrapper,
+    session_id: generalBidParams.sessionId || getBidIdParameter('bidderRequestId', generalObject),
     tmax: timeout
   }
 
@@ -441,7 +468,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
 
   if (bidderRequest && bidderRequest.refererInfo) {
     generalParams.referrer = deepAccess(bidderRequest, 'refererInfo.ref');
-    generalParams.page_url = deepAccess(bidderRequest, 'refererInfo.page') || window.location.href
+    generalParams.page_url = deepAccess(bidderRequest, 'refererInfo.page') || deepAccess(window, 'location.href');
   }
 
   return generalParams

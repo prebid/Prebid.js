@@ -1,9 +1,10 @@
 'use strict';
 
-import { BANNER } from '../src/mediaTypes.js';
-import { getAdUnitSizes, logWarn, isFn, getWindowTop, getWindowSelf } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { ajax } from '../src/ajax.js'
+import {BANNER} from '../src/mediaTypes.js';
+import {getWindowSelf, getWindowTop, isFn, logWarn} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {ajax} from '../src/ajax.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 const BIDDER_CODE = 'ogury';
 const GVLID = 31;
@@ -11,7 +12,7 @@ const DEFAULT_TIMEOUT = 1000;
 const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
 const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
-const ADAPTER_VERSION = '1.4.1';
+const ADAPTER_VERSION = '1.5.0';
 
 function getClientWidth() {
   const documentElementClientWidth = window.top.document.documentElement.clientWidth
@@ -46,27 +47,40 @@ function isBidRequestValid(bid) {
 }
 
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
-  if (!syncOptions.pixelEnabled) return [];
+  const consent = (gdprConsent && gdprConsent.consentString) || '';
 
-  return [
-    {
-      type: 'image',
-      url: `${MS_COOKIE_SYNC_DOMAIN}/v1/init-sync/bid-switch?iab_string=${(gdprConsent && gdprConsent.consentString) || ''}&source=prebid`
-    },
-    {
-      type: 'image',
-      url: `${MS_COOKIE_SYNC_DOMAIN}/ttd/init-sync?iab_string=${(gdprConsent && gdprConsent.consentString) || ''}&source=prebid`
-    },
-    {
-      type: 'image',
-      url: `${MS_COOKIE_SYNC_DOMAIN}/xandr/init-sync?iab_string=${(gdprConsent && gdprConsent.consentString) || ''}&source=prebid`
-    }
-  ]
+  if (syncOptions.iframeEnabled) {
+    return [
+      {
+        type: 'iframe',
+        url: `${MS_COOKIE_SYNC_DOMAIN}/user-sync.html?gdpr_consent=${consent}&source=prebid`
+      }
+    ];
+  }
+
+  if (syncOptions.pixelEnabled) {
+    return [
+      {
+        type: 'image',
+        url: `${MS_COOKIE_SYNC_DOMAIN}/v1/init-sync/bid-switch?iab_string=${consent}&source=prebid`
+      },
+      {
+        type: 'image',
+        url: `${MS_COOKIE_SYNC_DOMAIN}/ttd/init-sync?iab_string=${consent}&source=prebid`
+      },
+      {
+        type: 'image',
+        url: `${MS_COOKIE_SYNC_DOMAIN}/xandr/init-sync?iab_string=${consent}&source=prebid`
+      }
+    ];
+  }
+
+  return [];
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
   const openRtbBidRequestBanner = {
-    id: bidderRequest.auctionId,
+    id: bidderRequest.bidderRequestId,
     tmax: DEFAULT_TIMEOUT,
     at: 1,
     regs: {

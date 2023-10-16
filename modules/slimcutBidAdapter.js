@@ -1,4 +1,4 @@
-import { getValue, parseSizesInput, getBidIdParameter } from '../src/utils.js';
+import {getBidIdParameter, getValue, parseSizesInput} from '../src/utils.js';
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
@@ -75,7 +75,6 @@ export const spec = {
           ad: bid.ad,
           requestId: bid.requestId,
           creativeId: bid.creativeId,
-          transactionId: bid.tranactionId,
           winUrl: bid.winUrl,
           meta: {
             advertiserDomains: bid.adomain || []
@@ -107,8 +106,9 @@ function buildRequestObject(bid) {
   reqObj.bidderRequestId = getBidIdParameter('bidderRequestId', bid);
   reqObj.placementId = parseInt(placementId);
   reqObj.adUnitCode = getBidIdParameter('adUnitCode', bid);
+  // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
   reqObj.auctionId = getBidIdParameter('auctionId', bid);
-  reqObj.transactionId = getBidIdParameter('transactionId', bid);
+  reqObj.transactionId = bid.ortb2Imp?.ext?.tid || '';
   return reqObj;
 }
 function getReferrerInfo(bidderRequest) {

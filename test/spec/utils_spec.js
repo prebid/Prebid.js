@@ -1,8 +1,10 @@
-import { getAdServerTargeting } from 'test/fixtures/fixtures.js';
-import { expect } from 'chai';
+import {getAdServerTargeting} from 'test/fixtures/fixtures.js';
+import {expect} from 'chai';
 import CONSTANTS from 'src/constants.json';
 import * as utils from 'src/utils.js';
-import {memoize, deepEqual, waitForElementToLoad} from 'src/utils.js';
+import {getHighestCpm, getLatestHighestCpmBid, getOldestHighestCpmBid} from '../../src/utils/reducers.js';
+import {binarySearch, deepEqual, memoize, waitForElementToLoad} from 'src/utils.js';
+import {convertCamelToUnderscore} from '../../libraries/appnexusUtils/anUtils.js';
 
 var assert = require('assert');
 
@@ -36,28 +38,6 @@ describe('Utils', function () {
       };
       var output = utils.getBidIdParameter('c', obj);
       assert.equal(output, '');
-    });
-  });
-
-  describe('tryAppendQueryString', function () {
-    it('should append query string to existing url', function () {
-      var url = 'www.a.com?';
-      var key = 'b';
-      var value = 'c';
-
-      var output = utils.tryAppendQueryString(url, key, value);
-
-      var expectedResult = url + key + '=' + encodeURIComponent(value) + '&';
-      assert.equal(output, expectedResult);
-    });
-
-    it('should return existing url, if the value is empty', function () {
-      var url = 'www.a.com?';
-      var key = 'b';
-      var value = '';
-
-      var output = utils.tryAppendQueryString(url, key, value);
-      assert.equal(output, url);
     });
   });
 
@@ -538,72 +518,6 @@ describe('Utils', function () {
     });
   });
 
-  describe('getHighestCpm', function () {
-    it('should pick the existing highest cpm', function () {
-      let previous = {
-        cpm: 2,
-        timeToRespond: 100
-      };
-      let current = {
-        cpm: 1,
-        timeToRespond: 100
-      };
-      assert.equal(utils.getHighestCpm(previous, current), previous);
-    });
-
-    it('should pick the new highest cpm', function () {
-      let previous = {
-        cpm: 1,
-        timeToRespond: 100
-      };
-      let current = {
-        cpm: 2,
-        timeToRespond: 100
-      };
-      assert.equal(utils.getHighestCpm(previous, current), current);
-    });
-
-    it('should pick the fastest cpm in case of tie', function () {
-      let previous = {
-        cpm: 1,
-        timeToRespond: 100
-      };
-      let current = {
-        cpm: 1,
-        timeToRespond: 50
-      };
-      assert.equal(utils.getHighestCpm(previous, current), current);
-    });
-
-    it('should pick the oldest in case of tie using responseTimeStamp', function () {
-      let previous = {
-        cpm: 1,
-        timeToRespond: 100,
-        responseTimestamp: 1000
-      };
-      let current = {
-        cpm: 1,
-        timeToRespond: 50,
-        responseTimestamp: 2000
-      };
-      assert.equal(utils.getOldestHighestCpmBid(previous, current), previous);
-    });
-
-    it('should pick the latest in case of tie using responseTimeStamp', function () {
-      let previous = {
-        cpm: 1,
-        timeToRespond: 100,
-        responseTimestamp: 1000
-      };
-      let current = {
-        cpm: 1,
-        timeToRespond: 50,
-        responseTimestamp: 2000
-      };
-      assert.equal(utils.getLatestHighestCpmBid(previous, current), current);
-    });
-  });
-
   describe('polyfill test', function () {
     it('should not add polyfill to array', function() {
       var arr = ['hello', 'world'];
@@ -765,40 +679,12 @@ describe('Utils', function () {
   describe('convertCamelToUnderscore', function () {
     it('returns converted string value using underscore syntax instead of camelCase', function () {
       let var1 = 'placementIdTest';
-      let test1 = utils.convertCamelToUnderscore(var1);
+      let test1 = convertCamelToUnderscore(var1);
       expect(test1).to.equal('placement_id_test');
 
       let var2 = 'my_test_value';
-      let test2 = utils.convertCamelToUnderscore(var2);
+      let test2 = convertCamelToUnderscore(var2);
       expect(test2).to.equal(var2);
-    });
-  });
-
-  describe('getAdUnitSizes', function () {
-    it('returns an empty response when adUnits is undefined', function () {
-      let sizes = utils.getAdUnitSizes();
-      expect(sizes).to.be.undefined;
-    });
-
-    it('returns an empty array when invalid data is present in adUnit object', function () {
-      let sizes = utils.getAdUnitSizes({ sizes: 300 });
-      expect(sizes).to.deep.equal([]);
-    });
-
-    it('retuns an array of arrays when reading from adUnit.sizes', function () {
-      let sizes = utils.getAdUnitSizes({ sizes: [300, 250] });
-      expect(sizes).to.deep.equal([[300, 250]]);
-
-      sizes = utils.getAdUnitSizes({ sizes: [[300, 250], [300, 600]] });
-      expect(sizes).to.deep.equal([[300, 250], [300, 600]]);
-    });
-
-    it('returns an array of arrays when reading from adUnit.mediaTypes.banner.sizes', function () {
-      let sizes = utils.getAdUnitSizes({ mediaTypes: { banner: { sizes: [300, 250] } } });
-      expect(sizes).to.deep.equal([[300, 250]]);
-
-      sizes = utils.getAdUnitSizes({ mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } } });
-      expect(sizes).to.deep.equal([[300, 250], [300, 600]]);
     });
   });
 
@@ -894,93 +780,24 @@ describe('Utils', function () {
     });
   });
 
-  describe('transformBidderParamKeywords', function () {
-    it('returns an array of objects when keyvalue is an array', function () {
-      let keywords = {
-        genre: ['rock', 'pop']
-      };
-      let result = utils.transformBidderParamKeywords(keywords);
-      expect(result).to.deep.equal([{
-        key: 'genre',
-        value: ['rock', 'pop']
-      }]);
+  describe('insertElement', function () {
+    it('returns a node at the top of the target by default', function () {
+      const toInsert = document.createElement('div');
+      const target = document.getElementsByTagName('body')[0];
+      const inserted = utils.insertElement(toInsert, document, 'body');
+      expect(inserted).to.equal(target.firstChild);
     });
-
-    it('returns an array of objects when keyvalue is a string', function () {
-      let keywords = {
-        genre: 'opera'
-      };
-      let result = utils.transformBidderParamKeywords(keywords);
-      expect(result).to.deep.equal([{
-        key: 'genre',
-        value: ['opera']
-      }]);
+    it('returns a node at bottom of target if 4th argument is true', function () {
+      const toInsert = document.createElement('div');
+      const target = document.getElementsByTagName('html')[0];
+      const inserted = utils.insertElement(toInsert, document, 'html', true);
+      expect(inserted).to.equal(target.lastChild);
     });
-
-    it('returns an array of objects when keyvalue is a number', function () {
-      let keywords = {
-        age: 15
-      };
-      let result = utils.transformBidderParamKeywords(keywords);
-      expect(result).to.deep.equal([{
-        key: 'age',
-        value: ['15']
-      }]);
-    });
-
-    it('returns an array of objects when using multiple keys with values of differing types', function () {
-      let keywords = {
-        genre: 'classical',
-        mix: ['1', 2, '3', 4],
-        age: 10
-      };
-      let result = utils.transformBidderParamKeywords(keywords);
-      expect(result).to.deep.equal([{
-        key: 'genre',
-        value: ['classical']
-      }, {
-        key: 'mix',
-        value: ['1', '2', '3', '4']
-      }, {
-        key: 'age',
-        value: ['10']
-      }]);
-    });
-
-    it('returns an array of objects when the keyvalue uses an empty string', function() {
-      let keywords = {
-        test: [''],
-        test2: ''
-      };
-      let result = utils.transformBidderParamKeywords(keywords);
-      expect(result).to.deep.equal([{
-        key: 'test',
-        value: ['']
-      }, {
-        key: 'test2',
-        value: ['']
-      }]);
-    });
-
-    describe('insertElement', function () {
-      it('returns a node at the top of the target by default', function () {
-        const toInsert = document.createElement('div');
-        const target = document.getElementsByTagName('body')[0];
-        const inserted = utils.insertElement(toInsert, document, 'body');
-        expect(inserted).to.equal(target.firstChild);
-      });
-      it('returns a node at bottom of target if 4th argument is true', function () {
-        const toInsert = document.createElement('div');
-        const target = document.getElementsByTagName('html')[0];
-        const inserted = utils.insertElement(toInsert, document, 'html', true);
-        expect(inserted).to.equal(target.lastChild);
-      });
-      it('returns a node at top of the head if no target is given', function () {
-        const toInsert = document.createElement('div');
-        const target = document.getElementsByTagName('head')[0];
-        const inserted = utils.insertElement(toInsert);
-        expect(inserted).to.equal(target.firstChild);
-      });
+    it('returns a node at top of the head if no target is given', function () {
+      const toInsert = document.createElement('div');
+      const target = document.getElementsByTagName('head')[0];
+      const inserted = utils.insertElement(toInsert);
+      expect(inserted).to.equal(target.firstChild);
     });
   });
 
@@ -1302,5 +1119,44 @@ describe('memoize', () => {
     mem('one', 'three');
     expect(mem('one', 'three')).to.eql(['one', 'three']);
     expect(fn.callCount).to.eql(2);
-  })
+  });
+
+  describe('binarySearch', () => {
+    [
+      {
+        arr: [],
+        tests: [
+          ['any', 0]
+        ]
+      },
+      {
+        arr: [10],
+        tests: [
+          [5, 0],
+          [10, 0],
+          [20, 1],
+        ],
+      },
+      {
+        arr: [10, 20, 30, 30, 40],
+        tests: [
+          [5, 0],
+          [15, 1],
+          [10, 0],
+          [30, 2],
+          [35, 4],
+          [40, 4],
+          [100, 5]
+        ]
+      }
+    ].forEach(({arr, tests}) => {
+      describe(`on ${arr}`, () => {
+        tests.forEach(([el, pos]) => {
+          it(`finds index for ${el} => ${pos}`, () => {
+            expect(binarySearch(arr, el)).to.equal(pos);
+          });
+        });
+      });
+    })
+  });
 })

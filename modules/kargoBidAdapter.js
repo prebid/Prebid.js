@@ -97,6 +97,16 @@ function buildRequests(validBidRequests, bidderRequest) {
     user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids, bidderRequest.gppConsent),
   });
 
+  if (firstBidRequest.ortb2 != null) {
+    krakenParams.site = {
+      cat: firstBidRequest.ortb2.site.cat
+    }
+  }
+
+  if (firstBidRequest.schain && firstBidRequest.schain.nodes) {
+    krakenParams.schain = firstBidRequest.schain
+  }
+
   const reqCount = getRequestCount()
   if (reqCount != null) {
     krakenParams.requestCount = reqCount;
@@ -438,7 +448,7 @@ function sendTimeoutData(auctionId, auctionTimeout) {
 function getImpression(bid) {
   const imp = {
     id: bid.bidId,
-    tid: bid.transactionId,
+    tid: bid.ortb2Imp?.ext?.tid,
     pid: bid.params.placementId,
     code: bid.adUnitCode
   };

@@ -42,6 +42,12 @@ export const czechAdIdSubmodule = {
   getId () {
     const id = readId()
     return id ? { id: id } : undefined
+  },
+  eids: {
+    'czechAdId': {
+      source: 'czechadid.cz',
+      atype: 1
+    },
   }
 }
 

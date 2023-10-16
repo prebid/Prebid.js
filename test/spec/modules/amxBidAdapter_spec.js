@@ -39,7 +39,9 @@ const sampleBidderRequest = {
     gppString: 'example',
     applicableSections: 'example'
   },
-  auctionId: utils.getUniqueIdentifierStr(),
+
+  auctionId: null,
+
   uspConsent: '1YYY',
   refererInfo: {
     reachedTop: true,
@@ -90,7 +92,8 @@ const sampleBidRequestBase = {
   adUnitCode: 'div-gpt-ad-example',
   transactionId: utils.getUniqueIdentifierStr(),
   bidId: sampleRequestId,
-  auctionId: utils.getUniqueIdentifierStr(),
+
+  auctionId: null,
 };
 
 const schainConfig = {
@@ -494,7 +497,7 @@ describe('AmxBidAdapter', () => {
 
     it('can build a video request', () => {
       const { data } = spec.buildRequests(
-        [{...sampleBidRequestVideo, params: { ...sampleBidRequestVideo.params, adUnitId: 'custom-auid' }}],
+        [{ ...sampleBidRequestVideo, params: { ...sampleBidRequestVideo.params, adUnitId: 'custom-auid' } }],
         sampleBidderRequest
       );
       expect(Object.keys(data.m).length).to.equal(1);
