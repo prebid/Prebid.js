@@ -361,12 +361,12 @@ describe(`UID2 module`, function () {
 
   if (FEATURES.UID2_CSTG) {
     describe('When CSTG is enabled provided', function () {
-      let scenarios = [
+      const scenarios = [
         {
           name: 'email provided in config',
           identity: { email: 'test@example.com' },
           setConfig: function (extraConfig) { config.setConfig(makePrebidConfig({ ...cstgConfigParams, ...this.identity }, extraConfig)) },
-          setInvalidConfig: (extraConfig) => config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: '123' }, extraConfig))
+          setInvalidConfig: (extraConfig) => config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test . test@gmail.com' }, extraConfig))
         },
         {
           name: 'phone provided in config',
@@ -519,6 +519,68 @@ describe(`UID2 module`, function () {
           expectNoIdentity(bid);
         });
       })
+    });
+    describe('When invalid CSTG configuration is provided', function () {
+      const invalidConfigs = [
+        {
+          name: 'CSTG option is not a object',
+          cstgOptions: ''
+        },
+        {
+          name: 'CSTG option is null',
+          cstgOptions: ''
+        },
+        {
+          name: 'serverPublicKey is not a string',
+          cstgOptions: { subscriptionId: cstgConfigParams.subscriptionId, serverPublicKey: {} }
+        },
+        {
+          name: 'serverPublicKey not match regular expression',
+          cstgOptions: { subscriptionId: cstgConfigParams.subscriptionId, serverPublicKey: 'serverPublicKey' }
+        },
+        {
+          name: 'subscriptionId is not a string',
+          cstgOptions: { subscriptionId: {}, serverPublicKey: cstgConfigParams.serverPublicKey }
+        },
+        {
+          name: 'subscriptionId is empty',
+          cstgOptions: { subscriptionId: '', serverPublicKey: cstgConfigParams.serverPublicKey }
+        },
+      ]
+      invalidConfigs.forEach(function(scenario) {
+        describe(`When ${scenario.name}`, function() {
+          it('should not generate token using identity', async () => {
+            config.setConfig(makePrebidConfig({ ...scenario.cstgOptions, email: 'test@email.com' }));
+            const bid = await runAuction();
+            expectNoIdentity(bid);
+            expectGlobalToHaveNoUid2();
+            expectModuleStorageEmptyOrMissing();
+          });
+        });
+      });
+    });
+    describe('When email is provided in different format', function () {
+      const testCases = [
+        { originalEmail: 'TEst.TEST@Test.com ', normalizedEmail: 'test.test@test.com' },
+        { originalEmail: 'test+test@test.com', normalizedEmail: 'test+test@test.com' },
+        { originalEmail: '  testtest@test.com  ', normalizedEmail: 'testtest@test.com' },
+        { originalEmail: 'TEst.TEst+123@GMail.Com', normalizedEmail: 'testtest@gmail.com' }
+      ];
+      testCases.forEach((testCase) => {
+        it('should normalize the email and generate token on normalized email', async () => {
+          testApiSuccessAndFailure(async function(apiSucceeds) {
+            config.setConfig(makePrebidConfig({ ...scenario.cstgOptions, email: testCase.originalEmail }));
+            apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
+
+            await runAuction();
+            if (apiSucceeds) {
+              expectModuleStorageToContain(undefined, clientSideGeneratedToken, testCase.normalizedEmail);
+            } else {
+              expectModuleStorageEmptyOrMissing();
+            }
+          }, cstgApiUrl, 'the generated token should be stored in the module storage', 'the module storage should not be set', false, clientSideGeneratedToken);
+        });
+      });
     });
   }
 

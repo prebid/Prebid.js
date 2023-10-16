@@ -15,11 +15,8 @@ export class Uid2ApiClient {
     this._clientVersion = clientId;
     this._logInfo = logInfo;
     this._logWarn = logWarn;
-    if (opts.cstg) {
-      this._serverPublicKey = opts.cstg.serverPublicKey;
-      this._subscriptionId = opts.cstg.subscriptionId;
-    }
   }
+
   createArrayBuffer(text) {
     const arrayBuffer = new Uint8Array(text.length);
     for (let i = 0; i < text.length; i++) {
