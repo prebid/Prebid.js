@@ -902,6 +902,7 @@ describe('IndexexchangeAdapter', function () {
       source: 'euid.eu',
       uids: [{
         id: DEFAULT_USERID_DATA['euidID'].envelope
+      }]
     }, {
       source: 'google.com',
       uids: [{
