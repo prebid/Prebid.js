@@ -469,8 +469,8 @@ function getImpression(bid) {
     imp.bidderWinCount = bid.bidderWinsCount;
   }
 
-  const gpid = getGPID(bid)
-  if (gpid != null && gpid != '') {
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  if (gpid) {
     imp.fpd = {
       gpid: gpid
     }
@@ -491,29 +491,6 @@ function getImpression(bid) {
   }
 
   return imp
-}
-
-function getGPID(bid) {
-  if (bid.ortb2Imp != null) {
-    if (bid.ortb2Imp.gpid != null && bid.ortb2Imp.gpid != '') {
-      return bid.ortb2Imp.gpid;
-    }
-
-    if (bid.ortb2Imp.ext != null && bid.ortb2Imp.ext.data != null) {
-      if (bid.ortb2Imp.ext.data.pbAdSlot != null && bid.ortb2Imp.ext.data.pbAdSlot != '') {
-        return bid.ortb2Imp.ext.data.pbAdSlot;
-      }
-
-      if (bid.ortb2Imp.ext.data.adServer != null && bid.ortb2Imp.ext.data.adServer.adSlot != null && bid.ortb2Imp.ext.data.adServer.adSlot != '') {
-        return bid.ortb2Imp.ext.data.adServer.adSlot;
-      }
-    }
-  }
-
-  if (bid.adUnitCode != null && bid.adUnitCode != '') {
-    return bid.adUnitCode;
-  }
-  return '';
 }
 
 export const spec = {
