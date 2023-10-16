@@ -240,7 +240,7 @@ if (FEATURES.UID2_CSTG) {
           _logWarn('CSTG opts.email is invalid');
           return;
         }
-        return { email: opts.email };
+        return { email: normalizedEmail };
       }
 
       if (opts.phone) {
@@ -311,9 +311,9 @@ if (FEATURES.UID2_CSTG) {
   };
 
   class UID2DiiNormalization {
-    EMAIL_EXTENSION_SYMBOL = '+';
-    EMAIL_DOT = '.';
-    GMAIL_DOMAIN = 'gmail.com';
+    static EMAIL_EXTENSION_SYMBOL = '+';
+    static EMAIL_DOT = '.';
+    static GMAIL_DOMAIN = 'gmail.com';
 
     static isBase64Hash(value) {
       if (!(value && value.length === 44)) {
@@ -348,6 +348,7 @@ if (FEATURES.UID2_CSTG) {
         emailIsGmail,
         emailIsGmail
       );
+
       return parsedAddress ? `${parsedAddress}@${domain}` : undefined;
     }
 

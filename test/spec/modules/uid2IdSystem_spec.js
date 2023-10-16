@@ -567,14 +567,14 @@ describe(`UID2 module`, function () {
         { originalEmail: 'TEst.TEst+123@GMail.Com', normalizedEmail: 'testtest@gmail.com' }
       ];
       testCases.forEach((testCase) => {
-        it('should normalize the email and generate token on normalized email', async () => {
+        describe('it should normalize the email and generate token on normalized email', async () => {
           testApiSuccessAndFailure(async function(apiSucceeds) {
-            config.setConfig(makePrebidConfig({ ...scenario.cstgOptions, email: testCase.originalEmail }));
+            config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: testCase.originalEmail }));
             apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
 
             await runAuction();
             if (apiSucceeds) {
-              expectModuleStorageToContain(undefined, clientSideGeneratedToken, testCase.normalizedEmail);
+              expectModuleStorageToContain(undefined, clientSideGeneratedToken, { email: testCase.normalizedEmail });
             } else {
               expectModuleStorageEmptyOrMissing();
             }
