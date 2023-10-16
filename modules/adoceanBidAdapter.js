@@ -1,45 +1,86 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import { _each, parseSizesInput, isStr, isArray } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'adocean';
+const URL_SAFE_FIELDS = {
+  schain: true,
+  slaves: true
+};
 
-function buildEndpointUrl(emiter, payload) {
-  let payloadString = '';
-  utils._each(payload, function(v, k) {
-    if (payloadString.length) {
-      payloadString += '&';
-    }
-    payloadString += k + '=' + encodeURIComponent(v);
+function buildEndpointUrl(emiter, payloadMap) {
+  const payload = [];
+  _each(payloadMap, function(v, k) {
+    payload.push(k + '=' + (URL_SAFE_FIELDS[k] ? v : encodeURIComponent(v)));
   });
 
-  return 'https://' + emiter + '/ad.json?' + payloadString;
+  const randomizedPart = Math.random().toString().slice(2);
+  return 'https://' + emiter + '/_' + randomizedPart + '/ad.json?' + payload.join('&');
 }
 
 function buildRequest(masterBidRequests, masterId, gdprConsent) {
   let emiter;
   const payload = {
     id: masterId,
+    aosspsizes: [],
+    slaves: []
   };
   if (gdprConsent) {
     payload.gdpr_consent = gdprConsent.consentString || undefined;
     payload.gdpr = gdprConsent.gdprApplies ? 1 : 0;
   }
+  const anyKey = Object.keys(masterBidRequests)[0];
+  if (masterBidRequests[anyKey].schain) {
+    payload.schain = serializeSupplyChain(masterBidRequests[anyKey].schain);
+  }
 
   const bidIdMap = {};
-
-  utils._each(masterBidRequests, function(bid, slaveId) {
+  const uniquePartLength = 10;
+  _each(masterBidRequests, function(bid, slaveId) {
     if (!emiter) {
       emiter = bid.params.emiter;
     }
+
+    const slaveSizes = parseSizesInput(bid.mediaTypes.banner.sizes).join('_');
+    const rawSlaveId = bid.params.slaveId.replace('adocean', '');
+    payload.aosspsizes.push(rawSlaveId + '~' + slaveSizes);
+    payload.slaves.push(rawSlaveId.slice(-uniquePartLength));
+
     bidIdMap[slaveId] = bid.bidId;
   });
+
+  payload.aosspsizes = payload.aosspsizes.join('-');
+  payload.slaves = payload.slaves.join(',');
 
   return {
     method: 'GET',
     url: buildEndpointUrl(emiter, payload),
-    data: {},
+    data: '',
     bidIdMap: bidIdMap
   };
+}
+
+const SCHAIN_FIELDS = ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext'];
+function serializeSupplyChain(schain) {
+  const header = `${schain.ver},${schain.complete}!`;
+
+  const serializedNodes = [];
+  _each(schain.nodes, function(node) {
+    const serializedNode = SCHAIN_FIELDS
+      .map(fieldName => {
+        if (fieldName === 'ext') {
+          // do not serialize ext data, just mark if it was available
+          return ('ext' in node ? '1' : '0');
+        }
+        if (fieldName in node) {
+          return encodeURIComponent(node[fieldName]).replace(/!/g, '%21');
+        }
+        return '';
+      })
+      .join(',');
+    serializedNodes.push(serializedNode);
+  });
+
+  return header + serializedNodes.join('!');
 }
 
 function assignToMaster(bidRequest, bidRequestsByMaster) {
@@ -57,7 +98,8 @@ function assignToMaster(bidRequest, bidRequestsByMaster) {
 }
 
 function interpretResponse(placementResponse, bidRequest, bids) {
-  if (!placementResponse.error) {
+  const requestId = bidRequest.bidIdMap[placementResponse.id];
+  if (!placementResponse.error && requestId) {
     let adCode = '<script type="application/javascript">(function(){var wu="' + (placementResponse.winUrl || '') + '",su="' + (placementResponse.statsUrl || '') + '".replace(/\\[TIMESTAMP\\]/,(new Date()).getTime());';
     adCode += 'if(navigator.sendBeacon){if(wu){navigator.sendBeacon(wu)||((new Image(1,1)).src=wu)};if(su){navigator.sendBeacon(su)||((new Image(1,1)).src=su)}}';
     adCode += 'else{if(wu){(new Image(1,1)).src=wu;}if(su){(new Image(1,1)).src=su;}}';
@@ -69,11 +111,14 @@ function interpretResponse(placementResponse, bidRequest, bids) {
       cpm: parseFloat(placementResponse.price),
       currency: placementResponse.currency,
       height: parseInt(placementResponse.height, 10),
-      requestId: bidRequest.bidIdMap[placementResponse.id],
+      requestId: requestId,
       width: parseInt(placementResponse.width, 10),
       netRevenue: false,
       ttl: parseInt(placementResponse.ttl),
-      creativeId: placementResponse.crid
+      creativeId: placementResponse.crid,
+      meta: {
+        advertiserDomains: placementResponse.adomain || []
+      }
     };
 
     bids.push(bid);
@@ -84,19 +129,24 @@ export const spec = {
   code: BIDDER_CODE,
 
   isBidRequestValid: function(bid) {
-    return !!(bid.params.slaveId && bid.params.masterId && bid.params.emiter);
+    const requiredParams = ['slaveId', 'masterId', 'emiter'];
+    if (requiredParams.some(name => !isStr(bid.params[name]) || !bid.params[name].length)) {
+      return false;
+    }
+
+    return !!bid.mediaTypes.banner;
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
     const bidRequestsByMaster = {};
     let requests = [];
 
-    utils._each(validBidRequests, function(bidRequest) {
+    _each(validBidRequests, function(bidRequest) {
       assignToMaster(bidRequest, bidRequestsByMaster);
     });
 
-    utils._each(bidRequestsByMaster, function(masterRequests, masterId) {
-      utils._each(masterRequests, function(instanceRequests) {
+    _each(bidRequestsByMaster, function(masterRequests, masterId) {
+      _each(masterRequests, function(instanceRequests) {
         requests.push(buildRequest(instanceRequests, masterId, bidderRequest.gdprConsent));
       });
     });
@@ -107,8 +157,8 @@ export const spec = {
   interpretResponse: function(serverResponse, bidRequest) {
     let bids = [];
 
-    if (utils.isArray(serverResponse.body)) {
-      utils._each(serverResponse.body, function(placementResponse) {
+    if (isArray(serverResponse.body)) {
+      _each(serverResponse.body, function(placementResponse) {
         interpretResponse(placementResponse, bidRequest, bids);
       });
     }

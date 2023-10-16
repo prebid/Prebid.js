@@ -1,0 +1,32 @@
+# Overview
+
+**Module Name**: UNICORN Bid Adapter
+**Module Type**: Bidder Adapter
+**Maintainer**: service+prebid.js@bulbit.jp
+
+# Description
+
+Module that connects to UNICORN.
+
+# Test Parameters
+
+```js
+    const adUnits = [{
+        code: 'test-adunit1', // REQUIRED: adunit code
+        mediaTypes: {
+            banner: {
+                sizes: [[300, 250]] // a banner size
+            }
+        },
+        bids: [{
+            bidder: 'unicorn',
+            params: {
+                placementId: 'rectangle-ad-1', // OPTIONAL: If placementId is empty, adunit code will be used as placementId. 
+                publisherId: 99999 // OPTIONAL: Account specific publisher id
+                mediaId: "uc" // OPTIONAL: Publisher specific media id
+                accountId: 12345, // REQUIRED: Account ID for charge request
+                bcat: ['IAB-1', 'IAB-2'] // OPTIONAL: blocked IAB categories
+            }
+        }]
+    }];
+```

@@ -1,4 +1,4 @@
-
+	
 # Overview
 
 ```
@@ -12,7 +12,7 @@ Maintainer: engineering@ozoneproject.com
 
 Module that connects to the Ozone Project's demand source(s).
 
-The Ozone Project bid adapter supports Banner mediaTypes ONLY.
+The Ozone Project bid adapter supports Banner and Outstream Video mediaTypes ONLY.
  
 # Test Parameters
 
@@ -36,10 +36,76 @@ adUnits = [{
                             publisherId: 'OZONENUK0001', /* an ID to identify the publisher account  - required */
                             siteId: '4204204201', /* An ID used to identify a site within a publisher account - required */
                             placementId: '0420420421', /* an ID used to identify the piece of inventory - required - for appnexus test use 13144370. */
-                            customData: {"key1": "value1", "key2": "value2}, /* optional JSON placeholder for passing publisher key-values for targeting. */
-                            ozoneData: {"key1": "value1", "key2": "value2"}, /* optional JSON placeholder for for passing ozone project key-values for targeting. */
-                            lotameData: {"key1": "value1", "key2": "value2} /* optional JSON placeholder for passing Lotame DMP data */
+							customData: [{"settings": {}, "targeting": {"key": "value", "key2": ["value1", "value2"]}}],/* optional array with 'targeting' placeholder for passing publisher specific key-values for targeting. */                            
                         }
                     }]
                 }];
+```
+
+
+```
+
+//Outstream Video adUnit
+
+adUnits = [{
+                    code: 'id-of-your-video-div',
+                    mediaTypes: {
+                        video: {
+                            playerSize: [640, 360],
+                            mimes: ['video/mp4'],
+                            context: 'outstream',
+                        }
+                    },
+                    bids: [{
+                        bidder: 'ozone',
+                        params: {
+                            publisherId: 'OZONENUK0001', /* an ID to identify the publisher account  - required */
+                            siteId: '4204204201', /* An ID used to identify a site within a publisher account - required */
+							customData: [{"settings": {}, "targeting": { "key": "value", "key2": ["value1", "value2"]}}]
+                            placementId: '0440440442', /* an ID used to identify the piece of inventory - required - for unruly test use 0440440442. */
+							video: {
+                                skippable: true, /* optional */
+                                playback_method: ['auto_play_sound_off'], /* optional */
+                                targetDiv: 'some-different-div-id-to-my-adunitcode' /* optional */
+                            }
+                        }
+                    }]
+                }];
+```
+
+//Instream Video adUnit
+
+adUnits = [{
+					code: 'video1',
+					mediaTypes: {
+						video: {
+							playerSize: [640, 480],
+							context: 'instream',
+							mimes: ['video/mp4'],
+							protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+							playbackmethod: [2]
+						}
+					},
+					bids: [{
+							bidder: 'ozone',
+							params: {
+								publisherId: 'OZONENUK0001',
+								placementId: '8000000328', // or 999
+								siteId: '4204204201',
+								video: {
+									skippable: true,
+									playback_method: ['auto_play_sound_off']
+								},
+							customData: [{
+							      "settings": {},
+							      "targeting": {
+							          "key": "value",
+								  "key2": ["value1", "value2"]
+								  }
+							}
+							]
+
+							}
+						}]
+				};
 ```

@@ -23,7 +23,7 @@ Telaria bid adapter supports insteream Video.
         }
     },
     bids: [{
-        bidder: 'tremor',
+        bidder: 'telaria',
         params: {
             supplyCode: 'ssp-demo-rm6rh',
             adCode: 'ssp-!demo!-lufip',
@@ -33,3 +33,5 @@ Telaria bid adapter supports insteream Video.
 }
 ```
 
+# Example:
+https://console.telaria.com/examples/hb/headerbidding.jsp

@@ -2,7 +2,7 @@
 
 Module Name: Criteo Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: pi-direct@criteo.com
+Maintainer: prebid@criteo.com
 
 # Description
 
@@ -25,3 +25,9 @@ Module that connects to Criteo's demand sources.
         }
     ];
 ```
+
+# Additional Config (Optional)
+
+Criteo Bid Adapter supports the collection of the user's hashed email, if available.
+
+Please consider passing it to the adapter, following [these guidelines](https://publisherdocs.criteotilt.com/prebid/#hashed-emails).

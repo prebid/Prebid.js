@@ -1,16 +1,19 @@
-import * as utils from 'src/utils';
-import * as bidfactory from 'src/bidfactory';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {config} from 'src/config';
-import {VIDEO} from '../src/mediaTypes';
-import {STATUS} from 'src/constants';
+import { logError, isEmpty, deepAccess, triggerPixel, logWarn, isArray } from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {VIDEO} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'telaria';
-const ENDPOINT = '.ads.tremorhub.com/ad/tag';
+const DOMAIN = 'tremorhub.com';
+const TAG_ENDPOINT = `ads.${DOMAIN}/ad/tag`;
+const EVENTS_ENDPOINT = `events.${DOMAIN}/diag`;
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ['tremor', 'tremorvideo'],
+  gvlid: 202,
+  aliases: [
+    { code: 'tremor', gvlid: 202 },
+    { code: 'tremorvideo', gvlid: 202 }
+  ],
   supportedMediaTypes: [VIDEO],
   /**
    * Determines if the request is valid
@@ -24,17 +27,18 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    * @param validBidRequests list of valid bid requests that have passed isBidRequestValid check
+   * @param bidderRequest
    * @returns {Array} of url objects
    */
-  buildRequests: function (validBidRequests) {
+  buildRequests: function (validBidRequests, bidderRequest) {
     let requests = [];
 
     validBidRequests.forEach(bid => {
-      let url = generateUrl(bid);
+      let url = generateUrl(bid, bidderRequest);
       if (url) {
         requests.push({
           method: 'GET',
-          url: generateUrl(bid),
+          url: url,
           bidId: bid.bidId,
           vastUrl: url.split('&fmt=json')[0]
         });
@@ -71,7 +75,7 @@ export const spec = {
         }
       });
     } catch (error) {
-      utils.logError(error);
+      logError(error);
       width = 0;
       height = 0;
     }
@@ -81,10 +85,12 @@ export const spec = {
       if (bidResult && bidResult.error) {
         errorMessage += `: ${bidResult.error}`;
       }
-      utils.logError(errorMessage);
-    } else if (bidResult.seatbid && bidResult.seatbid.length > 0) {
+      logError(errorMessage);
+    } else if (!isEmpty(bidResult.seatbid)) {
       bidResult.seatbid[0].bid.forEach(tag => {
-        bids.push(createBid(STATUS.GOOD, bidderRequest, tag, width, height, bidResult.seatbid[0].seat));
+        if (tag) {
+          bids.push(createBid(bidderRequest, tag, width, height));
+        }
       });
     }
 
@@ -100,11 +106,88 @@ export const spec = {
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
     if (syncOptions.pixelEnabled && serverResponses.length) {
-      try {
-        serverResponses[0].body.ext.telaria.userSync.forEach(url => syncs.push({type: 'image', url: url}));
-      } catch (e) {}
+      (deepAccess(serverResponses, '0.body.ext.telaria.userSync') || []).forEach(url => syncs.push({type: 'image', url: url}));
     }
     return syncs;
+  },
+
+  /**
+   * See http://prebid.org/dev-docs/bidder-adaptor.html#registering-on-timeout for detailed semantic.
+   * @param timeoutData bidRequest
+   */
+  onTimeout: function (timeoutData) {
+    let url = getTimeoutUrl(timeoutData);
+    if (url) {
+      triggerPixel(url);
+    }
+  }
+};
+
+function getDefaultSrcPageUrl() {
+  return encodeURIComponent(document.location.href);
+}
+
+function getEncodedValIfNotEmpty(val) {
+  return (val !== '' && val !== undefined) ? encodeURIComponent(val) : '';
+}
+
+/**
+ * Converts the schain object to a url param value. Please refer to
+ * https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
+ * (schain for non ORTB section) for more information
+ * @param schainObject
+ * @returns {string}
+ */
+function getSupplyChainAsUrlParam(schainObject) {
+  if (isEmpty(schainObject)) {
+    return '';
+  }
+
+  let scStr = `&schain=${schainObject.ver},${schainObject.complete}`;
+
+  schainObject.nodes.forEach((node) => {
+    scStr += '!';
+    scStr += `${getEncodedValIfNotEmpty(node.asi)},`;
+    scStr += `${getEncodedValIfNotEmpty(node.sid)},`;
+    scStr += `${getEncodedValIfNotEmpty(node.hp)},`;
+    scStr += `${getEncodedValIfNotEmpty(node.rid)},`;
+    scStr += `${getEncodedValIfNotEmpty(node.name)},`;
+    scStr += `${getEncodedValIfNotEmpty(node.domain)}`;
+  });
+
+  return scStr;
+}
+
+function getUrlParams(params, schainFromBidRequest) {
+  let urlSuffix = '';
+
+  if (!isEmpty(params)) {
+    for (let key in params) {
+      if (key !== 'schain' && params.hasOwnProperty(key) && !isEmpty(params[key])) {
+        urlSuffix += `&${key}=${params[key]}`;
+      }
+    }
+    urlSuffix += getSupplyChainAsUrlParam(!isEmpty(schainFromBidRequest) ? schainFromBidRequest : params['schain']);
+  }
+
+  return urlSuffix;
+}
+
+export const getTimeoutUrl = function(timeoutData) {
+  let params = deepAccess(timeoutData, '0.params.0');
+
+  if (!isEmpty(params)) {
+    let url = `https://${EVENTS_ENDPOINT}`;
+
+    params = Object.assign({
+      srcPageUrl: getDefaultSrcPageUrl()
+    }, params);
+
+    url += `${getUrlParams(params)}`;
+
+    url += '&hb=1&evt=TO';
+
+    return url;
   }
 };
 
@@ -112,76 +195,95 @@ export const spec = {
  * Generates the url based on the parameters given. Sizes, supplyCode & adCode are required.
  * The format is: [L,W] or [[L1,W1],...]
  * @param bid
+ * @param bidderRequest
  * @returns {string}
  */
-function generateUrl(bid) {
+function generateUrl(bid, bidderRequest) {
+  let playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
+  if (!playerSize) {
+    logWarn(`Although player size isn't required it is highly recommended`);
+  }
+
   let width, height;
-  if (!bid.sizes) {
-    return '';
+  if (playerSize) {
+    if (isArray(playerSize) && (playerSize.length === 2) && (!isNaN(playerSize[0]) && !isNaN(playerSize[1]))) {
+      width = playerSize[0];
+      height = playerSize[1];
+    } else if (typeof playerSize === 'object') {
+      width = playerSize[0][0];
+      height = playerSize[0][1];
+    }
   }
 
-  if (utils.isArray(bid.sizes) && (bid.sizes.length === 2) && (!isNaN(bid.sizes[0]) && !isNaN(bid.sizes[1]))) {
-    width = bid.sizes[0];
-    height = bid.sizes[1];
-  } else if (typeof bid.sizes === 'object') {
-    // take the primary (first) size from the array
-    width = bid.sizes[0][0];
-    height = bid.sizes[0][1];
-  }
-  if (width && height && bid.params.supplyCode && bid.params.adCode) {
-    let scheme = ((document.location.protocol === 'https:') ? 'https' : 'http') + '://';
-    let url = scheme + bid.params.supplyCode + ENDPOINT + '?adCode=' + bid.params.adCode;
+  let supplyCode = deepAccess(bid, 'params.supplyCode');
+  let adCode = deepAccess(bid, 'params.adCode');
 
-    url += ('&playerWidth=' + width);
-    url += ('&playerHeight=' + height);
+  if (supplyCode && adCode) {
+    let url = `https://${supplyCode}.${TAG_ENDPOINT}?adCode=${adCode}`;
 
-    for (let key in bid.params) {
-      if (bid.params.hasOwnProperty(key) && bid.params[key]) {
-        url += ('&' + key + '=' + bid.params[key]);
+    if (width) {
+      url += (`&playerWidth=${width}`);
+    }
+    if (height) {
+      url += (`&playerHeight=${height}`);
+    }
+
+    const params = Object.assign({
+      srcPageUrl: getDefaultSrcPageUrl()
+    }, bid.params);
+    delete params.adCode;
+
+    url += `${getUrlParams(params, bid.schain)}`;
+
+    url += (`&transactionId=${bid.transactionId}`);
+
+    if (bidderRequest) {
+      if (bidderRequest.gdprConsent) {
+        if (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') {
+          url += (`&gdpr=${(bidderRequest.gdprConsent.gdprApplies ? 1 : 0)}`);
+        }
+        if (bidderRequest.gdprConsent.consentString) {
+          url += (`&gdpr_consent=${bidderRequest.gdprConsent.consentString}`);
+        }
+      }
+
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
+        // TODO: is 'page' the right value here?
+        url += (`&referrer=${encodeURIComponent(bidderRequest.refererInfo.page)}`);
       }
     }
 
-    if (!bid.params['srcPageUrl']) {
-      url += ('&srcPageUrl=' + encodeURIComponent(document.location.href));
-    }
-
-    url += ('&transactionId=' + bid.transactionId);
-    url += ('&referrer=' + config.getConfig('pageUrl') || utils.getTopWindowUrl());
-
-    return (url + '&fmt=json');
+    return (url + '&hb=1&fmt=json');
   }
 }
 
 /**
- * Create and return a bid object based on status and tag
- * @param status
+ * Create and return a bid response
  * @param reqBid
  * @param response
  * @param width
  * @param height
- * @param bidderCode
  */
-function createBid(status, reqBid, response, width, height, bidderCode) {
-  let bid = bidfactory.createBid(status, reqBid);
-
+function createBid(reqBid, response, width, height) {
   // TTL 5 mins by default, future support for extended imp wait time
-  if (response) {
-    Object.assign(bid, {
-      requestId: reqBid.bidId,
-      cpm: response.price,
-      creativeId: response.crid || '-1',
-      vastXml: response.adm,
-      vastUrl: reqBid.vastUrl,
-      mediaType: 'video',
-      width: width,
-      height: height,
-      bidderCode: bidderCode,
-      adId: response.id,
-      currency: 'USD',
-      netRevenue: true,
-      ttl: 300,
-      ad: response.adm
-    });
+  const bid = {
+    requestId: reqBid.bidId,
+    cpm: response.price,
+    creativeId: response.crid || '-1',
+    vastXml: response.adm,
+    vastUrl: reqBid.vastUrl,
+    mediaType: 'video',
+    width: width,
+    height: height,
+    currency: 'USD',
+    netRevenue: true,
+    ttl: 300,
+    ad: response.adm,
+    meta: {}
+  };
+
+  if (response.adomain && response.adomain.length > 0) {
+    bid.meta.advertiserDomains = response.adomain;
   }
 
   return bid;

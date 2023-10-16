@@ -9,8 +9,15 @@
  * This trickery helps integrate with ad servers, which set character limits on request params.
  */
 
-import { ajax } from './ajax';
-import { config } from '../src/config';
+import { ajax } from './ajax.js';
+import { config } from './config.js';
+import {auctionManager} from './auctionManager.js';
+
+/**
+ * Might be useful to be configurable in the future
+ * Depending on publisher needs
+ */
+const ttlBufferInSeconds = 15;
 
 /**
  * @typedef {object} CacheableUrlBid
@@ -53,18 +60,47 @@ function wrapURI(uri, impUrl) {
 }
 
 /**
+ * Function which change the AdSystem Element from the VAST XML Response
+ *
+ * @param {string} vastXml The XML Vast Response
+ * @return XML.
+ */
+function wrapVastXml(vastXml) {
+  return vastXml.replace(/<AdSystem.*>.*<\/AdSystem>/, '<AdSystem>prebid.org wrapper</AdSystem>');
+}
+
+/**
  * Wraps a bid in the format expected by the prebid-server endpoints, or returns null if
  * the bid can't be converted cleanly.
  *
  * @param {CacheableBid} bid
+ * @param index
  */
-function toStorageRequest(bid) {
-  const vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);
-  return {
+function toStorageRequest(bid, {index = auctionManager.index} = {}) {
+  const vastValue = bid.vastXml ? wrapVastXml(bid.vastXml) : wrapURI(bid.vastUrl, bid.vastImpUrl);
+  const auction = index.getAuction(bid);
+  const ttlWithBuffer = Number(bid.ttl) + ttlBufferInSeconds;
+  let payload = {
     type: 'xml',
     value: vastValue,
-    ttlseconds: Number(bid.ttl)
+    ttlseconds: ttlWithBuffer
   };
+
+  if (config.getConfig('cache.vasttrack')) {
+    payload.bidder = bid.bidder;
+    payload.bidid = bid.requestId;
+    payload.aid = bid.auctionId;
+  }
+
+  if (auction != null) {
+    payload.timestamp = auction.getAuctionStart();
+  }
+
+  if (typeof bid.customCacheKey === 'string' && bid.customCacheKey !== '') {
+    payload.key = bid.customCacheKey;
+  }
+
+  return payload;
 }
 
 /**
@@ -88,7 +124,7 @@ function toStorageRequest(bid) {
  */
 function shimStorageCallback(done) {
   return {
-    success: function(responseBody) {
+    success: function (responseBody) {
       let ids;
       try {
         ids = JSON.parse(responseBody).responses
@@ -103,7 +139,7 @@ function shimStorageCallback(done) {
         done(new Error("The cache server didn't respond with a responses property."), []);
       }
     },
-    error: function(statusText, responseBody) {
+    error: function (statusText, responseBody) {
       done(new Error(`Error storing video ad in the cache: ${statusText}: ${JSON.stringify(responseBody)}`), []);
     }
   }
@@ -114,7 +150,7 @@ function shimStorageCallback(done) {
  *
  * @param {CacheableBid[]} bids A list of bid objects which should be cached.
  * @param {videoCacheStoreCallback} [done] An optional callback which should be executed after
- *   the data has been stored in the cache.
+ * the data has been stored in the cache.
  */
 export function store(bids, done) {
   const requestData = {

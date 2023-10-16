@@ -1,8 +1,20 @@
 import { expect } from 'chai';
-import { Renderer } from 'src/Renderer';
-import * as utils from 'src/utils';
+import { Renderer, executeRenderer } from 'src/Renderer.js';
+import * as utils from 'src/utils.js';
+import { loadExternalScript } from 'src/adloader.js';
+require('test/mocks/adloaderStub.js');
 
 describe('Renderer', function () {
+  let oldAdUnits;
+  beforeEach(function () {
+    oldAdUnits = $$PREBID_GLOBAL$$.adUnits;
+    $$PREBID_GLOBAL$$.adUnits = [];
+  });
+
+  afterEach(function () {
+    $$PREBID_GLOBAL$$.adUnits = oldAdUnits;
+  });
+
   describe('Renderer: A renderer installed on a bid response', function () {
     let testRenderer1;
     let testRenderer2;
@@ -95,18 +107,30 @@ describe('Renderer', function () {
       sinon.assert.calledOnce(func2);
       expect(testRenderer1.cmd.length).to.equal(0);
     });
+
+    it('renders immediately when requested', function () {
+      const testRenderer3 = Renderer.install({
+        url: 'https://httpbin.org/post',
+        config: { test: 'config2' },
+        id: 2,
+        renderNow: true
+      });
+      const func1 = sinon.spy();
+      const testArg = 'testArgument';
+
+      testRenderer3.setRender(func1);
+      testRenderer3.render(testArg);
+      func1.calledWith(testArg).should.be.ok;
+    });
   });
 
   describe('3rd party renderer', function () {
-    let adUnitsOld;
     let utilsSpy;
     before(function () {
-      adUnitsOld = $$PREBID_GLOBAL$$.adUnits;
       utilsSpy = sinon.spy(utils, 'logWarn');
     });
 
     after(function() {
-      $$PREBID_GLOBAL$$.adUnits = adUnitsOld;
       utilsSpy.restore();
     });
 
@@ -114,7 +138,7 @@ describe('Renderer', function () {
       $$PREBID_GLOBAL$$.adUnits = [{
         code: 'video1',
         renderer: {
-          url: 'http://cdn.adnxs.com/renderer/video/ANOutstreamVideo.js',
+          url: 'http://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
           render: sinon.spy()
         }
       }]
@@ -125,7 +149,98 @@ describe('Renderer', function () {
         id: 1,
         adUnitCode: 'video1'
       });
+      testRenderer.setRender(() => {})
+
+      testRenderer.render()
       expect(utilsSpy.callCount).to.equal(1);
+    });
+
+    it('should load renderer adunit renderer when backupOnly', function() {
+      $$PREBID_GLOBAL$$.adUnits = [{
+        code: 'video1',
+        renderer: {
+          url: 'http://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
+          backupOnly: true,
+          render: sinon.spy()
+        }
+      }]
+
+      let testRenderer = Renderer.install({
+        url: 'https://httpbin.org/post',
+        config: { test: 'config1' },
+        id: 1,
+        adUnitCode: 'video1'
+
+      });
+      testRenderer.setRender(() => {})
+
+      testRenderer.render()
+      expect(loadExternalScript.called).to.be.true;
+    });
+
+    it('should load external script instead of publisher-defined one when backupOnly option is true in mediaTypes.video options', function() {
+      $$PREBID_GLOBAL$$.adUnits = [{
+        code: 'video1',
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            mimes: ['video/mp4'],
+            playerSize: [[400, 300]],
+            renderer: {
+              url: 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
+              backupOnly: true,
+              render: sinon.spy()
+            },
+          }
+        }
+      }]
+
+      let testRenderer = Renderer.install({
+        url: 'https://httpbin.org/post',
+        config: { test: 'config1' },
+        id: 1,
+        adUnitCode: 'video1'
+
+      });
+      testRenderer.setRender(() => {})
+
+      testRenderer.render()
+      expect(loadExternalScript.called).to.be.true;
+    });
+
+    it('should call loadExternalScript() for script not defined on adUnit, only when .render() is called', function() {
+      $$PREBID_GLOBAL$$.adUnits = [{
+        code: 'video1',
+        renderer: {
+          url: 'http://cdn.adnxs.com/renderer/video/ANOutstreamVideo.js',
+          render: sinon.spy()
+        }
+      }];
+      let testRenderer = Renderer.install({
+        url: 'https://httpbin.org/post',
+        config: { test: 'config1' },
+        id: 1,
+        adUnitCode: undefined
+      });
+      expect(loadExternalScript.called).to.be.false;
+
+      testRenderer.render()
+      expect(loadExternalScript.called).to.be.true;
+    });
+
+    it('call\'s documentResolver when configured', function () {
+      const documentResolver = sinon.spy(function(bid, sDoc, tDoc) {
+        return document;
+      });
+
+      let testRenderer = Renderer.install({
+        url: 'https://httpbin.org/post',
+        config: { documentResolver: documentResolver }
+      });
+
+      executeRenderer(testRenderer, {}, {});
+
+      expect(documentResolver.called).to.be.true;
     });
   });
 });

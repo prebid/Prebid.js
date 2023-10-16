@@ -2,39 +2,39 @@
 //
 // For more information, see http://karma-runner.github.io/1.0/config/configuration-file.html
 
+const babelConfig = require('./babelConfig.js');
 var _ = require('lodash');
-var webpackConf = require('./webpack.conf');
-var path = require('path')
+var webpackConf = require('./webpack.conf.js');
 var karmaConstants = require('karma').constants;
 
-function newWebpackConfig(codeCoverage) {
+function newWebpackConfig(codeCoverage, disableFeatures) {
   // Make a clone here because we plan on mutating this object, and don't want parallel tasks to trample each other.
   var webpackConfig = _.cloneDeep(webpackConf);
 
-  // remove optimize plugin for tests
-  webpackConfig.plugins.pop()
+  Object.assign(webpackConfig, {
+    mode: 'development',
+    devtool: 'inline-source-map',
+  });
 
-  webpackConfig.devtool = 'inline-source-map';
+  delete webpackConfig.entry;
 
-  if (codeCoverage) {
-    webpackConfig.module.rules.push({
-      enforce: 'post',
-      exclude: /(node_modules)|(test)|(integrationExamples)|(build)|polyfill.js|(src\/adapters\/analytics\/ga.js)/,
-      loader: 'istanbul-instrumenter-loader',
-      test: /\.js$/
-    })
-  }
+  webpackConfig.module.rules
+    .flatMap((r) => r.use)
+    .filter((use) => use.loader === 'babel-loader')
+    .forEach((use) => {
+      use.options = babelConfig({test: true, codeCoverage, disableFeatures});
+    });
+
   return webpackConfig;
 }
 
 function newPluginsArray(browserstack) {
   var plugins = [
     'karma-chrome-launcher',
-    'karma-coverage-istanbul-reporter',
+    'karma-coverage',
     'karma-es5-shim',
     'karma-mocha',
     'karma-chai',
-    'karma-requirejs',
     'karma-sinon',
     'karma-sourcemap-loader',
     'karma-spec-reporter',
@@ -64,18 +64,15 @@ function setReporters(karmaConf, codeCoverage, browserstack) {
       suppressPassed: true
     };
   }
+
   if (codeCoverage) {
-    karmaConf.reporters.push('coverage-istanbul');
-    karmaConf.coverageIstanbulReporter = {
-      reports: ['html', 'lcovonly', 'text-summary'],
-      dir: path.join(__dirname, 'build', 'coverage'),
-      'report-config': {
-        html: {
-          subdir: 'karma_html',
-          urlFriendlyName: true, // simply replaces spaces with _ for files/dirs
-        }
-      }
-    }
+    karmaConf.reporters.push('coverage');
+    karmaConf.coverageReporter = {
+      dir: 'build/coverage',
+      reporters: [
+        { type: 'lcov', subdir: '.' }
+      ]
+    };
   }
 }
 
@@ -83,13 +80,14 @@ function setBrowsers(karmaConf, browserstack) {
   if (browserstack) {
     karmaConf.browserStack = {
       username: process.env.BROWSERSTACK_USERNAME,
-      accessKey: process.env.BROWSERSTACK_ACCESS_KEY
+      accessKey: process.env.BROWSERSTACK_ACCESS_KEY,
+      build: 'Prebidjs Unit Tests ' + new Date().toLocaleString()
     }
     if (process.env.TRAVIS) {
       karmaConf.browserStack.startTunnel = false;
       karmaConf.browserStack.tunnelIdentifier = process.env.BROWSERSTACK_LOCAL_IDENTIFIER;
     }
-    karmaConf.customLaunchers = require('./browsers.json')
+    karmaConf.customLaunchers = require('./browsers.json');
     karmaConf.browsers = Object.keys(karmaConf.customLaunchers);
   } else {
     var isDocker = require('is-docker')();
@@ -108,11 +106,11 @@ function setBrowsers(karmaConf, browserstack) {
   }
 }
 
-module.exports = function(codeCoverage, browserstack, watchMode, file) {
-  var webpackConfig = newWebpackConfig(codeCoverage);
+module.exports = function(codeCoverage, browserstack, watchMode, file, disableFeatures) {
+  var webpackConfig = newWebpackConfig(codeCoverage, disableFeatures);
   var plugins = newPluginsArray(browserstack);
 
-  var files = file ? ['test/helpers/prebidGlobal.js', file] : ['test/test_index.js'];
+  var files = file ? ['test/test_deps.js', file, 'test/helpers/hookSetup.js'].flatMap(f => f) : ['test/test_index.js'];
   // This file opens the /debug.html tab automatically.
   // It has no real value unless you're running --watch, and intend to do some debugging in the browser.
   if (watchMode) {
@@ -125,6 +123,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
 
     webpack: webpackConfig,
     webpackMiddleware: {
+      stats: 'errors-only',
       noInfo: true
     },
     // frameworks to use
@@ -153,6 +152,13 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     autoWatch: true,
 
     reporters: ['mocha'],
+
+    client: {
+      mocha: {
+        timeout: 3000
+      }
+    },
+
     mochaReporter: {
       showDiff: true,
       output: 'minimal'
@@ -161,13 +167,24 @@ module.exports = function(codeCoverage, browserstack, watchMode, file) {
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
     singleRun: !watchMode,
-    browserDisconnectTimeout: 10000, // default 2000
-    browserDisconnectTolerance: 1, // default 0
-    browserNoActivityTimeout: 4 * 60 * 1000, // default 10000
-    captureTimeout: 4 * 60 * 1000, // default 60000
+    browserDisconnectTimeout: 3e5, // default 2000
+    browserNoActivityTimeout: 3e5, // default 10000
+    captureTimeout: 3e5, // default 60000,
+    browserDisconnectTolerance: 3,
+    concurrency: 5, // browserstack allows us 5 concurrent sessions
 
     plugins: plugins
+  };
+
+  // To ensure that, we are able to run single spec file
+  // here we are adding preprocessors, when file is passed
+  if (file) {
+    config.files.forEach((file) => {
+      config.preprocessors[file] = ['webpack', 'sourcemap'];
+    });
+    delete config.preprocessors['test/test_index.js'];
   }
+
   setReporters(config, codeCoverage, browserstack);
   setBrowsers(config, browserstack);
   return config;

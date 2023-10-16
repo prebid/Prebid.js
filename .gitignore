@@ -15,7 +15,7 @@ selenium*.log
 integrationExamples/gpt/gpt.html
 integrationExamples/gpt/*-test.html
 integrationExamples/implementations/
-src/adapters/analytics/libraries
+libraries/analyticsAdapter/examples/libraries
 
 # Coverage reports
 build/coverage/
@@ -27,6 +27,9 @@ build/coverage/
 ## Directory-based project format:
 .idea/
 # if you remove the above rule, at least ignore the following:
+
+# VS Code
+.vscode/
 
 # User-specific stuff:
 # .idea/workspace.xml

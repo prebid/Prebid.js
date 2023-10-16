@@ -1,81 +1,61 @@
+import funHooks from 'fun-hooks/no-eval/index.js';
+import {defer} from './utils/promise.js';
+
+export let hook = funHooks({
+  ready: funHooks.SYNC | funHooks.ASYNC | funHooks.QUEUE
+});
+
+const readyCtl = defer();
+hook.ready = (() => {
+  const ready = hook.ready;
+  return function () {
+    try {
+      return ready.apply(hook, arguments);
+    } finally {
+      readyCtl.resolve();
+    }
+  }
+})();
 
 /**
- * @typedef {function} HookedFunction
- * @property {function(function(), [number])} addHook A method that takes a new function to attach as a hook
- *  to the HookedFunction
- * @property {function(function())} removeHook A method to remove attached hooks
+ * A promise that resolves when hooks are ready.
+ * @type {Promise}
  */
+export const ready = readyCtl.promise;
+
+export const getHook = hook.get;
+
+export function setupBeforeHookFnOnce(baseFn, hookFn, priority = 15) {
+  let result = baseFn.getHooks({hook: hookFn});
+  if (result.length === 0) {
+    baseFn.before(hookFn, priority);
+  }
+}
+const submoduleInstallMap = {};
+
+export function module(name, install, {postInstallAllowed = false} = {}) {
+  hook('async', function (submodules) {
+    submodules.forEach(args => install(...args));
+    if (postInstallAllowed) submoduleInstallMap[name] = install;
+  }, name)([]); // will be queued until hook.ready() called in pbjs.processQueue();
+}
+
+export function submodule(name, ...args) {
+  const install = submoduleInstallMap[name];
+  if (install) return install(...args);
+  getHook(name).before((next, modules) => {
+    modules.push(args);
+    next(modules);
+  });
+}
 
 /**
- * A map of global hook methods to allow easy extension of hooked functions that are intended to be extended globally
- * @type {{}}
+ * Copy hook methods (.before, .after, etc) from a given hook to a given wrapper object.
  */
-export const hooks = {};
-
-/**
- * A utility function for allowing a regular function to be extensible with additional hook functions
- * @param {string} type The method for applying all attached hooks when this hooked function is called
- * @param {function()} fn The function to make hookable
- * @param {string} hookName If provided this allows you to register a name for a global hook to have easy access to
- *  the addHook and removeHook methods for that hook (which are usually accessed as methods on the function itself)
- * @returns {HookedFunction} A new function that implements the HookedFunction interface
- */
-export function createHook(type, fn, hookName) {
-  let _hooks = [{fn, priority: 0}];
-
-  let types = {
-    sync: function(...args) {
-      _hooks.forEach(hook => {
-        hook.fn.apply(this, args);
-      });
-    },
-    asyncSeries: function(...args) {
-      let curr = 0;
-
-      const asyncSeriesNext = (...args) => {
-        let hook = _hooks[++curr];
-        if (typeof hook === 'object' && typeof hook.fn === 'function') {
-          return hook.fn.apply(this, args.concat(asyncSeriesNext))
-        }
-      };
-
-      return _hooks[curr].fn.apply(this, args.concat(asyncSeriesNext));
-    }
-  };
-
-  if (!types[type]) {
-    throw 'invalid hook type';
-  }
-
-  let methods = {
-    addHook: function(fn, priority = 10) {
-      if (typeof fn === 'function') {
-        _hooks.push({
-          fn,
-          priority: priority
-        });
-
-        _hooks.sort((a, b) => b.priority - a.priority);
-      }
-    },
-    removeHook: function(removeFn) {
-      _hooks = _hooks.filter(hook => hook.fn === fn || hook.fn !== removeFn);
-    },
-    hasHook: function(fn) {
-      return _hooks.some(hook => hook.fn === fn);
-    }
-  };
-
-  if (typeof hookName === 'string') {
-    hooks[hookName] = methods;
-  }
-
-  function hookedFn(...args) {
-    if (_hooks.length === 1 && _hooks[0].fn === fn) {
-      return fn.apply(this, args);
-    }
-    return types[type].apply(this, args);
-  }
-
-  return Object.assign(hookedFn, methods);
+export function wrapHook(hook, wrapper) {
+  Object.defineProperties(
+    wrapper,
+    Object.fromEntries(['before', 'after', 'getHooks', 'removeAll'].map((m) => [m, {get: () => hook[m]}]))
+  );
+  return wrapper;
 }

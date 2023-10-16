@@ -1,13 +1,35 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
-import { config } from 'src/config';
+import {deepAccess, deepSetValue, getBidIdParameter, getUniqueIdentifierStr, logWarn, mergeDeep} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {Renderer} from '../src/Renderer.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import {loadExternalScript} from '../src/adloader.js';
 
 const BIDDER_CODE = 'improvedigital';
+const CREATIVE_TTL = 300;
+
+const AD_SERVER_BASE_URL = 'https://ad.360yield.com';
+const BASIC_ADS_BASE_URL = 'https://ad.360yield-basic.com';
+const PB_ENDPOINT = 'pb';
+const EXTEND_URL = 'https://pbs.360yield.com/openrtb2/auction';
+const IFRAME_SYNC_URL = 'https://hb.360yield.com/prebid-universal-creative/load-cookie.html';
+
+const VIDEO_PARAMS = {
+  DEFAULT_MIMES: ['video/mp4'],
+  PLACEMENT_TYPE: {
+    INSTREAM: 1,
+    OUTSTREAM: 3,
+  }
+};
 
 export const spec = {
-  version: '4.4.0',
   code: BIDDER_CODE,
+  gvlid: 253,
   aliases: ['id'],
+  supportedMediaTypes: [BANNER, NATIVE, VIDEO],
+  syncStore: { extendMode: false, placementId: null },
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -15,7 +37,7 @@ export const spec = {
    * @param {object} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: function (bid) {
+  isBidRequestValid(bid) {
     return !!(bid && bid.params && (bid.params.placementId || (bid.params.placementKey && bid.params.publisherId)));
   },
 
@@ -23,88 +45,24 @@ export const spec = {
    * Make a server request from the list of BidRequests.
    *
    * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
+   * @param bidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
-  buildRequests: function (bidRequests, bidderRequest) {
-    let normalizedBids = bidRequests.map((bidRequest) => {
-      return getNormalizedBidRequest(bidRequest);
-    });
-
-    let idClient = new ImproveDigitalAdServerJSClient('hb');
-    let requestParameters = {
-      singleRequestMode: false,
-      returnObjType: idClient.CONSTANTS.RETURN_OBJ_TYPE.URL_PARAMS_SPLIT,
-      libVersion: this.version
-    };
-
-    if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.consentString) {
-      requestParameters.gdpr = bidderRequest.gdprConsent.consentString;
-    }
-
-    let requestObj = idClient.createRequest(
-      normalizedBids, // requestObject
-      requestParameters
-    );
-
-    if (requestObj.errors && requestObj.errors.length > 0) {
-      utils.logError('ID WARNING 0x01');
-    }
-
-    return requestObj.requests;
+  buildRequests(bidRequests, bidderRequest) {
+    // Save a placement id to send it to the ad server when fetching the user syncs
+    this.syncStore.placementId = this.syncStore.placementId || bidRequests[0].params.placementId;
+    return ID_REQUEST.buildServerRequests(bidRequests, bidderRequest);
   },
 
   /**
    * Unpack the response from the server into a list of bids.
    *
    * @param {*} serverResponse A successful response from the server.
+   * @param bidderRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
-  interpretResponse: function (serverResponse, request) {
-    const bids = [];
-    utils._each(serverResponse.body.bid, function (bidObject) {
-      if (!bidObject.price || bidObject.price === null ||
-        bidObject.hasOwnProperty('errorCode') ||
-        typeof bidObject.adm !== 'string') {
-        return;
-      }
-
-      let bid = {};
-      let nurl = '';
-      if (bidObject.nurl && bidObject.nurl.length > 0) {
-        nurl = `<img src="${bidObject.nurl}" width="0" height="0" style="display:none">`;
-      }
-      bid.ad = `${nurl}<script>${bidObject.adm}</script>`;
-      bid.adId = bidObject.id;
-      bid.cpm = parseFloat(bidObject.price);
-      bid.creativeId = bidObject.crid;
-      bid.currency = bidObject.currency ? bidObject.currency.toUpperCase() : 'USD';
-
-      // Deal ID. Composite ads can have multiple line items and the ID of the first
-      // dealID line item will be used.
-      if (utils.isNumber(bidObject.lid) && bidObject.buying_type === 'deal_id') {
-        bid.dealId = bidObject.lid;
-      } else if (Array.isArray(bidObject.lid) &&
-        Array.isArray(bidObject.buying_type) &&
-        bidObject.lid.length === bidObject.buying_type.length) {
-        let isDeal = false;
-        bidObject.buying_type.forEach((bt, i) => {
-          if (isDeal) return;
-          if (bt === 'deal_id') {
-            isDeal = true;
-            bid.dealId = bidObject.lid[i];
-          }
-        });
-      }
-
-      bid.height = bidObject.h;
-      bid.netRevenue = bidObject.isNet ? bidObject.isNet : false;
-      bid.requestId = bidObject.id;
-      bid.ttl = 300;
-      bid.width = bidObject.w;
-
-      bids.push(bid);
-    });
-    return bids;
+  interpretResponse(serverResponse, { ortbRequest }) {
+    return CONVERTER.fromORTB({request: ortbRequest, response: serverResponse.body}).bids;
   },
 
   /**
@@ -114,306 +72,350 @@ export const spec = {
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function(syncOptions, serverResponses) {
-    if (syncOptions.pixelEnabled) {
-      const syncs = [];
+  getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
+    if (config.getConfig('coppa') === true || !hasPurpose1Consent(gdprConsent)) {
+      return [];
+    }
+
+    const syncs = [];
+    if ((this.syncStore.extendMode || !syncOptions.pixelEnabled) && syncOptions.iframeEnabled) {
+      const { gdprApplies, consentString } = gdprConsent || {};
+      const bidders = new Set();
+      if (this.syncStore.extendMode && serverResponses) {
+        serverResponses.forEach(response => {
+          if (!response?.body?.ext?.responsetimemillis) return;
+          Object.keys(response.body.ext.responsetimemillis).forEach(b => bidders.add(b))
+        })
+      }
+      syncs.push({
+        type: 'iframe',
+        url: IFRAME_SYNC_URL +
+          `?placement_id=${this.syncStore.placementId}` +
+          (this.syncStore.extendMode ? '&pbs=1' : '') +
+          (typeof gdprApplies === 'boolean' ? `&gdpr=${Number(gdprApplies)}` : '') +
+          (consentString ? `&gdpr_consent=${consentString}` : '') +
+          (uspConsent ? `&us_privacy=${encodeURIComponent(uspConsent)}` : '') +
+          (bidders.size ? `&bidders=${[...bidders].join(',')}` : '')
+      });
+    } else if (syncOptions.pixelEnabled) {
       serverResponses.forEach(response => {
-        response.body.bid.forEach(bidObject => {
-          if (utils.isArray(bidObject.sync)) {
-            bidObject.sync.forEach(syncElement => {
-              if (syncs.indexOf(syncElement) === -1) {
-                syncs.push(syncElement);
-              }
-            });
+        const syncArr = deepAccess(response, `body.ext.${BIDDER_CODE}.sync`, []);
+        syncArr.forEach(url => {
+          if (!syncs.some(sync => sync.url === url)) {
+            syncs.push({ type: 'image', url });
           }
         });
       });
-      return syncs.map(sync => ({ type: 'image', url: sync }));
     }
-    return [];
+
+    return syncs;
   }
 };
 
-function getNormalizedBidRequest(bid) {
-  let adUnitId = utils.getBidIdParameter('adUnitCode', bid) || null;
-  let placementId = utils.getBidIdParameter('placementId', bid.params) || null;
-  let publisherId = null;
-  let placementKey = null;
-
-  if (placementId === null) {
-    publisherId = utils.getBidIdParameter('publisherId', bid.params) || null;
-    placementKey = utils.getBidIdParameter('placementKey', bid.params) || null;
-  }
-  let keyValues = utils.getBidIdParameter('keyValues', bid.params) || null;
-  let localSize = utils.getBidIdParameter('size', bid.params) || null;
-  let bidId = utils.getBidIdParameter('bidId', bid);
-  let transactionId = utils.getBidIdParameter('transactionId', bid);
-  const currency = config.getConfig('currency.adServerCurrency');
-
-  let normalizedBidRequest = {};
-  if (placementId) {
-    normalizedBidRequest.placementId = placementId;
-  } else {
-    if (publisherId) {
-      normalizedBidRequest.publisherId = publisherId;
-    }
-    if (placementKey) {
-      normalizedBidRequest.placementKey = placementKey;
-    }
-  }
-
-  if (keyValues) {
-    normalizedBidRequest.keyValues = keyValues;
-  }
-  if (localSize && localSize.w && localSize.h) {
-    normalizedBidRequest.size = {};
-    normalizedBidRequest.size.h = localSize.h;
-    normalizedBidRequest.size.w = localSize.w;
-  }
-  if (bidId) {
-    normalizedBidRequest.id = bidId;
-  }
-  if (adUnitId) {
-    normalizedBidRequest.adUnitId = adUnitId;
-  }
-  if (transactionId) {
-    normalizedBidRequest.transactionId = transactionId;
-  }
-  if (currency) {
-    normalizedBidRequest.currency = currency;
-  }
-  return normalizedBidRequest;
-}
 registerBidder(spec);
 
-function ImproveDigitalAdServerJSClient(endPoint) {
-  this.CONSTANTS = {
-    HTTP_SECURITY: {
-      STANDARD: 0,
-      SECURE: 1
-    },
-    AD_SERVER_BASE_URL: 'ad.360yield.com',
-    END_POINT: endPoint || 'hb',
-    AD_SERVER_URL_PARAM: 'jsonp=',
-    CLIENT_VERSION: 'JS-5.1',
-    MAX_URL_LENGTH: 2083,
-    ERROR_CODES: {
-      MISSING_PLACEMENT_PARAMS: 2,
-      LIB_VERSION_MISSING: 3
-    },
-    RETURN_OBJ_TYPE: {
-      DEFAULT: 0,
-      URL_PARAMS_SPLIT: 1
+export const CONVERTER = ortbConverter({
+  context: {
+    ttl: CREATIVE_TTL,
+    nativeRequest: {
+      eventtrackers: [
+        {event: 1, methods: [1, 2]},
+      ]
     }
-  };
-
-  this.getErrorReturn = function(errorCode) {
-    return {
-      idMappings: {},
-      requests: {},
-      'errorCode': errorCode
-    };
-  };
-
-  this.createRequest = function(requestObject, requestParameters, extraRequestParameters) {
-    if (!requestParameters.libVersion) {
-      return this.getErrorReturn(this.CONSTANTS.ERROR_CODES.LIB_VERSION_MISSING);
+  },
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+    imp.secure = Number(window.location.protocol === 'https:');
+    if (!imp.bidfloor && bidRequest.params.bidFloor) {
+      imp.bidfloor = bidRequest.params.bidFloor;
+      imp.bidfloorcur = getBidIdParameter('bidFloorCur', bidRequest.params).toUpperCase() || 'USD'
     }
-
-    requestParameters.returnObjType = requestParameters.returnObjType || this.CONSTANTS.RETURN_OBJ_TYPE.DEFAULT;
-
-    let impressionObjects = [];
-    let impressionObject;
-    if (utils.isArray(requestObject)) {
-      for (let counter = 0; counter < requestObject.length; counter++) {
-        impressionObject = this.createImpressionObject(requestObject[counter]);
-        impressionObjects.push(impressionObject);
+    const bidderParamsPath = context.extendMode ? 'ext.prebid.bidder.improvedigital' : 'ext.bidder';
+    const placementId = bidRequest.params.placementId;
+    if (placementId) {
+      deepSetValue(imp, `${bidderParamsPath}.placementId`, placementId);
+      if (context.extendMode) {
+        deepSetValue(imp, 'ext.prebid.storedrequest.id', '' + placementId);
       }
     } else {
-      impressionObject = this.createImpressionObject(requestObject);
-      impressionObjects.push(impressionObject);
+      deepSetValue(imp, `${bidderParamsPath}.publisherId`, getBidIdParameter('publisherId', bidRequest.params));
+      deepSetValue(imp, `${bidderParamsPath}.placementKey`, getBidIdParameter('placementKey', bidRequest.params));
     }
+    deepSetValue(imp, `${bidderParamsPath}.keyValues`, getBidIdParameter('keyValues', bidRequest.params) || undefined);
 
-    let returnIdMappings = true;
-    if (requestParameters.returnObjType === this.CONSTANTS.RETURN_OBJ_TYPE.URL_PARAMS_SPLIT) {
-      returnIdMappings = false;
-    }
-
-    let returnObject = {};
-    returnObject.requests = [];
-    if (returnIdMappings) {
-      returnObject.idMappings = [];
-    }
-    let errors = null;
-
-    let baseUrl = `${(requestParameters.secure === 1 ? 'https' : 'http')}://${this.CONSTANTS.AD_SERVER_BASE_URL}/${this.CONSTANTS.END_POINT}?${this.CONSTANTS.AD_SERVER_URL_PARAM}`;
-
-    let bidRequestObject = {
-      bid_request: this.createBasicBidRequestObject(requestParameters, extraRequestParameters)
-    };
-    for (let counter = 0; counter < impressionObjects.length; counter++) {
-      impressionObject = impressionObjects[counter];
-
-      if (impressionObject.errorCode) {
-        errors = errors || [];
-        errors.push({
-          errorCode: impressionObject.errorCode,
-          adUnitId: impressionObject.adUnitId
-        });
-      } else {
-        if (returnIdMappings) {
-          returnObject.idMappings.push({
-            adUnitId: impressionObject.adUnitId,
-            id: impressionObject.impressionObject.id
-          });
-        }
-        bidRequestObject.bid_request.imp = bidRequestObject.bid_request.imp || [];
-        bidRequestObject.bid_request.imp.push(impressionObject.impressionObject);
-
-        let writeLongRequest = false;
-        const outputUri = baseUrl + encodeURIComponent(JSON.stringify(bidRequestObject));
-        if (outputUri.length > this.CONSTANTS.MAX_URL_LENGTH) {
-          writeLongRequest = true;
-          if (bidRequestObject.bid_request.imp.length > 1) {
-            // Pop the current request and process it again in the next iteration
-            bidRequestObject.bid_request.imp.pop();
-            if (returnIdMappings) {
-              returnObject.idMappings.pop();
-            }
-            counter--;
+    return imp;
+  },
+  request(buildRequest, imps, bidderRequest, context) {
+    const request = buildRequest(imps, bidderRequest, context);
+    mergeDeep(request, {
+      id: getUniqueIdentifierStr(),
+      source: {
+        // TODO: once https://github.com/prebid/Prebid.js/issues/8573 is resolved, this should be handled by the base ortbConverter logic
+        tid: context.bidRequests[0].transactionId,
+      },
+      ext: {
+        improvedigital: {
+          sdk: {
+            name: 'pbjs',
+            version: '$prebid.version$',
           }
         }
-
-        if (writeLongRequest ||
-            !requestParameters.singleRequestMode ||
-            counter === impressionObjects.length - 1) {
-          returnObject.requests.push(this.formatRequest(requestParameters, bidRequestObject));
-          bidRequestObject = {
-            bid_request: this.createBasicBidRequestObject(requestParameters, extraRequestParameters)
-          };
+      },
+    });
+    return request;
+  },
+  bidResponse(buildBidResponse, bid, context) {
+    if (!bid.adm || !bid.price || bid.hasOwnProperty('errorCode')) {
+      return;
+    }
+    const {bidRequest} = context;
+    context.mediaType = (() => {
+      const requestMediaTypes = Object.keys(bidRequest.mediaTypes);
+      if (requestMediaTypes.length === 1) return requestMediaTypes[0];
+      // Detect media type for multi-format response
+      if (bid.adm.search(/^(<\?xml|<vast)/i) !== -1) {
+        return VIDEO;
+      } else if (bid.adm[0] === '{') {
+        return NATIVE;
+      } else {
+        return BANNER;
+      }
+    })();
+    const bidResponse = buildBidResponse(bid, context);
+    const idExt = deepAccess(bid, `ext.${BIDDER_CODE}`, {});
+    Object.assign(bidResponse, {
+      dealId: (typeof idExt.buying_type === 'string' && idExt.buying_type !== 'rtb') ? idExt.line_item_id : undefined,
+      netRevenue: idExt.is_net || false,
+    })
+    if (bidResponse.mediaType === VIDEO && ID_REQUEST.isOutstreamVideo(bidRequest)) {
+      Object.assign(bidResponse, {
+        adResponse: { content: bidResponse.vastXml },
+        renderer: ID_OUTSTREAM.createRenderer(bidRequest)
+      })
+    }
+    ID_RAZR.forwardBid({bidRequest, bid: bidResponse});
+    return bidResponse;
+  },
+  overrides: {
+    imp: {
+      banner(fillImpBanner, imp, bidRequest, context) {
+        // override to disregard banner.sizes if usePrebidSizes is not set
+        if (!bidRequest.mediaTypes[BANNER]) return;
+        if (config.getConfig('improvedigital.usePrebidSizes') !== true) {
+          const banner = Object.assign({}, bidRequest.mediaTypes[BANNER], {sizes: null});
+          bidRequest = {...bidRequest, mediaTypes: {[BANNER]: banner}}
+        }
+        fillImpBanner(imp, bidRequest, context);
+      },
+      video(fillImpVideo, imp, bidRequest, context) {
+        // override to use video params from both mediaTypes.video and bidRequest.params.video
+        if (!bidRequest.mediaTypes[VIDEO]) return;
+        const video = Object.assign(
+          {mimes: VIDEO_PARAMS.DEFAULT_MIMES},
+          bidRequest.mediaTypes[VIDEO],
+          bidRequest.params?.video
+        )
+        fillImpVideo(
+          imp,
+          {...bidRequest, mediaTypes: {[VIDEO]: video}},
+          context
+        );
+        deepSetValue(imp, 'ext.is_rewarded_inventory', (video.rewarded === 1 || deepAccess(video, 'ext.rewarded') === 1) || undefined);
+        if (!imp.video.placement && ID_REQUEST.isOutstreamVideo(bidRequest)) {
+          // fillImpVideo will have already set placement = 1 for instream
+          imp.video.placement = VIDEO_PARAMS.PLACEMENT_TYPE.OUTSTREAM;
+        }
+      }
+    },
+    request: {
+      gdprAddtlConsent(setAddtlConsent, ortbRequest, bidderRequest) {
+        const additionalConsent = bidderRequest?.gdprConsent?.addtlConsent;
+        if (!additionalConsent) {
+          return;
+        }
+        if (spec.syncStore.extendMode) {
+          setAddtlConsent(ortbRequest, bidderRequest);
+          return;
+        }
+        if (additionalConsent && additionalConsent.indexOf('~') !== -1) {
+          // Google Ad Tech Provider IDs
+          const atpIds = additionalConsent.substring(additionalConsent.indexOf('~') + 1);
+          if (atpIds) {
+            deepSetValue(
+              ortbRequest,
+              'user.ext.consented_providers_settings.consented_providers',
+              atpIds.split('.').map(id => parseInt(id, 10))
+            );
+          }
         }
       }
     }
+  }
+})
 
-    if (errors) {
-      returnObject.errors = errors;
+const ID_REQUEST = {
+  buildServerRequests(bidRequests, bidderRequest) {
+    const globalExtendMode = config.getConfig('improvedigital.extend') === true;
+    const requests = [];
+    const singleRequestMode = config.getConfig('improvedigital.singleRequest') === true;
+
+    const extendBids = [];
+    const adServerBids = [];
+
+    function adServerUrl(extendMode, publisherId) {
+      if (extendMode) {
+        return EXTEND_URL;
+      }
+      const urlSegments = [];
+      urlSegments.push(hasPurpose1Consent(bidderRequest?.gdprConsent) ? AD_SERVER_BASE_URL : BASIC_ADS_BASE_URL)
+      if (publisherId) {
+        urlSegments.push(publisherId)
+      }
+      urlSegments.push(PB_ENDPOINT)
+      return urlSegments.join('/');
     }
 
-    return returnObject;
-  };
-
-  this.formatRequest = function(requestParameters, bidRequestObject) {
-    switch (requestParameters.returnObjType) {
-      case this.CONSTANTS.RETURN_OBJ_TYPE.URL_PARAMS_SPLIT:
-        return {
-          method: 'GET',
-          url: `//${this.CONSTANTS.AD_SERVER_BASE_URL}/${this.CONSTANTS.END_POINT}`,
-          data: `${this.CONSTANTS.AD_SERVER_URL_PARAM}${JSON.stringify(bidRequestObject)}`
-        };
-      default:
-        const baseUrl = `${(requestParameters.secure === 1 ? 'https' : 'http')}://` +
-          `${this.CONSTANTS.AD_SERVER_BASE_URL}/` +
-          `${this.CONSTANTS.END_POINT}?${this.CONSTANTS.AD_SERVER_URL_PARAM}`;
-        return {
-          url: baseUrl + encodeURIComponent(JSON.stringify(bidRequestObject))
-        }
-    }
-  };
-
-  this.createBasicBidRequestObject = function(requestParameters, extraRequestParameters) {
-    let impressionBidRequestObject = {};
-    if (requestParameters.requestId) {
-      impressionBidRequestObject.id = requestParameters.requestId;
-    } else {
-      impressionBidRequestObject.id = utils.getUniqueIdentifierStr();
-    }
-    if (requestParameters.domain) {
-      impressionBidRequestObject.domain = requestParameters.domain;
-    }
-    if (requestParameters.page) {
-      impressionBidRequestObject.page = requestParameters.page;
-    }
-    if (requestParameters.ref) {
-      impressionBidRequestObject.ref = requestParameters.ref;
-    }
-    if (requestParameters.callback) {
-      impressionBidRequestObject.callback = requestParameters.callback;
-    }
-    if ('secure' in requestParameters) {
-      impressionBidRequestObject.secure = requestParameters.secure;
-    }
-    if (requestParameters.libVersion) {
-      impressionBidRequestObject.version = requestParameters.libVersion + '-' + this.CONSTANTS.CLIENT_VERSION;
-    }
-    if (requestParameters.referrer) {
-      impressionBidRequestObject.referrer = requestParameters.referrer;
-    }
-    if (requestParameters.gdpr) {
-      impressionBidRequestObject.gdpr = requestParameters.gdpr;
-    }
-    if (extraRequestParameters) {
-      for (let prop in extraRequestParameters) {
-        impressionBidRequestObject[prop] = extraRequestParameters[prop];
+    function formatRequest(bidRequests, publisherId, extendMode) {
+      const ortbRequest = CONVERTER.toORTB({bidRequests, bidderRequest, context: {extendMode}});
+      return {
+        method: 'POST',
+        url: adServerUrl(extendMode, publisherId),
+        data: JSON.stringify(ortbRequest),
+        ortbRequest,
+        bidderRequest
       }
     }
 
-    return impressionBidRequestObject;
-  };
+    let publisherId = null;
+    bidRequests.map((bidRequest) => {
+      const bidParamsPublisherId = bidRequest.params.publisherId;
+      const extendModeEnabled = this.isExtendModeEnabled(globalExtendMode, bidRequest.params);
+      if (singleRequestMode) {
+        if (!publisherId) {
+          publisherId = bidParamsPublisherId;
+        } else if (bidParamsPublisherId && publisherId !== bidParamsPublisherId) {
+          throw new Error(`All Improve Digital placements in a single call must have the same publisherId. Please check your 'params.publisherId' or turn off the single request mode.`);
+        }
+        extendModeEnabled ? extendBids.push(bidRequest) : adServerBids.push(bidRequest);
+      } else {
+        requests.push(formatRequest([bidRequest], bidParamsPublisherId, extendModeEnabled));
+      }
+    });
 
-  this.createImpressionObject = function(placementObject) {
-    let outputObject = {};
-    let impressionObject = {};
-    outputObject.impressionObject = impressionObject;
+    if (!singleRequestMode) {
+      return requests;
+    }
+    // In the single request mode, split imps between those going to the ad server and those going to extend server
+    if (extendBids.length) {
+      requests.push(formatRequest(extendBids, publisherId, true));
+    }
+    if (adServerBids.length) {
+      requests.push(formatRequest(adServerBids, publisherId, false));
+    }
 
-    if (placementObject.id) {
-      impressionObject.id = placementObject.id;
-    } else {
-      impressionObject.id = utils.getUniqueIdentifierStr();
+    return requests;
+  },
+
+  isExtendModeEnabled(globalExtendMode, bidParams) {
+    const extendMode = typeof bidParams.extend === 'boolean' ? bidParams.extend : globalExtendMode;
+    if (extendMode && !spec.syncStore.extendMode) {
+      spec.syncStore.extendMode = true;
     }
-    if (placementObject.adUnitId) {
-      outputObject.adUnitId = placementObject.adUnitId;
+    return extendMode;
+  },
+
+  isOutstreamVideo(bidRequest) {
+    return deepAccess(bidRequest, 'mediaTypes.video.context') === 'outstream';
+  },
+
+};
+
+const ID_OUTSTREAM = {
+  RENDERER_URL: 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
+  createRenderer(bidRequest) {
+    const renderer = Renderer.install({
+      id: bidRequest.adUnitCode,
+      url: this.RENDERER_URL,
+      config: deepAccess(bidRequest, 'renderer.options'),
+      adUnitCode: bidRequest.adUnitCode
+    });
+    try {
+      renderer.setRender(this.render);
+    } catch (err) {
+      logWarn('Prebid Error calling setRender on renderer', err);
     }
-    if (placementObject.currency) {
-      impressionObject.currency = placementObject.currency.toUpperCase();
+    return renderer;
+  },
+
+  render(bid) {
+    bid.renderer.push(() => {
+      window.ANOutstreamVideo.renderAd({
+        sizes: [bid.width, bid.height],
+        targetId: bid.adUnitCode,
+        adResponse: bid.adResponse,
+        rendererOptions: bid.renderer.getConfig()
+      }, ID_OUTSTREAM.handleRendererEvents.bind(null, bid));
+    });
+  },
+
+  handleRendererEvents(bid, id, eventName) {
+    bid.renderer.handleVideoEvent({ id, eventName });
+  },
+};
+
+const ID_RAZR = {
+  RENDERER_URL: 'https://cdn.360yield.com/razr/tag.js',
+
+  forwardBid({bidRequest, bid}) {
+    if (bid.mediaType !== BANNER) {
+      return;
     }
-    if (placementObject.placementId) {
-      impressionObject.pid = placementObject.placementId;
+
+    const cfg = {
+      prebid: {
+        bidRequest,
+        bid
+      }
+    };
+
+    const cfgStr = JSON.stringify(cfg).replace(/<\/script>/g, '\\x3C/script>');
+    const s = `<script>window.__razr_config = ${cfgStr};</script>`;
+    bid.ad = bid.ad.replace(/<body[^>]*>/, match => match + s);
+
+    this.installListener();
+  },
+
+  installListener() {
+    if (this._listenerInstalled) {
+      return;
     }
-    if (placementObject.publisherId) {
-      impressionObject.pubid = placementObject.publisherId;
-    }
-    if (placementObject.placementKey) {
-      impressionObject.pkey = placementObject.placementKey;
-    }
-    if (placementObject.transactionId) {
-      impressionObject.tid = placementObject.transactionId;
-    }
-    if (placementObject.keyValues) {
-      for (let key in placementObject.keyValues) {
-        for (let valueCounter = 0; valueCounter < placementObject.keyValues[key].length; valueCounter++) {
-          impressionObject.kvw = impressionObject.kvw || {};
-          impressionObject.kvw[key] = impressionObject.kvw[key] || [];
-          impressionObject.kvw[key].push(placementObject.keyValues[key][valueCounter]);
+
+    window.addEventListener('message', function(e) {
+      const data = e.data?.razr?.load;
+      if (!data) {
+        return;
+      }
+
+      if (e.source) {
+        data.source = e.source;
+        if (data.id) {
+          e.source.postMessage({
+            razr: {
+              id: data.id
+            }
+          }, '*');
         }
       }
-    }
-    if (placementObject.size && placementObject.size.w && placementObject.size.h) {
-      impressionObject.banner = {};
-      impressionObject.banner.w = placementObject.size.w;
-      impressionObject.banner.h = placementObject.size.h;
-    } else {
-      impressionObject.banner = {};
-    }
 
-    if (!impressionObject.pid &&
-    !impressionObject.pubid &&
-    !impressionObject.pkey &&
-    !(impressionObject.banner && impressionObject.banner.w && impressionObject.banner.h)) {
-      outputObject.impressionObject = null;
-      outputObject.errorCode = this.CONSTANTS.ERROR_CODES.MISSING_PLACEMENT_PARAMS;
-    }
-    return outputObject;
-  };
-}
+      const ns = window.razr = window.razr || {};
+      ns.q = ns.q || [];
+      ns.q.push(data);
 
-exports.ImproveDigitalAdServerJSClient = ImproveDigitalAdServerJSClient;
+      if (!ns.loaded) {
+        loadExternalScript(ID_RAZR.RENDERER_URL, BIDDER_CODE);
+      }
+    });
+
+    this._listenerInstalled = true;
+  }
+};

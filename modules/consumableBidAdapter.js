@@ -1,15 +1,18 @@
-import * as utils from 'src/utils';
-import { registerBidder } from 'src/adapters/bidderFactory';
+import { logWarn, deepAccess, isArray, deepSetValue, isFn, isPlainObject } from '../src/utils.js';
+import {config} from '../src/config.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'consumable';
 
-const BASE_URI = 'https://e.serverbid.com/api/v2'
+const BASE_URI = 'https://e.serverbid.com/api/v2';
 
 let siteId = 0;
 let bidder = 'consumable';
 
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER, VIDEO],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -28,10 +31,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
 
-  buildRequests: function(validBidRequests) {
-    // Do we need to group by bidder? i.e. to make multiple requests for
-    // different endpoints.
-
+  buildRequests: function(validBidRequests, bidderRequest) {
     let ret = {
       method: 'POST',
       url: '',
@@ -50,27 +50,56 @@ export const spec = {
     const data = Object.assign({
       placements: [],
       time: Date.now(),
-      user: {},
-      url: utils.getTopWindowUrl(),
-      referrer: document.referrer,
-      enableBotFiltering: true,
-      includePricingData: true,
-      parallel: true
+      url: bidderRequest.refererInfo.page,
+      referrer: bidderRequest.refererInfo.ref,
+      source: [{
+        'name': 'prebidjs',
+        'version': '$prebid.version$'
+      }]
     }, validBidRequests[0].params);
 
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      data.gdpr = {
+        consent: bidderRequest.gdprConsent.consentString,
+        applies: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
+      };
+    }
+
+    if (bidderRequest && bidderRequest.uspConsent) {
+      data.ccpa = bidderRequest.uspConsent;
+    }
+
+    if (bidderRequest && bidderRequest.schain) {
+      data.schain = bidderRequest.schain;
+    }
+
+    if (config.getConfig('coppa')) {
+      data.coppa = true;
+    }
+
     validBidRequests.map(bid => {
+      const sizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes || [];
       const placement = Object.assign({
         divName: bid.bidId,
-        adTypes: bid.adTypes || getSize(bid.sizes)
+        adTypes: bid.adTypes || getSize(sizes)
       }, bid.params);
+
+      placement.bidfloor = getBidFloor(bid, sizes);
+
+      if (bid.mediaTypes.video && bid.mediaTypes.video.playerSize) {
+        placement.video = bid.mediaTypes.video;
+      }
 
       if (placement.networkId && placement.siteId && placement.unitId && placement.unitName) {
         data.placements.push(placement);
       }
     });
 
+    handleEids(data, validBidRequests);
+
     ret.data = JSON.stringify(data);
     ret.bidRequest = validBidRequests;
+    ret.bidderRequest = bidderRequest;
     ret.url = BASE_URI;
 
     return ret;
@@ -113,7 +142,35 @@ export const spec = {
           bid.creativeId = decision.adId;
           bid.ttl = 30;
           bid.netRevenue = true;
-          bid.referrer = utils.getTopWindowUrl();
+          bid.referrer = bidRequest.bidderRequest.refererInfo.page;
+
+          bid.meta = {
+            advertiserDomains: decision.adomain || []
+          };
+
+          if (decision.cats) {
+            if (decision.cats.length > 0) {
+              bid.meta.primaryCatId = decision.cats[0];
+              if (decision.cats.length > 1) {
+                bid.meta.secondaryCatIds = decision.cats.slice(1);
+              }
+            }
+          }
+
+          if (decision.networkId) {
+            bid.meta.networkId = decision.networkId;
+          }
+
+          if (decision.mediaType) {
+            bid.meta.mediaType = decision.mediaType;
+
+            if (decision.mediaType === 'video') {
+              bid.mediaType = 'video';
+              bid.vastUrl = decision.vastUrl || undefined;
+              bid.vastXml = decision.vastXml || undefined;
+              bid.videoCacheKey = decision.uuid || undefined;
+            }
+          }
 
           bidResponses.push(bid);
         }
@@ -123,14 +180,20 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions) {
+  getUserSyncs: function(syncOptions, serverResponses) {
     if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: '//sync.serverbid.com/ss/' + siteId + '.html'
-      }];
+      if (!serverResponses || serverResponses.length === 0 || !serverResponses[0].body.bdr || serverResponses[0].body.bdr !== 'cx') {
+        return [{
+          type: 'iframe',
+          url: 'https://sync.serverbid.com/ss/' + siteId + '.html'
+        }];
+      }
+    }
+
+    if (syncOptions.pixelEnabled && serverResponses && serverResponses.length > 0) {
+      return serverResponses[0].body.pixels;
     } else {
-      utils.logWarn(bidder + ': Please enable iframe based user syncing.');
+      logWarn(bidder + ': Please enable iframe based user syncing.');
     }
   }
 };
@@ -192,14 +255,43 @@ function getSize(sizes) {
 }
 
 function retrieveAd(decision, unitId, unitName) {
-  let oad = decision.contents && decision.contents[0] && decision.contents[0].body + utils.createTrackPixelHtml(decision.impressionUrl);
-  let cb = Math.round(new Date().getTime());
-  let ad = '<script type=\'text/javascript\'>document.write(\'<div id=\"' + unitName + '-' + unitId + '\">\');</script>' + oad;
-  ad += '<script type=\'text/javascript\'>document.write(\'</div>\');</script>';
-  ad += '<script type=\'text/javascript\'>document.write(\'<div class=\"' + unitName + '\"></div>\');</script>';
-  ad += '<script type=\'text/javascript\'>document.write(\'<scr\'+\'ipt type=\"text/javascript\" src=\"https://yummy.consumable.com/' + unitId + '/' + unitName + '/widget/unit.js?cb=' + cb + '\" charset=\"utf-8\" async></scr\'+\'ipt>\');</script>'
-
+  let ad;
+  if (decision.contents && decision.contents[0]) {
+    ad = decision.contents[0].body;
+  }
+  if (decision.vastXml) {
+    ad = decision.vastXml;
+  }
   return ad;
+}
+
+function handleEids(data, validBidRequests) {
+  let bidUserIdAsEids = deepAccess(validBidRequests, '0.userIdAsEids');
+  if (isArray(bidUserIdAsEids) && bidUserIdAsEids.length > 0) {
+    deepSetValue(data, 'user.eids', bidUserIdAsEids);
+  } else {
+    deepSetValue(data, 'user.eids', undefined);
+  }
+}
+
+function getBidFloor(bid, sizes) {
+  if (!isFn(bid.getFloor)) {
+    return bid.params.bidFloor ? bid.params.bidFloor : null;
+  }
+
+  let floor;
+
+  let floorInfo = bid.getFloor({
+    currency: 'USD',
+    mediaType: bid.mediaTypes.video ? 'video' : 'banner',
+    size: sizes.length === 1 ? sizes[0] : '*'
+  });
+
+  if (isPlainObject(floorInfo) && floorInfo.currency === 'USD' && !isNaN(parseFloat(floorInfo.floor))) {
+    floor = parseFloat(floorInfo.floor);
+  }
+
+  return floor;
 }
 
 registerBidder(spec);

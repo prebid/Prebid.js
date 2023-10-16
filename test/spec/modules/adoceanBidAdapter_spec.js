@@ -1,6 +1,7 @@
 import { expect } from 'chai';
-import { spec } from 'modules/adoceanBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory';
+import { spec } from 'modules/adoceanBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { deepClone } from 'src/utils.js';
 
 describe('AdoceanAdapter', function () {
   const adapter = newBidder(spec);
@@ -20,7 +21,11 @@ describe('AdoceanAdapter', function () {
         'emiter': 'myao.adocean.pl'
       },
       'adUnitCode': 'adunit-code',
-      'sizes': [[300, 250]],
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[300, 250]]
+        }
+      },
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
@@ -51,7 +56,11 @@ describe('AdoceanAdapter', function () {
           'emiter': 'myao.adocean.pl'
         },
         'adUnitCode': 'adunit-code',
-        'sizes': [[300, 250]],
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[300, 250], [300, 600]]
+          }
+        },
         'bidId': '30b31c1838de1e',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
@@ -64,12 +73,30 @@ describe('AdoceanAdapter', function () {
           'emiter': 'myao.adocean.pl'
         },
         'adUnitCode': 'adunit-code',
-        'sizes': [[300, 250]],
+        'mediaTypes': {
+          'banner': {
+            'sizes': [[300, 200], [600, 250]]
+          }
+        },
         'bidId': '30b31c1838de1f',
         'bidderRequestId': '22edbae2733bf6',
         'auctionId': '1d1a030790a475',
       }
     ];
+    const schainExample = {
+      'schain': {
+        ver: '1.0',
+        complete: 1,
+        nodes: [
+          {
+            asi: 'directseller.com',
+            sid: '00001!,2',
+            rid: 'BidRequest1',
+            hp: 1
+          }
+        ]
+      }
+    };
 
     const bidderRequest = {
       gdprConsent: {
@@ -78,16 +105,16 @@ describe('AdoceanAdapter', function () {
       }
     };
 
-    it('should send two requests if slave is duplicated', () => {
+    it('should send two requests if slave is duplicated', function () {
       const nrOfRequests = spec.buildRequests(bidRequests, bidderRequest).length;
       expect(nrOfRequests).to.equal(2);
     });
 
-    it('should add bidIdMap with correct slaveId => bidId mapping', () => {
+    it('should add bidIdMap with correct slaveId => bidId mapping', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       for (let i = 0; i < bidRequests.length; i++) {
-        expect(requests[i]).to.exists;
-        expect(requests[i].bidIdMap).to.exists;
+        expect(requests[i]).to.exist;
+        expect(requests[i].bidIdMap).to.exist;
         expect(requests[i].bidIdMap[bidRequests[i].params.slaveId]).to.equal(bidRequests[i].bidId);
       }
     });
@@ -95,7 +122,7 @@ describe('AdoceanAdapter', function () {
     it('sends bid request to url via GET', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
       expect(request.method).to.equal('GET');
-      expect(request.url).to.match(new RegExp(`^https://${bidRequests[0].params.emiter}/ad.json`));
+      expect(request.url).to.match(new RegExp(`^https://${bidRequests[0].params.emiter}/_[0-9]*/ad.json`));
     });
 
     it('should attach id to url', function () {
@@ -108,7 +135,33 @@ describe('AdoceanAdapter', function () {
       expect(request.url).to.include('gdpr=1');
       expect(request.url).to.include('gdpr_consent=' + bidderRequest.gdprConsent.consentString);
     });
-  })
+
+    it('should attach sizes and slaves information to url', function () {
+      let requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests[0].url).to.include('aosspsizes=myaozpniqismex~300x250_300x600');
+      expect(requests[0].url).to.include('slaves=zpniqismex');
+      expect(requests[1].url).to.include('aosspsizes=myaozpniqismex~300x200_600x250');
+      expect(requests[1].url).to.include('slaves=zpniqismex');
+
+      const differentSlavesBids = deepClone(bidRequests);
+      differentSlavesBids[1].params.slaveId = 'adoceanmyaowafpdwlrks';
+      requests = spec.buildRequests(differentSlavesBids, bidderRequest);
+      expect(requests.length).to.equal(1);
+      expect(requests[0].url).to.include('aosspsizes=myaozpniqismex~300x250_300x600-myaowafpdwlrks~300x200_600x250');
+      expect((requests[0].url.match(/aosspsizes=/g) || []).length).to.equal(1);
+      expect(requests[0].url).to.include('slaves=zpniqismex,wafpdwlrks');
+    });
+
+    it('should attach schain parameter if available', function() {
+      let requests = spec.buildRequests(bidRequests, bidderRequest);
+      expect(requests.some(e => e.url.includes('schain='))).to.be.false;
+
+      const bidsWithSchain = deepClone(bidRequests).map(e => ({...e, ...schainExample}));
+      requests = spec.buildRequests(bidsWithSchain, bidderRequest);
+      expect(requests.every(e => e.url.includes('schain=1.0,1!directseller.com,00001%21%2C2,1,BidRequest1,,,0')),
+        `One of urls does not contain valid schain param: ${requests.map(e => e.url).join('\n')}`).to.be.true;
+    });
+  });
 
   describe('interpretResponse', function () {
     const response = {
@@ -124,7 +177,8 @@ describe('AdoceanAdapter', function () {
           'width': '300',
           'height': '250',
           'crid': '0af345b42983cc4bc0',
-          'ttl': '300'
+          'ttl': '300',
+          'adomain': ['adocean.pl']
         }
       ],
       'headers': {
@@ -160,7 +214,10 @@ describe('AdoceanAdapter', function () {
           'ad': '<!-- Creative -->',
           'creativeId': '0af345b42983cc4bc0',
           'ttl': 300,
-          'netRevenue': false
+          'netRevenue': false,
+          'meta': {
+            'advertiserDomains': ['adocean.pl']
+          }
         }
       ];
 
@@ -171,6 +228,8 @@ describe('AdoceanAdapter', function () {
       resultKeys.forEach(function(k) {
         if (k === 'ad') {
           expect(result[0][k]).to.match(/<!-- Creative -->$/);
+        } else if (k === 'meta') {
+          expect(result[0][k]).to.deep.equal(expectedResponse[0][k]);
         } else {
           expect(result[0][k]).to.equal(expectedResponse[0][k]);
         }

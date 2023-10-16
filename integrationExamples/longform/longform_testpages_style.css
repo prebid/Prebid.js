@@ -1,0 +1,34 @@
+#videoPlayer {
+  height: 480px;
+  width: 100%;
+  background-color: #000;
+}
+
+.outer {
+  position: relative;
+}
+
+#skip {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  display: none;
+  color: white;
+  background-color: black;
+  border: 1px solid gray;
+}
+
+#adCount {
+  color: white;
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  display: none;
+}
+
+#showad {
+  color: white;
+  position: absolute;
+  left: 20px;
+  top: 20px;
+}

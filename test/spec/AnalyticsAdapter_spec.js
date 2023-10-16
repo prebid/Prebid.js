@@ -1,16 +1,21 @@
-import { expect } from 'chai';
-import events from 'src/events';
+import {expect} from 'chai';
+import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
+import {server} from 'test/mocks/xhr.js';
+import {disableAjaxForAnalytics, enableAjaxForAnalytics} from '../mocks/analyticsStub.js';
+import {clearEvents} from 'src/events.js';
+import {
+  DEFAULT_EXCLUDE_EVENTS,
+  DEFAULT_INCLUDE_EVENTS,
+  setDebounceDelay
+} from '../../libraries/analyticsAdapter/AnalyticsAdapter.js';
 
-const BID_REQUESTED = CONSTANTS.EVENTS.BID_REQUESTED;
-const BID_RESPONSE = CONSTANTS.EVENTS.BID_RESPONSE;
 const BID_WON = CONSTANTS.EVENTS.BID_WON;
-const BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;
-const AD_RENDER_FAILED = CONSTANTS.EVENTS.AD_RENDER_FAILED;
+const NO_BID = CONSTANTS.EVENTS.NO_BID;
 
-const AnalyticsAdapter = require('src/AnalyticsAdapter').default;
+const AnalyticsAdapter = require('libraries/analyticsAdapter/AnalyticsAdapter.js').default;
 const config = {
-  url: 'http://localhost:9999/endpoint',
+  url: 'https://localhost:9999/endpoint',
   analyticsType: 'endpoint'
 };
 
@@ -18,42 +23,99 @@ describe(`
 FEATURE: Analytics Adapters API
   SCENARIO: A publisher enables analytics
     AND an  \`example\` instance of \`AnalyticsAdapter\`\n`, () => {
-  let xhr;
-  let requests;
   let adapter;
 
+  before(enableAjaxForAnalytics);
+  after(disableAjaxForAnalytics);
+
   beforeEach(function () {
-    xhr = sinon.useFakeXMLHttpRequest();
-    requests = [];
-    xhr.onCreate = (request) => requests.push(request);
     adapter = new AnalyticsAdapter(config);
   });
 
   afterEach(function () {
-    xhr.restore();
     adapter.disableAnalytics();
+    clearEvents();
+  });
+
+  it('should track enable status in `enabled`', () => {
+    expect(adapter.enabled).to.equal(false);
+    adapter.enableAnalytics();
+    expect(adapter.enabled).to.equal(true);
+    adapter.disableAnalytics();
+    expect(adapter.enabled).to.equal(false);
   });
 
   it(`SHOULD call the endpoint WHEN an event occurs that is to be tracked`, function () {
-    const eventType = BID_REQUESTED;
-    const args = { some: 'data' };
+    const eventType = BID_WON;
+    const args = {some: 'data'};
 
-    adapter.track({ eventType, args });
+    adapter.track({eventType, args});
 
-    let result = JSON.parse(requests[0].requestBody);
-    expect(result).to.deep.equal({args: {some: 'data'}, eventType: 'bidRequested'});
+    let result = JSON.parse(server.requests[0].requestBody);
+    expect(result).to.deep.equal({args: {some: 'data'}, eventType});
   });
 
   it(`SHOULD queue the event first and then track it WHEN an event occurs before tracking library is available`, function () {
-    const eventType = BID_RESPONSE;
-    const args = { wat: 'wot' };
+    const eventType = BID_WON;
+    const args = {wat: 'wot'};
 
     events.emit(eventType, args);
     adapter.enableAnalytics();
 
-    let result = JSON.parse(requests[0].requestBody);
-    expect(result).to.deep.equal({args: {wat: 'wot'}, eventType: 'bidResponse'});
+    // As now AUCTION_DEBUG is triggered for WARNINGS too, the BID_RESPONSE goes last in the array
+    const index = server.requests.length - 1;
+    let result = JSON.parse(server.requests[index].requestBody);
+    expect(result).to.deep.equal({eventType, args: {wat: 'wot'}});
   });
+
+  describe('event filters', () => {
+    function fireEvents() {
+      events.emit(BID_WON, {});
+      events.emit(NO_BID, {});
+    }
+    function getEvents(ev) {
+      return server.requests
+        .map(r => JSON.parse(r.requestBody))
+        .filter(r => r.eventType === ev)
+    }
+
+    Object.entries({
+      'whitelist includeEvents': {
+        includeEvents: [BID_WON]
+      },
+      'blacklist excludeEvents': {
+        excludeEvents: [NO_BID]
+      },
+      'give precedence to exclude over include': {
+        includeEvents: [BID_WON, NO_BID],
+        excludeEvents: [NO_BID]
+      }
+    }).forEach(([t, config]) => {
+      it(`should ${t}`, () => {
+        fireEvents();
+        adapter.enableAnalytics(config);
+        expect(getEvents(BID_WON).length).to.eql(1);
+        expect(getEvents(NO_BID).length).to.eql(0);
+        fireEvents();
+        expect(getEvents(BID_WON).length).to.eql(2);
+        expect(getEvents(NO_BID).length).to.eql(0);
+      })
+    })
+  })
+
+  it('should prevent infinite loops when track triggers other events', () => {
+    let i = 0;
+    adapter.track = ((orig) => {
+      return function (event) {
+        i++;
+        orig.call(this, event);
+        events.emit(BID_WON, {})
+      }
+    })(adapter.track);
+    adapter.enableAnalytics(config);
+    events.emit(BID_WON, {});
+    expect(i >= 100).to.eql(false);
+  })
 
   describe(`WHEN an event occurs after enable analytics\n`, function () {
     beforeEach(function () {
@@ -64,75 +126,37 @@ FEATURE: Analytics Adapters API
       events.getEvents.restore();
     });
 
-    it('SHOULD call global when a bidWon event occurs', function () {
-      const eventType = BID_WON;
-      const args = { more: 'info' };
+    Object.values(DEFAULT_INCLUDE_EVENTS).forEach(eventType => {
+      it(`SHOULD call global when a ${eventType} event occurs`, () => {
+        const args = {more: 'info'};
 
-      adapter.enableAnalytics();
-      events.emit(eventType, args);
+        adapter.enableAnalytics();
+        events.emit(eventType, args);
 
-      let result = JSON.parse(requests[0].requestBody);
-      expect(result).to.deep.equal({args: {more: 'info'}, eventType: 'bidWon'});
-    });
-
-    it('SHOULD call global when a adRenderFailed event occurs', function () {
-      const eventType = AD_RENDER_FAILED;
-      const args = { call: 'adRenderFailed' };
-
-      adapter.enableAnalytics();
-      events.emit(eventType, args);
-
-      let result = JSON.parse(requests[0].requestBody);
-      expect(result).to.deep.equal({args: {call: 'adRenderFailed'}, eventType: 'adRenderFailed'});
-    });
-
-    it('SHOULD call global when a bidRequest event occurs', function () {
-      const eventType = BID_REQUESTED;
-      const args = { call: 'request' };
-
-      adapter.enableAnalytics();
-      events.emit(eventType, args);
-
-      let result = JSON.parse(requests[0].requestBody);
-      expect(result).to.deep.equal({args: {call: 'request'}, eventType: 'bidRequested'});
-    });
-
-    it('SHOULD call global when a bidResponse event occurs', function () {
-      const eventType = BID_RESPONSE;
-      const args = { call: 'response' };
-
-      adapter.enableAnalytics();
-      events.emit(eventType, args);
-
-      let result = JSON.parse(requests[0].requestBody);
-      expect(result).to.deep.equal({args: {call: 'response'}, eventType: 'bidResponse'});
-    });
-
-    it('SHOULD call global when a bidTimeout event occurs', function () {
-      const eventType = BID_TIMEOUT;
-      const args = { call: 'timeout' };
-
-      adapter.enableAnalytics();
-      events.emit(eventType, args);
-
-      let result = JSON.parse(requests[0].requestBody);
-      expect(result).to.deep.equal({args: {call: 'timeout'}, eventType: 'bidTimeout'});
+        let result = JSON.parse(server.requests[server.requests.length - 1].requestBody);
+        sinon.assert.match(result, {
+          eventType,
+          args: {
+            more: 'info'
+          },
+        });
+      });
     });
 
     it('SHOULD NOT call global again when adapter.enableAnalytics is called with previous timeout', function () {
-      const eventType = BID_TIMEOUT;
-      const args = { call: 'timeout' };
+      const eventType = BID_WON;
+      const args = {call: 'timeout'};
 
       events.emit(eventType, args);
       adapter.enableAnalytics();
       events.emit(eventType, args);
 
-      expect(requests.length).to.equal(1);
+      expect(server.requests.length).to.equal(1);
     });
 
     describe(`AND sampling is enabled\n`, function () {
       const eventType = BID_WON;
-      const args = { more: 'info' };
+      const args = {more: 'info'};
 
       beforeEach(function () {
         sinon.stub(Math, 'random').returns(0.5);
@@ -150,8 +174,8 @@ FEATURE: Analytics Adapters API
         });
         events.emit(eventType, args);
 
-        expect(requests.length).to.equal(1);
-        let result = JSON.parse(requests[0].requestBody);
+        expect(server.requests.length).to.equal(1);
+        let result = JSON.parse(server.requests[0].requestBody);
         expect(result).to.deep.equal({args: {more: 'info'}, eventType: 'bidWon'});
       });
 
@@ -163,8 +187,44 @@ FEATURE: Analytics Adapters API
         });
         events.emit(eventType, args);
 
-        expect(requests.length).to.equal(0);
+        expect(server.requests.length).to.equal(0);
       });
     });
   });
 });
+
+describe('Analytics asynchronous event tracking', () => {
+  before(() => {
+    setDebounceDelay(100);
+  });
+  after(() => {
+    setDebounceDelay(0);
+  });
+
+  let adapter, clock;
+
+  beforeEach(() => {
+    clock = sinon.useFakeTimers();
+    adapter = new AnalyticsAdapter(config);
+    adapter.track = sinon.stub();
+    adapter.enableAnalytics({});
+  });
+
+  afterEach(() => {
+    clock.restore();
+  })
+
+  it('does not call track as long as events are coming', () => {
+    events.emit(BID_WON, {i: 0});
+    sinon.assert.notCalled(adapter.track);
+    clock.tick(10);
+    events.emit(BID_WON, {i: 1});
+    sinon.assert.notCalled(adapter.track);
+    clock.tick(10);
+    sinon.assert.notCalled(adapter.track);
+    clock.tick(100);
+    sinon.assert.calledTwice(adapter.track);
+    sinon.assert.calledWith(adapter.track.firstCall, {eventType: BID_WON, args: {i: 0}});
+    sinon.assert.calledWith(adapter.track.secondCall, {eventType: BID_WON, args: {i: 1}});
+  });
+})

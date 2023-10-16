@@ -1,6 +1,6 @@
-import * as utils from 'src/utils';
-import {registerBidder} from 'src/adapters/bidderFactory';
-import {config} from 'src/config';
+import * as utils from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'orbitsoft';
 let styleParamsMap = {
@@ -46,17 +46,16 @@ export const spec = {
     for (let i = 0; i < validBidRequests.length; i++) {
       bidRequest = validBidRequests[i];
       let bidRequestParams = bidRequest.params;
-      let callbackId = utils.getUniqueIdentifierStr();
       let placementId = utils.getBidIdParameter('placementId', bidRequestParams);
       let requestUrl = utils.getBidIdParameter('requestUrl', bidRequestParams);
       let referrer = utils.getBidIdParameter('ref', bidRequestParams);
       let location = utils.getBidIdParameter('loc', bidRequestParams);
       // Append location & referrer
       if (location === '') {
-        location = utils.getTopWindowUrl();
+        location = utils.getWindowLocation();
       }
-      if (referrer === '') {
-        referrer = utils.getTopWindowReferrer();
+      if (referrer === '' && bidRequest && bidRequest.refererInfo) {
+        referrer = bidRequest.refererInfo.referer;
       }
 
       // Styles params
@@ -87,17 +86,18 @@ export const spec = {
       // Sizes params (not supports by server, for future features)
       let sizesParams = bidRequest.sizes;
       let parsedSizes = utils.parseSizesInput(sizesParams);
+      let requestData = Object.assign({
+        'scid': placementId,
+        'callback_uid': utils.generateUUID(),
+        'loc': location,
+        'ref': referrer,
+        'size': parsedSizes
+      }, stylesParamsArray, customParamsArray);
 
       serverRequests.push({
-        method: 'GET',
+        method: 'POST',
         url: requestUrl,
-        data: Object.assign({
-          'scid': placementId,
-          'callback_uid': callbackId,
-          'loc': location,
-          'ref': referrer,
-          'size': parsedSizes
-        }, stylesParamsArray, customParamsArray),
+        data: requestData,
         options: {withCredentials: false},
         bidRequest: bidRequest
       });
@@ -123,7 +123,7 @@ export const spec = {
     const CREATIVE = serverBody.content_url;
     const CALLBACK_UID = serverBody.callback_uid;
     const TIME_TO_LIVE = config.getConfig('_bidderTimeout');
-    const REFERER = utils.getTopWindowUrl();
+    const REFERER = utils.getWindowTop();
     let bidRequest = request.bidRequest;
     if (CPM > 0 && WIDTH > 0 && HEIGHT > 0) {
       let bidResponse = {
@@ -136,7 +136,10 @@ export const spec = {
         referrer: REFERER,
         currency: 'USD',
         netRevenue: true,
-        adUrl: CREATIVE
+        adUrl: CREATIVE,
+        meta: {
+          advertiserDomains: serverBody.adomain ? serverBody.adomain : []
+        }
       };
       bidResponses.push(bidResponse);
     }

@@ -3,7 +3,7 @@
 ```
 Module Name: Quantcast Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: igor.soarez@quantcast.com
+Maintainer: inventoryteam@quantcast.com
 ```
 
 # Description
@@ -27,7 +27,10 @@ const adUnits = [{
         battr: [1, 2] // OPTIONAL - Array of blocked creative attributes as per OpenRTB Spec List 5.3
       }
     }
-  ]
+  ],
+  userSync: {
+    url: 'https://quantcast.com/pixelUrl'
+  }
 }];
 ```
 
@@ -63,6 +66,9 @@ var adUnits = [{
         }
       }
     }
-  ]
+  ],
+  userSync: {
+    url: 'https://quantcast.com/pixelUrl'
+  }
 }];
 ```

@@ -1,0 +1,342 @@
+<html>
+<head>
+    <script>
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+    </script>
+    <script src="../../build/dev/prebid.js" async></script>
+
+    <script>
+      var googletag = googletag || {};
+      googletag.cmd = googletag.cmd || [];
+      googletag.cmd.push(function() {
+        googletag.pubads().disableInitialLoad();
+      });
+
+      pbjs.que.push(function() {
+        pbjs.setConfig({
+          debug: true,
+          consentManagement: {
+            cmpApi: 'iab',
+            timeout: 1000,
+            defaultGdprScope: true
+          },
+          userSync: {
+            userIds: [
+              {
+                name: "id5Id",
+                params: {
+                  partner: 173 //Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
+                },
+                storage: {
+                  type: "html5",
+                  name: "id5id",
+                  expires: 90,
+                  refreshInSeconds: 8*3600 // Refresh frequency of cookies, defaulting to 'expires'
+                },
+
+              }, {
+                name: "pubCommonId",
+                storage: {
+                  type: "html5",
+                  name: "pubcid",
+                  expires: 365
+                },
+              },  {
+                name: 'identityLink',
+                params: {
+                  pid: '14', // Set your real identityLink placement ID here
+                  // notUse3P: true // true/false - If you do not want to use 3P endpoint to retrieve envelope. If you do not set this property to true, 3p endpoint will be fired. By default this propertt is undefined and 3p request will be fired.},
+                },
+                storage: {
+                  type: 'html5',
+                  name: 'idl_env',
+                  expires: 30
+                }
+              },
+               {
+                name: "liveIntentId",
+                params: {
+                  publisherId: "9896876"
+                },
+                storage: {
+                  type: "cookie",
+                  name: "_li_pbid",
+                  expires: 28
+                }
+              },
+              {
+                name: "zeotapIdPlus"
+              },
+              {
+                name: 'hadronId',
+                storage: {
+                  type: "html5",
+                  name: "hadronId",
+                  expires: 28
+                }
+              }, {
+                name: "merkleId",
+                params: {
+                  ptk: '12345678-aaaa-bbbb-cccc-123456789abc', //Set your real merkle partner key here
+                  pubid: 'EXAMPLE' //Set your real merkle publisher id here
+                },
+                storage: {
+                  type: "html5",
+                  name: "merkleId",
+                  expires: 30
+                },
+
+              },{
+                name: "unifiedId",
+                params: {
+                  partner: "prebid",
+                  url: "http://match.adsrvr.org/track/rid?ttd_pid=prebid&fmt=json"
+                },
+                storage: {
+                  type: "html5",
+                  name: "unifiedid",
+                  expires: 30
+                },
+              },{
+                name: "parrableId",
+                params: {
+                  // change to Parrable Partner Client ID(s) you received from the Parrable Partners you are using
+                  partner: '30182847-e426-4ff9-b2b5-9ca1324ea09b'
+                }
+              },{
+                name: "criteo"
+              }
+            ],
+            syncDelay: 5000,
+            auctionDelay: 1000
+          }
+        });
+        pbjs.addAdUnits(adUnits);
+        pbjs.requestBids({
+          bidsBackHandler: sendAdserverRequest
+        });
+      });
+
+      function sendAdserverRequest() {
+        if (pbjs.adserverRequestSent) return;
+        pbjs.adserverRequestSent = true;
+        googletag.cmd.push(function() {
+          pbjs.que.push(function() {
+            pbjs.setTargetingForGPTAsync();
+            googletag.pubads().refresh();
+          });
+        });
+      }
+      var FAILSAFE_TIMEOUT = 2000;
+
+      setTimeout(function() {
+        sendAdserverRequest();
+      }, FAILSAFE_TIMEOUT);
+    </script>
+
+    <script>
+      googletag.cmd.push(function() {
+        googletag.defineSlot('/112115922/FL_PB_MedRect', [[300, 250],[300,600]], 'test-div').addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+      });
+      pbjs.que.push(function() {
+        pbjs.setConfig({
+          idImportLibrary:{
+            url: 'http://localhost:8090/sync'
+          },
+        });
+      });
+    </script>
+</head>
+
+<style>
+    body {font-family: Arial, Helvetica, sans-serif;}
+
+    /* Full-width input fields */
+    input[type=text], input[type=password] {
+        width: 100%;
+        padding: 12px 20px;
+        margin: 8px 0;
+        display: inline-block;
+        border: 1px solid #ccc;
+        box-sizing: border-box;
+    }
+
+    /* Set a style for all buttons */
+    button {
+        background-color: #4CAF50;
+        color: white;
+        padding: 14px 20px;
+        margin: 8px 0;
+        border: none;
+        cursor: pointer;
+        width: 100%;
+    }
+
+    button:hover {
+        opacity: 0.8;
+    }
+
+    /* Extra styles for the cancel button */
+    .cancelbtn {
+        width: auto;
+        padding: 10px 18px;
+        background-color: #f44336;
+    }
+
+    /* Center the image and position the close button */
+    .imgcontainer {
+        text-align: center;
+        margin: 24px 0 12px 0;
+        position: relative;
+    }
+
+    img.avatar {
+        width: 40%;
+        border-radius: 50%;
+    }
+
+    .container {
+        padding: 16px;
+    }
+
+    span.psw {
+        float: right;
+        padding-top: 16px;
+    }
+
+    /* The Modal (background) */
+    .modal {
+        display: none; /* Hidden by default */
+        position: fixed; /* Stay in place */
+        z-index: 1; /* Sit on top */
+        left: 0;
+        top: 0;
+        width: 100%; /* Full width */
+        height: 100%; /* Full height */
+        overflow: auto; /* Enable scroll if needed */
+        background-color: rgb(0,0,0); /* Fallback color */
+        background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        padding-top: 60px;
+    }
+
+    /* Modal Content/Box */
+    .modal-content {
+        background-color: #fefefe;
+        margin: 5% auto 15% auto; /* 5% from the top, 15% from the bottom and centered */
+        border: 1px solid #888;
+        width: 80%; /* Could be more or less, depending on screen size */
+    }
+
+    /* The Close Button (x) */
+    .close {
+        position: absolute;
+        right: 25px;
+        top: 0;
+        color: #000;
+        font-size: 35px;
+        font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+        color: red;
+        cursor: pointer;
+    }
+
+    /* Add Zoom Animation */
+    .animate {
+        -webkit-animation: animatezoom 0.6s;
+        animation: animatezoom 0.6s
+    }
+
+    @-webkit-keyframes animatezoom {
+        from {-webkit-transform: scale(0)}
+        to {-webkit-transform: scale(1)}
+    }
+
+    @keyframes animatezoom {
+        from {transform: scale(0)}
+        to {transform: scale(1)}
+    }
+
+    /* Change styles for span and cancel button on extra small screens */
+    @media screen and (max-width: 200px) {
+        span.psw {
+            display: block;
+            float: none;
+        }
+        .cancelbtn {
+            width: 100%;
+        }
+    }
+    table, th, td {
+        border: 1px solid black;
+        border-collapse: collapse;
+    }
+    th, td {
+        padding: 5px;
+    }
+    th {
+        text-align: left;
+    }
+</style>
+</head>
+<body>
+<img src="https://prebid.org/wp-content/uploads/2021/02/Prebid-Logo-RGB-Full-Color-Medium.svg" alt="Prebid" class="logo-img" data-no-retina="data-no-retina" width="150" data-no-lazy="1">
+
+<h2 style="color:#ff6f00;" >ID Import Library Example</h2>
+<h4> Steps before logging in:</h4>
+
+<ul style="font-size:18px;font-family:'Courier New'">
+    <li>Open console
+        <ul style="font-size:15px;font-family:'Courier New'">
+            <li>For Mac, Command+Option+J</li>
+            <li>Windows/Linux,	Control+Shift+J</li>
+        </ul>
+    </li>
+    <li>Search for 'ID-Library' in console</li>
+</ul>
+
+<button onclick="document.getElementById('id01').style.display='block'" style="width:auto;">Login</button>
+
+<div id="id01" class="modal">
+
+    <form class="modal-content animate">
+
+        <div class="container">
+            <label ><b>Username/Email</b></label>
+            <input type="text" placeholder="Enter Username/Email" name="uname" required>
+
+            <label ><b>Password</b></label>
+            <input type="password" placeholder="Enter Password" name="psw" required>
+
+            <button type="submit">Login</button>
+            <label>
+                <input type="checkbox" checked="checked" name="remember"> Remember me
+            </label>
+        </div>
+
+        <div class="container" style="background-color:#f1f1f1">
+            <button type="button" onclick="document.getElementById('id01').style.display='none'" class="cancelbtn">Cancel</button>
+            <span class="psw">Forgot <a href="#">password?</a></span>
+        </div>
+    </form>
+</div>
+
+<script>
+  // Get the modal
+  var modal = document.getElementById('id01');
+
+  // When the user clicks anywhere outside of the modal, close it
+  window.onclick = function(event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  }
+</script>
+
+</body>
+</html>
