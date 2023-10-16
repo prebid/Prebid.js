@@ -44,7 +44,7 @@ We support the following OpenRTB params that can be specified in `mediaTypes.vid
 - 'mimes',
 - 'minduration',
 - 'maxduration',
-- 'placement',
+- 'plcmt',
 - 'protocols',
 - 'startdelay',
 - 'skip',
@@ -75,7 +75,7 @@ We support the following OpenRTB params that can be specified in `mediaTypes.vid
                   delivery: [2],
                   minduration: 10,
                   maxduration: 30,
-                  placement: 1,
+                  plcmt: 1,
                   playbackmethod: [1,5],
             }
           },
