@@ -1,8 +1,9 @@
-import { tryAppendQueryString, logMessage, logError, isEmpty, isStr, isPlainObject, isArray, logWarn } from '../src/utils.js';
+import { logMessage, logError, isEmpty, isStr, isPlainObject, isArray, logWarn } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 const GVLID = 28;
 const BIDDER_CODE = 'triplelift';
@@ -79,9 +80,26 @@ export const tripleliftAdapterSpec = {
 
   interpretResponse: function(serverResponse, {bidderRequest}) {
     let bids = serverResponse.body.bids || [];
-    return bids.map(function(bid) {
-      return _buildResponseObject(bidderRequest, bid);
-    });
+    const paapi = serverResponse.body.paapi || [];
+
+    bids = bids.map(bid => _buildResponseObject(bidderRequest, bid));
+
+    if (paapi.length > 0) {
+      const fledgeAuctionConfigs = paapi.map(config => {
+        return {
+          bidId: bidderRequest.bids[config.imp_id].bidId,
+          config: config.auctionConfig
+        };
+      });
+
+      logMessage('Response with FLEDGE:', { bids, fledgeAuctionConfigs });
+      return {
+        bids,
+        fledgeAuctionConfigs
+      };
+    } else {
+      return bids;
+    }
   },
 
   getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy, gppConsent) {
@@ -189,6 +207,11 @@ function _buildPostBody(bidRequests, bidderRequest) {
   if (bidderRequest?.ortb2?.regs?.gpp) {
     data.regs = Object.assign({}, bidderRequest.ortb2.regs);
   }
+
+  if (bidderRequest?.ortb2) {
+    data.ext.ortb2 = Object.assign({}, bidderRequest.ortb2);
+  }
+
   return data;
 }
 
@@ -217,7 +240,12 @@ function _getORTBVideo(bidRequest) {
   } catch (err) {
     logWarn('Video size not defined', err);
   }
-  if (video.context === 'instream') video.placement = 1;
+  // honor existing publisher settings
+  if (video.context === 'instream') {
+    if (!video.placement) {
+      video.placement = 1;
+    }
+  }
   if (video.context === 'outstream') {
     if (!video.placement) {
       video.placement = 3

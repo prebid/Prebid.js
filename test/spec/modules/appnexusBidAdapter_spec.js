@@ -1093,7 +1093,18 @@ describe('AppNexusAdapter', function () {
       expect(payload.tags[0].use_pmt_rule).to.equal(true);
     });
 
-    it('should add gpid to the request', function () {
+    it('should add preferred gpid to the request', function () {
+      let testGpid = '/12345/my-gpt-tag-0';
+      let bidRequest = deepClone(bidRequests[0]);
+      bidRequest.ortb2Imp = { ext: { gpid: testGpid } };
+
+      const request = spec.buildRequests([bidRequest]);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.tags[0].gpid).to.exist.and.equal(testGpid)
+    });
+
+    it('should add backup gpid to the request', function () {
       let testGpid = '/12345/my-gpt-tag-0';
       let bidRequest = deepClone(bidRequests[0]);
       bidRequest.ortb2Imp = { ext: { data: { pbadslot: testGpid } } };

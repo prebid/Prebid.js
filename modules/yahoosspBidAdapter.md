@@ -19,6 +19,16 @@ The Yahoo Advertising Bid Adapter is an OpenRTB interface that consolidates all 
 * First Party Data (ortb2 & ortb2Imp)
 * Custom TTL (time to live)
 
+# Adapter Aliases
+Whilst the primary bidder code for this bid adapter is `yahooAds`, the aliases `yahoossp` and `yahooAdvertising` can be used to enable this adapter. If you wish to set Prebid configuration specifically for this bid adapter, then the configuration key _must_ match the used bidder code. All examples in this documentation use the primiry bidder code, but switching `yahooAds` with one of the relevant aliases may be required for your setup. Let's take [setting the request mode](#adapter-request-mode) as an example; if you used the `yahoossp` alias, then the corresponding `setConfig` API call would look like this:
+
+```javascript
+pbjs.setConfig({
+    yahoossp: {
+        mode: 'banner' // 'all', 'video', 'banner' (default)
+    }
+});
+```
 
 # Adapter Request mode
 Since the Yahoo Advertising bid adapter supports both Banner and Video adUnits, a controller was needed to allow you to define when the adapter should generate a bid-requests to the Yahoo bid endpoint.

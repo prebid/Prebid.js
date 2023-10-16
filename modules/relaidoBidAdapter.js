@@ -1,4 +1,14 @@
-import { deepAccess, logWarn, getBidIdParameter, parseQueryStringParameters, triggerPixel, generateUUID, isArray, isNumber, parseSizesInput } from '../src/utils.js';
+import {
+  deepAccess,
+  logWarn,
+  parseQueryStringParameters,
+  triggerPixel,
+  generateUUID,
+  isArray,
+  isNumber,
+  parseSizesInput,
+  getBidIdParameter
+} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';

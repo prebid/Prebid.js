@@ -91,7 +91,7 @@ export const spec = {
     let {bidderRequestId, gdprConsent, uspConsent, timeout, refererInfo, gppConsent} = bidderRequest || {};
 
     const referer = refererInfo ? encodeURIComponent(refererInfo.page) : '';
-    const tmax = timeout;
+    const tmax = parseInt(timeout) || null;
     const imp = [];
     const bidsMap = {};
     const requests = [];
@@ -133,20 +133,13 @@ export const spec = {
       };
       if (ortb2Imp) {
         if (ortb2Imp.instl) {
-          impObj.instl = ortb2Imp.instl;
+          impObj.instl = parseInt(ortb2Imp.instl) || null;
         }
 
         if (ortb2Imp.ext) {
+          impObj.ext.gpid = ortb2Imp.ext.gpid?.toString() || ortb2Imp.ext.data?.pbadslot?.toString() || ortb2Imp.ext.data?.adserver?.adslot?.toString();
           if (ortb2Imp.ext.data) {
             impObj.ext.data = ortb2Imp.ext.data;
-            if (impObj.ext.data.adserver && impObj.ext.data.adserver.adslot) {
-              impObj.ext.gpid = impObj.ext.data.adserver.adslot.toString();
-            } else if (ortb2Imp.ext.data.pbadslot) {
-              impObj.ext.gpid = ortb2Imp.ext.data.pbadslot.toString();
-            }
-          }
-          if (ortb2Imp.ext.gpid) {
-            impObj.ext.gpid = ortb2Imp.ext.gpid.toString();
           }
         }
       }
@@ -492,7 +485,7 @@ export const spec = {
  */
 function _getFloor (mediaTypes, bid) {
   const curMediaType = mediaTypes.video ? 'video' : 'banner';
-  let floor = bid.params.bidFloor || bid.params.floorcpm || 0;
+  let floor = parseFloat(bid.params.bidFloor || bid.params.floorcpm || 0) || null;
 
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({
@@ -602,8 +595,8 @@ function createVideoRequest(videoParams, mediaType, bidSizes) {
 
   if (!videoData.w || !videoData.h) return;
 
-  const minDur = mind || durationRangeSec[0] || videoData.minduration;
-  const maxDur = maxd || durationRangeSec[1] || videoData.maxduration;
+  const minDur = mind || durationRangeSec[0] || parseInt(videoData.minduration) || null;
+  const maxDur = maxd || durationRangeSec[1] || parseInt(videoData.maxduration) || null;
 
   if (minDur) {
     videoData.minduration = minDur;

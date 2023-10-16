@@ -1130,6 +1130,46 @@ describe('triplelift adapter', function () {
 
       expect(logErrorSpy.calledOnce).to.equal(true);
     });
+    it('should add ortb2 ext object if global fpd is available', function() {
+      const ortb2 = {
+        site: {
+          domain: 'page.example.com',
+          cat: ['IAB2'],
+          sectioncat: ['IAB2-2'],
+          pagecat: ['IAB2-2'],
+          page: 'https://page.example.com/here.html',
+        },
+        user: {
+          yob: 1985,
+          gender: 'm',
+          keywords: 'a,b',
+          data: [
+            {
+              name: 'dataprovider.com',
+              ext: { segtax: 4 },
+              segment: [{ id: '1' }]
+            }
+          ],
+          ext: {
+            data: {
+              registered: true,
+              interests: ['cars']
+            }
+          }
+        }
+      };
+
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, {...bidderRequest, ortb2});
+      const { data: payload } = request;
+      expect(payload.ext.ortb2).to.exist;
+      expect(payload.ext.ortb2.site).to.deep.equal({
+        domain: 'page.example.com',
+        cat: ['IAB2'],
+        sectioncat: ['IAB2-2'],
+        pagecat: ['IAB2-2'],
+        page: 'https://page.example.com/here.html',
+      });
+    });
     it('should send global config fpd if kvps are available', function() {
       const sens = null;
       const category = ['news', 'weather', 'hurricane'];
@@ -1507,6 +1547,57 @@ describe('triplelift adapter', function () {
       expect(result[1].meta.networkId).to.equal('10092');
       expect(result[2].meta.networkId).to.equal('5989');
       expect(result[3].meta.networkId).to.equal('5989');
+    });
+
+    it('should return fledgeAuctionConfigs if PAAPI response is received', function() {
+      response.body.paapi = [
+        {
+          imp_id: '0',
+          auctionConfig: {
+            seller: 'https://3lift.com',
+            decisionLogicUrl: 'https://3lift.com/decision_logic.js',
+            interestGroupBuyers: ['https://some_buyer.com'],
+            perBuyerSignals: {
+              'https://some_buyer.com': { a: 1 }
+            }
+          }
+        },
+        {
+          imp_id: '2',
+          auctionConfig: {
+            seller: 'https://3lift.com',
+            decisionLogicUrl: 'https://3lift.com/decision_logic.js',
+            interestGroupBuyers: ['https://some_other_buyer.com'],
+            perBuyerSignals: {
+              'https://some_other_buyer.com': { b: 2 }
+            }
+          }
+        }
+      ];
+
+      let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
+
+      expect(result).to.have.property('bids');
+      expect(result).to.have.property('fledgeAuctionConfigs');
+      expect(result.fledgeAuctionConfigs.length).to.equal(2);
+      expect(result.fledgeAuctionConfigs[0].bidId).to.equal('30b31c1838de1e');
+      expect(result.fledgeAuctionConfigs[1].bidId).to.equal('73edc0ba8de203');
+      expect(result.fledgeAuctionConfigs[0].config).to.deep.equal(
+        {
+          'seller': 'https://3lift.com',
+          'decisionLogicUrl': 'https://3lift.com/decision_logic.js',
+          'interestGroupBuyers': ['https://some_buyer.com'],
+          'perBuyerSignals': { 'https://some_buyer.com': { 'a': 1 } }
+        }
+      );
+      expect(result.fledgeAuctionConfigs[1].config).to.deep.equal(
+        {
+          'seller': 'https://3lift.com',
+          'decisionLogicUrl': 'https://3lift.com/decision_logic.js',
+          'interestGroupBuyers': ['https://some_other_buyer.com'],
+          'perBuyerSignals': { 'https://some_other_buyer.com': { 'b': 2 } }
+        }
+      );
     });
   });
 

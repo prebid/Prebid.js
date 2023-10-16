@@ -294,6 +294,12 @@ export const connectIdSubmodule = {
    */
   getAjaxFn() {
     return ajax;
+  },
+  eids: {
+    'connectId': {
+      source: 'yahoo.com',
+      atype: 3
+    },
   }
 };
 

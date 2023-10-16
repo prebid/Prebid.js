@@ -169,10 +169,8 @@ describe('IntentIQ tests', function () {
     request.respond(
       204,
       responseHeader,
-      ''
     );
     expect(callBackSpy.calledOnce).to.be.true;
-    expect(request.response).to.equal('');
   });
 
   it('should log an error and continue to callback if ajax request errors', function () {

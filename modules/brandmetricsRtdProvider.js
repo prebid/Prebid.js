@@ -21,13 +21,14 @@ let billableEventsInitialized = false
 
 function init (config, userConsent) {
   const hasConsent = checkConsent(userConsent)
+  const initialize = hasConsent !== false
 
-  if (hasConsent) {
+  if (initialize) {
     const moduleConfig = getMergedConfig(config)
     initializeBrandmetrics(moduleConfig.params.scriptId)
     initializeBillableEvents()
   }
-  return hasConsent
+  return initialize
 }
 
 /**
@@ -36,33 +37,35 @@ function init (config, userConsent) {
  * @returns {boolean}
  */
 function checkConsent (userConsent) {
-  let consent = false
+  let consent
 
-  if (userConsent && userConsent.gdpr && userConsent.gdpr.gdprApplies) {
-    const gdpr = userConsent.gdpr
+  if (userConsent) {
+    if (userConsent.gdpr && userConsent.gdpr.gdprApplies) {
+      const gdpr = userConsent.gdpr
 
-    if (gdpr.vendorData) {
-      const vendor = gdpr.vendorData.vendor
-      const purpose = gdpr.vendorData.purpose
+      if (gdpr.vendorData) {
+        const vendor = gdpr.vendorData.vendor
+        const purpose = gdpr.vendorData.purpose
 
-      let vendorConsent = false
-      if (vendor.consents) {
-        vendorConsent = vendor.consents[GVL_ID]
+        let vendorConsent = false
+        if (vendor.consents) {
+          vendorConsent = vendor.consents[GVL_ID]
+        }
+
+        if (vendor.legitimateInterests) {
+          vendorConsent = vendorConsent || vendor.legitimateInterests[GVL_ID]
+        }
+
+        const purposes = TCF_PURPOSES.map(id => {
+          return (purpose.consents && purpose.consents[id]) || (purpose.legitimateInterests && purpose.legitimateInterests[id])
+        })
+        const purposesValid = purposes.filter(p => p === true).length === TCF_PURPOSES.length
+        consent = vendorConsent && purposesValid
       }
-
-      if (vendor.legitimateInterests) {
-        vendorConsent = vendorConsent || vendor.legitimateInterests[GVL_ID]
-      }
-
-      const purposes = TCF_PURPOSES.map(id => {
-        return (purpose.consents && purpose.consents[id]) || (purpose.legitimateInterests && purpose.legitimateInterests[id])
-      })
-      const purposesValid = purposes.filter(p => p === true).length === TCF_PURPOSES.length
-      consent = vendorConsent && purposesValid
+    } else if (userConsent.usp) {
+      const usp = userConsent.usp
+      consent = usp[1] !== 'N' && usp[2] !== 'Y'
     }
-  } else if (userConsent.usp) {
-    const usp = userConsent.usp
-    consent = usp[1] !== 'N' && usp[2] !== 'Y'
   }
 
   return consent

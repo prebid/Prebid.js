@@ -1,6 +1,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getAdUnitSizes, parseSizesInput} from '../src/utils.js';
+import {parseSizesInput} from '../src/utils.js';
 import {includes} from '../src/polyfill.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 const BIDDER_CODE = 'between';
 let ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
