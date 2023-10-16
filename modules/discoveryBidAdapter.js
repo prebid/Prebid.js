@@ -223,12 +223,13 @@ function getItems(validBidRequests, bidderRequest) {
     let ret = {};
     // eslint-disable-next-line no-debugger
     let mediaTypes = getKv(req, 'mediaTypes');
+    const auc = getKv(req, 'adUnitCode');
 
     const bidFloor = getBidFloor(req);
     let id = '' + (i + 1);
 
     if (mediaTypes.native) {
-      ret = { ...NATIVERET, ...{ id, bidFloor } };
+      ret = { ...NATIVERET, ...{ id, bidFloor, auc } };
     }
     // banner
     if (mediaTypes.banner) {
@@ -258,7 +259,8 @@ function getItems(validBidRequests, bidderRequest) {
           format: sizes,
         },
         ext: {},
-        tagid: req.params && req.params.tagid
+        tagid: req.params && req.params.tagid,
+        auc,
       };
     }
     itemMaps[id] = {
