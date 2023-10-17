@@ -393,8 +393,8 @@ describe('minutemediaAdapter', function () {
       expect(request.data.bids[0].sua).to.not.exist;
     });
 
-    describe('COPPA param', function () {
-      it('should build request with coppa 1', function () {
+    describe('COPPA Param', function() {
+      it('should build request with coppa 1 when true', function () {
         config.setConfig({
           coppa: true
       });
