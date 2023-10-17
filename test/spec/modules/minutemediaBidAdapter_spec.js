@@ -398,22 +398,19 @@ describe('minutemediaAdapter', function () {
         config.setConfig({ coppa: true });
 
         const request = spec.buildRequests(bidRequests, bidderRequest);
-        const data = JSON.parse(request.data);
-        expect(data.coppa).to.equal(true);
+        expect(request.data.coppa).to.equal(true);
       });
 
       it('should not add COPPA param to payload when prebid config has parameter COPPA equal to false', function () {
         config.setConfig({ coppa: false });
 
         const request = spec.buildRequests(bidRequests, bidderRequest);
-        const data = JSON.parse(request.data);
-        expect(data.coppa).to.be.undefined;
+        expect(request.data.coppa).to.be.undefined;
       });
 
-      it('should not add COPPA param to payload when prebid config has not parameter COPPA', function () {
+      it('should not add COPPA param to payload when prebid config has no parameter COPPA', function () {
         const request = spec.buildRequests(bidRequests, bidderRequest);
-        const data = JSON.parse(request.data);
-        expect(data.coppa).to.be.undefined;
+        expect(request.data.coppa).to.be.undefined;
       });
     });
   });
