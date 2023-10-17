@@ -301,7 +301,7 @@ function generateBidParameters(bid, bidderRequest) {
     loop: getBidIdParameter('bidderRequestsCount', bid),
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
     transactionId: bid.ortb2Imp?.ext?.tid || '',
-    coppa: 0
+    coppa: config.getConfig('coppa') === true ? 1 : 0;
   };
 
   const pos = deepAccess(bid, `mediaTypes.${mediaType}.pos`);
@@ -331,11 +331,6 @@ function generateBidParameters(bid, bidderRequest) {
   const sua = deepAccess(bid, `ortb2.device.sua`);
   if (sua) {
     bidObject.sua = sua;
-  }
-
-  const coppa = deepAccess(bid, `ortb2.regs.coppa`)
-  if (coppa) {
-    bidObject.coppa = 1;
   }
 
   if (mediaType === VIDEO) {
