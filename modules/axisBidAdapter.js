@@ -150,7 +150,7 @@ export const spec = {
       page,
       placements,
       iabCat: deepAccess(bidderRequest, 'ortb2.site.cat'),
-      coppa: deepAccess(bidderRequest, 'ortb2.regs.coppa') ? 1 : 0,
+      coppa: config.getConfig('coppa') === true ? 1 : 0,
       ccpa: bidderRequest.uspConsent || undefined,
       gdpr: bidderRequest.gdprConsent || undefined,
       tmax: bidderRequest.timeout || 3000,
