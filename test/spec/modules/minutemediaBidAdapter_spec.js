@@ -393,21 +393,27 @@ describe('minutemediaAdapter', function () {
       expect(request.data.bids[0].sua).to.not.exist;
     });
 
-    describe('COPPA Param', function() {
-      it('should set coppa equal 0 in bid request if coppa is set to false', function() {
+    describe('COPPA param', function () {
+      it('should add COPPA param to payload when prebid config has parameter COPPA equal to true', function () {
+        config.setConfig({ coppa: true });
+
         const request = spec.buildRequests(bidRequests, bidderRequest);
-        expect(request.data.bids[0].coppa).to.be.equal(0);
+        const data = JSON.parse(request.data);
+        expect(data.coppa).to.equal(true);
       });
 
-      it('should set coppa equal 1 in bid request if coppa is set to true', function() {
-        const bid = utils.deepClone(bidRequests[0]);
-        bid.ortb2 = {
-          'regs': {
-            'coppa': true,
-          }
-        };
-        const request = spec.buildRequests([bid], bidderRequest);
-        expect(request.data.bids[0].coppa).to.be.equal(1);
+      it('should not add COPPA param to payload when prebid config has parameter COPPA equal to false', function () {
+        config.setConfig({ coppa: false });
+
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.coppa).to.be.undefined;
+      });
+
+      it('should not add COPPA param to payload when prebid config has not parameter COPPA', function () {
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.coppa).to.be.undefined;
       });
     });
   });
