@@ -14,17 +14,17 @@ for each auction to provide a more complete picture of your ad performance.
 
 The analytics adapter is free to use!
 However, the publisher must work with our account management team to obtain
-a Publisher/Partner ID (PID). If you are already using the 33Across PID,
+a Publisher/Partner ID (PID). If you are already using a 33Across PID,
 you may use your existing PID with the analytics adapter.
 
 The 33Across privacy policy is at <https://www.33across.com/privacy-policy/>.
 
 #### Analytics Options
 
-| Name      | Scope    | Example | Type  | Description |
-|-----------|----------|---------|-------|-------------|
-| `pid`     | required | 12345   | `int` | 33Across PID (Publisher ID) |
-| `timeout` | optional | 10000   | `int` | Milliseconds to wait after last seen auction transaction before sending report. |
+| Name      | Scope    | Example | Type     | Description |
+|-----------|----------|---------|----------|-------------|
+| `pid`     | required | abc123  | `string` | 33Across Publisher ID |
+| `timeout` | optional | 10000   | `int`    | Milliseconds to wait after last seen auction transaction before sending report (default 10000). |
 
 #### Configuration
 
@@ -53,9 +53,9 @@ pbjs.enableAnalytics({
     provider: '33across',
     options: {
         /**
-         * The 33Across PID (PID).
+         * The 33Across Publisher ID.
          */
-        pid: 12345,
+        pid: 'abc123',
         /** 
          * Timeout in milliseconds after which an auction report 
          * will be sent regardless of auction state.
