@@ -394,46 +394,20 @@ describe('minutemediaAdapter', function () {
     });
 
     describe('COPPA Param', function() {
-      it('should NOT include coppa flag in bid request if coppa config is not present', () => {
-        const request = spec.buildRequests(bidRequests, {});
-        let data = JSON.parse(request.data);
-        if (data.regs) {
-          // in case GDPR is set then data.regs will exist
-          expect(data.regs.coppa).to.equal(undefined);
-        } else {
-          expect(data.regs).to.equal(undefined);
-        }
+      it('should set coppa equal 0 in bid request if coppa is set to false', function() {
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request.data.bids[0].coppa).to.be.equal(0);
       });
-      it('should include coppa flag in bid request if coppa is set to true', () => {
-        let sandbox = sinon.sandbox.create();
-        sandbox.stub(config, 'getConfig').callsFake(key => {
-          const config = {
-            'coppa': true
-          };
-          return config[key];
-        });
-        const request = spec.buildRequests(bidRequests, {});
-        let data = JSON.parse(request.data);
-        expect(data.regs.coppa).to.equal(1);
-        sandbox.restore();
-      });
-      it('should NOT include coppa flag in bid request if coppa is set to false', () => {
-        let sandbox = sinon.sandbox.create();
-        sandbox.stub(config, 'getConfig').callsFake(key => {
-          const config = {
-            'coppa': false
-          };
-          return config[key];
-        });
-        const request = spec.buildRequests(bidRequests, {});
-        let data = JSON.parse(request.data);
-        if (data.regs) {
-          // in case GDPR is set then data.regs will exist
-          expect(data.regs.coppa).to.equal(undefined);
-        } else {
-          expect(data.regs).to.equal(undefined);
-        }
-        sandbox.restore();
+
+      it('should set coppa equal 1 in bid request if coppa is set to true', function() {
+        const bid = utils.deepClone(bidRequests[0]);
+        bid.ortb2 = {
+          'regs': {
+            'coppa': true,
+          }
+        };
+        const request = spec.buildRequests([bid], bidderRequest);
+        expect(request.data.bids[0].coppa).to.be.equal(1);
       });
     });
   });
