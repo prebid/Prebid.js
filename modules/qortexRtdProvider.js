@@ -132,7 +132,7 @@ export function loadScriptTag(config) {
           break;
         }
       default:
-        logWarn(`recieved invalid billable event: ${e.detail?.type}`)
+        logWarn(`received invalid billable event: ${e.detail?.type}`)
     }
   })
 
