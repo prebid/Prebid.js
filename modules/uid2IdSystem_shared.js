@@ -355,7 +355,6 @@ if (FEATURES.UID2_CSTG) {
     static splitEmailIntoAddressAndDomain(email) {
       const parts = email.split('@');
       if (
-        !parts.length ||
         parts.length !== 2 ||
         parts.some((part) => part === '')
       ) { return; }
