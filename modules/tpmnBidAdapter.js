@@ -115,7 +115,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   }
   if (bid.params.inventoryId) rtbData.ext = {};
   if (bid.params.inventoryId) rtbData.ext.inventoryId = bid.params.inventoryId
-  
+
   const ortb2Data = bidderRequest?.ortb2 || {};
   const bcat = ortb2Data?.bcat || bid.params.bcat || [];
   const badv = ortb2Data?.badv || bid.params.badv || [];
@@ -130,7 +130,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   if (badv.length > 0) {
     rtbData.bapp = bapp;
   }
-  
+
   return {
     method: 'POST',
     url: BIDDER_ENDPOINT_URL + '?v=' + ADAPTER_VERSION,
@@ -262,10 +262,12 @@ function buildVideoImp(bidRequest, imp) {
   if (imp.video && videoParams?.context === 'instream') {
     imp.video.placement = imp.video.placement || 1;
     imp.video.plcmt = imp.video.plcmt || 1;
+    imp.video.playbackmethod = imp.video.playbackmethod || 1;
   }
   if (imp.video && videoParams?.context === 'outstream') {
     imp.video.placement = imp.video.placement || 4;
-    imp.video.plcmt = imp.video.plcmt || 2;
+    imp.video.plcmt = imp.video.plcmt || 4;
+    imp.video.playbackmethod = imp.video.playbackmethod || 2;
   }
 
   return { ...imp };
