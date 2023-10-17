@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/freewheel-sspBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { createEidsArray } from 'modules/userId/eids.js';
+import { config } from 'src/config.js';
 
 const ENDPOINT = '//ads.stickyadstv.com/www/delivery/swfIndex.php';
 const PREBID_VERSION = '$prebid.version$';
@@ -117,6 +118,20 @@ describe('freewheelSSP BidAdapter Test', () => {
       }
     ];
 
+    it('should get correct value from content object', () => {
+      config.setConfig({
+        content: {
+          'title': 'freewheel',
+          'series': 'abc',
+          'id': 'iris_5e7'
+        }
+      });
+
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload._fw_prebid_content).to.deep.equal('{\"title\":\"freewheel\",\"series\":\"abc\",\"id\":\"iris_5e7\"}');
+    });
+
     it('should get bidfloor value from params if no getFloor method', () => {
       const request = spec.buildRequests(bidRequests);
       const payload = request[0].data;
@@ -135,11 +150,11 @@ describe('freewheelSSP BidAdapter Test', () => {
 
     it('should pass 3rd party IDs with the request when present', function () {
       const bidRequest = bidRequests[0];
-      bidRequest.userIdAsEids = createEidsArray({
-        tdid: 'TTD_ID_FROM_USER_ID_MODULE',
-        admixerId: 'admixerId_FROM_USER_ID_MODULE',
-        adtelligentId: 'adtelligentId_FROM_USER_ID_MODULE'
-      });
+      bidRequest.userIdAsEids = [
+        {source: 'adserver.org', uids: [{id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: {rtiPartner: 'TDID'}}]},
+        {source: 'admixer.net', uids: [{id: 'admixerId_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'adtelligent.com', uids: [{id: 'adtelligentId_FROM_USER_ID_MODULE', atype: 3}]},
+      ];
       const request = spec.buildRequests(bidRequests);
       const payload = request[0].data;
       expect(payload._fw_prebid_3p_UID).to.deep.equal(JSON.stringify([

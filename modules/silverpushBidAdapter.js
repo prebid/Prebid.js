@@ -12,7 +12,7 @@ const bidderConfig = 'sp_pb_ortb';
 const bidderVersion = '1.0.0';
 const DEFAULT_CURRENCY = 'USD';
 
-export const REQUEST_URL = 'https://apac.chocolateplatform.com/bidder/?identifier=prebidchoc';
+export const REQUEST_URL = 'https://prebid.chocolateplatform.co/bidder/?identifier=prebidchoc';
 export const SP_OUTSTREAM_PLAYER_URL = 'https://xaido.sgp1.cdn.digitaloceanspaces.com/prebid/spoutstream.min.js';
 
 const VIDEO_ORTB_PARAMS = [
@@ -110,7 +110,7 @@ export const CONVERTER = ortbConverter({
       bidResponse.meta.paf.content_id = utils.deepAccess(bid, 'ext.paf.content_id');
     }
 
-    bidResponse = buildVideoVastResponse(bidResponse)
+    bidResponse = buildVideoVastResponse(bidResponse);
     bidResponse = buildVideoOutstreamResponse(bidResponse, context)
 
     return bidResponse;
