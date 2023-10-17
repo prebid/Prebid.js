@@ -30,7 +30,7 @@ const GVLID = 58;
 const DEFAULT_TRANSACTION_TIMEOUT = 10000;
 /** Time to wait after all GAM slots have registered before sending the report */
 export const POST_GAM_TIMEOUT = 500;
-export const DEFAULT_ENDPOINT = `${window.origin}/api`; // TODO: Update to production endpoint
+export const DEFAULT_ENDPOINT = 'https://analytics.33across.com/api/v1/event';
 
 export const log = getLogger();
 
