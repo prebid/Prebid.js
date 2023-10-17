@@ -301,7 +301,7 @@ function generateBidParameters(bid, bidderRequest) {
     loop: getBidIdParameter('bidderRequestsCount', bid),
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
     transactionId: bid.ortb2Imp?.ext?.tid || '',
-    coppa: config.getConfig('coppa') === true ? 1 : 0;
+    coppa: config.getConfig('coppa') === true ? 1 : 0
   };
 
   const pos = deepAccess(bid, `mediaTypes.${mediaType}.pos`);
