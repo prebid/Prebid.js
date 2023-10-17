@@ -400,14 +400,11 @@ describe('minutemediaAdapter', function () {
       });
 
       it('should set coppa equal 1 in bid request if coppa is set to true', function() {
-        const bid = utils.deepClone(bidRequests[0]);
-        bid.ortb2 = {
-          'regs': {
-            'coppa': true,
-          }
-        };
-        const request = spec.buildRequests([bid], bidderRequest);
-        expect(request.data.bids[0].coppa).to.be.equal(1);
+        config.setConfig({
+          coppa: true
+        });
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request.data.coppa).to.be.equal(1);
       });
     });
   });
