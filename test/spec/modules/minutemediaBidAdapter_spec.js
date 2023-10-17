@@ -397,7 +397,7 @@ describe('minutemediaAdapter', function () {
       it('should build request with coppa 1 when true', function () {
         config.setConfig({
           coppa: true
-      });
+        });
         const request = JSON.parse(spec.buildRequests([bidRequests], {}).data)[0];
         expect(request).to.have.property('coppa').and.equals(1);
       });
