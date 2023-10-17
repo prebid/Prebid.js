@@ -115,10 +115,22 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   }
   if (bid.params.inventoryId) rtbData.ext = {};
   if (bid.params.inventoryId) rtbData.ext.inventoryId = bid.params.inventoryId
-  if (bid.params.bcat) rtbData.bcat = bid.params.bcat;
-  if (bid.params.badv) rtbData.badv = bid.params.badv;
-  if (bid.params.bapp) rtbData.bapp = bid.params.bapp;
+  
+  const ortb2Data = bidderRequest?.ortb2 || {};
+  const bcat = ortb2Data?.bcat || bid.params.bcat || [];
+  const badv = ortb2Data?.badv || bid.params.badv || [];
+  const bapp = ortb2Data?.bapp || bid.params.bapp || [];
 
+  if (bcat.length > 0) {
+    rtbData.bcat = bcat;
+  }
+  if (badv.length > 0) {
+    rtbData.badv = badv;
+  }
+  if (badv.length > 0) {
+    rtbData.bapp = bapp;
+  }
+  
   return {
     method: 'POST',
     url: BIDDER_ENDPOINT_URL + '?v=' + ADAPTER_VERSION,
