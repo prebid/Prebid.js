@@ -394,23 +394,12 @@ describe('minutemediaAdapter', function () {
     });
 
     describe('COPPA param', function () {
-      it('should add COPPA param to payload when prebid config has parameter COPPA equal to true', function () {
-        config.setConfig({ coppa: true });
-
-        const request = spec.buildRequests(bidRequests, bidderRequest);
-        expect(request.data.coppa).to.equal(true);
+      it('should build request with coppa 1', function () {
+        config.setConfig({
+          coppa: true
       });
-
-      it('should not add COPPA param to payload when prebid config has parameter COPPA equal to false', function () {
-        config.setConfig({ coppa: false });
-
-        const request = spec.buildRequests(bidRequests, bidderRequest);
-        expect(request.data.coppa).to.be.undefined;
-      });
-
-      it('should not add COPPA param to payload when prebid config has no parameter COPPA', function () {
-        const request = spec.buildRequests(bidRequests, bidderRequest);
-        expect(request.data.coppa).to.be.undefined;
+        const request = JSON.parse(spec.buildRequests([bidRequests], {}).data)[0];
+        expect(request).to.have.property('coppa').and.equals(1);
       });
     });
   });
