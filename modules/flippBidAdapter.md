@@ -32,9 +32,10 @@ var adUnits = [
                     publisherNameIdentifier: 'wishabi-test-publisher', // Required
                     siteId: 1192075, // Required
                     zoneIds: [260678], // Optional
-                    userKey: "", // Optional
+                    userKey: `4188d8a3-22d1-49cb-8624-8838a22562bd`, // Optional, in UUID format
                     options: {
-                        startCompact: true // Optional, default to true
+                        startCompact: true, // Optional. Height of the experience will be reduced. Default to true
+                        dwellExpand: true // Optional. Auto expand the experience after a certain time passes. Default to true
                     }
                 }
             }
