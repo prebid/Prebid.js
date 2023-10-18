@@ -242,7 +242,7 @@ describe('tpmnAdapterTests', function () {
         const videoBidWithParams = utils.deepClone(VIDEO_BID);
         const bidderVideoParams = {
           api: [1, 2],
-          mimes: ['video/mp4'],
+          mimes: ['video/mp4', 'video/x-flv'],
           playbackmethod: [3, 4],
           protocols: [5, 6],
           placement: 1,
