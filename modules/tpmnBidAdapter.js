@@ -14,6 +14,27 @@ const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 // const BIDDER_ENDPOINT_URL = 'http://localhost:8081/ortb/pbjs_bidder';
 const BIDDER_ENDPOINT_URL = 'https://gat.tpmn.io/ortb/pbjs_bidder';
 const IFRAMESYNC = 'https://gat.tpmn.io/sync/iframe';
+const VIDEO_ORTB_PARAMS = [
+  'mimes',
+  'minduration',
+  'maxduration',
+  'placement',
+  'protocols',
+  'startdelay',
+  'skip',
+  'skipafter',
+  'minbitrate',
+  'maxbitrate',
+  'delivery',
+  'playbackmethod',
+  'api',
+  'linearity',
+  'battr',
+  'plcmt'
+];
+const BANNER_ORTB_PARAMS = [
+  'battr'
+];
 
 export const VIDEO_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 export const ADAPTER_VERSION = '2.0';
@@ -162,18 +183,6 @@ const CONVERTER = ortbConverter({
       }
     }
     return bidResponse;
-  },
-  overrides: {
-    imp: {
-      video(orig, imp, bidRequest, context) {
-        let videoParams = bidRequest.mediaTypes[VIDEO];
-        if (videoParams) {
-          videoParams = Object.assign({}, videoParams, bidRequest.params.video);
-          bidRequest = {...bidRequest, mediaTypes: {[VIDEO]: videoParams}}
-        }
-        orig(imp, bidRequest, context);
-      }
-    }
   }
 });
 
@@ -244,9 +253,11 @@ function buildVideoImp(bidRequest, imp) {
     utils.deepSetValue(imp, 'video.h', videoSizes[0][1]);
   }
 
-  if (videoParams.hasOwnProperty('battr')) {
-    utils.deepSetValue(imp, `video.battr`, videoParams['battr']);
-  }
+  VIDEO_ORTB_PARAMS.forEach((param) => {
+    if (videoParams.hasOwnProperty(param)) {
+      utils.deepSetValue(imp, `video.${param}`, videoParams[param]);
+    }
+  });
 
   if (imp.video && videoParams?.context === 'instream') {
     imp.video.placement = imp.video.placement || 1;
@@ -275,9 +286,11 @@ function buildBannerImp(bidRequest, imp) {
     utils.deepSetValue(imp, 'banner.h', sizes[0][1]);
   }
 
-  if (bannerParams.hasOwnProperty('battr')) {
-    utils.deepSetValue(imp, `banner.battr`, bannerParams['battr']);
-  }
+  BANNER_ORTB_PARAMS.forEach((param) => {
+    if (bannerParams.hasOwnProperty(param)) {
+      utils.deepSetValue(imp, `banner.${param}`, bannerParams[param]);
+    }
+  });
 
   return { ...imp };
 }
