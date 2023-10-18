@@ -1,0 +1,108 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name=viewport content="width=device-width, initial-scale=1">
+    <script src="../../build/dev/prebid.js" async type="text/javascript"></script>
+    <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
+    <script>
+      /* adapted from https://docs.prebid.org/dev-docs/examples/basic-example.html */
+      var div_1_sizes = [
+        [300, 250],
+        [300, 600]
+      ];
+      var div_2_sizes = [
+        [728, 90],
+        [970, 250]
+      ];
+      var PREBID_TIMEOUT = 1000;
+      var FAILSAFE_TIMEOUT = 3000;
+
+      var adUnits = [
+        {
+          code: '/19968336/header-bid-tag-0',
+          mediaTypes: {
+            banner: {
+              sizes: div_1_sizes
+            }
+          },
+          bids: [{
+            bidder: 'appnexus',
+            params: {
+              placementId: 13144370
+            }
+          }]
+        }
+      ];
+
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+
+      var googletag = googletag || {};
+      googletag.cmd = googletag.cmd || [];
+
+      // DYNAMIC CONFIGURATION BLOCK
+      function requestBids() {
+        pbjs.que.push(function () {
+          // send requests
+          pbjs.addAdUnits(adUnits);
+          pbjs.requestBids({
+            bidsBackHandler: initAdserver,
+            timeout: PREBID_TIMEOUT
+          });
+        })
+      }
+
+      function timeout() {
+        setTimeout(function () {
+          initAdserver();
+        }, FAILSAFE_TIMEOUT);
+      }
+
+      function initAdserver() {
+        if (pbjs.initAdserverSet) return;
+        pbjs.initAdserverSet = true;
+        googletag.cmd.push(function () {
+          pbjs.que.push(function () {
+            pbjs.setTargetingForGPTAsync();
+            googletag.pubads().refresh();
+          });
+        });
+      }
+
+      pbjs.que.push(function () {
+        pbjs.setConfig({
+          realTimeData: {
+            auctionDelay: 1000,
+            dataProviders: [
+              {
+                name: 'mygaru',
+                waitForIt: true,
+                params:{}
+              }
+            ]
+          }
+        })
+      })
+      googletag.cmd.push(function () {
+        googletag.defineSlot('/19968336/header-bid-tag-0', div_1_sizes, 'div-1').addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+        requestBids()
+      });
+    </script>
+</head>
+<body>
+<h2>Basic Prebid.js Example using mygaruRtdProvider</h2>
+
+<h5>Div-1</h5>
+<div id='div-1'>
+    Ad spot div-1: This content will be replaced by prebid.js and/or related components once you click "Update"
+</div>
+
+<br>
+
+
+</body>
+</html>
