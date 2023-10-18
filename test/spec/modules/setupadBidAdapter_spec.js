@@ -191,6 +191,15 @@ describe('SetupadAdapter', function () {
   });
 
   describe('interpretResponse', function () {
+    it('should return empty array if error during parsing', () => {
+      const wrongServerResponse = 'wrong data';
+      let request = spec.buildRequests(bidRequests, bidRequests[0]);
+      let result = spec.interpretResponse(wrongServerResponse, request);
+
+      expect(result).to.be.instanceof(Array);
+      expect(result.length).to.equal(0);
+    });
+
     it('should get correct bid response', function () {
       const result = spec.interpretResponse(serverResponse, bidRequests[0]);
       expect(result).to.be.an('array').with.lengthOf(1);
