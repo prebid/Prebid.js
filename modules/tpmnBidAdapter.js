@@ -251,12 +251,12 @@ function buildVideoImp(bidRequest, imp) {
   if (imp.video && videoParams?.context === 'instream') {
     imp.video.placement = imp.video.placement || 1;
     imp.video.plcmt = imp.video.plcmt || 1;
-    imp.video.playbackmethod = imp.video.playbackmethod || 1;
+    imp.video.playbackmethod = imp.video.playbackmethod || [1];
   }
   if (imp.video && videoParams?.context === 'outstream') {
     imp.video.placement = imp.video.placement || 4;
     imp.video.plcmt = imp.video.plcmt || 4;
-    imp.video.playbackmethod = imp.video.playbackmethod || 2;
+    imp.video.playbackmethod = imp.video.playbackmethod || [2];
   }
 
   return { ...imp };

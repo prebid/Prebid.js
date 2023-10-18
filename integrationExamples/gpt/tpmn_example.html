@@ -44,7 +44,7 @@
                     context: 'outstream',
                     playerSize: [640, 480],
                     mimes: ['video/mp4'],
-                    playbackmethod: [2, 4, 6],
+                    //playbackmethod: [2, 4, 6],
                     api: [1, 2, 4, 6],
                     protocols: [3, 4, 7, 8, 10],
                     placement: 1,
@@ -136,8 +136,8 @@
 
             googletag.cmd.push(function () {
                 pbjs.que.push(function () {
-                    pbjs.setTargetingForGPTAsync('banner-div-0');
-                    pbjs.setTargetingForGPTAsync('video-div-1');
+                    const adUnitCodes = adUnits.map(adUnit => adUnit.code);
+                    pbjs.setTargetingForGPTAsync(adUnitCodes);
                     googletag.pubads().refresh();
                 });
             });
