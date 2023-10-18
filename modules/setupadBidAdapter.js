@@ -5,6 +5,7 @@ import {
   isStr,
   getBidIdParameter,
   triggerPixel,
+  logWarn,
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getRefererInfo } from '../src/refererDetection.js';
@@ -17,7 +18,7 @@ const BIDDER_CODE = 'setupad';
 const ENDPOINT = 'https://prebid.setupad.io/openrtb2/auction';
 const SYNC_ENDPOINT = 'https://cookie.stpd.cloud/sync?';
 const REPORT_ENDPOINT = 'https://adapter-analytics.azurewebsites.net/api/adapter-analytics';
-const GVLID = 1060;
+const GVLID = 1241;
 const TIME_TO_LIVE = 360;
 let seat = null;
 
@@ -131,6 +132,16 @@ export const spec = {
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
+    if (
+      !serverResponse ||
+      !serverResponse.body ||
+      typeof serverResponse.body != 'object' ||
+      Object.keys(serverResponse.body).length === 0
+    ) {
+      logWarn('no response or body is malformed');
+      return [];
+    }
+
     const serverBody = serverResponse.body;
     const bidResponses = [];
     seat = serverBody.seatbid[0].seat;
