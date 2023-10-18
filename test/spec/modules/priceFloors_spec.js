@@ -12,7 +12,7 @@ import {
   isFloorsDataValid,
   addBidResponseHook,
   fieldMatchingFunctions,
-  allowedFields
+  allowedFields, parseFloorData, normalizeDefault, getFloorDataFromAdUnits
 } from 'modules/priceFloors.js';
 import * as events from 'src/events.js';
 import * as mockGpt from '../integration/faker/googletag.js';
@@ -123,7 +123,7 @@ describe('the price floors module', function () {
     return {
       code,
       mediaTypes: {banner: { sizes: [[300, 200], [300, 600]] }, native: {}},
-      bids: [{bidder: 'someBidder'}, {bidder: 'someOtherBidder'}]
+      bids: [{bidder: 'someBidder', adUnitCode: code}, {bidder: 'someOtherBidder', adUnitCode: code}]
     };
   }
   beforeEach(function() {
@@ -142,6 +142,76 @@ describe('the price floors module', function () {
     // reset global bidder settings so no weird test side effects
     getGlobal().bidderSettings = {};
   });
+
+  describe('parseFloorData', () => {
+    it('should accept just a default floor', () => {
+      const fd = parseFloorData({
+        default: 1.23
+      });
+      expect(getFirstMatchingFloor(fd, {}, {}).matchingFloor).to.eql(1.23);
+    });
+  });
+
+  describe('getFloorDataFromAdUnits', () => {
+    let adUnits;
+
+    function setFloorValues(rule) {
+      adUnits.forEach((au, i) => {
+        au.floors = {
+          values: {
+            [rule]: i + 1
+          }
+        }
+      })
+    }
+
+    beforeEach(() => {
+      adUnits = ['au1', 'au2', 'au3'].map(getAdUnitMock);
+    })
+
+    it('should use one schema for all adUnits', () => {
+      setFloorValues('*;*')
+      adUnits[1].floors.schema = {
+        fields: ['mediaType', 'gptSlot'],
+        delimiter: ';'
+      }
+      sinon.assert.match(getFloorDataFromAdUnits(adUnits), {
+        schema: {
+          fields: ['adUnitCode', 'mediaType', 'gptSlot'],
+          delimiter: ';'
+        },
+        values: {
+          'au1;*;*': 1,
+          'au2;*;*': 2,
+          'au3;*;*': 3
+        }
+      })
+    });
+    it('should ignore adUnits that declare different schema', () => {
+      setFloorValues('*|*');
+      adUnits[0].floors.schema = {
+        fields: ['mediaType', 'gptSlot']
+      };
+      adUnits[2].floors.schema = {
+        fields: ['gptSlot', 'mediaType']
+      };
+      expect(getFloorDataFromAdUnits(adUnits).values).to.eql({
+        'au1|*|*': 1,
+        'au2|*|*': 2
+      })
+    });
+    it('should ignore adUnits that declare no values', () => {
+      setFloorValues('*');
+      adUnits[0].floors.schema = {
+        fields: ['mediaType']
+      };
+      delete adUnits[2].floors.values;
+      expect(getFloorDataFromAdUnits(adUnits).values).to.eql({
+        'au1|*': 1,
+        'au2|*': 2,
+      })
+    })
+  })
 
   describe('getFloorsDataForAuction', function () {
     it('converts basic input floor data into a floorData map for the auction correctly', function () {
@@ -233,8 +303,8 @@ describe('the price floors module', function () {
   });
 
   describe('getFirstMatchingFloor', function () {
-    it('uses a 0 floor as overrite', function () {
-      let inputFloorData = {
+    it('uses a 0 floor as override', function () {
+      let inputFloorData = normalizeDefault({
         currency: 'USD',
         schema: {
           delimiter: '|',
@@ -245,7 +315,7 @@ describe('the price floors module', function () {
           'test_div_2': 2
         },
         default: 0.5
-      };
+      });
 
       expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'banner', size: '*'})).to.deep.equal({
         floorMin: 0,
@@ -434,7 +504,7 @@ describe('the price floors module', function () {
       });
     });
     it('selects the right floor for more complex rules', function () {
-      let inputFloorData = {
+      let inputFloorData = normalizeDefault({
         currency: 'USD',
         schema: {
           delimiter: '^',
@@ -448,7 +518,7 @@ describe('the price floors module', function () {
           'weird_div^*^300x250': 5.5
         },
         default: 0.5
-      };
+      });
       // banner with 300x250 size
       expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'banner', size: [300, 250]})).to.deep.equal({
         floorMin: 0,
@@ -490,10 +560,8 @@ describe('the price floors module', function () {
         matchingFloor: undefined
       });
       // if default is there use it
-      inputFloorData = { default: 5.0 };
-      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'banner', size: '*'})).to.deep.equal({
-        matchingFloor: 5.0
-      });
+      inputFloorData = normalizeDefault({ default: 5.0 });
+      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'banner', size: '*'}).matchingFloor).to.equal(5.0);
     });
     describe('with gpt enabled', function () {
       let gptFloorData;
@@ -693,6 +761,95 @@ describe('the price floors module', function () {
         floorProvider: undefined
       });
     });
+    describe('default floor', () => {
+      let adUnits;
+      beforeEach(() => {
+        adUnits = ['au1', 'au2'].map(getAdUnitMock);
+      })
+      function expectFloors(floors) {
+        runStandardAuction(adUnits);
+        adUnits.forEach((au, i) => {
+          au.bids.forEach(bid => {
+            expect(bid.getFloor().floor).to.eql(floors[i]);
+          })
+        })
+      }
+      describe('should be sufficient by itself', () => {
+        it('globally', () => {
+          handleSetFloorsConfig({
+            ...basicFloorConfig,
+            data: {
+              default: 1.23
+            }
+          });
+          expectFloors([1.23, 1.23])
+        });
+        it('on adUnits', () => {
+          handleSetFloorsConfig({
+            ...basicFloorConfig,
+            data: undefined
+          });
+          adUnits[0].floors = {default: 1};
+          adUnits[1].floors = {default: 2};
+          expectFloors([1, 2])
+        });
+        it('on an adUnit with hidden schema', () => {
+          handleSetFloorsConfig({
+            ...basicFloorConfig,
+            data: undefined
+          });
+          adUnits[0].floors = {
+            schema: {
+              fields: ['mediaType', 'gptSlot'],
+            },
+            default: 1
+          }
+          adUnits[1].floors = {
+            default: 2
+          }
+          expectFloors([1, 2]);
+        })
+      });
+      describe('should NOT be used when a star rule exists', () => {
+        it('globally', () => {
+          handleSetFloorsConfig({
+            ...basicFloorConfig,
+            data: {
+              schema: {
+                fields: ['mediaType', 'gptSlot'],
+              },
+              values: {
+                '*|*': 2
+              },
+              default: 3,
+            }
+          });
+          expectFloors([2, 2]);
+        });
+        it('on adUnits', () => {
+          handleSetFloorsConfig({
+            ...basicFloorConfig,
+            data: undefined
+          });
+          adUnits[0].floors = {
+            schema: {
+              fields: ['mediaType', 'gptSlot'],
+            },
+            values: {
+              '*|*': 1
+            },
+            default: 3
+          };
+          adUnits[1].floors = {
+            values: {
+              '*|*': 2
+            },
+            default: 4
+          }
+          expectFloors([1, 2]);
+        })
+      });
+    })
     it('bidRequests should have getFloor function and flooring meta data when setConfig occurs', function () {
       handleSetFloorsConfig({...basicFloorConfig, floorProvider: 'floorprovider'});
       runStandardAuction();
@@ -1382,7 +1539,7 @@ describe('the price floors module', function () {
       it('picks the right rule with more complex rules', function () {
         _floorDataForAuction[bidRequest.auctionId] = {
           ...basicFloorConfig,
-          data: {
+          data: normalizeDefault({
             currency: 'USD',
             schema: { fields: ['mediaType', 'size'], delimiter: '|' },
             values: {
@@ -1394,7 +1551,7 @@ describe('the price floors module', function () {
               'video|*': 5.5
             },
             default: 10.0
-          }
+          })
         };
 
         // assumes banner *

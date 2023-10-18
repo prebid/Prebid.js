@@ -288,14 +288,11 @@ export function newBidder(spec) {
           onTimelyResponse(spec.code);
           responses.push(resp)
         },
-        /** Process eventual BidderAuctionResponse.fledgeAuctionConfig field in response.
-         * @param {Array<FledgeAuctionConfig>} fledgeAuctionConfigs
-         */
         onFledgeAuctionConfigs: (fledgeAuctionConfigs) => {
           fledgeAuctionConfigs.forEach((fledgeAuctionConfig) => {
             const bidRequest = bidRequestMap[fledgeAuctionConfig.bidId];
             if (bidRequest) {
-              addComponentAuction(bidRequest.adUnitCode, fledgeAuctionConfig.config);
+              addComponentAuction(bidRequest.auctionId, bidRequest.adUnitCode, fledgeAuctionConfig.config);
             } else {
               logWarn('Received fledge auction configuration for an unknown bidId', fledgeAuctionConfig);
             }

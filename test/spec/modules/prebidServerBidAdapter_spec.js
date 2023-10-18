@@ -712,8 +712,8 @@ describe('S2S Adapter', function () {
       beforeEach(() => {
         s2sReq = {
           ...REQUEST,
-          ortb2Fragments: {global: {source: {tid: 'mock-tid'}}},
-          ad_units: REQUEST.ad_units.map(au => ({...au, ortb2Imp: {ext: {tid: 'mock-tid'}}}))
+          ortb2Fragments: {global: {}},
+          ad_units: REQUEST.ad_units.map(au => ({...au, ortb2Imp: {ext: {tid: 'mock-tid'}}})),
         };
         BID_REQUESTS[0].bids[0].ortb2Imp = {ext: {tid: 'mock-tid'}};
       });
@@ -726,15 +726,15 @@ describe('S2S Adapter', function () {
       it('should not be set when transmitTid is not allowed, with ext.prebid.createtids: false', () => {
         config.setConfig({ s2sConfig: CONFIG, enableTIDs: false });
         const req = makeRequest();
-        expect(req.source.tid).to.not.exist;
-        expect(req.imp[0].ext.tid).to.not.exist;
+        expect(req.source?.tid).to.not.exist;
+        expect(req.imp[0].ext?.tid).to.not.exist;
         expect(req.ext.prebid.createtids).to.equal(false);
       });
 
-      it('should be picked from FPD otherwise', () => {
+      it('should be set to auction ID otherwise', () => {
         config.setConfig({s2sConfig: CONFIG, enableTIDs: true});
         const req = makeRequest();
-        expect(req.source.tid).to.eql('mock-tid');
+        expect(req.source.tid).to.eql(BID_REQUESTS[0].auctionId);
         expect(req.imp[0].ext.tid).to.eql('mock-tid');
       })
     })
@@ -2876,6 +2876,15 @@ describe('S2S Adapter', function () {
       events.emit.restore();
     });
 
+    it('triggers BIDDER_ERROR on server error', () => {
+      config.setConfig({ s2sConfig: CONFIG });
+      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
+      server.requests[0].respond(400, {}, {});
+      BID_REQUESTS.forEach(bidderRequest => {
+        sinon.assert.calledWith(events.emit, CONSTANTS.EVENTS.BIDDER_ERROR, sinon.match({bidderRequest}))
+      })
+    })
+
     // TODO: test dependent on pbjs_api_spec.  Needs to be isolated
     it('does not call addBidResponse and calls done when ad unit not set', function () {
       config.setConfig({ s2sConfig: CONFIG });
@@ -3467,16 +3476,16 @@ describe('S2S Adapter', function () {
         adapter.callBids(request, bidderRequests, addBidResponse, done, ajax);
         server.requests[0].respond(200, {}, JSON.stringify(mergeDeep({}, RESPONSE_OPENRTB, FLEDGE_RESP)));
         expect(addBidResponse.called).to.be.true;
-        sinon.assert.calledWith(fledgeStub, AU, {id: 1});
-        sinon.assert.calledWith(fledgeStub, AU, {id: 2});
+        sinon.assert.calledWith(fledgeStub, bidderRequests[0].auctionId, AU, {id: 1});
+        sinon.assert.calledWith(fledgeStub, bidderRequests[0].auctionId, AU, {id: 2});
       });
 
       it('calls addComponentAuction when there is no bid in the response', () => {
         adapter.callBids(request, bidderRequests, addBidResponse, done, ajax);
         server.requests[0].respond(200, {}, JSON.stringify(FLEDGE_RESP));
         expect(addBidResponse.called).to.be.false;
-        sinon.assert.calledWith(fledgeStub, AU, {id: 1});
-        sinon.assert.calledWith(fledgeStub, AU, {id: 2});
+        sinon.assert.calledWith(fledgeStub, bidderRequests[0].auctionId, AU, {id: 1});
+        sinon.assert.calledWith(fledgeStub, bidderRequests[0].auctionId, AU, {id: 2});
       })
     });
   });
@@ -3626,33 +3635,6 @@ describe('S2S Adapter', function () {
       sinon.assert.calledOnce(logErrorSpy);
     });
 
-    it('should configure the s2sConfig object with appnexus vendor defaults unless specified by user', function () {
-      const options = {
-        accountId: '123',
-        bidders: ['appnexus'],
-        defaultVendor: 'appnexus',
-        timeout: 750
-      };
-
-      config.setConfig({ s2sConfig: options });
-      sinon.assert.notCalled(logErrorSpy);
-
-      let vendorConfig = config.getConfig('s2sConfig');
-      expect(vendorConfig).to.have.property('accountId', '123');
-      expect(vendorConfig).to.have.property('adapter', 'prebidServer');
-      expect(vendorConfig.bidders).to.deep.equal(['appnexus']);
-      expect(vendorConfig.enabled).to.be.true;
-      expect(vendorConfig.endpoint).to.deep.equal({
-        p1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
-        noP1Consent: 'https://prebid.adnxs-simple.com/pbs/v1/openrtb2/auction'
-      });
-      expect(vendorConfig.syncEndpoint).to.deep.equal({
-        p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync',
-        noP1Consent: 'https://prebid.adnxs-simple.com/pbs/v1/cookie_sync'
-      });
-      expect(vendorConfig).to.have.property('timeout', 750);
-    });
-
     it('should configure the s2sConfig object with appnexuspsp vendor defaults unless specified by user', function () {
       const options = {
         accountId: '123',
@@ -3673,7 +3655,10 @@ describe('S2S Adapter', function () {
         p1Consent: 'https://ib.adnxs.com/openrtb2/prebid',
         noP1Consent: 'https://ib.adnxs-simple.com/openrtb2/prebid'
       });
-      expect(vendorConfig.syncEndpoint).to.be.undefined;
+      expect(vendorConfig.syncEndpoint).to.deep.equal({
+        p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync',
+        noP1Consent: 'https://prebid.adnxs-simple.com/pbs/v1/cookie_sync'
+      });
       expect(vendorConfig).to.have.property('timeout', 750);
     });
 

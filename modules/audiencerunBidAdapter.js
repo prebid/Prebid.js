@@ -1,8 +1,7 @@
 import {
   _each,
   deepAccess,
-  formatQS,
-  getBidIdParameter,
+  formatQS, getBidIdParameter,
   getValue,
   isArray,
   isFn,

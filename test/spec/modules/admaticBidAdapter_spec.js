@@ -348,6 +348,7 @@ describe('admaticBidAdapter', () => {
             'price': 0.01,
             'type': 'banner',
             'bidder': 'admatic',
+            'mime_type': 'iframe',
             'adomain': ['admatic.com.tr'],
             'party_tag': '<div></div>',
             'iurl': 'https://www.admatic.com.tr'
@@ -359,6 +360,7 @@ describe('admaticBidAdapter', () => {
             'height': 250,
             'price': 0.01,
             'type': 'video',
+            'mime_type': 'iframe',
             'bidder': 'admatic',
             'adomain': ['admatic.com.tr'],
             'party_tag': '<VAST></VAST>',
@@ -371,6 +373,7 @@ describe('admaticBidAdapter', () => {
             'height': 250,
             'price': 0.01,
             'type': 'video',
+            'mime_type': 'iframe',
             'bidder': 'admatic',
             'adomain': ['admatic.com.tr'],
             'party_tag': 'https://www.admatic.com.tr',
@@ -393,6 +396,7 @@ describe('admaticBidAdapter', () => {
           ad: '<div></div>',
           creativeId: '374',
           meta: {
+            model: 'iframe',
             advertiserDomains: ['admatic.com.tr']
           },
           ttl: 60,
@@ -410,6 +414,7 @@ describe('admaticBidAdapter', () => {
           vastXml: '<VAST></VAST>',
           creativeId: '3741',
           meta: {
+            model: 'iframe',
             advertiserDomains: ['admatic.com.tr']
           },
           ttl: 60,
@@ -427,6 +432,7 @@ describe('admaticBidAdapter', () => {
           vastXml: 'https://www.admatic.com.tr',
           creativeId: '3741',
           meta: {
+            model: 'iframe',
             advertiserDomains: ['admatic.com.tr']
           },
           ttl: 60,
