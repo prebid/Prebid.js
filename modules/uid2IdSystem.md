@@ -20,7 +20,19 @@ To configure the module to use this mode, you must:
 1. Set `parmas.serverPublicKey`  and `params.subscriptionId` 
 2. Provide **ONLY ONE DII** by setting **ONLY ONE** of `params.email`/`params.phone`/`params.emailHash`/`params.phoneHash`
 
-For the correct way to generate email and phone hash, refer to this [UID2 documentation](https://unifiedid.com/docs/getting-started/gs-normalization-encoding).
+Below is a table that provides guidance on when to use each directly identifying information (DII) parameter, along with information on whether normalization and hashing are required by the publisher for each parameter.
+
+| DII param        | When to use it                                        | Normalization required by publisher? | Hashing required by publisher? |
+|------------------|-------------------------------------------------------|--------------------------------------|--------------------------------|
+| params.email     | When you have users' email address                    | No                                   | No                             |
+| params.phone     | When you have user's phone number                     | Yes                                  | No                             |
+| params.emailHash | When you have user's hashed, normalized email address | Yes                                  | Yes                            |
+| params.phoneHash | When you have user's hashed, normalized phone number  | Yes                                  | Yes                            |
+
+
+*Note that setIdentityFromEmail will normalize email addresses, but setIdentityFromPhone requires phone numbers to be normalized.*
+
+Refer to this page [Normalization and Encoding](https://unifiedid.com/docs/getting-started/gs-normalization-encoding) on [unifiedid.com](https://unifiedid.com/) for details on email address normalization, SHA-256 hashing and Base64 encoding.
 
 ### CSTG example
 
