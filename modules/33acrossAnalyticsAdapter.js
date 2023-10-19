@@ -289,6 +289,12 @@ function subscribeToGamSlots() {
   window.googletag.pubads().addEventListener('slotRenderEnded', event => {
     setTimeout(() => {
       const { transactionId, auctionId } = getAdUnitMetadata(event.slot.getAdUnitPath());
+      if (!transactionId || !auctionId) {
+        const slotName = `${event.slot.getAdUnitPath()} - ${event.slot.getSlotElementId()}`;
+        log.warn('Could not find configured ad unit matching GAM render of slot:', { slotName });
+        return;
+      }
+
       locals.transactionManagers[auctionId] &&
         locals.transactionManagers[auctionId].complete(transactionId);
     }, POST_GAM_TIMEOUT);
@@ -300,6 +306,7 @@ function getAdUnitMetadata(adUnitCode) {
   if (adUnitMeta && adUnitMeta.length > 0) {
     return adUnitMeta[adUnitMeta.length - 1];
   }
+  return {};
 }
 
 /** necessary for testing */
