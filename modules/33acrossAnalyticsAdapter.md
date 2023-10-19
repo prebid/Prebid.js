@@ -9,8 +9,12 @@ Maintainer:  headerbidding@33across.com
 #### About
 
 This analytics adapter collects data about the performance of your ad slots
-for each auction run on your site. The data is sent at the earliest opportunity
-for each auction to provide a more complete picture of your ad performance.
+for each auction run on your site. It also provides insight into how identifiers
+from the
+[33Across User ID Sub-module](https://docs.prebid.org/dev-docs/modules/userid-submodules/33across.html)
+and other user ID sub-modules improve your monetization. The data is sent at
+the earliest opportunity for each auction to provide a more complete picture of
+your ad performance.
 
 The analytics adapter is free to use!
 However, the publisher must work with our account management team to obtain
