@@ -13,6 +13,7 @@ Please use ```connatix``` as the bidder code.
 
 # Configuration
 Connatix requires that ```iframe``` is used for user syncing.
+
 Example configuration:
 ```
 pbjs.setConfig({
