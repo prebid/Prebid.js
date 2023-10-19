@@ -14,11 +14,13 @@ The UID2 module handles storing, providing, and optionally refreshing tokens. Wh
 
 ## Client-Side Token Generation (CSTG) mode
 
-For publishers seeking a purely client-side integration without the complexities of server-side involvement, the CSTG mode is highly recommended. This mode necessitates the provision of a public key, subscription ID, and directly identifying information (DII). In the CSTG mode, the module takes on the responsibility of encrypting the DII, generating the UID2 token, and handling token refreshes when necessary.
+For publishers seeking a purely client-side integration without the complexities of server-side involvement, the CSTG mode is highly recommended. This mode requires the provision of a public key, subscription ID and [directly identifying information (DII)](https://unifiedid.com/docs/ref-info/glossary-uid#gl-dii) - either emails or phone numbers. In the CSTG mode, the module takes on the responsibility of encrypting the DII, generating the UID2 token, and handling token refreshes when necessary.
 
 To configure the module to use this mode, you must:
-1. Set `parmas.serverPublicKey`  and `params.subscription` 
-2. Provide **ONLY ONE DII** by set `params.email`/`params.phone`/`params.emailHash`/`params.phoneHash`
+1. Set `parmas.serverPublicKey`  and `params.subscriptionId` 
+2. Provide **ONLY ONE DII** by setting **ONLY ONE** of `params.email`/`params.phone`/`params.emailHash`/`params.phoneHash`
+
+For the correct way to generate email and phone hash, refer to this [UID2 documentation](https://unifiedid.com/docs/getting-started/gs-normalization-encoding).
 
 ### CSTG example
 
@@ -168,3 +170,9 @@ The below parameters apply only to the UID2 User ID Module integration.
 | params.uid2Cookie | Optional, Client refresh | String | The name of a cookie which holds the initial UID2 token, set by the server. The cookie should contain JSON in the same format as the uid2Token param. **If uid2Token is supplied, this param is ignored.** | See the sample token above. |
 | params.uid2ApiBase | Optional, Client refresh | String | Overrides the default UID2 API endpoint. | `"https://prod.uidapi.com"` _(default)_|
 | params.storage | Optional, Client refresh | String | Specify whether to use `cookie` or `localStorage` for module-internal storage. It is recommended to not provide this and allow the module to use the default. | `localStorage` _(default)_ |
+| params.serverPublicKey | Optional, Client-side token generation | String | 	A public key for encrypting the DII payload for the Operator's CSTG endpoint. **This is required for client-side token generation.**  | - |
+| params.subscriptionId | Optional, Client-side token generation | String | A publisher Identifier. **This is required for client-side token generation.** | - |
+| params.email | Optional, Client-side token generation | String | The user's email address. Provide this parameter if using email as the DII. | `"test@example.com"` |
+| params.emailHash | Optional, Client-side token generation | String | A hashed, normalized representation of the user's email. Provide this parameter if using emailHash as the DII. | `"tMmiiTI7IaAcPpQPFQ65uMVCWH8av9jw4cwf/F5HVRQ="` |
+| params.phone | Optional, Client-side token generation | String | The user's phone number. Provide this parameter if using phone as the DII. | `"+15555555555"` |
+| params.phoneHash | Optional, Client-side token generation | String | A hashed, normalized representation of the user's phone number. Provide this parameter if using phoneHash as the DII. | `"tMmiiTI7IaAcPpQPFQ65uMVCWH8av9jw4cwf/F5HVRQ="` |
