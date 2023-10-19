@@ -1,6 +1,18 @@
 import { spec } from 'modules/setupadBidAdapter.js';
 
 describe('SetupadAdapter', function () {
+  const userIdAsEids = [
+    {
+      source: 'pubcid.org',
+      uids: [
+        {
+          atype: 1,
+          id: '01EAJWWNEPN3CYMM5N8M5VXY22',
+        },
+      ],
+    },
+  ];
+
   const bidRequests = [
     {
       adUnitCode: 'test-div',
@@ -28,6 +40,7 @@ describe('SetupadAdapter', function () {
           page: 'http://test.com',
         },
       },
+      userIdAsEids,
     },
   ];
 
@@ -127,6 +140,19 @@ describe('SetupadAdapter', function () {
     it('check if imp object was added', function () {
       const request = spec.buildRequests(bidRequests);
       expect(JSON.parse(request[0].data).imp).to.be.an('array');
+    });
+
+    it('should send "user.ext.eids" in the request for Prebid.js supported modules only', function () {
+      const request = spec.buildRequests(bidRequests);
+      expect(JSON.parse(request[0].data).user.ext.eids).to.deep.equal(userIdAsEids);
+    });
+
+    it('should send an empty "user.ext.eids" array in the request if userId module is unsupported', function () {
+      let bidRequestsUnsupportedUserIdModule = Object.assign({}, bidRequests[0]);
+      delete bidRequestsUnsupportedUserIdModule.userIdAsEids;
+      const request = spec.buildRequests(bidRequestsUnsupportedUserIdModule);
+
+      expect(JSON.parse(request[0].data).user.ext.eids).to.be.empty;
     });
   });
 

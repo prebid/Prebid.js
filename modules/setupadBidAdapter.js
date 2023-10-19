@@ -27,6 +27,10 @@ events.on(CONSTANTS.EVENTS.AUCTION_INIT, () => {
   sendingDataStatistic.initEvents();
 });
 
+function getEids(bidRequest) {
+  if (deepAccess(bidRequest, 'userIdAsEids')) return bidRequest.userIdAsEids;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
@@ -45,8 +49,14 @@ export const spec = {
       const accountId = getBidIdParameter('account_id', bid.params);
       const auctionId = bid.auctionId;
       const bidId = bid.bidId;
+      const eids = getEids(bid) || [];
       let sizes = bid.sizes;
       if (sizes && !Array.isArray(sizes[0])) sizes = [sizes];
+
+      // eslint-disable-next-line no-console
+      console.log('SETUPAD bid', bid);
+      // eslint-disable-next-line no-console
+      console.log('SETUPAD eids', eids);
 
       const site = getSiteObj();
       const device = getDeviceObj();
@@ -66,10 +76,11 @@ export const spec = {
             scrollTop: window.pageYOffset || document.documentElement.scrollTop,
           },
         },
-
+        user: { ext: { eids } },
         device,
         site,
         imp: [],
+        test: 1,
       };
 
       const imp = {
@@ -105,9 +116,7 @@ export const spec = {
           }
 
           if (typeof gdprConsent.consentString !== 'undefined') {
-            payload.user = {
-              ext: { consent: gdprConsent.consentString },
-            };
+            payload.user.ext.consent = gdprConsent.consentString;
           }
         }
       }
