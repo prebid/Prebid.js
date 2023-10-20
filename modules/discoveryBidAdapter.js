@@ -225,7 +225,7 @@ function getScreenSize() {
  * @param bidderRequest
  * @returns {string}
  */
-function getReferrer(bidRequest, bidderRequest) {
+function getReferrer(bidRequest = {}, bidderRequest = {}) {
   let pageUrl;
   if (bidRequest.params && bidRequest.params.referrer) {
     pageUrl = bidRequest.params.referrer;
@@ -238,10 +238,10 @@ function getReferrer(bidRequest, bidderRequest) {
 /**
  * format imp ad test ext params
  *
- * @param validBidRequest
+ * @param validBidRequest sigleBidRequest
  * @param bidderRequest
  */
-function addImpExtParams(bidRequest, bidderRequest) {
+function addImpExtParams(bidRequest = {}, bidderRequest = {}) {
   const { deepAccess } = utils;
   const { params = {}, adUnitCode } = bidRequest;
   const ext = {
