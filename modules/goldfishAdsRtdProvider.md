@@ -17,11 +17,11 @@ This RTD module provides access to the Goldfish Ads Geograph, which leverages ge
 gulp build --modules="rtdModule,goldfishAdsRtdProvider,appnexusBidAdapter,..."
 ```
 
-> Note that the global RTD module, `rtdModule`, is a prerequisite of the GoldfishAds RTD module.
+> Note that the global RTD module, `rtdModule`, is a prerequisite of the Goldfish Ads RTD module.
 
 ### Configuration
 
-Use `setConfig` to instruct Prebid.js to initialize the GoldfishAds RTD module, as specified below.
+Use `setConfig` to instruct Prebid.js to initialize the Goldfish Ads RTD module, as specified below.
 
 This module is configured as part of the `realTimeData.dataProviders`
 
