@@ -1,14 +1,14 @@
-# GoldfishAds Real-time Data Submodule
+# Goldfish Ads Real-time Data Submodule
 
 ## Overview
 
-    Module Name: GoldfishAds Rtd Provider
+    Module Name: Goldfish Ads Rtd Provider
     Module Type: Rtd Provider
-    Maintainer: 
+    Maintainer: keith@goldfishads.com
 
 ## Description
 
-The GoldfishAds RTD module adds encrypted identifier envelope to the bidding object.
+This RTD module provides access to the Goldfish Ads Geograph, which leverages geographic and temporal data on a privcay-first platform. This module works without using cookies, PII, emails, or device IDs across all website traffic, including unauthenticated users, and adds audience data into bid requests to increase scale and yields.
 
 ## Usage
 
@@ -45,4 +45,4 @@ pbjs.setConfig({
 |:-----------------|:----------------------------------------|:-----------------------------------------------------------------------------|:-----------------------|
 | name             | String                                  | Real time data module name                                                   | Always 'goldfishAds'   |
 | waitForIt        | Boolean                                 | Set to true to maximize chance for bidder enrichment, used with auctionDelay | `false`                |
-| params.key       | String                                  | Your key id issued by GoldfishAds                                            |                        |
+| params.key       | String                                  | Your key id issued by Goldfish Ads                                            |                        |
