@@ -3,7 +3,7 @@
 ```txt
 Module Name: 33Across Analytics Adapter
 Module Type: Analytics Adapter
-Maintainer:  headerbidding@33across.com
+Maintainer:  analytics_support@33across.com
 ```
 
 #### About
@@ -17,9 +17,14 @@ the earliest opportunity for each auction to provide a more complete picture of
 your ad performance.
 
 The analytics adapter is free to use!
-However, the publisher must work with our account management team to obtain
-a Publisher/Partner ID (PID). If you are already using a 33Across PID,
-you may use your existing PID with the analytics adapter.
+However, the publisher must work with our account management team to obtain a
+Publisher/Partner ID (PID) and enable Analytics for their account.
+To get a PID and to have the publisher account enabled for Analytics,
+you can reach out to our team at the following email - analytics_support@33across.com
+
+If you are an existing publisher and you already use a 33Across PID,
+you can reach out to analytics_support@33across.com
+to have your account enabled for analytics.
 
 The 33Across privacy policy is at <https://www.33across.com/privacy-policy/>.
 
