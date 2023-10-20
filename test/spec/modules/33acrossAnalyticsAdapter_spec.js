@@ -466,17 +466,31 @@ describe('33acrossAnalyticsAdapter:', function () {
       });
 
       context('and the `slotRenderEnded` event fired for all bids, but not all bids have won', function () {
-        it('sends a report after the all `slotRenderEnded` events have fired and timed out', function () {
-          const timeout = POST_GAM_TIMEOUT + 2000;
-          this.enableAnalytics({ timeout });
+        context('and the GAM slot IDs are configured as the ad unit codes', function () {
+          it('sends a report after the all `slotRenderEnded` events have fired and timed out', function () {
+            const timeout = POST_GAM_TIMEOUT + 2000;
+            this.enableAnalytics({ timeout });
 
-          performStandardAuction({exclude: ['bidWon', 'auctionEnd']});
-          sandbox.clock.tick(POST_GAM_TIMEOUT + 1);
+            performStandardAuction({exclude: ['bidWon', 'auctionEnd']});
+            sandbox.clock.tick(POST_GAM_TIMEOUT + 1);
 
-          assert.strictEqual(navigator.sendBeacon.callCount, 1);
+            assert.strictEqual(navigator.sendBeacon.callCount, 1);
+          });
         });
 
-        it('does NOT sent a report if not all `slotRenderEnded` events have timed out', function () {
+        context('and the slot element IDs are configured as the ad unit codes', function () {
+          it('sends a report after the all `slotRenderEnded` events have fired and timed out', function () {
+            const timeout = POST_GAM_TIMEOUT + 2000;
+            this.enableAnalytics({ timeout });
+
+            performStandardAuction({exclude: ['bidWon', 'auctionEnd'], useSlotElementIds: true});
+            sandbox.clock.tick(POST_GAM_TIMEOUT + 1);
+
+            assert.strictEqual(navigator.sendBeacon.callCount, 1);
+          });
+        });
+
+        it('does NOT send a report if not all `slotRenderEnded` events have timed out', function () {
           const timeout = POST_GAM_TIMEOUT + 2000;
           this.enableAnalytics({ timeout });
 
@@ -484,6 +498,26 @@ describe('33acrossAnalyticsAdapter:', function () {
           sandbox.clock.tick(POST_GAM_TIMEOUT - 1);
 
           assert.strictEqual(navigator.sendBeacon.callCount, 0);
+        });
+      });
+
+      context('and the `slotRenderEnded` event has fired for an unknown slot code', function () {
+        it('logs a warning message', function () {
+          this.enableAnalytics();
+
+          const { prebid: [auction], gam } = getMockEvents();
+          auction.AUCTION_INIT.adUnits[0].code = 'INVALID_AD_UNIT_CODE';
+
+          const slotRenderEnded = gam.slotRenderEnded[0];
+          events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
+          events.emit(EVENTS.BID_REQUESTED, auction.BID_REQUESTED[0]);
+          mockGpt.emitEvent('slotRenderEnded', slotRenderEnded);
+
+          sandbox.clock.tick(POST_GAM_TIMEOUT + 1);
+
+          assert.calledWithExactly(log.warn,
+            'Could not find configured ad unit matching GAM render of slot:',
+            { slotName: `${adUnitCodes[0]} - ${adSlotElementIds[0]}` });
         });
       });
 
@@ -607,12 +641,21 @@ describe('33acrossAnalyticsAdapter:', function () {
   });
 });
 
-function performStandardAuction({ exclude = [] } = {}) {
+const adUnitCodes = ['/19968336/header-bid-tag-0', '/19968336/header-bid-tag-1', '/17118521/header-bid-tag-2'];
+const adSlotElementIds = ['ad-slot-div-0', 'ad-slot-div-1', 'ad-slot-div-2'];
+
+function performStandardAuction({ exclude = [], useSlotElementIds = false } = {}) {
   const mockEvents = getMockEvents();
   const { prebid, gam } = mockEvents;
   const [auction] = prebid;
 
   if (!exclude.includes(EVENTS.AUCTION_INIT)) {
+    if (useSlotElementIds) {
+      // With this option, identify the ad units by slot element IDs instead of GAM paths
+      auction.AUCTION_INIT.adUnits.forEach((adUnit, i) => {
+        adUnit.code = adSlotElementIds[i];
+      });
+    }
     events.emit(EVENTS.AUCTION_INIT, auction.AUCTION_INIT);
   }
 
@@ -756,7 +799,6 @@ function getLocalAssert() {
   }
 };
 
-const adUnitCodes = ['/19968336/header-bid-tag-0', '/19968336/header-bid-tag-1', '/17118521/header-bid-tag-2'];
 function createReportWithThreeBidWonEvents() {
   return {
     pid: 'test-pid',
@@ -847,7 +889,7 @@ function getMockEvents() {
       slotRenderEnded: [
         {
           serviceName: 'publisher_ads',
-          slot: mockGpt.makeSlot({ code: adUnitCodes[0] }),
+          slot: mockGpt.makeSlot({ code: adUnitCodes[0], divId: adSlotElementIds[0] }),
           isEmpty: true,
           slotContentChanged: true,
           size: null,
@@ -861,7 +903,7 @@ function getMockEvents() {
         },
         {
           serviceName: 'publisher_ads',
-          slot: mockGpt.makeSlot({ code: adUnitCodes[1] }),
+          slot: mockGpt.makeSlot({ code: adUnitCodes[1], divId: adSlotElementIds[1] }),
           isEmpty: false,
           slotContentChanged: true,
           size: [1, 1],
@@ -877,7 +919,7 @@ function getMockEvents() {
         },
         {
           serviceName: 'publisher_ads',
-          slot: mockGpt.makeSlot({ code: adUnitCodes[2] }),
+          slot: mockGpt.makeSlot({ code: adUnitCodes[2], divId: adSlotElementIds[2] }),
           isEmpty: false,
           slotContentChanged: true,
           size: [728, 90],
