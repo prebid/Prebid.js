@@ -470,6 +470,12 @@ export function newTargeting(auctionManager) {
       .filter(bid => deepAccess(bid, 'video.context') !== ADPOD)
       .filter(isBidUsable);
 
+    bidsReceived
+      .forEach(bid => {
+        bid.latestTargetedAuctionId = latestAuctionForAdUnit[bid.adUnitCode];
+        return bid;
+      });
+
     return getHighestCpmBidsFromBidPool(bidsReceived, getOldestHighestCpmBid);
   }
 
