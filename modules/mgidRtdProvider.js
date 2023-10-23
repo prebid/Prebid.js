@@ -3,6 +3,7 @@ import {ajax} from '../src/ajax.js';
 import {deepAccess, logError, logInfo, mergeDeep} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {getRefererInfo} from '../src/refererDetection.js';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'mgid';
@@ -13,7 +14,7 @@ const ORTB2_NAME = 'www.mgid.com'
 const GVLID = 358;
 /** @type {?Object} */
 export const storage = getStorageManager({
-  gvlid: GVLID,
+  moduleType: MODULE_TYPE_RTD,
   moduleName: SUBMODULE_NAME
 });
 
@@ -185,6 +186,7 @@ export const mgidSubmodule = {
   name: SUBMODULE_NAME,
   init: init,
   getBidRequestData: getBidRequestData,
+  gvlid: GVLID
 };
 
 submodule(MODULE_NAME, mgidSubmodule);

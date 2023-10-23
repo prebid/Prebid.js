@@ -55,7 +55,7 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     };
   });
   const request = {
-    id: bidderRequest.auctionId,
+    id: bidderRequest.bidderRequestId,
     at: 1,
     imp,
     cur: [UNICORN_DEFAULT_CURRENCY],

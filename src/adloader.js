@@ -21,7 +21,13 @@ const _approvedLoadExternalJSList = [
   'medianet',
   'improvedigital',
   'aaxBlockmeter',
-  'confiant'
+  'confiant',
+  'arcspan',
+  'airgrid',
+  'clean.io',
+  'a1Media',
+  'geoedge',
+  'qortex'
 ]
 
 /**

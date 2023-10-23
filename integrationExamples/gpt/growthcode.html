@@ -7,10 +7,13 @@
   <script async src="../../build/dev/prebid.js"></script>
   <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
   <script>
-    var FAILSAFE_TIMEOUT = 3300;
-    var PREBID_TIMEOUT = 1000;
+    var FAILSAFE_TIMEOUT = 33000;
+    var PREBID_TIMEOUT = 10000;
 
     var adUnits = [{
+      debugging: {
+        enabled: true
+      },
       code: 'div-gpt-ad-1460505748561-0',
       mediaTypes: {
         banner: {
@@ -23,6 +26,11 @@
         params: {
           placementId: 13144370
         }
+      },{
+        bidder: 'criteo',
+        params: {
+          zoneId: 497747
+        },
       }],
     }];
 
@@ -48,31 +56,25 @@
         provider: 'growthCodeAnalytics',
         options: {
           pid: 'TEST01',
+          //url: 'http://localhost:8080/v3/pb/analytics',
           trackEvents: [
-            'auctionInit',
             'auctionEnd',
-            'bidAdjustment',
-            'bidTimeout',
-            'bidTimeout',
-            'bidRequested',
-            'bidResponse',
-            'setTargeting',
-            'requestBids',
-            'addAdUnits',
-            'noBid',
             'bidWon',
-            'bidderDone']
+            ]
         }
       });
       pbjs.setConfig({
         debugging: {
           enabled: true,
-          bids: [{
-            bidder: 'appnexus',
-            adUnitCode: '/19968336/header-bid-tag-0',
-            cpm: 1.5,
-            adId: '111111',
-            ad: '<html><body><img src="https://files.prebid.org/creatives/prebid300x250.png"></body></html>'
+        },
+        realTimeData: {
+          auctionDelay: 1000,
+          dataProviders: [{
+            name: 'growthCodeRtd',
+            waitForIt: false,
+            params: {
+              pid: 'TEST01',
+            }
           }]
         },
         userSync: {
@@ -81,7 +83,7 @@
             storage: {
               type: "html5",
               name: "_sharedID",         // create a cookie with this name
-              expires: 365             // expires in 1 years
+              expires: 365             // expires in 1 year
             }
           },{
             name: 'growthCodeId',
