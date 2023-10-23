@@ -9,11 +9,13 @@ The UID2 module handles storing, providing, and optionally refreshing tokens. Wh
 ```
     $ gulp build --modules=uid2IdSystem --disable UID2_CSTG
 ```
-If you do plan to use Client-Side Token Generation (CSTG) mode, we strongly recommend consulting with the UID2 Team before implementing it in your integration. 
+If you do plan to use Client-Side Token Generation (CSTG) mode, please consult the UID2 Team first as they will provide required configuration values for you to use (see the Client-Side Token Generation (CSTG) mode section below for details)
 
 **Important information:** UID2 is not designed to be used where GDPR applies. The module checks the passed-in consent data and will not operate if the `gdprApplies` flag is true.
 
 ## Client-Side Token Generation (CSTG) mode
+
+**This mode is currently in the alpha stage of development. Please consult UID2 Team first as they will provide required configuration values for you to use.**
 
 For publishers seeking a purely client-side integration without the complexities of server-side involvement, the CSTG mode is highly recommended. This mode requires the provision of a public key, subscription ID and [directly identifying information (DII)](https://unifiedid.com/docs/ref-info/glossary-uid#gl-dii) - either emails or phone numbers. In the CSTG mode, the module takes on the responsibility of encrypting the DII, generating the UID2 token, and handling token refreshes when necessary.
 
