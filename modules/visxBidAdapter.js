@@ -15,6 +15,7 @@ const TIME_TO_LIVE = 360;
 const DEFAULT_CUR = 'EUR';
 const ADAPTER_SYNC_PATH = '/push_sync';
 const TRACK_TIMEOUT_PATH = '/track/bid_timeout';
+const RUNTIME_STATUS_RESPONSE_TIME = 999000;
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
   noAdm: 'Bid from response has no adm parameter - ',
@@ -149,7 +150,7 @@ export const spec = {
 
     return {
       method: 'POST',
-      url: buildUrl(ENDPOINT_PATH) + '?auids=' + encodeURIComponent(auids.join(',')),
+      url: buildUrl(ENDPOINT_PATH) + '?auids=' + encodeURIComponent(auids.join(',')) + '&r=' + Math.round(Math.random() * 10E6),
       data: request,
       bidsMap
     };
@@ -171,6 +172,9 @@ export const spec = {
       serverResponse.seatbid.forEach(respItem => {
         _addBidResponse(_getBidFromResponse(respItem), bidsMap, currency, bidResponses);
       });
+
+      // Track response time to VIS.X
+      _trackResponseTime(serverResponse, bidRequest);
     }
     if (errorMessage) logError(errorMessage);
     return bidResponses;
@@ -432,6 +436,45 @@ function _getUserId() {
   }
 
   return null;
+}
+
+function _trackResponseTime(serverResponse, bidRequest) {
+  const requestUrl = bidRequest.url;
+  if (requestUrl) {
+    const responseTime = _getResponseTime(requestUrl);
+    if (responseTime >= 0) {
+      // Apply sampling: track response time only for one bid from the bid response
+      const randomSeatBid = serverResponse.seatbid[Math.floor(Math.random() * serverResponse.seatbid.length)];
+      const randomBid = _getBidFromResponse(randomSeatBid);
+      const runtimeTracker = deepAccess(randomBid, 'ext.visx.events.runtime');
+
+      if (runtimeTracker) {
+        const _roundedTime = _roundResponseTime(responseTime, 50);
+        triggerPixel(runtimeTracker.replace('{STATUS_CODE}', RUNTIME_STATUS_RESPONSE_TIME + _roundedTime));
+      }
+    }
+  }
+}
+
+function _getResponseTime(url) {
+  if (window.performance && window.performance.getEntriesByName) {
+    const requestEntry = window.performance.getEntriesByName(url);
+    if (requestEntry.length > 0) {
+      return requestEntry[0].duration;
+    }
+  }
+  return -1;
+}
+
+function _roundResponseTime(time, timeRange) {
+  if (time <= 0) {
+    return 0; // Special code for scriptLoadTime of 0 ms or less
+  } else if (time > 5000) {
+    return 100; // Constant code for scriptLoadTime greater than 5000 ms
+  } else {
+    const roundedValue = Math.floor((time - 1) / timeRange) + 1;
+    return roundedValue;
+  }
 }
 
 registerBidder(spec);

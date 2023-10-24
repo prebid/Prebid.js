@@ -1333,6 +1333,85 @@ describe('VisxAdapter', function () {
     });
   });
 
+  describe('track response time', function () {
+    let performanceSandbox = sinon.sandbox.create();
+
+    const bidRequests = [
+      {
+        'bidder': 'visx',
+        'params': {
+          'uid': '903535'
+        },
+        'adUnitCode': 'adunit-code-1',
+        'sizes': [[300, 250], [300, 600]],
+        'bidId': '300bfeb0d71a5b',
+        'bidderRequestId': '5f2009617a7c0a',
+        'auctionId': '1cbd2feafe5e8b',
+      }
+    ];
+    const responseBid =
+      {'bid': [{'price': 1.15, 'impid': '300bfeb0d71a5b', 'adm': '<div>test content 1</div>', 'auid': 903535, 'h': 250, 'w': 300, 'cur': 'EUR', 'mediaType': 'banner', 'advertiserDomains': ['some_domain.com']}], 'seat': '1'};
+
+    beforeEach(function () {
+      sinon.stub(utils, 'triggerPixel');
+    });
+
+    afterEach(function () {
+      utils.triggerPixel.restore();
+      performanceSandbox.restore();
+    });
+
+    it('should not through exception if window.performance.getEntriesByName is not defined', function() {
+      performanceSandbox.stub(window.performance, 'getEntriesByName').value(undefined);
+      const request = spec.buildRequests(bidRequests);
+      expect(function () { spec.interpretResponse({'body': {'seatbid': [responseBid]}}, request); }).not.to.throw();
+    });
+
+    it('should not through exception if runtime pixel is missing in bid response', function() {
+      const request = spec.buildRequests(bidRequests);
+      expect(function () { spec.interpretResponse({'body': {'seatbid': [responseBid]}}, request); }).not.to.throw();
+    });
+
+    it('should track response time via runtime status call', function() {
+      const runtimeTrackUrl = 'https://t.visx.net/track/status/123123123/{STATUS_CODE}';
+      const expectedRuntimeTrackUrl = 'https://t.visx.net/track/status/123123123/999004';
+      const request = spec.buildRequests(bidRequests);
+
+      performanceSandbox.stub(window.performance, 'getEntriesByName').returns([{ duration: 200 }]);
+
+      utils.deepSetValue(responseBid.bid[0], 'ext.visx.events.runtime', runtimeTrackUrl);
+      spec.interpretResponse({'body': {'seatbid': [responseBid]}}, request);
+
+      expect(utils.triggerPixel.calledOnceWith(expectedRuntimeTrackUrl)).to.equal(true);
+    });
+
+    it('should track response equals 0', function() {
+      const runtimeTrackUrl = 'https://t.visx.net/track/status/123123123/{STATUS_CODE}';
+      const expectedRuntimeTrackUrl = 'https://t.visx.net/track/status/123123123/999000';
+      const request = spec.buildRequests(bidRequests);
+
+      performanceSandbox.stub(window.performance, 'getEntriesByName').returns([{ duration: 0 }]);
+
+      utils.deepSetValue(responseBid.bid[0], 'ext.visx.events.runtime', runtimeTrackUrl);
+      spec.interpretResponse({'body': {'seatbid': [responseBid]}}, request);
+
+      expect(utils.triggerPixel.calledOnceWith(expectedRuntimeTrackUrl)).to.equal(true);
+    });
+
+    it('should track response greater than 5000', function() {
+      const runtimeTrackUrl = 'https://t.visx.net/track/status/123123123/{STATUS_CODE}';
+      const expectedRuntimeTrackUrl = 'https://t.visx.net/track/status/123123123/999100';
+      const request = spec.buildRequests(bidRequests);
+
+      performanceSandbox.stub(window.performance, 'getEntriesByName').returns([{ duration: 5001 }]);
+
+      utils.deepSetValue(responseBid.bid[0], 'ext.visx.events.runtime', runtimeTrackUrl);
+      spec.interpretResponse({'body': {'seatbid': [responseBid]}}, request);
+
+      expect(utils.triggerPixel.calledOnceWith(expectedRuntimeTrackUrl)).to.equal(true);
+    });
+  });
+
   describe('user sync', function () {
     function parseUrl(url) {
       const [, path, querySt] = url.match(/^https?:\/\/[^\/]+(?:\/([^?]+)?)?(?:\?(.+)?)?$/) || [];
