@@ -33,7 +33,7 @@ Below is a table that provides guidance on when to use each directly identifying
 | params.phoneHash | When you have user's hashed, normalized phone number  | Yes                                  | Yes                            |
 
 
-*Note that setIdentityFromEmail will normalize email addresses, but setIdentityFromPhone requires phone numbers to be normalized.*
+*Note that setting params.email will normalize email addresses, but params.phone requires phone numbers to be normalized.*
 
 Refer to [Normalization and Encoding](#normalization-and-encoding) for details on email address normalization, SHA-256 hashing and Base64 encoding.
 
