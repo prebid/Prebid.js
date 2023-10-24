@@ -1,10 +1,10 @@
 ## UID2 User ID Submodule
 
-The UID2 module handles storing, providing, and optionally refreshing tokens. While initial tokens traditionally required server-side generation, the introduction of the *Client-Side Token Generation (CSTG)* mode (Alpha) offers publishers the flexibility to generate UID2 tokens directly from the module, eliminating this need. Publishers can choose to operate the module in one of three distinct modes: *Client Refresh* mode, *Server Only* mode and *Client-Side Token Generation* mode(Alpha).
+The UID2 module handles storing, providing, and optionally refreshing tokens. While initial tokens traditionally required server-side generation, the introduction of the *Client-Side Token Generation (CSTG)* mode offers publishers the flexibility to generate UID2 tokens directly from the module, eliminating this need. Publishers can choose to operate the module in one of three distinct modes: *Client Refresh* mode, *Server Only* mode and *Client-Side Token Generation* mode.
 
 *Server Only* mode was originally referred to as *legacy mode*, but it is a popular mode for new integrations where publishers prefer to handle token refresh server-side.
 
-*Client-Side Token Generation* mode is included in UID2 module by default. However, it's important to note that this mode is currently in the alpha stage of development. For publishers who do not intend to use it, you have the option to instruct the build to exclude the code related to this feature:
+*Client-Side Token Generation* mode is included in UID2 module by default. However, it's important to note that this mode is created and made available recently. For publishers who do not intend to use it, you have the option to instruct the build to exclude the code related to this feature:
 
 ```
     $ gulp build --modules=uid2IdSystem --disable UID2_CSTG
@@ -15,7 +15,7 @@ If you do plan to use Client-Side Token Generation (CSTG) mode, please consult t
 
 ## Client-Side Token Generation (CSTG) mode
 
-**This mode is currently in the alpha stage of development. Please consult UID2 Team first as they will provide required configuration values for you to use.**
+**This mode is created and made available recently. Please consult UID2 Team first as they will provide required configuration values for you to use.**
 
 For publishers seeking a purely client-side integration without the complexities of server-side involvement, the CSTG mode is highly recommended. This mode requires the provision of a public key, subscription ID and [directly identifying information (DII)](https://unifiedid.com/docs/ref-info/glossary-uid#gl-dii) - either emails or phone numbers. In the CSTG mode, the module takes on the responsibility of encrypting the DII, generating the UID2 token, and handling token refreshes when necessary.
 
