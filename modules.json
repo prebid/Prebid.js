@@ -19,8 +19,6 @@
   "shortcutBidAdapter",
   "smartadserverBidAdapter",
   "smilewantedBidAdapter",
-  "spotxBidAdapter",
-  "telariaBidAdapter",
   "tripleliftBidAdapter",
   "yahoosspBidAdapter",
 
@@ -34,7 +32,6 @@
   "consentManagementUsp",
   "currency",
   "dfpAdServerVideo",
-  "gdprEnforcement",
   "id5IdSystem",
   "rtdModule",
   "schain",
