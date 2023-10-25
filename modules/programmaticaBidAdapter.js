@@ -106,12 +106,12 @@ export const spec = {
     const syncs = []
 
     if (!hasPurpose1Consent(gdprConsent)) {
-      return;
+      return syncs;
     }
 
     let params = `usp=${uspConsent ?? ''}&consent=${gdprConsent?.consentString ?? ''}`;
     if (typeof gdprConsent?.gdprApplies === 'boolean') {
-      params += `gdpr=${Number(gdprConsent.gdprApplies)}`;
+      params += `&gdpr=${Number(gdprConsent.gdprApplies)}`;
     }
 
     if (syncOptions.iframeEnabled) {
@@ -121,7 +121,7 @@ export const spec = {
       });
     }
 
-    if (syncOptions.pixelEnabled && serverResponses.length > 0) {
+    if (syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
         url: `//${SYNC_ENDPOINT}/match/sp?${params}`
