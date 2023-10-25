@@ -212,15 +212,35 @@ export const adapter = {
     return getRequests({url, method, options}, validBidRequests, bidderRequest);
   },
 
-  interpretResponse: function (serverResponse = {}) {
+  interpretResponse: function (serverResponse, originalRequest) {
+    if (!(serverResponse && serverResponse.body && (serverResponse.body.auctionConfigList || serverResponse.body.bids))) {
+      return [];
+    }
+
     const serverResponseBody = serverResponse.body;
+    let bids = [];
+    let fledgeAuctionConfigs = null;
+    if (serverResponseBody.bids.length) {
+      bids = handleBidResponseByMediaType(serverResponseBody.bids);
+    }
 
-    const noBidsResponse = [];
-    const isInvalidResponse = !serverResponseBody || !serverResponseBody.bids;
+    if (serverResponseBody.auctionConfigList) {
+      let auctionConfigList = serverResponseBody.auctionConfigList;
+      fledgeAuctionConfigs = [{
+        'bidId': originalRequest.data.bidderRequest.bids[0].bidId,
+        'config': auctionConfigList[0]
+      }];
+      fledgeAuctionConfigs[0].config.auctionSignals = {};
+    }
 
-    return isInvalidResponse
-      ? noBidsResponse
-      : handleBidResponseByMediaType(serverResponseBody.bids);
+    if (!fledgeAuctionConfigs) {
+      return bids;
+    }
+
+    return {
+      bids,
+      fledgeAuctionConfigs
+    };
   }
 };
 
