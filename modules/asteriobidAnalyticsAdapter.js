@@ -17,7 +17,7 @@ const analyticsName = 'AsterioBid Analytics'
 const utmTags = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content']
 const _VERSION = 1
 
-let ajax = ajaxBuilder(0)
+let ajax = ajaxBuilder(20000)
 let initOptions
 let auctionStarts = {}
 let auctionTimeouts = {}
@@ -206,7 +206,6 @@ function handleEvent(eventType, eventArgs) {
     case CONSTANTS.EVENTS.AUCTION_INIT: {
       pmEvent.auctionId = eventArgs.auctionId
       pmEvent.timeout = eventArgs.timeout
-      pmEvent.eventType = eventArgs.eventType
       pmEvent.adUnits = eventArgs.adUnits && eventArgs.adUnits.map(trimAdUnit)
       pmEvent.bidderRequests = eventArgs.bidderRequests && eventArgs.bidderRequests.map(trimBidderRequest)
       auctionStarts[pmEvent.auctionId] = pmEvent.timestamp
