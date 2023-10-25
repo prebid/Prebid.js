@@ -19,7 +19,7 @@ const _VERSION = 1
 
 let ajax = ajaxBuilder(0)
 let initOptions
-let startAuctions = {}
+let auctionStarts = {}
 let auctionTimeouts = {}
 let sampling
 let pageViewId
@@ -188,6 +188,10 @@ function trimBidderRequest(bidderRequest) {
 }
 
 function handleEvent(eventType, eventArgs) {
+  if (!asteriobidAnalyticsEnabled) {
+    return
+  }
+
   try {
     eventArgs = eventArgs ? JSON.parse(JSON.stringify(eventArgs)) : {}
   } catch (e) {
@@ -195,6 +199,8 @@ function handleEvent(eventType, eventArgs) {
   }
 
   const pmEvent = {}
+  pmEvent.timestamp = eventArgs.timestamp || Date.now()
+  pmEvent.eventType = eventType
 
   switch (eventType) {
     case CONSTANTS.EVENTS.AUCTION_INIT: {
@@ -203,7 +209,7 @@ function handleEvent(eventType, eventArgs) {
       pmEvent.eventType = eventArgs.eventType
       pmEvent.adUnits = eventArgs.adUnits && eventArgs.adUnits.map(trimAdUnit)
       pmEvent.bidderRequests = eventArgs.bidderRequests && eventArgs.bidderRequests.map(trimBidderRequest)
-      startAuctions[pmEvent.auctionId] = pmEvent.timestamp
+      auctionStarts[pmEvent.auctionId] = pmEvent.timestamp
       auctionTimeouts[pmEvent.auctionId] = pmEvent.timeout
       break
     }
@@ -213,7 +219,7 @@ function handleEvent(eventType, eventArgs) {
       pmEvent.start = eventArgs.start
       pmEvent.adUnitCodes = eventArgs.adUnitCodes
       pmEvent.bidsReceived = eventArgs.bidsReceived && eventArgs.bidsReceived.map(trimBid)
-      pmEvent.start = startAuctions[pmEvent.auctionId]
+      pmEvent.start = auctionStarts[pmEvent.auctionId]
       pmEvent.end = Date.now()
       break
     }
@@ -248,8 +254,8 @@ function handleEvent(eventType, eventArgs) {
       pmEvent.adUnitCode = eventArgs.adUnitCode
       pmEvent.auctionId = eventArgs.auctionId
       pmEvent.timeToRespond = eventArgs.timeToRespond
-      pmEvent.responseTimestamp = eventArgs.responseTimestamp
       pmEvent.requestTimestamp = eventArgs.requestTimestamp
+      pmEvent.responseTimestamp = eventArgs.responseTimestamp
       pmEvent.netRevenue = eventArgs.netRevenue
       pmEvent.size = eventArgs.size
       pmEvent.adserverTargeting = eventArgs.adserverTargeting
@@ -304,9 +310,6 @@ function handleEvent(eventType, eventArgs) {
     default:
       return
   }
-
-  pmEvent.eventType = eventType
-  pmEvent.timestamp = pmEvent.timestamp || Date.now()
 
   sendEvent(pmEvent)
 }
