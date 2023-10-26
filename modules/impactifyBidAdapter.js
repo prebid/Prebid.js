@@ -138,12 +138,9 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
   if (schain) request.source.ext = { schain: schain };
 
   // Set Eids
-  let bidUserId = deepAccess(validBidRequests, '0.userIdAsEids');
-  if (bidUserId) {
-    let eids = helpers.getEids(validBidRequests);
-    if (eids.length) {
-      deepSetValue(request, 'user.ext.eids', eids);
-    }
+  let eids = deepAccess(validBidRequests, '0.userIdAsEids');
+  if (eids && eids.length) {
+    deepSetValue(request, 'user.ext.eids', eids);
   }
 
   // Set device/user/site
