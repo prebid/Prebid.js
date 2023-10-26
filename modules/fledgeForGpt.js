@@ -96,14 +96,15 @@ function onAuctionEnd({auctionId, bidsReceived, bidderRequests}) {
   }
 }
 
-export function addComponentAuctionHook(next, auctionId, adUnitCode, componentAuctionConfig) {
+export function addComponentAuctionHook(next, request, componentAuctionConfig) {
+  const {adUnitCode, auctionId} = request;
   if (PENDING.hasOwnProperty(auctionId)) {
     !PENDING[auctionId].hasOwnProperty(adUnitCode) && (PENDING[auctionId][adUnitCode] = []);
     PENDING[auctionId][adUnitCode].push(componentAuctionConfig);
   } else {
     logWarn(MODULE, `Received component auction config for auction that has closed (auction '${auctionId}', adUnit '${adUnitCode}')`, componentAuctionConfig)
   }
-  next(auctionId, adUnitCode, componentAuctionConfig);
+  next(request, componentAuctionConfig);
 }
 
 function isFledgeSupported() {

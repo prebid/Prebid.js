@@ -45,16 +45,17 @@ describe('fledgeForGpt module', () => {
       });
 
       it('should call next()', function () {
-        fledge.addComponentAuctionHook(nextFnSpy, 'aid', 'auc', fledgeAuctionConfig);
-        sinon.assert.calledWith(nextFnSpy, 'aid', 'auc', fledgeAuctionConfig);
+        const request = {auctionId: 'aid', adUnitCode: 'auc'};
+        fledge.addComponentAuctionHook(nextFnSpy, request, fledgeAuctionConfig);
+        sinon.assert.calledWith(nextFnSpy, request, fledgeAuctionConfig);
       });
 
       it('should collect auction configs and route them to GPT at end of auction', () => {
         events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {auctionId: 'aid'});
         const cf1 = {...fledgeAuctionConfig, id: 1, seller: 'b1'};
         const cf2 = {...fledgeAuctionConfig, id: 2, seller: 'b2'};
-        fledge.addComponentAuctionHook(nextFnSpy, 'aid', 'au1', cf1);
-        fledge.addComponentAuctionHook(nextFnSpy, 'aid', 'au2', cf2);
+        fledge.addComponentAuctionHook(nextFnSpy, {auctionId: 'aid', adUnitCode: 'au1'}, cf1);
+        fledge.addComponentAuctionHook(nextFnSpy, {auctionId: 'aid', adUnitCode: 'au2'}, cf2);
         events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId: 'aid'});
         sinon.assert.calledWith(gptUtils.getGptSlotForAdUnitCode, 'au1');
         sinon.assert.calledWith(gptUtils.getGptSlotForAdUnitCode, 'au2');
@@ -75,7 +76,7 @@ describe('fledgeForGpt module', () => {
       it('should drop auction configs after end of auction', () => {
         events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {auctionId: 'aid'});
         events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId: 'aid'});
-        fledge.addComponentAuctionHook(nextFnSpy, 'aid', 'au', fledgeAuctionConfig);
+        fledge.addComponentAuctionHook(nextFnSpy, {auctionId: 'aid', adUnitCode: 'au'}, fledgeAuctionConfig);
         events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId: 'aid'});
         sinon.assert.notCalled(mockGptSlot.setConfig);
       });
@@ -173,7 +174,7 @@ describe('fledgeForGpt module', () => {
 
                 it('should populate bidfloor/bidfloorcur', () => {
                   events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {auctionId: 'aid'});
-                  fledge.addComponentAuctionHook(nextFnSpy, 'aid', 'au', fledgeAuctionConfig);
+                  fledge.addComponentAuctionHook(nextFnSpy, {auctionId: 'aid', adUnitCode: 'au'}, fledgeAuctionConfig);
                   events.emit(CONSTANTS.EVENTS.AUCTION_END, payload);
                   sinon.assert.calledWith(mockGptSlot.setConfig, sinon.match(arg => {
                     return arg.componentAuction.some(au => au.auctionConfig.auctionSignals?.prebid?.bidfloor === bidfloor && au.auctionConfig.auctionSignals?.prebid?.bidfloorcur === bidfloorcur)
