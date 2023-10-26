@@ -7,6 +7,7 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 const BIDDER_CODE = 'blockthrough';
 const GVLID = 815;
 const ENDPOINT_URL = 'https://pbs.btloader.com/openrtb2/auction';
+const SYNC_URL = 'https://cdn.btloader.com/user_sync.html';
 
 const CONVERTER = ortbConverter({
   context: {
@@ -121,6 +122,45 @@ function interpretResponse(serverResponse, request) {
   }).bids;
 }
 
+/**
+ * Generates user synchronization data based on provided options and consents.
+ *
+ * @param {Object} syncOptions - Synchronization options.
+ * @param {Object[]} serverResponses - An array of server responses.
+ * @param {Object} gdprConsent - GDPR consent information.
+ * @param {string} uspConsent - US Privacy consent string.
+ * @param {Object} gppConsent - Google Publisher Policies (GPP) consent information.
+ * @returns {Object[]} An array of user synchronization objects.
+ */
+function getUserSyncs(
+  syncOptions,
+  serverResponses,
+  gdprConsent,
+  uspConsent,
+  gppConsent
+) {
+  let syncs = [];
+  const syncUrl = new URL(SYNC_URL);
+
+  if (syncOptions.iframeEnabled) {
+    if (gdprConsent) {
+      syncUrl.searchParams.set('gdpr', Number(gdprConsent.gdprApplies));
+      syncUrl.searchParams.set('gdpr_consent', gdprConsent.consentString);
+    }
+    if (gppConsent) {
+      syncUrl.searchParams.set('gpp', gppConsent.gppString);
+      syncUrl.searchParams.set('gpp_sid', gppConsent.applicableSections);
+    }
+    if (uspConsent) {
+      syncUrl.searchParams.set('us_privacy', uspConsent);
+    }
+
+    syncs.push({ type: 'iframe', url: syncUrl.href });
+  }
+
+  return syncs;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -128,6 +168,7 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
+  getUserSyncs,
 };
 
 registerBidder(spec);

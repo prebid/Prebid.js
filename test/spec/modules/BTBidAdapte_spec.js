@@ -151,4 +151,49 @@ describe('BT Bid Adapter', () => {
       expect(bids).to.deep.equal(expectedBids);
     });
   });
+
+  describe('getUserSyncs', () => {
+    const SYNC_URL = 'https://cdn.btloader.com/user_sync.html';
+
+    it('should return an empty array if no sync options are provided', () => {
+      const syncs = spec.getUserSyncs({}, [], null, null, null);
+
+      expect(syncs).to.deep.equal([]);
+    });
+
+    it('should include consent parameters in sync URL if they are provided', () => {
+      const gdprConsent = {
+        gdprApplies: true,
+        consentString: 'GDPRConsentString123',
+      };
+      const gppConsent = {
+        gppString: 'GPPString123',
+        applicableSections: ['sectionA'],
+      };
+      const us_privacy = '1YNY';
+      const expectedSyncUrl = `${SYNC_URL}?gdpr=1&gdpr_consent=${gdprConsent.consentString}&gpp=${gppConsent.gppString}&gpp_sid=sectionA&us_privacy=${us_privacy}`;
+
+      const syncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [],
+        gdprConsent,
+        us_privacy,
+        gppConsent
+      );
+
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: expectedSyncUrl }]);
+    });
+
+    it('should not include any consent parameters if no consents are provided', () => {
+      const syncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [],
+        null,
+        null,
+        null
+      );
+
+      expect(syncs).to.deep.equal([{ type: 'iframe', url: SYNC_URL }]);
+    });
+  });
 });
