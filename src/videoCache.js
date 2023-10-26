@@ -78,7 +78,7 @@ function toStorageRequest(bid, {index = auctionManager.index} = {}) {
 
   if (config.getConfig('cache.vasttrack')) {
     payload.bidder = bid.bidder;
-    payload.bidid = bid.requestId;
+    payload.bidid = bid.bidId || bid.requestId;
     payload.aid = bid.auctionId;
   }
 

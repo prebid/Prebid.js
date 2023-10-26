@@ -248,6 +248,30 @@ describe('The video cache', function () {
       JSON.parse(request.requestBody).should.deep.equal(payload);
     });
 
+    it('should prefer bidId if present on bid', () => {
+      config.setConfig({
+        cache: {
+          url: 'https://prebid.adnxs.com/pbc/v1/cache',
+          vasttrack: true
+        }
+      });
+
+      const vastXml1 = '<VAST version="3.0">testvast1</VAST>';
+
+      const bids = [{
+        vastXml: vastXml1,
+        ttl: 25,
+        requestId: '12345abc',
+        bidId: 'pickmepickme',
+        bidder: 'appnexus',
+        auctionId: '1234-56789-abcde'
+      }];
+
+      store(bids, function () { });
+      const payload = JSON.parse(server.requests[0].requestBody);
+      payload.puts[0].bidid.should.equal('pickmepickme');
+    });
+
     it('should include additional params in request payload should config.cache.vasttrack be true - with timestamp', () => {
       config.setConfig({
         cache: {
