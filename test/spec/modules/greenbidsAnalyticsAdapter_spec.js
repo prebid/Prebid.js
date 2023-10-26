@@ -246,6 +246,13 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
                     skip: 1,
                     protocols: [1, 2, 3, 4]
                   },
+                },
+                ortb2Imp: {
+                  ext: {
+                    data: {
+                      adunitDFP: 'adunitcustomPathExtension'
+                    }
+                  }
                 }
               },
             ],
@@ -266,6 +273,7 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
                     sizes: [[300, 250], [300, 600]]
                   }
                 },
+                ortb2Imp: {},
                 bidders: [
                   {
                     bidder: 'greenbids',
@@ -281,6 +289,13 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
               },
               {
                 code: 'adunit-2',
+                ortb2Imp: {
+                  ext: {
+                    data: {
+                      adunitDFP: 'adunitcustomPathExtension'
+                    }
+                  }
+                },
                 mediaTypes: {
                   banner: {
                     sizes: [[300, 250], [300, 600]]
