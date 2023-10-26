@@ -1,6 +1,7 @@
 [
   "adlooxAnalyticsAdapter",
   "adotBidAdapter",
+  "adyoulikeBidAdapter",
   "aniviewBidAdapter",
   "appnexusBidAdapter",
   "bliinkBidAdapter",
