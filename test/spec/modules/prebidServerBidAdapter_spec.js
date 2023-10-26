@@ -3489,7 +3489,6 @@ describe('S2S Adapter', function () {
         request.ad_units.forEach(au => deepSetValue(au, 'ortb2Imp.ext.ae', 1));
       });
 
-
       function expectFledgeCalls() {
         const auctionId = bidderRequests[0].auctionId;
         sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: bidderRequests[0].ortb2, ortb2Imp: bidderRequests[0].bids[0].ortb2Imp}), {id: 1})

@@ -81,6 +81,26 @@ describe('fledgeForGpt module', () => {
         sinon.assert.notCalled(mockGptSlot.setConfig);
       });
 
+      it('should augment auctionSignals with FPD', () => {
+        events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {auctionId: 'aid'});
+        fledge.addComponentAuctionHook(nextFnSpy, {auctionId: 'aid', adUnitCode: 'au1', ortb2: {fpd: 1}, ortb2Imp: {fpd: 2}}, fledgeAuctionConfig);
+        events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId: 'aid'});
+        sinon.assert.calledWith(mockGptSlot.setConfig, {
+          componentAuction: [{
+            configKey: 'bidder',
+            auctionConfig: {
+              ...fledgeAuctionConfig,
+              auctionSignals: {
+                prebid: {
+                  ortb2: {fpd: 1},
+                  ortb2Imp: {fpd: 2}
+                }
+              }
+            },
+          }]
+        })
+      })
+
       describe('floor signal', () => {
         before(() => {
           if (!getGlobal().convertCurrency) {

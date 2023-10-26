@@ -96,9 +96,14 @@ function onAuctionEnd({auctionId, bidsReceived, bidderRequests}) {
   }
 }
 
+function setFPDSignals(auctionConfig, fpd) {
+  auctionConfig.auctionSignals = mergeDeep({}, {prebid: fpd}, auctionConfig.auctionSignals);
+}
+
 export function addComponentAuctionHook(next, request, componentAuctionConfig) {
-  const {adUnitCode, auctionId} = request;
+  const {adUnitCode, auctionId, ortb2, ortb2Imp} = request;
   if (PENDING.hasOwnProperty(auctionId)) {
+    setFPDSignals(componentAuctionConfig, {ortb2, ortb2Imp});
     !PENDING[auctionId].hasOwnProperty(adUnitCode) && (PENDING[auctionId][adUnitCode] = []);
     PENDING[auctionId][adUnitCode].push(componentAuctionConfig);
   } else {
