@@ -183,6 +183,15 @@ function handleBidWon(args) {
           }
         });
       }
+      if (auction['auctionId'] == args['auctionId'] && typeof auction['bidderRequests'] == 'object') {
+        auction['bidderRequests'].forEach((req) => {
+          req.bids.forEach((bid) => {
+            if (bid['bidId'] == args['requestId'] && bid['transactionId'] == args['transactionId']) {
+              args['ova'] = bid['ova'];
+            }
+          });
+        });
+      }
     });
   }
   args['cpmIncrement'] = increment;
@@ -232,7 +241,8 @@ let oxxionAnalytics = Object.assign(adapter({url, analyticsType}), {
         addTimeout(args);
         break;
     }
-  }});
+  }
+});
 
 // save the base class function
 oxxionAnalytics.originEnableAnalytics = oxxionAnalytics.enableAnalytics;
