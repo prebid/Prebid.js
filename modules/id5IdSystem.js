@@ -15,12 +15,13 @@ import {
   logWarn,
   safeJSONParse
 } from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
+import {fetch} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {uspDataHandler} from '../src/adapterManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { GreedyPromise } from '../src/utils/promise.js';
 
 const MODULE_NAME = 'id5Id';
 const GVLID = 131;
@@ -36,6 +37,46 @@ const ID5_API_CONFIG_URL = 'https://id5-sync.com/api/config/prebid';
 const LEGACY_COOKIE_NAMES = ['pbjs-id5id', 'id5id.1st', 'id5id'];
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+
+/**
+ * @typedef {Object} IdResponse
+ * @property {string} [universal_uid] - The encrypted ID5 ID to pass to bidders
+ * @property {Object} [ext] - The extensions object to pass to bidders
+ * @property {Object} [ab_testing] - A/B testing configuration
+*/
+
+/**
+ * @typedef {Object} FetchCallConfig
+ * @property {string} [url] - The URL for the fetch endpoint
+ * @property {Object} [overrides] - Overrides to apply to fetch parameters
+*/
+
+/**
+ * @typedef {Object} ExtensionsCallConfig
+ * @property {string} [url] - The URL for the extensions endpoint
+ * @property {string} [method] - Overrides the HTTP method to use to make the call
+ * @property {Object} [body] - Specifies a body to pass to the extensions endpoint
+*/
+
+/**
+ * @typedef {Object} DynamicConfig
+ * @property {FetchCallConfig} [fetchCall] - The fetch call configuration
+ * @property {FetchCallConfig} [ExtensionsCallConfig] - The fetch call configuration
+*/
+
+/**
+ * @typedef {Object} ABTestingConfig
+ * @property {boolean} enabled - Tells whether A/B testing is enabled for this instance
+ * @property {number} controlGroupPct - A/B testing proabaility
+ */
+
+/**
+ * @typedef {Object} Id5PrebidConfig
+ * @property {number} partner - The ID5 partner ID
+ * @property {string} pd - The ID5 partner data string
+ * @property {ABTestingConfig} abTesting - The A/B testing configuration
+ * @property {boolean} disableExtensions - Disabled extensions call
+ */
 
 /** @type {Submodule} */
 export const id5IdSubmodule = {
@@ -177,83 +218,101 @@ class IdFetchFlow {
     this.usPrivacyData = usPrivacyData
   }
 
-  execute() {
-    return this.#callForConfig(this.submoduleConfig)
-      .then(fetchFlowConfig => {
-        return this.#callForExtensions(fetchFlowConfig.extensionsCall)
-          .then(extensionsData => {
-            return this.#callId5Fetch(fetchFlowConfig.fetchCall, extensionsData)
-          })
-      })
-      .then(fetchCallResponse => {
-        try {
-          resetNb(this.submoduleConfig.params.partner);
-          if (fetchCallResponse.privacy) {
-            storeInLocalStorage(ID5_PRIVACY_STORAGE_NAME, JSON.stringify(fetchCallResponse.privacy), NB_EXP_DAYS);
-          }
-        } catch (error) {
-          logError(LOG_PREFIX + error);
-        }
-        return fetchCallResponse;
-      })
-  }
-
-  #ajaxPromise(url, data, options) {
-    return new Promise((resolve, reject) => {
-      ajax(url,
-        {
-          success: function (res) {
-            resolve(res)
-          },
-          error: function (err) {
-            reject(err)
-          }
-        }, data, options)
-    })
-  }
-
-  // eslint-disable-next-line no-dupe-class-members
-  #callForConfig(submoduleConfig) {
-    let url = submoduleConfig.params.configUrl || ID5_API_CONFIG_URL; // override for debug/test purposes only
-    return this.#ajaxPromise(url, JSON.stringify(submoduleConfig), {method: 'POST'})
-      .then(response => {
-        let responseObj = JSON.parse(response);
-        logInfo(LOG_PREFIX + 'config response received from the server', responseObj);
-        return responseObj;
-      });
-  }
-
-  // eslint-disable-next-line no-dupe-class-members
-  #callForExtensions(extensionsCallConfig) {
-    if (extensionsCallConfig === undefined) {
-      return Promise.resolve(undefined)
+  /**
+   * Calls the ID5 Servers to fetch an ID5 ID
+   * @returns {Promise<IdResponse>} The result of calling the server side
+   */
+  async execute() {
+    if (this.#isExternalModule()) {
+      try {
+        return this.#externalModuleFlow();
+      } catch (error) {
+        logError('Error while performing ID5 external module flow. Continuing with regular flow.', error);
+        return this.#regularFlow();
+      }
+    } else {
+      return this.#regularFlow();
     }
-    let extensionsUrl = extensionsCallConfig.url
-    let method = extensionsCallConfig.method || 'GET'
-    let data = method === 'GET' ? undefined : JSON.stringify(extensionsCallConfig.body || {})
-    return this.#ajaxPromise(extensionsUrl, data, {'method': method})
-      .then(response => {
-        let responseObj = JSON.parse(response);
-        logInfo(LOG_PREFIX + 'extensions response received from the server', responseObj);
-        return responseObj;
-      })
+  }
+
+  #isExternalModule() {
+    return typeof this.submoduleConfig.params.externalModuleUrl === 'string';
   }
 
   // eslint-disable-next-line no-dupe-class-members
-  #callId5Fetch(fetchCallConfig, extensionsData) {
-    let url = fetchCallConfig.url;
-    let additionalData = fetchCallConfig.overrides || {};
-    let data = {
+  async #externalModuleFlow() {
+    const results = await GreedyPromise.allSettled(
+      this.#loadExternalModule(this.submoduleConfig.params.externalModuleUrl),
+      this.#callForConfig(this.submoduleConfig)
+    );
+
+    if (isRejected(results[0])) {
+      throw new Error('Could not load external module:', results[0].reason);
+    }
+    if (isRejected(results[1])) {
+      throw new Error('Could not load configuration:', results[0].reason);
+    }
+    const dynamicConfig = results[1].value;
+    const id5PrebidIntegration = window.id5Prebid.integration;
+    return id5PrebidIntegration.fetchId5Id(dynamicConfig);
+  }
+
+  // eslint-disable-next-line no-dupe-class-members
+  async #regularFlow() {
+    const fetchFlowConfig = await this.#callForConfig(this.submoduleConfig);
+    const extensionsData = await this.#callForExtensions(fetchFlowConfig.extensionsCall);
+    const fetchCallResponse = await this.#callId5Fetch(fetchFlowConfig.fetchCall, extensionsData);
+    return this.#processFetchCallResponse(fetchCallResponse);
+  }
+
+  // eslint-disable-next-line no-dupe-class-members
+  async #callForConfig(submoduleConfig) {
+    let url = submoduleConfig.params.configUrl || ID5_API_CONFIG_URL; // override for debug/test purposes only
+    const response = await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify(submoduleConfig)
+    });
+    if (!response.ok) {
+      throw new Error('Error while calling config endpoint: ', response)
+    }
+    const dynamicConfig = await response.json();
+    logInfo(LOG_PREFIX + 'config response received from the server', dynamicConfig);
+    return dynamicConfig;
+  }
+
+  // eslint-disable-next-line no-dupe-class-members
+  async #callForExtensions(extensionsCallConfig) {
+    if (extensionsCallConfig === undefined) {
+      return undefined;
+    }
+    const extensionsUrl = extensionsCallConfig.url
+    const method = extensionsCallConfig.method || 'GET'
+    const body = method === 'GET' ? undefined : JSON.stringify(extensionsCallConfig.body || {})
+    const response = await fetch(extensionsUrl, { method, body });
+    if (!response.ok) {
+      throw new Error('Error while calling extensions endpoint: ', response)
+    }
+    const extensions = await response.json();
+    logInfo(LOG_PREFIX + 'extensions response received from the server', extensions);
+    return extensions;
+  }
+
+  // eslint-disable-next-line no-dupe-class-members
+  async #callId5Fetch(fetchCallConfig, extensionsData) {
+    const fetchUrl = fetchCallConfig.url;
+    const additionalData = fetchCallConfig.overrides || {};
+    const body = JSON.stringify({
       ...this.#createFetchRequestData(),
       ...additionalData,
       extensions: extensionsData
-    };
-    return this.#ajaxPromise(url, JSON.stringify(data), {method: 'POST', withCredentials: true})
-      .then(response => {
-        let responseObj = JSON.parse(response);
-        logInfo(LOG_PREFIX + 'fetch response received from the server', responseObj);
-        return responseObj;
-      });
+    });
+    const response = await fetch(fetchUrl, { method: 'POST', body, credentials: 'include' });
+    if (!response.ok) {
+      throw new Error('Error while calling fetch endpoint: ', response)
+    }
+    const fetchResponse = await response.json();
+    logInfo(LOG_PREFIX + 'fetch response received from the server', fetchResponse);
+    return fetchResponse;
   }
 
   // eslint-disable-next-line no-dupe-class-members
@@ -302,6 +361,32 @@ class IdFetchFlow {
       };
     }
     return data;
+  }
+
+  // eslint-disable-next-line no-dupe-class-members
+  #processFetchCallResponse(fetchCallResponse) {
+    try {
+      resetNb(this.submoduleConfig.params.partner);
+      if (fetchCallResponse.privacy) {
+        storeInLocalStorage(ID5_PRIVACY_STORAGE_NAME, JSON.stringify(fetchCallResponse.privacy), NB_EXP_DAYS);
+      }
+    } catch (error) {
+      logError(LOG_PREFIX + error);
+    }
+    return fetchCallResponse;
+  }
+
+  // eslint-disable-next-line no-dupe-class-members
+  async #loadExternalModule() {
+    const url = this.submoduleConfig.params.externalModuleUrl;
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.onload = resolve;
+      script.onerror = reject;
+      script.type = 'text/javascript';
+      script.src = url;
+      document.head.appendChild(script);
+    });
   }
 }
 
@@ -426,5 +511,10 @@ function hasWriteConsentToLocalStorage(consentData) {
   }
   return true;
 }
+
+function isRejected(promiseResult) {
+  return promiseResult.status === 'rejected';
+}
+
 
 submodule('userId', id5IdSubmodule);

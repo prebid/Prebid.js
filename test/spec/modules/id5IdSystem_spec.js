@@ -21,6 +21,7 @@ import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 import {server} from '../../mocks/xhr.js';
 import {expect} from 'chai';
+import { GreedyPromise } from '../../../src/utils/promise.js';
 
 describe('ID5 ID System', function () {
   const ID5_MODULE_NAME = 'id5Id';
@@ -126,67 +127,66 @@ describe('ID5 ID System', function () {
   }
 
   function callSubmoduleGetId(config, consentData, cacheIdObj) {
-    return new Promise((resolve) => {
+    return new GreedyPromise((resolve) => {
       id5IdSubmodule.getId(config, consentData, cacheIdObj).callback((response) => {
-        resolve(response)
-      })
+        resolve(response);
+      });
     });
   }
 
   class XhrServerMock {
+    currentRequestIdx = 0;
+    server;
+
     constructor(server) {
-      this.currentRequestIdx = 0
-      this.server = server
+      this.currentRequestIdx = 0;
+      this.server = server;
     }
 
-    expectFirstRequest() {
-      return this.#expectRequest(0);
+    async expectFirstRequest() {
+      return this.#waitOnRequest(0);
     }
 
-    expectNextRequest() {
-      return this.#expectRequest(++this.currentRequestIdx)
+    async expectNextRequest() {
+      return this.#waitOnRequest(++this.currentRequestIdx)
     }
 
-    expectConfigRequest() {
-      return this.expectFirstRequest()
-        .then(configRequest => {
-          expect(configRequest.url).is.eq(ID5_API_CONFIG_URL);
-          expect(configRequest.method).is.eq('POST');
-          return configRequest;
-        })
+    async expectConfigRequest() {
+      const configRequest = await this.expectFirstRequest();
+      expect(configRequest.url).is.eq(ID5_API_CONFIG_URL);
+      expect(configRequest.method).is.eq('POST');
+      return configRequest;
     }
 
-    respondWithConfigAndExpectNext(configRequest, config = ID5_API_CONFIG) {
+    async respondWithConfigAndExpectNext(configRequest, config = ID5_API_CONFIG) {
       configRequest.respond(200, HEADERS_CONTENT_TYPE_JSON, JSON.stringify(config));
       return this.expectNextRequest()
     }
 
-    expectFetchRequest() {
-      return this.expectConfigRequest()
-        .then(configRequest => {
-          return this.respondWithConfigAndExpectNext(configRequest, ID5_API_CONFIG);
-        }).then(request => {
-          expect(request.url).is.eq(ID5_API_CONFIG.fetchCall.url);
-          expect(request.method).is.eq('POST');
-          return request;
-        })
+    async expectFetchRequest() {
+      const configRequest = await this.expectFirstRequest();
+      const fetchRequest = await this.respondWithConfigAndExpectNext(configRequest);
+      expect(fetchRequest.method).is.eq('POST');
+      expect(fetchRequest.url).is.eq(ID5_API_CONFIG.fetchCall.url);
+      return fetchRequest;
     }
 
-    #expectRequest(index) {
-      let server = this.server
-      return new Promise(function (resolve) {
-        (function waitForCondition() {
-          if (server.requests && server.requests.length > index) return resolve(server.requests[index]);
-          setTimeout(waitForCondition, 30);
-        })();
-      })
-        .then(request => {
-          return request
-        });
+    async #waitOnRequest(index) {
+      const server = this.server
+      return new GreedyPromise((resolve) => {
+        const waitForCondition = () => {
+          if (server.requests && server.requests.length > index) {
+            resolve(server.requests[index]);
+          } else {
+            setTimeout(waitForCondition, 30);
+          }
+        };
+        waitForCondition();
+      });
     }
 
     hasReceivedAnyRequest() {
-      let requests = this.server.requests;
+      const requests = this.server.requests;
       return requests && requests.length > 0;
     }
   }
@@ -214,7 +214,7 @@ describe('ID5 ID System', function () {
     });
 
     it('should warn with non-recommended storage params', function () {
-      let logWarnStub = sinon.stub(utils, 'logWarn');
+      const logWarnStub = sinon.stub(utils, 'logWarn');
 
       id5IdSubmodule.getId({ storage: { name: 'name', type: 'html5', }, params: { partner: 123 } });
       expect(logWarnStub.calledOnce).to.be.true;
@@ -240,7 +240,7 @@ describe('ID5 ID System', function () {
 
     dataConsentVals.forEach(function([purposeConsent, vendorConsent, caseName]) {
       it('should fail with invalid consent because of ' + caseName, function() {
-        let dataConsent = {
+        const dataConsent = {
           gdprApplies: true,
           consentString: 'consentString',
           vendorData: {
@@ -250,7 +250,7 @@ describe('ID5 ID System', function () {
         expect(id5IdSubmodule.getId(config)).is.eq(undefined);
         expect(id5IdSubmodule.getId(config, dataConsent)).is.eq(undefined);
 
-        let cacheIdObject = 'cacheIdObject';
+        const cacheIdObject = 'cacheIdObject';
         expect(id5IdSubmodule.extendId(config)).is.eq(undefined);
         expect(id5IdSubmodule.extendId(config, dataConsent, cacheIdObject)).is.eq(cacheIdObject);
       });
@@ -267,125 +267,121 @@ describe('ID5 ID System', function () {
       uspDataHandler.reset()
     });
 
-    it('should call the ID5 server and handle a valid response', function () {
-      let xhrServerMock = new XhrServerMock(server)
-      let config = getId5FetchConfig();
-      let submoduleResponse = callSubmoduleGetId(config, undefined, undefined);
+    it('should call the ID5 server and handle a valid response', async function () {
+      const xhrServerMock = new XhrServerMock(server)
+      const config = getId5FetchConfig();
 
-      return xhrServerMock.expectFetchRequest()
-        .then(fetchRequest => {
-          let requestBody = JSON.parse(fetchRequest.requestBody);
-          expect(fetchRequest.url).to.contain(ID5_ENDPOINT);
-          expect(fetchRequest.withCredentials).is.true;
-          expect(requestBody.partner).is.eq(ID5_TEST_PARTNER_ID);
-          expect(requestBody.o).is.eq('pbjs');
-          expect(requestBody.pd).is.undefined;
-          expect(requestBody.s).is.undefined;
-          expect(requestBody.provider).is.undefined
-          expect(requestBody.v).is.eq('$prebid.version$');
-          expect(requestBody.gdpr).is.eq(0);
-          expect(requestBody.gdpr_consent).is.undefined;
-          expect(requestBody.us_privacy).is.undefined;
-          expect(requestBody.storage).is.deep.eq(config.storage)
+      // Trigger the fetch but we await on it later
+      const submoduleResponsePromise = callSubmoduleGetId(config, undefined, undefined);
 
-          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
-          return submoduleResponse
-        })
-        .then(submoduleResponse => {
-          expect(submoduleResponse).is.deep.equal(ID5_JSON_RESPONSE);
-        });
+      const fetchRequest = await xhrServerMock.expectFetchRequest()
+
+      expect(fetchRequest.url).to.contain(ID5_ENDPOINT);
+      expect(fetchRequest.withCredentials).is.true;
+
+      const requestBody = JSON.parse(fetchRequest.requestBody);
+      expect(requestBody.partner).is.eq(ID5_TEST_PARTNER_ID);
+      expect(requestBody.o).is.eq('pbjs');
+      expect(requestBody.pd).is.undefined;
+      expect(requestBody.s).is.undefined;
+      expect(requestBody.provider).is.undefined
+      expect(requestBody.v).is.eq('$prebid.version$');
+      expect(requestBody.gdpr).is.eq(0);
+      expect(requestBody.gdpr_consent).is.undefined;
+      expect(requestBody.us_privacy).is.undefined;
+      expect(requestBody.storage).is.deep.eq(config.storage)
+
+      fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+
+      const submoduleResponse = await submoduleResponsePromise;
+      expect(submoduleResponse).is.deep.equal(ID5_JSON_RESPONSE);
     });
 
-    it('should call the ID5 server with gdpr data ', function () {
-      let xhrServerMock = new XhrServerMock(server)
-      let consentData = {
+    it('should call the ID5 server with gdpr data ', async function () {
+      const xhrServerMock = new XhrServerMock(server)
+      const consentData = {
         gdprApplies: true,
         consentString: 'consentString',
         vendorData: ALLOWED_ID5_VENDOR_DATA
       }
 
-      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), consentData, undefined);
+      // Trigger the fetch but we await on it later
+      const submoduleResponsePromise = callSubmoduleGetId(getId5FetchConfig(), consentData, undefined);
 
-      return xhrServerMock.expectFetchRequest()
-        .then(fetchRequest => {
-          let requestBody = JSON.parse(fetchRequest.requestBody);
-          expect(requestBody.partner).is.eq(ID5_TEST_PARTNER_ID);
-          expect(requestBody.gdpr).to.eq(1);
-          expect(requestBody.gdpr_consent).is.eq(consentData.consentString);
+      const fetchRequest = await xhrServerMock.expectFetchRequest()
+      const requestBody = JSON.parse(fetchRequest.requestBody);
+      expect(requestBody.partner).is.eq(ID5_TEST_PARTNER_ID);
+      expect(requestBody.gdpr).to.eq(1);
+      expect(requestBody.gdpr_consent).is.eq(consentData.consentString);
 
-          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
-          return submoduleResponse
-        })
-        .then(submoduleResponse => {
-          expect(submoduleResponse).is.deep.equal(ID5_JSON_RESPONSE);
-        });
+      fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+
+      const submoduleResponse = await submoduleResponsePromise;
+      expect(submoduleResponse).is.deep.equal(ID5_JSON_RESPONSE);
     });
 
-    it('should call the ID5 server without gdpr data when gdpr not applies ', function () {
-      let xhrServerMock = new XhrServerMock(server)
-      let consentData = {
+    it('should call the ID5 server without gdpr data when gdpr not applies ', async function () {
+      const xhrServerMock = new XhrServerMock(server)
+      const consentData = {
         gdprApplies: false,
         consentString: 'consentString'
       }
 
-      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), consentData, undefined);
+      // Trigger the fetch but we await on it later
+      const submoduleResponsePromise = callSubmoduleGetId(getId5FetchConfig(), consentData, undefined);
 
-      return xhrServerMock.expectFetchRequest()
-        .then(fetchRequest => {
-          let requestBody = JSON.parse(fetchRequest.requestBody);
-          expect(requestBody.gdpr).to.eq(0);
-          expect(requestBody.gdpr_consent).is.undefined
+      const fetchRequest = await xhrServerMock.expectFetchRequest()
+      const requestBody = JSON.parse(fetchRequest.requestBody);
+      expect(requestBody.gdpr).to.eq(0);
+      expect(requestBody.gdpr_consent).is.undefined
 
-          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
-          return submoduleResponse
-        })
-        .then(submoduleResponse => {
-          expect(submoduleResponse).is.deep.equal(ID5_JSON_RESPONSE);
-        });
+      fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+
+      const submoduleResponse = await submoduleResponsePromise;
+      expect(submoduleResponse).is.deep.equal(ID5_JSON_RESPONSE);
     });
 
-    it('should call the ID5 server with us privacy consent', function () {
-      let usPrivacyString = '1YN-';
+    it('should call the ID5 server with us privacy consent', async function () {
+      const usPrivacyString = '1YN-';
       uspDataHandler.setConsentData(usPrivacyString)
-      let xhrServerMock = new XhrServerMock(server)
-      let consentData = {
+      const xhrServerMock = new XhrServerMock(server)
+      const consentData = {
         gdprApplies: true,
         consentString: 'consentString',
         vendorData: ALLOWED_ID5_VENDOR_DATA
       }
 
-      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), consentData, undefined);
+      // Trigger the fetch but we await on it later
+      const submoduleResponsePromise = callSubmoduleGetId(getId5FetchConfig(), consentData, undefined);
 
-      return xhrServerMock.expectFetchRequest()
-        .then(fetchRequest => {
-          let requestBody = JSON.parse(fetchRequest.requestBody);
-          expect(requestBody.partner).is.eq(ID5_TEST_PARTNER_ID);
-          expect(requestBody.us_privacy).to.eq(usPrivacyString);
+      const fetchRequest = await xhrServerMock.expectFetchRequest()
+      const requestBody = JSON.parse(fetchRequest.requestBody);
+      expect(requestBody.partner).is.eq(ID5_TEST_PARTNER_ID);
+      expect(requestBody.us_privacy).to.eq(usPrivacyString);
 
-          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
-          return submoduleResponse
-        })
-        .then(submoduleResponse => {
-          expect(submoduleResponse).is.deep.equal(ID5_JSON_RESPONSE);
-        });
+      fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+
+      const submoduleResponse = await submoduleResponsePromise;
+      expect(submoduleResponse).is.deep.equal(ID5_JSON_RESPONSE);
     });
 
-    it('should call the ID5 server with no signature field when no stored object', function () {
-      let xhrServerMock = new XhrServerMock(server)
-      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, undefined);
+    it('should call the ID5 server with no signature field when no stored object', async function () {
+      const xhrServerMock = new XhrServerMock(server)
 
-      return xhrServerMock.expectFetchRequest()
-        .then(fetchRequest => {
-          let requestBody = JSON.parse(fetchRequest.requestBody);
-          expect(requestBody.s).is.undefined;
-          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
-          return submoduleResponse
-        })
+      // Trigger the fetch but we await on it later
+      const submoduleResponsePromise = callSubmoduleGetId(getId5FetchConfig(), undefined, undefined);
+
+      const fetchRequest = await xhrServerMock.expectFetchRequest()
+      const requestBody = JSON.parse(fetchRequest.requestBody);
+      expect(requestBody.s).is.undefined;
+
+      fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+      await submoduleResponsePromise;
     });
 
-    it('should call the ID5 server for config with submodule config object', function () {
-      let xhrServerMock = new XhrServerMock(server)
-      let id5FetchConfig = getId5FetchConfig();
+    it('should call the ID5 server for config with submodule config object', async function () {
+      const xhrServerMock = new XhrServerMock(server)
+      const id5FetchConfig = getId5FetchConfig();
       id5FetchConfig.params.extraParam = {
         x: 'X',
         y: {
@@ -393,341 +389,331 @@ describe('ID5 ID System', function () {
           b: '3'
         }
       }
-      let submoduleResponse = callSubmoduleGetId(id5FetchConfig, undefined, undefined);
 
-      return xhrServerMock.expectConfigRequest()
-        .then(configRequest => {
-          let requestBody = JSON.parse(configRequest.requestBody)
-          expect(requestBody).is.deep.eq(id5FetchConfig)
-          return xhrServerMock.respondWithConfigAndExpectNext(configRequest)
-        })
-        .then(fetchRequest => {
-          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
-          return submoduleResponse
-        })
+      // Trigger the fetch but we await on it later
+      const submoduleResponsePromise = callSubmoduleGetId(id5FetchConfig, undefined, undefined);
+
+      const configRequest = await xhrServerMock.expectConfigRequest();
+      const requestBody = JSON.parse(configRequest.requestBody);
+      expect(requestBody).is.deep.eq(id5FetchConfig)
+
+      const fetchRequest = await xhrServerMock.respondWithConfigAndExpectNext(configRequest)
+      fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+      await submoduleResponsePromise;
     });
 
-    it('should call the ID5 server for config with partner id being a string', function () {
-      let xhrServerMock = new XhrServerMock(server)
-      let id5FetchConfig = getId5FetchConfig();
+    it('should call the ID5 server for config with partner id being a string', async function () {
+      const xhrServerMock = new XhrServerMock(server)
+      const id5FetchConfig = getId5FetchConfig();
       id5FetchConfig.params.partner = '173';
-      let submoduleResponse = callSubmoduleGetId(id5FetchConfig, undefined, undefined);
 
-      return xhrServerMock.expectConfigRequest()
-        .then(configRequest => {
-          let requestBody = JSON.parse(configRequest.requestBody)
-          expect(requestBody.params.partner).is.eq(173)
-          return xhrServerMock.respondWithConfigAndExpectNext(configRequest)
-        })
-        .then(fetchRequest => {
-          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
-          return submoduleResponse
-        })
+      // Trigger the fetch but we await on it later
+      const submoduleResponsePromise = callSubmoduleGetId(id5FetchConfig, undefined, undefined);
+
+      const configRequest = await xhrServerMock.expectConfigRequest();
+      const requestBody = JSON.parse(configRequest.requestBody)
+      expect(requestBody.params.partner).is.eq(173)
+
+      const fetchRequest = await xhrServerMock.respondWithConfigAndExpectNext(configRequest)
+      fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+      await submoduleResponsePromise;
     });
 
-    it('should call the ID5 server for config with overridden url', function () {
-      let xhrServerMock = new XhrServerMock(server)
-      let id5FetchConfig = getId5FetchConfig();
+    it('should call the ID5 server for config with overridden url', async function () {
+      const xhrServerMock = new XhrServerMock(server)
+      const id5FetchConfig = getId5FetchConfig();
       id5FetchConfig.params.configUrl = 'http://localhost/x/y/z'
 
-      let submoduleResponse = callSubmoduleGetId(id5FetchConfig, undefined, undefined);
+      // Trigger the fetch but we await on it later
+      const submoduleResponsePromise = callSubmoduleGetId(id5FetchConfig, undefined, undefined);
 
-      return xhrServerMock.expectFirstRequest()
-        .then(configRequest => {
-          expect(configRequest.url).is.eq('http://localhost/x/y/z')
-          return xhrServerMock.respondWithConfigAndExpectNext(configRequest)
-        })
-        .then(fetchRequest => {
-          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
-          return submoduleResponse
-        })
+      const configRequest = await xhrServerMock.expectFirstRequest();
+      expect(configRequest.url).is.eq('http://localhost/x/y/z');
+
+      const fetchRequest = await xhrServerMock.respondWithConfigAndExpectNext(configRequest)
+      fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+      await submoduleResponsePromise;
     });
 
-    it('should call the ID5 server with additional data when provided', function () {
-      let xhrServerMock = new XhrServerMock(server)
-      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, undefined);
+    it('should call the ID5 server with additional data when provided', async function () {
+      const xhrServerMock = new XhrServerMock(server)
 
-      return xhrServerMock.expectConfigRequest()
-        .then(configRequest => {
-          return xhrServerMock.respondWithConfigAndExpectNext(configRequest, {
-            fetchCall: {
-              url: ID5_ENDPOINT,
-              overrides: {
-                arg1: '123',
-                arg2: {
-                  x: '1',
-                  y: 2
-                }
-              }
+      // Trigger the fetch but we await on it later
+      const submoduleResponsePromise = callSubmoduleGetId(getId5FetchConfig(), undefined, undefined);
+
+      const configRequest = await xhrServerMock.expectConfigRequest();
+      const fetchRequest = await xhrServerMock.respondWithConfigAndExpectNext(configRequest, {
+        fetchCall: {
+          url: ID5_ENDPOINT,
+          overrides: {
+            arg1: '123',
+            arg2: {
+              x: '1',
+              y: 2
             }
-          });
-        })
-        .then(fetchRequest => {
-          let requestBody = JSON.parse(fetchRequest.requestBody);
-          expect(requestBody.partner).is.eq(ID5_TEST_PARTNER_ID);
-          expect(requestBody.o).is.eq('pbjs');
-          expect(requestBody.v).is.eq('$prebid.version$');
-          expect(requestBody.arg1).is.eq('123')
-          expect(requestBody.arg2).is.deep.eq({
+          }
+        }
+      });
+      const requestBody = JSON.parse(fetchRequest.requestBody);
+      expect(requestBody.partner).is.eq(ID5_TEST_PARTNER_ID);
+      expect(requestBody.o).is.eq('pbjs');
+      expect(requestBody.v).is.eq('$prebid.version$');
+      expect(requestBody.arg1).is.eq('123')
+      expect(requestBody.arg2).is.deep.eq({
+        x: '1',
+        y: 2
+      })
+
+      fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+      await submoduleResponsePromise;
+    });
+
+    it('should call the ID5 server with extensions', async function () {
+      const xhrServerMock = new XhrServerMock(server)
+
+      // Trigger the fetch but we await on it later
+      const submoduleResponsePromise = callSubmoduleGetId(getId5FetchConfig(), undefined, undefined);
+
+      const configRequest = await xhrServerMock.expectConfigRequest();
+      const extensionsRequest = await xhrServerMock.respondWithConfigAndExpectNext(configRequest, {
+        fetchCall: {
+          url: ID5_ENDPOINT
+        },
+        extensionsCall: {
+          url: ID5_EXTENSIONS_ENDPOINT,
+          method: 'GET'
+        }
+      });
+      expect(extensionsRequest.url).is.eq(ID5_EXTENSIONS_ENDPOINT)
+      expect(extensionsRequest.method).is.eq('GET')
+
+      extensionsRequest.respond(200, responseHeader, JSON.stringify({
+        lb: 'ex'
+      }));
+      const fetchRequest = await xhrServerMock.expectNextRequest();
+      const requestBody = JSON.parse(fetchRequest.requestBody);
+      expect(requestBody.partner).is.eq(ID5_TEST_PARTNER_ID);
+      expect(requestBody.o).is.eq('pbjs');
+      expect(requestBody.v).is.eq('$prebid.version$');
+      expect(requestBody.extensions).is.deep.eq({
+        lb: 'ex'
+      })
+
+      fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+      await submoduleResponsePromise;
+    });
+
+    it('should call the ID5 server with extensions fetched using method POST', async function () {
+      const xhrServerMock = new XhrServerMock(server)
+
+      // Trigger the fetch but we await on it later
+      const submoduleResponsePromise = callSubmoduleGetId(getId5FetchConfig(), undefined, undefined);
+
+      const configRequest = await xhrServerMock.expectConfigRequest();
+      const extensionsRequest = await xhrServerMock.respondWithConfigAndExpectNext(configRequest, {
+        fetchCall: {
+          url: ID5_ENDPOINT
+        },
+        extensionsCall: {
+          url: ID5_EXTENSIONS_ENDPOINT,
+          method: 'POST',
+          body: {
             x: '1',
             y: 2
-          })
-          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
-          return submoduleResponse
-        })
+          }
+        }
+      });
+      expect(extensionsRequest.url).is.eq(ID5_EXTENSIONS_ENDPOINT)
+      expect(extensionsRequest.method).is.eq('POST')
+      const extRequestBody = JSON.parse(extensionsRequest.requestBody)
+      expect(extRequestBody).is.deep.eq({
+        x: '1',
+        y: 2
+      })
+      extensionsRequest.respond(200, responseHeader, JSON.stringify({
+        lb: 'post',
+      }));
+
+      const fetchRequest = await xhrServerMock.expectNextRequest();
+      const requestBody = JSON.parse(fetchRequest.requestBody);
+      expect(requestBody.partner).is.eq(ID5_TEST_PARTNER_ID);
+      expect(requestBody.o).is.eq('pbjs');
+      expect(requestBody.v).is.eq('$prebid.version$');
+      expect(requestBody.extensions).is.deep.eq({
+        lb: 'post'
+      });
+
+      fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+      await submoduleResponsePromise;
     });
 
-    it('should call the ID5 server with extensions', function () {
-      let xhrServerMock = new XhrServerMock(server)
-      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, undefined);
+    it('should call the ID5 server with signature field from stored object', async function () {
+      const xhrServerMock = new XhrServerMock(server)
 
-      return xhrServerMock.expectConfigRequest()
-        .then(configRequest => {
-          return xhrServerMock.respondWithConfigAndExpectNext(configRequest, {
-            fetchCall: {
-              url: ID5_ENDPOINT
-            },
-            extensionsCall: {
-              url: ID5_EXTENSIONS_ENDPOINT,
-              method: 'GET'
-            }
-          });
-        })
-        .then(extensionsRequest => {
-          expect(extensionsRequest.url).is.eq(ID5_EXTENSIONS_ENDPOINT)
-          expect(extensionsRequest.method).is.eq('GET')
-          extensionsRequest.respond(200, responseHeader, JSON.stringify({
-            lb: 'ex'
-          }))
-          return xhrServerMock.expectNextRequest();
-        })
-        .then(fetchRequest => {
-          let requestBody = JSON.parse(fetchRequest.requestBody);
-          expect(requestBody.partner).is.eq(ID5_TEST_PARTNER_ID);
-          expect(requestBody.o).is.eq('pbjs');
-          expect(requestBody.v).is.eq('$prebid.version$');
-          expect(requestBody.extensions).is.deep.eq({
-            lb: 'ex'
-          })
-          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
-          return submoduleResponse
-        })
+      // Trigger the fetch but we await on it later
+      const submoduleResponsePromise = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
+
+      const fetchRequest = await xhrServerMock.expectFetchRequest()
+      const requestBody = JSON.parse(fetchRequest.requestBody);
+      expect(requestBody.s).is.eq(ID5_STORED_SIGNATURE);
+
+      fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+      await submoduleResponsePromise;
     });
 
-    it('should call the ID5 server with extensions fetched with POST', function () {
-      let xhrServerMock = new XhrServerMock(server)
-      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, undefined);
-
-      return xhrServerMock.expectConfigRequest()
-        .then(configRequest => {
-          return xhrServerMock.respondWithConfigAndExpectNext(configRequest, {
-            fetchCall: {
-              url: ID5_ENDPOINT
-            },
-            extensionsCall: {
-              url: ID5_EXTENSIONS_ENDPOINT,
-              method: 'POST',
-              body: {
-                x: '1',
-                y: 2
-              }
-            }
-          });
-        })
-        .then(extensionsRequest => {
-          expect(extensionsRequest.url).is.eq(ID5_EXTENSIONS_ENDPOINT)
-          expect(extensionsRequest.method).is.eq('POST')
-          let requestBody = JSON.parse(extensionsRequest.requestBody)
-          expect(requestBody).is.deep.eq({
-            x: '1',
-            y: 2
-          })
-          extensionsRequest.respond(200, responseHeader, JSON.stringify({
-            lb: 'post',
-          }))
-          return xhrServerMock.expectNextRequest();
-        })
-        .then(fetchRequest => {
-          let requestBody = JSON.parse(fetchRequest.requestBody);
-          expect(requestBody.partner).is.eq(ID5_TEST_PARTNER_ID);
-          expect(requestBody.o).is.eq('pbjs');
-          expect(requestBody.v).is.eq('$prebid.version$');
-          expect(requestBody.extensions).is.deep.eq({
-            lb: 'post'
-          })
-          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
-          return submoduleResponse
-        })
-    });
-
-    it('should call the ID5 server with signature field from stored object', function () {
-      let xhrServerMock = new XhrServerMock(server)
-      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
-
-      return xhrServerMock.expectFetchRequest()
-        .then(fetchRequest => {
-          let requestBody = JSON.parse(fetchRequest.requestBody);
-          expect(requestBody.s).is.eq(ID5_STORED_SIGNATURE);
-          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
-          return submoduleResponse
-        })
-    });
-
-    it('should call the ID5 server with pd field when pd config is set', function () {
-      let xhrServerMock = new XhrServerMock(server)
+    it('should call the ID5 server with pd field when pd config is set', async function () {
+      const xhrServerMock = new XhrServerMock(server)
       const pubData = 'b50ca08271795a8e7e4012813f23d505193d75c0f2e2bb99baa63aa822f66ed3';
 
-      let id5Config = getId5FetchConfig();
+      const id5Config = getId5FetchConfig();
       id5Config.params.pd = pubData;
 
-      let submoduleResponse = callSubmoduleGetId(id5Config, undefined, ID5_STORED_OBJ);
+      // Trigger the fetch but we await on it later
+      const submoduleResponsePromise = callSubmoduleGetId(id5Config, undefined, undefined);
 
-      return xhrServerMock.expectFetchRequest()
-        .then(fetchRequest => {
-          let requestBody = JSON.parse(fetchRequest.requestBody);
-          expect(requestBody.pd).is.eq(pubData);
-          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
-          return submoduleResponse;
-        })
+      const fetchRequest = await xhrServerMock.expectFetchRequest();
+      const requestBody = JSON.parse(fetchRequest.requestBody);
+      expect(requestBody.pd).is.eq(pubData);
+
+      fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+      await submoduleResponsePromise;
     });
 
-    it('should call the ID5 server with no pd field when pd config is not set', function () {
-      let xhrServerMock = new XhrServerMock(server)
-      let id5Config = getId5FetchConfig();
+    it('should call the ID5 server with no pd field when pd config is not set', async function () {
+      const xhrServerMock = new XhrServerMock(server)
+      const id5Config = getId5FetchConfig();
       id5Config.params.pd = undefined;
 
-      let submoduleResponse = callSubmoduleGetId(id5Config, undefined, ID5_STORED_OBJ);
+      // Trigger the fetch but we await on it later
+      const submoduleResponsePromise = callSubmoduleGetId(id5Config, undefined, ID5_STORED_OBJ);
 
-      return xhrServerMock.expectFetchRequest()
-        .then(fetchRequest => {
-          let requestBody = JSON.parse(fetchRequest.requestBody);
-          expect(requestBody.pd).is.undefined;
-          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
-          return submoduleResponse;
-        })
+      const fetchRequest = await xhrServerMock.expectFetchRequest();
+      const requestBody = JSON.parse(fetchRequest.requestBody);
+      expect(requestBody.pd).is.undefined;
+
+      fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+      await submoduleResponsePromise;
     });
 
-    it('should call the ID5 server with nb=1 when no stored value exists and reset after', function () {
-      let xhrServerMock = new XhrServerMock(server)
+    it('should call the ID5 server with nb=1 when no stored value exists and reset after', async function () {
+      const xhrServerMock = new XhrServerMock(server)
       coreStorage.removeDataFromLocalStorage(ID5_NB_STORAGE_NAME);
 
-      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
+      // Trigger the fetch but we await on it later
+      const submoduleResponsePromise = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
 
-      return xhrServerMock.expectFetchRequest()
-        .then(fetchRequest => {
-          let requestBody = JSON.parse(fetchRequest.requestBody);
-          expect(requestBody.nbPage).is.eq(1);
-          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
-          return submoduleResponse
-        })
-        .then(() => {
-          expect(getNbFromCache(ID5_TEST_PARTNER_ID)).is.eq(0);
-        })
+      const fetchRequest = await xhrServerMock.expectFetchRequest();
+      const requestBody = JSON.parse(fetchRequest.requestBody);
+      expect(requestBody.nbPage).is.eq(1);
+
+      fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+      await submoduleResponsePromise;
+
+      expect(getNbFromCache(ID5_TEST_PARTNER_ID)).is.eq(0);
     });
 
-    it('should call the ID5 server with incremented nb when stored value exists and reset after', function () {
-      let xhrServerMock = new XhrServerMock(server)
+    it('should call the ID5 server with incremented nb when stored value exists and reset after', async function () {
+      const xhrServerMock = new XhrServerMock(server)
       storeNbInCache(ID5_TEST_PARTNER_ID, 1);
 
-      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
+      // Trigger the fetch but we await on it later
+      const submoduleResponsePromise = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
 
-      return xhrServerMock.expectFetchRequest()
-        .then(fetchRequest => {
-          let requestBody = JSON.parse(fetchRequest.requestBody);
-          expect(requestBody.nbPage).is.eq(2);
-          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
-          return submoduleResponse
-        })
-        .then(() => {
-          expect(getNbFromCache(ID5_TEST_PARTNER_ID)).is.eq(0);
-        })
+      const fetchRequest = await xhrServerMock.expectFetchRequest();
+      const requestBody = JSON.parse(fetchRequest.requestBody);
+      expect(requestBody.nbPage).is.eq(2);
+
+      fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+      await submoduleResponsePromise;
+
+      expect(getNbFromCache(ID5_TEST_PARTNER_ID)).is.eq(0);
     });
 
-    it('should call the ID5 server with ab_testing object when abTesting is turned on', function () {
-      let xhrServerMock = new XhrServerMock(server)
-      let id5Config = getId5FetchConfig();
+    it('should call the ID5 server with ab_testing object when abTesting is turned on', async function () {
+      const xhrServerMock = new XhrServerMock(server)
+      const id5Config = getId5FetchConfig();
       id5Config.params.abTesting = {enabled: true, controlGroupPct: 0.234}
 
-      let submoduleResponse = callSubmoduleGetId(id5Config, undefined, ID5_STORED_OBJ);
+      // Trigger the fetch but we await on it later
+      const submoduleResponsePromise = callSubmoduleGetId(id5Config, undefined, ID5_STORED_OBJ);
 
-      return xhrServerMock.expectFetchRequest()
-        .then(fetchRequest => {
-          let requestBody = JSON.parse(fetchRequest.requestBody);
-          expect(requestBody.ab_testing.enabled).is.eq(true);
-          expect(requestBody.ab_testing.control_group_pct).is.eq(0.234);
-          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
-          return submoduleResponse;
-        });
+      const fetchRequest = await xhrServerMock.expectFetchRequest();
+      const requestBody = JSON.parse(fetchRequest.requestBody);
+      expect(requestBody.ab_testing.enabled).is.eq(true);
+      expect(requestBody.ab_testing.control_group_pct).is.eq(0.234);
+
+      fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+      await submoduleResponsePromise;
     });
 
-    it('should call the ID5 server without ab_testing object when abTesting is turned off', function () {
-      let xhrServerMock = new XhrServerMock(server)
-      let id5Config = getId5FetchConfig();
+    it('should call the ID5 server without ab_testing object when abTesting is turned off', async function () {
+      const xhrServerMock = new XhrServerMock(server)
+      const id5Config = getId5FetchConfig();
       id5Config.params.abTesting = {enabled: false, controlGroupPct: 0.55}
 
-      let submoduleResponse = callSubmoduleGetId(id5Config, undefined, ID5_STORED_OBJ);
+      // Trigger the fetch but we await on it later
+      const submoduleResponsePromise = callSubmoduleGetId(id5Config, undefined, ID5_STORED_OBJ);
 
-      return xhrServerMock.expectFetchRequest()
-        .then(fetchRequest => {
-          let requestBody = JSON.parse(fetchRequest.requestBody);
-          expect(requestBody.ab_testing).is.undefined;
-          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
-          return submoduleResponse
-        });
+      const fetchRequest = await xhrServerMock.expectFetchRequest();
+      const requestBody = JSON.parse(fetchRequest.requestBody);
+      expect(requestBody.ab_testing).is.undefined;
+
+      fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+      await submoduleResponsePromise;
     });
 
-    it('should call the ID5 server without ab_testing when when abTesting is not set', function () {
-      let xhrServerMock = new XhrServerMock(server)
-      let id5Config = getId5FetchConfig();
+    it('should call the ID5 server without ab_testing when when abTesting is not set', async function () {
+      const xhrServerMock = new XhrServerMock(server)
+      const id5Config = getId5FetchConfig();
 
-      let submoduleResponse = callSubmoduleGetId(id5Config, undefined, ID5_STORED_OBJ);
+      // Trigger the fetch but we await on it later
+      const submoduleResponsePromise = callSubmoduleGetId(id5Config, undefined, ID5_STORED_OBJ);
 
-      return xhrServerMock.expectFetchRequest()
-        .then(fetchRequest => {
-          let requestBody = JSON.parse(fetchRequest.requestBody);
-          expect(requestBody.ab_testing).is.undefined;
-          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
-          return submoduleResponse
-        });
+      const fetchRequest = await xhrServerMock.expectFetchRequest();
+      const requestBody = JSON.parse(fetchRequest.requestBody);
+      expect(requestBody.ab_testing).is.undefined;
+
+      fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+      await submoduleResponsePromise;
     });
 
-    it('should store the privacy object from the ID5 server response', function () {
-      let xhrServerMock = new XhrServerMock(server)
-      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
+    it('should store the privacy object from the ID5 server response', async function () {
+      const xhrServerMock = new XhrServerMock(server)
+
+      // Trigger the fetch but we await on it later
+      const submoduleResponsePromise = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
 
       const privacy = {
         jurisdiction: 'gdpr',
         id5_consent: true
       };
 
-      return xhrServerMock.expectFetchRequest()
-        .then(request => {
-          let responseObject = utils.deepClone(ID5_JSON_RESPONSE);
-          responseObject.privacy = privacy;
-          request.respond(200, responseHeader, JSON.stringify(responseObject));
-          return submoduleResponse
-        })
-        .then(() => {
-          expect(getFromLocalStorage(ID5_PRIVACY_STORAGE_NAME)).is.eq(JSON.stringify(privacy));
-          coreStorage.removeDataFromLocalStorage(ID5_PRIVACY_STORAGE_NAME);
-        })
+      const fetchRequest = await xhrServerMock.expectFetchRequest();
+      const responseObject = utils.deepClone(ID5_JSON_RESPONSE);
+      responseObject.privacy = privacy;
+
+      fetchRequest.respond(200, responseHeader, JSON.stringify(responseObject));
+      await submoduleResponsePromise;
+
+      expect(getFromLocalStorage(ID5_PRIVACY_STORAGE_NAME)).is.eq(JSON.stringify(privacy));
+      coreStorage.removeDataFromLocalStorage(ID5_PRIVACY_STORAGE_NAME);
     });
 
-    it('should not store a privacy object if not part of ID5 server response', function () {
-      let xhrServerMock = new XhrServerMock(server)
+    it('should not store a privacy object if not part of ID5 server response', async function () {
+      const xhrServerMock = new XhrServerMock(server)
       coreStorage.removeDataFromLocalStorage(ID5_PRIVACY_STORAGE_NAME);
-      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
 
-      return xhrServerMock.expectFetchRequest()
-        .then(request => {
-          let responseObject = utils.deepClone(ID5_JSON_RESPONSE);
-          responseObject.privacy = undefined;
-          request.respond(200, responseHeader, JSON.stringify(responseObject));
-          return submoduleResponse
-        })
-        .then(() => {
-          expect(getFromLocalStorage(ID5_PRIVACY_STORAGE_NAME)).is.null;
-        });
+      // Trigger the fetch but we await on it later
+      const submoduleResponsePromise = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
+
+      const fetchRequest = await xhrServerMock.expectFetchRequest();
+      const responseObject = utils.deepClone(ID5_JSON_RESPONSE);
+      responseObject.privacy = undefined;
+
+      fetchRequest.respond(200, responseHeader, JSON.stringify(responseObject));
+      await submoduleResponsePromise;
+
+      expect(getFromLocalStorage(ID5_PRIVACY_STORAGE_NAME)).is.null;
     });
 
     describe('when legacy cookies are set', () => {
@@ -758,26 +744,23 @@ describe('ID5 ID System', function () {
     [
       [true, 1],
       [false, 0]
-    ].forEach(function ([isEnabled, expectedValue]) {
-      it(`should check localStorage availability and log in request. Available=${isEnabled}`, () => {
-        let xhrServerMock = new XhrServerMock(server)
-        let config = getId5FetchConfig();
-        let submoduleResponse = callSubmoduleGetId(config, undefined, undefined);
+    ].forEach(([isEnabled, expectedValue]) => {
+      it(`should check localStorage availability and log in request. Available=${isEnabled}`, async function() {
+        const xhrServerMock = new XhrServerMock(server)
         storage.localStorageIsEnabled.callsFake(() => isEnabled)
 
-        return xhrServerMock.expectFetchRequest()
-          .then(fetchRequest => {
-            let requestBody = JSON.parse(fetchRequest.requestBody);
-            expect(requestBody.localStorage).is.eq(expectedValue);
+        // Trigger the fetch but we await on it later
+        const submoduleResponsePromise = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
 
-            fetchRequest.respond(200, HEADERS_CONTENT_TYPE_JSON, JSON.stringify(ID5_JSON_RESPONSE));
-            return submoduleResponse
-          })
-          .then(submoduleResponse => {
-            expect(submoduleResponse).is.deep.equal(ID5_JSON_RESPONSE);
-          });
-      })
-    })
+        const fetchRequest = await xhrServerMock.expectFetchRequest();
+        const requestBody = JSON.parse(fetchRequest.requestBody);
+        expect(requestBody.localStorage).is.eq(expectedValue);
+
+        fetchRequest.respond(200, HEADERS_CONTENT_TYPE_JSON, JSON.stringify(ID5_JSON_RESPONSE));
+        const submoduleResponse = await submoduleResponsePromise;
+        expect(submoduleResponse).is.deep.equal(ID5_JSON_RESPONSE);
+      });
+    });
   });
 
   describe('Request Bids Hook', function () {
@@ -880,8 +863,8 @@ describe('ID5 ID System', function () {
     });
 
     it('should call ID5 servers with signature and incremented nb post auction if refresh needed', function () {
-      let xhrServerMock = new XhrServerMock(server)
-      let initialLocalStorageValue = JSON.stringify(ID5_STORED_OBJ);
+      const xhrServerMock = new XhrServerMock(server)
+      const initialLocalStorageValue = JSON.stringify(ID5_STORED_OBJ);
       storeInLocalStorage(ID5_STORAGE_NAME, initialLocalStorageValue, 1);
       storeInLocalStorage(`${ID5_STORAGE_NAME}_last`, expDaysStr(-1), 1);
 
@@ -901,7 +884,7 @@ describe('ID5 ID System', function () {
         events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
         return xhrServerMock.expectFetchRequest()
       }).then(request => {
-        let requestBody = JSON.parse(request.requestBody);
+        const requestBody = JSON.parse(request.requestBody);
         expect(requestBody.s).is.eq(ID5_STORED_SIGNATURE);
         expect(requestBody.nbPage).is.eq(2);
         expect(getNbFromCache(ID5_TEST_PARTNER_ID)).is.eq(2);
@@ -970,13 +953,13 @@ describe('ID5 ID System', function () {
         });
 
         it('should not set abTestingControlGroup extension when A/B testing is off', function () {
-          let decoded = id5IdSubmodule.decode(storedObject, testConfig);
+          const decoded = id5IdSubmodule.decode(storedObject, testConfig);
           expect(decoded).is.deep.equal(expectedDecodedObjectWithIdAbOff);
         });
 
         it('should set abTestingControlGroup to false when A/B testing is on but in normal group', function () {
           storedObject.ab_testing = {result: 'normal'};
-          let decoded = id5IdSubmodule.decode(storedObject, testConfig);
+          const decoded = id5IdSubmodule.decode(storedObject, testConfig);
           expect(decoded).is.deep.equal(expectedDecodedObjectWithIdAbOn);
         });
 
@@ -986,13 +969,13 @@ describe('ID5 ID System', function () {
           storedObject.ext = {
             'linkType': 0
           };
-          let decoded = id5IdSubmodule.decode(storedObject, testConfig);
+          const decoded = id5IdSubmodule.decode(storedObject, testConfig);
           expect(decoded).is.deep.equal(expectedDecodedObjectWithoutIdAbOn);
         });
 
         it('should log A/B testing errors', function () {
           storedObject.ab_testing = {result: 'error'};
-          let decoded = id5IdSubmodule.decode(storedObject, testConfig);
+          const decoded = id5IdSubmodule.decode(storedObject, testConfig);
           expect(decoded).is.deep.equal(expectedDecodedObjectWithIdAbOff);
           sinon.assert.calledOnce(logErrorSpy);
         });
