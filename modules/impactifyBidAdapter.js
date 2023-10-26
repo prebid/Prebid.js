@@ -83,12 +83,6 @@ const helpers = {
     }
   },
 
-  getEids(bidRequest) {
-    if (deepAccess(bidRequest, 'userIdAsEids')) {
-      return bidRequest.userIdAsEids || [];
-    }
-  },
-
   getFloor(bid) {
     const floorInfo = bid.getFloor({
       currency: DEFAULT_CURRENCY,
