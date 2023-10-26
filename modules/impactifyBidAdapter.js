@@ -5,7 +5,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { ajax } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { createEidsArray } from 'modules/userId/eids.js';
 
 const BIDDER_CODE = 'impactify';
 const BIDDER_ALIAS = ['imp'];
@@ -84,6 +83,12 @@ const helpers = {
     }
   },
 
+  getEids(bidRequest) {
+    if (deepAccess(bidRequest, 'userIdAsEids')) {
+      return bidRequest.userIdAsEids || [];
+    }
+  },
+
   getFloor(bid) {
     const floorInfo = bid.getFloor({
       currency: DEFAULT_CURRENCY,
@@ -134,8 +139,8 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
 
   // Set Eids
   let bidUserId = deepAccess(validBidRequests, '0.userIdAsEids');
-  if(bidUserId) {
-    let eids = createEidsArray(bidUserId);
+  if (bidUserId) {
+    let eids = helpers.getEids(validBidRequests);
     if (eids.length) {
       deepSetValue(request, 'user.ext.eids', eids);
     }
