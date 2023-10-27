@@ -131,8 +131,8 @@ function flush() {
     if ('adUnitDict' in initOptions) {
       data.adUnitDict = initOptions.adUnitDict;
     }
-    if ('invType' in initOptions) {
-      data.invType = initOptions.invType;
+    if ('customParam' in initOptions) {
+      data.customParam = initOptions.customParam;
     }
 
     const url = initOptions.url ? initOptions.url : DEFAULT_EVENT_URL
