@@ -56,6 +56,12 @@ const RemoveDuplicateSizes = (validBid) => {
   }
 };
 
+const ConfigureProtectedAudience = (validBid, protectedAudienceEnabled) => {
+  if (!protectedAudienceEnabled && validBid.ortb2Imp && validBid.ortb2Imp.ext) {
+    delete validBid.ortb2Imp.ext.ae;
+  }
+}
+
 const getRequests = (conf, validBidRequests, bidderRequest) => {
   const {bids, bidderRequestId, bidderCode, ...bidderRequestData} = bidderRequest;
   const invalidBidsCount = bidderRequest.bids.length - validBidRequests.length;
@@ -65,6 +71,7 @@ const getRequests = (conf, validBidRequests, bidderRequest) => {
     const currSiteId = validBid.params.siteId;
     addBidFloorInfo(validBid);
     RemoveDuplicateSizes(validBid);
+    ConfigureProtectedAudience(validBid, conf.protectedAudienceEnabled);
     requestBySiteId[currSiteId] = requestBySiteId[currSiteId] || [];
     requestBySiteId[currSiteId].push(validBid);
   });
@@ -206,10 +213,14 @@ export const adapter = {
       endPoint = deepAccess(validBidRequests[0], 'params.endpoint') || endPoint;
     }
 
-    const url = endPoint;
-    const method = 'POST';
-    const options = {contentType: 'application/json'};
-    return getRequests({url, method, options}, validBidRequests, bidderRequest);
+    return getRequests({
+      'url': endPoint,
+      'method': 'POST',
+      'options': {
+        'contentType': 'application/json'
+      },
+      'protectedAudienceEnabled': bidderRequest.fledgeEnabled
+    }, validBidRequests, bidderRequest);
   },
 
   interpretResponse: function (serverResponse, originalRequest) {

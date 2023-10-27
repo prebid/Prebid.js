@@ -683,6 +683,227 @@ describe('UnrulyAdapter', function () {
       let result = adapter.buildRequests(mockBidRequests.bids, mockBidRequests);
       expect(result[0].data).to.deep.equal(expectedResult);
     });
+    describe('Protected Audience Support', function() {
+      it('should return an array with 2 items and enabled protected audience', function () {
+        mockBidRequests = {
+          'bidderCode': 'unruly',
+          'fledgeEnabled': true,
+          'bids': [
+            {
+              'bidder': 'unruly',
+              'params': {
+                'siteId': 233261,
+              },
+              'mediaTypes': {
+                'video': {
+                  'context': 'outstream',
+                  'mimes': [
+                    'video/mp4'
+                  ],
+                  'playerSize': [
+                    [
+                      640,
+                      480
+                    ]
+                  ]
+                }
+              },
+              'adUnitCode': 'video2',
+              'transactionId': 'a89619e3-137d-4cc5-9ed4-58a0b2a0bbc2',
+              'sizes': [
+                [
+                  640,
+                  480
+                ]
+              ],
+              'bidId': '27a3ee1626a5c7',
+              'bidderRequestId': '12e00d17dff07b',
+              'ortb2Imp': {
+                'ext': {
+                  'ae': 1
+                }
+              }
+            },
+            {
+              'bidder': 'unruly',
+              'params': {
+                'siteId': 2234554,
+              },
+              'mediaTypes': {
+                'video': {
+                  'context': 'outstream',
+                  'mimes': [
+                    'video/mp4'
+                  ],
+                  'playerSize': [
+                    [
+                      640,
+                      480
+                    ]
+                  ]
+                }
+              },
+              'adUnitCode': 'video2',
+              'transactionId': 'a89619e3-137d-4cc5-9ed4-58a0b2a0bbc2',
+              'sizes': [
+                [
+                  640,
+                  480
+                ]
+              ],
+              'bidId': '27a3ee1626a5c7',
+              'bidderRequestId': '12e00d17dff07b',
+              'ortb2Imp': {
+                'ext': {
+                  'ae': 1
+                }
+              }
+            }
+          ]
+        };
+
+        let result = adapter.buildRequests(mockBidRequests.bids, mockBidRequests);
+        expect(typeof result).to.equal('object');
+        expect(result.length).to.equal(2);
+        expect(result[0].data.bidderRequest.bids.length).to.equal(1);
+        expect(result[1].data.bidderRequest.bids.length).to.equal(1);
+        expect(result[0].data.bidderRequest.bids[0].ortb2Imp.ext.ae).to.equal(1);
+        expect(result[1].data.bidderRequest.bids[0].ortb2Imp.ext.ae).to.equal(1);
+      });
+      it('should return an array with 2 items and enabled protected audience on only on unit', function () {
+        mockBidRequests = {
+          'bidderCode': 'unruly',
+          'fledgeEnabled': true,
+          'bids': [
+            {
+              'bidder': 'unruly',
+              'params': {
+                'siteId': 233261,
+              },
+              'mediaTypes': {
+                'video': {
+                  'context': 'outstream',
+                  'mimes': [
+                    'video/mp4'
+                  ],
+                  'playerSize': [
+                    [
+                      640,
+                      480
+                    ]
+                  ]
+                }
+              },
+              'adUnitCode': 'video2',
+              'transactionId': 'a89619e3-137d-4cc5-9ed4-58a0b2a0bbc2',
+              'sizes': [
+                [
+                  640,
+                  480
+                ]
+              ],
+              'bidId': '27a3ee1626a5c7',
+              'bidderRequestId': '12e00d17dff07b',
+              'ortb2Imp': {
+                'ext': {
+                  'ae': 1
+                }
+              }
+            },
+            {
+              'bidder': 'unruly',
+              'params': {
+                'siteId': 2234554,
+              },
+              'mediaTypes': {
+                'video': {
+                  'context': 'outstream',
+                  'mimes': [
+                    'video/mp4'
+                  ],
+                  'playerSize': [
+                    [
+                      640,
+                      480
+                    ]
+                  ]
+                }
+              },
+              'adUnitCode': 'video2',
+              'transactionId': 'a89619e3-137d-4cc5-9ed4-58a0b2a0bbc2',
+              'sizes': [
+                [
+                  640,
+                  480
+                ]
+              ],
+              'bidId': '27a3ee1626a5c7',
+              'bidderRequestId': '12e00d17dff07b',
+              'ortb2Imp': {
+                'ext': {}
+              }
+            }
+          ]
+        };
+
+        let result = adapter.buildRequests(mockBidRequests.bids, mockBidRequests);
+        expect(typeof result).to.equal('object');
+        expect(result.length).to.equal(2);
+        expect(result[0].data.bidderRequest.bids.length).to.equal(1);
+        expect(result[1].data.bidderRequest.bids.length).to.equal(1);
+        expect(result[0].data.bidderRequest.bids[0].ortb2Imp.ext.ae).to.equal(1);
+        expect(result[1].data.bidderRequest.bids[0].ortb2Imp.ext.ae).to.be.undefined;
+      });
+      it('disables configured protected audience when fledge is not availble', function () {
+        mockBidRequests = {
+          'bidderCode': 'unruly',
+          'fledgeEnabled': false,
+          'bids': [
+            {
+              'bidder': 'unruly',
+              'params': {
+                'siteId': 233261,
+              },
+              'mediaTypes': {
+                'video': {
+                  'context': 'outstream',
+                  'mimes': [
+                    'video/mp4'
+                  ],
+                  'playerSize': [
+                    [
+                      640,
+                      480
+                    ]
+                  ]
+                }
+              },
+              'adUnitCode': 'video2',
+              'transactionId': 'a89619e3-137d-4cc5-9ed4-58a0b2a0bbc2',
+              'sizes': [
+                [
+                  640,
+                  480
+                ]
+              ],
+              'bidId': '27a3ee1626a5c7',
+              'bidderRequestId': '12e00d17dff07b',
+              'ortb2Imp': {
+                'ext': {
+                  'ae': 1
+                }
+              }
+            }
+          ]
+        };
+
+        let result = adapter.buildRequests(mockBidRequests.bids, mockBidRequests);
+        expect(typeof result).to.equal('object');
+        expect(result.length).to.equal(1);
+        expect(result[0].data.bidderRequest.bids.length).to.equal(1);
+        expect(result[0].data.bidderRequest.bids[0].ortb2Imp.ext.ae).to.be.undefined;
+      });
+    });
   });
 
   describe('interpretResponse', function () {
