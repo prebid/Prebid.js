@@ -45,7 +45,8 @@
     "AUCTION_DEBUG": "auctionDebug",
     "BID_VIEWABLE": "bidViewable",
     "STALE_RENDER": "staleRender",
-    "BILLABLE_EVENT": "billableEvent"
+    "BILLABLE_EVENT": "billableEvent",
+    "FLOOR_VALUES_RECEIVED": "floorValuesReceived"
   },
   "AD_RENDER_FAILED_REASON": {
     "PREVENT_WRITING_ON_MAIN_DOCUMENT": "preventWritingOnMainDocument",
@@ -171,10 +172,10 @@
     "type"
   ],
   "FLOOR_VALUES": {
-	"NO_DATA": "noData",
-	"AD_UNIT": "adUnit",
-	"SET_CONFIG": "setConfig",
-	"FETCH": "fetch",
-	"SUCCESS": "success"
+    "NO_DATA": "noData",
+    "AD_UNIT": "adUnit",
+    "SET_CONFIG": "setConfig",
+    "FETCH": "fetch",
+    "SUCCESS": "success"
   }
 }

@@ -25,6 +25,7 @@ import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_TRANSMIT_TID} from '../../src/activities/activities.js';
 import {currencyCompare} from '../../libraries/currencyUtils/currency.js';
 import {minimum} from '../../src/utils/reducers.js';
+import * as events from '../../src/events.js'
 
 const DEFAULT_S2S_TTL = 60;
 const DEFAULT_S2S_CURRENCY = 'USD';
@@ -157,6 +158,7 @@ const PBS_CONVERTER = ortbConverter({
         if (min != null) {
           Object.assign(imp, min);
         }
+        events.emit(CONSTANTS.EVENTS.FLOOR_VALUES_RECEIVED, imp);
       }
     },
     [REQUEST]: {
