@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, storage } from 'modules/impactifyBidAdapter.js';
+import { spec, STORAGE, STORAGE_KEY } from 'modules/impactifyBidAdapter.js';
 import * as utils from 'src/utils.js';
 import sinon from 'sinon';
 
@@ -20,6 +20,10 @@ var gdprData = {
 };
 
 describe('ImpactifyAdapter', function () {
+  let getLocalStorageStub;
+  let localStorageIsEnabledStub;
+  let sandbox;
+
   beforeEach(function () {
     $$PREBID_GLOBAL$$.bidderSettings = {
       impactify: {
@@ -27,6 +31,15 @@ describe('ImpactifyAdapter', function () {
       }
     };
     sinon.stub(document.body, 'appendChild');
+    sandbox = sinon.sandbox.create();
+    getLocalStorageStub = sandbox.stub(STORAGE, 'getDataFromLocalStorage');
+    localStorageIsEnabledStub = sandbox.stub(STORAGE, 'localStorageIsEnabled');
+  });
+
+  afterEach(function() {
+    $$PREBID_GLOBAL$$.bidderSettings = {};
+    document.body.appendChild.restore();
+    sandbox.restore();
   });
 
   describe('isBidRequestValid', function () {
@@ -49,6 +62,55 @@ describe('ImpactifyAdapter', function () {
         }
       }
     ];
+
+    let videoBidRequests = [
+      {
+        bidder: 'impactify',
+        params: {
+          appId: '1',
+          format: 'screen',
+          style: 'inline'
+        },
+        mediaTypes: {
+          video: {
+            context: 'instream'
+          }
+        },
+        adUnitCode: 'adunit-code',
+        sizes: [[DEFAULT_VIDEO_WIDTH, DEFAULT_VIDEO_HEIGHT]],
+        bidId: '123456789',
+        bidderRequestId: '987654321',
+        auctionId: '19ab94a9-b0d7-4ed7-9f80-ad0c033cf1b1',
+        transactionId: 'f7b2c372-7a7b-11eb-9439-0242ac130002',
+        userId: {
+          pubcid: '87a0327b-851c-4bb3-a925-0c7be94548f5'
+        },
+        userIdAsEids: [
+          {
+            source: 'pubcid.org',
+            uids: [
+              {
+                id: '87a0327b-851c-4bb3-a925-0c7be94548f5',
+                atype: 1
+              }
+            ]
+          }
+        ]
+      }
+    ];
+    let videoBidderRequest = {
+      bidderRequestId: '98845765110',
+      auctionId: '165410516454',
+      bidderCode: 'impactify',
+      bids: [
+        {
+          ...videoBidRequests[0]
+        }
+      ],
+      refererInfo: {
+        referer: 'https://impactify.io'
+      }
+    };
 
     it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(validBids[0])).to.equal(true);
@@ -168,24 +230,8 @@ describe('ImpactifyAdapter', function () {
       bid.params.style = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
-
-    it('should pass bidfloor', function () {
-      videoBidRequests[0].getFloor = function() {
-        return {
-          currency: 'USD',
-          floor: 1.23,
-        }
-      }
-
-      const res = spec.buildRequests(videoBidRequests, videoBidderRequest)
-      const resData = JSON.parse(res.data)
-      expect(resData.imp[0].bidfloor).to.equal(1.23)
-    });
   });
   describe('buildRequests', function () {
-    let getLocalStorageStub;
-    let localStorageIsEnabledStub;
-
     let videoBidRequests = [
       {
         bidder: 'impactify',
@@ -234,15 +280,23 @@ describe('ImpactifyAdapter', function () {
         referer: 'https://impactify.io'
       }
     };
-    afterEach(function() {
-      localStorageIsEnabledStub.restore();
-      getLocalStorageStub.restore();
+
+    it('should pass bidfloor', function () {
+      videoBidRequests[0].getFloor = function() {
+        return {
+          currency: 'USD',
+          floor: 1.23,
+        }
+      }
+
+      const res = spec.buildRequests(videoBidRequests, videoBidderRequest);
+      const resData = JSON.parse(res.data)
+      expect(resData.imp[0].bidfloor).to.equal(1.23)
     });
+
     it('sends video bid request to ENDPOINT via POST', function () {
-      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
       localStorageIsEnabledStub.returns(true);
 
-      getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       getLocalStorageStub.returns('testValue');
 
       const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
@@ -253,23 +307,19 @@ describe('ImpactifyAdapter', function () {
     });
 
     it('should set header value from localstorage correctly', function () {
-      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
       localStorageIsEnabledStub.returns(true);
-
-      getLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       getLocalStorageStub.returns('testValue');
-      const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
 
+      const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
+      expect(request.options.customHeaders).to.be.an('object');
       expect(request.options.customHeaders['x-impact']).to.equal('testValue');
     });
 
     it('should set header value to empty if localstorage is not enabled', function () {
-      localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
       localStorageIsEnabledStub.returns(false);
 
       const request = spec.buildRequests(videoBidRequests, videoBidderRequest);
-
-      expect(request.options.customHeaders['x-impact']).to.equal('');
+      expect(request.options.customHeaders).to.be.undefined;
     });
   });
   describe('interpretResponse', function () {

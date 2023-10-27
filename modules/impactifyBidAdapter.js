@@ -17,8 +17,8 @@ const AUCTION_URI = '/bidder';
 const COOKIE_SYNC_URI = '/static/cookie_sync.html';
 const GVL_ID = 606;
 const GET_CONFIG = config.getConfig;
-const STORAGE = getStorageManager({gvlid: GVL_ID, bidderCode: BIDDER_CODE});
-const STORAGE_KEY = '_im_str'
+export const STORAGE = getStorageManager({gvlid: GVL_ID, bidderCode: BIDDER_CODE});
+export const STORAGE_KEY = '_im_str'
 
 /**
  * Helpers object
