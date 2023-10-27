@@ -217,7 +217,7 @@ const popInAdSize = [
  * @returns {string} eg: "widthxheight"
  */
 function getScreenSize() {
-  return [window.screen.width, window.screen.height].join('x');
+  return utils.parseSizesInput([window.screen.width, window.screen.height]);
 }
 
 /**
