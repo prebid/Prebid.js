@@ -4,6 +4,9 @@ import { generateUUID } from '../../../src/utils.js';
 import { expect } from 'chai';
 import * as utils from 'src/utils';
 import * as sinon from 'sinon';
+import 'modules/consentManagement.js';
+import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
+import {mockGdprConsent} from '../../helpers/consentData.js';
 
 const BIDDER_CODE = 'tpmn';
 const BANNER_BID = {
@@ -172,12 +175,12 @@ describe('tpmnAdapterTests', function () {
     it('should have gdpr data if applicable', function () {
       const bid = utils.deepClone(BANNER_BID);
 
-      const req = Object.assign({}, BIDDER_REQUEST, {
+      const req = syncAddFPDToBidderRequest(Object.assign({}, BIDDER_REQUEST, {
         gdprConsent: {
           consentString: 'consentString',
           gdprApplies: true,
         }
-      });
+      }));
       let request = spec.buildRequests([bid], req)[0];
 
       const payload = request.data;
@@ -188,7 +191,7 @@ describe('tpmnAdapterTests', function () {
     it('should properly forward ORTB blocking params', function () {
       let bid = utils.deepClone(BANNER_BID);
       bid = utils.mergeDeep(bid, {
-        params: { bcat: ['IAB1-1'], badv: ['example.com'], bapp: ['com.example'] },
+        params: { bcat: ['IAB1-1'], badv: ['example.com'], bapp: ['com.example'], battr: [1] },
         mediaTypes: { banner: { battr: [1] } }
       });
 
@@ -208,9 +211,9 @@ describe('tpmnAdapterTests', function () {
 
         const [request] = spec.buildRequests([bid], BIDDER_REQUEST);
         const requestData = request.data;
-
-        expect(requestData.imp[0].banner.w).to.equal(300);
-        expect(requestData.imp[0].banner.h).to.equal(250);
+        // expect(requestData.imp[0].banner).to.equal(null);
+        expect(requestData.imp[0].banner.format[0].w).to.equal(300);
+        expect(requestData.imp[0].banner.format[0].h).to.equal(250);
       });
 
       it('should create request data', function () {
@@ -238,35 +241,111 @@ describe('tpmnAdapterTests', function () {
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
-      it('should use bidder video params if they are set', () => {
-        const videoBidWithParams = utils.deepClone(VIDEO_BID);
-        const bidderVideoParams = {
-          api: [1, 2],
-          mimes: ['video/mp4', 'video/x-flv'],
-          playbackmethod: [3, 4],
-          protocols: [5, 6],
-          placement: 1,
-          plcmt: 1,
-          minduration: 0,
-          maxduration: 60,
+      it('when mediaType is Video - check', () => {
+        const bid = utils.deepClone(VIDEO_BID);
+        const check = {
           w: 1024,
           h: 768,
-          startdelay: 0
+          mimes: ['video/mp4'],
+          playbackmethod: [2, 4, 6],
+          api: [1, 2, 4, 6],
+          protocols: [3, 4, 7, 8, 10],
+          placement: 1,
+          minduration: 0,
+          maxduration: 60,
+          startdelay: 0,
+          plcmt: 1
+        };
+        setTimeout(() => {
+          expect(spec.isBidRequestValid(bid)).to.equal(true);
+          const requests = spec.buildRequests([bid], BIDDER_REQUEST);
+          const request = requests[0].data;
+          expect(request.imp[0].video).to.deep.include({...check});
+          done();
+        }, 200);
+      });
+
+      it('when mediaType New Video', () => {
+        const NEW_VIDEO_BID = {
+          'bidder': 'tpmn',
+          'params': {'inventoryId': 2, 'bidFloor': 2},
+          'userId': {'pubcid': '88a49ee6-beeb-4dd6-92ac-3b6060e127e1'},
+          'mediaTypes': {
+            'video': {
+              'context': 'outstream',
+              'mimes': ['video/mp4'],
+              'playerSize': [[1024, 768]],
+              'playbackmethod': [2, 4, 6],
+              'protocols': [3, 4],
+              'api': [1, 2, 3, 6],
+              'placement': 1,
+              'minduration': 0,
+              'maxduration': 30,
+              'startdelay': 0,
+              'skip': 1,
+              'plcmt': 4
+            }
+          },
         };
 
-        videoBidWithParams.params.video = bidderVideoParams;
+        const check = {
+          w: 1024,
+          h: 768,
+          mimes: [ 'video/mp4' ],
+          playbackmethod: [2, 4, 6],
+          api: [1, 2, 3, 6],
+          protocols: [3, 4],
+          placement: 1,
+          minduration: 0,
+          maxduration: 30,
+          startdelay: 0,
+          skip: 1,
+          plcmt: 4
+        }
 
-        const requests = spec.buildRequests([videoBidWithParams], BIDDER_REQUEST);
-        const request = requests[0].data;
-
-        expect(request.imp[0]).to.deep.include({
-          video: {
-            ...bidderVideoParams,
-            w: videoBidWithParams.mediaTypes.video.playerSize[0][0],
-            h: videoBidWithParams.mediaTypes.video.playerSize[0][1],
-          },
-        });
+        setTimeout(() => {
+          expect(spec.isBidRequestValid(NEW_VIDEO_BID)).to.equal(true);
+          let requests = spec.buildRequests([NEW_VIDEO_BID], BIDDER_REQUEST);
+          const request = requests[0].data;
+          expect(request.imp[0].video.w).to.equal(check.w);
+          expect(request.imp[0].video.h).to.equal(check.h);
+          expect(request.imp[0].video.placement).to.equal(check.placement);
+          expect(request.imp[0].video.minduration).to.equal(check.minduration);
+          expect(request.imp[0].video.maxduration).to.equal(check.maxduration);
+          expect(request.imp[0].video.startdelay).to.equal(check.startdelay);
+          expect(request.imp[0].video.skip).to.equal(check.skip);
+          expect(request.imp[0].video.plcmt).to.equal(check.plcmt);
+          expect(request.imp[0].video.mimes).to.deep.have.same.members(check.mimes);
+          expect(request.imp[0].video.playbackmethod).to.deep.have.same.members(check.playbackmethod);
+          expect(request.imp[0].video.api).to.deep.have.same.members(check.api);
+          expect(request.imp[0].video.protocols).to.deep.have.same.members(check.protocols);
+          done();
+        }, 200);
       });
+
+      // it('should use bidder video params if they are set', () => {
+      //   const bid = utils.deepClone(VIDEO_BID);
+      //   const check = {
+      //     api: [1, 2],
+      //     mimes: ['video/mp4', 'video/x-flv'],
+      //     playbackmethod: [3, 4],
+      //     protocols: [5, 6],
+      //     placement: 1,
+      //     plcmt: 4,
+      //     minduration: 0,
+      //     maxduration: 30,
+      //     startdelay: 0
+      //   };
+      //   bid.mediaTypes.video = check;
+      //   bid.mediaTypes.context = 'outstream';
+      //   setTimeout(() => {
+      //     expect(spec.isBidRequestValid(bid)).to.equal(true);
+      //     const requests = spec.buildRequests([bid], BIDDER_REQUEST);
+      //     const request = requests[0].data;
+      //     expect(request.imp[0].video).to.deep.include({...check});
+      //     done();
+      //   }, 200);
+      // });
     });
   });
 

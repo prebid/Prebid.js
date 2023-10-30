@@ -14,25 +14,7 @@ const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 // const BIDDER_ENDPOINT_URL = 'http://localhost:8081/ortb/pbjs_bidder';
 const BIDDER_ENDPOINT_URL = 'https://gat.tpmn.io/ortb/pbjs_bidder';
 const IFRAMESYNC = 'https://gat.tpmn.io/sync/iframe';
-const VIDEO_ORTB_PARAMS = [
-  'mimes',
-  'minduration',
-  'maxduration',
-  'placement',
-  'protocols',
-  'startdelay',
-  'skip',
-  'skipafter',
-  'minbitrate',
-  'maxbitrate',
-  'delivery',
-  'playbackmethod',
-  'api',
-  'linearity',
-  'battr',
-  'plcmt'
-];
-const BANNER_ORTB_PARAMS = [
+const COMMON_PARAMS = [
   'battr'
 ];
 
@@ -80,18 +62,22 @@ function isValidVideoRequest(bid) {
 }
 
 function buildRequests(validBidRequests, bidderRequest) {
-  if (validBidRequests.length === 0 || !bidderRequest) return [];
-  let bannerBids = validBidRequests.filter(bid => utils.deepAccess(bid, 'mediaTypes.banner'));
-  let videoBids = validBidRequests.filter(bid => utils.deepAccess(bid, 'mediaTypes.video'));
   let requests = [];
+  try {
+    if (validBidRequests.length === 0 || !bidderRequest) return [];
+    let bannerBids = validBidRequests.filter(bid => utils.deepAccess(bid, 'mediaTypes.banner'));
+    let videoBids = validBidRequests.filter(bid => utils.deepAccess(bid, 'mediaTypes.video'));
 
-  bannerBids.forEach(bid => {
-    requests.push(createRequest([bid], bidderRequest, BANNER));
-  });
+    bannerBids.forEach(bid => {
+      requests.push(createRequest([bid], bidderRequest, BANNER));
+    });
 
-  videoBids.forEach(bid => {
-    requests.push(createRequest([bid], bidderRequest, VIDEO));
-  });
+    videoBids.forEach(bid => {
+      requests.push(createRequest([bid], bidderRequest, VIDEO));
+    });
+  } catch (err) {
+    utils.logWarn('buildRequests', err);
+  }
 
   return requests;
 }
@@ -100,19 +86,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   const rtbData = CONVERTER.toORTB({ bidRequests, bidderRequest, context: { mediaType } })
 
   const bid = bidRequests.find((b) => b.params.inventoryId)
-  // console.log('createRequest : ', mediaType, bid);
 
-  if (!rtbData.site) rtbData.site = {}
-  rtbData.site = createSite(bidderRequest.refererInfo)
-
-  if (bidderRequest.gdprConsent) {
-    if (!rtbData.user) rtbData.user = {};
-    if (!rtbData.user.ext) rtbData.user.ext = {};
-    if (!rtbData.regs) rtbData.regs = {};
-    if (!rtbData.regs.ext) rtbData.regs.ext = {};
-    rtbData.user.ext.consent = bidderRequest.gdprConsent.consentString;
-    rtbData.regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
-  }
   if (bid.params.inventoryId) rtbData.ext = {};
   if (bid.params.inventoryId) rtbData.ext.inventoryId = bid.params.inventoryId
 
@@ -145,7 +119,7 @@ function interpretResponse(response, request) {
 
 registerBidder(spec);
 
-const CONVERTER = ortbConverter({
+export const CONVERTER = ortbConverter({
   context: {
     netRevenue: true,
     ttl: DEFAULT_BID_TTL,
@@ -153,16 +127,16 @@ const CONVERTER = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     let imp = buildImp(bidRequest, context);
-    imp.secure = Number(window.location.protocol === 'https:');
     if (!imp.bidfloor && bidRequest.params.bidFloor) {
       imp.bidfloor = bidRequest.params.bidFloor;
     }
-    if (bidRequest.mediaTypes[VIDEO]) {
-      imp = buildVideoImp(bidRequest, imp);
-    } else if (bidRequest.mediaTypes[BANNER]) {
-      imp = buildBannerImp(bidRequest, imp);
-    }
-
+    [VIDEO, BANNER].forEach(namespace => {
+      COMMON_PARAMS.forEach(param => {
+        if (bidRequest.params.hasOwnProperty(param)) {
+          utils.deepSetValue(imp, `${namespace}.${param}`, bidRequest.params[param])
+        }
+      })
+    })
     return imp;
   },
   bidResponse(buildBidResponse, bid, context) {
@@ -183,6 +157,18 @@ const CONVERTER = ortbConverter({
       }
     }
     return bidResponse;
+  },
+  overrides: {
+    imp: {
+      video(orig, imp, bidRequest, context) {
+        let videoParams = bidRequest.mediaTypes[VIDEO];
+        if (videoParams) {
+          videoParams = Object.assign({}, videoParams, bidRequest.params.video);
+          bidRequest = {...bidRequest, mediaTypes: {[VIDEO]: videoParams}}
+        }
+        orig(imp, bidRequest, context);
+      },
+    },
   }
 });
 
@@ -218,81 +204,6 @@ function outstreamRender(bid, doc) {
 
 function handleOutstreamRendererEvents(bid, id, eventName) {
   bid.renderer.handleVideoEvent({ id, eventName });
-}
-
-/**
- * Creates site description object
- */
-function createSite(refInfo) {
-  let url = utils.parseUrl(refInfo.page || '');
-  let site = {
-    'domain': url.hostname,
-    'page': url.protocol + '://' + url.hostname + url.pathname
-  };
-
-  if (refInfo.ref) {
-    site.ref = refInfo.ref
-  }
-  let keywords = document.getElementsByTagName('meta')['keywords'];
-  if (keywords && keywords.content) {
-    site.keywords = keywords.content;
-  }
-  return site;
-}
-
-function buildVideoImp(bidRequest, imp) {
-  const videoAdUnitParams = utils.deepAccess(bidRequest, `mediaTypes.${VIDEO}`, {});
-  const videoBidderParams = utils.deepAccess(bidRequest, `params.${VIDEO}`, {});
-
-  const videoParams = { ...videoAdUnitParams, ...videoBidderParams };
-
-  const videoSizes = (videoAdUnitParams && videoAdUnitParams.playerSize) || [];
-
-  if (videoSizes && videoSizes.length > 0) {
-    utils.deepSetValue(imp, 'video.w', videoSizes[0][0]);
-    utils.deepSetValue(imp, 'video.h', videoSizes[0][1]);
-  }
-
-  VIDEO_ORTB_PARAMS.forEach((param) => {
-    if (videoParams.hasOwnProperty(param)) {
-      utils.deepSetValue(imp, `video.${param}`, videoParams[param]);
-    }
-  });
-
-  if (imp.video && videoParams?.context === 'instream') {
-    imp.video.placement = imp.video.placement || 1;
-    imp.video.plcmt = imp.video.plcmt || 1;
-    imp.video.playbackmethod = imp.video.playbackmethod || [1];
-  }
-  if (imp.video && videoParams?.context === 'outstream') {
-    imp.video.placement = imp.video.placement || 4;
-    imp.video.plcmt = imp.video.plcmt || 4;
-    imp.video.playbackmethod = imp.video.playbackmethod || [2];
-  }
-
-  return { ...imp };
-}
-
-function buildBannerImp(bidRequest, imp) {
-  const bannerAdUnitParams = utils.deepAccess(bidRequest, `mediaTypes.${BANNER}`, {});
-  const bannerBidderParams = utils.deepAccess(bidRequest, `params.${BANNER}`, {});
-
-  const bannerParams = { ...bannerAdUnitParams, ...bannerBidderParams };
-
-  let sizes = bidRequest.mediaTypes.banner.sizes;
-
-  if (sizes) {
-    utils.deepSetValue(imp, 'banner.w', sizes[0][0]);
-    utils.deepSetValue(imp, 'banner.h', sizes[0][1]);
-  }
-
-  BANNER_ORTB_PARAMS.forEach((param) => {
-    if (bannerParams.hasOwnProperty(param)) {
-      utils.deepSetValue(imp, `banner.${param}`, bannerParams[param]);
-    }
-  });
-
-  return { ...imp };
 }
 
 function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
