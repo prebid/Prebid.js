@@ -382,6 +382,15 @@ export const spec = {
         requestParams.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
       }
 
+      // Add content object
+      if (typeof config.getConfig('content') === 'object') {
+        try {
+          requestParams._fw_prebid_content = JSON.stringify(config.getConfig('content'));
+        } catch (error) {
+          logWarn('PREBID - ' + BIDDER_CODE + ': Unable to stringify the content object: ' + error);
+        }
+      }
+
       // Add schain object
       var schain = currentBidRequest.schain;
       if (schain) {
