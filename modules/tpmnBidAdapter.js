@@ -119,7 +119,7 @@ function interpretResponse(response, request) {
 
 registerBidder(spec);
 
-export const CONVERTER = ortbConverter({
+const CONVERTER = ortbConverter({
   context: {
     netRevenue: true,
     ttl: DEFAULT_BID_TTL,

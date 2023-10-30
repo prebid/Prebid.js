@@ -241,7 +241,7 @@ describe('tpmnAdapterTests', function () {
         expect(spec.isBidRequestValid(bid)).to.equal(false);
       });
 
-      it('when mediaType is Video - check', () => {
+      it('when mediaType is Video - check', (done) => {
         const bid = utils.deepClone(VIDEO_BID);
         const check = {
           w: 1024,
@@ -265,7 +265,7 @@ describe('tpmnAdapterTests', function () {
         }, 200);
       });
 
-      it('when mediaType New Video', () => {
+      it('when mediaType New Video', (done) => {
         const NEW_VIDEO_BID = {
           'bidder': 'tpmn',
           'params': {'inventoryId': 2, 'bidFloor': 2},
