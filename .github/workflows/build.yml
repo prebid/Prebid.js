@@ -25,6 +25,14 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-npm-
 
+    - name: Cache gulp-cli
+      uses: actions/cache@v3
+      with:
+        path: ~/.npm-global
+        key: ${{ runner.os }}-gulp-cli
+        restore-keys: |
+          ${{ runner.os }}-gulp-cli
+
     - name: Install npm dependencies
       run: npm ci
       
