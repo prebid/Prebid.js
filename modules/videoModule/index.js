@@ -1,7 +1,7 @@
 import { config } from '../../src/config.js';
 import { find } from '../../src/polyfill.js';
 import * as events from '../../src/events.js';
-import { mergeDeep, logWarn } from '../../src/utils.js';
+import {mergeDeep, logWarn, logError} from '../../src/utils.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
 import CONSTANTS from '../../src/constants.json';
 import {
@@ -125,12 +125,13 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   }
 
   function getDivId(adUnit) {
-    const videoConfig = adUnit.video;
-    if (!adUnit.mediaTypes.video || !videoConfig) {
-      return;
+    if (adUnit.mediaTypes?.video != null && adUnit.video != null) {
+      if (!videoCore.hasProviderFor(adUnit.video.divId)) {
+        logError(`Video player div ID '${adUnit.video.divId}' for ad unit '${adUnit.code}' does not match any registered player`)
+      } else {
+        return adUnit.video.divId
+      }
     }
-
-    return videoConfig.divId;
   }
 
   function enrichAdUnit(adUnit, videoDivId) {
