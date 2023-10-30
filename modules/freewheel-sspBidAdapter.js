@@ -4,6 +4,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'freewheel-ssp';
+const GVL_ID = 285;
 
 const PROTOCOL = getProtocol();
 const FREEWHEEL_ADSSETUP = PROTOCOL + '://ads.stickyadstv.com/www/delivery/swfIndex.php';
@@ -314,6 +315,7 @@ var getOutstreamScript = function(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVL_ID,
   supportedMediaTypes: [BANNER, VIDEO],
   aliases: ['stickyadstv', 'freewheelssp'], //  aliases for freewheel-ssp
   /**
