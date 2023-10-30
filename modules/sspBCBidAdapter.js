@@ -506,7 +506,7 @@ const mapImpression = slot => {
 }
 
 const isVideoAd = bid => {
-  const xmlTester = new RegExp(/^<\?xml/);
+  const xmlTester = new RegExp(/^<\?xml|<VAST/, 'i');
   return bid.adm && bid.adm.match(xmlTester);
 }
 
