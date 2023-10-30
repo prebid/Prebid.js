@@ -2,7 +2,7 @@ name: OTZ-Ads - Prebid.js
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "pipeline-actions" ]
 
 jobs:
   build:
