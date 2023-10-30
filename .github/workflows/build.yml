@@ -54,5 +54,4 @@ jobs:
         bucket-region: ${{ secrets.S3_BUCKET_REGION }}            
         delete-removed: true
         no-cache: true        
-        files-to-include: 'prebid.js'
-        path: 'prebid/'
+        files-to-include: '.*/*,*/*,**'        
