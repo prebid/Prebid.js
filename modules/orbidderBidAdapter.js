@@ -99,15 +99,7 @@ export const spec = {
         data: {
           v: getGlobal().version,
           pageUrl: referer,
-          bidId: bidRequest.bidId,
-          auctionId: bidRequest.auctionId,
-          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-          transactionId: bidRequest.ortb2Imp?.ext?.tid,
-          adUnitCode: bidRequest.adUnitCode,
-          bidRequestCount: bidRequest.bidRequestCount,
-          params: bidRequest.params,
-          sizes: bidRequest.sizes,
-          mediaTypes: bidRequest.mediaTypes
+          ...bidRequest // get all data provided by bid request
         }
       };
 
