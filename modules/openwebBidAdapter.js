@@ -1,8 +1,9 @@
-import {convertTypes, deepAccess, flatten, isArray, isNumber, parseSizesInput} from '../src/utils.js';
+import {deepAccess, flatten, isArray, isNumber, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {find} from '../src/polyfill.js';
+import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
 const ENDPOINT = 'https://ghb.spotim.market/v2/auction';
 const BIDDER_CODE = 'openweb';

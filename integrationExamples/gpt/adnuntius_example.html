@@ -1,0 +1,95 @@
+<html>
+<head>
+    <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+    <script async src="../../build/dev/prebid.js"></script>
+    <script>
+        var FAILSAFE_TIMEOUT = 3000;
+
+        var adUnits = [
+            {
+                code: 'div-gpt-ad-1683695049516-0',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[320, 320]]
+                    }
+                },
+                bids: [{
+                    bidder: 'adnuntius',
+                    params: {
+                        auId: "201208",
+                        network: "adnuntius",
+                        bidType: 'netBid'
+                    }
+                }]
+            },
+        ];
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+        googletag.cmd.push(function() {
+            googletag.pubads().disableInitialLoad();
+        });
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        pbjs.que.push(function() {
+            pbjs.setConfig({
+                enableSendAllBids: true,
+                targetingControls: {
+                    alwaysIncludeDeals: true
+                },
+                userSync: {
+                    syncEnabled: false
+                }
+            });
+
+            pbjs.setBidderConfig({
+                bidders: ['adnuntius'],
+                config: {
+                    bidType: 'netBid'
+                }
+            });
+
+            pbjs.addAdUnits(adUnits);
+            pbjs.requestBids({bidsBackHandler: initAdserver});
+        });
+
+        function initAdserver() {
+            if (pbjs.initAdserverSet) return;
+            pbjs.initAdserverSet = true;
+            googletag.cmd.push(function() {
+                pbjs.que.push(function() {
+                    pbjs.setTargetingForGPTAsync('div-gpt-ad-1683695049516-0');
+                    googletag.pubads().refresh();
+                });
+            });
+        }
+
+        // in case PBJS doesn't load
+        setTimeout(function() {
+            initAdserver();
+        }, FAILSAFE_TIMEOUT);
+
+        window.googletag = window.googletag || {cmd: []};
+        googletag.cmd.push(function() {
+            googletag.defineSlot('/19660636/320x320', [320, 320], 'div-gpt-ad-1683695049516-0').addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+</head>
+<body>
+<h2>Adnuntius Prebid Adaptor Test</h2>
+<h5>Ad Slot 1</h5>
+
+<!-- /19660636/320x320 -->
+<div id='div-gpt-ad-1683695049516-0' style='min-width: 320px; min-height: 320px;'>
+    <script>
+        googletag.cmd.push(function() {
+            googletag.display('div-gpt-ad-1683695049516-0');
+        });
+    </script>
+</div>
+
+</body>
+</html>

@@ -2,7 +2,7 @@ import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {getANKeywordParam} from '../libraries/appnexusKeywords/anKeywords.js';
+import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
 
 const BIDDER_CODE = 'prisma';
 const BIDDER_URL = 'https://prisma.nexx360.io/prebid';
