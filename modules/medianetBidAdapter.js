@@ -1,7 +1,6 @@
 import {
   buildUrl,
   deepAccess,
-  getGptSlotInfoForAdUnitCode,
   getWindowTop,
   isArray,
   isEmpty,
@@ -18,6 +17,7 @@ import {getRefererInfo} from '../src/refererDetection.js';
 import {Renderer} from '../src/Renderer.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import {getGlobal} from '../src/prebidGlobal.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 const BIDDER_CODE = 'medianet';
 const TRUSTEDSTACK_CODE = 'trustedstack';

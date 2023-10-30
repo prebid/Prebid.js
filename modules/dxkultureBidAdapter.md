@@ -1,15 +1,15 @@
 # Overview
 
 ```
-Module Name:  Kulture Media Bid Adapter
+Module Name:  DXKulture Bid Adapter
 Module Type:  Bidder Adapter
 Maintainer:   devops@kulture.media
 ```
 
 # Description
 
-Module that connects to Kulture Media's demand sources.
-Kulture Media bid adapter supports Banner and Video.
+Module that connects to DXKulture's demand sources.
+DXKulture bid adapter supports Banner and Video.
 
 
 # Test Parameters
@@ -26,10 +26,12 @@ var adUnits = [
             }
         },
         bids: [{
-            bidder: 'kulturemedia',
+            bidder: 'dxkulture',
             params: {
                 placementId: 'test',
                 publisherId: 'test',
+                bidfloor: 2.7,
+                bidfloorcur: 'USD'
             }
         }]
     }
@@ -42,7 +44,7 @@ We support the following OpenRTB params that can be specified in `mediaTypes.vid
 - 'mimes',
 - 'minduration',
 - 'maxduration',
-- 'placement',
+- 'plcmt',
 - 'protocols',
 - 'startdelay',
 - 'skip',
@@ -73,13 +75,13 @@ We support the following OpenRTB params that can be specified in `mediaTypes.vid
                   delivery: [2],
                   minduration: 10,
                   maxduration: 30,
-                  placement: 1,
+                  plcmt: 1,
                   playbackmethod: [1,5],
             }
           },
           bids: [
             {
-              bidder: 'kulturemedia',
+              bidder: 'dxkulture',
               params: {
                 bidfloor: 0.5,
                 publisherId: '12345',
@@ -105,7 +107,7 @@ var adUnits = [
             }
         },
         bids: [{
-            bidder: 'kulturemedia',
+            bidder: 'dxkulture',
             params: {
                 e2etest: true
             }
@@ -129,7 +131,7 @@ var adUnits = [
       },
       bids: [
         {
-          bidder: 'kulturemedia',
+          bidder: 'dxkulture',
           params: {
             e2etest: true
           }
