@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/freewheel-sspBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { createEidsArray } from 'modules/userId/eids.js';
+import { config } from 'src/config.js';
 
 const ENDPOINT = '//ads.stickyadstv.com/www/delivery/swfIndex.php';
 const PREBID_VERSION = '$prebid.version$';
@@ -116,6 +117,20 @@ describe('freewheelSSP BidAdapter Test', () => {
         }
       }
     ];
+
+    it('should get correct value from content object', () => {
+      config.setConfig({
+        content: {
+          'title': 'freewheel',
+          'series': 'abc',
+          'id': 'iris_5e7'
+        }
+      });
+
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload._fw_prebid_content).to.deep.equal('{\"title\":\"freewheel\",\"series\":\"abc\",\"id\":\"iris_5e7\"}');
+    });
 
     it('should get bidfloor value from params if no getFloor method', () => {
       const request = spec.buildRequests(bidRequests);

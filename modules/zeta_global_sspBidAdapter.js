@@ -45,7 +45,7 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
-   * Determines whether or not the given bid request is valid.
+   * Determines whether the given bid request is valid.
    *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
@@ -54,7 +54,8 @@ export const spec = {
     // check for all required bid fields
     if (!(bid &&
       bid.bidId &&
-      bid.params)) {
+      bid.params &&
+      bid.params.sid)) {
       logWarn('Invalid bid request - missing required bid data');
       return false;
     }
@@ -162,7 +163,7 @@ export const spec = {
     }
 
     provideEids(validBidRequests[0], payload);
-    const url = params.shortname ? ENDPOINT_URL.concat('?shortname=', params.shortname) : ENDPOINT_URL;
+    const url = params.sid ? ENDPOINT_URL.concat('?sid=', params.sid) : ENDPOINT_URL;
     return {
       method: 'POST',
       url: url,

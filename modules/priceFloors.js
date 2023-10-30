@@ -431,7 +431,7 @@ function validateSchemaFields(fields) {
   if (Array.isArray(fields) && fields.length > 0 && fields.every(field => allowedFields.indexOf(field) !== -1)) {
     return true;
   }
-  logError(`${MODULE_NAME}: Fields recieved do not match allowed fields`);
+  logError(`${MODULE_NAME}: Fields received do not match allowed fields`);
   return false;
 }
 
@@ -616,7 +616,7 @@ function handleFetchError(status) {
 }
 
 /**
- * This function handles sending and recieving the AJAX call for a floors fetch
+ * This function handles sending and receiving the AJAX call for a floors fetch
  * @param {object} floorsConfig the floors config coming from setConfig
  */
 export function generateAndHandleFetch(floorEndpoint) {
