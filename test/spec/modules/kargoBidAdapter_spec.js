@@ -147,6 +147,22 @@ describe('kargo adapter tests', function () {
               id: '1234',
               name: 'SiteName',
               cat: ['IAB1', 'IAB2', 'IAB3']
+            },
+            user: {
+              data: [
+                {
+                  name: 'prebid.org',
+                  ext: {
+                    segtax: 600,
+                    segclass: 'v1',
+                  },
+                  segment: [
+                    {
+                      id: '133'
+                    },
+                  ]
+                },
+              ]
             }
           },
           ortb2Imp: {
@@ -519,6 +535,20 @@ describe('kargo adapter tests', function () {
                   ext: {
                     rtiPartner: 'TDID'
                   }
+                }
+              ]
+            }
+          ],
+          data: [
+            {
+              name: 'prebid.org',
+              ext: {
+                segtax: 600,
+                segclass: 'v1',
+              },
+              segment: [
+                {
+                  id: '133'
                 }
               ]
             }
