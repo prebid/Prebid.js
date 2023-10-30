@@ -7,10 +7,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      
+  
     steps:
     - name: Checkout repository    
       uses: actions/checkout@v3
@@ -44,26 +41,11 @@ jobs:
       
     - name: Build project with Gulp
       run: |
-        gulp build --modules=modules.json    
+        gulp build --modules=modules.json        
     
-    - name: Debug Environment Variables
+    - name: Upload to S3 Bucket
       run: |
-        echo "AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID"
-        echo "AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY"
-        echo "S3_BUCKET: $S3_BUCKET"
-        echo "S3_BUCKET_REGION: $S3_BUCKET_REGION"
+        aws s3 sync build/dist s3://${{ secrets.S3_BUCKET }}/prebid/ --region ${{ secrets.S3_BUCKET_REGION }} --delete
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        S3_BUCKET: ${{ secrets.S3_BUCKET }}
-        S3_BUCKET_REGION: ${{ secrets.S3_BUCKET_REGION }}
-    
-    - name: Deploy to S3 Bucket
-      uses: reggionick/s3-deploy@v4
-      with:
-        folder: build/dist
-        bucket: ${{ secrets.S3_BUCKET }}
-        bucket-region: ${{ secrets.S3_BUCKET_REGION }}            
-        delete-removed: true
-        no-cache: true        
-        files-to-include: '.*/*,*/*,**'        
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}       
