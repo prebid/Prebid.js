@@ -1,0 +1,173 @@
+<html>
+
+<head>
+    <script type="text/javascript" src="../../build/dev/prebid.js" async></script>
+
+    <script>
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        pbjs.que.push(function () {
+            const adUnits = [{
+                code: 'native-div',
+                mediaTypes: {
+                    native: {
+                        adTemplate: document.getElementById('native-template').innerHTML,
+                        title: {
+                            required: true,
+                            len: 800
+                        },
+                        image: {
+                            required: true,
+                            sizes: [989, 742],
+                        },
+                        sponsoredBy: {
+                            required: true
+                        }
+                    }
+                },
+                bids: [{
+                    bidder: 'appnexus',
+                    params: {
+                        placementId: 13232354,
+                        allowSmallerSizes: true
+                    }
+
+                }]
+            }];
+
+            pbjs.setConfig({
+                debug: true,
+                s2sConfig: {
+                    accountId: '1',
+                    enabled: true,
+                    bidders: ['appnexuspsp'],
+                    timeout: 1000,
+                    adapter: 'prebidServer',
+                    endpoint: 'https://ib.adnxs.com/openrtb2/prebid',
+                }
+            });
+
+            pbjs.requestBids({
+                adUnits,
+                bidsBackHandler: function (bidResponses) {
+                    Object.entries(bidResponses).forEach(([slot, {bids}]) => {
+                        bids?.length && renderNative(slot, bids[0]);
+                    });
+                }
+            });
+
+            function renderNative(divId, bid) {
+                const slot = document.getElementById(divId);
+                const content = `
+                    <!DOCTYPE html>
+                    <html>
+                        <body>
+                            <script src="https://cdn.jsdelivr.net/npm/prebid-universal-creative@latest/dist/native-render.js"> <\/script>
+                            <script>
+                                window.pbNativeData = {
+                                    pubUrl: '${encodeURI(document.location)}',
+                                    adId: '${bid.adId}',
+                                    requestAllAssets: true
+                                };
+                                pbNativeTag.renderNativeAd(pbNativeData);
+                            <\/script>
+                        </body>
+                    </html>
+                `;
+
+                const iframe = document.createElement('iframe');
+                slot.appendChild(iframe);
+                Object.entries({
+                    frameBorder: 0,
+                    marginWidth: 0,
+                    marginHeight: 0,
+                    srcdoc: content
+                }).forEach(([prop, val]) => iframe.setAttribute(prop, val));
+            }
+        });
+
+    </script>
+
+</head>
+
+<body>
+
+<template id="native-template">
+    <style>
+        body {
+            display: inline-block;
+        }
+
+        .container {
+            display: inline-block;
+            font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+            font-size: 14px;
+            line-height: 1.42857143;
+            color: #333;
+            background: #fff url(##hb_native_image##) no-repeat center;
+            background-size: cover;
+        }
+
+
+        .card {
+            border: 4px solid #ffd724;
+            display: inline-block;
+            padding: 20px;
+            height: 300px;
+            width: 320px;
+        }
+
+
+        h1 a:link, a:active, a:visited, a:hover, a:focus {
+            text-decoration: none;
+            color: #fff;
+        }
+
+        h1 {
+            line-height: 1.3;
+            color: #fff;
+            font-size: 26px;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: inline;
+            font-family: Roboto, serif;
+            font-weight: 100;
+        }
+
+        .attribution {
+            color: #fff;
+            display: inline-block;
+            letter-spacing: 2px;
+            background-color: #ffd724;
+            font-size: 12px;
+            line-height: 1;
+            padding: 6px 6px 0 6px;
+            height: 24px;
+            margin: 5px 0 10px 0;
+            border-radius: 4px;
+        }
+    </style>
+    <div class="container">
+        <div class="card">
+            <div class="title">
+                <h1>
+                    <a href="##hb_native_linkurl##">##hb_native_title##</a>
+                </h1>
+            </div>
+            <div class="attribution">
+                ##hb_native_brand##
+            </div>
+        </div>
+    </div>
+</template>
+
+<h2>Prebid Native</h2>
+<div id='native-div'>
+</div>
+
+<br>
+<br>
+
+</body>
+
+</html>

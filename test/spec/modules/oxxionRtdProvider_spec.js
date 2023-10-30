@@ -6,7 +6,10 @@ const utils = require('src/utils.js');
 const moduleConfig = {
   params: {
     domain: 'test.endpoint',
-    contexts: ['instream', 'outstream']
+    contexts: ['instream', 'outstream'],
+    samplingRate: 10,
+    threshold: false,
+    bidders: ['appnexus', 'mediasquare'],
   }
 };
 
@@ -31,6 +34,14 @@ let request = {
       ],
       'transactionId': 'de664ccb-e18b-4436-aeb0-362382eb1b41'
     },
+    {
+      'code': 'msq_tag_200125_banner',
+      'mediaTypes': { 'banner': { 'sizes': [[300, 250]] } },
+      'bids': [
+        {'bidder': 'appnexusAst', 'params': {'placementId': 345678}},
+      ],
+      'transactionId': 'de664ccb-e18b-4436-aeb0-362382eb1b41'
+    }
   ]
 };
 
@@ -102,6 +113,22 @@ let bids = [{
 },
 ];
 
+let bidInterests = [
+  {'id': 0, 'rate': 50.0, 'suggestion': true},
+  {'id': 1, 'rate': 12.0, 'suggestion': false},
+  {'id': 2, 'rate': 0.0, 'suggestion': true},
+  {'id': 3, 'rate': 0.0, 'suggestion': false},
+];
+
+const userConsent = {
+  'gdpr': {
+    'consentString': 'consent_hash'
+  },
+  'usp': null,
+  'gpp': null,
+  'coppa': false
+};
+
 describe('oxxionRtdProvider', () => {
   describe('Oxxion RTD sub module', () => {
     it('should init, return true, and set the params', () => {
@@ -114,29 +141,20 @@ describe('oxxionRtdProvider', () => {
     auctionEnd.bidsReceived = bids;
     it('call everything', function() {
       oxxionSubmodule.getBidRequestData(request, null, moduleConfig);
-      oxxionSubmodule.onAuctionEndEvent(auctionEnd, moduleConfig);
     });
-    it('check vastImpUrl', function() {
-      expect(auctionEnd.bidsReceived[0]).to.have.property('vastImpUrl');
-      let expectVastImpUrl = 'https://' + moduleConfig.params.domain + '.oxxion.io/analytics/vast_imp?';
-      expect(auctionEnd.bidsReceived[1].vastImpUrl).to.contain(expectVastImpUrl);
-      expect(auctionEnd.bidsReceived[1].vastImpUrl).to.contain(encodeURI('https://some.tracking-url.com'));
-    });
-    it('check vastXml', function() {
-      expect(auctionEnd.bidsReceived[0]).to.have.property('vastXml');
-      let vastWrapper = new DOMParser().parseFromString(auctionEnd.bidsReceived[0].vastXml, 'text/xml');
-      let impressions = vastWrapper.querySelectorAll('VAST Ad Wrapper Impression');
-      expect(impressions.length).to.equal(2);
-      expect(auctionEnd.bidsReceived[1]).to.have.property('vastXml');
-      expect(auctionEnd.bidsReceived[1].adId).to.equal('4b2e1581c0ca1a');
-      let vastInline = new DOMParser().parseFromString(auctionEnd.bidsReceived[1].vastXml, 'text/xml');
-      let inline = vastInline.querySelectorAll('VAST Ad InLine');
-      expect(inline).to.have.lengthOf(1);
-      let inlineImpressions = vastInline.querySelectorAll('VAST Ad InLine Impression');
-      expect(inlineImpressions).to.have.lengthOf.above(0);
-    });
-    it('check cpmIncrement', function() {
-      expect(auctionEnd.bidsReceived[1].vastImpUrl).to.contain(encodeURI('cpmIncrement=1'));
+    it('check bid filtering', function() {
+      let requestsList = oxxionSubmodule.getRequestsList(request);
+      expect(requestsList.length).to.equal(4);
+      expect(requestsList[0]).to.have.property('id');
+      expect(request.adUnits[0].bids[0]).to.have.property('_id');
+      expect(requestsList[0].id).to.equal(request.adUnits[0].bids[0]._id);
+      const [filteredBiddderRequests, filteredBids] = oxxionSubmodule.getFilteredAdUnitsOnBidRates(bidInterests, request.adUnits, moduleConfig.params, false);
+      expect(filteredBids.length).to.equal(1);
+      expect(filteredBiddderRequests.length).to.equal(3);
+      expect(filteredBiddderRequests[0]).to.have.property('bids');
+      expect(filteredBiddderRequests[0].bids.length).to.equal(1);
+      expect(filteredBiddderRequests[1]).to.have.property('bids');
+      expect(filteredBiddderRequests[1].bids.length).to.equal(1);
     });
   });
 });

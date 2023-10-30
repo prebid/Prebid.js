@@ -194,7 +194,7 @@ describe('oolo Prebid Analytic', () => {
       })
 
       const conf = {}
-      const pbjsConfig = config.getConfig()
+      const pbjsConfig = JSON.parse(JSON.stringify(config.getConfig()))
 
       Object.keys(pbjsConfig).forEach(key => {
         if (key[0] !== '_') {
@@ -663,7 +663,7 @@ describe('oolo Prebid Analytic', () => {
 
       events.emit(constants.EVENTS.AUCTION_INIT, { ...auctionInit });
 
-      expect(server.requests[3].url).to.equal('https://pbjs.com')
+      expect(server.requests[3].url).to.equal('https://pbjs.com/')
     })
 
     it('should send raw events based on server configuration', () => {

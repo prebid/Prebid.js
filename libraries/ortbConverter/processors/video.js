@@ -6,6 +6,7 @@ import {sizesToFormat} from '../lib/sizes.js';
 const ORTB_VIDEO_PARAMS = new Set([
   'pos',
   'placement',
+  'plcmt',
   'api',
   'mimes',
   'protocols',

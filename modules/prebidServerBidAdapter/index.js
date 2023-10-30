@@ -1,6 +1,6 @@
 import Adapter from '../../src/adapter.js';
 import {
-  bind,
+  deepAccess,
   deepClone,
   flatten,
   generateUUID,
@@ -15,12 +15,11 @@ import {
   logWarn,
   triggerPixel,
   uniques,
-  deepAccess,
 } from '../../src/utils.js';
 import CONSTANTS from '../../src/constants.json';
-import adapterManager from '../../src/adapterManager.js';
+import adapterManager, {s2sActivityParams} from '../../src/adapterManager.js';
 import {config} from '../../src/config.js';
-import {isValid} from '../../src/adapters/bidderFactory.js';
+import {addComponentAuction, isValid} from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
 import {includes} from '../../src/polyfill.js';
 import {S2S_VENDORS} from './config.js';
@@ -29,6 +28,8 @@ import {hook} from '../../src/hook.js';
 import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
 import {buildPBSRequest, interpretPBSResponse} from './ortbConverter.js';
 import {useMetrics} from '../../src/utils/perfMetrics.js';
+import {isActivityAllowed} from '../../src/activities/rules.js';
+import {ACTIVITY_TRANSMIT_UFPD} from '../../src/activities/activities.js';
 
 const getConfig = config.getConfig;
 
@@ -96,10 +97,8 @@ export const s2sDefaultConfig = {
   adapterOptions: {},
   syncUrlModifier: {},
   ortbNative: {
-    context: 1,
-    plcmttype: 1,
     eventtrackers: [
-      {event: 1, methods: [1]}
+      {event: 1, methods: [1, 2]}
     ],
   }
 };
@@ -222,10 +221,23 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig) 
   }
   _syncCount++;
 
+  let filterSettings = {};
+  const userSyncFilterSettings = getConfig('userSync.filterSettings');
+
+  if (userSyncFilterSettings) {
+    const { all, iframe, image } = userSyncFilterSettings;
+    const ifrm = iframe || all;
+    const img = image || all;
+
+    if (ifrm) filterSettings = Object.assign({ iframe: ifrm }, filterSettings);
+    if (img) filterSettings = Object.assign({ image: img }, filterSettings);
+  }
+
   const payload = {
     uuid: generateUUID(),
     bidders: bidderCodes,
-    account: s2sConfig.accountId
+    account: s2sConfig.accountId,
+    filterSettings
   };
 
   let userSyncLimit = s2sConfig.userSyncLimit;
@@ -247,9 +259,7 @@ function queueSync(bidderCodes, gdprConsent, uspConsent, gppConsent, s2sConfig) 
   }
 
   if (gppConsent) {
-    // proposing the following formatting, can adjust if needed...
-    // update - leaving this param as an array, since it's part of a POST payload where the [] characters shouldn't matter too much
-    payload.gpp_sid = gppConsent.applicableSections
+    payload.gpp_sid = gppConsent.applicableSections.join();
     // should we add check if applicableSections was not equal to -1 (where user was out of scope)?
     //   this would be similar to what was done above for TCF
     payload.gpp = gppConsent.gppString;
@@ -286,7 +296,7 @@ function doAllSyncs(bidders, s2sConfig) {
 
   // if PBS reports this bidder doesn't have an ID, then call the sync and recurse to the next sync entry
   if (thisSync.no_cookie) {
-    doPreBidderSync(thisSync.usersync.type, thisSync.usersync.url, thisSync.bidder, bind.call(doAllSyncs, null, bidders, s2sConfig), s2sConfig);
+    doPreBidderSync(thisSync.usersync.type, thisSync.usersync.url, thisSync.bidder, doAllSyncs.bind(null, bidders, s2sConfig), s2sConfig);
   } else {
     // bidder already has an ID, so just recurse to the next sync entry
     doAllSyncs(bidders, s2sConfig);
@@ -345,8 +355,7 @@ function doClientSideSyncs(bidders, gdprConsent, uspConsent, gppConsent) {
     if (clientAdapter && clientAdapter.registerSyncs) {
       config.runWithBidder(
         bidder,
-        bind.call(
-          clientAdapter.registerSyncs,
+        clientAdapter.registerSyncs.bind(
           clientAdapter,
           [],
           gdprConsent,
@@ -456,14 +465,27 @@ export function PrebidServer() {
       }
 
       processPBSRequest(s2sBidRequest, bidRequests, ajax, {
-        onResponse: function (isValid, requestedBidders) {
+        onResponse: function (isValid, requestedBidders, response) {
           if (isValid) {
             bidRequests.forEach(bidderRequest => events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest));
+          }
+          if (shouldEmitNonbids(s2sBidRequest.s2sConfig, response)) {
+            events.emit(CONSTANTS.EVENTS.SEAT_NON_BID, {
+              seatnonbid: response.ext.seatnonbid,
+              auctionId: bidRequests[0].auctionId,
+              requestedBidders,
+              response,
+              adapterMetrics
+            });
           }
           done();
           doClientSideSyncs(requestedBidders, gdprConsent, uspConsent, gppConsent);
         },
-        onError: done,
+        onError(msg, error) {
+          logError(`Prebid server call failed: '${msg}'`, error);
+          bidRequests.forEach(bidderRequest => events.emit(CONSTANTS.EVENTS.BIDDER_ERROR, {error, bidderRequest}));
+          done();
+        },
         onBid: function ({adUnit, bid}) {
           const metrics = bid.metrics = s2sBidRequest.metrics.fork().renameWith();
           metrics.checkpoint('addBidResponse');
@@ -480,6 +502,9 @@ export function PrebidServer() {
               addBidResponse.reject(adUnit, bid, CONSTANTS.REJECTION_REASON.INVALID);
             }
           }
+        },
+        onFledge: ({adUnitCode, config}) => {
+          addComponentAuction(bidRequests[0].auctionId, adUnitCode, config);
         }
       })
     }
@@ -505,7 +530,7 @@ export function PrebidServer() {
  * @param onError {function(String, {})} invoked on HTTP failure - with status message and XHR error
  * @param onBid {function({})} invoked once for each bid in the response - with the bid as returned by interpretResponse
  */
-export const processPBSRequest = hook('sync', function (s2sBidRequest, bidRequests, ajax, {onResponse, onError, onBid}) {
+export const processPBSRequest = hook('sync', function (s2sBidRequest, bidRequests, ajax, {onResponse, onError, onBid, onFledge}) {
   let { gdprConsent } = getConsentData(bidRequests);
   const adUnits = deepClone(s2sBidRequest.ad_units);
 
@@ -529,8 +554,11 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
           let result;
           try {
             result = JSON.parse(response);
-            const bids = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request).bids);
+            const {bids, fledgeAuctionConfigs} = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request));
             bids.forEach(onBid);
+            if (fledgeAuctionConfigs) {
+              fledgeAuctionConfigs.forEach(onFledge);
+            }
           } catch (error) {
             logError(error);
           }
@@ -538,7 +566,7 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
             logError('error parsing response: ', result ? result.status : 'not valid JSON');
             onResponse(false, requestedBidders);
           } else {
-            onResponse(true, requestedBidders);
+            onResponse(true, requestedBidders, result);
           }
         },
         error: function () {
@@ -547,12 +575,20 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
         }
       },
       requestJson,
-      {contentType: 'text/plain', withCredentials: true}
+      {
+        contentType: 'text/plain',
+        withCredentials: true,
+        browsingTopics: isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, s2sActivityParams(s2sBidRequest.s2sConfig))
+      }
     );
   } else {
     logError('PBS request not made.  Check endpoints.');
   }
 }, 'processPBSRequest');
+
+function shouldEmitNonbids(s2sConfig, response) {
+  return s2sConfig?.extPrebid?.returnallbidstatus && response?.ext?.seatnonbid;
+}
 
 /**
  * Global setter that sets eids permissions for bidders

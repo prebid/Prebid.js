@@ -16,6 +16,7 @@
  * @property {string} clientID
  * @property {string} optimeraKeyName
  * @property {string} device
+ * @property {string} apiVersion
  */
 
 import { logInfo, logError } from '../src/utils.js';
@@ -38,7 +39,10 @@ export let optimeraKeyName = 'hb_deal_optimera';
  * the targeting values.
  * @type {string}
  */
-export const scoresBaseURL = 'https://dyv1bugovvq1g.cloudfront.net/';
+export const scoresBaseURL = {
+  v0: 'https://dyv1bugovvq1g.cloudfront.net/',
+  v1: 'https://v1.oapi26b.com/',
+};
 
 /**
  * Optimera Score File URL.
@@ -57,6 +61,12 @@ export let clientID;
  * @type {string}
  */
 export let device = 'default';
+
+/**
+ * Optional apiVersion parameter.
+ * @type {string}
+ */
+export let apiVersion = 'v0';
 
 /**
  * Targeting object for all ad positions.
@@ -127,6 +137,7 @@ export function onAuctionInit(auctionDetails, config, userConsent) {
 
 /**
  * Initialize the Module.
+ * moduleConfig.params.apiVersion can be either v0 or v1.
  */
 export function init(moduleConfig) {
   _moduleParams = moduleConfig.params;
@@ -137,6 +148,9 @@ export function init(moduleConfig) {
     }
     if (_moduleParams.device) {
       device = _moduleParams.device;
+    }
+    if (_moduleParams.apiVersion) {
+      apiVersion = (_moduleParams.apiVersion.includes('v1', 'v0')) ? _moduleParams.apiVersion : 'v0';
     }
     setScoresURL();
     scoreFileRequest();
@@ -162,7 +176,15 @@ export function init(moduleConfig) {
 export function setScoresURL() {
   const optimeraHost = window.location.host;
   const optimeraPathName = window.location.pathname;
-  const newScoresURL = `${scoresBaseURL}${clientID}/${optimeraHost}${optimeraPathName}.js`;
+  const baseUrl = scoresBaseURL[apiVersion] ? scoresBaseURL[apiVersion] : scoresBaseURL.v0;
+  let newScoresURL;
+
+  if (apiVersion === 'v1') {
+    newScoresURL = `${baseUrl}api/products/scores?c=${clientID}&h=${optimeraHost}&p=${optimeraPathName}&s=${device}`;
+  } else {
+    newScoresURL = `${baseUrl}${clientID}/${optimeraHost}${optimeraPathName}.js`;
+  }
+
   if (scoresURL !== newScoresURL) {
     scoresURL = newScoresURL;
     fetchScoreFile = true;

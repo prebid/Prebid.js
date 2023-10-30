@@ -1,20 +1,21 @@
 import zetaAnalyticsAdapter from 'modules/zeta_global_sspAnalyticsAdapter.js';
 import {config} from 'src/config';
 import CONSTANTS from 'src/constants.json';
+import {server} from '../../mocks/xhr.js';
 import {logError} from '../../../src/utils';
 
 let utils = require('src/utils');
 let events = require('src/events');
 
-const MOCK = {
-  STUB: {
-    'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa'
-  },
+const EVENTS = {
   AUCTION_END: {
     'auctionId': '75e394d9-ccce-4978-9238-91e6a1ac88a1',
     'timestamp': 1638441234544,
     'auctionEnd': 1638441234784,
     'auctionStatus': 'completed',
+    'metrics': {
+      'someMetric': 1
+    },
     'adUnits': [
       {
         'code': '/19968336/header-bid-tag-0',
@@ -74,13 +75,6 @@ const MOCK = {
         'bids': [
           {
             'bidder': 'zeta_global_ssp',
-            'params': {
-              'sid': 111,
-              'tags': {
-                'shortname': 'prebid_analytics_event_test_shortname',
-                'position': 'test_position'
-              }
-            },
             'mediaTypes': {
               'banner': {
                 'sizes': [
@@ -309,6 +303,9 @@ const MOCK = {
       'cpm': 2.258302852806723,
       'currency': 'USD',
       'ad': 'test_ad',
+      'metrics': {
+        'someMetric': 0
+      },
       'ttl': 200,
       'creativeId': '456456456',
       'netRevenue': true,
@@ -344,11 +341,7 @@ const MOCK = {
       'status': 'rendered',
       'params': [
         {
-          'sid': 111,
-          'tags': {
-            'shortname': 'prebid_analytics_event_test_shortname',
-            'position': 'test_position'
-          }
+          'nonZetaParam': 'nonZetaValue'
         }
       ]
     },
@@ -358,14 +351,11 @@ const MOCK = {
 
 describe('Zeta Global SSP Analytics Adapter', function() {
   let sandbox;
-  let xhr;
   let requests;
 
   beforeEach(function() {
     sandbox = sinon.sandbox.create();
-    requests = [];
-    xhr = sandbox.useFakeXMLHttpRequest();
-    xhr.onCreate = request => requests.push(request);
+    requests = server.requests;
     sandbox.stub(events, 'getEvents').returns([]);
   });
 
@@ -395,33 +385,18 @@ describe('Zeta Global SSP Analytics Adapter', function() {
       zetaAnalyticsAdapter.disableAnalytics();
     });
 
-    it('events are sent', function() {
-      this.timeout(5000);
-      events.emit(CONSTANTS.EVENTS.AUCTION_INIT, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.AUCTION_END, MOCK.AUCTION_END);
-      events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.BID_RESPONSE, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.NO_BID, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.BID_WON, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.BIDDER_DONE, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.BIDDER_ERROR, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.SET_TARGETING, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.BEFORE_REQUEST_BIDS, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.REQUEST_BIDS, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.ADD_AD_UNITS, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.AD_RENDER_FAILED, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED, MOCK.AD_RENDER_SUCCEEDED);
-      events.emit(CONSTANTS.EVENTS.TCF2_ENFORCEMENT, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.BID_VIEWABLE, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.STALE_RENDER, MOCK.STUB);
+    it('Move ZetaParams through analytics events', function() {
+      this.timeout(3000);
+
+      events.emit(CONSTANTS.EVENTS.AUCTION_END, EVENTS.AUCTION_END);
+      events.emit(CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED, EVENTS.AD_RENDER_SUCCEEDED);
 
       expect(requests.length).to.equal(2);
-      expect(JSON.parse(requests[0].requestBody)).to.deep.equal(MOCK.AUCTION_END);
-      expect(JSON.parse(requests[1].requestBody)).to.deep.equal(MOCK.AD_RENDER_SUCCEEDED);
+      const auctionEnd = JSON.parse(requests[0].requestBody);
+      const auctionSucceeded = JSON.parse(requests[1].requestBody);
+
+      expect(auctionSucceeded.bid.params[0]).to.be.deep.equal(EVENTS.AUCTION_END.adUnits[0].bids[0].params);
+      expect(EVENTS.AUCTION_END.adUnits[0].bids[0].bidder).to.be.equal('zeta_global_ssp');
     });
   });
 });

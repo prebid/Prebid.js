@@ -7,7 +7,7 @@
       "amxIdSystem",
       "britepoolIdSystem",
       "connectIdSystem",
-      "cpexIdSystem",
+      "czechAdIdSystem",
       "criteoIdSystem",
       "dacIdSystem",
       "deepintentDpesIdSystem",
@@ -38,15 +38,17 @@
       "tapadIdSystem",
       "teadsIdSystem",
       "tncIdSystem",
-      "trustpidSystem",
+      "utiqSystem",
       "uid2IdSystem",
+      "euidIdSystem",
       "unifiedIdSystem",
       "unifiedIdHubvisorSystem",
       "verizonMediaIdSystem",
       "zeotapIdPlusIdSystem",
       "adqueryIdSystem",
       "gravitoIdSystem",
-      "unifiedIdHubvisorSystem"
+      "freepassIdSystem",
+      "operaadsIdSystem"
     ],
     "adpod": [
       "freeWheelAdserverVideo",
@@ -54,9 +56,11 @@
     ],
     "rtdModule": [
       "1plusXRtdProvider",
+      "a1MediaRtdProvider",
       "aaxBlockmeterRtdProvider",
       "airgridRtdProvider",
       "akamaiDapRtdProvider",
+      "arcspanRtdProvider",
       "blueconicRtdProvider",
       "browsiRtdProvider",
       "captifyRtdProvider",
@@ -72,10 +76,11 @@
       "oneKeyRtdProvider",
       "optimeraRtdProvider",
       "permutiveRtdProvider",
+      "qortexRtdProvider",
       "reconciliationRtdProvider",
       "sirdataRtdProvider",
       "timeoutRtdProvider",
-      "weboramaRtdProvider", 
+      "weboramaRtdProvider",
       "zeusPrimeRtdProvider"
     ],
     "fpdModule": [
