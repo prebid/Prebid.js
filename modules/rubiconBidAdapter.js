@@ -202,6 +202,10 @@ export const converter = ortbConverter({
     bidRequest.params.position === 'btf' && imp.video && (imp.video.pos = 3);
     delete imp.ext?.prebid?.storedrequest;
 
+    if (context.fledgeEnabled) {
+      deepSetValue(imp, 'ext.ae', 1)
+    }
+
     if (bidRequest.params.bidonmultiformat === true && bidRequestType.length > 1) {
       deepSetValue(imp, 'ext.prebid.bidder.rubicon.formats', bidRequestType);
     }
@@ -407,6 +411,7 @@ export const spec = {
         'x_source.tid',
         'l_pb_bid_id',
         'p_screen_res',
+        'o_ae',
         'rp_floor',
         'rp_secure',
         'tk_user_key'
@@ -519,6 +524,10 @@ export const spec = {
     if (configUserId) {
       data['ppuid'] = configUserId;
     }
+
+    if (bidderRequest.fledgeEnabled) {
+      data['o_ae'] = 1;
+    }
     // loop through userIds and add to request
     if (bidRequest.userIdAsEids) {
       bidRequest.userIdAsEids.forEach(eid => {
@@ -629,6 +638,15 @@ export const spec = {
       return [];
     }
 
+    let ads = responseObj.ads;
+    const {bidRequest} = request;
+    const bidId = Array.isArray(bidRequest) ? bidRequest[0].bidId : bidRequest.bidId;
+
+    let fledgeAuctionConfigs = responseObj.component_auction_config.map(config => {
+      return { config, bidId }
+    });
+
+
     // Response from PBS Java openRTB
     if (responseObj.seatbid) {
       const responseErrors = deepAccess(responseObj, 'ext.errors.rubicon');
@@ -636,13 +654,15 @@ export const spec = {
         logWarn('Rubicon: Error in video response');
       }
       const bids = converter.fromORTB({request: data, response: responseObj}).bids;
-      return bids;
+      if (fledgeAuctionConfigs) {
+        return { bids, fledgeAuctionConfigs };
+      } else {
+        return bids;
+      }
     }
 
-    let ads = responseObj.ads;
     let lastImpId;
     let multibid = 0;
-    const {bidRequest} = request;
 
     // video ads array is wrapped in an object
     if (typeof bidRequest === 'object' && !Array.isArray(bidRequest) && bidType(bidRequest).includes(VIDEO) && typeof ads === 'object') {
@@ -654,7 +674,7 @@ export const spec = {
       return [];
     }
 
-    return ads.reduce((bids, ad, i) => {
+    let bids = ads.reduce((bids, ad, i) => {
       (ad.impression_id && lastImpId === ad.impression_id) ? multibid++ : lastImpId = ad.impression_id;
 
       if (ad.status !== 'ok') {
@@ -715,6 +735,12 @@ export const spec = {
     }, []).sort((adA, adB) => {
       return (adB.cpm || 0.0) - (adA.cpm || 0.0);
     });
+
+    if (fledgeAuctionConfigs) {
+      return { bids, fledgeAuctionConfigs };
+    } else {
+      return bids;
+    }
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
