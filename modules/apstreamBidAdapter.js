@@ -286,13 +286,17 @@ function getRawConsentString(gdprConsentConfig) {
   return gdprConsentConfig.consentString;
 }
 
-function getConsentStringFromPrebid(gdprConsentConfig) {
+function getConsentStringFromPrebid(bidderRequest) {
+  const { gdprConsentConfig } = bidderRequest;
   const consentString = getRawConsentString(gdprConsentConfig);
   if (!consentString) {
     return null;
   }
 
-  let isIab = config.getConfig('consentManagement.cmpApi') != 'static';
+  const ortb2Data = bidderRequest?.ortb2 || {};
+  const consentManagement = ortb2Data?.consentManagement || {};
+
+  let isIab = consentManagement?.cmpApi != 'static';
   let vendorConsents = (
     gdprConsentConfig.vendorData.vendorConsents ||
     (gdprConsentConfig.vendorData.vendor || {}).consents ||
@@ -305,7 +309,7 @@ function getConsentStringFromPrebid(gdprConsentConfig) {
 
 function getIabConsentString(bidderRequest) {
   if (deepAccess(bidderRequest, 'gdprConsent')) {
-    return getConsentStringFromPrebid(bidderRequest.gdprConsent);
+    return getConsentStringFromPrebid(bidderRequest);
   }
 
   return 'disabled';
