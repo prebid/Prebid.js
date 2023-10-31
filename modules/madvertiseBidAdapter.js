@@ -34,6 +34,9 @@ export const spec = {
    * @return ServerRequest[]
    */
   buildRequests: function (bidRequests, bidderRequest) {
+    const ortb2Data = bidRequests?.ortb2 || {};
+    const consentManagement = ortb2Data?.consentManagement || {};
+
     return bidRequests.map(bidRequest => {
       bidRequest.startTime = new Date().getTime();
 
@@ -53,7 +56,7 @@ export const spec = {
       }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
-        src = src + '&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? '1' : '0') + '&consent[0][format]=' + config.getConfig('consentManagement.cmpApi') + '&consent[0][value]=' + bidderRequest.gdprConsent.consentString;
+        src = src + '&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? '1' : '0') + '&consent[0][format]=' + consentManagement?.cmpApi + '&consent[0][value]=' + bidderRequest.gdprConsent.consentString;
       }
 
       return {
