@@ -142,6 +142,7 @@ function interpretResponse(serverResponse, bidRequest) {
     const playerUrl = res.playerUrl || bidRequest.player || body.playerUrl;
     let bidResponse = {
       requestId: res.bidId,
+      placementId: res.placementId,
       width: res.width,
       height: res.height,
       cpm: res.price,

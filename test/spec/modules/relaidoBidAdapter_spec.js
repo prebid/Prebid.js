@@ -325,6 +325,7 @@ describe('RelaidoAdapter', function () {
       expect(bidResponses).to.have.lengthOf(1);
       const response = bidResponses[0];
       expect(response.requestId).to.equal(serverRequest.data.bids[0].bidId);
+      expect(response.placementId).to.equal(serverResponse.body.ads[0].placementId);
       expect(response.width).to.equal(serverRequest.data.bids[0].width);
       expect(response.height).to.equal(serverRequest.data.bids[0].height);
       expect(response.cpm).to.equal(serverResponse.body.ads[0].price);
@@ -343,6 +344,7 @@ describe('RelaidoAdapter', function () {
       expect(bidResponses).to.have.lengthOf(1);
       const response = bidResponses[0];
       expect(response.requestId).to.equal(serverRequest.data.bids[0].bidId);
+      expect(response.placementId).to.equal(serverResponse.body.ads[0].placementId);
       expect(response.width).to.equal(serverRequest.data.bids[0].width);
       expect(response.height).to.equal(serverRequest.data.bids[0].height);
       expect(response.cpm).to.equal(serverResponse.body.ads[0].price);
@@ -360,6 +362,7 @@ describe('RelaidoAdapter', function () {
       expect(bidResponses).to.have.lengthOf(1);
       const response = bidResponses[0];
       expect(response.requestId).to.equal(serverRequest.data.bids[0].bidId);
+      expect(response.placementId).to.equal(serverResponseBanner.body.ads[0].placementId);
       expect(response.cpm).to.equal(serverResponseBanner.body.ads[0].price);
       expect(response.currency).to.equal(serverResponseBanner.body.ads[0].currency);
       expect(response.creativeId).to.equal(serverResponseBanner.body.ads[0].creativeId);
