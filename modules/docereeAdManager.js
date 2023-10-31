@@ -2,7 +2,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'docereeAdManager';
-const END_POINT = 'https://prebidexample.sagargolait.repl.co';
+const END_POINT = 'https://dai.doceree.com';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -35,7 +35,7 @@ export const spec = {
         data: JSON.stringify(payload.data),
         options: {
           contentType: 'application/json',
-          withCredentials: true
+          withCredentials: true,
         },
       });
     });
@@ -65,7 +65,8 @@ export const spec = {
 };
 
 function getPayload(bid, bidderRequest) {
-  const { adUnitCode, bidId } = bid;
+  const { bidId, params } = bid;
+  const { placementId } = params;
   const {
     userid,
     email,
@@ -95,9 +96,9 @@ function getPayload(bid, bidderRequest) {
       state: state,
       zipcode: zipcode,
       hashedNPI: hashedNPI,
-      pb: pb,
+      pb: 1,
       privacyConsent: privacyConsent,
-      adunit: adUnitCode,
+      adunit: placementId,
       requestId: bidId,
     },
   };

@@ -24,7 +24,7 @@ var adUnits = [
            {
                bidder: "docereeAdManager",
                params: {
-                    placementId: 'DOC_7jm9j5eqkl0xvc5w', //required
+                    placementId: 'DOC-500-3', //required
                     publisherUrl: document.URL || window.location.href, //optional
                     gdpr: '1', //optional
                     gdprConsent:'CPQfU1jPQfU1jG0AAAENAwCAAAAAAAAAAAAAAAAAAAAA.IGLtV_T9fb2vj-_Z99_tkeYwf95y3p-wzhheMs-8NyZeH_B4Wv2MyvBX4JiQKGRgksjLBAQdtHGlcTQgBwIlViTLMYk2MjzNKJrJEilsbO2dYGD9Pn8HT3ZCY70-vv__7v3ff_3g', //optional
@@ -33,4 +33,29 @@ var adUnits = [
        ]
    }
 ];
+```
+
+```javascript
+pbjs.setBidderConfig({
+  bidders: ["docereeAdManager"],
+  config: {
+    docereeAdManager: {
+      user: {
+        data: {
+          userid: "DE.V1.138353881958.178023499",
+          email: "",
+          firstname: "RAYMOND",
+          lastname: "SCHONDELMEYER",
+          specialization: "Pediatrics",
+          hcpid: "9980811134",
+          gender: "Male",
+          city: "",
+          state: "",
+          zipcode: "65201",
+          hashedNPI: "",
+        },
+      },
+    },
+  },
+});
 ```
