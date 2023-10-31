@@ -646,7 +646,6 @@ export const spec = {
       return { config, bidId }
     });
 
-
     // Response from PBS Java openRTB
     if (responseObj.seatbid) {
       const responseErrors = deepAccess(responseObj, 'ext.errors.rubicon');
