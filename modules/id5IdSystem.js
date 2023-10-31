@@ -61,13 +61,32 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
 /**
  * @typedef {Object} DynamicConfig
  * @property {FetchCallConfig} [fetchCall] - The fetch call configuration
- * @property {FetchCallConfig} [ExtensionsCallConfig] - The fetch call configuration
+ * @property {ExtensionsCallConfig} [extensionsCall] - The extensions call configuration
 */
 
 /**
  * @typedef {Object} ABTestingConfig
  * @property {boolean} enabled - Tells whether A/B testing is enabled for this instance
- * @property {number} controlGroupPct - A/B testing proabaility
+ * @property {number} controlGroupPct - A/B testing proabability
+ */
+
+/**
+ * @typedef {Object} Multiplexing
+ * @property {boolean} [disabled] - Disable multiplexing (instance will work in single mode)
+ */
+
+/**
+ * @typedef {Object} Diagnostics
+ * @property {boolean} [publishingDisabled] - Disable diagnostics publishing
+ * @property {number} [publishAfterLoadInMsec] - Delay in ms after script load after which collected diagnostics are published
+ * @property {boolean} [publishBeforeWindowUnload] - When true, diagnostics publishing is triggered on Window 'beforeunload' event
+ * @property {number} [publishingSampleRatio] - Diagnostics publishing sample ratio
+ */
+
+/**
+ * @typedef {Object} Segment
+ * @property {string} [destination] - GVL ID or ID5-XX Partner ID. Mandatory
+ * @property {Array<string>} [ids] - The segment IDs to push. Must contain at least one segment ID.
  */
 
 /**
@@ -76,6 +95,11 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
  * @property {string} pd - The ID5 partner data string
  * @property {ABTestingConfig} abTesting - The A/B testing configuration
  * @property {boolean} disableExtensions - Disabled extensions call
+ * @property {string} [externalModuleUrl] - URL for the id5 prebid external module
+ * @property {Multiplexing} [multiplexing] - Multiplexing options. Only supported when loading the external module.
+ * @property {Diagnostics} [diagnostics] - Diagnostics options. Supported only in multiplexing
+ * @property {Array<Segment>} [segments] - A list of segments to push to partners. Supported only in multiplexing.
+ * @property {boolean} [disableUaHints] - When true, look up of high entropy values through user agent hints is disabled.
  */
 
 /** @type {Submodule} */
@@ -241,10 +265,10 @@ class IdFetchFlow {
 
   // eslint-disable-next-line no-dupe-class-members
   async #externalModuleFlow() {
-    const results = await GreedyPromise.allSettled(
+    const results = await GreedyPromise.allSettled([
       this.#loadExternalModule(this.submoduleConfig.params.externalModuleUrl),
       this.#callForConfig(this.submoduleConfig)
-    );
+    ]);
 
     if (isRejected(results[0])) {
       throw new Error('Could not load external module:', results[0].reason);
@@ -254,7 +278,7 @@ class IdFetchFlow {
     }
     const dynamicConfig = results[1].value;
     const id5PrebidIntegration = window.id5Prebid.integration;
-    return id5PrebidIntegration.fetchId5Id(dynamicConfig);
+    return id5PrebidIntegration.fetchId5Id(dynamicConfig, this.submoduleConfig.params, getRefererInfo(), this.gdprConsentData, this.usPrivacyData);
   }
 
   // eslint-disable-next-line no-dupe-class-members
@@ -379,7 +403,7 @@ class IdFetchFlow {
   // eslint-disable-next-line no-dupe-class-members
   async #loadExternalModule() {
     const url = this.submoduleConfig.params.externalModuleUrl;
-    return new Promise((resolve, reject) => {
+    return new GreedyPromise((resolve, reject) => {
       const script = document.createElement('script');
       script.onload = resolve;
       script.onerror = reject;
