@@ -118,25 +118,6 @@ describe('freewheelSSP BidAdapter Test', () => {
       }
     ];
 
-    it('should get correct value from content object', () => {
-      let bidderRequest = {
-        ortb2: {
-          site: {
-            content: {
-              fake: 'news',
-              unreal: 'param',
-              counterfit: 'data'
-            }
-          }
-        }
-      };
-
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-
-      const payload = request[0].data;
-      expect(payload._fw_prebid_content).to.deep.equal('{\"fake\":\"news\",\"unreal\":\"param\",\"counterfit\":\"data\"}');
-    });
-
     it('should get bidfloor value from params if no getFloor method', () => {
       const request = spec.buildRequests(bidRequests);
       const payload = request[0].data;
@@ -278,6 +259,24 @@ describe('freewheelSSP BidAdapter Test', () => {
         type: 'image',
         url: 'https://ads.stickyadstv.com/auto-user-sync?gpp=abc1234&gpp_sid[]=8'
       }]);
+    });
+
+    it('should get correct value from content object', () => {
+      let bidderRequest = {
+        'ortb2': {
+          'site': {
+            'content': {
+              'fake': 'news',
+              'unreal': 'param',
+              'counterfit': 'data'
+            }
+          }
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = request[0].data;
+      expect(payload._fw_prebid_content).to.deep.equal('{\"fake\":\"news\",\"unreal\":\"param\",\"counterfit\":\"data\"}');
     });
   })
 
