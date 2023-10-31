@@ -199,7 +199,7 @@ describe('S2S Adapter', function () {
       adapter.callBids(bidRequest, BID_REQUESTS, addBidResponse, done, ajax);
       expect(eventsEmitSpy.getCalls()
         .filter(call => {
-          return call.args[0] === CONSTANTS.EVENTS.FLOOR_VALUES_RECEIVED
+          return call.args[0] === CONSTANTS.EVENTS.PBS_FLOOR_VALUES_RECEIVED
         })
       ).to.length(1);
     });

@@ -158,7 +158,7 @@ const PBS_CONVERTER = ortbConverter({
         if (min != null) {
           Object.assign(imp, min);
         }
-        events.emit(CONSTANTS.EVENTS.FLOOR_VALUES_RECEIVED, imp);
+        events.emit(CONSTANTS.EVENTS.PBS_FLOOR_VALUES_RECEIVED, imp);
       }
     },
     [REQUEST]: {
