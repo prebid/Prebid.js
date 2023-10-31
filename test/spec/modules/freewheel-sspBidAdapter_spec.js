@@ -119,17 +119,20 @@ describe('freewheelSSP BidAdapter Test', () => {
     ];
 
     it('should get correct value from content object', () => {
-      config.setConfig({
-        content: {
-          'title': 'freewheel',
-          'series': 'abc',
-          'id': 'iris_5e7'
+      const bidRequest = bidRequests[0];
+      bidRequest.ortb2 = {
+        site: {
+          content: {
+            fake: 'news',
+            unreal: 'param',
+            counterfit: 'data'
+          }
         }
-      });
+      };
 
       const request = spec.buildRequests(bidRequests);
       const payload = request[0].data;
-      expect(payload._fw_prebid_content).to.deep.equal('{\"title\":\"freewheel\",\"series\":\"abc\",\"id\":\"iris_5e7\"}');
+      expect(payload._fw_prebid_content).to.deep.equal('{\"fake\":\"news\",\"unreal\":\"param\",\"counterfit\":\"data\"}');
     });
 
     it('should get bidfloor value from params if no getFloor method', () => {
