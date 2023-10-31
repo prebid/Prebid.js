@@ -59,7 +59,7 @@ const converter = ortbConverter({
     const request = buildRequest(imps, bidderRequest, context);
     deepSetValue(request, 'at', 1);
     setPrebidRequestEnvironment(request);
-    deepSetValue(request, 'regs', getRegs());
+    deepSetValue(request, 'regs', getRegs(bidderRequest));
     deepSetValue(request, 'site.publisher.id', bidderRequest.bids[0].params.publisherId);
     deepSetValue(request, 'site.id', bidderRequest.bids[0].params.siteId);
     return request;
@@ -106,9 +106,11 @@ function recur(obj) {
   return result;
 }
 
-function getRegs() {
+function getRegs(bidRequest) {
+  const ortb2Data = bidRequest?.ortb2 || {};
+
   let regs = {};
-  const consentManagement = config.getConfig('consentManagement');
+  const consentManagement = ortb2Data.consentManagement || {};
   const coppa = config.getConfig('coppa');
   if (consentManagement && !!(consentManagement.gdpr)) {
     deepSetValue(regs, 'gdpr_applies', !!consentManagement.gdpr);
