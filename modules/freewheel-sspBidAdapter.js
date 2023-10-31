@@ -385,7 +385,7 @@ export const spec = {
       }
 
       // Add content object
-      if (bidderRequest.ortb2 && bidderRequest.ortb2.site && bidderRequest.ortb2.site.content && typeof bidderRequest.ortb2.site.content === 'object') {
+      if (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.site && bidderRequest.ortb2.site.content && typeof bidderRequest.ortb2.site.content === 'object') {
         try {
           requestParams._fw_prebid_content = JSON.stringify(bidderRequest.ortb2.site.content);
         } catch (error) {
