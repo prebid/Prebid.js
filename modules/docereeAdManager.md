@@ -22,7 +22,7 @@ var adUnits = [
        ],
        bids: [
            {
-               bidder: "docereeAdManager",
+               bidder: 'docereeAdManager',
                params: {
                     placementId: 'DOC-500-3', //required
                     publisherUrl: document.URL || window.location.href, //optional
@@ -37,28 +37,28 @@ var adUnits = [
 
 ```javascript
 pbjs.setBidderConfig({
-  bidders: ["docereeAdManager"],
+  bidders: ['docereeAdManager'],
   config: {
     docereeAdManager: {
       user: {
         data: {
-          email: "DALIA.WENCKUS@GMAIL.COM",
-          firstName: "DR. DALIA",
-          lastName: "WENCKUS",
-          mobile: "9812345675",
-          specialization: "Internal Medicine",
-          organization: "Max Lifecare",
-          hcpid: "1992915645",
-          dob: "1987-08-27",
-          gd: "Female",
-          city: "Oildale",
-          state: "California",
-          country: "California",
-          hashedhcpid: "",
-          hashedemail: "",
-          hashedmobile: "",
-          adunit: "DOC-491-1",
-          userid: "7d26d8ca-233a-46c2-9d36-7c5d261e151d",
+          email: 'DALIA.WENCKUS@GMAIL.COM',
+          firstName: 'DR. DALIA',
+          lastName: 'WENCKUS',
+          mobile: '9812345675',
+          specialization: 'Internal Medicine',
+          organization: 'Max Lifecare',
+          hcpid: '1992915645',
+          dob: '1987-08-27',
+          gd: 'Female',
+          city: 'Oildale',
+          state: 'California',
+          country: 'California',
+          hashedhcpid: '',
+          hashedemail: '',
+          hashedmobile: '',
+          adunit: 'DOC-491-1',
+          userid: '7d26d8ca-233a-46c2-9d36-7c5d261e151d',
         },
       },
     },

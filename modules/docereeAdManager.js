@@ -1,12 +1,12 @@
-import { registerBidder } from "../src/adapters/bidderFactory.js";
-import { config } from "../src/config.js";
-import { BANNER } from "../src/mediaTypes.js";
-const BIDDER_CODE = "docereeAdManager";
-const END_POINT = "https://dai.doceree.com";
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER } from '../src/mediaTypes.js';
+const BIDDER_CODE = 'docereeAdManager';
+const END_POINT = 'https://dai.doceree.com';
 
 export const spec = {
   code: BIDDER_CODE,
-  url: "",
+  url: '',
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: (bid) => {
@@ -15,26 +15,26 @@ export const spec = {
   },
   isGdprConsentPresent: (bid) => {
     const { gdpr, gdprConsent } = bid.params;
-    if (gdpr == "1") {
+    if (gdpr == '1') {
       return !!gdprConsent;
     }
     return true;
   },
   buildRequests: (validBidRequests) => {
     const serverRequests = [];
-    const { data } = config.getConfig("docereeAdManager.user");
+    const { data } = config.getConfig('docereeAdManager.user');
 
     // TODO: this should probably look at refererInfo
-    // const { page, domain, token } = config.getConfig("customAdapter.context");
+    // const { page, domain, token } = config.getConfig('customAdapter.context');
 
     validBidRequests.forEach(function (validBidRequest) {
       const payload = getPayload(validBidRequest, data);
       serverRequests.push({
-        method: "POST",
+        method: 'POST',
         url: END_POINT,
         data: JSON.stringify(payload.data),
         options: {
-          contentType: "application/json",
+          contentType: 'application/json',
           withCredentials: true,
         },
       });
@@ -53,7 +53,7 @@ export const spec = {
       ttl: 30,
       cpm: responseJson.cpm,
       currency: responseJson.currency,
-      mediaType: "banner",
+      mediaType: 'banner',
       creativeId: responseJson.creativeId,
       meta: {
         advertiserDomains: [responseJson.meta.advertiserDomains],
