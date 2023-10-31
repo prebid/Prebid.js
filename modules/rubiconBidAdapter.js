@@ -200,7 +200,7 @@ export const converter = ortbConverter({
     bidRequest.params.position === 'btf' && (imp.video.pos = 3);
     delete imp.ext?.prebid?.storedrequest;
 
-    if (bidderRequest.fledgeEnabled) {
+    if (context.fledgeEnabled) {
       deepSetValue(imp, 'ext.ae', 1)
     }
 
