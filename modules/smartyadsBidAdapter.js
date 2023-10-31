@@ -6,7 +6,13 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'smartyads';
-const AD_URL = 'https://n1.smartyads.com/?c=o&m=prebid&secret_key=prebid_js';
+const GVLID = 534;
+const adUrls = {
+  US_EAST: 'https://n1.smartyads.com/?c=o&m=prebid&secret_key=prebid_js',
+  EU: 'https://n2.smartyads.com/?c=o&m=prebid&secret_key=prebid_js',
+  SGP: 'https://n6.smartyads.com/?c=o&m=prebid&secret_key=prebid_js'
+}
+
 const URL_SYNC = 'https://as.ck-ie.com/prebidjs?p=7c47322e527cf8bdeb7facc1bb03387a';
 
 function isBidResponseValid(bid) {
@@ -26,8 +32,28 @@ function isBidResponseValid(bid) {
   }
 }
 
+function getAdUrlByRegion(bid) {
+  let adUrl;
+
+  if (bid.params.region && adUrls[bid.params.region]) {
+    adUrl = adUrls[bid.params.region];
+  } else {
+    try {
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const region = timezone.split('/')[0];
+      if (region === 'Europe') adUrl = adUrls['EU'];
+      else adUrl = adUrls['US_EAST'];
+    } catch (err) {
+      adUrl = adUrls['US_EAST'];
+    }
+  }
+
+  return adUrl;
+}
+
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid) => {
@@ -73,8 +99,11 @@ export const spec = {
     }
     const len = validBidRequests.length;
 
+    let adUrl;
+
     for (let i = 0; i < len; i++) {
       let bid = validBidRequests[i];
+      if (i === 0) adUrl = getAdUrlByRegion(bid);
       let traff = bid.params.traffic || BANNER
       placements.push({
         placementId: bid.params.sourceid,
@@ -87,11 +116,12 @@ export const spec = {
         placements.schain = bid.schain;
       }
     }
+
     return {
       method: 'POST',
-      url: AD_URL,
+      url: adUrl,
       data: request
-    };
+    }
   },
 
   interpretResponse: (serverResponse) => {

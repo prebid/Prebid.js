@@ -503,8 +503,8 @@ export function PrebidServer() {
             }
           }
         },
-        onFledge: ({adUnitCode, config}) => {
-          addComponentAuction(bidRequests[0].auctionId, adUnitCode, config);
+        onFledge: (params) => {
+          addComponentAuction({auctionId: bidRequests[0].auctionId, ...params}, params.config);
         }
       })
     }

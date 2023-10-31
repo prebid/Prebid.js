@@ -24,6 +24,7 @@ const CURRENCY = Object.freeze({
 });
 
 const REQUEST_KEYS = Object.freeze({
+  USER_DATA: 'ortb2.user.data',
   SOCIAL_CANVAS: 'params.socialCanvas',
   SUA: 'ortb2.device.sua',
   TDID_ADAPTER: 'userId.tdid',
@@ -97,15 +98,26 @@ function buildRequests(validBidRequests, bidderRequest) {
     user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids, bidderRequest.gppConsent),
   });
 
+  if (firstBidRequest.ortb2 != null) {
+    krakenParams.site = {
+      cat: firstBidRequest.ortb2.site.cat
+    }
+  }
+
+  // Add schain
   if (firstBidRequest.schain && firstBidRequest.schain.nodes) {
     krakenParams.schain = firstBidRequest.schain
   }
+
+  // Add user data object if available
+  krakenParams.user.data = deepAccess(firstBidRequest, REQUEST_KEYS.USER_DATA) || [];
 
   const reqCount = getRequestCount()
   if (reqCount != null) {
     krakenParams.requestCount = reqCount;
   }
 
+  // Add currency if not USD
   if (currency != null && currency != CURRENCY.US_DOLLAR) {
     krakenParams.cur = currency;
   }
@@ -463,8 +475,8 @@ function getImpression(bid) {
     imp.bidderWinCount = bid.bidderWinsCount;
   }
 
-  const gpid = getGPID(bid)
-  if (gpid != null && gpid != '') {
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  if (gpid) {
     imp.fpd = {
       gpid: gpid
     }
@@ -485,29 +497,6 @@ function getImpression(bid) {
   }
 
   return imp
-}
-
-function getGPID(bid) {
-  if (bid.ortb2Imp != null) {
-    if (bid.ortb2Imp.gpid != null && bid.ortb2Imp.gpid != '') {
-      return bid.ortb2Imp.gpid;
-    }
-
-    if (bid.ortb2Imp.ext != null && bid.ortb2Imp.ext.data != null) {
-      if (bid.ortb2Imp.ext.data.pbAdSlot != null && bid.ortb2Imp.ext.data.pbAdSlot != '') {
-        return bid.ortb2Imp.ext.data.pbAdSlot;
-      }
-
-      if (bid.ortb2Imp.ext.data.adServer != null && bid.ortb2Imp.ext.data.adServer.adSlot != null && bid.ortb2Imp.ext.data.adServer.adSlot != '') {
-        return bid.ortb2Imp.ext.data.adServer.adSlot;
-      }
-    }
-  }
-
-  if (bid.adUnitCode != null && bid.adUnitCode != '') {
-    return bid.adUnitCode;
-  }
-  return '';
 }
 
 export const spec = {
