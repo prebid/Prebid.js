@@ -3,7 +3,6 @@ import { loadExternalScript } from '../src/adloader.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { find } from '../src/polyfill.js';
 import { verify } from 'criteo-direct-rsa-validate/build/verify.js'; // ref#2
 import { getStorageManager } from '../src/storageManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
@@ -282,7 +281,7 @@ export const spec = {
         igbid.igbuyer.forEach(buyerItem => {
           perBuyerSignals[buyerItem.origin] = buyerItem.buyerdata;
         });
-        const bidRequest = find(request.bidRequests, b => b.bidId === igbid.impid);
+        const bidRequest = request.bidRequests.find(b => b.bidId === igbid.impid);
         if (!sellerSignals.floor && bidRequest.params.bidFloor) {
           sellerSignals.floor = bidRequest.params.bidFloor;
         }
