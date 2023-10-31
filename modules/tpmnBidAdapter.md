@@ -75,7 +75,7 @@ We support the following OpenRTB params that can be specified in `mediaTypes.vid
 |    Name   |    Scope    |                      Description                                  |  Example  |    Type   |
 | --------- | ------------| ----------------------------------------------------------------- | --------- | --------- |
 | `context` | required | instream or outstream |'outstream' | string | 
-| `playerSize` | required | Avalaible sizes supported for video ad unit. | [300, 250] | [Integer, Integer] | 
+| `playerSize` | required | Avalaible sizes supported for video ad unit. | [[300, 250]] | [Integer, Integer] | 
 | `mimes` | required | List of content MIME types supported by the player. | ['video/mp4']| [String]|
 | `protocols` | optional | Supported video bid response protocol values. | [2,3,5,6] | [integers]|
 | `api` | optional | Supported API framework values. | [2] |  [integers] |
@@ -99,7 +99,7 @@ We support the following OpenRTB params that can be specified in `mediaTypes.vid
             video: {
                 context: 'instream',                    // required
                 mimes: ['video/mp4'],                   // required
-                playerSize: [ 640, 480 ],               // required
+                playerSize: [[ 640, 480 ]],               // required
                 ... // skippable, startdelay, battr..   // optional
             }
         },
