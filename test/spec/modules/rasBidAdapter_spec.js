@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/rasBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import {getAdUnitSizes} from '../../../src/utils';
 
 const CSR_ENDPOINT = 'https://csr.onet.pl/4178463/csr-006/csr.json?nid=4178463&';
 
@@ -59,7 +60,10 @@ describe('rasBidAdapter', function () {
         area: 'areatest',
         site: 'test',
         slotSequence: '0',
-        network: '4178463'
+        network: '4178463',
+        customParams: {
+          test: 'name=value'
+        }
       }
     };
     const bid2 = {
@@ -98,6 +102,7 @@ describe('rasBidAdapter', function () {
       expect(requests[0].url).to.have.string('euconsent=some-consent-string');
       expect(requests[0].url).to.have.string('du=https%3A%2F%2Fexample.com%2F');
       expect(requests[0].url).to.have.string('dr=https%3A%2F%2Fexample.org%2F');
+      expect(requests[0].url).to.have.string('test=name%3Dvalue');
     });
 
     it('should return empty consent string when undefined', function () {
@@ -187,6 +192,57 @@ describe('rasBidAdapter', function () {
       };
       const resp = spec.interpretResponse({ body: res }, {});
       expect(resp).to.deep.equal([]);
+    });
+
+    it('should generate auctionConfig when fledge is enabled', function () {
+      let bidRequest = {
+        method: 'GET',
+        url: 'https://example.com',
+        bidIds: [{
+          slot: 'top',
+          bidId: '123',
+          network: 'testnetwork',
+          sizes: ['300x250'],
+          params: {
+            site: 'testsite',
+            area: 'testarea',
+            network: 'testnetwork'
+          },
+          fledgeEnabled: true
+        },
+        {
+          slot: 'top',
+          bidId: '456',
+          network: 'testnetwork',
+          sizes: ['300x250'],
+          params: {
+            site: 'testsite',
+            area: 'testarea',
+            network: 'testnetwork'
+          },
+          fledgeEnabled: false
+        }]
+      };
+
+      let auctionConfigs = [{
+        'bidId': '123',
+        'config': {
+          'seller': 'https://csr.onet.pl',
+          'decisionLogicUrl': 'https://csr.onet.pl/testnetwork/v1/protected-audience-api/decision-logic.js',
+          'interestGroupBuyers': ['https://csr.onet.pl'],
+          'auctionSignals': {
+            'params': {
+              site: 'testsite',
+              area: 'testarea',
+              network: 'testnetwork'
+            },
+            'sizes': ['300x250'],
+            'gctx': '1234567890'
+          }
+        }
+      }];
+      const resp = spec.interpretResponse({body: {gctx: '1234567890'}}, bidRequest);
+      expect(resp).to.deep.equal({bids: [], fledgeAuctionConfigs: auctionConfigs});
     });
   });
 });

@@ -53,6 +53,10 @@ const BIDDER_REQUEST_1 = {
     consentString: 'consent-test',
     gdprApplies: false
   },
+  gppConsent: {
+    applicableSections: [1, 2],
+    gppString: 'consent-string'
+  },
   refererInfo: {
     referer: 'http://example.com/page.html',
     reachedTop: true,
@@ -624,6 +628,63 @@ describe('Consumable BidAdapter', function () {
 
       expect(opts.length).to.equal(1);
     });
+
+    it('should return a sync url if iframe syncs are enabled and GDPR applies', function () {
+      let gdprConsent = {
+        consentString: 'GDPR_CONSENT_STRING',
+        gdprApplies: true,
+      }
+      let opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], gdprConsent);
+
+      expect(opts.length).to.equal(1);
+      expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gdpr=1&gdpr_consent=GDPR_CONSENT_STRING');
+    })
+
+    it('should return a sync url if iframe syncs are enabled and GDPR is undefined', function () {
+      let gdprConsent = {
+        consentString: 'GDPR_CONSENT_STRING',
+        gdprApplies: undefined,
+      }
+      let opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], gdprConsent);
+
+      expect(opts.length).to.equal(1);
+      expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gdpr=0&gdpr_consent=GDPR_CONSENT_STRING');
+    })
+
+    it('should return a sync url if iframe syncs are enabled and GPP applies', function () {
+      let gppConsent = {
+        applicableSections: [1, 2],
+        gppString: 'GPP_CONSENT_STRING'
+      }
+      let opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], {}, {}, gppConsent);
+
+      expect(opts.length).to.equal(1);
+      expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gpp=GPP_CONSENT_STRING&gpp_sid=1,2');
+    })
+
+    it('should return a sync url if iframe syncs are enabled and USP applies', function () {
+      let uspConsent = {
+        consentString: 'USP_CONSENT_STRING',
+      }
+      let opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], {}, uspConsent);
+
+      expect(opts.length).to.equal(1);
+      expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?us_privacy=USP_CONSENT_STRING');
+    })
+
+    it('should return a sync url if iframe syncs are enabled, GDPR and USP applies', function () {
+      let gdprConsent = {
+        consentString: 'GDPR_CONSENT_STRING',
+        gdprApplies: true,
+      }
+      let uspConsent = {
+        consentString: 'USP_CONSENT_STRING',
+      }
+      let opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], gdprConsent, uspConsent);
+
+      expect(opts.length).to.equal(1);
+      expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gdpr=1&gdpr_consent=GDPR_CONSENT_STRING&us_privacy=USP_CONSENT_STRING');
+    })
 
     it('should return a sync url if pixel syncs are enabled and some are returned from the server', function () {
       let syncOptions = {'pixelEnabled': true};
