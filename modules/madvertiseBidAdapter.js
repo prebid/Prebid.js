@@ -34,7 +34,7 @@ export const spec = {
    * @return ServerRequest[]
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    const ortb2Data = bidRequests?.ortb2 || {};
+    const ortb2Data = bidderRequest?.ortb2 || {};
     const consentManagement = ortb2Data?.consentManagement || {};
 
     return bidRequests.map(bidRequest => {
