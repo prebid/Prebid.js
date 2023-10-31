@@ -119,18 +119,20 @@ describe('freewheelSSP BidAdapter Test', () => {
     ];
 
     it('should get correct value from content object', () => {
-      const bidRequest = bidRequests[0];
-      bidRequest.ortb2 = {
-        site: {
-          content: {
-            fake: 'news',
-            unreal: 'param',
-            counterfit: 'data'
+      let bidderRequest = {
+        ortb2: {
+          site: {
+            content: {
+              fake: 'news',
+              unreal: 'param',
+              counterfit: 'data'
+            }
           }
         }
       };
 
-      const request = spec.buildRequests(bidRequests);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+
       const payload = request[0].data;
       expect(payload._fw_prebid_content).to.deep.equal('{\"fake\":\"news\",\"unreal\":\"param\",\"counterfit\":\"data\"}');
     });
