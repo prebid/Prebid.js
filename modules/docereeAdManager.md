@@ -1,7 +1,7 @@
 # Overview
 
 ```
-Module Name: Doceree AdManager Adapter
+Module Name: Doceree AdManager Bidder Adapter
 Module Type: Bidder Adapter
 Maintainer: tech.stack@doceree.com
 ```
