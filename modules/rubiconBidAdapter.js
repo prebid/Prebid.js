@@ -650,14 +650,14 @@ export const spec = {
     let lastImpId;
     let multibid = 0;
 
-    // check the ad response
-    if (!Array.isArray(ads) || ads.length < 1) {
-      return [];
-    }
-
     // video ads array is wrapped in an object
     if (typeof bidRequest === 'object' && !Array.isArray(bidRequest) && bidType(bidRequest).includes(VIDEO) && typeof ads === 'object') {
       ads = ads[bidRequest.adUnitCode];
+    }
+
+    // check the ad response
+    if (!Array.isArray(ads) || ads.length < 1) {
+      return [];
     }
 
     let bids = ads.reduce((bids, ad, i) => {
