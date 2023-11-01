@@ -1,7 +1,6 @@
 import { timestamp, deepAccess, isStr, deepClone } from '../src/utils.js';
 import { getOrigin } from '../libraries/getOrigin/index.js';
 import { config } from '../src/config.js';
-import { hasPurpose1Consent } from '../src/utils/gpdr.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
@@ -190,7 +189,7 @@ export const spec = {
       return syncs;
     }
 
-    let gdprParams = null;
+    let gdprParams = '';
     if (gdprConsent) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
         gdprParams = `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${
@@ -201,15 +200,14 @@ export const spec = {
       }
     }
 
-    if (syncOptions.iframeEnabled && hasPurpose1Consent(gdprConsent)) {
+    if ((syncOptions.iframeEnabled || syncOptions.pixelEnabled)) {
       return [
         {
           type: 'iframe',
-          url: 'https://media.reset-digital.com/prebid/async_usersync.html?' + gdprParams,
+          url: 'https://media.reset-digital.com/prebid/async_usersync.html?' + gdprParams.length ? gdprParams : '',
         },
       ];
     }
-    return syncs;
   },
 };
 
