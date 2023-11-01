@@ -25,11 +25,7 @@ jobs:
     - name: Build project with Gulp
       run: |
         gulp build --modules=modules.json        
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:  
+  
     - name: Upload to S3 Bucket
       run: |
         aws s3 cp build/dist/prebid.js s3://${{ secrets.AWS_S3_BUCKET }} --region ${{ secrets.AWS_S3_REGION }}
