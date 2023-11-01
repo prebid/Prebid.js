@@ -11,13 +11,6 @@ jobs:
     - name: Checkout repository    
       uses: actions/checkout@v3
 
-    - name: Use Node.js 
-      uses: actions/setup-node@v3
-      with:
-        node-version: 18
-        cache: 'npm'
-        cache-dependency-path: package-lock.json
-
     - name: Cache npm dependencies
       uses: actions/cache@v3
       with: 
@@ -43,6 +36,21 @@ jobs:
     - name: Build project with Gulp
       run: |
         gulp build --modules=modules.json        
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository    
+      uses: actions/checkout@v3
+
+    - name: Restore npm modules
+      uses: actions/cache@v3
+      with:
+        paths: |
+          ~/.npm
+          ~/.npm-global
+        key: npm-caches-${{ runner.os }}
     
     - name: Upload to S3 Bucket
       run: |
