@@ -76,7 +76,9 @@ const SOURCE_RTI_MAPPING = {
   'audigent.com': '', // Hadron ID from Audigent, hadronId
   'pubcid.org': '', // SharedID, pubcid
   'utiq.com': '', // Utiq
-  'intimatemerger.com': ''
+  'intimatemerger.com': '',
+  '33across.com': '',
+  'liveintent.indexexchange.com': '',
 };
 const PROVIDERS = [
   'britepoolid',
@@ -180,6 +182,41 @@ function bidToBannerImp(bid) {
 }
 
 /**
+ * Sets imp.displaymanager
+ *
+ * @param {object} imp
+ * @param {object} bid
+ */
+function setDisplayManager(imp, bid) {
+  if (deepAccess(bid, 'mediaTypes.video.context') === OUTSTREAM) {
+    let renderer = deepAccess(bid, 'mediaTypes.video.renderer');
+    if (!renderer) {
+      renderer = deepAccess(bid, 'renderer');
+    }
+
+    if (deepAccess(bid, 'schain', false)) {
+      imp.displaymanager = 'pbjs_wrapper';
+    } else if (renderer && typeof (renderer) === 'object') {
+      if (renderer.url !== undefined) {
+        let domain = '';
+        try {
+          domain = new URL(renderer.url).hostname
+        } catch {
+          return;
+        }
+        if (domain.includes('js-sec.indexww')) {
+          imp.displaymanager = 'ix';
+        } else {
+          imp.displaymanager = renderer.url;
+        }
+      }
+    } else {
+      imp.displaymanager = 'ix';
+    }
+  }
+}
+
+/**
  * Transform valid bid request config object to video impression object that will be sent to ad server.
  *
  * @param  {object} bid A valid bid request config object.
@@ -198,8 +235,10 @@ export function bidToVideoImp(bid) {
   // populate imp level transactionId
   imp.ext.tid = deepAccess(bid, 'ortb2Imp.ext.tid');
 
+  setDisplayManager(imp, bid);
+
   // AdUnit-Specific First Party Data
-  addAdUnitFPD(imp, bid)
+  addAdUnitFPD(imp, bid);
 
   // copy all video properties to imp object
   for (const adUnitProperty in videoAdUnitRef) {
@@ -697,6 +736,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 
     const isLastAdUnit = adUnitIndex === impKeys.length - 1;
 
+    r = addDeviceInfo(r);
     r = deduplicateImpExtFields(r);
     r = removeSiteIDs(r);
 
@@ -2015,6 +2055,21 @@ function getFormatCount(imp) {
     formatCount += 1;
   }
   return formatCount;
+}
+
+/**
+ * Adds device.w / device.h info
+ * @param {object} r
+ * @returns object
+ */
+export function addDeviceInfo(r) {
+  if (r.device == undefined) {
+    r.device = {};
+  }
+  r.device.h = window.screen.height;
+  r.device.w = window.screen.width;
+
+  return r;
 }
 
 registerBidder(spec);

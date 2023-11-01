@@ -24,18 +24,19 @@ import {
 import {registerActivityControl} from '../src/activities/rules.js';
 import {
   ACTIVITY_ACCESS_DEVICE,
-  ACTIVITY_ENRICH_EIDS,
+  ACTIVITY_ENRICH_EIDS, ACTIVITY_ENRICH_UFPD,
   ACTIVITY_FETCH_BIDS,
   ACTIVITY_REPORT_ANALYTICS,
-  ACTIVITY_SYNC_USER
+  ACTIVITY_SYNC_USER, ACTIVITY_TRANSMIT_UFPD
 } from '../src/activities/activities.js';
 
 export const STRICT_STORAGE_ENFORCEMENT = 'strictStorageEnforcement';
 
 const TCF2 = {
-  'purpose1': {id: 1, name: 'storage'},
-  'purpose2': {id: 2, name: 'basicAds'},
-  'purpose7': {id: 7, name: 'measurement'}
+  purpose1: {id: 1, name: 'storage'},
+  purpose2: {id: 2, name: 'basicAds'},
+  purpose4: {id: 4, name: 'personalizedAds'},
+  purpose7: {id: 7, name: 'measurement'},
 };
 
 /*
@@ -55,6 +56,7 @@ const DEFAULT_RULES = [{
 
 export let purpose1Rule;
 export let purpose2Rule;
+export let purpose4Rule;
 export let purpose7Rule;
 
 export let enforcementRules;
@@ -62,6 +64,7 @@ export let enforcementRules;
 const storageBlocked = new Set();
 const biddersBlocked = new Set();
 const analyticsBlocked = new Set();
+const ufpdBlocked = new Set();
 
 let hooksAdded = false;
 let strictStorageEnforcement = false;
@@ -232,6 +235,8 @@ export const fetchBidsRule = ((rule) => {
 
 export const reportAnalyticsRule = gdprRule(7, () => purpose7Rule, analyticsBlocked, (params) => getGvlidFromAnalyticsAdapter(params[ACTIVITY_PARAM_COMPONENT_NAME], params[ACTIVITY_PARAM_ANL_CONFIG]));
 
+export const ufpdRule = gdprRule(4, () => purpose4Rule, ufpdBlocked);
+
 /**
  * Compiles the TCF2.0 enforcement results into an object, which is emitted as an event payload to "tcf2Enforcement" event.
  */
@@ -243,27 +248,20 @@ function emitTCF2FinalResults() {
   const tcf2FinalResults = {
     storageBlocked: formatSet(storageBlocked),
     biddersBlocked: formatSet(biddersBlocked),
-    analyticsBlocked: formatSet(analyticsBlocked)
+    analyticsBlocked: formatSet(analyticsBlocked),
+    ufpdBlocked: formatSet(ufpdBlocked),
   };
 
   events.emit(CONSTANTS.EVENTS.TCF2_ENFORCEMENT, tcf2FinalResults);
-  [storageBlocked, biddersBlocked, analyticsBlocked].forEach(el => el.clear());
+  [storageBlocked, biddersBlocked, analyticsBlocked, ufpdBlocked].forEach(el => el.clear());
 }
 
 events.on(CONSTANTS.EVENTS.AUCTION_END, emitTCF2FinalResults);
 
-/*
-  Set of callback functions used to detect presence of a TCF rule, passed as the second argument to find().
-*/
-const hasPurpose1 = (rule) => {
-  return rule.purpose === TCF2.purpose1.name;
-};
-const hasPurpose2 = (rule) => {
-  return rule.purpose === TCF2.purpose2.name;
-};
-const hasPurpose7 = (rule) => {
-  return rule.purpose === TCF2.purpose7.name;
-};
+function hasPurpose(purposeNo) {
+  const pname = TCF2[`purpose${purposeNo}`].name;
+  return (rule) => rule.purpose === pname;
+}
 
 /**
  * A configuration function that initializes some module variables, as well as adds hooks
@@ -279,9 +277,10 @@ export function setEnforcementConfig(config) {
   }
   strictStorageEnforcement = !!deepAccess(config, STRICT_STORAGE_ENFORCEMENT);
 
-  purpose1Rule = find(enforcementRules, hasPurpose1);
-  purpose2Rule = find(enforcementRules, hasPurpose2);
-  purpose7Rule = find(enforcementRules, hasPurpose7);
+  purpose1Rule = find(enforcementRules, hasPurpose(1));
+  purpose2Rule = find(enforcementRules, hasPurpose(2));
+  purpose4Rule = find(enforcementRules, hasPurpose(4))
+  purpose7Rule = find(enforcementRules, hasPurpose(7));
 
   if (!purpose1Rule) {
     purpose1Rule = DEFAULT_RULES[0];
@@ -300,6 +299,12 @@ export function setEnforcementConfig(config) {
     }
     if (purpose2Rule) {
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_FETCH_BIDS, RULE_NAME, fetchBidsRule));
+    }
+    if (purpose4Rule) {
+      RULE_HANDLES.push(
+        registerActivityControl(ACTIVITY_TRANSMIT_UFPD, RULE_NAME, ufpdRule),
+        registerActivityControl(ACTIVITY_ENRICH_UFPD, RULE_NAME, ufpdRule)
+      );
     }
     if (purpose7Rule) {
       RULE_HANDLES.push(registerActivityControl(ACTIVITY_REPORT_ANALYTICS, RULE_NAME, reportAnalyticsRule));
