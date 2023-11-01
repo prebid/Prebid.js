@@ -12,6 +12,7 @@ import * as events from '../src/events.js';
 const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
 
+let ratesURL;
 let bidResponseQueue = [];
 let conversionCache = {};
 let currencyRatesLoaded = false;
@@ -58,7 +59,7 @@ export let responseReady = defer();
  *  there is an error loading the config.conversionRateFile.
  */
 export function setConfig(config) {
-  let url = DEFAULT_CURRENCY_RATE_URL;
+  ratesURL = DEFAULT_CURRENCY_RATE_URL;
 
   if (typeof config.rates === 'object') {
     currencyRates.conversions = config.rates;
@@ -80,14 +81,14 @@ export function setConfig(config) {
     adServerCurrency = config.adServerCurrency;
     if (config.conversionRateFile) {
       logInfo('currency using override conversionRateFile:', config.conversionRateFile);
-      url = config.conversionRateFile;
+      ratesURL = config.conversionRateFile;
     }
 
     // see if the url contains a date macro
     // this is a workaround to the fact that jsdelivr doesn't currently support setting a 24-hour HTTP cache header
     // So this is an approach to let the browser cache a copy of the file each day
     // We should remove the macro once the CDN support a day-level HTTP cache setting
-    const macroLocation = url.indexOf('$$TODAY$$');
+    const macroLocation = ratesURL.indexOf('$$TODAY$$');
     if (macroLocation !== -1) {
       // get the date to resolve the macro
       const d = new Date();
@@ -98,10 +99,10 @@ export function setConfig(config) {
       const todaysDate = `${d.getFullYear()}${month}${day}`;
 
       // replace $$TODAY$$ with todaysDate
-      url = `${url.substring(0, macroLocation)}${todaysDate}${url.substring(macroLocation + 9, url.length)}`;
+      ratesURL = `${ratesURL.substring(0, macroLocation)}${todaysDate}${ratesURL.substring(macroLocation + 9, ratesURL.length)}`;
     }
 
-    initCurrency(url);
+    initCurrency();
   } else {
     // currency support is disabled, setting defaults
     logInfo('disabling currency support');
@@ -122,22 +123,11 @@ function errorSettingsRates(msg) {
   }
 }
 
-function initCurrency(url) {
-  conversionCache = {};
-  currencySupportEnabled = true;
-
-  logInfo('Installing addBidResponse decorator for currency module', arguments);
-
-  // Adding conversion function to prebid global for external module and on page use
-  getGlobal().convertCurrency = (cpm, fromCurrency, toCurrency) => parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency);
-  getHook('addBidResponse').before(addBidResponseHook, 100);
-  getHook('responsesReady').before(responsesReadyHook);
-  events.on(CONSTANTS.EVENTS.AUCTION_TIMEOUT, rejectOnAuctionTimeout);
-
-  // call for the file if we haven't already
+function loadRates() {
   if (needToCallForCurrencyFile) {
     needToCallForCurrencyFile = false;
-    ajax(url,
+    currencyRatesLoaded = false;
+    ajax(ratesURL,
       {
         success: function (response) {
           try {
@@ -152,10 +142,28 @@ function initCurrency(url) {
         },
         error: function (...args) {
           errorSettingsRates(...args);
+          currencyRatesLoaded = true;
+          processBidResponseQueue();
+          needToCallForCurrencyFile = true;
         }
       }
     );
   }
+}
+
+function initCurrency() {
+  conversionCache = {};
+  currencySupportEnabled = true;
+
+  logInfo('Installing addBidResponse decorator for currency module', arguments);
+
+  // Adding conversion function to prebid global for external module and on page use
+  getGlobal().convertCurrency = (cpm, fromCurrency, toCurrency) => parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency);
+  getHook('addBidResponse').before(addBidResponseHook, 100);
+  getHook('responsesReady').before(responsesReadyHook);
+  events.on(CONSTANTS.EVENTS.AUCTION_TIMEOUT, rejectOnAuctionTimeout);
+  events.on(CONSTANTS.EVENTS.AUCTION_INIT, loadRates);
+  loadRates();
 }
 
 function resetCurrency() {
@@ -164,6 +172,7 @@ function resetCurrency() {
   getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
   getHook('responsesReady').getHooks({hook: responsesReadyHook}).remove();
   events.off(CONSTANTS.EVENTS.AUCTION_TIMEOUT, rejectOnAuctionTimeout);
+  events.off(CONSTANTS.EVENTS.AUCTION_INIT, loadRates);
   delete getGlobal().convertCurrency;
 
   adServerCurrency = 'USD';

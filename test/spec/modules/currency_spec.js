@@ -287,32 +287,56 @@ describe('currency', function () {
       expect(innerBid.getCpmInNewCurrency('JPY')).to.equal('1000.000');
     });
 
-    it('uses default rates when currency file fails to load', function () {
-      setConfig({});
-
-      setConfig({
-        adServerCurrency: 'USD',
-        defaultRates: {
-          USD: {
-            JPY: 100
+    describe('when rates fail to load', () => {
+      let bid, addBidResponse, reject;
+      beforeEach(() => {
+        bid = makeBid({cpm: 100, currency: 'JPY', bidder: 'rubicoin'});
+        addBidResponse = sinon.spy();
+        reject = sinon.spy();
+      })
+      it('uses default rates if specified', function () {
+        setConfig({
+          adServerCurrency: 'USD',
+          defaultRates: {
+            USD: {
+              JPY: 100
+            }
           }
-        }
+        });
+
+        // default response is 404
+        addBidResponseHook(addBidResponse, 'au', bid);
+        fakeCurrencyFileServer.respond();
+        sinon.assert.calledWith(addBidResponse, 'au', sinon.match(innerBid => {
+          expect(innerBid.cpm).to.equal('1.0000');
+          expect(typeof innerBid.getCpmInNewCurrency).to.equal('function');
+          expect(innerBid.getCpmInNewCurrency('JPY')).to.equal('100.000');
+          return true;
+        }));
       });
 
-      // default response is 404
-      fakeCurrencyFileServer.respond();
+      it('rejects bids if no default rates are specified', () => {
+        setConfig({
+          adServerCurrency: 'USD',
+        });
+        addBidResponseHook(addBidResponse, 'au', bid, reject);
+        fakeCurrencyFileServer.respond();
+        sinon.assert.notCalled(addBidResponse);
+        sinon.assert.calledWith(reject, CONSTANTS.REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
+      });
 
-      var bid = { cpm: 100, currency: 'JPY', bidder: 'rubicon' };
-      var innerBid;
-
-      addBidResponseHook(function(adCodeId, bid) {
-        innerBid = bid;
-      }, 'elementId', bid);
-
-      expect(innerBid.cpm).to.equal('1.0000');
-      expect(typeof innerBid.getCpmInNewCurrency).to.equal('function');
-      expect(innerBid.getCpmInNewCurrency('JPY')).to.equal('100.000');
-    });
+      it('attempts to load rates again on the next auction', () => {
+        setConfig({
+          adServerCurrency: 'USD',
+        });
+        fakeCurrencyFileServer.respond();
+        fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
+        events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {});
+        addBidResponseHook(addBidResponse, 'au', bid, reject);
+        fakeCurrencyFileServer.respond();
+        sinon.assert.calledWith(addBidResponse, 'au', bid, reject);
+      })
+    })
   });
 
   describe('currency.addBidResponseDecorator bidResponseQueue', function () {
