@@ -35,7 +35,7 @@ jobs:
 
     - name: Invalidate Cloudflare Cache
       run: |
-        curl -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+        curl -s --connect-timeout 1 -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
         -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_KEY }}" \
         -H "Content-Type: application/json" \
         --data '{
