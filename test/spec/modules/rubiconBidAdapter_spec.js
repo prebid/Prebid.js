@@ -1229,6 +1229,30 @@ describe('the rubicon adapter', function () {
             });
           });
 
+          it('should still use single request if other rubicon configs are set after', function () {
+            // set single request to true
+            config.setConfig({ rubicon: { singleRequest: true } });
+
+            // execute some other rubicon setConfig
+            config.setConfig({ rubicon: { netRevenue: true } });
+
+            const bidCopy = utils.deepClone(bidderRequest.bids[0]);
+            bidderRequest.bids.push(bidCopy);
+            bidderRequest.bids.push(bidCopy);
+            bidderRequest.bids.push(bidCopy);
+
+            let serverRequests = spec.buildRequests(bidderRequest.bids, bidderRequest);
+
+            // should have 1 request only
+            expect(serverRequests).that.is.an('array').of.length(1);
+
+            // get the built query
+            let data = parseQuery(serverRequests[0].data);
+
+            // num slots should be 4
+            expect(data.slots).to.equal('4');
+          });
+
           it('should not group bid requests if singleRequest does not equal true', function () {
             config.setConfig({rubicon: {singleRequest: false}});
 
@@ -1552,6 +1576,22 @@ describe('the rubicon adapter', function () {
               let data = parseQuery(request.data);
 
               expect(data['eid_catchall']).to.equal('11111^2');
+            });
+
+            it('should send rubiconproject special case', function () {
+              const clonedBid = utils.deepClone(bidderRequest.bids[0]);
+              // Hardcoding userIdAsEids since createEidsArray returns empty array if source not found in eids.js
+              clonedBid.userIdAsEids = [{
+                source: 'rubiconproject.com',
+                uids: [{
+                  id: 'some-cool-id',
+                  atype: 3
+                }]
+              }]
+              let [request] = spec.buildRequests([clonedBid], bidderRequest);
+              let data = parseQuery(request.data);
+
+              expect(data['eid_rubiconproject.com']).to.equal('some-cool-id');
             });
           });
 
@@ -2605,6 +2645,18 @@ describe('the rubicon adapter', function () {
               const bidReq = addNativeToBidRequest(bidderRequest);
               bidReq.bids[0].params = {
                 video: {}
+              }
+              let [request] = spec.buildRequests(bidReq.bids, bidReq);
+              expect(request.method).to.equal('POST');
+              expect(request.url).to.equal('https://prebid-server.rubiconproject.com/openrtb2/auction');
+              expect(request.data.imp).to.have.nested.property('[0].native');
+            });
+
+            it('should not break if position is set and no video MT', function () {
+              const bidReq = addNativeToBidRequest(bidderRequest);
+              delete bidReq.bids[0].mediaTypes.banner;
+              bidReq.bids[0].params = {
+                position: 'atf'
               }
               let [request] = spec.buildRequests(bidReq.bids, bidReq);
               expect(request.method).to.equal('POST');

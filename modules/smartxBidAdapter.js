@@ -1,4 +1,17 @@
-import { logError, deepAccess, isArray, getBidIdParameter, getDNT, generateUUID, isEmpty, _each, logMessage, logWarn, isFn, isPlainObject } from '../src/utils.js';
+import {
+  logError,
+  deepAccess,
+  isArray,
+  getDNT,
+  generateUUID,
+  isEmpty,
+  _each,
+  logMessage,
+  logWarn,
+  isFn,
+  isPlainObject,
+  getBidIdParameter
+} from '../src/utils.js';
 import {
   Renderer
 } from '../src/Renderer.js';

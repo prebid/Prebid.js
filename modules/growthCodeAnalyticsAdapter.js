@@ -13,7 +13,7 @@ import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'growthCodeAnalytics';
 const DEFAULT_PID = 'INVALID_PID'
-const ENDPOINT_URL = 'https://p2.gcprivacy.com/v1/pb/analytics'
+const ENDPOINT_URL = 'https://analytics.gcprivacy.com/v3/pb/analytics'
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME});
 
@@ -138,12 +138,15 @@ growthCodeAnalyticsAdapter.enableAnalytics = function(conf = {}) {
 
 function logToServer() {
   if (pid === DEFAULT_PID) return;
-  if (eventQueue.length > 1) {
+  if (eventQueue.length >= 1) {
+    // Get the correct GCID
+    let gcid = localStorage.getItem('gcid')
+
     let data = {
       session: sessionId,
       pid: pid,
+      gcid: gcid,
       timestamp: Date.now(),
-      timezoneoffset: new Date().getTimezoneOffset(),
       url: getRefererInfo().page,
       referer: document.referrer,
       events: eventQueue
@@ -167,7 +170,7 @@ function sendEvent(event) {
   eventQueue.push(event);
   logInfo(MODULE_NAME + 'Analytics Event: ' + event);
 
-  if (event.eventType === CONSTANTS.EVENTS.AUCTION_END) {
+  if ((event.eventType === CONSTANTS.EVENTS.AUCTION_END) || (event.eventType === CONSTANTS.EVENTS.BID_WON)) {
     logToServer();
   }
 }

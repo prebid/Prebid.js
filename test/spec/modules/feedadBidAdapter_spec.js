@@ -621,7 +621,7 @@ describe('FeedAdAdapter', function () {
           expect(call.url).to.equal('https://api.feedad.com/1/prebid/web/events');
           expect(JSON.parse(call.requestBody)).to.deep.equal(expectedData);
           expect(call.method).to.equal('POST');
-          expect(call.requestHeaders).to.include({'Content-Type': 'application/json;charset=utf-8'});
+          expect(call.requestHeaders).to.include({'Content-Type': 'application/json'});
         })
       });
     });

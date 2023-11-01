@@ -96,8 +96,8 @@ export const spec = {
 
     payload.device = {};
     payload.device.ua = navigator.userAgent;
-    payload.device.height = window.screen.width;
-    payload.device.width = window.screen.height;
+    payload.device.height = window.screen.height;
+    payload.device.width = window.screen.width;
     payload.device.dnt = _getDoNotTrack();
     payload.device.language = navigator.language;
 

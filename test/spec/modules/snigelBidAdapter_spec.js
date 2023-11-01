@@ -23,6 +23,7 @@ const BASE_BIDDER_REQUEST = {
   auctionId: 'test',
   bidderRequestId: 'test',
   refererInfo: {
+    page: 'https://localhost',
     canonicalUrl: 'https://localhost',
   },
 };

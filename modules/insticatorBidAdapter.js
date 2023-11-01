@@ -106,8 +106,10 @@ function buildImpression(bidRequest) {
   return imp;
 }
 
-function buildDevice() {
-  const deviceConfig = config.getConfig('device');
+function buildDevice(bidRequest) {
+  const ortb2Data = bidRequest?.ortb2 || {};
+  const deviceConfig = ortb2Data?.device || {}
+
   const device = {
     w: window.innerWidth,
     h: window.innerHeight,
@@ -184,7 +186,7 @@ function buildRequest(validBidRequests, bidderRequest) {
       page: bidderRequest.refererInfo.page,
       ref: bidderRequest.refererInfo.ref,
     },
-    device: buildDevice(),
+    device: buildDevice(bidderRequest),
     regs: buildRegs(bidderRequest),
     user: buildUser(validBidRequests[0]),
     imp: validBidRequests.map((bidRequest) => buildImpression(bidRequest)),

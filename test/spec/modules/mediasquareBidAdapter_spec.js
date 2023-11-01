@@ -101,6 +101,7 @@ describe('MediaSquare bid adapter tests', function () {
       'adomain': ['test.com'],
       'context': 'instream',
       'increment': 1.0,
+      'ova': 'cleared',
     }],
   }};
 
@@ -171,6 +172,7 @@ describe('MediaSquare bid adapter tests', function () {
     expect(bid.mediasquare.increment).to.exist;
     expect(bid.mediasquare.increment).to.equal(1.0);
     expect(bid.mediasquare.code).to.equal([DEFAULT_PARAMS[0].params.owner, DEFAULT_PARAMS[0].params.code].join('/'));
+    expect(bid.mediasquare.ova).to.exist.and.to.equal('cleared');
     expect(bid.meta).to.exist;
     expect(bid.meta.advertiserDomains).to.exist;
     expect(bid.meta.advertiserDomains).to.have.lengthOf(1);
@@ -213,6 +215,7 @@ describe('MediaSquare bid adapter tests', function () {
     let message = JSON.parse(server.requests[0].requestBody);
     expect(message).to.have.property('increment').exist;
     expect(message).to.have.property('increment').and.to.equal('1');
+    expect(message).to.have.property('ova').and.to.equal('cleared');
   });
   it('Verifies user sync without cookie in bid response', function () {
     var syncs = spec.getUserSyncs({}, [BID_RESPONSE], DEFAULT_OPTIONS.gdprConsent, DEFAULT_OPTIONS.uspConsent);
