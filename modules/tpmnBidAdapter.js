@@ -142,12 +142,6 @@ const CONVERTER = ortbConverter({
   bidResponse(buildBidResponse, bid, context) {
     const {bidRequest} = context;
     const bidResponse = buildBidResponse(bid, context);
-
-    utils.logWarn('Building bidResponse');
-    utils.logWarn('bid', bid);
-    utils.logWarn('bidRequest', bidRequest);
-    utils.logWarn('bidResponse', bidResponse);
-
     if (bidResponse.mediaType === BANNER) {
       bidResponse.ad = bid.adm;
     } else if (bidResponse.mediaType === VIDEO) {
