@@ -29,17 +29,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    steps:
-    - name: Checkout repository    
-      uses: actions/checkout@v3
-
-    - name: Restore npm modules
-      uses: actions/cache@v3
-      with:
-        paths: |
-          ~/.npm          
-        key: npm-caches-${{ runner.os }}
-    
+    steps:  
     - name: Upload to S3 Bucket
       run: |
         aws s3 cp build/dist/prebid.js s3://${{ secrets.AWS_S3_BUCKET }} --region ${{ secrets.AWS_S3_REGION }}
