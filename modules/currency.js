@@ -7,20 +7,21 @@ import {getHook} from '../src/hook.js';
 import {defer} from '../src/utils/promise.js';
 import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {timedBidResponseHook} from '../src/utils/perfMetrics.js';
+import * as events from '../src/events.js';
 
 const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
 
-var bidResponseQueue = [];
-var conversionCache = {};
-var currencyRatesLoaded = false;
-var needToCallForCurrencyFile = true;
-var adServerCurrency = 'USD';
+let bidResponseQueue = [];
+let conversionCache = {};
+let currencyRatesLoaded = false;
+let needToCallForCurrencyFile = true;
+let adServerCurrency = 'USD';
 
 export var currencySupportEnabled = false;
 export var currencyRates = {};
-var bidderCurrencyDefault = {};
-var defaultRates;
+let bidderCurrencyDefault = {};
+let defaultRates;
 
 export let responseReady = defer();
 
@@ -131,6 +132,7 @@ function initCurrency(url) {
   getGlobal().convertCurrency = (cpm, fromCurrency, toCurrency) => parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency);
   getHook('addBidResponse').before(addBidResponseHook, 100);
   getHook('responsesReady').before(responsesReadyHook);
+  events.on(CONSTANTS.EVENTS.AUCTION_TIMEOUT, rejectOnAuctionTimeout);
 
   // call for the file if we haven't already
   if (needToCallForCurrencyFile) {
@@ -161,6 +163,7 @@ function resetCurrency() {
 
   getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
   getHook('responsesReady').getHooks({hook: responsesReadyHook}).remove();
+  events.off(CONSTANTS.EVENTS.AUCTION_TIMEOUT, rejectOnAuctionTimeout);
   delete getGlobal().convertCurrency;
 
   adServerCurrency = 'USD';
@@ -207,23 +210,25 @@ export const addBidResponseHook = timedBidResponseHook('currency', function addB
   if (bid.currency === adServerCurrency) {
     return fn.call(this, adUnitCode, bid, reject);
   }
-
-  bidResponseQueue.push(wrapFunction(fn, this, [adUnitCode, bid, reject]));
+  bidResponseQueue.push([fn, this, adUnitCode, bid, reject]);
   if (!currencySupportEnabled || currencyRatesLoaded) {
     processBidResponseQueue();
   }
 });
 
-function processBidResponseQueue() {
-  while (bidResponseQueue.length > 0) {
-    (bidResponseQueue.shift())();
-  }
-  responseReady.resolve()
+function rejectOnAuctionTimeout({auctionId}) {
+  bidResponseQueue = bidResponseQueue.filter(([fn, ctx, adUnitCode, bid, reject]) => {
+    if (bid.auctionId === auctionId) {
+      reject(CONSTANTS.REJECTION_REASON.CANNOT_CONVERT_CURRENCY)
+    } else {
+      return true;
+    }
+  });
 }
 
-function wrapFunction(fn, context, params) {
-  return function() {
-    let bid = params[1];
+function processBidResponseQueue() {
+  while (bidResponseQueue.length > 0) {
+    const [fn, ctx, adUnitCode, bid, reject] = bidResponseQueue.shift();
     if (bid !== undefined && 'currency' in bid && 'cpm' in bid) {
       let fromCurrency = bid.currency;
       try {
@@ -234,12 +239,13 @@ function wrapFunction(fn, context, params) {
         }
       } catch (e) {
         logWarn('getCurrencyConversion threw error: ', e);
-        params[2](CONSTANTS.REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
-        return;
+        reject(CONSTANTS.REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
+        continue;
       }
     }
-    return fn.apply(context, params);
-  };
+    fn.call(ctx, adUnitCode, bid, reject);
+  }
+  responseReady.resolve();
 }
 
 function getCurrencyConversion(fromCurrency, toCurrency = adServerCurrency) {

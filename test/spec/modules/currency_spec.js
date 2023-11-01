@@ -15,6 +15,7 @@ import {
 import {createBid} from '../../../src/bidfactory.js';
 import CONSTANTS from '../../../src/constants.json';
 import {server} from '../../mocks/xhr.js';
+import * as events from 'src/events.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -414,6 +415,23 @@ describe('currency', function () {
       expect(bidAdded).to.be.false;
       expect(reject.calledOnce).to.be.true;
     });
+
+    it('should reject bid when rates have not loaded when the auction times out', () => {
+      fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
+      setConfig({'adServerCurrency': 'JPY'});
+      const bid = makeBid({cpm: 1, currency: 'USD', auctionId: 'aid'});
+      const noConversionBid = makeBid({cpm: 1, currency: 'JPY', auctionId: 'aid'});
+      const reject = sinon.spy();
+      const addBidResponse = sinon.spy();
+      addBidResponseHook(addBidResponse, 'au', bid, reject);
+      addBidResponseHook(addBidResponse, 'au', noConversionBid, reject);
+      events.emit(CONSTANTS.EVENTS.AUCTION_TIMEOUT, {auctionId: 'aid'});
+      fakeCurrencyFileServer.respond();
+      sinon.assert.calledOnce(addBidResponse);
+      sinon.assert.calledWith(addBidResponse, 'au', noConversionBid, reject);
+      sinon.assert.calledOnce(reject);
+      sinon.assert.calledWith(reject, CONSTANTS.REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
+    })
 
     it('should return 1 when currency support is enabled and same currency code is requested as is set to adServerCurrency', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
