@@ -45,7 +45,7 @@ jobs:
     
     - name: Upload to S3 Bucket
       run: |
-        aws s3 sync build/dist/prebid.js s3://tags.otzads.net/prebid/ --region us-east-1 --delete
+        aws s3 sync build/dist/ s3://tags.otzads.net/prebid/ --region us-east-1 --delete
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}       
