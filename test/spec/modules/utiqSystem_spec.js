@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import { utiqIdSubmodule } from 'modules/utiqIdSystem.js';
-import { storage } from 'modules/utiqIdSystem.js';
+import { utiqSubmodule } from 'modules/utiqSystem.js';
+import { storage } from 'modules/utiqSystem.js';
 
-describe('utiqIdSystem', () => {
+describe('utiqSystem', () => {
   const utiqPassKey = 'utiqPass';
 
   const getStorageData = (idGraph) => {
@@ -17,7 +17,7 @@ describe('utiqIdSystem', () => {
   };
 
   it('should have the correct module name declared', () => {
-    expect(utiqIdSubmodule.name).to.equal('utiqId');
+    expect(utiqSubmodule.name).to.equal('utiq');
   });
 
   describe('utiq getId()', () => {
@@ -26,13 +26,13 @@ describe('utiqIdSystem', () => {
     });
 
     it('it should return object with key callback', () => {
-      expect(utiqIdSubmodule.getId()).to.have.property('callback');
+      expect(utiqSubmodule.getId()).to.have.property('callback');
     });
 
     it('should return object with key callback with value type - function', () => {
       storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData()));
-      expect(utiqIdSubmodule.getId()).to.have.property('callback');
-      expect(typeof utiqIdSubmodule.getId().callback).to.be.equal('function');
+      expect(utiqSubmodule.getId()).to.have.property('callback');
+      expect(typeof utiqSubmodule.getId().callback).to.be.equal('function');
     });
 
     it('tests if localstorage & JSON works properly ', () => {
@@ -50,7 +50,7 @@ describe('utiqIdSystem', () => {
         'atid': 'atidValue',
       };
       storage.setDataInLocalStorage(utiqPassKey, JSON.stringify(getStorageData(idGraph)));
-      const response = utiqIdSubmodule.getId();
+      const response = utiqSubmodule.getId();
       expect(response).to.have.property('id');
       expect(response.id).to.have.property('utiq');
       expect(response.id.utiq).to.be.equal('atidValue');
@@ -61,7 +61,7 @@ describe('utiqIdSystem', () => {
         'domain': 'test.domain',
         'atid': 'atidValue',
       };
-      const response = utiqIdSubmodule.getId();
+      const response = utiqSubmodule.getId();
       expect(response).to.have.property('callback');
       expect(response.callback.toString()).contain('result(callback)');
 
@@ -82,7 +82,7 @@ describe('utiqIdSystem', () => {
         'atid': 'atidValue',
       };
 
-      const response = utiqIdSubmodule.getId();
+      const response = utiqSubmodule.getId();
       expect(response).to.have.property('callback');
       expect(response.callback.toString()).contain('result(callback)');
 
@@ -105,7 +105,7 @@ describe('utiqIdSystem', () => {
         'atid': 'atidValue',
       };
 
-      const response = utiqIdSubmodule.getId({params: {maxDelayTime: 200}});
+      const response = utiqSubmodule.getId({params: {maxDelayTime: 200}});
       expect(response).to.have.property('callback');
       expect(response.callback.toString()).contain('result(callback)');
 
@@ -138,7 +138,7 @@ describe('utiqIdSystem', () => {
     ];
     VALID_API_RESPONSES.forEach(responseData => {
       it('should return a newly constructed object with the utiq for a payload with {utiq: value}', () => {
-        expect(utiqIdSubmodule.decode(responseData.payload)).to.deep.equal(
+        expect(utiqSubmodule.decode(responseData.payload)).to.deep.equal(
           {utiq: responseData.expected}
         );
       });
@@ -146,7 +146,7 @@ describe('utiqIdSystem', () => {
 
     [{}, '', {foo: 'bar'}].forEach((response) => {
       it(`should return null for an invalid response "${JSON.stringify(response)}"`, () => {
-        expect(utiqIdSubmodule.decode(response)).to.be.null;
+        expect(utiqSubmodule.decode(response)).to.be.null;
       });
     });
   });
@@ -177,7 +177,7 @@ describe('utiqIdSystem', () => {
 
         window.dispatchEvent(new MessageEvent('message', eventData));
 
-        const response = utiqIdSubmodule.getId();
+        const response = utiqSubmodule.getId();
         expect(response).to.have.property('id');
         expect(response.id).to.have.property('utiq');
         expect(response.id.utiq).to.be.equal('atidValue');
