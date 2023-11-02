@@ -202,10 +202,6 @@ export const converter = ortbConverter({
     bidRequest.params.position === 'btf' && imp.video && (imp.video.pos = 3);
     delete imp.ext?.prebid?.storedrequest;
 
-    if (context.fledgeEnabled) {
-      deepSetValue(imp, 'ext.ae', 1)
-    }
-
     if (bidRequest.params.bidonmultiformat === true && bidRequestType.length > 1) {
       deepSetValue(imp, 'ext.prebid.bidder.rubicon.formats', bidRequestType);
     }
@@ -627,7 +623,7 @@ export const spec = {
    * @param {*} responseObj
    * @param {BidRequest|Object.<string, BidRequest[]>} request - if request was SRA the bidRequest argument will be a keyed BidRequest array object,
    * non-SRA responses return a plain BidRequest object
-   * @return {Bid[]} An array of bids which
+   * @return {{fledgeAuctionConfigs: *, bids: *}} An array of bids which
    */
   interpretResponse: function (responseObj, request) {
     responseObj = responseObj.body;
@@ -638,15 +634,6 @@ export const spec = {
       return [];
     }
 
-    let ads = responseObj.ads;
-    const {bidRequest} = request;
-    const bidId = Array.isArray(bidRequest) ? bidRequest[0].bidId : bidRequest.bidId;
-
-    let fledgeAuctionConfigs = responseObj.component_auction_config.map(config => {
-      return { config, bidId }
-    });
-
-
     // Response from PBS Java openRTB
     if (responseObj.seatbid) {
       const responseErrors = deepAccess(responseObj, 'ext.errors.rubicon');
@@ -654,15 +641,13 @@ export const spec = {
         logWarn('Rubicon: Error in video response');
       }
       const bids = converter.fromORTB({request: data, response: responseObj}).bids;
-      if (fledgeAuctionConfigs) {
-        return { bids, fledgeAuctionConfigs };
-      } else {
-        return bids;
-      }
+      return bids;
     }
 
+    let ads = responseObj.ads;
     let lastImpId;
     let multibid = 0;
+    const {bidRequest} = request;
 
     // video ads array is wrapped in an object
     if (typeof bidRequest === 'object' && !Array.isArray(bidRequest) && bidType(bidRequest).includes(VIDEO) && typeof ads === 'object') {
@@ -734,6 +719,10 @@ export const spec = {
       return bids;
     }, []).sort((adA, adB) => {
       return (adB.cpm || 0.0) - (adA.cpm || 0.0);
+    });
+
+    let fledgeAuctionConfigs = responseObj.component_auction_config?.map(config => {
+      return { config, bidId: config.bidId }
     });
 
     if (fledgeAuctionConfigs) {
