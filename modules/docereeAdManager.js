@@ -24,9 +24,6 @@ export const spec = {
     const serverRequests = [];
     const { data } = config.getConfig('docereeAdManager.user');
 
-    // TODO: this should probably look at refererInfo
-    // const { page, domain, token } = config.getConfig('customAdapter.context');
-
     validBidRequests.forEach(function (validBidRequest) {
       const payload = getPayload(validBidRequest, data);
       serverRequests.push({
