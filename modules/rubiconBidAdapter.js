@@ -633,7 +633,6 @@ export const spec = {
     if (!responseObj || typeof responseObj !== 'object') {
       return [];
     }
-    
     // Response from PBS Java openRTB
     if (responseObj.seatbid) {
       const responseErrors = deepAccess(responseObj, 'ext.errors.rubicon');
