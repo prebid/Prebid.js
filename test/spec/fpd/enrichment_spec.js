@@ -312,13 +312,13 @@ describe('FPD enrichment', () => {
   });
 
   describe('privacy sandbox cookieDeprecationLabel', () => {
-    it('sets ext.cdep on device obj when navigator.cookieDeprecationLabel is true and the gdprEnforcement module is not active', () => {
+    it('attempts to set ext.cdep on device obj when the gdprEnforcement module is not active', () => {
       const spy = sinon.spy();
       tryToGetCdepLabel(spy);
       sinon.assert.calledOnce(spy);
     });
 
-    it('should not set ext.cdep on device obj when navigator.cookieDeprecationLabel is true, the gdprEnforcement module is active and purpose 1 consent was not given', () => {
+    it('does not attempt to set ext.cdep on device obj when the gdprEnforcement module is active and purpose 1 consent was not given', () => {
       config.setConfig({
         consentManagement: {
           gdpr: {
@@ -332,7 +332,7 @@ describe('FPD enrichment', () => {
       sinon.assert.notCalled(spy);
     });
 
-    it('sets ext.cdep on device obj when navigator.cookieDeprecationLabel is true, the gdprEnforcement module is active and purpose 1 consent was given', () => {
+    it('attempts to set ext.cdep on device obj when the gdprEnforcement module is active and purpose 1 consent was given', () => {
       const spy = sinon.spy();
       const consentData = {
         'vendorData': {

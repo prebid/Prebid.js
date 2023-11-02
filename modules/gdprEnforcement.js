@@ -282,6 +282,7 @@ function emitTCF2FinalResults() {
     eidsBlocked: formatSet(eidsBlocked),
     geoBlocked: formatSet(geoBlocked)
   };
+
   events.emit(CONSTANTS.EVENTS.TCF2_ENFORCEMENT, tcf2FinalResults);
   [storageBlocked, biddersBlocked, analyticsBlocked, ufpdBlocked, eidsBlocked, geoBlocked].forEach(el => el.clear());
 }
