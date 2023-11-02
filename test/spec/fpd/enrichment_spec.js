@@ -1,9 +1,10 @@
-import {dep, enrichFPD} from '../../../src/fpd/enrichment.js';
+import {dep, enrichFPD, tryToGetCdepLabel} from '../../../src/fpd/enrichment.js';
 import {hook} from '../../../src/hook.js';
 import {expect} from 'chai/index.mjs';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {CLIENT_SECTIONS} from '../../../src/fpd/oneClient.js';
+import {gdprDataHandler} from '../../../src/adapterManager.js';
 
 describe('FPD enrichment', () => {
   let sandbox;
@@ -213,7 +214,7 @@ describe('FPD enrichment', () => {
             ua: 'ua'
           })
         })
-      })
+      });
     });
   });
 
@@ -307,6 +308,67 @@ describe('FPD enrichment', () => {
       return fpd().then(ortb2 => {
         expect(ortb2.device.sua).to.eql({hints: ['h1', 'h2']})
       })
+    });
+  });
+
+  describe('privacy sandbox cookieDeprecationLabel', () => {
+    it('sets ext.cdep on device obj when navigator.cookieDeprecationLabel is true and the gdprEnforcement module is not active', () => {
+      const spy = sinon.spy();
+      tryToGetCdepLabel(spy);
+      sinon.assert.calledOnce(spy);
+    });
+
+    it('should not set ext.cdep on device obj when navigator.cookieDeprecationLabel is true, the gdprEnforcement module is active and purpose 1 consent was not given', () => {
+      config.setConfig({
+        consentManagement: {
+          gdpr: {
+            cmpApi: 'iab',
+            defaultGdprScope: true
+          }
+        }
+      });
+      const spy = sinon.spy();
+      tryToGetCdepLabel(spy);
+      sinon.assert.notCalled(spy);
+    });
+
+    it('sets ext.cdep on device obj when navigator.cookieDeprecationLabel is true, the gdprEnforcement module is active and purpose 1 consent was given', () => {
+      const spy = sinon.spy();
+      const consentData = {
+        'vendorData': {
+          'purpose': {
+            'consents': {
+              '1': true,
+              '2': true,
+              '3': true,
+              '4': true,
+              '5': true,
+              '6': true,
+              '7': true,
+              '8': true,
+              '9': true,
+              '10': true
+            }
+          },
+        },
+      }
+
+      config.setConfig({
+        consentManagement: {
+          gdpr: {
+            cmpApi: 'iab',
+            defaultGdprScope: true
+          }
+        }
+      });
+
+      tryToGetCdepLabel(spy);
+      sinon.assert.notCalled(spy);
+
+      gdprDataHandler.setConsentData(consentData);
+
+      tryToGetCdepLabel(spy);
+      sinon.assert.calledOnce(spy);
     });
   });
 
