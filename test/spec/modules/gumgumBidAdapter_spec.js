@@ -181,6 +181,7 @@ describe('gumgumAdapter', function () {
         linearity: 1,
         startdelay: 1,
         placement: 123456,
+        plcmt: 3,
         protocols: [1, 2]
       }
     };
@@ -457,6 +458,7 @@ describe('gumgumAdapter', function () {
         linearity: 1,
         startdelay: 1,
         placement: 123456,
+        plcmt: 3,
         protocols: [1, 2]
       };
       const request = Object.assign({}, bidRequests[0]);
@@ -475,6 +477,7 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.li).to.eq(videoVals.linearity);
       expect(bidRequest.data.sd).to.eq(videoVals.startdelay);
       expect(bidRequest.data.pt).to.eq(videoVals.placement);
+      expect(bidRequest.data.vplcmt).to.eq(videoVals.plcmt);
       expect(bidRequest.data.pr).to.eq(videoVals.protocols.join(','));
       expect(bidRequest.data.viw).to.eq(videoVals.playerSize[0].toString());
       expect(bidRequest.data.vih).to.eq(videoVals.playerSize[1].toString());
@@ -488,6 +491,7 @@ describe('gumgumAdapter', function () {
         linearity: 1,
         startdelay: 1,
         placement: 123456,
+        plcmt: 3,
         protocols: [1, 2]
       };
       const request = Object.assign({}, bidRequests[0]);
@@ -506,6 +510,7 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.li).to.eq(inVideoVals.linearity);
       expect(bidRequest.data.sd).to.eq(inVideoVals.startdelay);
       expect(bidRequest.data.pt).to.eq(inVideoVals.placement);
+      expect(bidRequest.data.vplcmt).to.eq(inVideoVals.plcmt);
       expect(bidRequest.data.pr).to.eq(inVideoVals.protocols.join(','));
       expect(bidRequest.data.viw).to.eq(inVideoVals.playerSize[0].toString());
       expect(bidRequest.data.vih).to.eq(inVideoVals.playerSize[1].toString());
