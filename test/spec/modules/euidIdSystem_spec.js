@@ -6,6 +6,7 @@ import 'src/prebid.js';
 import {apiHelpers, cookieHelpers, runAuction, setGdprApplies} from './uid2IdSystem_helpers.js';
 import {hook} from 'src/hook.js';
 import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
+import {server} from 'test/mocks/xhr';
 
 let expect = require('chai').expect;
 
@@ -32,8 +33,7 @@ const expectToken = (bid, token) => expect(bid?.userId ?? {}).to.deep.include(ma
 const expectNoIdentity = (bid) => expect(bid).to.not.haveOwnProperty('userId');
 
 describe('EUID module', function() {
-  let suiteSandbox, testSandbox, timerSpy, fullTestTitle, restoreSubtleToUndefined = false;
-  let server;
+  let suiteSandbox, restoreSubtleToUndefined = false;
 
   const configureEuidResponse = (httpStatus, response) => server.respondWith('POST', apiUrl, (xhr) => xhr.respond(httpStatus, headers, response));
 
@@ -53,12 +53,10 @@ describe('EUID module', function() {
     if (restoreSubtleToUndefined) window.crypto.subtle = undefined;
   });
   beforeEach(function() {
-    server = sinon.createFakeServer();
     init(config);
     setSubmoduleRegistry([euidIdSubmodule]);
   });
   afterEach(function() {
-    server.restore();
     $$PREBID_GLOBAL$$.requestBids.removeAll();
     config.resetConfig();
     cookieHelpers.clearCookies(moduleCookieName, publisherCookieName);

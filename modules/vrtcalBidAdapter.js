@@ -5,6 +5,8 @@ import { config } from '../src/config.js';
 import {deepAccess, isFn, isPlainObject} from '../src/utils.js';
 
 const GVLID = 706;
+const VRTCAL_USER_SYNC_URL_IFRAME = `https://usync.vrtcal.com/i?ssp=1804&synctype=iframe`;
+const VRTCAL_USER_SYNC_URL_REDIRECT = `https://usync.vrtcal.com/i?ssp=1804&synctype=redirect`;
 
 export const spec = {
   code: 'vrtcal',
@@ -67,7 +69,7 @@ export const spec = {
           name: 'VRTCAL_FILLED',
           cat: deepAccess(bid, 'ortb2.site.cat', []),
           domain: decodeURIComponent(window.location.href).replace('https://', '').replace('http://', '').split('/')[0],
-          page: bid.refererInfo.page
+          page: window.location.href
         },
         device: {
           language: navigator.language,
@@ -148,7 +150,34 @@ export const spec = {
     );
     ajax(winUrl, null);
     return true;
+  },
+
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent = {}, uspConsent = '', gppConsent = {}) {
+    const syncs = [];
+    const gdprFlag = `&gdpr=${gdprConsent.gdprApplies ? 1 : 0}`;
+    const gdprString = `&gdpr_consent=${encodeURIComponent((gdprConsent.consentString || ''))}`;
+    const usPrivacy = `&us_privacy=${encodeURIComponent(uspConsent)}`;
+    const gpp = gppConsent.gppString ? gppConsent.gppString : '';
+    const gppSid = Array.isArray(gppConsent.applicableSections) ? gppConsent.applicableSections.join(',') : '';
+    let vrtcalSyncURL = ''
+
+    if (syncOptions.iframeEnabled) {
+      vrtcalSyncURL = `${VRTCAL_USER_SYNC_URL_IFRAME}${usPrivacy}${gdprFlag}${gdprString}&gpp=${gpp}&gpp_sid=${gppSid}&surl=`;
+      syncs.push({
+        type: 'iframe',
+        url: vrtcalSyncURL
+      });
+    } else {
+      vrtcalSyncURL = `${VRTCAL_USER_SYNC_URL_REDIRECT}${usPrivacy}${gdprFlag}${gdprString}&gpp=${gpp}&gpp_sid=${gppSid}&surl=`;
+      syncs.push({
+        type: 'image',
+        url: vrtcalSyncURL
+      });
+    }
+
+    return syncs;
   }
+
 };
 
 registerBidder(spec);

@@ -1,13 +1,9 @@
-import pubxaiAnalyticsAdapter from 'modules/pubxaiAnalyticsAdapter.js';
-import { getDeviceType, getBrowser, getOS } from 'modules/pubxaiAnalyticsAdapter.js';
-import {
-  expect
-} from 'chai';
+import pubxaiAnalyticsAdapter, {getBrowser, getDeviceType, getOS} from 'modules/pubxaiAnalyticsAdapter.js';
+import {expect} from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
-import {
-  server
-} from 'test/mocks/xhr.js';
+import {server} from 'test/mocks/xhr.js';
+import {getGptSlotInfoForAdUnitCode} from '../../../libraries/gptUtils/gptUtils.js';
 
 let events = require('src/events');
 let constants = require('src/constants.json');
@@ -527,7 +523,7 @@ describe('pubxai analytics adapter', function() {
         'bidderCode': 'appnexus',
         'bidId': '248f9a4489835e',
         'adUnitCode': '/19968336/header-bid-tag-1',
-        'gptSlotCode': utils.getGptSlotInfoForAdUnitCode('/19968336/header-bid-tag-1').gptSlot || null,
+        'gptSlotCode': getGptSlotInfoForAdUnitCode('/19968336/header-bid-tag-1').gptSlot || null,
         'auctionId': 'bc3806e4-873e-453c-8ae5-204f35e923b4',
         'sizes': '300x250',
         'renderStatus': 2,
@@ -596,7 +592,7 @@ describe('pubxai analytics adapter', function() {
     let expectedAfterBidWon = {
       'winningBid': {
         'adUnitCode': '/19968336/header-bid-tag-1',
-        'gptSlotCode': utils.getGptSlotInfoForAdUnitCode('/19968336/header-bid-tag-1').gptSlot || null,
+        'gptSlotCode': getGptSlotInfoForAdUnitCode('/19968336/header-bid-tag-1').gptSlot || null,
         'auctionId': 'bc3806e4-873e-453c-8ae5-204f35e923b4',
         'bidderCode': 'appnexus',
         'bidId': '248f9a4489835e',
