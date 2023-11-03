@@ -10,6 +10,8 @@ import {config} from './config.js';
  */
 export const VENDORLESS_GVLID = Object.freeze({});
 
+export const FIRST_PARTY_GVLID = Object.freeze({});
+
 export class ConsentHandler {
   #enabled;
   #data;

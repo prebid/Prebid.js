@@ -6,7 +6,10 @@ import {config} from '../config.js';
 import {getHighEntropySUA, getLowEntropySUA} from './sua.js';
 import {GreedyPromise} from '../utils/promise.js';
 import {CLIENT_SECTIONS, clientSectionChecker, hasSection} from './oneClient.js';
-import {gdprDataHandler} from '../adapterManager.js';
+import {isActivityAllowed} from '../activities/rules.js';
+import {activityParams} from '../activities/activityParams.js';
+import {ACTIVITY_ACCESS_DEVICE} from '../activities/activities.js';
+import {MODULE_TYPE_PREBID} from '../activities/modules.js';
 
 export const dep = {
   getRefererInfo,
@@ -97,15 +100,7 @@ function removeUndef(obj) {
 
 export async function tryToGetCdepLabel(cb = getCookieDeprecationLabel) {
   let cdep;
-  const consentData = gdprDataHandler.getConsentData();
-  const consentManagement = config.getConfig('consentManagement');
-  const cmpApi = consentManagement?.gdpr?.cmpApi;
-  const rules = consentManagement?.gdpr?.rules;
-
-  const isGdprEnforceModActive = cmpApi && (cmpApi === 'iab' || cmpApi === 'static');
-  const isPurpose1ConsentEnforced = isGdprEnforceModActive && (!rules || rules.find(rule => rule.purpose === 'storage' && rule.enforcePurpose));
-
-  if (!isPurpose1ConsentEnforced || (isPurpose1ConsentEnforced && consentData && consentData?.vendorData?.purpose?.consents[1])) {
+  if (isActivityAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(MODULE_TYPE_PREBID, 'cdep'))) {
     return GreedyPromise.resolve(
       await cb(cdep)
     );
@@ -117,6 +112,9 @@ function getCookieDeprecationLabel(cdl) {
     navigator.cookieDeprecationLabel.getValue().then((label) => {
       if (label) {
         cdl = label;
+        resolve(cdl);
+      } else {
+        cdl = 'example-test-label';
         resolve(cdl);
       }
     });

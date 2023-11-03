@@ -7,7 +7,7 @@ import {config} from '../src/config.js';
 import adapterManager, {gdprDataHandler} from '../src/adapterManager.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
-import {GDPR_GVLIDS, VENDORLESS_GVLID} from '../src/consentHandler.js';
+import {GDPR_GVLIDS, VENDORLESS_GVLID, FIRST_PARTY_GVLID} from '../src/consentHandler.js';
 import {
   MODULE_TYPE_ANALYTICS,
   MODULE_TYPE_BIDDER,
@@ -111,7 +111,7 @@ export function getGvlid(moduleType, moduleName, fallbackFn) {
     if (gvlMapping && gvlMapping[moduleName]) {
       return gvlMapping[moduleName];
     } else if (moduleType === MODULE_TYPE_PREBID) {
-      return VENDORLESS_GVLID;
+      return moduleName === 'cdep' ? FIRST_PARTY_GVLID : VENDORLESS_GVLID;
     } else {
       let {gvlid, modules} = GDPR_GVLIDS.get(moduleName);
       if (gvlid == null && Object.keys(modules).length > 0) {
@@ -166,6 +166,7 @@ export function shouldEnforce(consentData, purpose, name) {
 function getConsent(consentData, type, id, gvlId) {
   let purpose = !!deepAccess(consentData, `vendorData.${CONSENT_PATHS[type]}.${id}`);
   let vendor = !!deepAccess(consentData, `vendorData.vendor.consents.${gvlId}`);
+
   if (type === 'purpose' && LI_PURPOSES.includes(id)) {
     purpose ||= !!deepAccess(consentData, `vendorData.purpose.legitimateInterests.${id}`);
     vendor ||= !!deepAccess(consentData, `vendorData.vendor.legitimateInterests.${gvlId}`);
@@ -198,9 +199,14 @@ function gdprRule(purposeNo, checkConsent, blocked = null, gvlidFallback = () =>
   return function (params) {
     const consentData = gdprDataHandler.getConsentData();
     const modName = params[ACTIVITY_PARAM_COMPONENT_NAME];
+
     if (shouldEnforce(consentData, purposeNo, modName)) {
       const gvlid = getGvlid(params[ACTIVITY_PARAM_COMPONENT_TYPE], modName, gvlidFallback(params));
-      let allow = !!checkConsent(consentData, modName, gvlid);
+      let allow =
+        gvlid === FIRST_PARTY_GVLID
+          ? !!deepAccess(consentData, `vendorData.publisher.consents.1`)
+          : !!checkConsent(consentData, modName, gvlid);
+
       if (!allow) {
         blocked && blocked.add(modName);
         return {allow};
