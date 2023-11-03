@@ -110,10 +110,8 @@ export async function tryToGetCdepLabel(cb = getCookieDeprecationLabel) {
 function getCookieDeprecationLabel(cdl) {
   return new Promise((resolve) => {
     navigator.cookieDeprecationLabel.getValue().then((label) => {
-      if (label) {
-        cdl = label;
-        resolve(cdl);
-      }
+      if (label) cdl = label;
+      resolve(cdl);
     });
   });
 }
