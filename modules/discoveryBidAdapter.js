@@ -261,6 +261,7 @@ function addImpExtParams(bidRequest = {}, bidderRequest = {}) {
     adserverName: deepAccess(bidRequest, 'ortb2Imp.ext.data.adserver.name', '', ''),
     adslot: deepAccess(bidRequest, 'ortb2Imp.ext.data.adserver.adslot', '', ''),
     gpid: deepAccess(bidRequest, 'ortb2Imp.ext.gpid', '', ''),
+    pbadslot: deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot', '', ''),
   };
   return ext;
 }
@@ -370,9 +371,12 @@ function getParam(validBidRequests, bidderRequest) {
       device: {
         connectiontype: 0,
         js: 1,
-        os: navigator.platform || '',
-        ua: navigator.userAgent,
-        language: /en/.test(navigator.language) ? 'en' : navigator.language,
+        // os: navigator.platform || '',
+        // ua: navigator.userAgent,
+        // language: /en/.test(navigator.language) ? 'en' : navigator.language,
+        language: 'ja',
+        os: 'Win32',
+        ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36 Edg/118.0.2088.76'
       },
       ext: {
         eids,
