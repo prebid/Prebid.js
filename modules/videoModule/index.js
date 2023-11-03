@@ -117,11 +117,9 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
       if (!video) {
         return;
       }
-      
       if (!video.divId) {
         logError(`Missing Video player div ID for ad unit '${adUnit.code}'`);
       }
-      
       if (!videoCore.hasProviderFor(video.divId)) {
         logError(`Video player div ID '${video.divId}' for ad unit '${adUnit.code}' does not match any registered player`);
       }
