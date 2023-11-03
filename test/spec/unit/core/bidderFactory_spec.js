@@ -1448,7 +1448,7 @@ describe('bidderFactory', () => {
           bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
           expect(fledgeStub.calledOnce).to.equal(true);
-          sinon.assert.calledWith(fledgeStub, bidRequest.auctionId, 'mock/placement', fledgeAuctionConfig.config);
+          sinon.assert.calledWith(fledgeStub, bidRequest.bids[0], fledgeAuctionConfig.config);
           expect(addBidResponseStub.calledOnce).to.equal(true);
           expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
         })
@@ -1462,7 +1462,7 @@ describe('bidderFactory', () => {
           bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
           expect(fledgeStub.calledOnce).to.be.true;
-          sinon.assert.calledWith(fledgeStub, bidRequest.auctionId, 'mock/placement', fledgeAuctionConfig.config);
+          sinon.assert.calledWith(fledgeStub, bidRequest.bids[0], fledgeAuctionConfig.config);
           expect(addBidResponseStub.calledOnce).to.equal(false);
         })
       })

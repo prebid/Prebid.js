@@ -3425,6 +3425,32 @@ describe('S2S Adapter', function () {
       });
     });
     describe('when the response contains ext.prebid.fledge', () => {
+      const AU = 'div-gpt-ad-1460505748561-0';
+      const FLEDGE_RESP = {
+        ext: {
+          prebid: {
+            fledge: {
+              auctionconfigs: [
+                {
+                  impid: AU,
+                  bidder: 'appnexus',
+                  config: {
+                    id: 1
+                  }
+                },
+                {
+                  impid: AU,
+                  bidder: 'other',
+                  config: {
+                    id: 2
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+
       let fledgeStub, request, bidderRequests;
 
       function fledgeHook(next, ...args) {
@@ -3442,50 +3468,45 @@ describe('S2S Adapter', function () {
       beforeEach(function () {
         fledgeStub = sinon.stub();
         config.setConfig({CONFIG});
+        bidderRequests = deepClone(BID_REQUESTS);
+        AU
+        bidderRequests.forEach(req => {
+          Object.assign(req, {
+            fledgeEnabled: true,
+            ortb2: {
+              fpd: 1
+            }
+          })
+          req.bids.forEach(bid => {
+            Object.assign(bid, {
+              ortb2Imp: {
+                fpd: 2
+              }
+            })
+          })
+        });
         request = deepClone(REQUEST);
         request.ad_units.forEach(au => deepSetValue(au, 'ortb2Imp.ext.ae', 1));
-        bidderRequests = deepClone(BID_REQUESTS);
-        bidderRequests.forEach(req => req.fledgeEnabled = true);
       });
 
-      const AU = 'div-gpt-ad-1460505748561-0';
-      const FLEDGE_RESP = {
-        ext: {
-          prebid: {
-            fledge: {
-              auctionconfigs: [
-                {
-                  impid: AU,
-                  config: {
-                    id: 1
-                  }
-                },
-                {
-                  impid: AU,
-                  config: {
-                    id: 2
-                  }
-                }
-              ]
-            }
-          }
-        }
+      function expectFledgeCalls() {
+        const auctionId = bidderRequests[0].auctionId;
+        sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: bidderRequests[0].ortb2, ortb2Imp: bidderRequests[0].bids[0].ortb2Imp}), {id: 1})
+        sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: undefined, ortb2Imp: undefined}), {id: 2})
       }
 
       it('calls addComponentAuction alongside addBidResponse', function () {
         adapter.callBids(request, bidderRequests, addBidResponse, done, ajax);
         server.requests[0].respond(200, {}, JSON.stringify(mergeDeep({}, RESPONSE_OPENRTB, FLEDGE_RESP)));
         expect(addBidResponse.called).to.be.true;
-        sinon.assert.calledWith(fledgeStub, bidderRequests[0].auctionId, AU, {id: 1});
-        sinon.assert.calledWith(fledgeStub, bidderRequests[0].auctionId, AU, {id: 2});
+        expectFledgeCalls();
       });
 
       it('calls addComponentAuction when there is no bid in the response', () => {
         adapter.callBids(request, bidderRequests, addBidResponse, done, ajax);
         server.requests[0].respond(200, {}, JSON.stringify(FLEDGE_RESP));
         expect(addBidResponse.called).to.be.false;
-        sinon.assert.calledWith(fledgeStub, bidderRequests[0].auctionId, AU, {id: 1});
-        sinon.assert.calledWith(fledgeStub, bidderRequests[0].auctionId, AU, {id: 2});
+        expectFledgeCalls();
       })
     });
   });
