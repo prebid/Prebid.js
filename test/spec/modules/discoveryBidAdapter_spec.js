@@ -56,6 +56,7 @@ describe('discovery:BidAdapterTests', function () {
                 adslot: 'adslot_name',
               },
               keywords: ['travel', 'sport'],
+              pbadslot: '202309999'
             }
           }
         },
