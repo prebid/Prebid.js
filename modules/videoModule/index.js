@@ -99,6 +99,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   return { init, renderBid, getOrtbVideo, getOrtbContent };
 
   function beforeBidsRequested(nextFn, bidderRequest) {
+    logErrorForInvalidDivIds(bidderRequest);
     enrichAuction(bidderRequest);
 
     const bidsBackHandler = bidderRequest.bidsBackHandler;
@@ -107,6 +108,24 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     }
 
     return nextFn.call(this, bidderRequest);
+  }
+
+  function logErrorForInvalidDivIds(bidderRequest) {
+    const adUnits = bidderRequest.adUnits || pbGlobal.adUnits || [];
+    adUnits.forEach(adUnit => {
+      const video = adUnit.video;
+      if (!video) {
+        return;
+      }
+      
+      if (!video.divId) {
+        logError(`Missing Video player div ID for ad unit '${adUnit.code}'`);
+      }
+      
+      if (!videoCore.hasProviderFor(video.divId)) {
+        logError(`Video player div ID '${video.divId}' for ad unit '${adUnit.code}' does not match any registered player`);
+      }
+    });
   }
 
   function enrichAuction(bidderRequest) {
@@ -125,13 +144,12 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   }
 
   function getDivId(adUnit) {
-    if (adUnit.mediaTypes?.video != null && adUnit.video != null) {
-      if (!videoCore.hasProviderFor(adUnit.video.divId)) {
-        logError(`Video player div ID '${adUnit.video.divId}' for ad unit '${adUnit.code}' does not match any registered player`)
-      } else {
-        return adUnit.video.divId
-      }
+    const videoConfig = adUnit.video;
+    if (!adUnit.mediaTypes.video || !videoConfig) {
+      return;
     }
+
+    return videoConfig.divId;
   }
 
   function enrichAdUnit(adUnit, videoDivId) {
