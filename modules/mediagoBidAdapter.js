@@ -240,7 +240,7 @@ function getItems(validBidRequests, bidderRequest) {
           format: sizes,
         },
         ext: {
-          ortb2Imp: utils.deepAccess(req, "ortb2Imp"), // 传入完整对象，分析日志数据
+          ortb2Imp: utils.deepAccess(req, 'ortb2Imp'), // 传入完整对象，分析日志数据
           gpid: gpid, // 加入后无法返回广告
         },
         tagid: req.params && req.params.tagid,
