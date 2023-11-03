@@ -113,9 +113,6 @@ function getCookieDeprecationLabel(cdl) {
       if (label) {
         cdl = label;
         resolve(cdl);
-      } else {
-        cdl = 'example-test-label';
-        resolve(cdl);
       }
     });
   });
