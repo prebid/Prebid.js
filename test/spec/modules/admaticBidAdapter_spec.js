@@ -16,6 +16,10 @@ describe('admaticBidAdapter', () => {
 
   describe('isBidRequestValid', function() {
     let bid = {
+      'refererInfo': {
+        'page': 'https://www.admatic.com.tr',
+        'domain': 'https://www.admatic.com.tr',
+      },
       'bidder': 'admatic',
       'params': {
         'networkId': 10433394,
@@ -48,6 +52,10 @@ describe('admaticBidAdapter', () => {
   describe('buildRequests', function () {
     it('sends bid request to ENDPOINT via POST', function () {
       let validRequest = [ {
+        'refererInfo': {
+          'page': 'https://www.admatic.com.tr',
+          'domain': 'https://www.admatic.com.tr',
+        },
         'bidder': 'admatic',
         'params': {
           'networkId': 10433394,
@@ -151,6 +159,51 @@ describe('admaticBidAdapter', () => {
               'placement': 2
             },
             'id': '45e86fc7ce7fc93'
+          },
+          {
+            'size': [
+              {
+                'w': 1,
+                'h': 1
+              }
+            ],
+            'type': 'native',
+            'mediatype': {
+              'title': {
+                'required': true,
+                'len': 120
+              },
+              'image': {
+                'required': true
+              },
+              'icon': {
+                'required': false,
+                'sizes': [
+                  640,
+                  480
+                ]
+              },
+              'sponsoredBy': {
+                'required': false
+              },
+              'body': {
+                'required': false
+              },
+              'clickUrl': {
+                'required': false
+              },
+              'displayUrl': {
+                'required': false
+              }
+            },
+            'ext': {
+              'instl': 0,
+              'gpid': 'native-INS_b1b1269f-9570-fe3c-9bf4-f187827ec94a',
+              'data': {
+                'pbadslot': 'native-INS_b1b1269f-9570-fe3c-9bf4-f187827ec94a'
+              }
+            },
+            'id': '16e0c8982318f91'
           }
         ],
         'ext': {
@@ -159,6 +212,10 @@ describe('admaticBidAdapter', () => {
         }
       } ];
       let bidderRequest = {
+        'refererInfo': {
+          'page': 'https://www.admatic.com.tr',
+          'domain': 'https://www.admatic.com.tr',
+        },
         'bidder': 'admatic',
         'params': {
           'networkId': 10433394,
@@ -262,6 +319,51 @@ describe('admaticBidAdapter', () => {
               'placement': 2
             },
             'id': '45e86fc7ce7fc93'
+          },
+          {
+            'size': [
+              {
+                'w': 1,
+                'h': 1
+              }
+            ],
+            'type': 'native',
+            'mediatype': {
+              'title': {
+                'required': true,
+                'len': 120
+              },
+              'image': {
+                'required': true
+              },
+              'icon': {
+                'required': false,
+                'sizes': [
+                  640,
+                  480
+                ]
+              },
+              'sponsoredBy': {
+                'required': false
+              },
+              'body': {
+                'required': false
+              },
+              'clickUrl': {
+                'required': false
+              },
+              'displayUrl': {
+                'required': false
+              }
+            },
+            'ext': {
+              'instl': 0,
+              'gpid': 'native-INS_b1b1269f-9570-fe3c-9bf4-f187827ec94a',
+              'data': {
+                'pbadslot': 'native-INS_b1b1269f-9570-fe3c-9bf4-f187827ec94a'
+              }
+            },
+            'id': '16e0c8982318f91'
           }
         ],
         'ext': {
@@ -307,6 +409,10 @@ describe('admaticBidAdapter', () => {
         },
       ];
       let bidderRequest = {
+        'refererInfo': {
+          'page': 'https://www.admatic.com.tr',
+          'domain': 'https://www.admatic.com.tr',
+        },
         'bidder': 'admatic',
         'params': {
           'networkId': 10433394,
@@ -348,6 +454,7 @@ describe('admaticBidAdapter', () => {
             'price': 0.01,
             'type': 'banner',
             'bidder': 'admatic',
+            'mime_type': 'iframe',
             'adomain': ['admatic.com.tr'],
             'party_tag': '<div></div>',
             'iurl': 'https://www.admatic.com.tr'
@@ -359,6 +466,7 @@ describe('admaticBidAdapter', () => {
             'height': 250,
             'price': 0.01,
             'type': 'video',
+            'mime_type': 'iframe',
             'bidder': 'admatic',
             'adomain': ['admatic.com.tr'],
             'party_tag': '<VAST></VAST>',
@@ -371,9 +479,23 @@ describe('admaticBidAdapter', () => {
             'height': 250,
             'price': 0.01,
             'type': 'video',
+            'mime_type': 'iframe',
             'bidder': 'admatic',
             'adomain': ['admatic.com.tr'],
             'party_tag': 'https://www.admatic.com.tr',
+            'iurl': 'https://www.admatic.com.tr'
+          },
+          {
+            'id': 4,
+            'creative_id': '3742',
+            'width': 1,
+            'height': 1,
+            'price': 0.01,
+            'type': 'native',
+            'mime_type': 'iframe',
+            'bidder': 'admatic',
+            'adomain': ['admatic.com.tr'],
+            'party_tag': '{"native":{"ver":"1.1","assets":[{"id":1,"title":{"text":"title"}},{"id":4,"data":{"value":"body"}},{"id":5,"data":{"value":"sponsored"}},{"id":2,"img":{"url":"https://www.admatic.com.tr","w":1200,"h":628}},{"id":3,"img":{"url":"https://www.admatic.com.tr","w":640,"h":480}}],"link":{"url":"https://www.admatic.com.tr"},"imptrackers":["https://www.admatic.com.tr"]}}',
             'iurl': 'https://www.admatic.com.tr'
           }
         ],
@@ -393,6 +515,7 @@ describe('admaticBidAdapter', () => {
           ad: '<div></div>',
           creativeId: '374',
           meta: {
+            model: 'iframe',
             advertiserDomains: ['admatic.com.tr']
           },
           ttl: 60,
@@ -410,6 +533,7 @@ describe('admaticBidAdapter', () => {
           vastXml: '<VAST></VAST>',
           creativeId: '3741',
           meta: {
+            model: 'iframe',
             advertiserDomains: ['admatic.com.tr']
           },
           ttl: 60,
@@ -427,6 +551,40 @@ describe('admaticBidAdapter', () => {
           vastXml: 'https://www.admatic.com.tr',
           creativeId: '3741',
           meta: {
+            model: 'iframe',
+            advertiserDomains: ['admatic.com.tr']
+          },
+          ttl: 60,
+          bidder: 'admatic'
+        },
+        {
+          requestId: 4,
+          cpm: 0.01,
+          width: 1,
+          height: 1,
+          currency: 'TRY',
+          mediaType: 'native',
+          netRevenue: true,
+          native: {
+            'clickUrl': 'https://www.admatic.com.tr',
+            'impressionTrackers': ['https://www.admatic.com.tr'],
+            'title': 'title',
+            'body': 'body',
+            'sponsoredBy': 'sponsored',
+            'image': {
+              'url': 'https://www.admatic.com.tr',
+              'width': 1200,
+              'height': 628
+            },
+            'icon': {
+              'url': 'https://www.admatic.com.tr',
+              'width': 640,
+              'height': 480
+            }
+          },
+          creativeId: '3742',
+          meta: {
+            model: 'iframe',
             advertiserDomains: ['admatic.com.tr']
           },
           ttl: 60,

@@ -153,6 +153,15 @@ export const spec = {
       tmax: bidderRequest.timeout
     };
 
+    // Add GPP consent
+    if (bidderRequest.gppConsent) {
+      request.gpp = bidderRequest.gppConsent.gppString;
+      request.gpp_sid = bidderRequest.gppConsent.applicableSections;
+    } else if (bidderRequest.ortb2?.regs?.gpp) {
+      request.gpp = bidderRequest.ortb2.regs.gpp;
+      request.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
+    }
+
     const len = validBidRequests.length;
     for (let i = 0; i < len; i++) {
       const bid = validBidRequests[i];

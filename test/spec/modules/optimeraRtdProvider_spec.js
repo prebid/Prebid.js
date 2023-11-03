@@ -21,10 +21,77 @@ describe('Optimera RTD sub module', () => {
   });
 });
 
-describe('Optimera RTD score file url is properly set', () => {
-  it('Proerly set the score file url', () => {
+describe('Optimera RTD score file URL is properly set for v0', () => {
+  it('should properly set the score file URL', () => {
+    const conf = {
+      dataProviders: [{
+        name: 'optimeraRTD',
+        params: {
+          clientID: '9999',
+          optimeraKeyName: 'optimera',
+          device: 'de',
+          apiVersion: 'v0',
+        }
+      }]
+    };
+    optimeraRTD.init(conf.dataProviders[0]);
+    optimeraRTD.setScores();
+    expect(optimeraRTD.apiVersion).to.equal('v0');
+    expect(optimeraRTD.scoresURL).to.equal('https://dyv1bugovvq1g.cloudfront.net/9999/localhost:9876/context.html.js');
+  });
+
+  it('should properly set the score file URL without apiVersion set', () => {
+    const conf = {
+      dataProviders: [{
+        name: 'optimeraRTD',
+        params: {
+          clientID: '9999',
+          optimeraKeyName: 'optimera',
+          device: 'de',
+        }
+      }]
+    };
+    optimeraRTD.init(conf.dataProviders[0]);
+    optimeraRTD.setScores();
+    expect(optimeraRTD.apiVersion).to.equal('v0');
+    expect(optimeraRTD.scoresURL).to.equal('https://dyv1bugovvq1g.cloudfront.net/9999/localhost:9876/context.html.js');
+  });
+
+  it('should properly set the score file URL with an api version other than v0 or v1', () => {
+    const conf = {
+      dataProviders: [{
+        name: 'optimeraRTD',
+        params: {
+          clientID: '9999',
+          optimeraKeyName: 'optimera',
+          device: 'de',
+          apiVersion: 'v15',
+        }
+      }]
+    };
+    optimeraRTD.init(conf.dataProviders[0]);
     optimeraRTD.setScores();
     expect(optimeraRTD.scoresURL).to.equal('https://dyv1bugovvq1g.cloudfront.net/9999/localhost:9876/context.html.js');
+  });
+});
+
+describe('Optimera RTD score file URL is properly set for v1', () => {
+  it('should properly set the score file URL', () => {
+    const conf = {
+      dataProviders: [{
+        name: 'optimeraRTD',
+        params: {
+          clientID: '9999',
+          optimeraKeyName: 'optimera',
+          device: 'de',
+          apiVersion: 'v1',
+        }
+      }]
+    };
+    optimeraRTD.init(conf.dataProviders[0]);
+    optimeraRTD.setScores();
+    expect(optimeraRTD.apiVersion).to.equal('v1');
+    expect(optimeraRTD.scoresURL).to.equal('https://v1.oapi26b.com/api/products/scores?c=9999&h=localhost:9876&p=/context.html&s=de');
   });
 });
 

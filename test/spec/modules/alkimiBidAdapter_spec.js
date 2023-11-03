@@ -68,7 +68,7 @@ const BIDDER_VIDEO_RESPONSE = {
     'ttl': 200,
     'creativeId': 2,
     'netRevenue': true,
-    'winUrl': 'http://test.com',
+    'winUrl': 'http://test.com?price=${AUCTION_PRICE}',
     'mediaType': 'video',
     'adomain': ['test.com']
   }]
@@ -112,7 +112,15 @@ describe('alkimiBidAdapter', function () {
         vendorData: {},
         gdprApplies: true
       },
-      uspConsent: 'uspConsent'
+      uspConsent: 'uspConsent',
+      ortb2: {
+        site: {
+          keywords: 'test1, test2'
+        },
+        at: 2,
+        bcat: ['BSW1', 'BSW2'],
+        wseat: ['16', '165']
+      }
     }
     const bidderRequest = spec.buildRequests(bidRequests, requestData)
 
@@ -138,6 +146,7 @@ describe('alkimiBidAdapter', function () {
       expect(bidderRequest.data.signRequest.randomUUID).to.equal(undefined)
       expect(bidderRequest.data.bidIds).to.deep.contains('456')
       expect(bidderRequest.data.signature).to.equal(undefined)
+      expect(bidderRequest.data.ortb2).to.deep.contains({ at: 2, wseat: ['16', '165'], bcat: ['BSW1', 'BSW2'], site: { keywords: 'test1, test2' }, })
       expect(bidderRequest.options.customHeaders).to.deep.equal({ 'Rtb-Direct': true })
       expect(bidderRequest.options.contentType).to.equal('application/json')
       expect(bidderRequest.url).to.equal(ENDPOINT)
@@ -186,9 +195,9 @@ describe('alkimiBidAdapter', function () {
       expect(result[0]).to.have.property('ttl').equal(200)
       expect(result[0]).to.have.property('creativeId').equal(2)
       expect(result[0]).to.have.property('netRevenue').equal(true)
-      expect(result[0]).to.have.property('winUrl').equal('http://test.com')
+      expect(result[0]).to.have.property('winUrl').equal('http://test.com?price=${AUCTION_PRICE}')
       expect(result[0]).to.have.property('mediaType').equal('video')
-      expect(result[0]).to.have.property('vastXml').equal('<xml>vast</xml>')
+      expect(result[0]).to.have.property('vastUrl').equal('http://test.com?price=800.4')
       expect(result[0].meta).to.exist.property('advertiserDomains')
       expect(result[0].meta).to.have.property('advertiserDomains').lengthOf(1)
     })

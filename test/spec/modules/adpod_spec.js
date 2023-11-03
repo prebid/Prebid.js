@@ -47,7 +47,6 @@ describe('adpod.js', function () {
       addBidToAuctionStub = sinon.stub(auction, 'addBidToAuction').callsFake(function (auctionInstance, bid) {
         auctionBids.push(bid);
       });
-      doCallbacksIfTimedoutStub = sinon.stub(auction, 'doCallbacksIfTimedout');
       clock = sinon.useFakeTimers();
       config.setConfig({
         cache: {
@@ -61,7 +60,6 @@ describe('adpod.js', function () {
       logWarnStub.restore();
       logInfoStub.restore();
       addBidToAuctionStub.restore();
-      doCallbacksIfTimedoutStub.restore();
       clock.restore();
       config.resetConfig();
       auctionBids = [];
@@ -633,7 +631,6 @@ describe('adpod.js', function () {
       callPrebidCacheHook(callbackFn, auctionInstance, bidResponse1, afterBidAddedSpy, videoMT);
       callPrebidCacheHook(callbackFn, auctionInstance, bidResponse2, afterBidAddedSpy, videoMT);
 
-      expect(doCallbacksIfTimedoutStub.calledTwice).to.equal(true);
       expect(logWarnStub.calledOnce).to.equal(true);
       expect(auctionBids.length).to.equal(0);
     });
