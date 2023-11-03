@@ -39,7 +39,8 @@ describe('discovery:BidAdapterTests', function () {
             publisher: {
               domain: 'discovery.popin.cc'
             },
-            page: 'https://discovery.popin.cc'
+            page: 'https://discovery.popin.cc',
+            cat: ['IAB-19', 'IAB-20'],
           },
         },
         ortb2Imp: {
@@ -53,7 +54,8 @@ describe('discovery:BidAdapterTests', function () {
               adserver: {
                 name: 'adserver_name',
                 adslot: 'adslot_name',
-              }
+              },
+              keywords: ['travel', 'sport'],
             }
           }
         },
