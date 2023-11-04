@@ -1232,6 +1232,10 @@ export const spec = {
       payload.device.sua = device?.sua;
     }
 
+    if (device?.ext?.cdep) {
+      deepSetValue(payload, 'device.ext.cdep', device.ext.cdep);
+    }
+
     if (user?.geo && device?.geo) {
       payload.device.geo = { ...payload.device.geo, ...device.geo };
       payload.user.geo = { ...payload.user.geo, ...user.geo };
