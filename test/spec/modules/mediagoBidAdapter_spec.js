@@ -43,7 +43,6 @@ describe('mediago:BidAdapterTests', function () {
           user: {
             ext: {
               data: {
-                CxSegments: [],
               },
             },
           },
