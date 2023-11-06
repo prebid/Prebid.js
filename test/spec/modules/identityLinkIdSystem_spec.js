@@ -1,13 +1,22 @@
-import {identityLinkSubmodule} from 'modules/identityLinkIdSystem.js';
+import {getEnvelopeFromStorage, identityLinkSubmodule} from 'modules/identityLinkIdSystem.js';
 import * as utils from 'src/utils.js';
 import {server} from 'test/mocks/xhr.js';
 import {getCoreStorageManager} from '../../../src/storageManager.js';
+import {stub} from 'sinon';
 
 const storage = getCoreStorageManager();
 
 const pid = '14';
 let defaultConfigParams;
-const responseHeader = {'Content-Type': 'application/json'}
+const responseHeader = {'Content-Type': 'application/json'};
+const testEnvelope = 'eyJ0aW1lc3RhbXAiOjE2OTEwNjU5MzQwMTcsInZlcnNpb24iOiIxLjIuMSIsImVudmVsb3BlIjoiQWhIenUyMFN3WHZ6T0hPd3c2bkxaODAtd2hoN2Nnd0FqWllNdkQ0UjBXT25xRVc1N21zR2Vral9QejU2b1FwcGdPOVB2aFJFa3VHc2lMdG56c3A2aG13eDRtTTRNLTctRy12NiJ9';
+const testEnvelopeValue = '{"timestamp":1691065934017,"version":"1.2.1","envelope":"AhHzu20SwXvzOHOww6nLZ80-whh7cgwAjZYMvD4R0WOnqEW57msGekj_Pz56oQppgO9PvhREkuGsiLtnzsp6hmwx4mM4M-7-G-v6"}';
+
+function setTestEnvelopeCookie () {
+  let now = new Date();
+  now.setTime(now.getTime() + 3000);
+  storage.setCookie('_lr_env', testEnvelope, now.toUTCString());
+}
 
 describe('IdentityLinkId tests', function () {
   let logErrorStub;
@@ -17,6 +26,7 @@ describe('IdentityLinkId tests', function () {
     logErrorStub = sinon.stub(utils, 'logError');
     // remove _lr_retry_request cookie before test
     storage.setCookie('_lr_retry_request', 'true', 'Thu, 01 Jan 1970 00:00:01 GMT');
+    storage.setCookie('_lr_env', testEnvelope, 'Thu, 01 Jan 1970 00:00:01 GMT');
   });
 
   afterEach(function () {
@@ -111,10 +121,8 @@ describe('IdentityLinkId tests', function () {
     request.respond(
       204,
       responseHeader,
-      ''
     );
     expect(callBackSpy.calledOnce).to.be.true;
-    expect(request.response).to.equal('');
     expect(logErrorStub.calledOnce).to.not.be.true;
   });
 
@@ -165,4 +173,43 @@ describe('IdentityLinkId tests', function () {
     let request = server.requests[0];
     expect(request).to.be.eq(undefined);
   });
+
+  it('should get envelope from storage if ats is not present on a page and pass it to callback', function () {
+    setTestEnvelopeCookie();
+    let envelopeValueFromStorage = getEnvelopeFromStorage();
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    expect(envelopeValueFromStorage).to.be.a('string');
+    expect(callBackSpy.calledOnce).to.be.true;
+  })
+
+  it('if there is no envelope in storage and ats is not present on a page try to call 3p url', function () {
+    let envelopeValueFromStorage = getEnvelopeFromStorage();
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.be.eq('https://api.rlcdn.com/api/identity/envelope?pid=14');
+    request.respond(
+      204,
+      responseHeader,
+    );
+    expect(envelopeValueFromStorage).to.be.a('undefined');
+    expect(callBackSpy.calledOnce).to.be.true;
+  })
+
+  it('if ats is present on a page, and envelope is generated and stored in storage, call a callback', function () {
+    setTestEnvelopeCookie();
+    let envelopeValueFromStorage = getEnvelopeFromStorage();
+    window.ats = {retrieveEnvelope: function() {
+    }}
+    // mock ats.retrieveEnvelope to return envelope
+    stub(window.ats, 'retrieveEnvelope').callsFake(function() { return envelopeValueFromStorage })
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    expect(envelopeValueFromStorage).to.be.a('string');
+    expect(envelopeValueFromStorage).to.be.eq(testEnvelopeValue);
+  })
 });

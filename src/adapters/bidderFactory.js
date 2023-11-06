@@ -25,7 +25,7 @@ import {useMetrics} from '../utils/perfMetrics.js';
 import {isActivityAllowed} from '../activities/rules.js';
 import {activityParams} from '../activities/activityParams.js';
 import {MODULE_TYPE_BIDDER} from '../activities/modules.js';
-import {ACTIVITY_TRANSMIT_TID} from '../activities/activities.js';
+import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../activities/activities.js';
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -288,14 +288,11 @@ export function newBidder(spec) {
           onTimelyResponse(spec.code);
           responses.push(resp)
         },
-        /** Process eventual BidderAuctionResponse.fledgeAuctionConfig field in response.
-         * @param {Array<FledgeAuctionConfig>} fledgeAuctionConfigs
-         */
         onFledgeAuctionConfigs: (fledgeAuctionConfigs) => {
           fledgeAuctionConfigs.forEach((fledgeAuctionConfig) => {
             const bidRequest = bidRequestMap[fledgeAuctionConfig.bidId];
             if (bidRequest) {
-              addComponentAuction(bidRequest.adUnitCode, fledgeAuctionConfig.config);
+              addComponentAuction(bidRequest, fledgeAuctionConfig.config);
             } else {
               logWarn('Received fledge auction configuration for an unknown bidId', fledgeAuctionConfig);
             }
@@ -454,6 +451,15 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
     onRequest(request);
 
     const networkDone = requestMetrics.startTiming('net');
+
+    function getOptions(defaults) {
+      const ro = request.options;
+      return Object.assign(defaults, ro, {
+        browsingTopics: ro?.hasOwnProperty('browsingTopics') && !ro.browsingTopics
+          ? false
+          : isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, activityParams(MODULE_TYPE_BIDDER, spec.code))
+      })
+    }
     switch (request.method) {
       case 'GET':
         ajax(
@@ -463,10 +469,10 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
             error: onFailure
           },
           undefined,
-          Object.assign({
+          getOptions({
             method: 'GET',
             withCredentials: true
-          }, request.options)
+          })
         );
         break;
       case 'POST':
@@ -477,11 +483,11 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
             error: onFailure
           },
           typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
-          Object.assign({
+          getOptions({
             method: 'POST',
             contentType: 'text/plain',
             withCredentials: true
-          }, request.options)
+          })
         );
         break;
       default:
@@ -519,7 +525,7 @@ export const registerSyncInner = hook('async', function(spec, responses, gdprCon
   }
 }, 'registerSyncs')
 
-export const addComponentAuction = hook('sync', (adUnitCode, fledgeAuctionConfig) => {
+export const addComponentAuction = hook('sync', (request, fledgeAuctionConfig) => {
 }, 'addComponentAuction');
 
 // check that the bid has a width and height set

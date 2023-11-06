@@ -1,4 +1,12 @@
-import { deepAccess, getBidIdParameter, isArray, getUniqueIdentifierStr, contains, isFn, isPlainObject } from '../src/utils.js';
+import {
+  deepAccess,
+  isArray,
+  getUniqueIdentifierStr,
+  contains,
+  isFn,
+  isPlainObject,
+  getBidIdParameter
+} from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';

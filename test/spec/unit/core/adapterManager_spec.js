@@ -965,13 +965,23 @@ describe('adapterManager tests', function () {
     }];
 
     it('invokes callBids on the S2S adapter', function () {
+      const done = sinon.stub();
+      const onTimelyResponse = sinon.stub();
+      prebidServerAdapterMock.callBids.callsFake((_1, _2, _3, done) => {
+        done();
+      });
       adapterManager.callBids(
         getAdUnits(),
         bidRequests,
         () => {},
-        () => () => {}
+        done,
+        undefined,
+        undefined,
+        onTimelyResponse
       );
       sinon.assert.calledTwice(prebidServerAdapterMock.callBids);
+      sinon.assert.calledTwice(done);
+      bidRequests.forEach(br => sinon.assert.calledWith(onTimelyResponse, br.bidderRequestId));
     });
 
     // Enable this test when prebidServer adapter is made 1.0 compliant

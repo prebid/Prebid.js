@@ -6,7 +6,6 @@ import {
   deepClone,
   generateUUID,
   getDNT,
-  getGptSlotInfoForAdUnitCode,
   getUniqueIdentifierStr,
   getWindowSelf,
   getWindowTop,
@@ -34,6 +33,7 @@ import {OUTSTREAM} from '../src/video.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { userSync } from '../src/userSync.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 const BIDDER_CODE = 'adagio';
 const LOG_PREFIX = 'Adagio:';
@@ -54,8 +54,9 @@ const ADAGIO_PUBKEY = 'AL16XT44Sfp+8SHVF1UdC7hydPSMVLMhsYknKDdwqq+0ToDSJrP0+Qh0k
 const ADAGIO_PUBKEY_E = 65537;
 const CURRENCY = 'USD';
 
-// This provide a whitelist and a basic validation of OpenRTB 2.6 options used by the Adagio SSP.
-// https://iabtechlab.com/wp-content/uploads/2022/04/OpenRTB-2-6_FINAL.pdf
+// This provide a whitelist and a basic validation of OpenRTB 2.5 options used by the Adagio SSP.
+// Accept all options but 'protocol', 'companionad', 'companiontype', 'ext'
+// https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-API-Specification-Version-2-5-FINAL.pdf
 export const ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
   'minduration': (value) => isInteger(value),
@@ -996,7 +997,7 @@ export const spec = {
     const aucId = generateUUID()
 
     const adUnits = _map(validBidRequests, (rawBidRequest) => {
-      const bidRequest = {...rawBidRequest}
+      const bidRequest = deepClone(rawBidRequest);
 
       // Fix https://github.com/prebid/Prebid.js/issues/9781
       bidRequest.auctionId = aucId
@@ -1130,14 +1131,22 @@ export const spec = {
       // remove useless props
       delete adUnitCopy.floorData;
       delete adUnitCopy.params.siteId;
-      delete adUnitCopy.userId
-      delete adUnitCopy.userIdAsEids
+      delete adUnitCopy.userId;
+      delete adUnitCopy.userIdAsEids;
 
       groupedAdUnits[adUnitCopy.params.organizationId] = groupedAdUnits[adUnitCopy.params.organizationId] || [];
       groupedAdUnits[adUnitCopy.params.organizationId].push(adUnitCopy);
 
       return groupedAdUnits;
     }, {});
+
+    // Adding more params on the original bid object.
+    // Those params are not sent to the server.
+    // They are used for further operations on analytics adapter.
+    validBidRequests.forEach(rawBidRequest => {
+      rawBidRequest.params.adagioAuctionId = aucId
+      rawBidRequest.params.pageviewId = pageviewId
+    });
 
     // Build one request per organizationId
     const requests = _map(Object.keys(groupedAdUnits), organizationId => {

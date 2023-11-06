@@ -322,6 +322,21 @@ describe('Adagio bid adapter', () => {
       expect(requests[0].data.adUnits[0].transactionId).to.not.exist;
     });
 
+    it('should enrich prebid bid requests params', function() {
+      const expectedAuctionId = '373bcda7-9794-4f1c-be2c-0d223d11d579'
+      const expectedPageviewId = '56befc26-8cf0-472d-b105-73896df8eb89';
+      sandbox.stub(utils, 'generateUUID').returns(expectedAuctionId);
+      sandbox.stub(adagio, 'getPageviewId').returns(expectedPageviewId);
+
+      const bid01 = new BidRequestBuilder().withParams().build();
+      const bidderRequest = new BidderRequestBuilder().build();
+
+      spec.buildRequests([bid01], bidderRequest);
+
+      expect(bid01.params.adagioAuctionId).eq(expectedAuctionId);
+      expect(bid01.params.pageviewId).eq(expectedPageviewId);
+    });
+
     it('should enqueue computed features for collect usage', function() {
       sandbox.stub(Date, 'now').returns(12345);
 

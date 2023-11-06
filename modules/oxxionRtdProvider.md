@@ -7,7 +7,7 @@ Maintainer: tech@oxxion.io
 # Oxxion Real-Time-Data submodule
 
 Oxxion helps you to understand how your prebid stack performs.
-This Rtd module is to use in order to improve video events tracking and/or to filter bidder requested.
+This Rtd module purpose is to filter bidders requested.
 
 # Integration
 
@@ -30,7 +30,6 @@ pbjs.setConfig(
           waitForIt: true,
           params: {
             domain: "test.endpoint",
-            contexts: ["instream"],
             threshold: false,
             samplingRate: 10,
           }
@@ -46,12 +45,6 @@ pbjs.setConfig(
 | Name                             | Type     | Description                                                                                                 |
 |:---------------------------------|:---------|:------------------------------------------------------------------------------------------------------------|
 | domain                           | String   | This string identifies yourself in Oxxion's systems and is provided to you by your Oxxion representative.   |
-
-# setConfig Parameters for Video Tracking
-
-| Name                             | Type     | Description                                                                                                 |
-|:---------------------------------|:---------|:------------------------------------------------------------------------------------------------------------|
-| contexts                         | Array    | Array defining which video contexts to add tracking events into. Values can be instream and/or outstream.   |
 
 # setConfig Parameters for bidder filtering
 

@@ -113,12 +113,19 @@ export const spec = {
       params.push(`ccpa_consent=${uspConsent.consentString}`);
     }
 
-    if (syncOptions.pixelEnabled && serverResponses.length > 0) {
+    if (syncOptions.iframeEnabled && serverResponses.length > 0) {
       syncs.push({
-        type: 'image',
-        url: `${SYNC_URL}?${params.join('&')}`
+        type: 'iframe',
+        url: `${SYNC_URL}/iframe?${params.join('&')}`
       });
     }
+
+    // if (syncOptions.pixelEnabled && serverResponses.length > 0) {
+    //   syncs.push({
+    //     type: 'image',
+    //     url: `${SYNC_URL}/image?${params.join('&')}`
+    //   });
+    // }
     return syncs;
   },
 };

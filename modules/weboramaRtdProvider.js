@@ -109,8 +109,7 @@ import {
   isBoolean,
   isPlainObject,
   logWarn,
-  mergeDeep,
-  tryAppendQueryString
+  mergeDeep
 } from '../src/utils.js';
 import {
   submodule
@@ -123,6 +122,7 @@ import {
 } from '../src/storageManager.js';
 import adapterManager from '../src/adapterManager.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
