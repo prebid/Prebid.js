@@ -123,10 +123,10 @@ function buildRequests(validBidRequests, bidderRequest) {
       const floor = getFloor(bidRequest);
 
       if (bidRequest.userId) {
-        openRtbBidRequestBanner.user.ext.uids = {...bidRequest.userId}
+        openRtbBidRequestBanner.user.ext.uids = bidRequest.userId
       }
       if (bidRequest.userIdAsEids) {
-        openRtbBidRequestBanner.user.ext.eids = {...bidRequest.userIdAsEids}
+        openRtbBidRequestBanner.user.ext.eids = bidRequest.userIdAsEids
       }
 
       openRtbBidRequestBanner.imp.push({
