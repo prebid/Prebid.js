@@ -3,31 +3,31 @@ import { spec } from 'modules/mediagoBidAdapter.js';
 
 describe('mediago:BidAdapterTests', function () {
   let bidRequestData = {
-    bidderCode: "mediago",
-    auctionId: "7fae02a9-0195-472f-ba94-708d3bc2c0d9",
-    bidderRequestId: "4fec04e87ad785",
+    bidderCode: 'mediago',
+    auctionId: '7fae02a9-0195-472f-ba94-708d3bc2c0d9',
+    bidderRequestId: '4fec04e87ad785',
     bids: [
       {
-        bidder: "mediago",
+        bidder: 'mediago',
         params: {
-          token: "85a6b01e41ac36d49744fad726e3655d",
-          siteId: "siteId_01",
-          zoneId: "zoneId_01",
-          publisher: "52",
-          position: "left",
-          referrer: "https://trace.mediago.io",
+          token: '85a6b01e41ac36d49744fad726e3655d',
+          siteId: 'siteId_01',
+          zoneId: 'zoneId_01',
+          publisher: '52',
+          position: 'left',
+          referrer: 'https://trace.mediago.io',
           bidfloor: 0.01,
           ortb2Imp: {
             ext: {
-              gpid: "adslot_gpid",
-              tid: "tid_01",
+              gpid: 'adslot_gpid',
+              tid: 'tid_01',
               data: {
                 browsi: {
-                  browsiViewability: "NA",
+                  browsiViewability: 'NA',
                 },
                 adserver: {
-                  name: "adserver_name",
-                  adslot: "adslot_name",
+                  name: 'adserver_name',
+                  adslot: 'adslot_name',
                 },
               },
             },
@@ -36,7 +36,7 @@ describe('mediago:BidAdapterTests', function () {
         mediaTypes: {
           banner: {
             sizes: [[300, 250]],
-            pos: "left",
+            pos: 'left',
           },
         },
         ortb2: {
@@ -48,13 +48,13 @@ describe('mediago:BidAdapterTests', function () {
             },
           },
         },
-        adUnitCode: "regular_iframe",
-        transactionId: "7b26fdae-96e6-4c35-a18b-218dda11397d",
+        adUnitCode: 'regular_iframe',
+        transactionId: '7b26fdae-96e6-4c35-a18b-218dda11397d',
         sizes: [[300, 250]],
-        bidId: "54d73f19c9d47a", // todo
-        bidderRequestId: "4fec04e87ad785", // todo
-        auctionId: "883a346a-6d62-4adb-a600-0f3a869061d1",
-        src: "client",
+        bidId: '54d73f19c9d47a', // todo
+        bidderRequestId: '4fec04e87ad785', // todo
+        auctionId: '883a346a-6d62-4adb-a600-0f3a869061d1',
+        src: 'client',
         bidRequestsCount: 1,
         bidderRequestsCount: 1,
         bidderWinsCount: 0,
