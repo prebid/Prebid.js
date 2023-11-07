@@ -3,6 +3,7 @@ import {config} from 'src/config';
 import CONSTANTS from 'src/constants.json';
 import {server} from '../../mocks/xhr.js';
 import {logError} from '../../../src/utils';
+import {self as exports} from "../../../modules/automatadAnalyticsAdapter";
 
 let utils = require('src/utils');
 let events = require('src/events');
@@ -408,7 +409,7 @@ describe('Zeta Global SSP Analytics Adapter', function() {
       expect(requests.length).to.equal(2);
       const auctionEnd = JSON.parse(requests[0].requestBody);
       const auctionSucceeded = JSON.parse(requests[1].requestBody);
-      console.warn(auctionSucceeded);
+      exports.prettyLog('status', auctionSucceeded, true, auctionSucceeded);
       expect(auctionEnd).to.be.deep.equal({
         adUnitCodes: [
           '/19968336/header-bid-tag-0'
