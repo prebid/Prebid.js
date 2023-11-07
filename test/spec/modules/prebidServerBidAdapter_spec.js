@@ -3780,8 +3780,8 @@ describe('S2S Adapter', function () {
       expect(vendorConfig.bidders).to.deep.equal(['pubmatic']);
       expect(vendorConfig.enabled).to.be.true;
       expect(vendorConfig.endpoint).to.deep.equal({
-        p1Consent: 'http://ow.pubmatic.com/openrtb2/auction?source=pbjs',
-        noP1Consent: 'http://ow.pubmatic.com/openrtb2/auction?source=pbjs'
+        p1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs',
+        noP1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs'
       });
       expect(vendorConfig).to.have.property('timeout', 1000);
     });
@@ -3802,8 +3802,8 @@ describe('S2S Adapter', function () {
         'defaultVendor': 'openwrap',
         'enabled': true,
         'endpoint': {
-          p1Consent: 'http://ow.pubmatic.com/openrtb2/auction?source=pbjs',
-          noP1Consent: 'http://ow.pubmatic.com/openrtb2/auction?source=pbjs'
+          p1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs',
+          noP1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs'
         },
         'timeout': 750
       })
@@ -3826,8 +3826,8 @@ describe('S2S Adapter', function () {
         bidders: ['pubmatic'],
         defaultVendor: 'openwrap',
         endpoint: {
-          p1Consent: 'http://ow.pubmatic.com/openrtb2/auction?source=pbjs',
-          noP1Consent: 'http://ow.pubmatic.com/openrtb2/auction?source=pbjs'
+          p1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs',
+          noP1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs'
         },
       })
     });

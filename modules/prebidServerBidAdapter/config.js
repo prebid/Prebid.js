@@ -43,9 +43,9 @@ export const S2S_VENDORS = {
     adapter: 'prebidServer',
     enabled: true,
     endpoint: {
-      p1Consent: 'http://ow.pubmatic.com/openrtb2/auction?source=pbjs',
-      noP1Consent: 'http://ow.pubmatic.com/openrtb2/auction?source=pbjs'
+      p1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs',
+      noP1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs'
     },
-    timeout: 1000
+    timeout: 500
   }
 }
