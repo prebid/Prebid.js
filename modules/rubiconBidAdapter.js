@@ -522,7 +522,7 @@ export const spec = {
       data['ppuid'] = configUserId;
     }
 
-    if (bidderRequest.fledgeEnabled) {
+    if (bidRequest?.ortb2Imp?.ext?.ae) {
       data['o_ae'] = 1;
     }
     // loop through userIds and add to request
@@ -725,11 +725,7 @@ export const spec = {
       return { config, bidId: config.bidId }
     });
 
-    if (fledgeAuctionConfigs) {
-      return { bids, fledgeAuctionConfigs };
-    } else {
-      return bids;
-    }
+    return { bids, fledgeAuctionConfigs };
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
