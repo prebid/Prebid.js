@@ -398,5 +398,65 @@ describe('Zeta Global SSP Analytics Adapter', function() {
       expect(auctionSucceeded.bid.params[0]).to.be.deep.equal(EVENTS.AUCTION_END.adUnits[0].bids[0].params);
       expect(EVENTS.AUCTION_END.adUnits[0].bids[0].bidder).to.be.equal('zeta_global_ssp');
     });
+
+    it('Keep only needed fields', function() {
+      this.timeout(3000);
+
+      events.emit(CONSTANTS.EVENTS.AUCTION_END, EVENTS.AUCTION_END);
+      events.emit(CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED, EVENTS.AD_RENDER_SUCCEEDED);
+
+      expect(requests.length).to.equal(2);
+      const auctionEnd = JSON.parse(requests[0].requestBody);
+      const auctionSucceeded = JSON.parse(requests[1].requestBody);
+
+      expect(auctionSucceeded).to.be.deep.equal({
+        adId: '5759bb3ef7be1e8',
+        bid: {
+          adId: '5759bb3ef7be1e8',
+          auctionId: '75e394d9-ccce-4978-9238-91e6a1ac88a1',
+          adUnitCode: '/19968336/header-bid-tag-0',
+          bidId: undefined,
+          requestId: '206be9a13236af',
+          bidderCode: 'zeta_global_ssp',
+          mediaTypes: undefined,
+          sizes: undefined,
+          adserverTargeting: {
+            hb_bidder: 'zeta_global_ssp',
+            hb_adid: '5759bb3ef7be1e8',
+            hb_pb: '2.20',
+            hb_size: '480x320',
+            hb_source: 'client',
+            hb_format: 'banner',
+            hb_adomain: 'viaplay.fi'
+          },
+          cpm: 2.258302852806723,
+          creativeId: '456456456',
+          mediaType: 'banner',
+          renderer: undefined,
+          size: '480x320',
+          timeToRespond: 123,
+          params: [
+            {
+              nonZetaParam: 'nonZetaValue'
+            }
+          ]
+        },
+        doc: {
+          location: {
+            href: 'http://test-zeta-ssp.net:63342/zeta-ssp/ssp/_dev/examples/page_banner.html',
+            protocol: 'http:',
+            host: 'localhost:63342',
+            hostname: 'localhost',
+            port: '63342',
+            pathname: '/zeta-ssp/ssp/_dev/examples/page_banner.html',
+            hash: '',
+            origin: 'http://test-zeta-ssp.net:63342',
+            ancestorOrigins: {
+              0: 'http://test-zeta-ssp.net:63342'
+            }
+          }
+        }
+      });
+    });
   });
 });
