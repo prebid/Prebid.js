@@ -7,6 +7,8 @@ import {
   BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME,
   getEffectiveConnectionType,
   getUserIds,
+  getDomLoadingDuration,
+  GVL_ID,
 } from 'modules/bliinkBidAdapter.js';
 import { config } from 'src/config.js';
 
@@ -31,6 +33,7 @@ import { config } from 'src/config.js';
  */
 
 const connectionType = getEffectiveConnectionType();
+const domLoadingDuration = getDomLoadingDuration().toString();
 const getConfigBid = (placement) => {
   return {
     adUnitCode: '/19968336/test',
@@ -57,6 +60,7 @@ const getConfigBid = (placement) => {
         },
       },
     },
+    domLoadingDuration,
     ect: connectionType,
     params: {
       placement: placement,
@@ -348,11 +352,31 @@ const GetUserIds = [
     want: undefined,
   },
   {
-    title: 'Should return userIds if exists',
+    title: 'Should return eids if exists',
     args: {
-      fn: getUserIds([{ userIds: { criteoId: 'testId' } }]),
+      fn: getUserIds([{ userIdAsEids: [
+        {
+          'source': 'criteo.com',
+          'uids': [
+            {
+              'id': 'testId',
+              'atype': 1
+            }
+          ]
+        }
+      ] }]),
     },
-    want: { criteoId: 'testId' },
+    want: [
+      {
+        'source': 'criteo.com',
+        'uids': [
+          {
+            'id': 'testId',
+            'atype': 1
+          }
+        ]
+      }
+    ],
   },
 ];
 
@@ -655,12 +679,13 @@ const testsBuildRequests = [
       method: 'POST',
       url: BLIINK_ENDPOINT_ENGINE,
       data: {
+        domLoadingDuration,
         ect: connectionType,
         keywords: '',
         pageDescription: '',
         pageTitle: '',
         pageUrl:
-          'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html?pbjs_debug=true',
+          'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html',
         tags: [
           {
             transactionId: '2def0c5b2a7f6e',
@@ -697,6 +722,7 @@ const testsBuildRequests = [
       method: 'POST',
       url: BLIINK_ENDPOINT_ENGINE,
       data: {
+        domLoadingDuration,
         ect: connectionType,
         gdpr: true,
         gdprConsent: 'XXXX',
@@ -704,7 +730,7 @@ const testsBuildRequests = [
         pageTitle: '',
         keywords: '',
         pageUrl:
-          'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html?pbjs_debug=true',
+          'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html',
         tags: [
           {
             transactionId: '2def0c5b2a7f6e',
@@ -742,6 +768,7 @@ const testsBuildRequests = [
       method: 'POST',
       url: BLIINK_ENDPOINT_ENGINE,
       data: {
+        domLoadingDuration,
         ect: connectionType,
         gdpr: true,
         uspConsent: 'uspConsent',
@@ -750,7 +777,7 @@ const testsBuildRequests = [
         pageTitle: '',
         keywords: '',
         pageUrl:
-          'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html?pbjs_debug=true',
+          'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html',
         tags: [
           {
             transactionId: '2def0c5b2a7f6e',
@@ -801,6 +828,7 @@ const testsBuildRequests = [
       method: 'POST',
       url: BLIINK_ENDPOINT_ENGINE,
       data: {
+        domLoadingDuration,
         ect: connectionType,
         gdpr: true,
         gdprConsent: 'XXXX',
@@ -808,7 +836,7 @@ const testsBuildRequests = [
         pageTitle: '',
         keywords: '',
         pageUrl:
-          'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html?pbjs_debug=true',
+          'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html',
         schain: {
           ver: '1.0',
           complete: 1,
@@ -840,16 +868,31 @@ const testsBuildRequests = [
     },
   },
   {
-    title: 'Should build request with userIds if exists',
+    title: 'Should build request with eids if exists',
     args: {
       fn: spec.buildRequests(
         [
           {
-            userIds: {
-              criteoId:
-                'vG4RRF93V05LRlJUTVVOQTJJJTJGbG1rZWxEeDVvc0NXWE42TzJqU2hG',
-              netId: 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg',
-            },
+            userIdAsEids: [
+              {
+                'source': 'criteo.com',
+                'uids': [
+                  {
+                    'id': 'vG4RRF93V05LRlJUTVVOQTJJJTJGbG1rZWxEeDVvc0NXWE42TzJqU2hG',
+                    'atype': 1
+                  }
+                ]
+              },
+              {
+                'source': 'netid.de',
+                'uids': [
+                  {
+                    'id': 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg',
+                    'atype': 1
+                  }
+                ]
+              }
+            ],
           },
         ],
         Object.assign(getConfigBuildRequest('banner'), {
@@ -864,6 +907,7 @@ const testsBuildRequests = [
       method: 'POST',
       url: BLIINK_ENDPOINT_ENGINE,
       data: {
+        domLoadingDuration,
         ect: connectionType,
         gdpr: true,
         gdprConsent: 'XXXX',
@@ -871,11 +915,27 @@ const testsBuildRequests = [
         pageTitle: '',
         keywords: '',
         pageUrl:
-          'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html?pbjs_debug=true',
-        userIds: {
-          criteoId: 'vG4RRF93V05LRlJUTVVOQTJJJTJGbG1rZWxEeDVvc0NXWE42TzJqU2hG',
-          netId: 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg',
-        },
+          'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html',
+        eids: [
+          {
+            'source': 'criteo.com',
+            'uids': [
+              {
+                'id': 'vG4RRF93V05LRlJUTVVOQTJJJTJGbG1rZWxEeDVvc0NXWE42TzJqU2hG',
+                'atype': 1
+              }
+            ]
+          },
+          {
+            'source': 'netid.de',
+            'uids': [
+              {
+                'id': 'fH5A3n2O8_CZZyPoJVD-eabc6ECb7jhxCicsds7qSg',
+                'atype': 1
+              }
+            ]
+          }
+        ],
         tags: [
           {
             transactionId: '2def0c5b2a7f6e',
@@ -1053,6 +1113,7 @@ describe('BLIINK Adapter keywords & coppa true', function () {
       method: 'POST',
       url: BLIINK_ENDPOINT_ENGINE,
       data: {
+        domLoadingDuration,
         ect: connectionType,
         gdpr: true,
         coppa: 1,
@@ -1061,7 +1122,7 @@ describe('BLIINK Adapter keywords & coppa true', function () {
         pageTitle: '',
         keywords: 'Bliink,Saber,Prebid',
         pageUrl:
-          'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html?pbjs_debug=true',
+          'http://localhost:9999/integrationExamples/gpt/bliink-adapter.html',
         tags: [
           {
             transactionId: '2def0c5b2a7f6e',
@@ -1107,4 +1168,8 @@ describe('getEffectiveConnectionType', () => {
       expect(result).to.equal('unsupported');
     });
   }
+});
+
+it('should expose gvlid', function () {
+  expect(spec.gvlid).to.equal(GVL_ID);
 });
