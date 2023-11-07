@@ -247,7 +247,7 @@ class GPP10Client extends GPPClient {
 
   getGPPData(pingData) {
     const parsedSections = GreedyPromise.all(
-      pingData.supportedAPIs.map((api) => this.cmp({
+      (pingData.supportedAPIs || pingData.apiSupport || []).map((api) => this.cmp({
         command: 'getSection',
         parameter: api
       }).catch(err => {

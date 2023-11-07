@@ -221,10 +221,10 @@ function getItems(validBidRequests, bidderRequest) {
     }
 
     const bidFloor = getBidFloor(req);
-    // const gpid =
-    //   utils.deepAccess(req, 'ortb2Imp.ext.gpid') ||
-    //   utils.deepAccess(req, 'ortb2Imp.ext.data.pbadslot') ||
-    //   utils.deepAccess(req, 'params.placementId', 0);
+    const gpid =
+      utils.deepAccess(req, 'ortb2Imp.ext.gpid') ||
+      utils.deepAccess(req, 'ortb2Imp.ext.data.pbadslot') ||
+      utils.deepAccess(req, 'params.placementId', 0);
 
     // if (mediaTypes.native) {}
     // banner广告类型
@@ -240,7 +240,8 @@ function getItems(validBidRequests, bidderRequest) {
           format: sizes,
         },
         ext: {
-          //   gpid: gpid, // 加入后无法返回广告
+          ortb2Imp: utils.deepAccess(req, 'ortb2Imp'), // 传入完整对象，分析日志数据
+          gpid: gpid, // 加入后无法返回广告
         },
         tagid: req.params && req.params.tagid,
       };

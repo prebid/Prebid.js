@@ -7,7 +7,6 @@ import { find } from '../src/polyfill.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { Renderer } from '../src/Renderer.js';
 import {
-  convertTypes,
   deepAccess,
   deepSetValue,
   formatQS,
@@ -21,6 +20,7 @@ import {
   parseSizesInput, _each
 } from '../src/utils.js';
 import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
+import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
@@ -124,6 +124,7 @@ var sizeMap = {
   278: '320x500',
   282: '320x400',
   288: '640x380',
+  484: '720x1280',
   524: '1x2',
   548: '500x1000',
   550: '980x480',
@@ -139,7 +140,9 @@ var sizeMap = {
   576: '610x877',
   578: '980x552',
   580: '505x656',
-  622: '192x160'
+  622: '192x160',
+  632: '1200x450',
+  634: '340x450'
 };
 
 _each(sizeMap, (item, key) => sizeMap[item] = key);

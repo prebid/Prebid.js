@@ -1,22 +1,24 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/acuityAdsBidAdapter';
+import { spec } from '../../../modules/axisBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
-const bidder = 'acuityads'
+const bidder = 'axis'
 
-describe('AcuityAdsBidAdapter', function () {
+describe('AxisBidAdapter', function () {
   const bids = [
     {
       bidId: getUniqueIdentifierStr(),
       bidder: bidder,
       mediaTypes: {
         [BANNER]: {
-          sizes: [[300, 250]]
+          sizes: [[300, 250]],
+          pos: 1
         }
       },
       params: {
-        placementId: 'testBanner',
+        integration: '000000',
+        token: '000000'
       }
     },
     {
@@ -26,11 +28,13 @@ describe('AcuityAdsBidAdapter', function () {
         [VIDEO]: {
           playerSize: [[300, 300]],
           minduration: 5,
-          maxduration: 60
+          maxduration: 60,
+          pos: 1
         }
       },
       params: {
-        placementId: 'testVideo',
+        integration: '000000',
+        token: '000000'
       }
     },
     {
@@ -53,7 +57,8 @@ describe('AcuityAdsBidAdapter', function () {
         }
       },
       params: {
-        placementId: 'testNative',
+        integration: '000000',
+        token: '000000'
       }
     }
   ];
@@ -77,7 +82,11 @@ describe('AcuityAdsBidAdapter', function () {
     refererInfo: {
       referer: 'https://test.com'
     },
-    timeout: 500
+    ortb2: {
+      site: {
+        cat: ['IAB24']
+      }
+    }
   };
 
   describe('isBidRequestValid', function () {
@@ -104,7 +113,7 @@ describe('AcuityAdsBidAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://prebid.admanmedia.com/pbjs');
+      expect(serverRequest.url).to.equal('https://prebid.axis-marketplace.com/pbjs');
     });
 
     it('Returns general data valid', function () {
@@ -117,6 +126,7 @@ describe('AcuityAdsBidAdapter', function () {
         'host',
         'page',
         'placements',
+        'iabCat',
         'coppa',
         'ccpa',
         'gdpr',
@@ -132,6 +142,7 @@ describe('AcuityAdsBidAdapter', function () {
       expect(data.gdpr).to.be.a('string');
       expect(data.ccpa).to.be.a('string');
       expect(data.tmax).to.be.a('number');
+      expect(data.iabCat).to.have.lengthOf(1);
       expect(data.placements).to.have.lengthOf(3);
     });
 
@@ -139,12 +150,12 @@ describe('AcuityAdsBidAdapter', function () {
       const { placements } = serverRequest.data;
       for (let i = 0, len = placements.length; i < len; i++) {
         const placement = placements[i];
-        expect(placement.placementId).to.be.oneOf(['testBanner', 'testVideo', 'testNative']);
         expect(placement.adFormat).to.be.oneOf([BANNER, VIDEO, NATIVE]);
         expect(placement.bidId).to.be.a('string');
+        expect(placement.integration).to.be.a('string');
+        expect(placement.token).to.be.a('string');
         expect(placement.schain).to.be.an('object');
         expect(placement.bidfloor).to.exist.and.to.equal(0);
-        expect(placement.type).to.exist.and.to.equal('publisher');
 
         if (placement.adFormat === BANNER) {
           expect(placement.sizes).to.be.an('array');
@@ -152,11 +163,13 @@ describe('AcuityAdsBidAdapter', function () {
         switch (placement.adFormat) {
           case BANNER:
             expect(placement.sizes).to.be.an('array');
+            expect(placement.pos).to.be.within(0, 7);
             break;
           case VIDEO:
             expect(placement.playerSize).to.be.an('array');
             expect(placement.minduration).to.be.an('number');
             expect(placement.maxduration).to.be.an('number');
+            expect(placement.pos).to.be.within(0, 7);
             break;
           case NATIVE:
             expect(placement.native).to.be.an('object');
@@ -229,7 +242,7 @@ describe('AcuityAdsBidAdapter', function () {
       expect(dataItem.creativeId).to.equal(banner.body[0].creativeId);
       expect(dataItem.netRevenue).to.be.true;
       expect(dataItem.currency).to.equal(banner.body[0].currency);
-      expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains');
+      expect(dataItem.meta).to.be.an('object').that.has.property('advertiserDomains');
     });
     it('Should interpret video response', function () {
       const video = {
@@ -238,6 +251,8 @@ describe('AcuityAdsBidAdapter', function () {
           mediaType: 'video',
           cpm: 0.5,
           requestId: '23fhj33i987f',
+          width: 300,
+          height: 250,
           ttl: 120,
           creativeId: '2',
           netRevenue: true,
@@ -254,7 +269,7 @@ describe('AcuityAdsBidAdapter', function () {
 
       let dataItem = videoResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'vastUrl', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
+        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta', 'width', 'height');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.5);
       expect(dataItem.vastUrl).to.equal('test.com');
@@ -262,7 +277,7 @@ describe('AcuityAdsBidAdapter', function () {
       expect(dataItem.creativeId).to.equal('2');
       expect(dataItem.netRevenue).to.be.true;
       expect(dataItem.currency).to.equal('USD');
-      expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains');
+      expect(dataItem.meta).to.be.an('object').that.has.property('advertiserDomains');
     });
     it('Should interpret native response', function () {
       const native = {
@@ -303,7 +318,7 @@ describe('AcuityAdsBidAdapter', function () {
       expect(dataItem.creativeId).to.equal('2');
       expect(dataItem.netRevenue).to.be.true;
       expect(dataItem.currency).to.equal('USD');
-      expect(dataItem.meta).to.be.an('object').that.has.any.key('advertiserDomains');
+      expect(dataItem.meta).to.be.an('object').that.has.property('advertiserDomains');
     });
     it('Should return an empty array if invalid banner response is passed', function () {
       const invBanner = {
@@ -382,7 +397,7 @@ describe('AcuityAdsBidAdapter', function () {
       expect(syncData[0].type).to.be.a('string')
       expect(syncData[0].type).to.equal('image')
       expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://cs.admanmedia.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
+      expect(syncData[0].url).to.equal('https://cs.axis-marketplace.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
     });
     it('Should return array of objects with proper sync config , include CCPA', function() {
       const syncData = spec.getUserSyncs({}, {}, {}, {
@@ -393,7 +408,7 @@ describe('AcuityAdsBidAdapter', function () {
       expect(syncData[0].type).to.be.a('string')
       expect(syncData[0].type).to.equal('image')
       expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://cs.admanmedia.com/image?pbjs=1&ccpa_consent=1---&coppa=0')
+      expect(syncData[0].url).to.equal('https://cs.axis-marketplace.com/image?pbjs=1&ccpa=1---&coppa=0')
     });
   });
 });

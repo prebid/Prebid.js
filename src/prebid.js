@@ -2,15 +2,11 @@
 
 import {getGlobal} from './prebidGlobal.js';
 import {
-  adUnitsFilter,
-  bind,
-  contains,
   deepAccess,
   deepClone,
   deepSetValue,
   flatten,
   generateUUID,
-  getHighestCpm,
   isArray,
   isArrayOfNums,
   isEmpty,
@@ -45,6 +41,8 @@ import {defer, GreedyPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
 import {allConsent} from './consentHandler.js';
 import {renderAdDirect} from '../libraries/creativeRender/direct.js';
+import {getHighestCpm} from './utils/reducers.js';
+import {fillVideoDefaults} from './video.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -82,7 +80,7 @@ function checkDefinedPlacement(id) {
     .reduce(flatten)
     .filter(uniques);
 
-  if (!contains(adUnitCodes, id)) {
+  if (!adUnitCodes.includes(id)) {
     logError('The "' + id + '" placement is not defined.');
     return;
   }
@@ -254,6 +252,12 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
   return validatedAdUnits;
 }, 'checkAdUnitSetup');
 
+function fillAdUnitDefaults(adUnits) {
+  if (FEATURES.VIDEO) {
+    adUnits.forEach(au => fillVideoDefaults(au))
+  }
+}
+
 /// ///////////////////////////////
 //                              //
 //    Start Public APIs         //
@@ -323,7 +327,7 @@ pbjsInstance.getConsentMetadata = function () {
 
 function getBids(type) {
   const responses = auctionManager[type]()
-    .filter(bind.call(adUnitsFilter, this, auctionManager.getAdUnitCodes()));
+    .filter(bid => auctionManager.getAdUnitCodes().includes(bid.adUnitCode))
 
   // find the last auction id to get responses for most recent auction only
   const currentAuctionId = auctionManager.getLastAuctionId();
@@ -534,6 +538,7 @@ pbjsInstance.requestBids = (function() {
 
 export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer } = {}) {
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
+  fillAdUnitDefaults(adUnits);
   adUnits = useMetrics(metrics).measureTime('requestBids.validate', () => checkAdUnitSetup(adUnits));
 
   function auctionDone(bids, timedOut, auctionId) {

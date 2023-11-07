@@ -1,6 +1,4 @@
 import {
-  convertCamelToUnderscore,
-  convertTypes,
   deepAccess,
   getBidRequest,
   getParameterByName,
@@ -16,7 +14,9 @@ import {BANNER} from '../src/mediaTypes.js';
 import {find, includes} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
-import {getANKeywordParam, transformBidderParamKeywords} from '../libraries/appnexusKeywords/anKeywords.js';
+import {getANKeywordParam, transformBidderParamKeywords} from '../libraries/appnexusUtils/anKeywords.js';
+import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
+import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
 const BIDDER_CODE = 'winr';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
