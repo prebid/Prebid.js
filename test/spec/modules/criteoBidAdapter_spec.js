@@ -1879,6 +1879,70 @@ describe('The Criteo bidding adapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.slots[0].rwdd).to.be.undefined;
     });
+
+    it('should properly build a request when FLEDGE is enabled', function () {
+      const bidderRequest = {
+        fledgeEnabled: true,
+      };
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            zoneId: 123,
+            ext: {
+              bidfloor: 0.75
+            }
+          },
+          ortb2Imp: {
+            ext: {
+              ae: 1
+            }
+          }
+        },
+      ];
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.slots[0].ext.ae).to.equal(1);
+    });
+
+    it('should properly build a request when FLEDGE is disabled', function () {
+      const bidderRequest = {
+        fledgeEnabled: false,
+      };
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            zoneId: 123,
+            ext: {
+              bidfloor: 0.75
+            }
+          },
+          ortb2Imp: {
+            ext: {
+              ae: 1
+            }
+          }
+        },
+      ];
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.slots[0].ext).to.not.have.property('ae');
+    });
   });
 
   describe('interpretResponse', function () {
@@ -2408,6 +2472,87 @@ describe('The Criteo bidding adapter', function () {
       expect(bids[0].ad).to.equal('test-ad');
       expect(bids[0].width).to.equal(728);
       expect(bids[0].height).to.equal(90);
+    });
+
+    it('should properly parse a bid response with FLEDGE auction configs', function () {
+      const response = {
+        body: {
+          ext: {
+            igbid: [{
+              impid: 'test-bidId',
+              igbuyer: [{
+                origin: 'https://first-buyer-domain.com',
+                buyerdata: {
+                  foo: 'bar',
+                },
+              }, {
+                origin: 'https://second-buyer-domain.com',
+                buyerdata: {
+                  foo: 'baz',
+                },
+              }]
+            }],
+            seller: 'https://seller-domain.com',
+            sellerTimeout: 500,
+            sellerSignals: {
+              foo: 'bar',
+            },
+          },
+        },
+      };
+      const bidderRequest = {
+        ortb2: {
+          source: {
+            tid: 'abc'
+          }
+        }
+      };
+      const bidRequests = [
+        {
+          bidId: 'test-bidId',
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            bidFloor: 1,
+            bidFloorCur: 'EUR'
+          }
+        },
+      ];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const interpretedResponse = spec.interpretResponse(response, request);
+      expect(interpretedResponse).to.have.property('bids');
+      expect(interpretedResponse).to.have.property('fledgeAuctionConfigs');
+      expect(interpretedResponse.bids).to.have.lengthOf(0);
+      expect(interpretedResponse.fledgeAuctionConfigs).to.have.lengthOf(1);
+      expect(interpretedResponse.fledgeAuctionConfigs[0]).to.deep.equal({
+        bidId: 'test-bidId',
+        config: {
+          auctionSignals: {},
+          decisionLogicUrl: 'https://grid-mercury.criteo.com/fledge/decision',
+          interestGroupBuyers: ['https://first-buyer-domain.com', 'https://second-buyer-domain.com'],
+          perBuyerSignals: {
+            'https://first-buyer-domain.com': {
+              foo: 'bar',
+            },
+            'https://second-buyer-domain.com': {
+              foo: 'baz'
+            },
+          },
+          seller: 'https://seller-domain.com',
+          sellerTimeout: 500,
+          sellerSignals: {
+            foo: 'bar',
+            floor: 1,
+            sellerCurrency: 'EUR',
+          },
+        },
+      });
     });
 
     [{

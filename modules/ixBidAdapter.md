@@ -469,6 +469,11 @@ pbjs.setConfig({
 
 The timeout value must be a positive whole number in milliseconds.
 
+Protected Audience API (FLEDGE)
+===========================
+
+In order to enable receiving [Protected Audience API](https://developer.chrome.com/en/docs/privacy-sandbox/fledge/) traffic, follow Prebid's documentation on [fledgeForGpt](https://docs.prebid.org/dev-docs/modules/fledgeForGpt.html) module to build and enable Fledge.
+
 Additional Information
 ======================
 
