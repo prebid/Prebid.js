@@ -408,6 +408,7 @@ export const spec = {
         'x_source.tid',
         'l_pb_bid_id',
         'p_screen_res',
+        'o_cdep',
         'rp_floor',
         'rp_secure',
         'tk_user_key'
@@ -481,6 +482,7 @@ export const spec = {
       'x_source.tid': bidderRequest.ortb2?.source?.tid,
       'x_imp.ext.tid': bidRequest.ortb2Imp?.ext?.tid,
       'l_pb_bid_id': bidRequest.bidId,
+      'o_cdep': bidRequest.ortb2?.device?.ext?.cdep,
       'p_screen_res': _getScreenResolution(),
       'tk_user_key': params.userId,
       'p_geo.latitude': isNaN(parseFloat(latitude)) ? undefined : parseFloat(latitude).toFixed(4),
