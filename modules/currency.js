@@ -7,7 +7,7 @@ import {getHook} from '../src/hook.js';
 import {defer} from '../src/utils/promise.js';
 import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {timedBidResponseHook} from '../src/utils/perfMetrics.js';
-import * as events from '../src/events.js';
+import {on as onEvent, off as offEvent} from '../src/events.js';
 
 const DEFAULT_CURRENCY_RATE_URL = 'https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json?date=$$TODAY$$';
 const CURRENCY_RATE_PRECISION = 4;
@@ -161,8 +161,8 @@ function initCurrency() {
   getGlobal().convertCurrency = (cpm, fromCurrency, toCurrency) => parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency);
   getHook('addBidResponse').before(addBidResponseHook, 100);
   getHook('responsesReady').before(responsesReadyHook);
-  events.on(CONSTANTS.EVENTS.AUCTION_TIMEOUT, rejectOnAuctionTimeout);
-  events.on(CONSTANTS.EVENTS.AUCTION_INIT, loadRates);
+  onEvent(CONSTANTS.EVENTS.AUCTION_TIMEOUT, rejectOnAuctionTimeout);
+  onEvent(CONSTANTS.EVENTS.AUCTION_INIT, loadRates);
   loadRates();
 }
 
@@ -171,8 +171,8 @@ function resetCurrency() {
 
   getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
   getHook('responsesReady').getHooks({hook: responsesReadyHook}).remove();
-  events.off(CONSTANTS.EVENTS.AUCTION_TIMEOUT, rejectOnAuctionTimeout);
-  events.off(CONSTANTS.EVENTS.AUCTION_INIT, loadRates);
+  offEvent(CONSTANTS.EVENTS.AUCTION_TIMEOUT, rejectOnAuctionTimeout);
+  offEvent(CONSTANTS.EVENTS.AUCTION_INIT, loadRates);
   delete getGlobal().convertCurrency;
 
   adServerCurrency = 'USD';
