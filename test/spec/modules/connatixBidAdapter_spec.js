@@ -135,14 +135,12 @@ describe('connatixBidAdapter', function () {
   describe('interpretResponse', function () {
     const CustomerId = '99f20d18-c4b4-4a28-3d8e-d43e2c8cb4ac';
     const PlayerId = 'e4984e88-9ff4-45a3-8b9d-33aabcad634f';
-    const Bid = {Cpm: 0.1, LineItems: [], RequestId: '2f897340c4eaa3', Ttl: 86400};
+    const Bid = {Cpm: 0.1, RequestId: '2f897340c4eaa3', Ttl: 86400, CustomerId, PlayerId};
 
     let serverResponse;
     this.beforeEach(function () {
       serverResponse = {
         body: {
-          CustomerId,
-          PlayerId,
           Bids: [ Bid ]
         },
         headers: function() { }
@@ -158,18 +156,6 @@ describe('connatixBidAdapter', function () {
 
     it('Should return an empty array if Bids is empty array', function () {
       serverResponse.body.Bids = [];
-      const response = spec.interpretResponse(serverResponse);
-      expect(response).to.be.an('array').that.is.empty;
-    });
-
-    it('Should return an empty array if CustomerId is null', function () {
-      serverResponse.body.CustomerId = null;
-      const response = spec.interpretResponse(serverResponse);
-      expect(response).to.be.an('array').that.is.empty;
-    });
-
-    it('Should return an empty array if PlayerId is null', function () {
-      serverResponse.body.PlayerId = null;
       const response = spec.interpretResponse(serverResponse);
       expect(response).to.be.an('array').that.is.empty;
     });
@@ -212,12 +198,10 @@ describe('connatixBidAdapter', function () {
     const CustomerId = '99f20d18-c4b4-4a28-3d8e-d43e2c8cb4ac';
     const PlayerId = 'e4984e88-9ff4-45a3-8b9d-33aabcad634f';
     const UserSyncEndpoint = 'https://connatix.com/sync'
-    const Bid = {Cpm: 0.1, LineItems: [], RequestId: '2f897340c4eaa3', Ttl: 86400};
+    const Bid = {Cpm: 0.1, RequestId: '2f897340c4eaa3', Ttl: 86400, CustomerId, PlayerId};
 
     const serverResponse = {
       body: {
-        CustomerId,
-        PlayerId,
         UserSyncEndpoint,
         Bids: [ Bid ]
       },
