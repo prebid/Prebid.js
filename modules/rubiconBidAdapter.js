@@ -408,6 +408,7 @@ export const spec = {
         'x_source.tid',
         'l_pb_bid_id',
         'p_screen_res',
+        'o_ae',
         'rp_floor',
         'rp_secure',
         'tk_user_key'
@@ -520,6 +521,10 @@ export const spec = {
     if (configUserId) {
       data['ppuid'] = configUserId;
     }
+
+    if (bidRequest?.ortb2Imp?.ext?.ae) {
+      data['o_ae'] = 1;
+    }
     // loop through userIds and add to request
     if (bidRequest.userIdAsEids) {
       bidRequest.userIdAsEids.forEach(eid => {
@@ -619,7 +624,7 @@ export const spec = {
    * @param {*} responseObj
    * @param {BidRequest|Object.<string, BidRequest[]>} request - if request was SRA the bidRequest argument will be a keyed BidRequest array object,
    * non-SRA responses return a plain BidRequest object
-   * @return {Bid[]} An array of bids which
+   * @return {{fledgeAuctionConfigs: *, bids: *}} An array of bids which
    */
   interpretResponse: function (responseObj, request) {
     responseObj = responseObj.body;
@@ -629,7 +634,6 @@ export const spec = {
     if (!responseObj || typeof responseObj !== 'object') {
       return [];
     }
-
     // Response from PBS Java openRTB
     if (responseObj.seatbid) {
       const responseErrors = deepAccess(responseObj, 'ext.errors.rubicon');
@@ -655,7 +659,7 @@ export const spec = {
       return [];
     }
 
-    return ads.reduce((bids, ad, i) => {
+    let bids = ads.reduce((bids, ad, i) => {
       (ad.impression_id && lastImpId === ad.impression_id) ? multibid++ : lastImpId = ad.impression_id;
 
       if (ad.status !== 'ok') {
@@ -716,6 +720,16 @@ export const spec = {
     }, []).sort((adA, adB) => {
       return (adB.cpm || 0.0) - (adA.cpm || 0.0);
     });
+
+    let fledgeAuctionConfigs = responseObj.component_auction_config?.map(config => {
+      return { config, bidId: config.bidId }
+    });
+
+    if (fledgeAuctionConfigs) {
+      return { bids, fledgeAuctionConfigs };
+    } else {
+      return bids;
+    }
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
