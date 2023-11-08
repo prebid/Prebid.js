@@ -89,8 +89,8 @@ describe('BT Bid Adapter', () => {
       expect(requests[0].url).to.equal(ENDPOINT_URL);
       expect(requests[0].data).to.exist;
       expect(requests[0].data.imp[0].ext).to.deep.equal(bidderParams);
-      expect(requests[0].data.imp[0].ab).to.be.true;
-      expect(requests[0].data.imp[0].siteId).to.equal('55555');
+      expect(requests[0].data.site.ext.blockthrough.ab).to.be.true;
+      expect(requests[0].data.site.ext.blockthrough.siteId).to.equal('55555');
     });
   });
 

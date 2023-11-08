@@ -32,7 +32,7 @@ function imp(buildImp, bidRequest, context) {
 
   if (params) {
     const { siteId, ab, ...btBidParams } = params;
-    Object.assign(imp, { ext: btBidParams, siteId, ab });
+    Object.assign(imp, { ext: btBidParams });
   }
   if (ortb2Imp?.ext.gpid) {
     deepSetValue(imp, 'gpid', ortb2Imp.ext.gpid);
@@ -52,6 +52,12 @@ function imp(buildImp, bidRequest, context) {
  */
 function request(buildRequest, imps, bidderRequest, context) {
   const request = buildRequest(imps, bidderRequest, context);
+  const { params } = bidderRequest.bids?.[0] || {};
+
+  if (params) {
+    const { ab, siteId } = params;
+    deepSetValue(request, 'site.ext.blockthrough', { ab, siteId });
+  }
   if (config.getConfig('debug')) {
     request.test = 1;
   }
