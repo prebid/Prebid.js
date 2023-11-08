@@ -2591,10 +2591,10 @@ describe('the rubicon adapter', function () {
         });
 
         it('should pass along o_ae param when fledge is enabled', () => {
-          const localBidderRequest = Object.assign({}, bidderRequest);
-          localBidderRequest.fledgeEnabled = true;
+          const localBidRequest = Object.assign({}, bidderRequest.bids[0]);
+          localBidRequest.ortb2Imp.ext.ae = true;
 
-          const slotParams = spec.createSlotParams(bidderRequest.bids[0], localBidderRequest);
+          const slotParams = spec.createSlotParams(localBidRequest, bidderRequest);
 
           expect(slotParams['o_ae']).to.equal(1)
         });
