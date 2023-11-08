@@ -58,8 +58,18 @@ describe('The DFP video support module', function () {
         }, options)));
         const prm = utils.parseQS(url.query);
         expect(prm.description_url).to.eql('example.com');
-      })
-    })
+      });
+
+      it('should use a URI encoded page location as default for description_url', () => {
+        sandbox.stub(dep, 'ri').callsFake(() => ({page: 'https://example.com?iu=/99999999/news&cust_params=current_hour%3D12%26newscat%3Dtravel&pbjs_debug=true'}));
+        const url = parse(buildDfpVideoUrl(Object.assign({
+          adUnit: adUnit,
+          bid: bid,
+        }, options)));
+        const prm = utils.parseQS(url.query);
+        expect(prm.description_url).to.eql('https%3A%2F%2Fexample.com%3Fiu%3D%2F99999999%2Fnews%26cust_params%3Dcurrent_hour%253D12%2526newscat%253Dtravel%26pbjs_debug%3Dtrue');
+      });
+    });
   })
 
   it('should make a legal request URL when given the required params', function () {

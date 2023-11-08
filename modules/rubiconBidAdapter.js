@@ -7,7 +7,6 @@ import { find } from '../src/polyfill.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { Renderer } from '../src/Renderer.js';
 import {
-  convertTypes,
   deepAccess,
   deepSetValue,
   formatQS,
@@ -21,6 +20,7 @@ import {
   parseSizesInput, _each
 } from '../src/utils.js';
 import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
+import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
@@ -124,6 +124,7 @@ var sizeMap = {
   278: '320x500',
   282: '320x400',
   288: '640x380',
+  484: '720x1280',
   524: '1x2',
   548: '500x1000',
   550: '980x480',
@@ -139,7 +140,9 @@ var sizeMap = {
   576: '610x877',
   578: '980x552',
   580: '505x656',
-  622: '192x160'
+  622: '192x160',
+  632: '1200x450',
+  634: '340x450'
 };
 
 _each(sizeMap, (item, key) => sizeMap[item] = key);
@@ -196,8 +199,8 @@ export const converter = ortbConverter({
     if (config.getConfig('s2sConfig.defaultTtl')) {
       imp.exp = config.getConfig('s2sConfig.defaultTtl');
     };
-    bidRequest.params.position === 'atf' && (imp.video.pos = 1);
-    bidRequest.params.position === 'btf' && (imp.video.pos = 3);
+    bidRequest.params.position === 'atf' && imp.video && (imp.video.pos = 1);
+    bidRequest.params.position === 'btf' && imp.video && (imp.video.pos = 3);
     delete imp.ext?.prebid?.storedrequest;
 
     if (bidRequest.params.bidonmultiformat === true && bidRequestType.length > 1) {
@@ -537,7 +540,9 @@ export const spec = {
             data['eid_id5-sync.com'] = `${eid.uids[0].id}^${eid.uids[0].atype}^${(eid.uids[0].ext && eid.uids[0].ext.linkType) || ''}`;
           } else {
             // add anything else with this generic format
-            data[`eid_${eid.source}`] = `${eid.uids[0].id}^${eid.uids[0].atype || ''}`;
+            // if rubicon drop ^
+            const id = eid.source === 'rubiconproject.com' ? eid.uids[0].id : `${eid.uids[0].id}^${eid.uids[0].atype || ''}`
+            data[`eid_${eid.source}`] = id;
           }
           // send AE "ppuid" signal if exists, and hasn't already been sent
           if (!data['ppuid']) {

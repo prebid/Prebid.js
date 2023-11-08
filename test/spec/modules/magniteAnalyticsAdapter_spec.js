@@ -1492,6 +1492,40 @@ describe('magnite analytics adapter', function () {
       expect(message).to.deep.equal(expectedMessage);
     });
 
+    describe('when eventDispatcher is present', () => {
+      beforeEach(() => {
+        window.pbjs = window.pbjs || {};
+        pbjs.rp = pbjs.rp || {};
+        pbjs.rp.eventDispatcher = pbjs.rp.eventDispatcher || document.createElement('fakeElem');
+      });
+
+      afterEach(() => {
+        delete pbjs.rp.eventDispatcher;
+        delete pbjs.rp;
+      });
+
+      it('should dispatch beforeSendingMagniteAnalytics if possible', () => {
+        pbjs.rp.eventDispatcher.addEventListener('beforeSendingMagniteAnalytics', (data) => {
+          data.detail.test = 'testData';
+        });
+
+        performStandardAuction();
+
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+
+        expect(request.url).to.equal('http://localhost:9999/event');
+
+        let message = JSON.parse(request.requestBody);
+
+        const AnalyticsMessageWithCustomData = {
+          ...ANALYTICS_MESSAGE,
+          test: 'testData'
+        }
+        expect(message).to.deep.equal(AnalyticsMessageWithCustomData);
+      });
+    })
+
     describe('when handling bid caching', () => {
       let auctionInits, bidRequests, bidResponses, bidsWon;
       beforeEach(function () {
