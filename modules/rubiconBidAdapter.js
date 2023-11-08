@@ -725,7 +725,11 @@ export const spec = {
       return { config, bidId: config.bidId }
     });
 
-    return { bids, fledgeAuctionConfigs };
+    if (fledgeAuctionConfigs) {
+      return { bids, fledgeAuctionConfigs };
+    } else {
+      return bids;
+    }
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
