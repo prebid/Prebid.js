@@ -5,7 +5,7 @@ import {
   adjustBids,
   getMediaTypeGranularity,
   getPriceByGranularity,
-  addBidResponse, resetAuctionState
+  addBidResponse, resetAuctionState, responsesReady
 } from 'src/auction.js';
 import CONSTANTS from 'src/constants.json';
 import * as auctionModule from 'src/auction.js';
@@ -527,7 +527,7 @@ describe('auctionmanager.js', function () {
         s2sConfig: {
           accountId: '1',
           enabled: true,
-          defaultVendor: 'appnexus',
+          defaultVendor: 'appnexuspsp',
           bidders: ['appnexus'],
           timeout: 1000,
           adapter: 'prebidServer'
@@ -1263,7 +1263,7 @@ describe('auctionmanager.js', function () {
           s2sConfig: [{
             accountId: '1',
             enabled: true,
-            defaultVendor: 'appnexus',
+            defaultVendor: 'appnexuspsp',
             bidders: ['mock-s2s-1'],
             adapter: 'pbs'
           }, {
@@ -1803,116 +1803,54 @@ describe('auctionmanager.js', function () {
       sinon.assert.calledWith(auction.addBidReceived, sinon.match({cpm: 1.23}));
     })
 
-    describe('when addBidResponse hook returns promises', () => {
-      let resolvers, callbacks, bids;
+    describe('when responsesReady defers', () => {
+      let resolve, reject, promise, callbacks, bids;
 
-      function hook(next, ...args) {
-        next.bail(new Promise((resolve, reject) => {
-          resolvers.resolve.push(resolve);
-          resolvers.reject.push(reject);
-        }).finally(() => next(...args)));
+      function hook(next, ready) {
+        next(ready.then(() => promise));
       }
 
-      function invokeCallbacks() {
-        bids.forEach((bid) => callbacks.addBidResponse(ADUNIT_CODE, bid));
-        bidRequests.forEach(bidRequest => callbacks.adapterDone.call(bidRequest));
-      }
+      before(() => {
+        responsesReady.before(hook);
+      });
 
-      function delay(ms = 0) {
-        return new Promise((resolve) => {
-          setTimeout(resolve, ms)
-        });
-      }
+      after(() => {
+        responsesReady.getHooks({hook}).remove();
+      });
 
       beforeEach(() => {
+        // eslint-disable-next-line promise/param-names
+        promise = new Promise((rs, rj) => {
+          resolve = rs;
+          reject = rj;
+        });
         bids = [
           mockBid({bidderCode: BIDDER_CODE1}),
           mockBid({bidderCode: BIDDER_CODE})
         ]
         bidRequests = bids.map((b) => mockBidRequest(b));
-        resolvers = {resolve: [], reject: []};
-        addBidResponse.before(hook);
         callbacks = auctionCallbacks(doneSpy, auction);
         Object.assign(auction, {
           addNoBid: sinon.spy()
         });
       });
 
-      afterEach(() => {
-        addBidResponse.getHooks({hook: hook}).remove();
-      });
-
-      it('should wait for bids without a request bids before calling auctionDone', () => {
-        callbacks.addBidResponse(ADUNIT_CODE, Object.assign(mockBid(), {requestId: null}));
-        invokeCallbacks();
-        resolvers.resolve.slice(1, 3).forEach((fn) => fn());
-        return delay().then(() => {
-          expect(doneSpy.called).to.be.false;
-          resolvers.resolve[0]();
-          return delay();
-        }).then(() => {
-          expect(doneSpy.called).to.be.true;
-        });
-      });
-
       Object.entries({
-        'all succeed': ['resolve', 'resolve'],
-        'some fail': ['resolve', 'reject'],
-        'all fail': ['reject', 'reject']
-      }).forEach(([test, results]) => {
-        describe(`(and ${test})`, () => {
-          it('should wait for them to complete before calling auctionDone', () => {
-            invokeCallbacks();
-            return delay().then(() => {
-              expect(doneSpy.called).to.be.false;
-              expect(auction.addNoBid.called).to.be.false;
-              resolvers[results[0]][0]();
-              return delay();
-            }).then(() => {
-              expect(doneSpy.called).to.be.false;
-              expect(auction.addNoBid.called).to.be.false;
-              resolvers[results[1]][1]();
-              return delay();
-            }).then(() => {
-              expect(doneSpy.called).to.be.true;
-            });
-          });
+        'resolve': () => resolve(),
+        'reject': () => reject(),
+      }).forEach(([t, resolver]) => {
+        it(`should wait for responsesReady to ${t} before calling auctionDone`, (done) => {
+          bidRequests.forEach(bidRequest => callbacks.adapterDone.call(bidRequest));
+          setTimeout(() => {
+            sinon.assert.notCalled(doneSpy);
+            resolver();
+            setTimeout(() => {
+              sinon.assert.called(doneSpy);
+              done();
+            })
+          })
         });
       });
-
-      Object.entries({
-        bidder: (timeout) => {
-          bidRequests.forEach((r) => r.timeout = timeout);
-          auction.getTimeout = () => timeout + 10000
-        },
-        auction: (timeout) => {
-          auction.getTimeout = () => timeout;
-          bidRequests.forEach((r) => r.timeout = timeout + 10000)
-        }
-      }).forEach(([test, setTimeout]) => {
-        it(`should respect ${test} timeout if they never complete`, () => {
-          const start = Date.now() - 2900;
-          auction.getAuctionStart = () => start;
-          setTimeout(3000);
-          invokeCallbacks();
-          return delay().then(() => {
-            expect(doneSpy.called).to.be.false;
-            return delay(100);
-          }).then(() => {
-            expect(doneSpy.called).to.be.true;
-          });
-        });
-
-        it(`should not wait if ${test} has already timed out`, () => {
-          const start = Date.now() - 2000;
-          auction.getAuctionStart = () => start;
-          setTimeout(1000);
-          invokeCallbacks();
-          return delay().then(() => {
-            expect(doneSpy.called).to.be.true;
-          });
-        });
-      })
     });
 
     describe('when bids are rejected', () => {

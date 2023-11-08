@@ -93,7 +93,7 @@ function copyRequiredBidDetails(bid) {
     'bidderCode',
     'adapterCode',
     'bidId',
-    'status', () => NO_BID, // default a bid to NO_BID until response is recieved or bid is timed out
+    'status', () => NO_BID, // default a bid to NO_BID until response is received or bid is timed out
     'finalSource as source',
     'params',
     'floorData',
@@ -362,6 +362,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   outputObj['pdvid'] = '' + profileVersionId;
   outputObj['dvc'] = {'plt': getDevicePlatform()};
   outputObj['tgid'] = getTgId();
+  outputObj['pbv'] = getGlobal()?.version || '-1';
 
   if (floorData && fetchStatus) {
     outputObj['fmv'] = floorData.floorRequestData ? floorData.floorRequestData.modelVersion || undefined : undefined;

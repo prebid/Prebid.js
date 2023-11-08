@@ -25,13 +25,16 @@ export function getUserKey(options = {}) {
   }
 
   // If the partner provides the user key use it, otherwise fallback to cookies
-  if (options.userKey && isValidUserKey(options.userKey)) {
-    userKey = options.userKey;
-    return options.userKey;
+  if ('userKey' in options && options.userKey) {
+    if (isValidUserKey(options.userKey)) {
+      userKey = options.userKey;
+      return options.userKey;
+    }
   }
+
   // Grab from Cookie
-  const foundUserKey = storage.cookiesAreEnabled() && storage.getCookie(FLIPP_USER_KEY);
-  if (foundUserKey) {
+  const foundUserKey = storage.cookiesAreEnabled(null) && storage.getCookie(FLIPP_USER_KEY, null);
+  if (foundUserKey && isValidUserKey(foundUserKey)) {
     return foundUserKey;
   }
 
@@ -47,7 +50,7 @@ export function getUserKey(options = {}) {
 }
 
 function isValidUserKey(userKey) {
-  return !userKey.startsWith('#');
+  return typeof userKey === 'string' && !userKey.startsWith('#') && userKey.length > 0;
 }
 
 const generateUUID = () => {

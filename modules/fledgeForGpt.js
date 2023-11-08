@@ -96,14 +96,20 @@ function onAuctionEnd({auctionId, bidsReceived, bidderRequests}) {
   }
 }
 
-export function addComponentAuctionHook(next, auctionId, adUnitCode, componentAuctionConfig) {
+function setFPDSignals(auctionConfig, fpd) {
+  auctionConfig.auctionSignals = mergeDeep({}, {prebid: fpd}, auctionConfig.auctionSignals);
+}
+
+export function addComponentAuctionHook(next, request, componentAuctionConfig) {
+  const {adUnitCode, auctionId, ortb2, ortb2Imp} = request;
   if (PENDING.hasOwnProperty(auctionId)) {
+    setFPDSignals(componentAuctionConfig, {ortb2, ortb2Imp});
     !PENDING[auctionId].hasOwnProperty(adUnitCode) && (PENDING[auctionId][adUnitCode] = []);
     PENDING[auctionId][adUnitCode].push(componentAuctionConfig);
   } else {
     logWarn(MODULE, `Received component auction config for auction that has closed (auction '${auctionId}', adUnit '${adUnitCode}')`, componentAuctionConfig)
   }
-  next(auctionId, adUnitCode, componentAuctionConfig);
+  next(request, componentAuctionConfig);
 }
 
 function isFledgeSupported() {
@@ -114,25 +120,21 @@ export function markForFledge(next, bidderRequests) {
   if (isFledgeSupported()) {
     const globalFledgeConfig = config.getConfig('fledgeForGpt');
     const bidders = globalFledgeConfig?.bidders ?? [];
-    bidderRequests.forEach((req) => {
-      const useGlobalConfig = globalFledgeConfig?.enabled && (bidders.length == 0 || bidders.includes(req.bidderCode));
-      Object.assign(req, config.runWithBidder(req.bidderCode, () => {
-        return {
-          fledgeEnabled: config.getConfig('fledgeEnabled') ?? (useGlobalConfig ? globalFledgeConfig.enabled : undefined),
-          defaultForSlots: config.getConfig('defaultForSlots') ?? (useGlobalConfig ? globalFledgeConfig?.defaultForSlots : undefined)
-        }
-      }));
+    bidderRequests.forEach((bidderReq) => {
+      const useGlobalConfig = globalFledgeConfig?.enabled && (bidders.length === 0 || bidders.includes(bidderReq.bidderCode));
+      config.runWithBidder(bidderReq.bidderCode, () => {
+        const fledgeEnabled = config.getConfig('fledgeEnabled') ?? (useGlobalConfig ? globalFledgeConfig.enabled : undefined);
+        const defaultForSlots = config.getConfig('defaultForSlots') ?? (useGlobalConfig ? globalFledgeConfig?.defaultForSlots : undefined);
+        Object.assign(bidderReq, {fledgeEnabled});
+        bidderReq.bids.forEach(bidReq => { deepSetValue(bidReq, 'ortb2Imp.ext.ae', bidReq.ortb2Imp?.ext?.ae ?? defaultForSlots) })
+      })
     });
   }
   next(bidderRequests);
 }
 
 export function setImpExtAe(imp, bidRequest, context) {
-  if (context.bidderRequest.fledgeEnabled) {
-    imp.ext = Object.assign(imp.ext || {}, {
-      ae: imp.ext?.ae ?? context.bidderRequest.defaultForSlots
-    })
-  } else {
+  if (imp.ext?.ae && !context.bidderRequest.fledgeEnabled) {
     delete imp.ext?.ae;
   }
 }

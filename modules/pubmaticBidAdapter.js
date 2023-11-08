@@ -758,6 +758,9 @@ function _addImpressionFPD(imp, bid) {
       deepSetValue(imp, `ext.data.${prop}`, ortb2[prop]);
     }
   });
+
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
+  gpid && deepSetValue(imp, `ext.gpid`, gpid);
 }
 
 function _addFloorFromFloorModule(impObj, bid) {
@@ -1227,6 +1230,10 @@ export const spec = {
     // check if fpd ortb2 contains device property with sua object
     if (device?.sua) {
       payload.device.sua = device?.sua;
+    }
+
+    if (device?.ext?.cdep) {
+      deepSetValue(payload, 'device.ext.cdep', device.ext.cdep);
     }
 
     if (user?.geo && device?.geo) {
