@@ -45,11 +45,17 @@ describe('UnrulyAdapter', function () {
   function createOutStreamExchangeAuctionConfig() {
     return {
       'seller': 'https://targeting.unrulymedia.com',
-      'decisionLogicURL': 'https://targeting.unrulymedia.com/padecisionlogic'
+      'decisionLogicURL': 'https://targeting.unrulymedia.com/padecisionlogic',
+      'interestGroupBuyers': 'https://mydsp.com',
+      'perBuyerSignals': {
+        'https://mydsp.com': {
+          'floor': 'bouttreefiddy'
+        }
+      }
     }
   };
 
-  function createExchangeResponse (bidList, auctionConfigList = null) {
+  function createExchangeResponse (bidList, auctionConfigs = null) {
     let bids = [];
     if (Array.isArray(bidList)) {
       bids = bidList;
@@ -57,7 +63,7 @@ describe('UnrulyAdapter', function () {
       bids.push(bidList);
     }
 
-    if (!auctionConfigList) {
+    if (!auctionConfigs) {
       return {
         'body': {bids}
       };
@@ -65,8 +71,8 @@ describe('UnrulyAdapter', function () {
 
     return {
       'body': {
-        'bids': bids,
-        'auctionConfigList': auctionConfigList
+        bids,
+        auctionConfigs
       }
     }
   };
@@ -770,7 +776,7 @@ describe('UnrulyAdapter', function () {
         expect(result[0].data.bidderRequest.bids[0].ortb2Imp.ext.ae).to.equal(1);
         expect(result[1].data.bidderRequest.bids[0].ortb2Imp.ext.ae).to.equal(1);
       });
-      it('should return an array with 2 items and enabled protected audience on only on unit', function () {
+      it('should return an array with 2 items and enabled protected audience on only one unit', function () {
         mockBidRequests = {
           'bidderCode': 'unruly',
           'fledgeEnabled': true,
@@ -955,9 +961,11 @@ describe('UnrulyAdapter', function () {
     });
 
     it('should return object with an array of bids and an array of auction configs when it receives a successful response from server', function () {
+      let bidId = '27a3ee1626a5c7'
       const mockExchangeBid = createOutStreamExchangeBid({adUnitCode: 'video1', requestId: 'mockBidId'});
-      const mockExchangeAuctionConfig = createOutStreamExchangeAuctionConfig();
-      const mockServerResponse = createExchangeResponse(mockExchangeBid, [mockExchangeAuctionConfig]);
+      const mockExchangeAuctionConfig = {};
+      mockExchangeAuctionConfig[bidId] = createOutStreamExchangeAuctionConfig();
+      const mockServerResponse = createExchangeResponse(mockExchangeBid, mockExchangeAuctionConfig);
       const originalRequest = {
         'data': {
           'bidderRequest': {
@@ -991,7 +999,7 @@ describe('UnrulyAdapter', function () {
                 },
                 'adUnitCode': 'video2',
                 'transactionId': 'a89619e3-137d-4cc5-9ed4-58a0b2a0bbc2',
-                'bidId': '27a3ee1626a5c7',
+                'bidId': bidId,
                 'bidderRequestId': '12e00d17dff07b',
               }
             ]
@@ -1033,19 +1041,26 @@ describe('UnrulyAdapter', function () {
           }
         ],
         'fledgeAuctionConfigs': [{
-          'bidId': originalRequest.data.bidderRequest.bids[0].bidId,
+          'bidId': bidId,
           'config': {
-            'auctionSignals': {},
             'seller': 'https://targeting.unrulymedia.com',
-            'decisionLogicURL': 'https://targeting.unrulymedia.com/padecisionlogic'
+            'decisionLogicURL': 'https://targeting.unrulymedia.com/padecisionlogic',
+            'interestGroupBuyers': 'https://mydsp.com',
+            'perBuyerSignals': {
+              'https://mydsp.com': {
+                'floor': 'bouttreefiddy'
+              }
+            }
           }
         }]
       });
     });
 
     it('should return object with an array of auction configs when it receives a successful response from server without bids', function () {
-      const mockExchangeAuctionConfig = createOutStreamExchangeAuctionConfig();
-      const mockServerResponse = createExchangeResponse(null, [mockExchangeAuctionConfig]);
+      let bidId = '27a3ee1626a5c7';
+      const mockExchangeAuctionConfig = {};
+      mockExchangeAuctionConfig[bidId] = createOutStreamExchangeAuctionConfig();
+      const mockServerResponse = createExchangeResponse(null, mockExchangeAuctionConfig);
       const originalRequest = {
         'data': {
           'bidderRequest': {
@@ -1079,7 +1094,7 @@ describe('UnrulyAdapter', function () {
                 },
                 'adUnitCode': 'video2',
                 'transactionId': 'a89619e3-137d-4cc5-9ed4-58a0b2a0bbc2',
-                'bidId': '27a3ee1626a5c7',
+                'bidId': bidId,
                 'bidderRequestId': '12e00d17dff07b',
               }
             ]
@@ -1090,11 +1105,16 @@ describe('UnrulyAdapter', function () {
       expect(adapter.interpretResponse(mockServerResponse, originalRequest)).to.deep.equal({
         'bids': [],
         'fledgeAuctionConfigs': [{
-          'bidId': originalRequest.data.bidderRequest.bids[0].bidId,
+          'bidId': bidId,
           'config': {
-            'auctionSignals': {},
             'seller': 'https://targeting.unrulymedia.com',
-            'decisionLogicURL': 'https://targeting.unrulymedia.com/padecisionlogic'
+            'decisionLogicURL': 'https://targeting.unrulymedia.com/padecisionlogic',
+            'interestGroupBuyers': 'https://mydsp.com',
+            'perBuyerSignals': {
+              'https://mydsp.com': {
+                'floor': 'bouttreefiddy'
+              }
+            }
           }
         }]
       });

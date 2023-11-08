@@ -223,8 +223,8 @@ export const adapter = {
     }, validBidRequests, bidderRequest);
   },
 
-  interpretResponse: function (serverResponse, originalRequest) {
-    if (!(serverResponse && serverResponse.body && (serverResponse.body.auctionConfigList || serverResponse.body.bids))) {
+  interpretResponse: function (serverResponse) {
+    if (!(serverResponse && serverResponse.body && (serverResponse.body.auctionConfigs || serverResponse.body.bids))) {
       return [];
     }
 
@@ -235,13 +235,17 @@ export const adapter = {
       bids = handleBidResponseByMediaType(serverResponseBody.bids);
     }
 
-    if (serverResponseBody.auctionConfigList) {
-      let auctionConfigList = serverResponseBody.auctionConfigList;
-      fledgeAuctionConfigs = [{
-        'bidId': originalRequest.data.bidderRequest.bids[0].bidId,
-        'config': auctionConfigList[0]
-      }];
-      fledgeAuctionConfigs[0].config.auctionSignals = {};
+    if (serverResponseBody.auctionConfigs) {
+      let auctionConfigs = serverResponseBody.auctionConfigs;
+      let bidIdList = Object.keys(auctionConfigs);
+      if (bidIdList.length) {
+        bidIdList.forEach((bidId)=>{
+          fledgeAuctionConfigs = [{
+            'bidId': bidId,
+            'config': auctionConfigs[bidId]
+          }];
+        })
+      }
     }
 
     if (!fledgeAuctionConfigs) {
