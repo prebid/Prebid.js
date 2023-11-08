@@ -696,6 +696,16 @@ describe('the rubicon adapter', function () {
           expect(data['p_pos']).to.equal('atf;;btf;;');
         });
 
+        it('should correctly send cdep signal when requested', () => {
+          var badposRequest = utils.deepClone(bidderRequest);
+          badposRequest.bids[0].ortb2 = {device: {ext: {cdep: 3}}};
+
+          let [request] = spec.buildRequests(badposRequest.bids, badposRequest);
+          let data = parseQuery(request.data);
+
+          expect(data['o_cdep']).to.equal('3');
+        });
+
         it('ad engine query params should be ordered correctly', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
@@ -2589,6 +2599,15 @@ describe('the rubicon adapter', function () {
           const slotParams = spec.createSlotParams(bidderRequest.bids[0], bidderRequest);
           expect(slotParams.kw).to.equal('a,b,c');
         });
+
+        it('should pass along o_ae param when fledge is enabled', () => {
+          const localBidRequest = Object.assign({}, bidderRequest.bids[0]);
+          localBidRequest.ortb2Imp.ext.ae = true;
+
+          const slotParams = spec.createSlotParams(localBidRequest, bidderRequest);
+
+          expect(slotParams['o_ae']).to.equal(1)
+        });
       });
 
       describe('classifiedAsVideo', function () {
@@ -3307,6 +3326,43 @@ describe('the rubicon adapter', function () {
           });
 
           expect(bids).to.be.lengthOf(0);
+        });
+
+        it('Should support recieving an auctionConfig and pass it along to Prebid', function () {
+          let response = {
+            'status': 'ok',
+            'account_id': 14062,
+            'site_id': 70608,
+            'zone_id': 530022,
+            'size_id': 15,
+            'alt_size_ids': [
+              43
+            ],
+            'tracking': '',
+            'inventory': {},
+            'ads': [{
+              'status': 'ok',
+              'cpm': 0,
+              'size_id': 15
+            }],
+            'component_auction_config': [{
+              'random': 'value',
+              'bidId': '5432'
+            },
+            {
+              'random': 'string',
+              'bidId': '6789'
+            }]
+          };
+
+          let {bids, fledgeAuctionConfigs} = spec.interpretResponse({body: response}, {
+            bidRequest: bidderRequest.bids[0]
+          });
+
+          expect(bids).to.be.lengthOf(1);
+          expect(fledgeAuctionConfigs[0].bidId).to.equal('5432');
+          expect(fledgeAuctionConfigs[0].config.random).to.equal('value');
+          expect(fledgeAuctionConfigs[1].bidId).to.equal('6789');
         });
 
         it('should handle an error', function () {

@@ -7,13 +7,14 @@
  */
 
 import { logInfo, logWarn } from '../src/utils.js';
-import {submodule} from '../src/hook.js';
+import { submodule } from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 // RE below lint exception: UID2 and EUID are separate modules, but the protocol is the same and shared code makes sense here.
 // eslint-disable-next-line prebid/validate-imports
 import { Uid2GetId, Uid2CodeVersion } from './uid2IdSystem_shared.js';
+import {UID2_EIDS} from '../libraries/uid2Eids/uid2Eids.js';
 
 const MODULE_NAME = 'uid2';
 const MODULE_REVISION = Uid2CodeVersion;
@@ -32,6 +33,19 @@ function createLogger(logger, prefix) {
     logger(prefix + ' ', ...strings);
   }
 }
+
+function extractIdentityFromParams(params) {
+  const keysToCheck = ['emailHash', 'phoneHash', 'email', 'phone'];
+
+  for (let key of keysToCheck) {
+    if (params.hasOwnProperty(key)) {
+      return { [key]: params[key] };
+    }
+  }
+
+  return {};
+}
+
 const _logInfo = createLogger(logInfo, LOG_PRE_FIX);
 const _logWarn = createLogger(logWarn, LOG_PRE_FIX);
 
@@ -78,25 +92,20 @@ export const uid2IdSubmodule = {
       clientId: UID2_CLIENT_ID,
       internalStorage: ADVERTISING_COOKIE
     }
+
+    if (FEATURES.UID2_CSTG) {
+      mappedConfig.cstg = {
+        serverPublicKey: config?.params?.serverPublicKey,
+        subscriptionId: config?.params?.subscriptionId,
+        ...extractIdentityFromParams(config?.params ?? {})
+      }
+    }
     _logInfo(`UID2 configuration loaded and mapped.`, mappedConfig);
     const result = Uid2GetId(mappedConfig, storage, _logInfo, _logWarn);
     _logInfo(`UID2 getId returned`, result);
     return result;
   },
-  eids: {
-    'uid2': {
-      source: 'uidapi.com',
-      atype: 3,
-      getValue: function(data) {
-        return data.id;
-      },
-      getUidExt: function(data) {
-        if (data.ext) {
-          return data.ext;
-        }
-      }
-    },
-  },
+  eids: UID2_EIDS
 };
 
 function decodeImpl(value) {

@@ -3,7 +3,7 @@ Module Name: Integr8 Bidder Adapter Module
 
 Type: Bidder Adapter
 
-Maintainer: arditb@gjirafa.com
+Maintainer: myhedin@gjirafa.com
 
 # Description
 Integr8 Bidder Adapter for Prebid.js.
@@ -23,8 +23,9 @@ var adUnits = [
         bids: [{
             bidder: 'integr8',
             params: {
-                propertyId: '105109',   //Required
-                placementId: '846835',  //Required
+                propertyId: '105135',   //Required
+                placementId: '846837',  //Required,
+                deliveryUrl: 'https://central.sea.integr8.digital/bid', //Optional
                 data: {                 //Optional
                     catalogs: [{
                         catalogId: "699229",
@@ -48,8 +49,9 @@ var adUnits = [
         bids: [{
             bidder: 'integr8',
             params: {
-                propertyId: '105109',  //Required
-                placementId: '846830', //Required
+                propertyId: '105135',  //Required
+                placementId: '846835', //Required,
+                deliveryUrl: 'https://central.sea.integr8.digital/bid', //Optional
                 data: {                //Optional
                     catalogs: [{
                         catalogId: "699229",

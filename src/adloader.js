@@ -28,6 +28,7 @@ const _approvedLoadExternalJSList = [
   'a1Media',
   'geoedge',
   'mediafilter',
+  'qortex'
 ]
 
 /**

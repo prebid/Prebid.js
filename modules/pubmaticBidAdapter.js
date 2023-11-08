@@ -1,10 +1,11 @@
-import { getBidRequest, logWarn, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, convertTypes, uniques, isPlainObject, isInteger } from '../src/utils.js';
+import { getBidRequest, logWarn, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, uniques, isPlainObject, isInteger } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE, ADPOD } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { bidderSettings } from '../src/bidderSettings.js';
 import CONSTANTS from '../src/constants.json';
+import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
@@ -757,6 +758,9 @@ function _addImpressionFPD(imp, bid) {
       deepSetValue(imp, `ext.data.${prop}`, ortb2[prop]);
     }
   });
+
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
+  gpid && deepSetValue(imp, `ext.gpid`, gpid);
 }
 
 function _addFloorFromFloorModule(impObj, bid) {
@@ -1228,6 +1232,10 @@ export const spec = {
       payload.device.sua = device?.sua;
     }
 
+    if (device?.ext?.cdep) {
+      deepSetValue(payload, 'device.ext.cdep', device.ext.cdep);
+    }
+
     if (user?.geo && device?.geo) {
       payload.device.geo = { ...payload.device.geo, ...device.geo };
       payload.user.geo = { ...payload.user.geo, ...user.geo };
@@ -1358,6 +1366,21 @@ export const spec = {
               bidResponses.push(newBid);
             });
         });
+      }
+      let fledgeAuctionConfigs = deepAccess(response.body, 'ext.fledge_auction_configs');
+      if (fledgeAuctionConfigs) {
+        fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
+          return {
+            bidId,
+            config: Object.assign({
+              auctionSignals: {},
+            }, cfg)
+          }
+        });
+        return {
+          bids: bidResponses,
+          fledgeAuctionConfigs,
+        }
       }
     } catch (error) {
       logError(error);
