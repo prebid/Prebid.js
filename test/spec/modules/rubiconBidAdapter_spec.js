@@ -696,6 +696,16 @@ describe('the rubicon adapter', function () {
           expect(data['p_pos']).to.equal('atf;;btf;;');
         });
 
+        it('should correctly send cdep signal when requested', () => {
+          var badposRequest = utils.deepClone(bidderRequest);
+          badposRequest.bids[0].ortb2 = {device: {ext: {cdep: 3}}};
+
+          let [request] = spec.buildRequests(badposRequest.bids, badposRequest);
+          let data = parseQuery(request.data);
+
+          expect(data['o_cdep']).to.equal('3');
+        });
+
         it('ad engine query params should be ordered correctly', function () {
           sandbox.stub(Math, 'random').callsFake(() => 0.1);
           let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
