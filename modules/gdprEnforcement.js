@@ -192,7 +192,14 @@ export function validateRules(rule, consentData, currentModule, gvlId) {
   }
   const vendorConsentRequred = rule.enforceVendor && !((gvlId === VENDORLESS_GVLID || (rule.softVendorExceptions || []).includes(currentModule)));
   const {purpose, vendor} = getConsent(consentData, ruleOptions.type, ruleOptions.id, gvlId);
-  return (!rule.enforcePurpose || purpose) && (!vendorConsentRequred || vendor);
+
+  let validation = (!rule.enforcePurpose || purpose) && (!vendorConsentRequred || vendor);
+
+  if (gvlId === FIRST_PARTY_GVLID) {
+    validation = (!rule.enforcePurpose || !!deepAccess(consentData, `vendorData.publisher.consents.${ruleOptions.id}`));
+  }
+
+  return validation;
 }
 
 function gdprRule(purposeNo, checkConsent, blocked = null, gvlidFallback = () => null) {
@@ -202,11 +209,7 @@ function gdprRule(purposeNo, checkConsent, blocked = null, gvlidFallback = () =>
 
     if (shouldEnforce(consentData, purposeNo, modName)) {
       const gvlid = getGvlid(params[ACTIVITY_PARAM_COMPONENT_TYPE], modName, gvlidFallback(params));
-      let allow =
-        gvlid === FIRST_PARTY_GVLID
-          ? !!deepAccess(consentData, `vendorData.publisher.consents.1`)
-          : !!checkConsent(consentData, modName, gvlid);
-
+      let allow = !!checkConsent(consentData, modName, gvlid);
       if (!allow) {
         blocked && blocked.add(modName);
         return {allow};

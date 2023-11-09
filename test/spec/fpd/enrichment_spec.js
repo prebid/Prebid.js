@@ -4,7 +4,8 @@ import {expect} from 'chai/index.mjs';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {CLIENT_SECTIONS} from '../../../src/fpd/oneClient.js';
-import {gdprDataHandler} from '../../../src/adapterManager.js';
+import {validateRules} from '../../../modules/gdprEnforcement.js';
+import {FIRST_PARTY_GVLID} from '../../../src/consentHandler.js';
 
 describe('FPD enrichment', () => {
   let sandbox;
@@ -311,66 +312,54 @@ describe('FPD enrichment', () => {
     });
   });
 
-  // describe('privacy sandbox cookieDeprecationLabel', () => {
-  //   it('attempts to set ext.cdep on device obj when the gdprEnforcement module is not active', () => {
-  //     const spy = sinon.spy();
-  //     tryToGetCdepLabel(spy);
-  //     sinon.assert.calledOnce(spy);
-  //   });
+  describe('privacy sandbox cookieDeprecationLabel', () => {
+    it('attempts to set ext.cdep on device obj when the gdprEnforcement module is not active', () => {
+      const spy = sinon.spy();
+      tryToGetCdepLabel(spy);
+      sinon.assert.calledOnce(spy);
+    });
 
-  //   it('does not attempt to set ext.cdep on device obj when the gdprEnforcement module is active and purpose 1 consent was not given', () => {
-  //     config.setConfig({
-  //       consentManagement: {
-  //         gdpr: {
-  //           cmpApi: 'iab',
-  //           defaultGdprScope: true
-  //         }
-  //       }
-  //     });
-  //     const spy = sinon.spy();
-  //     tryToGetCdepLabel(spy);
-  //     sinon.assert.notCalled(spy);
-  //   });
+    it('does not attempt to set ext.cdep on device obj when the gdprEnforcement module is active and purpose 1 consent was not given', () => {
+      config.setConfig({
+        consentManagement: {
+          gdpr: {
+            cmpApi: 'iab',
+            defaultGdprScope: true
+          },
+          strictStorageEnforcement: true
+        }
+      });
+      const spy = sinon.spy();
+      tryToGetCdepLabel(spy);
+      sinon.assert.notCalled(spy);
+    });
 
-  //   it('attempts to set ext.cdep on device obj when the gdprEnforcement module is active and purpose 1 consent was given', () => {
-  //     const spy = sinon.spy();
-  //     const consentData = {
-  //       'vendorData': {
-  //         'purpose': {
-  //           'consents': {
-  //             '1': true,
-  //             '2': true,
-  //             '3': true,
-  //             '4': true,
-  //             '5': true,
-  //             '6': true,
-  //             '7': true,
-  //             '8': true,
-  //             '9': true,
-  //             '10': true
-  //           }
-  //         },
-  //       },
-  //     }
+    it('allows for ext.cdep to be set on device obj when vendorData.publisher.consent.1 is given', () => {
+      const currentModule = 'cdep';
+      const gdprRule = {
+        'purpose': 'storage',
+        'enforcePurpose': true,
+        'enforceVendor': true
+      };
+      let consentData = null;
+      expect(validateRules(gdprRule, consentData, currentModule, FIRST_PARTY_GVLID)).to.be.false;
 
-  //     config.setConfig({
-  //       consentManagement: {
-  //         gdpr: {
-  //           cmpApi: 'iab',
-  //           defaultGdprScope: true
-  //         }
-  //       }
-  //     });
+      consentData = {
+        'vendorData': {
+          'publisher': {
+            'consents': {
+              '1': true
+            }
+          },
+        },
+      };
+      expect(validateRules(gdprRule, consentData, currentModule, FIRST_PARTY_GVLID)).to.be.true;
 
-  //     tryToGetCdepLabel(spy);
-  //     sinon.assert.notCalled(spy);
-
-  //     gdprDataHandler.setConsentData(consentData);
-
-  //     tryToGetCdepLabel(spy);
-  //     sinon.assert.calledOnce(spy);
-  //   });
-  // });
+      gdprRule.enforcePurpose = false;
+      consentData = null;
+      expect(validateRules(gdprRule, consentData, currentModule, FIRST_PARTY_GVLID)).to.be.true;
+    });
+  });
 
   it('leaves only one of app, site, dooh', () => {
     return fpd({
