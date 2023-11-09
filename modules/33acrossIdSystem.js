@@ -44,7 +44,7 @@ function calculateResponseObj(response) {
   };
 }
 
-function calculateQueryStringParams(pid, gdprConsentData, storedId) {
+function calculateQueryStringParams(pid, gdprConsentData) {
   const uspString = uspDataHandler.getConsentData();
   const gdprApplies = Boolean(gdprConsentData?.gdprApplies);
   const coppaValue = coppaDataHandler.getCoppa();
@@ -74,7 +74,7 @@ function calculateQueryStringParams(pid, gdprConsentData, storedId) {
   }
 
   const fp = storage.getDataFromLocalStorage(STORAGE_FPID_KEY);
-  if (storedId && fp) {
+  if (fp) {
     params.fp = fp;
   }
 
@@ -111,7 +111,7 @@ export const thirthyThreeAcrossIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId({ params = { } }, gdprConsentData, storedId) {
+  getId({ params = { } }, gdprConsentData) {
     if (typeof params.pid !== 'string') {
       logError(`${MODULE_NAME}: Submodule requires a partner ID to be defined`);
 
@@ -134,6 +134,8 @@ export const thirthyThreeAcrossIdSubmodule = {
 
             if (responseObj.fp) {
               storage.setDataInLocalStorage(STORAGE_FPID_KEY, responseObj.fp);
+            } else {
+              storage.removeDataFromLocalStorage(STORAGE_FPID_KEY);
             }
 
             cb(responseObj.envelope);
@@ -143,7 +145,7 @@ export const thirthyThreeAcrossIdSubmodule = {
 
             cb();
           }
-        }, calculateQueryStringParams(pid, gdprConsentData, storedId), { method: 'GET', withCredentials: true });
+        }, calculateQueryStringParams(pid, gdprConsentData), { method: 'GET', withCredentials: true });
       }
     };
   },
