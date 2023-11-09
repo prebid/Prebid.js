@@ -37,9 +37,9 @@ var adUnits = [
 
 ```javascript
 pbjs.setBidderConfig({
-  bidders: ['docereeAdManager'],
+  bidders: ['docereeadmanager'],
   config: {
-    docereeAdManager: {
+    docereeadmanager: {
       user: {
         data: {
           email: 'DALIA.WENCKUS@GMAIL.COM',
