@@ -3783,7 +3783,7 @@ describe('S2S Adapter', function () {
         p1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs',
         noP1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs'
       });
-      expect(vendorConfig).to.have.property('timeout', 1000);
+      expect(vendorConfig).to.have.property('timeout', 500);
     });
 
     it('should return proper defaults', function () {
@@ -3791,7 +3791,7 @@ describe('S2S Adapter', function () {
         accountId: '1234',
         bidders: ['pubmatic'],
         defaultVendor: 'openwrap',
-        timeout: 750
+        timeout: 500
       };
 
       config.setConfig({ s2sConfig: options });
@@ -3805,7 +3805,7 @@ describe('S2S Adapter', function () {
           p1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs',
           noP1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs'
         },
-        'timeout': 750
+        'timeout': 500
       })
     });
 
@@ -3815,12 +3815,12 @@ describe('S2S Adapter', function () {
           accountId: '1234',
           bidders: ['pubmatic'],
           defaultVendor: 'openwrap',
-          timeout: 750
+          timeout: 500
         }
       });
       expect(config.getConfig('s2sConfig')).to.deep.equal({
         enabled: true,
-        timeout: 750,
+        timeout: 500,
         adapter: 'prebidServer',
         accountId: '1234',
         bidders: ['pubmatic'],
