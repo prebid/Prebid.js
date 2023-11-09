@@ -98,28 +98,15 @@ function removeUndef(obj) {
   return getDefinedParams(obj, Object.keys(obj))
 }
 
-// export async function tryToGetCdepLabel(cb = getCookieDeprecationLabel) {
-//   let cdep;
-//   if (isActivityAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(MODULE_TYPE_PREBID, 'cdep'))) {
-//     return GreedyPromise.resolve(
-//       await cb(cdep)
-//     );
-//   }
-// }
-
-export async function tryToGetCdepLabel(cb = getCookieDeprecationLabel) {
-  return GreedyPromise.resolve(isActivityAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(MODULE_TYPE_PREBID, 'cdep')) && await cb());
+export function tryToGetCdepLabel(cb = getCookieDeprecationLabel) {
+  return GreedyPromise.resolve(isActivityAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(MODULE_TYPE_PREBID, 'cdep')) && cb());
 }
 
 function getCookieDeprecationLabel() {
   return new Promise((resolve) => {
     navigator.cookieDeprecationLabel.getValue().then((label) => {
-      label = label || 'example_label';
       resolve(label);
     });
-    setTimeout(() => {
-      resolve(false);
-    }, 250);
   });
 }
 
