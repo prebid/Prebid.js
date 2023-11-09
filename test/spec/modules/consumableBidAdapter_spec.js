@@ -651,7 +651,7 @@ describe('Consumable BidAdapter', function () {
       expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gdpr=0&gdpr_consent=GDPR_CONSENT_STRING');
     })
 
-    it('should return a sync url if iframe syncs are enabled and GPP applies', function () {
+    it('should return a sync url if iframe syncs are enabled and has GPP consent with applicable sections', function () {
       let gppConsent = {
         applicableSections: [1, 2],
         gppString: 'GPP_CONSENT_STRING'
@@ -660,6 +660,17 @@ describe('Consumable BidAdapter', function () {
 
       expect(opts.length).to.equal(1);
       expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gpp=GPP_CONSENT_STRING&gpp_sid=1%2C2');
+    })
+
+    it('should return a sync url if iframe syncs are enabled and has GPP consent without applicable sections', function () {
+      let gppConsent = {
+        applicableSections: [],
+        gppString: 'GPP_CONSENT_STRING'
+      }
+      let opts = spec.getUserSyncs(syncOptions, [AD_SERVER_RESPONSE], {}, '', gppConsent);
+
+      expect(opts.length).to.equal(1);
+      expect(opts[0].url).to.equal('https://sync.serverbid.com/ss/730181.html?gpp=GPP_CONSENT_STRING');
     })
 
     it('should return a sync url if iframe syncs are enabled and USP applies', function () {

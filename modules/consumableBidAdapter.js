@@ -196,8 +196,11 @@ export const spec = {
           syncUrl = appendUrlParam(syncUrl, `gdpr=0&gdpr_consent=${encodeURIComponent(gdprConsent.consentString) || ''}`);
         }
       }
-      if (gppConsent && gppConsent.gppString && gppConsent.applicableSections) {
-        syncUrl = appendUrlParam(syncUrl, `gpp=${encodeURIComponent(gppConsent.gppString)}&gpp_sid=${encodeURIComponent(gppConsent.applicableSections.join(','))}`);
+      if (gppConsent && gppConsent.gppString) {
+        syncUrl = appendUrlParam(syncUrl, `gpp=${encodeURIComponent(gppConsent.gppString)}`);
+        if (gppConsent.applicableSections && gppConsent.applicableSections.length > 0) {
+          syncUrl = appendUrlParam(syncUrl, `gpp_sid=${encodeURIComponent(gppConsent.applicableSections.join(','))}`);
+        }
       }
 
       if (uspConsent) {
