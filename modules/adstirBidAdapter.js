@@ -38,7 +38,7 @@ export const spec = {
           sua,
           gdpr: utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies', false),
           usp: (bidderRequest.uspConsent || '1---') !== '1---',
-          eids: utils.deepAccess(bidderRequest, 'userIdAdEids', []),
+          eids: utils.deepAccess(r, 'userIdAsEids', []),
           schain: serializeSchain(utils.deepAccess(r, 'schain', null)),
           pbVersion: '$prebid.version$',
         }),
