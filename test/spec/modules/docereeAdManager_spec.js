@@ -2,35 +2,36 @@ import { expect } from 'chai';
 import { spec } from '../../../modules/docereeAdManager.js';
 import { config } from '../../../src/config.js';
 
-describe('docereeAdManager', function () {
+describe('docereeadmanager', function () {
   config.setConfig({
-    docereeAdManager: {
+    docereeadmanager: {
       user: {
         data: {
           email: '',
-          firstName: '',
-          lastName: '',
+          firstname: '',
+          lastname: '',
           mobile: '',
           specialization: '',
           organization: '',
           hcpid: '',
           dob: '',
-          gd: '',
+          gender: '',
           city: '',
           state: '',
           country: '',
           hashedhcpid: '',
           hashedemail: '',
           hashedmobile: '',
-          adunit: '',
           userid: '',
+          zipcode: '',
+          userconsent: '',
         },
       },
     },
   });
   let bid = {
     bidId: 'testing',
-    bidder: 'docereeAdManager',
+    bidder: 'docereeadmanager',
     params: {
       placementId: 'DOC-500-3',
       gdpr: '1',
@@ -68,7 +69,7 @@ describe('docereeAdManager', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://dai.doceree.com');
+      expect(serverRequest.url).to.equal('https://dai.doceree.com/drs/quest');
     });
   });
   describe('interpretResponse', function () {
@@ -88,7 +89,7 @@ describe('docereeAdManager', function () {
           requestId: '123',
           meta: {
             brandId: null,
-            advertiserDomains: ['https://dai.doceree.com'],
+            advertiserDomains: ['https://dai.doceree.com/drs/quest'],
           },
         },
       };

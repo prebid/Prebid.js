@@ -1,8 +1,8 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
-const BIDDER_CODE = 'docereeAdManager';
-const END_POINT = 'https://dai.doceree.com';
+const BIDDER_CODE = 'docereeadmanager';
+const END_POINT = 'https://dai.doceree.com/drs/quest';
 
 export const spec = {
   code: BIDDER_CODE,
@@ -14,15 +14,15 @@ export const spec = {
     return !!placementId;
   },
   isGdprConsentPresent: (bid) => {
-    const { gdpr, gdprConsent } = bid.params;
+    const { gdpr, gdprconsent } = bid.params;
     if (gdpr == '1') {
-      return !!gdprConsent;
+      return !!gdprconsent;
     }
     return true;
   },
   buildRequests: (validBidRequests) => {
     const serverRequests = [];
-    const { data } = config.getConfig('docereeAdManager.user');
+    const { data } = config.getConfig('docereeadmanager.user');
 
     validBidRequests.forEach(function (validBidRequest) {
       const payload = getPayload(validBidRequest, data);
@@ -71,12 +71,11 @@ function getPayload(bid, bidderRequest) {
     lastname,
     specialization,
     hcpid,
-    gd,
+    gender,
     city,
     state,
     zipcode,
     hashedNPI,
-    privacyConsent,
     hashedhcpid,
     hashedemail,
     hashedmobile,
@@ -93,13 +92,12 @@ function getPayload(bid, bidderRequest) {
       lastname: lastname,
       specialization: specialization,
       hcpid: hcpid,
-      gender: gd,
+      gender: gender,
       city: city,
       state: state,
       zipcode: zipcode,
       hashedNPI: hashedNPI,
       pb: 1,
-      privacyConsent: privacyConsent,
       adunit: placementId,
       requestId: bidId,
       hashedhcpid: hashedhcpid,
@@ -108,6 +106,7 @@ function getPayload(bid, bidderRequest) {
       country: country,
       organization: organization,
       dob: dob,
+      userconsent: 1,
     },
   };
 }
