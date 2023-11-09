@@ -1,4 +1,4 @@
-import { thirthyThreeAcrossIdSubmodule } from 'modules/33acrossIdSystem.js';
+import { thirthyThreeAcrossIdSubmodule, storage } from 'modules/33acrossIdSystem.js';
 import * as utils from 'src/utils.js';
 
 import { server } from 'test/mocks/xhr.js';
@@ -48,6 +48,36 @@ describe('33acrossIdSystem', () => {
 
       expect(request.url).to.match(regExp);
       expect(completeCallback.calledOnceWithExactly('foo')).to.be.true;
+    });
+
+    it('stores the first-party ID provided in the response', () => {
+      const completeCallback = () => {};
+      const setDataInLocalStorage = sinon.stub(storage, 'setDataInLocalStorage');
+
+      const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+        params: {
+          pid: '12345'
+        }
+      });
+
+      callback(completeCallback);
+
+      const [request] = server.requests;
+
+      request.respond(200, {
+        'Content-Type': 'application/json'
+      }, JSON.stringify({
+        succeeded: true,
+        data: {
+          envelope: 'foo',
+          fp: 'bar'
+        },
+        expires: 1645667805067
+      }));
+
+      expect(setDataInLocalStorage.calledOnceWithExactly('33acrossIdFp', 'bar')).to.be.true;
+
+      setDataInLocalStorage.restore();
     });
 
     context('when GDPR applies', () => {
@@ -249,6 +279,73 @@ describe('33acrossIdSystem', () => {
 
           expect(server.requests[index].url).to.contain(`gpp_sid=${expected}`);
         });
+      });
+    });
+
+    context('when a 33Across ID is present in storage', () => {
+      context('and a first-party ID is also present in storage', () => {
+        it('should call endpoint with the first-party ID included', () => {
+          const completeCallback = () => {};
+          const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345'
+            }
+          },
+          { },
+          '33acrossIdValue');
+
+          sinon.stub(storage, 'getDataFromLocalStorage')
+            .withArgs('33acrossIdFp')
+            .returns('33acrossIdFpValue');
+
+          callback(completeCallback);
+
+          const [request] = server.requests;
+
+          expect(request.url).to.contain('fp=33acrossIdFpValue');
+
+          storage.getDataFromLocalStorage.restore();
+        });
+      });
+      context('and a first-party ID is not present in storage', () => {
+        it('should not call endpoint with the first-party ID included', () => {
+          const completeCallback = () => {};
+          const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345'
+            }
+          },
+          { },
+          '33acrossIdValue');
+
+          callback(completeCallback);
+
+          const [request] = server.requests;
+
+          expect(request.url).not.to.contain('fp=');
+        });
+      });
+    });
+    context('when a 33Across ID is not present in storage', () => {
+      it('should not call endpoint with the first-party ID included', () => {
+        const completeCallback = () => {};
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          }
+        });
+
+        sinon.stub(storage, 'getDataFromLocalStorage')
+          .withArgs('33acrossIdFp')
+          .returns('33acrossIdFpValue');
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).not.to.contain('fp=');
+
+        storage.getDataFromLocalStorage.restore();
       });
     });
 
