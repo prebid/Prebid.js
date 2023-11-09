@@ -35,7 +35,7 @@ describe('docereeadmanager', function () {
     params: {
       placementId: 'DOC-500-3',
       gdpr: '1',
-      gdprConsent:
+      gdprconsent:
         'CPQfU1jPQfU1jG0AAAENAwCAAAAAAAAAAAAAAAAAAAAA.IGLtV_T9fb2vj-_Z99_tkeYwf95y3p-wzhheMs-8NyZeH_B4Wv2MyvBX4JiQKGRgksjLBAQdtHGlcTQgBwIlViTLMYk2MjzNKJrJEilsbO2dYGD9Pn8HT3ZCY70-vv__7v3ff_3g',
     },
   };
