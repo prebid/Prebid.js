@@ -44,7 +44,6 @@ const ORTB_VIDEO_PARAMS = {
 const REQUIRED_VIDEO_PARAMS = {
   context: (value) => value !== ADPOD,
   mimes: ORTB_VIDEO_PARAMS.mimes,
-  minduration: ORTB_VIDEO_PARAMS.minduration,
   maxduration: ORTB_VIDEO_PARAMS.maxduration,
   protocols: ORTB_VIDEO_PARAMS.protocols
 }

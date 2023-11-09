@@ -955,6 +955,7 @@ describe('targeting tests', function () {
 
         expect(bids.length).to.equal(1);
         expect(bids[0].adId).to.equal('adid-1');
+        expect(bids[0].latestTargetedAuctionId).to.equal(2);
 
         useBidCache = false;
 
@@ -962,6 +963,7 @@ describe('targeting tests', function () {
 
         expect(bids.length).to.equal(1);
         expect(bids[0].adId).to.equal('adid-2');
+        expect(bids[0].latestTargetedAuctionId).to.equal(2);
       });
 
       it('should use bidCacheFilterFunction', function() {
@@ -989,9 +991,13 @@ describe('targeting tests', function () {
 
         expect(bids.length).to.equal(4);
         expect(bids[0].adId).to.equal('adid-1');
+        expect(bids[0].latestTargetedAuctionId).to.equal(2);
         expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[1].latestTargetedAuctionId).to.equal(2);
         expect(bids[2].adId).to.equal('adid-5');
+        expect(bids[2].latestTargetedAuctionId).to.equal(2);
         expect(bids[3].adId).to.equal('adid-8');
+        expect(bids[3].latestTargetedAuctionId).to.equal(2);
 
         // Bid Caching Off, No Filter Function
         useBidCache = false;
@@ -1000,9 +1006,13 @@ describe('targeting tests', function () {
 
         expect(bids.length).to.equal(4);
         expect(bids[0].adId).to.equal('adid-2');
+        expect(bids[0].latestTargetedAuctionId).to.equal(2);
         expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[1].latestTargetedAuctionId).to.equal(2);
         expect(bids[2].adId).to.equal('adid-6');
+        expect(bids[2].latestTargetedAuctionId).to.equal(2);
         expect(bids[3].adId).to.equal('adid-8');
+        expect(bids[3].latestTargetedAuctionId).to.equal(2);
 
         // Bid Caching On AGAIN, No Filter Function (should be same as first time)
         useBidCache = true;
@@ -1011,9 +1021,13 @@ describe('targeting tests', function () {
 
         expect(bids.length).to.equal(4);
         expect(bids[0].adId).to.equal('adid-1');
+        expect(bids[0].latestTargetedAuctionId).to.equal(2);
         expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[1].latestTargetedAuctionId).to.equal(2);
         expect(bids[2].adId).to.equal('adid-5');
+        expect(bids[2].latestTargetedAuctionId).to.equal(2);
         expect(bids[3].adId).to.equal('adid-8');
+        expect(bids[3].latestTargetedAuctionId).to.equal(2);
 
         // Bid Caching On, with Filter Function to Exclude video
         useBidCache = true;
@@ -1026,9 +1040,13 @@ describe('targeting tests', function () {
 
         expect(bids.length).to.equal(4);
         expect(bids[0].adId).to.equal('adid-1');
+        expect(bids[0].latestTargetedAuctionId).to.equal(2);
         expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[1].latestTargetedAuctionId).to.equal(2);
         expect(bids[2].adId).to.equal('adid-6');
+        expect(bids[2].latestTargetedAuctionId).to.equal(2);
         expect(bids[3].adId).to.equal('adid-8');
+        expect(bids[3].latestTargetedAuctionId).to.equal(2);
         // filter function should have been called for each cached bid (4 times)
         expect(bcffCalled).to.equal(4);
 
@@ -1044,9 +1062,13 @@ describe('targeting tests', function () {
 
         expect(bids.length).to.equal(4);
         expect(bids[0].adId).to.equal('adid-2');
+        expect(bids[0].latestTargetedAuctionId).to.equal(2);
         expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[1].latestTargetedAuctionId).to.equal(2);
         expect(bids[2].adId).to.equal('adid-6');
+        expect(bids[2].latestTargetedAuctionId).to.equal(2);
         expect(bids[3].adId).to.equal('adid-8');
+        expect(bids[3].latestTargetedAuctionId).to.equal(2);
         // filter function should not have been called
         expect(bcffCalled).to.equal(0);
       });
