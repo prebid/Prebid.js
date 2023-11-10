@@ -19,6 +19,10 @@ describe('discovery:BidAdapterTests', function () {
         },
         refererInfo: {
           page: 'https://discovery.popin.cc',
+          stack: [
+            'a.com',
+            'b.com'
+          ]
         },
         mediaTypes: {
           banner: {
