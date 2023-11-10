@@ -14,7 +14,7 @@ describe('33acrossAnalyticsAdapter:', function () {
   let assert = getLocalAssert();
 
   beforeEach(function () {
-    mockGpt.enable();
+    mockGpt.reset();
 
     sandbox = sinon.createSandbox({
       useFakeTimers: {
@@ -38,7 +38,7 @@ describe('33acrossAnalyticsAdapter:', function () {
 
   afterEach(function () {
     analyticsAdapter.disableAnalytics();
-    mockGpt.disable();
+    mockGpt.enable();
     sandbox.restore();
   });
 
