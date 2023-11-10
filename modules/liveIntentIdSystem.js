@@ -8,7 +8,7 @@ import { triggerPixel, logError } from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
-import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
+import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
@@ -125,6 +125,11 @@ function initializeLiveConnect(configParams) {
     liveConnectConfig.gdprConsent = gdprConsent.consentString;
   }
 
+  const gppConsent = gppDataHandler.getConsentData();
+  if (gppConsent) {
+    liveConnectConfig.gppString = gppConsent.gppString;
+    liveConnectConfig.gppApplicableSections = gppConsent.applicableSections;
+  }
   // The second param is the storage object, LS & Cookie manipulation uses PBJS
   // The third param is the ajax and pixel object, the ajax and pixel use PBJS
   liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls);
