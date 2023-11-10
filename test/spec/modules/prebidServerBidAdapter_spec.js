@@ -3764,6 +3764,74 @@ describe('S2S Adapter', function () {
       })
     });
 
+    it('should configure the s2sConfig object with openwrap vendor defaults unless specified by user', function () {
+      const options = {
+        accountId: '1234',
+        bidders: ['pubmatic'],
+        defaultVendor: 'openwrap'
+      };
+
+      config.setConfig({ s2sConfig: options });
+      sinon.assert.notCalled(logErrorSpy);
+
+      let vendorConfig = config.getConfig('s2sConfig');
+      expect(vendorConfig).to.have.property('accountId', '1234');
+      expect(vendorConfig).to.have.property('adapter', 'prebidServer');
+      expect(vendorConfig.bidders).to.deep.equal(['pubmatic']);
+      expect(vendorConfig.enabled).to.be.true;
+      expect(vendorConfig.endpoint).to.deep.equal({
+        p1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs',
+        noP1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs'
+      });
+      expect(vendorConfig).to.have.property('timeout', 500);
+    });
+
+    it('should return proper defaults', function () {
+      const options = {
+        accountId: '1234',
+        bidders: ['pubmatic'],
+        defaultVendor: 'openwrap',
+        timeout: 500
+      };
+
+      config.setConfig({ s2sConfig: options });
+      expect(config.getConfig('s2sConfig')).to.deep.equal({
+        'accountId': '1234',
+        'adapter': 'prebidServer',
+        'bidders': ['pubmatic'],
+        'defaultVendor': 'openwrap',
+        'enabled': true,
+        'endpoint': {
+          p1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs',
+          noP1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs'
+        },
+        'timeout': 500
+      })
+    });
+
+    it('should return default adapterOptions if not set', function () {
+      config.setConfig({
+        s2sConfig: {
+          accountId: '1234',
+          bidders: ['pubmatic'],
+          defaultVendor: 'openwrap',
+          timeout: 500
+        }
+      });
+      expect(config.getConfig('s2sConfig')).to.deep.equal({
+        enabled: true,
+        timeout: 500,
+        adapter: 'prebidServer',
+        accountId: '1234',
+        bidders: ['pubmatic'],
+        defaultVendor: 'openwrap',
+        endpoint: {
+          p1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs',
+          noP1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs'
+        },
+      })
+    });
+
     it('should set adapterOptions', function () {
       config.setConfig({
         s2sConfig: {
