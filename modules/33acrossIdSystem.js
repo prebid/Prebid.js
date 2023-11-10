@@ -9,29 +9,39 @@ import { logMessage, logError } from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { uspDataHandler, coppaDataHandler, gppDataHandler } from '../src/adapterManager.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 const MODULE_NAME = '33acrossId';
 const API_URL = 'https://lexicon.33across.com/v1/envelope';
 const AJAX_TIMEOUT = 10000;
 const CALLER_NAME = 'pbjs';
+const GVLID = 58;
 
-function getEnvelope(response) {
+const STORAGE_FPID_KEY = '33acrossIdFp';
+
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
+
+function calculateResponseObj(response) {
   if (!response.succeeded) {
     if (response.error == 'Cookied User') {
       logMessage(`${MODULE_NAME}: Unsuccessful response`.concat(' ', response.error));
     } else {
       logError(`${MODULE_NAME}: Unsuccessful response`.concat(' ', response.error));
     }
-    return;
+    return {};
   }
 
   if (!response.data.envelope) {
     logMessage(`${MODULE_NAME}: No envelope was received`);
 
-    return;
+    return {};
   }
 
-  return response.data.envelope;
+  return {
+    envelope: response.data.envelope,
+    fp: response.data.fp
+  };
 }
 
 function calculateQueryStringParams(pid, gdprConsentData) {
@@ -63,6 +73,11 @@ function calculateQueryStringParams(pid, gdprConsentData) {
     params.gdpr_consent = gdprConsentData.consentString;
   }
 
+  const fp = storage.getDataFromLocalStorage(STORAGE_FPID_KEY);
+  if (fp) {
+    params.fp = fp;
+  }
+
   return params;
 }
 
@@ -74,7 +89,7 @@ export const thirthyThreeAcrossIdSubmodule = {
    */
   name: MODULE_NAME,
 
-  gvlid: 58,
+  gvlid: GVLID,
 
   /**
    * decode the stored id value for passing to bid requests
@@ -109,14 +124,21 @@ export const thirthyThreeAcrossIdSubmodule = {
       callback(cb) {
         ajaxBuilder(AJAX_TIMEOUT)(apiUrl, {
           success(response) {
-            let envelope;
+            let responseObj = { };
 
             try {
-              envelope = getEnvelope(JSON.parse(response))
+              responseObj = calculateResponseObj(JSON.parse(response));
             } catch (err) {
               logError(`${MODULE_NAME}: ID reading error:`, err);
             }
-            cb(envelope);
+
+            if (responseObj.fp) {
+              storage.setDataInLocalStorage(STORAGE_FPID_KEY, responseObj.fp);
+            } else {
+              storage.removeDataFromLocalStorage(STORAGE_FPID_KEY);
+            }
+
+            cb(responseObj.envelope);
           },
           error(err) {
             logError(`${MODULE_NAME}: ID error response`, err);
