@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/docereeAdManager.js';
+import { spec } from '../../../modules/docereeAdManagerBidAdapter.js';
 import { config } from '../../../src/config.js';
 
 describe('docereeadmanager', function () {
@@ -33,7 +33,7 @@ describe('docereeadmanager', function () {
     bidId: 'testing',
     bidder: 'docereeadmanager',
     params: {
-      placementId: 'DOC-500-3',
+      placementId: 'DOC-19-1',
       gdpr: '1',
       gdprconsent:
         'CPQfU1jPQfU1jG0AAAENAwCAAAAAAAAAAAAAAAAAAAAA.IGLtV_T9fb2vj-_Z99_tkeYwf95y3p-wzhheMs-8NyZeH_B4Wv2MyvBX4JiQKGRgksjLBAQdtHGlcTQgBwIlViTLMYk2MjzNKJrJEilsbO2dYGD9Pn8HT3ZCY70-vv__7v3ff_3g',

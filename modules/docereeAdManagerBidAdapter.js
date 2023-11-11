@@ -22,10 +22,15 @@ export const spec = {
   },
   buildRequests: (validBidRequests) => {
     const serverRequests = [];
-    const { data } = config.getConfig('docereeadmanager.user');
+    const { data } = config.getConfig('docereeadmanager.user') || {};
 
     validBidRequests.forEach(function (validBidRequest) {
       const payload = getPayload(validBidRequest, data);
+
+      if (!payload) {
+        return;
+      }
+
       serverRequests.push({
         method: 'POST',
         url: END_POINT,
@@ -50,10 +55,14 @@ export const spec = {
       ttl: 30,
       cpm: responseJson.cpm,
       currency: responseJson.currency,
-      mediaType: 'banner',
+      mediaType: BANNER,
       creativeId: responseJson.creativeId,
       meta: {
-        advertiserDomains: [responseJson.meta.advertiserDomains],
+        advertiserDomains:
+          Array.isArray(responseJson.meta.advertiserDomains) &&
+          responseJson.meta.advertiserDomains.length > 0
+            ? responseJson.meta.advertiserDomains
+            : [],
       },
     };
 
@@ -61,7 +70,7 @@ export const spec = {
   },
 };
 
-function getPayload(bid, bidderRequest) {
+function getPayload(bid, userData) {
   const { bidId, params } = bid;
   const { placementId } = params;
   const {
@@ -82,7 +91,7 @@ function getPayload(bid, bidderRequest) {
     country,
     organization,
     dob,
-  } = bidderRequest;
+  } = userData;
 
   return {
     data: {

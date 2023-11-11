@@ -24,7 +24,7 @@ var adUnits = [
            {
                bidder: 'docereeadmanager',
                params: {
-                    placementId: 'DOC-500-3', //required
+                    placementId: 'DOC-19-1', //required
                     publisherUrl: document.URL || window.location.href, //optional
                     gdpr: '1', //optional
                     gdprconsent:'CPQfU1jPQfU1jG0AAAENAwCAAAAAAAAAAAAAAAAAAAAA.IGLtV_T9fb2vj-_Z99_tkeYwf95y3p-wzhheMs-8NyZeH_B4Wv2MyvBX4JiQKGRgksjLBAQdtHGlcTQgBwIlViTLMYk2MjzNKJrJEilsbO2dYGD9Pn8HT3ZCY70-vv__7v3ff_3g', //optional
@@ -42,13 +42,13 @@ pbjs.setBidderConfig({
     docereeadmanager: {
       user: {
         data: {
-          email: 'DALIA.WENCKUS@GMAIL.COM',
-          firstname: 'DR. DALIA',
-          lastname: 'WENCKUS',
-          mobile: '9812345675',
+          email: 'XXX.XXX@GMAIL.COM',
+          firstname: 'DR. XXX',
+          lastname: 'XXX',
+          mobile: '981234XXXX',
           specialization: 'Internal Medicine',
           organization: 'Max Lifecare',
-          hcpid: '1992915645',
+          hcpid: '199291XXXX',
           dob: '1987-08-27',
           gender: 'Female',
           city: 'Oildale',
