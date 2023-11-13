@@ -22,7 +22,7 @@ const HOST_GETTERS = {
   ocm: () => 'ghb.cenarius.orangeclickmedia.com',
   '9dotsmedia': () => 'ghb.platform.audiodots.com',
   copper6: () => 'ghb.app.copper6.com',
-  indicue: 'ghb.console.indicue.com',
+  indicue: () => 'ghb.console.indicue.com',
 }
 const getUri = function (bidderCode) {
   let bidderWithoutSuffix = bidderCode.split('_')[0];
