@@ -53,11 +53,6 @@ export const spec = {
       let sizes = bid.sizes;
       if (sizes && !Array.isArray(sizes[0])) sizes = [sizes];
 
-      // eslint-disable-next-line no-console
-      console.log('SETUPAD bid', bid);
-      // eslint-disable-next-line no-console
-      console.log('SETUPAD eids', eids);
-
       const site = getSiteObj();
       const device = getDeviceObj();
 
@@ -80,7 +75,6 @@ export const spec = {
         device,
         site,
         imp: [],
-        test: 1,
       };
 
       const imp = {
@@ -153,7 +147,7 @@ export const spec = {
 
     const serverBody = serverResponse.body;
     const bidResponses = [];
-    seat = serverBody.seatbid[0].seat;
+    seat = serverBody?.seatbid ? serverBody?.seatbid[0].seat : '';
 
     _each(serverBody.seatbid, (res) => {
       _each(res.bid, (bid) => {
