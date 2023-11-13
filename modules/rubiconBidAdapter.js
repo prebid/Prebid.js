@@ -17,7 +17,9 @@ import {
   logMessage,
   logWarn,
   mergeDeep,
-  parseSizesInput, _each
+  parseSizesInput,
+  pick,
+  _each
 } from '../src/utils.js';
 import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
@@ -973,6 +975,34 @@ function applyFPD(bidRequest, mediaType, data) {
     if (data['tg_i.pbadslot']) {
       delete data['tg_i.dfp_ad_unit_code'];
     }
+
+    // High Entropy stuff -> sua object is the ORTB standard (default to pass unless specifically disabled)
+    const clientHints = deepAccess(fpd, 'device.sua');
+    if (clientHints && rubiConf.chEnabled !== false) {
+      // pick out client hints we want to send (any that are undefined or empty will NOT be sent)
+      pick(clientHints, [
+        'architecture', arch => data.m_ch_arch = arch,
+        'bitness', bitness => data.m_ch_bitness = bitness,
+        'browsers', browsers => {
+          if (!Array.isArray(browsers)) return;
+          // reduce down into ua and full version list attributes
+          const [ua, fullVer] = browsers.reduce((accum, browserData) => {
+            accum[0].push(`"${browserData?.brand}"|v="${browserData?.version?.[0]}"`);
+            accum[1].push(`"${browserData?.brand}"|v="${browserData?.version?.join?.('.')}"`);
+            return accum;
+          }, [[], []]);
+          data.m_ch_ua = ua?.join?.(',');
+          data.m_ch_full_ver = fullVer?.join?.(',');
+        },
+        'mobile', isMobile => data.m_ch_mobile = `?${isMobile}`,
+        'model', model => data.m_ch_model = model,
+        'platform', platform => {
+          data.m_ch_platform = platform?.brand;
+          data.m_ch_platform_ver = platform?.version?.join?.('.');
+        }
+      ])
+    }
+
   } else {
     if (Object.keys(impExt).length) {
       mergeDeep(data.imp[0].ext, impExt);
