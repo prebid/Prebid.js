@@ -1002,7 +1002,6 @@ function applyFPD(bidRequest, mediaType, data) {
         }
       ])
     }
-
   } else {
     if (Object.keys(impExt).length) {
       mergeDeep(data.imp[0].ext, impExt);
