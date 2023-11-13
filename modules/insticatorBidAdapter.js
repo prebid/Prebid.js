@@ -72,13 +72,21 @@ function buildVideo(bidRequest) {
   const h = deepAccess(bidRequest, 'mediaTypes.video.h');
   const mimes = deepAccess(bidRequest, 'mediaTypes.video.mimes');
   const placement = deepAccess(bidRequest, 'mediaTypes.video.placement') || 3;
+  const plcmt = deepAccess(bidRequest, 'mediaTypes.video.plcmt') || undefined;
 
-  return {
+  let videoObj = {
     placement,
     mimes,
     w,
     h,
   }
+  if (plcmt) {
+    videoObj = {
+      ...videoObj,
+      plcmt
+    }
+  }
+  return videoObj
 }
 
 function buildImpression(bidRequest) {
@@ -343,6 +351,13 @@ function validateVideo(bid) {
 
   if (typeof placement !== 'undefined' && typeof placement !== 'number') {
     logError('insticator: video placement is not a number');
+    return false;
+  }
+
+  const plcmt = deepAccess(bid, 'mediaTypes.video.plcmt');
+
+  if (typeof plcmt !== 'undefined' && typeof plcmt !== 'number') {
+    logError('insticator: video plcmt is not a number');
     return false;
   }
 
