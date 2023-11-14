@@ -2311,6 +2311,23 @@ describe('PubMatic adapter', function () {
         expect(data.device.sua).to.deep.equal(suaObject);
       });
 
+      it('should pass device.ext.cdep if present in bidderRequest fpd ortb2 object', function () {
+        const cdepObj = {
+          cdep: 'example_label_1'
+        };
+        let request = spec.buildRequests(multipleMediaRequests, {
+          auctionId: 'new-auction-id',
+          ortb2: {
+            device: {
+              ext: cdepObj
+            }
+          }
+        });
+        let data = JSON.parse(request.data);
+        expect(data.device.ext.cdep).to.exist.and.to.be.an('string');
+        expect(data.device.ext).to.deep.equal(cdepObj);
+      });
+
       it('Request params should have valid native bid request for all valid params', function () {
         let request = spec.buildRequests(nativeBidRequests, {
           auctionId: 'new-auction-id'
