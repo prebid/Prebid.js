@@ -62,6 +62,17 @@ describe('secureCreatives', () => {
         adId: 123
       }
     });
+
+    it('does not invoke renderFn, but the renderer instead, if the ad has one', () => {
+      const renderer = {
+        url: 'some-custom-renderer',
+        render: sinon.spy()
+      }
+      handleRender(renderFn, {bidResponse: {renderer}});
+      sinon.assert.notCalled(renderFn);
+      sinon.assert.called(renderer.render);
+    });
+
     ['ad', 'adUrl'].forEach((prop) => {
       describe(`on ${prop}`, () => {
         it('replaces AUCTION_PRICE macro', () => {
