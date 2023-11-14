@@ -219,10 +219,10 @@ function getItems(validBidRequests, bidderRequest) {
       utils.deepAccess(req, 'ortb2Imp.ext.data.pbadslot') ||
       utils.deepAccess(req, 'params.placementId', 0);
 
-    const gdpr_consent = {};
+    const gdprConsent = {};
     if (bidderRequest && bidderRequest.gdprConsent) {
-      (gdpr_consent.consent = bidderRequest.gdprConsent.consentString),
-        (gdpr_consent.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
+      gdprConsent.consent = bidderRequest.gdprConsent.consentString;
+      gdprConsent.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
       // if (bidderRequest.gdprConsent.addtlConsent && bidderRequest.gdprConsent.addtlConsent.indexOf('~') !== -1) {
       //   let ac = bidderRequest.gdprConsent.addtlConsent;
       //   // pull only the ids from the string (after the ~) and convert them to an array of ints
@@ -247,8 +247,8 @@ function getItems(validBidRequests, bidderRequest) {
         ext: {
           ortb2Imp: utils.deepAccess(req, 'ortb2Imp'), // 传入完整对象，分析日志数据
           gpid: gpid, // 加入后无法返回广告
-          adslot: deepAccess(bidRequest, 'ortb2Imp.ext.data.adserver.adslot', '', ''),
-          ...gdpr_consent, // gdpr
+          adslot: utils.deepAccess(req, 'ortb2Imp.ext.data.adserver.adslot', '', ''),
+          ...gdprConsent, // gdpr
         },
         tagid: req.params && req.params.tagid,
       };
@@ -278,7 +278,7 @@ function getParam(validBidRequests, bidderRequest) {
 
   const bidsUserIdAsEids = validBidRequests[0].userIdAsEids;
   const bidsUserid = validBidRequests[0].userId;
-  const eids = userIdAsEids || userid;
+  const eids = bidsUserIdAsEids || bidsUserid;
 
   let isMobile = isMobileAndTablet() ? 1 : 0;
   // input test status by Publisher. more frequently for test true req
