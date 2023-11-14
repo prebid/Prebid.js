@@ -114,7 +114,6 @@ describe('BT Bid Adapter', () => {
                   impid: '2e9f38ea93bb9e',
                   crid: 'creative-id',
                   cur: 'USD',
-                  price: 9,
                   price: 2,
                   w: 300,
                   h: 250,
@@ -122,6 +121,7 @@ describe('BT Bid Adapter', () => {
                   adomain: ['test.com'],
                 },
               ],
+              seat: 'test-seat',
             },
           ],
         },
@@ -129,6 +129,7 @@ describe('BT Bid Adapter', () => {
 
       const expectedBids = [
         {
+          btBidderCode: 'test-seat',
           cpm: 2,
           creativeId: 'creative-id',
           creative_id: 'creative-id',

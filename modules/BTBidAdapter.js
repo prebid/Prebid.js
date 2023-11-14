@@ -16,6 +16,7 @@ const CONVERTER = ortbConverter({
   },
   imp,
   request,
+  bidResponse,
 });
 
 /**
@@ -66,6 +67,22 @@ function request(buildRequest, imps, bidderRequest, context) {
 }
 
 /**
+ * Processes a bid response using the provided build function, bid, and context.
+ *
+ * @param {Function} buildBidResponse - The function to build the bid response.
+ * @param {Object} bid - The bid object to include in the bid response.
+ * @param {Object} context - The context object containing additional information.
+ * @returns {Object} - The processed bid response.
+ */
+function bidResponse(buildBidResponse, bid, context) {
+  const bidResponse = buildBidResponse(bid, context);
+  const { seat } = context.seatbid || {};
+  bidResponse.btBidderCode = seat;
+
+  return bidResponse;
+}
+
+/**
  * Checks if a bid request is valid.
  *
  * @param {Object} bid - The bid request object.
@@ -75,12 +92,12 @@ function isBidRequestValid(bid) {
   const { ab, siteId } = bid.params;
 
   if (!siteId || !isStr(siteId)) {
-    logWarn('BT Bid Adapter: siteId must be string type.');
+    logWarn('BT Bid Adapter: a string type "siteId" must be provided.');
     return false;
   }
 
-  if (!ab || !isBoolean(ab)) {
-    logWarn('BT Bid Adapter: ab must be boolean type.');
+  if (!isBoolean(ab)) {
+    logWarn('BT Bid Adapter: a boolean type "ab" must be provided.');
     return false;
   }
 
