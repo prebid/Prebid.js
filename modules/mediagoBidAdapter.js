@@ -13,9 +13,10 @@ const BIDDER_CODE = 'mediago';
 const ENDPOINT_URL =
   // ((PROTOCOL === 'https:') ? 'https' : 'http') +
   'https://rtb-us.mediago.io/api/bid?tn=';
+const COOKY_SYNC_URL = 'https://trace.mediago.io/ju/cs/eplist';
 const TIME_TO_LIVE = 500;
 // const ENDPOINT_URL = '/api/bid?tn=';
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 let globals = {};
 let itemMaps = {};
 
@@ -156,11 +157,7 @@ function transformSizes(requestSizes) {
   let sizes = [];
   let sizeObj = {};
 
-  if (
-    utils.isArray(requestSizes) &&
-    requestSizes.length === 2 &&
-    !utils.isArray(requestSizes[0])
-  ) {
+  if (utils.isArray(requestSizes) && requestSizes.length === 2 && !utils.isArray(requestSizes[0])) {
     sizeObj.width = parseInt(requestSizes[0], 10);
     sizeObj.height = parseInt(requestSizes[1], 10);
     sizes.push(sizeObj);
@@ -207,17 +204,13 @@ function getItems(validBidRequests, bidderRequest) {
 
     // 确认尺寸是否符合我们要求
     for (let size of sizes) {
-      matchSize = mediagoAdSize.find(
-        (item) => size.width === item.w && size.height === item.h
-      );
+      matchSize = mediagoAdSize.find(item => size.width === item.w && size.height === item.h);
       if (matchSize) {
         break;
       }
     }
     if (!matchSize) {
-      matchSize = sizes[0]
-        ? { h: sizes[0].height || 0, w: sizes[0].width || 0 }
-        : { h: 0, w: 0 };
+      matchSize = sizes[0] ? { h: sizes[0].height || 0, w: sizes[0].width || 0 } : { h: 0, w: 0 };
     }
 
     const bidFloor = getBidFloor(req);
@@ -225,6 +218,18 @@ function getItems(validBidRequests, bidderRequest) {
       utils.deepAccess(req, 'ortb2Imp.ext.gpid') ||
       utils.deepAccess(req, 'ortb2Imp.ext.data.pbadslot') ||
       utils.deepAccess(req, 'params.placementId', 0);
+
+    const gdpr_consent = {};
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      (gdpr_consent.consent = bidderRequest.gdprConsent.consentString),
+        (gdpr_consent.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
+      // if (bidderRequest.gdprConsent.addtlConsent && bidderRequest.gdprConsent.addtlConsent.indexOf('~') !== -1) {
+      //   let ac = bidderRequest.gdprConsent.addtlConsent;
+      //   // pull only the ids from the string (after the ~) and convert them to an array of ints
+      //   let acStr = ac.substring(ac.indexOf('~') + 1);
+      //   gdpr_consent.addtl_consent = acStr.split('.').map(id => parseInt(id, 10));
+      // }
+    }
 
     // if (mediaTypes.native) {}
     // banner广告类型
@@ -242,6 +247,8 @@ function getItems(validBidRequests, bidderRequest) {
         ext: {
           ortb2Imp: utils.deepAccess(req, 'ortb2Imp'), // 传入完整对象，分析日志数据
           gpid: gpid, // 加入后无法返回广告
+          adslot: deepAccess(bidRequest, 'ortb2Imp.ext.data.adserver.adslot', '', ''),
+          ...gdpr_consent, // gdpr
         },
         tagid: req.params && req.params.tagid,
       };
@@ -268,7 +275,10 @@ function getParam(validBidRequests, bidderRequest) {
   const sharedid =
     utils.deepAccess(validBidRequests[0], 'userId.sharedid.id') ||
     utils.deepAccess(validBidRequests[0], 'userId.pubcid');
-  const eids = validBidRequests[0].userIdAsEids || validBidRequests[0].userId;
+
+  const bidsUserIdAsEids = validBidRequests[0].userIdAsEids;
+  const bidsUserid = validBidRequests[0].userId;
+  const eids = userIdAsEids || userid;
 
   let isMobile = isMobileAndTablet() ? 1 : 0;
   // input test status by Publisher. more frequently for test true req
@@ -276,8 +286,7 @@ function getParam(validBidRequests, bidderRequest) {
   let auctionId = getProperty(bidderRequest, 'auctionId');
   let items = getItems(validBidRequests, bidderRequest);
 
-  const domain =
-    utils.deepAccess(bidderRequest, 'refererInfo.domain') || document.domain;
+  const domain = utils.deepAccess(bidderRequest, 'refererInfo.domain') || document.domain;
   const location = utils.deepAccess(bidderRequest, 'refererInfo.location');
   const page = utils.deepAccess(bidderRequest, 'refererInfo.page');
   const referer = utils.deepAccess(bidderRequest, 'refererInfo.ref');
@@ -305,6 +314,8 @@ function getParam(validBidRequests, bidderRequest) {
       },
       ext: {
         eids,
+        bidsUserIdAsEids,
+        bidsUserid,
         firstPartyData,
       },
       user: {
@@ -413,6 +424,26 @@ export const spec = {
     }
 
     return bidResponses;
+  },
+
+  getUserSyncs: function (syncOptions, serverResponse, gdprConsent, uspConsent, gppConsent) {
+    const origin = encodeURIComponent(location.origin || `https://${location.host}`);
+    const url = `${COOKY_SYNC_URL}?dm=${origin}&gdpr_consent=${gdprConsent.consentString}`;
+    if (syncOptions.iframeEnabled) {
+      return [
+        {
+          type: 'iframe',
+          url: `https://cdn.mediago.io/js/cookieSync.html?gdpr_consent=${gdprConsent.consentString}`,
+        },
+      ];
+    } else {
+      return [
+        {
+          type: 'image',
+          url: url,
+        },
+      ];
+    }
   },
 
   /**

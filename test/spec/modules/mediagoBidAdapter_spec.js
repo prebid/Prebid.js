@@ -29,6 +29,7 @@ describe('mediago:BidAdapterTests', function () {
                   name: 'adserver_name',
                   adslot: 'adslot_name',
                 },
+                pbadslot: '/12345/my-gpt-tag-0'
               },
             },
           },
@@ -59,6 +60,64 @@ describe('mediago:BidAdapterTests', function () {
         bidderWinsCount: 0,
       },
     ],
+    gdprConsent: {
+        consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==',
+        gdprApplies: true,
+        apiVersion: 2,
+        vendorData: {
+          purpose: {
+            consents: {
+              1: false
+            }
+          }
+        }
+    },
+    userId: {
+        tdid: 'sample-userid',
+        uid2: { id: 'sample-uid2-value' },
+        criteoId: 'sample-criteo-userid',
+        netId: 'sample-netId-userid',
+        idl_env: 'sample-idl-userid',
+        pubProvidedId: [{
+          source: 'puburl.com',
+          uids: [{
+            id: 'pubid1',
+            atype: 1,
+            ext: {
+              stype: 'ppuid'
+            }
+          }]
+        }, {
+          source: 'puburl2.com',
+          uids: [{
+            id: 'pubid2'
+          }, {
+            id: 'pubid2-123'
+          }]
+        }]
+      },
+      userIdAsEids: [{
+        source: 'adserver.org',
+        uids: [{ id: 'sample-userid' }]
+      }, {
+        source: 'criteo.com',
+        uids: [{ id: 'sample-criteo-userid' }]
+      }, {
+        source: 'netid.de',
+        uids: [{ id: 'sample-netId-userid' }]
+      }, {
+        source: 'liveramp.com',
+        uids: [{ id: 'sample-idl-userid' }]
+      }, {
+        source: 'uidapi.com',
+        uids: [{ id: 'sample-uid2-value' }]
+      }, {
+        source: 'puburl.com',
+        uids: [{ id: 'pubid1' }]
+      }, {
+        source: 'puburl2.com',
+        uids: [{ id: 'pubid2' }, { id: 'pubid2-123' }]
+      }]
   };
   let request = [];
 
