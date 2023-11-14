@@ -14,6 +14,7 @@ import {
   BANNER,
   VIDEO
 } from '../src/mediaTypes.js'
+import {config} from '../src/config.js';
 
 const ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
@@ -170,6 +171,10 @@ export const spec = {
       const tid = deepAccess(bidderRequest, 'ortb2.source.tid')
       if (tid) {
         deepSetValue(sovrnBidReq, 'source.tid', tid)
+      }
+
+      if (config.getConfig('coppa') === true) {
+        deepSetValue(sovrnBidReq, 'regs.coppa', 1);
       }
 
       if (bidderRequest.gdprConsent) {
