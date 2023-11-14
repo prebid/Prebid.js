@@ -82,7 +82,7 @@ describe('mediago:BidAdapterTests', function () {
           source: 'puburl.com',
           uids: [
             {
-              id: 'pubid1',
+              id: 'pubid2',
               atype: 1,
               ext: {
                 stype: 'ppuid'
