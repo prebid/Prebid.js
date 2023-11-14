@@ -546,6 +546,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
 
       if (hasVideoMediaType(bidRequest)) {
         const video = {
+          context: bidRequest.mediaTypes.video.context,
           playersizes: parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'), parseSize),
           mimes: bidRequest.mediaTypes.video.mimes,
           protocols: bidRequest.mediaTypes.video.protocols,
@@ -556,7 +557,19 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
           minduration: bidRequest.mediaTypes.video.minduration,
           playbackmethod: bidRequest.mediaTypes.video.playbackmethod,
           startdelay: bidRequest.mediaTypes.video.startdelay,
-          plcmt: bidRequest.mediaTypes.video.plcmt
+          plcmt: bidRequest.mediaTypes.video.plcmt,
+          w: bidRequest.mediaTypes.video.w,
+          h: bidRequest.mediaTypes.video.h,
+          linearity: bidRequest.mediaTypes.video.linearity,
+          skipmin: bidRequest.mediaTypes.video.skipmin,
+          skipafter: bidRequest.mediaTypes.video.skipafter,
+          minbitrate: bidRequest.mediaTypes.video.minbitrate,
+          maxbitrate: bidRequest.mediaTypes.video.maxbitrate,
+          delivery: bidRequest.mediaTypes.video.delivery,
+          pos: bidRequest.mediaTypes.video.pos,
+          playbackend: bidRequest.mediaTypes.video.playbackend,
+          adPodDurationSec: bidRequest.mediaTypes.video.adPodDurationSec,
+          durationRangeSec: bidRequest.mediaTypes.video.durationRangeSec,
         };
         const paramsVideo = bidRequest.params.video;
         if (paramsVideo !== undefined) {

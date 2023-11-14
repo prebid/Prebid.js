@@ -186,6 +186,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   function executeCallback(timedOut) {
     if (!timedOut) {
       clearTimeout(_timeoutTimer);
+    } else {
+      events.emit(CONSTANTS.EVENTS.AUCTION_TIMEOUT, getProperties());
     }
     if (_auctionEnd === undefined) {
       let timedOutRequests = [];
