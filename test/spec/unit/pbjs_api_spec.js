@@ -2736,6 +2736,13 @@ describe('Unit: Prebid Module', function () {
       events.on.restore();
     });
 
+    it('should emit event EFORE_ADD_BID_RESPONSE when invoked', function () {
+      var callback = sinon.spy();
+      $$PREBID_GLOBAL$$.onEvent('beforeAddBidResponse', callback);
+      events.emit(CONSTANTS.EVENTS.BEFORE_ADD_BID_RESPONSE);
+      sinon.assert.calledOnce(callback);
+    });
+
     describe('beforeRequestBids', function () {
       let bidRequestedHandler;
       let beforeRequestBidsHandler;
