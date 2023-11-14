@@ -243,8 +243,9 @@ function getReferrer(bidRequest = {}, bidderRequest = {}) {
  */
 function addImpExtParams(bidRequest = {}, bidderRequest = {}) {
   const { deepAccess } = utils;
-  const { params = {}, adUnitCode } = bidRequest;
+  const { params = {}, adUnitCode, bidId } = bidRequest;
   const ext = {
+    bidId: bidId || '',
     adUnitCode: adUnitCode || '',
     token: params.token || '',
     siteId: params.siteId || '',
@@ -253,6 +254,7 @@ function addImpExtParams(bidRequest = {}, bidderRequest = {}) {
     p_pos: params.position || '',
     screenSize: getScreenSize(),
     referrer: getReferrer(bidRequest, bidderRequest),
+    stack: deepAccess(bidRequest, 'refererInfo.stack', []),
     b_pos: deepAccess(bidRequest, 'mediaTypes.banner.pos', '', ''),
     ortbUser: deepAccess(bidRequest, 'ortb2.user', {}, {}),
     ortbSite: deepAccess(bidRequest, 'ortb2.site', {}, {}),
@@ -260,7 +262,9 @@ function addImpExtParams(bidRequest = {}, bidderRequest = {}) {
     browsiViewability: deepAccess(bidRequest, 'ortb2Imp.ext.data.browsi.browsiViewability', '', ''),
     adserverName: deepAccess(bidRequest, 'ortb2Imp.ext.data.adserver.name', '', ''),
     adslot: deepAccess(bidRequest, 'ortb2Imp.ext.data.adserver.adslot', '', ''),
+    keywords: deepAccess(bidRequest, 'ortb2Imp.ext.data.keywords', '', ''),
     gpid: deepAccess(bidRequest, 'ortb2Imp.ext.gpid', '', ''),
+    pbadslot: deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot', '', ''),
   };
   return ext;
 }
