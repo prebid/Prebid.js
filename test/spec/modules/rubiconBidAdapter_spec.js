@@ -1818,6 +1818,126 @@ describe('the rubicon adapter', function () {
             expect(data['tg_i.dfp_ad_unit_code']).to.equal('/a/b/c');
           });
         });
+
+        describe('client hints', function () {
+          let standardSuaObject;
+          beforeEach(function () {
+            standardSuaObject = {
+              source: 2,
+              platform: {
+                brand: 'macOS',
+                version: [
+                  '12',
+                  '6',
+                  '0'
+                ]
+              },
+              browsers: [
+                {
+                  brand: 'Not.A/Brand',
+                  version: [
+                    '8',
+                    '0',
+                    '0',
+                    '0'
+                  ]
+                },
+                {
+                  brand: 'Chromium',
+                  version: [
+                    '114',
+                    '0',
+                    '5735',
+                    '198'
+                  ]
+                },
+                {
+                  brand: 'Google Chrome',
+                  version: [
+                    '114',
+                    '0',
+                    '5735',
+                    '198'
+                  ]
+                }
+              ],
+              mobile: 0,
+              model: '',
+              bitness: '64',
+              architecture: 'x86'
+            }
+          });
+          it('should send m_ch_* params if ortb2.device.sua object is there', function () {
+            let bidRequestSua = utils.deepClone(bidderRequest);
+            bidRequestSua.bids[0].ortb2 = { device: { sua: standardSuaObject } };
+
+            // How should fastlane query be constructed with default SUA
+            let expectedValues = {
+              m_ch_arch: 'x86',
+              m_ch_bitness: '64',
+              m_ch_ua: `"Not.A/Brand"|v="8","Chromium"|v="114","Google Chrome"|v="114"`,
+              m_ch_full_ver: `"Not.A/Brand"|v="8.0.0.0","Chromium"|v="114.0.5735.198","Google Chrome"|v="114.0.5735.198"`,
+              m_ch_mobile: '?0',
+              m_ch_platform: 'macOS',
+              m_ch_platform_ver: '12.6.0'
+            }
+
+            // Build Fastlane call
+            let [request] = spec.buildRequests(bidRequestSua.bids, bidRequestSua);
+            let data = parseQuery(request.data);
+
+            // Loop through expected values and if they do not match push an error
+            const errors = Object.entries(expectedValues).reduce((accum, [key, val]) => {
+              if (data[key] !== val) accum.push(`${key} - expect: ${val} - got: ${data[key]}`)
+              return accum;
+            }, []);
+
+            // should be no errors
+            expect(errors).to.deep.equal([]);
+          });
+          it('should not send invalid values for m_ch_*', function () {
+            let bidRequestSua = utils.deepClone(bidderRequest);
+
+            // Alter input SUA object
+            // send model
+            standardSuaObject.model = 'Suface Duo';
+            // send mobile = 1
+            standardSuaObject.mobile = 1;
+
+            // make browsers not an array
+            standardSuaObject.browsers = 'My Browser';
+
+            // make platform not have version
+            delete standardSuaObject.platform.version;
+
+            // delete architecture
+            delete standardSuaObject.architecture;
+
+            // add SUA to bid
+            bidRequestSua.bids[0].ortb2 = { device: { sua: standardSuaObject } };
+
+            // Build Fastlane request
+            let [request] = spec.buildRequests(bidRequestSua.bids, bidRequestSua);
+            let data = parseQuery(request.data);
+
+            // should show new names
+            expect(data.m_ch_model).to.equal('Suface Duo');
+            expect(data.m_ch_mobile).to.equal('?1');
+
+            // should still send platform
+            expect(data.m_ch_platform).to.equal('macOS');
+
+            // platform version not sent
+            expect(data).to.not.haveOwnProperty('m_ch_platform_ver');
+
+            // both ua and full_ver not sent because browsers not array
+            expect(data).to.not.haveOwnProperty('m_ch_ua');
+            expect(data).to.not.haveOwnProperty('m_ch_full_ver');
+
+            // arch not sent
+            expect(data).to.not.haveOwnProperty('m_ch_arch');
+          });
+        });
       });
 
       if (FEATURES.VIDEO) {
