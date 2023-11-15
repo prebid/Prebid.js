@@ -1,11 +1,11 @@
-import {mkFrame, writeAd} from './writer.js';
+import {writeAd} from './writer.js';
 import {
   AD_RENDER_FAILED,
   AD_RENDER_SUCCEEDED,
+  EXCEPTION,
   PREBID_EVENT,
-  PREBID_RESPONSE,
   PREBID_REQUEST,
-  EXCEPTION
+  PREBID_RESPONSE
 } from './constants.js';
 
 export function renderer(win = window) {
@@ -29,12 +29,7 @@ export function renderer(win = window) {
       }
       if (data.message === PREBID_RESPONSE && data.adId === adId) {
         try {
-          let doc = win.document
-          if (data.ad) {
-            doc = mkFrame(doc, {width: data.width, height: data.height}).contentDocument;
-            doc.open();
-          }
-          writeAd(data, cb, doc);
+          writeAd(data, cb, win.document);
         } catch (e) {
           // eslint-disable-next-line standard/no-callback-literal
           cb({ reason: EXCEPTION, message: e.message })

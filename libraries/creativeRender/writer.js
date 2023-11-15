@@ -23,12 +23,13 @@ export function writeAd({ad, adUrl, width, height}, cb, doc = document) {
     // eslint-disable-next-line standard/no-callback-literal
     cb({reason: NO_AD, message: 'Missing ad markup or URL'});
   } else {
+    const attrs = {width, height};
     if (adUrl && !ad) {
-      mkFrame(doc, {width, height, src: adUrl})
+      attrs.src = adUrl
     } else {
-      doc.write(ad);
-      doc.close();
+      attrs.srcdoc = ad;
     }
+    mkFrame(doc, attrs);
     cb();
   }
 }

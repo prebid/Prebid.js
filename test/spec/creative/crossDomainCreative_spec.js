@@ -52,6 +52,16 @@ describe('cross-domain creative', () => {
         clickUrl: 'https://click-url.com'
       }
     })
+  });
+
+  it('runs scripts inserted through iframe srcdoc', (done) => {
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('srcdoc', '<script>window.ran = true;</script>');
+    iframe.onload = function () {
+      expect(iframe.contentWindow.ran).to.be.true;
+      done();
+    }
+    document.body.appendChild(iframe);
   })
 
   Object.entries({
@@ -61,7 +71,7 @@ describe('cross-domain creative', () => {
     describe(`when using ${t}`, () => {
       function reply(msg) {
         transport(JSON.stringify(msg))
-      };
+      }
 
       it('ignores messages that are not a prebid response message', () => {
         renderAd({adId: '123'});
@@ -121,24 +131,27 @@ describe('cross-domain creative', () => {
           mkIframe.callsFake(() => iframe);
         });
 
+        Object.entries({
+          'adUrl as iframe src': ['mockUrl', 'adUrl', 'src'],
+          'ad as iframe srcdoc': ['mockAd', 'ad', 'srcdoc']
+        }).forEach(([t, [content, adProp, iframeProp]]) => {
+          it(`renders ${t}`, (done) => {
+            renderAd({adId: '123'});
+            reply({message: PREBID_RESPONSE, adId: '123', [adProp]: content});
+            setTimeout(() => {
+              sinon.assert.calledWith(win.document.body.appendChild, iframe);
+              expect(iframe.attrs[iframeProp]).to.eql(content);
+              done();
+            }, 100)
+          })
+        })
+
         it('renders adUrl as iframe src', (done) => {
           renderAd({adId: '123'});
           reply({message: PREBID_RESPONSE, adId: '123', adUrl: 'some-url'});
           setTimeout(() => {
             sinon.assert.calledWith(win.document.body.appendChild, iframe);
             expect(iframe.attrs.src).to.eql('some-url');
-            done();
-          }, 100)
-        });
-
-        it('renders ad through document.write', (done) => {
-          renderAd({adId: '123'});
-          reply({message: PREBID_RESPONSE, adId: '123', ad: 'some-markup'});
-          setTimeout(() => {
-            sinon.assert.calledWith(win.document.body.appendChild, iframe);
-            sinon.assert.called(iframe.contentDocument.open);
-            sinon.assert.calledWith(iframe.contentDocument.write, 'some-markup');
-            sinon.assert.called(iframe.contentDocument.close);
             done();
           }, 100)
         });
