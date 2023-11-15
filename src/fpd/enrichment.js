@@ -18,6 +18,7 @@ export const dep = {
   getWindowSelf,
   getHighEntropySUA,
   getLowEntropySUA,
+  getCookieDeprecationLabel,
 };
 
 const oneClient = clientSectionChecker('FPD')

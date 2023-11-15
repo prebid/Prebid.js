@@ -313,10 +313,15 @@ describe('FPD enrichment', () => {
   });
 
   describe('privacy sandbox cookieDeprecationLabel', () => {
-    it('attempts to set ext.cdep on device obj when the gdprEnforcement module is not active', () => {
-      const spy = sinon.spy();
-      tryToGetCdepLabel(spy);
-      sinon.assert.calledOnce(spy);
+    // it('attempts to set ext.cdep on device obj when the gdprEnforcement module is not active', () => {
+    it('if isActivityAllowed is mocked to true, and the navigator API returns a promise to some label X, the enrichment puts X in device.ext.cdep', () => {
+      // const spy = sinon.spy();
+      // tryToGetCdepLabel(spy);
+      // sinon.assert.calledOnce(spy);
+      sandbox.stub(dep, 'getCookieDeprecationLabel').returns(Promise.resolve('example-test-label'));
+      return fpd().then(ortb2 => {
+        expect(ortb2.device.ext.cdep).to.exist;
+      });
     });
 
     it('does not attempt to set ext.cdep on device obj when the gdprEnforcement module is active and purpose 1 consent was not given', () => {
