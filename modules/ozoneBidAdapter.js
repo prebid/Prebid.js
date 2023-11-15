@@ -22,10 +22,10 @@ const AUCTIONURI = '/openrtb2/auction';
 const OZONECOOKIESYNC = '/static/load-cookie.html';
 const OZONE_RENDERER_URL = 'https://prebid.the-ozone-project.com/ozone-renderer.js';
 const ORIGIN_DEV = 'https://test.ozpr.net';
-const OZONEVERSION = '2.9.0';
+const OZONEVERSION = '2.9.1';
 export const spec = {
   gvlid: 524,
-  aliases: [{code: 'lmc', gvlid: 524}],
+  aliases: [{code: 'lmc', gvlid: 524}, {code: 'venatus', gvlid: 524}],
   version: OZONEVERSION,
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER],
@@ -78,6 +78,9 @@ export const spec = {
     if (bidderConfig.hasOwnProperty('batchRequests')) {
       this.propertyBag.whitelabel.batchRequests = bidderConfig.batchRequests;
     }
+    if (arr.hasOwnProperty('batchRequests')) {
+      this.propertyBag.whitelabel.batchRequests = true;
+    }
     try {
       if (arr.hasOwnProperty('auction') && arr.auction === 'dev') {
         logInfo('GET: auction=dev');
@@ -100,6 +103,7 @@ export const spec = {
     return this.propertyBag.whitelabel.rendererUrl;
   },
   isBatchRequests() {
+    logInfo('isBatchRequests going to return ', this.propertyBag.whitelabel.batchRequests);
     return this.propertyBag.whitelabel.batchRequests;
   },
   isBidRequestValid(bid) {

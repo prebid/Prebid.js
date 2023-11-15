@@ -52,7 +52,11 @@ describe('SmartyadsAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://n1.smartyads.com/?c=o&m=prebid&secret_key=prebid_js');
+      expect(serverRequest.url).to.be.oneOf([
+        'https://n1.smartyads.com/?c=o&m=prebid&secret_key=prebid_js',
+        'https://n2.smartyads.com/?c=o&m=prebid&secret_key=prebid_js',
+        'https://n6.smartyads.com/?c=o&m=prebid&secret_key=prebid_js'
+      ]);
     });
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;

@@ -23,7 +23,7 @@ let auctionEnd = {}
 let initOptions = {}
 let mode = {};
 let endpoint = 'https://default'
-let requestsAttributes = ['adUnitCode', 'auctionId', 'bidder', 'bidderCode', 'bidId', 'cpm', 'creativeId', 'currency', 'width', 'height', 'mediaType', 'netRevenue', 'originalCpm', 'originalCurrency', 'requestId', 'size', 'source', 'status', 'timeToRespond', 'transactionId', 'ttl', 'sizes', 'mediaTypes', 'src', 'params', 'userId', 'labelAny', 'bids', 'adId'];
+let requestsAttributes = ['adUnitCode', 'auctionId', 'bidder', 'bidderCode', 'bidId', 'cpm', 'creativeId', 'currency', 'width', 'height', 'mediaType', 'netRevenue', 'originalCpm', 'originalCurrency', 'requestId', 'size', 'source', 'status', 'timeToRespond', 'transactionId', 'ttl', 'sizes', 'mediaTypes', 'src', 'params', 'userId', 'labelAny', 'bids', 'adId', 'ova'];
 
 function getAdapterNameForAlias(aliasName) {
   return adapterManager.aliasRegistry[aliasName] || aliasName;
@@ -183,6 +183,15 @@ function handleBidWon(args) {
           }
         });
       }
+      if (auction['auctionId'] == args['auctionId'] && typeof auction['bidderRequests'] == 'object') {
+        auction['bidderRequests'].forEach((req) => {
+          req.bids.forEach((bid) => {
+            if (bid['bidId'] == args['requestId'] && bid['transactionId'] == args['transactionId']) {
+              args['ova'] = bid['ova'];
+            }
+          });
+        });
+      }
     });
   }
   args['cpmIncrement'] = increment;
@@ -232,7 +241,8 @@ let oxxionAnalytics = Object.assign(adapter({url, analyticsType}), {
         addTimeout(args);
         break;
     }
-  }});
+  }
+});
 
 // save the base class function
 oxxionAnalytics.originEnableAnalytics = oxxionAnalytics.enableAnalytics;

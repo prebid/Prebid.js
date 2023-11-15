@@ -51,28 +51,64 @@ function adRenderSucceededHandler(args) {
   let eventType = CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED
   logInfo(LOG_PREFIX + 'handle ' + eventType + ' event');
 
-  // set zetaParams from cache
-  if (args.bid && args.bid.auctionId) {
-    const zetaParams = cache.auctions[args.bid.auctionId];
-    if (zetaParams) {
-      args.bid.params = [ zetaParams ];
+  const event = {
+    adId: args.adId,
+    bid: {
+      adId: args.bid?.adId,
+      auctionId: args.bid?.auctionId,
+      adUnitCode: args.bid?.adUnitCode,
+      bidId: args.bid?.bidId,
+      requestId: args.bid?.requestId,
+      bidderCode: args.bid?.bidderCode,
+      mediaTypes: args.bid?.mediaTypes,
+      sizes: args.bid?.sizes,
+      adserverTargeting: args.bid?.adserverTargeting,
+      cpm: args.bid?.cpm,
+      creativeId: args.bid?.creativeId,
+      mediaType: args.bid?.mediaType,
+      renderer: args.bid?.renderer,
+      size: args.bid?.size,
+      timeToRespond: args.bid?.timeToRespond,
+      params: args.bid?.params
+    },
+    doc: {
+      location: args.doc?.location
     }
   }
 
-  sendEvent(eventType, args);
+  // set zetaParams from cache
+  if (event.bid && event.bid.auctionId) {
+    const zetaParams = cache.auctions[event.bid.auctionId];
+    if (zetaParams) {
+      event.bid.params = [ zetaParams ];
+    }
+  }
+
+  sendEvent(eventType, event);
 }
 
 function auctionEndHandler(args) {
   let eventType = CONSTANTS.EVENTS.AUCTION_END;
   logInfo(LOG_PREFIX + 'handle ' + eventType + ' event');
 
-  // save zetaParams to cache
-  const zetaParams = getZetaParams(args);
-  if (zetaParams && args.auctionId) {
-    cache.auctions[args.auctionId] = zetaParams;
+  const event = {
+    adUnitCodes: args.adUnitCodes,
+    adUnits: args.adUnits,
+    auctionEnd: args.auctionEnd,
+    auctionId: args.auctionId,
+    bidderRequests: args.bidderRequests,
+    bidsReceived: args.bidsReceived,
+    noBids: args.noBids,
+    winningBids: args.winningBids
   }
 
-  sendEvent(eventType, args);
+  // save zetaParams to cache
+  const zetaParams = getZetaParams(event);
+  if (zetaParams && event.auctionId) {
+    cache.auctions[event.auctionId] = zetaParams;
+  }
+
+  sendEvent(eventType, event);
 }
 
 /// /////////// ADAPTER DEFINITION ///////////////////////////
