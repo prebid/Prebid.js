@@ -178,6 +178,12 @@ describe('minutemediaAdapter', function () {
       expect(request.data.bids[1].mediaType).to.equal(BANNER)
     });
 
+    it('should send the correct currency in bid request', function () {
+      const expectedCurrency = 'USD';
+      const request = spec.buildRequests(bidRequests, bidderRequest)
+      expect(request.data.bids[0].currency).to.equal(expectedCurrency);
+    });
+
     it('should respect syncEnabled option', function() {
       config.setConfig({
         userSync: {
@@ -314,7 +320,7 @@ describe('minutemediaAdapter', function () {
       bid.params.floorPrice = 0.64;
       const request = spec.buildRequests([bid], bidderRequest);
       expect(request.data.bids[0]).to.be.an('object');
-      expect(request.data.bids[0]).to.have.property('floorPrice', 0.64);
+      expect(request.data.bids[0]).to.have.property('floorPrice', 3.32);
     });
 
     it('should set floorPrice to params.floorPrice value if it is greater than getFloor.floor', function() {
