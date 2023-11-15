@@ -304,24 +304,28 @@ describe('minutemediaAdapter', function () {
     });
 
     it('should set flooPrice to getFloor.floor value if it is greater than params.floorPrice', function() {
+      const defaultCurrency = 'USD'
+      const currency = config.getConfig('currency.adServerCurrency') || defaultCurrency
       const bid = utils.deepClone(bidRequests[0]);
       bid.getFloor = () => {
         return {
-          currency: 'USD',
+          currency: currency,
           floor: 3.32
         }
       }
       bid.params.floorPrice = 0.64;
       const request = spec.buildRequests([bid], bidderRequest);
       expect(request.data.bids[0]).to.be.an('object');
-      expect(request.data.bids[0]).to.have.property('floorPrice', 3.32);
+      expect(request.data.bids[0]).to.have.property('floorPrice', 0.64);
     });
 
     it('should set floorPrice to params.floorPrice value if it is greater than getFloor.floor', function() {
+      const defaultCurrency = 'USD'
+      const currency = config.getConfig('currency.adServerCurrency') || defaultCurrency
       const bid = utils.deepClone(bidRequests[0]);
       bid.getFloor = () => {
         return {
-          currency: 'USD',
+          currency: currency,
           floor: 0.8
         }
       }
