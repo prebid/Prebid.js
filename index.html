@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Custom Prebid.js Adapter Example</title>
+  </head>
+  <body>
+    <!-- Create a container for the winning ad -->
+    <div id="ad-container"></div>
+
+    <!-- Include Prebid.js library (replace with your own path) -->
+    <script src="./build/dev/prebid.js"></script>
+    <script
+      async
+      src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"
+    ></script>
+
+    <!-- Include your custom adapter script -->
+    <script type="modules" src="./modules/docereeAdManagerBidAdapter.js"></script>
+
+    <script>
+      // Define the Prebid.js ad unit configuration (use the data from customAdapterBidRequest.js)
+      var adUnits = [
+        {
+          code: "/19968336/header-bid-tag-0", // Unique identifier for the ad unit
+          mediaTypes: {
+            banner: {
+              sizes: [
+                [300, 250],
+                [728, 90],
+              ], // Specify the ad sizes for banner ads
+            },
+          },
+          bids: [
+            {
+              bidder: "docereeadmanager", // Replace with the bidder code
+              params: {
+                // Specify bidder-specific parameters here
+
+                placementId: "DOC-19-1", // Example placement ID
+              },
+            },
+
+            // Add more bid configurations for the same ad unit if needed
+          ],
+        },
+        {
+          code: "adunit-2",
+          mediaTypes: {
+            banner: {
+              sizes: [[320, 50]],
+            },
+          },
+          bids: [
+            {
+              bidder: "bidder-2",
+              params: {
+                // Specify bidder-specific parameters here
+                adUnitId: "7890", // Example ad unit ID
+              },
+            },
+            // Add more bid configurations for the same ad unit if needed
+          ],
+        },
+        // Add more ad units as necessary
+      ];
+
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+
+      pbjs.setBidderConfig({
+        bidders: ["docereeadmanager"],
+        config: {
+          docereeadmanager: {
+            user: {
+              data: {
+                email: "DALIA.WENCKUS@GMAIL.COM",
+                firstname: "DR. DALIA",
+                lastname: "WENCKUS",
+                mobile: "9812345675",
+                specialization: "Internal Medicine",
+                organization: "Max Lifecare",
+                hcpid: "1992915645",
+                dob: "1987-08-27",
+                gender: "Female",
+                city: "Oildale",
+                state: "California",
+                country: "California",
+                hashedhcpid: "",
+                hashedemail: "",
+                hashedmobile: "",
+                userid: "7d26d8ca-233a-46c2-9d36-7c5d261e151d",
+                zipcode: "",
+                userconsent: "1",
+              },
+            },
+          },
+        },
+      });
+
+      pbjs.setConfig({
+        debug: true,
+        // Other configuration options
+      });
+
+      var PREBID_TIMEOUT = 1000;
+      var FAILSAFE_TIMEOUT = 3000;
+
+      window.googletag = window.googletag || { cmd: [] };
+      googletag.cmd.push(function () {
+        googletag.pubads().disableInitialLoad();
+      });
+
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+
+      pbjs.que.push(function () {
+        pbjs.addAdUnits(adUnits);
+        pbjs.requestBids({
+          bidsBackHandler: initAdserver,
+          timeout: PREBID_TIMEOUT,
+        });
+      });
+
+      function initAdserver() {
+        if (pbjs.initAdserverSet) return;
+        pbjs.initAdserverSet = true;
+        googletag.cmd.push(function () {
+          pbjs.que.push(function () {
+            pbjs.setTargetingForGPTAsync();
+            googletag.pubads().refresh();
+          });
+        });
+      }
+      // in case PBJS doesn't load
+      setTimeout(function () {
+        initAdserver();
+      }, FAILSAFE_TIMEOUT);
+
+      googletag.cmd.push(function () {
+        googletag
+          .defineSlot("/19968336/header-bid-tag-0", [300, 250], "div-1")
+          .addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+      });
+    </script>
+
+    <div id="div-1">
+      <script type="text/javascript">
+        googletag.cmd.push(function () {
+          googletag.display("div-1");
+        });
+      </script>
+    </div>
+  </body>
+</html>

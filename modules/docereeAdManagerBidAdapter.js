@@ -71,7 +71,7 @@ export const spec = {
 };
 
 function getPayload(bid, userData) {
-  if (!userData || !bid || bid.length === 0) {
+  if (!userData || !bid) {
     return false;
   }
 
