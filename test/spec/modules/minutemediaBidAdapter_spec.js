@@ -304,12 +304,10 @@ describe('minutemediaAdapter', function () {
     });
 
     it('should set flooPrice to getFloor.floor value if it is greater than params.floorPrice', function() {
-      const defaultCurrency = 'USD'
-      const currency = config.getConfig('currency.adServerCurrency') || defaultCurrency
       const bid = utils.deepClone(bidRequests[0]);
       bid.getFloor = () => {
         return {
-          currency: currency,
+          currency: 'USD',
           floor: 3.32
         }
       }
@@ -320,12 +318,10 @@ describe('minutemediaAdapter', function () {
     });
 
     it('should set floorPrice to params.floorPrice value if it is greater than getFloor.floor', function() {
-      const defaultCurrency = 'USD'
-      const currency = config.getConfig('currency.adServerCurrency') || defaultCurrency
       const bid = utils.deepClone(bidRequests[0]);
       bid.getFloor = () => {
         return {
-          currency: currency,
+          currency: 'USD',
           floor: 0.8
         }
       }

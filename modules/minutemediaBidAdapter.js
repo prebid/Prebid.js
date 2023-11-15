@@ -141,16 +141,16 @@ registerBidder(spec);
  * @param bid {bid}
  * @returns {Number}
  */
-function getFloor(bid, mediaType, currency) {
+function getFloor(bid, mediaType) {
   if (!isFn(bid.getFloor)) {
     return 0;
   }
   let floorResult = bid.getFloor({
-    currency: currency,
+    currency: bid.params.currency || DEFAULT_CURRENCY,
     mediaType: mediaType,
     size: '*'
   });
-  return floorResult.currency === currency && floorResult.floor ? floorResult.floor : 0;
+  return floorResult.currency === (bid.params.currency || DEFAULT_CURRENCY) && floorResult.floor ? floorResult.floor : 0;
 }
 
 /**
