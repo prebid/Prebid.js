@@ -187,7 +187,7 @@ export function createSendOptionsFromBatch(batch) {
   )
   const result = { price: price }
   Object.keys(batch).forEach(eventType => {
-    result[eventType] = JSON.stringify(batch[eventType])
+    result[eventType] = (batch[eventType] || []).map((x) => JSON.stringify(x))
   })
   return result
 }
