@@ -75,23 +75,37 @@ export function summarizeAuctionInit(args, adapterConfig) {
   const zoneNames = []
   const zoneIndexes = []
   const adUnitCodes = []
+  const podPos = [];
   const zoneMap = adapterConfig.options.zoneMap || {}
   let someZoneIndexNonNull = false
   let someZoneNameNonNull = false
   let allZoneNamesNonNull = true
   args.adUnits.forEach(adUnit => {
-    adUnitCodes.push(adUnit.code)
-
     const zoneConfig = zoneMap[adUnit.code] || {}
     const zoneIndexNonNull = zoneConfig.index != null && isFinite(zoneConfig.index)
     someZoneIndexNonNull = someZoneIndexNonNull || zoneIndexNonNull
 
-    let zoneIndex = zoneIndexNonNull ? +zoneConfig.index : null
+    const zoneIndex = zoneIndexNonNull ? +zoneConfig.index : null
     const zoneNameNonNull = zoneConfig.zone != null
-    zoneIndexes.push(zoneIndex)
-    zoneNames.push(zoneNameNonNull ? zoneConfig.zone : null)
     someZoneNameNonNull = someZoneNameNonNull || zoneNameNonNull
     allZoneNamesNonNull = allZoneNamesNonNull && zoneNameNonNull
+
+    // If video context is adpod we add to podPos array the ad position
+    // in the pod. Also for every ad in the pod we add its cpmm,
+    // index and zone.
+    if (adUnit.mediaTypes.video?.context === 'adpod') {
+      adUnit.mediaTypes.video?.durationRangeSec.forEach((value, podIndex) => {
+        adUnitCodes.push(adUnit.code)
+        zoneIndexes.push(zoneIndex)
+        zoneNames.push(zoneNameNonNull ? zoneConfig.zone : null)
+        podPos.push(++podIndex);
+      })
+    } else {
+      adUnitCodes.push(adUnit.code)
+      zoneIndexes.push(zoneIndex)
+      zoneNames.push(zoneNameNonNull ? zoneConfig.zone : null)
+      podPos.push(0);
+    }
   })
 
   /** @type {AuctionEndSummary} */
@@ -103,6 +117,7 @@ export function summarizeAuctionInit(args, adapterConfig) {
   }
   if (!allZoneNamesNonNull) eventToSend.codes = adUnitCodes
   if (someZoneNameNonNull) eventToSend.zoneNames = zoneNames
+  if (someZoneNameNonNull) eventToSend.podPositions = podPos
   if (someZoneIndexNonNull) eventToSend.zoneIndexes = zoneIndexes
   return eventToSend
 }
@@ -129,12 +144,27 @@ export function summarizeAuctionEnd(args, adapterConfig) {
   /** @type {AuctionEndSummary} */
   const eventToSend = summarizeAuctionInit(args, adapterConfig)
   args.adUnits.forEach(adUnit => {
-    cpmmsMap[adUnit.code] = 0
+    cpmmsMap[adUnit.code] = [];
+    if (adUnit.mediaTypes.video?.context === 'adpod') {
+      adUnit.mediaTypes.video?.durationRangeSec.forEach(() => {
+        cpmmsMap[adUnit.code].push(0);
+      })
+    } else {
+      cpmmsMap[adUnit.code].push(0);
+    }
   })
+
   args.bidsReceived.forEach(bid => {
-    cpmmsMap[bid.adUnitCode] = Math.max(cpmmsMap[bid.adUnitCode], Math.round(bid.cpm * 1000 || 0))
+    cpmmsMap[bid.adUnitCode] = cpmmsMap[bid.adUnitCode].map(() => Math.max(cpmmsMap[bid.adUnitCode][0], Math.round(bid.cpm * 1000 || 0)))
   })
-  const cpmms = args.adUnits.map(adUnit => cpmmsMap[adUnit.code])
+
+  const cpmms = [];
+  args.adUnits.forEach(adUnit => {
+    cpmmsMap[adUnit.code].forEach((cpmm) => {
+      cpmms.push(cpmm)
+    })
+  })
+
   eventToSend.cpmms = cpmms
   // args.timestamp is only the _auctionStart in src/auction.js
   // so to get the time for this event we want args.auctionEnd
@@ -157,7 +187,7 @@ export function createSendOptionsFromBatch(batch) {
   )
   const result = { price: price }
   Object.keys(batch).forEach(eventType => {
-    result[eventType] = (batch[eventType] || []).map((x) => JSON.stringify(x))
+    result[eventType] = JSON.stringify(batch[eventType])
   })
   return result
 }
