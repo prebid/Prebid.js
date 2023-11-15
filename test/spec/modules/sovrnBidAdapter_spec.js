@@ -349,6 +349,7 @@ describe('sovrnBidAdapter', function() {
       }
       const {regs} = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
       expect(regs.coppa).to.equal(1)
+      config.resetConfig();
     })
 
     it('should send gpp info in OpenRTB 2.6 location when gppConsent defined', function () {
