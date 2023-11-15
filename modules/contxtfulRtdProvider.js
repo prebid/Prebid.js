@@ -3,7 +3,6 @@
  * This RTD module provides receptivity feature that can be accessed using the
  * getReceptivity() function. The value returned by this function enriches the ad-units
  * that are passed within the `getTargetingData` functions and GAM.
- *
  */
 
 import { submodule } from '../src/hook.js';
