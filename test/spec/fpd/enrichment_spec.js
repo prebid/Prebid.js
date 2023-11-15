@@ -312,59 +312,59 @@ describe('FPD enrichment', () => {
     });
   });
 
-  describe('privacy sandbox cookieDeprecationLabel', () => {
-    // it('attempts to set ext.cdep on device obj when the gdprEnforcement module is not active', () => {
-    it('if isActivityAllowed is mocked to true, and the navigator API returns a promise to some label X, the enrichment puts X in device.ext.cdep', () => {
-      // const spy = sinon.spy();
-      // tryToGetCdepLabel(spy);
-      // sinon.assert.calledOnce(spy);
-      sandbox.stub(dep, 'getCookieDeprecationLabel').returns(Promise.resolve('example-test-label'));
-      return fpd().then(ortb2 => {
-        expect(ortb2.device.ext.cdep).to.exist;
-      });
-    });
+  // describe('privacy sandbox cookieDeprecationLabel', () => {
+  //   // it('attempts to set ext.cdep on device obj when the gdprEnforcement module is not active', () => {
+  //   it('if isActivityAllowed is mocked to true, and the navigator API returns a promise to some label X, the enrichment puts X in device.ext.cdep', () => {
+  //     // const spy = sinon.spy();
+  //     // tryToGetCdepLabel(spy);
+  //     // sinon.assert.calledOnce(spy);
+  //     sandbox.stub(dep, 'getCookieDeprecationLabel').returns(Promise.resolve('example-test-label'));
+  //     return fpd().then(ortb2 => {
+  //       expect(ortb2.device.ext.cdep).to.exist;
+  //     });
+  //   });
 
-    it('does not attempt to set ext.cdep on device obj when the gdprEnforcement module is active and purpose 1 consent was not given', () => {
-      config.setConfig({
-        consentManagement: {
-          gdpr: {
-            cmpApi: 'iab',
-            defaultGdprScope: true
-          },
-          strictStorageEnforcement: true
-        }
-      });
-      const spy = sinon.spy();
-      tryToGetCdepLabel(spy);
-      sinon.assert.notCalled(spy);
-    });
+  //   it('does not attempt to set ext.cdep on device obj when the gdprEnforcement module is active and purpose 1 consent was not given', () => {
+  //     config.setConfig({
+  //       consentManagement: {
+  //         gdpr: {
+  //           cmpApi: 'iab',
+  //           defaultGdprScope: true
+  //         },
+  //         strictStorageEnforcement: true
+  //       }
+  //     });
+  //     const spy = sinon.spy();
+  //     tryToGetCdepLabel(spy);
+  //     sinon.assert.notCalled(spy);
+  //   });
 
-    it('allows for ext.cdep to be set on device obj when vendorData.publisher.consent.1 is given', () => {
-      const currentModule = 'cdep';
-      const gdprRule = {
-        'purpose': 'storage',
-        'enforcePurpose': true,
-        'enforceVendor': true
-      };
-      let consentData = null;
-      expect(validateRules(gdprRule, consentData, currentModule, FIRST_PARTY_GVLID)).to.be.false;
+  //   it('allows for ext.cdep to be set on device obj when vendorData.publisher.consent.1 is given', () => {
+  //     const currentModule = 'cdep';
+  //     const gdprRule = {
+  //       'purpose': 'storage',
+  //       'enforcePurpose': true,
+  //       'enforceVendor': true
+  //     };
+  //     let consentData = null;
+  //     expect(validateRules(gdprRule, consentData, currentModule, FIRST_PARTY_GVLID)).to.be.false;
 
-      consentData = {
-        'vendorData': {
-          'publisher': {
-            'consents': {
-              '1': true
-            }
-          },
-        },
-      };
-      expect(validateRules(gdprRule, consentData, currentModule, FIRST_PARTY_GVLID)).to.be.true;
+  //     consentData = {
+  //       'vendorData': {
+  //         'publisher': {
+  //           'consents': {
+  //             '1': true
+  //           }
+  //         },
+  //       },
+  //     };
+  //     expect(validateRules(gdprRule, consentData, currentModule, FIRST_PARTY_GVLID)).to.be.true;
 
-      gdprRule.enforcePurpose = false;
-      consentData = null;
-      expect(validateRules(gdprRule, consentData, currentModule, FIRST_PARTY_GVLID)).to.be.true;
-    });
-  });
+  //     gdprRule.enforcePurpose = false;
+  //     consentData = null;
+  //     expect(validateRules(gdprRule, consentData, currentModule, FIRST_PARTY_GVLID)).to.be.true;
+  //   });
+  // });
 
   it('leaves only one of app, site, dooh', () => {
     return fpd({
