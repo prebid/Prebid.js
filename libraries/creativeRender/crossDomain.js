@@ -10,11 +10,7 @@ import {
 
 export function renderer(win = window) {
   return function ({adId, pubUrl, clickUrl}) {
-    const pubDomain = (function() {
-      const a = win.document.createElement('a');
-      a.href = pubUrl;
-      return a.protocol + '//' + a.host;
-    })();
+    const pubDomain = new URL(pubUrl, window.location).origin;
     function sendMessage(type, payload, transfer) {
       win.parent.postMessage(JSON.stringify(Object.assign({message: type, adId}, payload)), pubDomain, transfer);
     }
