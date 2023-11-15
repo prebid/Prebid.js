@@ -1156,7 +1156,7 @@ describe('auctionmanager.js', function () {
           return auction.end.then(() => {
             expect(auction.getBidsReceived().length).to.eql(1);
           })
-        })
+        });
       })
 
       it('sets bidResponse.ttlBuffer from adUnit.ttlBuffer', () => {
@@ -1200,6 +1200,7 @@ describe('auctionmanager.js', function () {
         const spec2 = mockBidder(BIDDER_CODE1, [bids[1]]);
         registerBidder(spec2);
         auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: () => auctionDone(), cbTimeout: 20});
+        indexAuctions = [auction];
       });
 
       afterEach(function () {
@@ -1216,7 +1217,35 @@ describe('auctionmanager.js', function () {
         });
         respondToRequest(0);
         return pm;
-      })
+      });
+
+      describe('AUCTION_TIMEOUT event', () => {
+        let handler;
+        beforeEach(() => {
+          handler = sinon.spy();
+          events.on(CONSTANTS.EVENTS.AUCTION_TIMEOUT, handler);
+        })
+        afterEach(() => {
+          events.off(CONSTANTS.EVENTS.AUCTION_TIMEOUT, handler);
+        });
+
+        Object.entries({
+          'is fired on timeout': [true, [0]],
+          'is NOT fired otherwise': [false, [0, 1]],
+        }).forEach(([t, [shouldFire, respond]]) => {
+          it(t, () => {
+            const pm = runAuction().then(() => {
+              if (shouldFire) {
+                sinon.assert.calledWith(handler, sinon.match({auctionId: auction.getAuctionId()}))
+              } else {
+                sinon.assert.notCalled(handler);
+              }
+            });
+            respond.forEach(respondToRequest);
+            return pm;
+          })
+        });
+      });
 
       it('should emit BID_TIMEOUT and AUCTION_END for timed out bids', function () {
         const pm = runAuction().then(() => {

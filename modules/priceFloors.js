@@ -748,7 +748,7 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
   let floorInfo = getFirstMatchingFloor(floorData.data, matchingBidRequest, {...bid, size: [bid.width, bid.height]});
 
   if (!floorInfo.matchingFloor) {
-    logWarn(`${MODULE_NAME}: unable to determine a matching price floor for bidResponse`, bid);
+    if (floorInfo.matchingFloor !== 0) logWarn(`${MODULE_NAME}: unable to determine a matching price floor for bidResponse`, bid);
     return fn.call(this, adUnitCode, bid, reject);
   }
 
