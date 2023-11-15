@@ -1,12 +1,12 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER } from '../src/mediaTypes.js';
-const BIDDER_CODE = 'docereeadmanager';
-const END_POINT = 'https://dai.doceree.com/drs/quest';
+import { registerBidder } from "../src/adapters/bidderFactory.js";
+import { config } from "../src/config.js";
+import { BANNER } from "../src/mediaTypes.js";
+const BIDDER_CODE = "docereeadmanager";
+const END_POINT = "https://dai.doceree.com/drs/quest";
 
 export const spec = {
   code: BIDDER_CODE,
-  url: '',
+  url: "",
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: (bid) => {
@@ -15,14 +15,14 @@ export const spec = {
   },
   isGdprConsentPresent: (bid) => {
     const { gdpr, gdprconsent } = bid.params;
-    if (gdpr == '1') {
+    if (gdpr == "1") {
       return !!gdprconsent;
     }
     return true;
   },
   buildRequests: (validBidRequests) => {
     const serverRequests = [];
-    const { data } = config.getConfig('docereeadmanager.user') || {};
+    const { data } = config.getConfig("docereeadmanager.user") || {};
 
     validBidRequests.forEach(function (validBidRequest) {
       const payload = getPayload(validBidRequest, data);
@@ -32,11 +32,11 @@ export const spec = {
       }
 
       serverRequests.push({
-        method: 'POST',
+        method: "POST",
         url: END_POINT,
         data: JSON.stringify(payload.data),
         options: {
-          contentType: 'application/json',
+          contentType: "application/json",
           withCredentials: true,
         },
       });
@@ -71,6 +71,10 @@ export const spec = {
 };
 
 function getPayload(bid, userData) {
+  if (!userData || !bid || bid.length === 0) {
+    return false;
+  }
+
   const { bidId, params } = bid;
   const { placementId } = params;
   const {
@@ -93,30 +97,31 @@ function getPayload(bid, userData) {
     dob,
   } = userData;
 
+  const data = {
+    userid: userid ? userid : "",
+    email: email ? email : "",
+    firstname: firstname ? firstname : "",
+    lastname: lastname ? lastname : "",
+    specialization: specialization ? specialization : "",
+    hcpid: hcpid ? hcpid : "",
+    gender: gender ? gender : "",
+    city: city ? city : "",
+    state: state ? state : "",
+    zipcode: zipcode ? zipcode : "",
+    hashedNPI: hashedNPI ? hashedNPI : "",
+    pb: 1,
+    adunit: placementId ? placementId : "",
+    requestId: bidId ? bidId : "",
+    hashedhcpid: hashedhcpid ? hashedhcpid : "",
+    hashedemail: hashedemail ? hashedemail : "",
+    hashedmobile: hashedmobile ? hashedmobile : "",
+    country: country ? country : "",
+    organization: organization ? organization : "",
+    dob: dob ? dob : "",
+    userconsent: 1,
+  };
   return {
-    data: {
-      userid: userid,
-      email: email,
-      firstname: firstname,
-      lastname: lastname,
-      specialization: specialization,
-      hcpid: hcpid,
-      gender: gender,
-      city: city,
-      state: state,
-      zipcode: zipcode,
-      hashedNPI: hashedNPI,
-      pb: 1,
-      adunit: placementId,
-      requestId: bidId,
-      hashedhcpid: hashedhcpid,
-      hashedemail: hashedemail,
-      hashedmobile: hashedmobile,
-      country: country,
-      organization: organization,
-      dob: dob,
-      userconsent: 1,
-    },
+    data,
   };
 }
 
