@@ -15,6 +15,7 @@ const ENDPOINT_URL =
   'https://rtb-us.mediago.io/api/bid?tn=';
 const COOKY_SYNC_URL = 'https://trace.mediago.io/ju/cs/eplist';
 const TIME_TO_LIVE = 500;
+const GVLID = 1020;
 // const ENDPOINT_URL = '/api/bid?tn=';
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 let globals = {};
@@ -347,6 +348,7 @@ function getParam(validBidRequests, bidderRequest) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   // aliases: ['ex'], // short code
   /**
    * Determines whether or not the given bid request is valid.
