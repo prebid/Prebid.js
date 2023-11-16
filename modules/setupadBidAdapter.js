@@ -240,7 +240,7 @@ export const spec = {
     }
 
     const url = `${REPORT_ENDPOINT}?event=${eventName}&bidder=${
-      seat || bidder
+      eventName === 'bidRequested' ? BIDDER_CODE : seat || bidder
     }&placementIds=${placementIds}&auctionId=${auctionId}${extraBidParams}&timestamp=${timestamp}`;
 
     return url;
