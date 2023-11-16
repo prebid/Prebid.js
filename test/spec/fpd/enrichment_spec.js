@@ -1,11 +1,9 @@
-import {dep, enrichFPD, tryToGetCdepLabel} from '../../../src/fpd/enrichment.js';
+import {dep, enrichFPD} from '../../../src/fpd/enrichment.js';
 import {hook} from '../../../src/hook.js';
 import {expect} from 'chai/index.mjs';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {CLIENT_SECTIONS} from '../../../src/fpd/oneClient.js';
-import {validateRules} from '../../../modules/gdprEnforcement.js';
-import {FIRST_PARTY_GVLID} from '../../../src/consentHandler.js';
 
 describe('FPD enrichment', () => {
   let sandbox;
@@ -312,59 +310,45 @@ describe('FPD enrichment', () => {
     });
   });
 
-  // describe('privacy sandbox cookieDeprecationLabel', () => {
-  //   // it('attempts to set ext.cdep on device obj when the gdprEnforcement module is not active', () => {
-  //   it('if isActivityAllowed is mocked to true, and the navigator API returns a promise to some label X, the enrichment puts X in device.ext.cdep', () => {
-  //     // const spy = sinon.spy();
-  //     // tryToGetCdepLabel(spy);
-  //     // sinon.assert.calledOnce(spy);
-  //     sandbox.stub(dep, 'getCookieDeprecationLabel').returns(Promise.resolve('example-test-label'));
-  //     return fpd().then(ortb2 => {
-  //       expect(ortb2.device.ext.cdep).to.exist;
-  //     });
-  //   });
+  describe('privacy sandbox cookieDeprecationLabel', () => {
+    afterEach(() => {
+      if (navigator.cookieDeprecationLabel) delete navigator.cookieDeprecationLabel;
+    });
 
-  //   it('does not attempt to set ext.cdep on device obj when the gdprEnforcement module is active and purpose 1 consent was not given', () => {
-  //     config.setConfig({
-  //       consentManagement: {
-  //         gdpr: {
-  //           cmpApi: 'iab',
-  //           defaultGdprScope: true
-  //         },
-  //         strictStorageEnforcement: true
-  //       }
-  //     });
-  //     const spy = sinon.spy();
-  //     tryToGetCdepLabel(spy);
-  //     sinon.assert.notCalled(spy);
-  //   });
+    it('enrichment sets device.ext.cdep when navigator.getCookieDeprecationLabel exists and isActivityAllowed is mocked to true', () => {
+      navigator.cookieDeprecationLabel = {};
+      sandbox.stub(dep, 'getCookieDeprecationLabel').returns(Promise.resolve('example-test-label'));
+      return fpd().then(ortb2 => {
+        expect(ortb2.device.ext.cdep).to.exist;
+        expect(ortb2.device.ext.cdep).to.eql('example-test-label');
+      })
+    });
 
-  //   it('allows for ext.cdep to be set on device obj when vendorData.publisher.consent.1 is given', () => {
-  //     const currentModule = 'cdep';
-  //     const gdprRule = {
-  //       'purpose': 'storage',
-  //       'enforcePurpose': true,
-  //       'enforceVendor': true
-  //     };
-  //     let consentData = null;
-  //     expect(validateRules(gdprRule, consentData, currentModule, FIRST_PARTY_GVLID)).to.be.false;
+    it('if isActivityAllowed is mocked to false, the navigator API is not called and no enrichment happens', () => {
+      config.setConfig({
+        consentManagement: {
+          gdpr: {
+            cmpApi: 'iab',
+            defaultGdprScope: true
+          },
+          strictStorageEnforcement: true
+        }
+      });
+      navigator.cookieDeprecationLabel = {};
+      sandbox.stub(dep, 'getCookieDeprecationLabel').returns(Promise.resolve('example-test-label'));
+      return fpd().then(ortb2 => {
+        expect(ortb2.device.ext).to.not.exist;
+      })
+    });
 
-  //     consentData = {
-  //       'vendorData': {
-  //         'publisher': {
-  //           'consents': {
-  //             '1': true
-  //           }
-  //         },
-  //       },
-  //     };
-  //     expect(validateRules(gdprRule, consentData, currentModule, FIRST_PARTY_GVLID)).to.be.true;
-
-  //     gdprRule.enforcePurpose = false;
-  //     consentData = null;
-  //     expect(validateRules(gdprRule, consentData, currentModule, FIRST_PARTY_GVLID)).to.be.true;
-  //   });
-  // });
+    it('if the navigator API returns a promise that rejects, the enrichment does not halt forever', () => {
+      navigator.cookieDeprecationLabel = {};
+      sandbox.stub(dep, 'getCookieDeprecationLabel').returns(Promise.reject(new Error('oops, something went wrong')));
+      return fpd().then(ortb2 => {
+        expect(ortb2.device.ext).to.not.exist;
+      })
+    });
+  });
 
   it('leaves only one of app, site, dooh', () => {
     return fpd({
