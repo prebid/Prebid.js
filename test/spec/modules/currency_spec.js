@@ -259,7 +259,7 @@ describe('currency', function () {
       expect(innerBid.getCpmInNewCurrency('JPY')).to.equal('100.000');
     });
 
-    it('does not block auctions if rates do need to be fetched', () => {
+    it('does not block auctions if rates do not need to be fetched', () => {
       sandbox.stub(responseReady, 'resolve');
       setConfig({
         adServerCurrency: 'USD',
