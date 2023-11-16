@@ -14,7 +14,6 @@ const BIDDER_CODE = 'dxkulture';
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_NET_REVENUE = true;
 const DEFAULT_CURRENCY = 'USD';
-const SYNC_URL = 'https://ads.kulture.media/usync';
 
 const converter = ortbConverter({
   context: {
@@ -138,31 +137,48 @@ export const spec = {
 
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     logInfo('dxkulture.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses);
-
     let syncs = [];
 
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
       return syncs;
     }
 
-    if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
-      let pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
-      let queryParamStrings = [];
-      let syncUrl = SYNC_URL;
-      if (gdprConsent) {
-        queryParamStrings.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));
-        queryParamStrings.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
-      }
-      if (uspConsent) {
-        queryParamStrings.push('us_privacy=' + encodeURIComponent(uspConsent));
-      }
+    serverResponses.forEach(resp => {
+      const userSync = deepAccess(resp, 'body.ext.usersync');
+      if (userSync) {
+        let syncDetails = [];
+        Object.keys(userSync).forEach(key => {
+          const value = userSync[key];
+          if (value.syncs && value.syncs.length) {
+            syncDetails = syncDetails.concat(value.syncs);
+          }
+        });
+        syncDetails.forEach(syncDetails => {
+          let queryParamStrings = [];
+          if (gdprConsent) {
+            queryParamStrings.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));
+            queryParamStrings.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
+          }
+          if (uspConsent) {
+            queryParamStrings.push('us_privacy=' + encodeURIComponent(uspConsent));
+          }
+          syncs.push({
+            type: syncDetails.type === 'iframe' ? 'iframe' : 'image',
+            url: `${syncDetails.url}${queryParamStrings.length > 0 ? '?' + queryParamStrings.join('&') : ''}`
+          });
+        });
 
-      return [{
-        type: pixelType,
-        url: `${syncUrl}${queryParamStrings.length > 0 ? '?' + queryParamStrings.join('&') : ''}`
-      }];
-    }
-  }
+        if (!syncOptions.iframeEnabled) {
+          syncs = syncs.filter(s => s.type !== 'iframe')
+        }
+        if (!syncOptions.pixelEnabled) {
+          syncs = syncs.filter(s => s.type !== 'image')
+        }
+      }
+    });
+    logInfo('dxkulture.getUserSyncs result=%o', syncs);
+    return syncs;
+  },
 
 };
 
