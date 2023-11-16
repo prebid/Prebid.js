@@ -1286,10 +1286,16 @@ describe('Unit: Prebid Module', function () {
 
     it('should place the url inside an iframe on the doc', function () {
       pushBidResponseToAuction({
-        adUrl: 'http://server.example.com/ad/ad.js'
+        adUrl: 'http://server.example.com/ad/ad.js',
+        width: 300,
+        height: 200,
       });
       $$PREBID_GLOBAL$$.renderAd(doc, bidId);
-      assert.ok(elStub.insertBefore.called, 'url was written to iframe in doc');
+      sinon.assert.calledWith(elStub.insertBefore, sinon.match(iframe =>
+        iframe.width === '300' && iframe.height === '200' &&
+          iframe.style.width === '300px' && iframe.style.height === '200px' &&
+          ~iframe.src.indexOf('http://server.example.com/ad/ad.js')
+      ));
     });
 
     it('should log an error when no ad or url', function () {

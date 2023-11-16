@@ -470,6 +470,24 @@ describe('Utils', function () {
     	});
   });
 
+  describe('createIframe', () => {
+    it('sets attributes on frame', () => {
+      const f = utils.createIframe({src: 'https://some-url/'});
+      expect(f.src).to.eql('https://some-url/');
+    });
+    it('sets style', () => {
+      const f = utils.createIframe(null, {display: 'inline'});
+      expect(f.style.display).to.eql('inline');
+    });
+    it('sets w/h on both', () => {
+      const f = utils.createIframe({width: 1, height: 2});
+      expect(f.width).to.eql('1');
+      expect(f.height).to.eql('2');
+      expect(f.style.width).to.eql('1px');
+      expect(f.style.height).to.eql('2px');
+    });
+  });
+
   describe('createInvisibleIframe', function () {
     var output = utils.createInvisibleIframe();
 

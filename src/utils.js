@@ -252,25 +252,30 @@ export function debugTurnedOn() {
   return !!config.getConfig('debug');
 }
 
-export function createInvisibleIframe() {
-  var f = document.createElement('iframe');
-  f.id = getUniqueIdentifierStr();
-  f.height = 0;
-  f.width = 0;
-  f.border = '0px';
-  f.hspace = '0';
-  f.vspace = '0';
-  f.marginWidth = '0';
-  f.marginHeight = '0';
-  f.style.border = '0';
-  f.scrolling = 'no';
-  f.frameBorder = '0';
-  f.src = 'about:blank';
-  f.style.display = 'none';
-  f.style.height = '0px';
-  f.style.width = '0px';
-  f.allowtransparency = 'true';
+export function createIframe(attrs, style) {
+  attrs = Object.assign({
+    id: getUniqueIdentifierStr(),
+    hspace: '0',
+    vspace: '0',
+    marginWidth: '0',
+    marginHeight: '0',
+    scrolling: 'no',
+    frameBorder: '0',
+    src: 'about:blank',
+    allowtransparency: 'true'
+  }, attrs);
+  style = Object.assign({
+    border: '0',
+  }, style);
+  ['width', 'height'].filter(k => !style.hasOwnProperty(k) && attrs.hasOwnProperty(k)).forEach(k => style[k] = attrs[k] + 'px');
+  const f = document.createElement('iframe');
+  Object.assign(f, attrs);
+  Object.assign(f.style, style);
   return f;
+}
+
+export function createInvisibleIframe() {
+  return createIframe({width: 0, height: 0}, {width: '0px', height: '0px', display: 'none'});
 }
 
 /*

@@ -3,7 +3,7 @@
 import {getGlobal} from './prebidGlobal.js';
 import {
   callBurl,
-  createInvisibleIframe,
+  createIframe,
   deepAccess,
   deepClone,
   deepSetValue,
@@ -558,13 +558,7 @@ pbjsInstance.renderAd = hook('async', function (doc, id, options) {
       callBurl(bid);
       emitAdRenderSucceeded({ doc, bid, id });
     } else if (adUrl) {
-      const iframe = createInvisibleIframe();
-      iframe.height = height;
-      iframe.width = width;
-      iframe.style.display = 'inline';
-      iframe.style.overflow = 'hidden';
-      iframe.src = adUrl;
-
+      const iframe = createIframe({width, height, src: adUrl}, {display: 'inline', overflow: 'hidden'});
       insertElement(iframe, doc, 'body');
       setRenderSize(doc, width, height);
       reinjectNodeIfRemoved(creativeComment, doc, 'html');
