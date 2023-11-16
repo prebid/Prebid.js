@@ -146,7 +146,7 @@ export function summarizeAuctionEnd(args, adapterConfig) {
   args.adUnits.forEach(adUnit => {
     cpmmsMap[adUnit.code] = [];
     if (adUnit.mediaTypes.video?.context === 'adpod') {
-      adUnit.mediaTypes.video?.durationRangeSec.forEach(() => {
+      adUnit.mediaTypes.video.durationRangeSec?.forEach(() => {
         cpmmsMap[adUnit.code].push(0);
       })
     } else {
