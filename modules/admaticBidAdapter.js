@@ -1,15 +1,38 @@
 import {getValue, logError, isEmpty, deepAccess, isArray, getBidIdParameter} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+export const OPENRTB = {
+  NATIVE: {
+    IMAGE_TYPE: {
+      ICON: 1,
+      MAIN: 3,
+    },
+    ASSET_ID: {
+      TITLE: 1,
+      IMAGE: 2,
+      ICON: 3,
+      BODY: 4,
+      SPONSORED: 5,
+      CTA: 6
+    },
+    DATA_ASSET_TYPE: {
+      SPONSORED: 1,
+      DESC: 2,
+      CTA_TEXT: 12,
+    },
+  }
+};
+
 let SYNC_URL = '';
 const BIDDER_CODE = 'admatic';
+
 export const spec = {
   code: BIDDER_CODE,
   aliases: [
     {code: 'pixad'}
   ],
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /** f
    * @param {object} bid
    * @return {boolean}
@@ -46,10 +69,10 @@ export const spec = {
       },
       blacklist: [],
       site: {
-        page: location.href,
-        ref: location.origin,
+        page: bidderRequest.refererInfo.page,
+        ref: bidderRequest.refererInfo.page,
         publisher: {
-          name: location.hostname,
+          name: bidderRequest.refererInfo.domain,
           publisherId: networkId
         }
       },
@@ -106,6 +129,7 @@ export const spec = {
           netRevenue: true,
           creativeId: bid.creative_id,
           meta: {
+            model: bid.mime_type,
             advertiserDomains: bid && bid.adomain ? bid.adomain : []
           },
           bidder: bid.bidder,
@@ -121,6 +145,8 @@ export const spec = {
           resbid.vastImpUrl = bid.iurl;
         } else if (resbid.mediaType === 'banner') {
           resbid.ad = bid.party_tag;
+        } else if (resbid.mediaType === 'native') {
+          resbid.native = interpretNativeAd(bid.party_tag)
         };
 
         bidResponses.push(resbid);
@@ -154,6 +180,11 @@ function enrichSlotWithFloors(slot, bidRequest) {
         slotFloors.video = {};
         const videoSizes = parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'))
         videoSizes.forEach(videoSize => slotFloors.video[parseSize(videoSize).toString()] = bidRequest.getFloor({ size: videoSize, mediaType: VIDEO }));
+      }
+
+      if (bidRequest.mediaTypes?.native) {
+        slotFloors.native = {};
+        slotFloors.native['*'] = bidRequest.getFloor({ size: '*', mediaType: NATIVE });
       }
 
       if (Object.keys(slotFloors).length > 0) {
@@ -195,6 +226,11 @@ function buildRequestObject(bid) {
     reqObj.type = 'video';
     reqObj.mediatype = bid.mediaTypes.video;
   }
+  if (bid.mediaTypes?.native) {
+    reqObj.type = 'native';
+    reqObj.size = [{w: 1, h: 1}];
+    reqObj.mediatype = bid.mediaTypes.native;
+  }
 
   if (deepAccess(bid, 'ortb2Imp.ext')) {
     reqObj.ext = bid.ortb2Imp.ext;
@@ -214,10 +250,11 @@ function getSizes(bid) {
 function concatSizes(bid) {
   let playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
   let videoSizes = deepAccess(bid, 'mediaTypes.video.sizes');
+  let nativeSizes = deepAccess(bid, 'mediaTypes.native.sizes');
   let bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
 
   if (isArray(bannerSizes) || isArray(playerSize) || isArray(videoSizes)) {
-    let mediaTypesSizes = [bannerSizes, videoSizes, playerSize];
+    let mediaTypesSizes = [bannerSizes, videoSizes, nativeSizes, playerSize];
     return mediaTypesSizes
       .reduce(function(acc, currSize) {
         if (isArray(currSize)) {
@@ -230,6 +267,45 @@ function concatSizes(bid) {
         return acc;
       }, []);
   }
+}
+
+function interpretNativeAd(adm) {
+  const native = JSON.parse(adm).native;
+  const result = {
+    clickUrl: encodeURI(native.link.url),
+    impressionTrackers: native.imptrackers
+  };
+  native.assets.forEach(asset => {
+    switch (asset.id) {
+      case OPENRTB.NATIVE.ASSET_ID.TITLE:
+        result.title = asset.title.text;
+        break;
+      case OPENRTB.NATIVE.ASSET_ID.IMAGE:
+        result.image = {
+          url: encodeURI(asset.img.url),
+          width: asset.img.w,
+          height: asset.img.h
+        };
+        break;
+      case OPENRTB.NATIVE.ASSET_ID.ICON:
+        result.icon = {
+          url: encodeURI(asset.img.url),
+          width: asset.img.w,
+          height: asset.img.h
+        };
+        break;
+      case OPENRTB.NATIVE.ASSET_ID.BODY:
+        result.body = asset.data.value;
+        break;
+      case OPENRTB.NATIVE.ASSET_ID.SPONSORED:
+        result.sponsoredBy = asset.data.value;
+        break;
+      case OPENRTB.NATIVE.ASSET_ID.CTA:
+        result.cta = asset.data.value;
+        break;
+    }
+  });
+  return result;
 }
 
 function _validateId(id) {

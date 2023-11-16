@@ -15,9 +15,14 @@ describe('onetag', function () {
       'bidId': '30b31c1838de1e',
       'bidderRequestId': '22edbae2733bf6',
       'auctionId': '1d1a030790a475',
-      ortb2Imp: {
-        ext: {
-          tid: 'qwerty123'
+      'ortb2Imp': {
+        'ext': {
+          'tid': '0000'
+        }
+      },
+      'ortb2': {
+        'source': {
+          'tid': '1111'
         }
       },
       'schain': {
@@ -255,6 +260,15 @@ describe('onetag', function () {
         let dataObj = JSON.parse(dataString);
         expect(dataObj.bids).to.be.an('array').that.is.empty;
       } catch (e) { }
+    });
+    it('Should pick each bid\'s auctionId and transactionId from ortb2 related fields', function () {
+      const serverRequest = spec.buildRequests([bannerBid]);
+      const payload = JSON.parse(serverRequest.data);
+
+      expect(payload).to.exist;
+      expect(payload.bids).to.exist.and.to.have.length(1);
+      expect(payload.bids[0].auctionId).to.equal(bannerBid.ortb2.source.tid);
+      expect(payload.bids[0].transactionId).to.equal(bannerBid.ortb2Imp.ext.tid);
     });
     it('should send GDPR consent data', function () {
       let consentString = 'consentString';

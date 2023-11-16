@@ -8,9 +8,10 @@ import { triggerPixel, logError } from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
-import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
+import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import {UID2_EIDS} from '../libraries/uid2Eids/uid2Eids.js';
 
 const DEFAULT_AJAX_TIMEOUT = 5000
 const EVENTS_TOPIC = 'pre_lips'
@@ -126,7 +127,11 @@ function initializeLiveConnect(configParams) {
     liveConnectConfig.gdprApplies = gdprConsent.gdprApplies;
     liveConnectConfig.gdprConsent = gdprConsent.consentString;
   }
-
+  const gppConsent = gppDataHandler.getConsentData();
+  if (gppConsent) {
+    liveConnectConfig.gppString = gppConsent.gppString;
+    liveConnectConfig.gppApplicableSections = gppConsent.applicableSections;
+  }
   // The second param is the storage object, LS & Cookie manipulation uses PBJS
   // The third param is the ajax and pixel object, the ajax and pixel use PBJS
   liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls);
@@ -210,6 +215,14 @@ export const liveIntentIdSubmodule = {
         result.index = { 'id': value.index, ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
+      if (value.openx) {
+        result.openx = { 'id': value.openx, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.pubmatic) {
+        result.pubmatic = { 'id': value.pubmatic, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
       return result
     }
 
@@ -249,6 +262,7 @@ export const liveIntentIdSubmodule = {
     return { callback: result };
   },
   eids: {
+    ...UID2_EIDS,
     'lipb': {
       getValue: function(data) {
         return data.lipbid;
@@ -301,6 +315,30 @@ export const liveIntentIdSubmodule = {
     },
     'index': {
       source: 'liveintent.indexexchange.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'openx': {
+      source: 'openx.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'pubmatic': {
+      source: 'pubmatic.com',
       atype: 3,
       getValue: function(data) {
         return data.id;
