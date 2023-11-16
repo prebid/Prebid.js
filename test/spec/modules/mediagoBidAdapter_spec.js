@@ -11,11 +11,40 @@ describe('mediago:BidAdapterTests', function () {
         bidder: 'mediago',
         params: {
           token: '85a6b01e41ac36d49744fad726e3655d',
+          siteId: 'siteId_01',
+          zoneId: 'zoneId_01',
+          publisher: '52',
+          position: 'left',
+          referrer: 'https://trace.mediago.io',
           bidfloor: 0.01,
+          ortb2Imp: {
+            ext: {
+              gpid: 'adslot_gpid',
+              tid: 'tid_01',
+              data: {
+                browsi: {
+                  browsiViewability: 'NA',
+                },
+                adserver: {
+                  name: 'adserver_name',
+                  adslot: 'adslot_name',
+                },
+              },
+            },
+          },
         },
         mediaTypes: {
           banner: {
             sizes: [[300, 250]],
+            pos: 'left',
+          },
+        },
+        ortb2: {
+          user: {
+            ext: {
+              data: {
+              },
+            },
           },
         },
         adUnitCode: 'regular_iframe',

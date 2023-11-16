@@ -149,6 +149,13 @@ export const spec = {
     if (config.getConfig('coppa') === true) {
       deepSetValue(request, 'regs.coppa', config.getConfig('coppa') & 1)
     }
+    if (bidderRequest.gppConsent) {
+      deepSetValue(request, 'regs.ext.gpp', bidderRequest.gppConsent.gppString)
+      deepSetValue(request, 'regs.ext.gpp_sid', bidderRequest.gppConsent.applicableSections)
+    } else if (deepAccess(bidderRequest, 'ortb2.regs.gpp')) {
+      deepSetValue(request, 'regs.ext.gpp', bidderRequest.ortb2.regs.gpp)
+      deepSetValue(request, 'regs.ext.gpp_sid', bidderRequest.ortb2.regs.gpp_sid)
+    }
 
     if (eids) {
       deepSetValue(request, 'user.ext.eids', eids);
@@ -212,7 +219,7 @@ export const spec = {
       }
     }).filter(Boolean);
   },
-  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
     const syncs = [];
     let syncUrl = config.getConfig('outbrain.usersyncUrl');
 
@@ -224,6 +231,10 @@ export const spec = {
       }
       if (uspConsent) {
         query.push('us_privacy=' + encodeURIComponent(uspConsent));
+      }
+      if (gppConsent) {
+        query.push('gpp=' + encodeURIComponent(gppConsent.gppString));
+        query.push('gpp_sid=' + encodeURIComponent(gppConsent.applicableSections.join(',')));
       }
 
       syncs.push({
