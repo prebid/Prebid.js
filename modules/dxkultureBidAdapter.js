@@ -157,14 +157,14 @@ export const spec = {
           let queryParamStrings = [];
           let syncUrl = syncDetails.url;
 
-          if (gdprConsent) {
-            queryParamStrings.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));
-            queryParamStrings.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
-          }
-          if (uspConsent) {
-            queryParamStrings.push('us_privacy=' + encodeURIComponent(uspConsent));
-          }
           if (syncDetails.type === 'iframe') {
+            if (gdprConsent) {
+              queryParamStrings.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));
+              queryParamStrings.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
+            }
+            if (uspConsent) {
+              queryParamStrings.push('us_privacy=' + encodeURIComponent(uspConsent));
+            }
             syncUrl = `${syncDetails.url}${queryParamStrings.length > 0 ? '?' + queryParamStrings.join('&') : ''}`
           }
 
