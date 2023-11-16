@@ -25,12 +25,24 @@ describe('PrecisoAdapter', function () {
       region: 'prebid-eu'
 
     },
-    userId: {
-      pubcid: '27e21631-975a-4410-85f3-c08b1f1c469f'
+    user: {
+      region: 'asia/kolkata',
+      utcoffset: '-300'
 
     },
-    geo: 'NA',
-    city: 'Asia,delhi'
+    ortb2: {
+      site: {
+        doamin: '',
+        page: 'https://localhost.com'
+      },
+      device: {
+
+      }
+    },
+    userId: {
+      pubcid: '27e21631-975a-4410-85f3-c08b1f1c469f',
+    },
+
   };
 
   describe('isBidRequestValid', function () {
@@ -71,9 +83,9 @@ describe('PrecisoAdapter', function () {
       expect(data.host).to.be.a('string');
       expect(data.page).to.be.a('string');
 
-      expect(data.city).to.be.a('string');
-      expect(data.geo).to.be.a('object');
-      expect(data.userId).to.be.a('object');
+      // expect(data.city).to.be.a('string');
+      // expect(data.geo).to.be.a('object');
+      expect(data.user).to.be.a('object');
       // expect(data.userId).to.be.a('string');
       // expect(data.imp).to.be.a('object');
     });

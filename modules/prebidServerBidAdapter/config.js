@@ -38,5 +38,18 @@ export const S2S_VENDORS = {
       noP1Consent: 'https://prebid.openx.net/cookie_sync'
     },
     timeout: 1000
+  },
+  'preciso': {
+    adapter: 'prebidServer',
+    enabled: true,
+    endpoint: {
+      p1Consent: 'https://ssp-server.2trk.info/openrtb2/auction',
+      noP1Consent: 'https://ssp-server.2trk.info/openrtb2/auction'
+    },
+    syncEndpoint: {
+      p1Consent: 'https://ssp-server.2trk.info/cookie_sync',
+      noP1Consent: 'https://ssp-server.2trk.info/cookie_sync'
+    },
+    timeout: 1000
   }
 }

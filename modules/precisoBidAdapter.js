@@ -6,6 +6,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'preciso';
 const AD_URL = 'https://ssp-bidder.mndtrk.com/bid_request/openrtb';
+// const URL_SYNC = 'https://prebid.2trk.info/sharedIdTrack.html';
 const URL_SYNC = 'https://ck.2trk.info/rtb/user/usersync.aspx?';
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 const GVLID = 874;
@@ -38,6 +39,7 @@ export const spec = {
     try {
       location = new URL(bidderRequest.refererInfo.page)
       winTop = window.top;
+      // var idString = navigator.userAgent + navigator.language;
     } catch (e) {
       location = winTop.location;
       logMessage(e);
@@ -45,7 +47,7 @@ export const spec = {
 
     let request = {
       id: validBidRequests[0].bidderRequestId,
-
+      req: validBidRequests[0],
       imp: validBidRequests.map(request => {
         const { bidId, sizes, mediaType, ortb2 } = request
         const item = {
@@ -78,19 +80,30 @@ export const spec = {
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
       'language': (navigator && navigator.language) ? navigator.language : '',
-      geo: navigator.geolocation.getCurrentPosition(position => {
-        const { latitude, longitude } = position.coords;
-        return {
-          latitude: latitude,
-          longitude: longitude
-        }
-        // Show a map centered at latitude / longitude.
-      }) || { utcoffset: new Date().getTimezoneOffset() },
-      city: city,
       'host': location.host,
       'page': location.pathname,
       'coppa': config.getConfig('coppa') === true ? 1 : 0,
-      userId: validBidRequests[0].userId
+      userId: validBidRequests[0].userId,
+      user: {
+        id: validBidRequests[0].userId.pubcid || '',
+        geo: {
+          region: city,
+          geo: navigator.geolocation.getCurrentPosition(position => {
+            const { latitude, longitude } = position.coords;
+            return {
+              latitude: latitude,
+              longitude: longitude
+            }
+            // Show a map centered at latitude / longitude.
+          }),
+          utcoffset: new Date().getTimezoneOffset()
+        }
+
+      },
+      site: validBidRequests[0].ortb2.site || '',
+      tmax: validBidRequests[0].timeout || 0,
+      device: validBidRequests[0].ortb2.device || ''
+
     };
 
     request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
@@ -145,6 +158,18 @@ export const spec = {
     let syncs = [];
     let { gdprApplies, consentString = '' } = gdprConsent;
 
+    var browserSignature = '';
+    getBrowserSignature().then(signature => {
+      logInfo('testTest BS:' + signature)
+      browserSignature = signature;
+      logInfo('test4 broswerId:' + browserSignature);
+    });
+    // console.log('test broswerId:' + browserSignature);
+    
+   
+    logInfo('test1 broswerId:' + browserSignature);
+   // logInfo('test3 broswerId:' + getBrowserSignature().then(signature => {}));
+
     if (serverResponses.length > 0) {
       logInfo('preciso bidadapter getusersync serverResponses:' + serverResponses.toString);
     }
@@ -152,18 +177,80 @@ export const spec = {
       syncs.push({
         type: 'iframe',
         url: `${URL_SYNC}id=${userId}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&us_privacy=${uspConsent}&t=4`
+
       });
     } else {
       syncs.push({
         type: 'image',
-        url: `${URL_SYNC}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&us_privacy=${uspConsent}&t=2`
+        url: `${URL_SYNC}id=${userId}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&us_privacy=${uspConsent}&t=2`
+
       });
     }
-
     return syncs
   }
 
 };
+
+function getBrowserSignature() {
+  return new Promise(async (resolve) => {
+    var fingerprint = '';
+
+    // User agent
+    fingerprint += navigator.userAgent;
+
+    // Screen resolution
+    // fingerprint += screen.width + 'x' + screen.height;
+
+    // Color depth
+    fingerprint += screen.colorDepth;
+
+    // Time zone offset
+    fingerprint += new Date().getTimezoneOffset();
+
+    // Language
+    fingerprint += navigator.language;
+
+    // Platform
+    fingerprint += navigator.platform;
+
+    // Plugins
+    var plugins = '';
+    for (var i = 0; i < navigator.plugins.length; i++) {
+      plugins += navigator.plugins[i].name + navigator.plugins[i].description;
+    }
+    fingerprint += plugins;
+
+    // Cookies enabled
+    fingerprint += navigator.cookieEnabled;
+
+    // Do Not Track
+    fingerprint += navigator.doNotTrack;
+
+    // Simulate an asynchronous call (you can replace this with your actual async operation)
+    setTimeout(async () => {
+      // Canvas fingerprint (requires a separate library)
+      // You can use a library like fingerprintjs2 for this purpose
+      // fingerprint += await Fingerprint2.getPromise();
+
+      // Hash the fingerprint to create a unique identifier
+      var hash = new TextEncoder().encode(fingerprint);
+      var digest = await crypto.subtle.digest('SHA-256', hash);
+      var signature = Array.from(new Uint8Array(digest)).map(x => x.toString(16).padStart(2, '0')).join('');
+
+      resolve(signature);
+    }, 0);
+  });
+}
+
+// Example usage
+getBrowserSignature().then(signature => {
+  logInfo(signature);
+});
+
+// Example usage
+getBrowserSignature().then(signature => {
+  logInfo('Test2 Browser:' + signature);
+});
 
 function getCountryCodeByTimezone(city) {
   try {
