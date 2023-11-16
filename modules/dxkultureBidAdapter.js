@@ -155,6 +155,8 @@ export const spec = {
         });
         syncDetails.forEach(syncDetails => {
           let queryParamStrings = [];
+          let syncUrl = syncDetails.url;
+
           if (gdprConsent) {
             queryParamStrings.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));
             queryParamStrings.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
@@ -162,9 +164,13 @@ export const spec = {
           if (uspConsent) {
             queryParamStrings.push('us_privacy=' + encodeURIComponent(uspConsent));
           }
+          if (syncDetails.type === 'iframe') {
+            syncUrl = `${syncDetails.url}${queryParamStrings.length > 0 ? '?' + queryParamStrings.join('&') : ''}`
+          }
+
           syncs.push({
             type: syncDetails.type === 'iframe' ? 'iframe' : 'image',
-            url: `${syncDetails.url}${queryParamStrings.length > 0 ? '?' + queryParamStrings.join('&') : ''}`
+            url: syncUrl
           });
         });
 
