@@ -18,7 +18,6 @@ export const dep = {
   getWindowSelf,
   getHighEntropySUA,
   getLowEntropySUA,
-  getCookieDeprecationLabel,
 };
 
 const oneClient = clientSectionChecker('FPD')
@@ -29,11 +28,7 @@ const oneClient = clientSectionChecker('FPD')
  * @returns: {Promise[{}]}: a promise to an enriched ortb2 object.
  */
 export const enrichFPD = hook('sync', (fpd) => {
-  const promArr = [fpd, getSUA().catch(() => null)];
-
-  if ('cookieDeprecationLabel' in navigator) {
-    promArr.push(tryToGetCdepLabel().catch(() => null));
-  }
+  const promArr = [fpd, getSUA().catch(() => null), tryToGetCdepLabel().catch(() => null)];
 
   return GreedyPromise.all(promArr)
     .then(([ortb2, sua, cdep]) => {
@@ -99,20 +94,8 @@ function removeUndef(obj) {
   return getDefinedParams(obj, Object.keys(obj))
 }
 
-export function tryToGetCdepLabel(cb = dep.getCookieDeprecationLabel) {
-  return GreedyPromise.resolve(isActivityAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(MODULE_TYPE_PREBID, 'cdep')) && cb());
-}
-
-function getCookieDeprecationLabel() {
-  return new Promise((resolve, reject) => {
-    try {
-      navigator.cookieDeprecationLabel.getValue().then((label) => {
-        resolve(label);
-      });
-    } catch (error) {
-      reject(error);
-    }
-  });
+function tryToGetCdepLabel() {
+  return GreedyPromise.resolve('cookieDeprecationLabel' in navigator && isActivityAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(MODULE_TYPE_PREBID, 'cdep')) && navigator.cookieDeprecationLabel.getValue());
 }
 
 const ENRICHMENTS = {

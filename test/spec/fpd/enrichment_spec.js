@@ -3,7 +3,10 @@ import {hook} from '../../../src/hook.js';
 import {expect} from 'chai/index.mjs';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
+import * as activities from 'src/activities/rules.js'
 import {CLIENT_SECTIONS} from '../../../src/fpd/oneClient.js';
+import {ACTIVITY_ACCESS_DEVICE} from '../../../src/activities/activities.js';
+import {ACTIVITY_PARAM_COMPONENT} from '../../../src/activities/params.js';
 
 describe('FPD enrichment', () => {
   let sandbox;
@@ -311,39 +314,64 @@ describe('FPD enrichment', () => {
   });
 
   describe('privacy sandbox cookieDeprecationLabel', () => {
-    afterEach(() => {
-      if (navigator.cookieDeprecationLabel) delete navigator.cookieDeprecationLabel;
+    let isAllowed, cdep, shouldCleanupNav = false;
+
+    before(() => {
+      if (!navigator.cookieDeprecationLabel) {
+        navigator.cookieDeprecationLabel = {};
+        shouldCleanupNav = true;
+      }
     });
 
-    it('enrichment sets device.ext.cdep when navigator.getCookieDeprecationLabel exists and isActivityAllowed is mocked to true', () => {
-      navigator.cookieDeprecationLabel = {};
-      sandbox.stub(dep, 'getCookieDeprecationLabel').returns(Promise.resolve('example-test-label'));
+    after(() => {
+      if (shouldCleanupNav) {
+        delete navigator.cookieDeprecationLabel;
+      }
+    });
+
+    beforeEach(() => {
+      isAllowed = true;
+      sandbox.stub(activities, 'isActivityAllowed').callsFake((activity, params) => {
+        if (activity === ACTIVITY_ACCESS_DEVICE && params[ACTIVITY_PARAM_COMPONENT] === 'prebid.cdep') {
+          return isAllowed;
+        } else {
+          throw new Error('Unexpected activity check');
+        }
+      });
+      sandbox.stub(window.navigator, 'cookieDeprecationLabel').value({
+        getValue: sinon.stub().callsFake(() => cdep)
+      })
+    })
+
+    it('enrichment sets device.ext.cdep when allowed and navigator.getCookieDeprecationLabel exists', () => {
+      cdep = Promise.resolve('example-test-label');
       return fpd().then(ortb2 => {
-        expect(ortb2.device.ext.cdep).to.exist;
         expect(ortb2.device.ext.cdep).to.eql('example-test-label');
       })
     });
 
-    it('if isActivityAllowed is mocked to false, the navigator API is not called and no enrichment happens', () => {
-      config.setConfig({
-        consentManagement: {
-          gdpr: {
-            cmpApi: 'iab',
-            defaultGdprScope: true
-          },
-          strictStorageEnforcement: true
-        }
+    Object.entries({
+      'not allowed'() {
+        isAllowed = false;
+      },
+      'not supported'() {
+        delete navigator.cookieDeprecationLabel
+      }
+    }).forEach(([t, setup]) => {
+      it(`if ${t}, the navigator API is not called and no enrichment happens`, () => {
+        setup();
+        cdep = Promise.resolve('example-test-label');
+        return fpd().then(ortb2 => {
+          expect(ortb2.device.ext).to.not.exist;
+          if (navigator.cookieDeprecationLabel) {
+            sinon.assert.notCalled(navigator.cookieDeprecationLabel.getValue);
+          }
+        })
       });
-      navigator.cookieDeprecationLabel = {};
-      sandbox.stub(dep, 'getCookieDeprecationLabel').returns(Promise.resolve('example-test-label'));
-      return fpd().then(ortb2 => {
-        expect(ortb2.device.ext).to.not.exist;
-      })
-    });
+    })
 
     it('if the navigator API returns a promise that rejects, the enrichment does not halt forever', () => {
-      navigator.cookieDeprecationLabel = {};
-      sandbox.stub(dep, 'getCookieDeprecationLabel').returns(Promise.reject(new Error('oops, something went wrong')));
+      cdep = Promise.reject(new Error('oops, something went wrong'));
       return fpd().then(ortb2 => {
         expect(ortb2.device.ext).to.not.exist;
       })
