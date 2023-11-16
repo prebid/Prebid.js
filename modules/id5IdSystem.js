@@ -67,7 +67,7 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
 /**
  * @typedef {Object} ABTestingConfig
  * @property {boolean} enabled - Tells whether A/B testing is enabled for this instance
- * @property {number} controlGroupPct - A/B testing proabability
+ * @property {number} controlGroupPct - A/B testing probability
  */
 
 /**
