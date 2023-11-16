@@ -148,6 +148,8 @@ function loadRates() {
         }
       }
     );
+  } else {
+    processBidResponseQueue();
   }
 }
 
