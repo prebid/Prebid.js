@@ -98,7 +98,7 @@ export function summarizeAuctionInit(args, adapterConfig) {
         adUnitCodes.push(adUnit.code)
         zoneIndexes.push(zoneIndex)
         zoneNames.push(zoneNameNonNull ? zoneConfig.zone : null)
-        podPos.push(++podIndex);
+        podPos.push(podIndex + 1);
       })
     } else {
       adUnitCodes.push(adUnit.code)
@@ -155,7 +155,7 @@ export function summarizeAuctionEnd(args, adapterConfig) {
   })
 
   args.bidsReceived.forEach(bid => {
-    cpmmsMap[bid.adUnitCode] = cpmmsMap[bid.adUnitCode].map(() => Math.max(cpmmsMap[bid.adUnitCode][0], Math.round(bid.cpm * 1000 || 0)))
+    cpmmsMap[bid.adUnitCode] = cpmmsMap[bid.adUnitCode].map(() => Math.max(cpmmsMap[bid.adUnitCode], Math.round(bid.cpm * 1000 || 0)))
   })
 
   const cpmms = [];
