@@ -254,6 +254,7 @@ function addImpExtParams(bidRequest = {}, bidderRequest = {}) {
     p_pos: params.position || '',
     screenSize: getScreenSize(),
     referrer: getReferrer(bidRequest, bidderRequest),
+    stack: deepAccess(bidRequest, 'refererInfo.stack', []),
     b_pos: deepAccess(bidRequest, 'mediaTypes.banner.pos', '', ''),
     ortbUser: deepAccess(bidRequest, 'ortb2.user', {}, {}),
     ortbSite: deepAccess(bidRequest, 'ortb2.site', {}, {}),
