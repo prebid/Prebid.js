@@ -9,7 +9,7 @@ import { logMessage, logError } from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { uspDataHandler, coppaDataHandler, gppDataHandler } from '../src/adapterManager.js';
-import { getStorageManager } from '../src/storageManager.js';
+import { getStorageManager, STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 const MODULE_NAME = '33acrossId';
@@ -44,7 +44,7 @@ function calculateResponseObj(response) {
   };
 }
 
-function calculateQueryStringParams(pid, gdprConsentData) {
+function calculateQueryStringParams(pid, gdprConsentData, storageConfig) {
   const uspString = uspDataHandler.getConsentData();
   const gdprApplies = Boolean(gdprConsentData?.gdprApplies);
   const coppaValue = coppaDataHandler.getCoppa();
@@ -73,12 +73,39 @@ function calculateQueryStringParams(pid, gdprConsentData) {
     params.gdpr_consent = gdprConsentData.consentString;
   }
 
-  const fp = storage.getDataFromLocalStorage(STORAGE_FPID_KEY);
+  const fp = getStoredValue(STORAGE_FPID_KEY, storageConfig);
   if (fp) {
     params.fp = fp;
   }
 
   return params;
+}
+
+function handleFpId(fpId, storageConfig = {}) {
+  if (!fpId) {
+    return storage.removeDataFromLocalStorage(STORAGE_FPID_KEY);
+  }
+
+  storeValue(STORAGE_FPID_KEY, fpId, storageConfig);
+}
+
+function storeValue(key, value, storageConfig = {}) {
+  if (storageConfig.type === STORAGE_TYPE_COOKIES && storage.cookiesAreEnabled()) {
+    const expirationInMs = 60 * 60 * 24 * 1000 * storageConfig.expires;
+    const expirationTime = new Date(Date.now() + expirationInMs);
+
+    storage.setCookie(key, value, expirationTime.toUTCString(), 'Lax');
+  } else if (storageConfig.type === STORAGE_TYPE_LOCALSTORAGE) {
+    storage.setDataInLocalStorage(key, value);
+  }
+}
+
+function getStoredValue(key, storageConfig = {}) {
+  if (storageConfig.type === STORAGE_TYPE_COOKIES && storage.cookiesAreEnabled()) {
+    return storage.getCookie(key);
+  } else if (storageConfig.type === STORAGE_TYPE_LOCALSTORAGE) {
+    return storage.getDataFromLocalStorage(key);
+  }
 }
 
 /** @type {Submodule} */
@@ -111,7 +138,7 @@ export const thirthyThreeAcrossIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId({ params = { } }, gdprConsentData) {
+  getId({ params = { }, storage }, gdprConsentData) {
     if (typeof params.pid !== 'string') {
       logError(`${MODULE_NAME}: Submodule requires a partner ID to be defined`);
 
@@ -132,11 +159,7 @@ export const thirthyThreeAcrossIdSubmodule = {
               logError(`${MODULE_NAME}: ID reading error:`, err);
             }
 
-            if (responseObj.fp) {
-              storage.setDataInLocalStorage(STORAGE_FPID_KEY, responseObj.fp);
-            } else {
-              storage.removeDataFromLocalStorage(STORAGE_FPID_KEY);
-            }
+            handleFpId(responseObj.fp, storage);
 
             cb(responseObj.envelope);
           },
@@ -145,7 +168,7 @@ export const thirthyThreeAcrossIdSubmodule = {
 
             cb();
           }
-        }, calculateQueryStringParams(pid, gdprConsentData), { method: 'GET', withCredentials: true });
+        }, calculateQueryStringParams(pid, gdprConsentData, storage), { method: 'GET', withCredentials: true });
       }
     };
   },
