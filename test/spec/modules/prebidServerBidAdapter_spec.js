@@ -14,7 +14,6 @@ import {config} from 'src/config.js';
 import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import {server} from 'test/mocks/xhr.js';
-import {createEidsArray} from 'modules/userId/eids.js';
 import 'modules/appnexusBidAdapter.js'; // appnexus alias test
 import 'modules/rubiconBidAdapter.js'; // rubicon alias test
 import 'src/prebid.js'; // $$PREBID_GLOBAL$$.aliasBidder test
@@ -34,11 +33,9 @@ import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {addComponentAuction, registerBidder} from 'src/adapters/bidderFactory.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
-import {syncAddFPDEnrichments, syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
+import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {deepSetValue} from '../../../src/utils.js';
-import {sandbox} from 'sinon';
 import {ACTIVITY_TRANSMIT_UFPD} from '../../../src/activities/activities.js';
-import {activityParams} from '../../../src/activities/activityParams.js';
 import {MODULE_TYPE_PREBID} from '../../../src/activities/modules.js';
 
 let CONFIG = {
@@ -2054,7 +2051,7 @@ describe('S2S Adapter', function () {
       const bidRequests = utils.deepClone(BID_REQUESTS);
       adapter.callBids(REQUEST, bidRequests, addBidResponse, done, ajax);
 
-      const parsedRequestBody = JSON.parse(server.requests[1].requestBody);
+      const parsedRequestBody = JSON.parse(server.requests.find(req => req.method === 'POST').requestBody);
       expect(parsedRequestBody.cur).to.deep.equal(['NZ']);
     });
 
