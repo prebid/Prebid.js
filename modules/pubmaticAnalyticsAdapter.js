@@ -260,10 +260,16 @@ function isS2SBidder(bidder) {
 
 function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
   highestBid = (highestBid && highestBid.length > 0) ? highestBid[0] : null;
+  let s2sConf = config.getConfig('s2sConfig');
   return Object.keys(adUnit.bids).reduce(function(partnerBids, bidId) {
-    adUnit.bids[bidId].forEach(function(bid) {
+    adUnit.bids[bidId].forEach(function(bid) {  
+      let adapterName = getAdapterNameForAlias(bid.adapterCode || bid.bidder);    
+      if (s2sConf.defaultVendor === 'openwrap' && adapterName === 'pubmatic' &&
+        isS2SBidder(bid.bidder)) {
+          return;
+      }
       partnerBids.push({
-        'pn': getAdapterNameForAlias(bid.adapterCode || bid.bidder),
+        'pn': adapterName,
         'bc': bid.bidderCode || bid.bidder,
         'bidid': bid.bidId || bidId,
         'db': bid.bidResponse ? 0 : 1,
@@ -402,13 +408,23 @@ function executeBidsLoggerCall(e, highestCpmBids) {
 function executeBidWonLoggerCall(auctionId, adUnitId) {
   const winningBidId = cache.auctions[auctionId].adUnitCodes[adUnitId].bidWon;
   const winningBids = cache.auctions[auctionId].adUnitCodes[adUnitId].bids[winningBidId];
-  let winningBid = winningBids[0];
+  if(!winningBids) {
+    logError(LOG_PRE_FIX + 'Could not find winningBids for : ', auctionId);
+    return;
+  }
 
+  let winningBid = winningBids[0];
   if (winningBids.length > 1) {
     winningBid = winningBids.filter(bid => bid.adId === cache.auctions[auctionId].adUnitCodes[adUnitId].bidWonAdId)[0];
   }
 
   const adapterName = getAdapterNameForAlias(winningBid.adapterCode || winningBid.bidder);
+  let s2sConf = config.getConfig('s2sConfig');
+  if (s2sConf.defaultVendor === 'openwrap' &&
+    adapterName === 'pubmatic' &&
+    isS2SBidder(bid.bidder)) {
+    return;
+  }
   let origAdUnit = getAdUnit(cache.auctions[auctionId].origAdUnits, adUnitId) || {};
   let auctionCache = cache.auctions[auctionId];
   let floorData = auctionCache.floorData;
@@ -492,6 +508,10 @@ function bidRequestedHandler(args) {
 }
 
 function bidResponseHandler(args) {
+  if(!args.requestId) {
+    logError(LOG_PRE_FIX + 'Got null requestId in bidResponseHandler');
+    return;
+  }
   let bid = cache.auctions[args.auctionId].adUnitCodes[args.adUnitCode].bids[args.requestId][0];
   if (!bid) {
     logError(LOG_PRE_FIX + 'Could not find associated bid request for bid response with requestId: ', args.requestId);
