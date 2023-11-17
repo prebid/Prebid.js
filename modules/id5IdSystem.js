@@ -540,5 +540,4 @@ function isRejected(promiseResult) {
   return promiseResult.status === 'rejected';
 }
 
-
 submodule('userId', id5IdSubmodule);
