@@ -44,8 +44,8 @@ describe('UnrulyAdapter', function () {
 
   function createOutStreamExchangeAuctionConfig() {
     return {
-      'seller': 'https://targeting.unrulymedia.com',
-      'decisionLogicURL': 'https://targeting.unrulymedia.com/padecisionlogic',
+      'seller': 'https://nexxen.tech',
+      'decisionLogicURL': 'https://nexxen.tech/padecisionlogic',
       'interestGroupBuyers': 'https://mydsp.com',
       'perBuyerSignals': {
         'https://mydsp.com': {
@@ -1043,8 +1043,8 @@ describe('UnrulyAdapter', function () {
         'fledgeAuctionConfigs': [{
           'bidId': bidId,
           'config': {
-            'seller': 'https://targeting.unrulymedia.com',
-            'decisionLogicURL': 'https://targeting.unrulymedia.com/padecisionlogic',
+            'seller': 'https://nexxen.tech',
+            'decisionLogicURL': 'https://nexxen.tech/padecisionlogic',
             'interestGroupBuyers': 'https://mydsp.com',
             'perBuyerSignals': {
               'https://mydsp.com': {
@@ -1107,8 +1107,8 @@ describe('UnrulyAdapter', function () {
         'fledgeAuctionConfigs': [{
           'bidId': bidId,
           'config': {
-            'seller': 'https://targeting.unrulymedia.com',
-            'decisionLogicURL': 'https://targeting.unrulymedia.com/padecisionlogic',
+            'seller': 'https://nexxen.tech',
+            'decisionLogicURL': 'https://nexxen.tech/padecisionlogic',
             'interestGroupBuyers': 'https://mydsp.com',
             'perBuyerSignals': {
               'https://mydsp.com': {
