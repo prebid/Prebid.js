@@ -13,7 +13,7 @@ const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstre
 const BIDDER_CODE = 'nexx360';
 const REQUEST_URL = 'https://fast.nexx360.io/booster';
 const PAGE_VIEW_ID = generateUUID();
-const BIDDER_VERSION = '2.0';
+const BIDDER_VERSION = '3.0';
 const GVLID = 965;
 const NEXXID_KEY = 'nexx360_storage';
 
@@ -21,7 +21,9 @@ const ALIASES = [
   { code: 'revenuemaker' },
   { code: 'first-id', gvlid: 1178 },
   { code: 'adwebone' },
-  { code: 'league-m', gvlid: 965 }
+  { code: 'league-m', gvlid: 965 },
+  { code: 'prjads' },
+  { code: 'pubtech' },
 ];
 
 export const storage = getStorageManager({
@@ -188,9 +190,15 @@ function interpretResponse(serverResponse) {
           demandSource: bid.ext.ssp,
         },
       };
-      if (allowAlternateBidderCodes) response.bidderCode = `n360-${bid.ext.ssp}`;
+      if (allowAlternateBidderCodes) response.bidderCode = `n360_${bid.ext.ssp}`;
 
-      if (bid.ext.mediaType === BANNER) response.adUrl = bid.ext.adUrl;
+      if (bid.ext.mediaType === BANNER) {
+        if (bid.adm) {
+          response.ad = bid.adm;
+        } else {
+          response.adUrl = bid.ext.adUrl;
+        }
+      }
       if ([INSTREAM, OUTSTREAM].includes(bid.ext.mediaType)) response.vastXml = bid.ext.vastXml;
 
       if (bid.ext.mediaType === OUTSTREAM) {

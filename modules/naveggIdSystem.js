@@ -107,6 +107,12 @@ export const naveggIdSubmodule = {
       }
     }
     return undefined;
+  },
+  eids: {
+    'naveggId': {
+      source: 'navegg.com',
+      atype: 1
+    },
   }
 };
 submodule('userId', naveggIdSubmodule);

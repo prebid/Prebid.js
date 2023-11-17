@@ -155,9 +155,9 @@ const DEFAULT_VALID_BANNER_REQUESTS = [
   {
     adUnitCode: 'test-div',
     auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-    bidId: '22c4871113f461',
+    bidId: '2705bfae8ea667',
     bidder: 'aidem',
-    bidderRequestId: '15246a574e859f',
+    bidderRequestId: '1bbb7854dfa0d8',
     mediaTypes: {
       banner: {
         sizes: [
@@ -171,7 +171,7 @@ const DEFAULT_VALID_BANNER_REQUESTS = [
       placementId: '13144370'
     },
     src: 'client',
-    transactionId: '54a58774-7a41-494e-9aaf-fa7b79164f0c'
+    transactionId: 'db739693-9b4a-4669-9945-8eab938783cc'
   }
 ];
 
@@ -179,9 +179,9 @@ const DEFAULT_VALID_VIDEO_REQUESTS = [
   {
     adUnitCode: 'test-div',
     auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
-    bidId: '22c4871113f461',
+    bidId: '2705bfae8ea667',
     bidder: 'aidem',
-    bidderRequestId: '15246a574e859f',
+    bidderRequestId: '1bbb7854dfa0d8',
     mediaTypes: {
       video: {
         minduration: 7,
@@ -196,14 +196,23 @@ const DEFAULT_VALID_VIDEO_REQUESTS = [
       placementId: '13144370'
     },
     src: 'client',
-    transactionId: '54a58774-7a41-494e-9aaf-fa7b79164f0c'
+    transactionId: 'db739693-9b4a-4669-9945-8eab938783cc'
   }
 ];
 
 const VALID_BIDDER_REQUEST = {
-  auctionId: '6e9b46c3-65a8-46ea-89f4-c5071110c85c',
+  auctionId: '19c97f22-5bd1-4b16-a128-80f75fb0a8a0',
   bidderCode: 'aidem',
-  bidderRequestId: '170ea5d2b1d073',
+  bidderRequestId: '1bbb7854dfa0d8',
+  bids: [
+    {
+      params: {
+        placementId: '13144370',
+        siteId: '23434',
+        publisherId: '7689670753'
+      },
+    }
+  ],
   refererInfo: {
     page: 'test-page',
     domain: 'test-domain',
@@ -211,179 +220,68 @@ const VALID_BIDDER_REQUEST = {
   },
 }
 
-// Add mediatype
 const SERVER_RESPONSE_BANNER = {
-  body: {
-    id: 'efa1930a-bc3e-4fd0-8368-08bc40236b4f',
-    bid: [
-      // BANNER
-      {
-        'id': '2e614be960ee1d',
-        'impid': '2e614be960ee1d',
-        'price': 7.91,
-        'mediatype': 'banner',
-        'adid': '24277955',
-        'adm': 'creativity_banner',
-        'adomain': [
-          'aidem.com'
-        ],
-        'iurl': 'http://www.aidem.com',
-        'cat': [],
-        'cid': '4193561',
-        'crid': '24277955',
-        'w': 300,
-        'h': 250,
-        'ext': {
-          'dspid': 85,
-          'advbrandid': 1246,
-          'advbrand': 'AIDEM'
+  'id': '19c97f22-5bd1-4b16-a128-80f75fb0a8a0',
+  'seatbid': [
+    {
+      'bid': [
+        {
+          'id': 'beeswax/aidem',
+          'impid': '2705bfae8ea667',
+          'price': 0.00875,
+          'burl': 'imp_burl',
+          'adm': 'creativity_banner',
+          'adid': '2:64:162:1001',
+          'adomain': [
+            'aidem.com'
+          ],
+          'cid': '64',
+          'crid': 'aidem-1001',
+          'cat': [],
+          'w': 300,
+          'h': 250,
+          'mtype': 1
         }
-      },
-    ],
-    cur: 'USD'
-  },
+      ],
+      'seat': 'aidemdsp',
+      'group': 0
+    }
+  ],
+  'cur': 'USD'
 }
 
 const SERVER_RESPONSE_VIDEO = {
-  body: {
-    id: 'efa1930a-bc3e-4fd0-8368-08bc40236b4f',
-    bid: [
-      // VIDEO
-      {
-        'id': '2876a29392a47c',
-        'impid': '2876a29392a47c',
-        'price': 7.93,
-        'mediatype': 'video',
-        'adid': '24277955',
-        'adm': 'https://hermes.aidemsrv.com/vast-tag/cl9mzhhd502uq09l720uegb02?auction_id={{AUCTION_ID}}&cachebuster={{CACHEBUSTER}}',
-        'adomain': [
-          'aidem.com'
-        ],
-        'iurl': 'http://www.aidem.com',
-        'cat': [],
-        'cid': '4193561',
-        'crid': '24277955',
-        'w': 640,
-        'h': 480,
-        'ext': {
-          'dspid': 85,
-          'advbrandid': 1246,
-          'advbrand': 'AIDEM'
+  'id': '19c97f22-5bd1-4b16-a128-80f75fb0a8a0',
+  'seatbid': [
+    {
+      'bid': [
+        {
+          'id': 'beeswax/aidem',
+          'impid': '2705bfae8ea667',
+          'price': 0.00875,
+          'burl': 'imp_burl',
+          'adm': 'creativity_banner',
+          'adid': '2:64:162:1001',
+          'adomain': [
+            'aidem.com'
+          ],
+          'cid': '64',
+          'crid': 'aidem-1001',
+          'cat': [],
+          'w': 300,
+          'h': 250,
+          'mtype': 2
         }
-      }
-    ],
-    cur: 'USD'
-  },
+      ],
+      'seat': 'aidemdsp',
+      'group': 0
+    }
+  ],
+  'cur': 'USD'
 }
 
-const WIN_NOTICE_WEB = {
-  'adId': '3a20ee5dc78c1e',
-  'adUnitCode': 'div-gpt-ad-1460505748561-0',
-  'creativeId': '24277955',
-  'cpm': 1,
-  'netRevenue': false,
-  'adserverTargeting': {
-    'hb_bidder': 'aidem',
-    'hb_adid': '3a20ee5dc78c1e',
-    'hb_pb': '1.00',
-    'hb_size': '300x250',
-    'hb_source': 'client',
-    'hb_format': 'banner',
-    'hb_adomain': 'example.com'
-  },
-
-  'auctionId': '85864730-6cbc-4e56-bc3c-a4a6596dca5b',
-  'currency': [
-    'USD'
-  ],
-  'mediaType': 'banner',
-  'meta': {
-    'advertiserDomains': [
-      'cloudflare.com'
-    ],
-    'ext': {}
-  },
-  'size': '300x250',
-  'params': [
-    {
-      'placementId': '13144370',
-      'siteId': '23434',
-      'publisherId': '7689670753'
-    }
-  ],
-  'width': 300,
-  'height': 250,
-  'status': 'rendered',
-  'transactionId': 'ce089116-4251-45c3-bdbb-3a03cb13816b',
-  'ttl': 300,
-  'requestTimestamp': 1666796241007,
-  'responseTimestamp': 1666796241021,
-  metrics: {
-    getMetrics() {
-      return {
-
-      }
-    }
-  }
-}
-
-const WIN_NOTICE_APP = {
-  'adId': '3a20ee5dc78c1e',
-  'adUnitCode': 'div-gpt-ad-1460505748561-0',
-  'creativeId': '24277955',
-  'cpm': 1,
-  'netRevenue': false,
-  'adserverTargeting': {
-    'hb_bidder': 'aidem',
-    'hb_adid': '3a20ee5dc78c1e',
-    'hb_pb': '1.00',
-    'hb_size': '300x250',
-    'hb_source': 'client',
-    'hb_format': 'banner',
-    'hb_adomain': 'example.com'
-  },
-
-  'auctionId': '85864730-6cbc-4e56-bc3c-a4a6596dca5b',
-  'currency': [
-    'USD'
-  ],
-  'mediaType': 'banner',
-  'meta': {
-    'advertiserDomains': [
-      'cloudflare.com'
-    ],
-    'ext': {
-      'app': {
-        'app_bundle': '{{APP_BUNDLE}}',
-        'app_id': '{{APP_ID}}',
-        'app_name': '{{APP_NAME}}',
-        'app_store_url': '{{APP_STORE_URL}}',
-        'inventory_source': '{{INVENTORY_SOURCE}}'
-      }
-    }
-  },
-  'size': '300x250',
-  'params': [
-    {
-      'placementId': '13144370',
-      'siteId': '23434',
-      'publisherId': '7689670753'
-    }
-  ],
-  'width': 300,
-  'height': 250,
-  'status': 'rendered',
-  'transactionId': 'ce089116-4251-45c3-bdbb-3a03cb13816b',
-  'ttl': 300,
-  'requestTimestamp': 1666796241007,
-  'responseTimestamp': 1666796241021,
-  metrics: {
-    getMetrics() {
-      return {
-
-      }
-    }
-  }
+const WIN_NOTICE = {
+  burl: 'burl'
 }
 
 const ERROR_NOTICE = {
@@ -501,109 +399,95 @@ describe('Aidem adapter', () => {
       const requests = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
       expect(requests).to.be.an('object');
       expect(requests.method).to.be.a('string')
-      expect(requests.data).to.be.a('string')
+      expect(requests.data).to.be.a('object')
       expect(requests.options).to.be.an('object').that.have.a.property('withCredentials')
     });
 
     it('should have a well formatted banner payload', () => {
-      const requests = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
-      const payload = JSON.parse(requests.data)
-      expect(payload).to.be.a('object').that.has.all.keys(
-        'id', 'imp', 'device', 'cur', 'tz', 'regs', 'site', 'environment', 'at'
+      const {data} = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
+      expect(data).to.be.a('object').that.has.all.keys(
+        'id', 'imp', 'regs', 'site', 'environment', 'at', 'test'
       )
-      expect(payload.imp).to.be.a('array').that.has.lengthOf(DEFAULT_VALID_BANNER_REQUESTS.length)
+      expect(data.imp).to.be.a('array').that.has.lengthOf(DEFAULT_VALID_BANNER_REQUESTS.length)
 
-      expect(payload.imp[0]).to.be.a('object').that.has.all.keys(
-        'banner', 'id', 'mediatype', 'imp_ext', 'tid', 'tagid'
+      expect(data.imp[0]).to.be.a('object').that.has.all.keys(
+        'banner', 'id', 'tagId'
       )
-      expect(payload.imp[0].banner).to.be.a('object').that.has.all.keys(
+      expect(data.imp[0].banner).to.be.a('object').that.has.all.keys(
         'format', 'topframe'
       )
     });
 
-    it('should have a well formatted video payload', () => {
-      const requests = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST);
-      const payload = JSON.parse(requests.data)
-      expect(payload).to.be.a('object').that.has.all.keys(
-        'id', 'imp', 'device', 'cur', 'tz', 'regs', 'site', 'environment', 'at'
-      )
-      expect(payload.imp).to.be.a('array').that.has.lengthOf(DEFAULT_VALID_VIDEO_REQUESTS.length)
+    if (FEATURES.VIDEO) {
+      it('should have a well formatted video payload', () => {
+        const {data} = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST);
+        expect(data).to.be.a('object').that.has.all.keys(
+          'id', 'imp', 'regs', 'site', 'environment', 'at', 'test'
+        )
+        expect(data.imp).to.be.a('array').that.has.lengthOf(DEFAULT_VALID_VIDEO_REQUESTS.length)
 
-      expect(payload.imp[0]).to.be.a('object').that.has.all.keys(
-        'video', 'id', 'mediatype', 'imp_ext', 'tid', 'tagid'
-      )
-      expect(payload.imp[0].video).to.be.a('object').that.has.all.keys(
-        'format', 'mimes', 'minDuration', 'maxDuration', 'protocols'
-      )
-    });
-
-    it('should have a well formatted bid floor payload if configured', () => {
-      const validBannerRequests = utils.deepClone(DEFAULT_VALID_BANNER_REQUESTS)
-      validBannerRequests[0].params.floor = {
-        value: 1.98,
-        currency: 'USD'
-      }
-      const requests = spec.buildRequests(validBannerRequests, VALID_BIDDER_REQUEST);
-      const payload = JSON.parse(requests.data)
-      const { floor } = payload.imp[0]
-      expect(floor).to.be.a('object').that.has.all.keys(
-        'value', 'currency'
-      )
-    });
+        expect(data.imp[0]).to.be.a('object').that.has.all.keys(
+          'video', 'id', 'tagId'
+        )
+        expect(data.imp[0].video).to.be.a('object').that.has.all.keys(
+          'mimes', 'minduration', 'maxduration', 'protocols', 'w', 'h'
+        )
+      });
+    }
 
     it('should hav wpar keys in environment object', function () {
-      const requests = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST);
-      const payload = JSON.parse(requests.data)
-      expect(payload).to.have.property('environment')
-      expect(payload.environment).to.be.a('object').that.have.property('wpar')
-      expect(payload.environment.wpar).to.be.a('object').that.has.keys('innerWidth', 'innerHeight')
+      const {data} = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST);
+      expect(data).to.have.property('environment')
+      expect(data.environment).to.be.a('object').that.have.property('wpar')
+      expect(data.environment.wpar).to.be.a('object').that.has.keys('innerWidth', 'innerHeight')
     });
   })
 
   describe('interpretResponse', () => {
     it('should return a valid bid array with a banner bid', () => {
-      const response = utils.deepClone(SERVER_RESPONSE_BANNER)
-      const interpreted = spec.interpretResponse(response)
-      expect(interpreted).to.be.a('array').that.has.lengthOf(1)
-      interpreted.forEach(value => {
+      const {data} = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST)
+      const bids = spec.interpretResponse({body: SERVER_RESPONSE_BANNER}, { data })
+      expect(bids).to.be.a('array').that.has.lengthOf(1)
+      bids.forEach(value => {
         expect(value).to.be.a('object').that.has.all.keys(
-          'ad', 'cpm', 'creativeId', 'currency', 'height', 'mediaType', 'meta', 'netRevenue', 'requestId', 'ttl', 'width', 'dealId'
+          'ad', 'cpm', 'creativeId', 'currency', 'height', 'mediaType', 'meta', 'netRevenue', 'requestId', 'ttl', 'width', 'burl', 'seatBidId', 'creative_id'
         )
       })
     });
 
-    it('should return a valid bid array with a banner bid', () => {
-      const response = utils.deepClone(SERVER_RESPONSE_VIDEO)
-      const interpreted = spec.interpretResponse(response)
-      expect(interpreted).to.be.a('array').that.has.lengthOf(1)
-      interpreted.forEach(value => {
-        expect(value).to.be.a('object').that.has.all.keys(
-          'vastUrl', 'cpm', 'creativeId', 'currency', 'height', 'mediaType', 'meta', 'netRevenue', 'requestId', 'ttl', 'width', 'dealId'
-        )
-      })
-    });
+    if (FEATURES.VIDEO) {
+      it('should return a valid bid array with a video bid', () => {
+        const {data} = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST)
+        const bids = spec.interpretResponse({body: SERVER_RESPONSE_VIDEO}, { data })
+        expect(bids).to.be.a('array').that.has.lengthOf(1)
+        bids.forEach(value => {
+          expect(value).to.be.a('object').that.has.all.keys(
+            'vastUrl', 'vastXml', 'playerHeight', 'playerWidth', 'cpm', 'creativeId', 'currency', 'height', 'mediaType', 'meta', 'netRevenue', 'requestId', 'ttl', 'width', 'burl', 'seatBidId', 'creative_id'
+          )
+        })
+      });
+    }
 
     it('should return a valid bid array with netRevenue', () => {
-      const response = utils.deepClone(SERVER_RESPONSE_BANNER)
-      response.body.bid[0].isNet = true
-      const interpreted = spec.interpretResponse(response)
-      expect(interpreted).to.be.a('array').that.has.lengthOf(1)
-      expect(interpreted[0].netRevenue).to.be.true
+      const {data} = spec.buildRequests(DEFAULT_VALID_VIDEO_REQUESTS, VALID_BIDDER_REQUEST)
+      const bids = spec.interpretResponse({body: SERVER_RESPONSE_VIDEO}, { data })
+      expect(bids).to.be.a('array').that.has.lengthOf(1)
+      expect(bids[0].netRevenue).to.be.true
     });
 
-    it('should return an empty bid array if one of seatbid entry is missing price property', () => {
-      const response = utils.deepClone(SERVER_RESPONSE_BANNER)
-      delete response.body.bid[0].price
-      const interpreted = spec.interpretResponse(response)
-      expect(interpreted).to.be.a('array').that.has.lengthOf(0)
-    });
+    // it('should return an empty bid array if one of seatbid entry is missing price property', () => {
+    //   const response = utils.deepClone(SERVER_RESPONSE_BANNER)
+    //   delete response.body.bid[0].price
+    //   const interpreted = spec.interpretResponse(response)
+    //   expect(interpreted).to.be.a('array').that.has.lengthOf(0)
+    // });
 
-    it('should return an empty bid array if one of seatbid entry is missing adm property', () => {
-      const response = utils.deepClone(SERVER_RESPONSE_BANNER)
-      delete response.body.bid[0].adm
-      const interpreted = spec.interpretResponse(response)
-      expect(interpreted).to.be.a('array').that.has.lengthOf(0)
-    });
+    // it('should return an empty bid array if one of seatbid entry is missing adm property', () => {
+    //   const response = utils.deepClone(SERVER_RESPONSE_BANNER)
+    //   delete response.body.bid[0].adm
+    //   const interpreted = spec.interpretResponse(response)
+    //   expect(interpreted).to.be.a('array').that.has.lengthOf(0)
+    // });
   })
 
   describe('onBidWon', () => {
@@ -611,34 +495,29 @@ describe('Aidem adapter', () => {
       expect(spec.onBidWon).to.exist.and.to.be.a('function')
     });
 
-    it(`should send a valid bid won notice from web environment`, function () {
-      spec.onBidWon(WIN_NOTICE_WEB);
-      expect(server.requests.length).to.equal(1);
-    });
-
-    it(`should send a valid bid won notice from app environment`, function () {
-      spec.onBidWon(WIN_NOTICE_APP);
+    it(`should send a win notice`, function () {
+      spec.onBidWon(WIN_NOTICE);
       expect(server.requests.length).to.equal(1);
     });
   });
 
-  describe('onBidderError', () => {
-    it(`should exists and type function`, function () {
-      expect(spec.onBidderError).to.exist.and.to.be.a('function')
-    });
-
-    it(`should send a valid error notice`, function () {
-      spec.onBidderError({ bidderRequest: ERROR_NOTICE })
-      expect(server.requests.length).to.equal(1);
-      const body = JSON.parse(server.requests[0].requestBody)
-      expect(body).to.be.a('object').that.has.all.keys('message', 'auctionId', 'bidderRequestId', 'url', 'metrics')
-      // const { bids } = JSON.parse(server.requests[0].requestBody)
-      // expect(bids).to.be.a('array').that.has.lengthOf(1)
-      // _each(bids, (bid) => {
-      //   expect(bid).to.be.a('object').that.has.all.keys('adUnitCode', 'auctionId', 'bidId', 'bidderRequestId', 'transactionId', 'metrics')
-      // })
-    });
-  });
+  // describe('onBidderError', () => {
+  //   it(`should exists and type function`, function () {
+  //     expect(spec.onBidderError).to.exist.and.to.be.a('function')
+  //   });
+  //
+  //   it(`should send a valid error notice`, function () {
+  //     spec.onBidderError({ bidderRequest: ERROR_NOTICE })
+  //     expect(server.requests.length).to.equal(1);
+  //     const body = JSON.parse(server.requests[0].requestBody)
+  //     expect(body).to.be.a('object').that.has.all.keys('message', 'auctionId', 'bidderRequestId', 'url', 'metrics')
+  //     // const { bids } = JSON.parse(server.requests[0].requestBody)
+  //     // expect(bids).to.be.a('array').that.has.lengthOf(1)
+  //     // _each(bids, (bid) => {
+  //     //   expect(bid).to.be.a('object').that.has.all.keys('adUnitCode', 'auctionId', 'bidId', 'bidderRequestId', 'transactionId', 'metrics')
+  //     // })
+  //   });
+  // });
 
   describe('setEndPoints', () => {
     it(`should exists and type function`, function () {
@@ -648,64 +527,35 @@ describe('Aidem adapter', () => {
     it(`should not modify default endpoints`, function () {
       const endpoints = setEndPoints()
       const requestURL = new URL(endpoints.request)
-      const winNoticeURL = new URL(endpoints.notice.win)
-      const timeoutNoticeURL = new URL(endpoints.notice.timeout)
-      const errorNoticeURL = new URL(endpoints.notice.error)
-
       expect(requestURL.host).to.equal('zero.aidemsrv.com')
-      expect(winNoticeURL.host).to.equal('zero.aidemsrv.com')
-      expect(timeoutNoticeURL.host).to.equal('zero.aidemsrv.com')
-      expect(errorNoticeURL.host).to.equal('zero.aidemsrv.com')
-
-      expect(decodeURIComponent(requestURL.pathname)).to.equal('/bid/request')
-      expect(decodeURIComponent(winNoticeURL.pathname)).to.equal('/notice/win')
-      expect(decodeURIComponent(timeoutNoticeURL.pathname)).to.equal('/notice/timeout')
-      expect(decodeURIComponent(errorNoticeURL.pathname)).to.equal('/notice/error')
+      expect(decodeURIComponent(requestURL.pathname)).to.equal('/prebidjs/ortb/v2.6/bid/request')
     });
 
     it(`should not change request endpoint`, function () {
       const endpoints = setEndPoints('default')
       const requestURL = new URL(endpoints.request)
-      expect(decodeURIComponent(requestURL.pathname)).to.equal('/bid/request')
+      expect(decodeURIComponent(requestURL.pathname)).to.equal('/prebidjs/ortb/v2.6/bid/request')
     });
 
     it(`should change to local env`, function () {
       const endpoints = setEndPoints('local')
       const requestURL = new URL(endpoints.request)
-      const winNoticeURL = new URL(endpoints.notice.win)
-      const timeoutNoticeURL = new URL(endpoints.notice.timeout)
-      const errorNoticeURL = new URL(endpoints.notice.error)
 
       expect(requestURL.host).to.equal('127.0.0.1:8787')
-      expect(winNoticeURL.host).to.equal('127.0.0.1:8787')
-      expect(timeoutNoticeURL.host).to.equal('127.0.0.1:8787')
-      expect(errorNoticeURL.host).to.equal('127.0.0.1:8787')
     });
 
     it(`should add a path prefix`, function () {
       const endpoints = setEndPoints('local', '/path')
       const requestURL = new URL(endpoints.request)
-      const winNoticeURL = new URL(endpoints.notice.win)
-      const timeoutNoticeURL = new URL(endpoints.notice.timeout)
-      const errorNoticeURL = new URL(endpoints.notice.error)
 
-      expect(decodeURIComponent(requestURL.pathname)).to.equal('/path/bid/request')
-      expect(decodeURIComponent(winNoticeURL.pathname)).to.equal('/path/notice/win')
-      expect(decodeURIComponent(timeoutNoticeURL.pathname)).to.equal('/path/notice/timeout')
-      expect(decodeURIComponent(errorNoticeURL.pathname)).to.equal('/path/notice/error')
+      expect(decodeURIComponent(requestURL.pathname)).to.equal('/path/prebidjs/ortb/v2.6/bid/request')
     });
 
     it(`should add a path prefix and change request endpoint`, function () {
       const endpoints = setEndPoints('local', '/path')
       const requestURL = new URL(endpoints.request)
-      const winNoticeURL = new URL(endpoints.notice.win)
-      const timeoutNoticeURL = new URL(endpoints.notice.timeout)
-      const errorNoticeURL = new URL(endpoints.notice.error)
 
-      expect(decodeURIComponent(requestURL.pathname)).to.equal('/path/bid/request')
-      expect(decodeURIComponent(winNoticeURL.pathname)).to.equal('/path/notice/win')
-      expect(decodeURIComponent(timeoutNoticeURL.pathname)).to.equal('/path/notice/timeout')
-      expect(decodeURIComponent(errorNoticeURL.pathname)).to.equal('/path/notice/error')
+      expect(decodeURIComponent(requestURL.pathname)).to.equal('/path/prebidjs/ortb/v2.6/bid/request')
     });
   });
 
@@ -747,8 +597,7 @@ describe('Aidem adapter', () => {
         coppa: true
       });
       const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
-      const request = JSON.parse(data)
-      expect(request.regs.coppa_applies).to.equal(true)
+      expect(data.regs.coppa_applies).to.equal(true)
     });
 
     it(`should set gdpr to true`, function () {
@@ -760,8 +609,7 @@ describe('Aidem adapter', () => {
         }
       });
       const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
-      const request = JSON.parse(data)
-      expect(request.regs.gdpr_applies).to.equal(true)
+      expect(data.regs.gdpr_applies).to.equal(true)
     });
 
     it(`should set usp_consent string`, function () {
@@ -778,8 +626,7 @@ describe('Aidem adapter', () => {
         }
       });
       const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
-      const request = JSON.parse(data)
-      expect(request.regs.us_privacy).to.equal('1YYY')
+      expect(data.regs.us_privacy).to.equal('1YYY')
     });
 
     it(`should not set usp_consent string`, function () {
@@ -796,8 +643,7 @@ describe('Aidem adapter', () => {
         }
       });
       const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
-      const request = JSON.parse(data)
-      expect(request.regs.us_privacy).to.undefined
+      expect(data.regs.us_privacy).to.undefined
     });
   });
 });

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Prebid.js Banner Example</title>
+    <!-- Prebid.js -->
+    <!-- <script async src="prebid.js"></script> -->
+    <script async src="../../build/dev/prebid.js"></script>
+    <!-- Google Publisher Tag -->
+    <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+    <script>
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+        const customConfigObject = {
+            "buckets": [{
+                "max": 40,
+                "increment": 0.5
+            }]
+        };
+        // Prebid Banner Ad Unit
+        var adUnits = [
+        {
+            // Banner adUnit
+            code: 'banner-div-0',
+            mediaTypes: {
+                banner: {
+                    sizes: [[300, 250]], 
+                    battr: [] 
+                }
+            },
+            bids: [{
+                bidder: 'tpmn',
+                params: {
+                    inventoryId: 2, 
+                    bidFloor: 0.1, 
+                }
+            }]
+        },
+        {
+            // Video adUnit
+            code: 'video-div-1',
+            mediaTypes: {
+                video: {
+                    context: 'outstream',
+                    playerSize: [640, 480],
+                    mimes: ['video/mp4'],
+                    //playbackmethod: [2, 4, 6],
+                    api: [1, 2, 4, 6],
+                    protocols: [3, 4, 7, 8, 10],
+                    placement: 1,
+                    minduration: 0,
+                    maxduration: 60,
+                    startdelay: 0,
+                    skip: 1
+                },
+            },
+            bids: [{
+                bidder: 'tpmn',
+                params: {
+                    inventoryId: 2,
+                    bidFloor: 2.0,
+                }
+            }],
+            renderer: {
+                options: {
+                    adText : "TPMN Ad",
+                    disableCollapse : true
+                }
+            }
+        }
+        ];
+    </script>
+    <script>
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+        googletag.cmd.push(function () {
+            googletag.pubads().disableInitialLoad();
+        });
+ 
+        pbjs.que.push(function () {
+            pbjs.setConfig({
+                debug: true,
+                enableSendAllBids: false,
+                priceGranularity: customConfigObject,
+                userSync: {
+                    userIds: [{
+                        name: "pubCommonId",
+                        storage: {
+                            name: "pubcid",
+                            type: "cookie",
+                            days: 30
+                        }
+                    },{
+                        name: "unifiedId",
+                        storage: {
+                            type: "cookie",
+                            name: "unifiedid",
+                            expires: 60
+                        }
+                    }],
+                    userIdAsEids: true
+                }
+            });
+            pbjs.addAdUnits(adUnits);
+            pbjs.requestBids({ bidsBackHandler: sendAdServerRequest });
+        });
+
+        function sendAdServerRequest() {
+            if (pbjs.adserverRequestSent) return;
+
+            //Google Ad Server Use Banner
+            googletag.cmd.push(() => {
+            googletag
+                .defineSlot('/19968336/header-bid-tag-0', [300, 250], 'banner-div-0')
+                .addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+            });
+
+            //Direct Rendering Video
+            var highestCpmBids = pbjs.getHighestCpmBids('video-div-1');
+            console.log("highestCpmBids", highestCpmBids);
+            if (highestCpmBids.length) {
+                var doc = document.getElementById('video-div-1');
+                console.log("highestCpmBids[0].adId", highestCpmBids[0].adId);
+                pbjs.renderAd(doc, highestCpmBids[0].adId);
+            }
+
+            // googletag.cmd.push(() => {
+            // googletag
+            //     .defineSlot('/19968336/header-bid-tag-0', [640, 480], 'video-div-1')
+            //     .addService(googletag.pubads());
+            // googletag.pubads().enableSingleRequest();
+            // googletag.enableServices();
+            // });
+
+            googletag.cmd.push(function () {
+                pbjs.que.push(function () {
+                    const adUnitCodes = adUnits.map(adUnit => adUnit.code);
+                    pbjs.setTargetingForGPTAsync(adUnitCodes);
+                    googletag.pubads().refresh();
+                });
+            });
+        }
+    </script>
+     
+</head>
+<body>
+    <h2>Prebid.js TPMN Banner Example</h2>
+    <div id='banner-div-0'>
+        <script>
+            googletag.cmd.push(function () {
+                googletag.display('banner-div-0');
+            });
+        </script>
+    </div>
+    <br>
+    <h2>Prebid.js TPMN Video Example</h2>
+    <div id='video-div-1' style="width: 640px; height: 480px;">
+        <script>
+             googletag.cmd.push(function () {
+                googletag.display('video-div-1');
+            });
+        </script>
+    </div>
+    <br>
+    <div id="targeting-keys"></div>
+</body>

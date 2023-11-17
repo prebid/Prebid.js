@@ -1,7 +1,6 @@
 import {expect} from 'chai';
 import {
   spec as adapter,
-  SUPPORTED_ID_SYSTEMS,
   createDomain,
   hashCode,
   extractPID,
@@ -17,6 +16,8 @@ import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
 import {BANNER, VIDEO} from '../../../src/mediaTypes';
 import {config} from '../../../src/config';
+
+export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
 
 const SUB_DOMAIN = 'exchange';
 
@@ -417,7 +418,26 @@ describe('KueezRtbBidAdapter', function () {
         'url': 'https://sync.kueezrtb.com/api/sync/image/?cid=testcid123&gdpr=0&gdpr_consent=&us_privacy=',
         'type': 'image'
       }]);
-    })
+    });
+
+    it('should generate url with consent data', function () {
+      const gdprConsent = {
+        gdprApplies: true,
+        consentString: 'consent_string'
+      };
+      const uspConsent = 'usp_string';
+      const gppConsent = {
+        gppString: 'gpp_string',
+        applicableSections: [7]
+      }
+
+      const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE], gdprConsent, uspConsent, gppConsent);
+
+      expect(result).to.deep.equal([{
+        'url': 'https://sync.kueezrtb.com/api/sync/image/?cid=testcid123&gdpr=1&gdpr_consent=consent_string&us_privacy=usp_string&gpp=gpp_string&gpp_sid=7',
+        'type': 'image'
+      }]);
+    });
   });
 
   describe('interpret response', function () {
@@ -498,7 +518,7 @@ describe('KueezRtbBidAdapter', function () {
   });
 
   describe('user id system', function () {
-    Object.keys(SUPPORTED_ID_SYSTEMS).forEach((idSystemProvider) => {
+    TEST_ID_SYSTEMS.forEach((idSystemProvider) => {
       const id = Date.now().toString();
       const bid = utils.deepClone(BID);
 

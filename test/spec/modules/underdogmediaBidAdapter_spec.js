@@ -5,6 +5,7 @@ import {
   spec,
   resetUserSync
 } from 'modules/underdogmediaBidAdapter.js';
+import { config } from '../../../src/config';
 
 describe('UnderdogMedia adapter', function () {
   let bidRequests;
@@ -735,7 +736,7 @@ describe('UnderdogMedia adapter', function () {
             },
           },
           refererInfo: {
-            ref: 'www.example.com'
+            page: 'www.example.com'
           }
         }
 
@@ -762,6 +763,20 @@ describe('UnderdogMedia adapter', function () {
 
         expect(request.data.ref).to.equal(undefined);
       });
+
+      it('should have pbTimeout to be 3001 if bidder timeout does not exists', function () {
+        config.setConfig({ bidderTimeout: '' })
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(request.data.pbTimeout).to.equal(3001)
+      })
+
+      it('should have pbTimeout to be a numerical value if bidder timeout is in a string', function () {
+        config.setConfig({ bidderTimeout: '1000' })
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+
+        expect(request.data.pbTimeout).to.equal(1000)
+      })
 
       it('should have pubcid if it exists', function () {
         let bidRequests = [{
@@ -967,7 +982,6 @@ describe('UnderdogMedia adapter', function () {
         expect(bids).to.be.lengthOf(2);
 
         expect(bids[0].meta.advertiserDomains).to.deep.equal(['domain1'])
-        expect(bids[0].bidderCode).to.equal('underdogmedia');
         expect(bids[0].cpm).to.equal(2.5);
         expect(bids[0].width).to.equal('160');
         expect(bids[0].height).to.equal('600');

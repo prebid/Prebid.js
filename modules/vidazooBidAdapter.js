@@ -1,9 +1,10 @@
-import {_each, deepAccess, parseSizesInput, parseUrl, uniques, isFn} from '../src/utils.js';
+import {_each, deepAccess, isFn, parseSizesInput, parseUrl, uniques, isArray} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {bidderSettings} from '../src/bidderSettings.js';
 import {config} from '../src/config.js';
+import {chunk} from '../libraries/chunk/chunk.js';
 
 const GVLID = 744;
 const DEFAULT_SUB_DOMAIN = 'prebid';
@@ -15,18 +16,6 @@ const DEAL_ID_EXPIRY = 1000 * 60 * 15;
 const UNIQUE_DEAL_ID_EXPIRY = 1000 * 60 * 60;
 const SESSION_ID_KEY = 'vidSid';
 const OPT_CACHE_KEY = 'vdzwopt';
-export const SUPPORTED_ID_SYSTEMS = {
-  'britepoolid': 1,
-  'criteoId': 1,
-  'id5id': 1,
-  'idl_env': 1,
-  'lipb': 1,
-  'netId': 1,
-  'parrableId': 1,
-  'pubcid': 1,
-  'tdid': 1,
-  'pubProvidedId': 1
-};
 export const webSessionId = 'wsid_' + parseInt(Date.now() * Math.random());
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
@@ -60,7 +49,7 @@ function isBidRequestValid(bid) {
   return !!(extractCID(params) && extractPID(params));
 }
 
-function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
+function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
   const {
     params,
     bidId,
@@ -68,8 +57,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     adUnitCode,
     schain,
     mediaTypes,
-    auctionId,
-    transactionId,
+    ortb2Imp,
     bidderRequestId,
     bidRequestsCount,
     bidderRequestsCount,
@@ -81,9 +69,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
   const dealId = getNextDealId(hashUrl);
   const uniqueDealId = getUniqueDealId(hashUrl);
   const sId = getVidazooSessionId();
-  const cId = extractCID(params);
   const pId = extractPID(params);
-  const subDomain = extractSubDomain(params);
   const ptrace = getCacheOpt();
   const isStorageAllowed = bidderSettings.get(BIDDER_CODE, 'storageAllowed');
 
@@ -126,8 +112,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     gpid: gpid,
     cat: cat,
     pagecat: pagecat,
-    auctionId: auctionId,
-    transactionId: transactionId,
+    transactionId: ortb2Imp?.ext?.tid,
     bidderRequestId: bidderRequestId,
     bidRequestsCount: bidRequestsCount,
     bidderRequestsCount: bidderRequestsCount,
@@ -164,41 +149,67 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     data.gppSid = bidderRequest.ortb2.regs.gpp_sid;
   }
 
+  _each(ext, (value, key) => {
+    data['ext.' + key] = value;
+  });
+
+  return data;
+}
+
+function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
+  const {params} = bid;
+  const cId = extractCID(params);
+  const subDomain = extractSubDomain(params);
+  const data = buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout);
   const dto = {
     method: 'POST',
     url: `${createDomain(subDomain)}/prebid/multi/${cId}`,
     data: data
   };
-
-  _each(ext, (value, key) => {
-    dto.data['ext.' + key] = value;
-  });
-
   return dto;
+}
+
+function buildSingleRequest(bidRequests, bidderRequest, topWindowUrl, bidderTimeout) {
+  const {params} = bidRequests[0];
+  const cId = extractCID(params);
+  const subDomain = extractSubDomain(params);
+  const data = bidRequests.map(bid => {
+    const sizes = parseSizesInput(bid.sizes);
+    return buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout)
+  });
+  const chunkSize = Math.min(20, config.getConfig('vidazoo.chunkSize') || 10);
+
+  const chunkedData = chunk(data, chunkSize);
+  return chunkedData.map(chunk => {
+    return {
+      method: 'POST',
+      url: `${createDomain(subDomain)}/prebid/multi/${cId}`,
+      data: {
+        bids: chunk
+      }
+    };
+  });
 }
 
 function appendUserIdsToRequestPayload(payloadRef, userIds) {
   let key;
   _each(userIds, (userId, idSystemProviderName) => {
-    if (SUPPORTED_ID_SYSTEMS[idSystemProviderName]) {
-      key = `uid.${idSystemProviderName}`;
-
-      switch (idSystemProviderName) {
-        case 'digitrustid':
-          payloadRef[key] = deepAccess(userId, 'data.id');
-          break;
-        case 'lipb':
-          payloadRef[key] = userId.lipbid;
-          break;
-        case 'parrableId':
-          payloadRef[key] = userId.eid;
-          break;
-        case 'id5id':
-          payloadRef[key] = userId.uid;
-          break;
-        default:
-          payloadRef[key] = userId;
-      }
+    key = `uid.${idSystemProviderName}`;
+    switch (idSystemProviderName) {
+      case 'digitrustid':
+        payloadRef[key] = deepAccess(userId, 'data.id');
+        break;
+      case 'lipb':
+        payloadRef[key] = userId.lipbid;
+        break;
+      case 'parrableId':
+        payloadRef[key] = userId.eid;
+        break;
+      case 'id5id':
+        payloadRef[key] = userId.uid;
+        break;
+      default:
+        payloadRef[key] = userId;
     }
   });
 }
@@ -207,12 +218,34 @@ function buildRequests(validBidRequests, bidderRequest) {
   // TODO: does the fallback make sense here?
   const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
   const bidderTimeout = config.getConfig('bidderTimeout');
+
+  const singleRequestMode = config.getConfig('vidazoo.singleRequest');
+
   const requests = [];
-  validBidRequests.forEach(validBidRequest => {
-    const sizes = parseSizesInput(validBidRequest.sizes);
-    const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);
-    requests.push(request);
-  });
+
+  if (singleRequestMode) {
+    // banner bids are sent as a single request
+    const bannerBidRequests = validBidRequests.filter(bid => isArray(bid.mediaTypes) ? bid.mediaTypes.includes(BANNER) : bid.mediaTypes[BANNER] !== undefined);
+    if (bannerBidRequests.length > 0) {
+      const singleRequests = buildSingleRequest(bannerBidRequests, bidderRequest, topWindowUrl, bidderTimeout);
+      requests.push(...singleRequests);
+    }
+
+    // video bids are sent as a single request for each bid
+
+    const videoBidRequests = validBidRequests.filter(bid => bid.mediaTypes[VIDEO] !== undefined);
+    videoBidRequests.forEach(validBidRequest => {
+      const sizes = parseSizesInput(validBidRequest.sizes);
+      const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);
+      requests.push(request);
+    });
+  } else {
+    validBidRequests.forEach(validBidRequest => {
+      const sizes = parseSizesInput(validBidRequest.sizes);
+      const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);
+      requests.push(request);
+    });
+  }
   return requests;
 }
 
@@ -220,20 +253,34 @@ function interpretResponse(serverResponse, request) {
   if (!serverResponse || !serverResponse.body) {
     return [];
   }
-  const {bidId} = request.data;
+
+  const singleRequestMode = config.getConfig('vidazoo.singleRequest');
+  const reqBidId = deepAccess(request, 'data.bidId');
   const {results} = serverResponse.body;
 
   let output = [];
 
   try {
-    results.forEach(result => {
-      const {creativeId, ad, price, exp, width, height, currency, advertiserDomains, metaData, mediaType = BANNER} = result;
+    results.forEach((result, i) => {
+      const {
+        creativeId,
+        ad,
+        price,
+        exp,
+        width,
+        height,
+        currency,
+        bidId,
+        advertiserDomains,
+        metaData,
+        mediaType = BANNER
+      } = result;
       if (!ad || !price) {
         return;
       }
 
       const response = {
-        requestId: bidId,
+        requestId: (singleRequestMode && bidId) ? bidId : reqBidId,
         cpm: price,
         width: width,
         height: height,
@@ -267,19 +314,27 @@ function interpretResponse(serverResponse, request) {
       }
       output.push(response);
     });
+
     return output;
   } catch (e) {
     return [];
   }
 }
 
-function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '') {
+function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '', gppConsent = {}) {
   let syncs = [];
   const {iframeEnabled, pixelEnabled} = syncOptions;
   const {gdprApplies, consentString = ''} = gdprConsent;
+  const {gppString, applicableSections} = gppConsent;
 
   const cidArr = responses.filter(resp => deepAccess(resp, 'body.cid')).map(resp => resp.body.cid).filter(uniques);
-  const params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`
+  let params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`;
+
+  if (gppString && applicableSections?.length) {
+    params += '&gpp=' + encodeURIComponent(gppString);
+    params += '&gpp_sid=' + encodeURIComponent(applicableSections.join(','));
+  }
+
   if (iframeEnabled) {
     syncs.push({
       type: 'iframe',

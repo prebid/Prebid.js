@@ -2,7 +2,7 @@ import {_each, deepAccess, parseSizesInput, parseUrl, uniques, isFn} from '../sr
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
-import { config } from '../src/config.js';
+import {config} from '../src/config.js';
 
 const GVLID = 1165;
 const DEFAULT_SUB_DOMAIN = 'exchange';
@@ -11,18 +11,6 @@ const BIDDER_VERSION = '1.0.0';
 const CURRENCY = 'USD';
 const TTL_SECONDS = 60 * 5;
 const UNIQUE_DEAL_ID_EXPIRY = 1000 * 60 * 15;
-export const SUPPORTED_ID_SYSTEMS = {
-  'britepoolid': 1,
-  'criteoId': 1,
-  'id5id': 1,
-  'idl_env': 1,
-  'lipb': 1,
-  'netId': 1,
-  'parrableId': 1,
-  'pubcid': 1,
-  'tdid': 1,
-  'pubProvidedId': 1
-};
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 function getTopWindowQueryParams() {
@@ -108,6 +96,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     schain: schain,
     mediaTypes: mediaTypes,
     gpid: gpid,
+    // TODO: fix auctionId/transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auctionId: auctionId,
     transactionId: transactionId,
     bidderRequestId: bidderRequestId,
@@ -161,25 +150,23 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
 function appendUserIdsToRequestPayload(payloadRef, userIds) {
   let key;
   _each(userIds, (userId, idSystemProviderName) => {
-    if (SUPPORTED_ID_SYSTEMS[idSystemProviderName]) {
-      key = `uid.${idSystemProviderName}`;
+    key = `uid.${idSystemProviderName}`;
 
-      switch (idSystemProviderName) {
-        case 'digitrustid':
-          payloadRef[key] = deepAccess(userId, 'data.id');
-          break;
-        case 'lipb':
-          payloadRef[key] = userId.lipbid;
-          break;
-        case 'parrableId':
-          payloadRef[key] = userId.eid;
-          break;
-        case 'id5id':
-          payloadRef[key] = userId.uid;
-          break;
-        default:
-          payloadRef[key] = userId;
-      }
+    switch (idSystemProviderName) {
+      case 'digitrustid':
+        payloadRef[key] = deepAccess(userId, 'data.id');
+        break;
+      case 'lipb':
+        payloadRef[key] = userId.lipbid;
+        break;
+      case 'parrableId':
+        payloadRef[key] = userId.eid;
+        break;
+      case 'id5id':
+        payloadRef[key] = userId.uid;
+        break;
+      default:
+        payloadRef[key] = userId;
     }
   });
 }
@@ -207,7 +194,18 @@ function interpretResponse(serverResponse, request) {
 
   try {
     results.forEach(result => {
-      const {creativeId, ad, price, exp, width, height, currency, metaData, advertiserDomains, mediaType = BANNER} = result;
+      const {
+        creativeId,
+        ad,
+        price,
+        exp,
+        width,
+        height,
+        currency,
+        metaData,
+        advertiserDomains,
+        mediaType = BANNER
+      } = result;
       if (!ad || !price) {
         return;
       }
@@ -253,13 +251,20 @@ function interpretResponse(serverResponse, request) {
   }
 }
 
-function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '') {
+function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '', gppConsent = {}) {
   let syncs = [];
   const {iframeEnabled, pixelEnabled} = syncOptions;
   const {gdprApplies, consentString = ''} = gdprConsent;
+  const {gppString, applicableSections} = gppConsent;
 
   const cidArr = responses.filter(resp => deepAccess(resp, 'body.cid')).map(resp => resp.body.cid).filter(uniques);
-  const params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`
+  let params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`
+
+  if (gppString && applicableSections?.length) {
+    params += '&gpp=' + encodeURIComponent(gppString);
+    params += '&gpp_sid=' + encodeURIComponent(applicableSections.join(','));
+  }
+
   if (iframeEnabled) {
     syncs.push({
       type: 'iframe',

@@ -25,6 +25,7 @@ import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {createBid} from '../../../src/bidfactory.js';
 import {enrichFPD} from '../../../src/fpd/enrichment.js';
 import {mockFpdEnrichments} from '../../helpers/fpd.js';
+import {generateUUID} from '../../../src/utils.js';
 var assert = require('chai').assert;
 var expect = require('chai').expect;
 
@@ -42,13 +43,13 @@ var adUnits = getAdUnits();
 var adUnitCodes = getAdUnits().map(unit => unit.code);
 var bidsBackHandler = function() {};
 const timeout = 2000;
-var auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout: timeout});
-auction.getBidRequests = getBidRequests;
-auction.getBidsReceived = getBidResponses;
-auction.getAdUnits = getAdUnits;
-auction.getAuctionStatus = function() { return auctionModule.AUCTION_COMPLETED }
+const auctionId = generateUUID();
+let auction;
 
 function resetAuction() {
+  if (auction == null) {
+    auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout: timeout, labels: undefined, auctionId: auctionId});
+  }
   $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: false });
   auction.getBidRequests = getBidRequests;
   auction.getBidsReceived = getBidResponses;
@@ -2501,7 +2502,6 @@ describe('Unit: Prebid Module', function () {
         }];
         let adUnitCodes = ['adUnit-code'];
         let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: timeout});
-
         adUnits[0]['mediaTypes'] = { native: {} };
         adUnitCodes = ['adUnit-code'];
         let auction1 = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: timeout});
@@ -3304,16 +3304,20 @@ describe('Unit: Prebid Module', function () {
       const highestBid = $$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode('/19968336/header-bid-tag-0');
       expect(highestBid).to.deep.equal(_bidsReceived[2])
     })
-  })
+  });
 
-  describe('getHighestCpm', () => {
+  describe('getHighestCpmBids', () => {
     after(() => {
       resetAuction();
     });
     it('returns an array containing the highest bid object for the given adUnitCode', function () {
-      const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids('/19968336/header-bid-tag-0');
+      const adUnitcode = '/19968336/header-bid-tag-0';
+      targeting.setLatestAuctionForAdUnit(adUnitcode, auctionId)
+      const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids(adUnitcode);
       expect(highestCpmBids.length).to.equal(1);
-      expect(highestCpmBids[0]).to.deep.equal(auctionManager.getBidsReceived()[1]);
+      const expectedBid = auctionManager.getBidsReceived()[1];
+      expectedBid.latestTargetedAuctionId = auctionId;
+      expect(highestCpmBids[0]).to.deep.equal(expectedBid);
     });
 
     it('returns an empty array when the given adUnit is not found', function () {
@@ -3350,66 +3354,55 @@ describe('Unit: Prebid Module', function () {
 
   if (FEATURES.VIDEO) {
     describe('markWinningBidAsUsed', function () {
-      it('marks the bid object as used for the given adUnitCode/adId combination', function () {
-        // make sure the auction has "state" and does not reload the fixtures
-        const adUnitCode = '/19968336/header-bid-tag-0';
+      const adUnitCode = '/19968336/header-bid-tag-0';
+      let winningBid;
+
+      beforeEach(() => {
         const bidsReceived = $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode);
         auction.getBidsReceived = function() { return bidsReceived.bids };
 
         // mark the bid and verify the state has changed to RENDERED
-        const winningBid = targeting.getWinningBids(adUnitCode)[0];
+        winningBid = targeting.getWinningBids(adUnitCode)[0];
+        auction.getAuctionId = function() { return winningBid.auctionId };
+      })
+
+      afterEach(() => {
+        resetAuction();
+      })
+
+      it('marks the bid object as used for the given adUnitCode/adId combination', function () {
+        // make sure the auction has "state" and does not reload the fixtures
         $$PREBID_GLOBAL$$.markWinningBidAsUsed({ adUnitCode, adId: winningBid.adId });
         const markedBid = find($$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids,
           bid => bid.adId === winningBid.adId);
 
         expect(markedBid.status).to.equal(CONSTANTS.BID_STATUS.RENDERED);
-        resetAuction();
       });
 
       it('try and mark the bid object, but fail because we supplied the wrong adId', function () {
-        const adUnitCode = '/19968336/header-bid-tag-0';
-        const bidsReceived = $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode);
-        auction.getBidsReceived = function() { return bidsReceived.bids };
-
-        const winningBid = targeting.getWinningBids(adUnitCode)[0];
         $$PREBID_GLOBAL$$.markWinningBidAsUsed({ adUnitCode, adId: 'miss' });
         const markedBid = find($$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids,
           bid => bid.adId === winningBid.adId);
 
         expect(markedBid.status).to.not.equal(CONSTANTS.BID_STATUS.RENDERED);
-        resetAuction();
       });
 
       it('marks the winning bid object as used for the given adUnitCode', function () {
         // make sure the auction has "state" and does not reload the fixtures
-        const adUnitCode = '/19968336/header-bid-tag-0';
-        const bidsReceived = $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode);
-        auction.getBidsReceived = function() { return bidsReceived.bids };
-
-        // mark the bid and verify the state has changed to RENDERED
-        const winningBid = targeting.getWinningBids(adUnitCode)[0];
         $$PREBID_GLOBAL$$.markWinningBidAsUsed({ adUnitCode });
         const markedBid = find($$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids,
           bid => bid.adId === winningBid.adId);
 
         expect(markedBid.status).to.equal(CONSTANTS.BID_STATUS.RENDERED);
-        resetAuction();
       });
 
       it('marks a bid object as used for the given adId', function () {
         // make sure the auction has "state" and does not reload the fixtures
-        const adUnitCode = '/19968336/header-bid-tag-0';
-        const bidsReceived = $$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode);
-        auction.getBidsReceived = function() { return bidsReceived.bids };
-
-        // mark the bid and verify the state has changed to RENDERED
-        const winningBid = targeting.getWinningBids(adUnitCode)[0];
         $$PREBID_GLOBAL$$.markWinningBidAsUsed({ adId: winningBid.adId });
         const markedBid = find($$PREBID_GLOBAL$$.getBidResponsesForAdUnitCode(adUnitCode).bids,
           bid => bid.adId === winningBid.adId);
 
         expect(markedBid.status).to.equal(CONSTANTS.BID_STATUS.RENDERED);
-        resetAuction();
       });
     });
   }
@@ -3544,6 +3537,65 @@ describe('Unit: Prebid Module', function () {
 
       expect(bids.length).to.equal(1);
       expect(bids[0].adId).to.equal('adid-1');
+    });
+  });
+
+  describe('deferred billing', function () {
+    const sandbox = sinon.createSandbox();
+
+    let adUnits = [
+      {
+        code: 'adUnit-code-1',
+        mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } },
+        transactionId: '1234567890',
+        bids: [
+          { bidder: 'pubmatic', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code-1' }
+        ]
+      },
+      {
+        code: 'adUnit-code-2',
+        deferBilling: true,
+        mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } },
+        transactionId: '0987654321',
+        bids: [
+          { bidder: 'pubmatic', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code-2' }
+        ]
+      }
+    ];
+
+    let winningBid1 = { adapterCode: 'pubmatic', bidder: 'pubmatic', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code-1', transactionId: '1234567890', adId: 'abcdefg' }
+    let winningBid2 = { adapterCode: 'pubmatic', bidder: 'pubmatic', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code-2', transactionId: '0987654321' }
+    let adUnitCodes = ['adUnit-code-1', 'adUnit-code-2'];
+    let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 2000});
+
+    beforeEach(function () {
+      sandbox.spy(adapterManager, 'callBidWonBidder');
+      sandbox.spy(adapterManager, 'callBidBillableBidder');
+      sandbox.stub(auctionManager, 'getBidsReceived').returns([winningBid1]);
+    });
+
+    afterEach(function () {
+      sandbox.resetHistory();
+      sandbox.restore();
+    });
+
+    it('should by default invoke callBidWonBidder and callBidBillableBidder', function () {
+      auction.addWinningBid(winningBid1);
+      sinon.assert.calledOnce(adapterManager.callBidWonBidder);
+      sinon.assert.calledOnce(adapterManager.callBidBillableBidder);
+    });
+
+    it('should only invoke callBidWonBidder and NOT callBidBillableBidder if deferBilling is present and true within the winning adUnit object', function () {
+      auction.addWinningBid(winningBid2);
+      sinon.assert.calledOnce(adapterManager.callBidWonBidder);
+      sinon.assert.notCalled(adapterManager.callBidBillableBidder);
+    });
+
+    it('should invoke callBidBillableBidder when pbjs.triggerBilling is invoked', function () {
+      $$PREBID_GLOBAL$$.triggerBilling(winningBid1);
+      sinon.assert.calledOnce(auctionManager.getBidsReceived);
+      sinon.assert.notCalled(adapterManager.callBidWonBidder);
+      sinon.assert.calledOnce(adapterManager.callBidBillableBidder);
     });
   });
 });

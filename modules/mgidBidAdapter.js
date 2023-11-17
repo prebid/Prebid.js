@@ -9,11 +9,10 @@ import {
   isEmpty,
   triggerPixel,
   logWarn,
-  getBidIdParameter,
   isFn,
   isNumber,
   isBoolean,
-  isInteger, deepSetValue,
+  isInteger, deepSetValue, getBidIdParameter,
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
@@ -380,15 +379,15 @@ export const spec = {
 
       const syncs = [];
       const query = [];
-      query.push('cbuster=' + Math.round(new Date().getTime()));
-      query.push('consentData=' + encodeURIComponent(isPlainObject(gdprConsent) && isStr(gdprConsent?.consentString) ? gdprConsent.consentString : ''));
+      query.push('cbuster={cbuster}');
+      query.push('gdpr_consent=' + encodeURIComponent(isPlainObject(gdprConsent) && isStr(gdprConsent?.consentString) ? gdprConsent.consentString : ''));
       if (isPlainObject(gdprConsent) && typeof gdprConsent?.gdprApplies === 'boolean' && gdprConsent.gdprApplies) {
-        query.push('gdprApplies=1');
+        query.push('gdpr=1');
       } else {
-        query.push('gdprApplies=0');
+        query.push('gdpr=0');
       }
       if (isPlainObject(uspConsent) && uspConsent?.consentString) {
-        query.push(`uspString=${encodeURIComponent(uspConsent?.consentString)}`);
+        query.push(`us_privacy=${encodeURIComponent(uspConsent?.consentString)}`);
       }
       if (isPlainObject(gppConsent) && gppConsent?.gppString) {
         query.push(`gppString=${encodeURIComponent(gppConsent?.gppString)}`);
@@ -396,24 +395,25 @@ export const spec = {
       if (config.getConfig('coppa')) {
         query.push('coppa=1')
       }
+      const q = query.join('&')
       if (syncOptions.iframeEnabled) {
         syncs.push({
           type: 'iframe',
-          url: 'https://cm.mgid.com/i.html?' + query.join('&')
+          url: 'https://cm.mgid.com/i.html?' + q.replace('{cbuster}', Math.round(new Date().getTime()))
         });
       } else if (syncOptions.pixelEnabled) {
         if (pixels.length === 0) {
           for (let i = 0; i < spb; i++) {
             syncs.push({
               type: 'image',
-              url: 'https://cm.mgid.com/i.gif?' + query.join('&') // randomly selects partner if sync required
+              url: 'https://cm.mgid.com/i.gif?' + q.replace('{cbuster}', Math.round(new Date().getTime())) // randomly selects partner if sync required
             });
           }
         } else {
           for (let i = 0; i < spb && i < pixels.length; i++) {
             syncs.push({
               type: 'image',
-              url: pixels[i] + (pixels[i].indexOf('?') > 0 ? '&' : '?') + query.join('&')
+              url: pixels[i] + (pixels[i].indexOf('?') > 0 ? '&' : '?') + q.replace('{cbuster}', Math.round(new Date().getTime()))
             });
           }
         }

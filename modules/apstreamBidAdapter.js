@@ -421,6 +421,7 @@ function buildRequests(bidRequests, bidderRequest) {
   bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
   const data = {
     med: encodeURIComponent(window.location.href),
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auid: bidderRequest.auctionId,
     ref: document.referrer,
     dnt: getDNT() ? 1 : 0,

@@ -1,6 +1,7 @@
-import {buildUrl, deepAccess, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn} from '../src/utils.js';
+import { buildUrl, deepAccess, generateUUID, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {find} from '../src/polyfill.js';
 
 const GVL_ID = 136;
 const BIDDER_CODE = 'stroeerCore';
@@ -49,7 +50,7 @@ export const spec = {
     const refererInfo = bidderRequest.refererInfo;
 
     const basePayload = {
-      id: bidderRequest.auctionId,
+      id: generateUUID(),
       ref: refererInfo.ref,
       ssl: isSecureWindow(),
       mpa: isMainPageAccessible(),
@@ -211,12 +212,16 @@ const mapToPayloadBaseBid = (bidRequest) => ({
   viz: elementInView(bidRequest.adUnitCode),
 });
 
-const mapToPayloadBannerBid = (bidRequest) => ({
-  ban: {
-    siz: deepAccess(bidRequest, 'mediaTypes.banner.sizes') || [],
-  },
-  ...mapToPayloadBaseBid(bidRequest)
-});
+const mapToPayloadBannerBid = (bidRequest) => {
+  const sizes = deepAccess(bidRequest, 'mediaTypes.banner.sizes') || [];
+  return ({
+    ban: {
+      siz: sizes,
+      fp: createFloorPriceObject(BANNER, sizes, bidRequest)
+    },
+    ...mapToPayloadBaseBid(bidRequest)
+  });
+};
 
 const mapToPayloadVideoBid = (bidRequest) => {
   const video = deepAccess(bidRequest, 'mediaTypes.video') || {};
@@ -225,9 +230,53 @@ const mapToPayloadVideoBid = (bidRequest) => {
       ctx: video.context,
       siz: video.playerSize,
       mim: video.mimes,
+      fp: createFloorPriceObject(VIDEO, [video.playerSize], bidRequest),
     },
     ...mapToPayloadBaseBid(bidRequest)
   };
 };
+
+const createFloorPriceObject = (mediaType, sizes, bidRequest) => {
+  if (!bidRequest.getFloor) {
+    return undefined;
+  }
+
+  const defaultFloor = bidRequest.getFloor({
+    currency: 'EUR',
+    mediaType: mediaType,
+    size: '*'
+  });
+
+  const sizeFloors = sizes.map(size => {
+    const floor = bidRequest.getFloor({
+      currency: 'EUR',
+      mediaType: mediaType,
+      size: [size[0], size[1]]
+    });
+    return {...floor, size};
+  });
+
+  const floorWithCurrency = find([defaultFloor].concat(sizeFloors), floor => floor.currency);
+
+  if (!floorWithCurrency) {
+    return undefined;
+  }
+
+  const currency = floorWithCurrency.currency;
+  const defaultFloorPrice = defaultFloor.currency === currency ? defaultFloor.floor : undefined;
+
+  return {
+    def: defaultFloorPrice,
+    cur: currency,
+    siz: sizeFloors
+      .filter(sizeFloor => sizeFloor.currency === currency)
+      .filter(sizeFloor => sizeFloor.floor !== defaultFloorPrice)
+      .map(sizeFloor => ({
+        w: sizeFloor.size[0],
+        h: sizeFloor.size[1],
+        p: sizeFloor.floor
+      }))
+  };
+}
 
 registerBidder(spec);

@@ -70,6 +70,9 @@ function buildRequests(validBidRequests, bidderRequest) {
   if (bidderRequest && bidderRequest.uspConsent) {
     payload.usPrivacy = bidderRequest.uspConsent;
   }
+  if (bidderRequest && bidderRequest.ortb2) {
+    payload.ortb2 = bidderRequest.ortb2;
+  }
   if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].userIdAsEids) {
     payload.userId = validBidRequests[0].userIdAsEids;
   }
@@ -264,8 +267,8 @@ function setGeneralInfo(bidRequest) {
   this['adUnitCode'] = bidRequest.adUnitCode;
   this['bidId'] = bidRequest.bidId;
   this['bidderRequestId'] = bidRequest.bidderRequestId;
-  this['auctionId'] = bidRequest.auctionId;
-  this['transactionId'] = bidRequest.transactionId;
+  this['auctionId'] = deepAccess(bidRequest, 'ortb2.source.tid');
+  this['transactionId'] = deepAccess(bidRequest, 'ortb2Imp.ext.tid');
   this['gpid'] = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
   this['pubId'] = params.pubId;
   this['ext'] = params.ext;

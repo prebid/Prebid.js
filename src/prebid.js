@@ -2,17 +2,13 @@
 
 import {getGlobal} from './prebidGlobal.js';
 import {
-  adUnitsFilter,
-  bind,
   callBurl,
-  contains,
   createInvisibleIframe,
   deepAccess,
   deepClone,
   deepSetValue,
   flatten,
   generateUUID,
-  getHighestCpm,
   inIframe,
   insertElement,
   isArray,
@@ -45,12 +41,15 @@ import {executeRenderer, isRendererRequired} from './Renderer.js';
 import {createBid} from './bidfactory.js';
 import {storageCallbacks} from './storageManager.js';
 import {emitAdRenderFail, emitAdRenderSucceeded} from './adRendering.js';
-import {default as adapterManager, gdprDataHandler, getS2SBidderSet, gppDataHandler, uspDataHandler} from './adapterManager.js';
+import {default as adapterManager, getS2SBidderSet} from './adapterManager.js';
 import CONSTANTS from './constants.json';
 import * as events from './events.js';
 import {newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {defer, GreedyPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
+import {allConsent} from './consentHandler.js';
+import {getHighestCpm} from './utils/reducers.js';
+import {fillVideoDefaults} from './video.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
@@ -89,7 +88,7 @@ function checkDefinedPlacement(id) {
     .reduce(flatten)
     .filter(uniques);
 
-  if (!contains(adUnitCodes, id)) {
+  if (!adUnitCodes.includes(id)) {
     logError('The "' + id + '" placement is not defined.');
     return;
   }
@@ -268,6 +267,12 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
   return validatedAdUnits;
 }, 'checkAdUnitSetup');
 
+function fillAdUnitDefaults(adUnits) {
+  if (FEATURES.VIDEO) {
+    adUnits.forEach(au => fillVideoDefaults(au))
+  }
+}
+
 /// ///////////////////////////////
 //                              //
 //    Start Public APIs         //
@@ -330,28 +335,14 @@ pbjsInstance.getAdserverTargeting = function (adUnitCode) {
   return targeting.getAllTargeting(adUnitCode);
 };
 
-/**
- * returns all consent data
- * @return {Object} Map of consent types and data
- * @alias module:pbjs.getConsentData
- */
-function getConsentMetadata() {
-  return {
-    gdpr: gdprDataHandler.getConsentMeta(),
-    usp: uspDataHandler.getConsentMeta(),
-    gpp: gppDataHandler.getConsentMeta(),
-    coppa: !!(config.getConfig('coppa'))
-  }
-}
-
 pbjsInstance.getConsentMetadata = function () {
   logInfo('Invoking $$PREBID_GLOBAL$$.getConsentMetadata');
-  return getConsentMetadata();
+  return allConsent.getConsentMeta()
 };
 
 function getBids(type) {
   const responses = auctionManager[type]()
-    .filter(bind.call(adUnitsFilter, this, auctionManager.getAdUnitCodes()));
+    .filter(bid => auctionManager.getAdUnitCodes().includes(bid.adUnitCode))
 
   // find the last auction id to get responses for most recent auction only
   const currentAuctionId = auctionManager.getLastAuctionId();
@@ -671,6 +662,7 @@ pbjsInstance.requestBids = (function() {
 
 export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer } = {}) {
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
+  fillAdUnitDefaults(adUnits);
   adUnits = useMetrics(metrics).measureTime('requestBids.validate', () => checkAdUnitSetup(adUnits));
 
   function auctionDone(bids, timedOut, auctionId) {
@@ -1001,24 +993,30 @@ if (FEATURES.VIDEO) {
    * @alias module:pbjs.markWinningBidAsUsed
    */
   pbjsInstance.markWinningBidAsUsed = function (markBidRequest) {
-    let bids = [];
-
-    if (markBidRequest.adUnitCode && markBidRequest.adId) {
-      bids = auctionManager.getBidsReceived()
-        .filter(bid => bid.adId === markBidRequest.adId && bid.adUnitCode === markBidRequest.adUnitCode);
-    } else if (markBidRequest.adUnitCode) {
-      bids = targeting.getWinningBids(markBidRequest.adUnitCode);
-    } else if (markBidRequest.adId) {
-      bids = auctionManager.getBidsReceived().filter(bid => bid.adId === markBidRequest.adId);
-    } else {
-      logWarn('Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
-    }
+    const bids = fetchReceivedBids(markBidRequest, 'Improper use of markWinningBidAsUsed. It needs an adUnitCode or an adId to function.');
 
     if (bids.length > 0) {
-      bids[0].status = CONSTANTS.BID_STATUS.RENDERED;
+      auctionManager.addWinningBid(bids[0]);
     }
   }
 }
+
+const fetchReceivedBids = (bidRequest, warningMessage) => {
+  let bids = [];
+
+  if (bidRequest.adUnitCode && bidRequest.adId) {
+    bids = auctionManager.getBidsReceived()
+      .filter(bid => bid.adId === bidRequest.adId && bid.adUnitCode === bidRequest.adUnitCode);
+  } else if (bidRequest.adUnitCode) {
+    bids = targeting.getWinningBids(bidRequest.adUnitCode);
+  } else if (bidRequest.adId) {
+    bids = auctionManager.getBidsReceived().filter(bid => bid.adId === bidRequest.adId);
+  } else {
+    logWarn(warningMessage);
+  }
+
+  return bids;
+};
 
 /**
  * Get Prebid config options
@@ -1095,6 +1093,24 @@ pbjsInstance.processQueue = function () {
   hook.ready();
   processQueue(pbjsInstance.que);
   processQueue(pbjsInstance.cmd);
+};
+
+/**
+ * @alias module:pbjs.triggerBilling
+ */
+pbjsInstance.triggerBilling = (winningBid) => {
+  const bids = fetchReceivedBids(winningBid, 'Improper use of triggerBilling. It requires a bid with at least an adUnitCode or an adId to function.');
+  const triggerBillingBid = bids.find(bid => bid.requestId === winningBid.requestId) || bids[0];
+
+  if (bids.length > 0 && triggerBillingBid) {
+    try {
+      adapterManager.callBidBillableBidder(triggerBillingBid);
+    } catch (e) {
+      logError('Error when triggering billing :', e);
+    }
+  } else {
+    logWarn('The bid provided to triggerBilling did not match any bids received.');
+  }
 };
 
 export default pbjsInstance;
