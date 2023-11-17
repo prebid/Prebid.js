@@ -70,6 +70,7 @@ describe('33acrossIdSystem', () => {
           const [request] = server.requests;
 
           const setCookie = sinon.stub(storage, 'setCookie');
+          const cookiesAreEnabled = sinon.stub(storage, 'cookiesAreEnabled').returns(true);
 
           request.respond(200, {
             'Content-Type': 'application/json'
@@ -85,6 +86,7 @@ describe('33acrossIdSystem', () => {
           expect(setCookie.calledOnceWithExactly('33acrossIdFp', 'bar', sinon.match.string, 'Lax')).to.be.true;
 
           setCookie.restore();
+          cookiesAreEnabled.restore();
         });
       });
 
@@ -143,6 +145,8 @@ describe('33acrossIdSystem', () => {
         const [request] = server.requests;
 
         const removeDataFromLocalStorage = sinon.stub(storage, 'removeDataFromLocalStorage');
+        const setCookie = sinon.stub(storage, 'setCookie');
+        const cookiesAreEnabled = sinon.stub(storage, 'cookiesAreEnabled').returns(true);
 
         request.respond(200, {
           'Content-Type': 'application/json'
@@ -155,8 +159,11 @@ describe('33acrossIdSystem', () => {
         }));
 
         expect(removeDataFromLocalStorage.calledOnceWithExactly('33acrossIdFp')).to.be.true;
+        expect(setCookie.calledOnceWithExactly('33acrossIdFp', '', sinon.match.string, 'Lax')).to.be.true;
 
         removeDataFromLocalStorage.restore();
+        setCookie.restore();
+        cookiesAreEnabled.restore();
       });
     });
 

@@ -81,12 +81,14 @@ function calculateQueryStringParams(pid, gdprConsentData, storageConfig) {
   return params;
 }
 
-function handleFpId(fpId, storageConfig = {}) {
-  if (!fpId) {
-    return storage.removeDataFromLocalStorage(STORAGE_FPID_KEY);
+function deleteFromStorage(key) {
+  if (storage.cookiesAreEnabled()) {
+    const expiredDate = new Date(0).toUTCString();
+
+    storage.setCookie(key, '', expiredDate, 'Lax');
   }
 
-  storeValue(STORAGE_FPID_KEY, fpId, storageConfig);
+  storage.removeDataFromLocalStorage(key);
 }
 
 function storeValue(key, value, storageConfig = {}) {
@@ -106,6 +108,12 @@ function getStoredValue(key, storageConfig = {}) {
   } else if (storageConfig.type === STORAGE_TYPE_LOCALSTORAGE) {
     return storage.getDataFromLocalStorage(key);
   }
+}
+
+function handleFpId(fpId, storageConfig = {}) {
+  fpId
+    ? storeValue(STORAGE_FPID_KEY, fpId, storageConfig)
+    : deleteFromStorage(STORAGE_FPID_KEY);
 }
 
 /** @type {Submodule} */
