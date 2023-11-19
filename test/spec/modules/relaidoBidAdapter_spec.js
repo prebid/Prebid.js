@@ -239,6 +239,7 @@ describe('RelaidoAdapter', function () {
       const request = data.bids[0];
       expect(bidRequests.method).to.equal('POST');
       expect(bidRequests.url).to.equal('https://api.relaido.jp/bid/v1/sprebid');
+      expect(data.canonical_url).to.equal('https://publisher.com/home');
       expect(data.canonical_url_hash).to.equal('e6092f44a0044903ae3764126eedd6187c1d9f04');
       expect(data.ref).to.equal(bidderRequest.refererInfo.page);
       expect(data.timeout_ms).to.equal(bidderRequest.timeout);
@@ -316,6 +317,23 @@ describe('RelaidoAdapter', function () {
       const data = JSON.parse(bidRequests.data);
       expect(data.bids).to.have.lengthOf(1);
       expect(data.imuid).to.equal('i.tjHcK_7fTcqnbrS_YA2vaw');
+    });
+
+    it('should get userIdAsEids', function () {
+      const userIdAsEids = [
+        {
+          source: 'hogehoge.com',
+          uids: {
+            atype: 1,
+            id: 'hugahuga'
+          }
+        }
+      ]
+      bidRequest.userIdAsEids = userIdAsEids
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(bidRequests.data);
+      expect(data.bids[0].userIdAsEids).to.have.lengthOf(1);
+      expect(data.bids[0].userIdAsEids[0].source).to.equal('hogehoge.com');
     });
   });
 
