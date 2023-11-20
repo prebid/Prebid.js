@@ -529,6 +529,16 @@ export const spec = {
     if (bidRequest?.ortb2Imp?.ext?.ae) {
       data['o_ae'] = 1;
     }
+
+    const topics = readTopicsIfAllowed();
+    if (topics) {
+      const domain = bidderRequest.refererInfo.domain
+      Object.keys(topics).forEach(taxonomy => {
+        const field = `s_segs_${taxonomy}_${domain}`;
+        data[field] = topics[taxonomy];
+      });
+    }
+    
     // loop through userIds and add to request
     if (bidRequest.userIdAsEids) {
       bidRequest.userIdAsEids.forEach(eid => {
@@ -1013,6 +1023,25 @@ function applyFPD(bidRequest, mediaType, data) {
 
     mergeDeep(data, fpd);
   }
+}
+
+function readTopicsIfAllowed() {
+  // Default to true
+  const readTopics = rubiConf.readTopics === false ? false : true;
+  let topics;
+  if (readTopics && document.browsingTopics) {
+    topics = document.browsingTopics({skipObservation:true}).map(taxonomyMap, topic => {
+      const taxonomy = Number(topic.taxonomyVersion);
+      if (taxonomyMap[taxonomy]) {
+        taxonomyMap[taxonomy] = taxonomyMap[taxonomy] + ',' + topic.topic;
+      } else if (taxonomy > 599 && taxonomy < 610) {
+        taxonomyMap[taxonomy] = '' + topic.topic;
+      }
+      return taxonomyMap;
+    }, {})
+  }
+  let hasProps = Object.keys(topics) > 0;
+  return hasProps ? topics : undefined;
 }
 
 /**
