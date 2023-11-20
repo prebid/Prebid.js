@@ -178,6 +178,11 @@ export const converter = ortbConverter({
 
     delete data?.ext?.prebid?.storedrequest;
 
+    const userData = config.getConfig(user.data);
+    if (userData) {
+      deepSetValue(data, 'user.data', userData);
+    }
+
     // floors
     if (rubiConf.disableFloors === true) {
       delete data.ext.prebid.floors;
@@ -538,7 +543,7 @@ export const spec = {
         data[field] = topics[taxonomy];
       });
     }
-    
+
     // loop through userIds and add to request
     if (bidRequest.userIdAsEids) {
       bidRequest.userIdAsEids.forEach(eid => {
