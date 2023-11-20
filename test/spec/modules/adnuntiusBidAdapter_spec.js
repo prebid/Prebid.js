@@ -12,7 +12,7 @@ describe('adnuntiusBidAdapter', function() {
   const EURO_URL = 'https://europe.delivery.adnuntius.com/i?tzo=';
   const GVLID = 855;
   const usi = utils.generateUUID()
-  const meta = [{ key: 'usi', value: usi }]
+  const meta = [{key: 'usi', value: usi}]
 
   before(() => {
     getGlobal().bidderSettings = {
@@ -20,7 +20,7 @@ describe('adnuntiusBidAdapter', function() {
         storageAllowed: true
       }
     };
-    const storage = getStorageManager({ bidderCode: 'adnuntius' })
+    const storage = getStorageManager({bidderCode: 'adnuntius'})
     storage.setDataInLocalStorage('adn.metaData', JSON.stringify(meta))
   });
 
@@ -99,8 +99,74 @@ describe('adnuntiusBidAdapter', function() {
 
   const videoBidRequest = {
     bid: videoBidderRequest,
-    bidder: 'adnuntius'
+    bidder: 'adnuntius',
+    params: {
+      bidType: 'justsomestuff-error-handling'
+    }
   }
+
+  const deals = [
+    {
+      'destinationUrlEsc': 'http%3A%2F%2Fads.adnuntius.delivery%2Fc%2FyQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg%3Fct%3D673%26r%3Dhttp%253A%252F%252Fadnuntius.com',
+      'assets': {
+        'Image': {
+          'cdnId': 'https://cdn.adnuntius.com/cdn/iBgqruUNbaUb2hmD3vws7WTi84jg_WB_-VOF_FeOZ7A.png',
+          'width': '640',
+          'height': '480'
+        }
+      },
+      'text': {},
+      'choices': {},
+      'clickUrl': 'https://ads.adnuntius.delivery/c/yQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg',
+      'urls': {
+        'destination': 'https://ads.adnuntius.delivery/c/yQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg?ct=673&r=http%3A%2F%2Fadnuntius.com'
+      },
+      'urlsEsc': {
+        'destination': 'https%3A%2F%2Fads.adnuntius.delivery%2Fc%2FyQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg%3Fct%3D673%26r%3Dhttp%253A%252F%252Fadnuntius.com'
+      },
+      'destinationUrls': {
+        'destination': 'https://adnuntius.com'
+      },
+      'cpm': {
+        'amount': 9,
+        'currency': 'USD'
+      },
+      'bid': {
+        'amount': 0.009,
+        'currency': 'USD'
+      },
+      'grossBid': {
+        'amount': 0.009,
+        'currency': 'USD'
+      },
+      'netBid': {
+        'amount': 0.0081,
+        'currency': 'USD'
+      },
+      'dealId': 'abc123xyz',
+      'impressionTrackingUrls': [],
+      'impressionTrackingUrlsEsc': [],
+      'adId': 'adn-id-1064238860',
+      'selectedColumn': '0',
+      'selectedColumnPosition': '0',
+      'renderedPixel': 'https://ads.adnuntius.delivery/b/yQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg.html',
+      'renderedPixelEsc': 'http%3A%2F%2Fads.adnuntius.delivery%2Fb%2FyQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg.html',
+      'visibleUrl': 'https://ads.adnuntius.delivery/s?rt=yQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg',
+      'visibleUrlEsc': 'http%3A%2F%2Fads.adnuntius.delivery%2Fs%3Frt%3DyQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg',
+      'viewUrl': 'https://ads.adnuntius.delivery/v?rt=yQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg',
+      'viewUrlEsc': 'http%3A%2F%2Fads.adnuntius.delivery%2Fv%3Frt%3DyQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg',
+      'rt': 'yQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg',
+      'creativeWidth': '640',
+      'creativeHeight': '480',
+      'creativeId': 's90t0q03pm',
+      'lineItemId': 'cr3hnkkxhnkw9ldy',
+      'layoutId': 'buyers_network_image_layout_1',
+      'layoutName': 'Image',
+      'layoutExternalReference': '',
+      'html': "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"utf-8\">\n    <style media=\"all\">\n        html, body, .responseCtr {\n            margin: 0;\n            padding: 0;\n            outline: 0;\n            border: 0;\n            overflow: hidden;\n        }\n\n        .responseCtr {\n            display: inline-block;\n            line-height: 0;\n            vertical-align: top;\n        }\n\n        .responseCtr a {\n            line-height: 0;\n        }\n\n        .responseCtr *, .responseCtr a * {\n            line-height: normal;\n        }\n\n        .responseCtr .contentWrapperPerItem {\n            margin: 0;\n            padding: 0;\n            outline: 0;\n            border: 0;\n            display: inline-block;\n            line-height: 0;\n            vertical-align: top;\n        }\n\n        a img {\n            border: none;\n            outline: none;\n        }\n\n        img {\n            margin: 0;\n            padding: 0;\n        }\n\n        /* need this displayNone class to ensure images are preloaded for smooth transition */\n        img.displayNone {\n            position: absolute;\n            top: -99999px;\n            left: -99999px;\n        }\n\n        .contentWrapperTrailer {\n            clear: both;\n        }\n    </style>\n    <script src=\"https://cdn.adnuntius.com/adn.js\"></script>\n</head>\n<body>\n<div id=\"adn-rsp--91674201\" class=\"responseCtr\">\n<div class=\"contentWrapperPerItem\" id=\"adn-id-1064238860\" data-line-item-id=\"cr3hnkkxhnkw9ldy\" data-creative-id=\"s90t0q03pm\" data-creative-width=\"100\" data-creative-height=\"30\" data-response-token=\"yQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg\"><a rel=\"nofollow\" target=\"_top\" href=\"https://ads.adnuntius.delivery/c/yQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg?ct=673&r=http%3A%2F%2Fadnuntius.com\"><img src=\"https://cdn.adnuntius.com/cdn/iBgqruUNbaUb2hmD3vws7WTi84jg_WB_-VOF_FeOZ7A.png\" width=\"728\" height=\"90\" alt=\"\"/></a><div class=\"contentWrapperTrailer\"></div></div>\n</div><script>\n            //<![CDATA[\n            (function() {\n                var impTrackers = [];impTrackers.push(\"https://ads.adnuntius.delivery/b/yQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg.html\");var body = document.getElementsByTagName(\"body\")[0];\n                for (var i = 0; i < impTrackers.length; i++) {\n                    var impTracker = impTrackers[i];\n                    var ifr = document.createElement(\"iframe\");\n                    ifr.src = impTracker + (impTracker.match(/\\?/) ? '&' : '?') + 'cb=' + Math.random();\n                    ifr.setAttribute(\"scrolling\", \"no\");\n                    ifr.setAttribute(\"frameborder\", \"0\");\n                    ifr.setAttribute(\"width\", \"1\");\n                    ifr.setAttribute(\"height\", \"1\");\n                    ifr.setAttribute(\"style\", \"position:absolute;top:-10000px;left:-100000px;\");\n                    body.appendChild(ifr);\n                }\n            })();\n            //]]>\n            </script>\n    \n<script>\n//<![CDATA[\n(function() {\n    var matchedAdCount = 1;\n    if (window.adn && adn.inIframe && adn.inIframe.processAdResponse) {\n        return adn.inIframe.processAdResponse({ matchedAdCount: matchedAdCount });\n    }\n    window.adn = window.adn || {};\n    adn.calls = adn.calls || [];\n    adn.calls.push(function() {\n        adn.inIframe.processAdResponse({ matchedAdCount: matchedAdCount });\n    });\n})();\n//]]>\n</script></body>\n</html>",
+      'renderTemplate': '<a rel="nofollow" target="_top" href="{{{urls.destination.url}}}"><img src="{{{assets.Image.cdnId}}}" width="{{assets.Image.width}}" height="{{assets.Image.height}}" alt=""/></a>'
+    }
+  ];
 
   const serverResponse = {
     body: {
@@ -111,68 +177,7 @@ describe('adnuntiusBidAdapter', function() {
           'html': "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"utf-8\">\n    <style media=\"all\">\n        html, body, .responseCtr {\n            margin: 0;\n            padding: 0;\n            outline: 0;\n            border: 0;\n            overflow: hidden;\n        }\n\n        .responseCtr {\n            display: inline-block;\n            line-height: 0;\n            vertical-align: top;\n        }\n\n        .responseCtr a {\n            line-height: 0;\n        }\n\n        .responseCtr *, .responseCtr a * {\n            line-height: normal;\n        }\n\n        .responseCtr .contentWrapperPerItem {\n            margin: 0;\n            padding: 0;\n            outline: 0;\n            border: 0;\n            display: inline-block;\n            line-height: 0;\n            vertical-align: top;\n        }\n\n        a img {\n            border: none;\n            outline: none;\n        }\n\n        img {\n            margin: 0;\n            padding: 0;\n        }\n\n        /* need this displayNone class to ensure images are preloaded for smooth transition */\n        img.displayNone {\n            position: absolute;\n            top: -99999px;\n            left: -99999px;\n        }\n\n        .contentWrapperTrailer {\n            clear: both;\n        }\n    </style>\n    <script src=\"https://cdn.adnuntius.com/adn.js\"></script>\n</head>\n<body>\n<div id=\"adn-rsp--229633088\" class=\"responseCtr\">\n<div class=\"contentWrapperPerItem\" id=\"adn-id-1488629603\" data-line-item-id=\"cr3hnkkxhnkw9ldy\" data-creative-id=\"s90t0q03pm\" data-creative-width=\"100\" data-creative-height=\"30\" data-response-token=\"5Mu-vFVsaf4dWWx8uyZoV7Mz0sPkF1_j9bSupMwX8dMAAAAQCtjQz9kbGWD4nuZy3q6HaCYxqqTYxj2sS0FkMriztxcORshj3zRbT0KsV7XnDXE0F-OsHX7Ok6_FNLuIDTOMJyx6ZZCB10wGqA3OaSe1Eq9D85h8gP1gGsobC0KsAISm_PYNkJ6ve6qZLnB79fX6XHLYSRqTBM8sBCRXQAetnVzeo7AHoQhkFeouS444YA_q4JCTlRI2peWFIuxFlOYyeX9Kzg\"><a rel=\"nofollow\" target=\"_top\" href=\"https://ads.adnuntius.delivery/c/5Mu-vFVsaf4dWWx8uyZoV7Mz0sPkF1_j9bSupMwX8dMAAAAQCtjQz9kbGWD4nuZy3q6HaCYxqqTYxj2sS0FkMriztxcORshj3zRbT0KsV7XnDXE0F-OsHX7Ok6_FNLuIDTOMJyx6ZZCB10wGqA3OaSe1Eq9D85h8gP1gGsobC0KsAISm_PYNkJ6ve6qZLnB79fX6XHLYSRqTBM8sBCRXQAetnVzeo7AHoQhkFeouS444YA_q4JCTlRI2peWFIuxFlOYyeX9Kzg?ct=673&r=http%3A%2F%2Fadnuntius.com\"><img src=\"https://cdn.adnuntius.com/cdn/iBgqruUNbaUb2hmD3vws7WTi84jg_WB_-VOF_FeOZ7A.png\" width=\"728\" height=\"90\" alt=\"\"/></a><div class=\"contentWrapperTrailer\"></div></div>\n</div><script>\n            //<![CDATA[\n            (function() {\n                var impTrackers = [];impTrackers.push(\"https://ads.adnuntius.delivery/b/5Mu-vFVsaf4dWWx8uyZoV7Mz0sPkF1_j9bSupMwX8dMAAAAQCtjQz9kbGWD4nuZy3q6HaCYxqqTYxj2sS0FkMriztxcORshj3zRbT0KsV7XnDXE0F-OsHX7Ok6_FNLuIDTOMJyx6ZZCB10wGqA3OaSe1Eq9D85h8gP1gGsobC0KsAISm_PYNkJ6ve6qZLnB79fX6XHLYSRqTBM8sBCRXQAetnVzeo7AHoQhkFeouS444YA_q4JCTlRI2peWFIuxFlOYyeX9Kzg.html\");var body = document.getElementsByTagName(\"body\")[0];\n                for (var i = 0; i < impTrackers.length; i++) {\n                    var impTracker = impTrackers[i];\n                    var ifr = document.createElement(\"iframe\");\n                    ifr.src = impTracker + (impTracker.match(/\\?/) ? '&' : '?') + 'cb=' + Math.random();\n                    ifr.setAttribute(\"scrolling\", \"no\");\n                    ifr.setAttribute(\"frameborder\", \"0\");\n                    ifr.setAttribute(\"width\", \"1\");\n                    ifr.setAttribute(\"height\", \"1\");\n                    ifr.setAttribute(\"style\", \"position:absolute;top:-10000px;left:-100000px;\");\n                    body.appendChild(ifr);\n                }\n            })();\n            //]]>\n            </script>\n    \n<script>\n//<![CDATA[\n(function() {\n    var matchedAdCount = 1;\n    if (window.adn && adn.inIframe && adn.inIframe.processAdResponse) {\n        return adn.inIframe.processAdResponse({ matchedAdCount: matchedAdCount });\n    }\n    window.adn = window.adn || {};\n    adn.calls = adn.calls || [];\n    adn.calls.push(function() {\n        adn.inIframe.processAdResponse({ matchedAdCount: matchedAdCount });\n    });\n})();\n//]]>\n</script></body>\n</html>",
           'matchedAdCount': 1,
           'responseId': 'adn-rsp--229633088',
-          'deals': [
-            {
-              'destinationUrlEsc': 'http%3A%2F%2Fads.adnuntius.delivery%2Fc%2FyQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg%3Fct%3D673%26r%3Dhttp%253A%252F%252Fadnuntius.com',
-              'assets': {
-                'Image': {
-                  'cdnId': 'https://cdn.adnuntius.com/cdn/iBgqruUNbaUb2hmD3vws7WTi84jg_WB_-VOF_FeOZ7A.png',
-                  'width': '640',
-                  'height': '480'
-                }
-              },
-              'text': {},
-              'choices': {},
-              'clickUrl': 'https://ads.adnuntius.delivery/c/yQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg',
-              'urls': {
-                'destination': 'https://ads.adnuntius.delivery/c/yQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg?ct=673&r=http%3A%2F%2Fadnuntius.com'
-              },
-              'urlsEsc': {
-                'destination': 'https%3A%2F%2Fads.adnuntius.delivery%2Fc%2FyQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg%3Fct%3D673%26r%3Dhttp%253A%252F%252Fadnuntius.com'
-              },
-              'destinationUrls': {
-                'destination': 'https://adnuntius.com'
-              },
-              'cpm': {
-                'amount': 9,
-                'currency': 'USD'
-              },
-              'bid': {
-                'amount': 0.009,
-                'currency': 'USD'
-              },
-              'grossBid': {
-                'amount': 0.009,
-                'currency': 'USD'
-              },
-              'netBid': {
-                'amount': 0.0081,
-                'currency': 'USD'
-              },
-              'dealId': 'abc123xyz',
-              'impressionTrackingUrls': [],
-              'impressionTrackingUrlsEsc': [],
-              'adId': 'adn-id-1064238860',
-              'selectedColumn': '0',
-              'selectedColumnPosition': '0',
-              'renderedPixel': 'https://ads.adnuntius.delivery/b/yQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg.html',
-              'renderedPixelEsc': 'http%3A%2F%2Fads.adnuntius.delivery%2Fb%2FyQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg.html',
-              'visibleUrl': 'https://ads.adnuntius.delivery/s?rt=yQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg',
-              'visibleUrlEsc': 'http%3A%2F%2Fads.adnuntius.delivery%2Fs%3Frt%3DyQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg',
-              'viewUrl': 'https://ads.adnuntius.delivery/v?rt=yQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg',
-              'viewUrlEsc': 'http%3A%2F%2Fads.adnuntius.delivery%2Fv%3Frt%3DyQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg',
-              'rt': 'yQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg',
-              'creativeWidth': '640',
-              'creativeHeight': '480',
-              'creativeId': 's90t0q03pm',
-              'lineItemId': 'cr3hnkkxhnkw9ldy',
-              'layoutId': 'buyers_network_image_layout_1',
-              'layoutName': 'Image',
-              'layoutExternalReference': '',
-              'html': "<!DOCTYPE html>\n<html>\n<head>\n    <meta charset=\"utf-8\">\n    <style media=\"all\">\n        html, body, .responseCtr {\n            margin: 0;\n            padding: 0;\n            outline: 0;\n            border: 0;\n            overflow: hidden;\n        }\n\n        .responseCtr {\n            display: inline-block;\n            line-height: 0;\n            vertical-align: top;\n        }\n\n        .responseCtr a {\n            line-height: 0;\n        }\n\n        .responseCtr *, .responseCtr a * {\n            line-height: normal;\n        }\n\n        .responseCtr .contentWrapperPerItem {\n            margin: 0;\n            padding: 0;\n            outline: 0;\n            border: 0;\n            display: inline-block;\n            line-height: 0;\n            vertical-align: top;\n        }\n\n        a img {\n            border: none;\n            outline: none;\n        }\n\n        img {\n            margin: 0;\n            padding: 0;\n        }\n\n        /* need this displayNone class to ensure images are preloaded for smooth transition */\n        img.displayNone {\n            position: absolute;\n            top: -99999px;\n            left: -99999px;\n        }\n\n        .contentWrapperTrailer {\n            clear: both;\n        }\n    </style>\n    <script src=\"https://cdn.adnuntius.com/adn.js\"></script>\n</head>\n<body>\n<div id=\"adn-rsp--91674201\" class=\"responseCtr\">\n<div class=\"contentWrapperPerItem\" id=\"adn-id-1064238860\" data-line-item-id=\"cr3hnkkxhnkw9ldy\" data-creative-id=\"s90t0q03pm\" data-creative-width=\"100\" data-creative-height=\"30\" data-response-token=\"yQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg\"><a rel=\"nofollow\" target=\"_top\" href=\"https://ads.adnuntius.delivery/c/yQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg?ct=673&r=http%3A%2F%2Fadnuntius.com\"><img src=\"https://cdn.adnuntius.com/cdn/iBgqruUNbaUb2hmD3vws7WTi84jg_WB_-VOF_FeOZ7A.png\" width=\"728\" height=\"90\" alt=\"\"/></a><div class=\"contentWrapperTrailer\"></div></div>\n</div><script>\n            //<![CDATA[\n            (function() {\n                var impTrackers = [];impTrackers.push(\"https://ads.adnuntius.delivery/b/yQtMUwYBn5P4v72WJMqLW4z7uJOBFXJTfjoRyz0z_wsAAAAQCtjQz9kbGWD4nuZy3q6HaCYxq6Lckz2kThplNb227EJdQ5032jcIGkf-UrPmXCU2EbXVaQ3Ok6_FNLuIDTONJyx6ZZCB10wGqA3OaSe1EqwQp84u1_5iQZAWDk73UYf7_vcIypn7ev-SICZ3qaevb2jYSRqTVZx6AiBZQQGlzlOOrbZU9AU1F-JwTds-YV3qtJHGlxI2peWFIuxFlOYyeX9Kzg.html\");var body = document.getElementsByTagName(\"body\")[0];\n                for (var i = 0; i < impTrackers.length; i++) {\n                    var impTracker = impTrackers[i];\n                    var ifr = document.createElement(\"iframe\");\n                    ifr.src = impTracker + (impTracker.match(/\\?/) ? '&' : '?') + 'cb=' + Math.random();\n                    ifr.setAttribute(\"scrolling\", \"no\");\n                    ifr.setAttribute(\"frameborder\", \"0\");\n                    ifr.setAttribute(\"width\", \"1\");\n                    ifr.setAttribute(\"height\", \"1\");\n                    ifr.setAttribute(\"style\", \"position:absolute;top:-10000px;left:-100000px;\");\n                    body.appendChild(ifr);\n                }\n            })();\n            //]]>\n            </script>\n    \n<script>\n//<![CDATA[\n(function() {\n    var matchedAdCount = 1;\n    if (window.adn && adn.inIframe && adn.inIframe.processAdResponse) {\n        return adn.inIframe.processAdResponse({ matchedAdCount: matchedAdCount });\n    }\n    window.adn = window.adn || {};\n    adn.calls = adn.calls || [];\n    adn.calls.push(function() {\n        adn.inIframe.processAdResponse({ matchedAdCount: matchedAdCount });\n    });\n})();\n//]]>\n</script></body>\n</html>",
-              'renderTemplate': '<a rel="nofollow" target="_top" href="{{{urls.destination.url}}}"><img src="{{{assets.Image.cdnId}}}" width="{{assets.Image.width}}" height="{{assets.Image.height}}" alt=""/></a>'
-            }
-          ],
+          'deals': deals,
           'ads': [
             {
               'destinationUrlEsc': 'http%3A%2F%2Fads.adnuntius.delivery%2Fc%2F5Mu-vFVsaf4dWWx8uyZoV7Mz0sPkF1_j9bSupMwX8dMAAAAQCtjQz9kbGWD4nuZy3q6HaCYxqqTYxj2sS0FkMriztxcORshj3zRbT0KsV7XnDXE0F-OsHX7Ok6_FNLuIDTOMJyx6ZZCB10wGqA3OaSe1Eq9D85h8gP1gGsobC0KsAISm_PYNkJ6ve6qZLnB79fX6XHLYSRqTBM8sBCRXQAetnVzeo7AHoQhkFeouS444YA_q4JCTlRI2peWFIuxFlOYyeX9Kzg%3Fct%3D673%26r%3Dhttp%253A%252F%252Fadnuntius.com',
@@ -747,12 +752,20 @@ describe('adnuntiusBidAdapter', function() {
 
   describe('interpretResponse', function() {
     it('should return valid response when passed valid server response', function() {
-      const interpretedResponse = spec.interpretResponse(serverResponse, singleBidRequest);
+      config.setBidderConfig({
+        bidders: ['adnuntius'],
+        config: {
+          bidType: 'netBid',
+          maxDeals: 1
+        }
+      });
+
+      const interpretedResponse = config.runWithBidder('adnuntius', () => spec.interpretResponse(serverResponse, singleBidRequest));
       expect(interpretedResponse).to.have.lengthOf(2);
 
       const deal = serverResponse.body.adUnits[0].deals[0];
       expect(interpretedResponse[0].bidderCode).to.equal('adnuntius');
-      expect(interpretedResponse[0].cpm).to.equal(deal.bid.amount * 1000);
+      expect(interpretedResponse[0].cpm).to.equal(deal.netBid.amount * 1000);
       expect(interpretedResponse[0].width).to.equal(Number(deal.creativeWidth));
       expect(interpretedResponse[0].height).to.equal(Number(deal.creativeHeight));
       expect(interpretedResponse[0].creativeId).to.equal(deal.creativeId);
@@ -768,7 +781,7 @@ describe('adnuntiusBidAdapter', function() {
 
       const ad = serverResponse.body.adUnits[0].ads[0];
       expect(interpretedResponse[1].bidderCode).to.equal('adnuntius');
-      expect(interpretedResponse[1].cpm).to.equal(ad.bid.amount * 1000);
+      expect(interpretedResponse[1].cpm).to.equal(ad.netBid.amount * 1000);
       expect(interpretedResponse[1].width).to.equal(Number(ad.creativeWidth));
       expect(interpretedResponse[1].height).to.equal(Number(ad.creativeHeight));
       expect(interpretedResponse[1].creativeId).to.equal(ad.creativeId);
@@ -781,6 +794,59 @@ describe('adnuntiusBidAdapter', function() {
       expect(interpretedResponse[1].ttl).to.equal(360);
       expect(interpretedResponse[1].dealId).to.equal('not-in-deal-array-here');
       expect(interpretedResponse[1].dealCount).to.equal(0);
+    });
+
+    it('should not process valid response when passed alt bidder that is an adndeal', function() {
+      const altBidder = {
+        bid: [
+          {
+            bidder: 'adndeal1',
+            bidId: 'adn-0000000000000551',
+          }
+        ]
+      };
+      serverResponse.body.adUnits[0].deals = [];
+
+      const interpretedResponse = spec.interpretResponse(serverResponse, altBidder);
+      expect(interpretedResponse).to.have.lengthOf(0);
+
+      serverResponse.body.adUnits[0].deals = deals;
+    });
+
+    it('should return valid response when passed alt bidder', function() {
+      const altBidder = {
+        bid: [
+          {
+            bidder: 'adn-alt',
+            bidId: 'adn-0000000000000551',
+            params: {
+              bidType: 'netBid'
+            }
+          }
+        ]
+      };
+      serverResponse.body.adUnits[0].deals = [];
+
+      const interpretedResponse = spec.interpretResponse(serverResponse, altBidder);
+      expect(interpretedResponse).to.have.lengthOf(1);
+
+      const ad = serverResponse.body.adUnits[0].ads[0];
+      expect(interpretedResponse[0].bidderCode).to.equal('adn-alt');
+      expect(interpretedResponse[0].cpm).to.equal(ad.netBid.amount * 1000);
+      expect(interpretedResponse[0].width).to.equal(Number(ad.creativeWidth));
+      expect(interpretedResponse[0].height).to.equal(Number(ad.creativeHeight));
+      expect(interpretedResponse[0].creativeId).to.equal(ad.creativeId);
+      expect(interpretedResponse[0].currency).to.equal(ad.bid.currency);
+      expect(interpretedResponse[0].netRevenue).to.equal(false);
+      expect(interpretedResponse[0].meta).to.have.property('advertiserDomains');
+      expect(interpretedResponse[0].meta.advertiserDomains).to.have.lengthOf(1);
+      expect(interpretedResponse[0].meta.advertiserDomains[0]).to.equal('adnuntius.com');
+      expect(interpretedResponse[0].ad).to.equal(serverResponse.body.adUnits[0].html);
+      expect(interpretedResponse[0].ttl).to.equal(360);
+      expect(interpretedResponse[0].dealId).to.equal('not-in-deal-array-here');
+      expect(interpretedResponse[0].dealCount).to.equal(0);
+
+      serverResponse.body.adUnits[0].deals = deals;
     });
   });
 

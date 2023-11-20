@@ -1,7 +1,6 @@
 import {
   buildUrl,
-  deepAccess,
-  getBidIdParameter,
+  deepAccess, getBidIdParameter,
   getValue,
   isArray,
   logInfo,
@@ -48,8 +47,10 @@ export const spec = {
     */
   buildRequests: function(validBidRequests, bidderRequest) {
     const slots = validBidRequests.map(beOpRequestSlotsMaker);
-    const firstPartyData = bidderRequest.ortb2;
-    const psegs = (firstPartyData && firstPartyData.user && firstPartyData.user.ext && firstPartyData.user.ext.data) ? firstPartyData.user.ext.data.permutive : undefined;
+    const firstPartyData = bidderRequest.ortb2 || {};
+    const psegs = firstPartyData.user?.ext?.permutive || firstPartyData.user?.ext?.data?.permutive || [];
+    const userBpSegs = firstPartyData.user?.ext?.bpsegs || firstPartyData.user?.ext?.data?.bpsegs || [];
+    const siteBpSegs = firstPartyData.site?.ext?.bpsegs || firstPartyData.site?.ext?.data?.bpsegs || [];
     const pageUrl = getPageUrl(bidderRequest.refererInfo, window);
     const gdpr = bidderRequest.gdprConsent;
     const firstSlot = slots[0];
@@ -61,6 +62,8 @@ export const spec = {
       nid: firstSlot.nid,
       nptnid: firstSlot.nptnid,
       pid: firstSlot.pid,
+      psegs: psegs,
+      bpsegs: (userBpSegs.concat(siteBpSegs)).map(item => item.toString()),
       url: pageUrl,
       lang: (window.navigator.language || window.navigator.languages[0]),
       kwds: keywords,
@@ -70,10 +73,6 @@ export const spec = {
       gdpr_applies: gdpr ? gdpr.gdprApplies : false,
       tc_string: (gdpr && gdpr.gdprApplies) ? gdpr.consentString : null,
     };
-
-    if (psegs) {
-      Object.assign(payloadObject, {psegs: psegs});
-    }
 
     const payloadString = JSON.stringify(payloadObject);
     return {
@@ -129,8 +128,6 @@ function buildTrackingParams(data, info, value) {
     nptnid: params.networkPartnerId,
     bid: data.bidId || data.requestId,
     sl_n: data.adUnitCode,
-    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-    aid: data.auctionId,
     se_ca: 'bid',
     se_ac: info,
     se_va: value,
@@ -158,8 +155,6 @@ function beOpRequestSlotsMaker(bid) {
     bid: getBidIdParameter('bidId', bid),
     brid: getBidIdParameter('bidderRequestId', bid),
     name: getBidIdParameter('adUnitCode', bid),
-    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-    aid: getBidIdParameter('auctionId', bid),
     tid: bid.ortb2Imp?.ext?.tid || '',
     brc: getBidIdParameter('bidRequestsCount', bid),
     bdrc: getBidIdParameter('bidderRequestCount', bid),

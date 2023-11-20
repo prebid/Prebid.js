@@ -73,6 +73,7 @@ export const spec = {
     validRequest.forEach((bid) => {
       let imp = {};
       Object.keys(bid).forEach(key => imp[key] = bid[key]);
+      imp.ortb2 && delete imp.ortb2;
       payload.imps.push(imp);
     });
     return {
