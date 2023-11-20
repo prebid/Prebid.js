@@ -10,7 +10,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bid) {
-    return !!(bid.bidId);
+    return !!(bid.bidId && bid.params.site && bid.params.adunit );
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -51,6 +51,9 @@ export const spec = {
       return bidResponses
     }
     const firstBid = bidResponsesFromServer[0]
+    if(!firstBid){
+      return bidResponses
+    }
     const firstSeat = firstBid.ads[0]
     const bidResponse = {
       requestId: firstSeat.requestId,
