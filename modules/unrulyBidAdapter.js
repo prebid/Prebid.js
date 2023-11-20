@@ -239,7 +239,7 @@ export const adapter = {
       let auctionConfigs = serverResponseBody.auctionConfigs;
       let bidIdList = Object.keys(auctionConfigs);
       if (bidIdList.length) {
-        bidIdList.forEach((bidId)=>{
+        bidIdList.forEach((bidId) => {
           fledgeAuctionConfigs = [{
             'bidId': bidId,
             'config': auctionConfigs[bidId]
