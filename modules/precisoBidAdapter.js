@@ -1,8 +1,11 @@
 import { logMessage, isFn, deepAccess, logInfo } from '../src/utils.js';
+import { hasPurpose1Consent } from '../src/utils/gpdr.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getStorageManager } from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const BIDDER_CODE = 'preciso';
 const AD_URL = 'https://ssp-bidder.mndtrk.com/bid_request/openrtb';
@@ -10,21 +13,109 @@ const AD_URL = 'https://ssp-bidder.mndtrk.com/bid_request/openrtb';
 const URL_SYNC = 'https://ck.2trk.info/rtb/user/usersync.aspx?';
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 const GVLID = 874;
-let userId = 'NA';
-
+// let userId = 'NA';
+const COOKIE_NAME = '_sharedId';
+// export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: 'sharedId'});
+export const storage1 = getStorageManager({bidderCode: BIDDER_CODE});
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
   gvlid: GVLID,
 
+  getUserSyncs: function (syncOptions, _, gdprConsent, uspConsent) {
+    logInfo('Cr Test1 userSync')
+    // const fastBidVersion = config.getConfig('criteo.fastBidVersion');
+    // if (canFastBid(fastBidVersion)) {
+    //   logInfo('Cr Test12 userSync')
+    //   return [];
+    // }
+
+    // const refererInfo = getRefererInfo();
+    // const origin = 'criteoPrebidAdapter';
+
+    if (syncOptions.iframeEnabled && hasPurpose1Consent(gdprConsent)) {
+      const queryParams = [];
+      // queryParams.push(`origin=${origin}`);
+      // queryParams.push(`topUrl=${refererInfo.domain}`);
+      logInfo('test1 iframe enabled')
+      if (gdprConsent) {
+        if (gdprConsent.gdprApplies) {
+          queryParams.push(`gdpr=${gdprConsent.gdprApplies == true ? 1 : 0}`);
+        }
+        if (gdprConsent.consentString) {
+          queryParams.push(`gdpr_consent=${gdprConsent.consentString}`);
+        }
+      }
+      if (uspConsent) {
+        queryParams.push(`us_privacy=${uspConsent}`);
+      }
+
+      let sharedId = readFromAllStorages(COOKIE_NAME);
+      logInfo('test1 sharedId:' + sharedId);
+
+      let preID = storage.getCookie('_pre|usrid15');
+      logInfo('test23 precisoId:' + preID)
+
+      return [{
+        type: 'iframe',
+        // url: `https://gum.criteo.com/syncframe?${queryParams.join('&')}#${jsonHashSerialized}`
+        // url: `${URL_SYNC}id=${sharedId}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&us_privacy=${uspConsent}&t=4`
+        url: `${URL_SYNC}id=${sharedId}${queryParams.join('&')}&t=4`
+
+      }];
+    }
+    return [{
+      type: 'iframe',
+      url: `${URL_SYNC}id=sharedId&t=4`
+    }
+    ];
+  },
+
+  // getUserSyncs: (syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '', gppConsent = '') => {
+  //   let syncs = [];
+  //   let { gdprApplies, consentString = '' } = gdprConsent;
+  //   logInfo('debugTest1 getUserSyncs')
+  //   var browserSignature = '';
+  //   getBrowserSignature().then(signature => {
+  //     logInfo('testTest BS:' + signature)
+  //     browserSignature = signature;
+  //     logInfo('test4 broswerId:' + browserSignature);
+  //   });
+  //   // console.log('test broswerId:' + browserSignature);
+
+  //   logInfo('test1 broswerId:' + browserSignature);
+  //   // logInfo('test3 broswerId:' + getBrowserSignature().then(signature => {}));
+
+  //   if (serverResponses.length > 0) {
+  //     logInfo('preciso bidadapter getusersync serverResponses:' + serverResponses.toString);
+  //   }
+  //   if (syncOptions.iframeEnabled) {
+  //     syncs.push({
+  //       type: 'iframe',
+  //       url: `${URL_SYNC}id=${userId}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&us_privacy=${uspConsent}&t=4`
+
+  //     });
+  //   } else {
+  //     syncs.push({
+  //       type: 'image',
+  //       url: `${URL_SYNC}id=${userId}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&us_privacy=${uspConsent}&t=2`
+
+  //     });
+  //   }
+  //   return syncs
+  // },
+
   isBidRequestValid: (bid) => {
+    logInfo('debugTest2 reqvalid')
     return Boolean(bid.bidId && bid.params && !isNaN(bid.params.publisherId) && bid.params.host == 'prebid');
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
+    logInfo('debugTest3 buildReq')
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-    userId = validBidRequests[0].userId.pubcid;
+    // userId = validBidRequests[0].userId.pubcid;
     let winTop = window;
     let location;
     var offset = new Date().getTimezoneOffset();
@@ -128,6 +219,7 @@ export const spec = {
   },
 
   interpretResponse: function (serverResponse) {
+    logInfo('debugTest4 resp')
     const response = serverResponse.body
 
     const bids = []
@@ -152,43 +244,7 @@ export const spec = {
     })
 
     return bids
-  },
-
-  getUserSyncs: (syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '', gppConsent = '') => {
-    let syncs = [];
-    let { gdprApplies, consentString = '' } = gdprConsent;
-
-    var browserSignature = '';
-    getBrowserSignature().then(signature => {
-      logInfo('testTest BS:' + signature)
-      browserSignature = signature;
-      logInfo('test4 broswerId:' + browserSignature);
-    });
-    // console.log('test broswerId:' + browserSignature);
-    
-   
-    logInfo('test1 broswerId:' + browserSignature);
-   // logInfo('test3 broswerId:' + getBrowserSignature().then(signature => {}));
-
-    if (serverResponses.length > 0) {
-      logInfo('preciso bidadapter getusersync serverResponses:' + serverResponses.toString);
-    }
-    if (syncOptions.iframeEnabled) {
-      syncs.push({
-        type: 'iframe',
-        url: `${URL_SYNC}id=${userId}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&us_privacy=${uspConsent}&t=4`
-
-      });
-    } else {
-      syncs.push({
-        type: 'image',
-        url: `${URL_SYNC}id=${userId}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&us_privacy=${uspConsent}&t=2`
-
-      });
-    }
-    return syncs
   }
-
 };
 
 function getBrowserSignature() {
@@ -294,6 +350,13 @@ function getBidFloor(bid) {
   } catch (_) {
     return 0
   }
+}
+
+function readFromAllStorages(name) {
+  const fromCookie = storage.getCookie(name);
+  const fromLocalStorage = storage.getDataFromLocalStorage(name);
+
+  return fromCookie || fromLocalStorage || undefined;
 }
 
 registerBidder(spec);

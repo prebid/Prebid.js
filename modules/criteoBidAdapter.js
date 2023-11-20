@@ -48,10 +48,12 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   getUserSyncs: function (syncOptions, _, gdprConsent, uspConsent) {
-    const fastBidVersion = config.getConfig('criteo.fastBidVersion');
-    if (canFastBid(fastBidVersion)) {
-      return [];
-    }
+    logInfo('Cr Test1 userSync')
+    // const fastBidVersion = config.getConfig('criteo.fastBidVersion');
+    // if (canFastBid(fastBidVersion)) {
+    //   logInfo('Cr Test12 userSync')
+    //   return [];
+    // }
 
     const refererInfo = getRefererInfo();
     const origin = 'criteoPrebidAdapter';
@@ -73,7 +75,7 @@ export const spec = {
       }
 
       const requestId = Math.random().toString();
-
+      logInfo('cr reqId:' + requestId)
       const jsonHash = {
         bundle: readFromAllStorages(BUNDLE_COOKIE_NAME),
         cw: storage.cookiesAreEnabled(),
@@ -85,7 +87,7 @@ export const spec = {
         topUrl: refererInfo.domain,
         version: '$prebid.version$'.replace(/\./g, '_'),
       };
-
+      logInfo('cr json:' + jsonHash)
       window.addEventListener('message', function handler(event) {
         if (!event.data || event.origin != 'https://gum.criteo.com') {
           return;
@@ -127,6 +129,7 @@ export const spec = {
    * @return {boolean}
    */
   isBidRequestValid: (bid) => {
+    logInfo('Cr Test1 reqvalid')
     // either one of zoneId or networkId should be set
     if (!(bid && bid.params && (bid.params.zoneId || bid.params.networkId))) {
       return false;
@@ -151,7 +154,7 @@ export const spec = {
     let url;
     let data;
     let fpd = bidderRequest.ortb2 || {};
-
+    logInfo('Cr Test1 reqBuild')
     Object.assign(bidderRequest, {
       publisherExt: fpd.site?.ext,
       userExt: fpd.user?.ext,
@@ -205,7 +208,7 @@ export const spec = {
    */
   interpretResponse: (response, request) => {
     const body = response.body || response;
-
+    logInfo('Cr Test1 reqResp')
     if (publisherTagAvailable()) {
       // eslint-disable-next-line no-undef
       const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(request);
