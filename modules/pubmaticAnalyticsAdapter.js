@@ -1,4 +1,4 @@
-import {_each, isArray, isStr, logError, logWarn, pick} from '../src/utils.js';
+import {_each, isArray, isStr, logError, logWarn, pick, generateUUID} from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
@@ -379,6 +379,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
       'sz': getSizesForAdUnit(adUnit, adUnitId),
       'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId)),
       'fskp': floorData && floorFetchStatus ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined,
+      'sid': generateUUID()
     };
     if (floorData?.floorRequestData) {
       const { location, fetchStatus, floorProvider } = floorData?.floorRequestData;
