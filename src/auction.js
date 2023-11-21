@@ -58,6 +58,7 @@
  */
 
 import {
+  callBurl,
   deepAccess,
   generateUUID,
   getValue,
@@ -185,6 +186,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   function executeCallback(timedOut) {
     if (!timedOut) {
       clearTimeout(_timeoutTimer);
+    } else {
+      events.emit(CONSTANTS.EVENTS.AUCTION_TIMEOUT, getProperties());
     }
     if (_auctionEnd === undefined) {
       let timedOutRequests = [];
@@ -360,6 +363,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   function addWinningBid(winningBid) {
     const winningAd = adUnits.find(adUnit => adUnit.transactionId === winningBid.transactionId);
     _winningBids = _winningBids.concat(winningBid);
+    callBurl(winningBid);
     adapterManager.callBidWonBidder(winningBid.adapterCode || winningBid.bidder, winningBid, adUnits);
     if (winningAd && !winningAd.deferBilling) adapterManager.callBidBillableBidder(winningBid);
   }
@@ -410,6 +414,14 @@ export const addBidResponse = hook('sync', function(adUnitCode, bid, reject) {
   this.dispatch.call(null, adUnitCode, bid);
 }, 'addBidResponse');
 
+/**
+ * Delay hook for adapter responses.
+ *
+ * `ready` is a promise; auctions wait for it to resolve before closing. Modules can hook into this
+ * to delay the end of auctions while they perform initialization that does not need to delay their start.
+ */
+export const responsesReady = hook('sync', (ready) => ready, 'responsesReady');
+
 export const addBidderRequests = hook('sync', function(bidderRequests) {
   this.dispatch.call(this.context, bidderRequests);
 }, 'addBidderRequests');
@@ -425,32 +437,6 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
   let allAdapterCalledDone = false;
   let bidderRequestsDone = new Set();
   let bidResponseMap = {};
-  const ready = {};
-
-  function waitFor(requestId, result) {
-    if (ready[requestId] == null) {
-      ready[requestId] = GreedyPromise.resolve();
-    }
-    ready[requestId] = ready[requestId].then(() => GreedyPromise.resolve(result).catch(() => {}))
-  }
-
-  function guard(bidderRequest, fn) {
-    let timeout = bidderRequest.timeout;
-    if (timeout == null || timeout > auctionInstance.getTimeout()) {
-      timeout = auctionInstance.getTimeout();
-    }
-    const timeRemaining = auctionInstance.getAuctionStart() + timeout - Date.now();
-    const wait = ready[bidderRequest.bidderRequestId];
-    const orphanWait = ready['']; // also wait for "orphan" responses that are not associated with any request
-    if ((wait != null || orphanWait != null) && timeRemaining > 0) {
-      GreedyPromise.race([
-        GreedyPromise.timeout(timeRemaining),
-        GreedyPromise.resolve(orphanWait).then(() => wait)
-      ]).then(fn);
-    } else {
-      fn();
-    }
-  }
 
   function afterBidAdded() {
     outstandingBidsAdded--;
@@ -525,8 +511,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
   return {
     addBidResponse: (function () {
       function addBid(adUnitCode, bid) {
-        const bidderRequest = index.getBidderRequest(bid);
-        waitFor((bidderRequest && bidderRequest.bidderRequestId) || '', addBidResponse.call({
+        addBidResponse.call({
           dispatch: acceptBidResponse,
         }, adUnitCode, bid, (() => {
           let rejected = false;
@@ -536,13 +521,13 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
               rejected = true;
             }
           }
-        })()));
+        })())
       }
       addBid.reject = rejectBidResponse;
       return addBid;
     })(),
     adapterDone: function () {
-      guard(this, adapterDone.bind(this))
+      responsesReady(GreedyPromise.resolve()).finally(() => adapterDone.call(this));
     }
   }
 }

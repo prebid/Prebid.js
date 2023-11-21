@@ -8,17 +8,12 @@ import { hasPurpose1Consent } from '../src/utils/gpdr.js';
 const GVLID = 816;
 const BIDDER_CODE = 'nobid';
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
-window.nobidVersion = '1.4.1';
+window.nobidVersion = '1.3.3';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
 window.nobid.bidWonTotal = 0;
 window.nobid.refreshCount = 0;
-window.nobid.firstPartyIds = null;
-window.nobid.firstPartyIdEnabled = false;
-const FIRST_PARTY_KEY = 'fppcid.nobid.io';
-const FIRST_PARTY_SOURCE_KEY = 'fpid.nobid.io';
-const FIRST_PARTY_DATA_EXPIRY_DAYS = 7 * 24 * 3600 * 1000;
 function log(msg, obj) {
   logInfo('-NoBid- ' + msg, obj)
 }
@@ -140,10 +135,8 @@ function nobidBuildRequests(bids, bidderRequest) {
             src.push({source: eid.source, uids: ids});
           }
         });
-        if (window.nobid.firstPartyIds && window.nobid.firstPartyIds) src.push({source: FIRST_PARTY_SOURCE_KEY, uids: [{id: window.nobid.firstPartyIds.ids}]});
         return src;
       }
-      if (window.nobid.firstPartyIds && window.nobid.firstPartyIds.ids) return [{source: FIRST_PARTY_SOURCE_KEY, uids: [{id: window.nobid.firstPartyIds.ids}]}];
     }
     var state = {};
     state['sid'] = siteId;
@@ -293,12 +286,6 @@ function nobidInterpretResponse(response, bidRequest) {
   var setRefreshLimit = function(response) {
     if (response && typeof response.rlimit !== 'undefined') window.nobid.refreshLimit = response.rlimit;
   }
-  var setFirstPartyIdEnabled = function(response) {
-    if (response && typeof response.fpid !== 'undefined') window.nobid.firstPartyIdEnabled = response.fpid;
-    if (window?.nobid?.firstPartyIdEnabled) {
-      nobidFirstPartyData.loadOrCreateFirstPartyData();
-    }
-  }
   var setUserBlock = function(response) {
     if (response && typeof response.ublock !== 'undefined') {
       nobidSetCookie('_ublock', '1', response.ublock);
@@ -306,7 +293,6 @@ function nobidInterpretResponse(response, bidRequest) {
   }
   setRefreshLimit(response);
   setUserBlock(response);
-  setFirstPartyIdEnabled(response);
   var bidResponses = [];
   for (var i = 0; response.bids && i < response.bids.length; i++) {
     var bid = response.bids[i];
@@ -373,113 +359,6 @@ window.addEventListener('message', function (event) {
     }
   }
 }, false);
-const nobidFirstPartyData = {
-  isJson: function (str) {
-    return str && str.startsWith('{') && str.endsWith('}');
-  },
-  hasLocalStorage: function () {
-    try {
-      return window.localStorage;
-    } catch (error) {
-      logWarn('Local storage api disabled', error);
-    }
-    return false;
-  },
-  readFirstPartyDataIds: function () {
-    try {
-      if (this.hasLocalStorage()) {
-        const idsStr = window.localStorage.getItem(FIRST_PARTY_SOURCE_KEY);
-        if (this.isJson(idsStr)) {
-          const idsObj = JSON.parse(idsStr);
-          if (idsObj.ts + FIRST_PARTY_DATA_EXPIRY_DAYS < Date.now()) return { pid: idsObj.pid }; // expired?
-          return idsObj;
-        }
-        return null;
-      }
-    } catch (error) {
-      logWarn('Local storage api disabled', error);
-    }
-    return null;
-  },
-  loadOrCreateFirstPartyData: function () {
-    const storeFirstPartyDataIds = function ({ids: theIds, pid: thePid}) {
-      try {
-        if (nobidFirstPartyData.hasLocalStorage()) {
-          window.localStorage.setItem(FIRST_PARTY_SOURCE_KEY, JSON.stringify({ids: theIds, pid: thePid, ts: Date.now()}));
-        }
-      } catch (error) {
-        logWarn('Local storage api disabled', error);
-      }
-    };
-    const readFirstPartyId = function () {
-      try {
-        if (nobidFirstPartyData.hasLocalStorage()) {
-          const idStr = window.localStorage.getItem(FIRST_PARTY_KEY);
-          if (nobidFirstPartyData.isJson(idStr)) {
-            return JSON.parse(idStr);
-          }
-          return null;
-        }
-      } catch (error) {
-        logWarn('Local storage api disabled', error);
-      }
-      return null;
-    };
-    const storeFirstPartyId = function (theId) {
-      try {
-        if (nobidFirstPartyData.hasLocalStorage()) {
-          window.localStorage.setItem(FIRST_PARTY_KEY, JSON.stringify(theId));
-        }
-      } catch (error) {
-        logWarn('Local storage api disabled', error);
-      }
-    };
-    const _loadOrCreateFirstPartyData = function () {
-      const generateGUID = function () {
-        let d = new Date().getTime();
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-          const r = (d + Math.random() * 16) % 16 | 0;
-          d = Math.floor(d / 16);
-          return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
-        });
-      };
-      const ajaxGet = function (ajaxParams, callback) {
-        const ajax = new XMLHttpRequest();
-        ajax.withCredentials = false;
-        ajax.timeout = ajaxParams.timeout;
-        ajax.open('GET', ajaxParams.url, true);
-        ajax.onreadystatechange = function () {
-          if (this.readyState === XMLHttpRequest.DONE) {
-            callback(this.response);
-          }
-        };
-        ajax.send(ajaxParams.data);
-      };
-      let firstPartyIdObj = readFirstPartyId();
-      if (!firstPartyIdObj || !firstPartyIdObj.id || !firstPartyIdObj.ts) {
-        const firstPartyId = generateGUID();
-        firstPartyIdObj = {id: firstPartyId, ts: Date.now()};
-        storeFirstPartyId(firstPartyIdObj);
-      }
-      let firstPartyIds = nobidFirstPartyData.readFirstPartyDataIds();
-      if (firstPartyIdObj?.ts && !firstPartyIds?.ids) {
-        const pid = firstPartyIds?.pid || '';
-        const pdate = firstPartyIdObj.ts;
-        const firstPartyId = firstPartyIdObj.id;
-        const url = `https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&pt=17&dpn=1&iiqidtype=2&dpi=430542822&iiqpcid=${firstPartyId}&iiqpciddate=${pdate}&pid=${pid}`;
-        if (window.nobid.firstPartyRequestInProgress) return;
-        window.nobid.firstPartyRequestInProgress = true;
-        ajaxGet({ url: url }, function (response) {
-          response = JSON.parse(response);
-          if (response?.data) storeFirstPartyDataIds({ ids: response.data, pid: response.pid });
-        });
-      }
-    };
-    window.nobid.firstPartyIds = this.readFirstPartyDataIds();
-    if (window.nobid.firstPartyIdEnabled && !window.nobid.firstPartyIds?.ids) _loadOrCreateFirstPartyData();
-  }
-};
-window.nobid.firstPartyIds = nobidFirstPartyData.readFirstPartyDataIds();
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,

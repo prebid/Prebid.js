@@ -83,7 +83,7 @@ export function getContext () {
  */
 export function addContextToRequests (reqBidsConfig) {
   if (currentSiteContext === null) {
-    logWarn('No context data recieved at this time');
+    logWarn('No context data received at this time');
   } else {
     const fragment = { site: {content: currentSiteContext} }
     if (bidderArray?.length > 0) {
@@ -122,17 +122,17 @@ export function loadScriptTag(config) {
       case 'qx-impression':
         const {uid} = e.detail;
         if (!uid || impressionIds.has(uid)) {
-          logWarn(`recieved invalid billable event due to ${!uid ? 'missing' : 'duplicate'} uid: qx-impression`)
+          logWarn(`received invalid billable event due to ${!uid ? 'missing' : 'duplicate'} uid: qx-impression`)
           return;
         } else {
-          logMessage('recieved billable event: qx-impression')
+          logMessage('received billable event: qx-impression')
           impressionIds.add(uid)
           billableEvent.transactionId = e.detail.uid;
           events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, billableEvent);
           break;
         }
       default:
-        logWarn(`recieved invalid billable event: ${e.detail?.type}`)
+        logWarn(`received invalid billable event: ${e.detail?.type}`)
     }
   })
 
