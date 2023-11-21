@@ -144,25 +144,26 @@ export function summarizeAuctionEnd(args, adapterConfig) {
   /** @type {AuctionEndSummary} */
   const eventToSend = summarizeAuctionInit(args, adapterConfig)
   args.adUnits.forEach(adUnit => {
-    cpmmsMap[adUnit.code] = [];
+    cpmmsMap[adUnit.code] = {};
+    cpmmsMap[adUnit.code].cpmm = 0;
     if (adUnit.mediaTypes.video?.context === 'adpod') {
-      adUnit.mediaTypes.video.durationRangeSec?.forEach(() => {
-        cpmmsMap[adUnit.code].push(0);
-      })
-    } else {
-      cpmmsMap[adUnit.code].push(0);
+      cpmmsMap[adUnit.code].adpodLenght = adUnit.mediaTypes.video.durationRangeSec;
     }
   })
 
   args.bidsReceived.forEach(bid => {
-    cpmmsMap[bid.adUnitCode] = cpmmsMap[bid.adUnitCode].map(() => Math.max(cpmmsMap[bid.adUnitCode], Math.round(bid.cpm * 1000 || 0)))
+    cpmmsMap[bid.adUnitCode].cpmm = Math.max(cpmmsMap[bid.adUnitCode].cpmm, Math.round(bid.cpm * 1000 || 0))
   })
 
   const cpmms = [];
   args.adUnits.forEach(adUnit => {
-    cpmmsMap[adUnit.code].forEach((cpmm) => {
-      cpmms.push(cpmm)
-    })
+    if (cpmmsMap[adUnit.code].adpodLenght) {
+      cpmmsMap[adUnit.code].adpodLenght.forEach(() => {
+        cpmms.push(cpmmsMap[adUnit.code].cpmm)
+      })
+    } else {
+      cpmms.push(cpmmsMap[adUnit.code].cpmm)
+    }
   })
 
   eventToSend.cpmms = cpmms
