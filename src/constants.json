@@ -23,6 +23,7 @@
   },
   "EVENTS": {
     "AUCTION_INIT": "auctionInit",
+    "AUCTION_TIMEOUT": "auctionTimeout",
     "AUCTION_END": "auctionEnd",
     "BID_ADJUSTMENT": "bidAdjustment",
     "BID_TIMEOUT": "bidTimeout",

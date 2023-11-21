@@ -3295,6 +3295,84 @@ describe('IndexexchangeAdapter', function () {
     });
   });
 
+  describe('integration through exchangeId and externalId', function () {
+    const expectedExchangeId = 123456;
+    // create banner bids with externalId but no siteId as bidder param
+    const bannerBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+    delete bannerBids[0].params.siteId;
+    bannerBids[0].params.externalId = 'exteranl_id_1';
+
+    beforeEach(() => {
+      config.setConfig({ exchangeId: expectedExchangeId });
+      spec.resetSiteID();
+    });
+
+    afterEach(() => {
+      config.resetConfig();
+    });
+
+    it('when exchangeId and externalId set but no siteId, isBidRequestValid should return true', function () {
+      const bid = utils.deepClone(bannerBids[0]);
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('when neither exchangeId nor siteId set, isBidRequestValid should return false', function () {
+      config.resetConfig();
+      const bid = utils.deepClone(bannerBids[0]);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('when exchangeId and externalId set with banner impression but no siteId, bidrequest sent to endpoint with p param and externalID inside imp.ext', function () {
+      const requests = spec.buildRequests(bannerBids, DEFAULT_OPTION);
+      const payload = extractPayload(requests[0]);
+
+      const expectedURL = IX_SECURE_ENDPOINT + '?p=' + expectedExchangeId;
+      expect(requests[0].url).to.equal(expectedURL);
+      expect(payload.imp[0].ext.externalID).to.equal(bannerBids[0].params.externalId);
+      expect(payload.imp[0].banner.format[0].ext).to.be.undefined;
+      expect(payload.imp[0].ext.siteID).to.be.undefined;
+    });
+
+    it('when exchangeId and externalId set with video impression, bidrequest sent to endpoint with p param and externalID inside imp.ext', function () {
+      const validBids = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+      delete validBids[0].params.siteId;
+      validBids[0].params.externalId = 'exteranl_id_1';
+
+      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
+      const payload = extractPayload(requests[0]);
+
+      const expectedURL = IX_SECURE_ENDPOINT + '?p=' + expectedExchangeId;
+      expect(requests[0].url).to.equal(expectedURL);
+      expect(payload.imp[0].ext.externalID).to.equal(validBids[0].params.externalId);
+      expect(payload.imp[0].ext.siteID).to.be.undefined;
+    });
+
+    it('when exchangeId and externalId set beside siteId, bidrequest sent to endpoint with both p param and s param and externalID inside imp.ext and siteID inside imp.banner.format.ext', function () {
+      bannerBids[0].params.siteId = '1234';
+      const requests = spec.buildRequests(bannerBids, DEFAULT_OPTION);
+      const payload = extractPayload(requests[0]);
+
+      const expectedURL = IX_SECURE_ENDPOINT + '?s=' + bannerBids[0].params.siteId + '&p=' + expectedExchangeId;
+      expect(requests[0].url).to.equal(expectedURL);
+      expect(payload.imp[0].ext.externalID).to.equal(bannerBids[0].params.externalId);
+      expect(payload.imp[0].banner.format[0].ext.externalID).to.be.undefined;
+      expect(payload.imp[0].ext.siteID).to.be.undefined;
+      expect(payload.imp[0].banner.format[0].ext.siteID).to.equal(bannerBids[0].params.siteId);
+    });
+
+    it('when exchangeId and siteId set, but no externalId, bidrequest sent to exchange', function () {
+      bannerBids[0].params.siteId = '1234';
+      delete bannerBids[0].params.externalId;
+      const requests = spec.buildRequests(bannerBids, DEFAULT_OPTION);
+      const payload = extractPayload(requests[0]);
+
+      const expectedURL = IX_SECURE_ENDPOINT + '?s=' + bannerBids[0].params.siteId + '&p=' + expectedExchangeId;
+      expect(requests[0].url).to.equal(expectedURL);
+      expect(payload.imp[0].ext.externalID).to.be.undefined;
+      expect(payload.imp[0].banner.format[0].ext.siteID).to.equal(bannerBids[0].params.siteId);
+    });
+  });
+
   describe('interpretResponse', function () {
     // generate bidderRequest with real buildRequest logic for intepretResponse testing
     let bannerBidderRequest
