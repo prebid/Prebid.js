@@ -158,10 +158,16 @@ function makeWebpackPkg(extraConfig = {}) {
   }
 }
 
-function buildCreative() {
-  return gulp.src(['**/*'])
-    .pipe(webpackStream(require('./webpack.creative.js')))
-    .pipe(gulp.dest('build/creative'))
+function buildCreative(mode = 'production') {
+  const opts = {mode};
+  if (mode === 'development') {
+    opts.devtool = 'inline-source-map'
+  }
+  return function() {
+    return gulp.src(['**/*'])
+      .pipe(webpackStream(Object.assign(require('./webpack.creative.js'), opts)))
+      .pipe(gulp.dest('build/creative'))
+  }
 }
 
 function updateCreativeExample(cb) {
@@ -430,8 +436,8 @@ function watchTaskMaker(options = {}) {
   }
 }
 
-const watch = watchTaskMaker({alsoWatch: ['test/**/*.js'], task: () => gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev', test, buildCreative))});
-const watchFast = watchTaskMaker({livereload: false, task: () => gulp.parallel('build-bundle-dev', buildCreative)});
+const watch = watchTaskMaker({alsoWatch: ['test/**/*.js'], task: () => gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev', test))});
+const watchFast = watchTaskMaker({livereload: false, task: () => gulp.series('build-bundle-dev')});
 
 // support tasks
 gulp.task(lint);
@@ -441,8 +447,8 @@ gulp.task(clean);
 
 gulp.task(escapePostbidConfig);
 
-gulp.task('build-bundle-dev', gulp.series(makeDevpackPkg, gulpBundle.bind(null, true)));
-gulp.task('build-bundle-prod', gulp.series(makeWebpackPkg(), gulpBundle.bind(null, false)));
+gulp.task('build-bundle-dev', gulp.series(gulp.parallel(buildCreative('development'), makeDevpackPkg), gulpBundle.bind(null, true)));
+gulp.task('build-bundle-prod', gulp.series(gulp.parallel(buildCreative(), makeWebpackPkg()), gulpBundle.bind(null, false)));
 // build-bundle-verbose - prod bundle except names and comments are preserved. Use this to see the effects
 // of dead code elimination.
 gulp.task('build-bundle-verbose', gulp.series(makeWebpackPkg({
@@ -462,23 +468,21 @@ gulp.task('build-bundle-verbose', gulp.series(makeWebpackPkg({
   }
 }), gulpBundle.bind(null, false)));
 
-gulp.task('build-creative', gulp.series(buildCreative, updateCreativeExample));
-
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('test-only', test);
 gulp.task('test-all-features-disabled', testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false}));
-gulp.task('test', gulp.series(clean, lint, gulp.parallel('build-creative', gulp.series('test-all-features-disabled', 'test-only'))));
+gulp.task('test', gulp.series(clean, lint, 'test-all-features-disabled', 'test-only'));
 
 gulp.task('test-coverage', gulp.series(clean, testCoverage));
 gulp.task(viewCoverage);
 
 gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 
-gulp.task('build', gulp.series(clean, 'build-bundle-prod', 'build-creative'));
+gulp.task('build', gulp.series(clean, 'build-bundle-prod', updateCreativeExample));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
-gulp.task('serve-fast', gulp.series(clean, gulp.parallel('build-bundle-dev', buildCreative, watchFast)));
+gulp.task('serve-fast', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast)));
 gulp.task('serve-prod', gulp.series(clean, gulp.parallel('build-bundle-prod', startLocalServer)));
 gulp.task('serve-and-test', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast, testTaskMaker({watch: true}))));
 gulp.task('serve-e2e', gulp.series(clean, 'build-bundle-prod', gulp.parallel(() => startIntegServer(), startLocalServer)));
