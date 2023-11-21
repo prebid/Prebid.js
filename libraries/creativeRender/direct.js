@@ -22,7 +22,7 @@ export function renderAdDirect(doc, adId, options) {
     } else {
       writeAd(adData, cb, doc);
     }
-    if (!adData.adUrl && doc.defaultView && doc.defaultView.frameElement) {
+    if (doc.defaultView && doc.defaultView.frameElement) {
       doc.defaultView.frameElement.width = adData.width;
       doc.defaultView.frameElement.height = adData.height;
     }
