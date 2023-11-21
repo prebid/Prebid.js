@@ -1,13 +1,17 @@
-// ver V1.0.3
-import { BANNER } from '../src/mediaTypes.js';
+// ver V1.0.4
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepSetValue, generateUUID, timestamp } from '../src/utils.js';
+import { deepSetValue, generateUUID, timestamp, deepAccess } from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
+import { Renderer } from '../src/Renderer.js';
+
 const BIDDER_CODE = 'pangle';
 const ENDPOINT = 'https://pangle.pangleglobal.com/api/ad/union/web_js/common/get_ads';
+
+const OUTSTREAM_RENDERER_URL = 'https://sf16-static.i18n-pglstatp.com/obj/ad-pattern-sg/pangle/web/ads/video.js';
 
 const DEFAULT_BID_TTL = 30;
 const DEFAULT_CURRENCY = 'USD';
@@ -25,9 +29,7 @@ export function isValidUuid(uuid) {
 function getPangleCookieId() {
   let sid = storage.cookiesAreEnabled() && storage.getCookie(PANGLE_COOKIE);
 
-  if (
-    !sid || !isValidUuid(sid)
-  ) {
+  if (!sid || !isValidUuid(sid)) {
     sid = generateUUID();
     setPangleCookieId(sid);
   }
@@ -37,10 +39,62 @@ function getPangleCookieId() {
 
 function setPangleCookieId(sid) {
   if (storage.cookiesAreEnabled()) {
-    const expires = (new Date(timestamp() + COOKIE_EXP)).toGMTString();
+    const expires = new Date(timestamp() + COOKIE_EXP).toGMTString();
 
     storage.setCookie(PANGLE_COOKIE, sid, expires);
   }
+}
+
+function createRequest(bidRequests, bidderRequest, mediaType) {
+  const data = converter.toORTB({
+    bidRequests,
+    bidderRequest,
+    context: { mediaType },
+  });
+  const devicetype = spec.getDeviceType(navigator.userAgent);
+  deepSetValue(data, 'device.devicetype', devicetype);
+  if (bidderRequest.userId && typeof bidderRequest.userId === 'object') {
+    const pangleId = getPangleCookieId();
+    // add pangle cookie
+    const _eids = data.user?.ext?.eids ?? [];
+    deepSetValue(data, 'user.ext.eids', [
+      ..._eids,
+      {
+        source: document.location.host,
+        uids: [
+          {
+            id: pangleId,
+            atype: 1,
+          },
+        ],
+      },
+    ]);
+  }
+  bidRequests.forEach((item, idx) => {
+    deepSetValue(data.imp[idx], 'ext.networkids', item.params);
+    deepSetValue(data.imp[idx], 'banner.api', [5]);
+    deepSetValue(data, 'test', item.params.test ?? 0)
+  });
+  return {
+    method: 'POST',
+    url: ENDPOINT,
+    data,
+    options: { contentType: 'application/json', withCredentials: true }
+  }
+}
+
+function isVideoBid(bid) {
+  return !!deepAccess(bid, 'mediaTypes.video');
+}
+
+function isBannerBid(bid) {
+  return !!deepAccess(bid, 'mediaTypes.banner');
+}
+
+function renderOutstream(bid) {
+  bid.renderer.push(() => {
+    window.outstreamPlayer({ bid, codeId: bid.adUnitCode });
+  });
 }
 
 const converter = ortbConverter({
@@ -48,19 +102,36 @@ const converter = ortbConverter({
     netRevenue: DEFAULT_NET_REVENUE,
     ttl: DEFAULT_BID_TTL,
     currency: DEFAULT_CURRENCY,
-    mediaType: BANNER
-  }
+  },
+  bidResponse(buildBidResponse, bid, context) {
+    const bidResponse = buildBidResponse(bid, context);
+    const { bidRequest } = context;
+    if (bidRequest.mediaTypes.video?.context === 'outstream') {
+      const renderer = Renderer.install({id: bid.bidId, url: OUTSTREAM_RENDERER_URL, adUnitCode: bid.adUnitCode});
+      renderer.setRender(renderOutstream);
+      bidResponse.renderer = renderer;
+    }
+    return bidResponse;
+  },
 });
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, VIDEO],
 
   getDeviceType: function (ua) {
-    if ((/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(ua.toLowerCase()))) {
+    if (
+      /ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(
+        ua.toLowerCase()
+      )
+    ) {
       return 5; // 'tablet'
     }
-    if ((/iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(ua.toLowerCase()))) {
+    if (
+      /iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(
+        ua.toLowerCase()
+      )
+    ) {
       return 4; // 'mobile'
     }
     return 2; // 'desktop'
@@ -71,38 +142,22 @@ export const spec = {
   },
 
   buildRequests(bidRequests, bidderRequest) {
-    const data = converter.toORTB({ bidRequests, bidderRequest })
-    const devicetype = spec.getDeviceType(navigator.userAgent);
-    deepSetValue(data, 'device.devicetype', devicetype);
-    if (bidderRequest.userId && typeof bidderRequest.userId === 'object') {
-      const pangleId = getPangleCookieId();
-      // add pangle cookie
-      const _eids = data.user?.ext?.eids ?? []
-      deepSetValue(data, 'user.ext.eids', [..._eids, {
-        source: document.location.host,
-        uids: [
-          {
-            id: pangleId,
-            atype: 1
-          }
-        ]
-      }]);
-    }
-    bidRequests.forEach((item, idx) => {
-      deepSetValue(data.imp[idx], 'ext.networkids', item.params);
-      deepSetValue(data.imp[idx], 'banner.api', [5]);
+    const videoBids = bidRequests.filter((bid) => isVideoBid(bid));
+    const bannerBids = bidRequests.filter((bid) => isBannerBid(bid));
+    let requests = bannerBids.length
+      ? [createRequest(bannerBids, bidderRequest, BANNER)]
+      : [];
+    videoBids.forEach((bid) => {
+      requests.push(createRequest([bid], bidderRequest, VIDEO));
     });
-
-    return [{
-      method: 'POST',
-      url: ENDPOINT,
-      data,
-      options: { contentType: 'application/json', withCredentials: true }
-    }]
+    return requests;
   },
 
   interpretResponse(response, request) {
-    const bids = converter.fromORTB({ response: response.body, request: request.data }).bids;
+    const bids = converter.fromORTB({
+      response: response.body,
+      request: request.data,
+    }).bids;
     return bids;
   },
 };

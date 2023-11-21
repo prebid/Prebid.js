@@ -94,7 +94,9 @@ export const spec = {
         request.ccpa = bidderRequest.uspConsent;
       }
       if (bidderRequest.gdprConsent) {
-        request.gdpr = bidderRequest.gdprConsent
+        request.gdpr = {
+          consentString: bidderRequest.gdprConsent.consentString
+        };
       }
       if (content) {
         request.content = content;

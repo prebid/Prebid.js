@@ -90,7 +90,7 @@ function lookupUspConsent({onSuccess, onError}) {
 
   cmp({
     command: 'registerDeletion',
-    callback: adapterManager.callDataDeletionRequest
+    callback: (res, success) => (success == null || success) && adapterManager.callDataDeletionRequest(res)
   }).catch(e => {
     logError('Error invoking CMP `registerDeletion`:', e);
   });

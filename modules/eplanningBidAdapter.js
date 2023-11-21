@@ -1,8 +1,9 @@
-import {getWindowSelf, isEmpty, parseSizesInput, isGptPubadsDefined, isSlotMatchingAdUnitCode} from '../src/utils.js';
+import {getWindowSelf, isEmpty, parseSizesInput, isGptPubadsDefined} from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 const BIDDER_CODE = 'eplanning';
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});

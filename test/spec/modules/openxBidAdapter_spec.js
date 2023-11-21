@@ -14,6 +14,7 @@ import 'modules/consentManagement.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
 import {deepClone} from 'src/utils.js';
+import {version} from 'package.json';
 import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {hook} from '../../../src/hook.js';
 
@@ -316,6 +317,7 @@ describe('OpenxRtbAdapter', function () {
         const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
         expect(request[0].url).to.equal(REQUEST_URL);
         expect(request[0].method).to.equal('POST');
+        expect(request[0].data.ext.pv).to.equal(version);
       });
 
       it('should send delivery domain, if available', function () {
