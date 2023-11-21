@@ -135,7 +135,7 @@ describe('IdentityLinkId tests', function () {
     gppConsentDataStub.restore();
   });
 
-  it('should NOT call the LiveRamp envelope endpoint if GPP applies but no consent string', function () {
+  it('should call the LiveRamp envelope endpoint without GPP consent string if consent string is not provided', function () {
     gppConsentDataStub = sinon.stub(gppDataHandler, 'getConsentData');
     gppConsentDataStub.returns({
       ready: true,
