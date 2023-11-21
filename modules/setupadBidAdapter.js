@@ -20,7 +20,7 @@ const SYNC_ENDPOINT = 'https://cookie.stpd.cloud/sync?';
 const REPORT_ENDPOINT = 'https://adapter-analytics.azurewebsites.net/api/adapter-analytics';
 const GVLID = 1241;
 const TIME_TO_LIVE = 360;
-let seat = null;
+const allBidders = {};
 
 const sendingDataStatistic = initSendingDataStatistic();
 events.on(CONSTANTS.EVENTS.AUCTION_INIT, () => {
@@ -148,7 +148,6 @@ export const spec = {
 
     const serverBody = serverResponse.body;
     const bidResponses = [];
-    seat = serverBody?.seatbid ? serverBody?.seatbid[0].seat : '';
 
     _each(serverBody.seatbid, (res) => {
       _each(res.bid, (bid) => {
@@ -170,6 +169,12 @@ export const spec = {
             advertiserDomains: bid.adomain || [],
           },
         };
+
+        // Set all bidders obj for later use in getPixelUrl()
+        allBidders[res.seat] = {};
+        allBidders[res.seat].cpm = bidResponse.cpm;
+        allBidders[res.seat].currency = bidResponse.currency;
+        allBidders[res.seat].creativeId = bidResponse.creativeId;
 
         bidResponse.ad = ad;
         bidResponse.adUrl = adUrl;
@@ -208,7 +213,7 @@ export const spec = {
   },
 
   getPixelUrl: function (eventName, bid, timestamp) {
-    const bidder = bid.bidder || bid.bidderCode;
+    let bidder = bid.bidder || bid.bidderCode;
     const auctionId = bid.auctionId;
     if (bidder != BIDDER_CODE) return;
 
@@ -235,13 +240,33 @@ export const spec = {
 
     let extraBidParams = '';
     // additional params on bidWon
-    if (eventName === 'bidWon' || eventName === 'bidResponse') {
+    if (eventName === 'bidWon') {
       extraBidParams = `&cpm=${bid.originalCpm}&currency=${bid.originalCurrency}`;
     }
 
-    const url = `${REPORT_ENDPOINT}?event=${eventName}&bidder=${
-      eventName === 'bidRequested' ? BIDDER_CODE : seat || bidder
-    }&placementIds=${placementIds}&auctionId=${auctionId}${extraBidParams}&timestamp=${timestamp}`;
+    if (eventName === 'bidResponse') {
+      // Exclude not needed creativeId key for bidResponse bidders
+      const filteredBidders = Object.fromEntries(
+        Object.entries(allBidders).map(([bidderKey, bidderObj]) => [
+          bidderKey,
+          Object.fromEntries(Object.entries(bidderObj).filter(([key]) => key !== 'creativeId')),
+        ])
+      );
+      bidder = JSON.stringify(filteredBidders);
+    } else if (eventName === 'bidWon') {
+      // Iterate through all bidders to find the winning bidder by using creativeId as identification
+      for (const bidderName in allBidders) {
+        if (
+          allBidders.hasOwnProperty(bidderName) &&
+          allBidders[bidderName].creativeId === bid.creativeId
+        ) {
+          bidder = bidderName;
+          break; // Exit the loop once a match is found
+        }
+      }
+    }
+
+    const url = `${REPORT_ENDPOINT}?event=${eventName}&bidder=${bidder}&placementIds=${placementIds}&auctionId=${auctionId}${extraBidParams}&timestamp=${timestamp}`;
 
     return url;
   },
