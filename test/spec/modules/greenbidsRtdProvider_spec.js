@@ -6,19 +6,10 @@ import {
 import {
   greenbidsSubmodule
 } from 'modules/greenbidsRtdProvider.js';
+import {server} from '../../mocks/xhr.js';
 
 describe('greenbidsRtdProvider', () => {
-  let server;
-
-  beforeEach(() => {
-    server = sinon.createFakeServer();
-  });
-
-  afterEach(() => {
-    server.restore();
-  });
-
-  const endPoint = 'europe-west1-greenbids-357713.cloudfunctions.net';
+  const endPoint = 't.greenbids.ai';
 
   const SAMPLE_MODULE_CONFIG = {
     params: {
@@ -137,7 +128,6 @@ describe('greenbidsRtdProvider', () => {
           {'Content-Type': 'application/json'},
           JSON.stringify(SAMPLE_RESPONSE_ADUNITS)
         );
-        done();
       }, 50);
 
       setTimeout(() => {
@@ -152,6 +142,7 @@ describe('greenbidsRtdProvider', () => {
         expect(requestBids.adUnits[1].bids.map((bid) => bid.bidder)).to.include('rubicon');
         expect(requestBids.adUnits[1].bids.map((bid) => bid.bidder)).to.include('openx');
         expect(callback.calledOnce).to.be.true;
+        done();
       }, 60);
     });
   });
@@ -195,7 +186,6 @@ describe('greenbidsRtdProvider', () => {
           {'Content-Type': 'application/json'},
           JSON.stringify({'failure': 'fail'})
         );
-        done();
       }, 50);
 
       setTimeout(() => {
@@ -204,7 +194,35 @@ describe('greenbidsRtdProvider', () => {
         expect(requestBids.adUnits[0].bids).to.have.length(3);
         expect(requestBids.adUnits[1].bids).to.have.length(3);
         expect(callback.calledOnce).to.be.true;
+        done();
       }, 60);
+    });
+  });
+  describe('stripAdUnits', function() {
+    it('should strip all properties except bidder from each bid in adUnits', function() {
+      const adUnits =
+        [
+          {
+            bids: [
+              { bidder: 'bidder1', otherProp: 'value1' },
+              { bidder: 'bidder2', otherProp: 'value2' }
+            ],
+            mediaTypes: {'banner': {prop: 'value3'}}
+          }
+        ];
+      const expectedOutput = [
+        {
+          bids: [
+            { bidder: 'bidder1' },
+            { bidder: 'bidder2' }
+          ],
+          mediaTypes: {'banner': {prop: 'value3'}}
+        }
+      ];
+
+      // Perform the test
+      const output = greenbidsSubmodule.stripAdUnits(adUnits);
+      expect(output).to.deep.equal(expectedOutput);
     });
   });
 });

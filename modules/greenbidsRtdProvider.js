@@ -1,10 +1,10 @@
-import { logError } from '../src/utils.js';
+import { logError, deepClone } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 
 const MODULE_NAME = 'greenbidsRtdProvider';
-const MODULE_VERSION = '1.0.0';
-const ENDPOINT = 'https://europe-west1-greenbids-357713.cloudfunctions.net/partner-selection';
+const MODULE_VERSION = '1.0.1';
+const ENDPOINT = 'https://t.greenbids.ai';
 
 const auctionInfo = {};
 const rtdOptions = {};
@@ -49,7 +49,12 @@ function createPromise(reqBidsConfigObj) {
         },
       },
       createPayload(reqBidsConfigObj),
-      { contentType: 'application/json' }
+      {
+        contentType: 'application/json',
+        customHeaders: {
+          'Greenbids-Pbuid': rtdOptions.pbuid
+        }
+      }
     );
   });
 }
@@ -85,6 +90,16 @@ function getFalseBidders(bidders) {
     .map(([bidder]) => bidder);
 }
 
+function stripAdUnits(adUnits) {
+  const stripedAdUnits = deepClone(adUnits);
+  return stripedAdUnits.map(adUnit => {
+    adUnit.bids = adUnit.bids.map(bid => {
+      return { bidder: bid.bidder };
+    });
+    return adUnit;
+  });
+}
+
 function createPayload(reqBidsConfigObj) {
   return JSON.stringify({
     auctionId: auctionInfo.auctionId,
@@ -92,7 +107,7 @@ function createPayload(reqBidsConfigObj) {
     referrer: window.location.href,
     prebid: '$prebid.version$',
     rtdOptions: rtdOptions,
-    adUnits: reqBidsConfigObj.adUnits,
+    adUnits: stripAdUnits(reqBidsConfigObj.adUnits),
   });
 }
 
@@ -105,6 +120,7 @@ export const greenbidsSubmodule = {
   findMatchingAdUnit: findMatchingAdUnit,
   removeFalseBidders: removeFalseBidders,
   getFalseBidders: getFalseBidders,
+  stripAdUnits: stripAdUnits,
 };
 
 submodule('realTimeData', greenbidsSubmodule);
