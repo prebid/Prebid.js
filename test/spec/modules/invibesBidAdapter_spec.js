@@ -5,7 +5,7 @@ import {spec, resetInvibes, stubDomainOptions, readGdprConsent} from 'modules/in
 describe('invibesBidAdapter:', function () {
   const BIDDER_CODE = 'invibes';
   const PLACEMENT_ID = '12345';
-  const ENDPOINT = 'https://bid.videostep.com/Bid/VideoAdContent';
+  const ENDPOINT = 'https://bid1.videostep.com/Bid/VideoAdContent';
   const SYNC_ENDPOINT = 'https://k.r66net.com/GetUserSync';
 
   let bidRequests = [
@@ -32,6 +32,78 @@ describe('invibesBidAdapter:', function () {
       bidderRequestId: 'r2',
       params: {
         placementId: 'abcde',
+        disableUserSyncs: false
+      },
+      adUnitCode: 'test-div2',
+      auctionId: 'a2',
+      sizes: [
+        [300, 250],
+        [400, 300]
+      ],
+      transactionId: 't2'
+    }
+  ];
+
+  let bidRequestsWithDuplicatedplacementId = [
+    {
+      bidId: 'b1',
+      bidder: BIDDER_CODE,
+      bidderRequestId: 'r1',
+      params: {
+        placementId: PLACEMENT_ID,
+        disableUserSyncs: false
+
+      },
+      adUnitCode: 'test-div1',
+      auctionId: 'a1',
+      sizes: [
+        [300, 250],
+        [400, 300],
+        [125, 125]
+      ],
+      transactionId: 't1'
+    }, {
+      bidId: 'b2',
+      bidder: BIDDER_CODE,
+      bidderRequestId: 'r2',
+      params: {
+        placementId: PLACEMENT_ID,
+        disableUserSyncs: false
+      },
+      adUnitCode: 'test-div2',
+      auctionId: 'a2',
+      sizes: [
+        [300, 250],
+        [400, 300]
+      ],
+      transactionId: 't2'
+    }
+  ];
+
+  let bidRequestsWithUniquePlacementId = [
+    {
+      bidId: 'b1',
+      bidder: BIDDER_CODE,
+      bidderRequestId: 'r1',
+      params: {
+        placementId: 'PLACEMENT_ID_1',
+        disableUserSyncs: false
+
+      },
+      adUnitCode: 'test-div1',
+      auctionId: 'a1',
+      sizes: [
+        [300, 250],
+        [400, 300],
+        [125, 125]
+      ],
+      transactionId: 't1'
+    }, {
+      bidId: 'b2',
+      bidder: BIDDER_CODE,
+      bidderRequestId: 'r2',
+      params: {
+        placementId: 'PLACEMENT_ID_2',
         disableUserSyncs: false
       },
       adUnitCode: 'test-div2',
@@ -185,15 +257,42 @@ describe('invibesBidAdapter:', function () {
       expect(request.data.preventPageViewEvent).to.be.false;
     });
 
+    it('sends isPlacementRefresh as false when the placement ids are used for the first time', function () {
+      let request = spec.buildRequests(bidRequestsWithUniquePlacementId, bidderRequestWithPageInfo);
+      expect(request.data.isPlacementRefresh).to.be.false;
+    });
+
     it('sends preventPageViewEvent as true on 2nd call', function () {
       let request = spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
       expect(request.data.preventPageViewEvent).to.be.true;
+    });
+
+    it('sends isPlacementRefresh as true on multi requests on the same placement id', function () {
+      let request = spec.buildRequests(bidRequestsWithDuplicatedplacementId, bidderRequestWithPageInfo);
+      expect(request.data.isPlacementRefresh).to.be.true;
+    });
+
+    it('sends isInfiniteScrollPage as false initially', function () {
+      let request = spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
+      expect(request.data.isInfiniteScrollPage).to.be.false;
+    });
+
+    it('sends isPlacementRefresh as true on multi requests multiple calls with the same placement id from second call', function () {
+      let request = spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
+      expect(request.data.isInfiniteScrollPage).to.be.false;
+      let duplicatedRequest = spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
+      expect(duplicatedRequest.data.isPlacementRefresh).to.be.true;
     });
 
     it('sends bid request to ENDPOINT via GET', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
       expect(request.url).to.equal(ENDPOINT);
       expect(request.method).to.equal('GET');
+    });
+
+    it('generates a visitId of length 32', function () {
+      spec.buildRequests(bidRequests, bidderRequestWithPageInfo);
+      expect(top.window.invibes.visitId.length).to.equal(32);
     });
 
     it('sends bid request to custom endpoint via GET', function () {
@@ -244,7 +343,7 @@ describe('invibesBidAdapter:', function () {
         },
         adUnitCode: 'test-div1'
       }], bidderRequestWithPageInfo);
-      expect(request.url).to.equal('https://bid.videostep.com/Bid/VideoAdContent');
+      expect(request.url).to.equal('https://bid1.videostep.com/Bid/VideoAdContent');
       expect(request.method).to.equal('GET');
     });
 
@@ -258,7 +357,7 @@ describe('invibesBidAdapter:', function () {
         },
         adUnitCode: 'test-div1'
       }], bidderRequestWithPageInfo);
-      expect(request.url).to.equal('https://bid.videostep.com/Bid/VideoAdContent');
+      expect(request.url).to.equal('https://bid1.videostep.com/Bid/VideoAdContent');
       expect(request.method).to.equal('GET');
     });
 
@@ -272,7 +371,7 @@ describe('invibesBidAdapter:', function () {
         },
         adUnitCode: 'test-div1'
       }], bidderRequestWithPageInfo);
-      expect(request.url).to.equal('https://bid2.videostep.com/Bid/VideoAdContent');
+      expect(request.url).to.equal('https://bid12.videostep.com/Bid/VideoAdContent');
       expect(request.method).to.equal('GET');
     });
 
@@ -285,7 +384,7 @@ describe('invibesBidAdapter:', function () {
         },
         adUnitCode: 'test-div1'
       }], bidderRequestWithPageInfo);
-      expect(request.url).to.equal('https://bid.videostep.com/Bid/VideoAdContent');
+      expect(request.url).to.equal('https://bid1.videostep.com/Bid/VideoAdContent');
       expect(request.method).to.equal('GET');
     });
 
@@ -298,7 +397,7 @@ describe('invibesBidAdapter:', function () {
         },
         adUnitCode: 'test-div1'
       }], bidderRequestWithPageInfo);
-      expect(request.url).to.equal('https://bid2.videostep.com/Bid/VideoAdContent');
+      expect(request.url).to.equal('https://bid12.videostep.com/Bid/VideoAdContent');
       expect(request.method).to.equal('GET');
     });
 
@@ -311,7 +410,7 @@ describe('invibesBidAdapter:', function () {
         },
         adUnitCode: 'test-div1'
       }], bidderRequestWithPageInfo);
-      expect(request.url).to.equal('https://bid10.videostep.com/Bid/VideoAdContent');
+      expect(request.url).to.equal('https://bid110.videostep.com/Bid/VideoAdContent');
       expect(request.method).to.equal('GET');
     });
 
