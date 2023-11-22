@@ -2,6 +2,7 @@
   "adlooxAnalyticsAdapter",
   "adotBidAdapter",
   "adyoulikeBidAdapter",
+  "amxBidAdapter",
   "aniviewBidAdapter",
   "appnexusBidAdapter",
   "bliinkBidAdapter",
@@ -29,6 +30,7 @@
   "sirdataRtdProvider",
   "weboramaRtdProvider",
 
+  "amxIdSystem",
   "consentManagement",
   "consentManagementUsp",
   "currency",
