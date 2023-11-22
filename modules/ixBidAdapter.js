@@ -238,7 +238,10 @@ export function bidToVideoImp(bid) {
 
   imp.video = videoParamRef ? deepClone(bid.params.video) : {};
   // populate imp level transactionId
-  imp.ext.tid = deepAccess(bid, 'ortb2Imp.ext.tid');
+  let tid = deepAccess(bid, 'ortb2Imp.ext.tid');
+  if (tid) {
+    deepSetValue(imp, 'ext.tid', tid);
+  }
 
   setDisplayManager(imp, bid);
 
@@ -328,7 +331,10 @@ export function bidToNativeImp(bid) {
   };
 
   // populate imp level transactionId
-  imp.ext.tid = deepAccess(bid, 'ortb2Imp.ext.tid');
+  let tid = deepAccess(bid, 'ortb2Imp.ext.tid');
+  if (tid) {
+    deepSetValue(imp, 'ext.tid', tid);
+  }
 
   // AdUnit-Specific First Party Data
   addAdUnitFPD(imp, bid)
@@ -348,26 +354,30 @@ function bidToImp(bid, mediaType) {
 
   imp.id = bid.bidId;
 
-  imp.ext = {};
+  if (isExchangeIdConfigured() && deepAccess(bid, `params.externalId`)) {
+    deepSetValue(imp, 'ext.externalID', bid.params.externalId);
+  }
   if (deepAccess(bid, `params.${mediaType}.siteId`) && !isNaN(Number(bid.params[mediaType].siteId))) {
     switch (mediaType) {
       case BANNER:
-        imp.ext.siteID = bid.params.banner.siteId.toString();
+        deepSetValue(imp, 'ext.siteID', bid.params.banner.siteId.toString());
         break;
       case VIDEO:
-        imp.ext.siteID = bid.params.video.siteId.toString();
+        deepSetValue(imp, 'ext.siteID', bid.params.video.siteId.toString());
         break;
       case NATIVE:
-        imp.ext.siteID = bid.params.native.siteId.toString();
+        deepSetValue(imp, 'ext.siteID', bid.params.native.siteId.toString());
         break;
     }
   } else {
-    imp.ext.siteID = bid.params.siteId.toString();
+    if (bid.params.siteId) {
+      deepSetValue(imp, 'ext.siteID', bid.params.siteId.toString());
+    }
   }
 
   // populate imp level sid
   if (bid.params.hasOwnProperty('id') && (typeof bid.params.id === 'string' || typeof bid.params.id === 'number')) {
-    imp.ext.sid = String(bid.params.id);
+    deepSetValue(imp, 'ext.sid', String(bid.params.id));
   }
 
   return imp;
@@ -413,12 +423,12 @@ function _applyFloor(bid, imp, mediaType) {
   if (moduleFloor) {
     imp.bidfloor = moduleFloor.floor;
     imp.bidfloorcur = moduleFloor.currency;
-    imp.ext.fl = FLOOR_SOURCE.PBJS;
+    deepSetValue(imp, 'ext.fl', FLOOR_SOURCE.PBJS);
     setFloor = true;
   } else if (adapterFloor) {
     imp.bidfloor = adapterFloor.floor;
     imp.bidfloorcur = adapterFloor.currency;
-    imp.ext.fl = FLOOR_SOURCE.IX;
+    deepSetValue(imp, 'ext.fl', FLOOR_SOURCE.IX);
     setFloor = true;
   }
 
@@ -709,8 +719,10 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   r = applyRegulations(r, bidderRequest);
 
   let payload = {};
-  siteID = validBidRequests[0].params.siteId;
-  payload.s = siteID;
+  if (validBidRequests[0].params.siteId) {
+    siteID = validBidRequests[0].params.siteId;
+    payload.s = siteID;
+  }
 
   const impKeys = Object.keys(impressions);
   let isFpdAdded = false;
@@ -746,9 +758,19 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     r = removeSiteIDs(r);
 
     if (isLastAdUnit) {
+      let exchangeUrl = `${baseUrl}?`;
+
+      if (siteID !== 0) {
+        exchangeUrl += `s=${siteID}`;
+      }
+
+      if (isExchangeIdConfigured()) {
+        exchangeUrl += siteID !== 0 ? '&' : '';
+        exchangeUrl += `p=${config.getConfig('exchangeId')}`;
+      }
       requests.push({
         method: 'POST',
-        url: baseUrl + '?s=' + siteID,
+        url: exchangeUrl,
         data: deepClone(r),
         option: {
           contentType: 'text/plain',
@@ -970,6 +992,7 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
     for (const impId in bannerImpsKeyed) {
       const bannerImps = bannerImpsKeyed[impId];
       const { id, banner: { topframe } } = bannerImps[0];
+      let externalID = deepAccess(bannerImps[0], 'ext.externalID');
       const _bannerImpression = {
         id,
         banner: {
@@ -979,14 +1002,23 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
       };
 
       for (let i = 0; i < _bannerImpression.banner.format.length; i++) {
-        // We add sid in imp.ext.sid therefore, remove from banner.format[].ext
-        if (_bannerImpression.banner.format[i].ext != null && _bannerImpression.banner.format[i].ext.sid != null) {
-          delete _bannerImpression.banner.format[i].ext.sid;
+        // We add sid and externalID in imp.ext therefore, remove from banner.format[].ext
+        if (_bannerImpression.banner.format[i].ext != null) {
+          if (_bannerImpression.banner.format[i].ext.sid != null) {
+            delete _bannerImpression.banner.format[i].ext.sid;
+          }
+          if (_bannerImpression.banner.format[i].ext.externalID != null) {
+            delete _bannerImpression.banner.format[i].ext.externalID;
+          }
         }
 
         // add floor per size
         if ('bidfloor' in bannerImps[i]) {
           _bannerImpression.banner.format[i].ext.bidfloor = bannerImps[i].bidfloor;
+        }
+
+        if (JSON.stringify(_bannerImpression.banner.format[i].ext) === '{}') {
+          delete _bannerImpression.banner.format[i].ext;
         }
       }
 
@@ -995,13 +1027,14 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
         _bannerImpression.banner.pos = position;
       }
 
-      if (dfpAdUnitCode || gpid || tid || sid || auctionEnvironment) {
+      if (dfpAdUnitCode || gpid || tid || sid || auctionEnvironment || externalID) {
         _bannerImpression.ext = {};
 
         _bannerImpression.ext.dfp_ad_unit_code = dfpAdUnitCode;
         _bannerImpression.ext.gpid = gpid;
         _bannerImpression.ext.tid = tid;
         _bannerImpression.ext.sid = sid;
+        _bannerImpression.ext.externalID = externalID;
 
         // enable fledge auction
         if (auctionEnvironment == 1) {
@@ -1030,7 +1063,9 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
     // Removes imp.ext.bidfloor
     // Sets imp.ext.siteID to one of the other [video/native].ext.siteid if imp.ext.siteID doesnt exist
     otherImpressions.forEach(imp => {
-      deepSetValue(imp, 'ext.gpid', gpid);
+      if (gpid) {
+        deepSetValue(imp, 'ext.gpid', gpid);
+      }
       if (r.imp.length > 0) {
         let matchFound = false;
         r.imp.forEach((rImp, index) => {
@@ -1628,6 +1663,17 @@ function isIndexRendererPreferred(bid) {
   return !isValid || renderer.backupOnly;
 }
 
+function isExchangeIdConfigured() {
+  let exchangeId = config.getConfig('exchangeId');
+  if (typeof exchangeId === 'number' && isFinite(exchangeId)) {
+    return true;
+  }
+  if (typeof exchangeId === 'string' && exchangeId.trim() !== '' && isFinite(Number(exchangeId))) {
+    return true;
+  }
+  return false;
+}
+
 export const spec = {
 
   code: BIDDER_CODE,
@@ -1685,14 +1731,21 @@ export const spec = {
       }
     }
 
-    if (typeof bid.params.siteId !== 'string' && typeof bid.params.siteId !== 'number') {
-      logError('IX Bid Adapter: siteId must be string or number type.', { bidder: BIDDER_CODE, code: ERROR_CODES.SITE_ID_INVALID_VALUE });
+    if (!isExchangeIdConfigured() && bid.params.siteId == undefined) {
+      logError('IX Bid Adapter: Invalid configuration - either siteId or exchangeId must be configured.');
       return false;
     }
 
-    if (typeof bid.params.siteId !== 'string' && isNaN(Number(bid.params.siteId))) {
-      logError('IX Bid Adapter: siteId must valid value', { bidder: BIDDER_CODE, code: ERROR_CODES.SITE_ID_INVALID_VALUE });
-      return false;
+    if (bid.params.siteId !== undefined) {
+      if (typeof bid.params.siteId !== 'string' && typeof bid.params.siteId !== 'number') {
+        logError('IX Bid Adapter: siteId must be string or number type.', { bidder: BIDDER_CODE, code: ERROR_CODES.SITE_ID_INVALID_VALUE });
+        return false;
+      }
+
+      if (typeof bid.params.siteId !== 'string' && isNaN(Number(bid.params.siteId))) {
+        logError('IX Bid Adapter: siteId must valid value', { bidder: BIDDER_CODE, code: ERROR_CODES.SITE_ID_INVALID_VALUE });
+        return false;
+      }
     }
 
     if (hasBidFloor || hasBidFloorCur) {
@@ -1723,6 +1776,11 @@ export const spec = {
     }
 
     return nativeMediaTypeValid(bid);
+  },
+
+  // For testing only - resets the siteID to 0 so that it can be set again
+  resetSiteID: function () {
+    siteID = 0;
   },
 
   /**
@@ -1964,8 +2022,9 @@ function buildImgSyncUrl(syncsPerBidder, index) {
   if (gdprConsent && gdprConsent.hasOwnProperty('consentString')) {
     consentString = gdprConsent.consentString || '';
   }
+  let siteIdParam = siteID !== 0 ? '&site_id=' + siteID.toString() : '';
 
-  return IMG_USER_SYNC_URL + '&site_id=' + siteID.toString() + '&p=' + syncsPerBidder.toString() + '&i=' + index.toString() + '&gdpr=' + gdprApplies + '&gdpr_consent=' + consentString + '&us_privacy=' + (usPrivacy || '');
+  return IMG_USER_SYNC_URL + siteIdParam + '&p=' + syncsPerBidder.toString() + '&i=' + index.toString() + '&gdpr=' + gdprApplies + '&gdpr_consent=' + consentString + '&us_privacy=' + (usPrivacy || '');
 }
 
 /**

@@ -176,6 +176,7 @@ function _getVidParams(attributes) {
     linearity: li,
     startdelay: sd,
     placement: pt,
+    plcmt,
     protocols = [],
     playerSize = []
   } = attributes;
@@ -187,7 +188,7 @@ function _getVidParams(attributes) {
     pr = protocols.join(',');
   }
 
-  return {
+  const result = {
     mind,
     maxd,
     li,
@@ -197,6 +198,11 @@ function _getVidParams(attributes) {
     viw,
     vih
   };
+    // Add vplcmt property to the result object if plcmt is available
+  if (plcmt !== undefined && plcmt !== null) {
+    result.vplcmt = plcmt;
+  }
+  return result;
 }
 
 /**

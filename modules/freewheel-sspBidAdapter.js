@@ -4,6 +4,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'freewheel-ssp';
+const GVL_ID = 285;
 
 const PROTOCOL = getProtocol();
 const FREEWHEEL_ADSSETUP = PROTOCOL + '://ads.stickyadstv.com/www/delivery/swfIndex.php';
@@ -314,6 +315,7 @@ var getOutstreamScript = function(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVL_ID,
   supportedMediaTypes: [BANNER, VIDEO],
   aliases: ['stickyadstv', 'freewheelssp'], //  aliases for freewheel-ssp
   /**
@@ -383,9 +385,9 @@ export const spec = {
       }
 
       // Add content object
-      if (typeof config.getConfig('content') === 'object') {
+      if (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.site && bidderRequest.ortb2.site.content && typeof bidderRequest.ortb2.site.content === 'object') {
         try {
-          requestParams._fw_prebid_content = JSON.stringify(config.getConfig('content'));
+          requestParams._fw_prebid_content = JSON.stringify(bidderRequest.ortb2.site.content);
         } catch (error) {
           logWarn('PREBID - ' + BIDDER_CODE + ': Unable to stringify the content object: ' + error);
         }
@@ -541,9 +543,10 @@ export const spec = {
       };
 
       if (bidrequest.mediaTypes.video) {
-        bidResponse.vastXml = serverResponse;
         bidResponse.mediaType = 'video';
       }
+
+      bidResponse.vastXml = serverResponse;
 
       bidResponse.ad = formatAdHTML(bidrequest, playerSize);
       bidResponses.push(bidResponse);

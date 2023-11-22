@@ -8,6 +8,7 @@ import {
   getEffectiveConnectionType,
   getUserIds,
   getDomLoadingDuration,
+  GVL_ID,
 } from 'modules/bliinkBidAdapter.js';
 import { config } from 'src/config.js';
 
@@ -1167,4 +1168,8 @@ describe('getEffectiveConnectionType', () => {
       expect(result).to.equal('unsupported');
     });
   }
+});
+
+it('should expose gvlid', function () {
+  expect(spec.gvlid).to.equal(GVL_ID);
 });

@@ -158,6 +158,20 @@ function makeWebpackPkg(extraConfig = {}) {
   }
 }
 
+function buildCreative() {
+  return gulp.src(['**/*'])
+    .pipe(webpackStream(require('./webpack.creative.js')))
+    .pipe(gulp.dest('build/creative'))
+}
+
+function updateCreativeExample(cb) {
+  const CREATIVE_EXAMPLE = 'integrationExamples/gpt/x-domain/creative.html';
+  const root = require('node-html-parser').parse(fs.readFileSync(CREATIVE_EXAMPLE));
+  root.querySelectorAll('script')[0].textContent = fs.readFileSync('build/creative/creative.js')
+  fs.writeFileSync(CREATIVE_EXAMPLE, root.toString())
+  cb();
+}
+
 function getModulesListToAddInBanner(modules) {
   if (!modules || modules.length === helpers.getModuleNames().length) {
     return 'All available modules for this version.'
@@ -405,6 +419,7 @@ function watchTaskMaker(options = {}) {
   return function watch(done) {
     var mainWatcher = gulp.watch([
       'src/**/*.js',
+      'libraries/**/*.js',
       'modules/**/*.js',
     ].concat(options.alsoWatch));
 
@@ -415,8 +430,8 @@ function watchTaskMaker(options = {}) {
   }
 }
 
-const watch = watchTaskMaker({alsoWatch: ['test/**/*.js'], task: () => gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev', test))});
-const watchFast = watchTaskMaker({livereload: false, task: () => gulp.series('build-bundle-dev')});
+const watch = watchTaskMaker({alsoWatch: ['test/**/*.js'], task: () => gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev', test, buildCreative))});
+const watchFast = watchTaskMaker({livereload: false, task: () => gulp.parallel('build-bundle-dev', buildCreative)});
 
 // support tasks
 gulp.task(lint);
@@ -447,21 +462,23 @@ gulp.task('build-bundle-verbose', gulp.series(makeWebpackPkg({
   }
 }), gulpBundle.bind(null, false)));
 
+gulp.task('build-creative', gulp.series(buildCreative, updateCreativeExample));
+
 // public tasks (dependencies are needed for each task since they can be ran on their own)
 gulp.task('test-only', test);
 gulp.task('test-all-features-disabled', testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false}));
-gulp.task('test', gulp.series(clean, lint, gulp.series('test-all-features-disabled', 'test-only')));
+gulp.task('test', gulp.series(clean, lint, gulp.parallel('build-creative', gulp.series('test-all-features-disabled', 'test-only'))));
 
 gulp.task('test-coverage', gulp.series(clean, testCoverage));
 gulp.task(viewCoverage);
 
 gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 
-gulp.task('build', gulp.series(clean, 'build-bundle-prod'));
+gulp.task('build', gulp.series(clean, 'build-bundle-prod', 'build-creative'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
-gulp.task('serve-fast', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast)));
+gulp.task('serve-fast', gulp.series(clean, gulp.parallel('build-bundle-dev', buildCreative, watchFast)));
 gulp.task('serve-prod', gulp.series(clean, gulp.parallel('build-bundle-prod', startLocalServer)));
 gulp.task('serve-and-test', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast, testTaskMaker({watch: true}))));
 gulp.task('serve-e2e', gulp.series(clean, 'build-bundle-prod', gulp.parallel(() => startIntegServer(), startLocalServer)));
