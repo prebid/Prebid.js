@@ -60,6 +60,7 @@ describe('SetupadAdapter', function () {
               h: 250,
             },
           ],
+          seat: 'testBidder',
         },
       ],
       cur: 'USD',
@@ -324,12 +325,11 @@ describe('SetupadAdapter', function () {
         bid: {
           auctionId: 'test-auction-id',
           bidderCode: 'setupad',
-          originalCpm: 0.8,
           originalCurrency: 'USD',
           params: { placement_id: '123' },
         },
 
-        expected: `${REPORT_ENDPOINT}?event=bidResponse&bidder=setupad&placementIds=123&auctionId=test-auction-id&cpm=0.8&currency=USD&timestamp=123456789`,
+        expected: `${REPORT_ENDPOINT}?event=bidResponse&bidder={"testBidder":0.8}&placementIds=123&auctionId=test-auction-id&currency=USD&timestamp=123456789`,
       },
 
       {
@@ -385,11 +385,12 @@ describe('SetupadAdapter', function () {
           auctionId: 'test-auction-id',
           bidder: 'setupad',
           originalCpm: 0.8,
+          creativeId: 'test-bid-id',
           originalCurrency: 'USD',
           params: { placement_id: '123', account_id: 'test' },
         },
 
-        expected: `${REPORT_ENDPOINT}?event=bidWon&bidder=setupad&placementIds=123&auctionId=test-auction-id&cpm=0.8&currency=USD&timestamp=123456789`,
+        expected: `${REPORT_ENDPOINT}?event=bidWon&bidder=testBidder&placementIds=123&auctionId=test-auction-id&cpm=0.8&currency=USD&timestamp=123456789`,
       },
     ];
 
