@@ -3,6 +3,7 @@ import {
   formatQS,
   isFn,
   logInfo,
+  safeJSONParse,
   triggerPixel,
 } from '../src/utils.js';
 import { config } from '../src/config.js';
@@ -57,7 +58,7 @@ export const spec = {
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     const capKey = `missena.missena.capper.remove-bubble.${validBidRequests[0]?.params.apiKey}`;
-    const capping = JSON.parse(storage.getDataFromLocalStorage(capKey));
+    const capping = safeJSONParse(storage.getDataFromLocalStorage(capKey));
     if (
       typeof capping?.expiry === 'number' &&
       new Date().getTime() < capping?.expiry
