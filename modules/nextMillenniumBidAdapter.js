@@ -1,7 +1,8 @@
 import {
   _each,
   createTrackPixelHtml,
-  deepAccess, getBidIdParameter,
+  deepAccess,
+  getBidIdParameter,
   getDefinedParams,
   getWindowTop,
   isArray,
@@ -27,9 +28,17 @@ const SYNC_ENDPOINT = 'https://cookies.nextmillmedia.com/sync?';
 const REPORT_ENDPOINT = 'https://report2.hb.brainlyads.com/statistics/metric';
 const TIME_TO_LIVE = 360;
 const VIDEO_PARAMS = [
-  'api', 'linearity', 'maxduration', 'mimes', 'minduration', 'placement',
-  'playbackmethod', 'protocols', 'startdelay'
+  'api',
+  'linearity',
+  'maxduration',
+  'mimes',
+  'minduration',
+  'placement',
+  'playbackmethod',
+  'protocols',
+  'startdelay',
 ];
+
 const GVLID = 1060;
 
 const sendingDataStatistic = initSendingDataStatistic();
@@ -118,14 +127,21 @@ export const spec = {
 
       postBody.imp.push(imp);
 
-      const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
-      const uspConsent = bidderRequest && bidderRequest.uspConsent;
+      const gdprConsent = bidderRequest?.gdprConsent;
+      const uspConsent = bidderRequest?.uspConsent;
+      let gppConsent = bidderRequest?.gppConsent?.gppString && bidderRequest?.gppConsent;
+      if (!gppConsent && bidderRequest?.ortb2?.regs?.gpp) gppConsent = bidderRequest?.ortb2?.regs;
 
-      if (gdprConsent || uspConsent) {
+      if (gdprConsent || uspConsent || gppConsent) {
         postBody.regs = { ext: {} };
 
         if (uspConsent) {
           postBody.regs.ext.us_privacy = uspConsent;
+        };
+
+        if (gppConsent) {
+          postBody.regs.gpp = gppConsent?.gppString || gppConsent?.gpp;
+          postBody.regs.gpp_sid = bidderRequest.gppConsent?.applicableSections || gppConsent?.gpp_sid;
         };
 
         if (gdprConsent) {
@@ -173,6 +189,7 @@ export const spec = {
         const params = bidRequest.params;
         const auctionId = bidRequest.auctionId;
         const wurl = deepAccess(bid, 'ext.prebid.events.win');
+
         // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         addWurl({auctionId, requestId, wurl});
 
@@ -210,7 +227,7 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     const pixels = [];
 
     if (isArray(responses)) {
@@ -219,7 +236,7 @@ export const spec = {
           deepAccess(response, 'body.ext.sync.image', []).forEach(imgUrl => {
             pixels.push({
               type: 'image',
-              url: replaceUsersyncMacros(imgUrl, gdprConsent, uspConsent)
+              url: replaceUsersyncMacros(imgUrl, gdprConsent, uspConsent, gppConsent)
             });
           })
         }
@@ -228,20 +245,29 @@ export const spec = {
           deepAccess(response, 'body.ext.sync.iframe', []).forEach(iframeUrl => {
             pixels.push({
               type: 'iframe',
-              url: replaceUsersyncMacros(iframeUrl, gdprConsent, uspConsent)
+              url: replaceUsersyncMacros(iframeUrl, gdprConsent, uspConsent, gppConsent)
             });
           })
         }
       })
     }
 
-    if (!pixels.length) {
-      let syncUrl = SYNC_ENDPOINT;
-      if (gdprConsent && gdprConsent.gdprApplies) syncUrl += 'gdpr=1&gdpr_consent=' + gdprConsent.consentString + '&';
-      if (uspConsent) syncUrl += 'us_privacy=' + uspConsent + '&';
-      if (syncOptions.iframeEnabled) pixels.push({type: 'iframe', url: syncUrl + 'type=iframe'});
-      if (syncOptions.pixelEnabled) pixels.push({type: 'image', url: syncUrl + 'type=image'});
+    if (!pixels.length && (syncOptions.iframeEnabled || syncOptions.pixelEnabled)) {
+      const syncUrlQuery = [];
+      if (gdprConsent?.gdprApplies) syncUrlQuery.push('gdpr=1&gdpr_consent=' + gdprConsent.consentString);
+      if (uspConsent) syncUrlQuery.push('us_privacy=' + uspConsent);
+      if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+        syncUrlQuery.push('gpp=' + gppConsent.gppString + '&gpp_sid=' + gppConsent?.applicableSections?.join(','));
+      }
+
+      const type = syncOptions.iframeEnabled && 'iframe' || 'image';
+      syncUrlQuery.push('type=' + type);
+      pixels.push({
+        type,
+        url: SYNC_ENDPOINT + syncUrlQuery.join('&'),
+      });
     }
+
     return pixels;
   },
 
@@ -281,7 +307,7 @@ export const spec = {
   },
 };
 
-function replaceUsersyncMacros(url, gdprConsent, uspConsent) {
+function replaceUsersyncMacros(url, gdprConsent, uspConsent, gppConsent) {
   const { consentString, gdprApplies } = gdprConsent || {};
 
   if (gdprApplies) {
@@ -298,6 +324,11 @@ function replaceUsersyncMacros(url, gdprConsent, uspConsent) {
 
   if (uspConsent) {
     url = url.replace('{{.USPrivacy}}', uspConsent);
+  }
+
+  if (gppConsent) {
+    if (gppConsent?.gppString) url = url.replace('{{.GPP}}', gppConsent.gppString);
+    if (gppConsent?.applicableSections?.length) url = url.replace('{{.GPPSID}}', gppConsent.applicableSections.join(','));
   }
 
   return url;
