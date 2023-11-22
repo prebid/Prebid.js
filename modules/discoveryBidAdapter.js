@@ -386,7 +386,6 @@ function getParam(validBidRequests, bidderRequest) {
         buyeruid: getUserID(),
         id: sharedid || pubcid,
       },
-      eids,
       tmax: timeout,
       site: {
         name: domain,
