@@ -17,7 +17,9 @@ import {
   logMessage,
   logWarn,
   mergeDeep,
-  parseSizesInput, _each
+  parseSizesInput,
+  pick,
+  _each
 } from '../src/utils.js';
 import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
@@ -124,6 +126,7 @@ var sizeMap = {
   278: '320x500',
   282: '320x400',
   288: '640x380',
+  484: '720x1280',
   524: '1x2',
   548: '500x1000',
   550: '980x480',
@@ -407,6 +410,8 @@ export const spec = {
         'x_source.tid',
         'l_pb_bid_id',
         'p_screen_res',
+        'o_ae',
+        'o_cdep',
         'rp_floor',
         'rp_secure',
         'tk_user_key'
@@ -480,6 +485,7 @@ export const spec = {
       'x_source.tid': bidderRequest.ortb2?.source?.tid,
       'x_imp.ext.tid': bidRequest.ortb2Imp?.ext?.tid,
       'l_pb_bid_id': bidRequest.bidId,
+      'o_cdep': bidRequest.ortb2?.device?.ext?.cdep,
       'p_screen_res': _getScreenResolution(),
       'tk_user_key': params.userId,
       'p_geo.latitude': isNaN(parseFloat(latitude)) ? undefined : parseFloat(latitude).toFixed(4),
@@ -518,6 +524,10 @@ export const spec = {
     const configUserId = config.getConfig('user.id');
     if (configUserId) {
       data['ppuid'] = configUserId;
+    }
+
+    if (bidRequest?.ortb2Imp?.ext?.ae) {
+      data['o_ae'] = 1;
     }
     // loop through userIds and add to request
     if (bidRequest.userIdAsEids) {
@@ -618,7 +628,7 @@ export const spec = {
    * @param {*} responseObj
    * @param {BidRequest|Object.<string, BidRequest[]>} request - if request was SRA the bidRequest argument will be a keyed BidRequest array object,
    * non-SRA responses return a plain BidRequest object
-   * @return {Bid[]} An array of bids which
+   * @return {{fledgeAuctionConfigs: *, bids: *}} An array of bids which
    */
   interpretResponse: function (responseObj, request) {
     responseObj = responseObj.body;
@@ -628,7 +638,6 @@ export const spec = {
     if (!responseObj || typeof responseObj !== 'object') {
       return [];
     }
-
     // Response from PBS Java openRTB
     if (responseObj.seatbid) {
       const responseErrors = deepAccess(responseObj, 'ext.errors.rubicon');
@@ -654,7 +663,7 @@ export const spec = {
       return [];
     }
 
-    return ads.reduce((bids, ad, i) => {
+    let bids = ads.reduce((bids, ad, i) => {
       (ad.impression_id && lastImpId === ad.impression_id) ? multibid++ : lastImpId = ad.impression_id;
 
       if (ad.status !== 'ok') {
@@ -715,6 +724,16 @@ export const spec = {
     }, []).sort((adA, adB) => {
       return (adB.cpm || 0.0) - (adA.cpm || 0.0);
     });
+
+    let fledgeAuctionConfigs = responseObj.component_auction_config?.map(config => {
+      return { config, bidId: config.bidId }
+    });
+
+    if (fledgeAuctionConfigs) {
+      return { bids, fledgeAuctionConfigs };
+    } else {
+      return bids;
+    }
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
@@ -955,6 +974,33 @@ function applyFPD(bidRequest, mediaType, data) {
     // only send one of pbadslot or dfp adunit code (prefer pbadslot)
     if (data['tg_i.pbadslot']) {
       delete data['tg_i.dfp_ad_unit_code'];
+    }
+
+    // High Entropy stuff -> sua object is the ORTB standard (default to pass unless specifically disabled)
+    const clientHints = deepAccess(fpd, 'device.sua');
+    if (clientHints && rubiConf.chEnabled !== false) {
+      // pick out client hints we want to send (any that are undefined or empty will NOT be sent)
+      pick(clientHints, [
+        'architecture', arch => data.m_ch_arch = arch,
+        'bitness', bitness => data.m_ch_bitness = bitness,
+        'browsers', browsers => {
+          if (!Array.isArray(browsers)) return;
+          // reduce down into ua and full version list attributes
+          const [ua, fullVer] = browsers.reduce((accum, browserData) => {
+            accum[0].push(`"${browserData?.brand}"|v="${browserData?.version?.[0]}"`);
+            accum[1].push(`"${browserData?.brand}"|v="${browserData?.version?.join?.('.')}"`);
+            return accum;
+          }, [[], []]);
+          data.m_ch_ua = ua?.join?.(',');
+          data.m_ch_full_ver = fullVer?.join?.(',');
+        },
+        'mobile', isMobile => data.m_ch_mobile = `?${isMobile}`,
+        'model', model => data.m_ch_model = model,
+        'platform', platform => {
+          data.m_ch_platform = platform?.brand;
+          data.m_ch_platform_ver = platform?.version?.join?.('.');
+        }
+      ])
     }
   } else {
     if (Object.keys(impExt).length) {

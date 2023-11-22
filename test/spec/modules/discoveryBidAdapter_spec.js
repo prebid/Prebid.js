@@ -11,11 +11,58 @@ describe('discovery:BidAdapterTests', function () {
         bidder: 'discovery',
         params: {
           token: 'd0f4902b616cc5c38cbe0a08676d0ed9',
+          siteId: 'siteId_01',
+          zoneId: 'zoneId_01',
+          publisher: '52',
+          position: 'left',
+          referrer: 'https://discovery.popin.cc',
+        },
+        refererInfo: {
+          page: 'https://discovery.popin.cc',
+          stack: [
+            'a.com',
+            'b.com'
+          ]
         },
         mediaTypes: {
           banner: {
             sizes: [[300, 250]],
+            pos: 'left',
           },
+        },
+        ortb2: {
+          user: {
+            ext: {
+              data: {
+                CxSegments: []
+              }
+            }
+          },
+          site: {
+            domain: 'discovery.popin.cc',
+            publisher: {
+              domain: 'discovery.popin.cc'
+            },
+            page: 'https://discovery.popin.cc',
+            cat: ['IAB-19', 'IAB-20'],
+          },
+        },
+        ortb2Imp: {
+          ext: {
+            gpid: 'adslot_gpid',
+            tid: 'tid_01',
+            data: {
+              browsi: {
+                browsiViewability: 'NA',
+              },
+              adserver: {
+                name: 'adserver_name',
+                adslot: 'adslot_name',
+              },
+              keywords: ['travel', 'sport'],
+              pbadslot: '202309999'
+            }
+          }
         },
         adUnitCode: 'regular_iframe',
         transactionId: 'd163f9e2-7ecd-4c2c-a3bd-28ceb52a60ee',

@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec, _getPlatform } from 'modules/missenaBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { BANNER } from '../../../src/mediaTypes.js';
 
 describe('Missena Adapter', function () {
   const adapter = newBidder(spec);
@@ -11,6 +12,28 @@ describe('Missena Adapter', function () {
     bidder: 'missena',
     bidId: bidId,
     sizes: [[1, 1]],
+    mediaTypes: { banner: { sizes: [[1, 1]] } },
+    params: {
+      apiKey: 'PA-34745704',
+      placement: 'sticky',
+      formats: ['sticky-banner'],
+    },
+    getFloor: (inputParams) => {
+      if (inputParams.mediaType === BANNER) {
+        return {
+          currency: 'EUR',
+          floor: 3.5,
+        };
+      } else {
+        return {};
+      }
+    },
+  };
+  const bidWithoutFloor = {
+    bidder: 'missena',
+    bidId: bidId,
+    sizes: [[1, 1]],
+    mediaTypes: { banner: { sizes: [[1, 1]] } },
     params: {
       apiKey: 'PA-34745704',
       placement: 'sticky',
@@ -31,13 +54,13 @@ describe('Missena Adapter', function () {
 
     it('should return false if the apiKey is missing', function () {
       expect(
-        spec.isBidRequestValid(Object.assign(bid, { params: {} }))
+        spec.isBidRequestValid(Object.assign(bid, { params: {} })),
       ).to.equal(false);
     });
 
     it('should return false if the apiKey is an empty string', function () {
       expect(
-        spec.isBidRequestValid(Object.assign(bid, { params: { apiKey: '' } }))
+        spec.isBidRequestValid(Object.assign(bid, { params: { apiKey: '' } })),
       ).to.equal(false);
     });
   });
@@ -56,9 +79,10 @@ describe('Missena Adapter', function () {
       },
     };
 
-    const requests = spec.buildRequests([bid, bid], bidderRequest);
+    const requests = spec.buildRequests([bid, bidWithoutFloor], bidderRequest);
     const request = requests[0];
     const payload = JSON.parse(request.data);
+    const payloadNoFloor = JSON.parse(requests[1].data);
 
     it('should return as many server requests as bidder requests', function () {
       expect(requests.length).to.equal(2);
@@ -88,6 +112,14 @@ describe('Missena Adapter', function () {
     it('should send gdpr consent information to the request', function () {
       expect(payload.consent_string).to.equal(consentString);
       expect(payload.consent_required).to.equal(true);
+    });
+    it('should send floor data', function () {
+      expect(payload.floor).to.equal(3.5);
+      expect(payload.floor_currency).to.equal('EUR');
+    });
+    it('should not send floor data if not available', function () {
+      expect(payloadNoFloor.floor).to.equal(undefined);
+      expect(payloadNoFloor.floor_currency).to.equal(undefined);
     });
   });
 
@@ -121,14 +153,14 @@ describe('Missena Adapter', function () {
       expect(result.length).to.equal(1);
 
       expect(Object.keys(result[0])).to.have.members(
-        Object.keys(serverResponse)
+        Object.keys(serverResponse),
       );
     });
 
     it('should return an empty response when the server answers with a timeout', function () {
       const result = spec.interpretResponse(
         { body: serverTimeoutResponse },
-        bid
+        bid,
       );
       expect(result).to.deep.equal([]);
     });
@@ -136,7 +168,7 @@ describe('Missena Adapter', function () {
     it('should return an empty response when the server answers with an empty ad', function () {
       const result = spec.interpretResponse(
         { body: serverEmptyAdResponse },
-        bid
+        bid,
       );
       expect(result).to.deep.equal([]);
     });
