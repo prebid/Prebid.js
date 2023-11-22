@@ -316,208 +316,6 @@ describe('pubmatic analytics adapter', function () {
     expect(utils.logError.called).to.equal(true);
   });
 
-  describe('OW S2S', function() {
-    this.beforeEach(function() {
-      pubmaticAnalyticsAdapter.enableAnalytics({
-        options: {
-          publisherId: 9999,
-          profileId: 1111,
-          profileVersionId: 20
-        }
-      });
-      config.setConfig({
-        s2sConfig: {
-          accountId: '1234',
-          bidders: ['pubmatic'],
-          defaultVendor: 'openwrap',
-          timeout: 500
-        }
-      });
-    });
-
-    this.afterEach(function() {
-      pubmaticAnalyticsAdapter.disableAnalytics();
-    });
-
-    it('Pubmatic Won: No tracker fired', function() {
-      this.timeout(5000)
-
-      sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
-        return [MOCK.BID_RESPONSE[0], MOCK.BID_RESPONSE[1]]
-      });
-
-      config.setConfig({
-        testGroupId: 15
-      });
-
-      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
-      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
-      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
-      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
-      events.emit(AUCTION_END, MOCK.AUCTION_END);
-      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
-      events.emit(BID_WON, MOCK.BID_WON[0]);
-
-      clock.tick(2000 + 1000);
-      expect(requests.length).to.equal(1); // only logger is fired
-      let request = requests[0];
-      expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
-      let data = getLoggerJsonFromRequest(request.requestBody);
-      expect(data.pubid).to.equal('9999');
-      expect(data.pid).to.equal('1111');
-      expect(data.pdvid).to.equal('20');
-    });
-
-    it('Non-pubmatic won: logger, tracker fired', function() {
-      const APPNEXUS_BID = Object.assign({}, BID, {
-        'bidder': 'appnexus',
-        'adserverTargeting': {
-          'hb_bidder': 'appnexus',
-          'hb_adid': '2ecff0db240757',
-          'hb_pb': 1.20,
-          'hb_size': '640x480',
-          'hb_source': 'server'
-        }
-      });
-
-      const MOCK_AUCTION_INIT_APPNEXUS = {
-        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
-        'timestamp': 1519767010567,
-        'auctionStatus': 'inProgress',
-        'adUnits': [ {
-          'code': '/19968336/header-bid-tag-1',
-          'sizes': [[640, 480]],
-          'bids': [ {
-            'bidder': 'appnexus',
-            'params': {
-              'publisherId': '1001'
-            }
-          } ],
-          'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014'
-        }
-        ],
-        'adUnitCodes': ['/19968336/header-bid-tag-1'],
-        'bidderRequests': [ {
-          'bidderCode': 'appnexus',
-          'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
-          'bidderRequestId': '1be65d7958826a',
-          'bids': [ {
-            'bidder': 'appnexus',
-            'params': {
-              'publisherId': '1001',
-              'kgpv': 'this-is-a-kgpv'
-            },
-            'mediaTypes': {
-              'banner': {
-                'sizes': [[640, 480]]
-              }
-            },
-            'adUnitCode': '/19968336/header-bid-tag-1',
-            'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
-            'sizes': [[640, 480]],
-            'bidId': '2ecff0db240757',
-            'bidderRequestId': '1be65d7958826a',
-            'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
-            'src': 'client',
-            'bidRequestsCount': 1
-          }
-          ],
-          'timeout': 3000,
-          'refererInfo': {
-            'topmostLocation': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
-          }
-        }
-        ],
-        'bidsReceived': [],
-        'winningBids': [],
-        'timeout': 3000
-      };
-
-      const MOCK_BID_REQUESTED_APPNEXUS = {
-        'bidder': 'appnexus',
-        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
-        'bidderRequestId': '1be65d7958826a',
-        'bids': [
-          {
-            'bidder': 'appnexus',
-            'adapterCode': 'appnexus',
-            'bidderCode': 'appnexus',
-            'params': {
-              'publisherId': '1001',
-              'video': {
-                'minduration': 30,
-                'skippable': true
-              }
-            },
-            'mediaType': 'video',
-            'adUnitCode': '/19968336/header-bid-tag-0',
-            'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
-            'sizes': [[640, 480]],
-            'bidId': '2ecff0db240757',
-            'bidderRequestId': '1be65d7958826a',
-            'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa'
-          }
-        ],
-        'auctionStart': 1519149536560,
-        'timeout': 5000,
-        'start': 1519149562216,
-        'refererInfo': {
-          'topmostLocation': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
-        },
-        'gdprConsent': {
-          'consentString': 'here-goes-gdpr-consent-string',
-          'gdprApplies': true
-        }
-      };
-
-      this.timeout(5000)
-
-      sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
-        return [APPNEXUS_BID]
-      });
-
-      events.emit(AUCTION_INIT, MOCK_AUCTION_INIT_APPNEXUS);
-      events.emit(BID_REQUESTED, MOCK_BID_REQUESTED_APPNEXUS);
-      events.emit(BID_RESPONSE, APPNEXUS_BID);
-      events.emit(BIDDER_DONE, {
-        'bidderCode': 'appnexus',
-        'bids': [
-          APPNEXUS_BID,
-          Object.assign({}, APPNEXUS_BID, {
-            'serverResponseTimeMs': 42,
-          })
-        ]
-      });
-      events.emit(AUCTION_END, MOCK.AUCTION_END);
-      events.emit(SET_TARGETING, {
-        [APPNEXUS_BID.adUnitCode]: APPNEXUS_BID.adserverTargeting,
-      });
-      events.emit(BID_WON, Object.assign({}, APPNEXUS_BID, {
-        'status': 'rendered'
-      }));
-
-      clock.tick(2000 + 1000);
-      expect(requests.length).to.equal(2); // logger as well as tracker is fired
-      let request = requests[1]; // logger is executed late, trackers execute first
-      expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
-      let data = getLoggerJsonFromRequest(request.requestBody);
-      expect(data.pubid).to.equal('9999');
-      expect(data.pid).to.equal('1111');
-      expect(data.pdvid).to.equal('20');
-
-      let firstTracker = requests[0].url;
-      expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
-      firstTracker.split('?')[1].split('&').map(e => e.split('=')).forEach(e => data[e[0]] = e[1]);
-      expect(data.pubid).to.equal('9999');
-      expect(decodeURIComponent(data.purl)).to.equal('http://www.test.com/page.html');
-
-      expect(data.s).to.be.an('array');
-      expect(data.s.length).to.equal(1);
-      expect(data.s[0].ps[0].pn).to.equal('appnexus');
-      expect(data.s[0].ps[0].bc).to.equal('appnexus');
-    })
-  });
-
   describe('when handling events', function() {
     beforeEach(function () {
       pubmaticAnalyticsAdapter.enableAnalytics({
@@ -1651,5 +1449,207 @@ describe('pubmatic analytics adapter', function () {
       const metadataObj = getMetadata(meta);
       expect(metadataObj).to.equal(undefined);
     });
+  });
+
+  describe('OW S2S', function() {
+    this.beforeEach(function() {
+      pubmaticAnalyticsAdapter.enableAnalytics({
+        options: {
+          publisherId: 9999,
+          profileId: 1111,
+          profileVersionId: 20
+        }
+      });
+      config.setConfig({
+        s2sConfig: {
+          accountId: '1234',
+          bidders: ['pubmatic'],
+          defaultVendor: 'openwrap',
+          timeout: 500
+        }
+      });
+    });
+
+    this.afterEach(function() {
+      pubmaticAnalyticsAdapter.disableAnalytics();
+    });
+
+    it('Pubmatic Won: No tracker fired', function() {
+      this.timeout(5000)
+
+      sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
+        return [MOCK.BID_RESPONSE[0], MOCK.BID_RESPONSE[1]]
+      });
+
+      config.setConfig({
+        testGroupId: 15
+      });
+
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_RESPONSE, MOCK.BID_RESPONSE[0]);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, MOCK.SET_TARGETING);
+      events.emit(BID_WON, MOCK.BID_WON[0]);
+
+      clock.tick(2000 + 1000);
+      expect(requests.length).to.equal(1); // only logger is fired
+      let request = requests[0];
+      expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
+      let data = getLoggerJsonFromRequest(request.requestBody);
+      expect(data.pubid).to.equal('9999');
+      expect(data.pid).to.equal('1111');
+      expect(data.pdvid).to.equal('20');
+    });
+
+    it('Non-pubmatic won: logger, tracker fired', function() {
+      const APPNEXUS_BID = Object.assign({}, BID, {
+        'bidder': 'appnexus',
+        'adserverTargeting': {
+          'hb_bidder': 'appnexus',
+          'hb_adid': '2ecff0db240757',
+          'hb_pb': 1.20,
+          'hb_size': '640x480',
+          'hb_source': 'server'
+        }
+      });
+
+      const MOCK_AUCTION_INIT_APPNEXUS = {
+        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+        'timestamp': 1519767010567,
+        'auctionStatus': 'inProgress',
+        'adUnits': [ {
+          'code': '/19968336/header-bid-tag-1',
+          'sizes': [[640, 480]],
+          'bids': [ {
+            'bidder': 'appnexus',
+            'params': {
+              'publisherId': '1001'
+            }
+          } ],
+          'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014'
+        }
+        ],
+        'adUnitCodes': ['/19968336/header-bid-tag-1'],
+        'bidderRequests': [ {
+          'bidderCode': 'appnexus',
+          'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+          'bidderRequestId': '1be65d7958826a',
+          'bids': [ {
+            'bidder': 'appnexus',
+            'params': {
+              'publisherId': '1001',
+              'kgpv': 'this-is-a-kgpv'
+            },
+            'mediaTypes': {
+              'banner': {
+                'sizes': [[640, 480]]
+              }
+            },
+            'adUnitCode': '/19968336/header-bid-tag-1',
+            'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
+            'sizes': [[640, 480]],
+            'bidId': '2ecff0db240757',
+            'bidderRequestId': '1be65d7958826a',
+            'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+            'src': 'client',
+            'bidRequestsCount': 1
+          }
+          ],
+          'timeout': 3000,
+          'refererInfo': {
+            'topmostLocation': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
+          }
+        }
+        ],
+        'bidsReceived': [],
+        'winningBids': [],
+        'timeout': 3000
+      };
+
+      const MOCK_BID_REQUESTED_APPNEXUS = {
+        'bidder': 'appnexus',
+        'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa',
+        'bidderRequestId': '1be65d7958826a',
+        'bids': [
+          {
+            'bidder': 'appnexus',
+            'adapterCode': 'appnexus',
+            'bidderCode': 'appnexus',
+            'params': {
+              'publisherId': '1001',
+              'video': {
+                'minduration': 30,
+                'skippable': true
+              }
+            },
+            'mediaType': 'video',
+            'adUnitCode': '/19968336/header-bid-tag-0',
+            'transactionId': 'ca4af27a-6d02-4f90-949d-d5541fa12014',
+            'sizes': [[640, 480]],
+            'bidId': '2ecff0db240757',
+            'bidderRequestId': '1be65d7958826a',
+            'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa'
+          }
+        ],
+        'auctionStart': 1519149536560,
+        'timeout': 5000,
+        'start': 1519149562216,
+        'refererInfo': {
+          'topmostLocation': 'http://www.test.com/page.html', 'reachedTop': true, 'numIframes': 0, 'stack': ['http://www.test.com/page.html']
+        },
+        'gdprConsent': {
+          'consentString': 'here-goes-gdpr-consent-string',
+          'gdprApplies': true
+        }
+      };
+
+      this.timeout(5000)
+
+      sandbox.stub($$PREBID_GLOBAL$$, 'getHighestCpmBids').callsFake((key) => {
+        return [APPNEXUS_BID]
+      });
+
+      events.emit(AUCTION_INIT, MOCK_AUCTION_INIT_APPNEXUS);
+      events.emit(BID_REQUESTED, MOCK_BID_REQUESTED_APPNEXUS);
+      events.emit(BID_RESPONSE, APPNEXUS_BID);
+      events.emit(BIDDER_DONE, {
+        'bidderCode': 'appnexus',
+        'bids': [
+          APPNEXUS_BID,
+          Object.assign({}, APPNEXUS_BID, {
+            'serverResponseTimeMs': 42,
+          })
+        ]
+      });
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      events.emit(SET_TARGETING, {
+        [APPNEXUS_BID.adUnitCode]: APPNEXUS_BID.adserverTargeting,
+      });
+      events.emit(BID_WON, Object.assign({}, APPNEXUS_BID, {
+        'status': 'rendered'
+      }));
+
+      clock.tick(2000 + 1000);
+      expect(requests.length).to.equal(2); // logger as well as tracker is fired
+      let request = requests[1]; // logger is executed late, trackers execute first
+      expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
+      let data = getLoggerJsonFromRequest(request.requestBody);
+      expect(data.pubid).to.equal('9999');
+      expect(data.pid).to.equal('1111');
+      expect(data.pdvid).to.equal('20');
+
+      let firstTracker = requests[0].url;
+      expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
+      firstTracker.split('?')[1].split('&').map(e => e.split('=')).forEach(e => data[e[0]] = e[1]);
+      expect(data.pubid).to.equal('9999');
+      expect(decodeURIComponent(data.purl)).to.equal('http://www.test.com/page.html');
+
+      expect(data.s).to.be.an('array');
+      expect(data.s.length).to.equal(1);
+      expect(data.s[0].ps[0].pn).to.equal('appnexus');
+      expect(data.s[0].ps[0].bc).to.equal('appnexus');
+    })
   });
 });
