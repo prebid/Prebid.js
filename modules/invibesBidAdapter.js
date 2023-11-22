@@ -5,7 +5,7 @@ import {getStorageManager} from '../src/storageManager.js';
 const CONSTANTS = {
   BIDDER_CODE: 'invibes',
   BID_ENDPOINT: '.videostep.com/Bid/VideoAdContent',
-  BID_SUBDOMAIN: 'https://bid1',
+  BID_SUBDOMAIN: 'https://bid',
   SYNC_ENDPOINT: 'https://k.r66net.com/GetUserSync',
   TIME_TO_LIVE: 300,
   DEFAULT_CURRENCY: 'EUR',
