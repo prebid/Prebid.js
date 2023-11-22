@@ -2736,10 +2736,10 @@ describe('Unit: Prebid Module', function () {
       events.on.restore();
     });
 
-    it('should emit event EFORE_ADD_BID_RESPONSE when invoked', function () {
+    it('should emit event BID_ACCEPTED when invoked', function () {
       var callback = sinon.spy();
-      $$PREBID_GLOBAL$$.onEvent('beforeAddBidResponse', callback);
-      events.emit(CONSTANTS.EVENTS.BEFORE_ADD_BID_RESPONSE);
+      $$PREBID_GLOBAL$$.onEvent('bidAccepted', callback);
+      events.emit(CONSTANTS.EVENTS.BID_ACCEPTED);
       sinon.assert.calledOnce(callback);
     });
 
