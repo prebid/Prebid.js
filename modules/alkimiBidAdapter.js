@@ -43,7 +43,9 @@ export const spec = {
       bidIds.push(bidRequest.bidId)
     })
 
-    const alkimiConfig = config.getConfig('alkimi');
+    const alkimiConfig = config.getConfig('alkimi')
+    const fullPageAuction = bidderRequest.ortb2?.source?.ext?.full_page_auction
+    const source = fullPageAuction != undefined ? { ext: { full_page_auction: fullPageAuction } } : undefined
 
     let payload = {
       requestId: generateUUID(),
@@ -59,6 +61,7 @@ export const spec = {
         h: screen.height
       },
       ortb2: {
+        source,
         site: {
           keywords: bidderRequest.ortb2?.site?.keywords
         },
