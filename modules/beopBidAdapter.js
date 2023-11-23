@@ -1,7 +1,6 @@
 import {
   buildUrl,
-  deepAccess,
-  getBidIdParameter,
+  deepAccess, getBidIdParameter,
   getValue,
   isArray,
   logInfo,

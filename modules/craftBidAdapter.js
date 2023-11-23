@@ -1,4 +1,4 @@
-import {convertCamelToUnderscore, convertTypes, getBidRequest, logError} from '../src/utils.js';
+import {getBidRequest, logError} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {auctionManager} from '../src/auctionManager.js';
@@ -7,7 +7,9 @@ import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
-import {getANKeywordParam, transformBidderParamKeywords} from '../libraries/appnexusKeywords/anKeywords.js';
+import {getANKeywordParam, transformBidderParamKeywords} from '../libraries/appnexusUtils/anKeywords.js';
+import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
+import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
 const BIDDER_CODE = 'craft';
 const URL_BASE = 'https://gacraft.jp/prebid-v3';

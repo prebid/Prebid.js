@@ -78,14 +78,17 @@ export const spec = {
         bust: new Date().getTime().toString(),
         dnt: getDNT(),
         description: getPageDescription(),
+        tmax: bidderRequest.timeout || 400,
         userConsent: JSON.stringify({
           // case of undefined, stringify will remove param
-          gdprApplies: deepAccess(bidderRequest, 'gdprConsent.gdprApplies') || '',
+          gdprApplies:
+            deepAccess(bidderRequest, 'gdprConsent.gdprApplies') || '',
           cmp: deepAccess(bidderRequest, 'gdprConsent.consentString') || '',
           gpp: deepAccess(bidderRequest, 'gppConsent.gppString') || '',
-          gpp_sid: deepAccess(bidderRequest, 'gppConsent.applicableSections') || []
+          gpp_sid:
+            deepAccess(bidderRequest, 'gppConsent.applicableSections') || [],
         }),
-        us_privacy: deepAccess(bidderRequest, 'uspConsent') || ''
+        us_privacy: deepAccess(bidderRequest, 'uspConsent') || '',
       };
 
       if (canAccessTopWindow()) {
@@ -432,12 +435,12 @@ function openRtbImpression(bidRequest) {
     }
   };
 
-  const mediaTypesParams = deepAccess(bidRequest, 'mediaTypes.video');
+  const mediaTypesParams = deepAccess(bidRequest, 'mediaTypes.video', {});
   Object.keys(mediaTypesParams)
     .filter(param => includes(OPENRTB_VIDEO_BIDPARAMS, param))
     .forEach(param => imp.video[param] = mediaTypesParams[param]);
 
-  const videoParams = deepAccess(bidRequest, 'params.video');
+  const videoParams = deepAccess(bidRequest, 'params.video', {});
   Object.keys(videoParams)
     .filter(param => includes(OPENRTB_VIDEO_BIDPARAMS, param))
     .forEach(param => imp.video[param] = videoParams[param]);
