@@ -185,9 +185,7 @@ describe('minutemediaAdapter', function () {
       };
       const expectedCurrency = bid.params.currency;
       const request = spec.buildRequests([bid], bidderRequest);
-      if (bid.params.currency) {
-        expect(request.data.bids[0].currency).to.equal(expectedCurrency);
-      }
+      expect(request.data.bids[0].currency).to.equal(expectedCurrency);
     });
 
     it('should send the correct currency in bid request, using default if not specified', function () {
