@@ -141,16 +141,16 @@ registerBidder(spec);
  * @param bid {bid}
  * @returns {Number}
  */
-function getFloor(bid, mediaType) {
+function getFloor(bid, mediaType, currency) {
   if (!isFn(bid.getFloor)) {
     return 0;
   }
   let floorResult = bid.getFloor({
-    currency: bid.params.currency || DEFAULT_CURRENCY,
+    currency: currency,
     mediaType: mediaType,
     size: '*'
   });
-  return floorResult.currency === (bid.params.currency || DEFAULT_CURRENCY) && floorResult.floor ? floorResult.floor : 0;
+  return floorResult.currency === currency && floorResult.floor ? floorResult.floor : 0;
 }
 
 /**
@@ -286,6 +286,7 @@ function generateBidParameters(bid, bidderRequest) {
   const {params} = bid;
   const mediaType = isBanner(bid) ? BANNER : VIDEO;
   const sizesArray = getSizesArray(bid, mediaType);
+  const currency = params.currency || config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY;
 
   // fix floor price in case of NAN
   if (isNaN(params.floorPrice)) {
@@ -296,13 +297,13 @@ function generateBidParameters(bid, bidderRequest) {
     mediaType,
     adUnitCode: getBidIdParameter('adUnitCode', bid),
     sizes: sizesArray,
-    floorPrice: Math.max(getFloor(bid, mediaType), params.floorPrice),
+    currency: currency,
+    floorPrice: Math.max(getFloor(bid, mediaType, currency), params.floorPrice),
     bidId: getBidIdParameter('bidId', bid),
     loop: getBidIdParameter('bidderRequestsCount', bid),
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
     transactionId: bid.ortb2Imp?.ext?.tid || '',
     coppa: 0,
-    currency: params.currency || config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY
   };
 
   const pos = deepAccess(bid, `mediaTypes.${mediaType}.pos`);
