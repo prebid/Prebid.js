@@ -12,7 +12,6 @@
   "ozoneBidAdapter",
   "permutiveRtdProvider",
   "prebidServerBidAdapter",
-  "pubCommonId",
   "pubmaticBidAdapter",
   "smartadserverBidAdapter",
   "sonobiBidAdapter",
