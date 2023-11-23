@@ -260,7 +260,7 @@ export const spec = {
         syncUrlQuery.push('gpp=' + gppConsent.gppString + '&gpp_sid=' + gppConsent?.applicableSections?.join(','));
       }
 
-      const type = syncOptions.iframeEnabled && 'iframe' || 'image';
+      const type = (syncOptions.iframeEnabled && 'iframe') || 'image';
       syncUrlQuery.push('type=' + type);
       pixels.push({
         type,
