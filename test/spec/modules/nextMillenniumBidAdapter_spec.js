@@ -11,19 +11,53 @@ describe('nextMillenniumBidAdapterTests', function() {
       params: { placement_id: '-1' },
       sizes: [[300, 250]],
       uspConsent: '1---',
+      gppConsent: {
+        gppString: 'DBACNYA~CPXxRfAPXxR',
+        applicableSections: [7],
+      },
+
       gdprConsent: {
         consentString: 'kjfdniwjnifwenrif3',
         gdprApplies: true
       },
+
       ortb2: {
         device: {
           w: 1500,
           h: 1000
         },
+
         site: {
           domain: 'example.com',
           page: 'http://example.com'
         }
+      }
+    }];
+
+  const bidRequestData2 = [
+    {
+      adUnitCode: 'test-div',
+      bidId: 'bid1234',
+      auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+      bidder: 'nextMillennium',
+      params: { placement_id: '-1' },
+      sizes: [[300, 250]],
+
+      ortb2: {
+        device: {
+          w: 1500,
+          h: 1000
+        },
+
+        site: {
+          domain: 'example.com',
+          page: 'http://example.com'
+        },
+
+        regs: {
+          gpp: 'DBACNYA~CPXxRfAPXxR',
+          gpp_sid: [7, 8],
+        },
       }
     }
   ];
@@ -49,7 +83,7 @@ describe('nextMillenniumBidAdapterTests', function() {
       cur: 'USD',
       ext: {
         sync: {
-          image: ['urlA?gdpr={{.GDPR}}'],
+          image: ['urlA?gdpr={{.GDPR}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}'],
           iframe: ['urlB'],
         }
       }
@@ -117,26 +151,34 @@ describe('nextMillenniumBidAdapterTests', function() {
     },
   ];
 
-  it('Request params check with GDPR and USP Consent', function () {
+  it('Request params check with GDPR and USP Consent and GPP Consent', function () {
     const request = spec.buildRequests(bidRequestData, bidRequestData[0]);
     expect(JSON.parse(request[0].data).user.ext.consent).to.equal('kjfdniwjnifwenrif3');
     expect(JSON.parse(request[0].data).regs.ext.us_privacy).to.equal('1---');
     expect(JSON.parse(request[0].data).regs.ext.gdpr).to.equal(1);
+    expect(JSON.parse(request[0].data).regs.gpp).to.equal('DBACNYA~CPXxRfAPXxR');
+    expect(JSON.stringify(JSON.parse(request[0].data).regs.gpp_sid)).to.equal('[7]');
+
+    const request2 = spec.buildRequests(bidRequestData2, bidRequestData2[0]);
+    expect(JSON.parse(request2[0].data).regs.gpp).to.equal('DBACNYA~CPXxRfAPXxR');
+    expect(JSON.stringify(JSON.parse(request2[0].data).regs.gpp_sid)).to.equal('[7,8]');
   });
 
   it('Test getUserSyncs function', function () {
+    const {gdprConsent, uspConsent, gppConsent} = bidRequestData[0];
     const syncOptions = {
       'iframeEnabled': false,
       'pixelEnabled': true
     }
-    let userSync = spec.getUserSyncs(syncOptions, [serverResponse], bidRequestData[0].gdprConsent, bidRequestData[0].uspConsent);
+
+    let userSync = spec.getUserSyncs(syncOptions, [serverResponse], gdprConsent, uspConsent, gppConsent);
     expect(userSync).to.be.an('array').with.lengthOf(1);
     expect(userSync[0].type).to.equal('image');
-    expect(userSync[0].url).to.equal('urlA?gdpr=1');
+    expect(userSync[0].url).to.equal('urlA?gdpr=1&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7');
 
     syncOptions.iframeEnabled = true;
     syncOptions.pixelEnabled = false;
-    userSync = spec.getUserSyncs(syncOptions, [serverResponse], bidRequestData[0].gdprConsent, bidRequestData[0].uspConsent);
+    userSync = spec.getUserSyncs(syncOptions, [serverResponse], gdprConsent, uspConsent);
     expect(userSync).to.be.an('array').with.lengthOf(1);
     expect(userSync[0].type).to.equal('iframe');
     expect(userSync[0].url).to.equal('urlB');
@@ -147,10 +189,10 @@ describe('nextMillenniumBidAdapterTests', function() {
       'iframeEnabled': true,
       'pixelEnabled': false
     }
-    let userSync = spec.getUserSyncs(syncOptions, [], bidRequestData[0].gdprConsent, bidRequestData[0].uspConsent);
+    let userSync = spec.getUserSyncs(syncOptions, [], bidRequestData[0].gdprConsent, bidRequestData[0].uspConsent, bidRequestData[0].gppConsent);
     expect(userSync).to.be.an('array')
     expect(userSync[0].type).to.equal('iframe')
-    expect(userSync[0].url).to.equal('https://cookies.nextmillmedia.com/sync?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&us_privacy=1---&type=iframe')
+    expect(userSync[0].url).to.equal('https://cookies.nextmillmedia.com/sync?gdpr=1&gdpr_consent=kjfdniwjnifwenrif3&us_privacy=1---&gpp=DBACNYA~CPXxRfAPXxR&gpp_sid=7&type=iframe')
   })
 
   it('Test getUserSyncs function if GDPR is undefined', function () {
@@ -162,7 +204,7 @@ describe('nextMillenniumBidAdapterTests', function() {
     let userSync = spec.getUserSyncs(syncOptions, [serverResponse], undefined, bidRequestData[0].uspConsent);
     expect(userSync).to.be.an('array').with.lengthOf(1);
     expect(userSync[0].type).to.equal('image');
-    expect(userSync[0].url).to.equal('urlA?gdpr=0');
+    expect(userSync[0].url).to.equal('urlA?gdpr=0&gpp={{.GPP}}&gpp_sid={{.GPPSID}}');
   });
 
   it('Request params check without GDPR Consent', function () {
@@ -190,7 +232,7 @@ describe('nextMillenniumBidAdapterTests', function() {
 
   it('Check if refresh_count param is incremented', function() {
     const request = spec.buildRequests(bidRequestData);
-    expect(JSON.parse(request[0].data).ext.nextMillennium.refresh_count).to.equal(3);
+    expect(JSON.parse(request[0].data).ext.nextMillennium.refresh_count).to.equal(4);
   });
 
   it('Check if domain was added', function() {
