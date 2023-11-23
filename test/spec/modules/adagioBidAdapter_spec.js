@@ -256,7 +256,6 @@ describe('Adagio bid adapter', () => {
 
   describe('buildRequests()', function() {
     const expectedDataKeys = [
-      'id',
       'organizationId',
       'secure',
       'device',
@@ -269,7 +268,8 @@ describe('Adagio bid adapter', () => {
       'prebidVersion',
       'featuresVersion',
       'data',
-      'usIfr'
+      'usIfr',
+      'adgjs',
     ];
 
     it('groups requests by organizationId', function() {
@@ -296,6 +296,7 @@ describe('Adagio bid adapter', () => {
       sandbox.stub(adagio, 'getDevice').returns({ a: 'a' });
       sandbox.stub(adagio, 'getSite').returns({ domain: 'adagio.io', 'page': 'https://adagio.io/hb' });
       sandbox.stub(adagio, 'getPageviewId').returns('1234-567');
+      sandbox.stub(utils, 'generateUUID').returns('blabla');
 
       const bid01 = new BidRequestBuilder().withParams().build();
       const bidderRequest = new BidderRequestBuilder().build();
@@ -307,6 +308,33 @@ describe('Adagio bid adapter', () => {
       expect(requests[0].url).to.equal(ENDPOINT);
       expect(requests[0].options.contentType).to.eq('text/plain');
       expect(requests[0].data).to.have.all.keys(expectedDataKeys);
+    });
+
+    it('should use a custom generated auctionId and remove transactionId', function() {
+      const expectedAuctionId = '373bcda7-9794-4f1c-be2c-0d223d11d579'
+      sandbox.stub(utils, 'generateUUID').returns(expectedAuctionId);
+
+      const bid01 = new BidRequestBuilder().withParams().build();
+      const bidderRequest = new BidderRequestBuilder().build();
+
+      const requests = spec.buildRequests([bid01], bidderRequest);
+      expect(requests[0].data.adUnits[0].auctionId).eq(expectedAuctionId);
+      expect(requests[0].data.adUnits[0].transactionId).to.not.exist;
+    });
+
+    it('should enrich prebid bid requests params', function() {
+      const expectedAuctionId = '373bcda7-9794-4f1c-be2c-0d223d11d579'
+      const expectedPageviewId = '56befc26-8cf0-472d-b105-73896df8eb89';
+      sandbox.stub(utils, 'generateUUID').returns(expectedAuctionId);
+      sandbox.stub(adagio, 'getPageviewId').returns(expectedPageviewId);
+
+      const bid01 = new BidRequestBuilder().withParams().build();
+      const bidderRequest = new BidderRequestBuilder().build();
+
+      spec.buildRequests([bid01], bidderRequest);
+
+      expect(bid01.params.adagioAuctionId).eq(expectedAuctionId);
+      expect(bid01.params.pageviewId).eq(expectedPageviewId);
     });
 
     it('should enqueue computed features for collect usage', function() {
@@ -681,6 +709,95 @@ describe('Adagio bid adapter', () => {
         const requests = spec.buildRequests([bid01], bidderRequest);
 
         expect(requests[0].data.regs.ccpa).to.be.empty;
+      });
+    });
+
+    describe('with GPP', function() {
+      const bid01 = new BidRequestBuilder().withParams().build();
+
+      const regsGpp = 'regs_gpp_consent_string';
+      const regsApplicableSections = [2];
+
+      const ortb2Gpp = 'ortb2_gpp_consent_string';
+      const ortb2GppSid = [1];
+
+      context('When GPP in regs module', function() {
+        it('send gpp and gppSid to the server', function() {
+          const bidderRequest = new BidderRequestBuilder({
+            gppConsent: {
+              gppString: regsGpp,
+              applicableSections: regsApplicableSections,
+            }
+          }).build();
+
+          const requests = spec.buildRequests([bid01], bidderRequest);
+
+          expect(requests[0].data.regs.gpp).to.equal(regsGpp);
+          expect(requests[0].data.regs.gppSid).to.equal(regsApplicableSections);
+        });
+      });
+
+      context('When GPP partially defined in regs module', function() {
+        it('send gpp and gppSid coming from ortb2 to the server', function() {
+          const bidderRequest = new BidderRequestBuilder({
+            gppConsent: {
+              gppString: regsGpp,
+            },
+            ortb2: {
+              regs: {
+                gpp: ortb2Gpp,
+                gpp_sid: ortb2GppSid,
+              }
+            }
+          }).build();
+
+          const requests = spec.buildRequests([bid01], bidderRequest);
+
+          expect(requests[0].data.regs.gpp).to.equal(ortb2Gpp);
+          expect(requests[0].data.regs.gppSid).to.equal(ortb2GppSid);
+        });
+
+        it('send empty gpp and gppSid if no ortb2 fields to the server', function() {
+          const bidderRequest = new BidderRequestBuilder({
+            gppConsent: {
+              gppString: regsGpp,
+            }
+          }).build();
+
+          const requests = spec.buildRequests([bid01], bidderRequest);
+
+          expect(requests[0].data.regs.gpp).to.equal('');
+          expect(requests[0].data.regs.gppSid).to.be.empty;
+        });
+      });
+
+      context('When GPP defined in ortb2 module', function() {
+        it('send gpp and gppSid coming from ortb2 to the server', function() {
+          const bidderRequest = new BidderRequestBuilder({
+            ortb2: {
+              regs: {
+                gpp: ortb2Gpp,
+                gpp_sid: ortb2GppSid,
+              }
+            }
+          }).build();
+
+          const requests = spec.buildRequests([bid01], bidderRequest);
+
+          expect(requests[0].data.regs.gpp).to.equal(ortb2Gpp);
+          expect(requests[0].data.regs.gppSid).to.equal(ortb2GppSid);
+        });
+      });
+
+      context('When GPP not defined in any modules', function() {
+        it('send empty gpp and gppSid', function() {
+          const bidderRequest = new BidderRequestBuilder({}).build();
+
+          const requests = spec.buildRequests([bid01], bidderRequest);
+
+          expect(requests[0].data.regs.gpp).to.equal('');
+          expect(requests[0].data.regs.gppSid).to.be.empty;
+        });
       });
     });
 
@@ -1280,14 +1397,6 @@ describe('Adagio bid adapter', () => {
 
   describe('transformBidParams', function() {
     it('Compute additional params in s2s mode', function() {
-      GlobalExchange.prepareExchangeData('{}');
-
-      sandbox.stub(window.top.document, 'getElementById').returns(
-        fixtures.getElementById()
-      );
-      sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'block' });
-      sandbox.stub(utils, 'inIframe').returns(false);
-
       const adUnit = {
         code: 'adunit-code',
         params: {
@@ -1308,22 +1417,8 @@ describe('Adagio bid adapter', () => {
         }
       }).withParams().build();
 
-      const params = spec.transformBidParams({ organizationId: '1000' }, true, adUnit, [{ bidderCode: 'adagio', auctionId: bid01.auctionId, bids: [bid01] }]);
-
-      expect(params.organizationId).to.exist;
-      expect(params.auctionId).to.exist;
-      expect(params.playerName).to.exist;
-      expect(params.playerName).to.equal('other');
-      expect(params.features).to.exist;
-      expect(params.features.page_dimensions).to.exist;
-      expect(params.features.adunit_position).to.exist;
-      expect(params.features.dom_loading).to.exist;
-      expect(params.features.print_number).to.exist;
-      expect(params.features.user_timestamp).to.exist;
-      expect(params.placement).to.exist;
-      expect(params.adUnitElementId).to.exist;
-      expect(params.site).to.exist;
-      expect(params.data.session).to.exist;
+      const params = spec.transformBidParams({ param01: 'test' }, true, adUnit, [{ bidderCode: 'adagio', auctionId: bid01.auctionId, bids: [bid01] }]);
+      expect(params.param01).eq('test');
     });
   });
 

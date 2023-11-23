@@ -1,16 +1,17 @@
 import assert from 'assert';
-import { config } from 'src/config';
+import {config} from 'src/config';
 import {
-  onePlusXSubmodule,
   buildOrtb2Updates,
   extractConfig,
   extractConsent,
   extractFpid,
   getPapiUrl,
+  onePlusXSubmodule,
   segtaxes,
   setTargetingDataToConfig,
   updateBidderConfig,
 } from 'modules/1plusXRtdProvider';
+import {deepClone} from '../../../src/utils.js';
 
 describe('1plusXRtdProvider', () => {
   // Fake server config
@@ -168,7 +169,7 @@ describe('1plusXRtdProvider', () => {
   })
 
   describe('buildOrtb2Updates', () => {
-    it('fills site.content.data, user.data & site.keywords in the ortb2 config', () => {
+    it('fills site.content.data & user.data in the ortb2 config', () => {
       const rtdData = { segments: fakeResponse.s, topics: fakeResponse.t };
       const ortb2Updates = buildOrtb2Updates(rtdData, randomBidder());
 
@@ -180,9 +181,9 @@ describe('1plusXRtdProvider', () => {
         },
         userData: {
           name: '1plusX.com',
-          segment: rtdData.segments.map((segmentId) => ({ id: segmentId }))
-        },
-        siteKeywords: rtdData.topics.map(topic => `1plusX=${topic}`).join(','),
+          segment: rtdData.segments.map((segmentId) => ({ id: segmentId })),
+          ext: { segtax: segtaxes.AUDIENCE }
+        }
       }
       expect([ortb2Updates]).to.deep.include.members([expectedOutput]);
     });
@@ -199,9 +200,9 @@ describe('1plusXRtdProvider', () => {
         },
         userData: {
           name: '1plusX.com',
-          segment: []
-        },
-        siteKeywords: rtdData.topics.map(topic => `1plusX=${topic}`).join(','),
+          segment: [],
+          ext: { segtax: segtaxes.AUDIENCE }
+        }
       }
       expect(ortb2Updates).to.deep.include(expectedOutput);
     })
@@ -218,9 +219,9 @@ describe('1plusXRtdProvider', () => {
         },
         userData: {
           name: '1plusX.com',
-          segment: rtdData.segments.map((segmentId) => ({ id: segmentId }))
+          segment: rtdData.segments.map((segmentId) => ({ id: segmentId })),
+          ext: { segtax: segtaxes.AUDIENCE }
         },
-        siteKeywords: '',
       }
       expect(ortb2Updates, `${JSON.stringify(ortb2Updates, null, 2)}`).to.deep.include(expectedOutput);
     })
@@ -327,13 +328,12 @@ describe('1plusXRtdProvider', () => {
         name: '1plusX.com',
         segment: fakeResponse.s.map((segmentId) => ({ id: segmentId }))
       },
-      siteKeywords: fakeResponse.t.map(topic => `1plusX=${topic}`).join(','),
     }
 
     it('merges fetched data in bidderConfig for configured bidders', () => {
       // Set initial config
       const bidder = randomBidder();
-      const ortb2Fragments = { [bidder]: { ...bidderConfigInitial } }
+      const ortb2Fragments = { [bidder]: deepClone(bidderConfigInitial) }
       // Call submodule's setBidderConfig
       updateBidderConfig(bidder, ortb2Updates, ortb2Fragments);
       const newBidderConfig = ortb2Fragments[bidder];
@@ -342,7 +342,6 @@ describe('1plusXRtdProvider', () => {
       expect(newBidderConfig.user).not.to.be.null.and.not.to.be.undefined;
       expect(newBidderConfig.site).not.to.be.null.and.not.to.be.undefined;
       expect(newBidderConfig.user.data).to.deep.include(ortb2Updates.userData);
-      expect(newBidderConfig.site.keywords).to.deep.include(ortb2Updates.siteKeywords);
       expect(newBidderConfig.site.content.data).to.deep.include(ortb2Updates.siteContentData);
       // Check that existing config didn't get erased
       expect(newBidderConfig.site).to.deep.include(bidderConfigInitial.site);
@@ -417,7 +416,6 @@ describe('1plusXRtdProvider', () => {
   })
 
   describe('setTargetingDataToConfig', () => {
-    const expectedKeywords = fakeResponse.t.map(topic => `1plusX=${topic}`).join(',');
     const expectedSiteContentObj = {
       data: [{
         name: '1plusX.com',
@@ -428,16 +426,17 @@ describe('1plusXRtdProvider', () => {
     const expectedUserObj = {
       data: [{
         name: '1plusX.com',
-        segment: fakeResponse.s.map((segmentId) => ({ id: segmentId }))
+        segment: fakeResponse.s.map((segmentId) => ({ id: segmentId })),
+        ext: { segtax: segtaxes.AUDIENCE }
       }]
     }
     const expectedOrtb2 = {
       appnexus: {
-        site: { content: expectedSiteContentObj, keywords: expectedKeywords },
+        site: { content: expectedSiteContentObj },
         user: expectedUserObj
       },
       rubicon: {
-        site: { content: expectedSiteContentObj, keywords: expectedKeywords },
+        site: { content: expectedSiteContentObj },
         user: expectedUserObj
       }
     }

@@ -1,18 +1,20 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepClone, deepAccess} from '../src/utils.js';
+import {deepAccess, deepClone, getDNT, generateUUID, replaceAuctionPrice} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
-import {VIDEO} from '../src/mediaTypes.js';
+import {VIDEO, BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'alkimi';
+const GVLID = 1169;
 export const ENDPOINT = 'https://exchange.alkimi-onboarding.com/bid?prebid=true';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: ['banner', 'video'],
 
   isBidRequestValid: function (bid) {
-    return !!(bid.params && bid.params.bidFloor && bid.params.token);
+    return !!(bid.params && bid.params.token);
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -28,12 +30,15 @@ export const spec = {
 
       bids.push({
         token: bidRequest.params.token,
-        pos: bidRequest.params.pos,
+        instl: bidRequest.params.instl,
+        exp: bidRequest.params.exp,
         bidFloor: getBidFloor(bidRequest, formatTypes),
         sizes: prepareSizes(deepAccess(bidRequest, 'mediaTypes.banner.sizes')),
         playerSizes: prepareSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize')),
         impMediaTypes: formatTypes,
-        adUnitCode: bidRequest.adUnitCode
+        adUnitCode: bidRequest.adUnitCode,
+        video: deepAccess(bidRequest, 'mediaTypes.video'),
+        banner: deepAccess(bidRequest, 'mediaTypes.banner')
       })
       bidIds.push(bidRequest.bidId)
     })
@@ -41,13 +46,26 @@ export const spec = {
     const alkimiConfig = config.getConfig('alkimi');
 
     let payload = {
-      requestId: bidderRequest.auctionId,
+      requestId: generateUUID(),
       signRequest: {bids, randomUUID: alkimiConfig && alkimiConfig.randomUUID},
       bidIds,
       referer: bidderRequest.refererInfo.page,
       signature: alkimiConfig && alkimiConfig.signature,
       schain: validBidRequests[0].schain,
-      cpp: config.getConfig('coppa') ? 1 : 0
+      cpp: config.getConfig('coppa') ? 1 : 0,
+      device: {
+        dnt: getDNT() ? 1 : 0,
+        w: screen.width,
+        h: screen.height
+      },
+      ortb2: {
+        site: {
+          keywords: bidderRequest.ortb2?.site?.keywords
+        },
+        at: bidderRequest.ortb2?.at,
+        bcat: bidderRequest.ortb2?.bcat,
+        wseat: bidderRequest.ortb2?.wseat
+      }
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {
@@ -98,7 +116,7 @@ export const spec = {
 
       // banner or video
       if (VIDEO === bid.mediaType) {
-        bid.vastXml = bid.ad;
+        bid.vastUrl = replaceAuctionPrice(bid.winUrl, bid.cpm);
       }
 
       bid.meta = {};
@@ -111,21 +129,12 @@ export const spec = {
   },
 
   onBidWon: function (bid) {
-    let winUrl;
-    if (bid.winUrl || bid.vastUrl) {
-      winUrl = bid.winUrl ? bid.winUrl : bid.vastUrl;
-      winUrl = winUrl.replace(/\$\{AUCTION_PRICE}/, bid.cpm);
-    } else if (bid.ad) {
-      let trackImg = bid.ad.match(/(?!^)<img src=".+dsp-win.+">/);
-      bid.ad = bid.ad.replace(trackImg[0], '');
-      winUrl = trackImg[0].split('"')[1];
-      winUrl = winUrl.replace(/\$%7BAUCTION_PRICE%7D/, bid.cpm);
-    } else {
-      return false;
+    if (BANNER == bid.mediaType && bid.winUrl) {
+      const winUrl = replaceAuctionPrice(bid.winUrl, bid.cpm);
+      ajax(winUrl, null);
+      return true;
     }
-
-    ajax(winUrl, null);
-    return true;
+    return false;
   }
 }
 

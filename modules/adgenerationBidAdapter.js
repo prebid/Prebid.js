@@ -1,8 +1,10 @@
-import {tryAppendQueryString, getBidIdParameter, escapeUnsafeChars, deepAccess} from '../src/utils.js';
+import {deepAccess, getBidIdParameter} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
+import {escapeUnsafeChars} from '../libraries/htmlEscape/htmlEscape.js';
 
 const ADG_BIDDER_CODE = 'adgeneration';
 
@@ -28,7 +30,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-    const ADGENE_PREBID_VERSION = '1.6.0';
+    const ADGENE_PREBID_VERSION = '1.6.2';
     let serverRequests = [];
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const validReq = validBidRequests[i];
@@ -41,6 +43,7 @@ export const spec = {
       const imuid = deepAccess(validReq, 'userId.imuid');
       const gpid = deepAccess(validReq, 'ortb2Imp.ext.gpid');
       const sua = deepAccess(validReq, 'ortb2.device.sua');
+      const uid2 = deepAccess(validReq, 'userId.uid2.id');
       let data = ``;
       data = tryAppendQueryString(data, 'posall', 'SSPLOC');
       const id = getBidIdParameter('id', validReq.params);
@@ -48,7 +51,7 @@ export const spec = {
       data = tryAppendQueryString(data, 'sdktype', '0');
       data = tryAppendQueryString(data, 'hb', 'true');
       data = tryAppendQueryString(data, 't', 'json3');
-      data = tryAppendQueryString(data, 'transactionid', validReq.transactionId);
+      data = tryAppendQueryString(data, 'transactionid', validReq.ortb2Imp?.ext?.tid);
       data = tryAppendQueryString(data, 'sizes', getSizes(validReq));
       data = tryAppendQueryString(data, 'currency', getCurrencyType());
       data = tryAppendQueryString(data, 'pbver', '$prebid.version$');
@@ -58,10 +61,10 @@ export const spec = {
       data = tryAppendQueryString(data, 'adgext_id5_id', id5id);
       data = tryAppendQueryString(data, 'adgext_id5_id_link_type', id5LinkType);
       data = tryAppendQueryString(data, 'adgext_imuid', imuid);
-      data = tryAppendQueryString(data, 'adgext_uid2', validReq.userId ? validReq.userId.uid2 : null);
-      data = tryAppendQueryString(data, 'gpid', gpid ? encodeURIComponent(gpid) : null);
+      data = tryAppendQueryString(data, 'adgext_uid2', uid2);
+      data = tryAppendQueryString(data, 'gpid', gpid);
       data = tryAppendQueryString(data, 'uach', sua ? JSON.stringify(sua) : null);
-      data = tryAppendQueryString(data, 'schain', validReq.schain ? encodeURIComponent(JSON.stringify(validReq.schain)) : null);
+      data = tryAppendQueryString(data, 'schain', validReq.schain ? JSON.stringify(validReq.schain) : null);
 
       // native以外にvideo等の対応が入った場合は要修正
       if (!validReq.mediaTypes || !validReq.mediaTypes.native) {

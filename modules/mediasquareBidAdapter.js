@@ -59,8 +59,9 @@ export const spec = {
         code: adunitValue.params.code,
         adunit: adunitValue.adUnitCode,
         bidId: adunitValue.bidId,
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: adunitValue.auctionId,
-        transactionId: adunitValue.transactionId,
+        transactionId: adunitValue.ortb2Imp?.ext?.tid,
         mediatypes: adunitValue.mediaTypes,
         floor: floor
       });
@@ -124,7 +125,7 @@ export const spec = {
             'advertiserDomains': value['adomain']
           }
         };
-        let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment'];
+        let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment', 'ova'];
         paramsToSearchFor.forEach(param => {
           if (param in value) {
             bidResponse['mediasquare'][param] = value[param];
@@ -173,11 +174,14 @@ export const spec = {
     }
     let params = { pbjs: '$prebid.version$', referer: encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation) };
     let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
-    let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment'];
+    let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment', 'ova'];
     if (bid.hasOwnProperty('mediasquare')) {
       paramsToSearchFor.forEach(param => {
         if (bid['mediasquare'].hasOwnProperty(param)) {
           params[param] = bid['mediasquare'][param];
+          if (typeof params[param] == 'number') {
+            params[param] = params[param].toString();
+          }
         }
       });
     };

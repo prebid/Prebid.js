@@ -1,10 +1,10 @@
-import {deepAccess, mergeDeep, isArray, logError, logInfo} from '../src/utils.js';
-import { getOrigin } from '../libraries/getOrigin/index.js';
+import {deepAccess, isArray, logError, logInfo, mergeDeep} from '../src/utils.js';
+import {getOrigin} from '../libraries/getOrigin/index.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {includes} from '../src/polyfill.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { config } from '../src/config.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'rtbhouse';
 const REGIONS = ['prebid-eu', 'prebid-us', 'prebid-asia'];
@@ -54,7 +54,7 @@ export const spec = {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
     const request = {
-      id: validBidRequests[0].auctionId,
+      id: bidderRequest.bidderRequestId,
       imp: validBidRequests.map(slot => mapImpression(slot, bidderRequest)),
       site: mapSite(validBidRequests, bidderRequest),
       cur: DEFAULT_CURRENCY_ARR,

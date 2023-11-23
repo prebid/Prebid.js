@@ -7,7 +7,6 @@ import { find } from '../src/polyfill.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { Renderer } from '../src/Renderer.js';
 import {
-  convertTypes,
   deepAccess,
   deepSetValue,
   formatQS,
@@ -18,15 +17,19 @@ import {
   logMessage,
   logWarn,
   mergeDeep,
-  parseSizesInput, _each
+  parseSizesInput,
+  pick,
+  _each
 } from '../src/utils.js';
+import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
+import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
 const DEFAULT_RENDERER_URL = 'https://video-outstream.rubiconproject.com/apex-2.2.1.js';
 // renderer code at https://github.com/rubicon-project/apex2
 
-let rubiConf = {};
+let rubiConf = config.getConfig('rubicon') || {};
 // we are saving these as global to this module so that if a pub accidentally overwrites the entire
 // rubicon object, then we do not lose other data
 config.getConfig('rubicon', config => {
@@ -123,6 +126,7 @@ var sizeMap = {
   278: '320x500',
   282: '320x400',
   288: '640x380',
+  484: '720x1280',
   524: '1x2',
   548: '500x1000',
   550: '980x480',
@@ -138,7 +142,9 @@ var sizeMap = {
   576: '610x877',
   578: '980x552',
   580: '505x656',
-  622: '192x160'
+  622: '192x160',
+  632: '1200x450',
+  634: '340x450'
 };
 
 _each(sizeMap, (item, key) => sizeMap[item] = key);
@@ -168,7 +174,7 @@ export const converter = ortbConverter({
       deepSetValue(data, 'ext.prebid.analytics', {'rubicon': {'client-analytics': true}});
     }
 
-    addOrtbFirstPartyData(data, bidRequests);
+    addOrtbFirstPartyData(data, bidRequests, bidderRequest.ortb2);
 
     delete data?.ext?.prebid?.storedrequest;
 
@@ -195,9 +201,13 @@ export const converter = ortbConverter({
     if (config.getConfig('s2sConfig.defaultTtl')) {
       imp.exp = config.getConfig('s2sConfig.defaultTtl');
     };
-    bidRequest.params.position === 'atf' && (imp.video.pos = 1);
-    bidRequest.params.position === 'btf' && (imp.video.pos = 3);
+    bidRequest.params.position === 'atf' && imp.video && (imp.video.pos = 1);
+    bidRequest.params.position === 'btf' && imp.video && (imp.video.pos = 3);
     delete imp.ext?.prebid?.storedrequest;
+
+    if (bidRequest.params.bidonmultiformat === true && bidRequestType.length > 1) {
+      deepSetValue(imp, 'ext.prebid.bidder.rubicon.formats', bidRequestType);
+    }
 
     setBidFloors(bidRequest, imp);
 
@@ -317,7 +327,7 @@ export const spec = {
         )
       );
     });
-    if (config.getConfig('rubicon.singleRequest') !== true) {
+    if (rubiConf.singleRequest !== true) {
       // bids are not grouped if single request mode is not enabled
       requests = filteredHttpRequest.concat(bannerBidRequests.map(bidRequest => {
         const bidParams = spec.createSlotParams(bidRequest, bidderRequest);
@@ -400,6 +410,8 @@ export const spec = {
         'x_source.tid',
         'l_pb_bid_id',
         'p_screen_res',
+        'o_ae',
+        'o_cdep',
         'rp_floor',
         'rp_secure',
         'tk_user_key'
@@ -470,9 +482,10 @@ export const spec = {
       'rp_floor': (params.floor = parseFloat(params.floor)) >= 0.01 ? params.floor : undefined,
       'rp_secure': '1',
       'tk_flint': `${rubiConf.int_type || DEFAULT_INTEGRATION}_v$prebid.version$`,
-      'x_source.tid': bidRequest.transactionId,
-      'x_imp.ext.tid': bidRequest.transactionId,
+      'x_source.tid': bidderRequest.ortb2?.source?.tid,
+      'x_imp.ext.tid': bidRequest.ortb2Imp?.ext?.tid,
       'l_pb_bid_id': bidRequest.bidId,
+      'o_cdep': bidRequest.ortb2?.device?.ext?.cdep,
       'p_screen_res': _getScreenResolution(),
       'tk_user_key': params.userId,
       'p_geo.latitude': isNaN(parseFloat(latitude)) ? undefined : parseFloat(latitude).toFixed(4),
@@ -496,6 +509,11 @@ export const spec = {
       data['rp_hard_floor'] = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
     }
 
+    // Send multiformat data if requested
+    if (params.bidonmultiformat === true && deepAccess(bidRequest, 'mediaTypes') && Object.keys(bidRequest.mediaTypes).length > 1) {
+      data['p_formats'] = Object.keys(bidRequest.mediaTypes).join(',');
+    }
+
     // add p_pos only if specified and valid
     // For SRA we need to explicitly put empty semi colons so AE treats it as empty, instead of copying the latter value
     let posMapping = {1: 'atf', 3: 'btf'};
@@ -506,6 +524,10 @@ export const spec = {
     const configUserId = config.getConfig('user.id');
     if (configUserId) {
       data['ppuid'] = configUserId;
+    }
+
+    if (bidRequest?.ortb2Imp?.ext?.ae) {
+      data['o_ae'] = 1;
     }
     // loop through userIds and add to request
     if (bidRequest.userIdAsEids) {
@@ -527,7 +549,9 @@ export const spec = {
             data['eid_id5-sync.com'] = `${eid.uids[0].id}^${eid.uids[0].atype}^${(eid.uids[0].ext && eid.uids[0].ext.linkType) || ''}`;
           } else {
             // add anything else with this generic format
-            data[`eid_${eid.source}`] = `${eid.uids[0].id}^${eid.uids[0].atype || ''}`;
+            // if rubicon drop ^
+            const id = eid.source === 'rubiconproject.com' ? eid.uids[0].id : `${eid.uids[0].id}^${eid.uids[0].atype || ''}`
+            data[`eid_${eid.source}`] = id;
           }
           // send AE "ppuid" signal if exists, and hasn't already been sent
           if (!data['ppuid']) {
@@ -604,7 +628,7 @@ export const spec = {
    * @param {*} responseObj
    * @param {BidRequest|Object.<string, BidRequest[]>} request - if request was SRA the bidRequest argument will be a keyed BidRequest array object,
    * non-SRA responses return a plain BidRequest object
-   * @return {Bid[]} An array of bids which
+   * @return {{fledgeAuctionConfigs: *, bids: *}} An array of bids which
    */
   interpretResponse: function (responseObj, request) {
     responseObj = responseObj.body;
@@ -614,7 +638,6 @@ export const spec = {
     if (!responseObj || typeof responseObj !== 'object') {
       return [];
     }
-
     // Response from PBS Java openRTB
     if (responseObj.seatbid) {
       const responseErrors = deepAccess(responseObj, 'ext.errors.rubicon');
@@ -640,7 +663,7 @@ export const spec = {
       return [];
     }
 
-    return ads.reduce((bids, ad, i) => {
+    let bids = ads.reduce((bids, ad, i) => {
       (ad.impression_id && lastImpId === ad.impression_id) ? multibid++ : lastImpId = ad.impression_id;
 
       if (ad.status !== 'ok') {
@@ -701,6 +724,16 @@ export const spec = {
     }, []).sort((adA, adB) => {
       return (adB.cpm || 0.0) - (adA.cpm || 0.0);
     });
+
+    let fledgeAuctionConfigs = responseObj.component_auction_config?.map(config => {
+      return { config, bidId: config.bidId }
+    });
+
+    if (fledgeAuctionConfigs) {
+      return { bids, fledgeAuctionConfigs };
+    } else {
+      return bids;
+    }
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
@@ -941,6 +974,33 @@ function applyFPD(bidRequest, mediaType, data) {
     // only send one of pbadslot or dfp adunit code (prefer pbadslot)
     if (data['tg_i.pbadslot']) {
       delete data['tg_i.dfp_ad_unit_code'];
+    }
+
+    // High Entropy stuff -> sua object is the ORTB standard (default to pass unless specifically disabled)
+    const clientHints = deepAccess(fpd, 'device.sua');
+    if (clientHints && rubiConf.chEnabled !== false) {
+      // pick out client hints we want to send (any that are undefined or empty will NOT be sent)
+      pick(clientHints, [
+        'architecture', arch => data.m_ch_arch = arch,
+        'bitness', bitness => data.m_ch_bitness = bitness,
+        'browsers', browsers => {
+          if (!Array.isArray(browsers)) return;
+          // reduce down into ua and full version list attributes
+          const [ua, fullVer] = browsers.reduce((accum, browserData) => {
+            accum[0].push(`"${browserData?.brand}"|v="${browserData?.version?.[0]}"`);
+            accum[1].push(`"${browserData?.brand}"|v="${browserData?.version?.join?.('.')}"`);
+            return accum;
+          }, [[], []]);
+          data.m_ch_ua = ua?.join?.(',');
+          data.m_ch_full_ver = fullVer?.join?.(',');
+        },
+        'mobile', isMobile => data.m_ch_mobile = `?${isMobile}`,
+        'model', model => data.m_ch_model = model,
+        'platform', platform => {
+          data.m_ch_platform = platform?.brand;
+          data.m_ch_platform_ver = platform?.version?.join?.('.');
+        }
+      ])
     }
   } else {
     if (Object.keys(impExt).length) {
@@ -1203,9 +1263,9 @@ function setBidFloors(bidRequest, imp) {
   }
 }
 
-function addOrtbFirstPartyData(data, nonBannerRequests) {
+function addOrtbFirstPartyData(data, nonBannerRequests, ortb2) {
   let fpd = {};
-  const keywords = new Set();
+  const keywords = getAllOrtbKeywords(ortb2, ...nonBannerRequests.map(req => req.params.keywords))
   nonBannerRequests.forEach(bidRequest => {
     const bidFirstPartyData = {
       user: {ext: {data: {...bidRequest.params.visitor}}},
@@ -1220,10 +1280,6 @@ function addOrtbFirstPartyData(data, nonBannerRequests) {
       }
     }
 
-    if (bidRequest.params.keywords) {
-      const keywordsArray = (!Array.isArray(bidRequest.params.keywords) ? bidRequest.params.keywords.split(',') : bidRequest.params.keywords);
-      keywordsArray.forEach(keyword => keywords.add(keyword));
-    }
     fpd = mergeDeep(fpd, bidRequest.ortb2 || {}, bidFirstPartyData);
 
     // add user.id from config.
@@ -1234,8 +1290,8 @@ function addOrtbFirstPartyData(data, nonBannerRequests) {
 
   mergeDeep(data, fpd);
 
-  if (keywords && keywords.size) {
-    deepSetValue(data, 'site.keywords', Array.from(keywords.values()).join(','));
+  if (keywords && keywords.length) {
+    deepSetValue(data, 'site.keywords', keywords.join(','));
   }
   delete data?.ext?.prebid?.storedrequest;
 }

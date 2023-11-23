@@ -74,7 +74,6 @@ describe('YieldmoAdapter', function () {
     bidderRequestId: '14c4ede8c693f',
     bids,
     auctionStart: 1520001292880,
-    timeout: 3000,
     start: 1520001292884,
     doneCbCallCount: 0,
     refererInfo: {
@@ -169,6 +168,14 @@ describe('YieldmoAdapter', function () {
         expect(requests[0].url).to.be.equal(BANNER_ENDPOINT);
       });
 
+      it('should pass default timeout in bid request', function () {
+        const requests = build([mockBannerBid()]);
+        expect(requests[0].data.tmax).to.equal(400);
+      });
+      it('should pass tmax to bid request', function () {
+        const requests = build([mockBannerBid()], mockBidderRequest({timeout: 1000}));
+        expect(requests[0].data.tmax).to.equal(1000);
+      });
       it('should not blow up if crumbs is undefined', function () {
         expect(function () {
           build([mockBannerBid({crumbs: undefined})]);
@@ -425,6 +432,18 @@ describe('YieldmoAdapter', function () {
         expect(requests[0].url).to.be.equal(VIDEO_ENDPOINT);
       });
 
+      it('should not require params.video if required props in mediaTypes.video', function () {
+        videoBid.mediaTypes.video = {
+          ...videoBid.mediaTypes.video,
+          ...videoBid.params.video
+        };
+        delete videoBid.params.video;
+        const requests = build([videoBid]);
+        expect(requests.length).to.equal(1);
+        expect(requests[0].method).to.equal('POST');
+        expect(requests[0].url).to.be.equal(VIDEO_ENDPOINT);
+      });
+
       it('should add mediaTypes.video prop to the imp.video prop', function () {
         utils.deepAccess(videoBid, 'mediaTypes.video')['minduration'] = 40;
         expect(buildVideoBidAndGetVideoParam().minduration).to.equal(40);
@@ -445,6 +464,20 @@ describe('YieldmoAdapter', function () {
         utils.deepAccess(videoBid, 'mediaTypes.video')['mimes'] = ['video/mp4'];
         utils.deepAccess(videoBid, 'params.video')['mimes'] = ['video/mkv'];
         expect(buildVideoBidAndGetVideoParam().mimes).to.deep.equal(['video/mkv']);
+      });
+
+      it('should validate protocol in video bid request', function () {
+        expect(
+          spec.isBidRequestValid(
+            mockVideoBid({}, {}, { protocols: [2, 3, 11] })
+          )
+        ).to.be.true;
+
+        expect(
+          spec.isBidRequestValid(
+            mockVideoBid({}, {}, { protocols: [2, 3, 10] })
+          )
+        ).to.be.false;
       });
 
       describe('video.skip state check', () => {

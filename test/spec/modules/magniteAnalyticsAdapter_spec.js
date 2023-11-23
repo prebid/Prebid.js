@@ -25,7 +25,8 @@ const {
     BID_WON,
     BID_TIMEOUT,
     BILLABLE_EVENT,
-    SEAT_NON_BID
+    SEAT_NON_BID,
+    BID_REJECTED
   }
 } = CONSTANTS;
 
@@ -549,7 +550,7 @@ describe('magnite analytics adapter', function () {
       expect(server.requests.length).to.equal(1);
       let request = server.requests[0];
 
-      expect(request.url).to.equal('//localhost:9999/event');
+      expect(request.url).to.match(/\/\/localhost:9999\/event/);
 
       let message = JSON.parse(request.requestBody);
 
@@ -723,7 +724,7 @@ describe('magnite analytics adapter', function () {
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
 
-        expect(request.url).to.equal('//localhost:9999/event');
+        expect(request.url).to.match(/\/\/localhost:9999\/event/);
 
         let message = JSON.parse(request.requestBody);
 
@@ -1491,6 +1492,40 @@ describe('magnite analytics adapter', function () {
       expect(message).to.deep.equal(expectedMessage);
     });
 
+    describe('when eventDispatcher is present', () => {
+      beforeEach(() => {
+        window.pbjs = window.pbjs || {};
+        pbjs.rp = pbjs.rp || {};
+        pbjs.rp.eventDispatcher = pbjs.rp.eventDispatcher || document.createElement('fakeElem');
+      });
+
+      afterEach(() => {
+        delete pbjs.rp.eventDispatcher;
+        delete pbjs.rp;
+      });
+
+      it('should dispatch beforeSendingMagniteAnalytics if possible', () => {
+        pbjs.rp.eventDispatcher.addEventListener('beforeSendingMagniteAnalytics', (data) => {
+          data.detail.test = 'testData';
+        });
+
+        performStandardAuction();
+
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+
+        expect(request.url).to.equal('http://localhost:9999/event');
+
+        let message = JSON.parse(request.requestBody);
+
+        const AnalyticsMessageWithCustomData = {
+          ...ANALYTICS_MESSAGE,
+          test: 'testData'
+        }
+        expect(message).to.deep.equal(AnalyticsMessageWithCustomData);
+      });
+    })
+
     describe('when handling bid caching', () => {
       let auctionInits, bidRequests, bidResponses, bidsWon;
       beforeEach(function () {
@@ -2144,6 +2179,97 @@ describe('magnite analytics adapter', function () {
       ];
       statuses.forEach((info, index) => {
         checkStatusAgainstCode(info.status, info.code, info.error, index);
+      });
+    });
+  });
+
+  describe('BID_REJECTED events', () => {
+    let bidRejectedArgs;
+
+    const runBidRejectedAuction = () => {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_REJECTED, bidRejectedArgs)
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      clock.tick(rubiConf.analyticsBatchTimeout + 1000);
+    };
+    beforeEach(() => {
+      magniteAdapter.enableAnalytics({
+        options: {
+          endpoint: '//localhost:9999/event',
+          accountId: 1001
+        }
+      });
+      bidRejectedArgs = utils.deepClone(MOCK.BID_RESPONSE);
+    });
+
+    it('updates the bid to be rejected by floors', () => {
+      bidRejectedArgs.floorData = {
+        floorValue: 0.5,
+        floorRule: 'banner',
+        floorRuleValue: 0.5,
+        floorCurrency: 'USD',
+        cpmAfterAdjustments: 0.15,
+        enforcements: {
+          enforceJS: true,
+          enforcePBS: false,
+          floorDeals: false,
+          bidAdjustment: true
+        },
+        matchedFields: {
+          mediaType: 'banner'
+        }
+      }
+      bidRejectedArgs.rejectionReason = 'Bid does not meet price floor';
+
+      runBidRejectedAuction();
+      let message = JSON.parse(server.requests[0].requestBody);
+
+      expect(message.auctions[0].adUnits[0].bids[0]).to.deep.equal({
+        bidder: 'rubicon',
+        bidId: '23fcd8cf4bf0d7',
+        source: 'client',
+        status: 'rejected-ipf',
+        clientLatencyMillis: 271,
+        httpLatencyMillis: 240,
+        bidResponse: {
+          bidPriceUSD: 0.15,
+          mediaType: 'banner',
+          dimensions: {
+            width: 300,
+            height: 250
+          },
+          floorValue: 0.5,
+          floorRuleValue: 0.5,
+          rejectionReason: 'Bid does not meet price floor'
+        }
+      });
+    });
+
+    it('does general rejection', () => {
+      bidRejectedArgs
+      bidRejectedArgs.rejectionReason = 'this bid is rejected';
+
+      runBidRejectedAuction();
+      let message = JSON.parse(server.requests[0].requestBody);
+
+      expect(message.auctions[0].adUnits[0].bids[0]).to.deep.equal({
+        bidder: 'rubicon',
+        bidId: '23fcd8cf4bf0d7',
+        source: 'client',
+        status: 'rejected',
+        clientLatencyMillis: 271,
+        httpLatencyMillis: 240,
+        bidResponse: {
+          bidPriceUSD: 3.4,
+          mediaType: 'banner',
+          dimensions: {
+            width: 300,
+            height: 250
+          },
+          rejectionReason: 'this bid is rejected'
+        }
       });
     });
   });

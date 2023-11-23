@@ -62,6 +62,7 @@ export const spec = {
     const loServerRequest = {
       cur: CURRENCY,
       timeout: poBidderRequest.timeout,
+      // TODO: fix auctionId/transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auction_id: paValidBidRequests[0].auctionId,
       // TODO: should this use auctionId? see #8573
       transaction_id: paValidBidRequests[0].transactionId,

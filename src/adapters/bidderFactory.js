@@ -8,28 +8,24 @@ import {isValidVideoBid} from '../video.js';
 import CONSTANTS from '../constants.json';
 import * as events from '../events.js';
 import {includes} from '../polyfill.js';
-import {ajax} from '../ajax.js';
 import {
-  deepAccess,
   delayExecution,
-  flatten,
   isArray,
   isPlainObject,
   logError,
-  logWarn,
+  logWarn, memoize,
   parseQueryStringParameters,
-  parseSizesInput,
-  timestamp,
+  parseSizesInput, pick,
   uniques
 } from '../utils.js';
-import {ADPOD} from '../mediaTypes.js';
-import {getHook, hook} from '../hook.js';
-import {getCoreStorageManager} from '../storageManager.js';
+import {hook} from '../hook.js';
 import {auctionManager} from '../auctionManager.js';
 import {bidderSettings} from '../bidderSettings.js';
 import {useMetrics} from '../utils/perfMetrics.js';
-
-export const storage = getCoreStorageManager('bidderFactory');
+import {isActivityAllowed} from '../activities/rules.js';
+import {activityParams} from '../activities/activityParams.js';
+import {MODULE_TYPE_BIDDER} from '../activities/modules.js';
+import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../activities/activities.js';
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -154,8 +150,7 @@ export const storage = getCoreStorageManager('bidderFactory');
 
 // common params for all mediaTypes
 const COMMON_BID_RESPONSE_KEYS = ['cpm', 'ttl', 'creativeId', 'netRevenue', 'currency'];
-
-const DEFAULT_REFRESHIN_DAYS = 1;
+const TIDS = ['auctionId', 'transactionId'];
 
 /**
  * Register a bidder with prebid, using the given spec.
@@ -190,6 +185,46 @@ export function registerBidder(spec) {
   }
 }
 
+export function guardTids(bidderCode) {
+  if (isActivityAllowed(ACTIVITY_TRANSMIT_TID, activityParams(MODULE_TYPE_BIDDER, bidderCode))) {
+    return {
+      bidRequest: (br) => br,
+      bidderRequest: (br) => br
+    };
+  }
+  function get(target, prop, receiver) {
+    if (TIDS.includes(prop)) {
+      return null;
+    }
+    return Reflect.get(target, prop, receiver);
+  }
+  function privateAccessProxy(target, handler) {
+    const proxy = new Proxy(target, handler);
+    // always allow methods (such as getFloor) private access to TIDs
+    Object.entries(target)
+      .filter(([_, v]) => typeof v === 'function')
+      .forEach(([prop, fn]) => proxy[prop] = fn.bind(target));
+    return proxy;
+  }
+  const bidRequest = memoize((br) => privateAccessProxy(br, {get}), (arg) => arg.bidId);
+  /**
+   * Return a view on bidd(er) requests where auctionId/transactionId are nulled if the bidder is not allowed `transmitTid`.
+   *
+   * Because both auctionId and transactionId are used for Prebid's own internal bookkeeping, we cannot simply erase them
+   * from request objects; and because request objects are quite complex and not easily cloneable, we hide the IDs
+   * with a proxy instead. This should be used only around the adapter logic.
+   */
+  return {
+    bidRequest,
+    bidderRequest: (br) => privateAccessProxy(br, {
+      get(target, prop, receiver) {
+        if (prop === 'bids') return br.bids.map(bidRequest);
+        return get(target, prop, receiver);
+      }
+    })
+  }
+}
+
 /**
  * Make a new bidder from the given spec. This is exported mainly for testing.
  * Adapters will probably find it more convenient to use registerBidder instead.
@@ -206,6 +241,7 @@ export function newBidder(spec) {
       if (!Array.isArray(bidderRequest.bids)) {
         return;
       }
+      const tidGuard = guardTids(bidderRequest.bidderCode);
 
       const adUnitCodesHandled = {};
       function addBidWithCode(adUnitCode, bid) {
@@ -231,7 +267,7 @@ export function newBidder(spec) {
       }
 
       const validBidRequests = adapterMetrics(bidderRequest)
-        .measureTime('validate', () => bidderRequest.bids.filter(filterAndWarn));
+        .measureTime('validate', () => bidderRequest.bids.filter((br) => filterAndWarn(tidGuard.bidRequest(br))));
 
       if (validBidRequests.length === 0) {
         afterAllResponses();
@@ -246,20 +282,17 @@ export function newBidder(spec) {
         }
       });
 
-      processBidderRequests(spec, validBidRequests, bidderRequest, ajax, configEnabledCallback, {
+      processBidderRequests(spec, validBidRequests.map(tidGuard.bidRequest), tidGuard.bidderRequest(bidderRequest), ajax, configEnabledCallback, {
         onRequest: requestObject => events.emit(CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP, bidderRequest, requestObject),
         onResponse: (resp) => {
           onTimelyResponse(spec.code);
           responses.push(resp)
         },
-        /** Process eventual BidderAuctionResponse.fledgeAuctionConfig field in response.
-         * @param {Array<FledgeAuctionConfig>} fledgeAuctionConfigs
-         */
         onFledgeAuctionConfigs: (fledgeAuctionConfigs) => {
           fledgeAuctionConfigs.forEach((fledgeAuctionConfig) => {
             const bidRequest = bidRequestMap[fledgeAuctionConfig.bidId];
             if (bidRequest) {
-              addComponentAuction(bidRequest.adUnitCode, fledgeAuctionConfig.config);
+              addComponentAuction(bidRequest, fledgeAuctionConfig.config);
             } else {
               logWarn('Received fledge auction configuration for an unknown bidId', fledgeAuctionConfig);
             }
@@ -285,7 +318,7 @@ export function newBidder(spec) {
             bid.originalCpm = bid.cpm;
             bid.originalCurrency = bid.currency;
             bid.meta = bid.meta || Object.assign({}, bid[bidRequest.bidder]);
-            const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid);
+            const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid, pick(bidRequest, TIDS));
             addBidWithCode(bidRequest.adUnitCode, prebidBid);
           } else {
             logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
@@ -418,6 +451,15 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
     onRequest(request);
 
     const networkDone = requestMetrics.startTiming('net');
+
+    function getOptions(defaults) {
+      const ro = request.options;
+      return Object.assign(defaults, ro, {
+        browsingTopics: ro?.hasOwnProperty('browsingTopics') && !ro.browsingTopics
+          ? false
+          : isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, activityParams(MODULE_TYPE_BIDDER, spec.code))
+      })
+    }
     switch (request.method) {
       case 'GET':
         ajax(
@@ -427,10 +469,10 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
             error: onFailure
           },
           undefined,
-          Object.assign({
+          getOptions({
             method: 'GET',
             withCredentials: true
-          }, request.options)
+          })
         );
         break;
       case 'POST':
@@ -441,11 +483,11 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
             error: onFailure
           },
           typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
-          Object.assign({
+          getOptions({
             method: 'POST',
             contentType: 'text/plain',
             withCredentials: true
-          }, request.options)
+          })
         );
         break;
       default:
@@ -483,85 +525,8 @@ export const registerSyncInner = hook('async', function(spec, responses, gdprCon
   }
 }, 'registerSyncs')
 
-export const addComponentAuction = hook('sync', (adUnitCode, fledgeAuctionConfig) => {
+export const addComponentAuction = hook('sync', (request, fledgeAuctionConfig) => {
 }, 'addComponentAuction');
-
-export function preloadBidderMappingFile(fn, adUnits) {
-  if (FEATURES.VIDEO) {
-    if (!config.getConfig('adpod.brandCategoryExclusion')) {
-      return fn.call(this, adUnits);
-    }
-
-    let adPodBidders = adUnits
-      .filter((adUnit) => deepAccess(adUnit, 'mediaTypes.video.context') === ADPOD)
-      .map((adUnit) => adUnit.bids.map((bid) => bid.bidder))
-      .reduce(flatten, [])
-      .filter(uniques);
-
-    adPodBidders.forEach(bidder => {
-      let bidderSpec = adapterManager.getBidAdapter(bidder);
-      if (bidderSpec.getSpec().getMappingFileInfo) {
-        let info = bidderSpec.getSpec().getMappingFileInfo();
-        let refreshInDays = (info.refreshInDays) ? info.refreshInDays : DEFAULT_REFRESHIN_DAYS;
-        let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getSpec().code;
-        let mappingData = storage.getDataFromLocalStorage(key);
-        try {
-          mappingData = mappingData ? JSON.parse(mappingData) : undefined;
-          if (!mappingData || timestamp() > mappingData.lastUpdated + refreshInDays * 24 * 60 * 60 * 1000) {
-            ajax(info.url,
-              {
-                success: (response) => {
-                  try {
-                    response = JSON.parse(response);
-                    let mapping = {
-                      lastUpdated: timestamp(),
-                      mapping: response.mapping
-                    }
-                    storage.setDataInLocalStorage(key, JSON.stringify(mapping));
-                  } catch (error) {
-                    logError(`Failed to parse ${bidder} bidder translation mapping file`);
-                  }
-                },
-                error: () => {
-                  logError(`Failed to load ${bidder} bidder translation file`)
-                }
-              },
-            );
-          }
-        } catch (error) {
-          logError(`Failed to parse ${bidder} bidder translation mapping file`);
-        }
-      }
-    });
-    fn.call(this, adUnits);
-  } else {
-    return fn.call(this, adUnits)
-  }
-}
-
-getHook('checkAdUnitSetup').before(preloadBidderMappingFile);
-
-/**
- * Reads the data stored in localstorage and returns iab subcategory
- * @param {string} bidderCode bidderCode
- * @param {string} category bidders category
- */
-export function getIabSubCategory(bidderCode, category) {
-  let bidderSpec = adapterManager.getBidAdapter(bidderCode);
-  if (bidderSpec.getSpec().getMappingFileInfo) {
-    let info = bidderSpec.getSpec().getMappingFileInfo();
-    let key = (info.localStorageKey) ? info.localStorageKey : bidderSpec.getBidderCode();
-    let data = storage.getDataFromLocalStorage(key);
-    if (data) {
-      try {
-        data = JSON.parse(data);
-      } catch (error) {
-        logError(`Failed to parse ${bidderCode} mapping data stored in local storage`);
-      }
-      return (data.mapping[category]) ? data.mapping[category] : null;
-    }
-  }
-}
 
 // check that the bid has a width and height set
 function validBidSize(adUnitCode, bid, {index = auctionManager.index} = {}) {

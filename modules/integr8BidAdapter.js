@@ -4,12 +4,12 @@ import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'integr8';
-const ENDPOINT_URL = 'https://integr8.central.gjirafa.tech/bid';
+const DEFAULT_ENDPOINT_URL = 'https://central.sea.integr8.digital/bid';
 const DIMENSION_SEPARATOR = 'x';
 const SIZE_SEPARATOR = ';';
-const BISKO_ID = 'biskoId';
+const BISKO_ID = 'integr8Id';
 const STORAGE_ID = 'bisko-sid';
-const SEGMENTS = 'biskoSegments';
+const SEGMENTS = 'integr8Segments';
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
@@ -31,6 +31,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    let deliveryUrl = '';
     const storageId = storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(STORAGE_ID) || '' : '';
     const biskoId = storage.localStorageIsEnabled() ? storage.getDataFromLocalStorage(BISKO_ID) || '' : '';
     const segments = storage.localStorageIsEnabled() ? JSON.parse(storage.getDataFromLocalStorage(SEGMENTS)) || [] : [];
@@ -55,6 +56,9 @@ export const spec = {
       if (!pageViewGuid) { pageViewGuid = bidRequest.params.pageViewGuid || ''; }
       if (!contents.length && bidRequest.params.contents && bidRequest.params.contents.length) { contents = bidRequest.params.contents; }
       if (!Object.keys(data).length && bidRequest.params.data && Object.keys(bidRequest.params.data).length) { data = bidRequest.params.data; }
+      if (!deliveryUrl && bidRequest.params && typeof bidRequest.params.deliveryUrl === 'string') {
+        deliveryUrl = bidRequest.params.deliveryUrl;
+      }
 
       return {
         sizes: generateSizeParam(bidRequest.sizes),
@@ -66,6 +70,10 @@ export const spec = {
         floor: getBidFloor(bidRequest)
       };
     });
+
+    if (!deliveryUrl) {
+      deliveryUrl = DEFAULT_ENDPOINT_URL;
+    }
 
     let body = {
       propertyId: propertyId,
@@ -82,7 +90,7 @@ export const spec = {
 
     return [{
       method: 'POST',
-      url: ENDPOINT_URL,
+      url: deliveryUrl,
       data: body
     }];
   },

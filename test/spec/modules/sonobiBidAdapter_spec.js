@@ -1,9 +1,9 @@
-import { expect } from 'chai'
-import { spec, _getPlatform } from 'modules/sonobiBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
-import { userSync } from '../../../src/userSync.js';
-import { config } from 'src/config.js';
-import * as utils from '../../../src/utils.js';
+import {expect} from 'chai';
+import {_getPlatform, spec} from 'modules/sonobiBidAdapter.js';
+import {newBidder} from 'src/adapters/bidderFactory.js';
+import {userSync} from '../../../src/userSync.js';
+import {config} from 'src/config.js';
+import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
 
 describe('SonobiBidAdapter', function () {
   const adapter = newBidder(spec)
@@ -193,7 +193,7 @@ describe('SonobiBidAdapter', function () {
       });
 
       describe('outstream', () => {
-        it('should return false if there is no param sizes', () => {
+        it('should return false if there is no playerSize', () => {
           const bid = {
             'bidder': 'sonobi',
             'adUnitCode': 'adunit-code',
@@ -203,7 +203,6 @@ describe('SonobiBidAdapter', function () {
             'mediaTypes': {
               video: {
                 context: 'outstream',
-                playerSize: [300, 250]
               }
             },
             'bidId': '30b31c1838de1e',
@@ -213,7 +212,7 @@ describe('SonobiBidAdapter', function () {
           expect(spec.isBidRequestValid(bid)).to.equal(false);
         });
 
-        it('should return true if there is param sizes', () => {
+        it('should return true if there is playerSize', () => {
           const bid = {
             'bidder': 'sonobi',
             'adUnitCode': 'adunit-code',
@@ -224,7 +223,8 @@ describe('SonobiBidAdapter', function () {
             },
             'mediaTypes': {
               video: {
-                context: 'outstream'
+                context: 'outstream',
+                playerSize: [640, 480]
               }
             },
             'bidId': '30b31c1838de1e',
@@ -248,13 +248,13 @@ describe('SonobiBidAdapter', function () {
     let sandbox;
     beforeEach(function () {
       sinon.stub(userSync, 'canBidderRegisterSync');
-      sinon.stub(utils, 'getGptSlotInfoForAdUnitCode')
+      sinon.stub(gptUtils, 'getGptSlotInfoForAdUnitCode')
         .onFirstCall().returns({ gptSlot: '/123123/gpt_publisher/adunit-code-3', divId: 'adunit-code-3-div-id' });
       sandbox = sinon.createSandbox();
     });
     afterEach(function () {
       userSync.canBidderRegisterSync.restore();
-      utils.getGptSlotInfoForAdUnitCode.restore();
+      gptUtils.getGptSlotInfoForAdUnitCode.restore();
       sandbox.restore();
     });
     let bidRequest = [{
@@ -294,8 +294,11 @@ describe('SonobiBidAdapter', function () {
       },
       mediaTypes: {
         video: {
-          sizes: [[300, 250], [300, 600]],
-          context: 'outstream'
+          playerSize: [640, 480],
+          context: 'outstream',
+          playbackmethod: [1, 2, 3],
+          plcmt: 3,
+          placement: 2
         }
       }
     },
@@ -339,7 +342,7 @@ describe('SonobiBidAdapter', function () {
     }];
 
     let keyMakerData = {
-      '30b31c1838de1f': '1a2b3c4d5e6f1a2b3c4d|300x250,300x600|f=1.25,gpid=/123123/gpt_publisher/adunit-code-1,c=v,',
+      '30b31c1838de1f': '1a2b3c4d5e6f1a2b3c4d|640x480|f=1.25,gpid=/123123/gpt_publisher/adunit-code-1,c=v,pm=1:2:3,p=2,pl=3,',
       '30b31c1838de1d': '1a2b3c4d5e6f1a2b3c4e|300x250,300x600|f=0.42,gpid=/123123/gpt_publisher/adunit-code-3,c=d,',
       '/7780971/sparks_prebid_LB|30b31c1838de1e': '300x250,300x600|gpid=/7780971/sparks_prebid_LB,c=d,',
     };
@@ -635,12 +638,12 @@ describe('SonobiBidAdapter', function () {
           bidder: 'sonobi',
           mediaTypes: {
             video: {
-              context: 'outstream'
+              context: 'outstream',
+              playerSize: [640, 480]
             }
           },
           params: {
-            placement_id: '92e95368e86639dbd86d',
-            sizes: [[640, 480]]
+            placement_id: '92e95368e86639dbd86d'
           }
         }
       ]
@@ -658,7 +661,7 @@ describe('SonobiBidAdapter', function () {
             'sbi_adomain': 'sonobi.com'
           },
           '30b31c1838de1e': {
-            'sbi_size': '300x250',
+            'sbi_size': '640x480',
             'sbi_apoc': 'remnant',
             'sbi_aid': '30292e432662bd5f86d90774b944b038',
             'sbi_mouse': 1.25,
@@ -668,7 +671,7 @@ describe('SonobiBidAdapter', function () {
 
           },
           '/7780971/sparks_prebid_LB_OUTSTREAM|30b31c1838de1g': {
-            'sbi_size': '300x600',
+            'sbi_size': '640x480',
             'sbi_apoc': 'remnant',
             'sbi_crid': '1234abcd',
             'sbi_aid': '30292e432662bd5f86d90774b944b038',
@@ -720,8 +723,8 @@ describe('SonobiBidAdapter', function () {
       {
         'requestId': '30b31c1838de1e',
         'cpm': 1.25,
-        'width': 300,
-        'height': 250,
+        'width': 640,
+        'height': 480,
         'vastUrl': 'https://mco-1-apex.go.sonobi.com/vast.xml?vid=30292e432662bd5f86d90774b944b038&ref=https%3A%2F%2Flocalhost%2F',
         'ttl': 500,
         'creativeId': '30292e432662bd5f86d90774b944b038',
@@ -737,8 +740,8 @@ describe('SonobiBidAdapter', function () {
       {
         'requestId': '30b31c1838de1g',
         'cpm': 1.07,
-        'width': 300,
-        'height': 600,
+        'width': 640,
+        'height': 480,
         'ad': `<script type="text/javascript" src="https://mco-1-apex.go.sonobi.com/sbi.js?aid=30292e432662bd5f86d90774b944b038&as=null&ref=https%3A%2F%2Flocalhost%2F"></script>`,
         'ttl': 500,
         'creativeId': '1234abcd',

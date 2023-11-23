@@ -1,4 +1,16 @@
-import { logWarn, logInfo, isArray, isFn, deepAccess, isEmpty, contains, timestamp, getBidIdParameter, triggerPixel, isInteger } from '../src/utils.js';
+import {
+  logWarn,
+  logInfo,
+  isArray,
+  isFn,
+  deepAccess,
+  isEmpty,
+  contains,
+  timestamp,
+  triggerPixel,
+  isInteger,
+  getBidIdParameter
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -291,7 +303,7 @@ function generateBidParameters(bid, bidderRequest) {
     bidId: getBidIdParameter('bidId', bid),
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
     loop: getBidIdParameter('bidderRequestsCount', bid),
-    transactionId: getBidIdParameter('transactionId', bid),
+    transactionId: bid.ortb2Imp?.ext?.tid,
     coppa: 0
   };
 

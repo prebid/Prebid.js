@@ -77,7 +77,7 @@ export const spec = {
         dealId: dealId,
         currency: currency,
         netRevenue: netRevenue,
-        ttl: bidRequest.timeout,
+        ttl: response.timeout,
         referrer: referrer,
         ad: response.ad,
         mediaType: response.mediaType,
