@@ -16,7 +16,7 @@ const ENDPOINT_URL = 'https://bid.missena.io/';
 const EVENTS_DOMAIN = 'events.missena.io';
 const EVENTS_DOMAIN_DEV = 'events.staging.missena.xyz';
 
-const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 /* Get Floor price information */
 function getFloor(bidRequest) {
