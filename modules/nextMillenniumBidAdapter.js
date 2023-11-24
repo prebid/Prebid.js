@@ -21,10 +21,11 @@ import * as events from '../src/events.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 
+const NM_VERSION = '3.0.0'
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
 const TEST_ENDPOINT = 'https://test.pbs.nextmillmedia.com/openrtb2/auction';
-const SYNC_ENDPOINT = 'https://cookies.nextmillmedia.com/sync?';
+const SYNC_ENDPOINT = 'https://cookies.nextmillmedia.com/sync?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}&type={{.TYPE_PIXEL}}';
 const REPORT_ENDPOINT = 'https://report2.hb.brainlyads.com/statistics/metric';
 const TIME_TO_LIVE = 360;
 const VIDEO_PARAMS = [
@@ -70,26 +71,25 @@ export const spec = {
       const id = getPlacementId(bid);
       const auctionId = bid.auctionId;
       const bidId = bid.bidId;
-      let sizes = bid.sizes;
-      if (sizes && !Array.isArray(sizes[0])) sizes = [sizes];
 
       const site = getSiteObj();
       const device = getDeviceObj();
 
       const postBody = {
-        'id': bidderRequest?.bidderRequestId,
-        'ext': {
-          'prebid': {
-            'storedrequest': {
-              'id': id
-            }
+        id: bidderRequest?.bidderRequestId,
+        ext: {
+          prebid: {
+            storedrequest: {
+              id,
+            },
           },
 
-          'nextMillennium': {
-            'refresh_count': window.nmmRefreshCounts[bid.adUnitCode]++,
-            'elOffsets': getBoundingClient(bid),
-            'scrollTop': window.pageYOffset || document.documentElement.scrollTop
-          }
+          nextMillennium: {
+            nm_version: NM_VERSION,
+            refresh_count: window.nmmRefreshCounts[bid.adUnitCode]++,
+            elOffsets: getBoundingClient(bid),
+            scrollTop: window.pageYOffset || document.documentElement.scrollTop,
+          },
         },
 
         device,
@@ -97,65 +97,8 @@ export const spec = {
         imp: []
       };
 
-      const imp = {
-        id: bid.adUnitCode,
-        ext: {
-          prebid: {
-            storedrequest: {id}
-          }
-        }
-      };
-
-      if (deepAccess(bid, 'mediaTypes.banner')) {
-        imp.banner = {
-          format: (sizes || []).map(s => { return {w: s[0], h: s[1]} })
-        };
-      };
-
-      const video = deepAccess(bid, 'mediaTypes.video');
-      if (video) {
-        imp.video = getDefinedParams(video, VIDEO_PARAMS);
-        if (video.playerSize) {
-          imp.video = Object.assign(
-            imp.video, parseGPTSingleSizeArrayToRtbSize(video.playerSize[0]) || {}
-          );
-        } else if (video.w && video.h) {
-          imp.video.w = video.w;
-          imp.video.h = video.h;
-        };
-      };
-
-      postBody.imp.push(imp);
-
-      const gdprConsent = bidderRequest?.gdprConsent;
-      const uspConsent = bidderRequest?.uspConsent;
-      let gppConsent = bidderRequest?.gppConsent?.gppString && bidderRequest?.gppConsent;
-      if (!gppConsent && bidderRequest?.ortb2?.regs?.gpp) gppConsent = bidderRequest?.ortb2?.regs;
-
-      if (gdprConsent || uspConsent || gppConsent) {
-        postBody.regs = { ext: {} };
-
-        if (uspConsent) {
-          postBody.regs.ext.us_privacy = uspConsent;
-        };
-
-        if (gppConsent) {
-          postBody.regs.gpp = gppConsent?.gppString || gppConsent?.gpp;
-          postBody.regs.gpp_sid = bidderRequest.gppConsent?.applicableSections || gppConsent?.gpp_sid;
-        };
-
-        if (gdprConsent) {
-          if (typeof gdprConsent.gdprApplies !== 'undefined') {
-            postBody.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
-          };
-
-          if (typeof gdprConsent.consentString !== 'undefined') {
-            postBody.user = {
-              ext: { consent: gdprConsent.consentString }
-            };
-          };
-        };
-      };
+      postBody.imp.push(getImp(bid, id));
+      setConsentStrings(postBody, bidderRequest)
 
       const urlParameters = parseUrl(getWindowTop().location.href).search;
       const isTest = urlParameters['pbs'] && urlParameters['pbs'] === 'test';
@@ -228,44 +171,26 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
+    if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) return [];
+
     const pixels = [];
+    const getSetPixelFunc = type => url => { pixels.push({type, url: replaceUsersyncMacros(url, gdprConsent, uspConsent, gppConsent, type)}) };
+    const getSetPixelsFunc = type => response => { deepAccess(response, `body.ext.sync.${type}`, []).forEach(getSetPixelFunc(type)) };
+
+    const setPixel = (type, url) => { (getSetPixelFunc(type))(url) };
+    const setPixelImages = getSetPixelsFunc('image');
+    const setPixelIframes = getSetPixelsFunc('iframe');
 
     if (isArray(responses)) {
       responses.forEach(response => {
-        if (syncOptions.pixelEnabled) {
-          deepAccess(response, 'body.ext.sync.image', []).forEach(imgUrl => {
-            pixels.push({
-              type: 'image',
-              url: replaceUsersyncMacros(imgUrl, gdprConsent, uspConsent, gppConsent)
-            });
-          })
-        }
-
-        if (syncOptions.iframeEnabled) {
-          deepAccess(response, 'body.ext.sync.iframe', []).forEach(iframeUrl => {
-            pixels.push({
-              type: 'iframe',
-              url: replaceUsersyncMacros(iframeUrl, gdprConsent, uspConsent, gppConsent)
-            });
-          })
-        }
+        if (syncOptions.pixelEnabled) setPixelImages(response);
+        if (syncOptions.iframeEnabled) setPixelIframes(response);
       })
     }
 
-    if (!pixels.length && (syncOptions.iframeEnabled || syncOptions.pixelEnabled)) {
-      const syncUrlQuery = [];
-      if (gdprConsent?.gdprApplies) syncUrlQuery.push('gdpr=1&gdpr_consent=' + gdprConsent.consentString);
-      if (uspConsent) syncUrlQuery.push('us_privacy=' + uspConsent);
-      if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
-        syncUrlQuery.push('gpp=' + gppConsent.gppString + '&gpp_sid=' + gppConsent?.applicableSections?.join(','));
-      }
-
-      const type = (syncOptions.iframeEnabled && 'iframe') || 'image';
-      syncUrlQuery.push('type=' + type);
-      pixels.push({
-        type,
-        url: SYNC_ENDPOINT + syncUrlQuery.join('&'),
-      });
+    if (!pixels.length) {
+      if (syncOptions.pixelEnabled) setPixel('image', SYNC_ENDPOINT);
+      if (syncOptions.iframeEnabled) setPixel('iframe', SYNC_ENDPOINT);
     }
 
     return pixels;
@@ -307,29 +232,81 @@ export const spec = {
   },
 };
 
-function replaceUsersyncMacros(url, gdprConsent, uspConsent, gppConsent) {
-  const { consentString, gdprApplies } = gdprConsent || {};
+export function getImp(bid, id) {
+  const imp = {
+    id: bid.adUnitCode,
+    ext: {
+      prebid: {
+        storedrequest: {
+          id,
+        },
+      },
+    },
+  };
 
-  if (gdprApplies) {
-    const gdpr = Number(gdprApplies);
-    url = url.replace('{{.GDPR}}', gdpr);
+  const banner = deepAccess(bid, 'mediaTypes.banner');
+  if (banner) {
+    imp.banner = {
+      format: (banner?.sizes || []).map(s => { return {w: s[0], h: s[1]} }),
+    };
+  };
 
-    if (gdpr == 1 && consentString && consentString.length > 0) {
-      url = url.replace('{{.GDPRConsent}}', consentString);
-    }
-  } else {
-    url = url.replace('{{.GDPR}}', 0);
-    url = url.replace('{{.GDPRConsent}}', '');
-  }
+  const video = deepAccess(bid, 'mediaTypes.video');
+  if (video) {
+    imp.video = getDefinedParams(video, VIDEO_PARAMS);
+    if (video.playerSize) {
+      imp.video = Object.assign(imp.video, parseGPTSingleSizeArrayToRtbSize(video.playerSize) || {});
+    } else if (video.w && video.h) {
+      imp.video.w = video.w;
+      imp.video.h = video.h;
+    };
+  };
 
-  if (uspConsent) {
-    url = url.replace('{{.USPrivacy}}', uspConsent);
-  }
+  return imp;
+};
 
-  if (gppConsent) {
-    if (gppConsent?.gppString) url = url.replace('{{.GPP}}', gppConsent.gppString);
-    if (gppConsent?.applicableSections?.length) url = url.replace('{{.GPPSID}}', gppConsent.applicableSections.join(','));
-  }
+export function setConsentStrings(postBody = {}, bidderRequest) {
+  const gdprConsent = bidderRequest?.gdprConsent;
+  const uspConsent = bidderRequest?.uspConsent;
+  let gppConsent = bidderRequest?.gppConsent?.gppString && bidderRequest?.gppConsent;
+  if (!gppConsent && bidderRequest?.ortb2?.regs?.gpp) gppConsent = bidderRequest?.ortb2?.regs;
+
+  if (gdprConsent || uspConsent || gppConsent) {
+    postBody.regs = { ext: {} };
+
+    if (uspConsent) {
+      postBody.regs.ext.us_privacy = uspConsent;
+    };
+
+    if (gppConsent) {
+      postBody.regs.gpp = gppConsent?.gppString || gppConsent?.gpp;
+      postBody.regs.gpp_sid = bidderRequest.gppConsent?.applicableSections || gppConsent?.gpp_sid;
+    };
+
+    if (gdprConsent) {
+      if (typeof gdprConsent.gdprApplies !== 'undefined') {
+        postBody.regs.ext.gdpr = gdprConsent.gdprApplies ? 1 : 0;
+      };
+
+      if (typeof gdprConsent.consentString !== 'undefined') {
+        postBody.user = {
+          ext: { consent: gdprConsent.consentString },
+        };
+      };
+    };
+  };
+};
+
+export function replaceUsersyncMacros(url, gdprConsent = {}, uspConsent = '', gppConsent = {}, type = '') {
+  const { consentString = '', gdprApplies = false } = gdprConsent;
+  const gdpr = Number(gdprApplies);
+  url = url
+    .replace('{{.GDPR}}', gdpr)
+    .replace('{{.GDPRConsent}}', consentString)
+    .replace('{{.USPrivacy}}', uspConsent)
+    .replace('{{.GPP}}', gppConsent.gppString || '')
+    .replace('{{.GPPSID}}', (gppConsent.applicableSections || []).join(','))
+    .replace('{{.TYPE_PIXEL}}', type);
 
   return url;
 };
