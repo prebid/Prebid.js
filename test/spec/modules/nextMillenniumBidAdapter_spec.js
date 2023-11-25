@@ -1,9 +1,10 @@
 import { expect } from 'chai';
 import {
-  spec,
   getImp,
-  setConsentStrings,
   replaceUsersyncMacros,
+  setConsentStrings,
+  setOrtb2Parameters,
+  spec,
 } from 'modules/nextMillenniumBidAdapter.js';
 
 describe('nextMillenniumBidAdapterTests', () => {
@@ -349,6 +350,58 @@ describe('nextMillenniumBidAdapterTests', () => {
         const {syncOptions, responses, gdprConsent, uspConsent, gppConsent} = data;
         const pixels = spec.getUserSyncs(syncOptions, responses, gdprConsent, uspConsent, gppConsent);
         expect(pixels).to.deep.equal(expected);
+      });
+    }
+  });
+
+  describe('function setOrtb2Parameters', () => {
+    const dataTests = [
+      {
+        title: 'site.pagecat, site.content.cat and site.content.language',
+        data: {
+          postBody: {},
+          ortb2: {site: {
+            pagecat: ['IAB2-11', 'IAB2-12', 'IAB2-14'],
+            content: {cat: ['IAB2-11', 'IAB2-12', 'IAB2-14'], language: 'EN'},
+          }},
+        },
+
+        expected: {site: {
+          pagecat: ['IAB2-11', 'IAB2-12', 'IAB2-14'],
+          content: {cat: ['IAB2-11', 'IAB2-12', 'IAB2-14'], language: 'EN'},
+        }},
+      },
+
+      {
+        title: 'only site.content.language',
+        data: {
+          postBody: {site: {domain: 'some.domain'}},
+          ortb2: {site: {
+            content: {language: 'EN'},
+          }},
+        },
+
+        expected: {site: {
+          domain: 'some.domain',
+          content: {language: 'EN'},
+        }},
+      },
+
+      {
+        title: 'object ortb2 is empty',
+        data: {
+          postBody: {imp: []},
+        },
+
+        expected: {imp: []},
+      },
+    ];
+
+    for (let {title, data, expected} of dataTests) {
+      it(title, () => {
+        const {postBody, ortb2} = data;
+        setOrtb2Parameters(postBody, ortb2);
+        expect(postBody).to.deep.equal(expected);
       });
     }
   });

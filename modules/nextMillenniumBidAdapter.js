@@ -2,6 +2,7 @@ import {
   _each,
   createTrackPixelHtml,
   deepAccess,
+  deepSetValue,
   getBidIdParameter,
   getDefinedParams,
   getWindowTop,
@@ -22,6 +23,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 
 const NM_VERSION = '3.0.0'
+const GVLID = 1060;
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
 const TEST_ENDPOINT = 'https://test.pbs.nextmillmedia.com/openrtb2/auction';
@@ -40,7 +42,11 @@ const VIDEO_PARAMS = [
   'startdelay',
 ];
 
-const GVLID = 1060;
+const ALLOWED_ORTB2_PARAMETERS = [
+  'site.pagecat',
+  'site.content.cat',
+  'site.content.language',
+]
 
 const sendingDataStatistic = initSendingDataStatistic();
 events.on(CONSTANTS.EVENTS.AUCTION_INIT, auctionInitHandler);
@@ -99,6 +105,7 @@ export const spec = {
 
       postBody.imp.push(getImp(bid, id));
       setConsentStrings(postBody, bidderRequest)
+      setOrtb2Parameters(postBody, bidderRequest?.ortb2)
 
       const urlParameters = parseUrl(getWindowTop().location.href).search;
       const isTest = urlParameters['pbs'] && urlParameters['pbs'] === 'test';
@@ -296,6 +303,13 @@ export function setConsentStrings(postBody = {}, bidderRequest) {
     };
   };
 };
+
+export function setOrtb2Parameters(postBody, ortb2 = {}) {
+  for(let parameter of ALLOWED_ORTB2_PARAMETERS) {
+    const value = deepAccess(ortb2, parameter)
+    if (value) deepSetValue(postBody, parameter, value)
+  }
+}
 
 export function replaceUsersyncMacros(url, gdprConsent = {}, uspConsent = '', gppConsent = {}, type = '') {
   const { consentString = '', gdprApplies = false } = gdprConsent;
