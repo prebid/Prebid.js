@@ -104,8 +104,8 @@ export const spec = {
       };
 
       postBody.imp.push(getImp(bid, id));
-      setConsentStrings(postBody, bidderRequest)
-      setOrtb2Parameters(postBody, bidderRequest?.ortb2)
+      setConsentStrings(postBody, bidderRequest);
+      setOrtb2Parameters(postBody, bidderRequest?.ortb2);
 
       const urlParameters = parseUrl(getWindowTop().location.href).search;
       const isTest = urlParameters['pbs'] && urlParameters['pbs'] === 'test';
