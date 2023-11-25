@@ -22,7 +22,7 @@ import * as events from '../src/events.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 
-const NM_VERSION = '3.0.0'
+const NM_VERSION = '3.0.0';
 const GVLID = 1060;
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
@@ -46,7 +46,7 @@ const ALLOWED_ORTB2_PARAMETERS = [
   'site.pagecat',
   'site.content.cat',
   'site.content.language',
-]
+];
 
 const sendingDataStatistic = initSendingDataStatistic();
 events.on(CONSTANTS.EVENTS.AUCTION_INIT, auctionInitHandler);
@@ -100,7 +100,7 @@ export const spec = {
 
         device,
         site,
-        imp: []
+        imp: [],
       };
 
       postBody.imp.push(getImp(bid, id));
@@ -156,8 +156,8 @@ export const spec = {
           netRevenue: true,
           ttl: TIME_TO_LIVE,
           meta: {
-            advertiserDomains: bid.adomain || []
-          }
+            advertiserDomains: bid.adomain || [],
+          },
         };
 
         if (vastUrl || vastXml) {
@@ -306,8 +306,8 @@ export function setConsentStrings(postBody = {}, bidderRequest) {
 
 export function setOrtb2Parameters(postBody, ortb2 = {}) {
   for (let parameter of ALLOWED_ORTB2_PARAMETERS) {
-    const value = deepAccess(ortb2, parameter)
-    if (value) deepSetValue(postBody, parameter, value)
+    const value = deepAccess(ortb2, parameter);
+    if (value) deepSetValue(postBody, parameter, value);
   }
 }
 
