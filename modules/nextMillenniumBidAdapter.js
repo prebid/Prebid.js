@@ -305,7 +305,7 @@ export function setConsentStrings(postBody = {}, bidderRequest) {
 };
 
 export function setOrtb2Parameters(postBody, ortb2 = {}) {
-  for(let parameter of ALLOWED_ORTB2_PARAMETERS) {
+  for (let parameter of ALLOWED_ORTB2_PARAMETERS) {
     const value = deepAccess(ortb2, parameter)
     if (value) deepSetValue(postBody, parameter, value)
   }
