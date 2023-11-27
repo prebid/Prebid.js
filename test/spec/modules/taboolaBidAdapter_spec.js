@@ -275,7 +275,7 @@ describe('Taboola Adapter', function () {
       expect(resData.tmax).to.equal(500);
     });
 
-    it('should pass bidder timeout as a string', function () {
+    it('should pass bidder tmax as int', function () {
       const bidderRequest = {
         ...commonBidderRequest,
         timeout: '500'
@@ -285,7 +285,7 @@ describe('Taboola Adapter', function () {
       expect(resData.tmax).to.equal(500);
     });
 
-    it('should pass bidder timeout as a string', function () {
+    it('should pass bidder timeout as null', function () {
       const bidderRequest = {
         ...commonBidderRequest,
         timeout: null
