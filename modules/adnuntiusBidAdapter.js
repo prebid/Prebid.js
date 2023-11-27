@@ -84,7 +84,11 @@ export const spec = {
     request.push('tzo=' + tzo)
     request.push('format=json')
 
-    if (gdprApplies !== undefined) request.push('consentString=' + consentString);
+    if (gdprApplies !== undefined) {
+      const flag = gdprApplies ? '1' : '0'
+      request.push('consentString=' + consentString);
+      request.push('gdpr=' + flag);
+    }
     if (segments.length > 0) request.push('segments=' + segments.join(','));
     if (usi) request.push('userId=' + usi);
     if (bidderConfig.useCookie === false) request.push('noCookies=true');
