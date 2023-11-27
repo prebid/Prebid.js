@@ -77,7 +77,27 @@ describe('PGAMBidAdapter', function () {
     refererInfo: {
       referer: 'https://test.com'
     },
-    timeout: 500
+    timeout: 500,
+    ortb2: {
+      user: {
+        yob: 1985,
+        gender: 'm',
+        keywords: 'a,b',
+        data: [{
+          name: 'dataprovider.com',
+          ext: { segtax: 4 },
+          segment: [
+            { id: '1' }
+          ]
+        }],
+        ext: {
+          data: {
+            registered: true,
+            interests: ['cars']
+          }
+        }
+      }
+    }
   };
 
   describe('isBidRequestValid', function () {
@@ -91,6 +111,9 @@ describe('PGAMBidAdapter', function () {
 
   describe('buildRequests', function () {
     let serverRequest = spec.buildRequests(bids, bidderRequest);
+
+    // eslint-disable-next-line no-console
+    console.log('serverReq', serverRequest);
 
     it('Creates a ServerRequest object with method, URL and data', function () {
       expect(serverRequest).to.exist;
@@ -120,7 +143,8 @@ describe('PGAMBidAdapter', function () {
         'coppa',
         'ccpa',
         'gdpr',
-        'tmax'
+        'tmax',
+        'userObj'
       );
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
@@ -132,6 +156,7 @@ describe('PGAMBidAdapter', function () {
       expect(data.gdpr).to.be.a('string');
       expect(data.ccpa).to.be.a('string');
       expect(data.tmax).to.be.a('number');
+      expect(data.userObj).to.be.an('object');
       expect(data.placements).to.have.lengthOf(3);
     });
 
@@ -145,6 +170,7 @@ describe('PGAMBidAdapter', function () {
         expect(placement.schain).to.be.an('object');
         expect(placement.bidfloor).to.exist.and.to.equal(0);
         expect(placement.type).to.exist.and.to.equal('publisher');
+        expect(placement.eids).to.exist.and.to.be.an('array');
 
         if (placement.adFormat === BANNER) {
           expect(placement.sizes).to.be.an('array');
