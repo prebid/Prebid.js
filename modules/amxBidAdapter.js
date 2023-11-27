@@ -551,6 +551,7 @@ export const spec = {
 
     ajax(url, null, payload, {
       method: 'POST',
+      keepalive: true,
       withCredentials: true,
     });
   },

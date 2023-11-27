@@ -72,6 +72,7 @@ function mockFetchServer() {
         }
       }),
       withCredentials: request.credentials === 'include',
+      keepalive: request.keepalive,
       setStatus(status) {
         // nise replaces invalid status with 200
         status = typeof status === 'number' ? status : 200;

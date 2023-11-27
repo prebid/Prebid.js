@@ -712,6 +712,7 @@ describe('AmxBidAdapter', () => {
       const [request] = server.requests;
       request.respond(204, {'Content-Type': 'text/html'}, null);
       expect(request.url).to.equal('https://1x1.a-mo.net/e/g_pbto');
+      expect(request.keepalive).to.equal(true);
 
       const {c: common, e: events} = JSON.parse(request.requestBody)
       expect(common).to.deep.equal({
