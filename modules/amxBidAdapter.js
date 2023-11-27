@@ -381,6 +381,7 @@ export const spec = {
     return {
       data: payload,
       method: 'POST',
+      browsingTopics: true,
       url: deepAccess(bidRequests[0], 'params.endpoint', DEFAULT_ENDPOINT),
       withCredentials: true,
     };
@@ -507,7 +508,7 @@ export const spec = {
   },
 
   onTimeout(timeoutData) {
-    if (timeoutData == null) {
+    if (timeoutData == null || !timeoutData.length) {
       return;
     }
 
@@ -547,11 +548,6 @@ export const spec = {
 
     const payload = JSON.stringify({ c: common, e: events });
     const url = POST_TRACKING_ENDPOINT + '/g_pbto';
-
-    if (navigator.sendBeacon != null) {
-      navigator.sendBeacon(url, payload);
-      return;
-    }
 
     ajax(url, null, payload, {
       method: 'POST',

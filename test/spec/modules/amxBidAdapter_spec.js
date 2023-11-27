@@ -3,6 +3,7 @@ import { spec } from 'modules/amxBidAdapter.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
+import { server } from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
 
 const sampleRequestId = '82c91e127a9b93e';
@@ -690,13 +691,6 @@ describe('AmxBidAdapter', () => {
 
     it('will log an event for timeout', () => {
       // this will use sendBeacon..
-      const _sendBeacon = navigator.sendBeacon;
-      let _sent = [];
-      navigator.sendBeacon = (url, postData) => {
-        _sent.push([url, postData]);
-        return true;
-      };
-
       spec.onTimeout([
         {
           bidder: 'example',
@@ -715,14 +709,11 @@ describe('AmxBidAdapter', () => {
         },
       ]);
 
-      navigator.sendBeacon = _sendBeacon;
+      const [request] = server.requests;
+      request.respond(204, {'Content-Type': 'text/html'}, null);
+      expect(request.url).to.equal('https://1x1.a-mo.net/e/g_pbto');
 
-      expect(_sent.length).to.equal(1);
-
-      const [[url, payload]] = _sent;
-      expect(url).to.equal('https://1x1.a-mo.net/e/g_pbto');
-
-      const { c: common, e: events } = JSON.parse(payload);
+      const {c: common, e: events} = JSON.parse(request.requestBody)
       expect(common).to.deep.equal({
         V: '$prebid.version$',
         vg: '$$PREBID_GLOBAL$$',
