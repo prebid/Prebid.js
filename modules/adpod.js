@@ -13,7 +13,6 @@
  */
 
 import {
-  compareOn,
   deepAccess,
   generateUUID,
   groupBy,
@@ -28,7 +27,6 @@ import {
 import {
   addBidToAuction,
   AUCTION_IN_PROGRESS,
-  doCallbacksIfTimedout,
   getPriceByGranularity,
   getPriceGranularity
 } from '../src/auction.js';
@@ -212,9 +210,6 @@ function firePrebidCacheCall(auctionInstance, bidList, afterBidAdded) {
   store(bidList, function (error, cacheIds) {
     if (error) {
       logWarn(`Failed to save to the video cache: ${error}. Video bid(s) must be discarded.`);
-      for (let i = 0; i < bidList.length; i++) {
-        doCallbacksIfTimedout(auctionInstance, bidList[i]);
-      }
     } else {
       for (let i = 0; i < cacheIds.length; i++) {
         // when uuid in response is empty string then the key already existed, so this bid wasn't cached
@@ -593,6 +588,23 @@ function getAdPodAdUnits(codes) {
   return auctionManager.getAdUnits()
     .filter((adUnit) => deepAccess(adUnit, 'mediaTypes.video.context') === ADPOD)
     .filter((adUnit) => (codes.length > 0) ? codes.indexOf(adUnit.code) != -1 : true);
+}
+
+/**
+ * This function will create compare function to sort on object property
+ * @param {string} property
+ * @returns {function} compare function to be used in sorting
+ */
+function compareOn(property) {
+  return function compare(a, b) {
+    if (a[property] < b[property]) {
+      return 1;
+    }
+    if (a[property] > b[property]) {
+      return -1;
+    }
+    return 0;
+  }
 }
 
 /**

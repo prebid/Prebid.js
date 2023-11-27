@@ -13,7 +13,7 @@ import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'growthCodeAnalytics';
 const DEFAULT_PID = 'INVALID_PID'
-const ENDPOINT_URL = 'https://p2.gcprivacy.com/v3/pb/analytics'
+const ENDPOINT_URL = 'https://analytics.gcprivacy.com/v3/pb/analytics'
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME});
 

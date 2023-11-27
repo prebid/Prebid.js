@@ -5,11 +5,12 @@
  * @requires module:modules/userId
  */
 
-import {logError, logInfo, pick, tryAppendQueryString} from '../src/utils.js';
+import {logError, logInfo, pick} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import { submodule } from '../src/hook.js'
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 const MODULE_NAME = 'growthCodeId';
 const GC_DATA_KEY = '_gc_data';

@@ -1,10 +1,11 @@
 import pubmaticAnalyticsAdapter, {getMetadata} from 'modules/pubmaticAnalyticsAdapter.js';
 import adapterManager from 'src/adapterManager.js';
 import CONSTANTS from 'src/constants.json';
-import {config} from 'src/config.js';
-import {setConfig} from 'modules/currency.js';
-import {server} from '../../mocks/xhr.js';
+import { config } from 'src/config.js';
+import { setConfig } from 'modules/currency.js';
+import { server } from '../../mocks/xhr.js';
 import 'src/prebid.js';
+import { getGlobal } from 'src/prebidGlobal';
 
 let events = require('src/events');
 let ajax = require('src/ajax');
@@ -367,6 +368,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.tgid).to.equal(15);
       expect(data.fmv).to.equal('floorModelTest');
       expect(data.ft).to.equal(1);
+      expect(data.pbv).to.equal(getGlobal()?.version || '-1');
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
       // slot 1
@@ -388,7 +390,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].ps[0].en).to.equal(1.23);
       expect(data.s[0].ps[0].di).to.equal('-1');
       expect(data.s[0].ps[0].dc).to.equal('');
-      expect(data.s[0].ps[0].l1).to.equal(3214);
+	  expect(data.s[0].ps[0].l1).to.equal(944);
+	  expect(data.s[0].ps[0].ol1).to.equal(3214);
       expect(data.s[0].ps[0].l2).to.equal(0);
       expect(data.s[0].ps[0].ss).to.equal(1);
       expect(data.s[0].ps[0].t).to.equal(0);
@@ -417,7 +420,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].dc).to.equal('PMP');
       expect(data.s[1].ps[0].mi).to.equal('matched-impression');
       expect(data.s[1].ps[0].adv).to.equal('example.com');
-      expect(data.s[1].ps[0].l1).to.equal(3214);
+      expect(data.s[0].ps[0].l1).to.equal(944);
+	  expect(data.s[0].ps[0].ol1).to.equal(3214);
       expect(data.s[1].ps[0].l2).to.equal(0);
       expect(data.s[1].ps[0].ss).to.equal(1);
       expect(data.s[1].ps[0].t).to.equal(0);
@@ -572,6 +576,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.pid).to.equal('1111');
       expect(data.fmv).to.equal('floorModelTest');
       expect(data.ft).to.equal(1);
+      expect(data.pbv).to.equal(getGlobal()?.version || '-1');
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
       expect(data.tgid).to.equal(0);
@@ -646,6 +651,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.tgid).to.equal(0);// test group id should be between 0-15 else set to 0
       expect(data.fmv).to.equal('floorModelTest');
       expect(data.ft).to.equal(1);
+      expect(data.pbv).to.equal(getGlobal()?.version || '-1');
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
       // slot 1
@@ -794,7 +800,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].dc).to.equal('PMP');
       expect(data.s[1].ps[0].mi).to.equal('matched-impression');
       expect(data.s[1].ps[0].adv).to.equal('example.com');
-      expect(data.s[1].ps[0].l1).to.equal(3214);
+	  expect(data.s[0].ps[0].l1).to.equal(0);
+	  expect(data.s[0].ps[0].ol1).to.equal(0);
       expect(data.s[1].ps[0].l2).to.equal(0);
       expect(data.s[1].ps[0].ss).to.equal(1);
       expect(data.s[1].ps[0].t).to.equal(1);
@@ -853,7 +860,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].dc).to.equal('PMP');
       expect(data.s[1].ps[0].mi).to.equal('matched-impression');
       expect(data.s[1].ps[0].adv).to.equal('example.com');
-      expect(data.s[1].ps[0].l1).to.equal(3214);
+      expect(data.s[0].ps[0].l1).to.equal(944);
+	  expect(data.s[0].ps[0].ol1).to.equal(3214);
       expect(data.s[1].ps[0].l2).to.equal(0);
       expect(data.s[1].ps[0].ss).to.equal(1);
       expect(data.s[1].ps[0].t).to.equal(0);
@@ -901,7 +909,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].dc).to.equal('PMP');
       expect(data.s[1].ps[0].mi).to.equal('matched-impression');
       expect(data.s[1].ps[0].adv).to.equal('example.com');
-      expect(data.s[1].ps[0].l1).to.equal(3214);
+      expect(data.s[0].ps[0].l1).to.equal(944);
+	  expect(data.s[0].ps[0].ol1).to.equal(3214);
       expect(data.s[1].ps[0].l2).to.equal(0);
       expect(data.s[1].ps[0].ss).to.equal(1);
       expect(data.s[1].ps[0].t).to.equal(0);
@@ -958,7 +967,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].dc).to.equal('PMP');
       expect(data.s[1].ps[0].mi).to.equal('matched-impression');
       expect(data.s[1].ps[0].adv).to.equal('example.com');
-      expect(data.s[1].ps[0].l1).to.equal(3214);
+      expect(data.s[0].ps[0].l1).to.equal(944);
+	  expect(data.s[0].ps[0].ol1).to.equal(3214);
       expect(data.s[1].ps[0].l2).to.equal(0);
       expect(data.s[1].ps[0].ss).to.equal(1);
       expect(data.s[1].ps[0].t).to.equal(0);
@@ -1012,7 +1022,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].dc).to.equal('PMP');
       expect(data.s[1].ps[0].mi).to.equal('matched-impression');
       expect(data.s[1].ps[0].adv).to.equal('example.com');
-      expect(data.s[1].ps[0].l1).to.equal(3214);
+      expect(data.s[0].ps[0].l1).to.equal(944);
+	  expect(data.s[0].ps[0].ol1).to.equal(3214);
       expect(data.s[1].ps[0].l2).to.equal(0);
       expect(data.s[1].ps[0].ss).to.equal(1);
       expect(data.s[1].ps[0].t).to.equal(0);
@@ -1067,7 +1078,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].dc).to.equal('PMP');
       expect(data.s[1].ps[0].mi).to.equal('matched-impression');
       expect(data.s[1].ps[0].adv).to.equal('example.com');
-      expect(data.s[1].ps[0].l1).to.equal(3214);
+      expect(data.s[0].ps[0].l1).to.equal(944);
+	  expect(data.s[0].ps[0].ol1).to.equal(3214);
       expect(data.s[1].ps[0].l2).to.equal(0);
       expect(data.s[1].ps[0].ss).to.equal(1);
       expect(data.s[1].ps[0].t).to.equal(0);
@@ -1126,7 +1138,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].dc).to.equal('PMP');
       expect(data.s[1].ps[0].mi).to.equal('matched-impression');
       expect(data.s[1].ps[0].adv).to.equal('example.com');
-      expect(data.s[1].ps[0].l1).to.equal(3214);
+      expect(data.s[0].ps[0].l1).to.equal(944);
+	  expect(data.s[0].ps[0].ol1).to.equal(3214);
       expect(data.s[1].ps[0].l2).to.equal(0);
       expect(data.s[1].ps[0].ss).to.equal(1);
       expect(data.s[1].ps[0].t).to.equal(0);
@@ -1175,6 +1188,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.tst).to.equal(1519767016);
       expect(data.tgid).to.equal(15);
       expect(data.fmv).to.equal('floorModelTest');
+      expect(data.pbv).to.equal(getGlobal()?.version || '-1');
       expect(data.ft).to.equal(1);
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
@@ -1198,7 +1212,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].ps[0].en).to.equal(1.23);
       expect(data.s[0].ps[0].di).to.equal('-1');
       expect(data.s[0].ps[0].dc).to.equal('');
-      expect(data.s[0].ps[0].l1).to.equal(3214);
+      expect(data.s[0].ps[0].l1).to.equal(944);
+	  expect(data.s[0].ps[0].ol1).to.equal(3214);
       expect(data.s[0].ps[0].l2).to.equal(0);
       expect(data.s[0].ps[0].ss).to.equal(0);
       expect(data.s[0].ps[0].t).to.equal(0);
@@ -1228,7 +1243,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].dc).to.equal('PMP');
       expect(data.s[1].ps[0].mi).to.equal('matched-impression');
       expect(data.s[1].ps[0].adv).to.equal('example.com');
-      expect(data.s[1].ps[0].l1).to.equal(3214);
+	  expect(data.s[0].ps[0].l1).to.equal(944);
+	  expect(data.s[0].ps[0].ol1).to.equal(3214);
       expect(data.s[1].ps[0].l2).to.equal(0);
       expect(data.s[1].ps[0].ss).to.equal(1);
       expect(data.s[1].ps[0].t).to.equal(0);
@@ -1294,6 +1310,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.tst).to.equal(1519767016);
       expect(data.tgid).to.equal(15);
       expect(data.fmv).to.equal('floorModelTest');
+      expect(data.pbv).to.equal(getGlobal()?.version || '-1');
       expect(data.ft).to.equal(1);
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
@@ -1317,7 +1334,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].ps[0].en).to.equal(1.23);
       expect(data.s[0].ps[0].di).to.equal('-1');
       expect(data.s[0].ps[0].dc).to.equal('');
-      expect(data.s[0].ps[0].l1).to.equal(3214);
+      expect(data.s[0].ps[0].l1).to.equal(944);
+	  expect(data.s[0].ps[0].ol1).to.equal(3214);
       expect(data.s[0].ps[0].l2).to.equal(0);
       expect(data.s[0].ps[0].ss).to.equal(0);
       expect(data.s[0].ps[0].t).to.equal(0);
@@ -1346,7 +1364,8 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].dc).to.equal('PMP');
       expect(data.s[1].ps[0].mi).to.equal('matched-impression');
       expect(data.s[1].ps[0].adv).to.equal('example.com');
-      expect(data.s[1].ps[0].l1).to.equal(3214);
+      expect(data.s[0].ps[0].l1).to.equal(944);
+	  expect(data.s[0].ps[0].ol1).to.equal(3214);
       expect(data.s[1].ps[0].l2).to.equal(0);
       expect(data.s[1].ps[0].ss).to.equal(1);
       expect(data.s[1].ps[0].t).to.equal(0);

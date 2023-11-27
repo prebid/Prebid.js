@@ -6,7 +6,7 @@ import {ajaxBuilder} from '../src/ajax.js';
 
 let ajax = ajaxBuilder(0);
 
-const DEFAULT_EVENT_URL = 'apex.go.sonobi.com/keymaker';
+export const DEFAULT_EVENT_URL = 'apex.go.sonobi.com/keymaker';
 const analyticsType = 'endpoint';
 const QUEUE_TIMEOUT_DEFAULT = 200;
 const {

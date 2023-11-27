@@ -74,7 +74,6 @@ describe('YieldmoAdapter', function () {
     bidderRequestId: '14c4ede8c693f',
     bids,
     auctionStart: 1520001292880,
-    timeout: 3000,
     start: 1520001292884,
     doneCbCallCount: 0,
     refererInfo: {
@@ -169,6 +168,14 @@ describe('YieldmoAdapter', function () {
         expect(requests[0].url).to.be.equal(BANNER_ENDPOINT);
       });
 
+      it('should pass default timeout in bid request', function () {
+        const requests = build([mockBannerBid()]);
+        expect(requests[0].data.tmax).to.equal(400);
+      });
+      it('should pass tmax to bid request', function () {
+        const requests = build([mockBannerBid()], mockBidderRequest({timeout: 1000}));
+        expect(requests[0].data.tmax).to.equal(1000);
+      });
       it('should not blow up if crumbs is undefined', function () {
         expect(function () {
           build([mockBannerBid({crumbs: undefined})]);
@@ -419,6 +426,18 @@ describe('YieldmoAdapter', function () {
       });
 
       it('should attempt to send video bid requests to the endpoint via POST', function () {
+        const requests = build([videoBid]);
+        expect(requests.length).to.equal(1);
+        expect(requests[0].method).to.equal('POST');
+        expect(requests[0].url).to.be.equal(VIDEO_ENDPOINT);
+      });
+
+      it('should not require params.video if required props in mediaTypes.video', function () {
+        videoBid.mediaTypes.video = {
+          ...videoBid.mediaTypes.video,
+          ...videoBid.params.video
+        };
+        delete videoBid.params.video;
         const requests = build([videoBid]);
         expect(requests.length).to.equal(1);
         expect(requests[0].method).to.equal('POST');
