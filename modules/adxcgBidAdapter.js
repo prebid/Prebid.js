@@ -4,7 +4,6 @@ import { convertTypes } from '../libraries/transformParamsUtils/convertTypes.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import {
-  convertTypes,
   isArray,
   replaceAuctionPrice,
   triggerPixel,
