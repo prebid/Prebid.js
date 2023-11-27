@@ -116,7 +116,9 @@ function getMacros(bid, key) {
     '%_hbadomains': bid.meta && bid.meta.advertiserDomains,
     '%%PATTERN:hb_pb%%': bid.pbHg,
     '%%SITE%%': location.hostname,
-    '%_pimp%': PV_ID
+    '%_pimp%': PV_ID,
+    '%_hbCpm!': bid.cpm,
+    '%_hbCurrency!': bid.currency
   };
 }
 
