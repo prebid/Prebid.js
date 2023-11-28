@@ -1,7 +1,8 @@
-import {deepClone, getAdUnitSizes, isArray, isBoolean, isEmpty, isFn, isPlainObject} from '../src/utils.js';
+import {deepClone, isArray, isBoolean, isEmpty, isFn, isPlainObject} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 export const BIDDER_CODE = 'aduptech';
 export const GVLID = 647;

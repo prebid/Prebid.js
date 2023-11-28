@@ -18,7 +18,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = 'https://grid.bidswitch.net/hbjson';
-const USP_DELETE_DATA_HANDLER = 'https://media.grid.bidswitch.net/uspapi_delete'
+const USP_DELETE_DATA_HANDLER = 'https://media.grid.bidswitch.net/uspapi_delete_c2s'
 
 const SYNC_URL = 'https://x.bidswitch.net/sync?ssp=themediagrid';
 const TIME_TO_LIVE = 360;
@@ -91,7 +91,7 @@ export const spec = {
     let {bidderRequestId, gdprConsent, uspConsent, timeout, refererInfo, gppConsent} = bidderRequest || {};
 
     const referer = refererInfo ? encodeURIComponent(refererInfo.page) : '';
-    const tmax = timeout;
+    const tmax = parseInt(timeout) || null;
     const imp = [];
     const bidsMap = {};
     const requests = [];
@@ -133,7 +133,7 @@ export const spec = {
       };
       if (ortb2Imp) {
         if (ortb2Imp.instl) {
-          impObj.instl = ortb2Imp.instl;
+          impObj.instl = parseInt(ortb2Imp.instl) || null;
         }
 
         if (ortb2Imp.ext) {
@@ -464,16 +464,7 @@ export const spec = {
   },
 
   onDataDeletionRequest: function(data) {
-    const uids = [];
-    const aliases = [spec.code, ...spec.aliases.map((alias) => alias.code || alias)];
-    data.forEach(({ bids }) => bids && bids.forEach(({ bidder, params }) => {
-      if (aliases.includes(bidder) && params && params.uid) {
-        uids.push(params.uid);
-      }
-    }));
-    if (uids.length) {
-      spec.ajaxCall(USP_DELETE_DATA_HANDLER, () => {}, JSON.stringify({ uids }), {contentType: 'application/json', method: 'POST'});
-    }
+    spec.ajaxCall(USP_DELETE_DATA_HANDLER, null, null, {method: 'GET'});
   }
 };
 
@@ -485,7 +476,7 @@ export const spec = {
  */
 function _getFloor (mediaTypes, bid) {
   const curMediaType = mediaTypes.video ? 'video' : 'banner';
-  let floor = bid.params.bidFloor || bid.params.floorcpm || 0;
+  let floor = parseFloat(bid.params.bidFloor || bid.params.floorcpm || 0) || null;
 
   if (typeof bid.getFloor === 'function') {
     const floorInfo = bid.getFloor({
@@ -595,8 +586,8 @@ function createVideoRequest(videoParams, mediaType, bidSizes) {
 
   if (!videoData.w || !videoData.h) return;
 
-  const minDur = mind || durationRangeSec[0] || videoData.minduration;
-  const maxDur = maxd || durationRangeSec[1] || videoData.maxduration;
+  const minDur = mind || durationRangeSec[0] || parseInt(videoData.minduration) || null;
+  const maxDur = maxd || durationRangeSec[1] || parseInt(videoData.maxduration) || null;
 
   if (minDur) {
     videoData.minduration = minDur;

@@ -173,7 +173,7 @@ describe('Taboola Adapter', function () {
 
       const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
 
-      expect(res.url).to.equal(`${END_POINT_URL}/${commonBidRequest.params.publisherId}`);
+      expect(res.url).to.equal(`${END_POINT_URL}?publisher=${commonBidRequest.params.publisherId}`);
       expect(res.data).to.deep.equal(JSON.stringify(expectedData));
     });
 
@@ -273,6 +273,26 @@ describe('Taboola Adapter', function () {
       const res = spec.buildRequests([defaultBidRequest], bidderRequest);
       const resData = JSON.parse(res.data);
       expect(resData.tmax).to.equal(500);
+    });
+
+    it('should pass bidder tmax as int', function () {
+      const bidderRequest = {
+        ...commonBidderRequest,
+        timeout: '500'
+      }
+      const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+      const resData = JSON.parse(res.data);
+      expect(resData.tmax).to.equal(500);
+    });
+
+    it('should pass bidder timeout as null', function () {
+      const bidderRequest = {
+        ...commonBidderRequest,
+        timeout: null
+      }
+      const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+      const resData = JSON.parse(res.data);
+      expect(resData.tmax).to.equal(undefined);
     });
 
     describe('first party data', function () {

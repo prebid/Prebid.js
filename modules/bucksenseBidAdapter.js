@@ -8,6 +8,7 @@ const URL = 'https://directo.prebidserving.com/prebidjs/';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 235,
   supportedMediaTypes: [BANNER],
 
   /**

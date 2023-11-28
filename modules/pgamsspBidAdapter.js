@@ -154,7 +154,6 @@ export const spec = {
     } catch (e) {
       logMessage(e);
     }
-
     // TODO: does the fallback make sense here?
     let location = refferLocation || winLocation;
     const language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';

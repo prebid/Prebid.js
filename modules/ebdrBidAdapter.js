@@ -1,4 +1,4 @@
-import { logInfo, getBidIdParameter } from '../src/utils.js';
+import {getBidIdParameter, logInfo} from '../src/utils.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'ebdr';

@@ -125,7 +125,7 @@ export const spec = {
       site,
       device,
       source: {fd: 1},
-      tmax: bidderRequest.timeout,
+      tmax: (bidderRequest.timeout == undefined) ? undefined : parseInt(bidderRequest.timeout),
       bcat: ortb2.bcat || bidRequest.params.bcat || [],
       badv: ortb2.badv || bidRequest.params.badv || [],
       wlang: ortb2.wlang || bidRequest.params.wlang || [],
@@ -136,7 +136,7 @@ export const spec = {
       }
     };
 
-    const url = [END_POINT_URL, publisherId].join('/');
+    const url = END_POINT_URL + '?publisher=' + publisherId;
 
     return {
       url,

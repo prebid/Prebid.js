@@ -112,6 +112,7 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
           ...(adUnit.mediaTypes.video !== undefined) && {video: adUnit.mediaTypes.video},
           ...(adUnit.mediaTypes.native !== undefined) && {native: adUnit.mediaTypes.native}
         },
+        ortb2Imp: adUnit.ortb2Imp || {},
         bidders: [],
       });
     });

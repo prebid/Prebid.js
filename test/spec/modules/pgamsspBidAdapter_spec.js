@@ -120,8 +120,7 @@ describe('PGAMBidAdapter', function () {
         'coppa',
         'ccpa',
         'gdpr',
-        'tmax',
-        'userObj'
+        'tmax'
       );
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
@@ -133,7 +132,6 @@ describe('PGAMBidAdapter', function () {
       expect(data.gdpr).to.be.a('string');
       expect(data.ccpa).to.be.a('string');
       expect(data.tmax).to.be.a('number');
-      expect(data.userObj).to.be.an('object');
       expect(data.placements).to.have.lengthOf(3);
     });
 
