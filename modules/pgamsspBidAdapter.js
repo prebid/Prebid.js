@@ -35,8 +35,13 @@ function getPlacementReqData(bid) {
   const placement = {
     bidId,
     schain,
-    bidfloor
+    bidfloor,
+    eids: []
   };
+
+  if (bid.userId) {
+    getUserId(placement.eids, bid.userId.uid2 && bid.userId.uid2.id, 'uidapi.com');
+  }
 
   if (placementId) {
     placement.placementId = placementId;
@@ -91,6 +96,18 @@ function getBidFloor(bid) {
     return 0;
   }
 }
+function getUserId(eids, id, source, uidExt) {
+  if (id) {
+    var uid = { id };
+    if (uidExt) {
+      uid.ext = uidExt;
+    }
+    eids.push({
+      source,
+      uids: [ uid ]
+    });
+  }
+}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -137,6 +154,7 @@ export const spec = {
     } catch (e) {
       logMessage(e);
     }
+
     // TODO: does the fallback make sense here?
     let location = refferLocation || winLocation;
     const language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';

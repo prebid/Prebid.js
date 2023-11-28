@@ -120,7 +120,8 @@ describe('PGAMBidAdapter', function () {
         'coppa',
         'ccpa',
         'gdpr',
-        'tmax'
+        'tmax',
+        'userObj'
       );
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
@@ -132,6 +133,7 @@ describe('PGAMBidAdapter', function () {
       expect(data.gdpr).to.be.a('string');
       expect(data.ccpa).to.be.a('string');
       expect(data.tmax).to.be.a('number');
+      expect(data.userObj).to.be.an('object');
       expect(data.placements).to.have.lengthOf(3);
     });
 
@@ -145,6 +147,7 @@ describe('PGAMBidAdapter', function () {
         expect(placement.schain).to.be.an('object');
         expect(placement.bidfloor).to.exist.and.to.equal(0);
         expect(placement.type).to.exist.and.to.equal('publisher');
+        expect(placement.eids).to.exist.and.to.be.an('array');
 
         if (placement.adFormat === BANNER) {
           expect(placement.sizes).to.be.an('array');
