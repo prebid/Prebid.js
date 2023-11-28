@@ -24,18 +24,17 @@ describe('BT Bid Adapter', () => {
       adUnitCode: 'adunit-code',
       mediaTypes: { [BANNER]: { sizes: [[300, 250]] } },
       params: {
-        ab: true,
-        siteId: '55555',
+        blockthrough: {
+          auctionID: 'auctionID',
+        },
         bidderA: {
           pubId: '11111',
         },
       },
       bidderRequestId: 'test-bidder-request-id',
-      auctionId: 'test-auction-id',
     },
   ];
   const bidderRequest = {
-    auctionId: 'test-auction-id',
     bidderCode: 'blockthrough',
     bidderRequestId: 'test-bidder-request-id',
     bids: validBidRequests,
@@ -45,8 +44,6 @@ describe('BT Bid Adapter', () => {
     it('should validate bid request with valid params', () => {
       const validBid = {
         params: {
-          ab: true,
-          siteId: 'exampleSiteId',
           pubmatic: {
             publisherId: 55555,
           },
@@ -77,9 +74,12 @@ describe('BT Bid Adapter', () => {
 
   describe('buildRequests', () => {
     it('should build post request when ortb2 fields are present', () => {
-      const bidderParams = {
+      const impExtParams = {
         bidderA: {
           pubId: '11111',
+        },
+        prebid: {
+          blockthrough: { auctionID: 'auctionID' },
         },
       };
 
@@ -88,9 +88,7 @@ describe('BT Bid Adapter', () => {
       expect(requests[0].method).to.equal('POST');
       expect(requests[0].url).to.equal(ENDPOINT_URL);
       expect(requests[0].data).to.exist;
-      expect(requests[0].data.imp[0].ext).to.deep.equal(bidderParams);
-      expect(requests[0].data.site.ext.blockthrough.ab).to.be.true;
-      expect(requests[0].data.site.ext.blockthrough.siteId).to.equal('55555');
+      expect(requests[0].data.imp[0].ext).to.deep.equal(impExtParams);
     });
   });
 

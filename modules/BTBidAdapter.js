@@ -1,6 +1,6 @@
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { deepSetValue, isBoolean, isStr, logWarn } from '../src/utils.js';
+import { deepSetValue, isPlainObject, logWarn } from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
@@ -32,8 +32,16 @@ function imp(buildImp, bidRequest, context) {
   const { params, ortb2Imp } = bidRequest;
 
   if (params) {
-    const { siteId, ab, ...btBidParams } = params;
-    Object.assign(imp, { ext: btBidParams });
+    const { blockthrough, ...btBidderParams } = params;
+
+    deepSetValue(imp, 'ext', btBidderParams);
+    if (blockthrough.auctionID) {
+      deepSetValue(
+        imp,
+        'ext.prebid.blockthrough.auctionID',
+        blockthrough.auctionID
+      );
+    }
   }
   if (ortb2Imp?.ext.gpid) {
     deepSetValue(imp, 'gpid', ortb2Imp.ext.gpid);
@@ -53,12 +61,6 @@ function imp(buildImp, bidRequest, context) {
  */
 function request(buildRequest, imps, bidderRequest, context) {
   const request = buildRequest(imps, bidderRequest, context);
-  const { params } = bidderRequest.bids?.[0] || {};
-
-  if (params) {
-    const { ab, siteId } = params;
-    deepSetValue(request, 'site.ext.blockthrough', { ab, siteId });
-  }
   if (config.getConfig('debug')) {
     request.test = 1;
   }
@@ -89,15 +91,8 @@ function bidResponse(buildBidResponse, bid, context) {
  * @returns {boolean} True if the bid request is valid, false otherwise.
  */
 function isBidRequestValid(bid) {
-  const { ab, siteId } = bid.params;
-
-  if (!siteId || !isStr(siteId)) {
-    logWarn('BT Bid Adapter: a string type "siteId" must be provided.');
-    return false;
-  }
-
-  if (!isBoolean(ab)) {
-    logWarn('BT Bid Adapter: a boolean type "ab" must be provided.');
+  if (!isPlainObject(bid.params) || !Object.keys(bid.params).length) {
+    logWarn('BT Bid Adapter: bid params must be provided.');
     return false;
   }
 
