@@ -176,7 +176,6 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
   // Create imps with bids
   validBidRequests.forEach((bid) => {
     let bannerObj = deepAccess(bid.mediaTypes, `banner`);
-    let videoObj = deepAccess(bid.mediaTypes, `video`);
 
     let imp = {
       id: bid.bidId,
@@ -184,15 +183,13 @@ function createOpenRtbRequest(validBidRequests, bidderRequest) {
       ext: helpers.getExtParamsFromBid(bid)
     };
 
-    if (videoObj) {
-      imp.video = {
-        ...helpers.createOrtbImpVideoObj(bid)
-      }
-    }
-
     if (bannerObj && typeof imp.ext.impactify.size == 'string') {
       imp.banner = {
         ...helpers.createOrtbImpBannerObj(bid, imp.ext.impactify.size)
+      }
+    } else {
+      imp.video = {
+        ...helpers.createOrtbImpVideoObj(bid)
       }
     }
 
