@@ -1,7 +1,8 @@
-import { ortbConverter } from '../libraries/ortbConverter/converter.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
+import {getBidIdParameter} from '../src/utils.js';
 
 const BIDDER_CODE = 'eskimi';
 // const ENDPOINT = 'https://hb.eskimi.com/bids'
@@ -65,7 +66,7 @@ const CONVERTER = ortbConverter({
     imp.secure = Number(window.location.protocol === 'https:');
     if (!imp.bidfloor && bidRequest.params.bidFloor) {
       imp.bidfloor = bidRequest.params.bidFloor;
-      imp.bidfloorcur = utils.getBidIdParameter('bidFloorCur', bidRequest.params).toUpperCase() || 'USD'
+      imp.bidfloorcur = getBidIdParameter('bidFloorCur', bidRequest.params).toUpperCase() || 'USD'
     }
 
     if (bidRequest.mediaTypes[VIDEO]) {

@@ -10,11 +10,12 @@ import {
   addBidResponseHook,
   currencySupportEnabled,
   currencyRates,
-  ready
+  responseReady
 } from 'modules/currency.js';
 import {createBid} from '../../../src/bidfactory.js';
 import CONSTANTS from '../../../src/constants.json';
 import {server} from '../../mocks/xhr.js';
+import * as events from 'src/events.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -32,7 +33,6 @@ describe('currency', function () {
 
   beforeEach(function () {
     fakeCurrencyFileServer = server;
-    ready.reset();
   });
 
   afterEach(function () {
@@ -259,6 +259,19 @@ describe('currency', function () {
       expect(innerBid.getCpmInNewCurrency('JPY')).to.equal('100.000');
     });
 
+    it('does not block auctions if rates do not need to be fetched', () => {
+      sandbox.stub(responseReady, 'resolve');
+      setConfig({
+        adServerCurrency: 'USD',
+        rates: {
+          USD: {
+            JPY: 100
+          }
+        }
+      });
+      sinon.assert.called(responseReady.resolve);
+    })
+
     it('uses rates specified in json when provided and consider boosted bid', function () {
       setConfig({
         adServerCurrency: 'USD',
@@ -287,32 +300,56 @@ describe('currency', function () {
       expect(innerBid.getCpmInNewCurrency('JPY')).to.equal('1000.000');
     });
 
-    it('uses default rates when currency file fails to load', function () {
-      setConfig({});
-
-      setConfig({
-        adServerCurrency: 'USD',
-        defaultRates: {
-          USD: {
-            JPY: 100
+    describe('when rates fail to load', () => {
+      let bid, addBidResponse, reject;
+      beforeEach(() => {
+        bid = makeBid({cpm: 100, currency: 'JPY', bidder: 'rubicoin'});
+        addBidResponse = sinon.spy();
+        reject = sinon.spy();
+      })
+      it('uses default rates if specified', function () {
+        setConfig({
+          adServerCurrency: 'USD',
+          defaultRates: {
+            USD: {
+              JPY: 100
+            }
           }
-        }
+        });
+
+        // default response is 404
+        addBidResponseHook(addBidResponse, 'au', bid);
+        fakeCurrencyFileServer.respond();
+        sinon.assert.calledWith(addBidResponse, 'au', sinon.match(innerBid => {
+          expect(innerBid.cpm).to.equal('1.0000');
+          expect(typeof innerBid.getCpmInNewCurrency).to.equal('function');
+          expect(innerBid.getCpmInNewCurrency('JPY')).to.equal('100.000');
+          return true;
+        }));
       });
 
-      // default response is 404
-      fakeCurrencyFileServer.respond();
+      it('rejects bids if no default rates are specified', () => {
+        setConfig({
+          adServerCurrency: 'USD',
+        });
+        addBidResponseHook(addBidResponse, 'au', bid, reject);
+        fakeCurrencyFileServer.respond();
+        sinon.assert.notCalled(addBidResponse);
+        sinon.assert.calledWith(reject, CONSTANTS.REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
+      });
 
-      var bid = { cpm: 100, currency: 'JPY', bidder: 'rubicon' };
-      var innerBid;
-
-      addBidResponseHook(function(adCodeId, bid) {
-        innerBid = bid;
-      }, 'elementId', bid);
-
-      expect(innerBid.cpm).to.equal('1.0000');
-      expect(typeof innerBid.getCpmInNewCurrency).to.equal('function');
-      expect(innerBid.getCpmInNewCurrency('JPY')).to.equal('100.000');
-    });
+      it('attempts to load rates again on the next auction', () => {
+        setConfig({
+          adServerCurrency: 'USD',
+        });
+        fakeCurrencyFileServer.respond();
+        fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
+        events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {});
+        addBidResponseHook(addBidResponse, 'au', bid, reject);
+        fakeCurrencyFileServer.respond();
+        sinon.assert.calledWith(addBidResponse, 'au', bid, reject);
+      })
+    })
   });
 
   describe('currency.addBidResponseDecorator bidResponseQueue', function () {
@@ -321,29 +358,26 @@ describe('currency', function () {
 
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
 
-      var bid = { 'cpm': 1, 'currency': 'USD' };
+      const bid = { 'cpm': 1, 'currency': 'USD' };
 
       setConfig({ 'adServerCurrency': 'JPY' });
 
-      var marker = false;
-      let promiseResolved = false;
+      let responseAdded = false;
+      let isReady = false;
+      responseReady.promise.then(() => { isReady = true });
+
       addBidResponseHook(Object.assign(function() {
-        marker = true;
-      }, {
-        bail: function (promise) {
-          promise.then(() => promiseResolved = true);
-        }
+        responseAdded = true;
       }), 'elementId', bid);
 
-      expect(marker).to.equal(false);
-
       setTimeout(() => {
-        expect(promiseResolved).to.be.false;
+        expect(responseAdded).to.equal(false);
+        expect(isReady).to.equal(false);
         fakeCurrencyFileServer.respond();
 
         setTimeout(() => {
-          expect(marker).to.equal(true);
-          expect(promiseResolved).to.be.true;
+          expect(responseAdded).to.equal(true);
+          expect(isReady).to.equal(true);
           done();
         });
       });
@@ -418,6 +452,23 @@ describe('currency', function () {
       expect(bidAdded).to.be.false;
       expect(reject.calledOnce).to.be.true;
     });
+
+    it('should reject bid when rates have not loaded when the auction times out', () => {
+      fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
+      setConfig({'adServerCurrency': 'JPY'});
+      const bid = makeBid({cpm: 1, currency: 'USD', auctionId: 'aid'});
+      const noConversionBid = makeBid({cpm: 1, currency: 'JPY', auctionId: 'aid'});
+      const reject = sinon.spy();
+      const addBidResponse = sinon.spy();
+      addBidResponseHook(addBidResponse, 'au', bid, reject);
+      addBidResponseHook(addBidResponse, 'au', noConversionBid, reject);
+      events.emit(CONSTANTS.EVENTS.AUCTION_TIMEOUT, {auctionId: 'aid'});
+      fakeCurrencyFileServer.respond();
+      sinon.assert.calledOnce(addBidResponse);
+      sinon.assert.calledWith(addBidResponse, 'au', noConversionBid, reject);
+      sinon.assert.calledOnce(reject);
+      sinon.assert.calledWith(reject, CONSTANTS.REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
+    })
 
     it('should return 1 when currency support is enabled and same currency code is requested as is set to adServerCurrency', function () {
       fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));

@@ -1,4 +1,4 @@
-import {logInfo, logError, deepClone} from '../src/utils.js';
+import {logInfo, logError} from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
@@ -47,53 +47,68 @@ function getZetaParams(event) {
 
 /// /////////// ADAPTER EVENT HANDLER FUNCTIONS //////////////
 
-function adRenderSucceededHandler(originalArgs) {
-  const args = deepClone(originalArgs);
+function adRenderSucceededHandler(args) {
   let eventType = CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED
   logInfo(LOG_PREFIX + 'handle ' + eventType + ' event');
 
-  if (args.bid) {
-    // cleanup object
-    delete args.bid.metrics;
-    delete args.bid.ad;
-
-    // set zetaParams from cache
-    if (args.bid.auctionId) {
-      const zetaParams = cache.auctions[args.bid.auctionId];
-      if (zetaParams) {
-        args.bid.params = [ zetaParams ];
-      }
+  const event = {
+    adId: args.adId,
+    bid: {
+      adId: args.bid?.adId,
+      auctionId: args.bid?.auctionId,
+      adUnitCode: args.bid?.adUnitCode,
+      bidId: args.bid?.bidId,
+      requestId: args.bid?.requestId,
+      bidderCode: args.bid?.bidderCode,
+      mediaTypes: args.bid?.mediaTypes,
+      sizes: args.bid?.sizes,
+      adserverTargeting: args.bid?.adserverTargeting,
+      cpm: args.bid?.cpm,
+      creativeId: args.bid?.creativeId,
+      mediaType: args.bid?.mediaType,
+      renderer: args.bid?.renderer,
+      size: args.bid?.size,
+      timeToRespond: args.bid?.timeToRespond,
+      params: args.bid?.params
+    },
+    doc: {
+      location: args.doc?.location
     }
   }
 
-  sendEvent(eventType, args);
+  // set zetaParams from cache
+  if (event.bid && event.bid.auctionId) {
+    const zetaParams = cache.auctions[event.bid.auctionId];
+    if (zetaParams) {
+      event.bid.params = [ zetaParams ];
+    }
+  }
+
+  sendEvent(eventType, event);
 }
 
-function auctionEndHandler(originalArgs) {
-  const args = deepClone(originalArgs);
+function auctionEndHandler(args) {
   let eventType = CONSTANTS.EVENTS.AUCTION_END;
   logInfo(LOG_PREFIX + 'handle ' + eventType + ' event');
 
-  // cleanup object
-  delete args.metrics;
-  if (args.bidderRequests) {
-    args.bidderRequests.forEach(requests => {
-      delete requests.metrics;
-      if (requests.bids) {
-        requests.bids.forEach(bid => {
-          delete bid.metrics;
-        })
-      }
-    })
+  const event = {
+    adUnitCodes: args.adUnitCodes,
+    adUnits: args.adUnits,
+    auctionEnd: args.auctionEnd,
+    auctionId: args.auctionId,
+    bidderRequests: args.bidderRequests,
+    bidsReceived: args.bidsReceived,
+    noBids: args.noBids,
+    winningBids: args.winningBids
   }
 
   // save zetaParams to cache
-  const zetaParams = getZetaParams(args);
-  if (zetaParams && args.auctionId) {
-    cache.auctions[args.auctionId] = zetaParams;
+  const zetaParams = getZetaParams(event);
+  if (zetaParams && event.auctionId) {
+    cache.auctions[event.auctionId] = zetaParams;
   }
 
-  sendEvent(eventType, args);
+  sendEvent(eventType, event);
 }
 
 /// /////////// ADAPTER DEFINITION ///////////////////////////
