@@ -259,6 +259,19 @@ describe('currency', function () {
       expect(innerBid.getCpmInNewCurrency('JPY')).to.equal('100.000');
     });
 
+    it('does not block auctions if rates do not need to be fetched', () => {
+      sandbox.stub(responseReady, 'resolve');
+      setConfig({
+        adServerCurrency: 'USD',
+        rates: {
+          USD: {
+            JPY: 100
+          }
+        }
+      });
+      sinon.assert.called(responseReady.resolve);
+    })
+
     it('uses rates specified in json when provided and consider boosted bid', function () {
       setConfig({
         adServerCurrency: 'USD',
