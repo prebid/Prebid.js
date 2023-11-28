@@ -1,5 +1,6 @@
 import {
   logInfo,
+  logWarn,
   logError,
   logMessage,
   deepAccess,
@@ -8,12 +9,14 @@ import {
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 
 const BIDDER_CODE = 'dxkulture';
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_NET_REVENUE = true;
 const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_OUTSTREAM_RENDERER_URL = 'https://cdn.dxkulture.com/players/dxOutstreamPlayer.js';
 
 const converter = ortbConverter({
   context: {
@@ -54,18 +57,12 @@ const converter = ortbConverter({
   },
   bidResponse(buildBidResponse, bid, context) {
     let resMediaType;
+    const {bidRequest} = context;
+
     if (bid.adm?.trim().startsWith('<VAST')) {
       resMediaType = VIDEO;
     } else {
       resMediaType = BANNER;
-    }
-
-    const isADomainPresent = bid.adomain && bid.adomain.length;
-
-    if (isADomainPresent) {
-      context.meta = {
-        advertiserDomains: bid.adomain
-      };
     }
 
     context.mediaType = resMediaType;
@@ -76,6 +73,10 @@ const converter = ortbConverter({
     }
 
     const bidResponse = buildBidResponse(bid, context);
+
+    if (resMediaType === VIDEO && bidRequest.mediaTypes.video.context === 'outstream') {
+      bidResponse.renderer = outstreamRenderer(bidResponse);
+    }
 
     return bidResponse;
   }
@@ -187,6 +188,42 @@ export const spec = {
   },
 
 };
+
+
+function outstreamRenderer(bid) {
+  const rendererConfig = {
+    width: bid.width,
+    height: bid.height,
+    vastTimeout: 5000,
+    maxAllowedVastTagRedirects: 3,
+    allowVpaid: false,
+    autoPlay: true,
+    preload: true,
+    mute: false
+  }
+
+  const renderer = Renderer.install({
+    id: bid.adId,
+    url: DEFAULT_OUTSTREAM_RENDERER_URL,
+    config: rendererConfig,
+    loaded: false,
+    targetId: bid.adUnitCode,
+    adUnitCode: bid.adUnitCode
+  });
+
+  try {
+    renderer.setRender(function (bid) {
+      bid.renderer.push(() => {
+        const { id, config } = bid.renderer;
+        window.dxOutstreamPlayer(bid, id, config);
+      });
+    });
+  } catch (err) {
+    logWarn('dxkulture: Prebid Error calling setRender on renderer', err);
+  }
+
+  return renderer;
+}
 
 /* =======================================
  * Util Functions
