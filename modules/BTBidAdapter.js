@@ -35,7 +35,7 @@ function imp(buildImp, bidRequest, context) {
     const { blockthrough, ...btBidderParams } = params;
 
     deepSetValue(imp, 'ext', btBidderParams);
-    if (blockthrough.auctionID) {
+    if (blockthrough?.auctionID) {
       deepSetValue(
         imp,
         'ext.prebid.blockthrough.auctionID',
