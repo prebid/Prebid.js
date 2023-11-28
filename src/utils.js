@@ -252,25 +252,37 @@ export function debugTurnedOn() {
   return !!config.getConfig('debug');
 }
 
+export const createIframe = (() => {
+  const DEFAULTS = {
+    border: '0px',
+    hspace: '0',
+    vspace: '0',
+    marginWidth: '0',
+    marginHeight: '0',
+    scrolling: 'no',
+    frameBorder: '0',
+    allowtransparency: 'true'
+  }
+  return (doc, attrs, style = {}) => {
+    const f = doc.createElement('iframe');
+    Object.assign(f, Object.assign({}, DEFAULTS, attrs));
+    Object.assign(f.style, style);
+    return f;
+  }
+})();
+
 export function createInvisibleIframe() {
-  var f = document.createElement('iframe');
-  f.id = getUniqueIdentifierStr();
-  f.height = 0;
-  f.width = 0;
-  f.border = '0px';
-  f.hspace = '0';
-  f.vspace = '0';
-  f.marginWidth = '0';
-  f.marginHeight = '0';
-  f.style.border = '0';
-  f.scrolling = 'no';
-  f.frameBorder = '0';
-  f.src = 'about:blank';
-  f.style.display = 'none';
-  f.style.height = '0px';
-  f.style.width = '0px';
-  f.allowtransparency = 'true';
-  return f;
+  return createIframe(document, {
+    id: getUniqueIdentifierStr(),
+    width: 0,
+    height: 0,
+    src: 'about:blank'
+  }, {
+    display: 'none',
+    height: '0px',
+    width: '0px',
+    border: '0px'
+  });
 }
 
 /*

@@ -444,6 +444,8 @@ function watchTaskMaker(options = {}) {
     var mainWatcher = gulp.watch([
       'src/**/*.js',
       'libraries/**/*.js',
+      '!libraries/creative-renderer-*/**/*.js',
+      'creative/**/*.js',
       'modules/**/*.js',
     ].concat(options.alsoWatch));
 

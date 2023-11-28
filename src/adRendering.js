@@ -1,4 +1,4 @@
-import {deepAccess, inIframe, insertElement, logError, logWarn, replaceMacros} from './utils.js';
+import {createIframe, deepAccess, inIframe, insertElement, logError, logWarn, replaceMacros} from './utils.js';
 import * as events from './events.js';
 import CONSTANTS from './constants.json';
 import {config} from './config.js';
@@ -7,8 +7,8 @@ import {VIDEO} from './mediaTypes.js';
 import {auctionManager} from './auctionManager.js';
 import {getGlobal} from './prebidGlobal.js';
 import {EXCEPTION} from '../creative/constants.js';
-import {getCreativeRenderer} from './creativeRenderers.js';
 import '../libraries/creative-renderer-display/renderer.js';
+import {getCreativeRenderer} from './creativeRenderers.js';
 
 const {AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON} = CONSTANTS.EVENTS;
 
@@ -117,7 +117,7 @@ export function renderAdDirect(doc, adId, options) {
       doc.write(adData.ad);
       doc.close();
     } else {
-      getCreativeRenderer().then(render => render(adData, cb, doc))
+      getCreativeRenderer().then(render => render(adData, {cb, mkFrame: createIframe}, doc))
     }
     if (doc.defaultView && doc.defaultView.frameElement) {
       doc.defaultView.frameElement.width = adData.width;

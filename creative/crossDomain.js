@@ -8,6 +8,24 @@ import {
   PREBID_RESPONSE
 } from './constants.js';
 
+const mkFrame = (() => {
+  const DEFAULTS = {
+    frameBorder: 0,
+    scrolling: 'no',
+    marginHeight: 0,
+    marginWidth: 0,
+    topMargin: 0,
+    leftMargin: 0,
+    allowTransparency: 'true',
+  };
+  return (doc, attrs) => {
+    const frame = doc.createElement('iframe');
+    Object.entries(Object.assign({}, attrs, DEFAULTS))
+      .forEach(([k, v]) => frame.setAttribute(k, v));
+    return frame;
+  }
+})()
+
 export function renderer(win = window) {
   return function ({adId, pubUrl, clickUrl}) {
     const pubDomain = new URL(pubUrl, window.location).origin;
@@ -29,7 +47,7 @@ export function renderer(win = window) {
       }
       if (data.message === PREBID_RESPONSE && data.adId === adId) {
         try {
-          render(data, cb, win.document);
+          render(data, {cb, mkFrame}, win.document);
         } catch (e) {
           // eslint-disable-next-line standard/no-callback-literal
           cb({ reason: EXCEPTION, message: e.message })

@@ -27,6 +27,7 @@ import {enrichFPD} from '../../../src/fpd/enrichment.js';
 import {mockFpdEnrichments} from '../../helpers/fpd.js';
 import {generateUUID} from '../../../src/utils.js';
 import {getCreativeRenderer} from '../../../src/creativeRenderers.js';
+
 var assert = require('chai').assert;
 var expect = require('chai').expect;
 
@@ -1234,6 +1235,9 @@ describe('Unit: Prebid Module', function () {
             width: 0,
             height: 0
           }
+        },
+        body: {
+          appendChild: sinon.stub()
         },
         getElementsByTagName: sinon.stub(),
         querySelector: sinon.stub(),

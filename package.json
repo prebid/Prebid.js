@@ -15,7 +15,8 @@
   "sideEffects": [
     "src/prebid.js",
     "modules/*.js",
-    "modules/*/index.js"
+    "modules/*/index.js",
+    "libraries/creative-renderer-*/*.js"
   ],
   "browserslist": [
     "> 0.25%",
