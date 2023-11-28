@@ -10,7 +10,7 @@ const IFRAME_ATTRS = {
   allowTransparency: 'true',
 };
 
-export function mkFrame(doc, attrs) {
+function mkFrame(doc, attrs) {
   const frame = doc.createElement('iframe');
   attrs = Object.assign({}, attrs, IFRAME_ATTRS);
   Object.entries(attrs).forEach(([k, v]) => frame.setAttribute(k, v));
@@ -18,7 +18,7 @@ export function mkFrame(doc, attrs) {
   return frame;
 }
 
-export function writeAd({ad, adUrl, width, height}, cb, doc = document) {
+export function render({ad, adUrl, width, height}, cb, doc = document) {
   if (!ad && !adUrl) {
     // eslint-disable-next-line standard/no-callback-literal
     cb({reason: NO_AD, message: 'Missing ad markup or URL'});
@@ -33,3 +33,5 @@ export function writeAd({ad, adUrl, width, height}, cb, doc = document) {
     cb();
   }
 }
+
+window.render = render;

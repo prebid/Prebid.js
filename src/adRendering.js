@@ -1,12 +1,16 @@
-import {deepAccess, logError, logWarn, replaceMacros} from './utils.js';
+import {deepAccess, inIframe, insertElement, logError, logWarn, replaceMacros} from './utils.js';
 import * as events from './events.js';
-import constants from './constants.json';
+import CONSTANTS from './constants.json';
 import {config} from './config.js';
 import {executeRenderer, isRendererRequired} from './Renderer.js';
 import {VIDEO} from './mediaTypes.js';
 import {auctionManager} from './auctionManager.js';
+import {getGlobal} from './prebidGlobal.js';
+import {EXCEPTION} from '../creative/constants.js';
+import {getCreativeRenderer} from './creativeRenderers.js';
+import '../libraries/creative-renderer-display/renderer.js';
 
-const {AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON} = constants.EVENTS;
+const {AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON} = CONSTANTS.EVENTS;
 
 /**
  * Emit the AD_RENDER_FAILED event.
@@ -44,13 +48,13 @@ export function emitAdRenderSucceeded({ doc, bid, id }) {
 export function handleRender(renderFn, {adId, options, bidResponse}) {
   if (bidResponse == null) {
     emitAdRenderFail({
-      reason: constants.AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
+      reason: CONSTANTS.AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
       message: `Cannot find ad '${adId}'`,
       id: adId
     });
     return;
   }
-  if (bidResponse.status === constants.BID_STATUS.RENDERED) {
+  if (bidResponse.status === CONSTANTS.BID_STATUS.RENDERED) {
     logWarn(`Ad id ${adId} has been rendered before`);
     events.emit(STALE_RENDER, bidResponse);
     if (deepAccess(config.getConfig('auctionOptions'), 'suppressStaleRender')) {
@@ -65,7 +69,7 @@ export function handleRender(renderFn, {adId, options, bidResponse}) {
     } else if (adId) {
       if (mediaType === VIDEO) {
         emitAdRenderFail({
-          reason: constants.AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT,
+          reason: CONSTANTS.AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT,
           message: 'Cannot render video ad',
           bid: bidResponse,
           id: adId
@@ -86,7 +90,7 @@ export function handleRender(renderFn, {adId, options, bidResponse}) {
     }
   } catch (e) {
     emitAdRenderFail({
-      reason: constants.AD_RENDER_FAILED_REASON.EXCEPTION,
+      reason: CONSTANTS.AD_RENDER_FAILED_REASON.EXCEPTION,
       message: e.message,
       id: adId,
       bid: bidResponse
@@ -97,4 +101,64 @@ export function handleRender(renderFn, {adId, options, bidResponse}) {
   auctionManager.addWinningBid(bidResponse);
 
   events.emit(BID_WON, bidResponse);
+}
+
+export function renderAdDirect(doc, adId, options) {
+  let bid;
+  function cb(err) {
+    if (err != null) {
+      emitAdRenderFail(Object.assign({id: adId, bid}, err));
+    } else {
+      emitAdRenderSucceeded({doc, bid, adId})
+    }
+  }
+  function renderFn(adData) {
+    if (adData.ad) {
+      doc.write(adData.ad);
+      doc.close();
+    } else {
+      getCreativeRenderer().then(render => render(adData, cb, doc))
+    }
+    if (doc.defaultView && doc.defaultView.frameElement) {
+      doc.defaultView.frameElement.width = adData.width;
+      doc.defaultView.frameElement.height = adData.height;
+    }
+    // TODO: this is almost certainly the wrong way to do this
+    const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
+    insertElement(creativeComment, doc, 'html');
+  }
+  try {
+    if (!adId || !doc) {
+      // eslint-disable-next-line standard/no-callback-literal
+      cb({
+        reason: CONSTANTS.AD_RENDER_FAILED_REASON.MISSING_DOC_OR_ADID,
+        message: `missing ${adId ? 'doc' : 'adId'}`
+      });
+    } else {
+      bid = auctionManager.findBidByAdId(adId);
+
+      if (FEATURES.VIDEO) {
+        // TODO: could the video module implement this as a custom renderer, rather than a special case in here?
+        const adUnit = bid && auctionManager.index.getAdUnit(bid);
+        const videoModule = getGlobal().videoModule;
+        if (adUnit?.video && videoModule) {
+          videoModule.renderBid(adUnit.video.divId, bid);
+          return;
+        }
+      }
+
+      if ((doc === document && !inIframe())) {
+        // eslint-disable-next-line standard/no-callback-literal
+        cb({
+          reason: CONSTANTS.AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT,
+          message: `renderAd was prevented from writing to the main document.`
+        })
+      } else {
+        handleRender(renderFn, {adId, options: {clickUrl: options?.clickThrough}, bidResponse: bid});
+      }
+    }
+  } catch (e) {
+    // eslint-disable-next-line standard/no-callback-literal
+    cb({reason: EXCEPTION, message: e.message})
+  }
 }

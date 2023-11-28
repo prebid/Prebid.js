@@ -25,6 +25,8 @@ const path = require('path');
 const execa = require('execa');
 const {minify} = require('terser');
 const Vinyl = require('vinyl');
+const wrap = require('gulp-wrap');
+const rename = require('gulp-rename');
 
 var prebid = require('./package.json');
 var port = 9999;
@@ -168,6 +170,22 @@ function buildCreative(mode = 'production') {
       .pipe(webpackStream(Object.assign(require('./webpack.creative.js'), opts)))
       .pipe(gulp.dest('build/creative'))
   }
+}
+
+function updateCreativeRenderers() {
+  return gulp.src(['build/creative/renderers/**/*'])
+    .pipe(wrap(function (data) {
+      const name = path.parse(data.file.basename).name;
+      return `import {RENDERERS} from '../../src/creativeRenderers.js';\nRENDERERS[${JSON.stringify(name)}] = ${JSON.stringify(data.contents.toString())};\n`;
+    }))
+    .pipe(rename(function (path) {
+      return {
+        dirname: `creative-renderer-${path.basename}`,
+        basename: 'renderer',
+        extname: '.js'
+      }
+    }))
+    .pipe(gulp.dest('libraries'))
 }
 
 function updateCreativeExample(cb) {
@@ -447,8 +465,11 @@ gulp.task(clean);
 
 gulp.task(escapePostbidConfig);
 
-gulp.task('build-bundle-dev', gulp.series(gulp.parallel(buildCreative('development'), makeDevpackPkg), gulpBundle.bind(null, true)));
-gulp.task('build-bundle-prod', gulp.series(gulp.parallel(buildCreative(), makeWebpackPkg()), gulpBundle.bind(null, false)));
+gulp.task('build-creative-dev', gulp.series(buildCreative(argv.creativeDev ? 'development' : 'production'), updateCreativeRenderers));
+gulp.task('build-creative-prod', gulp.series(buildCreative(), updateCreativeRenderers));
+
+gulp.task('build-bundle-dev', gulp.series('build-creative-dev', makeDevpackPkg, gulpBundle.bind(null, true)));
+gulp.task('build-bundle-prod', gulp.series('build-creative-prod', makeWebpackPkg(), gulpBundle.bind(null, false)));
 // build-bundle-verbose - prod bundle except names and comments are preserved. Use this to see the effects
 // of dead code elimination.
 gulp.task('build-bundle-verbose', gulp.series(makeWebpackPkg({

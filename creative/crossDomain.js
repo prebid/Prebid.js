@@ -1,4 +1,4 @@
-import {writeAd} from './writer.js';
+import {render} from './renderers/display/renderer.js';
 import {
   AD_RENDER_FAILED,
   AD_RENDER_SUCCEEDED,
@@ -29,7 +29,7 @@ export function renderer(win = window) {
       }
       if (data.message === PREBID_RESPONSE && data.adId === adId) {
         try {
-          writeAd(data, cb, win.document);
+          render(data, cb, win.document);
         } catch (e) {
           // eslint-disable-next-line standard/no-callback-literal
           cb({ reason: EXCEPTION, message: e.message })

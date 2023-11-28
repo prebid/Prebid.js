@@ -26,6 +26,7 @@ import {createBid} from '../../../src/bidfactory.js';
 import {enrichFPD} from '../../../src/fpd/enrichment.js';
 import {mockFpdEnrichments} from '../../helpers/fpd.js';
 import {generateUUID} from '../../../src/utils.js';
+import {getCreativeRenderer} from '../../../src/creativeRenderers.js';
 var assert = require('chai').assert;
 var expect = require('chai').expect;
 
@@ -200,11 +201,13 @@ window.apntag = {
 describe('Unit: Prebid Module', function () {
   let bidExpiryStub, sandbox;
 
-  before(() => {
+  before((done) => {
     hook.ready();
     $$PREBID_GLOBAL$$.requestBids.getHooks().remove();
     resetDebugging();
     sinon.stub(filters, 'isActualBid').returns(true); // stub this out so that we can use vanilla objects as bids
+    // preload creative renderer
+    getCreativeRenderer().then(() => done());
   });
 
   beforeEach(function () {

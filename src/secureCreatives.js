@@ -10,7 +10,7 @@ import {isApnGetTagDefined, isGptPubadsDefined, logError, logWarn} from './utils
 import {auctionManager} from './auctionManager.js';
 import {find, includes} from './polyfill.js';
 import {emitAdRenderFail, emitAdRenderSucceeded, handleRender} from './adRendering.js';
-import {PREBID_EVENT, PREBID_NATIVE, PREBID_REQUEST, PREBID_RESPONSE} from '../libraries/creativeRender/constants.js';
+import {PREBID_EVENT, PREBID_NATIVE, PREBID_REQUEST, PREBID_RESPONSE} from '../creative/constants.js';
 
 const BID_WON = constants.EVENTS.BID_WON;
 const WON_AD_IDS = new WeakSet();

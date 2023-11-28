@@ -1,10 +1,11 @@
-import {renderer} from '../../../libraries/creativeRender/crossDomain.js';
+import {renderer} from '../../../creative/crossDomain.js';
 import {
-  AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, EXCEPTION, NO_AD,
+  AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, EXCEPTION,
   PREBID_EVENT,
   PREBID_REQUEST,
   PREBID_RESPONSE
-} from '../../../libraries/creativeRender/constants.js';
+} from '../../../creative/constants.js';
+import {NO_AD} from '../../../creative/renderers/display/constants.js';
 
 describe('cross-domain creative', () => {
   let win, renderAd, messages, mkIframe, listeners;
