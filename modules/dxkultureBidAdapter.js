@@ -86,7 +86,7 @@ export const spec = {
   code: BIDDER_CODE,
   VERSION: '1.0.0',
   supportedMediaTypes: [BANNER, VIDEO],
-  ENDPOINT: 'https://ads.kulture.media/pbjs',
+  ENDPOINT: 'https://ads.dxkulture.com/pbjs',
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -188,7 +188,6 @@ export const spec = {
   },
 
 };
-
 
 function outstreamRenderer(bid) {
   const rendererConfig = {
