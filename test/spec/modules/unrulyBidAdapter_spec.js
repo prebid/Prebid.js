@@ -4,6 +4,7 @@ import * as utils from 'src/utils.js'
 import {VIDEO, BANNER} from 'src/mediaTypes.js'
 import {Renderer} from 'src/Renderer.js'
 import {adapter} from 'modules/unrulyBidAdapter.js'
+import {getGlobal} from 'src/prebidGlobal.js';
 
 describe('UnrulyAdapter', function () {
   function createOutStreamExchangeBid({
@@ -392,6 +393,7 @@ describe('UnrulyAdapter', function () {
       expect(typeof result).to.equal('object');
       expect(result.length).to.equal(2);
       expect(result[0].data.bidderRequest.bids.length).to.equal(1);
+      expect(result[0].data.prebidVersion).to.equal(getGlobal().version);
       expect(result[1].data.bidderRequest.bids.length).to.equal(1);
     });
     it('should return an array with 1 items when the bids has same siteId', function () {

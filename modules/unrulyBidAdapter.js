@@ -2,6 +2,7 @@ import { deepAccess, logError } from '../src/utils.js';
 import {Renderer} from '../src/Renderer.js'
 import {registerBidder} from '../src/adapters/bidderFactory.js'
 import {VIDEO, BANNER} from '../src/mediaTypes.js'
+import {getGlobal} from '../src/prebidGlobal.js';
 
 function configureUniversalTag(exchangeRenderer, requestId) {
   if (!exchangeRenderer.config) throw new Error('UnrulyBidAdapter: Missing renderer config.');
@@ -80,7 +81,14 @@ const getRequests = (conf, validBidRequests, bidderRequest) => {
 
   Object.keys(requestBySiteId).forEach((key) => {
     let data = {
-      bidderRequest: Object.assign({}, {bids: requestBySiteId[key], invalidBidsCount, ...bidderRequestData})
+      bidderRequest: Object.assign({},
+        {
+          bids: requestBySiteId[key],
+          invalidBidsCount,
+          prebidVersion: getGlobal().version,
+          ...bidderRequestData
+        }
+      )
     };
 
     request.push(Object.assign({}, {data, ...conf}));
