@@ -77,27 +77,7 @@ describe('PGAMBidAdapter', function () {
     refererInfo: {
       referer: 'https://test.com'
     },
-    timeout: 500,
-    ortb2: {
-      user: {
-        yob: 1985,
-        gender: 'm',
-        keywords: 'a,b',
-        data: [{
-          name: 'dataprovider.com',
-          ext: { segtax: 4 },
-          segment: [
-            { id: '1' }
-          ]
-        }],
-        ext: {
-          data: {
-            registered: true,
-            interests: ['cars']
-          }
-        }
-      }
-    }
+    timeout: 500
   };
 
   describe('isBidRequestValid', function () {
@@ -111,9 +91,6 @@ describe('PGAMBidAdapter', function () {
 
   describe('buildRequests', function () {
     let serverRequest = spec.buildRequests(bids, bidderRequest);
-
-    // eslint-disable-next-line no-console
-    console.log('serverReq', serverRequest);
 
     it('Creates a ServerRequest object with method, URL and data', function () {
       expect(serverRequest).to.exist;
