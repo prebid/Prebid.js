@@ -281,7 +281,7 @@ describe('dxkultureBidAdapter', function() {
 
     it('should return expected request object', function() {
       const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
-      expect(bidRequest.url).equal('https://ads.kulture.media/pbjs?pid=publisherId&placementId=123456');
+      expect(bidRequest.url).equal('https://ads.dxkulture.com/pbjs?pid=publisherId&placementId=123456');
       expect(bidRequest.method).equal('POST');
     });
   });
