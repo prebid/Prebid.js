@@ -21,15 +21,19 @@ const mkFrame = (() => {
     Object.entries(Object.assign({}, attrs, DEFAULTS))
       .forEach(([k, v]) => frame.setAttribute(k, v));
     return frame;
-  }
-})()
+  };
+})();
 
 export function renderer(win = window) {
   return function ({adId, pubUrl, clickUrl}) {
     const pubDomain = new URL(pubUrl, window.location).origin;
-    function sendMessage(type, payload, transfer) {
-      win.parent.postMessage(JSON.stringify(Object.assign({message: type, adId}, payload)), pubDomain, transfer);
+
+    function sendMessage(type, payload, responseListener) {
+      const channel = new MessageChannel();
+      channel.port1.onmessage = guard(responseListener);
+      win.parent.postMessage(JSON.stringify(Object.assign({message: type, adId}, payload)), pubDomain, [channel.port2]);
     }
+
     function guard(fn) {
       return function () {
         try {
@@ -41,16 +45,17 @@ export function renderer(win = window) {
               reason: ERROR_EXCEPTION,
               message: e.message
             }
-          })
+          });
           // eslint-disable-next-line no-console
           console.error(e);
         }
-      }
+      };
     }
-    const onMessage = guard(function (ev) {
-      let data = {};
+
+    function onMessage(ev) {
+      let data;
       try {
-        data = JSON.parse(ev[ev.message ? 'message' : 'data']);
+        data = JSON.parse(ev.data);
       } catch (e) {
         return;
       }
@@ -66,17 +71,12 @@ export function renderer(win = window) {
         });
         win.document.body.appendChild(renderer);
       }
-    })
+    }
 
-    const channel = new MessageChannel();
-    channel.port1.onmessage = onMessage;
     sendMessage(MESSAGE_REQUEST, {
       options: {clickUrl}
-    }, [channel.port2]);
-    win.addEventListener('message', function (ev) {
-      if (ev.origin === pubDomain) onMessage(ev);
-    }, false);
-  }
+    }, onMessage);
+  };
 }
 
 window.renderAd = renderer();
