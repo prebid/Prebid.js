@@ -393,7 +393,6 @@ describe('UnrulyAdapter', function () {
       expect(typeof result).to.equal('object');
       expect(result.length).to.equal(2);
       expect(result[0].data.bidderRequest.bids.length).to.equal(1);
-      expect(result[0].data.prebidVersion).to.equal(getGlobal().version);
       expect(result[1].data.bidderRequest.bids.length).to.equal(1);
     });
     it('should return an array with 1 items when the bids has same siteId', function () {
@@ -519,7 +518,8 @@ describe('UnrulyAdapter', function () {
               'bidderRequestId': '12e00d17dff07b'
             }
           ],
-          'invalidBidsCount': 0
+          'invalidBidsCount': 0,
+          'prebidVersion': getGlobal().version
         }
       };
 
@@ -593,7 +593,8 @@ describe('UnrulyAdapter', function () {
               'bidderRequestId': '12e00d17dff07b',
             }
           ],
-          'invalidBidsCount': 0
+          'invalidBidsCount': 0,
+          'prebidVersion': getGlobal().version
         }
       };
 
@@ -684,7 +685,8 @@ describe('UnrulyAdapter', function () {
               'bidderRequestId': '12e00d17dff07b',
             }
           ],
-          'invalidBidsCount': 0
+          'invalidBidsCount': 0,
+          'prebidVersion': getGlobal().version
         }
       };
 
