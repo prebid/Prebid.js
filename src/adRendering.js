@@ -144,7 +144,7 @@ export function renderAdDirect(doc, adId, options) {
       doc.write(adData.ad);
       doc.close();
     } else {
-      getCreativeRenderer().then(render => render(adData, {sendMessage: (type, data) => handleCreativeMessage(type, data, bid), mkFrame: createIframe}, doc))
+      getCreativeRenderer().then(render => render(adData, {sendMessage: (type, data) => handleCreativeMessage(type, data, bid), mkFrame: createIframe}, doc.defaultView))
     }
     if (doc.defaultView && doc.defaultView.frameElement) {
       doc.defaultView.frameElement.width = adData.width;

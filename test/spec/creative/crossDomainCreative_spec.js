@@ -110,7 +110,7 @@ describe('cross-domain creative', () => {
         reply(data);
         setTimeout(() => {
           try {
-            sinon.assert.calledWith(window._render, data, sinon.match.any, win.document);
+            sinon.assert.calledWith(window._render, data, sinon.match.any, win);
             done()
           } finally {
             delete window._render;

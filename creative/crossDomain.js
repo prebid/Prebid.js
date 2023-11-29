@@ -24,7 +24,7 @@ const mkFrame = (() => {
   };
 })();
 
-export function renderer(win = window) {
+export function renderer(win) {
   return function ({adId, pubUrl, clickUrl}) {
     const pubDomain = new URL(pubUrl, window.location).origin;
 
@@ -67,7 +67,7 @@ export function renderer(win = window) {
           srcdoc: `<script>${data.renderer}</script>`
         });
         renderer.onload = guard(function () {
-          renderer.contentWindow.render(data, {sendMessage, mkFrame}, win.document);
+          renderer.contentWindow.render(data, {sendMessage, mkFrame}, win);
         });
         win.document.body.appendChild(renderer);
       }
@@ -79,4 +79,4 @@ export function renderer(win = window) {
   };
 }
 
-window.renderAd = renderer();
+window.renderAd = renderer(window);

@@ -1,6 +1,6 @@
 import {ERROR_NO_AD, EVENT_AD_RENDER_FAILED, EVENT_AD_RENDER_SUCCEEDED, MESSAGE_EVENT} from './constants.js';
 
-export function render({ad, adUrl, width, height}, {sendMessage, mkFrame}, doc = document) {
+export function render({ad, adUrl, width, height}, {sendMessage, mkFrame}, win) {
   if (!ad && !adUrl) {
     sendMessage(MESSAGE_EVENT, {
       event: EVENT_AD_RENDER_FAILED,
@@ -10,6 +10,7 @@ export function render({ad, adUrl, width, height}, {sendMessage, mkFrame}, doc =
       }
     });
   } else {
+    const doc = win.document;
     const attrs = {width, height};
     if (adUrl && !ad) {
       attrs.src = adUrl;

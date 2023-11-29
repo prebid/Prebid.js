@@ -19,7 +19,7 @@ describe('Creative renderer - display', () => {
   });
 
   function runRenderer(data) {
-    return render(data, {sendMessage, mkFrame}, doc);
+    return render(data, {sendMessage, mkFrame}, {document: doc});
   }
 
   it('sends AD_RENDER_FAILED when both ad and adUrl are missing', () => {

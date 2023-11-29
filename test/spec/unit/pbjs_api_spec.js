@@ -1243,6 +1243,7 @@ describe('Unit: Prebid Module', function () {
         querySelector: sinon.stub(),
         createElement: sinon.stub(),
       };
+      doc.defaultView.document = doc;
 
       elStub = {
         insertBefore: sinon.stub()
