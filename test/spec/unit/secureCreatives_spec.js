@@ -7,10 +7,12 @@ import * as native from 'src/native.js';
 import {fireNativeTrackers, getAllAssetsMessage} from 'src/native.js';
 import * as events from 'src/events.js';
 import {config as configObj} from 'src/config.js';
+import * as creativeRenderers from 'src/creativeRenderers.js';
 import 'src/prebid.js';
 
 import {expect} from 'chai';
 import {handleRender} from '../../../src/adRendering.js';
+import {sandbox} from 'sinon';
 
 var CONSTANTS = require('src/constants.json');
 
@@ -53,49 +55,8 @@ describe('secureCreatives', () => {
     });
   });
 
-  describe('handleRender', () => {
-    let bidResponse, renderFn, result;
-    beforeEach(() => {
-      result = null;
-      renderFn = sinon.stub().callsFake((r) => { result = r; });
-      bidResponse = {
-        adId: 123
-      }
-    });
-
-    it('does not invoke renderFn, but the renderer instead, if the ad has one', () => {
-      const renderer = {
-        url: 'some-custom-renderer',
-        render: sinon.spy()
-      }
-      handleRender(renderFn, {bidResponse: {renderer}});
-      sinon.assert.notCalled(renderFn);
-      sinon.assert.called(renderer.render);
-    });
-
-    ['ad', 'adUrl'].forEach((prop) => {
-      describe(`on ${prop}`, () => {
-        it('replaces AUCTION_PRICE macro', () => {
-          bidResponse[prop] = 'pre${AUCTION_PRICE}post';
-          bidResponse.cpm = 123;
-          handleRender(renderFn, {adId: 123, bidResponse});
-          expect(result[prop]).to.eql('pre123post');
-        });
-        it('replaces CLICKTHROUGH macro', () => {
-          bidResponse[prop] = 'pre${CLICKTHROUGH}post';
-          handleRender(renderFn, {adId: 123, bidResponse, options: {clickUrl: 'clk'}});
-          expect(result[prop]).to.eql('preclkpost');
-        });
-        it('defaults CLICKTHROUGH to empty string', () => {
-          bidResponse[prop] = 'pre${CLICKTHROUGH}post';
-          handleRender(renderFn, {adId: 123, bidResponse});
-          expect(result[prop]).to.eql('prepost');
-        });
-      });
-    });
-  });
-
   describe('receiveMessage', function() {
+    let sandbox;
     const bidId = 1;
     const warning = `Ad id ${bidId} has been rendered before`;
     let auction;
@@ -156,19 +117,16 @@ describe('secureCreatives', () => {
     });
 
     beforeEach(function() {
-      spyAddWinningBid = sinon.spy(auctionManager, 'addWinningBid');
-      spyLogWarn = sinon.spy(utils, 'logWarn');
-      stubFireNativeTrackers = sinon.stub(native, 'fireNativeTrackers').callsFake(message => { return message.action; });
-      stubGetAllAssetsMessage = sinon.stub(native, 'getAllAssetsMessage');
-      stubEmit = sinon.stub(events, 'emit');
+      sandbox = sinon.sandbox.create();
+      spyAddWinningBid = sandbox.spy(auctionManager, 'addWinningBid');
+      spyLogWarn = sandbox.spy(utils, 'logWarn');
+      stubFireNativeTrackers = sandbox.stub(native, 'fireNativeTrackers').callsFake(message => { return message.action; });
+      stubGetAllAssetsMessage = sandbox.stub(native, 'getAllAssetsMessage');
+      stubEmit = sandbox.stub(events, 'emit');
     });
 
     afterEach(function() {
-      spyAddWinningBid.restore();
-      spyLogWarn.restore();
-      stubFireNativeTrackers.restore();
-      stubGetAllAssetsMessage.restore();
-      stubEmit.restore();
+      sandbox.restore();
       resetAuction();
       adResponse.adId = bidId;
     });
@@ -312,6 +270,19 @@ describe('secureCreatives', () => {
           adId: bidId
         }));
       });
+
+      it('should include renderers in responses', () => {
+        sandbox.stub(creativeRenderers, 'getRendererSrc').returns('mock-renderer');
+        pushBidResponseToAuction({});
+        const ev = makeEvent({
+          source: {
+            postMessage: sinon.stub()
+          },
+          data: JSON.stringify({adId: bidId, message: 'Prebid Request'})
+        });
+        receiveMessage(ev);
+        sinon.assert.calledWith(ev.source.postMessage, sinon.match(ob => JSON.parse(ob).renderer === 'mock-renderer'));
+      })
     });
 
     describe('Prebid Native', function() {

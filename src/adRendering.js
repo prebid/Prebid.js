@@ -44,6 +44,38 @@ export function emitAdRenderSucceeded({ doc, bid, id }) {
   events.emit(AD_RENDER_SUCCEEDED, data);
 }
 
+export function handleCreativeEvent(data, bidResponse) {
+  switch (data.event) {
+    case CONSTANTS.EVENTS.AD_RENDER_FAILED:
+      emitAdRenderFail({
+        bid: bidResponse,
+        id: bidResponse.adId,
+        reason: data.info.reason,
+        message: data.info.message
+      });
+      break;
+    case CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED:
+      emitAdRenderSucceeded({
+        doc: null,
+        bid: bidResponse,
+        id: bidResponse.adId
+      });
+      break;
+    default:
+      logError(`Received event request for unsupported event: '${data.event}' (adId: '${bidResponse.adId}')`);
+  }
+}
+
+const HANDLERS = {
+  [CONSTANTS.MESSAGES.EVENT]: handleCreativeEvent
+}
+
+export function handleCreativeMessage(type, data, bidResponse, handlers = HANDLERS) {
+  if (handlers.hasOwnProperty(type)) {
+    handlers[type](data, bidResponse);
+  }
+}
+
 export function handleRender(renderFn, {adId, options, bidResponse}) {
   if (bidResponse == null) {
     emitAdRenderFail({
@@ -104,19 +136,15 @@ export function handleRender(renderFn, {adId, options, bidResponse}) {
 
 export function renderAdDirect(doc, adId, options) {
   let bid;
-  function cb(err) {
-    if (err != null) {
-      emitAdRenderFail(Object.assign({id: adId, bid}, err));
-    } else {
-      emitAdRenderSucceeded({doc, bid, adId})
-    }
+  function fail(reason, message) {
+    emitAdRenderFail(Object.assign({id: adId, bid}, {reason, message}));
   }
   function renderFn(adData) {
     if (adData.ad) {
       doc.write(adData.ad);
       doc.close();
     } else {
-      getCreativeRenderer().then(render => render(adData, {cb, mkFrame: createIframe}, doc))
+      getCreativeRenderer().then(render => render(adData, {sendMessage: (type, data) => handleCreativeMessage(type, data, bid), mkFrame: createIframe}, doc))
     }
     if (doc.defaultView && doc.defaultView.frameElement) {
       doc.defaultView.frameElement.width = adData.width;
@@ -128,11 +156,7 @@ export function renderAdDirect(doc, adId, options) {
   }
   try {
     if (!adId || !doc) {
-      // eslint-disable-next-line standard/no-callback-literal
-      cb({
-        reason: CONSTANTS.AD_RENDER_FAILED_REASON.MISSING_DOC_OR_ADID,
-        message: `missing ${adId ? 'doc' : 'adId'}`
-      });
+      fail(CONSTANTS.AD_RENDER_FAILED_REASON.MISSING_DOC_OR_ADID, `missing ${adId ? 'doc' : 'adId'}`);
     } else {
       bid = auctionManager.findBidByAdId(adId);
 
@@ -147,17 +171,12 @@ export function renderAdDirect(doc, adId, options) {
       }
 
       if ((doc === document && !inIframe())) {
-        // eslint-disable-next-line standard/no-callback-literal
-        cb({
-          reason: CONSTANTS.AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT,
-          message: `renderAd was prevented from writing to the main document.`
-        })
+        fail(CONSTANTS.AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT, `renderAd was prevented from writing to the main document.`);
       } else {
         handleRender(renderFn, {adId, options: {clickUrl: options?.clickThrough}, bidResponse: bid});
       }
     }
   } catch (e) {
-    // eslint-disable-next-line standard/no-callback-literal
-    cb({reason: EXCEPTION, message: e.message})
+    fail(EXCEPTION, e.message);
   }
 }

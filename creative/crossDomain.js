@@ -1,11 +1,9 @@
-import {render} from './renderers/display/renderer.js';
 import {
-  EVENT_AD_RENDER_FAILED,
-  EVENT_AD_RENDER_SUCCEEDED,
   ERROR_EXCEPTION,
+  EVENT_AD_RENDER_FAILED,
+  MESSAGE_EVENT,
   MESSAGE_REQUEST,
-  MESSAGE_RESPONSE,
-  MESSAGE_EVENT
+  MESSAGE_RESPONSE
 } from './constants.js';
 
 const mkFrame = (() => {
@@ -32,13 +30,24 @@ export function renderer(win = window) {
     function sendMessage(type, payload, transfer) {
       win.parent.postMessage(JSON.stringify(Object.assign({message: type, adId}, payload)), pubDomain, transfer);
     }
-    function cb(err) {
-      sendMessage(MESSAGE_EVENT, {
-        event: err == null ? EVENT_AD_RENDER_SUCCEEDED : EVENT_AD_RENDER_FAILED,
-        info: err
-      });
+    function guard(fn) {
+      return function () {
+        try {
+          return fn.apply(this, arguments);
+        } catch (e) {
+          sendMessage(MESSAGE_EVENT, {
+            event: EVENT_AD_RENDER_FAILED,
+            info: {
+              reason: ERROR_EXCEPTION,
+              message: e.message
+            }
+          })
+          // eslint-disable-next-line no-console
+          console.error(e);
+        }
+      }
     }
-    function onMessage(ev) {
+    const onMessage = guard(function (ev) {
       let data = {};
       try {
         data = JSON.parse(ev[ev.message ? 'message' : 'data']);
@@ -46,21 +55,28 @@ export function renderer(win = window) {
         return;
       }
       if (data.message === MESSAGE_RESPONSE && data.adId === adId) {
-        try {
-          render(data, {cb, mkFrame}, win.document);
-        } catch (e) {
-          // eslint-disable-next-line standard/no-callback-literal
-          cb({ reason: ERROR_EXCEPTION, message: e.message })
-        }
+        const renderer = mkFrame(win.document, {
+          width: 0,
+          height: 0,
+          style: 'display: none',
+          srcdoc: `<script>${data.renderer}</script>`
+        });
+        renderer.onload = guard(function () {
+          renderer.contentWindow.render(data, {sendMessage, mkFrame}, win.document);
+        });
+        win.document.body.appendChild(renderer);
       }
-    }
+    })
 
     const channel = new MessageChannel();
     channel.port1.onmessage = onMessage;
     sendMessage(MESSAGE_REQUEST, {
       options: {clickUrl}
     }, [channel.port2]);
-    win.addEventListener('message', onMessage, false);
+    win.addEventListener('message', function (ev) {
+      if (ev.origin === pubDomain) onMessage(ev);
+    }, false);
   }
 }
+
 window.renderAd = renderer();

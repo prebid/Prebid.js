@@ -1,18 +1,23 @@
-import {ERROR_NO_AD} from '../../constants.js';
+import {ERROR_NO_AD, EVENT_AD_RENDER_FAILED, EVENT_AD_RENDER_SUCCEEDED, MESSAGE_EVENT} from './constants.js';
 
-export function render({ad, adUrl, width, height}, {cb, mkFrame}, doc = document) {
+export function render({ad, adUrl, width, height}, {sendMessage, mkFrame}, doc = document) {
   if (!ad && !adUrl) {
-    // eslint-disable-next-line standard/no-callback-literal
-    cb({reason: ERROR_NO_AD, message: 'Missing ad markup or URL'});
+    sendMessage(MESSAGE_EVENT, {
+      event: EVENT_AD_RENDER_FAILED,
+      info: {
+        reason: ERROR_NO_AD,
+        message: 'Missing ad markup or URL'
+      }
+    });
   } else {
     const attrs = {width, height};
     if (adUrl && !ad) {
-      attrs.src = adUrl
+      attrs.src = adUrl;
     } else {
       attrs.srcdoc = ad;
     }
     doc.body.appendChild(mkFrame(doc, attrs));
-    cb();
+    sendMessage(MESSAGE_EVENT, {event: EVENT_AD_RENDER_SUCCEEDED});
   }
 }
 

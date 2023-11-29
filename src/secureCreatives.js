@@ -5,14 +5,16 @@
 
 import * as events from './events.js';
 import {fireNativeTrackers, getAllAssetsMessage, getAssetMessage} from './native.js';
-import constants from './constants.json';
+import CONSTANTS from './constants.json';
 import {isApnGetTagDefined, isGptPubadsDefined, logError, logWarn} from './utils.js';
 import {auctionManager} from './auctionManager.js';
 import {find, includes} from './polyfill.js';
-import {emitAdRenderFail, emitAdRenderSucceeded, handleRender} from './adRendering.js';
-const {REQUEST, RESPONSE, NATIVE, EVENT} = constants.MESSAGES;
+import {handleCreativeEvent, handleRender} from './adRendering.js';
+import {getRendererSrc} from './creativeRenderers.js';
 
-const BID_WON = constants.EVENTS.BID_WON;
+const {REQUEST, RESPONSE, NATIVE, EVENT} = CONSTANTS.MESSAGES;
+
+const BID_WON = CONSTANTS.EVENTS.BID_WON;
 const WON_AD_IDS = new WeakSet();
 
 const HANDLER_MAP = {
@@ -72,6 +74,7 @@ function handleRenderRequest(reply, message, bidResponse) {
     resizeRemoteCreative(bidResponse);
     reply(Object.assign({
       message: RESPONSE,
+      renderer: getRendererSrc(bidResponse.mediaType)
     }, adData));
   }, {options: message.options, adId: message.adId, bidResponse});
 }
@@ -115,29 +118,11 @@ function handleEventRequest(reply, data, adObject) {
     logError(`Cannot find ad '${data.adId}' for x-origin event request`);
     return;
   }
-  if (adObject.status !== constants.BID_STATUS.RENDERED) {
-    logWarn(`Received x-origin event request without corresponding render request for ad '${data.adId}'`);
+  if (adObject.status !== CONSTANTS.BID_STATUS.RENDERED) {
+    logWarn(`Received x-origin event request without corresponding render request for ad '${adObject.adId}'`);
     return;
   }
-  switch (data.event) {
-    case constants.EVENTS.AD_RENDER_FAILED:
-      emitAdRenderFail({
-        bid: adObject,
-        id: data.adId,
-        reason: data.info.reason,
-        message: data.info.message
-      });
-      break;
-    case constants.EVENTS.AD_RENDER_SUCCEEDED:
-      emitAdRenderSucceeded({
-        doc: null,
-        bid: adObject,
-        id: data.adId
-      });
-      break;
-    default:
-      logError(`Received x-origin event request for unsupported event: '${data.event}' (adId: '${data.adId}')`);
-  }
+  return handleCreativeEvent(data, adObject);
 }
 
 export function resizeRemoteCreative({adId, adUnitCode, width, height}) {
