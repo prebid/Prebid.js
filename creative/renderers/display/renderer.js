@@ -1,9 +1,9 @@
-import {NO_AD} from './constants.js';
+import {ERROR_NO_AD} from '../../constants.js';
 
 export function render({ad, adUrl, width, height}, {cb, mkFrame}, doc = document) {
   if (!ad && !adUrl) {
     // eslint-disable-next-line standard/no-callback-literal
-    cb({reason: NO_AD, message: 'Missing ad markup or URL'});
+    cb({reason: ERROR_NO_AD, message: 'Missing ad markup or URL'});
   } else {
     const attrs = {width, height};
     if (adUrl && !ad) {

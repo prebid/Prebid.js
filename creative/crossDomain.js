@@ -1,8 +1,11 @@
 import {render} from './renderers/display/renderer.js';
 import {
-  AD_RENDER_FAILED,
-  AD_RENDER_SUCCEEDED,
-  EXCEPTION, MESSAGES,
+  EVENT_AD_RENDER_FAILED,
+  EVENT_AD_RENDER_SUCCEEDED,
+  ERROR_EXCEPTION,
+  MESSAGE_REQUEST,
+  MESSAGE_RESPONSE,
+  MESSAGE_EVENT
 } from './constants.js';
 
 const mkFrame = (() => {
@@ -30,8 +33,8 @@ export function renderer(win = window) {
       win.parent.postMessage(JSON.stringify(Object.assign({message: type, adId}, payload)), pubDomain, transfer);
     }
     function cb(err) {
-      sendMessage(MESSAGES.EVENT, {
-        event: err == null ? AD_RENDER_SUCCEEDED : AD_RENDER_FAILED,
+      sendMessage(MESSAGE_EVENT, {
+        event: err == null ? EVENT_AD_RENDER_SUCCEEDED : EVENT_AD_RENDER_FAILED,
         info: err
       });
     }
@@ -42,19 +45,19 @@ export function renderer(win = window) {
       } catch (e) {
         return;
       }
-      if (data.message === MESSAGES.RESPONSE && data.adId === adId) {
+      if (data.message === MESSAGE_RESPONSE && data.adId === adId) {
         try {
           render(data, {cb, mkFrame}, win.document);
         } catch (e) {
           // eslint-disable-next-line standard/no-callback-literal
-          cb({ reason: EXCEPTION, message: e.message })
+          cb({ reason: ERROR_EXCEPTION, message: e.message })
         }
       }
     }
 
     const channel = new MessageChannel();
     channel.port1.onmessage = onMessage;
-    sendMessage(MESSAGES.REQUEST, {
+    sendMessage(MESSAGE_REQUEST, {
       options: {clickUrl}
     }, [channel.port2]);
     win.addEventListener('message', onMessage, false);

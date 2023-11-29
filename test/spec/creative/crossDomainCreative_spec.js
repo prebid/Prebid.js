@@ -1,8 +1,7 @@
 import {renderer} from '../../../creative/crossDomain.js';
 import {
-  AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, EXCEPTION, MESSAGES
+  EVENT_AD_RENDER_FAILED, EVENT_AD_RENDER_SUCCEEDED, ERROR_EXCEPTION, MESSAGE_EVENT, MESSAGE_REQUEST, MESSAGE_RESPONSE, ERROR_NO_AD
 } from '../../../creative/constants.js';
-import {NO_AD} from '../../../creative/renderers/display/constants.js';
 
 describe('cross-domain creative', () => {
   let win, renderAd, messages, mkIframe, listeners;
@@ -44,7 +43,7 @@ describe('cross-domain creative', () => {
   it('generates request message with adId and clickUrl', () => {
     renderAd({adId: '123', clickUrl: 'https://click-url.com'});
     expect(messages[0].payload).to.eql({
-      message: MESSAGES.REQUEST,
+      message: MESSAGE_REQUEST,
       adId: '123',
       options: {
         clickUrl: 'https://click-url.com'
@@ -81,14 +80,14 @@ describe('cross-domain creative', () => {
         it('on exception', (done) => {
           mkIframe.callsFake(() => { throw new Error('error message') });
           renderAd({adId: '123'});
-          reply({message: MESSAGES.RESPONSE, adId: '123', ad: 'markup'});
+          reply({message: MESSAGE_RESPONSE, adId: '123', ad: 'markup'});
           setTimeout(() => {
             expect(messages[1].payload).to.eql({
-              message: MESSAGES.EVENT,
+              message: MESSAGE_EVENT,
               adId: '123',
-              event: AD_RENDER_FAILED,
+              event: EVENT_AD_RENDER_FAILED,
               info: {
-                reason: EXCEPTION,
+                reason: ERROR_EXCEPTION,
                 message: 'error message'
               }
             })
@@ -98,14 +97,14 @@ describe('cross-domain creative', () => {
 
         it('on missing ad', (done) => {
           renderAd({adId: '123'});
-          reply({message: MESSAGES.RESPONSE, adId: '123'});
+          reply({message: MESSAGE_RESPONSE, adId: '123'});
           setTimeout(() => {
             sinon.assert.match(messages[1].payload, {
-              message: MESSAGES.EVENT,
+              message: MESSAGE_EVENT,
               adId: '123',
-              event: AD_RENDER_FAILED,
+              event: EVENT_AD_RENDER_FAILED,
               info: {
-                reason: NO_AD,
+                reason: ERROR_NO_AD,
               }
             })
             done();
@@ -135,7 +134,7 @@ describe('cross-domain creative', () => {
         }).forEach(([t, [content, adProp, iframeProp]]) => {
           it(`renders ${t}`, (done) => {
             renderAd({adId: '123'});
-            reply({message: MESSAGES.RESPONSE, adId: '123', [adProp]: content});
+            reply({message: MESSAGE_RESPONSE, adId: '123', [adProp]: content});
             setTimeout(() => {
               sinon.assert.calledWith(win.document.body.appendChild, iframe);
               expect(iframe.attrs[iframeProp]).to.eql(content);
@@ -146,7 +145,7 @@ describe('cross-domain creative', () => {
 
         it('renders adUrl as iframe src', (done) => {
           renderAd({adId: '123'});
-          reply({message: MESSAGES.RESPONSE, adId: '123', adUrl: 'some-url'});
+          reply({message: MESSAGE_RESPONSE, adId: '123', adUrl: 'some-url'});
           setTimeout(() => {
             sinon.assert.calledWith(win.document.body.appendChild, iframe);
             expect(iframe.attrs.src).to.eql('some-url');
@@ -162,7 +161,7 @@ describe('cross-domain creative', () => {
             beforeEach((done) => {
               renderAd({adId: '123'});
               reply({
-                message: MESSAGES.RESPONSE,
+                message: MESSAGE_RESPONSE,
                 adId: '123',
                 [prop]: propValue,
                 width: 100,
@@ -173,9 +172,9 @@ describe('cross-domain creative', () => {
 
             it('emits AD_RENDER_SUCCEEDED', () => {
               expect(messages[1].payload).to.eql({
-                message: MESSAGES.EVENT,
+                message: MESSAGE_EVENT,
                 adId: '123',
-                event: AD_RENDER_SUCCEEDED
+                event: EVENT_AD_RENDER_SUCCEEDED
               })
             });
 

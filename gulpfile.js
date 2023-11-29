@@ -73,6 +73,7 @@ function lint(done) {
     'src/**/*.js',
     'modules/**/*.js',
     'libraries/**/*.js',
+    'creative/**/*.js',
     'test/**/*.js',
     'plugins/**/*.js',
     '!plugins/**/node_modules/**',
