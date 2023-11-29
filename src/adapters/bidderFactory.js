@@ -457,7 +457,7 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
       return Object.assign(defaults, ro, {
         browsingTopics: ro?.hasOwnProperty('browsingTopics') && !ro.browsingTopics
           ? false
-          : isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, activityParams(MODULE_TYPE_BIDDER, spec.code))
+          : (bidderSettings.get(spec.code, 'topicsHeader') ?? true) && isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, activityParams(MODULE_TYPE_BIDDER, spec.code))
       })
     }
     switch (request.method) {
