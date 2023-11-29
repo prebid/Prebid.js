@@ -1,9 +1,6 @@
 import {renderer} from '../../../creative/crossDomain.js';
 import {
-  AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, EXCEPTION,
-  PREBID_EVENT,
-  PREBID_REQUEST,
-  PREBID_RESPONSE
+  AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, EXCEPTION, MESSAGES
 } from '../../../creative/constants.js';
 import {NO_AD} from '../../../creative/renderers/display/constants.js';
 
@@ -47,7 +44,7 @@ describe('cross-domain creative', () => {
   it('generates request message with adId and clickUrl', () => {
     renderAd({adId: '123', clickUrl: 'https://click-url.com'});
     expect(messages[0].payload).to.eql({
-      message: PREBID_REQUEST,
+      message: MESSAGES.REQUEST,
       adId: '123',
       options: {
         clickUrl: 'https://click-url.com'
@@ -84,10 +81,10 @@ describe('cross-domain creative', () => {
         it('on exception', (done) => {
           mkIframe.callsFake(() => { throw new Error('error message') });
           renderAd({adId: '123'});
-          reply({message: PREBID_RESPONSE, adId: '123', ad: 'markup'});
+          reply({message: MESSAGES.RESPONSE, adId: '123', ad: 'markup'});
           setTimeout(() => {
             expect(messages[1].payload).to.eql({
-              message: PREBID_EVENT,
+              message: MESSAGES.EVENT,
               adId: '123',
               event: AD_RENDER_FAILED,
               info: {
@@ -101,10 +98,10 @@ describe('cross-domain creative', () => {
 
         it('on missing ad', (done) => {
           renderAd({adId: '123'});
-          reply({message: PREBID_RESPONSE, adId: '123'});
+          reply({message: MESSAGES.RESPONSE, adId: '123'});
           setTimeout(() => {
             sinon.assert.match(messages[1].payload, {
-              message: PREBID_EVENT,
+              message: MESSAGES.EVENT,
               adId: '123',
               event: AD_RENDER_FAILED,
               info: {
@@ -138,7 +135,7 @@ describe('cross-domain creative', () => {
         }).forEach(([t, [content, adProp, iframeProp]]) => {
           it(`renders ${t}`, (done) => {
             renderAd({adId: '123'});
-            reply({message: PREBID_RESPONSE, adId: '123', [adProp]: content});
+            reply({message: MESSAGES.RESPONSE, adId: '123', [adProp]: content});
             setTimeout(() => {
               sinon.assert.calledWith(win.document.body.appendChild, iframe);
               expect(iframe.attrs[iframeProp]).to.eql(content);
@@ -149,7 +146,7 @@ describe('cross-domain creative', () => {
 
         it('renders adUrl as iframe src', (done) => {
           renderAd({adId: '123'});
-          reply({message: PREBID_RESPONSE, adId: '123', adUrl: 'some-url'});
+          reply({message: MESSAGES.RESPONSE, adId: '123', adUrl: 'some-url'});
           setTimeout(() => {
             sinon.assert.calledWith(win.document.body.appendChild, iframe);
             expect(iframe.attrs.src).to.eql('some-url');
@@ -165,7 +162,7 @@ describe('cross-domain creative', () => {
             beforeEach((done) => {
               renderAd({adId: '123'});
               reply({
-                message: PREBID_RESPONSE,
+                message: MESSAGES.RESPONSE,
                 adId: '123',
                 [prop]: propValue,
                 width: 100,
@@ -176,7 +173,7 @@ describe('cross-domain creative', () => {
 
             it('emits AD_RENDER_SUCCEEDED', () => {
               expect(messages[1].payload).to.eql({
-                message: PREBID_EVENT,
+                message: MESSAGES.EVENT,
                 adId: '123',
                 event: AD_RENDER_SUCCEEDED
               })

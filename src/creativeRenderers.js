@@ -1,7 +1,10 @@
 import {GreedyPromise} from './utils/promise.js';
 import {createInvisibleIframe} from './utils.js';
+import {RENDERER} from '../libraries/creative-renderer-display/renderer.js';
 
-export const RENDERERS = {};
+export const RENDERERS = {
+  display: RENDERER
+};
 
 export const getCreativeRenderer = (function() {
   const renderers = {};

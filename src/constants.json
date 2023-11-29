@@ -177,5 +177,11 @@
 	"SET_CONFIG": "setConfig",
 	"FETCH": "fetch",
 	"SUCCESS": "success"
+  },
+  "MESSAGES": {
+    "REQUEST": "Prebid Request",
+    "RESPONSE": "Prebid Response",
+    "NATIVE": "Prebid Native",
+    "EVENT": "Prebid Event"
   }
 }

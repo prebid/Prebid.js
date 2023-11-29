@@ -7,7 +7,6 @@ import {VIDEO} from './mediaTypes.js';
 import {auctionManager} from './auctionManager.js';
 import {getGlobal} from './prebidGlobal.js';
 import {EXCEPTION} from '../creative/constants.js';
-import '../libraries/creative-renderer-display/renderer.js';
 import {getCreativeRenderer} from './creativeRenderers.js';
 
 const {AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON} = CONSTANTS.EVENTS;

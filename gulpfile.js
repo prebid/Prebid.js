@@ -175,8 +175,7 @@ function buildCreative(mode = 'production') {
 function updateCreativeRenderers() {
   return gulp.src(['build/creative/renderers/**/*'])
     .pipe(wrap(function (data) {
-      const name = path.parse(data.file.basename).name;
-      return `import {RENDERERS} from '../../src/creativeRenderers.js';\nRENDERERS[${JSON.stringify(name)}] = ${JSON.stringify(data.contents.toString())};\n`;
+      return `export const RENDERER = ${JSON.stringify(data.contents.toString())};\n`;
     }))
     .pipe(rename(function (path) {
       return {

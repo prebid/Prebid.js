@@ -2,10 +2,7 @@ import {render} from './renderers/display/renderer.js';
 import {
   AD_RENDER_FAILED,
   AD_RENDER_SUCCEEDED,
-  EXCEPTION,
-  PREBID_EVENT,
-  PREBID_REQUEST,
-  PREBID_RESPONSE
+  EXCEPTION, MESSAGES,
 } from './constants.js';
 
 const mkFrame = (() => {
@@ -33,7 +30,7 @@ export function renderer(win = window) {
       win.parent.postMessage(JSON.stringify(Object.assign({message: type, adId}, payload)), pubDomain, transfer);
     }
     function cb(err) {
-      sendMessage(PREBID_EVENT, {
+      sendMessage(MESSAGES.EVENT, {
         event: err == null ? AD_RENDER_SUCCEEDED : AD_RENDER_FAILED,
         info: err
       });
@@ -45,7 +42,7 @@ export function renderer(win = window) {
       } catch (e) {
         return;
       }
-      if (data.message === PREBID_RESPONSE && data.adId === adId) {
+      if (data.message === MESSAGES.RESPONSE && data.adId === adId) {
         try {
           render(data, {cb, mkFrame}, win.document);
         } catch (e) {
@@ -57,7 +54,7 @@ export function renderer(win = window) {
 
     const channel = new MessageChannel();
     channel.port1.onmessage = onMessage;
-    sendMessage(PREBID_REQUEST, {
+    sendMessage(MESSAGES.REQUEST, {
       options: {clickUrl}
     }, [channel.port2]);
     win.addEventListener('message', onMessage, false);
