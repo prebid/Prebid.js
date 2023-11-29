@@ -2,18 +2,20 @@ import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
-import {deepClone, logError, logInfo} from '../src/utils.js';
+import {deepClone, generateUUID, logError, logInfo, logWarn} from '../src/utils.js';
 
 const analyticsType = 'endpoint';
 
-export const ANALYTICS_VERSION = '1.0.0';
+export const ANALYTICS_VERSION = '2.0.0';
 
 const ANALYTICS_SERVER = 'https://a.greenbids.ai';
 
 const {
   EVENTS: {
+    AUCTION_INIT,
     AUCTION_END,
     BID_TIMEOUT,
+    BILLABLE_EVENT,
   }
 } = CONSTANTS;
 
@@ -25,28 +27,60 @@ export const BIDDER_STATUS = {
 
 const analyticsOptions = {};
 
-export const parseBidderCode = function (bid) {
-  let bidderCode = bid.bidderCode || bid.bidder;
-  return bidderCode.toLowerCase();
-};
+export const isSampled = function(greenbidsId, samplingRate) {
+  if (samplingRate < 0 || samplingRate > 1) {
+    logWarn('Sampling rate must be between 0 and 1');
+    return true;
+  }
+  const hashInt = parseInt(greenbidsId.slice(-4), 16);
+
+  return hashInt < samplingRate * (0xFFFF + 1);
+}
 
 export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER, analyticsType}), {
 
   cachedAuctions: {},
+  isSampled: true,
+  greenbidsId: null,
+  billingId: null,
 
   initConfig(config) {
+    analyticsOptions.options = deepClone(config.options);
     /**
      * Required option: pbuid
      * @type {boolean}
      */
-    analyticsOptions.options = deepClone(config.options);
-    if (typeof config.options.pbuid !== 'string' || config.options.pbuid.length < 1) {
+    if (typeof analyticsOptions.options.pbuid !== 'string' || analyticsOptions.options.pbuid.length < 1) {
       logError('"options.pbuid" is required.');
       return false;
     }
 
+    /**
+     *  Deprecate use of integerated 'sampling' config
+     *  replace by greenbidsSampling
+     */
+    if (typeof analyticsOptions.options.sampling === 'number') {
+      logWarn('"options.sampling" is deprecated, please use "greenbidsSampling" instead.');
+      analyticsOptions.options.greenbidsSampling = analyticsOptions.options.sampling;
+      // Set sampling to null to prevent prebid analytics integrated sampling to happen
+      analyticsOptions.options.sampling = null;
+    }
+
+    /**
+     *  Discourage unsampled analytics
+     */
+    if (typeof analyticsOptions.options.greenbidsSampling !== 'number' || analyticsOptions.options.greenbidsSampling >= 1) {
+      logWarn('"options.greenbidsSampling" is not set or >=1, using this analytics module unsampled is discouraged.');
+      analyticsOptions.options.greenbidsSampling = 1;
+    }
+
     analyticsOptions.pbuid = config.options.pbuid
     analyticsOptions.server = ANALYTICS_SERVER;
+    // resetting object default values on init
+    this.isSampled = true;
+    this.billingId = null;
+    this.greenbidsId = null;
+
     return true;
   },
   sendEventMessage(endPoint, data) {
@@ -61,9 +95,11 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
       version: ANALYTICS_VERSION,
       auctionId: auctionId,
       referrer: window.location.href,
-      sampling: analyticsOptions.options.sampling,
+      sampling: analyticsOptions.options.greenbidsSampling,
       prebid: '$prebid.version$',
+      greenbidsId: this.greenbidsId,
       pbuid: analyticsOptions.pbuid,
+      billingId: this.billingId,
       adUnits: [],
     };
   },
@@ -97,7 +133,6 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
     }
   },
   createBidMessage(auctionEndArgs, timeoutBids) {
-    logInfo(auctionEndArgs)
     const {auctionId, timestamp, auctionEnd, adUnits, bidsReceived, noBids} = auctionEndArgs;
     const message = this.createCommonMessage(auctionId);
 
@@ -125,6 +160,8 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
 
     timeoutBids.forEach(bid => this.addBidResponseToMessage(message, bid, BIDDER_STATUS.TIMEOUT));
 
+    message.billingId = this.billingId;
+
     return message;
   },
   getCachedAuction(auctionId) {
@@ -132,6 +169,15 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
       timeoutBids: [],
     };
     return this.cachedAuctions[auctionId];
+  },
+  handleAuctionInit(auctionInitArgs) {
+    try {
+      this.greenbidsId = auctionInitArgs.adUnits[0].ortb2Imp.ext.greenbids.greenbidsId;
+    } catch (e) {
+      logInfo("Couldn't find Greenbids RTD info, assuming analytics only");
+      this.greenbidsId = generateUUID();
+    }
+    this.isSampled = isSampled(this.greenbidsId, analyticsOptions.options.greenbidsSampling);
   },
   handleAuctionEnd(auctionEndArgs) {
     const cachedAuction = this.getCachedAuction(auctionEndArgs.auctionId);
@@ -145,14 +191,30 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
       cachedAuction.timeoutBids.push(bid);
     });
   },
+  handleBillable(billableArgs) {
+    const vendor = billableArgs.vendor || 'unknown_vendor';
+    const billingId = billableArgs.billingId || 'unknown_billing_id';
+    /* Filter Greenbids Billable Events only */
+    if (vendor === 'greenbidsRtdProvider') {
+      this.billingId = billingId;
+    }
+  },
   track({eventType, args}) {
-    switch (eventType) {
-      case BID_TIMEOUT:
-        this.handleBidTimeout(args);
-        break;
-      case AUCTION_END:
-        this.handleAuctionEnd(args);
-        break;
+    if (eventType === AUCTION_INIT) {
+      this.handleAuctionInit(args);
+    }
+    if (this.isSampled) {
+      switch (eventType) {
+        case BID_TIMEOUT:
+          this.handleBidTimeout(args);
+          break;
+        case AUCTION_END:
+          this.handleAuctionEnd(args);
+          break;
+        case BILLABLE_EVENT:
+          this.handleBillable(args);
+          break;
+      }
     }
   },
   getAnalyticsOptions() {
