@@ -429,13 +429,13 @@ function getTopics(bidderRequest) {
     let topicsObject = {
       taxonomy: topicsData.ext.segtax,
       classifier: topicsData.ext.segclass,
-      topics: Object.values(topicsData.segment),
+      // topics needs to be array of numbers
+      topics: Object.values(topicsData.segment).map(i => Number(i)),
     };
     return topicsObject;
   }
   return null;
 }
-
 
 /**
  * @param {BidRequest} bidRequest bidder request object.
