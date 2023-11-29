@@ -10,7 +10,7 @@ import {
   storeInLocalStorage,
   storeNbInCache,
 } from 'modules/id5IdSystem.js';
-import {coreStorage, init, requestBidsHook, setSubmoduleRegistry} from 'modules/userId/index.js';
+import {coreStorage, getConsentHash, init, requestBidsHook, setSubmoduleRegistry} from 'modules/userId/index.js';
 import {config} from 'src/config.js';
 import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
@@ -19,8 +19,8 @@ import {uspDataHandler} from 'src/adapterManager.js';
 import 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
-
-let expect = require('chai').expect;
+import {server} from '../../mocks/xhr.js';
+import {expect} from 'chai';
 
 describe('ID5 ID System', function () {
   const ID5_MODULE_NAME = 'id5Id';
@@ -42,7 +42,9 @@ describe('ID5 ID System', function () {
   const ID5_STORED_OBJ = {
     'universal_uid': ID5_STORED_ID,
     'signature': ID5_STORED_SIGNATURE,
-    'link_type': ID5_STORED_LINK_TYPE
+    'ext': {
+      'linkType': ID5_STORED_LINK_TYPE
+    }
   };
   const ID5_RESPONSE_ID = 'newid5id';
   const ID5_RESPONSE_SIGNATURE = 'abcdef';
@@ -50,7 +52,10 @@ describe('ID5 ID System', function () {
   const ID5_JSON_RESPONSE = {
     'universal_uid': ID5_RESPONSE_ID,
     'signature': ID5_RESPONSE_SIGNATURE,
-    'link_type': ID5_RESPONSE_LINK_TYPE
+    'link_type': ID5_RESPONSE_LINK_TYPE,
+    'ext': {
+      'linkType': ID5_RESPONSE_LINK_TYPE
+    }
   };
   const ALLOWED_ID5_VENDOR_DATA = {
     purpose: {
@@ -263,7 +268,7 @@ describe('ID5 ID System', function () {
     });
 
     it('should call the ID5 server and handle a valid response', function () {
-      let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+      let xhrServerMock = new XhrServerMock(server)
       let config = getId5FetchConfig();
       let submoduleResponse = callSubmoduleGetId(config, undefined, undefined);
 
@@ -292,7 +297,7 @@ describe('ID5 ID System', function () {
     });
 
     it('should call the ID5 server with gdpr data ', function () {
-      let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+      let xhrServerMock = new XhrServerMock(server)
       let consentData = {
         gdprApplies: true,
         consentString: 'consentString',
@@ -317,7 +322,7 @@ describe('ID5 ID System', function () {
     });
 
     it('should call the ID5 server without gdpr data when gdpr not applies ', function () {
-      let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+      let xhrServerMock = new XhrServerMock(server)
       let consentData = {
         gdprApplies: false,
         consentString: 'consentString'
@@ -342,7 +347,7 @@ describe('ID5 ID System', function () {
     it('should call the ID5 server with us privacy consent', function () {
       let usPrivacyString = '1YN-';
       uspDataHandler.setConsentData(usPrivacyString)
-      let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+      let xhrServerMock = new XhrServerMock(server)
       let consentData = {
         gdprApplies: true,
         consentString: 'consentString',
@@ -366,7 +371,7 @@ describe('ID5 ID System', function () {
     });
 
     it('should call the ID5 server with no signature field when no stored object', function () {
-      let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+      let xhrServerMock = new XhrServerMock(server)
       let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, undefined);
 
       return xhrServerMock.expectFetchRequest()
@@ -379,7 +384,7 @@ describe('ID5 ID System', function () {
     });
 
     it('should call the ID5 server for config with submodule config object', function () {
-      let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+      let xhrServerMock = new XhrServerMock(server)
       let id5FetchConfig = getId5FetchConfig();
       id5FetchConfig.params.extraParam = {
         x: 'X',
@@ -402,8 +407,26 @@ describe('ID5 ID System', function () {
         })
     });
 
+    it('should call the ID5 server for config with partner id being a string', function () {
+      let xhrServerMock = new XhrServerMock(server)
+      let id5FetchConfig = getId5FetchConfig();
+      id5FetchConfig.params.partner = '173';
+      let submoduleResponse = callSubmoduleGetId(id5FetchConfig, undefined, undefined);
+
+      return xhrServerMock.expectConfigRequest()
+        .then(configRequest => {
+          let requestBody = JSON.parse(configRequest.requestBody)
+          expect(requestBody.params.partner).is.eq(173)
+          return xhrServerMock.respondWithConfigAndExpectNext(configRequest)
+        })
+        .then(fetchRequest => {
+          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+          return submoduleResponse
+        })
+    });
+
     it('should call the ID5 server for config with overridden url', function () {
-      let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+      let xhrServerMock = new XhrServerMock(server)
       let id5FetchConfig = getId5FetchConfig();
       id5FetchConfig.params.configUrl = 'http://localhost/x/y/z'
 
@@ -421,7 +444,7 @@ describe('ID5 ID System', function () {
     });
 
     it('should call the ID5 server with additional data when provided', function () {
-      let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+      let xhrServerMock = new XhrServerMock(server)
       let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, undefined);
 
       return xhrServerMock.expectConfigRequest()
@@ -455,7 +478,7 @@ describe('ID5 ID System', function () {
     });
 
     it('should call the ID5 server with extensions', function () {
-      let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+      let xhrServerMock = new XhrServerMock(server)
       let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, undefined);
 
       return xhrServerMock.expectConfigRequest()
@@ -492,7 +515,7 @@ describe('ID5 ID System', function () {
     });
 
     it('should call the ID5 server with extensions fetched with POST', function () {
-      let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+      let xhrServerMock = new XhrServerMock(server)
       let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, undefined);
 
       return xhrServerMock.expectConfigRequest()
@@ -538,7 +561,7 @@ describe('ID5 ID System', function () {
     });
 
     it('should call the ID5 server with signature field from stored object', function () {
-      let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+      let xhrServerMock = new XhrServerMock(server)
       let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
 
       return xhrServerMock.expectFetchRequest()
@@ -551,7 +574,7 @@ describe('ID5 ID System', function () {
     });
 
     it('should call the ID5 server with pd field when pd config is set', function () {
-      let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+      let xhrServerMock = new XhrServerMock(server)
       const pubData = 'b50ca08271795a8e7e4012813f23d505193d75c0f2e2bb99baa63aa822f66ed3';
 
       let id5Config = getId5FetchConfig();
@@ -569,7 +592,7 @@ describe('ID5 ID System', function () {
     });
 
     it('should call the ID5 server with no pd field when pd config is not set', function () {
-      let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+      let xhrServerMock = new XhrServerMock(server)
       let id5Config = getId5FetchConfig();
       id5Config.params.pd = undefined;
 
@@ -585,7 +608,7 @@ describe('ID5 ID System', function () {
     });
 
     it('should call the ID5 server with nb=1 when no stored value exists and reset after', function () {
-      let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+      let xhrServerMock = new XhrServerMock(server)
       coreStorage.removeDataFromLocalStorage(ID5_NB_STORAGE_NAME);
 
       let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
@@ -603,7 +626,7 @@ describe('ID5 ID System', function () {
     });
 
     it('should call the ID5 server with incremented nb when stored value exists and reset after', function () {
-      let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+      let xhrServerMock = new XhrServerMock(server)
       storeNbInCache(ID5_TEST_PARTNER_ID, 1);
 
       let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
@@ -621,7 +644,7 @@ describe('ID5 ID System', function () {
     });
 
     it('should call the ID5 server with ab_testing object when abTesting is turned on', function () {
-      let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+      let xhrServerMock = new XhrServerMock(server)
       let id5Config = getId5FetchConfig();
       id5Config.params.abTesting = {enabled: true, controlGroupPct: 0.234}
 
@@ -638,7 +661,7 @@ describe('ID5 ID System', function () {
     });
 
     it('should call the ID5 server without ab_testing object when abTesting is turned off', function () {
-      let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+      let xhrServerMock = new XhrServerMock(server)
       let id5Config = getId5FetchConfig();
       id5Config.params.abTesting = {enabled: false, controlGroupPct: 0.55}
 
@@ -654,7 +677,7 @@ describe('ID5 ID System', function () {
     });
 
     it('should call the ID5 server without ab_testing when when abTesting is not set', function () {
-      let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+      let xhrServerMock = new XhrServerMock(server)
       let id5Config = getId5FetchConfig();
 
       let submoduleResponse = callSubmoduleGetId(id5Config, undefined, ID5_STORED_OBJ);
@@ -669,7 +692,7 @@ describe('ID5 ID System', function () {
     });
 
     it('should store the privacy object from the ID5 server response', function () {
-      let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+      let xhrServerMock = new XhrServerMock(server)
       let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
 
       const privacy = {
@@ -691,7 +714,7 @@ describe('ID5 ID System', function () {
     });
 
     it('should not store a privacy object if not part of ID5 server response', function () {
-      let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+      let xhrServerMock = new XhrServerMock(server)
       coreStorage.removeDataFromLocalStorage(ID5_PRIVACY_STORAGE_NAME);
       let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
 
@@ -737,7 +760,7 @@ describe('ID5 ID System', function () {
       [false, 0]
     ].forEach(function ([isEnabled, expectedValue]) {
       it(`should check localStorage availability and log in request. Available=${isEnabled}`, () => {
-        let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+        let xhrServerMock = new XhrServerMock(server)
         let config = getId5FetchConfig();
         let submoduleResponse = callSubmoduleGetId(config, undefined, undefined);
         storage.localStorageIsEnabled.callsFake(() => isEnabled)
@@ -768,6 +791,7 @@ describe('ID5 ID System', function () {
       coreStorage.removeDataFromLocalStorage(ID5_STORAGE_NAME);
       coreStorage.removeDataFromLocalStorage(`${ID5_STORAGE_NAME}_last`);
       coreStorage.removeDataFromLocalStorage(ID5_NB_STORAGE_NAME);
+      coreStorage.setDataInLocalStorage(ID5_STORAGE_NAME + '_cst', getConsentHash())
       adUnits = [getAdUnitMock()];
     });
     afterEach(function () {
@@ -775,6 +799,7 @@ describe('ID5 ID System', function () {
       coreStorage.removeDataFromLocalStorage(ID5_STORAGE_NAME);
       coreStorage.removeDataFromLocalStorage(`${ID5_STORAGE_NAME}_last`);
       coreStorage.removeDataFromLocalStorage(ID5_NB_STORAGE_NAME);
+      coreStorage.removeDataFromLocalStorage(ID5_STORAGE_NAME + '_cst')
       sandbox.restore();
     });
 
@@ -855,7 +880,7 @@ describe('ID5 ID System', function () {
     });
 
     it('should call ID5 servers with signature and incremented nb post auction if refresh needed', function () {
-      let xhrServerMock = new XhrServerMock(sinon.createFakeServer())
+      let xhrServerMock = new XhrServerMock(server)
       let initialLocalStorageValue = JSON.stringify(ID5_STORED_OBJ);
       storeInLocalStorage(ID5_STORAGE_NAME, initialLocalStorageValue, 1);
       storeInLocalStorage(`${ID5_STORAGE_NAME}_last`, expDaysStr(-1), 1);
@@ -958,7 +983,9 @@ describe('ID5 ID System', function () {
         it('should not expose ID when everyone is in control group', function () {
           storedObject.ab_testing = {result: 'control'};
           storedObject.universal_uid = '';
-          storedObject.link_type = 0;
+          storedObject.ext = {
+            'linkType': 0
+          };
           let decoded = id5IdSubmodule.decode(storedObject, testConfig);
           expect(decoded).is.deep.equal(expectedDecodedObjectWithoutIdAbOn);
         });

@@ -109,8 +109,7 @@ import {
   isBoolean,
   isPlainObject,
   logWarn,
-  mergeDeep,
-  tryAppendQueryString
+  mergeDeep
 } from '../src/utils.js';
 import {
   submodule
@@ -123,6 +122,7 @@ import {
 } from '../src/storageManager.js';
 import adapterManager from '../src/adapterManager.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -689,19 +689,8 @@ class WeboramaRtdProvider {
     /** @type {string} */
     const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
 
-    switch (bidder) {
-      case 'appnexus':
-        this.#handleAppnexusBid(bid, profile);
-        break;
-      case 'pubmatic':
-        this.#handlePubmaticBid(bid, profile);
-        break;
-      case 'smartadserver':
-        this.#handleSmartadserverBid(bid, profile);
-        break;
-      case 'rubicon':
-        this.#handleRubiconBid(bid, profile, metadata);
-        break;
+    if (bidder == 'appnexus') {
+      this.#handleAppnexusBid(reqBidsConfigObj, bid, profile);
     }
   }
 
@@ -719,92 +708,19 @@ class WeboramaRtdProvider {
   /** handle appnexus/xandr bid
    * @method
    * @private
+   * @param {Object} reqBidsConfigObj
+   * @param {Object} reqBidsConfigObj.ortb2Fragments
+   * @param {Object} reqBidsConfigObj.ortb2Fragments.bidder
    * @param {Object} bid
-   * @param {Object} bid.params
-   * @param {Object} bid.params.keyword
+   * @param {Object} bid.parameters
    * @param {Profile} profile
    * @returns {void}
    */
   // eslint-disable-next-line no-dupe-class-members
-  #handleAppnexusBid(bid, profile) {
+  #handleAppnexusBid(reqBidsConfigObj, bid, profile) {
     const base = 'params.keywords';
     this.#assignProfileToObject(bid, base, profile);
-  }
-
-  /** handle pubmatic bid
-   * @method
-   * @private
-   * @param {Object} bid
-   * @param {Object} bid.params
-   * @param {string} bid.params.dctr
-   * @param {Profile} profile
-   * @returns {void}
-   */
-  // eslint-disable-next-line no-dupe-class-members
-  #handlePubmaticBid(bid, profile) {
-    const sep = '|';
-    const subsep = ',';
-
-    bid.params ||= {};
-
-    const data = bid.params.dctr || '';
-    const target = new Set(data.split(sep).filter((x) => x.length > 0));
-
-    Object.entries(profile).forEach(([key, values]) => {
-      const value = values.join(subsep);
-      const keyword = `${key}=${value}`;
-      target.add(keyword);
-    });
-
-    bid.params.dctr = Array.from(target).join(sep);
-  }
-
-  /** handle smartadserver bid
-   * @method
-   * @private
-   * @param {Object} bid
-   * @param {Object} bid.params
-   * @param {string} bid.params.target
-   * @param {Profile} profile
-   * @returns {void}
-   */
-  // eslint-disable-next-line no-dupe-class-members
-  #handleSmartadserverBid(bid, profile) {
-    const sep = ';';
-
-    bid.params ||= {};
-
-    const data = bid.params.target || '';
-    const target = new Set(data.split(sep).filter((x) => x.length > 0));
-
-    Object.entries(profile).forEach(([key, values]) => {
-      values.forEach(value => {
-        const keyword = `${key}=${value}`;
-        target.add(keyword);
-      })
-    });
-
-    bid.params.target = Array.from(target).join(sep);
-  }
-
-  /** handle rubicon bid
-   * @method
-   * @private
-   * @param {Object} bid
-   * @param {string} bid.bidder
-   * @param {Profile} profile
-   * @param {dataCallbackMetadata} metadata
-   * @returns {void}
-   */
-  // eslint-disable-next-line no-dupe-class-members
-  #handleRubiconBid(bid, profile, metadata) {
-    if (isBoolean(metadata.user)) {
-      const section = metadata.user ? 'visitor' : 'inventory';
-      const base = `params.${section}`;
-      this.#assignProfileToObject(bid, base, profile);
-    } else {
-      logMessage(`SKIP bidder '${bid.bidder}', data from '${metadata.source}' is not defined as user or site-centric`);
-    }
+    // this.#setBidderOrtb2(reqBidsConfigObj.ortb2Fragments?.bidder, bid.bidder, base, profile);
   }
 
   /** handle generic bid via ortb2 arbitrary data
@@ -823,14 +739,28 @@ class WeboramaRtdProvider {
     if (isBoolean(metadata.user)) {
       logMessage(`bidder '${bidder}' is not directly supported, trying set data via bidder ortb2 fpd`);
       const section = metadata.user ? 'user' : 'site';
-      const base = `${bidder}.${section}.ext.data`;
+      const path = `${section}.ext.data`;
 
-      this.#assignProfileToObject(reqBidsConfigObj.ortb2Fragments?.bidder, base, profile);
+      this.#setBidderOrtb2(reqBidsConfigObj.ortb2Fragments?.bidder, bidder, path, profile)
     } else {
       logMessage(`SKIP unsupported bidder '${bidder}', data from '${metadata.source}' is not defined as user or site-centric`);
     }
   }
-
+  /**
+   * set bidder ortb2 data
+   * @method
+   * @private
+   * @param {Object} bidderOrtb2Fragments
+   * @param {string} bidder
+   * @param {string} path
+   * @param {Profile} profile
+   * @returns {void}
+   */
+  // eslint-disable-next-line no-dupe-class-members
+  #setBidderOrtb2(bidderOrtb2Fragments, bidder, path, profile) {
+    const base = `${bidder}.${path}`;
+    this.#assignProfileToObject(bidderOrtb2Fragments, base, profile)
+  }
   /**
    * assign profile to object
    * @method

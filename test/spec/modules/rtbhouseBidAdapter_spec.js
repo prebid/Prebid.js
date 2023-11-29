@@ -318,6 +318,41 @@ describe('RTBHouseAdapter', () => {
         expect(request.method).to.equal('POST');
       });
 
+      it('sets default fledgeConfig object values when none available from config', function () {
+        let bidRequest = Object.assign([], bidRequests);
+        delete bidRequest[0].params.test;
+
+        config.setConfig({ fledgeConfig: false });
+        const request = spec.buildRequests(bidRequest, { ...bidderRequest, fledgeEnabled: true });
+        const data = JSON.parse(request.data);
+        expect(data.ext).to.exist.and.to.be.a('object');
+        expect(data.ext.fledge_config).to.exist.and.to.be.a('object');
+        expect(data.ext.fledge_config).to.contain.keys('seller', 'decisionLogicUrl', 'sellerTimeout');
+        expect(data.ext.fledge_config.seller).to.equal('https://fledge-ssp.creativecdn.com');
+        expect(data.ext.fledge_config.decisionLogicUrl).to.equal('https://fledge-ssp.creativecdn.com/component-seller-prebid.js');
+        expect(data.ext.fledge_config.sellerTimeout).to.equal(500);
+      });
+
+      it('sets a fledgeConfig object values when available from config', function () {
+        let bidRequest = Object.assign([], bidRequests);
+        delete bidRequest[0].params.test;
+
+        config.setConfig({
+          fledgeConfig: {
+            seller: 'https://sellers.domain',
+            decisionLogicUrl: 'https://sellers.domain/decision.url'
+          }
+        });
+        const request = spec.buildRequests(bidRequest, { ...bidderRequest, fledgeEnabled: true });
+        const data = JSON.parse(request.data);
+        expect(data.ext).to.exist.and.to.be.a('object');
+        expect(data.ext.fledge_config).to.exist.and.to.be.a('object');
+        expect(data.ext.fledge_config).to.contain.keys('seller', 'decisionLogicUrl');
+        expect(data.ext.fledge_config.seller).to.equal('https://sellers.domain');
+        expect(data.ext.fledge_config.decisionLogicUrl).to.equal('https://sellers.domain/decision.url');
+        expect(data.ext.fledge_config.sellerTimeout).to.not.exist;
+      });
+
       it('when FLEDGE is disabled, should not send imp.ext.ae', function () {
         let bidRequest = Object.assign([], bidRequests);
         delete bidRequest[0].params.test;

@@ -128,7 +128,7 @@ describe('Real time module', function () {
     it('should be able to modify bid request', function (done) {
       rtdModule.setBidRequestsData(() => {
         assert(getBidRequestDataSpy.calledTwice);
-        assert(getBidRequestDataSpy.calledWith({bidRequest: {}}));
+        assert(getBidRequestDataSpy.calledWith(sinon.match({bidRequest: {}})));
         done();
       }, {bidRequest: {}})
     });

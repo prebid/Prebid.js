@@ -1,7 +1,6 @@
 [
     "33acrossBidAdapter",
     "adprimeBidAdapter",
-    "aolBidAdapter",
     "apacdexBidAdapter",
     "appnexusBidAdapter",
     "atsAnalyticsAdapter",
@@ -29,7 +28,6 @@
     "openxBidAdapter",
     "permutiveRtdProvider",
     "prebidServerBidAdapter",
-    "pubCommonId",
     "pubmaticBidAdapter",
     "pubProvidedIdSystem",
     "priceFloors",

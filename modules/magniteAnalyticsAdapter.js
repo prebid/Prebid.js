@@ -57,13 +57,7 @@ const {
     BID_TIMEOUT,
     BID_WON,
     BILLABLE_EVENT,
-    SEAT_NON_BID
-  },
-  STATUS: {
-    GOOD,
-    NO_BID
-  },
-  BID_STATUS: {
+    SEAT_NON_BID,
     BID_REJECTED
   }
 } = CONSTANTS;
@@ -148,6 +142,10 @@ const sendEvent = payload => {
     ...getTopLevelDetails(),
     ...payload
   }
+  if (window.pbjs?.rp?.eventDispatcher) {
+    const analyticsEvent = new CustomEvent('beforeSendingMagniteAnalytics', { detail: event });
+    window.pbjs.rp.eventDispatcher.dispatchEvent(analyticsEvent);
+  }
   ajax(
     endpoint,
     null,
@@ -220,7 +218,7 @@ const getBidPrice = bid => {
   // get the cpm from bidResponse
   let cpm;
   let currency;
-  if (bid.status === BID_REJECTED && typeof deepAccess(bid, 'floorData.cpmAfterAdjustments') === 'number') {
+  if (typeof deepAccess(bid, 'floorData.cpmAfterAdjustments') === 'number') {
     // if bid was rejected and bid.floorData.cpmAfterAdjustments use it
     cpm = bid.floorData.cpmAfterAdjustments;
     currency = bid.floorData.floorCurrency;
@@ -282,6 +280,7 @@ export const parseBidResponse = (bid, previousBidResponse) => {
     'conversionError', conversionError => conversionError === true || undefined, // only pass if exactly true
     'ogCurrency',
     'ogPrice',
+    'rejectionReason'
   ]);
 }
 
@@ -702,6 +701,78 @@ magniteAdapter.onDataDeletionRequest = function () {
 magniteAdapter.MODULE_INITIALIZED_TIME = Date.now();
 magniteAdapter.referrerHostname = '';
 
+const handleBidResponse = (args, bidStatus) => {
+  const auctionEntry = deepAccess(cache, `auctions.${args.auctionId}.auction`);
+  const adUnit = deepAccess(auctionEntry, `adUnits.${args.transactionId}`);
+  let bid = adUnit.bids[args.requestId];
+
+  // if this came from multibid, there might now be matching bid, so check
+  // THIS logic will change when we support multibid per bid request
+  if (!bid && args.originalRequestId) {
+    let ogBid = adUnit.bids[args.originalRequestId];
+    // create new bid
+    adUnit.bids[args.requestId] = {
+      ...ogBid,
+      bidId: args.requestId,
+      bidderDetail: args.targetingBidder
+    };
+    bid = adUnit.bids[args.requestId];
+  }
+
+  // if we have not set enforcements yet set it (This is hidden from bidders until now so we have to get from here)
+  if (typeof deepAccess(auctionEntry, 'floors.enforcement') !== 'boolean' && deepAccess(args, 'floorData.enforcements')) {
+    deepSetValue(auctionEntry, 'floors.enforcement', args.floorData.enforcements.enforceJS);
+    deepSetValue(auctionEntry, 'floors.dealsEnforced', args.floorData.enforcements.floorDeals);
+  }
+
+  // no-bid from server. report it!
+  if (!bid && args.seatBidId) {
+    bid = adUnit.bids[args.seatBidId] = {
+      bidder: args.bidderCode,
+      source: 'server',
+      bidId: args.seatBidId,
+      unknownBid: true
+    };
+  }
+
+  if (!bid) {
+    logError(`${MODULE_NAME}: Could not find associated bid request for bid response with requestId: `, args.requestId);
+    return;
+  }
+
+  // set bid status
+  bid.status = bidStatus;
+  const latencies = getLatencies(args, auctionEntry.auctionStart);
+  bid.clientLatencyMillis = latencies.total;
+  bid.httpLatencyMillis = latencies.net;
+  bid.bidResponse = parseBidResponse(args, bid.bidResponse);
+
+  // if pbs gave us back a bidId, we need to use it and update our bidId to PBA
+  const pbsBidId = (args.pbsBidId == 0 ? generateUUID() : args.pbsBidId) || (args.seatBidId == 0 ? generateUUID() : args.seatBidId);
+  if (pbsBidId) {
+    bid.pbsBidId = pbsBidId;
+  }
+}
+
+const getLatencies = (args, auctionStart) => {
+  try {
+    const metrics = args.metrics.getMetrics();
+    const src = args.src || args.source;
+    return {
+      total: parseInt(metrics[`adapter.${src}.total`]),
+      // If it is array, get slowest
+      net: parseInt(Array.isArray(metrics[`adapter.${src}.net`]) ? metrics[`adapter.${src}.net`][metrics[`adapter.${src}.net`].length - 1] : metrics[`adapter.${src}.net`])
+    }
+  } catch (error) {
+    // default to old way if not able to get better ones
+    const latency = Date.now() - auctionStart;
+    return {
+      total: latency,
+      net: latency
+    }
+  }
+}
+
 let browser;
 magniteAdapter.track = ({ eventType, args }) => {
   switch (eventType) {
@@ -818,68 +889,11 @@ magniteAdapter.track = ({ eventType, args }) => {
       });
       break;
     case BID_RESPONSE:
-      const auctionEntry = deepAccess(cache, `auctions.${args.auctionId}.auction`);
-      const adUnit = deepAccess(auctionEntry, `adUnits.${args.transactionId}`);
-      let bid = adUnit.bids[args.requestId];
-
-      // if this came from multibid, there might now be matching bid, so check
-      // THIS logic will change when we support multibid per bid request
-      if (!bid && args.originalRequestId) {
-        let ogBid = adUnit.bids[args.originalRequestId];
-        // create new bid
-        adUnit.bids[args.requestId] = {
-          ...ogBid,
-          bidId: args.requestId,
-          bidderDetail: args.targetingBidder
-        };
-        bid = adUnit.bids[args.requestId];
-      }
-
-      // if we have not set enforcements yet set it (This is hidden from bidders until now so we have to get from here)
-      if (typeof deepAccess(auctionEntry, 'floors.enforcement') !== 'boolean' && deepAccess(args, 'floorData.enforcements')) {
-        auctionEntry.floors.enforcement = args.floorData.enforcements.enforceJS;
-        auctionEntry.floors.dealsEnforced = args.floorData.enforcements.floorDeals;
-      }
-
-      // no-bid from server. report it!
-      if (!bid && args.seatBidId) {
-        bid = adUnit.bids[args.seatBidId] = {
-          bidder: args.bidderCode,
-          source: 'server',
-          bidId: args.seatBidId,
-          unknownBid: true
-        };
-      }
-
-      if (!bid) {
-        logError(`${MODULE_NAME}: Could not find associated bid request for bid response with requestId: `, args.requestId);
-        break;
-      }
-
-      // set bid status
-      switch (args.getStatusCode()) {
-        case GOOD:
-          bid.status = 'success';
-          delete bid.error; // it's possible for this to be set by a previous timeout
-          break;
-        case NO_BID:
-          bid.status = args.status === BID_REJECTED ? BID_REJECTED_IPF : 'no-bid';
-          delete bid.error;
-          break;
-        default:
-          bid.status = 'error';
-          bid.error = {
-            code: 'request-error'
-          };
-      }
-      bid.clientLatencyMillis = args.timeToRespond || Date.now() - cache.auctions[args.auctionId].auction.auctionStart;
-      bid.bidResponse = parseBidResponse(args, bid.bidResponse);
-
-      // if pbs gave us back a bidId, we need to use it and update our bidId to PBA
-      const pbsBidId = (args.pbsBidId == 0 ? generateUUID() : args.pbsBidId) || (args.seatBidId == 0 ? generateUUID() : args.seatBidId);
-      if (pbsBidId) {
-        bid.pbsBidId = pbsBidId;
-      }
+      handleBidResponse(args, 'success');
+      break;
+    case BID_REJECTED:
+      const bidStatus = args.rejectionReason === CONSTANTS.REJECTION_REASON.FLOOR_NOT_MET ? BID_REJECTED_IPF : 'rejected';
+      handleBidResponse(args, bidStatus);
       break;
     case SEAT_NON_BID:
       handleNonBidEvent(args);
@@ -904,8 +918,10 @@ magniteAdapter.track = ({ eventType, args }) => {
         }
 
         // set client latency if not done yet
-        if (!cachedBid.clientLatencyMillis) {
-          cachedBid.clientLatencyMillis = Date.now() - cache.auctions[args.auctionId].auction.auctionStart;
+        if (!cachedBid.clientLatencyMillis || !cachedBid.httpLatencyMillis) {
+          const latencies = getLatencies(bid, deepAccess(cache, `auctions.${args.auctionId}.auction.auctionStart`));
+          cachedBid.clientLatencyMillis = cachedBid.clientLatencyMillis || latencies.total;
+          cachedBid.httpLatencyMillis = cachedBid.httpLatencyMillis || latencies.net;
         }
       });
       break;

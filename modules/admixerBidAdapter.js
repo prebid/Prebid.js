@@ -1,17 +1,23 @@
-import {logError} from '../src/utils.js';
+import {isStr, logError} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {find} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'admixer';
-const BIDDER_CODE_ADX = 'admixeradx';
-const ALIASES = ['go2net', 'adblender', 'adsyield', 'futureads', 'admixeradx'];
 const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
-const ADX_ENDPOINT_URL = 'https://inv-nets.admixer.net/adxprebid.1.2.aspx';
+const ALIASES = [
+  {code: 'go2net', endpoint: 'https://ads.go2net.com.ua/prebid.1.2.aspx'},
+  'adblender',
+  {code: 'adsyield', endpoint: 'https://ads.adsyield.com/prebid.1.2.aspx'},
+  {code: 'futureads', endpoint: 'https://ads.futureads.io/prebid.1.2.aspx'},
+  {code: 'smn', endpoint: 'https://ads.smn.rs/prebid.1.2.aspx'},
+  {code: 'admixeradx', endpoint: 'https://inv-nets.admixer.net/adxprebid.1.2.aspx'},
+];
 export const spec = {
   code: BIDDER_CODE,
-  aliases: ALIASES,
+  aliases: ALIASES.map(val => isStr(val) ? val : val.code),
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
    * Determines whether or not the given bid request is valid.
@@ -67,15 +73,13 @@ export const spec = {
     validRequest.forEach((bid) => {
       let imp = {};
       Object.keys(bid).forEach(key => imp[key] = bid[key]);
+      imp.ortb2 && delete imp.ortb2;
       payload.imps.push(imp);
     });
     return {
       method: 'POST',
       url:
-        endpointUrl ||
-        (bidderRequest.bidderCode === BIDDER_CODE_ADX
-          ? ADX_ENDPOINT_URL
-          : ENDPOINT_URL),
+        endpointUrl || getEndpointUrl(bidderRequest.bidderCode),
       data: payload,
     };
   },
@@ -106,6 +110,9 @@ export const spec = {
     return pixels;
   }
 };
+function getEndpointUrl(code) {
+  return find(ALIASES, (val) => val.code === code)?.endpoint || ENDPOINT_URL;
+}
 function getBidFloor(bid) {
   try {
     const bidFloor = bid.getFloor({

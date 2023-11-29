@@ -2,8 +2,9 @@ import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {isNumber} from '../src/utils.js';
 
-const BIDADAPTERVERSION = 'TTD-PREBID-2022.06.28';
+const BIDADAPTERVERSION = 'TTD-PREBID-2023.09.05';
 const BIDDER_CODE = 'ttd';
 const BIDDER_CODE_LONG = 'thetradedesk';
 const BIDDER_ENDPOINT = 'https://direct.adsrvr.org/bid/bidder/';
@@ -65,9 +66,9 @@ function getBidFloor(bid) {
   return null;
 }
 
-function getSource(validBidRequests) {
+function getSource(validBidRequests, bidderRequest) {
   let source = {
-    tid: validBidRequests[0].auctionId
+    tid: bidderRequest?.ortb2?.source?.tid,
   };
   if (validBidRequests[0].schain) {
     utils.deepSetValue(source, 'ext.schain', validBidRequests[0].schain);
@@ -75,7 +76,7 @@ function getSource(validBidRequests) {
   return source;
 }
 
-function getDevice() {
+function getDevice(firstPartyData) {
   const language = navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage;
   let device = {
     ua: navigator.userAgent,
@@ -83,6 +84,8 @@ function getDevice() {
     language: language,
     connectiontype: getConnectionType()
   };
+
+  utils.mergeDeep(device, firstPartyData.device)
 
   return device;
 };
@@ -114,7 +117,7 @@ function getConnectionType() {
   }
 }
 
-function getUser(bidderRequest) {
+function getUser(bidderRequest, firstPartyData) {
   let user = {};
   if (bidderRequest.gdprConsent) {
     utils.deepSetValue(user, 'ext.consent', bidderRequest.gdprConsent.consentString);
@@ -129,13 +132,8 @@ function getUser(bidderRequest) {
     utils.deepSetValue(user, 'ext.eids', eids);
   }
 
-  // gather user.data
-  const ortb2UserData = utils.deepAccess(bidderRequest, 'ortb2.user.data');
-  if (ortb2UserData && ortb2UserData.length) {
-    user = utils.mergeDeep(user, {
-      data: [...ortb2UserData]
-    });
-  };
+  utils.mergeDeep(user, firstPartyData.user)
+
   return user;
 }
 
@@ -163,16 +161,6 @@ function getImpression(bidRequest) {
   };
 
   const gpid = utils.deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
-  const tid = utils.deepAccess(bidRequest, 'ortb2Imp.ext.tid');
-  const rwdd = utils.deepAccess(bidRequest, 'ortb2Imp.rwdd');
-  if (gpid || tid) {
-    impression.ext = {}
-    if (gpid) { impression.ext.gpid = gpid }
-    if (tid) { impression.ext.tid = tid }
-  }
-  if (rwdd) {
-    impression.rwdd = rwdd;
-  }
   const tagid = gpid || bidRequest.params.placementId;
   if (tagid) {
     impression.tagid = tagid;
@@ -196,6 +184,11 @@ function getImpression(bidRequest) {
     impression.bidfloor = parseFloat(bidfloor);
     impression.bidfloorcur = 'USD';
   }
+
+  const secure = utils.deepAccess(bidRequest, 'ortb2Imp.secure');
+  impression.secure = isNumber(secure) ? secure : 1
+
+  utils.mergeDeep(impression, bidRequest.ortb2Imp)
 
   return impression;
 }
@@ -413,15 +406,15 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const firstPartyData = bidderRequest.ortb2 || {};
     let topLevel = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       imp: validBidRequests.map(bidRequest => getImpression(bidRequest)),
       site: getSite(bidderRequest, firstPartyData),
-      device: getDevice(),
-      user: getUser(bidderRequest),
+      device: getDevice(firstPartyData),
+      user: getUser(bidderRequest, firstPartyData),
       at: 1,
       cur: ['USD'],
       regs: getRegs(bidderRequest),
-      source: getSource(validBidRequests),
+      source: getSource(validBidRequests, bidderRequest),
       ext: getExt(firstPartyData)
     }
 
@@ -431,6 +424,14 @@ export const spec = {
 
     if (firstPartyData && firstPartyData.badv) {
       topLevel.badv = firstPartyData.badv;
+    }
+
+    if (firstPartyData && firstPartyData.app) {
+      topLevel.app = firstPartyData.app
+    }
+
+    if (firstPartyData && firstPartyData.pmp) {
+      topLevel.pmp = firstPartyData.pmp
     }
 
     let url = BIDDER_ENDPOINT + bidderRequest.bids[0].params.supplySourceId;
@@ -468,7 +469,7 @@ export const spec = {
    * @param {ttdResponseObj} bidResponse A successful response from ttd.
    * @param {ServerRequest} serverRequest The result of buildRequests() that lead to this response.
    * @return {Bid[]} An array of formatted bids.
-  */
+   */
   interpretResponse: function (response, serverRequest) {
     let seatBidsInResponse = utils.deepAccess(response, 'body.seatbid');
     const currency = utils.deepAccess(response, 'body.cur');

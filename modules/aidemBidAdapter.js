@@ -1,16 +1,15 @@
-import {_each, contains, deepAccess, deepSetValue, getDNT, isBoolean, isStr, isNumber, logError, logInfo} from '../src/utils.js';
+import {deepAccess, deepSetValue, isBoolean, isNumber, isStr, logError, logInfo} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {ajax} from '../src/ajax.js';
+import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'aidem';
 const BASE_URL = 'https://zero.aidemsrv.com';
 const LOCAL_BASE_URL = 'http://127.0.0.1:8787';
 
-const AVAILABLE_CURRENCIES = ['USD'];
-const DEFAULT_CURRENCY = ['USD']; // NOTE - USD is the only supported currency right now; Hardcoded for bids
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
 const REQUIRED_VIDEO_PARAMS = [ 'mimes', 'protocols', 'context' ];
 
@@ -26,34 +25,63 @@ export const ERROR_CODES = {
 };
 
 const endpoints = {
-  request: `${BASE_URL}/bid/request`,
-  notice: {
-    win: `${BASE_URL}/notice/win`,
-    timeout: `${BASE_URL}/notice/timeout`,
-    error: `${BASE_URL}/notice/error`,
-  }
+  request: `${BASE_URL}/prebidjs/ortb/v2.6/bid/request`,
+  // notice: {
+  //   win: `${BASE_URL}/notice/win`,
+  //   timeout: `${BASE_URL}/notice/timeout`,
+  //   error: `${BASE_URL}/notice/error`,
+  // }
 };
 
-export function setEndPoints(env = null, path = '', mediaType = BANNER) {
+export function setEndPoints(env = null, path = '') {
   switch (env) {
     case 'local':
-      endpoints.request = mediaType === BANNER ? `${LOCAL_BASE_URL}${path}/bid/request` : `${LOCAL_BASE_URL}${path}/bid/videorequest`;
-      endpoints.notice.win = `${LOCAL_BASE_URL}${path}/notice/win`;
-      endpoints.notice.error = `${LOCAL_BASE_URL}${path}/notice/error`;
-      endpoints.notice.timeout = `${LOCAL_BASE_URL}${path}/notice/timeout`;
+      endpoints.request = `${LOCAL_BASE_URL}${path}/prebidjs/ortb/v2.6/bid/request`;
       break;
     case 'main':
-      endpoints.request = mediaType === BANNER ? `${BASE_URL}${path}/bid/request` : `${BASE_URL}${path}/bid/videorequest`;
-      endpoints.notice.win = `${BASE_URL}${path}/notice/win`;
-      endpoints.notice.error = `${BASE_URL}${path}/notice/error`;
-      endpoints.notice.timeout = `${BASE_URL}${path}/notice/timeout`;
+      endpoints.request = `${BASE_URL}${path}/prebidjs/ortb/v2.6/bid/request`;
       break;
   }
   return endpoints;
 }
 
 config.getConfig('aidem', function (config) {
-  if (config.aidem.env) { setEndPoints(config.aidem.env, config.aidem.path, config.aidem.mediaType); }
+  if (config.aidem.env) { setEndPoints(config.aidem.env, config.aidem.path); }
+});
+
+const converter = ortbConverter({
+  context: {
+    netRevenue: true,
+    ttl: 30
+  },
+  request(buildRequest, imps, bidderRequest, context) {
+    logInfo('Building request');
+    const request = buildRequest(imps, bidderRequest, context);
+    deepSetValue(request, 'at', 1);
+    setPrebidRequestEnvironment(request);
+    deepSetValue(request, 'regs', getRegs());
+    deepSetValue(request, 'site.publisher.id', bidderRequest.bids[0].params.publisherId);
+    deepSetValue(request, 'site.id', bidderRequest.bids[0].params.siteId);
+    return request;
+  },
+  imp(buildImp, bidRequest, context) {
+    logInfo('Building imp bidRequest', bidRequest);
+    const imp = buildImp(bidRequest, context);
+    deepSetValue(imp, 'tagId', bidRequest.params.placementId);
+    return imp;
+  },
+  bidResponse(buildBidResponse, bid, context) {
+    const {bidRequest} = context;
+    const bidResponse = buildBidResponse(bid, context);
+    logInfo('Building bidResponse');
+    logInfo('bid', bid);
+    logInfo('bidRequest', bidRequest);
+    logInfo('bidResponse', bidResponse);
+    if (bidResponse.mediaType === VIDEO) {
+      deepSetValue(bidResponse, 'vastUrl', bid.adm);
+    }
+    return bidResponse;
+  }
 });
 
 // AIDEM Custom FN
@@ -76,49 +104,6 @@ function recur(obj) {
     }
   }
   return result;
-}
-
-// =================================================================================
-function getConnectionType() {
-  const connection = navigator.connection || navigator.webkitConnection;
-  if (!connection) {
-    return 0;
-  }
-  switch (connection.type) {
-    case 'ethernet':
-      return 1;
-    case 'wifi':
-      return 2;
-    case 'cellular':
-      switch (connection.effectiveType) {
-        case 'slow-2g':
-          return 4;
-        case '2g':
-          return 4;
-        case '3g':
-          return 5;
-        case '4g':
-          return 6;
-        case '5g':
-          return 7;
-        default:
-          return 3;
-      }
-    default:
-      return 0;
-  }
-}
-
-function getDevice() {
-  const language = navigator.language || navigator.browserLanguage || navigator.userLanguage || navigator.systemLanguage;
-  return {
-    ua: navigator.userAgent,
-    dnt: !!getDNT(),
-    language: language,
-    connectiontype: getConnectionType(),
-    screen_width: screen.width,
-    screen_height: screen.height
-  };
 }
 
 function getRegs() {
@@ -146,125 +131,6 @@ function getRegs() {
   return regs;
 }
 
-function getPageUrl(bidderRequest) {
-  return bidderRequest?.refererInfo?.page;
-}
-
-function buildWinNotice(bid) {
-  const params = bid.params[0];
-  const app = deepAccess(bid, 'meta.ext.app')
-  return {
-    publisherId: params.publisherId,
-    siteId: params.siteId,
-    placementId: params.placementId,
-    burl: deepAccess(bid, 'meta.burl'),
-    cpm: bid.cpm,
-    currency: bid.currency,
-    impid: deepAccess(bid, 'meta.impid'),
-    dsp_id: deepAccess(bid, 'meta.dsp_id'),
-    adUnitCode: bid.adUnitCode,
-    auctionId: bid.auctionId,
-    transactionId: bid.transactionId,
-    ttl: bid.ttl,
-    requestTimestamp: bid.requestTimestamp,
-    responseTimestamp: bid.responseTimestamp,
-    mediatype: bid.mediaType,
-    environment: app ? 'app' : 'web',
-    ...app
-  };
-}
-
-function buildErrorNotice(prebidErrorResponse) {
-  return {
-    message: `Prebid.js: Server call for ${prebidErrorResponse.bidderCode} failed.`,
-    url: encodeURIComponent(getPageUrl(prebidErrorResponse)),
-    auctionId: prebidErrorResponse.auctionId,
-    bidderRequestId: prebidErrorResponse.bidderRequestId,
-    metrics: {}
-  };
-}
-
-function hasValidFloor(obj) {
-  if (!obj) return false;
-  const hasValue = !isNaN(Number(obj.value));
-  const hasCurrency = contains(AVAILABLE_CURRENCIES, obj.currency);
-  return hasValue && hasCurrency;
-}
-
-function getMediaType(bidRequest) {
-  if ((bidRequest.mediaTypes && bidRequest.mediaTypes.hasOwnProperty('video')) || bidRequest.params.hasOwnProperty('video')) { return VIDEO; }
-  return BANNER;
-}
-
-function getPrebidRequestFields(bidderRequest, bidRequests) {
-  const payload = {};
-  // Base Payload Data
-  deepSetValue(payload, 'id', bidderRequest.auctionId);
-  // Impressions
-  setPrebidImpressionObject(bidRequests, payload);
-  // Device
-  deepSetValue(payload, 'device', getDevice());
-  // Timeout
-  deepSetValue(payload, 'tmax', bidderRequest.timeout);
-  // Currency
-  deepSetValue(payload, 'cur', DEFAULT_CURRENCY);
-  // Timezone
-  deepSetValue(payload, 'tz', new Date().getTimezoneOffset());
-  // Privacy Regs
-  deepSetValue(payload, 'regs', getRegs());
-  // Site
-  setPrebidSiteObject(bidderRequest, payload);
-  // Environment
-  setPrebidRequestEnvironment(payload);
-  // AT auction type
-  deepSetValue(payload, 'at', 1);
-
-  return payload;
-}
-
-function setPrebidImpressionObject(bidRequests, payload) {
-  payload.imp = [];
-  _each(bidRequests, function (bidRequest) {
-    const impressionObject = {};
-    // Placement or ad tag used to initiate the auction
-    deepSetValue(impressionObject, 'id', bidRequest.bidId);
-    // Transaction id
-    deepSetValue(impressionObject, 'tid', deepAccess(bidRequest, 'transactionId'));
-    // placement id
-    deepSetValue(impressionObject, 'tagid', deepAccess(bidRequest, 'params.placementId', null));
-    // Publisher id
-    deepSetValue(payload, 'site.publisher.id', deepAccess(bidRequest, 'params.publisherId'));
-    // Site id
-    deepSetValue(payload, 'site.id', deepAccess(bidRequest, 'params.siteId'));
-    const mediaType = getMediaType(bidRequest);
-    switch (mediaType) {
-      case 'banner':
-        setPrebidImpressionObjectBanner(bidRequest, impressionObject);
-        break;
-      case 'video':
-        setPrebidImpressionObjectVideo(bidRequest, impressionObject);
-        break;
-    }
-
-    // Floor (optional)
-    setPrebidImpressionObjectFloor(bidRequest, impressionObject);
-
-    impressionObject.imp_ext = {};
-
-    payload.imp.push(impressionObject);
-  });
-}
-
-function setPrebidSiteObject(bidderRequest, payload) {
-  deepSetValue(payload, 'site.domain', deepAccess(bidderRequest, 'refererInfo.domain'));
-  deepSetValue(payload, 'site.page', deepAccess(bidderRequest, 'refererInfo.page'));
-  deepSetValue(payload, 'site.referer', deepAccess(bidderRequest, 'refererInfo.ref'));
-  deepSetValue(payload, 'site.cat', deepAccess(bidderRequest, 'ortb2.site.cat'));
-  deepSetValue(payload, 'site.sectioncat', deepAccess(bidderRequest, 'ortb2.site.sectioncat'));
-  deepSetValue(payload, 'site.keywords', deepAccess(bidderRequest, 'ortb2.site.keywords'));
-  deepSetValue(payload, 'site.site_ext', deepAccess(bidderRequest, 'ortb2.site.ext')); // see https://docs.prebid.org/features/firstPartyData.html
-}
-
 function setPrebidRequestEnvironment(payload) {
   const __navigator = JSON.parse(JSON.stringify(recur(navigator)));
   delete __navigator.plugins;
@@ -279,92 +145,6 @@ function setPrebidRequestEnvironment(payload) {
   deepSetValue(payload, 'environment.inp.oa', window.Object.assign.name === 'assign' && typeof window.Object.assign.prototype === 'undefined');
   deepSetValue(payload, 'environment.wpar.innerWidth', window.innerWidth);
   deepSetValue(payload, 'environment.wpar.innerHeight', window.innerHeight);
-}
-
-function setPrebidImpressionObjectFloor(bidRequest, impressionObject) {
-  const floor = deepAccess(bidRequest, 'params.floor');
-  if (hasValidFloor(floor)) {
-    deepSetValue(impressionObject, 'floor.value', floor.value);
-    deepSetValue(impressionObject, 'floor.currency', floor.currency);
-  }
-}
-
-function setPrebidImpressionObjectBanner(bidRequest, impressionObject) {
-  deepSetValue(impressionObject, 'mediatype', BANNER);
-  deepSetValue(impressionObject, 'banner.topframe', 1);
-  deepSetValue(impressionObject, 'banner.format', []);
-  _each(bidRequest.mediaTypes.banner.sizes, function (bannerFormat) {
-    const format = {};
-    deepSetValue(format, 'w', bannerFormat[0]);
-    deepSetValue(format, 'h', bannerFormat[1]);
-    deepSetValue(format, 'format_ext', {});
-    impressionObject.banner.format.push(format);
-  });
-}
-
-function setPrebidImpressionObjectVideo(bidRequest, impressionObject) {
-  deepSetValue(impressionObject, 'mediatype', VIDEO);
-  deepSetValue(impressionObject, 'video.format', []);
-  deepSetValue(impressionObject, 'video.mimes', bidRequest.mediaTypes.video.mimes);
-  deepSetValue(impressionObject, 'video.minDuration', bidRequest.mediaTypes.video.minduration);
-  deepSetValue(impressionObject, 'video.maxDuration', bidRequest.mediaTypes.video.maxduration);
-  deepSetValue(impressionObject, 'video.protocols', bidRequest.mediaTypes.video.protocols);
-  deepSetValue(impressionObject, 'video.context', bidRequest.mediaTypes.video.context);
-  deepSetValue(impressionObject, 'video.playbackmethod', bidRequest.mediaTypes.video.playbackmethod);
-  deepSetValue(impressionObject, 'skip', bidRequest.mediaTypes.video.skip);
-  deepSetValue(impressionObject, 'skipafter', bidRequest.mediaTypes.video.skipafter);
-  deepSetValue(impressionObject, 'video.pos', bidRequest.mediaTypes.video.pos);
-  _each(bidRequest.mediaTypes.video.playerSize, function (videoPlayerSize) {
-    const format = {};
-    deepSetValue(format, 'w', videoPlayerSize[0]);
-    deepSetValue(format, 'h', videoPlayerSize[1]);
-    deepSetValue(format, 'format_ext', {});
-    impressionObject.video.format.push(format);
-  });
-}
-
-function getPrebidResponseBidObject(openRTBResponseBidObject) {
-  const prebidResponseBidObject = {};
-  // Common properties
-  deepSetValue(prebidResponseBidObject, 'requestId', openRTBResponseBidObject.impid);
-  deepSetValue(prebidResponseBidObject, 'cpm', parseFloat(openRTBResponseBidObject.price));
-  deepSetValue(prebidResponseBidObject, 'creativeId', openRTBResponseBidObject.crid);
-  deepSetValue(prebidResponseBidObject, 'currency', openRTBResponseBidObject.cur ? openRTBResponseBidObject.cur.toUpperCase() : DEFAULT_CURRENCY);
-  deepSetValue(prebidResponseBidObject, 'width', openRTBResponseBidObject.w);
-  deepSetValue(prebidResponseBidObject, 'height', openRTBResponseBidObject.h);
-  deepSetValue(prebidResponseBidObject, 'dealId', openRTBResponseBidObject.dealid);
-  deepSetValue(prebidResponseBidObject, 'netRevenue', true);
-  deepSetValue(prebidResponseBidObject, 'ttl', 60000);
-
-  if (openRTBResponseBidObject.mediatype === VIDEO) {
-    logInfo('bidObject.mediatype == VIDEO');
-    deepSetValue(prebidResponseBidObject, 'mediaType', VIDEO);
-    deepSetValue(prebidResponseBidObject, 'vastUrl', openRTBResponseBidObject.adm);
-  } else {
-    logInfo('bidObject.mediatype == BANNER');
-    deepSetValue(prebidResponseBidObject, 'mediaType', BANNER);
-    deepSetValue(prebidResponseBidObject, 'ad', openRTBResponseBidObject.adm);
-  }
-  setPrebidResponseBidObjectMeta(prebidResponseBidObject, openRTBResponseBidObject);
-  return prebidResponseBidObject;
-}
-
-function setPrebidResponseBidObjectMeta(prebidResponseBidObject, openRTBResponseBidObject) {
-  logInfo('AIDEM Bid Adapter meta', openRTBResponseBidObject);
-  deepSetValue(prebidResponseBidObject, 'meta.advertiserDomains', deepAccess(openRTBResponseBidObject, 'meta.advertiserDomains'));
-  deepSetValue(prebidResponseBidObject, 'meta.ext', deepAccess(openRTBResponseBidObject, 'meta.ext'));
-  if (openRTBResponseBidObject.cat && Array.isArray(openRTBResponseBidObject.cat)) {
-    const primaryCatId = openRTBResponseBidObject.cat.shift();
-    deepSetValue(prebidResponseBidObject, 'meta.primaryCatId', primaryCatId);
-    deepSetValue(prebidResponseBidObject, 'meta.secondaryCatIds', openRTBResponseBidObject.cat);
-  }
-  deepSetValue(prebidResponseBidObject, 'meta.id', openRTBResponseBidObject.id);
-  deepSetValue(prebidResponseBidObject, 'meta.dsp_id', openRTBResponseBidObject.dsp_id);
-  deepSetValue(prebidResponseBidObject, 'meta.adid', openRTBResponseBidObject.adid);
-  deepSetValue(prebidResponseBidObject, 'meta.burl', openRTBResponseBidObject.burl);
-  deepSetValue(prebidResponseBidObject, 'meta.impid', openRTBResponseBidObject.impid);
-  deepSetValue(prebidResponseBidObject, 'meta.cat', openRTBResponseBidObject.cat);
-  deepSetValue(prebidResponseBidObject, 'meta.cid', openRTBResponseBidObject.cid);
 }
 
 function hasValidMediaType(bidRequest) {
@@ -479,48 +259,38 @@ export const spec = {
     return passesRateLimit(bidRequest);
   },
 
-  buildRequests: function(validBidRequests, bidderRequest) {
-    logInfo('validBidRequests: ', validBidRequests);
+  buildRequests: function(bidRequests, bidderRequest) {
+    logInfo('bidRequests: ', bidRequests);
     logInfo('bidderRequest: ', bidderRequest);
-    const prebidRequest = getPrebidRequestFields(bidderRequest, validBidRequests);
-    const payloadString = JSON.stringify(prebidRequest);
-
+    const data = converter.toORTB({bidRequests, bidderRequest});
+    logInfo('request payload', data);
     return {
       method: 'POST',
       url: endpoints.request,
-      data: payloadString,
+      data,
       options: {
         withCredentials: true
       }
     };
   },
 
-  interpretResponse: function (serverResponse) {
-    const bids = [];
-    logInfo('serverResponse: ', serverResponse);
-    _each(serverResponse.body.bid, function (bidObject) {
-      logInfo('bidObject: ', bidObject);
-      if (!bidObject.price || !bidObject.adm) {
-        return;
-      }
-      logInfo('CPM OK');
-      const bid = getPrebidResponseBidObject(bidObject);
-      bids.push(bid);
-    });
-    return bids;
+  interpretResponse: function (serverResponse, request) {
+    logInfo('serverResponse body: ', serverResponse.body);
+    logInfo('request data: ', request.data);
+    const ortbBids = converter.fromORTB({response: serverResponse.body, request: request.data}).bids;
+    logInfo('ortbBids: ', ortbBids);
+    return ortbBids;
   },
 
   onBidWon: function(bid) {
     // Bidder specific code
     logInfo('onBidWon bid: ', bid);
-    const notice = buildWinNotice(bid);
-    ajax(endpoints.notice.win, null, JSON.stringify(notice), { method: 'POST', withCredentials: true });
+    ajax(bid.burl);
   },
 
-  onBidderError: function({ bidderRequest }) {
-    // Bidder specific code
-    const notice = buildErrorNotice(bidderRequest);
-    ajax(endpoints.notice.error, null, JSON.stringify(notice), { method: 'POST', withCredentials: true });
-  },
+  // onBidderError: function({ bidderRequest }) {
+  //   const notice = buildErrorNotice(bidderRequest);
+  //   ajax(endpoints.notice.error, null, JSON.stringify(notice), { method: 'POST', withCredentials: true });
+  // },
 };
 registerBidder(spec);

@@ -61,7 +61,7 @@ export const spec = {
       // TODO: is 'page' the right value here?
       const referrer = bidderRequest.refererInfo.page;
       const bidId = bidRequest.bidId;
-      const transactionId = bidRequest.transactionId;
+      const transactionId = bidRequest.ortb2Imp?.ext?.tid;
       const unitCode = bidRequest.adUnitCode;
       const timeout = bidderRequest.timeout;
       const language = window.navigator.language;

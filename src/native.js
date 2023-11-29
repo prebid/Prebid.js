@@ -1,7 +1,6 @@
 import {
   deepAccess,
   deepClone,
-  getKeyByValue,
   insertHtmlIntoIframe,
   isArray,
   isBoolean,
@@ -422,12 +421,14 @@ function assetsMessage(data, adObject, keys, {index = auctionManager.index} = {}
   return message;
 }
 
+const NATIVE_KEYS_INVERTED = Object.fromEntries(Object.entries(CONSTANTS.NATIVE_KEYS).map(([k, v]) => [v, k]));
+
 /**
  * Constructs a message object containing asset values for each of the
  * requested data keys.
  */
 export function getAssetMessage(data, adObject) {
-  const keys = data.assets.map((k) => getKeyByValue(CONSTANTS.NATIVE_KEYS, k));
+  const keys = data.assets.map((k) => NATIVE_KEYS_INVERTED[k]);
   return assetsMessage(data, adObject, keys);
 }
 
@@ -477,6 +478,11 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
     if (NATIVE_KEYS_THAT_ARE_NOT_ASSETS.includes(key)) continue;
     if (!NATIVE_KEYS.hasOwnProperty(key)) {
       logError(`Unrecognized native asset code: ${key}. Asset will be ignored.`);
+      continue;
+    }
+
+    if (key === 'privacyLink') {
+      ortb.privacy = 1;
       continue;
     }
 
@@ -557,6 +563,21 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
 }
 
 /**
+ * Greatest common divisor between two positive integers
+ * https://en.wikipedia.org/wiki/Euclidean_algorithm
+ */
+function gcd(a, b) {
+  while (a && b && a !== b) {
+    if (a > b) {
+      a = a - b;
+    } else {
+      b = b - a;
+    }
+  }
+  return a || b;
+}
+
+/**
  * This function converts an OpenRTB native request object to Prebid proprietary
  * format. The purpose of this function is to help adapters to handle the
  * transition phase where publishers may be using OpenRTB objects but the
@@ -584,12 +605,13 @@ export function fromOrtbNativeRequest(openRTBRequest) {
       if (asset.img.w && asset.img.h) {
         image.sizes = [asset.img.w, asset.img.h];
       } else if (asset.img.wmin && asset.img.hmin) {
-        image.aspect_ratios = {
+        const scale = gcd(asset.img.wmin, asset.img.hmin)
+        image.aspect_ratios = [{
           min_width: asset.img.wmin,
           min_height: asset.img.hmin,
-          ratio_width: asset.img.wmin,
-          ratio_height: asset.img.hmin
-        }
+          ratio_width: asset.img.wmin / scale,
+          ratio_height: asset.img.hmin / scale
+        }]
       }
 
       if (asset.img.type === NATIVE_IMAGE_TYPES.MAIN) {
@@ -606,6 +628,9 @@ export function fromOrtbNativeRequest(openRTBRequest) {
       if (asset.data.len) {
         oldNativeObject[prebidAssetName].len = asset.data.len;
       }
+    }
+    if (openRTBRequest.privacy) {
+      oldNativeObject.privacyLink = { required: false };
     }
     // video was not supported by old prebid assets
   }
@@ -680,8 +705,11 @@ export function legacyPropertiesToOrtbNative(legacyNative) {
         // in general, native trackers seem to be neglected and/or broken
         response.jstracker = Array.isArray(value) ? value.join('') : value;
         break;
+      case 'privacyLink':
+        response.privacy = value;
+        break;
     }
-  })
+  });
   return response;
 }
 
@@ -764,8 +792,8 @@ export function toLegacyResponse(ortbResponse, ortbRequest) {
   legacyResponse.impressionTrackers = [];
   let jsTrackers = [];
 
-  if (ortbRequest?.imptrackers) {
-    legacyResponse.impressionTrackers.push(...ortbRequest.imptrackers);
+  if (ortbResponse.imptrackers) {
+    legacyResponse.impressionTrackers.push(...ortbResponse.imptrackers);
   }
   for (const eventTracker of ortbResponse?.eventtrackers || []) {
     if (eventTracker.event === TRACKER_EVENTS.impression && eventTracker.method === TRACKER_METHODS.img) {

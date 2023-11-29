@@ -5,11 +5,16 @@ import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'adnuntius';
+const BIDDER_CODE_DEAL_ALIAS_BASE = 'adndeal';
+const BIDDER_CODE_DEAL_ALIASES = [1, 2, 3, 4, 5].map(num => {
+  return BIDDER_CODE_DEAL_ALIAS_BASE + num;
+});
 const ENDPOINT_URL = 'https://ads.adnuntius.delivery/i';
 const ENDPOINT_URL_EUROPE = 'https://europe.delivery.adnuntius.com/i';
 const GVLID = 855;
 const DEFAULT_VAST_VERSION = 'vast4'
-// const DEFAULT_NATIVE = 'native'
+const MAXIMUM_DEALS_LIMIT = 5;
+const VALID_BID_TYPES = ['netBid', 'grossBid'];
 
 const checkSegment = function (segment) {
   if (isStr(segment)) return segment;
@@ -29,40 +34,13 @@ const getSegmentsFromOrtb = function (ortb2) {
   return segments
 }
 
-// function createNative(ad) {
-//   const native = {};
-//   const assets = ad.assets
-//   native.title = ad.text.title.content;
-//   native.image = {
-//     url: assets.image.cdnId,
-//     height: assets.image.height,
-//     width: assets.image.width,
-//   };
-//   if (assets.icon) {
-//     native.icon = {
-//       url: assets.icon.cdnId,
-//       height: assets.icon.height,
-//       width: assets.icon.width,
-//     };
-//   }
-
-//   native.sponsoredBy = ad.text.sponsoredBy?.content || '';
-//   native.body = ad.text.body?.content || '';
-//   native.cta = ad.text.cta?.content || '';
-//   native.clickUrl = ad.destinationUrls.destination || '';
-//   native.impressionTrackers = ad.impressionTrackingUrls || [ad.renderedPixel];
-
-//   return native;
-// }
-
 const handleMeta = function () {
   const storage = getStorageManager({ bidderCode: BIDDER_CODE })
   let adnMeta = null
   if (storage.localStorageIsEnabled()) {
     adnMeta = JSON.parse(storage.getDataFromLocalStorage('adn.metaData'))
   }
-  const meta = (adnMeta !== null) ? adnMeta.reduce((acc, cur) => { return { ...acc, [cur.key]: cur.value } }, {}) : {}
-  return meta
+  return (adnMeta !== null) ? adnMeta.reduce((acc, cur) => { return { ...acc, [cur.key]: cur.value } }, {}) : {}
 }
 
 const getUsi = function (meta, ortb2, bidderRequest) {
@@ -71,12 +49,21 @@ const getUsi = function (meta, ortb2, bidderRequest) {
   return usi
 }
 
+const validateBidType = function(bidTypeOption) {
+  return VALID_BID_TYPES.indexOf(bidTypeOption || '') > -1 ? bidTypeOption : 'bid';
+}
+
+const AU_ID_REGEX = new RegExp('^[0-9A-Fa-f]{1,20}$');
+
 export const spec = {
   code: BIDDER_CODE,
+  aliases: BIDDER_CODE_DEAL_ALIASES,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function (bid) {
-    return !!(bid.bidId || (bid.params.member && bid.params.invCode));
+    // The auId MUST be a hexadecimal string
+    const validAuId = AU_ID_REGEX.test(bid.params.auId);
+    return !!(validAuId && (bid.bidId || (bid.params.member && bid.params.invCode)));
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -100,19 +87,17 @@ export const spec = {
     if (gdprApplies !== undefined) request.push('consentString=' + consentString);
     if (segments.length > 0) request.push('segments=' + segments.join(','));
     if (usi) request.push('userId=' + usi);
-    if (bidderConfig.useCookie === false) request.push('noCookies=true')
-    for (var i = 0; i < validBidRequests.length; i++) {
+    if (bidderConfig.useCookie === false) request.push('noCookies=true');
+    if (bidderConfig.maxDeals > 0) request.push('ds=' + Math.min(bidderConfig.maxDeals, MAXIMUM_DEALS_LIMIT));
+    for (let i = 0; i < validBidRequests.length; i++) {
       const bid = validBidRequests[i]
       let network = bid.params.network || 'network';
+      const maxDeals = Math.max(0, Math.min(bid.params.maxDeals || 0, MAXIMUM_DEALS_LIMIT));
       const targeting = bid.params.targeting || {};
 
       if (bid.mediaTypes && bid.mediaTypes.video && bid.mediaTypes.video.context !== 'outstream') {
         network += '_video'
       }
-
-      // if (bid.mediaTypes && bid.mediaTypes.native) {
-      //   network += '_native'
-      // }
 
       bidRequests[network] = bidRequests[network] || [];
       bidRequests[network].push(bid);
@@ -121,18 +106,17 @@ export const spec = {
       networks[network].adUnits = networks[network].adUnits || [];
       if (bidderRequest && bidderRequest.refererInfo) networks[network].context = bidderRequest.refererInfo.page;
       if (adnMeta) networks[network].metaData = adnMeta;
-      const adUnit = { ...targeting, auId: bid.params.auId, targetId: bid.bidId }
+      const adUnit = { ...targeting, auId: bid.params.auId, targetId: bid.bidId, maxDeals: maxDeals }
       if (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) adUnit.dimensions = bid.mediaTypes.banner.sizes
       networks[network].adUnits.push(adUnit);
     }
 
     const networkKeys = Object.keys(networks)
-    for (var j = 0; j < networkKeys.length; j++) {
+    for (let j = 0; j < networkKeys.length; j++) {
       const network = networkKeys[j];
       const networkRequest = [...request]
       if (network.indexOf('_video') > -1) { networkRequest.push('tt=' + DEFAULT_VAST_VERSION) }
       const requestURL = gdprApplies ? ENDPOINT_URL_EUROPE : ENDPOINT_URL
-      // if (network.indexOf('_native') > -1) { networkRequest.push('tt=' + DEFAULT_NATIVE) }
       requests.push({
         method: 'POST',
         url: requestURL + '?' + networkRequest.join('&'),
@@ -146,50 +130,91 @@ export const spec = {
 
   interpretResponse: function (serverResponse, bidRequest) {
     const adUnits = serverResponse.body.adUnits;
-    const bidResponsesById = adUnits.reduce((response, adUnit) => {
-      if (adUnit.matchedAdCount >= 1) {
-        const ad = adUnit.ads[0];
-        const effectiveCpm = (ad.bid) ? ad.bid.amount * 1000 : 0;
-        const adResponse = {
-          ...response,
-          [adUnit.targetId]: {
-            requestId: adUnit.targetId,
-            cpm: effectiveCpm,
-            width: Number(ad.creativeWidth),
-            height: Number(ad.creativeHeight),
-            creativeId: ad.creativeId,
-            currency: (ad.bid) ? ad.bid.currency : 'EUR',
-            dealId: ad.dealId || '',
-            meta: {
-              advertiserDomains: (ad.destinationUrls.destination) ? [ad.destinationUrls.destination.split('/')[2]] : []
 
-            },
-            netRevenue: false,
-            ttl: 360,
-          }
+    let validatedBidType = validateBidType(config.getConfig().bidType);
+    if (bidRequest.bid) {
+      bidRequest.bid.forEach(b => {
+        if (b.params && b.params.bidType) {
+          validatedBidType = validateBidType(b.params.bidType);
         }
+      });
+    }
 
-        if (adUnit.vastXml) {
-          adResponse[adUnit.targetId].vastXml = adUnit.vastXml
-          adResponse[adUnit.targetId].mediaType = VIDEO
-          // } else if (ad.assets && ad.assets.image && ad.text && ad.text.title && ad.text.body && ad.destinationUrls && ad.destinationUrls.destination) {
-          //   adResponse[adUnit.targetId].native = createNative(ad);
-          //   adResponse[adUnit.targetId].mediaType = NATIVE;
-        } else {
-          adResponse[adUnit.targetId].ad = adUnit.html
-        }
+    function buildAdResponse(bidderCode, ad, adUnit, dealCount) {
+      const destinationUrls = ad.destinationUrls || {};
+      const advertiserDomains = [];
+      for (const value of Object.values(destinationUrls)) {
+        advertiserDomains.push(value.split('/')[2])
+      }
+      const adResponse = {
+        bidderCode: bidderCode,
+        requestId: adUnit.targetId,
+        cpm: ad[validatedBidType] ? ad[validatedBidType].amount * 1000 : 0,
+        width: Number(ad.creativeWidth),
+        height: Number(ad.creativeHeight),
+        creativeId: ad.creativeId,
+        currency: (ad.bid) ? ad.bid.currency : 'EUR',
+        dealId: ad.dealId || '',
+        dealCount: dealCount,
+        meta: {
+          advertiserDomains: advertiserDomains
+        },
+        netRevenue: false,
+        ttl: 360,
+      };
+      // Deal bids provide the rendered ad content along with the
+      // bid; whereas regular bids have it stored on the ad-unit.
+      const isDeal = dealCount > 0;
+      const renderSource = isDeal ? ad : adUnit;
+      if (renderSource.vastXml) {
+        adResponse.vastXml = renderSource.vastXml
+        adResponse.mediaType = VIDEO
+      } else {
+        adResponse.ad = renderSource.html
+      }
+      return adResponse;
+    }
 
-        return adResponse
-      } else return response
+    const bidsById = bidRequest.bid.reduce((response, bid) => {
+      return {
+        ...response,
+        [bid.bidId]: bid
+      };
     }, {});
 
-    const bidResponse = bidRequest.bid.map(bid => bid.bidId).reduce((request, adunitId) => {
-      if (bidResponsesById[adunitId]) { request.push(bidResponsesById[adunitId]) }
-      return request
+    const hasBidAdUnits = adUnits.filter((au) => {
+      const bid = bidsById[au.targetId];
+      if (bid && bid.bidder && BIDDER_CODE_DEAL_ALIASES.indexOf(bid.bidder) < 0) {
+        return au.matchedAdCount > 0;
+      } else {
+        // We do NOT accept bids when using this adaptor via one of the
+        // "deals" aliases; those requests are for ONLY getting deals from Adnuntius
+        return false;
+      }
+    });
+    const hasDealsAdUnits = adUnits.filter((au) => {
+      return au.deals && au.deals.length > 0;
+    });
+
+    const dealAdResponses = hasDealsAdUnits.reduce((response, au) => {
+      const bid = bidsById[au.targetId];
+      if (bid) {
+        (au.deals || []).forEach((deal, i) => {
+          response.push(buildAdResponse(bid.bidder, deal, au, i + 1));
+        });
+      }
+      return response;
     }, []);
 
-    return bidResponse
-  },
+    const bidAdResponses = hasBidAdUnits.reduce((response, au) => {
+      const bid = bidsById[au.targetId];
+      if (bid) {
+        response.push(buildAdResponse(bid.bidder, au.ads[0], au, 0));
+      }
+      return response;
+    }, []);
 
+    return [...dealAdResponses, ...bidAdResponses];
+  }
 }
 registerBidder(spec);

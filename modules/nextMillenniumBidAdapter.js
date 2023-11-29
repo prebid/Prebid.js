@@ -1,25 +1,24 @@
 import {
-  isArray,
   _each,
   createTrackPixelHtml,
-  deepAccess,
-  isStr,
+  deepAccess, getBidIdParameter,
+  getDefinedParams,
   getWindowTop,
-  getBidIdParameter,
+  isArray,
+  isStr,
   logMessage,
+  parseGPTSingleSizeArrayToRtbSize,
   parseUrl,
   triggerPixel,
-  getDefinedParams,
-  parseGPTSingleSizeArrayToRtbSize,
 } from '../src/utils.js';
 
 import CONSTANTS from '../src/constants.json';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import * as events from '../src/events.js';
 
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getRefererInfo } from '../src/refererDetection.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getRefererInfo} from '../src/refererDetection.js';
 
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
@@ -72,7 +71,7 @@ export const spec = {
       const device = getDeviceObj();
 
       const postBody = {
-        'id': bid.auctionId,
+        'id': bidderRequest?.bidderRequestId,
         'ext': {
           'prebid': {
             'storedrequest': {
@@ -177,6 +176,7 @@ export const spec = {
         const params = bidRequest.params;
         const auctionId = bidRequest.auctionId;
         const wurl = deepAccess(bid, 'ext.prebid.events.win');
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         addWurl({auctionId, requestId, wurl});
 
         const {ad, adUrl, vastUrl, vastXml} = getAd(bid);
