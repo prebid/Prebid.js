@@ -1099,7 +1099,7 @@ describe('UnrulyAdapter', function () {
                 'adUnitCode': 'video2',
                 'transactionId': 'a89619e3-137d-4cc5-9ed4-58a0b2a0bbc2',
                 'bidId': bidId,
-                'bidderRequestId': '12e00d17dff07b',
+                'bidderRequestId': '12e00d17dff07b'
               }
             ]
           }
