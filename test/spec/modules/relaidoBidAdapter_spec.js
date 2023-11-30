@@ -7,9 +7,6 @@ import {getCoreStorageManager} from '../../../src/storageManager.js';
 const UUID_KEY = 'relaido_uuid';
 const relaido_uuid = 'hogehoge';
 
-const storage = getCoreStorageManager();
-storage.setCookie(UUID_KEY, relaido_uuid);
-
 describe('RelaidoAdapter', function () {
   let bidRequest;
   let bidderRequest;
@@ -18,6 +15,10 @@ describe('RelaidoAdapter', function () {
   let serverRequest;
   let generateUUIDStub;
   let triggerPixelStub;
+  before(() => {
+    const storage = getCoreStorageManager();
+    storage.setCookie(UUID_KEY, relaido_uuid);
+  });
 
   beforeEach(function () {
     generateUUIDStub = sinon.stub(utils, 'generateUUID').returns(relaido_uuid);
@@ -39,7 +40,11 @@ describe('RelaidoAdapter', function () {
       bidId: '2ed93003f7bb99',
       bidderRequestId: '1c50443387a1f2',
       auctionId: '413ed000-8c7a-4ba1-a1fa-9732e006f8c3',
-      transactionId: '5c2d064c-7b76-42e8-a383-983603afdc45',
+      ortb2Imp: {
+        ext: {
+          tid: '5c2d064c-7b76-42e8-a383-983603afdc45',
+        }
+      },
       bidRequestsCount: 1,
       bidderRequestsCount: 1,
       bidderWinsCount: 0
@@ -234,6 +239,7 @@ describe('RelaidoAdapter', function () {
       const request = data.bids[0];
       expect(bidRequests.method).to.equal('POST');
       expect(bidRequests.url).to.equal('https://api.relaido.jp/bid/v1/sprebid');
+      expect(data.canonical_url).to.equal('https://publisher.com/home');
       expect(data.canonical_url_hash).to.equal('e6092f44a0044903ae3764126eedd6187c1d9f04');
       expect(data.ref).to.equal(bidderRequest.refererInfo.page);
       expect(data.timeout_ms).to.equal(bidderRequest.timeout);
@@ -243,7 +249,7 @@ describe('RelaidoAdapter', function () {
       expect(request.bidder_request_id).to.equal(bidRequest.bidderRequestId);
       expect(data.bid_requests_count).to.equal(bidRequest.bidRequestsCount);
       expect(request.bid_id).to.equal(bidRequest.bidId);
-      expect(request.transaction_id).to.equal(bidRequest.transactionId);
+      expect(request.transaction_id).to.equal(bidRequest.ortb2Imp.ext.tid);
       expect(request.media_type).to.equal('video');
       expect(data.uuid).to.equal(relaido_uuid);
       expect(data.pv).to.equal('$prebid.version$');
@@ -312,6 +318,23 @@ describe('RelaidoAdapter', function () {
       expect(data.bids).to.have.lengthOf(1);
       expect(data.imuid).to.equal('i.tjHcK_7fTcqnbrS_YA2vaw');
     });
+
+    it('should get userIdAsEids', function () {
+      const userIdAsEids = [
+        {
+          source: 'hogehoge.com',
+          uids: {
+            atype: 1,
+            id: 'hugahuga'
+          }
+        }
+      ]
+      bidRequest.userIdAsEids = userIdAsEids
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(bidRequests.data);
+      expect(data.bids[0].userIdAsEids).to.have.lengthOf(1);
+      expect(data.bids[0].userIdAsEids[0].source).to.equal('hogehoge.com');
+    });
   });
 
   describe('spec.interpretResponse', function () {
@@ -320,6 +343,7 @@ describe('RelaidoAdapter', function () {
       expect(bidResponses).to.have.lengthOf(1);
       const response = bidResponses[0];
       expect(response.requestId).to.equal(serverRequest.data.bids[0].bidId);
+      expect(response.placementId).to.equal(serverResponse.body.ads[0].placementId);
       expect(response.width).to.equal(serverRequest.data.bids[0].width);
       expect(response.height).to.equal(serverRequest.data.bids[0].height);
       expect(response.cpm).to.equal(serverResponse.body.ads[0].price);
@@ -338,6 +362,7 @@ describe('RelaidoAdapter', function () {
       expect(bidResponses).to.have.lengthOf(1);
       const response = bidResponses[0];
       expect(response.requestId).to.equal(serverRequest.data.bids[0].bidId);
+      expect(response.placementId).to.equal(serverResponse.body.ads[0].placementId);
       expect(response.width).to.equal(serverRequest.data.bids[0].width);
       expect(response.height).to.equal(serverRequest.data.bids[0].height);
       expect(response.cpm).to.equal(serverResponse.body.ads[0].price);
@@ -355,6 +380,7 @@ describe('RelaidoAdapter', function () {
       expect(bidResponses).to.have.lengthOf(1);
       const response = bidResponses[0];
       expect(response.requestId).to.equal(serverRequest.data.bids[0].bidId);
+      expect(response.placementId).to.equal(serverResponseBanner.body.ads[0].placementId);
       expect(response.cpm).to.equal(serverResponseBanner.body.ads[0].price);
       expect(response.currency).to.equal(serverResponseBanner.body.ads[0].currency);
       expect(response.creativeId).to.equal(serverResponseBanner.body.ads[0].creativeId);

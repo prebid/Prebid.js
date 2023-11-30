@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/freewheel-sspBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { createEidsArray } from 'modules/userId/eids.js';
+import { config } from 'src/config.js';
 
 const ENDPOINT = '//ads.stickyadstv.com/www/delivery/swfIndex.php';
 const PREBID_VERSION = '$prebid.version$';
@@ -135,11 +136,11 @@ describe('freewheelSSP BidAdapter Test', () => {
 
     it('should pass 3rd party IDs with the request when present', function () {
       const bidRequest = bidRequests[0];
-      bidRequest.userIdAsEids = createEidsArray({
-        tdid: 'TTD_ID_FROM_USER_ID_MODULE',
-        admixerId: 'admixerId_FROM_USER_ID_MODULE',
-        adtelligentId: 'adtelligentId_FROM_USER_ID_MODULE'
-      });
+      bidRequest.userIdAsEids = [
+        {source: 'adserver.org', uids: [{id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: {rtiPartner: 'TDID'}}]},
+        {source: 'admixer.net', uids: [{id: 'admixerId_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'adtelligent.com', uids: [{id: 'adtelligentId_FROM_USER_ID_MODULE', atype: 3}]},
+      ];
       const request = spec.buildRequests(bidRequests);
       const payload = request[0].data;
       expect(payload._fw_prebid_3p_UID).to.deep.equal(JSON.stringify([
@@ -203,6 +204,14 @@ describe('freewheelSSP BidAdapter Test', () => {
       let bidderRequest = {
         'gdprConsent': {
           'consentString': gdprConsentString
+        },
+        'ortb2': {
+          'site': {
+            'content': {
+              'test': 'news',
+              'test2': 'param'
+            }
+          }
         }
       };
 
@@ -216,6 +225,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.playerSize).to.equal('300x600');
       expect(payload._fw_gdpr_consent).to.exist.and.to.be.a('string');
       expect(payload._fw_gdpr_consent).to.equal(gdprConsentString);
+      expect(payload._fw_prebid_content).to.deep.equal('{\"test\":\"news\",\"test2\":\"param\"}');
 
       let gdprConsent = {
         'gdprApplies': true,
@@ -284,8 +294,9 @@ describe('freewheelSSP BidAdapter Test', () => {
     it('should return context and placement with default values', () => {
       const request = spec.buildRequests(bidRequests);
       const payload = request[0].data;
-      expect(payload.video_context).to.equal('instream'); ;
-      expect(payload.video_placement).to.equal(1);
+      expect(payload.video_context).to.equal(''); ;
+      expect(payload.video_placement).to.equal(null);
+      expect(payload.video_plcmt).to.equal(null);
     });
 
     it('should add parameters to the tag', () => {
@@ -367,6 +378,7 @@ describe('freewheelSSP BidAdapter Test', () => {
           'video': {
             'context': 'outstream',
             'placement': 2,
+            'plcmt': 3,
             'playerSize': [300, 600],
           }
         },
@@ -382,6 +394,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       const payload = request[0].data;
       expect(payload.video_context).to.equal('outstream'); ;
       expect(payload.video_placement).to.equal(2);
+      expect(payload.video_plcmt).to.equal(3);
     });
   })
 

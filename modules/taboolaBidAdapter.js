@@ -3,9 +3,9 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import {deepAccess, getWindowSelf, replaceAuctionPrice} from '../src/utils.js'
+import {deepAccess, getWindowSelf, replaceAuctionPrice} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
-import { ajax } from '../src/ajax.js';
+import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'taboola';
 const GVLID = 42;
@@ -120,12 +120,12 @@ export const spec = {
     };
 
     const request = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       imp: imps,
       site,
       device,
       source: {fd: 1},
-      tmax: bidderRequest.timeout,
+      tmax: (bidderRequest.timeout == undefined) ? undefined : parseInt(bidderRequest.timeout),
       bcat: ortb2.bcat || bidRequest.params.bcat || [],
       badv: ortb2.badv || bidRequest.params.badv || [],
       wlang: ortb2.wlang || bidRequest.params.wlang || [],
@@ -136,7 +136,7 @@ export const spec = {
       }
     };
 
-    const url = [END_POINT_URL, publisherId].join('/');
+    const url = END_POINT_URL + '?publisher=' + publisherId;
 
     return {
       url,

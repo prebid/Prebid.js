@@ -119,6 +119,11 @@ describe('Improve Digital Adapter Tests', function () {
   };
 
   const bidderRequest = {
+    ortb2: {
+      source: {
+        tid: 'mock-tid'
+      }
+    },
     bids: [simpleBidRequest],
   };
 
@@ -236,7 +241,7 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.tmax).not.to.exist;
       expect(payload.regs).to.not.exist;
       expect(payload.schain).to.not.exist;
-      sinon.assert.match(payload.source, {tid: 'f183e871-fbed-45f0-a427-c8a63c4c01eb'})
+      sinon.assert.match(payload.source, {tid: 'mock-tid'})
       expect(payload.device).to.be.an('object');
       expect(payload.user).to.not.exist;
       sinon.assert.match(payload.imp, [
@@ -1174,6 +1179,16 @@ describe('Improve Digital Adapter Tests', function () {
       response.body.seatbid[0].bid[0].ext.improvedigital.buying_type = 'deal_id';
       bids = spec.interpretResponse(response, request);
       expect(bids[0].dealId).to.equal(268515);
+    });
+
+    it('should set deal type targeting KV for PG', function () {
+      const request = makeRequest(bidderRequest);
+      const response = deepClone(serverResponse);
+      let bids;
+
+      response.body.seatbid[0].bid[0].ext.improvedigital.pg = 1;
+      bids = spec.interpretResponse(response, request);
+      expect(bids[0].adserverTargeting.hb_deal_type_improve).to.equal('pg');
     });
 
     it('should set currency', function () {

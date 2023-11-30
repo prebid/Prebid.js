@@ -1,6 +1,6 @@
-import {getAdUnitSizes} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 const BIDDER_CODE = 'vdoai';
 const ENDPOINT_URL = 'https://prebid.vdo.ai/auction';
@@ -38,6 +38,7 @@ export const spec = {
         bidId: bidRequest.bidId,
         // TODO: is 'page' the right value here?
         referer: bidderRequest.refererInfo.page,
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         id: bidRequest.auctionId,
         mediaType: bidRequest.mediaTypes.video ? 'video' : 'banner'
       };

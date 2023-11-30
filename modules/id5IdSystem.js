@@ -60,11 +60,11 @@ export const id5IdSubmodule = {
    */
   decode(value, config) {
     let universalUid;
-    let linkType = 0;
+    let ext = {};
 
     if (value && typeof value.universal_uid === 'string') {
       universalUid = value.universal_uid;
-      linkType = value.link_type || linkType;
+      ext = value.ext || ext;
     } else {
       return undefined;
     }
@@ -72,9 +72,7 @@ export const id5IdSubmodule = {
     let responseObj = {
       id5id: {
         uid: universalUid,
-        ext: {
-          linkType: linkType
-        }
+        ext: ext
       }
     };
 
@@ -110,7 +108,7 @@ export const id5IdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(submoduleConfig, consentData, cacheIdObj) {
-    if (!hasRequiredConfig(submoduleConfig)) {
+    if (!validateConfig(submoduleConfig)) {
       return undefined;
     }
 
@@ -144,19 +142,31 @@ export const id5IdSubmodule = {
    * @return {(IdResponse|function(callback:function))} A response object that contains id and/or callback.
    */
   extendId(config, consentData, cacheIdObj) {
-    hasRequiredConfig(config);
-
     if (!hasWriteConsentToLocalStorage(consentData)) {
       logInfo(LOG_PREFIX + 'No consent given for ID5 local storage writing, skipping nb increment.')
       return cacheIdObj;
     }
 
-    const partnerId = (config && config.params && config.params.partner) || 0;
+    const partnerId = validateConfig(config) ? config.params.partner : 0;
     incrementNb(partnerId);
 
     logInfo(LOG_PREFIX + 'using cached ID', cacheIdObj);
     return cacheIdObj;
-  }
+  },
+  eids: {
+    'id5id': {
+      getValue: function(data) {
+        return data.uid
+      },
+      source: 'id5-sync.com',
+      atype: 1,
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+  },
 };
 
 class IdFetchFlow {
@@ -295,9 +305,23 @@ class IdFetchFlow {
   }
 }
 
-function hasRequiredConfig(config) {
-  if (!config || !config.params || !config.params.partner || typeof config.params.partner !== 'number') {
-    logError(LOG_PREFIX + 'partner required to be defined as a number');
+function validateConfig(config) {
+  if (!config || !config.params || !config.params.partner) {
+    logError(LOG_PREFIX + 'partner required to be defined');
+    return false;
+  }
+
+  const partner = config.params.partner
+  if (typeof partner === 'string' || partner instanceof String) {
+    let parsedPartnerId = parseInt(partner);
+    if (isNaN(parsedPartnerId) || parsedPartnerId < 0) {
+      logError(LOG_PREFIX + 'partner required to be a number or a String parsable to a positive integer');
+      return false;
+    } else {
+      config.params.partner = parsedPartnerId;
+    }
+  } else if (typeof partner !== 'number') {
+    logError(LOG_PREFIX + 'partner required to be a number or a String parsable to a positive integer');
     return false;
   }
 

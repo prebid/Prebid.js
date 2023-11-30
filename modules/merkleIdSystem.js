@@ -196,6 +196,30 @@ export const merkleIdSubmodule = {
 
     logInfo('User ID - merkleId not refreshed');
     return {id: storedId};
+  },
+  eids: {
+    'merkleId': {
+      atype: 3,
+      getSource: function(data) {
+        if (data?.ext?.ssp) {
+          return `${data.ext.ssp}.merkleinc.com`
+        }
+        return 'merkleinc.com'
+      },
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.keyID) {
+          return {
+            keyID: data.keyID
+          }
+        }
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
   }
 
 };

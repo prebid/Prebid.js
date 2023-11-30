@@ -150,8 +150,7 @@ export const CONVERTER = ortbConverter({
     mergeDeep(request, {
       id: getUniqueIdentifierStr(),
       source: {
-        // TODO: once https://github.com/prebid/Prebid.js/issues/8573 is resolved, this should be handled by the base ortbConverter logic
-        tid: context.bidRequests[0].transactionId,
+
       },
       ext: {
         improvedigital: {
@@ -183,6 +182,10 @@ export const CONVERTER = ortbConverter({
     })();
     const bidResponse = buildBidResponse(bid, context);
     const idExt = deepAccess(bid, `ext.${BIDDER_CODE}`, {});
+    // Programmatic guaranteed flag
+    if (idExt.pg === 1) {
+      bidResponse.adserverTargeting = { hb_deal_type_improve: 'pg' };
+    }
     Object.assign(bidResponse, {
       dealId: (typeof idExt.buying_type === 'string' && idExt.buying_type !== 'rtb') ? idExt.line_item_id : undefined,
       netRevenue: idExt.is_net || false,
