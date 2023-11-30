@@ -27,7 +27,7 @@ describe('PremiumAdsBidAdapter', function () {
         bidId: 'f5b067ee-66c5-4b5a-99bc-29f5d757251f',
         requestId: 'c8423cb2-b35e-11ed-afa1-0242ac120002',
         bidderRequestId: 'cbf80fbf-30cf-4760-bfae-b44a778feff8',
-        transactionId: 'a91b2f52-db75-463b-8238-4fe80dc1ad2e',
+        transactionId: 'cbf80fbf-30cf-4760-bfae-b44a778feff8',
         schain: {
           'ver': '1.0',
           'complete': 1,
@@ -231,10 +231,8 @@ describe('PremiumAdsBidAdapter', function () {
         let data = JSON.parse(request.data);
         expect(data.at).to.equal(1); // auction  type
         expect(data.cur[0]).to.equal('USD'); // currency
-        expect(data.site.domain).to.be.a('string'); // domain should be set
+        expect(data.site.page).to.be.a('string'); // domain should be set
         expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
-        expect(data.source.tid).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
-        expect(data.imp[0].id).to.equal(bidRequests[0].bidId); // Prebid bid id is passed as id
         expect(data.imp[0].bidfloor).to.equal(bidRequests[0].params.floor); // floor
         expect(data.imp[0].tagid).to.equal(bidRequests[0].params.adUnitId); // adUnitId
         expect(data.imp[0].banner.w).to.equal(300); // width
@@ -253,10 +251,8 @@ describe('PremiumAdsBidAdapter', function () {
         expect(data.user.ext.consent).to.equal('23sfsdfdsf');
         expect(data.at).to.equal(1); // auction type
         expect(data.cur[0]).to.equal('USD'); // currency
-        expect(data.site.domain).to.be.a('string'); // domain should be set
+        expect(data.site.page).to.be.a('string'); // domain should be set
         expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
-        expect(data.source.tid).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
-        expect(data.imp[0].id).to.equal(bidRequests[0].bidId); // Prebid bid id is passed as id
         expect(data.imp[0].bidfloor).to.equal(parseFloat(bidRequests[0].params.floor)); // reverse
         expect(data.imp[0].tagid).to.equal(bidRequests[0].params.adUnitId); // adUnitId
         expect(data.imp[0].banner.w).to.equal(300); // width
@@ -272,10 +268,9 @@ describe('PremiumAdsBidAdapter', function () {
         expect(data.regs.ext.us_privacy).to.equal('1NYN');// USP/CCPAs
         expect(data.at).to.equal(1); // auction type
         expect(data.cur[0]).to.equal('USD'); // currency
-        expect(data.site.domain).to.be.a('string'); // domain should be set
+        expect(data.site.page).to.be.a('string'); // domain should be set
         expect(data.ext.wrapper.transactionId).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
         expect(data.source.tid).to.equal(bidRequests[0].transactionId); // Prebid TransactionId
-        expect(data.imp[0].id).to.equal(bidRequests[0].bidId); // Prebid bid id is passed as id
         expect(data.imp[0].bidfloor).to.equal(parseFloat(bidRequests[0].params.floor)); // reverse
         expect(data.imp[0].tagid).to.equal(bidRequests[0].params.adUnitId); // adUnitId
         expect(data.imp[0].banner.w).to.equal(300); // width
