@@ -232,7 +232,7 @@ describe('attachCallbacks', () => {
     };
   }
 
-  function expectNullXHR(response) {
+  function expectNullXHR(response, reason) {
     return new Promise((resolve, reject) => {
       attachCallbacks(Promise.resolve(response), {
         success: () => {
@@ -246,7 +246,8 @@ describe('attachCallbacks', () => {
             statusText: '',
             responseText: '',
             response: '',
-            responseXML: null
+            responseXML: null,
+            reason
           });
           expect(xhr.getResponseHeader('any')).to.be.null;
           resolve();
@@ -256,8 +257,20 @@ describe('attachCallbacks', () => {
   }
 
   it('runs error callback on rejections', () => {
-    return expectNullXHR(Promise.reject(new Error()));
+    const err = new Error();
+    return expectNullXHR(Promise.reject(err), err);
   });
+
+  it('sets timedOut = true on fetch timeout', (done) => {
+    const ctl = new AbortController();
+    ctl.abort();
+    attachCallbacks(fetch('/', {signal: ctl.signal}), {
+      error(_, xhr) {
+        expect(xhr.timedOut).to.be.true;
+        done();
+      }
+    });
+  })
 
   Object.entries({
     '2xx response': {
@@ -368,8 +381,9 @@ describe('attachCallbacks', () => {
       });
 
       it(`runs error callback if body cannot be retrieved`, () => {
-        response.text = () => Promise.reject(new Error());
-        return expectNullXHR(response);
+        const err = new Error();
+        response.text = () => Promise.reject(err);
+        return expectNullXHR(response, err);
       });
 
       if (success) {
