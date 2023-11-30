@@ -4,7 +4,6 @@ import * as utils from 'src/utils.js'
 import {VIDEO, BANNER} from 'src/mediaTypes.js'
 import {Renderer} from 'src/Renderer.js'
 import {adapter} from 'modules/unrulyBidAdapter.js'
-import {getGlobal} from 'src/prebidGlobal.js';
 
 describe('UnrulyAdapter', function () {
   function createOutStreamExchangeBid({
@@ -519,7 +518,7 @@ describe('UnrulyAdapter', function () {
             }
           ],
           'invalidBidsCount': 0,
-          'prebidVersion': getGlobal().version
+          'prebidVersion': '$prebid.version$'
         }
       };
 
@@ -594,7 +593,7 @@ describe('UnrulyAdapter', function () {
             }
           ],
           'invalidBidsCount': 0,
-          'prebidVersion': getGlobal().version
+          'prebidVersion': '$prebid.version$'
         }
       };
 
@@ -686,7 +685,7 @@ describe('UnrulyAdapter', function () {
             }
           ],
           'invalidBidsCount': 0,
-          'prebidVersion': getGlobal().version
+          'prebidVersion': '$prebid.version$'
         }
       };
 
