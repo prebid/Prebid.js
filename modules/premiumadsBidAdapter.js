@@ -5,7 +5,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
-
+import {getStorageManager} from '../src/storageManager.js';
 const BIDDER_CODE = 'premiumads';
 const CURRENCY = 'USD';
 const ENDPOINT_URL = 'https://bid.premiumads.net/prebid/auction';
@@ -15,6 +15,7 @@ const UNDEFINED = undefined;
 const DEFAULT_WIDTH = 0;
 const DEFAULT_HEIGHT = 0;
 const NET_REVENUE = false;
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 let NATIVE_ASSET_ID_TO_KEY_MAP = {};
 const DATA_TYPES = {
   'NUMBER': 'number', 'STRING': 'string', 'BOOLEAN': 'boolean', 'ARRAY': 'array', 'OBJECT': 'object'
@@ -319,9 +320,22 @@ function _getFloor(bid) {
   if (bid && typeof bid.getFloor === 'function' && bid.getFloor().floor) {
     return bid.getFloor().floor;
   }
-  return null;
+  return 0;
 }
 
+function _generateGUID() {
+  var d = new Date().getTime();
+  var guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    var r = (d + Math.random() * 16) % 16 | 0;
+    d = Math.floor(d / 16);
+    return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  })
+  return guid;
+}
+function _getLanguage() {
+  const language = navigator.language ? 'language' : 'userLanguage';
+  return navigator[language].split('-')[0];
+}
 function _createImpressionObject(bid, conf) {
   var impObj = {};
   var bannerObj;
@@ -329,6 +343,11 @@ function _createImpressionObject(bid, conf) {
   var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
   var mediaTypes = '';
   var format = [];
+  var guid;
+  if (storage.getDataFromLocalStorage('premiumads_user_id') == null) {
+    storage.setDataInLocalStorage('premiumads_user_id', _generateGUID())
+  }
+  guid = storage.getDataFromLocalStorage('premiumads_user_id')
 
   impObj = {
     id: bid.bidId,
@@ -336,7 +355,33 @@ function _createImpressionObject(bid, conf) {
     bidfloor: _getFloor(bid),
     secure: 1,
     ext: {},
-    bidfloorcur: CURRENCY
+    bidfloorcur: CURRENCY,
+    site: {
+      page: conf.pageURL,
+      ref: conf.refURL,
+      publisher: {}
+    },
+    device: {
+      ip: '',
+      ua: navigator.userAgent,
+      os: platform,
+      js: 1,
+      dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
+      h: screen.height,
+      w: screen.width,
+      language: _getLanguage(),
+      devicetype: _isMobile() ? 1 : _isConnectedTV() ? 3 : 2,
+      geo: {
+        country: '{country_code}',
+        type: 0,
+        ipservice: 1,
+        region: '',
+        city: '',
+      },
+    },
+    user: {
+      id: guid
+    }
   };
 
   if (bid.hasOwnProperty('mediaTypes')) {
@@ -439,7 +484,7 @@ export const spec = {
     payload.device.ua = navigator.userAgent;
     payload.device.ip = navigator.ip;
     payload.device.geo = payload.user.geo;
-    payload.site.page = bidderRequest.refererInfo.page;
+    payload.site.page = conf.pageURL;
     payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
     deepSetValue(payload, 'source.tid', conf.transactionId);
     // test bids
