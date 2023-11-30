@@ -200,7 +200,7 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function(bid) {
-    if (!bid.params.pid) {
+    if (!bid.params || !bid.params.pid) {
       logWarn('Bad params, "pid" required.');
       return false
     }
@@ -226,11 +226,11 @@ export const spec = {
 
   interpretResponse: function(serverResponse, request) {
     // r2b2Error('error message', {params: 1});
-    let prebidResponse = [];
+    let prebidResponses = [];
 
     const response = serverResponse.body;
     if (!response || !response.seatbid || !response.seatbid[0] || !response.seatbid[0].bid) {
-      return prebidResponse;
+      return prebidResponses;
     }
     let requestImps = request.data.imp || [];
     try {
@@ -244,13 +244,13 @@ export const spec = {
             r2b2Error('Cant match bid response.', {impid: Boolean(responseBid.impid)});
             continue;// Skip this iteration if there's no match
           }
-          prebidResponse.push(createPrebidResponseBid(requestCurrentImp, responseBid, response, request.bids));
+          prebidResponses.push(createPrebidResponseBid(requestCurrentImp, responseBid, response, request.bids));
         }
       })
     } catch (e) {
       r2b2Error('Error while interpreting response:', {msg: e.message});
     }
-    return prebidResponse;
+    return prebidResponses;
   },
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
