@@ -212,6 +212,64 @@ const popInAdSize = [
 ];
 
 /**
+ * get screen size
+ *
+ * @returns {Array} eg: "['widthxheight']"
+ */
+function getScreenSize() {
+  return utils.parseSizesInput([window.screen.width, window.screen.height]);
+}
+
+/**
+ * @param {BidRequest} bidRequest
+ * @param bidderRequest
+ * @returns {string}
+ */
+function getReferrer(bidRequest = {}, bidderRequest = {}) {
+  let pageUrl;
+  if (bidRequest.params && bidRequest.params.referrer) {
+    pageUrl = bidRequest.params.referrer;
+  } else {
+    pageUrl = utils.deepAccess(bidderRequest, 'refererInfo.page');
+  }
+  return pageUrl;
+}
+
+/**
+ * format imp ad test ext params
+ *
+ * @param validBidRequest sigleBidRequest
+ * @param bidderRequest
+ */
+function addImpExtParams(bidRequest = {}, bidderRequest = {}) {
+  const { deepAccess } = utils;
+  const { params = {}, adUnitCode, bidId } = bidRequest;
+  const ext = {
+    bidId: bidId || '',
+    adUnitCode: adUnitCode || '',
+    token: params.token || '',
+    siteId: params.siteId || '',
+    zoneId: params.zoneId || '',
+    publisher: params.publisher || '',
+    p_pos: params.position || '',
+    screenSize: getScreenSize(),
+    referrer: getReferrer(bidRequest, bidderRequest),
+    stack: deepAccess(bidRequest, 'refererInfo.stack', []),
+    b_pos: deepAccess(bidRequest, 'mediaTypes.banner.pos', '', ''),
+    ortbUser: deepAccess(bidRequest, 'ortb2.user', {}, {}),
+    ortbSite: deepAccess(bidRequest, 'ortb2.site', {}, {}),
+    tid: deepAccess(bidRequest, 'ortb2Imp.ext.tid', '', ''),
+    browsiViewability: deepAccess(bidRequest, 'ortb2Imp.ext.data.browsi.browsiViewability', '', ''),
+    adserverName: deepAccess(bidRequest, 'ortb2Imp.ext.data.adserver.name', '', ''),
+    adslot: deepAccess(bidRequest, 'ortb2Imp.ext.data.adserver.adslot', '', ''),
+    keywords: deepAccess(bidRequest, 'ortb2Imp.ext.data.keywords', '', ''),
+    gpid: deepAccess(bidRequest, 'ortb2Imp.ext.gpid', '', ''),
+    pbadslot: deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot', '', ''),
+  };
+  return ext;
+}
+
+/**
  * get aditem setting
  * @param {Array}  validBidRequests an an array of bids
  * @param {Object} bidderRequest  The master bidRequest object
@@ -261,6 +319,11 @@ function getItems(validBidRequests, bidderRequest) {
         tagid: req.params && req.params.tagid
       };
     }
+
+    try {
+      ret.ext = addImpExtParams(req, bidderRequest);
+    } catch (e) {}
+
     itemMaps[id] = {
       req,
       ret,
@@ -323,7 +386,6 @@ function getParam(validBidRequests, bidderRequest) {
         buyeruid: getUserID(),
         id: sharedid || pubcid,
       },
-      eids,
       tmax: timeout,
       site: {
         name: domain,

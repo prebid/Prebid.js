@@ -24,6 +24,7 @@ const CURRENCY = Object.freeze({
 });
 
 const REQUEST_KEYS = Object.freeze({
+  USER_DATA: 'ortb2.user.data',
   SOCIAL_CANVAS: 'params.socialCanvas',
   SUA: 'ortb2.device.sua',
   TDID_ADAPTER: 'userId.tdid',
@@ -103,15 +104,20 @@ function buildRequests(validBidRequests, bidderRequest) {
     }
   }
 
+  // Add schain
   if (firstBidRequest.schain && firstBidRequest.schain.nodes) {
     krakenParams.schain = firstBidRequest.schain
   }
+
+  // Add user data object if available
+  krakenParams.user.data = deepAccess(firstBidRequest, REQUEST_KEYS.USER_DATA) || [];
 
   const reqCount = getRequestCount()
   if (reqCount != null) {
     krakenParams.requestCount = reqCount;
   }
 
+  // Add currency if not USD
   if (currency != null && currency != CURRENCY.US_DOLLAR) {
     krakenParams.cur = currency;
   }

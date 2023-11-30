@@ -14,7 +14,6 @@ import {config} from 'src/config.js';
 import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
 import {server} from 'test/mocks/xhr.js';
-import {createEidsArray} from 'modules/userId/eids.js';
 import 'modules/appnexusBidAdapter.js'; // appnexus alias test
 import 'modules/rubiconBidAdapter.js'; // rubicon alias test
 import 'src/prebid.js'; // $$PREBID_GLOBAL$$.aliasBidder test
@@ -34,11 +33,9 @@ import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {addComponentAuction, registerBidder} from 'src/adapters/bidderFactory.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
-import {syncAddFPDEnrichments, syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
+import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {deepSetValue} from '../../../src/utils.js';
-import {sandbox} from 'sinon';
 import {ACTIVITY_TRANSMIT_UFPD} from '../../../src/activities/activities.js';
-import {activityParams} from '../../../src/activities/activityParams.js';
 import {MODULE_TYPE_PREBID} from '../../../src/activities/modules.js';
 
 let CONFIG = {
@@ -2054,7 +2051,7 @@ describe('S2S Adapter', function () {
       const bidRequests = utils.deepClone(BID_REQUESTS);
       adapter.callBids(REQUEST, bidRequests, addBidResponse, done, ajax);
 
-      const parsedRequestBody = JSON.parse(server.requests[1].requestBody);
+      const parsedRequestBody = JSON.parse(server.requests.find(req => req.method === 'POST').requestBody);
       expect(parsedRequestBody.cur).to.deep.equal(['NZ']);
     });
 
@@ -3425,6 +3422,32 @@ describe('S2S Adapter', function () {
       });
     });
     describe('when the response contains ext.prebid.fledge', () => {
+      const AU = 'div-gpt-ad-1460505748561-0';
+      const FLEDGE_RESP = {
+        ext: {
+          prebid: {
+            fledge: {
+              auctionconfigs: [
+                {
+                  impid: AU,
+                  bidder: 'appnexus',
+                  config: {
+                    id: 1
+                  }
+                },
+                {
+                  impid: AU,
+                  bidder: 'other',
+                  config: {
+                    id: 2
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+
       let fledgeStub, request, bidderRequests;
 
       function fledgeHook(next, ...args) {
@@ -3442,50 +3465,45 @@ describe('S2S Adapter', function () {
       beforeEach(function () {
         fledgeStub = sinon.stub();
         config.setConfig({CONFIG});
+        bidderRequests = deepClone(BID_REQUESTS);
+        AU
+        bidderRequests.forEach(req => {
+          Object.assign(req, {
+            fledgeEnabled: true,
+            ortb2: {
+              fpd: 1
+            }
+          })
+          req.bids.forEach(bid => {
+            Object.assign(bid, {
+              ortb2Imp: {
+                fpd: 2
+              }
+            })
+          })
+        });
         request = deepClone(REQUEST);
         request.ad_units.forEach(au => deepSetValue(au, 'ortb2Imp.ext.ae', 1));
-        bidderRequests = deepClone(BID_REQUESTS);
-        bidderRequests.forEach(req => req.fledgeEnabled = true);
       });
 
-      const AU = 'div-gpt-ad-1460505748561-0';
-      const FLEDGE_RESP = {
-        ext: {
-          prebid: {
-            fledge: {
-              auctionconfigs: [
-                {
-                  impid: AU,
-                  config: {
-                    id: 1
-                  }
-                },
-                {
-                  impid: AU,
-                  config: {
-                    id: 2
-                  }
-                }
-              ]
-            }
-          }
-        }
+      function expectFledgeCalls() {
+        const auctionId = bidderRequests[0].auctionId;
+        sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: bidderRequests[0].ortb2, ortb2Imp: bidderRequests[0].bids[0].ortb2Imp}), {id: 1})
+        sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: undefined, ortb2Imp: undefined}), {id: 2})
       }
 
       it('calls addComponentAuction alongside addBidResponse', function () {
         adapter.callBids(request, bidderRequests, addBidResponse, done, ajax);
         server.requests[0].respond(200, {}, JSON.stringify(mergeDeep({}, RESPONSE_OPENRTB, FLEDGE_RESP)));
         expect(addBidResponse.called).to.be.true;
-        sinon.assert.calledWith(fledgeStub, bidderRequests[0].auctionId, AU, {id: 1});
-        sinon.assert.calledWith(fledgeStub, bidderRequests[0].auctionId, AU, {id: 2});
+        expectFledgeCalls();
       });
 
       it('calls addComponentAuction when there is no bid in the response', () => {
         adapter.callBids(request, bidderRequests, addBidResponse, done, ajax);
         server.requests[0].respond(200, {}, JSON.stringify(FLEDGE_RESP));
         expect(addBidResponse.called).to.be.false;
-        sinon.assert.calledWith(fledgeStub, bidderRequests[0].auctionId, AU, {id: 1});
-        sinon.assert.calledWith(fledgeStub, bidderRequests[0].auctionId, AU, {id: 2});
+        expectFledgeCalls();
       })
     });
   });
@@ -3739,6 +3757,74 @@ describe('S2S Adapter', function () {
         syncEndpoint: {
           p1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync',
           noP1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync'
+        },
+      })
+    });
+
+    it('should configure the s2sConfig object with openwrap vendor defaults unless specified by user', function () {
+      const options = {
+        accountId: '1234',
+        bidders: ['pubmatic'],
+        defaultVendor: 'openwrap'
+      };
+
+      config.setConfig({ s2sConfig: options });
+      sinon.assert.notCalled(logErrorSpy);
+
+      let vendorConfig = config.getConfig('s2sConfig');
+      expect(vendorConfig).to.have.property('accountId', '1234');
+      expect(vendorConfig).to.have.property('adapter', 'prebidServer');
+      expect(vendorConfig.bidders).to.deep.equal(['pubmatic']);
+      expect(vendorConfig.enabled).to.be.true;
+      expect(vendorConfig.endpoint).to.deep.equal({
+        p1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs',
+        noP1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs'
+      });
+      expect(vendorConfig).to.have.property('timeout', 500);
+    });
+
+    it('should return proper defaults', function () {
+      const options = {
+        accountId: '1234',
+        bidders: ['pubmatic'],
+        defaultVendor: 'openwrap',
+        timeout: 500
+      };
+
+      config.setConfig({ s2sConfig: options });
+      expect(config.getConfig('s2sConfig')).to.deep.equal({
+        'accountId': '1234',
+        'adapter': 'prebidServer',
+        'bidders': ['pubmatic'],
+        'defaultVendor': 'openwrap',
+        'enabled': true,
+        'endpoint': {
+          p1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs',
+          noP1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs'
+        },
+        'timeout': 500
+      })
+    });
+
+    it('should return default adapterOptions if not set', function () {
+      config.setConfig({
+        s2sConfig: {
+          accountId: '1234',
+          bidders: ['pubmatic'],
+          defaultVendor: 'openwrap',
+          timeout: 500
+        }
+      });
+      expect(config.getConfig('s2sConfig')).to.deep.equal({
+        enabled: true,
+        timeout: 500,
+        adapter: 'prebidServer',
+        accountId: '1234',
+        bidders: ['pubmatic'],
+        defaultVendor: 'openwrap',
+        endpoint: {
+          p1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs',
+          noP1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs'
         },
       })
     });

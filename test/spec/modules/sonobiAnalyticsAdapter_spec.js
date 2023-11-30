@@ -1,4 +1,4 @@
-import sonobiAnalytics from 'modules/sonobiAnalyticsAdapter.js';
+import sonobiAnalytics, {DEFAULT_EVENT_URL} from 'modules/sonobiAnalyticsAdapter.js';
 import {expect} from 'chai';
 import {server} from 'test/mocks/xhr.js';
 let events = require('src/events');
@@ -76,8 +76,8 @@ describe('Sonobi Prebid Analytic', function () {
       events.emit(constants.EVENTS.AUCTION_END, {auctionId: '13', bidsReceived: [bid]});
 
       clock.tick(5000);
-      expect(server.requests).to.have.length(1);
-      expect(JSON.parse(server.requests[0].requestBody)).to.have.length(3)
+      const req = server.requests.find(req => req.url.indexOf(DEFAULT_EVENT_URL) !== -1);
+      expect(JSON.parse(req.requestBody)).to.have.length(3)
       done();
     });
   });

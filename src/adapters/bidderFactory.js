@@ -292,7 +292,7 @@ export function newBidder(spec) {
           fledgeAuctionConfigs.forEach((fledgeAuctionConfig) => {
             const bidRequest = bidRequestMap[fledgeAuctionConfig.bidId];
             if (bidRequest) {
-              addComponentAuction(bidRequest.auctionId, bidRequest.adUnitCode, fledgeAuctionConfig.config);
+              addComponentAuction(bidRequest, fledgeAuctionConfig.config);
             } else {
               logWarn('Received fledge auction configuration for an unknown bidId', fledgeAuctionConfig);
             }
@@ -457,7 +457,7 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
       return Object.assign(defaults, ro, {
         browsingTopics: ro?.hasOwnProperty('browsingTopics') && !ro.browsingTopics
           ? false
-          : isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, activityParams(MODULE_TYPE_BIDDER, spec.code))
+          : (bidderSettings.get(spec.code, 'topicsHeader') ?? true) && isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, activityParams(MODULE_TYPE_BIDDER, spec.code))
       })
     }
     switch (request.method) {
@@ -525,7 +525,7 @@ export const registerSyncInner = hook('async', function(spec, responses, gdprCon
   }
 }, 'registerSyncs')
 
-export const addComponentAuction = hook('sync', (adUnitCode, fledgeAuctionConfig) => {
+export const addComponentAuction = hook('sync', (request, fledgeAuctionConfig) => {
 }, 'addComponentAuction');
 
 // check that the bid has a width and height set

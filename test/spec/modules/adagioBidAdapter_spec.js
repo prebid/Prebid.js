@@ -958,6 +958,34 @@ describe('Adagio bid adapter', () => {
         expect(requests[0].data.usIfr).to.equal(false);
       });
     });
+
+    describe('with GPID', function () {
+      const gpid = '/12345/my-gpt-tag-0';
+
+      it('should add preferred gpid to the request', function () {
+        const bid01 = new BidRequestBuilder().withParams().build();
+        bid01.ortb2Imp = {
+          ext: {
+            gpid: gpid
+          }
+        };
+        const bidderRequest = new BidderRequestBuilder().build();
+        const requests = spec.buildRequests([bid01], bidderRequest);
+        expect(requests[0].data.adUnits[0].gpid).to.exist.and.equal(gpid);
+      });
+
+      it('should add backup gpid to the request', function () {
+        const bid01 = new BidRequestBuilder().withParams().build();
+        bid01.ortb2Imp = {
+          ext: {
+            data: { pbadslot: gpid }
+          }
+        };
+        const bidderRequest = new BidderRequestBuilder().build();
+        const requests = spec.buildRequests([bid01], bidderRequest);
+        expect(requests[0].data.adUnits[0].gpid).to.exist.and.equal(gpid);
+      });
+    });
   });
 
   describe('interpretResponse()', function() {
