@@ -543,9 +543,10 @@ export const spec = {
       };
 
       if (bidrequest.mediaTypes.video) {
-        bidResponse.vastXml = serverResponse;
         bidResponse.mediaType = 'video';
       }
+
+      bidResponse.vastXml = serverResponse;
 
       bidResponse.ad = formatAdHTML(bidrequest, playerSize);
       bidResponses.push(bidResponse);
