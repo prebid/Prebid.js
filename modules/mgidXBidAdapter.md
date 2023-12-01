@@ -26,7 +26,6 @@ MGIDX header bidding adapter connects with MGID demand sources to fetch bids for
                         {
                             bidder: 'mgidX',
                             params: {
-                                host: 'eu',
                                 placementId: 'testBanner',
                             }
                         }
@@ -46,7 +45,6 @@ MGIDX header bidding adapter connects with MGID demand sources to fetch bids for
                         {
                             bidder: 'mgidX',
                             params: {
-                                host: 'eu',
                                 placementId: 'testVideo',
                             }
                         }
@@ -72,7 +70,6 @@ MGIDX header bidding adapter connects with MGID demand sources to fetch bids for
                         {
                             bidder: 'mgidX',
                             params: {
-                                host: 'eu',
                                 placementId: 'testNative',
                             }
                         }
