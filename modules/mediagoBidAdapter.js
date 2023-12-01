@@ -285,7 +285,7 @@ function getParam(validBidRequests, bidderRequest) {
   const bidsUserid = validBidRequests[0].userId;
   const eids = bidsUserIdAsEids || bidsUserid;
   const ppuid = bidsUserid && bidsUserid.pubProvidedId;
-  const content = utils.deepAccess(bidderRequest, 'ortb2.site.content', config.getAnyConfig('ortb2.site.content'));
+  const content = utils.deepAccess(bidderRequest, 'ortb2.site.content');
   const cat = utils.deepAccess(bidderRequest, 'ortb2.site.cat');
   reqTimes += 1;
 
