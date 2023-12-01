@@ -238,7 +238,6 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-
   it('sovrn', function() {
     const userId = {
       sovrn: {'id': 'sample_id'}
@@ -261,12 +260,12 @@ describe('eids array generation for known sub-modules', function() {
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
-      source: 'media.net',
+      source: 'liveintent.sovrn.com',
       uids: [{
         id: 'sample_id',
         atype: 3,
         ext: {
-          provider: 'liveintent.sovrn.com'
+          provider: 'some.provider.com'
         }
       }]
     });
