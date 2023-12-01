@@ -223,6 +223,10 @@ export const liveIntentIdSubmodule = {
         result.pubmatic = { 'id': value.pubmatic, ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
+      if (value.sovrn) {
+        result.sovrn = { 'id': value.sovrn, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
       return result
     }
 
@@ -339,6 +343,18 @@ export const liveIntentIdSubmodule = {
     },
     'pubmatic': {
       source: 'pubmatic.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'sovrn': {
+      source: 'liveintent.sovrn.com',
       atype: 3,
       getValue: function(data) {
         return data.id;
