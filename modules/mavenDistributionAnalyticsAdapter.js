@@ -147,7 +147,7 @@ export function summarizeAuctionEnd(args, adapterConfig) {
     cpmmsMap[adUnit.code] = {};
     cpmmsMap[adUnit.code].cpmm = 0;
     if (adUnit.mediaTypes.video?.context === 'adpod') {
-      cpmmsMap[adUnit.code].adpodLenght = adUnit.mediaTypes.video.durationRangeSec;
+      cpmmsMap[adUnit.code].adPodLength = adUnit.mediaTypes.video.durationRangeSec;
     }
   })
 
@@ -157,8 +157,8 @@ export function summarizeAuctionEnd(args, adapterConfig) {
 
   const cpmms = [];
   args.adUnits.forEach(adUnit => {
-    if (cpmmsMap[adUnit.code].adpodLenght) {
-      cpmmsMap[adUnit.code].adpodLenght.forEach(() => {
+    if (cpmmsMap[adUnit.code].adPodLength) {
+      cpmmsMap[adUnit.code].adPodLength.forEach(() => {
         cpmms.push(cpmmsMap[adUnit.code].cpmm)
       })
     } else {
