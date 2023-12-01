@@ -60,7 +60,11 @@ function init(config, userConsent) {
 
   items = tryParse(storage.getDataFromLocalStorage(RTD_CACHE_KEY, null));
 
-  return callServer(configParams, items, expiresAt, userConsent);
+  if (configParams.pid === undefined) {
+    return true; // Die gracefully
+  } else {
+    return callServer(configParams, items, expiresAt, userConsent);
+  }
 }
 function callServer(configParams, items, expiresAt, userConsent) {
   // Expire Cache

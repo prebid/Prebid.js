@@ -1115,6 +1115,11 @@ export const spec = {
         _buildVideoBidRequest(bidRequest);
       }
 
+      const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+      if (gpid) {
+        bidRequest.gpid = gpid;
+      }
+
       storeRequestInAdagioNS(bidRequest);
 
       // Remove these fields at the very end, so we can still use them before.
