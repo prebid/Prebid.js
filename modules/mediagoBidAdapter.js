@@ -14,6 +14,8 @@ const ENDPOINT_URL =
   // ((PROTOCOL === 'https:') ? 'https' : 'http') +
   'https://rtb-us.mediago.io/api/bid?tn=';
 const COOKY_SYNC_URL = 'https://trace.mediago.io/ju/cs/eplist';
+const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediago.io/js/cookieSync.html';
+
 const TIME_TO_LIVE = 500;
 const GVLID = 1020;
 // const ENDPOINT_URL = '/api/bid?tn=';
@@ -23,7 +25,7 @@ let itemMaps = {};
 
 /* ----- mguid:start ------ */
 const COOKIE_KEY_MGUID = '__mguid_';
-const STORE_MAX_AGE = 1000*60*60*24*365;
+const STORE_MAX_AGE = 1000 * 60 * 60 * 24 * 365;
 let reqTimes = 0;
 
 /**
@@ -76,7 +78,7 @@ function isMobileAndTablet() {
         '.+mobile|avantgo|bada/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)',
         '|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone',
         '|p(ixi|re)/|plucker|pocket|psp|series(4|6)0|symbian|treo|up.(browser|link)|vodafone|wap',
-        '|windows ce|xda|xiino|android|ipad|playbook|silk',
+        '|windows ce|xda|xiino|android|ipad|playbook|silk'
       ].join(''),
       'i'
     );
@@ -100,7 +102,7 @@ function isMobileAndTablet() {
         '|tim-|t-mo|to(pl|sh)|ts(70|m-|m3|m5)|tx-9|up(.b|g1|si)|utst|',
         'v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|-v)',
         '|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas-',
-        '|your|zeto|zte-',
+        '|your|zeto|zte-'
       ].join(''),
       'i'
     );
@@ -142,7 +144,7 @@ function getBidFloor(bid) {
     const bidFloor = bid.getFloor({
       currency: 'USD',
       mediaType: '*',
-      size: '*',
+      size: '*'
     });
     return bidFloor.floor;
   } catch (_) {
@@ -187,7 +189,7 @@ const mediagoAdSize = [
   { w: 160, h: 600 },
   { w: 320, h: 180 },
   { w: 320, h: 100 },
-  { w: 336, h: 280 },
+  { w: 336, h: 280 }
 ];
 
 /**
@@ -245,19 +247,19 @@ function getItems(validBidRequests, bidderRequest) {
           h: matchSize.h,
           w: matchSize.w,
           pos: 1,
-          format: sizes,
+          format: sizes
         },
         ext: {
           ortb2Imp: utils.deepAccess(req, 'ortb2Imp'), // 传入完整对象，分析日志数据
           gpid: gpid, // 加入后无法返回广告
           adslot: utils.deepAccess(req, 'ortb2Imp.ext.data.adserver.adslot', '', ''),
-          ...gdprConsent, // gdpr
+          ...gdprConsent // gdpr
         },
-        tagid: req.params && req.params.tagid,
+        tagid: req.params && req.params.tagid
       };
       itemMaps[id] = {
         req,
-        ret,
+        ret
       };
     }
 
@@ -285,7 +287,7 @@ function getParam(validBidRequests, bidderRequest) {
   const ppuid = bidsUserid && bidsUserid.pubProvidedId;
   const content = utils.deepAccess(bidderRequest, 'ortb2.site.content', config.getAnyConfig('ortb2.site.content'));
   const cat = utils.deepAccess(bidderRequest, 'ortb2.site.cat');
-  reqTimes +=1;
+  reqTimes += 1;
 
   let isMobile = isMobileAndTablet() ? 1 : 0;
   // input test status by Publisher. more frequently for test true req
@@ -317,21 +319,21 @@ function getParam(validBidRequests, bidderRequest) {
         // ua: 'Mozilla/5.0 (Linux; Android 12; SM-G970U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Mobile Safari/537.36',
         os: navigator.platform || '',
         ua: navigator.userAgent,
-        language: /en/.test(navigator.language) ? 'en' : navigator.language,
+        language: /en/.test(navigator.language) ? 'en' : navigator.language
       },
       ext: {
         eids,
         bidsUserIdAsEids,
         bidsUserid,
-		ppuid,
+        ppuid,
         firstPartyData,
-		content,
-		cat,
-		reqTimes
+        content,
+        cat,
+        reqTimes
       },
       user: {
         buyeruid: getUserID(),
-        id: sharedid || pubcid,
+        id: sharedid || pubcid
       },
       eids,
       site: {
@@ -344,11 +346,11 @@ function getParam(validBidRequests, bidderRequest) {
         publisher: {
           // todo
           id: domain,
-          name: domain,
-        },
+          name: domain
+        }
       },
       imp: items,
-      tmax: timeout,
+      tmax: timeout
     };
     return c;
   } else {
@@ -390,7 +392,7 @@ export const spec = {
     return {
       method: 'POST',
       url: ENDPOINT_URL + globals['token'],
-      data: payloadString,
+      data: payloadString
     };
   },
 
@@ -421,7 +423,7 @@ export const spec = {
           ttl: TIME_TO_LIVE,
           // referrer: REFERER,
           ad: getProperty(bid, 'adm'),
-          nurl: getProperty(bid, 'nurl'),
+          nurl: getProperty(bid, 'nurl')
           //   adserverTargeting: {
           //     granularityMultiplier: 0.1,
           //     priceGranularity: 'pbHg',
@@ -440,20 +442,32 @@ export const spec = {
 
   getUserSyncs: function (syncOptions, serverResponse, gdprConsent, uspConsent, gppConsent) {
     const origin = encodeURIComponent(location.origin || `https://${location.host}`);
-    const url = `${COOKY_SYNC_URL}?dm=${origin}&gdpr_consent=${gdprConsent.consentString}`;
+    let syncParamUrl = `dm=${origin}`;
+
+    if (gdprConsent && gdprConsent.consentString) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        syncParamUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        syncParamUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+    if (uspConsent && uspConsent.consentString) {
+      syncParamUrl += `&ccpa_consent=${uspConsent.consentString}`;
+    }
+
     if (syncOptions.iframeEnabled) {
       return [
         {
           type: 'iframe',
-          url: `https://cdn.mediago.io/js/cookieSync.html?gdpr_consent=${gdprConsent.consentString}`,
-        },
+          url: `${COOKY_SYNC_IFRAME_URL}?${syncParamUrl}`
+        }
       ];
     } else {
       return [
         {
           type: 'image',
-          url: url,
-        },
+          url: `${COOKY_SYNC_URL}?${syncParamUrl}`
+        }
       ];
     }
   },
@@ -477,7 +491,7 @@ export const spec = {
     if (bid['nurl']) {
       utils.triggerPixel(bid['nurl']);
     }
-  },
+  }
 
   /**
    * Register bidder specific code, which will execute when the adserver targeting has been set for a bid from this bidder
