@@ -352,6 +352,7 @@ function initSendingDataStatistic() {
 
     disabledSending = false;
     enabledSending = false;
+    auctionIds = {};
     eventHendlers = {};
 
     initEvents() {
@@ -388,23 +389,20 @@ function initSendingDataStatistic() {
     }
 
     eventHandler(eventName) {
-      const eventHandlerFunc = this.getEventHandler(eventName);
-      if (eventName == CONSTANTS.EVENTS.BID_TIMEOUT) {
-        return (bids) => {
-          if (this.disabledSending || !Array.isArray(bids)) return;
-
-          for (let bid of bids) {
-            eventHandlerFunc(bid);
-          }
-        };
-      }
-
-      return eventHandlerFunc;
+      return this.getEventHandler(eventName);
     }
 
     getEventHandler(eventName) {
       return (bid) => {
         if (this.disabledSending) return;
+        if (
+          this.auctionIds[bid.auctionId] === bid.bidder &&
+          eventName === CONSTANTS.EVENTS.BID_RESPONSE
+        )
+          return;
+
+        if (eventName === CONSTANTS.EVENTS.BID_RESPONSE)
+          this.auctionIds[bid.auctionId] = bid.bidder;
 
         const url = spec.getPixelUrl(eventName, bid, Date.now());
         if (!url) return;
