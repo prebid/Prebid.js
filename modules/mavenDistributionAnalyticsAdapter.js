@@ -75,7 +75,7 @@ export function summarizeAuctionInit(args, adapterConfig) {
   const zoneNames = []
   const zoneIndexes = []
   const adUnitCodes = []
-  const podPos = [];
+  const podPos = []
   const zoneMap = adapterConfig.options.zoneMap || {}
   let someZoneIndexNonNull = false
   let someZoneNameNonNull = false
@@ -98,13 +98,13 @@ export function summarizeAuctionInit(args, adapterConfig) {
         adUnitCodes.push(adUnit.code)
         zoneIndexes.push(zoneIndex)
         zoneNames.push(zoneNameNonNull ? zoneConfig.zone : null)
-        podPos.push(podIndex + 1);
+        podPos.push(podIndex + 1)
       })
     } else {
       adUnitCodes.push(adUnit.code)
       zoneIndexes.push(zoneIndex)
       zoneNames.push(zoneNameNonNull ? zoneConfig.zone : null)
-      podPos.push(0);
+      podPos.push(0)
     }
   })
 
@@ -144,10 +144,10 @@ export function summarizeAuctionEnd(args, adapterConfig) {
   /** @type {AuctionEndSummary} */
   const eventToSend = summarizeAuctionInit(args, adapterConfig)
   args.adUnits.forEach(adUnit => {
-    cpmmsMap[adUnit.code] = {};
-    cpmmsMap[adUnit.code].cpmm = 0;
+    cpmmsMap[adUnit.code] = {}
+    cpmmsMap[adUnit.code].cpmm = 0
     if (adUnit.mediaTypes.video?.context === 'adpod') {
-      cpmmsMap[adUnit.code].adPodLength = adUnit.mediaTypes.video.durationRangeSec;
+      cpmmsMap[adUnit.code].adPodLength = adUnit.mediaTypes.video.durationRangeSec
     }
   })
 
@@ -155,7 +155,7 @@ export function summarizeAuctionEnd(args, adapterConfig) {
     cpmmsMap[bid.adUnitCode].cpmm = Math.max(cpmmsMap[bid.adUnitCode].cpmm, Math.round(bid.cpm * 1000 || 0))
   })
 
-  const cpmms = [];
+  const cpmms = []
   args.adUnits.forEach(adUnit => {
     if (cpmmsMap[adUnit.code].adPodLength) {
       cpmmsMap[adUnit.code].adPodLength.forEach(() => {
