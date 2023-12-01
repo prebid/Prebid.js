@@ -259,7 +259,9 @@ const PARAMS_ADG = {
   pageviewId: 'a68e6d70-213b-496c-be0a-c468ff387106',
   environment: 'desktop',
   pagetype: 'article',
-  placement: 'pave_top'
+  placement: 'pave_top',
+  testName: 'test',
+  testVersion: 'version',
 };
 
 const AUCTION_INIT_ANOTHER = {
@@ -678,7 +680,6 @@ describe('adagio analytics adapter', () => {
         expect(search.site).to.equal('test-com');
         expect(search.pv_id).to.equal('a68e6d70-213b-496c-be0a-c468ff387106');
         expect(search.url_dmn).to.equal(window.location.hostname);
-        expect(search.dvc).to.equal('desktop');
         expect(search.pgtyp).to.equal('article');
         expect(search.plcmt).to.equal('pave_top');
         expect(search.mts).to.equal('ban');
@@ -753,13 +754,14 @@ describe('adagio analytics adapter', () => {
         expect(search.site).to.equal('test-com');
         expect(search.pv_id).to.equal('a68e6d70-213b-496c-be0a-c468ff387106');
         expect(search.url_dmn).to.equal(window.location.hostname);
-        expect(search.dvc).to.equal('desktop');
         expect(search.pgtyp).to.equal('article');
         expect(search.plcmt).to.equal('pave_top');
         expect(search.mts).to.equal('ban');
         expect(search.ban_szs).to.equal('640x100,640x480');
         expect(search.bdrs).to.equal('adagio,another');
         expect(search.adg_mts).to.equal('ban');
+        expect(search.t_n).to.equal('test');
+        expect(search.t_v).to.equal('version');
       }
 
       {
@@ -775,7 +777,6 @@ describe('adagio analytics adapter', () => {
         expect(search.site).to.equal('test-com');
         expect(search.pv_id).to.equal('a68e6d70-213b-496c-be0a-c468ff387106');
         expect(search.url_dmn).to.equal(window.location.hostname);
-        expect(search.dvc).to.equal('desktop');
         expect(search.pgtyp).to.equal('article');
         expect(search.plcmt).to.equal('pave_top');
         expect(search.mts).to.equal('ban');
@@ -813,6 +814,7 @@ describe('adagio analytics adapter', () => {
         expect(search.og_cpm).to.equal('1.42');
         expect(search.og_cur).to.equal('USD');
         expect(search.og_cur_rate).to.equal('1');
+        expect(search.rndr).to.not.exist;
       }
 
       {
