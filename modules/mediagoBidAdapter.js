@@ -23,6 +23,8 @@ let itemMaps = {};
 
 /* ----- mguid:start ------ */
 const COOKIE_KEY_MGUID = '__mguid_';
+const STORE_MAX_AGE = 1000*60*60*24*365;
+let reqTimes = 0;
 
 /**
  * 获取用户id
@@ -33,7 +35,7 @@ const getUserID = () => {
 
   if (i === null) {
     const uuid = utils.generateUUID();
-    storage.setCookie(COOKIE_KEY_MGUID, uuid);
+    storage.setCookie(COOKIE_KEY_MGUID, uuid, STORE_MAX_AGE);
     return uuid;
   }
   return i;
@@ -280,6 +282,10 @@ function getParam(validBidRequests, bidderRequest) {
   const bidsUserIdAsEids = validBidRequests[0].userIdAsEids;
   const bidsUserid = validBidRequests[0].userId;
   const eids = bidsUserIdAsEids || bidsUserid;
+  const ppuid = bidsUserid && bidsUserid.pubProvidedId;
+  const content = utils.deepAccess(bidderRequest, 'ortb2.site.content', config.getAnyConfig('ortb2.site.content'));
+  const cat = utils.deepAccess(bidderRequest, 'ortb2.site.cat');
+  reqTimes +=1;
 
   let isMobile = isMobileAndTablet() ? 1 : 0;
   // input test status by Publisher. more frequently for test true req
@@ -317,7 +323,11 @@ function getParam(validBidRequests, bidderRequest) {
         eids,
         bidsUserIdAsEids,
         bidsUserid,
+		ppuid,
         firstPartyData,
+		content,
+		cat,
+		reqTimes
       },
       user: {
         buyeruid: getUserID(),

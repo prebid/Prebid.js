@@ -41,6 +41,14 @@ describe('mediago:BidAdapterTests', function () {
           }
         },
         ortb2: {
+          site: {
+        	cat: ['IAB2'],
+            keywords: 'power tools, drills, tools=industrial',
+            content: {
+              keywords: 'video, source=streaming'
+            },
+
+          },
           user: {
             ext: {
               data: {}
