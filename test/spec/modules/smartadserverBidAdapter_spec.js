@@ -786,7 +786,7 @@ describe('Smart bid adapter tests', function () {
         expect(request[0]).to.have.property('method').and.to.equal('POST');
         const requestContent = JSON.parse(request[0].data);
         expect(requestContent).to.have.property('videoData');
-        expect(requestContent.videoData).to.have.property('videoProtocol').and.to.equal(null);
+        expect(requestContent.videoData).not.to.have.property('videoProtocol').eq(true);
         expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(2);
       });
 
@@ -832,6 +832,41 @@ describe('Smart bid adapter tests', function () {
         expect(requestContent).to.have.property('videoData');
         expect(requestContent.videoData).to.have.property('videoProtocol').and.to.equal(6);
         expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(3);
+      });
+
+      it('should pass additional parameters', function () {
+        const request = spec.buildRequests([{
+          bidder: 'smartadserver',
+          mediaTypes: {
+            video: {
+              context: 'instream',
+              api: [1, 2, 3],
+              maxbitrate: 20,
+              minbitrate: 50,
+              maxduration: 30,
+              minduration: 5,
+              placement: 3,
+              playbackmethod: [2, 4],
+              playerSize: [[640, 480]],
+              plcmt: 1,
+              skip: 0
+            }
+          },
+          params: {
+            siteId: '123'
+          }
+        }]);
+        const requestContent = JSON.parse(request[0].data);
+
+        expect(requestContent.videoData).to.have.property('iabframeworks').and.to.equal('1,2,3');
+        expect(requestContent.videoData).not.to.have.property('skip');
+        expect(requestContent.videoData).to.have.property('vbrmax').and.to.equal(20);
+        expect(requestContent.videoData).to.have.property('vbrmin').and.to.equal(50);
+        expect(requestContent.videoData).to.have.property('vdmax').and.to.equal(30);
+        expect(requestContent.videoData).to.have.property('vdmin').and.to.equal(5);
+        expect(requestContent.videoData).to.have.property('vplcmt').and.to.equal(1);
+        expect(requestContent.videoData).to.have.property('vpmt').and.to.equal(2);
+        expect(requestContent.videoData).to.have.property('vpt').and.to.equal(3);
       });
     });
   });
@@ -1029,7 +1064,7 @@ describe('Smart bid adapter tests', function () {
       expect(request[0]).to.have.property('method').and.to.equal('POST');
       const requestContent = JSON.parse(request[0].data);
       expect(requestContent).to.have.property('videoData');
-      expect(requestContent.videoData).to.have.property('videoProtocol').and.to.equal(null);
+      expect(requestContent.videoData).not.to.have.property('videoProtocol').eq(true);
       expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(2);
     });
 
@@ -1391,6 +1426,43 @@ describe('Smart bid adapter tests', function () {
       const requestContent = JSON.parse(request[0].data);
 
       expect(requestContent).to.have.property('gpid').and.to.equal(gpid);
+    });
+  });
+
+  describe('#getValuableProperty method', function () {
+    it('should return an object when calling with a string value', () => {
+      const obj = spec.getValuableProperty('prop', 'str');
+      expect(obj).to.deep.equal({ prop: 'str' });
+    });
+
+    it('should return an object when calling with a number value', () => {
+      const obj = spec.getValuableProperty('prop', 3);
+      expect(obj).to.deep.equal({ prop: 3 });
+    });
+
+    it('should return an empty object when calling with a number property', () => {
+      const obj = spec.getValuableProperty(7, 'str');
+      expect(obj).to.deep.equal({});
+    });
+
+    it('should return an empty object when calling with a null value', () => {
+      const obj = spec.getValuableProperty('prop', null);
+      expect(obj).to.deep.equal({});
+    });
+
+    it('should return an empty object when calling with an object value', () => {
+      const obj = spec.getValuableProperty('prop', {});
+      expect(obj).to.deep.equal({});
+    });
+
+    it('should return an empty object when calling with a 0 value', () => {
+      const obj = spec.getValuableProperty('prop', 0);
+      expect(obj).to.deep.equal({});
+    });
+
+    it('should return an empty object when calling without the value argument', () => {
+      const obj = spec.getValuableProperty('prop');
+      expect(obj).to.deep.equal({});
     });
   });
 });

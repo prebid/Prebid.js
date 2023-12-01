@@ -59,14 +59,49 @@ export const spec = {
    */
   fillPayloadForVideoBidRequest: function(payload, videoMediaType, videoParams) {
     const playerSize = videoMediaType.playerSize[0];
-    payload.isVideo = videoMediaType.context === 'instream';
-    payload.mediaType = VIDEO;
-    payload.videoData = {
-      videoProtocol: this.getProtocolForVideoBidRequest(videoMediaType, videoParams),
-      playerWidth: playerSize[0],
-      playerHeight: playerSize[1],
-      adBreak: this.getStartDelayForVideoBidRequest(videoMediaType, videoParams)
+    const map = {
+      maxbitrate: 'vbrmax',
+      maxduration: 'vdmax',
+      minbitrate: 'vbrmin',
+      minduration: 'vdmin',
+      placement: 'vpt',
+      plcmt: 'vplcmt',
+      skip: 'skip'
     };
+
+    payload.mediaType = VIDEO;
+    payload.isVideo = videoMediaType.context === 'instream';
+    payload.videoData = {};
+
+    for (const [key, value] of Object.entries(map)) {
+      payload.videoData = {
+        ...payload.videoData,
+        ...this.getValuableProperty(value, videoMediaType[key])
+      };
+    }
+
+    payload.videoData = {
+      ...payload.videoData,
+      ...this.getValuableProperty('playerWidth', playerSize[0]),
+      ...this.getValuableProperty('playerHeight', playerSize[1]),
+      ...this.getValuableProperty('adBreak', this.getStartDelayForVideoBidRequest(videoMediaType, videoParams)),
+      ...this.getValuableProperty('videoProtocol', this.getProtocolForVideoBidRequest(videoMediaType, videoParams)),
+      ...this.getValuableProperty('iabframeworks', videoMediaType.api && videoMediaType.api.toString()),
+      ...this.getValuableProperty('vpmt', videoMediaType.playbackmethod && videoMediaType.playbackmethod[0])
+    };
+  },
+
+  /**
+   * Gets a property object if the value not falsy
+   * @param {string} property
+   * @param {number | string} value
+   * @returns object with the property or empty
+   */
+  getValuableProperty: function(property, value) {
+    const type = typeof value;
+
+    return typeof property === 'string' && (type === 'number' || type === 'string') && value
+      ? { [property]: value } : {};
   },
 
   /**
