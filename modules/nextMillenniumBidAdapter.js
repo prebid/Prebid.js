@@ -118,7 +118,7 @@ export const spec = {
         data: JSON.stringify(postBody),
         options: {
           contentType: 'text/plain',
-          withCredentials: true
+          withCredentials: true,
         },
 
         bidId,
