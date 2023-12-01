@@ -14,6 +14,8 @@ const MEDIATYPE = [BANNER, NATIVE];
 /* ----- _ss_pp_id:start ------ */
 const COOKIE_KEY_SSPPID = '_ss_pp_id';
 const COOKIE_KEY_MGUID = '__mguid_';
+const COOKIE_KEY_PRBUID = '__prbuid_';
+const COOKIE_RETENTION_TIME = 365 * 24 * 60 * 60 * 1000; // 1 year
 
 const NATIVERET = {
   id: 'id',
@@ -58,21 +60,18 @@ const NATIVERET = {
  * 获取用户id
  * @return {string}
  */
-const getUserID = () => {
-  let idd = storage.getCookie(COOKIE_KEY_SSPPID);
-  let idm = storage.getCookie(COOKIE_KEY_MGUID);
+const getPrbUID = () => {
+  let prbUid = storage.getCookie(COOKIE_KEY_PRBUID);
 
-  if (idd && !idm) {
-    idm = idd;
-  } else if (idm && !idd) {
-    idd = idm;
-  } else if (!idd && !idm) {
-    const uuid = utils.generateUUID();
-    storage.setCookie(COOKIE_KEY_MGUID, uuid);
-    storage.setCookie(COOKIE_KEY_SSPPID, uuid);
-    return uuid;
+  if (!prbUid) {
+    prbUid = utils.generateUUID();
+    const date = new Date();
+    date.setTime(date.getTime() + COOKIE_RETENTION_TIME);
+    try {
+      storage.setCookie(COOKIE_KEY_PRBUID, prbUid, date.toUTCString());
+    } catch (e) {}
   }
-  return idd;
+  return prbUid;
 };
 
 /* ----- _ss_pp_id:end ------ */
@@ -381,9 +380,11 @@ function getParam(validBidRequests, bidderRequest) {
       ext: {
         eids,
         firstPartyData,
+        ssppid: storage.getCookie(COOKIE_KEY_SSPPID) || undefined,
+        mguid: storage.getCookie(COOKIE_KEY_MGUID) || undefined,
       },
       user: {
-        buyeruid: getUserID(),
+        buyeruid: getPrbUID(),
         id: sharedid || pubcid,
       },
       tmax: timeout,
