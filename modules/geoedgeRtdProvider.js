@@ -103,7 +103,7 @@ export function wrapHtml(wrapper, html) {
  * @param {string} key
  * @return {Object}
  */
-function getMacros(bid, key) {
+export function getMacros(bid, key) {
   return {
     '${key}': key,
     '%%ADUNIT%%': bid.adUnitCode,
