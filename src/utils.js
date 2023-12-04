@@ -599,9 +599,15 @@ export function isSafariBrowser() {
   return /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
 }
 
-export function replaceAuctionPrice(str, cpm) {
+export function replaceMacros(str, subs) {
   if (!str) return;
-  return str.replace(/\$\{AUCTION_PRICE\}/g, cpm);
+  return Object.entries(subs).reduce((str, [key, val]) => {
+    return str.replace(new RegExp('\\$\\{' + key + '\\}', 'g'), val || '');
+  }, str);
+}
+
+export function replaceAuctionPrice(str, cpm) {
+  return replaceMacros(str, {AUCTION_PRICE: cpm})
 }
 
 export function replaceClickThrough(str, clicktag) {

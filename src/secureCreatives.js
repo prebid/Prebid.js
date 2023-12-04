@@ -6,26 +6,24 @@
 import * as events from './events.js';
 import {fireNativeTrackers, getAllAssetsMessage, getAssetMessage} from './native.js';
 import constants from './constants.json';
-import {deepAccess, isApnGetTagDefined, isGptPubadsDefined, logError, logWarn, replaceAuctionPrice} from './utils.js';
+import {isApnGetTagDefined, isGptPubadsDefined, logError, logWarn} from './utils.js';
 import {auctionManager} from './auctionManager.js';
 import {find, includes} from './polyfill.js';
-import {executeRenderer, isRendererRequired} from './Renderer.js';
-import {config} from './config.js';
-import {emitAdRenderFail, emitAdRenderSucceeded} from './adRendering.js';
+import {emitAdRenderFail, emitAdRenderSucceeded, handleRender} from './adRendering.js';
+import {PREBID_EVENT, PREBID_NATIVE, PREBID_REQUEST, PREBID_RESPONSE} from '../libraries/creativeRender/constants.js';
 
 const BID_WON = constants.EVENTS.BID_WON;
-const STALE_RENDER = constants.EVENTS.STALE_RENDER;
 const WON_AD_IDS = new WeakSet();
 
 const HANDLER_MAP = {
-  'Prebid Request': handleRenderRequest,
-  'Prebid Event': handleEventRequest,
-}
+  [PREBID_REQUEST]: handleRenderRequest,
+  [PREBID_EVENT]: handleEventRequest,
+};
 
 if (FEATURES.NATIVE) {
   Object.assign(HANDLER_MAP, {
-    'Prebid Native': handleNativeRequest,
-  })
+    [PREBID_NATIVE]: handleNativeRequest,
+  });
 }
 
 export function listenMessagesFromCreative() {
@@ -35,18 +33,18 @@ export function listenMessagesFromCreative() {
 export function getReplier(ev) {
   if (ev.origin == null && ev.ports.length === 0) {
     return function () {
-      const msg = 'Cannot post message to a frame with null origin. Please update creatives to use MessageChannel, see https://github.com/prebid/Prebid.js/issues/7870'
-      logError(msg)
+      const msg = 'Cannot post message to a frame with null origin. Please update creatives to use MessageChannel, see https://github.com/prebid/Prebid.js/issues/7870';
+      logError(msg);
       throw new Error(msg);
-    }
+    };
   } else if (ev.ports.length > 0) {
     return function (message) {
       ev.ports[0].postMessage(JSON.stringify(message));
-    }
+    };
   } else {
     return function (message) {
       ev.source.postMessage(JSON.stringify(message), ev.origin);
-    }
+    };
   }
 }
 
@@ -69,39 +67,13 @@ export function receiveMessage(ev) {
   }
 }
 
-function handleRenderRequest(reply, data, adObject) {
-  if (adObject == null) {
-    emitAdRenderFail({
-      reason: constants.AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
-      message: `Cannot find ad for cross-origin render request: '${data.adId}'`,
-      id: data.adId
-    });
-    return;
-  }
-  if (adObject.status === constants.BID_STATUS.RENDERED) {
-    logWarn(`Ad id ${adObject.adId} has been rendered before`);
-    events.emit(STALE_RENDER, adObject);
-    if (deepAccess(config.getConfig('auctionOptions'), 'suppressStaleRender')) {
-      return;
-    }
-  }
-
-  try {
-    _sendAdToCreative(adObject, reply);
-  } catch (e) {
-    emitAdRenderFail({
-      reason: constants.AD_RENDER_FAILED_REASON.EXCEPTION,
-      message: e.message,
-      id: data.adId,
-      bid: adObject
-    });
-    return;
-  }
-
-  // save winning bids
-  auctionManager.addWinningBid(adObject);
-
-  events.emit(BID_WON, adObject);
+function handleRenderRequest(reply, message, bidResponse) {
+  handleRender(function (adData) {
+    resizeRemoteCreative(bidResponse);
+    reply(Object.assign({
+      message: PREBID_RESPONSE,
+    }, adData));
+  }, {options: message.options, adId: message.adId, bidResponse});
 }
 
 function handleNativeRequest(reply, data, adObject) {
@@ -164,29 +136,11 @@ function handleEventRequest(reply, data, adObject) {
       });
       break;
     default:
-      logError(`Received x-origin event request for unsupported event: '${data.event}' (adId: '${data.adId}')`)
+      logError(`Received x-origin event request for unsupported event: '${data.event}' (adId: '${data.adId}')`);
   }
 }
 
-export function _sendAdToCreative(adObject, reply) {
-  const { adId, ad, adUrl, width, height, renderer, cpm, originalCpm } = adObject;
-  // rendering for outstream safeframe
-  if (isRendererRequired(renderer)) {
-    executeRenderer(renderer, adObject);
-  } else if (adId) {
-    resizeRemoteCreative(adObject);
-    reply({
-      message: 'Prebid Response',
-      ad: replaceAuctionPrice(ad, originalCpm || cpm),
-      adUrl: replaceAuctionPrice(adUrl, originalCpm || cpm),
-      adId,
-      width,
-      height
-    });
-  }
-}
-
-function resizeRemoteCreative({ adId, adUnitCode, width, height }) {
+export function resizeRemoteCreative({adId, adUnitCode, width, height}) {
   // resize both container div + iframe
   ['div', 'iframe'].forEach(elmType => {
     // not select element that gets removed after dfp render
@@ -208,9 +162,9 @@ function resizeRemoteCreative({ adId, adUnitCode, width, height }) {
 
   function getElementIdBasedOnAdServer(adId, adUnitCode) {
     if (isGptPubadsDefined()) {
-      return getDfpElementId(adId)
+      return getDfpElementId(adId);
     } else if (isApnGetTagDefined()) {
-      return getAstElementId(adUnitCode)
+      return getAstElementId(adUnitCode);
     } else {
       return adUnitCode;
     }

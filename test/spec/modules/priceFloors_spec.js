@@ -2011,6 +2011,12 @@ describe('the price floors module', function () {
       expect(returnedBidResponse).to.not.haveOwnProperty('floorData');
       expect(logWarnSpy.calledOnce).to.equal(true);
     });
+    it('if it finds a rule with a floor price of zero it should not call log warn', function () {
+      _floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);
+      _floorDataForAuction[AUCTION_ID].data.values = { '*': 0 };
+      runBidResponse();
+      expect(logWarnSpy.calledOnce).to.equal(false);
+    });
     it('if it finds a rule and floors should update the bid accordingly', function () {
       _floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);
       _floorDataForAuction[AUCTION_ID].data.values = { 'banner': 1.0 };
