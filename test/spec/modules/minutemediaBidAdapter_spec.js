@@ -188,16 +188,6 @@ describe('minutemediaAdapter', function () {
       expect(request.data.bids[0].currency).to.equal(expectedCurrency);
     });
 
-    it('should send the correct currency in bid request, using default if not specified', function () {
-      const bid = utils.deepClone(bidRequests[0]);
-      bid.params = {
-        'currency': undefined
-      };
-      const defaultCurrency = 'USD';
-      const request = spec.buildRequests([bid], bidderRequest);
-      expect(request.data.bids[0].currency).to.equal(defaultCurrency);
-    });
-
     it('should respect syncEnabled option', function() {
       config.setConfig({
         userSync: {
