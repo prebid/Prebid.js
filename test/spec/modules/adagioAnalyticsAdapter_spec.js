@@ -211,7 +211,10 @@ const BID_ADAGIO = Object.assign({}, BID_ADAGIO, {
   meta: {
     advertiserDomains: ['example.com']
   },
-  seatId: '42',
+  pba: {
+    sid: '42',
+    e_pba_test: true
+  }
 });
 
 const BID_ANOTHER = Object.assign({}, BID_ANOTHER, {
@@ -604,6 +607,12 @@ const MOCK = {
       bid: BID_CACHED
     }
   },
+  AD_RENDER_FAILED: {
+    bidcached: {
+      adId: 'fake_ad_id_2',
+      bid: BID_CACHED
+    }
+  }
 };
 
 describe('adagio analytics adapter', () => {
@@ -655,7 +664,7 @@ describe('adagio analytics adapter', () => {
       events.emit(constants.EVENTS.BID_WON, MOCK.BID_WON.another);
       events.emit(constants.EVENTS.AD_RENDER_SUCCEEDED, MOCK.AD_RENDER_SUCCEEDED.another);
 
-      expect(server.requests.length).to.equal(4, 'requests count');
+      expect(server.requests.length).to.equal(3, 'requests count');
       {
         const { protocol, hostname, pathname, search } = utils.parseUrl(server.requests[0].url);
         expect(protocol).to.equal('https');
@@ -684,6 +693,8 @@ describe('adagio analytics adapter', () => {
         expect(hostname).to.equal('c.4dex.io');
         expect(pathname).to.equal('/pba.gif');
         expect(search.v).to.equal('2');
+        expect(search.e_sid).to.equal('42');
+        expect(search.e_pba_test).to.equal('true');
         expect(search.bdrs_bid).to.equal('1,1,0');
       }
 
@@ -695,7 +706,6 @@ describe('adagio analytics adapter', () => {
         expect(search.v).to.equal('3');
         expect(search.auct_id).to.equal(AUCTION_ID_ADAGIO);
         expect(search.adu_code).to.equal('/19968336/header-bid-tag-1');
-        expect(search.adg_sid).to.equal('42');
         expect(search.win_bdr).to.equal('another');
         expect(search.win_mt).to.equal('ban');
         expect(search.win_ban_sz).to.equal('728x90');
@@ -705,17 +715,6 @@ describe('adagio analytics adapter', () => {
         expect(search.og_cpm).to.equal('1.62');
         expect(search.og_cur).to.equal('GBP');
         expect(search.og_cur_rate).to.equal('1.6');
-      }
-
-      {
-        const { protocol, hostname, pathname, search } = utils.parseUrl(server.requests[3].url);
-        expect(protocol).to.equal('https');
-        expect(hostname).to.equal('c.4dex.io');
-        expect(pathname).to.equal('/pba.gif');
-        expect(search.v).to.equal('4');
-        expect(search.auct_id).to.equal(AUCTION_ID_ADAGIO);
-        expect(search.adu_code).to.equal('/19968336/header-bid-tag-1');
-        expect(search.rndr).to.equal('1');
       }
     });
 
@@ -738,7 +737,7 @@ describe('adagio analytics adapter', () => {
       events.emit(constants.EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.another);
       events.emit(constants.EVENTS.AUCTION_END, MOCK.AUCTION_END.another_nobid);
       events.emit(constants.EVENTS.BID_WON, MOCK.BID_WON.bidcached);
-      events.emit(constants.EVENTS.AD_RENDER_SUCCEEDED, MOCK.AD_RENDER_SUCCEEDED.bidcached);
+      events.emit(constants.EVENTS.AD_RENDER_FAILED, MOCK.AD_RENDER_FAILED.bidcached);
 
       expect(server.requests.length).to.equal(5, 'requests count');
       {
@@ -791,6 +790,8 @@ describe('adagio analytics adapter', () => {
         expect(hostname).to.equal('c.4dex.io');
         expect(pathname).to.equal('/pba.gif');
         expect(search.v).to.equal('2');
+        expect(search.e_sid).to.equal('42');
+        expect(search.e_pba_test).to.equal('true');
         expect(search.bdrs_bid).to.equal('0,0,0');
       }
 
@@ -803,7 +804,6 @@ describe('adagio analytics adapter', () => {
         expect(search.auct_id).to.equal(AUCTION_ID_ADAGIO);
         expect(search.auct_id_c).to.equal(AUCTION_ID_CACHE_ADAGIO);
         expect(search.adu_code).to.equal('/19968336/header-bid-tag-1');
-        expect(search.adg_sid).to.equal('42');
         expect(search.win_bdr).to.equal('adagio');
         expect(search.win_mt).to.equal('ban');
         expect(search.win_ban_sz).to.equal('728x90');
@@ -824,7 +824,7 @@ describe('adagio analytics adapter', () => {
         expect(search.auct_id).to.equal(AUCTION_ID_ADAGIO);
         expect(search.auct_id_c).to.equal(AUCTION_ID_CACHE_ADAGIO);
         expect(search.adu_code).to.equal('/19968336/header-bid-tag-1');
-        expect(search.rndr).to.equal('1');
+        expect(search.rndr).to.equal('0');
       }
     });
   });

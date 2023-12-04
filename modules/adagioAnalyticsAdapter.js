@@ -112,6 +112,19 @@ function getMediaTypeAlias(mediaType) {
   return mediaTypesMap[mediaType] || mediaType;
 };
 
+function addKeyPrefix(obj, prefix) {
+  return Object.keys(obj).reduce((acc, key) => {
+    // We don't want to prefix already prefixed keys.
+    if (key.startsWith(prefix)) {
+      acc[key] = obj[key];
+      return acc;
+    }
+
+    acc[`${prefix}${key}`] = obj[key];
+    return acc;
+  }, {});
+}
+
 /**
 * sendRequest to Adagio. It filter null values and encode each query param.
 * @param {Object} qp
@@ -265,8 +278,12 @@ function handlerBidResponse(event) {
     return;
   }
 
+  if (!event.pba) {
+    return;
+  }
+
   cache.updateAuction(event.auctionId, event.adUnitCode, {
-    adg_sid: event.seatId || null
+    ...addKeyPrefix(event.pba, 'e_')
   });
 };
 
@@ -372,7 +389,8 @@ let adagioAdapter = Object.assign(adapter({ emptyUrl, analyticsType }), {
         case CONSTANTS.EVENTS.BID_WON:
           handlerBidWon(args);
           break;
-        case CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED:
+        // AD_RENDER_SUCCEEDED seems redundant with BID_WON.
+        // case CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED:
         case CONSTANTS.EVENTS.AD_RENDER_FAILED:
           handlerAdRender(args, eventType === CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED);
           break;
