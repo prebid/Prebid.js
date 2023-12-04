@@ -250,6 +250,8 @@ function getItems(validBidRequests, bidderRequest) {
           format: sizes
         },
         ext: {
+          adUnitCode: req.adUnitCode,
+          referrer: getReferrer(req, bidderRequest),
           ortb2Imp: utils.deepAccess(req, 'ortb2Imp'), // 传入完整对象，分析日志数据
           gpid: gpid, // 加入后无法返回广告
           adslot: utils.deepAccess(req, 'ortb2Imp.ext.data.adserver.adslot', '', ''),
@@ -266,6 +268,21 @@ function getItems(validBidRequests, bidderRequest) {
     return ret;
   });
   return items;
+}
+
+/**
+ * @param {BidRequest} bidRequest
+ * @param bidderRequest
+ * @returns {string}
+ */
+function getReferrer(bidRequest = {}, bidderRequest = {}) {
+  let pageUrl;
+  if (bidRequest.params && bidRequest.params.referrer) {
+    pageUrl = bidRequest.params.referrer;
+  } else {
+    pageUrl = utils.deepAccess(bidderRequest, 'refererInfo.page');
+  }
+  return pageUrl;
 }
 
 /**
