@@ -398,12 +398,12 @@ function initSendingDataStatistic() {
         if (
           this.auctionIds[bid.auctionId] === bid.bidder &&
           eventName === CONSTANTS.EVENTS.BID_RESPONSE
-        )
+        ) {
           return;
-
-        if (eventName === CONSTANTS.EVENTS.BID_RESPONSE)
+        }
+        if (eventName === CONSTANTS.EVENTS.BID_RESPONSE) {
           this.auctionIds[bid.auctionId] = bid.bidder;
-
+        }
         const url = spec.getPixelUrl(eventName, bid, Date.now());
         if (!url) return;
         triggerPixel(url);
