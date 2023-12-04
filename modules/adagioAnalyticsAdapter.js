@@ -22,6 +22,12 @@ const cache = {
   getAuction: function(auctionId, adUnitCode) {
     return this.auctions[auctionId][adUnitCode];
   },
+  getBiddersFromAuction: function(auctionId, adUnitCode) {
+    return this.getAuction(auctionId, adUnitCode).bdrs.split(',');
+  },
+  getAllAdUnitCodes: function(auctionId) {
+    return Object.keys(this.auctions[auctionId]);
+  },
   updateAuction: function(auctionId, adUnitCode, values) {
     this.auctions[auctionId][adUnitCode] = {
       ...this.auctions[auctionId][adUnitCode],
@@ -74,7 +80,8 @@ const adagioEnqueue = function adagioEnqueue(action, data) {
 
 const guard = {
   adagio: (value) => isAdagio(value),
-  bidTracked: (auctionId, adUnitCode) => deepAccess(cache, `auctions.${auctionId}.${adUnitCode}`, false)
+  bidTracked: (auctionId, adUnitCode) => deepAccess(cache, `auctions.${auctionId}.${adUnitCode}`, false),
+  auctionTracked: (auctionId) => deepAccess(cache, `auctions.${auctionId}`, false)
 };
 
 function removeDuplicates(arr, getKey) {
@@ -146,6 +153,7 @@ function getTargetedAuctionId(bid) {
  * HANDLERS
  * - handlerAuctionInit
  * - handlerBidResponse
+ * - handlerAuctionEnd
  * - handlerBidWon
  * - handlerAdRender
  *
@@ -262,6 +270,24 @@ function handlerBidResponse(event) {
   });
 };
 
+function handlerAuctionEnd(event) {
+  const { auctionId } = event;
+
+  if (!guard.auctionTracked(auctionId)) {
+    return;
+  }
+
+  const adUnitCodes = cache.getAllAdUnitCodes(auctionId);
+  adUnitCodes.forEach(adUnitCode => {
+    const mapper = (bidder) => event.bidsReceived.find(bid => bid.adUnitCode === adUnitCode && bid.bidder === bidder) ? '1' : '0';
+
+    cache.updateAuction(auctionId, adUnitCode, {
+      bdrs_bid: cache.getBiddersFromAuction(auctionId, adUnitCode).map(mapper).join(',')
+    });
+    sendNewBeacon(auctionId, adUnitCode);
+  });
+}
+
 function handlerBidWon(event) {
   let auctionId = getTargetedAuctionId(event);
 
@@ -339,6 +365,9 @@ let adagioAdapter = Object.assign(adapter({ emptyUrl, analyticsType }), {
           break;
         case CONSTANTS.EVENTS.BID_RESPONSE:
           handlerBidResponse(args);
+          break;
+        case CONSTANTS.EVENTS.AUCTION_END:
+          handlerAuctionEnd(args);
           break;
         case CONSTANTS.EVENTS.BID_WON:
           handlerBidWon(args);
