@@ -89,6 +89,8 @@ const _public = (function () {
     return allEvents.includes(event)
   }
 
+  _public.has = _checkAvailableEvent;
+
   _public.on = function (eventString, handler, id) {
     // check whether available event or not
     if (_checkAvailableEvent(eventString)) {
@@ -163,7 +165,7 @@ const _public = (function () {
 
 utils._setEventEmitter(_public.emit.bind(_public));
 
-export const {on, off, get, getEvents, emit, addEvents} = _public;
+export const {on, off, get, getEvents, emit, addEvents, has} = _public;
 
 export function clearEvents() {
   eventsFired.clear();

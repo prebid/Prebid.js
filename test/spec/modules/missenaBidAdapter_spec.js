@@ -1,13 +1,15 @@
 import { expect } from 'chai';
-import { spec, _getPlatform } from 'modules/missenaBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { spec, storage } from 'modules/missenaBidAdapter.js';
 import { BANNER } from '../../../src/mediaTypes.js';
 
 describe('Missena Adapter', function () {
-  const adapter = newBidder(spec);
+  $$PREBID_GLOBAL$$.bidderSettings = {
+    missena: {
+      storageAllowed: true,
+    },
+  };
 
   const bidId = 'abc';
-
   const bid = {
     bidder: 'missena',
     bidId: bidId,
@@ -40,7 +42,20 @@ describe('Missena Adapter', function () {
       formats: ['sticky-banner'],
     },
   };
+  const consentString = 'AAAAAAAAA==';
 
+  const bidderRequest = {
+    gdprConsent: {
+      consentString: consentString,
+      gdprApplies: true,
+    },
+    refererInfo: {
+      topmostLocation: 'https://referer',
+      canonicalUrl: 'https://canonical',
+    },
+  };
+
+  const bids = [bid, bidWithoutFloor];
   describe('codes', function () {
     it('should return a bidder code of missena', function () {
       expect(spec.code).to.equal('missena');
@@ -66,20 +81,12 @@ describe('Missena Adapter', function () {
   });
 
   describe('buildRequests', function () {
-    const consentString = 'AAAAAAAAA==';
+    let getDataFromLocalStorageStub = sinon.stub(
+      storage,
+      'getDataFromLocalStorage',
+    );
 
-    const bidderRequest = {
-      gdprConsent: {
-        consentString: consentString,
-        gdprApplies: true,
-      },
-      refererInfo: {
-        topmostLocation: 'https://referer',
-        canonicalUrl: 'https://canonical',
-      },
-    };
-
-    const requests = spec.buildRequests([bid, bidWithoutFloor], bidderRequest);
+    const requests = spec.buildRequests(bids, bidderRequest);
     const request = requests[0];
     const payload = JSON.parse(request.data);
     const payloadNoFloor = JSON.parse(requests[1].data);
@@ -120,6 +127,24 @@ describe('Missena Adapter', function () {
     it('should not send floor data if not available', function () {
       expect(payloadNoFloor.floor).to.equal(undefined);
       expect(payloadNoFloor.floor_currency).to.equal(undefined);
+    });
+
+    getDataFromLocalStorageStub.restore();
+    getDataFromLocalStorageStub = sinon.stub(
+      storage,
+      'getDataFromLocalStorage',
+    );
+    const localStorageData = {
+      [`missena.missena.capper.remove-bubble.${bid.params.apiKey}`]:
+        JSON.stringify({
+          expiry: new Date().getTime() + 600_000, // 10 min into the future
+        }),
+    };
+    getDataFromLocalStorageStub.callsFake((key) => localStorageData[key]);
+    const cappedRequests = spec.buildRequests(bids, bidderRequest);
+
+    it('should not participate if capped', function () {
+      expect(cappedRequests.length).to.equal(0);
     });
   });
 

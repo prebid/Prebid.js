@@ -28,6 +28,13 @@ const converter = ortbConverter({
 
     return request;
   },
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+
+    deepSetValue(imp, 'ext.sparteo.params', bidRequest.params);
+
+    return imp;
+  },
   bidResponse(buildBidResponse, bid, context) {
     context.mediaType = deepAccess(bid, 'ext.prebid.type');
 
