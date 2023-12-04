@@ -23,7 +23,6 @@ const MAX_BATCH_SIZE_PER_EVENT_TYPE = 32
  *  provider: typeof PROVIDER_CODE
  *  options: {
  *     sampling?: number
- *     zoneMap?: {[adUnitCode: string]: {index?: number, zone?: string}}
  *  }
  * }} MavenDistributionAdapterConfig
  */
@@ -48,12 +47,12 @@ const MAX_BATCH_SIZE_PER_EVENT_TYPE = 32
  * }} AuctionEventArgs
  */
 
-export const getAdIndex = (adUnit, zoneConfig = {}) =>
-  zoneConfig && zoneConfig.index ? Number(zoneConfig.index) : null
+export const getAdIndex = (adUnit) =>
+  adUnit.model ? Number(adUnit.model.index) : null
 
-export const filterDuplicateAdUnits = (adUnits, zoneMap = {}) =>
+export const filterDuplicateAdUnits = (adUnits) =>
   Array.from(new Map(adUnits.map(adUnit => [
-    adUnit.code + getAdIndex(adUnit, zoneMap[adUnit.code]),
+    adUnit.code + getAdIndex(adUnit),
     adUnit
   ])).values())
 
@@ -75,21 +74,22 @@ export function summarizeAuctionInit(args, adapterConfig) {
   const zoneNames = []
   const zoneIndexes = []
   const adUnitCodes = []
-  const zoneMap = adapterConfig.options.zoneMap || {}
   let someZoneIndexNonNull = false
   let someZoneNameNonNull = false
   let allZoneNamesNonNull = true
+
   args.adUnits.forEach(adUnit => {
     adUnitCodes.push(adUnit.code)
 
-    const zoneConfig = zoneMap[adUnit.code] || {}
-    const zoneIndexNonNull = zoneConfig.index != null && isFinite(zoneConfig.index)
-    someZoneIndexNonNull = someZoneIndexNonNull || zoneIndexNonNull
+    const zoneIndex = getAdIndex(adUnit);
+    const zoneName = adUnit.model?.zone ?? null
+    const zoneIndexNonNull = zoneIndex != null
+    const zoneNameNonNull = zoneName != null
 
-    let zoneIndex = zoneIndexNonNull ? +zoneConfig.index : null
-    const zoneNameNonNull = zoneConfig.zone != null
     zoneIndexes.push(zoneIndex)
-    zoneNames.push(zoneNameNonNull ? zoneConfig.zone : null)
+    zoneNames.push(zoneName)
+
+    someZoneIndexNonNull = someZoneIndexNonNull || zoneIndexNonNull
     someZoneNameNonNull = someZoneNameNonNull || zoneNameNonNull
     allZoneNamesNonNull = allZoneNamesNonNull && zoneNameNonNull
   })
@@ -157,7 +157,7 @@ export function createSendOptionsFromBatch(batch) {
   )
   const result = { price: price }
   Object.keys(batch).forEach(eventType => {
-    result[eventType] = JSON.stringify(batch[eventType])
+    result[eventType] = (batch[eventType] || []).map((x) => JSON.stringify(x))
   })
   return result
 }
@@ -242,7 +242,7 @@ MavenDistributionAnalyticsAdapterInner.prototype = {
       eventToSend = summarizeAuctionInit(
         {
           ...args,
-          adUnits: filterDuplicateAdUnits(args.adUnits, this.adapterConfig.options.zoneMap),
+          adUnits: filterDuplicateAdUnits(args.adUnits),
         },
         this.adapterConfig
       )
@@ -250,7 +250,7 @@ MavenDistributionAnalyticsAdapterInner.prototype = {
       eventToSend = summarizeAuctionEnd(
         {
           ...args,
-          adUnits: filterDuplicateAdUnits(args.adUnits, this.adapterConfig.options.zoneMap),
+          adUnits: filterDuplicateAdUnits(args.adUnits),
         },
         this.adapterConfig
       )

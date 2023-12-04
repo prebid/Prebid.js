@@ -1,8 +1,17 @@
+import { expect } from 'chai';
 import { filterDuplicateAdUnits, getAdIndex, createSendOptionsFromBatch, summarizeAuctionEnd, testables } from '../../../modules/mavenDistributionAnalyticsAdapter.js';
 
 var assert = require('assert');
 var adUnits = require('./mavenDistributionAnalyticsAdapter_adUnits.json');
-var zoneMap = require('./mavenDistributionAnalyticsAdapter_zoneMap.json');
+
+function cloneWithoutFields(obj, fieldsToOmit) {
+  return Object.keys(obj).reduce((newObj, key) => {
+    if (!fieldsToOmit.includes(key)) {
+      newObj[key] = obj[key];
+    }
+    return newObj;
+  }, {});
+}
 
 describe('MavenDistributionAnalyticsAdapter', function () {
   describe('LiftIgniterWrapper', () => {
@@ -91,13 +100,16 @@ describe('MavenDistributionAnalyticsAdapter', function () {
   })
   describe('filterDuplicateAdUnits', function() {
     it('should filter duplicates', function() {
-      var actual = filterDuplicateAdUnits(adUnits, zoneMap)
+      var actual = filterDuplicateAdUnits(adUnits)
       var set = new Set(adUnits.map(a => a.code))
       assert.ok(adUnits.length > actual.length)
       assert.equal(actual.length, set.size)
     })
-    it('should handle undefined zoneMap', function() {
-      var actual = filterDuplicateAdUnits(adUnits)
+    it('should handle undefined models', function() {
+      var actual = filterDuplicateAdUnits(adUnits.map(unit => {
+        const {model, ...rest} = unit;
+        return rest;
+      }));
       assert.ok(adUnits.length > actual.length)
     })
     it('should handle empty arrays', function() {
@@ -109,17 +121,25 @@ describe('MavenDistributionAnalyticsAdapter', function () {
   describe('getAdIndex', function() {
     it('should return an adindex', function() {
       var adUnit = adUnits[4];
-      var actual = getAdIndex(adUnit, zoneMap[adUnit.code]);
+      var actual = getAdIndex(adUnit);
       assert.equal(actual, 0)
     })
     it('should return null for undefined adzones', function() {
       var adUnit = adUnits[4];
-      var actual = getAdIndex(adUnit);
+      var actual = getAdIndex({
+        ...adUnit,
+        model: undefined,
+      });
       assert.equal(actual, null)
     })
     it('should cast a string to a number for found indices', function() {
       var adUnit = adUnits[4];
-      var actual = getAdIndex(adUnit, {index: '1'});
+      var actual = getAdIndex({
+        ...adUnit,
+        model: {
+          index: '1',
+        },
+      });
       assert.strictEqual(actual, 1)
     })
   })
@@ -134,6 +154,10 @@ describe('MavenDistributionAnalyticsAdapter', function () {
           {
             'code': 'ad-42a6e2ce42724767a2288295baa68f98',
             'adUnitPath': '/88059007/www.si.com/homepage',
+            'model': {
+              'zone': 'fixed_bottom',
+              'index': 0,
+            },
             'mediaTypes': {
               'banner': {
                 'sizes': [
@@ -904,25 +928,20 @@ describe('MavenDistributionAnalyticsAdapter', function () {
           'productionDomain': 'www.si.com',
           'screenSize': 'B',
           'sampling': 1,
-          'zoneMap': {
-            'ad-42a6e2ce42724767a2288295baa68f98': {
-              'zone': 'fixed_bottom',
-              'index': 0
-            }
-          }
         }
       }
       const actualSummary = summarizeAuctionEnd(args, adapterConfig)
       const expectedSummary = {
         'auc': 'e0a2febe-dc05-4999-87ed-4c40022b6796',
-        ts: 1592017352034,
-        cpmms: [0],
-        zoneIndexes: [0],
         zoneNames: ['fixed_bottom'],
+        zoneIndexes: [0],
+        cpmms: [0],
       }
-      assert.deepEqual(actualSummary, expectedSummary)
+
+      expect(expectedSummary).to.deep.equal(cloneWithoutFields(actualSummary, ['ts', 'tspl', 'tspl_q']))
     })
-    it('should include adUnit.code if zoneMap is not given', () => {
+
+    it('should include adUnit.code if model is not present', () => {
       const mavenArgs = {
         'auctionId': 'd01409e4-580d-4107-8d92-3c5dec19b41a',
         'timestamp': 1592938047397,
@@ -2296,11 +2315,10 @@ describe('MavenDistributionAnalyticsAdapter', function () {
       const actual = summarizeAuctionEnd(mavenArgs, adapterConfig)
       const expected = {
         auc: 'd01409e4-580d-4107-8d92-3c5dec19b41a',
-        ts: 1592938048399,
         cpmms: [ 2604 ],
         codes: [ 'gpt-slot-channel-banner-top' ],
       }
-      assert.deepEqual(actual, expected)
+      assert.deepEqual(cloneWithoutFields(actual, ['ts', 'tspl', 'tspl_q']), expected)
     })
   });
   describe('createSendOptionsFromBatch', () => {
@@ -2311,7 +2329,7 @@ describe('MavenDistributionAnalyticsAdapter', function () {
         zoneNames: ['sidebar']
       }]})
       const expected = {
-        auctionInit: '[{"auc":"aaa","zoneIndexes":[3],"zoneNames":["sidebar"]}]',
+        auctionInit: ['{"auc":"aaa","zoneIndexes":[3],"zoneNames":["sidebar"]}'],
         price: undefined,
       }
       assert.deepEqual(actual, expected)
@@ -2324,7 +2342,7 @@ describe('MavenDistributionAnalyticsAdapter', function () {
         zoneNames: ['sidebar']
       }]})
       const expected = {
-        auctionEnd: '[{"auc":"aaa","cpmms":[40],"zoneIndexes":[3],"zoneNames":["sidebar"]}]',
+        auctionEnd: ['{"auc":"aaa","cpmms":[40],"zoneIndexes":[3],"zoneNames":["sidebar"]}'],
         price: 40,
       }
       assert.deepEqual(actual, expected)
