@@ -45,6 +45,7 @@ export const spec = {
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     const bids = validBidRequests.map(buildRequestObject);
+    const topWindow = window.top;
 
     const payload = {
       referrer: getReferrerInfo(bidderRequest),
@@ -55,6 +56,12 @@ export const spec = {
       timeToFirstByte: getTimeToFirstByte(window),
       data: bids,
       deviceWidth: screen.width,
+      screenOrientation: screen.orientation?.type,
+      historyLength: topWindow.history?.length,
+      viewportHeight: topWindow.visualViewport?.height,
+      viewportWidth: topWindow.visualViewport?.width,
+      hardwareConcurrency: topWindow.navigator?.hardwareConcurrency,
+      deviceMemory: topWindow.navigator?.deviceMemory,
       hb_version: '$prebid.version$',
       ...getSharedViewerIdParameters(validBidRequests),
       ...getFirstPartyTeadsIdParameter(validBidRequests)

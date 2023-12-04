@@ -254,6 +254,54 @@ describe('teadsBidAdapter', () => {
       expect(payload.pageReferrer).to.deep.equal(document.referrer);
     });
 
+    it('should add screenOrientation info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.screenOrientation).to.exist;
+      expect(payload.screenOrientation).to.deep.equal(window.top.screen.orientation.type);
+    });
+
+    it('should add historyLength info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.historyLength).to.exist;
+      expect(payload.historyLength).to.deep.equal(window.top.history.length);
+    });
+
+    it('should add viewportHeight info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.viewportHeight).to.exist;
+      expect(payload.viewportHeight).to.deep.equal(window.top.visualViewport.height);
+    });
+
+    it('should add viewportWidth info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.viewportWidth).to.exist;
+      expect(payload.viewportWidth).to.deep.equal(window.top.visualViewport.width);
+    });
+
+    it('should add hardwareConcurrency info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.hardwareConcurrency).to.exist;
+      expect(payload.hardwareConcurrency).to.deep.equal(window.top.navigator.hardwareConcurrency);
+    });
+
+    it('should add deviceMemory info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.deviceMemory).to.exist;
+      expect(payload.deviceMemory).to.deep.equal(window.top.navigator.deviceMemory);
+    });
+
     describe('pageTitle', function () {
       it('should add pageTitle info to payload based on document title', function () {
         const testText = 'This is a title';
