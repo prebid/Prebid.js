@@ -73,7 +73,7 @@ import {
   timestamp
 } from './utils.js';
 import {getPriceBucketString} from './cpmBucketManager.js';
-import {getNativeTargeting, toLegacyResponse} from './native.js';
+import {getNativeTargeting, setNativeResponseProperties} from './native.js';
 import {getCacheUrl, store} from './videoCache.js';
 import {Renderer} from './Renderer.js';
 import {config} from './config.js';
@@ -462,7 +462,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
         if (FEATURES.NATIVE && bidResponse.native != null && typeof bidResponse.native === 'object') {
           // NOTE: augment bidResponse.native even if bidResponse.mediaType !== NATIVE; it's possible
           // to treat banner responses as native
-          addLegacyFieldsIfNeeded(bidResponse);
+          setNativeResponseProperties(bidResponse, index.getAdUnit(bidResponse));
         }
         addBidToAuction(auctionInstance, bidResponse);
         done();
@@ -565,17 +565,6 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
   if (addBid) {
     addBidToAuction(auctionInstance, bidResponse);
     afterBidAdded();
-  }
-}
-
-// Native bid response might be in ortb2 format - adds legacy field for backward compatibility
-const addLegacyFieldsIfNeeded = (bidResponse) => {
-  const nativeOrtbRequest = auctionManager.index.getAdUnit(bidResponse)?.nativeOrtbRequest;
-  const nativeOrtbResponse = bidResponse.native?.ortb
-
-  if (nativeOrtbRequest && nativeOrtbResponse) {
-    const legacyResponse = toLegacyResponse(nativeOrtbResponse, nativeOrtbRequest);
-    Object.assign(bidResponse.native, legacyResponse);
   }
 }
 
