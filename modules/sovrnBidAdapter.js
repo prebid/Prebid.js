@@ -14,7 +14,6 @@ import {
   BANNER,
   VIDEO
 } from '../src/mediaTypes.js'
-import {config} from '../src/config.js';
 
 const ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
@@ -173,7 +172,8 @@ export const spec = {
         deepSetValue(sovrnBidReq, 'source.tid', tid)
       }
 
-      if (config.getConfig('coppa') === true) {
+      const coppa = deepAccess(bidderRequest, 'ortb2.regs.coppa');
+      if (coppa) {
         deepSetValue(sovrnBidReq, 'regs.coppa', 1);
       }
 

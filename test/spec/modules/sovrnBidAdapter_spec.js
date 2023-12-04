@@ -336,11 +336,13 @@ describe('sovrnBidAdapter', function() {
     })
 
     it('should set coppa to 1 when coppa is provided with value true', function () {
-      config.setConfig({
-        coppa: true
-      });
       const bidderRequest = {
         ...baseBidderRequest,
+        ortb2: {
+          regs: {
+            coppa: true
+          }
+        },
         bidderCode: 'sovrn',
         auctionId: '1d1a030790a475',
         bidderRequestId: '22edbae2733bf6',
@@ -349,7 +351,6 @@ describe('sovrnBidAdapter', function() {
       }
       const {regs} = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
       expect(regs.coppa).to.equal(1)
-      config.resetConfig();
     })
 
     it('should send gpp info in OpenRTB 2.6 location when gppConsent defined', function () {
