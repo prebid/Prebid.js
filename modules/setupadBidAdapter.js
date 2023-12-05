@@ -213,7 +213,7 @@ export const spec = {
   getPixelUrl: function (eventName, bid, timestamp) {
     let bidder = bid.bidder || bid.bidderCode;
     const auctionId = bid.auctionId;
-    if (bidder != BIDDER_CODE) return;
+    if (bidder !== BIDDER_CODE) return;
 
     let params;
     if (bid.params) {
@@ -238,14 +238,14 @@ export const spec = {
 
     let extraBidParams = '';
 
-    if (eventName === 'bidResponse') {
+    if (eventName === CONSTANTS.EVENTS.BID_RESPONSE) {
       bidder = JSON.stringify(biddersCpms);
 
       // Add extra parameters
       extraBidParams = `&currency=${bid.originalCurrency}`;
     }
 
-    if (eventName === 'bidWon') {
+    if (eventName === CONSTANTS.EVENTS.BID_WON) {
       // Iterate through all bidders to find the winning bidder by using creativeId as identification
       for (const bidderName in biddersCreativeIds) {
         if (
@@ -259,6 +259,14 @@ export const spec = {
 
       // Add extra parameters
       extraBidParams = `&cpm=${bid.originalCpm}&currency=${bid.originalCurrency}`;
+    }
+
+    if (
+      eventName === CONSTANTS.EVENTS.BID_REQUESTED ||
+      eventName === CONSTANTS.EVENTS.BID_TIMEOUT ||
+      eventName === CONSTANTS.EVENTS.NO_BID
+    ) {
+      bidder = BIDDER_CODE;
     }
 
     const url = `${REPORT_ENDPOINT}?event=${eventName}&bidder=${bidder}&placementIds=${placementIds}&auctionId=${auctionId}${extraBidParams}&timestamp=${timestamp}`;
