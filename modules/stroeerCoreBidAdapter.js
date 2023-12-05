@@ -209,8 +209,13 @@ export const spec = {
       kvg: getGlobalKeyValues(),
       // page is available on v7
       url: refererInfo && (refererInfo.page || refererInfo.canonicalUrl || refererInfo.referer),
-      schain: anyBid.schain
+      schain: anyBid.schain,
     };
+
+    const versions = {
+      yl_ver: win.yieldlove_ab?.yl_ver,
+      pb_ver: win.YLHH?.bidder?.pbjs?.version
+    }
 
     const user = utils.cleanObj({
       euids: anyBid.userId,
@@ -255,7 +260,7 @@ export const spec = {
       const payload = Object.assign({
         ssat: bidRequestWithSsat ? bidRequestWithSsat.params.ssat : undefined,
         yl2: bidRequestWithYl2 ? bidRequestWithYl2.params.yl2 : (getFromLocalStorage('sdgYieldtest') === '1'),
-      }, commonPayload);
+      }, commonPayload, versions);
 
       payload.bids = bidRequests.map(bidRequest => {
         const metaTagPosition = win.YLHH?.bidder?.tag?.getMetaTagPositionBy(bidRequest.adUnitCode) ?? bidRequest.adUnitCode;
