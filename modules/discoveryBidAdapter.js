@@ -61,17 +61,17 @@ const NATIVERET = {
  * @return {string}
  */
 const getPmgUID = () => {
-  let prbUid = storage.getCookie(COOKIE_KEY_PMGUID);
+  let pmgUid = storage.getCookie(COOKIE_KEY_PMGUID);
 
-  if (!prbUid) {
-    prbUid = utils.generateUUID();
+  if (!pmgUid) {
+    pmgUid = utils.generateUUID();
     const date = new Date();
     date.setTime(date.getTime() + COOKIE_RETENTION_TIME);
     try {
-      storage.setCookie(COOKIE_KEY_PMGUID, prbUid, date.toUTCString());
+      storage.setCookie(COOKIE_KEY_PMGUID, pmgUid, date.toUTCString());
     } catch (e) {}
   }
-  return prbUid;
+  return pmgUid;
 };
 
 /* ----- _ss_pp_id:end ------ */
