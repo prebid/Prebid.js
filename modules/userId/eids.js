@@ -193,6 +193,20 @@ export const USER_IDS_CONFIG = {
     }
   },
 
+  // sovrn
+  'sovrn': {
+    source: 'liveintent.sovrn.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+
   // britepoolId
   'britepoolid': {
     source: 'britepool.com',

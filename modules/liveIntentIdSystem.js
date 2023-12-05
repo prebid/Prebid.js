@@ -213,6 +213,10 @@ export const liveIntentIdSubmodule = {
         result.index = { 'id': value.index }
       }
 
+      if (value.sovrn) {
+        result.sovrn = { 'id': value.sovrn }
+      }
+
       return result
     }
 
