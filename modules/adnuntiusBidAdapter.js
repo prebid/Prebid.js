@@ -6,16 +6,15 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'adnuntius';
 const BIDDER_CODE_DEAL_ALIAS_BASE = 'adndeal';
-const BIDDER_CODE_DEAL_ALIAS_1 = BIDDER_CODE_DEAL_ALIAS_BASE + '1';
-const BIDDER_CODE_DEAL_ALIAS_2 = BIDDER_CODE_DEAL_ALIAS_BASE + '2';
-const BIDDER_CODE_DEAL_ALIAS_3 = BIDDER_CODE_DEAL_ALIAS_BASE + '3';
-const BIDDER_CODE_DEAL_ALIAS_4 = BIDDER_CODE_DEAL_ALIAS_BASE + '4';
-const BIDDER_CODE_DEAL_ALIAS_5 = BIDDER_CODE_DEAL_ALIAS_BASE + '5';
+const BIDDER_CODE_DEAL_ALIASES = [1, 2, 3, 4, 5].map(num => {
+  return BIDDER_CODE_DEAL_ALIAS_BASE + num;
+});
 const ENDPOINT_URL = 'https://ads.adnuntius.delivery/i';
 const ENDPOINT_URL_EUROPE = 'https://europe.delivery.adnuntius.com/i';
 const GVLID = 855;
 const DEFAULT_VAST_VERSION = 'vast4'
 const MAXIMUM_DEALS_LIMIT = 5;
+const VALID_BID_TYPES = ['netBid', 'grossBid'];
 
 const checkSegment = function (segment) {
   if (isStr(segment)) return segment;
@@ -50,17 +49,15 @@ const getUsi = function (meta, ortb2, bidderRequest) {
   return usi
 }
 
+const validateBidType = function(bidTypeOption) {
+  return VALID_BID_TYPES.indexOf(bidTypeOption || '') > -1 ? bidTypeOption : 'bid';
+}
+
 const AU_ID_REGEX = new RegExp('^[0-9A-Fa-f]{1,20}$');
 
 export const spec = {
   code: BIDDER_CODE,
-  aliases: [
-    BIDDER_CODE_DEAL_ALIAS_1,
-    BIDDER_CODE_DEAL_ALIAS_2,
-    BIDDER_CODE_DEAL_ALIAS_3,
-    BIDDER_CODE_DEAL_ALIAS_4,
-    BIDDER_CODE_DEAL_ALIAS_5
-  ],
+  aliases: BIDDER_CODE_DEAL_ALIASES,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid: function (bid) {
@@ -134,6 +131,15 @@ export const spec = {
   interpretResponse: function (serverResponse, bidRequest) {
     const adUnits = serverResponse.body.adUnits;
 
+    let validatedBidType = validateBidType(config.getConfig().bidType);
+    if (bidRequest.bid) {
+      bidRequest.bid.forEach(b => {
+        if (b.params && b.params.bidType) {
+          validatedBidType = validateBidType(b.params.bidType);
+        }
+      });
+    }
+
     function buildAdResponse(bidderCode, ad, adUnit, dealCount) {
       const destinationUrls = ad.destinationUrls || {};
       const advertiserDomains = [];
@@ -143,7 +149,7 @@ export const spec = {
       const adResponse = {
         bidderCode: bidderCode,
         requestId: adUnit.targetId,
-        cpm: (ad.bid) ? ad.bid.amount * 1000 : 0,
+        cpm: ad[validatedBidType] ? ad[validatedBidType].amount * 1000 : 0,
         width: Number(ad.creativeWidth),
         height: Number(ad.creativeHeight),
         creativeId: ad.creativeId,
@@ -178,7 +184,7 @@ export const spec = {
 
     const hasBidAdUnits = adUnits.filter((au) => {
       const bid = bidsById[au.targetId];
-      if (bid && bid.bidder === BIDDER_CODE) {
+      if (bid && bid.bidder && BIDDER_CODE_DEAL_ALIASES.indexOf(bid.bidder) < 0) {
         return au.matchedAdCount > 0;
       } else {
         // We do NOT accept bids when using this adaptor via one of the

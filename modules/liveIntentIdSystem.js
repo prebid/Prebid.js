@@ -8,12 +8,15 @@ import { triggerPixel, logError } from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
-import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
+import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import {UID2_EIDS} from '../libraries/uid2Eids/uid2Eids.js';
 
+const DEFAULT_AJAX_TIMEOUT = 5000
 const EVENTS_TOPIC = 'pre_lips'
 const MODULE_NAME = 'liveIntentId';
+const LI_PROVIDER_DOMAIN = 'liveintent.com';
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 const defaultRequestedAttributes = {'nonId': true}
 const calls = {
@@ -64,6 +67,7 @@ function parseLiveIntentCollectorConfig(collectConfig) {
   collectConfig.fpiStorageStrategy && (config.storageStrategy = collectConfig.fpiStorageStrategy);
   collectConfig.fpiExpirationDays && (config.expirationDays = collectConfig.fpiExpirationDays);
   collectConfig.collectorUrl && (config.collectorUrl = collectConfig.collectorUrl);
+  config.ajaxTimeout = collectConfig.ajaxTimeout || DEFAULT_AJAX_TIMEOUT;
   return config;
 }
 
@@ -98,9 +102,8 @@ function initializeLiveConnect(configParams) {
   if (configParams.url) {
     identityResolutionConfig.url = configParams.url
   }
-  if (configParams.ajaxTimeout) {
-    identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout;
-  }
+
+  identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout || DEFAULT_AJAX_TIMEOUT;
 
   const liveConnectConfig = parseLiveIntentCollectorConfig(configParams.liCollectConfig);
 
@@ -124,7 +127,11 @@ function initializeLiveConnect(configParams) {
     liveConnectConfig.gdprApplies = gdprConsent.gdprApplies;
     liveConnectConfig.gdprConsent = gdprConsent.consentString;
   }
-
+  const gppConsent = gppDataHandler.getConsentData();
+  if (gppConsent) {
+    liveConnectConfig.gppString = gppConsent.gppString;
+    liveConnectConfig.gppApplicableSections = gppConsent.applicableSections;
+  }
   // The second param is the storage object, LS & Cookie manipulation uses PBJS
   // The third param is the ajax and pixel object, the ajax and pixel use PBJS
   liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls);
@@ -189,15 +196,31 @@ export const liveIntentIdSubmodule = {
       // As adapters are applied in lexicographical order, we will always
       // be overwritten by the 'proper' uid2 module if it is present.
       if (value.uid2) {
-        result.uid2 = { 'id': value.uid2 }
+        result.uid2 = { 'id': value.uid2, ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
       if (value.bidswitch) {
-        result.bidswitch = { 'id': value.bidswitch }
+        result.bidswitch = { 'id': value.bidswitch, ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
       if (value.medianet) {
-        result.medianet = { 'id': value.medianet }
+        result.medianet = { 'id': value.medianet, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.magnite) {
+        result.magnite = { 'id': value.magnite, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.index) {
+        result.index = { 'id': value.index, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.openx) {
+        result.openx = { 'id': value.openx, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.pubmatic) {
+        result.pubmatic = { 'id': value.pubmatic, ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
       if (value.magnite) {
@@ -245,6 +268,95 @@ export const liveIntentIdSubmodule = {
     }
 
     return { callback: result };
+  },
+  eids: {
+    ...UID2_EIDS,
+    'lipb': {
+      getValue: function(data) {
+        return data.lipbid;
+      },
+      source: 'liveintent.com',
+      atype: 3,
+      getEidExt: function(data) {
+        if (Array.isArray(data.segments) && data.segments.length) {
+          return {
+            segments: data.segments
+          };
+        }
+      }
+    },
+    'bidswitch': {
+      source: 'bidswitch.net',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'medianet': {
+      source: 'media.net',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'magnite': {
+      source: 'rubiconproject.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'index': {
+      source: 'liveintent.indexexchange.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'openx': {
+      source: 'openx.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'pubmatic': {
+      source: 'pubmatic.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    }
   }
 };
 

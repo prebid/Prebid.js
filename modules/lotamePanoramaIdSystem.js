@@ -368,6 +368,12 @@ export const lotamePanoramaIdSubmodule = {
 
     return { callback: resolveIdFunction };
   },
+  eids: {
+    lotamePanoramaId: {
+      source: 'crwdcntrl.net',
+      atype: 1,
+    },
+  },
 };
 
 submodule('userId', lotamePanoramaIdSubmodule);

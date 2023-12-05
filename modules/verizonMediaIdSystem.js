@@ -99,6 +99,12 @@ export const verizonMediaIdSubmodule = {
    */
   getAjaxFn() {
     return ajax;
+  },
+  eids: {
+    'connectid': {
+      source: 'verizonmedia.com',
+      atype: 3
+    },
   }
 };
 

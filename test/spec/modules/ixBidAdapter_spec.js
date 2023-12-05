@@ -2,8 +2,7 @@ import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import { spec, storage, ERROR_CODES, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs } from '../../../modules/ixBidAdapter.js';
-import { createEidsArray } from 'modules/userId/eids.js';
+import { spec, storage, ERROR_CODES, FEATURE_TOGGLES, LOCAL_STORAGE_FEATURE_TOGGLES_KEY, REQUESTED_FEATURE_TOGGLES, combineImps, bidToVideoImp, bidToNativeImp, deduplicateImpExtFields, removeSiteIDs, addDeviceInfo } from '../../../modules/ixBidAdapter.js';
 import { deepAccess, deepClone } from '../../../src/utils.js';
 
 describe('IndexexchangeAdapter', function () {
@@ -181,6 +180,35 @@ describe('IndexexchangeAdapter', function () {
         }
       },
       adUnitCode: 'div-gpt-ad-1460505748561-0',
+      transactionId: '173f49a8-7549-4218-a23c-e7ba59b47229',
+      bidId: '1a2b3c4d',
+      bidderRequestId: '11a22b33c44d',
+      auctionId: '1aa2bb3cc4dd',
+      schain: SAMPLE_SCHAIN
+    }
+  ];
+
+  const DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED = [
+    {
+      bidder: 'ix',
+      params: {
+        siteId: '123',
+        size: [300, 250]
+      },
+      sizes: [[300, 250], [300, 600]],
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250], [300, 600]],
+          pos: 0
+        }
+      },
+      ortb2Imp: {
+        ext: {
+          tid: '173f49a8-7549-4218-a23c-e7ba59b47229',
+          ae: 1 // Fledge enabled
+        },
+      },
+      adUnitCode: 'div-fledge-ad-1460505748561-0',
       transactionId: '173f49a8-7549-4218-a23c-e7ba59b47229',
       bidId: '1a2b3c4d',
       bidderRequestId: '11a22b33c44d',
@@ -389,11 +417,11 @@ describe('IndexexchangeAdapter', function () {
         ext: {
           tid: '273f49a8-7549-4218-a23c-e7ba59b47230',
           data: {
-            pbadslot: 'div-gpt-ad-1460505748562-0'
+            pbadslot: 'div-gpt-ad-1460505748562-1'
           }
         }
       },
-      adUnitCode: 'div-gpt-ad-1460505748562-0',
+      adUnitCode: 'div-gpt-ad-1460505748562-1',
       transactionId: '273f49a8-7549-4218-a23c-e7ba59b47230',
       bidId: '1a2b3c4e',
       bidderRequestId: '11a22b33c44e',
@@ -729,8 +757,54 @@ describe('IndexexchangeAdapter', function () {
     ortb2: {
       site: {
         page: 'https://www.prebid.org'
+      },
+      source: {
+        tid: 'mock-tid'
       }
     }
+  };
+
+  const DEFAULT_OPTION_FLEDGE_ENABLED_GLOBALLY = {
+    gdprConsent: {
+      gdprApplies: true,
+      consentString: '3huaa11=qu3198ae',
+      vendorData: {}
+    },
+    refererInfo: {
+      page: 'https://www.prebid.org',
+      canonicalUrl: 'https://www.prebid.org/the/link/to/the/page'
+    },
+    ortb2: {
+      site: {
+        page: 'https://www.prebid.org'
+      },
+      source: {
+        tid: 'mock-tid'
+      }
+    },
+    fledgeEnabled: true,
+    defaultForSlots: 1
+  };
+
+  const DEFAULT_OPTION_FLEDGE_ENABLED = {
+    gdprConsent: {
+      gdprApplies: true,
+      consentString: '3huaa11=qu3198ae',
+      vendorData: {}
+    },
+    refererInfo: {
+      page: 'https://www.prebid.org',
+      canonicalUrl: 'https://www.prebid.org/the/link/to/the/page'
+    },
+    ortb2: {
+      site: {
+        page: 'https://www.prebid.org'
+      },
+      source: {
+        tid: 'mock-tid'
+      }
+    },
+    fledgeEnabled: true
   };
 
   const DEFAULT_IDENTITY_RESPONSE = {
@@ -757,10 +831,11 @@ describe('IndexexchangeAdapter', function () {
     // similar to uid2, but id5's getValue takes .uid
     id5id: { uid: 'testid5id' }, // ID5
     imuid: 'testimuid',
-    '33acrossId': { envelope: 'v1.5fs.1000.fjdiosmclds' }
+    '33acrossId': { envelope: 'v1.5fs.1000.fjdiosmclds' },
+    'criteoID': { envelope: 'testcriteoID' },
+    'euidID': { envelope: 'testeuid' },
+    pairId: {envelope: 'testpairId'}
   };
-
-  const DEFAULT_USERIDASEIDS_DATA = createEidsArray(DEFAULT_USERID_DATA);
 
   const DEFAULT_USERID_PAYLOAD = [
     {
@@ -811,7 +886,27 @@ describe('IndexexchangeAdapter', function () {
     }, {
       source: 'intimatemerger.com',
       uids: [{
-        id: DEFAULT_USERID_DATA.imuid,
+        id: DEFAULT_USERID_DATA.imuid
+      }]
+    }, {
+      source: '33across.com',
+      uids: [{
+        id: DEFAULT_USERID_DATA['33acrossId'].envelope
+      }]
+    }, {
+      source: 'criteo.com',
+      uids: [{
+        id: DEFAULT_USERID_DATA['criteoID'].envelope
+      }]
+    }, {
+      source: 'euid.eu',
+      uids: [{
+        id: DEFAULT_USERID_DATA['euidID'].envelope
+      }]
+    }, {
+      source: 'google.com',
+      uids: [{
+        id: DEFAULT_USERID_DATA['pairId'].envelope
       }]
     }, {
       source: '33across.com',
@@ -820,6 +915,8 @@ describe('IndexexchangeAdapter', function () {
       }]
     },
   ];
+
+  const DEFAULT_USERIDASEIDS_DATA = DEFAULT_USERID_PAYLOAD;
 
   const DEFAULT_USERID_BID_DATA = {
     lotamePanoramaId: 'bd738d136bdaa841117fe9b331bb4'
@@ -835,6 +932,18 @@ describe('IndexexchangeAdapter', function () {
   });
 
   describe('getUserSync tests', function () {
+    before(() => {
+      // TODO (dgirardi): the assertions in this block rely on
+      // global state (consent and siteId) set up in the SOT
+      // this is an outsider's attempt to recreate that state more explicitly after shuffling around setup code
+      // in this test suite
+
+      // please make your preconditions explicit;
+      // also, please, avoid global state if possible.
+
+      spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION);
+    })
+
     it('UserSync test : check type = iframe, check usermatch URL', function () {
       const syncOptions = {
         'iframeEnabled': true
@@ -1210,7 +1319,7 @@ describe('IndexexchangeAdapter', function () {
         const payload = extractPayload(request[0]);
         expect(request).to.be.an('array');
         expect(request).to.have.lengthOf.above(0); // should be 1 or more
-        expect(payload.user.eids).to.have.lengthOf(8);
+        expect(payload.user.eids).to.have.lengthOf(11);
         expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
       });
     });
@@ -1398,7 +1507,7 @@ describe('IndexexchangeAdapter', function () {
       cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = extractPayload(request);
-      expect(payload.user.eids).to.have.lengthOf(8);
+      expect(payload.user.eids).to.have.lengthOf(11);
       expect(payload.user.eids).to.have.deep.members(DEFAULT_USERID_PAYLOAD);
     });
 
@@ -1531,7 +1640,7 @@ describe('IndexexchangeAdapter', function () {
       })
 
       expect(payload.user).to.exist;
-      expect(payload.user.eids).to.have.lengthOf(10);
+      expect(payload.user.eids).to.have.lengthOf(13);
 
       expect(payload.user.eids).to.have.deep.members(validUserIdPayload);
     });
@@ -1573,7 +1682,7 @@ describe('IndexexchangeAdapter', function () {
       });
 
       const payload = extractPayload(request);
-      expect(payload.user.eids).to.have.lengthOf(9);
+      expect(payload.user.eids).to.have.lengthOf(12);
       expect(payload.user.eids).to.have.deep.members(validUserIdPayload);
     });
   });
@@ -1774,16 +1883,19 @@ describe('IndexexchangeAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    let request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
-    const requestUrl = request.url;
-    const requestMethod = request.method;
-    const payloadData = request.data;
-
     const bidWithoutSchain = utils.deepClone(DEFAULT_BANNER_VALID_BID);
     delete bidWithoutSchain[0].schain;
-    const requestWithoutSchain = spec.buildRequests(bidWithoutSchain, DEFAULT_OPTION)[0];
-    const payloadWithoutSchain = extractPayload(requestWithoutSchain);
     const GPID = '/19968336/some-adunit-path';
+    let request, requestUrl, requestMethod, payloadData, requestWithoutSchain, payloadWithoutSchain;
+
+    before(() => {
+      request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, DEFAULT_OPTION)[0];
+      requestUrl = request.url;
+      requestMethod = request.method;
+      payloadData = request.data;
+      requestWithoutSchain = spec.buildRequests(bidWithoutSchain, DEFAULT_OPTION)[0];
+      payloadWithoutSchain = extractPayload(requestWithoutSchain);
+    });
 
     it('request should be made to IX endpoint with POST method and siteId in query param', function () {
       expect(requestMethod).to.equal('POST');
@@ -1900,7 +2012,7 @@ describe('IndexexchangeAdapter', function () {
       expect(payload.source.ext.schain).to.deep.equal(SAMPLE_SCHAIN);
       expect(payload.imp).to.be.an('array');
       expect(payload.imp).to.have.lengthOf(1);
-      expect(payload.source.tid).to.equal(DEFAULT_BANNER_VALID_BID[0].auctionId);
+      expect(payload.source.tid).to.equal(DEFAULT_OPTION.ortb2.source.tid);
     });
 
     it('payload should have correct format and value for r.id when bidderRequestId is a number ', function () {
@@ -1977,7 +2089,6 @@ describe('IndexexchangeAdapter', function () {
       request = spec.buildRequests([bid1, bid2], DEFAULT_OPTION)[0];
 
       const payload = extractPayload(request);
-      expect(payload.imp.length).to.equal(1);
       expect(payload.imp[0].banner.format[0].ext.siteID).to.equal('1234');
       expect(payload.imp[0].banner.format[1].ext.siteID).to.equal('4321');
     });
@@ -2217,7 +2328,8 @@ describe('IndexexchangeAdapter', function () {
 
         const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2 })[0];
         const payload = extractPayload(request);
-        expect(payload.device).to.be.undefined
+        expect(payload.device.h).to.exist;
+        expect(payload.device.w).to.exist;
       });
 
       it('should not set first party data if it is not an object', function () {
@@ -2337,7 +2449,11 @@ describe('IndexexchangeAdapter', function () {
     });
 
     describe('request should contain both banner and video requests', function () {
-      const request = spec.buildRequests([DEFAULT_BANNER_VALID_BID[0], DEFAULT_VIDEO_VALID_BID[0]], {});
+      let request;
+      before(() => {
+        request = spec.buildRequests([DEFAULT_BANNER_VALID_BID[0], DEFAULT_VIDEO_VALID_BID[0]], {});
+      });
+
       it('should have banner request', () => {
         const bannerImpression = extractPayload(request[0]).imp[0];
         const sidValue = DEFAULT_BANNER_VALID_BID[0].params.id;
@@ -2367,8 +2483,83 @@ describe('IndexexchangeAdapter', function () {
       });
     });
 
+    describe('video request should set displaymanager', () => {
+      it('ix renderer preferrered', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.equal('ix');
+      });
+      it('ix renderer not preferrered', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].mediaTypes.video.renderer = {
+          url: 'http://publisherplayer.js',
+          render: () => { }
+        };
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.equal('http://publisherplayer.js');
+      });
+      it('ix renderer not preferrered - bad url', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].mediaTypes.video.renderer = {
+          url: 'publisherplayer.js',
+          render: () => { }
+        };
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.be.undefined;
+      });
+      it('renderer url provided and is ix renderer', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].mediaTypes.video.renderer = {
+          url: 'http://js-sec.indexww.rendererplayer.com',
+          render: () => { }
+        };
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.equal('ix');
+      });
+      it('renderer url undefined and is ix renderer', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].mediaTypes.video.renderer = {
+          render: () => { }
+        };
+        bid[0].schain = undefined;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.be.undefined;
+      });
+      it('schain', () => {
+        const bid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+        bid[0].mediaTypes.video.context = 'outstream';
+        bid[0].mediaTypes.video.w = [[300, 143]];
+        bid[0].schain = SAMPLE_SCHAIN;
+        const request = spec.buildRequests(bid);
+        const videoImpression = extractPayload(request[0]).imp[0];
+        expect(videoImpression.displaymanager).to.equal('pbjs_wrapper');
+      });
+    });
+
     describe('request should contain both banner and native requests', function () {
-      const request = spec.buildRequests([DEFAULT_BANNER_VALID_BID[0], DEFAULT_NATIVE_VALID_BID[0]]);
+      let request;
+      before(() => {
+        request = spec.buildRequests([DEFAULT_BANNER_VALID_BID[0], DEFAULT_NATIVE_VALID_BID[0]]);
+      })
 
       it('should have banner request', () => {
         const bannerImpression = extractPayload(request[0]).imp[0];
@@ -2470,9 +2661,11 @@ describe('IndexexchangeAdapter', function () {
       bid1.bidId = '2f6g5s5e';
 
       const bid2 = utils.deepClone(bid1);
+      bid2.adUnitCode = 'div-gpt-2'
       bid2.transactionId = 'tr2';
       bid2.mediaTypes.banner.sizes = [[220, 221], [222, 223], [300, 250]];
       const bid3 = utils.deepClone(bid1);
+      bid3.adUnitCode = 'div-gpt-3'
       bid3.transactionId = 'tr3';
       bid3.mediaTypes.banner.sizes = [[330, 331], [332, 333], [300, 250]];
 
@@ -2574,8 +2767,11 @@ describe('IndexexchangeAdapter', function () {
   });
 
   describe('buildRequestVideo', function () {
-    const request = spec.buildRequests(DEFAULT_VIDEO_VALID_BID, DEFAULT_OPTION);
-    const payloadData = request[0].data;
+    let request, payloadData;
+    before(() => {
+      request = spec.buildRequests(DEFAULT_VIDEO_VALID_BID, DEFAULT_OPTION);
+      payloadData = request[0].data;
+    })
 
     it('auction type should be set correctly', function () {
       const at = payloadData.at;
@@ -2955,7 +3151,10 @@ describe('IndexexchangeAdapter', function () {
 
     describe('both banner and video bidder params set', function () {
       const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]];
-      const request = spec.buildRequests(bids, {});
+      let request;
+      before(() => {
+        request = spec.buildRequests(bids, {});
+      })
 
       it('should return valid banner requests', function () {
         const impressions = extractPayload(request[0]).imp;
@@ -3033,6 +3232,149 @@ describe('IndexexchangeAdapter', function () {
         });
         expect(nativeImps.ext.siteID).to.equal('456');
       });
+    });
+  });
+
+  describe('buildRequestFledge', function () {
+    it('impression should have ae=1 in ext when fledge module is enabled and ae is set in ad unit', function () {
+      const bidderRequest = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0]);
+      const requestBidFloor = spec.buildRequests([bid], bidderRequest)[0];
+      const impression = extractPayload(requestBidFloor).imp[0];
+
+      expect(impression.ext.ae).to.equal(1);
+    });
+
+    it('impression should have ae=1 in ext when fledge module is enabled globally and default is set through setConfig', function () {
+      const bidderRequest = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED_GLOBALLY);
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      const requestBidFloor = spec.buildRequests([bid], bidderRequest)[0];
+      const impression = extractPayload(requestBidFloor).imp[0];
+
+      expect(impression.ext.ae).to.equal(1);
+    });
+
+    it('impression should have ae=1 in ext when fledge module is enabled globally but no default set through setConfig but set at ad unit level', function () {
+      const bidderRequest = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0]);
+      const requestBidFloor = spec.buildRequests([bid], bidderRequest)[0];
+      const impression = extractPayload(requestBidFloor).imp[0];
+
+      expect(impression.ext.ae).to.equal(1);
+    });
+
+    it('impression should not have ae=1 in ext when fledge module is enabled globally through setConfig but overidden at ad unit level', function () {
+      const bidderRequest = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      const requestBidFloor = spec.buildRequests([bid], bidderRequest)[0];
+      const impression = extractPayload(requestBidFloor).imp[0];
+
+      expect(impression.ext.ae).to.be.undefined;
+    });
+
+    it('impression should not have ae=1 in ext when fledge module is disabled', function () {
+      const bidderRequest = deepClone(DEFAULT_OPTION);
+      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
+      const requestBidFloor = spec.buildRequests([bid], bidderRequest)[0];
+      const impression = extractPayload(requestBidFloor).imp[0];
+
+      expect(impression.ext.ae).to.be.undefined;
+    });
+
+    it('should contain correct IXdiag ae property for Fledge', function () {
+      const bid = DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0];
+      const bidderRequestWithFledgeEnabled = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
+      const request = spec.buildRequests([bid], bidderRequestWithFledgeEnabled);
+      const diagObj = extractPayload(request[0]).ext.ixdiag;
+      expect(diagObj.ae).to.equal(true);
+    });
+
+    it('should log warning for non integer auction environment in ad unit for fledge', () => {
+      const logWarnSpy = sinon.spy(utils, 'logWarn');
+      const bid = DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0];
+      bid.ortb2Imp.ext.ae = 'malformed'
+      const bidderRequestWithFledgeEnabled = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
+      spec.buildRequests([bid], bidderRequestWithFledgeEnabled);
+      expect(logWarnSpy.calledWith('error setting auction environment flag - must be an integer')).to.be.true;
+      logWarnSpy.restore();
+    });
+  });
+
+  describe('integration through exchangeId and externalId', function () {
+    const expectedExchangeId = 123456;
+    // create banner bids with externalId but no siteId as bidder param
+    const bannerBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+    delete bannerBids[0].params.siteId;
+    bannerBids[0].params.externalId = 'exteranl_id_1';
+
+    beforeEach(() => {
+      config.setConfig({ exchangeId: expectedExchangeId });
+      spec.resetSiteID();
+    });
+
+    afterEach(() => {
+      config.resetConfig();
+    });
+
+    it('when exchangeId and externalId set but no siteId, isBidRequestValid should return true', function () {
+      const bid = utils.deepClone(bannerBids[0]);
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('when neither exchangeId nor siteId set, isBidRequestValid should return false', function () {
+      config.resetConfig();
+      const bid = utils.deepClone(bannerBids[0]);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('when exchangeId and externalId set with banner impression but no siteId, bidrequest sent to endpoint with p param and externalID inside imp.ext', function () {
+      const requests = spec.buildRequests(bannerBids, DEFAULT_OPTION);
+      const payload = extractPayload(requests[0]);
+
+      const expectedURL = IX_SECURE_ENDPOINT + '?p=' + expectedExchangeId;
+      expect(requests[0].url).to.equal(expectedURL);
+      expect(payload.imp[0].ext.externalID).to.equal(bannerBids[0].params.externalId);
+      expect(payload.imp[0].banner.format[0].ext).to.be.undefined;
+      expect(payload.imp[0].ext.siteID).to.be.undefined;
+    });
+
+    it('when exchangeId and externalId set with video impression, bidrequest sent to endpoint with p param and externalID inside imp.ext', function () {
+      const validBids = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+      delete validBids[0].params.siteId;
+      validBids[0].params.externalId = 'exteranl_id_1';
+
+      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
+      const payload = extractPayload(requests[0]);
+
+      const expectedURL = IX_SECURE_ENDPOINT + '?p=' + expectedExchangeId;
+      expect(requests[0].url).to.equal(expectedURL);
+      expect(payload.imp[0].ext.externalID).to.equal(validBids[0].params.externalId);
+      expect(payload.imp[0].ext.siteID).to.be.undefined;
+    });
+
+    it('when exchangeId and externalId set beside siteId, bidrequest sent to endpoint with both p param and s param and externalID inside imp.ext and siteID inside imp.banner.format.ext', function () {
+      bannerBids[0].params.siteId = '1234';
+      const requests = spec.buildRequests(bannerBids, DEFAULT_OPTION);
+      const payload = extractPayload(requests[0]);
+
+      const expectedURL = IX_SECURE_ENDPOINT + '?s=' + bannerBids[0].params.siteId + '&p=' + expectedExchangeId;
+      expect(requests[0].url).to.equal(expectedURL);
+      expect(payload.imp[0].ext.externalID).to.equal(bannerBids[0].params.externalId);
+      expect(payload.imp[0].banner.format[0].ext.externalID).to.be.undefined;
+      expect(payload.imp[0].ext.siteID).to.be.undefined;
+      expect(payload.imp[0].banner.format[0].ext.siteID).to.equal(bannerBids[0].params.siteId);
+    });
+
+    it('when exchangeId and siteId set, but no externalId, bidrequest sent to exchange', function () {
+      bannerBids[0].params.siteId = '1234';
+      delete bannerBids[0].params.externalId;
+      const requests = spec.buildRequests(bannerBids, DEFAULT_OPTION);
+      const payload = extractPayload(requests[0]);
+
+      const expectedURL = IX_SECURE_ENDPOINT + '?s=' + bannerBids[0].params.siteId + '&p=' + expectedExchangeId;
+      expect(requests[0].url).to.equal(expectedURL);
+      expect(payload.imp[0].ext.externalID).to.be.undefined;
+      expect(payload.imp[0].banner.format[0].ext.siteID).to.equal(bannerBids[0].params.siteId);
     });
   });
 
@@ -3559,6 +3901,140 @@ describe('IndexexchangeAdapter', function () {
       const result = spec.interpretResponse({ body: DEFAULT_NATIVE_BID_RESPONSE }, nativeBidderRequest);
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
+
+    describe('Auction config response', function () {
+      let bidderRequestWithFledgeEnabled;
+      let serverResponseWithoutFledgeConfigs;
+      let serverResponseWithFledgeConfigs;
+      let serverResponseWithMalformedAuctionConfig;
+      let serverResponseWithMalformedAuctionConfigs;
+
+      beforeEach(() => {
+        bidderRequestWithFledgeEnabled = spec.buildRequests(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED, {})[0];
+        bidderRequestWithFledgeEnabled.fledgeEnabled = true;
+
+        serverResponseWithoutFledgeConfigs = {
+          body: {
+            ...DEFAULT_BANNER_BID_RESPONSE
+          }
+        };
+
+        serverResponseWithFledgeConfigs = {
+          body: {
+            ...DEFAULT_BANNER_BID_RESPONSE,
+            ext: {
+              protectedAudienceAuctionConfigs: [
+                {
+                  bidId: '59f219e54dc2fc',
+                  config: {
+                    seller: 'https://seller.test.indexexchange.com',
+                    decisionLogicUrl: 'https://seller.test.indexexchange.com/decision-logic.js',
+                    interestGroupBuyers: ['https://buyer.test.indexexchange.com'],
+                    sellerSignals: {
+                      callbackURL: 'https://test.com/ig/v1/ck74j8bcvc9c73a8eg6g'
+                    },
+                    perBuyerSignals: {
+                      'https://buyer.test.indexexchange.com': {}
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        };
+
+        serverResponseWithMalformedAuctionConfig = {
+          body: {
+            ...DEFAULT_BANNER_BID_RESPONSE,
+            ext: {
+              protectedAudienceAuctionConfigs: ['malformed']
+            }
+          }
+        };
+
+        serverResponseWithMalformedAuctionConfigs = {
+          body: {
+            ...DEFAULT_BANNER_BID_RESPONSE,
+            ext: {
+              protectedAudienceAuctionConfigs: 'malformed'
+            }
+          }
+        };
+      });
+
+      it('should correctly interpret response with auction configs', () => {
+        const result = spec.interpretResponse(serverResponseWithFledgeConfigs, bidderRequestWithFledgeEnabled);
+        const expectedOutput = [
+          {
+            bidId: '59f219e54dc2fc',
+            config: {
+              ...serverResponseWithFledgeConfigs.body.ext.protectedAudienceAuctionConfigs[0].config,
+              perBuyerSignals: {
+                'https://buyer.test.indexexchange.com': {}
+              }
+            }
+          }
+        ];
+        expect(result.fledgeAuctionConfigs).to.deep.equal(expectedOutput);
+      });
+
+      it('should correctly interpret response without auction configs', () => {
+        const result = spec.interpretResponse(serverResponseWithoutFledgeConfigs, bidderRequestWithFledgeEnabled);
+        expect(result.fledgeAuctionConfigs).to.be.undefined;
+      });
+
+      it('should handle malformed auction configs gracefully', () => {
+        const result = spec.interpretResponse(serverResponseWithMalformedAuctionConfig, bidderRequestWithFledgeEnabled);
+        expect(result.fledgeAuctionConfigs).to.be.empty;
+      });
+
+      it('should log warning for malformed auction configs', () => {
+        const logWarnSpy = sinon.spy(utils, 'logWarn');
+        spec.interpretResponse(serverResponseWithMalformedAuctionConfig, bidderRequestWithFledgeEnabled);
+        expect(logWarnSpy.calledWith('Malformed auction config detected:', 'malformed')).to.be.true;
+        logWarnSpy.restore();
+      });
+
+      it('should return bids when protected audience auction conigs is malformed', () => {
+        const result = spec.interpretResponse(serverResponseWithMalformedAuctionConfigs, bidderRequestWithFledgeEnabled);
+        expect(result.fledgeAuctionConfigs).to.be.undefined;
+        expect(result.length).to.be.greaterThan(0);
+      });
+    });
+
+    describe('interpretResponse when server response is empty', function() {
+      let serverResponseWithoutBody;
+      let serverResponseWithoutSeatbid;
+      let bidderRequestWithFledgeEnabled;
+      let bidderRequestWithoutFledgeEnabled;
+
+      beforeEach(() => {
+        serverResponseWithoutBody = {};
+
+        serverResponseWithoutSeatbid = {
+          body: {}
+        };
+
+        bidderRequestWithFledgeEnabled = spec.buildRequests(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED, {})[0];
+        bidderRequestWithFledgeEnabled.fledgeEnabled = true;
+
+        bidderRequestWithoutFledgeEnabled = spec.buildRequests(DEFAULT_BANNER_VALID_BID, {})[0];
+      });
+
+      it('should return empty bids when response does not have body', function () {
+        let result = spec.interpretResponse(serverResponseWithoutBody, bidderRequestWithFledgeEnabled);
+        expect(result).to.deep.equal([]);
+        result = spec.interpretResponse(serverResponseWithoutBody, bidderRequestWithoutFledgeEnabled);
+        expect(result).to.deep.equal([]);
+      });
+
+      it('should return empty bids when response body does not have seatbid', function () {
+        let result = spec.interpretResponse(serverResponseWithoutSeatbid, bidderRequestWithFledgeEnabled);
+        expect(result).to.deep.equal([]);
+        result = spec.interpretResponse(serverResponseWithoutSeatbid, bidderRequestWithoutFledgeEnabled);
+        expect(result).to.deep.equal([]);
+      });
+    });
   });
 
   describe('bidrequest consent', function () {
@@ -4013,8 +4489,8 @@ describe('IndexexchangeAdapter', function () {
         const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_VIDEO_VALID_BID[0]];
         bids[0].params.bidFloor = 2.35;
         bids[0].params.bidFloorCur = 'USD';
-        let tid = bids[1].transactionId;
-        bids[1].transactionId = bids[0].transactionId;
+        let adunitcode = bids[1].adUnitCode;
+        bids[1].adUnitCode = bids[0].adUnitCode;
         bids[1].params.bidFloor = 2.05;
         bids[1].params.bidFloorCur = 'USD';
         const request = spec.buildRequests(bids, {});
@@ -4024,15 +4500,15 @@ describe('IndexexchangeAdapter', function () {
         expect(extractPayload(request[0]).imp[0].bidfloorcur).to.equal('USD');
         expect(extractPayload(request[0]).imp[0].video.ext.bidfloor).to.equal(2.05);
         expect(extractPayload(request[0]).imp[0].banner.format[0].ext.bidfloor).to.equal(2.35);
-        bids[1].transactionId = tid;
+        bids[1].adUnitCode = adunitcode;
       });
 
       it('multiformat banner / native - bid floors', function () {
         const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_NATIVE_VALID_BID[0]];
         bids[0].params.bidFloor = 2.35;
         bids[0].params.bidFloorCur = 'USD';
-        let tid = bids[1].transactionId;
-        bids[1].transactionId = bids[0].transactionId;
+        let adunitcode = bids[1].adUnitCode;
+        bids[1].adUnitCode = bids[0].adUnitCode;
         bids[1].params.bidFloor = 2.05;
         bids[1].params.bidFloorCur = 'USD';
         const request = spec.buildRequests(bids, {});
@@ -4041,15 +4517,15 @@ describe('IndexexchangeAdapter', function () {
         expect(extractPayload(request[0]).imp[0].bidfloor).to.equal(2.05);
         expect(extractPayload(request[0]).imp[0].bidfloorcur).to.equal('USD');
         expect(extractPayload(request[0]).imp[0].native.ext.bidfloor).to.equal(2.05);
-        bids[1].transactionId = tid;
+        bids[1].adUnitCode = adunitcode;
       });
 
       it('multiformat banner / native - bid floors, banner imp less', function () {
         const bids = [DEFAULT_MULTIFORMAT_BANNER_VALID_BID[0], DEFAULT_MULTIFORMAT_NATIVE_VALID_BID[0]];
         bids[0].params.bidFloor = 2.05;
         bids[0].params.bidFloorCur = 'USD';
-        let tid = bids[1].transactionId;
-        bids[1].transactionId = bids[0].transactionId;
+        let adunitcode = bids[1].adUnitCode;
+        bids[1].adUnitCode = bids[0].adUnitCode;
         bids[1].params.bidFloor = 2.35;
         bids[1].params.bidFloorCur = 'USD';
         const request = spec.buildRequests(bids, {});
@@ -4058,7 +4534,7 @@ describe('IndexexchangeAdapter', function () {
         expect(extractPayload(request[0]).imp[0].bidfloor).to.equal(2.05);
         expect(extractPayload(request[0]).imp[0].bidfloorcur).to.equal('USD');
         expect(extractPayload(request[0]).imp[0].native.ext.bidfloor).to.equal(2.35);
-        bids[1].transactionId = tid;
+        bids[1].adUnitCode = adunitcode;
       });
 
       it('should return valid banner and video requests, different adunit, creates multiimp request', function () {
@@ -4832,6 +5308,24 @@ describe('IndexexchangeAdapter', function () {
       };
 
       expect(removeSiteIDs(request)).to.deep.equal(expected);
+    });
+  });
+  describe('addDeviceInfo', () => {
+    it('should add device to request when device already exists', () => {
+      let r = {
+        device: {
+          ip: '127.0.0.1'
+        }
+      }
+      r = addDeviceInfo(r);
+      expect(r.device.w).to.exist;
+      expect(r.device.h).to.exist;
+    });
+    it('should add device to request when device doesnt exist', () => {
+      let r = {}
+      r = addDeviceInfo(r);
+      expect(r.device.w).to.exist;
+      expect(r.device.h).to.exist;
     });
   });
 });

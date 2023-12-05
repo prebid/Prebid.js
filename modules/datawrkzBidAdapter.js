@@ -1,4 +1,12 @@
-import { deepAccess, getBidIdParameter, isArray, getUniqueIdentifierStr, contains, isFn, isPlainObject } from '../src/utils.js';
+import {
+  deepAccess,
+  isArray,
+  getUniqueIdentifierStr,
+  contains,
+  isFn,
+  isPlainObject,
+  getBidIdParameter
+} from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -414,8 +422,6 @@ function buildBannerResponse(bidRequest, bidResponse) {
       }
       let bidSizes = (deepAccess(bidRequest, 'mediaTypes.banner.sizes')) ? deepAccess(bidRequest, 'mediaTypes.banner.sizes') : bidRequest.sizes;
       bidResponse.requestId = bidRequest.bidId;
-      bidResponse.auctionId = bidRequest.auctionId;
-      bidResponse.transactionId = bidRequest.transactionId;
       bidResponse.placementCode = placementCode;
       bidResponse.cpm = responseCPM;
       bidResponse.size = bidSizes;
@@ -456,8 +462,6 @@ function buildNativeResponse(bidRequest, response) {
         return;
       }
       bidResponse.requestId = bidRequest.bidId;
-      bidResponse.auctionId = bidRequest.auctionId;
-      bidResponse.transactionId = bidRequest.transactionId;
       bidResponse.placementCode = placementCode;
       bidResponse.cpm = responseCPM;
 
@@ -509,8 +513,6 @@ function buildVideoResponse(bidRequest, response) {
       let context = bidRequest.mediaTypes.video.context;
 
       bidResponse.requestId = bidRequest.bidId;
-      bidResponse.auctionId = bidRequest.auctionId;
-      bidResponse.transactionId = bidRequest.transactionId;
       bidResponse.placementCode = placementCode;
       bidResponse.cpm = responseCPM;
 

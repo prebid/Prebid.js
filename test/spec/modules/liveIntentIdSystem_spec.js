@@ -1,6 +1,6 @@
 import { liveIntentIdSubmodule, reset as resetLiveIntentIdSubmodule, storage } from 'modules/liveIntentIdSystem.js';
 import * as utils from 'src/utils.js';
-import { gdprDataHandler, uspDataHandler } from '../../../src/adapterManager.js';
+import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../../src/adapterManager.js';
 import { server } from 'test/mocks/xhr.js';
 resetLiveIntentIdSubmodule();
 liveIntentIdSubmodule.setModuleMode('standard')
@@ -12,6 +12,7 @@ describe('LiveIntentId', function() {
   let logErrorStub;
   let uspConsentDataStub;
   let gdprConsentDataStub;
+  let gppConsentDataStub;
   let getCookieStub;
   let getDataFromLocalStorageStub;
   let imgStub;
@@ -24,6 +25,7 @@ describe('LiveIntentId', function() {
     logErrorStub = sinon.stub(utils, 'logError');
     uspConsentDataStub = sinon.stub(uspDataHandler, 'getConsentData');
     gdprConsentDataStub = sinon.stub(gdprDataHandler, 'getConsentData');
+    gppConsentDataStub = sinon.stub(gppDataHandler, 'getConsentData');
   });
 
   afterEach(function() {
@@ -33,6 +35,7 @@ describe('LiveIntentId', function() {
     logErrorStub.restore();
     uspConsentDataStub.restore();
     gdprConsentDataStub.restore();
+    gppConsentDataStub.restore();
     resetLiveIntentIdSubmodule();
   });
 
@@ -42,11 +45,15 @@ describe('LiveIntentId', function() {
       gdprApplies: true,
       consentString: 'consentDataString'
     })
+    gppConsentDataStub.returns({
+      gppString: 'gppConsentDataString',
+      applicableSections: [1, 2]
+    })
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
-    expect(request.url).to.match(/.*us_privacy=1YNY.*&gdpr=1&n3pc=1&gdpr_consent=consentDataString.*/);
+    expect(request.url).to.match(/.*us_privacy=1YNY.*&gdpr=1&n3pc=1&gdpr_consent=consentDataString.*&gpp_s=gppConsentDataString&gpp_as=1%2C2.*/);
     const response = {
       unifiedId: 'a_unified_id',
       segments: [123, 234]
@@ -65,9 +72,13 @@ describe('LiveIntentId', function() {
       gdprApplies: true,
       consentString: 'consentDataString'
     })
+    gppConsentDataStub.returns({
+      gppString: 'gppConsentDataString',
+      applicableSections: [1]
+    })
     liveIntentIdSubmodule.getId(defaultConfigParams);
     setTimeout(() => {
-      expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*&us_privacy=1YNY.*&wpn=prebid.*&gdpr=1&n3pc=1&n3pct=1&nb=1&gdpr_consent=consentDataString.*/);
+      expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*&us_privacy=1YNY.*&wpn=prebid.*&gdpr=1&n3pc=1&n3pct=1&nb=1&gdpr_consent=consentDataString&gpp_s=gppConsentDataString&gpp_as=1.*/);
       done();
     }, 200);
   });
@@ -123,9 +134,13 @@ describe('LiveIntentId', function() {
       gdprApplies: false,
       consentString: 'consentDataString'
     })
+    gppConsentDataStub.returns({
+      gppString: 'gppConsentDataString',
+      applicableSections: [1]
+    })
     liveIntentIdSubmodule.decode({}, defaultConfigParams);
     setTimeout(() => {
-      expect(server.requests[0].url).to.match(/.*us_privacy=1YNY.*&gdpr=0&gdpr_consent=consentDataString.*/);
+      expect(server.requests[0].url).to.match(/.*us_privacy=1YNY.*&gdpr=0&gdpr_consent=consentDataString.*&gpp_s=gppConsentDataString&gpp_as=1.*/);
       done();
     }, 200);
   });
@@ -355,17 +370,7 @@ describe('LiveIntentId', function() {
 
   it('should decode a uid2 to a seperate object when present', function() {
     const result = liveIntentIdSubmodule.decode({ nonId: 'foo', uid2: 'bar' });
-    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'uid2': 'bar'}, 'uid2': {'id': 'bar'}});
-  });
-
-  it('should decode a bidswitch id to a seperate object when present', function() {
-    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', bidswitch: 'bar' });
-    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'bidswitch': 'bar'}, 'bidswitch': {'id': 'bar'}});
-  });
-
-  it('should decode a medianet id to a seperate object when present', function() {
-    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', medianet: 'bar' });
-    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'medianet': 'bar'}, 'medianet': {'id': 'bar'}});
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'uid2': 'bar'}, 'uid2': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
   it('should decode a magnite id to a seperate object when present', function() {
@@ -375,7 +380,37 @@ describe('LiveIntentId', function() {
 
   it('should decode values with uid2 but no nonId', function() {
     const result = liveIntentIdSubmodule.decode({ uid2: 'bar' });
-    expect(result).to.eql({'uid2': {'id': 'bar'}});
+    expect(result).to.eql({'uid2': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
+  it('should decode a bidswitch id to a seperate object when present', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', bidswitch: 'bar' });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'bidswitch': 'bar'}, 'bidswitch': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
+  it('should decode a medianet id to a seperate object when present', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', medianet: 'bar' });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'medianet': 'bar'}, 'medianet': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
+  it('should decode a magnite id to a seperate object when present', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', magnite: 'bar' });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'magnite': 'bar'}, 'magnite': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
+  it('should decode an index id to a seperate object when present', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', index: 'bar' });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'index': 'bar'}, 'index': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
+  it('should decode an openx id to a seperate object when present', function () {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', openx: 'bar' });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'openx': 'bar'}, 'openx': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
+  it('should decode an pubmatic id to a seperate object when present', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', pubmatic: 'bar' });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'pubmatic': 'bar'}, 'pubmatic': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
   it('should decode an index id to a seperate object when present', function() {
