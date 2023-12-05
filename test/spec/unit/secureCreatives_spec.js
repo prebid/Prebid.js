@@ -9,6 +9,7 @@ import * as events from 'src/events.js';
 import {config as configObj} from 'src/config.js';
 import * as creativeRenderers from 'src/creativeRenderers.js';
 import 'src/prebid.js';
+import 'modules/nativeRendering.js';
 
 import {expect} from 'chai';
 
