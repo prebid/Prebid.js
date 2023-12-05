@@ -126,6 +126,7 @@ function handleEventRequest(reply, data, adObject) {
 }
 
 export function resizeRemoteCreative({adId, adUnitCode, width, height}) {
+  if (width == null || height == null) return;
   // resize both container div + iframe
   ['div', 'iframe'].forEach(elmType => {
     // not select element that gets removed after dfp render

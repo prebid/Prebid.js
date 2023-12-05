@@ -73,7 +73,7 @@ import {
   timestamp
 } from './utils.js';
 import {getPriceBucketString} from './cpmBucketManager.js';
-import {getNativeTargeting, setNativeResponseProperties} from './native.js';
+import {getNativeTargeting, isNativeResponse, setNativeResponseProperties} from './native.js';
 import {getCacheUrl, store} from './videoCache.js';
 import {Renderer} from './Renderer.js';
 import {config} from './config.js';
@@ -459,9 +459,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
       if (FEATURES.VIDEO && bidResponse.mediaType === VIDEO) {
         tryAddVideoBid(auctionInstance, bidResponse, done);
       } else {
-        if (FEATURES.NATIVE && bidResponse.native != null && typeof bidResponse.native === 'object') {
-          // NOTE: augment bidResponse.native even if bidResponse.mediaType !== NATIVE; it's possible
-          // to treat banner responses as native
+        if (FEATURES.NATIVE && isNativeResponse(bidResponse)) {
           setNativeResponseProperties(bidResponse, index.getAdUnit(bidResponse));
         }
         addBidToAuction(auctionInstance, bidResponse);

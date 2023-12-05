@@ -11,8 +11,6 @@ import * as creativeRenderers from 'src/creativeRenderers.js';
 import 'src/prebid.js';
 
 import {expect} from 'chai';
-import {handleRender} from '../../../src/adRendering.js';
-import {sandbox} from 'sinon';
 
 var CONSTANTS = require('src/constants.json');
 
@@ -282,7 +280,54 @@ describe('secureCreatives', () => {
         });
         receiveMessage(ev);
         sinon.assert.calledWith(ev.source.postMessage, sinon.match(ob => JSON.parse(ob).renderer === 'mock-renderer'));
-      })
+      });
+
+      if (FEATURES.NATIVE) {
+        it('should include native rendering data in responses', () => {
+          const bid = {
+            native: {
+              ortb: {
+                assets: [
+                  {
+                    id: 1,
+                    data: {
+                      type: 2,
+                      value: 'vbody'
+                    }
+                  }
+                ]
+              },
+              body: 'vbody',
+              adTemplate: 'tpl',
+              rendererUrl: 'rurl'
+            }
+          }
+          pushBidResponseToAuction(bid);
+          const ev = makeEvent({
+            source: {
+              postMessage: sinon.stub()
+            },
+            data: JSON.stringify({adId: bidId, message: 'Prebid Request'})
+          })
+          receiveMessage(ev);
+          sinon.assert.calledWith(ev.source.postMessage, sinon.match(ob => {
+            const data = JSON.parse(ob);
+            ['width', 'height'].forEach(prop => expect(data[prop]).to.not.exist);
+            const native = data.native;
+            sinon.assert.match(native, {
+              ortb: bid.native.ortb,
+              adTemplate: bid.native.adTemplate,
+              rendererUrl: bid.native.rendererUrl,
+            })
+            expect(Object.fromEntries(native.assets.map(({key, value}) => [key, value]))).to.eql({
+              adTemplate: bid.native.adTemplate,
+              rendererUrl: bid.native.rendererUrl,
+              body: 'vbody'
+            });
+            return true;
+          }))
+        })
+      }
     });
 
     describe('Prebid Native', function() {

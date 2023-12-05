@@ -7,6 +7,7 @@ import {VIDEO} from './mediaTypes.js';
 import {auctionManager} from './auctionManager.js';
 import {getGlobal} from './prebidGlobal.js';
 import {getCreativeRenderer} from './creativeRenderers.js';
+import {getNativeRenderingData, isNativeResponse} from './native.js';
 
 const {AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON} = CONSTANTS.EVENTS;
 const {EXCEPTION} = CONSTANTS.AD_RENDER_FAILED_REASON;
@@ -76,6 +77,27 @@ export function handleCreativeMessage(type, data, bidResponse, handlers = HANDLE
   }
 }
 
+function getRenderingData(bidResponse, options) {
+  const {adId, ad, adUrl, cpm, originalCpm, width, height} = bidResponse
+  const repl = {
+    AUCTION_PRICE: originalCpm || cpm,
+    CLICKTHROUGH: options?.clickUrl || ''
+  }
+  const data = {
+    adId,
+    ad: replaceMacros(ad, repl),
+    adUrl: replaceMacros(adUrl, repl),
+  };
+  if (FEATURES.NATIVE && isNativeResponse(bidResponse)) {
+    data.native = getNativeRenderingData(bidResponse, auctionManager.index.getAdUnit(bidResponse));
+  } else {
+    // only set w/h when we know it in advance, to avoid re-sizing the iframe twice - native creatives will
+    // ask for a resize after rendering
+    Object.assign(data, {width, height});
+  }
+  return data;
+}
+
 export function handleRender(renderFn, {adId, options, bidResponse}) {
   if (bidResponse == null) {
     emitAdRenderFail({
@@ -93,7 +115,7 @@ export function handleRender(renderFn, {adId, options, bidResponse}) {
     }
   }
   try {
-    const {adId, ad, adUrl, width, height, renderer, cpm, originalCpm, mediaType} = bidResponse;
+    const {adId, renderer, mediaType} = bidResponse;
     // rendering for outstream safeframe
     if (isRendererRequired(renderer)) {
       executeRenderer(renderer, bidResponse);
@@ -107,17 +129,7 @@ export function handleRender(renderFn, {adId, options, bidResponse}) {
         });
         return;
       }
-      const repl = {
-        AUCTION_PRICE: originalCpm || cpm,
-        CLICKTHROUGH: options?.clickUrl || ''
-      };
-      renderFn({
-        ad: replaceMacros(ad, repl),
-        adUrl: replaceMacros(adUrl, repl),
-        adId,
-        width,
-        height
-      });
+      renderFn(getRenderingData(bidResponse, options));
     }
   } catch (e) {
     emitAdRenderFail({

@@ -99,6 +99,12 @@ const TRACKER_EVENTS = {
   'viewable-video50': 4,
 }
 
+export function isNativeResponse(bidResponse) {
+  // check for native data and not mediaType; it's possible
+  // to treat banner responses as native
+  return bidResponse.native && typeof bidResponse.native === 'object';
+}
+
 /**
  * Recieves nativeParams from an adUnit. If the params were not of type 'type',
  * passes them on directly. If they were of type 'type', translate
@@ -410,7 +416,7 @@ function getNativeAssets(nativeProps, keys, ext = false) {
   return assets;
 }
 
-function getNativeRenderingData(bid, adUnit, keys) {
+export function getNativeRenderingData(bid, adUnit, keys) {
   const data = {
     ...getDefinedParams(bid.native, ['rendererUrl', 'adTemplate']),
     assets: getNativeAssets(bid.native, keys)
