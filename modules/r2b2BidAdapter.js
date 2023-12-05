@@ -190,7 +190,9 @@ function createPrebidResponseBid(requestImp, bidResponse, serverResponse, bids) 
       events: bidResponse.ext?.r2b2?.events
     }
   };
-  bidOut.renderer = setUpRenderer(adUnitCode, bidOut);
+  if (bidResponse.ext?.r2b2?.useRenderer) {
+    bidOut.renderer = setUpRenderer(adUnitCode, bidOut);
+  }
   return bidOut;
 }
 

@@ -180,7 +180,8 @@ describe('R2B2 adapter', function () {
             },
             r2b2: {
               cdid: cdid,
-              cid: cid
+              cid: cid,
+              useRenderer: true
             }
           }
         }],

@@ -32,3 +32,6 @@ Module that integrates R2B2 demand sources. To get your bidder configuration rea
     }
   ];
 ```
+## Rendering
+
+Our adapter can feature a custom renderer specifically for display ads, tailored to enhance ad presentation and functionality. This is particularly beneficial for non-standard ad formats that require more complex logic. It's important to note that our rendering process operates outside of SafeFrames. For additional information, not limited to rendering aspects, please feel free to contact us at partner@r2b2.io
