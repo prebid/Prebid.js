@@ -80,7 +80,7 @@ const _public = (function () {
       try {
         fn.apply(null, args);
       } catch (e) {
-        utils.logError('Error executing handler:', 'events.js', e);
+        utils.logError('Error executing handler:', 'events.js', e, eventString);
       }
     });
   }
