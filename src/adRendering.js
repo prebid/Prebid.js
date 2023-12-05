@@ -5,7 +5,6 @@ import {config} from './config.js';
 import {executeRenderer, isRendererRequired} from './Renderer.js';
 import {VIDEO} from './mediaTypes.js';
 import {auctionManager} from './auctionManager.js';
-import {getGlobal} from './prebidGlobal.js';
 import {getCreativeRenderer} from './creativeRenderers.js';
 import {hook} from './hook.js';
 
@@ -91,6 +90,28 @@ export const getRenderingData = hook('sync', function (bidResponse, options) {
   };
 })
 
+export const doRender = hook('sync', function(renderFn, bidResponse, options) {
+  if (FEATURES.VIDEO && bidResponse.mediaType === VIDEO) {
+    emitAdRenderFail({
+      reason: CONSTANTS.AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT,
+      message: 'Cannot render video ad',
+      bid: bidResponse,
+      id: bidResponse.adId
+    });
+    return;
+  }
+  renderFn(Object.assign({adId: bidResponse.adId}, getRenderingData(bidResponse, options)));
+});
+
+doRender.before(function (next, renderFn, bidResponse, options) {
+  if (isRendererRequired(bidResponse.renderer)) {
+    executeRenderer(bidResponse.renderer, bidResponse);
+    next.bail();
+  } else {
+    next(renderFn, bidResponse, options);
+  }
+}, 100)
+
 export function handleRender(renderFn, {adId, options, bidResponse}) {
   if (bidResponse == null) {
     emitAdRenderFail({
@@ -108,22 +129,7 @@ export function handleRender(renderFn, {adId, options, bidResponse}) {
     }
   }
   try {
-    const {adId, renderer, mediaType} = bidResponse;
-    // rendering for outstream safeframe
-    if (isRendererRequired(renderer)) {
-      executeRenderer(renderer, bidResponse);
-    } else if (adId) {
-      if (mediaType === VIDEO) {
-        emitAdRenderFail({
-          reason: CONSTANTS.AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT,
-          message: 'Cannot render video ad',
-          bid: bidResponse,
-          id: adId
-        });
-        return;
-      }
-      renderFn(Object.assign({adId}, getRenderingData(bidResponse, options)));
-    }
+    doRender(renderFn, bidResponse, options);
   } catch (e) {
     emitAdRenderFail({
       reason: CONSTANTS.AD_RENDER_FAILED_REASON.EXCEPTION,
@@ -131,11 +137,8 @@ export function handleRender(renderFn, {adId, options, bidResponse}) {
       id: adId,
       bid: bidResponse
     });
-    return;
   }
-  // save winning bids
   auctionManager.addWinningBid(bidResponse);
-
   events.emit(BID_WON, bidResponse);
 }
 
@@ -164,16 +167,6 @@ export function renderAdDirect(doc, adId, options) {
       fail(CONSTANTS.AD_RENDER_FAILED_REASON.MISSING_DOC_OR_ADID, `missing ${adId ? 'doc' : 'adId'}`);
     } else {
       bid = auctionManager.findBidByAdId(adId);
-
-      if (FEATURES.VIDEO) {
-        // TODO: could the video module implement this as a custom renderer, rather than a special case in here?
-        const adUnit = bid && auctionManager.index.getAdUnit(bid);
-        const videoModule = getGlobal().videoModule;
-        if (adUnit?.video && videoModule) {
-          videoModule.renderBid(adUnit.video.divId, bid);
-          return;
-        }
-      }
 
       if ((doc === document && !inIframe())) {
         fail(CONSTANTS.AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT, `renderAd was prevented from writing to the main document.`);
