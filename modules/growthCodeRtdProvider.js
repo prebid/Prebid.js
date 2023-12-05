@@ -5,10 +5,11 @@
 import { submodule } from '../src/hook.js'
 import { getStorageManager } from '../src/storageManager.js';
 import {
-  logMessage, logError, tryAppendQueryString, mergeDeep
+  logMessage, logError, mergeDeep
 } from '../src/utils.js';
 import * as ajax from '../src/ajax.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 const MODULE_NAME = 'growthCodeRtd';
 const LOG_PREFIX = 'GrowthCodeRtd: ';
@@ -59,7 +60,11 @@ function init(config, userConsent) {
 
   items = tryParse(storage.getDataFromLocalStorage(RTD_CACHE_KEY, null));
 
-  return callServer(configParams, items, expiresAt, userConsent);
+  if (configParams.pid === undefined) {
+    return true; // Die gracefully
+  } else {
+    return callServer(configParams, items, expiresAt, userConsent);
+  }
 }
 function callServer(configParams, items, expiresAt, userConsent) {
   // Expire Cache

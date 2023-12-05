@@ -106,6 +106,41 @@ describe('Yandex adapter', function () {
       expect(query['ssp-cur']).to.equal('USD');
     });
 
+    it('should send eids if defined', function() {
+      const bannerRequest = getBidRequest({
+        userIdAsEids: [{
+          source: 'sharedid.org',
+          uids: [
+            {
+              id: '01',
+              atype: 1
+            }
+          ]
+        }]
+      });
+
+      const requests = spec.buildRequests([bannerRequest], bidderRequest);
+
+      expect(requests).to.have.lengthOf(1);
+      const request = requests[0];
+
+      expect(request.data).to.exist;
+      const { data } = request;
+
+      expect(data.user).to.exist;
+      expect(data.user).to.deep.equal({
+        ext: {
+          eids: [{
+            source: 'sharedid.org',
+            uids: [{
+              id: '01',
+              atype: 1,
+            }],
+          }],
+        }
+      });
+    });
+
     describe('banner', () => {
       it('should create valid banner object', () => {
         const bannerRequest = getBidRequest({

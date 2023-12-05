@@ -26,6 +26,10 @@ const _approvedLoadExternalJSList = [
   'airgrid',
   'clean.io',
   'a1Media',
+  'geoedge',
+  'mediafilter',
+  'qortex',
+  'dynamicAdBoost'
 ]
 
 /**

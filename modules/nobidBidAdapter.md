@@ -7,6 +7,7 @@ hide: true
 media_types: banner, video
 gdpr_supported: true
 usp_supported: true
+gpp_supported: true
 ---
 
 ### Bid Params

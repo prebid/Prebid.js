@@ -1,12 +1,14 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { deepAccess, parseSizesInput, getAdUnitSizes } from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {deepAccess, parseSizesInput} from '../src/utils.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 const BIDDER_CODE = 'optidigital';
 const GVL_ID = 915;
 const ENDPOINT_URL = 'https://pbs.optidigital.com/bidder';
 const USER_SYNC_URL_IFRAME = 'https://scripts.opti-digital.com/js/presync.html?endpoint=optidigital';
 let CUR = 'USD';
+let isSynced = false;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -46,14 +48,16 @@ export const spec = {
       referrer: (bidderRequest.refererInfo && bidderRequest.refererInfo.page) ? bidderRequest.refererInfo.page : '',
       hb_version: '$prebid.version$',
       deviceWidth: document.documentElement.clientWidth,
-      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-      auctionId: deepAccess(validBidRequests[0], 'auctionId'),
       bidderRequestId: deepAccess(validBidRequests[0], 'bidderRequestId'),
       publisherId: deepAccess(validBidRequests[0], 'params.publisherId'),
       imp: validBidRequests.map(bidRequest => buildImp(bidRequest, ortb2)),
       badv: ortb2.badv || deepAccess(validBidRequests[0], 'params.badv') || [],
       bcat: ortb2.bcat || deepAccess(validBidRequests[0], 'params.bcat') || [],
       bapp: deepAccess(validBidRequests[0], 'params.bapp') || []
+    }
+
+    if (validBidRequests[0].auctionId) {
+      payload.auctionId = validBidRequests[0].auctionId;
     }
 
     if (validBidRequests[0].params.pageTemplate && validBidRequests[0].params.pageTemplate !== '') {
@@ -85,6 +89,12 @@ export const spec = {
 
     if (bidderRequest && bidderRequest.uspConsent) {
       payload.uspConsent = bidderRequest.uspConsent;
+    }
+
+    if (_getEids(validBidRequests[0])) {
+      payload.user = {
+        eids: _getEids(validBidRequests[0])
+      }
     }
 
     const payloadObject = JSON.stringify(payload);
@@ -136,21 +146,23 @@ export const spec = {
      */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     let syncurl = '';
+    if (!isSynced) {
+      // Attaching GDPR Consent Params in UserSync url
+      if (gdprConsent) {
+        syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
+        syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
+      }
+      if (uspConsent && uspConsent.consentString) {
+        syncurl += `&ccpa_consent=${uspConsent.consentString}`;
+      }
 
-    // Attaching GDPR Consent Params in UserSync url
-    if (gdprConsent) {
-      syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
-      syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
-    }
-    if (uspConsent && uspConsent.consentString) {
-      syncurl += `&ccpa_consent=${uspConsent.consentString}`;
-    }
-
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: USER_SYNC_URL_IFRAME + syncurl
-      }];
+      if (syncOptions.iframeEnabled) {
+        isSynced = true;
+        return [{
+          type: 'iframe',
+          url: USER_SYNC_URL_IFRAME + syncurl
+        }];
+      }
     }
   },
 };
@@ -216,6 +228,16 @@ function _getFloor (bid, sizes, currency) {
     } catch (err) {}
   }
   return floor !== null ? floor : bid.params.floor;
+}
+
+function _getEids(bidRequest) {
+  if (deepAccess(bidRequest, 'userIdAsEids')) {
+    return bidRequest.userIdAsEids;
+  }
+}
+
+export function resetSync() {
+  isSynced = false;
 }
 
 registerBidder(spec);

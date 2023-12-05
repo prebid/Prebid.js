@@ -23,6 +23,7 @@
   },
   "EVENTS": {
     "AUCTION_INIT": "auctionInit",
+    "AUCTION_TIMEOUT": "auctionTimeout",
     "AUCTION_END": "auctionEnd",
     "BID_ADJUSTMENT": "bidAdjustment",
     "BID_TIMEOUT": "bidTimeout",
@@ -163,11 +164,18 @@
     "MAIN": 3
   },
   "NATIVE_KEYS_THAT_ARE_NOT_ASSETS": [
-    "privacyLink",
+    "privacyIcon",
     "clickUrl",
     "sendTargetingKeys",
     "adTemplate",
     "rendererUrl",
     "type"
-  ]
+  ],
+  "FLOOR_VALUES": {
+	"NO_DATA": "noData",
+	"AD_UNIT": "adUnit",
+	"SET_CONFIG": "setConfig",
+	"FETCH": "fetch",
+	"SUCCESS": "success"
+  }
 }

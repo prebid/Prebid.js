@@ -1,12 +1,10 @@
 import {find} from '../src/polyfill.js';
 import {
-  _map,
   cleanObj,
   deepAccess,
   deepClone,
   generateUUID,
   getDNT,
-  getGptSlotInfoForAdUnitCode,
   getUniqueIdentifierStr,
   getWindowSelf,
   getWindowTop,
@@ -34,6 +32,7 @@ import {OUTSTREAM} from '../src/video.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { userSync } from '../src/userSync.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 const BIDDER_CODE = 'adagio';
 const LOG_PREFIX = 'Adagio:';
@@ -54,8 +53,9 @@ const ADAGIO_PUBKEY = 'AL16XT44Sfp+8SHVF1UdC7hydPSMVLMhsYknKDdwqq+0ToDSJrP0+Qh0k
 const ADAGIO_PUBKEY_E = 65537;
 const CURRENCY = 'USD';
 
-// This provide a whitelist and a basic validation of OpenRTB 2.6 options used by the Adagio SSP.
-// https://iabtechlab.com/wp-content/uploads/2022/04/OpenRTB-2-6_FINAL.pdf
+// This provide a whitelist and a basic validation of OpenRTB 2.5 options used by the Adagio SSP.
+// Accept all options but 'protocol', 'companionad', 'companiontype', 'ext'
+// https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-API-Specification-Version-2-5-FINAL.pdf
 export const ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
   'minduration': (value) => isInteger(value),
@@ -399,6 +399,17 @@ function _getUspConsent(bidderRequest) {
   return (deepAccess(bidderRequest, 'uspConsent')) ? { uspConsent: bidderRequest.uspConsent } : false;
 }
 
+function _getGppConsent(bidderRequest) {
+  let gpp = deepAccess(bidderRequest, 'gppConsent.gppString')
+  let gppSid = deepAccess(bidderRequest, 'gppConsent.applicableSections')
+
+  if (!gpp || !gppSid) {
+    gpp = deepAccess(bidderRequest, 'ortb2.regs.gpp', '')
+    gppSid = deepAccess(bidderRequest, 'ortb2.regs.gpp_sid', [])
+  }
+  return { gpp, gppSid }
+}
+
 function _getSchain(bidRequest) {
   return deepAccess(bidRequest, 'schain');
 }
@@ -558,6 +569,7 @@ function _parseNativeBidResponse(bid) {
   bid.native = native
 }
 
+// bidRequest param must be the `bidRequest` object with the original `auctionId` value.
 function _getFloors(bidRequest) {
   if (!isFn(bidRequest.getFloor)) {
     return false;
@@ -976,6 +988,7 @@ export const spec = {
     const gdprConsent = _getGdprConsent(bidderRequest) || {};
     const uspConsent = _getUspConsent(bidderRequest) || {};
     const coppa = _getCoppa();
+    const gppConsent = _getGppConsent(bidderRequest)
     const schain = _getSchain(validBidRequests[0]);
     const eids = _getEids(validBidRequests[0]) || [];
     const syncEnabled = deepAccess(config.getConfig('userSync'), 'syncEnabled')
@@ -983,8 +996,8 @@ export const spec = {
 
     const aucId = generateUUID()
 
-    const adUnits = _map(validBidRequests, (rawBidRequest) => {
-      const bidRequest = {...rawBidRequest}
+    const adUnits = validBidRequests.map(rawBidRequest => {
+      const bidRequest = deepClone(rawBidRequest);
 
       // Fix https://github.com/prebid/Prebid.js/issues/9781
       bidRequest.auctionId = aucId
@@ -1055,7 +1068,10 @@ export const spec = {
       });
 
       // Handle priceFloors module
-      const computedFloors = _getFloors(bidRequest);
+      // We need to use `rawBidRequest` as param because:
+      // - adagioBidAdapter generates its own auctionId due to transmitTid activity limitation (see https://github.com/prebid/Prebid.js/pull/10079)
+      // - the priceFloors.getFloor() uses a `_floorDataForAuction` map to store the floors based on the auctionId.
+      const computedFloors = _getFloors(rawBidRequest);
       if (isArray(computedFloors) && computedFloors.length) {
         bidRequest.floors = computedFloors
 
@@ -1099,6 +1115,11 @@ export const spec = {
         _buildVideoBidRequest(bidRequest);
       }
 
+      const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+      if (gpid) {
+        bidRequest.gpid = gpid;
+      }
+
       storeRequestInAdagioNS(bidRequest);
 
       // Remove these fields at the very end, so we can still use them before.
@@ -1118,8 +1139,8 @@ export const spec = {
       // remove useless props
       delete adUnitCopy.floorData;
       delete adUnitCopy.params.siteId;
-      delete adUnitCopy.userId
-      delete adUnitCopy.userIdAsEids
+      delete adUnitCopy.userId;
+      delete adUnitCopy.userIdAsEids;
 
       groupedAdUnits[adUnitCopy.params.organizationId] = groupedAdUnits[adUnitCopy.params.organizationId] || [];
       groupedAdUnits[adUnitCopy.params.organizationId].push(adUnitCopy);
@@ -1127,8 +1148,16 @@ export const spec = {
       return groupedAdUnits;
     }, {});
 
+    // Adding more params on the original bid object.
+    // Those params are not sent to the server.
+    // They are used for further operations on analytics adapter.
+    validBidRequests.forEach(rawBidRequest => {
+      rawBidRequest.params.adagioAuctionId = aucId
+      rawBidRequest.params.pageviewId = pageviewId
+    });
+
     // Build one request per organizationId
-    const requests = _map(Object.keys(groupedAdUnits), organizationId => {
+    const requests = Object.keys(groupedAdUnits).map(organizationId => {
       return {
         method: 'POST',
         url: ENDPOINT,
@@ -1143,7 +1172,9 @@ export const spec = {
           regs: {
             gdpr: gdprConsent,
             coppa: coppa,
-            ccpa: uspConsent
+            ccpa: uspConsent,
+            gpp: gppConsent.gpp,
+            gppSid: gppConsent.gppSid
           },
           schain: schain,
           user: {

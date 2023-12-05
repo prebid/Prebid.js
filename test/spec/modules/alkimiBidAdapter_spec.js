@@ -14,8 +14,7 @@ const REQUEST = {
   },
   'params': {
     bidFloor: 0.1,
-    token: 'e64782a4-8e68-4c38-965b-80ccf115d46f',
-    pos: 7
+    token: 'e64782a4-8e68-4c38-965b-80ccf115d46f'
   },
   'userIdAsEids': [{
     'source': 'criteo.com',
@@ -69,7 +68,7 @@ const BIDDER_VIDEO_RESPONSE = {
     'ttl': 200,
     'creativeId': 2,
     'netRevenue': true,
-    'winUrl': 'http://test.com',
+    'winUrl': 'http://test.com?price=${AUCTION_PRICE}',
     'mediaType': 'video',
     'adomain': ['test.com']
   }]
@@ -97,10 +96,6 @@ describe('alkimiBidAdapter', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(false)
 
       bid = Object.assign({}, REQUEST)
-      delete bid.params.bidFloor
-      expect(spec.isBidRequestValid(bid)).to.equal(false)
-
-      bid = Object.assign({}, REQUEST)
       delete bid.params
       expect(spec.isBidRequestValid(bid)).to.equal(false)
     })
@@ -109,7 +104,6 @@ describe('alkimiBidAdapter', function () {
   describe('buildRequests', function () {
     let bidRequests = [REQUEST]
     let requestData = {
-      auctionId: '123',
       refererInfo: {
         page: 'http://test.com/path.html'
       },
@@ -118,7 +112,15 @@ describe('alkimiBidAdapter', function () {
         vendorData: {},
         gdprApplies: true
       },
-      uspConsent: 'uspConsent'
+      uspConsent: 'uspConsent',
+      ortb2: {
+        site: {
+          keywords: 'test1, test2'
+        },
+        at: 2,
+        bcat: ['BSW1', 'BSW2'],
+        wseat: ['16', '165']
+      }
     }
     const bidderRequest = spec.buildRequests(bidRequests, requestData)
 
@@ -137,13 +139,14 @@ describe('alkimiBidAdapter', function () {
 
     it('sends bid request to ENDPOINT via POST', function () {
       expect(bidderRequest.method).to.equal('POST')
-      expect(bidderRequest.data.requestId).to.equal('123')
+      expect(bidderRequest.data.requestId).to.not.equal(undefined)
       expect(bidderRequest.data.referer).to.equal('http://test.com/path.html')
       expect(bidderRequest.data.schain).to.deep.contains({ ver: '1.0', complete: 1, nodes: [{ asi: 'alkimi-onboarding.com', sid: '00001', hp: 1 }] })
-      expect(bidderRequest.data.signRequest.bids).to.deep.contains({ token: 'e64782a4-8e68-4c38-965b-80ccf115d46f', pos: 7, bidFloor: 0.1, sizes: [{width: 300, height: 250}], playerSizes: [], impMediaTypes: ['Banner'], adUnitCode: 'bannerAdUnitCode' })
+      expect(bidderRequest.data.signRequest.bids).to.deep.contains({ token: 'e64782a4-8e68-4c38-965b-80ccf115d46f', bidFloor: 0.1, sizes: [{ width: 300, height: 250 }], playerSizes: [], impMediaTypes: ['Banner'], adUnitCode: 'bannerAdUnitCode', instl: undefined, exp: undefined, banner: { sizes: [[300, 250]] }, video: undefined })
       expect(bidderRequest.data.signRequest.randomUUID).to.equal(undefined)
       expect(bidderRequest.data.bidIds).to.deep.contains('456')
       expect(bidderRequest.data.signature).to.equal(undefined)
+      expect(bidderRequest.data.ortb2).to.deep.contains({ at: 2, wseat: ['16', '165'], bcat: ['BSW1', 'BSW2'], site: { keywords: 'test1, test2' }, })
       expect(bidderRequest.options.customHeaders).to.deep.equal({ 'Rtb-Direct': true })
       expect(bidderRequest.options.contentType).to.equal('application/json')
       expect(bidderRequest.url).to.equal(ENDPOINT)
@@ -192,9 +195,9 @@ describe('alkimiBidAdapter', function () {
       expect(result[0]).to.have.property('ttl').equal(200)
       expect(result[0]).to.have.property('creativeId').equal(2)
       expect(result[0]).to.have.property('netRevenue').equal(true)
-      expect(result[0]).to.have.property('winUrl').equal('http://test.com')
+      expect(result[0]).to.have.property('winUrl').equal('http://test.com?price=${AUCTION_PRICE}')
       expect(result[0]).to.have.property('mediaType').equal('video')
-      expect(result[0]).to.have.property('vastXml').equal('<xml>vast</xml>')
+      expect(result[0]).to.have.property('vastUrl').equal('http://test.com?price=800.4')
       expect(result[0].meta).to.exist.property('advertiserDomains')
       expect(result[0].meta).to.have.property('advertiserDomains').lengthOf(1)
     })
