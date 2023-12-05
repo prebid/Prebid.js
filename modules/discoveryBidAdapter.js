@@ -57,7 +57,7 @@ const NATIVERET = {
 };
 
 /**
- * 获取用户id
+ * 获取并生成用户id
  * @return {string}
  */
 const getPmgUID = () => {
