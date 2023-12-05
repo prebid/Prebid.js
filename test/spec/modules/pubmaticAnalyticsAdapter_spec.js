@@ -459,7 +459,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.af).to.equal('video');
     });
 
-    it('Logger: do not log floor fields when prebids floor shows noData in location property', function() {
+    it('Logger : do not log floor fields when prebids floor shows noData in location property', function() {
       const BID_REQUESTED_COPY = utils.deepClone(MOCK.BID_REQUESTED);
       BID_REQUESTED_COPY['bids'][1]['floorData']['location'] = 'noData';
 
