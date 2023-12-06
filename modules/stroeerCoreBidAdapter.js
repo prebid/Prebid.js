@@ -212,9 +212,9 @@ export const spec = {
       schain: anyBid.schain
     };
 
-    const versions = {
-      yl_ver: win.yieldlove_ab?.yl_ver,
-      pb_ver: win.YLHH?.bidder?.pbjs?.version
+    const ver = {
+      yl: win.yieldlove_ab?.yl_ver,
+      pb: win.YLHH?.bidder?.pbjs?.version
     }
 
     const user = utils.cleanObj({
@@ -260,7 +260,7 @@ export const spec = {
       const payload = Object.assign({
         ssat: bidRequestWithSsat ? bidRequestWithSsat.params.ssat : undefined,
         yl2: bidRequestWithYl2 ? bidRequestWithYl2.params.yl2 : (getFromLocalStorage('sdgYieldtest') === '1'),
-      }, commonPayload, versions);
+      }, commonPayload);
 
       payload.bids = bidRequests.map(bidRequest => {
         const metaTagPosition = win.YLHH?.bidder?.tag?.getMetaTagPositionBy(bidRequest.adUnitCode) ?? bidRequest.adUnitCode;
@@ -276,6 +276,8 @@ export const spec = {
 
         return Object.assign(bid, customAttrsFn(bidRequest));
       });
+
+      payload.ver = ver;
 
       return payload;
     }

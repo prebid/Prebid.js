@@ -207,6 +207,10 @@ describe('stroeerCore bid adapter', function () {
         getMetaTagPositionBy(adUnitCode) {
           return positionByAdUnitCode[adUnitCode];
         }
+      },
+      pbjs: {
+        version:
+        1.2
       }
     }
   });
@@ -309,7 +313,7 @@ describe('stroeerCore bid adapter', function () {
       };
       win.YLHH = buildFakeYLHH({
         '137': 'div-1-alpha',
-        '248': 'div-2-alpha'
+        '248': 'div-2-alpha',
       });
     });
 
@@ -563,6 +567,7 @@ describe('stroeerCore bid adapter', function () {
           '137': 'div-1',
           '248': 'div-2'
         })
+        win.yieldlove_ab = {yl_ver:1.1};
       });
 
       afterEach(() => {
@@ -589,6 +594,9 @@ describe('stroeerCore bid adapter', function () {
           'ref': topWin.document.referrer,
           'mpa': true,
           'ssl': false,
+          'ab': {
+            'yl_ver': 1.1
+          },
           'yl2': false,
           'url': 'https://www.example.com/index.html',
           'bids': [{
@@ -606,6 +614,10 @@ describe('stroeerCore bid adapter', function () {
               'siz': [[728, 90]]
             }
           }],
+          'ver': {
+            'pb':1.2,
+            'yl':1.1
+          },
           'user': {
             'euids': userIds
           }
