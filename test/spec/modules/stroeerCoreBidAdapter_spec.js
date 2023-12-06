@@ -207,10 +207,19 @@ describe('stroeerCore bid adapter', function () {
         getMetaTagPositionBy(adUnitCode) {
           return positionByAdUnitCode[adUnitCode];
         }
+      }
+    }
+  });
+
+  const buildFakeYLHHWithPBVersion = (positionByAdUnitCode) => ({
+    bidder: {
+      tag: {
+        getMetaTagPositionBy(adUnitCode) {
+          return positionByAdUnitCode[adUnitCode];
+        }
       },
       pbjs: {
-        version:
-        1.2
+        version: 1.2
       }
     }
   });
@@ -555,7 +564,7 @@ describe('stroeerCore bid adapter', function () {
       });
     });
 
-    describe('payload on server request info object', () => {
+    describe('payload on server request info object, version variation 1', () => {
       let topWin;
       let win;
 
@@ -564,6 +573,85 @@ describe('stroeerCore bid adapter', function () {
         placementElements = [createElement('div-1', 17), createElement('div-2', 54)];
         ({topWin, win} = setupNestedWindows(sandbox, placementElements));
         win.YLHH = buildFakeYLHH({
+          '137': 'div-1',
+          '248': 'div-2'
+        })
+        win.yieldlove_ab = {yl_ver: 1.1};
+        win.pbjs = {version: 1.5};
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should have expected JSON structure', () => {
+        clock.tick(13500);
+        const bidReq = buildBidderRequest();
+
+        const UUID = 'fb6a39e3-083f-424c-9046-f1095e15f3d5';
+
+        const generateUUIDStub = sinon.stub(utils, 'generateUUID').returns(UUID);
+
+        const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+
+        const expectedTimeout = bidderRequest.timeout - (13500 - bidderRequest.auctionStart);
+
+        assert.equal(expectedTimeout, 1500);
+
+        const expectedJsonPayload = {
+          'id': UUID,
+          'timeout': expectedTimeout,
+          'ref': topWin.document.referrer,
+          'mpa': true,
+          'ssl': false,
+          'ab': {
+            'yl_ver': 1.1
+          },
+          'yl2': false,
+          'url': 'https://www.example.com/index.html',
+          'bids': [{
+            'sid': 'NDA=',
+            'bid': 'bid1',
+            'viz': true,
+            'ban': {
+              'siz': [[300, 600], [160, 60]]
+            }
+          }, {
+            'sid': 'ODA=',
+            'bid': 'bid2',
+            'viz': true,
+            'ban': {
+              'siz': [[728, 90]]
+            }
+          }],
+          'ver': {
+            'pb': 1.5,
+            'yl': 1.1
+          },
+          'user': {
+            'euids': userIds
+          }
+        };
+
+        // trim away fields with undefined
+        const actualJsonPayload = JSON.parse(JSON.stringify(serverRequestInfo.data));
+
+        assert.deepEqual(actualJsonPayload, expectedJsonPayload);
+
+        generateUUIDStub.restore();
+      });
+    });
+
+
+    describe('payload on server request info object, version variation 2', () => {
+      let topWin;
+      let win;
+
+      let placementElements;
+      beforeEach(() => {
+        placementElements = [createElement('div-1', 17), createElement('div-2', 54)];
+        ({topWin, win} = setupNestedWindows(sandbox, placementElements));
+        win.YLHH = buildFakeYLHHWithPBVersion({
           '137': 'div-1',
           '248': 'div-2'
         })
@@ -595,7 +683,7 @@ describe('stroeerCore bid adapter', function () {
           'mpa': true,
           'ssl': false,
           'ab': {
-            'yl_ver': 1.1
+            yl_ver: 1.1
           },
           'yl2': false,
           'url': 'https://www.example.com/index.html',

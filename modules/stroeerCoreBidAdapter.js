@@ -214,7 +214,7 @@ export const spec = {
 
     const ver = {
       yl: win.yieldlove_ab?.yl_ver,
-      pb: win.YLHH?.bidder?.pbjs?.version
+      pb: win.YLHH?.bidder?.pbjs?.version || win.pbjs?.version
     }
 
     const user = utils.cleanObj({
