@@ -246,7 +246,7 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('magnite with ext', function() {
+  it('index with ext', function() {
     const userId = {
       index: {'id': 'sample_id', 'ext': {'provider': 'some.provider.com'}}
     };
@@ -254,6 +254,39 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'liveintent.indexexchange.com',
+      uids: [{
+        id: 'sample_id',
+        atype: 3,
+        ext: {
+          provider: 'some.provider.com'
+        }
+      }]
+    });
+  });
+
+  it('sovrn', function() {
+    const userId = {
+      sovrn: {'id': 'sample_id'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'liveintent.sovrn.com',
+      uids: [{
+        id: 'sample_id',
+        atype: 3
+      }]
+    });
+  });
+
+  it('sovrn with ext', function() {
+    const userId = {
+      sovrn: {'id': 'sample_id', 'ext': {'provider': 'some.provider.com'}}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'liveintent.sovrn.com',
       uids: [{
         id: 'sample_id',
         atype: 3,
