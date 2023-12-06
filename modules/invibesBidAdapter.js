@@ -110,9 +110,7 @@ function buildRequest(bidRequests, bidderRequest) {
   const _adUnitCodes = [];
   let _customEndpoint, _userId, _domainId;
   let _ivAuctionStart = Date.now();
-  if (window.placementIds == undefined) {
-    window.placementIds = [];
-  }
+  window.placementIds = window.placementIds || [];
 
   if (isInfiniteScrollPage == false) {
     updateInfiniteScrollFlag();
