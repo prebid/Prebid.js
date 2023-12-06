@@ -10,7 +10,7 @@ import {isApnGetTagDefined, isGptPubadsDefined, logError, logWarn} from './utils
 import {auctionManager} from './auctionManager.js';
 import {find, includes} from './polyfill.js';
 import {handleCreativeEvent, handleNativeMessage, handleRender} from './adRendering.js';
-import {getRendererSrc} from './creativeRenderers.js';
+import {getCreativeRendererSource} from './creativeRenderers.js';
 
 const {REQUEST, RESPONSE, NATIVE, EVENT} = CONSTANTS.MESSAGES;
 
@@ -78,7 +78,7 @@ function handleRenderRequest(reply, message, bidResponse) {
     renderFn(adData) {
       reply(Object.assign({
         message: RESPONSE,
-        renderer: getRendererSrc(bidResponse.mediaType)
+        renderer: getCreativeRendererSource(bidResponse.mediaType)
       }, adData));
     },
     resizeFn: getResizer(bidResponse),

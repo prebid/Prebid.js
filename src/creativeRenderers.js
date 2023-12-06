@@ -1,19 +1,16 @@
 import {GreedyPromise} from './utils/promise.js';
 import {createInvisibleIframe} from './utils.js';
 import {RENDERER} from '../libraries/creative-renderer-display/renderer.js';
+import {hook} from './hook.js';
 
-export const RENDERERS = {
-  display: RENDERER
-};
-
-export function getRendererSrc(mediaType) {
-  return RENDERERS.hasOwnProperty(mediaType) ? RENDERERS[mediaType] : RENDERERS.display;
-}
+export const getCreativeRendererSource = hook('sync', function (bidResponse) {
+  return RENDERER;
+})
 
 export const getCreativeRenderer = (function() {
   const renderers = {};
-  return function (mediaType) {
-    const src = getRendererSrc(mediaType);
+  return function (bidResponse) {
+    const src = getCreativeRendererSource(bidResponse);
     if (!renderers.hasOwnProperty(src)) {
       renderers[src] = new GreedyPromise((resolve) => {
         const iframe = createInvisibleIframe();

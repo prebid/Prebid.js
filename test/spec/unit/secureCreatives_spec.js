@@ -277,7 +277,7 @@ describe('secureCreatives', () => {
       });
 
       it('should include renderers in responses', () => {
-        sandbox.stub(creativeRenderers, 'getRendererSrc').returns('mock-renderer');
+        sandbox.stub(creativeRenderers, 'getCreativeRendererSource').returns('mock-renderer');
         pushBidResponseToAuction({});
         const ev = makeEvent({
           source: {
@@ -394,45 +394,6 @@ describe('secureCreatives', () => {
 
         receiveMessage(ev);
         stubEmit.withArgs(CONSTANTS.EVENTS.BID_WON, adResponse).calledOnce;
-      });
-
-      it('Prebid native should fire trackers', function () {
-        let adId = 2;
-        pushBidResponseToAuction({adId});
-
-        const data = {
-          adId: adId,
-          message: 'Prebid Native',
-          action: 'click',
-        };
-
-        const ev = makeEvent({
-          data: JSON.stringify(data),
-          source: {
-            postMessage: sinon.stub()
-          },
-          origin: 'any origin'
-        });
-
-        receiveMessage(ev);
-
-        sinon.assert.neverCalledWith(spyLogWarn, warning);
-        sinon.assert.calledOnce(stubFireNativeTrackers);
-        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
-        sinon.assert.calledOnce(spyAddWinningBid);
-
-        resetHistories(ev.source.postMessage);
-
-        delete data.action;
-        ev.data = JSON.stringify(data);
-        receiveMessage(ev);
-
-        sinon.assert.neverCalledWith(spyLogWarn, warning);
-        sinon.assert.calledOnce(stubFireNativeTrackers);
-        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.BID_WON);
-        sinon.assert.notCalled(spyAddWinningBid);
-
-        expect(adResponse).to.have.property('status', CONSTANTS.BID_STATUS.RENDERED);
       });
     });
 

@@ -126,6 +126,7 @@ export const doRender = hook('sync', function({renderFn, resizeFn, bidResponse, 
 });
 
 doRender.before(function (next, args) {
+  // run renderers from a high priority hook to allow the video module to insert itself between this and "normal" rendering.
   const {bidResponse} = args;
   if (isRendererRequired(bidResponse.renderer)) {
     executeRenderer(bidResponse.renderer, bidResponse);
