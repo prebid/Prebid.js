@@ -42,7 +42,7 @@ const converter = ortbConverter({
 
     if (context.mediaType == 'video') {
       response.nurl = bid.nurl;
-      response.vastUrl = deepAccess(bid, 'ext.prebid.cache.vastXml.url');
+      response.vastUrl = deepAccess(bid, 'ext.prebid.cache.vastXml.url') ?? null;
     }
 
     return response;
