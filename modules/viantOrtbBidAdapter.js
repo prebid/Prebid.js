@@ -7,6 +7,7 @@ import {deepAccess, getBidIdParameter, logError} from '../src/utils.js';
 const BIDDER_CODE = 'viant';
 const ENDPOINT = 'https://bidders-us-east-1.adelphic.net/d/rtb/v25/prebid/bidder'
 
+
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_NET_REVENUE = true;
