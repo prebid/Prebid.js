@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec, storage} from 'modules/teadsBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
+import { off } from '../../../src/events';
 
 const ENDPOINT = 'https://a.teads.tv/hb/bid-request';
 const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="https://a.teads.tv/hb/getAdSettings"></script>"';
@@ -257,9 +258,12 @@ describe('teadsBidAdapter', () => {
     it('should add screenOrientation info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
+      const screenOrientation = window.top.screen.orientation?.type
 
-      expect(payload.screenOrientation).to.exist;
-      expect(payload.screenOrientation).to.deep.equal(window.top.screen.orientation.type);
+      if (screenOrientation) {
+        expect(payload.screenOrientation).to.exist;
+        expect(payload.screenOrientation).to.deep.equal(screenOrientation);
+      } else expect(payload.screenOrientation).to.not.exist;
     });
 
     it('should add historyLength info to payload', function () {
@@ -289,17 +293,23 @@ describe('teadsBidAdapter', () => {
     it('should add hardwareConcurrency info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
+      const hardwareConcurrency = window.top.navigator?.hardwareConcurrency
 
-      expect(payload.hardwareConcurrency).to.exist;
-      expect(payload.hardwareConcurrency).to.deep.equal(window.top.navigator.hardwareConcurrency);
+      if (hardwareConcurrency) {
+        expect(payload.hardwareConcurrency).to.exist;
+        expect(payload.hardwareConcurrency).to.deep.equal(hardwareConcurrency);
+      } else expect(payload.hardwareConcurrency).to.not.exist
     });
 
     it('should add deviceMemory info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
+      const deviceMemory = window.top.navigator.deviceMemory
 
-      expect(payload.deviceMemory).to.exist;
-      expect(payload.deviceMemory).to.deep.equal(window.top.navigator.deviceMemory);
+      if (deviceMemory) {
+        expect(payload.deviceMemory).to.exist;
+        expect(payload.deviceMemory).to.deep.equal(deviceMemory);
+      } else expect(payload.deviceMemory).to.not.exist;
     });
 
     describe('pageTitle', function () {
