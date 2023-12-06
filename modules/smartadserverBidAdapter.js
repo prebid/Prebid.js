@@ -1,4 +1,4 @@
-import { deepAccess, deepClone, logError, isFn, isPlainObject } from '../src/utils.js';
+import { deepAccess, deepClone, isArrayOfNums, isFn, isInteger, isPlainObject, logError } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -86,21 +86,19 @@ export const spec = {
       ...this.getValuableProperty('playerHeight', playerSize[1]),
       ...this.getValuableProperty('adBreak', this.getStartDelayForVideoBidRequest(videoMediaType, videoParams)),
       ...this.getValuableProperty('videoProtocol', this.getProtocolForVideoBidRequest(videoMediaType, videoParams)),
-      ...this.getValuableProperty('iabframeworks', videoMediaType.api && videoMediaType.api.toString()),
-      ...this.getValuableProperty('vpmt', videoMediaType.playbackmethod && videoMediaType.playbackmethod[0])
+      ...(isArrayOfNums(videoMediaType.api) && videoMediaType.api.length ? { iabframeworks: videoMediaType.api.toString() } : {}),
+      ...(isArrayOfNums(videoMediaType.playbackmethod) && videoMediaType.playbackmethod.length ? { vpmt: videoMediaType.playbackmethod } : {})
     };
   },
 
   /**
    * Gets a property object if the value not falsy
    * @param {string} property
-   * @param {number | string} value
+   * @param {number} value
    * @returns object with the property or empty
    */
   getValuableProperty: function(property, value) {
-    const type = typeof value;
-
-    return typeof property === 'string' && (type === 'number' || type === 'string') && value
+    return typeof property === 'string' && isInteger(value) && value
       ? { [property]: value } : {};
   },
 
