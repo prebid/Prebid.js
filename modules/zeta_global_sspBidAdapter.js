@@ -163,6 +163,7 @@ export const spec = {
     }
 
     provideEids(validBidRequests[0], payload);
+    provideTopics(payload);
     const url = params.sid ? ENDPOINT_URL.concat('?sid=', params.sid) : ENDPOINT_URL;
     return {
       method: 'POST',
@@ -335,11 +336,43 @@ function provideEids(request, payload) {
   }
 }
 
+function provideTopics(payload) {
+  const topics = getTopics();
+  if (isArray(topics)) {
+    const segments = topics.filter(topic => topic?.topic).map(topic => {
+      return {id: String(topic.topic)};
+    });
+    if (segments.length > 0) {
+      if (!payload.user) {
+        payload.user = {};
+      }
+      if (!isArray(payload.user.data)) {
+        payload.user.data = [];
+      }
+      const data = {
+        segment: segments
+      };
+      payload.user.data.push(data);
+    }
+  }
+}
+
 function provideMediaType(zetaBid, bid, bidRequest) {
   if (zetaBid.ext && zetaBid.ext.prebid && zetaBid.ext.prebid.type) {
     bid.mediaType = zetaBid.ext.prebid.type === VIDEO ? VIDEO : BANNER;
   } else {
     bid.mediaType = bidRequest.imp[0].video ? VIDEO : BANNER;
+  }
+}
+
+function getTopics() {
+  try {
+    if ('browsingTopics' in document && document.featurePolicy.allowsFeature('browsing-topics')) {
+      return document.browsingTopics();
+    }
+    return null;
+  } catch (error) {
+    return null;
   }
 }
 
