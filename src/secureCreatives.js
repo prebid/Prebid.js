@@ -4,18 +4,17 @@
  */
 
 import * as events from './events.js';
-import {fireNativeTrackers, getAllAssetsMessage, getAssetMessage} from './native.js';
+import {getAllAssetsMessage, getAssetMessage} from './native.js';
 import CONSTANTS from './constants.json';
 import {isApnGetTagDefined, isGptPubadsDefined, logError, logWarn} from './utils.js';
 import {auctionManager} from './auctionManager.js';
 import {find, includes} from './polyfill.js';
-import {handleCreativeEvent, handleRender} from './adRendering.js';
+import {handleCreativeEvent, handleNativeMessage, handleRender} from './adRendering.js';
 import {getRendererSrc} from './creativeRenderers.js';
 
 const {REQUEST, RESPONSE, NATIVE, EVENT} = CONSTANTS.MESSAGES;
 
 const BID_WON = CONSTANTS.EVENTS.BID_WON;
-const WON_AD_IDS = new WeakSet();
 
 const HANDLER_MAP = {
   [REQUEST]: handleRenderRequest,
@@ -69,6 +68,11 @@ export function receiveMessage(ev) {
   }
 }
 
+function getResizer(bidResponse) {
+  return function (width, height) {
+    resizeRemoteCreative({...bidResponse, width, height});
+  }
+}
 function handleRenderRequest(reply, message, bidResponse) {
   handleRender({
     renderFn(adData) {
@@ -77,9 +81,7 @@ function handleRenderRequest(reply, message, bidResponse) {
         renderer: getRendererSrc(bidResponse.mediaType)
       }, adData));
     },
-    resizeFn(width, height) {
-      resizeRemoteCreative({...bidResponse, width, height});
-    },
+    resizeFn: getResizer(bidResponse),
     options: message.options,
     adId: message.adId,
     bidResponse
@@ -97,8 +99,7 @@ function handleNativeRequest(reply, data, adObject) {
     return;
   }
 
-  if (!WON_AD_IDS.has(adObject)) {
-    WON_AD_IDS.add(adObject);
+  if (adObject.status !== CONSTANTS.BID_STATUS.RENDERED) {
     auctionManager.addWinningBid(adObject);
     events.emit(BID_WON, adObject);
   }
@@ -110,13 +111,8 @@ function handleNativeRequest(reply, data, adObject) {
     case 'allAssetRequest':
       reply(getAllAssetsMessage(data, adObject));
       break;
-    case 'resizeNativeHeight':
-      adObject.height = data.height;
-      adObject.width = data.width;
-      resizeRemoteCreative(adObject);
-      break;
     default:
-      fireNativeTrackers(data, adObject);
+      handleNativeMessage(data, adObject, {resizeFn: getResizer(adObject)})
   }
 }
 
@@ -133,14 +129,17 @@ function handleEventRequest(reply, data, adObject) {
 }
 
 export function resizeRemoteCreative({adId, adUnitCode, width, height}) {
+  function getDimension(value) {
+    return value ? value + 'px' : '100%';
+  }
   // resize both container div + iframe
   ['div', 'iframe'].forEach(elmType => {
     // not select element that gets removed after dfp render
     let element = getElementByAdUnit(elmType + ':not([style*="display: none"])');
     if (element) {
       let elementStyle = element.style;
-      elementStyle.width = width ? width + 'px' : '100%';
-      elementStyle.height = height + 'px';
+      elementStyle.width = getDimension(width)
+      elementStyle.height = getDimension(height);
     } else {
       logWarn(`Unable to locate matching page element for adUnitCode ${adUnitCode}.  Can't resize it to ad's dimensions.  Please review setup.`);
     }

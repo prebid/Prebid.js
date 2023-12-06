@@ -1,6 +1,12 @@
 import * as events from 'src/events.js';
 import * as utils from 'src/utils.js';
-import {doRender, getRenderingData, handleCreativeEvent, handleRender} from '../../../src/adRendering.js';
+import {
+  doRender,
+  getRenderingData,
+  handleCreativeEvent,
+  handleNativeMessage,
+  handleRender
+} from '../../../src/adRendering.js';
 import CONSTANTS from 'src/constants.json';
 import {expect} from 'chai/index.mjs';
 import {config} from 'src/config.js';
@@ -198,4 +204,29 @@ describe('adRendering', () => {
       sinon.assert.notCalled(events.emit);
     });
   });
+
+  describe('handleNativeMessage', () => {
+    if (!FEATURES.NATIVE) return;
+    let bid;
+    beforeEach(() => {
+      bid = {
+        adId: '123'
+      };
+    })
+
+    it('should resize', () => {
+      const resizeFn = sinon.stub();
+      handleNativeMessage({action: 'resizeNativeHeight', height: 100}, bid, {resizeFn});
+      sinon.assert.calledWith(resizeFn, undefined, 100);
+    });
+
+    it('should fire trackers', () => {
+      const data = {
+        action: 'click'
+      };
+      const fireTrackers = sinon.stub();
+      handleNativeMessage(data, bid, {fireTrackers});
+      sinon.assert.calledWith(fireTrackers, data, bid);
+    })
+  })
 });

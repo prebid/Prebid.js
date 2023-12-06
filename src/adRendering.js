@@ -7,6 +7,7 @@ import {VIDEO} from './mediaTypes.js';
 import {auctionManager} from './auctionManager.js';
 import {getCreativeRenderer} from './creativeRenderers.js';
 import {hook} from './hook.js';
+import {fireNativeTrackers} from './native.js';
 
 const {AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON} = CONSTANTS.EVENTS;
 const {EXCEPTION} = CONSTANTS.AD_RENDER_FAILED_REASON;
@@ -66,13 +67,29 @@ export function handleCreativeEvent(data, bidResponse) {
   }
 }
 
+export function handleNativeMessage(data, bidResponse, {resizeFn, fireTrackers = fireNativeTrackers}) {
+  switch (data.action) {
+    case 'resizeNativeHeight':
+      resizeFn(data.width, data.height);
+      break;
+    default:
+      fireTrackers(data, bidResponse);
+  }
+}
+
 const HANDLERS = {
   [CONSTANTS.MESSAGES.EVENT]: handleCreativeEvent
 }
 
-export function handleCreativeMessage(type, data, bidResponse, handlers = HANDLERS) {
-  if (handlers.hasOwnProperty(type)) {
-    handlers[type](data, bidResponse);
+if (FEATURES.NATIVE) {
+  HANDLERS[CONSTANTS.MESSAGES.NATIVE] = handleNativeMessage;
+}
+
+function creativeMessageHandler(deps) {
+  return function (type, data, bidResponse) {
+    if (HANDLERS.hasOwnProperty(type)) {
+      HANDLERS[type](data, bidResponse, deps);
+    }
   }
 }
 
@@ -153,22 +170,23 @@ export function renderAdDirect(doc, adId, options) {
   function fail(reason, message) {
     emitAdRenderFail(Object.assign({id: adId, bid}, {reason, message}));
   }
+  function resizeFn(width, height) {
+    if (doc.defaultView && doc.defaultView.frameElement) {
+      width && (doc.defaultView.frameElement.width = width);
+      height && (doc.defaultView.frameElement.height = height);
+    }
+  }
+  const messageHandler = creativeMessageHandler({resizeFn});
   function renderFn(adData) {
     if (adData.ad) {
       doc.write(adData.ad);
       doc.close();
     } else {
-      getCreativeRenderer().then(render => render(adData, {sendMessage: (type, data) => handleCreativeMessage(type, data, bid), mkFrame: createIframe}, doc.defaultView))
+      getCreativeRenderer().then(render => render(adData, {sendMessage: (type, data) => messageHandler(type, data, bid), mkFrame: createIframe}, doc.defaultView))
     }
     // TODO: this is almost certainly the wrong way to do this
     const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
     insertElement(creativeComment, doc, 'html');
-  }
-  function resizeFn(width, height) {
-    if (doc.defaultView && doc.defaultView.frameElement) {
-      doc.defaultView.frameElement.width = width;
-      doc.defaultView.frameElement.height = height;
-    }
   }
   try {
     if (!adId || !doc) {
