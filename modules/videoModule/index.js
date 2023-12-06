@@ -247,16 +247,16 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   }
 }
 
-function videoRenderHook(next, renderFn, bidResponse, options) {
-  if (bidResponse.mediaType === VIDEO) {
-    const adUnit = auctionManager.index.getAdUnit(bidResponse);
+function videoRenderHook(next, args) {
+  if (args.bidResponse.mediaType === VIDEO) {
+    const adUnit = auctionManager.index.getAdUnit(args.bidResponse);
     if (adUnit?.video) {
-      getGlobal().videoModule.renderBid(adUnit.video.divId, bidResponse);
+      getGlobal().videoModule.renderBid(adUnit.video.divId, args.bidResponse);
       next.bail();
       return;
     }
   }
-  next(renderFn, bidResponse, options);
+  next(args);
 }
 
 export function pbVideoFactory() {

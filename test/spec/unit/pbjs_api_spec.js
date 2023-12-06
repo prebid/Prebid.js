@@ -1086,35 +1086,6 @@ describe('Unit: Prebid Module', function () {
       expect(slots[0].spySetTargeting.args).to.deep.contain.members(expected);
     });
 
-    it('should find correct gpt slot based on ad id rather than ad unit code when resizing secure creative', function () {
-      var slots = [
-        new Slot('div-not-matching-adunit-code-1', config.adUnitCodes[0]),
-        new Slot('div-not-matching-adunit-code-2', config.adUnitCodes[0]),
-        new Slot('div-not-matching-adunit-code-3', config.adUnitCodes[0])
-      ];
-
-      slots[1].setTargeting('hb_adid', ['someAdId']);
-      slots[1].spyGetSlotElementId.resetHistory();
-      window.googletag.pubads().setSlots(slots);
-
-      const mockAdObject = {
-        adId: 'someAdId',
-        ad: '<script src="http://prebid.org/creative/${AUCTION_PRICE}"></script>',
-        adUrl: 'http://creative.prebid.org/${AUCTION_PRICE}',
-        width: 300,
-        height: 250,
-        renderer: null,
-        cpm: '1.00',
-        adUnitCode: config.adUnitCodes[0],
-      };
-
-      resizeRemoteCreative(mockAdObject);
-
-      expect(slots[0].spyGetSlotElementId.called).to.equal(false);
-      expect(slots[1].spyGetSlotElementId.called).to.equal(true);
-      expect(slots[2].spyGetSlotElementId.called).to.equal(false);
-    });
-
     it('Calling enableSendAllBids should set targeting to include standard keys with bidder' +
       ' append to key name', function () {
       var slots = createSlotArray();

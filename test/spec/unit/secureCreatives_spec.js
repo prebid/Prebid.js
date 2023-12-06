@@ -1,4 +1,4 @@
-import {getReplier, receiveMessage} from 'src/secureCreatives.js';
+import {getReplier, receiveMessage, resizeRemoteCreative} from 'src/secureCreatives.js';
 import * as utils from 'src/utils.js';
 import {getAdUnits, getBidRequests, getBidResponses} from 'test/fixtures/fixtures.js';
 import {auctionManager} from 'src/auctionManager.js';
@@ -19,6 +19,14 @@ describe('secureCreatives', () => {
   function makeEvent(ev) {
     return Object.assign({origin: 'mock-origin', ports: []}, ev)
   }
+
+  let sandbox;
+  beforeEach(() => {
+    sandbox = sinon.sandbox.create();
+  });
+  afterEach(() => {
+    sandbox.restore();
+  })
 
   describe('getReplier', () => {
     it('should use source.postMessage if no MessagePort is available', () => {
@@ -55,7 +63,6 @@ describe('secureCreatives', () => {
   });
 
   describe('receiveMessage', function() {
-    let sandbox;
     const bidId = 1;
     const warning = `Ad id ${bidId} has been rendered before`;
     let auction;
@@ -116,7 +123,6 @@ describe('secureCreatives', () => {
     });
 
     beforeEach(function() {
-      sandbox = sinon.sandbox.create();
       spyAddWinningBid = sandbox.spy(auctionManager, 'addWinningBid');
       spyLogWarn = sandbox.spy(utils, 'logWarn');
       stubFireNativeTrackers = sandbox.stub(native, 'fireNativeTrackers').callsFake(message => { return message.action; });
@@ -481,4 +487,53 @@ describe('secureCreatives', () => {
       });
     });
   });
+
+  describe('resizeRemoteCreative', () => {
+    let origGpt;
+    before(() => {
+      origGpt = window.googletag;
+    });
+    after(() => {
+      window.googletag = origGpt;
+    });
+    function mockSlot(elementId, pathId) {
+      let targeting = {};
+      return {
+        getSlotElementId: sinon.stub().callsFake(() => elementId),
+        getAdUnitPath: sinon.stub().callsFake(() => pathId),
+        setTargeting: sinon.stub().callsFake((key, value) => {
+          value = Array.isArray(value) ? value : [value];
+          targeting[key] = value;
+        }),
+        getTargetingKeys: sinon.stub().callsFake(() => Object.keys(targeting)),
+        getTargeting: sinon.stub().callsFake((key) => targeting[key] || [])
+      }
+    }
+    let slots;
+    beforeEach(() => {
+      slots = [
+        mockSlot('div1', 'au1'),
+        mockSlot('div2', 'au2'),
+        mockSlot('div3', 'au3')
+      ]
+      window.googletag = {
+        pubads: sinon.stub().returns({
+          getSlots: sinon.stub().returns(slots)
+        })
+      };
+      sandbox.stub(document, 'getElementById');
+    })
+
+    it('should find correct gpt slot based on ad id rather than ad unit code when resizing secure creative', function () {
+      slots[1].setTargeting('hb_adid', ['adId']);
+      resizeRemoteCreative({
+        adId: 'adId',
+        width: 300,
+        height: 250,
+      });
+      [0, 2].forEach((i) => sinon.assert.notCalled(slots[i].getSlotElementId))
+      sinon.assert.called(slots[1].getSlotElementId);
+      sinon.assert.calledWith(document.getElementById, 'div2');
+    });
+  })
 });

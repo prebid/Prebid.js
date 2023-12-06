@@ -70,13 +70,20 @@ export function receiveMessage(ev) {
 }
 
 function handleRenderRequest(reply, message, bidResponse) {
-  handleRender(function (adData) {
-    resizeRemoteCreative(bidResponse);
-    reply(Object.assign({
-      message: RESPONSE,
-      renderer: getRendererSrc(bidResponse.mediaType)
-    }, adData));
-  }, {options: message.options, adId: message.adId, bidResponse});
+  handleRender({
+    renderFn(adData) {
+      reply(Object.assign({
+        message: RESPONSE,
+        renderer: getRendererSrc(bidResponse.mediaType)
+      }, adData));
+    },
+    resizeFn(width, height) {
+      resizeRemoteCreative({...bidResponse, width, height});
+    },
+    options: message.options,
+    adId: message.adId,
+    bidResponse
+  });
 }
 
 function handleNativeRequest(reply, data, adObject) {
@@ -126,7 +133,6 @@ function handleEventRequest(reply, data, adObject) {
 }
 
 export function resizeRemoteCreative({adId, adUnitCode, width, height}) {
-  if (width == null || height == null) return;
   // resize both container div + iframe
   ['div', 'iframe'].forEach(elmType => {
     // not select element that gets removed after dfp render

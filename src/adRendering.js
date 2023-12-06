@@ -90,7 +90,7 @@ export const getRenderingData = hook('sync', function (bidResponse, options) {
   };
 })
 
-export const doRender = hook('sync', function(renderFn, bidResponse, options) {
+export const doRender = hook('sync', function({renderFn, resizeFn, bidResponse, options}) {
   if (FEATURES.VIDEO && bidResponse.mediaType === VIDEO) {
     emitAdRenderFail({
       reason: CONSTANTS.AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT,
@@ -100,19 +100,25 @@ export const doRender = hook('sync', function(renderFn, bidResponse, options) {
     });
     return;
   }
-  renderFn(Object.assign({adId: bidResponse.adId}, getRenderingData(bidResponse, options)));
+  const data = getRenderingData(bidResponse, options);
+  renderFn(Object.assign({adId: bidResponse.adId}, data));
+  const {width, height} = data;
+  if ((width ?? height) != null) {
+    resizeFn(width, height);
+  }
 });
 
-doRender.before(function (next, renderFn, bidResponse, options) {
+doRender.before(function (next, args) {
+  const {bidResponse} = args;
   if (isRendererRequired(bidResponse.renderer)) {
     executeRenderer(bidResponse.renderer, bidResponse);
     next.bail();
   } else {
-    next(renderFn, bidResponse, options);
+    next(args);
   }
 }, 100)
 
-export function handleRender(renderFn, {adId, options, bidResponse}) {
+export function handleRender({renderFn, resizeFn, adId, options, bidResponse}) {
   if (bidResponse == null) {
     emitAdRenderFail({
       reason: CONSTANTS.AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
@@ -129,7 +135,7 @@ export function handleRender(renderFn, {adId, options, bidResponse}) {
     }
   }
   try {
-    doRender(renderFn, bidResponse, options);
+    doRender({renderFn, resizeFn, bidResponse, options});
   } catch (e) {
     emitAdRenderFail({
       reason: CONSTANTS.AD_RENDER_FAILED_REASON.EXCEPTION,
@@ -154,13 +160,15 @@ export function renderAdDirect(doc, adId, options) {
     } else {
       getCreativeRenderer().then(render => render(adData, {sendMessage: (type, data) => handleCreativeMessage(type, data, bid), mkFrame: createIframe}, doc.defaultView))
     }
-    if (doc.defaultView && doc.defaultView.frameElement) {
-      doc.defaultView.frameElement.width = adData.width;
-      doc.defaultView.frameElement.height = adData.height;
-    }
     // TODO: this is almost certainly the wrong way to do this
     const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
     insertElement(creativeComment, doc, 'html');
+  }
+  function resizeFn(width, height) {
+    if (doc.defaultView && doc.defaultView.frameElement) {
+      doc.defaultView.frameElement.width = width;
+      doc.defaultView.frameElement.height = height;
+    }
   }
   try {
     if (!adId || !doc) {
@@ -171,7 +179,7 @@ export function renderAdDirect(doc, adId, options) {
       if ((doc === document && !inIframe())) {
         fail(CONSTANTS.AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT, `renderAd was prevented from writing to the main document.`);
       } else {
-        handleRender(renderFn, {adId, options: {clickUrl: options?.clickThrough}, bidResponse: bid});
+        handleRender({renderFn, resizeFn, adId, options: {clickUrl: options?.clickThrough}, bidResponse: bid});
       }
     }
   } catch (e) {
