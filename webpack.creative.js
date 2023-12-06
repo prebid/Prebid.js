@@ -14,6 +14,9 @@ module.exports = {
     },
     'renderers/display': {
       import: './creative/renderers/display/renderer.js'
+    },
+    'renderers/native': {
+      import: './creative/renderers/native/renderer.js'
     }
   },
   output: {

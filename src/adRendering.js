@@ -183,7 +183,7 @@ export function renderAdDirect(doc, adId, options) {
       doc.write(adData.ad);
       doc.close();
     } else {
-      getCreativeRenderer().then(render => render(adData, {sendMessage: (type, data) => messageHandler(type, data, bid), mkFrame: createIframe}, doc.defaultView))
+      getCreativeRenderer(bid).then(render => render(adData, {sendMessage: (type, data) => messageHandler(type, data, bid), mkFrame: createIframe}, doc.defaultView))
     }
     // TODO: this is almost certainly the wrong way to do this
     const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);

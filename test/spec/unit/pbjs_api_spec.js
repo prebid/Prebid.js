@@ -208,7 +208,7 @@ describe('Unit: Prebid Module', function () {
     resetDebugging();
     sinon.stub(filters, 'isActualBid').returns(true); // stub this out so that we can use vanilla objects as bids
     // preload creative renderer
-    getCreativeRenderer().then(() => done());
+    getCreativeRenderer({}).then(() => done());
   });
 
   beforeEach(function () {

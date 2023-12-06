@@ -78,7 +78,7 @@ function handleRenderRequest(reply, message, bidResponse) {
     renderFn(adData) {
       reply(Object.assign({
         message: RESPONSE,
-        renderer: getCreativeRendererSource(bidResponse.mediaType)
+        renderer: getCreativeRendererSource(bidResponse)
       }, adData));
     },
     resizeFn: getResizer(bidResponse),
