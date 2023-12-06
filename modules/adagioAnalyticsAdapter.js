@@ -27,6 +27,15 @@ const cache = {
       ...this.auctions[auctionId][adUnitCode],
       ...values
     };
+  },
+
+  // Map prebid auction id to adagio auction id
+  auctionIdReferences: {},
+  addPrebidAuctionIdRef(auctionId, adagioAuctionId) {
+    this.auctionIdReferences[auctionId] = adagioAuctionId;
+  },
+  getAdagioAuctionId(auctionId) {
+    return this.auctionIdReferences[auctionId];
   }
 };
 const enc = window.encodeURIComponent;
@@ -125,6 +134,10 @@ function sendNewBeacon(auctionId, adUnitCode) {
   sendRequest(cache.getAuction(auctionId, adUnitCode));
 };
 
+function getTargetedAuctionId(bid) {
+  return deepAccess(bid, 'latestTargetedAuctionId') || deepAccess(bid, 'auctionId');
+}
+
 /**
  * END UTILS FUNCTIONS
 */
@@ -196,6 +209,9 @@ function handlerAuctionInit(event) {
     // We assume that all Adagio bids for a same adunit have the same params.
     const params = adagioAdUnitBids[0].params;
 
+    const adagioAuctionId = params.adagioAuctionId;
+    cache.addPrebidAuctionIdRef(prebidAuctionId, adagioAuctionId);
+
     // Get all media types requested for Adagio.
     const adagioMediaTypes = removeDuplicates(
       adagioAdUnitBids.map(bid => Object.keys(bid.mediaTypes)).flat(),
@@ -208,7 +224,7 @@ function handlerAuctionInit(event) {
       org_id: params.organizationId,
       site: params.site,
       pv_id: params.pageviewId,
-      auct_id: params.adagioAuctionId,
+      auct_id: adagioAuctionId,
       adu_code: adUnitCode,
       url_dmn: w.location.hostname,
       dvc: params.environment,
@@ -247,7 +263,9 @@ function handlerBidResponse(event) {
 };
 
 function handlerBidWon(event) {
-  if (!guard.bidTracked(event.auctionId, event.adUnitCode)) {
+  let auctionId = getTargetedAuctionId(event);
+
+  if (!guard.bidTracked(auctionId, event.adUnitCode)) {
     return;
   }
 
@@ -266,7 +284,12 @@ function handlerBidWon(event) {
     logError('Error on Adagio Analytics Adapter - handlerBidWon', error);
   }
 
-  cache.updateAuction(event.auctionId, event.adUnitCode, {
+  const adagioAuctionCacheId = (
+    (event.latestTargetedAuctionId && event.latestTargetedAuctionId !== event.auctionId)
+      ? cache.getAdagioAuctionId(event.auctionId)
+      : null);
+
+  cache.updateAuction(auctionId, event.adUnitCode, {
     win_bdr: getAdapterNameForAlias(event.bidder),
     win_mt: getMediaTypeAlias(event.mediaType),
     win_ban_sz: event.mediaType === BANNER ? `${event.width}x${event.height}` : null,
@@ -280,12 +303,17 @@ function handlerBidWon(event) {
     og_cpm: event.originalCpm,
     og_cur: event.originalCurrency,
     og_cur_rate: ogCurRateToUSD,
+
+    // cache bid id
+    auct_id_c: adagioAuctionCacheId,
   });
-  sendNewBeacon(event.auctionId, event.adUnitCode);
+  sendNewBeacon(auctionId, event.adUnitCode);
 };
 
 function handlerAdRender(event, isSuccess) {
-  const { auctionId, adUnitCode } = event.bid;
+  const { adUnitCode } = event.bid;
+  let auctionId = getTargetedAuctionId(event.bid);
+
   if (!guard.bidTracked(auctionId, adUnitCode)) {
     return;
   }

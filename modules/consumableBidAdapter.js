@@ -191,17 +191,20 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       if (gdprConsent && gdprConsent.consentString) {
         if (typeof gdprConsent.gdprApplies === 'boolean') {
-          syncUrl = appendUrlParam(syncUrl, `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`);
+          syncUrl = appendUrlParam(syncUrl, `gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${encodeURIComponent(gdprConsent.consentString) || ''}`);
         } else {
-          syncUrl = appendUrlParam(syncUrl, `gdpr=0&gdpr_consent=${gdprConsent.consentString}`);
+          syncUrl = appendUrlParam(syncUrl, `gdpr=0&gdpr_consent=${encodeURIComponent(gdprConsent.consentString) || ''}`);
         }
       }
       if (gppConsent && gppConsent.gppString) {
-        syncUrl = appendUrlParam(syncUrl, `gpp=${gppConsent.gppString}&gpp_sid=${gppConsent.applicableSections}`);
+        syncUrl = appendUrlParam(syncUrl, `gpp=${encodeURIComponent(gppConsent.gppString)}`);
+        if (gppConsent.applicableSections && gppConsent.applicableSections.length > 0) {
+          syncUrl = appendUrlParam(syncUrl, `gpp_sid=${encodeURIComponent(gppConsent.applicableSections.join(','))}`);
+        }
       }
 
-      if (uspConsent && uspConsent.consentString) {
-        syncUrl = appendUrlParam(syncUrl, `us_privacy=${uspConsent.consentString}`);
+      if (uspConsent) {
+        syncUrl = appendUrlParam(syncUrl, `us_privacy=${encodeURIComponent(uspConsent)}`);
       }
 
       if (!serverResponses || serverResponses.length === 0 || !serverResponses[0].body.bdr || serverResponses[0].body.bdr !== 'cx') {

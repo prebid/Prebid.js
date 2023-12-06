@@ -78,14 +78,17 @@ export const spec = {
         bust: new Date().getTime().toString(),
         dnt: getDNT(),
         description: getPageDescription(),
+        tmax: bidderRequest.timeout || 400,
         userConsent: JSON.stringify({
           // case of undefined, stringify will remove param
-          gdprApplies: deepAccess(bidderRequest, 'gdprConsent.gdprApplies') || '',
+          gdprApplies:
+            deepAccess(bidderRequest, 'gdprConsent.gdprApplies') || '',
           cmp: deepAccess(bidderRequest, 'gdprConsent.consentString') || '',
           gpp: deepAccess(bidderRequest, 'gppConsent.gppString') || '',
-          gpp_sid: deepAccess(bidderRequest, 'gppConsent.applicableSections') || []
+          gpp_sid:
+            deepAccess(bidderRequest, 'gppConsent.applicableSections') || [],
         }),
-        us_privacy: deepAccess(bidderRequest, 'uspConsent') || ''
+        us_privacy: deepAccess(bidderRequest, 'uspConsent') || '',
       };
 
       if (canAccessTopWindow()) {
