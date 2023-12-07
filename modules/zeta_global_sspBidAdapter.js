@@ -347,10 +347,10 @@ function provideSegments(bidderRequest, payload) {
       if (!isArray(payload.user.data)) {
         payload.user.data = [];
       }
-      const data = {
+      const payloadData = {
         segment: segments
       };
-      payload.user.data.push(data);
+      payload.user.data.push(payloadData);
     }
   }
 }
