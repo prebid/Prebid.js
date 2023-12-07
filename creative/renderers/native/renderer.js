@@ -1,12 +1,4 @@
-import {
-  ACTION_IMP,
-  ACTION_RESIZE,
-  EVENT_AD_RENDER_FAILED,
-  EVENT_AD_RENDER_SUCCEEDED,
-  FAILURE_REASON_EXCEPTION,
-  MESSAGE_EVENT, MESSAGE_NATIVE,
-  ORTB_ASSETS
-} from './constants.js';
+import {ACTION_IMP, ACTION_RESIZE, MESSAGE_NATIVE, ORTB_ASSETS} from './constants.js';
 
 export function getReplacements(adId, {assets = [], ortb, nativeKeys = {}}) {
   const assetValues = Object.fromEntries((assets).map(({key, value}) => [key, value]));
@@ -58,7 +50,6 @@ function loadScript(url, win) {
 export function getAdMarkup(adId, nativeData, win, load = loadScript) {
   const {rendererUrl, assets, ortb, adTemplate} = nativeData;
   if (rendererUrl) {
-    delete win.renderAd; // renderAd from renderer may clash with renderAd defined in creative
     return load(rendererUrl, win).then(() => {
       if (typeof win.renderAd !== 'function') {
         throw new Error(`Renderer from '${rendererUrl}' does not define renderAd()`)
@@ -80,10 +71,9 @@ export function render({adId, native}, {sendMessage}, win, getMarkup = getAdMark
   });
   return getMarkup(adId, native, win).then(markup => {
     win.document.body.innerHTML = markup;
-    sendMessage(MESSAGE_EVENT, {event: EVENT_AD_RENDER_SUCCEEDED});
     sendMessage(MESSAGE_NATIVE, {action: ACTION_IMP});
     win.document.readyState === 'complete' ? resize() : win.onload = resize;
-  }).catch(e => sendMessage(MESSAGE_EVENT, {event: EVENT_AD_RENDER_FAILED, info: {reason: FAILURE_REASON_EXCEPTION, message: e?.message}}));
+  });
 }
 
 window.render = render;

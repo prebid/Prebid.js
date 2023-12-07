@@ -1,11 +1,5 @@
 import {getAdMarkup, getReplacements, replace} from '../../../creative/renderers/native/renderer.js';
-import {
-  ACTION_IMP,
-  ACTION_RESIZE, EVENT_AD_RENDER_FAILED,
-  EVENT_AD_RENDER_SUCCEEDED,
-  FAILURE_REASON_EXCEPTION,
-  MESSAGE_EVENT, MESSAGE_NATIVE
-} from '../../../creative/renderers/native/constants.js';
+import {ACTION_IMP, ACTION_RESIZE, MESSAGE_NATIVE} from '../../../creative/renderers/native/constants.js';
 
 describe('Native creative renderer', () => {
   let win;
@@ -37,17 +31,6 @@ describe('Native creative renderer', () => {
           return true;
         }));
       });
-    });
-
-    it('does not use window.renderAd that does not come from rendererUrl', () => {
-      win.renderAd = sinon.stub();
-      loadScript.returns(Promise.resolve());
-      return getAdMarkup('123', {rendererUrl: 'renderer.com'}, win, loadScript)
-        // eslint-disable-next-line prefer-promise-reject-errors
-        .then(() => {
-          throw new Error('should not resolve');
-        })
-        .catch((e) => expect(e.message).to.contain('renderer.com'));
     });
   });
 
@@ -174,34 +157,36 @@ describe('Native creative renderer', () => {
   });
 
   describe('render', () => {
-    let getMarkup, sendMessage, adId, nativeData;
+    let getMarkup, sendMessage, adId, nativeData, exc;
     beforeEach(() => {
       adId = '123';
       nativeData = {}
       getMarkup = sinon.stub();
       sendMessage = sinon.stub()
+      exc = sinon.stub();
       win.document = {
         body: {}
       }
     });
 
     function runRender() {
-      return render({adId, native: nativeData}, {sendMessage}, win, getMarkup)
+      return render({adId, native: nativeData}, {sendMessage, exc}, win, getMarkup)
     }
 
-    it('drops markup on body, and emits AD_RENDER_SUCCEEDED and fires imp trackers', () => {
+    it('drops markup on body, and fires imp trackers', () => {
       getMarkup.returns(Promise.resolve('markup'));
       return runRender().then(() => {
         expect(win.document.body.innerHTML).to.eql('markup');
-        sinon.assert.calledWith(sendMessage, MESSAGE_EVENT, {event: EVENT_AD_RENDER_SUCCEEDED});
         sinon.assert.calledWith(sendMessage, MESSAGE_NATIVE, {action: ACTION_IMP});
       })
     });
 
-    it('emits AD_RENDER_FAILED on error', () => {
-      getMarkup.returns(Promise.reject(new Error('failure')));
-      return runRender().then(() => {
-        sinon.assert.calledWith(sendMessage, MESSAGE_EVENT, {event: EVENT_AD_RENDER_FAILED, info: {reason: FAILURE_REASON_EXCEPTION, message: 'failure'}})
+    it('rejects on error', (done) => {
+      const err = new Error('failure');
+      getMarkup.returns(Promise.reject(err));
+      runRender().catch((e) => {
+        expect(e).to.eql(err);
+        done();
       })
     });
 

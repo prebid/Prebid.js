@@ -1,7 +1,7 @@
 import {renderer} from '../../../creative/crossDomain.js';
 import {
   ERROR_EXCEPTION,
-  EVENT_AD_RENDER_FAILED,
+  EVENT_AD_RENDER_FAILED, EVENT_AD_RENDER_SUCCEEDED,
   MESSAGE_EVENT,
   MESSAGE_REQUEST,
   MESSAGE_RESPONSE
@@ -119,10 +119,13 @@ describe('cross-domain creative', () => {
       });
 
       Object.entries({
-        'broken': 'window.render = function() { throw new Error() }',
-        'missing': null
-      }).forEach(([t, renderer]) => {
-        it(`signals AD_RENDER_FAILED on ${t} renderer`, (done) => {
+        'throws (w/error)': ['window.render = function() { throw new Error("msg") }'],
+        'throws (w/reason)': ['window.render = function() { throw {reason: "other", message: "msg"}}', 'other'],
+        'is missing': [null, ERROR_EXCEPTION, null],
+        'rejects (w/error)': ['window.render = function() { return Promise.reject(new Error("msg")) }'],
+        'rejects (w/reason)': ['window.render = function() { return Promise.reject({reason: "other", message: "msg"}) }', 'other'],
+      }).forEach(([t, [renderer, reason = ERROR_EXCEPTION, message = 'msg']]) => {
+        it(`signals AD_RENDER_FAILED on renderer that ${t}`, (done) => {
           renderAd({adId: '123', pubUrl: ORIGIN});
           reply({
             message: MESSAGE_RESPONSE,
@@ -131,16 +134,40 @@ describe('cross-domain creative', () => {
           });
           setTimeout(() => {
             sinon.assert.match(messages[1].payload, {
+              adId: '123',
               message: MESSAGE_EVENT,
               event: EVENT_AD_RENDER_FAILED,
               info: {
-                reason: ERROR_EXCEPTION
+                reason,
+                message: sinon.match(val => message == null || message === val)
               }
             });
             done();
           }, 100)
         })
       });
+
+      it('signals AD_RENDER_SUCCEEDED when renderer resolves', (done) => {
+        renderAd({adId: '123', pubUrl: ORIGIN});
+        reply({
+          message: MESSAGE_RESPONSE,
+          adId: '123',
+          renderer: 'window.render = function() { return new Promise((resolve) => { window.parent._resolve = resolve })}'
+        });
+        setTimeout(() => {
+          expect(messages[1]).to.not.exist;
+          window._resolve();
+          setTimeout(() => {
+            sinon.assert.match(messages[1].payload, {
+              adId: '123',
+              message: MESSAGE_EVENT,
+              event: EVENT_AD_RENDER_SUCCEEDED
+            })
+            delete window._resolve;
+            done();
+          }, 100)
+        }, 100)
+      })
 
       it('is provided a sendMessage that accepts replies', (done) => {
         renderAd({adId: '123', pubUrl: ORIGIN});
@@ -161,7 +188,7 @@ describe('cross-domain creative', () => {
             }
           }, 100)
         }, 100)
-      })
+      });
     });
   });
 });

@@ -1,10 +1,5 @@
 import {render} from 'creative/renderers/display/renderer.js';
-import {
-  ERROR_NO_AD,
-  EVENT_AD_RENDER_FAILED,
-  EVENT_AD_RENDER_SUCCEEDED,
-  MESSAGE_EVENT
-} from '../../../creative/renderers/display/constants.js';
+import {ERROR_NO_AD} from '../../../creative/renderers/display/constants.js';
 
 describe('Creative renderer - display', () => {
   let doc, mkFrame, sendMessage;
@@ -22,9 +17,15 @@ describe('Creative renderer - display', () => {
     return render(data, {sendMessage, mkFrame}, {document: doc});
   }
 
-  it('sends AD_RENDER_FAILED when both ad and adUrl are missing', () => {
-    runRenderer({});
-    sinon.assert.calledWith(sendMessage, MESSAGE_EVENT, sinon.match({event: EVENT_AD_RENDER_FAILED, info: {reason: ERROR_NO_AD}}));
+  it('throws when both ad and adUrl are missing', () => {
+    expect(() => {
+      try {
+        runRenderer({})
+      } catch (e) {
+        expect(e.reason).to.eql(ERROR_NO_AD);
+        throw e;
+      }
+    }).to.throw();
   })
 
   Object.entries({
@@ -39,10 +40,6 @@ describe('Creative renderer - display', () => {
           width: 123,
           height: 321
         }
-      })
-      it('sends AD_RENDER_SUCCEEDED', () => {
-        runRenderer(data);
-        sinon.assert.calledWith(sendMessage, MESSAGE_EVENT, sinon.match({event: EVENT_AD_RENDER_SUCCEEDED}));
       })
       it(`drops iframe with ${frameProp} = ${adProp}`, () => {
         runRenderer(data);

@@ -1,14 +1,11 @@
-import {ERROR_NO_AD, EVENT_AD_RENDER_FAILED, EVENT_AD_RENDER_SUCCEEDED, MESSAGE_EVENT} from './constants.js';
+import {ERROR_NO_AD} from './constants.js';
 
-export function render({ad, adUrl, width, height}, {sendMessage, mkFrame}, win) {
+export function render({ad, adUrl, width, height}, {mkFrame}, win) {
   if (!ad && !adUrl) {
-    sendMessage(MESSAGE_EVENT, {
-      event: EVENT_AD_RENDER_FAILED,
-      info: {
-        reason: ERROR_NO_AD,
-        message: 'Missing ad markup or URL'
-      }
-    });
+    throw {
+      reason: ERROR_NO_AD,
+      message: 'Missing ad markup or URL'
+    };
   } else {
     const doc = win.document;
     const attrs = {width, height};
@@ -18,7 +15,6 @@ export function render({ad, adUrl, width, height}, {sendMessage, mkFrame}, win) 
       attrs.srcdoc = ad;
     }
     doc.body.appendChild(mkFrame(doc, attrs));
-    sendMessage(MESSAGE_EVENT, {event: EVENT_AD_RENDER_SUCCEEDED});
   }
 }
 

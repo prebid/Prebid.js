@@ -5,7 +5,7 @@
 <script>!function(){"use strict";var e=JSON.parse('{"FP":{"h0":"adRenderFailed"},"q_":{"XW":"exception"},"X3":{"Z":"Prebid Request","YC":"Prebid Response","Ks":"Prebid Event"}}');const n=e.X3.Z,t=e.X3.YC,r=e.X3.Ks,s=e.FP.h0,o=e.q_.XW,i=(()=>{const e={frameBorder:0,scrolling:"no",marginHeight:0,marginWidth:0,topMargin:0,leftMargin:0,allowTransparency:"true"};return(n,t)=>{const r=n.createElement("iframe");return Object.entries(Object.assign({},t,e)).forEach((([e,n])=>r.setAttribute(e,n))),r}})();var a;window.renderAd=(a=window,function({adId:e,pubUrl:c,clickUrl:d}){const l=new URL(c,window.location).origin;function g(n,t,r){const s=new MessageChannel;s.port1.onmessage=p(r),a.parent.postMessage(JSON.stringify(Object.assign({message:n,adId:e},t)),l,[s.port2])}function p(e){return function(){try{return e.apply(this,arguments)}catch(e){g(r,{event:s,info:{reason:o,message:e.message}}),console.error(e)}}}g(n,{options:{clickUrl:d}},(function(n){let r;try{r=JSON.parse(n.data)}catch(e){return}if(r.message===t&&r.adId===e){const e=i(a.document,{width:0,height:0,style:"display: none",srcdoc:`<script>${r.renderer}<\/script>`});e.onload=p((function(){e.contentWindow.render(r,{sendMessage:g,mkFrame:i},a)})),a.document.body.appendChild(e)}}))})}();</script>
 
 <script>
-    renderAd({
+    pbRender({
         adId: '%%PATTERN:hb_adid%%',
         pubUrl: '%%PATTERN:url%%',
         clickUrl: '%%CLICK_URL_UNESC%%'
