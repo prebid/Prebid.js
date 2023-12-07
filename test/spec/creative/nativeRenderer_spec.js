@@ -1,5 +1,5 @@
 import {getAdMarkup, getReplacements, replace} from '../../../creative/renderers/native/renderer.js';
-import {ACTION_IMP, ACTION_RESIZE, MESSAGE_NATIVE} from '../../../creative/renderers/native/constants.js';
+import {ACTION_CLICK, ACTION_IMP, ACTION_RESIZE, MESSAGE_NATIVE} from '../../../creative/renderers/native/constants.js';
 
 describe('Native creative renderer', () => {
   let win;
@@ -165,6 +165,7 @@ describe('Native creative renderer', () => {
       sendMessage = sinon.stub()
       exc = sinon.stub();
       win.document = {
+        querySelectorAll() { return [] },
         body: {}
       }
     });
@@ -181,6 +182,17 @@ describe('Native creative renderer', () => {
       })
     });
 
+    it('runs postRenderAd if defined', () => {
+      win.postRenderAd = sinon.stub();
+      getMarkup.returns(Promise.resolve('markup'));
+      return runRender().then(() => {
+        sinon.assert.calledWith(win.postRenderAd, sinon.match({
+          adId,
+          ...nativeData
+        }))
+      })
+    })
+
     it('rejects on error', (done) => {
       const err = new Error('failure');
       getMarkup.returns(Promise.reject(err));
@@ -193,8 +205,8 @@ describe('Native creative renderer', () => {
     describe('requests resize', () => {
       beforeEach(() => {
         getMarkup.returns(Promise.resolve('markup'));
-        win.document.body.clientHeight = 123;
-        win.document.body.clientWidth = 321;
+        win.document.body.offsetHeight = 123;
+        win.document.body.offsetWidth = 321;
       });
 
       it('immediately, if document is loaded', () => {
@@ -212,5 +224,33 @@ describe('Native creative renderer', () => {
         })
       })
     })
-  })
+
+    describe('click trackers', () => {
+      let iframe;
+      beforeEach(() => {
+        iframe = document.createElement('iframe');
+        document.body.appendChild(iframe);
+        win.document = iframe.contentDocument;
+      })
+      afterEach(() => {
+        document.body.removeChild(iframe);
+      })
+
+      it('are fired on click', () => {
+        getMarkup.returns(Promise.resolve('<div class="pb-click"><div id="target"></div></div>'));
+        return runRender().then(() => {
+          win.document.querySelector('#target').click();
+          sinon.assert.calledWith(sendMessage, MESSAGE_NATIVE, sinon.match({action: ACTION_CLICK}));
+        })
+      });
+
+      it('pass assetId if provided', () => {
+        getMarkup.returns(Promise.resolve('<div class="pb-click" hb_native_asset_id="123" id="target"></div>'));
+        return runRender().then(() => {
+          win.document.querySelector('#target').click();
+          sinon.assert.calledWith(sendMessage, MESSAGE_NATIVE, {action: ACTION_CLICK, assetId: '123'})
+        });
+      });
+    });
+  });
 });

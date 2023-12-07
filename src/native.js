@@ -419,7 +419,8 @@ function getNativeAssets(nativeProps, keys, ext = false) {
 export function getNativeRenderingData(bid, adUnit, keys) {
   const data = {
     ...getDefinedParams(bid.native, ['rendererUrl', 'adTemplate']),
-    assets: getNativeAssets(bid.native, keys)
+    assets: getNativeAssets(bid.native, keys),
+    nativeKeys: CONSTANTS.NATIVE_KEYS
   };
   if (bid.native.ortb) {
     data.ortb = bid.native.ortb;

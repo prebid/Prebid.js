@@ -1,4 +1,4 @@
-import {ACTION_IMP, ACTION_RESIZE, MESSAGE_NATIVE, ORTB_ASSETS} from './constants.js';
+import {ACTION_CLICK, ACTION_IMP, ACTION_RESIZE, MESSAGE_NATIVE, ORTB_ASSETS} from './constants.js';
 
 export function getReplacements(adId, {assets = [], ortb, nativeKeys = {}}) {
   const assetValues = Object.fromEntries((assets).map(({key, value}) => [key, value]));
@@ -66,11 +66,18 @@ export function getAdMarkup(adId, nativeData, win, load = loadScript) {
 export function render({adId, native}, {sendMessage}, win, getMarkup = getAdMarkup) {
   const resize = () => sendMessage(MESSAGE_NATIVE, {
     action: ACTION_RESIZE,
-    height: win.document.body.clientHeight || win.document.body.offsetHeight,
-    width: win.document.body.clientWidth
+    height: win.document.body.offsetHeight,
+    width: win.document.body.offsetWidth
   });
   return getMarkup(adId, native, win).then(markup => {
     win.document.body.innerHTML = markup;
+    if (typeof win.postRenderAd === 'function') {
+      win.postRenderAd({adId, ...native});
+    }
+    win.document.querySelectorAll('.pb-click').forEach(el => {
+      const assetId = el.getAttribute('hb_native_asset_id');
+      el.addEventListener('click', () => sendMessage(MESSAGE_NATIVE, {action: ACTION_CLICK, assetId}));
+    })
     sendMessage(MESSAGE_NATIVE, {action: ACTION_IMP});
     win.document.readyState === 'complete' ? resize() : win.onload = resize;
   });
