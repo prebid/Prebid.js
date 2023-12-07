@@ -14,7 +14,6 @@ import * as events from '../src/events.js';
 import { BANNER } from '../src/mediaTypes.js';
 import CONSTANTS from '../src/constants.json';
 
-const BIDDER_CODE = 'setupad';
 const ENDPOINT = 'https://prebid.setupad.io/openrtb2/auction';
 const SYNC_ENDPOINT = 'https://cookie.stpd.cloud/sync?';
 const REPORT_ENDPOINT = 'https://adapter-analytics.azurewebsites.net/api/adapter-analytics';
@@ -33,7 +32,7 @@ function getEids(bidRequest) {
 }
 
 export const spec = {
-  code: BIDDER_CODE,
+  code: 'setupad',
   supportedMediaTypes: [BANNER],
   gvlid: GVLID,
 
@@ -213,7 +212,7 @@ export const spec = {
   getPixelUrl: function (eventName, bid, timestamp) {
     let bidder = bid.bidder || bid.bidderCode;
     const auctionId = bid.auctionId;
-    if (bidder !== BIDDER_CODE) return;
+    if (bidder !== 'setupad') return;
 
     let params;
     if (bid.params) {
@@ -259,14 +258,6 @@ export const spec = {
 
       // Add extra parameters
       extraBidParams = `&cpm=${bid.originalCpm}&currency=${bid.originalCurrency}`;
-    }
-
-    if (
-      eventName === CONSTANTS.EVENTS.BID_REQUESTED ||
-      eventName === CONSTANTS.EVENTS.BID_TIMEOUT ||
-      eventName === CONSTANTS.EVENTS.NO_BID
-    ) {
-      bidder = BIDDER_CODE;
     }
 
     const url = `${REPORT_ENDPOINT}?event=${eventName}&bidder=${bidder}&placementIds=${placementIds}&auctionId=${auctionId}${extraBidParams}&timestamp=${timestamp}`;
