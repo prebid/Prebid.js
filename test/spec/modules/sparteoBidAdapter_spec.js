@@ -323,7 +323,12 @@ describe('SparteoAdapter', function () {
             'price': 5,
             'ext': {
               'prebid': {
-                'type': 'video'
+                'type': 'video',
+                'cache': {
+                  'vastXml': {
+                    'url': 'https://pbs.tet.com/cache?uuid=1234'
+                  }
+                }
               }
             },
             'adm': 'tag',
@@ -368,7 +373,8 @@ describe('SparteoAdapter', function () {
             ttl: TTL,
             mediaType: 'video',
             meta: {},
-            vastUrl: 'https://t.bidder.sparteo.com/img',
+            nurl: 'https://t.bidder.sparteo.com/img',
+            vastUrl: 'https://pbs.tet.com/cache?uuid=1234',
             vastXml: 'tag'
           });
         }
