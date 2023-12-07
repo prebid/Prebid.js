@@ -1,4 +1,4 @@
-import {getAdMarkup, getReplacements, replace} from '../../../creative/renderers/native/renderer.js';
+import {getAdMarkup, getReplacements, getReplacer} from '../../../creative/renderers/native/renderer.js';
 import {ACTION_CLICK, ACTION_IMP, ACTION_RESIZE, MESSAGE_NATIVE} from '../../../creative/renderers/native/constants.js';
 
 describe('Native creative renderer', () => {
@@ -22,7 +22,7 @@ describe('Native creative renderer', () => {
       loadScript.returns(Promise.resolve().then(() => {
         win.renderAd = renderAd;
       }));
-      return getAdMarkup('123', data, win, loadScript).then((markup) => {
+      return getAdMarkup('123', data, null, win, loadScript).then((markup) => {
         expect(markup).to.eql('markup');
         sinon.assert.calledWith(loadScript, data.rendererUrl, win);
         sinon.assert.calledWith(renderAd, sinon.match(arg => {
@@ -32,22 +32,65 @@ describe('Native creative renderer', () => {
         }));
       });
     });
+    describe('otherwise, calls replacer', () => {
+      let replacer;
+      beforeEach(() => {
+        replacer = sinon.stub().returns('markup');
+      });
+      it('with adTemplate, if present', () => {
+        return getAdMarkup('123', {adTemplate: 'tpl'}, replacer, win).then((result) => {
+          expect(result).to.eql('markup');
+          sinon.assert.calledWith(replacer, 'tpl');
+        });
+      });
+      it('with document body otherwise', () => {
+        win.document = {body: {innerHTML: 'body'}};
+        return getAdMarkup('123', {}, replacer, win).then((result) => {
+          expect(result).to.eql('markup');
+          sinon.assert.calledWith(replacer, 'body');
+        })
+      })
+    })
   });
 
-  describe('getReplacements', () => {
-    it('generates empty entries for missing assets', () => {
-      const repl = getReplacements('123', {
+  describe('getReplacer', () => {
+    function expectReplacements(replacer, replacements) {
+      Object.entries(replacements).forEach(([placeholder, repl]) => {
+        expect(replacer(`.${placeholder}.${placeholder}.`)).to.eql(`.${repl}.${repl}.`);
+      })
+    }
+    it('uses empty strings for missing legacy assets', () => {
+      const repl = getReplacer('123', {
         nativeKeys: {
           'k': 'hb_native_k'
         }
       });
-      expect(repl).to.eql({
-        '##hb_native_k##': undefined,
-        'hb_native_k:123': undefined
+      expectReplacements(repl, {
+        '##hb_native_k##': '',
+        'hb_native_k:123': ''
+      })
+    });
+
+    it('uses empty string for missing ORTB assets', () => {
+      const repl = getReplacer('', {
+        ortb: {
+          assets: [{
+            id: 1,
+            link: {url: 'l1'},
+            data: {value: 'v1'}
+          }]
+        }
+      });
+      expectReplacements(repl, {
+        '##hb_native_asset_id_1##': 'v1',
+        '##hb_native_asset_id_2##': '',
+        '##hb_native_asset_link_id_1##': 'l1',
+        '##hb_native_asset_link_id_2##': ''
       });
     });
-    it('generates entries for legacy assets', () => {
-      const repl = getReplacements('123', {
+
+    it('replaces placeholders for for legacy assets', () => {
+      const repl = getReplacer('123', {
         assets: [
           {key: 'k1', value: 'v1'}, {key: 'k2', value: 'v2'}
         ],
@@ -56,12 +99,12 @@ describe('Native creative renderer', () => {
           k2: 'hb_native_k2'
         }
       });
-      expect(repl).to.eql({
+      expectReplacements(repl, {
         '##hb_native_k1##': 'v1',
         'hb_native_k1:123': 'v1',
         '##hb_native_k2##': 'v2',
         'hb_native_k2:123': 'v2'
-      });
+      })
     });
 
     describe('ORTB response top-level (non-asset) fields', () => {
@@ -75,14 +118,14 @@ describe('Native creative renderer', () => {
         '##hb_native_linkurl##': 'link.url',
         '##hb_native_privacy##': 'privacy.url'
       };
-      it('generate entries', () => {
-        const repl = getReplacements('123', {
+      it('replaces placeholders', () => {
+        const repl = getReplacer('123', {
           ortb
         });
-        sinon.assert.match(repl, expected);
+        expectReplacements(repl, expected);
       });
-      it('take precedence over legacy counterparts', () => {
-        const repl = getReplacements('123', {
+      it('gives them precedence over legacy counterparts', () => {
+        const repl = getReplacer('123', {
           ortb,
           assets: [
             {key: 'clickUrl', value: 'overridden'},
@@ -93,16 +136,16 @@ describe('Native creative renderer', () => {
             privacyLink: 'hb_native_privacy'
           }
         });
-        sinon.assert.match(repl, expected);
+        expectReplacements(repl, expected);
       });
-      it('generate empty entries', () => {
-        const repl = getReplacements('123', {
+      it('uses empty string for missing assets', () => {
+        const repl = getReplacer('123', {
           ortb: {}
         });
-        expect(repl).to.eql({
-          '##hb_native_linkurl##': undefined,
-          '##hb_native_privacy##': undefined,
-        });
+        expectReplacements(repl, {
+          '##hb_native_linkurl##': '',
+          '##hb_native_privacy##': '',
+        })
       });
     });
 
@@ -124,35 +167,20 @@ describe('Native creative renderer', () => {
             ]
           };
         });
-        it('generates entries', () => {
-          const repl = getReplacements('', {ortb});
-          expect(repl['##hb_native_asset_id_123##']).to.eql('val');
+        it('replaces placeholder', () => {
+          const repl = getReplacer('', {ortb});
+          expectReplacements(repl, {
+            '##hb_native_asset_id_123##': 'val'
+          })
         });
-        it('generates link entries', () => {
+        it('replaces link placeholders', () => {
           ortb.assets[0].link = {url: 'link'};
-          const repl = getReplacements('', {ortb});
-          expect(repl['##hb_native_asset_link_id_123##']).to.eql('link');
+          const repl = getReplacer('', {ortb});
+          expectReplacements(repl, {
+            '##hb_native_asset_link_id_123##': 'link'
+          })
         });
       });
-    });
-  });
-
-  describe('replace', () => {
-    it('replaces values', () => {
-      const result = replace('pre?middle?post', {'?': '.'});
-      expect(result).to.eql('pre.middle.post');
-    });
-    it('defaults to empty string', () => {
-      const result = replace('pre?post', {'?': undefined});
-      expect(result).to.eql('prepost');
-    });
-    it('uses empty string for missing asset id placeholders', () => {
-      const repl = {
-        '##hb_native_asset_id_1##': 'v1',
-        '##hb_native_asset_link_id_1##': 'l1'
-      };
-      const template = '.##hb_native_asset_id_1##.##hb_native_asset_id_2##.##hb_native_asset_link_id_1##.##hb_native_asset_link_id_2##';
-      expect(replace(template, repl)).to.eql('.v1..l1.');
     });
   });
 
@@ -173,6 +201,19 @@ describe('Native creative renderer', () => {
     function runRender() {
       return render({adId, native: nativeData}, {sendMessage, exc}, win, getMarkup)
     }
+
+    it('replaces placeholders in head, if present', () => {
+      getMarkup.returns(Promise.resolve(''))
+      win.document.head = {innerHTML: '##hb_native_asset_id_1##'};
+      nativeData.ortb = {
+        assets: [
+          {id: 1, data: {value: 'repl'}}
+        ]
+      };
+      return runRender().then(() => {
+        expect(win.document.head.innerHTML).to.eql('repl');
+      })
+    });
 
     it('drops markup on body, and fires imp trackers', () => {
       getMarkup.returns(Promise.resolve('markup'));
