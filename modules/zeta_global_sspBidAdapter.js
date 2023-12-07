@@ -339,7 +339,7 @@ function provideEids(request, payload) {
 function provideSegments(bidderRequest, payload) {
   const data = bidderRequest.ortb2?.user?.data;
   if (isArray(data)) {
-    const segments = data.filter(d => d?.segment).map(d => d.segment).filter(s => isArray(s)).flatMap(s => s);
+    const segments = data.filter(d => d?.segment).map(d => d.segment).filter(s => isArray(s)).flatMap(s => s).filter(s => s?.id);
     if (segments.length > 0) {
       if (!payload.user) {
         payload.user = {};
