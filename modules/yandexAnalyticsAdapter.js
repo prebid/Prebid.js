@@ -4,7 +4,6 @@ import { logError, logInfo } from '../src/utils.js';
 import CONSTANTS from '../src/constants.json';
 import * as events from '../src/events.js';
 
-const GVLID = 100500; // TODO to get GVLID and ask prebid where to get one
 const tagURL = `https://mc.yandex.com/metrika/tag_prebid.js`;
 
 const timeoutIds = {};
@@ -36,55 +35,21 @@ const clearWaitForTimeouts = (timeouts) => {
 const SEND_EVENTS_BUNDLE_TIMEOUT = 1500;
 const {
   EVENTS: {
-    AUCTION_INIT,
     AUCTION_END,
     BID_ADJUSTMENT,
     BID_TIMEOUT,
-    BID_REQUESTED,
     BID_RESPONSE,
-    BID_REJECTED,
-    NO_BID,
-    SEAT_NON_BID,
-    BID_WON,
-    BIDDER_DONE,
-    BIDDER_ERROR,
-    SET_TARGETING,
-    REQUEST_BIDS,
-    ADD_AD_UNITS,
-    AD_RENDER_FAILED,
-    AD_RENDER_SUCCEEDED,
-    TCF2_ENFORCEMENT,
-    BID_VIEWABLE,
-    STALE_RENDER,
-    BILLABLE_EVENT,
   },
 } = CONSTANTS;
 
 const EVENTS_TO_TRACK = [
-  AUCTION_INIT,
   AUCTION_END,
   BID_ADJUSTMENT,
   BID_TIMEOUT,
-  BID_REQUESTED,
   BID_RESPONSE,
-  BID_REJECTED,
-  NO_BID,
-  SEAT_NON_BID,
-  BID_WON,
-  BIDDER_DONE,
-  BIDDER_ERROR,
-  SET_TARGETING,
-  REQUEST_BIDS,
-  ADD_AD_UNITS,
-  AD_RENDER_FAILED,
-  AD_RENDER_SUCCEEDED,
-  TCF2_ENFORCEMENT,
-  BID_VIEWABLE,
-  STALE_RENDER,
-  BILLABLE_EVENT,
 ];
 
-const yandexAnalytics = Object.assign(buildAdapter({analyticsType: 'endpoint'}), {
+const yandexAnalytics = Object.assign(buildAdapter({ analyticsType: 'endpoint' }), {
   bufferedEvents: [],
   initTimeoutId: 0,
   counters: {},
@@ -126,8 +91,8 @@ const yandexAnalytics = Object.assign(buildAdapter({analyticsType: 'endpoint'}),
   },
 
   enableAnalytics: (config) => {
-    yandexAnalytics.opions = (config && config.options) || {};
-    const { counters } = yandexAnalytics.opions || {};
+    yandexAnalytics.options = (config && config.options) || {};
+    const { counters } = yandexAnalytics.options || {};
     const validCounters = counters.filter((counterOptions) => {
       if (!counterOptions) {
         return false;
@@ -202,7 +167,7 @@ const yandexAnalytics = Object.assign(buildAdapter({analyticsType: 'endpoint'}),
         const onScriptLoad = () => {
           coutnersToInit.forEach((counterOptions) => {
             window[`yaCounter${counterOptions.id}`] =
-                            new window.Ya.Metrika2(counterOptions);
+              new window.Ya.Metrika2(counterOptions);
             yandexAnalytics.onCounterInit(counterOptions.id);
           });
         };
@@ -219,8 +184,7 @@ const yandexAnalytics = Object.assign(buildAdapter({analyticsType: 'endpoint'}),
 
 adapterManager.registerAnalyticsAdapter({
   adapter: yandexAnalytics,
-  code: 'yandexAnalytics',
-  gvlid: GVLID
+  code: 'yandexAnalytics'
 });
 
 export default yandexAnalytics;
