@@ -150,6 +150,17 @@ function groupBy(array, keyFns) {
   return groups;
 }
 
+function getVersionValues (win) {
+  const returnObject = {};
+  if (win.yieldlove_ab?.yl_ver) {
+    returnObject.yl = win.yieldlove_ab?.yl_ver;
+  }
+  if (win.YLHH?.bidder?.pbjs?.version || win.pbjs?.version) {
+    returnObject.pb = win.YLHH?.bidder?.pbjs?.version || win.pbjs?.version
+  }
+  return returnObject;
+}
+
 function divideBidRequestsBySsat(bidRequests) {
   return groupBy(bidRequests, {'params.ssat': value => value !== 1}).map(group => group.values);
 }
@@ -204,6 +215,7 @@ export const spec = {
       ref: getTopWindowReferrer(),
       ssl: isSecureWindow(),
       mpa: isMainPageAccessible(),
+      ver: getVersionValues(win),
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
       ab: win['yieldlove_ab'],
       kvg: getGlobalKeyValues(),
@@ -211,11 +223,6 @@ export const spec = {
       url: refererInfo && (refererInfo.page || refererInfo.canonicalUrl || refererInfo.referer),
       schain: anyBid.schain
     };
-
-    const ver = {
-      yl: win.yieldlove_ab?.yl_ver,
-      pb: win.YLHH?.bidder?.pbjs?.version || win.pbjs?.version
-    }
 
     const user = utils.cleanObj({
       euids: anyBid.userId,
@@ -276,8 +283,6 @@ export const spec = {
 
         return Object.assign(bid, customAttrsFn(bidRequest));
       });
-
-      payload.ver = ver;
 
       return payload;
     }

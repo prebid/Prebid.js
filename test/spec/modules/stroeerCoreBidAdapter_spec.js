@@ -211,19 +211,6 @@ describe('stroeerCore bid adapter', function () {
     }
   });
 
-  const buildFakeYLHHWithPBVersion = (positionByAdUnitCode) => ({
-    bidder: {
-      tag: {
-        getMetaTagPositionBy(adUnitCode) {
-          return positionByAdUnitCode[adUnitCode];
-        }
-      },
-      pbjs: {
-        version: 1.2
-      }
-    }
-  });
-
   const createWindow = (href, params = {}) => {
     let {parent, referrer, top, frameElement, placementElements = []} = params;
     const protocol = href.startsWith('https') ? 'https:' : 'http:';
@@ -564,85 +551,7 @@ describe('stroeerCore bid adapter', function () {
       });
     });
 
-    describe('payload on server request info object, version variation 1', () => {
-      let topWin;
-      let win;
-
-      let placementElements;
-      beforeEach(() => {
-        placementElements = [createElement('div-1', 17), createElement('div-2', 54)];
-        ({topWin, win} = setupNestedWindows(sandbox, placementElements));
-        win.YLHH = buildFakeYLHH({
-          '137': 'div-1',
-          '248': 'div-2'
-        })
-        win.yieldlove_ab = {yl_ver: 1.1};
-        win.pbjs = {version: 1.5};
-      });
-
-      afterEach(() => {
-        sandbox.restore();
-      });
-
-      it('should have expected JSON structure', () => {
-        clock.tick(13500);
-        const bidReq = buildBidderRequest();
-
-        const UUID = 'fb6a39e3-083f-424c-9046-f1095e15f3d5';
-
-        const generateUUIDStub = sinon.stub(utils, 'generateUUID').returns(UUID);
-
-        const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
-
-        const expectedTimeout = bidderRequest.timeout - (13500 - bidderRequest.auctionStart);
-
-        assert.equal(expectedTimeout, 1500);
-
-        const expectedJsonPayload = {
-          'id': UUID,
-          'timeout': expectedTimeout,
-          'ref': topWin.document.referrer,
-          'mpa': true,
-          'ssl': false,
-          'ab': {
-            'yl_ver': 1.1
-          },
-          'yl2': false,
-          'url': 'https://www.example.com/index.html',
-          'bids': [{
-            'sid': 'NDA=',
-            'bid': 'bid1',
-            'viz': true,
-            'ban': {
-              'siz': [[300, 600], [160, 60]]
-            }
-          }, {
-            'sid': 'ODA=',
-            'bid': 'bid2',
-            'viz': true,
-            'ban': {
-              'siz': [[728, 90]]
-            }
-          }],
-          'ver': {
-            'pb': 1.5,
-            'yl': 1.1
-          },
-          'user': {
-            'euids': userIds
-          }
-        };
-
-        // trim away fields with undefined
-        const actualJsonPayload = JSON.parse(JSON.stringify(serverRequestInfo.data));
-
-        assert.deepEqual(actualJsonPayload, expectedJsonPayload);
-
-        generateUUIDStub.restore();
-      });
-    });
-
-    describe('payload on server request info object, no version variation', () => {
+    describe('payload on server request info object', () => {
       let topWin;
       let win;
 
@@ -698,83 +607,6 @@ describe('stroeerCore bid adapter', function () {
             }
           }],
           'ver': {},
-          'user': {
-            'euids': userIds
-          }
-        };
-
-        // trim away fields with undefined
-        const actualJsonPayload = JSON.parse(JSON.stringify(serverRequestInfo.data));
-
-        assert.deepEqual(actualJsonPayload, expectedJsonPayload);
-
-        generateUUIDStub.restore();
-      });
-    });
-
-    describe('payload on server request info object, version variation 2', () => {
-      let topWin;
-      let win;
-
-      let placementElements;
-      beforeEach(() => {
-        placementElements = [createElement('div-1', 17), createElement('div-2', 54)];
-        ({topWin, win} = setupNestedWindows(sandbox, placementElements));
-        win.YLHH = buildFakeYLHHWithPBVersion({
-          '137': 'div-1',
-          '248': 'div-2'
-        })
-        win.yieldlove_ab = {yl_ver:1.1};
-      });
-
-      afterEach(() => {
-        sandbox.restore();
-      });
-
-      it('should have expected JSON structure', () => {
-        clock.tick(13500);
-        const bidReq = buildBidderRequest();
-
-        const UUID = 'fb6a39e3-083f-424c-9046-f1095e15f3d5';
-
-        const generateUUIDStub = sinon.stub(utils, 'generateUUID').returns(UUID);
-
-        const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
-
-        const expectedTimeout = bidderRequest.timeout - (13500 - bidderRequest.auctionStart);
-
-        assert.equal(expectedTimeout, 1500);
-
-        const expectedJsonPayload = {
-          'id': UUID,
-          'timeout': expectedTimeout,
-          'ref': topWin.document.referrer,
-          'mpa': true,
-          'ssl': false,
-          'ab': {
-            yl_ver: 1.1
-          },
-          'yl2': false,
-          'url': 'https://www.example.com/index.html',
-          'bids': [{
-            'sid': 'NDA=',
-            'bid': 'bid1',
-            'viz': true,
-            'ban': {
-              'siz': [[300, 600], [160, 60]]
-            }
-          }, {
-            'sid': 'ODA=',
-            'bid': 'bid2',
-            'viz': true,
-            'ban': {
-              'siz': [[728, 90]]
-            }
-          }],
-          'ver': {
-            'pb':1.2,
-            'yl':1.1
-          },
           'user': {
             'euids': userIds
           }
@@ -1036,6 +868,45 @@ describe('stroeerCore bid adapter', function () {
       });
 
       describe('optional fields', () => {
+        it('gets version variables', () => {
+          win.YLHH.bidder.pbjs = {version: 1.2}
+          win.yieldlove_ab = {yl_ver: 1.1};
+          const bidReq = buildBidderRequest();
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+          assert.deepEqual(serverRequestInfo.data.ver, {'yl': 1.1, 'pb': 1.2})
+        })
+        it('functions with missing pb version value', () => {
+          win.yieldlove_ab = {yl_ver: 1.1};
+          const bidReq = buildBidderRequest();
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+          assert.deepEqual(serverRequestInfo.data.ver, {'yl': 1.1})
+        });
+        it('functions with two pb values', () => {
+          win.yieldlove_ab = {yl_ver: 1.1};
+          win.YLHH = {bidder: {pbjs: {version: 2}}}
+          win.pbjs = {version: 3}
+          const bidReq = buildBidderRequest();
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+          assert.deepEqual(serverRequestInfo.data.ver, {'yl': 1.1, 'pb': 2})
+        });
+        it('functions with no yl value', () => {
+          win.YLHH = {bidder: {pbjs: {version: 2}}}
+          const bidReq = buildBidderRequest();
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+          assert.deepEqual(serverRequestInfo.data.ver, {'pb': 2})
+        });
+        it('functions with no ylhh pb value', () => {
+          win.yieldlove_ab = {yl_ver: 1.1};
+          win.pbjs = {version: 3}
+          const bidReq = buildBidderRequest();
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+          assert.deepEqual(serverRequestInfo.data.ver, {'yl': 1.1, 'pb': 3})
+        });
+        it('functions with no values', () => {
+          const bidReq = buildBidderRequest();
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+          assert.deepEqual(serverRequestInfo.data.ver, {})
+        });
         it('should use ssat value from config', () => {
           const bidReq = buildBidderRequest();
           bidReq.bids.length = 1;
