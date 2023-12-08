@@ -2,7 +2,7 @@ import {assert} from 'chai';
 import {spec} from 'modules/stroeerCoreBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
-import {getGlobal} from '../../../src/prebidGlobal';
+import * as prebidGlobal from '../../../src/prebidGlobal';
 
 describe('stroeerCore bid adapter', function () {
   let sandbox;
@@ -870,29 +870,28 @@ describe('stroeerCore bid adapter', function () {
 
       describe('optional fields', () => {
         describe('version fields', () => {
-          pbjs = getGlobal();
           it('gets version variables', () => {
-            pbjs.version = 1.2;
+            const pbVerStub = sinon.stub(prebidGlobal, 'getGlobal').returns({version: 1.2});
             win.YLHH.bidder.settings = {version: 1.1};
             const bidReq = buildBidderRequest();
             const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
             assert.deepEqual(serverRequestInfo.data.ver, {'yl': 1.1, 'pb': 1.2})
+            pbVerStub.restore();
           })
           it('functions with no pb value', () => {
-            pbjs.version = undefined;
             win.YLHH.bidder.settings = {version: 1.1};
             const bidReq = buildBidderRequest();
             const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
             assert.deepEqual(serverRequestInfo.data.ver, {'yl': 1.1, 'pb': undefined})
           });
           it('functions with no yl value', () => {
-            pbjs.version = 2;
+            const pbVerStub = sinon.stub(prebidGlobal, 'getGlobal').returns({version: 2});
             const bidReq = buildBidderRequest();
             const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
             assert.deepEqual(serverRequestInfo.data.ver, {'pb': 2, 'yl': undefined})
+            pbVerStub.restore()
           });
           it('functions with no values', () => {
-            pbjs.version = undefined;
             const bidReq = buildBidderRequest();
             const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
             assert.deepEqual(serverRequestInfo.data.ver, {'yl': undefined, 'pb': undefined})
