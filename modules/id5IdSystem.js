@@ -183,7 +183,7 @@ export const id5IdSubmodule = {
     }
 
     const resp = function (cbFunction) {
-      new IdFetchFlow(submoduleConfig, consentData, cacheIdObj, uspDataHandler.getConsentData()).execute()
+      buildFetchFlow(submoduleConfig, consentData, cacheIdObj, uspDataHandler.getConsentData()).execute()
         .then(response => {
           cbFunction(response)
         })
@@ -234,7 +234,12 @@ export const id5IdSubmodule = {
   },
 };
 
-class IdFetchFlow {
+// Factory to be able to intercept creation process of the flow for testing
+export function buildFetchFlow(submoduleConfig, gdprConsentData, cacheIdObj, usPrivacyData) {
+  return new IdFetchFlow(submoduleConfig, gdprConsentData, cacheIdObj, usPrivacyData);
+}
+
+export class IdFetchFlow {
   constructor(submoduleConfig, gdprConsentData, cacheIdObj, usPrivacyData) {
     this.submoduleConfig = submoduleConfig
     this.gdprConsentData = gdprConsentData
@@ -247,15 +252,16 @@ class IdFetchFlow {
    * @returns {Promise<IdResponse>} The result of calling the server side
    */
   async execute() {
+    const configCallPromise = this.#callForConfig();
     if (this.#isExternalModule()) {
       try {
-        return this.#externalModuleFlow();
+        return await this.#externalModuleFlow(configCallPromise);
       } catch (error) {
-        logError('Error while performing ID5 external module flow. Continuing with regular flow.', error);
-        return this.#regularFlow();
+        logError(LOG_PREFIX + 'Error while performing ID5 external module flow. Continuing with regular flow.', error);
+        return this.#regularFlow(configCallPromise);
       }
     } else {
-      return this.#regularFlow();
+      return this.#regularFlow(configCallPromise);
     }
   }
 
@@ -264,40 +270,35 @@ class IdFetchFlow {
   }
 
   // eslint-disable-next-line no-dupe-class-members
-  async #externalModuleFlow() {
-    const results = await GreedyPromise.allSettled([
-      this.#loadExternalModule(this.submoduleConfig.params.externalModuleUrl),
-      this.#callForConfig(this.submoduleConfig)
-    ]);
+  async #externalModuleFlow(configCallPromise) {
+    await this.#loadExternalModule(this.submoduleConfig.params.externalModuleUrl);
+    const fetchFlowConfig = await configCallPromise;
 
-    if (isRejected(results[0])) {
-      throw new Error('Could not load external module:', results[0].reason);
-    }
-    if (isRejected(results[1])) {
-      throw new Error('Could not load configuration:', results[0].reason);
-    }
-    const dynamicConfig = results[1].value;
-    const id5PrebidIntegration = window.id5Prebid.integration;
-    return id5PrebidIntegration.fetchId5Id(dynamicConfig, this.submoduleConfig.params, getRefererInfo(), this.gdprConsentData, this.usPrivacyData);
+    return this.#getExternalIntegration().fetchId5Id(fetchFlowConfig, this.submoduleConfig.params, getRefererInfo(), this.gdprConsentData, this.usPrivacyData);
   }
 
   // eslint-disable-next-line no-dupe-class-members
-  async #regularFlow() {
-    const fetchFlowConfig = await this.#callForConfig(this.submoduleConfig);
+  #getExternalIntegration() {
+    return window.id5Prebid && window.id5Prebid.integration;
+  }
+
+  // eslint-disable-next-line no-dupe-class-members
+  async #regularFlow(configCallPromise) {
+    const fetchFlowConfig = await configCallPromise;
     const extensionsData = await this.#callForExtensions(fetchFlowConfig.extensionsCall);
     const fetchCallResponse = await this.#callId5Fetch(fetchFlowConfig.fetchCall, extensionsData);
     return this.#processFetchCallResponse(fetchCallResponse);
   }
 
   // eslint-disable-next-line no-dupe-class-members
-  async #callForConfig(submoduleConfig) {
-    let url = submoduleConfig.params.configUrl || ID5_API_CONFIG_URL; // override for debug/test purposes only
+  async #callForConfig() {
+    let url = this.submoduleConfig.params.configUrl || ID5_API_CONFIG_URL; // override for debug/test purposes only
     const response = await fetch(url, {
       method: 'POST',
-      body: JSON.stringify(submoduleConfig)
+      body: JSON.stringify(this.submoduleConfig)
     });
     if (!response.ok) {
-      throw new Error('Error while calling config endpoint: ', response)
+      throw new Error('Error while calling config endpoint: ', response);
     }
     const dynamicConfig = await response.json();
     logInfo(LOG_PREFIX + 'config response received from the server', dynamicConfig);
@@ -309,12 +310,12 @@ class IdFetchFlow {
     if (extensionsCallConfig === undefined) {
       return undefined;
     }
-    const extensionsUrl = extensionsCallConfig.url
-    const method = extensionsCallConfig.method || 'GET'
-    const body = method === 'GET' ? undefined : JSON.stringify(extensionsCallConfig.body || {})
+    const extensionsUrl = extensionsCallConfig.url;
+    const method = extensionsCallConfig.method || 'GET';
+    const body = method === 'GET' ? undefined : JSON.stringify(extensionsCallConfig.body || {});
     const response = await fetch(extensionsUrl, { method, body });
     if (!response.ok) {
-      throw new Error('Error while calling extensions endpoint: ', response)
+      throw new Error('Error while calling extensions endpoint: ', response);
     }
     const extensions = await response.json();
     logInfo(LOG_PREFIX + 'extensions response received from the server', extensions);
@@ -332,7 +333,7 @@ class IdFetchFlow {
     });
     const response = await fetch(fetchUrl, { method: 'POST', body, credentials: 'include' });
     if (!response.ok) {
-      throw new Error('Error while calling fetch endpoint: ', response)
+      throw new Error('Error while calling fetch endpoint: ', response);
     }
     const fetchResponse = await response.json();
     logInfo(LOG_PREFIX + 'fetch response received from the server', fetchResponse);
@@ -404,12 +405,16 @@ class IdFetchFlow {
   async #loadExternalModule() {
     const url = this.submoduleConfig.params.externalModuleUrl;
     return new GreedyPromise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.onload = resolve;
-      script.onerror = reject;
-      script.type = 'text/javascript';
-      script.src = url;
-      document.head.appendChild(script);
+      if (this.#getExternalIntegration()) {
+        resolve();
+      } else {
+        const script = document.createElement('script');
+        script.onload = resolve;
+        script.onerror = reject;
+        script.type = 'text/javascript';
+        script.src = url;
+        document.head.appendChild(script);
+      }
     });
   }
 }
@@ -534,10 +539,6 @@ function hasWriteConsentToLocalStorage(consentData) {
     return false;
   }
   return true;
-}
-
-function isRejected(promiseResult) {
-  return promiseResult.status === 'rejected';
 }
 
 submodule('userId', id5IdSubmodule);
