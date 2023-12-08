@@ -28,10 +28,24 @@ const converter = ortbConverter({
 
     return request;
   },
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+
+    deepSetValue(imp, 'ext.sparteo.params', bidRequest.params);
+
+    return imp;
+  },
   bidResponse(buildBidResponse, bid, context) {
     context.mediaType = deepAccess(bid, 'ext.prebid.type');
 
-    return buildBidResponse(bid, context)
+    const response = buildBidResponse(bid, context);
+
+    if (context.mediaType == 'video') {
+      response.nurl = bid.nurl;
+      response.vastUrl = deepAccess(bid, 'ext.prebid.cache.vastXml.url') ?? null;
+    }
+
+    return response;
   }
 });
 
@@ -113,10 +127,8 @@ export const spec = {
   onTimeout: function(timeoutData) {},
 
   onBidWon: function(bid) {
-    if (bid && bid.nurl && bid.nurl.length > 0) {
-      bid.nurl.forEach(function(winUrl) {
-        triggerPixel(winUrl, null);
-      });
+    if (bid && bid.nurl) {
+      triggerPixel(bid.nurl, null);
     }
   },
 

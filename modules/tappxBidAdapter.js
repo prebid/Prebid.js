@@ -276,7 +276,11 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     site.name = bundle;
     site.page = bidderRequest?.refererInfo?.page || deepAccess(validBidRequests, 'params.site.page') || bidderRequest?.refererInfo?.topmostLocation || window.location.href || bundle;
     site.domain = bundle;
-    site.ref = bidderRequest?.refererInfo?.ref || window.top.document.referrer || '';
+    try {
+      site.ref = bidderRequest?.refererInfo?.ref || window.top.document.referrer || '';
+    } catch (e) {
+      site.ref = bidderRequest?.refererInfo?.ref || window.document.referrer || '';
+    }
     site.ext = {};
     site.ext.is_amp = bidderRequest?.refererInfo?.isAmp || 0;
     site.ext.page_da = deepAccess(validBidRequests, 'params.site.page') || '-';
