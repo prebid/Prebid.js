@@ -183,7 +183,8 @@ export const id5IdSubmodule = {
     }
 
     const resp = function (cbFunction) {
-      buildFetchFlow(submoduleConfig, consentData, cacheIdObj, uspDataHandler.getConsentData()).execute()
+      const fetchFlow = new IdFetchFlow(submoduleConfig, consentData, cacheIdObj, uspDataHandler.getConsentData());
+      fetchFlow.execute()
         .then(response => {
           cbFunction(response)
         })
@@ -234,11 +235,6 @@ export const id5IdSubmodule = {
   },
 };
 
-// Factory to be able to intercept creation process of the flow for testing
-export function buildFetchFlow(submoduleConfig, gdprConsentData, cacheIdObj, usPrivacyData) {
-  return new IdFetchFlow(submoduleConfig, gdprConsentData, cacheIdObj, usPrivacyData);
-}
-
 export class IdFetchFlow {
   constructor(submoduleConfig, gdprConsentData, cacheIdObj, usPrivacyData) {
     this.submoduleConfig = submoduleConfig
@@ -271,7 +267,7 @@ export class IdFetchFlow {
 
   // eslint-disable-next-line no-dupe-class-members
   async #externalModuleFlow(configCallPromise) {
-    await this.#loadExternalModule(this.submoduleConfig.params.externalModuleUrl);
+    await loadExternalModule(this.submoduleConfig.params.externalModuleUrl);
     const fetchFlowConfig = await configCallPromise;
 
     return this.#getExternalIntegration().fetchId5Id(fetchFlowConfig, this.submoduleConfig.params, getRefererInfo(), this.gdprConsentData, this.usPrivacyData);
@@ -400,23 +396,22 @@ export class IdFetchFlow {
     }
     return fetchCallResponse;
   }
+}
 
-  // eslint-disable-next-line no-dupe-class-members
-  async #loadExternalModule() {
-    const url = this.submoduleConfig.params.externalModuleUrl;
-    return new GreedyPromise((resolve, reject) => {
-      if (this.#getExternalIntegration()) {
-        resolve();
-      } else {
-        const script = document.createElement('script');
-        script.onload = resolve;
-        script.onerror = reject;
-        script.type = 'text/javascript';
-        script.src = url;
-        document.head.appendChild(script);
-      }
-    });
-  }
+async function loadExternalModule(url) {
+  return new GreedyPromise((resolve, reject) => {
+    if (window.id5Prebid) {
+      // Already loaded
+      resolve();
+    } else {
+      const script = document.createElement('script');
+      script.onload = resolve;
+      script.onerror = reject;
+      script.type = 'text/javascript';
+      script.src = url;
+      document.head.appendChild(script);
+    }
+  });
 }
 
 function validateConfig(config) {

@@ -280,7 +280,7 @@ describe('ID5 ID System', function () {
       expect(requestBody.gdpr).is.eq(0);
       expect(requestBody.gdpr_consent).is.undefined;
       expect(requestBody.us_privacy).is.undefined;
-      expect(requestBody.id5System.storage).is.deep.eq(config.id5System.storage)
+      expect(requestBody.storage).is.deep.eq(config.storage)
 
       fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
 
@@ -708,31 +708,28 @@ describe('ID5 ID System', function () {
     });
 
     describe('with successful external module call', function() {
-      let mockSuccessfulModuleCall;
+      const MOCK_RESPONSE = {
+        ...ID5_JSON_RESPONSE,
+        universal_uid: 'my_mock_reponse'
+      };
       let mockId5ExternalModule;
+
       beforeEach(() => {
-        mockSuccessfulModuleCall = sinon.stub(id5System, 'buildFetchFlow')
-          .callsFake(() => {
-            const flow = new IdFetchFlow(...arguments);
-            sinon.stub(flow, '#loadExternalModule').resolves();
-            return flow;
-          });
         window.id5Prebid = {
           integration: {
             fetchId5Id: function() {}
           }
         };
         mockId5ExternalModule = sinon.stub(window.id5Prebid.integration, 'fetchId5Id')
-          .resolves(ID5_JSON_RESPONSE);
+          .resolves(MOCK_RESPONSE);
       });
 
       this.afterEach(() => {
-        mockSuccessfulModuleCall.restore();
         mockId5ExternalModule.restore();
         delete window.id5Prebid;
       });
 
-      it.only('should retrieve the response from the external module interface', async function() {
+      it('should retrieve the response from the external module interface', async function() {
         const xhrServerMock = new XhrServerMock(server);
         const config = getId5FetchConfig();
         config.params.externalModuleUrl = 'https://test-me.test';
@@ -744,30 +741,16 @@ describe('ID5 ID System', function () {
         configRequest.respond(200, HEADERS_CONTENT_TYPE_JSON, JSON.stringify(ID5_API_CONFIG));
 
         const submoduleResponse = await submoduleResponsePromise;
-        expect(submoduleResponse).to.deep.equal(ID5_JSON_RESPONSE);
+        expect(submoduleResponse).to.deep.equal(MOCK_RESPONSE);
         expect(mockId5ExternalModule.calledOnce);
       });
     });
 
-    describe('with failing external module call', function() {
-      let mockFailingModuleCall;
-      beforeEach(() => {
-        mockFailingModuleCall = sinon.stub(id5System, 'buildFetchFlow')
-          .callsFake(() => {
-            const flow = new IdFetchFlow(...arguments);
-            sinon.stub(flow, '#loadExternalModule').rejects('FAKE ERROR');
-            return flow;
-          });
-      });
-
-      this.afterEach(() => {
-        mockFailingModuleCall.restore();
-      });
-
+    describe('with failing external module loading', function() {
       it('should fallback to regular logic if external module fails to load', async function() {
         const xhrServerMock = new XhrServerMock(server);
         const config = getId5FetchConfig();
-        config.params.externalModuleUrl = 'https://test-me.test';
+        config.params.externalModuleUrl = 'https://test-me.test'; // Fails by loading this fake URL
 
         // Trigger the fetch but we await on it later
         const submoduleResponsePromise = callSubmoduleGetId(config, undefined, undefined);
@@ -797,7 +780,7 @@ describe('ID5 ID System', function () {
     })
   });
 
-  describe('Local id5System.storage', () => {
+  describe('Local storage', () => {
     let sandbox;
     beforeEach(() => {
       sandbox = sinon.sandbox.create();
@@ -935,7 +918,7 @@ describe('ID5 ID System', function () {
 
       id5System.storeNbInCache(ID5_TEST_PARTNER_ID, 1);
       let id5Config = getFetchLocalStorageConfig();
-      id5Config.userSync.userIds[0].id5System.storage.refreshInSeconds = 2;
+      id5Config.userSync.userIds[0].storage.refreshInSeconds = 2;
       init(config);
       setSubmoduleRegistry([id5System.id5IdSubmodule]);
       config.setConfig(id5Config);
