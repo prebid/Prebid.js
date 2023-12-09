@@ -406,6 +406,78 @@ describe('nextMillenniumBidAdapterTests', () => {
     }
   });
 
+  describe('function setEids', () => {
+    const dataTests = [
+      {
+        title: 'site.pagecat, site.content.cat and site.content.language',
+        data: {
+          postBody: {},
+          bid: {
+            userIdAsEids: undefined,
+          },
+        },
+
+        expected: {},
+      },
+
+      {
+        title: 'site.pagecat, site.content.cat and site.content.language',
+        data: {
+          postBody: {},
+          bid: {
+            userIdAsEids: [],
+          },
+        },
+
+        expected: {},
+      },
+
+      {
+        title: 'site.pagecat, site.content.cat and site.content.language',
+        data: {
+          postBody: {},
+          bid: {
+            userIdAsEids: [
+              {
+                source: '33across.com',
+                uids: [{id: 'some-random-id-value', atype: 1}],
+              },
+
+              {
+                source: 'utiq.com',
+                uids: [{id: 'some-random-id-value', atype: 1}],
+              },
+            ],
+          },
+        },
+
+        expected: {
+          user: {
+            eids: [
+              {
+                source: '33across.com',
+                uids: [{id: 'some-random-id-value', atype: 1}],
+              },
+
+              {
+                source: 'utiq.com',
+                uids: [{id: 'some-random-id-value', atype: 1}],
+              },
+            ],
+          },
+        },
+      },
+    ];
+
+    for (let { title, data, expected } of dataTests) {
+      it(title, () => {
+        const { postBody, bid } = data;
+        setEids(postBody, bid);
+        expect(postBody).to.deep.equal(expected);
+      });
+    }
+  });
+
   const bidRequestData = [{
     adUnitCode: 'test-div',
     bidId: 'bid1234',
