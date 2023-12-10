@@ -870,28 +870,37 @@ describe('stroeerCore bid adapter', function () {
 
       describe('optional fields', () => {
         describe('version fields', () => {
-          it('gets version variables', () => {
-            const pbVerStub = sinon.stub(prebidGlobal, 'getGlobal').returns({version: 1.2});
-            win.YLHH.bidder.settings = {version: 1.1};
-            const bidReq = buildBidderRequest();
-            const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
-            assert.deepEqual(serverRequestInfo.data.ver, {'yl': 1.1, 'pb': 1.2})
-            pbVerStub.restore();
-          })
-          it('functions with no pb value', () => {
-            win.YLHH.bidder.settings = {version: 1.1};
-            const bidReq = buildBidderRequest();
-            const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
-            assert.deepEqual(serverRequestInfo.data.ver, {'yl': 1.1, 'pb': undefined})
+          let pbVerStub
+          beforeEach(() => {
+            pbVerStub = sinon.stub(prebidGlobal, 'getGlobal')
           });
-          it('functions with no yl value', () => {
-            const pbVerStub = sinon.stub(prebidGlobal, 'getGlobal').returns({version: 2});
-            const bidReq = buildBidderRequest();
-            const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
-            assert.deepEqual(serverRequestInfo.data.ver, {'pb': 2, 'yl': undefined})
+
+          afterEach(() => {
             pbVerStub.restore()
           });
+
+          it('gets version variables', () => {
+            pbVerStub.returns({version: '1.2'});
+            win.YLHH.bidder.settings = {version: '1.1'};
+            const bidReq = buildBidderRequest();
+            const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+            assert.deepEqual(serverRequestInfo.data.ver, {'yl': '1.1', 'pb': '1.2'})
+          })
+          it('functions with no pb value', () => {
+            pbVerStub.returns({version: undefined});
+            win.YLHH.bidder.settings = {version: '1.1'};
+            const bidReq = buildBidderRequest();
+            const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+            assert.deepEqual(serverRequestInfo.data.ver, {'yl': '1.1', 'pb': undefined})
+          });
+          it('functions with no yl value', () => {
+            pbVerStub.returns({version: '2'});
+            const bidReq = buildBidderRequest();
+            const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+            assert.deepEqual(serverRequestInfo.data.ver, {'pb': '2', 'yl': undefined})
+          });
           it('functions with no values', () => {
+            pbVerStub.returns({version: undefined});
             const bidReq = buildBidderRequest();
             const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
             assert.deepEqual(serverRequestInfo.data.ver, {'yl': undefined, 'pb': undefined})
