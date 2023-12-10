@@ -62,19 +62,19 @@ let _disableUserSyncs;
 function updateInfiniteScrollFlag() {
   const { scrollHeight } = document.documentElement;
 
-  if (window.originalURL === undefined) {
-    window.originalURL = window.location.href;
+  if (invibes.originalURL === undefined) {
+    invibes.originalURL = window.location.href;
     return;
   }
 
-  if (window.originalScrollHeight === undefined) {
-    window.originalScrollHeight = scrollHeight;
+  if (invibes.originalScrollHeight === undefined) {
+    invibes.originalScrollHeight = scrollHeight;
     return;
   }
 
   const currentURL = window.location.href;
 
-  if (scrollHeight > window.originalScrollHeight && window.originalURL !== currentURL) {
+  if (scrollHeight > invibes.originalScrollHeight && invibes.originalURL !== currentURL) {
     isInfiniteScrollPage = true;
   }
 }
