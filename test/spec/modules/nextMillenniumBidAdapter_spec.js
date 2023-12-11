@@ -4,6 +4,7 @@ import {
   replaceUsersyncMacros,
   setConsentStrings,
   setOrtb2Parameters,
+  setEids,
   spec,
 } from 'modules/nextMillenniumBidAdapter.js';
 
@@ -409,7 +410,7 @@ describe('nextMillenniumBidAdapterTests', () => {
   describe('function setEids', () => {
     const dataTests = [
       {
-        title: 'site.pagecat, site.content.cat and site.content.language',
+        title: 'setEids - userIdAsEids is empty',
         data: {
           postBody: {},
           bid: {
@@ -421,7 +422,7 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
 
       {
-        title: 'site.pagecat, site.content.cat and site.content.language',
+        title: 'setEids - userIdAsEids - array is empty',
         data: {
           postBody: {},
           bid: {
@@ -433,7 +434,7 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
 
       {
-        title: 'site.pagecat, site.content.cat and site.content.language',
+        title: 'setEids - userIdAsEids is',
         data: {
           postBody: {},
           bid: {
