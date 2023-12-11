@@ -217,6 +217,14 @@ export const liveIntentIdSubmodule = {
         result.sovrn = { 'id': value.sovrn }
       }
 
+      if (value.openx) {
+        result.openx = { 'id': value.openx }
+      }
+
+      if (value.pubmatic) {
+        result.pubmatic = { 'id': value.pubmatic }
+      }
+
       return result
     }
 
