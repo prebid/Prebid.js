@@ -422,7 +422,15 @@ describe('bidderFactory', () => {
       });
 
       describe('browsingTopics ajax option', () => {
-        let transmitUfpdAllowed, bidder;
+        let transmitUfpdAllowed, bidder, origBS;
+        before(() => {
+          origBS = window.$$PREBID_GLOBAL$$.bidderSettings;
+        })
+
+        after(() => {
+          window.$$PREBID_GLOBAL$$.bidderSettings = origBS;
+        });
+
         beforeEach(() => {
           activityRules.isActivityAllowed.reset();
           activityRules.isActivityAllowed.callsFake((activity) => activity === ACTIVITY_TRANSMIT_UFPD ? transmitUfpdAllowed : true);
@@ -448,49 +456,71 @@ describe('bidderFactory', () => {
         });
 
         Object.entries({
-          'allowed': true,
-          'not allowed': false
-        }).forEach(([t, allow]) => {
-          it(`should be set to ${allow} when transmitUfpd is ${t}`, () => {
-            transmitUfpdAllowed = allow;
-            spec.buildRequests.returns([
-              {
-                method: 'GET',
-                url: '1',
-              },
-              {
-                method: 'POST',
-                url: '2',
-                data: {}
-              },
-              {
-                method: 'GET',
-                url: '3',
-                options: {
-                  browsingTopics: true
-                }
-              },
-              {
-                method: 'POST',
-                url: '4',
-                data: {},
-                options: {
-                  browsingTopics: true
+          'omitted': [undefined, true],
+          'enabled': [true, true],
+          'disabled': [false, false]
+        }).forEach(([t, [topicsHeader, enabled]]) => {
+          describe(`when bidderSettings.topicsHeader is ${t}`, () => {
+            beforeEach(() => {
+              window.$$PREBID_GLOBAL$$.bidderSettings = {
+                [CODE]: {
+                  topicsHeader: topicsHeader
                 }
               }
-            ]);
-            bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-            ['1', '2', '3', '4'].forEach(url => {
-              sinon.assert.calledWith(
-                ajaxStub,
-                url,
-                sinon.match.any,
-                sinon.match.any,
-                sinon.match({browsingTopics: allow})
-              );
             });
-          });
-        });
+
+            afterEach(() => {
+              delete window.$$PREBID_GLOBAL$$.bidderSettings[CODE];
+            });
+
+            Object.entries({
+              'allowed': true,
+              'not allowed': false
+            }).forEach(([t, allow]) => {
+              const shouldBeSet = allow && enabled;
+
+              it(`should be set to ${shouldBeSet} when transmitUfpd is ${t}`, () => {
+                transmitUfpdAllowed = allow;
+                spec.buildRequests.returns([
+                  {
+                    method: 'GET',
+                    url: '1',
+                  },
+                  {
+                    method: 'POST',
+                    url: '2',
+                    data: {}
+                  },
+                  {
+                    method: 'GET',
+                    url: '3',
+                    options: {
+                      browsingTopics: true
+                    }
+                  },
+                  {
+                    method: 'POST',
+                    url: '4',
+                    data: {},
+                    options: {
+                      browsingTopics: true
+                    }
+                  }
+                ]);
+                bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+                ['1', '2', '3', '4'].forEach(url => {
+                  sinon.assert.calledWith(
+                    ajaxStub,
+                    url,
+                    sinon.match.any,
+                    sinon.match.any,
+                    sinon.match({browsingTopics: shouldBeSet})
+                  );
+                });
+              });
+            });
+          })
+        })
       });
 
       it('should not add bids for each placement code if no requests are given', function () {
