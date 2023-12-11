@@ -9,7 +9,7 @@ into creative frames:
 `creative-renderer-*` library. These libraries are committed in source so that they are available to NPM consumers. 
 - At render time, Prebid passes the appropriate renderer's source string to the remote creative, which then runs it.
 
-The goal is to have as simple, lightweight, and unchanging creative script as possible, but still allow the possibility
+The goal is to have a creative script that is as simple, lightweight, and unchanging as possible, but still allow the possibility
 of complex or frequently updated rendering logic. Compared to the approach taken by [PUC](https://github.com/prebid/prebid-universal-creative), this:
 
 - should perform marginally better: the creative only runs logic that is pertinent (for example, it sees native logic only on native bids);
@@ -31,7 +31,7 @@ where:
 
  - `data` is rendering data about the winning bid, and varies depending on the bid type - see `getRenderingData` in `adRendering.js`;
  - `mkFrame(document, attributes)` is a utility that creates a frame with the given attributes and convenient defaults (no border, margin, and scrolling);
- - `sendMessage(messageType, payload)` is the mechanism by which the renderer/creative can communicate back with Prebid - see `adRendering.js:handleCreativeMessage`.
+ - `sendMessage(messageType, payload)` is the mechanism by which the renderer/creative can communicate back with Prebid - see `creativeMessageHandler` in `adRendering.js`;
  - `win` is the window to render into; note that this is not the same window that runs the renderer.
  
 The function may return a promise; if it does and the promise rejects, or if the function throws, an AD_RENDER_FAILED event is emitted in Prebid. Otherwise an AD_RENDER_SUCCEEDED is fired 
