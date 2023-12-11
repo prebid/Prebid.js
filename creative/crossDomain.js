@@ -71,8 +71,13 @@ export function renderer(win) {
           srcdoc: `<script>${data.renderer}</script>`
         });
         renderer.onload = guard(function () {
-          Promise.resolve(renderer.contentWindow.render(data, {sendMessage, mkFrame}, win))
-            .then(() => sendMessage(MESSAGE_EVENT, {event: EVENT_AD_RENDER_SUCCEEDED}), onError);
+          const W = renderer.contentWindow;
+          // NOTE: on Firefox, `Promise.resolve(P)` or `new Promise((resolve) => resolve(P))`
+          // does not appear to work if P comes from another frame
+          W.Promise.resolve(W.render(data, {sendMessage, mkFrame}, win)).then(
+            () => sendMessage(MESSAGE_EVENT, {event: EVENT_AD_RENDER_SUCCEEDED}),
+            onError
+          )
         });
         win.document.body.appendChild(renderer);
       }
