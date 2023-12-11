@@ -403,7 +403,7 @@ describe('nextMillenniumBidAdapterTests', () => {
         setOrtb2Parameters(postBody, ortb2);
         expect(postBody).to.deep.equal(expected);
       });
-    }
+    };
   });
 
   describe('function setEids', () => {
