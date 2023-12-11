@@ -4,8 +4,6 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js'
 import * as utils from '../src/utils.js'
 import {getGlobal} from '../src/prebidGlobal.js'
 
-
-
 // Do not import POLYFILLS from core-js. Most likely until next major update (v4).
 // Prebid.js committers updated core-js to version 3 on v3.19.0 release (9/5/2020).
 // This broke imports. We need to be backwards compatible since this adapter is copied into
@@ -155,10 +153,14 @@ function groupBy(array, keyFns) {
 
 function getVersionValues (win) {
   const pbjs = getGlobal();
-  return {
+  var versionObject = {
     yl: win.YLHH?.bidder?.settings?.version,
     pb: pbjs.version
   };
+
+  versionObject.mt = win?.SDG?.version && win.SDG.version()
+
+  return versionObject
 }
 
 function divideBidRequestsBySsat(bidRequests) {
