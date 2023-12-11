@@ -437,7 +437,7 @@ function getDeviceObj() {
 }
 
 function getSua() {
-  let {brands, mobile, platform} = window?.navigator?.userAgentData;
+  let {brands, mobile, platform} = (window?.navigator?.userAgentData || {});
   if (!(brands && platform)) return undefined;
 
   return {
