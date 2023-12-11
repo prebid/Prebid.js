@@ -80,7 +80,14 @@ const getRequests = (conf, validBidRequests, bidderRequest) => {
 
   Object.keys(requestBySiteId).forEach((key) => {
     let data = {
-      bidderRequest: Object.assign({}, {bids: requestBySiteId[key], invalidBidsCount, ...bidderRequestData})
+      bidderRequest: Object.assign({},
+        {
+          bids: requestBySiteId[key],
+          invalidBidsCount,
+          prebidVersion: '$prebid.version$',
+          ...bidderRequestData
+        }
+      )
     };
 
     request.push(Object.assign({}, {data, ...conf}));
