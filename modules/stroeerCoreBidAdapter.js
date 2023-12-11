@@ -2,6 +2,9 @@ import {registerBidder} from '../src/adapters/bidderFactory.js'
 import {ajax} from '../src/ajax.js'
 import {BANNER, VIDEO} from '../src/mediaTypes.js'
 import * as utils from '../src/utils.js'
+import {getGlobal} from '../src/prebidGlobal.js'
+
+
 
 // Do not import POLYFILLS from core-js. Most likely until next major update (v4).
 // Prebid.js committers updated core-js to version 3 on v3.19.0 release (9/5/2020).
@@ -150,6 +153,14 @@ function groupBy(array, keyFns) {
   return groups;
 }
 
+function getVersionValues (win) {
+  const pbjs = getGlobal();
+  return {
+    yl: win.YLHH?.bidder?.settings?.version,
+    pb: pbjs.version
+  };
+}
+
 function divideBidRequestsBySsat(bidRequests) {
   return groupBy(bidRequests, {'params.ssat': value => value !== 1}).map(group => group.values);
 }
@@ -204,6 +215,7 @@ export const spec = {
       ref: getTopWindowReferrer(),
       ssl: isSecureWindow(),
       mpa: isMainPageAccessible(),
+      ver: getVersionValues(win),
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
       ab: win['yieldlove_ab'],
       kvg: getGlobalKeyValues(),

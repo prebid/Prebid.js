@@ -2,6 +2,7 @@ import {assert} from 'chai';
 import {spec} from 'modules/stroeerCoreBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
+import * as prebidGlobal from '../../../src/prebidGlobal';
 
 describe('stroeerCore bid adapter', function () {
   let sandbox;
@@ -309,7 +310,7 @@ describe('stroeerCore bid adapter', function () {
       };
       win.YLHH = buildFakeYLHH({
         '137': 'div-1-alpha',
-        '248': 'div-2-alpha'
+        '248': 'div-2-alpha',
       });
     });
 
@@ -606,6 +607,7 @@ describe('stroeerCore bid adapter', function () {
               'siz': [[728, 90]]
             }
           }],
+          'ver': {},
           'user': {
             'euids': userIds
           }
@@ -867,6 +869,43 @@ describe('stroeerCore bid adapter', function () {
       });
 
       describe('optional fields', () => {
+        describe('version fields', () => {
+          let pbVerStub
+          beforeEach(() => {
+            pbVerStub = sinon.stub(prebidGlobal, 'getGlobal')
+          });
+
+          afterEach(() => {
+            pbVerStub.restore()
+          });
+
+          it('gets version variables', () => {
+            pbVerStub.returns({version: '1.2'});
+            win.YLHH.bidder.settings = {version: '1.1'};
+            const bidReq = buildBidderRequest();
+            const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+            assert.deepEqual(serverRequestInfo.data.ver, {'yl': '1.1', 'pb': '1.2'})
+          })
+          it('functions with no pb value', () => {
+            pbVerStub.returns({version: undefined});
+            win.YLHH.bidder.settings = {version: '1.1'};
+            const bidReq = buildBidderRequest();
+            const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+            assert.deepEqual(serverRequestInfo.data.ver, {'yl': '1.1', 'pb': undefined})
+          });
+          it('functions with no yl value', () => {
+            pbVerStub.returns({version: '2'});
+            const bidReq = buildBidderRequest();
+            const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+            assert.deepEqual(serverRequestInfo.data.ver, {'pb': '2', 'yl': undefined})
+          });
+          it('functions with no values', () => {
+            pbVerStub.returns({version: undefined});
+            const bidReq = buildBidderRequest();
+            const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq)[0];
+            assert.deepEqual(serverRequestInfo.data.ver, {'yl': undefined, 'pb': undefined})
+          });
+        });
         it('should use ssat value from config', () => {
           const bidReq = buildBidderRequest();
           bidReq.bids.length = 1;
