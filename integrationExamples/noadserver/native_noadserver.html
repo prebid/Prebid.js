@@ -83,7 +83,7 @@
                     srcdoc: document.getElementById('native-template').innerHTML
                 }).forEach(([prop, val]) => iframe.setAttribute(prop, val));
                 slot.appendChild(iframe);
-                pbjs.renderAd(iframe.contentDocument, bid.adId);
+                iframe.onload = () => pbjs.renderAd(iframe.contentDocument, bid.adId);
             }
         });
 
