@@ -19,7 +19,7 @@ const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'rise';
 const ADAPTER_VERSION = '6.0.0';
 const TTL = 360;
-const CURRENCY = 'USD';
+const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_SELLER_ENDPOINT = 'https://hb.yellowblue.io/';
 const MODES = {
   PRODUCTION: 'hb-multi',
@@ -73,7 +73,7 @@ export const spec = {
         const bidResponse = {
           requestId: adUnit.requestId,
           cpm: adUnit.cpm,
-          currency: adUnit.currency || CURRENCY,
+          currency: adUnit.currency || DEFAULT_CURRENCY,
           width: adUnit.width,
           height: adUnit.height,
           ttl: adUnit.ttl || TTL,
@@ -140,18 +140,20 @@ registerBidder(spec);
 /**
  * Get floor price
  * @param bid {bid}
+ * @param mediaType {string}
+ * @param currency {string}
  * @returns {Number}
  */
-function getFloor(bid, mediaType) {
+function getFloor(bid, mediaType, currency) {
   if (!isFn(bid.getFloor)) {
     return 0;
   }
   let floorResult = bid.getFloor({
-    currency: CURRENCY,
+    currency: currency,
     mediaType: mediaType,
     size: '*'
   });
-  return floorResult.currency === CURRENCY && floorResult.floor ? floorResult.floor : 0;
+  return floorResult.currency === currency && floorResult.floor ? floorResult.floor : 0;
 }
 
 /**
@@ -289,7 +291,7 @@ function generateBidParameters(bid, bidderRequest) {
   const {params} = bid;
   const mediaType = isBanner(bid) ? BANNER : VIDEO;
   const sizesArray = getSizesArray(bid, mediaType);
-
+  const currency = params.currency || config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY;
   // fix floor price in case of NAN
   if (isNaN(params.floorPrice)) {
     params.floorPrice = 0;
@@ -299,12 +301,13 @@ function generateBidParameters(bid, bidderRequest) {
     mediaType,
     adUnitCode: getBidIdParameter('adUnitCode', bid),
     sizes: sizesArray,
-    floorPrice: Math.max(getFloor(bid, mediaType), params.floorPrice),
+    currency: currency,
+    floorPrice: Math.max(getFloor(bid, mediaType, currency), params.floorPrice),
     bidId: getBidIdParameter('bidId', bid),
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
     loop: getBidIdParameter('bidderRequestsCount', bid),
     transactionId: bid.ortb2Imp?.ext?.tid,
-    coppa: 0
+    coppa: 0,
   };
 
   const pos = deepAccess(bid, `mediaTypes.${mediaType}.pos`);
