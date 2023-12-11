@@ -627,9 +627,9 @@ describe('Zeta Ssp Bid Adapter', function () {
   it('Test provide segments into the request', function () {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
     const payload = JSON.parse(request.data);
-    expect(payload.user.data.segment.length).to.eql(3);
-    expect(payload.user.data.segment[0].id).to.eql('3');
-    expect(payload.user.data.segment[1].id).to.eql('44');
-    expect(payload.user.data.segment[2].id).to.eql('59');
+    expect(payload.user.data[0].segment.length).to.eql(3);
+    expect(payload.user.data[0].segment[0].id).to.eql('3');
+    expect(payload.user.data[0].segment[1].id).to.eql('44');
+    expect(payload.user.data[0].segment[2].id).to.eql('59');
   });
 });
