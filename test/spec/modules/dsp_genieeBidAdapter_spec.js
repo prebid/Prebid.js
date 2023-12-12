@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/genieeBidAdapter.js';
+import { spec } from 'modules/dsp_genieeBidAdapter.js';
 import { config } from 'src/config';
 
 describe('Geniee adapter tests', () => {
