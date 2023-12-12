@@ -77,6 +77,7 @@ userIdAsEids = [
         uids: [{
             id: 'the-ids-object-stringified',
             atype: 1
+        }]
     },
 
     {
