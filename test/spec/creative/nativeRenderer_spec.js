@@ -13,6 +13,7 @@ describe('Native creative renderer', () => {
       loadScript = sinon.stub();
     });
     it('uses rendererUrl if present', () => {
+      win.document = {}
       const data = {
         assets: ['1', '2'],
         ortb: 'ortb',
@@ -24,7 +25,7 @@ describe('Native creative renderer', () => {
       }));
       return getAdMarkup('123', data, null, win, loadScript).then((markup) => {
         expect(markup).to.eql('markup');
-        sinon.assert.calledWith(loadScript, data.rendererUrl, win);
+        sinon.assert.calledWith(loadScript, data.rendererUrl, sinon.match(arg => arg === win.document));
         sinon.assert.calledWith(renderAd, sinon.match(arg => {
           expect(arg).to.have.members(data.assets);
           expect(arg.ortb).to.eql(data.ortb);

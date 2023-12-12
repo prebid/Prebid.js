@@ -35,20 +35,21 @@ export function getReplacer(adId, {assets = [], ortb, nativeKeys = {}}) {
   };
 }
 
-function loadScript(url, win) {
+function loadScript(url, doc) {
   return new Promise((resolve, reject) => {
-    const script = win.document.createElement('script');
+    const script = doc.createElement('script');
     script.onload = resolve;
     script.onerror = reject;
     script.src = url;
-    win.document.body.appendChild(script);
+    doc.body.appendChild(script);
   });
 }
 
 export function getAdMarkup(adId, nativeData, replacer, win, load = loadScript) {
   const {rendererUrl, assets, ortb, adTemplate} = nativeData;
+  const doc = win.document;
   if (rendererUrl) {
-    return load(rendererUrl, win).then(() => {
+    return load(rendererUrl, doc).then(() => {
       if (typeof win.renderAd !== 'function') {
         throw new Error(`Renderer from '${rendererUrl}' does not define renderAd()`);
       }
@@ -57,17 +58,17 @@ export function getAdMarkup(adId, nativeData, replacer, win, load = loadScript) 
       return win.renderAd(payload);
     });
   } else {
-    return Promise.resolve(replacer(adTemplate ?? win.document.body.innerHTML));
+    return Promise.resolve(replacer(adTemplate ?? doc.body.innerHTML));
   }
 }
 
 export function render({adId, native}, {sendMessage}, win, getMarkup = getAdMarkup) {
+  const {head, body} = win.document;
   const resize = () => sendMessage(MESSAGE_NATIVE, {
     action: ACTION_RESIZE,
-    height: win.document.body.offsetHeight,
-    width: win.document.body.offsetWidth
+    height: body.offsetHeight,
+    width: body.offsetWidth
   });
-  const {head, body} = win.document;
   const replacer = getReplacer(adId, native);
   head && (head.innerHTML = replacer(head.innerHTML));
   return getMarkup(adId, native, replacer, win).then(markup => {
