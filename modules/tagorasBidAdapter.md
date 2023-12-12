@@ -4,7 +4,7 @@
 
 **Module Type:** Bidder Adapter
 
-**Maintainer:** rtb@kueez.com
+**Maintainer:** prebid@tagoras.io
 
 # Description
 
