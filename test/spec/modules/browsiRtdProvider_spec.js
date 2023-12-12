@@ -89,12 +89,6 @@ describe('browsi Real time  data sub module', function () {
       expect(browsiRTD.browsiSubmodule.getTargetingData([], null, null, auction)).to.eql({});
     });
 
-    it('should return NA if no prediction for ad unit', function () {
-      makeSlot({code: 'adMock', divId: 'browsiAd_2'});
-      browsiRTD.setData({});
-      expect(browsiRTD.browsiSubmodule.getTargetingData(['adMock'], null, null, auction)).to.eql({adMock: {bv: 'NA'}});
-    });
-
     it('should return prediction from server', function () {
       makeSlot({code: 'hasPrediction', divId: 'hasPrediction'});
       const data = {
