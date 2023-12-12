@@ -102,8 +102,7 @@ userIdAsEids = [
             id: 'some-random-id-value',
             atype: 1
         }],
-            segments: ['s1', 's2']
-        }
+        segments: ['s1', 's2']
     },
     
     {
@@ -117,6 +116,50 @@ userIdAsEids = [
         }]
     },
     
+    {
+        source: 'liveintent.indexexchange.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },
+
+    {
+        source: 'liveintent.sovrn.com'',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },
+
+    {
+        source: 'openx.net'',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },
+
+    {
+        source: 'pubmatic.com'',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },   
+
     {
         source: 'media.net',
         uids: [{
