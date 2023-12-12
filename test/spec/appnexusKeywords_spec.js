@@ -1,4 +1,4 @@
-import {transformBidderParamKeywords} from '../../libraries/appnexusKeywords/anKeywords.js';
+import {transformBidderParamKeywords} from '../../libraries/appnexusUtils/anKeywords.js';
 import {expect} from 'chai/index.js';
 import * as utils from '../../src/utils.js';
 
