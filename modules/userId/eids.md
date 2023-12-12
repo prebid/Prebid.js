@@ -110,7 +110,10 @@ userIdAsEids = [
         source: 'bidswitch.net',
         uids: [{
             id: 'some-random-id-value',
-            atype: 3
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
         }]
     },
     
@@ -118,7 +121,10 @@ userIdAsEids = [
         source: 'liveintent.indexexchange.com',
         uids: [{
             id: 'some-random-id-value',
-            atype: 3
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
         }]
     },
 
@@ -126,7 +132,10 @@ userIdAsEids = [
         source: 'liveintent.sovrn.com'',
         uids: [{
             id: 'some-random-id-value',
-            atype: 3
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
         }]
     },
 
@@ -134,7 +143,10 @@ userIdAsEids = [
         source: 'openx.net'',
         uids: [{
             id: 'some-random-id-value',
-            atype: 3
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
         }]
     },
 
@@ -142,7 +154,10 @@ userIdAsEids = [
         source: 'pubmatic.com'',
         uids: [{
             id: 'some-random-id-value',
-            atype: 3
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
         }]
     },
 
@@ -150,7 +165,10 @@ userIdAsEids = [
         source: 'media.net',
         uids: [{
             id: 'some-random-id-value',
-            atype: 3
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
         }]
     },
 
@@ -158,7 +176,10 @@ userIdAsEids = [
         source: 'rubiconproject.com',
         uids: [{
             id: 'some-random-id-value',
-            atype: 3
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
         }]
     },
 
