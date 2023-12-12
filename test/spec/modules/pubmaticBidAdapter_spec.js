@@ -213,6 +213,7 @@ describe('PubMatic adapter', function () {
       params: {
         publisherId: '5670',
         adSlot: '/43743431/NativeAutomationPrebid@1x1',
+        wiid: 'new-unique-wiid'
       },
       bidId: '2a5571261281d4',
       requestId: 'B68287E1-DC39-4B38-9790-FE4F179739D6',
