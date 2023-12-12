@@ -77,6 +77,7 @@ userIdAsEids = [
         uids: [{
             id: 'the-ids-object-stringified',
             atype: 1
+        }]
     },
 
     {
@@ -101,7 +102,6 @@ userIdAsEids = [
             id: 'some-random-id-value',
             atype: 1
         }],
-        ext: {
             segments: ['s1', 's2']
         }
     },
