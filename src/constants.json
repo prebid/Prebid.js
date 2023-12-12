@@ -176,6 +176,8 @@
 	"AD_UNIT": "adUnit",
 	"SET_CONFIG": "setConfig",
 	"FETCH": "fetch",
-	"SUCCESS": "success"
+	"SUCCESS": "success",
+	"ERROR": "error",
+	"TIMEOUT": "timeout"
   }
 }
