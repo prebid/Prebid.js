@@ -711,7 +711,7 @@ describe('AmxBidAdapter', () => {
 
       const [request] = server.requests;
       request.respond(204, {'Content-Type': 'text/html'}, null);
-      expect(request.url).to.equal('https://1x1.a-mo.net/e/g_pbto');
+      expect(request.url).to.equal('https://1x1.a-mo.net/e');
 
       if (typeof Request !== 'undefined' && 'keepalive' in Request.prototype) {
         expect(request.keepalive).to.equal(true);
@@ -727,6 +727,7 @@ describe('AmxBidAdapter', () => {
 
       expect(events.length).to.equal(1);
       const [event] = events;
+      expect(event.n).to.equal('g_pbto')
       expect(event.A).to.equal('example');
       expect(event.mid).to.equal('tag-id');
       expect(event.cn).to.equal(300);

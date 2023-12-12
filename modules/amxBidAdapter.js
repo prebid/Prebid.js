@@ -14,7 +14,7 @@ import {
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { ajax } from '../src/ajax.js';
+import { fetch } from '../src/ajax.js';
 
 const BIDDER_CODE = 'amx';
 const storage = getStorageManager({ bidderCode: BIDDER_CODE });
@@ -537,6 +537,7 @@ export const spec = {
         mid: params.tagId,
         a: params.adunitId || timeout.adUnitCode,
         bid: timeout.bidId,
+        n: 'g_pbto',
         aud: timeout.transactionId,
         w: size[0],
         h: size[1],
@@ -547,12 +548,11 @@ export const spec = {
     });
 
     const payload = JSON.stringify({ c: common, e: events });
-    const url = POST_TRACKING_ENDPOINT + '/g_pbto';
-
-    ajax(url, null, payload, {
-      method: 'POST',
+    fetch(POST_TRACKING_ENDPOINT, {
+      body: payload,
       keepalive: true,
       withCredentials: true,
+      method: 'POST'
     });
   },
 
