@@ -3,7 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
 
-const NETWORK_ID = 11090;
+const NETWORK_ID = 10922;
 const AD_TYPES = [4309, 641];
 const DTX_TYPES = [5061];
 const TARGET_NAME = 'inline';
