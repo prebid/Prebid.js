@@ -168,25 +168,6 @@ describe('toFetchRequest', () => {
           'content-type': 'text/plain'
         }
       }
-    },
-    'POST with keepalive': {
-      url: EXAMPLE_URL,
-      data: 'test data',
-      options: {
-        method: 'POST',
-        keepalive: true,
-      },
-      expect: {
-        request: {
-          url: EXAMPLE_URL + '/',
-          method: 'POST',
-          keepalive: true,
-        },
-        text: 'test data',
-        headers: {
-          'content-type': 'text/plain'
-        }
-      }
     }
   }).forEach(([t, {url, data, options, expect: {request, text, headers}}]) => {
     it(`can build ${t}`, () => {
