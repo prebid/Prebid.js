@@ -110,7 +110,7 @@ function buildRequest(bidRequests, bidderRequest) {
   const _adUnitCodes = [];
   let _customEndpoint, _userId, _domainId;
   let _ivAuctionStart = Date.now();
-  window.placementIds = window.placementIds || [];
+  window.invibes.placementIds = window.invibes.placementIds || [];
 
   if (isInfiniteScrollPage == false) {
     updateInfiniteScrollFlag();
@@ -119,11 +119,11 @@ function buildRequest(bidRequests, bidderRequest) {
   bidRequests.forEach(function (bidRequest) {
     bidRequest.startTime = new Date().getTime();
 
-    if (window.placementIds.includes(bidRequest.params.placementId)) {
+    if (window.invibes.placementIds.includes(bidRequest.params.placementId)) {
       isPlacementRefresh = true;
     }
 
-    window.placementIds.push(bidRequest.params.placementId);
+    window.invibes.placementIds.push(bidRequest.params.placementId);
 
     _placementIds.push(bidRequest.params.placementId);
     _placementIds.push(bidRequest.params.placementId);
