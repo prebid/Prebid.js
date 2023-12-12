@@ -81,15 +81,10 @@ export function summarizeAuctionInit(args, adapterConfig) {
   let allZoneNamesNonNull = true
 
   args.adUnits.forEach(adUnit => {
-    adUnitCodes.push(adUnit.code)
-
     const zoneIndex = getAdIndex(adUnit);
     const zoneName = adUnit.model?.zone ?? null
     const zoneIndexNonNull = zoneIndex != null
     const zoneNameNonNull = zoneName != null
-
-    zoneIndexes.push(zoneIndex)
-    zoneNames.push(zoneName)
 
     someZoneIndexNonNull = someZoneIndexNonNull || zoneIndexNonNull
     someZoneNameNonNull = someZoneNameNonNull || zoneNameNonNull
@@ -102,13 +97,13 @@ export function summarizeAuctionInit(args, adapterConfig) {
       adUnit.mediaTypes.video?.durationRangeSec.forEach((value, podIndex) => {
         adUnitCodes.push(adUnit.code)
         zoneIndexes.push(zoneIndex)
-        zoneNames.push(zoneNameNonNull ? zoneName : null)
+        zoneNames.push(zoneName)
         podPos.push(podIndex + 1)
       })
     } else {
       adUnitCodes.push(adUnit.code)
       zoneIndexes.push(zoneIndex)
-      zoneNames.push(zoneNameNonNull ? zoneName : null)
+      zoneNames.push(zoneName)
       podPos.push(0)
     }
   })
