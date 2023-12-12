@@ -714,7 +714,7 @@ describe('AmxBidAdapter', () => {
       expect(request.url).to.equal('https://1x1.a-mo.net/e');
 
       if (typeof Request !== 'undefined' && 'keepalive' in Request.prototype) {
-        expect(request.keepalive).to.equal(true);
+        expect(request.fetch.request.keepalive).to.equal(true);
       }
 
       const {c: common, e: events} = JSON.parse(request.requestBody)

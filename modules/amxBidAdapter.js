@@ -553,6 +553,8 @@ export const spec = {
       keepalive: true,
       withCredentials: true,
       method: 'POST'
+    }).catch((_e) => {
+      // do nothing; ignore errors
     });
   },
 
