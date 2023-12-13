@@ -35,18 +35,22 @@ const clearWaitForTimeouts = (timeouts) => {
 const SEND_EVENTS_BUNDLE_TIMEOUT = 1500;
 const {
   EVENTS: {
-    AUCTION_END,
-    BID_ADJUSTMENT,
-    BID_TIMEOUT,
+    BID_REQUESTED,
     BID_RESPONSE,
+    BID_ADJUSTMENT,
+    BID_WON,
+    BIDDER_DONE,
+    AUCTION_END,
   },
 } = CONSTANTS;
 
 const EVENTS_TO_TRACK = [
-  AUCTION_END,
-  BID_ADJUSTMENT,
-  BID_TIMEOUT,
+  BID_REQUESTED,
   BID_RESPONSE,
+  BID_ADJUSTMENT,
+  BID_WON,
+  BIDDER_DONE,
+  AUCTION_END,
 ];
 
 const yandexAnalytics = Object.assign(buildAdapter({ analyticsType: 'endpoint' }), {
