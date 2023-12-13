@@ -10,9 +10,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'mediago';
 // const PROTOCOL = window.document.location.protocol;
-const ENDPOINT_URL =
-  // ((PROTOCOL === 'https:') ? 'https' : 'http') +
-  'https://gbid.mediago.io/api/bid?tn=';
+const ENDPOINT_URL = 'https://gbid.mediago.io/api/bid?tn=';
 const COOKY_SYNC_URL = 'https://gtrace.mediago.io/ju/cs/eplist';
 const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediago.io/js/cookieSync.html';
 
