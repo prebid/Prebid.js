@@ -2,7 +2,6 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { deepSetValue } from '../src/utils.js';
 
 const BIDDER_CODE = 'bizzclick';
 const SOURCE_ID_MACRO = '[sourceid]';
@@ -10,7 +9,6 @@ const ACCOUNT_ID_MACRO = '[accountid]';
 const HOST_MACRO = '[host]';
 const URL = `https://${HOST_MACRO}.bizzclick.com/bid?rtb_seat_id=${SOURCE_ID_MACRO}&secret_key=${ACCOUNT_ID_MACRO}&integration_type=prebidjs`;
 const DEFAULT_CURRENCY = 'USD';
-const DEFAULT_TMAX = 500;
 const DEFAULT_HOST = 'us-e-node1';
 
 const converter = ortbConverter({
@@ -34,18 +32,7 @@ const converter = ortbConverter({
     const request = buildRequest(imps, bidderRequest, context);
     const bid = context.bidRequests[0];
     request.test = config.getConfig('debug') ? 1 : 0;
-    request.tmax = request.tmax || DEFAULT_TMAX;
     if (!request.cur) request.cur = [bid.params.currency || DEFAULT_CURRENCY];
-
-    if (config.getConfig('coppa')) deepSetValue(request, 'regs.coppa', 1);
-    if (bid.gdprConsent && bid.gdprConsent.gdprApplies) {
-      deepSetValue(request, 'regs.ext.gdpr', bid.gdprConsent.gdprApplies ? 1 : 0);
-      deepSetValue(request, 'user.ext.consent', bid.gdprConsent.consentString);
-    }
-    if (bid.uspConsent) {
-      deepSetValue(request, 'regs.ext.us_privacy', bid.uspConsent);
-    }
-
     return request;
   },
   bidResponse(buildBidResponse, bid, context) {

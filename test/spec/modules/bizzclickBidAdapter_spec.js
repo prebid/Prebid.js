@@ -5,6 +5,46 @@ import { newBidder } from 'src/adapters/bidderFactory';
 import { config } from '../../../src/config.js';
 import { syncAddFPDToBidderRequest } from '../../helpers/fpd.js';
 
+// load modules that register ORTB processors
+import 'src/prebid.js';
+import 'modules/currency.js';
+import 'modules/userId/index.js';
+import 'modules/multibid/index.js';
+import 'modules/priceFloors.js';
+import 'modules/consentManagement.js';
+import 'modules/consentManagementUsp.js';
+import 'modules/schain.js';
+
+const SIMPLE_BID_REQUEST = {
+  bidder: 'bizzclick',
+  params: {
+    accountId: 'testAccountId',
+    sourceId: 'testSourceId',
+    host: 'USE',
+  },
+  mediaTypes: {
+    banner: {
+      sizes: [
+        [320, 250],
+        [300, 600],
+      ],
+    },
+  },
+  adUnitCode: 'div-gpt-ad-1499748733608-0',
+  transactionId: 'f183e871-fbed-45f0-a427-c8a63c4c01eb',
+  bidId: '33e9500b21129f',
+  bidderRequestId: '2772c1e566670b',
+  auctionId: '192721e36a0239',
+  sizes: [[300, 250], [160, 600]],
+  gdprConsent: {
+    apiVersion: 2,
+    consentString: 'CONSENT',
+    vendorData: { purpose: { consents: { 1: true } } },
+    gdprApplies: true,
+    addtlConsent: '1~1.35.41.101',
+  },
+}
+
 const BANNER_BID_REQUEST = {
   bidder: 'bizzclick',
   params: {
@@ -27,11 +67,6 @@ const BANNER_BID_REQUEST = {
   transactionId: 'test-transactionId-1',
   code: 'banner_example',
   timeout: 1000,
-  gdprConsent: {
-    consentString: 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA',
-    gdprApplies: 1,
-  },
-  uspConsent: 'uspConsent'
 }
 
 const VIDEO_BID_REQUEST = {
@@ -61,11 +96,6 @@ const VIDEO_BID_REQUEST = {
   auctionId: 'test-auction-1',
   transactionId: 'test-transactionId-1',
   timeout: 1000,
-  gdprConsent: {
-    consentString: 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA',
-    gdprApplies: 1,
-  },
-  uspConsent: 'uspConsent'
 }
 
 const NATIVE_BID_REQUEST = {
@@ -110,10 +140,6 @@ const NATIVE_BID_REQUEST = {
   auctionId: 'test-auction-1',
   transactionId: 'test-transactionId-1',
   timeout: 1000,
-  gdprConsent: {
-    consentString: 'BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA',
-    gdprApplies: 1,
-  },
   uspConsent: 'uspConsent'
 };
 
@@ -124,6 +150,14 @@ const bidderRequest = {
   }
 };
 
+const gdprConsent = {
+  apiVersion: 2,
+  consentString: 'CONSENT',
+  vendorData: { purpose: { consents: { 1: true } } },
+  gdprApplies: true,
+  addtlConsent: '1~1.35.41.101',
+}
+
 describe('bizzclickAdapter', function () {
   const adapter = newBidder(spec);
   describe('inherited functions', function () {
@@ -132,19 +166,25 @@ describe('bizzclickAdapter', function () {
     });
   });
 
-  describe('with COPPA', function () {
-    beforeEach(function () {
+  describe('with user privacy regulations', function () {
+    it('should send the Coppa "required" flag set to "1" in the request', function () {
       sinon.stub(config, 'getConfig')
         .withArgs('coppa')
         .returns(true);
-    });
-    afterEach(function () {
+      const serverRequest = spec.buildRequests([SIMPLE_BID_REQUEST], syncAddFPDToBidderRequest(bidderRequest));
+      expect(serverRequest.data.regs.coppa).to.equal(1);
       config.getConfig.restore();
     });
 
-    it('should send the Coppa "required" flag set to "1" in the request', function () {
-      let serverRequest = spec.buildRequests([BANNER_BID_REQUEST], bidderRequest);
-      expect(serverRequest.data.regs.coppa).to.equal(1);
+    it('should send the GDPR Consent data in the request', function () {
+      const serverRequest = spec.buildRequests([SIMPLE_BID_REQUEST], syncAddFPDToBidderRequest({ ...bidderRequest, gdprConsent }));
+      expect(serverRequest.data.regs.ext.gdpr).to.exist.and.to.equal(1);
+      expect(serverRequest.data.user.ext.consent).to.equal('CONSENT');
+    });
+
+    it('should send the CCPA data in the request', function () {
+      const serverRequest = spec.buildRequests([SIMPLE_BID_REQUEST], syncAddFPDToBidderRequest({...bidderRequest, ...{ uspConsent: '1YYY' }}));
+      expect(serverRequest.data.regs.ext.us_privacy).to.equal('1YYY');
     });
   });
 
@@ -163,13 +203,13 @@ describe('bizzclickAdapter', function () {
 
   describe('build request', function () {
     it('should return an empty array when no bid requests', function () {
-      const bidRequest = spec.buildRequests([], bidderRequest);
+      const bidRequest = spec.buildRequests([], syncAddFPDToBidderRequest(bidderRequest));
       expect(bidRequest).to.be.an('array');
       expect(bidRequest.length).to.equal(0);
     });
 
     it('should return a valid bid request object', function () {
-      const request = spec.buildRequests([BANNER_BID_REQUEST], syncAddFPDToBidderRequest(bidderRequest));
+      const request = spec.buildRequests([SIMPLE_BID_REQUEST], syncAddFPDToBidderRequest(bidderRequest));
       expect(request).to.not.equal('array');
       expect(request.data).to.be.an('object');
       expect(request.method).to.equal('POST');
@@ -177,10 +217,11 @@ describe('bizzclickAdapter', function () {
       expect(request.url).to.not.equal(undefined);
       expect(request.url).to.not.equal(null);
 
+      expect(request.data.site).to.have.property('page');
       expect(request.data.site).to.have.property('domain');
-      expect(request.data.regs.ext.gdpr).to.equal(1);
-      expect(request.data.user.ext.consent).to.equal('BOEFEAyOEFEAyAHABDENAI4AAAB9vABAASA');
-      expect(request.data.regs.ext.us_privacy).to.equal('uspConsent');
+      expect(request.data).to.have.property('id');
+      expect(request.data).to.have.property('imp');
+      expect(request.data).to.have.property('device');
     });
 
     it('should return a valid bid BANNER request object', function () {
@@ -250,7 +291,7 @@ describe('bizzclickAdapter', function () {
         }
       };
       it('should interpret server response', function () {
-        const bidRequest = spec.buildRequests(bidRequests, bidderRequest);
+        const bidRequest = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
         const bids = spec.interpretResponse(serverResponse, bidRequest);
         expect(bids).to.be.an('array');
         const bid = bids[0];
