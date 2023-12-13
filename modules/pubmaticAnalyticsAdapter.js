@@ -337,6 +337,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
   let auctionId = e.auctionId;
   let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
   let auctionCache = cache.auctions[auctionId];
+  let wiid = auctionCache?.wiid || auctionId;
   let floorData = auctionCache?.floorData;
   let floorFetchStatus = getFloorFetchStatus(auctionCache?.floorData);
   let outputObj = { s: [] };
@@ -352,7 +353,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
 
   pixelURL += 'pubid=' + publisherId;
   outputObj['pubid'] = '' + publisherId;
-  outputObj['iid'] = '' + auctionId;
+  outputObj['iid'] = '' + wiid;
   outputObj['to'] = '' + auctionCache.timeout;
   outputObj['purl'] = referrer;
   outputObj['orig'] = getDomainFromUrl(referrer);
@@ -428,6 +429,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   let origAdUnit = getAdUnit(cache.auctions[auctionId].origAdUnits, adUnitId) || {};
   let auctionCache = cache.auctions[auctionId];
   let floorData = auctionCache.floorData;
+  let wiid = cache.auctions[auctionId]?.wiid || auctionId;
   let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
   let adv = winningBid.bidResponse ? getAdDomain(winningBid.bidResponse) || undefined : undefined;
   let fskp = floorData ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined;
@@ -436,7 +438,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += 'pubid=' + publisherId;
   pixelURL += '&purl=' + enc(config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '');
   pixelURL += '&tst=' + Math.round((new window.Date()).getTime() / 1000);
-  pixelURL += '&iid=' + enc(auctionId);
+  pixelURL += '&iid=' + enc(wiid);
   pixelURL += '&bidid=' + enc(winningBidId);
   pixelURL += '&pid=' + enc(profileId);
   pixelURL += '&pdvid=' + enc(profileVersionId);
@@ -499,6 +501,9 @@ function bidRequestedHandler(args) {
         bidWon: false,
         dimensions: bid.sizes
       };
+    }
+    if (bid.bidder === 'pubmatic' && !!bid?.params?.wiid) {
+      cache.auctions[args.auctionId].wiid = bid.params.wiid;
     }
     cache.auctions[args.auctionId].adUnitCodes[bid.adUnitCode].bids[bid.bidId] = [copyRequiredBidDetails(bid)];
     if (bid.floorData) {
