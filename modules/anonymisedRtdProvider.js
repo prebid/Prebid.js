@@ -7,7 +7,7 @@
  */
 import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
-import {isPlainObject, mergeDeep, logMessage, logError} from '../src/utils.js';
+import {isPlainObject, mergeDeep, logMessage, logError, logWarn} from '../src/utils.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'realTimeData';
@@ -49,8 +49,15 @@ function tryParse(data) {
   */
 export function getRealTimeData(reqBidsConfigObj, onDone, rtdConfig, userConsent) {
   if (rtdConfig && isPlainObject(rtdConfig.params)) {
-    const jsonData = storage.getDataFromLocalStorage(rtdConfig.params.cohortStorageKey)
+    const cohortStorageKey = rtdConfig.params.cohortStorageKey;
+    const bidders = rtdConfig.params.bidders;
 
+    if (!bidders || bidders.length === 0 || !cohortStorageKey || cohortStorageKey.length === 0) {
+      logWarn('anonymisedRtdProvider: missing required params')
+      return;
+    }
+
+    const jsonData = storage.getDataFromLocalStorage(cohortStorageKey);
     if (!jsonData) {
       return;
     }
@@ -78,6 +85,11 @@ export function getRealTimeData(reqBidsConfigObj, onDone, rtdConfig, userConsent
           }
         }
       };
+
+      if (bidders.includes('appnexus')) {
+        data.rtd.ortb2.user.keywords = segments.map(x => `perid=${x}`).join(',');
+      }
+
       addRealTimeData(reqBidsConfigObj.ortb2Fragments?.global, data.rtd);
       onDone();
     }

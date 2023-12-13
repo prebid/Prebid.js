@@ -37,10 +37,11 @@ describe('anonymisedRtdProvider', function() {
   });
 
   describe('Get Real-Time Data', function() {
-    it('gets rtd from local storage', function() {
+    it('gets rtd from local storage and set to ortb2.user.data', function() {
       const rtdConfig = {
         params: {
           cohortStorageKey: 'cohort_ids',
+          bidders: ['smartadserver'],
           segtax: 503
         }
       };
@@ -71,6 +72,86 @@ describe('anonymisedRtdProvider', function() {
 
       getRealTimeData(bidConfig, () => {}, rtdConfig, {});
       expect(bidConfig.ortb2Fragments.global.user.data).to.deep.include.members([rtdUserObj1]);
+      expect(bidConfig.ortb2Fragments.global.user.keywords).to.be.undefined;
+    });
+
+    it('gets rtd from local storage and set to ortb2.user.keywords for appnexus bidders parameter', function() {
+      const rtdConfig = {
+        params: {
+          cohortStorageKey: 'cohort_ids',
+          bidders: ['smartadserver', 'appnexus'],
+          segtax: 503
+        }
+      };
+
+      const bidConfig = {
+        ortb2Fragments: {
+          global: {}
+        }
+      };
+
+      const rtdUserObj1 = {
+        name: 'anonymised.io',
+        ext: {
+          segtax: 503
+        },
+        segment: [
+          {
+            id: 'TCZPQOWPEJG3MJOTUQUF793A'
+          },
+          {
+            id: '93SUG3H540WBJMYNT03KX8N3'
+          }
+        ]
+      };
+
+      getDataFromLocalStorageStub.withArgs('cohort_ids')
+        .returns(JSON.stringify(['TCZPQOWPEJG3MJOTUQUF793A', '93SUG3H540WBJMYNT03KX8N3']));
+
+      getRealTimeData(bidConfig, () => {}, rtdConfig, {});
+      expect(bidConfig.ortb2Fragments.global.user.data).to.deep.include.members([rtdUserObj1]);
+      expect(bidConfig.ortb2Fragments.global.user.keywords).to.include('perid=TCZPQOWPEJG3MJOTUQUF793A');
+      expect(bidConfig.ortb2Fragments.global.user.keywords).to.include('perid=93SUG3H540WBJMYNT03KX8N3');
+    });
+
+    it('do not set rtd if `bidders` parameter undefined', function() {
+      const rtdConfig = {
+        params: {
+          cohortStorageKey: 'cohort_ids',
+        }
+      };
+
+      const bidConfig = {
+        ortb2Fragments: {
+          global: {}
+        }
+      };
+
+      getDataFromLocalStorageStub.withArgs('cohort_ids')
+        .returns(JSON.stringify(['randomsegmentid']));
+
+      getRealTimeData(bidConfig, () => {}, rtdConfig, {});
+      expect(bidConfig.ortb2Fragments.global.user).to.be.undefined;
+    });
+
+    it('do not set rtd if `cohortStorageKey` parameter undefined', function() {
+      const rtdConfig = {
+        params: {
+          bidders: ['smartadserver']
+        }
+      };
+
+      const bidConfig = {
+        ortb2Fragments: {
+          global: {}
+        }
+      };
+
+      getDataFromLocalStorageStub.withArgs('cohort_ids')
+        .returns(JSON.stringify(['randomsegmentid']));
+
+      getRealTimeData(bidConfig, () => {}, rtdConfig, {});
+      expect(bidConfig.ortb2Fragments.global.user).to.be.undefined;
     });
 
     it('do not set rtd if local storage empty', function() {
