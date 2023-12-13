@@ -54,7 +54,6 @@ export const identityLinkSubmodule = {
     }
     const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
     const gdprConsentString = hasGdpr ? consentData.consentString : '';
-    const tcfPolicyV2 = utils.deepAccess(consentData, 'vendorData.tcfPolicyVersion') === 2;
     // use protocol relative urls for http or https
     if (hasGdpr && (!gdprConsentString || gdprConsentString === '')) {
       utils.logInfo('identityLink: Consent string is required to call envelope API.');
@@ -64,7 +63,7 @@ export const identityLinkSubmodule = {
     const gppString = gppData && gppData.gppString ? gppData.gppString : false;
     const gppSectionId = gppData && gppData.gppString && gppData.applicableSections.length > 0 && gppData.applicableSections[0] !== -1 ? gppData.applicableSections[0] : false;
     const hasGpp = gppString && gppSectionId;
-    const url = `https://api.rlcdn.com/api/identity/envelope?pid=${configParams.pid}${hasGdpr ? (tcfPolicyV2 ? '&ct=4&cv=' : '&ct=1&cv=') + gdprConsentString : ''}${hasGpp ? '&gpp=' + gppString + '&gpp_sid=' + gppSectionId : ''}`;
+    const url = `https://api.rlcdn.com/api/identity/envelope?pid=${configParams.pid}${hasGdpr ? '&ct=4&cv=' + gdprConsentString : ''}${hasGpp ? '&gpp=' + gppString + '&gpp_sid=' + gppSectionId : ''}`;
     let resp;
     resp = function (callback) {
       // Check ats during callback so it has a chance to initialise.

@@ -1020,6 +1020,9 @@ export const spec = {
         }
       }
 
+      // Enforce the organizationId param to be a string
+      bidRequest.params.organizationId = bidRequest.params.organizationId.toString();
+
       // Force the Data Layer key and value to be a String
       if (bidRequest.params.dataLayer) {
         if (isStr(bidRequest.params.dataLayer) || isNumber(bidRequest.params.dataLayer) || isArray(bidRequest.params.dataLayer) || isFn(bidRequest.params.dataLayer)) {
@@ -1120,30 +1123,36 @@ export const spec = {
         bidRequest.gpid = gpid;
       }
 
+      // store the whole bidRequest (adUnit) object in the ADAGIO namespace.
       storeRequestInAdagioNS(bidRequest);
 
-      // Remove these fields at the very end, so we can still use them before.
-      delete bidRequest.transactionId;
-      delete bidRequest.ortb2Imp;
-      delete bidRequest.ortb2;
-      delete bidRequest.sizes;
+      // Remove some params that are not needed on the server side.
+      delete bidRequest.params.siteId;
 
-      return bidRequest;
+      // whitelist the fields that are allowed to be sent to the server.
+      const adUnit = {
+        adUnitCode: bidRequest.adUnitCode,
+        auctionId: bidRequest.auctionId,
+        bidder: bidRequest.bidder,
+        bidId: bidRequest.bidId,
+        params: bidRequest.params,
+        features: bidRequest.features,
+        gpid: bidRequest.gpid,
+        mediaTypes: bidRequest.mediaTypes,
+        nativeParams: bidRequest.nativeParams,
+        score: bidRequest.score,
+        transactionId: bidRequest.transactionId,
+      }
+
+      return adUnit;
     });
 
     // Group ad units by organizationId
     const groupedAdUnits = adUnits.reduce((groupedAdUnits, adUnit) => {
-      const adUnitCopy = deepClone(adUnit);
-      adUnitCopy.params.organizationId = adUnitCopy.params.organizationId.toString();
+      const organizationId = adUnit.params.organizationId
 
-      // remove useless props
-      delete adUnitCopy.floorData;
-      delete adUnitCopy.params.siteId;
-      delete adUnitCopy.userId;
-      delete adUnitCopy.userIdAsEids;
-
-      groupedAdUnits[adUnitCopy.params.organizationId] = groupedAdUnits[adUnitCopy.params.organizationId] || [];
-      groupedAdUnits[adUnitCopy.params.organizationId].push(adUnitCopy);
+      groupedAdUnits[organizationId] = groupedAdUnits[organizationId] || [];
+      groupedAdUnits[organizationId].push(adUnit);
 
       return groupedAdUnits;
     }, {});
