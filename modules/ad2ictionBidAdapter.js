@@ -14,7 +14,7 @@ export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const canAccessTopWindow = () => {
   try {
     return !!getWindowTop().location.href;
-  } catch (errro) {
+  } catch (error) {
     return false;
   }
 };
