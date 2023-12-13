@@ -19,17 +19,27 @@ const canAccessTopWindow = () => {
   }
 };
 
+const getScreenOrientation = (device) => {
+  if (device && device.w && device.h) {
+    return device.w > device.h ? 'l' : 'p'
+  } else {
+    const w = canAccessTopWindow() ? getWindowTop() : getWindowSelf();
+    return w.innerWidth > w.innerHeight ? 'l' : 'p'
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['ad2'],
   supportedMediaTypes: SUPPORTED_AD_TYPES,
-  isBidRequestValid: (bid) =>
-    !!bid.params.id && typeof bid.params.id === 'string',
+  isBidRequestValid: (bid) => {
+    return !!bid.params.id && typeof bid.params.id === 'string'
+  },
   buildRequests: (validBidRequests, bidderRequest) => {
     const ids = validBidRequests.map(bid => {
       return { bannerId: bid.params.id, bidId: bid.bidId };
     });
-    const w = canAccessTopWindow() ? getWindowTop() : getWindowSelf();
+
     const options = {
       contentType: 'application/json',
       withCredentials: false,
@@ -38,14 +48,15 @@ export const spec = {
 
     const data = {
       ids: JSON.stringify(ids),
-      rf: bidderRequest.refererInfo.page,
-      o: w.innerWidth > w.innerHeight ? 'l' : 'p',
+      rf: bidderRequest.ortb2.site?.page || bidderRequest.refererInfo.page,
+      o: getScreenOrientation(),
       v: API_VERSION_NUMBER,
-      iso: navigator.browserLanguage ||
-                      navigator.language,
+      iso: bidderRequest.ortb2.device?.language || navigator.browserLanguage ||
+        navigator.language,
       udid: udid || '',
       _: Math.round(new Date().getTime()),
-    };
+    }
+
     return {
       method: 'GET',
       url: API_ENDPOINT,
