@@ -140,7 +140,7 @@ export const spec = {
   interpretResponse: interpretResponse,
 
   onBidWon: function (bid) {
-    const nurl = bid['nurl'];
+    const nurl = addRTT(bid['nurl'], bid.timeToRespond);
 
     if (!nurl) {
       return;
@@ -376,6 +376,26 @@ function replaceAuctionPrice(url, price, currency) {
   return url
     .replace(/\${AUCTION_PRICE}/, price)
     .replace(/\${AUCTION_CURRENCY}/, currency);
+}
+
+function addRTT(url, rtt) {
+  if (!url) return;
+
+  if (url.indexOf(`\${RTT}`) > -1) {
+    return url.replace(/\${RTT}/, rtt ?? -1);
+  }
+
+  let urlObj = new URL(url);
+
+  if (Number.isInteger(rtt)) {
+    urlObj.searchParams.set('rtt', rtt);
+  } else {
+    urlObj.searchParams.delete('rtt');
+  }
+
+  url = urlObj.toString();
+
+  return url;
 }
 
 registerBidder(spec);

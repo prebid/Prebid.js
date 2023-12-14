@@ -1,6 +1,6 @@
 import { assert, expect } from 'chai';
 import { spec, NATIVE_ASSETS } from 'modules/yandexBidAdapter.js';
-import { parseUrl } from 'src/utils.js';
+import * as utils from 'src/utils.js';
 import { BANNER, NATIVE } from '../../../src/mediaTypes';
 import { config } from '../../../src/config';
 
@@ -71,7 +71,7 @@ describe('Yandex adapter', function () {
 
       expect(method).to.equal('POST');
 
-      const parsedRequestUrl = parseUrl(url);
+      const parsedRequestUrl = utils.parseUrl(url);
       const { search: query } = parsedRequestUrl
 
       expect(parsedRequestUrl.hostname).to.equal('bs.yandex.ru');
@@ -100,7 +100,7 @@ describe('Yandex adapter', function () {
       const bannerRequest = getBidRequest();
       const requests = spec.buildRequests([bannerRequest], bidderRequest);
       const { url } = requests[0];
-      const parsedRequestUrl = parseUrl(url);
+      const parsedRequestUrl = utils.parseUrl(url);
       const { search: query } = parsedRequestUrl
 
       expect(query['ssp-cur']).to.equal('USD');
@@ -443,6 +443,55 @@ describe('Yandex adapter', function () {
       });
     });
   });
+
+  describe('onBidWon', function() {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+
+    it('Should not trigger pixel if bid does not contain nurl', function() {
+      const result = spec.onBidWon({});
+      expect(utils.triggerPixel.callCount).to.equal(0)
+    })
+
+    it('Should trigger pixel if bid has nurl', function() {
+      const result = spec.onBidWon({
+        nurl: 'https://example.com/some-tracker',
+        timeToRespond: 378,
+      });
+      expect(utils.triggerPixel.callCount).to.equal(1)
+      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker?rtt=378')
+    })
+
+    it('Should trigger pixel if bid has nurl with path & params', function() {
+      const result = spec.onBidWon({
+        nurl: 'https://example.com/some-tracker/abcdxyz?param1=1&param2=2',
+        timeToRespond: 378,
+      });
+      expect(utils.triggerPixel.callCount).to.equal(1)
+      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker/abcdxyz?param1=1&param2=2&rtt=378')
+    })
+
+    it('Should trigger pixel if bid has nurl with path & params and rtt macros', function() {
+      const result = spec.onBidWon({
+        nurl: 'https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=${RTT}',
+        timeToRespond: 378,
+      });
+      expect(utils.triggerPixel.callCount).to.equal(1)
+      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=378')
+    })
+
+    it('Should trigger pixel if bid has nurl and there is no timeToRespond param, but has rtt macros in nurl', function() {
+      const result = spec.onBidWon({
+        nurl: 'https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=${RTT}',
+      });
+      expect(utils.triggerPixel.callCount).to.equal(1)
+      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=-1')
+    })
+  })
 });
 
 function getBidConfig() {
