@@ -23,7 +23,9 @@ Anonymised’s Real-time Data Provider automatically obtains segment IDs from th
          name: "anonymised",
          waitForIt: true,
          params: {
-           cohortStorageKey: "cohort_ids"       
+           cohortStorageKey: "cohort_ids",
+           bidders: ["smartadserver", "appnexus"],
+           segtax: 1000
          }
        }
      ]
@@ -37,7 +39,8 @@ Anonymised’s Real-time Data Provider automatically obtains segment IDs from th
 | name | String | Anonymised Rtd module name | 'anonymised' always|
 | waitForIt | Boolean | Required to ensure that the auction is delayed until prefetch is complete | Optional. Defaults to false |
 | params.cohortStorageKey | String | the `localStorage` key, under which Anonymised Marketing Tag stores the segment IDs | 'cohort_ids' always |
-| params.bidders | `Array` | Bidders with which to share segment information | Required |
+| params.bidders | Array | Bidders with which to share segment information | Required |
+| params.segtax | Integer | The taxonomy for Anonymised | '1000' always |
 
 Please note that anonymisedRtdProvider should be integrated into the publisher website along with the [Anonymised Marketing Tag](https://support.anonymised.io/integrate/marketing-tag).
 Please reach out to Anonymised [representative](mailto:support@anonymised.io) if you have any questions or need further help to integrate Prebid, anonymisedRtdProvider, and Anonymised Marketing Tag
