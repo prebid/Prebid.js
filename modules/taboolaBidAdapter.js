@@ -186,7 +186,7 @@ export const spec = {
     if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url: USER_SYNC_IMG_URL + (queryParams.length ? '?' + queryParams.join('&') : '')
+        url: USER_SYNC_IFRAME_URL + (queryParams.length ? '?' + queryParams.join('&') : '')
       });
     }
 
