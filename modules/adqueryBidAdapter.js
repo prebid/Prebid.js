@@ -155,7 +155,17 @@ export const spec = {
     });
     triggerPixel(adqueryRequestUrl);
   },
+  /**
+   * Retrieves user synchronization URLs based on provided options and consents.
+   *
+   * @param {object} syncOptions - Options for synchronization.
+   * @param {object[]} serverResponses - Array of server responses.
+   * @param {object} gdprConsent - GDPR consent object.
+   * @param {object} uspConsent - USP consent object.
+   * @returns {object[]} - Array of synchronization URLs.
+   */
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+    logInfo('getUserSyncs', syncOptions, serverResponses, gdprConsent, uspConsent);
     let syncUrl = ADQUERY_USER_SYNC_DOMAIN;
     if (gdprConsent && gdprConsent.consentString) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
@@ -167,12 +177,19 @@ export const spec = {
     if (uspConsent && uspConsent.consentString) {
       syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
     }
+
+    if (syncOptions.iframeEnabled) {
+      return [{
+        type: 'iframe',
+        url: syncUrl + '&iframe=1'
+      }];
+    }
+
     return [{
       type: 'image',
       url: syncUrl
     }];
   }
-
 };
 
 function buildRequest(validBidRequests, bidderRequest) {
@@ -190,7 +207,8 @@ function buildRequest(validBidRequests, bidderRequest) {
 
   if (!userId) {
     // onetime User ID
-    userId = (getUniqueIdentifierStr() + '_' + getUniqueIdentifierStr()).substring(0, 22);
+    const ramdomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
+    userId = ramdomValues.map(val => val.toString(36)).join('').substring(0, 20);
     window.qid = userId;
   }
 
