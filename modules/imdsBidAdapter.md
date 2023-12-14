@@ -11,11 +11,11 @@ Maintainer: eng-demand@imds.tv
 The iMedia Digital Services adapter requires setup and approval from iMedia Digital Services.
 Please reach out to your account manager for more information.
 
-### DFP Video Creative
-To use video, setup a `VAST redirect` creative within Google AdManager (DFP) with the following VAST tag URL:
+### Google Ad Manager Video Creative
+To use video, setup a `VAST redirect` creative within Google Ad Manager with the following VAST tag URL:
 
-```
-https://track.technoratimedia.com/openrtb/tags?ID=%%PATTERN:hb_cache_id_synacorm%%&AUCTION_PRICE=%%PATTERN:hb_pb_synacormedia%%
+```text
+https://track.technoratimedia.com/openrtb/tags?ID=%%PATTERN:hb_uuid_imds%%&AUCTION_PRICE=%%PATTERN:hb_pb_imds%%
 ```
 
 # Test Parameters

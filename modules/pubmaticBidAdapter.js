@@ -1,4 +1,4 @@
-import { getBidRequest, logWarn, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, uniques, isPlainObject, isInteger } from '../src/utils.js';
+import { getBidRequest, logWarn, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, uniques, isPlainObject, isInteger, generateUUID } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE, ADPOD } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -758,6 +758,9 @@ function _addImpressionFPD(imp, bid) {
       deepSetValue(imp, `ext.data.${prop}`, ortb2[prop]);
     }
   });
+
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
+  gpid && deepSetValue(imp, `ext.gpid`, gpid);
 }
 
 function _addFloorFromFloorModule(impObj, bid) {
@@ -1078,8 +1081,10 @@ export const spec = {
     var bid;
     var blockedIabCategories = [];
     var allowedIabCategories = [];
+    var wiid = generateUUID();
 
     validBidRequests.forEach(originalBid => {
+      originalBid.params.wiid = originalBid.params.wiid || bidderRequest.auctionId || wiid;
       bid = deepClone(originalBid);
       bid.params.adSlot = bid.params.adSlot || '';
       _parseAdSlot(bid);
@@ -1227,6 +1232,10 @@ export const spec = {
     // check if fpd ortb2 contains device property with sua object
     if (device?.sua) {
       payload.device.sua = device?.sua;
+    }
+
+    if (device?.ext?.cdep) {
+      deepSetValue(payload, 'device.ext.cdep', device.ext.cdep);
     }
 
     if (user?.geo && device?.geo) {
