@@ -172,7 +172,7 @@ describe('viantOrtbBidAdapter', function () {
     });
     it('sends bid requests to the correct endpoint', function () {
       const url = testBuildRequests(baseBannerBidRequests, baseBidderRequest)[0].url;
-      expect(url).to.equal('https://bidders-us-east-1.adelphic.net/d/rtb/v25/prebid/bidder_test');
+      expect(url).to.equal('https://bidders-us-east-1.adelphic.net/d/rtb/v25/prebid/bidder');
     });
 
     it('sends site', function () {

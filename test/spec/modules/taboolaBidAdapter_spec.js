@@ -275,6 +275,26 @@ describe('Taboola Adapter', function () {
       expect(resData.tmax).to.equal(500);
     });
 
+    it('should pass bidder tmax as int', function () {
+      const bidderRequest = {
+        ...commonBidderRequest,
+        timeout: '500'
+      }
+      const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+      const resData = JSON.parse(res.data);
+      expect(resData.tmax).to.equal(500);
+    });
+
+    it('should pass bidder timeout as null', function () {
+      const bidderRequest = {
+        ...commonBidderRequest,
+        timeout: null
+      }
+      const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+      const resData = JSON.parse(res.data);
+      expect(resData.tmax).to.equal(undefined);
+    });
+
     describe('first party data', function () {
       it('should parse first party data', function () {
         const bidderRequest = {

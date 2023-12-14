@@ -12,7 +12,8 @@ const VALID_BID_BANNER = {
   bidId: '1a2b3c4d',
   adUnitCode: 'id-1234',
   params: {
-    networkId: '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+    networkId: '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+    formats: ['corner']
   },
   mediaTypes: {
     banner: {
@@ -64,6 +65,14 @@ const VALID_REQUEST_BANNER = {
           'w': 1
         }],
         'topframe': 0
+      },
+      'ext': {
+        'sparteo': {
+          'params': {
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'formats': ['corner']
+          }
+        }
       }
     }],
     'site': {
@@ -99,7 +108,12 @@ const VALID_REQUEST_VIDEO = {
         'maxduration': 30,
       },
       'ext': {
-        'pbadslot': 'video'
+        'pbadslot': 'video',
+        'sparteo': {
+          'params': {
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+          }
+        }
       }
     }],
     'site': {
@@ -127,6 +141,14 @@ const VALID_REQUEST = {
           'w': 1
         }],
         'topframe': 0
+      },
+      'ext': {
+        'sparteo': {
+          'params': {
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf',
+            'formats': ['corner']
+          }
+        }
       }
     }, {
       'id': '5e6f7g8h',
@@ -144,7 +166,12 @@ const VALID_REQUEST = {
         'maxduration': 30,
       },
       'ext': {
-        'pbadslot': 'video'
+        'pbadslot': 'video',
+        'sparteo': {
+          'params': {
+            'networkId': '1234567a-eb1b-1fae-1d23-e1fbaef234cf'
+          }
+        }
       }
     }],
     'site': {
@@ -296,7 +323,12 @@ describe('SparteoAdapter', function () {
             'price': 5,
             'ext': {
               'prebid': {
-                'type': 'video'
+                'type': 'video',
+                'cache': {
+                  'vastXml': {
+                    'url': 'https://pbs.tet.com/cache?uuid=1234'
+                  }
+                }
               }
             },
             'adm': 'tag',
@@ -341,7 +373,8 @@ describe('SparteoAdapter', function () {
             ttl: TTL,
             mediaType: 'video',
             meta: {},
-            vastUrl: 'https://t.bidder.sparteo.com/img',
+            nurl: 'https://t.bidder.sparteo.com/img',
+            vastUrl: 'https://pbs.tet.com/cache?uuid=1234',
             vastXml: 'tag'
           });
         }
