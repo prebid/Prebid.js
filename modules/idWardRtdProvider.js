@@ -5,15 +5,15 @@
  * @module modules/idWardRtdProvider
  * @requires module:modules/realTimeData
  */
-import { getStorageManager } from '../src/storageManager.js';
-import { submodule } from '../src/hook.js';
-import { isPlainObject, mergeDeep, logMessage, logError } from '../src/utils.js';
-import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {submodule} from '../src/hook.js';
+import {isPlainObject, mergeDeep, logMessage, logError} from '../src/utils.js';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'idWard';
 
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
+export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME});
 /**
  * Add real-time data & merge segments.
  * @param ortb2 object to merge into
@@ -63,7 +63,7 @@ export function getRealTimeData(reqBidsConfigObj, onDone, rtdConfig, userConsent
         ext: {
           segtax: rtdConfig.params.segtax
         },
-        segment: segments.map(x => ({ id: x }))
+        segment: segments.map(x => ({id: x}))
       }
 
       logMessage('idWardRtdProvider: user.data.segment: ', udSegment);

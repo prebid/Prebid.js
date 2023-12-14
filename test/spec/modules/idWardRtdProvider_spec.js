@@ -1,7 +1,7 @@
-import { config } from 'src/config.js';
-import { getRealTimeData, idWardRtdSubmodule, storage } from 'modules/idWardRtdProvider.js';
+import {config} from 'src/config.js';
+import {getRealTimeData, idWardRtdSubmodule, storage} from 'modules/idWardRtdProvider.js';
 
-describe('idWardRtdProvider', function () {
+describe('idWardRtdProvider', function() {
   let getDataFromLocalStorageStub;
 
   const testReqBidsConfigObj = {
@@ -12,7 +12,7 @@ describe('idWardRtdProvider', function () {
     ]
   };
 
-  const onDone = function () { return true };
+  const onDone = function() { return true };
 
   const cmoduleConfig = {
     'name': 'idWard',
@@ -21,7 +21,7 @@ describe('idWardRtdProvider', function () {
     }
   }
 
-  beforeEach(function () {
+  beforeEach(function() {
     config.resetConfig();
     getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage')
   });
@@ -30,14 +30,14 @@ describe('idWardRtdProvider', function () {
     getDataFromLocalStorageStub.restore();
   });
 
-  describe('idWardRtdSubmodule', function () {
+  describe('idWardRtdSubmodule', function() {
     it('successfully instantiates', function () {
-      expect(idWardRtdSubmodule.init()).to.equal(true);
+		  expect(idWardRtdSubmodule.init()).to.equal(true);
     });
   });
 
-  describe('Get Real-Time Data', function () {
-    it('gets rtd from local storage', function () {
+  describe('Get Real-Time Data', function() {
+    it('gets rtd from local storage', function() {
       const rtdConfig = {
         params: {
           cohortStorageKey: 'cohort_ids',
@@ -69,11 +69,11 @@ describe('idWardRtdProvider', function () {
       getDataFromLocalStorageStub.withArgs('cohort_ids')
         .returns(JSON.stringify(['TCZPQOWPEJG3MJOTUQUF793A', '93SUG3H540WBJMYNT03KX8N3']));
 
-      getRealTimeData(bidConfig, () => { }, rtdConfig, {});
+      getRealTimeData(bidConfig, () => {}, rtdConfig, {});
       expect(bidConfig.ortb2Fragments.global.user.data).to.deep.include.members([rtdUserObj1]);
     });
 
-    it('do not set rtd if local storage empty', function () {
+    it('do not set rtd if local storage empty', function() {
       const rtdConfig = {
         params: {
           cohortStorageKey: 'cohort_ids',
@@ -87,11 +87,11 @@ describe('idWardRtdProvider', function () {
         .returns(null);
 
       expect(config.getConfig().ortb2).to.be.undefined;
-      getRealTimeData(bidConfig, () => { }, rtdConfig, {});
+      getRealTimeData(bidConfig, () => {}, rtdConfig, {});
       expect(config.getConfig().ortb2).to.be.undefined;
     });
 
-    it('do not set rtd if local storage has incorrect value', function () {
+    it('do not set rtd if local storage has incorrect value', function() {
       const rtdConfig = {
         params: {
           cohortStorageKey: 'cohort_ids',
@@ -105,7 +105,7 @@ describe('idWardRtdProvider', function () {
         .returns('wrong cohort ids value');
 
       expect(config.getConfig().ortb2).to.be.undefined;
-      getRealTimeData(bidConfig, () => { }, rtdConfig, {});
+      getRealTimeData(bidConfig, () => {}, rtdConfig, {});
       expect(config.getConfig().ortb2).to.be.undefined;
     });
 
