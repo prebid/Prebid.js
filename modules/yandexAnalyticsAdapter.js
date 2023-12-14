@@ -41,6 +41,7 @@ const {
     BID_WON,
     BIDDER_DONE,
     AUCTION_END,
+    BID_TIMEOUT,
   },
 } = CONSTANTS;
 
@@ -51,6 +52,7 @@ const EVENTS_TO_TRACK = [
   BID_WON,
   BIDDER_DONE,
   AUCTION_END,
+  BID_TIMEOUT,
 ];
 
 const yandexAnalytics = Object.assign(buildAdapter({ analyticsType: 'endpoint' }), {
