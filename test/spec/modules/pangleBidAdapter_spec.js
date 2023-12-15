@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/pangleBidAdapter.js';
+import { logInfo } from '../../../src/utils';
 
 const REQUEST = [{
   adUnitCode: 'adUnitCode1',
@@ -45,6 +46,7 @@ const REQUEST = [{
     appid: 111,
   },
 }];
+
 const DEFAULT_OPTIONS = {
   userId: {
     britepoolid: 'pangle-britepool',
@@ -182,6 +184,112 @@ describe('pangle bid adapter', function () {
     it('should return correct device type: desktop', function () {
       let deviceType = spec.getDeviceType(desktop);
       expect(deviceType).to.equal(2);
+    });
+  });
+
+  // describe('video', function () {
+  //   it('video config', function() {
+  //     logInfo(spec.buildRequests(VIDEO_REQUEST, DEFAULT_OPTIONS)[0].data, 'spec.buildRequests(videoConfig, DEFAULT_OPTIONS)[0].data.imp[0]');
+  //     const request = spec.buildRequests(VIDEO_REQUEST, DEFAULT_OPTIONS)[0];
+
+  //     expect(request).to.exist.and.to.be.a('object');
+  //     const payload = request.data;
+  //     expect(payload).to.exist.and.to.be.a('object');
+  //     const video = payload.imp[0].video;
+  //     expect(video).to.exist.and.to.be.a('object');
+  //     // console.log(video, 'video???')
+  //     // expect(url).to.equal('https://pangle.pangleglobal.com/api/ad/union/web_js/common/get_ads');
+  //     // assert.deepEqual(video, {
+  //     //   h: 380,
+  //     //   mimes: ['video/mp4'],
+  //     //   w: 240
+  //     // })
+  //   })
+  // })
+});
+
+describe('Pangle Adapter with video', function() {
+  const videoBidRequest = [
+    {
+      bidId: '2820132fe18114',
+      mediaTypes: { video: { context: 'outstream', playerSize: [[300, 250]] } },
+      params: { token: 'test-token' }
+    }
+  ];
+  const bidderRequest = {
+    refererInfo: {
+      referer: 'https://example.com'
+    }
+  };
+  const serverResponse = {
+    'headers': null,
+    'body': {
+      'id': '233f1693-68d1-470a-ad85-c156c3faaf6f',
+      'seatbid': [
+        {
+          'bid': [
+            {
+              'id': '2820132fe18114',
+              'impid': '2820132fe18114',
+              'price': 0.03294,
+              'nurl': 'https://api16-event-sg2.pangle.io/api/ad/union/openrtb/win/?req_id=233f1693-68d1-470a-ad85-c156c3faaf6fu1450&ttdsp_adx_index=256&rit=980589944&extra=oqveoB%2Bg4%2ByNz9L8wwu%2Fy%2FwKxQsGaKsJHuB4NMK77uqZ9%2FJKpnsVZculJX8%2FxrRBAtaktU1DRN%2Fy6TKAqibCbj%2FM3%2BZ6biAKQG%2BCyt4eIV0KVvri9jCCnaajbkN7YNJWJJw2lW6cJ6Va3SuJG9H7a%2FAJd2PMbhK7fXWhoW72TwgOcKHKBgjM6sNDISBKbWlZyY3L1PhKSX%2FM8LOvL6qahsb%2FDpEObIx24vhQLNWp28XY1L4UqeibuRjam3eCvN7nXoQq74KkJ45QQsTgvV4j6I6EbLOdjOi%2FURhWMDjUD1VCMpqUT%2B6L8ZROgrX9Tp53eJ3bFOczmSTOmDSazKMHa%2B3uZZ7JHcSx32eoY4hfYc99NOJmYBKXNKCmoXyJvS3PCM3PlAz97hKrDMGnVv1wAQ7QGDCbittF0vZwtsRAvvx2mWINNIB3%2FUB2PjhxFsoDA%2BWE2urVZwEdyu%2FJrCznJsMwenXjcbMD5jmUF5vDkkLS%2B7TMDIEawJPJKZ62pK35enrwGxCs6ePXi21rJJkA0bF8tgAdl4mU1illBIVO4kCL%2ByRASskHPjgg%2FcdFe9HP%2Fi8byjAprH%2BhRerN%2FRKFxC3xv8b75x2pb1g7dY%2FTj9IjT0evsBSPVwFNqtKmPId35IcY%2FSXiqPHh%2FrAHZzr5BPsTT19P49SlNMR9UZYTzViX1iJpcCL1UFjuDdrdff%2BhHCviXxo%2FkRmufEF3umHZwxbdDOPAghuZ0DtRCY6S1rnb%2FK9BbpsVKSndOtgfCwMHFwiPmdw1XjEXGc1eOWXY6qfSp90PIfL6WS7Neh3ba2qMv6WxG3HSOBYvrcCqVTsNxk4UdVm3qb1J0CMVByweTMo45usSkCTdvX3JuEB7tVA6%2BrEk57b3XJd5Phf2AN8hon%2F7lmcXE41kwMQuXq89ViwQmW0G247UFWOQx4t1cmBqFiP6qNA%2F%2BunkZDno1pmAsGnTv7Mz9xtpOaIqKl8BKrVQSTopZ9WcUVzdBUutF19mn1f43BvyA9gIEhcDJHOj&win_price=${AUCTION_PRICE}&auction_mwb=${AUCTION_BID_TO_WIN}&use_pb=1',
+              'lurl': 'https://api16-event-sg2.pangle.io/api/ad/union/openrtb/loss/?req_id=233f1693-68d1-470a-ad85-c156c3faaf6fu1450&ttdsp_adx_index=256&rit=980589944&extra=oqveoB%2Bg4%2ByNz9L8wwu%2Fy%2FwKxQsGaKsJHuB4NMK77uqZ9%2FJKpnsVZculJX8%2FxrRBAtaktU1DRN%2Fy6TKAqibCbj%2FM3%2BZ6biAKQG%2BCyt4eIV0KVvri9jCCnaajbkN7YNJWJJw2lW6cJ6Va3SuJG9H7a%2FAJd2PMbhK7fXWhoW72TwgOcKHKBgjM6sNDISBKbWlZyY3L1PhKSX%2FM8LOvL6qahsb%2FDpEObIx24vhQLNWp28XY1L4UqeibuRjam3eCvN7nXoQq74KkJ45QQsTgvV4j6I6EbLOdjOi%2FURhWMDjUD1VCMpqUT%2B6L8ZROgrX9Tp53eJ3bFOczmSTOmDSazKMHa%2B3uZZ7JHcSx32eoY4hfYc99NOJmYBKXNKCmoXyJvS3PCM3PlAz97hKrDMGnVv1wAQ7QGDCbittF0vZwtsRAvvx2mWINNIB3%2FUB2PjhxFsoDA%2BWE2urVZwEdyu%2FJrCznJsMwenXjcbMD5jmUF5vDkkLS%2B7TMDIEawJPJKZ62pK35enrwGxCs6ePXi21rJJkA0bF8tgAdl4mU1illBIVO4kCL%2ByRASskHPjgg%2FcdFe9HP%2Fi8byjAprH%2BhRerN%2FRKFxC3xv8b75x2pb1g7dY%2FTj9IjT0evsBSPVwFNqtKmPId35IcY%2FSXiqPHh%2FrAHZzr5BPsTT19P49SlNMR9UZYTzViX1iJpcCL1UFjuDdrdff%2BhHCviXxo%2FkRmufEF3umHZwxbdDOPAghuZ0DtRCY6S1rnb%2FK9BbpsVKSndOtgfCwMHFwiPmdw1XjEXGc1eOWXY6qfSp90PIfL6WS7Neh3ba2qMv6WxG3HSOBYvrcCqVTsNxk4UdVm3qb1J0CMVByweTMo45usSkCTdvX3JuEB7tVA6%2BrEk57b3XJd5Phf2AN8hon%2F7lmcXE41kwMQuXq89ViwQmW0G247UFWOQx4t1cmBqFiP6qNA%2F%2BunkZDno1pmAsGnTv7Mz9xtpOaIqKl8BKrVQSTopZ9WcUVzdBUutF19mn1f43BvyA9gIEhcDJHOj&reason=${AUCTION_LOSS}&ad_slot_type=8&auction_mwb=${AUCTION_PRICE}&use_pb=1',
+              'adm': '<VAST version="2.0"></VAST>',
+              'adid': '1780626232977441',
+              'adomain': [
+                'swi.esxcmnb.com'
+              ],
+              'iurl': 'https://p16-ttam-va.ibyteimg.com/origin/ad-site-i18n-sg/202310245d0d598b3ff5993c4f129a8b',
+              'cid': '1780626232977441',
+              'crid': '1780626232977441',
+              'attr': [
+                4
+              ],
+              'w': 640,
+              'h': 640,
+              'ext': {
+                'pangle': {
+                  'adtype': 8
+                },
+                'event_notification_token': {
+                  'payload': '980589944:8:1450:7492'
+                }
+              }
+            }
+          ],
+          'seat': 'pangle'
+        }
+      ]
+    }
+  };
+
+  describe('Video: buildRequests', function() {
+    it('should create a POST request for video bid', function() {
+      const requests = spec.buildRequests(videoBidRequest, bidderRequest);
+      expect(requests[0].method).to.equal('POST');
+    });
+
+    it('should have a valid URL and payload for an out-stream video bid', function () {
+      const requests = spec.buildRequests(videoBidRequest, bidderRequest);
+      expect(requests[0].url).to.equal('https://pangle.pangleglobal.com/api/ad/union/web_js/common/get_ads');
+      expect(requests[0].data).to.exist;
+    });
+  });
+
+  describe('interpretResponse: Video', function () {
+    it('should get correct bid response', function () {
+      const request = spec.buildRequests(videoBidRequest, bidderRequest)[0];
+      const interpretedResponse = spec.interpretResponse(serverResponse, request);
+      expect(interpretedResponse).to.be.an('array');
+      const bid = interpretedResponse[0];
+      expect(bid).to.exist;
+      expect(bid.requestId).to.exist;
+      expect(bid.cpm).to.be.above(0);
+      expect(bid.ttl).to.exist;
+      expect(bid.creativeId).to.exist;
+      if (bid.renderer) {
+        expect(bid.renderer.render).to.exist;
+      }
     });
   });
 });

@@ -27,7 +27,9 @@ const _approvedLoadExternalJSList = [
   'clean.io',
   'a1Media',
   'geoedge',
+  'mediafilter',
   'qortex',
+  'dynamicAdBoost',
   'id5'
 ]
 

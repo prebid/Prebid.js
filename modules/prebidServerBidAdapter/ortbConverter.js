@@ -240,7 +240,16 @@ const PBS_CONVERTER = ortbConverter({
       },
       fledgeAuctionConfigs(orig, response, ortbResponse, context) {
         const configs = Object.values(context.impContext)
-          .flatMap((impCtx) => (impCtx.fledgeConfigs || []).map(cfg => ({adUnitCode: impCtx.adUnit.code, config: cfg.config})));
+          .flatMap((impCtx) => (impCtx.fledgeConfigs || []).map(cfg => {
+            const bidderReq = impCtx.actualBidderRequests.find(br => br.bidderCode === cfg.bidder);
+            const bidReq = impCtx.actualBidRequests.get(cfg.bidder);
+            return {
+              adUnitCode: impCtx.adUnit.code,
+              ortb2: bidderReq?.ortb2,
+              ortb2Imp: bidReq?.ortb2Imp,
+              config: cfg.config
+            };
+          }));
         if (configs.length > 0) {
           response.fledgeAuctionConfigs = configs;
         }
