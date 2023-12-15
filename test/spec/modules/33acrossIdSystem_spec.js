@@ -127,8 +127,8 @@ describe('33acrossIdSystem', () => {
       });
     });
 
-    context('if the response doesn\'t include a first-party ID', () => {
-      it('should try to remove any first-party ID that could be stored', () => {
+    context('if the response lacks a first-party ID', () => {
+      it('should wipe any existing first-party ID from storage', () => {
         const completeCallback = () => {};
 
         const { callback } = thirthyThreeAcrossIdSubmodule.getId({
@@ -164,38 +164,6 @@ describe('33acrossIdSystem', () => {
         removeDataFromLocalStorage.restore();
         setCookie.restore();
         cookiesAreEnabled.restore();
-      });
-    });
-
-    context('if the response lacks a first-party ID', () => {
-      it('should wipe any existing first-party ID from storage', () => {
-        const completeCallback = () => {};
-
-        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
-          params: {
-            pid: '12345'
-          }
-        });
-
-        callback(completeCallback);
-
-        const [request] = server.requests;
-
-        const removeDataFromLocalStorage = sinon.stub(storage, 'removeDataFromLocalStorage');
-
-        request.respond(200, {
-          'Content-Type': 'application/json'
-        }, JSON.stringify({
-          succeeded: true,
-          data: {
-            envelope: 'foo'
-          },
-          expires: 1645667805067
-        }));
-
-        expect(removeDataFromLocalStorage.calledOnceWithExactly('33acrossIdFp')).to.be.true;
-
-        removeDataFromLocalStorage.restore();
       });
     });
 
