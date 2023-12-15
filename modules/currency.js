@@ -22,14 +22,7 @@ export var currencyRates = {};
 var bidderCurrencyDefault = {};
 var defaultRates;
 
-export const ready = (() => {
-  let ctl;
-  function reset() {
-    ctl = defer();
-  }
-  reset();
-  return {done: () => ctl.resolve(), reset, promise: () => ctl.promise}
-})();
+export let responseReady = defer();
 
 /**
  * Configuration function for currency
@@ -137,6 +130,7 @@ function initCurrency(url) {
   // Adding conversion function to prebid global for external module and on page use
   getGlobal().convertCurrency = (cpm, fromCurrency, toCurrency) => parseFloat(cpm) * getCurrencyConversion(fromCurrency, toCurrency);
   getHook('addBidResponse').before(addBidResponseHook, 100);
+  getHook('responsesReady').before(responsesReadyHook);
 
   // call for the file if we haven't already
   if (needToCallForCurrencyFile) {
@@ -150,19 +144,15 @@ function initCurrency(url) {
             conversionCache = {};
             currencyRatesLoaded = true;
             processBidResponseQueue();
-            ready.done();
           } catch (e) {
             errorSettingsRates('Failed to parse currencyRates response: ' + response);
           }
         },
         error: function (...args) {
           errorSettingsRates(...args);
-          ready.done();
         }
       }
     );
-  } else {
-    ready.done();
   }
 }
 
@@ -170,6 +160,7 @@ function resetCurrency() {
   logInfo('Uninstalling addBidResponse decorator for currency module', arguments);
 
   getHook('addBidResponse').getHooks({hook: addBidResponseHook}).remove();
+  getHook('responsesReady').getHooks({hook: responsesReadyHook}).remove();
   delete getGlobal().convertCurrency;
 
   adServerCurrency = 'USD';
@@ -179,6 +170,11 @@ function resetCurrency() {
   needToCallForCurrencyFile = true;
   currencyRates = {};
   bidderCurrencyDefault = {};
+  responseReady = defer();
+}
+
+function responsesReadyHook(next, ready) {
+  next(ready.then(() => responseReady.promise));
 }
 
 export const addBidResponseHook = timedBidResponseHook('currency', function addBidResponseHook(fn, adUnitCode, bid, reject) {
@@ -215,8 +211,6 @@ export const addBidResponseHook = timedBidResponseHook('currency', function addB
   bidResponseQueue.push(wrapFunction(fn, this, [adUnitCode, bid, reject]));
   if (!currencySupportEnabled || currencyRatesLoaded) {
     processBidResponseQueue();
-  } else {
-    fn.untimed.bail(ready.promise());
   }
 });
 
@@ -224,6 +218,7 @@ function processBidResponseQueue() {
   while (bidResponseQueue.length > 0) {
     (bidResponseQueue.shift())();
   }
+  responseReady.resolve()
 }
 
 function wrapFunction(fn, context, params) {
@@ -238,9 +233,9 @@ function wrapFunction(fn, context, params) {
           bid.currency = adServerCurrency;
         }
       } catch (e) {
-        logWarn('Returning NO_BID, getCurrencyConversion threw error: ', e);
-        // TODO: in v8, this should not continue with a "NO_BID"
-        params[1] = params[2](CONSTANTS.REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
+        logWarn('getCurrencyConversion threw error: ', e);
+        params[2](CONSTANTS.REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
+        return;
       }
     }
     return fn.apply(context, params);

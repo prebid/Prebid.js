@@ -354,7 +354,6 @@ describe('Nexx360 bid adapter tests', function () {
         const request = spec.buildRequests(displayBids, bidderRequest);
         const requestContent = request.data;
         expect(request).to.have.property('method').and.to.equal('POST');
-        expect(requestContent.id).to.be.eql('2e684815-b44e-4e04-b812-56da54adbe74');
         expect(requestContent.cur[0]).to.be.eql('USD');
         expect(requestContent.imp.length).to.be.eql(2);
         expect(requestContent.imp[0].id).to.be.eql('44a2706ac3574');
@@ -375,50 +374,52 @@ describe('Nexx360 bid adapter tests', function () {
         expect(requestContent.imp[1].tagid).to.be.eql('div-2-abcd');
         expect(requestContent.imp[1].ext.adUnitCode).to.be.eql('div-2-abcd');
         expect(requestContent.imp[1].ext.divId).to.be.eql('div-2-abcd');
-        expect(requestContent.ext.bidderVersion).to.be.eql('2.0');
+        expect(requestContent.ext.bidderVersion).to.be.eql('3.0');
         expect(requestContent.ext.source).to.be.eql('prebid.js');
       });
 
-      it('We perform a test with a multiformat adunit', function() {
-        const multiformatBids = [...sampleBids];
-        multiformatBids[0].mediaTypes = {
-          banner: {
-            sizes: [[300, 250], [300, 600]]
-          },
-          video: {
-            context: 'outstream',
-            playerSize: [640, 480],
-            mimes: ['video/mp4'],
-            protocols: [1, 2, 3, 4, 5, 6, 7, 8],
-            playbackmethod: [2],
-            skip: 1,
-            playback_method: ['auto_play_sound_off']
-          }
-        };
-        const request = spec.buildRequests(multiformatBids, bidderRequest);
-        const requestContent = request.data;
-        expect(requestContent.imp[0].video.ext.context).to.be.eql('outstream');
-        expect(requestContent.imp[0].video.playbackmethod[0]).to.be.eql(2);
-      });
+      if (FEATURES.VIDEO) {
+        it('We perform a test with a multiformat adunit', function() {
+          const multiformatBids = [...sampleBids];
+          multiformatBids[0].mediaTypes = {
+            banner: {
+              sizes: [[300, 250], [300, 600]]
+            },
+            video: {
+              context: 'outstream',
+              playerSize: [640, 480],
+              mimes: ['video/mp4'],
+              protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+              playbackmethod: [2],
+              skip: 1,
+              playback_method: ['auto_play_sound_off']
+            }
+          };
+          const request = spec.buildRequests(multiformatBids, bidderRequest);
+          const requestContent = request.data;
+          expect(requestContent.imp[0].video.ext.context).to.be.eql('outstream');
+          expect(requestContent.imp[0].video.playbackmethod[0]).to.be.eql(2);
+        });
 
-      it('We perform a test with a instream adunit', function() {
-        const videoBids = [sampleBids[0]];
-        videoBids[0].mediaTypes = {
-          video: {
-            context: 'instream',
-            playerSize: [640, 480],
-            mimes: ['video/mp4'],
-            protocols: [1, 2, 3, 4, 5, 6],
-            playbackmethod: [2],
-            skip: 1
-          }
-        };
-        const request = spec.buildRequests(videoBids, bidderRequest);
-        const requestContent = request.data;
-        expect(request).to.have.property('method').and.to.equal('POST');
-        expect(requestContent.imp[0].video.ext.context).to.be.eql('instream');
-        expect(requestContent.imp[0].video.playbackmethod[0]).to.be.eql(2);
-      })
+        it('We perform a test with a instream adunit', function() {
+          const videoBids = [sampleBids[0]];
+          videoBids[0].mediaTypes = {
+            video: {
+              context: 'instream',
+              playerSize: [640, 480],
+              mimes: ['video/mp4'],
+              protocols: [1, 2, 3, 4, 5, 6],
+              playbackmethod: [2],
+              skip: 1
+            }
+          };
+          const request = spec.buildRequests(videoBids, bidderRequest);
+          const requestContent = request.data;
+          expect(request).to.have.property('method').and.to.equal('POST');
+          expect(requestContent.imp[0].video.ext.context).to.be.eql('instream');
+          expect(requestContent.imp[0].video.playbackmethod[0]).to.be.eql(2);
+        })
+      }
     });
     after(function () {
       sandbox.restore()
@@ -433,7 +434,7 @@ describe('Nexx360 bid adapter tests', function () {
       const output = spec.interpretResponse(response);
       expect(output.length).to.be.eql(0);
     });
-    it('banner responses', function() {
+    it('banner responses with adUrl only', function() {
       const response = {
         body: {
           'id': 'a8d3a675-a4ba-4d26-807f-c8f2fad821e0',
@@ -474,6 +475,53 @@ describe('Nexx360 bid adapter tests', function () {
       };
       const output = spec.interpretResponse(response);
       expect(output[0].adUrl).to.be.eql(response.body.seatbid[0].bid[0].ext.adUrl);
+      expect(output[0].mediaType).to.be.eql(response.body.seatbid[0].bid[0].ext.mediaType);
+      expect(output[0].currency).to.be.eql(response.body.cur);
+      expect(output[0].cpm).to.be.eql(response.body.seatbid[0].bid[0].price);
+    });
+    it('banner responses with adm', function() {
+      const response = {
+        body: {
+          'id': 'a8d3a675-a4ba-4d26-807f-c8f2fad821e0',
+          'cur': 'USD',
+          'seatbid': [
+            {
+              'bid': [
+                {
+                  'id': '4427551302944024629',
+                  'impid': '226175918ebeda',
+                  'price': 1.5,
+                  'adomain': [
+                    'http://prebid.org'
+                  ],
+                  'crid': '98493581',
+                  'ssp': 'appnexus',
+                  'h': 600,
+                  'w': 300,
+                  'adm': '<div>TestAd</div>',
+                  'cat': [
+                    'IAB3-1'
+                  ],
+                  'ext': {
+                    'adUnitCode': 'div-1',
+                    'mediaType': 'banner',
+                    'adUrl': 'https://fast.nexx360.io/cache?uuid=fdddcebc-1edf-489d-880d-1418d8bdc493',
+                    'ssp': 'appnexus',
+                  }
+                }
+              ],
+              'seat': 'appnexus'
+            }
+          ],
+          'ext': {
+            'id': 'de3de7c7-e1cf-4712-80a9-94eb26bfc718',
+            'cookies': []
+          },
+        }
+      };
+      const output = spec.interpretResponse(response);
+      expect(output[0].ad).to.be.eql(response.body.seatbid[0].bid[0].adm);
+      expect(output[0].adUrl).to.be.eql(undefined);
       expect(output[0].mediaType).to.be.eql(response.body.seatbid[0].bid[0].ext.mediaType);
       expect(output[0].currency).to.be.eql(response.body.cur);
       expect(output[0].cpm).to.be.eql(response.body.seatbid[0].bid[0].price);

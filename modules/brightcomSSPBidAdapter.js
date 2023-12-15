@@ -1,5 +1,4 @@
 import {
-  getBidIdParameter,
   isArray,
   getWindowTop,
   getUniqueIdentifierStr,
@@ -9,7 +8,7 @@ import {
   createTrackPixelHtml,
   getWindowSelf,
   isFn,
-  isPlainObject,
+  isPlainObject, getBidIdParameter,
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
@@ -84,7 +83,7 @@ function buildRequests(bidReqs, bidderRequest) {
         w: screen.width,
         h: screen.height
       },
-      tmax: config.getConfig('bidderTimeout')
+      tmax: bidderRequest?.timeout
     };
 
     if (bidderRequest?.gdprConsent) {
@@ -116,7 +115,6 @@ function buildRequests(bidReqs, bidderRequest) {
       method: 'POST',
       url: URL,
       data: JSON.stringify(payload),
-      options: {contentType: 'text/plain', withCredentials: false}
     };
   } catch (e) {
     logError(e, {bidReqs, bidderRequest});

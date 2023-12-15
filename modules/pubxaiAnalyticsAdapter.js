@@ -1,8 +1,10 @@
-import { deepAccess, getGptSlotInfoForAdUnitCode, parseSizesInput, getWindowLocation, buildUrl } from '../src/utils.js';
+import { deepAccess, parseSizesInput, getWindowLocation, buildUrl } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
@@ -180,7 +182,7 @@ function send(data, status) {
       search: {
         auctionTimestamp: auctionTimestamp,
         pubxaiAnalyticsVersion: pubxaiAnalyticsVersion,
-        prebidVersion: $$PREBID_GLOBAL$$.version
+        prebidVersion: getGlobal().version
       }
     });
     if (status == 'bidwon') {

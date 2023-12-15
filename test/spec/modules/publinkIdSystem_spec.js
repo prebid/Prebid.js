@@ -1,11 +1,12 @@
 import {publinkIdSubmodule} from 'modules/publinkIdSystem.js';
-import {getStorageManager} from '../../../src/storageManager';
+import {getCoreStorageManager, getStorageManager} from '../../../src/storageManager';
 import {server} from 'test/mocks/xhr.js';
 import sinon from 'sinon';
 import {uspDataHandler} from '../../../src/adapterManager';
 import {parseUrl} from '../../../src/utils';
 
-export const storage = getStorageManager({gvlid: 24});
+const storage = getCoreStorageManager();
+
 const TEST_COOKIE_VALUE = 'cookievalue';
 describe('PublinkIdSystem', () => {
   describe('decode', () => {
@@ -119,7 +120,7 @@ describe('PublinkIdSystem', () => {
         expect(parsed.search.mpn).to.equal('Prebid.js');
         expect(parsed.search.mpv).to.equal('$prebid.version$');
 
-        request.respond(204, {}, JSON.stringify(serverResponse));
+        request.respond(204);
         expect(callbackSpy.called).to.be.false;
       });
 

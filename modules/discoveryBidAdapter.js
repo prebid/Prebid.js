@@ -6,7 +6,7 @@ import { BANNER, NATIVE } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'discovery';
 const ENDPOINT_URL = 'https://rtb-jp.mediago.io/api/bid?tn=';
 const TIME_TO_LIVE = 500;
-const storage = getStorageManager();
+const storage = getStorageManager({bidderCode: BIDDER_CODE});
 let globals = {};
 let itemMaps = {};
 const MEDIATYPE = [BANNER, NATIVE];
@@ -258,7 +258,7 @@ function getItems(validBidRequests, bidderRequest) {
           format: sizes,
         },
         ext: {},
-        tagid: globals['tagid'],
+        tagid: req.params && req.params.tagid
       };
     }
     itemMaps[id] = {
@@ -301,6 +301,7 @@ function getParam(validBidRequests, bidderRequest) {
 
   if (items && items.length) {
     let c = {
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       id: 'pp_hbjs_' + auctionId,
       test: +isTest,
       at: 1,

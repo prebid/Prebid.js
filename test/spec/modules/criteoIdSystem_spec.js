@@ -1,5 +1,6 @@
 import { criteoIdSubmodule, storage } from 'modules/criteoIdSystem.js';
 import * as utils from 'src/utils.js';
+import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../../src/adapterManager.js';
 import { server } from '../../mocks/xhr';
 
 const pastDateString = new Date(0).toString()
@@ -17,6 +18,9 @@ describe('CriteoId module', function () {
   let timeStampStub;
   let parseUrlStub;
   let triggerPixelStub;
+  let gdprConsentDataStub;
+  let uspConsentDataStub;
+  let gppConsentDataStub;
 
   beforeEach(function (done) {
     getCookieStub = sinon.stub(storage, 'getCookie');
@@ -27,6 +31,9 @@ describe('CriteoId module', function () {
     timeStampStub = sinon.stub(utils, 'timestamp').returns(nowTimestamp);
     parseUrlStub = sinon.stub(utils, 'parseUrl').returns({ protocol: 'https', hostname: 'testdev.com' })
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+    gdprConsentDataStub = sinon.stub(gdprDataHandler, 'getConsentData');
+    uspConsentDataStub = sinon.stub(uspDataHandler, 'getConsentData');
+    gppConsentDataStub = sinon.stub(gppDataHandler, 'getConsentData');
     done();
   });
 
@@ -39,6 +46,9 @@ describe('CriteoId module', function () {
     timeStampStub.restore();
     triggerPixelStub.restore();
     parseUrlStub.restore();
+    gdprConsentDataStub.restore();
+    uspConsentDataStub.restore();
+    gppConsentDataStub.restore();
   });
 
   const storageTestCases = [
@@ -136,11 +146,11 @@ describe('CriteoId module', function () {
   }));
 
   const gdprConsentTestCases = [
-    { consentData: { gdprApplies: true, consentString: 'expectedConsentString' }, expected: 'expectedConsentString' },
-    { consentData: { gdprApplies: false, consentString: 'expectedConsentString' }, expected: undefined },
-    { consentData: { gdprApplies: true, consentString: undefined }, expected: undefined },
-    { consentData: { gdprApplies: 'oui', consentString: 'expectedConsentString' }, expected: undefined },
-    { consentData: undefined, expected: undefined }
+    { consentData: { gdprApplies: true, consentString: 'expectedConsentString' }, expectedGdprConsent: 'expectedConsentString', expectedGdpr: '1' },
+    { consentData: { gdprApplies: false, consentString: 'expectedConsentString' }, expectedGdprConsent: 'expectedConsentString', expectedGdpr: '0' },
+    { consentData: { gdprApplies: true, consentString: undefined }, expectedGdprConsent: undefined, expectedGdpr: '1' },
+    { consentData: { gdprApplies: 'oui', consentString: 'expectedConsentString' }, expectedGdprConsent: 'expectedConsentString', expectedGdpr: '0' },
+    { consentData: undefined, expectedGdprConsent: undefined, expectedGdpr: undefined }
   ];
 
   it('should call sync pixels if request by backend', function () {
@@ -185,16 +195,134 @@ describe('CriteoId module', function () {
     expect(setLocalStorageStub.calledWith('cto_pixel_test', 'ok')).to.be.true;
   });
 
+  it('should call sync pixels and use error handler', function () {
+    const expirationTs = new Date(nowTimestamp + cookiesMaxAge).toString();
+
+    const result = criteoIdSubmodule.getId();
+    result.callback((id) => {
+    });
+
+    const response = {
+      pixels: [
+        {
+          pixelUrl: 'pixelUrlWithBundle',
+          writeBundleInStorage: true,
+          bundlePropertyName: 'abc',
+          storageKeyName: 'cto_pixel_test'
+        }
+      ]
+    };
+
+    server.requests[0].respond(
+      200,
+      { 'Content-Type': 'application/json' },
+      JSON.stringify(response)
+    );
+
+    server.requests[1].respond(
+      500,
+      { 'Content-Type': 'application/json' },
+      JSON.stringify({
+        abc: 'ok'
+      })
+    );
+
+    expect(triggerPixelStub.called).to.be.false;
+    expect(setCookieStub.calledWith('cto_pixel_test', 'ok', expirationTs, null, '.com')).to.be.false;
+    expect(setCookieStub.calledWith('cto_pixel_test', 'ok', expirationTs, null, '.testdev.com')).to.be.false;
+    expect(setLocalStorageStub.calledWith('cto_pixel_test', 'ok')).to.be.false;
+  });
+
   gdprConsentTestCases.forEach(testCase => it('should call user sync url with the gdprConsent', function () {
     let callBackSpy = sinon.spy();
-    let result = criteoIdSubmodule.getId(undefined, testCase.consentData);
+
+    gdprConsentDataStub.returns(testCase.consentData);
+
+    let result = criteoIdSubmodule.getId(undefined);
     result.callback(callBackSpy);
 
     let request = server.requests[0];
-    if (testCase.expected) {
-      expect(request.url).to.have.string(`gdprString=${testCase.expected}`);
+
+    if (testCase.expectedGdprConsent) {
+      expect(request.url).to.have.string(`gdprString=${testCase.expectedGdprConsent}`);
     } else {
-      expect(request.url).to.not.have.string('gdprString');
+      expect(request.url).to.not.have.string('gdprString=');
+    }
+
+    if (testCase.expectedGdpr) {
+      expect(request.url).to.have.string(`gdpr=${testCase.expectedGdpr}`);
+    } else {
+      expect(request.url).to.not.have.string('gdpr=');
+    }
+
+    request.respond(
+      200,
+      { 'Content-Type': 'application/json' },
+      JSON.stringify({})
+    );
+
+    expect(callBackSpy.calledOnce).to.be.true;
+  }));
+
+  [undefined, 'abc'].forEach(usPrivacy => it('should call user sync url with the us privacy string', function () {
+    let callBackSpy = sinon.spy();
+
+    uspConsentDataStub.returns(usPrivacy);
+
+    let result = criteoIdSubmodule.getId(undefined);
+    result.callback(callBackSpy);
+
+    let request = server.requests[0];
+
+    if (usPrivacy) {
+      expect(request.url).to.have.string(`us_privacy=${usPrivacy}`);
+    } else {
+      expect(request.url).to.not.have.string('us_privacy=');
+    }
+
+    request.respond(
+      200,
+      { 'Content-Type': 'application/json' },
+      JSON.stringify({})
+    );
+
+    expect(callBackSpy.calledOnce).to.be.true;
+  }));
+
+  [
+    {
+      consentData: {
+        gppString: 'abc',
+        applicableSections: [1]
+      },
+      expectedGpp: 'abc',
+      expectedGppSid: '1'
+    },
+    {
+      consentData: undefined,
+      expectedGpp: undefined,
+      expectedGppSid: undefined
+    }
+  ].forEach(testCase => it('should call user sync url with the gpp string', function () {
+    let callBackSpy = sinon.spy();
+
+    gppConsentDataStub.returns(testCase.consentData);
+
+    let result = criteoIdSubmodule.getId(undefined);
+    result.callback(callBackSpy);
+
+    let request = server.requests[0];
+
+    if (testCase.expectedGpp) {
+      expect(request.url).to.have.string(`gpp=${testCase.expectedGpp}`);
+    } else {
+      expect(request.url).to.not.have.string('gpp=');
+    }
+
+    if (testCase.expectedGppSid) {
+      expect(request.url).to.have.string(`gpp_sid=${testCase.expectedGppSid}`);
+    } else {
+      expect(request.url).to.not.have.string('gpp_sid=');
     }
 
     request.respond(
