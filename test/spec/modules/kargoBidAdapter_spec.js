@@ -147,6 +147,22 @@ describe('kargo adapter tests', function () {
               id: '1234',
               name: 'SiteName',
               cat: ['IAB1', 'IAB2', 'IAB3']
+            },
+            user: {
+              data: [
+                {
+                  name: 'prebid.org',
+                  ext: {
+                    segtax: 600,
+                    segclass: 'v1',
+                  },
+                  segment: [
+                    {
+                      id: '133'
+                    },
+                  ]
+                },
+              ]
             }
           },
           ortb2Imp: {
@@ -155,9 +171,9 @@ describe('kargo adapter tests', function () {
               data: {
                 adServer: {
                   name: 'gam',
-                  adSlot: '/22558409563,18834096/dfy_mobile_adhesion'
+                  adslot: '/22558409563,18834096/dfy_mobile_adhesion'
                 },
-                pbAdSlot: '/22558409563,18834096/dfy_mobile_adhesion'
+                pbadslot: '/22558409563,18834096/dfy_mobile_adhesion'
               },
               gpid: '/22558409563,18834096/dfy_mobile_adhesion'
             }
@@ -184,9 +200,9 @@ describe('kargo adapter tests', function () {
               data: {
                 adServer: {
                   name: 'gam',
-                  adSlot: '/22558409563,18834096/dfy_mobile_adhesion'
+                  adslot: '/22558409563,18834096/dfy_mobile_adhesion'
                 },
-                pbAdSlot: '/22558409563,18834096/dfy_mobile_adhesion'
+                pbadslot: '/22558409563,18834096/dfy_mobile_adhesion'
               }
             }
           }
@@ -209,9 +225,10 @@ describe('kargo adapter tests', function () {
               data: {
                 adServer: {
                   name: 'gam',
-                  adSlot: '/22558409563,18834096/dfy_mobile_adhesion'
+                  adslot: '/22558409563,18834096/dfy_mobile_adhesion'
                 }
-              }
+              },
+              gpid: '/22558409563,18834096/dfy_mobile_adhesion'
             }
           }
         }
@@ -518,6 +535,20 @@ describe('kargo adapter tests', function () {
                   ext: {
                     rtiPartner: 'TDID'
                   }
+                }
+              ]
+            }
+          ],
+          data: [
+            {
+              name: 'prebid.org',
+              ext: {
+                segtax: 600,
+                segclass: 'v1',
+              },
+              segment: [
+                {
+                  id: '133'
                 }
               ]
             }

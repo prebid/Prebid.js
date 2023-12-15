@@ -832,6 +832,8 @@ describe('IndexexchangeAdapter', function () {
     id5id: { uid: 'testid5id' }, // ID5
     imuid: 'testimuid',
     '33acrossId': { envelope: 'v1.5fs.1000.fjdiosmclds' },
+    'criteoID': { envelope: 'testcriteoID' },
+    'euidID': { envelope: 'testeuid' },
     pairId: {envelope: 'testpairId'}
   };
 
@@ -890,6 +892,16 @@ describe('IndexexchangeAdapter', function () {
       source: '33across.com',
       uids: [{
         id: DEFAULT_USERID_DATA['33acrossId'].envelope
+      }]
+    }, {
+      source: 'criteo.com',
+      uids: [{
+        id: DEFAULT_USERID_DATA['criteoID'].envelope
+      }]
+    }, {
+      source: 'euid.eu',
+      uids: [{
+        id: DEFAULT_USERID_DATA['euidID'].envelope
       }]
     }, {
       source: 'google.com',
@@ -1302,7 +1314,7 @@ describe('IndexexchangeAdapter', function () {
         const payload = extractPayload(request[0]);
         expect(request).to.be.an('array');
         expect(request).to.have.lengthOf.above(0); // should be 1 or more
-        expect(payload.user.eids).to.have.lengthOf(9);
+        expect(payload.user.eids).to.have.lengthOf(11);
         expect(payload.user.eids).to.deep.include(DEFAULT_USERID_PAYLOAD[0]);
       });
     });
@@ -1490,7 +1502,7 @@ describe('IndexexchangeAdapter', function () {
       cloneValidBid[0].userIdAsEids = utils.deepClone(DEFAULT_USERIDASEIDS_DATA);
       const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
       const payload = extractPayload(request);
-      expect(payload.user.eids).to.have.lengthOf(9);
+      expect(payload.user.eids).to.have.lengthOf(11);
       expect(payload.user.eids).to.have.deep.members(DEFAULT_USERID_PAYLOAD);
     });
 
@@ -1623,7 +1635,7 @@ describe('IndexexchangeAdapter', function () {
       })
 
       expect(payload.user).to.exist;
-      expect(payload.user.eids).to.have.lengthOf(11);
+      expect(payload.user.eids).to.have.lengthOf(13);
 
       expect(payload.user.eids).to.have.deep.members(validUserIdPayload);
     });
@@ -1665,7 +1677,7 @@ describe('IndexexchangeAdapter', function () {
       });
 
       const payload = extractPayload(request);
-      expect(payload.user.eids).to.have.lengthOf(10);
+      expect(payload.user.eids).to.have.lengthOf(12);
       expect(payload.user.eids).to.have.deep.members(validUserIdPayload);
     });
   });
@@ -3280,6 +3292,84 @@ describe('IndexexchangeAdapter', function () {
       spec.buildRequests([bid], bidderRequestWithFledgeEnabled);
       expect(logWarnSpy.calledWith('error setting auction environment flag - must be an integer')).to.be.true;
       logWarnSpy.restore();
+    });
+  });
+
+  describe('integration through exchangeId and externalId', function () {
+    const expectedExchangeId = 123456;
+    // create banner bids with externalId but no siteId as bidder param
+    const bannerBids = utils.deepClone(DEFAULT_BANNER_VALID_BID);
+    delete bannerBids[0].params.siteId;
+    bannerBids[0].params.externalId = 'exteranl_id_1';
+
+    beforeEach(() => {
+      config.setConfig({ exchangeId: expectedExchangeId });
+      spec.resetSiteID();
+    });
+
+    afterEach(() => {
+      config.resetConfig();
+    });
+
+    it('when exchangeId and externalId set but no siteId, isBidRequestValid should return true', function () {
+      const bid = utils.deepClone(bannerBids[0]);
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('when neither exchangeId nor siteId set, isBidRequestValid should return false', function () {
+      config.resetConfig();
+      const bid = utils.deepClone(bannerBids[0]);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
+    });
+
+    it('when exchangeId and externalId set with banner impression but no siteId, bidrequest sent to endpoint with p param and externalID inside imp.ext', function () {
+      const requests = spec.buildRequests(bannerBids, DEFAULT_OPTION);
+      const payload = extractPayload(requests[0]);
+
+      const expectedURL = IX_SECURE_ENDPOINT + '?p=' + expectedExchangeId;
+      expect(requests[0].url).to.equal(expectedURL);
+      expect(payload.imp[0].ext.externalID).to.equal(bannerBids[0].params.externalId);
+      expect(payload.imp[0].banner.format[0].ext).to.be.undefined;
+      expect(payload.imp[0].ext.siteID).to.be.undefined;
+    });
+
+    it('when exchangeId and externalId set with video impression, bidrequest sent to endpoint with p param and externalID inside imp.ext', function () {
+      const validBids = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+      delete validBids[0].params.siteId;
+      validBids[0].params.externalId = 'exteranl_id_1';
+
+      const requests = spec.buildRequests(validBids, DEFAULT_OPTION);
+      const payload = extractPayload(requests[0]);
+
+      const expectedURL = IX_SECURE_ENDPOINT + '?p=' + expectedExchangeId;
+      expect(requests[0].url).to.equal(expectedURL);
+      expect(payload.imp[0].ext.externalID).to.equal(validBids[0].params.externalId);
+      expect(payload.imp[0].ext.siteID).to.be.undefined;
+    });
+
+    it('when exchangeId and externalId set beside siteId, bidrequest sent to endpoint with both p param and s param and externalID inside imp.ext and siteID inside imp.banner.format.ext', function () {
+      bannerBids[0].params.siteId = '1234';
+      const requests = spec.buildRequests(bannerBids, DEFAULT_OPTION);
+      const payload = extractPayload(requests[0]);
+
+      const expectedURL = IX_SECURE_ENDPOINT + '?s=' + bannerBids[0].params.siteId + '&p=' + expectedExchangeId;
+      expect(requests[0].url).to.equal(expectedURL);
+      expect(payload.imp[0].ext.externalID).to.equal(bannerBids[0].params.externalId);
+      expect(payload.imp[0].banner.format[0].ext.externalID).to.be.undefined;
+      expect(payload.imp[0].ext.siteID).to.be.undefined;
+      expect(payload.imp[0].banner.format[0].ext.siteID).to.equal(bannerBids[0].params.siteId);
+    });
+
+    it('when exchangeId and siteId set, but no externalId, bidrequest sent to exchange', function () {
+      bannerBids[0].params.siteId = '1234';
+      delete bannerBids[0].params.externalId;
+      const requests = spec.buildRequests(bannerBids, DEFAULT_OPTION);
+      const payload = extractPayload(requests[0]);
+
+      const expectedURL = IX_SECURE_ENDPOINT + '?s=' + bannerBids[0].params.siteId + '&p=' + expectedExchangeId;
+      expect(requests[0].url).to.equal(expectedURL);
+      expect(payload.imp[0].ext.externalID).to.be.undefined;
+      expect(payload.imp[0].banner.format[0].ext.siteID).to.equal(bannerBids[0].params.siteId);
     });
   });
 

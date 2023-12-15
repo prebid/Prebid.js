@@ -6,6 +6,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'smartyads';
+const GVLID = 534;
 const adUrls = {
   US_EAST: 'https://n1.smartyads.com/?c=o&m=prebid&secret_key=prebid_js',
   EU: 'https://n2.smartyads.com/?c=o&m=prebid&secret_key=prebid_js',
@@ -52,6 +53,7 @@ function getAdUrlByRegion(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid) => {

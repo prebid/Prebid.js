@@ -7,7 +7,7 @@
  */
 
 import { logInfo, logWarn } from '../src/utils.js';
-import {submodule} from '../src/hook.js';
+import { submodule } from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
@@ -33,6 +33,19 @@ function createLogger(logger, prefix) {
     logger(prefix + ' ', ...strings);
   }
 }
+
+function extractIdentityFromParams(params) {
+  const keysToCheck = ['emailHash', 'phoneHash', 'email', 'phone'];
+
+  for (let key of keysToCheck) {
+    if (params.hasOwnProperty(key)) {
+      return { [key]: params[key] };
+    }
+  }
+
+  return {};
+}
+
 const _logInfo = createLogger(logInfo, LOG_PRE_FIX);
 const _logWarn = createLogger(logWarn, LOG_PRE_FIX);
 
@@ -78,6 +91,14 @@ export const uid2IdSubmodule = {
       storage: config?.params?.storage ?? 'localStorage',
       clientId: UID2_CLIENT_ID,
       internalStorage: ADVERTISING_COOKIE
+    }
+
+    if (FEATURES.UID2_CSTG) {
+      mappedConfig.cstg = {
+        serverPublicKey: config?.params?.serverPublicKey,
+        subscriptionId: config?.params?.subscriptionId,
+        ...extractIdentityFromParams(config?.params ?? {})
+      }
     }
     _logInfo(`UID2 configuration loaded and mapped.`, mappedConfig);
     const result = Uid2GetId(mappedConfig, storage, _logInfo, _logWarn);
