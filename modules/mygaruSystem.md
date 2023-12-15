@@ -1,6 +1,6 @@
 ## Mygaru User ID Submodule
 
-MyGaru provides single use tokens as a UserId for SSPs and DSP that consume  telcom DMP data.  
+MyGaru provides single use tokens as a UserId for SSPs and DSP that consume  telecom DMP data.  
 
 ## Building Prebid with Mygaru ID Support
 
