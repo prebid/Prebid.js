@@ -102,7 +102,9 @@ userIdAsEids = [
             id: 'some-random-id-value',
             atype: 1
         }],
-        segments: ['s1', 's2']
+        ext: {
+            segments: ['s1', 's2']
+        }
     },
     
     {
