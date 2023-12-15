@@ -407,7 +407,7 @@ async function loadExternalModule(url) {
     } else {
       try {
         loadExternalScript(url, 'id5', resolve);
-      } catch(error) {
+      } catch (error) {
         reject(error);
       }
     }
