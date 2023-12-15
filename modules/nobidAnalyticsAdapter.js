@@ -170,6 +170,9 @@ adapterManager.registerAnalyticsAdapter({
 });
 nobidAnalytics.originalAdUnits = {};
 window.nobidCarbonizer = {
+  getStoredLocalData: function () {
+    return storage.getDataFromLocalStorage(ANALYTICS_DATA_NAME);
+  },
   isActive: function () {
     let stored = storage.getDataFromLocalStorage(ANALYTICS_DATA_NAME);
     if (!isJson(stored)) return false;
