@@ -22,6 +22,7 @@ import {getStorageManager} from '../src/storageManager.js';
 import {uspDataHandler} from '../src/adapterManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import { GreedyPromise } from '../src/utils/promise.js';
+import { loadExternalScript } from '../src/adloader.js';
 
 const MODULE_NAME = 'id5Id';
 const GVLID = 131;
@@ -404,12 +405,11 @@ async function loadExternalModule(url) {
       // Already loaded
       resolve();
     } else {
-      const script = document.createElement('script');
-      script.onload = resolve;
-      script.onerror = reject;
-      script.type = 'text/javascript';
-      script.src = url;
-      document.head.appendChild(script);
+      try {
+        loadExternalScript(url, 'id5', resolve);
+      } catch(error) {
+        reject(error);
+      }
     }
   });
 }
