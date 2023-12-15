@@ -8,8 +8,6 @@ import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 const VERSION = '1.1.0';
 const MODULE_NAME = 'nobidAnalyticsAdapter';
-const ANALYTICS_DATA_NAME = 'analytics.nobid.io';
-const ANALYTICS_OPT_NAME = 'analytics.nobid.io/optData';
 const ANALYTICS_OPT_FLUSH_TIMEOUT_SECONDS = 5 * 1000;
 const RETENTION_SECONDS = 1 * 24 * 3600;
 const TEST_ALLOCATION_PERCENTAGE = 5; // dont block 5% of the time;
@@ -150,7 +148,7 @@ nobidAnalytics = {
     return isExpired(data, this.retentionSeconds);
   },
   isAnalyticsDisabled () {
-    let stored = storage.getDataFromLocalStorage(ANALYTICS_DATA_NAME);
+    let stored = storage.getDataFromLocalStorage(this.ANALYTICS_DATA_NAME);
     if (!isJson(stored)) return false;
     stored = JSON.parse(stored);
     if (this.isExpired(stored)) return false;
@@ -159,8 +157,10 @@ nobidAnalytics = {
   processServerResponse (response) {
     if (!isJson(response)) return;
     const resp = JSON.parse(response);
-    storage.setDataInLocalStorage(ANALYTICS_DATA_NAME, JSON.stringify({ ...resp, ts: Date.now() }));
-  }
+    storage.setDataInLocalStorage(this.ANALYTICS_DATA_NAME, JSON.stringify({ ...resp, ts: Date.now() }));
+  },
+  ANALYTICS_DATA_NAME: 'analytics.nobid.io',
+  ANALYTICS_OPT_NAME: 'analytics.nobid.io.optData'
 }
 
 adapterManager.registerAnalyticsAdapter({
@@ -171,10 +171,15 @@ adapterManager.registerAnalyticsAdapter({
 nobidAnalytics.originalAdUnits = {};
 window.nobidCarbonizer = {
   getStoredLocalData: function () {
-    return storage.getDataFromLocalStorage(ANALYTICS_DATA_NAME);
+    const a = storage.getDataFromLocalStorage(nobidAnalytics.ANALYTICS_DATA_NAME);
+    const b = storage.getDataFromLocalStorage(nobidAnalytics.ANALYTICS_OPT_NAME);
+    const ret = {};
+    if (a) ret[nobidAnalytics.ANALYTICS_DATA_NAME] = a;
+    if (b) ret[nobidAnalytics.ANALYTICS_OPT_NAME] = b
+    return ret;
   },
   isActive: function () {
-    let stored = storage.getDataFromLocalStorage(ANALYTICS_DATA_NAME);
+    let stored = storage.getDataFromLocalStorage(nobidAnalytics.ANALYTICS_DATA_NAME);
     if (!isJson(stored)) return false;
     stored = JSON.parse(stored);
     if (isExpired(stored, nobidAnalytics.retentionSeconds)) return false;
@@ -183,8 +188,8 @@ window.nobidCarbonizer = {
   carbonizeAdunits: function (adunits, skipTestGroup) {
     function processBlockedBidders (blockedBidders) {
       function sendOptimizerData() {
-        let optData = storage.getDataFromLocalStorage(ANALYTICS_OPT_NAME);
-        storage.removeDataFromLocalStorage(ANALYTICS_OPT_NAME);
+        let optData = storage.getDataFromLocalStorage(nobidAnalytics.ANALYTICS_OPT_NAME);
+        storage.removeDataFromLocalStorage(nobidAnalytics.ANALYTICS_OPT_NAME);
         if (isJson(optData)) {
           optData = JSON.parse(optData);
           if (Object.getOwnPropertyNames(optData).length > 0) {
@@ -195,7 +200,7 @@ window.nobidCarbonizer = {
         }
       }
       if (blockedBidders && blockedBidders.length > 0) {
-        let optData = storage.getDataFromLocalStorage(ANALYTICS_OPT_NAME);
+        let optData = storage.getDataFromLocalStorage(nobidAnalytics.ANALYTICS_OPT_NAME);
         optData = isJson(optData) ? JSON.parse(optData) : {};
         const bidders = blockedBidders.map(rec => rec.bidder);
         if (bidders && bidders.length > 0) {
@@ -203,14 +208,14 @@ window.nobidCarbonizer = {
             if (!optData[bidder]) optData[bidder] = 1;
             else optData[bidder] += 1;
           });
-          storage.setDataInLocalStorage(ANALYTICS_OPT_NAME, JSON.stringify(optData));
+          storage.setDataInLocalStorage(nobidAnalytics.ANALYTICS_OPT_NAME, JSON.stringify(optData));
           if (window.nobidAnalyticsOptTimer) return;
           window.nobidAnalyticsOptTimer = setInterval(sendOptimizerData, ANALYTICS_OPT_FLUSH_TIMEOUT_SECONDS);
         }
       }
     }
     function carbonizeAdunit (adunit) {
-      let stored = storage.getDataFromLocalStorage(ANALYTICS_DATA_NAME);
+      let stored = storage.getDataFromLocalStorage(nobidAnalytics.ANALYTICS_DATA_NAME);
       if (!isJson(stored)) return;
       stored = JSON.parse(stored);
       if (isExpired(stored, nobidAnalytics.retentionSeconds)) return;
