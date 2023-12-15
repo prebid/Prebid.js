@@ -18,17 +18,17 @@ const VALID_BID_TYPES = ['netBid', 'grossBid'];
 const META_DATA_KEY = 'adn.metaData';
 
 export const misc = {
-  getUnixTimestamp: function(addDays, asMinutes) {
+  getUnixTimestamp: function (addDays, asMinutes) {
     const multiplication = addDays / (asMinutes ? 1440 : 1);
     return Date.now() + (addDays && addDays > 0 ? (1000 * 60 * 60 * 24 * multiplication) : 0);
   }
 };
 
-const storageTool = (function() {
-  const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const storageTool = (function () {
+  const storage = getStorageManager({ bidderCode: BIDDER_CODE });
   let metaInternal;
 
-  const getMetaInternal = function() {
+  const getMetaInternal = function () {
     if (!storage.localStorageIsEnabled()) {
       return {};
     }
@@ -57,24 +57,24 @@ const storageTool = (function() {
     return filteredEntries;
   };
 
-  const setMetaInternal = function(apiResponse) {
+  const setMetaInternal = function (apiResponse) {
     if (!storage.localStorageIsEnabled()) {
       return;
     }
 
-    const updateVoidAuIds = function(currentVoidAuIds, auIdsAsString) {
+    const updateVoidAuIds = function (currentVoidAuIds, auIdsAsString) {
       const newAuIds = auIdsAsString ? auIdsAsString.split(';') : [];
       const notNewExistingAuIds = currentVoidAuIds.filter(auIdObj => {
         return newAuIds.indexOf(auIdObj.value) < -1;
       }) || [];
       const oneDayFromNow = misc.getUnixTimestamp(1);
       const apiIdsArray = newAuIds.map(auId => {
-        return {exp: oneDayFromNow, auId: auId};
+        return { exp: oneDayFromNow, auId: auId };
       }) || [];
       return notNewExistingAuIds.concat(apiIdsArray) || [];
     }
 
-    const metaAsObj = getMetaInternal().reduce((a, entry) => ({...a, [entry.key]: {value: entry.value, exp: entry.exp}}), {});
+    const metaAsObj = getMetaInternal().reduce((a, entry) => ({ ...a, [entry.key]: { value: entry.value, exp: entry.exp } }), {});
     for (const key in apiResponse) {
       if (key !== 'voidAuIds') {
         metaAsObj[key] = {
@@ -85,7 +85,7 @@ const storageTool = (function() {
     }
     const currentAuIds = updateVoidAuIds(metaAsObj.voidAuIds || [], apiResponse.voidAuIds || []);
     if (currentAuIds.length > 0) {
-      metaAsObj.voidAuIds = {value: currentAuIds};
+      metaAsObj.voidAuIds = { value: currentAuIds };
     }
     const metaDataForSaving = Object.entries(metaAsObj).map((entrySet) => {
       if (entrySet[0] === 'voidAuIds') {
@@ -103,7 +103,7 @@ const storageTool = (function() {
     storage.setDataInLocalStorage(META_DATA_KEY, JSON.stringify(metaDataForSaving));
   };
 
-  const getUsi = function(meta, ortb2) {
+  const getUsi = function (meta, ortb2) {
     let usi = (meta && meta.usi) ? meta.usi : false;
     if (ortb2 && ortb2.user && ortb2.user.id) {
       usi = ortb2.user.id
@@ -128,9 +128,9 @@ const storageTool = (function() {
   }
 
   return {
-    refreshStorage: function(bidderRequest) {
+    refreshStorage: function (bidderRequest) {
       const ortb2 = bidderRequest.ortb2 || {};
-      metaInternal = getMetaInternal().reduce((a, entry) => ({...a, [entry.key]: entry.value}), {});
+      metaInternal = getMetaInternal().reduce((a, entry) => ({ ...a, [entry.key]: entry.value }), {});
       metaInternal.usi = getUsi(metaInternal, ortb2);
       if (!metaInternal.usi) {
         delete metaInternal.usi;
@@ -142,21 +142,21 @@ const storageTool = (function() {
       }
       metaInternal.segments = getSegmentsFromOrtb(ortb2);
     },
-    saveToStorage: function(serverData) {
+    saveToStorage: function (serverData) {
       setMetaInternal(serverData);
     },
-    getUrlRelatedData: function() {
-      const {segments, usi, voidAuIdsArray} = metaInternal;
-      return {segments, usi, voidAuIdsArray};
+    getUrlRelatedData: function () {
+      const { segments, usi, voidAuIdsArray } = metaInternal;
+      return { segments, usi, voidAuIdsArray };
     },
-    getPayloadRelatedData: function() {
-      const {segments, usi, userId, voidAuIdsArray, voidAuIds, ...payloadRelatedData} = metaInternal;
+    getPayloadRelatedData: function () {
+      const { segments, usi, userId, voidAuIdsArray, voidAuIds, ...payloadRelatedData } = metaInternal;
       return payloadRelatedData;
     }
   };
 })();
 
-const validateBidType = function(bidTypeOption) {
+const validateBidType = function (bidTypeOption) {
   return VALID_BID_TYPES.indexOf(bidTypeOption || '') > -1 ? bidTypeOption : 'bid';
 }
 
@@ -177,10 +177,13 @@ export const spec = {
     const queryParamsAndValues = [];
     queryParamsAndValues.push('tzo=' + new Date().getTimezoneOffset())
     queryParamsAndValues.push('format=json')
-
     const gdprApplies = deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
     const consentString = deepAccess(bidderRequest, 'gdprConsent.consentString');
-    if (gdprApplies !== undefined) queryParamsAndValues.push('consentString=' + consentString);
+    if (gdprApplies !== undefined) {
+      const flag = gdprApplies ? '1' : '0'
+      queryParamsAndValues.push('consentString=' + consentString);
+      queryParamsAndValues.push('gdpr=' + flag);
+    }
 
     storageTool.refreshStorage(bidderRequest);
 
@@ -194,6 +197,7 @@ export const spec = {
 
     const bidRequests = {};
     const networks = {};
+
     for (let i = 0; i < validBidRequests.length; i++) {
       const bid = validBidRequests[i];
       if ((urlRelatedMetaData.voidAuIdsArray && (urlRelatedMetaData.voidAuIdsArray.indexOf(bid.params.auId) > -1 || urlRelatedMetaData.voidAuIdsArray.indexOf(bid.params.auId.padStart(16, '0')) > -1))) {

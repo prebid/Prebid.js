@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec, internal, END_POINT_URL, userData} from 'modules/taboolaBidAdapter.js';
+import {spec, internal, END_POINT_URL, userData, EVENT_ENDPOINT} from 'modules/taboolaBidAdapter.js';
 import {config} from '../../../src/config'
 import * as utils from '../../../src/utils'
 import {server} from '../../mocks/xhr'
@@ -110,6 +110,50 @@ describe('Taboola Adapter', function () {
       }
       spec.onBidWon(bid);
       expect(server.requests[0].url).to.equals('http://win.example.com/3.4')
+    });
+  });
+
+  describe('onTimeout', function () {
+    it('onTimeout exist as a function', () => {
+      expect(spec.onTimeout).to.exist.and.to.be.a('function');
+    });
+    it('should send timeout', function () {
+      const timeoutData = [{
+        bidder: 'taboola',
+        bidId: 'da43860a-4644-442a-b5e0-93f268cf8d19',
+        params: [{
+          publisherId: 'publisherId'
+        }],
+        adUnitCode: 'adUnit-code',
+        timeout: 3000,
+        auctionId: '12a34b56c'
+      }]
+      spec.onTimeout(timeoutData);
+      expect(server.requests[0].method).to.equal('POST');
+      expect(server.requests[0].url).to.equal(EVENT_ENDPOINT + '/timeout');
+      expect(JSON.parse(server.requests[0].requestBody)).to.deep.equal(timeoutData);
+    });
+  });
+
+  describe('onBidderError', function () {
+    it('onBidderError exist as a function', () => {
+      expect(spec.onBidderError).to.exist.and.to.be.a('function');
+    });
+    it('should send bidder error', function () {
+      const error = {
+        status: 204,
+        statusText: 'No Content'
+      };
+      const bidderRequest = {
+        bidder: 'taboola',
+        params: {
+          publisherId: 'publisherId'
+        }
+      }
+      spec.onBidderError({error, bidderRequest});
+      expect(server.requests[0].method).to.equal('POST');
+      expect(server.requests[0].url).to.equal(EVENT_ENDPOINT + '/bidError');
+      expect(JSON.parse(server.requests[0].requestBody)).to.deep.equal(error, bidderRequest);
     });
   });
 
