@@ -1,6 +1,6 @@
-import { expect } from 'chai'
-import { spec } from 'modules/adqueryBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
+import {expect} from 'chai'
+import {spec} from 'modules/adqueryBidAdapter.js'
+import {newBidder} from 'src/adapters/bidderFactory.js'
 import * as utils from '../../../src/utils';
 
 describe('adqueryBidAdapter', function () {
@@ -80,7 +80,7 @@ describe('adqueryBidAdapter', function () {
   })
 
   describe('buildRequests', function () {
-    let req = spec.buildRequests([ bidRequest ], { refererInfo: { } })[0]
+    let req = spec.buildRequests([bidRequest], {refererInfo: {}})[0]
     let rdata
 
     it('should return request object', function () {
@@ -136,7 +136,7 @@ describe('adqueryBidAdapter', function () {
       expect(result).to.be.an('array')
     })
 
-    it('validate response params', function() {
+    it('validate response params', function () {
       const newResponse = spec.interpretResponse(expectedResponse, bidRequest);
       expect(newResponse[0].requestId).to.be.equal(1)
     });
@@ -151,13 +151,24 @@ describe('adqueryBidAdapter', function () {
 
   describe('getUserSyncs', function () {
     it('should return iframe sync', function () {
-      let sync = spec.getUserSyncs()
+      let sync = spec.getUserSyncs(
+        {
+          iframeEnabled: true,
+          pixelEnabled: true,
+        },
+        {},
+        {
+          consentString: 'ALL',
+          gdprApplies: true,
+        },
+        {}
+      )
       expect(sync.length).to.equal(1)
       expect(sync[0].type === 'iframe')
       expect(typeof sync[0].url === 'string')
     })
 
-    it('Should return array of objects with proper sync config , include GDPR', function() {
+    it('Should return array of objects with proper sync config , include GDPR', function () {
       const syncData = spec.getUserSyncs({}, {}, {
         consentString: 'ALL',
         gdprApplies: true,
@@ -170,10 +181,10 @@ describe('adqueryBidAdapter', function () {
   })
 
   describe('test onBidWon function', function () {
-    beforeEach(function() {
+    beforeEach(function () {
       sinon.stub(utils, 'triggerPixel');
     });
-    afterEach(function() {
+    afterEach(function () {
       utils.triggerPixel.restore();
     });
     it('exists and is a function', () => {
