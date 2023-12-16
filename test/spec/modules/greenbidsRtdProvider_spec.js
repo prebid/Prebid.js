@@ -6,7 +6,7 @@ import {
 import {
   greenbidsSubmodule
 } from 'modules/greenbidsRtdProvider.js';
-import {server} from '../../mocks/xhr.js';
+import { server } from '../../mocks/xhr.js';
 import * as events from '../../../src/events.js';
 import CONSTANTS from '../../../src/constants.json';
 
@@ -166,7 +166,7 @@ describe('greenbidsRtdProvider', () => {
       setTimeout(() => {
         server.requests[0].respond(
           200,
-          {'Content-Type': 'application/json'},
+          { 'Content-Type': 'application/json' },
           JSON.stringify(SAMPLE_RESPONSE_ADUNITS_NOT_EXPLORED)
         );
       }, 50);
@@ -199,7 +199,7 @@ describe('greenbidsRtdProvider', () => {
       setTimeout(() => {
         server.requests[0].respond(
           200,
-          {'Content-Type': 'application/json'},
+          { 'Content-Type': 'application/json' },
           JSON.stringify(SAMPLE_RESPONSE_ADUNITS_NOT_EXPLORED)
         );
         done();
@@ -226,8 +226,8 @@ describe('greenbidsRtdProvider', () => {
       setTimeout(() => {
         server.requests[0].respond(
           500,
-          {'Content-Type': 'application/json'},
-          JSON.stringify({'failure': 'fail'})
+          { 'Content-Type': 'application/json' },
+          JSON.stringify({ 'failure': 'fail' })
         );
       }, 50);
 
@@ -243,8 +243,8 @@ describe('greenbidsRtdProvider', () => {
     });
   });
 
-  describe('stripAdUnits', function() {
-    it('should strip all properties except bidder from each bid in adUnits', function() {
+  describe('stripAdUnits', function () {
+    it('should strip all properties except bidder from each bid in adUnits', function () {
       const adUnits =
         [
           {
@@ -252,7 +252,7 @@ describe('greenbidsRtdProvider', () => {
               { bidder: 'bidder1', otherProp: 'value1' },
               { bidder: 'bidder2', otherProp: 'value2' }
             ],
-            mediaTypes: {'banner': {prop: 'value3'}}
+            mediaTypes: { 'banner': { prop: 'value3' } }
           }
         ];
       const expectedOutput = [
@@ -261,7 +261,7 @@ describe('greenbidsRtdProvider', () => {
             { bidder: 'bidder1' },
             { bidder: 'bidder2' }
           ],
-          mediaTypes: {'banner': {prop: 'value3'}}
+          mediaTypes: { 'banner': { prop: 'value3' } }
         }
       ];
 
@@ -270,7 +270,7 @@ describe('greenbidsRtdProvider', () => {
       expect(output).to.deep.equal(expectedOutput);
     });
 
-    it('should strip all properties except bidder from each bid in adUnits but keep ortb2Imp', function() {
+    it('should strip all properties except bidder from each bid in adUnits but keep ortb2Imp', function () {
       const adUnits =
         [
           {
@@ -278,7 +278,7 @@ describe('greenbidsRtdProvider', () => {
               { bidder: 'bidder1', otherProp: 'value1' },
               { bidder: 'bidder2', otherProp: 'value2' }
             ],
-            mediaTypes: {'banner': {prop: 'value3'}},
+            mediaTypes: { 'banner': { prop: 'value3' } },
             ortb2Imp: {
               ext: {
                 greenbids: {
@@ -294,7 +294,7 @@ describe('greenbidsRtdProvider', () => {
             { bidder: 'bidder1' },
             { bidder: 'bidder2' }
           ],
-          mediaTypes: {'banner': {prop: 'value3'}},
+          mediaTypes: { 'banner': { prop: 'value3' } },
           ortb2Imp: {
             ext: {
               greenbids: {
@@ -311,8 +311,26 @@ describe('greenbidsRtdProvider', () => {
     });
   });
 
-  describe('onAuctionInitEvent', function() {
-    it('should emit billable events', function (done) {
+  describe('onAuctionInitEvent', function () {
+    it('should not emit billable event if greenbids hasn\'t set the adunit.ext value', function () {
+      sinon.spy(events, 'emit');
+      greenbidsSubmodule.onAuctionInitEvent({
+        auctionId: 'test',
+        adUnits: [
+          {
+            bids: [
+              { bidder: 'bidder1', otherProp: 'value1' },
+              { bidder: 'bidder2', otherProp: 'value2' }
+            ],
+            mediaTypes: { 'banner': { prop: 'value3' } },
+          }
+        ]
+      });
+      sinon.assert.callCount(events.emit, 0);
+      events.emit.restore();
+    });
+
+    it('should  emit billable event if greenbids has set the adunit.ext value', function (done) {
       let counter = 0;
       events.on(CONSTANTS.EVENTS.BILLABLE_EVENT, function (event) {
         if (event.vendor === 'greenbidsRtdProvider' && event.type === 'auction') {
@@ -321,7 +339,19 @@ describe('greenbidsRtdProvider', () => {
         expect(counter).to.equal(1);
         done();
       });
-      greenbidsSubmodule.onAuctionInitEvent({auctionId: 'test'});
+      greenbidsSubmodule.onAuctionInitEvent({
+        auctionId: 'test',
+        adUnits: [
+          {
+            bids: [
+              { bidder: 'bidder1', otherProp: 'value1' },
+              { bidder: 'bidder2', otherProp: 'value2' }
+            ],
+            mediaTypes: { 'banner': { prop: 'value3' } },
+            ortb2Imp: { ext: { greenbids: { greenbidsId: 'b0b39610-b941-4659-a87c-de9f62d3e13e' } } }
+          }
+        ]
+      });
     });
   });
 });

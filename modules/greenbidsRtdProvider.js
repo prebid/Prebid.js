@@ -1,4 +1,4 @@
-import { logError, deepClone, generateUUID, deepSetValue } from '../src/utils.js';
+import { logError, deepClone, generateUUID, deepSetValue, deepAccess } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import * as events from '../src/events.js';
@@ -24,12 +24,17 @@ function init(moduleConfig) {
 
 function onAuctionInitEvent(auctionDetails) {
   /* Emitting one billing event per auction */
-  events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
-    type: 'auction',
-    billingId: generateUUID(),
-    auctionId: auctionDetails.auctionId,
-    vendor: MODULE_NAME
-  });
+  let defaultId = 'default_id';
+  let greenbidsId = deepAccess(auctionDetails.adUnits[0], 'ortb2Imp.ext.greenbids.greenbidsId', defaultId);
+  /* greenbids was successfully called so we emit the event */
+  if (greenbidsId !== defaultId) {
+    events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
+      type: 'auction',
+      billingId: generateUUID(),
+      auctionId: auctionDetails.auctionId,
+      vendor: MODULE_NAME
+    });
+  }
 }
 
 function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {

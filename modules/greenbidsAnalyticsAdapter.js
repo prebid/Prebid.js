@@ -40,9 +40,6 @@ export const isSampled = function(greenbidsId, samplingRate) {
 export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER, analyticsType}), {
 
   cachedAuctions: {},
-  isSampled: true,
-  greenbidsId: null,
-  billingId: null,
 
   initConfig(config) {
     analyticsOptions.options = deepClone(config.options);
@@ -76,10 +73,6 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
 
     analyticsOptions.pbuid = config.options.pbuid
     analyticsOptions.server = ANALYTICS_SERVER;
-    // resetting object default values on init
-    this.isSampled = true;
-    this.billingId = null;
-    this.greenbidsId = null;
 
     return true;
   },
@@ -91,15 +84,16 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
     });
   },
   createCommonMessage(auctionId) {
+    const cachedAuction = this.getCachedAuction(auctionId);
     return {
       version: ANALYTICS_VERSION,
       auctionId: auctionId,
       referrer: window.location.href,
       sampling: analyticsOptions.options.greenbidsSampling,
       prebid: '$prebid.version$',
-      greenbidsId: this.greenbidsId,
+      greenbidsId: cachedAuction.greenbidsId,
       pbuid: analyticsOptions.pbuid,
-      billingId: this.billingId,
+      billingId: cachedAuction.billingId,
       adUnits: [],
     };
   },
@@ -132,20 +126,22 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
       }
     }
   },
-  createBidMessage(auctionEndArgs, timeoutBids) {
+  createBidMessage(auctionEndArgs) {
     const {auctionId, timestamp, auctionEnd, adUnits, bidsReceived, noBids} = auctionEndArgs;
+    const cachedAuction = this.getCachedAuction(auctionId);
     const message = this.createCommonMessage(auctionId);
+    const timeoutBids = cachedAuction.timeoutBids || [];
 
     message.auctionElapsed = (auctionEnd - timestamp);
 
     adUnits.forEach((adUnit) => {
-      const adUnitCode = adUnit.code.toLowerCase();
+      const adUnitCode = adUnit.code?.toLowerCase() || 'unknown_adunit_code';
       message.adUnits.push({
         code: adUnitCode,
         mediaTypes: {
-          ...(adUnit.mediaTypes.banner !== undefined) && {banner: adUnit.mediaTypes.banner},
-          ...(adUnit.mediaTypes.video !== undefined) && {video: adUnit.mediaTypes.video},
-          ...(adUnit.mediaTypes.native !== undefined) && {native: adUnit.mediaTypes.native}
+          ...(adUnit.mediaTypes?.banner !== undefined) && {banner: adUnit.mediaTypes.banner},
+          ...(adUnit.mediaTypes?.video !== undefined) && {video: adUnit.mediaTypes.video},
+          ...(adUnit.mediaTypes?.native !== undefined) && {native: adUnit.mediaTypes.native}
         },
         ortb2Imp: adUnit.ortb2Imp || {},
         bidders: [],
@@ -160,29 +156,31 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
 
     timeoutBids.forEach(bid => this.addBidResponseToMessage(message, bid, BIDDER_STATUS.TIMEOUT));
 
-    message.billingId = this.billingId;
-
     return message;
   },
   getCachedAuction(auctionId) {
     this.cachedAuctions[auctionId] = this.cachedAuctions[auctionId] || {
       timeoutBids: [],
+      greenbidsId: null,
+      billingId: null,
+      isSampled: true,
     };
     return this.cachedAuctions[auctionId];
   },
   handleAuctionInit(auctionInitArgs) {
+    const cachedAuction = this.getCachedAuction(auctionInitArgs.auctionId);
     try {
-      this.greenbidsId = auctionInitArgs.adUnits[0].ortb2Imp.ext.greenbids.greenbidsId;
+      cachedAuction.greenbidsId = auctionInitArgs.adUnits[0].ortb2Imp.ext.greenbids.greenbidsId;
     } catch (e) {
       logInfo("Couldn't find Greenbids RTD info, assuming analytics only");
-      this.greenbidsId = generateUUID();
+      cachedAuction.greenbidsId = generateUUID();
     }
-    this.isSampled = isSampled(this.greenbidsId, analyticsOptions.options.greenbidsSampling);
+    cachedAuction.isSampled = isSampled(cachedAuction.greenbidsId, analyticsOptions.options.greenbidsSampling);
   },
   handleAuctionEnd(auctionEndArgs) {
     const cachedAuction = this.getCachedAuction(auctionEndArgs.auctionId);
     this.sendEventMessage('/',
-      this.createBidMessage(auctionEndArgs, cachedAuction.timeoutBids)
+      this.createBidMessage(auctionEndArgs, cachedAuction)
     );
   },
   handleBidTimeout(timeoutBids) {
@@ -192,29 +190,33 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
     });
   },
   handleBillable(billableArgs) {
-    const vendor = billableArgs.vendor || 'unknown_vendor';
-    const billingId = billableArgs.billingId || 'unknown_billing_id';
+    const cachedAuction = this.getCachedAuction(billableArgs.auctionId);
     /* Filter Greenbids Billable Events only */
-    if (vendor === 'greenbidsRtdProvider') {
-      this.billingId = billingId;
+    if (billableArgs.vendor === 'greenbidsRtdProvider') {
+      cachedAuction.billingId = billableArgs.billingId || 'unknown_billing_id';
     }
   },
   track({eventType, args}) {
-    if (eventType === AUCTION_INIT) {
-      this.handleAuctionInit(args);
-    }
-    if (this.isSampled) {
-      switch (eventType) {
-        case BID_TIMEOUT:
-          this.handleBidTimeout(args);
-          break;
-        case AUCTION_END:
-          this.handleAuctionEnd(args);
-          break;
-        case BILLABLE_EVENT:
-          this.handleBillable(args);
-          break;
+    try {
+      if (eventType === AUCTION_INIT) {
+        this.handleAuctionInit(args);
       }
+
+      if (this.getCachedAuction(args?.auctionId)?.isSampled ?? true) {
+        switch (eventType) {
+          case BID_TIMEOUT:
+            this.handleBidTimeout(args);
+            break;
+          case AUCTION_END:
+            this.handleAuctionEnd(args);
+            break;
+          case BILLABLE_EVENT:
+            this.handleBillable(args);
+            break;
+        }
+      }
+    } catch (e) {
+      logWarn('There was an error handling event ' + eventType);
     }
   },
   getAnalyticsOptions() {

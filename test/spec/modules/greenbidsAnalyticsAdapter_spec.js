@@ -19,7 +19,7 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
   describe('enableAnalytics and config parser', function () {
     const configOptions = {
       pbuid: pbuid,
-      greenbidsSampling: 0,
+      greenbidsSampling: 1,
     };
     beforeEach(function () {
       greenbidsAnalyticsAdapter.enableAnalytics({
@@ -51,7 +51,7 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
     beforeEach(function () {
       const configOptions = {
         pbuid: pbuid,
-        greenbidsSampling: 0,
+        greenbidsSampling: 1,
       };
 
       greenbidsAnalyticsAdapter.enableAnalytics({
@@ -143,7 +143,7 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
           auctionId: auctionId,
           pbuid: pbuid,
           referrer: window.location.href,
-          sampling: 0,
+          sampling: 1,
           prebid: '$prebid.version$',
         });
       }
@@ -257,7 +257,9 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
             noBids: noBids
           };
 
+          sinon.stub(greenbidsAnalyticsAdapter, 'getCachedAuction').returns({timeoutBids: timeoutBids});
           const result = greenbidsAnalyticsAdapter.createBidMessage(args, timeoutBids);
+          greenbidsAnalyticsAdapter.getCachedAuction.restore();
 
           assertHavingRequiredMessageFields(result);
           expect(result).to.deep.include({
@@ -368,21 +370,21 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
 
     it('should call handleAuctionInit as AUCTION_INIT trigger event', function() {
       sinon.spy(greenbidsAnalyticsAdapter, 'handleAuctionInit');
-      events.emit(constants.EVENTS.AUCTION_INIT, {});
+      events.emit(constants.EVENTS.AUCTION_INIT, {auctionId: 'auctionId'});
       sinon.assert.callCount(greenbidsAnalyticsAdapter.handleAuctionInit, 1);
       greenbidsAnalyticsAdapter.handleAuctionInit.restore();
     });
 
     it('should call handleBidTimeout as BID_TIMEOUT trigger event', function() {
       sinon.spy(greenbidsAnalyticsAdapter, 'handleBidTimeout');
-      events.emit(constants.EVENTS.BID_TIMEOUT, {});
+      events.emit(constants.EVENTS.BID_TIMEOUT, {auctionId: 'auctionId'});
       sinon.assert.callCount(greenbidsAnalyticsAdapter.handleBidTimeout, 1);
       greenbidsAnalyticsAdapter.handleBidTimeout.restore();
     });
 
     it('should call handleAuctionEnd as AUCTION_END trigger event', function() {
       sinon.spy(greenbidsAnalyticsAdapter, 'handleAuctionEnd');
-      events.emit(constants.EVENTS.AUCTION_END, {});
+      events.emit(constants.EVENTS.AUCTION_END, {auctionId: 'auctionId'});
       sinon.assert.callCount(greenbidsAnalyticsAdapter.handleAuctionEnd, 1);
       greenbidsAnalyticsAdapter.handleAuctionEnd.restore();
     });
@@ -392,7 +394,7 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
       events.emit(constants.EVENTS.BILLABLE_EVENT, {
         type: 'auction',
         billingId: generateUUID(),
-        auctionId: 'auctionID-1',
+        auctionId: 'auctionId',
         vendor: 'greenbidsRtdProvider'
       });
       sinon.assert.callCount(greenbidsAnalyticsAdapter.handleBillable, 1);
