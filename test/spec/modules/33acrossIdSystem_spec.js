@@ -167,6 +167,46 @@ describe('33acrossIdSystem', () => {
       });
     });
 
+    context('if the response lacks the 33across "envelope" ID', () => {
+      it('should wipe any existing "envelope" ID from storage', () => {
+        const completeCallback = () => {};
+
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          },
+          storage: {
+            type: 'html5'
+          }
+        });
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        const removeDataFromLocalStorage = sinon.stub(storage, 'removeDataFromLocalStorage');
+        const setCookie = sinon.stub(storage, 'setCookie');
+        const cookiesAreEnabled = sinon.stub(storage, 'cookiesAreEnabled').returns(true);
+
+        request.respond(200, {
+          'Content-Type': 'application/json'
+        }, JSON.stringify({
+          succeeded: true,
+          data: {
+            envelope: '' // no 'envelope' field
+          },
+          expires: 1645667805067
+        }));
+
+        expect(removeDataFromLocalStorage.calledWith('33acrossId')).to.be.true;
+        expect(setCookie.calledWith('33acrossId', '', sinon.match.string, 'Lax')).to.be.true;
+
+        removeDataFromLocalStorage.restore();
+        setCookie.restore();
+        cookiesAreEnabled.restore();
+      });
+    });
+
     context('when GDPR applies', () => {
       it('should call endpoint with \'gdpr=1\'', () => {
         const completeCallback = () => {};

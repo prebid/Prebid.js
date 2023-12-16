@@ -146,7 +146,7 @@ export const thirthyThreeAcrossIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId({ params = { }, storage }, gdprConsentData) {
+  getId({ params = { }, storage: storageConfig }, gdprConsentData) {
     if (typeof params.pid !== 'string') {
       logError(`${MODULE_NAME}: Submodule requires a partner ID to be defined`);
 
@@ -167,7 +167,11 @@ export const thirthyThreeAcrossIdSubmodule = {
               logError(`${MODULE_NAME}: ID reading error:`, err);
             }
 
-            handleFpId(responseObj.fp, storage);
+            if (!responseObj.envelope) {
+              deleteFromStorage(MODULE_NAME);
+            }
+
+            handleFpId(responseObj.fp, storageConfig);
 
             cb(responseObj.envelope);
           },
@@ -176,7 +180,7 @@ export const thirthyThreeAcrossIdSubmodule = {
 
             cb();
           }
-        }, calculateQueryStringParams(pid, gdprConsentData, storage), { method: 'GET', withCredentials: true });
+        }, calculateQueryStringParams(pid, gdprConsentData, storageConfig), { method: 'GET', withCredentials: true });
       }
     };
   },
