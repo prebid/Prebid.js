@@ -95,7 +95,6 @@ export const spec = {
           bidResponse.campId = adUnit.campId;
         }
         bidResponse.bidder = BIDDER_CODE;
-        bidResponse.timestamp = timestamp();
         bidResponses.push(bidResponse);
       });
     }

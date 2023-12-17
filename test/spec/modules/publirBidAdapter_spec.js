@@ -5,8 +5,8 @@ import { config } from 'src/config.js';
 import { BANNER } from '../../../src/mediaTypes.js';
 import * as utils from 'src/utils.js';
 
-const ENDPOINT = 'https://cravehub.com/prebid.php';
-const RTB_DOMAIN_TEST = 'cravehub.com';
+const ENDPOINT = 'https://prebid.publir.com/publirPrebidEndPoint';
+const RTB_DOMAIN_TEST = 'prebid.publir.com';
 const TTL = 360;
 
 describe('publirAdapter', function () {
@@ -66,9 +66,6 @@ describe('publirAdapter', function () {
     const bidderRequest = {
       bidderCode: 'publir',
     }
-    const api = [1, 2];
-    const mimes = ['application/javascript'];
-    const protocols = [2, 3, 5, 6];
 
     it('sends bid request to ENDPOINT via POST', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
