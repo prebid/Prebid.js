@@ -15,6 +15,7 @@ export const USER_SYNC_IMG_URL = 'https://trc.taboola.com/sg/prebidJS/1/cm';
 const USER_ID = 'user-id';
 const STORAGE_KEY = `taboola global:${USER_ID}`;
 const COOKIE_KEY = 'trc_cookie_storage';
+export const EVENT_ENDPOINT = 'https://beacon.bidder.taboola.com';
 
 /**
  *  extract User Id by that order:
@@ -189,6 +190,13 @@ export const spec = {
       });
     }
     return syncs;
+  },
+  onTimeout: (timeoutData) => {
+    ajax(EVENT_ENDPOINT + '/timeout', null, JSON.stringify(timeoutData), {method: 'POST'});
+  },
+
+  onBidderError: ({ error, bidderRequest }) => {
+    ajax(EVENT_ENDPOINT + '/bidError', null, JSON.stringify(error, bidderRequest), {method: 'POST'});
   },
 };
 
