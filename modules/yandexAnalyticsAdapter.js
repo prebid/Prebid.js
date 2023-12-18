@@ -4,7 +4,7 @@ import { logError, logInfo } from '../src/utils.js';
 import CONSTANTS from '../src/constants.json';
 import * as events from '../src/events.js';
 
-const tagURL = `https://mc.yandex.com/metrika/tag_prebid.js`;
+const tagURL = `https://mc.yandex.com/metrika/tag.js`;
 
 const timeoutIds = {};
 const tryUntil = (operationId, conditionCb, cb) => {
