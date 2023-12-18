@@ -7,7 +7,7 @@ import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
-/// /////////// CONSTANTS //////////////
+////////////// CONSTANTS //////////////
 const ADAPTER_CODE = 'pubmatic';
 const VENDOR_OPENWRAP = 'openwrap';
 const SEND_TIMEOUT = 2000;
