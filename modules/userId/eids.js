@@ -207,6 +207,34 @@ export const USER_IDS_CONFIG = {
     }
   },
 
+  // openx
+  'openx': {
+    source: 'openx.net',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+
+  // pubmatic
+  'pubmatic': {
+    source: 'pubmatic.com',
+    atype: 3,
+    getValue: function(data) {
+      return data.id;
+    },
+    getUidExt: function(data) {
+      if (data.ext) {
+        return data.ext;
+      }
+    }
+  },
+
   // britepoolId
   'britepoolid': {
     source: 'britepool.com',
