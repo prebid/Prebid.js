@@ -97,6 +97,10 @@ function getAdapterNameForAlias(aliasName) {
 };
 
 function isAdagio(value) {
+  if (!value) {
+    return false
+  }
+
   return value.toLowerCase().includes('adagio') ||
     getAdapterNameForAlias(value).toLowerCase().includes('adagio');
 };
