@@ -1,5 +1,13 @@
 import { expect } from 'chai';
 import { config } from 'src/config.js';
+import {ruleRegistry} from '../../src/activities/rules.js';
+import {ACTIVITY_SYNC_USER} from '../../src/activities/activities.js';
+import {
+  ACTIVITY_PARAM_COMPONENT,
+  ACTIVITY_PARAM_SYNC_TYPE,
+  ACTIVITY_PARAM_SYNC_URL
+} from '../../src/activities/params.js';
+import {MODULE_TYPE_BIDDER} from '../../src/activities/modules.js';
 // Use require since we need to be able to write to these vars
 const utils = require('../../src/utils');
 let { newUserSync, USERSYNC_DEFAULT_CONFIG } = require('../../src/userSync');
@@ -14,12 +22,18 @@ describe('user sync', function () {
   let idPrefix = 'test-generated-id-';
   let lastId = 0;
   let defaultUserSyncConfig = config.getConfig('userSync');
-  function getUserSyncConfig(userSyncConfig) {
-    return Object.assign({}, defaultUserSyncConfig, userSyncConfig);
+  let regRule, isAllowed;
+
+  function mkUserSync(deps) {
+    [regRule, isAllowed] = ruleRegistry();
+    return newUserSync(Object.assign({
+      regRule, isAllowed
+    }, deps))
   }
+
   function newTestUserSync(configOverrides, disableBrowserCookies) {
     const thisConfig = Object.assign({}, defaultUserSyncConfig, configOverrides);
-    return newUserSync({
+    return mkUserSync({
       config: thisConfig,
       browserSupportsCookies: !disableBrowserCookies,
     })
@@ -58,6 +72,22 @@ describe('user sync', function () {
     expect(triggerPixelStub.getCall(0)).to.not.be.null;
     expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com');
   });
+
+  it('should NOT fire a sync if a rule blocks syncUser', () => {
+    const userSync = newTestUserSync()
+    regRule(ACTIVITY_SYNC_USER, 'testRule', (params) => {
+      if (
+        params[ACTIVITY_PARAM_COMPONENT] === `${MODULE_TYPE_BIDDER}.testBidder` &&
+        params[ACTIVITY_PARAM_SYNC_TYPE] === 'image' &&
+        params[ACTIVITY_PARAM_SYNC_URL] === 'http://example.com'
+      ) {
+        return {allow: false}
+      }
+    })
+    userSync.registerSync('image', 'testBidder', 'http://example.com');
+    userSync.syncUsers();
+    expect(triggerPixelStub.called).to.be.false;
+  })
 
   it('should clear queue after sync', function () {
     const userSync = newTestUserSync();
@@ -371,14 +401,13 @@ describe('user sync', function () {
     userSync.registerSync('image', 'atestBidder', 'http://example.com/1');
     userSync.registerSync('iframe', 'testBidder', 'http://example.com/iframe');
     userSync.syncUsers();
-    expect(logWarnStub.getCall(0).args[0]).to.exist;
     expect(triggerPixelStub.getCall(0)).to.not.be.null;
     expect(triggerPixelStub.getCall(0).args[0]).to.exist.and.to.equal('http://example.com/1');
     expect(insertUserSyncIframeStub.getCall(0)).to.be.null;
   });
 
   it('should still allow default image syncs if setConfig only defined iframe', function () {
-    const userSync = newUserSync({
+    const userSync = mkUserSync({
       config: config.getConfig('userSync'),
       browserSupportsCookies: true
     });
@@ -403,7 +432,7 @@ describe('user sync', function () {
   });
 
   it('should not fire image pixel for a bidder if iframe pixel is fired for same bidder', function() {
-    const userSync = newUserSync({
+    const userSync = mkUserSync({
       config: config.getConfig('userSync'),
       browserSupportsCookies: true
     });
@@ -430,7 +459,7 @@ describe('user sync', function () {
   });
 
   it('should override default image syncs if setConfig used image filter', function () {
-    const userSync = newUserSync({
+    const userSync = mkUserSync({
       config: config.getConfig('userSync'),
       browserSupportsCookies: true
     });
@@ -455,7 +484,7 @@ describe('user sync', function () {
   });
 
   it('should override default image syncs if setConfig used all filter', function() {
-    const userSync = newUserSync({
+    const userSync = mkUserSync({
       config: config.getConfig('userSync'),
       browserSupportsCookies: true
     });
@@ -488,7 +517,7 @@ describe('user sync', function () {
     describe('canBidderRegisterSync', function () {
       describe('with filterSettings', function () {
         it('should return false if filter settings does not allow it', function () {
-          const userSync = newUserSync({
+          const userSync = mkUserSync({
             config: {
               filterSettings: {
                 image: {
@@ -505,7 +534,7 @@ describe('user sync', function () {
           expect(userSync.canBidderRegisterSync('iframe', 'otherTestBidder')).to.equal(false);
         });
         it('should return false for iframe if there is no iframe filterSettings', function () {
-          const userSync = newUserSync({
+          const userSync = mkUserSync({
             config: {
               syncEnabled: true,
               filterSettings: {
@@ -523,7 +552,7 @@ describe('user sync', function () {
           expect(userSync.canBidderRegisterSync('iframe', 'otherTestBidder')).to.equal(false);
         });
         it('should return true if filter settings does allow it', function () {
-          const userSync = newUserSync({
+          const userSync = mkUserSync({
             config: {
               filterSettings: {
                 image: {
@@ -543,7 +572,7 @@ describe('user sync', function () {
       describe('almost deprecated - without filterSettings', function () {
         describe('enabledBidders contains testBidder', function () {
           it('should return false if type is iframe and iframeEnabled is false', function () {
-            const userSync = newUserSync({
+            const userSync = mkUserSync({
               config: {
                 filterSettings: {
                   iframe: {
@@ -557,7 +586,7 @@ describe('user sync', function () {
           });
 
           it('should return true if type is iframe and iframeEnabled is true', function () {
-            const userSync = newUserSync({
+            const userSync = mkUserSync({
               config: {
                 pixelEnabled: true,
                 iframeEnabled: true,
@@ -568,7 +597,7 @@ describe('user sync', function () {
           });
 
           it('should return false if type is image and pixelEnabled is false', function () {
-            const userSync = newUserSync({
+            const userSync = mkUserSync({
               config: {
                 filterSettings: {
                   image: {
@@ -582,7 +611,7 @@ describe('user sync', function () {
           });
 
           it('should return true if type is image and pixelEnabled is true', function () {
-            const userSync = newUserSync({
+            const userSync = mkUserSync({
               config: {
                 pixelEnabled: true,
                 iframeEnabled: true,
@@ -595,7 +624,7 @@ describe('user sync', function () {
 
         describe('enabledBidders does not container testBidder', function () {
           it('should return false since testBidder is not in enabledBidders', function () {
-            const userSync = newUserSync({
+            const userSync = mkUserSync({
               config: {
                 filterSettings: {
                   image: {

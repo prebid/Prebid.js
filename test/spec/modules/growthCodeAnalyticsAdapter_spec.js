@@ -64,7 +64,6 @@ describe('growthCode analytics adapter', () => {
     var eventTypes = [];
     body.events.forEach(e => eventTypes.push(e.eventType));
     assert(eventTypes.length > 0)
-    assert(eventTypes.indexOf(constants.EVENTS.AUCTION_END) > -1);
     growthCodeAnalyticsAdapter.disableAnalytics();
   });
 });

@@ -1,10 +1,12 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, getGptSlotInfoForAdUnitCode, isFn, isPlainObject } from '../src/utils.js';
+import { parseSizesInput, logError, generateUUID, isEmpty, deepAccess, logWarn, logMessage, isFn, isPlainObject } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { userSync } from '../src/userSync.js';
 import { bidderSettings } from '../src/bidderSettings.js';
+import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
 const PAGEVIEW_ID = generateUUID();
@@ -38,8 +40,8 @@ export const spec = {
         return false;
       }
     } else if (deepAccess(bid, 'mediaTypes.video')) {
-      if (deepAccess(bid, 'mediaTypes.video.context') === 'outstream' && !bid.params.sizes) {
-        // bids.params.sizes is required for outstream video adUnits
+      if (deepAccess(bid, 'mediaTypes.video.context') === 'outstream' && !deepAccess(bid, 'mediaTypes.video.playerSize')) {
+        // playerSize is required for outstream video adUnits
         return false;
       }
       if (deepAccess(bid, 'mediaTypes.video.context') === 'instream' && !deepAccess(bid, 'mediaTypes.video.playerSize')) {
@@ -59,23 +61,15 @@ export const spec = {
    */
   buildRequests: (validBidRequests, bidderRequest) => {
     const bids = validBidRequests.map(bid => {
-      let mediaType;
-
-      if (deepAccess(bid, 'mediaTypes.video')) {
-        mediaType = 'video';
-      } else if (deepAccess(bid, 'mediaTypes.banner')) {
-        mediaType = 'display';
-      }
-
       let slotIdentifier = _validateSlot(bid);
       if (/^[\/]?[\d]+[[\/].+[\/]?]?$/.test(slotIdentifier)) {
         slotIdentifier = slotIdentifier.charAt(0) === '/' ? slotIdentifier : '/' + slotIdentifier;
         return {
-          [`${slotIdentifier}|${bid.bidId}`]: `${_validateSize(bid)}|${_validateFloor(bid)}${_validateGPID(bid)}${_validateMediaType(mediaType)}`
+          [`${slotIdentifier}|${bid.bidId}`]: `${_validateSize(bid)}|${_validateFloor(bid)}${_validateGPID(bid)}${_validateMediaType(bid)}`
         }
       } else if (/^[0-9a-fA-F]{20}$/.test(slotIdentifier) && slotIdentifier.length === 20) {
         return {
-          [bid.bidId]: `${slotIdentifier}|${_validateSize(bid)}|${_validateFloor(bid)}${_validateGPID(bid)}${_validateMediaType(mediaType)}`
+          [bid.bidId]: `${slotIdentifier}|${_validateSize(bid)}|${_validateFloor(bid)}${_validateGPID(bid)}${_validateMediaType(bid)}`
         }
       } else {
         logError(`The ad unit code or Sonobi Placement id for slot ${bid.bidId} is invalid`);
@@ -140,7 +134,7 @@ export const spec = {
       payload.eids = JSON.stringify(eids);
     }
 
-    let keywords = validBidRequests[0].params.keywords; // a CSV of keywords
+    let keywords = getAllOrtbKeywords(bidderRequest.ortb2, ...validBidRequests.map(br => br.params.keywords)).join(',');
 
     if (keywords) {
       payload.kw = keywords;
@@ -247,10 +241,7 @@ export const spec = {
             bidRequest,
             'renderer.options'
           ));
-          let videoSize = deepAccess(bidRequest, 'params.sizes');
-          if (Array.isArray(videoSize) && Array.isArray(videoSize[0])) { // handle case of multiple sizes
-            videoSize = videoSize[0]; // Only take the first size for outstream
-          }
+          let videoSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
           if (videoSize) {
             bids.width = videoSize[0];
             bids.height = videoSize[1];
@@ -338,10 +329,28 @@ function _validateGPID(bid) {
   return ''
 }
 
-function _validateMediaType(mediaType) {
+function _validateMediaType(bidRequest) {
+  let mediaType;
+  if (deepAccess(bidRequest, 'mediaTypes.video')) {
+    mediaType = 'video';
+  } else if (deepAccess(bidRequest, 'mediaTypes.banner')) {
+    mediaType = 'display';
+  }
+
   let mediaTypeValidation = '';
   if (mediaType === 'video') {
     mediaTypeValidation = 'c=v,';
+    if (deepAccess(bidRequest, 'mediaTypes.video.playbackmethod')) {
+      mediaTypeValidation = `${mediaTypeValidation}pm=${deepAccess(bidRequest, 'mediaTypes.video.playbackmethod').join(':')},`;
+    }
+    if (deepAccess(bidRequest, 'mediaTypes.video.placement')) {
+      let placement = deepAccess(bidRequest, 'mediaTypes.video.placement');
+      mediaTypeValidation = `${mediaTypeValidation}p=${placement},`;
+    }
+    if (deepAccess(bidRequest, 'mediaTypes.video.plcmt')) {
+      let plcmt = deepAccess(bidRequest, 'mediaTypes.video.plcmt');
+      mediaTypeValidation = `${mediaTypeValidation}pl=${plcmt},`;
+    }
   } else if (mediaType === 'display') {
     mediaTypeValidation = 'c=d,';
   }

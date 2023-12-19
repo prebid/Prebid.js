@@ -1,20 +1,13 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
-import { find, includes } from '../src/polyfill.js';
-import {
-  convertCamelToUnderscore,
-  deepAccess,
-  isArray,
-  isEmpty,
-  isFn,
-  isNumber,
-  isPlainObject,
-  transformBidderParamKeywords
-} from '../src/utils.js';
-import { auctionManager } from '../src/auctionManager.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
+import {find, includes} from '../src/polyfill.js';
+import {deepAccess, isArray, isFn, isNumber, isPlainObject} from '../src/utils.js';
+import {auctionManager} from '../src/auctionManager.js';
 import {getGlobal} from '../src/prebidGlobal.js';
+import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
+import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
 
 const SOURCE = 'pbjs';
 const storageManager = getStorageManager({bidderCode: 'pixfuture'});
@@ -136,8 +129,9 @@ export const spec = {
           v: getGlobal().version,
           pageUrl: referer,
           bidId: bidRequest.bidId,
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           auctionId: bidRequest.auctionId,
-          transactionId: bidRequest.transactionId,
+          transactionId: bidRequest.ortb2Imp?.ext?.tid,
           adUnitCode: bidRequest.adUnitCode,
           bidRequestCount: bidRequest.bidRequestCount,
           sizes: bidRequest.sizes,
@@ -281,14 +275,7 @@ function bidToTag(bid) {
   if (bid.params.externalImpId) {
     tag.external_imp_id = bid.params.externalImpId;
   }
-  if (!isEmpty(bid.params.keywords)) {
-    let keywords = transformBidderParamKeywords(bid.params.keywords);
-
-    if (keywords.length > 0) {
-      keywords.forEach(deleteValues);
-    }
-    tag.keywords = keywords;
-  }
+  tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords)
 
   let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
   if (gpid) {
@@ -302,7 +289,7 @@ function bidToTag(bid) {
   if (bid.params.frameworks && isArray(bid.params.frameworks)) {
     tag['banner_frameworks'] = bid.params.frameworks;
   }
-
+  // TODO: why does this need to iterate through every adUnit?
   let adUnit = find(auctionManager.getAdUnits(), au => bid.transactionId === au.transactionId);
   if (adUnit && adUnit.mediaTypes && adUnit.mediaTypes.banner) {
     tag.ad_types.push(BANNER);
@@ -366,16 +353,6 @@ function getBidFloor(bid) {
     return floor.floor;
   }
   return null;
-}
-
-function deleteValues(keyPairObj) {
-  if (isPopulatedArray(keyPairObj.value) && keyPairObj.value[0] === '') {
-    delete keyPairObj.value;
-  }
-}
-
-function isPopulatedArray(arr) {
-  return !!(isArray(arr) && arr.length > 0);
 }
 
 registerBidder(spec);

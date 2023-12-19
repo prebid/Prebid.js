@@ -1,8 +1,7 @@
 import {
   _each,
   deepAccess,
-  formatQS,
-  getBidIdParameter,
+  formatQS, getBidIdParameter,
   getValue,
   isArray,
   isFn,
@@ -114,8 +113,9 @@ export const spec = {
         bidId: bid.bidId,
         bidderRequestId: getBidIdParameter('bidderRequestId', bid),
         adUnitCode: getBidIdParameter('adUnitCode', bid),
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: getBidIdParameter('auctionId', bid),
-        transactionId: getBidIdParameter('transactionId', bid),
+        transactionId: bid.ortb2Imp?.ext?.tid || '',
       };
     });
 
