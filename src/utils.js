@@ -181,6 +181,15 @@ export function getWindowLocation() {
 }
 
 /**
+ * returns a window object, which holds the provided document or null
+ * @param {Document} doc
+ * @returns {Window}
+ */
+export function getWindowFromDocument(doc) {
+  return (doc) ? doc.defaultView : null;
+}
+
+/**
  * Wrappers to console.(log | info | warn | error). Takes N arguments, the same as the native methods
  */
 export function logMessage() {
