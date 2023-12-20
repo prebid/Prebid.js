@@ -175,10 +175,10 @@ export const spec = {
           });
         });
 
-        if (!syncOptions.iframeEnabled) {
+        if (syncOptions.iframeEnabled) {
           syncs = syncs.filter(s => s.type !== 'iframe')
         }
-        if (!syncOptions.pixelEnabled) {
+        if (syncOptions.pixelEnabled) {
           syncs = syncs.filter(s => s.type !== 'image')
         }
       }
