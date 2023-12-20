@@ -109,21 +109,30 @@ describe('ad2ictionBidAdapter', function () {
       start: 1702526505498,
     };
 
-    it('should send bid request to API_ENDPOINT via POST', function() {
-      const request = spec.buildRequests(mockValidBidRequests, mockBidderRequest);
+    it('should send bid request to API_ENDPOINT via POST', function () {
+      const request = spec.buildRequests(
+        mockValidBidRequests,
+        mockBidderRequest
+      );
 
       expect(request.url).to.equal(API_ENDPOINT);
       expect(request.method).to.equal('POST');
     });
 
-    it('should send bid request with API version', function() {
-      const request = spec.buildRequests(mockValidBidRequests, mockBidderRequest);
+    it('should send bid request with API version', function () {
+      const request = spec.buildRequests(
+        mockValidBidRequests,
+        mockBidderRequest
+      );
 
       expect(request.data.v).to.equal(API_VERSION_NUMBER);
     });
 
-    it('should send bid request with dada fields', function() {
-      const request = spec.buildRequests(mockValidBidRequests, mockBidderRequest);
+    it('should send bid request with dada fields', function () {
+      const request = spec.buildRequests(
+        mockValidBidRequests,
+        mockBidderRequest
+      );
 
       expect(request.data).to.include.all.keys('udid', '_');
       expect(request.data).to.have.property('refererInfo');
@@ -132,12 +141,83 @@ describe('ad2ictionBidAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    it('should return an empty array to indicate no valid bids', function() {
+    it('should return an empty array to indicate no valid bids', function () {
       const mockServerResponse = {};
 
       const bidResponses = spec.interpretResponse(mockServerResponse);
 
       expect(bidResponses).is.an('array').that.is.empty;
     });
-  })
+
+    it('should return a valid bid response', function () {
+      const MOCK_AD_DOM = "<div id='AD2M-BOX'>"
+      const mockServerResponse = {
+        body: [
+          {
+            requestId: '23a3d87fb6bde9',
+            cpm: 1.61,
+            currency: 'USD',
+            width: '336',
+            height: '280',
+            creativeId: '46271',
+            netRevenue: 'false',
+            ad: MOCK_AD_DOM,
+            meta: {
+              advertiserDomains: [''],
+            },
+            ttl: 360,
+          },
+          {
+            requestId: '3ce3efc40c890b',
+            cpm: 1.61,
+            currency: 'USD',
+            width: '336',
+            height: '280',
+            creativeId: '46271',
+            netRevenue: 'false',
+            ad: MOCK_AD_DOM,
+            meta: {
+              advertiserDomains: [''],
+            },
+            ttl: 360,
+          },
+        ],
+      };
+
+      const exceptServerResponse = [
+        {
+          requestId: '23a3d87fb6bde9',
+          cpm: 1.61,
+          currency: 'USD',
+          width: '336',
+          height: '280',
+          creativeId: '46271',
+          netRevenue: 'false',
+          ad: MOCK_AD_DOM,
+          meta: {
+            advertiserDomains: [''],
+          },
+          ttl: 360,
+        },
+        {
+          requestId: '3ce3efc40c890b',
+          cpm: 1.61,
+          currency: 'USD',
+          width: '336',
+          height: '280',
+          creativeId: '46271',
+          netRevenue: 'false',
+          ad: MOCK_AD_DOM,
+          meta: {
+            advertiserDomains: [''],
+          },
+          ttl: 360,
+        },
+      ]
+
+      const bidResponses = spec.interpretResponse(mockServerResponse);
+
+      expect(bidResponses).to.eql(exceptServerResponse);
+    });
+  });
 });
