@@ -227,9 +227,9 @@ function bidToAdRequest(bid, currency) {
     adUnitId: bid.params.adUnitId,
     callerAdUnitId: bid.params.adUnitName || bid.adUnitCode || bid.placementCode,
     bidId: bid.bidId,
-    transactionId: bid.ortb2Imp?.ext?.tid,
     formats: getSizes(bid).map(sizeToFormat),
     flr: getBidFloor(bid, currency),
+    rtbData: bid.ortb2Imp,
     options: bid.params.options
   };
 
