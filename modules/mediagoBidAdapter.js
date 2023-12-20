@@ -10,49 +10,21 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'mediago';
 // const PROTOCOL = window.document.location.protocol;
-const ENDPOINT_URL =
-  // ((PROTOCOL === 'https:') ? 'https' : 'http') +
-  'https://rtb-us.mediago.io/api/bid?tn=';
+const ENDPOINT_URL = 'https://gbid.mediago.io/api/bid?tn=';
+const COOKY_SYNC_URL = 'https://gtrace.mediago.io/ju/cs/eplist';
+const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediago.io/js/cookieSync.html';
+
 const TIME_TO_LIVE = 500;
+const GVLID = 1020;
 // const ENDPOINT_URL = '/api/bid?tn=';
-const storage = getStorageManager();
+const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 let globals = {};
 let itemMaps = {};
 
-/**
- * 获取随机id
- * @param  {number} a random number from 0 to 15
- * @return {string}   random number or random string
- */
-// function getRandomId(
-//   a // placeholder
-// ) {
-//   // if the placeholder was passed, return
-//   // a random number from 0 to 15
-//   return a
-//     ? (
-//       a ^ // unless b is 8,
-//         ((Math.random() * // in which case
-//           16) >> // a random number from
-//           (a / 4))
-//     ) // 8 to 11
-//       .toString(16) // in hexadecimal
-//     : ( // or otherwise a concatenated string:
-//       [1e7] + // 10000000 +
-//         1e3 + // -1000 +
-//         4e3 + // -4000 +
-//         8e3 + // -80000000 +
-//         1e11
-//     ) // -100000000000,
-//       .replace(
-//         // replacing
-//         /[018]/g, // zeroes, ones, and eights with
-//         getRandomId // random hex digits
-//       );
-// }
-
 /* ----- mguid:start ------ */
 const COOKIE_KEY_MGUID = '__mguid_';
+const STORE_MAX_AGE = 1000 * 60 * 60 * 24 * 365;
+let reqTimes = 0;
 
 /**
  * 获取用户id
@@ -63,7 +35,7 @@ const getUserID = () => {
 
   if (i === null) {
     const uuid = utils.generateUUID();
-    storage.setCookie(COOKIE_KEY_MGUID, uuid);
+    storage.setCookie(COOKIE_KEY_MGUID, uuid, STORE_MAX_AGE);
     return uuid;
   }
   return i;
@@ -104,7 +76,7 @@ function isMobileAndTablet() {
         '.+mobile|avantgo|bada/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)',
         '|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone',
         '|p(ixi|re)/|plucker|pocket|psp|series(4|6)0|symbian|treo|up.(browser|link)|vodafone|wap',
-        '|windows ce|xda|xiino|android|ipad|playbook|silk',
+        '|windows ce|xda|xiino|android|ipad|playbook|silk'
       ].join(''),
       'i'
     );
@@ -128,7 +100,7 @@ function isMobileAndTablet() {
         '|tim-|t-mo|to(pl|sh)|ts(70|m-|m3|m5)|tx-9|up(.b|g1|si)|utst|',
         'v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|-v)',
         '|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas-',
-        '|your|zeto|zte-',
+        '|your|zeto|zte-'
       ].join(''),
       'i'
     );
@@ -148,12 +120,12 @@ function isMobileAndTablet() {
  */
 // function getBidFloor(bid, mediaType, sizes) {
 //   var floor;
-//   var size = sizes.length === 1 ? sizes[0] : "*";
-//   if (typeof bid.getFloor === "function") {
-//     const floorInfo = bid.getFloor({ currency: "USD", mediaType, size });
+//   var size = sizes.length === 1 ? sizes[0] : '*';
+//   if (typeof bid.getFloor === 'function') {
+//     const floorInfo = bid.getFloor({ currency: 'USD', mediaType, size });
 //     if (
-//       typeof floorInfo === "object" &&
-//       floorInfo.currency === "USD" &&
+//       typeof floorInfo === 'object' &&
+//       floorInfo.currency === 'USD' &&
 //       !isNaN(parseFloat(floorInfo.floor))
 //     ) {
 //       floor = parseFloat(floorInfo.floor);
@@ -170,7 +142,7 @@ function getBidFloor(bid) {
     const bidFloor = bid.getFloor({
       currency: 'USD',
       mediaType: '*',
-      size: '*',
+      size: '*'
     });
     return bidFloor.floor;
   } catch (_) {
@@ -188,11 +160,7 @@ function transformSizes(requestSizes) {
   let sizes = [];
   let sizeObj = {};
 
-  if (
-    utils.isArray(requestSizes) &&
-    requestSizes.length === 2 &&
-    !utils.isArray(requestSizes[0])
-  ) {
+  if (utils.isArray(requestSizes) && requestSizes.length === 2 && !utils.isArray(requestSizes[0])) {
     sizeObj.width = parseInt(requestSizes[0], 10);
     sizeObj.height = parseInt(requestSizes[1], 10);
     sizes.push(sizeObj);
@@ -219,7 +187,7 @@ const mediagoAdSize = [
   { w: 160, h: 600 },
   { w: 320, h: 180 },
   { w: 320, h: 100 },
-  { w: 336, h: 280 },
+  { w: 336, h: 280 }
 ];
 
 /**
@@ -239,23 +207,32 @@ function getItems(validBidRequests, bidderRequest) {
 
     // 确认尺寸是否符合我们要求
     for (let size of sizes) {
-      matchSize = mediagoAdSize.find(
-        (item) => size.width === item.w && size.height === item.h
-      );
+      matchSize = mediagoAdSize.find(item => size.width === item.w && size.height === item.h);
       if (matchSize) {
         break;
       }
     }
     if (!matchSize) {
-      return {};
+      matchSize = sizes[0] ? { h: sizes[0].height || 0, w: sizes[0].width || 0 } : { h: 0, w: 0 };
     }
 
     const bidFloor = getBidFloor(req);
-    // const gpid =
-    //   utils.deepAccess(req, 'ortb2Imp.ext.gpid') ||
-    //   utils.deepAccess(req, 'ortb2Imp.ext.data.pbadslot') ||
-    //   utils.deepAccess(req, 'params.placementId', 0);
-    // console.log("wjh getItems:", req, bidFloor, gpid);
+    const gpid =
+      utils.deepAccess(req, 'ortb2Imp.ext.gpid') ||
+      utils.deepAccess(req, 'ortb2Imp.ext.data.pbadslot') ||
+      utils.deepAccess(req, 'params.placementId', 0);
+
+    const gdprConsent = {};
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      gdprConsent.consent = bidderRequest.gdprConsent.consentString;
+      gdprConsent.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+      // if (bidderRequest.gdprConsent.addtlConsent && bidderRequest.gdprConsent.addtlConsent.indexOf('~') !== -1) {
+      //   let ac = bidderRequest.gdprConsent.addtlConsent;
+      //   // pull only the ids from the string (after the ~) and convert them to an array of ints
+      //   let acStr = ac.substring(ac.indexOf('~') + 1);
+      //   gdpr_consent.addtl_consent = acStr.split('.').map(id => parseInt(id, 10));
+      // }
+    }
 
     // if (mediaTypes.native) {}
     // banner广告类型
@@ -268,20 +245,42 @@ function getItems(validBidRequests, bidderRequest) {
           h: matchSize.h,
           w: matchSize.w,
           pos: 1,
+          format: sizes
         },
         ext: {
-        //   gpid: gpid, // 加入后无法返回广告
+          adUnitCode: req.adUnitCode,
+          referrer: getReferrer(req, bidderRequest),
+          ortb2Imp: utils.deepAccess(req, 'ortb2Imp'), // 传入完整对象，分析日志数据
+          gpid: gpid, // 加入后无法返回广告
+          adslot: utils.deepAccess(req, 'ortb2Imp.ext.data.adserver.adslot', '', ''),
+          ...gdprConsent // gdpr
         },
+        tagid: req.params && req.params.tagid
       };
       itemMaps[id] = {
         req,
-        ret,
+        ret
       };
     }
 
     return ret;
   });
   return items;
+}
+
+/**
+ * @param {BidRequest} bidRequest
+ * @param bidderRequest
+ * @returns {string}
+ */
+function getReferrer(bidRequest = {}, bidderRequest = {}) {
+  let pageUrl;
+  if (bidRequest.params && bidRequest.params.referrer) {
+    pageUrl = bidRequest.params.referrer;
+  } else {
+    pageUrl = utils.deepAccess(bidderRequest, 'refererInfo.page');
+  }
+  return pageUrl;
 }
 
 /**
@@ -293,54 +292,80 @@ function getItems(validBidRequests, bidderRequest) {
  */
 function getParam(validBidRequests, bidderRequest) {
   const pubcid = utils.deepAccess(validBidRequests[0], 'crumbs.pubcid');
-  // console.log('wjh getParam', validBidRequests, bidderRequest);
+  const sharedid =
+    utils.deepAccess(validBidRequests[0], 'userId.sharedid.id') ||
+    utils.deepAccess(validBidRequests[0], 'userId.pubcid');
+
+  const bidsUserIdAsEids = validBidRequests[0].userIdAsEids;
+  const bidsUserid = validBidRequests[0].userId;
+  const eids = bidsUserIdAsEids || bidsUserid;
+  const ppuid = bidsUserid && bidsUserid.pubProvidedId;
+  const content = utils.deepAccess(bidderRequest, 'ortb2.site.content');
+  const cat = utils.deepAccess(bidderRequest, 'ortb2.site.cat');
+  reqTimes += 1;
+
   let isMobile = isMobileAndTablet() ? 1 : 0;
-  let isTest = 0;
+  // input test status by Publisher. more frequently for test true req
+  let isTest = validBidRequests[0].params.test || 0;
   let auctionId = getProperty(bidderRequest, 'auctionId');
   let items = getItems(validBidRequests, bidderRequest);
 
-  const domain = document.domain;
-  const location = utils.deepAccess(bidderRequest, 'refererInfo.referer');
+  const domain = utils.deepAccess(bidderRequest, 'refererInfo.domain') || document.domain;
+  const location = utils.deepAccess(bidderRequest, 'refererInfo.location');
+  const page = utils.deepAccess(bidderRequest, 'refererInfo.page');
+  const referer = utils.deepAccess(bidderRequest, 'refererInfo.ref');
 
   const timeout = bidderRequest.timeout || 2000;
+  const firstPartyData = bidderRequest.ortb2;
 
   if (items && items.length) {
     let c = {
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       id: 'mgprebidjs_' + auctionId,
       test: +isTest,
       at: 1,
       cur: ['USD'],
       device: {
         connectiontype: 0,
-        // ip: '64.188.178.115',
+        // ip: '98.61.5.0',
         js: 1,
-        // language: "en",
-        // os: "Microsoft Windows",
-        // ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36 Edge/18.19043",
+        // language: 'en',
+        // os: 'Microsoft Windows',
+        // ua: 'Mozilla/5.0 (Linux; Android 12; SM-G970U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Mobile Safari/537.36',
         os: navigator.platform || '',
         ua: navigator.userAgent,
-        language: /en/.test(navigator.language) ? 'en' : navigator.language,
+        language: /en/.test(navigator.language) ? 'en' : navigator.language
       },
-      ext: {},
+      ext: {
+        eids,
+        bidsUserIdAsEids,
+        bidsUserid,
+        ppuid,
+        firstPartyData,
+        content,
+        cat,
+        reqTimes
+      },
       user: {
         buyeruid: getUserID(),
-        id: pubcid,
+        id: sharedid || pubcid
       },
+      eids,
       site: {
         name: domain,
         domain: domain,
-        page: location,
-        ref: location,
+        page: page || location,
+        ref: referer,
         mobile: isMobile,
         cat: [], // todo
         publisher: {
           // todo
           id: domain,
-          name: domain,
-        },
+          name: domain
+        }
       },
       imp: items,
-      tmax: timeout,
+      tmax: timeout
     };
     return c;
   } else {
@@ -350,6 +375,7 @@ function getParam(validBidRequests, bidderRequest) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   // aliases: ['ex'], // short code
   /**
    * Determines whether or not the given bid request is valid.
@@ -381,7 +407,7 @@ export const spec = {
     return {
       method: 'POST',
       url: ENDPOINT_URL + globals['token'],
-      data: payloadString,
+      data: payloadString
     };
   },
 
@@ -412,21 +438,53 @@ export const spec = {
           ttl: TIME_TO_LIVE,
           // referrer: REFERER,
           ad: getProperty(bid, 'adm'),
-          nurl: getProperty(bid, 'nurl'),
+          nurl: getProperty(bid, 'nurl')
           //   adserverTargeting: {
           //     granularityMultiplier: 0.1,
-          //     priceGranularity: "pbHg",
-          //     pbMg: "0.01",
+          //     priceGranularity: 'pbHg',
+          //     pbMg: '0.01',
           //   },
-          //   pbMg: "0.01",
+          //   pbMg: '0.01',
           //   granularityMultiplier: 0.1,
-          //   priceGranularity: "pbHg",
+          //   priceGranularity: 'pbHg',
         };
         bidResponses.push(bidResponse);
       }
     }
 
     return bidResponses;
+  },
+
+  getUserSyncs: function (syncOptions, serverResponse, gdprConsent, uspConsent, gppConsent) {
+    const origin = encodeURIComponent(location.origin || `https://${location.host}`);
+    let syncParamUrl = `dm=${origin}`;
+
+    if (gdprConsent && gdprConsent.consentString) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        syncParamUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        syncParamUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+    if (uspConsent && uspConsent.consentString) {
+      syncParamUrl += `&ccpa_consent=${uspConsent.consentString}`;
+    }
+
+    if (syncOptions.iframeEnabled) {
+      return [
+        {
+          type: 'iframe',
+          url: `${COOKY_SYNC_IFRAME_URL}?${syncParamUrl}`
+        }
+      ];
+    } else {
+      return [
+        {
+          type: 'image',
+          url: `${COOKY_SYNC_URL}?${syncParamUrl}`
+        }
+      ];
+    }
   },
 
   /**
@@ -448,15 +506,15 @@ export const spec = {
     if (bid['nurl']) {
       utils.triggerPixel(bid['nurl']);
     }
-  },
+  }
 
   /**
    * Register bidder specific code, which will execute when the adserver targeting has been set for a bid from this bidder
    * @param {Bid} The bid of which the targeting has been set
    */
-//   onSetTargeting: function (bid) {
-//     // console.log('onSetTargeting', bid);
-//     // Bidder specific code
-//   },
+  //   onSetTargeting: function (bid) {
+  //     // console.log('onSetTargeting', bid);
+  //     // Bidder specific code
+  //   },
 };
 registerBidder(spec);

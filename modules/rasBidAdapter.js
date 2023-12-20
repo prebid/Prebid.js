@@ -1,7 +1,8 @@
-import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import { isEmpty, getAdUnitSizes, parseSizesInput, deepAccess } from '../src/utils.js';
+import { isEmpty, parseSizesInput, deepAccess } from '../src/utils.js';
+import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 const BIDDER_CODE = 'ras';
 const VERSION = '1.0';
@@ -12,9 +13,15 @@ const getEndpoint = (network) => {
 
 function parseParams(params, bidderRequest) {
   const newParams = {};
+  if (params.customParams && typeof params.customParams === 'object') {
+    for (const param in params.customParams) {
+      if (params.customParams.hasOwnProperty(param)) {
+        newParams[param] = params.customParams[param];
+      }
+    }
+  }
   const du = deepAccess(bidderRequest, 'refererInfo.page');
   const dr = deepAccess(bidderRequest, 'refererInfo.ref');
-
   if (du) {
     newParams.du = du;
   }
@@ -34,8 +41,9 @@ function parseParams(params, bidderRequest) {
   if (pageContext.dv) {
     newParams.DV = pageContext.dv;
   }
-  if (pageContext.keyWords && Array.isArray(pageContext.keyWords)) {
-    newParams.kwrd = pageContext.keyWords.join('+');
+  const keywords = getAllOrtbKeywords(bidderRequest?.ortb2, pageContext.keyWords)
+  if (keywords.length > 0) {
+    newParams.kwrd = keywords.join('+')
   }
   if (pageContext.capping) {
     newParams.local_capping = pageContext.capping;
@@ -93,7 +101,7 @@ const getSlots = (bidRequests) => {
   const batchSize = bidRequests.length;
   for (let i = 0; i < batchSize; i++) {
     const adunit = bidRequests[i];
-    const slotSequence = utils.deepAccess(adunit, 'params.slotSequence');
+    const slotSequence = deepAccess(adunit, 'params.slotSequence');
 
     const sizes = parseSizesInput(getAdUnitSizes(adunit)).join(',');
 
@@ -122,6 +130,36 @@ const getGdprParams = (bidderRequest) => {
   return queryString;
 };
 
+const parseAuctionConfigs = (serverResponse, bidRequest) => {
+  if (isEmpty(bidRequest)) {
+    return null;
+  }
+  const auctionConfigs = [];
+  const gctx = serverResponse && serverResponse.body?.gctx;
+
+  bidRequest.bidIds.filter(bid => bid.fledgeEnabled).forEach((bid) => {
+    auctionConfigs.push({
+      'bidId': bid.bidId,
+      'config': {
+        'seller': 'https://csr.onet.pl',
+        'decisionLogicUrl': `https://csr.onet.pl/${encodeURIComponent(bid.params.network)}/v1/protected-audience-api/decision-logic.js`,
+        'interestGroupBuyers': ['https://csr.onet.pl'],
+        'auctionSignals': {
+          'params': bid.params,
+          'sizes': bid.sizes,
+          'gctx': gctx
+        }
+      }
+    });
+  });
+
+  if (auctionConfigs.length === 0) {
+    return null;
+  } else {
+    return auctionConfigs;
+  }
+}
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
@@ -138,8 +176,16 @@ export const spec = {
     const slotsQuery = getSlots(bidRequests);
     const contextQuery = getContextParams(bidRequests, bidderRequest);
     const gdprQuery = getGdprParams(bidderRequest);
-    const bidIds = bidRequests.map((bid) => ({ slot: bid.params.slot, bidId: bid.bidId }));
+    const fledgeEligible = Boolean(bidderRequest && bidderRequest.fledgeEnabled);
     const network = bidRequests[0].params.network;
+    const bidIds = bidRequests.map((bid) => ({
+      slot: bid.params.slot,
+      bidId: bid.bidId,
+      sizes: getAdUnitSizes(bid),
+      params: bid.params,
+      fledgeEnabled: fledgeEligible
+    }));
+
     return [{
       method: 'GET',
       url: getEndpoint(network) + contextQuery + slotsQuery + gdprQuery,
@@ -149,10 +195,16 @@ export const spec = {
 
   interpretResponse: function (serverResponse, bidRequest) {
     const response = serverResponse.body;
-    if (!response || !response.ads || response.ads.length === 0) {
-      return [];
+
+    const fledgeAuctionConfigs = parseAuctionConfigs(serverResponse, bidRequest);
+    const bids = (!response || !response.ads || response.ads.length === 0) ? [] : response.ads.map(buildBid).filter((bid) => !isEmpty(bid));
+
+    if (fledgeAuctionConfigs) {
+      // Return a tuple of bids and auctionConfigs. It is possible that bids could be null.
+      return {bids, fledgeAuctionConfigs};
+    } else {
+      return bids;
     }
-    return response.ads.map(buildBid).filter((bid) => !isEmpty(bid));
   }
 };
 

@@ -6,14 +6,15 @@ import {getStorageManager} from '../src/storageManager.js';
 import {includes} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
-const BIDDER_CODE = 'gumgum'
+const BIDDER_CODE = 'gumgum';
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
-const ALIAS_BIDDER_CODE = ['gg']
-const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`
+const ALIAS_BIDDER_CODE = ['gg'];
+const BID_ENDPOINT = `https://g2.gumgum.com/hbid/imp`;
 const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
-const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO]
-const TIME_TO_LIVE = 60
+const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
+const TIME_TO_LIVE = 60;
 const DELAY_REQUEST_TIME = 1800000; // setting to 30 mins
+const pubProvidedIdSources = ['dac.co.jp', 'audigent.com', 'id5-sync.com', 'liveramp.com', 'intentiq.com', 'liveintent.com', 'crwdcntrl.net', 'quantcast.com', 'adserver.org', 'yahoo.com']
 
 let invalidRequestIds = {};
 let pageViewId = null;
@@ -99,17 +100,6 @@ function getWrapperCode(wrapper, data) {
   return wrapper.replace('AD_JSON', window.btoa(JSON.stringify(data)))
 }
 
-function _getDigiTrustQueryParams(userId) {
-  let digiTrustId = userId.digitrustid && userId.digitrustid.data;
-  // Verify there is an ID and this user has not opted out
-  if (!digiTrustId || (digiTrustId.privacy && digiTrustId.privacy.optout)) {
-    return {};
-  }
-  return {
-    dt: digiTrustId.id
-  };
-}
-
 /**
  * Serializes the supply chain object according to IAB standards
  * @see https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
@@ -186,6 +176,7 @@ function _getVidParams(attributes) {
     linearity: li,
     startdelay: sd,
     placement: pt,
+    plcmt,
     protocols = [],
     playerSize = []
   } = attributes;
@@ -197,7 +188,7 @@ function _getVidParams(attributes) {
     pr = protocols.join(',');
   }
 
-  return {
+  const result = {
     mind,
     maxd,
     li,
@@ -207,6 +198,11 @@ function _getVidParams(attributes) {
     viw,
     vih
   };
+    // Add vplcmt property to the result object if plcmt is available
+  if (plcmt !== undefined && plcmt !== null) {
+    result.vplcmt = plcmt;
+  }
+  return result;
 }
 
 /**
@@ -264,7 +260,8 @@ function getEids(userId) {
   const idProperties = [
     'uid',
     'eid',
-    'lipbid'
+    'lipbid',
+    'envelope'
   ];
 
   return Object.keys(userId).reduce(function (eids, provider) {
@@ -293,7 +290,9 @@ function buildRequests(validBidRequests, bidderRequest) {
   const bids = [];
   const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
   const uspConsent = bidderRequest && bidderRequest.uspConsent;
-  const timeout = config.getConfig('bidderTimeout');
+  const gppConsent = bidderRequest && bidderRequest.gppConsent;
+  const timeout = bidderRequest && bidderRequest.timeout
+  const coppa = config.getConfig('coppa') === true ? 1 : 0;
   const topWindowUrl = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page;
   _each(validBidRequests, bidRequest => {
     const {
@@ -301,7 +300,6 @@ function buildRequests(validBidRequests, bidderRequest) {
       mediaTypes = {},
       params = {},
       schain,
-      transactionId,
       userId = {},
       ortb2Imp,
       adUnitCode = ''
@@ -319,15 +317,33 @@ function buildRequests(validBidRequests, bidderRequest) {
     // ADTS-174 Removed unnecessary checks to fix failing test
     data.lt = lt;
     data.to = to;
-
+    function jsoStringifynWithMaxLength(data, maxLength) {
+      let jsonString = JSON.stringify(data);
+      if (jsonString.length <= maxLength) {
+        return jsonString;
+      } else {
+        const truncatedData = data.slice(0, Math.floor(data.length * (maxLength / jsonString.length)));
+        jsonString = JSON.stringify(truncatedData);
+        return jsonString;
+      }
+    }
+    // Send filtered pubProvidedId's
+    if (userId && userId.pubProvidedId) {
+      let filteredData = userId.pubProvidedId.filter(item => pubProvidedIdSources.includes(item.source));
+      let maxLength = 1800; // replace this with your desired maximum length
+      let truncatedJsonString = jsoStringifynWithMaxLength(filteredData, maxLength);
+      data.pubProvidedId = truncatedJsonString
+    }
+    // ADJS-1286 Read id5 id linktype field
+    if (userId && userId.id5id && userId.id5id.uid && userId.id5id.ext) {
+      data.id5Id = userId.id5id.uid || null
+      data.id5IdLinkType = userId.id5id.ext.linkType || null
+    }
     // ADTS-169 add adUnitCode to requests
     if (adUnitCode) data.aun = adUnitCode;
 
     // ADTS-134 Retrieve ID envelopes
     for (const eid in eids) data[eid] = eids[eid];
-
-    // ADJS-1024 & ADSS-1297 & ADTS-175
-    gpid && (data.gpid = gpid);
 
     if (mediaTypes.banner) {
       sizes = mediaTypes.banner.sizes;
@@ -335,6 +351,9 @@ function buildRequests(validBidRequests, bidderRequest) {
       sizes = mediaTypes.video.playerSize;
       data = _getVidParams(mediaTypes.video);
     }
+
+    // ADJS-1024 & ADSS-1297 & ADTS-175
+    gpid && (data.gpid = gpid);
 
     if (pageViewId) {
       data.pv = pageViewId;
@@ -386,6 +405,16 @@ function buildRequests(validBidRequests, bidderRequest) {
     if (uspConsent) {
       data.uspConsent = uspConsent;
     }
+    if (gppConsent) {
+      data.gppString = bidderRequest.gppConsent.gppString ? bidderRequest.gppConsent.gppString : ''
+      data.gppSid = Array.isArray(bidderRequest.gppConsent.applicableSections) ? bidderRequest.gppConsent.applicableSections.join(',') : ''
+    } else if (!gppConsent && bidderRequest?.ortb2?.regs?.gpp) {
+      data.gppString = bidderRequest.ortb2.regs.gpp
+      data.gppSid = Array.isArray(bidderRequest.ortb2.regs.gpp_sid) ? bidderRequest.ortb2.regs.gpp_sid.join(',') : ''
+    }
+    if (coppa) {
+      data.coppa = coppa;
+    }
     if (schain && schain.nodes) {
       data.schain = _serializeSupplyChainObj(schain);
     }
@@ -393,13 +422,13 @@ function buildRequests(validBidRequests, bidderRequest) {
     bids.push({
       id: bidId,
       tmax: timeout,
-      tId: transactionId,
+      tId: ortb2Imp?.ext?.tid,
       pi: data.pi,
       selector: params.selector,
       sizes,
       url: BID_ENDPOINT,
       method: 'GET',
-      data: Object.assign(data, _getBrowserParams(topWindowUrl), _getDigiTrustQueryParams(userId))
+      data: Object.assign(data, _getBrowserParams(topWindowUrl))
     });
   });
   return bids;
@@ -579,6 +608,7 @@ function getUserSyncs(syncOptions, serverResponses) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 61,
   aliases: ALIAS_BIDDER_CODE,
   isBidRequestValid,
   buildRequests,

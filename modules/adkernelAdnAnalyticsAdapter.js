@@ -5,12 +5,14 @@ import { logError, parseUrl, _each } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {config} from '../src/config.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
+const MODULE_CODE = 'adkernelAdn';
 const GVLID = 14;
 const ANALYTICS_VERSION = '1.0.2';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
 const DEFAULT_HOST = 'tag.adkernel.com';
-const storageObj = getStorageManager({gvlid: GVLID});
+const storageObj = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
 
 const ADK_HB_EVENTS = {
   AUCTION_INIT: 'auctionInit',
@@ -104,7 +106,7 @@ analyticsAdapter.enableAnalytics = (config) => {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: analyticsAdapter,
-  code: 'adkernelAdn',
+  code: MODULE_CODE,
   gvlid: GVLID
 });
 

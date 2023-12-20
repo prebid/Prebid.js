@@ -9,8 +9,10 @@ Maintainer: team-openx@openx.com
 # Description
 
 Module that connects to OpenX's demand sources.
-Note there is an updated version of the OpenX bid adapter called openxOrtbBidAdapter.
-Publishers are welcome to test the other adapter and give feedback. Please note you should only include either openxBidAdapter or openxOrtbBidAdapter in your build.
+Note that this adapter mirrors openxOrtbBidAdapter and any updates must be
+completed in both adapters.
+openxOrtbBidAdapter will be removed in a future release and should not be used.
+Please note you should only include either openxBidAdapter or openxOrtbBidAdapter in your build.
 
 # Bid Parameters
 ## Banner
@@ -22,7 +24,7 @@ Publishers are welcome to test the other adapter and give feedback. Please note 
 | `customParams` | optional | Object | User-defined targeting key-value pairs. customParams applies to a specific unit. | `{key1: "v1", key2: ["v2","v3"]}`
 | `customFloor` | optional | Number | Minimum price in USD. customFloor applies to a specific unit. For example, use the following value to set a $1.50 floor: 1.50 <br/><br/> **WARNING:**<br/> Misuse of this parameter can impact revenue | 1.50
 | `doNotTrack` | optional | Boolean | Prevents advertiser from using data for this user. <br/><br/> **WARNING:**<br/> Request-level setting.  May impact revenue. | true
-| `coppa` | optional | Boolean | Enables Child's Online Privacy Protection Act (COPPA) regulations. | true
+| `coppa` | optional | Boolean | Enables Child's Online Privacy Protection Act (COPPA) regulations. Use of `pbjs.setConfig({coppa: true});` is now preferred. | true
 
 ## Video
 
@@ -30,7 +32,7 @@ Publishers are welcome to test the other adapter and give feedback. Please note 
 | ---- | ----- | ---- | ----------- | -------
 | `unit` | required | String | OpenX ad unit ID provided by your OpenX representative. | "1611023122"
 | `delDomain` | required | String |  OpenX delivery domain provided by your OpenX representative.  | "PUBLISHER-d.openx.net"
-| `openrtb` | optional | OpenRTB Impression | An OpenRtb Impression with Video subtype properties | `{ imp: [{ video: {mimes: ['video/x-ms-wmv, video/mp4']} }] }`
+| `video` | optional | OpenRTB video subtypes | Use of adUnit.mediaTypes.video is now preferred. | `{ video: {mimes: ['video/mp4']}`
 
 
 # Example
@@ -69,7 +71,8 @@ var adUnits = [
     mediaTypes: {
       video: {
         playerSize: [640, 480],
-        context: 'instream'
+        context: 'instream',
+        mimes: ['video/x-ms-wmv, video/mp4']
       }
     },
     bids: [{
@@ -78,10 +81,10 @@ var adUnits = [
         unit: '1611023124',
         delDomain: 'PUBLISHER-d.openx.net',
         video: {
-          mimes: ['video/x-ms-wmv, video/mp4']
+          mimes: ['video/x-ms-wmv, video/mp4'] // mediaTypes.video preferred
         }
       }
-    }]
+    }]p
   }
 ];
 ```

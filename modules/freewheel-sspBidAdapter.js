@@ -1,8 +1,10 @@
-import { logWarn, isArray } from '../src/utils.js';
+import { logWarn, isArray, isFn, deepAccess, formatQS } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
 
 const BIDDER_CODE = 'freewheel-ssp';
+const GVL_ID = 285;
 
 const PROTOCOL = getProtocol();
 const FREEWHEEL_ADSSETUP = PROTOCOL + '://ads.stickyadstv.com/www/delivery/swfIndex.php';
@@ -76,6 +78,39 @@ function getPricing(xmlNode) {
   }
 
   return princingData;
+}
+
+/*
+* Read the StickyBrand extension with this format:
+* <Extension type='StickyBrand'>
+*   <Domain><![CDATA[minotaur.com]]></Domain>
+*   <Sector><![CDATA[BEAUTY & HYGIENE]]></Sector>
+*   <Advertiser><![CDATA[James Bond Trademarks]]></Advertiser>
+*   <Brand><![CDATA[007 Seven]]></Brand>
+* </Extension>
+* @return {object} pricing data in format: {currency: "EUR", price:"1.000"}
+*/
+function getAdvertiserDomain(xmlNode) {
+  var domain = [];
+  var brandExtNode;
+  var extensions = xmlNode.querySelectorAll('Extension');
+  // Nodelist.forEach is not supported in IE and Edge
+  // Workaround given here https://developer.microsoft.com/en-us/microsoft-edge/platform/issues/10638731/
+  Array.prototype.forEach.call(extensions, function(node) {
+    if (node.getAttribute('type') === 'StickyBrand') {
+      brandExtNode = node;
+    }
+  });
+
+  // Currently we only return one Domain
+  if (brandExtNode) {
+    var domainNode = brandExtNode.querySelector('Domain');
+    domain.push(domainNode.textContent || domainNode.innerText);
+  } else {
+    logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing StickyBrand extension.');
+  }
+
+  return domain;
 }
 
 function hashcode(inputString) {
@@ -180,6 +215,27 @@ function getAPIName(componentId) {
   return componentId.replace('-', '');
 }
 
+function getBidFloor(bid, config) {
+  if (!isFn(bid.getFloor)) {
+    return deepAccess(bid, 'params.bidfloor', 0);
+  }
+
+  try {
+    const bidFloor = bid.getFloor({
+      currency: getFloorCurrency(config),
+      mediaType: typeof bid.mediaTypes['banner'] == 'object' ? 'banner' : 'video',
+      size: '*',
+    });
+    return bidFloor.floor;
+  } catch (e) {
+    return -1;
+  }
+}
+
+function getFloorCurrency(config) {
+  return config.getConfig('floors.data.currency') != null ? config.getConfig('floors.data.currency') : 'USD';
+}
+
 function formatAdHTML(bid, size) {
   var integrationType = bid.params.format;
 
@@ -259,8 +315,9 @@ var getOutstreamScript = function(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVL_ID,
   supportedMediaTypes: [BANNER, VIDEO],
-  aliases: ['stickyadstv'], //  former name for freewheel-ssp
+  aliases: ['stickyadstv', 'freewheelssp'], //  aliases for freewheel-ssp
   /**
   * Determines whether or not the given bid request is valid.
   *
@@ -284,13 +341,19 @@ export const spec = {
       var zone = currentBidRequest.params.zoneId;
       var timeInMillis = new Date().getTime();
       var keyCode = hashcode(zone + '' + timeInMillis);
+      var bidfloor = getBidFloor(currentBidRequest, config);
+      var format = currentBidRequest.params.format;
+
       var requestParams = {
         reqType: 'AdsSetup',
-        protocolVersion: '2.0',
+        protocolVersion: '4.2',
         zoneId: zone,
         componentId: 'prebid',
         componentSubId: getComponentId(currentBidRequest.params.format),
         timestamp: timeInMillis,
+        _fw_bidfloor: (bidfloor > 0) ? bidfloor : 0,
+        _fw_bidfloorcur: (bidfloor > 0) ? getFloorCurrency(config) : '',
+        pbjs_version: '$prebid.version$',
         pKey: keyCode
       };
 
@@ -312,10 +375,40 @@ export const spec = {
         requestParams._fw_us_privacy = bidderRequest.uspConsent;
       }
 
+      // Add GPP consent
+      if (bidderRequest && bidderRequest.gppConsent) {
+        requestParams.gpp = bidderRequest.gppConsent.gppString;
+        requestParams.gpp_sid = bidderRequest.gppConsent.applicableSections;
+      } else if (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.regs && bidderRequest.ortb2.regs.gpp) {
+        requestParams.gpp = bidderRequest.ortb2.regs.gpp;
+        requestParams.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
+      }
+
+      // Add content object
+      if (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.site && bidderRequest.ortb2.site.content && typeof bidderRequest.ortb2.site.content === 'object') {
+        try {
+          requestParams._fw_prebid_content = JSON.stringify(bidderRequest.ortb2.site.content);
+        } catch (error) {
+          logWarn('PREBID - ' + BIDDER_CODE + ': Unable to stringify the content object: ' + error);
+        }
+      }
+
       // Add schain object
       var schain = currentBidRequest.schain;
       if (schain) {
-        requestParams.schain = schain;
+        try {
+          requestParams.schain = JSON.stringify(schain);
+        } catch (error) {
+          logWarn('PREBID - ' + BIDDER_CODE + ': Unable to stringify the schain: ' + error);
+        }
+      }
+
+      if (currentBidRequest.userIdAsEids && currentBidRequest.userIdAsEids.length > 0) {
+        try {
+          requestParams._fw_prebid_3p_UID = JSON.stringify(currentBidRequest.userIdAsEids);
+        } catch (error) {
+          logWarn('PREBID - ' + BIDDER_CODE + ': Unable to stringify the userIdAsEids: ' + error);
+        }
       }
 
       var vastParams = currentBidRequest.params.vastUrlParams;
@@ -326,7 +419,7 @@ export const spec = {
           }
         }
       }
-      // TODO: is 'page' the right value here?
+
       var location = bidderRequest?.refererInfo?.page;
       if (isValidUrl(location)) {
         requestParams.loc = location;
@@ -350,6 +443,21 @@ export const spec = {
 
       if (playerSize[0] > 0 || playerSize[1] > 0) {
         requestParams.playerSize = playerSize[0] + 'x' + playerSize[1];
+      }
+
+      // Add video context and placement in requestParams
+      if (currentBidRequest.mediaTypes.video) {
+        var videoContext = currentBidRequest.mediaTypes.video.context ? currentBidRequest.mediaTypes.video.context : '';
+        var videoPlacement = currentBidRequest.mediaTypes.video.placement ? currentBidRequest.mediaTypes.video.placement : null;
+        var videoPlcmt = currentBidRequest.mediaTypes.video.plcmt ? currentBidRequest.mediaTypes.video.plcmt : null;
+
+        if (format == 'inbanner') {
+          videoPlacement = 2;
+          videoContext = 'In-Banner';
+        }
+        requestParams.video_context = videoContext;
+        requestParams.video_placement = videoPlacement;
+        requestParams.video_plcmt = videoPlcmt;
       }
 
       return {
@@ -409,6 +517,8 @@ export const spec = {
     const campaignId = getCampaignId(xmlDoc);
     const bannerId = getBannerId(xmlDoc);
     const topWin = getTopMostWindow();
+    const advertiserDomains = getAdvertiserDomain(xmlDoc);
+
     if (!topWin.freewheelssp_cache) {
       topWin.freewheelssp_cache = {};
     }
@@ -426,16 +536,17 @@ export const spec = {
         currency: princingData.currency,
         netRevenue: true,
         ttl: 360,
-        meta: { advertiserDomains: princingData.adomain && isArray(princingData.adomain) ? princingData.adomain : [] },
+        meta: { advertiserDomains: advertiserDomains },
         dealId: dealId,
         campaignId: campaignId,
         bannerId: bannerId
       };
 
       if (bidrequest.mediaTypes.video) {
-        bidResponse.vastXml = serverResponse;
         bidResponse.mediaType = 'video';
       }
+
+      bidResponse.vastXml = serverResponse;
 
       bidResponse.ad = formatAdHTML(bidrequest, playerSize);
       bidResponses.push(bidResponse);
@@ -444,24 +555,46 @@ export const spec = {
     return bidResponses;
   },
 
-  getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy) {
-    var gdprParams = '';
+  getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy, gppConsent) {
+    const params = {};
+
     if (gdprConsent) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
-        gdprParams = `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+        params.gdpr = Number(gdprConsent.gdprApplies);
+        params.gdpr_consent = gdprConsent.consentString;
       } else {
-        gdprParams = `?gdpr_consent=${gdprConsent.consentString}`;
+        params.gdpr_consent = gdprConsent.consentString;
       }
     }
 
-    if (syncOptions && syncOptions.pixelEnabled) {
-      return [{
-        type: 'image',
-        url: USER_SYNC_URL + gdprParams
-      }];
-    } else {
-      return [];
+    if (gppConsent) {
+      if (typeof gppConsent.gppString === 'string') {
+        params.gpp = gppConsent.gppString;
+      }
+      if (gppConsent.applicableSections) {
+        params.gpp_sid = gppConsent.applicableSections;
+      }
     }
+
+    var queryString = '';
+    if (params) {
+      queryString = '?' + `${formatQS(params)}`;
+    }
+
+    const syncs = [];
+    if (syncOptions && syncOptions.pixelEnabled) {
+      syncs.push({
+        type: 'image',
+        url: USER_SYNC_URL + queryString
+      });
+    } else if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: USER_SYNC_URL + queryString
+      });
+    }
+
+    return syncs;
   },
 };
 

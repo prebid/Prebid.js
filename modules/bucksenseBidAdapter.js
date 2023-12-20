@@ -4,10 +4,11 @@ import { BANNER } from '../src/mediaTypes.js';
 
 const WHO = 'BKSHBID-005';
 const BIDDER_CODE = 'bucksense';
-const URL = 'https://prebid.bksn.se/prebidjs/';
+const URL = 'https://directo.prebidserving.com/prebidjs/';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 235,
   supportedMediaTypes: [BANNER],
 
   /**

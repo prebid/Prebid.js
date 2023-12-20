@@ -1,13 +1,25 @@
-import { expect } from 'chai';
-import { targeting as targetingInstance, filters, getHighestCpmBidsFromBidPool, sortByDealAndPriceBucketOrCpm } from 'src/targeting.js';
-import { config } from 'src/config.js';
-import { createBidReceived } from 'test/fixtures/fixtures.js';
+import {expect} from 'chai';
+import {
+  filters,
+  getHighestCpmBidsFromBidPool,
+  sortByDealAndPriceBucketOrCpm,
+  targeting as targetingInstance
+} from 'src/targeting.js';
+import {config} from 'src/config.js';
+import {createBidReceived} from 'test/fixtures/fixtures.js';
 import CONSTANTS from 'src/constants.json';
-import { auctionManager } from 'src/auctionManager.js';
+import {auctionManager} from 'src/auctionManager.js';
 import * as utils from 'src/utils.js';
 import {deepClone} from 'src/utils.js';
+import {createBid} from '../../../../src/bidfactory.js';
+import {hook} from '../../../../src/hook.js';
+import {getHighestCpm} from '../../../../src/utils/reducers.js';
 
-const bid1 = {
+function mkBid(bid, status = CONSTANTS.STATUS.GOOD) {
+  return Object.assign(createBid(status), bid);
+}
+
+const sampleBid = {
   'bidderCode': 'rubicon',
   'width': '300',
   'height': '250',
@@ -39,7 +51,9 @@ const bid1 = {
   'ttl': 300
 };
 
-const bid2 = {
+const bid1 = mkBid(sampleBid);
+
+const bid2 = mkBid({
   'bidderCode': 'rubicon',
   'width': '300',
   'height': '250',
@@ -67,9 +81,9 @@ const bid2 = {
   'netRevenue': true,
   'currency': 'USD',
   'ttl': 300
-};
+});
 
-const bid3 = {
+const bid3 = mkBid({
   'bidderCode': 'rubicon',
   'width': '300',
   'height': '600',
@@ -97,9 +111,9 @@ const bid3 = {
   'netRevenue': true,
   'currency': 'USD',
   'ttl': 300
-};
+});
 
-const nativeBid1 = {
+const nativeBid1 = mkBid({
   'bidderCode': 'appnexus',
   'width': 0,
   'height': 0,
@@ -165,8 +179,9 @@ const nativeBid1 = {
     [CONSTANTS.NATIVE_KEYS.image]: 'http://vcdn.adnxs.com/p/creative-image/94/22/cd/0f/9422cd0f-f400-45d3-80f5-2b92629d9257.jpg',
     [CONSTANTS.NATIVE_KEYS.icon]: 'http://vcdn.adnxs.com/p/creative-image/bd/59/a6/c6/bd59a6c6-0851-411d-a16d-031475a51312.png'
   }
-};
-const nativeBid2 = {
+});
+
+const nativeBid2 = mkBid({
   'bidderCode': 'dgads',
   'width': 0,
   'height': 0,
@@ -222,7 +237,7 @@ const nativeBid2 = {
     [CONSTANTS.NATIVE_KEYS.sponsoredBy]: 'test.com',
     [CONSTANTS.NATIVE_KEYS.clickUrl]: 'http://prebid.org/'
   }
-};
+});
 
 describe('targeting tests', function () {
   let sandbox;
@@ -230,6 +245,10 @@ describe('targeting tests', function () {
   let useBidCache;
   let bidCacheFilterFunction;
   let undef;
+
+  before(() => {
+    hook.ready();
+  });
 
   beforeEach(function() {
     sandbox = sinon.sandbox.create();
@@ -254,6 +273,40 @@ describe('targeting tests', function () {
   afterEach(function () {
     sandbox.restore();
     bidCacheFilterFunction = undef;
+  });
+
+  describe('isBidNotExpired', () => {
+    let clock;
+    beforeEach(() => {
+      clock = sandbox.useFakeTimers(0);
+    });
+
+    Object.entries({
+      'bid.ttlBuffer': (bid, ttlBuffer) => {
+        bid.ttlBuffer = ttlBuffer
+      },
+      'setConfig({ttlBuffer})': (_, ttlBuffer) => {
+        config.setConfig({ttlBuffer})
+      },
+    }).forEach(([t, setup]) => {
+      describe(`respects ${t}`, () => {
+        [0, 2].forEach(ttlBuffer => {
+          it(`when ttlBuffer is ${ttlBuffer}`, () => {
+            const bid = {
+              responseTimestamp: 0,
+              ttl: 10,
+            }
+            setup(bid, ttlBuffer);
+
+            expect(filters.isBidNotExpired(bid)).to.be.true;
+            clock.tick((bid.ttl - ttlBuffer) * 1000 - 100);
+            expect(filters.isBidNotExpired(bid)).to.be.true;
+            clock.tick(101);
+            expect(filters.isBidNotExpired(bid)).to.be.false;
+          });
+        });
+      });
+    });
   });
 
   describe('getAllTargeting', function () {
@@ -404,7 +457,7 @@ describe('targeting tests', function () {
           }
         });
 
-        const bids = getHighestCpmBidsFromBidPool(bidsReceived, utils.getHighestCpm, 2);
+        const bids = getHighestCpmBidsFromBidPool(bidsReceived, getHighestCpm, 2);
 
         expect(bids.length).to.equal(3);
         expect(bids[0].adId).to.equal('8383838');
@@ -420,7 +473,7 @@ describe('targeting tests', function () {
           }
         });
 
-        const bids = getHighestCpmBidsFromBidPool(bidsReceived, utils.getHighestCpm, 2);
+        const bids = getHighestCpmBidsFromBidPool(bidsReceived, getHighestCpm, 2);
 
         expect(bids.length).to.equal(3);
         expect(bids[0].adId).to.equal('8383838');
@@ -902,6 +955,7 @@ describe('targeting tests', function () {
 
         expect(bids.length).to.equal(1);
         expect(bids[0].adId).to.equal('adid-1');
+        expect(bids[0].latestTargetedAuctionId).to.equal(2);
 
         useBidCache = false;
 
@@ -909,6 +963,7 @@ describe('targeting tests', function () {
 
         expect(bids.length).to.equal(1);
         expect(bids[0].adId).to.equal('adid-2');
+        expect(bids[0].latestTargetedAuctionId).to.equal(2);
       });
 
       it('should use bidCacheFilterFunction', function() {
@@ -936,9 +991,13 @@ describe('targeting tests', function () {
 
         expect(bids.length).to.equal(4);
         expect(bids[0].adId).to.equal('adid-1');
+        expect(bids[0].latestTargetedAuctionId).to.equal(2);
         expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[1].latestTargetedAuctionId).to.equal(2);
         expect(bids[2].adId).to.equal('adid-5');
+        expect(bids[2].latestTargetedAuctionId).to.equal(2);
         expect(bids[3].adId).to.equal('adid-8');
+        expect(bids[3].latestTargetedAuctionId).to.equal(2);
 
         // Bid Caching Off, No Filter Function
         useBidCache = false;
@@ -947,9 +1006,13 @@ describe('targeting tests', function () {
 
         expect(bids.length).to.equal(4);
         expect(bids[0].adId).to.equal('adid-2');
+        expect(bids[0].latestTargetedAuctionId).to.equal(2);
         expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[1].latestTargetedAuctionId).to.equal(2);
         expect(bids[2].adId).to.equal('adid-6');
+        expect(bids[2].latestTargetedAuctionId).to.equal(2);
         expect(bids[3].adId).to.equal('adid-8');
+        expect(bids[3].latestTargetedAuctionId).to.equal(2);
 
         // Bid Caching On AGAIN, No Filter Function (should be same as first time)
         useBidCache = true;
@@ -958,9 +1021,13 @@ describe('targeting tests', function () {
 
         expect(bids.length).to.equal(4);
         expect(bids[0].adId).to.equal('adid-1');
+        expect(bids[0].latestTargetedAuctionId).to.equal(2);
         expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[1].latestTargetedAuctionId).to.equal(2);
         expect(bids[2].adId).to.equal('adid-5');
+        expect(bids[2].latestTargetedAuctionId).to.equal(2);
         expect(bids[3].adId).to.equal('adid-8');
+        expect(bids[3].latestTargetedAuctionId).to.equal(2);
 
         // Bid Caching On, with Filter Function to Exclude video
         useBidCache = true;
@@ -973,9 +1040,13 @@ describe('targeting tests', function () {
 
         expect(bids.length).to.equal(4);
         expect(bids[0].adId).to.equal('adid-1');
+        expect(bids[0].latestTargetedAuctionId).to.equal(2);
         expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[1].latestTargetedAuctionId).to.equal(2);
         expect(bids[2].adId).to.equal('adid-6');
+        expect(bids[2].latestTargetedAuctionId).to.equal(2);
         expect(bids[3].adId).to.equal('adid-8');
+        expect(bids[3].latestTargetedAuctionId).to.equal(2);
         // filter function should have been called for each cached bid (4 times)
         expect(bcffCalled).to.equal(4);
 
@@ -991,9 +1062,13 @@ describe('targeting tests', function () {
 
         expect(bids.length).to.equal(4);
         expect(bids[0].adId).to.equal('adid-2');
+        expect(bids[0].latestTargetedAuctionId).to.equal(2);
         expect(bids[1].adId).to.equal('adid-4');
+        expect(bids[1].latestTargetedAuctionId).to.equal(2);
         expect(bids[2].adId).to.equal('adid-6');
+        expect(bids[2].latestTargetedAuctionId).to.equal(2);
         expect(bids[3].adId).to.equal('adid-8');
+        expect(bids[3].latestTargetedAuctionId).to.equal(2);
         // filter function should not have been called
         expect(bcffCalled).to.equal(0);
       });

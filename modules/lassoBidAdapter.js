@@ -37,24 +37,25 @@ export const spec = {
         url: encodeURIComponent(window.location.href),
         bidderRequestId: bidRequest.bidderRequestId,
         adUnitCode: bidRequest.adUnitCode,
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: bidRequest.auctionId,
         bidId: bidRequest.bidId,
-        transactionId: bidRequest.transactionId,
-        device: JSON.stringify(getDeviceData()),
+        transactionId: bidRequest.ortb2Imp?.ext?.tid,
+        device: encodeURIComponent(JSON.stringify(getDeviceData())),
         sizes,
         aimXR,
         uid: '$UID',
         params: JSON.stringify(bidRequest.params),
         crumbs: JSON.stringify(bidRequest.crumbs),
         prebidVersion: '$prebid.version$',
-        version: 2,
+        version: 3,
         coppa: config.getConfig('coppa') == true ? 1 : 0,
         ccpa: bidderRequest.uspConsent || undefined
       }
 
       return {
         method: 'GET',
-        url: getBidRequestUrl(aimXR),
+        url: getBidRequestUrl(aimXR, bidRequest.params),
         data: payload,
         options: {
           withCredentials: true
@@ -113,11 +114,15 @@ export const spec = {
   supportedMediaTypes: [BANNER]
 }
 
-function getBidRequestUrl(aimXR) {
-  if (!aimXR) {
-    return GET_IUD_URL + ENDPOINT_URL + '/request';
+function getBidRequestUrl(aimXR, params) {
+  let path = '/request';
+  if (params && params.dtc) {
+    path = '/dtc-request';
   }
-  return ENDPOINT_URL + '/request'
+  if (!aimXR) {
+    return GET_IUD_URL + ENDPOINT_URL + path;
+  }
+  return ENDPOINT_URL + path;
 }
 
 function getDeviceData() {
