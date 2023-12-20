@@ -75,41 +75,6 @@ export const spec = {
 
     return bidResponses;
   },
-  /**
-   * Register bidder specific code, which will execute if bidder timed out after an auction
-   * @param {data} Containing timeout specific data
-   */
-  onTimeout: (data) => {
-    // Bidder specific code
-    logError('===Ad2 Timeout===', data)
-  },
-
-  /**
-   * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
-   */
-  onBidWon: (bid) => {
-    // Bidder specific code
-    logInfo('===Ad2 Bid won===', bid)
-  },
-
-  /**
-   * Register bidder specific code, which will execute when the adserver targeting has been set for a bid from this bidder
-   * @param {Bid} The bid of which the targeting has been set
-   */
-  onSetTargeting: (bid) => {
-    // Bidder specific code
-    logInfo('===Ad2 Set targeting===', bid)
-  },
-
-  /**
-   * Register bidder specific code, which will execute if the bidder responded with an error
-   * @param {error, bidderRequest} An object with the XMLHttpRequest error and the bid request object
-   */
-  onBidderError: ({ error, bidderRequest }) => {
-    // Bidder specific code
-    logError('===Ad2 Bidder error===', { error, bidderRequest })
-  },
 };
 
 registerBidder(spec);
