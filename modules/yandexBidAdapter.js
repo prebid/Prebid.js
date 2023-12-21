@@ -385,7 +385,7 @@ function addRTT(url, rtt) {
     return url.replace(/\${RTT}/, rtt ?? -1);
   }
 
-  let urlObj = new URL(url);
+  const urlObj = new URL(url);
 
   if (Number.isInteger(rtt)) {
     urlObj.searchParams.set('rtt', rtt);
