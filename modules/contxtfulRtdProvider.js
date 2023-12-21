@@ -25,7 +25,7 @@ let contxtfulModule = null;
 
 /**
  * Init function used to start sub module
- * @param { { params: { version: String, customer: String } } } config
+ * @param { { params: { version: String, customer: String, hostname: String } } } config
  * @return { Boolean }
  */
 function init(config) {
@@ -34,8 +34,8 @@ function init(config) {
   contxtfulModule = null;
 
   try {
-    const {version, customer} = extractParameters(config);
-    initCustomer(version, customer);
+    const {version, customer, hostname} = extractParameters(config);
+    initCustomer(version, customer, hostname);
     return true;
   } catch (error) {
     logError(MODULE, error);
@@ -47,8 +47,8 @@ function init(config) {
  * Extract required configuration for the sub module.
  * validate that all required configuration are present and are valid.
  * Throws an error if any config is missing of invalid.
- * @param { { params: { version: String, customer: String } } } config
- * @return { { version: String, customer: String } }
+ * @param { { params: { version: String, customer: String, hostname: String } } } config
+ * @return { { version: String, customer: String, hostname: String } }
  * @throws params.{name} should be a non-empty string
  */
 function extractParameters(config) {
@@ -62,7 +62,9 @@ function extractParameters(config) {
     throw Error(`${MODULE}: params.customer should be a non-empty string`);
   }
 
-  return {version, customer};
+  const hostname = config?.params?.hostname || CONTXTFUL_RECEPTIVITY_DOMAIN;
+
+  return {version, customer, hostname};
 }
 
 /**
@@ -70,11 +72,12 @@ function extractParameters(config) {
  * This will load the external resources for the sub module.
  * @param { String } version
  * @param { String } customer
+ * @param { String } hostname
  */
-function initCustomer(version, customer) {
+function initCustomer(version, customer, hostname) {
   const CONNECTOR_URL = buildUrl({
     protocol: 'https',
-    host: CONTXTFUL_RECEPTIVITY_DOMAIN,
+    host: hostname,
     pathname: `/${version}/prebid/${customer}/connector/p.js`,
   });
 
