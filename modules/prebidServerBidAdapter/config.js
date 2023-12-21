@@ -39,6 +39,7 @@ export const S2S_VENDORS = {
     },
     timeout: 1000
   },
+<<<<<<< HEAD
   'preciso': {
     adapter: 'prebidServer',
     enabled: true,
@@ -51,5 +52,15 @@ export const S2S_VENDORS = {
       noP1Consent: 'https://ssp-server.2trk.info/cookie_sync'
     },
     timeout: 1000
+=======
+  'openwrap': {
+    adapter: 'prebidServer',
+    enabled: true,
+    endpoint: {
+      p1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs',
+      noP1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs'
+    },
+    timeout: 500
+>>>>>>> cd787ebd7caab60888e8bdf731afa2dcecffa53a
   }
 }

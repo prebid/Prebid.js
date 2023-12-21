@@ -94,7 +94,7 @@ describe('ConcertAdapter', function () {
   });
 
   describe('spec.isBidRequestValid', function() {
-    it('should return when it recieved all the required params', function() {
+    it('should return when it received all the required params', function() {
       const bid = bidRequests[0];
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });

@@ -6,6 +6,7 @@ import {
   getInPageUrl,
   htmlPlaceholder,
   setWrapper,
+  getMacros,
   wrapper,
   WRAPPER_URL
 } from '../../../modules/geoedgeRtdProvider.js';
@@ -115,6 +116,15 @@ describe('Geoedge RTD module', function () {
       it('should set the wrapper', function () {
         setWrapper(mockWrapper);
         expect(wrapper).to.equal(mockWrapper);
+      });
+    });
+    describe('getMacros', function () {
+      it('return a dictionary of macros replaced with values from bid object', function () {
+        let bid = mockBid('testBidder');
+        let dict = getMacros(bid, key);
+        let hasCpm = dict['%_hbCpm!'] === bid.cpm;
+        let hasCurrency = dict['%_hbCurrency!'] === bid.currency;
+        expect(hasCpm && hasCurrency);
       });
     });
     describe('onBidResponseEvent', function () {

@@ -45,16 +45,17 @@ describe('fledgeForGpt module', () => {
       });
 
       it('should call next()', function () {
-        fledge.addComponentAuctionHook(nextFnSpy, 'aid', 'auc', fledgeAuctionConfig);
-        sinon.assert.calledWith(nextFnSpy, 'aid', 'auc', fledgeAuctionConfig);
+        const request = {auctionId: 'aid', adUnitCode: 'auc'};
+        fledge.addComponentAuctionHook(nextFnSpy, request, fledgeAuctionConfig);
+        sinon.assert.calledWith(nextFnSpy, request, fledgeAuctionConfig);
       });
 
       it('should collect auction configs and route them to GPT at end of auction', () => {
         events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {auctionId: 'aid'});
         const cf1 = {...fledgeAuctionConfig, id: 1, seller: 'b1'};
         const cf2 = {...fledgeAuctionConfig, id: 2, seller: 'b2'};
-        fledge.addComponentAuctionHook(nextFnSpy, 'aid', 'au1', cf1);
-        fledge.addComponentAuctionHook(nextFnSpy, 'aid', 'au2', cf2);
+        fledge.addComponentAuctionHook(nextFnSpy, {auctionId: 'aid', adUnitCode: 'au1'}, cf1);
+        fledge.addComponentAuctionHook(nextFnSpy, {auctionId: 'aid', adUnitCode: 'au2'}, cf2);
         events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId: 'aid'});
         sinon.assert.calledWith(gptUtils.getGptSlotForAdUnitCode, 'au1');
         sinon.assert.calledWith(gptUtils.getGptSlotForAdUnitCode, 'au2');
@@ -75,10 +76,30 @@ describe('fledgeForGpt module', () => {
       it('should drop auction configs after end of auction', () => {
         events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {auctionId: 'aid'});
         events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId: 'aid'});
-        fledge.addComponentAuctionHook(nextFnSpy, 'aid', 'au', fledgeAuctionConfig);
+        fledge.addComponentAuctionHook(nextFnSpy, {auctionId: 'aid', adUnitCode: 'au'}, fledgeAuctionConfig);
         events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId: 'aid'});
         sinon.assert.notCalled(mockGptSlot.setConfig);
       });
+
+      it('should augment auctionSignals with FPD', () => {
+        events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {auctionId: 'aid'});
+        fledge.addComponentAuctionHook(nextFnSpy, {auctionId: 'aid', adUnitCode: 'au1', ortb2: {fpd: 1}, ortb2Imp: {fpd: 2}}, fledgeAuctionConfig);
+        events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId: 'aid'});
+        sinon.assert.calledWith(mockGptSlot.setConfig, {
+          componentAuction: [{
+            configKey: 'bidder',
+            auctionConfig: {
+              ...fledgeAuctionConfig,
+              auctionSignals: {
+                prebid: {
+                  ortb2: {fpd: 1},
+                  ortb2Imp: {fpd: 2}
+                }
+              }
+            },
+          }]
+        })
+      })
 
       describe('floor signal', () => {
         before(() => {
@@ -173,7 +194,7 @@ describe('fledgeForGpt module', () => {
 
                 it('should populate bidfloor/bidfloorcur', () => {
                   events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {auctionId: 'aid'});
-                  fledge.addComponentAuctionHook(nextFnSpy, 'aid', 'au', fledgeAuctionConfig);
+                  fledge.addComponentAuctionHook(nextFnSpy, {auctionId: 'aid', adUnitCode: 'au'}, fledgeAuctionConfig);
                   events.emit(CONSTANTS.EVENTS.AUCTION_END, payload);
                   sinon.assert.calledWith(mockGptSlot.setConfig, sinon.match(arg => {
                     return arg.componentAuction.some(au => au.auctionConfig.auctionSignals?.prebid?.bidfloor === bidfloor && au.auctionConfig.auctionSignals?.prebid?.bidfloorcur === bidfloorcur)
@@ -223,6 +244,24 @@ describe('fledgeForGpt module', () => {
         },
       ]
     }];
+    function expectFledgeFlags(...enableFlags) {
+      const bidRequests = adapterManager.makeBidRequests(
+        adUnits,
+        Date.now(),
+        utils.getUniqueIdentifierStr(),
+        function callback() {
+        },
+        []
+      );
+
+      expect(bidRequests[0].bids[0].bidder).equals('appnexus');
+      expect(bidRequests[0].fledgeEnabled).to.eql(enableFlags[0].enabled)
+      bidRequests[0].bids.forEach(bid => expect(bid.ortb2Imp.ext.ae).to.eql(enableFlags[0].ae))
+
+      expect(bidRequests[1].bids[0].bidder).equals('rubicon');
+      expect(bidRequests[1].fledgeEnabled).to.eql(enableFlags[1].enabled)
+      bidRequests[1].bids.forEach(bid => expect(bid.ortb2Imp?.ext?.ae).to.eql(enableFlags[1].ae));
+    }
 
     describe('with setBidderConfig()', () => {
       it('should set fledgeEnabled correctly per bidder', function () {
@@ -234,23 +273,7 @@ describe('fledgeForGpt module', () => {
             defaultForSlots: 1,
           }
         });
-
-        const bidRequests = adapterManager.makeBidRequests(
-          adUnits,
-          Date.now(),
-          utils.getUniqueIdentifierStr(),
-          function callback() {
-          },
-          []
-        );
-
-        expect(bidRequests[0].bids[0].bidder).equals('appnexus');
-        expect(bidRequests[0].fledgeEnabled).to.be.true;
-        expect(bidRequests[0].defaultForSlots).to.equal(1);
-
-        expect(bidRequests[1].bids[0].bidder).equals('rubicon');
-        expect(bidRequests[1].fledgeEnabled).to.be.undefined;
-        expect(bidRequests[1].defaultForSlots).to.be.undefined;
+        expectFledgeFlags({enabled: true, ae: 1}, {enabled: void 0, ae: void 0});
       });
     });
 
@@ -264,23 +287,7 @@ describe('fledgeForGpt module', () => {
             defaultForSlots: 1,
           }
         });
-
-        const bidRequests = adapterManager.makeBidRequests(
-          adUnits,
-          Date.now(),
-          utils.getUniqueIdentifierStr(),
-          function callback() {
-          },
-          []
-        );
-
-        expect(bidRequests[0].bids[0].bidder).equals('appnexus');
-        expect(bidRequests[0].fledgeEnabled).to.be.true;
-        expect(bidRequests[0].defaultForSlots).to.equal(1);
-
-        expect(bidRequests[1].bids[0].bidder).equals('rubicon');
-        expect(bidRequests[1].fledgeEnabled).to.be.undefined;
-        expect(bidRequests[1].defaultForSlots).to.be.undefined;
+        expectFledgeFlags({enabled: true, ae: 1}, {enabled: void 0, ae: void 0});
       });
 
       it('should set fledgeEnabled correctly for all bidders', function () {
@@ -291,51 +298,33 @@ describe('fledgeForGpt module', () => {
             defaultForSlots: 1,
           }
         });
-
-        const bidRequests = adapterManager.makeBidRequests(
-          adUnits,
-          Date.now(),
-          utils.getUniqueIdentifierStr(),
-          function callback() {
-          },
-          []
-        );
-
-        expect(bidRequests[0].bids[0].bidder).equals('appnexus');
-        expect(bidRequests[0].fledgeEnabled).to.be.true;
-        expect(bidRequests[0].defaultForSlots).to.equal(1);
-
-        expect(bidRequests[1].bids[0].bidder).equals('rubicon');
-        expect(bidRequests[0].fledgeEnabled).to.be.true;
-        expect(bidRequests[0].defaultForSlots).to.equal(1);
+        expectFledgeFlags({enabled: true, ae: 1}, {enabled: true, ae: 1});
       });
+
+      it('should not override pub-defined ext.ae', () => {
+        config.setConfig({
+          bidderSequence: 'fixed',
+          fledgeForGpt: {
+            enabled: true,
+            defaultForSlots: 1,
+          }
+        });
+        Object.assign(adUnits[0], {ortb2Imp: {ext: {ae: 0}}});
+        expectFledgeFlags({enabled: true, ae: 0}, {enabled: true, ae: 0});
+      })
     });
   });
 
   describe('ortb processors for fledge', () => {
-    describe('when defaultForSlots is set', () => {
-      it('imp.ext.ae should be set if fledge is enabled', () => {
-        const imp = {};
-        setImpExtAe(imp, {}, {bidderRequest: {fledgeEnabled: true, defaultForSlots: 1}});
-        expect(imp.ext.ae).to.equal(1);
-      });
-      it('imp.ext.ae should be left intact if set on adunit and fledge is enabled', () => {
-        const imp = {ext: {ae: 2}};
-        setImpExtAe(imp, {}, {bidderRequest: {fledgeEnabled: true, defaultForSlots: 1}});
-        expect(imp.ext.ae).to.equal(2);
-      });
+    it('imp.ext.ae should be removed if fledge is not enabled', () => {
+      const imp = {ext: {ae: 1}};
+      setImpExtAe(imp, {}, {bidderRequest: {}});
+      expect(imp.ext.ae).to.not.exist;
     });
-    describe('when defaultForSlots is not defined', () => {
-      it('imp.ext.ae should be removed if fledge is not enabled', () => {
-        const imp = {ext: {ae: 1}};
-        setImpExtAe(imp, {}, {bidderRequest: {}});
-        expect(imp.ext.ae).to.not.exist;
-      });
-      it('imp.ext.ae should be left intact if fledge is enabled', () => {
-        const imp = {ext: {ae: 2}};
-        setImpExtAe(imp, {}, {bidderRequest: {fledgeEnabled: true}});
-        expect(imp.ext.ae).to.equal(2);
-      });
+    it('imp.ext.ae should be left intact if fledge is enabled', () => {
+      const imp = {ext: {ae: 2}};
+      setImpExtAe(imp, {}, {bidderRequest: {fledgeEnabled: true}});
+      expect(imp.ext.ae).to.equal(2);
     });
     describe('parseExtPrebidFledge', () => {
       function packageConfigs(configs) {

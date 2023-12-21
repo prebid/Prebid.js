@@ -1,6 +1,11 @@
 {
+<<<<<<< HEAD
   "name": "prebid",
   "version": "8.18.0-pre",
+=======
+  "name": "prebid.js",
+  "version": "8.29.0-pre",
+>>>>>>> cd787ebd7caab60888e8bdf731afa2dcecffa53a
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -101,6 +106,7 @@
     "lodash": "^4.17.21",
     "mocha": "^10.0.0",
     "morgan": "^1.10.0",
+    "node-html-parser": "^6.1.5",
     "opn": "^5.4.0",
     "resolve-from": "^5.0.0",
     "sinon": "^4.1.3",
@@ -134,7 +140,7 @@
     "fun-hooks": "^0.9.9",
     "gulp": "^4.0.2",
     "just-clone": "^1.0.2",
-    "live-connect-js": "^6.0.1"
+    "live-connect-js": "^6.3.0"
   },
   "optionalDependencies": {
     "fsevents": "^2.3.2"

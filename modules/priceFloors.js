@@ -431,7 +431,7 @@ function validateSchemaFields(fields) {
   if (Array.isArray(fields) && fields.length > 0 && fields.every(field => allowedFields.indexOf(field) !== -1)) {
     return true;
   }
-  logError(`${MODULE_NAME}: Fields recieved do not match allowed fields`);
+  logError(`${MODULE_NAME}: Fields received do not match allowed fields`);
   return false;
 }
 
@@ -616,7 +616,7 @@ function handleFetchError(status) {
 }
 
 /**
- * This function handles sending and recieving the AJAX call for a floors fetch
+ * This function handles sending and receiving the AJAX call for a floors fetch
  * @param {object} floorsConfig the floors config coming from setConfig
  */
 export function generateAndHandleFetch(floorEndpoint) {
@@ -748,7 +748,7 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
   let floorInfo = getFirstMatchingFloor(floorData.data, matchingBidRequest, {...bid, size: [bid.width, bid.height]});
 
   if (!floorInfo.matchingFloor) {
-    logWarn(`${MODULE_NAME}: unable to determine a matching price floor for bidResponse`, bid);
+    if (floorInfo.matchingFloor !== 0) logWarn(`${MODULE_NAME}: unable to determine a matching price floor for bidResponse`, bid);
     return fn.call(this, adUnitCode, bid, reject);
   }
 
