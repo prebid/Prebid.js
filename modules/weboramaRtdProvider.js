@@ -110,7 +110,6 @@ import {
   logWarn,
   mergeDeep,
   prefixLog,
-  tryAppendQueryString
 } from '../src/utils.js';
 import {
   submodule
@@ -125,6 +124,9 @@ import {
   MODULE_TYPE_RTD
 } from '../src/activities/modules.js';
 import adapterManager from '../src/adapterManager.js';
+import {
+  tryAppendQueryString
+} from '../libraries/urlUtils/urlUtils.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';

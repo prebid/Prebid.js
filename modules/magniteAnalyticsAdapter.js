@@ -142,6 +142,10 @@ const sendEvent = payload => {
     ...getTopLevelDetails(),
     ...payload
   }
+  if (window.pbjs?.rp?.eventDispatcher) {
+    const analyticsEvent = new CustomEvent('beforeSendingMagniteAnalytics', { detail: event });
+    window.pbjs.rp.eventDispatcher.dispatchEvent(analyticsEvent);
+  }
   ajax(
     endpoint,
     null,

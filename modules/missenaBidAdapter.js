@@ -1,11 +1,38 @@
-import { buildUrl, formatQS, logInfo, triggerPixel } from '../src/utils.js';
+import {
+  buildUrl,
+  formatQS,
+  isFn,
+  logInfo,
+  safeJSONParse,
+  triggerPixel,
+} from '../src/utils.js';
+import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'missena';
 const ENDPOINT_URL = 'https://bid.missena.io/';
 const EVENTS_DOMAIN = 'events.missena.io';
 const EVENTS_DOMAIN_DEV = 'events.staging.missena.xyz';
+
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+
+/* Get Floor price information */
+function getFloor(bidRequest) {
+  if (!isFn(bidRequest.getFloor)) {
+    return {};
+  }
+
+  const bidFloors = bidRequest.getFloor({
+    currency: 'USD',
+    mediaType: BANNER,
+  });
+
+  if (!isNaN(bidFloors.floor)) {
+    return bidFloors;
+  }
+}
 
 export const spec = {
   aliases: ['msna'],
@@ -30,6 +57,16 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    const capKey = `missena.missena.capper.remove-bubble.${validBidRequests[0]?.params.apiKey}`;
+    const capping = safeJSONParse(storage.getDataFromLocalStorage(capKey));
+    if (
+      typeof capping?.expiry === 'number' &&
+      new Date().getTime() < capping?.expiry
+    ) {
+      logInfo('Missena - Capped');
+      return [];
+    }
+
     return validBidRequests.map((bidRequest) => {
       const payload = {
         adunit: bidRequest.adUnitCode,
@@ -61,6 +98,12 @@ export const spec = {
         payload.is_internal = bidRequest.params.isInternal;
       }
       payload.userEids = bidRequest.userIdAsEids || [];
+
+      const bidFloor = getFloor(bidRequest);
+      payload.floor = bidFloor?.floor;
+      payload.floor_currency = bidFloor?.currency;
+      payload.currency = config.getConfig('currency.adServerCurrency') || 'EUR';
+
       return {
         method: 'POST',
         url: baseUrl + '?' + formatQS({ t: bidRequest.params.apiKey }),
@@ -89,7 +132,7 @@ export const spec = {
     syncOptions,
     serverResponses,
     gdprConsent,
-    uspConsent
+    uspConsent,
   ) {
     if (!syncOptions.iframeEnabled) {
       return [];
@@ -128,8 +171,13 @@ export const spec = {
         protocol: 'https',
         hostname,
         pathname: '/v1/bidsuccess',
-        search: { t: bid.params[0].apiKey, provider: bid.meta?.networkName, cpm: bid.cpm, currency: bid.currency },
-      })
+        search: {
+          t: bid.params[0].apiKey,
+          provider: bid.meta?.networkName,
+          cpm: bid.originalCpm,
+          currency: bid.originalCurrency,
+        },
+      }),
     );
     logInfo('Missena - Bid won', bid);
   },

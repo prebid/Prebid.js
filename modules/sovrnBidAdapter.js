@@ -1,13 +1,12 @@
 import {
   _each,
-  getBidIdParameter,
   isArray,
   getUniqueIdentifierStr,
   deepSetValue,
   logError,
   deepAccess,
   isInteger,
-  logWarn
+  logWarn, getBidIdParameter
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import {
@@ -45,7 +44,6 @@ const ORTB_VIDEO_PARAMS = {
 const REQUIRED_VIDEO_PARAMS = {
   context: (value) => value !== ADPOD,
   mimes: ORTB_VIDEO_PARAMS.mimes,
-  minduration: ORTB_VIDEO_PARAMS.minduration,
   maxduration: ORTB_VIDEO_PARAMS.maxduration,
   protocols: ORTB_VIDEO_PARAMS.protocols
 }
@@ -174,6 +172,11 @@ export const spec = {
         deepSetValue(sovrnBidReq, 'source.tid', tid)
       }
 
+      const coppa = deepAccess(bidderRequest, 'ortb2.regs.coppa');
+      if (coppa) {
+        deepSetValue(sovrnBidReq, 'regs.coppa', 1);
+      }
+
       if (bidderRequest.gdprConsent) {
         deepSetValue(sovrnBidReq, 'regs.ext.gdpr', +bidderRequest.gdprConsent.gdprApplies);
         deepSetValue(sovrnBidReq, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
@@ -248,7 +251,7 @@ export const spec = {
     }
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     try {
       const tracks = []
       if (serverResponses && serverResponses.length !== 0) {
@@ -261,6 +264,10 @@ export const spec = {
           }
           if (uspConsent) {
             params.push(['us_privacy', uspConsent]);
+          }
+          if (gppConsent) {
+            params.push(['gpp', gppConsent.gppString]);
+            params.push(['gpp_sid', gppConsent.applicableSections])
           }
 
           if (iidArr[0]) {
