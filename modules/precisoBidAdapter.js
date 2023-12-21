@@ -5,7 +5,7 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getStorageManager } from '../src/storageManager.js';
-import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 const BIDDER_CODE = 'preciso';
 const AD_URL = 'https://ssp-bidder.mndtrk.com/bid_request/openrtb';
@@ -14,10 +14,12 @@ const URL_SYNC = 'https://ck.2trk.info/rtb/user/usersync.aspx?';
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 const GVLID = 874;
 // let userId = 'NA';
-const COOKIE_NAME = '_sharedId';
+const COOKIE_NAME = '_sharedid';
+let precisoId = 'NA';
 // export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: 'sharedId'});
-export const storage1 = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'sharedId' });
+export const storage1 = getStorageManager({ bidderCode: BIDDER_CODE });
+export const storage2 = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: BIDDER_CODE });
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
@@ -107,8 +109,22 @@ export const spec = {
   // },
 
   isBidRequestValid: (bid) => {
-    logInfo('debugTest2 reqvalid')
-    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.publisherId) && bid.params.host == 'prebid');
+    let sharedId = readFromAllStorages(COOKIE_NAME);
+    logInfo('Test sharedId :' + sharedId)
+    // let sharedId = 'd466fcae%23260f%234f7c%23aceb%23b05cbbba049c';
+    const testurl = 'http://localhost:8080/getUUID?UUID=' + sharedId;
+
+    precisoId = window.localStorage.getItem('pre_Id');
+    logInfo('Test 12333 pre_Id :' + precisoId)
+
+    logInfo('Test bid pre_Id:' + !Object.is(precisoId, 'NA'))
+    // Call for uuid fetch against the test url
+    if (Object.is(precisoId, 'NA') || Object.is(precisoId, null)) {
+      getapi(testurl);
+    }
+    // window.localStorage.key('precisoKey')
+
+    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.publisherId) && bid.params.host == 'prebid' && !Object.is(precisoId, 'NA'));
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
@@ -177,6 +193,7 @@ export const spec = {
       userId: validBidRequests[0].userId,
       user: {
         id: validBidRequests[0].userId.pubcid || '',
+        uuid: precisoId || 'NA',
         geo: {
           region: city,
           geo: navigator.geolocation.getCurrentPosition(position => {
@@ -357,6 +374,36 @@ function readFromAllStorages(name) {
   const fromLocalStorage = storage.getDataFromLocalStorage(name);
 
   return fromCookie || fromLocalStorage || undefined;
+}
+
+async function getapi(url) {
+  // Storing response
+  const response = await fetch(url);
+  logInfo('DEBUG UUID ::::1122::' + response.toString);
+  logInfo('DEBUG UUID ::::1122::' + response.toString);
+  // Storing data in form of JSON
+  var data = await response.json();
+  const jsonDataString = JSON.stringify(data);
+  const dataMap = new Map(Object.entries(data));
+
+  // Log the map entries
+  dataMap.forEach((value, key) => {
+    logInfo(`Test 123 Map Entry - Key: ${key}, Value: ${value}`);
+  });
+
+  const uuidValue = dataMap.get('UUID');
+  logInfo('debug uuid value boolean:' + !Object.is(uuidValue, null))
+  if (!Object.is(uuidValue, null)) {
+    logInfo('DEBUG nonNull uuidValue:' + uuidValue);
+    storage2.setDataInLocalStorage('pre_Id', uuidValue);
+    logInfo('DEBUG nonNull uuidValue:' + uuidValue);
+  }
+
+  logInfo('Test uuid from local storage:' + window.localStorage.getItem('pre_Id'))
+  logInfo('DEBUG UUID 123::::' + jsonDataString);
+  logInfo('DEBUG uuidValue ::::' + uuidValue);
+
+  return data;
 }
 
 registerBidder(spec);

@@ -129,7 +129,6 @@ export const spec = {
    * @return {boolean}
    */
   isBidRequestValid: (bid) => {
-    logInfo('Cr Test1 reqvalid')
     // either one of zoneId or networkId should be set
     if (!(bid && bid.params && (bid.params.zoneId || bid.params.networkId))) {
       return false;
