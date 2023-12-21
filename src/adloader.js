@@ -29,6 +29,7 @@ const _approvedLoadExternalJSList = [
   'geoedge',
   'mediafilter',
   'qortex',
+  'dynamicAdBoost',
   'contxtful'
 ]
 

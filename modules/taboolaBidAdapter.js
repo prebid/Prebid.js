@@ -12,9 +12,11 @@ const GVLID = 42;
 const CURRENCY = 'USD';
 export const END_POINT_URL = 'https://display.bidder.taboola.com/OpenRTB/TaboolaHB/auction';
 export const USER_SYNC_IMG_URL = 'https://trc.taboola.com/sg/prebidJS/1/cm';
+export const USER_SYNC_IFRAME_URL = 'https://cdn.taboola.com/scripts/prebid_iframe_sync.html';
 const USER_ID = 'user-id';
 const STORAGE_KEY = `taboola global:${USER_ID}`;
 const COOKIE_KEY = 'trc_cookie_storage';
+export const EVENT_ENDPOINT = 'https://beacon.bidder.taboola.com';
 
 /**
  *  extract User Id by that order:
@@ -125,7 +127,7 @@ export const spec = {
       site,
       device,
       source: {fd: 1},
-      tmax: bidderRequest.timeout,
+      tmax: (bidderRequest.timeout == undefined) ? undefined : parseInt(bidderRequest.timeout),
       bcat: ortb2.bcat || bidRequest.params.bcat || [],
       badv: ortb2.badv || bidRequest.params.badv || [],
       wlang: ortb2.wlang || bidRequest.params.wlang || [],
@@ -182,6 +184,13 @@ export const spec = {
       queryParams.push('gpp=' + encodeURIComponent(gppConsent));
     }
 
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: USER_SYNC_IFRAME_URL + (queryParams.length ? '?' + queryParams.join('&') : '')
+      });
+    }
+
     if (syncOptions.pixelEnabled) {
       syncs.push({
         type: 'image',
@@ -189,6 +198,13 @@ export const spec = {
       });
     }
     return syncs;
+  },
+  onTimeout: (timeoutData) => {
+    ajax(EVENT_ENDPOINT + '/timeout', null, JSON.stringify(timeoutData), {method: 'POST'});
+  },
+
+  onBidderError: ({ error, bidderRequest }) => {
+    ajax(EVENT_ENDPOINT + '/bidError', null, JSON.stringify(error, bidderRequest), {method: 'POST'});
   },
 };
 

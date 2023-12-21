@@ -1,322 +1,77 @@
-import {_map, deepAccess, deepSetValue, getDNT, logMessage, logWarn} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { config } from '../src/config.js';
+import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'bizzclick';
-const ACCOUNTID_MACROS = '[account_id]';
-const URL_ENDPOINT = `https://us-e-node1.bizzclick.com/bid?rtb_seat_id=prebidjs&secret_key=${ACCOUNTID_MACROS}`;
-const NATIVE_ASSET_IDS = { 0: 'title', 2: 'icon', 3: 'image', 5: 'sponsoredBy', 4: 'body', 1: 'cta' };
-const NATIVE_PARAMS = {
-  title: {
-    id: 0,
-    name: 'title'
+const SOURCE_ID_MACRO = '[sourceid]';
+const ACCOUNT_ID_MACRO = '[accountid]';
+const HOST_MACRO = '[host]';
+const URL = `https://${HOST_MACRO}.bizzclick.com/bid?rtb_seat_id=${SOURCE_ID_MACRO}&secret_key=${ACCOUNT_ID_MACRO}&integration_type=prebidjs`;
+const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_HOST = 'us-e-node1';
+
+const converter = ortbConverter({
+  context: {
+    netRevenue: true,
+    ttl: 20,
   },
-  icon: {
-    id: 2,
-    type: 1,
-    name: 'img'
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+    if (!imp.bidfloor) imp.bidfloor = bidRequest.params.bidfloor || 0;
+    imp.ext = {
+      [BIDDER_CODE]: {
+        accountId: bidRequest.params.accountId,
+        sourceId: bidRequest.params.sourceId,
+        host: bidRequest.params.host || DEFAULT_HOST,
+      }
+    }
+    return imp;
   },
-  image: {
-    id: 3,
-    type: 3,
-    name: 'img'
+  request(buildRequest, imps, bidderRequest, context) {
+    const request = buildRequest(imps, bidderRequest, context);
+    const bid = context.bidRequests[0];
+    request.test = config.getConfig('debug') ? 1 : 0;
+    if (!request.cur) request.cur = [bid.params.currency || DEFAULT_CURRENCY];
+    return request;
   },
-  sponsoredBy: {
-    id: 5,
-    name: 'data',
-    type: 1
-  },
-  body: {
-    id: 4,
-    name: 'data',
-    type: 2
-  },
-  cta: {
-    id: 1,
-    type: 12,
-    name: 'data'
+  bidResponse(buildBidResponse, bid, context) {
+    const bidResponse = buildBidResponse(bid, context);
+    bidResponse.cur = bid.cur || DEFAULT_CURRENCY;
+    return bidResponse;
   }
-};
-const NATIVE_VERSION = '1.2';
+});
+
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
-  /**
-   * Determines whether or not the given bid request is valid.
-   *
-   * @param {object} bid The bid to validate.
-   * @return boolean True if this is a valid bid, and false otherwise.
-   */
+
   isBidRequestValid: (bid) => {
-    return Boolean(bid.params.accountId) && Boolean(bid.params.placementId)
+    return Boolean(bid.params.sourceId) && Boolean(bid.params.accountId);
   },
-  /**
-   * Make a server request from the list of BidRequests.
-   *
-   * @param {BidRequest[]} validBidRequests A non-empty list of valid bid requests that should be sent to the Server.
-   * @return ServerRequest Info describing the request to the server.
-   */
+
   buildRequests: (validBidRequests, bidderRequest) => {
-    // convert Native ORTB definition to old-style prebid native definition
-    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-
-    if (validBidRequests && validBidRequests.length === 0) return []
-    let accuontId = validBidRequests[0].params.accountId;
-    const endpointURL = URL_ENDPOINT.replace(ACCOUNTID_MACROS, accuontId);
-    let winTop = window;
-    let location;
-    try {
-      location = new URL(bidderRequest.refererInfo.page)
-      winTop = window.top;
-    } catch (e) {
-      location = winTop.location;
-      logMessage(e);
-    };
-    let bids = [];
-    for (let bidRequest of validBidRequests) {
-      let impObject = prepareImpObject(bidRequest);
-      let data = {
-        id: bidRequest.bidId,
-        test: config.getConfig('debug') ? 1 : 0,
-        at: 1,
-        cur: ['USD'],
-        device: {
-          w: winTop.screen.width,
-          h: winTop.screen.height,
-          dnt: getDNT() ? 1 : 0,
-          language: (navigator && navigator.language) ? navigator.language.indexOf('-') != -1 ? navigator.language.split('-')[0] : navigator.language : '',
-        },
-        site: {
-          page: location.pathname,
-          host: location.host
-        },
-        source: {
-          tid: bidRequest.ortb2Imp?.ext?.tid,
-          ext: {
-            schain: {}
-          }
-        },
-        regs: {
-          coppa: config.getConfig('coppa') === true ? 1 : 0,
-          ext: {}
-        },
-        user: {
-          ext: {}
-        },
-        ext: {
-          ts: Date.now()
-        },
-        tmax: bidRequest.timeout,
-        imp: [impObject],
-      };
-
-      let connection = navigator.connection || navigator.webkitConnection;
-      if (connection && connection.effectiveType) {
-        data.device.connectiontype = connection.effectiveType;
-      }
-      if (bidRequest) {
-        if (bidRequest.schain) {
-          deepSetValue(data, 'source.ext.schain', bidRequest.schain);
-        }
-
-        if (bidRequest.gdprConsent && bidRequest.gdprConsent.gdprApplies) {
-          deepSetValue(data, 'regs.ext.gdpr', bidRequest.gdprConsent.gdprApplies ? 1 : 0);
-          deepSetValue(data, 'user.ext.consent', bidRequest.gdprConsent.consentString);
-        }
-
-        if (bidRequest.uspConsent !== undefined) {
-          deepSetValue(data, 'regs.ext.us_privacy', bidRequest.uspConsent);
-        }
-      }
-      bids.push(data)
-    }
+    if (validBidRequests && validBidRequests.length === 0) return [];
+    const { sourceId, accountId } = validBidRequests[0].params;
+    const host = validBidRequests[0].params.host || 'USE';
+    const endpointURL = URL.replace(HOST_MACRO, host || DEFAULT_HOST)
+      .replace(ACCOUNT_ID_MACRO, accountId)
+      .replace(SOURCE_ID_MACRO, sourceId);
+    const request = converter.toORTB({ bidRequests: validBidRequests, bidderRequest });
     return {
       method: 'POST',
       url: endpointURL,
-      data: bids
+      data: request
     };
   },
-  /**
-   * Unpack the response from the server into a list of bids.
-   *
-   * @param {*} serverResponse A successful response from the server.
-   * @return {Bid[]} An array of bids which were nested inside the server.
-   */
-  interpretResponse: (serverResponse) => {
-    if (!serverResponse || !serverResponse.body) return []
-    let bizzclickResponse = serverResponse.body;
-    let bids = [];
-    for (let response of bizzclickResponse) {
-      let mediaType = response.seatbid[0].bid[0].ext && response.seatbid[0].bid[0].ext.mediaType ? response.seatbid[0].bid[0].ext.mediaType : BANNER;
-      let bid = {
-        requestId: response.id,
-        cpm: response.seatbid[0].bid[0].price,
-        width: response.seatbid[0].bid[0].w,
-        height: response.seatbid[0].bid[0].h,
-        ttl: response.ttl || 1200,
-        currency: response.cur || 'USD',
-        netRevenue: true,
-        creativeId: response.seatbid[0].bid[0].crid,
-        dealId: response.seatbid[0].bid[0].dealid,
-        mediaType: mediaType
-      };
 
-      bid.meta = {};
-      if (response.seatbid[0].bid[0].adomain && response.seatbid[0].bid[0].adomain.length > 0) {
-        bid.meta.advertiserDomains = response.seatbid[0].bid[0].adomain;
-      }
-
-      switch (mediaType) {
-        case VIDEO:
-          bid.vastXml = response.seatbid[0].bid[0].adm
-          bid.vastUrl = response.seatbid[0].bid[0].ext.vastUrl
-          break
-        case NATIVE:
-          bid.native = parseNative(response.seatbid[0].bid[0].adm)
-          break
-        default:
-          bid.ad = response.seatbid[0].bid[0].adm
-      }
-      bids.push(bid);
+  interpretResponse: (response, request) => {
+    if (response?.body) {
+      const bids = converter.fromORTB({ response: response.body, request: request.data }).bids;
+      return bids;
     }
-    return bids;
+    return [];
   },
 };
-/**
- * Determine type of request
- *
- * @param bidRequest
- * @param type
- * @returns {boolean}
- */
-const checkRequestType = (bidRequest, type) => {
-  return (typeof deepAccess(bidRequest, `mediaTypes.${type}`) !== 'undefined');
-}
-const parseNative = admObject => {
-  const { assets, link, imptrackers, jstracker } = admObject.native;
-  const result = {
-    clickUrl: link.url,
-    clickTrackers: link.clicktrackers || undefined,
-    impressionTrackers: imptrackers || undefined,
-    javascriptTrackers: jstracker ? [ jstracker ] : undefined
-  };
-  assets.forEach(asset => {
-    const kind = NATIVE_ASSET_IDS[asset.id];
-    const content = kind && asset[NATIVE_PARAMS[kind].name];
-    if (content) {
-      result[kind] = content.text || content.value || { url: content.url, width: content.w, height: content.h };
-    }
-  });
-  return result;
-}
-const prepareImpObject = (bidRequest) => {
-  let impObject = {
-    id: bidRequest.transactionId,
-    secure: 1,
-    ext: {
-      placementId: bidRequest.params.placementId
-    }
-  };
-  if (checkRequestType(bidRequest, BANNER)) {
-    impObject.banner = addBannerParameters(bidRequest);
-  }
-  if (checkRequestType(bidRequest, VIDEO)) {
-    impObject.video = addVideoParameters(bidRequest);
-  }
-  if (checkRequestType(bidRequest, NATIVE)) {
-    impObject.native = {
-      ver: NATIVE_VERSION,
-      request: addNativeParameters(bidRequest)
-    };
-  }
-  return impObject
-};
-const addNativeParameters = bidRequest => {
-  let impObject = {
-    // TODO: top-level ID is not in ORTB native 1.2, is this intentional?
-    // (despite the name, this appears to be an ORTB native request - not an imp - object)
-    id: bidRequest.bidId,
-    ver: NATIVE_VERSION,
-  };
-  const assets = _map(bidRequest.mediaTypes.native, (bidParams, key) => {
-    const props = NATIVE_PARAMS[key];
-    const asset = {
-      required: bidParams.required & 1,
-    };
-    if (props) {
-      asset.id = props.id;
-      let wmin, hmin;
-      let aRatios = bidParams.aspect_ratios;
-      if (aRatios && aRatios[0]) {
-        aRatios = aRatios[0];
-        wmin = aRatios.min_width || 0;
-        hmin = aRatios.ratio_height * wmin / aRatios.ratio_width | 0;
-      }
-      if (bidParams.sizes) {
-        const sizes = flatten(bidParams.sizes);
-        wmin = sizes[0];
-        hmin = sizes[1];
-      }
-      asset[props.name] = {};
-      if (bidParams.len) asset[props.name]['len'] = bidParams.len;
-      if (props.type) asset[props.name]['type'] = props.type;
-      if (wmin) asset[props.name]['wmin'] = wmin;
-      if (hmin) asset[props.name]['hmin'] = hmin;
-      return asset;
-    }
-  }).filter(Boolean);
-  impObject.assets = assets;
-  return impObject
-}
-const addBannerParameters = (bidRequest) => {
-  let bannerObject = {};
-  const size = parseSizes(bidRequest, 'banner');
-  bannerObject.w = size[0];
-  bannerObject.h = size[1];
-  return bannerObject;
-};
-const parseSizes = (bid, mediaType) => {
-  let mediaTypes = bid.mediaTypes;
-  if (mediaType === 'video') {
-    let size = [];
-    if (mediaTypes.video && mediaTypes.video.w && mediaTypes.video.h) {
-      size = [
-        mediaTypes.video.w,
-        mediaTypes.video.h
-      ];
-    } else if (Array.isArray(deepAccess(bid, 'mediaTypes.video.playerSize')) && bid.mediaTypes.video.playerSize.length === 1) {
-      size = bid.mediaTypes.video.playerSize[0];
-    } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0 && Array.isArray(bid.sizes[0]) && bid.sizes[0].length > 1) {
-      size = bid.sizes[0];
-    }
-    return size;
-  }
-  let sizes = [];
-  if (Array.isArray(mediaTypes.banner.sizes)) {
-    sizes = mediaTypes.banner.sizes[0];
-  } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
-    sizes = bid.sizes
-  } else {
-    logWarn('no sizes are setup or found');
-  }
-  return sizes
-}
-const addVideoParameters = (bidRequest) => {
-  let videoObj = {};
-  let supportParamsList = ['mimes', 'minduration', 'maxduration', 'protocols', 'startdelay', 'placement', 'skip', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity']
-  for (let param of supportParamsList) {
-    if (bidRequest.mediaTypes.video[param] !== undefined) {
-      videoObj[param] = bidRequest.mediaTypes.video[param];
-    }
-  }
-  const size = parseSizes(bidRequest, 'video');
-  videoObj.w = size[0];
-  videoObj.h = size[1];
-  return videoObj;
-}
-const flatten = arr => {
-  return [].concat(...arr);
-}
+
 registerBidder(spec);

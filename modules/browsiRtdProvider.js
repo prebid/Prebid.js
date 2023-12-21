@@ -88,6 +88,7 @@ export function collectData() {
   let predictorData = {
     ...{
       sk: _moduleParams.siteKey,
+      pk: _moduleParams.pubKey,
       sw: (win.screen && win.screen.width) || -1,
       sh: (win.screen && win.screen.height) || -1,
       url: `${doc.location.protocol}//${doc.location.host}${doc.location.pathname}`,
@@ -134,7 +135,6 @@ function getRTD(auc) {
       const adSlot = getSlotByCode(uc);
       const identifier = adSlot ? getMacroId(_browsiData['pmd'], adSlot) : uc;
       const _pd = _bp[identifier];
-      rp[uc] = getKVObject(-1);
       if (!_pd) {
         return rp
       }
@@ -275,7 +275,7 @@ function getPredictionsFromServer(url) {
         if (req.status === 200) {
           try {
             const data = JSON.parse(response);
-            if (data && data.p && data.kn) {
+            if (data) {
               setData({p: data.p, kn: data.kn, pmd: data.pmd, bet: data.bet});
             } else {
               setData({});

@@ -145,6 +145,7 @@ describe('PGAMBidAdapter', function () {
         expect(placement.schain).to.be.an('object');
         expect(placement.bidfloor).to.exist.and.to.equal(0);
         expect(placement.type).to.exist.and.to.equal('publisher');
+        expect(placement.eids).to.exist.and.to.be.an('array');
 
         if (placement.adFormat === BANNER) {
           expect(placement.sizes).to.be.an('array');
