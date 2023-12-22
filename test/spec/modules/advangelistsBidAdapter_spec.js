@@ -93,7 +93,6 @@ describe('advangelistsBidAdapter', function () {
         delete bidResponseVid['ad'];
         expect(bidResponseVid).to.deep.equal({
           requestId: bidRequestsVid[0].bidId,
-          bidderCode: 'advangelists',
           creativeId: serverResponseVid.seatbid[0].bid[0].crid,
           cpm: serverResponseVid.seatbid[0].bid[0].price,
           width: serverResponseVid.seatbid[0].bid[0].w,

@@ -8,6 +8,7 @@ import * as utils from 'src/utils.js';
 
 const ENDPOINT = 'https://tlx.3lift.com/header/auction?';
 const GDPR_CONSENT_STR = 'BOONm0NOONm0NABABAENAa-AAAARh7______b9_3__7_9uz_Kv_K7Vf7nnG072lPVA9LTOQ6gEaY';
+const GPP_CONSENT_STR = 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN'
 
 describe('triplelift adapter', function () {
   const adapter = newBidder(tripleliftAdapterSpec);
@@ -1039,6 +1040,12 @@ describe('triplelift adapter', function () {
       const url = request.url;
       expect(url).to.match(/(\?|&)us_privacy=1YYY/);
     });
+    it('should pass fledge signal when Triplelift is eligible for fledge', function() {
+      bidderRequest.fledgeEnabled = true;
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
+      const url = request.url;
+      expect(url).to.match(/(\?|&)fledge=true/);
+    });
     it('should return coppa param when COPPA config is set to true', function() {
       sinon.stub(config, 'getConfig').withArgs('coppa').returns(true);
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
@@ -1122,6 +1129,46 @@ describe('triplelift adapter', function () {
       tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
 
       expect(logErrorSpy.calledOnce).to.equal(true);
+    });
+    it('should add ortb2 ext object if global fpd is available', function() {
+      const ortb2 = {
+        site: {
+          domain: 'page.example.com',
+          cat: ['IAB2'],
+          sectioncat: ['IAB2-2'],
+          pagecat: ['IAB2-2'],
+          page: 'https://page.example.com/here.html',
+        },
+        user: {
+          yob: 1985,
+          gender: 'm',
+          keywords: 'a,b',
+          data: [
+            {
+              name: 'dataprovider.com',
+              ext: { segtax: 4 },
+              segment: [{ id: '1' }]
+            }
+          ],
+          ext: {
+            data: {
+              registered: true,
+              interests: ['cars']
+            }
+          }
+        }
+      };
+
+      const request = tripleliftAdapterSpec.buildRequests(bidRequests, {...bidderRequest, ortb2});
+      const { data: payload } = request;
+      expect(payload.ext.ortb2).to.exist;
+      expect(payload.ext.ortb2.site).to.deep.equal({
+        domain: 'page.example.com',
+        cat: ['IAB2'],
+        sectioncat: ['IAB2-2'],
+        pagecat: ['IAB2-2'],
+        page: 'https://page.example.com/here.html',
+      });
     });
     it('should send global config fpd if kvps are available', function() {
       const sens = null;
@@ -1501,11 +1548,63 @@ describe('triplelift adapter', function () {
       expect(result[2].meta.networkId).to.equal('5989');
       expect(result[3].meta.networkId).to.equal('5989');
     });
+
+    it('should return fledgeAuctionConfigs if PAAPI response is received', function() {
+      response.body.paapi = [
+        {
+          imp_id: '0',
+          auctionConfig: {
+            seller: 'https://3lift.com',
+            decisionLogicUrl: 'https://3lift.com/decision_logic.js',
+            interestGroupBuyers: ['https://some_buyer.com'],
+            perBuyerSignals: {
+              'https://some_buyer.com': { a: 1 }
+            }
+          }
+        },
+        {
+          imp_id: '2',
+          auctionConfig: {
+            seller: 'https://3lift.com',
+            decisionLogicUrl: 'https://3lift.com/decision_logic.js',
+            interestGroupBuyers: ['https://some_other_buyer.com'],
+            perBuyerSignals: {
+              'https://some_other_buyer.com': { b: 2 }
+            }
+          }
+        }
+      ];
+
+      let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
+
+      expect(result).to.have.property('bids');
+      expect(result).to.have.property('fledgeAuctionConfigs');
+      expect(result.fledgeAuctionConfigs.length).to.equal(2);
+      expect(result.fledgeAuctionConfigs[0].bidId).to.equal('30b31c1838de1e');
+      expect(result.fledgeAuctionConfigs[1].bidId).to.equal('73edc0ba8de203');
+      expect(result.fledgeAuctionConfigs[0].config).to.deep.equal(
+        {
+          'seller': 'https://3lift.com',
+          'decisionLogicUrl': 'https://3lift.com/decision_logic.js',
+          'interestGroupBuyers': ['https://some_buyer.com'],
+          'perBuyerSignals': { 'https://some_buyer.com': { 'a': 1 } }
+        }
+      );
+      expect(result.fledgeAuctionConfigs[1].config).to.deep.equal(
+        {
+          'seller': 'https://3lift.com',
+          'decisionLogicUrl': 'https://3lift.com/decision_logic.js',
+          'interestGroupBuyers': ['https://some_other_buyer.com'],
+          'perBuyerSignals': { 'https://some_other_buyer.com': { 'b': 2 } }
+        }
+      );
+    });
   });
 
   describe('getUserSyncs', function() {
     let expectedIframeSyncUrl = 'https://eb2.3lift.com/sync?gdpr=true&cmp_cs=' + GDPR_CONSENT_STR + '&';
     let expectedImageSyncUrl = 'https://eb2.3lift.com/sync?px=1&src=prebid&gdpr=true&cmp_cs=' + GDPR_CONSENT_STR + '&';
+    let expectedGppSyncUrl = 'https://eb2.3lift.com/sync?gdpr=true&cmp_cs=' + GDPR_CONSENT_STR + '&gpp=' + GPP_CONSENT_STR + '&gpp_sid=2%2C8' + '&';
 
     it('returns undefined when syncing is not enabled', function() {
       expect(tripleliftAdapterSpec.getUserSyncs({})).to.equal(undefined);
@@ -1543,8 +1642,19 @@ describe('triplelift adapter', function () {
       let syncOptions = {
         iframeEnabled: true
       };
-      let result = tripleliftAdapterSpec.getUserSyncs(syncOptions, null, null, '1YYY');
+      let result = tripleliftAdapterSpec.getUserSyncs(syncOptions, null, null, '1YYY', null);
       expect(result[0].url).to.match(/(\?|&)us_privacy=1YYY/);
+    });
+    it('returns a user sync pixel with GPP signals when available', function() {
+      let syncOptions = {
+        iframeEnabled: true
+      };
+      let gppConsent = {
+        'applicableSections': [2, 8],
+        'gppString': 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN'
+      }
+      let result = tripleliftAdapterSpec.getUserSyncs(syncOptions, null, null, null, gppConsent);
+      expect(result[0].url).to.equal(expectedGppSyncUrl);
     });
   });
 });

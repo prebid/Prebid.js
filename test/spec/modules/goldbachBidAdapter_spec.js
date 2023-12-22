@@ -1001,15 +1001,6 @@ describe('GoldbachXandrAdapter', function () {
   })
 
   describe('interpretResponse', function () {
-    let bfStub;
-    before(function() {
-      bfStub = sinon.stub(bidderFactory, 'getIabSubCategory');
-    });
-
-    after(function() {
-      bfStub.restore();
-    });
-
     let response = {
       'version': '3.0.0',
       'tags': [
@@ -1206,7 +1197,6 @@ describe('GoldbachXandrAdapter', function () {
           }
         }]
       };
-      bfStub.returns('1');
 
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(result[0]).to.have.property('vastUrl');

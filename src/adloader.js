@@ -23,7 +23,13 @@ const _approvedLoadExternalJSList = [
   'aaxBlockmeter',
   'confiant',
   'arcspan',
-  'clean.io'
+  'airgrid',
+  'clean.io',
+  'a1Media',
+  'geoedge',
+  'mediafilter',
+  'qortex',
+  'dynamicAdBoost'
 ]
 
 /**

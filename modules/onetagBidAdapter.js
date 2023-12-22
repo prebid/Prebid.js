@@ -70,6 +70,9 @@ function buildRequests(validBidRequests, bidderRequest) {
   if (bidderRequest && bidderRequest.uspConsent) {
     payload.usPrivacy = bidderRequest.uspConsent;
   }
+  if (bidderRequest && bidderRequest.ortb2) {
+    payload.ortb2 = bidderRequest.ortb2;
+  }
   if (validBidRequests && validBidRequests.length !== 0 && validBidRequests[0].userIdAsEids) {
     payload.userId = validBidRequests[0].userIdAsEids;
   }
@@ -84,6 +87,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   const connection = navigator.connection || navigator.webkitConnection;
   payload.networkConnectionType = (connection && connection.type) ? connection.type : null;
   payload.networkEffectiveConnectionType = (connection && connection.effectiveType) ? connection.effectiveType : null;
+  payload.fledgeEnabled = Boolean(bidderRequest && bidderRequest.fledgeEnabled)
   return {
     method: 'POST',
     url: ENDPOINT,
@@ -98,10 +102,10 @@ function interpretResponse(serverResponse, bidderRequest) {
   if (!body || (body.nobid && body.nobid === true)) {
     return bids;
   }
-  if (!body.bids || !Array.isArray(body.bids) || body.bids.length === 0) {
+  if (!body.fledgeAuctionConfigs && (!body.bids || !Array.isArray(body.bids) || body.bids.length === 0)) {
     return bids;
   }
-  body.bids.forEach(bid => {
+  Array.isArray(body.bids) && body.bids.forEach(bid => {
     const responseBid = {
       requestId: bid.requestId,
       cpm: bid.cpm,
@@ -138,7 +142,16 @@ function interpretResponse(serverResponse, bidderRequest) {
     }
     bids.push(responseBid);
   });
-  return bids;
+
+  if (body.fledgeAuctionConfigs && Array.isArray(body.fledgeAuctionConfigs)) {
+    const fledgeAuctionConfigs = body.fledgeAuctionConfigs
+    return {
+      bids,
+      fledgeAuctionConfigs,
+    }
+  } else {
+    return bids;
+  }
 }
 
 function createRenderer(bid, rendererOptions = {}) {
@@ -264,8 +277,8 @@ function setGeneralInfo(bidRequest) {
   this['adUnitCode'] = bidRequest.adUnitCode;
   this['bidId'] = bidRequest.bidId;
   this['bidderRequestId'] = bidRequest.bidderRequestId;
-  this['auctionId'] = bidRequest.auctionId;
-  this['transactionId'] = bidRequest.transactionId;
+  this['auctionId'] = deepAccess(bidRequest, 'ortb2.source.tid');
+  this['transactionId'] = deepAccess(bidRequest, 'ortb2Imp.ext.tid');
   this['gpid'] = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
   this['pubId'] = params.pubId;
   this['ext'] = params.ext;

@@ -246,6 +246,13 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
                     skip: 1,
                     protocols: [1, 2, 3, 4]
                   },
+                },
+                ortb2Imp: {
+                  ext: {
+                    data: {
+                      adunitDFP: 'adunitcustomPathExtension'
+                    }
+                  }
                 }
               },
             ],
@@ -266,6 +273,7 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
                     sizes: [[300, 250], [300, 600]]
                   }
                 },
+                ortb2Imp: {},
                 bidders: [
                   {
                     bidder: 'greenbids',
@@ -281,6 +289,13 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
               },
               {
                 code: 'adunit-2',
+                ortb2Imp: {
+                  ext: {
+                    data: {
+                      adunitDFP: 'adunitcustomPathExtension'
+                    }
+                  }
+                },
                 mediaTypes: {
                   banner: {
                     sizes: [[300, 250], [300, 600]]
@@ -389,7 +404,6 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
     it('should parse config correctly with optional values', function () {
       expect(greenbidsAnalyticsAdapter.getAnalyticsOptions().options).to.deep.equal(configOptions);
       expect(greenbidsAnalyticsAdapter.getAnalyticsOptions().pbuid).to.equal(configOptions.pbuid);
-      expect(greenbidsAnalyticsAdapter.getAnalyticsOptions().sampled).to.equal(false);
     });
 
     it('should not enable Analytics when pbuid is missing', function () {
@@ -399,20 +413,6 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
       };
       const validConfig = greenbidsAnalyticsAdapter.initConfig(configOptions);
       expect(validConfig).to.equal(false);
-    });
-    it('should fall back to default value when sampling factor is not number', function () {
-      const configOptions = {
-        options: {
-          pbuid: pbuid,
-          sampling: 'string',
-        }
-      };
-      greenbidsAnalyticsAdapter.enableAnalytics({
-        provider: 'greenbidsAnalytics',
-        options: configOptions
-      });
-
-      expect(greenbidsAnalyticsAdapter.getAnalyticsOptions().sampled).to.equal(false);
     });
   });
 });

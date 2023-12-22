@@ -59,8 +59,9 @@ export const spec = {
         code: adunitValue.params.code,
         adunit: adunitValue.adUnitCode,
         bidId: adunitValue.bidId,
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: adunitValue.auctionId,
-        transactionId: adunitValue.transactionId,
+        transactionId: adunitValue.ortb2Imp?.ext?.tid,
         mediatypes: adunitValue.mediaTypes,
         floor: floor
       });
@@ -119,20 +120,17 @@ export const spec = {
           netRevenue: value['net_revenue'],
           ttl: value['ttl'],
           ad: value['ad'],
-          mediasquare: {
-            'bidder': value['bidder'],
-            'code': value['code']
-          },
+          mediasquare: {},
           meta: {
             'advertiserDomains': value['adomain']
           }
         };
-        if ('match' in value) {
-          bidResponse['mediasquare']['match'] = value['match'];
-        }
-        if ('hasConsent' in value) {
-          bidResponse['mediasquare']['hasConsent'] = value['hasConsent'];
-        }
+        let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment', 'ova'];
+        paramsToSearchFor.forEach(param => {
+          if (param in value) {
+            bidResponse['mediasquare'][param] = value[param];
+          }
+        });
         if ('native' in value) {
           bidResponse['native'] = value['native'];
           bidResponse['mediaType'] = 'native';
@@ -171,21 +169,31 @@ export const spec = {
      */
   onBidWon: function(bid) {
     // fires a pixel to confirm a winning bid
+    if (bid.hasOwnProperty('mediaType') && bid.mediaType == 'video') {
+      return;
+    }
     let params = { pbjs: '$prebid.version$', referer: encodeURIComponent(getRefererInfo().page || getRefererInfo().topmostLocation) };
     let endpoint = document.location.search.match(/msq_test=true/) ? BIDDER_URL_TEST : BIDDER_URL_PROD;
-    let paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond', 'requestId', 'auctionId', 'originalCpm', 'originalCurrency'];
+    let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment', 'ova'];
     if (bid.hasOwnProperty('mediasquare')) {
-      if (bid['mediasquare'].hasOwnProperty('bidder')) { params['bidder'] = bid['mediasquare']['bidder']; }
-      if (bid['mediasquare'].hasOwnProperty('code')) { params['code'] = bid['mediasquare']['code']; }
-      if (bid['mediasquare'].hasOwnProperty('match')) { params['match'] = bid['mediasquare']['match']; }
-      if (bid['mediasquare'].hasOwnProperty('hasConsent')) { params['hasConsent'] = bid['mediasquare']['hasConsent']; }
+      paramsToSearchFor.forEach(param => {
+        if (bid['mediasquare'].hasOwnProperty(param)) {
+          params[param] = bid['mediasquare'][param];
+          if (typeof params[param] == 'number') {
+            params[param] = params[param].toString();
+          }
+        }
+      });
     };
-    for (let i = 0; i < paramsToSearchFor.length; i++) {
-      if (bid.hasOwnProperty(paramsToSearchFor[i])) {
-        params[paramsToSearchFor[i]] = bid[paramsToSearchFor[i]];
-        if (typeof params[paramsToSearchFor[i]] == 'number') { params[paramsToSearchFor[i]] = params[paramsToSearchFor[i]].toString() }
+    paramsToSearchFor = ['cpm', 'size', 'mediaType', 'currency', 'creativeId', 'adUnitCode', 'timeToRespond', 'requestId', 'auctionId', 'originalCpm', 'originalCurrency'];
+    paramsToSearchFor.forEach(param => {
+      if (bid.hasOwnProperty(param)) {
+        params[param] = bid[param];
+        if (typeof params[param] == 'number') {
+          params[param] = params[param].toString();
+        }
       }
-    }
+    });
     ajax(endpoint + BIDDER_ENDPOINT_WINNING, null, JSON.stringify(params), {method: 'POST', withCredentials: true});
     return true;
   }

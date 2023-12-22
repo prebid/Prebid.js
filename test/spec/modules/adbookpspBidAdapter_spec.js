@@ -960,6 +960,11 @@ const bidderRequest = {
     consentString: 'gdprConsentString',
   },
   uspConsent: 'uspConsentString',
+  ortb2: {
+    source: {
+      tid: 'aaccee333311'
+    }
+  }
 };
 
 const bannerBid = {

@@ -218,7 +218,7 @@ describe('TeadsIdSystem', function () {
       callback(callbackSpy);
       const request = server.requests[0];
       expect(request.url).to.include(teadsUrl);
-      request.respond(204, null, 'Unavailable');
+      request.respond(204);
       expect(logInfoStub.calledOnce).to.be.true;
     });
 
