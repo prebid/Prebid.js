@@ -89,8 +89,7 @@ describe('LiveIntentId', function() {
       emailHash: '58131bc547fb87af94cebdaf3102321f'
     }});
     setTimeout(() => {
-      const packageJson = require('package.json')
-      expect(server.requests[0].url).to.contain(`tv=${packageJson.version}`)
+      expect(server.requests[0].url).to.contain('$prebid.version$')
       expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*e=58131bc547fb87af94cebdaf3102321f.+/)
       done();
     }, 200);
