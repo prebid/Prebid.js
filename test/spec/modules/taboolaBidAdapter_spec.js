@@ -835,15 +835,26 @@ describe('Taboola Adapter', function () {
 
   describe('getUserSyncs', function () {
     const usersyncUrl = 'https://trc.taboola.com/sg/prebidJS/1/cm';
+    const iframeUrl = 'https://cdn.taboola.com/scripts/prebid_iframe_sync.html';
 
-    it('should not return user sync if pixelEnabled is false', function () {
-      const res = spec.getUserSyncs({pixelEnabled: false});
+    it('should not return user sync if pixelEnabled is false and iframe disabled', function () {
+      const res = spec.getUserSyncs({pixelEnabled: false, iframeEnabled: false});
       expect(res).to.be.an('array').that.is.empty;
     });
 
     it('should return user sync if pixelEnabled is true', function () {
-      const res = spec.getUserSyncs({pixelEnabled: true});
+      const res = spec.getUserSyncs({pixelEnabled: true, iframeEnabled: false});
       expect(res).to.deep.equal([{type: 'image', url: usersyncUrl}]);
+    });
+
+    it('should return user sync if iframeEnabled is true', function () {
+      const res = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false});
+      expect(res).to.deep.equal([{type: 'iframe', url: iframeUrl}]);
+    });
+
+    it('should return both user syncs if iframeEnabled is true and pixelEnabled is true', function () {
+      const res = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true});
+      expect(res).to.deep.equal([{type: 'iframe', url: iframeUrl}, {type: 'image', url: usersyncUrl}]);
     });
 
     it('should pass consent tokens values', function() {

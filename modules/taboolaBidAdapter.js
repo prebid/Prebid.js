@@ -12,6 +12,7 @@ const GVLID = 42;
 const CURRENCY = 'USD';
 export const END_POINT_URL = 'https://display.bidder.taboola.com/OpenRTB/TaboolaHB/auction';
 export const USER_SYNC_IMG_URL = 'https://trc.taboola.com/sg/prebidJS/1/cm';
+export const USER_SYNC_IFRAME_URL = 'https://cdn.taboola.com/scripts/prebid_iframe_sync.html';
 const USER_ID = 'user-id';
 const STORAGE_KEY = `taboola global:${USER_ID}`;
 const COOKIE_KEY = 'trc_cookie_storage';
@@ -181,6 +182,13 @@ export const spec = {
 
     if (gppConsent) {
       queryParams.push('gpp=' + encodeURIComponent(gppConsent));
+    }
+
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: USER_SYNC_IFRAME_URL + (queryParams.length ? '?' + queryParams.join('&') : '')
+      });
     }
 
     if (syncOptions.pixelEnabled) {
