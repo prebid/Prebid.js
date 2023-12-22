@@ -466,8 +466,8 @@ describe('NoBid Prebid Analytic', function () {
       const previousRetention = nobidAnalytics.retentionSeconds;
       nobidAnalytics.retentionSeconds = 3;
       nobidAnalytics.processServerResponse(JSON.stringify({carbonizer_active: true}));
-      const stored = nobidCarbonizer.getStoredLocalData();
-      expect(stored).to.contain(`{"carbonizer_active":true,"ts":`);
+      let stored = nobidCarbonizer.getStoredLocalData();
+      expect(stored[nobidAnalytics.ANALYTICS_DATA_NAME]).to.contain(`{"carbonizer_active":true,"ts":`);
       clock.tick(5000);
       active = nobidCarbonizer.isActive(adunits, true);
       expect(active).to.equal(false);
@@ -486,6 +486,10 @@ describe('NoBid Prebid Analytic', function () {
         }
       ]
       nobidCarbonizer.carbonizeAdunits(adunits, true);
+      stored = nobidCarbonizer.getStoredLocalData();
+      expect(stored[nobidAnalytics.ANALYTICS_DATA_NAME]).to.contain('{"carbonizer_active":true,"ts":');
+      expect(stored[nobidAnalytics.ANALYTICS_OPT_NAME]).to.contain('{"bidder1":1,"bidder2":1}');
+      clock.tick(5000);
       expect(adunits[0].bids.length).to.equal(0);
 
       done();

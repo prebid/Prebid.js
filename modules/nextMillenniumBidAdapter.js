@@ -14,6 +14,7 @@ import {
   triggerPixel,
 } from '../src/utils.js';
 
+import {getGlobal} from '../src/prebidGlobal.js';
 import CONSTANTS from '../src/constants.json';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -22,7 +23,7 @@ import * as events from '../src/events.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 
-const NM_VERSION = '3.0.0';
+const NM_VERSION = '3.1.0';
 const GVLID = 1060;
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
@@ -47,6 +48,7 @@ const ALLOWED_ORTB2_PARAMETERS = [
   'site.pagecat',
   'site.content.cat',
   'site.content.language',
+  'device.sua',
 ];
 
 const sendingDataStatistic = initSendingDataStatistic();
@@ -93,6 +95,7 @@ export const spec = {
 
           nextMillennium: {
             nm_version: NM_VERSION,
+            pbjs_version: getGlobal()?.version || undefined,
             refresh_count: window.nmmRefreshCounts[bid.adUnitCode]++,
             elOffsets: getBoundingClient(bid),
             scrollTop: window.pageYOffset || document.documentElement.scrollTop,
@@ -107,6 +110,7 @@ export const spec = {
       postBody.imp.push(getImp(bid, id));
       setConsentStrings(postBody, bidderRequest);
       setOrtb2Parameters(postBody, bidderRequest?.ortb2);
+      setEids(postBody, bid);
 
       const urlParameters = parseUrl(getWindowTop().location.href).search;
       const isTest = urlParameters['pbs'] && urlParameters['pbs'] === 'test';
@@ -312,6 +316,12 @@ export function setOrtb2Parameters(postBody, ortb2 = {}) {
   }
 }
 
+export function setEids(postBody, bid) {
+  if (!isArray(bid.userIdAsEids) || !bid.userIdAsEids.length) return;
+
+  deepSetValue(postBody, 'user.eids', bid.userIdAsEids);
+}
+
 export function replaceUsersyncMacros(url, gdprConsent = {}, uspConsent = '', gppConsent = {}, type = '') {
   const { consentString = '', gdprApplies = false } = gdprConsent;
   const gdpr = Number(gdprApplies);
@@ -391,7 +401,7 @@ function getAd(bid) {
       } else if (bid.nurl) {
         adUrl = bid.nurl;
       };
-  }
+  };
 
   return {ad, adUrl, vastXml, vastUrl};
 }
@@ -399,10 +409,21 @@ function getAd(bid) {
 function getSiteObj() {
   const refInfo = (getRefererInfo && getRefererInfo()) || {};
 
+  let language = navigator.language;
+  let content;
+  if (language) {
+    // get ISO-639-1-alpha-2 (2 character language)
+    language = language.split('-')[0];
+    content = {
+      language,
+    };
+  };
+
   return {
     page: refInfo.page,
     ref: refInfo.ref,
-    domain: refInfo.domain
+    domain: refInfo.domain,
+    content,
   };
 }
 
@@ -410,6 +431,19 @@ function getDeviceObj() {
   return {
     w: window.innerWidth || window.document.documentElement.clientWidth || window.document.body.clientWidth || 0,
     h: window.innerHeight || window.document.documentElement.clientHeight || window.document.body.clientHeight || 0,
+    ua: window.navigator.userAgent || undefined,
+    sua: getSua(),
+  };
+}
+
+function getSua() {
+  let {brands, mobile, platform} = (window?.navigator?.userAgentData || {});
+  if (!(brands && platform)) return undefined;
+
+  return {
+    brands,
+    mobile: Number(!!mobile),
+    platform: (platform && {brand: platform}) || undefined,
   };
 }
 

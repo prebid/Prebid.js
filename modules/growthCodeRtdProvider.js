@@ -81,8 +81,8 @@ function callServer(configParams, items, expiresAt, userConsent) {
     url = tryAppendQueryString(url, 'pid', configParams.pid);
     url = tryAppendQueryString(url, 'u', window.location.href);
     url = tryAppendQueryString(url, 'gcid', gcid);
-    if ((userConsent !== null) && (userConsent.gdpr !== null) && (userConsent.gdpr.consentData.getTCData.tcString)) {
-      url = tryAppendQueryString(url, 'tcf', userConsent.gdpr.consentData.getTCData.tcString)
+    if ((userConsent !== null) && (userConsent.gdpr !== null) && (userConsent.gdpr.consentString)) {
+      url = tryAppendQueryString(url, 'tcf', userConsent.gdpr.consentString)
     }
 
     ajax.ajaxBuilder()(url, {
