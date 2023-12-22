@@ -1122,6 +1122,30 @@ describe('The Criteo bidding adapter', function () {
       expect(request.data.user.uspIab).to.equal('1YNY');
     });
 
+    it('should properly build a request with site and app ortb fields', function () {
+      const bidRequests = [];
+      let app = {
+        publisher: {
+          id: 'appPublisherId'
+        }
+      };
+      let site = {
+        publisher: {
+          id: 'sitePublisherId'
+        }
+      };
+      const bidderRequest = {
+        ortb2: {
+          app: app,
+          site: site
+        }
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+
+      expect(request.data.app).to.equal(app);
+      expect(request.data.site).to.equal(site);
+    });
+
     it('should properly build a request with device sua field', function () {
       const sua = {}
       const bidRequests = [
