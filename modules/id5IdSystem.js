@@ -343,7 +343,7 @@ export class IdFetchFlow {
     const hasGdpr = (this.gdprConsentData && typeof this.gdprConsentData.gdprApplies === 'boolean' && this.gdprConsentData.gdprApplies) ? 1 : 0;
     const referer = getRefererInfo();
     const signature = (this.cacheIdObj && this.cacheIdObj.signature) ? this.cacheIdObj.signature : getLegacyCookieSignature();
-    const nbPage = incrementNb(params.partner);
+    const nbPage = incrementAndResetNb(params.partner);
     const data = {
       'partner': params.partner,
       'gdpr': hasGdpr,
@@ -388,12 +388,11 @@ export class IdFetchFlow {
   // eslint-disable-next-line no-dupe-class-members
   #processFetchCallResponse(fetchCallResponse) {
     try {
-      resetNb(this.submoduleConfig.params.partner);
       if (fetchCallResponse.privacy) {
         storeInLocalStorage(ID5_PRIVACY_STORAGE_NAME, JSON.stringify(fetchCallResponse.privacy), NB_EXP_DAYS);
       }
     } catch (error) {
-      logError(LOG_PREFIX + error);
+      logError(LOG_PREFIX + 'Error while writing privacy info into local storage.', error);
     }
     return fetchCallResponse;
   }
@@ -474,8 +473,10 @@ function incrementNb(partnerId) {
   return nb;
 }
 
-function resetNb(partnerId) {
+function incrementAndResetNb(partnerId) {
+  const result = incrementNb(partnerId);
   storeNbInCache(partnerId, 0);
+  return result;
 }
 
 function getLegacyCookieSignature() {
