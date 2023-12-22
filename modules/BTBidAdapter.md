@@ -18,7 +18,7 @@ The BT adapter requires setup and approval from the Blockthrough team. Please re
 
 # Bidder Config
 
-Make sure to set ab, orgID, websiteID values received after approval using `pbjs.setBidderConfig`.
+Make sure to set required ab, orgID, websiteID values received after approval using `pbjs.setBidderConfig`.
 
 ## Example
 

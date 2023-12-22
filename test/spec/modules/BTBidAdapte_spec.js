@@ -16,7 +16,7 @@ import 'modules/gppControl_usnat.js';
 import 'modules/schain.js';
 
 describe('BT Bid Adapter', () => {
-  const ENDPOINT_URL = 'https://pbs.btloader.com/openrtb2/auction';
+  const ENDPOINT_URL = 'https://pbs.sample.com';
   const validBidRequests = [
     {
       bidId: '2e9f38ea93bb9e',
@@ -24,9 +24,6 @@ describe('BT Bid Adapter', () => {
       adUnitCode: 'adunit-code',
       mediaTypes: { [BANNER]: { sizes: [[300, 250]] } },
       params: {
-        blockthrough: {
-          auctionID: 'auctionID',
-        },
         bidderA: {
           pubId: '11111',
         },
@@ -77,9 +74,6 @@ describe('BT Bid Adapter', () => {
       const impExtParams = {
         bidderA: {
           pubId: '11111',
-        },
-        prebid: {
-          blockthrough: { auctionID: 'auctionID' },
         },
       };
 
@@ -152,7 +146,7 @@ describe('BT Bid Adapter', () => {
   });
 
   describe('getUserSyncs', () => {
-    const SYNC_URL = 'https://cdn.btloader.com/user_sync.html';
+    const SYNC_URL = 'https://cdn.sample.com/';
 
     it('should return an empty array if no sync options are provided', () => {
       const syncs = spec.getUserSyncs({}, [], null, null, null);

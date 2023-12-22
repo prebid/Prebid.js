@@ -6,8 +6,9 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'blockthrough';
 const GVLID = 815;
-const ENDPOINT_URL = 'https://pbs.btloader.com/openrtb2/auction';
-const SYNC_URL = 'https://cdn.btloader.com/user_sync.html';
+// reach out for approval to marketing@blockthrough.com
+const ENDPOINT_URL = 'https://pbs.sample.com';
+const SYNC_URL = 'https://cdn.sample.com';
 
 const CONVERTER = ortbConverter({
   context: {
@@ -32,16 +33,7 @@ function imp(buildImp, bidRequest, context) {
   const { params, ortb2Imp } = bidRequest;
 
   if (params) {
-    const { blockthrough, ...btBidderParams } = params;
-
-    deepSetValue(imp, 'ext', btBidderParams);
-    if (blockthrough?.auctionID) {
-      deepSetValue(
-        imp,
-        'ext.prebid.blockthrough.auctionID',
-        blockthrough.auctionID
-      );
-    }
+    deepSetValue(imp, 'ext', params);
   }
   if (ortb2Imp?.ext.gpid) {
     deepSetValue(imp, 'gpid', ortb2Imp.ext.gpid);
