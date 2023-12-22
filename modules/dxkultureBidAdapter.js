@@ -175,11 +175,9 @@ export const spec = {
           });
         });
 
-        if (syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
+        if (syncOptions.iframeEnabled) {
           syncs = syncs.filter(s => s.type == 'iframe');
-        }
-
-        if (!syncOptions.iframeEnabled && syncOptions.pixelEnabled) {
+        } else if (syncOptions.pixelEnabled) {
           syncs = syncs.filter(s => s.type == 'image');
         }
       }

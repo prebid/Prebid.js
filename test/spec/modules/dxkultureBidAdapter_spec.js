@@ -640,10 +640,10 @@ describe('dxkultureBidAdapter', function() {
       expect(opts[0].url).to.equal(bidderResponse.body.ext.usersync['appnexus'].syncs[0].url);
     });
 
-    it('all sync enabled should return all results', function () {
+    it('all sync enabled should prioritize iframe', function () {
       let opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [bidderResponse]);
 
-      expect(opts.length).to.equal(2);
+      expect(opts.length).to.equal(1);
     });
   });
 });
