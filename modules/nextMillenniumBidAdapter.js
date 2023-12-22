@@ -31,6 +31,7 @@ const TEST_ENDPOINT = 'https://test.pbs.nextmillmedia.com/openrtb2/auction';
 const SYNC_ENDPOINT = 'https://cookies.nextmillmedia.com/sync?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}&type={{.TYPE_PIXEL}}';
 const REPORT_ENDPOINT = 'https://report2.hb.brainlyads.com/statistics/metric';
 const TIME_TO_LIVE = 360;
+const DEFAULT_CURRENCY = 'USD';
 
 const VIDEO_PARAMS = [
   'api',
@@ -83,9 +84,11 @@ export const spec = {
 
       const site = getSiteObj();
       const device = getDeviceObj();
+      const currency = getCurrency();
 
       const postBody = {
         id: bidderRequest?.bidderRequestId,
+        cur: [currency],
         ext: {
           prebid: {
             storedrequest: {
@@ -157,7 +160,7 @@ export const spec = {
           width: bid.w,
           height: bid.h,
           creativeId: bid.adid,
-          currency: response.cur,
+          currency: response.cur || DEFAULT_CURRENCY,
           netRevenue: true,
           ttl: TIME_TO_LIVE,
           meta: {
@@ -245,8 +248,10 @@ export const spec = {
 };
 
 export function getImp(bid, id) {
+  const bidfloorcur = getCurrency();
   const imp = {
     id: bid.adUnitCode,
+    bidfloorcur,
     ext: {
       prebid: {
         storedrequest: {
@@ -334,7 +339,12 @@ export function replaceUsersyncMacros(url, gdprConsent = {}, uspConsent = '', gp
     .replace('{{.TYPE_PIXEL}}', type);
 
   return url;
-};
+}
+
+function getCurrency() {
+  const currency = config?.getConfig('currency')?.adServerCurrency || DEFAULT_CURRENCY;
+  return currency;
+}
 
 function getAdEl(bid) {
   // best way I could think of to get El, is by matching adUnitCode to google slots...

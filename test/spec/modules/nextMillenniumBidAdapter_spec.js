@@ -23,6 +23,7 @@ describe('nextMillenniumBidAdapterTests', () => {
 
         expected: {
           id: 'test-banner-1',
+          bidfloorcur: 'USD',
           ext: {prebid: {storedrequest: {id: '123'}}},
           banner: {format: [{w: 300, h: 250}, {w: 320, h: 250}]},
         },
@@ -40,6 +41,7 @@ describe('nextMillenniumBidAdapterTests', () => {
 
         expected: {
           id: 'test-video-1',
+          bidfloorcur: 'USD',
           ext: {prebid: {storedrequest: {id: '234'}}},
           video: {w: 400, h: 300},
         },
