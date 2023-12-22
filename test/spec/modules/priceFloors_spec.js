@@ -659,7 +659,7 @@ describe('the price floors module', function () {
       inputFloorData.skipRate = 0.5;
     });
 
-    it('should set the skipRate in the bid floorData if it exists in the data property of the floorData', function() {
+    it('should set the skipRate to the skipRate from the data property before using the skipRate from floorData directly', function() {
       utils.deepSetValue(inputFloorData, 'data', {
         skipRate: 0.7
       });
@@ -669,7 +669,7 @@ describe('the price floors module', function () {
       expect(skipRate).to.equal(0.7);
     });
 
-    it('should set the skipRate in the bid floorData directly from the floor data if it does not exist in the data property of floorData', function() {
+    it('should set the skipRate to the skipRate from floorData directly if it does not exist in the data property of floorData', function() {
       updateAdUnitsForAuction(adUnits, inputFloorData, 'id');
 
       const skipRate = utils.deepAccess(adUnits, '0.bids.0.floorData.skipRate');
@@ -700,9 +700,8 @@ describe('the price floors module', function () {
     it('should return skipRate as 0 if both skipRate and skipRate in the data property are undefined', function() {
       floorConfig.skipRate = undefined;
       floorConfig.data.skipRate = undefined;
-      handleSetFloorsConfig({
-        ...floorConfig,
-      });
+      handleSetFloorsConfig(floorConfig);
+
       const floorData = createFloorsDataForAuction(adUnits, 'id');
 
       expect(floorData.skipRate).to.equal(0);
@@ -725,6 +724,7 @@ describe('the price floors module', function () {
       // this will force skipped to be true
       floorConfig.skipRate = 101;
       handleSetFloorsConfig(floorConfig);
+
       const floorData = createFloorsDataForAuction(adUnits, 'id');
 
       expect(floorData.skipRate).to.equal(101);
