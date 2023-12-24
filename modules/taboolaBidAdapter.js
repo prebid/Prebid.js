@@ -16,6 +16,7 @@ export const USER_SYNC_IFRAME_URL = 'https://cdn.taboola.com/scripts/prebid_ifra
 const USER_ID = 'user-id';
 const STORAGE_KEY = `taboola global:${USER_ID}`;
 const COOKIE_KEY = 'trc_cookie_storage';
+const TGID_COOKIE_KEY = 't_gid';
 export const EVENT_ENDPOINT = 'https://beacon.bidder.taboola.com';
 
 /**
@@ -40,7 +41,11 @@ export const userData = {
     const {cookiesAreEnabled, getCookie} = userData.storageManager;
     if (cookiesAreEnabled()) {
       const cookieData = getCookie(COOKIE_KEY);
-      const userId = userData.getCookieDataByKey(cookieData, USER_ID);
+      let userId = userData.getCookieDataByKey(cookieData, USER_ID);
+      if (userId) {
+        return userId;
+      }
+      userId = getCookie(TGID_COOKIE_KEY);
       if (userId) {
         return userId;
       }
