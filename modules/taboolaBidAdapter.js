@@ -42,10 +42,6 @@ export const userData = {
     const {cookiesAreEnabled, getCookie} = userData.storageManager;
     if (cookiesAreEnabled()) {
       const cookieData = getCookie(COOKIE_KEY);
-      const tblaId = getCookie(TBLA_ID_COOKIE_KEY);
-      if (tblaId) {
-        return tblaId;
-      }
       let userId = userData.getCookieDataByKey(cookieData, USER_ID);
       if (userId) {
         return userId;
@@ -53,6 +49,10 @@ export const userData = {
       userId = getCookie(TGID_COOKIE_KEY);
       if (userId) {
         return userId;
+      }
+      const tblaId = getCookie(TBLA_ID_COOKIE_KEY);
+      if (tblaId) {
+        return tblaId;
       }
     }
   },
