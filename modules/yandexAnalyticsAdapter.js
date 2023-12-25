@@ -4,7 +4,13 @@ import { logError, logInfo } from '../src/utils.js';
 import CONSTANTS from '../src/constants.json';
 import * as events from '../src/events.js';
 
-const tagURL = `https://mc.yandex.com/metrika/tag.js`;
+const tagTlds = ['com', 'ru'];
+const fileNames = ['tag', 'int']
+const tagUrlTemplate = 'https://mc.yandex.{tld}/metrika/{file}.js';
+export const tagURLs = tagTlds.flatMap((tld) => {
+  const partialTemplate = tagUrlTemplate.replace('{tld}', tld);
+  return fileNames.map((file) => partialTemplate.replace('{file}', file));
+});
 
 const timeoutIds = {};
 const tryUntil = (operationId, conditionCb, cb) => {
@@ -45,7 +51,7 @@ const {
   },
 } = CONSTANTS;
 
-const EVENTS_TO_TRACK = [
+export const EVENTS_TO_TRACK = [
   BID_REQUESTED,
   BID_RESPONSE,
   BID_ADJUSTMENT,
@@ -96,6 +102,20 @@ const yandexAnalytics = Object.assign(buildAdapter({ analyticsType: 'endpoint' }
     }
   },
 
+  getCounterScript: () => {
+    const presentScript = document.querySelector(
+      tagURLs.map((tagUrl) => `script[src="${tagUrl}"]`).join(',')
+    );
+    if (presentScript) {
+      return presentScript;
+    }
+
+    const script = window.document.createElement('script');
+    script.setAttribute('src', tagURLs[0]);
+    window.document.body.appendChild(script);
+    return script;
+  },
+
   enableAnalytics: (config) => {
     yandexAnalytics.options = (config && config.options) || {};
     const { counters } = yandexAnalytics.options || {};
@@ -121,7 +141,7 @@ const yandexAnalytics = Object.assign(buildAdapter({ analyticsType: 'endpoint' }
     ];
 
     yandexAnalytics.initTimeoutId = setTimeout(() => {
-      yandexAnalytics.bufferedEvents = null;
+      yandexAnalytics.bufferedEvents = [];
       unsubscribeCallbacks.forEach((cb) => cb());
       logError(`Can't find metrika counter after 25 seconds.`);
       logError('Aborting analytics provider initialization.');
@@ -145,9 +165,11 @@ const yandexAnalytics = Object.assign(buildAdapter({ analyticsType: 'endpoint' }
     });
 
     // Waiting for counters appearing on the page
-    const presentCounters = validCounters.filter((options) => typeof options !== 'object');
+    const presentCounters = validCounters.map(
+      (options) => typeof options === 'object' ? options.id : options
+    );
+    let allCountersInited = false;
     if (presentCounters.length) {
-      let allCountersInited = false;
       tryUntil('countersInit', () => allCountersInited, () => {
         allCountersInited = presentCounters.reduce((result, counterId) => {
           if (yandexAnalytics.counters[counterId]) {
@@ -160,28 +182,32 @@ const yandexAnalytics = Object.assign(buildAdapter({ analyticsType: 'endpoint' }
           }
 
           return false;
-        });
+        }, true);
       });
     }
 
     // Inserting counter script and initializing counters
-    const coutnersToInit = validCounters.filter((options) => typeof options === 'object');
-    if (coutnersToInit.length) {
-      waitFor('body', () => document.body, () => {
-        const tag = document.createElement('script');
-        tag.setAttribute('src', tagURL);
+    if (!allCountersInited) {
+      const coutnersToInit = validCounters.filter((options) => {
+        const id = options === 'object' ? options.id : options;
+        return !yandexAnalytics.counters[id];
+      });
+      waitFor('body', () => window.document.body, () => {
+        const tag = yandexAnalytics.getCounterScript();
         const onScriptLoad = () => {
           coutnersToInit.forEach((counterOptions) => {
-            window[`yaCounter${counterOptions.id}`] =
+            const id = counterOptions === 'object'
+              ? counterOptions.id
+              : counterOptions;
+            window[`yaCounter${id}`] =
               new window.Ya.Metrika2(counterOptions);
-            yandexAnalytics.onCounterInit(counterOptions.id);
+            yandexAnalytics.onCounterInit(id);
           });
         };
         unsubscribeCallbacks.push(() => {
           tag.removeEventListener('load', onScriptLoad);
         });
         tag.addEventListener('load', onScriptLoad);
-        document.body.appendChild(tag);
         logInfo('Inserting metrika tag script');
       });
     }

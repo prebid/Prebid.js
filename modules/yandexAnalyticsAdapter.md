@@ -24,7 +24,13 @@ Note: If you have Single Page Application (SPA), [configure your tag](https://ya
 pbjs.enableAnalytics({
     provider: 'yandexAnalytics',
     options: {
-        counters: [123],
+        counters: [
+            123,
+            {
+                id: 1234,
+                clickmap: true,
+            }
+        ],
     },
 });
 ```
