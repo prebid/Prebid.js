@@ -131,6 +131,11 @@ export const spec = {
         deepSetValue(data, 'user.ext.eids', eids);
       }
 
+      const userData = deepAccess(bidRequest, 'ortb2.user.data');
+      if (userData && userData.length) {
+        deepSetValue(data, 'user.data', userData);
+      }
+
       const queryParamsString = formatQS(queryParams);
       return {
         method: 'POST',
