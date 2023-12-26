@@ -57,8 +57,6 @@ export const spec = {
       _: Math.round(new Date().getTime()),
     }
 
-    logInfo('===Ad2 buildRequests===', data)
-
     return {
       method: 'GET',
       url: API_ENDPOINT,
