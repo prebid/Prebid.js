@@ -4,6 +4,7 @@ import {
   replaceUsersyncMacros,
   setConsentStrings,
   setOrtb2Parameters,
+  setEids,
   spec,
 } from 'modules/nextMillenniumBidAdapter.js';
 
@@ -401,6 +402,78 @@ describe('nextMillenniumBidAdapterTests', () => {
       it(title, () => {
         const {postBody, ortb2} = data;
         setOrtb2Parameters(postBody, ortb2);
+        expect(postBody).to.deep.equal(expected);
+      });
+    };
+  });
+
+  describe('function setEids', () => {
+    const dataTests = [
+      {
+        title: 'setEids - userIdAsEids is empty',
+        data: {
+          postBody: {},
+          bid: {
+            userIdAsEids: undefined,
+          },
+        },
+
+        expected: {},
+      },
+
+      {
+        title: 'setEids - userIdAsEids - array is empty',
+        data: {
+          postBody: {},
+          bid: {
+            userIdAsEids: [],
+          },
+        },
+
+        expected: {},
+      },
+
+      {
+        title: 'setEids - userIdAsEids is',
+        data: {
+          postBody: {},
+          bid: {
+            userIdAsEids: [
+              {
+                source: '33across.com',
+                uids: [{id: 'some-random-id-value', atype: 1}],
+              },
+
+              {
+                source: 'utiq.com',
+                uids: [{id: 'some-random-id-value', atype: 1}],
+              },
+            ],
+          },
+        },
+
+        expected: {
+          user: {
+            eids: [
+              {
+                source: '33across.com',
+                uids: [{id: 'some-random-id-value', atype: 1}],
+              },
+
+              {
+                source: 'utiq.com',
+                uids: [{id: 'some-random-id-value', atype: 1}],
+              },
+            ],
+          },
+        },
+      },
+    ];
+
+    for (let { title, data, expected } of dataTests) {
+      it(title, () => {
+        const { postBody, bid } = data;
+        setEids(postBody, bid);
         expect(postBody).to.deep.equal(expected);
       });
     }
