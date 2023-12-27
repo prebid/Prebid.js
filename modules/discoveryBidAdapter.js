@@ -55,6 +55,66 @@ const NATIVERET = {
 };
 
 /**
+ * 获取页面标题
+ * @returns {string}
+ */
+
+function getPageTitle() {
+  try {
+    const ogTitle = window.top.document.querySelector('meta[property="og:title"]')
+
+    return window.top.document.title || (ogTitle && ogTitle.content) || '';
+  } catch (e) {
+    const ogTitle = document.querySelector('meta[property="og:title"]')
+
+    return document.title || (ogTitle && ogTitle.content) || '';
+  }
+}
+
+/**
+ * 获取页面description
+ * @returns {string}
+ */
+function getPageDescription() {
+  let element;
+
+  try {
+    element = window.top.document.querySelector('meta[name="description"]') ||
+      window.top.document.querySelector('meta[property="og:description"]')
+  } catch (e) {
+    element = document.querySelector('meta[name="description"]') ||
+      document.querySelector('meta[property="og:description"]')
+  }
+
+  return (element && element.content) || '';
+}
+
+/**
+ * 获取页面keywords
+ * @returns {string}
+ */
+function getPageKeywords() {
+  let element;
+
+  try {
+    element = window.top.document.querySelector('meta[name="keywords"]');
+  } catch (e) {
+    element = document.querySelector('meta[name="keywords"]');
+  }
+
+  return (element && element.content) || '';
+}
+
+/**
+ * 获取带宽
+ * @returns {number}
+ */
+function getConnectionDownLink() {
+  const nav = window.navigator || {};
+  return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : undefined;
+}
+
+/**
  * 获取用户id
  * @return {string}
  */
@@ -361,6 +421,10 @@ function getParam(validBidRequests, bidderRequest) {
   const page = utils.deepAccess(bidderRequest, 'refererInfo.page');
   const referer = utils.deepAccess(bidderRequest, 'refererInfo.ref');
   const firstPartyData = bidderRequest.ortb2;
+  const topWindow = window.top;
+  const title = getPageTitle();
+  const desc = getPageDescription();
+  const keywords = getPageKeywords();
 
   if (items && items.length) {
     let c = {
@@ -381,6 +445,17 @@ function getParam(validBidRequests, bidderRequest) {
       ext: {
         eids,
         firstPartyData,
+        page: {
+          title: title ? title.slice(0, 300) : undefined,
+          desc: desc ? desc.slice(0, 300) : undefined,
+          keywords: keywords ? keywords.slice(0, 300) : undefined,
+          hLen: topWindow.history?.length || undefined,
+        },
+        device: {
+          nbw: getConnectionDownLink(),
+          hc: topWindow.navigator?.hardwareConcurrency || undefined,
+          dm: topWindow.navigator?.deviceMemory || undefined,
+        }
       },
       user: {
         buyeruid: getUserID(),
