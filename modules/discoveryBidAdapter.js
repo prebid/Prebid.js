@@ -446,9 +446,9 @@ function getParam(validBidRequests, bidderRequest) {
         eids,
         firstPartyData,
         page: {
-          title: title ? title.slice(0, 300) : undefined,
+          title: title ? title.slice(0, 100) : undefined,
           desc: desc ? desc.slice(0, 300) : undefined,
-          keywords: keywords ? keywords.slice(0, 300) : undefined,
+          keywords: keywords ? keywords.slice(0, 100) : undefined,
           hLen: topWindow.history?.length || undefined,
         },
         device: {
