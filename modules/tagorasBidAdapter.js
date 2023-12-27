@@ -332,7 +332,6 @@ export function tryParseJSON(value) {
 export const spec = {
   code: BIDDER_CODE,
   version: BIDDER_VERSION,
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
   buildRequests,
