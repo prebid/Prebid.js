@@ -2,11 +2,11 @@
 
 **Module Name**: Ad2iction Bidder Adapter
 **Module Type**: Bidder Adapter
-**Maintainer**:
+**Maintainer**: prebid@ad2iction.com
 
 # Description
 
-Connects to Ad2iction exchange for bids.
+The Ad2iction Bidding adapter requires setup before beginning. Please contact us on https://www.ad2iction.com.
 
 # Sample Ad Unit Config
 ```
