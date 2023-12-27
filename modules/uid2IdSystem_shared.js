@@ -755,3 +755,15 @@ export function Uid2GetId(config, prebidStorageManager, _logInfo, _logWarn) {
   storageManager.storeValue(tokens);
   return { id: tokens };
 }
+
+export function extractIdentityFromParams(params) {
+  const keysToCheck = ['emailHash', 'phoneHash', 'email', 'phone'];
+
+  for (let key of keysToCheck) {
+    if (params.hasOwnProperty(key)) {
+      return { [key]: params[key] };
+    }
+  }
+
+  return {};
+}
