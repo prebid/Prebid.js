@@ -21,7 +21,28 @@ describe('MygaruID module', function () {
     await promise;
 
     expect(callBackSpy.calledOnce).to.be.true;
-    expect(callBackSpy.calledWith({mygaru: '123'})).to.be.true;
+    expect(callBackSpy.calledWith({mygaruId: '123'})).to.be.true;
+  });
+  it('should not fail on error', async () => {
+    const callBackSpy = sinon.spy();
+    const expectedUrl = `https://ident.mygaru.com/v2/id?gdprApplies=0`;
+    const result = mygaruIdSubmodule.getId({});
+
+    expect(result.callback).to.be.an('function');
+    const promise = result.callback(callBackSpy);
+
+    const request = server.requests[0];
+    expect(request.url).to.be.eq(expectedUrl);
+
+    request.respond(
+      500,
+      {},
+      ''
+    );
+    await promise;
+
+    expect(callBackSpy.calledOnce).to.be.true;
+    expect(callBackSpy.calledWith({mygaruId: undefined})).to.be.true;
   });
 
   it('should not modify while decoding', () => {

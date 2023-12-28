@@ -8,7 +8,7 @@
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 
-const bidderCode = 'mygaru';
+const bidderCode = 'mygaruId';
 const syncUrl = 'https://ident.mygaru.com/v2/id';
 
 export function buildUrl(opts) {
@@ -27,9 +27,13 @@ function requestRemoteIdAsync(url) {
       url,
       {
         success: response => {
-          const jsonResponse = JSON.parse(response);
-          const { iuid } = jsonResponse;
-          resolve(iuid);
+          try {
+            const jsonResponse = JSON.parse(response);
+            const { iuid } = jsonResponse;
+            resolve(iuid);
+          } catch (e) {
+            resolve();
+          }
         },
         error: () => {
           resolve();
@@ -78,13 +82,13 @@ export const mygaruIdSubmodule = {
       url,
       callback: function (done) {
         return requestRemoteIdAsync(url).then((id) => {
-          done({ mygaru: id });
+          done({ mygaruId: id });
         })
       }
     }
   },
   eids: {
-    'mygaru': {
+    'mygaruId': {
       source: 'mygaru.com',
       atype: 1
     },
