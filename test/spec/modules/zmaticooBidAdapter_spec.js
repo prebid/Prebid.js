@@ -2,20 +2,28 @@ import {spec} from '../../../modules/zmaticooBidAdapter.js'
 
 describe('zMaticoo Bidder Adapter', function () {
   const bannerRequest = [{
-    bidId: 12345189, auctionId: 67890, mediaTypes: {
+    bidId: '1234511',
+    auctionId: '223',
+    mediaTypes: {
       banner: {
         sizes: [[320, 50]],
       }
-    }, refererInfo: {
-      page: 'test.com'
-    }, params: {
+    },
+    refererInfo: {
+      page: 'testprebid.com'
+    },
+    params: {
       user: {
-        uid: '12345', buyeruid: '12345'
-      }, device: {
-        ip: '111.222.33.44', geo: {
+        uid: '12345',
+        buyeruid: '12345'
+      },
+      device: {
+        ip: '111.222.33.44',
+        geo: {
           country: 'USA'
         }
-      }, pubId: 'prebid_xx', test: 1
+      },
+      test: 1
     }
   }];
 
@@ -36,11 +44,23 @@ describe('zMaticoo Bidder Adapter', function () {
   });
 
   const responseBody = {
-    id: '123451', seatbid: [{
-      bid: [{
-        id: 'auctionId', impid: 'impId', price: 0.0, adm: 'adMarkup', crid: 'creativeId', h: 50, w: 320
-      }]
-    }], cur: 'USD'
+    id: '12345',
+    seatbid: [
+      {
+        bid: [
+          {
+            id: 'auctionId',
+            impid: 'impId',
+            price: 0.0,
+            adm: 'adMarkup',
+            crid: 'creativeId',
+            h: 50,
+            w: 320
+          }
+        ]
+      }
+    ],
+    cur: 'USD'
   };
 
   it('Test the response parsing function', function () {
