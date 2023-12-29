@@ -23,6 +23,7 @@ describe('zMaticoo Bidder Adapter', function () {
           country: 'USA'
         }
       },
+      pubId: 'prebid-test',
       test: 1
     }
   }];
