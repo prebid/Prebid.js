@@ -107,7 +107,7 @@ export const euidIdSubmodule = {
       }
     }
     _logInfo(`EUID configuration loaded and mapped.`, mappedConfig);
-      const result = Uid2GetId(mappedConfig, storage, _logInfo, _logWarn);
+    const result = Uid2GetId(mappedConfig, storage, _logInfo, _logWarn);
     _logInfo(`EUID getId returned`, result);
     return result;
   },
