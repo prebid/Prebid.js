@@ -119,12 +119,12 @@ export const spec = {
 
     logInfo('Test bid pre_Id:' + !Object.is(precisoId, 'NA'))
     // Call for uuid fetch against the test url
-    if (Object.is(precisoId, 'NA') || Object.is(precisoId, null)) {
+    if (Object.is(precisoId, 'NA') || Object.is(precisoId, null) || Object.is(precisoId, undefined)) {
       getapi(testurl);
     }
     // window.localStorage.key('precisoKey')
 
-    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.publisherId) && bid.params.host == 'prebid' && !Object.is(precisoId, 'NA'));
+    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.publisherId) && bid.params.host == 'prebid' && !Object.is(precisoId, 'NA') && !Object.is(precisoId, null) && !Object.is(precisoId, undefined));
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
@@ -393,7 +393,7 @@ async function getapi(url) {
 
   const uuidValue = dataMap.get('UUID');
   logInfo('debug uuid value boolean:' + !Object.is(uuidValue, null))
-  if (!Object.is(uuidValue, null)) {
+  if (!Object.is(uuidValue, null) && !Object.is(uuidValue, undefined)) {
     logInfo('DEBUG nonNull uuidValue:' + uuidValue);
     storage2.setDataInLocalStorage('pre_Id', uuidValue);
     logInfo('DEBUG nonNull uuidValue:' + uuidValue);
