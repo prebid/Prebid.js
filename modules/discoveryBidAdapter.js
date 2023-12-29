@@ -61,19 +61,27 @@ const NATIVERET = {
  * 获取并生成用户的id
  * @return {string}
  */
+let pmgUid;
 export const getPmgUID = () => {
-  let pmgUid = storage.getCookie(COOKIE_KEY_PMGUID);
+  if (!storage.cookiesAreEnabled()) return;
 
-  if (!pmgUid) {
-    pmgUid = utils.generateUUID();
+  let pmgUidTmp = storage.getCookie(COOKIE_KEY_PMGUID) || pmgUid;
+  if (!pmgUidTmp) {
+    pmgUidTmp = utils.generateUUID();
+    pmgUid = pmgUidTmp;
+  }
+  return pmgUidTmp;
+};
+
+const setPmgUid = (uid) => {
+  if (storage.cookiesAreEnabled() && uid) {
     const date = new Date();
     date.setTime(date.getTime() + COOKIE_RETENTION_TIME);
     try {
       storage.setCookie(COOKIE_KEY_PMGUID, pmgUid, date.toUTCString());
     } catch (e) {}
   }
-  return pmgUid;
-};
+}
 
 /* ----- _ss_pp_id:end ------ */
 
@@ -550,6 +558,8 @@ export const spec = {
   },
 
   getUserSyncs: function (syncOptions, serverResponse, gdprConsent, uspConsent, gppConsent) {
+    setPmgUid(pmgUid); // set cookie
+
     const origin = encodeURIComponent(location.origin || `https://${location.host}`);
     let syncParamUrl = `dm=${origin}`;
 
