@@ -9,7 +9,8 @@ const TTL = 200;
 const NET_REV = true;
 
 export const spec = {
-  code: BIDDER_CODE, supportedMediaTypes: [BANNER],
+  code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER],
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -48,7 +49,9 @@ export const spec = {
     const request = validBidRequests[0];
     const params = request.params;
     let impData = {
-      id: request.bidId, secure: secure, banner: buildBanner(request),
+      id: request.bidId,
+      secure: secure,
+      banner: buildBanner(request),
       ext: {
         bidder: {
           pubId: params.pubId
