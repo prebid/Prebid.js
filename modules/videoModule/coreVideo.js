@@ -220,7 +220,7 @@ export function VideoCore(parentModule_) {
     onEvents,
     offEvents,
     hasProviderFor(divId) {
-      return parentModule.getSubmodule(divId) != null
+      return !!parentModule.getSubmodule(divId);
     }
   };
 }
