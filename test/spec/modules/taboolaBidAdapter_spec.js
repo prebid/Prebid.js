@@ -130,7 +130,6 @@ describe('Taboola Adapter', function () {
 
     it('should build display request', function () {
       const expectedData = {
-        id: 'mock-uuid',
         'imp': [{
           'id': 1,
           'banner': {
@@ -149,6 +148,8 @@ describe('Taboola Adapter', function () {
           'bidfloorcur': 'USD',
           'ext': {}
         }],
+        id: 'mock-uuid',
+        'test': 0,
         'site': {
           'id': commonBidRequest.params.publisherId,
           'name': commonBidRequest.params.publisherId,
@@ -174,7 +175,7 @@ describe('Taboola Adapter', function () {
       const res = spec.buildRequests([defaultBidRequest], commonBidderRequest);
 
       expect(res.url).to.equal(`${END_POINT_URL}?publisher=${commonBidRequest.params.publisherId}`);
-      expect(res.data).to.deep.equal(JSON.stringify(expectedData));
+      expect(JSON.stringify(res.data)).to.deep.equal(JSON.stringify(expectedData));
     });
 
     it('should pass optional parameters in request', function () {
@@ -189,9 +190,8 @@ describe('Taboola Adapter', function () {
       };
 
       const res = spec.buildRequests([bidRequest], commonBidderRequest);
-      const resData = JSON.parse(res.data);
-      expect(resData.imp[0].bidfloor).to.deep.equal(0.25);
-      expect(resData.imp[0].bidfloorcur).to.deep.equal('EUR');
+      expect(res.data.imp[0].bidfloor).to.deep.equal(0.25);
+      expect(res.data.imp[0].bidfloorcur).to.deep.equal('EUR');
     });
 
     it('should pass bid floor', function () {
@@ -206,9 +206,8 @@ describe('Taboola Adapter', function () {
         }
       };
       const res = spec.buildRequests([bidRequest], commonBidderRequest);
-      const resData = JSON.parse(res.data);
-      expect(resData.imp[0].bidfloor).to.deep.equal(2.7);
-      expect(resData.imp[0].bidfloorcur).to.deep.equal('USD');
+      expect(res.data.imp[0].bidfloor).to.deep.equal(2.7);
+      expect(res.data.imp[0].bidfloorcur).to.deep.equal('USD');
     });
 
     it('should pass bid floor even if it is a bid floor param', function () {
@@ -228,9 +227,8 @@ describe('Taboola Adapter', function () {
         }
       };
       const res = spec.buildRequests([bidRequest], commonBidderRequest);
-      const resData = JSON.parse(res.data);
-      expect(resData.imp[0].bidfloor).to.deep.equal(2.7);
-      expect(resData.imp[0].bidfloorcur).to.deep.equal('USD');
+      expect(res.data.imp[0].bidfloor).to.deep.equal(2.7);
+      expect(res.data.imp[0].bidfloorcur).to.deep.equal('USD');
     });
 
     it('should pass impression position', function () {
@@ -244,8 +242,7 @@ describe('Taboola Adapter', function () {
       };
 
       const res = spec.buildRequests([bidRequest], commonBidderRequest);
-      const resData = JSON.parse(res.data);
-      expect(resData.imp[0].banner.pos).to.deep.equal(2);
+      expect(res.data.imp[0].banner.pos).to.deep.equal(2);
     });
 
     it('should pass gpid if configured', function () {
@@ -261,8 +258,7 @@ describe('Taboola Adapter', function () {
       };
 
       const res = spec.buildRequests([bidRequest], commonBidderRequest);
-      const resData = JSON.parse(res.data);
-      expect(resData.imp[0].ext.gpid).to.deep.equal('/homepage/#1');
+      expect(res.data.imp[0].ext.gpid).to.deep.equal('/homepage/#1');
     });
 
     it('should pass bidder timeout', function () {
@@ -271,8 +267,7 @@ describe('Taboola Adapter', function () {
         timeout: 500
       }
       const res = spec.buildRequests([defaultBidRequest], bidderRequest);
-      const resData = JSON.parse(res.data);
-      expect(resData.tmax).to.equal(500);
+      expect(res.data.tmax).to.equal(500);
     });
 
     describe('first party data', function () {
@@ -286,10 +281,9 @@ describe('Taboola Adapter', function () {
           }
         }
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
-        const resData = JSON.parse(res.data);
-        expect(resData.bcat).to.deep.equal(bidderRequest.ortb2.bcat)
-        expect(resData.badv).to.deep.equal(bidderRequest.ortb2.badv)
-        expect(resData.wlang).to.deep.equal(bidderRequest.ortb2.wlang)
+        expect(res.data.bcat).to.deep.equal(bidderRequest.ortb2.bcat)
+        expect(res.data.badv).to.deep.equal(bidderRequest.ortb2.badv)
+        expect(res.data.wlang).to.deep.equal(bidderRequest.ortb2.wlang)
       });
 
       it('should pass pageType if exists in ortb2', function () {
@@ -304,8 +298,7 @@ describe('Taboola Adapter', function () {
           }
         }
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
-        const resData = JSON.parse(res.data);
-        expect(resData.ext.pageType).to.deep.equal(bidderRequest.ortb2.ext.data.pageType);
+        expect(res.data.ext.pageType).to.deep.equal(bidderRequest.ortb2.ext.data.pageType);
       });
     });
 
@@ -322,9 +315,8 @@ describe('Taboola Adapter', function () {
         };
 
         const res = spec.buildRequests([defaultBidRequest], bidderRequest)
-        const resData = JSON.parse(res.data)
-        expect(resData.user.ext.consent).to.equal('consentString')
-        expect(resData.regs.ext.gdpr).to.equal(1)
+        expect(res.data.user.ext.consent).to.equal('consentString')
+        expect(res.data.regs.ext.gdpr).to.equal(1)
       });
 
       it('should pass GPP consent if exist in ortb2', function () {
@@ -336,9 +328,8 @@ describe('Taboola Adapter', function () {
         }
 
         const res = spec.buildRequests([defaultBidRequest], {...commonBidderRequest, ortb2})
-        const resData = JSON.parse(res.data)
-        expect(resData.regs.ext.gpp).to.equal('testGpp')
-        expect(resData.regs.ext.gpp_sid).to.deep.equal([1, 2, 3])
+        expect(res.data.regs.ext.gpp).to.equal('testGpp')
+        expect(res.data.regs.ext.gpp_sid).to.deep.equal([1, 2, 3])
       });
 
       it('should pass us privacy consent', function () {
@@ -349,16 +340,14 @@ describe('Taboola Adapter', function () {
           uspConsent: 'consentString'
         }
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
-        const resData = JSON.parse(res.data);
-        expect(resData.regs.ext.us_privacy).to.equal('consentString');
+        expect(res.data.regs.ext.us_privacy).to.equal('consentString');
       });
 
       it('should pass coppa consent', function () {
         config.setConfig({coppa: true})
 
         const res = spec.buildRequests([defaultBidRequest], commonBidderRequest)
-        const resData = JSON.parse(res.data);
-        expect(resData.regs.coppa).to.equal(1)
+        expect(res.data.regs.coppa).to.equal(1)
 
         config.resetConfig()
       });
@@ -375,8 +364,7 @@ describe('Taboola Adapter', function () {
           timeout: 500
         }
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
-        const resData = JSON.parse(res.data);
-        expect(resData.user.buyeruid).to.equal(51525152);
+        expect(res.data.user.buyeruid).to.equal(51525152);
       });
 
       it('should get user id from cookie if local storage isn`t defined', function () {
@@ -390,9 +378,7 @@ describe('Taboola Adapter', function () {
           ...commonBidderRequest
         };
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
-        const resData = JSON.parse(res.data);
-
-        expect(resData.user.buyeruid).to.equal('12121212');
+        expect(res.data.user.buyeruid).to.equal('12121212');
       });
 
       it('should get user id from TRC if local storage and cookie isn`t defined', function () {
@@ -408,8 +394,7 @@ describe('Taboola Adapter', function () {
           ...commonBidderRequest
         }
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
-        const resData = JSON.parse(res.data);
-        expect(resData.user.buyeruid).to.equal(window.TRC.user_id);
+        expect(res.data.user.buyeruid).to.equal(window.TRC.user_id);
 
         delete window.TRC;
       });
@@ -422,8 +407,7 @@ describe('Taboola Adapter', function () {
           ...commonBidderRequest
         }
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
-        const resData = JSON.parse(res.data);
-        expect(resData.user.buyeruid).to.equal(0);
+        expect(res.data.user.buyeruid).to.equal(0);
       });
 
       it('should set buyeruid to be 0 if it`s a new user', function () {
@@ -431,8 +415,7 @@ describe('Taboola Adapter', function () {
           ...commonBidderRequest
         }
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
-        const resData = JSON.parse(res.data);
-        expect(resData.user.buyeruid).to.equal(0);
+        expect(res.data.user.buyeruid).to.equal(0);
       });
     });
   })
@@ -471,14 +454,22 @@ describe('Taboola Adapter', function () {
       }
     };
 
-    const request = {
-      bids: [
-        {
-          ...commonBidRequest,
-          ...displayBidRequestParams
-        }
-      ]
-    }
+    const defaultBidRequest = {
+      ...createBidRequest(),
+      ...displayBidRequestParams,
+    };
+    const commonBidderRequest = {
+      bidderRequestId: 'mock-uuid',
+      refererInfo: {
+        page: 'https://example.com/ref',
+        ref: 'https://ref',
+        domain: 'example.com',
+      }
+    };
+    const bidderRequest = {
+      ...commonBidderRequest
+    };
+    const request = spec.buildRequests([defaultBidRequest], bidderRequest);
 
     it('should return empty array if no valid bids', function () {
       const res = spec.interpretResponse(serverResponse, [])
@@ -513,18 +504,7 @@ describe('Taboola Adapter', function () {
     });
 
     it('should interpret multi impression request', function () {
-      const multiRequest = {
-        bids: [
-          {
-            ...createBidRequest(),
-            ...displayBidRequestParams
-          },
-          {
-            ...createBidRequest(),
-            ...displayBidRequestParams
-          }
-        ]
-      }
+      const multiRequest = spec.buildRequests([defaultBidRequest, defaultBidRequest], bidderRequest);
 
       const multiServerResponse = {
         body: {
@@ -534,7 +514,7 @@ describe('Taboola Adapter', function () {
               'bid': [
                 {
                   'id': '0b3dd94348-134b-435f-8db5-6bf5afgfc39e86c',
-                  'impid': '2',
+                  'impid': '1',
                   'price': 0.342068,
                   'adid': '2785119545551083381',
                   'adm': 'ADM2',
@@ -582,6 +562,8 @@ describe('Taboola Adapter', function () {
           requestId: multiRequest.bids[1].bidId,
           cpm: bid.price,
           creativeId: bid.crid,
+          creative_id: bid.crid,
+          seatBidId: multiServerResponse.body.seatbid[0].bid[0].id,
           ttl: 60,
           netRevenue: true,
           currency: multiServerResponse.body.cur,
@@ -598,6 +580,8 @@ describe('Taboola Adapter', function () {
           requestId: multiRequest.bids[0].bidId,
           cpm: bid.price,
           creativeId: bid.crid,
+          creative_id: bid.crid,
+          seatBidId: multiServerResponse.body.seatbid[0].bid[1].id,
           ttl: 60,
           netRevenue: true,
           currency: multiServerResponse.body.cur,
@@ -621,8 +605,10 @@ describe('Taboola Adapter', function () {
       const expectedRes = [
         {
           requestId: request.bids[0].bidId,
+          seatBidId: serverResponse.body.seatbid[0].bid[0].id,
           cpm: bid.price,
           creativeId: bid.crid,
+          creative_id: bid.crid,
           ttl: 60,
           netRevenue: true,
           currency: serverResponse.body.cur,
@@ -648,8 +634,10 @@ describe('Taboola Adapter', function () {
       const expectedRes = [
         {
           requestId: request.bids[0].bidId,
+          seatBidId: serverResponse.body.seatbid[0].bid[0].id,
           cpm: bid.price,
           creativeId: bid.crid,
+          creative_id: bid.crid,
           ttl: 125,
           netRevenue: true,
           currency: serverResponse.body.cur,
@@ -668,18 +656,7 @@ describe('Taboola Adapter', function () {
     });
 
     it('should replace AUCTION_PRICE macro in adm', function () {
-      const multiRequest = {
-        bids: [
-          {
-            ...createBidRequest(),
-            ...displayBidRequestParams
-          },
-          {
-            ...createBidRequest(),
-            ...displayBidRequestParams
-          }
-        ]
-      }
+      const multiRequest = spec.buildRequests([defaultBidRequest, defaultBidRequest], bidderRequest);
       const multiServerResponseWithMacro = {
         body: {
           'id': '49ffg4d58ef9a163a69fhgfghd4fad03621b9e036f24f7_15',
@@ -688,7 +665,7 @@ describe('Taboola Adapter', function () {
               'bid': [
                 {
                   'id': '0b3dd94348-134b-435f-8db5-6bf5afgfc39e86c',
-                  'impid': '2',
+                  'impid': '1',
                   'price': 0.34,
                   'adid': '2785119545551083381',
                   'adm': 'ADM2,\\nwp:\'${AUCTION_PRICE}\'',
@@ -735,6 +712,8 @@ describe('Taboola Adapter', function () {
           requestId: multiRequest.bids[1].bidId,
           cpm: multiServerResponseWithMacro.body.seatbid[0].bid[0].price,
           creativeId: bid.crid,
+          creative_id: bid.crid,
+          seatBidId: multiServerResponseWithMacro.body.seatbid[0].bid[0].id,
           ttl: 60,
           netRevenue: true,
           currency: multiServerResponseWithMacro.body.cur,
@@ -751,6 +730,8 @@ describe('Taboola Adapter', function () {
           requestId: multiRequest.bids[0].bidId,
           cpm: multiServerResponseWithMacro.body.seatbid[0].bid[1].price,
           creativeId: bid.crid,
+          creative_id: bid.crid,
+          seatBidId: multiServerResponseWithMacro.body.seatbid[0].bid[1].id,
           ttl: 60,
           netRevenue: true,
           currency: multiServerResponseWithMacro.body.cur,
