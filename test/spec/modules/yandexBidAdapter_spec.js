@@ -106,19 +106,37 @@ describe('Yandex adapter', function () {
       expect(query['ssp-cur']).to.equal('USD');
     });
 
-    it('should send eids if defined', function() {
-      const bannerRequest = getBidRequest({
+    it('should send eids and ortb2 user data if defined', function() {
+      const bidRequestExtra = {
         userIdAsEids: [{
           source: 'sharedid.org',
-          uids: [
-            {
-              id: '01',
-              atype: 1
-            }
-          ]
-        }]
-      });
+          uids: [{ id: '01', atype: 1 }],
+        }],
+        ortb2: {
+          user: {
+            data: [
+              {
+                ext: { segtax: 600, segclass: '1' },
+                name: 'example.com',
+                segment: [{ id: '243' }],
+              },
+              {
+                ext: { segtax: 600, segclass: '1' },
+                name: 'ads.example.org',
+                segment: [{ id: '243' }],
+              },
+            ],
+          },
+        },
+      };
+      const expected = {
+        ext: {
+          eids: bidRequestExtra.userIdAsEids,
+        },
+        data: bidRequestExtra.ortb2.user.data,
+      };
 
+      const bannerRequest = getBidRequest(bidRequestExtra);
       const requests = spec.buildRequests([bannerRequest], bidderRequest);
 
       expect(requests).to.have.lengthOf(1);
@@ -128,17 +146,7 @@ describe('Yandex adapter', function () {
       const { data } = request;
 
       expect(data.user).to.exist;
-      expect(data.user).to.deep.equal({
-        ext: {
-          eids: [{
-            source: 'sharedid.org',
-            uids: [{
-              id: '01',
-              atype: 1,
-            }],
-          }],
-        }
-      });
+      expect(data.user).to.deep.equal(expected);
     });
 
     describe('banner', () => {
