@@ -459,6 +459,22 @@ describe('Taboola Adapter', function () {
         expect(resData.user.buyeruid).to.equal('12121212');
       });
 
+      it('should get user id from tgid cookie if local storage isn`t defined', function () {
+        getDataFromLocalStorage.returns(51525152);
+        hasLocalStorage.returns(false);
+        localStorageIsEnabled.returns(false);
+        cookiesAreEnabled.returns(true);
+        getCookie.returns('d966c5be-c49f-4f73-8cd1-37b6b5790653-tuct9f7bf10');
+
+        const bidderRequest = {
+          ...commonBidderRequest
+        };
+        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const resData = JSON.parse(res.data);
+
+        expect(resData.user.buyeruid).to.equal('d966c5be-c49f-4f73-8cd1-37b6b5790653-tuct9f7bf10');
+      });
+
       it('should get user id from TRC if local storage and cookie isn`t defined', function () {
         hasLocalStorage.returns(false);
         cookiesAreEnabled.returns(false);
@@ -835,15 +851,26 @@ describe('Taboola Adapter', function () {
 
   describe('getUserSyncs', function () {
     const usersyncUrl = 'https://trc.taboola.com/sg/prebidJS/1/cm';
+    const iframeUrl = 'https://cdn.taboola.com/scripts/prebid_iframe_sync.html';
 
-    it('should not return user sync if pixelEnabled is false', function () {
-      const res = spec.getUserSyncs({pixelEnabled: false});
+    it('should not return user sync if pixelEnabled is false and iframe disabled', function () {
+      const res = spec.getUserSyncs({pixelEnabled: false, iframeEnabled: false});
       expect(res).to.be.an('array').that.is.empty;
     });
 
     it('should return user sync if pixelEnabled is true', function () {
-      const res = spec.getUserSyncs({pixelEnabled: true});
+      const res = spec.getUserSyncs({pixelEnabled: true, iframeEnabled: false});
       expect(res).to.deep.equal([{type: 'image', url: usersyncUrl}]);
+    });
+
+    it('should return user sync if iframeEnabled is true', function () {
+      const res = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false});
+      expect(res).to.deep.equal([{type: 'iframe', url: iframeUrl}]);
+    });
+
+    it('should return both user syncs if iframeEnabled is true and pixelEnabled is true', function () {
+      const res = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true});
+      expect(res).to.deep.equal([{type: 'iframe', url: iframeUrl}, {type: 'image', url: usersyncUrl}]);
     });
 
     it('should pass consent tokens values', function() {
