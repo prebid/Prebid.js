@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec, internal, END_POINT_URL, userData} from 'modules/taboolaBidAdapter.js';
+import {spec, internal, END_POINT_URL, userData, EVENT_ENDPOINT} from 'modules/taboolaBidAdapter.js';
 import {config} from '../../../src/config'
 import * as utils from '../../../src/utils'
 import {server} from '../../mocks/xhr'
@@ -110,6 +110,50 @@ describe('Taboola Adapter', function () {
       }
       spec.onBidWon(bid);
       expect(server.requests[0].url).to.equals('http://win.example.com/3.4')
+    });
+  });
+
+  describe('onTimeout', function () {
+    it('onTimeout exist as a function', () => {
+      expect(spec.onTimeout).to.exist.and.to.be.a('function');
+    });
+    it('should send timeout', function () {
+      const timeoutData = [{
+        bidder: 'taboola',
+        bidId: 'da43860a-4644-442a-b5e0-93f268cf8d19',
+        params: [{
+          publisherId: 'publisherId'
+        }],
+        adUnitCode: 'adUnit-code',
+        timeout: 3000,
+        auctionId: '12a34b56c'
+      }]
+      spec.onTimeout(timeoutData);
+      expect(server.requests[0].method).to.equal('POST');
+      expect(server.requests[0].url).to.equal(EVENT_ENDPOINT + '/timeout');
+      expect(JSON.parse(server.requests[0].requestBody)).to.deep.equal(timeoutData);
+    });
+  });
+
+  describe('onBidderError', function () {
+    it('onBidderError exist as a function', () => {
+      expect(spec.onBidderError).to.exist.and.to.be.a('function');
+    });
+    it('should send bidder error', function () {
+      const error = {
+        status: 204,
+        statusText: 'No Content'
+      };
+      const bidderRequest = {
+        bidder: 'taboola',
+        params: {
+          publisherId: 'publisherId'
+        }
+      }
+      spec.onBidderError({error, bidderRequest});
+      expect(server.requests[0].method).to.equal('POST');
+      expect(server.requests[0].url).to.equal(EVENT_ENDPOINT + '/bidError');
+      expect(JSON.parse(server.requests[0].requestBody)).to.deep.equal(error, bidderRequest);
     });
   });
 
@@ -275,6 +319,26 @@ describe('Taboola Adapter', function () {
       expect(resData.tmax).to.equal(500);
     });
 
+    it('should pass bidder tmax as int', function () {
+      const bidderRequest = {
+        ...commonBidderRequest,
+        timeout: '500'
+      }
+      const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+      const resData = JSON.parse(res.data);
+      expect(resData.tmax).to.equal(500);
+    });
+
+    it('should pass bidder timeout as null', function () {
+      const bidderRequest = {
+        ...commonBidderRequest,
+        timeout: null
+      }
+      const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+      const resData = JSON.parse(res.data);
+      expect(resData.tmax).to.equal(undefined);
+    });
+
     describe('first party data', function () {
       it('should parse first party data', function () {
         const bidderRequest = {
@@ -393,6 +457,22 @@ describe('Taboola Adapter', function () {
         const resData = JSON.parse(res.data);
 
         expect(resData.user.buyeruid).to.equal('12121212');
+      });
+
+      it('should get user id from tgid cookie if local storage isn`t defined', function () {
+        getDataFromLocalStorage.returns(51525152);
+        hasLocalStorage.returns(false);
+        localStorageIsEnabled.returns(false);
+        cookiesAreEnabled.returns(true);
+        getCookie.returns('d966c5be-c49f-4f73-8cd1-37b6b5790653-tuct9f7bf10');
+
+        const bidderRequest = {
+          ...commonBidderRequest
+        };
+        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        const resData = JSON.parse(res.data);
+
+        expect(resData.user.buyeruid).to.equal('d966c5be-c49f-4f73-8cd1-37b6b5790653-tuct9f7bf10');
       });
 
       it('should get user id from TRC if local storage and cookie isn`t defined', function () {
@@ -771,15 +851,26 @@ describe('Taboola Adapter', function () {
 
   describe('getUserSyncs', function () {
     const usersyncUrl = 'https://trc.taboola.com/sg/prebidJS/1/cm';
+    const iframeUrl = 'https://cdn.taboola.com/scripts/prebid_iframe_sync.html';
 
-    it('should not return user sync if pixelEnabled is false', function () {
-      const res = spec.getUserSyncs({pixelEnabled: false});
+    it('should not return user sync if pixelEnabled is false and iframe disabled', function () {
+      const res = spec.getUserSyncs({pixelEnabled: false, iframeEnabled: false});
       expect(res).to.be.an('array').that.is.empty;
     });
 
     it('should return user sync if pixelEnabled is true', function () {
-      const res = spec.getUserSyncs({pixelEnabled: true});
+      const res = spec.getUserSyncs({pixelEnabled: true, iframeEnabled: false});
       expect(res).to.deep.equal([{type: 'image', url: usersyncUrl}]);
+    });
+
+    it('should return user sync if iframeEnabled is true', function () {
+      const res = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false});
+      expect(res).to.deep.equal([{type: 'iframe', url: iframeUrl}]);
+    });
+
+    it('should return both user syncs if iframeEnabled is true and pixelEnabled is true', function () {
+      const res = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true});
+      expect(res).to.deep.equal([{type: 'iframe', url: iframeUrl}, {type: 'image', url: usersyncUrl}]);
     });
 
     it('should pass consent tokens values', function() {
