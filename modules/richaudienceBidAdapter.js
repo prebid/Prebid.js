@@ -183,6 +183,24 @@ export const spec = {
     }
     return syncs
   },
+
+  onTimeout: function (data) {
+    let {params, timeout} = data[0]
+    let url = 'https://s.richaudience.com/err/?ec=6&ev=[timeout_publisher]&pla=[placement_hash]&int=PREBID&pltfm=&node=&dm=[domain]';
+
+    url = url.replace('[timeout_publisher]', timeout)
+    url = url.replace('[placement_hash]', params[0].pid)
+    if (REFERER != null) {
+      url = url.replace('[domain]', REFERER)
+    }
+
+    let pixelTimeout = document.createElement('img')
+    pixelTimeout.id = 'raPix'
+    pixelTimeout.src = url
+    pixelTimeout.width = '1px'
+    pixelTimeout.height = '1px'
+    document.body.appendChild(pixelTimeout)
+  }
 };
 
 registerBidder(spec);
