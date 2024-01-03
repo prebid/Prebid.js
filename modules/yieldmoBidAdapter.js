@@ -29,7 +29,7 @@ const VIDEO_PATH = '/exchange/prebidvideo';
 const STAGE_DOMAIN = 'https://ads-stg.yieldmo.com';
 const PROD_DOMAIN = 'https://ads.yieldmo.com';
 const OUTSTREAM_VIDEO_PLAYER_URL = 'https://prebid-outstream.yieldmo.com/bundle.js';
-const OPENRTB_VIDEO_BIDPARAMS = ['mimes', 'startdelay', 'placement', 'startdelay', 'skipafter', 'protocols', 'api',
+const OPENRTB_VIDEO_BIDPARAMS = ['mimes', 'startdelay', 'placement', 'plcmt', 'skipafter', 'protocols', 'api',
   'playbackmethod', 'maxduration', 'minduration', 'pos', 'skip', 'skippable'];
 const OPENRTB_VIDEO_SITEPARAMS = ['name', 'domain', 'cat', 'keywords'];
 const LOCAL_WINDOW = getWindowTop();
@@ -78,14 +78,17 @@ export const spec = {
         bust: new Date().getTime().toString(),
         dnt: getDNT(),
         description: getPageDescription(),
+        tmax: bidderRequest.timeout || 400,
         userConsent: JSON.stringify({
           // case of undefined, stringify will remove param
-          gdprApplies: deepAccess(bidderRequest, 'gdprConsent.gdprApplies') || '',
+          gdprApplies:
+            deepAccess(bidderRequest, 'gdprConsent.gdprApplies') || '',
           cmp: deepAccess(bidderRequest, 'gdprConsent.consentString') || '',
           gpp: deepAccess(bidderRequest, 'gppConsent.gppString') || '',
-          gpp_sid: deepAccess(bidderRequest, 'gppConsent.applicableSections') || []
+          gpp_sid:
+            deepAccess(bidderRequest, 'gppConsent.applicableSections') || [],
         }),
-        us_privacy: deepAccess(bidderRequest, 'uspConsent') || ''
+        us_privacy: deepAccess(bidderRequest, 'uspConsent') || '',
       };
 
       if (canAccessTopWindow()) {
@@ -446,7 +449,7 @@ function openRtbImpression(bidRequest) {
     imp.video.skip = 1;
     delete imp.video.skippable;
   }
-  if (imp.video.placement !== 1) {
+  if (imp.video.plcmt !== 1 || imp.video.placement !== 1) {
     imp.video.startdelay = DEFAULT_START_DELAY;
     imp.video.playbackmethod = [ DEFAULT_PLAYBACK_METHOD ];
   }

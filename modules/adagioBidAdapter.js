@@ -1,6 +1,5 @@
 import {find} from '../src/polyfill.js';
 import {
-  _map,
   cleanObj,
   deepAccess,
   deepClone,
@@ -54,8 +53,9 @@ const ADAGIO_PUBKEY = 'AL16XT44Sfp+8SHVF1UdC7hydPSMVLMhsYknKDdwqq+0ToDSJrP0+Qh0k
 const ADAGIO_PUBKEY_E = 65537;
 const CURRENCY = 'USD';
 
-// This provide a whitelist and a basic validation of OpenRTB 2.6 options used by the Adagio SSP.
-// https://iabtechlab.com/wp-content/uploads/2022/04/OpenRTB-2-6_FINAL.pdf
+// This provide a whitelist and a basic validation of OpenRTB 2.5 options used by the Adagio SSP.
+// Accept all options but 'protocol', 'companionad', 'companiontype', 'ext'
+// https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-API-Specification-Version-2-5-FINAL.pdf
 export const ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
   'minduration': (value) => isInteger(value),
@@ -569,6 +569,7 @@ function _parseNativeBidResponse(bid) {
   bid.native = native
 }
 
+// bidRequest param must be the `bidRequest` object with the original `auctionId` value.
 function _getFloors(bidRequest) {
   if (!isFn(bidRequest.getFloor)) {
     return false;
@@ -995,7 +996,7 @@ export const spec = {
 
     const aucId = generateUUID()
 
-    const adUnits = _map(validBidRequests, (rawBidRequest) => {
+    const adUnits = validBidRequests.map(rawBidRequest => {
       const bidRequest = deepClone(rawBidRequest);
 
       // Fix https://github.com/prebid/Prebid.js/issues/9781
@@ -1018,6 +1019,9 @@ export const spec = {
           logWarn(LOG_PREFIX, 'The splitKeyword param have been removed because the type is invalid, accepted type: number or string.');
         }
       }
+
+      // Enforce the organizationId param to be a string
+      bidRequest.params.organizationId = bidRequest.params.organizationId.toString();
 
       // Force the Data Layer key and value to be a String
       if (bidRequest.params.dataLayer) {
@@ -1067,7 +1071,10 @@ export const spec = {
       });
 
       // Handle priceFloors module
-      const computedFloors = _getFloors(bidRequest);
+      // We need to use `rawBidRequest` as param because:
+      // - adagioBidAdapter generates its own auctionId due to transmitTid activity limitation (see https://github.com/prebid/Prebid.js/pull/10079)
+      // - the priceFloors.getFloor() uses a `_floorDataForAuction` map to store the floors based on the auctionId.
+      const computedFloors = _getFloors(rawBidRequest);
       if (isArray(computedFloors) && computedFloors.length) {
         bidRequest.floors = computedFloors
 
@@ -1111,30 +1118,41 @@ export const spec = {
         _buildVideoBidRequest(bidRequest);
       }
 
+      const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+      if (gpid) {
+        bidRequest.gpid = gpid;
+      }
+
+      // store the whole bidRequest (adUnit) object in the ADAGIO namespace.
       storeRequestInAdagioNS(bidRequest);
 
-      // Remove these fields at the very end, so we can still use them before.
-      delete bidRequest.transactionId;
-      delete bidRequest.ortb2Imp;
-      delete bidRequest.ortb2;
-      delete bidRequest.sizes;
+      // Remove some params that are not needed on the server side.
+      delete bidRequest.params.siteId;
 
-      return bidRequest;
+      // whitelist the fields that are allowed to be sent to the server.
+      const adUnit = {
+        adUnitCode: bidRequest.adUnitCode,
+        auctionId: bidRequest.auctionId,
+        bidder: bidRequest.bidder,
+        bidId: bidRequest.bidId,
+        params: bidRequest.params,
+        features: bidRequest.features,
+        gpid: bidRequest.gpid,
+        mediaTypes: bidRequest.mediaTypes,
+        nativeParams: bidRequest.nativeParams,
+        score: bidRequest.score,
+        transactionId: bidRequest.transactionId,
+      }
+
+      return adUnit;
     });
 
     // Group ad units by organizationId
     const groupedAdUnits = adUnits.reduce((groupedAdUnits, adUnit) => {
-      const adUnitCopy = deepClone(adUnit);
-      adUnitCopy.params.organizationId = adUnitCopy.params.organizationId.toString();
+      const organizationId = adUnit.params.organizationId
 
-      // remove useless props
-      delete adUnitCopy.floorData;
-      delete adUnitCopy.params.siteId;
-      delete adUnitCopy.userId;
-      delete adUnitCopy.userIdAsEids;
-
-      groupedAdUnits[adUnitCopy.params.organizationId] = groupedAdUnits[adUnitCopy.params.organizationId] || [];
-      groupedAdUnits[adUnitCopy.params.organizationId].push(adUnitCopy);
+      groupedAdUnits[organizationId] = groupedAdUnits[organizationId] || [];
+      groupedAdUnits[organizationId].push(adUnit);
 
       return groupedAdUnits;
     }, {});
@@ -1148,7 +1166,7 @@ export const spec = {
     });
 
     // Build one request per organizationId
-    const requests = _map(Object.keys(groupedAdUnits), organizationId => {
+    const requests = Object.keys(groupedAdUnits).map(organizationId => {
       return {
         method: 'POST',
         url: ENDPOINT,

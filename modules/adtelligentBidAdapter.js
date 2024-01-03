@@ -21,7 +21,8 @@ const HOST_GETTERS = {
   janet: () => 'ghb.bidder.jmgads.com',
   ocm: () => 'ghb.cenarius.orangeclickmedia.com',
   '9dotsmedia': () => 'ghb.platform.audiodots.com',
-  copper6: () => 'ghb.app.copper6.com'
+  copper6: () => 'ghb.app.copper6.com',
+  indicue: () => 'ghb.console.indicue.com',
 }
 const getUri = function (bidderCode) {
   let bidderWithoutSuffix = bidderCode.split('_')[0];
@@ -44,6 +45,7 @@ export const spec = {
     { code: 'ocm', gvlid: 1148 },
     '9dotsmedia',
     'copper6',
+    'indicue',
   ],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {
