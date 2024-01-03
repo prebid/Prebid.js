@@ -18,7 +18,7 @@ describe('MGIDXBidAdapter', function () {
         }
       },
       params: {
-        host: 'eu',
+        region: 'eu',
         placementId: 'testBanner',
       }
     },
@@ -56,7 +56,7 @@ describe('MGIDXBidAdapter', function () {
         }
       },
       params: {
-        host: 'eu',
+        region: 'eu',
         placementId: 'testNative',
       }
     }
@@ -107,13 +107,13 @@ describe('MGIDXBidAdapter', function () {
     });
 
     it('Returns valid EU URL', function () {
-      bids[0].params.host = 'eu';
+      bids[0].params.region = 'eu';
       serverRequest = spec.buildRequests(bids, bidderRequest);
       expect(serverRequest.url).to.equal('https://eu.mgid.com/pbjs');
     });
 
     it('Returns valid EAST URL', function () {
-      bids[0].params.host = 'us-east-x';
+      bids[0].params.region = 'other';
       serverRequest = spec.buildRequests(bids, bidderRequest);
       expect(serverRequest.url).to.equal('https://us-east-x.mgid.com/pbjs');
     });

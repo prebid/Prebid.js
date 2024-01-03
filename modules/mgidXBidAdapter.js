@@ -111,7 +111,7 @@ export const spec = {
 
   isBidRequestValid: (bid = {}) => {
     const { params, bidId, mediaTypes } = bid;
-    let valid = Boolean(bidId && params && (params.placementId || params.endpointId) && params.host);
+    let valid = Boolean(bidId && params && (params.placementId || params.endpointId));
 
     if (mediaTypes && mediaTypes[BANNER]) {
       valid = valid && Boolean(mediaTypes[BANNER] && mediaTypes[BANNER].sizes);
@@ -176,7 +176,14 @@ export const spec = {
       placements.push(getPlacementReqData(bid));
     }
 
-    const url = AD_URL.replace('#{REGION}#', validBidRequests[0].params?.host)
+    const region = validBidRequests[0].params?.region;
+
+    let url;
+    if (region === 'eu') {
+      url = AD_URL.replace('#{REGION}#', 'eu');
+    } else {
+      url = AD_URL.replace('#{REGION}#', 'us-east-x');
+    }
 
     return {
       method: 'POST',
