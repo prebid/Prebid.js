@@ -55,7 +55,7 @@ export const spec = {
    * Fills the payload with specific video attributes.
    *
    * @param {*} payload Payload that will be sent in the ServerRequest
-   * @param {*} videoMediaType Video media type.
+   * @param {*} videoMediaType Video media type
    */
   fillPayloadForVideoBidRequest: function(payload, videoMediaType, videoParams) {
     const playerSize = videoMediaType.playerSize[0];
