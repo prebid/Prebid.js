@@ -3,7 +3,6 @@ import * as utils from 'src/utils.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../../src/adapterManager.js';
 import { server } from 'test/mocks/xhr.js';
 resetLiveIntentIdSubmodule();
-liveIntentIdSubmodule.setModuleMode('standard')
 const PUBLISHER_ID = '89899';
 const defaultConfigParams = { params: {publisherId: PUBLISHER_ID, fireEventDelay: 1} };
 const responseHeader = {'Content-Type': 'application/json'}
@@ -18,7 +17,6 @@ describe('LiveIntentId', function() {
   let imgStub;
 
   beforeEach(function() {
-    liveIntentIdSubmodule.setModuleMode('standard');
     imgStub = sinon.stub(utils, 'triggerPixel');
     getCookieStub = sinon.stub(storage, 'getCookie');
     getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');

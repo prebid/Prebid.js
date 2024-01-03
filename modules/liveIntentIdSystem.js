@@ -7,7 +7,7 @@
 import { triggerPixel, logError } from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
+import { StandardLiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
@@ -48,7 +48,6 @@ export function reset() {
     window.liQ_instances.forEach(i => i.eventBus.off(EVENTS_TOPIC, setEventFiredFlag))
     window.liQ_instances = [];
   }
-  liveIntentIdSubmodule.setModuleMode(null)
   eventFired = false;
   liveConnect = null;
 }
@@ -156,18 +155,14 @@ function tryFireEvent() {
 
 /** @type {Submodule} */
 export const liveIntentIdSubmodule = {
-  moduleMode: process.env.LiveConnectMode,
   /**
    * used to link submodule with config
    * @type {string}
    */
   name: MODULE_NAME,
 
-  setModuleMode(mode) {
-    this.moduleMode = mode
-  },
   getInitializer() {
-    return (liveConnectConfig, storage, calls) => LiveConnect(liveConnectConfig, storage, calls, this.moduleMode)
+    return (liveConnectConfig, storage, calls) => StandardLiveConnect(liveConnectConfig, storage, calls)
   },
 
   /**

@@ -1,7 +1,6 @@
 const TerserPlugin = require('terser-webpack-plugin');
 var prebid = require('./package.json');
 var path = require('path');
-var webpack = require('webpack');
 var helpers = require('./gulpHelpers.js');
 var { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 var argv = require('yargs').argv;
@@ -10,7 +9,6 @@ const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDis
 const {WebpackManifestPlugin} = require('webpack-manifest-plugin')
 
 var plugins = [
-  new webpack.EnvironmentPlugin({'LiveConnectMode': null}),
   new WebpackManifestPlugin({
     fileName: 'dependencies.json',
     generate: (seed, files) => {
