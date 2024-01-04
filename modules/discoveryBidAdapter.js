@@ -62,8 +62,9 @@ const NATIVERET = {
  * @return {string}
  */
 export const getPmgUID = () => {
-  let pmgUid = storage.getCookie(COOKIE_KEY_PMGUID);
+  if (!storage.cookiesAreEnabled()) return;
 
+  let pmgUid = storage.getCookie(COOKIE_KEY_PMGUID);
   if (!pmgUid) {
     pmgUid = utils.generateUUID();
     const date = new Date();

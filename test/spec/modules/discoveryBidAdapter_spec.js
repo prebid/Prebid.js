@@ -108,6 +108,7 @@ describe('discovery:BidAdapterTests', function () {
         sandbox.stub(storage, 'getCookie');
         sandbox.stub(storage, 'setCookie');
         sandbox.stub(utils, 'generateUUID').returns('new-uuid');
+        sandbox.stub(storage, 'cookiesAreEnabled');
       })
 
       afterEach(() => {
@@ -115,6 +116,7 @@ describe('discovery:BidAdapterTests', function () {
       });
 
       it('should generate new UUID and set cookie if not exists', () => {
+        storage.cookiesAreEnabled.callsFake(() => true);
         storage.getCookie.callsFake(() => null);
         const uid = getPmgUID();
         expect(uid).to.equal('new-uuid');
@@ -122,10 +124,18 @@ describe('discovery:BidAdapterTests', function () {
       });
 
       it('should return existing UUID from cookie', () => {
+        storage.cookiesAreEnabled.callsFake(() => true);
         storage.getCookie.callsFake(() => 'existing-uuid');
         const uid = getPmgUID();
         expect(uid).to.equal('existing-uuid');
         expect(storage.setCookie.called).to.be.false;
+      });
+
+      it('should not set new UUID when cookies are not enabled', () => {
+        storage.cookiesAreEnabled.callsFake(() => false);
+        storage.getCookie.callsFake(() => null);
+        getPmgUID();
+        expect(storage.setCookie.calledOnce).to.be.false;
       });
     })
   });
@@ -184,12 +194,12 @@ describe('discovery:BidAdapterTests', function () {
       consentString: 'gdprConsentString',
       gdprApplies: true
     };
-    const UPS_CONSENT = {
-      consentString: 'upsConsentString'
+    const USP_CONSENT = {
+      consentString: 'uspConsentString'
     }
 
     let syncParamUrl = `dm=${encodeURIComponent(location.origin || `https://${location.host}`)}`;
-    syncParamUrl += '&gdpr=1&gdpr_consent=gdprConsentString&ccpa_consent=upsConsentString';
+    syncParamUrl += '&gdpr=1&gdpr_consent=gdprConsentString&ccpa_consent=uspConsentString';
     const expectedIframeSyncs = [
       {
         type: 'iframe',
@@ -198,12 +208,12 @@ describe('discovery:BidAdapterTests', function () {
     ];
 
     it('should return nothing if iframe is disabled', () => {
-      const userSyncs = spec.getUserSyncs(IFRAME_DISABLED, undefined, GDPR_CONSENT, UPS_CONSENT, undefined);
+      const userSyncs = spec.getUserSyncs(IFRAME_DISABLED, undefined, GDPR_CONSENT, USP_CONSENT, undefined);
       expect(userSyncs).to.be.undefined;
     });
 
     it('should do userSyncs if iframe is enabled', () => {
-      const userSyncs = spec.getUserSyncs(IFRAME_ENABLED, undefined, GDPR_CONSENT, UPS_CONSENT, undefined);
+      const userSyncs = spec.getUserSyncs(IFRAME_ENABLED, undefined, GDPR_CONSENT, USP_CONSENT, undefined);
       expect(userSyncs).to.deep.equal(expectedIframeSyncs);
     });
   });
