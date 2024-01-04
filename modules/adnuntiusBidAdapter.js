@@ -30,14 +30,14 @@ const storageTool = (function () {
 
   const getMetaInternal = function () {
     if (!storage.localStorageIsEnabled()) {
-      return {};
+      return [];
     }
 
     let parsedJson;
     try {
       parsedJson = JSON.parse(storage.getDataFromLocalStorage(META_DATA_KEY));
     } catch (e) {
-      return {};
+      return [];
     }
 
     let filteredEntries = parsedJson ? parsedJson.filter((datum) => {

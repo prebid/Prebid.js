@@ -1,9 +1,7 @@
 {
 
   "name": "prebid.js",
-
-  "version": "8.29.0-pre",
-
+  "version": "8.30.0-pre",
   "description": "Header Bidding Management Library",
 
   "main": "src/prebid.js",
@@ -271,9 +269,7 @@
     "gulp": "^4.0.2",
 
     "just-clone": "^1.0.2",
-
-    "live-connect-js": "^6.3.0"
-
+    "live-connect-js": "^6.3.2"
   },
 
   "optionalDependencies": {
