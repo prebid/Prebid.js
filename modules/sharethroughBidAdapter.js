@@ -63,6 +63,11 @@ export const sharethroughAdapterSpec = {
       test: 0,
     };
 
+    if (bidderRequest.ortb2?.device?.ext?.cdep) {
+      req.device.ext = {};
+      req.device.ext.cdep = bidderRequest.ortb2.device.ext.cdep;
+    }
+
     req.user = nullish(firstPartyData.user, {});
     if (!req.user.ext) req.user.ext = {};
     req.user.ext.eids = bidRequests[0].userIdAsEids || [];
@@ -220,9 +225,7 @@ export const sharethroughAdapterSpec = {
     const shouldCookieSync =
       syncOptions.pixelEnabled && deepAccess(serverResponses, '0.body.cookieSyncUrls') !== undefined;
 
-    return shouldCookieSync
-      ? serverResponses[0].body.cookieSyncUrls.map((url) => ({ type: 'image', url: url }))
-      : [];
+    return shouldCookieSync ? serverResponses[0].body.cookieSyncUrls.map((url) => ({ type: 'image', url: url })) : [];
   },
 
   // Empty implementation for prebid core to be able to find it
