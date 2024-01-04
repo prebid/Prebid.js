@@ -1,7 +1,7 @@
 /**
  * This module adds the ID Ward RTD provider to the real time data module
  * The {@link module:modules/realTimeData} module is required
- * The module will poulate real-time data from ID Ward
+ * The module will populate real-time data from ID Ward
  * @module modules/idWardRtdProvider
  * @requires module:modules/realTimeData
  */
@@ -21,8 +21,8 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleNam
  */
 function addRealTimeData(ortb2, rtd) {
   if (isPlainObject(rtd.ortb2)) {
-    logMessage('idWardRtdProvider: merging original: ', ortb2);
-    logMessage('idWardRtdProvider: merging in: ', rtd.ortb2);
+    logMessage('anonymisedRtdProvider: merging original: ', ortb2);
+    logMessage('anonymisedRtdProvider: merging in: ', rtd.ortb2);
     mergeDeep(ortb2, rtd.ortb2);
   }
 }
@@ -35,7 +35,7 @@ function tryParse(data) {
   try {
     return JSON.parse(data);
   } catch (err) {
-    logError(`idWardRtdProvider: failed to parse json:`, data);
+    logError(`anonymisedRtdProvider: failed to parse json:`, data);
     return null;
   }
 }
@@ -59,14 +59,14 @@ export function getRealTimeData(reqBidsConfigObj, onDone, rtdConfig, userConsent
 
     if (segments) {
       const udSegment = {
-        name: 'id-ward.com',
+        name: 'anonymised.io',
         ext: {
           segtax: rtdConfig.params.segtax
         },
         segment: segments.map(x => ({id: x}))
       }
 
-      logMessage('idWardRtdProvider: user.data.segment: ', udSegment);
+      logMessage('anonymisedRtdProvider: user.data.segment: ', udSegment);
       const data = {
         rtd: {
           ortb2: {

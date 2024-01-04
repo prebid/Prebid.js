@@ -1,7 +1,7 @@
 /**
  * This module adds the Anonymised RTD provider to the real time data module
  * The {@link module:modules/realTimeData} module is required
- * The module will poulate real-time data from Anonymised
+ * The module will populate real-time data from Anonymised
  * @module modules/anonymisedRtdProvider
  * @requires module:modules/realTimeData
  */

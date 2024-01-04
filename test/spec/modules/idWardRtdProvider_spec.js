@@ -52,7 +52,7 @@ describe('idWardRtdProvider', function() {
       };
 
       const rtdUserObj1 = {
-        name: 'id-ward.com',
+        name: 'anonymised.io',
         ext: {
           segtax: 503
         },
