@@ -112,7 +112,7 @@ export const spec = {
     let sharedId = readFromAllStorages(COOKIE_NAME);
     logInfo('Test sharedId :' + sharedId)
     // let sharedId = 'd466fcae%23260f%234f7c%23aceb%23b05cbbba049c';
-    const testurl = 'http://localhost:8080/getUUID?UUID=' + sharedId;
+    const preCall = 'http://ssp-usersync.mndtrk.com:9090//getUUID?sharedId=' + sharedId;
 
     precisoId = window.localStorage.getItem('pre_Id');
     logInfo('Test 12333 pre_Id :' + precisoId)
@@ -120,7 +120,7 @@ export const spec = {
     logInfo('Test bid pre_Id:' + !Object.is(precisoId, 'NA'))
     // Call for uuid fetch against the test url
     if (Object.is(precisoId, 'NA') || Object.is(precisoId, null) || Object.is(precisoId, undefined)) {
-      getapi(testurl);
+      getapi(preCall);
     }
     // window.localStorage.key('precisoKey')
 
