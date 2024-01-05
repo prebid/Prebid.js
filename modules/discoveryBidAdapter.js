@@ -116,7 +116,7 @@ export function getConnectionDownLink(win = window) {
 }
 
 /**
- * 获取用户id
+ * get pmg uid
  * 获取并生成用户的id
  * @return {string}
  */
