@@ -75,14 +75,14 @@ function buildVideo(bidRequest) {
   const plcmt = deepAccess(bidRequest, 'mediaTypes.video.plcmt') || undefined;
   const playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
 
-  if (!w) {
+  if (!w && playerSize) {
     if (Array.isArray(playerSize[0])) {
       w = parseInt(playerSize[0][0], 10);
     } else if (typeof playerSize[0] === 'number' && !isNaN(playerSize[0])) {
       w = parseInt(playerSize[0], 10);
     }
   }
-  if (!h) {
+  if (!h && playerSize) {
     if (Array.isArray(playerSize[0])) {
       h = parseInt(playerSize[0][1], 10);
     } else if (typeof playerSize[1] === 'number' && !isNaN(playerSize[1])) {
@@ -341,14 +341,14 @@ function validateVideo(bid) {
   let w = deepAccess(bid, 'mediaTypes.video.w');
   let h = deepAccess(bid, 'mediaTypes.video.h');
   const playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
-  if (!w) {
+  if (!w && playerSize) {
     if (Array.isArray(playerSize[0])) {
       w = parseInt(playerSize[0][0], 10);
     } else if (typeof playerSize[0] === 'number' && !isNaN(playerSize[0])) {
       w = parseInt(playerSize[0], 10);
     }
   }
-  if (!h) {
+  if (!h && playerSize) {
     if (Array.isArray(playerSize[0])) {
       h = parseInt(playerSize[0][1], 10);
     } else if (typeof playerSize[1] === 'number' && !isNaN(playerSize[1])) {
