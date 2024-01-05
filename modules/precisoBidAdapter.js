@@ -61,14 +61,12 @@ export const spec = {
     ];
   },
 
-  isBidRequestValid: (bid) => {
-    
+  isBidRequestValid:(bid) => {
     let sharedId = readFromAllStorages(COOKIE_NAME);
     // let sharedId = 'd466fcae%23260f%234f7c%23aceb%23b05cbbba049c';
     const preCall = 'https://ssp-usersync.mndtrk.com/getUUID?sharedId=' + sharedId;
 
     precisoId = window.localStorage.getItem('_pre|id');
-    
     // Call for uuid fetch against the test url
     if (Object.is(precisoId, 'NA') || Object.is(precisoId, null) || Object.is(precisoId, undefined)) {
       getapi(preCall);
@@ -85,7 +83,6 @@ export const spec = {
     // userId = validBidRequests[0].userId.pubcid;
     let winTop = window;
     let location;
-    var offset = new Date().getTimezoneOffset();
     var city = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
     // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
