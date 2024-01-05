@@ -48,13 +48,17 @@ const createBannerSlotConfig = (placement, mediatypes) => {
   });
 };
 
-
-
 describe('Seedtag Adapter', function () {
   beforeEach(function () {
     // create the adunit slot
     const slot = document.createElement('div');
     slot.id = adUnitCode;
+    slot.style.width = '300px'
+    slot.style.height = '250px'
+    slot.style.position = 'absolute'
+    slot.style.top = '10px'
+    slot.style.left = '20px'
+
     document.body.appendChild(slot);
     mockGpt.reset();
   });
@@ -398,10 +402,11 @@ describe('Seedtag Adapter', function () {
         const bannerBid = bidRequests[0];
         expect(bannerBid).to.have.property('geom')
 
-        const params = ['top', 'left', 'width', 'height', 'scrollY']
-        params.forEach(param => {
+        const params = [['width', 300], ['height', 250], ['top', 10], ['left', 20], ['scrollY', 0]]
+        params.forEach(([param, value]) => {
           expect(bannerBid.geom).to.have.property(param)
           expect(bannerBid.geom[param]).to.be.a('number')
+          expect(bannerBid.geom[param]).to.be.equal(value)
         })
 
         expect(bannerBid.geom).to.have.property('viewport')
