@@ -9,6 +9,17 @@ const ADUNIT_ID = '000000';
 
 const adUnitCode = '/19968336/header-bid-tag-0'
 
+// create a default adunit
+const slot = document.createElement('div');
+slot.id = adUnitCode;
+slot.style.width = '300px'
+slot.style.height = '250px'
+slot.style.position = 'absolute'
+slot.style.top = '10px'
+slot.style.left = '20px'
+
+document.body.appendChild(slot);
+
 function getSlotConfigs(mediaTypes, params) {
   return {
     params: params,
@@ -50,16 +61,6 @@ const createBannerSlotConfig = (placement, mediatypes) => {
 
 describe('Seedtag Adapter', function () {
   beforeEach(function () {
-    // create the adunit slot
-    const slot = document.createElement('div');
-    slot.id = adUnitCode;
-    slot.style.width = '300px'
-    slot.style.height = '250px'
-    slot.style.position = 'absolute'
-    slot.style.top = '10px'
-    slot.style.left = '20px'
-
-    document.body.appendChild(slot);
     mockGpt.reset();
   });
 
