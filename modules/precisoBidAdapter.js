@@ -61,7 +61,7 @@ export const spec = {
     ];
   },
 
-  isBidRequestValid:(bid) => {
+  isBidRequestValid: (bid) => {
     let sharedId = readFromAllStorages(COOKIE_NAME);
     // let sharedId = 'd466fcae%23260f%234f7c%23aceb%23b05cbbba049c';
     const preCall = 'https://ssp-usersync.mndtrk.com/getUUID?sharedId=' + sharedId;
