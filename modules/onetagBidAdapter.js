@@ -7,6 +7,7 @@ import { find } from '../src/polyfill.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepClone, logError, deepAccess } from '../src/utils.js';
+import { config } from '../src/config.js';
 
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
@@ -87,7 +88,8 @@ function buildRequests(validBidRequests, bidderRequest) {
   const connection = navigator.connection || navigator.webkitConnection;
   payload.networkConnectionType = (connection && connection.type) ? connection.type : null;
   payload.networkEffectiveConnectionType = (connection && connection.effectiveType) ? connection.effectiveType : null;
-  payload.fledgeEnabled = Boolean(bidderRequest && bidderRequest.fledgeEnabled)
+  payload.fledgeEnabled = Boolean(bidderRequest && bidderRequest.fledgeEnabled);
+  payload.coppa = config.getConfig('coppa') === true;
   return {
     method: 'POST',
     url: ENDPOINT,

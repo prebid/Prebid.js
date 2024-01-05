@@ -189,7 +189,7 @@ describe('onetag', function () {
     });
     it('Should contain all keys', function () {
       expect(data).to.be.an('object');
-      expect(data).to.include.all.keys('location', 'referrer', 'stack', 'numIframes', 'sHeight', 'sWidth', 'docHeight', 'wHeight', 'wWidth', 'oHeight', 'oWidth', 'aWidth', 'aHeight', 'sLeft', 'sTop', 'hLength', 'bids', 'docHidden', 'xOffset', 'yOffset', 'networkConnectionType', 'networkEffectiveConnectionType', 'timing', 'version', 'fledgeEnabled');
+      expect(data).to.include.all.keys('location', 'referrer', 'stack', 'numIframes', 'sHeight', 'sWidth', 'docHeight', 'wHeight', 'wWidth', 'oHeight', 'oWidth', 'aWidth', 'aHeight', 'sLeft', 'sTop', 'hLength', 'bids', 'docHidden', 'xOffset', 'yOffset', 'networkConnectionType', 'networkEffectiveConnectionType', 'timing', 'version', 'fledgeEnabled', 'coppa');
       expect(data.location).to.satisfy(function (value) {
         return value === null || typeof value === 'string';
       });
