@@ -62,17 +62,13 @@ export const spec = {
   },
 
   isBidRequestValid: (bid) => {
-    logInfo('Test test test test test');
-
+    
     let sharedId = readFromAllStorages(COOKIE_NAME);
-    logInfo('Test sharedId :' + sharedId)
     // let sharedId = 'd466fcae%23260f%234f7c%23aceb%23b05cbbba049c';
     const preCall = 'https://ssp-usersync.mndtrk.com/getUUID?sharedId=' + sharedId;
 
-    precisoId = window.localStorage.getItem('pre_Id');
-    logInfo('Test 12333 pre_Id :' + precisoId)
-
-    logInfo('Test bid pre_Id:' + !Object.is(precisoId, 'NA'))
+    precisoId = window.localStorage.getItem('_pre|id');
+    
     // Call for uuid fetch against the test url
     if (Object.is(precisoId, 'NA') || Object.is(precisoId, null) || Object.is(precisoId, undefined)) {
       getapi(preCall);
@@ -90,9 +86,7 @@ export const spec = {
     let winTop = window;
     let location;
     var offset = new Date().getTimezoneOffset();
-    logInfo('timezone ' + offset);
     var city = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    logInfo('location test' + city)
 
     // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
     try {
@@ -188,7 +182,6 @@ export const spec = {
   },
 
   interpretResponse: function (serverResponse) {
-    logInfo('debugTest4 resp')
     const response = serverResponse.body
 
     const bids = []
@@ -256,11 +249,9 @@ async function getapi(url) {
 
   const uuidValue = dataMap.get('UUID');
   if (!Object.is(uuidValue, null) && !Object.is(uuidValue, undefined)) {
-    storage2.setDataInLocalStorage('pre_Id', uuidValue);
+    storage2.setDataInLocalStorage('_pre|id', uuidValue);
     logInfo('DEBUG nonNull uuidValue:' + uuidValue);
   }
-
-  logInfo('Test uuid from local storage:' + window.localStorage.getItem('pre_Id'))
 
   return data;
 }
