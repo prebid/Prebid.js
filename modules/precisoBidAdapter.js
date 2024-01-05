@@ -27,19 +27,8 @@ export const spec = {
 
   getUserSyncs: function (syncOptions, _, gdprConsent, uspConsent) {
     logInfo('Cr Test1 userSync')
-    // const fastBidVersion = config.getConfig('criteo.fastBidVersion');
-    // if (canFastBid(fastBidVersion)) {
-    //   logInfo('Cr Test12 userSync')
-    //   return [];
-    // }
-
-    // const refererInfo = getRefererInfo();
-    // const origin = 'criteoPrebidAdapter';
-
     if (syncOptions.iframeEnabled && hasPurpose1Consent(gdprConsent)) {
       const queryParams = [];
-      // queryParams.push(`origin=${origin}`);
-      // queryParams.push(`topUrl=${refererInfo.domain}`);
       logInfo('test1 iframe enabled')
       if (gdprConsent) {
         if (gdprConsent.gdprApplies) {
@@ -61,8 +50,6 @@ export const spec = {
 
       return [{
         type: 'iframe',
-        // url: `https://gum.criteo.com/syncframe?${queryParams.join('&')}#${jsonHashSerialized}`
-        // url: `${URL_SYNC}id=${sharedId}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&us_privacy=${uspConsent}&t=4`
         url: `${URL_SYNC}id=${sharedId}${queryParams.join('&')}&t=4`
 
       }];
@@ -74,45 +61,13 @@ export const spec = {
     ];
   },
 
-  // getUserSyncs: (syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '', gppConsent = '') => {
-  //   let syncs = [];
-  //   let { gdprApplies, consentString = '' } = gdprConsent;
-  //   logInfo('debugTest1 getUserSyncs')
-  //   var browserSignature = '';
-  //   getBrowserSignature().then(signature => {
-  //     logInfo('testTest BS:' + signature)
-  //     browserSignature = signature;
-  //     logInfo('test4 broswerId:' + browserSignature);
-  //   });
-  //   // console.log('test broswerId:' + browserSignature);
-
-  //   logInfo('test1 broswerId:' + browserSignature);
-  //   // logInfo('test3 broswerId:' + getBrowserSignature().then(signature => {}));
-
-  //   if (serverResponses.length > 0) {
-  //     logInfo('preciso bidadapter getusersync serverResponses:' + serverResponses.toString);
-  //   }
-  //   if (syncOptions.iframeEnabled) {
-  //     syncs.push({
-  //       type: 'iframe',
-  //       url: `${URL_SYNC}id=${userId}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&us_privacy=${uspConsent}&t=4`
-
-  //     });
-  //   } else {
-  //     syncs.push({
-  //       type: 'image',
-  //       url: `${URL_SYNC}id=${userId}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&us_privacy=${uspConsent}&t=2`
-
-  //     });
-  //   }
-  //   return syncs
-  // },
-
   isBidRequestValid: (bid) => {
+    logInfo('Test test test test test');
+
     let sharedId = readFromAllStorages(COOKIE_NAME);
     logInfo('Test sharedId :' + sharedId)
     // let sharedId = 'd466fcae%23260f%234f7c%23aceb%23b05cbbba049c';
-    const preCall = 'http://ssp-usersync.mndtrk.com:9090//getUUID?sharedId=' + sharedId;
+    const preCall = 'https://ssp-usersync.mndtrk.com/getUUID?sharedId=' + sharedId;
 
     precisoId = window.localStorage.getItem('pre_Id');
     logInfo('Test 12333 pre_Id :' + precisoId)
@@ -138,9 +93,6 @@ export const spec = {
     logInfo('timezone ' + offset);
     var city = Intl.DateTimeFormat().resolvedOptions().timeZone;
     logInfo('location test' + city)
-
-    const countryCode = getCountryCodeByTimezone(city);
-    logInfo(`The country code for ${city} is ${countryCode}`);
 
     // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
     try {
@@ -264,94 +216,6 @@ export const spec = {
   }
 };
 
-function getBrowserSignature() {
-  return new Promise(async (resolve) => {
-    var fingerprint = '';
-
-    // User agent
-    fingerprint += navigator.userAgent;
-
-    // Screen resolution
-    // fingerprint += screen.width + 'x' + screen.height;
-
-    // Color depth
-    fingerprint += screen.colorDepth;
-
-    // Time zone offset
-    fingerprint += new Date().getTimezoneOffset();
-
-    // Language
-    fingerprint += navigator.language;
-
-    // Platform
-    fingerprint += navigator.platform;
-
-    // Plugins
-    var plugins = '';
-    for (var i = 0; i < navigator.plugins.length; i++) {
-      plugins += navigator.plugins[i].name + navigator.plugins[i].description;
-    }
-    fingerprint += plugins;
-
-    // Cookies enabled
-    fingerprint += navigator.cookieEnabled;
-
-    // Do Not Track
-    fingerprint += navigator.doNotTrack;
-
-    // Simulate an asynchronous call (you can replace this with your actual async operation)
-    setTimeout(async () => {
-      // Canvas fingerprint (requires a separate library)
-      // You can use a library like fingerprintjs2 for this purpose
-      // fingerprint += await Fingerprint2.getPromise();
-
-      // Hash the fingerprint to create a unique identifier
-      var hash = new TextEncoder().encode(fingerprint);
-      var digest = await crypto.subtle.digest('SHA-256', hash);
-      var signature = Array.from(new Uint8Array(digest)).map(x => x.toString(16).padStart(2, '0')).join('');
-
-      resolve(signature);
-    }, 0);
-  });
-}
-
-// Example usage
-getBrowserSignature().then(signature => {
-  logInfo(signature);
-});
-
-// Example usage
-getBrowserSignature().then(signature => {
-  logInfo('Test2 Browser:' + signature);
-});
-
-function getCountryCodeByTimezone(city) {
-  try {
-    const now = new Date();
-    const options = {
-      timeZone: city,
-      timeZoneName: 'long',
-    };
-    const [timeZoneName] = new Intl.DateTimeFormat('en-US', options)
-      .formatToParts(now)
-      .filter((part) => part.type === 'timeZoneName');
-
-    if (timeZoneName) {
-      // Extract the country code from the timezone name
-      const parts = timeZoneName.value.split('-');
-      if (parts.length >= 2) {
-        return parts[1];
-      }
-    }
-  } catch (error) {
-    // Handle errors, such as an invalid timezone city
-    logInfo(error);
-  }
-
-  // Handle the case where the city is not found or an error occurred
-  return 'Unknown';
-}
-
 function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
     return deepAccess(bid, 'params.bidFloor', 0);
@@ -379,11 +243,10 @@ function readFromAllStorages(name) {
 async function getapi(url) {
   // Storing response
   const response = await fetch(url);
-  logInfo('DEBUG UUID ::::1122::' + response.toString);
-  logInfo('DEBUG UUID ::::1122::' + response.toString);
+
   // Storing data in form of JSON
   var data = await response.json();
-  const jsonDataString = JSON.stringify(data);
+
   const dataMap = new Map(Object.entries(data));
 
   // Log the map entries
@@ -392,16 +255,12 @@ async function getapi(url) {
   });
 
   const uuidValue = dataMap.get('UUID');
-  logInfo('debug uuid value boolean:' + !Object.is(uuidValue, null))
   if (!Object.is(uuidValue, null) && !Object.is(uuidValue, undefined)) {
-    logInfo('DEBUG nonNull uuidValue:' + uuidValue);
     storage2.setDataInLocalStorage('pre_Id', uuidValue);
     logInfo('DEBUG nonNull uuidValue:' + uuidValue);
   }
 
   logInfo('Test uuid from local storage:' + window.localStorage.getItem('pre_Id'))
-  logInfo('DEBUG UUID 123::::' + jsonDataString);
-  logInfo('DEBUG uuidValue ::::' + uuidValue);
 
   return data;
 }
