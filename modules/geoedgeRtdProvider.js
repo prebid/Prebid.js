@@ -71,7 +71,7 @@ export function setWrapper(responseText) {
 
 /**
  * preloads the client
-  * @param {string} key
+ * @param {string} key
  */
 export function preloadClient(key) {
   let link = document.createElement('link');
@@ -252,9 +252,9 @@ function init(config, userConsent) {
 /** @type {RtdSubmodule} */
 export const geoedgeSubmodule = {
   /**
-     * used to link submodule with realTimeData
-     * @type {string}
-     */
+   * used to link submodule with realTimeData
+   * @type {string}
+   */
   name: SUBMODULE_NAME,
   init,
   onBidResponseEvent: conditionallyWrap

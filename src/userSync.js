@@ -244,7 +244,7 @@ export function newUserSync(deps) {
    * @param {string} type The type of the sync; either image or iframe
    * @param {string} bidder The name of the adapter. e.g. "rubicon"
    * @returns {boolean} true => bidder is not allowed to register; false => bidder can register
-    */
+   */
   function shouldBidderBeBlocked(type, bidder) {
     let filterConfig = usConfig.filterSettings;
 

@@ -51,12 +51,12 @@ export let allowedFields = [SYN_FIELD, 'gptSlot', 'adUnitCode', 'size', 'domain'
 
 /**
  * @summary This is a flag to indicate if a AJAX call is processing for a floors request
-*/
+ */
 let fetching = false;
 
 /**
  * @summary so we only register for our hooks once
-*/
+ */
 let addedFloorsHook = false;
 
 /**
