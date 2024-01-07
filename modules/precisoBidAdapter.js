@@ -26,10 +26,8 @@ export const spec = {
   gvlid: GVLID,
 
   getUserSyncs: function (syncOptions, _, gdprConsent, uspConsent) {
-    logInfo('Cr Test1 userSync')
     if (syncOptions.iframeEnabled && hasPurpose1Consent(gdprConsent)) {
       const queryParams = [];
-      logInfo('test1 iframe enabled')
       if (gdprConsent) {
         if (gdprConsent.gdprApplies) {
           queryParams.push(`gdpr=${gdprConsent.gdprApplies == true ? 1 : 0}`);
@@ -41,13 +39,7 @@ export const spec = {
       if (uspConsent) {
         queryParams.push(`us_privacy=${uspConsent}`);
       }
-
       let sharedId = readFromAllStorages(COOKIE_NAME);
-      logInfo('test1 sharedId:' + sharedId);
-
-      let preID = storage.getCookie('_pre|usrid15');
-      logInfo('test23 precisoId:' + preID)
-
       return [{
         type: 'iframe',
         url: `${URL_SYNC}id=${sharedId}${queryParams.join('&')}&t=4`
@@ -77,7 +69,6 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
-    logInfo('debugTest3 buildReq')
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     // userId = validBidRequests[0].userId.pubcid;
@@ -238,11 +229,6 @@ async function getapi(url) {
   var data = await response.json();
 
   const dataMap = new Map(Object.entries(data));
-
-  // Log the map entries
-  dataMap.forEach((value, key) => {
-    logInfo(`Test 123 Map Entry - Key: ${key}, Value: ${value}`);
-  });
 
   const uuidValue = dataMap.get('UUID');
   if (!Object.is(uuidValue, null) && !Object.is(uuidValue, undefined)) {
