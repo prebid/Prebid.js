@@ -73,20 +73,20 @@ export const internal = {
 const converter = ortbConverter({
   context: {
     netRevenue: true,
-    ttl: 60
+    mediaType: BANNER,
+    ttl: 300
   },
   imp(buildImp, bidRequest, context) {
     let imp = buildImp(bidRequest, context);
-    const imps = getImps([bidRequest], imp);
-    deepSetValue(bidRequest, 'imp', imps);
+    fillTaboolaImpData(bidRequest, imp);
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
-    const req = buildRequest(imps, bidderRequest, context);
-    return req;
+    const reqData = buildRequest(imps, bidderRequest, context);
+    fillTaboolaReqData(bidderRequest, context.bidRequests[0], reqData)
+    return reqData;
   },
   bidResponse(buildBidResponse, bid, context) {
-    context.mediaType = BANNER;
     const bidResponse = buildBidResponse(bid, context);
     bidResponse.nurl = bid.nurl;
     bidResponse.ad = replaceAuctionPrice(bid.adm, bid.price);
@@ -106,58 +106,8 @@ export const spec = {
   },
   buildRequests: (validBidRequests, bidderRequest) => {
     const [bidRequest] = validBidRequests;
-    const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
     const data = converter.toORTB({bidderRequest: bidderRequest, bidRequests: validBidRequests});
     const {publisherId} = bidRequest.params;
-    const site = getSiteProperties(bidRequest.params, refererInfo, bidderRequest.ortb2);
-    const device = {ua: navigator.userAgent};
-    const user = {
-      buyeruid: userData.getUserId(gdprConsent, uspConsent),
-      ext: {}
-    };
-    const regs = {
-      coppa: 0,
-      ext: {}
-    };
-
-    if (gdprConsent.gdprApplies) {
-      user.ext.consent = bidderRequest.gdprConsent.consentString;
-      regs.ext.gdpr = 1;
-    }
-
-    if (uspConsent) {
-      regs.ext.us_privacy = uspConsent;
-    }
-
-    if (bidderRequest.ortb2?.regs?.gpp) {
-      regs.ext.gpp = bidderRequest.ortb2.regs.gpp;
-      regs.ext.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
-    }
-
-    if (config.getConfig('coppa')) {
-      regs.coppa = 1;
-    }
-
-    const ortb2 = bidderRequest.ortb2 || {
-      bcat: [],
-      badv: [],
-      wlang: []
-    };
-
-    data.id = bidderRequest.bidderRequestId;
-    data.site = site;
-    data.device = device;
-    data.source = {fd: 1};
-    data.tmax = bidderRequest.timeout;
-    data.bcat = ortb2.bcat || bidRequest.params.bcat || [];
-    data.badv = ortb2.badv || bidRequest.params.badv || [];
-    data.wlang = ortb2.wlang || bidRequest.params.wlang || [];
-    data.user = user;
-    data.regs = regs;
-    data.ext = {
-      pageType: ortb2?.ext?.data?.pageType || ortb2?.ext?.data?.section || bidRequest.params.pageType
-    }
-
     const url = END_POINT_URL + '?publisher=' + publisherId;
 
     return {
@@ -179,7 +129,7 @@ export const spec = {
       return [];
     }
 
-    if (!serverResponse.body.seatbid.length || !serverResponse.body.seatbid[0].bid || !serverResponse.body.seatbid[0].bid.length) {
+    if (!serverResponse.body.seatbid || !serverResponse.body.seatbid.length || !serverResponse.body.seatbid[0].bid || !serverResponse.body.seatbid[0].bid.length) {
       return [];
     }
 
@@ -233,31 +183,77 @@ function getSiteProperties({publisherId}, refererInfo, ortb2) {
     }
   }
 }
-function getImps(bidRequest, imp) {
-  return bidRequest.map((bid, id) => {
-    const {tagId, position} = bid.params;
-    deepSetValue(imp, 'banner', getBanners(bid, position));
-    deepSetValue(imp, 'tagid', tagId);
-    deepSetValue(imp, 'id', id + 1);
 
-    if (typeof bid.getFloor === 'function') {
-      const floorInfo = bid.getFloor({
-        currency: CURRENCY,
-        mediaType: BANNER,
-        size: '*'
-      });
-      if (typeof floorInfo === 'object' && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
-        deepSetValue(imp, 'bidfloor', parseFloat(floorInfo.floor));
-        deepSetValue(imp, 'bidfloorcur', CURRENCY);
-      }
-    } else {
-      const {bidfloor = null, bidfloorcur = CURRENCY} = bid.params;
-      deepSetValue(imp, 'bidfloor', bidfloor);
-      deepSetValue(imp, 'bidfloorcur', bidfloorcur);
+function fillTaboolaReqData(bidderRequest, bidRequest, data) {
+  const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
+  const site = getSiteProperties(bidRequest.params, refererInfo, bidderRequest.ortb2);
+  const device = {ua: navigator.userAgent};
+  const user = {
+    buyeruid: userData.getUserId(gdprConsent, uspConsent),
+    ext: {}
+  };
+  const regs = {
+    coppa: 0,
+    ext: {}
+  };
+
+  if (gdprConsent.gdprApplies) {
+    user.ext.consent = bidderRequest.gdprConsent.consentString;
+    regs.ext.gdpr = 1;
+  }
+
+  if (uspConsent) {
+    regs.ext.us_privacy = uspConsent;
+  }
+
+  if (bidderRequest.ortb2?.regs?.gpp) {
+    regs.ext.gpp = bidderRequest.ortb2.regs.gpp;
+    regs.ext.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
+  }
+
+  if (config.getConfig('coppa')) {
+    regs.coppa = 1;
+  }
+
+  const ortb2 = bidderRequest.ortb2 || {
+    bcat: [],
+    badv: [],
+    wlang: []
+  };
+
+  data.id = bidderRequest.bidderRequestId;
+  data.site = site;
+  data.device = device;
+  data.source = {fd: 1};
+  data.tmax = bidderRequest.timeout;
+  data.bcat = ortb2.bcat || bidRequest.params.bcat || [];
+  data.badv = ortb2.badv || bidRequest.params.badv || [];
+  data.wlang = ortb2.wlang || bidRequest.params.wlang || [];
+  data.user = user;
+  data.regs = regs;
+  deepSetValue(data, 'ext.pageType', ortb2?.ext?.data?.pageType || ortb2?.ext?.data?.section || bidRequest.params.pageType);
+}
+
+function fillTaboolaImpData(bid, imp) {
+  const {tagId, position} = bid.params;
+  imp.banner = getBanners(bid, position);
+  imp.tagid = tagId;
+
+  if (typeof bid.getFloor === 'function') {
+    const floorInfo = bid.getFloor({
+      currency: CURRENCY,
+      size: '*'
+    });
+    if (typeof floorInfo === 'object' && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
+      imp.bidfloor = parseFloat(floorInfo.floor);
+      imp.bidfloorcur = CURRENCY;
     }
-    deepSetValue(imp, 'ext.gpid', deepAccess(bid, 'ortb2Imp.ext.gpid'));
-    return imp;
-  });
+  } else {
+    const {bidfloor = null, bidfloorcur = CURRENCY} = bid.params;
+    imp.bidfloor = bidfloor;
+    imp.bidfloorcur = bidfloorcur;
+  }
+  deepSetValue(imp, 'ext.gpid', deepAccess(bid, 'ortb2Imp.ext.gpid'));
 }
 
 function getBanners(bid, pos) {
