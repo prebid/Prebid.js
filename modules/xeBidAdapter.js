@@ -142,12 +142,12 @@ function interpretResponse(serverResponse, { bidderRequest }) {
 }
 
 /**
-* Register the user sync pixels which should be dropped after the auction.
-*
-* @param {SyncOptions} syncOptions Which user syncs are allowed?
-* @param {ServerResponse[]} serverResponses List of server's responses.
-* @return {UserSync[]} The user syncs which should be dropped.
-*/
+ * Register the user sync pixels which should be dropped after the auction.
+ *
+ * @param {SyncOptions} syncOptions Which user syncs are allowed?
+ * @param {ServerResponse[]} serverResponses List of server's responses.
+ * @return {UserSync[]} The user syncs which should be dropped.
+ */
 function getUserSyncs(syncOptions, serverResponses, gdprConsent = {}, uspConsent = '') {
   const syncs = [];
   const pixels = deepAccess(serverResponses, '0.body.data.0.ext.pixels');
@@ -172,11 +172,11 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent = {}, uspConsent
 }
 
 /**
-* Get valid floor value from getFloor fuction.
-*
-* @param {Object} bid Current bid request.
-* @return {null|Number} Returns floor value when bid.getFloor is function and returns valid floor object with USD currency, otherwise returns null.
-*/
+ * Get valid floor value from getFloor fuction.
+ *
+ * @param {Object} bid Current bid request.
+ * @return {null|Number} Returns floor value when bid.getFloor is function and returns valid floor object with USD currency, otherwise returns null.
+ */
 export function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {
     return null;
