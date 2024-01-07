@@ -32,8 +32,8 @@ describe('PrecisoAdapter', function () {
     },
     ortb2: {
       site: {
-        doamin: '',
-        page: 'https://localhost.com'
+        doamin: 'localhost.com',
+        page: 'https://.comlocalhost.com'
       },
       device: {
 
