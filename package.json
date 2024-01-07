@@ -117,11 +117,7 @@
     "eslint-config-standard": "^10.2.1",
 
     "eslint-plugin-import": "^2.20.2",
-<<<<<<< HEAD
-
-=======
     "eslint-plugin-jsdoc": "^38.1.6",
->>>>>>> d390f6c3d84e65f0d4a5d60020acc7b9201be9b1
     "eslint-plugin-node": "^11.1.0",
 
     "eslint-plugin-prebid": "file:./plugins/eslint",
