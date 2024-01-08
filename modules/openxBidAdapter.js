@@ -50,7 +50,8 @@ const converter = ortbConverter({
     mergeDeep(req, {
       at: 1,
       ext: {
-        bc: `${bidderConfig}_${bidderVersion}`
+        bc: `${bidderConfig}_${bidderVersion}`,
+        pv: '$prebid.version$'
       }
     })
     const bid = context.bidRequests[0];

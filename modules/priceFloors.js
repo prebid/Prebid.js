@@ -51,12 +51,12 @@ export let allowedFields = [SYN_FIELD, 'gptSlot', 'adUnitCode', 'size', 'domain'
 
 /**
  * @summary This is a flag to indicate if a AJAX call is processing for a floors request
-*/
+ */
 let fetching = false;
 
 /**
  * @summary so we only register for our hooks once
-*/
+ */
 let addedFloorsHook = false;
 
 /**
@@ -347,7 +347,7 @@ export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
       bid.auctionId = auctionId;
       bid.floorData = {
         skipped: floorData.skipped,
-        skipRate: floorData.skipRate,
+        skipRate: deepAccess(floorData, 'data.skipRate') ?? floorData.skipRate,
         floorMin: floorData.floorMin,
         modelVersion: deepAccess(floorData, 'data.modelVersion'),
         modelWeight: deepAccess(floorData, 'data.modelWeight'),
@@ -396,7 +396,7 @@ export function createFloorsDataForAuction(adUnits, auctionId) {
     resolvedFloorsData.skipped = true;
   } else {
     // determine the skip rate now
-    const auctionSkipRate = getParameterByName('pbjs_skipRate') || resolvedFloorsData.skipRate;
+    const auctionSkipRate = getParameterByName('pbjs_skipRate') || (deepAccess(resolvedFloorsData, 'data.skipRate') ?? resolvedFloorsData.skipRate);
     const isSkipped = Math.random() * 100 < parseFloat(auctionSkipRate);
     resolvedFloorsData.skipped = isSkipped;
   }
@@ -748,7 +748,7 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
   let floorInfo = getFirstMatchingFloor(floorData.data, matchingBidRequest, {...bid, size: [bid.width, bid.height]});
 
   if (!floorInfo.matchingFloor) {
-    logWarn(`${MODULE_NAME}: unable to determine a matching price floor for bidResponse`, bid);
+    if (floorInfo.matchingFloor !== 0) logWarn(`${MODULE_NAME}: unable to determine a matching price floor for bidResponse`, bid);
     return fn.call(this, adUnitCode, bid, reject);
   }
 

@@ -19,7 +19,7 @@ import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {uspDataHandler} from '../src/adapterManager.js';
+import {uspDataHandler, gppDataHandler} from '../src/adapterManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'id5Id';
@@ -118,7 +118,7 @@ export const id5IdSubmodule = {
     }
 
     const resp = function (cbFunction) {
-      new IdFetchFlow(submoduleConfig, consentData, cacheIdObj, uspDataHandler.getConsentData()).execute()
+      new IdFetchFlow(submoduleConfig, consentData, cacheIdObj, uspDataHandler.getConsentData(), gppDataHandler.getConsentData()).execute()
         .then(response => {
           cbFunction(response)
         })
@@ -170,11 +170,12 @@ export const id5IdSubmodule = {
 };
 
 class IdFetchFlow {
-  constructor(submoduleConfig, gdprConsentData, cacheIdObj, usPrivacyData) {
+  constructor(submoduleConfig, gdprConsentData, cacheIdObj, usPrivacyData, gppData) {
     this.submoduleConfig = submoduleConfig
     this.gdprConsentData = gdprConsentData
     this.cacheIdObj = cacheIdObj
     this.usPrivacyData = usPrivacyData
+    this.gppData = gppData
   }
 
   execute() {
@@ -285,6 +286,11 @@ class IdFetchFlow {
     if (this.usPrivacyData !== undefined && !isEmpty(this.usPrivacyData) && !isEmptyStr(this.usPrivacyData)) {
       data.us_privacy = this.usPrivacyData;
     }
+    if (this.gppData) {
+      data.gpp_string = this.gppData.gppString;
+      data.gpp_sid = this.gppData.applicableSections;
+    }
+
     if (signature !== undefined && !isEmptyStr(signature)) {
       data.s = signature;
     }

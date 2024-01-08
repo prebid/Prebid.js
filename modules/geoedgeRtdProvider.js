@@ -71,7 +71,7 @@ export function setWrapper(responseText) {
 
 /**
  * preloads the client
-  * @param {string} key
+ * @param {string} key
  */
 export function preloadClient(key) {
   let link = document.createElement('link');
@@ -103,7 +103,7 @@ export function wrapHtml(wrapper, html) {
  * @param {string} key
  * @return {Object}
  */
-function getMacros(bid, key) {
+export function getMacros(bid, key) {
   return {
     '${key}': key,
     '%%ADUNIT%%': bid.adUnitCode,
@@ -116,7 +116,9 @@ function getMacros(bid, key) {
     '%_hbadomains': bid.meta && bid.meta.advertiserDomains,
     '%%PATTERN:hb_pb%%': bid.pbHg,
     '%%SITE%%': location.hostname,
-    '%_pimp%': PV_ID
+    '%_pimp%': PV_ID,
+    '%_hbCpm!': bid.cpm,
+    '%_hbCurrency!': bid.currency
   };
 }
 
@@ -250,9 +252,9 @@ function init(config, userConsent) {
 /** @type {RtdSubmodule} */
 export const geoedgeSubmodule = {
   /**
-     * used to link submodule with realTimeData
-     * @type {string}
-     */
+   * used to link submodule with realTimeData
+   * @type {string}
+   */
   name: SUBMODULE_NAME,
   init,
   onBidResponseEvent: conditionallyWrap

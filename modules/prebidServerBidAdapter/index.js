@@ -207,7 +207,7 @@ getConfig('s2sConfig', ({s2sConfig}) => setS2sConfig(s2sConfig));
 
 /**
  * resets the _synced variable back to false, primiarily used for testing purposes
-*/
+ */
 export function resetSyncedStatus() {
   _syncCount = 0;
 }
@@ -503,8 +503,8 @@ export function PrebidServer() {
             }
           }
         },
-        onFledge: ({adUnitCode, config}) => {
-          addComponentAuction(bidRequests[0].auctionId, adUnitCode, config);
+        onFledge: (params) => {
+          addComponentAuction({auctionId: bidRequests[0].auctionId, ...params}, params.config);
         }
       })
     }

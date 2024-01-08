@@ -9,14 +9,14 @@
  */
 
 /**
-  * @typedef {Object} AdUnit An object containing the adUnit configuration.
-  *
-  * @property {string} code A code which will be used to uniquely identify this bidder. This should be the same
-  *   one as is used in the call to registerBidAdapter
-  * @property {Array.<size>} sizes A list of size for adUnit.
-  * @property {object} params Any bidder-specific params which the publisher used in their bid request.
-  *   This is guaranteed to have passed the spec.areParamsValid() test.
-  */
+ * @typedef {Object} AdUnit An object containing the adUnit configuration.
+ *
+ * @property {string} code A code which will be used to uniquely identify this bidder. This should be the same
+ *   one as is used in the call to registerBidAdapter
+ * @property {Array.<size>} sizes A list of size for adUnit.
+ * @property {object} params Any bidder-specific params which the publisher used in their bid request.
+ *   This is guaranteed to have passed the spec.areParamsValid() test.
+ */
 
 /**
  * @typedef {Array.<number>} size
@@ -58,6 +58,7 @@
  */
 
 import {
+  callBurl,
   deepAccess,
   generateUUID,
   getValue,
@@ -118,19 +119,19 @@ export function resetAuctionState() {
 }
 
 /**
-  * Creates new auction instance
-  *
-  * @param {Object} requestConfig
-  * @param {AdUnit} requestConfig.adUnits
-  * @param {AdUnitCode} requestConfig.adUnitCodes
-  * @param {function():void} requestConfig.callback
-  * @param {number} requestConfig.cbTimeout
-  * @param {Array.<string>} requestConfig.labels
-  * @param {string} requestConfig.auctionId
-  * @param {{global: {}, bidder: {}}} ortb2Fragments first party data, separated into global
-  *    (from getConfig('ortb2') + requestBids({ortb2})) and bidder (a map from bidderCode to ortb2)
-  * @returns {Auction} auction instance
-  */
+ * Creates new auction instance
+ *
+ * @param {Object} requestConfig
+ * @param {AdUnit} requestConfig.adUnits
+ * @param {AdUnitCode} requestConfig.adUnitCodes
+ * @param {function():void} requestConfig.callback
+ * @param {number} requestConfig.cbTimeout
+ * @param {Array.<string>} requestConfig.labels
+ * @param {string} requestConfig.auctionId
+ * @param {{global: {}, bidder: {}}} ortb2Fragments first party data, separated into global
+ *    (from getConfig('ortb2') + requestBids({ortb2})) and bidder (a map from bidderCode to ortb2)
+ * @returns {Auction} auction instance
+ */
 export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId, ortb2Fragments, metrics}) {
   metrics = useMetrics(metrics);
   const _adUnits = adUnits;
@@ -185,6 +186,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   function executeCallback(timedOut) {
     if (!timedOut) {
       clearTimeout(_timeoutTimer);
+    } else {
+      events.emit(CONSTANTS.EVENTS.AUCTION_TIMEOUT, getProperties());
     }
     if (_auctionEnd === undefined) {
       let timedOutRequests = [];
@@ -360,6 +363,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   function addWinningBid(winningBid) {
     const winningAd = adUnits.find(adUnit => adUnit.transactionId === winningBid.transactionId);
     _winningBids = _winningBids.concat(winningBid);
+    callBurl(winningBid);
     adapterManager.callBidWonBidder(winningBid.adapterCode || winningBid.bidder, winningBid, adUnits);
     if (winningAd && !winningAd.deferBilling) adapterManager.callBidBillableBidder(winningBid);
   }
@@ -451,7 +455,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
   function acceptBidResponse(adUnitCode, bid) {
     handleBidResponse(adUnitCode, bid, (done) => {
       let bidResponse = getPreparedBidForAuction(bid);
-
+      events.emit(CONSTANTS.EVENTS.BID_ACCEPTED, bidResponse);
       if (FEATURES.VIDEO && bidResponse.mediaType === VIDEO) {
         tryAddVideoBid(auctionInstance, bidResponse, done);
       } else {
