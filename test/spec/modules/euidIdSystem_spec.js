@@ -27,24 +27,22 @@ const useLocalStorage = true;
 const makePrebidConfig = (params = null, extraSettings = {}, debug = false) => ({
   userSync: { auctionDelay: auctionDelayMs, userIds: [{name: 'euid', params: {storage: useLocalStorage ? 'localStorage' : 'cookie', ...params}, ...extraSettings}] }, debug
 });
+
 const cstgConfigParams = { serverPublicKey: 'UID2-X-L-24B8a/eLYBmRkXA9yPgRZt+ouKbXewG2OPs23+ov3JC8mtYJBCx6AxGwJ4MlwUcguebhdDp2CvzsCgS9ogwwGA==', subscriptionId: 'subscription-id' }
 const clientSideGeneratedToken = 'client-side-generated-advertising-token';
 
 const apiUrl = 'https://prod.euid.eu/v2/token/refresh';
+const cstgApiUrl = 'https://prod.euid.eu/v2/token/client-generate';
 const headers = { 'Content-Type': 'application/json' };
 const makeSuccessResponseBody = (token) => btoa(JSON.stringify({ status: 'success', body: { ...apiHelpers.makeTokenResponse(initialToken), advertising_token: token } }));
 const expectToken = (bid, token) => expect(bid?.userId ?? {}).to.deep.include(makeEuidIdentityContainer(token));
 const expectNoIdentity = (bid) => expect(bid).to.not.haveOwnProperty('userId');
 
-const makeOriginalIdentity = (identity, salt = 1) => ({
-  identity: utils.cyrb53Hash(identity, salt),
-  salt
-})
-
 describe('EUID module', function() {
   let suiteSandbox, restoreSubtleToUndefined = false;
 
   const configureEuidResponse = (httpStatus, response) => server.respondWith('POST', apiUrl, (xhr) => xhr.respond(httpStatus, headers, response));
+  const configureEuidCstgResponse = (httpStatus, response) => server.respondWith('POST', cstgApiUrl, (xhr) => xhr.respond(httpStatus, headers, response));
 
   before(function() {
     uninstallGdprEnforcement();
@@ -130,7 +128,7 @@ describe('EUID module', function() {
   it('When an expired token is provided and the API responds in time, the refreshed token is provided to the auction.', async function() {
     setGdprApplies(true);
     const euidToken = apiHelpers.makeTokenResponse(initialToken, true, true);
-    configureEuidResponse(200, makeSuccessResponseBody());
+    configureEuidResponse(200, makeSuccessResponseBody(refreshedToken));
     config.setConfig(makePrebidConfig({euidToken}));
     apiHelpers.respondAfterDelay(1, server);
     const bid = await runAuction();
@@ -138,13 +136,12 @@ describe('EUID module', function() {
   });
 
   if (FEATURES.UID2_CSTG) {
-    it('Should use generated token in the auction.', async function() {
+    it('Should use client side generated EUID token in the auction.', async function() {
       setGdprApplies(true);
-      const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken, true, true, true);
-      const moduleCookie = {originalIdentity: makeOriginalIdentity('test@test.com'), latestToken: refreshedIdentity};
-      coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
-      config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com' }));
-      apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
+      const euidToken = apiHelpers.makeTokenResponse(initialToken, true, true);
+      configureEuidCstgResponse(200, makeSuccessResponseBody(clientSideGeneratedToken));
+      config.setConfig(makePrebidConfig({ euidToken, ...cstgConfigParams, email: 'test@test.com' }));
+      apiHelpers.respondAfterDelay(1, server);
 
       const bid = await runAuction();
       expectToken(bid, clientSideGeneratedToken);
