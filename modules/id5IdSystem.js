@@ -272,7 +272,7 @@ export class IdFetchFlow {
     await loadExternalModule(this.submoduleConfig.params.externalModuleUrl);
     const fetchFlowConfig = await configCallPromise;
 
-    return this.#getExternalIntegration().fetchId5Id(fetchFlowConfig, this.submoduleConfig.params, getRefererInfo(), this.gdprConsentData, this.usPrivacyData);
+    return this.#getExternalIntegration().fetchId5Id(fetchFlowConfig, this.submoduleConfig.params, getRefererInfo(), this.gdprConsentData, this.usPrivacyData, this.gppData);
   }
 
   // eslint-disable-next-line no-dupe-class-members
