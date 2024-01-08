@@ -19,9 +19,9 @@ export const RTD_LOCAL_NAME = 'bcPrebidData';
 export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME});
 
 /**
-* Try parsing stringified array of data.
-* @param {String} data
-*/
+ * Try parsing stringified array of data.
+ * @param {String} data
+ */
 function parseJson(data) {
   try {
     return JSON.parse(data);

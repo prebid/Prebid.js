@@ -26,16 +26,16 @@ let resumeBidRequest;
 /** @type {RtdSubmodule} */
 export const jwplayerSubmodule = {
   /**
-     * used to link submodule with realTimeData
-     * @type {string}
-     */
+   * used to link submodule with realTimeData
+   * @type {string}
+   */
   name: SUBMODULE_NAME,
   /**
-     * add targeting data to bids and signal completion to realTimeData module
-     * @function
-     * @param {Obj} bidReqConfig
-     * @param {function} onDone
-     */
+   * add targeting data to bids and signal completion to realTimeData module
+   * @function
+   * @param {Obj} bidReqConfig
+   * @param {function} onDone
+   */
   getBidRequestData: enrichBidRequest,
   init
 };

@@ -1113,7 +1113,7 @@ This function retrieves the page URL and appends first party data query paramete
 to it without adding duplicate query parameters. Returns original referer URL if no IX FPD exists.
 @param {Object} bidderRequest - The bidder request object containing information about the bid and the page.
 @returns {string} - The modified page URL with first party data query parameters appended.
-*/
+ */
 function getIxFirstPartyDataPageUrl (bidderRequest) {
   // Parse additional runtime configs.
   const bidderCode = (bidderRequest && bidderRequest.bidderCode) || 'ix';
@@ -1143,7 +1143,7 @@ This function appends the provided query parameters to the given URL without add
 @param {string} url - The base URL to which query parameters will be appended.
 @param {Object} params - An object containing key-value pairs of query parameters to append.
 @returns {string} - The modified URL with the provided query parameters appended.
-*/
+ */
 function appendIXQueryParams(bidderRequest, url, params) {
   let urlObj;
   try {
@@ -2008,11 +2008,11 @@ export const spec = {
 };
 
 /**
-   * Build img user sync url
-   * @param {int} syncsPerBidder number of syncs Per Bidder
-   * @param {int} index index to pass
-   * @returns {string} img user sync url
-   */
+ * Build img user sync url
+ * @param {int} syncsPerBidder number of syncs Per Bidder
+ * @param {int} index index to pass
+ * @returns {string} img user sync url
+ */
 function buildImgSyncUrl(syncsPerBidder, index) {
   let consentString = '';
   let gdprApplies = '0';
