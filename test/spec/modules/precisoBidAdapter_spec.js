@@ -12,6 +12,11 @@ describe('PrecisoAdapter', function () {
   let bid = {
     bidId: '23fhj33i987f',
     bidder: 'preciso',
+    refererInfo: {
+      page: 'http://mock-page.com',
+      domain: 'mock-page.com',
+      ref: 'http://example-domain.com/foo',
+    },
     mediaTypes: {
       banner: {
         sizes: [[DEFAULT_BANNER_WIDTH, DEFAULT_BANNER_HEIGHT]]
@@ -71,10 +76,6 @@ describe('PrecisoAdapter', function () {
     });
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
-      // expect(data).to.be.an('object');
-
-      // expect(data).to.have.all.keys('bidId', 'imp', 'site', 'deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'coppa');
-
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
       expect(data.coppa).to.be.a('number');
@@ -86,8 +87,6 @@ describe('PrecisoAdapter', function () {
       // expect(data.city).to.be.a('string');
       // expect(data.geo).to.be.a('object');
       expect(data.user).to.be.a('object');
-      // expect(data.userId).to.be.a('string');
-      // expect(data.imp).to.be.a('object');
     });
     // it('Returns empty data if no valid requests are passed', function () {
     /// serverRequest = spec.buildRequests([]);

@@ -58,7 +58,7 @@ export const spec = {
     // let sharedId = 'd466fcae%23260f%234f7c%23aceb%23b05cbbba049c';
     const preCall = 'https://ssp-usersync.mndtrk.com/getUUID?sharedId=' + sharedId;
 
-    precisoId = window.localStorage.getItem('_pre|id');
+    precisoId = window.localStorage.getItem('_pre|id') || bid.test;
     // Call for uuid fetch against the test url
     if (Object.is(precisoId, 'NA') || Object.is(precisoId, null) || Object.is(precisoId, undefined)) {
       getapi(preCall);
@@ -222,21 +222,26 @@ function readFromAllStorages(name) {
 }
 
 async function getapi(url) {
+  try {
   // Storing response
-  const response = await fetch(url);
+    const response = await fetch(url);
 
-  // Storing data in form of JSON
-  var data = await response.json();
+    // Storing data in form of JSON
+    var data = await response.json();
 
-  const dataMap = new Map(Object.entries(data));
+    const dataMap = new Map(Object.entries(data));
 
-  const uuidValue = dataMap.get('UUID');
-  if (!Object.is(uuidValue, null) && !Object.is(uuidValue, undefined)) {
-    storage2.setDataInLocalStorage('_pre|id', uuidValue);
-    logInfo('DEBUG nonNull uuidValue:' + uuidValue);
+    const uuidValue = dataMap.get('UUID');
+
+    if (!Object.is(uuidValue, null) && !Object.is(uuidValue, undefined)) {
+      storage2.setDataInLocalStorage('_pre|id', uuidValue);
+      logInfo('DEBUG nonNull uuidValue:' + uuidValue);
+    }
+
+    return data;
+  } catch (error) {
+    logInfo('Error in preciso precall' + error);
   }
-
-  return data;
 }
 
 registerBidder(spec);
