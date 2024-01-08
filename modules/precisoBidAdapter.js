@@ -221,24 +221,58 @@ function readFromAllStorages(name) {
   return fromCookie || fromLocalStorage || undefined;
 }
 
-async function getapi(url) {
+// async function getapi(url) {
+//   try {
+//   // Storing response
+//     const response = await fetch(url);
+
+//     // Storing data in form of JSON
+//     var data = await response.json();
+
+//     const dataMap = new Map(Object.entries(data));
+
+//     const uuidValue = dataMap.get('UUID');
+
+//     if (!Object.is(uuidValue, null) && !Object.is(uuidValue, undefined)) {
+//       storage2.setDataInLocalStorage('_pre|id', uuidValue);
+//       logInfo('DEBUG nonNull uuidValue:' + uuidValue);
+//     }
+
+//     return data;
+//   } catch (error) {
+//     logInfo('Error in preciso precall' + error);
+//   }
+// }
+
+function getapi(url) {
   try {
-  // Storing response
-    const response = await fetch(url);
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.responseType = 'json';
 
-    // Storing data in form of JSON
-    var data = await response.json();
+    xhr.onload = function () {
+      if (xhr.status === 200) {
+        const data = xhr.response;
+        const dataMap = new Map(Object.entries(data));
 
-    const dataMap = new Map(Object.entries(data));
+        const uuidValue = dataMap.get('UUID');
 
-    const uuidValue = dataMap.get('UUID');
+        if (!Object.is(uuidValue, null) && !Object.is(uuidValue, undefined)) {
+          storage2.setDataInLocalStorage('_pre|id', uuidValue);
+          logInfo('DEBUG nonNull uuidValue:' + uuidValue);
+        }
 
-    if (!Object.is(uuidValue, null) && !Object.is(uuidValue, undefined)) {
-      storage2.setDataInLocalStorage('_pre|id', uuidValue);
-      logInfo('DEBUG nonNull uuidValue:' + uuidValue);
-    }
+        // You can return data here if needed
+      } else {
+        logInfo('Error in preciso precall. Status: ' + xhr.status);
+      }
+    };
 
-    return data;
+    xhr.onerror = function () {
+      logInfo('Error in preciso precall. Network error.');
+    };
+
+    xhr.send();
   } catch (error) {
     logInfo('Error in preciso precall' + error);
   }

@@ -10,12 +10,13 @@ const BIDDER_CODE = 'preciso';
 
 describe('PrecisoAdapter', function () {
   let bid = {
+    test: 'testkey',
     bidId: '23fhj33i987f',
     bidder: 'preciso',
     refererInfo: {
-      page: 'http://mock-page.com',
-      domain: 'mock-page.com',
-      ref: 'http://example-domain.com/foo',
+      page: 'https://localhost.com',
+      domain: 'localhost.com',
+      ref: 'https://localhost.com/foo'
     },
     mediaTypes: {
       banner: {
