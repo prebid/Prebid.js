@@ -81,7 +81,8 @@ export const experianRtdObj = {
       }
     }
     const queryString = experianRtdObj.extractConsentQueryString(config, userConsent)
-    const fullUrl = queryString == null ? `${EXPERIAN_RTID_URL}/acc/${deepAccess(config, 'params.accountId')}/ids` : `${EXPERIAN_RTID_URL}/acc/${deepAccess(config, 'params.accountId')}/ids${queryString}`
+    const rtidUrl = deepAccess(config, 'sandbox.url') == null ? EXPERIAN_RTID_URL : deepAccess(config, 'sandbox.url')
+    const fullUrl = queryString == null ? `${rtidUrl}/acc/${deepAccess(config, 'params.accountId')}/ids` : `${rtidUrl}/acc/${deepAccess(config, 'params.accountId')}/ids${queryString}`
     ajax(fullUrl, storeDataEnvelopeResponse, null, { withCredentials: true, contentType: 'application/json' })
   },
   extractConsentQueryString(config, userConsent) {

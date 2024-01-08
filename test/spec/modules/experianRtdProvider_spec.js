@@ -338,6 +338,24 @@ describe('Experian realtime module', () => {
       expect(storage.getDataFromLocalStorage(EXPERIAN_RTID_STALE_KEY)).to.equal('2023-06-01T00:00:00')
       expect(storage.getDataFromLocalStorage(EXPERIAN_RTID_EXPIRATION_KEY)).to.equal('2023-06-03T00:00:00')
     })
+    describe('when sandbox is configured', () => {
+      it('sends request to rtd sandbox endpoint and stores response', () => {
+        const moduleConfig = {
+          sandbox: { url: 'https://set-by-sandbox.com' },
+          params: { accountId: 'YxkzsXh', bidders: ['pubmatic', 'sovrn'] }
+        }
+        experianRtdObj.requestDataEnvelope(moduleConfig, { gdpr: { gdprApplies: 0, consentString: 'wow' }, uspConsent: '1YYY' })
+        requests[0].respond(
+          200,
+          { 'Content-Type': 'application/json' },
+          '{"staleAt":"2023-06-01T00:00:00","expiresAt":"2023-06-03T00:00:00","status":"ok","data":[{"bidder":"pubmatic","data":{"key":"pubmatic-encryption-key-1","data":"IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=="}},{"bidder":"sovrn","data":{"key":"sovrn-encryption-key-1","data":"IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=="}}]}'
+        )
+        expect(requests[0].url).to.equal('https://set-by-sandbox.com/acc/YxkzsXh/ids?gdpr=0&gdpr_consent=wow&us_privacy=1YYY')
+        expect(safeJSONParse(storage.getDataFromLocalStorage(EXPERIAN_RTID_DATA_KEY, null))).to.deep.equal([{bidder: 'pubmatic', data: {key: 'pubmatic-encryption-key-1', data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='}}, {bidder: 'sovrn', data: {key: 'sovrn-encryption-key-1', data: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='}}])
+        expect(storage.getDataFromLocalStorage(EXPERIAN_RTID_STALE_KEY)).to.equal('2023-06-01T00:00:00')
+        expect(storage.getDataFromLocalStorage(EXPERIAN_RTID_EXPIRATION_KEY)).to.equal('2023-06-03T00:00:00')
+      })
+    })
   })
 
   describe('extractConsentQueryString', () => {
