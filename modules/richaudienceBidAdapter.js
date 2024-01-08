@@ -1,4 +1,4 @@
-import {deepAccess, isStr} from '../src/utils.js';
+import {deepAccess, isStr, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -185,21 +185,10 @@ export const spec = {
   },
 
   onTimeout: function (data) {
-    let {params, timeout} = data[0]
-    let url = 'https://s.richaudience.com/err/?ec=6&ev=[timeout_publisher]&pla=[placement_hash]&int=PREBID&pltfm=&node=&dm=[domain]';
-
-    url = url.replace('[timeout_publisher]', timeout)
-    url = url.replace('[placement_hash]', params[0].pid)
-    if (REFERER != null) {
-      url = url.replace('[domain]', REFERER)
+    let url = raiGetTimeoutURL(data);
+    if (url) {
+      triggerPixel(url);
     }
-
-    let pixelTimeout = document.createElement('img')
-    pixelTimeout.id = 'raPix'
-    pixelTimeout.src = url
-    pixelTimeout.width = '1px'
-    pixelTimeout.height = '1px'
-    document.body.appendChild(pixelTimeout)
   }
 };
 
@@ -349,4 +338,16 @@ function raiGetFloor(bid, config) {
   } catch (e) {
     return 0
   }
+}
+
+function raiGetTimeoutURL(data) {
+  let {params, timeout} = data[0]
+  let url = 'https://s.richaudience.com/err/?ec=6&ev=[timeout_publisher]&pla=[placement_hash]&int=PREBID&pltfm=&node=&dm=[domain]';
+
+  url = url.replace('[timeout_publisher]', timeout)
+  url = url.replace('[placement_hash]', params[0].pid)
+  if (REFERER != null) {
+    url = url.replace('[domain]', REFERER)
+  }
+  return url
 }
