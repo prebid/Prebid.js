@@ -87,7 +87,7 @@ export const NATIVE_ASSETS = {
 const NATIVE_ASSETS_IDS = {};
 _each(NATIVE_ASSETS, (asset, key) => { NATIVE_ASSETS_IDS[asset[0]] = key });
 
-/** @type BidderSpec */
+/** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['ya'], // short code

@@ -214,7 +214,7 @@ export const spec = {
    * Format Sovrn responses as Prebid bid responses
    * @param {id, seatbid} sovrnResponse A successful response from Sovrn.
    * @return {Bid[]} An array of formatted bids.
-  */
+   */
   interpretResponse: function({ body: {id, seatbid} }) {
     if (!id || !seatbid || !Array.isArray(seatbid)) return []
 

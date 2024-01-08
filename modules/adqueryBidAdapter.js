@@ -17,7 +17,8 @@ export const spec = {
   gvlid: ADQUERY_GVLID,
   supportedMediaTypes: [BANNER],
 
-  /** f
+  /**
+   * f
    * @param {object} bid
    * @return {boolean}
    */

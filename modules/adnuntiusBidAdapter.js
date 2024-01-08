@@ -63,7 +63,7 @@ const storageTool = (function () {
     }
 
     const updateVoidAuIds = function (currentVoidAuIds, auIdsAsString) {
-      const newAuIds = auIdsAsString ? auIdsAsString.split(';') : [];
+      const newAuIds = isStr(auIdsAsString) ? auIdsAsString.split(';') : [];
       const notNewExistingAuIds = currentVoidAuIds.filter(auIdObj => {
         return newAuIds.indexOf(auIdObj.value) < -1;
       }) || [];
@@ -83,7 +83,7 @@ const storageTool = (function () {
         }
       }
     }
-    const currentAuIds = updateVoidAuIds(metaAsObj.voidAuIds || [], apiResponse.voidAuIds || []);
+    const currentAuIds = updateVoidAuIds(metaAsObj.voidAuIds || [], apiResponse.voidAuIds);
     if (currentAuIds.length > 0) {
       metaAsObj.voidAuIds = { value: currentAuIds };
     }

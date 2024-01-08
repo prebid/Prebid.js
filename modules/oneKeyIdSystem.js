@@ -47,27 +47,27 @@ const getIdsAndPreferences = (callback) => {
 /** @type {Submodule} */
 export const oneKeyIdSubmodule = {
   /**
-    * used to link submodule with config
-    * @type {string}
-    */
+   * used to link submodule with config
+   * @type {string}
+   */
   name: 'oneKeyData',
   /**
-    * decode the stored data value for passing to bid requests
-    * @function decode
-    * @param {(Object|string)} value
-    * @returns {(Object|undefined)}
-    */
+   * decode the stored data value for passing to bid requests
+   * @function decode
+   * @param {(Object|string)} value
+   * @returns {(Object|undefined)}
+   */
   decode(data) {
     return { oneKeyData: data };
   },
   /**
-    * performs action to obtain id and return a value in the callback's response argument
-    * @function
-    * @param {SubmoduleConfig} [config]
-    * @param {ConsentData} [consentData]
-    * @param {(Object|undefined)} cacheIdObj
-    * @returns {IdResponse|undefined}
-    */
+   * performs action to obtain id and return a value in the callback's response argument
+   * @function
+   * @param {SubmoduleConfig} [config]
+   * @param {ConsentData} [consentData]
+   * @param {(Object|undefined)} cacheIdObj
+   * @returns {IdResponse|undefined}
+   */
   getId(config) {
     return {
       callback: getIdsAndPreferences

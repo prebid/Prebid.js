@@ -15,11 +15,11 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   /**
-     * Determines whether or not the given bid request is valid.
-     *
-     * @param {BidRequest} bid The bid params to validate.
-     * @return boolean True if this is a valid bid, and false otherwise.
-     */
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function(bid) {
     // check for all required bid fields
     if (!(bid &&
@@ -50,12 +50,12 @@ export const spec = {
   },
 
   /**
-     * Make a server request from the list of BidRequests.
-     *
-     * @param {Bids[]} validBidRequests - an array of bidRequest objects
-     * @param {BidderRequest} bidderRequest - master bidRequest object
-     * @return ServerRequest Info describing the request to the server.
-     */
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {Bids[]} validBidRequests - an array of bidRequest objects
+   * @param {BidderRequest} bidderRequest - master bidRequest object
+   * @return ServerRequest Info describing the request to the server.
+   */
   buildRequests: function(validBidRequests, bidderRequest) {
     const secure = 1; // treat all requests as secure
     const request = validBidRequests[0];
@@ -117,12 +117,12 @@ export const spec = {
   },
 
   /**
-     * Unpack the response from the server into a list of bids.
-     *
-     * @param {ServerResponse} serverResponse A successful response from the server.
-     * @param bidRequest The payload from the server's response.
-     * @return {Bid[]} An array of bids which were nested inside the server.
-     */
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {ServerResponse} serverResponse A successful response from the server.
+   * @param bidRequest The payload from the server's response.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
   interpretResponse: function(serverResponse, bidRequest) {
     let bidResponse = [];
     if (Object.keys(serverResponse.body).length !== 0) {
