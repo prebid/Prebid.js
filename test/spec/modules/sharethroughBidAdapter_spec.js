@@ -592,10 +592,9 @@ describe('sharethrough adapter spec', function () {
         it('should not add cdep if we do not get it in an impression request', () => {
           const builtRequests = spec.buildRequests(bidRequests, bidderRequest);
 
-          builtRequests.map((builtRequest) => {
+          builtRequests.every((builtRequest) => {
             const ourCdepValue = builtRequest.data.device?.ext?.cdep;
-            expect(ourCdepValue).to.equal(undefined);
-            expect(builtRequest.data.device.ext.cdep).to.not.exist;
+            expect(ourCdepValue === undefined).to.be.true;
           });
         });
 
@@ -610,8 +609,8 @@ describe('sharethrough adapter spec', function () {
               },
             },
           });
-          builtRequests.map((builtRequest) => {
-            expect(builtRequest.data.device.ext.cdep).to.exist.and.to.be.an('string');
+          builtRequests.every((builtRequest) => {
+            expect(builtRequest.data.device.ext.cdep).to.equal('cdep-value');
           });
         });
       });
