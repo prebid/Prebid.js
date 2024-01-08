@@ -45,6 +45,7 @@ export const sharethroughAdapterSpec = {
         dnt: navigator.doNotTrack === '1' ? 1 : 0,
         h: window.screen.height,
         w: window.screen.width,
+        ext: {},
       },
       regs: {
         coppa: config.getConfig('coppa') === true ? 1 : 0,
@@ -64,8 +65,7 @@ export const sharethroughAdapterSpec = {
     };
 
     if (bidderRequest.ortb2?.device?.ext?.cdep) {
-      req.device.ext = {};
-      req.device.ext.cdep = bidderRequest.ortb2.device.ext.cdep;
+      req.device.ext['cdep'] = bidderRequest.ortb2.device.ext.cdep;
     }
 
     req.user = nullish(firstPartyData.user, {});

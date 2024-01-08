@@ -595,6 +595,7 @@ describe('sharethrough adapter spec', function () {
           builtRequests.map((builtRequest) => {
             const ourCdepValue = builtRequest.data.device?.ext?.cdep;
             expect(ourCdepValue).to.equal(undefined);
+            expect(builtRequest.data.device.ext.cdep).to.not.exist;
           });
         });
 
