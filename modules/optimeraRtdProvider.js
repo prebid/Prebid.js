@@ -30,7 +30,8 @@ let _moduleParams = {};
  * Default Optimera Key Name
  * This can default to hb_deal_optimera for publishers
  * who used the previous Optimera Bidder Adapter.
- * @type {string} */
+ * @type {string}
+ */
 export let optimeraKeyName = 'hb_deal_optimera';
 
 /**

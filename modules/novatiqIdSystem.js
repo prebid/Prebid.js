@@ -17,9 +17,9 @@ const MODULE_NAME = 'novatiq';
 export const novatiqIdSubmodule = {
 
   /**
- * used to link submodule with config
- * @type {string}
- */
+   * used to link submodule with config
+   * @type {string}
+   */
   name: MODULE_NAME,
   /**
    * used to specify vendor id
@@ -28,10 +28,10 @@ export const novatiqIdSubmodule = {
   gvlid: 1119,
 
   /**
- * decode the stored id value for passing to bid requests
- * @function
- * @returns {novatiq: {snowflake: string}}
- */
+   * decode the stored id value for passing to bid requests
+   * @function
+   * @returns {novatiq: {snowflake: string}}
+   */
   decode(novatiqId, config) {
     let responseObj = {
       novatiq: {
@@ -52,11 +52,11 @@ export const novatiqIdSubmodule = {
   },
 
   /**
- * performs action to obtain id and return a value in the callback's response argument
- * @function
- * @param {SubmoduleConfig} config
- * @returns {id: string}
- */
+   * performs action to obtain id and return a value in the callback's response argument
+   * @function
+   * @param {SubmoduleConfig} config
+   * @returns {id: string}
+   */
   getId(config) {
     const configParams = config.params || {};
     const urlParams = this.getUrlParams(configParams);

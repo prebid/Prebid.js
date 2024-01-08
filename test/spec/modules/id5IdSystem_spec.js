@@ -4,7 +4,7 @@ import {config} from '../../../src/config.js';
 import * as events from '../../../src/events.js';
 import CONSTANTS from '../../../src/constants.json';
 import * as utils from '../../../src/utils.js';
-import {uspDataHandler} from '../../../src/adapterManager.js';
+import {uspDataHandler, gppDataHandler} from '../../../src/adapterManager.js';
 import '../../../src/prebid.js';
 import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
@@ -249,12 +249,14 @@ describe('ID5 ID System', function () {
 
   describe('Xhr Requests from getId()', function () {
     const responseHeader = HEADERS_CONTENT_TYPE_JSON
+    let gppStub
 
     beforeEach(function () {
     });
 
     afterEach(function () {
       uspDataHandler.reset()
+      gppStub?.restore()
     });
 
     it('should call the ID5 server and handle a valid response', async function () {
@@ -764,6 +766,26 @@ describe('ID5 ID System', function () {
         const submoduleResponse = await submoduleResponsePromise;
         expect(submoduleResponse).to.deep.equal(ID5_JSON_RESPONSE);
       });
+    });
+
+    it('should pass gpp_string and gpp_sid to ID5 server', function () {
+      let xhrServerMock = new XhrServerMock(server)
+      gppStub = sinon.stub(gppDataHandler, 'getConsentData');
+      gppStub.returns({
+        ready: true,
+        gppString: 'GPP_STRING',
+        applicableSections: [2]
+      });
+      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
+
+      return xhrServerMock.expectFetchRequest()
+        .then(fetchRequest => {
+          let requestBody = JSON.parse(fetchRequest.requestBody);
+          expect(requestBody.gpp_string).is.equal('GPP_STRING');
+          expect(requestBody.gpp_sid).contains(2);
+          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+          return submoduleResponse
+        });
     });
 
     describe('when legacy cookies are set', () => {

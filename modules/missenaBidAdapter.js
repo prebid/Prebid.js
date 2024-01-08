@@ -59,9 +59,11 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const capKey = `missena.missena.capper.remove-bubble.${validBidRequests[0]?.params.apiKey}`;
     const capping = safeJSONParse(storage.getDataFromLocalStorage(capKey));
+    const referer = bidderRequest?.refererInfo?.topmostLocation;
     if (
       typeof capping?.expiry === 'number' &&
-      new Date().getTime() < capping?.expiry
+      new Date().getTime() < capping?.expiry &&
+      (!capping?.referer || capping?.referer == referer)
     ) {
       logInfo('Missena - Capped');
       return [];

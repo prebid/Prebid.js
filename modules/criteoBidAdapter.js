@@ -125,7 +125,8 @@ export const spec = {
     return [];
   },
 
-  /** f
+  /**
+   * f
    * @param {object} bid
    * @return {boolean}
    */
