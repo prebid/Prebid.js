@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { spec } from 'modules/pangleBidAdapter.js';
-import { logInfo } from '../../../src/utils';
 
 const REQUEST = [{
   adUnitCode: 'adUnitCode1',
@@ -84,6 +83,7 @@ const RESPONSE = {
             'cat': [],
             'w': 300,
             'h': 250,
+            'mtype': 1,
             'ext': {
               'prebid': {
                 'type': 'banner'
@@ -186,26 +186,6 @@ describe('pangle bid adapter', function () {
       expect(deviceType).to.equal(2);
     });
   });
-
-  // describe('video', function () {
-  //   it('video config', function() {
-  //     logInfo(spec.buildRequests(VIDEO_REQUEST, DEFAULT_OPTIONS)[0].data, 'spec.buildRequests(videoConfig, DEFAULT_OPTIONS)[0].data.imp[0]');
-  //     const request = spec.buildRequests(VIDEO_REQUEST, DEFAULT_OPTIONS)[0];
-
-  //     expect(request).to.exist.and.to.be.a('object');
-  //     const payload = request.data;
-  //     expect(payload).to.exist.and.to.be.a('object');
-  //     const video = payload.imp[0].video;
-  //     expect(video).to.exist.and.to.be.a('object');
-  //     // console.log(video, 'video???')
-  //     // expect(url).to.equal('https://pangle.pangleglobal.com/api/ad/union/web_js/common/get_ads');
-  //     // assert.deepEqual(video, {
-  //     //   h: 380,
-  //     //   mimes: ['video/mp4'],
-  //     //   w: 240
-  //     // })
-  //   })
-  // })
 });
 
 describe('Pangle Adapter with video', function() {
@@ -247,6 +227,7 @@ describe('Pangle Adapter with video', function() {
               ],
               'w': 640,
               'h': 640,
+              'mtype': 1,
               'ext': {
                 'pangle': {
                   'adtype': 8

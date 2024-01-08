@@ -110,25 +110,19 @@ const converter = ortbConverter({
   },
   bidResponse(buildBidResponse, bid, context) {
     const { bidRequest } = context;
-    const reqMediaTypes = Object.keys(bidRequest.mediaTypes);
     let bidResponse;
-    if (reqMediaTypes.length === 1) {
-      context.mediaType = reqMediaTypes[0];
+    if (bid.mtype === MEDIA_TYPES.Video) {
+      context.mediaType = VIDEO;
       bidResponse = buildBidResponse(bid, context);
-    } else {
-      if (bid.mtype === MEDIA_TYPES.Video) {
-        context.mediaType = VIDEO;
-        bidResponse = buildBidResponse(bid, context);
-        if (bidRequest.mediaTypes.video?.context === 'outstream') {
-          const renderer = Renderer.install({id: bid.bidId, url: OUTSTREAM_RENDERER_URL, adUnitCode: bid.adUnitCode});
-          renderer.setRender(renderOutstream);
-          bidResponse.renderer = renderer;
-        }
+      if (bidRequest.mediaTypes.video?.context === 'outstream') {
+        const renderer = Renderer.install({id: bid.bidId, url: OUTSTREAM_RENDERER_URL, adUnitCode: bid.adUnitCode});
+        renderer.setRender(renderOutstream);
+        bidResponse.renderer = renderer;
       }
-      if (bid.mtype === MEDIA_TYPES.Banner) {
-        context.mediaType = BANNER;
-        bidResponse = buildBidResponse(bid, context);
-      }
+    }
+    if (bid.mtype === MEDIA_TYPES.Banner) {
+      context.mediaType = BANNER;
+      bidResponse = buildBidResponse(bid, context);
     }
     return bidResponse;
   },
