@@ -133,7 +133,7 @@ describe('BT Bid Adapter', () => {
           },
           netRevenue: true,
           requestId: '2e9f38ea93bb9e',
-          ttl: 30,
+          ttl: 60,
           width: 300,
         },
       ];
