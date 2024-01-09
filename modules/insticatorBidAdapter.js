@@ -276,7 +276,7 @@ function buildBid(bid, bidderRequest) {
     adUnitCode: originalBid.adUnitCode,
     ...(Object.keys(meta).length > 0 ? {meta} : {})
   };
-  
+
   if (mediaType === 'video') {
     bidResponse.vastXml = bid.adm;
   }
@@ -457,7 +457,7 @@ export const spec = {
     const bidsets = body.seatbid.map((seatbid) =>
       buildBidSet(seatbid, bidderRequest)
     );
-    
+
     return bidsets.reduce((a, b) => a.concat(b), []);
   },
 
