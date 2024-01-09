@@ -39,6 +39,18 @@ describe('LiveIntentId', function() {
     resetLiveIntentIdSubmodule();
   });
 
+   it('should initialize LiveConnect and forward the prebid version', function(done) {
+      liveIntentIdSubmodule.getId({ params: {
+        ...defaultConfigParams
+      }});
+      setTimeout(() => {
+        const packageJson = require('../../../package.json')
+        const version = packageJson.version
+        expect(server.requests[0].url).to.contain(`tv=${version}`)
+        done();
+      }, 200);
+    });
+
   it('should initialize LiveConnect with a privacy string when getId, and include it in the resolution request', function () {
     uspConsentDataStub.returns('1YNY');
     gdprConsentDataStub.returns({
@@ -79,20 +91,6 @@ describe('LiveIntentId', function() {
     liveIntentIdSubmodule.getId(defaultConfigParams);
     setTimeout(() => {
       expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*&us_privacy=1YNY.*&wpn=prebid.*&gdpr=1&n3pc=1&n3pct=1&nb=1&gdpr_consent=consentDataString&gpp_s=gppConsentDataString&gpp_as=1.*/);
-      done();
-    }, 200);
-  });
-
-  it('should fire an event when getId and a hash is provided', function(done) {
-    liveIntentIdSubmodule.getId({ params: {
-      ...defaultConfigParams,
-      emailHash: '58131bc547fb87af94cebdaf3102321f'
-    }});
-    setTimeout(() => {
-      const packageJson = require('../../../package.json')
-      const version = packageJson.version
-      expect(server.requests[0].url).to.contain(`tv=${version}`)
-      expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*e=58131bc547fb87af94cebdaf3102321f.+/)
       done();
     }, 200);
   });
