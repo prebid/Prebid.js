@@ -3,62 +3,51 @@
  * GPT is resposible to run the fledge auction.
  */
 import { config } from '../src/config.js';
-import { getHook } from '../src/hook.js';
+import { getHook, module } from '../src/hook.js';
 import {deepSetValue, logInfo, logWarn, mergeDeep} from '../src/utils.js';
 import {IMP, PBS, registerOrtbProcessor, RESPONSE} from '../src/pbjsORTB.js';
 import * as events from '../src/events.js'
 import CONSTANTS from '../src/constants.json';
 import {currencyCompare} from '../libraries/currencyUtils/currency.js';
 import {maximum, minimum} from '../src/utils/reducers.js';
-import {getGptSlotForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import {auctionManager} from '../src/auctionManager.js';
 
-const MODULE = 'fledgeForGpt'
-const PENDING = {};
+const MODULE = 'PAAPI'
 
-export let isEnabled = false;
+function auctionConfigs() {
+  const store = new WeakMap();
+  return function(auctionId, init = {}) {
+    const auction = auctionManager.index.getAuction({auctionId});
+    if (auction == null) return;
+    if (!store.has(auction)) {
+      store.set(auction, init);
+    }
+    return store.get(auction);
+  }
+}
+
+const pendingForAuction = auctionConfigs();
+const configsForAuction = auctionConfigs();
+const latestAuctionForAdUnit = {};
+
+let moduleConfig = {};
+
+config.getConfig('fledgeForGpt', config => init(config.fledgeForGpt));
+getHook('addComponentAuction').before(addComponentAuctionHook);
+getHook('makeBidRequests').after(markForFledge);
+events.on(CONSTANTS.EVENTS.AUCTION_END, onAuctionEnd);
 
 /**
  * Module init.
  */
 export function init(cfg) {
   if (cfg && cfg.enabled === true) {
-    if (!isEnabled) {
-      getHook('addComponentAuction').before(addComponentAuctionHook);
-      getHook('makeBidRequests').after(markForFledge);
-      events.on(CONSTANTS.EVENTS.AUCTION_INIT, onAuctionInit);
-      events.on(CONSTANTS.EVENTS.AUCTION_END, onAuctionEnd);
-      isEnabled = true;
-    }
+    moduleConfig = cfg;
     logInfo(`${MODULE} enabled (browser ${isFledgeSupported() ? 'supports' : 'does NOT support'} fledge)`, cfg);
   } else {
-    if (isEnabled) {
-      getHook('addComponentAuction').getHooks({hook: addComponentAuctionHook}).remove();
-      getHook('makeBidRequests').getHooks({hook: markForFledge}).remove()
-      events.off(CONSTANTS.EVENTS.AUCTION_INIT, onAuctionInit);
-      events.off(CONSTANTS.EVENTS.AUCTION_END, onAuctionEnd);
-      isEnabled = false;
-    }
+    moduleConfig = {};
     logInfo(`${MODULE} disabled`, cfg);
   }
-}
-
-function setComponentAuction(adUnitCode, auctionConfigs) {
-  const gptSlot = getGptSlotForAdUnitCode(adUnitCode);
-  if (gptSlot && gptSlot.setConfig) {
-    gptSlot.setConfig({
-      componentAuction: auctionConfigs.map(cfg => ({
-        configKey: cfg.seller,
-        auctionConfig: cfg
-      }))
-    });
-    logInfo(MODULE, `register component auction configs for: ${adUnitCode}: ${gptSlot.getAdUnitPath()}`, auctionConfigs);
-  } else {
-    logWarn(MODULE, `unable to register component auction config for ${adUnitCode}`, auctionConfigs);
-  }
-}
-
-function onAuctionInit({auctionId}) {
-  PENDING[auctionId] = {};
 }
 
 function getSlotSignals(bidsReceived = [], bidRequests = []) {
@@ -82,16 +71,17 @@ function getSlotSignals(bidsReceived = [], bidRequests = []) {
 }
 
 function onAuctionEnd({auctionId, bidsReceived, bidderRequests}) {
-  try {
-    const allReqs = bidderRequests?.flatMap(br => br.bids);
-    Object.entries(PENDING[auctionId]).forEach(([adUnitCode, auctionConfigs]) => {
-      const forThisAdUnit = (bid) => bid.adUnitCode === adUnitCode;
-      const slotSignals = getSlotSignals(bidsReceived?.filter(forThisAdUnit), allReqs?.filter(forThisAdUnit));
-      setComponentAuction(adUnitCode, auctionConfigs.map(cfg => mergeDeep({}, slotSignals, cfg)))
-    })
-  } finally {
-    delete PENDING[auctionId];
-  }
+  const allReqs = bidderRequests?.flatMap(br => br.bids);
+  const paapiConfigs = {};
+  Object.entries(pendingForAuction(auctionId) || {}).forEach(([adUnitCode, auctionConfigs]) => {
+    const forThisAdUnit = (bid) => bid.adUnitCode === adUnitCode;
+    const slotSignals = getSlotSignals(bidsReceived?.filter(forThisAdUnit), allReqs?.filter(forThisAdUnit));
+    paapiConfigs[adUnitCode] = {
+      componentAuctions: auctionConfigs.map(cfg => mergeDeep({}, slotSignals, cfg))
+    };
+    latestAuctionForAdUnit[adUnitCode] = auctionId;
+  })
+  configsForAuction(auctionId, paapiConfigs);
 }
 
 function setFPDSignals(auctionConfig, fpd) {
@@ -99,31 +89,60 @@ function setFPDSignals(auctionConfig, fpd) {
 }
 
 export function addComponentAuctionHook(next, request, componentAuctionConfig) {
-  const {adUnitCode, auctionId, ortb2, ortb2Imp} = request;
-  if (PENDING.hasOwnProperty(auctionId)) {
-    setFPDSignals(componentAuctionConfig, {ortb2, ortb2Imp});
-    !PENDING[auctionId].hasOwnProperty(adUnitCode) && (PENDING[auctionId][adUnitCode] = []);
-    PENDING[auctionId][adUnitCode].push(componentAuctionConfig);
-  } else {
-    logWarn(MODULE, `Received component auction config for auction that has closed (auction '${auctionId}', adUnit '${adUnitCode}')`, componentAuctionConfig)
+  if (getFledgeConfig().enabled) {
+    const {adUnitCode, auctionId, ortb2, ortb2Imp} = request;
+    const configs = pendingForAuction(auctionId);
+    if (configs != null) {
+      setFPDSignals(componentAuctionConfig, {ortb2, ortb2Imp});
+      !configs.hasOwnProperty(adUnitCode) && (configs[adUnitCode] = []);
+      configs[adUnitCode].push(componentAuctionConfig);
+    } else {
+      logWarn(MODULE, `Received component auction config for auction that has closed (auction '${auctionId}', adUnit '${adUnitCode}')`, componentAuctionConfig)
+    }
   }
   next(request, componentAuctionConfig);
+}
+
+export function getPAAPIConfig({auctionId, adUnitCode} = {}) {
+  const output = {};
+  const targetedAuctionConfigs = auctionId && configsForAuction(auctionId);
+  Object.entries(latestAuctionForAdUnit).forEach(([au, auct]) => {
+    const auctionConfigs = configsForAuction(auct);
+    if (auctionConfigs == null) {
+      // auction is no longer cached, get rid of our ref as well
+      delete latestAuctionForAdUnit[au];
+    } else {
+      if (adUnitCode == null || adUnitCode === au) {
+        if (targetedAuctionConfigs?.hasOwnProperty(au)) {
+          output[au] = targetedAuctionConfigs[au];
+        } else if (auctionId == null) {
+          output[au] = auctionConfigs[au];
+        }
+      }
+    }
+  })
+  return output;
 }
 
 function isFledgeSupported() {
   return 'runAdAuction' in navigator && 'joinAdInterestGroup' in navigator
 }
 
+function getFledgeConfig() {
+  const bidder = config.getCurrentBidder();
+  const useGlobalConfig = moduleConfig.enabled && (bidder == null || !moduleConfig.bidders?.length || moduleConfig.bidders?.includes(bidder))
+  return {
+    enabled: config.getConfig('fledgeEnabled') ?? useGlobalConfig,
+    defaultForSlots: config.getConfig('defaultForSlots') ?? (useGlobalConfig ? moduleConfig.defaultForSlots : undefined)
+  }
+}
+
 export function markForFledge(next, bidderRequests) {
   if (isFledgeSupported()) {
-    const globalFledgeConfig = config.getConfig('fledgeForGpt');
-    const bidders = globalFledgeConfig?.bidders ?? [];
     bidderRequests.forEach((bidderReq) => {
-      const useGlobalConfig = globalFledgeConfig?.enabled && (bidders.length === 0 || bidders.includes(bidderReq.bidderCode));
       config.runWithBidder(bidderReq.bidderCode, () => {
-        const fledgeEnabled = config.getConfig('fledgeEnabled') ?? (useGlobalConfig ? globalFledgeConfig.enabled : undefined);
-        const defaultForSlots = config.getConfig('defaultForSlots') ?? (useGlobalConfig ? globalFledgeConfig?.defaultForSlots : undefined);
-        Object.assign(bidderReq, {fledgeEnabled});
+        const {enabled, defaultForSlots} = getFledgeConfig();
+        Object.assign(bidderReq, {fledgeEnabled: enabled});
         bidderReq.bids.forEach(bidReq => { deepSetValue(bidReq, 'ortb2Imp.ext.ae', bidReq.ortb2Imp?.ext?.ae ?? defaultForSlots) })
       })
     });
