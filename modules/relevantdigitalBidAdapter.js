@@ -94,7 +94,7 @@ export const spec = {
   gvlid: 1100,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  /** We need both params.placementId + a complete configuration (pbsHost + accountId) to continue **/
+  /** We need both params.placementId + a complete configuration (pbsHost + accountId) to continue */
   isBidRequestValid: (bid) => bid.params?.placementId && getBidderConfig([bid]).complete,
 
   /** Trigger impression-pixel */
