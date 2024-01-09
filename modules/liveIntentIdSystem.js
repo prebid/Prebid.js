@@ -156,7 +156,7 @@ function tryFireEvent() {
 
 /** @type {Submodule} */
 export const liveIntentIdSubmodule = {
-  moduleMode: process.env.LiveConnectMode,
+  moduleMode: process?.env?.LiveConnectMode,
   /**
    * used to link submodule with config
    * @type {string}
