@@ -1183,8 +1183,7 @@ export function hasValidVideoParams(bid) {
   var requiredParams = {
     mimes: arrayType,
     protocols: arrayType,
-    linearity: numberType,
-    api: arrayType
+    linearity: numberType
   }
   // loop through each param and verify it has the correct
   Object.keys(requiredParams).forEach(function(param) {
