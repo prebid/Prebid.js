@@ -401,21 +401,28 @@ describe('Seedtag Adapter', function () {
         const data = JSON.parse(request.data);
         const bidRequests = data.bidRequests;
         const bannerBid = bidRequests[0];
-        expect(bannerBid).to.have.property('geom')
 
-        const params = [['width', 300], ['height', 250], ['top', 10], ['left', 20], ['scrollY', 0]]
-        params.forEach(([param, value]) => {
-          expect(bannerBid.geom).to.have.property(param)
-          expect(bannerBid.geom[param]).to.be.a('number')
-          expect(bannerBid.geom[param]).to.be.equal(value)
-        })
+        // on some CI, the DOM is not initialized, so we need to check if the slot is available
+        const slot = document.getElementById(adUnitCode)
+        if (slot) {
+          expect(bannerBid).to.have.property('geom')
 
-        expect(bannerBid.geom).to.have.property('viewport')
-        const viewportParams = ['width', 'height']
-        viewportParams.forEach(param => {
-          expect(bannerBid.geom.viewport).to.have.property(param)
-          expect(bannerBid.geom.viewport[param]).to.be.a('number')
-        })
+          const params = [['width', 300], ['height', 250], ['top', 10], ['left', 20], ['scrollY', 0]]
+          params.forEach(([param, value]) => {
+            expect(bannerBid.geom).to.have.property(param)
+            expect(bannerBid.geom[param]).to.be.a('number')
+            expect(bannerBid.geom[param]).to.be.equal(value)
+          })
+
+          expect(bannerBid.geom).to.have.property('viewport')
+          const viewportParams = ['width', 'height']
+          viewportParams.forEach(param => {
+            expect(bannerBid.geom.viewport).to.have.property(param)
+            expect(bannerBid.geom.viewport[param]).to.be.a('number')
+          })
+        } else {
+          expect(bannerBid).to.not.have.property('geom')
+        }
       })
     });
 
