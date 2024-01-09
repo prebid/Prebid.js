@@ -89,12 +89,14 @@ function buildVideo(bidRequest) {
       h = parseInt(playerSize[1], 10);
     }
   }
+
   let videoObj = {
     placement,
     mimes,
     w,
     h,
   }
+
   if (plcmt) {
     videoObj = {
       ...videoObj,
