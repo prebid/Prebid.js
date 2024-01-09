@@ -258,7 +258,11 @@ function buildBid(bid, bidderRequest) {
     meta.advertiserDomains = bid.adomain
   }
 
-  return {
+  let mediaType = 'banner';
+  if (bid.adm && bid.adm.includes('<VAST')) {
+    mediaType = 'video';
+  }
+  let bidResponse = {
     requestId: bid.impid,
     creativeId: bid.crid,
     cpm: bid.price,
@@ -267,11 +271,22 @@ function buildBid(bid, bidderRequest) {
     ttl: bid.exp || config.getConfig('insticator.bidTTL') || BID_TTL,
     width: bid.w,
     height: bid.h,
-    mediaType: 'banner',
+    mediaType: mediaType,
     ad: bid.adm,
     adUnitCode: originalBid.adUnitCode,
     ...(Object.keys(meta).length > 0 ? {meta} : {})
   };
+  
+  if (mediaType === 'video') {
+    bidResponse.vastXml = bid.adm;
+  }
+
+  // Inticator bid adaptor only returns `vastXml` for video bids. No VastUrl or videoCache.
+  if (!bidResponse.vastUrl && bidResponse.vastXml) {
+    bidResponse.vastUrl = 'data:text/xml;charset=utf-8;base64,' + window.btoa(bidResponse.vastXml.replace(/\\"/g, '"'));
+  }
+
+  return bidResponse;
 }
 
 function buildBidSet(seatbid, bidderRequest) {
@@ -442,7 +457,7 @@ export const spec = {
     const bidsets = body.seatbid.map((seatbid) =>
       buildBidSet(seatbid, bidderRequest)
     );
-
+    
     return bidsets.reduce((a, b) => a.concat(b), []);
   },
 
