@@ -110,6 +110,7 @@ const yandexAnalytics = Object.assign(buildAdapter({ analyticsType: 'endpoint' }
       return presentScript;
     }
 
+    logInfo('Inserting metrika tag script');
     const script = window.document.createElement('script');
     script.setAttribute('src', tagURLs[0]);
     window.document.body.appendChild(script);
@@ -204,11 +205,15 @@ const yandexAnalytics = Object.assign(buildAdapter({ analyticsType: 'endpoint' }
             yandexAnalytics.onCounterInit(id);
           });
         };
-        unsubscribeCallbacks.push(() => {
-          tag.removeEventListener('load', onScriptLoad);
-        });
-        tag.addEventListener('load', onScriptLoad);
-        logInfo('Inserting metrika tag script');
+        // Script not only present but loaded
+        if (window.Ya && window.Ya.Metrika2) {
+          onScriptLoad();
+        } else {
+          unsubscribeCallbacks.push(() => {
+            tag.removeEventListener('load', onScriptLoad);
+          });
+          tag.addEventListener('load', onScriptLoad);
+        }
       });
     }
   },

@@ -155,15 +155,47 @@ describe('Yandex analytics adapter testing', () => {
     }]);
   });
 
-  it('finds present metrika script if it\'s not already present and initializes counter', () => {
-    // Simulatin metrika script initialization
-    const counterPbjsMethod = sandbox.stub();
+  it('finds present metrika script if it\'s already loaded and initializes counter', () => {
     window.Ya = {Metrika2: function (id) {
       chai.expect(id).to.equal(counterId);
       return {
         pbjs: counterPbjsMethod,
       }
     }};
+    // Simulatin metrika script initialization
+    const counterPbjsMethod = sandbox.stub();
+    const fakeScript = {
+      addEventListener: sandbox.stub(),
+      removeEventListener: sandbox.stub(),
+    };
+    querySelector.returns(fakeScript);
+    yandexAnalytics.enableAnalytics({
+      options: {
+        counters: [
+          counterId,
+        ],
+      },
+    });
+    const [ scriptSelector ] = querySelector.getCall(0).args;
+    chai.expect(scriptSelector).to.equal(
+      tagURLs.map((scriptUrl) => `script[src="${scriptUrl}"]`).join(',')
+    );
+    chai.assert(!!window[counterWindowKey]);
+
+    // Sending event
+    const [event, eventCallback] = onEvent.getCall(0).args;
+    eventCallback({});
+    clock.tick(1501);
+    const [ sentEvents ] = counterPbjsMethod.getCall(0).args;
+    chai.expect(sentEvents).to.deep.equal([{
+      event,
+      data: {},
+    }]);
+  });
+
+  it('finds present metrika script if it\'s not already loaded and initializes counter', () => {
+    // Simulatin metrika script initialization
+    const counterPbjsMethod = sandbox.stub();
     const fakeScript = {
       addEventListener: sandbox.stub(),
       removeEventListener: sandbox.stub(),
@@ -182,6 +214,12 @@ describe('Yandex analytics adapter testing', () => {
     );
     const [scriptEvent, onLoad] = fakeScript.addEventListener.getCall(0).args;
     chai.expect(scriptEvent).to.equal('load');
+    window.Ya = {Metrika2: function (id) {
+      chai.expect(id).to.equal(counterId);
+      return {
+        pbjs: counterPbjsMethod,
+      }
+    }};
     onLoad();
     chai.assert(!!window[counterWindowKey]);
 
