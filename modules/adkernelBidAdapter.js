@@ -67,7 +67,7 @@ const NATIVE_INDEX = NATIVE_MODEL.reduce((acc, val, idx) => {
   return acc;
 }, {});
 
-const MULTI_FORMAT_SUFFIX = "__mf";
+const MULTI_FORMAT_SUFFIX = '__mf';
 const MULTI_FORMAT_SUFFIX_BANNER = 'b' + MULTI_FORMAT_SUFFIX;
 const MULTI_FORMAT_SUFFIX_VIDEO = 'v' + MULTI_FORMAT_SUFFIX;
 const MULTI_FORMAT_SUFFIX_NATIVE = 'n' + MULTI_FORMAT_SUFFIX;
