@@ -251,7 +251,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data) {
   data.site = site;
   data.device = device;
   data.source = {fd: 1};
-  data.tmax = bidderRequest.timeout;
+  data.tmax = (bidderRequest.timeout == undefined) ? undefined : parseInt(bidderRequest.timeout);
   data.bcat = ortb2.bcat || bidRequest.params.bcat || [];
   data.badv = ortb2.badv || bidRequest.params.badv || [];
   data.wlang = ortb2.wlang || bidRequest.params.wlang || [];

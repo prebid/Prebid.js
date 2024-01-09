@@ -335,8 +335,8 @@ describe('Taboola Adapter', function () {
         timeout: '500'
       }
       const res = spec.buildRequests([defaultBidRequest], bidderRequest);
-      const resData = JSON.parse(res.data);
-      expect(resData.tmax).to.equal(500);
+      // const resData = JSON.parse(res.data);
+      expect(res.data.tmax).to.equal(500);
     });
 
     it('should pass bidder timeout as null', function () {
@@ -345,8 +345,8 @@ describe('Taboola Adapter', function () {
         timeout: null
       }
       const res = spec.buildRequests([defaultBidRequest], bidderRequest);
-      const resData = JSON.parse(res.data);
-      expect(resData.tmax).to.equal(undefined);
+      // const resData = JSON.parse(res.data);
+      expect(res.data.tmax).to.equal(undefined);
     });
 
     describe('first party data', function () {
@@ -484,9 +484,9 @@ describe('Taboola Adapter', function () {
           ...commonBidderRequest
         };
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
-        const resData = JSON.parse(res.data);
+        // const resData = JSON.parse(res.data);
 
-        expect(resData.user.buyeruid).to.equal('d966c5be-c49f-4f73-8cd1-37b6b5790653-tuct9f7bf10');
+        expect(res.data.user.buyeruid).to.equal('d966c5be-c49f-4f73-8cd1-37b6b5790653-tuct9f7bf10');
       });
 
       it('should get user id from TRC if local storage and cookie isn`t defined', function () {
