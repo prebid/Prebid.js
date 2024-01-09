@@ -335,7 +335,6 @@ describe('Taboola Adapter', function () {
         timeout: '500'
       }
       const res = spec.buildRequests([defaultBidRequest], bidderRequest);
-      // const resData = JSON.parse(res.data);
       expect(res.data.tmax).to.equal(500);
     });
 
@@ -345,7 +344,6 @@ describe('Taboola Adapter', function () {
         timeout: null
       }
       const res = spec.buildRequests([defaultBidRequest], bidderRequest);
-      // const resData = JSON.parse(res.data);
       expect(res.data.tmax).to.equal(undefined);
     });
 
@@ -484,7 +482,6 @@ describe('Taboola Adapter', function () {
           ...commonBidderRequest
         };
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
-        // const resData = JSON.parse(res.data);
 
         expect(res.data.user.buyeruid).to.equal('d966c5be-c49f-4f73-8cd1-37b6b5790653-tuct9f7bf10');
       });
