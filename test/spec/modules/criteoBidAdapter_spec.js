@@ -368,93 +368,6 @@ describe('The Criteo bidding adapter', function () {
         bidder: 'criteo',
         mediaTypes: {
           video: {
-            mimes: ['video/mpeg'],
-            playerSize: [640, 480],
-            protocols: [5, 6],
-            maxduration: 30,
-            api: [1, 2]
-          }
-        },
-        params: {
-          networkId: 456,
-          video: {
-            skip: 1,
-            placement: 1,
-            playbackmethod: 1
-          }
-        },
-      })).to.equal(false);
-
-      expect(spec.isBidRequestValid({
-        bidder: 'criteo',
-        mediaTypes: {
-          video: {
-            context: 'instream',
-            mimes: ['video/mpeg'],
-            playerSize: [640, 480],
-            protocols: [5, 6],
-            maxduration: 30,
-            api: [1, 2]
-          }
-        },
-        params: {
-          networkId: 456,
-          video: {
-            skip: 1,
-            placement: 2,
-            playbackmethod: 1
-          }
-        },
-      })).to.equal(false);
-
-      expect(spec.isBidRequestValid({
-        bidder: 'criteo',
-        mediaTypes: {
-          video: {
-            context: 'outstream',
-            mimes: ['video/mpeg'],
-            playerSize: [640, 480],
-            protocols: [5, 6],
-            maxduration: 30,
-            api: [1, 2]
-          }
-        },
-        params: {
-          networkId: 456,
-          video: {
-            skip: 1,
-            placement: 1,
-            playbackmethod: 1
-          }
-        },
-      })).to.equal(false);
-
-      expect(spec.isBidRequestValid({
-        bidder: 'criteo',
-        mediaTypes: {
-          video: {
-            context: 'adpod',
-            mimes: ['video/mpeg'],
-            playerSize: [640, 480],
-            protocols: [5, 6],
-            maxduration: 30,
-            api: [1, 2]
-          }
-        },
-        params: {
-          networkId: 456,
-          video: {
-            skip: 1,
-            placement: 1,
-            playbackmethod: 1
-          }
-        },
-      })).to.equal(false);
-
-      expect(spec.isBidRequestValid({
-        bidder: 'criteo',
-        mediaTypes: {
-          video: {
             context: 'instream',
             playerSize: [640, 480],
             protocols: [5, 6],
@@ -1120,6 +1033,30 @@ describe('The Criteo bidding adapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.user).to.not.be.null;
       expect(request.data.user.uspIab).to.equal('1YNY');
+    });
+
+    it('should properly build a request with site and app ortb fields', function () {
+      const bidRequests = [];
+      let app = {
+        publisher: {
+          id: 'appPublisherId'
+        }
+      };
+      let site = {
+        publisher: {
+          id: 'sitePublisherId'
+        }
+      };
+      const bidderRequest = {
+        ortb2: {
+          app: app,
+          site: site
+        }
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+
+      expect(request.data.app).to.equal(app);
+      expect(request.data.site).to.equal(site);
     });
 
     it('should properly build a request with device sua field', function () {

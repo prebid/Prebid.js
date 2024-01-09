@@ -3,16 +3,20 @@ import {
   formatQS,
   isFn,
   logInfo,
+  safeJSONParse,
   triggerPixel,
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'missena';
 const ENDPOINT_URL = 'https://bid.missena.io/';
 const EVENTS_DOMAIN = 'events.missena.io';
 const EVENTS_DOMAIN_DEV = 'events.staging.missena.xyz';
+
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 /* Get Floor price information */
 function getFloor(bidRequest) {
@@ -22,7 +26,7 @@ function getFloor(bidRequest) {
 
   const bidFloors = bidRequest.getFloor({
     currency: 'USD',
-    mediaType: BANNER
+    mediaType: BANNER,
   });
 
   if (!isNaN(bidFloors.floor)) {
@@ -53,6 +57,18 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    const capKey = `missena.missena.capper.remove-bubble.${validBidRequests[0]?.params.apiKey}`;
+    const capping = safeJSONParse(storage.getDataFromLocalStorage(capKey));
+    const referer = bidderRequest?.refererInfo?.topmostLocation;
+    if (
+      typeof capping?.expiry === 'number' &&
+      new Date().getTime() < capping?.expiry &&
+      (!capping?.referer || capping?.referer == referer)
+    ) {
+      logInfo('Missena - Capped');
+      return [];
+    }
+
     return validBidRequests.map((bidRequest) => {
       const payload = {
         adunit: bidRequest.adUnitCode,

@@ -85,26 +85,26 @@ export const getHighestCpmBidsFromBidPool = hook('sync', function(bidsReceived, 
 });
 
 /**
-* A descending sort function that will sort the list of objects based on the following two dimensions:
-*  - bids with a deal are sorted before bids w/o a deal
-*  - then sort bids in each grouping based on the hb_pb value
-* eg: the following list of bids would be sorted like:
-*  [{
-*    "hb_adid": "vwx",
-*    "hb_pb": "28",
-*    "hb_deal": "7747"
-*  }, {
-*    "hb_adid": "jkl",
-*    "hb_pb": "10",
-*    "hb_deal": "9234"
-*  }, {
-*    "hb_adid": "stu",
-*    "hb_pb": "50"
-*  }, {
-*    "hb_adid": "def",
-*    "hb_pb": "2"
-*  }]
-*/
+ * A descending sort function that will sort the list of objects based on the following two dimensions:
+ *  - bids with a deal are sorted before bids w/o a deal
+ *  - then sort bids in each grouping based on the hb_pb value
+ * eg: the following list of bids would be sorted like:
+ *  [{
+ *    "hb_adid": "vwx",
+ *    "hb_pb": "28",
+ *    "hb_deal": "7747"
+ *  }, {
+ *    "hb_adid": "jkl",
+ *    "hb_pb": "10",
+ *    "hb_deal": "9234"
+ *  }, {
+ *    "hb_adid": "stu",
+ *    "hb_pb": "50"
+ *  }, {
+ *    "hb_adid": "def",
+ *    "hb_pb": "2"
+ *  }]
+ */
 export function sortByDealAndPriceBucketOrCpm(useCpm = false) {
   return function(a, b) {
     if (a.adserverTargeting.hb_deal !== undefined && b.adserverTargeting.hb_deal === undefined) {
