@@ -10,8 +10,14 @@ const BIDDER_CODE = 'preciso';
 
 describe('PrecisoAdapter', function () {
   let bid = {
+    test: 'testkey',
     bidId: '23fhj33i987f',
     bidder: 'preciso',
+    refererInfo: {
+      page: 'https://localhost.com',
+      domain: 'localhost.com',
+      ref: 'https://localhost.com/foo'
+    },
     mediaTypes: {
       banner: {
         sizes: [[DEFAULT_BANNER_WIDTH, DEFAULT_BANNER_HEIGHT]]
@@ -25,12 +31,24 @@ describe('PrecisoAdapter', function () {
       region: 'prebid-eu'
 
     },
-    userId: {
-      pubcid: '12355454test'
+    user: {
+      region: 'asia/kolkata',
+      utcoffset: '-300'
 
     },
-    geo: 'NA',
-    city: 'Asia,delhi'
+    ortb2: {
+      site: {
+        doamin: 'localhost.com',
+        page: 'https://.comlocalhost.com'
+      },
+      device: {
+
+      }
+    },
+    userId: {
+      pubcid: '27e21631-975a-4410-85f3-c08b1f1c469f',
+    },
+
   };
 
   describe('isBidRequestValid', function () {
@@ -59,10 +77,6 @@ describe('PrecisoAdapter', function () {
     });
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
-      // expect(data).to.be.an('object');
-
-      // expect(data).to.have.all.keys('bidId', 'imp', 'site', 'deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'coppa');
-
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
       expect(data.coppa).to.be.a('number');
@@ -71,10 +85,9 @@ describe('PrecisoAdapter', function () {
       expect(data.host).to.be.a('string');
       expect(data.page).to.be.a('string');
 
-      expect(data.city).to.be.a('string');
-      expect(data.geo).to.be.a('object');
-      // expect(data.userId).to.be.a('string');
-      // expect(data.imp).to.be.a('object');
+      // expect(data.city).to.be.a('string');
+      // expect(data.geo).to.be.a('object');
+      expect(data.user).to.be.a('object');
     });
     // it('Returns empty data if no valid requests are passed', function () {
     /// serverRequest = spec.buildRequests([]);
@@ -145,7 +158,7 @@ describe('PrecisoAdapter', function () {
     })
   })
   describe('getUserSyncs', function () {
-    const syncUrl = 'https://ck.2trk.info/rtb/user/usersync.aspx?id=NA&gdpr=0&gdpr_consent=&us_privacy=&t=4';
+    const syncUrl = 'https://ck.2trk.info/rtb/user/usersync.aspx?id=27e21631-975a-4410-85f3-c08b1f1c469f&gdpr=0&gdpr_consent=&us_privacy=&t=4';
     const syncOptions = {
       iframeEnabled: true
     };
