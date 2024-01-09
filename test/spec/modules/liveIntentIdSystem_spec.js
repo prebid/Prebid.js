@@ -39,17 +39,17 @@ describe('LiveIntentId', function() {
     resetLiveIntentIdSubmodule();
   });
 
-   it('should initialize LiveConnect and forward the prebid version', function(done) {
-      liveIntentIdSubmodule.getId({ params: {
-        ...defaultConfigParams
-      }});
-      setTimeout(() => {
-        const packageJson = require('../../../package.json')
-        const version = packageJson.version
-        expect(server.requests[0].url).to.contain(`tv=${version}`)
-        done();
-      }, 200);
-    });
+  it('should initialize LiveConnect and forward the prebid version', function(done) {
+    liveIntentIdSubmodule.getId({ params: {
+      ...defaultConfigParams
+    }});
+    setTimeout(() => {
+      const packageJson = require('../../../package.json')
+      const version = packageJson.version
+      expect(server.requests[0].url).to.contain(`tv=${version}`)
+      done();
+    }, 200);
+  });
 
   it('should initialize LiveConnect with a privacy string when getId, and include it in the resolution request', function () {
     uspConsentDataStub.returns('1YNY');
