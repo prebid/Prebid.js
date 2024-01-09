@@ -44,9 +44,7 @@ describe('LiveIntentId', function() {
       ...defaultConfigParams
     }});
     setTimeout(() => {
-      const packageJson = require('../../../package.json')
-      const version = packageJson.version
-      expect(server.requests[0].url).to.contain(`tv=${version}`)
+      expect(server.requests[0].url).to.contain(`tv=$prebid.version$`)
       done();
     }, 200);
   });
