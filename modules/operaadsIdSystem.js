@@ -50,33 +50,33 @@ function asyncRequest(url, cb) {
 
 export const operaIdSubmodule = {
   /**
-     * used to link submodule with config
-     * @type {string}
-     */
+   * used to link submodule with config
+   * @type {string}
+   */
   name: MODULE_NAME,
 
   /**
-     * @type {string}
-     */
+   * @type {string}
+   */
   version,
 
   /**
-     * decode the stored id value for passing to bid requests
-     * @function
-     * @param {string} id
-     * @returns {{'operaId': string}}
-     */
+   * decode the stored id value for passing to bid requests
+   * @function
+   * @param {string} id
+   * @returns {{'operaId': string}}
+   */
   decode: (id) =>
     id != null && id.length > 0
       ? { [ID_KEY]: id }
       : undefined,
 
   /**
-     * performs action to obtain id and return a value in the callback's response argument
-     * @function
-     * @param {SubmoduleConfig} [config]
-     * @returns {IdResponse|undefined}
-     */
+   * performs action to obtain id and return a value in the callback's response argument
+   * @function
+   * @param {SubmoduleConfig} [config]
+   * @returns {IdResponse|undefined}
+   */
   getId(config, consentData) {
     logMessage(`${MODULE_NAME}: start synchronizing opera uid`);
     const params = (config && config.params) || {};

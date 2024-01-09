@@ -360,7 +360,7 @@ export const spec = {
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
    * @param {Bid} The bid that won the auction
-  */
+   */
   onBidWon: function (bid) {
     ajax(`${LOGGER_URI}/prebid/won`, null, JSON.stringify(bid), {
       method: 'POST',
@@ -373,7 +373,7 @@ export const spec = {
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
    * @param {data} Containing timeout specific data
-  */
+   */
   onTimeout: function (data) {
     ajax(`${LOGGER_URI}/prebid/timeout`, null, JSON.stringify(data[0]), {
       method: 'POST',

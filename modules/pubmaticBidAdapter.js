@@ -734,9 +734,9 @@ function _addImpressionFPD(imp, bid) {
   const ortb2 = {...deepAccess(bid, 'ortb2Imp.ext.data')};
   Object.keys(ortb2).forEach(prop => {
     /**
-      * Prebid AdSlot
-      * @type {(string|undefined)}
-    */
+     * Prebid AdSlot
+     * @type {(string|undefined)}
+     */
     if (prop === 'pbadslot') {
       if (typeof ortb2[prop] === 'string' && ortb2[prop]) deepSetValue(imp, 'ext.data.pbadslot', ortb2[prop]);
     } else if (prop === 'adserver') {
@@ -1011,11 +1011,11 @@ export const spec = {
   gvlid: 76,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
-  * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
-  *
-  * @param {BidRequest} bid The bid params to validate.
-  * @return boolean True if this is a valid bid, and false otherwise.
-  */
+   * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: bid => {
     if (bid && bid.params) {
       if (!isStr(bid.params.publisherId)) {
