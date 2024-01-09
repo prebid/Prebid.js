@@ -31,8 +31,8 @@ pbjs.setBidderConfig({
         ext: {
           blockthrough: {
             ab: false,
-            orgID: 'orgID',
-            websiteID: 'websiteID',
+            orgID: '4829301576428910',
+            websiteID: '5654012389765432',
           },
         },
       },

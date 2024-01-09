@@ -13,7 +13,7 @@ const SYNC_URL = 'https://cdn.sample.com';
 const CONVERTER = ortbConverter({
   context: {
     netRevenue: true,
-    ttl: 30,
+    ttl: 60,
   },
   imp,
   request,
