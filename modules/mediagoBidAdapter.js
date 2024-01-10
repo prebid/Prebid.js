@@ -43,6 +43,7 @@ export function getPageTitle(win = window) {
 
 /**
  * get page description
+ *
  * @returns {string}
  */
 export function getPageDescription(win = window) {
