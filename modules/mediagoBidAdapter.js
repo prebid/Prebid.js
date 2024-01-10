@@ -110,6 +110,7 @@ export const getPmgUID = () => {
 
 /**
  * 获取一个对象的某个值，如果没有则返回空字符串
+ *
  * @param  {Object}    obj  对象
  * @param  {...string} keys 键名
  * @return {any}
