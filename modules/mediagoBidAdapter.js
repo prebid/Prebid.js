@@ -88,6 +88,7 @@ export function getConnectionDownLink(win = window) {
 /**
  * get pmg uid
  * 获取并生成用户的id
+ *
  * @return {string}
  */
 export const getPmgUID = () => {
