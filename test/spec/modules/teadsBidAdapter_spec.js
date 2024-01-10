@@ -407,6 +407,24 @@ describe('teadsBidAdapter', () => {
       });
     });
 
+    it('should add fledgeEnabled info to payload when runAdAuction and joinAdInterestGroup are defined', function () {
+      navigator.runAdAuction = 'Function implementation';
+      navigator.joinAdInterestGroup = 'Function implementation';
+      const request1 = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload1 = JSON.parse(request1.data);
+
+      expect(payload1.fledgeEnabled).to.exist;
+      expect(payload1.fledgeEnabled).to.deep.equal(true);
+
+      delete navigator.runAdAuction;
+      delete navigator.joinAdInterestGroup;
+      const request2 = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload2 = JSON.parse(request2.data);
+
+      expect(payload2.fledgeEnabled).to.exist;
+      expect(payload2.fledgeEnabled).to.deep.equal(false);
+    });
+
     it('should add timeToFirstByte info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);

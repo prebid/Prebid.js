@@ -47,6 +47,8 @@ export const spec = {
     const bids = validBidRequests.map(buildRequestObject);
     const topWindow = window.top;
 
+    const fledgeEnabled = 'runAdAuction' in navigator && 'joinAdInterestGroup' in navigator;
+
     const payload = {
       referrer: getReferrerInfo(bidderRequest),
       pageReferrer: document.referrer,
@@ -63,6 +65,7 @@ export const spec = {
       hardwareConcurrency: topWindow.navigator?.hardwareConcurrency,
       deviceMemory: topWindow.navigator?.deviceMemory,
       hb_version: '$prebid.version$',
+      fledgeEnabled: fledgeEnabled,
       ...getSharedViewerIdParameters(validBidRequests),
       ...getFirstPartyTeadsIdParameter(validBidRequests)
     };
