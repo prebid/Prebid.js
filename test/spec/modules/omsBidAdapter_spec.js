@@ -41,7 +41,7 @@ describe('omsBidAdapter', function() {
       innerHeight: 600
     };
     bidRequests = [{
-      'bidder': 'bcmssp',
+      'bidder': 'oms',
       'params': {
         'publisherId': 1234567
       },
@@ -82,7 +82,7 @@ describe('omsBidAdapter', function() {
 
   describe('isBidRequestValid', function () {
     let bid = {
-      'bidder': 'bcmssp',
+      'bidder': 'oms',
       'params': {
         'publisherId': 1234567
       },
@@ -159,7 +159,7 @@ describe('omsBidAdapter', function() {
     it('sends gdpr info if exists', function () {
       const consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
       const bidderRequest = {
-        'bidderCode': 'bcmssp',
+        'bidderCode': 'oms',
         'auctionId': '1d1a030790a437',
         'bidderRequestId': '22edbae2744bf5',
         'timeout': 3000,
