@@ -4,8 +4,6 @@ import {
   spec
 } from 'modules/richaudienceBidAdapter.js';
 import {config} from 'src/config.js';
-import {server} from '../../mocks/xhr';
-import {EVENT_ENDPOINT} from '../../../modules/taboolaBidAdapter';
 import * as utils from 'src/utils.js';
 import sinon from 'sinon';
 
