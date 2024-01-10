@@ -17,7 +17,7 @@ const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediago.io/js/cookieSync.html';
 const TIME_TO_LIVE = 500;
 const GVLID = 1020;
 // const ENDPOINT_URL = '/api/bid?tn=';
-export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 let globals = {};
 let itemMaps = {};
 
