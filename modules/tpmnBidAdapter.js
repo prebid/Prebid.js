@@ -184,7 +184,7 @@ function createRenderer(bid) {
 
 function outstreamRender(bid, doc) {
   bid.renderer.push(() => {
-    const win = utils.getWindowFromDocument(doc) || window;
+    const win = (doc) ? doc.defaultView : window;
     win.ANOutstreamVideo.renderAd({
       sizes: [bid.playerWidth, bid.playerHeight],
       targetId: bid.adUnitCode,

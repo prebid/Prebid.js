@@ -64,7 +64,7 @@ export const spec = {
    * Format ucfunnel responses as Prebid bid responses
    * @param {ucfunnelResponseObj} ucfunnelResponse A successful response from ucfunnel.
    * @return {Bid[]} An array of formatted bids.
-  */
+   */
   interpretResponse: function (ucfunnelResponseObj, request) {
     const bidRequest = request.bidRequest;
     const ad = ucfunnelResponseObj ? ucfunnelResponseObj.body : {};

@@ -33,7 +33,8 @@ export const spec = {
     {code: 'pixad'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
-  /** f
+  /**
+   * f
    * @param {object} bid
    * @return {boolean}
    */

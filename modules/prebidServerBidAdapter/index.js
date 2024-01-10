@@ -207,7 +207,7 @@ getConfig('s2sConfig', ({s2sConfig}) => setS2sConfig(s2sConfig));
 
 /**
  * resets the _synced variable back to false, primiarily used for testing purposes
-*/
+ */
 export function resetSyncedStatus() {
   _syncCount = 0;
 }

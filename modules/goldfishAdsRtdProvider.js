@@ -74,9 +74,9 @@ const getTargetingDataFromApi = (key) => {
 /**
  * @returns {{
  *    name: 'golfishads.com',
-  *   ext: { segtax: 4},
-  *   segment: string[]
-  * } | null }
+ *   ext: { segtax: 4},
+ *   segment: string[]
+ * } | null }
  */
 export const getStorageData = () => {
   const now = new Date();
@@ -140,9 +140,9 @@ const init = (config, userConsent) => {
  *
  * @param {{
  *  name: string,
-*  ext: { segtax: 4},
-*  segment: {id: string}[]
-* } | null } userData
+ *  ext: { segtax: 4},
+ *  segment: {id: string}[]
+ * } | null } userData
  * @param {*} reqBidsConfigObj
  * @returns
  */
