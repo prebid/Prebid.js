@@ -556,13 +556,6 @@ export const spec = {
           url: `${COOKY_SYNC_IFRAME_URL}?${syncParamUrl}`
         }
       ];
-    } else {
-      return [
-        {
-          type: 'image',
-          url: `${COOKY_SYNC_URL}?${syncParamUrl}`
-        }
-      ];
     }
   },
 
