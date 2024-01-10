@@ -17,31 +17,94 @@ const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediago.io/js/cookieSync.html';
 const TIME_TO_LIVE = 500;
 const GVLID = 1020;
 // const ENDPOINT_URL = '/api/bid?tn=';
-const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 let globals = {};
 let itemMaps = {};
 
 /* ----- mguid:start ------ */
 const COOKIE_KEY_MGUID = '__mguid_';
-const STORE_MAX_AGE = 1000 * 60 * 60 * 24 * 365;
+const COOKIE_KEY_PMGUID = '__pmguid_';
+const COOKIE_RETENTION_TIME = 365 * 24 * 60 * 60 * 1000; // 1 year
 let reqTimes = 0;
+/**
+ * get page title
+ * @returns {string}
+ */
+
+export function getPageTitle(win = window) {
+  try {
+    const ogTitle = win.top.document.querySelector('meta[property="og:title"]')
+    return win.top.document.title || (ogTitle && ogTitle.content) || '';
+  } catch (e) {
+    const ogTitle = document.querySelector('meta[property="og:title"]')
+    return document.title || (ogTitle && ogTitle.content) || '';
+  }
+}
 
 /**
- * 获取用户id
+ * get page description
+ * @returns {string}
+ */
+export function getPageDescription(win = window) {
+  let element;
+
+  try {
+    element = win.top.document.querySelector('meta[name="description"]') ||
+        win.top.document.querySelector('meta[property="og:description"]')
+  } catch (e) {
+    element = document.querySelector('meta[name="description"]') ||
+        document.querySelector('meta[property="og:description"]')
+  }
+
+  return (element && element.content) || '';
+}
+
+/**
+ * get page keywords
+ * @returns {string}
+ */
+export function getPageKeywords(win = window) {
+  let element;
+
+  try {
+    element = win.top.document.querySelector('meta[name="keywords"]');
+  } catch (e) {
+    element = document.querySelector('meta[name="keywords"]');
+  }
+
+  return (element && element.content) || '';
+}
+
+/**
+ * get connection downlink
+ * @returns {number}
+ */
+export function getConnectionDownLink(win = window) {
+  const nav = win.navigator || {};
+  return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : undefined;
+}
+
+/**
+ * get pmg uid
+ * 获取并生成用户的id
  * @return {string}
  */
-const getUserID = () => {
-  const i = storage.getCookie(COOKIE_KEY_MGUID);
+export const getPmgUID = () => {
+  if (!storage.cookiesAreEnabled()) return;
 
-  if (i === null) {
-    const uuid = utils.generateUUID();
-    storage.setCookie(COOKIE_KEY_MGUID, uuid, STORE_MAX_AGE);
-    return uuid;
+  let pmgUid = storage.getCookie(COOKIE_KEY_PMGUID);
+  if (!pmgUid) {
+    pmgUid = utils.generateUUID();
+    const date = new Date();
+    date.setTime(date.getTime() + COOKIE_RETENTION_TIME);
+    try {
+      storage.setCookie(COOKIE_KEY_PMGUID, pmgUid, date.toUTCString());
+    } catch (e) {}
   }
-  return i;
+  return pmgUid;
 };
 
-/* ----- mguid:end ------ */
+/* ----- pmguid:end ------ */
 
 /**
  * 获取一个对象的某个值，如果没有则返回空字符串
@@ -317,6 +380,10 @@ function getParam(validBidRequests, bidderRequest) {
 
   const timeout = bidderRequest.timeout || 2000;
   const firstPartyData = bidderRequest.ortb2;
+  const topWindow = window.top;
+  const title = getPageTitle();
+  const desc = getPageDescription();
+  const keywords = getPageKeywords();
 
   if (items && items.length) {
     let c = {
@@ -344,11 +411,23 @@ function getParam(validBidRequests, bidderRequest) {
         firstPartyData,
         content,
         cat,
-        reqTimes
+        reqTimes,
+        pmguid: getPmgUID(),
+        page: {
+          title: title ? title.slice(0, 100) : undefined,
+          desc: desc ? desc.slice(0, 300) : undefined,
+          keywords: keywords ? keywords.slice(0, 100) : undefined,
+          hLen: topWindow.history?.length || undefined,
+        },
+        device: {
+          nbw: getConnectionDownLink(),
+          hc: topWindow.navigator?.hardwareConcurrency || undefined,
+          dm: topWindow.navigator?.deviceMemory || undefined,
+        }
       },
       user: {
-        buyeruid: getUserID(),
-        id: sharedid || pubcid
+        buyeruid: storage.getCookie(COOKIE_KEY_MGUID) || undefined,
+        id: sharedid || pubcid,
       },
       eids,
       site: {
@@ -407,7 +486,7 @@ export const spec = {
     return {
       method: 'POST',
       url: ENDPOINT_URL + globals['token'],
-      data: payloadString
+      data: payloadString,
     };
   },
 
