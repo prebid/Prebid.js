@@ -593,6 +593,9 @@ const _storeInCache = (batch) => {
           if (!bidResponse.vastUrl) {
             bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
           }
+
+          // Add a signal onto bid response that this was cached client side
+          bidResponse.clientSideCache = true;
           addBidToAuction(auctionInstance, bidResponse);
           afterBidAdded();
         }
