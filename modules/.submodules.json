@@ -47,7 +47,8 @@
       "adqueryIdSystem",
       "gravitoIdSystem",
       "freepassIdSystem",
-      "operaadsIdSystem"
+      "operaadsIdSystem",
+      "mygaruIdSystem"
     ],
     "adpod": [
       "freeWheelAdserverVideo",

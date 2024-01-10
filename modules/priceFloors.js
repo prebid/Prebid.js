@@ -347,7 +347,7 @@ export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
       bid.auctionId = auctionId;
       bid.floorData = {
         skipped: floorData.skipped,
-        skipRate: floorData.skipRate,
+        skipRate: deepAccess(floorData, 'data.skipRate') ?? floorData.skipRate,
         floorMin: floorData.floorMin,
         modelVersion: deepAccess(floorData, 'data.modelVersion'),
         modelWeight: deepAccess(floorData, 'data.modelWeight'),
@@ -396,7 +396,7 @@ export function createFloorsDataForAuction(adUnits, auctionId) {
     resolvedFloorsData.skipped = true;
   } else {
     // determine the skip rate now
-    const auctionSkipRate = getParameterByName('pbjs_skipRate') || resolvedFloorsData.skipRate;
+    const auctionSkipRate = getParameterByName('pbjs_skipRate') || (deepAccess(resolvedFloorsData, 'data.skipRate') ?? resolvedFloorsData.skipRate);
     const isSkipped = Math.random() * 100 < parseFloat(auctionSkipRate);
     resolvedFloorsData.skipped = isSkipped;
   }
