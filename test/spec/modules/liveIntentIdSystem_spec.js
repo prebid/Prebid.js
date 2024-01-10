@@ -39,16 +39,6 @@ describe('LiveIntentId', function() {
     resetLiveIntentIdSubmodule();
   });
 
-  it('should initialize LiveConnect and forward the prebid version', function(done) {
-    liveIntentIdSubmodule.getId({ params: {
-      ...defaultConfigParams
-    }});
-    setTimeout(() => {
-      expect(server.requests[0].url).to.contain(`tv=$prebid.version$`)
-      done();
-    }, 200);
-  });
-
   it('should initialize LiveConnect with a privacy string when getId, and include it in the resolution request', function () {
     uspConsentDataStub.returns('1YNY');
     gdprConsentDataStub.returns({
@@ -100,6 +90,16 @@ describe('LiveIntentId', function() {
     }});
     setTimeout(() => {
       expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*e=58131bc547fb87af94cebdaf3102321f.+/)
+      done();
+    }, 200);
+  });
+
+  it('should initialize LiveConnect and forward the prebid version when decode and emit an event', function(done) {
+    liveIntentIdSubmodule.decode({}, { params: {
+      ...defaultConfigParams
+    }});
+    setTimeout(() => {
+      expect(server.requests[0].url).to.contain('tv=$prebid.version$')
       done();
     }, 200);
   });
