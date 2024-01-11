@@ -13,6 +13,7 @@ const BIDDER_CODE = 'mediago';
 const ENDPOINT_URL = 'https://gbid.mediago.io/api/bid?tn=';
 // const COOKY_SYNC_URL = 'https://gtrace.mediago.io/ju/cs/eplist';
 const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediago.io/js/cookieSync.html';
+export const THIRD_PARTY_COOKIE_ORIGIN = 'https://cdn.mediago.io';
 
 const TIME_TO_LIVE = 500;
 const GVLID = 1020;
@@ -22,7 +23,7 @@ let globals = {};
 let itemMaps = {};
 
 /* ----- mguid:start ------ */
-const COOKIE_KEY_MGUID = '__mguid_';
+export const COOKIE_KEY_MGUID = '__mguid_';
 const COOKIE_KEY_PMGUID = '__pmguid_';
 const COOKIE_RETENTION_TIME = 365 * 24 * 60 * 60 * 1000; // 1 year
 let reqTimes = 0;
@@ -97,10 +98,8 @@ export const getPmgUID = () => {
   let pmgUid = storage.getCookie(COOKIE_KEY_PMGUID);
   if (!pmgUid) {
     pmgUid = utils.generateUUID();
-    const date = new Date();
-    date.setTime(date.getTime() + COOKIE_RETENTION_TIME);
     try {
-      storage.setCookie(COOKIE_KEY_PMGUID, pmgUid, date.toUTCString());
+      storage.setCookie(COOKIE_KEY_PMGUID, pmgUid, getCurrentTimeToUTCString());
     } catch (e) {}
   }
   return pmgUid;
@@ -350,6 +349,16 @@ function getReferrer(bidRequest = {}, bidderRequest = {}) {
 }
 
 /**
+ * get current time to UTC string
+ * @returns utc string
+ */
+export function getCurrentTimeToUTCString() {
+  const date = new Date();
+  date.setTime(date.getTime() + COOKIE_RETENTION_TIME);
+  return date.toUTCString();
+}
+
+/**
  * 获取rtb请求参数
  *
  * @param {Array}  validBidRequests an an array of bids
@@ -552,6 +561,20 @@ export const spec = {
     }
 
     if (syncOptions.iframeEnabled) {
+      window.addEventListener('message', function handler(event) {
+        if (!event.data || event.origin != THIRD_PARTY_COOKIE_ORIGIN) {
+          return;
+        }
+
+        this.removeEventListener('message', handler);
+
+        event.stopImmediatePropagation();
+
+        const response = event.data;
+        if (!response.optout && response.mguid) {
+          storage.setCookie(COOKIE_KEY_MGUID, response.mguid, getCurrentTimeToUTCString());
+        }
+      }, true);
       return [
         {
           type: 'iframe',
