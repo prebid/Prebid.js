@@ -62,6 +62,9 @@ export const experianRtdObj = {
       const bidderData = dataEnvelope.find(({ bidder }) => bidder === bidderCode)
       if (bidderData != null) {
         mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, { [bidderCode]: { experianRtidKey: bidderData.data.key, experianRtidData: bidderData.data.data } })
+        if (deepAccess(config, 'sandbox.bidderCode') === bidderCode) {
+          mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, { expSandbox: { experianRtidKey: bidderData.data.key, experianRtidData: bidderData.data.data } })
+        }
       }
     })
   },

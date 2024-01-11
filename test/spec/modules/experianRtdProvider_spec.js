@@ -288,6 +288,29 @@ describe('Experian realtime module', () => {
           experianRtidData: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='
         }})
       })
+      describe('when a sandbox bidder code is set', () => {
+        it('alters bids for bidders in params and for the sandbox bidder', () => {
+          const bidsConfig = {
+            ortb2Fragments: {
+              bidder: {}
+            }
+          }
+          const moduleConfig = { params: { accountId: 'ZylatYg', bidders: ['pubmatic'] }, sandbox: { bidderCode: 'pubmatic' } }
+          experianRtdObj.alterBids(bidsConfig, moduleConfig);
+          expect(bidsConfig.ortb2Fragments.bidder).to.deep.equal(
+            {
+              pubmatic: {
+                experianRtidKey: 'pubmatic-encryption-key-1',
+                experianRtidData: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='
+              },
+              expSandbox: {
+                experianRtidKey: 'pubmatic-encryption-key-1',
+                experianRtidData: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=='
+              }
+            }
+          )
+        })
+      })
     })
     describe('data envelope is missing bidders from config', () => {
       beforeEach(() => {
