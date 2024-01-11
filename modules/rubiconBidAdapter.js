@@ -22,7 +22,6 @@ import {
   _each
 } from '../src/utils.js';
 import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
-import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
@@ -766,19 +765,6 @@ export const spec = {
         url: `https://${rubiConf.syncHost || 'eus'}.rubiconproject.com/usync.html` + params
       };
     }
-  },
-  /**
-   * Covert bid param types for S2S
-   * @param {Object} params bid params
-   * @param {Boolean} isOpenRtb boolean to check openrtb2 protocol
-   * @return {Object} params bid params
-   */
-  transformBidParams: function(params, isOpenRtb) {
-    return convertTypes({
-      'accountId': 'number',
-      'siteId': 'number',
-      'zoneId': 'number'
-    }, params);
   }
 };
 

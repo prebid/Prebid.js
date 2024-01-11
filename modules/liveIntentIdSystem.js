@@ -115,6 +115,7 @@ function initializeLiveConnect(configParams) {
   }
 
   liveConnectConfig.wrapperName = 'prebid';
+  liveConnectConfig.trackerVersion = '$prebid.version$';
   liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
   liveConnectConfig.fireEventDelay = configParams.fireEventDelay;

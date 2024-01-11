@@ -332,13 +332,29 @@ export function getFloorDataFromAdUnits(adUnits) {
   }, {});
 }
 
+function getNoFloorSignalBidersArray(floorData) {
+  const { data, enforcement } = floorData
+  // The data.noFloorSignalBidders higher priority then the enforcment
+  if (data?.noFloorSignalBidders?.length > 0) {
+    return data.noFloorSignalBidders
+  } else if (enforcement?.noFloorSignalBidders?.length > 0) {
+    return enforcement.noFloorSignalBidders
+  }
+  return []
+}
+
 /**
  * @summary This function takes the adUnits for the auction and update them accordingly as well as returns the rules hashmap for the auction
  */
 export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
+  const noFloorSignalBiddersArray = getNoFloorSignalBidersArray(floorData)
+
   adUnits.forEach((adUnit) => {
     adUnit.bids.forEach(bid => {
-      if (floorData.skipped) {
+      // check if the bidder is in the no signal list
+      const isNoFloorSignaled = noFloorSignalBiddersArray.some(bidderName => bidderName === bid.bidder)
+      if (floorData.skipped || isNoFloorSignaled) {
+        isNoFloorSignaled && logInfo(`noFloorSignal to ${bid.bidder}`)
         delete bid.getFloor;
       } else {
         bid.getFloor = getFloor;
@@ -346,6 +362,7 @@ export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
       // information for bid and analytics adapters
       bid.auctionId = auctionId;
       bid.floorData = {
+        noFloorSignaled: isNoFloorSignaled,
         skipped: floorData.skipped,
         skipRate: deepAccess(floorData, 'data.skipRate') ?? floorData.skipRate,
         floorMin: floorData.floorMin,
@@ -663,7 +680,8 @@ export function handleSetFloorsConfig(config) {
       'enforceJS', enforceJS => enforceJS !== false, // defaults to true
       'enforcePBS', enforcePBS => enforcePBS === true, // defaults to false
       'floorDeals', floorDeals => floorDeals === true, // defaults to false
-      'bidAdjustment', bidAdjustment => bidAdjustment !== false, // defaults to true
+      'bidAdjustment', bidAdjustment => bidAdjustment !== false, // defaults to true,
+      'noFloorSignalBidders', noFloorSignalBidders => noFloorSignalBidders || []
     ]),
     'additionalSchemaFields', additionalSchemaFields => typeof additionalSchemaFields === 'object' && Object.keys(additionalSchemaFields).length > 0 ? addFieldOverrides(additionalSchemaFields) : undefined,
     'data', data => (data && parseFloorData(data, 'setConfig')) || undefined

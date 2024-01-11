@@ -604,6 +604,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   request.user = bidderRequest.ortb2?.user || {};
   request.site = bidderRequest.ortb2?.site || {};
   request.app = bidderRequest.ortb2?.app || {};
+  request.device = bidderRequest.ortb2?.device || {};
   if (bidderRequest && bidderRequest.ceh) {
     request.user.ceh = bidderRequest.ceh;
   }

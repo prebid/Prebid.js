@@ -1906,6 +1906,22 @@ describe('The Criteo bidding adapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.slots[0].ext).to.not.have.property('ae');
     });
+
+    it('should properly transmit device.ext.cdep if available', function () {
+      const bidderRequest = {
+        ortb2: {
+          device: {
+            ext: {
+              cdep: 'cookieDeprecationLabel'
+            }
+          }
+        }
+      };
+      const bidRequests = [];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const ortbRequest = request.data;
+      expect(ortbRequest.device.ext.cdep).to.equal('cookieDeprecationLabel');
+    });
   });
 
   describe('interpretResponse', function () {
