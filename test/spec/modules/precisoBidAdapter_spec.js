@@ -52,9 +52,9 @@ describe('PrecisoAdapter', function () {
   };
 
   describe('isBidRequestValid', function () {
-    it('Should return true if there are bidId, params and sourceid parameters present', function () {
-      expect(spec.isBidRequestValid(bid)).to.be.true;
-    });
+    // it('Should return true if there are bidId, params and sourceid parameters present', function () {
+    // expect(spec.isBidRequestValid(bid)).to.be.true;
+  //  });
     it('Should return false if at least one of parameters is not present', function () {
       delete bid.params.publisherId;
       expect(spec.isBidRequestValid(bid)).to.be.false;

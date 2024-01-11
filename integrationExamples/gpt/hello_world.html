@@ -10,86 +10,179 @@
 <html>
 
 <head>
-    <script async src="../../build/dev/prebid.js"></script>
-    <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
-    <script>
-        var FAILSAFE_TIMEOUT = 3300;
-        var PREBID_TIMEOUT = 1000;
+  <script async src="../../build/dev/prebid.js"></script>
+  <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+  <script>
+    var FAILSAFE_TIMEOUT = 3300;
+    var PREBID_TIMEOUT = 1000;
 
-        var adUnits = [{
-            code: 'div-gpt-ad-1460505748561-0',
-            mediaTypes: {
-                banner: {
-                    sizes: [[300, 250]],
-                }
-            },
-
-            // Replace this object to test a new Adapter!
-            bids: [{
-                bidder: 'appnexus',
-                params: {
-                    placementId: 13144370
-                }
-            }]
-
-        }];
-
-        var pbjs = pbjs || {};
-        pbjs.que = pbjs.que || [];
-
-    </script>
-
-    <script>
-        var googletag = googletag || {};
-        googletag.cmd = googletag.cmd || [];
-        googletag.cmd.push(function () {
-            googletag.pubads().disableInitialLoad();
-        });
-
-        pbjs.que.push(function () {
-            pbjs.addAdUnits(adUnits);
-
-            pbjs.requestBids({
-                bidsBackHandler: sendAdserverRequest,
-                timeout: PREBID_TIMEOUT
-            });
-        });
-
-        function sendAdserverRequest() {
-            if (pbjs.adserverRequestSent) return;
-            pbjs.adserverRequestSent = true;
-            googletag.cmd.push(function () {
-                pbjs.que.push(function () {
-                    pbjs.setTargetingForGPTAsync();
-                    googletag.pubads().refresh();
-                });
-            });
+    var adUnits = [{
+      code: 'div-gpt-ad-preciso-0',
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]],
         }
+      },
 
-        setTimeout(function () {
-            sendAdserverRequest();
-        }, FAILSAFE_TIMEOUT);
+      // Replace this object to test a new Adapter!
+      bids: [{
+        bidder: 'preciso',
+        params: {
+          publisherId: '123456',
+          host: 'prebid',
+          region: 'prebid-eu',
+          traffic: 'banner'
+        }
+      }]
 
-    </script>
+    },
+    {
+      code: 'div-gpt-ad-preciso-1',
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 200]],
+        }
+      },
 
-    <script>
-        googletag.cmd.push(function () {
-            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+      // Replace this object to test a new Adapter!
+      bids: [{
+        bidder: 'preciso',
+        params: {
+          publisherId: '123456',
+          host: 'prebid',
+          region: 'prebid-eu',
+          traffic: 'banner'
+        }
+      }]
 
-            googletag.pubads().enableSingleRequest();
-            googletag.enableServices();
+    }];
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+  </script>
+
+  <script>
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+    googletag.cmd.push(function () {
+      googletag.pubads().disableInitialLoad();
+    });
+
+    pbjs.que.push(function () {
+      pbjs.addAdUnits(adUnits);
+      pbjs.setConfig({
+        userSync: {
+          userIds: [{
+            name: 'sharedId',
+            storage: {
+              name: '_sharedid',
+              type: 'cookie',
+              expires: 365
+            }
+          }],
+          filterSettings: {
+            iframe: {
+              bidders: ['preciso'],
+              filter: 'include'
+            },
+            image: {
+              bidders: ['preciso'],
+              filter: 'include'
+            }
+          }
+        },
+        realTimeData: {
+          dataProviders: [{
+            "name": "geolocation",
+            "waitForIt": true,
+            "params": {
+              "requestPermission": true
+            }
+          }]
+        },
+        floors: {
+
+          floorMin: 0.32,
+          currency: 'USD'
+
+
+
+        },
+        enableTIDs: true,
+        deviceAccess: true
+      });
+      pbjs.requestBids({
+        bidsBackHandler: sendAdserverRequest,
+        timeout: PREBID_TIMEOUT
+      });
+    });
+
+    function sendAdserverRequest() {
+      if (pbjs.adserverRequestSent) return;
+      pbjs.adserverRequestSent = true;
+      googletag.cmd.push(function () {
+        pbjs.que.push(function () {
+          pbjs.setTargetingForGPTAsync();
+          googletag.pubads().refresh();
         });
-    </script>
+      });
+    }
+
+    setTimeout(function () {
+      sendAdserverRequest();
+    }, FAILSAFE_TIMEOUT);
+
+  </script>
+
+  <script>
+    googletag.cmd.push(function () {
+      googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250]], 'div-gpt-ad-preciso-0').addService(googletag.pubads());
+      googletag.defineSlot('/19968336/header-bid-tag-1', [[300, 250]], 'div-gpt-ad-preciso-1').addService(googletag.pubads());
+      googletag.pubads().enableSingleRequest();
+      googletag.enableServices();
+    });
+  </script>
+
 </head>
 
+
+<style>
+  /* Style for the pop-up ad container */
+  #popup-ad-container {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 20%;
+    right: 20%;
+    background-color: #fff;
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    max-width: auto;
+  }
+</style>
 <body>
-    <h2>Prebid.js Test</h2>
-    <h5>Div-1</h5>
-    <div id='div-gpt-ad-1460505748561-0'>
-        <script type='text/javascript'>
-            googletag.cmd.push(function () { googletag.display('div-gpt-ad-1460505748561-0'); });
-        </script>
-    </div>
+  <h2>Prebid.js Test</h2>
+  <h5>Div-1</h5>
+
+  <div id='div-gpt-ad-preciso-0' style="min-height: 300px; min-width: auto;">
+    <script type='text/javascript'>
+      googletag.cmd.push(function () { googletag.display('div-gpt-ad-preciso-0'); });
+    </script>
+  </div>
 </body>
+
+  <h2>preciso Test</h6>
+  <h5 >Div-2</h6>
+  <div id='popup-ad-container'>  
+  <div id='div-gpt-ad-preciso-1' style=" min-height: auto; min-width: auto;">
+    <script type='text/javascript'>
+      document.getElementById('popup-ad-container').style.display = 'block';
+      googletag.cmd.push(function () { googletag.display('div-gpt-ad-preciso-1'); });
+    </script>
+  </div>
+  </div>
+</body>
+
 
 </html>

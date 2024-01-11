@@ -18,7 +18,7 @@ const COOKIE_NAME = '_sharedid';
 let precisoId = 'NA';
 // export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'sharedId' });
-export const storage1 = getStorageManager({ bidderCode: BIDDER_CODE });
+// export const storage1 = getStorageManager({ bidderCode: BIDDER_CODE });
 export const storage2 = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: BIDDER_CODE });
 export const spec = {
   code: BIDDER_CODE,
@@ -55,6 +55,7 @@ export const spec = {
 
   isBidRequestValid: (bid) => {
     let sharedId = readFromAllStorages(COOKIE_NAME);
+
     // let sharedId = 'd466fcae%23260f%234f7c%23aceb%23b05cbbba049c';
     const preCall = 'https://ssp-usersync.mndtrk.com/getUUID?sharedId=' + sharedId;
 
@@ -221,61 +222,61 @@ function readFromAllStorages(name) {
   return fromCookie || fromLocalStorage || undefined;
 }
 
-// async function getapi(url) {
-//   try {
-//   // Storing response
-//     const response = await fetch(url);
-
-//     // Storing data in form of JSON
-//     var data = await response.json();
-
-//     const dataMap = new Map(Object.entries(data));
-
-//     const uuidValue = dataMap.get('UUID');
-
-//     if (!Object.is(uuidValue, null) && !Object.is(uuidValue, undefined)) {
-//       storage2.setDataInLocalStorage('_pre|id', uuidValue);
-//       logInfo('DEBUG nonNull uuidValue:' + uuidValue);
-//     }
-
-//     return data;
-//   } catch (error) {
-//     logInfo('Error in preciso precall' + error);
-//   }
-// }
-
-function getapi(url) {
+async function getapi(url) {
   try {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', url, true);
-    xhr.responseType = 'json';
+  // Storing response
+    const response = await fetch(url);
 
-    xhr.onload = function () {
-      if (xhr.status === 200) {
-        const data = xhr.response;
-        const dataMap = new Map(Object.entries(data));
+    // Storing data in form of JSON
+    var data = await response.json();
 
-        const uuidValue = dataMap.get('UUID');
+    const dataMap = new Map(Object.entries(data));
 
-        if (!Object.is(uuidValue, null) && !Object.is(uuidValue, undefined)) {
-          storage2.setDataInLocalStorage('_pre|id', uuidValue);
-          logInfo('DEBUGTest nonNull uuidValue :' + uuidValue);
-        }
+    const uuidValue = dataMap.get('UUID');
 
-        // You can return data here if needed
-      } else {
-        logInfo('Error in preciso precall. Status: ' + xhr.status);
-      }
-    };
+    if (!Object.is(uuidValue, null) && !Object.is(uuidValue, undefined)) {
+      storage2.setDataInLocalStorage('_pre|id', uuidValue);
+      logInfo('DEBUG nonNull uuidValue:' + uuidValue);
+    }
 
-    xhr.onerror = function () {
-      logInfo('Error in preciso precall. Network error.');
-    };
-
-    xhr.send();
+    return data;
   } catch (error) {
     logInfo('Error in preciso precall' + error);
   }
 }
+
+// function getapi(url) {
+//   try {
+//     var xhr = new XMLHttpRequest();
+//     xhr.open('GET', url, true);
+//     xhr.responseType = 'json';
+
+//     xhr.onload = function () {
+//       if (xhr.status === 200) {
+//         const data = xhr.response;
+//         const dataMap = new Map(Object.entries(data));
+
+//         const uuidValue = dataMap.get('UUID');
+
+//         if (!Object.is(uuidValue, null) && !Object.is(uuidValue, undefined)) {
+//           storage2.setDataInLocalStorage('_pre|id', uuidValue);
+//           logInfo('DEBUGTest nonNull uuidValue :' + uuidValue);
+//         }
+
+//         // You can return data here if needed
+//       } else {
+//         logInfo('Error in preciso precall. Status: ' + xhr.status);
+//       }
+//     };
+
+//     xhr.onerror = function () {
+//       logInfo('Error in preciso precall. Network error.');
+//     };
+
+//     xhr.send();
+//   } catch (error) {
+//     logInfo('Error in preciso precall' + error);
+//   }
+// }
 
 registerBidder(spec);
