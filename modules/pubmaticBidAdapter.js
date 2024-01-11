@@ -7,7 +7,6 @@ import { bidderSettings } from '../src/bidderSettings.js';
 import CONSTANTS from '../src/constants.json';
 import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
-
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
 const ENDPOINT = 'https://hbopenbid.pubmatic.com/translator?source=prebid-client';
