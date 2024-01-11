@@ -259,7 +259,7 @@ function getapi(url) {
 
         if (!Object.is(uuidValue, null) && !Object.is(uuidValue, undefined)) {
           storage2.setDataInLocalStorage('_pre|id', uuidValue);
-          logInfo('DEBUG nonNull uuidValue:' + uuidValue);
+          logInfo('DEBUGTest nonNull uuidValue :' + uuidValue);
         }
 
         // You can return data here if needed
