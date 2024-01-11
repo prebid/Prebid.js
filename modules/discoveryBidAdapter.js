@@ -58,6 +58,65 @@ const NATIVERET = {
 };
 
 /**
+ * get page title
+ * @returns {string}
+ */
+
+export function getPageTitle(win = window) {
+  try {
+    const ogTitle = win.top.document.querySelector('meta[property="og:title"]')
+    return win.top.document.title || (ogTitle && ogTitle.content) || '';
+  } catch (e) {
+    const ogTitle = document.querySelector('meta[property="og:title"]')
+    return document.title || (ogTitle && ogTitle.content) || '';
+  }
+}
+
+/**
+ * get page description
+ * @returns {string}
+ */
+export function getPageDescription(win = window) {
+  let element;
+
+  try {
+    element = win.top.document.querySelector('meta[name="description"]') ||
+      win.top.document.querySelector('meta[property="og:description"]')
+  } catch (e) {
+    element = document.querySelector('meta[name="description"]') ||
+      document.querySelector('meta[property="og:description"]')
+  }
+
+  return (element && element.content) || '';
+}
+
+/**
+ * get page keywords
+ * @returns {string}
+ */
+export function getPageKeywords(win = window) {
+  let element;
+
+  try {
+    element = win.top.document.querySelector('meta[name="keywords"]');
+  } catch (e) {
+    element = document.querySelector('meta[name="keywords"]');
+  }
+
+  return (element && element.content) || '';
+}
+
+/**
+ * get connection downlink
+ * @returns {number}
+ */
+export function getConnectionDownLink(win = window) {
+  const nav = win.navigator || {};
+  return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : undefined;
+}
+
+/**
+ * get pmg uid
  * 获取并生成用户的id
  * @return {string}
  */
@@ -362,6 +421,10 @@ function getParam(validBidRequests, bidderRequest) {
   const page = utils.deepAccess(bidderRequest, 'refererInfo.page');
   const referer = utils.deepAccess(bidderRequest, 'refererInfo.ref');
   const firstPartyData = bidderRequest.ortb2;
+  const topWindow = window.top;
+  const title = getPageTitle();
+  const desc = getPageDescription();
+  const keywords = getPageKeywords();
 
   if (items && items.length) {
     let c = {
@@ -384,6 +447,17 @@ function getParam(validBidRequests, bidderRequest) {
         firstPartyData,
         ssppid: storage.getCookie(COOKIE_KEY_SSPPID) || undefined,
         pmguid: getPmgUID(),
+        page: {
+          title: title ? title.slice(0, 100) : undefined,
+          desc: desc ? desc.slice(0, 300) : undefined,
+          keywords: keywords ? keywords.slice(0, 100) : undefined,
+          hLen: topWindow.history?.length || undefined,
+        },
+        device: {
+          nbw: getConnectionDownLink(),
+          hc: topWindow.navigator?.hardwareConcurrency || undefined,
+          dm: topWindow.navigator?.deviceMemory || undefined,
+        }
       },
       user: {
         buyeruid: storage.getCookie(COOKIE_KEY_MGUID) || undefined,
