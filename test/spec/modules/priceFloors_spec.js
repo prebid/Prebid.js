@@ -773,6 +773,124 @@ describe('the price floors module', function () {
         floorProvider: undefined
       });
     });
+    it('should not do floor stuff if floors.data is defined by noFloorSignalBidders[]', function() {
+      handleSetFloorsConfig({
+        ...basicFloorConfig,
+        data: {
+          ...basicFloorDataLow,
+          noFloorSignalBidders: ['someBidder', 'someOtherBidder']
+        }});
+      runStandardAuction();
+      validateBidRequests(false, {
+        skipped: false,
+        floorMin: undefined,
+        modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: undefined,
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: undefined,
+        noFloorSignaled: true
+      })
+    });
+    it('should not do floor stuff if floors.enforcement is defined by noFloorSignalBidders[]', function() {
+      handleSetFloorsConfig({ ...basicFloorConfig,
+        enforcement: {
+          enforceJS: true,
+          noFloorSignalBidders: ['someBidder', 'someOtherBidder']
+        },
+        data: basicFloorDataLow
+      });
+      runStandardAuction();
+      validateBidRequests(false, {
+        skipped: false,
+        floorMin: undefined,
+        modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: undefined,
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: undefined,
+        noFloorSignaled: true
+      })
+    });
+    it('should not do floor stuff and use first floors.data.noFloorSignalBidders if its defined betwen enforcement.noFloorSignalBidders', function() {
+      handleSetFloorsConfig({ ...basicFloorConfig,
+        enforcement: {
+          enforceJS: true,
+          noFloorSignalBidders: ['someBidder']
+        },
+        data: {
+          ...basicFloorDataLow,
+          noFloorSignalBidders: ['someBidder', 'someOtherBidder']
+        }
+      });
+      runStandardAuction();
+      validateBidRequests(false, {
+        skipped: false,
+        floorMin: undefined,
+        modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: undefined,
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: undefined,
+        noFloorSignaled: true
+      })
+    });
+    it('it shouldn`t return floor stuff for bidder in the noFloorSignalBidders list', function() {
+      handleSetFloorsConfig({ ...basicFloorConfig,
+        enforcement: {
+          enforceJS: true,
+        },
+        data: {
+          ...basicFloorDataLow,
+          noFloorSignalBidders: ['someBidder']
+        }
+      });
+      runStandardAuction()
+      const bidRequestData = exposedAdUnits[0].bids.find(bid => bid.bidder === 'someBidder');
+      expect(bidRequestData.hasOwnProperty('getFloor')).to.equal(false);
+      sinon.assert.match(bidRequestData.floorData, {
+        skipped: false,
+        floorMin: undefined,
+        modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: undefined,
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: undefined,
+        noFloorSignaled: true
+      });
+    })
+    it('it should return floor stuff if we defined wrong bidder name in data.noFloorSignalBidders', function() {
+      handleSetFloorsConfig({ ...basicFloorConfig,
+        enforcement: {
+          enforceJS: true,
+        },
+        data: {
+          ...basicFloorDataLow,
+          noFloorSignalBidders: ['randomBiider']
+        }
+      });
+      runStandardAuction();
+      validateBidRequests(true, {
+        skipped: false,
+        floorMin: undefined,
+        modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: undefined,
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: undefined,
+        noFloorSignaled: false
+      })
+    });
     it('should use adUnit level data if not setConfig or fetch has occured', function () {
       handleSetFloorsConfig({
         ...basicFloorConfig,
