@@ -409,12 +409,12 @@ describe('sharethrough adapter spec', function () {
           it('should properly attach GPP information to the request when applicable', () => {
             bidderRequest.gppConsent = {
               gppString: 'some-gpp-string',
-              applicableSections: [3, 5]
+              applicableSections: [3, 5],
             };
 
             const openRtbReq = spec.buildRequests(bidRequests, bidderRequest)[0].data;
-            expect(openRtbReq.regs.gpp).to.equal(bidderRequest.gppConsent.gppString)
-            expect(openRtbReq.regs.gpp_sid).to.equal(bidderRequest.gppConsent.applicableSections)
+            expect(openRtbReq.regs.gpp).to.equal(bidderRequest.gppConsent.gppString);
+            expect(openRtbReq.regs.gpp_sid).to.equal(bidderRequest.gppConsent.applicableSections);
           });
 
           it('should populate request accordingly when gpp explicitly does not apply', function () {
@@ -588,6 +588,43 @@ describe('sharethrough adapter spec', function () {
         });
       });
 
+      describe('cookie deprecation', () => {
+        it('should not add cdep if we do not get it in an impression request', () => {
+          const builtRequests = spec.buildRequests(bidRequests, {
+            auctionId: 'new-auction-id',
+            ortb2: {
+              device: {
+                ext: {
+                  propThatIsNotCdep: 'value-we-dont-care-about',
+                },
+              },
+            },
+          });
+          const noCdep = builtRequests.every((builtRequest) => {
+            const ourCdepValue = builtRequest.data.device?.ext?.cdep;
+            return ourCdepValue === undefined;
+          });
+          expect(noCdep).to.be.true;
+        });
+
+        it('should add cdep if we DO get it in an impression request', () => {
+          const builtRequests = spec.buildRequests(bidRequests, {
+            auctionId: 'new-auction-id',
+            ortb2: {
+              device: {
+                ext: {
+                  cdep: 'cdep-value',
+                },
+              },
+            },
+          });
+          const cdepPresent = builtRequests.every((builtRequest) => {
+            return builtRequest.data.device.ext.cdep === 'cdep-value';
+          });
+          expect(cdepPresent).to.be.true;
+        });
+      });
+
       describe('first party data', () => {
         const firstPartyData = {
           site: {
@@ -618,7 +655,7 @@ describe('sharethrough adapter spec', function () {
           badv: ['domain1.com', 'domain2.com'],
           regs: {
             gpp: 'gpp_string',
-            gpp_sid: [7]
+            gpp_sid: [7],
           },
         };
 
@@ -869,25 +906,6 @@ describe('sharethrough adapter spec', function () {
       it('returns an empty array if pixels are not enabled', function () {
         const syncArray = spec.getUserSyncs({ pixelEnabled: false }, serverResponses);
         expect(syncArray).to.be.an('array').that.is.empty;
-      });
-
-      it('returns GDPR Consent Params in UserSync url', function () {
-        const syncArray = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, { gdprApplies: true,
-          consentString: 'consent' });
-        expect(syncArray).to.deep.equal([
-          { type: 'image', url: 'cookieUrl1&gdpr=1&gdpr_consent=consent' },
-          { type: 'image', url: 'cookieUrl2&gdpr=1&gdpr_consent=consent' },
-          { type: 'image', url: 'cookieUrl3&gdpr=1&gdpr_consent=consent' },
-        ]);
-      });
-
-      it('returns GPP Consent Params in UserSync url', function () {
-        const syncArray = spec.getUserSyncs({ pixelEnabled: true }, serverResponses, {}, {gppString: 'gpp-string', applicableSections: [1, 2]});
-        expect(syncArray).to.deep.equal([
-          { type: 'image', url: 'cookieUrl1&gdpr=0&gdpr_consent=&gpp=gpp-string&gpp_sid=1%2C2' },
-          { type: 'image', url: 'cookieUrl2&gdpr=0&gdpr_consent=&gpp=gpp-string&gpp_sid=1%2C2' },
-          { type: 'image', url: 'cookieUrl3&gdpr=0&gdpr_consent=&gpp=gpp-string&gpp_sid=1%2C2' },
-        ]);
       });
     });
   });

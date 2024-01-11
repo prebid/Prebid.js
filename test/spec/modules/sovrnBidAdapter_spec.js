@@ -64,6 +64,29 @@ describe('sovrnBidAdapter', function() {
 
       expect(spec.isBidRequestValid(bidRequest)).to.equal(false)
     })
+
+    it('should return true when minduration is not passed', function() {
+      const width = 300
+      const height = 250
+      const mimes = ['video/mp4', 'application/javascript']
+      const protocols = [2, 5]
+      const maxduration = 60
+      const startdelay = 0
+      const videoBidRequest = {
+        ...baseBidRequest,
+        mediaTypes: {
+          video: {
+            mimes,
+            protocols,
+            playerSize: [[width, height], [360, 240]],
+            maxduration,
+            startdelay
+          }
+        }
+      }
+
+      expect(spec.isBidRequestValid(videoBidRequest)).to.equal(true)
+    })
   })
 
   describe('buildRequests', function () {
@@ -293,6 +316,41 @@ describe('sovrnBidAdapter', function() {
       const data = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
 
       expect(data.regs.ext['us_privacy']).to.equal(bidderRequest.uspConsent)
+    })
+
+    it('should not set coppa when coppa is undefined', function () {
+      const bidderRequest = {
+        ...baseBidderRequest,
+        bidderCode: 'sovrn',
+        auctionId: '1d1a030790a475',
+        bidderRequestId: '22edbae2733bf6',
+        timeout: 3000,
+        bids: [baseBidRequest],
+        gdprConsent: {
+          consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==',
+          gdprApplies: true
+        },
+      }
+      const {regs} = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+      expect(regs.coppa).to.be.undefined
+    })
+
+    it('should set coppa to 1 when coppa is provided with value true', function () {
+      const bidderRequest = {
+        ...baseBidderRequest,
+        ortb2: {
+          regs: {
+            coppa: true
+          }
+        },
+        bidderCode: 'sovrn',
+        auctionId: '1d1a030790a475',
+        bidderRequestId: '22edbae2733bf6',
+        timeout: 3000,
+        bids: [baseBidRequest]
+      }
+      const {regs} = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+      expect(regs.coppa).to.equal(1)
     })
 
     it('should send gpp info in OpenRTB 2.6 location when gppConsent defined', function () {

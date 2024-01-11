@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/outbrainBidAdapter.js';
+import { spec, storage } from 'modules/outbrainBidAdapter.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr';
 
@@ -213,15 +213,18 @@ describe('Outbrain Adapter', function () {
     })
 
     describe('buildRequests', function () {
+      let getDataFromLocalStorageStub;
+
       before(() => {
+        getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage')
         config.setConfig({
           outbrain: {
             bidderUrl: 'https://bidder-url.com',
           }
-        }
-        )
+        })
       })
       after(() => {
+        getDataFromLocalStorageStub.restore()
         config.resetConfig()
       })
 
@@ -424,7 +427,7 @@ describe('Outbrain Adapter', function () {
         expect(resData.badv).to.deep.equal(['bad-advertiser'])
       });
 
-      it('first party data', function () {
+      it('should pass first party data', function () {
         const bidRequest = {
           ...commonBidRequest,
           ...nativeBidRequestParams,
@@ -505,6 +508,28 @@ describe('Outbrain Adapter', function () {
         config.resetConfig()
       });
 
+      it('should pass gpp information', function () {
+        const bidRequest = {
+          ...commonBidRequest,
+          ...nativeBidRequestParams,
+        };
+        const bidderRequest = {
+          ...commonBidderRequest,
+          'gppConsent': {
+            'gppString': 'abc12345',
+            'applicableSections': [8]
+          }
+        }
+
+        const res = spec.buildRequests([bidRequest], bidderRequest);
+        const resData = JSON.parse(res.data);
+
+        expect(resData.regs.ext.gpp).to.exist;
+        expect(resData.regs.ext.gpp_sid).to.exist;
+        expect(resData.regs.ext.gpp).to.equal('abc12345');
+        expect(resData.regs.ext.gpp_sid).to.deep.equal([8]);
+      });
+
       it('should pass extended ids', function () {
         let bidRequest = {
           bidId: 'bidId',
@@ -520,6 +545,22 @@ describe('Outbrain Adapter', function () {
         expect(resData.user.ext.eids).to.deep.equal([
           { source: 'liveramp.com', uids: [{ id: 'id-value', atype: 3 }] }
         ]);
+      });
+
+      it('should pass OB user token', function () {
+        getDataFromLocalStorageStub.returns('12345');
+
+        let bidRequest = {
+          bidId: 'bidId',
+          params: {},
+          ...commonBidRequest,
+        };
+
+        let res = spec.buildRequests([bidRequest], commonBidderRequest);
+        const resData = JSON.parse(res.data)
+        expect(resData.user.ext.obusertoken).to.equal('12345')
+        expect(getDataFromLocalStorageStub.called).to.be.true;
+        sinon.assert.calledWith(getDataFromLocalStorageStub, 'OB-USER-TOKEN');
       });
 
       it('should pass bidfloor', function () {
@@ -840,6 +881,12 @@ describe('Outbrain Adapter', function () {
     it('should pass GDPR and US consent', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, { gdprApplies: true, consentString: 'foo' }, '1NYN')).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?gdpr=1&gdpr_consent=foo&us_privacy=1NYN`
+      }]);
+    });
+
+    it('should pass gpp consent', function () {
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, '', { gppString: 'abc12345', applicableSections: [1, 2] })).to.deep.equal([{
+        type: 'image', url: `${usersyncUrl}?gpp=abc12345&gpp_sid=1%2C2`
       }]);
     });
   })

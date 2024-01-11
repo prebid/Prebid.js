@@ -53,7 +53,7 @@ describe('riseAdapter', function () {
         'adUnitCode': 'adunit-code',
         'sizes': [[640, 480]],
         'params': {
-          'org': 'jdye8weeyirk00000001'
+          'org': 'jdye8weeyirk00000001',
         },
         'bidId': '299ffc8cca0b87',
         'loop': 1,
@@ -193,6 +193,16 @@ describe('riseAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.bids[0].mediaType).to.equal(VIDEO)
       expect(request.data.bids[1].mediaType).to.equal(BANNER)
+    });
+
+    it('should send the correct currency in bid request', function () {
+      const bid = utils.deepClone(bidRequests[0]);
+      bid.params = {
+        'currency': 'EUR'
+      };
+      const expectedCurrency = bid.params.currency;
+      const request = spec.buildRequests([bid], bidderRequest);
+      expect(request.data.bids[0].currency).to.equal(expectedCurrency);
     });
 
     it('should respect syncEnabled option', function() {

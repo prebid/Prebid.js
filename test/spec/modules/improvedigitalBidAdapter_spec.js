@@ -1181,6 +1181,16 @@ describe('Improve Digital Adapter Tests', function () {
       expect(bids[0].dealId).to.equal(268515);
     });
 
+    it('should set deal type targeting KV for PG', function () {
+      const request = makeRequest(bidderRequest);
+      const response = deepClone(serverResponse);
+      let bids;
+
+      response.body.seatbid[0].bid[0].ext.improvedigital.pg = 1;
+      bids = spec.interpretResponse(response, request);
+      expect(bids[0].adserverTargeting.hb_deal_type_improve).to.equal('pg');
+    });
+
     it('should set currency', function () {
       const response = deepClone(serverResponse);
       response.body.cur = 'EUR';

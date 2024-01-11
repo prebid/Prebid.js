@@ -89,6 +89,17 @@ export function fetcherFactory(timeout = 3000, {request, done} = {}) {
 
 function toXHR({status, statusText = '', headers, url}, responseText) {
   let xml = 0;
+  function getXML(onError) {
+    if (xml === 0) {
+      try {
+        xml = new DOMParser().parseFromString(responseText, headers?.get(CTYPE)?.split(';')?.[0])
+      } catch (e) {
+        xml = null;
+        onError && onError(e)
+      }
+    }
+    return xml;
+  }
   return {
     readyState: XMLHttpRequest.DONE,
     status,
@@ -98,17 +109,12 @@ function toXHR({status, statusText = '', headers, url}, responseText) {
     responseType: '',
     responseURL: url,
     get responseXML() {
-      if (xml === 0) {
-        try {
-          xml = new DOMParser().parseFromString(responseText, headers?.get(CTYPE)?.split(';')?.[0])
-        } catch (e) {
-          xml = null;
-          logError(e);
-        }
-      }
-      return xml;
+      return getXML(logError);
     },
     getResponseHeader: (header) => headers?.has(header) ? headers.get(header) : null,
+    toJSON() {
+      return Object.assign({responseXML: getXML()}, this)
+    }
   }
 }
 

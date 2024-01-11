@@ -20,7 +20,8 @@ describe('MobfoxHBBidAdapter', function () {
   const bidderRequest = {
     refererInfo: {
       referer: 'test.com'
-    }
+    },
+    ortb2: {}
   };
 
   describe('isBidRequestValid', function () {
@@ -143,6 +144,36 @@ describe('MobfoxHBBidAdapter', function () {
       expect(data.placements).to.be.an('array').that.is.empty;
     });
   });
+
+  describe('gpp consent', function () {
+    it('bidderRequest.gppConsent', () => {
+      bidderRequest.gppConsent = {
+        gppString: 'abc123',
+        applicableSections: [8]
+      };
+
+      let serverRequest = spec.buildRequests([bid], bidderRequest);
+      let data = serverRequest.data;
+      expect(data).to.be.an('object');
+      expect(data).to.have.property('gpp');
+      expect(data).to.have.property('gpp_sid');
+
+      delete bidderRequest.gppConsent;
+    })
+
+    it('bidderRequest.ortb2.regs.gpp', () => {
+      bidderRequest.ortb2.regs = bidderRequest.ortb2.regs || {};
+      bidderRequest.ortb2.regs.gpp = 'abc123';
+      bidderRequest.ortb2.regs.gpp_sid = [8];
+
+      let serverRequest = spec.buildRequests([bid], bidderRequest);
+      let data = serverRequest.data;
+      expect(data).to.be.an('object');
+      expect(data).to.have.property('gpp');
+      expect(data).to.have.property('gpp_sid');
+    })
+  });
+
   describe('interpretResponse', function () {
     it('Should interpret banner response', function () {
       const banner = {
