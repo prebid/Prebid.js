@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, getPmgUID, storage } from 'modules/discoveryBidAdapter.js';
+import { spec, getPmgUID, storage, getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLink } from 'modules/discoveryBidAdapter.js';
 import * as utils from 'src/utils.js';
 
 describe('discovery:BidAdapterTests', function () {
@@ -215,6 +215,233 @@ describe('discovery:BidAdapterTests', function () {
     it('should do userSyncs if iframe is enabled', () => {
       const userSyncs = spec.getUserSyncs(IFRAME_ENABLED, undefined, GDPR_CONSENT, USP_CONSENT, undefined);
       expect(userSyncs).to.deep.equal(expectedIframeSyncs);
+    });
+  });
+});
+
+describe('discovery Bid Adapter Tests', function () {
+  describe('buildRequests', () => {
+    describe('getPageTitle function', function() {
+      let sandbox;
+
+      beforeEach(() => {
+        sandbox = sinon.createSandbox();
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should return the top document title if available', function() {
+        const fakeTopDocument = {
+          title: 'Top Document Title',
+          querySelector: () => ({ content: 'Top Document Title test' })
+        };
+        const fakeTopWindow = {
+          document: fakeTopDocument
+        };
+        const result = getPageTitle({ top: fakeTopWindow });
+        expect(result).to.equal('Top Document Title');
+      });
+
+      it('should return the content of top og:title meta tag if title is empty', function() {
+        const ogTitleContent = 'Top OG Title Content';
+        const fakeTopWindow = {
+          document: {
+            title: '',
+            querySelector: sandbox.stub().withArgs('meta[property="og:title"]').returns({ content: ogTitleContent })
+          }
+        };
+
+        const result = getPageTitle({ top: fakeTopWindow });
+        expect(result).to.equal(ogTitleContent);
+      });
+
+      it('should return the document title if no og:title meta tag is present', function() {
+        document.title = 'Test Page Title';
+        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns(null);
+
+        const result = getPageTitle({ top: undefined });
+        expect(result).to.equal('Test Page Title');
+      });
+
+      it('should return the content of og:title meta tag if present', function() {
+        document.title = '';
+        const ogTitleContent = 'Top OG Title Content';
+        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns({ content: ogTitleContent });
+        const result = getPageTitle({ top: undefined });
+        expect(result).to.equal(ogTitleContent);
+      });
+
+      it('should return an empty string if no title or og:title meta tag is found', function() {
+        document.title = '';
+        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns(null);
+        const result = getPageTitle({ top: undefined });
+        expect(result).to.equal('');
+      });
+
+      it('should handle exceptions when accessing top.document and fallback to current document', function() {
+        const fakeWindow = {
+          get top() {
+            throw new Error('Access denied');
+          }
+        };
+        const ogTitleContent = 'Current OG Title Content';
+        document.title = 'Current Document Title';
+        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns({ content: ogTitleContent });
+        const result = getPageTitle(fakeWindow);
+        expect(result).to.equal('Current Document Title');
+      });
+    });
+
+    describe('getPageDescription function', function() {
+      let sandbox;
+
+      beforeEach(() => {
+        sandbox = sinon.createSandbox();
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should return the top document description if available', function() {
+        const descriptionContent = 'Top Document Description';
+        const fakeTopDocument = {
+          querySelector: sandbox.stub().withArgs('meta[name="description"]').returns({ content: descriptionContent })
+        };
+        const fakeTopWindow = { document: fakeTopDocument };
+        const result = getPageDescription({ top: fakeTopWindow });
+        expect(result).to.equal(descriptionContent);
+      });
+
+      it('should return the top document og:description if description is not present', function() {
+        const ogDescriptionContent = 'Top OG Description';
+        const fakeTopDocument = {
+          querySelector: sandbox.stub().withArgs('meta[property="og:description"]').returns({ content: ogDescriptionContent })
+        };
+        const fakeTopWindow = { document: fakeTopDocument };
+        const result = getPageDescription({ top: fakeTopWindow });
+        expect(result).to.equal(ogDescriptionContent);
+      });
+
+      it('should return the current document description if top document is not accessible', function() {
+        const descriptionContent = 'Current Document Description';
+        sandbox.stub(document, 'querySelector')
+          .withArgs('meta[name="description"]').returns({ content: descriptionContent })
+        const fakeWindow = {
+          get top() {
+            throw new Error('Access denied');
+          }
+        };
+        const result = getPageDescription(fakeWindow);
+        expect(result).to.equal(descriptionContent);
+      });
+
+      it('should return the current document og:description if description is not present and top document is not accessible', function() {
+        const ogDescriptionContent = 'Current OG Description';
+        sandbox.stub(document, 'querySelector')
+          .withArgs('meta[property="og:description"]').returns({ content: ogDescriptionContent });
+
+        const fakeWindow = {
+          get top() {
+            throw new Error('Access denied');
+          }
+        };
+        const result = getPageDescription(fakeWindow);
+        expect(result).to.equal(ogDescriptionContent);
+      });
+    });
+
+    describe('getPageKeywords function', function() {
+      let sandbox;
+
+      beforeEach(() => {
+        sandbox = sinon.createSandbox();
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should return the top document keywords if available', function() {
+        const keywordsContent = 'keyword1, keyword2, keyword3';
+        const fakeTopDocument = {
+          querySelector: sandbox.stub()
+            .withArgs('meta[name="keywords"]').returns({ content: keywordsContent })
+        };
+        const fakeTopWindow = { document: fakeTopDocument };
+
+        const result = getPageKeywords({ top: fakeTopWindow });
+        expect(result).to.equal(keywordsContent);
+      });
+
+      it('should return the current document keywords if top document is not accessible', function() {
+        const keywordsContent = 'keyword1, keyword2, keyword3';
+        sandbox.stub(document, 'querySelector')
+          .withArgs('meta[name="keywords"]').returns({ content: keywordsContent });
+
+        // 模拟顶层窗口访问异常
+        const fakeWindow = {
+          get top() {
+            throw new Error('Access denied');
+          }
+        };
+
+        const result = getPageKeywords(fakeWindow);
+        expect(result).to.equal(keywordsContent);
+      });
+
+      it('should return an empty string if no keywords meta tag is found', function() {
+        sandbox.stub(document, 'querySelector').withArgs('meta[name="keywords"]').returns(null);
+
+        const result = getPageKeywords();
+        expect(result).to.equal('');
+      });
+    });
+    describe('getConnectionDownLink function', function() {
+      let sandbox;
+
+      beforeEach(() => {
+        sandbox = sinon.createSandbox();
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should return the downlink value as a string if available', function() {
+        const downlinkValue = 2.5;
+        const fakeNavigator = {
+          connection: {
+            downlink: downlinkValue
+          }
+        };
+
+        const result = getConnectionDownLink({ navigator: fakeNavigator });
+        expect(result).to.equal(downlinkValue.toString());
+      });
+
+      it('should return undefined if downlink is not available', function() {
+        const fakeNavigator = {
+          connection: {}
+        };
+
+        const result = getConnectionDownLink({ navigator: fakeNavigator });
+        expect(result).to.be.undefined;
+      });
+
+      it('should return undefined if connection is not available', function() {
+        const fakeNavigator = {};
+
+        const result = getConnectionDownLink({ navigator: fakeNavigator });
+        expect(result).to.be.undefined;
+      });
+
+      it('should handle cases where navigator is not defined', function() {
+        const result = getConnectionDownLink({});
+        expect(result).to.be.undefined;
+      });
     });
   });
 });
