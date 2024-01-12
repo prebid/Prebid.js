@@ -177,6 +177,11 @@ export const converter = ortbConverter({
 
     delete data?.ext?.prebid?.storedrequest;
 
+    let carbonTopics = fetchCarbonTopics();
+    if (carbonTopics.length > 0) {
+      deepSetValue(data, 'user.data', carbonTopics);
+    }
+
     // floors
     if (rubiConf.disableFloors === true) {
       delete data.ext.prebid.floors;
@@ -527,6 +532,15 @@ export const spec = {
 
     if (bidRequest?.ortb2Imp?.ext?.ae) {
       data['o_ae'] = 1;
+    }
+
+    const topics = readCarbonTopics();
+    if (topics) {
+      const domain = bidderRequest.refererInfo.domain
+      Object.keys(topics).forEach(taxonomy => {
+        const field = `s_segs_${taxonomy}_${domain}`;
+        data[field] = topics[taxonomy];
+      });
     }
     // loop through userIds and add to request
     if (bidRequest.userIdAsEids) {
@@ -999,6 +1013,34 @@ function applyFPD(bidRequest, mediaType, data) {
 
     mergeDeep(data, fpd);
   }
+}
+
+
+function fetchCarbonTopics() {
+  let topics = [];
+  if (rubiConf.readTopics === false ? false : true) {
+    topics = config.getConfig('user.data').filter(topic => {
+      const taxonomy = topic.taxonomyVersion;
+      return taxonomy == 507 || taxonomy == 508;
+    });
+  }
+  return topics
+}
+
+function readCarbonTopics() {
+  let topics = {};
+  let carbonTopics = fetchCarbonTopics();
+  carbonTopics.forEach(topic => {
+    const taxonomy = topic.taxonomyVersion;
+    if (topics[taxonomy]) {
+      topics[taxonomy] = topics[taxonomy] + ',' + topic.topic;
+    } else {
+      topics[taxonomy] = '' + topic.topic;
+    }
+
+  })
+  let hasProps = Object.keys(topics) > 0;
+  return hasProps ? topics : undefined;
 }
 
 /**
