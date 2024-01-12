@@ -609,6 +609,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   request.user = bidderRequest.ortb2?.user || {};
   request.site = bidderRequest.ortb2?.site || {};
   request.app = bidderRequest.ortb2?.app || {};
+  request.device = bidderRequest.ortb2?.device || {};
   if (bidderRequest && bidderRequest.ceh) {
     request.user.ceh = bidderRequest.ceh;
   }
@@ -683,17 +684,7 @@ function hasValidVideoMediaType(bidRequest) {
     }
   });
 
-  if (isValid) {
-    const videoPlacement = bidRequest.mediaTypes.video.placement || bidRequest.params.video.placement;
-    // We do not support long form for now, also we have to check that context & placement are consistent
-    if (bidRequest.mediaTypes.video.context == 'instream' && videoPlacement === 1) {
-      return true;
-    } else if (bidRequest.mediaTypes.video.context == 'outstream' && videoPlacement !== 1) {
-      return true;
-    }
-  }
-
-  return false;
+  return isValid;
 }
 
 /**

@@ -30,6 +30,7 @@ const _approvedLoadExternalJSList = [
   'mediafilter',
   'qortex',
   'dynamicAdBoost',
+  'contxtful',
   'id5'
 ]
 
