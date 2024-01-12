@@ -34,9 +34,9 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
 /** @type {Submodule} */
 export const teadsIdSubmodule = {
   /**
-     * used to link submodule with config
-     * @type {string}
-     */
+   * used to link submodule with config
+   * @type {string}
+   */
   name: MODULE_NAME,
   /**
    * Vendor id of Teads
@@ -44,21 +44,21 @@ export const teadsIdSubmodule = {
    */
   gvlid: GVL_ID,
   /**
-     * decode the stored id value for passing to bid requests
-     * @function
-     * @param {string} value
-     * @returns {{teadsId:string}}
-     */
+   * decode the stored id value for passing to bid requests
+   * @function
+   * @param {string} value
+   * @returns {{teadsId:string}}
+   */
   decode(value) {
     return {teadsId: value}
   },
   /**
-     * performs action to obtain id and return a value in the callback's response argument
-     * @function
-     * @param {SubmoduleConfig} [submoduleConfig]
-     * @param {ConsentData} [consentData]
-     * @returns {IdResponse|undefined}
-     */
+   * performs action to obtain id and return a value in the callback's response argument
+   * @function
+   * @param {SubmoduleConfig} [submoduleConfig]
+   * @param {ConsentData} [consentData]
+   * @returns {IdResponse|undefined}
+   */
   getId(submoduleConfig, consentData) {
     const resp = function (callback) {
       const url = buildAnalyticsTagUrl(submoduleConfig, consentData);

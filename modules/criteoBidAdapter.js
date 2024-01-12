@@ -31,7 +31,7 @@ const LOG_PREFIX = 'Criteo: ';
   Unminified source code can be found in the privately shared repo: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
 */
 const FAST_BID_VERSION_PLACEHOLDER = '%FAST_BID_VERSION%';
-export const FAST_BID_VERSION_CURRENT = 139;
+export const FAST_BID_VERSION_CURRENT = 144;
 const FAST_BID_VERSION_LATEST = 'latest';
 const FAST_BID_VERSION_NONE = 'none';
 const PUBLISHER_TAG_URL_TEMPLATE = 'https://static.criteo.net/js/ld/publishertag.prebid' + FAST_BID_VERSION_PLACEHOLDER + '.js';
@@ -125,7 +125,8 @@ export const spec = {
     return [];
   },
 
-  /** f
+  /**
+   * f
    * @param {object} bid
    * @return {boolean}
    */
@@ -546,6 +547,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
 
       if (hasVideoMediaType(bidRequest)) {
         const video = {
+          context: bidRequest.mediaTypes.video.context,
           playersizes: parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'), parseSize),
           mimes: bidRequest.mediaTypes.video.mimes,
           protocols: bidRequest.mediaTypes.video.protocols,
@@ -556,7 +558,19 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
           minduration: bidRequest.mediaTypes.video.minduration,
           playbackmethod: bidRequest.mediaTypes.video.playbackmethod,
           startdelay: bidRequest.mediaTypes.video.startdelay,
-          plcmt: bidRequest.mediaTypes.video.plcmt
+          plcmt: bidRequest.mediaTypes.video.plcmt,
+          w: bidRequest.mediaTypes.video.w,
+          h: bidRequest.mediaTypes.video.h,
+          linearity: bidRequest.mediaTypes.video.linearity,
+          skipmin: bidRequest.mediaTypes.video.skipmin,
+          skipafter: bidRequest.mediaTypes.video.skipafter,
+          minbitrate: bidRequest.mediaTypes.video.minbitrate,
+          maxbitrate: bidRequest.mediaTypes.video.maxbitrate,
+          delivery: bidRequest.mediaTypes.video.delivery,
+          pos: bidRequest.mediaTypes.video.pos,
+          playbackend: bidRequest.mediaTypes.video.playbackend,
+          adPodDurationSec: bidRequest.mediaTypes.video.adPodDurationSec,
+          durationRangeSec: bidRequest.mediaTypes.video.durationRangeSec,
         };
         const paramsVideo = bidRequest.params.video;
         if (paramsVideo !== undefined) {
@@ -594,6 +608,8 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   };
   request.user = bidderRequest.ortb2?.user || {};
   request.site = bidderRequest.ortb2?.site || {};
+  request.app = bidderRequest.ortb2?.app || {};
+  request.device = bidderRequest.ortb2?.device || {};
   if (bidderRequest && bidderRequest.ceh) {
     request.user.ceh = bidderRequest.ceh;
   }
@@ -668,17 +684,7 @@ function hasValidVideoMediaType(bidRequest) {
     }
   });
 
-  if (isValid) {
-    const videoPlacement = bidRequest.mediaTypes.video.placement || bidRequest.params.video.placement;
-    // We do not support long form for now, also we have to check that context & placement are consistent
-    if (bidRequest.mediaTypes.video.context == 'instream' && videoPlacement === 1) {
-      return true;
-    } else if (bidRequest.mediaTypes.video.context == 'outstream' && videoPlacement !== 1) {
-      return true;
-    }
-  }
-
-  return false;
+  return isValid;
 }
 
 /**
