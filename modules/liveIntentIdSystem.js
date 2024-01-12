@@ -8,10 +8,12 @@ import { triggerPixel, logError } from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
-import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
+import { gdprDataHandler, uspDataHandler, gppDataHandler, coppaDataHandler } from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import {UID2_EIDS} from '../libraries/uid2Eids/uid2Eids.js';
+import {PUBCID_EIDS} from '../libraries/pubcidEids/pubcidEids.js';
+
 
 const DEFAULT_AJAX_TIMEOUT = 5000
 const EVENTS_TOPIC = 'pre_lips'
@@ -118,6 +120,13 @@ function initializeLiveConnect(configParams) {
   liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
   liveConnectConfig.fireEventDelay = configParams.fireEventDelay;
+
+  liveConnectConfig.idcookie = {}
+  const sharedIdConfig = configParams.sharedId || {}
+  liveConnectConfig.idcookie.mode = sharedIdConfig.mode || 'generated'
+  liveConnectConfig.idcookie.name = sharedIdConfig.name
+  liveConnectConfig.idcookie.strategy = sharedIdConfig.strategy
+
   const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString) {
     liveConnectConfig.usPrivacyString = usPrivacyString;
@@ -227,6 +236,10 @@ export const liveIntentIdSubmodule = {
         result.sovrn = { 'id': value.sovrn, ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
+      if (value.idcookie && !coppaDataHandler.getCoppa()) {
+        result.pubcid = { 'id' : value.idcookie, ext: { provider: LI_PROVIDER_DOMAIN} }
+      }
+
       return result
     }
 
@@ -267,6 +280,7 @@ export const liveIntentIdSubmodule = {
   },
   eids: {
     ...UID2_EIDS,
+    ...PUBCID_EIDS,
     'lipb': {
       getValue: function(data) {
         return data.lipbid;
