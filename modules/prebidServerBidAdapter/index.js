@@ -593,7 +593,7 @@ function shouldEmitNonbids(s2sConfig, response) {
 /**
  * Global setter that sets eids permissions for bidders
  * This setter is to be used by userId module when included
- * @param {array} newEidPermissions
+ * @param {Array} newEidPermissions
  */
 function setEidPermissions(newEidPermissions) {
   eidPermissions = newEidPermissions;

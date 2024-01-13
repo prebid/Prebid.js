@@ -67,7 +67,7 @@ function getConnectionSpeed() {
  * Calculate the time to be added to the timeout
  * @param {Array} adUnits
  * @param {Object} rules
- * @return {int}
+ * @return {number}
  */
 function calculateTimeoutModifier(adUnits, rules) {
   logInfo('Timeout rules', rules);
