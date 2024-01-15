@@ -1,7 +1,7 @@
 import {createEidsArray} from 'modules/userId/eids.js';
 import {expect} from 'chai';
 
-//  Note: In unit tets cases for bidders, call the createEidsArray function over userId object that is used for calling fetchBids
+//  Note: In unit test cases for bidders, call the createEidsArray function over userId object that is used for calling fetchBids
 //      this way the request will stay consistent and unit test cases will not need lots of changes.
 
 describe('eids array generation for known sub-modules', function() {

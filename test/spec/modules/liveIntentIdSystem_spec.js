@@ -1,6 +1,6 @@
 import { liveIntentIdSubmodule, reset as resetLiveIntentIdSubmodule, storage } from 'modules/liveIntentIdSystem.js';
 import * as utils from 'src/utils.js';
-import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../../src/adapterManager.js';
+import { gdprDataHandler, uspDataHandler, gppDataHandler, coppaDataHandler} from '../../../src/adapterManager.js';
 import { server } from 'test/mocks/xhr.js';
 resetLiveIntentIdSubmodule();
 liveIntentIdSubmodule.setModuleMode('standard')
@@ -16,6 +16,7 @@ describe('LiveIntentId', function() {
   let getCookieStub;
   let getDataFromLocalStorageStub;
   let imgStub;
+  let coppaConsentDataStub;
 
   beforeEach(function() {
     liveIntentIdSubmodule.setModuleMode('standard');
@@ -26,6 +27,7 @@ describe('LiveIntentId', function() {
     uspConsentDataStub = sinon.stub(uspDataHandler, 'getConsentData');
     gdprConsentDataStub = sinon.stub(gdprDataHandler, 'getConsentData');
     gppConsentDataStub = sinon.stub(gppDataHandler, 'getConsentData');
+    coppaConsentDataStub = sinon.stub(coppaDataHandler);
   });
 
   afterEach(function() {
@@ -36,6 +38,7 @@ describe('LiveIntentId', function() {
     uspConsentDataStub.restore();
     gdprConsentDataStub.restore();
     gppConsentDataStub.restore();
+    coppaConsentDataStub.restore();
     resetLiveIntentIdSubmodule();
   });
 
@@ -429,4 +432,9 @@ describe('LiveIntentId', function() {
     );
     expect(callBackSpy.calledOnce).to.be.true;
   });
-});
+
+  it('should decode a idcookie cookie as shared id if exist', function() {
+    const result = coppaConsentDataStub.returns(getCoppa()) && liveIntentIdSubmodule.decode({nonid: 'foo', pubcid: 'bar'})
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'pubcid': 'bar'}, 'pubcid': {'id': 'bar', 'ext': {'provider': 'pubcid.org'}}})
+  });
+})
