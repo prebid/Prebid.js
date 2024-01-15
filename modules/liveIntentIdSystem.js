@@ -14,7 +14,6 @@ import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import {UID2_EIDS} from '../libraries/uid2Eids/uid2Eids.js';
 import {PUBCID_EIDS} from '../libraries/pubcidEids/pubcidEids.js';
 
-
 const DEFAULT_AJAX_TIMEOUT = 5000
 const EVENTS_TOPIC = 'pre_lips'
 const MODULE_NAME = 'liveIntentId';
@@ -196,9 +195,8 @@ export const liveIntentIdSubmodule = {
       // old versions stored lipbid in unifiedId. Ensure that we can still read the data.
       const lipbid = value.nonId || value.unifiedId
       if (lipbid) {
-        value.lipbid = lipbid
-        delete value.unifiedId
-        result.lipb = value
+        result.lipb = { ...value, lipbid }
+        delete result.lipb.unifiedId
       }
 
       // Lift usage of uid2 by exposing uid2 if we were asked to resolve it.
@@ -237,7 +235,10 @@ export const liveIntentIdSubmodule = {
       }
 
       if (value.idcookie && !coppaDataHandler.getCoppa()) {
-        result.pubcid = { 'id' : value.idcookie, ext: { provider: LI_PROVIDER_DOMAIN} }
+        result.lipb.pubcid = value.idcookie
+        delete result.lipb.idcookie
+
+        result.pubcid = { 'id': value.idcookie, ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
       return result
