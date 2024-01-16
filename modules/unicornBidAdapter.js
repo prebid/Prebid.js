@@ -102,7 +102,7 @@ const initializeEids = (bidRequest) => {
   let id5 = deepAccess(bidRequest, 'userId.id5id.uid');
   if (id5) {
     eids.push({
-      source: "id5-sync.com",
+      source: 'id5-sync.com',
       uids: [
         {
           id: id5
