@@ -99,7 +99,11 @@ export const spec = {
       if (bidRequest.params.isInternal) {
         payload.is_internal = bidRequest.params.isInternal;
       }
+      if (bidRequest.ortb2?.device?.ext?.cdep) {
+        payload.cdep = bidRequest.ortb2?.device?.ext?.cdep;
+      }
       payload.userEids = bidRequest.userIdAsEids || [];
+      payload.version = '$prebid.version$';
 
       const bidFloor = getFloor(bidRequest);
       payload.floor = bidFloor?.floor;
