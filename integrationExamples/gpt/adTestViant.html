@@ -1,0 +1,149 @@
+<html>
+
+<head>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
+    <script async src="//cdn.jsdelivr.net/npm/prebid.js@latest/dist/not-for-prod/prebid.js"></script>
+    <style>
+        adelphic_ads {
+            overflow: visible;
+            display: ;
+        }
+    </style>
+    <script>
+        var div_1_sizes = [
+            [300, 250],
+            [300, 600]
+        ];
+        var div_2_sizes = [
+            [728, 300],
+            [970, 250]
+        ];
+        var PREBID_TIMEOUT = 1000;
+        var FAILSAFE_TIMEOUT = 3000;
+
+        var adUnits = [
+            {
+                code: '/19968336/header-bid-tag-0',
+                mediaTypes: {
+                    banner: {
+                        sizes: div_1_sizes
+                    }
+                },
+                bids: [{
+                    bidder: 'viant',
+                    params: {
+                        placementId: 13144370,
+                        publisherId: 464464
+                    }
+                }]
+            },
+            {
+                code: '/19968336/header-bid-tag-1',
+                mediaTypes: {
+                    banner: {
+                        sizes: div_2_sizes
+                    }
+                },
+                bids: [{
+                    bidder: 'viant',
+                    params: {
+                        placementId: 13144370,
+                        publisherId: 464464
+                    }
+                }]
+            }
+        ];
+
+        // ======== DO NOT EDIT BELOW THIS LINE =========== //
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+        googletag.cmd.push(function () {
+            googletag.pubads().disableInitialLoad();
+        });
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        pbjs.que.push(function () {
+            console.log("adUnits ", adUnits);
+            pbjs.addAdUnits(adUnits);
+            pbjs.requestBids({
+                bidsBackHandler: initAdserver,
+                timeout: PREBID_TIMEOUT
+            });
+        });
+
+        function initAdserver() {
+            console.log("pbjs is: ", pbjs);
+            if (pbjs.initAdserverSet) return;
+            pbjs.initAdserverSet = true;
+            googletag.cmd.push(function () {
+                pbjs.que.push(function () {
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
+                });
+            });
+        }
+
+        // in case PBJS doesn't load
+        setTimeout(function () {
+            initAdserver();
+        }, FAILSAFE_TIMEOUT);
+
+        console.log("googletag is: ", googletag);
+
+        googletag.cmd.push(function () {
+            console.log("googleTag is ", googletag);
+            googletag.defineSlot('/19968336/header-bid-tag-0', div_1_sizes, 'div-1').addService(googletag.pubads()).setTargeting('position', 'Landing_Top');
+            googletag.pubads().enableSingleRequest();
+            console.log("pubads is: ", googletag.pubads());
+            googletag.enableServices();
+        });
+        googletag.cmd.push(function () {
+            googletag.defineSlot('/19968336/header-bid-tag-1', div_2_sizes, 'div-2').addService(googletag.pubads()).setTargeting('position', 'Landing_Middle');
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+
+    </script>
+
+</head>
+
+<body>
+<h2>Basic Prebid.js Example</h2>
+<h5>Div-1</h5>
+<div id='div-1'>
+    <script type='text/javascript'>
+        googletag.cmd.push(function() {
+            googletag.display('div-1');
+            console.log("googletag display div1 is:", googletag.display('div-1'));
+        });
+
+    </script>
+</div>
+<h5>Div-2</h5>
+<div id='div-2'>
+    <script type='text/javascript'>
+        googletag.cmd.push(function () {
+            googletag.display('div-2');
+            console.log("pbjs.bidresponse is: ", pbjs.getBidResponses());
+            console.log("googletag display is:", googletag.display('div-2'));
+        });
+
+    </script>
+</div>
+
+<!--<div id="adelphic_ads" style="margin:0;padding:0;border:0;width:300;height:250;overflow: hidden;">-->
+<!--    <a target="_blank"-->
+<!--       href="https://events-us-east-1.ipredictive.com/d/track/click?zid=prebid_1_0_1&amp;sid=c8297cef-4334-4b9b-b023-a01c6f8a443d-27f17c9170c5f6&amp;crid=23242298&amp;adid=96326&amp;oid=2217278&amp;cid=440507&amp;spid=851&amp;pubid=464&amp;site_id=3748449002&amp;auid=5774186&amp;algid=1&amp;algrev=1&amp;offpc=9.067961165048544&amp;maxbid=10&amp;optpc=0.9391223788261414&amp;cstpc=9.067961165048544&amp;xts=1705462759&amp;pbap=CgMweDAQBhoBZioGR29vZ2xlMgZDaHJvbWU6BE9TIFhCBjEyLjYuMlICZW5aEVBFUlNPTkFMX0NPTVBVVEVSYABqBkJBTk5FUooBATCQAQCaASA4MjE3ODliOTlmOTE2ODMzMGIwNjM3OWM1MzgxMzgwMKUBAAAAAK0BAAAAAMABAMgBAtIBBlBVQkxJQ_oBIGVkN2Y4M2IwMWVlMjg5YWUxMTA1NDQwMDkyNTljZGI1mgICWFKgAgCwAgLyAnVNb3ppbGxhLzUuMCAoTWFjaW50b3NoOyBJbnRlbCBNYWMgT1MgWCAxMF8xNV83KSBBcHBsZVdlYktpdC81MzcuMzYgKEtIVE1MLCBsaWtlIEdlY2tvKSBDaHJvbWUvMTIwLjAuMC4wIFNhZmFyaS81MzcuMzb6Ag5DaHJvbWUgRGVza3RvcLEDAAAAAAAAAADKAwDaAxBxYS52aWFudHRlY2guY29t6gMkZTJjMzUwOTEtYTc3Ny00N2U0LTkzYzktZjE4MDVhMWQ4MTJjuQTpJjEIrByqP8AE_QPqBAQ4OS4w8gQGQ2hyb21l0gUpcHJlYmlkLXctNjg5MTZhNmM4MjYzNGQwMzA5YzIyYTBlODdlMTZlZDWABgE&amp;ez_p=&amp;rd=https%3A%2F%2Fwww.adelphic.com">-->
+<!--        <img src="https://media-cdn.ipredictive.com/image/96326/18b688b840e_300x250.gif" width="300" height="250">-->
+<!--    </a>-->
+<!--    <img id="cs_imp"-->
+<!--         src="https://events-us-east-1.ipredictive.com/d/csimp/pixel?zid=prebid_1_0_1&amp;sid=c8297cef-4334-4b9b-b023-a01c6f8a443d-27f17c9170c5f6&amp;crid=23242298&amp;adid=96326&amp;oid=2217278&amp;cid=440507&amp;spid=851&amp;pubid=464&amp;site_id=3748449002&amp;auid=5774186&amp;algid=1&amp;algrev=1&amp;offpc=9.067961165048544&amp;maxbid=10&amp;optpc=0.9391223788261414&amp;cstpc=9.067961165048544&amp;xts=1705462759&amp;pbap=CgMweDAQBhoBZioGR29vZ2xlMgZDaHJvbWU6BE9TIFhCBjEyLjYuMlICZW5aEVBFUlNPTkFMX0NPTVBVVEVSYABqBkJBTk5FUooBATCQAQCaASA4MjE3ODliOTlmOTE2ODMzMGIwNjM3OWM1MzgxMzgwMKUBAAAAAK0BAAAAAMABAMgBAtIBBlBVQkxJQ_oBIGVkN2Y4M2IwMWVlMjg5YWUxMTA1NDQwMDkyNTljZGI1mgICWFKgAgCwAgLyAnVNb3ppbGxhLzUuMCAoTWFjaW50b3NoOyBJbnRlbCBNYWMgT1MgWCAxMF8xNV83KSBBcHBsZVdlYktpdC81MzcuMzYgKEtIVE1MLCBsaWtlIEdlY2tvKSBDaHJvbWUvMTIwLjAuMC4wIFNhZmFyaS81MzcuMzb6Ag5DaHJvbWUgRGVza3RvcLEDAAAAAAAAAADKAwDaAxBxYS52aWFudHRlY2guY29t6gMkZTJjMzUwOTEtYTc3Ny00N2U0LTkzYzktZjE4MDVhMWQ4MTJjuQTpJjEIrByqP8AE_QPqBAQ4OS4w8gQGQ2hyb21l0gUpcHJlYmlkLXctNjg5MTZhNmM4MjYzNGQwMzA5YzIyYTBlODdlMTZlZDWABgE&amp;au_pc=9.067962165048543&amp;rr=1705376359955"-->
+<!--         style="display:none" height="1" width="1">-->
+<!--</div>-->
+
+</body>
+
+</html>
