@@ -50,8 +50,8 @@ function getSegments(segments, moduleConfig) {
 }
 
 /**
-* @param {string} bidderName
-*/
+ * @param {string} bidderName
+ */
 export function getBidderFunction(bidderName) {
   const biddersFunction = {
     pubmatic: function (bid, data, moduleConfig) {

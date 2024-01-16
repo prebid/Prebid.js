@@ -26,7 +26,7 @@ export var spec = {
    *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
-   **/
+   */
   isBidRequestValid: (bid) => {
     if (!bid || !bid.params) {
       utils.logError(LOG_WARN_PREFIX, 'nil/empty bid object');
@@ -51,11 +51,11 @@ export var spec = {
   },
 
   /**
-  * Make a server request from the list of BidRequests.
-  *
-  * @param {validBidRequests[]} - an array of bids
-  * @return ServerRequest Info describing the request to the server.
-  **/
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {validBidRequests[]} - an array of bids
+   * @return ServerRequest Info describing the request to the server.
+   */
   buildRequests: (validBidRequests, bidderRequest) => {
     if (validBidRequests.length === 0) {
       return;
@@ -79,11 +79,11 @@ export var spec = {
   },
 
   /**
-  * Unpack the response from the server into a list of bids.
-  *
-  * @param {ServerResponse} response A successful response from the server.
-  * @return {Bid[]} An array of bids which were nested inside the server.
-  **/
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {ServerResponse} response A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
   interpretResponse: (response, request) => {
     return spec._parseRTBResponse(request, response.body);
   },
@@ -93,7 +93,7 @@ export var spec = {
    * @param {SyncOptions} syncOptions Which user syncs are allowed?
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
-   **/
+   */
   getUserSyncs: (syncOptions, serverResponses) => {
     let syncurl = USER_SYNC + 'pid=' + pubId;
     if (syncOptions.iframeEnabled) {
@@ -115,7 +115,7 @@ export var spec = {
 
   /**
    * parse object
-   **/
+   */
   _parseJSON: function (rawPayload) {
     try {
       if (rawPayload) {
@@ -155,7 +155,7 @@ export var spec = {
 
   /**
    * create IAB standard OpenRTB bid request
-   **/
+   */
   _createoRTBRequest: (bidRequests, conf) => {
     var oRTBObject = {};
     try {
@@ -202,7 +202,7 @@ export var spec = {
 
   /**
    * create impression array objects
-   **/
+   */
   _getImpressionArray: (request) => {
     var impArray = [];
     var map = request.map(bid => spec._getImpressionObject(bid));
@@ -218,7 +218,7 @@ export var spec = {
 
   /**
    * create impression (single) object
-   **/
+   */
   _getImpressionObject: (bid) => {
     var impression = {};
     var bObj;
@@ -277,8 +277,8 @@ export var spec = {
   },
 
   /**
-  * set bid floor
-  **/
+   * set bid floor
+   */
   _setFloor: (impObj, bid) => {
     let bidFloor = -1;
     // get lowest floor from floorModule
@@ -304,8 +304,8 @@ export var spec = {
   },
 
   /**
-  * parse Open RTB response
-  **/
+   * parse Open RTB response
+   */
   _parseRTBResponse: (request, response) => {
     var bidResponses = [];
     try {
@@ -358,8 +358,8 @@ export var spec = {
   },
 
   /**
-  * get bid request api end point url
-  **/
+   * get bid request api end point url
+   */
   _endPointURL: (request) => {
     var params = request && request[0].params ? request[0].params : null;
     if (params) {
@@ -371,8 +371,8 @@ export var spec = {
   },
 
   /**
-  * get domain name from url
-  **/
+   * get domain name from url
+   */
   _getDomain: (url) => {
     var a = document.createElement('a');
     a.setAttribute('href', url);
@@ -380,8 +380,8 @@ export var spec = {
   },
 
   /**
-  * create the site object
-  **/
+   * create the site object
+   */
   _getSiteObject: (request, conf) => {
     var params = request && request.params ? request.params : null;
     if (params) {
@@ -406,8 +406,8 @@ export var spec = {
   },
 
   /**
-  * create the app object
-  **/
+   * create the app object
+   */
   _getAppObject: (request) => {
     var params = request && request.params ? request.params : null;
     if (params) {
@@ -432,8 +432,8 @@ export var spec = {
   },
 
   /**
-  * create the device object
-  **/
+   * create the device object
+   */
   _getDeviceObject: (request) => {
     var params = request && request.params ? request.params : null;
     if (params) {
@@ -481,8 +481,8 @@ export var spec = {
   },
 
   /**
-  * get request ad sizes
-  **/
+   * get request ad sizes
+   */
   _getSizes: (request) => {
     if (request && request.sizes && utils.isArray(request.sizes[0]) && request.sizes[0].length > 0) {
       return request.sizes[0];
@@ -491,8 +491,8 @@ export var spec = {
   },
 
   /**
-  * create the banner object
-  **/
+   * create the banner object
+   */
   _getBannerRequest: (bid) => {
     var bObj;
     var adFormat = [];
@@ -531,8 +531,8 @@ export var spec = {
   },
 
   /**
-  * create the video object
-  **/
+   * create the video object
+   */
   _getVideoRequest: (bid) => {
     var vObj;
     if (utils.deepAccess(bid, 'mediaTypes.video')) {
@@ -554,8 +554,8 @@ export var spec = {
   },
 
   /**
-  * check media type
-  **/
+   * check media type
+   */
   _checkMediaType: (adm, newBid) => {
     // Create a regex here to check the strings
     var videoRegex = new RegExp(/VAST.*version/);

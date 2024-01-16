@@ -87,17 +87,17 @@ function generateId(configParams, configStorage) {
 /** @type {Submodule} */
 export const merkleIdSubmodule = {
   /**
-     * used to link submodule with config
-     * @type {string}
-     */
+   * used to link submodule with config
+   * @type {string}
+   */
   name: MODULE_NAME,
 
   /**
-     * decode the stored id value for passing to bid requests
-     * @function
-     * @param {string} value
-     * @returns {{eids:arrayofields}}
-     */
+   * decode the stored id value for passing to bid requests
+   * @function
+   * @param {string} value
+   * @returns {{eids:arrayofields}}
+   */
   decode(value) {
     // Legacy support for a single id
     const id = (value && value.pam_id && typeof value.pam_id.id === 'string') ? value.pam_id : undefined;
@@ -115,12 +115,12 @@ export const merkleIdSubmodule = {
   },
 
   /**
-     * performs action to obtain id and return a value in the callback's response argument
-     * @function
-     * @param {SubmoduleConfig} [config]
-     * @param {ConsentData} [consentData]
-     * @returns {IdResponse|undefined}
-     */
+   * performs action to obtain id and return a value in the callback's response argument
+   * @function
+   * @param {SubmoduleConfig} [config]
+   * @param {ConsentData} [consentData]
+   * @returns {IdResponse|undefined}
+   */
   getId(config, consentData) {
     logInfo('User ID - merkleId generating id');
 
@@ -196,6 +196,30 @@ export const merkleIdSubmodule = {
 
     logInfo('User ID - merkleId not refreshed');
     return {id: storedId};
+  },
+  eids: {
+    'merkleId': {
+      atype: 3,
+      getSource: function(data) {
+        if (data?.ext?.ssp) {
+          return `${data.ext.ssp}.merkleinc.com`
+        }
+        return 'merkleinc.com'
+      },
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.keyID) {
+          return {
+            keyID: data.keyID
+          }
+        }
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
   }
 
 };

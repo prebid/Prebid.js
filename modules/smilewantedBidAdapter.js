@@ -4,9 +4,12 @@ import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
+const GVL_ID = 639;
+
 export const spec = {
   code: 'smilewanted',
   aliases: ['smile', 'sw'],
+  gvlid: GVL_ID,
   supportedMediaTypes: [BANNER, VIDEO],
   /**
    * Determines whether or not the given bid request is valid.
@@ -37,11 +40,13 @@ export const spec = {
         transactionId: bid.ortb2Imp?.ext?.tid,
         timeout: bidderRequest?.timeout,
         bidId: bid.bidId,
-        /** positionType is undocumented
+        /**
+         positionType is undocumented
         It is unclear what this parameter means.
         If it means the same as pos in openRTB,
         It should read from openRTB object
-        or from mediaTypes.banner.pos */
+        or from mediaTypes.banner.pos
+         */
         positionType: bid.params.positionType || '',
         prebidVersion: '$prebid.version$'
       };
