@@ -1,9 +1,9 @@
 # Overview
 
 ```
-Module Name: iqx Bidder Adapter
-Module Type: iqx Bidder Adapter
-Maintainer: pavlo@xe.works
+Module Name: IQX Bidder Adapter
+Module Type: IQX Bidder Adapter
+Maintainer: it@iqzone.com
 ```
 
 # Description
