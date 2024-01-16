@@ -1215,7 +1215,7 @@ export const spec = {
 
     // First Party Data
     const commonFpd = (bidderRequest && bidderRequest.ortb2) || {};
-    const { user, device, site, bcat } = commonFpd;
+    const { user, device, site, bcat, badv } = commonFpd;
     if (site) {
       const { page, domain, ref } = payload.site;
       mergeDeep(payload, {site: site});
@@ -1225,6 +1225,9 @@ export const spec = {
     }
     if (user) {
       mergeDeep(payload, {user: user});
+    }
+    if (badv) {
+      mergeDeep(payload, {badv: badv});
     }
     if (bcat) {
       blockedIabCategories = blockedIabCategories.concat(bcat);
