@@ -42,7 +42,21 @@ describe('OguryBidAdapter', function () {
 
         return floorResult;
       },
-      transactionId: 'transactionId'
+      transactionId: 'transactionId',
+      userId: {
+        pubcid: '2abb10e5-c4f6-4f70-9f45-2200e4487714'
+      },
+      userIdAsEids: [
+        {
+          source: 'pubcid.org',
+          uids: [
+            {
+              id: '2abb10e5-c4f6-4f70-9f45-2200e4487714',
+              atype: 1
+            }
+          ]
+        }
+      ]
     },
     {
       adUnitCode: 'adUnitCode2',
@@ -407,12 +421,26 @@ describe('OguryBidAdapter', function () {
       },
       user: {
         ext: {
-          consent: bidderRequest.gdprConsent.consentString
+          consent: bidderRequest.gdprConsent.consentString,
+          uids: {
+            pubcid: '2abb10e5-c4f6-4f70-9f45-2200e4487714'
+          },
+          eids: [
+            {
+              source: 'pubcid.org',
+              uids: [
+                {
+                  id: '2abb10e5-c4f6-4f70-9f45-2200e4487714',
+                  atype: 1
+                }
+              ]
+            }
+          ],
         },
       },
       ext: {
         prebidversion: '$prebid.version$',
-        adapterversion: '1.5.0'
+        adapterversion: '1.6.0'
       },
       device: {
         w: stubbedWidth,
@@ -637,7 +665,9 @@ describe('OguryBidAdapter', function () {
         },
         user: {
           ext: {
-            consent: ''
+            consent: '',
+            uids: expectedRequestObject.user.ext.uids,
+            eids: expectedRequestObject.user.ext.eids
           },
         }
       };
@@ -663,7 +693,9 @@ describe('OguryBidAdapter', function () {
         },
         user: {
           ext: {
-            consent: ''
+            consent: '',
+            uids: expectedRequestObject.user.ext.uids,
+            eids: expectedRequestObject.user.ext.eids
           },
         }
       };
@@ -689,7 +721,9 @@ describe('OguryBidAdapter', function () {
         },
         user: {
           ext: {
-            consent: ''
+            consent: '',
+            uids: expectedRequestObject.user.ext.uids,
+            eids: expectedRequestObject.user.ext.eids
           },
         }
       };
@@ -699,6 +733,48 @@ describe('OguryBidAdapter', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequestWithoutGdpr);
       expect(request.data).to.deep.equal(expectedRequestObjectWithoutGdpr);
       expect(request.data.regs.ext.gdpr).to.be.a('number');
+    });
+
+    it('should should not add uids infos if userId is undefined', () => {
+      const expectedRequestWithUndefinedUserId = {
+        ...expectedRequestObject,
+        user: {
+          ext: {
+            consent: expectedRequestObject.user.ext.consent,
+            eids: expectedRequestObject.user.ext.eids
+          }
+        }
+      };
+
+      const validBidRequests = utils.deepClone(bidRequests);
+      validBidRequests[0] = {
+        ...validBidRequests[0],
+        userId: undefined
+      };
+
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      expect(request.data).to.deep.equal(expectedRequestWithUndefinedUserId);
+    });
+
+    it('should should not add uids infos if userIdAsEids is undefined', () => {
+      const expectedRequestWithUndefinedUserIdAsEids = {
+        ...expectedRequestObject,
+        user: {
+          ext: {
+            consent: expectedRequestObject.user.ext.consent,
+            uids: expectedRequestObject.user.ext.uids
+          }
+        }
+      };
+
+      const validBidRequests = utils.deepClone(bidRequests);
+      validBidRequests[0] = {
+        ...validBidRequests[0],
+        userIdAsEids: undefined
+      };
+
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      expect(request.data).to.deep.equal(expectedRequestWithUndefinedUserIdAsEids);
     });
 
     it('should handle bidFloor undefined', () => {
@@ -814,7 +890,7 @@ describe('OguryBidAdapter', function () {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[0].adomain
         },
         nurl: openRtbBidResponse.body.seatbid[0].bid[0].nurl,
-        adapterVersion: '1.5.0',
+        adapterVersion: '1.6.0',
         prebidVersion: '$prebid.version$'
       }, {
         requestId: openRtbBidResponse.body.seatbid[0].bid[1].impid,
@@ -831,7 +907,7 @@ describe('OguryBidAdapter', function () {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[1].adomain
         },
         nurl: openRtbBidResponse.body.seatbid[0].bid[1].nurl,
-        adapterVersion: '1.5.0',
+        adapterVersion: '1.6.0',
         prebidVersion: '$prebid.version$'
       }]
 

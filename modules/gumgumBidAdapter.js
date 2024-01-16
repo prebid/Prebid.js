@@ -176,6 +176,7 @@ function _getVidParams(attributes) {
     linearity: li,
     startdelay: sd,
     placement: pt,
+    plcmt,
     protocols = [],
     playerSize = []
   } = attributes;
@@ -187,7 +188,7 @@ function _getVidParams(attributes) {
     pr = protocols.join(',');
   }
 
-  return {
+  const result = {
     mind,
     maxd,
     li,
@@ -197,6 +198,11 @@ function _getVidParams(attributes) {
     viw,
     vih
   };
+    // Add vplcmt property to the result object if plcmt is available
+  if (plcmt !== undefined && plcmt !== null) {
+    result.vplcmt = plcmt;
+  }
+  return result;
 }
 
 /**
@@ -339,15 +345,15 @@ function buildRequests(validBidRequests, bidderRequest) {
     // ADTS-134 Retrieve ID envelopes
     for (const eid in eids) data[eid] = eids[eid];
 
-    // ADJS-1024 & ADSS-1297 & ADTS-175
-    gpid && (data.gpid = gpid);
-
     if (mediaTypes.banner) {
       sizes = mediaTypes.banner.sizes;
     } else if (mediaTypes.video) {
       sizes = mediaTypes.video.playerSize;
       data = _getVidParams(mediaTypes.video);
     }
+
+    // ADJS-1024 & ADSS-1297 & ADTS-175
+    gpid && (data.gpid = gpid);
 
     if (pageViewId) {
       data.pv = pageViewId;

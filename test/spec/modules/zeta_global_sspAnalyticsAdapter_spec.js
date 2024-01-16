@@ -398,5 +398,32 @@ describe('Zeta Global SSP Analytics Adapter', function() {
       expect(auctionSucceeded.bid.params[0]).to.be.deep.equal(EVENTS.AUCTION_END.adUnits[0].bids[0].params);
       expect(EVENTS.AUCTION_END.adUnits[0].bids[0].bidder).to.be.equal('zeta_global_ssp');
     });
+
+    it('Keep only needed fields', function() {
+      this.timeout(3000);
+
+      events.emit(CONSTANTS.EVENTS.AUCTION_END, EVENTS.AUCTION_END);
+      events.emit(CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED, EVENTS.AD_RENDER_SUCCEEDED);
+
+      expect(requests.length).to.equal(2);
+      const auctionEnd = JSON.parse(requests[0].requestBody);
+      const auctionSucceeded = JSON.parse(requests[1].requestBody);
+
+      expect(auctionEnd.adUnitCodes[0]).to.be.equal('/19968336/header-bid-tag-0');
+      expect(auctionEnd.adUnits[0].bids[0].bidder).to.be.equal('zeta_global_ssp');
+      expect(auctionEnd.auctionEnd).to.be.equal(1638441234784);
+      expect(auctionEnd.auctionId).to.be.equal('75e394d9-ccce-4978-9238-91e6a1ac88a1');
+      expect(auctionEnd.bidderRequests[0].bidderCode).to.be.equal('zeta_global_ssp');
+      expect(auctionEnd.bidsReceived[0].bidderCode).to.be.equal('zeta_global_ssp');
+      expect(auctionEnd.noBids[0].bidder).to.be.equal('appnexus');
+
+      expect(auctionSucceeded.adId).to.be.equal('5759bb3ef7be1e8');
+      expect(auctionSucceeded.bid.auctionId).to.be.equal('75e394d9-ccce-4978-9238-91e6a1ac88a1');
+      expect(auctionSucceeded.bid.requestId).to.be.equal('206be9a13236af');
+      expect(auctionSucceeded.bid.bidderCode).to.be.equal('zeta_global_ssp');
+      expect(auctionSucceeded.bid.creativeId).to.be.equal('456456456');
+      expect(auctionSucceeded.bid.size).to.be.equal('480x320');
+      expect(auctionSucceeded.doc.location.hostname).to.be.equal('localhost');
+    });
   });
 });

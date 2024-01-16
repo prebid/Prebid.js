@@ -28,9 +28,9 @@ function addRealTimeData(ortb2, rtd) {
 }
 
 /**
-  * Try parsing stringified array of segment IDs.
-  * @param {String} data
-  */
+ * Try parsing stringified array of segment IDs.
+ * @param {String} data
+ */
 function tryParse(data) {
   try {
     return JSON.parse(data);
@@ -41,12 +41,12 @@ function tryParse(data) {
 }
 
 /**
-  * Real-time data retrieval from ID Ward
-  * @param {Object} reqBidsConfigObj
-  * @param {function} onDone
-  * @param {Object} rtdConfig
-  * @param {Object} userConsent
-  */
+ * Real-time data retrieval from ID Ward
+ * @param {Object} reqBidsConfigObj
+ * @param {function} onDone
+ * @param {Object} rtdConfig
+ * @param {Object} userConsent
+ */
 export function getRealTimeData(reqBidsConfigObj, onDone, rtdConfig, userConsent) {
   if (rtdConfig && isPlainObject(rtdConfig.params)) {
     const jsonData = storage.getDataFromLocalStorage(rtdConfig.params.cohortStorageKey)
@@ -85,11 +85,11 @@ export function getRealTimeData(reqBidsConfigObj, onDone, rtdConfig, userConsent
 }
 
 /**
-  * Module init
-  * @param {Object} provider
-  * @param {Object} userConsent
-  * @return {boolean}
-  */
+ * Module init
+ * @param {Object} provider
+ * @param {Object} userConsent
+ * @return {boolean}
+ */
 function init(provider, userConsent) {
   return true;
 }
