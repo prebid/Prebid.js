@@ -7,7 +7,7 @@ describe('experianSandboxBidAdapter', () => {
     const validBid = {
       bidder: 'expSandbox',
       params: {
-        env: 'stg'
+        sandboxUrl: 'https://rtid-sample-bidder-lq4sckwqxa-uc.a.run.app/bidder/decrypt_and_bid'
       }
     }
     const invalidBid = {
@@ -24,55 +24,19 @@ describe('experianSandboxBidAdapter', () => {
   })
 
   describe('buildRequests', () => {
-    describe('env is stg', () => {
-      it('should make POST request to correct endpoint with rtid key and data', () => {
-        const requests = experianSandboxBidderSpec.buildRequests([{
-          bidder: 'expSandbox',
-          params: {
-            env: 'stg'
-          }
-        }], { ortb2: { experianRtidKey: 'test-key', experianRtidData: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg==' } })
+    it('should make POST request to correct endpoint with rtid key and data', () => {
+      const requests = experianSandboxBidderSpec.buildRequests([{
+        bidder: 'expSandbox',
+        params: {
+          sandboxUrl: 'https://rtid-sample-bidder-lq4sckwqxa-uc.a.run.app/bidder/decrypt_and_bid'
+        }
+      }], { ortb2: { experianRtidKey: 'test-key', experianRtidData: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg==' } })
 
-        expect(requests).to.deep.equal([{
-          method: 'POST',
-          url: 'https://rtid-sample-bidder-lq2sckomxa-uc.a.run.app/bidder/decrypt_and_bid',
-          data: '{"rtid-data":{"key":"test-key","data":"IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=="}}'
-        }])
-      })
-    })
-
-    describe('env is dev', () => {
-      it('should make POST request to correct endpoint with rtid key and data', () => {
-        const requests = experianSandboxBidderSpec.buildRequests([{
-          bidder: 'expSandbox',
-          params: {
-            env: 'dev'
-          }
-        }], { ortb2: { experianRtidKey: 'test-key', experianRtidData: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg==' } })
-
-        expect(requests).to.deep.equal([{
-          method: 'POST',
-          url: 'https://rtid-sample-bidder-la63usugka-uc.a.run.app/bidder/decrypt_and_bid',
-          data: '{"rtid-data":{"key":"test-key","data":"IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=="}}'
-        }])
-      })
-    })
-
-    describe('env is prod', () => {
-      it('should make POST request to correct endpoint with rtid key and data', () => {
-        const requests = experianSandboxBidderSpec.buildRequests([{
-          bidder: 'expSandbox',
-          params: {
-            env: 'prod'
-          }
-        }], { ortb2: { experianRtidKey: 'test-key', experianRtidData: 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg==' } })
-
-        expect(requests).to.deep.equal([{
-          method: 'POST',
-          url: 'https://rtid-sample-bidder-v5uw7sqsya-uc.a.run.app/bidder/decrypt_and_bid',
-          data: '{"rtid-data":{"key":"test-key","data":"IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=="}}'
-        }])
-      })
+      expect(requests).to.deep.equal([{
+        method: 'POST',
+        url: 'https://rtid-sample-bidder-lq4sckwqxa-uc.a.run.app/bidder/decrypt_and_bid',
+        data: '{"rtid-data":{"key":"test-key","data":"IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg=="}}'
+      }])
     })
   })
 

@@ -22,7 +22,7 @@ var adUnits = [
     bids: [
       {
         bidder: "expSandbox",
-        params: { env: 'stg' }
+        params: { sandboxUrl: 'https://rtid-sample-bidder-lq4sckwqxa-uc.a.run.app/bidder/decrypt_and_bid' }
       }
     ]
   },
