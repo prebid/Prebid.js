@@ -207,7 +207,7 @@ getConfig('s2sConfig', ({s2sConfig}) => setS2sConfig(s2sConfig));
 
 /**
  * resets the _synced variable back to false, primiarily used for testing purposes
-*/
+ */
 export function resetSyncedStatus() {
   _syncCount = 0;
 }
@@ -593,7 +593,7 @@ function shouldEmitNonbids(s2sConfig, response) {
 /**
  * Global setter that sets eids permissions for bidders
  * This setter is to be used by userId module when included
- * @param {array} newEidPermissions
+ * @param {Array} newEidPermissions
  */
 function setEidPermissions(newEidPermissions) {
   eidPermissions = newEidPermissions;

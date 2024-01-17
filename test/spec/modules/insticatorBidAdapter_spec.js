@@ -179,6 +179,43 @@ describe('InsticatorBidAdapter', function () {
         }
       })).to.be.false;
     });
+
+    it('should return false if video plcmt is not a number', () => {
+      expect(spec.isBidRequestValid({
+        ...bidRequest,
+        ...{
+          mediaTypes: {
+            video: {
+              mimes: [
+                'video/mp4',
+                'video/mpeg',
+              ],
+              w: 250,
+              h: 300,
+              plcmt: 'NaN',
+            },
+          }
+        }
+      })).to.be.false;
+    });
+
+    it('should return true if playerSize is present instead of w and h', () => {
+      expect(spec.isBidRequestValid({
+        ...bidRequest,
+        ...{
+          mediaTypes: {
+            video: {
+              mimes: [
+                'video/mp4',
+                'video/mpeg',
+              ],
+              playerSize: [250, 300],
+              placement: 1,
+            },
+          }
+        }
+      })).to.be.true;
+    });
   });
 
   describe('buildRequests', function () {
@@ -570,4 +607,87 @@ describe('InsticatorBidAdapter', function () {
       expect(spec.getUserSyncs({}, [response])).to.have.length(0);
     })
   });
+
+  describe('Response with video Instream', function () {
+    const bidRequestVid = {
+      method: 'POST',
+      url: 'https://ex.ingage.tech/v1/openrtb',
+      options: {
+        contentType: 'application/json',
+        withCredentials: true,
+      },
+      data: '',
+      bidderRequest: {
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
+        timeout: 300,
+        bids: [
+          {
+            bidder: 'insticator',
+            params: {
+              adUnitId: '1a2b3c4d5e6f1a2b3c4d'
+            },
+            adUnitCode: 'adunit-code-1',
+            mediaTypes: {
+              video: {
+                mimes: [
+                  'video/mp4',
+                  'video/mpeg',
+                ],
+                playerSize: [[250, 300]],
+                placement: 2,
+                plcmt: 2,
+              }
+            },
+            bidId: 'bid1',
+          }
+        ]
+      }
+    };
+
+    const bidResponseVid = {
+      body: {
+        id: '22edbae2733bf6',
+        bidid: 'foo9876',
+        cur: 'USD',
+        seatbid: [
+          {
+            seat: 'some-dsp',
+            bid: [
+              {
+                ad: '<Vast></Vast>',
+                impid: 'bid1',
+                crid: 'crid1',
+                price: 0.5,
+                w: 300,
+                h: 250,
+                adm: '<VAST version="4.0"><Ad></Ad></VAST>',
+                exp: 60,
+                adomain: ['test1.com'],
+                ext: {
+                  meta: {
+                    test: 1
+                  }
+                },
+              }
+            ],
+          },
+        ]
+      }
+    };
+    const bidRequestWithVideo = utils.deepClone(bidRequestVid);
+
+    it('should have related properties for video Instream', function() {
+      const serverResponseWithInstream = utils.deepClone(bidResponseVid);
+      serverResponseWithInstream.body.seatbid[0].bid[0].vastXml = '<VAST version="4.0"><Ad></Ad></VAST>';
+      serverResponseWithInstream.body.seatbid[0].bid[0].mediaType = 'video';
+      const bidResponse = spec.interpretResponse(serverResponseWithInstream, bidRequestWithVideo)[0];
+      expect(bidResponse).to.have.any.keys('mediaType', 'vastXml', 'vastUrl');
+      expect(bidResponse).to.have.property('mediaType', 'video');
+      expect(bidResponse.width).to.equal(300);
+      expect(bidResponse.height).to.equal(250);
+      expect(bidResponse).to.have.property('vastXml', '<VAST version="4.0"><Ad></Ad></VAST>');
+      expect(bidResponse.vastUrl).to.match(/^data:text\/xml;charset=utf-8;base64,[\w+/=]+$/)
+    });
+  })
 });

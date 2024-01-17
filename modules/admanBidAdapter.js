@@ -4,6 +4,7 @@ import { isFn, deepAccess, logMessage } from '../src/utils.js';
 import {config} from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
+const GVLID = 149;
 const BIDDER_CODE = 'adman';
 const AD_URL = 'https://pub.admanmedia.com/?c=o&m=multi';
 const URL_SYNC = 'https://sync.admanmedia.com';
@@ -57,6 +58,7 @@ function getUserId(eids, id, source, uidExt) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid) => {

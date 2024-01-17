@@ -1,5 +1,6 @@
 import { expect } from 'chai';
-import { spec } from 'modules/discoveryBidAdapter.js';
+import { spec, getPmgUID, storage, getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLink } from 'modules/discoveryBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('discovery:BidAdapterTests', function () {
   let bidRequestData = {
@@ -98,6 +99,47 @@ describe('discovery:BidAdapterTests', function () {
     expect(req_data.imp).to.have.lengthOf(1);
   });
 
+  describe('discovery: buildRequests', function() {
+    describe('getPmgUID function', function() {
+      let sandbox;
+
+      beforeEach(() => {
+        sandbox = sinon.sandbox.create();
+        sandbox.stub(storage, 'getCookie');
+        sandbox.stub(storage, 'setCookie');
+        sandbox.stub(utils, 'generateUUID').returns('new-uuid');
+        sandbox.stub(storage, 'cookiesAreEnabled');
+      })
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should generate new UUID and set cookie if not exists', () => {
+        storage.cookiesAreEnabled.callsFake(() => true);
+        storage.getCookie.callsFake(() => null);
+        const uid = getPmgUID();
+        expect(uid).to.equal('new-uuid');
+        expect(storage.setCookie.calledOnce).to.be.true;
+      });
+
+      it('should return existing UUID from cookie', () => {
+        storage.cookiesAreEnabled.callsFake(() => true);
+        storage.getCookie.callsFake(() => 'existing-uuid');
+        const uid = getPmgUID();
+        expect(uid).to.equal('existing-uuid');
+        expect(storage.setCookie.called).to.be.false;
+      });
+
+      it('should not set new UUID when cookies are not enabled', () => {
+        storage.cookiesAreEnabled.callsFake(() => false);
+        storage.getCookie.callsFake(() => null);
+        getPmgUID();
+        expect(storage.setCookie.calledOnce).to.be.false;
+      });
+    })
+  });
+
   it('discovery:validate_response_params', function () {
     let tempAdm = '<link rel=\"stylesheet\" href=\"https://cdn.mediago.io/js/style/style_banner_336x280_standard.css\"><div id=\"mgcontainer-e1746bcc817beaba9d63bd4254aad533\" class=\"mediago-placement_46ee9c c336x280_standard_46ee9c mediago-placement c336x280_standard\" style=\"width:336px;height:280px;overflow:hidden\"><a class=\"mediago-placement-track_46ee9c mediago-placement-track\" title=\"秘密のしかけのネックレスをプレゼントした男性。2年後に彼女は中身に気付いて悲鳴を上げた\" href=\"https://trace.mediago.cc/api/bidder/track?tn=d0f4902b616cc5c38cbe0a08676d0ed9&price=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&evt=102&rid=3f6700b5e61e1476bed629b6ea6c7a4d&campaignid=1366258&impid=50-3663.infoseek.co.jp.336x280-1&offerid=28316825&test=0&time=1660811542&cp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&clickid=50_3f6700b5e61e1476bed629b6ea6c7a4d_50-3663.infoseek.co.jp.336x280-1&acid=1120&trackingid=e1746bcc817beaba9d63bd4254aad533&uid=7544198412013119947&jt=2&url=O7fi1nLA9qLQjcPq7rIDvxMyybMbcc2iUh-TuaqiVSD1Dj4cKrR82gRYdWy1Ao22yhq2FoY79tmyI3X_bsO3CusXggmpW8bZvwTlHPxfOxekArClcRSpWmkVorlnMSYf7yM6QBVTuTLCCP-cK8eXMZnQVR7PdOImYZGJis6q9Xx9MToxvPkWRVa13OaCtKVeqzGdglYH3G2mqo1qLP1RCCZJHE1Fq8fgCYmLJ0Xli-nLvFZjt3g0HIui_IvyZi6YtXS97p9ohgfgDJnqcGH6l053AP0cO7ZQDHtS2_9P9UqgaA47gmltDVEDkSThX7js&bm=50&la=ja&cn=jp&cid=4215873&info=x_ME1qzmB7TY6hTSn_XUw5s6N-EkBgxcE4qJ0fd9amgsJzO3-Gtm2Nja777SyGlpkF6k_tSzbcLYYecYQlHncOAAIyuNaT2rvqrhxrQPfC7opZUGQ8WMx4Rwkx8R2k0nDiBI8xnegLWYTvY-Fc99Rw&sid=38__149__12__24__144__163__47__1__99&sp=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&scp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&acu=JPY&scu=USD&sgcp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&gprice=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&gcp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&ah=&pb=m&de=infoseek.co.jp&cat=&iv=0\" target=\"_blank\"><div class=\"mediago-placement-top_46ee9c mediago-placement-top\" style=\"background-image:url(https://d2cli4kgl5uxre.cloudfront.net/ML/d8e9b4aa20fae1739d2aad8c926d3f15__scv1__306x304.png)\"></div></a><div class=\"mediago-placement-bottom_46ee9c mediago-placement-bottom\"><div class=\"mediago-middle_46ee9c mediago-middle\"><a class=\"mediago-placement-track_46ee9c mediago-placement-track\" title=\"秘密のしかけのネックレスをプレゼントした男性。2年後に彼女は中身に気付いて悲鳴を上げた\" href=\"https://trace.mediago.cc/api/bidder/track?tn=d0f4902b616cc5c38cbe0a08676d0ed9&price=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&evt=102&rid=3f6700b5e61e1476bed629b6ea6c7a4d&campaignid=1366258&impid=50-3663.infoseek.co.jp.336x280-1&offerid=28316825&test=0&time=1660811542&cp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&clickid=50_3f6700b5e61e1476bed629b6ea6c7a4d_50-3663.infoseek.co.jp.336x280-1&acid=1120&trackingid=e1746bcc817beaba9d63bd4254aad533&uid=7544198412013119947&jt=2&url=O7fi1nLA9qLQjcPq7rIDvxMyybMbcc2iUh-TuaqiVSD1Dj4cKrR82gRYdWy1Ao22yhq2FoY79tmyI3X_bsO3CusXggmpW8bZvwTlHPxfOxekArClcRSpWmkVorlnMSYf7yM6QBVTuTLCCP-cK8eXMZnQVR7PdOImYZGJis6q9Xx9MToxvPkWRVa13OaCtKVeqzGdglYH3G2mqo1qLP1RCCZJHE1Fq8fgCYmLJ0Xli-nLvFZjt3g0HIui_IvyZi6YtXS97p9ohgfgDJnqcGH6l053AP0cO7ZQDHtS2_9P9UqgaA47gmltDVEDkSThX7js&bm=50&la=ja&cn=jp&cid=4215873&info=x_ME1qzmB7TY6hTSn_XUw5s6N-EkBgxcE4qJ0fd9amgsJzO3-Gtm2Nja777SyGlpkF6k_tSzbcLYYecYQlHncOAAIyuNaT2rvqrhxrQPfC7opZUGQ8WMx4Rwkx8R2k0nDiBI8xnegLWYTvY-Fc99Rw&sid=38__149__12__24__144__163__47__1__99&sp=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&scp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&acu=JPY&scu=USD&sgcp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&gprice=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&gcp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&ah=&pb=m&de=infoseek.co.jp&cat=&iv=0\" target=\"_blank\"><div class=\"mediago-title_46ee9c mediago-title\">秘密のしかけのネックレスをプレゼントした男性。2年後に彼女は中身に気付いて悲鳴を上げた</div></a><div style=\"margin-top:10px;\"><a class=\"mediago-ad-icon_46ee9c mediago-ad-icon\" title=\"ad\" href=\"//www.mediago.io/privacy\" target=\"_blank\">AD</a> <a class=\"mediago-placement-track_46ee9c mediago-placement-track\" title=\"秘密のしかけのネックレスをプレゼントした男性。2年後に彼女は中身に気付いて悲鳴を上げた\" href=\"https://trace.mediago.cc/api/bidder/track?tn=d0f4902b616cc5c38cbe0a08676d0ed9&price=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&evt=102&rid=3f6700b5e61e1476bed629b6ea6c7a4d&campaignid=1366258&impid=50-3663.infoseek.co.jp.336x280-1&offerid=28316825&test=0&time=1660811542&cp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&clickid=50_3f6700b5e61e1476bed629b6ea6c7a4d_50-3663.infoseek.co.jp.336x280-1&acid=1120&trackingid=e1746bcc817beaba9d63bd4254aad533&uid=7544198412013119947&jt=2&url=O7fi1nLA9qLQjcPq7rIDvxMyybMbcc2iUh-TuaqiVSD1Dj4cKrR82gRYdWy1Ao22yhq2FoY79tmyI3X_bsO3CusXggmpW8bZvwTlHPxfOxekArClcRSpWmkVorlnMSYf7yM6QBVTuTLCCP-cK8eXMZnQVR7PdOImYZGJis6q9Xx9MToxvPkWRVa13OaCtKVeqzGdglYH3G2mqo1qLP1RCCZJHE1Fq8fgCYmLJ0Xli-nLvFZjt3g0HIui_IvyZi6YtXS97p9ohgfgDJnqcGH6l053AP0cO7ZQDHtS2_9P9UqgaA47gmltDVEDkSThX7js&bm=50&la=ja&cn=jp&cid=4215873&info=x_ME1qzmB7TY6hTSn_XUw5s6N-EkBgxcE4qJ0fd9amgsJzO3-Gtm2Nja777SyGlpkF6k_tSzbcLYYecYQlHncOAAIyuNaT2rvqrhxrQPfC7opZUGQ8WMx4Rwkx8R2k0nDiBI8xnegLWYTvY-Fc99Rw&sid=38__149__12__24__144__163__47__1__99&sp=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&scp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&acu=JPY&scu=USD&sgcp=mMrvLk32jGlArvPzkLzohkmMOOp6YSaVPquxpJIAub4&gprice=zM_t6HbCS8OclsiLiZUjtAqxHOGHkHjKXNZ9_buiV_s&gcp=WDWnWmVvDyEauBe8AfxyP7vfEVRzDMzzKOeztgGoSWY&ah=&pb=m&de=infoseek.co.jp&cat=&iv=0\" target=\"_blank\"><div class=\"mediago-brand-name_46ee9c mediago-brand-name\">Factable</div></a></div></div></div></div>'
     tempAdm += '%3Cscr';
@@ -136,5 +178,270 @@ describe('discovery:BidAdapterTests', function () {
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);
     expect(bid.currency).to.equal('USD');
+  });
+
+  describe('discovery: getUserSyncs', function() {
+    const COOKY_SYNC_IFRAME_URL = 'https://asset.popin.cc/js/cookieSync.html';
+    const IFRAME_ENABLED = {
+      iframeEnabled: true,
+      pixelEnabled: false,
+    };
+    const IFRAME_DISABLED = {
+      iframeEnabled: false,
+      pixelEnabled: false,
+    };
+    const GDPR_CONSENT = {
+      consentString: 'gdprConsentString',
+      gdprApplies: true
+    };
+    const USP_CONSENT = {
+      consentString: 'uspConsentString'
+    }
+
+    let syncParamUrl = `dm=${encodeURIComponent(location.origin || `https://${location.host}`)}`;
+    syncParamUrl += '&gdpr=1&gdpr_consent=gdprConsentString&ccpa_consent=uspConsentString';
+    const expectedIframeSyncs = [
+      {
+        type: 'iframe',
+        url: `${COOKY_SYNC_IFRAME_URL}?${syncParamUrl}`
+      }
+    ];
+
+    it('should return nothing if iframe is disabled', () => {
+      const userSyncs = spec.getUserSyncs(IFRAME_DISABLED, undefined, GDPR_CONSENT, USP_CONSENT, undefined);
+      expect(userSyncs).to.be.undefined;
+    });
+
+    it('should do userSyncs if iframe is enabled', () => {
+      const userSyncs = spec.getUserSyncs(IFRAME_ENABLED, undefined, GDPR_CONSENT, USP_CONSENT, undefined);
+      expect(userSyncs).to.deep.equal(expectedIframeSyncs);
+    });
+  });
+});
+
+describe('discovery Bid Adapter Tests', function () {
+  describe('buildRequests', () => {
+    describe('getPageTitle function', function() {
+      let sandbox;
+
+      beforeEach(() => {
+        sandbox = sinon.createSandbox();
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should return the top document title if available', function() {
+        const fakeTopDocument = {
+          title: 'Top Document Title',
+          querySelector: () => ({ content: 'Top Document Title test' })
+        };
+        const fakeTopWindow = {
+          document: fakeTopDocument
+        };
+        const result = getPageTitle({ top: fakeTopWindow });
+        expect(result).to.equal('Top Document Title');
+      });
+
+      it('should return the content of top og:title meta tag if title is empty', function() {
+        const ogTitleContent = 'Top OG Title Content';
+        const fakeTopWindow = {
+          document: {
+            title: '',
+            querySelector: sandbox.stub().withArgs('meta[property="og:title"]').returns({ content: ogTitleContent })
+          }
+        };
+
+        const result = getPageTitle({ top: fakeTopWindow });
+        expect(result).to.equal(ogTitleContent);
+      });
+
+      it('should return the document title if no og:title meta tag is present', function() {
+        document.title = 'Test Page Title';
+        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns(null);
+
+        const result = getPageTitle({ top: undefined });
+        expect(result).to.equal('Test Page Title');
+      });
+
+      it('should return the content of og:title meta tag if present', function() {
+        document.title = '';
+        const ogTitleContent = 'Top OG Title Content';
+        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns({ content: ogTitleContent });
+        const result = getPageTitle({ top: undefined });
+        expect(result).to.equal(ogTitleContent);
+      });
+
+      it('should return an empty string if no title or og:title meta tag is found', function() {
+        document.title = '';
+        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns(null);
+        const result = getPageTitle({ top: undefined });
+        expect(result).to.equal('');
+      });
+
+      it('should handle exceptions when accessing top.document and fallback to current document', function() {
+        const fakeWindow = {
+          get top() {
+            throw new Error('Access denied');
+          }
+        };
+        const ogTitleContent = 'Current OG Title Content';
+        document.title = 'Current Document Title';
+        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns({ content: ogTitleContent });
+        const result = getPageTitle(fakeWindow);
+        expect(result).to.equal('Current Document Title');
+      });
+    });
+
+    describe('getPageDescription function', function() {
+      let sandbox;
+
+      beforeEach(() => {
+        sandbox = sinon.createSandbox();
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should return the top document description if available', function() {
+        const descriptionContent = 'Top Document Description';
+        const fakeTopDocument = {
+          querySelector: sandbox.stub().withArgs('meta[name="description"]').returns({ content: descriptionContent })
+        };
+        const fakeTopWindow = { document: fakeTopDocument };
+        const result = getPageDescription({ top: fakeTopWindow });
+        expect(result).to.equal(descriptionContent);
+      });
+
+      it('should return the top document og:description if description is not present', function() {
+        const ogDescriptionContent = 'Top OG Description';
+        const fakeTopDocument = {
+          querySelector: sandbox.stub().withArgs('meta[property="og:description"]').returns({ content: ogDescriptionContent })
+        };
+        const fakeTopWindow = { document: fakeTopDocument };
+        const result = getPageDescription({ top: fakeTopWindow });
+        expect(result).to.equal(ogDescriptionContent);
+      });
+
+      it('should return the current document description if top document is not accessible', function() {
+        const descriptionContent = 'Current Document Description';
+        sandbox.stub(document, 'querySelector')
+          .withArgs('meta[name="description"]').returns({ content: descriptionContent })
+        const fakeWindow = {
+          get top() {
+            throw new Error('Access denied');
+          }
+        };
+        const result = getPageDescription(fakeWindow);
+        expect(result).to.equal(descriptionContent);
+      });
+
+      it('should return the current document og:description if description is not present and top document is not accessible', function() {
+        const ogDescriptionContent = 'Current OG Description';
+        sandbox.stub(document, 'querySelector')
+          .withArgs('meta[property="og:description"]').returns({ content: ogDescriptionContent });
+
+        const fakeWindow = {
+          get top() {
+            throw new Error('Access denied');
+          }
+        };
+        const result = getPageDescription(fakeWindow);
+        expect(result).to.equal(ogDescriptionContent);
+      });
+    });
+
+    describe('getPageKeywords function', function() {
+      let sandbox;
+
+      beforeEach(() => {
+        sandbox = sinon.createSandbox();
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should return the top document keywords if available', function() {
+        const keywordsContent = 'keyword1, keyword2, keyword3';
+        const fakeTopDocument = {
+          querySelector: sandbox.stub()
+            .withArgs('meta[name="keywords"]').returns({ content: keywordsContent })
+        };
+        const fakeTopWindow = { document: fakeTopDocument };
+
+        const result = getPageKeywords({ top: fakeTopWindow });
+        expect(result).to.equal(keywordsContent);
+      });
+
+      it('should return the current document keywords if top document is not accessible', function() {
+        const keywordsContent = 'keyword1, keyword2, keyword3';
+        sandbox.stub(document, 'querySelector')
+          .withArgs('meta[name="keywords"]').returns({ content: keywordsContent });
+
+        // 模拟顶层窗口访问异常
+        const fakeWindow = {
+          get top() {
+            throw new Error('Access denied');
+          }
+        };
+
+        const result = getPageKeywords(fakeWindow);
+        expect(result).to.equal(keywordsContent);
+      });
+
+      it('should return an empty string if no keywords meta tag is found', function() {
+        sandbox.stub(document, 'querySelector').withArgs('meta[name="keywords"]').returns(null);
+
+        const result = getPageKeywords();
+        expect(result).to.equal('');
+      });
+    });
+    describe('getConnectionDownLink function', function() {
+      let sandbox;
+
+      beforeEach(() => {
+        sandbox = sinon.createSandbox();
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should return the downlink value as a string if available', function() {
+        const downlinkValue = 2.5;
+        const fakeNavigator = {
+          connection: {
+            downlink: downlinkValue
+          }
+        };
+
+        const result = getConnectionDownLink({ navigator: fakeNavigator });
+        expect(result).to.equal(downlinkValue.toString());
+      });
+
+      it('should return undefined if downlink is not available', function() {
+        const fakeNavigator = {
+          connection: {}
+        };
+
+        const result = getConnectionDownLink({ navigator: fakeNavigator });
+        expect(result).to.be.undefined;
+      });
+
+      it('should return undefined if connection is not available', function() {
+        const fakeNavigator = {};
+
+        const result = getConnectionDownLink({ navigator: fakeNavigator });
+        expect(result).to.be.undefined;
+      });
+
+      it('should handle cases where navigator is not defined', function() {
+        const result = getConnectionDownLink({});
+        expect(result).to.be.undefined;
+      });
+    });
   });
 });
