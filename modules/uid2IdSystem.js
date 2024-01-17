@@ -13,7 +13,7 @@ import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
 // RE below lint exception: UID2 and EUID are separate modules, but the protocol is the same and shared code makes sense here.
 // eslint-disable-next-line prebid/validate-imports
-import { Uid2GetId, Uid2CodeVersion } from './uid2IdSystem_shared.js';
+import { Uid2GetId, Uid2CodeVersion, extractIdentityFromParams } from './uid2IdSystem_shared.js';
 import {UID2_EIDS} from '../libraries/uid2Eids/uid2Eids.js';
 
 const MODULE_NAME = 'uid2';
@@ -32,18 +32,6 @@ function createLogger(logger, prefix) {
   return function (...strings) {
     logger(prefix + ' ', ...strings);
   }
-}
-
-function extractIdentityFromParams(params) {
-  const keysToCheck = ['emailHash', 'phoneHash', 'email', 'phone'];
-
-  for (let key of keysToCheck) {
-    if (params.hasOwnProperty(key)) {
-      return { [key]: params[key] };
-    }
-  }
-
-  return {};
 }
 
 const _logInfo = createLogger(logInfo, LOG_PRE_FIX);
