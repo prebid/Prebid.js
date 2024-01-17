@@ -216,6 +216,56 @@ describe('InsticatorBidAdapter', function () {
         }
       })).to.be.true;
     });
+
+    it('should return true if optional video fields are valid', () => {
+      expect(spec.isBidRequestValid({
+        ...bidRequest,
+        ...{
+          mediaTypes: {
+            video: {
+              mimes: [
+                'video/mp4',
+                'video/mpeg',
+              ],
+              playerSize: [250, 300],
+              placement: 1,
+              startdelay: 1,
+              skip: 1,
+              skipmin: 1,
+              skipafter: 1,
+              minduration: 1,
+              maxduration: 1,
+              api: [1, 2],
+              protocols: [2],
+              battr: [1, 2],
+              playbackmethod: [1, 2],
+              playbackend: 1,
+              delivery: [1, 2],
+              pos: 1,
+            },
+          }
+        }
+      })).to.be.true;
+    });
+
+    it('should return false if optional video fields are not valid', () => {
+      expect(spec.isBidRequestValid({
+        ...bidRequest,
+        ...{
+          mediaTypes: {
+            video: {
+              mimes: [
+                'video/mp4',
+                'video/mpeg',
+              ],
+              playerSize: [250, 300],
+              placement: 1,
+              startdelay: 'NaN',
+            },
+          }
+        }
+      })).to.be.false;
+    });
   });
 
   describe('buildRequests', function () {

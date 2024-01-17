@@ -1,7 +1,7 @@
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepAccess, generateUUID, logError, isArray} from '../src/utils.js';
+import {deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {find} from '../src/polyfill.js';
 
@@ -11,6 +11,35 @@ const USER_ID_KEY = 'hb_insticator_uid';
 const USER_ID_COOKIE_EXP = 2592000000; // 30 days
 const BID_TTL = 300; // 5 minutes
 const GVLID = 910;
+
+const isSubarray = (arr, target) => {
+  if (!Array.isArray(arr) || arr.length === 0) {
+    return false;
+  }
+  const targetSet = new Set(target);
+  return arr.every(el => targetSet.has(el));
+};
+
+export const OPTIONAL_VIDEO_PARAMS = {
+  'minduration': (value) => isInteger(value),
+  'maxduration': (value) => isInteger(value),
+  'protocols': (value) => isSubarray(value, [2, 3, 5, 6]), // protocols values supported by Inticator, according to the OpenRTB spec
+  'startdelay': (value) => isInteger(value),
+  'linearity': (value) => [1, 2].includes(value),
+  'skip': (value) => [1, 0].includes(value),
+  'skipmin': (value) => isInteger(value),
+  'skipafter': (value) => isInteger(value),
+  'sequence': (value) => isInteger(value),
+  'battr': (value) => isArrayOfNums(value),
+  'maxextended': (value) => isInteger(value),
+  'minbitrate': (value) => isInteger(value),
+  'maxbitrate': (value) => isInteger(value),
+  'playbackmethod': (value) => isArrayOfNums(value),
+  'playbackend': (value) => isInteger(value),
+  'delivery': (value) => isArrayOfNums(value),
+  'pos': (value) => isInteger(value),
+  'api': (value) => isArrayOfNums(value)
+};
 
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
@@ -90,18 +119,26 @@ function buildVideo(bidRequest) {
     }
   }
 
+  const bidRequestVideo = deepAccess(bidRequest, 'mediaTypes.video');
+  let optionalParams = {};
+  for (const param in OPTIONAL_VIDEO_PARAMS) {
+    if (bidRequestVideo[param]) {
+      if (OPTIONAL_VIDEO_PARAMS[param](bidRequestVideo[param])) {
+        optionalParams[param] = bidRequestVideo[param];
+      }
+    }
+  }
+
   let videoObj = {
     placement,
     mimes,
     w,
     h,
+    ...optionalParams
   }
 
   if (plcmt) {
-    videoObj = {
-      ...videoObj,
-      plcmt
-    }
+    videoObj['plcmt'] = plcmt;
   }
   return videoObj
 }
@@ -405,6 +442,15 @@ function validateVideo(bid) {
     return false;
   }
 
+  for (const param in OPTIONAL_VIDEO_PARAMS) {
+    if (video[param]) {
+      if (!OPTIONAL_VIDEO_PARAMS[param](video[param])) {
+        logError(`insticator: video ${param} is invalid`);
+        return false
+      }
+    }
+  }
+
   return true;
 }
 
@@ -446,7 +492,6 @@ export const spec = {
   interpretResponse: function (serverResponse, request) {
     const bidderRequest = request.bidderRequest;
     const body = serverResponse.body;
-
     if (!body || body.id !== bidderRequest.bidderRequestId) {
       logError('insticator: response id does not match bidderRequestId');
       return [];
