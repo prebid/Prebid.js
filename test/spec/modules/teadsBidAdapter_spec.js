@@ -1,23 +1,21 @@
 import {expect} from 'chai';
 import {spec, storage} from 'modules/teadsBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
-import {getStorageManager} from 'src/storageManager';
+import { off } from '../../../src/events';
 
 const ENDPOINT = 'https://a.teads.tv/hb/bid-request';
 const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="https://a.teads.tv/hb/getAdSettings"></script>"';
 
 describe('teadsBidAdapter', () => {
   const adapter = newBidder(spec);
-  let cookiesAreEnabledStub, getCookieStub;
+  let sandbox;
 
   beforeEach(function () {
-    cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
-    getCookieStub = sinon.stub(storage, 'getCookie');
+    sandbox = sinon.sandbox.create();
   });
 
   afterEach(function () {
-    cookiesAreEnabledStub.restore();
-    getCookieStub.restore();
+    sandbox.restore();
   });
 
   describe('inherited functions', () => {
@@ -255,6 +253,158 @@ describe('teadsBidAdapter', () => {
 
       expect(payload.pageReferrer).to.exist;
       expect(payload.pageReferrer).to.deep.equal(document.referrer);
+    });
+
+    it('should add screenOrientation info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+      const screenOrientation = window.top.screen.orientation?.type
+
+      if (screenOrientation) {
+        expect(payload.screenOrientation).to.exist;
+        expect(payload.screenOrientation).to.deep.equal(screenOrientation);
+      } else expect(payload.screenOrientation).to.not.exist;
+    });
+
+    it('should add historyLength info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.historyLength).to.exist;
+      expect(payload.historyLength).to.deep.equal(window.top.history.length);
+    });
+
+    it('should add viewportHeight info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.viewportHeight).to.exist;
+      expect(payload.viewportHeight).to.deep.equal(window.top.visualViewport.height);
+    });
+
+    it('should add viewportWidth info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.viewportWidth).to.exist;
+      expect(payload.viewportWidth).to.deep.equal(window.top.visualViewport.width);
+    });
+
+    it('should add hardwareConcurrency info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+      const hardwareConcurrency = window.top.navigator?.hardwareConcurrency
+
+      if (hardwareConcurrency) {
+        expect(payload.hardwareConcurrency).to.exist;
+        expect(payload.hardwareConcurrency).to.deep.equal(hardwareConcurrency);
+      } else expect(payload.hardwareConcurrency).to.not.exist
+    });
+
+    it('should add deviceMemory info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+      const deviceMemory = window.top.navigator.deviceMemory
+
+      if (deviceMemory) {
+        expect(payload.deviceMemory).to.exist;
+        expect(payload.deviceMemory).to.deep.equal(deviceMemory);
+      } else expect(payload.deviceMemory).to.not.exist;
+    });
+
+    describe('pageTitle', function () {
+      it('should add pageTitle info to payload based on document title', function () {
+        const testText = 'This is a title';
+        sandbox.stub(window.top.document, 'title').value(testText);
+
+        const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.pageTitle).to.exist;
+        expect(payload.pageTitle).to.deep.equal(testText);
+      });
+
+      it('should add pageTitle info to payload based on open-graph title', function () {
+        const testText = 'This is a title from open-graph';
+        sandbox.stub(window.top.document, 'title').value('');
+        sandbox.stub(window.top.document, 'querySelector').withArgs('meta[property="og:title"]').returns({ content: testText });
+
+        const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.pageTitle).to.exist;
+        expect(payload.pageTitle).to.deep.equal(testText);
+      });
+
+      it('should add pageTitle info to payload sliced on 300 first characters', function () {
+        const testText = Array(500).join('a');
+        sandbox.stub(window.top.document, 'title').value(testText);
+
+        const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.pageTitle).to.exist;
+        expect(payload.pageTitle).to.have.length(300);
+      });
+
+      it('should add pageTitle info to payload when fallbacking from window.top', function () {
+        const testText = 'This is a fallback title';
+        sandbox.stub(window.top.document, 'querySelector').throws();
+        sandbox.stub(document, 'title').value(testText);
+
+        const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.pageTitle).to.exist;
+        expect(payload.pageTitle).to.deep.equal(testText);
+      });
+    });
+
+    describe('pageDescription', function () {
+      it('should add pageDescription info to payload based on open-graph description', function () {
+        const testText = 'This is a description';
+        sandbox.stub(window.top.document, 'querySelector').withArgs('meta[name="description"]').returns({ content: testText });
+
+        const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.pageDescription).to.exist;
+        expect(payload.pageDescription).to.deep.equal(testText);
+      });
+
+      it('should add pageDescription info to payload based on open-graph description', function () {
+        const testText = 'This is a description from open-graph';
+        sandbox.stub(window.top.document, 'querySelector').withArgs('meta[property="og:description"]').returns({ content: testText });
+
+        const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.pageDescription).to.exist;
+        expect(payload.pageDescription).to.deep.equal(testText);
+      });
+
+      it('should add pageDescription info to payload sliced on 300 first characters', function () {
+        const testText = Array(500).join('a');
+        sandbox.stub(window.top.document, 'querySelector').withArgs('meta[name="description"]').returns({ content: testText });
+
+        const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.pageDescription).to.exist;
+        expect(payload.pageDescription).to.have.length(300);
+      });
+
+      it('should add pageDescription info to payload when fallbacking from window.top', function () {
+        const testText = 'This is a fallback description';
+        sandbox.stub(window.top.document, 'querySelector').throws();
+        sandbox.stub(document, 'querySelector').withArgs('meta[name="description"]').returns({ content: testText });
+
+        const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.pageDescription).to.exist;
+        expect(payload.pageDescription).to.deep.equal(testText);
+      });
     });
 
     it('should add timeToFirstByte info to payload', function () {
@@ -681,7 +831,7 @@ describe('teadsBidAdapter', () => {
       describe('First-party cookie Teads ID', function () {
         it('should not add firstPartyCookieTeadsId param to payload if cookies are not enabled' +
             ' and teads user id not available', function () {
-          cookiesAreEnabledStub.returns(false);
+          sandbox.stub(storage, 'cookiesAreEnabled').returns(false);
 
           const bidRequest = {
             ...baseBidRequest,
@@ -698,8 +848,8 @@ describe('teadsBidAdapter', () => {
 
         it('should not add firstPartyCookieTeadsId param to payload if cookies are enabled ' +
             'but first-party cookie and teads user id are not available', function () {
-          cookiesAreEnabledStub.returns(true);
-          getCookieStub.withArgs('_tfpvi').returns(undefined);
+          sandbox.stub(storage, 'cookiesAreEnabled').returns(true);
+          sandbox.stub(storage, 'getCookie').withArgs('_tfpvi').returns(undefined);
 
           const bidRequest = {
             ...baseBidRequest,
@@ -716,8 +866,8 @@ describe('teadsBidAdapter', () => {
 
         it('should add firstPartyCookieTeadsId from cookie if it\'s available ' +
             'and teads user id is not', function () {
-          cookiesAreEnabledStub.returns(true);
-          getCookieStub.withArgs('_tfpvi').returns('my-teads-id');
+          sandbox.stub(storage, 'cookiesAreEnabled').returns(true);
+          sandbox.stub(storage, 'getCookie').withArgs('_tfpvi').returns('my-teads-id');
 
           const bidRequest = {
             ...baseBidRequest,
@@ -735,8 +885,8 @@ describe('teadsBidAdapter', () => {
 
         it('should add firstPartyCookieTeadsId from user id module if it\'s available ' +
             'even if cookie is available too', function () {
-          cookiesAreEnabledStub.returns(true);
-          getCookieStub.withArgs('_tfpvi').returns('my-teads-id');
+          sandbox.stub(storage, 'cookiesAreEnabled').returns(true);
+          sandbox.stub(storage, 'getCookie').withArgs('_tfpvi').returns('my-teads-id');
 
           const bidRequest = {
             ...baseBidRequest,

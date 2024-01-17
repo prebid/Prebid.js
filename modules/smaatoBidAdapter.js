@@ -1,22 +1,12 @@
-import {
-  chunk,
-  deepAccess,
-  deepSetValue,
-  fill,
-  getAdUnitSizes,
-  getDNT,
-  getMaxValueFromArray,
-  getMinValueFromArray,
-  isEmpty,
-  isNumber,
-  logError,
-  logInfo
-} from '../src/utils.js';
+import {deepAccess, deepSetValue, getDNT, isEmpty, isNumber, logError, logInfo} from '../src/utils.js';
 import {find} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import CONSTANTS from '../src/constants.json';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+import {fill} from '../libraries/appnexusUtils/anUtils.js';
+import {chunk} from '../libraries/chunk/chunk.js';
 
 const { NATIVE_IMAGE_TYPES } = CONSTANTS;
 const BIDDER_CODE = 'smaato';
@@ -466,7 +456,7 @@ function createAdPodImp(bidRequest, videoMediaType) {
     });
   } else {
     // all maxdurations should be the same
-    const maxDuration = getMaxValueFromArray(durationRangeSec);
+    const maxDuration = Math.max(...durationRangeSec);
     imps.map((imp, index) => {
       const sequence = index + 1;
       imp.video.maxduration = maxDuration
@@ -481,7 +471,7 @@ function createAdPodImp(bidRequest, videoMediaType) {
 
 function getAdPodNumberOfPlacements(videoMediaType) {
   const {adPodDurationSec, durationRangeSec, requireExactDuration} = videoMediaType
-  const minAllowedDuration = getMinValueFromArray(durationRangeSec)
+  const minAllowedDuration = Math.min(...durationRangeSec)
   const numberOfPlacements = Math.floor(adPodDurationSec / minAllowedDuration)
 
   return requireExactDuration

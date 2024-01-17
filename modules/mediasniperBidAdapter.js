@@ -1,8 +1,7 @@
 import {
   deepAccess,
   deepClone,
-  deepSetValue,
-  getBidIdParameter,
+  deepSetValue, getBidIdParameter,
   inIframe,
   isArray,
   isEmpty,

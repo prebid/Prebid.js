@@ -22,7 +22,7 @@ describe('AdqueryIdSystem', function () {
   describe('getId', function () {
     let getDataFromLocalStorageStub;
 
-    beforeEach(function() {
+    beforeEach(function () {
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
     });
 
@@ -53,7 +53,7 @@ describe('AdqueryIdSystem', function () {
       const callback = adqueryIdSubmodule.getId(config).callback;
       callback(callbackSpy);
       const request = server.requests[0];
-      expect(request.url).to.contains('https://another_bidder.adquery.io');
+      expect(request.url).to.contains('https://another_bidder.adquery.io/qid');
       request.respond(200, {'Content-Type': 'application/json'}, JSON.stringify({qid: 'testqid'}));
       expect(callbackSpy.lastCall.lastArg).to.deep.equal('testqid');
     });

@@ -75,7 +75,6 @@ export function summarizeAuctionInit(args, adapterConfig) {
   const zoneIndexes = []
   const adUnitCodes = []
   const podPos = []
-
   let someZoneIndexNonNull = false
   let someZoneNameNonNull = false
   let allZoneNamesNonNull = true

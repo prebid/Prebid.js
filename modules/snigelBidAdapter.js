@@ -105,7 +105,7 @@ registerBidder(spec);
 
 function getPage(bidderRequest) {
   return (
-    getConfig(`${BIDDER_CODE}.page`) || deepAccess(bidderRequest, 'refererInfo.canonicalUrl') || window.location.href
+    getConfig(`${BIDDER_CODE}.page`) || deepAccess(bidderRequest, 'refererInfo.page') || window.location.href
   );
 }
 
