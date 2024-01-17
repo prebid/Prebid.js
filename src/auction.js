@@ -58,6 +58,7 @@
  */
 
 import {
+  callBurl,
   deepAccess,
   generateUUID,
   getValue,
@@ -185,6 +186,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   function executeCallback(timedOut) {
     if (!timedOut) {
       clearTimeout(_timeoutTimer);
+    } else {
+      events.emit(CONSTANTS.EVENTS.AUCTION_TIMEOUT, getProperties());
     }
     if (_auctionEnd === undefined) {
       let timedOutRequests = [];
@@ -360,6 +363,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   function addWinningBid(winningBid) {
     const winningAd = adUnits.find(adUnit => adUnit.transactionId === winningBid.transactionId);
     _winningBids = _winningBids.concat(winningBid);
+    callBurl(winningBid);
     adapterManager.callBidWonBidder(winningBid.adapterCode || winningBid.bidder, winningBid, adUnits);
     if (winningAd && !winningAd.deferBilling) adapterManager.callBidBillableBidder(winningBid);
   }
@@ -451,7 +455,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
   function acceptBidResponse(adUnitCode, bid) {
     handleBidResponse(adUnitCode, bid, (done) => {
       let bidResponse = getPreparedBidForAuction(bid);
-
+      events.emit(CONSTANTS.EVENTS.BID_ACCEPTED, bidResponse);
       if (FEATURES.VIDEO && bidResponse.mediaType === VIDEO) {
         tryAddVideoBid(auctionInstance, bidResponse, done);
       } else {

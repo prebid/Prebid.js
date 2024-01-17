@@ -104,6 +104,7 @@ describe('PubMatic adapter', function () {
         params: {
           publisherId: '5890',
           adSlot: 'Div1@0x0', // ad_id or tagid
+          wiid: 'new-unique-wiid',
           video: {
             mimes: ['video/mp4', 'video/x-flv'],
             skippable: true,
@@ -154,6 +155,7 @@ describe('PubMatic adapter', function () {
         params: {
           publisherId: '5890',
           adSlot: 'Div1@640x480', // ad_id or tagid
+          wiid: '1234567890',
           video: {
             mimes: ['video/mp4', 'video/x-flv'],
             skippable: true,
@@ -213,6 +215,7 @@ describe('PubMatic adapter', function () {
       params: {
         publisherId: '5670',
         adSlot: '/43743431/NativeAutomationPrebid@1x1',
+        wiid: 'new-unique-wiid'
       },
       bidId: '2a5571261281d4',
       requestId: 'B68287E1-DC39-4B38-9790-FE4F179739D6',
@@ -278,6 +281,7 @@ describe('PubMatic adapter', function () {
       params: {
         publisherId: '5670',
         adSlot: '/43743431/NativeAutomationPrebid@1x1',
+        wiid: 'new-unique-wiid'
       },
       bidId: '2a5571261281d4',
       requestId: 'B68287E1-DC39-4B38-9790-FE4F179739D6',
@@ -304,6 +308,7 @@ describe('PubMatic adapter', function () {
       params: {
         publisherId: '5670',
         adSlot: '/43743431/NativeAutomationPrebid@1x1',
+        wiid: 'new-unique-wiid'
       }
     }];
 
@@ -344,6 +349,7 @@ describe('PubMatic adapter', function () {
       params: {
         publisherId: '5670',
         adSlot: '/43743431/NativeAutomationPrebid@1x1',
+        wiid: 'new-unique-wiid'
       }
     }];
 
@@ -502,6 +508,7 @@ describe('PubMatic adapter', function () {
         params: {
           publisherId: '301',
           adSlot: '/15671365/DMDemo@300x250:0',
+          wiid: 'new-unique-wiid',
           video: {
             mimes: ['video/mp4', 'video/x-flv'],
             skippable: true,
@@ -572,6 +579,7 @@ describe('PubMatic adapter', function () {
         params: {
           publisherId: '301',
           adSlot: '/15671365/DMDemo@300x250:0',
+          wiid: 'new-unique-wiid',
           video: {
             mimes: ['video/mp4', 'video/x-flv'],
             skippable: true,
@@ -2309,6 +2317,23 @@ describe('PubMatic adapter', function () {
         let data = JSON.parse(request.data);
         expect(data.device.sua).to.exist.and.to.be.an('object');
         expect(data.device.sua).to.deep.equal(suaObject);
+      });
+
+      it('should pass device.ext.cdep if present in bidderRequest fpd ortb2 object', function () {
+        const cdepObj = {
+          cdep: 'example_label_1'
+        };
+        let request = spec.buildRequests(multipleMediaRequests, {
+          auctionId: 'new-auction-id',
+          ortb2: {
+            device: {
+              ext: cdepObj
+            }
+          }
+        });
+        let data = JSON.parse(request.data);
+        expect(data.device.ext.cdep).to.exist.and.to.be.an('string');
+        expect(data.device.ext).to.deep.equal(cdepObj);
       });
 
       it('Request params should have valid native bid request for all valid params', function () {

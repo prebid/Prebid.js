@@ -1122,6 +1122,30 @@ describe('The Criteo bidding adapter', function () {
       expect(request.data.user.uspIab).to.equal('1YNY');
     });
 
+    it('should properly build a request with site and app ortb fields', function () {
+      const bidRequests = [];
+      let app = {
+        publisher: {
+          id: 'appPublisherId'
+        }
+      };
+      let site = {
+        publisher: {
+          id: 'sitePublisherId'
+        }
+      };
+      const bidderRequest = {
+        ortb2: {
+          app: app,
+          site: site
+        }
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+
+      expect(request.data.app).to.equal(app);
+      expect(request.data.site).to.equal(site);
+    });
+
     it('should properly build a request with device sua field', function () {
       const sua = {}
       const bidRequests = [
@@ -1326,12 +1350,25 @@ describe('The Criteo bidding adapter', function () {
           sizes: [[640, 480]],
           mediaTypes: {
             video: {
+              context: 'instream',
               playerSize: [640, 480],
               mimes: ['video/mp4', 'video/x-flv'],
               maxduration: 30,
               api: [1, 2],
               protocols: [2, 3],
-              plcmt: 3
+              plcmt: 3,
+              w: 640,
+              h: 480,
+              linearity: 1,
+              skipmin: 30,
+              skipafter: 30,
+              minbitrate: 10000,
+              maxbitrate: 48000,
+              delivery: [1, 2, 3],
+              pos: 1,
+              playbackend: 1,
+              adPodDurationSec: 30,
+              durationRangeSec: [1, 30],
             }
           },
           params: {
@@ -1350,6 +1387,7 @@ describe('The Criteo bidding adapter', function () {
       expect(request.url).to.match(/^https:\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&wv=[^&]+&cb=\d/);
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
+      expect(ortbRequest.slots[0].video.context).to.equal('instream');
       expect(ortbRequest.slots[0].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
       expect(ortbRequest.slots[0].sizes).to.deep.equal([]);
       expect(ortbRequest.slots[0].video.playersizes).to.deep.equal(['640x480']);
@@ -1362,6 +1400,18 @@ describe('The Criteo bidding adapter', function () {
       expect(ortbRequest.slots[0].video.playbackmethod).to.deep.equal([1, 3]);
       expect(ortbRequest.slots[0].video.placement).to.equal(2);
       expect(ortbRequest.slots[0].video.plcmt).to.equal(3);
+      expect(ortbRequest.slots[0].video.w).to.equal(640);
+      expect(ortbRequest.slots[0].video.h).to.equal(480);
+      expect(ortbRequest.slots[0].video.linearity).to.equal(1);
+      expect(ortbRequest.slots[0].video.skipmin).to.equal(30);
+      expect(ortbRequest.slots[0].video.skipafter).to.equal(30);
+      expect(ortbRequest.slots[0].video.minbitrate).to.equal(10000);
+      expect(ortbRequest.slots[0].video.maxbitrate).to.equal(48000);
+      expect(ortbRequest.slots[0].video.delivery).to.deep.equal([1, 2, 3]);
+      expect(ortbRequest.slots[0].video.pos).to.equal(1);
+      expect(ortbRequest.slots[0].video.playbackend).to.equal(1);
+      expect(ortbRequest.slots[0].video.adPodDurationSec).to.equal(30);
+      expect(ortbRequest.slots[0].video.durationRangeSec).to.deep.equal([1, 30]);
     });
 
     it('should properly build a video request with more than one player size', function () {
