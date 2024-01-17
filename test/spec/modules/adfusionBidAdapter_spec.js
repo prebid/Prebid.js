@@ -25,7 +25,7 @@ describe('adfusionBidAdapter', function () {
       transactionId: 'test-transactionId-1',
     };
 
-    it('should return true when required params found', function () {
+    it('should return true when required params are found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
