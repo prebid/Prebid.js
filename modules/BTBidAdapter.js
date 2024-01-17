@@ -1,4 +1,3 @@
-import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepSetValue, isPlainObject, logWarn } from '../src/utils.js';
 import { BANNER } from '../src/mediaTypes.js';
@@ -53,7 +52,7 @@ function imp(buildImp, bidRequest, context) {
  */
 function request(buildRequest, imps, bidderRequest, context) {
   const request = buildRequest(imps, bidderRequest, context);
-  if (config.getConfig('debug')) {
+  if (window.location.href.includes('btServerTest=true')) {
     request.test = 1;
   }
 
