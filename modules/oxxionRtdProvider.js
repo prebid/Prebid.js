@@ -50,9 +50,8 @@ function getAdUnits(reqBidsConfigObj, callback, config, userConsent) {
       if (typeof callback == 'function') { callback(); }
       const timeToRun = new Date() - moduleStarted;
       logInfo(LOG_PREFIX + " time to run: "+ timeToRun);
-      ajax('https://' + config.params.domain + '.oxxion.io/ova/time', null, JSON.stringify({'duration': timeToRun, 'auctionId': reqBidsConfigObj.auctionId}), {
-        method: 'POST', withCredentials: true
-      });
+      if (getRandomNumber(50) == 1) 
+        ajax('https://' + config.params.domain + '.oxxion.io/ova/time', null, JSON.stringify({'duration': timeToRun, 'auctionId': reqBidsConfigObj.auctionId}), {method: 'POST', withCredentials: true});
     }).catch(error => logError(LOG_PREFIX, 'bidInterestError', error));
   }
 }
