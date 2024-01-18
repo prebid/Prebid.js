@@ -121,11 +121,11 @@ function initializeLiveConnect(configParams) {
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
   liveConnectConfig.fireEventDelay = configParams.fireEventDelay;
 
-  liveConnectConfig.idcookie = {}
+  liveConnectConfig.idCookie = {}
   const sharedIdConfig = configParams.sharedId || {}
-  liveConnectConfig.idcookie.mode = sharedIdConfig.mode || 'generated'
-  liveConnectConfig.idcookie.name = sharedIdConfig.name
-  liveConnectConfig.idcookie.strategy = sharedIdConfig.strategy
+  liveConnectConfig.idCookie.mode = sharedIdConfig.mode || 'generated'
+  liveConnectConfig.idCookie.name = sharedIdConfig.name
+  liveConnectConfig.idCookie.strategy = sharedIdConfig.strategy
 
   const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString) {
@@ -191,7 +191,7 @@ export const liveIntentIdSubmodule = {
   decode(value, config) {
     const configParams = (config && config.params) || {};
     function composeIdObject(value) {
-      const result = {};
+      const result = {  };
 
       // old versions stored lipbid in unifiedId. Ensure that we can still read the data.
       const lipbid = value.nonId || value.unifiedId
@@ -236,7 +236,7 @@ export const liveIntentIdSubmodule = {
       }
 
       if (value.idcookie && !coppaDataHandler.getCoppa()) {
-        result.lipb.pubcid = value.idcookie
+        result.lipb = { ...result.lipb, pubcid: value.idcookie }
         delete result.lipb.idcookie
 
         result.pubcid = { 'id': value.idcookie, ext: { provider: LI_PROVIDER_DOMAIN } }
