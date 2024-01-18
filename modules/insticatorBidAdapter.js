@@ -23,7 +23,7 @@ const isSubarray = (arr, target) => {
 export const OPTIONAL_VIDEO_PARAMS = {
   'minduration': (value) => isInteger(value),
   'maxduration': (value) => isInteger(value),
-  'protocols': (value) => isSubarray(value, [2, 3, 5, 6]), // protocols values supported by Inticator, according to the OpenRTB spec
+  'protocols': (value) => isSubarray(value, [2, 3, 5, 6, 7, 8]), // protocols values supported by Inticator, according to the OpenRTB spec
   'startdelay': (value) => isInteger(value),
   'linearity': (value) => [1, 2].includes(value),
   'skip': (value) => [1, 0].includes(value),
@@ -123,7 +123,7 @@ function buildVideo(bidRequest) {
   let optionalParams = {};
   for (const param in OPTIONAL_VIDEO_PARAMS) {
     if (bidRequestVideo[param]) {
-        optionalParams[param] = bidRequestVideo[param];
+      optionalParams[param] = bidRequestVideo[param];
     }
   }
 
