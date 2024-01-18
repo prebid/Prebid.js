@@ -919,7 +919,7 @@ describe('Richaudience adapter tests', function () {
     it('should send timeout', function () {
       spec.onTimeout(DEFAULT_PARAMS_VIDEO_TIMEOUT);
       expect(utils.triggerPixel.called).to.equal(true);
-      expect(utils.triggerPixel.firstCall.args[0]).to.equal('https://s.richaudience.com/err/?ec=6&ev=3000&pla=ADb1f40rmi&int=PREBID&pltfm=&node=&dm=http%3A%2F%2Fdomain.com');
+      expect(utils.triggerPixel.firstCall.args[0]).to.equal('https://s.richaudience.com/err/?ec=6&ev=3000&pla=ADb1f40rmi&int=PREBID&pltfm=&node=&dm=localhost:9876');
     });
   });
 

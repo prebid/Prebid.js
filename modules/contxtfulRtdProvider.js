@@ -121,7 +121,7 @@ function getReceptivity() {
  * @param { [String] } adUnits
  * @param {*} _config
  * @param {*} _userConsent
-*  @return {{ code: { ReceptivityState: String } }}
+ *  @return {{ code: { ReceptivityState: String } }}
  */
 function getTargetingData(adUnits, _config, _userConsent) {
   logInfo(MODULE, 'getTargetingData');
