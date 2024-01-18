@@ -276,20 +276,26 @@ export const spec = {
     if (isArray(body.ext?.igbid)) {
       const seller = body.ext.seller || FLEDGE_SELLER_DOMAIN;
       const sellerTimeout = body.ext.sellerTimeout || FLEDGE_SELLER_TIMEOUT;
-      const sellerSignals = body.ext.sellerSignals || {};
       body.ext.igbid.forEach((igbid) => {
         const perBuyerSignals = {};
         igbid.igbuyer.forEach(buyerItem => {
           perBuyerSignals[buyerItem.origin] = buyerItem.buyerdata;
         });
         const bidRequest = request.bidRequests.find(b => b.bidId === igbid.impid);
+        const bidId = bidRequest.bidId;
+        let sellerSignals = body.ext.sellerSignals || {};
         if (!sellerSignals.floor && bidRequest.params.bidFloor) {
           sellerSignals.floor = bidRequest.params.bidFloor;
         }
         if (!sellerSignals.sellerCurrency && bidRequest.params.bidFloorCur) {
           sellerSignals.sellerCurrency = bidRequest.params.bidFloorCur;
         }
-        const bidId = bidRequest.bidId;
+        if (body?.ext?.sellerSignalsPerImp !== undefined) {
+          const sellerSignalsPerImp = body.ext.sellerSignalsPerImp[bidId];
+          if (sellerSignalsPerImp !== undefined) {
+            sellerSignals = {...sellerSignals, ...sellerSignalsPerImp};
+          }
+        }
         fledgeAuctionConfigs.push({
           bidId,
           config: {
@@ -609,6 +615,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   request.user = bidderRequest.ortb2?.user || {};
   request.site = bidderRequest.ortb2?.site || {};
   request.app = bidderRequest.ortb2?.app || {};
+  request.device = bidderRequest.ortb2?.device || {};
   if (bidderRequest && bidderRequest.ceh) {
     request.user.ceh = bidderRequest.ceh;
   }

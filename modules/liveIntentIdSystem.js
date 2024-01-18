@@ -115,6 +115,7 @@ function initializeLiveConnect(configParams) {
   }
 
   liveConnectConfig.wrapperName = 'prebid';
+  liveConnectConfig.trackerVersion = '$prebid.version$';
   liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
   liveConnectConfig.fireEventDelay = configParams.fireEventDelay;
@@ -156,7 +157,7 @@ function tryFireEvent() {
 
 /** @type {Submodule} */
 export const liveIntentIdSubmodule = {
-  moduleMode: process.env.LiveConnectMode,
+  moduleMode: '$$LIVE_INTENT_MODULE_MODE$$',
   /**
    * used to link submodule with config
    * @type {string}

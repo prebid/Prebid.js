@@ -1184,7 +1184,7 @@ export function hasValidVideoParams(bid) {
 /**
  * Make sure the required params are present
  * @param {Object} schain
- * @param {Bool}
+ * @param {boolean}
  */
 export function hasValidSupplyChainParams(schain) {
   let isValid = false;
