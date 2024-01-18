@@ -56,5 +56,6 @@
     "liveIntentIdSystem",
     "unifiedIdSystem",
     "pairIdSystem",
-    "connectIdSystem"
+    "connectIdSystem",
+    "fsAnalytics"
 ]
