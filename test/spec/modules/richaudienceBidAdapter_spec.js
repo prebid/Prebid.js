@@ -916,7 +916,7 @@ describe('Richaudience adapter tests', function () {
     it('onTimeout exist as a function', () => {
       expect(spec.onTimeout).to.exist.and.to.be.a('function');
     });
-    it('should send timeout', function () {
+    it('should send timeouts', function () {
       spec.onTimeout(DEFAULT_PARAMS_VIDEO_TIMEOUT);
       expect(utils.triggerPixel.called).to.equal(true);
       expect(utils.triggerPixel.firstCall.args[0]).to.equal('https://s.richaudience.com/err/?ec=6&ev=3000&pla=ADb1f40rmi&int=PREBID&pltfm=&node=&dm=localhost:9876');
