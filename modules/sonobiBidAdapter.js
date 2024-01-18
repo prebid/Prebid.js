@@ -6,7 +6,7 @@ import { Renderer } from '../src/Renderer.js';
 import { userSync } from '../src/userSync.js';
 import { bidderSettings } from '../src/bidderSettings.js';
 import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
-import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
 const PAGEVIEW_ID = generateUUID();
@@ -148,6 +148,11 @@ export const spec = {
       payload.coppa = 1;
     } else {
       payload.coppa = 0;
+    }
+
+    if (deepAccess(bidderRequest, 'ortb2.experianRtidData') && deepAccess(bidderRequest, 'ortb2.experianRtidKey')) {
+      payload.expData = deepAccess(bidderRequest, 'ortb2.experianRtidData');
+      payload.expKey = deepAccess(bidderRequest, 'ortb2.experianRtidKey');
     }
 
     // If there is no key_maker data, then don't make the request.
