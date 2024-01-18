@@ -123,9 +123,7 @@ function buildVideo(bidRequest) {
   let optionalParams = {};
   for (const param in OPTIONAL_VIDEO_PARAMS) {
     if (bidRequestVideo[param]) {
-      if (OPTIONAL_VIDEO_PARAMS[param](bidRequestVideo[param])) {
         optionalParams[param] = bidRequestVideo[param];
-      }
     }
   }
 
