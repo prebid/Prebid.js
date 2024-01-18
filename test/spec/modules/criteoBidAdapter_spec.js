@@ -2470,11 +2470,29 @@ describe('The Criteo bidding adapter', function () {
                   foo: 'baz',
                 },
               }]
+            }, {
+              impid: 'test-bidId-2',
+              igbuyer: [{
+                origin: 'https://first-buyer-domain.com',
+                buyerdata: {
+                  foo: 'bar',
+                },
+              }, {
+                origin: 'https://second-buyer-domain.com',
+                buyerdata: {
+                  foo: 'baz',
+                },
+              }]
             }],
             seller: 'https://seller-domain.com',
             sellerTimeout: 500,
             sellerSignals: {
               foo: 'bar',
+            },
+            sellerSignalsPerImp: {
+              'test-bidId': {
+                foo2: 'bar2',
+              }
             },
           },
         },
@@ -2502,15 +2520,54 @@ describe('The Criteo bidding adapter', function () {
             bidFloorCur: 'EUR'
           }
         },
+        {
+          bidId: 'test-bidId-2',
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            bidFloor: 1,
+            bidFloorCur: 'EUR'
+          }
+        },
       ];
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const interpretedResponse = spec.interpretResponse(response, request);
       expect(interpretedResponse).to.have.property('bids');
       expect(interpretedResponse).to.have.property('fledgeAuctionConfigs');
       expect(interpretedResponse.bids).to.have.lengthOf(0);
-      expect(interpretedResponse.fledgeAuctionConfigs).to.have.lengthOf(1);
+      expect(interpretedResponse.fledgeAuctionConfigs).to.have.lengthOf(2);
       expect(interpretedResponse.fledgeAuctionConfigs[0]).to.deep.equal({
         bidId: 'test-bidId',
+        config: {
+          auctionSignals: {},
+          decisionLogicUrl: 'https://grid-mercury.criteo.com/fledge/decision',
+          interestGroupBuyers: ['https://first-buyer-domain.com', 'https://second-buyer-domain.com'],
+          perBuyerSignals: {
+            'https://first-buyer-domain.com': {
+              foo: 'bar',
+            },
+            'https://second-buyer-domain.com': {
+              foo: 'baz'
+            },
+          },
+          seller: 'https://seller-domain.com',
+          sellerTimeout: 500,
+          sellerSignals: {
+            foo: 'bar',
+            foo2: 'bar2',
+            floor: 1,
+            sellerCurrency: 'EUR',
+          },
+        },
+      });
+      expect(interpretedResponse.fledgeAuctionConfigs[1]).to.deep.equal({
+        bidId: 'test-bidId-2',
         config: {
           auctionSignals: {},
           decisionLogicUrl: 'https://grid-mercury.criteo.com/fledge/decision',

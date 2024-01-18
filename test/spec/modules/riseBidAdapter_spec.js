@@ -22,6 +22,12 @@ describe('riseAdapter', function () {
     });
   });
 
+  describe('bid adapter', function () {
+    it('should have aliases', function () {
+      expect(spec.aliases).to.be.an('array').that.is.not.empty;
+    });
+  });
+
   describe('isBidRequestValid', function () {
     const bid = {
       'bidder': spec.code,
