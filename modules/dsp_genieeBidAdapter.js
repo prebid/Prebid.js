@@ -42,11 +42,11 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
   /**
-   * Determines whether or not the given bid request is valid.
-   *
-   * @param {BidRequest} - The bid params to validate.
-   * @return boolean True if this is a valid bid, and false otherwise.
-   */
+     * Determines whether or not the given bid request is valid.
+     *
+     * @param {BidRequest} - The bid params to validate.
+     * @return boolean True if this is a valid bid, and false otherwise.
+     */
   isBidRequestValid: function (_) {
     return true;
   },
