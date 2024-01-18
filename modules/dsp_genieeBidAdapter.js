@@ -51,12 +51,12 @@ export const spec = {
     return true;
   },
   /**
-   * Make a server request from the list of BidRequests.
-   *
-   * @param {validBidRequests[]} - an array of bids
-   * @param {bidderRequest} - the master bidRequest object
-   * @return ServerRequest Info describing the request to the server.
-   */
+     * Make a server request from the list of BidRequests.
+     *
+     * @param {validBidRequests[]} - an array of bids
+     * @param {bidderRequest} - the master bidRequest object
+     * @return ServerRequest Info describing the request to the server.
+     */
   buildRequests: function (validBidRequests, bidderRequest) {
     if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies') || // gdpr
             USPConsent(bidderRequest.uspConsent) || // usp
