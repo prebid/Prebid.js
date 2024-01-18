@@ -309,7 +309,7 @@ export function newUserSync(deps) {
    * @function syncUsers
    * @summary Trigger all the user syncs based on publisher-defined timeout
    * @public
-   * @params {int} timeout The delay in ms before syncing data - default 0
+   * @params {number} timeout The delay in ms before syncing data - default 0
    */
   publicApi.syncUsers = (timeout = 0) => {
     if (timeout) {
@@ -358,7 +358,7 @@ export const userSync = newUserSync(Object.defineProperties({
  *
  * @property {boolean} enableOverride
  * @property {boolean} syncEnabled
- * @property {int} syncsPerBidder
+ * @property {number} syncsPerBidder
  * @property {string[]} enabledBidders
  * @property {Object} filterSettings
  */

@@ -386,7 +386,7 @@ export function getAdUnitTargeting(auction) {
 
 /**
  * deep merge array of objects
- * @param {array} arr - objects array
+ * @param {Array} arr - objects array
  * @return {Object} merged object
  */
 export function deepMerge(arr) {

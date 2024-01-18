@@ -9,6 +9,13 @@
  */
 
 /**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/config.js').MediaTypePriceGranularity} MediaTypePriceGranularity
+ * @typedef {import('../src/mediaTypes.js').MediaType} MediaType
+ */
+
+/**
  * @typedef {Object} AdUnit An object containing the adUnit configuration.
  *
  * @property {string} code A code which will be used to uniquely identify this bidder. This should be the same
@@ -128,8 +135,9 @@ export function resetAuctionState() {
  * @param {number} requestConfig.cbTimeout
  * @param {Array.<string>} requestConfig.labels
  * @param {string} requestConfig.auctionId
- * @param {{global: {}, bidder: {}}} ortb2Fragments first party data, separated into global
+ * @param {{global: {}, bidder: {}}} requestConfig.ortb2Fragments first party data, separated into global
  *    (from getConfig('ortb2') + requestBids({ortb2})) and bidder (a map from bidderCode to ortb2)
+ * @param {Object} requestConfig.metrics
  * @returns {Auction} auction instance
  */
 export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId, ortb2Fragments, metrics}) {
@@ -406,9 +414,10 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
 /**
  * Hook into this to intercept bids before they are added to an auction.
  *
+ * @type {Function}
  * @param adUnitCode
  * @param bid
- * @param {function(String)} reject: a function that, when called, rejects `bid` with the given reason.
+ * @param {function(String): void} reject a function that, when called, rejects `bid` with the given reason.
  */
 export const addBidResponse = hook('sync', function(adUnitCode, bid, reject) {
   this.dispatch.call(null, adUnitCode, bid);
@@ -750,8 +759,9 @@ export function getMediaTypeGranularity(mediaType, mediaTypes, mediaTypePriceGra
 
 /**
  * This function returns the price granularity defined. It can be either publisher defined or default value
- * @param bid bid response object
- * @param index
+ * @param {Bid} bid bid response object
+ * @param {object} obj
+ * @param {object} obj.index
  * @returns {string} granularity
  */
 export const getPriceGranularity = (bid, {index = auctionManager.index} = {}) => {
@@ -859,7 +869,6 @@ function defaultAdserverTargeting() {
 /**
  * @param {string} mediaType
  * @param {string} bidderCode
- * @param {BidRequest} bidReq
  * @returns {*}
  */
 export function getStandardBidderSettings(mediaType, bidderCode) {
