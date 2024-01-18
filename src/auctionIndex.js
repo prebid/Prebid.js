@@ -5,7 +5,8 @@
 export function AuctionIndex(getAuctions) {
   Object.assign(this, {
     /**
-     * @param auctionId
+     * @param {Object} filter
+     * @param filter.auctionId
      * @returns {*} Auction instance for `auctionId`
      */
     getAuction({auctionId}) {
@@ -16,40 +17,43 @@ export function AuctionIndex(getAuctions) {
     },
     /**
      * NOTE: you should prefer {@link #getMediaTypes} for looking up bid media types.
-     * @param transactionId
-     * @returns adUnit object for `transactionId`
+     * @param {Object} filter
+     * @param filter.adUnitId
+     * @returns adUnit object for `adUnitId`
      */
-    getAdUnit({transactionId}) {
-      if (transactionId != null) {
+    getAdUnit({adUnitId}) {
+      if (adUnitId != null) {
         return getAuctions()
           .flatMap(a => a.getAdUnits())
-          .find(au => au.transactionId === transactionId);
+          .find(au => au.adUnitId === adUnitId);
       }
     },
     /**
-     * @param transactionId
-     * @param requestId?
-     * @returns {*} mediaTypes object from bidRequest (through requestId) falling back to the adUnit (through transactionId).
+     * @param {Object} filter
+     * @param filter.adUnitId
+     * @param filter.requestId
+     * @returns {*} mediaTypes object from bidRequest (through requestId) falling back to the adUnit (through adUnitId).
      *
      * The bidRequest is given precedence because its mediaTypes can differ from the adUnit's (if bidder-specific labels are in use).
      * Bids that have no associated request do not have labels either, and use the adUnit's mediaTypes.
      */
-    getMediaTypes({transactionId, requestId}) {
+    getMediaTypes({adUnitId, requestId}) {
       if (requestId != null) {
         const req = this.getBidRequest({requestId});
-        if (req != null && (transactionId == null || req.transactionId === transactionId)) {
+        if (req != null && (adUnitId == null || req.adUnitId === adUnitId)) {
           return req.mediaTypes;
         }
-      } else if (transactionId != null) {
-        const au = this.getAdUnit({transactionId});
+      } else if (adUnitId != null) {
+        const au = this.getAdUnit({adUnitId});
         if (au != null) {
           return au.mediaTypes;
         }
       }
     },
     /**
-     * @param requestId?
-     * @param bidderRequestId?
+     * @param {Object} filter
+     * @param filter.requestId
+     * @param filter.bidderRequestId
      * @returns {*} bidderRequest that matches both requestId and bidderRequestId (if either or both are provided).
      *
      * NOTE: Bid responses are not guaranteed to have a corresponding request.
@@ -68,7 +72,8 @@ export function AuctionIndex(getAuctions) {
       }
     },
     /**
-     * @param requestId
+     * @param {Object} filter
+     * @param filter.requestId
      * @returns {*} bidRequest object for requestId
      *
      * NOTE: Bid responses are not guaranteed to have a corresponding request.

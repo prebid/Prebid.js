@@ -567,7 +567,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
     const bidderRegistry = adapterManager.bidderRegistry;
 
     const bidders = allBidders.filter(bidder => !s2sBidders.has(bidder));
-
+    adUnit.adUnitId = generateUUID();
     const tid = adUnit.ortb2Imp?.ext?.tid || generateUUID();
     adUnit.transactionId = tid;
     if (ttlBuffer != null && !adUnit.hasOwnProperty('ttlBuffer')) {

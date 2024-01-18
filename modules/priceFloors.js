@@ -94,8 +94,8 @@ const getHostname = (() => {
 })();
 
 // First look into bidRequest!
-function getGptSlotFromAdUnit(transactionId, {index = auctionManager.index} = {}) {
-  const adUnit = index.getAdUnit({transactionId});
+function getGptSlotFromAdUnit(adUnitId, {index = auctionManager.index} = {}) {
+  const adUnit = index.getAdUnit({adUnitId});
   const isGam = deepAccess(adUnit, 'ortb2Imp.ext.data.adserver.name') === 'gam';
   return isGam && adUnit.ortb2Imp.ext.data.adserver.adslot;
 }
@@ -111,7 +111,7 @@ export let fieldMatchingFunctions = {
   [SYN_FIELD]: () => '*',
   'size': (bidRequest, bidResponse) => parseGPTSingleSizeArray(bidResponse.size) || '*',
   'mediaType': (bidRequest, bidResponse) => bidResponse.mediaType || 'banner',
-  'gptSlot': (bidRequest, bidResponse) => getGptSlotFromAdUnit((bidRequest || bidResponse).transactionId) || getGptSlotInfoForAdUnitCode(getAdUnitCode(bidRequest, bidResponse)).gptSlot,
+  'gptSlot': (bidRequest, bidResponse) => getGptSlotFromAdUnit((bidRequest || bidResponse).adUnitId) || getGptSlotInfoForAdUnitCode(getAdUnitCode(bidRequest, bidResponse)).gptSlot,
   'domain': getHostname,
   'adUnitCode': (bidRequest, bidResponse) => getAdUnitCode(bidRequest, bidResponse)
 }
