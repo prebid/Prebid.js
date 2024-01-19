@@ -1,12 +1,9 @@
 import adapterManager from './adapterManager.js';
-import { deepAccess, logError } from './utils.js';
-import { config } from '../src/config.js';
+import {deepAccess, logError} from './utils.js';
+import {config} from '../src/config.js';
 import {includes} from './polyfill.js';
-import { hook } from './hook.js';
+import {hook} from './hook.js';
 import {auctionManager} from './auctionManager.js';
-import {isActivityAllowed} from './activities/rules.js';
-import {activityParams} from './activities/activityParams.js';
-import {ACTIVITY_REPORT_ANALYTICS} from './activities/activities.js';
 
 const VIDEO_MEDIA_TYPE = 'video';
 export const OUTSTREAM = 'outstream';
@@ -23,8 +20,6 @@ export const videoAdUnit = adUnit => {
 export const videoBidder = bid => includes(adapterManager.videoAdapters, bid.bidder);
 export const hasNonVideoBidder = adUnit =>
   adUnit.bids.filter(bid => !videoBidder(bid)).length;
-
-let vastTrackers = [];
 
 /**
  * @typedef {object} VideoBid
@@ -69,66 +64,3 @@ export const checkVideoBidSetup = hook('sync', function(bid, adUnit, videoMediaT
 
   return true;
 }, 'checkVideoBidSetup');
-
-export function registerVastTrackers(moduleType, moduleName, trackerFn) {
-  if (typeof trackerFn === 'function') {
-    vastTrackers.push({'moduleType': moduleType, 'moduleName': moduleName, 'trackerFn': trackerFn});
-  }
-}
-
-export function insertVastTrackers(trackers, vastXml) {
-  const doc = new DOMParser().parseFromString(vastXml, 'text/xml');
-  const wrappers = doc.querySelectorAll('VAST Ad Wrapper, VAST Ad InLine');
-  try {
-    if (wrappers.length) {
-      wrappers.forEach(wrapper => {
-        if (trackers.get('impressions')) {
-          trackers.get('impressions').forEach(trackingUrl => {
-            const impression = doc.createElement('Impression');
-            impression.appendChild(doc.createCDATASection(trackingUrl));
-            wrapper.appendChild(impression)
-          });
-        }
-      });
-      vastXml = new XMLSerializer().serializeToString(doc);
-    }
-  } catch (error) {
-    logError('an error happened trying to insert trackers in vastXml');
-  }
-  return vastXml;
-}
-
-export function getVastTrackers(bid) {
-  let trackers = [];
-  vastTrackers.filter(
-    ({moduleType, moduleName, trackerFn}) => isActivityAllowed(ACTIVITY_REPORT_ANALYTICS, activityParams(moduleType, moduleName))
-  ).forEach(({trackerFn}) => {
-    let trackersToAdd = trackerFn(bid);
-    trackersToAdd.forEach(trackerToAdd => {
-      if (isValidVastTracker(trackers, trackerToAdd)) { trackers.push(trackerToAdd); }
-    });
-  });
-  const trackersMap = trackersToMap(trackers);
-  return (trackersMap.size ? trackersMap : null);
-};
-
-function isValidVastTracker(trackers, trackerToAdd) {
-  return trackerToAdd.hasOwnProperty('event') && trackerToAdd.hasOwnProperty('url');
-}
-
-function trackersToMap(trackers) {
-  return trackers.reduce((map, {url, event}) => {
-    !map.has(event) && map.set(event, new Set())
-    map.get(event).add(url);
-    return map;
-  }, new Map())
-}
-
-export function addImpUrlToTrackers(bid, trackersMap) {
-  if (bid.vastImpUrl) {
-    if (!trackersMap) { trackersMap = new Map(); }
-    if (!trackersMap.get('impressions')) { trackersMap.set('impressions', new Set()); }
-    trackersMap.get('impressions').add(bid.vastImpUrl);
-  }
-  return trackersMap;
-}
