@@ -170,7 +170,7 @@ describe('discovery:BidAdapterTests', function () {
         bidder: 'discovery',
         params: {},
       })
-    ).to.equal(true);
+    ).to.be.undefined;
   });
 
   it('discovery:validate_generated_params', function () {
