@@ -94,7 +94,7 @@ adUnits =
                     bidfloorcur: 'EUR',
                     mimes: ['image/jpg'],
                     image_output: 'html',
-                    endpoint: 'https://rtb.exads.rocks/rtb.php'
+                    endpoint: 'https://your-ad-network.com/rtb.php'
                 }
             }]
         }];
@@ -128,7 +128,7 @@ adUnits =
                     bidfloorcur: 'EUR',
                     mimes: ['image/jpg'],
                     video_output: 'html',
-                    endpoint: 'https://rtb.exads.rocks/rtb.php'
+                    endpoint: 'https://your-ad-network.com/rtb.php'
                 }
             }]
         }];
@@ -190,7 +190,7 @@ adUnits = [{
             keywords: 'lifestyle, humour',
             bidfloor: 0.00000011,
             bidfloorcur: 'EUR',
-            endpoint: 'https://rtb.exads.rocks/rtb.php',
+            endpoint: 'https://your-ad-network.com/rtb.php',
         }
     }]
 }];
@@ -279,7 +279,7 @@ adUnits = [{
                 keywords: 'lifestyle, humour',
                 bidfloor: 0.00000011,
                 bidfloorcur: 'EUR',
-                endpoint: 'https://rtb.exads.rocks/rtb.php',
+                endpoint: 'https://your-ad-network.com/rtb.php',
             }
         }]
 }];
