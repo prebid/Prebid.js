@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Prebid.js</title>
+    <!-- Uncomment for development environments -->
+    <script src="js/prebid.js"></script>
+    <!-- Uncomment for production environments -->
+    <!-- <script async src="js/prebid.js" onload="onScriptLoaded()"></script> -->
+    <script>
+        // Client Conf start
+        // Set as true for development environments only
+        const isEnabledDebug = true;
+        const exads_endpoint = 'https://rtb.exads.rocks/rtb.php';
+        let zoneId = 5179867;
+        let fid = "1e284a9540445fad9ac9c64881569260f1aa195f";
+        const partner = 'rtb_2_4';
+
+        // Start GDPR params
+        let isGDPRRequested = false;
+        // Valid iabtcf consent string 
+        let consentString = 'CO_V33gP0l1PgAoAAAENCZCgAAAAAAAAAAAAE0wAQE0gTTABATSAAA.YAAAAAAAAAA';
+        // End GDPR params
+
+        let siteId = "12345";
+        let bannerSizes = [
+            [300, 250]
+        ];
+        let country = 'IRL';
+        let keywords = 'lifestyle, humour';
+        let catIab = ['IAB25-3']; // if available - ex.: ["IAB1-5", "IAB1-7"]
+        let bidfloorcur = 'EUR';
+        let bidfloor = 0.00000011;
+        // Set the assets section parameters
+        // If you need change the rendering function
+        // Client Conf end
+
+        let adUnits = [];
+
+        let PREBID_TIMEOUT = 5000;
+        let userIp = 0;
+        let userIpLoaded = false;
+        let impression_id = hashCode(new Date().getTime().toString());
+        let user_id = localStorage.getItem('prebidJS.user_id');
+        
+        if(!user_id) {
+            localStorage.setItem('prebidJS.user_id', hashCode('user_id' + new Date().getTime().toString()));
+            user_id =  localStorage.getItem('prebidJS.user_id');
+        }
+
+        let ip_script = document.createElement("script");
+        ip_script.type = "text/javascript";
+        ip_script.src = "https://api.ipify.org?format=jsonp&callback=userIpCallback";
+        document.getElementsByTagName('head')[0].appendChild(ip_script);
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        handleRTB();
+
+        if(isEnabledDebug) {
+            onScriptLoaded();
+        }
+
+        function onScriptLoaded() {
+            pbjs.setConfig({
+                debug: isEnabledDebug,
+                consentManagement: {
+                    gdpr: {
+                        cmpApi: 'static',
+                        timeout: 1000000,
+                        defaultGdprScope: true,
+                        consentData: {
+                            getTCData: {
+                                tcString: consentString,
+                                gdprApplies: isGDPRRequested
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ======== DO NOT EDIT BELOW THIS LINE =========== //
+        function userIpCallback(user_ip) {
+            userIpLoaded = true;
+            if (user_ip.hasOwnProperty('ip')) userIp = user_ip.ip;
+        }
+
+        // MurmurHash3 hash function
+        function hashCode(str, seed = 0) {
+            let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+            for (let i = 0, ch; i < str.length; i++) {
+                ch = str.charCodeAt(i);
+                h1 = Math.imul(h1 ^ ch, 2654435761);
+                h2 = Math.imul(h2 ^ ch, 1597334677);
+            }
+            h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+            h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+            return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+        }
+        
+        function handleRTB() {
+            adUnits = [{
+            code: 'postbid_iframe',
+            mediaTypes: {
+                native: {
+                    ortb: {
+                        assets: [{
+                            id: 3,
+                            required: 1,
+                            title: {
+                                len: 124
+                            }
+                        },
+                        {
+                            id: 2,
+                            data: {
+                                type: 1,
+                                len: 50
+                            }
+                        },
+                        {
+                            id: 1,
+                            required: 1,
+                            img: {
+                                type: 3,
+                                w: 300,
+                                h: 300,
+                            }
+                        }]
+                    }
+                },
+            },
+            bids: [{
+                bidder: 'exadsadserver',
+                params: {
+                        zoneId: zoneId,
+                        fid: fid,
+                        partner: partner,
+                        siteId: siteId,
+                        catIab: catIab,
+                        keywords: keywords,
+                        userIp: 0, // DO NOT EDIT - Client side data
+                        userId: user_id,
+                        impressionId: impression_id.toString(), // DO NOT EDIT - Custom hash,
+                        native: {
+                            plcmtcnt: 4,
+                        },
+                        bidfloor: bidfloor,
+                        bidfloorcur: bidfloorcur,
+                        country: country,
+                        endpoint: exads_endpoint
+                    }
+                }]
+            }];
+        }
+
+        // Init when IP data is available
+        function initBids() {
+            if (userIpLoaded === false) {
+                window.setTimeout(initBids, 50);
+            } else {
+                for (let i = 0; i < adUnits.length; i++) {
+                    for (let t = 0; t < adUnits[i].bids.length; t++) {
+                        adUnits[i].bids[t].params.userIp = userIp;
+                    }
+                }
+
+                pbjs.que.push(function () {
+                    pbjs.addAdUnits(adUnits);
+                    pbjs.requestBids({
+                        timeout: PREBID_TIMEOUT,
+                        bidsBackHandler: function () {
+                            let iframe = document.getElementById('postbid_iframe');
+                            let iframeDoc = iframe.contentWindow.document;
+                            let adServerTargeting = pbjs.getAdserverTargetingForAdUnitCode('postbid_iframe');
+
+                            // If any bidders return any creatives
+                            if (adServerTargeting && adServerTargeting['hb_adid']) {
+                                // rendering logic based on own template
+                                let template = "<div><div><\/div><div><h1>##hb_native_title##<\/h1><p>##hb_native_body##<\/p><a href=\"https:\/\/##hb_native_linkurl##\" target=\"_blank\"><img src=\"##hb_native_image##\"><\/a><div> <\/div> <\/div>";
+                                let keys = Object.keys(adServerTargeting);
+                                for (var i = 0; i < keys.length; i++){
+                                    template = template.replace("##"+keys[i]+"##",adServerTargeting[keys[i]]);
+                                }
+                                iframeDoc.open();
+                                iframeDoc.write(template);
+                                iframeDoc.close();
+                                
+                            } else {
+                                iframe.width = bannerSizes[0][0];
+                                iframe.height = bannerSizes[0][1];
+                                iframeDoc.write('<head></head><body>' + passbackTagHtml + '</body>');
+                                iframeDoc.close();
+                            }
+                        }
+                    });
+                });
+            }
+        }
+
+        initBids();
+
+        // Define the passback HTML tag here.
+        // Note that this tag is usually in either Script tag form or iFrame form.
+        let passbackTagHtml = '<iframe src="//a.adnflow.com/iframe.php?idzone=88&size=300x250" width="500" height="250" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>';
+        
+    </script>
+
+</head>
+<body>
+    <h2>RTB Native Prebid.js</h2>
+    <iframe id='postbid_iframe' frameborder="0" scrolling="no" marginheight="0" marginwidth="0" topmargin="0" leftmargin="0" allowtransparency="true" width="500" height="500"></iframe>
+</body>
+</html>
