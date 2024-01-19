@@ -79,8 +79,15 @@ function parseLiveIntentCollectorConfig(collectConfig) {
  * @returns {Array}
  */
 function parseRequestedAttributes(overrides) {
+  function renameAttribute(attribute) {
+    if (attribute === 'sharedId') {
+      return 'idcookie'
+    } else {
+      return attribute
+    }
+  }
   function createParameterArray(config) {
-    return Object.entries(config).flatMap(([k, v]) => (typeof v === 'boolean' && v) ? [k] : []);
+    return Object.entries(config).flatMap(([k, v]) => (typeof v === 'boolean' && v) ? [renameAttribute(k)] : []);
   }
   if (typeof overrides === 'object') {
     return createParameterArray({...defaultRequestedAttributes, ...overrides})
