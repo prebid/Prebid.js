@@ -7,20 +7,17 @@ Exads PrebidJS Adapter
 * Updating the unit tests, they are into `./Prebid.js/test/spec/modules/exadsBidAdapter_spec.js`
 * Running tlint and unit tests (to see the specific paragraph)
 * Doing manual tests (to see the specific paragraph)
-* Building the new version of the adapter and all modules needed: 
-* `gulp build --modules=consentManagement,exadsBidAdapter`
+* Building the new version of the adapter and all modules needed: `gulp build --modules=consentManagement,exadsBidAdapter`
 * After that you can use the prebidJS merged with our module. 
-* You can find it into: 
-* `./build/dist/prebid.js`
-* Updating our examples. You can find them into: 
-* `./exads/examples`
+* You can find it into:  `./build/dist/prebid.js`
+* Updating our examples. You can find them into `./exads/examples`
 
 #### Lint and Unit tests
 * Note: lint checks the official prebidJS rules.
 * Also, to do the pull request to official prebidJS team, it is mondatory 80% or more of covarage. 
 * To check the coverage, type:
-* `gulp test-coverage` and then
-* `gulp view-coverage`
+  * `gulp test-coverage` and then
+  * `gulp view-coverage`
 
 #### Manual tests
 * Copying all examples to use into the publisher test web site: `./exads/doc/README.md`
