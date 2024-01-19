@@ -511,7 +511,7 @@ export const spec = {
     if (bid.params.badv) {
       globals['badv'] = Array.isArray(bid.params.badv) ? bid.params.badv : [];
     }
-    return !!(bid.params.token && bid.params.publisher && bid.params.tagid);
+    return true;
   },
 
   /**
@@ -522,6 +522,8 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    if (!globals['token']) return;
+
     let payload = getParam(validBidRequests, bidderRequest);
 
     const payloadString = JSON.stringify(payload);
