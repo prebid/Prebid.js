@@ -179,7 +179,6 @@ describe('discovery:BidAdapterTests', function () {
     expect(req_data.imp).to.have.lengthOf(1);
   });
 
-
   it('discovery:no_params', function () {
     request = spec.buildRequests(bidRequestDataNoParams.bids, bidRequestData);
     let req_data = JSON.parse(request.data);
