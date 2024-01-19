@@ -284,3 +284,64 @@ adUnits = [{
         }]
 }];
 ```
+# Tools and suggestions
+This section contains some suggestions that allow to set some parameters automatically.
+
+### User Ip / Country
+In order to detect the current user ip there are different approaches. An example is using public web services as ``` https://api.ipify.org```.
+
+Example of usage (to add into the publisher web sites):
+
+```
+<script>
+    let userIp = '';
+    let ip_script = document.createElement("script");
+    ip_script.type = "text/javascript";
+    ip_script.src = "https://api.ipify.org?format=jsonp&callback=userIpCallback";
+    
+    function userIpCallback(user_ip) {
+        userIp = user_ip.ip;
+    }
+</script>
+```
+
+The same service gives the possibility to detect the country as well. Check the official web page about possible limitations of the free licence. 
+
+### Impression Id
+Each advertising request has to be identified uniquely by an id.
+One possible approach is using a classical hash function.
+
+```
+<script>
+    let impression_id = hashCode(new Date().getTime().toString());
+    
+    // MurmurHash3 hash function
+    function hashCode(str, seed = 0) {
+        let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+        for (let i = 0, ch; i < str.length; i++) {
+            ch = str.charCodeAt(i);
+            h1 = Math.imul(h1 ^ ch, 2654435761);
+            h2 = Math.imul(h2 ^ ch, 1597334677);
+        }
+        h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+        h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+        return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+    }
+</script>
+```
+
+### User Id
+The approach used for impression id could be used for generating a unique user id.
+Also, it is recommended to store locally the id, e.g. by the browser localStorage.
+
+```
+<script>
+let userId = localStorage.getItem('prebidJS.user_id');
+
+if(!userId) {
+    localStorage.setItem('prebidJS.user_id', hashCode('user_id' + new Date().getTime().toString()));
+    userId =  localStorage.getItem('prebidJS.user_id');
+}
+</script>
+```
+
