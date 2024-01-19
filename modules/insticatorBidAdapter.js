@@ -13,7 +13,7 @@ const BID_TTL = 300; // 5 minutes
 const GVLID = 910;
 
 const isSubarray = (arr, target) => {
-  if (!Array.isArray(arr) || arr.length === 0) {
+  if (!isArrayOfNums(arr) || arr.length === 0) {
     return false;
   }
   const targetSet = new Set(target);
@@ -25,20 +25,20 @@ export const OPTIONAL_VIDEO_PARAMS = {
   'maxduration': (value) => isInteger(value),
   'protocols': (value) => isSubarray(value, [2, 3, 5, 6, 7, 8]), // protocols values supported by Inticator, according to the OpenRTB spec
   'startdelay': (value) => isInteger(value),
-  'linearity': (value) => [1, 2].includes(value),
-  'skip': (value) => [1, 0].includes(value),
+  'linearity': (value) => isInteger(value) && [1].includes(value),
+  'skip': (value) => isInteger(value) && [1, 0].includes(value),
   'skipmin': (value) => isInteger(value),
   'skipafter': (value) => isInteger(value),
   'sequence': (value) => isInteger(value),
-  'battr': (value) => isArrayOfNums(value),
+  'battr': (value) => isSubarray(value, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]),
   'maxextended': (value) => isInteger(value),
   'minbitrate': (value) => isInteger(value),
   'maxbitrate': (value) => isInteger(value),
-  'playbackmethod': (value) => isArrayOfNums(value),
-  'playbackend': (value) => isInteger(value),
-  'delivery': (value) => isArrayOfNums(value),
-  'pos': (value) => isInteger(value),
-  'api': (value) => isArrayOfNums(value)
+  'playbackmethod': (value) => isSubarray(value, [1, 2, 3, 4]),
+  'playbackend': (value) => isInteger(value) && [1, 2, 3].includes(value),
+  'delivery': (value) => isSubarray(value, [1, 2, 3]),
+  'pos': (value) => isInteger(value) && [0, 1, 2, 3, 4, 5, 6, 7].includes(value),
+  'api': (value) => isSubarray(value, [1, 2, 3, 4, 5, 6, 7]),
 };
 
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
@@ -443,10 +443,15 @@ function validateVideo(bid) {
   for (const param in OPTIONAL_VIDEO_PARAMS) {
     if (video[param]) {
       if (!OPTIONAL_VIDEO_PARAMS[param](video[param])) {
-        logError(`insticator: video ${param} is invalid`);
+        logError(`insticator: video ${param} is invalid or not supported by insticator`);
         return false
       }
     }
+  }
+
+  if (video.minduration && video.maxduration && video.minduration > video.maxduration) {
+    logError('insticator: video minduration is greater than maxduration');
+    return false;
   }
 
   return true;

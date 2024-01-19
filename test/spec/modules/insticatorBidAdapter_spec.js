@@ -266,6 +266,26 @@ describe('InsticatorBidAdapter', function () {
         }
       })).to.be.false;
     });
+
+    it('should return false if video min duration > max duration', () => {
+      expect(spec.isBidRequestValid({
+        ...bidRequest,
+        ...{
+          mediaTypes: {
+            video: {
+              mimes: [
+                'video/mp4',
+                'video/mpeg',
+              ],
+              playerSize: [250, 300],
+              placement: 1,
+              minduration: 5,
+              maxduration: 4,
+            },
+          }
+        }
+      })).to.be.false;
+    });
   });
 
   describe('buildRequests', function () {
