@@ -84,11 +84,11 @@ export const spec = {
 
       const site = getSiteObj();
       const device = getDeviceObj();
-      const currency = getCurrency();
+      const {cur, mediaTypes} = getCurrency(bid);
 
       const postBody = {
         id: bidderRequest?.bidderRequestId,
-        cur: [currency],
+        cur,
         ext: {
           prebid: {
             storedrequest: {
@@ -110,7 +110,7 @@ export const spec = {
         imp: [],
       };
 
-      postBody.imp.push(getImp(bid, id));
+      postBody.imp.push(getImp(bid, id, mediaTypes));
       setConsentStrings(postBody, bidderRequest);
       setOrtb2Parameters(postBody, bidderRequest?.ortb2);
       setEids(postBody, bid);
@@ -247,11 +247,10 @@ export const spec = {
   },
 };
 
-export function getImp(bid, id) {
-  const bidfloorcur = getCurrency();
+export function getImp(bid, id, mediaTypes) {
+  const {banner, video} = mediaTypes;
   const imp = {
     id: bid.adUnitCode,
-    bidfloorcur,
     ext: {
       prebid: {
         storedrequest: {
@@ -261,18 +260,22 @@ export function getImp(bid, id) {
     },
   };
 
-  const banner = deepAccess(bid, 'mediaTypes.banner');
   if (banner) {
+    if (banner.bidfloorcur) imp.bidfloorcur = banner.bidfloorcur;
+    if (banner.bidfloor) imp.bidfloor = banner.bidfloor;
+
     imp.banner = {
-      format: (banner?.sizes || []).map(s => { return {w: s[0], h: s[1]} }),
+      format: (banner.data?.sizes || []).map(s => { return {w: s[0], h: s[1]} }),
     };
   };
 
-  const video = deepAccess(bid, 'mediaTypes.video');
   if (video) {
+    if (video.bidfloorcur) imp.bidfloorcur = video.bidfloorcur;
+    if (video.bidfloor) imp.bidfloor = video.bidfloor;
+
     imp.video = getDefinedParams(video, VIDEO_PARAMS);
-    if (video.playerSize) {
-      imp.video = Object.assign(imp.video, parseGPTSingleSizeArrayToRtbSize(video.playerSize) || {});
+    if (video.data.playerSize) {
+      imp.video = Object.assign(imp.video, parseGPTSingleSizeArrayToRtbSize(video.data.playerSize) || {});
     } else if (video.w && video.h) {
       imp.video.w = video.w;
       imp.video.h = video.h;
@@ -341,9 +344,33 @@ export function replaceUsersyncMacros(url, gdprConsent = {}, uspConsent = '', gp
   return url;
 }
 
-function getCurrency() {
+function getCurrency(bid = {}) {
   const currency = config?.getConfig('currency')?.adServerCurrency || DEFAULT_CURRENCY;
-  return currency;
+  const cur = [];
+  const types = ['banner', 'video'];
+  const mediaTypes = {};
+  for (const mediaType of types) {
+    const mediaTypeData = deepAccess(bid, `mediaTypes.${mediaType}`);
+    if (mediaTypeData) {
+      mediaTypes[mediaType] = {data: mediaTypeData};
+    } else {
+      continue;
+    };
+
+    if (typeof bid.getFloor === 'function') {
+      let floorInfo = bid.getFloor({currency, mediaType, size: '*'});
+      mediaTypes[mediaType].bidfloorcur = floorInfo.currency;
+      mediaTypes[mediaType].bidfloor = floorInfo.floor;
+    } else {
+      mediaTypes[mediaType].bidfloorcur = currency;
+    };
+
+    if (cur.includes(mediaTypes[mediaType].bidfloorcur)) cur.push(mediaTypes[mediaType].bidfloorcur);
+  };
+
+  if (!cur.length) cur.push(DEFAULT_CURRENCY);
+
+  return {cur, mediaTypes};
 }
 
 function getAdEl(bid) {
