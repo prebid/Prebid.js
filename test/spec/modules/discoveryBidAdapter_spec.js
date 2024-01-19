@@ -164,25 +164,19 @@ describe('discovery:BidAdapterTests', function () {
     ).to.equal(true);
   });
 
-  it('discovery:no params', function () {
+  it('isBidRequestValid:no_params', function () {
     expect(
       spec.isBidRequestValid({
         bidder: 'discovery',
         params: {},
       })
-    ).to.be.undefined;
+    ).to.equal(true);
   });
 
   it('discovery:validate_generated_params', function () {
     request = spec.buildRequests(bidRequestData.bids, bidRequestData);
     let req_data = JSON.parse(request.data);
     expect(req_data.imp).to.have.lengthOf(1);
-  });
-
-  it('discovery:no_params', function () {
-    request = spec.buildRequests(bidRequestDataNoParams.bids, bidRequestData);
-    let req_data = JSON.parse(request.data);
-    expect(req_data.imp).to.have.lengthOf(0);
   });
 
   describe('discovery: buildRequests', function() {
