@@ -4,6 +4,11 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER, NATIVE } from '../src/mediaTypes.js';
 import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ */
+
 const BidderCode = 'aja';
 const URL = 'https://ad.as.amanad.adtdp.com/v2/prebid';
 const SDKType = 5;
