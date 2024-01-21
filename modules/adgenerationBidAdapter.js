@@ -13,6 +13,7 @@ import {escapeUnsafeChars} from '../libraries/htmlEscape/htmlEscape.js';
  * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
  * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
+
 const ADG_BIDDER_CODE = 'adgeneration';
 
 export const spec = {
