@@ -443,7 +443,7 @@ describe('LiveIntentId', function() {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
-  it('should decode a idcookie as sharedId if it exist and coppa is false', function() {
+  it('should decode a idcookie as sharedId if it exists and coppa is false', function() {
     coppaConsentDataStub.returns(false)
     const result = liveIntentIdSubmodule.decode({nonId: 'foo', idcookie: 'bar'})
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'pubcid': 'bar'}, 'pubcid': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}})
