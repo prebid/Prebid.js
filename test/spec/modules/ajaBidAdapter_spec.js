@@ -62,6 +62,9 @@ describe('AjaAdapter', function () {
               model: 'SM-G955U',
               bitness: '64',
               architecture: ''
+            },
+            ext: {
+              cdep: 'example_label_1'
             }
           }
         },
@@ -84,7 +87,7 @@ describe('AjaAdapter', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[0].url).to.equal(ENDPOINT);
       expect(requests[0].method).to.equal('GET');
-      expect(requests[0].data).to.equal('asi=123456&skt=5&gpid=%2F1111%2Fhomepage%23300x250&tid=cea1eb09-d970-48dc-8585-634d3a7b0544&prebid_id=30b31c1838de1e&prebid_ver=$prebid.version$&page_url=https%3A%2F%2Fhoge.com&ad_format_ids=2&sua=%7B%22source%22%3A2%2C%22platform%22%3A%7B%22brand%22%3A%22Android%22%2C%22version%22%3A%5B%228%22%2C%220%22%2C%220%22%5D%7D%2C%22browsers%22%3A%5B%7B%22brand%22%3A%22Not_A%20Brand%22%2C%22version%22%3A%5B%2299%22%2C%220%22%2C%220%22%2C%220%22%5D%7D%2C%7B%22brand%22%3A%22Google%20Chrome%22%2C%22version%22%3A%5B%22109%22%2C%220%22%2C%225414%22%2C%22119%22%5D%7D%2C%7B%22brand%22%3A%22Chromium%22%2C%22version%22%3A%5B%22109%22%2C%220%22%2C%225414%22%2C%22119%22%5D%7D%5D%2C%22mobile%22%3A1%2C%22model%22%3A%22SM-G955U%22%2C%22bitness%22%3A%2264%22%2C%22architecture%22%3A%22%22%7D&');
+      expect(requests[0].data).to.equal('asi=123456&skt=5&gpid=%2F1111%2Fhomepage%23300x250&tid=cea1eb09-d970-48dc-8585-634d3a7b0544&cdep=example_label_1&prebid_id=30b31c1838de1e&prebid_ver=$prebid.version$&page_url=https%3A%2F%2Fhoge.com&ad_format_ids=2&sua=%7B%22source%22%3A2%2C%22platform%22%3A%7B%22brand%22%3A%22Android%22%2C%22version%22%3A%5B%228%22%2C%220%22%2C%220%22%5D%7D%2C%22browsers%22%3A%5B%7B%22brand%22%3A%22Not_A%20Brand%22%2C%22version%22%3A%5B%2299%22%2C%220%22%2C%220%22%2C%220%22%5D%7D%2C%7B%22brand%22%3A%22Google%20Chrome%22%2C%22version%22%3A%5B%22109%22%2C%220%22%2C%225414%22%2C%22119%22%5D%7D%2C%7B%22brand%22%3A%22Chromium%22%2C%22version%22%3A%5B%22109%22%2C%220%22%2C%225414%22%2C%22119%22%5D%7D%5D%2C%22mobile%22%3A1%2C%22model%22%3A%22SM-G955U%22%2C%22bitness%22%3A%2264%22%2C%22architecture%22%3A%22%22%7D&');
     });
   });
 

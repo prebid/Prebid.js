@@ -1,6 +1,6 @@
-import {createTrackPixelHtml, logError, deepAccess, getBidIdParameter} from '../src/utils.js';
+import {createTrackPixelHtml, logError, getBidIdParameter} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { VIDEO, BANNER, NATIVE } from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.js';
 import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 const BidderCode = 'aja';
@@ -51,8 +51,8 @@ export const spec = {
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const bidRequest = validBidRequests[i];
       if (
-        (deepAccess(bidRequest, `mediaTypes.${NATIVE}`) || deepAccess(bidRequest, `mediaTypes.${VIDEO}`)) &&
-        !deepAccess(bidRequest, `mediaTypes.${BANNER}`)) {
+        (bidRequest.mediaTypes?.native || bidRequest.mediaTypes?.video) &&
+        bidRequest.mediaTypes?.banner) {
         continue
       }
 
@@ -61,8 +61,9 @@ export const spec = {
       const asi = getBidIdParameter('asi', bidRequest.params);
       queryString = tryAppendQueryString(queryString, 'asi', asi);
       queryString = tryAppendQueryString(queryString, 'skt', SDKType);
-      queryString = tryAppendQueryString(queryString, 'gpid', deepAccess(bidRequest, 'ortb2Imp.ext.gpid'))
-      queryString = tryAppendQueryString(queryString, 'tid', deepAccess(bidRequest, 'ortb2Imp.ext.tid'))
+      queryString = tryAppendQueryString(queryString, 'gpid', bidRequest.ortb2Imp?.ext?.gpid)
+      queryString = tryAppendQueryString(queryString, 'tid', bidRequest.ortb2Imp?.ext?.tid)
+      queryString = tryAppendQueryString(queryString, 'cdep', bidRequest.ortb2?.device?.ext?.cdep)
       queryString = tryAppendQueryString(queryString, 'prebid_id', bidRequest.bidId);
       queryString = tryAppendQueryString(queryString, 'prebid_ver', '$prebid.version$');
 
@@ -82,7 +83,7 @@ export const spec = {
         }));
       }
 
-      const sua = deepAccess(bidRequest, 'ortb2.device.sua');
+      const sua = bidRequest.ortb2?.device?.sua
       if (sua) {
         queryString = tryAppendQueryString(queryString, 'sua', JSON.stringify(sua));
       }
@@ -170,7 +171,7 @@ export const spec = {
 
 function pickAdFormats(bidRequest) {
   let sizes = bidRequest.sizes || []
-  sizes.push(...(deepAccess(bidRequest, `mediaTypes.${BANNER}.sizes`) || []))
+  sizes.push(...(bidRequest.mediaTypes?.banner?.sizes || []))
 
   const adFormatIDs = [];
   for (const size of sizes) {
