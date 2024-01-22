@@ -61,7 +61,7 @@ export const getOrtb2Data = (options) => {
     }
   }
   try {
-    const configData = config.getConfig('agma');
+    const configData = config.getConfig();
     // try to fallback to global config
     if (configData.ortb2) {
       site = site || configData.ortb2.site;
