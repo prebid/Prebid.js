@@ -45,7 +45,7 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const secure = 1; // treat all requests as secure
+    const secure = 1;
     const request = validBidRequests[0];
     const params = request.params;
     let impData = {
