@@ -31,7 +31,7 @@
     var pbjs = pbjs || {};
     pbjs.que = pbjs.que || [];
   </script>
-  <script src="../../build/dev/prebid.js" async></script>
+  <script src="../../build/dist/prebid.js" async></script>
 
   <script>
     function getHashedEmail() { }
@@ -86,207 +86,21 @@
         "userSync": {
           "userIds": [
             {
-              "name": "pubProvidedId",
-              "params": {
-                "eids": [
-                  {
-                    "source": "domain.com",
-                    "uids": [
-                      {
-                        "id": "value read from cookie or local storage",
-                        "atype": 1,
-                        "ext": {
-                          "stype": "ppuid" // allowable options are sha256email, DMP, ppuid for now
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "source": "3rdpartyprovided.com",
-                    "uids": [
-                      {
-                        "id": "value read from cookie or local storage",
-                        "atype": 3,
-                        "ext": {
-                          "stype": "sha256email"
-                        }
-                      }
-                    ]
-                  }
-                ],
-                "eidsFunction": getHashedEmail // any user defined function that exists in the page
-              }
-            },
-            {
-              "name": "unifiedId",
-              "params": {
-                "partner": "prebid",
-                "url": "http://match.adsrvr.org/track/rid?ttd_pid=prebid&fmt=json"
-              },
-              "storage": {
-                "type": "html5",
-                "name": "unifiedid",
-                "expires": 30
-              }
-            },
-            {
-              "name": "33acrossId",
-              "params": {
-                "pid": '0'
-              },
-              "storage": {
-                "type": 'html5',
-                "name": '33acrossId',
-                "expires": 90
-              }
-            },
-            {
-              "name": "intentIqId",
-              "params": {
-                "partner": 0 // Set your real IntentIQ partner ID here for production.
-              },
-              "storage": {
-                "type": "cookie",
-                "name": "intentIqId",
-                "expires": 30
-              }
-            },
-            {
-              "name": "id5Id",
-              "params": {
-                "partner": 173 // Set your real ID5 partner ID here for production, please ask for one at http://id5.io/prebid
-              },
-              "storage": {
-                "type": "html5",
-                "name": "id5id",
-                "expires": 90,
-                "refreshInSeconds": 10// 8*3600 // Refresh frequency of cookies
-              }
-            },
-            {
-              "name": "merkleId",
-              "params": {
-                "endpoint":  "https://test_endpoint/",
-                "vendor": "sdfg",
-                "sv_cid": "dfg",
-                "sv_pubid": "xcv",
-                "sv_domain": "zxv"
-              },
-              "storage": {
-                "type": "html5",
-                "name": "merkleId",
-                "expires": 30
-              }
-            },
-            {
-              "name": "parrableId",
-              "params": {
-                // change to Parrable Partner Client ID(s) you received from the Parrable Partners you are using
-                "partner": "30182847-e426-4ff9-b2b5-9ca1324ea09b"
-              }
-            },
-            {
-              "name": "pubCommonId",
-              "storage": {
-                "type": "cookie",
-                "name": "pubcid",
-                "expires": 365
-              }
-              // value: {
-              //     foo: '9879878907987',
-              //     bar:'93939'
-              // }
-            },
-            {
-              "name": "identityLink",
-              "params": {
-                "pid": "14" // Set your real identityLink placement ID here
-                // use3P: false // true/false - If you want to use 3P endpoint to retrieve envelope. If you do not set this property to true, 3p endpoint will not be fired. By default this property is undefined and 3p request will not be fired.
-              },
-              "storage": {
-                "type": "cookie",
-                "name": "idl_env",
-                "expires": 30
-              }
-            },
-            {
-              "name": "lotamePanoramaId"
-            },
-            {
               "name": "liveIntentId",
               "params": {
-                "publisherId": "9896876"
+                "publisherId": "9896876",
+                "requestedAttributesOverrides": {'sharedId': true},
+                "sharedId": {
+                  "mode": "provided",
+                  "name": "someName",
+                  "strategy": "cookie"
+                }
               },
               "storage": {
                 "type": "cookie",
                 "name": "_li_pbid",
                 "expires": 28
               }
-            },
-            {
-              "name": "zeotapIdPlus"
-            },
-            {
-              "name": "hadronId",
-              "storage": {
-                "type": "cookie",
-                "name": "hadronId",
-                "expires": 28
-              }
-            },
-            {
-              "name": "quantcastId"
-            },
-            {
-              "name": "criteo"
-            },
-            {
-              "name": "amxId",
-              "storage": {
-                "type": "html5",
-                "name": "amxId",
-                "expires": 14
-              }
-            },
-            {
-              "name": "uid2",
-              "params": {
-                "uid2ApiBase": "https://operator-integ.uidapi.com", // Omit this setting for production
-                "uid2Token": {
-                  "advertising_token": "advertising token goes here",
-                  "refresh_token": "refresh token goes here",
-                  "identity_expires": Date.now() + 60*1000, // These timestamps should be from the token generate response
-                  "refresh_from": Date.now() - 10*1000,
-                  "refresh_expires": Date.now() + 12*60*60*1000,
-                  "refresh_response_key": "refresh key goes here"
-                }
-              }
-            },
-            {
-              "name": "euid",
-              "params": {
-                "euidApiBase": "https://integ.euid.eu", // Omit this setting for production
-                "euidToken": {
-                  "advertising_token": "advertising token goes here",
-                  "refresh_token": "refresh token goes here",
-                  "identity_expires": Date.now() + 60*1000, // These timestamps should be from the token generate response
-                  "refresh_from": Date.now() - 10*1000,
-                  "refresh_expires": Date.now() + 12*60*60*1000,
-                  "refresh_response_key": "refresh key goes here"
-                }
-              }
-            },
-            {
-              "name": "imuid",
-              "params": {
-                "cid": 5126 // Set your Intimate Merger Customer ID here for production
-              }
-            },
-            {
-              "name": "dacId"
-            },
-            {
-              "name": "gravitompId"
             }
           ],
           "syncDelay": 5000,

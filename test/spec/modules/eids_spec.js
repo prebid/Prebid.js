@@ -417,6 +417,39 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
+  it('pubcid', function() {
+    const userId = {
+      pubcid: {'id': 'sample_id'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'pubcid.org',
+      uids: [{
+        id: 'sample_id',
+        atype: 1
+      }]
+    });
+  });
+
+  it('pubcid with ext', function() {
+    const userId = {
+      pubcid: {'id': 'sample_id', 'ext': {'provider': 'some.provider.com'}}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'pubcid.org',
+      uids: [{
+        id: 'sample_id',
+        atype: 1,
+        ext: {
+          provider: 'some.provider.com'
+        }
+      }]
+    });
+  });
+
   it('britepoolId', function() {
     const userId = {
       britepoolid: 'some-random-id-value'
