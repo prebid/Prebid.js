@@ -21,6 +21,13 @@ import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
 // Maintainer: mediapsr@epsilon.com
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Device} Device
+ */
+
 const GVLID = 24;
 
 const BIDDER_CODE = 'conversant';
