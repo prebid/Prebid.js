@@ -8,7 +8,7 @@
 
 # Description
 
-Module that connects to Exads's bidder for bids.
+Module that connects to EXADS' bidder for bids.
 
 ### Build
 ```
@@ -46,6 +46,7 @@ pbjs.setConfig({
 
 # Test Parameters
  
+Now you will find the different parameters to set, based on publisher website. They are optional unless otherwise specified.
  
 #### RTB Banner 2.4
 
@@ -53,17 +54,17 @@ pbjs.setConfig({
 * **fid** (required) - you can get it from the endpoint created after configuring the zones (string)
 * **partner** (required) - currently we support rtb 2.4 ("rtb_2_4") only (string)
 * **siteId** (recommended) - unique Site ID (string)
-* **banner.sizes** (required) - One array of integer - [width, height]
-* **catIab** - IAB category ID (array of string)
+* **banner.sizes** (required) - one integer array - [width, height]
+* **catIab** - IAB category ID (string array)
 * **userIp** (required) - IP address of the user (string)*
 * **userId** (*required) - unique user ID (string). *If you cannot generate a user ID, you can leave it empty (""). The request will get a response as long as "user" object is included in the request.
 * **country** - Country ISO3
 * **impressionId** (required) - unique impression ID within this bid request (string)
 * **keywords** - keywords can be used to ensure ad zones get the right type of advertising. Keywords should be a string of comma-separated words
-* **bidfloor** - Minimum bid for this impression (CPM) / click (CPC) and account currency, optional (float) 
-* **bidfloorcur** - Currency for minimum bid value specified using ISO-4217 alpha codes, optional (string)
-* **mimes** - List of supported mime types. We support: image/jpeg, image/jpg, image/png, image/png, image/gif, image/webp, video/mp4 (string array)
-* **endpoint** (required) - Exads endpoint (URL)
+* **bidfloor** - minimum bid for this impression (CPM) / click (CPC) and account currency (float) 
+* **bidfloorcur** - Currency for minimum bid value specified using ISO-4217 alpha codes (string)
+* **mimes** - list of supported mime types. We support: image/jpeg, image/jpg, image/png, image/png, image/gif, image/webp, video/mp4 (string array)
+* **endpoint** (required) - EXADS endpoint (URL)
 
 ##### RTB Banner 2.4 (Image)
 * **image_output** - Indicates output format for image banners* (string)
@@ -140,7 +141,7 @@ adUnits =
 * **fid** (required) - you can get it from the endpoint created after configuring the zones (string)
 * **partner** (required) - currently we support rtb 2.4 ("rtb_2_4") only (string)
 * **siteId** (recommended) - unique Site ID (string)
-* **catIab** - IAB category ID (array of string)
+* **catIab** - IAB category ID (string array)
 * **userIp** (required) - IP address of the user (string)*
 * **userId** (*required) - unique user ID (string). *If you cannot generate a user ID, you can leave it empty (""). The request will get a response as long as "user" object is included in the request.
 * **country** - Country ISO3 (string)
@@ -150,8 +151,8 @@ adUnits =
 * **bidfloorcur** - Currency for minimum bid value specified using ISO-4217 alpha codes, optional (string)
 * **video.mimes** - List of supported mime types (string array)
 * **context** - (recommended) - The video context, either 'instream', 'outstream'. Defaults to ‘instream’ (string)
-* **protocols** - List of supported video bid response protocols (int array) 
-* **endpoint** (required) - Exads endpoint (URL)
+* **protocols** - List of supported video bid response protocols (integer array) 
+* **endpoint** (required) - EXADS endpoint (URL)
 
 ```javascript
 adUnits = [{
@@ -202,7 +203,7 @@ adUnits = [{
 * **fid** (required) - you can get it from the endpoint created after configuring the zones (string)
 * **partner** (required) - currently we support rtb 2.4 ("rtb_2_4") only (string)
 * **siteId** (recommended) - unique Site ID (string)
-* **catIab** - IAB category ID (array of string)
+* **catIab** - IAB category ID (string array)
 * **userIp** (required) - IP address of the user (string)*
 * **userId** (*required) - unique user ID (string). *If you cannot generate a user ID, you can leave it empty (""). The request will get a response as long as "user" object is included in the request.
 * **country** - Country ISO3 (string)
@@ -212,20 +213,33 @@ adUnits = [{
 * **bidfloorcur** - Currency for minimum bid value specified using ISO-4217 alpha codes, optional (string)
 * **native.plcmtcnt** - The number of identical placements in this Layout (integer)
 * **assets (title)** - Title object for title assets* (JSON object)
-    * **id** - Unique asset ID, assigned by exchange. Typically a counter for the array (integer) 1: Image asset ID, 2: Title asset ID, 3: Description asset ID
+    * **id** - Unique asset ID, assigned by exchange. Typically a counter for the array (integer): 
+        * 1 - Image asset ID
+        * 2 - Title asset ID
+        * 3 - Description asset ID
     * **required** - Set to 1 if asset is required or 0 if asset is optional (integer)
     * **title**
         * len (required) - Maximum length of the text in the title element. (integer)
 * **assets (data)**
-    * **id** - Unique asset ID, assigned by exchange. Typically a counter for the array (integer) 1: Image asset ID, 2: Title asset ID, 3: Description asset ID
+    * **id** - Unique asset ID, assigned by exchange. Typically a counter for the array (integer):
+        * 1 - Image asset ID
+        * 2 - Title asset ID
+        * 3 - Description asset ID
     * **data**
-        * **type** - Type ID of the element supported by the publisher (integer). We support: 1 (sponsored - Sponsored By message where response should contain the brand name of the sponsor), 2 (desc - Descriptive text associated with the product or service being advertised)
+        * **type** - Type ID of the element supported by the publisher (integer). We support: 
+            * 1 - sponsored - sponsored By message where response should contain the brand name of the sponsor
+            * 2 - desc - descriptive text associated with the product or service being advertised
         * **len**
 * **assets (img)**
-    * **id** - Unique asset ID, assigned by exchange. Typically a counter for the array (integer) 1: Image asset ID, 2: Title asset ID, 3: Description asset ID
+    * **id** - Unique asset ID, assigned by exchange. Typically a counter for the array (integer): 
+        * 1 - Image asset ID
+        * 2 - Title asset ID
+        * 3 - Description asset ID
     * **required** - Set to 1 if asset is required or 0 if asset is optional (integer)
     * **img**
-        * **type** - Type ID of the image element supported by the publisher. We support: 1 (Icon image) (integer), 3 (Large image preview for the ad) (integer)
+        * **type** - Type ID of the image element supported by the publisher. We support: 
+            * 1 - Icon image (integer)
+            * 3 - Large image preview for the ad (integer)
         * **w** - Width of the image in pixels, optional (integer)
         * **h** - Height of the image in pixels, optional (integer)
     
@@ -290,7 +304,7 @@ This section contains some suggestions that allow to set some parameters automat
 ### User Ip / Country
 In order to detect the current user ip there are different approaches. An example is using public web services as ``` https://api.ipify.org```.
 
-Example of usage (to add into the publisher web sites):
+Example of usage (to add into the publisher websites):
 
 ```
 <script>
@@ -332,7 +346,7 @@ One possible approach is using a classical hash function.
 
 ### User Id
 The approach used for impression id could be used for generating a unique user id.
-Also, it is recommended to store locally the id, e.g. by the browser localStorage.
+Also, it is recommended to store the id locally, e.g. by the browser localStorage.
 
 ```
 <script>
