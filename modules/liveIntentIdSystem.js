@@ -97,60 +97,61 @@ function parseRequestedAttributes(overrides) {
 }
 
 function initializeLiveConnect(configParams) {
-  configParams = configParams || {};
   if (liveConnect) {
     return liveConnect;
   }
+
+  configParams = configParams || {};
+  const sharedIdConfig = configParams.sharedId || {}
 
   const publisherId = configParams.publisherId || 'any';
   const identityResolutionConfig = {
     publisherId: publisherId,
     requestedAttributes: parseRequestedAttributes(configParams.requestedAttributesOverrides)
-  };
+  }
   if (configParams.url) {
     identityResolutionConfig.url = configParams.url
   }
 
-  identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout || DEFAULT_AJAX_TIMEOUT;
+  identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout || DEFAULT_AJAX_TIMEOUT
+  identityResolutionConfig.idCookieMode = sharedIdConfig.mode || 'generated'
 
   const liveConnectConfig = parseLiveIntentCollectorConfig(configParams.liCollectConfig);
 
   if (!liveConnectConfig.appId && configParams.distributorId) {
-    liveConnectConfig.distributorId = configParams.distributorId;
-    identityResolutionConfig.source = configParams.distributorId;
+    liveConnectConfig.distributorId = configParams.distributorId
+    identityResolutionConfig.source = configParams.distributorId
   } else {
     identityResolutionConfig.source = configParams.partner || 'prebid'
   }
 
-  liveConnectConfig.wrapperName = 'prebid';
-  liveConnectConfig.trackerVersion = '$prebid.version$';
-  liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
-  liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
-  liveConnectConfig.fireEventDelay = configParams.fireEventDelay;
+  liveConnectConfig.wrapperName = 'prebid'
+  liveConnectConfig.trackerVersion = '$prebid.version$'
+  liveConnectConfig.identityResolutionConfig = identityResolutionConfig
+  liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || []
+  liveConnectConfig.fireEventDelay = configParams.fireEventDelay
 
   liveConnectConfig.idCookie = {}
-  const sharedIdConfig = configParams.sharedId || {}
-  liveConnectConfig.idCookie.mode = sharedIdConfig.mode || 'generated'
   liveConnectConfig.idCookie.name = sharedIdConfig.name
   liveConnectConfig.idCookie.strategy = sharedIdConfig.strategy
 
-  const usPrivacyString = uspDataHandler.getConsentData();
+  const usPrivacyString = uspDataHandler.getConsentData()
   if (usPrivacyString) {
-    liveConnectConfig.usPrivacyString = usPrivacyString;
+    liveConnectConfig.usPrivacyString = usPrivacyString
   }
   const gdprConsent = gdprDataHandler.getConsentData()
   if (gdprConsent) {
-    liveConnectConfig.gdprApplies = gdprConsent.gdprApplies;
-    liveConnectConfig.gdprConsent = gdprConsent.consentString;
+    liveConnectConfig.gdprApplies = gdprConsent.gdprApplies
+    liveConnectConfig.gdprConsent = gdprConsent.consentString
   }
-  const gppConsent = gppDataHandler.getConsentData();
+  const gppConsent = gppDataHandler.getConsentData()
   if (gppConsent) {
-    liveConnectConfig.gppString = gppConsent.gppString;
-    liveConnectConfig.gppApplicableSections = gppConsent.applicableSections;
+    liveConnectConfig.gppString = gppConsent.gppString
+    liveConnectConfig.gppApplicableSections = gppConsent.applicableSections
   }
   // The second param is the storage object, LS & Cookie manipulation uses PBJS
   // The third param is the ajax and pixel object, the ajax and pixel use PBJS
-  liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls);
+  liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls)
   if (configParams.emailHash) {
     liveConnect.push({ hash: configParams.emailHash })
   }
@@ -198,13 +199,15 @@ export const liveIntentIdSubmodule = {
   decode(value, config) {
     const configParams = (config && config.params) || {};
     function composeIdObject(value) {
-      const result = {  };
+      const result = { };
 
       // old versions stored lipbid in unifiedId. Ensure that we can still read the data.
       const lipbid = value.nonId || value.unifiedId
       if (lipbid) {
-        result.lipb = { ...value, lipbid }
-        delete result.lipb.unifiedId
+        const lipb = { ...value, lipbid }
+        delete lipb.unifiedId
+
+        result.lipb = lipb
       }
 
       // Lift usage of uid2 by exposing uid2 if we were asked to resolve it.
