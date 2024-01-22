@@ -24,6 +24,7 @@ function getTopWindowQueryParams() {
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.tagoras.io`;
 }
+
 export function extractCID(params) {
   return params.cId || params.CID || params.cID || params.CId || params.cid || params.ciD || params.Cid || params.CiD;
 }
@@ -265,8 +266,7 @@ function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '',
       type: 'iframe',
       url: `https://sync.tagoras.io/api/sync/iframe/${params}`
     });
-  }
-  if (pixelEnabled) {
+  } else if (pixelEnabled) {
     syncs.push({
       type: 'image',
       url: `https://sync.tagoras.io/api/sync/image/${params}`
