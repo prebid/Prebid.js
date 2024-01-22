@@ -3,6 +3,12 @@ import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
+
 const BIDDER_CODE = 'discovery';
 const ENDPOINT_URL = 'https://rtb-jp.mediago.io/api/bid?tn=';
 const TIME_TO_LIVE = 500;
