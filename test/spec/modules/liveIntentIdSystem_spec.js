@@ -449,7 +449,7 @@ describe('LiveIntentId', function() {
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'pubcid': 'bar'}, 'pubcid': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}})
   });
 
-  it('should not decode a idcookie as sharedId if it exist and coppa is true', function() {
+  it('should not decode a idcookie as sharedId if it exists and coppa is true', function() {
     coppaConsentDataStub.returns(true)
     const result = liveIntentIdSubmodule.decode({nonId: 'foo', idcookie: 'bar'})
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'pubcid': 'bar'}, 'pubcid': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}})
