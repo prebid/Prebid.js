@@ -7,7 +7,7 @@ describe('exadsBidAdapterTest', function () {
 
   const partners = {
     RTB_2_4: 'rtb_2_4'
-  }
+  };
 
   const imageBanner = {
     mediaTypes: {
@@ -123,27 +123,27 @@ describe('exadsBidAdapterTest', function () {
     }
   };
 
-  describe('bidRequestValidity', function () {
-    it('bidRequest with all mandatory params for banner ad-format', function () {
+  describe('while validating bid request', function () {
+    it('should check the validity of bidRequest with all mandatory params for banner ad-format', function () {
       expect(spec.isBidRequestValid(imageBanner)).to.equal(true);
     });
 
-    it('bidRequest with all mandatory params for native ad-format', function () {
+    it('should check the validity of a bidRequest with all mandatory params for native ad-format', function () {
       expect(spec.isBidRequestValid(native));
     });
 
-    it('bidRequest with all mandatory params for instream ad-format', function () {
+    it('should check the validity of a bidRequest with all mandatory params for instream ad-format', function () {
       expect(spec.isBidRequestValid(instream)).to.equal(true);
     });
 
-    it('bidRequest with wrong bidder code', function () {
+    it('should check the validity of a bidRequest with wrong bidder code', function () {
       expect(spec.isBidRequestValid({
         ...imageBanner,
         bidder: 'not_exadsadserver'
       })).to.eql(false);
     });
 
-    it('bidRequest with wrong partner', function () {
+    it('should check the validity of a bidRequest with wrong partner', function () {
       expect(spec.isBidRequestValid({
         ...imageBanner,
         params: {
@@ -153,7 +153,7 @@ describe('exadsBidAdapterTest', function () {
       })).to.eql(false);
     });
 
-    it('bidRequest without params', function () {
+    it('should check the validity of a bidRequest without params', function () {
       expect(spec.isBidRequestValid({
         bidder: bidder,
         params: { }
@@ -161,10 +161,10 @@ describe('exadsBidAdapterTest', function () {
     });
   });
 
-  describe('bidRequest for banner ad-format', function () {
+  describe('while building bid request for banner ad-format', function () {
     const bidRequests = [imageBanner];
 
-    it('bidRequest HTTP method', function () {
+    it('should make a bidRequest by HTTP method', function () {
       const requests = spec.buildRequests(bidRequests, {});
       requests.forEach(function(requestItem) {
         expect(requestItem.method).to.equal('POST');
@@ -172,10 +172,10 @@ describe('exadsBidAdapterTest', function () {
     });
   });
 
-  describe('bidRequest for native ad-format', function () {
+  describe('while building bid request for native ad-format', function () {
     const bidRequests = [native];
 
-    it('bidRequest HTTP method', function () {
+    it('should make a bidRequest by HTTP method', function () {
       const requests = spec.buildRequests(bidRequests, {});
       requests.forEach(function(requestItem) {
         expect(requestItem.method).to.equal('POST');
@@ -183,10 +183,10 @@ describe('exadsBidAdapterTest', function () {
     });
   });
 
-  describe('bidRequest for instream ad-format', function () {
+  describe('while building bid request for instream ad-format', function () {
     const bidRequests = [instream];
 
-    it('bidRequest HTTP method', function () {
+    it('should make a bidRequest by HTTP method', function () {
       const requests = spec.buildRequests(bidRequests, {});
       requests.forEach(function(requestItem) {
         expect(requestItem.method).to.equal('POST');
@@ -194,12 +194,12 @@ describe('exadsBidAdapterTest', function () {
     });
   });
 
-  describe('interpretResponse', function () {
+  describe('while interpreting bid response', function () {
     beforeEach(() => {
       imps.set('270544423272657', 'rtb_2_4');
     });
 
-    it('Test banner interpretResponse', function () {
+    it('should test the banner interpretResponse', function () {
       const serverResponse = {
         body: {
           'id': '2d2a496527398e',
@@ -295,7 +295,7 @@ describe('exadsBidAdapterTest', function () {
       expect(bidResponse.height).to.equal(bid.h);
     });
 
-    it('Test native Ad interpretResponse', function () {
+    it('should test the native interpretResponse', function () {
       const serverResponse = {
         body: {
           'id': '21dea1fc6c3e1b',
@@ -380,12 +380,12 @@ describe('exadsBidAdapterTest', function () {
 
       expect(bidResponses).to.be.an('array').that.is.not.empty;
 
-      const bid = serverResponse.body.seatbid[0].bid[0];
       const bidResponse = bidResponses[0];
 
       expect(bidResponse.mediaType).to.equal(NATIVE);
     });
-    it('Test InStream Video interpretResponse', function () {
+
+    it('should test the InStream Video interpretResponse', function () {
       const serverResponse = {
         body: {
           'id': '2218abc7ebca97',
@@ -476,21 +476,20 @@ describe('exadsBidAdapterTest', function () {
 
       expect(bidResponses).to.be.an('array').that.is.not.empty;
 
-      const bid = serverResponse.body.seatbid[0].bid[0];
       const bidResponse = bidResponses[0];
 
       expect(bidResponse.mediaType).to.equal(VIDEO);
-    })
+    });
   });
 
-  describe('onBidWon', function() {
-    it('Should not create nurl request if bid is undefined', function() {
+  describe('on getting the win event', function() {
+    it('should not create nurl request if bid is undefined', function() {
       const result = spec.onBidWon({});
       expect(result).to.be.undefined;
-    })
+    });
   });
 
-  describe('onTimeout', function () {
+  describe('checking timout', function () {
     it('should exists and be a function', () => {
       expect(spec.onTimeout).to.exist.and.to.be.a('function');
     });

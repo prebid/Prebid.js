@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
 <head>
-    <meta charset="UTF-8">
+    <meta charset='UTF-8'>
     <title>RTB Video Banner Prebid.js</title>
 
     <!-- Uncomment for development environments -->
-    <!-- <script src="js/prebid.js"></script> -->
+    <!-- <script src='js/prebid.js'></script> -->
     <!-- Uncomment for production environments -->
-    <script async src="js/prebid.js" onload="onScriptLoaded()"></script>
+    <script async src='js/prebid.js' onload='onScriptLoaded()'></script>
     <script>
         // Client Conf start
         // Set as true for development environments only
@@ -15,7 +15,7 @@
         const exads_endpoint = 'https://your-ad-network.com/rtb.php';
         const partner = 'rtb_2_4';
         let zoneId = 5179863;
-        let fid = "a1891f9f74cb728ad9583e0fb0eb5feae741292c";
+        let fid = 'a1891f9f74cb728ad9583e0fb0eb5feae741292c';
 
         // Start GDPR params
         let isGDPRRequested = false;
@@ -23,17 +23,17 @@
         let consentString = 'CO_V33gP0l1PgAoAAAENCZCgAAAAAAAAAAAAE0wAQE0gTTABATSAAA.YAAAAAAAAAA';
         // End GDPR params
 
-        let siteId = "12345";
+        let siteId = '12345';
         let bannerSizes = [
             [900, 250]
         ];
         let country = 'IRL';
         let keywords = 'lifestyle, humour';
-        let catIab = ['IAB25-3']; // if available - ex.: ["IAB1-5", "IAB1-7"]
+        let catIab = ['IAB25-3']; // if available - ex.: ['IAB1-5', 'IAB1-7']
         let bidfloorcur = 'EUR';
         let bidfloor = 0.00000011;
         let mimes = ['video/mp4'];
-        let videoOutput = "html";
+        let videoOutput = 'html';
         // Client Conf end
         
         let adUnits = [];
@@ -43,14 +43,14 @@
         let impression_id = hashCode(new Date().getTime().toString());
         let user_id = localStorage.getItem('prebidJS.user_id');
         
-        if(!user_id) {
+        if (!user_id) {
             localStorage.setItem('prebidJS.user_id', hashCode('user_id' + new Date().getTime().toString()));
-            user_id =  localStorage.getItem('prebidJS.user_id');
+            user_id = localStorage.getItem('prebidJS.user_id');
         }
 
-        let ip_script = document.createElement("script");
-        ip_script.type = "text/javascript";
-        ip_script.src = "https://api.ipify.org?format=jsonp&callback=userIpCallback";
+        let ip_script = document.createElement('script');
+        ip_script.type = 'text/javascript';
+        ip_script.src = 'https://api.ipify.org?format=jsonp&callback=userIpCallback';
         document.getElementsByTagName('head')[0].appendChild(ip_script);
 
         var pbjs = pbjs || {};
@@ -58,7 +58,7 @@
 
         handleRTB();
 
-        if(isEnabledDebug) {
+        if (isEnabledDebug) {
             onScriptLoaded();
         }
 
@@ -84,7 +84,9 @@
         // ======== DO NOT EDIT BELOW THIS LINE =========== //
         function userIpCallback(user_ip) {
             userIpLoaded = true;
-            if (user_ip.hasOwnProperty('ip')) userIp = user_ip.ip;
+            if (user_ip.hasOwnProperty('ip')) {
+                userIp = user_ip.ip;
+            }
         }
 
          // MurmurHash3 hash function
@@ -179,7 +181,7 @@
 
     <h2>RTB Video Banner Prebid.js</h2>
 
-    <iframe id='postbid_iframe' frameborder="0" scrolling="no" marginheight="0" marginwidth="0" topmargin="0" leftmargin="0" allowtransparency="true" width="0" height="0"></iframe>
+    <iframe id='postbid_iframe' frameborder='0' scrolling='no' marginheight='0' marginwidth='0' topmargin='0' leftmargin='0' allowtransparency='true' width='0' height='0'></iframe>
 
 </body>
 </html>

@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
 
 <head>
-    <meta charset="UTF-8">
+    <meta charset='UTF-8'>
     <title>RTB Instream Video Prebid.js</title>
 
     <!-- Uncomment for development environments -->
-    <!-- <script src="js/prebid.js"></script> -->
+    <!-- <script src='js/prebid.js'></script> -->
     <!-- Uncomment for production environments -->
-    <script async src="js/prebid.js" onload="onScriptLoaded()"></script>
+    <script async src='js/prebid.js' onload='onScriptLoaded()'></script>
 
     <!-- Fluid Player CSS and JS -->
-    <script async src="https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js"></script>
+    <script async src='https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js'></script>
     <script>
         // Client Conf start
         // Set as true for development environments only
@@ -19,7 +19,7 @@
         const exads_endpoint = 'https://your-ad-network.com/rtb.php';
         const partner = 'rtb_2_4';
         let zoneId = 5179865;
-        let fid = "12f6c5316c88687e275728a8f24f8787b6c31202";
+        let fid = '12f6c5316c88687e275728a8f24f8787b6c31202';
 
         // Start GDPR params
         let isGDPRRequested = false;
@@ -27,10 +27,10 @@
         let consentString = 'CO_V33gP0l1PgAoAAAENCZCgAAAAAAAAAAAAE0wAQE0gTTABATSAAA.YAAAAAAAAAA';
         // End GDPR params
 
-        let siteId = "12345";
+        let siteId = '12345';
         let country = 'IRL';
         let keywords = 'lifestyle, humour';
-        let catIab = ['IAB25-3']; // if available - ex.: ["IAB1-5", "IAB1-7"]
+        let catIab = ['IAB25-3']; // if available - ex.: ['IAB1-5', 'IAB1-7']
         let bidfloorcur = 'EUR';
         let bidfloor = 0.00000011;
         // Client Conf end
@@ -47,9 +47,9 @@
             user_id = localStorage.getItem('prebidJS.user_id');
         }
 
-        let ip_script = document.createElement("script");
-        ip_script.type = "text/javascript";
-        ip_script.src = "https://api.ipify.org?format=jsonp&callback=userIpCallback";
+        let ip_script = document.createElement('script');
+        ip_script.type = 'text/javascript';
+        ip_script.src = 'https://api.ipify.org?format=jsonp&callback=userIpCallback';
         document.getElementsByTagName('head')[0].appendChild(ip_script);
 
         var pbjs = pbjs || {};
@@ -57,14 +57,14 @@
 
         handleRTB();
 
-        if(isEnabledDebug) {
+        if (isEnabledDebug) {
             onScriptLoaded();
         }
 
         function onScriptLoaded() {
             pbjs.setConfig({
                 debug: isEnabledDebug,
-                cache: { url: "https://prebid.adnxs.com/pbc/v1/cache" },
+                cache: { url: 'https://prebid.adnxs.com/pbc/v1/cache' },
                 consentManagement: {
                     gdpr: {
                         cmpApi: 'static',
@@ -106,7 +106,7 @@
                 mediaTypes: {
                     video: {
                         mimes: ['video/mp4'],
-                        protocols: [3, 6],
+                        protocols: [3, 6]
                     }
                 },
                 bids: [{
@@ -137,7 +137,7 @@
                         bidfloor: bidfloor,
                         bidfloorcur: bidfloorcur,
                         catIab: catIab,
-                        endpoint: exads_endpoint,
+                        endpoint: exads_endpoint
                     }
                 }]
             }];
@@ -166,14 +166,12 @@
 
                             bidResponse.bids.forEach(bid => {
                                 initFluidPlayer(bid.vastUrl);
-
                             });
                         }
                     });
-                })
+                });
             }
         }
-
 
         function initFluidPlayer(vastUrl) {
             var fluidPlayerInstance = fluidPlayer('video-element', {
@@ -183,8 +181,8 @@
                             roll: 'preRoll',
                             vastTag: vastUrl,
                             adText: 'Advertising supports us directly'
-                        },],
-
+                        }
+                    ],
                     skipButtonCaption: 'Skip ad in [5]',
                     skipButtonClickCaption: 'Skip ad <span class="skip_button_icon"></span>',
                     adText: null,
@@ -193,7 +191,7 @@
                     adCTATextPosition: 'bottom right',
                     vastTimeout: 5000,
                     showPlayButton: false,
-                    maxAllowedVastTagRedirects: 1,
+                    maxAllowedVastTagRedirects: 1
                 }
             });
         }
@@ -210,15 +208,11 @@
 
 <body>
 
-    <script>
-
-    </script>
-
     <h2>RTB Instream Video Prebid.js</h2>
 
     <!-- Your main video element -->
-    <video id="video-element">
-        <source src="https://vjs.zencdn.net/v/oceans.mp4" type="video/mp4">
+    <video id='video-element'>
+        <source src='https://vjs.zencdn.net/v/oceans.mp4' type='video/mp4'>
     </video>
 
 </body>

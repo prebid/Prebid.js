@@ -75,8 +75,7 @@ function handleReqRTB2Dot4(bid, endpointUrl, validBidRequests, bidderRequest) {
     bidRequestData.imp = bannerMediaType.sizes.map(size => {
       let ext;
 
-      if (bid.params.image_output ||
-        bid.params.video_output) {
+      if (bid.params.image_output || bid.params.video_output) {
         ext = {
           image_output: bid.params.image_output ? bid.params.image_output : undefined,
           video_output: bid.params.video_output ? bid.params.video_output : undefined,
@@ -93,10 +92,10 @@ function handleReqRTB2Dot4(bid, endpointUrl, validBidRequests, bidderRequest) {
           'mimes': bid.params.mimes ? bid.params.mimes : undefined,
           ext
         },
-      })
-    }
-    );
+      });
+    });
   }
+
   const nativeMediaType = utils.deepAccess(bid, 'mediaTypes.native');
 
   if (nativeMediaType != null) {
@@ -170,8 +169,8 @@ function handleResRTB2Dot4(serverResponse, request) {
     const requestId = serverResponse.body.id;
     const bidData = serverResponse.body.seatbid[0].bid[0];
     const currency = serverResponse.body.cur;
-    let bidResponseAd = bidData.adm;
-    let pixelUrl = bidData.nurl.replace(/^http:\/\//i, 'https://');
+    const bidResponseAd = bidData.adm;
+    const pixelUrl = bidData.nurl.replace(/^http:\/\//i, 'https://');
 
     const bannerInfo = utils.deepAccess(bidRq.imp[0], 'banner');
     const nativeInfo = utils.deepAccess(bidRq.imp[0], 'native');
@@ -202,6 +201,8 @@ function handleResRTB2Dot4(serverResponse, request) {
           native.title = asset.title.text;
         } else if (asset.data != null) {
           native.body = asset.data.value;
+        } else {
+          utils.logWarn('bidResponse->', 'wrong asset type or null');
         }
       });
       mediaType = NATIVE;
@@ -268,21 +269,16 @@ function getUrl(adPartner, bid) {
 function manageEnvParams() {
   envParams.domain = window.location.hostname;
   envParams.page = window.location.protocol + '//' + window.location.host + window.location.pathname;
-  envParams.lang = navigator.language;
-  if (envParams.lang.indexOf('-') > -1) {
-    envParams.lang = envParams.lang.split('-')[0];
-  }
+  envParams.lang = envParams.lang = navigator.language.indexOf('-') > -1 ? navigator.language.split('-')[0] : navigator.language;
   envParams.userAgent = navigator.userAgent;
+
   if (navigator.appVersion.indexOf('Win') !== -1) {
     envParams.osName = 'Windows';
-  }
-  if (navigator.appVersion.indexOf('Mac') !== -1) {
+  } else if (navigator.appVersion.indexOf('Mac') !== -1) {
     envParams.osName = 'MacOS';
-  }
-  if (navigator.appVersion.indexOf('X11') !== -1) {
+  } else if (navigator.appVersion.indexOf('X11') !== -1) {
     envParams.osName = 'Unix';
-  }
-  if (navigator.appVersion.indexOf('Linux') !== -1) {
+  } else if (navigator.appVersion.indexOf('Linux') !== -1) {
     envParams.osName = 'Linux';
   }
 
@@ -357,7 +353,6 @@ function getGdprConsentChoice(bidderRequest) {
 
 export const spec = {
   aliases: ['exads'], // short code
-
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
   isBidRequestValid: function (bid) {
     utils.logInfo('on isBidRequestValid -> bid:', bid);

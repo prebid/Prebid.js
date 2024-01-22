@@ -1,19 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
 <head>
-    <meta charset="UTF-8">
+    <meta charset='UTF-8'>
     <title>Prebid.js</title>
     <!-- Uncomment for development environments -->
-    <script src="js/prebid.js"></script>
+    <script src='js/prebid.js'></script>
     <!-- Uncomment for production environments -->
-    <!-- <script async src="js/prebid.js" onload="onScriptLoaded()"></script> -->
+    <!-- <script async src='js/prebid.js' onload='onScriptLoaded()'></script> -->
     <script>
         // Client Conf start
         // Set as true for development environments only
         const isEnabledDebug = true;
         const exads_endpoint = 'https://your-ad-network.com/rtb.php';
         let zoneId = 5179867;
-        let fid = "1e284a9540445fad9ac9c64881569260f1aa195f";
+        let fid = '1e284a9540445fad9ac9c64881569260f1aa195f';
         const partner = 'rtb_2_4';
 
         // Start GDPR params
@@ -22,13 +22,13 @@
         let consentString = 'CO_V33gP0l1PgAoAAAENCZCgAAAAAAAAAAAAE0wAQE0gTTABATSAAA.YAAAAAAAAAA';
         // End GDPR params
 
-        let siteId = "12345";
+        let siteId = '12345';
         let bannerSizes = [
             [300, 250]
         ];
         let country = 'IRL';
         let keywords = 'lifestyle, humour';
-        let catIab = ['IAB25-3']; // if available - ex.: ["IAB1-5", "IAB1-7"]
+        let catIab = ['IAB25-3']; // if available - ex.: ['IAB1-5', 'IAB1-7']
         let bidfloorcur = 'EUR';
         let bidfloor = 0.00000011;
         // Set the assets section parameters
@@ -43,14 +43,14 @@
         let impression_id = hashCode(new Date().getTime().toString());
         let user_id = localStorage.getItem('prebidJS.user_id');
         
-        if(!user_id) {
+        if (!user_id) {
             localStorage.setItem('prebidJS.user_id', hashCode('user_id' + new Date().getTime().toString()));
             user_id =  localStorage.getItem('prebidJS.user_id');
         }
 
-        let ip_script = document.createElement("script");
-        ip_script.type = "text/javascript";
-        ip_script.src = "https://api.ipify.org?format=jsonp&callback=userIpCallback";
+        let ip_script = document.createElement('script');
+        ip_script.type = 'text/javascript';
+        ip_script.src = 'https://api.ipify.org?format=jsonp&callback=userIpCallback';
         document.getElementsByTagName('head')[0].appendChild(ip_script);
 
         var pbjs = pbjs || {};
@@ -58,7 +58,7 @@
 
         handleRTB();
 
-        if(isEnabledDebug) {
+        if (isEnabledDebug) {
             onScriptLoaded();
         }
 
@@ -84,7 +84,9 @@
         // ======== DO NOT EDIT BELOW THIS LINE =========== //
         function userIpCallback(user_ip) {
             userIpLoaded = true;
-            if (user_ip.hasOwnProperty('ip')) userIp = user_ip.ip;
+            if (user_ip.hasOwnProperty('ip')){
+                userIp = user_ip.ip;
+            } 
         }
 
         // MurmurHash3 hash function
@@ -126,7 +128,7 @@
                             img: {
                                 type: 3,
                                 w: 300,
-                                h: 300,
+                                h: 300
                             }
                         }]
                     }
@@ -179,10 +181,10 @@
                             // If any bidders return any creatives
                             if (adServerTargeting && adServerTargeting['hb_adid']) {
                                 // rendering logic based on own template
-                                let template = "<div><div><\/div><div><h1>##hb_native_title##<\/h1><p>##hb_native_body##<\/p><a href=\"https:\/\/##hb_native_linkurl##\" target=\"_blank\"><img src=\"##hb_native_image##\"><\/a><div> <\/div> <\/div>";
+                                let template = '<div><div><\/div><div><h1>##hb_native_title##<\/h1><p>##hb_native_body##<\/p><a href=\"https:\/\/##hb_native_linkurl##\" target=\"_blank\"><img src=\"##hb_native_image##\"><\/a><div> <\/div> <\/div>';
                                 let keys = Object.keys(adServerTargeting);
                                 for (var i = 0; i < keys.length; i++){
-                                    template = template.replace("##"+keys[i]+"##",adServerTargeting[keys[i]]);
+                                    template = template.replace('##'+keys[i]+'##',adServerTargeting[keys[i]]);
                                 }
                                 iframeDoc.open();
                                 iframeDoc.write(template);
@@ -211,6 +213,6 @@
 </head>
 <body>
     <h2>RTB Native Prebid.js</h2>
-    <iframe id='postbid_iframe' frameborder="0" scrolling="no" marginheight="0" marginwidth="0" topmargin="0" leftmargin="0" allowtransparency="true" width="500" height="500"></iframe>
+    <iframe id='postbid_iframe' frameborder='0' scrolling='no' marginheight='0' marginwidth='0' topmargin='0' leftmargin='0' allowtransparency='true' width='500' height='500"></iframe>
 </body>
 </html>
