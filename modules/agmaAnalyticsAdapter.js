@@ -17,7 +17,7 @@ import { config } from '../src/config.js';
 const GVLID = 1122;
 const ModuleCode = 'agma';
 const analyticsType = 'endpoint';
-const scriptVersion = '1.7.0';
+const scriptVersion = '1.7.1';
 const batchDelayInMs = 1000;
 const agmaURL = 'https://pbc.agma-analytics.de/v1';
 const pageViewId = generateUUID();
