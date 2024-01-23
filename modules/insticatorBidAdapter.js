@@ -120,6 +120,7 @@ function buildVideo(bidRequest) {
   }
 
   const bidRequestVideo = deepAccess(bidRequest, 'mediaTypes.video');
+  const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
   let optionalParams = {};
   for (const param in OPTIONAL_VIDEO_PARAMS) {
     if (bidRequestVideo[param]) {
@@ -132,7 +133,8 @@ function buildVideo(bidRequest) {
     mimes,
     w,
     h,
-    ...optionalParams
+    ...optionalParams,
+    ...videoBidderParams
   }
 
   if (plcmt) {
@@ -384,7 +386,12 @@ function validateBanner(bid) {
 }
 
 function validateVideo(bid) {
-  const video = deepAccess(bid, 'mediaTypes.video');
+  const videoParams = deepAccess(bid, 'mediaTypes.video');
+  const videoBidderParams = deepAccess(bid, 'params.video', {});
+  let video = {
+    ...videoParams,
+    ...videoBidderParams
+  }
 
   if (video === undefined) {
     return true;
