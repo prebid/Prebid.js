@@ -386,14 +386,15 @@ function validateBanner(bid) {
 }
 
 function validateVideo(bid) {
-  const videoParams = deepAccess(bid, 'mediaTypes.video');
+  const videoParams = deepAccess(bid, 'mediaTypes.video', {});
   const videoBidderParams = deepAccess(bid, 'params.video', {});
   let video = {
     ...videoParams,
     ...videoBidderParams // bidder specific overrides for video
   }
-  if (video === undefined) {
-    return true;
+  // Check if the merged video object is empty
+  if (Object.keys(video).length === 0) {
+    return true; // or handle the case where video parameters are undefined or empty
   }
 
   let w = deepAccess(bid, 'mediaTypes.video.w');
