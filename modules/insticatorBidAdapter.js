@@ -134,7 +134,7 @@ function buildVideo(bidRequest) {
     w,
     h,
     ...optionalParams,
-    ...videoBidderParams
+    ...videoBidderParams // bidder specific overrides for video
   }
 
   if (plcmt) {
@@ -390,9 +390,8 @@ function validateVideo(bid) {
   const videoBidderParams = deepAccess(bid, 'params.video', {});
   let video = {
     ...videoParams,
-    ...videoBidderParams
+    ...videoBidderParams // bidder specific overrides for video
   }
-
   if (video === undefined) {
     return true;
   }

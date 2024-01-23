@@ -493,7 +493,7 @@ describe('InsticatorBidAdapter', function () {
       expect(spec.buildRequests([], bidderRequest)).to.be.an('array').that.have.lengthOf(0);
     });
 
-    it('should have bidRequest params override bidRequest mediatypes', function () {
+    it('should have bidder params override bidRequest mediatypes', function () {
       const tempBiddRequest = {
         ...bidRequest,
         params: {
