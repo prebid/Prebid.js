@@ -1,6 +1,7 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { deepAccess, parseSizesInput, getAdUnitSizes } from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {deepAccess, parseSizesInput} from '../src/utils.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 const BIDDER_CODE = 'optidigital';
 const GVL_ID = 915;
@@ -14,11 +15,11 @@ export const spec = {
   gvlid: GVL_ID,
   supportedMediaTypes: [BANNER],
   /**
-     * Determines whether or not the given bid request is valid.
-     *
-     * @param {BidRequest} bid The bid params to validate.
-     * @return boolean True if this is a valid bid, and false otherwise.
-     */
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function(bid) {
     let isValid = false;
     if (typeof bid.params !== 'undefined' && bid.params.placementId && bid.params.publisherId) {
@@ -28,11 +29,11 @@ export const spec = {
     return isValid;
   },
   /**
-     * Make a server request from the list of BidRequests.
-     *
-     * @param {validBidRequests[]} - an array of bids
-     * @return ServerRequest Info describing the request to the server.
-     */
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {validBidRequests[]} - an array of bids
+   * @return ServerRequest Info describing the request to the server.
+   */
   buildRequests: function(validBidRequests, bidderRequest) {
     if (!validBidRequests || validBidRequests.length === 0 || !bidderRequest || !bidderRequest.bids) {
       return [];
@@ -90,6 +91,12 @@ export const spec = {
       payload.uspConsent = bidderRequest.uspConsent;
     }
 
+    if (_getEids(validBidRequests[0])) {
+      payload.user = {
+        eids: _getEids(validBidRequests[0])
+      }
+    }
+
     const payloadObject = JSON.stringify(payload);
     return {
       method: 'POST',
@@ -98,11 +105,11 @@ export const spec = {
     };
   },
   /**
-     * Unpack the response from the server into a list of bids.
-     *
-     * @param {ServerResponse} serverResponse A successful response from the server.
-     * @return {Bid[]} An array of bids which were nested inside the server.
-     */
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {ServerResponse} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
   interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
     serverResponse = serverResponse.body;
@@ -131,12 +138,12 @@ export const spec = {
   },
 
   /**
-     * Register the user sync pixels which should be dropped after the auction.
-     *
-     * @param {SyncOptions} syncOptions Which user syncs are allowed?
-     * @param {ServerResponse[]} serverResponses List of server's responses.
-     * @return {UserSync[]} The user syncs which should be dropped.
-     */
+   * Register the user sync pixels which should be dropped after the auction.
+   *
+   * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {ServerResponse[]} serverResponses List of server's responses.
+   * @return {UserSync[]} The user syncs which should be dropped.
+   */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     let syncurl = '';
     if (!isSynced) {
@@ -221,6 +228,12 @@ function _getFloor (bid, sizes, currency) {
     } catch (err) {}
   }
   return floor !== null ? floor : bid.params.floor;
+}
+
+function _getEids(bidRequest) {
+  if (deepAccess(bidRequest, 'userIdAsEids')) {
+    return bidRequest.userIdAsEids;
+  }
 }
 
 export function resetSync() {

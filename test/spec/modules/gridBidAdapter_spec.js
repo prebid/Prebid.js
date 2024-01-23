@@ -941,6 +941,15 @@ describe('TheMediaGrid Adapter', function () {
       getDataFromLocalStorageStub.restore();
     })
 
+    it('tmax should be set as integer', function() {
+      let [request] = spec.buildRequests([bidRequests[0]], {...bidderRequest, timeout: '10'});
+      let payload = parseRequest(request.data);
+      expect(payload.tmax).to.equal(10);
+      [request] = spec.buildRequests([bidRequests[0]], {...bidderRequest, timeout: 'ddqwdwdq'});
+      payload = parseRequest(request.data);
+      expect(payload.tmax).to.equal(null);
+    })
+
     describe('floorModule', function () {
       const floorTestData = {
         'currency': 'USD',
@@ -974,6 +983,15 @@ describe('TheMediaGrid Adapter', function () {
         expect(request.data).to.be.an('string');
         const payload = parseRequest(request.data);
         expect(payload.imp[0].bidfloor).to.equal(bidfloor);
+      });
+      it('should return the bidfloor string value if it is greater than getFloor.floor', function () {
+        const bidfloor = '1.80';
+        const bidRequestsWithFloor = { ...bidRequest };
+        bidRequestsWithFloor.params = Object.assign({bidFloor: bidfloor}, bidRequestsWithFloor.params);
+        const [request] = spec.buildRequests([bidRequestsWithFloor], bidderRequest);
+        expect(request.data).to.be.an('string');
+        const payload = parseRequest(request.data);
+        expect(payload.imp[0].bidfloor).to.equal(1.80);
       });
     });
   });
@@ -1541,37 +1559,9 @@ describe('TheMediaGrid Adapter', function () {
     });
 
     it('should send right request on onDataDeletionRequest call', function() {
-      spec.onDataDeletionRequest([{
-        bids: [
-          {
-            bidder: 'grid',
-            params: {
-              uid: 1
-            }
-          },
-          {
-            bidder: 'grid',
-            params: {
-              uid: 2
-            }
-          },
-          {
-            bidder: 'another',
-            params: {
-              uid: 3
-            }
-          },
-          {
-            bidder: 'gridNM',
-            params: {
-              uid: 4
-            }
-          }
-        ],
-      }]);
+      spec.onDataDeletionRequest([{}]);
       expect(ajaxStub.calledOnce).to.equal(true);
-      expect(ajaxStub.firstCall.args[0]).to.equal('https://media.grid.bidswitch.net/uspapi_delete');
-      expect(ajaxStub.firstCall.args[2]).to.equal('{"uids":[1,2,4]}');
+      expect(ajaxStub.firstCall.args[0]).to.equal('https://media.grid.bidswitch.net/uspapi_delete_c2s');
     });
   });
 

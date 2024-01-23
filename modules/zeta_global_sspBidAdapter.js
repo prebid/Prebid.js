@@ -45,7 +45,7 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
-   * Determines whether or not the given bid request is valid.
+   * Determines whether the given bid request is valid.
    *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
@@ -54,7 +54,8 @@ export const spec = {
     // check for all required bid fields
     if (!(bid &&
       bid.bidId &&
-      bid.params)) {
+      bid.params &&
+      bid.params.sid)) {
       logWarn('Invalid bid request - missing required bid data');
       return false;
     }
@@ -162,7 +163,8 @@ export const spec = {
     }
 
     provideEids(validBidRequests[0], payload);
-    const url = params.shortname ? ENDPOINT_URL.concat('?shortname=', params.shortname) : ENDPOINT_URL;
+    provideSegments(bidderRequest, payload);
+    const url = params.sid ? ENDPOINT_URL.concat('?sid=', params.sid) : ENDPOINT_URL;
     return {
       method: 'POST',
       url: url,
@@ -331,6 +333,25 @@ function checkParamDataType(key, value, datatype) {
 function provideEids(request, payload) {
   if (Array.isArray(request.userIdAsEids) && request.userIdAsEids.length > 0) {
     deepSetValue(payload, 'user.ext.eids', request.userIdAsEids);
+  }
+}
+
+function provideSegments(bidderRequest, payload) {
+  const data = bidderRequest.ortb2?.user?.data;
+  if (isArray(data)) {
+    const segments = data.filter(d => d?.segment).map(d => d.segment).filter(s => isArray(s)).flatMap(s => s).filter(s => s?.id);
+    if (segments.length > 0) {
+      if (!payload.user) {
+        payload.user = {};
+      }
+      if (!isArray(payload.user.data)) {
+        payload.user.data = [];
+      }
+      const payloadData = {
+        segment: segments
+      };
+      payload.user.data.push(payloadData);
+    }
   }
 }
 

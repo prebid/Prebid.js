@@ -112,27 +112,27 @@ export { writeCookie };
 /** @type {Submodule} */
 export const mwOpenLinkIdSubModule = {
   /**
-     * used to link submodule with config
-     * @type {string}
-     */
+   * used to link submodule with config
+   * @type {string}
+   */
   name: 'mwOpenLinkId',
   /**
-     * decode the stored id value for passing to bid requests
-     * @function
-     * @param {MwOlId} mwOlId
-     * @return {(Object|undefined}
-     */
+   * decode the stored id value for passing to bid requests
+   * @function
+   * @param {MwOlId} mwOlId
+   * @return {(Object|undefined}
+   */
   decode(mwOlId) {
     const id = mwOlId && isPlainObject(mwOlId) ? mwOlId.eid : undefined;
     return id ? { 'mwOpenLinkId': id } : undefined;
   },
 
   /**
-     * performs action to obtain id and return a value in the callback's response argument
-     * @function
-     * @param {SubmoduleParams} [submoduleParams]
-     * @returns {id:MwOlId | undefined}
-     */
+   * performs action to obtain id and return a value in the callback's response argument
+   * @function
+   * @param {SubmoduleParams} [submoduleParams]
+   * @returns {id:MwOlId | undefined}
+   */
   getId(submoduleConfig) {
     const submoduleConfigParams = (submoduleConfig && submoduleConfig.params) || {};
     if (!isValidConfig(submoduleConfigParams)) return undefined;

@@ -70,7 +70,7 @@ const NATIVE_DEFAULTS = {
 
 export const spec = {
   code: BIDDER_CODE,
-
+  gvlid: 1135,
   // short code
   aliases: ['opera'],
 
@@ -232,13 +232,6 @@ function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
     test: config.getConfig('debug') ? 1 : 0,
     imp: createImp(bidRequest),
     device: getDevice(),
-    site: {
-      id: String(deepAccess(bidRequest, 'params.publisherId')),
-      // TODO: does the fallback make sense here?
-      domain: bidderRequest?.refererInfo?.domain || window.location.host,
-      page: bidderRequest?.refererInfo?.page,
-      ref: bidderRequest?.refererInfo?.ref || '',
-    },
     at: 1,
     bcat: getBcat(bidRequest),
     cur: [DEFAULT_CURRENCY],
@@ -250,6 +243,7 @@ function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
       buyeruid: getUserId(bidRequest)
     }
   }
+  fulfillInventoryInfo(payload, bidRequest, bidderRequest);
 
   const gdprConsent = deepAccess(bidderRequest, 'gdprConsent');
   if (!!gdprConsent && gdprConsent.gdprApplies) {
@@ -762,6 +756,38 @@ function getDevice() {
     ? device.dnt : (getDNT() ? 1 : 0);
 
   return device;
+}
+
+/**
+ * Fulfill inventory info
+ *
+ * @param payload
+ * @param bidRequest
+ * @param bidderRequest
+ */
+function fulfillInventoryInfo(payload, bidRequest, bidderRequest) {
+  let info = deepAccess(bidRequest, 'params.site');
+  // 1.If the inventory info for site specified, use the site object provided in params.
+  let key = 'site';
+  if (!isPlainObject(info)) {
+    info = deepAccess(bidRequest, 'params.app');
+    if (isPlainObject(info)) {
+      // 2.If the inventory info for app specified, use the app object provided in params.
+      key = 'app';
+    } else {
+      // 3.Otherwise, we use site by default.
+      info = {};
+    }
+  }
+  // Fulfill key parameters.
+  info.id = String(deepAccess(bidRequest, 'params.publisherId'));
+  info.domain = info.domain || bidderRequest?.refererInfo?.domain || window.location.host;
+  if (key === 'site') {
+    info.ref = info.ref || bidderRequest?.refererInfo?.ref || '';
+    info.page = info.page || bidderRequest?.refererInfo?.page;
+  }
+
+  payload[key] = info;
 }
 
 /**

@@ -1,6 +1,4 @@
-import {
-  _sendAdToCreative, getReplier, receiveMessage
-} from 'src/secureCreatives.js';
+import {getReplier, receiveMessage} from 'src/secureCreatives.js';
 import * as utils from 'src/utils.js';
 import {getAdUnits, getBidRequests, getBidResponses} from 'test/fixtures/fixtures.js';
 import {auctionManager} from 'src/auctionManager.js';
@@ -8,10 +6,11 @@ import * as auctionModule from 'src/auction.js';
 import * as native from 'src/native.js';
 import {fireNativeTrackers, getAllAssetsMessage} from 'src/native.js';
 import * as events from 'src/events.js';
-import { config as configObj } from 'src/config.js';
+import {config as configObj} from 'src/config.js';
 import 'src/prebid.js';
 
-import { expect } from 'chai';
+import {expect} from 'chai';
+import {handleRender} from '../../../src/adRendering.js';
 
 var CONSTANTS = require('src/constants.json');
 
@@ -54,37 +53,45 @@ describe('secureCreatives', () => {
     });
   });
 
-  describe('_sendAdToCreative', () => {
-    beforeEach(function () {
-      sinon.stub(utils, 'logError');
-      sinon.stub(utils, 'logWarn');
+  describe('handleRender', () => {
+    let bidResponse, renderFn, result;
+    beforeEach(() => {
+      result = null;
+      renderFn = sinon.stub().callsFake((r) => { result = r; });
+      bidResponse = {
+        adId: 123
+      }
     });
 
-    afterEach(function () {
-      utils.logError.restore();
-      utils.logWarn.restore();
+    it('does not invoke renderFn, but the renderer instead, if the ad has one', () => {
+      const renderer = {
+        url: 'some-custom-renderer',
+        render: sinon.spy()
+      }
+      handleRender(renderFn, {bidResponse: {renderer}});
+      sinon.assert.notCalled(renderFn);
+      sinon.assert.called(renderer.render);
     });
-    it('should macro replace ${AUCTION_PRICE} with the winning bid for ad and adUrl', () => {
-      const oldVal = window.googletag;
-      const oldapntag = window.apntag;
-      window.apntag = null
-      window.googletag = null;
-      const mockAdObject = {
-        adId: 'someAdId',
-        ad: '<script src="http://prebid.org/creative/${AUCTION_PRICE}"></script>',
-        adUrl: 'http://creative.prebid.org/${AUCTION_PRICE}',
-        width: 300,
-        height: 250,
-        renderer: null,
-        cpm: '1.00',
-        adUnitCode: 'some_dom_id'
-      };
-      const reply = sinon.spy();
-      _sendAdToCreative(mockAdObject, reply);
-      expect(reply.args[0][0].ad).to.equal('<script src="http://prebid.org/creative/1.00"></script>');
-      expect(reply.args[0][0].adUrl).to.equal('http://creative.prebid.org/1.00');
-      window.googletag = oldVal;
-      window.apntag = oldapntag;
+
+    ['ad', 'adUrl'].forEach((prop) => {
+      describe(`on ${prop}`, () => {
+        it('replaces AUCTION_PRICE macro', () => {
+          bidResponse[prop] = 'pre${AUCTION_PRICE}post';
+          bidResponse.cpm = 123;
+          handleRender(renderFn, {adId: 123, bidResponse});
+          expect(result[prop]).to.eql('pre123post');
+        });
+        it('replaces CLICKTHROUGH macro', () => {
+          bidResponse[prop] = 'pre${CLICKTHROUGH}post';
+          handleRender(renderFn, {adId: 123, bidResponse, options: {clickUrl: 'clk'}});
+          expect(result[prop]).to.eql('preclkpost');
+        });
+        it('defaults CLICKTHROUGH to empty string', () => {
+          bidResponse[prop] = 'pre${CLICKTHROUGH}post';
+          handleRender(renderFn, {adId: 123, bidResponse});
+          expect(result[prop]).to.eql('prepost');
+        });
+      });
     });
   });
 

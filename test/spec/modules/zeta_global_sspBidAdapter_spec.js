@@ -1,5 +1,6 @@
 import {spec} from '../../../modules/zeta_global_sspBidAdapter.js'
 import {BANNER, VIDEO} from '../../../src/mediaTypes';
+import {deepClone} from '../../../src/utils';
 
 describe('Zeta Ssp Bid Adapter', function () {
   const eids = [
@@ -50,7 +51,6 @@ describe('Zeta Ssp Bid Adapter', function () {
       someTag: 444,
     },
     sid: 'publisherId',
-    shortname: 'test_shortname',
     tagid: 'test_tag_id',
     site: {
       page: 'testPage'
@@ -124,7 +124,24 @@ describe('Zeta Ssp Bid Adapter', function () {
     uspConsent: 'someCCPAString',
     params: params,
     userIdAsEids: eids,
-    timeout: 500
+    timeout: 500,
+    ortb2: {
+      user: {
+        data: [
+          {
+            ext: {
+              segtax: 600,
+              segclass: 'classifier_v1'
+            },
+            segment: [
+              { id: '3' },
+              { id: '44' },
+              { id: '59' }
+            ]
+          }
+        ]
+      }
+    }
   }];
 
   const bannerWithFewSizesRequest = [{
@@ -253,11 +270,13 @@ describe('Zeta Ssp Bid Adapter', function () {
   };
 
   it('Test the bid validation function', function () {
-    const validBid = spec.isBidRequestValid(bannerRequest[0]);
-    const invalidBid = spec.isBidRequestValid(null);
+    const invalidBid = deepClone(bannerRequest[0]);
+    invalidBid.params = {};
+    const isValidBid = spec.isBidRequestValid(bannerRequest[0]);
+    const isInvalidBid = spec.isBidRequestValid(null);
 
-    expect(validBid).to.be.true;
-    expect(invalidBid).to.be.false;
+    expect(isValidBid).to.be.true;
+    expect(isInvalidBid).to.be.false;
   });
 
   it('Test provide eids', function () {
@@ -453,7 +472,7 @@ describe('Zeta Ssp Bid Adapter', function () {
   it('Test required params in banner request', function () {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
     const payload = JSON.parse(request.data);
-    expect(request.url).to.eql('https://ssp.disqus.com/bid/prebid?shortname=test_shortname');
+    expect(request.url).to.eql('https://ssp.disqus.com/bid/prebid?sid=publisherId');
     expect(payload.ext.sid).to.eql('publisherId');
     expect(payload.ext.tags.someTag).to.eql(444);
     expect(payload.ext.tags.shortname).to.be.undefined;
@@ -462,7 +481,7 @@ describe('Zeta Ssp Bid Adapter', function () {
   it('Test required params in video request', function () {
     const request = spec.buildRequests(videoRequest, videoRequest[0]);
     const payload = JSON.parse(request.data);
-    expect(request.url).to.eql('https://ssp.disqus.com/bid/prebid?shortname=test_shortname');
+    expect(request.url).to.eql('https://ssp.disqus.com/bid/prebid?sid=publisherId');
     expect(payload.ext.sid).to.eql('publisherId');
     expect(payload.ext.tags.someTag).to.eql(444);
     expect(payload.ext.tags.shortname).to.be.undefined;
@@ -471,7 +490,7 @@ describe('Zeta Ssp Bid Adapter', function () {
   it('Test multi imp', function () {
     const request = spec.buildRequests(multiImpRequest, multiImpRequest[0]);
     const payload = JSON.parse(request.data);
-    expect(request.url).to.eql('https://ssp.disqus.com/bid/prebid?shortname=test_shortname');
+    expect(request.url).to.eql('https://ssp.disqus.com/bid/prebid?sid=publisherId');
 
     expect(payload.imp.length).to.eql(2);
 
@@ -603,5 +622,14 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(bidResponse[0].mediaType).to.eql(BANNER);
     expect(bidResponse[0].ad).to.eql(zetaResponse.body.seatbid[0].bid[0].adm);
     expect(bidResponse[0].vastXml).to.be.undefined;
+  });
+
+  it('Test provide segments into the request', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+    expect(payload.user.data[0].segment.length).to.eql(3);
+    expect(payload.user.data[0].segment[0].id).to.eql('3');
+    expect(payload.user.data[0].segment[1].id).to.eql('44');
+    expect(payload.user.data[0].segment[2].id).to.eql('59');
   });
 });
