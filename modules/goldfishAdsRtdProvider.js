@@ -3,6 +3,10 @@ import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { deepAccess } from '../src/utils.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 export const MODULE_NAME = 'goldfishAdsRtd';
 export const MODULE_TYPE = 'realTimeData';
 export const ENDPOINT_URL = 'https://prebid.goldfishads.com/iab-segments';

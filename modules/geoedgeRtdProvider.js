@@ -24,6 +24,10 @@ import { loadExternalScript } from '../src/adloader.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 /** @type {string} */
 const SUBMODULE_NAME = 'geoedge';
 /** @type {string} */
