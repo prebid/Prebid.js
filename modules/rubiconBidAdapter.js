@@ -916,6 +916,7 @@ function applyFPD(bidRequest, mediaType, data) {
   let impExtData = deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
 
   const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+  const dsa = deepAccess(fpd, 'regs.ext.dsa');
   const SEGTAX = {user: [4], site: [1, 2, 5, 6]};
   const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
   const validate = function(prop, key, parentName) {
@@ -969,6 +970,26 @@ function applyFPD(bidRequest, mediaType, data) {
     // add in gpid
     if (gpid) {
       data['p_gpid'] = gpid;
+    }
+
+    // add dsa signals
+    if (dsa && Object.keys(dsa).length) {
+      pick(dsa, [
+        'dsainfo', (dsainfo) => data['dsainfo'] = dsainfo,
+        'required', (required) => data['dsarequired'] = required,
+        'pubrender', (pubrender) => data['dsapubrender'] = pubrender,
+        'datatopub', (datatopub) => data['dsadatatopubs'] = datatopub,
+        'transparency', (transparency) => {
+          if (Array.isArray(transparency) && transparency.length) {
+            data['dsatransparency'] = transparency.reduce((param, transp) => {
+              if (param) {
+                param += '~~'
+              }
+              return param += `${transp.domain}~${transp.params.join('_')}`
+            }, '')
+          }
+        }
+      ])
     }
 
     // only send one of pbadslot or dfp adunit code (prefer pbadslot)

@@ -21,6 +21,7 @@ import 'modules/priceFloors.js';
 import 'modules/multibid/index.js';
 import adapterManager from 'src/adapterManager.js';
 import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
+import { deepClone } from '../../../src/utils.js';
 
 const INTEGRATION = `pbjs_lite_v$prebid.version$`; // $prebid.version$ will be substituted in by gulp in built prebid
 const PBS_INTEGRATION = 'pbjs';
@@ -1710,6 +1711,57 @@ describe('the rubicon adapter', function () {
             expect(data).to.have.property('p_gpid');
             expect(data['p_gpid']).to.equal('/1233/sports&div1');
           });
+
+          describe('Pass DSA signals', function() {
+            const ortb2 = {
+              regs: {
+                ext: {
+                  dsa: {
+                    required: 3,
+                    pubrender: 0,
+                    datatopub: 2,
+                    transparency: [
+                      {
+                        domain: 'testdomain.com',
+                        params: [1],
+                      },
+                      {
+                        domain: 'testdomain2.com',
+                        params: [1, 2]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+            it('should send dsa signals if \"ortb2.regs.ext.dsa\"', function() {
+              const expectedTransparency = 'testdomain.com~1~~testdomain2.com~1_2'
+              const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({...b, ortb2})), bidderRequest)
+              const data = parseQuery(request.data);
+
+              expect(data).to.be.an('Object');
+              expect(data).to.have.property('dsarequired');
+              expect(data).to.have.property('dsapubrender');
+              expect(data).to.have.property('dsadatatopubs');
+              expect(data).to.have.property('dsatransparency');
+
+              expect(data['dsarequired']).to.equal(ortb2.regs.ext.dsa.required.toString());
+              expect(data['dsapubrender']).to.equal(ortb2.regs.ext.dsa.pubrender.toString());
+              expect(data['dsadatatopubs']).to.equal(ortb2.regs.ext.dsa.datatopub.toString());
+              expect(data['dsatransparency']).to.equal(expectedTransparency)
+            })
+            it('should return one transparency param', function() {
+              const expectedTransparency = 'testdomain.com~1';
+              const ortb2Clone = deepClone(ortb2);
+              ortb2Clone.regs.ext.dsa.transparency.pop()
+              const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({...b, ortb2: ortb2Clone})), bidderRequest)
+              const data = parseQuery(request.data);
+
+              expect(data).to.be.an('Object');
+              expect(data).to.have.property('dsatransparency');
+              expect(data['dsatransparency']).to.equal(expectedTransparency);
+            })
+          })
 
           it('should send gpid and pbadslot since it is prefered over dfp code', function () {
             bidderRequest.bids[0].ortb2Imp = {
