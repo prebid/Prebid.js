@@ -393,8 +393,9 @@ function validateVideo(bid) {
     ...videoBidderParams // bidder specific overrides for video
   }
   // Check if the merged video object is empty
-  if (Object.keys(video).length === 0) {
-    return true; // or handle the case where video parameters are undefined or empty
+  if (Object.keys(video).length === 0 || video === undefined) {
+    logError('insticator: video object is empty');
+    return false; // or handle the case where video parameters are undefined or empty
   }
 
   let w = deepAccess(bid, 'mediaTypes.video.w');
