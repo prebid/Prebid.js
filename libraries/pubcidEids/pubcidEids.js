@@ -2,7 +2,7 @@ export const PUBCID_EIDS = {
   'pubcid': {
     source: 'pubcid.org',
     atype: 1,
-    getValue: function(data)  {
+    getValue: function(data) {
       if (data.id) {
         return data.id
       } else {
