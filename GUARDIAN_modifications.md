@@ -49,16 +49,16 @@ gulp build
     > git checkout -b upgrade-v6.26.0
 1. You should now have all the release tags and you can merge a tag e.g.:
     > git merge 6.26.0 
-1. Resolve any conflicts
-1. If you get a large `package-lock.json` conflict it is probably easier to regenerate it
+1. Regenerate the `package-lock.json` file
     ```sh
     rm package-lock.json
     rm -rf ./node_modules
     npm install
     ```
+1. Resolve any conflicts
 1. Create new build
     > npm run build
-1. Check in the new `build/dist` output
+1. Commit and ensure the `build/dist` output is included
 
 ### Troubleshooting
 
