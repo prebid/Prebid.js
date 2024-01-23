@@ -10,6 +10,13 @@ import { submodule } from '../src/hook.js'
 import { loadExternalScript } from '../src/adloader.js'
 import {includes} from '../src/polyfill.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
+
 const MODULE_NAME = 'justId';
 const EXTERNAL_SCRIPT_MODULE_CODE = 'justtag';
 const LOG_PREFIX = 'User ID - JustId submodule: ';

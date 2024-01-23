@@ -24,6 +24,13 @@ import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import { GreedyPromise } from '../src/utils/promise.js';
 import { loadExternalScript } from '../src/adloader.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
+
 const MODULE_NAME = 'id5Id';
 const GVLID = 131;
 const NB_EXP_DAYS = 30;
@@ -521,7 +528,7 @@ export function getFromLocalStorage(key) {
  * by default it's not required
  * @param {string} key
  * @param {any} value
- * @param {integer} expDays
+ * @param {number} expDays
  */
 export function storeInLocalStorage(key, value, expDays) {
   storage.setDataInLocalStorage(`${key}_exp`, expDaysStr(expDays));
