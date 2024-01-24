@@ -25,10 +25,7 @@ export const spec = {
    * @returns {boolean}
    */
   isBidRequestValid(bid) {
-    if (bid && bid.params && bid.params.adslotId && bid.params.supplyId) {
-      return true;
-    }
-    return false;
+    return !!(bid && bid.params && bid.params.adslotId && bid.params.supplyId && isTransparencyCountOneOrLess(bid.params));
   },
 
   /**
@@ -82,6 +79,29 @@ export const spec = {
       const floor = getBidFloor(bid, sizes);
       if (floor) {
         adslotFloors.push(bid.params.adslotId + ':' + floor);
+      }
+      const dsaRequired = bid.params.regs?.ext?.dsa?.required;
+      if (dsaRequired !== undefined) {
+        query.dsarequired = dsaRequired;
+      }
+      const dsaPubRender = bid.params.regs?.ext?.dsa?.pubrender;
+      if (dsaPubRender !== undefined) {
+        query.dsapubrender = dsaPubRender;
+      }
+      const dsaDataToPub = bid.params.regs?.ext?.dsa?.datatopub;
+      if (dsaDataToPub !== undefined) {
+        query.dsadatatopub = dsaDataToPub;
+      }
+      const dsaTransparency = bid.params.regs?.ext?.dsa?.transparency;
+      if (Array.isArray(dsaTransparency) && dsaTransparency.length > 0) {
+        const dsaDomain = dsaTransparency[0].domain;
+        if (dsaDomain !== undefined) {
+          query.dsadomain = dsaDomain;
+        }
+        const dsaParams = dsaTransparency[0].params;
+        if (Array.isArray(dsaParams) && dsaParams.length > 0) {
+          query.dsaparams = dsaParams.join(',');
+        }
       }
     });
 
@@ -164,6 +184,12 @@ export const spec = {
             advertiserDomains: (matchedBid.advertiser) ? matchedBid.advertiser : 'n/a',
           },
         };
+
+        const dsa = getDigitalServicesActObjectFromMatchedBid(matchedBid)
+        if (dsa !== undefined) {
+          bidResponse.ext = bidResponse.ext || {};
+          bidResponse.ext.dsa = dsa;
+        }
 
         if (isVideo(bidRequest, adType)) {
           const playersize = getPlayerSize(bidRequest);
@@ -534,6 +560,26 @@ function hasValidProperty(obj, propName) {
  */
 function isImageAssetOfType(type) {
   return asset => asset?.img?.type === type;
+}
+
+/**
+ * Determines if the 'transparency' array within the bid parameters has one or fewer elements.
+ *
+ * @param {Object} params - Bid parameters containing the nested 'transparency' array.
+ * @returns {boolean} - Returns true if the 'transparency' field is either undefined, or contains an array with at most one element; returns false otherwise.
+ */
+function isTransparencyCountOneOrLess(params) {
+  return (params?.regs?.ext?.dsa?.transparency?.length ?? 0) <= 1;
+}
+
+/**
+ * Retrieves the Digital Services Act (DSA) object from a matched bid.
+ *
+ * @param {Object} matchedBid - The server response body to inspect for the DSA information.
+ * @returns {Object|undefined} A copy of the DSA object if it exists, or undefined if not.
+ */
+function getDigitalServicesActObjectFromMatchedBid(matchedBid) {
+  return matchedBid.ext?.dsa ? { ...matchedBid.ext.dsa } : undefined;
 }
 
 registerBidder(spec);
