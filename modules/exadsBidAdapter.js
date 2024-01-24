@@ -269,7 +269,9 @@ function getUrl(adPartner, bid) {
 function manageEnvParams() {
   envParams.domain = window.location.hostname;
   envParams.page = window.location.protocol + '//' + window.location.host + window.location.pathname;
-  envParams.lang = envParams.lang = navigator.language.indexOf('-') > -1 ? navigator.language.split('-')[0] : navigator.language;
+  envParams.lang = envParams.lang = navigator.language.indexOf('-') > -1 
+    ? navigator.language.split('-')[0] 
+    : navigator.language;
   envParams.userAgent = navigator.userAgent;
 
   if (navigator.appVersion.indexOf('Win') !== -1) {

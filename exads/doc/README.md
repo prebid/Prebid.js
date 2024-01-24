@@ -10,7 +10,7 @@ EXADS PrebidJS Adapter
 * Build the new version of the adapter and all modules needed: `gulp build --modules=consentManagement,exadsBidAdapter`
 * After that, you can use the prebidJS, merged with our module. 
     * You can find it into:  `./build/dist/prebid.js`
-* Update our HTML examples in order to test the adapter. You can find them into `./exads/examples`
+* Update our HTML examples in order to test the adapter. You can find them in `./exads/examples`
 
 #### Lint and Unit tests
 * Note: lint checks the official prebidJS rules.

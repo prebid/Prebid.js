@@ -57,7 +57,7 @@ Now you will find the different parameters to set, based on publisher website. T
 * **banner.sizes** (required) - one integer array - [width, height]
 * **catIab** - IAB category ID (string array)
 * **userIp** (required) - IP address of the user, ipv4 or ipv6 (string)
-* **userId** (*required) - unique user ID (string). *If you cannot generate a user ID, you can leave it empty (""). The request will get a response as long as "user" object is included in the request.
+* **userId** (*required) - unique user ID (string). *If you cannot generate a user ID, you can leave it empty (""). The request will get a response as long as "user" object is included in the request
 * **country** - country ISO3
 * **impressionId** (required) - unique impression ID within this bid request (string)
 * **keywords** - keywords can be used to ensure ad zones get the right type of advertising. Keywords should be a string of comma-separated words
@@ -68,7 +68,7 @@ Now you will find the different parameters to set, based on publisher website. T
 
 ##### RTB Banner 2.4 (Image)
 * **image_output** - indicates output format for image banners (string)
-    * options are **xml** or **html**. Default values is **xml** in case field not provided
+    * options are **xml** or **html**. Default value is **xml** in case field is not provided
 
 ```javascript
 
@@ -104,7 +104,7 @@ adUnits =
 
 ##### RTB Banner 2.4 (Video)
 * **video_output** - indicates output format for video banners (string)
-    * options are **xml** or **html**. Default values is **xml** in case field not provided
+    * options are **xml** or **html**. Default value is **xml** in case field is not provided
 
 ```javascript
 adUnits = 
@@ -145,7 +145,7 @@ adUnits =
 * **siteId** (recommended) - unique Site ID (string)
 * **catIab** - IAB category ID (string array)
 * **userIp** (required) - IP address of the user, ipv4 or ipv6 (string)
-* **userId** (*required) - unique user ID (string). *If you cannot generate a user ID, you can leave it empty (""). The request will get a response as long as "user" object is included in the request.
+* **userId** (*required) - unique user ID (string). *If you cannot generate a user ID, you can leave it empty (""). The request will get a response as long as "user" object is included in the request
 * **country** - Country ISO3 (string)
 * **impressionId** (required) - unique impression ID within this bid request (string)
 * **keywords** - keywords can be used to ensure ad zones get the right type of advertising. Keywords should be a string of comma-separated words
@@ -207,7 +207,7 @@ adUnits = [{
 * **siteId** (recommended) - unique Site ID (string)
 * **catIab** - IAB category ID (string array)
 * **userIp** (required) - IP address of the user, ipv4 or ipv6 (string)
-* **userId** (*required) - unique user ID (string). *If you cannot generate a user ID, you can leave it empty (""). The request will get a response as long as "user" object is included in the request.
+* **userId** (*required) - unique user ID (string). *If you cannot generate a user ID, you can leave it empty (""). The request will get a response as long as "user" object is included in the request
 * **country** - country ISO3 (string)
 * **impressionId** (required) - unique impression ID within this bid request (string)
 * **keywords** - keywords can be used to ensure ad zones get the right type of advertising. Keywords should be a string of comma-separated words
@@ -221,7 +221,7 @@ adUnits = [{
         * 3 - description asset ID
     * **required** - set to 1 if asset is required or 0 if asset is optional (integer)
     * **title**
-        * len (required) - maximum length of the text in the title element. (integer)
+        * len (required) - maximum length of the text in the title element (integer)
 * **assets (data)**
     * **id** - unique asset ID, assigned by exchange. Typically a counter for the array (integer):
         * 1 - image asset ID
@@ -271,11 +271,11 @@ adUnits = [{
                     img: {
                         type: 3,
                         w: 300,
-                        h: 300,
+                        h: 300
                     }
                 }]
             }
-        },
+        }
     },
     bids: [{
         bidder: 'exadsadserver',
@@ -289,7 +289,7 @@ adUnits = [{
                 userId: '1234',
                 impressionId: '1234',
                 native: {
-                    plcmtcnt: 4,
+                    plcmtcnt: 4
                 },
                 country: 'IRL',
                 keywords: 'lifestyle, humour',
