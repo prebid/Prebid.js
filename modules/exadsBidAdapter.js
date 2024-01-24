@@ -318,8 +318,8 @@ function handleValidRTB2Dot4(bid) {
     bid.params.country.length > 0 &&
     (bannerInfo || nativeInfo || videoInfo) &&
     !!(bid.params.bidfloor && bid.params.bidfloorcur) &&
-    (nativeInfo ? !!(bid.params.native &&
-      bid.params.native.plcmtcnt) : true) &&
+    (nativeInfo ? bid.params.native && 
+      nativeInfo.ortb.assets.some(asset => !!asset.img) : true) &&
     (videoInfo ? !!(bid.params.stream &&
       bid.params.stream.video &&
       bid.params.stream.video.mimes &&
