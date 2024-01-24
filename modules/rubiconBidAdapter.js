@@ -178,7 +178,7 @@ export const converter = ortbConverter({
     delete data?.ext?.prebid?.storedrequest;
 
     let carbonTopics = fetchCarbonTopics();
-    if (carbonTopics.length > 0) {
+    if (carbonTopics?.length > 0) {
       deepSetValue(data, 'user.data', carbonTopics);
     }
 
@@ -1015,14 +1015,13 @@ function applyFPD(bidRequest, mediaType, data) {
   }
 }
 
-
 function fetchCarbonTopics() {
   let topics = [];
-  if (rubiConf.readTopics === false ? false : true) {
-    topics = config.getConfig('user.data').filter(topic => {
+  if (rubiConf.readTopics !== false) {
+    topics = config.getConfig('user.data')?.filter(topic => {
       const taxonomy = topic.taxonomyVersion;
       return taxonomy == 507 || taxonomy == 508;
-    });
+    }) || topics;
   }
   return topics
 }
@@ -1037,9 +1036,8 @@ function readCarbonTopics() {
     } else {
       topics[taxonomy] = '' + topic.topic;
     }
-
   })
-  let hasProps = Object.keys(topics) > 0;
+  let hasProps = Object.keys(topics).length > 0;
   return hasProps ? topics : undefined;
 }
 
