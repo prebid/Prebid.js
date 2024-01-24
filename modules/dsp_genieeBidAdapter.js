@@ -99,12 +99,12 @@ export const spec = {
   },
 
   /**
-   * Register the user sync pixels which should be dropped after the auction.
-   *
-   * @param {SyncOptions} syncOptions Which user syncs are allowed?
-   * @param {ServerResponse[]} serverResponses List of server's responses.
-   * @return {UserSync[]} The user syncs which should be dropped.
-   */
+     * Register the user sync pixels which should be dropped after the auction.
+     *
+     * @param {SyncOptions} syncOptions Which user syncs are allowed?
+     * @param {ServerResponse[]} serverResponses List of server's responses.
+     * @return {UserSync[]} The user syncs which should be dropped.
+     */
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
     // gdpr & usp
