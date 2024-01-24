@@ -286,6 +286,36 @@ describe('InsticatorBidAdapter', function () {
         }
       })).to.be.false;
     });
+
+    it('should return true when video bidder params override bidRequest video params', () => {
+      expect(spec.isBidRequestValid({
+        ...bidRequest,
+        ...{
+          mediaTypes: {
+            video: {
+              mimes: [
+                'video/mp4',
+                'video/mpeg',
+              ],
+              playerSize: [250, 300],
+              placement: 1,
+            },
+          }
+        },
+        params: {
+          ...bidRequest.params,
+          video: {
+            mimes: [
+              'video/mp4',
+              'video/mpeg',
+              'video/x-flv',
+              'video/webm',
+            ],
+            placement: 2,
+          },
+        }
+      })).to.be.true;
+    });
   });
 
   describe('buildRequests', function () {
@@ -461,6 +491,40 @@ describe('InsticatorBidAdapter', function () {
     });
     it('should return empty array if no valid requests are passed', function () {
       expect(spec.buildRequests([], bidderRequest)).to.be.an('array').that.have.lengthOf(0);
+    });
+
+    it('should have bidder params override bidRequest mediatypes', function () {
+      const tempBiddRequest = {
+        ...bidRequest,
+        params: {
+          ...bidRequest.params,
+          video: {
+            mimes: [
+              'video/mp4',
+              'video/mpeg',
+              'video/x-flv',
+              'video/webm',
+              'video/ogg',
+            ],
+            plcmt: 4,
+            w: 640,
+            h: 480,
+          }
+        }
+      }
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.imp[0].video.mimes).to.deep.equal([
+        'video/mp4',
+        'video/mpeg',
+        'video/x-flv',
+        'video/webm',
+        'video/ogg',
+      ])
+      expect(data.imp[0].video.placement).to.equal(2);
+      expect(data.imp[0].video.plcmt).to.equal(4);
+      expect(data.imp[0].video.w).to.equal(640);
+      expect(data.imp[0].video.h).to.equal(480);
     });
   });
 
