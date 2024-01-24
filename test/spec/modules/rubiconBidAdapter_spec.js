@@ -1949,6 +1949,28 @@ describe('the rubicon adapter', function () {
               bidderRequest.auctionStart + 100
             );
 
+            sandbox.stub(config, 'getConfig')
+              .withArgs('user.data')
+              .onFirstCall().returns([{
+                taxonomyVersion: 404,
+                topic: '5'
+              }, {
+                taxonomyVersion: '404',
+                topic: '6'
+              }, {
+                taxonomyVersion: '507',
+                topic: '1'
+              }, {
+                taxonomyVersion: 507,
+                topic: '2'
+              }, {
+                taxonomyVersion: 508,
+                topic: '3'
+              }, {
+                taxonomyVersion: '508',
+                topic: '4'
+              }]);
+
             let [request] = spec.buildRequests(bidderRequest.bids, syncAddFPDToBidderRequest(bidderRequest));
             let post = request.data;
 
@@ -1969,6 +1991,10 @@ describe('the rubicon adapter', function () {
             expect(imp.ext.prebid.bidder.rubicon.video.playerHeight).to.equal(480);
             expect(imp.ext.prebid.bidder.rubicon.video.size_id).to.equal(201);
             expect(imp.ext.prebid.bidder.rubicon.video.language).to.equal('en');
+            expect(post.user.data[0]).to.deep.equal({'taxonomyVersion': '507', 'topic': '1'});
+            expect(post.user.data[1]).to.deep.equal({'taxonomyVersion': 507, 'topic': '2'});
+            expect(post.user.data[2]).to.deep.equal({'taxonomyVersion': 508, 'topic': '3'});
+            expect(post.user.data[3]).to.deep.equal({'taxonomyVersion': '508', 'topic': '4'});
             // Also want it to be in post.site.content.language
             expect(imp.ext.prebid.bidder.rubicon.video.skip).to.equal(1);
             expect(imp.ext.prebid.bidder.rubicon.video.skipafter).to.equal(15);
@@ -2717,6 +2743,35 @@ describe('the rubicon adapter', function () {
           const slotParams = spec.createSlotParams(localBidRequest, bidderRequest);
 
           expect(slotParams['o_ae']).to.equal(1)
+        });
+
+        it('should pass along Carbon segtaxes, but not non-Carbon ones', () => {
+          const localBidderRequest = Object.assign({}, bidderRequest);
+          localBidderRequest.refererInfo = {domain: 'bob'};
+          sandbox.stub(config, 'getConfig')
+            .onFirstCall().returns(1)
+            .onSecondCall().returns([{
+              taxonomyVersion: 404,
+              topic: '5'
+            }, {
+              taxonomyVersion: '404',
+              topic: '6'
+            }, {
+              taxonomyVersion: '507',
+              topic: '1'
+            }, {
+              taxonomyVersion: 507,
+              topic: '2'
+            }, {
+              taxonomyVersion: 508,
+              topic: '3'
+            }, {
+              taxonomyVersion: '508',
+              topic: '4'
+            }]);
+          const slotParams = spec.createSlotParams(bidderRequest.bids[0], localBidderRequest);
+          expect(slotParams.s_segs_507_bob).is.equal('1,2');
+          expect(slotParams.s_segs_508_bob).is.equal('3,4');
         });
       });
 
