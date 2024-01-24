@@ -71,19 +71,4 @@ describe('DSA transparency', () => {
     })
     it('should accept bids regardless of dsa when "required" any other value')
   });
-
-  describe('setMetaDsa', () => {
-    it('does nothing if bid has no ext.dsa', () => {
-      const resp = {};
-      setMetaDsa(resp, {});
-      expect(resp).to.eql({});
-    });
-
-    it('carries over ext.dsa into meta.dsa', () => {
-      const dsa = {transparency: 'info'};
-      const resp = {meta: {}};
-      setMetaDsa(resp, {ext: {dsa}});
-      expect(resp.meta.dsa).to.eql(dsa);
-    })
-  })
 });

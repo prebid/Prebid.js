@@ -1,4 +1,3 @@
-import {BID_RESPONSE, registerOrtbProcessor} from '../src/pbjsORTB.js';
 import {config} from '../src/config.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {timedBidResponseHook} from '../src/utils/perfMetrics.js';
@@ -50,16 +49,3 @@ toggleHooks(true);
 config.getConfig('consentManagement', (cfg) => {
   toggleHooks(cfg.consentManagement?.dsa?.validateBids ?? true);
 });
-
-export function setMetaDsa(bidResponse, bid) {
-  if (bid.ext?.dsa) {
-    bidResponse.meta.dsa = bidResponse.meta.dsa ?? bid.ext.dsa;
-  }
-}
-
-registerOrtbProcessor({
-  name: 'metaDsa',
-  type: BID_RESPONSE,
-  fn: setMetaDsa,
-  priority: -1 // run after 'meta' init
-})
