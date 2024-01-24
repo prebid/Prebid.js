@@ -269,8 +269,8 @@ function getUrl(adPartner, bid) {
 function manageEnvParams() {
   envParams.domain = window.location.hostname;
   envParams.page = window.location.protocol + '//' + window.location.host + window.location.pathname;
-  envParams.lang = navigator.language.indexOf('-') > -1 
-    ? navigator.language.split('-')[0] 
+  envParams.lang = navigator.language.indexOf('-') > -1
+    ? navigator.language.split('-')[0]
     : navigator.language;
   envParams.userAgent = navigator.userAgent;
 
@@ -318,7 +318,8 @@ function handleValidRTB2Dot4(bid) {
     bid.params.country.length > 0 &&
     (bannerInfo || nativeInfo || videoInfo) &&
     !!(bid.params.bidfloor && bid.params.bidfloorcur) &&
-    (nativeInfo ? bid.params.native && 
+    (nativeInfo ? bid.params.native &&
+      nativeInfo.ortb.assets &&
       nativeInfo.ortb.assets.some(asset => !!asset.img) : true) &&
     (videoInfo ? !!(bid.params.stream &&
       bid.params.stream.video &&
