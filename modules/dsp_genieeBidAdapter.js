@@ -84,12 +84,12 @@ export const spec = {
     };
   },
   /**
-   * Unpack the response from the server into a list of bids.
-   *
-   * @param {ServerResponse} serverResponse A successful response from the server.
-   * @param {BidRequest} bidRequest - the master bidRequest object
-   * @return {bids} - An array of bids which were nested inside the server.
-   */
+     * Unpack the response from the server into a list of bids.
+     *
+     * @param {ServerResponse} serverResponse A successful response from the server.
+     * @param {BidRequest} bidRequest - the master bidRequest object
+     * @return {bids} - An array of bids which were nested inside the server.
+     */
   interpretResponse: function (serverResponse, bidRequest) {
     if (!serverResponse.body) { // empty response (no bids)
       return [];
