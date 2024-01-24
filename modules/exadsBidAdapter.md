@@ -306,7 +306,7 @@ This section contains some suggestions that allow to set some parameters automat
 ### User Ip / Country
 In order to detect the current user ip there are different approaches. An example is using public web services as ```https://api.ipify.org```.
 
-Example of usage (to add into the publisher websites):
+Example of usage (to add to the publisher websites):
 
 ```
 <script>
