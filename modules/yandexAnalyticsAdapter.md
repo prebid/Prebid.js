@@ -14,9 +14,9 @@ Disclosure: provider loads Metrica Tag build based on https://github.com/yandex/
 
 ## How to setup provider
 
-Register your application on https://metrica.yandex.com/ and get counter id
-
-Init provider like this, where `123` is your counter id
+Register your application on https://metrica.yandex.com/ and get counter id.
+Insert counter initialization code obtained from the page https://metrica.yandex.com/settings?id={counterId} into your html code.
+Init provider like this, where `123` is your counter id.
 
 Note: If you have Single Page Application (SPA), [configure your tag](https://yandex.com/support/metrica/code/counter-spa-setup.html).
 
@@ -26,10 +26,6 @@ pbjs.enableAnalytics({
     options: {
         counters: [
             123,
-            {
-                id: 1234,
-                clickmap: true,
-            }
         ],
     },
 });

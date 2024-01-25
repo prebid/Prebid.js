@@ -4,14 +4,6 @@ import { logError, logInfo } from '../src/utils.js';
 import CONSTANTS from '../src/constants.json';
 import * as events from '../src/events.js';
 
-const tagTlds = ['com', 'ru'];
-const fileNames = ['tag', 'int']
-const tagUrlTemplate = 'https://mc.yandex.{tld}/metrika/{file}.js';
-export const tagURLs = tagTlds.flatMap((tld) => {
-  const partialTemplate = tagUrlTemplate.replace('{tld}', tld);
-  return fileNames.map((file) => partialTemplate.replace('{file}', file));
-});
-
 const timeoutIds = {};
 const tryUntil = (operationId, conditionCb, cb) => {
   if (!conditionCb()) {
@@ -22,15 +14,8 @@ const tryUntil = (operationId, conditionCb, cb) => {
     );
   }
 };
-const waitFor = (operationId, conditionCb, cb) => {
-  if (conditionCb()) {
-    cb();
-  } else {
-    timeoutIds[operationId] = setTimeout(() => waitFor(conditionCb, cb), 100);
-  }
-};
 
-const clearWaitForTimeouts = (timeouts) => {
+const clearTryUntilTimeouts = (timeouts) => {
   timeouts.forEach((timeoutID) => {
     if (timeoutIds[timeoutID]) {
       clearTimeout(timeoutIds[timeoutID]);
@@ -90,7 +75,7 @@ const yandexAnalytics = Object.assign(buildAdapter({ analyticsType: 'endpoint' }
 
   onCounterInit: (counterId) => {
     yandexAnalytics.counters[counterId] = window[`yaCounter${counterId}`];
-    logInfo(`Initialized metrika counter ${counterId}`);
+    logInfo(`Found metrika counter ${counterId}`);
     if (!yandexAnalytics.oneCounterInited) {
       yandexAnalytics.oneCounterInited = true;
       setTimeout(() => {
@@ -100,30 +85,15 @@ const yandexAnalytics = Object.assign(buildAdapter({ analyticsType: 'endpoint' }
     }
   },
 
-  getCounterScript: () => {
-    const presentScript = document.querySelector(
-      tagURLs.map((tagUrl) => `script[src="${tagUrl}"]`).join(',')
-    );
-    if (presentScript) {
-      return presentScript;
-    }
-
-    logInfo('Inserting metrika tag script');
-    const script = window.document.createElement('script');
-    script.setAttribute('src', tagURLs[0]);
-    window.document.body.appendChild(script);
-    return script;
-  },
-
   enableAnalytics: (config) => {
     yandexAnalytics.options = (config && config.options) || {};
     const { counters } = yandexAnalytics.options || {};
-    const validCounters = counters.filter((counterOptions) => {
-      if (!counterOptions) {
+    const validCounters = counters.filter((counterId) => {
+      if (!counterId) {
         return false;
       }
 
-      if (isNaN(counterOptions) && isNaN(counterOptions.id)) {
+      if (isNaN(counterId)) {
         return false;
       }
 
@@ -136,14 +106,14 @@ const yandexAnalytics = Object.assign(buildAdapter({ analyticsType: 'endpoint' }
     }
 
     const unsubscribeCallbacks = [
-      () => clearWaitForTimeouts(['body', 'countersInit']),
+      () => clearTryUntilTimeouts(['countersInit']),
     ];
 
     yandexAnalytics.initTimeoutId = setTimeout(() => {
       yandexAnalytics.bufferedEvents = [];
       unsubscribeCallbacks.forEach((cb) => cb());
       logError(`Can't find metrika counter after 25 seconds.`);
-      logError('Aborting analytics provider initialization.');
+      logError('Aborting yandex analytics provider initialization.');
     }, 25000);
 
     events.getEvents().forEach((event) => {
@@ -152,68 +122,27 @@ const yandexAnalytics = Object.assign(buildAdapter({ analyticsType: 'endpoint' }
       }
     });
 
-    const eventsCallbacks = [];
     EVENTS_TO_TRACK.forEach((eventName) => {
       const eventCallback = yandexAnalytics.onEvent.bind(null, eventName);
-      eventsCallbacks.push([eventName, eventCallback]);
+      unsubscribeCallbacks.push(() => events.off(eventName, eventCallback));
       events.on(eventName, eventCallback);
     });
 
-    unsubscribeCallbacks.push(() => {
-      eventsCallbacks.forEach(([eventName, cb]) => events.off(eventName, cb));
-    });
-
-    // Waiting for counters appearing on the page
-    const presentCounters = validCounters.map(
-      (options) => typeof options === 'object' ? options.id : options
-    );
     let allCountersInited = false;
-    if (presentCounters.length) {
-      tryUntil('countersInit', () => allCountersInited, () => {
-        allCountersInited = presentCounters.reduce((result, counterId) => {
-          if (yandexAnalytics.counters[counterId]) {
-            return result && true;
-          }
-
-          if (window[`yaCounter${counterId}`]) {
-            yandexAnalytics.onCounterInit(counterId);
-            return result && true;
-          }
-
-          return false;
-        }, true);
-      });
-    }
-
-    // Inserting counter script and initializing counters
-    if (!allCountersInited) {
-      const coutnersToInit = validCounters.filter((options) => {
-        const id = options === 'object' ? options.id : options;
-        return !yandexAnalytics.counters[id];
-      });
-      waitFor('body', () => window.document.body, () => {
-        const tag = yandexAnalytics.getCounterScript();
-        const onScriptLoad = () => {
-          coutnersToInit.forEach((counterOptions) => {
-            const id = counterOptions === 'object'
-              ? counterOptions.id
-              : counterOptions;
-            window[`yaCounter${id}`] =
-              new window.Ya.Metrika2(counterOptions);
-            yandexAnalytics.onCounterInit(id);
-          });
-        };
-        // Script not only present but loaded
-        if (window.Ya && window.Ya.Metrika2) {
-          onScriptLoad();
-        } else {
-          unsubscribeCallbacks.push(() => {
-            tag.removeEventListener('load', onScriptLoad);
-          });
-          tag.addEventListener('load', onScriptLoad);
+    tryUntil('countersInit', () => allCountersInited, () => {
+      allCountersInited = validCounters.reduce((result, counterId) => {
+        if (yandexAnalytics.counters[counterId]) {
+          return result && true;
         }
-      });
-    }
+
+        if (window[`yaCounter${counterId}`]) {
+          yandexAnalytics.onCounterInit(counterId);
+          return result && true;
+        }
+
+        return false;
+      }, true);
+    });
   },
 });
 

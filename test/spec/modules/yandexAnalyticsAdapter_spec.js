@@ -1,5 +1,5 @@
 import * as sinon from 'sinon';
-import yandexAnalytics, { EVENTS_TO_TRACK, tagURLs } from 'modules/yandexAnalyticsAdapter.js';
+import yandexAnalytics, { EVENTS_TO_TRACK } from 'modules/yandexAnalyticsAdapter.js';
 import * as log from '../../../src/utils.js'
 import * as events from '../../../src/events.js';
 
@@ -9,8 +9,6 @@ describe('Yandex analytics adapter testing', () => {
   let logError;
   let getEvents;
   let onEvent;
-  let appendBodyChild;
-  let querySelector;
   const counterId = 123;
   const counterWindowKey = 'yaCounter123';
 
@@ -24,8 +22,6 @@ describe('Yandex analytics adapter testing', () => {
     sandbox.stub(log, 'logInfo');
     getEvents = sandbox.stub(events, 'getEvents').returns([]);
     onEvent = sandbox.stub(events, 'on');
-    querySelector = sandbox.stub(document, 'querySelector').returns(null);
-    appendBodyChild = sandbox.stub(window.document.body, 'appendChild');
     sandbox.stub(window.document, 'createElement').callsFake((tag) => {
       const element = {
         tag,
@@ -63,7 +59,7 @@ describe('Yandex analytics adapter testing', () => {
     clock.tick(25001);
     chai.expect(yandexAnalytics.bufferedEvents).to.deep.equal([]);
     sinon.assert.calledWith(logError, `Can't find metrika counter after 25 seconds.`);
-    sinon.assert.calledWith(logError, `Aborting analytics provider initialization.`);
+    sinon.assert.calledWith(logError, `Aborting yandex analytics provider initialization.`);
   });
 
   it('fails if no valid counters provided', () => {
@@ -121,7 +117,9 @@ describe('Yandex analytics adapter testing', () => {
     chai.expect(sentEvents).to.deep.equal(eventsToSend);
   });
 
-  it('inserts metrika script if it\'s not already present and initializes counter', () => {
+  it('waits for counter initialization', () => {
+    window.Ya = {};
+    // Simulatin metrika script initialization
     yandexAnalytics.enableAnalytics({
       options: {
         counters: [
@@ -129,104 +127,17 @@ describe('Yandex analytics adapter testing', () => {
         ],
       },
     });
-    const [ element ] = appendBodyChild.getCall(0).args;
-    chai.expect(element.attributes).to.deep.equal({src: tagURLs[0]});
-    chai.expect(element.tag).to.equal('script');
-
-    // Simulatin metrika script initialization
-    const counterPbjsMethod = sandbox.stub();
-    window.Ya = {Metrika2: function (id) {
-      chai.expect(id).to.equal(counterId);
-      return {
-        pbjs: counterPbjsMethod,
-      }
-    }};
-    element.events.load();
-    chai.assert(!!window[counterWindowKey]);
 
     // Sending event
     const [event, eventCallback] = onEvent.getCall(0).args;
     eventCallback({});
-    clock.tick(1501);
-    const [ sentEvents ] = counterPbjsMethod.getCall(0).args;
-    chai.expect(sentEvents).to.deep.equal([{
-      event,
-      data: {},
-    }]);
-  });
 
-  it('finds present metrika script if it\'s already loaded and initializes counter', () => {
-    window.Ya = {Metrika2: function (id) {
-      chai.expect(id).to.equal(counterId);
-      return {
-        pbjs: counterPbjsMethod,
-      }
-    }};
-    // Simulatin metrika script initialization
     const counterPbjsMethod = sandbox.stub();
-    const fakeScript = {
-      addEventListener: sandbox.stub(),
-      removeEventListener: sandbox.stub(),
+    window[`yaCounter${counterId}`] = {
+      pbjs: counterPbjsMethod,
     };
-    querySelector.returns(fakeScript);
-    yandexAnalytics.enableAnalytics({
-      options: {
-        counters: [
-          counterId,
-        ],
-      },
-    });
-    const [ scriptSelector ] = querySelector.getCall(0).args;
-    chai.expect(scriptSelector).to.equal(
-      tagURLs.map((scriptUrl) => `script[src="${scriptUrl}"]`).join(',')
-    );
-    chai.assert(!!window[counterWindowKey]);
+    clock.tick(2001);
 
-    // Sending event
-    const [event, eventCallback] = onEvent.getCall(0).args;
-    eventCallback({});
-    clock.tick(1501);
-    const [ sentEvents ] = counterPbjsMethod.getCall(0).args;
-    chai.expect(sentEvents).to.deep.equal([{
-      event,
-      data: {},
-    }]);
-  });
-
-  it('finds present metrika script if it\'s not already loaded and initializes counter', () => {
-    // Simulatin metrika script initialization
-    const counterPbjsMethod = sandbox.stub();
-    const fakeScript = {
-      addEventListener: sandbox.stub(),
-      removeEventListener: sandbox.stub(),
-    };
-    querySelector.returns(fakeScript);
-    yandexAnalytics.enableAnalytics({
-      options: {
-        counters: [
-          counterId,
-        ],
-      },
-    });
-    const [ scriptSelector ] = querySelector.getCall(0).args;
-    chai.expect(scriptSelector).to.equal(
-      tagURLs.map((scriptUrl) => `script[src="${scriptUrl}"]`).join(',')
-    );
-    const [scriptEvent, onLoad] = fakeScript.addEventListener.getCall(0).args;
-    chai.expect(scriptEvent).to.equal('load');
-    window.Ya = {Metrika2: function (id) {
-      chai.expect(id).to.equal(counterId);
-      return {
-        pbjs: counterPbjsMethod,
-      }
-    }};
-    onLoad();
-    chai.assert(!!window[counterWindowKey]);
-
-    // Sending event
-    const [event, eventCallback] = onEvent.getCall(0).args;
-    eventCallback({});
-    clock.tick(1501);
     const [ sentEvents ] = counterPbjsMethod.getCall(0).args;
     chai.expect(sentEvents).to.deep.equal([{
       event,
