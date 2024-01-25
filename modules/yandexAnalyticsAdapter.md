@@ -10,7 +10,7 @@ Maintainer: prebid@yandex-team.com
 
 This adapter is designed to work with [Yandex Metrica](https://metrica.yandex.com/about) - Top-5 worldwide web analytics tool.
 
-Disclosure: provider loads Metrica Tag build based on https://github.com/yandex/metrica-tag, ~60 kB gzipped.
+Disclosure: provider use Metrica Tag build based on https://github.com/yandex/metrica-tag, ~60 kB gzipped.
 
 ## How to setup provider
 
