@@ -29,7 +29,7 @@ const VIDEO_PATH = '/exchange/prebidvideo';
 const STAGE_DOMAIN = 'https://ads-stg.yieldmo.com';
 const PROD_DOMAIN = 'https://ads.yieldmo.com';
 const OUTSTREAM_VIDEO_PLAYER_URL = 'https://prebid-outstream.yieldmo.com/bundle.js';
-const OPENRTB_VIDEO_BIDPARAMS = ['mimes', 'startdelay', 'placement', 'startdelay', 'skipafter', 'protocols', 'api',
+const OPENRTB_VIDEO_BIDPARAMS = ['mimes', 'startdelay', 'placement', 'plcmt', 'skipafter', 'protocols', 'api',
   'playbackmethod', 'maxduration', 'minduration', 'pos', 'skip', 'skippable'];
 const OPENRTB_VIDEO_SITEPARAMS = ['name', 'domain', 'cat', 'keywords'];
 const LOCAL_WINDOW = getWindowTop();
@@ -449,7 +449,7 @@ function openRtbImpression(bidRequest) {
     imp.video.skip = 1;
     delete imp.video.skippable;
   }
-  if (imp.video.placement !== 1) {
+  if (imp.video.plcmt !== 1 || imp.video.placement !== 1) {
     imp.video.startdelay = DEFAULT_START_DELAY;
     imp.video.playbackmethod = [ DEFAULT_PLAYBACK_METHOD ];
   }
