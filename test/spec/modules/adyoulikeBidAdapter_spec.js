@@ -812,6 +812,12 @@ describe('Adyoulike Adapter', function () {
       }
     });
 
+    it('handles 204 responses', function () {
+      serverResponse.body = '';
+      let result = spec.interpretResponse(serverResponse, []);
+      expect(result).deep.equal([]);
+    });
+
     it('handles nobid responses', function () {
       let response = [{
         BidID: '123dfsdf',
