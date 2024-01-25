@@ -80,6 +80,77 @@ describe('discovery:BidAdapterTests', function () {
   };
   let request = [];
 
+  let bidRequestDataNoParams = {
+    bidderCode: 'discovery',
+    auctionId: 'ff66e39e-4075-4d18-9854-56fde9b879ac',
+    bidderRequestId: '4fec04e87ad785',
+    bids: [
+      {
+        bidder: 'discovery',
+        params: {
+          referrer: 'https://discovery.popin.cc',
+        },
+        refererInfo: {
+          page: 'https://discovery.popin.cc',
+          stack: [
+            'a.com',
+            'b.com'
+          ]
+        },
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]],
+            pos: 'left',
+          },
+        },
+        ortb2: {
+          user: {
+            ext: {
+              data: {
+                CxSegments: []
+              }
+            }
+          },
+          site: {
+            domain: 'discovery.popin.cc',
+            publisher: {
+              domain: 'discovery.popin.cc'
+            },
+            page: 'https://discovery.popin.cc',
+            cat: ['IAB-19', 'IAB-20'],
+          },
+        },
+        ortb2Imp: {
+          ext: {
+            gpid: 'adslot_gpid',
+            tid: 'tid_01',
+            data: {
+              browsi: {
+                browsiViewability: 'NA',
+              },
+              adserver: {
+                name: 'adserver_name',
+                adslot: 'adslot_name',
+              },
+              keywords: ['travel', 'sport'],
+              pbadslot: '202309999'
+            }
+          }
+        },
+        adUnitCode: 'regular_iframe',
+        transactionId: 'd163f9e2-7ecd-4c2c-a3bd-28ceb52a60ee',
+        sizes: [[300, 250]],
+        bidId: '276092a19e05eb',
+        bidderRequestId: '1fadae168708b',
+        auctionId: 'ff66e39e-4075-4d18-9854-56fde9b879ac',
+        src: 'client',
+        bidRequestsCount: 1,
+        bidderRequestsCount: 1,
+        bidderWinsCount: 0,
+      },
+    ],
+  };
+
   it('discovery:validate_pub_params', function () {
     expect(
       spec.isBidRequestValid({
@@ -89,6 +160,15 @@ describe('discovery:BidAdapterTests', function () {
           tagid: ['test_tagid'],
           publisher: ['test_publisher']
         },
+      })
+    ).to.equal(true);
+  });
+
+  it('isBidRequestValid:no_params', function () {
+    expect(
+      spec.isBidRequestValid({
+        bidder: 'discovery',
+        params: {},
       })
     ).to.equal(true);
   });
