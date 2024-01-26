@@ -3,6 +3,10 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {includes} from '../src/polyfill.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ */
+
 const BIDDER_CODE = 'stv';
 const ENDPOINT_URL = 'https://ads.smartstream.tv/r/';
 const ENDPOINT_URL_DEV = 'https://ads.smartstream.tv/r/';

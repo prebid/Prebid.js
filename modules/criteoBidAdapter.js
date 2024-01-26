@@ -11,6 +11,14 @@ import { Renderer } from '../src/Renderer.js';
 import { OUTSTREAM } from '../src/video.js';
 import { ajax } from '../src/ajax.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
+ */
+
 const GVLID = 91;
 export const ADAPTER_VERSION = 36;
 const BIDDER_CODE = 'criteo';
