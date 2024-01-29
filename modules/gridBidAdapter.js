@@ -466,6 +466,7 @@ export const spec = {
   },
 
   ajaxCall: function(url, cb, data, options) {
+    options.browsingTopics = false;
     return ajax(url, cb, data, options);
   },
 
