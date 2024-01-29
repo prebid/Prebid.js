@@ -51,6 +51,7 @@ export const adqueryIdSubmodule = {
    * @returns {{qid:Object}}
    */
   decode(value) {
+    debugger;
     return {qid: value}
   },
   /**
@@ -61,6 +62,18 @@ export const adqueryIdSubmodule = {
    */
   getId(config) {
     logInfo('adqueryIdSubmodule getId');
+
+    debugger;
+    let qid = storage.getDataFromLocalStorage('qid');
+
+    if (qid) {
+      return {
+        callback: function (callback) {
+          callback(qid);
+        }
+      }
+    }
+
     if (!isPlainObject(config.params)) {
       config.params = {};
     }
@@ -78,6 +91,7 @@ export const adqueryIdSubmodule = {
         const ramdomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
         qid = ramdomValues.map(val => val.toString(36)).join('').substring(0, 20);
 
+        debugger;
         logInfo('adqueryIdSubmodule ID QID GENERTAED:', qid);
       }
       logInfo('adqueryIdSubmodule ID QID:', qid);
