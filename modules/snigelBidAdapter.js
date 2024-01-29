@@ -227,12 +227,16 @@ function getSyncEndpoint(url, gdprConsent) {
 
 function getSessionId() {
   try {
-    let sessionId = storageManager.getDataFromLocalStorage(SESSION_ID_KEY);
-    if (sessionId == null) {
-      sessionId = generateUUID();
-      storageManager.setDataInLocalStorage(SESSION_ID_KEY, sessionId);
+    if (storageManager.localStorageIsEnabled()) {
+      let sessionId = storageManager.getDataFromLocalStorage(SESSION_ID_KEY);
+      if (sessionId == null) {
+        sessionId = generateUUID();
+        storageManager.setDataInLocalStorage(SESSION_ID_KEY, sessionId);
+      }
+      return sessionId;
+    } else {
+      return undefined;
     }
-    return sessionId;
   } catch (e) {
     return undefined;
   }
