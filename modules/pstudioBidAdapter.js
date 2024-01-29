@@ -206,7 +206,6 @@ function readUserIdFromCookie(key) {
       return match[matchedUserIdIndex];
     }
   } catch (error) {
-    return;
   }
 }
 
