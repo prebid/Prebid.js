@@ -1,4 +1,4 @@
-import { logInfo } from '../src/utils.js';
+import { logInfo, logWarn } from '../src/utils.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
@@ -11,7 +11,13 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: function (bid) {
-    return typeof bid == 'object';
+    // check for all required bid fields
+    if (!(bid && bid.params.pid)) {
+      logWarn('Invalid bid request - missing required bid params');
+      return false;
+    }
+
+    return true;
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -27,7 +33,7 @@ export const spec = {
         eids: bidRequest.userIdAsEids,
         id: bidRequest.auctionId,
         schain: bidRequest.schain,
-        version: tmzr.version ?? false,
+        version: '$prebid.version$',
         excl_sync: window.tmzrBidderExclSync
       };
 
@@ -75,23 +81,22 @@ export const spec = {
   getUserSyncs: function (
     syncOptions,
     serverResponses,
-    gdprConsent,
+    // gdprConsent,
   ) {
     if (!syncOptions.iframeEnabled) {
       return [];
     }
 
-    let gdprParams = '';
-    if (
-      gdprConsent &&
-      'gdprApplies' in gdprConsent &&
-      typeof gdprConsent.gdprApplies === 'boolean'
-    ) {
-      gdprParams = `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString
-        }`;
-    }
+    // let gdprParams = '';
+    // if (
+    //   gdprConsent &&
+    //   'gdprApplies' in gdprConsent &&
+    //   typeof gdprConsent.gdprApplies === 'boolean'
+    // ) {
+    //   gdprParams = `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+    // }
 
-    s = [];
+    let s = [];
     serverResponses.map((c) => {
       if (c.body.c_sync) {
         c.body.c_sync.bidder_status.map((p) => {
