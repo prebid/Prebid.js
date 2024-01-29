@@ -10,13 +10,13 @@ describe('Adspirit Bidder Spec', function () {
   
   // isBidRequestValid ---case
   describe('isBidRequestValid', function () {
-    it('should return true if bid request is valid', function () {
+    it('should return true if the bid request is valid', function () {
       const validBid = { bidder: 'adspirit', params: { placementId: '57', host: 'test.adspirit.de' } };
       const result = spec.isBidRequestValid(validBid);
       expect(result).to.be.true;
     });
 
-    it('should return false if bid request is invalid', function () {
+    it('should return false if the bid request is invalid', function () {
       const invalidBid = { bidder: 'adspirit', params: {} };
       const result = spec.isBidRequestValid(invalidBid);
       expect(result).to.be.false;
