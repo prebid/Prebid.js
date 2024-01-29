@@ -7,6 +7,12 @@ import { userSync } from '../src/userSync.js';
 import { bidderSettings } from '../src/bidderSettings.js';
 import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
 const PAGEVIEW_ID = generateUUID();

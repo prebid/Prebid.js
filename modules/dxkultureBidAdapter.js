@@ -12,6 +12,11 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'dxkulture';
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_NET_REVENUE = true;

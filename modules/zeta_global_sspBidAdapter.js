@@ -5,6 +5,12 @@ import {config} from '../src/config.js';
 import {parseDomain} from '../src/refererDetection.js';
 import {ajax} from '../src/ajax.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
+
 const BIDDER_CODE = 'zeta_global_ssp';
 const ENDPOINT_URL = 'https://ssp.disqus.com/bid/prebid';
 const TIMEOUT_URL = 'https://ssp.disqus.com/timeout/prebid';

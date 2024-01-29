@@ -7,6 +7,10 @@ import {find} from '../src/polyfill.js';
 import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const subdomainSuffixes = ['', 1, 2];
 const AUCTION_PATH = '/v2/auction/';
 const PROTOCOL = 'https://';

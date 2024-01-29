@@ -16,6 +16,12 @@ import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ */
+
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = 'https://grid.bidswitch.net/hbjson';
 const USP_DELETE_DATA_HANDLER = 'https://media.grid.bidswitch.net/uspapi_delete_c2s'

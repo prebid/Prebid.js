@@ -4,6 +4,11 @@ import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ */
+
 export const BIDDER_CODE = 'aduptech';
 export const GVLID = 647;
 export const ENDPOINT_URL_PUBLISHER_PLACEHOLDER = '{PUBLISHER}';

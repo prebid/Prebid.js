@@ -1,6 +1,11 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
+
 const BIDDER_CODE = 'biddo';
 const ENDPOINT_URL = 'https://ad.adopx.net/delivery/impress';
 
