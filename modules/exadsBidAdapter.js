@@ -8,16 +8,6 @@ const PARTNERS = {
   RTB_2_4: 'rtb_2_4'
 };
 
-const envParams = {
-  lang: '',
-  userAgent: '',
-  osName: '',
-  page: '',
-  domain: '',
-  language: '',
-  userId: ''
-};
-
 const adPartnerHandlers = {
   [PARTNERS.RTB_2_4]: {
     request: handleReqRTB2Dot4,
@@ -26,27 +16,28 @@ const adPartnerHandlers = {
   }
 };
 
-function handleReqRTB2Dot4(bid, endpointUrl, validBidRequests, bidderRequest) {
+function handleReqRTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
   utils.logInfo(`Calling endpoint for rtb_2_4:`, endpointUrl);
   const gdprConsent = getGdprConsentChoice(bidderRequest);
+  const envParams = getEnvParams();
 
   // Make a dynamic bid request to the ad partner's endpoint
   let bidRequestData = {
-    'id': bid.bidId, // NOT bid.bidderRequestId or bid.auctionId
+    'id': validBidRequest.bidId, // NOT bid.bidderRequestId or bid.auctionId
     'at': 1,
     'imp': [],
     'site': {
-      'id': bid.params.siteId,
+      'id': validBidRequest.params.siteId,
       'domain': envParams.domain,
-      'cat': bid.params.catIab,
+      'cat': validBidRequest.params.catIab,
       'page': envParams.page,
-      'keywords': bid.params.keywords
+      'keywords': validBidRequest.params.keywords
     },
     'device': {
       'ua': envParams.userAgent,
-      'ip': bid.params.userIp,
+      'ip': validBidRequest.params.userIp,
       'geo': {
-        'country': bid.params.country
+        'country': validBidRequest.params.country
       },
       'language': envParams.lang,
       'os': envParams.osName,
@@ -56,10 +47,16 @@ function handleReqRTB2Dot4(bid, endpointUrl, validBidRequests, bidderRequest) {
       }
     },
     'user': {
-      'id': bid.params.userId,
+      'id': validBidRequest.params.userId,
     },
     'ext': {
-      'sub': 0
+      'sub': 0,
+      'prebid': {
+        'channel': {
+          'name': 'pbjs',
+          'version': '$prebid.version$'
+        }
+      }
     }
   };
 
@@ -70,33 +67,33 @@ function handleReqRTB2Dot4(bid, endpointUrl, validBidRequests, bidderRequest) {
   }
 
   // Banner setup
-  const bannerMediaType = utils.deepAccess(bid, 'mediaTypes.banner');
+  const bannerMediaType = utils.deepAccess(validBidRequest, 'mediaTypes.banner');
   if (bannerMediaType != null) {
     bidRequestData.imp = bannerMediaType.sizes.map(size => {
       let ext;
 
-      if (bid.params.image_output || bid.params.video_output) {
+      if (validBidRequest.params.image_output || validBidRequest.params.video_output) {
         ext = {
-          image_output: bid.params.image_output ? bid.params.image_output : undefined,
-          video_output: bid.params.video_output ? bid.params.video_output : undefined,
+          image_output: validBidRequest.params.image_output ? validBidRequest.params.image_output : undefined,
+          video_output: validBidRequest.params.video_output ? validBidRequest.params.video_output : undefined,
         }
       }
 
       return ({
-        'id': bid.params.impressionId,
-        'bidfloor': bid.params.bidfloor,
-        'bidfloorcur': bid.params.bidfloorcur,
+        'id': validBidRequest.params.impressionId,
+        'bidfloor': validBidRequest.params.bidfloor,
+        'bidfloorcur': validBidRequest.params.bidfloorcur,
         'banner': {
           'w': size[0],
           'h': size[1],
-          'mimes': bid.params.mimes ? bid.params.mimes : undefined,
+          'mimes': validBidRequest.params.mimes ? validBidRequest.params.mimes : undefined,
           ext
         },
       });
     });
   }
 
-  const nativeMediaType = utils.deepAccess(bid, 'mediaTypes.native');
+  const nativeMediaType = utils.deepAccess(validBidRequest, 'mediaTypes.native');
 
   if (nativeMediaType != null) {
     const nativeVersion = '1.2';
@@ -105,7 +102,7 @@ function handleReqRTB2Dot4(bid, endpointUrl, validBidRequests, bidderRequest) {
       'native': {
         'ver': nativeVersion,
         'plcmttype': 4,
-        'plcmtcnt': bid.params.native.plcmtcnt
+        'plcmtcnt': validBidRequest.params.native.plcmtcnt
       }
     };
 
@@ -119,9 +116,9 @@ function handleReqRTB2Dot4(bid, endpointUrl, validBidRequests, bidderRequest) {
     });
 
     const imp = [{
-      'id': bid.params.impressionId,
-      'bidfloor': bid.params.bidfloor,
-      'bidfloorcur': bid.params.bidfloorcur,
+      'id': validBidRequest.params.impressionId,
+      'bidfloor': validBidRequest.params.bidfloor,
+      'bidfloorcur': validBidRequest.params.bidfloorcur,
       'native': {
         'request': JSON.stringify(native),
         'ver': nativeVersion
@@ -131,18 +128,18 @@ function handleReqRTB2Dot4(bid, endpointUrl, validBidRequests, bidderRequest) {
     bidRequestData.imp = imp;
   };
 
-  const videoMediaType = utils.deepAccess(bid, 'mediaTypes.video');
+  const videoMediaType = utils.deepAccess(validBidRequest, 'mediaTypes.video');
 
   if (videoMediaType != null) {
     const imp = [{
-      'id': bid.params.impressionId,
-      'bidfloor': bid.params.bidfloor,
-      'bidfloorcur': bid.params.bidfloorcur,
+      'id': validBidRequest.params.impressionId,
+      'bidfloor': validBidRequest.params.bidfloor,
+      'bidfloorcur': validBidRequest.params.bidfloorcur,
       'video': {
-        'mimes': bid.params.stream.video.mimes,
-        'protocols': bid.params.stream.protocols,
+        'mimes': validBidRequest.params.stream.video.mimes,
+        'protocols': validBidRequest.params.stream.protocols,
       },
-      'ext': bid.params.stream.ext
+      'ext': validBidRequest.params.stream.ext
     }];
 
     bidRequestData.imp = imp;
@@ -266,7 +263,16 @@ function getUrl(adPartner, bid) {
   return endpointUrlMapping[adPartner] ? endpointUrlMapping[adPartner] : 'defaultEndpoint';
 }
 
-function manageEnvParams() {
+function getEnvParams() {
+  const envParams = {
+    lang: '',
+    userAgent: '',
+    osName: '',
+    page: '',
+    domain: '',
+    language: ''
+  };
+
   envParams.domain = window.location.hostname;
   envParams.page = window.location.protocol + '//' + window.location.host + window.location.pathname;
   envParams.lang = navigator.language.indexOf('-') > -1
@@ -274,14 +280,20 @@ function manageEnvParams() {
     : navigator.language;
   envParams.userAgent = navigator.userAgent;
 
-  if (navigator.appVersion.indexOf('Win') !== -1) {
+  if (envParams.userAgent.match(/Windows/i)) {
     envParams.osName = 'Windows';
-  } else if (navigator.appVersion.indexOf('Mac') !== -1) {
+  } else if (envParams.userAgent.match(/Mac OS|Macintosh/i)) {
     envParams.osName = 'MacOS';
-  } else if (navigator.appVersion.indexOf('X11') !== -1) {
+  } else if (envParams.userAgent.match(/Unix/i)) {
     envParams.osName = 'Unix';
-  } else if (navigator.appVersion.indexOf('Linux') !== -1) {
+  } else if (envParams.userAgent.userAgent.match(/Android/i)) {
+    envParams.osName = 'Android';
+  } else if (envParams.userAgent.userAgent.match(/iPhone|iPad|iPod/i)) {
+    envParams.osName = 'iOS';
+  } else if (envParams.userAgent.userAgent.match(/Linux/i)) {
     envParams.osName = 'Linux';
+  } else {
+    envParams.osName = 'Unknown';
   }
 
   let browserLanguage = navigator.language || navigator.userLanguage;
@@ -295,34 +307,57 @@ function manageEnvParams() {
   utils.logInfo('OS -> ', envParams.osName);
   utils.logInfo('User Agent -> ', envParams.userAgent);
   utils.logInfo('Primary Language -> ', envParams.language);
+
+  return envParams;
 }
 
 export const imps = new Map();
 
-manageEnvParams();
+/*
+  Common mandatory parameters:
+  - endpoint
+  - userIp
+  - userIp - the minimum constraint is having the propery, empty or not
+  - zoneId
+  - partner
+  - fid
+  - siteId
+  - impressionId
+  - country
+  - bidfloor
+  - bidfloorcur
+  - mediaTypes?.banner or mediaTypes?.native or mediaTypes?.video
 
+  for native parameters
+  - assets - it should contain the img property
+
+  for video parameters
+  - mimes - it has to contain one mime type at least
+  - procols - it should contain one protocol at least
+
+*/
 function handleValidRTB2Dot4(bid) {
   const bannerInfo = bid.mediaTypes?.banner;
   const nativeInfo = bid.mediaTypes?.native;
   const videoInfo = bid.mediaTypes?.video;
-  const isValid = !!(
-    bid.params.endpoint &&
-    bid.params.userIp &&
-    bid.params.hasOwnProperty('userId') &&
-    bid.params.zoneId &&
-    bid.params.partner &&
-    bid.params.fid &&
-    bid.params.siteId &&
-    bid.params.impressionId &&
-    bid.params.country &&
-    bid.params.country.length > 0 &&
+  const isValid = (
+    hasValue(bid.params.endpoint) &&
+    hasValue(bid.params.userIp) &&
+    bid.params.hasOwnProperty('userIp') &&
+    hasValue(bid.params.zoneId) &&
+    hasValue(bid.params.partner) &&
+    hasValue(bid.params.fid) &&
+    hasValue(bid.params.siteId) &&
+    hasValue(bid.params.impressionId) &&
+    hasValue(bid.params.country) &&
+    hasValue(bid.params.country.length > 0) &&
     (bannerInfo || nativeInfo || videoInfo) &&
-    !!(bid.params.bidfloor && bid.params.bidfloorcur) &&
+    (hasValue(bid.params.bidfloor) && hasValue(bid.params.bidfloorcur)) &&
     (nativeInfo ? bid.params.native &&
       nativeInfo.ortb.assets &&
       nativeInfo.ortb.assets.some(asset => !!asset.img) : true) &&
-    (videoInfo ? !!(bid.params.stream &&
-      bid.params.stream.video &&
+    (videoInfo ? (bid.params.stream &&
+      hasValue(bid.params.stream.video) &&
       bid.params.stream.video.mimes &&
       bid.params.stream.video.mimes.length > 0 &&
       bid.params.stream.protocols &&
@@ -360,10 +395,7 @@ export const spec = {
   isBidRequestValid: function (bid) {
     utils.logInfo('on isBidRequestValid -> bid:', bid);
 
-    if (bid.bidder !== BIDDER) {
-      utils.logError('Validation Error', 'bidder wrong');
-      return false;
-    } else if (!bid.params.partner) {
+    if (!bid.params.partner) {
       utils.logError('Validation Error', 'bid.params.partner missed');
       return false;
     } else if (!Object.values(PARTNERS).includes(bid.params.partner)) {
@@ -393,7 +425,7 @@ export const spec = {
 
       // Call the handler for the ad partner, passing relevant parameters
       if (adPartnerHandlers[adPartner]['request']) {
-        return adPartnerHandlers[adPartner]['request'](bid, endpointUrl, validBidRequests, bidderRequest);
+        return adPartnerHandlers[adPartner]['request'](bid, endpointUrl, bidderRequest);
       } else {
         // Handle unknown or unsupported ad partners
         return null;

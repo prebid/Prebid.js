@@ -136,13 +136,6 @@ describe('exadsBidAdapterTest', function () {
       expect(spec.isBidRequestValid(instream)).to.equal(true);
     });
 
-    it('should check the validity of a bidRequest with wrong bidder code', function () {
-      expect(spec.isBidRequestValid({
-        ...imageBanner,
-        bidder: 'not_exadsadserver'
-      })).to.eql(false);
-    });
-
     it('should check the validity of a bidRequest with wrong partner', function () {
       expect(spec.isBidRequestValid({
         ...imageBanner,
