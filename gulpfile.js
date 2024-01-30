@@ -57,7 +57,7 @@ function requireNodeVersion(version) {
     const [major] = process.versions.node.split('.');
 
     if (major < version) {
-      throw new Error(`E2E testing requires Node v${version}`)
+      throw new Error(`This task requires Node v${version}`)
     }
 
     done();
