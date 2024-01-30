@@ -16,7 +16,7 @@ import CONSTANTS from '../src/constants.json';
 
 const ENDPOINT = 'https://prebid.setupad.io/openrtb2/auction';
 const SYNC_ENDPOINT = 'https://cookie.stpd.cloud/sync?';
-const REPORT_ENDPOINT = 'https://adapter-analytics.azurewebsites.net/api/adapter-analytics';
+const REPORT_ENDPOINT = 'https://adapter-analytics.setupad.io';
 const GVLID = 1241;
 const TIME_TO_LIVE = 360;
 const biddersCpms = {};
