@@ -243,7 +243,7 @@ describe('SetupadAdapter', function () {
   });
 
   describe('getPixelUrl', function () {
-    const REPORT_ENDPOINT = 'https://adapter-analytics.azurewebsites.net/api/adapter-analytics';
+    const REPORT_ENDPOINT = 'https://adapter-analytics.setupad.io';
     const mockData = [
       {
         timestamp: 123456789,
