@@ -11,7 +11,6 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: function (bid) {
-    // check for all required bid fields
     if (!(bid && bid.params.pid)) {
       logWarn('Invalid bid request - missing required bid params');
       return false;
@@ -37,6 +36,8 @@ export const spec = {
         excl_sync: window.tmzrBidderExclSync
       };
 
+      const baseUrl = bidRequest.params.baseUrl || ENDPOINT_URL;
+
       if (bidderRequest && bidderRequest.refererInfo) {
         payload.referer = bidderRequest.refererInfo.topmostLocation;
         payload.referer_canonical = bidderRequest.refererInfo.canonicalUrl;
@@ -46,20 +47,25 @@ export const spec = {
         payload.consent_string = bidderRequest.gdprConsent.consentString;
         payload.consent_required = bidderRequest.gdprConsent.gdprApplies;
       }
-      const baseUrl = bidRequest.params.baseUrl || ENDPOINT_URL;
+
       if (bidRequest.params.test) {
         payload.test = bidRequest.params.test;
       }
+
       if (bidRequest.params.placement) {
         payload.placement = bidRequest.params.placement;
       }
+
       if (bidRequest.params.formats) {
         payload.formats = bidRequest.params.formats;
       }
+
       if (bidRequest.params.isInternal) {
         payload.is_internal = bidRequest.params.isInternal;
       }
+
       payload.userEids = bidRequest.userIdAsEids || [];
+
       return {
         method: 'POST',
         url: baseUrl,
