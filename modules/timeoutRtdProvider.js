@@ -4,6 +4,10 @@ import * as ajax from '../src/ajax.js';
 import { logInfo, deepAccess, logError } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 const SUBMODULE_NAME = 'timeout';
 
 // this allows the stubbing of functions during testing

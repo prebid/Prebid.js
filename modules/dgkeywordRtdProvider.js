@@ -12,6 +12,10 @@ import { submodule } from '../src/hook.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 
 /**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
+/**
  * get keywords from api server. and set keywords.
  * @param {Object} reqBidsConfigObj
  * @param {function} callback
