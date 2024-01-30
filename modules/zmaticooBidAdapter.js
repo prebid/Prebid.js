@@ -250,5 +250,4 @@ function checkParamDataType(key, value, datatype) {
   logWarn('Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value);
   return undefined;
 }
-
 registerBidder(spec);
