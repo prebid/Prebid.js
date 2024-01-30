@@ -89,7 +89,6 @@ export const adqueryIdSubmodule = {
         const ramdomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
         qid = ramdomValues.map(val => val.toString(36)).join('').substring(0, 20);
 
-        debugger;
         logInfo('adqueryIdSubmodule ID QID GENERTAED:', qid);
       }
       logInfo('adqueryIdSubmodule ID QID:', qid);
