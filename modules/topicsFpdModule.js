@@ -27,6 +27,9 @@ const bidderIframeList = {
   }, {
     bidder: 'rtbhouse',
     iframeURL: 'https://topics.authorizedvault.com/topicsapi.html'
+  }, {
+    bidder: 'improvedigital',
+    iframeURL: 'https://hb.360yield.com/privacy-sandbox/topics.html'
   }]
 }
 export const coreStorage = getCoreStorageManager(MODULE_NAME);
