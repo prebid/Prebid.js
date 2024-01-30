@@ -153,7 +153,7 @@ function interpretResponse(serverResponse) {
           netRevenue: true,
           mediaType: BANNER,
           ad: _getAdMarkup(bid),
-          ttl: 60,
+          ttl: 300,
           meta: {
             advertiserDomains: bid?.adomain || []
           }
