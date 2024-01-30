@@ -51,7 +51,6 @@ export const adqueryIdSubmodule = {
    * @returns {{qid:Object}}
    */
   decode(value) {
-    debugger;
     return {qid: value}
   },
   /**
@@ -63,7 +62,6 @@ export const adqueryIdSubmodule = {
   getId(config) {
     logInfo('adqueryIdSubmodule getId');
 
-    debugger;
     let qid = storage.getDataFromLocalStorage('qid');
 
     if (qid) {

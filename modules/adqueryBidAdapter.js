@@ -1,12 +1,14 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {buildUrl, logInfo, parseSizesInput, triggerPixel} from '../src/utils.js';
+import {buildUrl, logInfo, logMessage, parseSizesInput, triggerPixel} from '../src/utils.js';
 
 const ADQUERY_GVLID = 902;
 const ADQUERY_BIDDER_CODE = 'adquery';
 const ADQUERY_BIDDER_DOMAIN_PROTOCOL = 'https';
 const ADQUERY_BIDDER_DOMAIN = 'bidder.adquery.io';
-const ADQUERY_USER_SYNC_DOMAIN = 'https://api.adquery.io/prebid/userSync?1=1';
+const ADQUERY_STATIC_DOMAIN_PROTOCOL = 'https';
+const ADQUERY_STATIC_DOMAIN = 'api.adquery.io';
+const ADQUERY_USER_SYNC_DOMAIN = ADQUERY_BIDDER_DOMAIN;
 const ADQUERY_DEFAULT_CURRENCY = 'PLN';
 const ADQUERY_NET_REVENUE = true;
 const ADQUERY_TTL = 360;
@@ -32,10 +34,18 @@ export const spec = {
    */
   buildRequests: (bidRequests, bidderRequest) => {
     const requests = [];
+
+    let adqueryRequestUrl = buildUrl({
+      protocol: ADQUERY_BIDDER_DOMAIN_PROTOCOL,
+      hostname: ADQUERY_BIDDER_DOMAIN,
+      pathname: '/prebid/bid',
+      // search: params
+    });
+
     for (let i = 0, len = bidRequests.length; i < len; i++) {
       const request = {
         method: 'POST',
-        url: ADQUERY_BIDDER_DOMAIN_PROTOCOL + '://' + ADQUERY_BIDDER_DOMAIN + '/prebid/bid',
+        url: adqueryRequestUrl, // ADQUERY_BIDDER_DOMAIN_PROTOCOL + '://' + ADQUERY_BIDDER_DOMAIN + '/prebid/bid',
         data: buildRequest(bidRequests[i], bidderRequest),
         options: {
           withCredentials: false,
@@ -165,35 +175,39 @@ export const spec = {
    * @returns {object[]} - Array of synchronization URLs.
    */
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
-    logInfo('getUserSyncs', syncOptions, serverResponses, gdprConsent, uspConsent);
-    let syncUrl = ADQUERY_USER_SYNC_DOMAIN;
-    let syncData = '';
-    if (gdprConsent && gdprConsent.consentString) {
-      if (typeof gdprConsent.gdprApplies === 'boolean') {
-        syncData += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-      } else {
-        syncData += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
-      }
-    }
-    if (uspConsent && uspConsent.consentString) {
-      syncData += `&ccpa_consent=${uspConsent.consentString}`;
+    logMessage('getUserSyncs', syncOptions, serverResponses, gdprConsent, uspConsent);
+    let syncData = {
+      'gdpr': gdprConsent && gdprConsent.gdprApplies ? 1 : 0,
+      'gdpr_consent': gdprConsent && gdprConsent.consentString ? gdprConsent.consentString : '',
+      'ccpa_consent': uspConsent && uspConsent.uspConsent ? uspConsent.uspConsent : '',
+    };
+
+    if (window.qid) { // only for new users (new qid)
+      syncData.qid = window.qid;
     }
 
-    let syncOption1 = {
-      type: 'image',
-      url: syncUrl + syncData
+    let syncUrlObject = {
+      protocol: ADQUERY_BIDDER_DOMAIN_PROTOCOL,
+      hostname: ADQUERY_USER_SYNC_DOMAIN,
+      pathname: '/prebid/userSync',
+      search: syncData
     };
 
     if (syncOptions.iframeEnabled) {
-      syncOption1 = {
+      syncUrlObject.protocol = ADQUERY_STATIC_DOMAIN_PROTOCOL;
+      syncUrlObject.hostname = ADQUERY_STATIC_DOMAIN;
+      syncUrlObject.pathname = '/user-sync-iframe.html';
+
+      return [{
         type: 'iframe',
-        url: syncUrl + syncData + '&iframe=1'
-      };
+        url: buildUrl(syncUrlObject)
+      }];
     }
 
-    return [
-      syncOption1
-    ];
+    return [{
+      type: 'image',
+      url: buildUrl(syncUrlObject)
+    }];
   }
 };
 
