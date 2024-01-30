@@ -1,47 +1,33 @@
 import { spec } from '../../../modules/themoneytizerBidAdapter.js'
 
+const ENDPOINT_URL = 'https://ads.biddertmz.com/m/';
+
 const VALID_BID_BANNER = {
-  ext: {
-    gpid: '/123456/prebid.com/desktop/ad-unit-code',
-    data: {
-      pbadslot: '/123456/prebid.com/desktop/ad-unit-code'
-    }
+  ortb2Imp: {
+    ext: {}
   },
   params: {
     pid: 123456,
   },
-  size: {
+  mediaTypes: {
     banner: {
-      sizes: [
-        [
-          970,
-          250
-        ]
-      ]
+      sizes: [[970, 250]]
     }
   },
-  adunit: 'ad-unit-code',
-  request_id: '1234567890',
+  adUnitCode: 'ad-unit-code',
+  bidId: '82376dbe72be72',
   timeout: 3000,
-  ortb2: {
-
-  },
-  eids: [],
-  schain: {},
-  version: 'v8.30.0',
-  referer: 'https://prebid.com/',
-  referer_canonical: 'https://prebid.com/',
-  consent_required: false,
-  userEids: []
-};
+  ortb2: {},
+  userIdAsEids: [],
+  auctionId: '123456-abcdef-7890',
+  schain: {}
+}
 
 const BIDDER_REQUEST_BANNER = {
   bids: [VALID_BID_BANNER]
 }
 
 describe('The Moneytizer Bidder Adapter', function () {
-  const bannerRequest = VALID_BID_BANNER;
-
   describe('codes', function () {
     it('should return a bidder code of themoneytizer', function () {
       expect(spec.code).to.equal('themoneytizer');
@@ -59,64 +45,114 @@ describe('The Moneytizer Bidder Adapter', function () {
       expect(invalidBid).to.be.false;
     });
 
-    it('should return false when required fields are missing', function () {
-      const bid = {
-        bidId: '123456',
-        auctionId: '666',
-        params: {} // empty params
+    it('should return false when params are incomplete', function () {
+      const bidWithIncompleteParams = {
+        ...VALID_BID_BANNER,
+        params: {}
       };
-      expect(spec.isBidRequestValid(bid)).to.be.false;
+      expect(spec.isBidRequestValid(bidWithIncompleteParams)).to.be.false;
     });
   });
 
   describe('buildRequests', function () {
-    it('Test the request processing function', function () {
-      const requests = spec.buildRequests([VALID_BID_BANNER], BIDDER_REQUEST_BANNER);
+    let requests, request;
+
+    before(function () {
+      requests = spec.buildRequests([VALID_BID_BANNER], BIDDER_REQUEST_BANNER);
+      request = requests[0];
+    });
+
+    it('should build a request array for valid bids', function () {
       expect(requests).to.be.an('array').that.is.not.empty;
     });
 
-    it('should build a request with all necessary parameters', function () {
-      const request = spec.buildRequests([VALID_BID_BANNER], [BIDDER_REQUEST_BANNER]);
-
-      expect(request).to.have.all.keys('method', 'url', 'data');
+    it('should build a request with the correct method, URL, and data type', function () {
+      expect(request).to.include.keys(['method', 'url', 'data']);
       expect(request.method).to.equal('POST');
+      expect(request.url).to.equal(ENDPOINT_URL);
+      expect(request.data).to.be.a('string');
+    });
+
+    describe('Payload structure', function () {
+      let payload;
+
+      before(function () {
+        payload = JSON.parse(request.data);
+      });
+
+      it('should have correct payload structure', function () {
+        expect(payload).to.be.an('object');
+        expect(payload.size).to.be.an('object');
+        expect(payload.params).to.be.an('object');
+      });
     });
   });
 
-  // const responseBody = {
-  //     id: '12345',
-  //     seatbid: [
-  //         {
-  //             bid: [
-  //                 {
-  //                     id: 'auctionId',
-  //                     impid: 'impId',
-  //                     price: 0.0,
-  //                     adm: 'adMarkup',
-  //                     crid: 'creativeId',
-  //                     h: 50,
-  //                     w: 320
-  //                 }
-  //             ]
-  //         }
-  //     ],
-  //     cur: 'USD'
-  // };
+  describe('interpretResponse', function () {
+    let bidResponse, receivedBid;
+    const responseBody = {
+      bid: {
+        id: 'auctionId',
+        impid: 'impId',
+        cpm: 0.0,
+        ad: 'adMarkup',
+        crid: 'creativeId',
+        height: 250,
+        width: 300
+      },
+      timeout: false
+    };
 
-  // it('Test the response parsing function', function () {
-  //     const receivedBid = responseBody.seatbid[0].bid[0];
-  //     const response = {};
-  //     response.body = responseBody;
+    before(function () {
+      receivedBid = responseBody.bid;
+      const response = { body: responseBody };
+      bidResponse = spec.interpretResponse(response, null);
+    });
 
-  //     const bidResponse = spec.interpretResponse(response, null);
-  //     expect(bidResponse).to.not.be.empty;
+    it('should not return an empty response', function () {
+      expect(bidResponse).to.not.be.empty;
+    });
 
-  //     const bid = bidResponse[0];
-  //     expect(bid).to.not.be.empty;
-  //     expect(bid.ad).to.equal(receivedBid.adm);
-  //     expect(bid.cpm).to.equal(receivedBid.price);
-  //     expect(bid.height).to.equal(receivedBid.h);
-  //     expect(bid.width).to.equal(receivedBid.w);
-  //     expect(bid.requestId).to.equal(receivedBid.impid);
-  // });
+    describe('Parsed Bid Object', function () {
+      let bid;
+
+      before(function () {
+        bid = bidResponse[0];
+      });
+
+      it('should not be empty', function () {
+        expect(bid).to.not.be.empty;
+      });
+
+      it('should correctly interpret ad markup', function () {
+        expect(bid.ad).to.equal(receivedBid.ad);
+      });
+
+      it('should correctly interpret CPM', function () {
+        expect(bid.cpm).to.equal(receivedBid.cpm);
+      });
+
+      it('should correctly interpret dimensions', function () {
+        expect(bid.height).to.equal(receivedBid.height);
+        expect(bid.width).to.equal(receivedBid.width);
+      });
+
+      it('should correctly interpret request ID', function () {
+        expect(bid.impid).to.equal(receivedBid.impid);
+      });
+    });
+  });
+
+  describe('onTimeout', function () {
+    const timeoutData = [{
+      timeout: null
+    }];
+
+    it('should exists and be a function', () => {
+      expect(spec.onTimeout).to.exist.and.to.be.a('function');
+    });
+    it('should include timeoutData', function () {
+      expect(spec.onTimeout(timeoutData)).to.be.undefined;
+    })
+  });
 });
