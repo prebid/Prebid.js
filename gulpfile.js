@@ -52,6 +52,18 @@ function clean() {
     .pipe(gulpClean());
 }
 
+function requireNodeVersion(version) {
+  return (done) => {
+    const [major] = process.versions.node.split('.');
+
+    if (major < version) {
+      throw new Error(`E2E testing requires Node v${version}`)
+    }
+
+    done();
+  }
+}
+
 // Dependant task for building postbid. It escapes postbid-config file.
 function escapePostbidConfig() {
   gulp.src('./integrationExamples/postbid/oas/postbid-config.js')
@@ -494,8 +506,8 @@ gulp.task('serve-e2e-dev', gulp.series(clean, 'build-bundle-dev', gulp.parallel(
 
 gulp.task('default', gulp.series(clean, 'build-bundle-prod'));
 
-gulp.task('e2e-test-only', () => runWebdriver({file: argv.file}));
-gulp.task('e2e-test', gulp.series(clean, 'build-bundle-prod', e2eTestTaskMaker()));
+gulp.task('e2e-test-only', gulp.series(requireNodeVersion(16), () => runWebdriver({file: argv.file})));
+gulp.task('e2e-test', gulp.series(requireNodeVersion(16), clean, 'build-bundle-prod', e2eTestTaskMaker()));
 
 // other tasks
 gulp.task(bundleToStdout);
