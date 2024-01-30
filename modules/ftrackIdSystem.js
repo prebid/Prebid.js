@@ -6,19 +6,26 @@
  */
 
 import * as utils from '../src/utils.js';
-import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { uspDataHandler } from '../src/adapterManager.js';
-import { loadExternalScript } from '../src/adloader.js';
+import {submodule} from '../src/hook.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {uspDataHandler} from '../src/adapterManager.js';
+import {loadExternalScript} from '../src/adloader.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
 
 const MODULE_NAME = 'ftrackId';
 const LOG_PREFIX = 'FTRACK - ';
 const LOCAL_STORAGE_EXP_DAYS = 30;
-const VENDOR_ID = null;
 const LOCAL_STORAGE = 'html5';
 const FTRACK_STORAGE_NAME = 'ftrackId';
 const FTRACK_PRIVACY_STORAGE_NAME = `${FTRACK_STORAGE_NAME}_privacy`;
-const storage = getStorageManager({gvlid: VENDOR_ID, moduleName: MODULE_NAME});
+const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 let consentInfo = {
   gdpr: {
@@ -221,6 +228,22 @@ export const ftrackIdSubmodule = {
     if (usPrivacyVersion == 1 && usPrivacyOptOutSale === 'Y') consentValue = false;
 
     return consentValue;
+  },
+  eids: {
+    'ftrackId': {
+      source: 'flashtalking.com',
+      atype: 1,
+      getValue: function(data) {
+        let value = '';
+        if (data && data.ext && data.ext.DeviceID) {
+          value = data.ext.DeviceID;
+        }
+        return value;
+      },
+      getUidExt: function(data) {
+        return data && data.ext;
+      }
+    },
   }
 };
 

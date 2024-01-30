@@ -1,17 +1,18 @@
-import { tryAppendQueryString, logMessage, logError, isEmpty, isStr, isPlainObject, isArray, logWarn } from '../src/utils.js';
+import { logMessage, logError, isEmpty, isStr, isPlainObject, isArray, logWarn } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 const GVLID = 28;
 const BIDDER_CODE = 'triplelift';
 const STR_ENDPOINT = 'https://tlx.3lift.com/header/auction?';
 const BANNER_TIME_TO_LIVE = 300;
 const VIDEO_TIME_TO_LIVE = 3600;
-let gdprApplies = true;
+let gdprApplies = null;
 let consentString = null;
-export const storage = getStorageManager({gvlid: GVLID, bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const tripleliftAdapterSpec = {
   gvlid: GVLID,
@@ -29,7 +30,7 @@ export const tripleliftAdapterSpec = {
     tlCall = tryAppendQueryString(tlCall, 'v', '$prebid.version$');
 
     if (bidderRequest && bidderRequest.refererInfo) {
-      let referrer = bidderRequest?.refererInfo?.topmostLocation || bidderRequest?.refererInfo?.page;
+      let referrer = bidderRequest.refererInfo.page;
       tlCall = tryAppendQueryString(tlCall, 'referrer', referrer);
     }
 
@@ -40,8 +41,12 @@ export const tripleliftAdapterSpec = {
     if (bidderRequest && bidderRequest.gdprConsent) {
       if (typeof bidderRequest.gdprConsent.gdprApplies !== 'undefined') {
         gdprApplies = bidderRequest.gdprConsent.gdprApplies;
-        tlCall = tryAppendQueryString(tlCall, 'gdpr', gdprApplies.toString());
+      } else {
+        gdprApplies = true;
       }
+
+      tlCall = tryAppendQueryString(tlCall, 'gdpr', gdprApplies.toString());
+
       if (typeof bidderRequest.gdprConsent.consentString !== 'undefined') {
         consentString = bidderRequest.gdprConsent.consentString;
         tlCall = tryAppendQueryString(tlCall, 'cmp_cs', consentString);
@@ -50,6 +55,10 @@ export const tripleliftAdapterSpec = {
 
     if (bidderRequest && bidderRequest.uspConsent) {
       tlCall = tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
+    }
+
+    if (bidderRequest && bidderRequest.fledgeEnabled) {
+      tlCall = tryAppendQueryString(tlCall, 'fledge', bidderRequest.fledgeEnabled);
     }
 
     if (config.getConfig('coppa') === true) {
@@ -71,12 +80,29 @@ export const tripleliftAdapterSpec = {
 
   interpretResponse: function(serverResponse, {bidderRequest}) {
     let bids = serverResponse.body.bids || [];
-    return bids.map(function(bid) {
-      return _buildResponseObject(bidderRequest, bid);
-    });
+    const paapi = serverResponse.body.paapi || [];
+
+    bids = bids.map(bid => _buildResponseObject(bidderRequest, bid));
+
+    if (paapi.length > 0) {
+      const fledgeAuctionConfigs = paapi.map(config => {
+        return {
+          bidId: bidderRequest.bids[config.imp_id].bidId,
+          config: config.auctionConfig
+        };
+      });
+
+      logMessage('Response with FLEDGE:', { bids, fledgeAuctionConfigs });
+      return {
+        bids,
+        fledgeAuctionConfigs
+      };
+    } else {
+      return bids;
+    }
   },
 
-  getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy) {
+  getUserSyncs: function(syncOptions, responses, gdprConsent, usPrivacy, gppConsent) {
     let syncType = _getSyncType(syncOptions);
     if (!syncType) return;
 
@@ -87,13 +113,22 @@ export const tripleliftAdapterSpec = {
       syncEndpoint = tryAppendQueryString(syncEndpoint, 'src', 'prebid');
     }
 
-    if (consentString !== null) {
+    if (consentString !== null || gdprApplies) {
       syncEndpoint = tryAppendQueryString(syncEndpoint, 'gdpr', gdprApplies);
       syncEndpoint = tryAppendQueryString(syncEndpoint, 'cmp_cs', consentString);
     }
 
     if (usPrivacy) {
       syncEndpoint = tryAppendQueryString(syncEndpoint, 'us_privacy', usPrivacy);
+    }
+
+    if (gppConsent) {
+      if (gppConsent.gppString) {
+        syncEndpoint = tryAppendQueryString(syncEndpoint, 'gpp', gppConsent.gppString);
+      }
+      if (gppConsent.applicableSections && gppConsent.applicableSections.length !== 0) {
+        syncEndpoint = tryAppendQueryString(syncEndpoint, 'gpp_sid', _filterSid(gppConsent.applicableSections));
+      }
     }
 
     return [{
@@ -107,6 +142,13 @@ function _getSyncType(syncOptions) {
   if (!syncOptions) return;
   if (syncOptions.iframeEnabled) return 'iframe';
   if (syncOptions.pixelEnabled) return 'image';
+}
+
+function _filterSid(sid) {
+  return sid.filter(element => {
+    return Number.isInteger(element);
+  })
+    .join(',');
 }
 
 function _buildPostBody(bidRequests, bidderRequest) {
@@ -130,8 +172,15 @@ function _buildPostBody(bidRequests, bidderRequest) {
     }
 
     if (!isEmpty(bidRequest.ortb2Imp)) {
+      // legacy method for extracting ortb2Imp.ext
       imp.fpd = _getAdUnitFpd(bidRequest.ortb2Imp);
+
+      // preferred method for extracting ortb2Imp.ext
+      if (!isEmpty(bidRequest.ortb2Imp.ext)) {
+        imp.ext = { ...bidRequest.ortb2Imp.ext };
+      }
     }
+
     return imp;
   });
 
@@ -154,6 +203,15 @@ function _buildPostBody(bidRequests, bidderRequest) {
   if (!isEmpty(ext)) {
     data.ext = ext;
   }
+
+  if (bidderRequest?.ortb2?.regs?.gpp) {
+    data.regs = Object.assign({}, bidderRequest.ortb2.regs);
+  }
+
+  if (bidderRequest?.ortb2) {
+    data.ext.ortb2 = Object.assign({}, bidderRequest.ortb2);
+  }
+
   return data;
 }
 
@@ -182,7 +240,12 @@ function _getORTBVideo(bidRequest) {
   } catch (err) {
     logWarn('Video size not defined', err);
   }
-  if (video.context === 'instream') video.placement = 1;
+  // honor existing publisher settings
+  if (video.context === 'instream') {
+    if (!video.placement) {
+      video.placement = 1;
+    }
+  }
   if (video.context === 'outstream') {
     if (!video.placement) {
       video.placement = 3
@@ -190,6 +253,9 @@ function _getORTBVideo(bidRequest) {
       logMessage(`video.placement value of ${video.placement} is invalid for outstream context. Setting placement to 3`)
       video.placement = 3
     }
+  }
+  if (video.playbackmethod && Number.isInteger(video.playbackmethod)) {
+    video.playbackmethod = Array.from(String(video.playbackmethod), Number);
   }
 
   // clean up oRTB object
@@ -431,6 +497,10 @@ function _buildResponseObject(bidderRequest, bid) {
 
     if (bid.tl_source && bid.tl_source == 'tlx') {
       bidResponse.meta.mediaType = 'native';
+    }
+
+    if (creativeId) {
+      bidResponse.meta.networkId = creativeId.slice(0, creativeId.indexOf('_'));
     }
   };
   return bidResponse;

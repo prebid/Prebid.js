@@ -1,4 +1,4 @@
-import { deepSetValue } from '../src/utils.js';
+import { deepSetValue, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'pubx';
@@ -16,8 +16,11 @@ export const spec = {
       const bidId = bidRequest.bidId;
       const params = bidRequest.params;
       const sid = params.sid;
+      const pageUrl = deepAccess(bidRequest, 'ortb2.site.page').replace(/\?.*$/, '');
+      const pageEnc = encodeURIComponent(pageUrl);
       const payload = {
-        sid: sid
+        sid: sid,
+        pu: pageEnc,
       };
       return {
         id: bidId,
@@ -52,8 +55,8 @@ export const spec = {
   /**
    * Determine which user syncs should occur
    * @param {object} syncOptions
-   * @param {array} serverResponses
-   * @returns {array} User sync pixels
+   * @param {Array} serverResponses
+   * @returns {Array} User sync pixels
    */
   getUserSyncs: function (syncOptions, serverResponses) {
     const kwTag = document.getElementsByName('keywords');

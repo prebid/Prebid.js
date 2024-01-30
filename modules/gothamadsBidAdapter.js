@@ -4,6 +4,11 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'gothamads';
 const ACCOUNTID_MACROS = '[account_id]';
 const URL_ENDPOINT = `https://us-e-node1.gothamads.com/bid?pass=${ACCOUNTID_MACROS}&integration=prebidjs`;
@@ -104,7 +109,7 @@ export const spec = {
           host: location.host
         },
         source: {
-          tid: bidRequest.transactionId
+          tid: bidderRequest?.ortb2?.source?.tid,
         },
         regs: {
           coppa: config.getConfig('coppa') === true ? 1 : 0,
@@ -224,7 +229,7 @@ const parseNative = admObject => {
 
 const prepareImpObject = (bidRequest) => {
   let impObject = {
-    id: bidRequest.transactionId,
+    id: bidRequest.bidId,
     secure: 1,
     ext: {
       placementId: bidRequest.params.placementId
@@ -247,7 +252,8 @@ const prepareImpObject = (bidRequest) => {
 
 const addNativeParameters = bidRequest => {
   let impObject = {
-    id: bidRequest.transactionId,
+    // TODO: this is not an "impObject", and `id` is not part of the ORTB native spec
+    id: bidRequest.bidId,
     ver: NATIVE_VERSION,
   };
 

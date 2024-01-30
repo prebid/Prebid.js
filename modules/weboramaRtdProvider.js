@@ -7,25 +7,29 @@
  * @requires module:modules/realTimeData
  */
 
-/** profile metadata
+/**
+ * profile metadata
  * @typedef dataCallbackMetadata
  * @property {boolean} user if true it is user-centric data
  * @property {string} source describe the source of data, if 'contextual' or 'wam'
  * @property {boolean} isDefault if true it the default profile defined in the configuration
  */
 
-/** profile from contextual, wam or sfbx
+/**
+ * profile from contextual, wam or sfbx
  * @typedef {Object.<string,string[]>} Profile
  */
 
-/** onData callback type
+/**
+ * onData callback type
  * @callback dataCallback
  * @param {Profile} data profile data
  * @param {dataCallbackMetadata} meta metadata
  * @returns {void}
  */
 
-/** setPrebidTargeting callback type
+/**
+ * setPrebidTargeting callback type
  * @callback setPrebidTargetingCallback
  * @param {string} adUnitCode
  * @param {Profile} data
@@ -33,7 +37,8 @@
  * @returns {boolean}
  */
 
-/** sendToBidders callback type
+/**
+ * sendToBidders callback type
  * @callback sendToBiddersCallback
  * @param {Object} bid
  * @param {string} adUnitCode
@@ -90,7 +95,8 @@
  * @property {?boolean} enabled if false, will ignore this configuration
  */
 
-/** common configuration between contextual, wam and sfbx
+/**
+ * common configuration between contextual, wam and sfbx
  * @typedef {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} CommonConf
  */
 
@@ -109,8 +115,7 @@ import {
   isBoolean,
   isPlainObject,
   logWarn,
-  mergeDeep,
-  tryAppendQueryString
+  mergeDeep
 } from '../src/utils.js';
 import {
   submodule
@@ -122,6 +127,8 @@ import {
   getStorageManager
 } from '../src/storageManager.js';
 import adapterManager from '../src/adapterManager.js';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
@@ -153,7 +160,7 @@ const SFBX_LITE_DATA_SOURCE_LABEL = 'lite';
 const GVLID = 284;
 
 export const storage = getStorageManager({
-  gvlid: GVLID,
+  moduleType: MODULE_TYPE_RTD,
   moduleName: SUBMODULE_NAME
 });
 
@@ -180,13 +187,15 @@ export const storage = getStorageManager({
 class WeboramaRtdProvider {
   #components;
   name = SUBMODULE_NAME;
+  gvlid = GVLID;
   /**
    * @param  {Components} components
    */
   constructor(components) {
     this.#components = components;
   }
-  /** Initialize module
+  /**
+   * Initialize module
    * @method
    * @param {Object} moduleConfig
    * @param {?ModuleParams} moduleConfig.params
@@ -217,7 +226,8 @@ class WeboramaRtdProvider {
     return Object.values(this.#components).some((c) => c.initialized);
   }
 
-  /** function that will allow RTD sub-modules to modify the AdUnit object for each auction
+  /**
+   * function that will allow RTD sub-modules to modify the AdUnit object for each auction
    * @method
    * @param {Object} reqBidsConfigObj
    * @param {doneCallback} onDone
@@ -251,7 +261,8 @@ class WeboramaRtdProvider {
     });
   }
 
-  /** function that provides ad server targeting data to RTD-core
+  /**
+   * function that provides ad server targeting data to RTD-core
    * @method
    * @param {string[]} adUnitsCodes
    * @param {Object} moduleConfig
@@ -292,7 +303,8 @@ class WeboramaRtdProvider {
     }
   }
 
-  /** Initialize subsection module
+  /**
+   * Initialize subsection module
    * @method
    * @private
    * @param {ModuleParams} moduleParams
@@ -328,7 +340,8 @@ class WeboramaRtdProvider {
     return true;
   }
 
-  /** normalize submodule configuration
+  /**
+   * normalize submodule configuration
    * @method
    * @private
    * @param {ModuleParams} moduleParams
@@ -361,7 +374,8 @@ class WeboramaRtdProvider {
     }
   }
 
-  /** coerce setPrebidTargeting to a callback
+  /**
+   * coerce setPrebidTargeting to a callback
    * @method
    * @private
    * @param {CommonConf} submoduleParams
@@ -377,7 +391,8 @@ class WeboramaRtdProvider {
     }
   }
 
-  /** coerce sendToBidders to a callback
+  /**
+   * coerce sendToBidders to a callback
    * @method
    * @private
    * @param {CommonConf} submoduleParams
@@ -424,7 +439,8 @@ class WeboramaRtdProvider {
    * @typedef {Object} AdUnit
    * @property {Object[]} bids
    */
-  /** function that handles bid request data
+  /**
+   * function that handles bid request data
    * @method
    * @private
    * @param {Object} reqBidsConfigObj
@@ -474,18 +490,21 @@ class WeboramaRtdProvider {
     });
   }
 
-  /** onSuccess callback type
+  /**
+   * onSuccess callback type
    * @callback successCallback
    * @param {?Object} data
    * @returns {void}
    */
 
-  /** onDone callback type
+  /**
+   * onDone callback type
    * @callback doneCallback
    * @returns {void}
    */
 
-  /** Fetch Bigsea Contextual Profile
+  /**
+   * Fetch Bigsea Contextual Profile
    * @method
    * @private
    * @param {WeboCtxConf} weboCtxConf
@@ -564,7 +583,8 @@ class WeboramaRtdProvider {
     ajax(urlProfileAPI, callback, null, options);
   }
 
-  /** set bigsea contextual profile on module state
+  /**
+   * set bigsea contextual profile on module state
    * @method
    * @private
    * @param {?Object} data
@@ -577,7 +597,8 @@ class WeboramaRtdProvider {
     }
   }
 
-  /** function that provides data handlers based on the configuration
+  /**
+   * function that provides data handlers based on the configuration
    * @method
    * @private
    * @param {ModuleParams} moduleParams
@@ -665,7 +686,8 @@ class WeboramaRtdProvider {
       onData: dataConf.onData,
     };
   }
-  /** handle individual bid
+  /**
+   * handle individual bid
    * @method
    * @private
    * @param {Object} reqBidsConfigObj
@@ -687,23 +709,13 @@ class WeboramaRtdProvider {
     /** @type {string} */
     const bidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
 
-    switch (bidder) {
-      case 'appnexus':
-        this.#handleAppnexusBid(bid, profile);
-        break;
-      case 'pubmatic':
-        this.#handlePubmaticBid(bid, profile);
-        break;
-      case 'smartadserver':
-        this.#handleSmartadserverBid(bid, profile);
-        break;
-      case 'rubicon':
-        this.#handleRubiconBid(bid, profile, metadata);
-        break;
+    if (bidder == 'appnexus') {
+      this.#handleAppnexusBid(reqBidsConfigObj, bid, profile);
     }
   }
 
-  /** function that handles bid request data
+  /**
+   * function that handles bid request data
    * @method
    * @private
    * @param {ProfileHandler} ph profile handler
@@ -714,98 +726,27 @@ class WeboramaRtdProvider {
     return [deepClone(ph.data), deepClone(ph.metadata)];
   }
 
-  /** handle appnexus/xandr bid
+  /**
+   * handle appnexus/xandr bid
    * @method
    * @private
+   * @param {Object} reqBidsConfigObj
+   * @param {Object} reqBidsConfigObj.ortb2Fragments
+   * @param {Object} reqBidsConfigObj.ortb2Fragments.bidder
    * @param {Object} bid
-   * @param {Object} bid.params
-   * @param {Object} bid.params.keyword
+   * @param {Object} bid.parameters
    * @param {Profile} profile
    * @returns {void}
    */
   // eslint-disable-next-line no-dupe-class-members
-  #handleAppnexusBid(bid, profile) {
+  #handleAppnexusBid(reqBidsConfigObj, bid, profile) {
     const base = 'params.keywords';
     this.#assignProfileToObject(bid, base, profile);
+    // this.#setBidderOrtb2(reqBidsConfigObj.ortb2Fragments?.bidder, bid.bidder, base, profile);
   }
 
-  /** handle pubmatic bid
-   * @method
-   * @private
-   * @param {Object} bid
-   * @param {Object} bid.params
-   * @param {string} bid.params.dctr
-   * @param {Profile} profile
-   * @returns {void}
-   */
-  // eslint-disable-next-line no-dupe-class-members
-  #handlePubmaticBid(bid, profile) {
-    const sep = '|';
-    const subsep = ',';
-
-    bid.params ||= {};
-
-    const data = bid.params.dctr || '';
-    const target = new Set(data.split(sep).filter((x) => x.length > 0));
-
-    Object.entries(profile).forEach(([key, values]) => {
-      const value = values.join(subsep);
-      const keyword = `${key}=${value}`;
-      target.add(keyword);
-    });
-
-    bid.params.dctr = Array.from(target).join(sep);
-  }
-
-  /** handle smartadserver bid
-   * @method
-   * @private
-   * @param {Object} bid
-   * @param {Object} bid.params
-   * @param {string} bid.params.target
-   * @param {Profile} profile
-   * @returns {void}
-   */
-  // eslint-disable-next-line no-dupe-class-members
-  #handleSmartadserverBid(bid, profile) {
-    const sep = ';';
-
-    bid.params ||= {};
-
-    const data = bid.params.target || '';
-    const target = new Set(data.split(sep).filter((x) => x.length > 0));
-
-    Object.entries(profile).forEach(([key, values]) => {
-      values.forEach(value => {
-        const keyword = `${key}=${value}`;
-        target.add(keyword);
-      })
-    });
-
-    bid.params.target = Array.from(target).join(sep);
-  }
-
-  /** handle rubicon bid
-   * @method
-   * @private
-   * @param {Object} bid
-   * @param {string} bid.bidder
-   * @param {Profile} profile
-   * @param {dataCallbackMetadata} metadata
-   * @returns {void}
-   */
-  // eslint-disable-next-line no-dupe-class-members
-  #handleRubiconBid(bid, profile, metadata) {
-    if (isBoolean(metadata.user)) {
-      const section = metadata.user ? 'visitor' : 'inventory';
-      const base = `params.${section}`;
-      this.#assignProfileToObject(bid, base, profile);
-    } else {
-      logMessage(`SKIP bidder '${bid.bidder}', data from '${metadata.source}' is not defined as user or site-centric`);
-    }
-  }
-
-  /** handle generic bid via ortb2 arbitrary data
+  /**
+   * handle generic bid via ortb2 arbitrary data
    * @method
    * @private
    * @param {Object} reqBidsConfigObj
@@ -821,14 +762,28 @@ class WeboramaRtdProvider {
     if (isBoolean(metadata.user)) {
       logMessage(`bidder '${bidder}' is not directly supported, trying set data via bidder ortb2 fpd`);
       const section = metadata.user ? 'user' : 'site';
-      const base = `${bidder}.${section}.ext.data`;
+      const path = `${section}.ext.data`;
 
-      this.#assignProfileToObject(reqBidsConfigObj.ortb2Fragments?.bidder, base, profile);
+      this.#setBidderOrtb2(reqBidsConfigObj.ortb2Fragments?.bidder, bidder, path, profile)
     } else {
       logMessage(`SKIP unsupported bidder '${bidder}', data from '${metadata.source}' is not defined as user or site-centric`);
     }
   }
-
+  /**
+   * set bidder ortb2 data
+   * @method
+   * @private
+   * @param {Object} bidderOrtb2Fragments
+   * @param {string} bidder
+   * @param {string} path
+   * @param {Profile} profile
+   * @returns {void}
+   */
+  // eslint-disable-next-line no-dupe-class-members
+  #setBidderOrtb2(bidderOrtb2Fragments, bidder, path, profile) {
+    const base = `${bidder}.${path}`;
+    this.#assignProfileToObject(bidderOrtb2Fragments, base, profile)
+  }
   /**
    * assign profile to object
    * @method
@@ -912,7 +867,8 @@ export function isValidProfile(profile) {
  * @returns {buildProfileHandlerCallback}
  */
 function getContextualProfile(component /* equivalent to this */) {
-  /** return contextual profile
+  /**
+   * return contextual profile
    * @param {WeboCtxConf} weboCtxConf
    * @returns {[Profile,boolean]} contextual profile + isDefault boolean flag
    */
@@ -933,7 +889,8 @@ function getContextualProfile(component /* equivalent to this */) {
  * @returns {buildProfileHandlerCallback}
  */
 function getWeboUserDataProfile(component /* equivalent to this */) {
-  /** return weboUserData profile
+  /**
+   * return weboUserData profile
    * @param {WeboUserDataConf} weboUserDataConf
    * @returns {[Profile,boolean]} weboUserData profile  + isDefault boolean flag
    */
@@ -953,7 +910,8 @@ function getWeboUserDataProfile(component /* equivalent to this */) {
  * @returns {buildProfileHandlerCallback}
  */
 function getSfbxLiteDataProfile(component /* equivalent to this */) {
-  /** return weboUserData profile
+  /**
+   * return weboUserData profile
    * @param {SfbxLiteDataConf} sfbxLiteDataConf
    * @returns {[Profile,boolean]} sfbxLiteData profile + isDefault boolean flag
    */
@@ -977,7 +935,8 @@ function getSfbxLiteDataProfile(component /* equivalent to this */) {
  * @returns {void}
  */
 
-/** return generic webo data profile
+/**
+ * return generic webo data profile
  * @param {WeboUserDataConf|SfbxLiteDataConf} weboDataConf
  * @param {cacheGetCallback} cacheGet
  * @param {cacheSetCallback} cacheSet

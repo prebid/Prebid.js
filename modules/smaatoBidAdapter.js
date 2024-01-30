@@ -1,19 +1,30 @@
-import { deepAccess, isNumber, getDNT, deepSetValue, logInfo, logError, isEmpty, getAdUnitSizes, fill, chunk, getMaxValueFromArray, getMinValueFromArray } from '../src/utils.js';
+import {deepAccess, deepSetValue, getDNT, isEmpty, isNumber, logError, logInfo} from '../src/utils.js';
 import {find} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
-import {ADPOD, BANNER, VIDEO, NATIVE} from '../src/mediaTypes.js';
+import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import CONSTANTS from '../src/constants.json';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+import {fill} from '../libraries/appnexusUtils/anUtils.js';
+import {chunk} from '../libraries/chunk/chunk.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
 
 const { NATIVE_IMAGE_TYPES } = CONSTANTS;
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
-const SMAATO_CLIENT = 'prebid_js_$prebid.version$_1.7'
+const SMAATO_CLIENT = 'prebid_js_$prebid.version$_1.8'
 const CURRENCY = 'USD';
 
 const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
   const requestTemplate = {
-    id: bidderRequest.auctionId,
+    id: bidderRequest.bidderRequestId,
     at: 1,
     cur: [CURRENCY],
     tmax: bidderRequest.timeout,
@@ -63,11 +74,28 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
     deepSetValue(requestTemplate, 'regs.ext.us_privacy', bidderRequest.uspConsent);
   }
 
+  if (ortb2.regs?.gpp !== undefined) {
+    deepSetValue(requestTemplate, 'regs.ext.gpp', ortb2.regs.gpp);
+    deepSetValue(requestTemplate, 'regs.ext.gpp_sid', ortb2.regs.gpp_sid);
+  }
+
+  if (ortb2.device?.ifa !== undefined) {
+    deepSetValue(requestTemplate, 'device.ifa', ortb2.device.ifa);
+  }
+
+  if (ortb2.device?.geo !== undefined) {
+    deepSetValue(requestTemplate, 'device.geo', ortb2.device.geo);
+  }
+
   if (deepAccess(bidRequest, 'params.app')) {
-    const geo = deepAccess(bidRequest, 'params.app.geo');
-    deepSetValue(requestTemplate, 'device.geo', geo);
-    const ifa = deepAccess(bidRequest, 'params.app.ifa');
-    deepSetValue(requestTemplate, 'device.ifa', ifa);
+    if (!deepAccess(requestTemplate, 'device.geo')) {
+      const geo = deepAccess(bidRequest, 'params.app.geo');
+      deepSetValue(requestTemplate, 'device.geo', geo);
+    }
+    if (!deepAccess(requestTemplate, 'device.ifa')) {
+      const ifa = deepAccess(bidRequest, 'params.app.ifa');
+      deepSetValue(requestTemplate, 'device.ifa', ifa);
+    }
   }
 
   const eids = deepAccess(bidRequest, 'userIdAsEids');
@@ -436,7 +464,7 @@ function createAdPodImp(bidRequest, videoMediaType) {
     });
   } else {
     // all maxdurations should be the same
-    const maxDuration = getMaxValueFromArray(durationRangeSec);
+    const maxDuration = Math.max(...durationRangeSec);
     imps.map((imp, index) => {
       const sequence = index + 1;
       imp.video.maxduration = maxDuration
@@ -451,7 +479,7 @@ function createAdPodImp(bidRequest, videoMediaType) {
 
 function getAdPodNumberOfPlacements(videoMediaType) {
   const {adPodDurationSec, durationRangeSec, requireExactDuration} = videoMediaType
-  const minAllowedDuration = getMinValueFromArray(durationRangeSec)
+  const minAllowedDuration = Math.min(...durationRangeSec)
   const numberOfPlacements = Math.floor(adPodDurationSec / minAllowedDuration)
 
   return requireExactDuration

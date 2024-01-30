@@ -1,8 +1,9 @@
-import {isEmpty, deepAccess, isStr} from '../src/utils.js';
+import {deepAccess, isStr, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import { Renderer } from '../src/Renderer.js';
+import {Renderer} from '../src/Renderer.js';
+import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 
 const BIDDER_CODE = 'richaudience';
 let REFERER = '';
@@ -36,6 +37,7 @@ export const spec = {
         pid: bid.params.pid,
         supplyType: bid.params.supplyType,
         currencyCode: config.getConfig('currency.adServerCurrency'),
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: bid.auctionId,
         bidId: bid.bidId,
         BidRequestsCount: bid.bidRequestsCount,
@@ -46,15 +48,16 @@ export const spec = {
         // TODO: is 'page' the right value here?
         referer: (typeof bidderRequest.refererInfo.page != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.page) : null),
         numIframes: (typeof bidderRequest.refererInfo.numIframes != 'undefined' ? bidderRequest.refererInfo.numIframes : null),
-        transactionId: bid.transactionId,
+        transactionId: bid.ortb2Imp?.ext?.tid,
         timeout: config.getConfig('bidderTimeout'),
         user: raiSetEids(bid),
         demand: raiGetDemandType(bid),
         videoData: raiGetVideoInfo(bid),
         scr_rsl: raiGetResolution(),
         cpuc: (typeof window.navigator != 'undefined' ? window.navigator.hardwareConcurrency : null),
-        kws: (!isEmpty(bid.params.keywords) ? bid.params.keywords : null),
-        schain: bid.schain
+        kws: getAllOrtbKeywords(bidderRequest.ortb2, bid.params.keywords).join(','),
+        schain: bid.schain,
+        gpid: raiSetPbAdSlot(bid)
       };
 
       // TODO: is 'page' the right value here?
@@ -180,6 +183,13 @@ export const spec = {
     }
     return syncs
   },
+
+  onTimeout: function (data) {
+    let url = raiGetTimeoutURL(data);
+    if (url) {
+      triggerPixel(url);
+    }
+  }
 };
 
 registerBidder(spec);
@@ -283,6 +293,14 @@ function raiGetResolution() {
   return resolution;
 }
 
+function raiSetPbAdSlot(bid) {
+  let pbAdSlot = '';
+  if (deepAccess(bid, 'ortb2Imp.ext.data.pbadslot') != null) {
+    pbAdSlot = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot')
+  }
+  return pbAdSlot
+}
+
 function raiGetSyncInclude(config) {
   try {
     let raConfig = null;
@@ -320,4 +338,16 @@ function raiGetFloor(bid, config) {
   } catch (e) {
     return 0
   }
+}
+
+function raiGetTimeoutURL(data) {
+  let {params, timeout} = data[0]
+  let url = 'https://s.richaudience.com/err/?ec=6&ev=[timeout_publisher]&pla=[placement_hash]&int=PREBID&pltfm=&node=&dm=[domain]';
+
+  url = url.replace('[timeout_publisher]', timeout)
+  url = url.replace('[placement_hash]', params[0].pid)
+  if (REFERER != null) {
+    url = url.replace('[domain]', document.location.host)
+  }
+  return url
 }

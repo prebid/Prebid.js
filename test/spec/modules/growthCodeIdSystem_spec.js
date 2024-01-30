@@ -4,12 +4,13 @@ import { server } from 'test/mocks/xhr.js';
 import { uspDataHandler } from 'src/adapterManager.js';
 import {expect} from 'chai';
 import {getStorageManager} from '../../../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
 
 const GCID_EXPIRY = 45;
 const MODULE_NAME = 'growthCodeId';
 const SHAREDID = 'fe9c5c89-7d56-4666-976d-e07e73b3b664';
 
-export const storage = getStorageManager({ gvlid: undefined, moduleName: MODULE_NAME });
+const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
 const getIdParams = {params: {
   pid: 'TEST01',

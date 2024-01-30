@@ -3,16 +3,22 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {parseDomain} from '../src/refererDetection.js';
+import {ajax} from '../src/ajax.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
 
 const BIDDER_CODE = 'zeta_global_ssp';
 const ENDPOINT_URL = 'https://ssp.disqus.com/bid/prebid';
+const TIMEOUT_URL = 'https://ssp.disqus.com/timeout/prebid';
 const USER_SYNC_URL_IFRAME = 'https://ssp.disqus.com/sync?type=iframe';
 const USER_SYNC_URL_IMAGE = 'https://ssp.disqus.com/sync?type=image';
 const DEFAULT_CUR = 'USD';
-const TTL = 200;
+const TTL = 300;
 const NET_REV = true;
-
-const VIDEO_REGEX = new RegExp(/VAST\s+version/);
 
 const DATA_TYPES = {
   'NUMBER': 'number',
@@ -34,6 +40,7 @@ const VIDEO_CUSTOM_PARAMS = {
   'battr': DATA_TYPES.ARRAY,
   'linearity': DATA_TYPES.NUMBER,
   'placement': DATA_TYPES.NUMBER,
+  'plcmt': DATA_TYPES.NUMBER,
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER,
   'skip': DATA_TYPES.NUMBER
@@ -44,7 +51,7 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
-   * Determines whether or not the given bid request is valid.
+   * Determines whether the given bid request is valid.
    *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
@@ -53,7 +60,8 @@ export const spec = {
     // check for all required bid fields
     if (!(bid &&
       bid.bidId &&
-      bid.params)) {
+      bid.params &&
+      bid.params.sid)) {
       logWarn('Invalid bid request - missing required bid data');
       return false;
     }
@@ -75,6 +83,9 @@ export const spec = {
         id: request.bidId,
         secure: secure
       };
+      if (params.tagid) {
+        impData.tagid = params.tagid;
+      }
       if (request.mediaTypes) {
         for (const mediaType in request.mediaTypes) {
           switch (mediaType) {
@@ -90,11 +101,26 @@ export const spec = {
       if (!impData.banner && !impData.video) {
         impData.banner = buildBanner(request);
       }
+
+      if (typeof request.getFloor === 'function') {
+        const floorInfo = request.getFloor({
+          currency: 'USD',
+          mediaType: impData.video ? 'video' : 'banner',
+          size: [ impData.video ? impData.video.w : impData.banner.w, impData.video ? impData.video.h : impData.banner.h ]
+        });
+        if (floorInfo && floorInfo.floor) {
+          impData.bidfloor = floorInfo.floor;
+        }
+      }
+      if (!impData.bidfloor && params.bidfloor) {
+        impData.bidfloor = params.bidfloor;
+      }
+
       return impData;
     });
 
     let payload = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       cur: [DEFAULT_CUR],
       imp: imps,
       site: params.site ? params.site : {},
@@ -129,8 +155,22 @@ export const spec = {
       deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
+    // schain
+    if (validBidRequests[0].schain) {
+      payload.source = {
+        ext: {
+          schain: validBidRequests[0].schain
+        }
+      }
+    }
+
+    if (bidderRequest?.timeout) {
+      payload.tmax = bidderRequest.timeout;
+    }
+
     provideEids(validBidRequests[0], payload);
-    const url = params.shortname ? ENDPOINT_URL.concat('?shortname=', params.shortname) : ENDPOINT_URL;
+    provideSegments(bidderRequest, payload);
+    const url = params.sid ? ENDPOINT_URL.concat('?sid=', params.sid) : ENDPOINT_URL;
     return {
       method: 'POST',
       url: url,
@@ -167,7 +207,10 @@ export const spec = {
               advertiserDomains: zetaBid.adomain
             };
           }
-          provideMediaType(zetaBid, bid);
+          provideMediaType(zetaBid, bid, bidRequest.data);
+          if (bid.mediaType === VIDEO) {
+            bid.vastXml = bid.ad;
+          }
           bidResponses.push(bid);
         })
       })
@@ -208,6 +251,18 @@ export const spec = {
         url: USER_SYNC_URL_IMAGE + syncurl
       }];
     }
+  },
+
+  onTimeout: function(timeoutData) {
+    if (timeoutData) {
+      ajax(TIMEOUT_URL, null, JSON.stringify(timeoutData), {
+        method: 'POST',
+        options: {
+          withCredentials: false,
+          contentType: 'application/json'
+        }
+      });
+    }
   }
 }
 
@@ -218,10 +273,24 @@ function buildBanner(request) {
     request.mediaTypes.banner.sizes) {
     sizes = request.mediaTypes.banner.sizes;
   }
-  return {
-    w: sizes[0][0],
-    h: sizes[0][1]
-  };
+  if (sizes.length > 1) {
+    const format = sizes.map(s => {
+      return {
+        w: s[0],
+        h: s[1]
+      }
+    });
+    return {
+      w: sizes[0][0],
+      h: sizes[0][1],
+      format: format
+    }
+  } else {
+    return {
+      w: sizes[0][0],
+      h: sizes[0][1]
+    }
+  }
 }
 
 function buildVideo(request) {
@@ -273,21 +342,30 @@ function provideEids(request, payload) {
   }
 }
 
-function provideMediaType(zetaBid, bid) {
-  if (zetaBid.ext && zetaBid.ext.bidtype) {
-    if (zetaBid.ext.bidtype === VIDEO) {
-      bid.mediaType = VIDEO;
-      bid.vastXml = bid.ad;
-    } else {
-      bid.mediaType = BANNER;
+function provideSegments(bidderRequest, payload) {
+  const data = bidderRequest.ortb2?.user?.data;
+  if (isArray(data)) {
+    const segments = data.filter(d => d?.segment).map(d => d.segment).filter(s => isArray(s)).flatMap(s => s).filter(s => s?.id);
+    if (segments.length > 0) {
+      if (!payload.user) {
+        payload.user = {};
+      }
+      if (!isArray(payload.user.data)) {
+        payload.user.data = [];
+      }
+      const payloadData = {
+        segment: segments
+      };
+      payload.user.data.push(payloadData);
     }
+  }
+}
+
+function provideMediaType(zetaBid, bid, bidRequest) {
+  if (zetaBid.ext && zetaBid.ext.prebid && zetaBid.ext.prebid.type) {
+    bid.mediaType = zetaBid.ext.prebid.type === VIDEO ? VIDEO : BANNER;
   } else {
-    if (VIDEO_REGEX.test(bid.ad)) {
-      bid.mediaType = VIDEO;
-      bid.vastXml = bid.ad;
-    } else {
-      bid.mediaType = BANNER;
-    }
+    bid.mediaType = bidRequest.imp[0].video ? VIDEO : BANNER;
   }
 }
 

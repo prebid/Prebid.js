@@ -63,7 +63,7 @@ export function isUsingNewSizeMapping(adUnits) {
   does not recognize.
   @params {Array<AdUnits>} adUnits
   @returns {Array<AdUnits>} validateAdUnits - Unrecognized properties are deleted.
-*/
+ */
 export function checkAdUnitSetupHook(adUnits) {
   const validateSizeConfig = function (mediaType, sizeConfig, adUnitCode) {
     let isValid = true;
@@ -182,7 +182,7 @@ export function checkAdUnitSetupHook(adUnits) {
       }
     }
 
-    if (mediaTypes.video) {
+    if (FEATURES.VIDEO && mediaTypes.video) {
       if (mediaTypes.video.playerSize) {
         // Ad unit is using 'mediaTypes.video.playerSize' instead of the new property 'sizeConfig'. Apply the old checks!
         validatedVideo = validatedBanner ? adUnitSetupChecks.validateVideoMediaType(validatedBanner) : adUnitSetupChecks.validateVideoMediaType(adUnit);

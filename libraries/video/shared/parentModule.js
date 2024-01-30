@@ -72,7 +72,6 @@ export function SubmoduleBuilder(submoduleDirectory_, sharedUtils_) {
     }
 
     const submodule = submoduleFactory(config, sharedUtils);
-    submodule && submodule.init && submodule.init();
     return submodule;
   }
 
