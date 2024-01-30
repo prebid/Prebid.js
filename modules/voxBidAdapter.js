@@ -6,6 +6,13 @@ import {auctionManager} from '../src/auctionManager.js';
 import {Renderer} from '../src/Renderer.js';
 import {config} from '../src/config.js'
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const { getConfig } = config;
 
 const BIDDER_CODE = 'vox';

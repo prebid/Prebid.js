@@ -2,6 +2,10 @@ import { submodule } from '../src/hook.js';
 import { mergeDeep } from '../src/utils.js';
 import {loadExternalScript} from '../src/adloader.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'arcspan';

@@ -30,6 +30,11 @@ import {convertCamelToUnderscore, fill} from '../libraries/appnexusUtils/anUtils
 import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'goldbach';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
 const PRICING_URL = 'https://templates.da-services.ch/01_universal/burda_prebid/1.0/json/sizeCPMMapping.json';

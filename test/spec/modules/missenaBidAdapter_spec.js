@@ -4,6 +4,7 @@ import { BANNER } from '../../../src/mediaTypes.js';
 
 const REFERRER = 'https://referer';
 const REFERRER2 = 'https://referer2';
+const COOKIE_DEPRECATION_LABEL = 'test';
 
 describe('Missena Adapter', function () {
   $$PREBID_GLOBAL$$.bidderSettings = {
@@ -18,6 +19,11 @@ describe('Missena Adapter', function () {
     bidId: bidId,
     sizes: [[1, 1]],
     mediaTypes: { banner: { sizes: [[1, 1]] } },
+    ortb2: {
+      device: {
+        ext: { cdep: COOKIE_DEPRECATION_LABEL },
+      },
+    },
     params: {
       apiKey: 'PA-34745704',
       placement: 'sticky',
@@ -182,6 +188,14 @@ describe('Missena Adapter', function () {
 
     it('should participate if capped on a different page', function () {
       expect(cappedRequestsOtherPage.length).to.equal(2);
+    });
+
+    it('should send the prebid version', function () {
+      expect(payload.version).to.equal('$prebid.version$');
+    });
+
+    it('should send cookie deprecation', function () {
+      expect(payload.cdep).to.equal(COOKIE_DEPRECATION_LABEL);
     });
   });
 

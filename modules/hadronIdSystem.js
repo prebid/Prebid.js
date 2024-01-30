@@ -13,6 +13,12 @@ import { config } from '../src/config.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
+
 const LOG_PREFIX = '[hadronIdSystem]';
 const HADRONID_LOCAL_NAME = 'auHadronId';
 const MODULE_NAME = 'hadronId';

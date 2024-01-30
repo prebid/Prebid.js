@@ -3,6 +3,11 @@ import {BANNER} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ */
+
 const BIDDER_CODE = 'unicorn';
 const UNICORN_ENDPOINT = 'https://ds.uncn.jp/pb/0/bid.json';
 const UNICORN_DEFAULT_CURRENCY = 'JPY';

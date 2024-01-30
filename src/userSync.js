@@ -182,8 +182,8 @@ export function newUserSync(deps) {
    * @function incrementAdapterBids
    * @summary Increment the count of user syncs queue for the adapter
    * @private
-   * @params {object} numAdapterBids The object contain counts for all adapters
-   * @params {string} bidder The name of the bidder adding a sync
+   * @param {object} numAdapterBids The object contain counts for all adapters
+   * @param {string} bidder The name of the bidder adding a sync
    * @returns {object} The updated version of numAdapterBids
    */
   function incrementAdapterBids(numAdapterBids, bidder) {
@@ -199,10 +199,9 @@ export function newUserSync(deps) {
    * @function registerSync
    * @summary Add sync for this bidder to a queue to be fired later
    * @public
-   * @params {string} type The type of the sync including image, iframe
-   * @params {string} bidder The name of the adapter. e.g. "rubicon"
-   * @params {string} url Either the pixel url or iframe url depending on the type
-
+   * @param {string} type The type of the sync including image, iframe
+   * @param {string} bidder The name of the adapter. e.g. "rubicon"
+   * @param {string} url Either the pixel url or iframe url depending on the type
    * @example <caption>Using Image Sync</caption>
    * // registerSync(type, adapter, pixelUrl)
    * userSync.registerSync('image', 'rubicon', 'http://example.com/pixel')
@@ -309,7 +308,7 @@ export function newUserSync(deps) {
    * @function syncUsers
    * @summary Trigger all the user syncs based on publisher-defined timeout
    * @public
-   * @params {number} timeout The delay in ms before syncing data - default 0
+   * @param {number} timeout The delay in ms before syncing data - default 0
    */
   publicApi.syncUsers = (timeout = 0) => {
     if (timeout) {

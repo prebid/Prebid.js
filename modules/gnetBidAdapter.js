@@ -4,6 +4,12 @@ import { BANNER } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'gnet';
 const ENDPOINT = 'https://service.gnetrtb.com/api';
 const storage = getStorageManager({bidderCode: BIDDER_CODE});

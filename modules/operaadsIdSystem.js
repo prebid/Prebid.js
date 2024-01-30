@@ -8,6 +8,11 @@ import * as ajax from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { logMessage, logError } from '../src/utils.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
+
 const MODULE_NAME = 'operaId';
 const ID_KEY = MODULE_NAME;
 const version = '1.0';
