@@ -1,6 +1,6 @@
-import {deepAccess, getBidRequest, isArray, isBoolean, isNumber, isStr, logWarn} from '../src/utils.js';
+import {deepAccess, isArray, isBoolean, isNumber, isStr, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'zmaticoo';
 const ENDPOINT_URL = 'https://bid.zmaticoo.com/prebid/bid';
@@ -102,7 +102,6 @@ export const spec = {
       if (!impData.banner && !impData.video) {
         impData.banner = buildBanner(request);
       }
-
       if (typeof request.getFloor === 'function') {
         const floorInfo = request.getFloor({
           currency: 'USD',
@@ -118,8 +117,6 @@ export const spec = {
       }
       return impData;
     });
-
-
     let payload = {
       id: bidderRequest.bidderRequestId,
       imp: imps,
@@ -141,7 +138,6 @@ export const spec = {
       regs: params.regs ? params.regs : {},
       ext: params.ext ? params.ext : {}
     };
-
     payload.device.ua = navigator.userAgent;
     payload.device.ip = navigator.ip;
     payload.site.page = bidderRequest.refererInfo.page;
