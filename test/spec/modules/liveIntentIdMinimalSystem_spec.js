@@ -73,7 +73,7 @@ describe('LiveIntentMinimalId', function() {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
-  it('should call the Identity Exchange endpoint with the privided distributorId', function() {
+  it('should call the Identity Exchange endpoint with the provided distributorId', function() {
     getCookieStub.returns(null);
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId({ params: { fireEventDelay: 1, distributorId: 'did-1111' } }).callback;
@@ -87,7 +87,7 @@ describe('LiveIntentMinimalId', function() {
     expect(callBackSpy.calledOnceWith({})).to.be.true;
   });
 
-  it('should call the Identity Exchange endpoint without the privided distributorId when appId is provided', function() {
+  it('should call the Identity Exchange endpoint without the provided distributorId when appId is provided', function() {
     getCookieStub.returns(null);
     let callBackSpy = sinon.spy();
     let submoduleCallback = liveIntentIdSubmodule.getId({ params: { fireEventDelay: 1, distributorId: 'did-1111', liCollectConfig: { appId: 'a-0001' } } }).callback;
@@ -241,29 +241,39 @@ describe('LiveIntentMinimalId', function() {
     expect(callBackSpy.calledOnce).to.be.true;
   });
 
-  it('should decode a uid2 to a seperate object when present', function() {
+  it('should decode a uid2 to a separate object when present', function() {
     const result = liveIntentIdSubmodule.decode({ nonId: 'foo', uid2: 'bar' });
-    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'uid2': 'bar'}, 'uid2': {'id': 'bar'}});
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'uid2': 'bar'}, 'uid2': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
   it('should decode values with uid2 but no nonId', function() {
     const result = liveIntentIdSubmodule.decode({ uid2: 'bar' });
-    expect(result).to.eql({'uid2': {'id': 'bar'}});
+    expect(result).to.eql({'uid2': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
-  it('should decode a magnite id to a seperate object when present', function() {
+  it('should decode a magnite id to a separate object when present', function() {
     const result = liveIntentIdSubmodule.decode({ nonId: 'foo', magnite: 'bar' });
-    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'magnite': 'bar'}, 'magnite': {'id': 'bar'}});
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'magnite': 'bar'}, 'magnite': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
-  it('should decode an index id to a seperate object when present', function() {
+  it('should decode an index id to a separate object when present', function() {
     const result = liveIntentIdSubmodule.decode({ nonId: 'foo', index: 'bar' });
-    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'index': 'bar'}, 'index': {'id': 'bar'}});
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'index': 'bar'}, 'index': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
-  it('should decode a sovrn id to a seperate object when present', function() {
+  it('should decode a sovrn id to a separate object when present', function() {
     const result = liveIntentIdSubmodule.decode({ nonId: 'foo', sovrn: 'bar' });
-    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'sovrn': 'bar'}, 'sovrn': {'id': 'bar'}});
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'sovrn': 'bar'}, 'sovrn': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
+  it('should decode a openx id to a separate object when present', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', openx: 'bar' });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'openx': 'bar'}, 'openx': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
+  it('should decode a pubmatic id to a separate object when present', function() {
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', pubmatic: 'bar' });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'pubmatic': 'bar'}, 'pubmatic': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
   });
 
   it('should allow disabling nonId resolution', function() {
