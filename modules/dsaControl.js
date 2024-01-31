@@ -10,18 +10,34 @@ let dsaAuctions = {};
 
 export const addBidResponseHook = timedBidResponseHook('dsa', function (fn, adUnitCode, bid, reject) {
   if (!dsaAuctions.hasOwnProperty(bid.auctionId)) {
-    dsaAuctions[bid.auctionId] = auctionManager.index.getAuction(bid)?.getFPD?.()?.global?.regs?.ext?.dsa?.required
+    dsaAuctions[bid.auctionId] = auctionManager.index.getAuction(bid)?.getFPD?.()?.global?.regs?.ext?.dsa;
   }
-  const required = dsaAuctions[bid.auctionId];
-  if (!bid.meta?.dsa) {
-    if (required === 1) {
-      logWarn(`dsaControl: ${CONSTANTS.REJECTION_REASON.DSA_REQUIRED}; will still be accepted as regs.ext.dsa.required = 1`, bid);
-    } else if ([2, 3].includes(required)) {
-      reject(CONSTANTS.REJECTION_REASON.DSA_REQUIRED);
-      return;
+  const dsaRequest = dsaAuctions[bid.auctionId];
+  let rejectReason;
+  if (dsaRequest) {
+    if (!bid.meta?.dsa) {
+      if (dsaRequest.dsarequired === 1) {
+        // request says dsa is supported; response does not have dsa info; warn about it
+        logWarn(`dsaControl: ${CONSTANTS.REJECTION_REASON.DSA_REQUIRED}; will still be accepted as regs.ext.dsa.dsarequired = 1`, bid);
+      } else if ([2, 3].includes(dsaRequest.dsarequired)) {
+        // request says dsa is required; response does not have dsa info; reject it
+        rejectReason = CONSTANTS.REJECTION_REASON.DSA_REQUIRED;
+      }
+    } else {
+      if (dsaRequest.pubrender === 0 && bid.meta.dsa.adrender === 0) {
+        // request says publisher can't render; response says advertiser won't; reject it
+        rejectReason = CONSTANTS.REJECTION_REASON.DSA_MISMATCH;
+      } else if (dsaRequest.pubrender === 2 && bid.meta.dsa.adrender === 1) {
+        // request says publisher will render; response says advertiser will; reject it
+        rejectReason = CONSTANTS.REJECTION_REASON.DSA_MISMATCH;
+      }
     }
   }
-  return fn.call(this, adUnitCode, bid, reject);
+  if (rejectReason) {
+    reject(rejectReason);
+  } else {
+    return fn.call(this, adUnitCode, bid, reject);
+  }
 });
 
 function toggleHooks(enabled) {
