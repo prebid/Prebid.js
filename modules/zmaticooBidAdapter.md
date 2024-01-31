@@ -12,6 +12,8 @@ zMaticoo Bidder Adapter for Prebid.js.
 
 # Test Parameters
 
+## banner
+
 ```
         var adUnits = [
             {
@@ -42,4 +44,43 @@ zMaticoo Bidder Adapter for Prebid.js.
                 ]
             }
         ];
+```
+
+## video
+
+```
+var adUnits = [{
+    code: 'test1',
+    mediaTypes: {
+        video: {
+            playerSize: [480, 320],
+            mimes: ['video/mp4'],
+            context: 'instream'
+        }
+    },
+    bids: [{
+        bidder: "zmaticoo",
+        bidId: '123456',
+        video: {
+            skipppable: false,
+            playback_methods: ['auto_play_sound_off']
+        },
+        params: {
+            pubId: 'prebid-test',
+            video: {
+                placement: 1,       // required, integer
+                maxduration: 30,    // required, integer
+                minduration: 15,    // optional, integer
+                pos: 1,             // optional, integer
+                startdelay: 10,     // required if placement == 1
+                protocols: [2, 3],  // required, array of integers
+                api: [2, 3],        // required, array of integers
+                playbackmethod: [2, 6], // required, array of integers
+                skippable: true,    // optional, boolean
+                skipafter: 10       // optional, integer
+            },
+            site: {domain: "test.com"},
+        }
+    }]
+}];
 ```
