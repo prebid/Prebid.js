@@ -171,6 +171,23 @@ describe('adqueryBidAdapter', function () {
       expect(sync[0].type === 'iframe')
       expect(typeof sync[0].url === 'string')
     })
+    it('should return image sync', function () {
+      let sync = spec.getUserSyncs(
+        {
+          iframeEnabled: false,
+          pixelEnabled: true,
+        },
+        {},
+        {
+          consentString: 'ALL',
+          gdprApplies: true,
+        },
+        {}
+      )
+      expect(sync.length).to.equal(1)
+      expect(sync[0].type === 'image')
+      expect(typeof sync[0].url === 'string')
+    })
 
     it('Should return array of objects with proper sync config , include GDPR', function() {
       const syncData = spec.getUserSyncs({}, {}, {
