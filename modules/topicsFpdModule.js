@@ -31,6 +31,7 @@ const bidderIframeList = {
     iframeURL: 'https://topics.authorizedvault.com/topicsapi.html'
   }]
 }
+
 export const coreStorage = getCoreStorageManager(MODULE_NAME);
 export const topicStorageName = 'prebid:topics';
 export const lastUpdated = 'lastUpdated';
