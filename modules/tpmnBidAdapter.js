@@ -7,6 +7,10 @@ import { Renderer } from '../src/Renderer.js';
 import { config } from '../src/config.js';
 import * as utils from '../src/utils.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'tpmn';
 const DEFAULT_BID_TTL = 500;
 const DEFAULT_CURRENCY = 'USD';

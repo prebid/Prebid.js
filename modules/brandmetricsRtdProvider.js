@@ -11,6 +11,10 @@ import {loadExternalScript} from '../src/adloader.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 const MODULE_NAME = 'brandmetrics'
 const MODULE_CODE = MODULE_NAME
 const RECEIVED_EVENTS = []

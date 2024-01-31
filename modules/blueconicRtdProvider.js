@@ -11,6 +11,10 @@ import {submodule} from '../src/hook.js';
 import {mergeDeep, isPlainObject, logMessage, logError} from '../src/utils.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'blueconic';
 

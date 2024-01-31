@@ -218,7 +218,10 @@ export function VideoCore(parentModule_) {
     getOrtbContent,
     setAdTagUrl,
     onEvents,
-    offEvents
+    offEvents,
+    hasProviderFor(divId) {
+      return !!parentModule.getSubmodule(divId);
+    }
   };
 }
 

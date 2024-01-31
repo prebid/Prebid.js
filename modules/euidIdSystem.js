@@ -14,6 +14,13 @@ import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 // eslint-disable-next-line prebid/validate-imports
 import { Uid2GetId, Uid2CodeVersion, extractIdentityFromParams } from './uid2IdSystem_shared.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').euidId} euidId
+ */
+
 const MODULE_NAME = 'euid';
 const MODULE_REVISION = Uid2CodeVersion;
 const PREBID_VERSION = '$prebid.version$';

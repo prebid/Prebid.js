@@ -3,6 +3,12 @@ import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
+
 const BIDDER_CODE = 'discovery';
 const ENDPOINT_URL = 'https://rtb-jp.mediago.io/api/bid?tn=';
 const TIME_TO_LIVE = 500;
@@ -13,10 +19,11 @@ const MEDIATYPE = [BANNER, NATIVE];
 
 /* ----- _ss_pp_id:start ------ */
 const COOKIE_KEY_SSPPID = '_ss_pp_id';
-const COOKIE_KEY_MGUID = '__mguid_';
+export const COOKIE_KEY_MGUID = '__mguid_';
 const COOKIE_KEY_PMGUID = '__pmguid_';
 const COOKIE_RETENTION_TIME = 365 * 24 * 60 * 60 * 1000; // 1 year
 const COOKY_SYNC_IFRAME_URL = 'https://asset.popin.cc/js/cookieSync.html';
+export const THIRD_PARTY_COOKIE_ORIGIN = 'https://asset.popin.cc';
 
 const NATIVERET = {
   id: 'id',
@@ -126,10 +133,8 @@ export const getPmgUID = () => {
   let pmgUid = storage.getCookie(COOKIE_KEY_PMGUID);
   if (!pmgUid) {
     pmgUid = utils.generateUUID();
-    const date = new Date();
-    date.setTime(date.getTime() + COOKIE_RETENTION_TIME);
     try {
-      storage.setCookie(COOKIE_KEY_PMGUID, pmgUid, date.toUTCString());
+      storage.setCookie(COOKIE_KEY_PMGUID, pmgUid, getCurrentTimeToUTCString());
     } catch (e) {}
   }
   return pmgUid;
@@ -293,6 +298,16 @@ function getReferrer(bidRequest = {}, bidderRequest = {}) {
     pageUrl = utils.deepAccess(bidderRequest, 'refererInfo.page');
   }
   return pageUrl;
+}
+
+/**
+ * get current time to UTC string
+ * @returns utc string
+ */
+export function getCurrentTimeToUTCString() {
+  const date = new Date();
+  date.setTime(date.getTime() + COOKIE_RETENTION_TIME);
+  return date.toUTCString();
 }
 
 /**
@@ -511,7 +526,7 @@ export const spec = {
     if (bid.params.badv) {
       globals['badv'] = Array.isArray(bid.params.badv) ? bid.params.badv : [];
     }
-    return !!(bid.params.token && bid.params.publisher && bid.params.tagid);
+    return true;
   },
 
   /**
@@ -522,6 +537,8 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    if (!globals['token']) return;
+
     let payload = getParam(validBidRequests, bidderRequest);
 
     const payloadString = JSON.stringify(payload);
@@ -640,6 +657,20 @@ export const spec = {
     }
 
     if (syncOptions.iframeEnabled) {
+      window.addEventListener('message', function handler(event) {
+        if (!event.data || event.origin != THIRD_PARTY_COOKIE_ORIGIN) {
+          return;
+        }
+
+        this.removeEventListener('message', handler);
+
+        event.stopImmediatePropagation();
+
+        const response = event.data;
+        if (!response.optout && response.mguid) {
+          storage.setCookie(COOKIE_KEY_MGUID, response.mguid, getCurrentTimeToUTCString());
+        }
+      }, true);
       return [
         {
           type: 'iframe',

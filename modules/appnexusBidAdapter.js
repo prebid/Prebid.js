@@ -38,6 +38,11 @@ import {convertCamelToUnderscore, fill} from '../libraries/appnexusUtils/anUtils
 import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'appnexus';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
 const URL_SIMPLE = 'https://ib.adnxs-simple.com/ut/v3/prebid';
@@ -346,6 +351,36 @@ export const spec = {
       }
     }
 
+    if (bidderRequest?.ortb2?.regs?.ext?.dsa) {
+      const pubDsaObj = bidderRequest.ortb2.regs.ext.dsa;
+      const dsaObj = {};
+      ['required', 'pubrender', 'datatopub'].forEach((dsaKey) => {
+        if (isNumber(pubDsaObj[dsaKey])) {
+          if (dsaKey === 'required') {
+            // our client-side endpoint has a different name for the 'required' field
+            // ...this is the only exception to the openrtb spec for these fields
+            dsaObj.dsainfo = pubDsaObj[dsaKey];
+          } else {
+            dsaObj[dsaKey] = pubDsaObj[dsaKey];
+          }
+        }
+      });
+
+      if (isArray(pubDsaObj.transparency) && pubDsaObj.transparency.every((v) => isPlainObject(v))) {
+        const tpData = [];
+        pubDsaObj.transparency.forEach((tpObj) => {
+          if (isStr(tpObj.domain) && tpObj.domain != '' && isArray(tpObj.params) && tpObj.params.every((v) => isNumber(v))) {
+            tpData.push(tpObj);
+          }
+        });
+        if (tpData.length > 0) {
+          dsaObj.transparency = tpData;
+        }
+      }
+
+      if (!isEmpty(dsaObj)) payload.dsa = dsaObj;
+    }
+
     if (tags[0].publisher_id) {
       payload.publisher_id = tags[0].publisher_id;
     }
@@ -583,6 +618,10 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
   if (rtbBid.advertiser_id) {
     bid.meta = Object.assign({}, bid.meta, { advertiserId: rtbBid.advertiser_id });
+  }
+
+  if (rtbBid.dsa) {
+    bid.meta = Object.assign({}, bid.meta, { dsa: rtbBid.dsa });
   }
 
   // temporary function; may remove at later date if/when adserver fully supports dchain

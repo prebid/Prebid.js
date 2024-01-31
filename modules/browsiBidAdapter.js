@@ -3,6 +3,11 @@ import {config} from '../src/config.js';
 import {VIDEO} from '../src/mediaTypes.js';
 import {logError, logInfo, isArray, isStr} from '../src/utils.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
+
 const BIDDER_CODE = 'browsi';
 const DATA = 'brwvidtag';
 const ADAPTER = '__bad';

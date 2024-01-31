@@ -16,6 +16,11 @@ import {deepAccess, logError} from '../src/utils.js';
 import {find} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ * @typedef {import('../modules/rtdModule/index.js').adUnit} adUnit
+ */
+
 const SUBMODULE_NAME = 'jwplayer';
 const JWPLAYER_DOMAIN = SUBMODULE_NAME + '.com';
 const segCache = {};
