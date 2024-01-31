@@ -56,7 +56,7 @@ export const spec = {
       return false;
     }
 
-    if (!(bid.params.device && bid.params.device.ip)) {
+    if (!(bid.params.device)) {
       logWarn('Invalid bid request - missing required device data');
       return false;
     }
