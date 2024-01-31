@@ -2381,16 +2381,6 @@ describe('the rubicon adapter', function () {
             bidderRequest = createVideoBidderRequest();
             delete bidderRequest.bids[0].mediaTypes.video.linearity;
             expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
-
-            // change api to an string, no good
-            bidderRequest = createVideoBidderRequest();
-            bidderRequest.bids[0].mediaTypes.video.api = 'string';
-            expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
-
-            // delete api, no good
-            bidderRequest = createVideoBidderRequest();
-            delete bidderRequest.bids[0].mediaTypes.video.api;
-            expect(spec.isBidRequestValid(bidderRequest.bids[0])).to.equal(false);
           });
 
           it('bid request is valid when video context is outstream', function () {

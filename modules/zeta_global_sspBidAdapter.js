@@ -5,6 +5,12 @@ import {config} from '../src/config.js';
 import {parseDomain} from '../src/refererDetection.js';
 import {ajax} from '../src/ajax.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
+
 const BIDDER_CODE = 'zeta_global_ssp';
 const ENDPOINT_URL = 'https://ssp.disqus.com/bid/prebid';
 const TIMEOUT_URL = 'https://ssp.disqus.com/timeout/prebid';
@@ -77,8 +83,9 @@ export const spec = {
         id: request.bidId,
         secure: secure
       };
-      if (params.tagid) {
-        impData.tagid = params.tagid;
+      const tagid = request.params?.tagid;
+      if (tagid) {
+        impData.tagid = tagid;
       }
       if (request.mediaTypes) {
         for (const mediaType in request.mediaTypes) {
@@ -106,8 +113,11 @@ export const spec = {
           impData.bidfloor = floorInfo.floor;
         }
       }
-      if (!impData.bidfloor && params.bidfloor) {
-        impData.bidfloor = params.bidfloor;
+      if (!impData.bidfloor) {
+        const bidfloor = request.params?.bidfloor;
+        if (bidfloor) {
+          impData.bidfloor = bidfloor;
+        }
       }
 
       return impData;
@@ -163,6 +173,7 @@ export const spec = {
     }
 
     provideEids(validBidRequests[0], payload);
+    provideSegments(bidderRequest, payload);
     const url = params.sid ? ENDPOINT_URL.concat('?sid=', params.sid) : ENDPOINT_URL;
     return {
       method: 'POST',
@@ -332,6 +343,25 @@ function checkParamDataType(key, value, datatype) {
 function provideEids(request, payload) {
   if (Array.isArray(request.userIdAsEids) && request.userIdAsEids.length > 0) {
     deepSetValue(payload, 'user.ext.eids', request.userIdAsEids);
+  }
+}
+
+function provideSegments(bidderRequest, payload) {
+  const data = bidderRequest.ortb2?.user?.data;
+  if (isArray(data)) {
+    const segments = data.filter(d => d?.segment).map(d => d.segment).filter(s => isArray(s)).flatMap(s => s).filter(s => s?.id);
+    if (segments.length > 0) {
+      if (!payload.user) {
+        payload.user = {};
+      }
+      if (!isArray(payload.user.data)) {
+        payload.user.data = [];
+      }
+      const payloadData = {
+        segment: segments
+      };
+      payload.user.data.push(payloadData);
+    }
   }
 }
 

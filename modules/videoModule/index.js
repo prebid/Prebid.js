@@ -1,7 +1,7 @@
 import { config } from '../../src/config.js';
 import { find } from '../../src/polyfill.js';
 import * as events from '../../src/events.js';
-import { mergeDeep, logWarn } from '../../src/utils.js';
+import {mergeDeep, logWarn, logError} from '../../src/utils.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
 import CONSTANTS from '../../src/constants.json';
 import {
@@ -99,6 +99,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
   return { init, renderBid, getOrtbVideo, getOrtbContent };
 
   function beforeBidsRequested(nextFn, bidderRequest) {
+    logErrorForInvalidDivIds(bidderRequest);
     enrichAuction(bidderRequest);
 
     const bidsBackHandler = bidderRequest.bidsBackHandler;
@@ -107,6 +108,22 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
     }
 
     return nextFn.call(this, bidderRequest);
+  }
+
+  function logErrorForInvalidDivIds(bidderRequest) {
+    const adUnits = bidderRequest.adUnits || pbGlobal.adUnits || [];
+    adUnits.forEach(adUnit => {
+      const video = adUnit.video;
+      if (!video) {
+        return;
+      }
+      if (!video.divId) {
+        logError(`Missing Video player div ID for ad unit '${adUnit.code}'`);
+      }
+      if (!videoCore.hasProviderFor(video.divId)) {
+        logError(`Video player div ID '${video.divId}' for ad unit '${adUnit.code}' does not match any registered player`);
+      }
+    });
   }
 
   function enrichAuction(bidderRequest) {

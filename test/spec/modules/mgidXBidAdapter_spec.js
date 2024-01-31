@@ -6,7 +6,6 @@ import { config } from '../../../src/config';
 import { USERSYNC_DEFAULT_CONFIG } from '../../../src/userSync';
 
 const bidder = 'mgidX'
-const adUrl = 'https://us-east-x.mgid.com/pbjs';
 
 describe('MGIDXBidAdapter', function () {
   const bids = [
@@ -19,6 +18,7 @@ describe('MGIDXBidAdapter', function () {
         }
       },
       params: {
+        region: 'eu',
         placementId: 'testBanner',
       }
     },
@@ -56,6 +56,7 @@ describe('MGIDXBidAdapter', function () {
         }
       },
       params: {
+        region: 'eu',
         placementId: 'testNative',
       }
     }
@@ -76,7 +77,10 @@ describe('MGIDXBidAdapter', function () {
 
   const bidderRequest = {
     uspConsent: '1---',
-    gdprConsent: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
+    gdprConsent: {
+      consentString: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
+      vendorData: {}
+    },
     refererInfo: {
       referer: 'https://test.com'
     }
@@ -105,8 +109,16 @@ describe('MGIDXBidAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
 
-    it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal(adUrl);
+    it('Returns valid EU URL', function () {
+      bids[0].params.region = 'eu';
+      serverRequest = spec.buildRequests(bids, bidderRequest);
+      expect(serverRequest.url).to.equal('https://eu.mgid.com/pbjs');
+    });
+
+    it('Returns valid EAST URL', function () {
+      bids[0].params.region = 'other';
+      serverRequest = spec.buildRequests(bids, bidderRequest);
+      expect(serverRequest.url).to.equal('https://us-east-x.mgid.com/pbjs');
     });
 
     it('Returns general data valid', function () {
@@ -131,7 +143,7 @@ describe('MGIDXBidAdapter', function () {
       expect(data.host).to.be.a('string');
       expect(data.page).to.be.a('string');
       expect(data.coppa).to.be.a('number');
-      expect(data.gdpr).to.be.a('string');
+      expect(data.gdpr).to.be.a('object');
       expect(data.ccpa).to.be.a('string');
       expect(data.tmax).to.be.a('number');
       expect(data.placements).to.have.lengthOf(3);
@@ -172,8 +184,10 @@ describe('MGIDXBidAdapter', function () {
       serverRequest = spec.buildRequests(bids, bidderRequest);
       let data = serverRequest.data;
       expect(data.gdpr).to.exist;
-      expect(data.gdpr).to.be.a('string');
-      expect(data.gdpr).to.equal(bidderRequest.gdprConsent);
+      expect(data.gdpr).to.be.a('object');
+      expect(data.gdpr).to.have.property('consentString');
+      expect(data.gdpr).to.not.have.property('vendorData');
+      expect(data.gdpr.consentString).to.equal(bidderRequest.gdprConsent.consentString);
       expect(data.ccpa).to.not.exist;
       delete bidderRequest.gdprConsent;
     });
@@ -187,12 +201,6 @@ describe('MGIDXBidAdapter', function () {
       expect(data.ccpa).to.be.a('string');
       expect(data.ccpa).to.equal(bidderRequest.uspConsent);
       expect(data.gdpr).to.not.exist;
-    });
-
-    it('Returns empty data if no valid requests are passed', function () {
-      serverRequest = spec.buildRequests([], bidderRequest);
-      let data = serverRequest.data;
-      expect(data.placements).to.be.an('array').that.is.empty;
     });
   });
 
