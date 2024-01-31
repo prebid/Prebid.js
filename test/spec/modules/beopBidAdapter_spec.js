@@ -312,4 +312,65 @@ describe('BeOp Bid Adapter tests', () => {
       expect(payload.kwds).to.include('keywords');
     })
   })
+
+  describe('Ensure regs are get', function() {
+    let bidRequests = [];
+    afterEach(function () {
+      bidRequests = [];
+    });
+
+    it(`should set coppa`, function () {
+      config.setConfig({
+        coppa: true
+      });
+      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
+      expect(data.regs.coppa_applies).to.equal(true)
+    });
+
+    it(`should set gdpr to true`, function () {
+      config.setConfig({
+        consentManagement: {
+          gdpr: {
+            // any data here set gdpr to true
+          },
+        }
+      });
+      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
+      expect(data.regs.gdpr_applies).to.equal(true)
+    });
+
+    it(`should set usp_consent string`, function () {
+      config.setConfig({
+        consentManagement: {
+          usp: {
+            cmpApi: 'static',
+            consentData: {
+              getUSPData: {
+                uspString: '1YYY'
+              }
+            }
+          }
+        }
+      });
+      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
+      expect(data.regs.us_privacy).to.equal('1YYY')
+    });
+
+    it(`should not set usp_consent string`, function () {
+      config.setConfig({
+        consentManagement: {
+          usp: {
+            cmpApi: 'iab',
+            consentData: {
+              getUSPData: {
+                uspString: '1YYY'
+              }
+            }
+          }
+        }
+      });
+      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
+      expect(data.regs.us_privacy).to.undefined
+    });
+  })
 });

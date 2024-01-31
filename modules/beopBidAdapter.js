@@ -56,6 +56,7 @@ export const spec = {
     const firstSlot = slots[0];
     const kwdsFromRequest = firstSlot.kwds;
     let keywords = getAllOrtbKeywords(bidderRequest.ortb2, kwdsFromRequest);
+    let regs = getRegulationInformation();
 
     const payloadObject = {
       at: new Date().toString(),
@@ -67,11 +68,13 @@ export const spec = {
       url: pageUrl,
       lang: (window.navigator.language || window.navigator.languages[0]),
       kwds: keywords,
+      regs: regs,
       dbg: false,
       slts: slots,
       is_amp: deepAccess(bidderRequest, 'referrerInfo.isAmp'),
       gdpr_applies: gdpr ? gdpr.gdprApplies : false,
       tc_string: (gdpr && gdpr.gdprApplies) ? gdpr.consentString : null,
+      eids: firstSlot.eids,
     };
 
     const payloadString = JSON.stringify(payloadObject);
@@ -135,6 +138,31 @@ function buildTrackingParams(data, info, value) {
   };
 }
 
+function getRegulationInformation() {
+  let regs = {};
+  const consentManagement = config.getConfig('consentManagement');
+  const coppa = config.getConfig('coppa');
+  if (consentManagement && !!(consentManagement.gdpr)) {
+    deepSetValue(regs, 'gdpr_applies', !!consentManagement.gdpr);
+  } else {
+    deepSetValue(regs, 'gdpr_applies', false);
+  }
+  if (consentManagement && deepAccess(consentManagement, 'usp.cmpApi') === 'static') {
+    deepSetValue(regs, 'usp_applies', !!deepAccess(consentManagement, 'usp'));
+    deepSetValue(regs, 'us_privacy', deepAccess(consentManagement, 'usp.consentData.getUSPData.uspString'));
+  } else {
+    deepSetValue(regs, 'usp_applies', false);
+  }
+
+  if (isBoolean(coppa)) {
+    deepSetValue(regs, 'coppa_applies', !!coppa);
+  } else {
+    deepSetValue(regs, 'coppa_applies', false);
+  }
+
+  return regs;
+}
+
 function beOpRequestSlotsMaker(bid) {
   const bannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
   const publisherCurrency = config.getConfig('currency.adServerCurrency') || getValue(bid.params, 'currency') || 'EUR';
@@ -145,6 +173,7 @@ function beOpRequestSlotsMaker(bid) {
       floor = parseFloat(floorInfo.floor);
     }
   }
+
   return {
     sizes: isArray(bannerSizes) ? bannerSizes : bid.sizes,
     flr: floor,
@@ -159,6 +188,7 @@ function beOpRequestSlotsMaker(bid) {
     brc: getBidIdParameter('bidRequestsCount', bid),
     bdrc: getBidIdParameter('bidderRequestCount', bid),
     bwc: getBidIdParameter('bidderWinsCount', bid),
+    eids: bid.userIdAsEids,
   }
 }
 
