@@ -30,10 +30,30 @@ export const spec = {
     method: 'POST',
     url: 'https://pb.dmxleo.com',
     data: {
-      bidder_request: bidderRequest,
+      bidder_request: {
+        gdprConsent: {
+          apiVersion: bidderRequest?.gdprConsent?.apiVersion || 1,
+          consentString: bidderRequest?.gdprConsent?.consentString || '',
+          // Cast boolean in any case (eg: if value is int) to ensure type
+          gdprApplies: !!bidderRequest?.gdprConsent?.gdprApplies,
+        },
+        refererInfo: {
+          page: bidderRequest?.refererInfo?.page || '',
+        },
+        uspConsent: bidderRequest?.uspConsent || '',
+      },
       config: config.getConfig('dailymotion'),
       coppa: config.getConfig('coppa'),
-      request: bid,
+      request: {
+        auctionId: bid.auctionId || '',
+        bidId: bid.bidId || '',
+        mediaTypes: {
+          video: {
+            playerSize: bid.mediaTypes?.[VIDEO]?.playerSize || [],
+          },
+        },
+        sizes: bid.sizes || [],
+      },
     },
     options: {
       withCredentials: true,
