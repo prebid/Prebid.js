@@ -27,6 +27,41 @@ const BIDDER_REQUEST_BANNER = {
   bids: [VALID_BID_BANNER]
 }
 
+const SERVER_RESPONSE = {
+  c_sync: {
+    status: 'ok',
+    bidder_status: [
+      {
+        bidder: 'bidder-A',
+        usersync: {
+          url: 'https://syncurl.com',
+          type: 'redirect'
+        }
+      },
+      {
+        bidder: 'bidder-B',
+        usersync: {
+          url: 'https://syncurl2.com',
+          type: 'image'
+        }
+      }
+    ]
+  },
+  bid: {
+    requestId: '17750222eb16825',
+    cpm: 0.098,
+    currency: 'USD',
+    width: 300,
+    height: 600,
+    creativeId: '44368852571075698202250',
+    dealId: '',
+    netRevenue: true,
+    ttl: 5,
+    ad: '<p>This is an ad</p>',
+    mediaType: 'banner',
+  }
+};
+
 describe('The Moneytizer Bidder Adapter', function () {
   describe('codes', function () {
     it('should return a bidder code of themoneytizer', function () {
@@ -154,5 +189,29 @@ describe('The Moneytizer Bidder Adapter', function () {
     it('should include timeoutData', function () {
       expect(spec.onTimeout(timeoutData)).to.be.undefined;
     })
+  });
+
+  describe('getUserSyncs', function () {
+    const response = { body: SERVER_RESPONSE };
+
+    it('should have empty user sync with iframeEnabled to false', function () {
+      const result = spec.getUserSyncs({ iframeEnabled: false }, [response]);
+
+      expect(result).to.be.empty;
+    });
+
+    it('should have user sync with iframeEnabled to true', function () {
+      const result = spec.getUserSyncs({ iframeEnabled: true }, [response]);
+
+      expect(result).to.not.be.empty;
+      expect(result[0].type).to.equal('image');
+      expect(result[0].url).to.equal(SERVER_RESPONSE.c_sync.bidder_status[0].usersync.url);
+    });
+
+    it('should transform type redirect into image', function () {
+      const result = spec.getUserSyncs({ iframeEnabled: true }, [response]);
+
+      expect(result[1].type).to.equal('image');
+    });
   });
 });
