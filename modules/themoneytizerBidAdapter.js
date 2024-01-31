@@ -84,23 +84,10 @@ export const spec = {
 
     return bidResponses;
   },
-  getUserSyncs: function (
-    syncOptions,
-    serverResponses,
-    // gdprConsent,
-  ) {
+  getUserSyncs: function (syncOptions, serverResponses) {
     if (!syncOptions.iframeEnabled) {
       return [];
     }
-
-    // let gdprParams = '';
-    // if (
-    //   gdprConsent &&
-    //   'gdprApplies' in gdprConsent &&
-    //   typeof gdprConsent.gdprApplies === 'boolean'
-    // ) {
-    //   gdprParams = `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-    // }
 
     let s = [];
     serverResponses.map((c) => {
