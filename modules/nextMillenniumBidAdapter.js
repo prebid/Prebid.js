@@ -50,6 +50,9 @@ const ALLOWED_ORTB2_PARAMETERS = [
   'site.content.cat',
   'site.content.language',
   'device.sua',
+  'site.keywords',
+  'site.content.keywords',
+  'user.keywords',
 ];
 
 const sendingDataStatistic = initSendingDataStatistic();
