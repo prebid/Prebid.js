@@ -1,8 +1,8 @@
 import adapterManager from './adapterManager.js';
-import {deepAccess, logError} from './utils.js';
-import {config} from '../src/config.js';
+import { deepAccess, logError } from './utils.js';
+import { config } from '../src/config.js';
 import {includes} from './polyfill.js';
-import {hook} from './hook.js';
+import { hook } from './hook.js';
 import {auctionManager} from './auctionManager.js';
 
 const VIDEO_MEDIA_TYPE = 'video';
