@@ -1,7 +1,6 @@
-import { isValidVideoBid, registerVastTrackers, insertVastTrackers, getVastTrackers, addImpUrlToTrackers } from 'src/video.js';
+import { isValidVideoBid } from 'src/video.js';
 import {hook} from '../../src/hook.js';
 import {stubAuctionIndex} from '../helpers/indexStub.js';
-import { MODULE_TYPE_ANALYTICS } from 'src/activities/modules.js';
 
 describe('video.js', function () {
   before(() => {
