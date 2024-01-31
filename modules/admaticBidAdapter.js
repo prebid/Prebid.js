@@ -1,7 +1,14 @@
-import {getValue, logError, isEmpty, deepAccess, isArray, getBidIdParameter} from '../src/utils.js';
+import {getValue, formatQS, logError, deepAccess, isArray, getBidIdParameter} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ */
+
 export const OPENRTB = {
   NATIVE: {
     IMAGE_TYPE: {
@@ -33,7 +40,8 @@ export const spec = {
     {code: 'pixad'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
-  /** f
+  /**
+   * f
    * @param {object} bid
    * @return {boolean}
    */
@@ -56,18 +64,16 @@ export const spec = {
    * @return {ServerRequest}
    */
   buildRequests: (validBidRequests, bidderRequest) => {
+    const tmax = bidderRequest.timeout;
     const bids = validBidRequests.map(buildRequestObject);
-    const blacklist = bidderRequest.ortb2;
+    const ortb = bidderRequest.ortb2;
     const networkId = getValue(validBidRequests[0].params, 'networkId');
     const host = getValue(validBidRequests[0].params, 'host');
     const currency = config.getConfig('currency.adServerCurrency') || 'TRY';
     const bidderName = validBidRequests[0].bidder;
 
     const payload = {
-      user: {
-        ua: navigator.userAgent
-      },
-      blacklist: [],
+      ortb,
       site: {
         page: bidderRequest.refererInfo.page,
         ref: bidderRequest.refererInfo.page,
@@ -80,17 +86,59 @@ export const spec = {
       ext: {
         cur: currency,
         bidder: bidderName
-      }
+      },
+      schain: {},
+      regs: {
+        ext: {
+        }
+      },
+      user: {
+        ext: {}
+      },
+      at: 1,
+      tmax: parseInt(tmax)
     };
 
-    if (!isEmpty(blacklist.badv)) {
-      payload.blacklist = blacklist.badv;
-    };
+    if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
+      const consentStr = (bidderRequest.gdprConsent.consentString)
+        ? bidderRequest.gdprConsent.consentString.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') : '';
+      const gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+      payload.regs.ext.gdpr = gdpr;
+      payload.regs.ext.consent = consentStr;
+    }
+
+    if (bidderRequest && bidderRequest.coppa) {
+      payload.regs.ext.coppa = bidderRequest.coppa === true ? 1 : (bidderRequest.coppa === false ? 0 : undefined);
+    }
+
+    if (bidderRequest && bidderRequest.ortb2?.regs?.gpp) {
+      payload.regs.ext.gpp = bidderRequest.ortb2?.regs?.gpp;
+    }
+
+    if (bidderRequest && bidderRequest.ortb2?.regs?.gpp_sid) {
+      payload.regs.ext.gpp_sid = bidderRequest.ortb2?.regs?.gpp_sid;
+    }
+
+    if (bidderRequest && bidderRequest.uspConsent) {
+      payload.regs.ext.uspIab = bidderRequest.uspConsent;
+    }
+
+    if (validBidRequests[0].schain) {
+      const schain = mapSchain(validBidRequests[0].schain);
+      if (schain) {
+        payload.schain = schain;
+      }
+    }
+
+    if (validBidRequests[0].userIdAsEids) {
+      const eids = { eids: validBidRequests[0].userIdAsEids };
+      payload.user.ext = { ...payload.user.ext, ...eids };
+    }
 
     if (payload) {
       switch (bidderName) {
         case 'pixad':
-          SYNC_URL = 'https://static.pixad.com.tr/sync.html';
+          SYNC_URL = 'https://static.cdn.pixad.com.tr/sync.html';
           break;
         default:
           SYNC_URL = 'https://cdn.serve.admatic.com.tr/showad/sync.html';
@@ -101,12 +149,36 @@ export const spec = {
     }
   },
 
-  getUserSyncs: function (syncOptions, responses) {
-    if (syncOptions.iframeEnabled) {
-      return [{
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
+    if (!hasSynced && syncOptions.iframeEnabled) {
+      // data is only assigned if params are available to pass to syncEndpoint
+      let params = {};
+
+      if (gdprConsent) {
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          params['gdpr'] = Number(gdprConsent.gdprApplies);
+        }
+        if (typeof gdprConsent.consentString === 'string') {
+          params['gdpr_consent'] = gdprConsent.consentString;
+        }
+      }
+
+      if (uspConsent) {
+        params['us_privacy'] = encodeURIComponent(uspConsent);
+      }
+
+      if (gppConsent?.gppString) {
+        params['gpp'] = gppConsent.gppString;
+        params['gpp_sid'] = gppConsent.applicableSections?.toString();
+      }
+
+      params = Object.keys(params).length ? `?${formatQS(params)}` : '';
+
+      hasSynced = true;
+      return {
         type: 'iframe',
-        url: SYNC_URL
-      }];
+        url: SYNC_URL + params
+      };
     }
   },
 
@@ -155,6 +227,41 @@ export const spec = {
     return bidResponses;
   }
 };
+
+var hasSynced = false;
+
+export function resetUserSync() {
+  hasSynced = false;
+}
+
+/**
+ * @param {object} schain object set by Publisher
+ * @returns {object} OpenRTB SupplyChain object
+ */
+function mapSchain(schain) {
+  if (!schain) {
+    return null;
+  }
+  if (!validateSchain(schain)) {
+    logError('AdMatic: required schain params missing');
+    return null;
+  }
+  return schain;
+}
+
+/**
+ * @param {object} schain object set by Publisher
+ * @returns {object} bool
+ */
+function validateSchain(schain) {
+  if (!schain.nodes) {
+    return false;
+  }
+  const requiredFields = ['asi', 'sid', 'hp'];
+  return schain.nodes.every(node => {
+    return requiredFields.every(field => node[field]);
+  });
+}
 
 function isUrl(str) {
   try {

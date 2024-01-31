@@ -1,5 +1,6 @@
 import {config} from 'src/config.js';
-import {emit, clearEvents, getEvents} from '../../../../src/events.js';
+import {emit, clearEvents, getEvents, on, off} from '../../../../src/events.js';
+import * as utils from '../../../../src/utils.js'
 
 describe('events', () => {
   let clock;
@@ -26,5 +27,19 @@ describe('events', () => {
     config.setConfig({eventHistoryTTL: 1000});
     clock.tick(10000);
     expect(getEvents().length).to.eql(1);
-  })
+  });
+
+  it('should include the eventString if a callback fails', () => {
+    const logErrorStub = sinon.stub(utils, 'logError');
+    const eventString = 'bidWon';
+    let fn = function() { throw new Error('Test error'); };
+    on(eventString, fn);
+
+    emit(eventString, {});
+
+    sinon.assert.calledWith(logErrorStub, 'Error executing handler:', 'events.js', sinon.match.instanceOf(Error), eventString);
+
+    off(eventString, fn);
+    logErrorStub.restore();
+  });
 })

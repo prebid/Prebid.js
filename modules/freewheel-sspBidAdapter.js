@@ -3,6 +3,11 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'freewheel-ssp';
 const GVL_ID = 285;
 
@@ -183,8 +188,8 @@ function getCampaignId(xmlNode) {
 }
 
 /**
-* returns the top most accessible window
-*/
+ * returns the top most accessible window
+ */
 function getTopMostWindow() {
   var res = window;
 
@@ -319,21 +324,21 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
   aliases: ['stickyadstv', 'freewheelssp'], //  aliases for freewheel-ssp
   /**
-  * Determines whether or not the given bid request is valid.
-  *
-  * @param {object} bid The bid to validate.
-  * @return boolean True if this is a valid bid, and false otherwise.
-  */
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {object} bid The bid to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function(bid) {
     return !!(bid.params.zoneId);
   },
 
   /**
-  * Make a server request from the list of BidRequests.
-  *
-  * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
-  * @return ServerRequest Info describing the request to the server.
-  */
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {BidRequest[]} bidRequests A non-empty list of bid requests which should be sent to the Server.
+   * @return ServerRequest Info describing the request to the server.
+   */
   buildRequests: function(bidRequests, bidderRequest) {
     // var currency = config.getConfig(currency);
 
@@ -474,12 +479,12 @@ export const spec = {
   },
 
   /**
-  * Unpack the response from the server into a list of bids.
-  *
-  * @param {*} serverResponse A successful response from the server.
-  * @param {object} request: the built request object containing the initial bidRequest.
-  * @return {Bid[]} An array of bids which were nested inside the server.
-  */
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {*} serverResponse A successful response from the server.
+   * @param {object} request: the built request object containing the initial bidRequest.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
   interpretResponse: function(serverResponse, request) {
     var bidrequest = request.bidRequest;
     var playerSize = [];
