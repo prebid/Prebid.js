@@ -27,19 +27,76 @@ describe('zMaticoo Bidder Adapter', function () {
       test: 1
     }
   }];
-
-  it('Test the bid validation function', function () {
+  const videoRequest = [{
+    bidId: '1234511',
+    auctionId: '223',
+    mediaTypes: {
+      video: {
+        playerSize: [480, 320],
+        mimes: ['video/mp4'],
+        context: 'instream',
+        placement: 1,
+        maxduration: 30,
+        minduration: 15,
+        pos: 1,
+        startdelay: 10,
+        protocols: [2, 3],
+        api: [2, 3],
+        playbackmethod: [2, 6],
+        skip: 10,
+      }
+    },
+    refererInfo: {
+      page: 'testprebid.com'
+    },
+    params: {
+      user: {
+        uid: '12345',
+        buyeruid: '12345'
+      },
+      device: {
+        ip: '111.222.33.44',
+        geo: {
+          country: 'USA'
+        }
+      },
+      pubId: 'prebid-test',
+      test: 1
+    }
+  }];
+  it('Test the video request validation function', function () {
+    const validBid = spec.isBidRequestValid(videoRequest[0]);
+    const invalidBid = spec.isBidRequestValid(null);
+    expect(validBid).to.be.true;
+    expect(invalidBid).to.be.false;
+  });
+  it('Test the video request processing function', function () {
+    const request = spec.buildRequests(videoRequest, videoRequest[0]);
+    expect(request).to.not.be.empty;
+    const payload = request.data;
+    expect(payload).to.not.be.empty;
+  });
+  it('Test video object', function () {
+    const request = spec.buildRequests(videoRequest, videoRequest[0]);
+    const payload = JSON.parse(request.data);
+    expect(payload.imp[0].video.minduration).to.eql(videoRequest[0].mediaTypes.video.minduration);
+    expect(payload.imp[0].video.maxduration).to.eql(videoRequest[0].mediaTypes.video.maxduration);
+    expect(payload.imp[0].video.protocols).to.eql(videoRequest[0].mediaTypes.video.protocols);
+    expect(payload.imp[0].video.mimes).to.eql(videoRequest[0].mediaTypes.video.mimes);
+    expect(payload.imp[0].video.w).to.eql(480);
+    expect(payload.imp[0].video.h).to.eql(320);
+    expect(payload.imp[0].banner).to.be.undefined;
+  });
+  it('Test the banner request validation function', function () {
     const validBid = spec.isBidRequestValid(bannerRequest[0]);
     const invalidBid = spec.isBidRequestValid(null);
 
     expect(validBid).to.be.true;
     expect(invalidBid).to.be.false;
   });
-
-  it('Test the request processing function', function () {
+  it('Test the banner request processing function', function () {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
     expect(request).to.not.be.empty;
-
     const payload = request.data;
     expect(payload).to.not.be.empty;
   });

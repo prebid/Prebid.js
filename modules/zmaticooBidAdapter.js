@@ -46,6 +46,10 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     // check for all required bid fields
+    if (!(hasBannerMediaType(bid) || hasVideoMediaType(bid))) {
+      logWarn('Invalid bid request - missing required mediaTypes');
+      return false;
+    }
     if (!(bid && bid.bidId && bid.params)) {
       logWarn('Invalid bid request - missing required bid data');
       return false;
@@ -56,7 +60,7 @@ export const spec = {
       return false;
     }
 
-    if (!(bid.params.device && bid.params.device.ip)) {
+    if (!(bid.params.device)) {
       logWarn('Invalid bid request - missing required device data');
       return false;
     }
@@ -99,10 +103,6 @@ export const spec = {
           }
         }
       }
-      if (!impData.banner && !impData.video) {
-        impData.banner = buildBanner(request);
-      }
-
       if (typeof request.getFloor === 'function') {
         const floorInfo = request.getFloor({
           currency: 'USD',
@@ -247,6 +247,17 @@ function checkParamDataType(key, value, datatype) {
   }
   logWarn('Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value);
   return undefined;
+}
+
+function hasBannerMediaType(bidRequest) {
+  return !!deepAccess(bidRequest, 'mediaTypes.banner');
+}
+
+/**
+ * @param {BidRequest} bidRequest bid request
+ */
+function hasVideoMediaType(bidRequest) {
+  return !!deepAccess(bidRequest, 'mediaTypes.video');
 }
 
 registerBidder(spec);
