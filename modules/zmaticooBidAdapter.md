@@ -49,7 +49,7 @@ zMaticoo Bidder Adapter for Prebid.js.
 ## video
 
 ```
-var adUnits = [{
+        var adUnits = [{
     code: 'test1',
     mediaTypes: {
         video: {
