@@ -1,6 +1,6 @@
-import {deepAccess, getBidRequest, isArray, isBoolean, isNumber, isStr, logWarn} from '../src/utils.js';
+import {deepAccess, isArray, isBoolean, isNumber, isStr, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'zmaticoo';
 const ENDPOINT_URL = 'https://bid.zmaticoo.com/prebid/bid';
@@ -118,8 +118,6 @@ export const spec = {
       }
       return impData;
     });
-
-
     let payload = {
       id: bidderRequest.bidderRequestId,
       imp: imps,
