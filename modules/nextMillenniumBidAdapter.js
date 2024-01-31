@@ -203,7 +203,7 @@ export const spec = {
       responses.forEach(response => {
         if (syncOptions.pixelEnabled) setPixelImages(response);
         if (syncOptions.iframeEnabled) setPixelIframes(response);
-      })
+      });
     }
 
     if (!pixels.length) {
