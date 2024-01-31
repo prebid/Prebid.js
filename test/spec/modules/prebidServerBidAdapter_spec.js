@@ -2882,6 +2882,32 @@ describe('S2S Adapter', function () {
       })
     })
 
+    describe('calls done', () => {
+      let success, error;
+      beforeEach(() => {
+        const mockAjax = function (_, callback) {
+          ({success, error} = callback);
+        }
+        config.setConfig({ s2sConfig: CONFIG });
+        adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, mockAjax);
+      })
+
+      it('passing timedOut = false on succcess', () => {
+        success({});
+        sinon.assert.calledWith(done, false);
+      });
+
+      Object.entries({
+        'timeouts': true,
+        'other errors': false
+      }).forEach(([t, timedOut]) => {
+        it(`passing timedOut = ${timedOut} on ${t}`, () => {
+          error('', {timedOut});
+          sinon.assert.calledWith(done, timedOut);
+        })
+      })
+    })
+
     // TODO: test dependent on pbjs_api_spec.  Needs to be isolated
     it('does not call addBidResponse and calls done when ad unit not set', function () {
       config.setConfig({ s2sConfig: CONFIG });
