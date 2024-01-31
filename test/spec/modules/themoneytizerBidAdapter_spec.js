@@ -125,18 +125,7 @@ describe('The Moneytizer Bidder Adapter', function () {
 
   describe('interpretResponse', function () {
     let bidResponse, receivedBid;
-    const responseBody = {
-      bid: {
-        id: 'auctionId',
-        impid: 'impId',
-        cpm: 0.0,
-        ad: 'adMarkup',
-        crid: 'creativeId',
-        height: 250,
-        width: 300
-      },
-      timeout: false
-    };
+    const responseBody = SERVER_RESPONSE;
 
     before(function () {
       receivedBid = responseBody.bid;
@@ -173,7 +162,7 @@ describe('The Moneytizer Bidder Adapter', function () {
       });
 
       it('should correctly interpret request ID', function () {
-        expect(bid.impid).to.equal(receivedBid.impid);
+        expect(bid.requestId).to.equal(receivedBid.requestId);
       });
     });
   });
