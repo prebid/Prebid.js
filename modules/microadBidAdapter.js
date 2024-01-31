@@ -115,6 +115,26 @@ export const spec = {
         params['aids'] = JSON.stringify(aidsParams)
       }
 
+      const pbadslot = bid.ortb2Imp?.ext?.data?.pbadslot;
+      const gpid = bid.ortb2Imp?.ext?.gpid || pbadslot;
+      if (gpid != null && gpid.length > 0) {
+        params['gpid'] = gpid;
+      }
+
+      if (pbadslot != null && pbadslot.length > 0) {
+        params['pbadslot'] = pbadslot;
+      }
+
+      const adservname = bid.ortb2Imp?.ext?.data?.adserver?.name;
+      if (adservname != null && adservname.length > 0) {
+        params['adservname'] = adservname;
+      }
+
+      const adservadslot = bid.ortb2Imp?.ext?.data?.adserver?.adslot;
+      if (adservadslot != null && adservadslot.length > 0) {
+        params['adservadslot'] = adservadslot;
+      }
+
       requests.push({
         method: 'GET',
         url: ENDPOINT_URLS[ENVIRONMENT],
