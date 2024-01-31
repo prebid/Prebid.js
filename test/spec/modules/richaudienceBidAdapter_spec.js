@@ -1292,14 +1292,6 @@ describe('Richaudience adapter tests', function () {
       expect(syncs).to.have.lengthOf(1);
       expect(syncs[0].type).to.equal('image');
     });
-  /*
-    it('Verifies user syncs URL iframe include with GPP', function () {
-      const gppConsent = { gppString: 'DBACMYA~CP5P4cAP5P4cAPoABAESAlEAAAAAAAAAAAAAA2QAQA2ADZABADYAAAAA.QA2QAQA2AAAA.IA2QAQA2AAAA~BP5P4cAP5P4cAPoABABGBACAAAAAAAAAAAAAAAAAAA.YAAAAAAAAAA', applicableSections: [0] };
-      const result = spec.getUserSyncs({iframeEnabled: true}, undefined, undefined, undefined, gppConsent);
-      expect(result).to.deep.equal([{
-        type: 'iframe', url: `https://sync.richaudience.com/dcf3528a0b8aa83634892d50e91c306e/?ord=7208292014&gpp=DBACMYA~CP5P4cAP5P4cAPoABAESAlEAAAAAAAAAAAAAA2QAQA2ADZABADYAAAAA.QA2QAQA2AAAA.IA2QAQA2AAAA~BP5P4cAP5P4cAPoABABGBACAAAAAAAAAAAAAAAAAAA.YAAAAAAAAAA&gpp_sid=0`
-      }]);
-    });
 
     it('Verifies user syncs URL image include with GPP', function () {
       const gppConsent = { gppString: 'DBACMYA~CP5P4cAP5P4cAPoABAESAlEAAAAAAAAAAAAAA2QAQA2ADZABADYAAAAA.QA2QAQA2AAAA.IA2QAQA2AAAA~BP5P4cAP5P4cAPoABABGBACAAAAAAAAAAAAAAAAAAA.YAAAAAAAAAA', applicableSections: [0] };
@@ -1307,6 +1299,6 @@ describe('Richaudience adapter tests', function () {
       expect(result).to.deep.equal([{
         type: 'image', url: `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=http%3A%2F%2Fdomain.com&gpp=DBACMYA~CP5P4cAP5P4cAPoABAESAlEAAAAAAAAAAAAAA2QAQA2ADZABADYAAAAA.QA2QAQA2AAAA.IA2QAQA2AAAA~BP5P4cAP5P4cAPoABABGBACAAAAAAAAAAAAAAAAAAA.YAAAAAAAAAA&gpp_sid=0`
       }]);
-    }); */
+    });
   })
 });
