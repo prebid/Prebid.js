@@ -700,9 +700,9 @@ function getPageDimensions() {
 }
 
 /**
-* @todo Move to prebid Core as Utils.
-* @returns
-*/
+ * @todo Move to prebid Core as Utils.
+ * @returns
+ */
 function getViewPortDimensions() {
   if (!isSafeFrameWindow() && !canAccessTopWindow()) {
     return '';
@@ -832,8 +832,8 @@ function getPrintNumber(adUnitCode, bidderRequest) {
 }
 
 /**
-  * domLoading feature is computed on window.top if reachable.
-  */
+ * domLoading feature is computed on window.top if reachable.
+ */
 function getDomLoadingDuration() {
   let domLoadingDuration = -1;
   let performance;

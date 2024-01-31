@@ -15,10 +15,11 @@ const {EXCEPTION} = CONSTANTS.AD_RENDER_FAILED_REASON;
 /**
  * Emit the AD_RENDER_FAILED event.
  *
- * @param reason one of the values in CONSTANTS.AD_RENDER_FAILED_REASON
- * @param message failure description
- * @param bid? bid response object that failed to render
- * @param id? adId that failed to render
+ * @param {Object} data
+ * @param data.reason one of the values in CONSTANTS.AD_RENDER_FAILED_REASON
+ * @param data.message failure description
+ * @param [data.bid] bid response object that failed to render
+ * @param [data.id] adId that failed to render
  */
 export function emitAdRenderFail({ reason, message, bid, id }) {
   const data = { reason, message };
@@ -32,10 +33,11 @@ export function emitAdRenderFail({ reason, message, bid, id }) {
 /**
  * Emit the AD_RENDER_SUCCEEDED event.
  * (Note: Invocation of this function indicates that the render function did not generate an error, it does not guarantee that tracking for this event has occurred yet.)
- * @param doc document object that was used to `.write` the ad. Should be `null` if unavailable (e.g. for documents in
+ * @param {Object} data
+ * @param data.doc document object that was used to `.write` the ad. Should be `null` if unavailable (e.g. for documents in
  * a cross-origin frame).
- * @param bid bid response object for the ad that was rendered
- * @param id adId that was rendered.
+ * @param [data.bid] bid response object for the ad that was rendered
+ * @param [data.id] adId that was rendered.
  */
 export function emitAdRenderSucceeded({ doc, bid, id }) {
   const data = { doc };
@@ -127,16 +129,16 @@ export const doRender = hook('sync', function({renderFn, resizeFn, bidResponse, 
 
 doRender.before(function (next, args) {
   // run renderers from a high priority hook to allow the video module to insert itself between this and "normal" rendering.
-  const {bidResponse} = args;
+  const {bidResponse, doc} = args;
   if (isRendererRequired(bidResponse.renderer)) {
-    executeRenderer(bidResponse.renderer, bidResponse);
+    executeRenderer(bidResponse.renderer, bidResponse, doc);
     next.bail();
   } else {
     next(args);
   }
 }, 100)
 
-export function handleRender({renderFn, resizeFn, adId, options, bidResponse}) {
+export function handleRender({renderFn, resizeFn, adId, options, bidResponse, doc}) {
   if (bidResponse == null) {
     emitAdRenderFail({
       reason: CONSTANTS.AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
@@ -153,7 +155,7 @@ export function handleRender({renderFn, resizeFn, adId, options, bidResponse}) {
     }
   }
   try {
-    doRender({renderFn, resizeFn, bidResponse, options});
+    doRender({renderFn, resizeFn, bidResponse, options, doc});
   } catch (e) {
     emitAdRenderFail({
       reason: CONSTANTS.AD_RENDER_FAILED_REASON.EXCEPTION,
@@ -210,7 +212,7 @@ export function renderAdDirect(doc, adId, options) {
       if ((doc === document && !inIframe())) {
         fail(CONSTANTS.AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT, `renderAd was prevented from writing to the main document.`);
       } else {
-        handleRender({renderFn, resizeFn, adId, options: {clickUrl: options?.clickThrough}, bidResponse: bid});
+        handleRender({renderFn, resizeFn, adId, options: {clickUrl: options?.clickThrough}, bidResponse: bid, doc});
       }
     }
   } catch (e) {

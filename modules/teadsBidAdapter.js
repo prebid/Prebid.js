@@ -2,6 +2,11 @@ import {getValue, logError, deepAccess, parseSizesInput, isArray, getBidIdParame
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'teads';
 const GVL_ID = 132;
 const ENDPOINT_URL = 'https://a.teads.tv/hb/bid-request';
@@ -262,7 +267,7 @@ function buildRequestObject(bid) {
   reqObj.bidderRequestId = getBidIdParameter('bidderRequestId', bid);
   reqObj.placementId = parseInt(placementId, 10);
   reqObj.pageId = parseInt(pageId, 10);
-  reqObj.adUnitCode = getValue(bid.params, 'adUnitCode') || getBidIdParameter('adUnitCode', bid);
+  reqObj.adUnitCode = getBidIdParameter('adUnitCode', bid);
   reqObj.transactionId = bid.ortb2Imp?.ext?.tid || '';
   if (gpid) { reqObj.gpid = gpid; }
   if (videoPlcmt) { reqObj.videoPlcmt = videoPlcmt; }

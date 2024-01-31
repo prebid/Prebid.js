@@ -4,6 +4,10 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import * as utils from '../src/utils.js';
 import {getBidIdParameter} from '../src/utils.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'eskimi';
 // const ENDPOINT = 'https://hb.eskimi.com/bids'
 const ENDPOINT = 'https://sspback.eskimi.com/bid-request'

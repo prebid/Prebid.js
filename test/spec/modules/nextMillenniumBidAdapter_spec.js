@@ -19,10 +19,20 @@ describe('nextMillenniumBidAdapterTests', () => {
             mediaTypes: {banner: {sizes: [[300, 250], [320, 250]]}},
             adUnitCode: 'test-banner-1',
           },
+
+          mediaTypes: {
+            banner: {
+              data: {sizes: [[300, 250], [320, 250]]},
+              bidfloorcur: 'EUR',
+              bidfloor: 1.11,
+            },
+          },
         },
 
         expected: {
           id: 'test-banner-1',
+          bidfloorcur: 'EUR',
+          bidfloor: 1.11,
           ext: {prebid: {storedrequest: {id: '123'}}},
           banner: {format: [{w: 300, h: 250}, {w: 320, h: 250}]},
         },
@@ -36,10 +46,18 @@ describe('nextMillenniumBidAdapterTests', () => {
             mediaTypes: {video: {playerSize: [400, 300]}},
             adUnitCode: 'test-video-1',
           },
+
+          mediaTypes: {
+            video: {
+              data: {playerSize: [400, 300]},
+              bidfloorcur: 'USD',
+            },
+          },
         },
 
         expected: {
           id: 'test-video-1',
+          bidfloorcur: 'USD',
           ext: {prebid: {storedrequest: {id: '234'}}},
           video: {w: 400, h: 300},
         },
@@ -48,8 +66,8 @@ describe('nextMillenniumBidAdapterTests', () => {
 
     for (let {title, data, expected} of dataTests) {
       it(title, () => {
-        const {bid, id} = data;
-        const imp = getImp(bid, id);
+        const {bid, id, mediaTypes} = data;
+        const imp = getImp(bid, id, mediaTypes);
         expect(imp).to.deep.equal(expected);
       });
     }

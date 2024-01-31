@@ -16,6 +16,11 @@ import {auctionManager} from './auctionManager.js';
 import CONSTANTS from './constants.json';
 import {NATIVE} from './mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 export const nativeAdapters = [];
 
 export const NATIVE_TARGETING_KEYS = Object.keys(CONSTANTS.NATIVE_KEYS).map(

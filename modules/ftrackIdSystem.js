@@ -12,6 +12,13 @@ import {uspDataHandler} from '../src/adapterManager.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
+
 const MODULE_NAME = 'ftrackId';
 const LOG_PREFIX = 'FTRACK - ';
 const LOCAL_STORAGE_EXP_DAYS = 30;
