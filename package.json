@@ -1,5 +1,5 @@
 {
-  "name": "prebid.js",
+  "name": "@guardian/prebid.js",
   "version": "8.24.0",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
