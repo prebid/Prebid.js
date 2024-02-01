@@ -16,21 +16,21 @@ Kimberlite exchange adapter.
 
 ```javascript
 var adUnits = [
-    {
-        code: 'test-div',
-        mediaTypes: {
-            banner: {
-                sizes: [[320, 250], [640, 480]],
-            }
-        },
-        bids: [
-            {
-                bidder: "kimberlite",
-                params: {
-                    placementId: 'testBanner'
-                }
-            }
-        ]
-    }
+  {
+    code: 'test-div',
+    mediaTypes: {
+      banner: {
+        sizes: [[320, 250], [640, 480]],
+      }
+    },
+    bids: [
+      {
+        bidder: "kimberlite",
+        params: {
+          placementId: 'testBanner'
+        }
+      }
+    ]
+  }
 ]
 ```
