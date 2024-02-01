@@ -8,6 +8,10 @@ import { Renderer } from '../src/Renderer.js';
 import {parseDomain} from '../src/refererDetection.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ */
+
 const BIDDER_CODE = 'tappx';
 const GVLID_CODE = 628;
 const TTL = 360;

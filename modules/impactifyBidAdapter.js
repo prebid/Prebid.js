@@ -6,6 +6,14 @@ import { config } from '../src/config.js';
 import { ajax } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
+
 const BIDDER_CODE = 'impactify';
 const BIDDER_ALIAS = ['imp'];
 const DEFAULT_CURRENCY = 'USD';

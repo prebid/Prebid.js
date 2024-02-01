@@ -1204,6 +1204,46 @@ describe('AppNexusAdapter', function () {
       expect(payload.privacy.gpp_sid).to.deep.equal([7]);
     });
 
+    it('should add dsa information to the request via bidderRequest.ortb2.regs.ext.dsa', function () {
+      let bidderRequest = {
+        'bidderCode': 'appnexus',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'ortb2': {
+          'regs': {
+            'ext': {
+              'dsa': {
+                'dsarequired': 1,
+                'pubrender': 0,
+                'datatopub': 1,
+                'transparency': [{
+                  'domain': 'good-domain',
+                  'dsaparams': [1, 2]
+                }, {
+                  'domain': 'bad-setup',
+                  'dsaparams': ['1', 3]
+                }]
+              }
+            }
+          }
+        }
+      };
+      bidderRequest.bids = bidRequests;
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.dsa).to.exist;
+      expect(payload.dsa.dsarequired).to.equal(1);
+      expect(payload.dsa.pubrender).to.equal(0);
+      expect(payload.dsa.datatopub).to.equal(1);
+      expect(payload.dsa.transparency).to.deep.equal([{
+        'domain': 'good-domain',
+        'dsaparams': [1, 2]
+      }]);
+    });
+
     it('supports sending hybrid mobile app parameters', function () {
       let appRequest = Object.assign({},
         bidRequests[0],
@@ -1575,6 +1615,15 @@ describe('AppNexusAdapter', function () {
               'viewability': {
                 'config': '<script type=\'text/javascript\' async=\'true\' src=\'https://cdn.adnxs.com/v/s/152/trk.js#v;vk=appnexus.com-omid;tv=native1-18h;dom_id=%native_dom_id%;st=0;d=1x1;vc=iab;vid_ccr=1;tag_id=13232354;cb=https%3A%2F%2Fams1-ib.adnxs.com%2Fvevent%3Freferrer%3Dhttps253A%252F%252Ftestpages-pmahe.tp.adnxs.net%252F01_basic_single%26e%3DwqT_3QLNB6DNAwAAAwDWAAUBCLfl_-MFEMStk8u3lPTjRxih88aF0fq_2QsqNgkAAAECCCRAEQEHEAAAJEAZEQkAIREJACkRCQAxEQmoMOLRpwY47UhA7UhIAlCDy74uWJzxW2AAaM26dXjzjwWAAQGKAQNVU0SSAQEG8FCYAQGgAQGoAQGwAQC4AQHAAQTIAQLQAQDYAQDgAQDwAQCKAjt1ZignYScsIDI1Mjk4ODUsIDE1NTE4ODkwNzkpO3VmKCdyJywgOTc0OTQ0MDM2HgDwjZIC8QEha0RXaXBnajgtTHdLRUlQTHZpNFlBQ0NjOFZzd0FEZ0FRQVJJN1VoUTR0R25CbGdBWU1rR2FBQndMSGlrTDRBQlVvZ0JwQy1RQVFHWUFRR2dBUUdvQVFPd0FRQzVBZk90YXFRQUFDUkF3UUh6cldxa0FBQWtRTWtCbWo4dDA1ZU84VF9aQVFBQUEBAyRQQV80QUVBOVFFAQ4sQW1BSUFvQUlBdFFJBRAAdg0IeHdBSUF5QUlBNEFJQTZBSUEtQUlBZ0FNQm1BTUJxQVAFzIh1Z01KUVUxVE1UbzBNekl3NEFPVENBLi6aAmEhUXcxdGNRagUoEfQkblBGYklBUW9BRAl8AEEBqAREbzJEABRRSk1JU1EBGwRBQQGsAFURDAxBQUFXHQzwWNgCAOACrZhI6gIzaHR0cDovL3Rlc3RwYWdlcy1wbWFoZS50cC5hZG54cy5uZXQvMDFfYmFzaWNfc2luZ2xl8gITCg9DVVNUT01fTU9ERUxfSUQSAPICGgoWMhYAPExFQUZfTkFNRRIA8gIeCho2HQAIQVNUAT7wnElGSUVEEgCAAwCIAwGQAwCYAxegAwGqAwDAA-CoAcgDANgD8ao-4AMA6AMA-AMBgAQAkgQNL3V0L3YzL3ByZWJpZJgEAKIECjEwLjIuMTIuMzioBIqpB7IEDggAEAEYACAAKAAwADgCuAQAwAQAyAQA0gQOOTMyNSNBTVMxOjQzMjDaBAIIAeAEAfAEg8u-LogFAZgFAKAF______8BAxgBwAUAyQUABQEU8D_SBQkJBQt8AAAA2AUB4AUB8AWZ9CH6BQQIABAAkAYBmAYAuAYAwQYBITAAAPA_yAYA2gYWChAAOgEAGBAAGADgBgw.%26s%3D971dce9d49b6bee447c8a58774fb30b40fe98171;ts=1551889079;cet=0;cecb=\'></script>'
               },
+              'dsa': {
+                'behalf': 'test-behalf',
+                'paid': 'test-paid',
+                'transparency': [{
+                  'domain': 'good-domain',
+                  'params': [1, 2, 3]
+                }],
+                'adrender': 1
+              },
               'rtb': {
                 'banner': {
                   'content': '<!-- Creative -->',
@@ -1623,6 +1672,15 @@ describe('AppNexusAdapter', function () {
               'nodes': [{
                 'bsid': '958'
               }]
+            },
+            'dsa': {
+              'behalf': 'test-behalf',
+              'paid': 'test-paid',
+              'transparency': [{
+                'domain': 'good-domain',
+                'params': [1, 2, 3]
+              }],
+              'adrender': 1
             }
           }
         }
