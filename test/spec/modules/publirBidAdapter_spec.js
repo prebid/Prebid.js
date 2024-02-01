@@ -344,12 +344,13 @@ describe('publirAdapter', function () {
       width: 640,
       height: 480,
       ttl: TTL,
-      creativeId: '21e12606d47ba7',
+      creativeId: '639153ddd0s443',
       netRevenue: true,
       nurl: 'http://example.com/win/1234',
       mediaType: BANNER,
       meta: {
         mediaType: BANNER,
+        ad_key: '65830dfda639153ddd012905'
       },
       ad: '"<img src=\"https://...\"/>"',
       bidder: 'publir'

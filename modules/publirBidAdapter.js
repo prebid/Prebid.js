@@ -9,11 +9,13 @@ import {
   timestamp,
   triggerPixel,
   isInteger,
+  getDNT,
   getBidIdParameter
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'publir';
@@ -26,9 +28,9 @@ const SUPPORTED_SYNC_METHODS = {
   PIXEL: 'pixel'
 }
 
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: 32,
   version: ADAPTER_VERSION,
   aliases: ['plr'],
   supportedMediaTypes: SUPPORTED_AD_TYPES,
@@ -73,7 +75,7 @@ export const spec = {
           width: adUnit.width,
           height: adUnit.height,
           ttl: adUnit.ttl || TTL,
-          creativeId: adUnit.requestId,
+          creativeId: adUnit.creativeId,
           netRevenue: adUnit.netRevenue || true,
           nurl: adUnit.nurl,
           mediaType: adUnit.mediaType,
@@ -89,7 +91,10 @@ export const spec = {
         }
 
         if (adUnit.adomain && adUnit.adomain.length) {
-          bidResponse.meta.advertiserDomains = adUnit.adomain;
+          bidResponse.meta.advertiserDomains = [adUnit.adomain];
+        }
+        if (adUnit?.meta?.ad_key) {
+          bidResponse.meta.ad_key = adUnit.meta.ad_key ?? null;
         }
         if (adUnit.campId) {
           bidResponse.campId = adUnit.campId;
@@ -125,8 +130,8 @@ export const spec = {
     if (bid == null) {
       return;
     }
-
     logInfo('onBidWon:', bid);
+    fetch('//wsfd8lvwt6.execute-api.us-east-1.amazonaws.com/default/publirPrebidImpressionTracker', { method: 'POST', mode: 'no-cors', body: JSON.stringify(bid), credentials: 'include', headers: { 'Content-Type': 'application/json' } });
     if (bid.hasOwnProperty('nurl') && bid.nurl.length > 0) {
       triggerPixel(bid.nurl);
     }
@@ -298,7 +303,7 @@ function generateBidParameters(bid, bidderRequest) {
     bidObject.gpid = gpid;
   }
 
-  const pubId = params.pubId || deepAccess(bid, `mediaTypes.${mediaType}.name`);
+  const pubId = params.pubId;
   if (pubId) {
     bidObject.pubId = pubId;
   }
@@ -382,6 +387,15 @@ function isBanner(bid) {
   return bid.mediaTypes && bid.mediaTypes.banner;
 }
 
+function getLocalStorage(cookieObjName) {
+  // return localStorage.getItem('_publir_prebid_creative');
+  if (storage.localStorageIsEnabled()) {
+    const lstData = storage.getDataFromLocalStorage(cookieObjName);
+    return lstData;
+  }
+  return '';
+}
+
 /**
    * Generate params that are common between all bids
    * @param {single bid object} generalObject
@@ -389,7 +403,7 @@ function isBanner(bid) {
    * @returns {object} the common params object
    */
 function generatePubGeneralsParams(generalObject, bidderRequest) {
-  const domain = window.location.hostname;
+  const domain = bidderRequest.refererInfo;
   const { syncEnabled, filterSettings } = config.getConfig('userSync') || {};
   const { bidderCode } = bidderRequest;
   const generalBidParams = generalObject.params;
@@ -402,16 +416,17 @@ function generatePubGeneralsParams(generalObject, bidderRequest) {
     wrapper_vendor: '$$PREBID_GLOBAL$$',
     wrapper_version: '$prebid.version$',
     adapter_version: ADAPTER_VERSION,
-    auction_start: timestamp(),
+    auction_start: bidderRequest.auctionStart,
     publisher_id: generalBidParams.pubId,
     publisher_name: domain,
     site_domain: domain,
-    dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
+    dnt: getDNT() ? 1 : 0,
     device_type: getDeviceType(navigator.userAgent),
     ua: navigator.userAgent,
     is_wrapper: !!generalBidParams.isWrapper,
     session_id: generalBidParams.sessionId || getBidIdParameter('bidderRequestId', generalObject),
-    tmax: timeout
+    tmax: timeout,
+    user_cookie: getLocalStorage('_publir_prebid_creative')
   };
 
   const userIdsParam = getBidIdParameter('userId', generalObject);

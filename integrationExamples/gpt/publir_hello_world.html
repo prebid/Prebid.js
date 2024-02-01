@@ -1,7 +1,10 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <script async src="../../build/dev/prebid.js"></script>
+    <meta charset="UTF-8">
+    <title>Prebid.js Banner gpt Example</title>
     <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+    <script async src="../../build/dev/prebid.js"></script>
     <script>
         var FAILSAFE_TIMEOUT = 3300;
         var PREBID_TIMEOUT = 1000;
@@ -44,11 +47,9 @@
         });
 
         function sendAdserverRequest() {
-            if (pbjs.adserverRequestSent) return;
-            pbjs.adserverRequestSent = true;
             googletag.cmd.push(function () {
                 pbjs.que.push(function () {
-                    pbjs.setTargetingForGPTAsync();
+                    pbjs.setTargetingForGPTAsync('div-gpt-ad-1460505748561-0');
                     googletag.pubads().refresh();
                 });
             });
@@ -62,7 +63,7 @@
 
     <script>
         googletag.cmd.push(function () {
-            googletag.defineSlot('/19968336/header-bid-tag-0', [[160, 600], [240, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+            googletag.defineSlot('/1011927,22444378655/hre_vcn_4', [[160, 600], [240, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
 
             googletag.pubads().enableSingleRequest();
             googletag.enableServices();
