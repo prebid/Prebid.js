@@ -109,7 +109,7 @@ const converter = ortbConverter({
           bidId,
           config: mergeDeep(Object.assign({}, cfg), {
             auctionSignals: {
-              ortb2Imp: context.impContext[bidId]?.ortbRequest?.imp?.[0],
+              ortb2Imp: context.impContext[bidId]?.imp,
             },
           }),
         }
