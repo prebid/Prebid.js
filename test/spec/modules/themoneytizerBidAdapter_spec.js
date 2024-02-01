@@ -3,6 +3,7 @@ import { spec } from '../../../modules/themoneytizerBidAdapter.js'
 const ENDPOINT_URL = 'https://ads.biddertmz.com/m/';
 
 const VALID_BID_BANNER = {
+  bidder: 'themoneytizer',
   ortb2Imp: {
     ext: {}
   },
@@ -20,11 +21,46 @@ const VALID_BID_BANNER = {
   ortb2: {},
   userIdAsEids: [],
   auctionId: '123456-abcdef-7890',
+  schain: {},
+}
+
+const VALID_TEST_BID_BANNER = {
+  bidder: 'themoneytizer',
+  ortb2Imp: {
+    ext: {}
+  },
+  params: {
+    pid: 123456,
+    test: 1,
+    formats: [],
+    placement: '12-abc',
+    isInternal: true,
+    baseUrl: 'https://custom-endpoint.biddertmz.com/m/'
+  },
+  mediaTypes: {
+    banner: {
+      sizes: [[970, 250]]
+    }
+  },
+  adUnitCode: 'ad-unit-code',
+  bidId: '82376dbe72be72',
+  timeout: 3000,
+  ortb2: {},
+  userIdAsEids: [],
+  auctionId: '123456-abcdef-7890',
   schain: {}
 }
 
 const BIDDER_REQUEST_BANNER = {
-  bids: [VALID_BID_BANNER]
+  bids: [VALID_BID_BANNER, VALID_TEST_BID_BANNER],
+  refererInfo: {
+    topmostLocation: 'http://prebid.org/',
+    canonicalUrl: 'http://prebid.org/'
+  },
+  gdprConsent: {
+    gdprApplies: true,
+    consentString: 'abcdefghxyz'
+  }
 }
 
 const SERVER_RESPONSE = {
@@ -90,15 +126,22 @@ describe('The Moneytizer Bidder Adapter', function () {
   });
 
   describe('buildRequests', function () {
-    let requests, request;
+    let requests, request, requests_test, request_test;
 
     before(function () {
       requests = spec.buildRequests([VALID_BID_BANNER], BIDDER_REQUEST_BANNER);
       request = requests[0];
+
+      requests_test = spec.buildRequests([VALID_TEST_BID_BANNER], BIDDER_REQUEST_BANNER);
+      request_test = requests_test[0];
     });
 
     it('should build a request array for valid bids', function () {
       expect(requests).to.be.an('array').that.is.not.empty;
+    });
+
+    it('should build a request array for valid test bids', function () {
+      expect(requests_test).to.be.an('array').that.is.not.empty;
     });
 
     it('should build a request with the correct method, URL, and data type', function () {
@@ -106,6 +149,13 @@ describe('The Moneytizer Bidder Adapter', function () {
       expect(request.method).to.equal('POST');
       expect(request.url).to.equal(ENDPOINT_URL);
       expect(request.data).to.be.a('string');
+    });
+
+    it('should build a test request with the correct method, URL, and data type', function () {
+      expect(request_test).to.include.keys(['method', 'url', 'data']);
+      expect(request_test.method).to.equal('POST');
+      expect(request_test.url).to.equal(VALID_TEST_BID_BANNER.params.baseUrl);
+      expect(request_test.data).to.be.a('string');
     });
 
     describe('Payload structure', function () {
@@ -119,6 +169,31 @@ describe('The Moneytizer Bidder Adapter', function () {
         expect(payload).to.be.an('object');
         expect(payload.size).to.be.an('object');
         expect(payload.params).to.be.an('object');
+      });
+    });
+
+    describe('Payload structure optional params', function () {
+      let payload;
+
+      before(function () {
+        payload = JSON.parse(request_test.data);
+      });
+
+      it('should have correct params', function () {
+        expect(payload.params.pid).to.equal(123456);
+        expect(payload.params.formats).to.be.an('array');
+        expect(payload.params.placement).to.be.a('string').that.is.not.empty;
+        expect(payload.params.isInternal).to.be.a('boolean').that.is.true;
+      });
+
+      it('should have correct referer info', function () {
+        expect(payload.referer).to.equal(BIDDER_REQUEST_BANNER.refererInfo.topmostLocation);
+        expect(payload.referer_canonical).to.equal(BIDDER_REQUEST_BANNER.refererInfo.canonicalUrl);
+      });
+
+      it('should have correct GDPR consent', function () {
+        expect(payload.consent_string).to.equal(BIDDER_REQUEST_BANNER.gdprConsent.consentString);
+        expect(payload.consent_required).to.equal(BIDDER_REQUEST_BANNER.gdprConsent.gdprApplies);
       });
     });
   });
