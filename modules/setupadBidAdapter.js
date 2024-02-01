@@ -45,13 +45,12 @@ export const spec = {
     const requests = [];
     window.nmmRefreshCounts = window.nmmRefreshCounts || {};
     _each(validBidRequests, function (bid) {
-      window.nmmRefreshCounts[bid.adUnitCode] =
-        window.nmmRefreshCounts[bid.adUnitCode] || 0;
+      window.nmmRefreshCounts[bid.adUnitCode] = window.nmmRefreshCounts[bid.adUnitCode] || 0;
       const id = getBidIdParameter('placement_id', bid.params);
       const accountId = getBidIdParameter('account_id', bid.params);
       const auctionId = bid.auctionId;
       const bidId = bid.bidId;
-      const eids = getEids(bid) || [];
+      const eids = getEids(bid) || undefined;
       let sizes = bid.sizes;
       if (sizes && !Array.isArray(sizes[0])) sizes = [sizes];
 
@@ -65,12 +64,6 @@ export const spec = {
             storedrequest: {
               id: accountId || 'default',
             },
-          },
-
-          setupad: {
-            refresh_count: window.nmmRefreshCounts[bid.adUnitCode]++,
-            elOffsets: getBoundingClient(bid),
-            scrollTop: window.pageYOffset || document.documentElement.scrollTop,
           },
         },
         user: { ext: { eids } },
@@ -233,8 +226,7 @@ export const spec = {
       placementIdsArray.push(param.placement_id);
     });
 
-    const placementIds =
-      (placementIdsArray.length && placementIdsArray.join(';')) || '';
+    const placementIds = (placementIdsArray.length && placementIdsArray.join(';')) || '';
 
     if (!placementIds) return;
 
@@ -277,26 +269,6 @@ function getBidders(serverResponse) {
   if (bidders.length) {
     return encodeURIComponent(JSON.stringify([...new Set(bidders)]));
   }
-}
-
-function getAdEl(bid) {
-  // best way I could think of to get El, is by matching adUnitCode to google slots...
-  const slot =
-    window.googletag &&
-    window.googletag.pubads &&
-    window.googletag
-      .pubads()
-      .getSlots()
-      .find((slot) => slot.getAdUnitPath() === bid.adUnitCode);
-  const slotElementId = slot && slot.getSlotElementId();
-  if (!slotElementId) return null;
-  return document.querySelector('#' + slotElementId);
-}
-
-function getBoundingClient(bid) {
-  const el = getAdEl(bid);
-  if (!el) return {};
-  return el.getBoundingClientRect();
 }
 
 function getAd(bid) {
@@ -355,11 +327,10 @@ function initSendingDataStatistic() {
     disabledSending = false;
     enabledSending = false;
     auctionIds = {};
-    eventHendlers = {};
+    eventHandlers = {};
 
     initEvents() {
-      this.disabledSending =
-        !!config.getBidderConfig()?.setupad?.disabledSendingStatisticData;
+      this.disabledSending = !!config.getBidderConfig()?.setupad?.disabledSendingStatisticData;
       if (this.disabledSending) {
         this.removeEvents();
       } else {
@@ -372,11 +343,11 @@ function initSendingDataStatistic() {
 
       this.enabledSending = true;
       for (let eventName of this.eventNames) {
-        if (!this.eventHendlers[eventName]) {
-          this.eventHendlers[eventName] = this.eventHandler(eventName);
+        if (!this.eventHandlers[eventName]) {
+          this.eventHandlers[eventName] = this.eventHandler(eventName);
         }
 
-        events.on(eventName, this.eventHendlers[eventName]);
+        events.on(eventName, this.eventHandlers[eventName]);
       }
     }
 
@@ -385,9 +356,9 @@ function initSendingDataStatistic() {
 
       this.enabledSending = false;
       for (let eventName of this.eventNames) {
-        if (!this.eventHendlers[eventName]) continue;
+        if (!this.eventHandlers[eventName]) continue;
 
-        events.off(eventName, this.eventHendlers[eventName]);
+        events.off(eventName, this.eventHandlers[eventName]);
       }
     }
 

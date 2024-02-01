@@ -133,11 +133,6 @@ describe('SetupadAdapter', function () {
       expect(JSON.parse(request[0].data).site.domain).to.exist;
     });
 
-    it('check if elOffsets was added', function () {
-      const request = spec.buildRequests(bidRequests);
-      expect(JSON.parse(request[0].data).ext.setupad.elOffsets).to.be.an('object');
-    });
-
     it('check if imp object was added', function () {
       const request = spec.buildRequests(bidRequests);
       expect(JSON.parse(request[0].data).imp).to.be.an('array');
@@ -148,12 +143,12 @@ describe('SetupadAdapter', function () {
       expect(JSON.parse(request[0].data).user.ext.eids).to.deep.equal(userIdAsEids);
     });
 
-    it('should send an empty "user.ext.eids" array in the request if userId module is unsupported', function () {
+    it('should send an undefined "user.ext.eids" in the request if userId module is unsupported', function () {
       let bidRequestsUnsupportedUserIdModule = Object.assign({}, bidRequests[0]);
       delete bidRequestsUnsupportedUserIdModule.userIdAsEids;
       const request = spec.buildRequests(bidRequestsUnsupportedUserIdModule);
 
-      expect(JSON.parse(request[0].data).user.ext.eids).to.be.empty;
+      expect(JSON.parse(request[0].data).user.ext.eids).to.be.undefined;
     });
   });
 
