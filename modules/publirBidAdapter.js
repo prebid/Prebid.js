@@ -16,6 +16,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {ajax} from '../src/ajax.js';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'publir';
@@ -91,7 +92,9 @@ export const spec = {
         }
 
         if (adUnit.adomain && adUnit.adomain.length) {
-          bidResponse.meta.advertiserDomains = [adUnit.adomain];
+          bidResponse.meta.advertiserDomains = adUnit.adomain;
+        } else {
+          bidResponse.meta.advertiserDomains = [];
         }
         if (adUnit?.meta?.ad_key) {
           bidResponse.meta.ad_key = adUnit.meta.ad_key ?? null;
@@ -131,7 +134,7 @@ export const spec = {
       return;
     }
     logInfo('onBidWon:', bid);
-    fetch('//wsfd8lvwt6.execute-api.us-east-1.amazonaws.com/default/publirPrebidImpressionTracker', { method: 'POST', mode: 'no-cors', body: JSON.stringify(bid), credentials: 'include', headers: { 'Content-Type': 'application/json' } });
+    ajax('//wsfd8lvwt6.execute-api.us-east-1.amazonaws.com/default/publirPrebidImpressionTracker', null, JSON.stringify(bid), {method: 'POST', mode: 'no-cors', credentials: 'include', headers: { 'Content-Type': 'application/json' }});
     if (bid.hasOwnProperty('nurl') && bid.nurl.length > 0) {
       triggerPixel(bid.nurl);
     }
