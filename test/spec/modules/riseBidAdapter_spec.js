@@ -324,6 +324,22 @@ describe('riseAdapter', function () {
       expect(request.data.params).to.have.property('gdpr_consent', 'test-consent-string');
     });
 
+    it('should not send the gpp param if gppConsent is false in the bidRequest', function () {
+      const bidderRequestWithGPP = Object.assign({gppConsent: false}, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.not.have.property('gppString');
+      expect(request.data.params).to.not.have.property('gppSid');
+    });
+
+    it('should send the gpp param if gppConsent is true in the bidRequest', function () {
+      const bidderRequestWithGPP = Object.assign({gppConsent: {gppString: 'test-consent-string', applicableSections: '123'}}, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.have.property('gppString', 'test-consent-string');
+      expect(request.data.params).to.have.property('gppSid', '123');
+    });
+
     it('should have schain param if it is available in the bidRequest', () => {
       const schain = {
         ver: '1.0',
