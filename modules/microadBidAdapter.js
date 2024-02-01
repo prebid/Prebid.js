@@ -117,21 +117,21 @@ export const spec = {
 
       const pbadslot = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
       const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || pbadslot;
-      if (gpid != null && gpid.length > 0) {
+      if (gpid) {
         params['gpid'] = gpid;
       }
 
-      if (pbadslot != null && pbadslot.length > 0) {
+      if (pbadslot) {
         params['pbadslot'] = pbadslot;
       }
 
       const adservname = deepAccess(bid, 'ortb2Imp.ext.data.adserver.name');
-      if (adservname != null && adservname.length > 0) {
+      if (adservname) {
         params['adservname'] = adservname;
       }
 
       const adservadslot = deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot');
-      if (adservadslot != null && adservadslot.length > 0) {
+      if (adservadslot) {
         params['adservadslot'] = adservadslot;
       }
 
