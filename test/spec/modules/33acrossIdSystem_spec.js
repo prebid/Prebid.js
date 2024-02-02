@@ -127,8 +127,8 @@ describe('33acrossIdSystem', () => {
       });
     });
 
-    context('if the response doesn\'t include a first-party ID', () => {
-      it('should try to remove any first-party ID that could be stored', () => {
+    context('if the response lacks a first-party ID', () => {
+      it('should wipe any existing first-party ID from storage', () => {
         const completeCallback = () => {};
 
         const { callback } = thirthyThreeAcrossIdSubmodule.getId({
@@ -167,13 +167,16 @@ describe('33acrossIdSystem', () => {
       });
     });
 
-    context('if the response lacks a first-party ID', () => {
-      it('should wipe any existing first-party ID from storage', () => {
+    context('if the response lacks the 33across "envelope" ID', () => {
+      it('should wipe any existing "envelope" ID from storage', () => {
         const completeCallback = () => {};
 
         const { callback } = thirthyThreeAcrossIdSubmodule.getId({
           params: {
             pid: '12345'
+          },
+          storage: {
+            type: 'html5'
           }
         });
 
@@ -182,20 +185,25 @@ describe('33acrossIdSystem', () => {
         const [request] = server.requests;
 
         const removeDataFromLocalStorage = sinon.stub(storage, 'removeDataFromLocalStorage');
+        const setCookie = sinon.stub(storage, 'setCookie');
+        const cookiesAreEnabled = sinon.stub(storage, 'cookiesAreEnabled').returns(true);
 
         request.respond(200, {
           'Content-Type': 'application/json'
         }, JSON.stringify({
           succeeded: true,
           data: {
-            envelope: 'foo'
+            envelope: '' // no 'envelope' field
           },
           expires: 1645667805067
         }));
 
-        expect(removeDataFromLocalStorage.calledOnceWithExactly('33acrossIdFp')).to.be.true;
+        expect(removeDataFromLocalStorage.calledWith('33acrossId')).to.be.true;
+        expect(setCookie.calledWith('33acrossId', '', sinon.match.string, 'Lax')).to.be.true;
 
         removeDataFromLocalStorage.restore();
+        setCookie.restore();
+        cookiesAreEnabled.restore();
       });
     });
 
