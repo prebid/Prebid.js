@@ -26,7 +26,7 @@ var adUnits = [
       {
         bidder: "themoneytizer",
         params: {
-          pid: '1234',
+          pid: 1234,
           test: 1
         },
       },
