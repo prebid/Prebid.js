@@ -161,51 +161,6 @@ const IAB_REQUEST = () => Object.assign(DEFAULT_REQUEST(), {
   },
 });
 
-const DIGITAL_SERVICES_ACT_REQUEST = () => Object.assign(DEFAULT_REQUEST(), {
-  params: {
-    adslotId: '1111',
-    supplyId: '2222',
-    targeting: {
-      key1: 'value1',
-      key2: 'value2',
-      notDoubleEncoded: 'value3,value4',
-    },
-    customParams: {
-      extraParam: true,
-      foo: 'bar',
-    },
-    extId: 'abc',
-    iabContent: {
-      id: 'foo_id',
-      episode: '99',
-      title: 'foo_title,bar_title',
-      series: 'foo_series',
-      season: 's1',
-      artist: 'foo bar',
-      genre: 'baz',
-      isrc: 'CC-XXX-YY-NNNNN',
-      url: 'http://foo_url.de',
-      cat: ['cat1', 'cat2,ppp', 'cat3|||//'],
-      context: '7',
-      keywords: ['k1,', 'k2..'],
-      live: '0',
-    },
-    regs: {
-      ext: {
-        dsa: {
-          required: '1',
-          pubrender: '2',
-          datatopub: '3',
-          transparency: [{
-            domain: 'test.com',
-            params: [1, 2, 3]
-          }]
-        },
-      }
-    },
-  },
-});
-
 const RESPONSE = {
   advertiser: 'yieldlab',
   curl: 'https://www.yieldlab.de',
@@ -272,18 +227,34 @@ const PVID_RESPONSE = Object.assign({}, VIDEO_RESPONSE, {
 });
 
 const DIGITAL_SERVICES_ACT_RESPONSE = Object.assign({}, RESPONSE, {
-  ext: {
-    dsa: {
-      required: '1',
-      pubrender: '2',
-      datatopub: '3',
-      transparency: [{
-        domain: 'test.com',
-        params: [1, 2, 3]
-      }]
-    }
+  dsa: {
+    behalf: 'some-behalf',
+    paid: 'some-paid',
+    transparency: [{
+      domain: 'test.com',
+      dsaparams: [1, 2, 3]
+    }],
+    adrender: 1
   }
 });
+
+const DIGITAL_SERVICES_ACT_CONFIG = {
+  ortb2: {
+    regs: {
+      ext: {
+        dsa: {
+          dsarequired: '1',
+          pubrender: '2',
+          datatopub: '3',
+          transparency: [{
+            domain: 'test.com',
+            dsaparams: [1, 2, 3]
+          }]
+        },
+      }
+    },
+  }
+}
 
 const REQPARAMS = {
   json: true,
@@ -320,49 +291,6 @@ describe('yieldlabBidAdapter', () => {
 
     it('should return false when required parameters are missing', () => {
       expect(spec.isBidRequestValid({})).to.equal(false);
-    });
-
-    it('should return false if more than one transparency object is found', () => {
-      const request = {
-        params: {
-          adslotId: '1111',
-          supplyId: '2222',
-          regs: {
-            ext: {
-              dsa: {
-                transparency: [{
-                  domain: 'test.com',
-                  params: [1, 2, 3]
-                }, {
-                  domain: 'yieldlab.com',
-                  params: [1, 2, 3]
-                }]
-              },
-            }
-          },
-        },
-      };
-      expect(spec.isBidRequestValid(request)).to.equal(false);
-    });
-
-    it('should return true if one transparency object is found', () => {
-      const request = {
-        params: {
-          adslotId: '1111',
-          supplyId: '2222',
-          regs: {
-            ext: {
-              dsa: {
-                transparency: [{
-                  domain: 'test.com',
-                  params: [1, 2, 3]
-                }]
-              },
-            }
-          },
-        },
-      };
-      expect(spec.isBidRequestValid(request)).to.equal(true);
     });
   });
 
@@ -590,39 +518,71 @@ describe('yieldlabBidAdapter', () => {
     });
 
     describe('Digital Services Act handling', () => {
-      it('does pass dsarequired parameter', () => {
-        const dsaRequest = DIGITAL_SERVICES_ACT_REQUEST();
+      beforeEach(() => {
+        config.setConfig(DIGITAL_SERVICES_ACT_CONFIG);
+      });
 
-        let request = spec.buildRequests([dsaRequest], REQPARAMS);
+      afterEach(() => {
+        config.resetConfig();
+      });
+
+      it('does pass dsarequired parameter', () => {
+        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
         expect(request.url).to.include('dsarequired=1');
       });
 
       it('does pass dsapubrender parameter', () => {
-        const dsaRequest = DIGITAL_SERVICES_ACT_REQUEST();
-
-        let request = spec.buildRequests([dsaRequest], REQPARAMS);
+        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
         expect(request.url).to.include('dsapubrender=2');
       });
 
       it('does pass dsadatatopub parameter', () => {
-        const dsaRequest = DIGITAL_SERVICES_ACT_REQUEST();
-
-        let request = spec.buildRequests([dsaRequest], REQPARAMS);
+        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
         expect(request.url).to.include('dsadatatopub=3');
       });
 
       it('does pass dsadomain parameter', () => {
-        const dsaRequest = DIGITAL_SERVICES_ACT_REQUEST();
-
-        let request = spec.buildRequests([dsaRequest], REQPARAMS);
+        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
         expect(request.url).to.include('dsadomain=test.com');
       });
 
       it('does pass encoded dsaparams parameter', () => {
-        const dsaRequest = DIGITAL_SERVICES_ACT_REQUEST();
-
-        let request = spec.buildRequests([dsaRequest], REQPARAMS);
+        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DIGITAL_SERVICES_ACT_CONFIG });
         expect(request.url).to.include('dsaparams=1%2C2%2C3');
+      });
+
+      it('does pass multiple transparencies in dsatransparency param', () => {
+        const DSA_CONFIG_WITH_MULTIPLE_TRANSPARENCIES = {
+          ortb2: {
+            regs: {
+              ext: {
+                dsa: {
+                  dsarequired: '1',
+                  pubrender: '2',
+                  datatopub: '3',
+                  transparency: [
+                    {
+                      domain: 'test.com',
+                      dsaparams: [1, 2, 3]
+                    },
+                    {
+                      domain: 'example.com',
+                      dsaparams: [4, 5, 6]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        };
+
+        config.setConfig(DSA_CONFIG_WITH_MULTIPLE_TRANSPARENCIES);
+
+        let request = spec.buildRequests([DEFAULT_REQUEST()], { ...REQPARAMS, ...DSA_CONFIG_WITH_MULTIPLE_TRANSPARENCIES });
+
+        expect(request.url).to.include('dsatransparency=test.com~1_2_3~~example.com~4_5_6');
+        expect(request.url).to.not.include('dsadomain');
+        expect(request.url).to.not.include('dsaparams');
       });
     });
   });
@@ -817,14 +777,14 @@ describe('yieldlabBidAdapter', () => {
     });
 
     it('should get digital services act object in matched bid response', () => {
-      const result = spec.interpretResponse({body: [DIGITAL_SERVICES_ACT_RESPONSE]}, {validBidRequests: [DIGITAL_SERVICES_ACT_REQUEST()], queryParams: REQPARAMS});
+      const result = spec.interpretResponse({body: [DIGITAL_SERVICES_ACT_RESPONSE]}, {validBidRequests: [{...DEFAULT_REQUEST(), ...DIGITAL_SERVICES_ACT_CONFIG}], queryParams: REQPARAMS});
 
       expect(result[0].requestId).to.equal('2d925f27f5079f');
-      expect(result[0].ext.dsa.required).to.equal('1');
-      expect(result[0].ext.dsa.pubrender).to.equal('2');
-      expect(result[0].ext.dsa.datatopub).to.equal('3');
-      expect(result[0].ext.dsa.transparency[0].domain).to.equal('test.com');
-      expect(result[0].ext.dsa.transparency[0].params).to.deep.equal([1, 2, 3]);
+      expect(result[0].meta.dsa.behalf).to.equal('some-behalf');
+      expect(result[0].meta.dsa.paid).to.equal('some-paid');
+      expect(result[0].meta.dsa.transparency[0].domain).to.equal('test.com');
+      expect(result[0].meta.dsa.transparency[0].dsaparams).to.deep.equal([1, 2, 3]);
+      expect(result[0].meta.dsa.adrender).to.equal(1);
     });
   });
 

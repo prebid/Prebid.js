@@ -25,7 +25,7 @@ export const spec = {
    * @returns {boolean}
    */
   isBidRequestValid(bid) {
-    return !!(bid && bid.params && bid.params.adslotId && bid.params.supplyId && isTransparencyCountOneOrLess(bid.params));
+    return !!(bid && bid.params && bid.params.adslotId && bid.params.supplyId);
   },
 
   /**
@@ -80,29 +80,6 @@ export const spec = {
       if (floor) {
         adslotFloors.push(bid.params.adslotId + ':' + floor);
       }
-      const dsaRequired = bid.params.regs?.ext?.dsa?.required;
-      if (dsaRequired !== undefined) {
-        query.dsarequired = dsaRequired;
-      }
-      const dsaPubRender = bid.params.regs?.ext?.dsa?.pubrender;
-      if (dsaPubRender !== undefined) {
-        query.dsapubrender = dsaPubRender;
-      }
-      const dsaDataToPub = bid.params.regs?.ext?.dsa?.datatopub;
-      if (dsaDataToPub !== undefined) {
-        query.dsadatatopub = dsaDataToPub;
-      }
-      const dsaTransparency = bid.params.regs?.ext?.dsa?.transparency;
-      if (Array.isArray(dsaTransparency) && dsaTransparency.length > 0) {
-        const dsaDomain = dsaTransparency[0].domain;
-        if (dsaDomain !== undefined) {
-          query.dsadomain = dsaDomain;
-        }
-        const dsaParams = dsaTransparency[0].params;
-        if (Array.isArray(dsaParams) && dsaParams.length > 0) {
-          query.dsaparams = dsaParams.join(',');
-        }
-      }
     });
 
     if (bidderRequest) {
@@ -115,6 +92,33 @@ export const spec = {
         query.gdpr = (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true;
         if (query.gdpr) {
           query.consent = bidderRequest.gdprConsent.consentString;
+        }
+      }
+
+      if (bidderRequest.ortb2?.regs?.ext?.dsa !== undefined) {
+        const dsa = bidderRequest.ortb2.regs.ext.dsa;
+
+        assignIfNotUndefined(query, 'dsarequired', dsa.dsarequired);
+        assignIfNotUndefined(query, 'dsapubrender', dsa.pubrender);
+        assignIfNotUndefined(query, 'dsadatatopub', dsa.datatopub);
+
+        if (Array.isArray(dsa.transparency)) {
+          const filteredTransparencies = dsa.transparency.filter(({ domain, dsaparams }) => {
+            return domain && !domain.includes('~') && Array.isArray(dsaparams) && dsaparams.length > 0 && dsaparams.every(param => typeof param === 'number');
+          });
+
+          if (filteredTransparencies.length === 1) {
+            const { domain, dsaparams } = filteredTransparencies[0];
+            assignIfNotUndefined(query, 'dsadomain', domain);
+            assignIfNotUndefined(query, 'dsaparams', dsaparams.join(','));
+          } else if (filteredTransparencies.length > 1) {
+            const dsatransparency = filteredTransparencies.map(({ domain, dsaparams }) =>
+              `${domain}~${dsaparams.join('_')}`
+            ).join('~~');
+            if (dsatransparency) {
+              query.dsatransparency = dsatransparency;
+            }
+          }
         }
       }
     }
@@ -187,8 +191,7 @@ export const spec = {
 
         const dsa = getDigitalServicesActObjectFromMatchedBid(matchedBid)
         if (dsa !== undefined) {
-          bidResponse.ext = bidResponse.ext || {};
-          bidResponse.ext.dsa = dsa;
+          bidResponse.meta = { ...bidResponse.meta, dsa: dsa };
         }
 
         if (isVideo(bidRequest, adType)) {
@@ -563,23 +566,36 @@ function isImageAssetOfType(type) {
 }
 
 /**
- * Determines if the 'transparency' array within the bid parameters has one or fewer elements.
- *
- * @param {Object} params - Bid parameters containing the nested 'transparency' array.
- * @returns {boolean} - Returns true if the 'transparency' field is either undefined, or contains an array with at most one element; returns false otherwise.
- */
-function isTransparencyCountOneOrLess(params) {
-  return (params?.regs?.ext?.dsa?.transparency?.length ?? 0) <= 1;
-}
-
-/**
  * Retrieves the Digital Services Act (DSA) object from a matched bid.
+ * Only includes specific attributes (behalf, paid, transparency, adrender) from the DSA object.
  *
  * @param {Object} matchedBid - The server response body to inspect for the DSA information.
  * @returns {Object|undefined} A copy of the DSA object if it exists, or undefined if not.
  */
 function getDigitalServicesActObjectFromMatchedBid(matchedBid) {
-  return matchedBid.ext?.dsa ? { ...matchedBid.ext.dsa } : undefined;
+  if (matchedBid.dsa) {
+    const { behalf, paid, transparency, adrender } = matchedBid.dsa;
+    return {
+      ...(behalf !== undefined && { behalf }),
+      ...(paid !== undefined && { paid }),
+      ...(transparency !== undefined && { transparency }),
+      ...(adrender !== undefined && { adrender })
+    };
+  }
+  return undefined;
+}
+
+/**
+ * Conditionally assigns a value to a specified key on an object if the value is not undefined.
+ *
+ * @param {Object} obj - The object to which the value will be assigned.
+ * @param {string} key - The key under which the value should be assigned.
+ * @param {*} value - The value to be assigned, if it is not undefined.
+ */
+function assignIfNotUndefined(obj, key, value) {
+  if (value !== undefined) {
+    obj[key] = value;
+  }
 }
 
 registerBidder(spec);
