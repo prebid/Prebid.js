@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, generateUUID, inIframe } from '../src/utils.js';
+import { deepAccess, generateUUID, inIframe, mergeDeep } from '../src/utils.js';
 
 const VERSION = '4.3.0';
 const BIDDER_CODE = 'sharethrough';
@@ -104,6 +104,10 @@ export const sharethroughAdapterSpec = {
 
         const videoRequest = deepAccess(bidReq, 'mediaTypes.video');
 
+        if (bidderRequest.fledgeEnabled && bidReq.mediaTypes.banner) {
+          mergeDeep(impression, { ext: { ae: 1 } }); // ae = auction environment; if this is 1, ad server knows we have a fledge auction
+        }
+
         if (videoRequest) {
           // default playerSize, only change this if we know width and height are properly defined in the request
           let [w, h] = [640, 360];
@@ -188,7 +192,9 @@ export const sharethroughAdapterSpec = {
       return [];
     }
 
-    return body.seatbid[0].bid.map((bid) => {
+    const fledgeAuctionEnabled = body.ext?.auctionConfigs;
+
+    const bidsFromExchange = body.seatbid[0].bid.map((bid) => {
       // Spec: https://docs.prebid.org/dev-docs/bidder-adaptor.html#interpreting-the-response
       const response = {
         requestId: bid.impid,
@@ -228,6 +234,15 @@ export const sharethroughAdapterSpec = {
 
       return response;
     });
+
+    if (fledgeAuctionEnabled) {
+      return {
+        bids: bidsFromExchange,
+        fledgeAuctionConfigs: body.ext?.auctionConfigs || {},
+      };
+    } else {
+      return bidsFromExchange;
+    }
   },
 
   getUserSyncs: (syncOptions, serverResponses) => {

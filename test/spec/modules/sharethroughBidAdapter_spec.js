@@ -713,6 +713,22 @@ describe('sharethrough adapter spec', function () {
           expect(openRtbReq.regs.ext.gpp_sid).to.equal(firstPartyData.regs.gpp_sid);
         });
       });
+
+      describe('fledge', () => {
+        it('should attach "ae" as a property to the request if 1) fledge auctions are enabled, and 2) request is display (only supporting display for now)', () => {
+          // ASSEMBLE
+          const EXPECTED_AE_VALUE = 1;
+
+          // ACT
+          bidderRequest['fledgeEnabled'] = true;
+          const builtRequests = spec.buildRequests(bidRequests, bidderRequest);
+          const ACTUAL_AE_VALUE = builtRequests[0].data.imp[0].ext.ae;
+
+          // ASSERT
+          expect(ACTUAL_AE_VALUE).to.equal(EXPECTED_AE_VALUE);
+          expect(builtRequests[1].data.imp[0].ext.ae).to.be.undefined;
+        });
+      });
     });
 
     describe('interpretResponse', function () {
