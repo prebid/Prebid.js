@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { spec } from 'modules/rixengineBidAdapter.js';
 
 const REQUEST = [
@@ -7,9 +6,7 @@ const REQUEST = [
     bidId: 'bidId1',
     auctionId: 'auctionId-56a2-4f71-9098-720a68f2f708',
     mediaTypes: {
-      banner: {
-        sizes: [[300, 250]],
-      },
+      banner: {},
     },
     bidder: 'rixengine',
     params: {
