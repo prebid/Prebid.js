@@ -413,8 +413,10 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
         if (s2sBidRequest.ad_units.length) {
           let doneCbs = uniqueServerRequests.map(bidRequest => {
             bidRequest.start = timestamp();
-            return function () {
-              onTimelyResponse(bidRequest.bidderRequestId);
+            return function (timedOut) {
+              if (!timedOut) {
+                onTimelyResponse(bidRequest.bidderRequestId);
+              }
               doneCb.apply(bidRequest, arguments);
             }
           });
@@ -433,7 +435,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
             s2sBidRequest,
             serverBidderRequests,
             addBidResponse,
-            () => doneCbs.forEach(done => done()),
+            (timedOut) => doneCbs.forEach(done => done(timedOut)),
             s2sAjax
           );
         }
