@@ -153,7 +153,7 @@ export const thirthyThreeAcrossIdSubmodule = {
       return;
     }
 
-    const { pid, apiUrl = API_URL } = params;
+    const { pid, storeFpid, apiUrl = API_URL } = params;
 
     return {
       callback(cb) {
@@ -171,7 +171,9 @@ export const thirthyThreeAcrossIdSubmodule = {
               deleteFromStorage(MODULE_NAME);
             }
 
-            handleFpId(responseObj.fp, storageConfig);
+            if (storeFpid) {
+              handleFpId(responseObj.fp, storageConfig);
+            }
 
             cb(responseObj.envelope);
           },
