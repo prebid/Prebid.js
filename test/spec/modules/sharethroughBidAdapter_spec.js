@@ -585,6 +585,27 @@ describe('sharethrough adapter spec', function () {
 
             expect(videoImp.placement).to.equal(4);
           });
+
+          it('should not override "placement" value if "plcmt" prop is present', () => {
+            // ASSEMBLE
+            const ARBITRARY_PLACEMENT_VALUE = 99;
+            const ARBITRARY_PLCMT_VALUE = 100;
+
+            bidRequests[1].mediaTypes.video.context = 'instream';
+            bidRequests[1].mediaTypes.video.placement = ARBITRARY_PLACEMENT_VALUE;
+
+            // adding "plcmt" property - this should prevent "placement" prop
+            // from getting overridden to 1
+            bidRequests[1].mediaTypes.video['plcmt'] = ARBITRARY_PLCMT_VALUE;
+
+            // ACT
+            const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[1];
+            const videoImp = builtRequest.data.imp[0].video;
+
+            // ASSERT
+            expect(videoImp.placement).to.equal(ARBITRARY_PLACEMENT_VALUE);
+            expect(videoImp.plcmt).to.equal(ARBITRARY_PLCMT_VALUE);
+          });
         });
       });
 

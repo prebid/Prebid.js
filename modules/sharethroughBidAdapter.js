@@ -116,6 +116,14 @@ export const sharethroughAdapterSpec = {
             [w, h] = videoRequest.playerSize[0];
           }
 
+          const getVideoPlacementValue = (vidReq) => {
+            if (vidReq.plcmt) {
+              return vidReq.placement;
+            } else {
+              return vidReq.context === 'instream' ? 1 : +deepAccess(vidReq, 'placement', 4);
+            }
+          };
+
           impression.video = {
             pos: nullish(videoRequest.pos, 0),
             topframe: inIframe() ? 0 : 1,
@@ -132,7 +140,8 @@ export const sharethroughAdapterSpec = {
             startdelay: nullish(videoRequest.startdelay, 0),
             skipmin: nullish(videoRequest.skipmin, 0),
             skipafter: nullish(videoRequest.skipafter, 0),
-            placement: videoRequest.context === 'instream' ? 1 : +deepAccess(videoRequest, 'placement', 4),
+            placement: getVideoPlacementValue(videoRequest),
+            plcmt: videoRequest.plcmt ? videoRequest.plcmt : null,
           };
 
           if (videoRequest.delivery) impression.video.delivery = videoRequest.delivery;
