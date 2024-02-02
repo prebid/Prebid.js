@@ -26,8 +26,8 @@ setupTest({
   waitFor: CREATIVE_BANNER_CSS_SELECTOR,
   expectGAMCreative: true,
 }, 'Prebid.js Multiple Bidder Ad Unit Test', function () {
-  it('should load the targeting keys with correct values', function () {
-    const result = browser.execute(function () {
+  it('should load the targeting keys with correct values', async function () {
+    const result = await browser.execute(function () {
       return window.pbjs.getAdserverTargeting('div-banner-native-2');
     });
 

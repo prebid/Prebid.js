@@ -83,8 +83,9 @@ export const spec = {
         id: request.bidId,
         secure: secure
       };
-      if (params.tagid) {
-        impData.tagid = params.tagid;
+      const tagid = request.params?.tagid;
+      if (tagid) {
+        impData.tagid = tagid;
       }
       if (request.mediaTypes) {
         for (const mediaType in request.mediaTypes) {
@@ -112,8 +113,11 @@ export const spec = {
           impData.bidfloor = floorInfo.floor;
         }
       }
-      if (!impData.bidfloor && params.bidfloor) {
-        impData.bidfloor = params.bidfloor;
+      if (!impData.bidfloor) {
+        const bidfloor = request.params?.bidfloor;
+        if (bidfloor) {
+          impData.bidfloor = bidfloor;
+        }
       }
 
       return impData;

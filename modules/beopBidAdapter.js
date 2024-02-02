@@ -72,6 +72,7 @@ export const spec = {
       is_amp: deepAccess(bidderRequest, 'referrerInfo.isAmp'),
       gdpr_applies: gdpr ? gdpr.gdprApplies : false,
       tc_string: (gdpr && gdpr.gdprApplies) ? gdpr.consentString : null,
+      eids: firstSlot.eids,
     };
 
     const payloadString = JSON.stringify(payloadObject);
@@ -159,6 +160,7 @@ function beOpRequestSlotsMaker(bid) {
     brc: getBidIdParameter('bidRequestsCount', bid),
     bdrc: getBidIdParameter('bidderRequestCount', bid),
     bwc: getBidIdParameter('bidderWinsCount', bid),
+    eids: bid.userIdAsEids,
   }
 }
 
