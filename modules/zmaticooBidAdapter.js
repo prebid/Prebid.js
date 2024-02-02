@@ -169,7 +169,7 @@ export const spec = {
   interpretResponse: function (serverResponse, bidRequest) {
     let bidResponses = [];
     const response = (serverResponse || {}).body;
-    if (response && response.seatbid && response.seatbid[0].bid && response.seatbid[0].bid.length) {
+    if (response && response.seatbid && response.seatbid.length && response.seatbid[0].bid && response.seatbid[0].bid.length) {
       response.seatbid.forEach(zmSeatbid => {
         zmSeatbid.bid.forEach(zmBid => {
           let bid = {
@@ -183,11 +183,9 @@ export const spec = {
             creativeId: zmBid.crid,
             netRevenue: NET_REV,
           };
-          if (zmBid.adomain && zmBid.adomain.length) {
-            bid.meta = {
-              advertiserDomains: zmBid.adomain
-            };
-          }
+          bid.meta = {
+            advertiserDomains: (zmBid.adomain && zmBid.adomain.length) ? zmBid.adomain : []
+          };
           bidResponses.push(bid);
         })
       })
