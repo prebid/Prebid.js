@@ -1,4 +1,4 @@
-import {deepAccess, isArray, logError, logInfo, mergeDeep} from '../src/utils.js';
+import {deepAccess, deepClone, isArray, logError, logInfo, mergeDeep, isEmpty} from '../src/utils.js';
 import {getOrigin} from '../libraries/getOrigin/index.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -95,6 +95,17 @@ export const spec = {
       }
     });
 
+    const dsa = deepAccess(ortb2Params, 'regs.ext.dsa');
+    if (!isEmpty(dsa)) {
+      mergeDeep(request, {
+        regs: {
+          ext: {
+            dsa
+          }
+        }
+      });
+    }
+
     let computedEndpointUrl = ENDPOINT_URL;
 
     if (bidderRequest.fledgeEnabled) {
@@ -133,7 +144,13 @@ export const spec = {
       } else {
         interpretedBid = interpretBannerBid(serverBid);
       }
-      if (serverBid.ext) interpretedBid.ext = serverBid.ext;
+
+      if (serverBid.ext) {
+        interpretedBid.ext = deepClone(serverBid.ext);
+        if (serverBid.ext.dsa) {
+          interpretedBid.meta = Object.assign({}, interpretedBid.meta, { dsa: serverBid.ext.dsa });
+        }
+      }
 
       bids.push(interpretedBid);
     });
