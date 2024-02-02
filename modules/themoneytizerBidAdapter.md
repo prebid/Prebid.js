@@ -3,7 +3,7 @@
 ```
 Module Name: The Moneytizer Bid Adapter
 Module Type: Bidder Adapter
-Maintainer:  tech@themoneytizer.com
+Maintainer: tech@themoneytizer.com
 ```
 
 ## Description
@@ -19,14 +19,15 @@ var adUnits = [
     code: 'your-adunit-code',
     mediaTypes: {
       banner: {
-        sizes: [[300, 250],[1, 1]],
+        sizes: [[300, 250]],
       },
     },
     bids: [
       {
         bidder: "themoneytizer",
         params: {
-          pid: '1234'
+          pid: '1234',
+          test: 1
         },
       },
     ],
