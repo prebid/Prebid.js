@@ -2,6 +2,11 @@ import {buildUrl, deepAccess, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'retailspot';
 const DEFAULT_SUBDOMAIN = 'ssp';
 const PREPROD_SUBDOMAIN = 'ssp-preprod';
@@ -28,7 +33,7 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {bidRequests} - bidRequests.bids[] is an array of AdUnits and bids
+   * @param {BidRequests} - bidRequests.bids[] is an array of AdUnits and bids
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {

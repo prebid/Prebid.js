@@ -700,9 +700,9 @@ function getPageDimensions() {
 }
 
 /**
-* @todo Move to prebid Core as Utils.
-* @returns
-*/
+ * @todo Move to prebid Core as Utils.
+ * @returns
+ */
 function getViewPortDimensions() {
   if (!isSafeFrameWindow() && !canAccessTopWindow()) {
     return '';
@@ -795,16 +795,12 @@ function getSlotPosition(adUnitElementId) {
       const scrollLeft = wt.pageXOffset || docEl.scrollLeft || body.scrollLeft;
 
       const elComputedStyle = wt.getComputedStyle(domElement, null);
-      const elComputedDisplay = elComputedStyle.display || 'block';
-      const mustDisplayElement = elComputedDisplay === 'none';
+      const mustDisplayElement = elComputedStyle.display === 'none';
 
       if (mustDisplayElement) {
-        domElement.style = domElement.style || {};
-        const originalDisplay = domElement.style.display;
-        domElement.style.display = 'block';
-        box = domElement.getBoundingClientRect();
-        domElement.style.display = originalDisplay || null;
+        logWarn(LOG_PREFIX, 'The element is hidden. The slot position cannot be computed.');
       }
+
       position.x = Math.round(box.left + scrollLeft - clientLeft);
       position.y = Math.round(box.top + scrollTop - clientTop);
     } catch (err) {
@@ -832,8 +828,8 @@ function getPrintNumber(adUnitCode, bidderRequest) {
 }
 
 /**
-  * domLoading feature is computed on window.top if reachable.
-  */
+ * domLoading feature is computed on window.top if reachable.
+ */
 function getDomLoadingDuration() {
   let domLoadingDuration = -1;
   let performance;
