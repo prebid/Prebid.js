@@ -375,7 +375,7 @@ function provideMediaType(zetaBid, bid, bidRequest) {
 
 function clearEmpties(o) {
   for (let k in o) {
-    if (!o[k] || typeof o[k] !== "object") {
+    if (!o[k] || typeof o[k] !== 'object') {
       continue;
     }
     clearEmpties(o[k]);
