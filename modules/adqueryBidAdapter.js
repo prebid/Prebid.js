@@ -2,6 +2,14 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {buildUrl, logInfo, parseSizesInput, triggerPixel} from '../src/utils.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
+ */
+
 const ADQUERY_GVLID = 902;
 const ADQUERY_BIDDER_CODE = 'adquery';
 const ADQUERY_BIDDER_DOMAIN_PROTOCOL = 'https';

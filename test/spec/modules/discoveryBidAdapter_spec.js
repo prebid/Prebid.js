@@ -1,5 +1,16 @@
 import { expect } from 'chai';
-import { spec, getPmgUID, storage, getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLink } from 'modules/discoveryBidAdapter.js';
+import {
+  spec,
+  getPmgUID,
+  storage,
+  getPageTitle,
+  getPageDescription,
+  getPageKeywords,
+  getConnectionDownLink,
+  THIRD_PARTY_COOKIE_ORIGIN,
+  COOKIE_KEY_MGUID,
+  getCurrentTimeToUTCString
+} from 'modules/discoveryBidAdapter.js';
 import * as utils from 'src/utils.js';
 
 describe('discovery:BidAdapterTests', function () {
@@ -521,6 +532,61 @@ describe('discovery Bid Adapter Tests', function () {
       it('should handle cases where navigator is not defined', function() {
         const result = getConnectionDownLink({});
         expect(result).to.be.undefined;
+      });
+    });
+
+    describe('getUserSyncs with message event listener', function() {
+      function messageHandler(event) {
+        if (!event.data || event.origin !== THIRD_PARTY_COOKIE_ORIGIN) {
+          return;
+        }
+
+        window.removeEventListener('message', messageHandler, true);
+        event.stopImmediatePropagation();
+
+        const response = event.data;
+        if (!response.optout && response.mguid) {
+          storage.setCookie(COOKIE_KEY_MGUID, response.mguid, getCurrentTimeToUTCString());
+        }
+      }
+
+      let sandbox;
+
+      beforeEach(() => {
+        sandbox = sinon.createSandbox();
+        sandbox.stub(storage, 'setCookie');
+        sandbox.stub(window, 'removeEventListener');
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should set a cookie when a valid message is received', () => {
+        const fakeEvent = {
+          data: { optout: '', mguid: '12345' },
+          origin: THIRD_PARTY_COOKIE_ORIGIN,
+          stopImmediatePropagation: sinon.spy()
+        };
+
+        messageHandler(fakeEvent);
+
+        expect(fakeEvent.stopImmediatePropagation.calledOnce).to.be.true;
+        expect(window.removeEventListener.calledWith('message', messageHandler, true)).to.be.true;
+        expect(storage.setCookie.calledWith(COOKIE_KEY_MGUID, '12345', sinon.match.string)).to.be.true;
+      });
+      it('should not do anything when an invalid message is received', () => {
+        const fakeEvent = {
+          data: null,
+          origin: 'http://invalid-origin.com',
+          stopImmediatePropagation: sinon.spy()
+        };
+
+        messageHandler(fakeEvent);
+
+        expect(fakeEvent.stopImmediatePropagation.notCalled).to.be.true;
+        expect(window.removeEventListener.notCalled).to.be.true;
+        expect(storage.setCookie.notCalled).to.be.true;
       });
     });
   });

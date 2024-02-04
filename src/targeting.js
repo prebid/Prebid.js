@@ -497,7 +497,7 @@ export function newTargeting(auctionManager) {
   };
 
   /**
-   * @param  {(string|string[])} adUnitCode adUnitCode or array of adUnitCodes
+   * @param  {(string|string[])} adUnitCodes adUnitCode or array of adUnitCodes
    * Sets targeting for AST
    */
   targeting.setTargetingForAst = function(adUnitCodes) {
@@ -530,7 +530,7 @@ export function newTargeting(auctionManager) {
 
   /**
    * Get targeting key value pairs for winning bid.
-   * @param {string[]}    AdUnit code array
+   * @param {string[]}    adUnitCodes code array
    * @return {targetingArray}   winning bids targeting
    */
   function getWinningBidTargeting(adUnitCodes, bidsReceived) {
@@ -630,7 +630,7 @@ export function newTargeting(auctionManager) {
 
   /**
    * Get custom targeting key value pairs for bids.
-   * @param {string[]}    AdUnit code array
+   * @param {string[]}    adUnitCodes code array
    * @return {targetingArray}   bids with custom targeting defined in bidderSettings
    */
   function getCustomBidTargeting(adUnitCodes, bidsReceived) {
@@ -644,7 +644,7 @@ export function newTargeting(auctionManager) {
 
   /**
    * Get targeting key value pairs for non-winning bids.
-   * @param {string[]}    AdUnit code array
+   * @param {string[]}    adUnitCodes code array
    * @return {targetingArray}   all non-winning bids targeting
    */
   function getBidLandscapeTargeting(adUnitCodes, bidsReceived) {

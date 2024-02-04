@@ -1508,6 +1508,25 @@ describe('OpenxRtbAdapter', function () {
         expect(response.fledgeAuctionConfigs.length).to.equal(1);
         expect(response.fledgeAuctionConfigs[0].bidId).to.equal('test-bid-id');
       });
+
+      it('should inject ortb2Imp in auctionSignals', function () {
+        const auctionConfig = response.fledgeAuctionConfigs[0].config;
+        expect(auctionConfig).to.deep.include({
+          auctionSignals: {
+            ortb2Imp: {
+              id: 'test-bid-id',
+              tagid: '12345678',
+              banner: {
+                topframe: 0,
+                format: bidRequestConfigs[0].mediaTypes.banner.sizes.map(([w, h]) => ({w, h}))
+              },
+              ext: {
+                divid: 'adunit-code',
+              }
+            }
+          }
+        });
+      })
     });
   });
 
