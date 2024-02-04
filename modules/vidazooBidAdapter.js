@@ -388,7 +388,7 @@ function onBidWon(bid) {
     status: bid.status,
   };
   const qs = formatQS(wonBid);
-  const url = bid.nurl + qs;
+  const url = bid.nurl + '&' + qs;
   triggerPixel(url);
 }
 
