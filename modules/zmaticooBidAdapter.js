@@ -9,11 +9,7 @@ const TTL = 200;
 const NET_REV = true;
 
 const DATA_TYPES = {
-  'NUMBER': 'number',
-  'STRING': 'string',
-  'BOOLEAN': 'boolean',
-  'ARRAY': 'array',
-  'OBJECT': 'object'
+  'NUMBER': 'number', 'STRING': 'string', 'BOOLEAN': 'boolean', 'ARRAY': 'array', 'OBJECT': 'object'
 };
 const VIDEO_CUSTOM_PARAMS = {
   'mimes': DATA_TYPES.ARRAY,
@@ -103,8 +99,8 @@ export const spec = {
           }
         }
       }
-      if (typeof request.getFloor === 'function') {
-        const floorInfo = request.getFloor({
+      if (typeof bidderRequest.getFloor === 'function') {
+        const floorInfo = bidderRequest.getFloor({
           currency: 'USD',
           mediaType: impData.video ? 'video' : 'banner',
           size: [impData.video ? impData.video.w : impData.banner.w, impData.video ? impData.video.h : impData.banner.h]
@@ -139,19 +135,21 @@ export const spec = {
       regs: params.regs ? params.regs : {},
       ext: params.ext ? params.ext : {}
     };
-
+    payload.regs.ext = {}
+    payload.user.ext = {}
     payload.device.ua = navigator.userAgent;
     payload.device.ip = navigator.ip;
-    payload.site.page = bidderRequest.refererInfo.page;
+    payload.site.page = bidderRequest?.refererInfo?.page || window.location.href;
+    payload.site.domain = _getDomainFromURL(payload.site.page);
     payload.site.mobile = /(ios|ipod|ipad|iphone|android)/i.test(navigator.userAgent) ? 1 : 0;
     if (params.test) {
       payload.test = params.test;
     }
-    if (request.gdprConsent) {
-      payload.regs.ext = Object.assign(payload.regs.ext, {gdpr: request.gdprConsent.gdprApplies === true ? 1 : 0});
+    if (bidderRequest.gdprConsent) {
+      payload.regs.ext = Object.assign(payload.regs.ext, {gdpr: bidderRequest.gdprConsent.gdprApplies == true ? 1 : 0});
     }
-    if (request.gdprConsent && request.gdprConsent.gdprApplies) {
-      payload.user.ext = Object.assign(payload.user.ext, {consent: request.gdprConsent.consentString});
+    if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
+      payload.user.ext = Object.assign(payload.user.ext, {consent: bidderRequest.gdprConsent.consentString});
     }
     const postUrl = ENDPOINT_URL;
     return {
@@ -186,6 +184,9 @@ export const spec = {
           bid.meta = {
             advertiserDomains: (zmBid.adomain && zmBid.adomain.length) ? zmBid.adomain : []
           };
+          if (zmBid.ext && zmBid.ext.vast_url) {
+            bid.vastXml = zmBid.ext.vast_url;
+          }
           bidResponses.push(bid);
         })
       })
@@ -224,7 +225,7 @@ function buildVideo(request) {
   return video;
 }
 
-function checkParamDataType(key, value, datatype) {
+export function checkParamDataType(key, value, datatype) {
   let functionToExecute;
   switch (datatype) {
     case DATA_TYPES.BOOLEAN:
@@ -256,6 +257,12 @@ function hasBannerMediaType(bidRequest) {
  */
 function hasVideoMediaType(bidRequest) {
   return !!deepAccess(bidRequest, 'mediaTypes.video');
+}
+
+export function _getDomainFromURL(url) {
+  let anchor = document.createElement('a');
+  anchor.href = url;
+  return anchor.hostname;
 }
 
 registerBidder(spec);
