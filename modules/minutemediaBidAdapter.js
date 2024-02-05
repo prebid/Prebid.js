@@ -467,7 +467,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
     generalParams.gppS = bidderRequest.ortb2.regs.gpp;
     generalParams.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
   }
-  
+
   if (generalBidParams.ifa) {
     generalParams.ifa = generalBidParams.ifa;
   }

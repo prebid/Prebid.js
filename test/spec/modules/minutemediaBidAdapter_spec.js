@@ -301,7 +301,6 @@ describe('minutemediaAdapter', function () {
       expect(request.data.params).to.have.property('gdpr_consent', 'test-consent-string');
     });
 
-
     it('should not send the gpp param if gppConsent is false in the bidRequest', function () {
       const bidderRequestWithGPP = Object.assign({gppConsent: false}, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
@@ -315,9 +314,9 @@ describe('minutemediaAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.have.property('gpp', 'test-consent-string');
-      expect(request.data.params.gpp_sid).to.be.equal([7]);
+      expect(request.data.params.gpp_sid[0]).to.be.equal(7);
     });
-    
+
     it('should have schain param if it is available in the bidRequest', () => {
       const schain = {
         ver: '1.0',
