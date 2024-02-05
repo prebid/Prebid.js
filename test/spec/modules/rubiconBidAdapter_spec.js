@@ -1575,7 +1575,7 @@ describe('the rubicon adapter', function () {
           describe('UserID catchall support', function () {
             it('should send user id with generic format', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
-              // Hardcoding userIdAsEids since createEidsArray returns empty array if source not found in eids.js
+              // Hardcoding userIdAsEids since createEirray returns empty array if source not found in eids.js
               clonedBid.userIdAsEids = [{
                 source: 'catchall',
                 uids: [{
@@ -1591,7 +1591,7 @@ describe('the rubicon adapter', function () {
 
             it('should send rubiconproject special case', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
-              // Hardcoding userIdAsEids since createEidsArray returns empty array if source not found in eids.js
+              // Hardcoding userIdAsEids since createEirray returns empty array if source not found in eids.js
               clonedBid.userIdAsEids = [{
                 source: 'rubiconproject.com',
                 uids: [{
@@ -1717,17 +1717,17 @@ describe('the rubicon adapter', function () {
               regs: {
                 ext: {
                   dsa: {
-                    required: 3,
+                    dsarequired: 3,
                     pubrender: 0,
                     datatopub: 2,
                     transparency: [
                       {
                         domain: 'testdomain.com',
-                        params: [1],
+                        dsaparams: [1],
                       },
                       {
                         domain: 'testdomain2.com',
-                        params: [1, 2]
+                        dsaparams: [1, 2]
                       }
                     ]
                   }
@@ -1745,7 +1745,7 @@ describe('the rubicon adapter', function () {
               expect(data).to.have.property('dsadatatopubs');
               expect(data).to.have.property('dsatransparency');
 
-              expect(data['dsarequired']).to.equal(ortb2.regs.ext.dsa.required.toString());
+              expect(data['dsarequired']).to.equal(ortb2.regs.ext.dsa.dsarequired.toString());
               expect(data['dsapubrender']).to.equal(ortb2.regs.ext.dsa.pubrender.toString());
               expect(data['dsadatatopubs']).to.equal(ortb2.regs.ext.dsa.datatopub.toString());
               expect(data['dsatransparency']).to.equal(expectedTransparency)
