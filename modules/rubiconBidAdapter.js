@@ -976,7 +976,7 @@ function applyFPD(bidRequest, mediaType, data) {
     if (dsa && Object.keys(dsa).length) {
       pick(dsa, [
         'dsainfo', (dsainfo) => data['dsainfo'] = dsainfo,
-        'required', (required) => data['dsarequired'] = required,
+        'dsarequired', (required) => data['dsarequired'] = required,
         'pubrender', (pubrender) => data['dsapubrender'] = pubrender,
         'datatopub', (datatopub) => data['dsadatatopubs'] = datatopub,
         'transparency', (transparency) => {
@@ -985,7 +985,7 @@ function applyFPD(bidRequest, mediaType, data) {
               if (param) {
                 param += '~~'
               }
-              return param += `${transp.domain}~${transp.params.join('_')}`
+              return param += `${transp.domain}~${transp.dsaparams.join('_')}`
             }, '')
           }
         }
