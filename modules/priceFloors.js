@@ -445,10 +445,13 @@ export function continueAuction(hookConfig) {
 }
 
 function validateSchemaFields(fields) {
-  if (Array.isArray(fields) && fields.length > 0 && fields.every(field => allowedFields.indexOf(field) !== -1)) {
-    return true;
+  if (Array.isArray(fields) && fields.length > 0) {
+    if (fields.every(field => allowedFields.includes(field))) {
+      return true;
+    } else {
+      logError(`${MODULE_NAME}: Fields received do not match allowed fields`);
+    }
   }
-  logError(`${MODULE_NAME}: Fields received do not match allowed fields`);
   return false;
 }
 

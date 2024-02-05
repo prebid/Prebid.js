@@ -3,7 +3,7 @@
 ```
 Module Name: Sovrn Analytics Adapter
 Module Type: Analytics Adapter
-Maintainer: jrosendahl@sovrn.com
+Maintainer: exchange@sovrn.com
 ```
 
 # Description

@@ -347,7 +347,7 @@ function raiGetTimeoutURL(data) {
   url = url.replace('[timeout_publisher]', timeout)
   url = url.replace('[placement_hash]', params[0].pid)
   if (REFERER != null) {
-    url = url.replace('[domain]', REFERER)
+    url = url.replace('[domain]', document.location.host)
   }
   return url
 }
