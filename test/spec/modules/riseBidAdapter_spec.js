@@ -333,10 +333,10 @@ describe('riseAdapter', function () {
     });
 
     it('should send the gpp param if gppConsent is true in the bidRequest', function () {
-      const bidderRequestWithGPP = Object.assign({gppConsent: {gppString: 'test-consent-string', applicableSections: [7]}}, bidderRequest);
+      const bidderRequestWithGPP = Object.assign({gppConsent: {gppString: 'gpp-consent', applicableSections: [7]}}, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
       expect(request.data.params).to.be.an('object');
-      expect(request.data.params).to.have.property('gpp', 'test-consent-string');
+      expect(request.data.params).to.have.property('gpp', 'gpp-consent');
       expect(request.data.params.gpp_sid).to.be.equal([7]);
     });
 
