@@ -325,8 +325,8 @@ describe('riseAdapter', function () {
     });
 
     it('should not send the gpp param if gppConsent is false in the bidRequest', function () {
-      const bidderRequestWithGPP = Object.assign({gppConsent: false}, bidderRequest);
-      const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
+      const bidderRequestWithoutGPP = Object.assign({gppConsent: false}, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithoutGPP);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.not.have.property('gpp');
       expect(request.data.params).to.not.have.property('gpp_sid');
@@ -335,9 +335,11 @@ describe('riseAdapter', function () {
     it('should send the gpp param if gppConsent is true in the bidRequest', function () {
       const bidderRequestWithGPP = Object.assign({gppConsent: {gppString: 'gpp-consent', applicableSections: [7]}}, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
+      console.log('request.data.params');
+      console.log(request.data.params);
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.have.property('gpp', 'gpp-consent');
-      expect(request.data.params.gpp_sid).to.be.equal([7]);
+      expect(request.data.params.gpp_sid[0]).to.be.equal(7);
     });
 
     it('should have schain param if it is available in the bidRequest', () => {
