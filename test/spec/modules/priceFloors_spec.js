@@ -12,7 +12,7 @@ import {
   isFloorsDataValid,
   addBidResponseHook,
   fieldMatchingFunctions,
-  allowedFields, parseFloorData, normalizeDefault, getFloorDataFromAdUnits
+  allowedFields, parseFloorData, normalizeDefault, getFloorDataFromAdUnits, updateAdUnitsForAuction, createFloorsDataForAuction
 } from 'modules/priceFloors.js';
 import * as events from 'src/events.js';
 import * as mockGpt from '../integration/faker/googletag.js';
@@ -648,6 +648,90 @@ describe('the price floors module', function () {
       });
     });
   });
+
+  describe('updateAdUnitsForAuction', function() {
+    let inputFloorData;
+    let adUnits;
+
+    beforeEach(function() {
+      adUnits = [getAdUnitMock()];
+      inputFloorData = utils.deepClone(minFloorConfigLow);
+      inputFloorData.skipRate = 0.5;
+    });
+
+    it('should set the skipRate to the skipRate from the data property before using the skipRate from floorData directly', function() {
+      utils.deepSetValue(inputFloorData, 'data', {
+        skipRate: 0.7
+      });
+      updateAdUnitsForAuction(adUnits, inputFloorData, 'id');
+
+      const skipRate = utils.deepAccess(adUnits, '0.bids.0.floorData.skipRate');
+      expect(skipRate).to.equal(0.7);
+    });
+
+    it('should set the skipRate to the skipRate from floorData directly if it does not exist in the data property of floorData', function() {
+      updateAdUnitsForAuction(adUnits, inputFloorData, 'id');
+
+      const skipRate = utils.deepAccess(adUnits, '0.bids.0.floorData.skipRate');
+      expect(skipRate).to.equal(0.5);
+    });
+
+    it('should set the skipRate in the bid floorData to undefined if both skipRate and skipRate in the data property are undefined', function() {
+      inputFloorData.skipRate = undefined;
+      utils.deepSetValue(inputFloorData, 'data', {
+        skipRate: undefined,
+      });
+      updateAdUnitsForAuction(adUnits, inputFloorData, 'id');
+
+      const skipRate = utils.deepAccess(adUnits, '0.bids.0.floorData.skipRate');
+      expect(skipRate).to.equal(undefined);
+    });
+  });
+
+  describe('createFloorsDataForAuction', function() {
+    let adUnits;
+    let floorConfig;
+
+    beforeEach(function() {
+      adUnits = [getAdUnitMock()];
+      floorConfig = utils.deepClone(basicFloorConfig);
+    });
+
+    it('should return skipRate as 0 if both skipRate and skipRate in the data property are undefined', function() {
+      floorConfig.skipRate = undefined;
+      floorConfig.data.skipRate = undefined;
+      handleSetFloorsConfig(floorConfig);
+
+      const floorData = createFloorsDataForAuction(adUnits, 'id');
+
+      expect(floorData.skipRate).to.equal(0);
+      expect(floorData.skipped).to.equal(false);
+    });
+
+    it('should properly set skipRate if it is available in the data property', function() {
+      // this will force skipped to be true
+      floorConfig.skipRate = 101;
+      floorConfig.data.skipRate = 201;
+      handleSetFloorsConfig(floorConfig);
+
+      const floorData = createFloorsDataForAuction(adUnits, 'id');
+
+      expect(floorData.data.skipRate).to.equal(201);
+      expect(floorData.skipped).to.equal(true);
+    });
+
+    it('should should use the skipRate if its not available in the data property ', function() {
+      // this will force skipped to be true
+      floorConfig.skipRate = 101;
+      handleSetFloorsConfig(floorConfig);
+
+      const floorData = createFloorsDataForAuction(adUnits, 'id');
+
+      expect(floorData.skipRate).to.equal(101);
+      expect(floorData.skipped).to.equal(true);
+    });
+  });
+
   describe('pre-auction tests', function () {
     let exposedAdUnits;
     const validateBidRequests = (getFloorExpected, FloorDataExpected) => {
@@ -688,6 +772,124 @@ describe('the price floors module', function () {
         fetchStatus: undefined,
         floorProvider: undefined
       });
+    });
+    it('should not do floor stuff if floors.data is defined by noFloorSignalBidders[]', function() {
+      handleSetFloorsConfig({
+        ...basicFloorConfig,
+        data: {
+          ...basicFloorDataLow,
+          noFloorSignalBidders: ['someBidder', 'someOtherBidder']
+        }});
+      runStandardAuction();
+      validateBidRequests(false, {
+        skipped: false,
+        floorMin: undefined,
+        modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: undefined,
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: undefined,
+        noFloorSignaled: true
+      })
+    });
+    it('should not do floor stuff if floors.enforcement is defined by noFloorSignalBidders[]', function() {
+      handleSetFloorsConfig({ ...basicFloorConfig,
+        enforcement: {
+          enforceJS: true,
+          noFloorSignalBidders: ['someBidder', 'someOtherBidder']
+        },
+        data: basicFloorDataLow
+      });
+      runStandardAuction();
+      validateBidRequests(false, {
+        skipped: false,
+        floorMin: undefined,
+        modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: undefined,
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: undefined,
+        noFloorSignaled: true
+      })
+    });
+    it('should not do floor stuff and use first floors.data.noFloorSignalBidders if its defined betwen enforcement.noFloorSignalBidders', function() {
+      handleSetFloorsConfig({ ...basicFloorConfig,
+        enforcement: {
+          enforceJS: true,
+          noFloorSignalBidders: ['someBidder']
+        },
+        data: {
+          ...basicFloorDataLow,
+          noFloorSignalBidders: ['someBidder', 'someOtherBidder']
+        }
+      });
+      runStandardAuction();
+      validateBidRequests(false, {
+        skipped: false,
+        floorMin: undefined,
+        modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: undefined,
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: undefined,
+        noFloorSignaled: true
+      })
+    });
+    it('it shouldn`t return floor stuff for bidder in the noFloorSignalBidders list', function() {
+      handleSetFloorsConfig({ ...basicFloorConfig,
+        enforcement: {
+          enforceJS: true,
+        },
+        data: {
+          ...basicFloorDataLow,
+          noFloorSignalBidders: ['someBidder']
+        }
+      });
+      runStandardAuction()
+      const bidRequestData = exposedAdUnits[0].bids.find(bid => bid.bidder === 'someBidder');
+      expect(bidRequestData.hasOwnProperty('getFloor')).to.equal(false);
+      sinon.assert.match(bidRequestData.floorData, {
+        skipped: false,
+        floorMin: undefined,
+        modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: undefined,
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: undefined,
+        noFloorSignaled: true
+      });
+    })
+    it('it should return floor stuff if we defined wrong bidder name in data.noFloorSignalBidders', function() {
+      handleSetFloorsConfig({ ...basicFloorConfig,
+        enforcement: {
+          enforceJS: true,
+        },
+        data: {
+          ...basicFloorDataLow,
+          noFloorSignalBidders: ['randomBiider']
+        }
+      });
+      runStandardAuction();
+      validateBidRequests(true, {
+        skipped: false,
+        floorMin: undefined,
+        modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: undefined,
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: undefined,
+        noFloorSignaled: false
+      })
     });
     it('should use adUnit level data if not setConfig or fetch has occured', function () {
       handleSetFloorsConfig({

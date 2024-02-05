@@ -17,7 +17,7 @@ import { USERSYNC_DEFAULT_CONFIG } from '../src/userSync.js';
 
 const BIDDER_CODE = 'mgidX';
 const GVLID = 358;
-const AD_URL = 'https://us-east-x.mgid.com/pbjs';
+const AD_URL = 'https://#{REGION}#.mgid.com/pbjs';
 const PIXEL_SYNC_URL = 'https://cm.mgid.com/i.gif';
 const IFRAME_SYNC_URL = 'https://cm.mgid.com/i.html';
 
@@ -166,9 +166,14 @@ export const spec = {
       placements,
       coppa: config.getConfig('coppa') === true ? 1 : 0,
       ccpa: bidderRequest.uspConsent || undefined,
-      gdpr: bidderRequest.gdprConsent || undefined,
       tmax: config.getConfig('bidderTimeout')
     };
+
+    if (bidderRequest.gdprConsent) {
+      request.gdpr = {
+        consentString: bidderRequest.gdprConsent.consentString
+      };
+    }
 
     const len = validBidRequests.length;
     for (let i = 0; i < len; i++) {
@@ -176,9 +181,18 @@ export const spec = {
       placements.push(getPlacementReqData(bid));
     }
 
+    const region = validBidRequests[0].params?.region;
+
+    let url;
+    if (region === 'eu') {
+      url = AD_URL.replace('#{REGION}#', 'eu');
+    } else {
+      url = AD_URL.replace('#{REGION}#', 'us-east-x');
+    }
+
     return {
       method: 'POST',
-      url: AD_URL,
+      url: url,
       data: request
     };
   },

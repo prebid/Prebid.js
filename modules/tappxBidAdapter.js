@@ -8,6 +8,10 @@ import { Renderer } from '../src/Renderer.js';
 import {parseDomain} from '../src/refererDetection.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ */
+
 const BIDDER_CODE = 'tappx';
 const GVLID_CODE = 628;
 const TTL = 360;
@@ -53,7 +57,7 @@ export const spec = {
    *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
-  */
+   */
   isBidRequestValid: function(bid) {
     // bid.params.host
     if ((new RegExp(`^(vz.*|zz.*)\\.*$`, 'i')).test(bid.params.host)) { // New endpoint
@@ -234,12 +238,12 @@ function interpretBid(serverBid, request) {
 }
 
 /**
-* Build and makes the request
-*
-* @param {*} validBidRequests
-* @param {*} bidderRequest
-* @return response ad
-*/
+ * Build and makes the request
+ *
+ * @param {*} validBidRequests
+ * @param {*} bidderRequest
+ * @return response ad
+ */
 function buildOneRequest(validBidRequests, bidderRequest) {
   let hostInfo = _getHostInfo(validBidRequests);
   const ENDPOINT = hostInfo.endpoint;

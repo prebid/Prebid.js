@@ -5,6 +5,12 @@ import { INSTREAM } from '../src/video.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json'
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').AdUnit} AdUnit
+ */
+
 const {CACHE_ID, UUID} = CONSTANTS.TARGETING_KEYS;
 const {BID_WON, AUCTION_END} = CONSTANTS.EVENTS;
 const {RENDERED} = CONSTANTS.BID_STATUS;

@@ -47,7 +47,7 @@ describe('YieldmoAdapter', function () {
       video: {
         playerSize: [640, 480],
         context: 'instream',
-        mimes: ['video/mp4']
+        mimes: ['video/mp4'],
       },
     },
     params: {
@@ -61,11 +61,11 @@ describe('YieldmoAdapter', function () {
         api: [2, 3],
         skipppable: true,
         playbackmethod: [1, 2],
-        ...videoParams
-      }
+        ...videoParams,
+      },
     },
     transactionId: '54a58774-7a41-494e-8cbc-fa7b79164f0c',
-    ...rootParams
+    ...rootParams,
   });
 
   const mockBidderRequest = (params = {}, bids = [mockBannerBid()]) => ({
@@ -394,6 +394,41 @@ describe('YieldmoAdapter', function () {
         expect(placementInfo).to.include('"gpid":"/6355419/Travel/Europe/France/Paris"');
       });
 
+      it('should add topics to the banner bid request', function () {
+        const biddata = build([mockBannerBid()], mockBidderRequest({ortb2: { user: {
+          data: [
+            {
+              ext: {
+                segtax: 600,
+                segclass: '2206021246',
+              },
+              segment: ['7', '8', '9'],
+            },
+          ],
+        }}}));
+        expect(biddata[0].data.topics).to.deep.equal({
+          taxonomy: 600,
+          classifier: '2206021246',
+          topics: [7, 8, 9],
+        });
+      });
+
+      it('should send gpc in the banner bid request', function () {
+        const biddata = build(
+          [mockBannerBid()],
+          mockBidderRequest({
+            ortb2: {
+              regs: {
+                ext: {
+                  gpc: '1'
+                },
+              },
+            },
+          })
+        );
+        expect(biddata[0].data.gpc).to.equal('1');
+      });
+
       it('should add eids to the banner bid request', function () {
         const params = {
           userIdAsEids: [{
@@ -458,6 +493,16 @@ describe('YieldmoAdapter', function () {
       it('should add mediaTypes.video.mimes prop to the imp.video', function () {
         utils.deepAccess(videoBid, 'mediaTypes.video')['minduration'] = ['video/mp4'];
         expect(buildVideoBidAndGetVideoParam().minduration).to.deep.equal(['video/mp4']);
+      });
+
+      it('should add plcmt value to the imp.video', function () {
+        const videoBid = mockVideoBid({}, {}, { plcmt: 1 });
+        expect(utils.deepAccess(videoBid, 'params.video')['plcmt']).to.equal(1);
+      });
+
+      it('should add start delay if plcmt value is not 1', function () {
+        const videoBid = mockVideoBid({}, {}, { plcmt: 2 });
+        expect(build([videoBid])[0].data.imp[0].video.startdelay).to.equal(0);
       });
 
       it('should override mediaTypes.video.mimes prop if params.video.mimes is present', function () {
@@ -610,6 +655,51 @@ describe('YieldmoAdapter', function () {
         };
         expect(buildAndGetData([mockVideoBid({...params})]).user.eids).to.eql(params.fakeUserIdAsEids);
       });
+
+      it('should add topics to the bid request', function () {
+        let videoBidder = mockBidderRequest(
+          {
+            ortb2: {
+              user: {
+                data: [
+                  {
+                    ext: {
+                      segtax: 600,
+                      segclass: '2206021246',
+                    },
+                    segment: ['7', '8', '9'],
+                  },
+                ],
+              },
+            },
+          },
+          [mockVideoBid()]
+        );
+        let payload = buildAndGetData([mockVideoBid()], 0, videoBidder);
+        expect(payload.topics).to.deep.equal({
+          taxonomy: 600,
+          classifier: '2206021246',
+          topics: [7, 8, 9],
+        });
+      });
+
+      it('should send gpc in the bid request', function () {
+        let videoBidder = mockBidderRequest(
+          {
+            ortb2: {
+              regs: {
+                ext: {
+                  gpc: '1',
+                },
+              },
+            },
+          },
+          [mockVideoBid()]
+        );
+        let payload = buildAndGetData([mockVideoBid()], 0, videoBidder);
+        expect(payload.regs.ext.gpc).to.equal('1');
+      });
+
       it('should add device info to payload if available', function () {
         let videoBidder = mockBidderRequest({ ortb2: {
           device: {
