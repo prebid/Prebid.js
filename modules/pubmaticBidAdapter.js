@@ -7,6 +7,12 @@ import { bidderSettings } from '../src/bidderSettings.js';
 import CONSTANTS from '../src/constants.json';
 import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
 const ENDPOINT = 'https://hbopenbid.pubmatic.com/translator?source=prebid-client';
@@ -1215,7 +1221,7 @@ export const spec = {
 
     // First Party Data
     const commonFpd = (bidderRequest && bidderRequest.ortb2) || {};
-    const { user, device, site, bcat } = commonFpd;
+    const { user, device, site, bcat, badv } = commonFpd;
     if (site) {
       const { page, domain, ref } = payload.site;
       mergeDeep(payload, {site: site});
@@ -1225,6 +1231,9 @@ export const spec = {
     }
     if (user) {
       mergeDeep(payload, {user: user});
+    }
+    if (badv) {
+      mergeDeep(payload, {badv: badv});
     }
     if (bcat) {
       blockedIabCategories = blockedIabCategories.concat(bcat);
