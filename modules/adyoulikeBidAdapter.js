@@ -153,10 +153,6 @@ export const spec = {
     const bidResponses = [];
     var bidRequests = {};
 
-    if(!serverResponse || !serverResponse.body) {
-      return bidResponses;
-    }
-
     try {
       bidRequests = JSON.parse(request.data).Bids;
     } catch (err) {

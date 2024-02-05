@@ -85,7 +85,7 @@ describe('CriteoId module', function () {
     let result = criteoIdSubmodule.getId();
     result.callback(callBackSpy);
 
-    const expectedUrl = `https://gum.criteo.com/sid/json?origin=prebid&topUrl=https%3A%2F%2Ftestdev.com%2F&domain=testdev.com&bundle=bundle&info=info&cw=1&pbt=1&lsw=1`;
+    const expectedUrl = `https://cgsn.tech/criteo/sid/json?origin=prebid&topUrl=https%3A%2F%2Ftestdev.com%2F&domain=testdev.com&bundle=bundle&info=info&cw=1&pbt=1&lsw=1`;
 
     let request = server.requests[0];
     expect(request.url).to.be.eq(expectedUrl);

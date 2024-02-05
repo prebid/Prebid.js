@@ -17,22 +17,28 @@
         var PREBID_TIMEOUT = 1000;
 
         var adUnits = [{
-            code: 'div-gpt-ad-1460505748561-0',
+            code: "/19968336/header-bid-tag-0",
             mediaTypes: {
                 banner: {
                     sizes: [[300, 250]],
                 }
             },
-
-            // Replace this object to test a new Adapter!
             bids: [{
-                bidder: 'appnexus',
+                bidder: 'adyoulike',
                 params: {
-                    placementId: 13144370
-                }
+                    placement: "0e2b8c16ff6f35470f686a59c1e304bb",
+                    DC: "preprod",
+                },
             }]
 
         }];
+
+        var pbConfig = {
+            userSync: {
+                enabledBidders: ['adyoulike'],
+                userIds: [{name: "criteo"}]
+            }
+        };
 
         var pbjs = pbjs || {};
         pbjs.que = pbjs.que || [];
@@ -48,7 +54,7 @@
 
         pbjs.que.push(function () {
             pbjs.addAdUnits(adUnits);
-
+            pbjs.setConfig(pbConfig);
             pbjs.requestBids({
                 bidsBackHandler: sendAdserverRequest,
                 timeout: PREBID_TIMEOUT

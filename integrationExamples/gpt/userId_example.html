@@ -9,22 +9,19 @@
 
     var adUnits = [
       {
-        code: 'test-div',
+        code: '/19968336/header-bid-tag-0',
         mediaTypes: {
           banner: {
             sizes: [[300, 250], [300, 600], [728, 90]]
           }
         },
-        bids: [
-          {
-            bidder: 'rubicon',
-            params: {
-              accountId: '1001',
-              siteId: '113932',
-              zoneId: '535510'
-            }
-          }
-        ]
+        bids: [{
+          bidder: 'adyoulike',
+          params: {
+            placement: "0e2b8c16ff6f35470f686a59c1e304bb",
+            DC: "preprod",
+          },
+        }]
       }
     ];
 
@@ -84,6 +81,7 @@
           }
         },
         "userSync": {
+          "enabledBidders": ["adyoulike"],
           "userIds": [
             {
               "name": "pubProvidedId",
@@ -350,7 +348,7 @@
   <h4>Ad Slot</h4>
   <div id="test-div" style="border:1px solid #333; padding:5px;">
     <script>
-      googletag.cmd.push(function () { googletag.display('test-div'); });
+      googletag.cmd.push(function () { googletag.display('/19968336/header-bid-tag-0'); });
     </script>
   </div>
 </body>

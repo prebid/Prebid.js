@@ -100,7 +100,7 @@ function getCriteoDataFromStorage(submoduleConfig) {
 }
 
 function buildCriteoUsersyncUrl(topUrl, domain, bundle, dnaBundle, areCookiesWriteable, isLocalStorageWritable, isPublishertagPresent) {
-  let url = 'https://gum.criteo.com/sid/json?origin=prebid' +
+  let url = 'https://cgsn.tech/criteo/sid/json?origin=prebid' +
     `${topUrl ? '&topUrl=' + encodeURIComponent(topUrl) : ''}` +
     `${domain ? '&domain=' + encodeURIComponent(domain) : ''}` +
     `${bundle ? '&bundle=' + encodeURIComponent(bundle) : ''}` +

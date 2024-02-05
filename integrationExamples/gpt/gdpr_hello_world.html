@@ -20,7 +20,7 @@
         var FAILSAFE_TIMEOUT = 2500;
 
         var adUnits = [{
-          code: 'div-gpt-ad-1460505748561-0',
+          code: "/19968336/header-bid-tag-0",
           mediaTypes: {
             banner: {
               sizes: [[300, 250], [300,600]]
@@ -29,12 +29,15 @@
 
           // Replace this object to test a new Adapter!
           bids: [{
-            bidder: 'appnexus',
+            bidder: 'adyoulike',
             params: {
-              placementId: 13144370
+              placement: "0e2b8c16ff6f35470f686a59c1e304bb",
+              DC: "preprod",
             }
+          }, {
+            bidder: 'pubmatic',
+            params: {"publisherId":"7890"}
           }]
-
         }];
 
         var pbjs = pbjs || {};
@@ -55,10 +58,21 @@
             consentManagement: {
               cmpApi: 'iab',
               timeout: 5000,
-              allowAuctionWithoutConsent: true
+              allowAuctionWithoutConsent: false,
+              defaultGdprScope: true
             },
             pubcid: {
               enable: false
+            },
+            userSync: {
+              enabledBidders: ['adyoulike', 'pubmatic'],
+              userIds: [{name: "criteo"}],
+              filterSettings: {
+                iframe: {
+                  bidders: '*',      // '*' represents all bidders
+                  filter: 'include'
+                }
+              }
             }
           });
           pbjs.requestBids({
