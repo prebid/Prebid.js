@@ -63,6 +63,7 @@ gulp build
    ```
 1. Resolve any conflicts
 1. Ensure the package.json name field is `@guardian/prebid.js`
+1. If this upgrade diverges from the upstream prebid.js version (i.e. a Guardian specific change) add a suffix to the package.json version field e.g. 8.34.0-1
 1. Create new build
    > npm run build
 1. Commit and ensure `build/dist/prebid.js` is included
