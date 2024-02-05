@@ -1165,12 +1165,10 @@ describe('magnite analytics adapter', function () {
       expect(server.requests.length).to.equal(1);
       let request = server.requests[0];
       let message = JSON.parse(request.requestBody);
-      let expectedMessage = utils.deepClone(ANALYTICS_MESSAGE);
 
-      // new adUnitCodes in payload
-      expectedMessage.auctions[0].adUnits[0].bids[0].bidId = MOCK.BID_RESPONSE.requestId;
-      expectedMessage.bidsWon[0].bidId = MOCK.BID_RESPONSE.requestId;
-      expect(message).to.deep.equal(expectedMessage);
+      // Expect the ids sent to server to use the original bidId not the pbsBidId thing
+      expect(message.auctions[0].adUnits[0].bids[0].bidId).to.equal(MOCK.BID_RESPONSE.requestId);
+      expect(message.bidsWon[0].bidId).to.equal(MOCK.BID_RESPONSE.requestId);
     });
 
     [0, '0'].forEach(pbsParam => {
