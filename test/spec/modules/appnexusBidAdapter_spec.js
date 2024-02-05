@@ -1214,15 +1214,15 @@ describe('AppNexusAdapter', function () {
           'regs': {
             'ext': {
               'dsa': {
-                'required': 1,
+                'dsarequired': 1,
                 'pubrender': 0,
                 'datatopub': 1,
                 'transparency': [{
                   'domain': 'good-domain',
-                  'params': [1, 2]
+                  'dsaparams': [1, 2]
                 }, {
                   'domain': 'bad-setup',
-                  'params': ['1', 3]
+                  'dsaparams': ['1', 3]
                 }]
               }
             }
@@ -1235,12 +1235,12 @@ describe('AppNexusAdapter', function () {
       const payload = JSON.parse(request.data);
 
       expect(payload.dsa).to.exist;
-      expect(payload.dsa.dsainfo).to.equal(1);
+      expect(payload.dsa.dsarequired).to.equal(1);
       expect(payload.dsa.pubrender).to.equal(0);
       expect(payload.dsa.datatopub).to.equal(1);
       expect(payload.dsa.transparency).to.deep.equal([{
         'domain': 'good-domain',
-        'params': [1, 2]
+        'dsaparams': [1, 2]
       }]);
     });
 
