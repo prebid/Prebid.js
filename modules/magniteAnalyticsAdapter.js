@@ -77,7 +77,7 @@ const resetConfs = () => {
     eventPending: false,
     elementIdMap: {},
     sessionData: {},
-    bidWasClientSideCached: {}
+    bidsCachedClientSide: new WeakSet()
   }
   rubiConf = {
     pvid: generateUUID().slice(0, 8),
@@ -683,7 +683,7 @@ function enableMgniAnalytics(config = {}) {
     And if it was we will use the actual bidId instead of the pbsBidId override in our BID_RESPONSE handler
 */
 export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
-  cache.bidWasClientSideCached[bidResponse.requestId] = true;
+  cache.bidsCachedClientSide.add(bidResponse);
   fn.call(this, auctionInstance, bidResponse, afterBidAdded, videoMediaType);
 }
 
@@ -764,7 +764,8 @@ const handleBidResponse = (args, bidStatus) => {
 
   // if pbs gave us back a bidId, we need to use it and update our bidId to PBA
   const pbsBidId = (args.pbsBidId == 0 ? generateUUID() : args.pbsBidId) || (args.seatBidId == 0 ? generateUUID() : args.seatBidId);
-  if (pbsBidId && !cache.bidWasClientSideCached[args.requestId]) {
+  if (pbsBidId && !cache.bidsCachedClientSide.has(args)) {
+    cache.bidsCachedClientSide.delete(args);
     bid.pbsBidId = pbsBidId;
   }
 }
