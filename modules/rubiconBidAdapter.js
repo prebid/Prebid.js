@@ -177,7 +177,7 @@ export const converter = ortbConverter({
 
     delete data?.ext?.prebid?.storedrequest;
 
-    let carbonTopics = fetchCarbonTopics();
+    let carbonTopics = fetchCarbonTopics(bidderRequest);
     if (carbonTopics?.length > 0) {
       deepSetValue(data, 'user.data', carbonTopics);
     }
@@ -534,7 +534,7 @@ export const spec = {
       data['o_ae'] = 1;
     }
 
-    const topics = readCarbonTopics();
+    const topics = readCarbonTopics(bidderRequest);
     if (topics) {
       const domain = bidderRequest.refererInfo.domain
       Object.keys(topics).forEach(taxonomy => {
@@ -1015,27 +1015,23 @@ function applyFPD(bidRequest, mediaType, data) {
   }
 }
 
-function fetchCarbonTopics() {
+function fetchCarbonTopics(bidderRequest) {
   let topics = [];
   if (rubiConf.readTopics !== false) {
-    topics = config.getConfig('user.data')?.filter(topic => {
-      const taxonomy = topic.taxonomyVersion;
+    topics = bidderRequest.ortb2?.user?.data?.filter(topic => {
+      const taxonomy = topic.ext?.segtax;
       return taxonomy == 507 || taxonomy == 508;
     }) || topics;
   }
   return topics
 }
 
-function readCarbonTopics() {
+function readCarbonTopics(bidderRequest) {
   let topics = {};
-  let carbonTopics = fetchCarbonTopics();
+  let carbonTopics = fetchCarbonTopics(bidderRequest);
   carbonTopics.forEach(topic => {
-    const taxonomy = topic.taxonomyVersion;
-    if (topics[taxonomy]) {
-      topics[taxonomy] = topics[taxonomy] + ',' + topic.topic;
-    } else {
-      topics[taxonomy] = '' + topic.topic;
-    }
+    const taxonomy = topic.ext?.segtax;
+    topics[taxonomy] = topic.segments.forEach(seg => seg.id).join(',')
   })
   let hasProps = Object.keys(topics).length > 0;
   return hasProps ? topics : undefined;
