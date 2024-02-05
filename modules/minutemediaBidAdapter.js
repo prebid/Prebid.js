@@ -460,14 +460,6 @@ function generateGeneralParams(generalObject, bidderRequest) {
     generalParams.gdpr_consent = bidderRequest.gdprConsent.consentString;
   }
 
-  if (bidderRequest.gppConsent) {
-    generalBidParams.gpp = bidderRequest.gppConsent.gppString;
-    generalBidParams.gpp_sid = bidderRequest.gppConsent.applicableSections;
-  } else if (bidderRequest.ortb2?.regs?.gpp) {
-    generalBidParams.gpp = bidderRequest.ortb2.regs.gpp;
-    generalBidParams.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
-  }
-
   if (generalBidParams.ifa) {
     generalParams.ifa = generalBidParams.ifa;
   }
