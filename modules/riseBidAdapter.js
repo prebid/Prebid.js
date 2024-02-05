@@ -471,11 +471,11 @@ function generateGeneralParams(generalObject, bidderRequest) {
   }
 
   if (bidderRequest.gppConsent) {
-    generalBidParams.gppString = bidderRequest.gppConsent.gppString;
-    generalBidParams.gppSid = bidderRequest.gppConsent.applicableSections;
+    generalBidParams.gpp = bidderRequest.gppConsent.gppString;
+    generalBidParams.gpp_sid = bidderRequest.gppConsent.applicableSections;
   } else if (bidderRequest.ortb2?.regs?.gpp) {
-    generalBidParams.gppString = bidderRequest.ortb2.regs.gpp;
-    generalBidParams.gppSid = bidderRequest.ortb2.regs.gpp_sid;
+    generalBidParams.gpp = bidderRequest.ortb2.regs.gpp;
+    generalBidParams.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
   }
 
   if (generalBidParams.ifa) {

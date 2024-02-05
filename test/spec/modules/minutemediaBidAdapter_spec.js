@@ -305,16 +305,16 @@ describe('minutemediaAdapter', function () {
       const bidderRequestWithGPP = Object.assign({gppConsent: false}, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
       expect(request.data.params).to.be.an('object');
-      expect(request.data.params).to.not.have.property('gppString');
-      expect(request.data.params).to.not.have.property('gppSid');
+      expect(request.data.params).to.not.have.property('gpp');
+      expect(request.data.params).to.not.have.property('gpp_sid');
     });
 
     it('should send the gpp param if gppConsent is true in the bidRequest', function () {
-      const bidderRequestWithGPP = Object.assign({gppConsent: {gppString: 'test-consent-string', applicableSections: '123'}}, bidderRequest);
+      const bidderRequestWithGPP = Object.assign({gppConsent: {gppString: 'test-consent-string', applicableSections: [7]}}, bidderRequest);
       const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
       expect(request.data.params).to.be.an('object');
-      expect(request.data.params).to.have.property('gppString', 'test-consent-string');
-      expect(request.data.params).to.have.property('gppSid', '123');
+      expect(request.data.params).to.have.property('gpp', 'test-consent-string');
+      expect(request.data.params.gpp_sid).to.be.equal([7]);
     });
     
     it('should have schain param if it is available in the bidRequest', () => {
