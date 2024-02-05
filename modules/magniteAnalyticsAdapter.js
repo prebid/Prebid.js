@@ -25,7 +25,7 @@ import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
-import { getHook, setupBeforeHookFnOnce } from '../src/hook.js';
+import { getHook } from '../src/hook.js';
 
 const RUBICON_GVL_ID = 52;
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: 'magnite' });
@@ -684,7 +684,7 @@ function enableMgniAnalytics(config = {}) {
 */
 export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
   cache.bidWasClientSideCached[bidResponse.requestId] = true;
-  fn.call(this, auctionInstance, bidResponse, afterBidAdded, videoConfig);
+  fn.call(this, auctionInstance, bidResponse, afterBidAdded, videoMediaType);
 }
 
 const handleBidWon = args => {
