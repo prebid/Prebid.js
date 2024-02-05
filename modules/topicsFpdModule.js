@@ -14,9 +14,11 @@ const MODULE_NAME = 'topicsFpd';
 const DEFAULT_EXPIRATION_DAYS = 21;
 const DEFAULT_FETCH_RATE_IN_DAYS = 1;
 let LOAD_TOPICS_INITIALISE = false;
+let iframeLoadedURL = [];
 
 export function reset() {
   LOAD_TOPICS_INITIALISE = false;
+  iframeLoadedURL = [];
 }
 
 const bidderIframeList = {
@@ -29,11 +31,11 @@ const bidderIframeList = {
     iframeURL: 'https://topics.authorizedvault.com/topicsapi.html'
   }]
 }
+
 export const coreStorage = getCoreStorageManager(MODULE_NAME);
 export const topicStorageName = 'prebid:topics';
 export const lastUpdated = 'lastUpdated';
 
-const iframeLoadedURL = [];
 const TAXONOMIES = {
   // map from topic taxonomyVersion to IAB segment taxonomy
   '1': 600,
@@ -178,8 +180,8 @@ export function receiveMessage(evt) {
 
 /**
 Function to store Topics data received from iframe in storage(name: "prebid:topics")
-* @param {Topics} topics
-*/
+ * @param {Topics} topics
+ */
 export function storeInLocalStorage(bidder, topics) {
   const storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
   const topicsObj = {
@@ -202,8 +204,8 @@ function isCachedDataExpired(storedTime, cacheTime) {
 }
 
 /**
-* Function to get random bidders based on count passed with array of bidders
-**/
+ * Function to get random bidders based on count passed with array of bidders
+ */
 function getRandomBidders(arr, count) {
   return ([...arr].sort(() => 0.5 - Math.random())).slice(0, count)
 }

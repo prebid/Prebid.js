@@ -195,7 +195,7 @@ registerBidder(spec);
 
 /**
  * @param {object} slot Ad Unit Params by Prebid
- * @returns {int} floor by imp type
+ * @returns {number} floor by imp type
  */
 function applyFloor(slot) {
   const floors = [];
@@ -350,7 +350,7 @@ function mapNative(slot) {
 
 /**
  * @param {object} slot Slot config by Prebid
- * @returns {array} Request Assets by OpenRTB Native Ads 1.1 §4.2
+ * @returns {Array} Request Assets by OpenRTB Native Ads 1.1 §4.2
  */
 function mapNativeAssets(slot) {
   const params = slot.nativeParams || deepAccess(slot, 'mediaTypes.native');
@@ -413,7 +413,7 @@ function mapNativeAssets(slot) {
 
 /**
  * @param {object} image Prebid native.image/icon
- * @param {int} type Image or icon code
+ * @param {number} type Image or icon code
  * @returns {object} Request Image by OpenRTB Native Ads 1.1 §4.4
  */
 function mapNativeImage(image, type) {

@@ -11,12 +11,25 @@ module.exports = {
       node: {
         moduleDirectory: ['node_modules', './']
       }
+    },
+    'jsdoc': {
+      mode: 'typescript',
+      tagNamePreference: {
+        'tag constructor': 'constructor',
+        extends: 'extends',
+        method: 'method',
+        return: 'return',
+      }
     }
   },
-  extends: 'standard',
+  extends: [
+    'standard',
+    'plugin:jsdoc/recommended'
+  ],
   plugins: [
     'prebid',
-    'import'
+    'import',
+    'jsdoc'
   ],
   globals: {
     'BROWSERSTACK_USERNAME': false,
@@ -46,6 +59,24 @@ module.exports = {
     'no-undef': 2,
     'no-useless-escape': 'off',
     'no-console': 'error',
+    'jsdoc/check-types': 'off',
+    'jsdoc/newline-after-description': 'off',
+    'jsdoc/require-jsdoc': 'off',
+    'jsdoc/require-param': 'off',
+    'jsdoc/require-param-description': 'off',
+    'jsdoc/require-param-name': 'off',
+    'jsdoc/require-param-type': 'off',
+    'jsdoc/require-property': 'off',
+    'jsdoc/require-property-description': 'off',
+    'jsdoc/require-property-name': 'off',
+    'jsdoc/require-property-type': 'off',
+    'jsdoc/require-returns': 'off',
+    'jsdoc/require-returns-check': 'off',
+    'jsdoc/require-returns-description': 'off',
+    'jsdoc/require-returns-type': 'off',
+    'jsdoc/require-yields': 'off',
+    'jsdoc/require-yields-check': 'off',
+    'jsdoc/tag-lines': 'off'
   },
   overrides: Object.keys(allowedModules).map((key) => ({
     files: key + '/**/*.js',
