@@ -5,7 +5,7 @@
  * @requires module:modules/userId
  */
 
-import { logMessage, logError } from '../src/utils.js';
+import { logMessage, logError, logWarn } from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { uspDataHandler, coppaDataHandler, gppDataHandler } from '../src/adapterManager.js';
@@ -46,13 +46,12 @@ function calculateResponseObj(response) {
 
 function calculateQueryStringParams(pid, gdprConsentData, storageConfig) {
   const uspString = uspDataHandler.getConsentData();
-  const gdprApplies = Boolean(gdprConsentData?.gdprApplies);
   const coppaValue = coppaDataHandler.getCoppa();
   const gppConsent = gppDataHandler.getConsentData();
 
   const params = {
     pid,
-    gdpr: Number(gdprApplies),
+    gdpr: 0,
     src: CALLER_NAME,
     ver: '$prebid.version$',
     coppa: Number(coppaValue)
@@ -149,6 +148,12 @@ export const thirthyThreeAcrossIdSubmodule = {
   getId({ params = { }, storage: storageConfig }, gdprConsentData) {
     if (typeof params.pid !== 'string') {
       logError(`${MODULE_NAME}: Submodule requires a partner ID to be defined`);
+
+      return;
+    }
+
+    if (gdprConsentData?.gdprApplies === true) {
+      logWarn(`${MODULE_NAME}: Submodule cannot be used where GDPR applies`);
 
       return;
     }

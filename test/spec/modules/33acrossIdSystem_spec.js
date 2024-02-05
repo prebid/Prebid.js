@@ -290,9 +290,10 @@ describe('33acrossIdSystem', () => {
     });
 
     context('when GDPR applies', () => {
-      it('should call endpoint with \'gdpr=1\'', () => {
-        const completeCallback = () => {};
-        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+      it('should log a warning and don\'t expect a call to the endpoint', () => {
+        const logWarnSpy = sinon.spy(utils, 'logWarn');
+
+        const result = thirthyThreeAcrossIdSubmodule.getId({
           params: {
             pid: '12345'
           }
@@ -300,11 +301,10 @@ describe('33acrossIdSystem', () => {
           gdprApplies: true
         });
 
-        callback(completeCallback);
+        expect(logWarnSpy.calledOnceWithExactly('33acrossId: Submodule cannot be used where GDPR applies')).to.be.true;
+        expect(result).to.be.undefined;
 
-        const [request] = server.requests;
-
-        expect(request.url).to.contain('gdpr=1');
+        logWarnSpy.restore();
       });
     });
 
@@ -325,24 +325,25 @@ describe('33acrossIdSystem', () => {
 
         expect(request.url).to.contain('gdpr=0');
       });
-    });
 
-    context('when the GDPR consent string is given', () => {
-      it('should call endpoint with the GDPR consent string', () => {
-        const completeCallback = () => {};
-        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
-          params: {
-            pid: '12345'
-          }
-        }, {
-          consentString: 'foo'
+      context('but the GDPR consent string is given', () => {
+        it('should call endpoint with the GDPR consent string', () => {
+          const completeCallback = () => {};
+          const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+            params: {
+              pid: '12345'
+            }
+          }, {
+            gdprApplies: false,
+            consentString: 'foo'
+          });
+
+          callback(completeCallback);
+
+          const [request] = server.requests;
+
+          expect(request.url).to.contain('gdpr_consent=foo');
         });
-
-        callback(completeCallback);
-
-        const [request] = server.requests;
-
-        expect(request.url).to.contain('gdpr_consent=foo');
       });
     });
 
