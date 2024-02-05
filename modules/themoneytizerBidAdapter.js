@@ -9,7 +9,7 @@ const ENDPOINT_URL = 'https://ads.biddertmz.com/m/';
 export const spec = {
   aliases: [BIDDER_CODE],
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+  supportedMediaTypes: [BANNER],
   gvlid: GVLID,
 
   isBidRequestValid: function (bid) {
