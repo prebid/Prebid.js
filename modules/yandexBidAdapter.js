@@ -4,10 +4,55 @@ import { BANNER, NATIVE } from '../src/mediaTypes.js'
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { config } from '../src/config.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/auction.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/mediaTypes.js').MediaType} MediaType
+ * @typedef {import('../src/utils.js').MediaTypes} MediaTypes
+ * @typedef {import('../modules/priceFloors.js').getFloor} GetFloor
+ */
+
+/**
+ * @typedef {Object} CustomServerRequestFields
+ * @property {BidRequest} bidRequest
+ */
+
+/**
+ * @typedef {ServerRequest & CustomServerRequestFields} YandexServerRequest
+ */
+
+/**
+ * Yandex bidder-specific params which the publisher used in their bid request.
+ *
+ * @typedef {Object} YandexBidRequestParams
+ * @property {string} placementId Possible formats: `R-I-123456-2`, `R-123456-1`, `123456-789`.
+ * @property {number} [pageId] Deprecated. Please use `placementId` instead.
+ * @property {number} [impId] Deprecated. Please use `placementId` instead.
+ */
+
+/**
+ * @typedef {Object} AdditionalBidRequestFields
+ * @property {GetFloor} [getFloor]
+ * @property {MediaTypes} [mediaTypes]
+ */
+
+/**
+ * @typedef {BidRequest & AdditionalBidRequestFields} ExtendedBidRequest
+ */
+
 const BIDDER_CODE = 'yandex';
 const BIDDER_URL = 'https://bs.yandex.ru/prebid';
 const DEFAULT_TTL = 180;
 const DEFAULT_CURRENCY = 'EUR';
+/**
+ * @type {MediaType[]}
+ */
 const SUPPORTED_MEDIA_TYPES = [ BANNER, NATIVE ];
 const SSP_ID = 10500;
 
@@ -42,11 +87,18 @@ export const NATIVE_ASSETS = {
 const NATIVE_ASSETS_IDS = {};
 _each(NATIVE_ASSETS, (asset, key) => { NATIVE_ASSETS_IDS[asset[0]] = key });
 
+/** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['ya'], // short code
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
+  /**
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid request to validate.
+   * @returns {boolean} True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function(bid) {
     const { params } = bid;
     if (!params) {
@@ -59,6 +111,13 @@ export const spec = {
     return true;
   },
 
+  /**
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {ExtendedBidRequest[]} validBidRequests An array of bids.
+   * @param {BidderRequest} bidderRequest Bidder request object.
+   * @returns {YandexServerRequest[]} Objects describing the requests to the server.
+   */
   buildRequests: function(validBidRequests, bidderRequest) {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
@@ -131,6 +190,11 @@ export const spec = {
         deepSetValue(data, 'user.ext.eids', eids);
       }
 
+      const userData = deepAccess(bidRequest, 'ortb2.user.data');
+      if (userData && userData.length) {
+        deepSetValue(data, 'user.data', userData);
+      }
+
       const queryParamsString = formatQS(queryParams);
       return {
         method: 'POST',
@@ -146,8 +210,12 @@ export const spec = {
 
   interpretResponse: interpretResponse,
 
-  onBidWon: function (bid) {
-    const nurl = bid['nurl'];
+  /**
+   * Register bidder specific code, which will execute if a bid from this bidder won the auction.
+   * @param {Bid} bid The bid that won the auction.
+   */
+  onBidWon: function(bid) {
+    const nurl = addRTT(bid['nurl'], bid.timeToRespond);
 
     if (!nurl) {
       return;
@@ -157,6 +225,9 @@ export const spec = {
   }
 }
 
+/**
+ * @param {YandexBidRequestParams} bidRequestParams
+ */
 function extractPlacementIds(bidRequestParams) {
   const { placementId } = bidRequestParams;
   const result = { pageId: null, impId: null };
@@ -191,6 +262,9 @@ function extractPlacementIds(bidRequestParams) {
   return result;
 }
 
+/**
+ * @param {ExtendedBidRequest} bidRequest
+ */
 function getBidfloor(bidRequest) {
   const floors = [];
 
@@ -210,6 +284,9 @@ function getBidfloor(bidRequest) {
   return floors.sort((a, b) => b.floor - a.floor)[0];
 }
 
+/**
+ * @param {ExtendedBidRequest} bidRequest
+ */
 function mapBanner(bidRequest) {
   if (deepAccess(bidRequest, 'mediaTypes.banner')) {
     const sizes = bidRequest.sizes || bidRequest.mediaTypes.banner.sizes;
@@ -227,6 +304,9 @@ function mapBanner(bidRequest) {
   }
 }
 
+/**
+ * @param {ExtendedBidRequest} bidRequest
+ */
 function mapNative(bidRequest) {
   const adUnitNativeAssets = deepAccess(bidRequest, 'mediaTypes.native');
   if (adUnitNativeAssets) {
@@ -299,6 +379,13 @@ function mapImageAsset(adUnitImageAssetParams, nativeAssetType) {
   return img;
 }
 
+/**
+ * Unpack the response from the server into a list of bids.
+ *
+ * @param {ServerResponse} serverResponse A successful response from the server.
+ * @param {YandexServerRequest} yandexServerRequest
+ * @return {Bid[]} An array of bids which were nested inside the server.
+ */
 function interpretResponse(serverResponse, { bidRequest }) {
   let response = serverResponse.body;
   if (!response.seatbid) {
@@ -313,6 +400,7 @@ function interpretResponse(serverResponse, { bidRequest }) {
 
   return bidsReceived.map(bidReceived => {
     const price = bidReceived.price;
+    /** @type {Bid} */
     let prBid = {
       requestId: bidRequest.bidId,
       cpm: price,
@@ -383,6 +471,26 @@ function replaceAuctionPrice(url, price, currency) {
   return url
     .replace(/\${AUCTION_PRICE}/, price)
     .replace(/\${AUCTION_CURRENCY}/, currency);
+}
+
+function addRTT(url, rtt) {
+  if (!url) return;
+
+  if (url.indexOf(`\${RTT}`) > -1) {
+    return url.replace(/\${RTT}/, rtt ?? -1);
+  }
+
+  const urlObj = new URL(url);
+
+  if (Number.isInteger(rtt)) {
+    urlObj.searchParams.set('rtt', rtt);
+  } else {
+    urlObj.searchParams.delete('rtt');
+  }
+
+  url = urlObj.toString();
+
+  return url;
 }
 
 registerBidder(spec);

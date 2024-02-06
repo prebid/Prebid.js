@@ -3,17 +3,27 @@ import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
+
 const BIDDER_CODE = 'discovery';
 const ENDPOINT_URL = 'https://rtb-jp.mediago.io/api/bid?tn=';
 const TIME_TO_LIVE = 500;
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 let globals = {};
 let itemMaps = {};
 const MEDIATYPE = [BANNER, NATIVE];
 
 /* ----- _ss_pp_id:start ------ */
 const COOKIE_KEY_SSPPID = '_ss_pp_id';
-const COOKIE_KEY_MGUID = '__mguid_';
+export const COOKIE_KEY_MGUID = '__mguid_';
+const COOKIE_KEY_PMGUID = '__pmguid_';
+const COOKIE_RETENTION_TIME = 365 * 24 * 60 * 60 * 1000; // 1 year
+const COOKY_SYNC_IFRAME_URL = 'https://asset.popin.cc/js/cookieSync.html';
+export const THIRD_PARTY_COOKIE_ORIGIN = 'https://asset.popin.cc';
 
 const NATIVERET = {
   id: 'id',
@@ -55,24 +65,79 @@ const NATIVERET = {
 };
 
 /**
- * 获取用户id
+ * get page title
+ * @returns {string}
+ */
+
+export function getPageTitle(win = window) {
+  try {
+    const ogTitle = win.top.document.querySelector('meta[property="og:title"]')
+    return win.top.document.title || (ogTitle && ogTitle.content) || '';
+  } catch (e) {
+    const ogTitle = document.querySelector('meta[property="og:title"]')
+    return document.title || (ogTitle && ogTitle.content) || '';
+  }
+}
+
+/**
+ * get page description
+ * @returns {string}
+ */
+export function getPageDescription(win = window) {
+  let element;
+
+  try {
+    element = win.top.document.querySelector('meta[name="description"]') ||
+      win.top.document.querySelector('meta[property="og:description"]')
+  } catch (e) {
+    element = document.querySelector('meta[name="description"]') ||
+      document.querySelector('meta[property="og:description"]')
+  }
+
+  return (element && element.content) || '';
+}
+
+/**
+ * get page keywords
+ * @returns {string}
+ */
+export function getPageKeywords(win = window) {
+  let element;
+
+  try {
+    element = win.top.document.querySelector('meta[name="keywords"]');
+  } catch (e) {
+    element = document.querySelector('meta[name="keywords"]');
+  }
+
+  return (element && element.content) || '';
+}
+
+/**
+ * get connection downlink
+ * @returns {number}
+ */
+export function getConnectionDownLink(win = window) {
+  const nav = win.navigator || {};
+  return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : undefined;
+}
+
+/**
+ * get pmg uid
+ * 获取并生成用户的id
  * @return {string}
  */
-const getUserID = () => {
-  let idd = storage.getCookie(COOKIE_KEY_SSPPID);
-  let idm = storage.getCookie(COOKIE_KEY_MGUID);
+export const getPmgUID = () => {
+  if (!storage.cookiesAreEnabled()) return;
 
-  if (idd && !idm) {
-    idm = idd;
-  } else if (idm && !idd) {
-    idd = idm;
-  } else if (!idd && !idm) {
-    const uuid = utils.generateUUID();
-    storage.setCookie(COOKIE_KEY_MGUID, uuid);
-    storage.setCookie(COOKIE_KEY_SSPPID, uuid);
-    return uuid;
+  let pmgUid = storage.getCookie(COOKIE_KEY_PMGUID);
+  if (!pmgUid) {
+    pmgUid = utils.generateUUID();
+    try {
+      storage.setCookie(COOKIE_KEY_PMGUID, pmgUid, getCurrentTimeToUTCString());
+    } catch (e) {}
   }
-  return idd;
+  return pmgUid;
 };
 
 /* ----- _ss_pp_id:end ------ */
@@ -236,6 +301,16 @@ function getReferrer(bidRequest = {}, bidderRequest = {}) {
 }
 
 /**
+ * get current time to UTC string
+ * @returns utc string
+ */
+export function getCurrentTimeToUTCString() {
+  const date = new Date();
+  date.setTime(date.getTime() + COOKIE_RETENTION_TIME);
+  return date.toUTCString();
+}
+
+/**
  * format imp ad test ext params
  *
  * @param validBidRequest sigleBidRequest
@@ -361,6 +436,10 @@ function getParam(validBidRequests, bidderRequest) {
   const page = utils.deepAccess(bidderRequest, 'refererInfo.page');
   const referer = utils.deepAccess(bidderRequest, 'refererInfo.ref');
   const firstPartyData = bidderRequest.ortb2;
+  const topWindow = window.top;
+  const title = getPageTitle();
+  const desc = getPageDescription();
+  const keywords = getPageKeywords();
 
   if (items && items.length) {
     let c = {
@@ -381,9 +460,22 @@ function getParam(validBidRequests, bidderRequest) {
       ext: {
         eids,
         firstPartyData,
+        ssppid: storage.getCookie(COOKIE_KEY_SSPPID) || undefined,
+        pmguid: getPmgUID(),
+        page: {
+          title: title ? title.slice(0, 100) : undefined,
+          desc: desc ? desc.slice(0, 300) : undefined,
+          keywords: keywords ? keywords.slice(0, 100) : undefined,
+          hLen: topWindow.history?.length || undefined,
+        },
+        device: {
+          nbw: getConnectionDownLink(),
+          hc: topWindow.navigator?.hardwareConcurrency || undefined,
+          dm: topWindow.navigator?.deviceMemory || undefined,
+        }
       },
       user: {
-        buyeruid: getUserID(),
+        buyeruid: storage.getCookie(COOKIE_KEY_MGUID) || undefined,
         id: sharedid || pubcid,
       },
       tmax: timeout,
@@ -434,7 +526,7 @@ export const spec = {
     if (bid.params.badv) {
       globals['badv'] = Array.isArray(bid.params.badv) ? bid.params.badv : [];
     }
-    return !!(bid.params.token && bid.params.publisher && bid.params.tagid);
+    return true;
   },
 
   /**
@@ -445,6 +537,8 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    if (!globals['token']) return;
+
     let payload = getParam(validBidRequests, bidderRequest);
 
     const payloadString = JSON.stringify(payload);
@@ -545,6 +639,45 @@ export const spec = {
     }
 
     return bidResponses;
+  },
+
+  getUserSyncs: function (syncOptions, serverResponse, gdprConsent, uspConsent, gppConsent) {
+    const origin = encodeURIComponent(location.origin || `https://${location.host}`);
+    let syncParamUrl = `dm=${origin}`;
+
+    if (gdprConsent && gdprConsent.consentString) {
+      if (typeof gdprConsent.gdprApplies === 'boolean') {
+        syncParamUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+      } else {
+        syncParamUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
+      }
+    }
+    if (uspConsent && uspConsent.consentString) {
+      syncParamUrl += `&ccpa_consent=${uspConsent.consentString}`;
+    }
+
+    if (syncOptions.iframeEnabled) {
+      window.addEventListener('message', function handler(event) {
+        if (!event.data || event.origin != THIRD_PARTY_COOKIE_ORIGIN) {
+          return;
+        }
+
+        this.removeEventListener('message', handler);
+
+        event.stopImmediatePropagation();
+
+        const response = event.data;
+        if (!response.optout && response.mguid) {
+          storage.setCookie(COOKIE_KEY_MGUID, response.mguid, getCurrentTimeToUTCString());
+        }
+      }, true);
+      return [
+        {
+          type: 'iframe',
+          url: `${COOKY_SYNC_IFRAME_URL}?${syncParamUrl}`
+        }
+      ];
+    }
   },
 
   /**

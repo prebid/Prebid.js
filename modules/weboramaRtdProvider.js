@@ -7,25 +7,29 @@
  * @requires module:modules/realTimeData
  */
 
-/** profile metadata
+/**
+ * profile metadata
  * @typedef dataCallbackMetadata
  * @property {boolean} user if true it is user-centric data
  * @property {string} source describe the source of data, if 'contextual' or 'wam'
  * @property {boolean} isDefault if true it the default profile defined in the configuration
  */
 
-/** profile from contextual, wam or sfbx
+/**
+ * profile from contextual, wam or sfbx
  * @typedef {Object.<string,string[]>} Profile
  */
 
-/** onData callback type
+/**
+ * onData callback type
  * @callback dataCallback
  * @param {Profile} data profile data
  * @param {dataCallbackMetadata} meta metadata
  * @returns {void}
  */
 
-/** setPrebidTargeting callback type
+/**
+ * setPrebidTargeting callback type
  * @callback setPrebidTargetingCallback
  * @param {string} adUnitCode
  * @param {Profile} data
@@ -33,7 +37,8 @@
  * @returns {boolean}
  */
 
-/** sendToBidders callback type
+/**
+ * sendToBidders callback type
  * @callback sendToBiddersCallback
  * @param {Object} bid
  * @param {string} adUnitCode
@@ -90,7 +95,8 @@
  * @property {?boolean} enabled if false, will ignore this configuration
  */
 
-/** common configuration between contextual, wam and sfbx
+/**
+ * common configuration between contextual, wam and sfbx
  * @typedef {WeboCtxConf|WeboUserDataConf|SfbxLiteDataConf} CommonConf
  */
 
@@ -194,7 +200,8 @@ class WeboramaRtdProvider {
   constructor(components) {
     this.#components = components;
   }
-  /** Initialize module
+  /**
+   * Initialize module
    * @method
    * @param {Object} moduleConfig
    * @param {?ModuleParams} moduleConfig.params
@@ -233,7 +240,8 @@ class WeboramaRtdProvider {
     return Object.values(this.#components).some((c) => c.initialized);
   }
 
-  /** function that will allow RTD sub-modules to modify the AdUnit object for each auction
+  /**
+   * function that will allow RTD sub-modules to modify the AdUnit object for each auction
    * @method
    * @param {Object} reqBidsConfigObj
    * @param {doneCallback} onDone
@@ -267,7 +275,8 @@ class WeboramaRtdProvider {
     });
   }
 
-  /** function that provides ad server targeting data to RTD-core
+  /**
+   * function that provides ad server targeting data to RTD-core
    * @method
    * @param {string[]} adUnitsCodes
    * @param {Object} moduleConfig
@@ -308,7 +317,8 @@ class WeboramaRtdProvider {
     }
   }
 
-  /** Initialize subsection module
+  /**
+   * Initialize subsection module
    * @method
    * @private
    * @param {ModuleParams} moduleParams
@@ -353,7 +363,8 @@ class WeboramaRtdProvider {
     return true;
   }
 
-  /** check gdpr consent data
+  /**
+   * check gdpr consent data
    * @method
    * @private
    * @param {Object} gdpr
@@ -383,7 +394,8 @@ class WeboramaRtdProvider {
 
     return true;
   }
-  /** normalize submodule configuration
+  /**
+   * normalize submodule configuration
    * @method
    * @private
    * @param {ModuleParams} moduleParams
@@ -416,7 +428,8 @@ class WeboramaRtdProvider {
     }
   }
 
-  /** coerce setPrebidTargeting to a callback
+  /**
+   * coerce setPrebidTargeting to a callback
    * @method
    * @private
    * @param {CommonConf} submoduleParams
@@ -432,7 +445,8 @@ class WeboramaRtdProvider {
     }
   }
 
-  /** coerce sendToBidders to a callback
+  /**
+   * coerce sendToBidders to a callback
    * @method
    * @private
    * @param {CommonConf} submoduleParams
@@ -479,7 +493,8 @@ class WeboramaRtdProvider {
    * @typedef {Object} AdUnit
    * @property {Object[]} bids
    */
-  /** function that handles bid request data
+  /**
+   * function that handles bid request data
    * @method
    * @private
    * @param {Object} reqBidsConfigObj
@@ -529,18 +544,21 @@ class WeboramaRtdProvider {
     });
   }
 
-  /** onSuccess callback type
+  /**
+   * onSuccess callback type
    * @callback successCallback
    * @param {?Object} data
    * @returns {void}
    */
 
-  /** onDone callback type
+  /**
+   * onDone callback type
    * @callback doneCallback
    * @returns {void}
    */
 
-  /** Fetch Bigsea Contextual Profile
+  /**
+   * Fetch Bigsea Contextual Profile
    * @method
    * @private
    * @param {WeboCtxConf} weboCtxConf
@@ -619,7 +637,8 @@ class WeboramaRtdProvider {
     ajax(urlProfileAPI, callback, null, options);
   }
 
-  /** set bigsea contextual profile on module state
+  /**
+   * set bigsea contextual profile on module state
    * @method
    * @private
    * @param {?Object} data
@@ -632,7 +651,8 @@ class WeboramaRtdProvider {
     }
   }
 
-  /** function that provides data handlers based on the configuration
+  /**
+   * function that provides data handlers based on the configuration
    * @method
    * @private
    * @param {ModuleParams} moduleParams
@@ -720,7 +740,8 @@ class WeboramaRtdProvider {
       onData: dataConf.onData,
     };
   }
-  /** handle individual bid
+  /**
+   * handle individual bid
    * @method
    * @private
    * @param {Object} reqBidsConfigObj
@@ -744,7 +765,8 @@ class WeboramaRtdProvider {
     }
   }
 
-  /** return adapter name based on alias, if any
+  /**
+   * return adapter name based on alias, if any
    * @method
    * @private
    * @param {string} aliasName
@@ -755,7 +777,8 @@ class WeboramaRtdProvider {
     return adapterManager.aliasRegistry[aliasName] || aliasName;
   }
 
-  /** function that handles bid request data
+  /**
+   * function that handles bid request data
    * @method
    * @private
    * @param {ProfileHandler} ph profile handler
@@ -766,7 +789,8 @@ class WeboramaRtdProvider {
     return [deepClone(ph.data), deepClone(ph.metadata)];
   }
 
-  /** handle appnexus/xandr bid
+  /**
+   * handle appnexus/xandr bid
    * @method
    * @private
    * @param {Object} reqBidsConfigObj
@@ -784,7 +808,8 @@ class WeboramaRtdProvider {
     // this.#setBidderOrtb2(reqBidsConfigObj.ortb2Fragments?.bidder, bid.bidder, base, profile);
   }
 
-  /** handle generic bid via ortb2 arbitrary data
+  /**
+   * handle generic bid via ortb2 arbitrary data
    * @method
    * @private
    * @param {Object} reqBidsConfigObj
@@ -905,7 +930,8 @@ export function isValidProfile(profile) {
  * @returns {buildProfileHandlerCallback}
  */
 function getContextualProfile(component /* equivalent to this */) {
-  /** return contextual profile
+  /**
+   * return contextual profile
    * @param {WeboCtxConf} weboCtxConf
    * @returns {[Profile,boolean]} contextual profile + isDefault boolean flag
    */
@@ -926,7 +952,8 @@ function getContextualProfile(component /* equivalent to this */) {
  * @returns {buildProfileHandlerCallback}
  */
 function getWeboUserDataProfile(component /* equivalent to this */) {
-  /** return weboUserData profile
+  /**
+   * return weboUserData profile
    * @param {WeboUserDataConf} weboUserDataConf
    * @returns {[Profile,boolean]} weboUserData profile  + isDefault boolean flag
    */
@@ -946,7 +973,8 @@ function getWeboUserDataProfile(component /* equivalent to this */) {
  * @returns {buildProfileHandlerCallback}
  */
 function getSfbxLiteDataProfile(component /* equivalent to this */) {
-  /** return weboUserData profile
+  /**
+   * return weboUserData profile
    * @param {SfbxLiteDataConf} sfbxLiteDataConf
    * @returns {[Profile,boolean]} sfbxLiteData profile + isDefault boolean flag
    */
@@ -970,7 +998,8 @@ function getSfbxLiteDataProfile(component /* equivalent to this */) {
  * @returns {void}
  */
 
-/** return generic webo data profile
+/**
+ * return generic webo data profile
  * @param {WeboUserDataConf|SfbxLiteDataConf} weboDataConf
  * @param {cacheGetCallback} cacheGet
  * @param {cacheSetCallback} cacheSet
