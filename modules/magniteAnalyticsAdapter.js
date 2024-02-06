@@ -765,7 +765,6 @@ const handleBidResponse = (args, bidStatus) => {
   // if pbs gave us back a bidId, we need to use it and update our bidId to PBA
   const pbsBidId = (args.pbsBidId == 0 ? generateUUID() : args.pbsBidId) || (args.seatBidId == 0 ? generateUUID() : args.seatBidId);
   if (pbsBidId && !cache.bidsCachedClientSide.has(args)) {
-    cache.bidsCachedClientSide.delete(args);
     bid.pbsBidId = pbsBidId;
   }
 }
