@@ -38,9 +38,9 @@ export function setComponentAuction(adUnitCode, auctionConfigs) {
           auctionConfig
         }))
     });
-    logInfo(MODULE, `register component auction configs for: ${adUnitCode}: ${gptSlot.getAdUnitPath()}`, Object.values(auctionConfigs));
+    logInfo(MODULE, `register component auction configs for: ${adUnitCode}: ${gptSlot.getAdUnitPath()}`, auctionConfigs);
   } else {
-    logWarn(MODULE, `unable to register component auction config for ${adUnitCode}`, Object.entries(auctionConfigs));
+    logWarn(MODULE, `unable to register component auction config for ${adUnitCode}`, auctionConfigs);
   }
 }
 
