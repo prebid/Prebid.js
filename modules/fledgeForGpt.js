@@ -24,25 +24,30 @@ Object.entries({
   });
 });
 
+export function configsBySeller(auctionConfigs) {
+  return Object.fromEntries(auctionConfigs.map(cfg => [cfg.seller, cfg]))
+}
+
 export function setComponentAuction(adUnitCode, auctionConfigs) {
   const gptSlot = getGptSlotForAdUnitCode(adUnitCode);
   if (gptSlot && gptSlot.setConfig) {
     gptSlot.setConfig({
-      componentAuction: auctionConfigs.map(cfg => ({
-        configKey: cfg.seller,
-        auctionConfig: cfg
-      }))
+      componentAuction: Object.entries(auctionConfigs)
+        .map(([configKey, auctionConfig]) => ({
+          configKey,
+          auctionConfig
+        }))
     });
-    logInfo(MODULE, `register component auction configs for: ${adUnitCode}: ${gptSlot.getAdUnitPath()}`, auctionConfigs);
+    logInfo(MODULE, `register component auction configs for: ${adUnitCode}: ${gptSlot.getAdUnitPath()}`, Object.values(auctionConfigs));
   } else {
-    logWarn(MODULE, `unable to register component auction config for ${adUnitCode}`, auctionConfigs);
+    logWarn(MODULE, `unable to register component auction config for ${adUnitCode}`, Object.entries(auctionConfigs));
   }
 }
 
 export function onAuctionConfigFactory(setGptConfig = setComponentAuction) {
   return function onAuctionConfig(auctionId, adUnitCode, auctionConfig) {
     if (autoconfig) {
-      setGptConfig(adUnitCode, auctionConfig.componentAuctions);
+      setGptConfig(adUnitCode, configsBySeller(auctionConfig.componentAuctions));
     }
   }
 }
@@ -50,16 +55,39 @@ export function onAuctionConfigFactory(setGptConfig = setComponentAuction) {
 export function setPAAPIConfigFactory(
   getPAAPIConfig = (filters) => getGlobal().getPAAPIConfig(filters),
   setGptConfig = setComponentAuction) {
-  return function(filters) {
-    let some = false;
+  const PREVIOUSLY_SET = {};
+  /**
+   * Configure GPT slots with PAAPI auction configs.
+   * `filters` are the same filters accepted by `pbjs.getPAAPIConfig`;
+   * if reuse = false, this also resets configuration for slots that were previously configured.
+   */
+  return function(filters = {}) {
+    let set = new Set();
     Object.entries(
       getPAAPIConfig(filters) || {}
     ).forEach(([au, config]) => {
-      some = true;
-      setGptConfig(au, config.componentAuctions);
+      set.add(au);
+      config = configsBySeller(config.componentAuctions);
+      const sellers = Object.keys(config);
+      let previous = PREVIOUSLY_SET[au] || new Set();
+      if (!(filters.reuse ?? true) && (filters.adUnitCode ?? au) === au) {
+        Object.assign(config, Object.fromEntries(Array.from(previous.values()).map(v => [v, null])));
+        previous = new Set(sellers);
+      } else {
+        sellers.forEach(seller => previous.add(seller));
+      }
+      PREVIOUSLY_SET[au] = previous;
+      setGptConfig(au, config);
     })
-    if (!some) {
+    if (set.size === 0) {
       logInfo(`${MODULE}: No component auctions available to set`);
+    }
+    if (!(filters.reuse ?? true)) {
+      Object.entries(PREVIOUSLY_SET)
+        .filter(([au]) => !set.has(au) && (filters.adUnitCode ?? au) === au)
+        .forEach(([au, sellers]) => {
+          setGptConfig(au, Object.fromEntries(Array.from(sellers.values()).map(seller => [seller, null])))
+        })
     }
   }
 }

@@ -15,6 +15,7 @@ import {getGlobal} from '../src/prebidGlobal.js';
 const MODULE = 'PAAPI';
 
 const submodules = [];
+const USED = new WeakSet();
 
 export function registerSubmodule(submod) {
   submodules.push(submod);
@@ -128,9 +129,10 @@ export function addComponentAuctionHook(next, request, componentAuctionConfig) {
  *
  * @param auctionId? optional auction filter; if omitted, the latest auction for each ad unit is used
  * @param adUnitCode? optional ad unit filter
+ * @param reuse if false, only return configurations that have not been returned previously
  * @returns {{}} a map from ad unit code to auction config for the ad unit.
  */
-export function getPAAPIConfig({auctionId, adUnitCode} = {}) {
+export function getPAAPIConfig({auctionId, adUnitCode, reuse = true} = {}) {
   const output = {};
   const targetedAuctionConfigs = auctionId && configsForAuction(auctionId);
   Object.entries(latestAuctionForAdUnit).forEach(([au, auct]) => {
@@ -140,10 +142,15 @@ export function getPAAPIConfig({auctionId, adUnitCode} = {}) {
       delete latestAuctionForAdUnit[au];
     } else {
       if (adUnitCode == null || adUnitCode === au) {
+        let candidate;
         if (targetedAuctionConfigs?.hasOwnProperty(au)) {
-          output[au] = targetedAuctionConfigs[au];
+          candidate = targetedAuctionConfigs[au];
         } else if (auctionId == null) {
-          output[au] = auctionConfigs[au];
+          candidate = auctionConfigs[au];
+        }
+        if (candidate && (!USED.has(candidate) || reuse)) {
+          output[au] = candidate;
+          USED.add(candidate);
         }
       }
     }

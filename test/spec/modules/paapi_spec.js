@@ -88,6 +88,22 @@ describe('paapi module', () => {
                 componentAuctions: [cf1]
               });
             });
+
+            it('and not return them again if reuse = false', () => {
+              getPAAPIConfig();
+              const cfg = getPAAPIConfig({reuse: false});
+              expect(cfg).to.eql({});
+            });
+            Object.entries({
+              'true': {reuse: true},
+              'undefined': {}
+            }).forEach(([t, options]) => {
+              it(`and return them again if reuse is ${t}`, () => {
+                const expected = getPAAPIConfig();
+                const cfg = getPAAPIConfig(options);
+                expect(cfg).to.eql(expected);
+              })
+            })
           });
 
           it('should drop auction configs after end of auction', () => {
@@ -315,6 +331,12 @@ describe('paapi module', () => {
 
           it('should filter by ad unit and use latest auction', () => {
             expectAdUnitsFromAuctions(getPAAPIConfig({adUnitCode: 'au2'}), {au2: AUCTION2});
+          });
+
+          it('should keep track of which configs were returned for reuse = false', () => {
+            expectAdUnitsFromAuctions(getPAAPIConfig({auctionId: AUCTION1}), {au1: AUCTION1, au2: AUCTION1});
+            expect(getPAAPIConfig({auctionId: AUCTION1, reuse: false})).to.eql({});
+            expectAdUnitsFromAuctions(getPAAPIConfig({reuse: false}), {au2: AUCTION2, au3: AUCTION2});
           });
         });
       });
