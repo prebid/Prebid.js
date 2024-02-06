@@ -154,7 +154,19 @@ describe('BT Bid Adapter', () => {
       expect(syncs).to.deep.equal([]);
     });
 
-    it('should include consent parameters in sync URL if they are provided', () => {
+    it('should return an empty array if no server responses are provided', () => {
+      const syncs = spec.getUserSyncs(
+        { iframeEnabled: true },
+        [],
+        null,
+        null,
+        null
+      );
+
+      expect(syncs).to.deep.equal([]);
+    });
+
+    it('should pass consent parameters and bidder codes in sync URL if they are provided', () => {
       const gdprConsent = {
         gdprApplies: true,
         consentString: 'GDPRConsentString123',
@@ -164,29 +176,30 @@ describe('BT Bid Adapter', () => {
         applicableSections: ['sectionA'],
       };
       const us_privacy = '1YNY';
-      const expectedSyncUrl = `${SYNC_URL}?gdpr=1&gdpr_consent=${gdprConsent.consentString}&gpp=${gppConsent.gppString}&gpp_sid=sectionA&us_privacy=${us_privacy}`;
-
+      const expectedSyncUrl = new URL(SYNC_URL);
+      expectedSyncUrl.searchParams.set('bidders', 'pubmatic,ix');
+      expectedSyncUrl.searchParams.set('gdpr', 1);
+      expectedSyncUrl.searchParams.set(
+        'gdpr_consent',
+        gdprConsent.consentString
+      );
+      expectedSyncUrl.searchParams.set('gpp', gppConsent.gppString);
+      expectedSyncUrl.searchParams.set('gpp_sid', 'sectionA');
+      expectedSyncUrl.searchParams.set('us_privacy', us_privacy);
       const syncs = spec.getUserSyncs(
         { iframeEnabled: true },
-        [],
+        [
+          { body: { ext: { responsetimemillis: { pubmatic: 123 } } } },
+          { body: { ext: { responsetimemillis: { pubmatic: 123, ix: 123 } } } },
+        ],
         gdprConsent,
         us_privacy,
         gppConsent
       );
 
-      expect(syncs).to.deep.equal([{ type: 'iframe', url: expectedSyncUrl }]);
-    });
-
-    it('should not include any consent parameters if no consents are provided', () => {
-      const syncs = spec.getUserSyncs(
-        { iframeEnabled: true },
-        [],
-        null,
-        null,
-        null
-      );
-
-      expect(syncs).to.deep.equal([{ type: 'iframe', url: SYNC_URL }]);
+      expect(syncs).to.deep.equal([
+        { type: 'iframe', url: expectedSyncUrl.href },
+      ]);
     });
   });
 });

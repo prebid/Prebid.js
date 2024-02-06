@@ -148,24 +148,41 @@ function getUserSyncs(
   uspConsent,
   gppConsent
 ) {
-  let syncs = [];
-  const syncUrl = new URL(SYNC_URL);
-
-  if (syncOptions.iframeEnabled) {
-    if (gdprConsent) {
-      syncUrl.searchParams.set('gdpr', Number(gdprConsent.gdprApplies));
-      syncUrl.searchParams.set('gdpr_consent', gdprConsent.consentString);
-    }
-    if (gppConsent) {
-      syncUrl.searchParams.set('gpp', gppConsent.gppString);
-      syncUrl.searchParams.set('gpp_sid', gppConsent.applicableSections);
-    }
-    if (uspConsent) {
-      syncUrl.searchParams.set('us_privacy', uspConsent);
-    }
-
-    syncs.push({ type: 'iframe', url: syncUrl.href });
+  if (!syncOptions.iframeEnabled || !serverResponses?.length) {
+    return [];
   }
+
+  const bidderCodes = new Set();
+  serverResponses.forEach((serverResponse) => {
+    if (serverResponse?.body?.ext?.responsetimemillis) {
+      Object.keys(serverResponse.body.ext.responsetimemillis).forEach(
+        bidderCodes.add,
+        bidderCodes
+      );
+    }
+  });
+
+  if (!bidderCodes.size) {
+    return [];
+  }
+
+  const syncs = [];
+  const syncUrl = new URL(SYNC_URL);
+  syncUrl.searchParams.set('bidders', [...bidderCodes].join(','));
+
+  if (gdprConsent) {
+    syncUrl.searchParams.set('gdpr', Number(gdprConsent.gdprApplies));
+    syncUrl.searchParams.set('gdpr_consent', gdprConsent.consentString);
+  }
+  if (gppConsent) {
+    syncUrl.searchParams.set('gpp', gppConsent.gppString);
+    syncUrl.searchParams.set('gpp_sid', gppConsent.applicableSections);
+  }
+  if (uspConsent) {
+    syncUrl.searchParams.set('us_privacy', uspConsent);
+  }
+
+  syncs.push({ type: 'iframe', url: syncUrl.href });
 
   return syncs;
 }
