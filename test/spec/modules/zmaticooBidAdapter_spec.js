@@ -1,5 +1,6 @@
 import {checkParamDataType, spec} from '../../../modules/zmaticooBidAdapter.js'
-import {deepClone} from '../../../src/utils';
+import utils, {deepClone} from '../../../src/utils';
+import {expect} from 'chai';
 
 describe('zMaticoo Bidder Adapter', function () {
   const bannerRequest = [{
@@ -260,8 +261,12 @@ describe('zMaticoo Bidder Adapter', function () {
               adomain: ['test.com'],
               h: 50,
               w: 320,
+              nurl: 'https://gwbudgetali.iymedia.me/budget.php',
               ext: {
-                vast_url: '<vasturl>'
+                vast_url: '<vasturl>',
+                prebid: {
+                  type: 'banner'
+                }
               }
             }
           ]
@@ -284,6 +289,18 @@ describe('zMaticoo Bidder Adapter', function () {
       expect(bid.requestId).to.equal(receivedBid.impid);
       expect(bid.vastXml).to.equal(receivedBid.ext.vast_url);
       expect(bid.meta.advertiserDomains).to.equal(receivedBid.adomain);
+      expect(bid.mediaType).to.equal(receivedBid.ext.prebid.type);
+      expect(bid.nurl).to.equal(receivedBid.nurl);
     });
   });
+  describe('onBidWon', function () {
+    it('should make an ajax call with the original cpm', function () {
+      const bid = {
+        nurl: 'http://test.com/win?auctionPrice=${AUCTION_PRICE}',
+        cpm: 2.1,
+      }
+      const bidWonResult = spec.onBidWon(bid)
+      expect(bidWonResult).to.equal(true)
+    });
+  })
 });
