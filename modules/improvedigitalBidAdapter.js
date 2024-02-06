@@ -212,7 +212,7 @@ export const CONVERTER = ortbConverter({
       banner(fillImpBanner, imp, bidRequest, context) {
         // override to disregard banner.sizes if usePrebidSizes is not set
         if (!bidRequest.mediaTypes[BANNER]) return;
-        if (config.getConfig('improvedigital.usePrebidSizes') !== true) {
+        if (config.getConfig('improvedigital.usePrebidSizes') === false) {
           const banner = Object.assign({}, bidRequest.mediaTypes[BANNER], {sizes: null});
           bidRequest = {...bidRequest, mediaTypes: {[BANNER]: banner}}
         }

@@ -228,8 +228,6 @@ describe('Improve Digital Adapter Tests', function () {
     });
 
     it('should make a well-formed request objects', function () {
-      getConfigStub = sinon.stub(config, 'getConfig');
-      getConfigStub.withArgs('improvedigital.usePrebidSizes').returns(true);
       const request = spec.buildRequests([simpleBidRequest], syncAddFPDToBidderRequest(bidderRequest))[0];
       expect(request).to.be.an('object');
       expect(request.method).to.equal(METHOD);
@@ -264,8 +262,6 @@ describe('Improve Digital Adapter Tests', function () {
     });
 
     it('should make a well-formed request object for multi-format ad unit', function () {
-      getConfigStub = sinon.stub(config, 'getConfig');
-      getConfigStub.withArgs('improvedigital.usePrebidSizes').returns(true);
       const request = spec.buildRequests(updateNativeParams([multiFormatBidRequest]), multiFormatBidderRequest)[0];
       expect(request).to.be.an('object');
       expect(request.method).to.equal(METHOD);
@@ -642,8 +638,6 @@ describe('Improve Digital Adapter Tests', function () {
     });
 
     it('should set Prebid sizes in bid request', function () {
-      getConfigStub = sinon.stub(config, 'getConfig');
-      getConfigStub.withArgs('improvedigital.usePrebidSizes').returns(true);
       const request = spec.buildRequests([simpleBidRequest], bidderRequest)[0];
       const payload = JSON.parse(request.data);
       sinon.assert.match(payload.imp[0].banner, {
@@ -655,8 +649,6 @@ describe('Improve Digital Adapter Tests', function () {
     });
 
     it('should not add single size filter when using Prebid sizes', function () {
-      getConfigStub = sinon.stub(config, 'getConfig');
-      getConfigStub.withArgs('improvedigital.usePrebidSizes').returns(true);
       const bidRequest = Object.assign({}, simpleBidRequest);
       const size = {
         w: 800,
