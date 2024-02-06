@@ -1,6 +1,6 @@
 import Adapter from '../../src/adapter.js';
 import {
-  bind,
+  deepAccess,
   deepClone,
   flatten,
   generateUUID,
@@ -15,10 +15,9 @@ import {
   logWarn,
   triggerPixel,
   uniques,
-  deepAccess,
 } from '../../src/utils.js';
 import CONSTANTS from '../../src/constants.json';
-import adapterManager from '../../src/adapterManager.js';
+import adapterManager, {s2sActivityParams} from '../../src/adapterManager.js';
 import {config} from '../../src/config.js';
 import {addComponentAuction, isValid} from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
@@ -29,6 +28,8 @@ import {hook} from '../../src/hook.js';
 import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
 import {buildPBSRequest, interpretPBSResponse} from './ortbConverter.js';
 import {useMetrics} from '../../src/utils/perfMetrics.js';
+import {isActivityAllowed} from '../../src/activities/rules.js';
+import {ACTIVITY_TRANSMIT_UFPD} from '../../src/activities/activities.js';
 
 const getConfig = config.getConfig;
 
@@ -206,7 +207,7 @@ getConfig('s2sConfig', ({s2sConfig}) => setS2sConfig(s2sConfig));
 
 /**
  * resets the _synced variable back to false, primiarily used for testing purposes
-*/
+ */
 export function resetSyncedStatus() {
   _syncCount = 0;
 }
@@ -295,7 +296,7 @@ function doAllSyncs(bidders, s2sConfig) {
 
   // if PBS reports this bidder doesn't have an ID, then call the sync and recurse to the next sync entry
   if (thisSync.no_cookie) {
-    doPreBidderSync(thisSync.usersync.type, thisSync.usersync.url, thisSync.bidder, bind.call(doAllSyncs, null, bidders, s2sConfig), s2sConfig);
+    doPreBidderSync(thisSync.usersync.type, thisSync.usersync.url, thisSync.bidder, doAllSyncs.bind(null, bidders, s2sConfig), s2sConfig);
   } else {
     // bidder already has an ID, so just recurse to the next sync entry
     doAllSyncs(bidders, s2sConfig);
@@ -354,8 +355,7 @@ function doClientSideSyncs(bidders, gdprConsent, uspConsent, gppConsent) {
     if (clientAdapter && clientAdapter.registerSyncs) {
       config.runWithBidder(
         bidder,
-        bind.call(
-          clientAdapter.registerSyncs,
+        clientAdapter.registerSyncs.bind(
           clientAdapter,
           [],
           gdprConsent,
@@ -478,10 +478,14 @@ export function PrebidServer() {
               adapterMetrics
             });
           }
-          done();
+          done(false);
           doClientSideSyncs(requestedBidders, gdprConsent, uspConsent, gppConsent);
         },
-        onError: done,
+        onError(msg, error) {
+          logError(`Prebid server call failed: '${msg}'`, error);
+          bidRequests.forEach(bidderRequest => events.emit(CONSTANTS.EVENTS.BIDDER_ERROR, {error, bidderRequest}));
+          done(error.timedOut);
+        },
         onBid: function ({adUnit, bid}) {
           const metrics = bid.metrics = s2sBidRequest.metrics.fork().renameWith();
           metrics.checkpoint('addBidResponse');
@@ -499,8 +503,8 @@ export function PrebidServer() {
             }
           }
         },
-        onFledge: ({adUnitCode, config}) => {
-          addComponentAuction(adUnitCode, config);
+        onFledge: (params) => {
+          addComponentAuction({auctionId: bidRequests[0].auctionId, ...params}, params.config);
         }
       })
     }
@@ -571,7 +575,11 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
         }
       },
       requestJson,
-      {contentType: 'text/plain', withCredentials: true}
+      {
+        contentType: 'text/plain',
+        withCredentials: true,
+        browsingTopics: isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, s2sActivityParams(s2sBidRequest.s2sConfig))
+      }
     );
   } else {
     logError('PBS request not made.  Check endpoints.');
@@ -585,7 +593,7 @@ function shouldEmitNonbids(s2sConfig, response) {
 /**
  * Global setter that sets eids permissions for bidders
  * This setter is to be used by userId module when included
- * @param {array} newEidPermissions
+ * @param {Array} newEidPermissions
  */
 function setEidPermissions(newEidPermissions) {
   eidPermissions = newEidPermissions;

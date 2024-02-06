@@ -12,7 +12,7 @@ const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const GVLID = 676;
 const TMAX = 450;
-const BIDDER_VERSION = '5.9';
+const BIDDER_VERSION = '5.92';
 const DEFAULT_CURRENCY = 'PLN';
 const W = window;
 const { navigator } = W;
@@ -38,7 +38,7 @@ var nativeAssetMap = {
 
 /**
  * return native asset type, based on asset id
- * @param {int} id - native asset id
+ * @param {number} id - native asset id
  * @returns {string} asset type
  */
 const getNativeAssetType = id => {
@@ -164,7 +164,7 @@ const applyClientHints = ortbRequest => {
     Check / generate page view id
     Should be generated dureing first call to applyClientHints(),
     and re-generated if pathname has changed
-  */
+   */
   if (!pageView.id || location.pathname !== pageView.path) {
     pageView.path = location.pathname;
     pageView.id = Math.floor(1E20 * Math.random()).toString();
@@ -197,6 +197,22 @@ const applyClientHints = ortbRequest => {
 
   const ch = { data };
   ortbRequest.user = { ...ortbRequest.user, ...ch };
+};
+
+const applyTopics = (validBidRequest, ortbRequest) => {
+  const userData = validBidRequest.ortb2?.user?.data || [];
+  const topicsData = userData.filter(dataObj => {
+    const segtax = dataObj.ext?.segtax;
+    return segtax >= 600 && segtax <= 609;
+  })[0];
+
+  // format topics obj for exchange
+  if (topicsData) {
+    topicsData.id = `${topicsData.ext.segtax}`;
+    topicsData.name = 'topics';
+    delete (topicsData.ext);
+    ortbRequest.user.data.push(topicsData);
+  }
 };
 
 const applyUserIds = (validBidRequest, ortbRequest) => {
@@ -490,7 +506,7 @@ const mapImpression = slot => {
 }
 
 const isVideoAd = bid => {
-  const xmlTester = new RegExp(/^<\?xml/);
+  const xmlTester = new RegExp(/^<\?xml|<VAST/, 'i');
   return bid.adm && bid.adm.match(xmlTester);
 }
 
@@ -682,6 +698,7 @@ const spec = {
     applyGdpr(bidderRequest, payload);
     applyClientHints(payload);
     applyUserIds(validBidRequests[0], payload);
+    applyTopics(bidderRequest, payload);
 
     return {
       method: 'POST',

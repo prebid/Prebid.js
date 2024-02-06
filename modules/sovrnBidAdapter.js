@@ -1,13 +1,12 @@
 import {
   _each,
-  getBidIdParameter,
   isArray,
   getUniqueIdentifierStr,
   deepSetValue,
   logError,
   deepAccess,
   isInteger,
-  logWarn
+  logWarn, getBidIdParameter
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import {
@@ -15,6 +14,10 @@ import {
   BANNER,
   VIDEO
 } from '../src/mediaTypes.js'
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
@@ -45,7 +48,6 @@ const ORTB_VIDEO_PARAMS = {
 const REQUIRED_VIDEO_PARAMS = {
   context: (value) => value !== ADPOD,
   mimes: ORTB_VIDEO_PARAMS.mimes,
-  minduration: ORTB_VIDEO_PARAMS.minduration,
   maxduration: ORTB_VIDEO_PARAMS.maxduration,
   protocols: ORTB_VIDEO_PARAMS.protocols
 }
@@ -174,6 +176,11 @@ export const spec = {
         deepSetValue(sovrnBidReq, 'source.tid', tid)
       }
 
+      const coppa = deepAccess(bidderRequest, 'ortb2.regs.coppa');
+      if (coppa) {
+        deepSetValue(sovrnBidReq, 'regs.coppa', 1);
+      }
+
       if (bidderRequest.gdprConsent) {
         deepSetValue(sovrnBidReq, 'regs.ext.gdpr', +bidderRequest.gdprConsent.gdprApplies);
         deepSetValue(sovrnBidReq, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
@@ -211,7 +218,7 @@ export const spec = {
    * Format Sovrn responses as Prebid bid responses
    * @param {id, seatbid} sovrnResponse A successful response from Sovrn.
    * @return {Bid[]} An array of formatted bids.
-  */
+   */
   interpretResponse: function({ body: {id, seatbid} }) {
     if (!id || !seatbid || !Array.isArray(seatbid)) return []
 

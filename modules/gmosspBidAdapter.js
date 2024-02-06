@@ -1,17 +1,25 @@
 import {
   createTrackPixelHtml,
   deepAccess,
-  deepSetValue,
-  getBidIdParameter,
+  deepSetValue, getBidIdParameter,
   getDNT,
   getWindowTop,
   isEmpty,
-  logError,
-  tryAppendQueryString
+  logError
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER} from '../src/mediaTypes.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
 
 const BIDDER_CODE = 'gmossp';
 const ENDPOINT = 'https://sp.gmossp-sp.jp/hb/prebid/query.ad';

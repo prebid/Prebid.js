@@ -1,10 +1,21 @@
 import * as utils from '../../../src/utils.js';
-import { loadExternalScript } from '../../../src/adloader.js';
-import * as hook from '../../../src/hook.js'
-import { beforeInit, geoedgeSubmodule, setWrapper, wrapper, htmlPlaceholder, WRAPPER_URL, getClientUrl, getInPageUrl } from '../../../modules/geoedgeRtdProvider.js';
-import { server } from '../../../test/mocks/xhr.js';
+import {loadExternalScript} from '../../../src/adloader.js';
+import * as geoedgeRtdModule from '../../../modules/geoedgeRtdProvider.js';
+import {server} from '../../../test/mocks/xhr.js';
 import * as events from '../../../src/events.js';
 import CONSTANTS from '../../../src/constants.json';
+
+let {
+  geoedgeSubmodule,
+  getClientUrl,
+  getInPageUrl,
+  htmlPlaceholder,
+  setWrapper,
+  getMacros,
+  WRAPPER_URL,
+  preloadClient,
+  markAsLoaded
+} = geoedgeRtdModule;
 
 let key = '123123123';
 function makeConfig(gpt) {
@@ -50,20 +61,6 @@ function mockMessageFromClient(key) {
 let mockWrapper = `<wrapper>${htmlPlaceholder}</wrapper>`;
 
 describe('Geoedge RTD module', function () {
-  describe('beforeInit', function () {
-    let submoduleStub;
-
-    before(function () {
-      submoduleStub = sinon.stub(hook, 'submodule');
-    });
-    after(function () {
-      submoduleStub.restore();
-    });
-    it('should register RTD submodule provider', function () {
-      beforeInit();
-      expect(submoduleStub.calledWith('realTimeData', geoedgeSubmodule)).to.equal(true);
-    });
-  });
   describe('submodule', function () {
     describe('name', function () {
       it('should be geoedge', function () {
@@ -71,13 +68,11 @@ describe('Geoedge RTD module', function () {
       });
     });
     describe('init', function () {
-      let insertElementStub;
-
       before(function () {
-        insertElementStub = sinon.stub(utils, 'insertElement');
+        sinon.spy(geoedgeRtdModule, 'preloadClient');
       });
       after(function () {
-        utils.insertElement.restore();
+        geoedgeRtdModule.preloadClient.restore();
       });
       it('should return false when missing params or key', function () {
         let missingParams = geoedgeSubmodule.init({});
@@ -93,14 +88,13 @@ describe('Geoedge RTD module', function () {
         let isWrapperRequest = request && request.url && request.url && request.url === WRAPPER_URL;
         expect(isWrapperRequest).to.equal(true);
       });
-      it('should preload the client', function () {
-        let isLinkPreloadAsScript = arg => arg.tagName === 'LINK' && arg.rel === 'preload' && arg.as === 'script' && arg.href === getClientUrl(key);
-        expect(insertElementStub.calledWith(sinon.match(isLinkPreloadAsScript))).to.equal(true);
+      it('should call preloadClient', function () {
+        expect(preloadClient.called);
       });
       it('should emit billable events with applicable winning bids', function (done) {
         let counter = 0;
         events.on(CONSTANTS.EVENTS.BILLABLE_EVENT, function (event) {
-          if (event.vendor === 'geoedge' && event.type === 'impression') {
+          if (event.vendor === geoedgeSubmodule.name && event.type === 'impression') {
             counter += 1;
           }
           expect(counter).to.equal(1);
@@ -110,7 +104,7 @@ describe('Geoedge RTD module', function () {
       });
       it('should load the in page code when gpt params is true', function () {
         geoedgeSubmodule.init(makeConfig(true));
-        let isInPageUrl = arg => arg == getInPageUrl(key);
+        let isInPageUrl = arg => arg === getInPageUrl(key);
         expect(loadExternalScript.calledWith(sinon.match(isInPageUrl))).to.equal(true);
       });
       it('should set the window.grumi config object when gpt params is true', function () {
@@ -118,10 +112,36 @@ describe('Geoedge RTD module', function () {
         expect(hasGrumiObj && window.grumi.key === key && window.grumi.fromPrebid).to.equal(true);
       });
     });
+    describe('preloadClient', function () {
+      let iframe;
+      preloadClient(key);
+      let loadExternalScriptCall = loadExternalScript.getCall(0);
+      it('should create an invisible iframe and insert it to the DOM', function () {
+        iframe = document.getElementById('grumiFrame');
+        expect(iframe && iframe.style.display === 'none');
+      });
+      it('should assign params object to the iframe\'s window', function () {
+        let grumi = iframe.contentWindow.grumi;
+        expect(grumi.key).to.equal(key);
+      });
+      it('should preload the client into the iframe', function () {
+        let isClientUrl = arg => arg === getClientUrl(key);
+        expect(loadExternalScriptCall.calledWithMatch(isClientUrl)).to.equal(true);
+      });
+    });
     describe('setWrapper', function () {
       it('should set the wrapper', function () {
         setWrapper(mockWrapper);
-        expect(wrapper).to.equal(mockWrapper);
+        expect(geoedgeRtdModule.wrapper).to.equal(mockWrapper);
+      });
+    });
+    describe('getMacros', function () {
+      it('return a dictionary of macros replaced with values from bid object', function () {
+        let bid = mockBid('testBidder');
+        let dict = getMacros(bid, key);
+        let hasCpm = dict['%_hbCpm!'] === bid.cpm;
+        let hasCurrency = dict['%_hbCurrency!'] === bid.currency;
+        expect(hasCpm && hasCurrency);
       });
     });
     describe('onBidResponseEvent', function () {

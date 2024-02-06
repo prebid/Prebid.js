@@ -25,7 +25,12 @@ import {useMetrics} from '../utils/perfMetrics.js';
 import {isActivityAllowed} from '../activities/rules.js';
 import {activityParams} from '../activities/activityParams.js';
 import {MODULE_TYPE_BIDDER} from '../activities/modules.js';
-import {ACTIVITY_TRANSMIT_TID} from '../activities/activities.js';
+import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../activities/activities.js';
+
+/**
+ * @typedef {import('../mediaTypes.js').MediaType} MediaType
+ * @typedef {import('../Renderer.js').Renderer} Renderer
+ */
 
 /**
  * This file aims to support Adapters during the Prebid 0.x -> 1.x transition.
@@ -57,7 +62,7 @@ import {ACTIVITY_TRANSMIT_TID} from '../activities/activities.js';
  * @property {string} code A code which will be used to uniquely identify this bidder. This should be the same
  *   one as is used in the call to registerBidAdapter
  * @property {string[]} [aliases] A list of aliases which should also resolve to this bidder.
- * @property {MediaType[]} [supportedMediaTypes]: A list of Media Types which the adapter supports.
+ * @property {MediaType[]} [supportedMediaTypes] A list of Media Types which the adapter supports.
  * @property {function(object): boolean} isBidRequestValid Determines whether or not the given bid has all the params
  *   needed to make a valid request.
  * @property {function(BidRequest[], bidderRequest): ServerRequest|ServerRequest[]} buildRequests Build the request to the Server
@@ -105,7 +110,7 @@ import {ACTIVITY_TRANSMIT_TID} from '../activities/activities.js';
  *
  * @property {*} body The response body. If this is legal JSON, then it will be parsed. Otherwise it'll be a
  *   string with the body's content.
- * @property {{get: function(string): string} headers The response headers.
+ * @property {{get: function(string): string}} headers The response headers.
  *   Call this like `ServerResponse.headers.get("Content-Type")`
  */
 
@@ -126,7 +131,7 @@ import {ACTIVITY_TRANSMIT_TID} from '../activities/activities.js';
  * @property {object} [video] Object for storing video response data
  * @property {object} [meta] Object for storing bid meta data
  * @property {string} [meta.primaryCatId] The IAB primary category ID
- * @property [Renderer] renderer A Renderer which can be used as a default for this bid,
+ * @property {Renderer} renderer A Renderer which can be used as a default for this bid,
  *   if the publisher doesn't override it. This is only relevant for Outstream Video bids.
  */
 
@@ -288,14 +293,11 @@ export function newBidder(spec) {
           onTimelyResponse(spec.code);
           responses.push(resp)
         },
-        /** Process eventual BidderAuctionResponse.fledgeAuctionConfig field in response.
-         * @param {Array<FledgeAuctionConfig>} fledgeAuctionConfigs
-         */
         onFledgeAuctionConfigs: (fledgeAuctionConfigs) => {
           fledgeAuctionConfigs.forEach((fledgeAuctionConfig) => {
             const bidRequest = bidRequestMap[fledgeAuctionConfig.bidId];
             if (bidRequest) {
-              addComponentAuction(bidRequest.adUnitCode, fledgeAuctionConfig.config);
+              addComponentAuction(bidRequest, fledgeAuctionConfig.config);
             } else {
               logWarn('Received fledge auction configuration for an unknown bidId', fledgeAuctionConfig);
             }
@@ -303,7 +305,9 @@ export function newBidder(spec) {
         },
         // If the server responds with an error, there's not much we can do beside logging.
         onError: (errorMessage, error) => {
-          onTimelyResponse(spec.code);
+          if (!error.timedOut) {
+            onTimelyResponse(spec.code);
+          }
           adapterManager.callBidderError(spec.code, error, bidderRequest)
           events.emit(CONSTANTS.EVENTS.BIDDER_ERROR, { error, bidderRequest });
           logError(`Server call for ${spec.code} failed: ${errorMessage} ${error.status}. Continuing without bids.`);
@@ -454,6 +458,15 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
     onRequest(request);
 
     const networkDone = requestMetrics.startTiming('net');
+
+    function getOptions(defaults) {
+      const ro = request.options;
+      return Object.assign(defaults, ro, {
+        browsingTopics: ro?.hasOwnProperty('browsingTopics') && !ro.browsingTopics
+          ? false
+          : (bidderSettings.get(spec.code, 'topicsHeader') ?? true) && isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, activityParams(MODULE_TYPE_BIDDER, spec.code))
+      })
+    }
     switch (request.method) {
       case 'GET':
         ajax(
@@ -463,10 +476,10 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
             error: onFailure
           },
           undefined,
-          Object.assign({
+          getOptions({
             method: 'GET',
             withCredentials: true
-          }, request.options)
+          })
         );
         break;
       case 'POST':
@@ -477,11 +490,11 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
             error: onFailure
           },
           typeof request.data === 'string' ? request.data : JSON.stringify(request.data),
-          Object.assign({
+          getOptions({
             method: 'POST',
             contentType: 'text/plain',
             withCredentials: true
-          }, request.options)
+          })
         );
         break;
       default:
@@ -519,7 +532,7 @@ export const registerSyncInner = hook('async', function(spec, responses, gdprCon
   }
 }, 'registerSyncs')
 
-export const addComponentAuction = hook('sync', (adUnitCode, fledgeAuctionConfig) => {
+export const addComponentAuction = hook('sync', (request, fledgeAuctionConfig) => {
 }, 'addComponentAuction');
 
 // check that the bid has a width and height set

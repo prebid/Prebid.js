@@ -2,7 +2,7 @@ import {
   attachIdSystem,
   auctionDelay,
   coreStorage, dep,
-  findRootDomain,
+  findRootDomain, getConsentHash,
   init,
   PBJS_USER_ID_OPTOUT_NAME,
   requestBidsHook,
@@ -21,7 +21,6 @@ import CONSTANTS from 'src/constants.json';
 import {getGlobal} from 'src/prebidGlobal.js';
 import {resetConsentData, } from 'modules/consentManagement.js';
 import {server} from 'test/mocks/xhr.js';
-import {find} from 'src/polyfill.js';
 import {unifiedIdSubmodule} from 'modules/unifiedIdSystem.js';
 import {britepoolIdSubmodule} from 'modules/britepoolIdSystem.js';
 import {id5IdSubmodule} from 'modules/id5IdSystem.js';
@@ -56,7 +55,7 @@ import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 import {getPPID} from '../../../src/adserver.js';
 import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
-import {GDPR_GVLIDS} from '../../../src/consentHandler.js';
+import {allConsent, GDPR_GVLIDS, gdprDataHandler} from '../../../src/consentHandler.js';
 import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
 import {ACTIVITY_ENRICH_EIDS} from '../../../src/activities/activities.js';
 import {ACTIVITY_PARAM_COMPONENT_NAME, ACTIVITY_PARAM_COMPONENT_TYPE} from '../../../src/activities/params.js';
@@ -380,10 +379,95 @@ describe('User ID', function () {
             expect(bid).to.not.have.deep.nested.property('userIdAsEids');
           });
         });
-        // setCookie is called once in order to store consentData
-        expect(coreStorage.setCookie.callCount).to.equal(1);
       });
     });
+
+    describe('createEidsArray', () => {
+      beforeEach(() => {
+        init(config);
+        setSubmoduleRegistry([
+          createMockIdSubmodule('mockId1', null, null,
+            {'mockId1': {source: 'mock1source', atype: 1}}),
+          createMockIdSubmodule('mockId2v1', null, null,
+            {'mockId2v1': {source: 'mock2source', atype: 2, getEidExt: () => ({v: 1})}}),
+          createMockIdSubmodule('mockId2v2', null, null,
+            {'mockId2v2': {source: 'mock2source', atype: 2, getEidExt: () => ({v: 2})}}),
+        ]);
+      });
+
+      it('should group UIDs by source and ext', () => {
+        const eids = createEidsArray({
+          mockId1: ['mock-1-1', 'mock-1-2'],
+          mockId2v1: ['mock-2-1', 'mock-2-2'],
+          mockId2v2: ['mock-2-1', 'mock-2-2']
+        });
+        expect(eids).to.eql([
+          {
+            source: 'mock1source',
+            uids: [
+              {
+                id: 'mock-1-1',
+                atype: 1,
+              },
+              {
+                id: 'mock-1-2',
+                atype: 1,
+              }
+            ]
+          },
+          {
+            source: 'mock2source',
+            ext: {
+              v: 1
+            },
+            uids: [
+              {
+                id: 'mock-2-1',
+                atype: 2,
+              },
+              {
+                id: 'mock-2-2',
+                atype: 2,
+              }
+            ]
+          },
+          {
+            source: 'mock2source',
+            ext: {
+              v: 2
+            },
+            uids: [
+              {
+                id: 'mock-2-1',
+                atype: 2,
+              },
+              {
+                id: 'mock-2-2',
+                atype: 2,
+              }
+            ]
+          }
+        ])
+      });
+
+      it('when merging with pubCommonId, should not alter its eids', () => {
+        const uid = {
+          pubProvidedId: [
+            {
+              source: 'mock1Source',
+              uids: [
+                {id: 'uid2'}
+              ]
+            }
+          ],
+          mockId1: 'uid1',
+        };
+        const eids = createEidsArray(uid);
+        expect(eids).to.have.length(1);
+        expect(eids[0].uids.map(u => u.id)).to.have.members(['uid1', 'uid2']);
+        expect(uid.pubProvidedId[0].uids).to.eql([{id: 'uid2'}]);
+      });
+    })
 
     it('pbjs.getUserIds', function (done) {
       init(config);
@@ -929,6 +1013,7 @@ describe('User ID', function () {
 
       beforeEach(() => {
         mockIdCallback = sinon.stub();
+        coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
         let mockIdSystem = {
           name: 'mockId',
           decode: function(value) {
@@ -1155,7 +1240,7 @@ describe('User ID', function () {
 
     it('pbjs.refreshUserIds refreshes single', function() {
       coreStorage.setCookie('MOCKID', '', EXPIRED_COOKIE_DATE);
-      coreStorage.setCookie('REFRESH', '', EXPIRED_COOKIE_DATE);
+      coreStorage.setCookie('refreshedid', '', EXPIRED_COOKIE_DATE);
 
       let sandbox = sinon.createSandbox();
       let mockIdCallback = sandbox.stub().returns({id: {'MOCKID': '1111'}});
@@ -3005,7 +3090,7 @@ describe('User ID', function () {
           expect(server.requests).to.be.empty;
           return endAuction();
         }).then(() => {
-          expect(server.requests[0].url).to.equal('/any/unifiedid/url');
+          expect(server.requests[0].url).to.match(/\/any\/unifiedid\/url/);
         });
       });
 
@@ -3119,17 +3204,12 @@ describe('User ID', function () {
           }
         };
 
-        consentData = {
-          gdprApplies: true,
-          consentString: 'mockString',
-          apiVersion: 1,
-          hasValidated: true // mock presence of GPDR enforcement module
-        }
         // clear cookies
         expStr = (new Date(Date.now() + 25000).toUTCString());
         coreStorage.setCookie(mockIdCookieName, '', EXPIRED_COOKIE_DATE);
         coreStorage.setCookie(`${mockIdCookieName}_last`, '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie(CONSENT_LOCAL_STORAGE_NAME, '', EXPIRED_COOKIE_DATE);
+        coreStorage.setCookie(`${mockIdCookieName}_cst`, '', EXPIRED_COOKIE_DATE);
+        allConsent.reset();
 
         // init
         adUnits = [getAdUnitMock()];
@@ -3143,10 +3223,20 @@ describe('User ID', function () {
         config.resetConfig();
       });
 
-      it('calls getId if no stored consent data and refresh is not needed', function () {
-        coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
-        coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
+      function setStorage({
+        val = JSON.stringify({id: '1234'}),
+        lastDelta = 60 * 1000,
+        cst = null
+      } = {}) {
+        coreStorage.setCookie(mockIdCookieName, val, expStr);
+        coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - lastDelta).toUTCString()), expStr);
+        if (cst != null) {
+          coreStorage.setCookie(`${mockIdCookieName}_cst`, cst, expStr);
+        }
+      }
 
+      it('calls getId if no stored consent data and refresh is not needed', function () {
+        setStorage({lastDelta: 1000});
         config.setConfig(userIdConfig);
 
         let innerAdUnits;
@@ -3160,9 +3250,7 @@ describe('User ID', function () {
       });
 
       it('calls getId if no stored consent data but refresh is needed', function () {
-        coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
-        coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 60 * 1000).toUTCString()), expStr);
-
+        setStorage();
         config.setConfig(userIdConfig);
 
         let innerAdUnits;
@@ -3176,11 +3264,7 @@ describe('User ID', function () {
       });
 
       it('calls getId if empty stored consent and refresh not needed', function () {
-        coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
-        coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
-
-        setStoredConsentData();
-
+        setStorage({cst: ''});
         config.setConfig(userIdConfig);
 
         let innerAdUnits;
@@ -3194,10 +3278,10 @@ describe('User ID', function () {
       });
 
       it('calls getId if stored consent does not match current consent and refresh not needed', function () {
-        coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
-        coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
-
-        setStoredConsentData({...consentData, consentString: 'different'});
+        setStorage({cst: getConsentHash()});
+        gdprDataHandler.setConsentData({
+          consentString: 'different'
+        });
 
         config.setConfig(userIdConfig);
 
@@ -3212,10 +3296,7 @@ describe('User ID', function () {
       });
 
       it('does not call getId if stored consent matches current consent and refresh not needed', function () {
-        coreStorage.setCookie(mockIdCookieName, JSON.stringify({id: '1234'}), expStr);
-        coreStorage.setCookie(`${mockIdCookieName}_last`, (new Date(Date.now() - 1 * 1000).toUTCString()), expStr);
-
-        setStoredConsentData({...consentData});
+        setStorage({lastDelta: 1000, cst: getConsentHash()});
 
         config.setConfig(userIdConfig);
 

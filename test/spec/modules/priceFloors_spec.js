@@ -12,7 +12,7 @@ import {
   isFloorsDataValid,
   addBidResponseHook,
   fieldMatchingFunctions,
-  allowedFields
+  allowedFields, parseFloorData, normalizeDefault, getFloorDataFromAdUnits, updateAdUnitsForAuction, createFloorsDataForAuction
 } from 'modules/priceFloors.js';
 import * as events from 'src/events.js';
 import * as mockGpt from '../integration/faker/googletag.js';
@@ -22,6 +22,7 @@ import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {guardTids} from '../../../src/adapters/bidderFactory.js';
 import * as activities from '../../../src/activities/rules.js';
+import {server} from '../../mocks/xhr.js';
 
 describe('the price floors module', function () {
   let logErrorSpy;
@@ -122,7 +123,7 @@ describe('the price floors module', function () {
     return {
       code,
       mediaTypes: {banner: { sizes: [[300, 200], [300, 600]] }, native: {}},
-      bids: [{bidder: 'someBidder'}, {bidder: 'someOtherBidder'}]
+      bids: [{bidder: 'someBidder', adUnitCode: code}, {bidder: 'someOtherBidder', adUnitCode: code}]
     };
   }
   beforeEach(function() {
@@ -141,6 +142,76 @@ describe('the price floors module', function () {
     // reset global bidder settings so no weird test side effects
     getGlobal().bidderSettings = {};
   });
+
+  describe('parseFloorData', () => {
+    it('should accept just a default floor', () => {
+      const fd = parseFloorData({
+        default: 1.23
+      });
+      expect(getFirstMatchingFloor(fd, {}, {}).matchingFloor).to.eql(1.23);
+    });
+  });
+
+  describe('getFloorDataFromAdUnits', () => {
+    let adUnits;
+
+    function setFloorValues(rule) {
+      adUnits.forEach((au, i) => {
+        au.floors = {
+          values: {
+            [rule]: i + 1
+          }
+        }
+      })
+    }
+
+    beforeEach(() => {
+      adUnits = ['au1', 'au2', 'au3'].map(getAdUnitMock);
+    })
+
+    it('should use one schema for all adUnits', () => {
+      setFloorValues('*;*')
+      adUnits[1].floors.schema = {
+        fields: ['mediaType', 'gptSlot'],
+        delimiter: ';'
+      }
+      sinon.assert.match(getFloorDataFromAdUnits(adUnits), {
+        schema: {
+          fields: ['adUnitCode', 'mediaType', 'gptSlot'],
+          delimiter: ';'
+        },
+        values: {
+          'au1;*;*': 1,
+          'au2;*;*': 2,
+          'au3;*;*': 3
+        }
+      })
+    });
+    it('should ignore adUnits that declare different schema', () => {
+      setFloorValues('*|*');
+      adUnits[0].floors.schema = {
+        fields: ['mediaType', 'gptSlot']
+      };
+      adUnits[2].floors.schema = {
+        fields: ['gptSlot', 'mediaType']
+      };
+      expect(getFloorDataFromAdUnits(adUnits).values).to.eql({
+        'au1|*|*': 1,
+        'au2|*|*': 2
+      })
+    });
+    it('should ignore adUnits that declare no values', () => {
+      setFloorValues('*');
+      adUnits[0].floors.schema = {
+        fields: ['mediaType']
+      };
+      delete adUnits[2].floors.values;
+      expect(getFloorDataFromAdUnits(adUnits).values).to.eql({
+        'au1|*': 1,
+        'au2|*': 2,
+      })
+    })
+  })
 
   describe('getFloorsDataForAuction', function () {
     it('converts basic input floor data into a floorData map for the auction correctly', function () {
@@ -232,8 +303,8 @@ describe('the price floors module', function () {
   });
 
   describe('getFirstMatchingFloor', function () {
-    it('uses a 0 floor as overrite', function () {
-      let inputFloorData = {
+    it('uses a 0 floor as override', function () {
+      let inputFloorData = normalizeDefault({
         currency: 'USD',
         schema: {
           delimiter: '|',
@@ -244,7 +315,7 @@ describe('the price floors module', function () {
           'test_div_2': 2
         },
         default: 0.5
-      };
+      });
 
       expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'banner', size: '*'})).to.deep.equal({
         floorMin: 0,
@@ -433,7 +504,7 @@ describe('the price floors module', function () {
       });
     });
     it('selects the right floor for more complex rules', function () {
-      let inputFloorData = {
+      let inputFloorData = normalizeDefault({
         currency: 'USD',
         schema: {
           delimiter: '^',
@@ -447,7 +518,7 @@ describe('the price floors module', function () {
           'weird_div^*^300x250': 5.5
         },
         default: 0.5
-      };
+      });
       // banner with 300x250 size
       expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'banner', size: [300, 250]})).to.deep.equal({
         floorMin: 0,
@@ -489,10 +560,8 @@ describe('the price floors module', function () {
         matchingFloor: undefined
       });
       // if default is there use it
-      inputFloorData = { default: 5.0 };
-      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'banner', size: '*'})).to.deep.equal({
-        matchingFloor: 5.0
-      });
+      inputFloorData = normalizeDefault({ default: 5.0 });
+      expect(getFirstMatchingFloor(inputFloorData, basicBidRequest, {mediaType: 'banner', size: '*'}).matchingFloor).to.equal(5.0);
     });
     describe('with gpt enabled', function () {
       let gptFloorData;
@@ -579,6 +648,90 @@ describe('the price floors module', function () {
       });
     });
   });
+
+  describe('updateAdUnitsForAuction', function() {
+    let inputFloorData;
+    let adUnits;
+
+    beforeEach(function() {
+      adUnits = [getAdUnitMock()];
+      inputFloorData = utils.deepClone(minFloorConfigLow);
+      inputFloorData.skipRate = 0.5;
+    });
+
+    it('should set the skipRate to the skipRate from the data property before using the skipRate from floorData directly', function() {
+      utils.deepSetValue(inputFloorData, 'data', {
+        skipRate: 0.7
+      });
+      updateAdUnitsForAuction(adUnits, inputFloorData, 'id');
+
+      const skipRate = utils.deepAccess(adUnits, '0.bids.0.floorData.skipRate');
+      expect(skipRate).to.equal(0.7);
+    });
+
+    it('should set the skipRate to the skipRate from floorData directly if it does not exist in the data property of floorData', function() {
+      updateAdUnitsForAuction(adUnits, inputFloorData, 'id');
+
+      const skipRate = utils.deepAccess(adUnits, '0.bids.0.floorData.skipRate');
+      expect(skipRate).to.equal(0.5);
+    });
+
+    it('should set the skipRate in the bid floorData to undefined if both skipRate and skipRate in the data property are undefined', function() {
+      inputFloorData.skipRate = undefined;
+      utils.deepSetValue(inputFloorData, 'data', {
+        skipRate: undefined,
+      });
+      updateAdUnitsForAuction(adUnits, inputFloorData, 'id');
+
+      const skipRate = utils.deepAccess(adUnits, '0.bids.0.floorData.skipRate');
+      expect(skipRate).to.equal(undefined);
+    });
+  });
+
+  describe('createFloorsDataForAuction', function() {
+    let adUnits;
+    let floorConfig;
+
+    beforeEach(function() {
+      adUnits = [getAdUnitMock()];
+      floorConfig = utils.deepClone(basicFloorConfig);
+    });
+
+    it('should return skipRate as 0 if both skipRate and skipRate in the data property are undefined', function() {
+      floorConfig.skipRate = undefined;
+      floorConfig.data.skipRate = undefined;
+      handleSetFloorsConfig(floorConfig);
+
+      const floorData = createFloorsDataForAuction(adUnits, 'id');
+
+      expect(floorData.skipRate).to.equal(0);
+      expect(floorData.skipped).to.equal(false);
+    });
+
+    it('should properly set skipRate if it is available in the data property', function() {
+      // this will force skipped to be true
+      floorConfig.skipRate = 101;
+      floorConfig.data.skipRate = 201;
+      handleSetFloorsConfig(floorConfig);
+
+      const floorData = createFloorsDataForAuction(adUnits, 'id');
+
+      expect(floorData.data.skipRate).to.equal(201);
+      expect(floorData.skipped).to.equal(true);
+    });
+
+    it('should should use the skipRate if its not available in the data property ', function() {
+      // this will force skipped to be true
+      floorConfig.skipRate = 101;
+      handleSetFloorsConfig(floorConfig);
+
+      const floorData = createFloorsDataForAuction(adUnits, 'id');
+
+      expect(floorData.skipRate).to.equal(101);
+      expect(floorData.skipped).to.equal(true);
+    });
+  });
+
   describe('pre-auction tests', function () {
     let exposedAdUnits;
     const validateBidRequests = (getFloorExpected, FloorDataExpected) => {
@@ -593,16 +746,11 @@ describe('the price floors module', function () {
         adUnits,
       });
     };
-    let fakeFloorProvider;
     let actualAllowedFields = allowedFields;
     let actualFieldMatchingFunctions = fieldMatchingFunctions;
     const defaultAllowedFields = [...allowedFields];
     const defaultMatchingFunctions = {...fieldMatchingFunctions};
-    beforeEach(function() {
-      fakeFloorProvider = sinon.fakeServer.create();
-    });
     afterEach(function() {
-      fakeFloorProvider.restore();
       exposedAdUnits = undefined;
       actualAllowedFields = [...defaultAllowedFields];
       actualFieldMatchingFunctions = {...defaultMatchingFunctions};
@@ -624,6 +772,124 @@ describe('the price floors module', function () {
         fetchStatus: undefined,
         floorProvider: undefined
       });
+    });
+    it('should not do floor stuff if floors.data is defined by noFloorSignalBidders[]', function() {
+      handleSetFloorsConfig({
+        ...basicFloorConfig,
+        data: {
+          ...basicFloorDataLow,
+          noFloorSignalBidders: ['someBidder', 'someOtherBidder']
+        }});
+      runStandardAuction();
+      validateBidRequests(false, {
+        skipped: false,
+        floorMin: undefined,
+        modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: undefined,
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: undefined,
+        noFloorSignaled: true
+      })
+    });
+    it('should not do floor stuff if floors.enforcement is defined by noFloorSignalBidders[]', function() {
+      handleSetFloorsConfig({ ...basicFloorConfig,
+        enforcement: {
+          enforceJS: true,
+          noFloorSignalBidders: ['someBidder', 'someOtherBidder']
+        },
+        data: basicFloorDataLow
+      });
+      runStandardAuction();
+      validateBidRequests(false, {
+        skipped: false,
+        floorMin: undefined,
+        modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: undefined,
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: undefined,
+        noFloorSignaled: true
+      })
+    });
+    it('should not do floor stuff and use first floors.data.noFloorSignalBidders if its defined betwen enforcement.noFloorSignalBidders', function() {
+      handleSetFloorsConfig({ ...basicFloorConfig,
+        enforcement: {
+          enforceJS: true,
+          noFloorSignalBidders: ['someBidder']
+        },
+        data: {
+          ...basicFloorDataLow,
+          noFloorSignalBidders: ['someBidder', 'someOtherBidder']
+        }
+      });
+      runStandardAuction();
+      validateBidRequests(false, {
+        skipped: false,
+        floorMin: undefined,
+        modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: undefined,
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: undefined,
+        noFloorSignaled: true
+      })
+    });
+    it('it shouldn`t return floor stuff for bidder in the noFloorSignalBidders list', function() {
+      handleSetFloorsConfig({ ...basicFloorConfig,
+        enforcement: {
+          enforceJS: true,
+        },
+        data: {
+          ...basicFloorDataLow,
+          noFloorSignalBidders: ['someBidder']
+        }
+      });
+      runStandardAuction()
+      const bidRequestData = exposedAdUnits[0].bids.find(bid => bid.bidder === 'someBidder');
+      expect(bidRequestData.hasOwnProperty('getFloor')).to.equal(false);
+      sinon.assert.match(bidRequestData.floorData, {
+        skipped: false,
+        floorMin: undefined,
+        modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: undefined,
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: undefined,
+        noFloorSignaled: true
+      });
+    })
+    it('it should return floor stuff if we defined wrong bidder name in data.noFloorSignalBidders', function() {
+      handleSetFloorsConfig({ ...basicFloorConfig,
+        enforcement: {
+          enforceJS: true,
+        },
+        data: {
+          ...basicFloorDataLow,
+          noFloorSignalBidders: ['randomBiider']
+        }
+      });
+      runStandardAuction();
+      validateBidRequests(true, {
+        skipped: false,
+        floorMin: undefined,
+        modelVersion: 'basic model',
+        modelWeight: 10,
+        modelTimestamp: undefined,
+        location: 'setConfig',
+        skipRate: 0,
+        fetchStatus: undefined,
+        floorProvider: undefined,
+        noFloorSignaled: false
+      })
     });
     it('should use adUnit level data if not setConfig or fetch has occured', function () {
       handleSetFloorsConfig({
@@ -697,6 +963,95 @@ describe('the price floors module', function () {
         floorProvider: undefined
       });
     });
+    describe('default floor', () => {
+      let adUnits;
+      beforeEach(() => {
+        adUnits = ['au1', 'au2'].map(getAdUnitMock);
+      })
+      function expectFloors(floors) {
+        runStandardAuction(adUnits);
+        adUnits.forEach((au, i) => {
+          au.bids.forEach(bid => {
+            expect(bid.getFloor().floor).to.eql(floors[i]);
+          })
+        })
+      }
+      describe('should be sufficient by itself', () => {
+        it('globally', () => {
+          handleSetFloorsConfig({
+            ...basicFloorConfig,
+            data: {
+              default: 1.23
+            }
+          });
+          expectFloors([1.23, 1.23])
+        });
+        it('on adUnits', () => {
+          handleSetFloorsConfig({
+            ...basicFloorConfig,
+            data: undefined
+          });
+          adUnits[0].floors = {default: 1};
+          adUnits[1].floors = {default: 2};
+          expectFloors([1, 2])
+        });
+        it('on an adUnit with hidden schema', () => {
+          handleSetFloorsConfig({
+            ...basicFloorConfig,
+            data: undefined
+          });
+          adUnits[0].floors = {
+            schema: {
+              fields: ['mediaType', 'gptSlot'],
+            },
+            default: 1
+          }
+          adUnits[1].floors = {
+            default: 2
+          }
+          expectFloors([1, 2]);
+        })
+      });
+      describe('should NOT be used when a star rule exists', () => {
+        it('globally', () => {
+          handleSetFloorsConfig({
+            ...basicFloorConfig,
+            data: {
+              schema: {
+                fields: ['mediaType', 'gptSlot'],
+              },
+              values: {
+                '*|*': 2
+              },
+              default: 3,
+            }
+          });
+          expectFloors([2, 2]);
+        });
+        it('on adUnits', () => {
+          handleSetFloorsConfig({
+            ...basicFloorConfig,
+            data: undefined
+          });
+          adUnits[0].floors = {
+            schema: {
+              fields: ['mediaType', 'gptSlot'],
+            },
+            values: {
+              '*|*': 1
+            },
+            default: 3
+          };
+          adUnits[1].floors = {
+            values: {
+              '*|*': 2
+            },
+            default: 4
+          }
+          expectFloors([1, 2]);
+        })
+      });
+    })
     it('bidRequests should have getFloor function and flooring meta data when setConfig occurs', function () {
       handleSetFloorsConfig({...basicFloorConfig, floorProvider: 'floorprovider'});
       runStandardAuction();
@@ -986,7 +1341,7 @@ describe('the price floors module', function () {
       });
     });
     it('Should continue auction of delay is hit without a response from floor provider', function () {
-      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
+      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakefloorprovider.json//'}});
 
       // start the auction it should delay and not immediately call `continueAuction`
       runStandardAuction();
@@ -1013,7 +1368,7 @@ describe('the price floors module', function () {
         fetchStatus: 'timeout',
         floorProvider: undefined
       });
-      fakeFloorProvider.respond();
+      server.respond();
     });
     it('It should fetch if config has url and bidRequests have fetch level flooring meta data', function () {
       // init the fake server with response stuff
@@ -1021,14 +1376,14 @@ describe('the price floors module', function () {
         ...basicFloorData,
         modelVersion: 'fetch model name', // change the model name
       };
-      fakeFloorProvider.respondWith(JSON.stringify(fetchFloorData));
+      server.respondWith(JSON.stringify(fetchFloorData));
 
       // run setConfig indicating fetch
-      handleSetFloorsConfig({...basicFloorConfig, floorProvider: 'floorprovider', auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
+      handleSetFloorsConfig({...basicFloorConfig, floorProvider: 'floorprovider', auctionDelay: 250, endpoint: {url: 'http://www.fakefloorprovider.json/'}});
 
       // floor provider should be called
-      expect(fakeFloorProvider.requests.length).to.equal(1);
-      expect(fakeFloorProvider.requests[0].url).to.equal('http://www.fakeFloorProvider.json');
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.equal('http://www.fakefloorprovider.json/');
 
       // start the auction it should delay and not immediately call `continueAuction`
       runStandardAuction();
@@ -1037,7 +1392,7 @@ describe('the price floors module', function () {
       expect(exposedAdUnits).to.be.undefined;
 
       // make the fetch respond
-      fakeFloorProvider.respond();
+      server.respond();
       expect(exposedAdUnits).to.not.be.undefined;
 
       // the exposedAdUnits should be from the fetch not setConfig level data
@@ -1061,14 +1416,14 @@ describe('the price floors module', function () {
         floorProvider: 'floorProviderD', // change the floor provider
         modelVersion: 'fetch model name', // change the model name
       };
-      fakeFloorProvider.respondWith(JSON.stringify(fetchFloorData));
+      server.respondWith(JSON.stringify(fetchFloorData));
 
       // run setConfig indicating fetch
-      handleSetFloorsConfig({...basicFloorConfig, floorProvider: 'floorproviderC', auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
+      handleSetFloorsConfig({...basicFloorConfig, floorProvider: 'floorproviderC', auctionDelay: 250, endpoint: {url: 'http://www.fakefloorprovider.json/'}});
 
       // floor provider should be called
-      expect(fakeFloorProvider.requests.length).to.equal(1);
-      expect(fakeFloorProvider.requests[0].url).to.equal('http://www.fakeFloorProvider.json');
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.equal('http://www.fakefloorprovider.json/');
 
       // start the auction it should delay and not immediately call `continueAuction`
       runStandardAuction();
@@ -1077,7 +1432,7 @@ describe('the price floors module', function () {
       expect(exposedAdUnits).to.be.undefined;
 
       // make the fetch respond
-      fakeFloorProvider.respond();
+      server.respond();
 
       // the exposedAdUnits should be from the fetch not setConfig level data
       // and fetchStatus is success since fetch worked
@@ -1102,14 +1457,14 @@ describe('the price floors module', function () {
         modelVersion: 'fetch model name', // change the model name
       };
       fetchFloorData.skipRate = 95;
-      fakeFloorProvider.respondWith(JSON.stringify(fetchFloorData));
+      server.respondWith(JSON.stringify(fetchFloorData));
 
       // run setConfig indicating fetch
-      handleSetFloorsConfig({...basicFloorConfig, floorProvider: 'floorprovider', auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
+      handleSetFloorsConfig({...basicFloorConfig, floorProvider: 'floorprovider', auctionDelay: 250, endpoint: {url: 'http://www.fakefloorprovider.json/'}});
 
       // floor provider should be called
-      expect(fakeFloorProvider.requests.length).to.equal(1);
-      expect(fakeFloorProvider.requests[0].url).to.equal('http://www.fakeFloorProvider.json');
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.equal('http://www.fakefloorprovider.json/');
 
       // start the auction it should delay and not immediately call `continueAuction`
       runStandardAuction();
@@ -1118,7 +1473,7 @@ describe('the price floors module', function () {
       expect(exposedAdUnits).to.be.undefined;
 
       // make the fetch respond
-      fakeFloorProvider.respond();
+      server.respond();
       expect(exposedAdUnits).to.not.be.undefined;
 
       // the exposedAdUnits should be from the fetch not setConfig level data
@@ -1137,10 +1492,10 @@ describe('the price floors module', function () {
     });
     it('Should not break if floor provider returns 404', function () {
       // run setConfig indicating fetch
-      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
+      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakefloorprovider.json/'}});
 
       // run the auction and make server respond with 404
-      fakeFloorProvider.respond();
+      server.respond();
       runStandardAuction();
 
       // error should have been called for fetch error
@@ -1160,13 +1515,13 @@ describe('the price floors module', function () {
       });
     });
     it('Should not break if floor provider returns non json', function () {
-      fakeFloorProvider.respondWith('Not valid response');
+      server.respondWith('Not valid response');
 
       // run setConfig indicating fetch
-      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
+      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakefloorprovider.json/'}});
 
       // run the auction and make server respond
-      fakeFloorProvider.respond();
+      server.respond();
       runStandardAuction();
 
       // error should have been called for response floor data not being valid
@@ -1187,27 +1542,27 @@ describe('the price floors module', function () {
     });
     it('should handle not using fetch correctly', function () {
       // run setConfig twice indicating fetch
-      fakeFloorProvider.respondWith(JSON.stringify(basicFloorData));
-      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
-      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
+      server.respondWith(JSON.stringify(basicFloorData));
+      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakefloorprovider.json/'}});
+      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakefloorprovider.json/'}});
 
       // log warn should be called and server only should have one request
       expect(logWarnSpy.calledOnce).to.equal(true);
-      expect(fakeFloorProvider.requests.length).to.equal(1);
-      expect(fakeFloorProvider.requests[0].url).to.equal('http://www.fakeFloorProvider.json');
+      expect(server.requests.length).to.equal(1);
+      expect(server.requests[0].url).to.equal('http://www.fakefloorprovider.json/');
 
       // now we respond and then run again it should work and make another request
-      fakeFloorProvider.respond();
-      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakeFloorProvider.json'}});
-      fakeFloorProvider.respond();
+      server.respond();
+      handleSetFloorsConfig({...basicFloorConfig, auctionDelay: 250, endpoint: {url: 'http://www.fakefloorprovider.json/'}});
+      server.respond();
 
       // now warn still only called once and server called twice
       expect(logWarnSpy.calledOnce).to.equal(true);
-      expect(fakeFloorProvider.requests.length).to.equal(2);
+      expect(server.requests.length).to.equal(2);
 
       // should log error if method is not GET for now
       expect(logErrorSpy.calledOnce).to.equal(false);
-      handleSetFloorsConfig({...basicFloorConfig, endpoint: {url: 'http://www.fakeFloorProvider.json', method: 'POST'}});
+      handleSetFloorsConfig({...basicFloorConfig, endpoint: {url: 'http://www.fakefloorprovider.json/', method: 'POST'}});
       expect(logErrorSpy.calledOnce).to.equal(true);
     });
     describe('isFloorsDataValid', function () {
@@ -1386,7 +1741,7 @@ describe('the price floors module', function () {
       it('picks the right rule with more complex rules', function () {
         _floorDataForAuction[bidRequest.auctionId] = {
           ...basicFloorConfig,
-          data: {
+          data: normalizeDefault({
             currency: 'USD',
             schema: { fields: ['mediaType', 'size'], delimiter: '|' },
             values: {
@@ -1398,7 +1753,7 @@ describe('the price floors module', function () {
               'video|*': 5.5
             },
             default: 10.0
-          }
+          })
         };
 
         // assumes banner *
@@ -1857,6 +2212,12 @@ describe('the price floors module', function () {
       runBidResponse();
       expect(returnedBidResponse).to.not.haveOwnProperty('floorData');
       expect(logWarnSpy.calledOnce).to.equal(true);
+    });
+    it('if it finds a rule with a floor price of zero it should not call log warn', function () {
+      _floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);
+      _floorDataForAuction[AUCTION_ID].data.values = { '*': 0 };
+      runBidResponse();
+      expect(logWarnSpy.calledOnce).to.equal(false);
     });
     it('if it finds a rule and floors should update the bid accordingly', function () {
       _floorDataForAuction[AUCTION_ID] = utils.deepClone(basicFloorConfig);

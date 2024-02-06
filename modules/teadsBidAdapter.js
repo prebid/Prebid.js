@@ -1,6 +1,11 @@
-import { getValue, logError, deepAccess, getBidIdParameter, parseSizesInput, isArray } from '../src/utils.js';
+import {getValue, logError, deepAccess, parseSizesInput, isArray, getBidIdParameter} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const BIDDER_CODE = 'teads';
 const GVL_ID = 132;
@@ -45,14 +50,23 @@ export const spec = {
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     const bids = validBidRequests.map(buildRequestObject);
+    const topWindow = window.top;
 
     const payload = {
       referrer: getReferrerInfo(bidderRequest),
       pageReferrer: document.referrer,
+      pageTitle: getPageTitle().slice(0, 300),
+      pageDescription: getPageDescription().slice(0, 300),
       networkBandwidth: getConnectionDownLink(window.navigator),
       timeToFirstByte: getTimeToFirstByte(window),
       data: bids,
       deviceWidth: screen.width,
+      screenOrientation: screen.orientation?.type,
+      historyLength: topWindow.history?.length,
+      viewportHeight: topWindow.visualViewport?.height,
+      viewportWidth: topWindow.visualViewport?.width,
+      hardwareConcurrency: topWindow.navigator?.hardwareConcurrency,
+      deviceMemory: topWindow.navigator?.deviceMemory,
       hb_version: '$prebid.version$',
       ...getSharedViewerIdParameters(validBidRequests),
       ...getFirstPartyTeadsIdParameter(validBidRequests)
@@ -168,6 +182,32 @@ function getReferrerInfo(bidderRequest) {
     ref = bidderRequest.refererInfo.page;
   }
   return ref;
+}
+
+function getPageTitle() {
+  try {
+    const ogTitle = window.top.document.querySelector('meta[property="og:title"]')
+
+    return window.top.document.title || (ogTitle && ogTitle.content) || '';
+  } catch (e) {
+    const ogTitle = document.querySelector('meta[property="og:title"]')
+
+    return document.title || (ogTitle && ogTitle.content) || '';
+  }
+}
+
+function getPageDescription() {
+  let element;
+
+  try {
+    element = window.top.document.querySelector('meta[name="description"]') ||
+      window.top.document.querySelector('meta[property="og:description"]')
+  } catch (e) {
+    element = document.querySelector('meta[name="description"]') ||
+      document.querySelector('meta[property="og:description"]')
+  }
+
+  return (element && element.content) || '';
 }
 
 function getConnectionDownLink(nav) {

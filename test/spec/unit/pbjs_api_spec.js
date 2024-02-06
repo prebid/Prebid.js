@@ -14,7 +14,7 @@ import { config as configObj } from 'src/config.js';
 import * as ajaxLib from 'src/ajax.js';
 import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
-import { _sendAdToCreative } from 'src/secureCreatives.js';
+import {resizeRemoteCreative} from 'src/secureCreatives.js';
 import {find} from 'src/polyfill.js';
 import * as pbjsModule from 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
@@ -25,7 +25,7 @@ import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {createBid} from '../../../src/bidfactory.js';
 import {enrichFPD} from '../../../src/fpd/enrichment.js';
 import {mockFpdEnrichments} from '../../helpers/fpd.js';
-
+import {generateUUID} from '../../../src/utils.js';
 var assert = require('chai').assert;
 var expect = require('chai').expect;
 
@@ -43,13 +43,13 @@ var adUnits = getAdUnits();
 var adUnitCodes = getAdUnits().map(unit => unit.code);
 var bidsBackHandler = function() {};
 const timeout = 2000;
-var auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout: timeout});
-auction.getBidRequests = getBidRequests;
-auction.getBidsReceived = getBidResponses;
-auction.getAdUnits = getAdUnits;
-auction.getAuctionStatus = function() { return auctionModule.AUCTION_COMPLETED }
+const auctionId = generateUUID();
+let auction;
 
 function resetAuction() {
+  if (auction == null) {
+    auction = auctionManager.createAuction({adUnits, adUnitCodes, callback: bidsBackHandler, cbTimeout: timeout, labels: undefined, auctionId: auctionId});
+  }
   $$PREBID_GLOBAL$$.setConfig({ enableSendAllBids: false });
   auction.getBidRequests = getBidRequests;
   auction.getBidsReceived = getBidResponses;
@@ -1104,7 +1104,7 @@ describe('Unit: Prebid Module', function () {
         adUnitCode: config.adUnitCodes[0],
       };
 
-      _sendAdToCreative(mockAdObject, sinon.stub());
+      resizeRemoteCreative(mockAdObject);
 
       expect(slots[0].spyGetSlotElementId.called).to.equal(false);
       expect(slots[1].spyGetSlotElementId.called).to.equal(true);
@@ -1233,7 +1233,8 @@ describe('Unit: Prebid Module', function () {
           }
         },
         getElementsByTagName: sinon.stub(),
-        querySelector: sinon.stub()
+        querySelector: sinon.stub(),
+        createElement: sinon.stub(),
       };
 
       elStub = {
@@ -1264,7 +1265,7 @@ describe('Unit: Prebid Module', function () {
 
     it('should require doc and id params', function () {
       $$PREBID_GLOBAL$$.renderAd();
-      var error = 'Error trying to write ad Id :undefined to the page. Missing adId';
+      var error = 'Error rendering ad (id: undefined): missing adId';
       assert.ok(spyLogError.calledWith(error), 'expected param error was logged');
     });
 
@@ -1289,14 +1290,13 @@ describe('Unit: Prebid Module', function () {
         adUrl: 'http://server.example.com/ad/ad.js'
       });
       $$PREBID_GLOBAL$$.renderAd(doc, bidId);
-      assert.ok(elStub.insertBefore.called, 'url was written to iframe in doc');
+      sinon.assert.calledWith(doc.createElement, 'iframe');
     });
 
     it('should log an error when no ad or url', function () {
       pushBidResponseToAuction({});
       $$PREBID_GLOBAL$$.renderAd(doc, bidId);
-      var error = 'Error trying to write ad. No ad for bid response id: ' + bidId;
-      assert.ok(spyLogError.calledWith(error), 'expected error was logged');
+      sinon.assert.called(spyLogError);
     });
 
     it('should log an error when not in an iFrame', function () {
@@ -1305,7 +1305,7 @@ describe('Unit: Prebid Module', function () {
       });
       inIframe = false;
       $$PREBID_GLOBAL$$.renderAd(document, bidId);
-      const error = 'Error trying to write ad. Ad render call ad id ' + bidId + ' was prevented from writing to the main document.';
+      const error = `Error rendering ad (id: ${bidId}): renderAd was prevented from writing to the main document.`;
       assert.ok(spyLogError.calledWith(error), 'expected error was logged');
     });
 
@@ -1326,14 +1326,14 @@ describe('Unit: Prebid Module', function () {
       doc.write = sinon.stub().throws(error);
       $$PREBID_GLOBAL$$.renderAd(doc, bidId);
 
-      var errorMessage = 'Error trying to write ad Id :' + bidId + ' to the page:' + error.message;
+      var errorMessage = `Error rendering ad (id: ${bidId}): doc write error`
       assert.ok(spyLogError.calledWith(errorMessage), 'expected error was logged');
     });
 
     it('should log an error when ad not found', function () {
       var fakeId = 99;
       $$PREBID_GLOBAL$$.renderAd(doc, fakeId);
-      var error = 'Error trying to write ad. Cannot find ad by given id : ' + fakeId;
+      var error = `Error rendering ad (id: ${fakeId}): Cannot find ad '${fakeId}'`
       assert.ok(spyLogError.calledWith(error), 'expected error was logged');
     });
 
@@ -1343,14 +1343,6 @@ describe('Unit: Prebid Module', function () {
       });
       $$PREBID_GLOBAL$$.renderAd(doc, bidId);
       assert.deepEqual($$PREBID_GLOBAL$$.getAllWinningBids()[0], adResponse);
-    });
-
-    it('should replace ${CLICKTHROUGH} macro in winning bids response', function () {
-      pushBidResponseToAuction({
-        ad: "<script type='text/javascript' src='http://server.example.com/ad/ad.js?clickthrough=${CLICKTHROUGH}'></script>"
-      });
-      $$PREBID_GLOBAL$$.renderAd(doc, bidId, {clickThrough: 'https://someadserverclickurl.com'});
-      expect(adResponse).to.have.property('ad').and.to.match(/https:\/\/someadserverclickurl\.com/i);
     });
 
     it('fires billing url if present on s2s bid', function () {
@@ -2736,6 +2728,13 @@ describe('Unit: Prebid Module', function () {
       events.on.restore();
     });
 
+    it('should emit event BID_ACCEPTED when invoked', function () {
+      var callback = sinon.spy();
+      $$PREBID_GLOBAL$$.onEvent('bidAccepted', callback);
+      events.emit(CONSTANTS.EVENTS.BID_ACCEPTED);
+      sinon.assert.calledOnce(callback);
+    });
+
     describe('beforeRequestBids', function () {
       let bidRequestedHandler;
       let beforeRequestBidsHandler;
@@ -3304,16 +3303,20 @@ describe('Unit: Prebid Module', function () {
       const highestBid = $$PREBID_GLOBAL$$.getHighestUnusedBidResponseForAdUnitCode('/19968336/header-bid-tag-0');
       expect(highestBid).to.deep.equal(_bidsReceived[2])
     })
-  })
+  });
 
-  describe('getHighestCpm', () => {
+  describe('getHighestCpmBids', () => {
     after(() => {
       resetAuction();
     });
     it('returns an array containing the highest bid object for the given adUnitCode', function () {
-      const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids('/19968336/header-bid-tag-0');
+      const adUnitcode = '/19968336/header-bid-tag-0';
+      targeting.setLatestAuctionForAdUnit(adUnitcode, auctionId)
+      const highestCpmBids = $$PREBID_GLOBAL$$.getHighestCpmBids(adUnitcode);
       expect(highestCpmBids.length).to.equal(1);
-      expect(highestCpmBids[0]).to.deep.equal(auctionManager.getBidsReceived()[1]);
+      const expectedBid = auctionManager.getBidsReceived()[1];
+      expectedBid.latestTargetedAuctionId = auctionId;
+      expect(highestCpmBids[0]).to.deep.equal(expectedBid);
     });
 
     it('returns an empty array when the given adUnit is not found', function () {

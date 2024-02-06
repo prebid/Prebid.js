@@ -2,6 +2,14 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {buildUrl, logInfo, parseSizesInput, triggerPixel} from '../src/utils.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
+ */
+
 const ADQUERY_GVLID = 902;
 const ADQUERY_BIDDER_CODE = 'adquery';
 const ADQUERY_BIDDER_DOMAIN_PROTOCOL = 'https';
@@ -17,7 +25,8 @@ export const spec = {
   gvlid: ADQUERY_GVLID,
   supportedMediaTypes: [BANNER],
 
-  /** f
+  /**
+   * f
    * @param {object} bid
    * @return {boolean}
    */
@@ -53,6 +62,9 @@ export const spec = {
    * @return {Bid[]}
    */
   interpretResponse: (response, request) => {
+    logInfo(request);
+    logInfo(response);
+
     const res = response && response.body && response.body.data;
     let bidResponses = [];
 
@@ -113,8 +125,12 @@ export const spec = {
    */
   onBidWon: (bid) => {
     logInfo('onBidWon', bid);
+
     const bidString = JSON.stringify(bid);
-    const encodedBuf = window.btoa(bidString);
+    let copyOfBid = JSON.parse(bidString);
+    delete copyOfBid.ad;
+    const shortBidString = JSON.stringify(bid);
+    const encodedBuf = window.btoa(shortBidString);
 
     let params = {
       q: encodedBuf,
@@ -170,7 +186,6 @@ export const spec = {
       url: syncUrl
     }];
   }
-
 };
 
 function buildRequest(validBidRequests, bidderRequest) {
@@ -188,9 +203,9 @@ function buildRequest(validBidRequests, bidderRequest) {
 
   if (!userId) {
     // onetime User ID
-    const randomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
-    userId = randomValues.map(it => it.toString(36)).join().substring(20);
-
+    const ramdomValues = Array.from(window.crypto.getRandomValues(new Uint32Array(4)));
+    userId = ramdomValues.map(val => val.toString(36)).join('').substring(0, 20);
+    logInfo('generated onetime User ID: ', userId);
     window.qid = userId;
   }
 

@@ -2,19 +2,11 @@
 
 import {getGlobal} from './prebidGlobal.js';
 import {
-  adUnitsFilter,
-  bind,
-  callBurl,
-  contains,
-  createInvisibleIframe,
   deepAccess,
   deepClone,
   deepSetValue,
   flatten,
   generateUUID,
-  getHighestCpm,
-  inIframe,
-  insertElement,
   isArray,
   isArrayOfNums,
   isEmpty,
@@ -26,8 +18,6 @@ import {
   logMessage,
   logWarn,
   mergeDeep,
-  replaceAuctionPrice,
-  replaceClickThrough,
   transformAdServerTargetingObj,
   uniques,
   unsupportedBidderMessage
@@ -41,23 +31,24 @@ import {hook, wrapHook} from './hook.js';
 import {loadSession} from './debugging.js';
 import {includes} from './polyfill.js';
 import {adunitCounter} from './adUnits.js';
-import {executeRenderer, isRendererRequired} from './Renderer.js';
 import {createBid} from './bidfactory.js';
 import {storageCallbacks} from './storageManager.js';
-import {emitAdRenderFail, emitAdRenderSucceeded} from './adRendering.js';
-import {default as adapterManager, gdprDataHandler, getS2SBidderSet, gppDataHandler, uspDataHandler} from './adapterManager.js';
+import {default as adapterManager, getS2SBidderSet} from './adapterManager.js';
 import CONSTANTS from './constants.json';
 import * as events from './events.js';
 import {newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {defer, GreedyPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
+import {allConsent} from './consentHandler.js';
+import {renderAdDirect} from '../libraries/creativeRender/direct.js';
+import {getHighestCpm} from './utils/reducers.js';
+import {fillVideoDefaults} from './video.js';
 
 const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
-const { ADD_AD_UNITS, BID_WON, REQUEST_BIDS, SET_TARGETING, STALE_RENDER } = CONSTANTS.EVENTS;
-const { PREVENT_WRITING_ON_MAIN_DOCUMENT, NO_AD, EXCEPTION, CANNOT_FIND_AD, MISSING_DOC_OR_ADID } = CONSTANTS.AD_RENDER_FAILED_REASON;
+const { ADD_AD_UNITS, REQUEST_BIDS, SET_TARGETING } = CONSTANTS.EVENTS;
 
 const eventValidators = {
   bidWon: checkDefinedPlacement
@@ -89,19 +80,12 @@ function checkDefinedPlacement(id) {
     .reduce(flatten)
     .filter(uniques);
 
-  if (!contains(adUnitCodes, id)) {
+  if (!adUnitCodes.includes(id)) {
     logError('The "' + id + '" placement is not defined.');
     return;
   }
 
   return true;
-}
-
-function setRenderSize(doc, width, height) {
-  if (doc.defaultView && doc.defaultView.frameElement) {
-    doc.defaultView.frameElement.width = width;
-    doc.defaultView.frameElement.height = height;
-  }
 }
 
 function validateSizes(sizes, targLength) {
@@ -268,6 +252,12 @@ export const checkAdUnitSetup = hook('sync', function (adUnits) {
   return validatedAdUnits;
 }, 'checkAdUnitSetup');
 
+function fillAdUnitDefaults(adUnits) {
+  if (FEATURES.VIDEO) {
+    adUnits.forEach(au => fillVideoDefaults(au))
+  }
+}
+
 /// ///////////////////////////////
 //                              //
 //    Start Public APIs         //
@@ -330,28 +320,14 @@ pbjsInstance.getAdserverTargeting = function (adUnitCode) {
   return targeting.getAllTargeting(adUnitCode);
 };
 
-/**
- * returns all consent data
- * @return {Object} Map of consent types and data
- * @alias module:pbjs.getConsentData
- */
-function getConsentMetadata() {
-  return {
-    gdpr: gdprDataHandler.getConsentMeta(),
-    usp: uspDataHandler.getConsentMeta(),
-    gpp: gppDataHandler.getConsentMeta(),
-    coppa: !!(config.getConfig('coppa'))
-  }
-}
-
 pbjsInstance.getConsentMetadata = function () {
   logInfo('Invoking $$PREBID_GLOBAL$$.getConsentMetadata');
-  return getConsentMetadata();
+  return allConsent.getConsentMeta()
 };
 
 function getBids(type) {
   const responses = auctionManager[type]()
-    .filter(bind.call(adUnitsFilter, this, auctionManager.getAdUnitCodes()));
+    .filter(bid => auctionManager.getAdUnitCodes().includes(bid.adUnitCode))
 
   // find the last auction id to get responses for most recent auction only
   const currentAuctionId = auctionManager.getLastAuctionId();
@@ -468,19 +444,6 @@ pbjsInstance.setTargetingForAst = function (adUnitCodes) {
 };
 
 /**
- * This function will check for presence of given node in given parent. If not present - will inject it.
- * @param {Node} node node, whose existance is in question
- * @param {Document} doc document element do look in
- * @param {string} tagName tag name to look in
- */
-function reinjectNodeIfRemoved(node, doc, tagName) {
-  const injectionNode = doc.querySelector(tagName);
-  if (!node.parentNode || node.parentNode !== injectionNode) {
-    insertElement(node, doc, tagName);
-  }
-}
-
-/**
  * This function will render the ad (based on params) in the given iframe document passed through.
  * Note that doc SHOULD NOT be the parent document page as we can't doc.write() asynchronously
  * @param  {Document} doc document
@@ -490,103 +453,7 @@ function reinjectNodeIfRemoved(node, doc, tagName) {
 pbjsInstance.renderAd = hook('async', function (doc, id, options) {
   logInfo('Invoking $$PREBID_GLOBAL$$.renderAd', arguments);
   logMessage('Calling renderAd with adId :' + id);
-
-  if (!id) {
-    const message = `Error trying to write ad Id :${id} to the page. Missing adId`;
-    emitAdRenderFail({ reason: MISSING_DOC_OR_ADID, message, id });
-    return;
-  }
-
-  try {
-    // lookup ad by ad Id
-    const bid = auctionManager.findBidByAdId(id);
-    if (!bid) {
-      const message = `Error trying to write ad. Cannot find ad by given id : ${id}`;
-      emitAdRenderFail({ reason: CANNOT_FIND_AD, message, id });
-      return;
-    }
-
-    if (bid.status === CONSTANTS.BID_STATUS.RENDERED) {
-      logWarn(`Ad id ${bid.adId} has been rendered before`);
-      events.emit(STALE_RENDER, bid);
-      if (deepAccess(config.getConfig('auctionOptions'), 'suppressStaleRender')) {
-        return;
-      }
-    }
-
-    // replace macros according to openRTB with price paid = bid.cpm
-    bid.ad = replaceAuctionPrice(bid.ad, bid.originalCpm || bid.cpm);
-    bid.adUrl = replaceAuctionPrice(bid.adUrl, bid.originalCpm || bid.cpm);
-    // replacing clickthrough if submitted
-    if (options && options.clickThrough) {
-      const {clickThrough} = options;
-      bid.ad = replaceClickThrough(bid.ad, clickThrough);
-      bid.adUrl = replaceClickThrough(bid.adUrl, clickThrough);
-    }
-
-    // save winning bids
-    auctionManager.addWinningBid(bid);
-
-    // emit 'bid won' event here
-    events.emit(BID_WON, bid);
-
-    const {height, width, ad, mediaType, adUrl, renderer} = bid;
-
-    // video module
-    if (FEATURES.VIDEO) {
-      const adUnitCode = bid.adUnitCode;
-      const adUnit = pbjsInstance.adUnits.filter(adUnit => adUnit.code === adUnitCode);
-      const videoModule = pbjsInstance.videoModule;
-      if (adUnit.video && videoModule) {
-        videoModule.renderBid(adUnit.video.divId, bid);
-        return;
-      }
-    }
-
-    if (!doc) {
-      const message = `Error trying to write ad Id :${id} to the page. Missing document`;
-      emitAdRenderFail({ reason: MISSING_DOC_OR_ADID, message, id });
-      return;
-    }
-
-    const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
-    insertElement(creativeComment, doc, 'html');
-
-    if (isRendererRequired(renderer)) {
-      executeRenderer(renderer, bid, doc);
-      reinjectNodeIfRemoved(creativeComment, doc, 'html');
-      emitAdRenderSucceeded({ doc, bid, id });
-    } else if ((doc === document && !inIframe()) || mediaType === 'video') {
-      const message = `Error trying to write ad. Ad render call ad id ${id} was prevented from writing to the main document.`;
-      emitAdRenderFail({reason: PREVENT_WRITING_ON_MAIN_DOCUMENT, message, bid, id});
-    } else if (ad) {
-      doc.write(ad);
-      doc.close();
-      setRenderSize(doc, width, height);
-      reinjectNodeIfRemoved(creativeComment, doc, 'html');
-      callBurl(bid);
-      emitAdRenderSucceeded({ doc, bid, id });
-    } else if (adUrl) {
-      const iframe = createInvisibleIframe();
-      iframe.height = height;
-      iframe.width = width;
-      iframe.style.display = 'inline';
-      iframe.style.overflow = 'hidden';
-      iframe.src = adUrl;
-
-      insertElement(iframe, doc, 'body');
-      setRenderSize(doc, width, height);
-      reinjectNodeIfRemoved(creativeComment, doc, 'html');
-      callBurl(bid);
-      emitAdRenderSucceeded({ doc, bid, id });
-    } else {
-      const message = `Error trying to write ad. No ad for bid response id: ${id}`;
-      emitAdRenderFail({reason: NO_AD, message, bid, id});
-    }
-  } catch (e) {
-    const message = `Error trying to write ad Id :${id} to the page:${e.message}`;
-    emitAdRenderFail({ reason: EXCEPTION, message, id });
-  }
+  renderAdDirect(doc, id, options);
 });
 
 /**
@@ -671,6 +538,7 @@ pbjsInstance.requestBids = (function() {
 
 export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer } = {}) {
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
+  fillAdUnitDefaults(adUnits);
   adUnits = useMetrics(metrics).measureTime('requestBids.validate', () => checkAdUnitSetup(adUnits));
 
   function auctionDone(bids, timedOut, auctionId) {
