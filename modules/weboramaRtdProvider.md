@@ -117,9 +117,9 @@ On this section we will explain the `params.weboCtxConf` subconfiguration:
 | enabled | Boolean| if false, will ignore this configuration| Default is `true` if this section is present|
 | baseURLProfileAPI | String| if present, update the domain of the contextual api| Optional. Default is `ctx.weborama.com` |
 
-#### WAM User-Centric Configuration
+#### User-Centric Configuration
 
-To be possible use the integration with Weborama Audience Manager (WAM) you must be a client with an account id and you lust include the `wamfactory` script in your pages with `wam2gam` feature activated.
+To be possible use the integration with Weborama Audience Manager (WAM) you must be a client with an account id and you must include the `wamfactory` script in your pages with `wam2gam` feature activated.
 Please contact weborama if you don't have it.
 
 On this section we will explain the `params.weboUserDataConf` subconfiguration:
