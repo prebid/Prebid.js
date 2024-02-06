@@ -1013,7 +1013,8 @@ function getCarbonTopics(bidderRequest) {
     return undefined;
   }
   let fields = {};
-  bidderRequest.ortb2?.user?.data?.forEach(topic => {
+  let userData = bidderRequest.ortb2?.user?.data || [];
+  userData.forEach(topic => {
     const taxonomy = topic.ext?.segtax;
     if (taxonomy == 507 || taxonomy == 508) {
       const domain = bidderRequest.refererInfo.domain;
