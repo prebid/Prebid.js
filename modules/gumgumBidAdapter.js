@@ -553,6 +553,7 @@ function interpretResponse(serverResponse, bidRequest) {
     sizes = [`${maxw}x${maxh}`];
   } else if (product === 5 && includes(sizes, '1x1')) {
     sizes = ['1x1'];
+  // added logic for in-slot multi-szie
   } else if ((product === 2 && includes(sizes, '1x1')) || product === 3) {
     const requestSizesThatMatchResponse = (bidRequest.sizes && bidRequest.sizes.reduce((result, current) => {
       const [ width, height ] = current;
