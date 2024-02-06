@@ -49,7 +49,7 @@ export const spec = {
         referer: (typeof bidderRequest.refererInfo.page != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.page) : null),
         numIframes: (typeof bidderRequest.refererInfo.numIframes != 'undefined' ? bidderRequest.refererInfo.numIframes : null),
         transactionId: bid.ortb2Imp?.ext?.tid,
-        timeout: config.getConfig('bidderTimeout'),
+        timeout: bidderRequest.timeout || 600,
         user: raiSetEids(bid),
         demand: raiGetDemandType(bid),
         videoData: raiGetVideoInfo(bid),
