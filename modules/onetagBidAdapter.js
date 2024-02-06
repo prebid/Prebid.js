@@ -127,6 +127,9 @@ function interpretResponse(serverResponse, bidderRequest) {
       },
       ttl: bid.ttl || 300
     };
+    if (bid.dsa) {
+      responseBid.meta.dsa = bid.dsa;
+    }
     if (bid.mediaType === BANNER) {
       responseBid.ad = bid.ad;
     } else if (bid.mediaType === VIDEO) {
