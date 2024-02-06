@@ -889,7 +889,6 @@ describe('gumgumAdapter', function () {
         body.ad.width = 300;
         body.ad.height = 600;
         result = spec.interpretResponse({ body }, request)[0];
-        console.log(result, 'result==============') // eslint-disable-line
         expect(result.width = expectedSize[1][0]);
         expect(result.height = expectedSize[1][1]);
       })
