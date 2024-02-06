@@ -2,6 +2,13 @@ import {getValue, formatQS, logError, deepAccess, isArray, getBidIdParameter} fr
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ */
+
 export const OPENRTB = {
   NATIVE: {
     IMAGE_TYPE: {

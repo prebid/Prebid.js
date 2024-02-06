@@ -1,7 +1,7 @@
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepAccess, generateUUID, logError, isArray} from '../src/utils.js';
+import {deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {find} from '../src/polyfill.js';
 
@@ -11,6 +11,35 @@ const USER_ID_KEY = 'hb_insticator_uid';
 const USER_ID_COOKIE_EXP = 2592000000; // 30 days
 const BID_TTL = 300; // 5 minutes
 const GVLID = 910;
+
+const isSubarray = (arr, target) => {
+  if (!isArrayOfNums(arr) || arr.length === 0) {
+    return false;
+  }
+  const targetSet = new Set(target);
+  return arr.every(el => targetSet.has(el));
+};
+
+export const OPTIONAL_VIDEO_PARAMS = {
+  'minduration': (value) => isInteger(value),
+  'maxduration': (value) => isInteger(value),
+  'protocols': (value) => isSubarray(value, [2, 3, 5, 6, 7, 8]), // protocols values supported by Inticator, according to the OpenRTB spec
+  'startdelay': (value) => isInteger(value),
+  'linearity': (value) => isInteger(value) && [1].includes(value),
+  'skip': (value) => isInteger(value) && [1, 0].includes(value),
+  'skipmin': (value) => isInteger(value),
+  'skipafter': (value) => isInteger(value),
+  'sequence': (value) => isInteger(value),
+  'battr': (value) => isSubarray(value, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]),
+  'maxextended': (value) => isInteger(value),
+  'minbitrate': (value) => isInteger(value),
+  'maxbitrate': (value) => isInteger(value),
+  'playbackmethod': (value) => isSubarray(value, [1, 2, 3, 4]),
+  'playbackend': (value) => isInteger(value) && [1, 2, 3].includes(value),
+  'delivery': (value) => isSubarray(value, [1, 2, 3]),
+  'pos': (value) => isInteger(value) && [0, 1, 2, 3, 4, 5, 6, 7].includes(value),
+  'api': (value) => isSubarray(value, [1, 2, 3, 4, 5, 6, 7]),
+};
 
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
@@ -68,17 +97,50 @@ function buildBanner(bidRequest) {
 }
 
 function buildVideo(bidRequest) {
-  const w = deepAccess(bidRequest, 'mediaTypes.video.w');
-  const h = deepAccess(bidRequest, 'mediaTypes.video.h');
+  let w = deepAccess(bidRequest, 'mediaTypes.video.w');
+  let h = deepAccess(bidRequest, 'mediaTypes.video.h');
   const mimes = deepAccess(bidRequest, 'mediaTypes.video.mimes');
   const placement = deepAccess(bidRequest, 'mediaTypes.video.placement') || 3;
+  const plcmt = deepAccess(bidRequest, 'mediaTypes.video.plcmt') || undefined;
+  const playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
 
-  return {
+  if (!w && playerSize) {
+    if (Array.isArray(playerSize[0])) {
+      w = parseInt(playerSize[0][0], 10);
+    } else if (typeof playerSize[0] === 'number' && !isNaN(playerSize[0])) {
+      w = parseInt(playerSize[0], 10);
+    }
+  }
+  if (!h && playerSize) {
+    if (Array.isArray(playerSize[0])) {
+      h = parseInt(playerSize[0][1], 10);
+    } else if (typeof playerSize[1] === 'number' && !isNaN(playerSize[1])) {
+      h = parseInt(playerSize[1], 10);
+    }
+  }
+
+  const bidRequestVideo = deepAccess(bidRequest, 'mediaTypes.video');
+  const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
+  let optionalParams = {};
+  for (const param in OPTIONAL_VIDEO_PARAMS) {
+    if (bidRequestVideo[param]) {
+      optionalParams[param] = bidRequestVideo[param];
+    }
+  }
+
+  let videoObj = {
     placement,
     mimes,
     w,
     h,
+    ...optionalParams,
+    ...videoBidderParams // bidder specific overrides for video
   }
+
+  if (plcmt) {
+    videoObj['plcmt'] = plcmt;
+  }
+  return videoObj
 }
 
 function buildImpression(bidRequest) {
@@ -235,7 +297,11 @@ function buildBid(bid, bidderRequest) {
     meta.advertiserDomains = bid.adomain
   }
 
-  return {
+  let mediaType = 'banner';
+  if (bid.adm && bid.adm.includes('<VAST')) {
+    mediaType = 'video';
+  }
+  let bidResponse = {
     requestId: bid.impid,
     creativeId: bid.crid,
     cpm: bid.price,
@@ -244,11 +310,22 @@ function buildBid(bid, bidderRequest) {
     ttl: bid.exp || config.getConfig('insticator.bidTTL') || BID_TTL,
     width: bid.w,
     height: bid.h,
-    mediaType: 'banner',
+    mediaType: mediaType,
     ad: bid.adm,
     adUnitCode: originalBid.adUnitCode,
     ...(Object.keys(meta).length > 0 ? {meta} : {})
   };
+
+  if (mediaType === 'video') {
+    bidResponse.vastXml = bid.adm;
+  }
+
+  // Inticator bid adaptor only returns `vastXml` for video bids. No VastUrl or videoCache.
+  if (!bidResponse.vastUrl && bidResponse.vastXml) {
+    bidResponse.vastUrl = 'data:text/xml;charset=utf-8;base64,' + window.btoa(bidResponse.vastXml.replace(/\\"/g, '"'));
+  }
+
+  return bidResponse;
 }
 
 function buildBidSet(seatbid, bidderRequest) {
@@ -309,15 +386,38 @@ function validateBanner(bid) {
 }
 
 function validateVideo(bid) {
-  const video = deepAccess(bid, 'mediaTypes.video');
-
-  if (video === undefined) {
-    return true;
+  const videoParams = deepAccess(bid, 'mediaTypes.video', {});
+  const videoBidderParams = deepAccess(bid, 'params.video', {});
+  let video = {
+    ...videoParams,
+    ...videoBidderParams // bidder specific overrides for video
+  }
+  // Check if the merged video object is empty
+  if (Object.keys(video).length === 0 || video === undefined) {
+    logError('insticator: video object is empty');
+    return false; // or handle the case where video parameters are undefined or empty
   }
 
+  let w = deepAccess(bid, 'mediaTypes.video.w');
+  let h = deepAccess(bid, 'mediaTypes.video.h');
+  const playerSize = deepAccess(bid, 'mediaTypes.video.playerSize');
+  if (!w && playerSize) {
+    if (Array.isArray(playerSize[0])) {
+      w = parseInt(playerSize[0][0], 10);
+    } else if (typeof playerSize[0] === 'number' && !isNaN(playerSize[0])) {
+      w = parseInt(playerSize[0], 10);
+    }
+  }
+  if (!h && playerSize) {
+    if (Array.isArray(playerSize[0])) {
+      h = parseInt(playerSize[0][1], 10);
+    } else if (typeof playerSize[1] === 'number' && !isNaN(playerSize[1])) {
+      h = parseInt(playerSize[1], 10);
+    }
+  }
   const videoSize = [
-    deepAccess(bid, 'mediaTypes.video.w'),
-    deepAccess(bid, 'mediaTypes.video.h'),
+    w,
+    h,
   ];
 
   if (
@@ -338,6 +438,27 @@ function validateVideo(bid) {
 
   if (typeof placement !== 'undefined' && typeof placement !== 'number') {
     logError('insticator: video placement is not a number');
+    return false;
+  }
+
+  const plcmt = deepAccess(bid, 'mediaTypes.video.plcmt');
+
+  if (typeof plcmt !== 'undefined' && typeof plcmt !== 'number') {
+    logError('insticator: video plcmt is not a number');
+    return false;
+  }
+
+  for (const param in OPTIONAL_VIDEO_PARAMS) {
+    if (video[param]) {
+      if (!OPTIONAL_VIDEO_PARAMS[param](video[param])) {
+        logError(`insticator: video ${param} is invalid or not supported by insticator`);
+        return false
+      }
+    }
+  }
+
+  if (video.minduration && video.maxduration && video.minduration > video.maxduration) {
+    logError('insticator: video minduration is greater than maxduration');
     return false;
   }
 
@@ -382,7 +503,6 @@ export const spec = {
   interpretResponse: function (serverResponse, request) {
     const bidderRequest = request.bidderRequest;
     const body = serverResponse.body;
-
     if (!body || body.id !== bidderRequest.bidderRequestId) {
       logError('insticator: response id does not match bidderRequestId');
       return [];

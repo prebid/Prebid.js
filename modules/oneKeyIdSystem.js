@@ -8,6 +8,13 @@
 import {submodule} from '../src/hook.js';
 import { logError, logMessage } from '../src/utils.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
+
 // Pre-init OneKey if it has not load yet.
 window.OneKey = window.OneKey || {};
 window.OneKey.queue = window.OneKey.queue || [];

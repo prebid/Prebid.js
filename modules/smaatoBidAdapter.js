@@ -8,6 +8,14 @@ import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 import {fill} from '../libraries/appnexusUtils/anUtils.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
+
 const { NATIVE_IMAGE_TYPES } = CONSTANTS;
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';

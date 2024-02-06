@@ -9,6 +9,9 @@ import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
 import {isPlainObject, mergeDeep, logMessage, logError} from '../src/utils.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'idWard';
