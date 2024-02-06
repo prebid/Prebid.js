@@ -177,11 +177,6 @@ export const converter = ortbConverter({
 
     delete data?.ext?.prebid?.storedrequest;
 
-    let carbonTopics = fetchCarbonTopics(bidderRequest);
-    if (carbonTopics?.length > 0) {
-      deepSetValue(data, 'user.data', carbonTopics);
-    }
-
     // floors
     if (rubiConf.disableFloors === true) {
       delete data.ext.prebid.floors;
@@ -534,12 +529,10 @@ export const spec = {
       data['o_ae'] = 1;
     }
 
-    const topics = readCarbonTopics(bidderRequest);
+    const topics = getCarbonTopics(bidderRequest);
     if (topics) {
-      const domain = bidderRequest.refererInfo.domain
-      Object.keys(topics).forEach(taxonomy => {
-        const field = `s_segs_${taxonomy}_${domain}`;
-        data[field] = topics[taxonomy];
+      Object.keys(topics).forEach(field => {
+        data[field] = topics[field];
       });
     }
     // loop through userIds and add to request
@@ -1015,26 +1008,20 @@ function applyFPD(bidRequest, mediaType, data) {
   }
 }
 
-function fetchCarbonTopics(bidderRequest) {
-  let topics = [];
-  if (rubiConf.readTopics !== false) {
-    topics = bidderRequest.ortb2?.user?.data?.filter(topic => {
-      const taxonomy = topic.ext?.segtax;
-      return taxonomy == 507 || taxonomy == 508;
-    }) || topics;
+function getCarbonTopics(bidderRequest) {
+  if (rubiConf.readTopics === false) {
+    return undefined;
   }
-  return topics
-}
-
-function readCarbonTopics(bidderRequest) {
-  let topics = {};
-  let carbonTopics = fetchCarbonTopics(bidderRequest);
-  carbonTopics.forEach(topic => {
+  let fields = {};
+  bidderRequest.ortb2?.user?.data?.forEach(topic => {
     const taxonomy = topic.ext?.segtax;
-    topics[taxonomy] = topic.segments.forEach(seg => seg.id).join(',')
+    if (taxonomy == 507 || taxonomy == 508) {
+      const domain = bidderRequest.refererInfo.domain;
+      fields[`s_segs_${taxonomy}_${domain}`] = topic.segment?.map(seg => seg.id).join(',')
+    }
   })
-  let hasProps = Object.keys(topics).length > 0;
-  return hasProps ? topics : undefined;
+  let hasProps = Object.keys(fields).length > 0;
+  return hasProps ? fields : undefined;
 }
 
 /**
