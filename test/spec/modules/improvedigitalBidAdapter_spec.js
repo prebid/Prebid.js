@@ -109,17 +109,6 @@ describe('Improve Digital Adapter Tests', function () {
     }
   };
 
-  const simpleSmartTagBidRequest = {
-    mediaTypes: {},
-    bidder: 'improvedigital',
-    bidId: '1a2b3c',
-    placementCode: 'placement1',
-    params: {
-      publisherId: 1234,
-      placementId: 123456
-    }
-  };
-
   const bidderRequest = {
     ortb2: {
       source: {
@@ -595,7 +584,7 @@ describe('Improve Digital Adapter Tests', function () {
     it('should return 2 requests', function () {
       const requests = spec.buildRequests([
         simpleBidRequest,
-        simpleSmartTagBidRequest
+        instreamBidRequest
       ], bidderRequest);
       expect(requests).to.be.an('array');
       expect(requests.length).to.equal(2);
