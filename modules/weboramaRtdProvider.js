@@ -374,7 +374,7 @@ class WeboramaRtdProvider {
    * @param {?Object.<number, boolean>} gdpr.vendorData.purpose.consents
    * @param {?Object} gdpr.vendorData.vendor
    * @param {?Object.<number, boolean>} gdpr.vendorData.vendor.consents
-   * @return {bool}
+   * @return {boolean}
    */
   // eslint-disable-next-line no-dupe-class-members
   #checkTCFv2(gdpr) {
