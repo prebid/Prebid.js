@@ -16,7 +16,7 @@ import 'modules/gppControl_usnat.js';
 import 'modules/schain.js';
 
 describe('BT Bid Adapter', () => {
-  const ENDPOINT_URL = 'https://pbs.sample.com';
+  const ENDPOINT_URL = 'https://pbs.btloader.com/openrtb2/auction';
   const validBidRequests = [
     {
       bidId: '2e9f38ea93bb9e',
@@ -146,7 +146,7 @@ describe('BT Bid Adapter', () => {
   });
 
   describe('getUserSyncs', () => {
-    const SYNC_URL = 'https://cdn.sample.com/';
+    const SYNC_URL = 'https://cdn.btloader.com/user_sync.html';
 
     it('should return an empty array if no sync options are provided', () => {
       const syncs = spec.getUserSyncs({}, [], null, null, null);

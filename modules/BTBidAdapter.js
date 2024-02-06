@@ -5,9 +5,8 @@ import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'blockthrough';
 const GVLID = 815;
-// reach out for approval to marketing@blockthrough.com
-const ENDPOINT_URL = 'https://pbs.sample.com';
-const SYNC_URL = 'https://cdn.sample.com';
+const ENDPOINT_URL = 'https://pbs.btloader.com/openrtb2/auction';
+const SYNC_URL = 'https://cdn.btloader.com/user_sync.html';
 
 const CONVERTER = ortbConverter({
   context: {
