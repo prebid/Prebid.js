@@ -7,6 +7,21 @@ describe('MediaSquare bid adapter tests', function () {
     adUnitCode: 'banner-div',
     bidId: 'aaaa1234',
     auctionId: 'bbbb1234',
+    ortb2: {
+      regs: {
+        ext: {
+	  dsa: {
+            dsarequired: '1',
+            pubrender: '2',
+            datatopub: '3',
+            transparency: [{
+              domain: 'test.com',
+              dsaparams: [1, 2, 3]
+	    }]
+          }
+        }
+      }
+    },
     ortb2Imp: {
       ext: {
         tid: 'cccc1234',
@@ -102,6 +117,15 @@ describe('MediaSquare bid adapter tests', function () {
       'context': 'instream',
       'increment': 1.0,
       'ova': 'cleared',
+      'dsa': {
+        'behalf': 'some-behalf',
+        'paid': 'some-paid',
+        'transparency': [{
+          'domain': 'test.com',
+          'dsaparams': [1, 2, 3]
+        }],
+        'adrender': 1
+      }
     }],
   }};
 
@@ -176,6 +200,7 @@ describe('MediaSquare bid adapter tests', function () {
     expect(bid.meta).to.exist;
     expect(bid.meta.advertiserDomains).to.exist;
     expect(bid.meta.advertiserDomains).to.have.lengthOf(1);
+    expect(bid.meta.dsa).to.exist;
   });
   it('Verifies match', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS, DEFAULT_OPTIONS);
