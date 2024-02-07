@@ -24,40 +24,54 @@ Object.entries({
   });
 });
 
-export function configsBySeller(auctionConfigs) {
-  return Object.fromEntries(auctionConfigs.map(cfg => [cfg.seller, cfg]))
+export function slotConfigurator() {
+  const PREVIOUSLY_SET = {};
+  return [
+    function setComponentAuction(adUnitCode, auctionConfigs, reset = false) {
+      const gptSlot = getGptSlotForAdUnitCode(adUnitCode);
+      if (gptSlot && gptSlot.setConfig) {
+        let previous = PREVIOUSLY_SET[adUnitCode] ?? {}
+        let configsBySeller = Object.fromEntries(auctionConfigs.map(cfg => [cfg.seller, cfg]));
+        const sellers = Object.keys(configsBySeller);
+        if (reset) {
+          configsBySeller = Object.assign(previous, configsBySeller);
+          previous = Object.fromEntries(sellers.map(seller => [seller, null]))
+        } else {
+          sellers.forEach(seller => {
+            previous[seller] = null;
+          })
+        }
+        Object.keys(previous).length ? PREVIOUSLY_SET[adUnitCode] = previous : delete PREVIOUSLY_SET[adUnitCode];
+        const componentAuction = Object.entries(configsBySeller)
+          .map(([configKey, auctionConfig]) => ({configKey, auctionConfig}));
+        if (componentAuction.length > 0) {
+          gptSlot.setConfig({componentAuction});
+          logInfo(MODULE, `register component auction configs for: ${adUnitCode}: ${gptSlot.getAdUnitPath()}`, auctionConfigs);
+        }
+      } else if (auctionConfigs.length > 0) {
+        logWarn(MODULE, `unable to register component auction config for ${adUnitCode}`, auctionConfigs);
+      }
+    },
+    function getConfiguredSlots() {
+      return Object.keys(PREVIOUSLY_SET)
+    }
+  ]
 }
 
-export function setComponentAuction(adUnitCode, auctionConfigs) {
-  const gptSlot = getGptSlotForAdUnitCode(adUnitCode);
-  if (gptSlot && gptSlot.setConfig) {
-    gptSlot.setConfig({
-      componentAuction: Object.entries(auctionConfigs)
-        .map(([configKey, auctionConfig]) => ({
-          configKey,
-          auctionConfig
-        }))
-    });
-    logInfo(MODULE, `register component auction configs for: ${adUnitCode}: ${gptSlot.getAdUnitPath()}`, auctionConfigs);
-  } else {
-    logWarn(MODULE, `unable to register component auction config for ${adUnitCode}`, auctionConfigs);
-  }
-}
+const [setComponentAuction, getConfiguredSlots] = slotConfigurator();
 
 export function onAuctionConfigFactory(setGptConfig = setComponentAuction) {
   return function onAuctionConfig(auctionId, adUnitCode, auctionConfig) {
     if (autoconfig) {
-      setGptConfig(adUnitCode, configsBySeller(auctionConfig.componentAuctions));
+      setGptConfig(adUnitCode, auctionConfig.componentAuctions);
     }
   }
 }
 
 export function setPAAPIConfigFactory(
   getPAAPIConfig = (filters) => getGlobal().getPAAPIConfig(filters),
-  setGptConfig = setComponentAuction) {
-  const PREVIOUSLY_SET = {};
-  const resetMap = (keySet) => Object.fromEntries(Array.from(keySet.values()).map(v => [v, null]));
-
+  setGptConfig = setComponentAuction,
+  getSlots = getConfiguredSlots) {
   /**
    * Configure GPT slots with PAAPI auction configs.
    * `filters` are the same filters accepted by `pbjs.getPAAPIConfig`;
@@ -65,31 +79,21 @@ export function setPAAPIConfigFactory(
    */
   return function(filters = {}) {
     let set = new Set();
+    const reset = !(filters.reuse ?? true)
     Object.entries(
       getPAAPIConfig(filters) || {}
     ).forEach(([au, config]) => {
       set.add(au);
-      config = configsBySeller(config.componentAuctions);
-      const sellers = Object.keys(config);
-      let previous = PREVIOUSLY_SET[au] || new Set();
-      if (!(filters.reuse ?? true) && (filters.adUnitCode ?? au) === au) {
-        config = Object.assign(resetMap(previous), config);
-        previous = new Set(sellers);
-      } else {
-        sellers.forEach(seller => previous.add(seller));
-      }
-      PREVIOUSLY_SET[au] = previous;
-      setGptConfig(au, config);
+      setGptConfig(au, config.componentAuctions, reset);
     })
     if (set.size === 0) {
       logInfo(`${MODULE}: No component auctions available to set`);
     }
-    if (!(filters.reuse ?? true)) {
-      Object.entries(PREVIOUSLY_SET)
-        .filter(([au]) => !set.has(au) && (filters.adUnitCode ?? au) === au)
-        .forEach(([au, sellers]) => {
-          setGptConfig(au, resetMap(sellers));
-          delete PREVIOUSLY_SET[au];
+    if (reset) {
+      getSlots()
+        .filter(au => !set.has(au) && (filters.adUnitCode ?? au) === au)
+        .forEach(au => {
+          setGptConfig(au, [], true);
         })
     }
   }
