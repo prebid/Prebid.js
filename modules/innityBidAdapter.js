@@ -38,7 +38,7 @@ export const spec = {
   },
   interpretResponse: function(serverResponse, request) {
     const res = serverResponse.body;
-    if(Object.keys(res).length === 0){
+    if (Object.keys(res).length === 0) {
       return [];
     }
     const bidResponse = {
