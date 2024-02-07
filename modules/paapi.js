@@ -21,8 +21,8 @@ export function registerSubmodule(submod) {
   submodules.push(submod);
 }
 
-export function unregister(moduleName) {
-  submodules.splice(submodules.find(submod => submod.name === moduleName), 1);
+export function reset() {
+  submodules.splice(0, submodules.length);
 }
 
 module('paapi', registerSubmodule);
@@ -101,7 +101,7 @@ function onAuctionEnd({auctionId, bidsReceived, bidderRequests}) {
   });
   configsForAuction(auctionId, paapiConfigs);
   Object.entries(paapiConfigs).forEach(([au, config]) => {
-    submodules.forEach(submod => submod.onAuctionConfig?.(auctionId, au, config));
+    submodules.forEach(submod => submod.onAuctionConfig?.(auctionId, au, config, () => USED.add(config)));
   });
 }
 
@@ -129,10 +129,9 @@ export function addComponentAuctionHook(next, request, componentAuctionConfig) {
  *
  * @param auctionId? optional auction filter; if omitted, the latest auction for each ad unit is used
  * @param adUnitCode? optional ad unit filter
- * @param reuse if false, only return configurations that have not been returned previously
  * @returns {{}} a map from ad unit code to auction config for the ad unit.
  */
-export function getPAAPIConfig({auctionId, adUnitCode, reuse = true} = {}) {
+export function getPAAPIConfig({auctionId, adUnitCode} = {}) {
   const output = {};
   const targetedAuctionConfigs = auctionId && configsForAuction(auctionId);
   Object.entries(latestAuctionForAdUnit).forEach(([au, auct]) => {
@@ -148,7 +147,7 @@ export function getPAAPIConfig({auctionId, adUnitCode, reuse = true} = {}) {
         } else if (auctionId == null) {
           candidate = auctionConfigs[au];
         }
-        if (candidate && (!USED.has(candidate) || reuse)) {
+        if (candidate && !USED.has(candidate)) {
           output[au] = candidate;
           USED.add(candidate);
         }

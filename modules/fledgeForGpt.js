@@ -27,7 +27,7 @@ Object.entries({
 export function slotConfigurator() {
   const PREVIOUSLY_SET = {};
   return [
-    function setComponentAuction(adUnitCode, auctionConfigs, reset = false) {
+    function setComponentAuction(adUnitCode, auctionConfigs, reset = true) {
       const gptSlot = getGptSlotForAdUnitCode(adUnitCode);
       if (gptSlot && gptSlot.setConfig) {
         let previous = PREVIOUSLY_SET[adUnitCode] ?? {}
@@ -61,9 +61,10 @@ export function slotConfigurator() {
 const [setComponentAuction, getConfiguredSlots] = slotConfigurator();
 
 export function onAuctionConfigFactory(setGptConfig = setComponentAuction) {
-  return function onAuctionConfig(auctionId, adUnitCode, auctionConfig) {
+  return function onAuctionConfig(auctionId, adUnitCode, auctionConfig, markAsUsed) {
     if (autoconfig) {
       setGptConfig(adUnitCode, auctionConfig.componentAuctions);
+      markAsUsed();
     }
   }
 }
@@ -75,27 +76,23 @@ export function setPAAPIConfigFactory(
   /**
    * Configure GPT slots with PAAPI auction configs.
    * `filters` are the same filters accepted by `pbjs.getPAAPIConfig`;
-   * if reuse = false, this also resets configuration for slots that were previously configured.
    */
   return function(filters = {}) {
     let set = new Set();
-    const reset = !(filters.reuse ?? true)
     Object.entries(
       getPAAPIConfig(filters) || {}
     ).forEach(([au, config]) => {
       set.add(au);
-      setGptConfig(au, config.componentAuctions, reset);
+      setGptConfig(au, config.componentAuctions, true);
     })
     if (set.size === 0) {
       logInfo(`${MODULE}: No component auctions available to set`);
     }
-    if (reset) {
-      getSlots()
-        .filter(au => !set.has(au) && (filters.adUnitCode ?? au) === au)
-        .forEach(au => {
-          setGptConfig(au, [], true);
-        })
-    }
+    getSlots()
+      .filter(au => !set.has(au) && (filters.adUnitCode ?? au) === au)
+      .forEach(au => {
+        setGptConfig(au, [], true);
+      })
   }
 }
 /**

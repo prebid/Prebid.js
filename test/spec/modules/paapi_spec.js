@@ -12,7 +12,7 @@ import {
   registerSubmodule,
   setImpExtAe,
   setResponseFledgeConfigs,
-  unregister
+  reset
 } from 'modules/paapi.js';
 import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
@@ -23,6 +23,7 @@ import {AuctionIndex} from '../../../src/auctionIndex.js';
 
 describe('paapi module', () => {
   let sandbox;
+  before(reset);
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
   });
@@ -89,21 +90,11 @@ describe('paapi module', () => {
               });
             });
 
-            it('and not return them again if reuse = false', () => {
+            it('and not return them again', () => {
               getPAAPIConfig();
-              const cfg = getPAAPIConfig({reuse: false});
+              const cfg = getPAAPIConfig();
               expect(cfg).to.eql({});
             });
-            Object.entries({
-              'true': {reuse: true},
-              'undefined': {}
-            }).forEach(([t, options]) => {
-              it(`and return them again if reuse is ${t}`, () => {
-                const expected = getPAAPIConfig();
-                const cfg = getPAAPIConfig(options);
-                expect(cfg).to.eql(expected);
-              })
-            })
           });
 
           it('should drop auction configs after end of auction', () => {
@@ -146,7 +137,7 @@ describe('paapi module', () => {
               submods.forEach(registerSubmodule);
             });
             afterEach(() => {
-              submods.forEach(m => unregister(m.name));
+              reset();
             });
 
             describe('onAuctionConfig', () => {
@@ -165,6 +156,19 @@ describe('paapi module', () => {
                   });
                 });
               });
+              it('removes configs from getPAAPIConfig if the module calls markAsUsed', () => {
+                submods[0].onAuctionConfig.callsFake((auctionId, adUnitCode, config, markAsUsed) => {
+                  markAsUsed();
+                });
+                addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au1'}, fledgeAuctionConfig);
+                events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId});
+                expect(getPAAPIConfig()).to.eql({});
+              });
+              it('keeps them available if they do not', () => {
+                addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au1'}, fledgeAuctionConfig);
+                events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId});
+                expect(getPAAPIConfig()).to.not.be.empty;
+              })
             });
           });
 
@@ -333,10 +337,10 @@ describe('paapi module', () => {
             expectAdUnitsFromAuctions(getPAAPIConfig({adUnitCode: 'au2'}), {au2: AUCTION2});
           });
 
-          it('should keep track of which configs were returned for reuse = false', () => {
+          it('should keep track of which configs were returned', () => {
             expectAdUnitsFromAuctions(getPAAPIConfig({auctionId: AUCTION1}), {au1: AUCTION1, au2: AUCTION1});
-            expect(getPAAPIConfig({auctionId: AUCTION1, reuse: false})).to.eql({});
-            expectAdUnitsFromAuctions(getPAAPIConfig({reuse: false}), {au2: AUCTION2, au3: AUCTION2});
+            expect(getPAAPIConfig({auctionId: AUCTION1})).to.eql({});
+            expectAdUnitsFromAuctions(getPAAPIConfig(), {au2: AUCTION2, au3: AUCTION2});
           });
         });
       });
