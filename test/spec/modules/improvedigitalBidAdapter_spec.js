@@ -727,6 +727,7 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.imp[0].ext.bidder).to.not.exist;
       expect(payload.imp[0].ext.prebid.bidder.improvedigital).to.deep.equal({
         placementId: 1053688,
+        publisherId: 1234,
         keyValues
       });
       expect(payload.imp[0].ext.prebid.storedrequest.id).to.equal('1053688');

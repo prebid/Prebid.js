@@ -140,7 +140,9 @@ export const CONVERTER = ortbConverter({
     }
     const bidderParamsPath = context.extendMode ? 'ext.prebid.bidder.improvedigital' : 'ext.bidder';
     const placementId = bidRequest.params.placementId;
+    const publisherId = bidRequest.params.publisherId;
     deepSetValue(imp, `${bidderParamsPath}.placementId`, placementId);
+    deepSetValue(imp, `${bidderParamsPath}.publisherId`, publisherId);
     if (context.extendMode) {
       deepSetValue(imp, 'ext.prebid.storedrequest.id', '' + placementId);
     }
