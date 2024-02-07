@@ -103,6 +103,7 @@ export const euidIdSubmodule = {
       mappedConfig.cstg = {
         serverPublicKey: config?.params?.serverPublicKey,
         subscriptionId: config?.params?.subscriptionId,
+        optoutCheck: 1,
         ...extractIdentityFromParams(config?.params ?? {})
       }
     }
@@ -127,6 +128,10 @@ function decodeImpl(value) {
     _logInfo('Found server-only token. Refresh is unavailable for this token.');
     const result = { euid: { id: value } };
     return result;
+  }
+  if (value.latestToken === 'optout') {
+    _logInfo('Found optout token.  Refresh is unavailable for this token.');
+    return { euid: { optout: true } };
   }
   if (Date.now() < value.latestToken.identity_expires) {
     return { euid: { id: value.latestToken.advertising_token } };
