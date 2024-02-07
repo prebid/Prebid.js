@@ -1,4 +1,4 @@
-import {deepAccess, isStr} from '../src/utils.js';
+import {deepAccess, isStr, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -183,6 +183,13 @@ export const spec = {
     }
     return syncs
   },
+
+  onTimeout: function (data) {
+    let url = raiGetTimeoutURL(data);
+    if (url) {
+      triggerPixel(url);
+    }
+  }
 };
 
 registerBidder(spec);
@@ -331,4 +338,16 @@ function raiGetFloor(bid, config) {
   } catch (e) {
     return 0
   }
+}
+
+function raiGetTimeoutURL(data) {
+  let {params, timeout} = data[0]
+  let url = 'https://s.richaudience.com/err/?ec=6&ev=[timeout_publisher]&pla=[placement_hash]&int=PREBID&pltfm=&node=&dm=[domain]';
+
+  url = url.replace('[timeout_publisher]', timeout)
+  url = url.replace('[placement_hash]', params[0].pid)
+  if (REFERER != null) {
+    url = url.replace('[domain]', document.location.host)
+  }
+  return url
 }

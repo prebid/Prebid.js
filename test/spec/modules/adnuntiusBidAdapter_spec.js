@@ -909,6 +909,7 @@ describe('adnuntiusBidAdapter', function() {
         ]
       };
       serverResponse.body.adUnits[0].deals = [];
+      delete serverResponse.body.metaData.voidAuIds; // test response with no voidAuIds
 
       const interpretedResponse = spec.interpretResponse(serverResponse, altBidder);
       expect(interpretedResponse).to.have.lengthOf(0);

@@ -9,6 +9,10 @@ const ENDPOINT = 'https://n.ads3-adnow.com/a';
 
 /**
  * @typedef {object} CommonBidData
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
  *
  * @property {string} requestId The specific BidRequest which this bid is aimed at.
  *   This should match the BidRequest.bidId which this Bid targets.

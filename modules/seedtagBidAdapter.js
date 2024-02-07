@@ -3,6 +3,15 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'seedtag';
 const SEEDTAG_ALIAS = 'st';
 const SEEDTAG_SSP_ENDPOINT = 'https://s.seedtag.com/c/hb/bid';
@@ -107,7 +116,6 @@ function buildBidRequest(validBidRequest) {
       return mediaTypesMap[pbjsType];
     }
   );
-
   const bidRequest = {
     id: validBidRequest.bidId,
     transactionId: validBidRequest.ortb2Imp?.ext?.tid,
@@ -115,6 +123,7 @@ function buildBidRequest(validBidRequest) {
     supplyTypes: mediaTypes,
     adUnitId: params.adUnitId,
     adUnitCode: validBidRequest.adUnitCode,
+    geom: geom(validBidRequest.adUnitCode),
     placement: params.placement,
     requestCount: validBidRequest.bidderRequestsCount || 1, // FIXME : in unit test the parameter bidderRequestsCount is undefined
   };
@@ -196,6 +205,27 @@ function ttfb() {
   // @see https://github.com/googleChrome/web-vitals/issues/162
   //      https://github.com/googleChrome/web-vitals/issues/137
   return ttfb >= 0 && ttfb <= performance.now() ? ttfb : 0;
+}
+
+function geom(adunitCode) {
+  const slot = document.getElementById(adunitCode);
+  if (slot) {
+    const scrollY = window.scrollY;
+    const { top, left, width, height } = slot.getBoundingClientRect();
+    const viewport = {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+
+    return {
+      scrollY,
+      top,
+      left,
+      width,
+      height,
+      viewport,
+    };
+  }
 }
 
 export function getTimeoutUrl(data) {
