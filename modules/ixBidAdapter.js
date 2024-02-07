@@ -8,6 +8,9 @@ import {
   isEmpty,
   isFn,
   isInteger,
+  isNumber,
+  isStr,
+  isPlainObject,
   logError,
   logWarn,
   mergeDeep,
@@ -519,6 +522,9 @@ function parseBid(rawBid, currency, bidRequest) {
   bid.meta.brandName = deepAccess(rawBid, 'ext.advbrand');
   if (rawBid.adomain && rawBid.adomain.length > 0) {
     bid.meta.advertiserDomains = rawBid.adomain;
+  }
+  if (rawBid.ext?.dsa) {
+    bid.meta.dsa = rawBid.ext.dsa
   }
   return bid;
 }
@@ -1212,6 +1218,7 @@ function addFPD(bidderRequest, r, fpd, site, user) {
     }
   }
 
+  // regulations from ortb2
   if (fpd.hasOwnProperty('regs') && !bidderRequest.gppConsent) {
     if (fpd.regs.hasOwnProperty('gpp') && typeof fpd.regs.gpp == 'string') {
       deepSetValue(r, 'regs.gpp', fpd.regs.gpp)
@@ -1219,6 +1226,30 @@ function addFPD(bidderRequest, r, fpd, site, user) {
 
     if (fpd.regs.hasOwnProperty('gpp_sid') && Array.isArray(fpd.regs.gpp_sid)) {
       deepSetValue(r, 'regs.gpp_sid', fpd.regs.gpp_sid)
+    }
+
+    if (fpd.regs.ext?.dsa) {
+      const pubDsaObj = fpd.regs.ext.dsa;
+      const dsaObj = {};
+      ['dsarequired', 'pubrender', 'datatopub'].forEach((dsaKey) => {
+        if (isNumber(pubDsaObj[dsaKey])) {
+          dsaObj[dsaKey] = pubDsaObj[dsaKey];
+        }
+      });
+
+      if (isArray(pubDsaObj.transparency)) {
+        const tpData = [];
+        pubDsaObj.transparency.forEach((tpObj) => {
+          if (isPlainObject(tpObj) && isStr(tpObj.domain) && tpObj.domain != '' && isArray(tpObj.dsaparams) && tpObj.dsaparams.every((v) => isNumber(v))) {
+            tpData.push(tpObj);
+          }
+        });
+        if (tpData.length > 0) {
+          dsaObj.transparency = tpData;
+        }
+      }
+
+      if (!isEmpty(dsaObj)) deepSetValue(r, 'regs.ext.dsa', dsaObj);
     }
   }
 
