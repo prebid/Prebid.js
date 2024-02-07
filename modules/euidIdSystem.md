@@ -4,10 +4,10 @@ The EUID module handles storing, providing, and optionally refreshing tokens. Wh
 
 *Server Only* mode was originally referred to as *legacy mode*, but it is a popular mode for new integrations where publishers prefer to handle token refresh server-side.
 
-*Client-Side Token Generation* mode is included in EUID module by default. However, it's important to note that this mode is created and made available recently. For publishers who do not intend to use it, you have the option to instruct the build to exclude the code related to this feature:
+*Client-Side Token Generation* mode is included in EUID module by default. However, it's important to note that this mode was created and made available recently. For publishers who do not intend to use it, you have the option to instruct the build to exclude the code related to this feature:
 
 ```
-    $ gulp build --modules=uid2IdSystem --disable UID2_CSTG
+    $ gulp build --modules=euidIdSystem --disable UID2_CSTG
 ```
 If you do plan to use Client-Side Token Generation (CSTG) mode, please consult the EUID Team first as they will provide required configuration values for you to use (see the Client-Side Token Generation (CSTG) mode section below for details)
 

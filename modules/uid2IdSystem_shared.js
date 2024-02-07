@@ -254,6 +254,9 @@ if (FEATURES.UID2_CSTG) {
 
     isStoredTokenInvalid(cstgIdentity, storedTokens, _logInfo, _logWarn) {
       if (storedTokens) {
+        if (storedTokens.latestToken === 'optout') {
+          return true;
+        }
         const identity = Object.values(cstgIdentity)[0];
         if (!this.isStoredTokenFromSameIdentity(storedTokens, identity)) {
           _logInfo(
@@ -386,6 +389,7 @@ if (FEATURES.UID2_CSTG) {
       this._baseUrl = opts.baseUrl;
       this._serverPublicKey = opts.cstg.serverPublicKey;
       this._subscriptionId = opts.cstg.subscriptionId;
+      this._optoutCheck = opts.cstg.optoutCheck;
       this._logInfo = logInfo;
       this._logWarn = logWarn;
     }
@@ -400,6 +404,12 @@ if (FEATURES.UID2_CSTG) {
         response.status === 'success' &&
         isValidIdentity(response.body)
       );
+    }
+
+    isCstgApiOptoutResponse(response) {
+      return (
+        this.hasStatusResponse(response) &&
+        response.status === 'optout');
     }
 
     isCstgApiClientErrorResponse(response) {
@@ -460,6 +470,7 @@ if (FEATURES.UID2_CSTG) {
         ),
         timestamp: now,
         subscription_id: this._subscriptionId,
+        optout_check: this._optoutCheck,
       };
       return this.callCstgApi(requestBody, box);
     }
@@ -490,6 +501,11 @@ if (FEATURES.UID2_CSTG) {
                 resolvePromise({
                   status: 'success',
                   identity: response.body,
+                });
+              } else if (this.isCstgApiOptoutResponse(response)) {
+                resolvePromise({
+                  status: 'optout',
+                  identity: 'optout',
                 });
               } else {
                 // A 200 should always be a success response.
