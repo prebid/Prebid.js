@@ -39,7 +39,7 @@ describe('LiveIntentId', function() {
     resetLiveIntentIdSubmodule();
   });
 
-  it('should initialize LiveConnect with a privacy string when getId, and include it in the resolution request', function () {
+  it('should initialize LiveConnect with a privacy string when getId but not include it in the resolution request', function () {
     uspConsentDataStub.returns('1YNY');
     gdprConsentDataStub.returns({
       gdprApplies: true,
@@ -66,7 +66,7 @@ describe('LiveIntentId', function() {
     expect(callBackSpy.calledOnceWith(response)).to.be.true;
   });
 
-  it('should fire an event when getId', function(done) {
+  it('should not fire an event if privacy applied when getId', function(done) {
     uspConsentDataStub.returns('1YNY');
     gdprConsentDataStub.returns({
       gdprApplies: true,
