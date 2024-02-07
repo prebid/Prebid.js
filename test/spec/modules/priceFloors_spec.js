@@ -730,6 +730,23 @@ describe('the price floors module', function () {
       expect(floorData.skipRate).to.equal(101);
       expect(floorData.skipped).to.equal(true);
     });
+
+    it('should have skippedReason set to "not_found" if there is no valid floor data', function() {
+      floorConfig.data = {}
+      handleSetFloorsConfig(floorConfig);
+
+      const floorData = createFloorsDataForAuction(adUnits, 'id');
+      expect(floorData.skippedReason).to.equal(CONSTANTS.FLOOR_SKIPPED_REASON.NOT_FOUND);
+    });
+
+    it('should have skippedReason set to "random" if there is floor data and skipped is true', function() {
+      // this will force skipped to be true
+      floorConfig.skipRate = 101;
+      handleSetFloorsConfig(floorConfig);
+
+      const floorData = createFloorsDataForAuction(adUnits, 'id');
+      expect(floorData.skippedReason).to.equal(CONSTANTS.FLOOR_SKIPPED_REASON.RANDOM);
+    });
   });
 
   describe('pre-auction tests', function () {
