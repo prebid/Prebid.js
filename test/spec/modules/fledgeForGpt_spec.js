@@ -163,6 +163,47 @@ describe('fledgeForGpt module', () => {
         })
       });
 
+      it('only resets sellers that have no fresh config', () => {
+        getPAAPIConfig.returns({
+          au1: {
+            componentAuctions: [{seller: 's1'}, {seller: 's2'}]
+          }
+        });
+        setPAAPIConfigForGPT();
+        setGptConfig.resetHistory();
+        getPAAPIConfig.returns({
+          au1: {
+            componentAuctions: [{seller: 's1'}]
+          }
+        });
+        setPAAPIConfigForGPT({reuse: false})
+        sinon.assert.calledWith(setGptConfig, 'au1', {
+          s1: {seller: 's1'},
+          s2: null
+        })
+      });
+
+      it('does not reset slots that have already been reset', () => {
+        getPAAPIConfig.returns({
+          au1: {
+            componentAuctions: [{seller: 's1'}]
+          },
+          au2: {
+            componentAuctions: [{seller: 's1'}]
+          }
+        });
+        setPAAPIConfigForGPT();
+        getPAAPIConfig.returns({});
+        setPAAPIConfigForGPT({adUnitCode: 'au1', reuse: false});
+        setGptConfig.resetHistory();
+        setPAAPIConfigForGPT({adUnitCode: 'au1', reuse: false});
+        sinon.assert.notCalled(setGptConfig);
+        setPAAPIConfigForGPT({reuse: false});
+        sinon.assert.calledWith(setGptConfig, 'au2', {
+          s1: null
+        })
+      })
+
       it('only resets the given adUnit', () => {
         getPAAPIConfig.returns({
           au1: {

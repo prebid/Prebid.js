@@ -56,6 +56,8 @@ export function setPAAPIConfigFactory(
   getPAAPIConfig = (filters) => getGlobal().getPAAPIConfig(filters),
   setGptConfig = setComponentAuction) {
   const PREVIOUSLY_SET = {};
+  const resetMap = (keySet) => Object.fromEntries(Array.from(keySet.values()).map(v => [v, null]));
+
   /**
    * Configure GPT slots with PAAPI auction configs.
    * `filters` are the same filters accepted by `pbjs.getPAAPIConfig`;
@@ -71,7 +73,7 @@ export function setPAAPIConfigFactory(
       const sellers = Object.keys(config);
       let previous = PREVIOUSLY_SET[au] || new Set();
       if (!(filters.reuse ?? true) && (filters.adUnitCode ?? au) === au) {
-        Object.assign(config, Object.fromEntries(Array.from(previous.values()).map(v => [v, null])));
+        config = Object.assign(resetMap(previous), config);
         previous = new Set(sellers);
       } else {
         sellers.forEach(seller => previous.add(seller));
@@ -86,7 +88,8 @@ export function setPAAPIConfigFactory(
       Object.entries(PREVIOUSLY_SET)
         .filter(([au]) => !set.has(au) && (filters.adUnitCode ?? au) === au)
         .forEach(([au, sellers]) => {
-          setGptConfig(au, Object.fromEntries(Array.from(sellers.values()).map(seller => [seller, null])))
+          setGptConfig(au, resetMap(sellers));
+          delete PREVIOUSLY_SET[au];
         })
     }
   }
