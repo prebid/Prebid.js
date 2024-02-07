@@ -95,6 +95,7 @@ export const spec = {
       } else if (bidderRequest.hasOwnProperty('bids') && typeof bidderRequest.bids == 'object' && bidderRequest.bids.length > 0 && bidderRequest.bids[0].hasOwnProperty('userId')) {
         payload.userId = bidderRequest.bids[0].userId;
       }
+      if (bidderRequest.ortb2?.regs?.ext?.dsa) { payload.dsa = bidderRequest.ortb2.regs.ext.dsa }
     };
     if (test) { payload.debug = true; }
     const payloadString = JSON.stringify(payload);
@@ -134,6 +135,7 @@ export const spec = {
             'advertiserDomains': value['adomain']
           }
         };
+        if ('dsa' in value) { bidResponse.meta.dsa = value['dsa']; }
         let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment', 'ova'];
         paramsToSearchFor.forEach(param => {
           if (param in value) {
