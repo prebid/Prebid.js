@@ -204,5 +204,16 @@ describe('fledgeForGpt module', () => {
       sinon.assert.calledOnce(setGptConfig);
       sinon.assert.calledWith(setGptConfig, 'au1', [], true);
     });
+
+    it('does not reset untouched slots if filtering by auction', () => {
+      getSlots.returns(['au1', 'au2']);
+      getPAAPIConfig.returns({
+        au1: {
+          componentAuctions: [{seller: 's1'}]
+        }
+      });
+      setPAAPIConfigForGPT({auctionId: 'any-auction'});
+      sinon.assert.neverCalledWith(setGptConfig, 'au2');
+    })
   })
 });

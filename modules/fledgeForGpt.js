@@ -88,11 +88,13 @@ export function setPAAPIConfigFactory(
     if (set.size === 0) {
       logInfo(`${MODULE}: No component auctions available to set`);
     }
-    getSlots()
-      .filter(au => !set.has(au) && (filters.adUnitCode ?? au) === au)
-      .forEach(au => {
-        setGptConfig(au, [], true);
-      })
+    if (!filters.auctionId) {
+      getSlots()
+        .filter(au => !set.has(au) && (filters.adUnitCode ?? au) === au)
+        .forEach(au => {
+          setGptConfig(au, [], true);
+        })
+    }
   }
 }
 /**
