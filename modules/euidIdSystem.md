@@ -157,6 +157,11 @@ The module stores a number of internal values. By default, all values are stored
 
 `{`<br />&nbsp;&nbsp;`"advertising_token": "...",`<br />&nbsp;&nbsp;`"refresh_token": "...",`<br />&nbsp;&nbsp;`"identity_expires": 1633643601000,`<br />&nbsp;&nbsp;`"refresh_from": 1633643001000,`<br />&nbsp;&nbsp;`"refresh_expires": 1636322000000,`<br />&nbsp;&nbsp;`"refresh_response_key": "wR5t6HKMfJ2r4J7fEGX9Gw=="`<br />`}`
 
+## Optout response
+
+`{`<br />&nbsp;&nbsp;`"optout": "true",`<br />`}`
+
+
 ### Notes
 
 If you are trying to limit the size of cookies, provide the token in configuration and use the default option of local storage.
