@@ -88,7 +88,7 @@ function getSlotSignals(bidsReceived = [], bidRequests = []) {
   return cfg;
 }
 
-function onAuctionEnd({auctionId, bidsReceived, bidderRequests}) {
+function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes}) {
   const allReqs = bidderRequests?.flatMap(br => br.bids);
   const paapiConfigs = {};
   Object.entries(pendingForAuction(auctionId) || {}).forEach(([adUnitCode, auctionConfigs]) => {
@@ -100,9 +100,12 @@ function onAuctionEnd({auctionId, bidsReceived, bidderRequests}) {
     latestAuctionForAdUnit[adUnitCode] = auctionId;
   });
   configsForAuction(auctionId, paapiConfigs);
-  Object.entries(paapiConfigs).forEach(([au, config]) => {
-    submodules.forEach(submod => submod.onAuctionConfig?.(auctionId, au, config, () => USED.add(config)));
-  });
+  const configsByAdUnit = Object.fromEntries(adUnitCodes.map(au => [au, paapiConfigs[au] ?? null]))
+  submodules.forEach(submod => submod.onAuctionConfig?.(
+    auctionId,
+    configsByAdUnit,
+    (adUnitCode) => paapiConfigs.hasOwnProperty(adUnitCode) && USED.add(paapiConfigs[adUnitCode]))
+  );
 }
 
 function setFPDSignals(auctionConfig, fpd) {

@@ -61,10 +61,12 @@ export function slotConfigurator() {
 const [setComponentAuction, getConfiguredSlots] = slotConfigurator();
 
 export function onAuctionConfigFactory(setGptConfig = setComponentAuction) {
-  return function onAuctionConfig(auctionId, adUnitCode, auctionConfig, markAsUsed) {
+  return function onAuctionConfig(auctionId, configsByAdUnit, markAsUsed) {
     if (autoconfig) {
-      setGptConfig(adUnitCode, auctionConfig.componentAuctions);
-      markAsUsed();
+      Object.entries(configsByAdUnit).forEach(([adUnitCode, cfg]) => {
+        setGptConfig(adUnitCode, cfg?.componentAuctions ?? []);
+        markAsUsed(adUnitCode);
+      });
     }
   }
 }

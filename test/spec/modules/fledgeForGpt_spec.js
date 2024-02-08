@@ -120,14 +120,16 @@ describe('fledgeForGpt module', () => {
             afterEach(() => {
               config.resetConfig();
             });
+
             it(`should ${shouldSetConfig ? '' : 'NOT'} set GPT slot configuration`, () => {
               const auctionConfig = {componentAuctions: [{seller: 'mock1'}, {seller: 'mock2'}]};
               const setGptConfig = sinon.stub();
               const markAsUsed = sinon.stub();
-              onAuctionConfigFactory(setGptConfig)('aid', 'au', auctionConfig, markAsUsed);
+              onAuctionConfigFactory(setGptConfig)('aid', {au1: auctionConfig, au2: null}, markAsUsed);
               if (shouldSetConfig) {
-                sinon.assert.calledWith(setGptConfig, 'au', auctionConfig.componentAuctions);
-                sinon.assert.called(markAsUsed);
+                sinon.assert.calledWith(setGptConfig, 'au1', auctionConfig.componentAuctions);
+                sinon.assert.calledWith(setGptConfig, 'au2', []);
+                sinon.assert.calledWith(markAsUsed, 'au1');
               } else {
                 sinon.assert.notCalled(setGptConfig);
                 sinon.assert.notCalled(markAsUsed);

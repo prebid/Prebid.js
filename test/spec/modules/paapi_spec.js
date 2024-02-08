@@ -142,31 +142,33 @@ describe('paapi module', () => {
 
             describe('onAuctionConfig', () => {
               const auctionId = 'aid';
-              it('is not invoked when there\'s no config', () => {
-                events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId});
-                submods.forEach(submod => sinon.assert.notCalled(submod.onAuctionConfig));
+              it('is invoked with null configs when there\'s no config', () => {
+                events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId, adUnitCodes: ['au']});
+                submods.forEach(submod => sinon.assert.calledWith(submod.onAuctionConfig, auctionId, {au: null}));
               });
-              it('is invoked with relevant config otherwise', () => {
+              it('is invoked with relevant configs', () => {
                 addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au1'}, fledgeAuctionConfig);
                 addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au2'}, fledgeAuctionConfig);
-                events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId});
+                events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId, adUnitCodes: ['au1', 'au2', 'au3']});
                 submods.forEach(submod => {
-                  ['au1', 'au2'].forEach(au => {
-                    sinon.assert.calledWith(submod.onAuctionConfig, auctionId, au, {componentAuctions: [fledgeAuctionConfig]});
-                  });
+                  sinon.assert.calledWith(submod.onAuctionConfig, auctionId, {
+                    au1: {componentAuctions: [fledgeAuctionConfig]},
+                    au2: {componentAuctions: [fledgeAuctionConfig]},
+                    au3: null
+                  })
                 });
               });
               it('removes configs from getPAAPIConfig if the module calls markAsUsed', () => {
-                submods[0].onAuctionConfig.callsFake((auctionId, adUnitCode, config, markAsUsed) => {
-                  markAsUsed();
+                submods[0].onAuctionConfig.callsFake((auctionId, configs, markAsUsed) => {
+                  markAsUsed('au1');
                 });
                 addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au1'}, fledgeAuctionConfig);
-                events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId});
+                events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId, adUnitCodes: ['au1']});
                 expect(getPAAPIConfig()).to.eql({});
               });
               it('keeps them available if they do not', () => {
                 addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au1'}, fledgeAuctionConfig);
-                events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId});
+                events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId, adUnitCodes: ['au1']});
                 expect(getPAAPIConfig()).to.not.be.empty;
               })
             });
