@@ -51,6 +51,11 @@ function imp(buildImp, bidRequest, context) {
  */
 function request(buildRequest, imps, bidderRequest, context) {
   const request = buildRequest(imps, bidderRequest, context);
+  deepSetValue(request, 'ext.prebid.channel', {
+    name: 'pbjs',
+    version: '$prebid.version$',
+  });
+
   if (window.location.href.includes('btServerTest=true')) {
     request.test = 1;
   }

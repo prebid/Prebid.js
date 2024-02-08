@@ -82,6 +82,10 @@ describe('BT Bid Adapter', () => {
       expect(requests[0].method).to.equal('POST');
       expect(requests[0].url).to.equal(ENDPOINT_URL);
       expect(requests[0].data).to.exist;
+      expect(requests[0].data.ext.prebid.channel).to.deep.equal({
+        name: 'pbjs',
+        version: '$prebid.version$',
+      });
       expect(requests[0].data.imp[0].ext).to.deep.equal(impExtParams);
     });
   });
