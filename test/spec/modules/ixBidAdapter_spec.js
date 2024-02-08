@@ -919,6 +919,23 @@ describe('IndexexchangeAdapter', function () {
 
   const extractPayload = function (bidRequest) { return bidRequest.data }
 
+  const generateEid = function (numEid) {
+    const eids = [];
+
+    for (let i = 1; i <= numEid; i++) {
+      const newEid = {
+        source: `eid_source_${i}.com`,
+        uids: [{
+          id: `uid_id_${i}`,
+        }]
+      };
+
+      eids.push(newEid);
+    }
+
+    return eids;
+  }
+
   describe('inherited functions', function () {
     it('should exists and is a function', function () {
       const adapter = newBidder(spec);
@@ -1485,6 +1502,17 @@ describe('IndexexchangeAdapter', function () {
   describe('buildRequestsUserId', function () {
     let validIdentityResponse;
     let validUserIdPayload;
+    const serverResponse = {
+      body: {
+        ext: {
+          pbjs_allow_all_eids: {
+            test: {
+              activated: false
+            }
+          }
+        }
+      }
+    };
 
     beforeEach(function () {
       window.headertag = {};
@@ -1495,6 +1523,12 @@ describe('IndexexchangeAdapter', function () {
 
     afterEach(function () {
       delete window.headertag;
+      serverResponse.body.ext.features = {
+        pbjs_allow_all_eids: {
+          activated: false
+        }
+      };
+      validIdentityResponse = {}
     });
 
     it('IX adapter reads supported user modules from Prebid and adds it to Video', function () {
@@ -1504,6 +1538,91 @@ describe('IndexexchangeAdapter', function () {
       const payload = extractPayload(request);
       expect(payload.user.eids).to.have.lengthOf(11);
       expect(payload.user.eids).to.have.deep.members(DEFAULT_USERID_PAYLOAD);
+    });
+
+    it('IX adapter filters eids from prebid past the maximum eid limit', function () {
+      serverResponse.body.ext.features = {
+        pbjs_allow_all_eids: {
+          activated: true
+        }
+      };
+      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
+      const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+      let eid_sent_from_prebid = generateEid(55);
+      cloneValidBid[0].userIdAsEids = utils.deepClone(eid_sent_from_prebid);
+      const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
+      const payload = extractPayload(request);
+      expect(payload.user.eids).to.have.lengthOf(50);
+      let eid_accepted = eid_sent_from_prebid.slice(0, 50);
+      expect(payload.user.eids).to.have.deep.members(eid_accepted);
+      expect(payload.ext.ixdiag.eidLength).to.equal(55);
+    });
+
+    it('IX adapter filters eids from IXL past the maximum eid limit', function () {
+      validIdentityResponse = {
+        MerkleIp: {
+          responsePending: false,
+          data: {
+            source: 'merkle.com',
+            uids: [{
+              id: '1234-5678-9012-3456',
+              ext: {
+                keyID: '1234-5678',
+                enc: 1
+              }
+            }]
+          }
+        },
+        LiveIntentIp: {
+          responsePending: false,
+          data: {
+            source: 'liveintent.com',
+            uids: [{
+              id: '1234-5678-9012-3456',
+              ext: {
+                keyID: '1234-5678',
+                rtiPartner: 'LDID',
+                enc: 1
+              }
+            }]
+          }
+        }
+      };
+      serverResponse.body.ext.features = {
+        pbjs_allow_all_eids: {
+          activated: true
+        }
+      };
+      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
+      const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+      let eid_sent_from_prebid = generateEid(49);
+      cloneValidBid[0].userIdAsEids = utils.deepClone(eid_sent_from_prebid);
+      const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
+      const payload = extractPayload(request);
+      expect(payload.user.eids).to.have.lengthOf(50);
+      eid_sent_from_prebid.push({
+        source: 'merkle.com',
+        uids: [{
+          id: '1234-5678-9012-3456',
+          ext: {
+            keyID: '1234-5678',
+            enc: 1
+          }
+        }]
+      })
+      expect(payload.user.eids).to.have.deep.members(eid_sent_from_prebid);
+      expect(payload.ext.ixdiag.eidLength).to.equal(49);
+    });
+
+    it('All incoming eids are from unsupported source with feature toggle off', function () {
+      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
+      const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+      let eid_sent_from_prebid = generateEid(20);
+      cloneValidBid[0].userIdAsEids = utils.deepClone(eid_sent_from_prebid);
+      const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
+      const payload = extractPayload(request);
+      expect(payload.user.eids).to.be.undefined
+      expect(payload.ext.ixdiag.eidLength).to.equal(20);
     });
 
     it('We continue to send in IXL identity info and Prebid takes precedence over IXL', function () {

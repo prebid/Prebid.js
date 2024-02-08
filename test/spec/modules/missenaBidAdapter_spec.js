@@ -137,6 +137,10 @@ describe('Missena Adapter', function () {
       expect(payloadNoFloor.floor).to.equal(undefined);
       expect(payloadNoFloor.floor_currency).to.equal(undefined);
     });
+    it('should send the idempotency key', function () {
+      expect(window.msna_ik).to.not.equal(undefined);
+      expect(payload.ik).to.equal(window.msna_ik);
+    });
 
     getDataFromLocalStorageStub.restore();
     getDataFromLocalStorageStub = sinon.stub(

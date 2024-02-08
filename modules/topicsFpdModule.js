@@ -22,7 +22,7 @@ export function reset() {
 }
 
 const bidderIframeList = {
-  maxTopicCaller: 3,
+  maxTopicCaller: 4,
   bidders: [{
     bidder: 'pubmatic',
     iframeURL: 'https://ads.pubmatic.com/AdServer/js/topics/topics_frame.html'
@@ -32,6 +32,9 @@ const bidderIframeList = {
   }, {
     bidder: 'openx',
     iframeURL: 'https://pa.openx.net/topics_frame.html'
+  }, {
+    bidder: 'improvedigital',
+    iframeURL: 'https://hb.360yield.com/privacy-sandbox/topics.html'
   }]
 }
 
