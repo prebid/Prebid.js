@@ -1012,7 +1012,6 @@ describe('Utils', function () {
       expect(deepEqual([], [])).to.be.true;
     });
 
-
     describe('cyrb53Hash', function() {
       it('should return the same hash for the same string', function() {
         const stringOne = 'string1';
