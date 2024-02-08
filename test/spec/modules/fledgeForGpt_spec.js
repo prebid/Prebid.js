@@ -20,14 +20,14 @@ describe('fledgeForGpt module', () => {
   });
 
   describe('slotConfigurator', () => {
-    let mockGptSlot, setGptConfig, getSlots;
+    let mockGptSlot, setGptConfig;
     beforeEach(() => {
       mockGptSlot = {
         setConfig: sinon.stub(),
         getAdUnitPath: () => 'mock/gpt/au'
       };
       sandbox.stub(gptUtils, 'getGptSlotForAdUnitCode').callsFake(() => mockGptSlot);
-      [setGptConfig, getSlots] = slotConfigurator();
+      setGptConfig = slotConfigurator();
     });
     it('should set GPT slot config', () => {
       setGptConfig('au', [fledgeAuctionConfig]);
@@ -38,7 +38,6 @@ describe('fledgeForGpt module', () => {
           auctionConfig: fledgeAuctionConfig,
         }]
       });
-      expect(getSlots()).to.eql(['au']);
     });
 
     describe('when reset = true', () => {
@@ -54,7 +53,6 @@ describe('fledgeForGpt module', () => {
             auctionConfig: null
           }]
         });
-        expect(getSlots()).to.eql([]);
       });
 
       it('should reset only sellers with no fresh config', () => {
@@ -84,7 +82,6 @@ describe('fledgeForGpt module', () => {
         setGptConfig('au1', [{seller: 's1'}]);
         setGptConfig('au1', [{seller: 's2'}], false);
         setGptConfig('au2', [{seller: 's3'}]);
-        expect(getSlots()).to.eql(['au1', 'au2']);
         mockGptSlot.setConfig.resetHistory();
         setGptConfig('au1', [], true);
         sinon.assert.calledWith(mockGptSlot.setConfig, {
@@ -96,7 +93,6 @@ describe('fledgeForGpt module', () => {
             auctionConfig: null
           }]
         });
-        expect(getSlots()).to.eql(['au2'])
       })
     });
   });
@@ -141,13 +137,11 @@ describe('fledgeForGpt module', () => {
     })
   });
   describe('setPAAPIConfigForGpt', () => {
-    let getPAAPIConfig, setGptConfig, getSlots, setPAAPIConfigForGPT;
+    let getPAAPIConfig, setGptConfig, setPAAPIConfigForGPT;
     beforeEach(() => {
       getPAAPIConfig = sinon.stub();
       setGptConfig = sinon.stub();
-      getSlots = sinon.stub();
-      getSlots.returns([]);
-      setPAAPIConfigForGPT = setPAAPIConfigFactory(getPAAPIConfig, setGptConfig, getSlots);
+      setPAAPIConfigForGPT = setPAAPIConfigFactory(getPAAPIConfig, setGptConfig);
     });
 
     Object.entries({
@@ -162,60 +156,22 @@ describe('fledgeForGpt module', () => {
       })
     });
 
-    it('sets GPT slot config for each ad unit that has PAAPI config', () => {
+    it('sets GPT slot config for each ad unit that has PAAPI config, and resets the rest', () => {
       const cfg = {
         au1: {
           componentAuctions: [{seller: 's1'}, {seller: 's2'}]
         },
         au2: {
           componentAuctions: [{seller: 's3'}]
-        }
+        },
+        au3: null
       }
       getPAAPIConfig.returns(cfg);
       setPAAPIConfigForGPT('mock-filters');
       sinon.assert.calledWith(getPAAPIConfig, 'mock-filters');
       Object.entries(cfg).forEach(([au, config]) => {
-        sinon.assert.calledWith(setGptConfig, au, config.componentAuctions, true);
+        sinon.assert.calledWith(setGptConfig, au, config?.componentAuctions ?? [], true);
       })
     });
-
-    it('resets previously set slots', () => {
-      getSlots.returns(['au1', 'au2']);
-      getPAAPIConfig.returns({});
-      setPAAPIConfigForGPT();
-      ['au1', 'au2'].forEach(au => sinon.assert.calledWith(setGptConfig, au, [], true));
-    });
-
-    it('does not reset-and-set', () => {
-      getSlots.returns(['au1', 'au2']);
-      getPAAPIConfig.returns({
-        au1: {
-          componentAuctions: [{seller: 's1'}]
-        }
-      });
-      setPAAPIConfigForGPT();
-      sinon.assert.calledTwice(setGptConfig);
-      sinon.assert.calledWith(setGptConfig, 'au1', [{seller: 's1'}], true);
-      sinon.assert.calledWith(setGptConfig, 'au2', [], true);
-    })
-
-    it('only resets the given adUnit', () => {
-      getSlots.returns(['au1', 'au2']);
-      getPAAPIConfig.returns({});
-      setPAAPIConfigForGPT({adUnitCode: 'au1'});
-      sinon.assert.calledOnce(setGptConfig);
-      sinon.assert.calledWith(setGptConfig, 'au1', [], true);
-    });
-
-    it('does not reset untouched slots if filtering by auction', () => {
-      getSlots.returns(['au1', 'au2']);
-      getPAAPIConfig.returns({
-        au1: {
-          componentAuctions: [{seller: 's1'}]
-        }
-      });
-      setPAAPIConfigForGPT({auctionId: 'any-auction'});
-      sinon.assert.neverCalledWith(setGptConfig, 'au2');
-    })
   })
 });

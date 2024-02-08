@@ -19,6 +19,7 @@ const USED = new WeakSet();
 
 export function registerSubmodule(submod) {
   submodules.push(submod);
+  submod.init && submod.init({getPAAPIConfig});
 }
 
 module('paapi', registerSubmodule);
@@ -91,7 +92,7 @@ function getSlotSignals(bidsReceived = [], bidRequests = []) {
 function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes}) {
   const allReqs = bidderRequests?.flatMap(br => br.bids);
   const paapiConfigs = {};
-  adUnitCodes?.forEach(au => {
+  (adUnitCodes || []).forEach(au => {
     paapiConfigs[au] = null;
     !latestAuctionForAdUnit.hasOwnProperty(au) && (latestAuctionForAdUnit[au] = null);
   })

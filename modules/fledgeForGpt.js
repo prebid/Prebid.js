@@ -9,6 +9,8 @@ import {getGlobal} from '../src/prebidGlobal.js';
 
 const MODULE = 'fledgeForGpt';
 
+let getPAAPIConfig;
+
 // for backwards compat, we attempt to automatically set GPT configuration as soon as we
 // have the auction configs available. Disabling this allows one to call pbjs.setPAAPIConfigForGPT at their
 // own pace.
@@ -26,39 +28,34 @@ Object.entries({
 
 export function slotConfigurator() {
   const PREVIOUSLY_SET = {};
-  return [
-    function setComponentAuction(adUnitCode, auctionConfigs, reset = true) {
-      const gptSlot = getGptSlotForAdUnitCode(adUnitCode);
-      if (gptSlot && gptSlot.setConfig) {
-        let previous = PREVIOUSLY_SET[adUnitCode] ?? {}
-        let configsBySeller = Object.fromEntries(auctionConfigs.map(cfg => [cfg.seller, cfg]));
-        const sellers = Object.keys(configsBySeller);
-        if (reset) {
-          configsBySeller = Object.assign(previous, configsBySeller);
-          previous = Object.fromEntries(sellers.map(seller => [seller, null]))
-        } else {
-          sellers.forEach(seller => {
-            previous[seller] = null;
-          })
-        }
-        Object.keys(previous).length ? PREVIOUSLY_SET[adUnitCode] = previous : delete PREVIOUSLY_SET[adUnitCode];
-        const componentAuction = Object.entries(configsBySeller)
-          .map(([configKey, auctionConfig]) => ({configKey, auctionConfig}));
-        if (componentAuction.length > 0) {
-          gptSlot.setConfig({componentAuction});
-          logInfo(MODULE, `register component auction configs for: ${adUnitCode}: ${gptSlot.getAdUnitPath()}`, auctionConfigs);
-        }
-      } else if (auctionConfigs.length > 0) {
-        logWarn(MODULE, `unable to register component auction config for ${adUnitCode}`, auctionConfigs);
+  return function setComponentAuction(adUnitCode, auctionConfigs, reset = true) {
+    const gptSlot = getGptSlotForAdUnitCode(adUnitCode);
+    if (gptSlot && gptSlot.setConfig) {
+      let previous = PREVIOUSLY_SET[adUnitCode] ?? {};
+      let configsBySeller = Object.fromEntries(auctionConfigs.map(cfg => [cfg.seller, cfg]));
+      const sellers = Object.keys(configsBySeller);
+      if (reset) {
+        configsBySeller = Object.assign(previous, configsBySeller);
+        previous = Object.fromEntries(sellers.map(seller => [seller, null]));
+      } else {
+        sellers.forEach(seller => {
+          previous[seller] = null;
+        });
       }
-    },
-    function getConfiguredSlots() {
-      return Object.keys(PREVIOUSLY_SET)
+      Object.keys(previous).length ? PREVIOUSLY_SET[adUnitCode] = previous : delete PREVIOUSLY_SET[adUnitCode];
+      const componentAuction = Object.entries(configsBySeller)
+        .map(([configKey, auctionConfig]) => ({configKey, auctionConfig}));
+      if (componentAuction.length > 0) {
+        gptSlot.setConfig({componentAuction});
+        logInfo(MODULE, `register component auction configs for: ${adUnitCode}: ${gptSlot.getAdUnitPath()}`, auctionConfigs);
+      }
+    } else if (auctionConfigs.length > 0) {
+      logWarn(MODULE, `unable to register component auction config for ${adUnitCode}`, auctionConfigs);
     }
-  ]
+  };
 }
 
-const [setComponentAuction, getConfiguredSlots] = slotConfigurator();
+const setComponentAuction = slotConfigurator();
 
 export function onAuctionConfigFactory(setGptConfig = setComponentAuction) {
   return function onAuctionConfig(auctionId, configsByAdUnit, markAsUsed) {
@@ -72,30 +69,24 @@ export function onAuctionConfigFactory(setGptConfig = setComponentAuction) {
 }
 
 export function setPAAPIConfigFactory(
-  getPAAPIConfig = (filters) => getGlobal().getPAAPIConfig(filters),
-  setGptConfig = setComponentAuction,
-  getSlots = getConfiguredSlots) {
+  getConfig = (filters) => getPAAPIConfig(filters, true),
+  setGptConfig = setComponentAuction) {
   /**
    * Configure GPT slots with PAAPI auction configs.
    * `filters` are the same filters accepted by `pbjs.getPAAPIConfig`;
    */
   return function(filters = {}) {
-    let set = new Set();
+    let some = false;
     Object.entries(
-      getPAAPIConfig(filters) || {}
+      getConfig(filters) || {}
     ).forEach(([au, config]) => {
-      set.add(au);
-      setGptConfig(au, config.componentAuctions, true);
+      if (config != null) {
+        some = true;
+      }
+      setGptConfig(au, config?.componentAuctions || [], true);
     })
-    if (set.size === 0) {
+    if (!some) {
       logInfo(`${MODULE}: No component auctions available to set`);
-    }
-    if (!filters.auctionId) {
-      getSlots()
-        .filter(au => !set.has(au) && (filters.adUnitCode ?? au) === au)
-        .forEach(au => {
-          setGptConfig(au, [], true);
-        })
     }
   }
 }
@@ -106,5 +97,8 @@ getGlobal().setPAAPIConfigForGPT = setPAAPIConfigFactory();
 
 submodule('paapi', {
   name: 'gpt',
-  onAuctionConfig: onAuctionConfigFactory()
+  onAuctionConfig: onAuctionConfigFactory(),
+  init(params) {
+    getPAAPIConfig = params.getPAAPIConfig;
+  }
 });
