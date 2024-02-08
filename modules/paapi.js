@@ -21,10 +21,6 @@ export function registerSubmodule(submod) {
   submodules.push(submod);
 }
 
-export function reset() {
-  submodules.splice(0, submodules.length);
-}
-
 module('paapi', registerSubmodule);
 
 function auctionConfigs() {
@@ -41,8 +37,7 @@ function auctionConfigs() {
 
 const pendingForAuction = auctionConfigs();
 const configsForAuction = auctionConfigs();
-const latestAuctionForAdUnit = {};
-
+let latestAuctionForAdUnit = {};
 let moduleConfig = {};
 
 ['paapi', 'fledgeForGpt'].forEach(ns => {
@@ -50,6 +45,11 @@ let moduleConfig = {};
     init(config[ns], ns);
   });
 });
+
+export function reset() {
+  submodules.splice(0, submodules.length);
+  latestAuctionForAdUnit = {};
+}
 
 export function init(cfg, configNamespace) {
   if (configNamespace !== 'paapi') {
@@ -91,6 +91,10 @@ function getSlotSignals(bidsReceived = [], bidRequests = []) {
 function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes}) {
   const allReqs = bidderRequests?.flatMap(br => br.bids);
   const paapiConfigs = {};
+  adUnitCodes?.forEach(au => {
+    paapiConfigs[au] = null;
+    !latestAuctionForAdUnit.hasOwnProperty(au) && (latestAuctionForAdUnit[au] = null);
+  })
   Object.entries(pendingForAuction(auctionId) || {}).forEach(([adUnitCode, auctionConfigs]) => {
     const forThisAdUnit = (bid) => bid.adUnitCode === adUnitCode;
     const slotSignals = getSlotSignals(bidsReceived?.filter(forThisAdUnit), allReqs?.filter(forThisAdUnit));
@@ -100,11 +104,10 @@ function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes}) {
     latestAuctionForAdUnit[adUnitCode] = auctionId;
   });
   configsForAuction(auctionId, paapiConfigs);
-  const configsByAdUnit = Object.fromEntries(adUnitCodes.map(au => [au, paapiConfigs[au] ?? null]))
   submodules.forEach(submod => submod.onAuctionConfig?.(
     auctionId,
-    configsByAdUnit,
-    (adUnitCode) => paapiConfigs.hasOwnProperty(adUnitCode) && USED.add(paapiConfigs[adUnitCode]))
+    paapiConfigs,
+    (adUnitCode) => paapiConfigs[adUnitCode] != null && USED.add(paapiConfigs[adUnitCode]))
   );
 }
 
@@ -132,35 +135,34 @@ export function addComponentAuctionHook(next, request, componentAuctionConfig) {
  *
  * @param auctionId? optional auction filter; if omitted, the latest auction for each ad unit is used
  * @param adUnitCode? optional ad unit filter
+ * @param includeBlanks if true, include null entries for ad units that match the given filters but do not have any available auction configs.
  * @returns {{}} a map from ad unit code to auction config for the ad unit.
  */
-export function getPAAPIConfig({auctionId, adUnitCode} = {}) {
+export function getPAAPIConfig({auctionId, adUnitCode} = {}, includeBlanks = false) {
   const output = {};
   const targetedAuctionConfigs = auctionId && configsForAuction(auctionId);
-  Object.entries(latestAuctionForAdUnit).forEach(([au, auct]) => {
-    const auctionConfigs = configsForAuction(auct);
-    if (auctionConfigs == null) {
-      // auction is no longer cached, get rid of our ref as well
-      delete latestAuctionForAdUnit[au];
-    } else {
-      if (adUnitCode == null || adUnitCode === au) {
-        let candidate;
-        if (targetedAuctionConfigs?.hasOwnProperty(au)) {
-          candidate = targetedAuctionConfigs[au];
-        } else if (auctionId == null) {
-          candidate = auctionConfigs[au];
-        }
-        if (candidate && !USED.has(candidate)) {
-          output[au] = candidate;
-          USED.add(candidate);
-        }
+  Object.keys((auctionId != null ? targetedAuctionConfigs : latestAuctionForAdUnit) ?? []).forEach(au => {
+    const latestAuctionId = latestAuctionForAdUnit[au];
+    const auctionConfigs = targetedAuctionConfigs ?? (latestAuctionId && configsForAuction(latestAuctionId));
+    if ((adUnitCode ?? au) === au) {
+      let candidate;
+      if (targetedAuctionConfigs?.hasOwnProperty(au)) {
+        candidate = targetedAuctionConfigs[au];
+      } else if (auctionId == null && auctionConfigs?.hasOwnProperty(au)) {
+        candidate = auctionConfigs[au];
+      }
+      if (candidate && !USED.has(candidate)) {
+        output[au] = candidate;
+        USED.add(candidate);
+      } else if (includeBlanks) {
+        output[au] = null;
       }
     }
-  });
+  })
   return output;
 }
 
-getGlobal().getPAAPIConfig = getPAAPIConfig;
+getGlobal().getPAAPIConfig = (filters) => getPAAPIConfig(filters);
 
 function isFledgeSupported() {
   return 'runAdAuction' in navigator && 'joinAdInterestGroup' in navigator;

@@ -29,6 +29,7 @@ describe('paapi module', () => {
   });
   afterEach(() => {
     sandbox.restore();
+    reset();
   });
 
   [
@@ -68,7 +69,7 @@ describe('paapi module', () => {
               cf2 = {...fledgeAuctionConfig, id: 2, seller: 'b2'};
               addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au1'}, cf1);
               addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au2'}, cf2);
-              events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId});
+              events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId, adUnitCodes: ['au1', 'au2', 'au3']});
             });
 
             it('and make them available at end of auction', () => {
@@ -94,6 +95,30 @@ describe('paapi module', () => {
               getPAAPIConfig();
               const cfg = getPAAPIConfig();
               expect(cfg).to.eql({});
+            });
+
+            describe('includeBlanks = true', () => {
+              it('includes all ad units', () => {
+                const cfg = getPAAPIConfig({}, true);
+                expect(Object.keys(cfg)).to.have.members(['au1', 'au2', 'au3']);
+                expect(cfg.au3).to.eql(null);
+              })
+              it('includes the targeted adUnit', () => {
+                expect(getPAAPIConfig({adUnitCode: 'au3'}, true)).to.eql({
+                  au3: null
+                })
+              });
+              it('includes the targeted auction', () => {
+                const cfg = getPAAPIConfig({auctionId}, true);
+                expect(Object.keys(cfg)).to.have.members(['au1', 'au2', 'au3']);
+                expect(cfg.au3).to.eql(null);
+              });
+              it('does not include non-existing ad units', () => {
+                expect(getPAAPIConfig({adUnitCode: 'other'})).to.eql({});
+              });
+              it('does not include non-existing auctions', () => {
+                expect(getPAAPIConfig({auctionId: 'other'})).to.eql({});
+              })
             });
           });
 
@@ -135,9 +160,6 @@ describe('paapi module', () => {
                 onAuctionConfig: sinon.stub()
               }));
               submods.forEach(registerSubmodule);
-            });
-            afterEach(() => {
-              reset();
             });
 
             describe('onAuctionConfig', () => {
@@ -309,15 +331,15 @@ describe('paapi module', () => {
             sandbox.stub(auctionManager, 'index').value(new AuctionIndex(() => mockAuctions));
             configs = {[AUCTION1]: {}, [AUCTION2]: {}};
             Object.entries({
-              [AUCTION1]: ['au1', 'au2'],
-              [AUCTION2]: ['au2', 'au3'],
-            }).forEach(([auctionId, adUnitCodes]) => {
+              [AUCTION1]: [['au1', 'au2'], ['missing-1']],
+              [AUCTION2]: [['au2', 'au3'], []],
+            }).forEach(([auctionId, [adUnitCodes, noConfigAdUnitCodes]]) => {
               adUnitCodes.forEach(adUnitCode => {
                 const cfg = {...fledgeAuctionConfig, auctionId, adUnitCode};
                 configs[auctionId][adUnitCode] = cfg;
                 addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode}, cfg);
               });
-              events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId});
+              events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId, adUnitCodes: adUnitCodes.concat(noConfigAdUnitCodes)});
             });
           });
 
@@ -343,6 +365,51 @@ describe('paapi module', () => {
             expectAdUnitsFromAuctions(getPAAPIConfig({auctionId: AUCTION1}), {au1: AUCTION1, au2: AUCTION1});
             expect(getPAAPIConfig({auctionId: AUCTION1})).to.eql({});
             expectAdUnitsFromAuctions(getPAAPIConfig(), {au2: AUCTION2, au3: AUCTION2});
+          });
+
+          describe('includeBlanks = true', () => {
+            Object.entries({
+              'auction with blanks': {
+                filters: {auctionId: AUCTION1},
+                expected: {au1: true, au2: true, 'missing-1': false}
+              },
+              'blank adUnit in an auction': {
+                filters: {auctionId: AUCTION1, adUnitCode: 'missing-1'},
+                expected: {'missing-1': false}
+              },
+              'non-existing auction': {
+                filters: {auctionId: 'other'},
+                expected: {}
+              },
+              'non-existing adUnit in an auction': {
+                filters: {auctionId: AUCTION2, adUnitCode: 'other'},
+                expected: {}
+              },
+              'non-existing ad unit': {
+                filters: {adUnitCode: 'other'},
+                expected: {},
+              },
+              'non existing ad unit in a non-existing auction': {
+                filters: {adUnitCode: 'other', auctionId: 'other'},
+                expected: {}
+              },
+              'all ad units': {
+                filters: {},
+                expected: {'au1': true, 'au2': true, 'missing-1': false, 'au3': true}
+              }
+            }).forEach(([t, {filters, expected}]) => {
+              it(t, () => {
+                const cfg = getPAAPIConfig(filters, true);
+                expect(Object.keys(cfg)).to.have.members(Object.keys(expected));
+                Object.entries(expected).forEach(([au, shouldBeFilled]) => {
+                  if (shouldBeFilled) {
+                    expect(cfg[au]).to.not.be.null;
+                  } else {
+                    expect(cfg[au]).to.be.null;
+                  }
+                })
+              })
+            })
           });
         });
       });
