@@ -51,26 +51,26 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
  * @property {string} [universal_uid] - The encrypted ID5 ID to pass to bidders
  * @property {Object} [ext] - The extensions object to pass to bidders
  * @property {Object} [ab_testing] - A/B testing configuration
-*/
+ */
 
 /**
  * @typedef {Object} FetchCallConfig
  * @property {string} [url] - The URL for the fetch endpoint
  * @property {Object} [overrides] - Overrides to apply to fetch parameters
-*/
+ */
 
 /**
  * @typedef {Object} ExtensionsCallConfig
  * @property {string} [url] - The URL for the extensions endpoint
  * @property {string} [method] - Overrides the HTTP method to use to make the call
  * @property {Object} [body] - Specifies a body to pass to the extensions endpoint
-*/
+ */
 
 /**
  * @typedef {Object} DynamicConfig
  * @property {FetchCallConfig} [fetchCall] - The fetch call configuration
  * @property {ExtensionsCallConfig} [extensionsCall] - The extensions call configuration
-*/
+ */
 
 /**
  * @typedef {Object} ABTestingConfig

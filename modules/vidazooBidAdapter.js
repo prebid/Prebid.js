@@ -1,4 +1,14 @@
-import {_each, deepAccess, isFn, parseSizesInput, parseUrl, uniques, isArray} from '../src/utils.js';
+import {
+  _each,
+  deepAccess,
+  isFn,
+  parseSizesInput,
+  parseUrl,
+  uniques,
+  isArray,
+  formatQS,
+  triggerPixel
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -271,6 +281,7 @@ function interpretResponse(serverResponse, request) {
         height,
         currency,
         bidId,
+        nurl,
         advertiserDomains,
         metaData,
         mediaType = BANNER
@@ -289,6 +300,10 @@ function interpretResponse(serverResponse, request) {
         netRevenue: true,
         ttl: exp || TTL_SECONDS,
       };
+
+      if (nurl) {
+        response.nurl = nurl;
+      }
 
       if (metaData) {
         Object.assign(response, {
@@ -348,6 +363,33 @@ function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '',
     });
   }
   return syncs;
+}
+
+/**
+ * @param {Bid} bid
+ */
+function onBidWon(bid) {
+  if (!bid.nurl) {
+    return;
+  }
+  const wonBid = {
+    adId: bid.adId,
+    creativeId: bid.creativeId,
+    auctionId: bid.auctionId,
+    transactionId: bid.transactionId,
+    adUnitCode: bid.adUnitCode,
+    cpm: bid.cpm,
+    currency: bid.currency,
+    originalCpm: bid.originalCpm,
+    originalCurrency: bid.originalCurrency,
+    netRevenue: bid.netRevenue,
+    mediaType: bid.mediaType,
+    timeToRespond: bid.timeToRespond,
+    status: bid.status,
+  };
+  const qs = formatQS(wonBid);
+  const url = bid.nurl + (bid.nurl.indexOf('?') === -1 ? '?' : '&') + qs;
+  triggerPixel(url);
 }
 
 export function hashCode(s, prefix = '_') {
@@ -445,7 +487,8 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs
+  getUserSyncs,
+  onBidWon
 };
 
 registerBidder(spec);

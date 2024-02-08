@@ -413,6 +413,22 @@ describe('YieldmoAdapter', function () {
         });
       });
 
+      it('should send gpc in the banner bid request', function () {
+        const biddata = build(
+          [mockBannerBid()],
+          mockBidderRequest({
+            ortb2: {
+              regs: {
+                ext: {
+                  gpc: '1'
+                },
+              },
+            },
+          })
+        );
+        expect(biddata[0].data.gpc).to.equal('1');
+      });
+
       it('should add eids to the banner bid request', function () {
         const params = {
           userIdAsEids: [{
@@ -665,6 +681,23 @@ describe('YieldmoAdapter', function () {
           classifier: '2206021246',
           topics: [7, 8, 9],
         });
+      });
+
+      it('should send gpc in the bid request', function () {
+        let videoBidder = mockBidderRequest(
+          {
+            ortb2: {
+              regs: {
+                ext: {
+                  gpc: '1',
+                },
+              },
+            },
+          },
+          [mockVideoBid()]
+        );
+        let payload = buildAndGetData([mockVideoBid()], 0, videoBidder);
+        expect(payload.regs.ext.gpc).to.equal('1');
       });
 
       it('should add device info to payload if available', function () {

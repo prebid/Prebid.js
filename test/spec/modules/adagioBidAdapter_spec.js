@@ -1497,8 +1497,8 @@ describe('Adagio bid adapter', () => {
       expect(result.user_timestamp).to.be.a('String');
     });
 
-    it('should return `adunit_position` feature when the slot is hidden', function () {
-      const elem = fixtures.getElementById();
+    it('should return `adunit_position` feature when the slot is hidden with value 0x0', function () {
+      const elem = fixtures.getElementById('0', '0', '0', '0');
       sandbox.stub(window.top.document, 'getElementById').returns(elem);
       sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'none' });
       sandbox.stub(utils, 'inIframe').returns(false);
@@ -1516,8 +1516,7 @@ describe('Adagio bid adapter', () => {
       const requests = spec.buildRequests([bidRequest], bidderRequest);
       const result = requests[0].data.adUnits[0].features;
 
-      expect(result.adunit_position).to.match(/^[\d]+x[\d]+$/);
-      expect(elem.style.display).to.equal(null); // set null to reset style
+      expect(result.adunit_position).to.equal('0x0');
     });
   });
 

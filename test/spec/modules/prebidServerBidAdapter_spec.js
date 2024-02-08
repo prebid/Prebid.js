@@ -91,6 +91,7 @@ const REQUEST = {
         }
       },
       'transactionId': '4ef956ad-fd83-406d-bd35-e4bb786ab86c',
+      'adUnitId': 'au-id-1',
       'bids': [
         {
           'bid_id': '123',

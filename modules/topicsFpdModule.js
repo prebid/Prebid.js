@@ -14,9 +14,11 @@ const MODULE_NAME = 'topicsFpd';
 const DEFAULT_EXPIRATION_DAYS = 21;
 const DEFAULT_FETCH_RATE_IN_DAYS = 1;
 let LOAD_TOPICS_INITIALISE = false;
+let iframeLoadedURL = [];
 
 export function reset() {
   LOAD_TOPICS_INITIALISE = false;
+  iframeLoadedURL = [];
 }
 
 const bidderIframeList = {
@@ -27,13 +29,16 @@ const bidderIframeList = {
   }, {
     bidder: 'rtbhouse',
     iframeURL: 'https://topics.authorizedvault.com/topicsapi.html'
+  }, {
+    bidder: 'improvedigital',
+    iframeURL: 'https://hb.360yield.com/privacy-sandbox/topics.html'
   }]
 }
+
 export const coreStorage = getCoreStorageManager(MODULE_NAME);
 export const topicStorageName = 'prebid:topics';
 export const lastUpdated = 'lastUpdated';
 
-const iframeLoadedURL = [];
 const TAXONOMIES = {
   // map from topic taxonomyVersion to IAB segment taxonomy
   '1': 600,
