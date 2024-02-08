@@ -5,6 +5,12 @@ import {config} from '../src/config.js';
 import {parseDomain} from '../src/refererDetection.js';
 import {ajax} from '../src/ajax.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
+
 const BIDDER_CODE = 'zeta_global_ssp';
 const ENDPOINT_URL = 'https://ssp.disqus.com/bid/prebid';
 const TIMEOUT_URL = 'https://ssp.disqus.com/timeout/prebid';
@@ -77,8 +83,9 @@ export const spec = {
         id: request.bidId,
         secure: secure
       };
-      if (params.tagid) {
-        impData.tagid = params.tagid;
+      const tagid = request.params?.tagid;
+      if (tagid) {
+        impData.tagid = tagid;
       }
       if (request.mediaTypes) {
         for (const mediaType in request.mediaTypes) {
@@ -106,8 +113,11 @@ export const spec = {
           impData.bidfloor = floorInfo.floor;
         }
       }
-      if (!impData.bidfloor && params.bidfloor) {
-        impData.bidfloor = params.bidfloor;
+      if (!impData.bidfloor) {
+        const bidfloor = request.params?.bidfloor;
+        if (bidfloor) {
+          impData.bidfloor = bidfloor;
+        }
       }
 
       return impData;
@@ -133,6 +143,12 @@ export const spec = {
 
     payload.device.ua = navigator.userAgent;
     payload.device.language = navigator.language;
+    payload.device.w = screen.width;
+    payload.device.h = screen.height;
+
+    if (bidderRequest?.ortb2?.device?.sua) {
+      payload.device.sua = bidderRequest.ortb2.device.sua;
+    }
 
     if (params.test) {
       payload.test = params.test;
@@ -168,7 +184,7 @@ export const spec = {
     return {
       method: 'POST',
       url: url,
-      data: JSON.stringify(payload),
+      data: JSON.stringify(clearEmpties(payload)),
     };
   },
 
@@ -361,6 +377,19 @@ function provideMediaType(zetaBid, bid, bidRequest) {
   } else {
     bid.mediaType = bidRequest.imp[0].video ? VIDEO : BANNER;
   }
+}
+
+function clearEmpties(o) {
+  for (let k in o) {
+    if (!o[k] || typeof o[k] !== 'object') {
+      continue;
+    }
+    clearEmpties(o[k]);
+    if (Object.keys(o[k]).length === 0) {
+      delete o[k];
+    }
+  }
+  return o;
 }
 
 registerBidder(spec);
