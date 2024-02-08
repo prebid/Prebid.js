@@ -1,5 +1,5 @@
+import {deepAccess, logInfo} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
 import {BANNER} from '../src/mediaTypes.js';
 
 const ENDPOINT_URL = 'https://x.padsquad.com/auction';
@@ -40,12 +40,12 @@ export const spec = {
     }));
 
     const openrtbRequest = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       imp: impressions,
       site: {
-        domain: window.location.hostname,
-        page: window.location.href,
-        ref: bidderRequest.refererInfo ? bidderRequest.refererInfo.referer || null : null
+        domain: bidderRequest?.refererInfo?.domain,
+        page: bidderRequest?.refererInfo?.page,
+        ref: bidderRequest?.refererInfo?.ref,
       },
       ext: {
         exchange: {
@@ -89,12 +89,12 @@ export const spec = {
         })
       })
     } else {
-      utils.logInfo('padsquad.interpretResponse :: no valid responses to interpret');
+      logInfo('padsquad.interpretResponse :: no valid responses to interpret');
     }
     return bidResponses;
   },
   getUserSyncs: function (syncOptions, serverResponses) {
-    utils.logInfo('padsquad.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses);
+    logInfo('padsquad.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses);
     let syncs = [];
 
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
@@ -102,7 +102,7 @@ export const spec = {
     }
 
     serverResponses.forEach(resp => {
-      const userSync = utils.deepAccess(resp, 'body.ext.usersync');
+      const userSync = deepAccess(resp, 'body.ext.usersync');
       if (userSync) {
         let syncDetails = [];
         Object.keys(userSync).forEach(key => {

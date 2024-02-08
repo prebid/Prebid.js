@@ -3,6 +3,21 @@
 ```
 userIdAsEids = [
     {
+        source: '33across.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
+        source: 'utiq.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+
+    {
         source: 'pubcid.org',
         uids: [{
             id: 'some-random-id-value',
@@ -18,6 +33,22 @@ userIdAsEids = [
             ext: {
                 rtiPartner: 'TDID'
             }
+        }]
+    },
+
+    {
+        source: 'navegg.com',
+        uids: [{
+            id: 'naveggId',
+            atype: 1
+        }]
+    },
+
+    {
+        source: 'justtag.com',
+        uids: [{
+            id: 'justId',
+            atype: 1
         }]
     },
 
@@ -38,6 +69,14 @@ userIdAsEids = [
                 linkType: 2,
                 abTestingControlGroup: false
             }
+        }]
+    },
+
+    {
+        source: 'flashtalking.com',
+        uids: [{
+            id: 'the-ids-object-stringified',
+            atype: 1
         }]
     },
 
@@ -66,6 +105,83 @@ userIdAsEids = [
         ext: {
             segments: ['s1', 's2']
         }
+    },
+    
+    {
+        source: 'bidswitch.net',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },
+    
+    {
+        source: 'liveintent.indexexchange.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },
+
+    {
+        source: 'liveintent.sovrn.com'',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },
+
+    {
+        source: 'openx.net'',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },
+
+    {
+        source: 'pubmatic.com'',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },   
+
+    {
+        source: 'media.net',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },
+
+    {
+        source: 'rubiconproject.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
     },
 
     {
@@ -110,14 +226,6 @@ userIdAsEids = [
 
     {
         source: 'zeotap.com',
-        uids: [{
-            id: 'some-random-id-value',
-            atype: 1
-        }]
-    },
-
-    {
-        source: 'nextroll.com',
         uids: [{
             id: 'some-random-id-value',
             atype: 1
@@ -183,17 +291,45 @@ userIdAsEids = [
         }]
     },
     {
-        source: 'akamai.com',
-        uids: [{
-            id: 'some-random-id-value',
-            atype: 1
-        }]
-    },
-    {
         source: 'deepintent.com',
         uids: [{
             id: 'some-random-id-value',
             atype: 3
+        }]
+    },
+    {
+         source: 'kpuid.com',
+         uids: [{
+              id: 'some-random-id-value',
+              atype: 3
+         }]
+    },
+    {
+         source: 'yahoo.com',
+         uids: [{
+              id: 'some-random-id-value',
+              atype: 3
+         }]
+    },
+    {
+        source: 'thenewco.it',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
+        }]
+    },
+    {
+        source: 'euid.eu',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
+        }]
+    },
+    {
+        source: 'mygaru.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
         }]
     }
 ]

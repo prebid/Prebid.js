@@ -79,6 +79,9 @@ describe('adriverAdapter', function () {
         bidderRequestId: '22edbae2733bf6',
         auctionId: '1d1a030790a475',
         transactionId: '04f2659e-c005-4eb1-a57c-fa93145e3843',
+        userId: {
+          adrcid: 'testCookieValue',
+        },
         userIdAsEids: [
           {
             source: 'id5-sync.com',
@@ -289,6 +292,27 @@ describe('adriverAdapter', function () {
       expect(payload.imp[0].pmp.deals[0].bidfloorcur).to.deep.equal('RUB');
     });
 
+    const cookieValues = [
+      { adrcid: 'adrcidValue' },
+      { adrcid: undefined }
+    ]
+    cookieValues.forEach(cookieValue => describe('test cookie exist or not behavior', function () {
+      let expectedValues = [
+        'buyerid',
+        'ext'
+      ]
+
+      it('check adrcid if it exists', function () {
+        bidRequests[0].userId.adrcid = cookieValue.adrcid;
+        const payload = JSON.parse(spec.buildRequests(bidRequests).data);
+        if (cookieValue.adrcid) {
+          expect(Object.keys(payload.user)).to.have.members(expectedValues);
+        } else {
+          expect(payload.user.buyerid).to.equal(0);
+        }
+      });
+    }));
+
     it('sends bid request to ENDPOINT via POST', function () {
       const request = spec.buildRequests(bidRequests);
       expect(request.url).to.equal(ENDPOINT);
@@ -297,15 +321,6 @@ describe('adriverAdapter', function () {
   });
 
   describe('interpretResponse', function () {
-    let bfStub;
-    before(function() {
-      bfStub = sinon.stub(bidderFactory, 'getIabSubCategory');
-    });
-
-    after(function() {
-      bfStub.restore();
-    });
-
     let response = {
       'id': '221594457-1615288400-1-46-',
       'bidid': 'D8JW8XU8-L5m7qFMNQGs7i1gcuPvYMEDOKsktw6e9uLy5Eebo9HftVXb0VpKj4R2dXa93i6QmRhjextJVM4y1SqodMAh5vFOb_eVkHA',
@@ -398,6 +413,9 @@ describe('adriverAdapter', function () {
         bidderRequestId: '22edbae2733bf6',
         auctionId: '1d1a030790a475',
         transactionId: '04f2659e-c005-4eb1-a57c-fa93145e3843',
+        userId: {
+          adrcid: 'testCookieValue',
+        },
         userIdAsEids: [
           {
             source: 'id5-sync.com',
@@ -535,6 +553,9 @@ describe('adriverAdapter', function () {
         bidderRequestId: '22edbae2733bf6',
         auctionId: '1d1a030790a475',
         transactionId: '04f2659e-c005-4eb1-a57c-fa93145e3843',
+        userId: {
+          adrcid: 'testCookieValue',
+        },
         userIdAsEids: [
           {
             source: 'id5-sync.com',

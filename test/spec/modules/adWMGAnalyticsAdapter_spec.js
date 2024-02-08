@@ -1,6 +1,7 @@
 import adWMGAnalyticsAdapter from 'modules/adWMGAnalyticsAdapter.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
+import {expectEvents} from '../../helpers/analytics.js';
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
 let constants = require('src/constants.json');
@@ -140,14 +141,15 @@ describe('adWMG Analytics', function () {
         }
       });
 
-      events.emit(constants.EVENTS.AUCTION_INIT, {timestamp, auctionId, timeout, adUnits});
-      events.emit(constants.EVENTS.BID_REQUESTED, {});
-      events.emit(constants.EVENTS.BID_RESPONSE, bidResponse);
-      events.emit(constants.EVENTS.NO_BID, {});
-      events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeoutArgs);
-      events.emit(constants.EVENTS.AUCTION_END, {});
-      events.emit(constants.EVENTS.BID_WON, wonRequest);
-      sinon.assert.callCount(adWMGAnalyticsAdapter.track, 7);
+      expectEvents([
+        [constants.EVENTS.AUCTION_INIT, {timestamp, auctionId, timeout, adUnits}],
+        [constants.EVENTS.BID_REQUESTED, {}],
+        [constants.EVENTS.BID_RESPONSE, bidResponse],
+        [constants.EVENTS.NO_BID, {}],
+        [constants.EVENTS.BID_TIMEOUT, bidTimeoutArgs],
+        [constants.EVENTS.AUCTION_END, {}],
+        [constants.EVENTS.BID_WON, wonRequest],
+      ]).to.beTrackedBy(adWMGAnalyticsAdapter.track);
     });
 
     it('should be two xhr requests', function () {

@@ -1,6 +1,6 @@
 import relevantAnalytics from '../../../modules/relevantAnalyticsAdapter.js';
 import adapterManager from 'src/adapterManager';
-import events from 'src/events';
+import * as events from 'src/events';
 import constants from 'src/constants.json'
 import { expect } from 'chai';
 

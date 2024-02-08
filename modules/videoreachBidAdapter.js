@@ -1,5 +1,5 @@
+import {getBidIdParameter, getValue} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-const utils = require('../src/utils.js');
 const BIDDER_CODE = 'videoreach';
 const ENDPOINT_URL = 'https://a.videoreach.com/hb/';
 const GVLID = 547;
@@ -17,18 +17,20 @@ export const spec = {
     let data = {
       data: validBidRequests.map(function(bid) {
         return {
-          TagId: utils.getValue(bid.params, 'TagId'),
-          adUnitCode: utils.getBidIdParameter('adUnitCode', bid),
-          bidId: utils.getBidIdParameter('bidId', bid),
-          bidderRequestId: utils.getBidIdParameter('bidderRequestId', bid),
-          auctionId: utils.getBidIdParameter('auctionId', bid),
-          transactionId: utils.getBidIdParameter('transactionId', bid)
+          TagId: getValue(bid.params, 'TagId'),
+          adUnitCode: getBidIdParameter('adUnitCode', bid),
+          bidId: getBidIdParameter('bidId', bid),
+          bidderRequestId: getBidIdParameter('bidderRequestId', bid),
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
+          auctionId: getBidIdParameter('auctionId', bid),
+          transactionId: bid.ortb2Imp?.ext?.tid,
         }
       })
     };
 
     if (bidderRequest && bidderRequest.refererInfo) {
-      data.referrer = bidderRequest.refererInfo.referer;
+      // TODO: is 'page' the right value here?
+      data.referrer = bidderRequest.refererInfo.page;
     }
 
     if (bidderRequest && bidderRequest.gdprConsent) {

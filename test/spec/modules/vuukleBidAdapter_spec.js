@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/vuukleBidAdapter.js';
+import { config } from '../../../src/config.js';
 
 describe('vuukleBidAdapterTests', function() {
   let bidRequestData = {
@@ -34,6 +35,13 @@ describe('vuukleBidAdapterTests', function() {
     expect(req_data.bidId).to.equal('testbid');
   });
 
+  it('validate_generated_params_tmax', function() {
+    request = spec.buildRequests(bidRequestData.bids, {timeout: 1234});
+    let req_data = request[0].data;
+
+    expect(req_data.tmax).to.equal(1234);
+  });
+
   it('validate_response_params', function() {
     let serverResponse = {
       body: {
@@ -58,4 +66,83 @@ describe('vuukleBidAdapterTests', function() {
     expect(bid.creativeId).to.equal('12345');
     expect(bid.meta.advertiserDomains).to.deep.equal(['example.com']);
   });
+
+  describe('consent handling', function() {
+    const bidderRequest = {
+      gdprConsent: {
+        consentString: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
+        gdprApplies: 1,
+        vendorData: {
+          vendor: {
+            consents: {
+              1004: 1
+            }
+          }
+        }
+      }
+    }
+
+    it('must handle consent 1/1', function() {
+      request = spec.buildRequests(bidRequestData.bids, bidderRequest);
+      let req_data = request[0].data;
+
+      expect(req_data.gdpr).to.equal(1);
+      expect(req_data.consentGiven).to.equal(1);
+      expect(req_data.consent).to.equal('COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw');
+    })
+
+    it('must handle consent 0/1', function() {
+      bidderRequest.gdprConsent.gdprApplies = 0;
+      request = spec.buildRequests(bidRequestData.bids, bidderRequest);
+      let req_data = request[0].data;
+
+      expect(req_data.gdpr).to.equal(0);
+      expect(req_data.consentGiven).to.equal(1);
+    })
+
+    it('must handle consent 0/0', function() {
+      bidderRequest.gdprConsent.gdprApplies = 0;
+      bidderRequest.gdprConsent.vendorData = undefined;
+      request = spec.buildRequests(bidRequestData.bids, bidderRequest);
+      let req_data = request[0].data;
+
+      expect(req_data.gdpr).to.equal(0);
+      expect(req_data.consentGiven).to.equal(0);
+    })
+
+    it('must handle consent undef', function() {
+      request = spec.buildRequests(bidRequestData.bids, {});
+      let req_data = request[0].data;
+
+      expect(req_data.gdpr).to.equal(0);
+      expect(req_data.consentGiven).to.equal(0);
+    })
+  })
+
+  it('must handle usp consent', function() {
+    request = spec.buildRequests(bidRequestData.bids, {uspConsent: '1YNN'});
+    let req_data = request[0].data;
+
+    expect(req_data.uspConsent).to.equal('1YNN');
+  })
+
+  it('must handle undefined usp consent', function() {
+    request = spec.buildRequests(bidRequestData.bids, {});
+    let req_data = request[0].data;
+
+    expect(req_data.uspConsent).to.equal(undefined);
+  })
+
+  it('must handle coppa flag', function() {
+    sinon.stub(config, 'getConfig')
+      .withArgs('coppa')
+      .returns(true);
+
+    request = spec.buildRequests(bidRequestData.bids);
+    let req_data = request[0].data;
+
+    expect(req_data.coppa).to.equal(1);
+
+    config.getConfig.restore();
+  })
 });

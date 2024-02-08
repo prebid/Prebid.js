@@ -1,5 +1,5 @@
+import { deepSetValue, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import * as utils from '../src/utils.js';
 
 const BIDDER_CODE = 'pubx';
 const BID_ENDPOINT = 'https://api.primecaster.net/adlogue/api/slot/bid';
@@ -16,8 +16,11 @@ export const spec = {
       const bidId = bidRequest.bidId;
       const params = bidRequest.params;
       const sid = params.sid;
+      const pageUrl = deepAccess(bidRequest, 'ortb2.site.page').replace(/\?.*$/, '');
+      const pageEnc = encodeURIComponent(pageUrl);
       const payload = {
-        sid: sid
+        sid: sid,
+        pu: pageEnc,
       };
       return {
         id: bidId,
@@ -43,7 +46,7 @@ export const spec = {
         ad: body.adm
       };
       if (body.adomains) {
-        utils.deepSetValue(bidResponse, 'meta.advertiserDomains', Array.isArray(body.adomains) ? body.adomains : [body.adomains]);
+        deepSetValue(bidResponse, 'meta.advertiserDomains', Array.isArray(body.adomains) ? body.adomains : [body.adomains]);
       }
       bidResponses.push(bidResponse);
     } else {};
@@ -52,8 +55,8 @@ export const spec = {
   /**
    * Determine which user syncs should occur
    * @param {object} syncOptions
-   * @param {array} serverResponses
-   * @returns {array} User sync pixels
+   * @param {Array} serverResponses
+   * @returns {Array} User sync pixels
    */
   getUserSyncs: function (syncOptions, serverResponses) {
     const kwTag = document.getElementsByName('keywords');
@@ -76,7 +79,7 @@ export const spec = {
       } else {
         kwString = kwContents;
       }
-      kwEnc = encodeURIComponent(kwString)
+      kwEnc = encodeURIComponent(kwString);
     } else { }
     if (titleContent) {
       if (titleContent.length > 30) {

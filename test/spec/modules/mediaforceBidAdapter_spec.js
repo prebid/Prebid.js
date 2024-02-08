@@ -97,7 +97,11 @@ describe('mediaforce bid adapter', function () {
           }
         }
       },
-      transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+      ortb2Imp: {
+        ext: {
+          tid: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+        }
+      }
     };
 
     const multiBid = [
@@ -127,12 +131,16 @@ describe('mediaforce bid adapter', function () {
             sizes: [[300, 250], [600, 400]]
           }
         },
-        transactionId: transactionId || 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
+        ortb2Imp: {
+          ext: {
+            tid: transactionId || 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
+          }
+        },
       }
     });
 
     const refererInfo = {
-      referer: 'https://www.prebid.org',
+      ref: 'https://www.prebid.org',
       reachedTop: true,
       stack: [
         'https://www.prebid.org/page.html',
@@ -181,7 +189,7 @@ describe('mediaforce bid adapter', function () {
         site: {
           id: bid.params.publisher_id,
           publisher: {id: bid.params.publisher_id},
-          ref: encodeURIComponent(refererInfo.referer),
+          ref: encodeURIComponent(refererInfo.ref),
           page: pageUrl,
         },
         device: {
@@ -196,7 +204,7 @@ describe('mediaforce bid adapter', function () {
           bidfloor: bid.params.bidfloor,
           ext: {
             mediaforce: {
-              transactionId: bid.transactionId
+              transactionId: bid.ortb2Imp.ext.tid,
             }
           },
           banner: {w: 300, h: 250},
@@ -265,7 +273,7 @@ describe('mediaforce bid adapter', function () {
             site: {
               id: 'pub123',
               publisher: {id: 'pub123'},
-              ref: encodeURIComponent(refererInfo.referer),
+              ref: encodeURIComponent(refererInfo.ref),
               page: pageUrl,
             },
             device: {
@@ -321,7 +329,7 @@ describe('mediaforce bid adapter', function () {
             site: {
               id: 'pub124',
               publisher: {id: 'pub124'},
-              ref: encodeURIComponent(refererInfo.referer),
+              ref: encodeURIComponent(refererInfo.ref),
               page: pageUrl,
             },
             device: {

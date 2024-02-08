@@ -1,5 +1,6 @@
 import adomikAnalytics from 'modules/adomikAnalyticsAdapter.js';
-import {expect} from 'chai';
+import { expect } from 'chai';
+
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;
 let constants = require('src/constants.json');
@@ -8,41 +9,35 @@ describe('Adomik Prebid Analytic', function () {
   let sendEventStub;
   let sendWonEventStub;
   let clock;
-  before(function () {
+
+  beforeEach(function () {
     clock = sinon.useFakeTimers();
+    sinon.spy(adomikAnalytics, 'track');
+    sendEventStub = sinon.stub(adomikAnalytics, 'sendTypedEvent');
+    sendWonEventStub = sinon.stub(adomikAnalytics, 'sendWonEvent');
+    sinon.stub(events, 'getEvents').returns([]);
+    adomikAnalytics.currentContext = undefined;
+
+    adapterManager.registerAnalyticsAdapter({
+      code: 'adomik',
+      adapter: adomikAnalytics
+    });
   });
-  after(function () {
+
+  afterEach(function () {
+    adomikAnalytics.disableAnalytics();
     clock.restore();
+    adomikAnalytics.track.restore();
+    sendEventStub.restore();
+    sendWonEventStub.restore();
+    events.getEvents.restore();
   });
 
-  describe('enableAnalytics', function () {
-    beforeEach(function () {
-      sinon.spy(adomikAnalytics, 'track');
-      sendEventStub = sinon.stub(adomikAnalytics, 'sendTypedEvent');
-      sendWonEventStub = sinon.stub(adomikAnalytics, 'sendWonEvent');
-      sinon.stub(events, 'getEvents').returns([]);
-    });
-
-    afterEach(function () {
-      adomikAnalytics.track.restore();
-      sendEventStub.restore();
-      sendWonEventStub.restore();
-      events.getEvents.restore();
-    });
-
-    after(function () {
-      adomikAnalytics.disableAnalytics();
-    });
-
+  describe('adomikAnalytics.enableAnalytics', function () {
     it('should catch all events', function (done) {
-      adapterManager.registerAnalyticsAdapter({
-        code: 'adomik',
-        adapter: adomikAnalytics
-      });
-
       const initOptions = {
         id: '123456',
-        url: 'testurl',
+        url: 'testurl'
       };
 
       const bid = {
@@ -69,6 +64,7 @@ describe('Adomik Prebid Analytic', function () {
       expect(adomikAnalytics.currentContext).to.deep.equal({
         uid: '123456',
         url: 'testurl',
+        sampling: undefined,
         id: '',
         timeouted: false
       });
@@ -79,6 +75,7 @@ describe('Adomik Prebid Analytic', function () {
       expect(adomikAnalytics.currentContext).to.deep.equal({
         uid: '123456',
         url: 'testurl',
+        sampling: undefined,
         id: 'test-test-test',
         timeouted: false
       });
@@ -91,7 +88,7 @@ describe('Adomik Prebid Analytic', function () {
         type: 'request',
         event: {
           bidder: 'BIDDERTEST',
-          placementCode: 'placementtest',
+          placementCode: '0000',
         }
       });
 
@@ -138,6 +135,119 @@ describe('Adomik Prebid Analytic', function () {
       clock.tick(5000);
 
       sinon.assert.callCount(adomikAnalytics.track, 6);
+    });
+
+    describe('when sampling is undefined', function () {
+      beforeEach(function() {
+        adapterManager.enableAnalytics({
+          provider: 'adomik',
+          options: { id: '123456', url: 'testurl' }
+        });
+      });
+
+      it('is enabled', function () {
+        expect(adomikAnalytics.currentContext).is.not.null;
+      });
+    });
+
+    describe('when sampling is 0', function () {
+      beforeEach(function() {
+        adapterManager.enableAnalytics({
+          provider: 'adomik',
+          options: { id: '123456', url: 'testurl', sampling: 0 }
+        });
+      });
+
+      it('is disabled', function () {
+        expect(adomikAnalytics.currentContext).to.equal(undefined);
+      });
+    });
+
+    describe('when sampling is 1', function () {
+      beforeEach(function() {
+        adapterManager.enableAnalytics({
+          provider: 'adomik',
+          options: { id: '123456', url: 'testurl', sampling: 1 }
+        });
+      });
+
+      it('is enabled', function () {
+        expect(adomikAnalytics.currentContext).is.not.null;
+      });
+    });
+
+    describe('when options is not defined', function () {
+      beforeEach(function() {
+        adapterManager.enableAnalytics({ provider: 'adomik' });
+      });
+
+      it('is disabled', function () {
+        expect(adomikAnalytics.currentContext).to.equal(undefined);
+      });
+    });
+
+    describe('when id is not defined in options', function () {
+      beforeEach(function() {
+        adapterManager.enableAnalytics({ provider: 'adomik', url: 'xxx' });
+      });
+
+      it('is disabled', function () {
+        expect(adomikAnalytics.currentContext).to.equal(undefined);
+      });
+    });
+
+    describe('when url is not defined in options', function () {
+      beforeEach(function() {
+        adapterManager.enableAnalytics({ provider: 'adomik', id: 'xxx' });
+      });
+
+      it('is disabled', function () {
+        expect(adomikAnalytics.currentContext).to.equal(undefined);
+      });
+    });
+  });
+
+  describe('adomikAnalytics.getKeyValues', function () {
+    it('returns [undefined, undefined]', function () {
+      let [testId, testValue] = adomikAnalytics.getKeyValues()
+      expect(testId).to.equal(undefined);
+      expect(testValue).to.equal(undefined);
+    });
+
+    describe('when test is in scope', function () {
+      beforeEach(function () {
+        sessionStorage.setItem(window.location.hostname + '_AdomikTestInScope', true);
+      });
+
+      it('returns [undefined, undefined]', function () {
+        let [testId, testValue] = adomikAnalytics.getKeyValues()
+        expect(testId).to.equal(undefined);
+        expect(testValue).to.equal(undefined);
+      });
+
+      describe('when key values are defined', function () {
+        beforeEach(function () {
+          sessionStorage.setItem(window.location.hostname + '_AdomikTest', '{"testId":"12345","testOptionLabel":"1000"}');
+        });
+
+        it('returns key values', function () {
+          let [testId, testValue] = adomikAnalytics.getKeyValues()
+          expect(testId).to.equal('12345');
+          expect(testValue).to.equal('1000');
+        });
+
+        describe('when preventTest is on', function () {
+          beforeEach(function () {
+            sessionStorage.setItem(window.location.hostname + '_NoAdomikTest', true);
+          });
+
+          it('returns [undefined, undefined]', function () {
+            let [testId, testValue] = adomikAnalytics.getKeyValues()
+            expect(testId).to.equal(undefined);
+            expect(testValue).to.equal(undefined);
+          });
+        });
+      });
     });
   });
 });

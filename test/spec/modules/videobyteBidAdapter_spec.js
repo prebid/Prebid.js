@@ -153,7 +153,7 @@ describe('VideoByteBidAdapter', function () {
     it('should create a POST request for every bid', function () {
       const requests = spec.buildRequests([bidRequest], bidderRequest);
       expect(requests[0].method).to.equal('POST');
-      expect(requests[0].url).to.equal(spec.ENDPOINT + bidRequest.params.pubId);
+      expect(requests[0].url).to.equal(spec.ENDPOINT + '?pid=' + bidRequest.params.pubId);
     });
 
     it('should attach request data', function () {
@@ -172,7 +172,7 @@ describe('VideoByteBidAdapter', function () {
       bidRequest.params.video.e2etest = true;
       const requests = spec.buildRequests([bidRequest], bidderRequest);
       expect(requests[0].method).to.equal('POST');
-      expect(requests[0].url).to.equal(spec.ENDPOINT + 'e2etest');
+      expect(requests[0].url).to.equal(spec.ENDPOINT + '?pid=e2etest');
     });
 
     it('should attach End 2 End test data', function () {
@@ -463,7 +463,6 @@ describe('VideoByteBidAdapter', function () {
       });
       let o = {
         requestId: serverResponse.id,
-        bidderCode: spec.code,
         cpm: serverResponse.seatbid[0].bid[0].price,
         creativeId: serverResponse.seatbid[0].bid[0].crid,
         vastXml: serverResponse.seatbid[0].bid[0].adm,

@@ -1,17 +1,23 @@
-import * as utils from '../src/utils.js'
+import { _map } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER } from '../src/mediaTypes.js'
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
 
 const BIDDER_CODE = 'astraone';
 const SSP_ENDPOINT = 'https://ssp.astraone.io/auction/prebid';
 const TTL = 60;
 
 function buildBidRequests(validBidRequests) {
-  return utils._map(validBidRequests, function(validBidRequest) {
+  return _map(validBidRequests, function(validBidRequest) {
     const params = validBidRequest.params;
     const bidRequest = {
       bidId: validBidRequest.bidId,
-      transactionId: validBidRequest.transactionId,
+      transactionId: validBidRequest.ortb2Imp?.ext?.tid,
       sizes: validBidRequest.sizes,
       placement: params.placement,
       placeId: params.placeId,
@@ -99,7 +105,7 @@ export const spec = {
    */
   buildRequests(validBidRequests, bidderRequest) {
     const payload = {
-      url: bidderRequest.refererInfo.referer,
+      url: bidderRequest.refererInfo.page,
       cmp: !!bidderRequest.gdprConsent,
       bidRequests: buildBidRequests(validBidRequests)
     };
