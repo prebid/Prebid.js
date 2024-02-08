@@ -894,12 +894,14 @@ export function deepEqual(obj1, obj2, {checkTypes = false} = {}) {
   ) {
     if (Object.keys(obj1).length !== Object.keys(obj2).length) return false;
     for (let prop in obj1) {
-      if (obj2.hasOwnProperty(prop)) {
-        if (!deepEqual(obj1[prop], obj2[prop], {checkTypes})) {
+      if (obj1.hasOwnProperty(prop)) {
+        if (obj2.hasOwnProperty(prop)) {
+          if (!deepEqual(obj1[prop], obj2[prop], {checkTypes})) {
+            return false;
+          }
+        } else {
           return false;
         }
-      } else {
-        return false;
       }
     }
     return true;
