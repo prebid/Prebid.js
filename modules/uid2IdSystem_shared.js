@@ -447,7 +447,8 @@ if (FEATURES.UID2_CSTG) {
     }
 
     async generateToken(cstgIdentity) {
-      const request = await this.generateCstgRequest(cstgIdentity);
+      const requestIdentity = await this.generateCstgRequest(cstgIdentity);
+      const request = { optout_check: this._optoutCheck, ...requestIdentity };
       this._logInfo('Building CSTG request for', request);
       const box = await UID2CstgBox.build(
         this.stripPublicKeyPrefix(this._serverPublicKey)
@@ -470,7 +471,6 @@ if (FEATURES.UID2_CSTG) {
         ),
         timestamp: now,
         subscription_id: this._subscriptionId,
-        optout_check: this._optoutCheck,
       };
       return this.callCstgApi(requestBody, box);
     }
