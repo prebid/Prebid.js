@@ -2,13 +2,13 @@
 ## Overview
 Module Name: pubX.ai RTD Provider
 Module Type: RTD Adapter
-Maintainer: bharadhwaj@pubx.ai
+Maintainer: phaneendra@pubx.ai
 
-  
+
 ## Description
 RTD module for prebid provided by pubX.ai.
 
-  
+
 ## Usage
 
 Inorder to compile the RTD module into your Prebid build:

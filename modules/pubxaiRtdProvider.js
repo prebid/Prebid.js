@@ -1,6 +1,9 @@
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { deepAccess, logError } from '../src/utils.js';
+import { config } from '../src/config.js';
+// import { createFloorsDataForAuction, handleSetFloorsConfig } from './priceFloors.js';
+
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'pubxai';
@@ -28,21 +31,34 @@ function fetchDataFromURL(url) {
   })
 }
 
-function setDataToConfig(url) {
+function setDataToConfig(url, reqBidsConfigObj) {
   fetchDataFromURL(url)
     .then(response => {
-      const { bucket, ...floorValues } = response;
-      window.__PBXCNFG__.prb = bucket;
-      window.__PBXCNFG__.flrs = floorValues;
+      console.log('pubx RTD module response', response);
+      const floors = {
+        floors: {
+          enforcement: {
+            floorDeals: false, //default to false
+            bidAdjustment: true
+          },
+          data: response
+        }
+      };
+      config.setConfig(floors);
+      // createFloorsDataForAuction(reqBidsConfigObj.adUnits, reqBidsConfigObj.auctionId);
+      // handleSetFloorsConfig(floors);
+      console.log("pubx floors", pbjs.getConfig('floors'));
+      window.sessionStorage.setItem('pubxFloors', JSON.stringify(floors));
     })
     .catch(err => {
       logError('pubX API Fetch Error: ', err);
     })
 }
 
-function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
-  const endpoint = deepAccess(config, 'params.endpoint');
-  setDataToConfig(endpoint);
+function getBidRequestData(reqBidsConfigObj, callback, rtd_config, userConsent) {
+  console.log("pubx reqBidsConfigObj", reqBidsConfigObj);
+  const endpoint = deepAccess(rtd_config, 'params.endpoint');
+  setDataToConfig(endpoint, reqBidsConfigObj);
 }
 
 export const pubxaiSubmodule = {
