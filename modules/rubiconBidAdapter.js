@@ -694,6 +694,10 @@ export const spec = {
           bid.mediaType = ad.creative_type;
         }
 
+        if (ad.dsa && Object.keys(ad.dsa).length) {
+          bid.meta.dsa = ad.dsa;
+        }
+
         if (ad.adomain) {
           bid.meta.advertiserDomains = Array.isArray(ad.adomain) ? ad.adomain : [ad.adomain];
         }
