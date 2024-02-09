@@ -1575,7 +1575,7 @@ describe('the rubicon adapter', function () {
           describe('UserID catchall support', function () {
             it('should send user id with generic format', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
-              // Hardcoding userIdAsEids since createEirray returns empty array if source not found in eids.js
+              // Hardcoding userIdAsEids since createEidsArray returns empty array if source not found in eids.js
               clonedBid.userIdAsEids = [{
                 source: 'catchall',
                 uids: [{
@@ -1591,7 +1591,7 @@ describe('the rubicon adapter', function () {
 
             it('should send rubiconproject special case', function () {
               const clonedBid = utils.deepClone(bidderRequest.bids[0]);
-              // Hardcoding userIdAsEids since createEirray returns empty array if source not found in eids.js
+              // Hardcoding userIdAsEids since createEidsArray returns empty array if source not found in eids.js
               clonedBid.userIdAsEids = [{
                 source: 'rubiconproject.com',
                 uids: [{
@@ -3407,11 +3407,6 @@ describe('the rubicon adapter', function () {
               }
             ]
           };
-          // config.setConfig({
-          //   rubicon: {
-          //     netRevenue: false
-          //   }
-          // });
           let bids = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
