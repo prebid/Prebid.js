@@ -5,8 +5,8 @@ import { config } from 'src/config.js';
 import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 import * as utils from 'src/utils.js';
 
-const ENDPOINT = 'https://hb.stngo.com/hb-stn-multi';
-const TEST_ENDPOINT = 'https://hb.stngo.com/hb-stn-multi-test';
+const ENDPOINT = 'https://hb.stngo.com/hb-multi';
+const TEST_ENDPOINT = 'https://hb.stngo.com/hb-multi-test';
 const TTL = 360;
 /* eslint no-console: ["error", { allow: ["log", "warn", "error"] }] */
 

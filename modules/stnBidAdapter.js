@@ -22,8 +22,8 @@ const TTL = 360;
 const DEFAULT_CURRENCY = 'USD';
 const SELLER_ENDPOINT = 'https://hb.stngo.com/';
 const MODES = {
-  PRODUCTION: 'hb-stn-multi',
-  TEST: 'hb-stn-multi-test'
+  PRODUCTION: 'hb-multi',
+  TEST: 'hb-multi-test'
 }
 const SUPPORTED_SYNC_METHODS = {
   IFRAME: 'iframe',

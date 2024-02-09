@@ -20,7 +20,7 @@ The adapter supports Video(instream) & Banner.
 
 | Name | Scope | Type | Description                                                       | Example
 | ---- | ----- | ---- |-------------------------------------------------------------------| -------
-| `org` | required | String | STN publisher Id provided by your STN representative              | "1234567890abcdef12345678"
+| `org` | required | String | STN publisher Id provided by your STN representative              | "0987654321abcdef87654321"
 | `floorPrice` | optional | Number | Minimum price in USD. Misuse of this parameter can impact revenue | 2.00
 | `placementId` | optional | String | A unique placement identifier                                     | "12345678"
 | `testMode` | optional | Boolean | This activates the test mode                                      | false
@@ -66,7 +66,7 @@ var adUnits = [{
         bids: [{
             bidder: 'stn',
             params: {
-                org: '1234567890abcdef12345678', // Required
+                org: '0987654321abcdef87654321', // Required
                 floorPrice: 2.00, // Optional
                 placementId: 'banner-test', // Optional
                 testMode: false // Optional
