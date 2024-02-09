@@ -55,8 +55,7 @@ export const spec = {
     }
     return requests;
   },
-
-  interpretResponse: function (serverResponse, bidRequest) {
+  interpretResponse: function(serverResponse, bidRequest) {
     const bidResponses = [];
     let bidObj = bidRequest.bidRequest;
 
@@ -73,52 +72,40 @@ export const spec = {
     }
 
     let host = spec.getBidderHost(bidObj);
-    let bidResponse;
+
+    const bidResponse = {
+      requestId: bidObj.bidId,
+      cpm: cpm,
+      width: adData.w,
+      height: adData.h,
+      creativeId: bidObj.params.placementId,
+      currency: 'EUR',
+      netRevenue: true,
+      ttl: 300,
+      meta: {
+        advertiserDomains: bidObj && bidObj.adomain ? bidObj.adomain : []
+      }
+    };
+
     if ('mediaTypes' in bidObj && 'native' in bidObj.mediaTypes) {
-      bidResponse = {
-        requestId: bidObj.bidId,
-        cpm: cpm,
-        width: adData.w,
-        height: adData.h,
-        creativeId: bidObj.params.placementId,
-        currency: 'EUR',
-        netRevenue: true,
-        ttl: 300,
-        meta: {
-          advertiserDomains: bidObj && bidObj.adomain ? bidObj.adomain : []
-        },
-        native: {
-          title: adData.title,
-          body: adData.body,
-          cta: adData.cta,
-          image: { url: adData.image },
-          clickUrl: adData.click,
-          impressionTrackers: [adData.view]
-        },
-        mediaType: NATIVE
+      bidResponse.native = {
+        title: adData.title,
+        body: adData.body,
+        cta: adData.cta,
+        image: { url: adData.image },
+        clickUrl: adData.click,
+        impressionTrackers: [adData.view]
       };
+      bidResponse.mediaType = NATIVE;
     } else {
       let adm = '<script>window.inDapIF=false</script><script src="//' + host + SCRIPT_URL + '"></script><ins id="' + bidObj.adspiritConId + '"></ins>' + adData.adm;
-      bidResponse = {
-        requestId: bidObj.bidId,
-        cpm: cpm,
-        width: adData.w,
-        height: adData.h,
-        creativeId: bidObj.params.placementId,
-        currency: 'EUR',
-        netRevenue: true,
-        ttl: 300,
-        meta: {
-          advertiserDomains: bidObj && bidObj.adomain ? bidObj.adomain : []
-        },
-        ad: adm,
-        mediaType: BANNER
-      };
+      bidResponse.ad = adm;
+      bidResponse.mediaType = BANNER;
     }
+
     bidResponses.push(bidResponse);
     return bidResponses;
   },
-
   getBidderHost: function (bid) {
     if (bid.bidder === 'adspirit') {
       return utils.getBidIdParameter('host', bid.params);
