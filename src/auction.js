@@ -78,7 +78,7 @@ import {
   logMessage,
   logWarn,
   parseUrl,
-  timestamp,
+  timestamp
 } from './utils.js';
 import {getPriceBucketString} from './cpmBucketManager.js';
 import {getNativeTargeting, isNativeResponse, setNativeResponseProperties} from './native.js';

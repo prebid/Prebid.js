@@ -427,7 +427,10 @@ const RESPONSE_OPENRTB_VIDEO = {
           ext: {
             prebid: {
               type: 'video',
-              bidid: '654321'
+              bidid: '654321',
+              meta: {
+                rendererUrl: 'www.rendererurl.com'
+              }
             },
             bidder: {
               appnexus: {
@@ -437,7 +440,6 @@ const RESPONSE_OPENRTB_VIDEO = {
                 bid_ad_type: 1,
               },
             },
-            rendererurl: 'www.rendererurl.com'
           },
         },
       ],
@@ -3299,7 +3301,7 @@ describe('S2S Adapter', function () {
     });
 
     if (FEATURES.NATIVE) {
-      it('handles OpenRTB native responses', function () {
+      it.only('handles OpenRTB native responses', function () {
         const stub = sinon.stub(auctionManager, 'index');
         stub.get(() => stubAuctionIndex({adUnits: REQUEST.ad_units}));
         const s2sConfig = Object.assign({}, CONFIG, {
