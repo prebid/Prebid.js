@@ -1,5 +1,4 @@
 [
-    "33acrossIdSystem",
     "adprimeBidAdapter",
     "apacdexBidAdapter",
     "appnexusBidAdapter",
@@ -56,5 +55,7 @@
     "liveIntentIdSystem",
     "unifiedIdSystem",
     "pairIdSystem",
-    "connectIdSystem"
+    "connectIdSystem",
+    "33acrossIdSystem",
+    "id5IdSystem"
 ]
