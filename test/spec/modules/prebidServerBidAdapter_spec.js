@@ -91,6 +91,7 @@ const REQUEST = {
         }
       },
       'transactionId': '4ef956ad-fd83-406d-bd35-e4bb786ab86c',
+      'adUnitId': 'au-id-1',
       'bids': [
         {
           'bid_id': '123',
@@ -2879,6 +2880,32 @@ describe('S2S Adapter', function () {
       server.requests[0].respond(400, {}, {});
       BID_REQUESTS.forEach(bidderRequest => {
         sinon.assert.calledWith(events.emit, CONSTANTS.EVENTS.BIDDER_ERROR, sinon.match({bidderRequest}))
+      })
+    })
+
+    describe('calls done', () => {
+      let success, error;
+      beforeEach(() => {
+        const mockAjax = function (_, callback) {
+          ({success, error} = callback);
+        }
+        config.setConfig({ s2sConfig: CONFIG });
+        adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, mockAjax);
+      })
+
+      it('passing timedOut = false on succcess', () => {
+        success({});
+        sinon.assert.calledWith(done, false);
+      });
+
+      Object.entries({
+        'timeouts': true,
+        'other errors': false
+      }).forEach(([t, timedOut]) => {
+        it(`passing timedOut = ${timedOut} on ${t}`, () => {
+          error('', {timedOut});
+          sinon.assert.calledWith(done, timedOut);
+        })
       })
     })
 

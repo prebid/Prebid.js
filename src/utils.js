@@ -653,7 +653,7 @@ export function checkCookieSupport() {
  *
  * @param {function} func The function which should be executed, once the returned function has been executed
  *   numRequiredCalls times.
- * @param {int} numRequiredCalls The number of times which the returned function needs to be called before
+ * @param {number} numRequiredCalls The number of times which the returned function needs to be called before
  *   func is.
  */
 export function delayExecution(func, numRequiredCalls) {
@@ -672,7 +672,7 @@ export function delayExecution(func, numRequiredCalls) {
 /**
  * https://stackoverflow.com/a/34890276/428704
  * @export
- * @param {array} xs
+ * @param {Array} xs
  * @param {string} key
  * @returns {Object} {${key_value}: ${groupByArray}, key_value: {groupByArray}}
  */
@@ -898,8 +898,9 @@ export function deepEqual(obj1, obj2, {checkTypes = false} = {}) {
     (typeof obj2 === 'object' && obj2 !== null) &&
     (!checkTypes || (obj1.constructor === obj2.constructor))
   ) {
-    if (Object.keys(obj1).length !== Object.keys(obj2).length) return false;
-    for (let prop in obj1) {
+    const props1 = Object.keys(obj1);
+    if (props1.length !== Object.keys(obj2).length) return false;
+    for (let prop of props1) {
       if (obj2.hasOwnProperty(prop)) {
         if (!deepEqual(obj1[prop], obj2[prop], {checkTypes})) {
           return false;

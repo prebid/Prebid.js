@@ -17,7 +17,7 @@ import { config } from '../src/config.js';
 const GVLID = 1122;
 const ModuleCode = 'agma';
 const analyticsType = 'endpoint';
-const scriptVersion = '1.7.0';
+const scriptVersion = '1.7.1';
 const batchDelayInMs = 1000;
 const agmaURL = 'https://pbc.agma-analytics.de/v1';
 const pageViewId = generateUUID();
@@ -61,7 +61,7 @@ export const getOrtb2Data = (options) => {
     }
   }
   try {
-    const configData = config.getConfig('agma');
+    const configData = config.getConfig();
     // try to fallback to global config
     if (configData.ortb2) {
       site = site || configData.ortb2.site;
