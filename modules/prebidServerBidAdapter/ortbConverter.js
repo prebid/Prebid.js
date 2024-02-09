@@ -102,7 +102,7 @@ const PBS_CONVERTER = ortbConverter({
     }
 
     const bidResponse = buildBidResponse(bid, context);
-    bidResponse.rendererurl = bid.ext.rendererurl;
+    bidResponse.rendererurl = bid.ext.prebid.meta.rendererUrl;
     bidResponse.requestBidder = bidRequest?.bidder;
 
     if (bidResponse.native?.ortb) {
