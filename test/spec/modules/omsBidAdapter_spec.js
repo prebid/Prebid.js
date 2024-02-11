@@ -1,18 +1,18 @@
-import { expect } from 'chai';
+import {expect} from 'chai';
 import * as utils from 'src/utils.js';
-import { spec } from 'modules/omsBidAdapter';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import {spec} from 'modules/omsBidAdapter';
+import {newBidder} from 'src/adapters/bidderFactory.js';
 import {config} from '../../../src/config';
 
 const URL = 'https://rt.marphezis.com/hb';
 
-describe('omsBidAdapter', function() {
+describe('omsBidAdapter', function () {
   const adapter = newBidder(spec);
   let element, win;
   let bidRequests;
   let sandbox;
 
-  beforeEach(function() {
+  beforeEach(function () {
     element = {
       x: 0,
       y: 0,
@@ -76,7 +76,7 @@ describe('omsBidAdapter', function() {
     sandbox.stub(utils, 'getWindowSelf').returns(win);
   });
 
-  afterEach(function() {
+  afterEach(function () {
     sandbox.restore();
   });
 
@@ -124,13 +124,13 @@ describe('omsBidAdapter', function() {
       expect(request.url).to.equal(URL);
     });
 
-    it('sets the proper banner object', function() {
+    it('sets the proper banner object', function () {
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
       expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
     });
 
-    it('accepts a single array as a size', function() {
+    it('accepts a single array as a size', function () {
       bidRequests[0].mediaTypes.banner.sizes = [300, 250];
       const request = spec.buildRequests(bidRequests);
       const payload = JSON.parse(request.data);
@@ -182,21 +182,8 @@ describe('omsBidAdapter', function() {
       expect(data.user.ext.consent).to.equal(consentString);
     });
 
-    it('sends us_privacy', function () {
-      const bidderRequest = {
-        uspConsent: '1YYY'
-      };
-      const data = JSON.parse(spec.buildRequests(bidRequests, bidderRequest).data)
-
-      expect(data.regs).to.not.equal(null);
-      expect(data.regs.ext).to.not.equal(null);
-      expect(data.regs.ext.us_privacy).to.equal('1YYY');
-    });
-
     it('sends coppa', function () {
-      sandbox.stub(config, 'getConfig').withArgs('coppa').returns(true);
-
-      const data = JSON.parse(spec.buildRequests(bidRequests).data)
+      const data = JSON.parse(spec.buildRequests(bidRequests, {ortb2: {regs: {coppa: 1}}}).data)
       expect(data.regs).to.not.be.undefined;
       expect(data.regs.coppa).to.equal(1);
     });
@@ -260,36 +247,36 @@ describe('omsBidAdapter', function() {
       expect(data.user.ext.ids).is.deep.equal(userId);
     });
 
-    context('when element is fully in view', function() {
-      it('returns 100', function() {
-        Object.assign(element, { width: 600, height: 400 });
+    context('when element is fully in view', function () {
+      it('returns 100', function () {
+        Object.assign(element, {width: 600, height: 400});
         const request = spec.buildRequests(bidRequests);
         const payload = JSON.parse(request.data);
         expect(payload.imp[0].banner.ext.viewability).to.equal(100);
       });
     });
 
-    context('when element is out of view', function() {
-      it('returns 0', function() {
-        Object.assign(element, { x: -300, y: 0, width: 207, height: 320 });
+    context('when element is out of view', function () {
+      it('returns 0', function () {
+        Object.assign(element, {x: -300, y: 0, width: 207, height: 320});
         const request = spec.buildRequests(bidRequests);
         const payload = JSON.parse(request.data);
         expect(payload.imp[0].banner.ext.viewability).to.equal(0);
       });
     });
 
-    context('when element is partially in view', function() {
-      it('returns percentage', function() {
-        Object.assign(element, { width: 800, height: 800 });
+    context('when element is partially in view', function () {
+      it('returns percentage', function () {
+        Object.assign(element, {width: 800, height: 800});
         const request = spec.buildRequests(bidRequests);
         const payload = JSON.parse(request.data);
         expect(payload.imp[0].banner.ext.viewability).to.equal(75);
       });
     });
 
-    context('when width or height of the element is zero', function() {
-      it('try to use alternative values', function() {
-        Object.assign(element, { width: 0, height: 0 });
+    context('when width or height of the element is zero', function () {
+      it('try to use alternative values', function () {
+        Object.assign(element, {width: 0, height: 0});
         bidRequests[0].mediaTypes.banner.sizes = [[800, 2400]];
         const request = spec.buildRequests(bidRequests);
         const payload = JSON.parse(request.data);
@@ -297,9 +284,9 @@ describe('omsBidAdapter', function() {
       });
     });
 
-    context('when nested iframes', function() {
-      it('returns \'na\'', function() {
-        Object.assign(element, { width: 600, height: 400 });
+    context('when nested iframes', function () {
+      it('returns \'na\'', function () {
+        Object.assign(element, {width: 600, height: 400});
 
         utils.getWindowTop.restore();
         utils.getWindowSelf.restore();
@@ -312,9 +299,9 @@ describe('omsBidAdapter', function() {
       });
     });
 
-    context('when tab is inactive', function() {
-      it('returns 0', function() {
-        Object.assign(element, { width: 600, height: 400 });
+    context('when tab is inactive', function () {
+      it('returns 0', function () {
+        Object.assign(element, {width: 600, height: 400});
 
         utils.getWindowTop.restore();
         win.document.visibilityState = 'hidden';
@@ -360,7 +347,7 @@ describe('omsBidAdapter', function() {
         'netRevenue': true,
         'mediaType': 'banner',
         'ad': `<!-- Creative --><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="${encodeURI('<!-- NURL -->')}"></div>`,
-        'ttl': 60,
+        'ttl': 300,
         'meta': {
           'advertiserDomains': ['example.com']
         }
@@ -381,7 +368,7 @@ describe('omsBidAdapter', function() {
         'netRevenue': true,
         'mediaType': 'banner',
         'ad': `<!-- Creative --><div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="${encodeURI('<!-- NURL -->')}"></div>`,
-        'ttl': 60,
+        'ttl': 300,
         'meta': {
           'advertiserDomains': ['example.com']
         }

@@ -1,20 +1,20 @@
 import {
   isArray,
   getWindowTop,
-  getUniqueIdentifierStr,
   deepSetValue,
   logError,
   logWarn,
   createTrackPixelHtml,
   getWindowSelf,
   isFn,
-  isPlainObject, getBidIdParameter,
+  isPlainObject,
+  getBidIdParameter,
+  getUniqueIdentifierStr,
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
 import {ajax} from '../src/ajax.js';
-import {percentInView} from "../libraries/percentInView/percentInView";
+import {percentInView} from '../libraries/percentInView/percentInView.js';
 
 const BIDDER_CODE = 'oms';
 const URL = 'https://rt.marphezis.com/hb';
@@ -29,7 +29,6 @@ export const spec = {
   buildRequests,
   interpretResponse,
   onBidderError,
-  onTimeout,
   onBidWon,
   getUserSyncs,
 };
@@ -81,7 +80,7 @@ function buildRequests(bidReqs, bidderRequest) {
         }
       },
       device: {
-        devicetype: _getDeviceType(),
+        devicetype: _getDeviceType(navigator.userAgent, bidderRequest?.ortb2?.device?.sua),
         w: screen.width,
         h: screen.height
       },
@@ -93,16 +92,21 @@ function buildRequests(bidReqs, bidderRequest) {
       deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
     }
 
-    if (bidderRequest?.uspConsent) {
-      deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    const gpp = _getGpp(bidderRequest)
+    if (gpp) {
+      deepSetValue(payload, 'regs.ext.gpp', gpp);
     }
 
-    if (config.getConfig('coppa') === true || bidReqs[0].coppa) {
+    if (bidderRequest?.ortb2?.regs?.coppa) {
       deepSetValue(payload, 'regs.coppa', 1);
     }
 
     if (bidReqs?.[0]?.schain) {
       deepSetValue(payload, 'source.ext.schain', bidReqs[0].schain)
+    }
+
+    if (bidderRequest?.ortb2?.user) {
+      deepSetValue(payload, 'user', bidderRequest.ortb2.user)
     }
 
     if (bidReqs?.[0]?.userIdAsEids) {
@@ -111,6 +115,10 @@ function buildRequests(bidReqs, bidderRequest) {
 
     if (bidReqs?.[0].userId) {
       deepSetValue(payload, 'user.ext.ids', bidReqs[0].userId || [])
+    }
+
+    if (bidderRequest?.ortb2?.site?.content) {
+      deepSetValue(payload, 'site.content', bidderRequest.ortb2.site.content)
     }
 
     return {
@@ -172,14 +180,6 @@ function getUserSyncs(syncOptions, responses, gdprConsent) {
   return [];
 }
 
-function onTimeout(timeoutData) {
-  if (timeoutData === null) {
-    return;
-  }
-
-  _trackEvent('timeout', timeoutData);
-}
-
 function onBidderError(errorData) {
   if (errorData === null || !errorData.bidderRequest) {
     return;
@@ -203,16 +203,26 @@ function _trackEvent(endpoint, data) {
   });
 }
 
-function _isMobile() {
-  return (/(ios|ipod|ipad|iphone|android)/i).test(navigator.userAgent);
+function _getDeviceType(ua, sua) {
+  if (sua?.mobile || (/(ios|ipod|ipad|iphone|android)/i).test(ua)) {
+    return 1
+  }
+
+  if ((/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(ua)) {
+    return 3
+  }
+
+  return 2
 }
 
-function _isConnectedTV() {
-  return (/(smart[-]?tv|hbbtv|appletv|googletv|hdmi|netcast\.tv|viera|nettv|roku|\bdtv\b|sonydtv|inettvbrowser|\btv\b)/i).test(navigator.userAgent);
-}
+function _getGpp(bidderRequest) {
+  if (bidderRequest?.gppConsent != null) {
+    return bidderRequest.gppConsent;
+  }
 
-function _getDeviceType() {
-  return _isMobile() ? 1 : _isConnectedTV() ? 3 : 2;
+  return (
+    bidderRequest?.ortb2?.regs?.gpp ?? { gppString: '', applicableSections: '' }
+  );
 }
 
 function _getAdMarkup(bid) {
@@ -242,7 +252,6 @@ function _isIframe() {
 function _getMinSize(sizes) {
   return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
 }
-
 
 function _getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {

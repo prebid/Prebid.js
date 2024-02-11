@@ -1,5 +1,4 @@
 
-
 function getBoundingBox(element, {w, h} = {}) {
   let {width, height, left, top, right, bottom} = element.getBoundingClientRect();
 
@@ -12,8 +11,6 @@ function getBoundingBox(element, {w, h} = {}) {
 
   return {width, height, left, top, right, bottom};
 }
-
-
 
 function getIntersectionOfRects(rects) {
   const bbox = {
