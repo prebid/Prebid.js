@@ -6,9 +6,12 @@ import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { ajax } from '../src/ajax.js';
+
 
 const BIDDER_CODE = 'preciso';
-const AD_URL = 'https://ssp-bidder.mndtrk.com/bid_request/openrtb';
+//const AD_URL = 'https://ssp-bidder.mndtrk.com/bid_request/openrtb';
+const AD_URL = 'http://localhost:8080/bid_request/openrtb';
 // const URL_SYNC = 'https://prebid.2trk.info/sharedIdTrack.html';
 const URL_SYNC = 'https://ck.2trk.info/rtb/user/usersync.aspx?';
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
@@ -48,13 +51,18 @@ export const spec = {
     }
     return [{
       type: 'iframe',
-      url: `${URL_SYNC}id=sharedId&t=4`
+      url: `${URL_SYNC}id=${sharedId}&t=4`
     }
     ];
   },
 
   isBidRequestValid: (bid) => {
+
+
+
+
     let sharedId = readFromAllStorages(COOKIE_NAME);
+    
 
     // let sharedId = 'd466fcae%23260f%234f7c%23aceb%23b05cbbba049c';
     const preCall = 'https://ssp-usersync.mndtrk.com/getUUID?sharedId=' + sharedId;
@@ -75,7 +83,11 @@ export const spec = {
     // userId = validBidRequests[0].userId.pubcid;
     let winTop = window;
     let location;
-    var city = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    var timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    let country = getCountry();
+    logInfo("Test Test Debug Country :"+country);
+    logInfo("Valid request:"+validBidRequests[0]);
+    
 
     // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
     try {
@@ -89,15 +101,15 @@ export const spec = {
 
     let request = {
       id: validBidRequests[0].bidderRequestId,
-      req: validBidRequests[0],
+      //req: validBidRequests[0],
       imp: validBidRequests.map(request => {
-        const { bidId, sizes, mediaType, ortb2 } = request
+        const { bidId, sizes,mediaTypes } = request
         const item = {
           id: bidId,
-          region: request.params.region,
-          traffic: mediaType,
-          bidFloor: getBidFloor(request),
-          ortb2: ortb2
+          //region: request.params.region,
+          //traffic: mediaType,
+          bidFloor: getBidFloor(request)
+         // ortb2: ortb2
 
         }
 
@@ -118,49 +130,49 @@ export const spec = {
         }
         return item
       }),
-      auctionId: validBidRequests[0].auctionId,
-      'deviceWidth': winTop.screen.width,
-      'deviceHeight': winTop.screen.height,
-      'language': (navigator && navigator.language) ? navigator.language : '',
-      'host': location.host,
-      'page': location.pathname,
-      'coppa': config.getConfig('coppa') === true ? 1 : 0,
-      userId: validBidRequests[0].userId,
+      // auctionId: validBidRequests[0].auctionId,
+      // 'deviceWidth': winTop.screen.width,
+      // 'deviceHeight': winTop.screen.height,
+      // 'language': (navigator && navigator.language) ? navigator.language : '',
+      // 'host': location.host,
+      // 'page': location.pathname,
+      // 'coppa': config.getConfig('coppa') === true ? 1 : 0,
+      // userId: validBidRequests[0].userId,
       user: {
         id: validBidRequests[0].userId.pubcid || '',
-        uuid: precisoId || 'NA',
+       buyeruid: precisoId ,
         geo: {
-          region: city,
-          geo: navigator.geolocation.getCurrentPosition(position => {
-            const { latitude, longitude } = position.coords;
-            return {
-              latitude: latitude,
-              longitude: longitude
-            }
-            // Show a map centered at latitude / longitude.
-          }),
+          region: timeZone,
+          // geo: navigator.geolocation.getCurrentPosition(position => {
+          //   const { latitude, longitude } = position.coords;
+          //   return {
+          //     latitude: latitude,
+          //     longitude: longitude
+          //   }
+          //   // Show a map centered at latitude / longitude.
+          // }),
           utcoffset: new Date().getTimezoneOffset()
         }
 
       },
-      site: validBidRequests[0].ortb2.site || '',
-      tmax: validBidRequests[0].timeout || 0,
-      device: validBidRequests[0].ortb2.device || ''
-
+       site: validBidRequests[0].ortb2.site || '',
+       tmax: validBidRequests[0].timeout || 1000,
+      // device: validBidRequests[0].ortb2.device || '',
+  
     };
 
-    request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
-    if (bidderRequest) {
-      if (bidderRequest.uspConsent) {
-        request.ccpa = bidderRequest.uspConsent;
-      }
-      if (bidderRequest.gdprConsent) {
-        request.gdpr = bidderRequest.gdprConsent
-      }
-      if (bidderRequest.gppConsent) {
-        request.gpp = bidderRequest.gppConsent;
-      }
-    }
+    // request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
+    // if (bidderRequest) {
+    //   if (bidderRequest.uspConsent) {
+    //     request.ccpa = bidderRequest.uspConsent;
+    //   }
+    //   if (bidderRequest.gdprConsent) {
+    //     request.gdpr = bidderRequest.gdprConsent
+    //   }
+    //   if (bidderRequest.gppConsent) {
+    //     request.gpp = bidderRequest.gppConsent;
+    //   }
+    // }
 
     return {
       method: 'POST',
@@ -224,7 +236,7 @@ function readFromAllStorages(name) {
 
 async function getapi(url) {
   try {
-  // Storing response
+    // Storing response
     const response = await fetch(url);
 
     // Storing data in form of JSON
@@ -278,5 +290,27 @@ async function getapi(url) {
 //     logInfo('Error in preciso precall' + error);
 //   }
 // }
+
+function getCountry(){
+  var requestUrl = "http://ip-api.com/json";
+  var country = "NA";
+
+ajax({
+  url: requestUrl,
+  type: 'GET',
+  success: function(json)
+  {
+    country = json.country;
+    logInfo("My country is: " + json.country);
+  },
+  error: function(err)
+  {
+    logInfo("Request failed, error= " + err);
+  }
+});
+ return country;
+
+}
+
 
 registerBidder(spec);
