@@ -54,18 +54,6 @@ export const spec = {
         payload.test = bidRequest.params.test;
       }
 
-      if (bidRequest.params.placement) {
-        payload.placement = bidRequest.params.placement;
-      }
-
-      if (bidRequest.params.formats) {
-        payload.formats = bidRequest.params.formats;
-      }
-
-      if (bidRequest.params.isInternal) {
-        payload.is_internal = bidRequest.params.isInternal;
-      }
-
       payload.userEids = bidRequest.userIdAsEids || [];
 
       return {
@@ -87,7 +75,7 @@ export const spec = {
     return bidResponses;
   },
   getUserSyncs: function (syncOptions, serverResponses) {
-    if (!syncOptions.iframeEnabled) {
+    if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
       return [];
     }
 
