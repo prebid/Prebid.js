@@ -354,22 +354,16 @@ export const spec = {
     if (bidderRequest?.ortb2?.regs?.ext?.dsa) {
       const pubDsaObj = bidderRequest.ortb2.regs.ext.dsa;
       const dsaObj = {};
-      ['required', 'pubrender', 'datatopub'].forEach((dsaKey) => {
+      ['dsarequired', 'pubrender', 'datatopub'].forEach((dsaKey) => {
         if (isNumber(pubDsaObj[dsaKey])) {
-          if (dsaKey === 'required') {
-            // our client-side endpoint has a different name for the 'required' field
-            // ...this is the only exception to the openrtb spec for these fields
-            dsaObj.dsainfo = pubDsaObj[dsaKey];
-          } else {
-            dsaObj[dsaKey] = pubDsaObj[dsaKey];
-          }
+          dsaObj[dsaKey] = pubDsaObj[dsaKey];
         }
       });
 
       if (isArray(pubDsaObj.transparency) && pubDsaObj.transparency.every((v) => isPlainObject(v))) {
         const tpData = [];
         pubDsaObj.transparency.forEach((tpObj) => {
-          if (isStr(tpObj.domain) && tpObj.domain != '' && isArray(tpObj.params) && tpObj.params.every((v) => isNumber(v))) {
+          if (isStr(tpObj.domain) && tpObj.domain != '' && isArray(tpObj.dsaparams) && tpObj.dsaparams.every((v) => isNumber(v))) {
             tpData.push(tpObj);
           }
         });

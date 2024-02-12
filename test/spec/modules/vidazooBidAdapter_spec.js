@@ -648,6 +648,14 @@ describe('VidazooBidAdapter', function () {
       expect(responses).to.have.length(1);
       expect(responses[0].ttl).to.equal(300);
     });
+
+    it('should add nurl if exists on response', function () {
+      const serverResponse = utils.deepClone(SERVER_RESPONSE);
+      serverResponse.body.results[0].nurl = 'https://test.com/win-notice?test=123';
+      const responses = adapter.interpretResponse(serverResponse, REQUEST);
+      expect(responses).to.have.length(1);
+      expect(responses[0].nurl).to.equal('https://test.com/win-notice?test=123');
+    });
   });
 
   describe('user id system', function () {
@@ -831,6 +839,68 @@ describe('VidazooBidAdapter', function () {
       const parsed = tryParseJSON(value);
       expect(typeof parsed).to.be.equal('number');
       expect(parsed).to.be.equal(value);
+    });
+  });
+
+  describe('validate onBidWon', function () {
+    beforeEach(function () {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function () {
+      utils.triggerPixel.restore();
+    });
+
+    it('should call triggerPixel if nurl exists', function () {
+      const bid = {
+        adUnitCode: 'div-gpt-ad-12345-0',
+        adId: '2d52001cabd527',
+        auctionId: '1fdb5ff1b6eaa7',
+        transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+        status: 'rendered',
+        timeToRespond: 100,
+        cpm: 0.8,
+        originalCpm: 0.8,
+        creativeId: '12610997325162499419',
+        currency: 'USD',
+        originalCurrency: 'USD',
+        height: 250,
+        mediaType: 'banner',
+        nurl: 'https://test.com/win-notice?test=123',
+        netRevenue: true,
+        requestId: '2d52001cabd527',
+        ttl: 30,
+        width: 300
+      };
+      adapter.onBidWon(bid);
+      expect(utils.triggerPixel.called).to.be.true;
+
+      const url = utils.triggerPixel.args[0];
+
+      expect(url[0]).to.be.equal('https://test.com/win-notice?test=123&adId=2d52001cabd527&creativeId=12610997325162499419&auctionId=1fdb5ff1b6eaa7&transactionId=c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf&adUnitCode=div-gpt-ad-12345-0&cpm=0.8&currency=USD&originalCpm=0.8&originalCurrency=USD&netRevenue=true&mediaType=banner&timeToRespond=100&status=rendered');
+    });
+
+    it('should not call triggerPixel if nurl does not exist', function () {
+      const bid = {
+        adUnitCode: 'div-gpt-ad-12345-0',
+        adId: '2d52001cabd527',
+        auctionId: '1fdb5ff1b6eaa7',
+        transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+        status: 'rendered',
+        timeToRespond: 100,
+        cpm: 0.8,
+        originalCpm: 0.8,
+        creativeId: '12610997325162499419',
+        currency: 'USD',
+        originalCurrency: 'USD',
+        height: 250,
+        mediaType: 'banner',
+        netRevenue: true,
+        requestId: '2d52001cabd527',
+        ttl: 30,
+        width: 300
+      };
+      adapter.onBidWon(bid);
+      expect(utils.triggerPixel.called).to.be.false;
     });
   });
 });

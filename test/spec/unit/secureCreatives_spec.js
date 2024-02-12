@@ -16,17 +16,19 @@ import {expect} from 'chai';
 var CONSTANTS = require('src/constants.json');
 
 describe('secureCreatives', () => {
-  function makeEvent(ev) {
-    return Object.assign({origin: 'mock-origin', ports: []}, ev)
-  }
-
   let sandbox;
+
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
   });
+
   afterEach(() => {
     sandbox.restore();
-  })
+  });
+
+  function makeEvent(ev) {
+    return Object.assign({origin: 'mock-origin', ports: []}, ev)
+  }
 
   describe('getReplier', () => {
     it('should use source.postMessage if no MessagePort is available', () => {

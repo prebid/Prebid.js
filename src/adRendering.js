@@ -23,7 +23,10 @@ const {EXCEPTION} = CONSTANTS.AD_RENDER_FAILED_REASON;
  */
 export function emitAdRenderFail({ reason, message, bid, id }) {
   const data = { reason, message };
-  if (bid) data.bid = bid;
+  if (bid) {
+    data.bid = bid;
+    data.adId = bid.adId;
+  }
   if (id) data.adId = id;
 
   logError(`Error rendering ad (id: ${id}): ${message}`);
@@ -132,6 +135,7 @@ doRender.before(function (next, args) {
   const {bidResponse, doc} = args;
   if (isRendererRequired(bidResponse.renderer)) {
     executeRenderer(bidResponse.renderer, bidResponse, doc);
+    emitAdRenderSucceeded({doc, bid: bidResponse, id: bidResponse.adId})
     next.bail();
   } else {
     next(args);

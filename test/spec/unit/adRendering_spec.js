@@ -83,15 +83,31 @@ describe('adRendering', () => {
         getRenderingDataStub = sinon.stub();
       })
 
-      it('does not invoke renderFn, but the renderer instead, if the ad has one', () => {
-        const renderer = {
-          url: 'some-custom-renderer',
-          render: sinon.spy()
-        }
-        doRender({renderFn, resizeFn, bidResponse: {renderer}});
-        sinon.assert.notCalled(renderFn);
-        sinon.assert.notCalled(resizeFn);
-        sinon.assert.called(renderer.render);
+      describe('when the ad has a renderer', () => {
+        let bidResponse;
+        beforeEach(() => {
+          bidResponse = {
+            adId: 'mock-ad-id',
+            renderer: {
+              url: 'some-custom-renderer',
+              render: sinon.stub()
+            }
+          }
+        });
+
+        it('does not invoke renderFn, but the renderer instead', () => {
+          doRender({renderFn, bidResponse});
+          sinon.assert.notCalled(renderFn);
+          sinon.assert.called(bidResponse.renderer.render);
+        });
+
+        it('emits AD_RENDER_SUCCEDED', () => {
+          doRender({renderFn, bidResponse});
+          sinon.assert.calledWith(events.emit, CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED, sinon.match({
+            bid: bidResponse,
+            adId: bidResponse.adId
+          }));
+        });
       });
 
       if (FEATURES.VIDEO) {
