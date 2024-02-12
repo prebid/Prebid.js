@@ -50,6 +50,9 @@ const ALLOWED_ORTB2_PARAMETERS = [
   'site.content.cat',
   'site.content.language',
   'device.sua',
+  'site.keywords',
+  'site.content.keywords',
+  'user.keywords',
 ];
 
 const sendingDataStatistic = initSendingDataStatistic();
@@ -200,7 +203,7 @@ export const spec = {
       responses.forEach(response => {
         if (syncOptions.pixelEnabled) setPixelImages(response);
         if (syncOptions.iframeEnabled) setPixelIframes(response);
-      })
+      });
     }
 
     if (!pixels.length) {

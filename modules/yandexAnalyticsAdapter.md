@@ -1,4 +1,4 @@
-# Overview
+## Overview
 
 ```
 Module Name: Yandex Analytics Adapter
@@ -6,31 +6,41 @@ Module Type: Analytics Adapter
 Maintainer: prebid@yandex-team.com
 ```
 
-# Description
+## Description
 
-This adapter is designed to work with [Yandex Metrica](https://metrica.yandex.com/about) - Top-5 worldwide web analytics tool.
+The Yandex Analytics Adapter integrates Prebid.js with [Yandex Metrica](https://metrica.yandex.com/about), a top-5 worldwide web analytics tool. It offers detailed insights into auction performance and user behavior, enabling publishers to make data-driven decisions to optimize their ad revenue.
 
-Disclosure: provider use Metrica Tag build based on https://github.com/yandex/metrica-tag, ~60 kB gzipped.
+Disclosure: The adapter utilizes the Metrica Tag build based on [github.com/yandex/metrica-tag](https://github.com/yandex/metrica-tag), approximately 60 kB gzipped.
 
-## How to setup provider
+## Setup Instructions
 
-Register your application on https://metrica.yandex.com/ and get counter id.
-Insert counter initialization code obtained from the page https://metrica.yandex.com/settings?id={counterId} into your html code.
-Init provider like this, where `123` is your counter id.
+1. **Register Your Website:**
 
-Note: If you have Single Page Application (SPA), [configure your tag](https://yandex.com/support/metrica/code/counter-spa-setup.html).
+   Visit [Yandex Metrica](https://metrica.yandex.com/) and register your website to obtain a counter ID.
 
-```javascript
-pbjs.enableAnalytics({
-    provider: 'yandexAnalytics',
-    options: {
-        counters: [
-            123,
-        ],
-    },
-});
-```
+2. **Insert Counter Initialization Code:**
 
-## Where to find data
+   Retrieve the counter initialization code from the Yandex Metrica settings page at `https://metrica.yandex.com/settings?id={counterId}`, where `{counterId}` is your counter ID, and embed it into your website's HTML.
 
-Go to https://metrika.yandex.com/dashboard -> Prebid Analytics
+3. **Initialize the Adapter in Prebid.js:**
+
+   Configure the Yandex Analytics Adapter in your Prebid.js setup. For optimal performance and ease of management, it is preferred to use a single counter. Add the following JavaScript snippet, replacing `123` with your actual counter ID:
+
+   ```javascript
+   pbjs.enableAnalytics({
+     provider: "yandex",
+     options: {
+       // Replace 123 with your actual counter ID
+       // It's preferred to use a single counter for optimal performance and ease of management
+       counters: [123]
+     }
+   });
+   ```
+
+4. **Special Instructions for Single Page Applications (SPAs):**
+
+   If your website is an SPA, make sure to [configure your Metrica tag accordingly](https://yandex.com/support/metrica/code/counter-spa-setup.html).
+
+## Accessing Analytics Data
+
+You can view the collected analytics data in the Yandex Metrica dashboard. Navigate to [metrika.yandex.com/dashboard](https://metrika.yandex.com/dashboard) and look for the Prebid Analytics section to analyze your data.
