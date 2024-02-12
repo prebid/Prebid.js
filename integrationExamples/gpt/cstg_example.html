@@ -20,8 +20,8 @@
 
       // *********************************** UID2 ***********************************
       console.log('Initializing example.')
-      window.uid2_example_settings = {
-        UID2_BASE_URL: undefined,
+      window.example_settings = {
+        BASE_URL: undefined,
         SERVER_PUBLIC_KEY: undefined,
         SUBSCRIPTION_ID: undefined,
       };
@@ -55,11 +55,11 @@
 
       function setUid2Config(email) {
         // show credentials in the UI
-        document.querySelector('#uid2SubscriptionId').innerText = window.uid2_example_settings.SUBSCRIPTION_ID;
-        document.querySelector('#uid2PublicKey').innerText = window.uid2_example_settings.SERVER_PUBLIC_KEY;
-        const cstgParams = email ? {email, subscriptionId: window.uid2_example_settings.SUBSCRIPTION_ID, serverPublicKey: window.uid2_example_settings.SERVER_PUBLIC_KEY} : {};
+        document.querySelector('#uid2SubscriptionId').innerText = window.example_settings.SUBSCRIPTION_ID;
+        document.querySelector('#uid2PublicKey').innerText = window.example_settings.SERVER_PUBLIC_KEY;
+        const cstgParams = email ? {email, subscriptionId: window.example_settings.SUBSCRIPTION_ID, serverPublicKey: window.example_settings.SERVER_PUBLIC_KEY} : {};
         const uid2Params = {
-          uid2ApiBase: window.uid2_example_settings.UID2_BASE_URL,
+          uid2ApiBase: window.example_settings.BASE_URL,
           ...cstgParams,
         };
 
@@ -81,20 +81,14 @@
 
       // *********************************** EUID ***********************************
 
-      window.euid_example_settings = {
-        EUID_BASE_URL: undefined,
-        SERVER_PUBLIC_KEY: undefined,
-        SUBSCRIPTION_ID: undefined,
-      }
-
       function setEuidConfig(email) {
         // show credentials in the UI
-        document.querySelector('#euidSubscriptionId').innerText = window.euid_example_settings.SUBSCRIPTION_ID;
-        document.querySelector('#euidPublicKey').innerText = window.euid_example_settings.SERVER_PUBLIC_KEY;
+        document.querySelector('#euidSubscriptionId').innerText = window.example_settings.SUBSCRIPTION_ID;
+        document.querySelector('#euidPublicKey').innerText = window.example_settings.SERVER_PUBLIC_KEY;
         
-        const cstgParams = email ? {email, subscriptionId: window.euid_example_settings.SUBSCRIPTION_ID, serverPublicKey: window.euid_example_settings.SERVER_PUBLIC_KEY} : {};
+        const cstgParams = email ? {email, subscriptionId: window.example_settings.SUBSCRIPTION_ID, serverPublicKey: window.example_settings.SERVER_PUBLIC_KEY} : {};
         const euidParams = {
-          euidApiBase: window.euid_example_settings.EUID_BASE_URL,
+          euidApiBase: window.example_settings.BASE_URL,
           ...cstgParams,
         };
         pbjs.setConfig({
@@ -200,8 +194,8 @@
       pbjs.que = pbjs.que || [];
       pbjs.que.push(function () {
         // uncomment one to pull an existing token from localStorage on load
-        //setUid2Config();
-        setEuidConfig()
+        setUid2Config();
+        //setEuidConfig()
         pbjs.addAdUnits(adUnits);
         pbjs.requestBids();
       });
