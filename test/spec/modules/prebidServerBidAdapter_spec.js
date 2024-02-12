@@ -429,7 +429,7 @@ const RESPONSE_OPENRTB_VIDEO = {
               type: 'video',
               bidid: '654321',
               meta: {
-                rendererUrl: 'www.rendererurl.com'
+                rendererUrl: 'https://example-player.com/renderer.js'
               }
             },
             bidder: {
@@ -3143,7 +3143,7 @@ describe('S2S Adapter', function () {
         expect(response).to.have.property('bidderCode', 'appnexus');
         expect(response).to.have.property('requestId', '123');
         expect(response).to.have.property('cpm', 10);
-        expect(response).to.have.property('rendererurl', 'www.rendererurl.com');
+        expect(response).to.have.property('rendererurl', 'https://example-player.com/renderer.js');
       });
 
       it('handles response cache from ext.prebid.cache.vastXml', function () {
@@ -3301,7 +3301,7 @@ describe('S2S Adapter', function () {
     });
 
     if (FEATURES.NATIVE) {
-      it.only('handles OpenRTB native responses', function () {
+      it('handles OpenRTB native responses', function () {
         const stub = sinon.stub(auctionManager, 'index');
         stub.get(() => stubAuctionIndex({adUnits: REQUEST.ad_units}));
         const s2sConfig = Object.assign({}, CONFIG, {

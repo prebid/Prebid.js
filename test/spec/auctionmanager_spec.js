@@ -1124,6 +1124,32 @@ describe('auctionmanager.js', function () {
         assert.strictEqual(addedBid.renderer.url, myBid.renderer.url);
       });
 
+      it('installs renderer via dynamic renderer url', function () {
+        let myBid = mockBid();
+        myBid.rendererurl = 'https://example-player.com/renderer.js';
+        let bidRequest = mockBidRequest(myBid);
+        bidRequest.bids[0] = {
+          ...bidRequest.bids[0],
+          mediaTypes: {
+            video: {
+              context: 'outstream',
+            }
+          },
+        };
+        makeRequestsStub.returns([bidRequest]);
+
+        myBid.mediaType = 'video';
+        myBid.renderer = {
+          url: 'https://example-player.com/renderer.js',
+          render: sinon.spy()
+        };
+        spec.interpretResponse.returns(myBid);
+        auction.callBids();
+
+        const addedBid = auction.getBidsReceived().pop();
+        assert.strictEqual(addedBid.renderer.url, myBid.renderer.url);
+      });
+
       describe('bid for a regular unit and a video unit', () => {
         beforeEach(() => {
           const renderer = {
