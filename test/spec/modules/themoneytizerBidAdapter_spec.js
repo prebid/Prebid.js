@@ -32,9 +32,6 @@ const VALID_TEST_BID_BANNER = {
   params: {
     pid: 123456,
     test: 1,
-    formats: [],
-    placement: '12-abc',
-    isInternal: true,
     baseUrl: 'https://custom-endpoint.biddertmz.com/m/'
   },
   mediaTypes: {
@@ -187,9 +184,6 @@ describe('The Moneytizer Bidder Adapter', function () {
 
       it('should have correct params', function () {
         expect(payload.params.pid).to.equal(123456);
-        expect(payload.params.formats).to.be.an('array');
-        expect(payload.params.placement).to.be.a('string').that.is.not.empty;
-        expect(payload.params.isInternal).to.be.a('boolean').that.is.true;
       });
 
       it('should have correct referer info', function () {
@@ -264,14 +258,22 @@ describe('The Moneytizer Bidder Adapter', function () {
   describe('getUserSyncs', function () {
     const response = { body: SERVER_RESPONSE };
 
-    it('should have empty user sync with iframeEnabled to false', function () {
-      const result = spec.getUserSyncs({ iframeEnabled: false }, [response]);
+    it('should have empty user sync with iframeEnabled to false and pixelEnabled to false', function () {
+      const result = spec.getUserSyncs({ iframeEnabled: false, pixelEnabled: false }, [response]);
 
       expect(result).to.be.empty;
     });
 
     it('should have user sync with iframeEnabled to true', function () {
       const result = spec.getUserSyncs({ iframeEnabled: true }, [response]);
+
+      expect(result).to.not.be.empty;
+      expect(result[0].type).to.equal('image');
+      expect(result[0].url).to.equal(SERVER_RESPONSE.c_sync.bidder_status[0].usersync.url);
+    });
+
+    it('should have user sync with pixelEnabled to true', function () {
+      const result = spec.getUserSyncs({ pixelEnabled: true }, [response]);
 
       expect(result).to.not.be.empty;
       expect(result[0].type).to.equal('image');
