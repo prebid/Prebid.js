@@ -15,6 +15,16 @@ import {handleRender} from '../../../src/adRendering.js';
 var CONSTANTS = require('src/constants.json');
 
 describe('secureCreatives', () => {
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.sandbox.create();
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   function makeEvent(ev) {
     return Object.assign({origin: 'mock-origin', ports: []}, ev)
   }
@@ -63,14 +73,44 @@ describe('secureCreatives', () => {
       }
     });
 
-    it('does not invoke renderFn, but the renderer instead, if the ad has one', () => {
-      const renderer = {
-        url: 'some-custom-renderer',
-        render: sinon.spy()
-      }
-      handleRender(renderFn, {bidResponse: {renderer}});
-      sinon.assert.notCalled(renderFn);
-      sinon.assert.called(renderer.render);
+    describe('when the ad has a renderer', () => {
+      let bidResponse;
+      beforeEach(() => {
+        sandbox.stub(events, 'emit');
+        bidResponse = {
+          adId: 'mock-ad-id',
+          renderer: {
+            url: 'some-custom-renderer',
+            render: sinon.stub()
+          }
+        }
+      });
+
+      it('does not invoke renderFn, but the renderer instead', () => {
+        handleRender(renderFn, {bidResponse});
+        sinon.assert.notCalled(renderFn);
+        sinon.assert.called(bidResponse.renderer.render);
+      });
+
+      it('emits AD_RENDER_SUCCEDED', () => {
+        handleRender(renderFn, {bidResponse});
+        sinon.assert.calledWith(events.emit, CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED, sinon.match({
+          bid: bidResponse,
+          adId: bidResponse.adId
+        }));
+      });
+
+      it('emits AD_RENDER_FAILED', () => {
+        const err = new Error('error message');
+        bidResponse.renderer.render.throws(err);
+        handleRender(renderFn, {bidResponse});
+        sinon.assert.calledWith(events.emit, CONSTANTS.EVENTS.AD_RENDER_FAILED, sinon.match({
+          bid: bidResponse,
+          adId: bidResponse.adId,
+          reason: CONSTANTS.AD_RENDER_FAILED_REASON.EXCEPTION,
+          message: err.message
+        }));
+      })
     });
 
     ['ad', 'adUrl'].forEach((prop) => {
