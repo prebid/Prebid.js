@@ -17,7 +17,6 @@ export const spec = {
   gvlid: GVLID,
 
   isBidRequestValid: (bid) => {
-    logInfo("test");
     return Boolean(bid.bidId && bid.params && !isNaN(bid.params.publisherId) && bid.params.host == 'prebid');
   },
 
