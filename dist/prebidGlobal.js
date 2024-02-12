@@ -1,0 +1,26 @@
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.getGlobal = getGlobal;
+exports.registerModule = registerModule;
+// if $$PREBID_GLOBAL$$ already exists in global document scope, use it, if not, create the object
+// global defination should happen BEFORE imports to avoid global undefined errors.
+/* global $$DEFINE_PREBID_GLOBAL$$ */
+const scope = !true ? {} : window;
+const global = scope.pbjs = scope.pbjs || {};
+global.cmd = global.cmd || [];
+global.que = global.que || [];
+
+// create a pbjs global pointer
+if (scope === window) {
+  scope._pbjsGlobals = scope._pbjsGlobals || [];
+  scope._pbjsGlobals.push("pbjs");
+}
+function getGlobal() {
+  return global;
+}
+function registerModule(name) {
+  global.installedModules.push(name);
+}
