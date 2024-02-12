@@ -241,7 +241,7 @@ function createImp(bid) {
  *
  * @param {*} bid a Prebid.js bid (request) object
  * @param {string} mediaType the mediaType or the wildcard '*'
- * @param {string|array} size the size array or the wildcard '*'
+ * @param {string|Array} size the size array or the wildcard '*'
  * @returns {number|boolean}
  */
 function getFloor(bid, mediaType, size = '*') {

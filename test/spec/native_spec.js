@@ -19,7 +19,7 @@ const utils = require('src/utils');
 
 const bid = {
   adId: '123',
-  transactionId: 'au',
+  adUnitId: 'au',
   native: {
     title: 'Native Creative',
     body: 'Cool description great stuff',
@@ -49,7 +49,7 @@ const bid = {
 
 const ortbBid = {
   adId: '123',
-  transactionId: 'au',
+  adUnitId: 'au',
   native: {
     ortb: {
       assets: [
@@ -106,7 +106,7 @@ const ortbBid = {
 
 const completeNativeBid = {
   adId: '123',
-  transactionId: 'au',
+  adUnitId: 'au',
   native: {
     ...bid.native,
     ...ortbBid.native
@@ -157,7 +157,7 @@ const ortbRequest = {
 }
 
 const bidWithUndefinedFields = {
-  transactionId: 'au',
+  adUnitId: 'au',
   native: {
     title: 'Native Creative',
     body: undefined,
@@ -209,7 +209,7 @@ describe('native.js', function () {
 
   it('sends placeholders for configured assets', function () {
     const adUnit = {
-      transactionId: 'au',
+      adUnitId: 'au',
       nativeParams: {
         body: { sendId: true },
         clickUrl: { sendId: true },
@@ -246,7 +246,7 @@ describe('native.js', function () {
 
   it('should only include native targeting keys with values', function () {
     const adUnit = {
-      transactionId: 'au',
+      adUnitId: 'au',
       nativeParams: {
         body: { sendId: true },
         clickUrl: { sendId: true },
@@ -273,7 +273,7 @@ describe('native.js', function () {
 
   it('should only include targeting that has sendTargetingKeys set to true', function () {
     const adUnit = {
-      transactionId: 'au',
+      adUnitId: 'au',
       nativeParams: {
         image: {
           required: true,
@@ -294,7 +294,7 @@ describe('native.js', function () {
 
   it('should only include targeting if sendTargetingKeys not set to false', function () {
     const adUnit = {
-      transactionId: 'au',
+      adUnitId: 'au',
       nativeParams: {
         image: {
           required: true,
@@ -347,7 +347,7 @@ describe('native.js', function () {
 
   it('should copy over rendererUrl to bid object and include it in targeting', function () {
     const adUnit = {
-      transactionId: 'au',
+      adUnitId: 'au',
       nativeParams: {
         image: {
           required: true,
@@ -382,7 +382,7 @@ describe('native.js', function () {
 
   it('should copy over adTemplate to bid object and include it in targeting', function () {
     const adUnit = {
-      transactionId: 'au',
+      adUnitId: 'au',
       nativeParams: {
         image: {
           required: true,
@@ -724,7 +724,7 @@ describe('validate native openRTB', function () {
 
 describe('validate native', function () {
   const adUnit = {
-    transactionId: 'test_adunit',
+    adUnitId: 'test_adunit',
     mediaTypes: {
       native: {
         title: {
@@ -749,7 +749,7 @@ describe('validate native', function () {
   let validBid = {
     adId: 'abc123',
     requestId: 'test_bid_id',
-    transactionId: 'test_adunit',
+    adUnitId: 'test_adunit',
     adUnitCode: '123/prebid_native_adunit',
     bidder: 'test_bidder',
     native: {
@@ -776,7 +776,7 @@ describe('validate native', function () {
   let noIconDimBid = {
     adId: 'abc234',
     requestId: 'test_bid_id',
-    transactionId: 'test_adunit',
+    adUnitId: 'test_adunit',
     adUnitCode: '123/prebid_native_adunit',
     bidder: 'test_bidder',
     native: {
@@ -799,7 +799,7 @@ describe('validate native', function () {
   let noImgDimBid = {
     adId: 'abc345',
     requestId: 'test_bid_id',
-    transactionId: 'test_adunit',
+    adUnitId: 'test_adunit',
     adUnitCode: '123/prebid_native_adunit',
     bidder: 'test_bidder',
     native: {
@@ -836,7 +836,7 @@ describe('validate native', function () {
 
   it('should convert from old-style native to OpenRTB request', () => {
     const adUnit = {
-      transactionId: 'test_adunit',
+      adUnitId: 'test_adunit',
       mediaTypes: {
         native: {
           title: {
@@ -1043,7 +1043,7 @@ describe('validate native', function () {
       const validBidRequests = [{
         bidId: 'bidId3',
         adUnitCode: 'adUnitCode3',
-        transactionId: 'transactionId3',
+        adUnitId: 'transactionId3',
         mediaTypes: {
           banner: {}
         },
