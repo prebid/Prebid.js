@@ -10,6 +10,14 @@ Maintainer: tech@themoneytizer.com
 
 Module that connects to The Moneytizer demand sources
 
+## Bid Parameters
+
+| Key             | Required | Example                                      | Description                            |
+| --------------- | -------- | ---------------------------------------------| ---------------------------------------|
+| `pid`           | yes      | `12345`                                      | The Moneytizer's publisher token       |
+| `test`          | no       | `1`                                          | Set to 1 to receive a test bid response|
+| `baseUrl`       | no       | `'https://custom-endpoint.biddertmz.com/m/'` | Call on custom endpoint                |
+
 ## Test parameters
 
 ```js
