@@ -143,6 +143,12 @@ export const spec = {
 
     payload.device.ua = navigator.userAgent;
     payload.device.language = navigator.language;
+    payload.device.w = screen.width;
+    payload.device.h = screen.height;
+
+    if (bidderRequest?.ortb2?.device?.sua) {
+      payload.device.sua = bidderRequest.ortb2.device.sua;
+    }
 
     if (params.test) {
       payload.test = params.test;
