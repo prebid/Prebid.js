@@ -48,6 +48,10 @@ pbjs.setConfig({
                 bidder: 'appnexus',
                 iframeURL: 'https://appnexus.com:8080/topics/fpd/topic.html', // dummy URL
                 expiry: 7 // Configurable expiry days
+            }, {
+                bidder: 'onetag',
+                iframeURL: 'https://onetag-sys.com/static/topicsapi.html',
+                expiry: 7 // Configurable expiry days
             }]
         }
         ....
