@@ -27,7 +27,7 @@ The following parameters apply only to the UID2 User ID Module integration.
 | --- | --- | --- | --- | --- |
 | name | Required | String | ID value for the UID2 module. Must be `"uid2"`. | `"uid2"` |
 | params.uid2ApiBase | Optional | String | Overrides the default UID2 API endpoint. | `"https://prod.uidapi.com"` _(default)_|
-| params.storage | Optional | String | Specify whether to use `cookie` or `localStorage` for module-internal storage. It is recommended to not provide this and allow the module to use the default. | `localStorage` _(default)_ |
+| params.storage | Optional | String | Specify whether to use `cookie` or `localStorage` for module-internal storage. It is recommended to not provide this and allow the module to use the default. | `"localStorage"` _(default)_ |
 
 ### Client-Side Integration
 
@@ -59,7 +59,7 @@ The following parameters apply to the UID2 User ID Module if you are following t
 | Param under userSync.userIds[] | Scope | Type | Description | Example |
 | --- | --- | --- | --- | --- |
 | params.uid2Token | Optional | Object | The initial UID2 token. This should be `body` element of the decrypted response from a call to the `/token/generate` or `/token/refresh` endpoint. | See [Sample Token](#sample-token). |
-| params.uid2Cookie | Optional | String | The name of a cookie which holds the initial UID2 token, set by the server. The cookie should contain JSON in the same format as the uid2Token param. **If uid2Token is supplied, this param is ignored.** | See [Sample Token](#sample-token). |
+| params.uid2Cookie | Optional | String | The name of a cookie which holds the initial UID2 token, set by the server. The cookie should contain JSON in the same format as the uid2Token param. **If uid2Token is supplied, this param is ignored.** | `"uid2_pub_cookie"` |
 
 ## Sample Token
 
