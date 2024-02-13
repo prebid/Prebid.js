@@ -45,6 +45,7 @@
  * @property {refererInfo} refererInfo - referer info object
  * @property {string} [tid] - random UUID (used for s2s)
  * @property {string} [src] - s2s or client (used for s2s)
+ * @property {import('./types/ortb2.js').Ortb2.Ortb2Object} [ortb2] Global (not specific to any adUnit) first party data to use for all requests in this auction.
  */
 
 /**
