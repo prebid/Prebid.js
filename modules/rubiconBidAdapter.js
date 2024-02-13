@@ -22,7 +22,10 @@ import {
   _each
 } from '../src/utils.js';
 import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
-import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ */
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
@@ -766,19 +769,6 @@ export const spec = {
         url: `https://${rubiConf.syncHost || 'eus'}.rubiconproject.com/usync.html` + params
       };
     }
-  },
-  /**
-   * Covert bid param types for S2S
-   * @param {Object} params bid params
-   * @param {Boolean} isOpenRtb boolean to check openrtb2 protocol
-   * @return {Object} params bid params
-   */
-  transformBidParams: function(params, isOpenRtb) {
-    return convertTypes({
-      'accountId': 'number',
-      'siteId': 'number',
-      'zoneId': 'number'
-    }, params);
   }
 };
 
@@ -1183,8 +1173,7 @@ export function hasValidVideoParams(bid) {
   var requiredParams = {
     mimes: arrayType,
     protocols: arrayType,
-    linearity: numberType,
-    api: arrayType
+    linearity: numberType
   }
   // loop through each param and verify it has the correct
   Object.keys(requiredParams).forEach(function(param) {
@@ -1199,7 +1188,7 @@ export function hasValidVideoParams(bid) {
 /**
  * Make sure the required params are present
  * @param {Object} schain
- * @param {Bool}
+ * @param {boolean}
  */
 export function hasValidSupplyChainParams(schain) {
   let isValid = false;

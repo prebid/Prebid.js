@@ -8,6 +8,11 @@ import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { deepClone, logError, deepAccess } from '../src/utils.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const ENDPOINT = 'https://onetag-sys.com/prebid-request';
 const USER_SYNC_ENDPOINT = 'https://onetag-sys.com/usync/';
 const BIDDER_CODE = 'onetag';
@@ -87,6 +92,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   const connection = navigator.connection || navigator.webkitConnection;
   payload.networkConnectionType = (connection && connection.type) ? connection.type : null;
   payload.networkEffectiveConnectionType = (connection && connection.effectiveType) ? connection.effectiveType : null;
+  payload.fledgeEnabled = Boolean(bidderRequest && bidderRequest.fledgeEnabled)
   return {
     method: 'POST',
     url: ENDPOINT,
@@ -101,10 +107,10 @@ function interpretResponse(serverResponse, bidderRequest) {
   if (!body || (body.nobid && body.nobid === true)) {
     return bids;
   }
-  if (!body.bids || !Array.isArray(body.bids) || body.bids.length === 0) {
+  if (!body.fledgeAuctionConfigs && (!body.bids || !Array.isArray(body.bids) || body.bids.length === 0)) {
     return bids;
   }
-  body.bids.forEach(bid => {
+  Array.isArray(body.bids) && body.bids.forEach(bid => {
     const responseBid = {
       requestId: bid.requestId,
       cpm: bid.cpm,
@@ -121,6 +127,9 @@ function interpretResponse(serverResponse, bidderRequest) {
       },
       ttl: bid.ttl || 300
     };
+    if (bid.dsa) {
+      responseBid.meta.dsa = bid.dsa;
+    }
     if (bid.mediaType === BANNER) {
       responseBid.ad = bid.ad;
     } else if (bid.mediaType === VIDEO) {
@@ -141,7 +150,16 @@ function interpretResponse(serverResponse, bidderRequest) {
     }
     bids.push(responseBid);
   });
-  return bids;
+
+  if (body.fledgeAuctionConfigs && Array.isArray(body.fledgeAuctionConfigs)) {
+    const fledgeAuctionConfigs = body.fledgeAuctionConfigs
+    return {
+      bids,
+      fledgeAuctionConfigs,
+    }
+  } else {
+    return bids;
+  }
 }
 
 function createRenderer(bid, rendererOptions = {}) {
