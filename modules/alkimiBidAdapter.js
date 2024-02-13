@@ -46,6 +46,8 @@ export const spec = {
     const alkimiConfig = config.getConfig('alkimi')
     const fullPageAuction = bidderRequest.ortb2?.source?.ext?.full_page_auction
     const source = fullPageAuction != undefined ? { ext: { full_page_auction: fullPageAuction } } : undefined
+    const walletID = alkimiConfig && alkimiConfig.walletID
+    const user = walletID != undefined ? { ext: { walletID: walletID } } : undefined
 
     let payload = {
       requestId: generateUUID(),
@@ -62,6 +64,7 @@ export const spec = {
       },
       ortb2: {
         source,
+        user,
         site: {
           keywords: bidderRequest.ortb2?.site?.keywords
         },
