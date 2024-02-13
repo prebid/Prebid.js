@@ -4,6 +4,7 @@
 import CONSTANTS from '../src/constants.json';
 import adaptermanager from '../src/adapterManager.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import { config } from '../src/config.js';
 import { logError, logInfo, logWarn } from '../src/utils.js';
 
 // Standard Analytics Adapter code
@@ -56,21 +57,7 @@ export const filterDuplicateAdUnits = (adUnits) =>
     adUnit
   ])).values())
 
-/**
- * // cpmms, zoneIndexes, and zoneNames all have the same length
- * @typedef {{
- *   auc: string
- *   codes?: string[]
- *   zoneIndexes?: number[]
- *   zoneNames?: string[]
- * }} AuctionInitSummary
- */
-/**
- * @param {AuctionEventArgs} args
- * @param {MavenDistributionAdapterConfig} adapterConfig
- * @return {AuctionEndSummary}
- */
-export function summarizeAuctionInit(args, adapterConfig) {
+function getCommonEventToSend(args, adapterConfig) {
   const zoneNames = []
   const zoneIndexes = []
   const adUnitCodes = []
@@ -125,6 +112,79 @@ export function summarizeAuctionInit(args, adapterConfig) {
  * // cpmms, zoneIndexes, and zoneNames all have the same length
  * @typedef {{
  *   auc: string
+ *   codes?: string[]
+ *   zoneIndexes?: number[]
+ *   zoneNames?: string[]
+ * }} AuctionInitSummary
+ */
+/**
+ * @param {AuctionEventArgs} args
+ * @param {MavenDistributionAdapterConfig} adapterConfig
+ * @return {AuctionEndSummary}
+ */
+export function summarizeAuctionInit(args, adapterConfig) {
+  const floorData = config.getConfig('floors');
+  const flattenedBidRequests = args.bidderRequests.reduce((total, curr) => {
+    return [...total, ...curr.bids]
+  }, [])
+  const bidderss = []
+  args.adUnits.forEach(adUnit => {
+    const bidders = []
+    flattenedBidRequests.forEach(fbr => {
+      if (fbr.adUnitCode === adUnit.code) {
+        bidders.push(fbr.bidder)
+      }
+    })
+    bidderss.push(bidders)
+  })
+  const eventToSend = getCommonEventToSend(args, adapterConfig)
+  eventToSend.bidderss = bidderss
+  eventToSend.floor_price = floorData?.data?.values
+  eventToSend.timeout = args.timeout
+  return eventToSend
+}
+
+const getBidStatusAmtsAndResponseTime = (key, bidRequest, args) => {
+  const BID_STATUS_MAP = {
+    bidsRejected: () => ({
+      bidStatus: 'error',
+      bidAmount: 0,
+      bidResponseTime: null,
+    }),
+    noBids: () => ({
+      bidStatus: 'nobid',
+      bidAmount: 0,
+      bidResponseTime: null,
+    }),
+    timeout: () => ({
+      bidStatus: 'timeout',
+      bidAmount: 0,
+      bidResponseTime: args.timeout,
+    }),
+    bid: (bid) => ({
+      bidStatus: 'bid',
+      bidAmount: bid.cpm * 1000,
+      bidResponseTime: bid.timeToRespond,
+    })
+  };
+  const filteredBids = (args[key] || []).filter(bid => bid.bidder === bidRequest.bidder && bid.adUnitCode === bidRequest.adUnitCode);
+  if (filteredBids?.length > 0) {
+    if (key === 'noBids' || key === 'bidsRejected') {
+      return BID_STATUS_MAP[key]();
+    }
+    const bid = filteredBids[0];
+    if (bid.timeToRespond < args.timeout) {
+      return BID_STATUS_MAP.bid(bid)
+    }
+    return BID_STATUS_MAP.timeout();
+  }
+  return false;
+};
+
+/**
+ * // cpmms, zoneIndexes, and zoneNames all have the same length
+ * @typedef {{
+ *   auc: string
  *   cpmms: number[]
  *   codes?: string[]
  *   zoneIndexes?: number[]
@@ -141,13 +201,50 @@ export function summarizeAuctionEnd(args, adapterConfig) {
   /** @type {{[code: string]: number}} */
   const cpmmsMap = {}
   /** @type {AuctionEndSummary} */
-  const eventToSend = summarizeAuctionInit(args, adapterConfig)
+  const eventToSend = getCommonEventToSend(args, adapterConfig)
+  const bidderss = []
+  const bid_statusss = []
+  const bid_amountss = []
+  const bid_response_timess = []
+  const flattenedBidRequests = args.bidderRequests.reduce((total, curr) => {
+    return [...total, ...curr.bids]
+  }, []);
   args.adUnits.forEach(adUnit => {
     cpmmsMap[adUnit.code] = {}
     cpmmsMap[adUnit.code].cpmm = 0
     if (adUnit.mediaTypes.video?.context === 'adpod') {
       cpmmsMap[adUnit.code].adPodLength = adUnit.mediaTypes.video.durationRangeSec
     }
+    const bidders = []
+    const bid_statuss = []
+    const bid_amounts = []
+    const bid_response_times = []
+    flattenedBidRequests.forEach(fbr => {
+      if (fbr.adUnitCode === adUnit.code) {
+        bidders.push(fbr.bidder)
+        // Find bid_status, bid_amounts, bid_response_times
+        // Search in array bidder and adUnitCode combo
+        // Check in rejected -> error, bid_amt =0, bidresponse time null
+        // check in no bids -> no bid, bid_amt = 0, bidresponsetime null
+        // check in bidreceived => br.timeToRespond < timeout -> bid, bidamount = br.cpm * 1000, bid_respnsetime=> br.timeToRespond
+        // check in bidreceived => br.timeToRespond > timeout -> timeout, bidamount = 0, bid_response_time = timeout
+        const keys = ['bidsRejected', 'noBids', 'bidsReceived'];
+        for (let i = 0; i < keys.length; i += 1) {
+          const status = keys[i];
+          const data = getBidStatusAmtsAndResponseTime(status, fbr, args)
+          if (data) {
+            bid_statuss.push(data.bidStatus)
+            bid_amounts.push(data.bidAmount)
+            bid_response_times.push(data.bidResponseTime)
+            break
+          }
+        }
+      }
+    });
+    bidderss.push(bidders)
+    bid_statusss.push(bid_statuss)
+    bid_amountss.push(bid_amounts)
+    bid_response_timess.push(bid_response_times)
   })
 
   args.bidsReceived.forEach(bid => {
@@ -171,6 +268,10 @@ export function summarizeAuctionEnd(args, adapterConfig) {
   eventToSend.ts = args.auctionEnd
   eventToSend.tspl = args.auctionEnd - (Date.now() - (window.performance.now() | 0))
   eventToSend.tspl_q = window.performance.now() | 0
+  eventToSend.bidderss = bidderss
+  eventToSend.bid_statusss = bid_statusss
+  eventToSend.bid_amountss = bid_amountss
+  eventToSend.bid_response_timess = bid_response_timess
   return eventToSend
 }
 
