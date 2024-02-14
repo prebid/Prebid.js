@@ -1007,8 +1007,8 @@ function addDesiredSegtaxes(bidderRequest, target) {
   if (rubiConf.readTopics === false) {
     return;
   }
-  let iSegments = [1, 2, 5, 6, 507].concat(rubiConf.sendUserSegtax?.map(seg => Number(seg)));
-  let vSegments = [4, 508].concat(rubiConf.sendSiteSegtax?.map(seg => Number(seg)));
+  let iSegments = [1, 2, 5, 6, 507].concat(rubiConf.sendUserSegtax?.map(seg => Number(seg)) || []);
+  let vSegments = [4, 508].concat(rubiConf.sendSiteSegtax?.map(seg => Number(seg)) || []);
   let userData = bidderRequest.ortb2?.user?.data || [];
   userData.forEach(topic => {
     const taxonomy = Number(topic.ext?.segtax);
