@@ -150,7 +150,7 @@ export function summarizeAuctionInit(args, adapterConfig) {
         if (!floor && fbr?.mediaTypes?.video) {
           floor = floorData?.data?.values?.video
         }
-        floor = (floor || 0) * 1000
+        floor = Math.round((floor || 0) * 1000)
         floors.push(floor)
       }
     })
@@ -185,13 +185,12 @@ const getBidStatusAmtsAndResponseTime = (key, bidRequest, args) => {
     }),
     bid: (bid) => ({
       bidStatus: 'bid',
-      bidAmount: bid.cpm * 1000,
+      bidAmount: Math.round((bid.cpm || 0) * 1000),
       bidResponseTime: bid.timeToRespond,
     })
   }
   const filteredBids = (args[key] || []).filter((bid) => (
-    bid.bidder === bidRequest.bidder &&
-    bid.adUnitCode === bidRequest.adUnitCode
+    (bid.bidId || bid.requestId) === bidRequest.bidId
   ))
   if (filteredBids?.length > 0) {
     if (key === 'noBids' || key === 'bidsRejected') {
