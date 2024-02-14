@@ -214,7 +214,7 @@ const getBidStatusAmtsAndResponseTime = (key, bidRequest, args) => {
  *   codes?: string[]
  *   zoneIndexes?: number[]
  *   zoneNames?: string[]
- *   bidderss: string[][] 
+ *   bidderss: string[][]
  *   bid_statusss: Array<Array<nobid | bid | timeout | error>>
  *   bid_amountss: Array<Array<number>>
  *   bid_response_timess: Array<Array<number | null>>
