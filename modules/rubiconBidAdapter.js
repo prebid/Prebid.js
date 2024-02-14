@@ -530,7 +530,6 @@ export const spec = {
     }
 
     addDesiredSegtaxes(bidderRequest, data);
-    
     // loop through userIds and add to request
     if (bidRequest.userIdAsEids) {
       bidRequest.userIdAsEids.forEach(eid => {
