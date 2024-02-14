@@ -26,6 +26,7 @@
     "priceFloors",
     "rtdModule",
     "rubiconBidAdapter",
+    "riseBidAdapter",
     "schain",
     "sharethroughBidAdapter",
     "sonobiBidAdapter",
