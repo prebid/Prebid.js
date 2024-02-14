@@ -2576,7 +2576,8 @@ describe('The Criteo bidding adapter', function () {
             sellerSignalsPerImp: {
               'test-bidId': {
                 foo2: 'bar2',
-              }
+                currency: 'USD'
+              },
             },
           },
         },
@@ -2646,8 +2647,9 @@ describe('The Criteo bidding adapter', function () {
             foo: 'bar',
             foo2: 'bar2',
             floor: 1,
-            sellerCurrency: 'EUR',
+            currency: 'USD',
           },
+          sellerCurrency: 'USD'
         },
       });
       expect(interpretedResponse.fledgeAuctionConfigs[1]).to.deep.equal({
@@ -2669,8 +2671,8 @@ describe('The Criteo bidding adapter', function () {
           sellerSignals: {
             foo: 'bar',
             floor: 1,
-            sellerCurrency: 'EUR',
           },
+          sellerCurrency: '???'
         },
       });
     });
