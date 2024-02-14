@@ -529,12 +529,8 @@ export const spec = {
       data['o_ae'] = 1;
     }
 
-    const topics = getCarbonTopics(bidderRequest);
-    if (topics) {
-      Object.keys(topics).forEach(field => {
-        data[field] = topics[field];
-      });
-    }
+    addDesiredSegtaxes(bidderRequest, data);
+    
     // loop through userIds and add to request
     if (bidRequest.userIdAsEids) {
       bidRequest.userIdAsEids.forEach(eid => {
@@ -1008,21 +1004,20 @@ function applyFPD(bidRequest, mediaType, data) {
   }
 }
 
-function getCarbonTopics(bidderRequest) {
+function addDesiredSegtaxes(bidderRequest, target) {
   if (rubiConf.readTopics === false) {
-    return undefined;
+    return;
   }
-  let fields = {};
+  let iSegments = [1, 2, 5, 6, 507].concat(rubiConf.sendUserSegtax?.map(seg => Number(seg)));
+  let vSegments = [4, 508].concat(rubiConf.sendSiteSegtax?.map(seg => Number(seg)));
   let userData = bidderRequest.ortb2?.user?.data || [];
   userData.forEach(topic => {
-    const taxonomy = topic.ext?.segtax;
-    if (taxonomy == 507 || taxonomy == 508) {
-      const domain = bidderRequest.refererInfo.domain;
-      fields[`s_segs_${taxonomy}_${domain}`] = topic.segment?.map(seg => seg.id).join(',')
+    const taxonomy = Number(topic.ext?.segtax);
+    let char;
+    if ((iSegments.includes(taxonomy) && (char = 'i')) || (vSegments.includes(taxonomy) && (char = 'v'))) {
+      target[`tg_${char}.tax${taxonomy}`] = topic.segment?.map(seg => seg.id).join(',')
     }
   })
-  let hasProps = Object.keys(fields).length > 0;
-  return hasProps ? fields : undefined;
 }
 
 /**
