@@ -159,7 +159,7 @@ export function summarizeAuctionInit(args, adapterConfig) {
   })
   const eventToSend = getCommonEventToSend(args, adapterConfig)
   eventToSend.bidderss = bidderss
-  eventToSend.floor_price = floorss
+  eventToSend.floor_pricess = floorss
   eventToSend.timeout = args.timeout
   return eventToSend
 }
