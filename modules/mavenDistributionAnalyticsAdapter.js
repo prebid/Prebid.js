@@ -67,7 +67,7 @@ function getCommonEventToSend(args, adapterConfig) {
   let allZoneNamesNonNull = true
 
   args.adUnits.forEach(adUnit => {
-    const zoneIndex = getAdIndex(adUnit);
+    const zoneIndex = getAdIndex(adUnit)
     const zoneName = adUnit.model?.zone ?? null
     const zoneIndexNonNull = zoneIndex != null
     const zoneNameNonNull = zoneName != null
@@ -126,7 +126,7 @@ function getCommonEventToSend(args, adapterConfig) {
  * @return {AuctionEndSummary}
  */
 export function summarizeAuctionInit(args, adapterConfig) {
-  const floorData = config.getConfig('floors');
+  const floorData = config.getConfig('floors')
   const flattenedBidRequests = args.bidderRequests.reduce((total, curr) => {
     return [...total, ...curr.bids]
   }, [])
@@ -139,16 +139,16 @@ export function summarizeAuctionInit(args, adapterConfig) {
       if (fbr.adUnitCode === adUnit.code) {
         bidders.push(fbr.bidder)
         // Initiate with the with bid floor value
-        let floor = fbr?.floorData?.floorMin;
+        let floor = fbr?.floorData?.floorMin
         // If value not found and mediaType is banner
         // Add the default the default banner value from global config
         if (!floor && fbr?.mediaTypes?.banner) {
-          floor = floorData?.data?.values?.banner;
+          floor = floorData?.data?.values?.banner
         }
         // If value not found and mediaType is video
         // Add the default the default video value from global config
         if (!floor && fbr?.mediaTypes?.video) {
-          floor = floorData?.data?.values?.video;
+          floor = floorData?.data?.values?.video
         }
         floor = (floor || 0) * 1000
         floors.push(floor)
@@ -188,23 +188,23 @@ const getBidStatusAmtsAndResponseTime = (key, bidRequest, args) => {
       bidAmount: bid.cpm * 1000,
       bidResponseTime: bid.timeToRespond,
     })
-  };
+  }
   const filteredBids = (args[key] || []).filter((bid) => (
     bid.bidder === bidRequest.bidder &&
     bid.adUnitCode === bidRequest.adUnitCode
-  ));
+  ))
   if (filteredBids?.length > 0) {
     if (key === 'noBids' || key === 'bidsRejected') {
-      return BID_STATUS_MAP[key]();
+      return BID_STATUS_MAP[key]()
     }
-    const bid = filteredBids[0];
+    const bid = filteredBids[0]
     if (bid.timeToRespond < args.timeout) {
       return BID_STATUS_MAP.bid(bid)
     }
-    return BID_STATUS_MAP.timeout();
+    return BID_STATUS_MAP.timeout()
   }
-  return false;
-};
+  return false
+}
 
 /**
  * // cpmms, zoneIndexes, bidderss, bid_statusss, bid_response_timess
@@ -238,7 +238,7 @@ export function summarizeAuctionEnd(args, adapterConfig) {
   const bidResponseTimess = []
   const flattenedBidRequests = args.bidderRequests.reduce((total, curr) => {
     return [...total, ...curr.bids]
-  }, []);
+  }, [])
   args.adUnits.forEach(adUnit => {
     cpmmsMap[adUnit.code] = {}
     cpmmsMap[adUnit.code].cpmm = 0
@@ -258,9 +258,9 @@ export function summarizeAuctionEnd(args, adapterConfig) {
         // found we look into the bidsReceived and check whether the responsetime is greater
         // or less than timeout and assign it either a timeout bid or a valid valid
         // The bidsReceived array has both timeout bids and the valid bids
-        const keys = ['bidsRejected', 'noBids', 'bidsReceived'];
+        const keys = ['bidsRejected', 'noBids', 'bidsReceived']
         for (let i = 0; i < keys.length; i += 1) {
-          const status = keys[i];
+          const status = keys[i]
           const data = getBidStatusAmtsAndResponseTime(status, fbr, args)
           if (data) {
             bidStatuss.push(data.bidStatus)
@@ -270,7 +270,7 @@ export function summarizeAuctionEnd(args, adapterConfig) {
           }
         }
       }
-    });
+    })
     bidderss.push(bidders)
     bidStatusss.push(bidStatuss)
     bidAmountss.push(bidAmounts)
