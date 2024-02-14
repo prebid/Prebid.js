@@ -2741,8 +2741,8 @@ describe('the rubicon adapter', function () {
             }]
           }
           const slotParams = spec.createSlotParams(bidderRequest.bids[0], localBidderRequest);
-          expect(slotParams.s_segs_507_bob).is.equal('1,2');
-          expect(slotParams.s_segs_508_bob).is.equal('3,4');
+          expect(slotParams['tg_i.tax507']).is.equal('1,2');
+          expect(slotParams['tg_v.tax508']).is.equal('3,4');
         });
       });
 
