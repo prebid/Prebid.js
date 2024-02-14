@@ -2,7 +2,7 @@ import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { deepAccess, logError } from '../src/utils.js';
 import { config } from '../src/config.js';
-// import { createFloorsDataForAuction, handleSetFloorsConfig } from './priceFloors.js';
+import { createFloorsDataForAuction, requestBidsHook } from './priceFloors.js';
 
 
 const MODULE_NAME = 'realTimeData';
@@ -26,8 +26,11 @@ function fetchDataFromURL(url) {
         reject(error);
       }
     };
+    // TODO: Check condition.
+    if (config.getConfig('floors').data.floorProvider !== "PubxFloorProvider") {
+      ajax(url, callback);
+    }
 
-    ajax(url, callback);
   })
 }
 
@@ -45,9 +48,9 @@ function setDataToConfig(url, reqBidsConfigObj) {
         }
       };
       config.setConfig(floors);
-      // createFloorsDataForAuction(reqBidsConfigObj.adUnits, reqBidsConfigObj.auctionId);
+      createFloorsDataForAuction(reqBidsConfigObj.adUnits, reqBidsConfigObj.auctionId);
       // handleSetFloorsConfig(floors);
-      console.log("pubx floors", pbjs.getConfig('floors'));
+      // requestBidsHook(reqBidsConfigObj);
       window.sessionStorage.setItem('pubxFloors', JSON.stringify(floors));
     })
     .catch(err => {
@@ -56,7 +59,6 @@ function setDataToConfig(url, reqBidsConfigObj) {
 }
 
 function getBidRequestData(reqBidsConfigObj, callback, rtd_config, userConsent) {
-  console.log("pubx reqBidsConfigObj", reqBidsConfigObj);
   const endpoint = deepAccess(rtd_config, 'params.endpoint');
   setDataToConfig(endpoint, reqBidsConfigObj);
 }
