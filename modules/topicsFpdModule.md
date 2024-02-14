@@ -41,6 +41,10 @@ pbjs.setConfig({
                 iframeURL: 'https://topics.authorizedvault.com/topicsapi.html',
                 expiry: 7 // Configurable expiry days
             },{
+                bidder: 'openx',
+                iframeURL: 'https://pa.openx.net/topics_frame.html',
+                expiry: 7 // Configurable expiry days
+            },{
                 bidder: 'rubicon',
                 iframeURL: 'https://rubicon.com:8080/topics/fpd/topic.html', // dummy URL
                 expiry: 7 // Configurable expiry days
