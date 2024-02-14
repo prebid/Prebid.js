@@ -2719,9 +2719,15 @@ describe('the rubicon adapter', function () {
           expect(slotParams['o_ae']).to.equal(1)
         });
 
-        it('should pass along Carbon segtaxes, but not non-Carbon ones', () => {
+        it('should pass along desired segtaxes, but not non-desired ones', () => {
           const localBidderRequest = Object.assign({}, bidderRequest);
           localBidderRequest.refererInfo = {domain: 'bob'};
+          config.setConfig({
+            rubicon: {
+              sendUserSegtax: [9],
+              sendSiteSegtax: [10]
+            }
+          });
           localBidderRequest.ortb2.user = {
             data: [{
               ext: {
@@ -2735,6 +2741,21 @@ describe('the rubicon adapter', function () {
               segment: [{id: 1}, {id: 2}]
             }, {
               ext: {
+                segtax: '9'
+              },
+              segment: [{id: 1}, {id: 2}]
+            }, {
+              ext: {
+                segtax: '10'
+              },
+              segment: [{id: 2}, {id: 3}]
+            }, {
+              ext: {
+                segtax: '508'
+              },
+              segment: [{id: 3}, {id: 4}]
+            }, {
+              ext: {
                 segtax: '508'
               },
               segment: [{id: 3}, {id: 4}]
@@ -2743,6 +2764,9 @@ describe('the rubicon adapter', function () {
           const slotParams = spec.createSlotParams(bidderRequest.bids[0], localBidderRequest);
           expect(slotParams['tg_i.tax507']).is.equal('1,2');
           expect(slotParams['tg_v.tax508']).is.equal('3,4');
+          expect(slotParams['tg_i.tax9']).is.equal('1,2');
+          expect(slotParams['tg_v.tax10']).is.equal('2,3');
+          expect(slotParams['tg_i.tax404']).is.equal(undefined);
         });
       });
 
