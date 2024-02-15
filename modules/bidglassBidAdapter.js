@@ -5,7 +5,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
- * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests  
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  */
 

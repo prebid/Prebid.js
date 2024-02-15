@@ -6,7 +6,7 @@ import { config } from '../src/config.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests 
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
  * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
