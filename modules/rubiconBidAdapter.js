@@ -1007,16 +1007,21 @@ function addDesiredSegtaxes(bidderRequest, target) {
   if (rubiConf.readTopics === false) {
     return;
   }
-  let iSegments = [1, 2, 5, 6, 507].concat(rubiConf.sendUserSegtax?.map(seg => Number(seg)) || []);
-  let vSegments = [4, 508].concat(rubiConf.sendSiteSegtax?.map(seg => Number(seg)) || []);
+  let iSegments = [1, 2, 5, 6, 7, 507].concat(rubiConf.sendSiteSegtax?.map(seg => Number(seg)) || []);
+  let vSegments = [4, 508].concat(rubiConf.sendUserSegtax?.map(seg => Number(seg)) || []);
   let userData = bidderRequest.ortb2?.user?.data || [];
-  userData.forEach(topic => {
+  let siteData = bidderRequest.ortb2?.site?.content?.data || [];
+  userData.forEach(iterateOverSegmentData(target, 'v', vSegments));
+  siteData.forEach(iterateOverSegmentData(target, 'i', iSegments));
+}
+
+function iterateOverSegmentData(target, char, segments) {
+  return (topic) => {
     const taxonomy = Number(topic.ext?.segtax);
-    let char;
-    if ((iSegments.includes(taxonomy) && (char = 'i')) || (vSegments.includes(taxonomy) && (char = 'v'))) {
-      target[`tg_${char}.tax${taxonomy}`] = topic.segment?.map(seg => seg.id).join(',')
+    if (segments.includes(taxonomy)) {
+      target[`tg_${char}.tax${taxonomy}`] = topic.segment?.map(seg => seg.id).join(',');
     }
-  })
+  }
 }
 
 /**
