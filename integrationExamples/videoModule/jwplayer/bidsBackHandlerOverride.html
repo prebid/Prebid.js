@@ -119,7 +119,9 @@
               });
 
               bid.vastUrl = videoUrl;
-              pbjs.videoModule.renderBid('player', bid);
+              pbjs.renderAd(null, bid.adId);
+              // Alternatively you can use:
+              // pbjs.videoModule.renderBid('player', bid);
             });
           }
         });

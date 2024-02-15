@@ -35,12 +35,13 @@ export function renderAdDirect(doc, adId, options) {
     } else {
       bid = auctionManager.findBidByAdId(adId);
 
-      if (FEATURES.VIDEO) {
+      if (FEATURES.VIDEO && bid.mediaType === 'video') {
         // TODO: could the video module implement this as a custom renderer, rather than a special case in here?
         const adUnit = bid && auctionManager.index.getAdUnit(bid);
         const videoModule = getGlobal().videoModule;
-        if (adUnit?.video && videoModule) {
-          videoModule.renderBid(adUnit.video.divId, bid);
+        const divId = adUnit && adUnit.video && adUnit.video.divId;
+        if (divId && videoModule) {
+          videoModule.renderBid(divId, bid);
           return;
         }
       }

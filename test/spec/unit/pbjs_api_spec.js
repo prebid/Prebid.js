@@ -1210,6 +1210,8 @@ describe('Unit: Prebid Module', function () {
     var spyAddWinningBid;
     var inIframe = true;
     var triggerPixelStub;
+    let indexStub;
+    let auctionManagerInstance;
 
     function pushBidResponseToAuction(obj) {
       adResponse = Object.assign({
@@ -1255,6 +1257,10 @@ describe('Unit: Prebid Module', function () {
       inIframe = true;
       sinon.stub(utils, 'inIframe').callsFake(() => inIframe);
       triggerPixelStub = sinon.stub(utils.internal, 'triggerPixel');
+
+      indexStub = sinon.stub(auctionManager, 'index');
+      auctionManagerInstance = newAuctionManager();
+      indexStub.get(() => auctionManagerInstance.index);
     });
 
     afterEach(function () {
@@ -1265,6 +1271,7 @@ describe('Unit: Prebid Module', function () {
       utils.inIframe.restore();
       triggerPixelStub.restore();
       spyAddWinningBid.restore();
+      indexStub.restore();
     });
 
     it('should require doc and id params', function () {
@@ -1473,6 +1480,25 @@ describe('Unit: Prebid Module', function () {
       $$PREBID_GLOBAL$$.offEvent(CONSTANTS.EVENTS.STALE_RENDER, onStaleEvent);
       configObj.setConfig({'auctionOptions': {}});
     });
+
+    if (FEATURES.VIDEO) {
+      it('should render in the Video Module when mediaType is video and the AdUnit includes a video config', function () {
+        const adUnit = {
+          video: {
+            divId: 'playerDivId'
+          }
+        };
+        sinon.stub(auctionManager.index, 'getAdUnit').callsFake(() => adUnit);
+        pushBidResponseToAuction({
+          mediaType: 'video'
+        });
+        const renderBidSpy = sinon.spy($$PREBID_GLOBAL$$.videoModule, 'renderBid');
+        $$PREBID_GLOBAL$$.renderAd(null, bidId);
+        assert.ok(renderBidSpy.calledOnce, 'videoModule.renderBid should be called when adUnit is configured for Video Module');
+        const args = renderBidSpy.getCall(0).args;
+        assert.ok(args[0] === 'playerDivId', 'divId from adUnit must be passed as an argument');
+      });
+    }
   });
 
   describe('requestBids', function () {
