@@ -170,8 +170,8 @@ const getBidStatusAmtsAndResponseTime = (key, bidRequest, args) => {
   const BID_STATUS_MAP = {
     bidsRejected: (bid) => ({
       bidStatus: `error: ${bid.rejectionReason || 'generic'}`,
-      bidAmount: bid.cpm || 0,
-      bidResponseTime: null,
+      bidAmount: Math.round((bid.cpm || 0) * 1000),
+      bidResponseTime: bid.timeToRespond || null,
     }),
     noBids: () => ({
       bidStatus: 'nobid',
