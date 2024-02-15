@@ -57,7 +57,7 @@ The following parameters apply to the UID2 User ID Module if you are following t
 
 | Param under userSync.userIds[] | Scope | Type | Description | Example |
 | --- | --- | --- | --- | --- |
-| value | Required for server-only mode | Object | An object containing the value for the advertising token. | See [Sample Token](#sample-token). |
+| value | Required for server-only mode | Object | An object containing the value for the advertising token. | <pre>{<br>  uid2: {<br>    id: '...advertising token...'<br>  }<br>}</pre> |
 
 #### Client Refresh Mode
 
