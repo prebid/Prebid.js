@@ -168,9 +168,9 @@ const getBidStatusAmtsAndResponseTime = (key, bidRequest, args) => {
   // Config decribing the various bidStatus, bidAmount and bidResponseTime
   // values for each bid condition
   const BID_STATUS_MAP = {
-    bidsRejected: () => ({
-      bidStatus: 'error',
-      bidAmount: 0,
+    bidsRejected: (bid) => ({
+      bidStatus: `error: ${bid.rejectionReason || 'generic'}`,
+      bidAmount: bid.cpm || 0,
       bidResponseTime: null,
     }),
     noBids: () => ({
@@ -193,10 +193,16 @@ const getBidStatusAmtsAndResponseTime = (key, bidRequest, args) => {
     (bid.bidId || bid.requestId) === bidRequest.bidId
   ))
   if (filteredBids?.length > 0) {
-    if (key === 'noBids' || key === 'bidsRejected') {
+    const bid = filteredBids[0]
+    if (key === 'bidsRejected') {
+      return BID_STATUS_MAP[key](bid)
+    }
+    if (key === 'noBids') {
       return BID_STATUS_MAP[key]()
     }
-    const bid = filteredBids[0]
+    // Look in bidsRequested and compare with timeout
+    // If bid.timeToRespond > args.timeout then
+    // the bid is considered to be a timed out bid
     if (bid.timeToRespond < args.timeout) {
       return BID_STATUS_MAP.bid(bid)
     }
