@@ -37,9 +37,8 @@ function parseJson(data) {
 
 /**
  * Add real-time data & merge segments.
- * @param {Object} bidConfig
+ * @param {Object} ortb2
  * @param {Object} rtd
- * @param {Object} rtdConfig
  */
 export function addRealTimeData(ortb2, rtd) {
   if (isPlainObject(rtd.ortb2)) {
@@ -82,7 +81,7 @@ export function getRealTimeData(reqBidsConfigObj, onDone, rtdConfig, userConsent
 /**
  * Module init
  * @param {Object} provider
- * @param {Objkect} userConsent
+ * @param {Object} userConsent
  * @return {boolean}
  */
 function init(provider, userConsent) {
