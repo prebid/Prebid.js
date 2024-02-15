@@ -70,7 +70,16 @@ The following parameters apply to the UID2 User ID Module if you are following t
 
 ## Sample Token
 
-`{`<br />&nbsp;&nbsp;`"advertising_token": "...",`<br />&nbsp;&nbsp;`"refresh_token": "...",`<br />&nbsp;&nbsp;`"identity_expires": 1633643601000,`<br />&nbsp;&nbsp;`"refresh_from": 1633643001000,`<br />&nbsp;&nbsp;`"refresh_expires": 1636322000000,`<br />&nbsp;&nbsp;`"refresh_response_key": "wR5t6HKMfJ2r4J7fEGX9Gw=="`<br />`}`
+```
+{
+  "advertising_token": "...",
+  "refresh_token": "...",
+  "identity_expires": 1633643601000,
+  "refresh_from": 1633643001000,
+  "refresh_expires": 1636322000000,
+  "refresh_response_key": "wR5t6HKMfJ2r4J7fEGX9Gw=="
+}
+```
 
 ## Normalization and Encoding
 
