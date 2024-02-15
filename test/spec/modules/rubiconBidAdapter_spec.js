@@ -2736,37 +2736,37 @@ describe('the rubicon adapter', function () {
               segment: [{id: 5}, {id: 6}]
             }, {
               ext: {
-                segtax: '507'
+                segtax: '508'
               },
-              segment: [{id: 1}, {id: 2}]
+              segment: [{id: 5}, {id: 2}]
             }, {
               ext: {
                 segtax: '9'
               },
               segment: [{id: 1}, {id: 2}]
-            }, {
-              ext: {
-                segtax: '10'
-              },
-              segment: [{id: 2}, {id: 3}]
-            }, {
-              ext: {
-                segtax: '508'
-              },
-              segment: [{id: 3}, {id: 4}]
-            }, {
-              ext: {
-                segtax: '508'
-              },
-              segment: [{id: 3}, {id: 4}]
             }]
           }
+          localBidderRequest.ortb2.site = {
+            content: {
+              data: [{
+                ext: {
+                  segtax: '10'
+                },
+                segment: [{id: 2}, {id: 3}]
+              }, {
+                ext: {
+                  segtax: '507'
+                },
+                segment: [{id: 3}, {id: 4}]
+              }]
+            }
+          }
           const slotParams = spec.createSlotParams(bidderRequest.bids[0], localBidderRequest);
-          expect(slotParams['tg_i.tax507']).is.equal('1,2');
-          expect(slotParams['tg_v.tax508']).is.equal('3,4');
-          expect(slotParams['tg_i.tax9']).is.equal('1,2');
-          expect(slotParams['tg_v.tax10']).is.equal('2,3');
-          expect(slotParams['tg_i.tax404']).is.equal(undefined);
+          expect(slotParams['tg_i.tax507']).is.equal('3,4');
+          expect(slotParams['tg_v.tax508']).is.equal('5,2');
+          expect(slotParams['tg_v.tax9']).is.equal('1,2');
+          expect(slotParams['tg_i.tax10']).is.equal('2,3');
+          expect(slotParams['tg_v.tax404']).is.equal(undefined);
         });
       });
 
