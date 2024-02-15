@@ -8,7 +8,6 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').bidRequests} bidRequests 
  */
 
 const VERSION = '1.0';
@@ -63,7 +62,7 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {bidRequests} - bidRequests.bids[] is an array of AdUnits and bids
+   * @param {bidRequests} bidRequests.bids[] is an array of AdUnits and bids
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
