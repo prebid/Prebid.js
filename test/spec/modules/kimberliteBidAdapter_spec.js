@@ -1,6 +1,5 @@
 import { spec } from 'modules/kimberliteBidAdapter.js';
 import { assert } from 'chai';
-import { deepClone, randomIdentifierStr } from '../../../src/utils';
 import { BANNER } from '../../../src/mediaTypes.js';
 
 const BIDDER_CODE = 'kimberlite';
@@ -9,37 +8,38 @@ describe('kimberliteBidAdapter', function () {
   const sizes = [[640, 480]];
 
   describe('isBidRequestValid', function () {
-    let validBid = {
-      mediaTypes: {
-        [BANNER]: {
-          sizes: [[320, 240]]
+    let bidRequest;
+
+    beforeEach(function () {
+      bidRequest = {
+        mediaTypes: {
+          [BANNER]: {
+            sizes: [[320, 240]]
+          }
+        },
+        params: {
+          placementId: 'test-placement'
         }
-      },
-      params: {
-        placementId: 'test-placement'
-      }
-    };
+      };
+    });
 
     it('pass on valid bidRequest', function () {
-      assert.isTrue(spec.isBidRequestValid(validBid));
+      assert.isTrue(spec.isBidRequestValid(bidRequest));
     });
 
     it('fails on missed placementId', function () {
-      let bid = deepClone(validBid);
-      delete bid.params.placementId;
-      assert.isFalse(spec.isBidRequestValid(bid));
+      delete bidRequest.params.placementId;
+      assert.isFalse(spec.isBidRequestValid(bidRequest));
     });
 
     it('fails on empty banner', function () {
-      let bid = deepClone(validBid);
-      delete bid.mediaTypes.banner;
-      assert.isFalse(spec.isBidRequestValid(bid));
+      delete bidRequest.mediaTypes.banner;
+      assert.isFalse(spec.isBidRequestValid(bidRequest));
     });
 
     it('fails on empty banner.sizes', function () {
-      let bid = deepClone(validBid);
-      delete bid.mediaTypes.banner.sizes;
-      assert.isFalse(spec.isBidRequestValid(bid));
+      delete bidRequest.mediaTypes.banner.sizes;
+      assert.isFalse(spec.isBidRequestValid(bidRequest));
     });
 
     it('fails on empty request', function () {
@@ -79,7 +79,11 @@ describe('kimberliteBidAdapter', function () {
       assert.ok(bidRequest.data);
 
       const requestData = bidRequest.data;
+      expect(requestData.site.page).to.equal(bidderRequest.refererInfo.page);
+      expect(requestData.site.publisher.domain).to.equal(bidderRequest.refererInfo.domain);
+
       expect(requestData.imp).to.be.an('array').and.is.not.empty;
+
       expect(requestData.ext).to.be.an('Object').and.have.all.keys('prebid');
       expect(requestData.ext.prebid).to.be.an('Object').and.have.all.keys('ver', 'adapterVer');
 

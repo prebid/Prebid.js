@@ -1,12 +1,18 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+import { deepSetValue } from '../src/utils.js';
 
 const VERSION = '1.0.0';
 
 const BIDDER_CODE = 'kimberlite';
 const METHOD = 'POST';
 const ENDPOINT_URL = 'https://kimberlite.io/rtb/bid/pbjs';
+
+const VERSION_INFO = {
+  ver: '$prebid.version$',
+  adapterVer: `${VERSION}`
+};
 
 const converter = ortbConverter({
   context: {
@@ -17,18 +23,10 @@ const converter = ortbConverter({
 
   request(buildRequest, imps, bidderRequest, context) {
     const bidRequest = buildRequest(imps, bidderRequest, context);
-    bidRequest.site ||= {};
-    bidRequest.site.publisher ||= {
-      domain: bidderRequest.refererInfo.domain
-    };
-    bidRequest.site.page ||= bidderRequest.refererInfo.page;
+    deepSetValue(bidRequest, 'site.publisher.domain', bidderRequest.refererInfo.domain);
+    deepSetValue(bidRequest, 'site.page', bidderRequest.refererInfo.page);
+    deepSetValue(bidRequest, 'ext.prebid', VERSION_INFO);
     bidRequest.at = 1;
-    bidRequest.ext = {
-      prebid: {
-        ver: '$prebid.version$',
-        adapterVer: `${VERSION}`
-      }
-    };
     return bidRequest;
   },
 
