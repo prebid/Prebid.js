@@ -74,7 +74,9 @@ The following parameters apply to the UID2 User ID Module if you are following t
 
 ## Normalization and Encoding
 
-Refer to [Normalization and Encoding](https://unifiedid.com/docs/getting-started/gs-normalization-encoding).
+It's important that, in working with UID2, normalizing and encoding are performed correctly. By doing so, you can ensure that the UID2 value you create can be securely and anonymously matched up with other instances of online behavior by the same user.
+
+For more information, refer to [Normalization and Encoding](https://unifiedid.com/docs/getting-started/gs-normalization-encoding).
 
 ## Notes
 
