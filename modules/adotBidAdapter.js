@@ -21,7 +21,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
  * @typedef {import('../src/adapters/bidderFactory.js').Banner} Banner
  * @typedef {import('../src/adapters/bidderFactory.js').Video} Video
  * @typedef {import('../src/adapters/bidderFactory.js').AdUnit} AdUnit
- * @typedef {import('../src/adapters/bidderFactory.js').Imp} Imp     
+ * @typedef {import('../src/adapters/bidderFactory.js').Imp} Imp
  */
 
 const BIDDER_CODE = 'adot';
