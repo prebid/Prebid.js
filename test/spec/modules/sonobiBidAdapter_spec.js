@@ -1,8 +1,8 @@
-import {expect} from 'chai';
-import {_getPlatform, spec} from 'modules/sonobiBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {userSync} from '../../../src/userSync.js';
-import {config} from 'src/config.js';
+import { expect } from 'chai';
+import { _getPlatform, spec } from 'modules/sonobiBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { userSync } from '../../../src/userSync.js';
+import { config } from 'src/config.js';
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
 
 describe('SonobiBidAdapter', function () {
@@ -359,7 +359,9 @@ describe('SonobiBidAdapter', function () {
         'page': 'https://example.com',
         'stack': ['https://example.com']
       },
-      uspConsent: 'someCCPAString'
+      uspConsent: 'someCCPAString',
+      ortb2: {}
+
     };
 
     it('should set fpd if there is any data in ortb2', function () {
@@ -491,6 +493,14 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data.ref).not.to.be.empty
       expect(bidRequests.data.s).not.to.be.empty
       expect(bidRequests.data.hfa).to.equal('hfakey')
+    })
+
+    it('should return a properly formatted request with expData and expKey', function () {
+      bidderRequests.ortb2.experianRtidData = 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg==';
+      bidderRequests.ortb2.experianRtidKey = 'sovrn-encryption-key-1';
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+      expect(bidRequests.data.expData).to.equal('IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg==');
+      expect(bidRequests.data.expKey).to.equal('sovrn-encryption-key-1');
     })
 
     it('should return null if there is nothing to bid on', function () {

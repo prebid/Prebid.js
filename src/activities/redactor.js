@@ -18,7 +18,7 @@ export const ORTB_UFPD_PATHS = [
   'id',
   'buyeruid',
   'customdata'
-].map(f => `user.${f}`);
+].map(f => `user.${f}`).concat('device.ext.cdep');
 export const ORTB_EIDS_PATHS = ['user.eids', 'user.ext.eids'];
 export const ORTB_GEO_PATHS = ['user.geo.lat', 'user.geo.lon', 'device.geo.lat', 'device.geo.lon'];
 

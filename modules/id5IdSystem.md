@@ -25,6 +25,7 @@ pbjs.setConfig({
       name: 'id5Id',
       params: {
         partner: 173,            // change to the Partner Number you received from ID5
+        externalModuleUrl: "https://cdn.id5-sync.com/api/1.0/id5PrebidModule.js" // optional but recommended
         pd: 'MT1iNTBjY...',      // optional, see table below for a link to how to generate this
         abTesting: {             // optional
           enabled: true,         // false by default
@@ -49,6 +50,7 @@ pbjs.setConfig({
 | name | Required | String | The name of this module: `"id5Id"`                                                                                                                                                                                                                                             | `"id5Id"` |
 | params | Required | Object | Details for the ID5 ID.                                                                                                                                                                                                                                                        | |
 | params.partner | Required | Number | This is the ID5 Partner Number obtained from registering with ID5.                                                                                                                                                                                                             | `173` |
+| params.externalModuleUrl | Optional | String | The URL for the id5-prebid external module. It is recommended to use the latest version at the URL in the example. Source code available [here](https://github.com/id5io/id5-api.js/blob/master/src/id5PrebidModule.js). | https://cdn.id5-sync.com/api/1.0/id5PrebidModule.js
 | params.pd | Optional | String | Partner-supplied data used for linking ID5 IDs across domains. See [our documentation](https://wiki.id5.io/en/identitycloud/retrieve-id5-ids/passing-partner-data-to-id5) for details on generating the string. Omit the parameter or leave as an empty string if no data to supply     | `"MT1iNTBjY..."` |
 | params.provider | Optional | String | An identifier provided by ID5 to technology partners who manage Prebid setups on behalf of publishers. Reach out to [ID5](mailto:prebid@id5.io) if you have questions about this parameter                                                                                     | `pubmatic-identity-hub` |
 | params.abTesting | Optional | Object | Allows publishers to easily run an A/B Test. If enabled and the user is in the Control Group, the ID5 ID will NOT be exposed to bid adapters for that request                                                                                                                  | Disabled by default |

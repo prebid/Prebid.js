@@ -1,3 +1,4 @@
+import 'src/prebid.js';
 import { expect } from 'chai';
 import { PbVideo } from 'modules/videoModule';
 import CONSTANTS from 'src/constants.json';
@@ -26,7 +27,8 @@ function resetTestVars() {
     onEvents: sinon.spy(),
     getOrtbVideo: () => ortbVideoMock,
     getOrtbContent: () => ortbContentMock,
-    setAdTagUrl: sinon.spy()
+    setAdTagUrl: sinon.spy(),
+    hasProviderFor: sinon.spy(),
   };
   getConfigMock = () => {};
   requestBidsMock = {

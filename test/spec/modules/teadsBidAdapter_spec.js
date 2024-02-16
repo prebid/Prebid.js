@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec, storage} from 'modules/teadsBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
+import { off } from '../../../src/events';
 
 const ENDPOINT = 'https://a.teads.tv/hb/bid-request';
 const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="https://a.teads.tv/hb/getAdSettings"></script>"';
@@ -252,6 +253,63 @@ describe('teadsBidAdapter', () => {
 
       expect(payload.pageReferrer).to.exist;
       expect(payload.pageReferrer).to.deep.equal(document.referrer);
+    });
+
+    it('should add screenOrientation info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+      const screenOrientation = window.top.screen.orientation?.type
+
+      if (screenOrientation) {
+        expect(payload.screenOrientation).to.exist;
+        expect(payload.screenOrientation).to.deep.equal(screenOrientation);
+      } else expect(payload.screenOrientation).to.not.exist;
+    });
+
+    it('should add historyLength info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.historyLength).to.exist;
+      expect(payload.historyLength).to.deep.equal(window.top.history.length);
+    });
+
+    it('should add viewportHeight info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.viewportHeight).to.exist;
+      expect(payload.viewportHeight).to.deep.equal(window.top.visualViewport.height);
+    });
+
+    it('should add viewportWidth info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.viewportWidth).to.exist;
+      expect(payload.viewportWidth).to.deep.equal(window.top.visualViewport.width);
+    });
+
+    it('should add hardwareConcurrency info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+      const hardwareConcurrency = window.top.navigator?.hardwareConcurrency
+
+      if (hardwareConcurrency) {
+        expect(payload.hardwareConcurrency).to.exist;
+        expect(payload.hardwareConcurrency).to.deep.equal(hardwareConcurrency);
+      } else expect(payload.hardwareConcurrency).to.not.exist
+    });
+
+    it('should add deviceMemory info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+      const deviceMemory = window.top.navigator.deviceMemory
+
+      if (deviceMemory) {
+        expect(payload.deviceMemory).to.exist;
+        expect(payload.deviceMemory).to.deep.equal(deviceMemory);
+      } else expect(payload.deviceMemory).to.not.exist;
     });
 
     describe('pageTitle', function () {
@@ -947,6 +1005,45 @@ describe('teadsBidAdapter', () => {
         }
       });
     }
+
+    it('should add dsa info to payload if available', function () {
+      const bidRequestWithDsa = Object.assign({}, bidderRequestDefault, {
+        ortb2: {
+          regs: {
+            ext: {
+              dsa: {
+                dsarequired: '1',
+                pubrender: '2',
+                datatopub: '3',
+                transparency: [{
+                  domain: 'test.com',
+                  dsaparams: [1, 2, 3]
+                }]
+              }
+            }
+          }
+        }
+      });
+
+      const requestWithDsa = spec.buildRequests(bidRequests, bidRequestWithDsa);
+      const payload = JSON.parse(requestWithDsa.data);
+
+      expect(payload.dsa).to.exist;
+      expect(payload.dsa).to.deep.equal(
+        {
+          dsarequired: '1',
+          pubrender: '2',
+          datatopub: '3',
+          transparency: [{
+            domain: 'test.com',
+            dsaparams: [1, 2, 3]
+          }]
+        }
+      );
+
+      const defaultRequest = spec.buildRequests(bidRequests, bidderRequestDefault);
+      expect(JSON.parse(defaultRequest.data).dsa).to.not.exist;
+    });
   });
 
   describe('interpretResponse', function() {
@@ -973,7 +1070,18 @@ describe('teadsBidAdapter', () => {
             'width': 350,
             'creativeId': 'fs3ff',
             'placementId': 34,
-            'dealId': 'ABC_123'
+            'dealId': 'ABC_123',
+            'ext': {
+              'dsa': {
+                'behalf': 'some-behalf',
+                'paid': 'some-paid',
+                'transparency': [{
+                  'domain': 'test.com',
+                  'dsaparams': [1, 2, 3]
+                }],
+                'adrender': 1
+              }
+            }
           }]
         }
       };
@@ -999,7 +1107,16 @@ describe('teadsBidAdapter', () => {
           'currency': 'USD',
           'netRevenue': true,
           'meta': {
-            advertiserDomains: []
+            advertiserDomains: [],
+            dsa: {
+              behalf: 'some-behalf',
+              paid: 'some-paid',
+              transparency: [{
+                domain: 'test.com',
+                dsaparams: [1, 2, 3]
+              }],
+              adrender: 1
+            }
           },
           'ttl': 360,
           'ad': AD_SCRIPT,
