@@ -25,7 +25,8 @@ const converter = ortbConverter({
     const bidRequest = buildRequest(imps, bidderRequest, context);
     deepSetValue(bidRequest, 'site.publisher.domain', bidderRequest.refererInfo.domain);
     deepSetValue(bidRequest, 'site.page', bidderRequest.refererInfo.page);
-    deepSetValue(bidRequest, 'ext.prebid', VERSION_INFO);
+    deepSetValue(bidRequest, 'ext.prebid.ver', VERSION_INFO.ver);
+    deepSetValue(bidRequest, 'ext.prebid.adapterVer', VERSION_INFO.adapterVer);
     bidRequest.at = 1;
     return bidRequest;
   },
