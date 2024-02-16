@@ -29,7 +29,8 @@ export const spec = {
     var offset = new Date().getTimezoneOffset();
     logInfo('timezone ' + offset);
     var city = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    logInfo('location test' + city)
+    logInfo('location test' + city);
+    logInfo('test log');
 
     const countryCode = getCountryCodeByTimezone(city);
     logInfo(`The country code for ${city} is ${countryCode}`);
