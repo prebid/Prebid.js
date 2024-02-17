@@ -25,6 +25,11 @@ import {getGlobal} from '../src/prebidGlobal.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
+
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 const MODULE_NAME = 'browsi';
 
 const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME});

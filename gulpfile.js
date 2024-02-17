@@ -52,6 +52,18 @@ function clean() {
     .pipe(gulpClean());
 }
 
+function requireNodeVersion(version) {
+  return (done) => {
+    const [major] = process.versions.node.split('.');
+
+    if (major < version) {
+      throw new Error(`This task requires Node v${version}`)
+    }
+
+    done();
+  }
+}
+
 // Dependant task for building postbid. It escapes postbid-config file.
 function escapePostbidConfig() {
   gulp.src('./integrationExamples/postbid/oas/postbid-config.js')
@@ -76,7 +88,7 @@ function lint(done) {
     '!plugins/**/node_modules/**',
     './*.js'
   ], { base: './' })
-    .pipe(gulpif(argv.nolintfix, eslint(), eslint({ fix: true })))
+    .pipe(eslint({ fix: !argv.nolintfix, quiet: !(typeof argv.lintWarnings === 'boolean' ? argv.lintWarnings : true) }))
     .pipe(eslint.format('stylish'))
     .pipe(eslint.failAfterError())
     .pipe(gulpif(isFixed, gulp.dest('./')));
@@ -293,7 +305,7 @@ function bundle(dev, moduleArr) {
 // If --notest is given, it will immediately skip the test task (useful for developing changes with `gulp serve --notest`)
 
 function testTaskMaker(options = {}) {
-  ['watch', 'e2e', 'file', 'browserstack', 'notest'].forEach(opt => {
+  ['watch', 'file', 'browserstack', 'notest'].forEach(opt => {
     options[opt] = options.hasOwnProperty(opt) ? options[opt] : argv[opt];
   })
 
@@ -302,22 +314,6 @@ function testTaskMaker(options = {}) {
   return function test(done) {
     if (options.notest) {
       done();
-    } else if (options.e2e) {
-      const integ = startIntegServer();
-      startLocalServer();
-      runWebdriver(options)
-        .then(stdout => {
-          // kill fake server
-          integ.kill('SIGINT');
-          done();
-          process.exit(0);
-        })
-        .catch(err => {
-          // kill fake server
-          integ.kill('SIGINT');
-          done(new Error(`Tests failed with error: ${err}`));
-          process.exit(1);
-        });
     } else {
       runKarma(options, done)
     }
@@ -326,10 +322,34 @@ function testTaskMaker(options = {}) {
 
 const test = testTaskMaker();
 
+function e2eTestTaskMaker() {
+  return function test(done) {
+    const integ = startIntegServer();
+    startLocalServer();
+    runWebdriver({})
+      .then(stdout => {
+        // kill fake server
+        integ.kill('SIGINT');
+        done();
+        process.exit(0);
+      })
+      .catch(err => {
+        // kill fake server
+        integ.kill('SIGINT');
+        done(new Error(`Tests failed with error: ${err}`));
+        process.exit(1);
+      });
+  }
+}
+
 function runWebdriver({file}) {
   process.env.TEST_SERVER_HOST = argv.host || 'localhost';
+
+  let local = argv.local || false;
+
+  let wdioConfFile = local === true ? 'wdio.local.conf.js' : 'wdio.conf.js';
   let wdioCmd = path.join(__dirname, 'node_modules/.bin/wdio');
-  let wdioConf = path.join(__dirname, 'wdio.conf.js');
+  let wdioConf = path.join(__dirname, wdioConfFile);
   let wdioOpts;
 
   if (file) {
@@ -486,8 +506,9 @@ gulp.task('serve-e2e-dev', gulp.series(clean, 'build-bundle-dev', gulp.parallel(
 
 gulp.task('default', gulp.series(clean, 'build-bundle-prod'));
 
-gulp.task('e2e-test-only', () => runWebdriver({file: argv.file}));
-gulp.task('e2e-test', gulp.series(clean, 'build-bundle-prod', testTaskMaker({e2e: true})));
+gulp.task('e2e-test-only', gulp.series(requireNodeVersion(16), () => runWebdriver({file: argv.file})));
+gulp.task('e2e-test', gulp.series(requireNodeVersion(16), clean, 'build-bundle-prod', e2eTestTaskMaker()));
+
 // other tasks
 gulp.task(bundleToStdout);
 gulp.task('bundle', gulpBundle.bind(null, false)); // used for just concatenating pre-built files with no build step

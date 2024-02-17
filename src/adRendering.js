@@ -11,14 +11,18 @@ const {AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON} = constants
 /**
  * Emit the AD_RENDER_FAILED event.
  *
- * @param reason one of the values in CONSTANTS.AD_RENDER_FAILED_REASON
- * @param message failure description
- * @param bid? bid response object that failed to render
- * @param id? adId that failed to render
+ * @param {Object} data
+ * @param data.reason one of the values in CONSTANTS.AD_RENDER_FAILED_REASON
+ * @param data.message failure description
+ * @param [data.bid] bid response object that failed to render
+ * @param [data.id] adId that failed to render
  */
 export function emitAdRenderFail({ reason, message, bid, id }) {
   const data = { reason, message };
-  if (bid) data.bid = bid;
+  if (bid) {
+    data.bid = bid;
+    data.adId = bid.adId;
+  }
   if (id) data.adId = id;
 
   logError(`Error rendering ad (id: ${id}): ${message}`);
@@ -28,10 +32,11 @@ export function emitAdRenderFail({ reason, message, bid, id }) {
 /**
  * Emit the AD_RENDER_SUCCEEDED event.
  * (Note: Invocation of this function indicates that the render function did not generate an error, it does not guarantee that tracking for this event has occurred yet.)
- * @param doc document object that was used to `.write` the ad. Should be `null` if unavailable (e.g. for documents in
+ * @param {Object} data
+ * @param data.doc document object that was used to `.write` the ad. Should be `null` if unavailable (e.g. for documents in
  * a cross-origin frame).
- * @param bid bid response object for the ad that was rendered
- * @param id adId that was rendered.
+ * @param [data.bid] bid response object for the ad that was rendered
+ * @param [data.id] adId that was rendered.
  */
 export function emitAdRenderSucceeded({ doc, bid, id }) {
   const data = { doc };
@@ -41,7 +46,7 @@ export function emitAdRenderSucceeded({ doc, bid, id }) {
   events.emit(AD_RENDER_SUCCEEDED, data);
 }
 
-export function handleRender(renderFn, {adId, options, bidResponse}) {
+export function handleRender(renderFn, {adId, options, bidResponse, doc}) {
   if (bidResponse == null) {
     emitAdRenderFail({
       reason: constants.AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
@@ -61,7 +66,8 @@ export function handleRender(renderFn, {adId, options, bidResponse}) {
     const {adId, ad, adUrl, width, height, renderer, cpm, originalCpm, mediaType} = bidResponse;
     // rendering for outstream safeframe
     if (isRendererRequired(renderer)) {
-      executeRenderer(renderer, bidResponse);
+      executeRenderer(renderer, bidResponse, doc);
+      emitAdRenderSucceeded({doc, bid: bidResponse, id: adId})
     } else if (adId) {
       if (mediaType === VIDEO) {
         emitAdRenderFail({
