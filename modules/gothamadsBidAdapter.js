@@ -4,6 +4,11 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'gothamads';
 const ACCOUNTID_MACROS = '[account_id]';
 const URL_ENDPOINT = `https://us-e-node1.gothamads.com/bid?pass=${ACCOUNTID_MACROS}&integration=prebidjs`;

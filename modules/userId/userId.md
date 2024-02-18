@@ -158,6 +158,9 @@ pbjs.setConfig({
         },
         {
             name: "gravitompId"
+        },
+        {
+            name: "mygaruId"
         }
         ],
         syncDelay: 5000,

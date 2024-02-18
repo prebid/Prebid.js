@@ -297,6 +297,14 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.gpid).to.equal(pbadslot);
     });
 
+    it('should set the global placement id (gpid) if media type is video', function () {
+      const pbadslot = 'cde456'
+      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: { pbadslot } } }, params: zoneParam, mediaTypes: vidMediaTypes }
+      const bidRequest = spec.buildRequests([req])[0];
+      expect(bidRequest.data).to.have.property('gpid');
+      expect(bidRequest.data.gpid).to.equal(pbadslot);
+    });
+
     it('should set the bid floor if getFloor module is not present but static bid floor is defined', function () {
       const req = { ...bidRequests[0], params: { bidfloor: 42 } }
       const bidRequest = spec.buildRequests([req])[0];
@@ -870,6 +878,19 @@ describe('gumgumAdapter', function () {
 
         expect(result.width = expectedSize[0]);
         expect(result.height = expectedSize[1]);
+      })
+
+      it('request size that  matches response size for in-slot', function () {
+        const request = { ...bidRequest };
+        const body = { ...serverResponse };
+        const expectedSize = [[ 320, 50 ], [300, 600], [300, 250]];
+        let result;
+        request.pi = 3;
+        body.ad.width = 300;
+        body.ad.height = 600;
+        result = spec.interpretResponse({ body }, request)[0];
+        expect(result.width = expectedSize[1][0]);
+        expect(result.height = expectedSize[1][1]);
       })
 
       it('defaults to use bidRequest sizes', function () {

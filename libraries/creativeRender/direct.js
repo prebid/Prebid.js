@@ -52,7 +52,7 @@ export function renderAdDirect(doc, adId, options) {
           message: `renderAd was prevented from writing to the main document.`
         })
       } else {
-        handleRender(renderFn, {adId, options: {clickUrl: options?.clickThrough}, bidResponse: bid});
+        handleRender(renderFn, {adId, options: {clickUrl: options?.clickThrough}, bidResponse: bid, doc});
       }
     }
   } catch (e) {

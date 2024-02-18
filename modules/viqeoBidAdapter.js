@@ -3,6 +3,14 @@ import {logError, logInfo, _each, mergeDeep, isFn, isNumber, isPlainObject} from
 import {VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ */
+
 const BIDDER_CODE = 'viqeo';
 const DEFAULT_MIMES = ['application/javascript'];
 const VIQEO_ENDPOINT = 'https://ads.betweendigital.com/openrtb_bid';
