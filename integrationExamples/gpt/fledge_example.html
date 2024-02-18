@@ -44,15 +44,11 @@
 
     pbjs.que.push(function() {
       pbjs.setConfig({
-        fledgeForGpt: {
-          enabled: true
-        }
-      });
-
-      pbjs.setBidderConfig({
-        bidders: ['openx'],
-        config: {
-          fledgeEnabled: true
+        paapi: {
+          enabled: true,
+          gpt: {
+              autoconfig: false
+          }
         }
       });
 
@@ -69,6 +65,7 @@
         googletag.cmd.push(function() {
           pbjs.que.push(function() {
             pbjs.setTargetingForGPTAsync();
+            pbjs.setPAAPIConfigForGPT();
             googletag.pubads().refresh();
           });
         });

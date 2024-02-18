@@ -102,6 +102,9 @@
     "videoModule": [
       "jwplayerVideoProvider",
       "videojsVideoProvider"
+    ],
+    "paapi": [
+      "fledgeForGpt"
     ]
   }
 }
