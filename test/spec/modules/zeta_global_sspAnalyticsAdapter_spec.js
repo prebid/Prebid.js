@@ -414,6 +414,8 @@ describe('Zeta Global SSP Analytics Adapter', function() {
       expect(auctionEnd.auctionEnd).to.be.equal(1638441234784);
       expect(auctionEnd.auctionId).to.be.equal('75e394d9-ccce-4978-9238-91e6a1ac88a1');
       expect(auctionEnd.bidderRequests[0].bidderCode).to.be.equal('zeta_global_ssp');
+      expect(auctionEnd.bidderRequests[0].bids[0].bidId).to.be.equal('206be9a13236af');
+      expect(auctionEnd.bidderRequests[0].bids[0].adUnitCode).to.be.equal('/19968336/header-bid-tag-0');
       expect(auctionEnd.bidsReceived[0].bidderCode).to.be.equal('zeta_global_ssp');
       expect(auctionEnd.noBids[0].bidder).to.be.equal('appnexus');
 

@@ -92,14 +92,22 @@ function auctionEndHandler(args) {
   logInfo(LOG_PREFIX + 'handle ' + eventType + ' event');
 
   const event = {
-    adUnitCodes: args.adUnitCodes,
-    adUnits: args.adUnits,
-    auctionEnd: args.auctionEnd,
     auctionId: args.auctionId,
-    bidderRequests: args.bidderRequests,
+    adUnits: args.adUnits,
+    bidderRequests: args.bidderRequests?.map(br => ({
+      bidderCode: br?.bidderCode,
+      refererInfo: br?.refererInfo,
+      bids: br?.bids?.map(b => ({
+        adUnitCode: b?.adUnitCode,
+        auctionId: b?.auctionId,
+        bidId: b?.bidId,
+        requestId: b?.requestId,
+        bidderCode: b?.bidderCode,
+        mediaTypes: b?.mediaTypes,
+        sizes: b?.sizes
+      }))
+    })),
     bidsReceived: args.bidsReceived,
-    noBids: args.noBids,
-    winningBids: args.winningBids
   }
 
   // save zetaParams to cache
