@@ -104,10 +104,32 @@ function auctionEndHandler(args) {
         requestId: b?.requestId,
         bidderCode: b?.bidderCode,
         mediaTypes: b?.mediaTypes,
-        sizes: b?.sizes
+        sizes: b?.sizes,
+        bidder: b?.bidder,
+        params: b?.params
       }))
     })),
-    bidsReceived: args.bidsReceived,
+    bidsReceived: args.bidsReceived?.map(br => ({
+      adId: br?.adId,
+      adserverTargeting: {
+        hb_adomain: br?.adserverTargeting?.hb_adomain
+      },
+      cpm: br?.cpm,
+      creativeId: br?.creativeId,
+      mediaType: br?.mediaType,
+      renderer: br?.renderer,
+      size: br?.size,
+      timeToRespond: br?.timeToRespond,
+      adUnitCode: br?.adUnitCode,
+      auctionId: br?.auctionId,
+      bidId: br?.bidId,
+      requestId: br?.requestId,
+      bidderCode: br?.bidderCode,
+      mediaTypes: br?.mediaTypes,
+      sizes: br?.sizes,
+      bidder: br?.bidder,
+      params: br?.params
+    }))
   }
 
   // save zetaParams to cache
