@@ -40,7 +40,6 @@ export const spec = {
         page: bidderRequest.refererInfo?.page,
         ref: bidderRequest.refererInfo?.ref,
       },
-      test: 1
     };
 
     if (isTest(validBidRequests[0])) {

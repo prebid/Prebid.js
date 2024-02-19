@@ -28,9 +28,9 @@ var adUnits = [
             params: {
                 placementId: '1234',
                 publisherId: '9876',
+                test: true
             }
         }],
-        test: 1
     }
 ];
 ```
