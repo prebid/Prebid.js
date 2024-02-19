@@ -2,7 +2,7 @@ import {deepAccess, deepSetValue, isArray, logInfo} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 
-const ENDPOINT = 'https://dev-exchange-npid.ops.co/openrtb2/auction';
+const ENDPOINT = 'https://exchange.ops.co/openrtb2/auction';
 const BIDDER_CODE = 'opsco';
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
