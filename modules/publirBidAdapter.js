@@ -134,7 +134,7 @@ export const spec = {
       return;
     }
     logInfo('onBidWon:', bid);
-    ajax('//wsfd8lvwt6.execute-api.us-east-1.amazonaws.com/default/publirPrebidImpressionTracker', null, JSON.stringify(bid), {method: 'POST', mode: 'no-cors', credentials: 'include', headers: { 'Content-Type': 'application/json' }});
+    ajax("//prebidimpst.publir.com/publirPrebidImpressionTracker", null, JSON.stringify(bid), {"Content-Type": "application/json"});
     if (bid.hasOwnProperty('nurl') && bid.nurl.length > 0) {
       triggerPixel(bid.nurl);
     }
