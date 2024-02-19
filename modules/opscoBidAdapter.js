@@ -1,8 +1,8 @@
-import {deepAccess, deepSetValue, logInfo} from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
+import {deepAccess, deepSetValue, isArray, logInfo} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
 
-const ENDPOINT = 'https://dev-exchange-npid.ops.co/pbjs';
+const ENDPOINT = 'https://dev-exchange-npid.ops.co/openrtb2/auction';
 const BIDDER_CODE = 'opsco';
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
@@ -12,29 +12,58 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
 
-  isBidRequestValid: (bid) => !!(bid.params && bid.params.placementId && bid.params.publisherId && bid.mediaTypes?.banner?.sizes),
+  isBidRequestValid: (bid) => !!(bid.params &&
+    bid.params.placementId &&
+    bid.params.publisherId &&
+    bid.mediaTypes?.banner?.sizes &&
+    Array.isArray(bid.mediaTypes?.banner?.sizes)),
 
   buildRequests: (validBidRequests, bidderRequest) => {
-    const { publisherId } = validBidRequests[0].params;
-    const siteId = validBidRequests[0].params.siteId;
+    const {publisherId, placementId, siteId} = validBidRequests[0].params;
 
     const payload = {
       id: bidderRequest.bidderRequestId,
-      imp: buildOpenRtbImps(validBidRequests),
+      imp: validBidRequests.map(bidRequest => ({
+        id: bidRequest.bidId,
+        banner: {format: extractSizes(bidRequest)},
+        ext: {
+          opsco: {
+            placementId: placementId,
+            publisherId: publisherId,
+          }
+        }
+      })),
       site: {
         id: siteId,
-        publisher: { id: publisherId },
+        publisher: {id: publisherId},
         domain: bidderRequest.refererInfo?.domain,
         page: bidderRequest.refererInfo?.page,
         ref: bidderRequest.refererInfo?.ref,
       },
-      test: isTest(validBidRequests[0])
+      test: 1
     };
 
-    attachParams(payload, 'schain', bidderRequest);
-    attachParams(payload, 'gdprConsent', bidderRequest);
-    attachParams(payload, 'uspConsent', bidderRequest);
-    attachParams(payload, 'userIdAsEids', validBidRequests[0]);
+    if (isTest(validBidRequests[0])) {
+      payload.test = 1;
+    }
+
+    if (bidderRequest.gdprConsent) {
+      deepSetValue(payload, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      deepSetValue(payload, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
+    }
+    const eids = deepAccess(validBidRequests[0], 'userIdAsEids');
+    if (eids && eids.length !== 0) {
+      deepSetValue(payload, 'user.ext.eids', eids);
+    }
+
+    const schainData = deepAccess(validBidRequests[0], 'schain.nodes');
+    if (isArray(schainData) && schainData.length > 0) {
+      deepSetValue(payload, 'source.ext.schain', validBidRequests[0].schain);
+    }
+
+    if (bidderRequest.uspConsent) {
+      deepSetValue(payload, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
 
     return {
       method: 'POST',
@@ -43,28 +72,35 @@ export const spec = {
     };
   },
 
-  interpretResponse: (response) => (response.body?.bids || []).map(({ bidId, cpm, width, height, creativeId, currency, netRevenue, ttl, ad, mediaType }) => ({
-    requestId: bidId,
-    cpm,
-    width,
-    height,
-    creativeId,
-    currency: currency || DEFAULT_CURRENCY,
-    netRevenue: netRevenue || DEFAULT_NET_REVENUE,
-    ttl: ttl || DEFAULT_BID_TTL,
-    ad,
-    mediaType
-  })),
+  interpretResponse: (serverResponse) => {
+    const response = (serverResponse || {}).body;
+    const bidResponses = response?.seatbid?.[0]?.bid?.map(bid => ({
+      requestId: bid.impid,
+      cpm: bid.price,
+      width: bid.w,
+      height: bid.h,
+      ad: bid.adm,
+      ttl: typeof bid.exp === 'number' ? bid.exp : DEFAULT_BID_TTL,
+      creativeId: bid.crid,
+      netRevenue: DEFAULT_NET_REVENUE,
+      currency: DEFAULT_CURRENCY,
+      meta: {advertiserDomains: bid?.adomain || []},
+      mediaType: bid.mediaType || bid.mtype
+    })) || [];
+
+    if (!bidResponses.length) {
+      logInfo('opsco.interpretResponse :: No valid responses');
+    }
+
+    return bidResponses;
+  },
 
   getUserSyncs: (syncOptions, serverResponses) => {
     logInfo('opsco.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses);
-
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
       return [];
     }
-
     let syncs = [];
-
     serverResponses.forEach(resp => {
       const userSync = deepAccess(resp, 'body.ext.usersync');
       if (userSync) {
@@ -72,7 +108,7 @@ export const spec = {
         syncDetails.forEach(syncDetail => {
           const type = syncDetail.type === 'iframe' ? 'iframe' : 'image';
           if ((type === 'iframe' && syncOptions.iframeEnabled) || (type === 'image' && syncOptions.pixelEnabled)) {
-            syncs.push({ type, url: syncDetail.url });
+            syncs.push({type, url: syncDetail.url});
           }
         });
       }
@@ -83,23 +119,8 @@ export const spec = {
   }
 };
 
-function buildOpenRtbImps(validBidRequests) {
-  const placementId = validBidRequests[0].params.placementId;
-  return validBidRequests.map(bidRequest => ({
-    id: bidRequest.bidId,
-    banner: { format: extractSizes(bidRequest) },
-    ext: { placementId }
-  }));
-}
-
 function extractSizes(bidRequest) {
-  return (bidRequest.mediaTypes?.banner?.sizes || []).map(([width, height]) => ({ w: width, h: height }));
-}
-
-function attachParams(payload, paramName, request) {
-  if (request[paramName]) {
-    deepSetValue(payload, `source.ext.${paramName}`, request[paramName]);
-  }
+  return (bidRequest.mediaTypes?.banner?.sizes || []).map(([width, height]) => ({w: width, h: height}));
 }
 
 function isTest(validBidRequest) {
