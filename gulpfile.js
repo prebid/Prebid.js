@@ -88,7 +88,7 @@ function lint(done) {
     '!plugins/**/node_modules/**',
     './*.js'
   ], { base: './' })
-    .pipe(gulpif(argv.nolintfix, eslint(), eslint({ fix: true })))
+    .pipe(eslint({ fix: !argv.nolintfix, quiet: !(typeof argv.lintWarnings === 'boolean' ? argv.lintWarnings : true) }))
     .pipe(eslint.format('stylish'))
     .pipe(eslint.failAfterError())
     .pipe(gulpif(isFixed, gulp.dest('./')));

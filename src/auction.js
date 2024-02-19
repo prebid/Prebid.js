@@ -369,7 +369,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   }
 
   function addWinningBid(winningBid) {
-    const winningAd = adUnits.find(adUnit => adUnit.transactionId === winningBid.transactionId);
+    const winningAd = adUnits.find(adUnit => adUnit.adUnitId === winningBid.adUnitId);
     _winningBids = _winningBids.concat(winningBid);
     callBurl(winningBid);
     adapterManager.callBidWonBidder(winningBid.adapterCode || winningBid.bidder, winningBid, adUnits);
@@ -557,7 +557,7 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
   const videoMediaType = deepAccess(
     index.getMediaTypes({
       requestId: bidResponse.originalRequestId || bidResponse.requestId,
-      transactionId: bidResponse.transactionId
+      adUnitId: bidResponse.adUnitId
     }), 'video');
   const context = videoMediaType && deepAccess(videoMediaType, 'context');
   const useCacheKey = videoMediaType && deepAccess(videoMediaType, 'useCacheKey');

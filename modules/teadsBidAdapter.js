@@ -101,6 +101,11 @@ export const spec = {
       payload.userAgentClientHints = userAgentClientHints;
     }
 
+    const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
+    if (dsa) {
+      payload.dsa = dsa;
+    }
+
     const payloadString = JSON.stringify(payload);
     return {
       method: 'POST',
@@ -137,6 +142,9 @@ export const spec = {
         };
         if (bid.dealId) {
           bidResponse.dealId = bid.dealId
+        }
+        if (bid?.ext?.dsa) {
+          bidResponse.meta.dsa = bid.ext.dsa;
         }
         bidResponses.push(bidResponse);
       });

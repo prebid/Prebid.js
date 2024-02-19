@@ -898,8 +898,9 @@ export function deepEqual(obj1, obj2, {checkTypes = false} = {}) {
     (typeof obj2 === 'object' && obj2 !== null) &&
     (!checkTypes || (obj1.constructor === obj2.constructor))
   ) {
-    if (Object.keys(obj1).length !== Object.keys(obj2).length) return false;
-    for (let prop in obj1) {
+    const props1 = Object.keys(obj1);
+    if (props1.length !== Object.keys(obj2).length) return false;
+    for (let prop of props1) {
       if (obj2.hasOwnProperty(prop)) {
         if (!deepEqual(obj1[prop], obj2[prop], {checkTypes})) {
           return false;

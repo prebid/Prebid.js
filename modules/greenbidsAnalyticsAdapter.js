@@ -6,7 +6,7 @@ import {deepClone, generateUUID, logError, logInfo, logWarn} from '../src/utils.
 
 const analyticsType = 'endpoint';
 
-export const ANALYTICS_VERSION = '2.0.0';
+export const ANALYTICS_VERSION = '2.1.0';
 
 const ANALYTICS_SERVER = 'https://a.greenbids.ai';
 
@@ -33,7 +33,6 @@ export const isSampled = function(greenbidsId, samplingRate) {
     return true;
   }
   const hashInt = parseInt(greenbidsId.slice(-4), 16);
-
   return hashInt < samplingRate * (0xFFFF + 1);
 }
 
@@ -59,8 +58,6 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
     if (typeof analyticsOptions.options.sampling === 'number') {
       logWarn('"options.sampling" is deprecated, please use "greenbidsSampling" instead.');
       analyticsOptions.options.greenbidsSampling = analyticsOptions.options.sampling;
-      // Set sampling to null to prevent prebid analytics integrated sampling to happen
-      analyticsOptions.options.sampling = null;
     }
 
     /**
@@ -228,6 +225,10 @@ greenbidsAnalyticsAdapter.originEnableAnalytics = greenbidsAnalyticsAdapter.enab
 
 greenbidsAnalyticsAdapter.enableAnalytics = function(config) {
   this.initConfig(config);
+  if (typeof config.options.sampling === 'number') {
+    // Set sampling to 1 to prevent prebid analytics integrated sampling to happen
+    config.options.sampling = 1;
+  }
   logInfo('loading greenbids analytics');
   greenbidsAnalyticsAdapter.originEnableAnalytics(config);
 };
