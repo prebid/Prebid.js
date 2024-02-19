@@ -56,6 +56,10 @@ pbjs.setConfig({
                 bidder: 'onetag',
                 iframeURL: 'https://onetag-sys.com/static/topicsapi.html',
                 expiry: 7 // Configurable expiry days
+            }, {
+                bidder: 'yandex',
+                iframeURL: 'https://yandex.ru/ads/prebid/topics_frame.html',
+                expiry: 7 // Configurable expiry days
             }]
         }
         ....
