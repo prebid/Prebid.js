@@ -327,8 +327,6 @@ export const imps = new Map();
   - siteId
   - impressionId
   - country
-  - bidfloor
-  - bidfloorcur
   - mediaTypes?.banner or mediaTypes?.native or mediaTypes?.video
 
   for native parameters
@@ -355,7 +353,6 @@ function handleValidORTB2Dot4(bid) {
     hasValue(bid.params.country) &&
     hasValue(bid.params.country.length > 0) &&
     (bannerInfo || nativeInfo || videoInfo) &&
-    (hasValue(bid.params.bidfloor) && hasValue(bid.params.bidfloorcur)) &&
     (nativeInfo ? bid.params.native &&
       nativeInfo.ortb.assets &&
       nativeInfo.ortb.assets.some(asset => !!asset.img) : true) &&
