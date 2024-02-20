@@ -1,6 +1,14 @@
+/**
+ * This module adds lockr AIM ID support to the User ID module
+ * The {@link module:modules/userId} module is required.
+ * @module modules/lockrAIMIdSystem
+ * @requires module:modules/userId
+ */
+
 import { submodule } from '../src/hook.js';
-import { logInfo, logWarn } from '../src/utils';
-import { lockrAIMCodeVersion, lockrAIMGetIds } from './lockrAIMIdSystem_shared';
+import { logInfo, logWarn } from '../src/utils.js';
+// eslint-disable-next-line prebid/validate-imports
+import { lockrAIMGetIds } from './lockrAIMIdSystem_shared.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -9,9 +17,7 @@ import { lockrAIMCodeVersion, lockrAIMGetIds } from './lockrAIMIdSystem_shared';
  * @typedef {import('../modules/userId/index.js').lockrAIMId} lockrAIMId
  */
 
-const MODULE_NAME = 'lockr-aim';
-const MODULE_REVISION = lockrAIMCodeVersion;
-const PREBID_VERSION = '$prebid.version$';
+const MODULE_NAME = 'lockrAIMId'
 const LOG_PRE_FIX = 'lockr-AIM: ';
 
 const AIM_PROD_URL = 'https://identity.loc.kr';
@@ -27,7 +33,15 @@ const _logWarn = createLogger(logWarn, LOG_PRE_FIX);
 
 /** @type {Submodule} */
 export const lockrAIMSubmodule = {
+  /**
+   * used to link submodule with config
+   * @type {string}
+   */
   name: MODULE_NAME,
+
+  init() {
+    _logInfo('lockrAIM Initialization complete');
+  },
 
   /**
    * performs action to obtain id and return a value.
@@ -44,12 +58,14 @@ export const lockrAIMSubmodule = {
 
     const mappedConfig = {
       appID: config?.params?.appID,
-      email: config?.params?.email
+      email: config?.params?.email,
+      baseUrl: AIM_PROD_URL,
     };
 
     _logInfo('lockr AIM configurations loaded and mapped.', mappedConfig);
-    lockrAIMGetIds(mappedConfig, _logInfo, _logWarn);
+    const result = lockrAIMGetIds(mappedConfig, _logInfo, _logWarn);
     _logInfo('lockr AIM results generated');
+    return result;
   }
 }
 
