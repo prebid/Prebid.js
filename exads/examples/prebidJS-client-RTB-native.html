@@ -11,10 +11,10 @@
         // Client Conf start
         // Set as true for development environments only
         const isEnabledDebug = true;
-        const exads_endpoint = 'https://your-ad-network.com/rtb.php';
+        const exadsEndpoint = 'https://your-ad-network.com/rtb.php';
         let zoneId = 5179867;
         let fid = '1e284a9540445fad9ac9c64881569260f1aa195f';
-        const partner = 'rtb_2_4';
+        const partner = 'ortb_2_4';
 
         // Start GDPR params
         let isGDPRRequested = false;
@@ -40,18 +40,18 @@
         let PREBID_TIMEOUT = 5000;
         let userIp = 0;
         let userIpLoaded = false;
-        let impression_id = hashCode(new Date().getTime().toString());
-        let user_id = localStorage.getItem('prebidJS.user_id');
+        let impressionId = hashCode(new Date().getTime().toString());
+        let userId = localStorage.getItem('prebidJS.userId');
         
-        if (!user_id) {
-            localStorage.setItem('prebidJS.user_id', hashCode('user_id' + new Date().getTime().toString()));
-            user_id =  localStorage.getItem('prebidJS.user_id');
+        if (!userId) {
+            localStorage.setItem('prebidJS.userId', hashCode('userId' + new Date().getTime().toString()));
+            userId =  localStorage.getItem('prebidJS.userId');
         }
 
-        let ip_script = document.createElement('script');
-        ip_script.type = 'text/javascript';
-        ip_script.src = 'https://api.ipify.org?format=jsonp&callback=userIpCallback';
-        document.getElementsByTagName('head')[0].appendChild(ip_script);
+        let ipScript = document.createElement('script');
+        ipScript.type = 'text/javascript';
+        ipScript.src = 'https://api.ipify.org?format=jsonp&callback=userIpCallback';
+        document.getElementsByTagName('head')[0].appendChild(ipScript);
 
         var pbjs = pbjs || {};
         pbjs.que = pbjs.que || [];
@@ -144,15 +144,15 @@
                         catIab: catIab,
                         keywords: keywords,
                         userIp: 0, // DO NOT EDIT - Client side data
-                        userId: user_id,
-                        impressionId: impression_id.toString(), // DO NOT EDIT - Custom hash,
+                        userId: userId,
+                        impressionId: impressionId.toString(), // DO NOT EDIT - Custom hash,
                         native: {
                             plcmtcnt: 4,
                         },
                         bidfloor: bidfloor,
                         bidfloorcur: bidfloorcur,
                         country: country,
-                        endpoint: exads_endpoint
+                        endpoint: exadsEndpoint
                     }
                 }]
             }];
@@ -181,7 +181,7 @@
                             // If any bidders return any creatives
                             if (adServerTargeting && adServerTargeting['hb_adid']) {
                                 // rendering logic based on own template
-                                let template = '<div><div><\/div><div><h1>##hb_native_title##<\/h1><p>##hb_native_body##<\/p><a href=\"https:\/\/##hb_native_linkurl##\" target=\"_blank\"><img src=\"##hb_native_image##\"><\/a><div> <\/div> <\/div>';
+                                let template = '<div><div><\/div><div><h1>##hb_native_title##<\/h1><p>##hb_native_body##<\/p><a href=\"##hb_native_linkurl##\" target=\"_blank\"><img src=\"##hb_native_image##\"><\/a><div> <\/div> <\/div>';
                                 let keys = Object.keys(adServerTargeting);
                                 for (var i = 0; i < keys.length; i++){
                                     template = template.replace('##'+keys[i]+'##',adServerTargeting[keys[i]]);

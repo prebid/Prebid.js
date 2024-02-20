@@ -52,7 +52,7 @@ Now you will find the different parameters to set, based on publisher website. T
 
 * **zoneId** (required) - you can get it from the endpoint created after configuring the zones (integer)
 * **fid** (required) - you can get it from the endpoint created after configuring the zones (string)
-* **partner** (required) - currently we support rtb 2.4 ("rtb_2_4") only (string)
+* **partner** (required) - currently we support rtb 2.4 ("ortb_2_4") only (string)
 * **siteId** (recommended) - unique Site ID (string)
 * **banner.sizes** (required) - one integer array - [width, height]
 * **catIab** - IAB category ID (string array)
@@ -67,7 +67,7 @@ Now you will find the different parameters to set, based on publisher website. T
 * **endpoint** (required) - EXADS endpoint (URL)
 
 ##### RTB Banner 2.4 (Image)
-* **image_output** - indicates output format for image banners (string)
+* **imageOutput** - indicates output format for image banners (string)
     * options are **xml** or **html**. Default value is **xml** in case field is not provided
 
 ```javascript
@@ -84,7 +84,7 @@ adUnits =
             params: {
                     zoneId: 12345,
                     fid: '829a896f011475d50da0d82cfdd1af8d9cdb07ff',
-                    partner: 'rtb_2_4',
+                    partner: 'ortb_2_4',
                     siteId: '123',
                     catIab: ['IAB17-15'],
                     userIp: '0.0.0.0',
@@ -95,7 +95,7 @@ adUnits =
                     bidfloor: 0.00000011,
                     bidfloorcur: 'EUR',
                     mimes: ['image/jpg'],
-                    image_output: 'html',
+                    imageOutput: 'html',
                     endpoint: 'https://your-ad-network.com/rtb.php'
                 }
             }]
@@ -103,7 +103,7 @@ adUnits =
 ```
 
 ##### RTB Banner 2.4 (Video)
-* **video_output** - indicates output format for video banners (string)
+* **videoOutput** - indicates output format for video banners (string)
     * options are **xml** or **html**. Default value is **xml** in case field is not provided
 
 ```javascript
@@ -119,7 +119,7 @@ adUnits =
             params: {
                     zoneId: 12345,
                     fid: '829a896f011475d50da0d82cfdd1af8d9cdb07ff',
-                    partner: 'rtb_2_4',
+                    partner: 'ortb_2_4',
                     siteId: '123',
                     catIab: ['IAB17-15'],
                     userIp: '0.0.0.0',
@@ -130,7 +130,7 @@ adUnits =
                     bidfloor: 0.00000011,
                     bidfloorcur: 'EUR',
                     mimes: ['image/jpg'],
-                    video_output: 'html',
+                    videoOutput: 'html',
                     endpoint: 'https://your-ad-network.com/rtb.php'
                 }
             }]
@@ -141,7 +141,7 @@ adUnits =
 
 * **zoneId** (required) - you can get it from the endpoint created after configuring the zones (integer)
 * **fid** (required) - you can get it from the endpoint created after configuring the zones (string)
-* **partner** (required) - currently we support rtb 2.4 ("rtb_2_4") only (string)
+* **partner** (required) - currently we support rtb 2.4 ("ortb_2_4") only (string)
 * **siteId** (recommended) - unique Site ID (string)
 * **catIab** - IAB category ID (string array)
 * **userIp** (required) - IP address of the user, ipv4 or ipv6 (string)
@@ -171,7 +171,7 @@ adUnits = [{
         params: {
             zoneId: 12345,
             fid: '829a896f011475d50da0d82cfdd1af8d9cdb07ff',
-            partner: 'rtb_2_4',
+            partner: 'ortb_2_4',
             siteId: '123',
             catIab: ['IAB17-15'],
             userIp: '0.0.0.0',
@@ -203,7 +203,7 @@ adUnits = [{
 
 * **zoneId** (required) - you can get it from the endpoint created after configuring the zones (integer)
 * **fid** (required) - you can get it from the endpoint created after configuring the zones (string)
-* **partner** (required) - currently we support rtb 2.4 ("rtb_2_4") only (string)
+* **partner** (required) - currently we support rtb 2.4 ("ortb_2_4") only (string)
 * **siteId** (recommended) - unique Site ID (string)
 * **catIab** - IAB category ID (string array)
 * **userIp** (required) - IP address of the user, ipv4 or ipv6 (string)
@@ -282,7 +282,7 @@ adUnits = [{
         params: {
                 zoneId: 12345,
                 fid: '829a896f011475d50da0d82cfdd1af8d9cdb07ff',
-                partner: 'rtb_2_4',
+                partner: 'ortb_2_4',
                 siteId: '123',
                 catIab: ['IAB17-15'],
                 userIp: '0.0.0.0',

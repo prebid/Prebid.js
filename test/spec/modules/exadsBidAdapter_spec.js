@@ -6,7 +6,7 @@ describe('exadsBidAdapterTest', function () {
   const bidder = 'exadsadserver';
 
   const partners = {
-    RTB_2_4: 'rtb_2_4'
+    ORTB_2_4: 'ortb_2_4'
   };
 
   const imageBanner = {
@@ -19,7 +19,7 @@ describe('exadsBidAdapterTest', function () {
     params: {
       zoneId: 5147485,
       fid: '829a896f011475d505a0d89cfdd1af8d9cdb07ff',
-      partner: partners.RTB_2_4,
+      partner: partners.ORTB_2_4,
       siteId: '12345',
       catIab: ['IAB25-3'],
       userIp: '0.0.0.0',
@@ -30,7 +30,7 @@ describe('exadsBidAdapterTest', function () {
       bidfloor: 0.00000011,
       bidfloorcur: 'EUR',
       mimes: ['image/jpg'],
-      image_output: 'html',
+      imageOutput: 'html',
       endpoint: 'test.com'
     }
   };
@@ -69,7 +69,7 @@ describe('exadsBidAdapterTest', function () {
     params: {
       zoneId: 5147485,
       fid: '829a896f011475d505a0d89cfdd1af8d9cdb07ff',
-      partner: partners.RTB_2_4,
+      partner: partners.ORTB_2_4,
       siteId: '12345',
       catIab: ['IAB25-3'],
       userIp: '0.0.0.0',
@@ -97,7 +97,7 @@ describe('exadsBidAdapterTest', function () {
     params: {
       zoneId: 5147485,
       fid: '829a896f011475d505a0d89cfdd1af8d9cdb07ff',
-      partner: partners.RTB_2_4,
+      partner: partners.ORTB_2_4,
       siteId: '12345',
       catIab: ['IAB25-3'],
       userIp: '0.0.0.0',
@@ -141,7 +141,7 @@ describe('exadsBidAdapterTest', function () {
         ...imageBanner,
         params: {
           ...imageBanner.params,
-          partner: 'not_rtb_2_4'
+          partner: 'not_ortb_2_4'
         }
       })).to.eql(false);
     });
@@ -189,7 +189,7 @@ describe('exadsBidAdapterTest', function () {
 
   describe('while interpreting bid response', function () {
     beforeEach(() => {
-      imps.set('270544423272657', 'rtb_2_4');
+      imps.set('270544423272657', 'ortb_2_4');
     });
 
     it('should test the banner interpretResponse', function () {
@@ -482,7 +482,7 @@ describe('exadsBidAdapterTest', function () {
     });
   });
 
-  describe('checking timout', function () {
+  describe('checking timeut', function () {
     it('should exists and be a function', () => {
       expect(spec.onTimeout).to.exist.and.to.be.a('function');
     });

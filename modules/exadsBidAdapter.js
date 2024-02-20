@@ -5,19 +5,19 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER = 'exadsadserver';
 
 const PARTNERS = {
-  RTB_2_4: 'rtb_2_4'
+  ORTB_2_4: 'ortb_2_4'
 };
 
 const adPartnerHandlers = {
-  [PARTNERS.RTB_2_4]: {
-    request: handleReqRTB2Dot4,
-    response: handleResRTB2Dot4,
-    validation: handleValidRTB2Dot4,
+  [PARTNERS.ORTB_2_4]: {
+    request: handleReqORTB2Dot4,
+    response: handleResORTB2Dot4,
+    validation: handleValidORTB2Dot4,
   }
 };
 
-function handleReqRTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
-  utils.logInfo(`Calling endpoint for rtb_2_4:`, endpointUrl);
+function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
+  utils.logInfo(`Calling endpoint for ortb_2_4:`, endpointUrl);
   const gdprConsent = getGdprConsentChoice(bidderRequest);
   const envParams = getEnvParams();
 
@@ -72,10 +72,10 @@ function handleReqRTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
     bidRequestData.imp = bannerMediaType.sizes.map(size => {
       let ext;
 
-      if (validBidRequest.params.image_output || validBidRequest.params.video_output) {
+      if (validBidRequest.params.imageOutput || validBidRequest.params.videoOutput) {
         ext = {
-          image_output: validBidRequest.params.image_output ? validBidRequest.params.image_output : undefined,
-          video_output: validBidRequest.params.video_output ? validBidRequest.params.video_output : undefined,
+          image_output: validBidRequest.params.imageOutput ? validBidRequest.params.imageOutput : undefined,
+          video_output: validBidRequest.params.videoOutput ? validBidRequest.params.videoOutput : undefined,
         }
       }
 
@@ -151,10 +151,10 @@ function handleReqRTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
   return makeBidRequest(endpointUrl, bidRequestData);
 };
 
-function handleResRTB2Dot4(serverResponse, request) {
-  utils.logInfo('on handleResRTB_2_4 -> request:', request);
-  utils.logInfo('on handleResRTB_2_4 -> request json data:', JSON.parse(request.data));
-  utils.logInfo('on handleResRTB_2_4 -> serverResponse:', serverResponse);
+function handleResORTB2Dot4(serverResponse, request) {
+  utils.logInfo('on handleResORTB2Dot4 -> request:', request);
+  utils.logInfo('on handleResORTB2Dot4 -> request json data:', JSON.parse(request.data));
+  utils.logInfo('on handleResORTB2Dot4 -> serverResponse:', serverResponse);
 
   let bidResponses = [];
 
@@ -182,8 +182,8 @@ function handleResRTB2Dot4(serverResponse, request) {
       h = bidRq.imp[0].banner.h;
       mediaType = BANNER;
     } else if (nativeInfo != null) {
-      const reqNative = JSON.parse(bidResponseAd);
-      reqNative.native.assets.forEach(asset => {
+      const responseADM = JSON.parse(bidResponseAd);
+      responseADM.native.assets.forEach(asset => {
         if (asset.img != null) {
           const imgAsset = JSON.parse(bidRq.imp[0].native.request)
             .native.assets.filter(asset => asset.img != null).map(asset => asset.img);
@@ -202,6 +202,11 @@ function handleResRTB2Dot4(serverResponse, request) {
           utils.logWarn('bidResponse->', 'wrong asset type or null');
         }
       });
+
+      if (responseADM.native && responseADM.native.link) {
+        native.clickUrl = responseADM.native.link.url;
+      }
+
       mediaType = NATIVE;
     } else if (videoInfo != null) {
       mediaType = VIDEO;
@@ -223,7 +228,6 @@ function handleResRTB2Dot4(serverResponse, request) {
     };
 
     if (mediaType == 'native') {
-      native.clickUrl = bidData.adomain[0];
       bidResponse.native = native;
     }
 
@@ -251,13 +255,13 @@ function makeBidRequest(url, data) {
   return {
     method: 'POST',
     url: url,
-    data: payloadString,
+    data: payloadString
   }
 }
 
 function getUrl(adPartner, bid) {
   let endpointUrlMapping = {
-    [PARTNERS.RTB_2_4]: bid.params.endpoint + '?idzone=' + bid.params.zoneId + '&fid=' + bid.params.fid
+    [PARTNERS.ORTB_2_4]: bid.params.endpoint + '?idzone=' + bid.params.zoneId + '&fid=' + bid.params.fid
   };
 
   return endpointUrlMapping[adPartner] ? endpointUrlMapping[adPartner] : 'defaultEndpoint';
@@ -336,7 +340,7 @@ export const imps = new Map();
   - procols - it should contain one protocol at least
 
 */
-function handleValidRTB2Dot4(bid) {
+function handleValidORTB2Dot4(bid) {
   const bannerInfo = bid.mediaTypes?.banner;
   const nativeInfo = bid.mediaTypes?.native;
   const videoInfo = bid.mediaTypes?.video;

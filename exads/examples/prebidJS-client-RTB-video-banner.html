@@ -12,8 +12,8 @@
         // Client Conf start
         // Set as true for development environments only
         const isEnabledDebug = false;
-        const exads_endpoint = 'https://your-ad-network.com/rtb.php';
-        const partner = 'rtb_2_4';
+        const exadsEndpoint = 'https://your-ad-network.com/rtb.php';
+        const partner = 'ortb_2_4';
         let zoneId = 5179863;
         let fid = 'a1891f9f74cb728ad9583e0fb0eb5feae741292c';
 
@@ -40,18 +40,18 @@
         let PREBID_TIMEOUT = 5000;
         let userIp = 0;
         let userIpLoaded = false;
-        let impression_id = hashCode(new Date().getTime().toString());
-        let user_id = localStorage.getItem('prebidJS.user_id');
+        let impressionId = hashCode(new Date().getTime().toString());
+        let userId = localStorage.getItem('prebidJS.userId');
         
-        if (!user_id) {
-            localStorage.setItem('prebidJS.user_id', hashCode('user_id' + new Date().getTime().toString()));
-            user_id = localStorage.getItem('prebidJS.user_id');
+        if (!userId) {
+            localStorage.setItem('prebidJS.userId', hashCode('userId' + new Date().getTime().toString()));
+            userId = localStorage.getItem('prebidJS.userId');
         }
 
-        let ip_script = document.createElement('script');
-        ip_script.type = 'text/javascript';
-        ip_script.src = 'https://api.ipify.org?format=jsonp&callback=userIpCallback';
-        document.getElementsByTagName('head')[0].appendChild(ip_script);
+        let ipScript = document.createElement('script');
+        ipScript.type = 'text/javascript';
+        ipScript.src = 'https://api.ipify.org?format=jsonp&callback=userIpCallback';
+        document.getElementsByTagName('head')[0].appendChild(ipScript);
 
         var pbjs = pbjs || {};
         pbjs.que = pbjs.que || [];
@@ -86,7 +86,7 @@
             userIpLoaded = true;
             if (user_ip.hasOwnProperty('ip')) {
                 userIp = user_ip.ip;
-            }
+            } 
         }
 
          // MurmurHash3 hash function
@@ -119,15 +119,15 @@
                         siteId: siteId,
                         catIab: catIab,
                         userIp: 0,
-                        userId: user_id,
+                        userId: userId,
                         country: country,
-                        impressionId: impression_id.toString(),
+                        impressionId: impressionId.toString(),
                         keywords: keywords,
                         bidfloor: bidfloor,
                         bidfloorcur: bidfloorcur,
                         mimes: mimes,
-                        video_output: videoOutput,
-                        endpoint: exads_endpoint
+                        videoOutput: videoOutput,
+                        endpoint: exadsEndpoint
                     }
                 }]
             }];

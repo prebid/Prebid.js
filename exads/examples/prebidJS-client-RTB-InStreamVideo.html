@@ -16,8 +16,8 @@
         // Client Conf start
         // Set as true for development environments only
         const isEnabledDebug = false;
-        const exads_endpoint = 'https://your-ad-network.com/rtb.php';
-        const partner = 'rtb_2_4';
+        const exadsEndpoint = 'https://your-ad-network.com/rtb.php';
+        const partner = 'ortb_2_4';
         let zoneId = 5179865;
         let fid = '12f6c5316c88687e275728a8f24f8787b6c31202';
 
@@ -39,18 +39,18 @@
         let PREBID_TIMEOUT = 500000;
         let userIp = 0;
         let userIpLoaded = false;
-        let impression_id = hashCode(new Date().getTime().toString());
-        let user_id = localStorage.getItem('prebidJS.user_id');      
+        let impressionId = hashCode(new Date().getTime().toString());
+        let userId = localStorage.getItem('prebidJS.userId');      
 
-        if (!user_id) {
-            localStorage.setItem('prebidJS.user_id', hashCode('user_id' + new Date().getTime().toString()));
-            user_id = localStorage.getItem('prebidJS.user_id');
+        if (!userId) {
+            localStorage.setItem('prebidJS.userId', hashCode('userId' + new Date().getTime().toString()));
+            userId = localStorage.getItem('prebidJS.userId');
         }
 
-        let ip_script = document.createElement('script');
-        ip_script.type = 'text/javascript';
-        ip_script.src = 'https://api.ipify.org?format=jsonp&callback=userIpCallback';
-        document.getElementsByTagName('head')[0].appendChild(ip_script);
+        let ipScript = document.createElement('script');
+        ipScript.type = 'text/javascript';
+        ipScript.src = 'https://api.ipify.org?format=jsonp&callback=userIpCallback';
+        document.getElementsByTagName('head')[0].appendChild(ipScript);
 
         var pbjs = pbjs || {};
         pbjs.que = pbjs.que || [];
@@ -84,7 +84,9 @@
         // ======== DO NOT EDIT BELOW THIS LINE =========== //
         function userIpCallback(user_ip) {
             userIpLoaded = true;
-            if (user_ip.hasOwnProperty('ip')) userIp = user_ip.ip;
+            if (user_ip.hasOwnProperty('ip')) {
+                userIp = user_ip.ip;
+            } 
         }
 
         // MurmurHash3 hash function
@@ -118,8 +120,8 @@
                         siteId: siteId,
                         catIab: ['IAB25-3'],
                         userIp: 0, // DO NOT EDIT - Client side data
-                        userId: user_id,
-                        impressionId: impression_id.toString(), // DO NOT EDIT - Custom hash
+                        userId: userId,
+                        impressionId: impressionId.toString(), // DO NOT EDIT - Custom hash
                         stream: {
                             video: {
                                 mimes: ['video/mp4']
@@ -137,7 +139,7 @@
                         bidfloor: bidfloor,
                         bidfloorcur: bidfloorcur,
                         catIab: catIab,
-                        endpoint: exads_endpoint
+                        endpoint: exadsEndpoint
                     }
                 }]
             }];
@@ -197,10 +199,6 @@
         }
 
         initBids();
-
-        // Define the passback HTML tag here.
-        // Note that this tag is usually in either Script tag form or iFrame form.
-        let passbackTagHtml = '<iframe src="//a.adnflow.com/iframe.php?idzone=88&size=300x250" width="300" height="250" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>';
 
     </script>
 
