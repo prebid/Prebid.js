@@ -24,6 +24,7 @@ const ADAPTER_VERSION = '1.0.0';
 const TTL = 360;
 const CURRENCY = 'USD';
 const DEFAULT_SELLER_ENDPOINT = 'https://prebid.publir.com/publirPrebidEndPoint';
+const DEFAULT_IMPS_ENDPOINT = 'https://prebidimpst.publir.com/publirPrebidImpressionTracker';
 const SUPPORTED_SYNC_METHODS = {
   IFRAME: 'iframe',
   PIXEL: 'pixel'
@@ -134,7 +135,7 @@ export const spec = {
       return;
     }
     logInfo('onBidWon:', bid);
-    ajax("//prebidimpst.publir.com/publirPrebidImpressionTracker", null, JSON.stringify(bid), {"Content-Type": "application/json"});
+    ajax(DEFAULT_IMPS_ENDPOINT, null, JSON.stringify(bid), {method: 'POST', mode: 'no-cors', credentials: 'include', headers: { 'Content-Type': 'application/json' }});
     if (bid.hasOwnProperty('nurl') && bid.nurl.length > 0) {
       triggerPixel(bid.nurl);
     }
