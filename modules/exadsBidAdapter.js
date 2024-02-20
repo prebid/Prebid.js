@@ -29,7 +29,6 @@ function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
     'site': {
       'id': validBidRequest.params.siteId,
       'domain': envParams.domain,
-      'cat': validBidRequest.params.catIab,
       'page': envParams.page,
       'keywords': validBidRequest.params.keywords
     },
