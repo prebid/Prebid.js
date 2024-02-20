@@ -829,7 +829,14 @@ function renderBid(bid) {
   hideSmartAdServerIframe(adUnitElement);
 
   // configure renderer
-  const config = bid.renderer.getConfig();
+  const defaultConfig = {
+    align: 'center',
+    position: 'append',
+    closeButton: false,
+    label: undefined,
+    collapse: true
+  };
+  const config = { ...defaultConfig, ...bid.renderer.getConfig() };
   bid.renderer.push(() => {
     window.MagniteApex.renderAd({
       width: bid.width,
@@ -837,12 +844,12 @@ function renderBid(bid) {
       vastUrl: bid.vastUrl,
       placement: {
         attachTo: adUnitElement,
-        align: config.align || 'center',
-        position: config.position || 'append'
+        align: config.align,
+        position: config.position
       },
-      closeButton: config.closeButton || false,
-      label: config.label || undefined,
-      collapse: config.collapse || true
+      closeButton: config.closeButton,
+      label: config.label,
+      collapse: config.collapse
     });
   });
 }

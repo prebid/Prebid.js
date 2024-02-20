@@ -3899,7 +3899,8 @@ describe('the rubicon adapter', function () {
             config.setConfig({rubicon: {
               rendererConfig: {
                 align: 'left',
-                closeButton: true
+                closeButton: true,
+                collapse: false
               },
               rendererUrl: 'https://example.test/renderer.js'
             }});
@@ -3971,7 +3972,8 @@ describe('the rubicon adapter', function () {
             expect(typeof bids[0].renderer).to.equal('object');
             expect(bids[0].renderer.getConfig()).to.deep.equal({
               align: 'left',
-              closeButton: true
+              closeButton: true,
+              collapse: false
             });
             expect(bids[0].renderer.url).to.equal('https://example.test/renderer.js');
           });
@@ -4025,7 +4027,7 @@ describe('the rubicon adapter', function () {
             const renderCall = window.MagniteApex.renderAd.getCall(0);
             expect(renderCall.args[0]).to.deep.equal({
               closeButton: true,
-              collapse: true,
+              collapse: false,
               height: 320,
               label: undefined,
               placement: {
@@ -4094,7 +4096,7 @@ describe('the rubicon adapter', function () {
             const renderCall = window.MagniteApex.renderAd.getCall(0);
             expect(renderCall.args[0]).to.deep.equal({
               closeButton: true,
-              collapse: true,
+              collapse: false,
               height: 480,
               label: undefined,
               placement: {
