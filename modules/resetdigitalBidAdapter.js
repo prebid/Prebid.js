@@ -178,15 +178,12 @@ export const spec = {
     return bidResponses;
   },
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
-    const syncs = [];
+    // console.log('syncOptions', syncOptions);
+    // console.log('serverResponses', serverResponses);
+    // console.log('gdprConsent', gdprConsent);
 
     if (!serverResponses.length || !serverResponses[0].body) {
-      return syncs;
-    }
-
-    let pixels = serverResponses[0].body.pixels;
-    if (!pixels || !pixels.length) {
-      return syncs;
+      return [];
     }
 
     let gdprParams = '';
@@ -200,11 +197,26 @@ export const spec = {
       }
     }
 
-    if ((syncOptions.iframeEnabled || syncOptions.pixelEnabled)) {
+    if (syncOptions.iframeEnabled) {
       return [
         {
           type: 'iframe',
-          url: 'https://media.reset-digital.com/prebid/async_usersync.html?' + gdprParams.length ? gdprParams : '',
+          url:
+            'https://resetdigital.co/async_usersync.html?' + gdprParams.length
+              ? gdprParams
+              : '',
+        },
+      ];
+    }
+    if (syncOptions.pixelEnabled) {
+      // we return this and should be executed by prebid, but it's not working
+      return [
+        {
+          type: 'image',
+          url:
+            'https://resetdigital.co/async_usersync.html?' + gdprParams.length
+              ? gdprParams
+              : '',
         },
       ];
     }
