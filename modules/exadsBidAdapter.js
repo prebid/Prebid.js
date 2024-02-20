@@ -20,7 +20,7 @@ function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
   utils.logInfo(`Calling endpoint for ortb_2_4:`, endpointUrl);
   const gdprConsent = getGdprConsentChoice(bidderRequest);
   const envParams = getEnvParams();
-
+          
   // Make a dynamic bid request to the ad partner's endpoint
   let bidRequestData = {
     'id': validBidRequest.bidId, // NOT bid.bidderRequestId or bid.auctionId
@@ -62,6 +62,22 @@ function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
   if (gdprConsent && gdprConsent.gdprApplies) {
     bidRequestData.user['ext'] = {
       consent: gdprConsent.consentString
+    }
+  }
+
+  if (validBidRequest.params.dsa && (
+    hasValue(validBidRequest.params.dsa.dsarequired) ||
+    hasValue(validBidRequest.params.dsa.pubrender) ||
+    hasValue(validBidRequest.params.dsa.datatopub))) {
+
+    bidRequestData.regs = {
+      'ext': {
+        'dsa': {
+          'dsarequired': validBidRequest.params.dsa.dsarequired,
+          'pubrender': validBidRequest.params.dsa.pubrender,
+          'datatopub': validBidRequest.params.dsa.datatopub
+        }
+      }
     }
   }
 

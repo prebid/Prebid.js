@@ -63,6 +63,20 @@ Now you will find the different parameters to set, based on publisher website. T
 * **bidfloor** - minimum bid for this impression (CPM) / click (CPC) and account currency (float) 
 * **bidfloorcur** - currency for minimum bid value specified using ISO-4217 alpha codes (string)
 * **mimes** - list of supported mime types. We support: image/jpeg, image/jpg, image/png, image/png, image/gif, image/webp, video/mp4 (string array)
+* **dsa** - DSA transparency information
+    * **dsarequired** - flag to indicate if DSA information should be made available (integer)
+        * 0 - Not required
+        * 1 - Supported, bid responses with or without DSA object will be accepted
+        * 2 - Required, bid responses without DSA object will not be accepted
+        * 3 - Required, bid responses without DSA object will not be accepted, Publisher is an Online Platform
+    * **pubrender** - flag to indicate if the publisher will render the DSA Transparency info (integer)
+        * 0 - Publisher can't render
+        * 1 - Publisher could render depending on adrender
+        * 2 - Publisher will render
+    * **datatopub** - independent of pubrender, the publisher may need the transparency data for audit purposes (integer)
+        * 0 - do not send transparency data
+        * 1 - optional to send transparency data
+        * 2 - send transparency data
 * **endpoint** (required) - EXADS endpoint (URL)
 
 ##### RTB Banner 2.4 (Image)
@@ -93,6 +107,11 @@ adUnits =
                     bidfloor: 0.00000011,
                     bidfloorcur: 'EUR',
                     mimes: ['image/jpg'],
+                    dsa: {
+                        dsarequired: 3, 
+                        pubrender: 0,
+                        datatopub: 2
+                    },
                     imageOutput: 'html',
                     endpoint: 'https://your-ad-network.com/rtb.php'
                 }
@@ -127,6 +146,11 @@ adUnits =
                     bidfloor: 0.00000011,
                     bidfloorcur: 'EUR',
                     mimes: ['image/jpg'],
+                    dsa: {
+                        dsarequired: 3, 
+                        pubrender: 0,
+                        datatopub: 2
+                    },                    
                     videoOutput: 'html',
                     endpoint: 'https://your-ad-network.com/rtb.php'
                 }
@@ -148,6 +172,20 @@ adUnits =
 * **bidfloor** - minimum bid for this impression (CPM) / click (CPC) and account currency, optional (float) 
 * **bidfloorcur** - currency for minimum bid value specified using ISO-4217 alpha codes, optional (string)
 * **video.mimes** - list of supported mime types (string array)
+* **dsa** - DSA transparency information
+    * **dsarequired** - flag to indicate if DSA information should be made available (integer)
+        * 0 - Not required
+        * 1 - Supported, bid responses with or without DSA object will be accepted
+        * 2 - Required, bid responses without DSA object will not be accepted
+        * 3 - Required, bid responses without DSA object will not be accepted, Publisher is an Online Platform
+    * **pubrender** - flag to indicate if the publisher will render the DSA Transparency info (integer)
+        * 0 - Publisher can't render
+        * 1 - Publisher could render depending on adrender
+        * 2 - Publisher will render
+    * **datatopub** - independent of pubrender, the publisher may need the transparency data for audit purposes (integer)
+        * 0 - do not send transparency data
+        * 1 - optional to send transparency data
+        * 2 - send transparency data
 * **context** - (recommended) - the video context, either 'instream', 'outstream'. Defaults to ‘instream’ (string)
 * **protocols** - list of supported video bid response protocols (integer array) 
 * **endpoint** (required) - EXADS endpoint (URL)
@@ -172,7 +210,7 @@ adUnits = [{
             userIp: '0.0.0.0',
             userId: '1234',
             impressionId: '1234',
-            stream: {
+            imp: {
                 video: {
                     mimes: ['video/mp4'],
                     protocols: [3,6]
@@ -180,6 +218,11 @@ adUnits = [{
                 ext: {
                     video_cta: 0
                 }
+            },
+            dsa: {
+                dsarequired: 3, 
+                pubrender: 0,
+                datatopub: 2
             },
             country: 'IRL',
             keywords: 'lifestyle, humour',
@@ -204,6 +247,20 @@ adUnits = [{
 * **keywords** - keywords can be used to ensure ad zones get the right type of advertising. Keywords should be a string of comma-separated words
 * **bidfloor** - minimum bid for this impression (CPM) / click (CPC) and account currency, optional (float) 
 * **bidfloorcur** - currency for minimum bid value specified using ISO-4217 alpha codes, optional (string)
+* **dsa** - DSA transparency information
+    * **dsarequired** - flag to indicate if DSA information should be made available (integer)
+        * 0 - Not required
+        * 1 - Supported, bid responses with or without DSA object will be accepted
+        * 2 - Required, bid responses without DSA object will not be accepted
+        * 3 - Required, bid responses without DSA object will not be accepted, Publisher is an Online Platform
+    * **pubrender** - flag to indicate if the publisher will render the DSA Transparency info (integer)
+        * 0 - Publisher can't render
+        * 1 - Publisher could render depending on adrender
+        * 2 - Publisher will render
+    * **datatopub** - independent of pubrender, the publisher may need the transparency data for audit purposes (integer)
+        * 0 - do not send transparency data
+        * 1 - optional to send transparency data
+        * 2 - send transparency data
 * **native.plcmtcnt** - the number of identical placements in this Layout (integer)
 * **assets (title)**
     * **id** - unique asset ID, assigned by exchange. Typically a counter for the array (integer): 
@@ -280,6 +337,11 @@ adUnits = [{
                 impressionId: '1234',
                 native: {
                     plcmtcnt: 4
+                },
+                dsa: {
+                    dsarequired: 3, 
+                    pubrender: 0,
+                    datatopub: 2
                 },
                 country: 'IRL',
                 keywords: 'lifestyle, humour',
