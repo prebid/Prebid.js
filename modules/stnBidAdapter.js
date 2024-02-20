@@ -103,13 +103,13 @@ export const spec = {
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
     for (const response of serverResponses) {
-      if (syncOptions.iframeEnabled && response.body.params.userSyncURL) {
+      if (syncOptions.iframeEnabled && deepAccess(response, 'body.params.userSyncURL')) {
         syncs.push({
           type: 'iframe',
-          url: response.body.params.userSyncURL
+          url: deepAccess(response, 'body.params.userSyncURL')
         });
       }
-      if (syncOptions.pixelEnabled && isArray(response.body.params.userSyncPixels)) {
+      if (syncOptions.pixelEnabled && isArray(deepAccess(response, 'body.params.userSyncPixels'))) {
         const pixels = response.body.params.userSyncPixels.map(pixel => {
           return {
             type: 'image',
@@ -186,7 +186,7 @@ function getSupplyChain(schainObject) {
     scStr += '!';
     scStr += `${getEncodedValIfNotEmpty(node.asi)},`;
     scStr += `${getEncodedValIfNotEmpty(node.sid)},`;
-    scStr += `${node.hp ? encodeURIComponent(node.hp) : ''},`;
+    scStr += `${getEncodedValIfNotEmpty(node.hp)},`;
     scStr += `${getEncodedValIfNotEmpty(node.rid)},`;
     scStr += `${getEncodedValIfNotEmpty(node.name)},`;
     scStr += `${getEncodedValIfNotEmpty(node.domain)}`;
@@ -200,7 +200,7 @@ function getSupplyChain(schainObject) {
  * @returns {string}
  */
 function getEncodedValIfNotEmpty(val) {
-  return !isEmpty(val) ? encodeURIComponent(val) : '';
+  return (val !== '' && val !== undefined) ? encodeURIComponent(val) : '';
 }
 
 /**
