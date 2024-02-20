@@ -5,7 +5,7 @@
  */
 
 import adapterManager from '../src/adapterManager.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {AUCTION_COMPLETED} from '../src/auction.js';
@@ -14,7 +14,6 @@ import {find} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {
   deepAccess,
-  getGptSlotInfoForAdUnitCode,
   getUniqueIdentifierStr,
   insertElement,
   isFn,
@@ -28,6 +27,7 @@ import {
   mergeDeep,
   parseUrl
 } from '../src/utils.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 const MODULE = 'adlooxAnalyticsAdapter';
 

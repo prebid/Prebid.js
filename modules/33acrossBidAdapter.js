@@ -1,18 +1,19 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
 import {
   deepAccess,
-  uniques,
-  isArray,
+  getWindowSelf,
   getWindowTop,
+  isArray,
   isGptPubadsDefined,
-  isSlotMatchingAdUnitCode,
   logInfo,
   logWarn,
-  getWindowSelf,
   mergeDeep,
+  pick,
+  uniques
 } from '../src/utils.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 // **************************** UTILS *************************** //
 const BIDDER_CODE = '33across';
@@ -166,7 +167,9 @@ function buildRequests(bidRequests, bidderRequest) {
     ttxSettings,
     gdprConsent,
     uspConsent,
-    pageUrl
+    gppConsent,
+    pageUrl,
+    referer
   } = _buildRequestParams(bidRequests, bidderRequest);
 
   const groupedRequests = _buildRequestGroups(ttxSettings, bidRequests);
@@ -179,8 +182,11 @@ function buildRequests(bidRequests, bidderRequest) {
         bidRequests: groupedRequests[key],
         gdprConsent,
         uspConsent,
+        gppConsent,
         pageUrl,
-        ttxSettings
+        referer,
+        ttxSettings,
+        bidderRequest,
       })
     )
   }
@@ -196,17 +202,15 @@ function _buildRequestParams(bidRequests, bidderRequest) {
     gdprApplies: false
   }, bidderRequest && bidderRequest.gdprConsent);
 
-  const uspConsent = bidderRequest && bidderRequest.uspConsent;
-
-  const pageUrl = bidderRequest?.refererInfo?.page
-
   adapterState.uniqueSiteIds = bidRequests.map(req => req.params.siteId).filter(uniques);
 
   return {
     ttxSettings,
     gdprConsent,
-    uspConsent,
-    pageUrl
+    uspConsent: bidderRequest?.uspConsent,
+    gppConsent: bidderRequest?.gppConsent,
+    pageUrl: bidderRequest?.refererInfo?.page,
+    referer: bidderRequest?.refererInfo?.ref
   }
 }
 
@@ -240,9 +244,11 @@ function _getMRAKey(bidRequest) {
 }
 
 // Infer the necessary data from valid bid for a minimal ttxRequest and create HTTP request
-function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageUrl, ttxSettings }) {
+function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, gppConsent = {}, pageUrl, referer, ttxSettings, bidderRequest }) {
   const ttxRequest = {};
-  const { siteId, test } = bidRequests[0].params;
+  const firstBidRequest = bidRequests[0];
+  const { siteId, test } = firstBidRequest.params;
+  const coppaValue = config.getConfig('coppa');
 
   /*
    * Infer data for the request payload
@@ -254,12 +260,17 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
   });
 
   ttxRequest.site = { id: siteId };
+  ttxRequest.device = _buildDeviceORTB(firstBidRequest.ortb2?.device);
 
   if (pageUrl) {
     ttxRequest.site.page = pageUrl;
   }
 
-  ttxRequest.id = bidRequests[0].auctionId;
+  if (referer) {
+    ttxRequest.site.ref = referer;
+  }
+
+  ttxRequest.id = bidderRequest?.bidderRequestId;
 
   if (gdprConsent.consentString) {
     ttxRequest.user = setExtensions(ttxRequest.user, {
@@ -267,9 +278,9 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
     });
   }
 
-  if (Array.isArray(bidRequests[0].userIdAsEids) && bidRequests[0].userIdAsEids.length > 0) {
+  if (Array.isArray(firstBidRequest.userIdAsEids) && firstBidRequest.userIdAsEids.length > 0) {
     ttxRequest.user = setExtensions(ttxRequest.user, {
-      'eids': bidRequests[0].userIdAsEids
+      'eids': firstBidRequest.userIdAsEids
     });
   }
 
@@ -283,6 +294,17 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
     });
   }
 
+  if (gppConsent.gppString) {
+    Object.assign(ttxRequest.regs, {
+      'gpp': gppConsent.gppString,
+      'gpp_sid': gppConsent.applicableSections
+    });
+  }
+
+  if (coppaValue !== undefined) {
+    ttxRequest.regs.coppa = Number(!!coppaValue);
+  }
+
   ttxRequest.ext = {
     ttx: {
       prebidStartedAt: Date.now(),
@@ -293,9 +315,9 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
     }
   };
 
-  if (bidRequests[0].schain) {
+  if (firstBidRequest.schain) {
     ttxRequest.source = setExtensions(ttxRequest.source, {
-      'schain': bidRequests[0].schain
+      'schain': firstBidRequest.schain
     });
   }
 
@@ -321,7 +343,7 @@ function _createServerRequest({ bidRequests, gdprConsent = {}, uspConsent, pageU
     'url': url,
     'data': JSON.stringify(ttxRequest),
     'options': options
-  }
+  };
 }
 
 // BUILD REQUESTS: SET EXTENSIONS
@@ -333,12 +355,15 @@ function setExtensions(obj = {}, extFields) {
 
 // BUILD REQUESTS: IMP
 function _buildImpORTB(bidRequest) {
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+
   const imp = {
     id: bidRequest.bidId,
     ext: {
       ttx: {
         prod: deepAccess(bidRequest, 'params.productId')
-      }
+      },
+      ...(gpid ? { gpid } : {})
     }
   };
 
@@ -434,7 +459,7 @@ function _buildBannerORTB(bidRequest) {
   return {
     format,
     ext
-  }
+  };
 }
 
 // BUILD REQUESTS: VIDEO
@@ -448,7 +473,7 @@ function _buildVideoORTB(bidRequest) {
     ...videoBidderParams // Bidder Specific overrides
   };
 
-  const video = {}
+  const video = {};
 
   const { w, h } = _getSize(videoParams.playerSize[0]);
   video.w = w;
@@ -666,7 +691,6 @@ function _createBidResponse(bid, cur) {
     bid.adomain && bid.adomain.length;
   const bidResponse = {
     requestId: bid.impid,
-    bidderCode: BIDDER_CODE,
     cpm: bid.price,
     width: bid.w,
     height: bid.h,
@@ -702,10 +726,10 @@ function _createBidResponse(bid, cur) {
 // Else no syncs
 // For logic on how we handle gdpr data see _createSyncs and module's unit tests
 // '33acrossBidAdapter#getUserSyncs'
-function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
+function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
   const syncUrls = (
     (syncOptions.iframeEnabled)
-      ? adapterState.uniqueSiteIds.map((siteId) => _createSync({ gdprConsent, uspConsent, siteId }))
+      ? adapterState.uniqueSiteIds.map((siteId) => _createSync({ gdprConsent, uspConsent, gppConsent, siteId }))
       : ([])
   );
 
@@ -716,15 +740,16 @@ function getUserSyncs(syncOptions, responses, gdprConsent, uspConsent) {
 }
 
 // Sync object will always be of type iframe for TTX
-function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConsent }) {
+function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConsent, gppConsent = {} }) {
   const ttxSettings = config.getConfig('ttxSettings');
   const syncUrl = (ttxSettings && ttxSettings.syncUrl) || SYNC_ENDPOINT;
 
   const { consentString, gdprApplies } = gdprConsent;
+  const { gppString = '', applicableSections = [] } = gppConsent;
 
   const sync = {
     type: 'iframe',
-    url: `${syncUrl}&id=${siteId}&gdpr_consent=${encodeURIComponent(consentString)}&us_privacy=${encodeURIComponent(uspConsent)}`
+    url: `${syncUrl}&id=${siteId}&gdpr_consent=${encodeURIComponent(consentString)}&us_privacy=${encodeURIComponent(uspConsent)}&gpp=${encodeURIComponent(gppString)}&gpp_sid=${encodeURIComponent(applicableSections.join(','))}`
   };
 
   if (typeof gdprApplies === 'boolean') {
@@ -732,6 +757,79 @@ function _createSync({ siteId = 'zzz000000000003zzz', gdprConsent = {}, uspConse
   }
 
   return sync;
+}
+
+// BUILD REQUESTS: DEVICE
+function _buildDeviceORTB(device = {}) {
+  const win = getWindowSelf();
+  const deviceProps = {
+    ext: {
+      ttx: {
+        ...getScreenDimensions(),
+        pxr: win.devicePixelRatio,
+        vp: getViewportDimensions(),
+        ah: win.screen.availHeight,
+        mtp: win.navigator.maxTouchPoints
+      }
+    }
+  }
+
+  if (device.sua) {
+    deviceProps.sua = pick(device.sua, [ 'browsers', 'platform', 'model', 'mobile' ]);
+  }
+
+  return deviceProps;
+}
+
+function getTopMostAccessibleWindow() {
+  let mostAccessibleWindow = getWindowSelf();
+
+  try {
+    while (mostAccessibleWindow.parent !== mostAccessibleWindow &&
+      mostAccessibleWindow.parent.document) {
+      mostAccessibleWindow = mostAccessibleWindow.parent;
+    }
+  } catch (err) {
+    // Do not throw an exception if we can't access the topmost frame.
+  }
+
+  return mostAccessibleWindow;
+}
+
+function getViewportDimensions() {
+  const topWin = getTopMostAccessibleWindow();
+  const documentElement = topWin.document.documentElement;
+
+  return {
+    w: documentElement.clientWidth,
+    h: documentElement.clientHeight,
+  };
+}
+
+function getScreenDimensions() {
+  const {
+    innerWidth: windowWidth,
+    innerHeight: windowHeight,
+    screen
+  } = getWindowSelf();
+
+  const [biggerDimension, smallerDimension] = [
+    Math.max(screen.width, screen.height),
+    Math.min(screen.width, screen.height),
+  ];
+
+  if (windowHeight > windowWidth) { // Portrait mode
+    return {
+      w: smallerDimension,
+      h: biggerDimension,
+    };
+  }
+
+  // Landscape mode
+  return {
+    w: biggerDimension,
+    h: smallerDimension,
+  };
 }
 
 export const spec = {

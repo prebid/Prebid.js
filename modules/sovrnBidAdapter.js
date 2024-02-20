@@ -1,13 +1,12 @@
 import {
   _each,
-  getBidIdParameter,
   isArray,
   getUniqueIdentifierStr,
   deepSetValue,
   logError,
   deepAccess,
   isInteger,
-  logWarn
+  logWarn, getBidIdParameter
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import {
@@ -15,7 +14,10 @@ import {
   BANNER,
   VIDEO
 } from '../src/mediaTypes.js'
-import {createEidsArray} from './userId/eids.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
@@ -46,7 +48,6 @@ const ORTB_VIDEO_PARAMS = {
 const REQUIRED_VIDEO_PARAMS = {
   context: (value) => value !== ADPOD,
   mimes: ORTB_VIDEO_PARAMS.mimes,
-  minduration: ORTB_VIDEO_PARAMS.minduration,
   maxduration: ORTB_VIDEO_PARAMS.maxduration,
   protocols: ORTB_VIDEO_PARAMS.protocols
 }
@@ -90,8 +91,8 @@ export const spec = {
       let criteoId;
 
       _each(bidReqs, function (bid) {
-        if (!eids && bid.userId) {
-          eids = createEidsArray(bid.userId)
+        if (!eids && bid.userIdAsEids) {
+          eids = bid.userIdAsEids;
           eids.forEach(function (id) {
             if (id.uids && id.uids[0]) {
               if (id.source === 'criteo.com') {
@@ -152,11 +153,14 @@ export const spec = {
       site.page = bidderRequest.refererInfo.page
       site.domain = bidderRequest.refererInfo.domain
 
+      const tmax = deepAccess(bidderRequest, 'timeout');
+
       const sovrnBidReq = {
         id: getUniqueIdentifierStr(),
         imp: sovrnImps,
         site: site,
-        user: fpd.user || {}
+        user: fpd.user || {},
+        tmax: tmax
       }
 
       if (schain) {
@@ -167,12 +171,26 @@ export const spec = {
         };
       }
 
+      const tid = deepAccess(bidderRequest, 'ortb2.source.tid')
+      if (tid) {
+        deepSetValue(sovrnBidReq, 'source.tid', tid)
+      }
+
+      const coppa = deepAccess(bidderRequest, 'ortb2.regs.coppa');
+      if (coppa) {
+        deepSetValue(sovrnBidReq, 'regs.coppa', 1);
+      }
+
       if (bidderRequest.gdprConsent) {
         deepSetValue(sovrnBidReq, 'regs.ext.gdpr', +bidderRequest.gdprConsent.gdprApplies);
         deepSetValue(sovrnBidReq, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
       }
       if (bidderRequest.uspConsent) {
         deepSetValue(sovrnBidReq, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+      }
+      if (bidderRequest.gppConsent) {
+        deepSetValue(sovrnBidReq, 'regs.gpp', bidderRequest.gppConsent.gppString);
+        deepSetValue(sovrnBidReq, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
       }
 
       if (eids) {
@@ -200,7 +218,7 @@ export const spec = {
    * Format Sovrn responses as Prebid bid responses
    * @param {id, seatbid} sovrnResponse A successful response from Sovrn.
    * @return {Bid[]} An array of formatted bids.
-  */
+   */
   interpretResponse: function({ body: {id, seatbid} }) {
     if (!id || !seatbid || !Array.isArray(seatbid)) return []
 
@@ -237,7 +255,7 @@ export const spec = {
     }
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     try {
       const tracks = []
       if (serverResponses && serverResponses.length !== 0) {
@@ -250,6 +268,10 @@ export const spec = {
           }
           if (uspConsent) {
             params.push(['us_privacy', uspConsent]);
+          }
+          if (gppConsent) {
+            params.push(['gpp', gppConsent.gppString]);
+            params.push(['gpp_sid', gppConsent.applicableSections])
           }
 
           if (iidArr[0]) {

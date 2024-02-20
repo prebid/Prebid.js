@@ -19,12 +19,12 @@ describe('ColossussspAdapter', function () {
     },
     ortb2Imp: {
       ext: {
+        tid: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
         data: {
           pbadslot: '/19968336/prebid_cache_video_adunit'
         }
       }
     },
-    transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
     schain: {
       ver: '1.0',
       complete: 1,
@@ -55,6 +55,93 @@ describe('ColossussspAdapter', function () {
     refererInfo: {
       referer: 'http://www.example.com',
       reachedTop: true,
+    },
+    ortb2: {
+      app: {
+        name: 'myappname',
+        keywords: 'power tools, drills',
+        content: {
+          data: [
+            {
+              name: 'www.dataprovider1.com',
+              ext: {
+                segtax: 6
+              },
+              segment: [
+                {
+                  id: '687'
+                },
+                {
+                  id: '123'
+                }
+              ]
+            },
+            {
+              name: 'www.dataprovider1.com',
+              ext: {
+                segtax: 7
+              },
+              segment: [
+                {
+                  id: '456'
+                },
+                {
+                  id: '789'
+                }
+              ]
+            }
+          ]
+        }
+      },
+      site: {
+        name: 'example',
+        domain: 'page.example.com',
+        cat: ['IAB2'],
+        sectioncat: ['IAB2-2'],
+        pagecat: ['IAB2-2'],
+        page: 'https://page.example.com/here.html',
+        ref: 'https://ref.example.com',
+        keywords: 'power tools, drills',
+        search: 'drill',
+        content: {
+          userrating: '4',
+          data: [{
+            name: 'www.dataprovider1.com',
+            ext: {
+              segtax: 7,
+              cids: ['iris_c73g5jq96mwso4d8']
+            },
+            segment: [
+              { id: '687' },
+              { id: '123' }
+            ]
+          }]
+        },
+        ext: {
+          data: {
+            pageType: 'article',
+            category: 'repair'
+          }
+        }
+      },
+      user: {
+        yob: 1985,
+        gender: 'm',
+        keywords: 'a,b',
+        data: [{
+          name: 'dataprovider.com',
+          ext: { segtax: 4 },
+          segment: [
+            { id: '1' }
+          ]
+        }],
+        ext: {
+          data: {
+            registered: true,
+            interests: ['cars']
+          }
+        }
+      }
     },
     bids: [bid]
   }
@@ -91,7 +178,7 @@ describe('ColossussspAdapter', function () {
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
       expect(data).to.be.an('object');
-      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'ccpa', 'gdpr_consent', 'gdpr_require');
+      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'ccpa', 'gdpr_consent', 'gdpr_require', 'userObj', 'siteObj', 'appObj');
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
       expect(data.language).to.be.a('string');
@@ -101,7 +188,7 @@ describe('ColossussspAdapter', function () {
       let placements = data['placements'];
       for (let i = 0; i < placements.length; i++) {
         let placement = placements[i];
-        expect(placement).to.have.all.keys('placementId', 'groupId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'floor', 'gpid');
+        expect(placement).to.have.all.keys('placementId', 'groupId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'floor', 'gpid', 'tid');
         expect(placement.schain).to.be.an('object')
         expect(placement.placementId).to.be.a('number');
         expect(placement.groupId).to.be.a('number');
@@ -110,6 +197,7 @@ describe('ColossussspAdapter', function () {
         expect(placement.sizes).to.be.an('array');
         expect(placement.floor).to.be.an('object');
         expect(placement.gpid).to.be.an('string');
+        expect(placement.tid).to.be.an('string');
       }
     });
 
@@ -118,7 +206,6 @@ describe('ColossussspAdapter', function () {
         ...bid,
         params: {
           placement_id: 0,
-          traffic: 'video',
         },
         mediaTypes: {
           video: {
@@ -132,7 +219,7 @@ describe('ColossussspAdapter', function () {
 
       let data = serverRequest.data;
       expect(data).to.be.an('object');
-      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'ccpa', 'gdpr_consent', 'gdpr_require');
+      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'ccpa', 'gdpr_consent', 'gdpr_require', 'userObj', 'siteObj', 'appObj');
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
       expect(data.language).to.be.a('string');
@@ -144,7 +231,7 @@ describe('ColossussspAdapter', function () {
         let placement = placements[i];
         expect(placement).to.have.all.keys('placementId', 'groupId', 'eids', 'bidId', 'traffic', 'schain', 'floor', 'gpid', 'sizes',
           'playerSize', 'minduration', 'maxduration', 'mimes', 'protocols', 'startdelay', 'placement', 'skip', 'skipafter',
-          'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity'
+          'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity', 'tid'
         );
         expect(placement.schain).to.be.an('object')
         expect(placement.placementId).to.be.a('number');
@@ -156,6 +243,7 @@ describe('ColossussspAdapter', function () {
         expect(placement.playerSize).to.be.an('array');
         expect(placement.minduration).to.be.an('number');
         expect(placement.maxduration).to.be.an('number');
+        expect(placement.tid).to.be.an('string');
       }
     });
 
@@ -193,6 +281,35 @@ describe('ColossussspAdapter', function () {
         }
       }
     });
+  });
+
+  describe('gpp consent', function () {
+    it('bidderRequest.gppConsent', () => {
+      bidderRequest.gppConsent = {
+        gppString: 'abc123',
+        applicableSections: [8]
+      };
+
+      let serverRequest = spec.buildRequests([bid], bidderRequest);
+      let data = serverRequest.data;
+      expect(data).to.be.an('object');
+      expect(data).to.have.property('gpp');
+      expect(data).to.have.property('gpp_sid');
+
+      delete bidderRequest.gppConsent;
+    })
+
+    it('bidderRequest.ortb2.regs.gpp', () => {
+      bidderRequest.ortb2.regs = bidderRequest.ortb2.regs || {};
+      bidderRequest.ortb2.regs.gpp = 'abc123';
+      bidderRequest.ortb2.regs.gpp_sid = [8];
+
+      let serverRequest = spec.buildRequests([bid], bidderRequest);
+      let data = serverRequest.data;
+      expect(data).to.be.an('object');
+      expect(data).to.have.property('gpp');
+      expect(data).to.have.property('gpp_sid');
+    })
   });
 
   describe('interpretResponse', function () {
@@ -298,8 +415,8 @@ describe('ColossussspAdapter', function () {
       expect(userSync).to.be.an('array').with.lengthOf(1);
       expect(userSync[0].type).to.exist;
       expect(userSync[0].url).to.exist;
-      expect(userSync[0].type).to.be.equal('hms.gif');
-      expect(userSync[0].url).to.be.equal('https://sync.colossusssp.com/hms.gif?pbjs=1&gdpr=0&gdpr_consent=xxx&ccpa_consent=1YN-&coppa=0');
+      expect(userSync[0].type).to.be.equal('image');
+      expect(userSync[0].url).to.be.equal('https://sync.colossusssp.com/image?pbjs=1&gdpr=0&gdpr_consent=xxx&ccpa_consent=1YN-&coppa=0');
     });
   });
 });

@@ -1,6 +1,8 @@
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { createTrackPixelHtml } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+
 const BIDDER_CODE = 'engageya';
 const ENDPOINT_URL = 'https://recs.engageya.com/rec-api/getrecs.json';
 const ENDPOINT_METHOD = 'GET';
@@ -126,6 +128,9 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     if (!validBidRequests) {
       return [];
     }

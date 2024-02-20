@@ -1,8 +1,9 @@
-import {convertTypes, deepAccess, flatten, isArray, isNumber, parseSizesInput} from '../src/utils.js';
+import {deepAccess, flatten, isArray, isNumber, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {find} from '../src/polyfill.js';
+import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
 const ENDPOINT = 'https://ghb.spotim.market/v2/auction';
 const BIDDER_CODE = 'openweb';
@@ -149,7 +150,7 @@ function bidToTag(bidRequests, adapterRequest) {
     tag.UserEids = deepAccess(bidRequests[0], 'userIdAsEids');
   }
   // end publisher env
-  const bids = []
+  const bids = [];
 
   for (let i = 0, length = bidRequests.length; i < length; i++) {
     const bid = prepareBidRequests(bidRequests[i]);

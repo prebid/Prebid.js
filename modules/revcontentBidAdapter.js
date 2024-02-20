@@ -2,9 +2,11 @@
 'use strict';
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { triggerPixel, isFn, deepAccess, getAdUnitSizes, parseGPTSingleSizeArrayToRtbSize, _map } from '../src/utils.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {_map, deepAccess, isFn, parseGPTSingleSizeArrayToRtbSize, triggerPixel} from '../src/utils.js';
 import {parseDomain} from '../src/refererDetection.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 const BIDDER_CODE = 'revcontent';
 const NATIVE_PARAMS = {
@@ -32,6 +34,9 @@ export const spec = {
     return (typeof bid.params.apiKey !== 'undefined' && typeof bid.params.userId !== 'undefined');
   },
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const userId = validBidRequests[0].params.userId;
     const widgetId = validBidRequests[0].params.widgetId;
     const apiKey = validBidRequests[0].params.apiKey;
@@ -61,7 +66,7 @@ export const spec = {
     const imp = validBidRequests.map((bid, id) => buildImp(bid, id));
 
     let data = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       imp: imp,
       site: {
         id: widgetId,
@@ -116,8 +121,6 @@ export const spec = {
         currency: response.cur || 'USD',
         ttl: 360,
         netRevenue: true,
-        bidder: 'revcontent',
-        bidderCode: 'revcontent'
       };
       if ('banner' in imp) {
         prBid.mediaType = BANNER;
@@ -213,8 +216,9 @@ function buildImp(bid, id) {
     id: id + 1,
     tagid: bid.adUnitCode,
     bidderRequestId: bid.bidderRequestId,
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     auctionId: bid.auctionId,
-    transactionId: bid.transactionId,
+    transactionId: bid.ortb2Imp?.ext?.tid,
     instl: 0,
     bidfloor: bidfloor,
     secure: '1'
@@ -228,7 +232,7 @@ function buildImp(bid, id) {
       w: sizes[0][0],
       h: sizes[0][1],
       format: sizes.map(wh => parseGPTSingleSizeArrayToRtbSize(wh)),
-    }
+    };
   } else if (nativeReq) {
     const assets = _map(bid.nativeParams, (bidParams, key) => {
       const props = NATIVE_PARAMS[key];

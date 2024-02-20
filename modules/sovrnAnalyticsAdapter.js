@@ -1,5 +1,5 @@
 import {logError, timestamp} from '../src/utils.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adaptermanager from '../src/adapterManager.js';
 import CONSTANTS from '../src/constants.json';
 import {ajaxBuilder} from '../src/ajax.js';

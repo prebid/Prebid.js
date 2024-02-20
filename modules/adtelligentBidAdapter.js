@@ -1,9 +1,15 @@
-import {_map, chunk, convertTypes, deepAccess, flatten, isArray, parseSizesInput} from '../src/utils.js';
+import {_map, deepAccess, flatten, isArray, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
 import {find} from '../src/polyfill.js';
+import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
+import {chunk} from '../libraries/chunk/chunk.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const subdomainSuffixes = ['', 1, 2];
 const AUCTION_PATH = '/v2/auction/';
@@ -15,13 +21,12 @@ const HOST_GETTERS = {
       return 'ghb' + subdomainSuffixes[num++ % subdomainSuffixes.length] + '.adtelligent.com';
     }
   }()),
-  navelix: () => 'ghb.hb.navelix.com',
-  appaloosa: () => 'ghb.hb.appaloosa.media',
-  onefiftytwomedia: () => 'ghb.ads.152media.com',
-  bidsxchange: () => 'ghb.hbd.bidsxchange.com',
   streamkey: () => 'ghb.hb.streamkey.net',
   janet: () => 'ghb.bidder.jmgads.com',
-  pgam: () => 'ghb.pgamssp.com',
+  ocm: () => 'ghb.cenarius.orangeclickmedia.com',
+  '9dotsmedia': () => 'ghb.platform.audiodots.com',
+  copper6: () => 'ghb.app.copper6.com',
+  indicue: () => 'ghb.console.indicue.com',
 }
 const getUri = function (bidderCode) {
   let bidderWithoutSuffix = bidderCode.split('_')[0];
@@ -37,9 +42,14 @@ const syncsCache = {};
 export const spec = {
   code: BIDDER_CODE,
   gvlid: 410,
-  aliases: ['onefiftytwomedia', 'selectmedia', 'appaloosa', 'bidsxchange', 'streamkey', 'janet',
-    { code: 'navelix', gvlid: 380 },
-    'pgam'
+  aliases: [
+    'streamkey',
+    'janet',
+    { code: 'selectmedia', gvlid: 775 },
+    { code: 'ocm', gvlid: 1148 },
+    '9dotsmedia',
+    'copper6',
+    'indicue',
   ],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {
@@ -186,8 +196,16 @@ function bidToTag(bidRequests, adapterRequest) {
     tag.DMPId = window.adtDmp.getUID();
   }
 
+  if (adapterRequest.gppConsent) {
+    tag.GPP = adapterRequest.gppConsent.gppString;
+    tag.GPPSid = adapterRequest.gppConsent.applicableSections?.toString();
+  } else if (adapterRequest.ortb2?.regs?.gpp) {
+    tag.GPP = adapterRequest.ortb2.regs.gpp;
+    tag.GPPSid = adapterRequest.ortb2.regs.gpp_sid;
+  }
+
   // end publisher env
-  const bids = []
+  const bids = [];
 
   for (let i = 0, length = bidRequests.length; i < length; i++) {
     const bid = prepareBidRequests(bidRequests[i]);

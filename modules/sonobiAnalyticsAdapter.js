@@ -1,12 +1,12 @@
 import { deepClone, logInfo, logError } from '../src/utils.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import {ajaxBuilder} from '../src/ajax.js';
 
 let ajax = ajaxBuilder(0);
 
-const DEFAULT_EVENT_URL = 'apex.go.sonobi.com/keymaker';
+export const DEFAULT_EVENT_URL = 'apex.go.sonobi.com/keymaker';
 const analyticsType = 'endpoint';
 const QUEUE_TIMEOUT_DEFAULT = 200;
 const {
@@ -255,7 +255,7 @@ sonobiAdapter.sendData = function (auction, data) {
       contentType: 'text/plain'
     }
   );
-}
+};
 
 function _logInfo(message, meta) {
   logInfo(buildLogMessage(message), meta);

@@ -1,8 +1,9 @@
-import {_map, chunk, deepAccess, flatten, isArray, logError, parseSizesInput} from '../src/utils.js';
+import {_map, deepAccess, flatten, isArray, logError, parseSizesInput} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {find} from '../src/polyfill.js';
+import {chunk} from '../libraries/chunk/chunk.js';
 
 const ENDPOINT = 'https://ghb.console.adtarget.com.tr/v2/auction/';
 const BIDDER_CODE = 'adtarget';
@@ -137,7 +138,7 @@ function bidToTag(bidRequests, adapterRequest) {
     tag.UserIds = deepAccess(bidRequests[0], 'userId');
   }
 
-  const bids = []
+  const bids = [];
 
   for (let i = 0, length = bidRequests.length; i < length; i++) {
     const bid = prepareBidRequests(bidRequests[i]);

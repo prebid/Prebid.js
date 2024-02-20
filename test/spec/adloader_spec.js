@@ -69,4 +69,27 @@ describe('adLoader', function () {
       expect(utilsinsertElementStub.callCount).to.equal(2);
     });
   });
+
+  it('attaches passed attributes to a script', function () {
+    const doc = {
+        createElement: function () {
+          return {
+            setAttribute: function (key, value) {
+              this[key] = value;
+            }
+          }
+        },
+        getElementsByTagName: function() {
+          return {
+            firstChild: {
+              insertBefore: function() {}
+            }
+          }
+        }
+      },
+      attrs = {'z': 'A', 'y': 2};
+    let script = adLoader.loadExternalScript('someUrl', 'criteo', undefined, doc, attrs);
+    expect(script.z).to.equal('A');
+    expect(script.y).to.equal(2);
+  });
 });

@@ -1,4 +1,4 @@
-import { deepAccess, isPlainObject, isArray, replaceAuctionPrice, isFn } from '../src/utils.js';
+import { deepAccess, isPlainObject, isArray, replaceAuctionPrice, isFn, logError } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
@@ -96,14 +96,14 @@ export const spec = {
 
     payload.device = {};
     payload.device.ua = navigator.userAgent;
-    payload.device.height = window.screen.width;
-    payload.device.width = window.screen.height;
+    payload.device.height = window.screen.height;
+    payload.device.width = window.screen.width;
     payload.device.dnt = _getDoNotTrack();
     payload.device.language = navigator.language;
 
     var pageUrl = _extractTopWindowUrlFromBidderRequest(bidderRequest);
     payload.site = {};
-    payload.site.page = pageUrl
+    payload.site.page = pageUrl;
     payload.site.referrer = _extractTopWindowReferrerFromBidderRequest(bidderRequest);
     // TODO: does it make sense to fall back to window.location for the domain?
     payload.site.hostname = bidderRequest.refererInfo?.domain || parseDomain(pageUrl);
@@ -124,24 +124,24 @@ export const spec = {
 
     // Apply schain.
     if (schain) {
-      payload.schain = schain
+      payload.schain = schain;
     }
 
     // Apply eids.
     if (eids) {
-      payload.eids = eids
+      payload.eids = eids;
     }
 
     // Apply geo
     if (geo) {
-      payload.geo = geo;
+      logError('apacdex adapter: Precise lat and long must be set on config; not on bidder parameters');
     }
 
     payload.bids = bids.map(function (bid) {
       return {
         params: bid.params,
         mediaTypes: bid.mediaTypes,
-        transactionId: bid.transactionId,
+        transactionId: bid.ortb2Imp?.ext?.tid,
         sizes: bid.sizes,
         bidId: bid.bidId,
         adUnitCode: bid.adUnitCode,

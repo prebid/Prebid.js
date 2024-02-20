@@ -44,8 +44,9 @@ pbjs.setConfig(
                 params: {
                     segmentCache: false,
                     requestParams: {
-                        publisherId: 1234
-                    }
+                        publisherId: 1234  // deprecated, use partnerId instead
+                    },
+                    partnerId: 1234
                 }
             }
         ]
@@ -56,15 +57,17 @@ pbjs.setConfig(
 
 ### Parameter Descriptions for the Hadron Configuration Section
 
-| Name  |Type | Description   | Notes  |
-| :------------ | :------------ | :------------ |:------------ |
-| name | String | Real time data module name | Always 'hadron' |
-| waitForIt | Boolean | Required to ensure that the auction is delayed until prefetch is complete | Optional. Defaults to false |
-| params | Object | | |
-| params.handleRtd | Function | A passable RTD handler that allows custom adunit and ortb2 logic to be configured. The function signature is (bidConfig, rtd, rtdConfig, pbConfig) => {}. | Optional |
-| params.segmentCache | Boolean | This parameter tells the Hadron RTD module to attempt reading segments from a local storage cache instead of always requesting them from the Audigent server. | Optional. Defaults to false. |
-| params.requestParams | Object | Publisher partner specific configuration options, such as optional publisher id and other segment query related metadata to be submitted to Audigent's backend with each request.  Contact prebid@audigent.com for more information. | Optional |
-| params.hadronIdUrl | String | Parameter to specify alternate hadronid endpoint url. | Optional |
+| Name                             | Type     | Description                                                                                                                                                                                                                          | Notes                        |
+|:---------------------------------|:---------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------|
+| name                             | String   | Real time data module name                                                                                                                                                                                                           | Always 'hadron'              |
+| waitForIt                        | Boolean  | Required to ensure that the auction is delayed until prefetch is complete                                                                                                                                                            | Optional. Defaults to false  |
+| params                           | Object   |                                                                                                                                                                                                                                      |                              |
+| params.partnerId                 | Number   | This is the Audigent Partner ID obtained from Audigent.                                                                                                                                                                              | `1234`                       |
+| params.handleRtd                 | Function | A passable RTD handler that allows custom adunit and ortb2 logic to be configured. The function signature is (bidConfig, rtd, rtdConfig, pbConfig) => {}.                                                                            | Optional                     |
+| params.segmentCache              | Boolean  | This parameter tells the Hadron RTD module to attempt reading segments from a local storage cache instead of always requesting them from the Audigent server.                                                                        | Optional. Defaults to false. |
+| params.requestParams             | Object   | Publisher partner specific configuration options, such as optional publisher id and other segment query related metadata to be submitted to Audigent's backend with each request.  Contact prebid@audigent.com for more information. | Optional                     |
+| params.requestParams.publisherId | Object   | (deprecated) Publisher id and other segment query related metadata to be submitted to Audigent's backend with each request.  Contact prebid@audigent.com for more information.                                                       | Optional                     |
+| params.hadronIdUrl               | String   | Parameter to specify alternate hadronid endpoint url.                                                                                                                                                                                | Optional                     |
 
 ### Publisher Customized RTD Handling
 As indicated above, it is possible to provide your own bid augmentation
@@ -100,8 +103,9 @@ pbjs.setConfig(
                     },
                     segmentCache: false,
                     requestParams: {
-                        publisherId: 1234
-                    }
+                        publisherId: 1234  // deprecated, use partnerId instead
+                    },
+                    partnerId: 1234
                 }
             }
         ]

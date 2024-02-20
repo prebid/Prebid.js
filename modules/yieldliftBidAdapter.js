@@ -1,10 +1,10 @@
-import { deepSetValue, logInfo, deepAccess } from '../src/utils.js';
+import {deepAccess, deepSetValue, logInfo} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 
-const ENDPOINT_URL = 'https://x.yieldlift.com/auction';
+const ENDPOINT_URL = 'https://x.yieldlift.com/pbjs';
 
-const DEFAULT_BID_TTL = 30;
+const DEFAULT_BID_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_NET_REVENUE = true;
 
@@ -41,7 +41,7 @@ export const spec = {
     }));
 
     const openrtbRequest = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       imp: impressions,
       site: {
         domain: bidderRequest.refererInfo?.domain,
@@ -72,6 +72,12 @@ export const spec = {
       deepSetValue(openrtbRequest, 'regs.ext.us_privacy', bidderRequest.uspConsent);
     }
 
+    // EIDS
+    const eids = deepAccess(validBidRequests[0], 'userIdAsEids');
+    if (Array.isArray(eids) && eids.length > 0) {
+      deepSetValue(openrtbRequest, 'user.ext.eids', eids);
+    }
+
     const payloadString = JSON.stringify(openrtbRequest);
     return {
       method: 'POST',
@@ -92,13 +98,11 @@ export const spec = {
           width: bid.w,
           height: bid.h,
           ad: bid.adm,
-          ttl: DEFAULT_BID_TTL,
+          ttl: typeof bid.exp === 'number' ? bid.exp : DEFAULT_BID_TTL,
           creativeId: bid.crid,
           netRevenue: DEFAULT_NET_REVENUE,
           currency: DEFAULT_CURRENCY,
-          meta: {
-            adomain: bid.adomain
-          }
+          meta: { advertiserDomains: bid && bid.advertiserDomains ? bid.advertiserDomains : [] }
         })
       })
     } else {

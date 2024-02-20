@@ -2,6 +2,12 @@ import { logInfo, generateUUID, formatQS, triggerPixel, deepAccess } from '../sr
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ */
+
 const BIDDER_CODE = 'sublime';
 const BIDDER_GVLID = 114;
 const DEFAULT_BID_HOST = 'pbjs.sskzlabs.com';
@@ -179,6 +185,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 
     const bidPayload = {
       adUnitCode: bid.adUnitCode,
+      // TODO: fix auctionId/transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auctionId: bid.auctionId,
       bidder: bid.bidder,
       bidderRequestId: bid.bidderRequestId,

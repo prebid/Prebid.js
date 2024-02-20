@@ -1,8 +1,20 @@
-import {isArray, logMessage, deepAccess, logWarn, parseSizesInput, deepSetValue, generateUUID, isEmpty, logError, _each, isFn} from '../src/utils.js';
+import {
+  _each,
+  deepAccess,
+  deepSetValue,
+  generateUUID,
+  isArray,
+  isEmpty,
+  isFn,
+  logError,
+  logMessage,
+  logWarn,
+  parseSizesInput
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER} from '../src/mediaTypes.js';
-import { ajax } from '../src/ajax.js';
+import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'luponmedia';
 const ENDPOINT_URL = 'https://rtb.adxpremium.services/openrtb2/auction';
@@ -176,7 +188,7 @@ export const spec = {
       responses.forEach(csResp => {
         if (csResp.body && csResp.body.ext && csResp.body.ext.usersyncs) {
           try {
-            let response = csResp.body.ext.usersyncs
+            let response = csResp.body.ext.usersyncs;
             let bidders = response.bidder_status;
             for (let synci in bidders) {
               let thisSync = bidders[synci];
@@ -287,12 +299,12 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
   }
 
   const data = {
-    id: bidRequest.transactionId,
+    id: bidderRequest.bidderRequestId,
     test: config.getConfig('debug') ? 1 : 0,
     source: {
-      tid: bidRequest.transactionId
+      tid: bidderRequest.ortb2?.source?.tid,
     },
-    tmax: config.getConfig('timeout') || 1500,
+    tmax: bidderRequest.timeout,
     imp: currentImps.concat([{
       id: bidRequest.bidId,
       secure: 1,
@@ -314,7 +326,7 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
     },
     user: {
     }
-  }
+  };
 
   let bidFloor;
   if (isFn(bidRequest.getFloor) && !config.getConfig('disableFloors')) {
@@ -566,7 +578,7 @@ function parseSizes(bid, mediaType) {
   } else if (typeof deepAccess(bid, 'mediaTypes.banner.sizes') !== 'undefined') {
     sizes = mapSizes(bid.mediaTypes.banner.sizes);
   } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
-    sizes = mapSizes(bid.sizes)
+    sizes = mapSizes(bid.sizes);
   } else {
     logWarn('LuponMedia: no sizes are setup or found');
   }

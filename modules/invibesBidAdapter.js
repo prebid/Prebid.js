@@ -1,6 +1,11 @@
-import { logInfo } from '../src/utils.js';
+import {logInfo} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const CONSTANTS = {
   BIDDER_CODE: 'invibes',
@@ -9,14 +14,15 @@ const CONSTANTS = {
   SYNC_ENDPOINT: 'https://k.r66net.com/GetUserSync',
   TIME_TO_LIVE: 300,
   DEFAULT_CURRENCY: 'EUR',
-  PREBID_VERSION: 8,
+  PREBID_VERSION: 11,
   METHOD: 'GET',
   INVIBES_VENDOR_ID: 436,
   USERID_PROVIDERS: ['pubcid', 'pubProvidedId', 'uid2', 'zeotapIdPlus', 'id5id'],
-  META_TAXONOMY: ['networkId', 'networkName', 'agencyId', 'agencyName', 'advertiserId', 'advertiserName', 'advertiserDomains', 'brandId', 'brandName', 'primaryCatId', 'secondaryCatIds', 'mediaType']
+  META_TAXONOMY: ['networkId', 'networkName', 'agencyId', 'agencyName', 'advertiserId', 'advertiserName', 'advertiserDomains', 'brandId', 'brandName', 'primaryCatId', 'secondaryCatIds', 'mediaType'],
+  DISABLE_USER_SYNC: true
 };
 
-const storage = getStorageManager({gvlid: CONSTANTS.INVIBES_VENDOR_ID, bidderCode: CONSTANTS.BIDDER_CODE});
+const storage = getStorageManager({bidderCode: CONSTANTS.BIDDER_CODE});
 
 export const spec = {
   code: CONSTANTS.BIDDER_CODE,
@@ -40,15 +46,7 @@ export const spec = {
   interpretResponse: function (responseObj, requestParams) {
     return handleResponse(responseObj, requestParams != null ? requestParams.bidRequests : null);
   },
-  getUserSyncs: function (syncOptions) {
-    if (syncOptions.iframeEnabled) {
-      const syncUrl = buildSyncUrl();
-      return {
-        type: 'iframe',
-        url: syncUrl
-      };
-    }
-  }
+  getUserSyncs: getUserSync,
 };
 
 registerBidder(spec);
@@ -56,11 +54,35 @@ registerBidder(spec);
 // some state info is required: cookie info, unique user visit id
 const topWin = getTopMostWindow();
 let invibes = topWin.invibes = topWin.invibes || {};
-invibes.purposes = invibes.purposes || [false, false, false, false, false, false, false, false, false, false];
-invibes.legitimateInterests = invibes.legitimateInterests || [false, false, false, false, false, false, false, false, false, false];
+invibes.purposes = invibes.purposes || [false, false, false, false, false, false, false, false, false, false, false];
+invibes.legitimateInterests = invibes.legitimateInterests || [false, false, false, false, false, false, false, false, false, false, false];
 invibes.placementBids = invibes.placementBids || [];
 invibes.pushedCids = invibes.pushedCids || {};
+let preventPageViewEvent = false;
+let isInfiniteScrollPage = false;
+let isPlacementRefresh = false;
 let _customUserSync;
+let _disableUserSyncs;
+
+function updateInfiniteScrollFlag() {
+  const { scrollHeight } = document.documentElement;
+
+  if (invibes.originalURL === undefined) {
+    invibes.originalURL = window.location.href;
+    return;
+  }
+
+  if (invibes.originalScrollHeight === undefined) {
+    invibes.originalScrollHeight = scrollHeight;
+    return;
+  }
+
+  const currentURL = window.location.href;
+
+  if (scrollHeight > invibes.originalScrollHeight && invibes.originalURL !== currentURL) {
+    isInfiniteScrollPage = true;
+  }
+}
 
 function isBidRequestValid(bid) {
   if (typeof bid.params !== 'object') {
@@ -75,20 +97,47 @@ function isBidRequestValid(bid) {
   return true;
 }
 
+function getUserSync(syncOptions) {
+  if (syncOptions.iframeEnabled) {
+    if (!(_disableUserSyncs == null || _disableUserSyncs == undefined ? CONSTANTS.DISABLE_USER_SYNC : _disableUserSyncs)) {
+      const syncUrl = buildSyncUrl();
+      return {
+        type: 'iframe',
+        url: syncUrl
+      };
+    }
+  }
+}
+
 function buildRequest(bidRequests, bidderRequest) {
   bidderRequest = bidderRequest || {};
   const _placementIds = [];
   const _adUnitCodes = [];
   let _customEndpoint, _userId, _domainId;
-  let _ivAuctionStart = bidderRequest.auctionStart || Date.now();
+  let _ivAuctionStart = Date.now();
+  window.invibes = window.invibes || {};
+  window.invibes.placementIds = window.invibes.placementIds || [];
+
+  if (isInfiniteScrollPage == false) {
+    updateInfiniteScrollFlag();
+  }
 
   bidRequests.forEach(function (bidRequest) {
     bidRequest.startTime = new Date().getTime();
+
+    if (window.invibes.placementIds.includes(bidRequest.params.placementId)) {
+      isPlacementRefresh = true;
+    }
+
+    window.invibes.placementIds.push(bidRequest.params.placementId);
+
+    _placementIds.push(bidRequest.params.placementId);
     _placementIds.push(bidRequest.params.placementId);
     _adUnitCodes.push(bidRequest.adUnitCode);
     _domainId = _domainId || bidRequest.params.domainId;
     _customEndpoint = _customEndpoint || bidRequest.params.customEndpoint;
     _customUserSync = _customUserSync || bidRequest.params.customUserSync;
+    _disableUserSyncs = bidRequest?.params?.disableUserSyncs;
     _userId = _userId || bidRequest.userId;
   });
 
@@ -108,7 +157,7 @@ function buildRequest(bidRequests, bidderRequest) {
     bidParamsJson.userId = userIdModel;
   }
   let data = {
-    location: getDocumentLocation(topWin),
+    location: getDocumentLocation(bidderRequest),
     videoAdHtmlId: generateRandomId(),
     showFallback: currentQueryStringParams['advs'] === '0',
     ivbsCampIdsLocal: readFromLocalStorage('IvbsCampIdsLocal'),
@@ -129,6 +178,9 @@ function buildRequest(bidRequests, bidderRequest) {
 
     tc: invibes.gdpr_consent,
     isLocalStorageEnabled: storage.hasLocalStorage(),
+    preventPageViewEvent: preventPageViewEvent,
+    isPlacementRefresh: isPlacementRefresh,
+    isInfiniteScrollPage: isInfiniteScrollPage,
   };
 
   let lid = readFromLocalStorage('ivbsdid');
@@ -157,6 +209,8 @@ function buildRequest(bidRequests, bidderRequest) {
   }
 
   let endpoint = createEndpoint(_customEndpoint, _domainId, _placementIds);
+
+  preventPageViewEvent = true;
 
   return {
     method: CONSTANTS.METHOD,
@@ -357,11 +411,13 @@ function addMeta(bidModelMeta) {
 }
 
 function generateRandomId() {
-  return (Math.round(Math.random() * 1e12)).toString(36).substring(0, 10);
+  return '10000000100040008000100000000000'.replace(/[018]/g, c =>
+    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+  );
 }
 
-function getDocumentLocation(topWin) {
-  return topWin.location.href.substring(0, 300).split(/[?#]/)[0];
+function getDocumentLocation(bidderRequest) {
+  return bidderRequest.refererInfo.page.substring(0, 300);
 }
 
 function getUserIds(bidUserId) {
@@ -381,7 +437,10 @@ function getUserIds(bidUserId) {
 function parseQueryStringParams() {
   let params = {};
   try {
-    params = JSON.parse(localStorage.ivbs);
+    let storedParam = storage.getDataFromLocalStorage('ivbs');
+    if (storedParam != null) {
+      params = JSON.parse(storedParam);
+    }
   } catch (e) {
   }
   let re = /[\\?&]([^=]+)=([^\\?&#]+)/g;
@@ -554,7 +613,7 @@ function readGdprConsent(gdprConsent) {
     }
 
     let legitimateInterests = getLegitimateInterests(gdprConsent.vendorData);
-    tryCopyValueToArray(legitimateInterests, invibes.legitimateInterests, 10);
+    tryCopyValueToArray(legitimateInterests, invibes.legitimateInterests, purposesLength);
 
     let invibesVendorId = CONSTANTS.INVIBES_VENDOR_ID.toString(10);
     let vendorConsents = getVendorConsents(gdprConsent.vendorData);
@@ -607,6 +666,10 @@ function tryCopyValueToArray(value, target, length) {
 
 function getPurposeConsentsCounter(vendorData) {
   if (vendorData.purpose && vendorData.purpose.consents) {
+    if (vendorData.tcfPolicyVersion >= 4) {
+      return 11;
+    }
+
     return 10;
   }
 

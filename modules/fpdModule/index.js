@@ -4,6 +4,9 @@
  */
 import { config } from '../../src/config.js';
 import { module, getHook } from '../../src/hook.js';
+import {logError} from '../../src/utils.js';
+import {GreedyPromise} from '../../src/utils/promise.js';
+import {timedAuctionHook} from '../../src/utils/perfMetrics.js';
 
 let submodules = [];
 
@@ -17,20 +20,28 @@ export function reset() {
 
 export function processFpd({global = {}, bidder = {}} = {}) {
   let modConf = config.getConfig('firstPartyData') || {};
-
+  let result = GreedyPromise.resolve({global, bidder});
   submodules.sort((a, b) => {
     return ((a.queue || 1) - (b.queue || 1));
   }).forEach(submodule => {
-    ({global = global, bidder = bidder} = submodule.processFpd(modConf, {global, bidder}));
+    result = result.then(
+      ({global, bidder}) => GreedyPromise.resolve(submodule.processFpd(modConf, {global, bidder}))
+        .catch((err) => {
+          logError(`Error in FPD module ${submodule.name}`, err);
+          return {};
+        })
+        .then((result) => ({global: result.global || global, bidder: result.bidder || bidder}))
+    );
   });
-
-  return {global, bidder};
+  return result;
 }
 
-export function startAuctionHook(fn, req) {
-  Object.assign(req.ortb2Fragments, processFpd(req.ortb2Fragments));
-  fn.call(this, req);
-}
+export const startAuctionHook = timedAuctionHook('fpd', function startAuctionHook(fn, req) {
+  processFpd(req.ortb2Fragments).then((ortb2Fragments) => {
+    Object.assign(req.ortb2Fragments, ortb2Fragments);
+    fn.call(this, req);
+  })
+});
 
 function setupHook() {
   getHook('startAuction').before(startAuctionHook, 10);

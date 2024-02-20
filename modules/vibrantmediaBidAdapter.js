@@ -1,3 +1,4 @@
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 /*
  * Vibrant Media Ltd.
  *
@@ -10,6 +11,13 @@ import {logError, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {OUTSTREAM} from '../src/video.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ */
 
 const BIDDER_CODE = 'vibrantmedia';
 const VIBRANT_MEDIA_PREBID_URL = 'https://prebid.intellitxt.com/prebid';
@@ -71,7 +79,7 @@ const transformBidRequests = function(bidRequests) {
     const transformedBidRequest = {
       code: bidRequest.adUnitCode || bidRequest.code,
       id: bidRequest.placementId || params.placementId || params.invCode,
-      requestId: bidRequest.bidId || bidRequest.transactionId,
+      requestId: bidRequest.bidId,
       bidder: bidRequest.bidder,
       mediaTypes: bidRequest.mediaTypes,
       bids: bidRequest.bids,
@@ -123,6 +131,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the prebid server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const transformedBidRequests = transformBidRequests(validBidRequests);
 
     var url = window.parent.location.href;
