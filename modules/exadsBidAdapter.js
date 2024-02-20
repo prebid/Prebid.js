@@ -136,10 +136,10 @@ function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
       'bidfloor': validBidRequest.params.bidfloor,
       'bidfloorcur': validBidRequest.params.bidfloorcur,
       'video': {
-        'mimes': validBidRequest.params.stream.video.mimes,
-        'protocols': validBidRequest.params.stream.protocols,
+        'mimes': validBidRequest.params.imp.video.mimes,
+        'protocols': validBidRequest.params.imp.video.protocols,
       },
-      'ext': validBidRequest.params.stream.ext
+      'ext': validBidRequest.params.imp.ext
     }];
 
     bidRequestData.imp = imp;
@@ -360,12 +360,12 @@ function handleValidORTB2Dot4(bid) {
     (nativeInfo ? bid.params.native &&
       nativeInfo.ortb.assets &&
       nativeInfo.ortb.assets.some(asset => !!asset.img) : true) &&
-    (videoInfo ? (bid.params.stream &&
-      hasValue(bid.params.stream.video) &&
-      bid.params.stream.video.mimes &&
-      bid.params.stream.video.mimes.length > 0 &&
-      bid.params.stream.protocols &&
-      bid.params.stream.protocols.length > 0) : true));
+    (videoInfo ? (bid.params.imp &&
+      hasValue(bid.params.imp.video) &&
+      bid.params.imp.video.mimes &&
+      bid.params.imp.video.mimes.length > 0 &&
+      bid.params.imp.video.protocols &&
+      bid.params.imp.video.protocols.length > 0) : true));
 
   if (!isValid) {
     utils.logError('Validation Error');

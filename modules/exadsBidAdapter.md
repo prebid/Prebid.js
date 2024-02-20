@@ -179,12 +179,9 @@ adUnits = [{
             impressionId: '1234',
             stream: {
                 video: {
-                    mimes: ['video/mp4']
+                    mimes: ['video/mp4'],
+                    protocols: [3,6]
                 },
-                protocols: [
-                    3,
-                    6
-                ],
                 ext: {
                     video_cta: 0
                 }

@@ -122,14 +122,12 @@
                         userIp: 0, // DO NOT EDIT - Client side data
                         userId: userId,
                         impressionId: impressionId.toString(), // DO NOT EDIT - Custom hash
-                        stream: {
+                        imp: {
                             video: {
-                                mimes: ['video/mp4']
+                                mimes: ['video/mp4'],
+                                protocols: [3,6],
                             },
-                            protocols: [
-                                3,
-                                6
-                            ],
+                            
                             ext: {
                                 video_cta: 0
                             }
