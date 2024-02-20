@@ -6,6 +6,10 @@ import {server} from '../../mocks/xhr'
 
 describe('Taboola Adapter', function () {
   let sandbox, hasLocalStorage, cookiesAreEnabled, getDataFromLocalStorage, localStorageIsEnabled, getCookie, commonBidRequest;
+  const COOKIE_KEY = 'trc_cookie_storage';
+  const TGID_COOKIE_KEY = 't_gid';
+  const TGID_PT_COOKIE_KEY = 't_pt_gid';
+  const TBLA_ID_COOKIE_KEY = 'tbla_id';
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
@@ -214,7 +218,11 @@ describe('Taboola Adapter', function () {
           'ext': {},
         },
         'regs': {'coppa': 0, 'ext': {}},
-        'ext': {}
+        'ext': {
+          'prebid': {
+            'version': '$prebid.version$'
+          }
+        }
       };
 
       expect(res.url).to.equal(`${END_POINT_URL}?publisher=${commonBidRequest.params.publisherId}`);
@@ -469,6 +477,90 @@ describe('Taboola Adapter', function () {
         };
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.user.buyeruid).to.equal('12121212');
+      });
+
+      it('should get user id from cookie if local storage isn`t defined, only TGID_COOKIE_KEY exists', function () {
+        getDataFromLocalStorage.returns(51525152);
+        hasLocalStorage.returns(false);
+        localStorageIsEnabled.returns(false);
+        cookiesAreEnabled.returns(true);
+        getCookie.callsFake(function (cookieKey) {
+          if (cookieKey === COOKIE_KEY) {
+            return 'should:not:return:this';
+          }
+          if (cookieKey === TGID_COOKIE_KEY) {
+            return 'user:12121212';
+          }
+          return undefined;
+        });
+        const bidderRequest = {
+          ...commonBidderRequest
+        };
+        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        expect(res.data.user.buyeruid).to.equal('user:12121212');
+      });
+
+      it('should get user id from cookie if local storage isn`t defined, only TGID_PT_COOKIE_KEY exists', function () {
+        getDataFromLocalStorage.returns(51525152);
+        hasLocalStorage.returns(false);
+        localStorageIsEnabled.returns(false);
+        cookiesAreEnabled.returns(true);
+        getCookie.callsFake(function (cookieKey) {
+          if (cookieKey === TGID_PT_COOKIE_KEY) {
+            return 'user:12121212';
+          }
+          return undefined;
+        });
+        const bidderRequest = {
+          ...commonBidderRequest
+        };
+        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        expect(res.data.user.buyeruid).to.equal('user:12121212');
+      });
+
+      it('should get user id from cookie if local storage isn`t defined, only TBLA_ID_COOKIE_KEY exists', function () {
+        getDataFromLocalStorage.returns(51525152);
+        hasLocalStorage.returns(false);
+        localStorageIsEnabled.returns(false);
+        cookiesAreEnabled.returns(true);
+        getCookie.callsFake(function (cookieKey) {
+          if (cookieKey === TBLA_ID_COOKIE_KEY) {
+            return 'user:tbla:12121212';
+          }
+          return undefined;
+        });
+        const bidderRequest = {
+          ...commonBidderRequest
+        };
+        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        expect(res.data.user.buyeruid).to.equal('user:tbla:12121212');
+      });
+
+      it('should get user id from cookie if local storage isn`t defined, all cookie keys exist', function () {
+        getDataFromLocalStorage.returns(51525152);
+        hasLocalStorage.returns(false);
+        localStorageIsEnabled.returns(false);
+        cookiesAreEnabled.returns(true);
+        getCookie.callsFake(function (cookieKey) {
+          if (cookieKey === COOKIE_KEY) {
+            return 'taboola%20global%3Auser-id=cookie:1';
+          }
+          if (cookieKey === TGID_COOKIE_KEY) {
+            return 'cookie:2';
+          }
+          if (cookieKey === TGID_PT_COOKIE_KEY) {
+            return 'cookie:3';
+          }
+          if (cookieKey === TBLA_ID_COOKIE_KEY) {
+            return 'cookie:4';
+          }
+          return undefined;
+        });
+        const bidderRequest = {
+          ...commonBidderRequest
+        };
+        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        expect(res.data.user.buyeruid).to.equal('cookie:1');
       });
 
       it('should get user id from tgid cookie if local storage isn`t defined', function () {
@@ -892,8 +984,11 @@ describe('Taboola Adapter', function () {
       expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, 'USP_CONSENT')).to.deep.equal([{
         type: 'image', url: `${usersyncUrl}?us_privacy=USP_CONSENT`
       }]);
-      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, 'USP_CONSENT', 'GPP_STRING')).to.deep.equal([{
-        type: 'image', url: `${usersyncUrl}?us_privacy=USP_CONSENT&gpp=GPP_STRING`
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, 'USP_CONSENT', {gppString: 'GPP_STRING', applicableSections: []})).to.deep.equal([{
+        type: 'image', url: `${usersyncUrl}?us_privacy=USP_CONSENT&gpp=GPP_STRING&gpp_sid=`
+      }]);
+      expect(spec.getUserSyncs({ pixelEnabled: true }, {}, undefined, 'USP_CONSENT', {gppString: 'GPP_STRING', applicableSections: [32, 51]})).to.deep.equal([{
+        type: 'image', url: `${usersyncUrl}?us_privacy=USP_CONSENT&gpp=GPP_STRING&gpp_sid=32%2C51`
       }]);
     });
   })
