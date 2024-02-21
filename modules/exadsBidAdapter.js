@@ -175,86 +175,92 @@ function handleResORTB2Dot4(serverResponse, request) {
 
   if (serverResponse.hasOwnProperty('body') && serverResponse.body.hasOwnProperty('id')) {
     utils.logInfo('Ad server response', serverResponse.body.id);
-    utils.logInfo('serverResponse.body.seatbid[0].bid[0]', serverResponse.body.seatbid[0].bid[0]);
-
+    
     const bidRq = JSON.parse(request.data);
     const requestId = serverResponse.body.id;
-    const bidData = serverResponse.body.seatbid[0].bid[0];
     const currency = serverResponse.body.cur;
-    const bidResponseAd = bidData.adm;
-    const pixelUrl = bidData.nurl.replace(/^http:\/\//i, 'https://');
 
-    const bannerInfo = utils.deepAccess(bidRq.imp[0], 'banner');
-    const nativeInfo = utils.deepAccess(bidRq.imp[0], 'native');
-    const videoInfo = utils.deepAccess(bidRq.imp[0], 'video');
+    serverResponse.body.seatbid.forEach((seatbid, seatIndex) => {
+      seatbid.bid.forEach((bidData, bidIndex) => {
+        utils.logInfo('serverResponse.body.seatbid[' + seatIndex + '].bid[' + bidIndex + ']', bidData);
+        
+        const bidResponseAd = bidData.adm;
+        const pixelUrl = bidData.nurl.replace(/^http:\/\//i, 'https://');
 
-    let w; let h = 0;
-    let mediaType = '';
-    const native = {};
+        const bannerInfo = utils.deepAccess(bidRq.imp[0], 'banner');
+        const nativeInfo = utils.deepAccess(bidRq.imp[0], 'native');
+        const videoInfo = utils.deepAccess(bidRq.imp[0], 'video');
 
-    if (bannerInfo != null) {
-      w = bidRq.imp[0].banner.w;
-      h = bidRq.imp[0].banner.h;
-      mediaType = BANNER;
-    } else if (nativeInfo != null) {
-      const responseADM = JSON.parse(bidResponseAd);
-      responseADM.native.assets.forEach(asset => {
-        if (asset.img != null) {
-          const imgAsset = JSON.parse(bidRq.imp[0].native.request)
-            .native.assets.filter(asset => asset.img != null).map(asset => asset.img);
-          w = imgAsset[0].w;
-          h = imgAsset[0].h;
-          native.image = {
-            url: asset.img.url,
-            height: h,
-            width: w
+        let w; let h = 0;
+        let mediaType = '';
+        const native = {};
+
+        if (bannerInfo != null) {
+          w = bidRq.imp[0].banner.w;
+          h = bidRq.imp[0].banner.h;
+          mediaType = BANNER;
+        } else if (nativeInfo != null) {
+          const responseADM = JSON.parse(bidResponseAd);
+          responseADM.native.assets.forEach(asset => {
+            if (asset.img != null) {
+              const imgAsset = JSON.parse(bidRq.imp[0].native.request)
+                .native.assets.filter(asset => asset.img != null).map(asset => asset.img);
+              w = imgAsset[0].w;
+              h = imgAsset[0].h;
+              native.image = {
+                url: asset.img.url,
+                height: h,
+                width: w
+              }
+            } else if (asset.title != null) {
+              native.title = asset.title.text;
+            } else if (asset.data != null) {
+              native.body = asset.data.value;
+            } else {
+              utils.logWarn('bidResponse->', 'wrong asset type or null');
+            }
+          });
+
+          if (responseADM.native && responseADM.native.link) {
+            native.clickUrl = responseADM.native.link.url;
           }
-        } else if (asset.title != null) {
-          native.title = asset.title.text;
-        } else if (asset.data != null) {
-          native.body = asset.data.value;
-        } else {
-          utils.logWarn('bidResponse->', 'wrong asset type or null');
+
+          mediaType = NATIVE;
+        } else if (videoInfo != null) {
+          mediaType = VIDEO;
         }
+
+        const bidResponse = {
+          requestId: requestId,
+          currency: currency,
+          ad: bidData.adm,
+          cpm: bidData.price,
+          creativeId: bidData.crid,
+          cid: bidData.cid,
+          width: w,
+          ttl: 360,
+          height: h,
+          netRevenue: true,
+          mediaType: mediaType,
+          nurl: pixelUrl
+        };
+
+        if (mediaType == 'native') {
+          bidResponse.native = native;
+        }
+
+        if (mediaType == 'video') {
+          bidResponse.vastXml = bidData.adm;
+          bidResponse.width = bidData.w;
+          bidResponse.height = bidData.h;
+        }
+
+        utils.logInfo('bidResponse->', bidResponse);
+
+        bidResponses.push(bidResponse);
       });
+    });
 
-      if (responseADM.native && responseADM.native.link) {
-        native.clickUrl = responseADM.native.link.url;
-      }
-
-      mediaType = NATIVE;
-    } else if (videoInfo != null) {
-      mediaType = VIDEO;
-    }
-
-    const bidResponse = {
-      requestId: requestId,
-      currency: currency,
-      ad: bidData.adm,
-      cpm: bidData.price,
-      creativeId: bidData.crid,
-      cid: bidData.cid,
-      width: w,
-      ttl: 360,
-      height: h,
-      netRevenue: true,
-      mediaType: mediaType,
-      nurl: pixelUrl
-    };
-
-    if (mediaType == 'native') {
-      bidResponse.native = native;
-    }
-
-    if (mediaType == 'video') {
-      bidResponse.vastXml = bidData.adm;
-      bidResponse.width = bidData.w;
-      bidResponse.height = bidData.h;
-    }
-
-    utils.logInfo('bidResponse->', bidResponse);
-
-    bidResponses.push(bidResponse);
   } else {
     utils.logInfo('NO Ad server response ->', serverResponse.body.id);
   }
@@ -262,6 +268,7 @@ function handleResORTB2Dot4(serverResponse, request) {
   utils.logInfo('interpretResponse -> bidResponses:', bidResponses);
 
   return bidResponses;
+
 }
 
 function makeBidRequest(url, data) {
