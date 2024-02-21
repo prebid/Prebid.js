@@ -298,9 +298,6 @@ export const spec = {
         if (!sellerSignals.floor && bidRequest.params.bidFloor) {
           sellerSignals.floor = bidRequest.params.bidFloor;
         }
-        if (!sellerSignals.sellerCurrency && bidRequest.params.bidFloorCur) {
-          sellerSignals.sellerCurrency = bidRequest.params.bidFloorCur;
-        }
         if (body?.ext?.sellerSignalsPerImp !== undefined) {
           const sellerSignalsPerImp = body.ext.sellerSignalsPerImp[bidId];
           if (sellerSignalsPerImp !== undefined) {
@@ -317,6 +314,7 @@ export const spec = {
             auctionSignals: {},
             decisionLogicUrl: FLEDGE_DECISION_LOGIC_URL,
             interestGroupBuyers: Object.keys(perBuyerSignals),
+            sellerCurrency: sellerSignals.currency || '???',
           },
         });
       });
