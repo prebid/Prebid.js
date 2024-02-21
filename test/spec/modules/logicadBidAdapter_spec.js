@@ -235,12 +235,12 @@ describe('LogicadAdapter', function () {
           config: {
             seller: 'https://fledge.ladsp.com',
             decisionLogicUrl: 'https://fledge.ladsp.com/decision_logic.js',
-            interestGroupBuyers: '',
+            interestGroupBuyers: ['https://fledge.ladsp.com'],
             requestedSize: {width: '300', height: '250'},
             allSlotsRequestedSizes: [{width: '300', height: '250'}],
             sellerSignals: {signal: 'signal'},
             sellerTimeout: '500',
-            perBuyerSignals: {'https://fledge.ladsp.com': {}},
+            perBuyerSignals: {'https://fledge.ladsp.com': {signal: 'signal'}},
             perBuyerCurrencies: {'https://fledge.ladsp.com': 'USD'}
           }
         }]
