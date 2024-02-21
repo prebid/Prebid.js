@@ -37,7 +37,7 @@ export const spec = {
     if (!serverResponse || serverResponse.error) {
       return bids;
     }
-    
+
     serverResponse.seatbid.forEach(function (seatbid) {
       bids.push(seatbid.bid);
     })
@@ -94,12 +94,12 @@ function newBidRequest(bidRequest, bidderRequest) {
     eids: bidRequest.userIdAsEids,
   };
 
-  const sua = deepAccess(bid, 'ortb2.device.sua');
+  const sua = deepAccess(bidRequest, 'ortb2.device.sua');
   if (sua) {
     data.sua = sua;
   }
 
-  const userData = deepAccess(bid, 'ortb2.user.data');
+  const userData = deepAccess(bidRequest, 'ortb2.user.data');
   if (userData) {
     data.userData = userData;
   }
