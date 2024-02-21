@@ -172,10 +172,7 @@ export const spec = {
         site: ortb2?.site,
         tmax: timeout,
         user: ortb2?.user,
-        device: {
-          ...ortb2?.device,
-          ext: getDeviceExt(),
-        },
+        device: ortb2?.device,
       };
 
       const eids = deepAccess(bidRequest, 'userIdAsEids');
@@ -479,13 +476,6 @@ function addRTT(url, rtt) {
   url = urlObj.toString();
 
   return url;
-}
-
-/** @returns {{webdriver: boolean}} */
-function getDeviceExt() {
-  return {
-    webdriver: self.navigator?.webdriver === true
-  };
 }
 
 registerBidder(spec);

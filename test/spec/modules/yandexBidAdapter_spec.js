@@ -188,21 +188,6 @@ describe('Yandex adapter', function () {
       expect(data.user).to.deep.equal(expected);
     });
 
-    it('should send device with webdriver ext', function() {
-      const expected = {
-        device: {
-          ...bidderRequest.ortb2.device,
-          ext: {
-            webdriver: true
-          }
-        }
-      };
-
-      const requests = spec.buildRequests([getBidRequest()], bidderRequest);
-
-      expect(requests[0].data.device).to.deep.equal(expected.device);
-    });
-
     it('should send site', function() {
       const expected = {
         site: bidderRequest.ortb2.site
