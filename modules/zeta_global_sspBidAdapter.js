@@ -381,6 +381,10 @@ function provideMediaType(zetaBid, bid, bidRequest) {
 
 function clearEmpties(o) {
   for (let k in o) {
+    if (o[k] === null) {
+      delete o[k];
+      continue;
+    }
     if (!o[k] || typeof o[k] !== 'object') {
       continue;
     }

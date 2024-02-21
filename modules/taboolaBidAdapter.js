@@ -18,6 +18,7 @@ const USER_ID = 'user-id';
 const STORAGE_KEY = `taboola global:${USER_ID}`;
 const COOKIE_KEY = 'trc_cookie_storage';
 const TGID_COOKIE_KEY = 't_gid';
+const TGID_PT_COOKIE_KEY = 't_pt_gid';
 const TBLA_ID_COOKIE_KEY = 'tbla_id';
 export const EVENT_ENDPOINT = 'https://beacon.bidder.taboola.com';
 
@@ -43,11 +44,18 @@ export const userData = {
     const {cookiesAreEnabled, getCookie} = userData.storageManager;
     if (cookiesAreEnabled()) {
       const cookieData = getCookie(COOKIE_KEY);
-      let userId = userData.getCookieDataByKey(cookieData, USER_ID);
+      let userId;
+      if (cookieData) {
+        userId = userData.getCookieDataByKey(cookieData, USER_ID);
+      }
       if (userId) {
         return userId;
       }
       userId = getCookie(TGID_COOKIE_KEY);
+      if (userId) {
+        return userId;
+      }
+      userId = getCookie(TGID_PT_COOKIE_KEY);
       if (userId) {
         return userId;
       }
@@ -58,6 +66,9 @@ export const userData = {
     }
   },
   getCookieDataByKey(cookieData, key) {
+    if (!cookieData) {
+      return undefined;
+    }
     const [, value = ''] = cookieData.split(`${key}=`)
     return value;
   },
@@ -166,7 +177,7 @@ export const spec = {
     }
 
     if (gppConsent) {
-      queryParams.push('gpp=' + encodeURIComponent(gppConsent));
+      queryParams.push('gpp=' + encodeURIComponent(gppConsent.gppString || '') + '&gpp_sid=' + encodeURIComponent((gppConsent.applicableSections || []).join(',')));
     }
 
     if (syncOptions.iframeEnabled) {
@@ -258,6 +269,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data) {
   data.user = user;
   data.regs = regs;
   deepSetValue(data, 'ext.pageType', ortb2?.ext?.data?.pageType || ortb2?.ext?.data?.section || bidRequest.params.pageType);
+  deepSetValue(data, 'ext.prebid.version', '$prebid.version$');
 }
 
 function fillTaboolaImpData(bid, imp) {
