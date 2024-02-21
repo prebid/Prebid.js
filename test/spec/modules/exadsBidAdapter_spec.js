@@ -107,17 +107,19 @@ describe('exadsBidAdapterTest', function () {
       keywords: 'lifestyle, humour',
       bidfloor: 0.00000011,
       bidfloorcur: 'EUR',
-      stream: {
+      imp: {
         video: {
-          mimes: ['video/mp4']
+          mimes: ['video/mp4'],
+          protocols: [3,6]
         },
-        protocols: [
-          3,
-          6
-        ],
         ext: {
           video_cta: 0
         }
+      },
+      dsa: {
+        dsarequired: 3, 
+        pubrender: 0,
+        datatopub: 2
       },
       endpoint: 'test.com',
     }
