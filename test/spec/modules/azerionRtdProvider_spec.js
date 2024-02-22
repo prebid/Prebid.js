@@ -42,7 +42,7 @@ describe('Azerion RTD submodule', function () {
     });
 
     it('should load external script with default versioned url', function() {
-      const expected = 'https://pa.hyth.io/js/v1/htpa.min.js';
+      const expected = 'https://edge.hyth.io/js/v1/azerion-edge.min.js';
       expect(loadExternalScript.args[0][0]).to.deep.equal(expected);
     });
 
@@ -62,7 +62,7 @@ describe('Azerion RTD submodule', function () {
       });
 
       it('should load external script with publisher id url', function() {
-        const expected = `https://pa.hyth.io/js/v1/${key}/htpa.min.js`;
+        const expected = `https://edge.hyth.io/js/v1/${key}/azerion-edge.min.js`;
         expect(loadExternalScript.args[0][0]).to.deep.equal(expected);
       });
     });

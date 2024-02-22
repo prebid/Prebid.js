@@ -34,7 +34,7 @@ function getScriptURL(config) {
   const VERSION = 'v1';
   const key = config.params?.key;
   const publisherPath = key ? `${key}/` : '';
-  return `https://pa.hyth.io/js/${VERSION}/${publisherPath}htpa.min.js`;
+  return `https://edge.hyth.io/js/${VERSION}/${publisherPath}azerion-edge.min.js`;
 }
 
 /**
