@@ -1,4 +1,5 @@
 import { spec } from 'modules/rixengineBidAdapter.js';
+const ENDPOINT = 'http://demo.svr.rixengine.com/rtb?sid=36540&token=1e05a767930d7d96ef6ce16318b4ab99';
 
 const REQUEST = [
   {
@@ -13,7 +14,6 @@ const REQUEST = [
       endpoint: 'http://demo.svr.rixengine.com/rtb',
       token: '1e05a767930d7d96ef6ce16318b4ab99',
       sid: '36540',
-      bidfloor: 10.0,
     },
   },
 ];
@@ -54,10 +54,9 @@ describe('rixengine bid adapter', function () {
     let bid = {
       bidder: 'rixengine',
       params: {
-        endpoint: 'xxx',
-        sid: 'xxx',
-        token: 'xxx',
-        bidfloor: 10.00,
+        endpoint: 'http://demo.svr.rixengine.com/rtb',
+        token: '1e05a767930d7d96ef6ce16318b4ab99',
+        sid: '36540',
       },
     };
     it('should return true when required params found', function () {
@@ -78,11 +77,16 @@ describe('rixengine bid adapter', function () {
   });
   describe('buildRequests', function () {
     it('creates request data', function () {
-      const request = spec.buildRequests(REQUEST, {})[0];
+      const request = spec.buildRequests(REQUEST, {
+        refererInfo: {
+          page: 'page',
+        },
+      })[0];
       expect(request).to.exist.and.to.be.a('object');
     });
-    it('sends bid request via POST', function () {
+    it('sends bid request to ENDPOINT via POST', function () {
       const request = spec.buildRequests(REQUEST, {})[0];
+      expect(request.url).to.equal(ENDPOINT);
       expect(request.method).to.equal('POST');
     });
   });

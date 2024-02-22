@@ -25,7 +25,6 @@ var adUnits = [
         endpoint: 'http://demo.svr.rixengine.com/rtb', // required
         token: '1e05a767930d7d96ef6ce16318b4ab99', // required
         sid: 36540, // required
-        bidfloor: '0.5', // Optional
       }
     }]
 }];
