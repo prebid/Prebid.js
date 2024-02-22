@@ -7,6 +7,10 @@ import {find} from '../src/polyfill.js';
 import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const subdomainSuffixes = ['', 1, 2];
 const AUCTION_PATH = '/v2/auction/';
 const PROTOCOL = 'https://';
@@ -21,7 +25,8 @@ const HOST_GETTERS = {
   janet: () => 'ghb.bidder.jmgads.com',
   ocm: () => 'ghb.cenarius.orangeclickmedia.com',
   '9dotsmedia': () => 'ghb.platform.audiodots.com',
-  copper6: () => 'ghb.app.copper6.com'
+  copper6: () => 'ghb.app.copper6.com',
+  indicue: () => 'ghb.console.indicue.com',
 }
 const getUri = function (bidderCode) {
   let bidderWithoutSuffix = bidderCode.split('_')[0];
@@ -44,6 +49,7 @@ export const spec = {
     { code: 'ocm', gvlid: 1148 },
     '9dotsmedia',
     'copper6',
+    'indicue',
   ],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function (bid) {

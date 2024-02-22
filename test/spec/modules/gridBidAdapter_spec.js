@@ -1559,37 +1559,9 @@ describe('TheMediaGrid Adapter', function () {
     });
 
     it('should send right request on onDataDeletionRequest call', function() {
-      spec.onDataDeletionRequest([{
-        bids: [
-          {
-            bidder: 'grid',
-            params: {
-              uid: 1
-            }
-          },
-          {
-            bidder: 'grid',
-            params: {
-              uid: 2
-            }
-          },
-          {
-            bidder: 'another',
-            params: {
-              uid: 3
-            }
-          },
-          {
-            bidder: 'gridNM',
-            params: {
-              uid: 4
-            }
-          }
-        ],
-      }]);
+      spec.onDataDeletionRequest([{}]);
       expect(ajaxStub.calledOnce).to.equal(true);
-      expect(ajaxStub.firstCall.args[0]).to.equal('https://media.grid.bidswitch.net/uspapi_delete');
-      expect(ajaxStub.firstCall.args[2]).to.equal('{"uids":[1,2,4]}');
+      expect(ajaxStub.firstCall.args[0]).to.equal('https://media.grid.bidswitch.net/uspapi_delete_c2s');
     });
   });
 

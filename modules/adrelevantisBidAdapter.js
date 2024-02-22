@@ -23,6 +23,11 @@ import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
 import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'adrelevantis';
 const URL = 'https://ssp.adrelevantis.com/prebid';
 const VIDEO_TARGETING = ['id', 'mimes', 'minduration', 'maxduration',

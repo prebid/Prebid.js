@@ -2,6 +2,7 @@
 
 ```
 Module Name: Greenbids RTD Provider
+Module Version: 2.0.0
 Module Type: RTD Provider
 Maintainer: jb@greenbids.ai
 ```
@@ -21,7 +22,6 @@ This module is configured as part of the `realTimeData.dataProviders` object.
 | `waitForIt `     | required (mandatory true value) | Tells prebid auction to wait for the result of this module | `'true'`   | `boolean` |
 | `params`      | required |  | | `Object` |
 | `params.pbuid`      | required | The client site id provided by Greenbids. | `'TEST_FROM_GREENBIDS'` | `string` |
-| `params.targetTPR`      | optional (default 0.95) | Target True positive rate for the throttling model | `0.99` | `[0-1]` |
 | `params.timeout`      | optional (default 200) | Maximum amount of milliseconds allowed for module to finish working (has to be <= to the realTimeData.auctionDelay property) | `200` | `number` |
 
 #### Example

@@ -15,6 +15,11 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import CONSTANTS from '../src/constants.json';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'datawrkz';
 const ALIASES = [];
 const ENDPOINT_URL = 'https://at.datawrkz.com/exchange/openrtb23/';

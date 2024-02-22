@@ -861,11 +861,6 @@ describe('Adagio bid adapter', () => {
         }
         const requests = spec.buildRequests([bid01], bidderRequest);
 
-        expect(requests[0].data.adUnits[0].floors.length).to.equal(3);
-        expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({f: 1, mt: 'banner', s: '300x250'});
-        expect(requests[0].data.adUnits[0].floors[1]).to.deep.equal({f: 1, mt: 'banner', s: '300x600'});
-        expect(requests[0].data.adUnits[0].floors[2]).to.deep.equal({f: 1, mt: 'video', s: '600x480'});
-
         expect(requests[0].data.adUnits[0].mediaTypes.banner.sizes.length).to.equal(2);
         expect(requests[0].data.adUnits[0].mediaTypes.banner.bannerSizes[0]).to.deep.equal({size: [300, 250], floor: 1});
         expect(requests[0].data.adUnits[0].mediaTypes.banner.bannerSizes[1]).to.deep.equal({size: [300, 600], floor: 1});
@@ -890,10 +885,6 @@ describe('Adagio bid adapter', () => {
         }
         const requests = spec.buildRequests([bid01], bidderRequest);
 
-        expect(requests[0].data.adUnits[0].floors.length).to.equal(2);
-        expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({f: 1, mt: 'video'});
-        expect(requests[0].data.adUnits[0].floors[1]).to.deep.equal({f: 1, mt: 'native'});
-
         expect(requests[0].data.adUnits[0].mediaTypes.video.floor).to.equal(1);
         expect(requests[0].data.adUnits[0].mediaTypes.native.floor).to.equal(1);
       });
@@ -913,8 +904,6 @@ describe('Adagio bid adapter', () => {
         }
         const requests = spec.buildRequests([bid01], bidderRequest);
 
-        expect(requests[0].data.adUnits[0].floors.length).to.equal(1);
-        expect(requests[0].data.adUnits[0].floors[0]).to.deep.equal({mt: 'video'});
         expect(requests[0].data.adUnits[0].mediaTypes.video.floor).to.be.undefined;
       });
     });
@@ -956,6 +945,34 @@ describe('Adagio bid adapter', () => {
         const requests = spec.buildRequests([bid01], bidderRequest);
 
         expect(requests[0].data.usIfr).to.equal(false);
+      });
+    });
+
+    describe('with GPID', function () {
+      const gpid = '/12345/my-gpt-tag-0';
+
+      it('should add preferred gpid to the request', function () {
+        const bid01 = new BidRequestBuilder().withParams().build();
+        bid01.ortb2Imp = {
+          ext: {
+            gpid: gpid
+          }
+        };
+        const bidderRequest = new BidderRequestBuilder().build();
+        const requests = spec.buildRequests([bid01], bidderRequest);
+        expect(requests[0].data.adUnits[0].gpid).to.exist.and.equal(gpid);
+      });
+
+      it('should add backup gpid to the request', function () {
+        const bid01 = new BidRequestBuilder().withParams().build();
+        bid01.ortb2Imp = {
+          ext: {
+            data: { pbadslot: gpid }
+          }
+        };
+        const bidderRequest = new BidderRequestBuilder().build();
+        const requests = spec.buildRequests([bid01], bidderRequest);
+        expect(requests[0].data.adUnits[0].gpid).to.exist.and.equal(gpid);
       });
     });
   });
@@ -1480,8 +1497,8 @@ describe('Adagio bid adapter', () => {
       expect(result.user_timestamp).to.be.a('String');
     });
 
-    it('should return `adunit_position` feature when the slot is hidden', function () {
-      const elem = fixtures.getElementById();
+    it('should return `adunit_position` feature when the slot is hidden with value 0x0', function () {
+      const elem = fixtures.getElementById('0', '0', '0', '0');
       sandbox.stub(window.top.document, 'getElementById').returns(elem);
       sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'none' });
       sandbox.stub(utils, 'inIframe').returns(false);
@@ -1499,8 +1516,7 @@ describe('Adagio bid adapter', () => {
       const requests = spec.buildRequests([bidRequest], bidderRequest);
       const result = requests[0].data.adUnits[0].features;
 
-      expect(result.adunit_position).to.match(/^[\d]+x[\d]+$/);
-      expect(elem.style.display).to.equal(null); // set null to reset style
+      expect(result.adunit_position).to.equal('0x0');
     });
   });
 
