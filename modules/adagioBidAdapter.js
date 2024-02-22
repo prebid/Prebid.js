@@ -990,6 +990,9 @@ export const spec = {
     const syncEnabled = deepAccess(config.getConfig('userSync'), 'syncEnabled')
     const usIfr = syncEnabled && userSync.canBidderRegisterSync('iframe', 'adagio')
 
+    // We don't validate the dsa object in adapter and let our server do it.
+    const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
+
     const aucId = generateUUID()
 
     const adUnits = validBidRequests.map(rawBidRequest => {
@@ -1179,7 +1182,8 @@ export const spec = {
             coppa: coppa,
             ccpa: uspConsent,
             gpp: gppConsent.gpp,
-            gppSid: gppConsent.gppSid
+            gppSid: gppConsent.gppSid,
+            dsa: dsa // populated if exists
           },
           schain: schain,
           user: {
@@ -1216,6 +1220,7 @@ export const spec = {
             const bidReq = (find(bidRequest.data.adUnits, bid => bid.bidId === bidObj.requestId));
 
             if (bidReq) {
+              // bidObj.meta is the `bidResponse.meta` object according to https://docs.prebid.org/dev-docs/bidder-adaptor.html#interpreting-the-response
               bidObj.meta = deepAccess(bidObj, 'meta', {});
               bidObj.meta.mediaType = bidObj.mediaType;
               bidObj.meta.advertiserDomains = (Array.isArray(bidObj.aDomain) && bidObj.aDomain.length) ? bidObj.aDomain : [];
