@@ -660,6 +660,27 @@ describe('adnuntiusBidAdapter', function() {
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL);
     });
+
+    it('should user in user', function () {
+      config.setBidderConfig({
+        bidders: ['adnuntius'],
+      });
+      const req = [
+        {
+          bidId: 'adn-000000000008b6bc',
+          bidder: 'adnuntius',
+          params: {
+            auId: '000000000008b6bc',
+            network: 'adnuntius',
+            userId: 'different_user_id'
+          }
+        }
+      ]
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, { bids: req }));
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url')
+      expect(request[0].url).to.equal(`${ENDPOINT_URL_BASE}&userId=different_user_id`);
+    });
   });
 
   describe('user privacy', function() {
@@ -909,6 +930,7 @@ describe('adnuntiusBidAdapter', function() {
         ]
       };
       serverResponse.body.adUnits[0].deals = [];
+      delete serverResponse.body.metaData.voidAuIds; // test response with no voidAuIds
 
       const interpretedResponse = spec.interpretResponse(serverResponse, altBidder);
       expect(interpretedResponse).to.have.lengthOf(0);

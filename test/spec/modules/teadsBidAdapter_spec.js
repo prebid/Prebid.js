@@ -1005,6 +1005,45 @@ describe('teadsBidAdapter', () => {
         }
       });
     }
+
+    it('should add dsa info to payload if available', function () {
+      const bidRequestWithDsa = Object.assign({}, bidderRequestDefault, {
+        ortb2: {
+          regs: {
+            ext: {
+              dsa: {
+                dsarequired: '1',
+                pubrender: '2',
+                datatopub: '3',
+                transparency: [{
+                  domain: 'test.com',
+                  dsaparams: [1, 2, 3]
+                }]
+              }
+            }
+          }
+        }
+      });
+
+      const requestWithDsa = spec.buildRequests(bidRequests, bidRequestWithDsa);
+      const payload = JSON.parse(requestWithDsa.data);
+
+      expect(payload.dsa).to.exist;
+      expect(payload.dsa).to.deep.equal(
+        {
+          dsarequired: '1',
+          pubrender: '2',
+          datatopub: '3',
+          transparency: [{
+            domain: 'test.com',
+            dsaparams: [1, 2, 3]
+          }]
+        }
+      );
+
+      const defaultRequest = spec.buildRequests(bidRequests, bidderRequestDefault);
+      expect(JSON.parse(defaultRequest.data).dsa).to.not.exist;
+    });
   });
 
   describe('interpretResponse', function() {
@@ -1031,7 +1070,18 @@ describe('teadsBidAdapter', () => {
             'width': 350,
             'creativeId': 'fs3ff',
             'placementId': 34,
-            'dealId': 'ABC_123'
+            'dealId': 'ABC_123',
+            'ext': {
+              'dsa': {
+                'behalf': 'some-behalf',
+                'paid': 'some-paid',
+                'transparency': [{
+                  'domain': 'test.com',
+                  'dsaparams': [1, 2, 3]
+                }],
+                'adrender': 1
+              }
+            }
           }]
         }
       };
@@ -1057,7 +1107,16 @@ describe('teadsBidAdapter', () => {
           'currency': 'USD',
           'netRevenue': true,
           'meta': {
-            advertiserDomains: []
+            advertiserDomains: [],
+            dsa: {
+              behalf: 'some-behalf',
+              paid: 'some-paid',
+              transparency: [{
+                domain: 'test.com',
+                dsaparams: [1, 2, 3]
+              }],
+              adrender: 1
+            }
           },
           'ttl': 360,
           'ad': AD_SCRIPT,

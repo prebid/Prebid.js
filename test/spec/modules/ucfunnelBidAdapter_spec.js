@@ -30,7 +30,7 @@ const validBannerBidReq = {
   params: {
     adid: 'ad-34BBD2AA24B678BBFD4E7B9EE3B872D'
   },
-  sizes: [[300, 250]],
+  sizes: [[300, 250], [336, 280]],
   bidId: '263be71e91dd9d',
   auctionId: '9ad1fa8d-2297-4660-a018-b39945054746',
   ortb2Imp: {
@@ -180,15 +180,15 @@ describe('ucfunnel Adapter', function () {
       expect(data.schain).to.equal('1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com');
     });
 
-    it('must parse bid size from a nested array', function () {
-      const width = 640;
-      const height = 480;
-      const bid = deepClone(validBannerBidReq);
-      bid.sizes = [[ width, height ]];
-      const requests = spec.buildRequests([ bid ], bidderRequest);
+    it('should support multiple size', function () {
+      const sizes = [[300, 250], [336, 280]];
+      const format = '300,250;336,280';
+      validBannerBidReq.sizes = sizes;
+      const requests = spec.buildRequests([ validBannerBidReq ], bidderRequest);
       const data = requests[0].data;
-      expect(data.w).to.equal(width);
-      expect(data.h).to.equal(height);
+      expect(data.w).to.equal(sizes[0][0]);
+      expect(data.h).to.equal(sizes[0][1]);
+      expect(data.format).to.equal(format);
     });
 
     it('should set bidfloor if configured', function() {

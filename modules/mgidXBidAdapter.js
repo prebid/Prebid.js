@@ -17,7 +17,7 @@ import { USERSYNC_DEFAULT_CONFIG } from '../src/userSync.js';
 
 const BIDDER_CODE = 'mgidX';
 const GVLID = 358;
-const AD_URL = 'https://us-east-x.mgid.com/pbjs';
+const AD_URL = 'https://#{REGION}#.mgid.com/pbjs';
 const PIXEL_SYNC_URL = 'https://cm.mgid.com/i.gif';
 const IFRAME_SYNC_URL = 'https://cm.mgid.com/i.html';
 
@@ -181,9 +181,18 @@ export const spec = {
       placements.push(getPlacementReqData(bid));
     }
 
+    const region = validBidRequests[0].params?.region;
+
+    let url;
+    if (region === 'eu') {
+      url = AD_URL.replace('#{REGION}#', 'eu');
+    } else {
+      url = AD_URL.replace('#{REGION}#', 'us-east-x');
+    }
+
     return {
       method: 'POST',
-      url: AD_URL,
+      url: url,
       data: request
     };
   },

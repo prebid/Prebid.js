@@ -172,6 +172,17 @@ userIdAsEids = [
             }
         }]
     },
+    
+    {
+        source: 'adserver.org',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },
 
     {
         source: 'rubiconproject.com',
@@ -323,6 +334,13 @@ userIdAsEids = [
         uids: [{
             id: 'some-random-id-value',
             atype: 3
+        }]
+    },
+    {
+        source: 'mygaru.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
         }]
     }
 ]
