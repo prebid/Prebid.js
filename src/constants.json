@@ -186,5 +186,11 @@
 	"SUCCESS": "success",
 	"ERROR": "error",
 	"TIMEOUT": "timeout"
+  },
+  "MESSAGES": {
+    "REQUEST": "Prebid Request",
+    "RESPONSE": "Prebid Response",
+    "NATIVE": "Prebid Native",
+    "EVENT": "Prebid Event"
   }
 }
