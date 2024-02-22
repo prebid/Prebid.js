@@ -49,6 +49,12 @@ describe('Zeta Ssp Bid Adapter', function () {
     },
     tags: {
       someTag: 444,
+      emptyTag: {},
+      nullTag: null,
+      complexEmptyTag: {
+        empty: {},
+        nullValue: null
+      }
     },
     sid: 'publisherId',
     tagid: 'test_tag_id',
@@ -126,6 +132,16 @@ describe('Zeta Ssp Bid Adapter', function () {
     userIdAsEids: eids,
     timeout: 500,
     ortb2: {
+      device: {
+        sua: {
+          mobile: 1,
+          architecture: 'arm',
+          platform: {
+            brand: 'Chrome',
+            version: ['102']
+          }
+        }
+      },
       user: {
         data: [
           {
@@ -631,5 +647,31 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(payload.user.data[0].segment[0].id).to.eql('3');
     expect(payload.user.data[0].segment[1].id).to.eql('44');
     expect(payload.user.data[0].segment[2].id).to.eql('59');
+  });
+
+  it('Test provide device params', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    expect(payload.device.sua.mobile).to.eql(1);
+    expect(payload.device.sua.architecture).to.eql('arm');
+    expect(payload.device.sua.platform.brand).to.eql('Chrome');
+    expect(payload.device.sua.platform.version[0]).to.eql('102');
+
+    expect(payload.device.ua).to.not.be.undefined;
+    expect(payload.device.language).to.not.be.undefined;
+    expect(payload.device.w).to.not.be.undefined;
+    expect(payload.device.h).to.not.be.undefined;
+  });
+
+  it('Test that all empties are removed', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    expect(payload.ext.tags.someTag).to.eql(444);
+
+    expect(payload.ext.tags.emptyTag).to.be.undefined;
+    expect(payload.ext.tags.nullTag).to.be.undefined;
+    expect(payload.ext.tags.complexEmptyTag).to.be.undefined;
   });
 });
