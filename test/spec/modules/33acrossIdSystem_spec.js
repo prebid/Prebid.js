@@ -63,7 +63,7 @@ describe('33acrossIdSystem', () => {
               },
               storage: {
                 type: 'cookie',
-                expires: 90
+                expires: 30
               }
             });
 
@@ -184,7 +184,7 @@ describe('33acrossIdSystem', () => {
             },
             storage: {
               type: 'cookie',
-              expires: 90
+              expires: 30
             }
           });
 
