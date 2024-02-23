@@ -210,6 +210,7 @@
                         `;
 
                         const iframe = document.createElement('iframe');
+                        slot.removeChild(slot.childNodes[0]);
                         slot.appendChild(iframe);
                         Object.entries({
                             frameBorder: 0,

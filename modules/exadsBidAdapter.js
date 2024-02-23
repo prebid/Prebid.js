@@ -12,8 +12,7 @@ const adPartnerHandlers = {
   [PARTNERS.ORTB_2_4]: {
     request: handleReqORTB2Dot4,
     response: handleResORTB2Dot4,
-    validation: handleValidORTB2Dot4,
-    nurl: handleNURLORTB2Dot4
+    validation: handleValidORTB2Dot4
   }
 };
 
@@ -226,15 +225,24 @@ function handleResORTB2Dot4(serverResponse, request, adPartner) {
             }
           });
 
-          if (responseADM.native && responseADM.native.link) {
-            native.clickUrl = responseADM.native.link.url;
+          if (responseADM.native) {
+            if(responseADM.native.link) {
+              native.clickUrl = responseADM.native.link.url;
+            }
+            if(responseADM.native.eventtrackers) {
+              native.impressionTrackers = [];
+
+              responseADM.native.eventtrackers.forEach(tracker => {
+                if(tracker.method == 1) {
+                  native.impressionTrackers.push(tracker.url);
+                }
+              });
+            }
           }
           mediaType = NATIVE;
         } else if (videoInfo != null) {
           mediaType = VIDEO;
         }
-
-        const pixelUrl = adPartnerHandlers[adPartner]['nurl'](bidData);
 
         const bidResponse = {
           requestId: requestId,
@@ -248,7 +256,7 @@ function handleResORTB2Dot4(serverResponse, request, adPartner) {
           height: h,
           netRevenue: true,
           mediaType: mediaType,
-          nurl: pixelUrl ? pixelUrl.replace(/^http:\/\//i, 'https://') : ''
+          nurl: bidData.nurl.replace(/^http:\/\//i, 'https://')
         };
 
         if (mediaType == 'native') {
@@ -398,34 +406,6 @@ function handleValidORTB2Dot4(bid) {
   }
 
   return isValid;
-}
-
-function handleNURLORTB2Dot4(response){
-  const { mediaType } = imps.get(response.impid);
-
-  switch(mediaType){
-    case BANNER:
-      return response.nurl;
-    case NATIVE:
-      {
-        const adm = JSON.parse(response.adm);
-
-        if(adm.native.eventtrackers){
-          const event = adm.native.eventtrackers.find(tracker => tracker.event == 1);
-          if(hasValue(event)) {
-            return event.url;
-          } else {
-            return '';
-          }
-        } else {
-          return '';
-        }        
-      }
-    case VIDEO:
-      return response.nurl;
-    default:
-      return '';
-  }
 }
 
 function hasValue(value) {
