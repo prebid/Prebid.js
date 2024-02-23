@@ -4,7 +4,6 @@ import {expect} from 'chai';
 
 describe('zMaticoo Bidder Adapter', function () {
   const bannerRequest = [{
-    bidId: '1234511',
     auctionId: '223',
     mediaTypes: {
       banner: {
@@ -18,12 +17,6 @@ describe('zMaticoo Bidder Adapter', function () {
       user: {
         uid: '12345',
         buyeruid: '12345'
-      },
-      device: {
-        ip: '111.222.33.44',
-        geo: {
-          country: 'USA'
-        }
       },
       pubId: 'prebid-test',
       test: 1,
@@ -32,7 +25,6 @@ describe('zMaticoo Bidder Adapter', function () {
     }
   }];
   const bannerRequest1 = [{
-    bidId: '1234511',
     auctionId: '223',
     mediaTypes: {
       banner: {
@@ -46,12 +38,6 @@ describe('zMaticoo Bidder Adapter', function () {
       user: {
         uid: '12345',
         buyeruid: '12345'
-      },
-      device: {
-        ip: '111.222.33.44',
-        geo: {
-          country: 'USA'
-        }
       },
       pubId: 'prebid-test',
       test: 1,
@@ -69,7 +55,6 @@ describe('zMaticoo Bidder Adapter', function () {
     },
   }];
   const videoRequest = [{
-    bidId: '1234511',
     auctionId: '223',
     mediaTypes: {
       video: {
@@ -95,12 +80,6 @@ describe('zMaticoo Bidder Adapter', function () {
         uid: '12345',
         buyeruid: '12345'
       },
-      device: {
-        ip: '111.222.33.44',
-        geo: {
-          country: 'USA'
-        }
-      },
       pubId: 'prebid-test',
       test: 1,
       tagid: 'test',
@@ -109,7 +88,6 @@ describe('zMaticoo Bidder Adapter', function () {
   }];
 
   const videoRequest1 = [{
-    bidId: '1234511',
     auctionId: '223',
     mediaTypes: {
       video: {
@@ -132,12 +110,6 @@ describe('zMaticoo Bidder Adapter', function () {
         uid: '12345',
         buyeruid: '12345'
       },
-      device: {
-        ip: '111.222.33.44',
-        geo: {
-          country: 'USA'
-        }
-      },
       pubId: 'prebid-test',
       test: 1,
       tagid: 'test',
@@ -154,21 +126,9 @@ describe('zMaticoo Bidder Adapter', function () {
       const invalidBid = spec.isBidRequestValid(null);
       expect(invalidBid).to.be.false;
     });
-    it('missing required bid.bidId', function () {
-      const request = deepClone(videoRequest[0])
-      delete request.bidId
-      const invalidBid = spec.isBidRequestValid(request);
-      expect(invalidBid).to.be.false;
-    });
     it('missing required params.pubId', function () {
       const request = deepClone(videoRequest[0])
       delete request.params.pubId
-      const invalidBid = spec.isBidRequestValid(request);
-      expect(invalidBid).to.be.false;
-    });
-    it('missing required device data', function () {
-      const request = deepClone(videoRequest[0])
-      delete request.params.device
       const invalidBid = spec.isBidRequestValid(request);
       expect(invalidBid).to.be.false;
     });

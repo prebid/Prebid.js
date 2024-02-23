@@ -46,18 +46,13 @@ export const spec = {
       logWarn('Invalid bid request - missing required mediaTypes');
       return false;
     }
-    if (!(bid && bid.bidId && bid.params)) {
+    if (!(bid && bid.params)) {
       logWarn('Invalid bid request - missing required bid data');
       return false;
     }
 
     if (!(bid.params.pubId)) {
       logWarn('Invalid bid request - missing required field pubId');
-      return false;
-    }
-
-    if (!(bid.params.device)) {
-      logWarn('Invalid bid request - missing required device data');
       return false;
     }
     return true;
