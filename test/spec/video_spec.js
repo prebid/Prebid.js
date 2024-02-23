@@ -82,10 +82,10 @@ describe('video.js', function () {
       const bid = {
         adId: '456xyz',
         vastUrl: 'http://www.example.com/vastUrl',
-        transactionId: 'au'
+        adUnitId: 'au'
       };
       const adUnits = [{
-        transactionId: 'au',
+        adUnitId: 'au',
         mediaTypes: {
           video: {context: 'instream'}
         }
@@ -96,10 +96,10 @@ describe('video.js', function () {
 
     it('catches invalid instream bids', function () {
       const bid = {
-        transactionId: 'au'
+        adUnitId: 'au'
       };
       const adUnits = [{
-        transactionId: 'au',
+        adUnitId: 'au',
         mediaTypes: {
           video: {context: 'instream'}
         }
@@ -110,26 +110,26 @@ describe('video.js', function () {
 
     it('catches invalid bids when prebid-cache is disabled', function () {
       const adUnits = [{
-        transactionId: 'au',
+        adUnitId: 'au',
         bidder: 'vastOnlyVideoBidder',
         mediaTypes: {video: {}},
       }];
 
-      const valid = isValidVideoBid({ transactionId: 'au', vastXml: '<xml>vast</xml>' }, {index: stubAuctionIndex({adUnits})});
+      const valid = isValidVideoBid({ adUnitId: 'au', vastXml: '<xml>vast</xml>' }, {index: stubAuctionIndex({adUnits})});
 
       expect(valid).to.equal(false);
     });
 
     it('validates valid outstream bids', function () {
       const bid = {
-        transactionId: 'au',
+        adUnitId: 'au',
         renderer: {
           url: 'render.url',
           render: () => true,
         }
       };
       const adUnits = [{
-        transactionId: 'au',
+        adUnitId: 'au',
         mediaTypes: {
           video: {context: 'outstream'}
         }
@@ -140,10 +140,10 @@ describe('video.js', function () {
 
     it('validates valid outstream bids with a publisher defined renderer', function () {
       const bid = {
-        transactionId: 'au',
+        adUnitId: 'au',
       };
       const adUnits = [{
-        transactionId: 'au',
+        adUnitId: 'au',
         mediaTypes: {
           video: {
             context: 'outstream',
@@ -160,10 +160,10 @@ describe('video.js', function () {
 
     it('catches invalid outstream bids', function () {
       const bid = {
-        transactionId: 'au',
+        adUnitId: 'au',
       };
       const adUnits = [{
-        transactionId: 'au',
+        adUnitId: 'au',
         mediaTypes: {
           video: {context: 'outstream'}
         }

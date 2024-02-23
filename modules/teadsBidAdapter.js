@@ -2,6 +2,11 @@ import {getValue, logError, deepAccess, parseSizesInput, isArray, getBidIdParame
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'teads';
 const GVL_ID = 132;
 const ENDPOINT_URL = 'https://a.teads.tv/hb/bid-request';
@@ -45,6 +50,7 @@ export const spec = {
    */
   buildRequests: function(validBidRequests, bidderRequest) {
     const bids = validBidRequests.map(buildRequestObject);
+    const topWindow = window.top;
 
     const payload = {
       referrer: getReferrerInfo(bidderRequest),
@@ -55,6 +61,12 @@ export const spec = {
       timeToFirstByte: getTimeToFirstByte(window),
       data: bids,
       deviceWidth: screen.width,
+      screenOrientation: screen.orientation?.type,
+      historyLength: topWindow.history?.length,
+      viewportHeight: topWindow.visualViewport?.height,
+      viewportWidth: topWindow.visualViewport?.width,
+      hardwareConcurrency: topWindow.navigator?.hardwareConcurrency,
+      deviceMemory: topWindow.navigator?.deviceMemory,
       hb_version: '$prebid.version$',
       ...getSharedViewerIdParameters(validBidRequests),
       ...getFirstPartyTeadsIdParameter(validBidRequests)
@@ -87,6 +99,11 @@ export const spec = {
     const userAgentClientHints = deepAccess(firstBidRequest, 'ortb2.device.sua');
     if (userAgentClientHints) {
       payload.userAgentClientHints = userAgentClientHints;
+    }
+
+    const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
+    if (dsa) {
+      payload.dsa = dsa;
     }
 
     const payloadString = JSON.stringify(payload);
@@ -125,6 +142,9 @@ export const spec = {
         };
         if (bid.dealId) {
           bidResponse.dealId = bid.dealId
+        }
+        if (bid?.ext?.dsa) {
+          bidResponse.meta.dsa = bid.ext.dsa;
         }
         bidResponses.push(bidResponse);
       });

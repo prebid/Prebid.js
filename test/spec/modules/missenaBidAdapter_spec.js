@@ -1,18 +1,29 @@
 import { expect } from 'chai';
-import { spec, _getPlatform } from 'modules/missenaBidAdapter.js';
-import { newBidder } from 'src/adapters/bidderFactory.js';
+import { spec, storage } from 'modules/missenaBidAdapter.js';
 import { BANNER } from '../../../src/mediaTypes.js';
 
+const REFERRER = 'https://referer';
+const REFERRER2 = 'https://referer2';
+const COOKIE_DEPRECATION_LABEL = 'test';
+
 describe('Missena Adapter', function () {
-  const adapter = newBidder(spec);
+  $$PREBID_GLOBAL$$.bidderSettings = {
+    missena: {
+      storageAllowed: true,
+    },
+  };
 
   const bidId = 'abc';
-
   const bid = {
     bidder: 'missena',
     bidId: bidId,
     sizes: [[1, 1]],
     mediaTypes: { banner: { sizes: [[1, 1]] } },
+    ortb2: {
+      device: {
+        ext: { cdep: COOKIE_DEPRECATION_LABEL },
+      },
+    },
     params: {
       apiKey: 'PA-34745704',
       placement: 'sticky',
@@ -40,7 +51,20 @@ describe('Missena Adapter', function () {
       formats: ['sticky-banner'],
     },
   };
+  const consentString = 'AAAAAAAAA==';
 
+  const bidderRequest = {
+    gdprConsent: {
+      consentString: consentString,
+      gdprApplies: true,
+    },
+    refererInfo: {
+      topmostLocation: REFERRER,
+      canonicalUrl: 'https://canonical',
+    },
+  };
+
+  const bids = [bid, bidWithoutFloor];
   describe('codes', function () {
     it('should return a bidder code of missena', function () {
       expect(spec.code).to.equal('missena');
@@ -66,20 +90,12 @@ describe('Missena Adapter', function () {
   });
 
   describe('buildRequests', function () {
-    const consentString = 'AAAAAAAAA==';
+    let getDataFromLocalStorageStub = sinon.stub(
+      storage,
+      'getDataFromLocalStorage',
+    );
 
-    const bidderRequest = {
-      gdprConsent: {
-        consentString: consentString,
-        gdprApplies: true,
-      },
-      refererInfo: {
-        topmostLocation: 'https://referer',
-        canonicalUrl: 'https://canonical',
-      },
-    };
-
-    const requests = spec.buildRequests([bid, bidWithoutFloor], bidderRequest);
+    const requests = spec.buildRequests(bids, bidderRequest);
     const request = requests[0];
     const payload = JSON.parse(request.data);
     const payloadNoFloor = JSON.parse(requests[1].data);
@@ -105,7 +121,7 @@ describe('Missena Adapter', function () {
     });
 
     it('should send referer information to the request', function () {
-      expect(payload.referer).to.equal('https://referer');
+      expect(payload.referer).to.equal(REFERRER);
       expect(payload.referer_canonical).to.equal('https://canonical');
     });
 
@@ -120,6 +136,70 @@ describe('Missena Adapter', function () {
     it('should not send floor data if not available', function () {
       expect(payloadNoFloor.floor).to.equal(undefined);
       expect(payloadNoFloor.floor_currency).to.equal(undefined);
+    });
+    it('should send the idempotency key', function () {
+      expect(window.msna_ik).to.not.equal(undefined);
+      expect(payload.ik).to.equal(window.msna_ik);
+    });
+
+    getDataFromLocalStorageStub.restore();
+    getDataFromLocalStorageStub = sinon.stub(
+      storage,
+      'getDataFromLocalStorage',
+    );
+    const localStorageData = {
+      [`missena.missena.capper.remove-bubble.${bid.params.apiKey}`]:
+        JSON.stringify({
+          expiry: new Date().getTime() + 600_000, // 10 min into the future
+        }),
+    };
+    getDataFromLocalStorageStub.callsFake((key) => localStorageData[key]);
+    const cappedRequests = spec.buildRequests(bids, bidderRequest);
+
+    it('should not participate if capped', function () {
+      expect(cappedRequests.length).to.equal(0);
+    });
+
+    const localStorageDataSamePage = {
+      [`missena.missena.capper.remove-bubble.${bid.params.apiKey}`]:
+        JSON.stringify({
+          expiry: new Date().getTime() + 600_000, // 10 min into the future
+          referer: REFERRER,
+        }),
+    };
+
+    getDataFromLocalStorageStub.callsFake(
+      (key) => localStorageDataSamePage[key],
+    );
+    const cappedRequestsSamePage = spec.buildRequests(bids, bidderRequest);
+
+    it('should not participate if capped on same page', function () {
+      expect(cappedRequestsSamePage.length).to.equal(0);
+    });
+
+    const localStorageDataOtherPage = {
+      [`missena.missena.capper.remove-bubble.${bid.params.apiKey}`]:
+        JSON.stringify({
+          expiry: new Date().getTime() + 600_000, // 10 min into the future
+          referer: REFERRER2,
+        }),
+    };
+
+    getDataFromLocalStorageStub.callsFake(
+      (key) => localStorageDataOtherPage[key],
+    );
+    const cappedRequestsOtherPage = spec.buildRequests(bids, bidderRequest);
+
+    it('should participate if capped on a different page', function () {
+      expect(cappedRequestsOtherPage.length).to.equal(2);
+    });
+
+    it('should send the prebid version', function () {
+      expect(payload.version).to.equal('$prebid.version$');
+    });
+
+    it('should send cookie deprecation', function () {
+      expect(payload.cdep).to.equal(COOKIE_DEPRECATION_LABEL);
     });
   });
 

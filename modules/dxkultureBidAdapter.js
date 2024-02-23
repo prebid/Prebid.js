@@ -1,5 +1,6 @@
 import {
   logInfo,
+  logWarn,
   logError,
   logMessage,
   deepAccess,
@@ -8,13 +9,19 @@ import {
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const BIDDER_CODE = 'dxkulture';
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_NET_REVENUE = true;
 const DEFAULT_CURRENCY = 'USD';
-const SYNC_URL = 'https://ads.kulture.media/usync';
+const DEFAULT_OUTSTREAM_RENDERER_URL = 'https://cdn.dxkulture.com/players/dxOutstreamPlayer.js';
 
 const converter = ortbConverter({
   context: {
@@ -55,18 +62,12 @@ const converter = ortbConverter({
   },
   bidResponse(buildBidResponse, bid, context) {
     let resMediaType;
+    const {bidRequest} = context;
+
     if (bid.adm?.trim().startsWith('<VAST')) {
       resMediaType = VIDEO;
     } else {
       resMediaType = BANNER;
-    }
-
-    const isADomainPresent = bid.adomain && bid.adomain.length;
-
-    if (isADomainPresent) {
-      context.meta = {
-        advertiserDomains: bid.adomain
-      };
     }
 
     context.mediaType = resMediaType;
@@ -78,6 +79,10 @@ const converter = ortbConverter({
 
     const bidResponse = buildBidResponse(bid, context);
 
+    if (resMediaType === VIDEO && bidRequest.mediaTypes.video.context === 'outstream') {
+      bidResponse.renderer = outstreamRenderer(bidResponse);
+    }
+
     return bidResponse;
   }
 });
@@ -86,7 +91,7 @@ export const spec = {
   code: BIDDER_CODE,
   VERSION: '1.0.0',
   supportedMediaTypes: [BANNER, VIDEO],
-  ENDPOINT: 'https://ads.kulture.media/pbjs',
+  ENDPOINT: 'https://ads.dxkulture.com/pbjs',
 
   /**
    * Determines whether or not the given bid request is valid.
@@ -138,33 +143,90 @@ export const spec = {
 
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     logInfo('dxkulture.getUserSyncs', 'syncOptions', syncOptions, 'serverResponses', serverResponses);
-
     let syncs = [];
 
     if (!syncOptions.iframeEnabled && !syncOptions.pixelEnabled) {
       return syncs;
     }
 
-    if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
-      let pixelType = syncOptions.iframeEnabled ? 'iframe' : 'image';
-      let queryParamStrings = [];
-      let syncUrl = SYNC_URL;
-      if (gdprConsent) {
-        queryParamStrings.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));
-        queryParamStrings.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
-      }
-      if (uspConsent) {
-        queryParamStrings.push('us_privacy=' + encodeURIComponent(uspConsent));
-      }
+    serverResponses.forEach(resp => {
+      const userSync = deepAccess(resp, 'body.ext.usersync');
+      if (userSync) {
+        let syncDetails = [];
+        Object.keys(userSync).forEach(key => {
+          const value = userSync[key];
+          if (value.syncs && value.syncs.length) {
+            syncDetails = syncDetails.concat(value.syncs);
+          }
+        });
+        syncDetails.forEach(syncDetails => {
+          let queryParamStrings = [];
+          let syncUrl = syncDetails.url;
 
-      return [{
-        type: pixelType,
-        url: `${syncUrl}${queryParamStrings.length > 0 ? '?' + queryParamStrings.join('&') : ''}`
-      }];
-    }
-  }
+          if (syncDetails.type === 'iframe') {
+            if (gdprConsent) {
+              queryParamStrings.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));
+              queryParamStrings.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
+            }
+            if (uspConsent) {
+              queryParamStrings.push('us_privacy=' + encodeURIComponent(uspConsent));
+            }
+            syncUrl = `${syncDetails.url}${queryParamStrings.length > 0 ? '?' + queryParamStrings.join('&') : ''}`
+          }
+
+          syncs.push({
+            type: syncDetails.type === 'iframe' ? 'iframe' : 'image',
+            url: syncUrl
+          });
+        });
+
+        if (syncOptions.iframeEnabled) {
+          syncs = syncs.filter(s => s.type == 'iframe');
+        } else if (syncOptions.pixelEnabled) {
+          syncs = syncs.filter(s => s.type == 'image');
+        }
+      }
+    });
+    logInfo('dxkulture.getUserSyncs result=%o', syncs);
+    return syncs;
+  },
 
 };
+
+function outstreamRenderer(bid) {
+  const rendererConfig = {
+    width: bid.width,
+    height: bid.height,
+    vastTimeout: 5000,
+    maxAllowedVastTagRedirects: 3,
+    allowVpaid: false,
+    autoPlay: true,
+    preload: true,
+    mute: false
+  }
+
+  const renderer = Renderer.install({
+    id: bid.adId,
+    url: DEFAULT_OUTSTREAM_RENDERER_URL,
+    config: rendererConfig,
+    loaded: false,
+    targetId: bid.adUnitCode,
+    adUnitCode: bid.adUnitCode
+  });
+
+  try {
+    renderer.setRender(function (bid) {
+      bid.renderer.push(() => {
+        const { id, config } = bid.renderer;
+        window.dxOutstreamPlayer(bid, id, config);
+      });
+    });
+  } catch (err) {
+    logWarn('dxkulture: Prebid Error calling setRender on renderer', err);
+  }
+
+  return renderer;
+}
 
 /* =======================================
  * Util Functions

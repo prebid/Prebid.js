@@ -3,6 +3,11 @@ import {getBidRequest} from '../src/utils.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const SOURCE = 'pbjs';
 const BIDDER_CODE = 'targetVideo';
 const ENDPOINT_URL = 'https://ib.adnxs.com/ut/v3/prebid';

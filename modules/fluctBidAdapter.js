@@ -2,6 +2,11 @@ import { _each, deepSetValue, isEmpty } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'fluct';
 const END_POINT = 'https://hb.adingo.jp/prebid';
 const VERSION = '1.2';

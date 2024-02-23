@@ -51,12 +51,12 @@ export let allowedFields = [SYN_FIELD, 'gptSlot', 'adUnitCode', 'size', 'domain'
 
 /**
  * @summary This is a flag to indicate if a AJAX call is processing for a floors request
-*/
+ */
 let fetching = false;
 
 /**
  * @summary so we only register for our hooks once
-*/
+ */
 let addedFloorsHook = false;
 
 /**
@@ -94,8 +94,8 @@ const getHostname = (() => {
 })();
 
 // First look into bidRequest!
-function getGptSlotFromAdUnit(transactionId, {index = auctionManager.index} = {}) {
-  const adUnit = index.getAdUnit({transactionId});
+function getGptSlotFromAdUnit(adUnitId, {index = auctionManager.index} = {}) {
+  const adUnit = index.getAdUnit({adUnitId});
   const isGam = deepAccess(adUnit, 'ortb2Imp.ext.data.adserver.name') === 'gam';
   return isGam && adUnit.ortb2Imp.ext.data.adserver.adslot;
 }
@@ -111,7 +111,7 @@ export let fieldMatchingFunctions = {
   [SYN_FIELD]: () => '*',
   'size': (bidRequest, bidResponse) => parseGPTSingleSizeArray(bidResponse.size) || '*',
   'mediaType': (bidRequest, bidResponse) => bidResponse.mediaType || 'banner',
-  'gptSlot': (bidRequest, bidResponse) => getGptSlotFromAdUnit((bidRequest || bidResponse).transactionId) || getGptSlotInfoForAdUnitCode(getAdUnitCode(bidRequest, bidResponse)).gptSlot,
+  'gptSlot': (bidRequest, bidResponse) => getGptSlotFromAdUnit((bidRequest || bidResponse).adUnitId) || getGptSlotInfoForAdUnitCode(getAdUnitCode(bidRequest, bidResponse)).gptSlot,
   'domain': getHostname,
   'adUnitCode': (bidRequest, bidResponse) => getAdUnitCode(bidRequest, bidResponse)
 }
@@ -332,13 +332,29 @@ export function getFloorDataFromAdUnits(adUnits) {
   }, {});
 }
 
+function getNoFloorSignalBidersArray(floorData) {
+  const { data, enforcement } = floorData
+  // The data.noFloorSignalBidders higher priority then the enforcment
+  if (data?.noFloorSignalBidders?.length > 0) {
+    return data.noFloorSignalBidders
+  } else if (enforcement?.noFloorSignalBidders?.length > 0) {
+    return enforcement.noFloorSignalBidders
+  }
+  return []
+}
+
 /**
  * @summary This function takes the adUnits for the auction and update them accordingly as well as returns the rules hashmap for the auction
  */
 export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
+  const noFloorSignalBiddersArray = getNoFloorSignalBidersArray(floorData)
+
   adUnits.forEach((adUnit) => {
     adUnit.bids.forEach(bid => {
-      if (floorData.skipped) {
+      // check if the bidder is in the no signal list
+      const isNoFloorSignaled = noFloorSignalBiddersArray.some(bidderName => bidderName === bid.bidder)
+      if (floorData.skipped || isNoFloorSignaled) {
+        isNoFloorSignaled && logInfo(`noFloorSignal to ${bid.bidder}`)
         delete bid.getFloor;
       } else {
         bid.getFloor = getFloor;
@@ -346,8 +362,10 @@ export function updateAdUnitsForAuction(adUnits, floorData, auctionId) {
       // information for bid and analytics adapters
       bid.auctionId = auctionId;
       bid.floorData = {
+        noFloorSignaled: isNoFloorSignaled,
         skipped: floorData.skipped,
-        skipRate: floorData.skipRate,
+        skipRate: deepAccess(floorData, 'data.skipRate') ?? floorData.skipRate,
+        skippedReason: floorData.skippedReason,
         floorMin: floorData.floorMin,
         modelVersion: deepAccess(floorData, 'data.modelVersion'),
         modelWeight: deepAccess(floorData, 'data.modelWeight'),
@@ -394,11 +412,13 @@ export function createFloorsDataForAuction(adUnits, auctionId) {
   // if we still do not have a valid floor data then floors is not on for this auction, so skip
   if (Object.keys(deepAccess(resolvedFloorsData, 'data.values') || {}).length === 0) {
     resolvedFloorsData.skipped = true;
+    resolvedFloorsData.skippedReason = CONSTANTS.FLOOR_SKIPPED_REASON.NOT_FOUND
   } else {
     // determine the skip rate now
-    const auctionSkipRate = getParameterByName('pbjs_skipRate') || resolvedFloorsData.skipRate;
+    const auctionSkipRate = getParameterByName('pbjs_skipRate') || (deepAccess(resolvedFloorsData, 'data.skipRate') ?? resolvedFloorsData.skipRate);
     const isSkipped = Math.random() * 100 < parseFloat(auctionSkipRate);
     resolvedFloorsData.skipped = isSkipped;
+    if (isSkipped) resolvedFloorsData.skippedReason = CONSTANTS.FLOOR_SKIPPED_REASON.RANDOM
   }
   // copy FloorMin to floorData.data
   if (resolvedFloorsData.hasOwnProperty('floorMin')) resolvedFloorsData.data.floorMin = resolvedFloorsData.floorMin;
@@ -428,10 +448,13 @@ export function continueAuction(hookConfig) {
 }
 
 function validateSchemaFields(fields) {
-  if (Array.isArray(fields) && fields.length > 0 && fields.every(field => allowedFields.indexOf(field) !== -1)) {
-    return true;
+  if (Array.isArray(fields) && fields.length > 0) {
+    if (fields.every(field => allowedFields.includes(field))) {
+      return true;
+    } else {
+      logError(`${MODULE_NAME}: Fields received do not match allowed fields`);
+    }
   }
-  logError(`${MODULE_NAME}: Fields received do not match allowed fields`);
   return false;
 }
 
@@ -663,7 +686,8 @@ export function handleSetFloorsConfig(config) {
       'enforceJS', enforceJS => enforceJS !== false, // defaults to true
       'enforcePBS', enforcePBS => enforcePBS === true, // defaults to false
       'floorDeals', floorDeals => floorDeals === true, // defaults to false
-      'bidAdjustment', bidAdjustment => bidAdjustment !== false, // defaults to true
+      'bidAdjustment', bidAdjustment => bidAdjustment !== false, // defaults to true,
+      'noFloorSignalBidders', noFloorSignalBidders => noFloorSignalBidders || []
     ]),
     'additionalSchemaFields', additionalSchemaFields => typeof additionalSchemaFields === 'object' && Object.keys(additionalSchemaFields).length > 0 ? addFieldOverrides(additionalSchemaFields) : undefined,
     'data', data => (data && parseFloorData(data, 'setConfig')) || undefined
