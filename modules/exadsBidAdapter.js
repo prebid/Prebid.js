@@ -20,7 +20,7 @@ function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
   utils.logInfo(`Calling endpoint for ortb_2_4:`, endpointUrl);
   const gdprConsent = getGdprConsentChoice(bidderRequest);
   const envParams = getEnvParams();
-          
+
   // Make a dynamic bid request to the ad partner's endpoint
   let bidRequestData = {
     'id': validBidRequest.bidId, // NOT bid.bidderRequestId or bid.auctionId
@@ -69,7 +69,6 @@ function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
     hasValue(validBidRequest.params.dsa.dsarequired) ||
     hasValue(validBidRequest.params.dsa.pubrender) ||
     hasValue(validBidRequest.params.dsa.datatopub))) {
-
     bidRequestData.regs = {
       'ext': {
         'dsa': {
@@ -181,15 +180,14 @@ function handleResORTB2Dot4(serverResponse, request, adPartner) {
 
   if (serverResponse.hasOwnProperty('body') && serverResponse.body.hasOwnProperty('id')) {
     utils.logInfo('Ad server response', serverResponse.body.id);
-    
-    
+
     const requestId = serverResponse.body.id;
     const currency = serverResponse.body.cur;
 
     serverResponse.body.seatbid.forEach((seatbid, seatIndex) => {
       seatbid.bid.forEach((bidData, bidIndex) => {
         utils.logInfo('serverResponse.body.seatbid[' + seatIndex + '].bid[' + bidIndex + ']', bidData);
-        
+
         const bidResponseAd = bidData.adm;
         const bannerInfo = utils.deepAccess(bidRq.imp[0], 'banner');
         const nativeInfo = utils.deepAccess(bidRq.imp[0], 'native');
@@ -226,14 +224,14 @@ function handleResORTB2Dot4(serverResponse, request, adPartner) {
           });
 
           if (responseADM.native) {
-            if(responseADM.native.link) {
+            if (responseADM.native.link) {
               native.clickUrl = responseADM.native.link.url;
             }
-            if(responseADM.native.eventtrackers) {
+            if (responseADM.native.eventtrackers) {
               native.impressionTrackers = [];
 
               responseADM.native.eventtrackers.forEach(tracker => {
-                if(tracker.method == 1) {
+                if (tracker.method == 1) {
                   native.impressionTrackers.push(tracker.url);
                 }
               });
@@ -274,16 +272,14 @@ function handleResORTB2Dot4(serverResponse, request, adPartner) {
         bidResponses.push(bidResponse);
       });
     });
-
   } else {
-    imps.delete(bidRq.imp[0].id); 
+    imps.delete(bidRq.imp[0].id);
     utils.logInfo('NO Ad server response ->', serverResponse.body.id);
   }
 
   utils.logInfo('interpretResponse -> bidResponses:', bidResponses);
 
   return bidResponses;
-
 }
 
 function makeBidRequest(url, data) {
@@ -496,7 +492,7 @@ export const spec = {
     utils.logInfo(`onSetTargeting -> bid:`, bid);
   },
   onBidderError: function (bid) {
-    imps.delete(bid.bidderRequest.bids[0].params.impressionId); 
+    imps.delete(bid.bidderRequest.bids[0].params.impressionId);
     utils.logInfo('onBidderError -> bid:', bid);
   },
 };
