@@ -178,11 +178,12 @@ function handleResORTB2Dot4(serverResponse, request, adPartner) {
   utils.logInfo('on handleResORTB2Dot4 -> serverResponse:', serverResponse);
 
   let bidResponses = [];
+  const bidRq = JSON.parse(request.data);
 
   if (serverResponse.hasOwnProperty('body') && serverResponse.body.hasOwnProperty('id')) {
     utils.logInfo('Ad server response', serverResponse.body.id);
     
-    const bidRq = JSON.parse(request.data);
+    
     const requestId = serverResponse.body.id;
     const currency = serverResponse.body.cur;
 
@@ -267,6 +268,7 @@ function handleResORTB2Dot4(serverResponse, request, adPartner) {
     });
 
   } else {
+    imps.delete(bidRq.imp[0].id); 
     utils.logInfo('NO Ad server response ->', serverResponse.body.id);
   }
 
@@ -498,7 +500,6 @@ export const spec = {
       return adPartnerHandlers[adPartner]['response'](serverResponse, request, adPartner);
     } else {
       // Handle unknown or unsupported ad partners
-      imps.delete(bid.imp[0].id); 
       return null;
     }
   },

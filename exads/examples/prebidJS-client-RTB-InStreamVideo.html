@@ -5,21 +5,36 @@
     <meta charset='UTF-8'>
     <title>RTB Instream Video Prebid.js</title>
 
+    <link href="https://vjs.zencdn.net/7.20.2/video-js.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.9.0/videojs-contrib-ads.css"
+          integrity="sha512-0gIqgiX1dWTChdWUl8XGIBDFvLo7aTvmd6FAhJjzWx5bzYsCJTiPJLKqLF3q31IN4Kfrc0NbTO+EthoT6O0olQ=="
+          crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/videojs-ima/2.1.0/videojs.ima.css"
+          integrity="sha512-vvsEsf+dZDp6wbommO1Jbb2bpFhVQjw6pIzfE5fUY5Fgkmsgn/16sQWegqrd236T69kK5F1SbGZ+yK46a9il5A=="
+          crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://vjs.zencdn.net/7.20.2/video.js"></script>
+    <script src="https://imasdk.googleapis.com/js/sdkloader/ima3.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-contrib-ads/6.9.0/videojs-contrib-ads.js"
+            integrity="sha512-XjyyAijQGlXZET35toG8igvVs8HvfVgKXGnbfAs2EpZ0o8vjJoIrxL9RBBQbQjzAODIe0jvWelFfZOA3Z/vdWg=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/videojs-ima/2.1.0/videojs.ima.js"
+            integrity="sha512-SCLZezhUawfgEVvtAuWp8OpRjZVa30okAsUoUe4+wPO6BEj4dWV1rDDruNwgOUrNdKpJL0GBf0KRrslSO7nqrw=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/videojs-playlist@5.1.0/dist/videojs-playlist.min.js"></script>
+
     <!-- Uncomment for development environments -->
     <!-- <script src='js/prebid.js'></script> -->
     <!-- Uncomment for production environments -->
     <script async src='js/prebid.js' onload='onScriptLoaded()'></script>
 
-    <!-- Fluid Player CSS and JS -->
-    <script async src='https://cdn.fluidplayer.com/v3/current/fluidplayer.min.js'></script>
     <script>
         // Client Conf start
         // Set as true for development environments only
         const isEnabledDebug = false;
         const exadsEndpoint = 'https://your-ad-network.com/rtb.php';
         const partner = 'ortb_2_4';
-        let zoneId = 5179865;
-        let fid = '12f6c5316c88687e275728a8f24f8787b6c31202';
+        let zoneId = 5208095;
+        let fid = '56aa7575210d931d37f62d816a84d4afdb2dfa97';
 
         // Start GDPR params
         let isGDPRRequested = false;
@@ -61,23 +76,7 @@
         }
 
         function onScriptLoaded() {
-            pbjs.setConfig({
-                debug: isEnabledDebug,
-                cache: { url: 'https://prebid.adnxs.com/pbc/v1/cache' },
-                consentManagement: {
-                    gdpr: {
-                        cmpApi: 'static',
-                        timeout: 1000000,
-                        defaultGdprScope: true,
-                        consentData: {
-                            getTCData: {
-                                tcString: consentString,
-                                gdprApplies: isGDPRRequested
-                            }
-                        }
-                    }
-                }
-            });
+
         }
 
         // ======== DO NOT EDIT BELOW THIS LINE =========== //
@@ -107,7 +106,12 @@
                 mediaTypes: {
                     video: {
                         mimes: ['video/mp4'],
-                        protocols: [3, 6]
+                        protocols: [3, 6],
+                        divId: 'player', // required to indicate which player is being used to render this ad unit.
+                        /*renderer: {
+                            url: 'example.com/videoRenderer.js',
+                            render: function (bid) { renderVideo(...)  }
+                        }*/
                     }
                 },
                 bids: [{
@@ -157,7 +161,73 @@
                 }
 
                 pbjs.que.push(function () {
+                    pbjs.setConfig({
+                        debug: isEnabledDebug,
+                        cache: { url: 'https://prebid.adnxs.com/pbc/v1/cache' },
+                        consentManagement: {
+                            gdpr: {
+                                cmpApi: 'static',
+                                timeout: 1000000,
+                                defaultGdprScope: true,
+                                consentData: {
+                                    getTCData: {
+                                        tcString: consentString,
+                                        gdprApplies: isGDPRRequested
+                                    }
+                                }
+                            }
+                        },
+                        video: {
+                            providers: [{
+                                divId: 'player',
+                                vendorCode: 2, // videojs vendorCode
+                                playerConfig: {
+                                    params: {
+                                        adPluginConfig: {
+                                            numRedirects: 10
+                                        },
+                                        vendorConfig: {
+                                            controls: true,
+                                            autoplay: true,
+                                            preload: "auto",
+                                        }
+                                    }
+                                }
+                            },]
+                        },
+                    });
                     pbjs.addAdUnits(adUnits);
+
+                    pbjs.onEvent('videoSetupComplete', e => {
+                        const player = videojs('player');
+                        // Load the playlist items with their metadata when the video player is done instantiating.
+                        player.playlist([{
+                            sources: [{
+                                src: 'https://vjs.zencdn.net/v/oceans.mp4',
+                                type: 'video/mp4'
+                            }]
+                        }]);
+
+                        player.playlist.autoadvance(0);
+                    });
+
+                    pbjs.onEvent('videoSetupFailed', e => {
+                        console.log('player setup failed: ', e);
+                    });
+
+                    pbjs.onEvent('videoPlaylist', (e) => {
+                        console.log('videos pb playlist: ', e);
+                    });
+
+                    pbjs.onEvent('videoContentLoaded', (e) => {
+                        console.log('videos pb contentLoaded: ', e);
+                    });
+
+                    pbjs.onEvent('videoComplete', (e) => {
+                        console.log('videos pb complete: ', e);
+                    });
+
+                    //pbjs.requestBids(adUnits);
                     pbjs.requestBids({
                         timeout: PREBID_TIMEOUT,
                         bidsBackHandler: function (bidResponses) {
@@ -167,35 +237,12 @@
                             }
 
                             bidResponse.bids.forEach(bid => {
-                                initFluidPlayer(bid.vastUrl);
+                                pbjs.videoModule.renderBid('player', bid);
                             });
                         }
                     });
                 });
             }
-        }
-
-        function initFluidPlayer(vastUrl) {
-            var fluidPlayerInstance = fluidPlayer('video-element', {
-                vastOptions: {
-                    adList: [
-                        {
-                            roll: 'preRoll',
-                            vastTag: vastUrl,
-                            adText: 'Advertising supports us directly'
-                        }
-                    ],
-                    skipButtonCaption: 'Skip ad in [5]',
-                    skipButtonClickCaption: 'Skip ad <span class="skip_button_icon"></span>',
-                    adText: null,
-                    adTextPosition: 'top left',
-                    adCTAText: 'Visit now!',
-                    adCTATextPosition: 'bottom right',
-                    vastTimeout: 5000,
-                    showPlayButton: false,
-                    maxAllowedVastTagRedirects: 1
-                }
-            });
         }
 
         initBids();
@@ -207,12 +254,8 @@
 <body>
 
     <h2>RTB Instream Video Prebid.js</h2>
-
-    <!-- Your main video element -->
-    <video id='video-element'>
-        <source src='https://vjs.zencdn.net/v/oceans.mp4' type='video/mp4'>
-    </video>
-
+    <video-js id='player' class="vjs-big-play-centered" muted="'true">
+    </video-js>
 </body>
 
 </html>
