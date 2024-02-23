@@ -103,11 +103,16 @@ const storageTool = (function () {
     storage.setDataInLocalStorage(META_DATA_KEY, JSON.stringify(metaDataForSaving));
   };
 
-  const getUsi = function (meta, ortb2) {
-    let usi = (meta && meta.usi) ? meta.usi : false;
+  const getUsi = function (meta, ortb2, bidderRequest) {
+    // Fetch user id from parameters.
+    const paramUsi = (bidderRequest.bids) ? bidderRequest.bids.find(bid => {
+      if (bid.params && bid.params.userId) return true
+    }).params.userId : false
+    let usi = (meta && meta.usi) ? meta.usi : false
     if (ortb2 && ortb2.user && ortb2.user.id) {
       usi = ortb2.user.id
     }
+    if (paramUsi) usi = paramUsi
     return usi;
   }
 
@@ -131,7 +136,7 @@ const storageTool = (function () {
     refreshStorage: function (bidderRequest) {
       const ortb2 = bidderRequest.ortb2 || {};
       metaInternal = getMetaInternal().reduce((a, entry) => ({ ...a, [entry.key]: entry.value }), {});
-      metaInternal.usi = getUsi(metaInternal, ortb2);
+      metaInternal.usi = getUsi(metaInternal, ortb2, bidderRequest);
       if (!metaInternal.usi) {
         delete metaInternal.usi;
       }

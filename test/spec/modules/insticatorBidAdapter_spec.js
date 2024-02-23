@@ -161,6 +161,19 @@ describe('InsticatorBidAdapter', function () {
       })).to.be.false;
     });
 
+    it('should return true if video object is absent/undefined', () => {
+      expect(spec.isBidRequestValid({
+        ...bidRequest,
+        ...{
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300, 600]],
+            },
+          }
+        }
+      })).to.be.true;
+    })
+
     it('should return false if video placement is not a number', () => {
       expect(spec.isBidRequestValid({
         ...bidRequest,

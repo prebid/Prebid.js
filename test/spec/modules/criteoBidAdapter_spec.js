@@ -1110,7 +1110,7 @@ describe('The Criteo bidding adapter', function () {
       const ortb2 = {
         regs: {
           gpp: 'gpp_consent_string',
-          gpp_sid: [0, 1, 2]
+          gpp_sid: [0, 1, 2],
         }
       };
 
@@ -1118,6 +1118,48 @@ describe('The Criteo bidding adapter', function () {
       expect(request.data.regs).to.not.be.null;
       expect(request.data.regs.gpp).to.equal('gpp_consent_string');
       expect(request.data.regs.gpp_sid).to.deep.equal([0, 1, 2]);
+    });
+
+    it('should properly build a request with dsa object', function () {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            zoneId: 123,
+          },
+        },
+      ];
+      let dsa = {
+        required: 3,
+        pubrender: 0,
+        datatopub: 2,
+        transparency: [{
+          domain: 'platform1domain.com',
+          params: [1]
+        }, {
+          domain: 'SSP2domain.com',
+          params: [1, 2]
+        }]
+      };
+      const ortb2 = {
+        regs: {
+          ext: {
+            dsa: dsa
+          }
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2 });
+      expect(request.data.regs).to.not.be.null;
+      expect(request.data.regs.ext).to.not.be.null;
+      expect(request.data.regs.ext.dsa).to.deep.equal(dsa);
     });
 
     it('should properly build a request with schain object', function () {
@@ -1979,6 +2021,48 @@ describe('The Criteo bidding adapter', function () {
       expect(bids[0].meta.networkName).to.equal('Criteo');
     });
 
+    it('should properly parse a bid response with dsa', function () {
+      const response = {
+        body: {
+          slots: [{
+            impid: 'test-requestId',
+            cpm: 1.23,
+            creative: 'test-ad',
+            creativecode: 'test-crId',
+            width: 728,
+            height: 90,
+            deal: 'myDealCode',
+            adomain: ['criteo.com'],
+            ext: {
+              dsa: {
+                adrender: 1
+              },
+              meta: {
+                networkName: 'Criteo'
+              }
+            }
+          }],
+        },
+      };
+      const request = {
+        bidRequests: [{
+          adUnitCode: 'test-requestId',
+          bidId: 'test-bidId',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            networkId: 456,
+          }
+        }]
+      };
+      const bids = spec.interpretResponse(response, request);
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].meta.adrender).to.equal(1);
+    });
+
     it('should properly parse a bid response with a networkId with twin ad unit banner win', function () {
       const response = {
         body: {
@@ -2492,7 +2576,8 @@ describe('The Criteo bidding adapter', function () {
             sellerSignalsPerImp: {
               'test-bidId': {
                 foo2: 'bar2',
-              }
+                currency: 'USD'
+              },
             },
           },
         },
@@ -2562,8 +2647,9 @@ describe('The Criteo bidding adapter', function () {
             foo: 'bar',
             foo2: 'bar2',
             floor: 1,
-            sellerCurrency: 'EUR',
+            currency: 'USD',
           },
+          sellerCurrency: 'USD'
         },
       });
       expect(interpretedResponse.fledgeAuctionConfigs[1]).to.deep.equal({
@@ -2585,8 +2671,8 @@ describe('The Criteo bidding adapter', function () {
           sellerSignals: {
             foo: 'bar',
             floor: 1,
-            sellerCurrency: 'EUR',
           },
+          sellerCurrency: '???'
         },
       });
     });

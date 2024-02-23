@@ -143,6 +143,12 @@ export const spec = {
 
     payload.device.ua = navigator.userAgent;
     payload.device.language = navigator.language;
+    payload.device.w = screen.width;
+    payload.device.h = screen.height;
+
+    if (bidderRequest?.ortb2?.device?.sua) {
+      payload.device.sua = bidderRequest.ortb2.device.sua;
+    }
 
     if (params.test) {
       payload.test = params.test;
@@ -178,7 +184,7 @@ export const spec = {
     return {
       method: 'POST',
       url: url,
-      data: JSON.stringify(payload),
+      data: JSON.stringify(clearEmpties(payload)),
     };
   },
 
@@ -371,6 +377,23 @@ function provideMediaType(zetaBid, bid, bidRequest) {
   } else {
     bid.mediaType = bidRequest.imp[0].video ? VIDEO : BANNER;
   }
+}
+
+function clearEmpties(o) {
+  for (let k in o) {
+    if (o[k] === null) {
+      delete o[k];
+      continue;
+    }
+    if (!o[k] || typeof o[k] !== 'object') {
+      continue;
+    }
+    clearEmpties(o[k]);
+    if (Object.keys(o[k]).length === 0) {
+      delete o[k];
+    }
+  }
+  return o;
 }
 
 registerBidder(spec);

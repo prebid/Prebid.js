@@ -392,6 +392,28 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
 
       {
+        title: 'site.keywords, site.content.keywords and user.keywords',
+        data: {
+          postBody: {},
+          ortb2: {
+            user: {keywords: 'key7,key8,key9'},
+            site: {
+              keywords: 'key1,key2,key3',
+              content: {keywords: 'key4,key5,key6'},
+            },
+          },
+        },
+
+        expected: {
+          user: {keywords: 'key7,key8,key9'},
+          site: {
+            keywords: 'key1,key2,key3',
+            content: {keywords: 'key4,key5,key6'},
+          },
+        },
+      },
+
+      {
         title: 'only site.content.language',
         data: {
           postBody: {site: {domain: 'some.domain'}},

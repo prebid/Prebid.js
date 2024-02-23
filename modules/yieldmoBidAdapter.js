@@ -98,7 +98,11 @@ export const spec = {
         us_privacy: deepAccess(bidderRequest, 'uspConsent') || '',
       };
       if (topicsData) {
-        serverRequest.topics = topicsData;
+        serverRequest.topics = JSON.stringify(topicsData);
+      }
+      const gpc = getGPCSignal(bidderRequest);
+      if (gpc) {
+        serverRequest.gpc = gpc;
       }
 
       if (canAccessTopWindow()) {
@@ -417,12 +421,20 @@ function openRtbRequest(bidRequests, bidderRequest) {
   if (schain) {
     openRtbRequest.schain = schain;
   }
-
+  const gpc = getGPCSignal(bidderRequest);
+  if (gpc) {
+    deepSetValue(openRtbRequest, 'regs.ext.gpc', gpc);
+  }
   if (bidRequests[0].auctionId) {
     openRtbRequest.auctionId = bidRequests[0].auctionId;
   }
   populateOpenRtbGdpr(openRtbRequest, bidderRequest);
   return openRtbRequest;
+}
+
+function getGPCSignal(bidderRequest) {
+  const gpc = deepAccess(bidderRequest, 'ortb2.regs.ext.gpc');
+  return gpc;
 }
 
 function getTopics(bidderRequest) {

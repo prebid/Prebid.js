@@ -178,14 +178,8 @@ export const spec = {
     return bidResponses;
   },
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
-    const syncs = [];
-
+    let syncs = [];
     if (!serverResponses.length || !serverResponses[0].body) {
-      return syncs;
-    }
-
-    let pixels = serverResponses[0].body.pixels;
-    if (!pixels || !pixels.length) {
       return syncs;
     }
 
@@ -200,14 +194,17 @@ export const spec = {
       }
     }
 
-    if ((syncOptions.iframeEnabled || syncOptions.pixelEnabled)) {
-      return [
-        {
-          type: 'iframe',
-          url: 'https://media.reset-digital.com/prebid/async_usersync.html?' + gdprParams.length ? gdprParams : '',
-        },
-      ];
+    if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url:
+          'https://async.resetdigital.co/async_usersync.html?' +
+          gdprParams.length
+            ? gdprParams
+            : '',
+      });
     }
+    return syncs;
   },
 };
 
