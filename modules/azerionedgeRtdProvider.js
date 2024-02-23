@@ -2,7 +2,7 @@
  * This module adds the Azerion provider to the real time data module of prebid.
  *
  * The {@link module:modules/realTimeData} module is required
- * @module modules/azerionRtdProvider
+ * @module modules/azerionedgeRtdProvider
  * @requires module:modules/realTimeData
  */
 import { submodule } from '../src/hook.js';
@@ -12,15 +12,16 @@ import { loadExternalScript } from '../src/adloader.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 
 /**
- * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ * @typedef {import('./rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
 
 const REAL_TIME_MODULE = 'realTimeData';
-const SUBREAL_TIME_MODULE = 'azerion';
+const SUBREAL_TIME_MODULE = 'azerionedge';
 export const STORAGE_KEY = 'ht-pa-v1-a';
 
 export const storage = getStorageManager({
-  moduleType: MODULE_TYPE_RTD, moduleName: SUBREAL_TIME_MODULE
+  moduleType: MODULE_TYPE_RTD,
+  moduleName: SUBREAL_TIME_MODULE,
 });
 
 /**
@@ -61,7 +62,7 @@ export function attachScript(config) {
 export function getAudiences() {
   try {
     const data = storage.getDataFromLocalStorage(STORAGE_KEY);
-    return JSON.parse(data).map(({id}) => id);
+    return JSON.parse(data).map(({ id }) => id);
   } catch (_) {
     return [];
   }
@@ -79,13 +80,21 @@ export function getAudiences() {
 export function setAudiencesToBidders(reqBidsConfigObj, config, audiences) {
   const defaultBidders = ['improvedigital'];
   const bidders = config.params?.bidders || defaultBidders;
-  bidders.forEach((bidderCode) => mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {[bidderCode]: {
-    user: {
-      data: [
-        { name: 'azerion', ext: { segtax: 4 }, segment: audiences.map(id => ({id})) }
-      ]
-    }
-  }}));
+  bidders.forEach((bidderCode) =>
+    mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
+      [bidderCode]: {
+        user: {
+          data: [
+            {
+              name: 'azerionedge',
+              ext: { segtax: 4 },
+              segment: audiences.map((id) => ({ id })),
+            },
+          ],
+        },
+      },
+    })
+  );
 }
 
 /**
@@ -111,7 +120,12 @@ function init(config, userConsent) {
  *
  * @return {void}
  */
-export function getBidRequestData(reqBidsConfigObj, callback, config, userConsent) {
+export function getBidRequestData(
+  reqBidsConfigObj,
+  callback,
+  config,
+  userConsent
+) {
   const audiences = getAudiences();
   if (audiences.length > 0) {
     setAudiencesToBidders(reqBidsConfigObj, config, audiences);
@@ -120,10 +134,10 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
 }
 
 /** @type {RtdSubmodule} */
-export const azerionSubmodule = {
+export const azerionedgeSubmodule = {
   name: SUBREAL_TIME_MODULE,
   init: init,
   getBidRequestData: getBidRequestData,
 };
 
-submodule(REAL_TIME_MODULE, azerionSubmodule);
+submodule(REAL_TIME_MODULE, azerionedgeSubmodule);

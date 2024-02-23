@@ -1,22 +1,24 @@
 ---
 layout: page_v2
-title: azerion RTD Provider
-display_name: Azerion RTD Provider
+title: azerion edge RTD Provider
+display_name: Azerion Edge RTD Provider
 description: Client-side contextual cookieless audiences.
 page_type: module
 module_type: rtd
-module_code: azerionRtdProvider
+module_code: azerionedgeRtdProvider
 enable_download: true
 vendor_specific: true
 sidebarType: 1
 ---
 
-# Azerion RTD Provider
+# Azerion Edge RTD Provider
 
 Client-side contextual cookieless audiences.
 
-Azerion RTD module helps publishers to capture users' interest
+Azerion Edge RTD module helps publishers to capture users' interest
 audiences on their site, and attach these into the bid request.
+
+Maintainer: [azerion.com](https://www.azerion.com/)
 
 {:.no_toc}
 
@@ -25,11 +27,11 @@ audiences on their site, and attach these into the bid request.
 
 ## Integration
 
-Compile the Azerion RTD module (`azerionRtdProvider`) into your Prebid build,
+Compile the Azerion Edge RTD module (`azerionedgeRtdProvider`) into your Prebid build,
 along with the parent RTD Module (`rtdModule`):
 
 ```bash
-gulp build --modules=rtdModule,azerionRtdProvider,appnexusBidAdapter,improvedigitalBidAdapter
+gulp build --modules=rtdModule,azerionedgeRtdProvider,improvedigitalBidAdapter
 ```
 
 Set configuration via `pbjs.setConfig`.
@@ -41,7 +43,7 @@ pbjs.setConfig(
         auctionDelay: 1000,
         dataProviders: [
             {
-                name: 'azerion',
+                name: 'azerionedge',
                 waitForIt: true,
                 params: {
                     key: '',
@@ -60,7 +62,7 @@ pbjs.setConfig(
 {: .table .table-bordered .table-striped }
 | Name | Type | Description | Notes |
 | :--- | :------- | :------------------ | :--------------- |
-| name | `String` | RTD sub module name | Always "azerion" |
+| name | `String` | RTD sub module name | Always "azerionedge" |
 | waitForIt | `Boolean` | Required to ensure that the auction is delayed for the module to respond. | Optional. Defaults to false but recommended to true. |
 | params.key | `String` | Publisher partner specific key | Optional |
 | params.bidders | `Array` | Bidders with which to share segment information | Optional. Defaults to "improvedigital". |
@@ -86,7 +88,7 @@ as exception, as shown below:
     purpose: 'storage',
     enforcePurpose: true,
     enforceVendor: true,
-    vendorExceptions: ["azerion"]
+    vendorExceptions: ["azerionedge"]
   },
   ...
 ]
@@ -97,18 +99,14 @@ as exception, as shown below:
 To view an example:
 
 ```bash
-gulp serve-fast --modules=rtdModule,azerionRtdProvider,improvedigitalBidAdapter
+gulp serve-fast --modules=rtdModule,azerionedgeRtdProvider,improvedigitalBidAdapter
 ```
 
-Access [http://localhost:9999/integrationExamples/gpt/azerionRtdProvider_example.html](http://localhost:9999/integrationExamples/gpt/azerionRtdProvider_example.html)
+Access [http://localhost:9999/integrationExamples/gpt/azerionedgeRtdProvider_example.html](http://localhost:9999/integrationExamples/gpt/azerionedgeRtdProvider_example.html)
 in your browser.
 
 Run the unit tests:
 
 ```bash
-npm test -- --file "test/spec/modules/azerionRtdProvider_spec.js"
+npm test -- --file "test/spec/modules/azerionedgeRtdProvider_spec.js"
 ```
-
-## Support
-
-If you require further assistance please contact [support@azerion.com](mailto:support@azerion.com).
