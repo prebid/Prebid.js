@@ -13,6 +13,7 @@ const adPartnerHandlers = {
     request: handleReqORTB2Dot4,
     response: handleResORTB2Dot4,
     validation: handleValidORTB2Dot4,
+    nurl: handleNURLORTB2Dot4
   }
 };
 
@@ -81,9 +82,12 @@ function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
     }
   }
 
+  const impData = imps.get(validBidRequest.params.impressionId);
+
   // Banner setup
   const bannerMediaType = utils.deepAccess(validBidRequest, 'mediaTypes.banner');
   if (bannerMediaType != null) {
+    impData.mediaType = BANNER;
     bidRequestData.imp = bannerMediaType.sizes.map(size => {
       let ext;
 
@@ -111,6 +115,7 @@ function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
   const nativeMediaType = utils.deepAccess(validBidRequest, 'mediaTypes.native');
 
   if (nativeMediaType != null) {
+    impData.mediaType = NATIVE;
     const nativeVersion = '1.2';
 
     const native = {
@@ -146,6 +151,7 @@ function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
   const videoMediaType = utils.deepAccess(validBidRequest, 'mediaTypes.video');
 
   if (videoMediaType != null) {
+    impData.mediaType = VIDEO;
     const imp = [{
       'id': validBidRequest.params.impressionId,
       'bidfloor': validBidRequest.params.bidfloor,
@@ -166,7 +172,7 @@ function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
   return makeBidRequest(endpointUrl, bidRequestData);
 };
 
-function handleResORTB2Dot4(serverResponse, request) {
+function handleResORTB2Dot4(serverResponse, request, adPartner) {
   utils.logInfo('on handleResORTB2Dot4 -> request:', request);
   utils.logInfo('on handleResORTB2Dot4 -> request json data:', JSON.parse(request.data));
   utils.logInfo('on handleResORTB2Dot4 -> serverResponse:', serverResponse);
@@ -185,8 +191,6 @@ function handleResORTB2Dot4(serverResponse, request) {
         utils.logInfo('serverResponse.body.seatbid[' + seatIndex + '].bid[' + bidIndex + ']', bidData);
         
         const bidResponseAd = bidData.adm;
-        const pixelUrl = bidData.nurl.replace(/^http:\/\//i, 'https://');
-
         const bannerInfo = utils.deepAccess(bidRq.imp[0], 'banner');
         const nativeInfo = utils.deepAccess(bidRq.imp[0], 'native');
         const videoInfo = utils.deepAccess(bidRq.imp[0], 'video');
@@ -224,11 +228,12 @@ function handleResORTB2Dot4(serverResponse, request) {
           if (responseADM.native && responseADM.native.link) {
             native.clickUrl = responseADM.native.link.url;
           }
-
           mediaType = NATIVE;
         } else if (videoInfo != null) {
           mediaType = VIDEO;
         }
+
+        const pixelUrl = adPartnerHandlers[adPartner]['nurl'](bidData);
 
         const bidResponse = {
           requestId: requestId,
@@ -242,7 +247,7 @@ function handleResORTB2Dot4(serverResponse, request) {
           height: h,
           netRevenue: true,
           mediaType: mediaType,
-          nurl: pixelUrl
+          nurl: pixelUrl ? pixelUrl.replace(/^http:\/\//i, 'https://') : ''
         };
 
         if (mediaType == 'native') {
@@ -393,6 +398,34 @@ function handleValidORTB2Dot4(bid) {
   return isValid;
 }
 
+function handleNURLORTB2Dot4(response){
+  const { mediaType } = imps.get(response.impid);
+
+  switch(mediaType){
+    case BANNER:
+      return response.nurl;
+    case NATIVE:
+      {
+        const adm = JSON.parse(response.adm);
+
+        if(adm.native.eventtrackers){
+          const event = adm.native.eventtrackers.find(tracker => tracker.event == 1);
+          if(hasValue(event)) {
+            return event.url;
+          } else {
+            return '';
+          }
+        } else {
+          return '';
+        }        
+      }
+    case VIDEO:
+      return response.nurl;
+    default:
+      return '';
+  }
+}
+
 function hasValue(value) {
   return (
     value !== undefined &&
@@ -442,7 +475,7 @@ export const spec = {
     return validBidRequests.map(bid => {
       let adPartner = bid.params.partner;
 
-      imps.set(bid.params.impressionId, adPartner);
+      imps.set(bid.params.impressionId, { adPartner: adPartner, mediaType: null });
 
       let endpointUrl = getUrl(adPartner, bid);
 
@@ -457,14 +490,15 @@ export const spec = {
   },
   interpretResponse: function (serverResponse, request) {
     const bid = JSON.parse(request.data);
-    let adPartner = imps.get(bid.imp[0].id);
-    imps.delete(bid.imp[0].id);
+    const impData = imps.get(bid.imp[0].id);
+    const adPartner = impData.adPartner;
 
     // Call the handler for the ad partner, passing relevant parameters
     if (adPartnerHandlers[adPartner]['response']) {
-      return adPartnerHandlers[adPartner]['response'](serverResponse, request);
+      return adPartnerHandlers[adPartner]['response'](serverResponse, request, adPartner);
     } else {
       // Handle unknown or unsupported ad partners
+      imps.delete(bid.imp[0].id); 
       return null;
     }
   },
@@ -473,13 +507,17 @@ export const spec = {
   },
   onBidWon: function (bid) {
     utils.logInfo(`onBidWon -> bid:`, bid);
-    if (bid['nurl']) {
-      utils.triggerPixel(bid['nurl']);
+    if (bid.nurl) {
+      utils.triggerPixel(bid.nurl);
     }
   },
   onSetTargeting: function (bid) {
     utils.logInfo(`onSetTargeting -> bid:`, bid);
-  }
+  },
+  onBidderError: function (bid) {
+    imps.delete(bid.bidderRequest.bids[0].params.impressionId); 
+    utils.logInfo('onBidderError -> bid:', bid);
+  },
 };
 
 registerBidder({
