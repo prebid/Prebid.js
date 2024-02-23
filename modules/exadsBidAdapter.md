@@ -11,8 +11,9 @@
 Module that connects to EXADS' bidder for bids.
 
 ### Build
+If you don't need to use the prebidJS video module, please remove the videojsVideoProvider module.
 ```
-gulp build --modules="--modules=consentManagement,exadsBidAdapter"  
+gulp build --modules="--modules=consentManagement,exadsBidAdapter,videojsVideoProvider"  
 ```
 
 ### Configuration
@@ -41,8 +42,32 @@ pbjs.setConfig({
         }
     }
 });
-
 ```
+Add the `video` config if you need to render videos using the video module.
+For more info navigate to https://docs.prebid.org/prebid-video/video-module.html.
+```
+pbjs.setConfig({
+    video: {
+        providers: [{
+            divId: 'player', // the id related to the videojs tag in your body
+            vendorCode: 2, // videojs, 
+            playerConfig: {
+                params: {
+                    adPluginConfig: {
+                        numRedirects: 10
+                    },
+                    vendorConfig: {
+                        controls: true,
+                        autoplay: true,
+                        preload: "auto",
+                    }
+                }
+            }
+        },]
+    },
+});
+```
+
 
 # Test Parameters
  
