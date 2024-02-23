@@ -31,7 +31,12 @@ describe('exadsBidAdapterTest', function () {
       bidfloorcur: 'EUR',
       mimes: ['image/jpg'],
       imageOutput: 'html',
-      endpoint: 'test.com'
+      endpoint: 'test.com',
+      dsa: {
+        dsarequired: 3, 
+        pubrender: 0,
+        datatopub: 2
+      },
     }
   };
 
@@ -82,6 +87,11 @@ describe('exadsBidAdapterTest', function () {
       native: {
         plcmtcnt: 4,
       },
+      dsa: {
+        dsarequired: 3, 
+        pubrender: 0,
+        datatopub: 2
+      },
       endpoint: 'test.com'
     }
   };
@@ -110,14 +120,14 @@ describe('exadsBidAdapterTest', function () {
       imp: {
         video: {
           mimes: ['video/mp4'],
-          protocols: [3,6]
+          protocols: [3, 6]
         },
         ext: {
           video_cta: 0
         }
       },
       dsa: {
-        dsarequired: 3, 
+        dsarequired: 3,
         pubrender: 0,
         datatopub: 2
       },
@@ -191,7 +201,7 @@ describe('exadsBidAdapterTest', function () {
 
   describe('while interpreting bid response', function () {
     beforeEach(() => {
-      imps.set('270544423272657', 'ortb_2_4');
+      imps.set('270544423272657', { adPartner: 'ortb_2_4', mediaType: null });
     });
 
     it('should test the banner interpretResponse', function () {
