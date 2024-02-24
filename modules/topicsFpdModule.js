@@ -38,6 +38,9 @@ const bidderIframeList = {
   }, {
     bidder: 'onetag',
     iframeURL: 'https://onetag-sys.com/static/topicsapi.html'
+  }, {
+    bidder: 'yandex',
+    iframeURL: 'https://yandex.ru/ads/prebid/topics_frame.html'
   }]
 }
 
