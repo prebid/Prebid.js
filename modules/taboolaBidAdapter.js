@@ -272,6 +272,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data) {
   data.user = user;
   data.regs = regs;
   deepSetValue(data, 'ext.pageType', ortb2?.ext?.data?.pageType || ortb2?.ext?.data?.section || bidRequest.params.pageType);
+  deepSetValue(data, 'ext.prebid.version', '$prebid.version$');
 }
 
 function fillTaboolaImpData(bid, imp) {

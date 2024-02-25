@@ -532,6 +532,8 @@ export const spec = {
     if (bidRequest?.ortb2Imp?.ext?.ae) {
       data['o_ae'] = 1;
     }
+
+    addDesiredSegtaxes(bidderRequest, data);
     // loop through userIds and add to request
     if (bidRequest.userIdAsEids) {
       bidRequest.userIdAsEids.forEach(eid => {
@@ -829,7 +831,14 @@ function renderBid(bid) {
   hideSmartAdServerIframe(adUnitElement);
 
   // configure renderer
-  const config = bid.renderer.getConfig();
+  const defaultConfig = {
+    align: 'center',
+    position: 'append',
+    closeButton: false,
+    label: undefined,
+    collapse: true
+  };
+  const config = { ...defaultConfig, ...bid.renderer.getConfig() };
   bid.renderer.push(() => {
     window.MagniteApex.renderAd({
       width: bid.width,
@@ -837,12 +846,12 @@ function renderBid(bid) {
       vastUrl: bid.vastUrl,
       placement: {
         attachTo: adUnitElement,
-        align: config.align || 'center',
-        position: config.position || 'append'
+        align: config.align,
+        position: config.position
       },
-      closeButton: config.closeButton || false,
-      label: config.label || undefined,
-      collapse: config.collapse || true
+      closeButton: config.closeButton,
+      label: config.label,
+      collapse: config.collapse
     });
   });
 }
@@ -1027,6 +1036,27 @@ function applyFPD(bidRequest, mediaType, data) {
     }
 
     mergeDeep(data, fpd);
+  }
+}
+
+function addDesiredSegtaxes(bidderRequest, target) {
+  if (rubiConf.readTopics === false) {
+    return;
+  }
+  let iSegments = [1, 2, 5, 6, 7, 507].concat(rubiConf.sendSiteSegtax?.map(seg => Number(seg)) || []);
+  let vSegments = [4, 508].concat(rubiConf.sendUserSegtax?.map(seg => Number(seg)) || []);
+  let userData = bidderRequest.ortb2?.user?.data || [];
+  let siteData = bidderRequest.ortb2?.site?.content?.data || [];
+  userData.forEach(iterateOverSegmentData(target, 'v', vSegments));
+  siteData.forEach(iterateOverSegmentData(target, 'i', iSegments));
+}
+
+function iterateOverSegmentData(target, char, segments) {
+  return (topic) => {
+    const taxonomy = Number(topic.ext?.segtax);
+    if (segments.includes(taxonomy)) {
+      target[`tg_${char}.tax${taxonomy}`] = topic.segment?.map(seg => seg.id).join(',');
+    }
   }
 }
 
