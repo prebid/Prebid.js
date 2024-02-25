@@ -225,7 +225,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data) {
   const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
   const site = getSiteProperties(bidRequest.params, refererInfo, bidderRequest.ortb2);
   const device = {ua: navigator.userAgent};
-  const user = {
+  let user = {
     buyeruid: userData.getUserId(gdprConsent, uspConsent),
     ext: {}
   };

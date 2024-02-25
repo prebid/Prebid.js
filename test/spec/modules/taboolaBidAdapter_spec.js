@@ -397,24 +397,26 @@ describe('Taboola Adapter', function () {
 
       it('should pass additional parameter in request for topics', function () {
         const ortb2 = {
-          user: {
-            data: {
-              segment: [
-                {
-                  id: '243'
+          ...commonBidderRequest,
+          ortb2: {
+            user: {
+              data: {
+                segment: [
+                  {
+                    id: '243'
+                  }
+                ],
+                name: 'pa.taboola.com',
+                ext: {
+                  segclass: '4',
+                  segtax: 601
                 }
-              ],
-              name: 'pa.taboola.com',
-              ext: {
-                segclass: '4',
-                segtax: 601
               }
             }
           }
         }
-
-        const res = spec.buildRequests([defaultBidRequest], {...commonBidderRequest, ortb2})
-        expect(res.user.data).to.deep.equal(ortb2.user.data);
+        const res = spec.buildRequests([defaultBidRequest], {...ortb2})
+        expect(res.data.user.data).to.deep.equal(ortb2.ortb2.user.data);
       });
     });
 
