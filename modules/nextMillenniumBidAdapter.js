@@ -8,7 +8,6 @@ import {
   getWindowTop,
   isArray,
   isStr,
-  logMessage,
   parseGPTSingleSizeArrayToRtbSize,
   parseUrl,
   triggerPixel,
@@ -57,12 +56,6 @@ const ALLOWED_ORTB2_PARAMETERS = [
 
 const sendingDataStatistic = initSendingDataStatistic();
 events.on(CONSTANTS.EVENTS.AUCTION_INIT, auctionInitHandler);
-
-const EXPIRENCE_WURL = 20 * 60000;
-const wurlMap = {};
-cleanWurl();
-
-events.on(CONSTANTS.EVENTS.BID_WON, bidWonHandler);
 
 export const spec = {
   code: BIDDER_CODE,
@@ -148,11 +141,6 @@ export const spec = {
       _each(resp.bid, (bid) => {
         const requestId = bidRequest.bidId;
         const params = bidRequest.params;
-        const auctionId = bidRequest.auctionId;
-        const wurl = deepAccess(bid, 'ext.prebid.events.win');
-
-        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-        addWurl({auctionId, requestId, wurl});
 
         const {ad, adUrl, vastUrl, vastXml} = getAd(bid);
 
@@ -487,51 +475,8 @@ function getSua() {
   };
 }
 
-function getKeyWurl({auctionId, requestId}) {
-  return `${auctionId}-${requestId}`;
-}
-
-function addWurl({wurl, requestId, auctionId}) {
-  if (!wurl) return;
-
-  const expirence = Date.now() + EXPIRENCE_WURL;
-  const key = getKeyWurl({auctionId, requestId});
-  wurlMap[key] = {wurl, expirence};
-}
-
-function removeWurl({auctionId, requestId}) {
-  const key = getKeyWurl({auctionId, requestId});
-  delete wurlMap[key];
-}
-
-function getWurl({auctionId, requestId}) {
-  const key = getKeyWurl({auctionId, requestId});
-  return wurlMap[key] && wurlMap[key].wurl;
-}
-
-function bidWonHandler(bid) {
-  const {auctionId, requestId} = bid;
-  const wurl = getWurl({auctionId, requestId});
-  if (wurl) {
-    logMessage(`(nextmillennium) Invoking image pixel for wurl on BID_WIN: "${wurl}"`);
-    triggerPixel(wurl);
-    removeWurl({auctionId, requestId});
-  };
-}
-
 function auctionInitHandler() {
   sendingDataStatistic.initEvents();
-}
-
-function cleanWurl() {
-  const dateNow = Date.now();
-  Object.keys(wurlMap).forEach(key => {
-    if (dateNow >= wurlMap[key].expirence) {
-      delete wurlMap[key];
-    };
-  });
-
-  setTimeout(cleanWurl, 60000);
 }
 
 function initSendingDataStatistic() {
