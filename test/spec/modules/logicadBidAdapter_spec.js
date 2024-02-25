@@ -36,6 +36,11 @@ describe('LogicadAdapter', function () {
         }
       }]
     }],
+    ortb2Imp: {
+      ext: {
+        ae: 1
+      }
+    },
     ortb2: {
       device: {
         sua: {
@@ -176,7 +181,8 @@ describe('LogicadAdapter', function () {
       numIframes: 1,
       stack: []
     },
-    auctionStart: 1563337198010
+    auctionStart: 1563337198010,
+    fledgeEnabled: true
   };
   const serverResponse = {
     body: {
@@ -203,6 +209,49 @@ describe('LogicadAdapter', function () {
       }
     }
   };
+
+  const paapiServerResponse = {
+    body: {
+      seatbid:
+        [{
+          bid: {
+            requestId: '51ef8751f9aead',
+            cpm: 101.0234,
+            width: 300,
+            height: 250,
+            creativeId: '2019',
+            currency: 'JPY',
+            netRevenue: true,
+            ttl: 60,
+            ad: '<div>TEST</div>',
+            meta: {
+              advertiserDomains: ['logicad.com']
+            }
+          }
+        }],
+      ext: {
+        fledgeAuctionConfigs: [{
+          bidId: '51ef8751f9aead',
+          config: {
+            seller: 'https://fledge.ladsp.com',
+            decisionLogicUrl: 'https://fledge.ladsp.com/decision_logic.js',
+            interestGroupBuyers: ['https://fledge.ladsp.com'],
+            requestedSize: {width: '300', height: '250'},
+            allSlotsRequestedSizes: [{width: '300', height: '250'}],
+            sellerSignals: {signal: 'signal'},
+            sellerTimeout: '500',
+            perBuyerSignals: {'https://fledge.ladsp.com': {signal: 'signal'}},
+            perBuyerCurrencies: {'https://fledge.ladsp.com': 'USD'}
+          }
+        }]
+      },
+      userSync: {
+        type: 'image',
+        url: 'https://cr-p31.ladsp.jp/cookiesender/31'
+      }
+    }
+  };
+
   const nativeServerResponse = {
     body: {
       seatbid:
@@ -272,6 +321,11 @@ describe('LogicadAdapter', function () {
 
       const data = JSON.parse(request.data);
       expect(data.auctionId).to.equal('18fd8b8b0bd757');
+
+      // Protected Audience API flag
+      expect(data.bids[0]).to.have.property('ae');
+      expect(data.bids[0].ae).to.equal(1);
+
       expect(data.eids[0].source).to.equal('sharedid.org');
       expect(data.eids[0].uids[0].id).to.equal('fakesharedid');
 
@@ -329,6 +383,13 @@ describe('LogicadAdapter', function () {
       expect(interpretedResponse[0].ad).to.equal(serverResponse.body.seatbid[0].bid.ad);
       expect(interpretedResponse[0].ttl).to.equal(serverResponse.body.seatbid[0].bid.ttl);
       expect(interpretedResponse[0].meta.advertiserDomains).to.equal(serverResponse.body.seatbid[0].bid.meta.advertiserDomains);
+
+      // Protected Audience API
+      const paapiRequest = spec.buildRequests(bidRequests, bidderRequest)[0];
+      const paapiInterpretedResponse = spec.interpretResponse(paapiServerResponse, paapiRequest);
+      expect(paapiInterpretedResponse).to.have.property('bids');
+      expect(paapiInterpretedResponse).to.have.property('fledgeAuctionConfigs');
+      expect(paapiInterpretedResponse.fledgeAuctionConfigs[0]).to.deep.equal(paapiServerResponse.body.ext.fledgeAuctionConfigs[0]);
 
       // native
       const nativeRequest = spec.buildRequests(nativeBidRequests, bidderRequest)[0];

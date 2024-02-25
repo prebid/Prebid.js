@@ -218,7 +218,11 @@ describe('Taboola Adapter', function () {
           'ext': {},
         },
         'regs': {'coppa': 0, 'ext': {}},
-        'ext': {}
+        'ext': {
+          'prebid': {
+            'version': '$prebid.version$'
+          }
+        }
       };
 
       expect(res.url).to.equal(`${END_POINT_URL}?publisher=${commonBidRequest.params.publisherId}`);
