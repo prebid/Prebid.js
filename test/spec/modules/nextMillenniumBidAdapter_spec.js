@@ -902,7 +902,7 @@ describe('nextMillenniumBidAdapterTests', () => {
     ];
 
     for (let {eventName, bid, expected} of dataForTests) {
-      const url = spec.getUrlPixelMetric(eventName, bid);
+      const url = spec._getUrlPixelMetric(eventName, bid);
       expect(url).to.equal(expected);
     };
   })

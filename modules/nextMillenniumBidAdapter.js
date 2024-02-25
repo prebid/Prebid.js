@@ -17,7 +17,6 @@ import {getGlobal} from '../src/prebidGlobal.js';
 import CONSTANTS from '../src/constants.json';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import * as events from '../src/events.js';
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
@@ -54,9 +53,6 @@ const ALLOWED_ORTB2_PARAMETERS = [
   'user.keywords',
 ];
 
-const sendingDataStatistic = initSendingDataStatistic();
-events.on(CONSTANTS.EVENTS.AUCTION_INIT, auctionInitHandler);
-
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
@@ -72,7 +68,7 @@ export const spec = {
     const requests = [];
     window.nmmRefreshCounts = window.nmmRefreshCounts || {};
 
-    _each(validBidRequests, function(bid) {
+    _each(validBidRequests, (bid) => {
       window.nmmRefreshCounts[bid.adUnitCode] = window.nmmRefreshCounts[bid.adUnitCode] || 0;
       const id = getPlacementId(bid);
       const auctionId = bid.auctionId;
@@ -128,6 +124,8 @@ export const spec = {
         params,
         auctionId,
       });
+
+      this.getUrlPixelMetric(CONSTANTS.EVENTS.BID_REQUESTED, bid);
     });
 
     return requests;
@@ -170,6 +168,8 @@ export const spec = {
         };
 
         bidResponses.push(bidResponse);
+
+        this.getUrlPixelMetric(CONSTANTS.EVENTS.BID_RESPONSE, bid);
       });
     });
 
@@ -203,6 +203,16 @@ export const spec = {
   },
 
   getUrlPixelMetric(eventName, bid) {
+    const disabledSending = !!config.getBidderConfig()?.nextMillennium?.disabledSendingStatisticData;
+    if (disabledSending) return;
+
+    const url = this._getUrlPixelMetric(eventName, bid);
+    if (!url) return;
+
+    triggerPixel(url);
+  },
+
+  _getUrlPixelMetric(eventName, bid) {
     const bidder = bid.bidder || bid.bidderCode;
     if (bidder != BIDDER_CODE) return;
 
@@ -235,6 +245,12 @@ export const spec = {
     const url = `${REPORT_ENDPOINT}?event=${eventName}&bidder=${bidder}&source=pbjs${groupIds}${placementIds}`;
 
     return url;
+  },
+
+  onTimeout(bids) {
+    for (const bid of bids) {
+      this.getUrlPixelMetric(CONSTANTS.EVENTS.BID_TIMEOUT, bid);
+    };
   },
 };
 
@@ -473,85 +489,6 @@ function getSua() {
     mobile: Number(!!mobile),
     platform: (platform && {brand: platform}) || undefined,
   };
-}
-
-function auctionInitHandler() {
-  sendingDataStatistic.initEvents();
-}
-
-function initSendingDataStatistic() {
-  class SendingDataStatistic {
-    eventNames = [
-      CONSTANTS.EVENTS.BID_TIMEOUT,
-      CONSTANTS.EVENTS.BID_RESPONSE,
-      CONSTANTS.EVENTS.BID_REQUESTED,
-      CONSTANTS.EVENTS.NO_BID,
-    ];
-
-    disabledSending = false;
-    enabledSending = false;
-    eventHendlers = {};
-
-    initEvents() {
-      this.disabledSending = !!config.getBidderConfig()?.nextMillennium?.disabledSendingStatisticData;
-      if (this.disabledSending) {
-        this.removeEvents();
-      } else {
-        this.createEvents();
-      };
-    }
-
-    createEvents() {
-      if (this.enabledSending) return;
-
-      this.enabledSending = true;
-      for (let eventName of this.eventNames) {
-        if (!this.eventHendlers[eventName]) {
-          this.eventHendlers[eventName] = this.eventHandler(eventName);
-        };
-
-        events.on(eventName, this.eventHendlers[eventName]);
-      };
-    }
-
-    removeEvents() {
-      if (!this.enabledSending) return;
-
-      this.enabledSending = false;
-      for (let eventName of this.eventNames) {
-        if (!this.eventHendlers[eventName]) continue;
-
-        events.off(eventName, this.eventHendlers[eventName]);
-      };
-    }
-
-    eventHandler(eventName) {
-      const eventHandlerFunc = this.getEventHandler(eventName);
-      if (eventName == CONSTANTS.EVENTS.BID_TIMEOUT) {
-        return bids => {
-          if (this.disabledSending || !Array.isArray(bids)) return;
-
-          for (let bid of bids) {
-            eventHandlerFunc(bid);
-          };
-        }
-      };
-
-      return eventHandlerFunc;
-    }
-
-    getEventHandler(eventName) {
-      return bid => {
-        if (this.disabledSending) return;
-
-        const url = spec.getUrlPixelMetric(eventName, bid);
-        if (!url) return;
-        triggerPixel(url);
-      };
-    }
-  };
-
-  return new SendingDataStatistic();
 }
 
 registerBidder(spec);
