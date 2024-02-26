@@ -49,6 +49,12 @@ describe('Zeta Ssp Bid Adapter', function () {
     },
     tags: {
       someTag: 444,
+      emptyTag: {},
+      nullTag: null,
+      complexEmptyTag: {
+        empty: {},
+        nullValue: null
+      }
     },
     sid: 'publisherId',
     tagid: 'test_tag_id',
@@ -656,5 +662,16 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(payload.device.language).to.not.be.undefined;
     expect(payload.device.w).to.not.be.undefined;
     expect(payload.device.h).to.not.be.undefined;
+  });
+
+  it('Test that all empties are removed', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    expect(payload.ext.tags.someTag).to.eql(444);
+
+    expect(payload.ext.tags.emptyTag).to.be.undefined;
+    expect(payload.ext.tags.nullTag).to.be.undefined;
+    expect(payload.ext.tags.complexEmptyTag).to.be.undefined;
   });
 });
