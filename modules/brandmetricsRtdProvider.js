@@ -78,6 +78,7 @@ function checkConsent (userConsent) {
 /**
  * Add event- listeners to hook in to brandmetrics events
  * @param {Object} reqBidsConfigObj
+ * @param {Object} moduleConfig
  * @param {function} callback
  */
 function processBrandmetricsEvents (reqBidsConfigObj, moduleConfig, callback) {
@@ -114,6 +115,7 @@ function processBrandmetricsEvents (reqBidsConfigObj, moduleConfig, callback) {
 /**
  * Sets bid targeting of specific bidders
  * @param {Object} reqBidsConfigObj
+ * @param {Object} moduleConfig
  * @param {string} key Targeting key
  * @param {string} val Targeting value
  */
