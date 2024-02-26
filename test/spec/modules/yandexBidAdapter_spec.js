@@ -1,8 +1,8 @@
 import { assert, expect } from 'chai';
-import { spec, NATIVE_ASSETS } from 'modules/yandexBidAdapter.js';
-import { parseUrl } from 'src/utils.js';
-import { BANNER, NATIVE } from '../../../src/mediaTypes';
+import { NATIVE_ASSETS, spec } from 'modules/yandexBidAdapter.js';
+import * as utils from 'src/utils.js';
 import { config } from '../../../src/config';
+import { BANNER, NATIVE } from '../../../src/mediaTypes';
 
 describe('Yandex adapter', function () {
   describe('isBidRequestValid', function () {
@@ -41,11 +41,45 @@ describe('Yandex adapter', function () {
   });
 
   describe('buildRequests', function () {
+    /** @type {import('../../../src/auction').BidderRequest} */
     const bidderRequest = {
-      refererInfo: {
-        domain: 'ya.ru',
-        ref: 'https://ya.ru/',
-        page: 'https://ya.ru/',
+      ortb2: {
+        site: {
+          domain: 'ya.ru',
+          ref: 'https://ya.ru/',
+          page: 'https://ya.ru/',
+          publisher: {
+            domain: 'ya.ru',
+          },
+        },
+        device: {
+          w: 1600,
+          h: 900,
+          dnt: 0,
+          ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          language: 'en',
+          sua: {
+            source: 1,
+            platform: {
+              brand: 'macOS',
+            },
+            browsers: [
+              {
+                brand: 'Not_A Brand',
+                version: ['8'],
+              },
+              {
+                brand: 'Chromium',
+                version: ['120'],
+              },
+              {
+                brand: 'Google Chrome',
+                version: ['120'],
+              },
+            ],
+            mobile: 0,
+          },
+        },
       },
       gdprConsent: {
         gdprApplies: 1,
@@ -71,7 +105,7 @@ describe('Yandex adapter', function () {
 
       expect(method).to.equal('POST');
 
-      const parsedRequestUrl = parseUrl(url);
+      const parsedRequestUrl = utils.parseUrl(url);
       const { search: query } = parsedRequestUrl
 
       expect(parsedRequestUrl.hostname).to.equal('bs.yandex.ru');
@@ -100,26 +134,49 @@ describe('Yandex adapter', function () {
       const bannerRequest = getBidRequest();
       const requests = spec.buildRequests([bannerRequest], bidderRequest);
       const { url } = requests[0];
-      const parsedRequestUrl = parseUrl(url);
+      const parsedRequestUrl = utils.parseUrl(url);
       const { search: query } = parsedRequestUrl
 
       expect(query['ssp-cur']).to.equal('USD');
     });
 
-    it('should send eids if defined', function() {
-      const bannerRequest = getBidRequest({
+    it('should send eids and ortb2 user data if defined', function() {
+      const bidderRequestWithUserData = {
+        ...bidderRequest,
+        ortb2: {
+          ...bidderRequest.ortb2,
+          user: {
+            data: [
+              {
+                ext: { segtax: 600, segclass: '1' },
+                name: 'example.com',
+                segment: [{ id: '243' }],
+              },
+              {
+                ext: { segtax: 600, segclass: '1' },
+                name: 'ads.example.org',
+                segment: [{ id: '243' }],
+              },
+            ],
+          },
+        }
+      };
+      const bidRequestExtra = {
         userIdAsEids: [{
           source: 'sharedid.org',
-          uids: [
-            {
-              id: '01',
-              atype: 1
-            }
-          ]
-        }]
-      });
+          uids: [{ id: '01', atype: 1 }],
+        }],
+      };
 
-      const requests = spec.buildRequests([bannerRequest], bidderRequest);
+      const expected = {
+        ext: {
+          eids: bidRequestExtra.userIdAsEids,
+        },
+        data: bidderRequestWithUserData.ortb2.user.data,
+      };
+
+      const bannerRequest = getBidRequest(bidRequestExtra);
+      const requests = spec.buildRequests([bannerRequest], bidderRequestWithUserData);
 
       expect(requests).to.have.lengthOf(1);
       const request = requests[0];
@@ -128,17 +185,17 @@ describe('Yandex adapter', function () {
       const { data } = request;
 
       expect(data.user).to.exist;
-      expect(data.user).to.deep.equal({
-        ext: {
-          eids: [{
-            source: 'sharedid.org',
-            uids: [{
-              id: '01',
-              atype: 1,
-            }],
-          }],
-        }
-      });
+      expect(data.user).to.deep.equal(expected);
+    });
+
+    it('should send site', function() {
+      const expected = {
+        site: bidderRequest.ortb2.site
+      };
+
+      const requests = spec.buildRequests([getBidRequest()], bidderRequest);
+
+      expect(requests[0].data.site).to.deep.equal(expected.site);
     });
 
     describe('banner', () => {
@@ -478,6 +535,60 @@ describe('Yandex adapter', function () {
       });
     });
   });
+
+  describe('onBidWon', function() {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+
+    it('Should not trigger pixel if bid does not contain nurl', function() {
+      spec.onBidWon({});
+
+      expect(utils.triggerPixel.callCount).to.equal(0)
+    })
+
+    it('Should trigger pixel if bid has nurl', function() {
+      spec.onBidWon({
+        nurl: 'https://example.com/some-tracker',
+        timeToRespond: 378,
+      });
+
+      expect(utils.triggerPixel.callCount).to.equal(1)
+      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker?rtt=378')
+    })
+
+    it('Should trigger pixel if bid has nurl with path & params', function() {
+      spec.onBidWon({
+        nurl: 'https://example.com/some-tracker/abcdxyz?param1=1&param2=2',
+        timeToRespond: 378,
+      });
+
+      expect(utils.triggerPixel.callCount).to.equal(1)
+      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker/abcdxyz?param1=1&param2=2&rtt=378')
+    })
+
+    it('Should trigger pixel if bid has nurl with path & params and rtt macros', function() {
+      spec.onBidWon({
+        nurl: 'https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=${RTT}',
+        timeToRespond: 378,
+      });
+
+      expect(utils.triggerPixel.callCount).to.equal(1)
+      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=378')
+    })
+
+    it('Should trigger pixel if bid has nurl and there is no timeToRespond param, but has rtt macros in nurl', function() {
+      spec.onBidWon({
+        nurl: 'https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=${RTT}',
+      });
+
+      expect(utils.triggerPixel.callCount).to.equal(1)
+      expect(utils.triggerPixel.getCall(0).args[0]).to.equal('https://example.com/some-tracker/abcdxyz?param1=1&param2=2&custom-rtt=-1')
+    })
+  })
 });
 
 function getBidConfig() {

@@ -14,6 +14,7 @@ import {
   triggerPixel,
 } from '../src/utils.js';
 
+import {getGlobal} from '../src/prebidGlobal.js';
 import CONSTANTS from '../src/constants.json';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -22,7 +23,7 @@ import * as events from '../src/events.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 
-const NM_VERSION = '3.0.0';
+const NM_VERSION = '3.1.0';
 const GVLID = 1060;
 const BIDDER_CODE = 'nextMillennium';
 const ENDPOINT = 'https://pbs.nextmillmedia.com/openrtb2/auction';
@@ -30,6 +31,7 @@ const TEST_ENDPOINT = 'https://test.pbs.nextmillmedia.com/openrtb2/auction';
 const SYNC_ENDPOINT = 'https://cookies.nextmillmedia.com/sync?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&us_privacy={{.USPrivacy}}&gpp={{.GPP}}&gpp_sid={{.GPPSID}}&type={{.TYPE_PIXEL}}';
 const REPORT_ENDPOINT = 'https://report2.hb.brainlyads.com/statistics/metric';
 const TIME_TO_LIVE = 360;
+const DEFAULT_CURRENCY = 'USD';
 
 const VIDEO_PARAMS = [
   'api',
@@ -47,6 +49,10 @@ const ALLOWED_ORTB2_PARAMETERS = [
   'site.pagecat',
   'site.content.cat',
   'site.content.language',
+  'device.sua',
+  'site.keywords',
+  'site.content.keywords',
+  'user.keywords',
 ];
 
 const sendingDataStatistic = initSendingDataStatistic();
@@ -81,9 +87,11 @@ export const spec = {
 
       const site = getSiteObj();
       const device = getDeviceObj();
+      const {cur, mediaTypes} = getCurrency(bid);
 
       const postBody = {
         id: bidderRequest?.bidderRequestId,
+        cur,
         ext: {
           prebid: {
             storedrequest: {
@@ -93,6 +101,7 @@ export const spec = {
 
           nextMillennium: {
             nm_version: NM_VERSION,
+            pbjs_version: getGlobal()?.version || undefined,
             refresh_count: window.nmmRefreshCounts[bid.adUnitCode]++,
             elOffsets: getBoundingClient(bid),
             scrollTop: window.pageYOffset || document.documentElement.scrollTop,
@@ -104,9 +113,10 @@ export const spec = {
         imp: [],
       };
 
-      postBody.imp.push(getImp(bid, id));
+      postBody.imp.push(getImp(bid, id, mediaTypes));
       setConsentStrings(postBody, bidderRequest);
       setOrtb2Parameters(postBody, bidderRequest?.ortb2);
+      setEids(postBody, bid);
 
       const urlParameters = parseUrl(getWindowTop().location.href).search;
       const isTest = urlParameters['pbs'] && urlParameters['pbs'] === 'test';
@@ -153,7 +163,7 @@ export const spec = {
           width: bid.w,
           height: bid.h,
           creativeId: bid.adid,
-          currency: response.cur,
+          currency: response.cur || DEFAULT_CURRENCY,
           netRevenue: true,
           ttl: TIME_TO_LIVE,
           meta: {
@@ -193,7 +203,7 @@ export const spec = {
       responses.forEach(response => {
         if (syncOptions.pixelEnabled) setPixelImages(response);
         if (syncOptions.iframeEnabled) setPixelIframes(response);
-      })
+      });
     }
 
     if (!pixels.length) {
@@ -240,7 +250,8 @@ export const spec = {
   },
 };
 
-export function getImp(bid, id) {
+export function getImp(bid, id, mediaTypes) {
+  const {banner, video} = mediaTypes;
   const imp = {
     id: bid.adUnitCode,
     ext: {
@@ -252,18 +263,22 @@ export function getImp(bid, id) {
     },
   };
 
-  const banner = deepAccess(bid, 'mediaTypes.banner');
   if (banner) {
+    if (banner.bidfloorcur) imp.bidfloorcur = banner.bidfloorcur;
+    if (banner.bidfloor) imp.bidfloor = banner.bidfloor;
+
     imp.banner = {
-      format: (banner?.sizes || []).map(s => { return {w: s[0], h: s[1]} }),
+      format: (banner.data?.sizes || []).map(s => { return {w: s[0], h: s[1]} }),
     };
   };
 
-  const video = deepAccess(bid, 'mediaTypes.video');
   if (video) {
+    if (video.bidfloorcur) imp.bidfloorcur = video.bidfloorcur;
+    if (video.bidfloor) imp.bidfloor = video.bidfloor;
+
     imp.video = getDefinedParams(video, VIDEO_PARAMS);
-    if (video.playerSize) {
-      imp.video = Object.assign(imp.video, parseGPTSingleSizeArrayToRtbSize(video.playerSize) || {});
+    if (video.data.playerSize) {
+      imp.video = Object.assign(imp.video, parseGPTSingleSizeArrayToRtbSize(video.data.playerSize) || {});
     } else if (video.w && video.h) {
       imp.video.w = video.w;
       imp.video.h = video.h;
@@ -312,6 +327,12 @@ export function setOrtb2Parameters(postBody, ortb2 = {}) {
   }
 }
 
+export function setEids(postBody, bid) {
+  if (!isArray(bid.userIdAsEids) || !bid.userIdAsEids.length) return;
+
+  deepSetValue(postBody, 'user.eids', bid.userIdAsEids);
+}
+
 export function replaceUsersyncMacros(url, gdprConsent = {}, uspConsent = '', gppConsent = {}, type = '') {
   const { consentString = '', gdprApplies = false } = gdprConsent;
   const gdpr = Number(gdprApplies);
@@ -324,7 +345,36 @@ export function replaceUsersyncMacros(url, gdprConsent = {}, uspConsent = '', gp
     .replace('{{.TYPE_PIXEL}}', type);
 
   return url;
-};
+}
+
+function getCurrency(bid = {}) {
+  const currency = config?.getConfig('currency')?.adServerCurrency || DEFAULT_CURRENCY;
+  const cur = [];
+  const types = ['banner', 'video'];
+  const mediaTypes = {};
+  for (const mediaType of types) {
+    const mediaTypeData = deepAccess(bid, `mediaTypes.${mediaType}`);
+    if (mediaTypeData) {
+      mediaTypes[mediaType] = {data: mediaTypeData};
+    } else {
+      continue;
+    };
+
+    if (typeof bid.getFloor === 'function') {
+      let floorInfo = bid.getFloor({currency, mediaType, size: '*'});
+      mediaTypes[mediaType].bidfloorcur = floorInfo.currency;
+      mediaTypes[mediaType].bidfloor = floorInfo.floor;
+    } else {
+      mediaTypes[mediaType].bidfloorcur = currency;
+    };
+
+    if (cur.includes(mediaTypes[mediaType].bidfloorcur)) cur.push(mediaTypes[mediaType].bidfloorcur);
+  };
+
+  if (!cur.length) cur.push(DEFAULT_CURRENCY);
+
+  return {cur, mediaTypes};
+}
 
 function getAdEl(bid) {
   // best way I could think of to get El, is by matching adUnitCode to google slots...
@@ -391,7 +441,7 @@ function getAd(bid) {
       } else if (bid.nurl) {
         adUrl = bid.nurl;
       };
-  }
+  };
 
   return {ad, adUrl, vastXml, vastUrl};
 }
@@ -399,10 +449,21 @@ function getAd(bid) {
 function getSiteObj() {
   const refInfo = (getRefererInfo && getRefererInfo()) || {};
 
+  let language = navigator.language;
+  let content;
+  if (language) {
+    // get ISO-639-1-alpha-2 (2 character language)
+    language = language.split('-')[0];
+    content = {
+      language,
+    };
+  };
+
   return {
     page: refInfo.page,
     ref: refInfo.ref,
-    domain: refInfo.domain
+    domain: refInfo.domain,
+    content,
   };
 }
 
@@ -410,6 +471,19 @@ function getDeviceObj() {
   return {
     w: window.innerWidth || window.document.documentElement.clientWidth || window.document.body.clientWidth || 0,
     h: window.innerHeight || window.document.documentElement.clientHeight || window.document.body.clientHeight || 0,
+    ua: window.navigator.userAgent || undefined,
+    sua: getSua(),
+  };
+}
+
+function getSua() {
+  let {brands, mobile, platform} = (window?.navigator?.userAgentData || {});
+  if (!(brands && platform)) return undefined;
+
+  return {
+    brands,
+    mobile: Number(!!mobile),
+    platform: (platform && {brand: platform}) || undefined,
   };
 }
 

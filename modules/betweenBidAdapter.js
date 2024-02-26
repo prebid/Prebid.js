@@ -3,6 +3,14 @@ import {parseSizesInput} from '../src/utils.js';
 import {includes} from '../src/polyfill.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
+
 const BIDDER_CODE = 'between';
 let ENDPOINT = 'https://ads.betweendigital.com/adjson?t=prebid';
 const CODE_TYPES = ['inpage', 'preroll', 'midroll', 'postroll'];

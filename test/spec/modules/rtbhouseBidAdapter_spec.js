@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { OPENRTB, spec } from 'modules/rtbhouseBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
+import { mergeDeep } from '../../../src/utils';
 
 describe('RTBHouseAdapter', () => {
   const adapter = newBidder(spec);
@@ -304,6 +305,152 @@ describe('RTBHouseAdapter', () => {
       expect(data.user).to.nested.include({'ext.data': 'some user data'});
     });
 
+    context('DSA', () => {
+      const validDSAObject = {
+        'dsarequired': 3,
+        'pubrender': 0,
+        'datatopub': 2,
+        'transparency': [
+          {
+            'domain': 'platform1domain.com',
+            'dsaparams': [1]
+          },
+          {
+            'domain': 'SSP2domain.com',
+            'dsaparams': [1, 2]
+          }
+        ]
+      };
+      const invalidDSAObjects = [
+        -1,
+        0,
+        '',
+        'x',
+        true,
+        [],
+        [1],
+        {},
+        {
+          'dsarequired': -1
+        },
+        {
+          'pubrender': -1
+        },
+        {
+          'datatopub': -1
+        },
+        {
+          'dsarequired': 4
+        },
+        {
+          'pubrender': 3
+        },
+        {
+          'datatopub': 3
+        },
+        {
+          'dsarequired': '1'
+        },
+        {
+          'pubrender': '1'
+        },
+        {
+          'datatopub': '1'
+        },
+        {
+          'transparency': '1'
+        },
+        {
+          'transparency': 2
+        },
+        {
+          'transparency': [
+            1, 2
+          ]
+        },
+        {
+          'transparency': [
+            {
+              domain: '',
+              dsaparams: []
+            }
+          ]
+        },
+        {
+          'transparency': [
+            {
+              domain: 'x',
+              dsaparams: null
+            }
+          ]
+        },
+        {
+          'transparency': [
+            {
+              domain: 'x',
+              dsaparams: [1, '2']
+            }
+          ]
+        },
+      ];
+      let bidRequest;
+
+      beforeEach(() => {
+        bidRequest = Object.assign([], bidRequests);
+      });
+
+      it('should add dsa information to the request via bidderRequest.ortb2.regs.ext.dsa', function () {
+        const localBidderRequest = {
+          ...bidderRequest,
+          ortb2: {
+            regs: {
+              ext: {
+                dsa: validDSAObject
+              }
+            }
+          }
+        };
+
+        const request = spec.buildRequests(bidRequest, localBidderRequest);
+        const data = JSON.parse(request.data);
+
+        expect(data).to.have.nested.property('regs.ext.dsa');
+        expect(data.regs.ext.dsa.dsarequired).to.equal(3);
+        expect(data.regs.ext.dsa.pubrender).to.equal(0);
+        expect(data.regs.ext.dsa.datatopub).to.equal(2);
+        expect(data.regs.ext.dsa.transparency).to.deep.equal([
+          {
+            'domain': 'platform1domain.com',
+            'dsaparams': [1]
+          },
+          {
+            'domain': 'SSP2domain.com',
+            'dsaparams': [1, 2]
+          }
+        ]);
+      });
+
+      invalidDSAObjects.forEach((invalidDSA, index) => {
+        it(`should not add dsa information to the request via bidderRequest.ortb2.regs.ext.dsa; test# ${index}`, function () {
+          const localBidderRequest = {
+            ...bidderRequest,
+            ortb2: {
+              regs: {
+                ext: {
+                  dsa: invalidDSA
+                }
+              }
+            }
+          };
+
+          const request = spec.buildRequests(bidRequest, localBidderRequest);
+          const data = JSON.parse(request.data);
+
+          expect(data).to.not.have.nested.property('regs.ext.dsa');
+        });
+      });
+    });
+
     context('FLEDGE', function() {
       afterEach(function () {
         config.resetConfig();
@@ -563,17 +710,20 @@ describe('RTBHouseAdapter', () => {
   });
 
   describe('interpretResponse', function () {
-    let response = [{
-      'id': 'bidder_imp_identifier',
-      'impid': '552b8922e28f27',
-      'price': 0.5,
-      'adid': 'Ad_Identifier',
-      'adm': '<!-- test creative -->',
-      'adomain': ['rtbhouse.com'],
-      'cid': 'Ad_Identifier',
-      'w': 300,
-      'h': 250
-    }];
+    let response;
+    beforeEach(() => {
+      response = [{
+        'id': 'bidder_imp_identifier',
+        'impid': '552b8922e28f27',
+        'price': 0.5,
+        'adid': 'Ad_Identifier',
+        'adm': '<!-- test creative -->',
+        'adomain': ['rtbhouse.com'],
+        'cid': 'Ad_Identifier',
+        'w': 300,
+        'h': 250
+      }];
+    });
 
     let fledgeResponse = {
       'id': 'bid-identifier',
@@ -635,6 +785,51 @@ describe('RTBHouseAdapter', () => {
         expect(response).to.have.property('fledgeAuctionConfigs');
         expect(response.fledgeAuctionConfigs.length).to.equal(1);
         expect(response.fledgeAuctionConfigs[0].bidId).to.equal('test-bid-id');
+      });
+    });
+
+    context('when the response contains DSA object', function () {
+      it('should get correct bid response', function () {
+        const dsa = {
+          'dsa': {
+            'behalf': 'Advertiser',
+            'paid': 'Advertiser',
+            'transparency': [{
+              'domain': 'dsp1domain.com',
+              'dsaparams': [1, 2]
+            }],
+            'adrender': 1
+          }
+        };
+        mergeDeep(response[0], { ext: dsa });
+
+        const expectedResponse = [
+          {
+            'requestId': '552b8922e28f27',
+            'cpm': 0.5,
+            'creativeId': 29681110,
+            'width': 300,
+            'height': 250,
+            'ad': '<!-- test creative -->',
+            'mediaType': 'banner',
+            'currency': 'USD',
+            'ttl': 300,
+            'meta': {
+              'advertiserDomains': ['rtbhouse.com'],
+              ...dsa
+            },
+            'netRevenue': true,
+            ext: { ...dsa }
+          }
+        ];
+        let bidderRequest;
+        let result = spec.interpretResponse({body: response}, {bidderRequest});
+
+        expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
+        expect(result[0]).to.have.nested.property('meta.dsa');
+        expect(result[0]).to.have.nested.property('ext.dsa');
+        expect(result[0].meta.dsa).to.deep.equal(expectedResponse[0].meta.dsa);
+        expect(result[0].ext.dsa).to.deep.equal(expectedResponse[0].meta.dsa);
       });
     });
 

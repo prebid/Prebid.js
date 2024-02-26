@@ -3,6 +3,12 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ */
+
 const BIDDER_CODE = 'smartadserver';
 const GVL_ID = 45;
 const DEFAULT_FLOOR = 0.0;

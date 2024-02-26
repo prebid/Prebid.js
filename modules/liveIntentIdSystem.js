@@ -12,6 +12,13 @@ import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterM
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import {UID2_EIDS} from '../libraries/uid2Eids/uid2Eids.js';
+import { getRefererInfo } from '../src/refererDetection.js';
+
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
 
 const DEFAULT_AJAX_TIMEOUT = 5000
 const EVENTS_TOPIC = 'pre_lips'
@@ -115,6 +122,7 @@ function initializeLiveConnect(configParams) {
   }
 
   liveConnectConfig.wrapperName = 'prebid';
+  liveConnectConfig.trackerVersion = '$prebid.version$';
   liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
   liveConnectConfig.fireEventDelay = configParams.fireEventDelay;
@@ -156,7 +164,7 @@ function tryFireEvent() {
 
 /** @type {Submodule} */
 export const liveIntentIdSubmodule = {
-  moduleMode: process.env.LiveConnectMode,
+  moduleMode: '$$LIVE_INTENT_MODULE_MODE$$',
   /**
    * used to link submodule with config
    * @type {string}
@@ -225,6 +233,10 @@ export const liveIntentIdSubmodule = {
 
       if (value.sovrn) {
         result.sovrn = { 'id': value.sovrn, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.thetradedesk) {
+        result.thetradedesk = { 'id': value.thetradedesk, ext: { provider: getRefererInfo().domain || LI_PROVIDER_DOMAIN } }
       }
 
       return result
@@ -355,6 +367,18 @@ export const liveIntentIdSubmodule = {
     },
     'sovrn': {
       source: 'liveintent.sovrn.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'thetradedesk': {
+      source: 'adserver.org',
       atype: 3,
       getValue: function(data) {
         return data.id;
