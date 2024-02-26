@@ -8,6 +8,9 @@ import {
   isEmpty,
   isFn,
   isInteger,
+  isNumber,
+  isStr,
+  isPlainObject,
   logError,
   logWarn,
   mergeDeep,
@@ -38,6 +41,7 @@ const VIDEO_TIME_TO_LIVE = 3600; // 1hr
 const NATIVE_TIME_TO_LIVE = 3600; // Since native can have video, use ttl same as video
 const NET_REVENUE = true;
 const MAX_REQUEST_LIMIT = 4;
+const MAX_EID_SOURCES = 50;
 const OUTSTREAM_MINIMUM_PLAYER_SIZE = [144, 144];
 const PRICE_TO_DOLLAR_FACTOR = {
   JPY: 1
@@ -111,7 +115,8 @@ export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 export const FEATURE_TOGGLES = {
   // Update with list of CFTs to be requested from Exchange
   REQUESTED_FEATURE_TOGGLES: [
-    'pbjs_enable_multiformat'
+    'pbjs_enable_multiformat',
+    'pbjs_allow_all_eids'
   ],
 
   featureToggles: {},
@@ -518,6 +523,9 @@ function parseBid(rawBid, currency, bidRequest) {
   if (rawBid.adomain && rawBid.adomain.length > 0) {
     bid.meta.advertiserDomains = rawBid.adomain;
   }
+  if (rawBid.ext?.dsa) {
+    bid.meta.dsa = rawBid.ext.dsa
+  }
   return bid;
 }
 
@@ -657,15 +665,23 @@ function getEidInfo(allEids) {
   let seenSources = {};
   if (isArray(allEids)) {
     for (const eid of allEids) {
-      if (SOURCE_RTI_MAPPING.hasOwnProperty(eid.source) && deepAccess(eid, 'uids.0')) {
+      const isSourceMapped = SOURCE_RTI_MAPPING.hasOwnProperty(eid.source);
+      const allowAllEidsFeatureEnabled = FEATURE_TOGGLES.isFeatureEnabled('pbjs_allow_all_eids');
+      const hasUids = deepAccess(eid, 'uids.0');
+
+      if ((isSourceMapped || allowAllEidsFeatureEnabled) && hasUids) {
         seenSources[eid.source] = true;
-        if (SOURCE_RTI_MAPPING[eid.source] != '') {
+
+        if (isSourceMapped && SOURCE_RTI_MAPPING[eid.source] !== '') {
           eid.uids[0].ext = {
             rtiPartner: SOURCE_RTI_MAPPING[eid.source]
           };
         }
         delete eid.uids[0].atype;
         toSend.push(eid);
+        if (toSend.length >= MAX_EID_SOURCES) {
+          break;
+        }
       }
     }
   }
@@ -710,7 +726,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   // getting ixdiags for adunits of the video, outstream & multi format (MF) style
   const fledgeEnabled = deepAccess(bidderRequest, 'fledgeEnabled')
   let ixdiag = buildIXDiag(validBidRequests, fledgeEnabled);
-  for (var key in ixdiag) {
+  for (let key in ixdiag) {
     r.ext.ixdiag[key] = ixdiag[key];
   }
 
@@ -796,6 +812,9 @@ function addRTI(userEids, eidInfo) {
   let identityInfo = window.headertag.getIdentityInfo();
   if (identityInfo && typeof identityInfo === 'object') {
     for (const partnerName in identityInfo) {
+      if (userEids.length >= MAX_EID_SOURCES) {
+        return
+      }
       if (identityInfo.hasOwnProperty(partnerName)) {
         let response = identityInfo[partnerName];
         if (!response.responsePending && response.data && typeof response.data === 'object' &&
@@ -1199,6 +1218,7 @@ function addFPD(bidderRequest, r, fpd, site, user) {
     }
   }
 
+  // regulations from ortb2
   if (fpd.hasOwnProperty('regs') && !bidderRequest.gppConsent) {
     if (fpd.regs.hasOwnProperty('gpp') && typeof fpd.regs.gpp == 'string') {
       deepSetValue(r, 'regs.gpp', fpd.regs.gpp)
@@ -1206,6 +1226,30 @@ function addFPD(bidderRequest, r, fpd, site, user) {
 
     if (fpd.regs.hasOwnProperty('gpp_sid') && Array.isArray(fpd.regs.gpp_sid)) {
       deepSetValue(r, 'regs.gpp_sid', fpd.regs.gpp_sid)
+    }
+
+    if (fpd.regs.ext?.dsa) {
+      const pubDsaObj = fpd.regs.ext.dsa;
+      const dsaObj = {};
+      ['dsarequired', 'pubrender', 'datatopub'].forEach((dsaKey) => {
+        if (isNumber(pubDsaObj[dsaKey])) {
+          dsaObj[dsaKey] = pubDsaObj[dsaKey];
+        }
+      });
+
+      if (isArray(pubDsaObj.transparency)) {
+        const tpData = [];
+        pubDsaObj.transparency.forEach((tpObj) => {
+          if (isPlainObject(tpObj) && isStr(tpObj.domain) && tpObj.domain != '' && isArray(tpObj.dsaparams) && tpObj.dsaparams.every((v) => isNumber(v))) {
+            tpData.push(tpObj);
+          }
+        });
+        if (tpData.length > 0) {
+          dsaObj.transparency = tpData;
+        }
+      }
+
+      if (!isEmpty(dsaObj)) deepSetValue(r, 'regs.ext.dsa', dsaObj);
     }
   }
 
@@ -1274,6 +1318,7 @@ function buildIXDiag(validBidRequests, fledgeEnabled) {
     .map(bidRequest => bidRequest.adUnitCode)
     .filter((value, index, arr) => arr.indexOf(value) === index);
 
+  let allEids = deepAccess(validBidRequests, '0.userIdAsEids', [])
   let ixdiag = {
     mfu: 0,
     bu: 0,
@@ -1286,7 +1331,8 @@ function buildIXDiag(validBidRequests, fledgeEnabled) {
     userIds: _getUserIds(validBidRequests[0]),
     url: window.location.href.split('?')[0],
     vpd: defaultVideoPlacement,
-    ae: fledgeEnabled
+    ae: fledgeEnabled,
+    eidLength: allEids.length
   };
 
   // create ad unit map and collect the required diag properties

@@ -31,7 +31,8 @@ const _approvedLoadExternalJSList = [
   'qortex',
   'dynamicAdBoost',
   'contxtful',
-  'id5'
+  'id5',
+  'lucead',
 ]
 
 /**

@@ -21,6 +21,13 @@ import {ORTB_MTYPES} from '../libraries/ortbConverter/processors/mediaType.js';
 
 // Maintainer: mediapsr@epsilon.com
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Device} Device
+ */
+
 const GVLID = 24;
 
 const BIDDER_CODE = 'conversant';
@@ -87,7 +94,10 @@ const converter = ortbConverter({
     const bidResponse = buildBidResponse(bid, context);
     return bidResponse;
   },
-
+  response(buildResponse, bidResponses, ortbResponse, context) {
+    const response = buildResponse(bidResponses, ortbResponse, context);
+    return response.bids;
+  },
   overrides: {
     imp: {
       banner(fillBannerImp, imp, bidRequest, context) {
