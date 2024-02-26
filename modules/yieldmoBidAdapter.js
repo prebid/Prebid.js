@@ -98,7 +98,7 @@ export const spec = {
         us_privacy: deepAccess(bidderRequest, 'uspConsent') || '',
       };
       if (topicsData) {
-        serverRequest.topics = topicsData;
+        serverRequest.topics = JSON.stringify(topicsData);
       }
       const gpc = getGPCSignal(bidderRequest);
       if (gpc) {
