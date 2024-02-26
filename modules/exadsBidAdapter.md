@@ -87,6 +87,8 @@ Now you will find the different parameters to set, based on publisher website. T
 * **keywords** - keywords can be used to ensure ad zones get the right type of advertising. Keywords should be a string of comma-separated words
 * **bidfloor** - minimum bid for this impression (CPM) / click (CPC) and account currency (float) 
 * **bidfloorcur** - currency for minimum bid value specified using ISO-4217 alpha codes (string)
+* **bcat** - blocked advertiser categories using the IAB content categories (string array)
+* **badv** - block list of advertisers by their domains (string array)
 * **mimes** - list of supported mime types. We support: image/jpeg, image/jpg, image/png, image/png, image/gif, image/webp, video/mp4 (string array)
 * **dsa** - DSA transparency information
     * **dsarequired** - flag to indicate if DSA information should be made available (integer)
@@ -131,6 +133,8 @@ adUnits =
                     keywords: 'lifestyle, humour',
                     bidfloor: 0.00000011,
                     bidfloorcur: 'EUR',
+                    bcat: ['IAB25', 'IAB7-39','IAB8-18','IAB8-5','IAB9-9'],
+                    badv: ['first.com', 'second.com'],
                     mimes: ['image/jpg'],
                     dsa: {
                         dsarequired: 3, 
@@ -170,6 +174,8 @@ adUnits =
                     keywords: 'lifestyle, humour',
                     bidfloor: 0.00000011,
                     bidfloorcur: 'EUR',
+                    bcat: ['IAB25', 'IAB7-39','IAB8-18','IAB8-5','IAB9-9'],
+                    badv: ['first.com', 'second.com'],                      
                     mimes: ['image/jpg'],
                     dsa: {
                         dsarequired: 3, 
@@ -194,8 +200,10 @@ adUnits =
 * **country** - Country ISO3 (string)
 * **impressionId** (required) - unique impression ID within this bid request (string)
 * **keywords** - keywords can be used to ensure ad zones get the right type of advertising. Keywords should be a string of comma-separated words
-* **bidfloor** - minimum bid for this impression (CPM) / click (CPC) and account currency, optional (float) 
-* **bidfloorcur** - currency for minimum bid value specified using ISO-4217 alpha codes, optional (string)
+* **bidfloor** - minimum bid for this impression (CPM) / click (CPC) and account currency (float) 
+* **bidfloorcur** - currency for minimum bid value specified using ISO-4217 alpha codes (string)
+* **bcat** - blocked advertiser categories using the IAB content categories (string array)
+* **badv** - block list of advertisers by their domains (string array)
 * **video.mimes** - list of supported mime types (string array)
 * **dsa** - DSA transparency information
     * **dsarequired** - flag to indicate if DSA information should be made available (integer)
@@ -253,6 +261,8 @@ adUnits = [{
             keywords: 'lifestyle, humour',
             bidfloor: 0.00000011,
             bidfloorcur: 'EUR',
+            bcat: ['IAB25', 'IAB7-39','IAB8-18','IAB8-5','IAB9-9'],
+            badv: ['first.com', 'second.com'],            
             endpoint: 'https://your-ad-network.com/rtb.php'
         }
     }]
@@ -270,8 +280,10 @@ adUnits = [{
 * **country** - country ISO3 (string)
 * **impressionId** (required) - unique impression ID within this bid request (string)
 * **keywords** - keywords can be used to ensure ad zones get the right type of advertising. Keywords should be a string of comma-separated words
-* **bidfloor** - minimum bid for this impression (CPM) / click (CPC) and account currency, optional (float) 
-* **bidfloorcur** - currency for minimum bid value specified using ISO-4217 alpha codes, optional (string)
+* **bidfloor** - minimum bid for this impression (CPM) / click (CPC) and account currency (float) 
+* **bidfloorcur** - currency for minimum bid value specified using ISO-4217 alpha codes (string)
+* **bcat** - blocked advertiser categories using the IAB content categories (string array)
+* **badv** - block list of advertisers by their domains (string array)
 * **dsa** - DSA transparency information
     * **dsarequired** - flag to indicate if DSA information should be made available (integer)
         * 0 - Not required
@@ -372,6 +384,8 @@ adUnits = [{
                 keywords: 'lifestyle, humour',
                 bidfloor: 0.00000011,
                 bidfloorcur: 'EUR',
+                bcat: ['IAB25', 'IAB7-39','IAB8-18','IAB8-5','IAB9-9'],
+                badv: ['first.com', 'second.com'],                
                 endpoint: 'https://your-ad-network.com/rtb.php'
             }
         }]

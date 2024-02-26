@@ -122,6 +122,8 @@
                         keywords: keywords,
                         bidfloor: bidfloor,
                         bidfloorcur: bidfloorcur,
+                        bcat: ['IAB25', 'IAB7-39','IAB8-18','IAB8-5','IAB9-9'],
+                        badv: ['first.com', 'second.com'],
                         mimes: mimes,
                         imageOutput: imageOutput,
                         endpoint: exadsEndpoint,
@@ -161,7 +163,7 @@
                             } else {
                                 iframe.width = bannerSizes[0][0];
                                 iframe.height = bannerSizes[0][1];
-                                iframeDoc.write('<head></head><body>' + passbackTagHtml + '</body>');
+                                iframeDoc.write('<head></head><body>NO ADS</body>');
                                 iframeDoc.close();
                             }
                         }
@@ -171,11 +173,6 @@
         }
 
         initBids();
-
-        // Define the passback HTML tag here.
-        // Note that this tag is usually in either Script tag form or iFrame form.
-        let passbackTagHtml = '<iframe src="//a.adnflow.com/iframe.php?idzone=88&size=300x250" width="300" height="250" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>';
-        
     </script>
 
 </head>

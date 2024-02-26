@@ -26,6 +26,8 @@ function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
     'id': validBidRequest.bidId, // NOT bid.bidderRequestId or bid.auctionId
     'at': 1,
     'imp': [],
+    'bcat': validBidRequest.params.bcat,
+    'badv': validBidRequest.params.badv,
     'site': {
       'id': validBidRequest.params.siteId,
       'domain': envParams.domain,
@@ -386,6 +388,10 @@ function handleValidORTB2Dot4(bid) {
     hasValue(bid.params.impressionId) &&
     hasValue(bid.params.country) &&
     hasValue(bid.params.country.length > 0) &&
+    ((!hasValue(bid.params.bcat) ||
+      bid.params.bcat.length > 0)) &&
+    ((!hasValue(bid.params.badv) ||
+        bid.params.badv.length > 0)) &&      
     (bannerInfo || nativeInfo || videoInfo) &&
     (nativeInfo ? bid.params.native &&
       nativeInfo.ortb.assets &&
@@ -396,7 +402,6 @@ function handleValidORTB2Dot4(bid) {
       bid.params.imp.video.mimes.length > 0 &&
       bid.params.imp.video.protocols &&
       bid.params.imp.video.protocols.length > 0) : true));
-
   if (!isValid) {
     utils.logError('Validation Error');
   }
