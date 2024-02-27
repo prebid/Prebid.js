@@ -216,7 +216,6 @@ function readUserIdFromCookie(key) {
       return storedValue;
     }
   } catch (error) {
-    return;
   }
 }
 

@@ -2,7 +2,6 @@ import { assert } from 'chai';
 import sinon from 'sinon';
 import { spec, storage } from 'modules/pstudioBidAdapter.js';
 import { deepClone } from '../../../src/utils.js';
-import * as utilsModule from '../../../src/utils.js';
 
 describe('PStudioAdapter', function () {
   let sandbox;
@@ -485,21 +484,31 @@ describe('PStudioAdapter', function () {
       ]);
     });
 
-    it('should generate user id and put it into sync object', function () {
-      const newUUID = 'newUUID';
-
-      sandbox.stub(utilsModule, 'generateUUID').returns(newUUID);
+    it('should generate user id and put the same uuid it into sync object', function () {
+      sandbox.stub(storage, 'getCookie').returns(undefined);
 
       const result = spec.getUserSyncs({}, {}, {}, {});
+      const url1 = result[0].url;
+      const url2 = result[1].url;
+
+      const expectedUID1 = extractValueFromURL(url1, 'ttd_puid');
+      const expectedUID2 = extractValueFromURL(url2, 'uid');
+
+      expect(expectedUID1).to.equal(expectedUID2);
 
       expect(result[0]).deep.equal({
         type: 'image',
-        url: `https://match.adsrvr.org/track/cmf/generic?ttd_pid=k1on5ig&ttd_tpi=1&ttd_puid=${newUUID}&dsp=ttd`,
+        url: `https://match.adsrvr.org/track/cmf/generic?ttd_pid=k1on5ig&ttd_tpi=1&ttd_puid=${expectedUID1}&dsp=ttd`,
       });
       expect(result[1]).deep.equal({
         type: 'image',
-        url: `https://dsp.myads.telkomsel.com/api/v1/pixel?uid=${newUUID}`,
+        url: `https://dsp.myads.telkomsel.com/api/v1/pixel?uid=${expectedUID2}`,
       });
+      // Helper function to extract UUID from URL
+      function extractValueFromURL(url, key) {
+        const match = url.match(new RegExp(`[?&]${key}=([^&]*)`));
+        return match ? match[1] : null;
+      }
     });
   });
 });
