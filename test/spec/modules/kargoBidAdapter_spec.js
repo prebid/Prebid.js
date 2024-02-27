@@ -725,7 +725,8 @@ describe('kargo adapter tests', function () {
             adm: '<div id="1"></div>',
             width: 320,
             height: 50,
-            metadata: {}
+            metadata: {},
+            creativeId: 'bar'
           },
           2: {
             id: 'bar',
@@ -736,14 +737,16 @@ describe('kargo adapter tests', function () {
             targetingCustom: 'dmpmptest1234',
             metadata: {
               landingPageDomain: ['https://foobar.com']
-            }
+            },
+            creativeId: 'foo'
           },
           3: {
             id: 'bar',
             cpm: 2.5,
             adm: '<div id="2"></div>',
             width: 300,
-            height: 250
+            height: 250,
+            creativeId: 'foo'
           },
           4: {
             id: 'bar',
@@ -753,6 +756,7 @@ describe('kargo adapter tests', function () {
             height: 250,
             mediaType: 'banner',
             metadata: {},
+            creativeId: 'foo',
             currency: 'EUR'
           },
           5: {
@@ -763,6 +767,7 @@ describe('kargo adapter tests', function () {
             height: 250,
             mediaType: 'video',
             metadata: {},
+            creativeId: 'foo',
             currency: 'EUR'
           },
           6: {
@@ -774,6 +779,7 @@ describe('kargo adapter tests', function () {
             height: 250,
             mediaType: 'video',
             metadata: {},
+            creativeId: 'foo',
             currency: 'EUR'
           }
         }
@@ -818,7 +824,7 @@ describe('kargo adapter tests', function () {
         width: 320,
         height: 50,
         ttl: 300,
-        creativeId: 'foo',
+        creativeId: 'bar',
         dealId: undefined,
         netRevenue: true,
         currency: 'USD',
@@ -833,7 +839,7 @@ describe('kargo adapter tests', function () {
         width: 300,
         height: 250,
         ttl: 300,
-        creativeId: 'bar',
+        creativeId: 'foo',
         dealId: 'dmpmptest1234',
         netRevenue: true,
         currency: 'USD',
@@ -850,7 +856,7 @@ describe('kargo adapter tests', function () {
         width: 300,
         height: 250,
         ttl: 300,
-        creativeId: 'bar',
+        creativeId: 'foo',
         dealId: undefined,
         netRevenue: true,
         currency: 'USD',
@@ -865,7 +871,7 @@ describe('kargo adapter tests', function () {
         width: 300,
         height: 250,
         ttl: 300,
-        creativeId: 'bar',
+        creativeId: 'foo',
         dealId: undefined,
         netRevenue: true,
         currency: 'EUR',
@@ -880,7 +886,7 @@ describe('kargo adapter tests', function () {
         height: 250,
         vastXml: '<VAST></VAST>',
         ttl: 300,
-        creativeId: 'bar',
+        creativeId: 'foo',
         dealId: undefined,
         netRevenue: true,
         currency: 'EUR',
@@ -895,7 +901,7 @@ describe('kargo adapter tests', function () {
         height: 250,
         vastUrl: 'https://foobar.com/vast_adm',
         ttl: 300,
-        creativeId: 'bar',
+        creativeId: 'foo',
         dealId: undefined,
         netRevenue: true,
         currency: 'EUR',
