@@ -107,8 +107,6 @@ Now you will find the different parameters to set, based on publisher website. T
 * **endpoint** (required) - EXADS endpoint (URL)
 
 ##### RTB Banner 2.4 (Image)
-* **imageOutput** - indicates output format for image banners (string)
-    * options are **xml** or **html**. Default value is **xml** in case field is not provided
 
 ```javascript
 
@@ -141,7 +139,6 @@ adUnits =
                         pubrender: 0,
                         datatopub: 2
                     },
-                    imageOutput: 'html',
                     endpoint: 'https://your-ad-network.com/rtb.php'
                 }
             }]
@@ -149,8 +146,6 @@ adUnits =
 ```
 
 ##### RTB Banner 2.4 (Video)
-* **videoOutput** - indicates output format for video banners (string)
-    * options are **xml** or **html**. Default value is **xml** in case field is not provided
 
 ```javascript
 adUnits = 
@@ -181,8 +176,7 @@ adUnits =
                         dsarequired: 3, 
                         pubrender: 0,
                         datatopub: 2
-                    },                    
-                    videoOutput: 'html',
+                    },
                     endpoint: 'https://your-ad-network.com/rtb.php'
                 }
             }]

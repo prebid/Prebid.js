@@ -32,7 +32,6 @@ describe('exadsBidAdapterTest', function () {
       bcat: ['IAB25', 'IAB7-39','IAB8-18','IAB8-5','IAB9-9'],
       badv: ['first.com', 'second.com'],
       mimes: ['image/jpg'],
-      imageOutput: 'html',
       endpoint: 'test.com',
       dsa: {
         dsarequired: 3, 

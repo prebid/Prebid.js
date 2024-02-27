@@ -8,6 +8,9 @@ const PARTNERS = {
   ORTB_2_4: 'ortb_2_4'
 };
 
+const htmlImageOutput = 'html';
+const htmlVideoOutput = 'html';
+
 const adPartnerHandlers = {
   [PARTNERS.ORTB_2_4]: {
     request: handleReqORTB2Dot4,
@@ -89,14 +92,6 @@ function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
   if (bannerMediaType != null) {
     impData.mediaType = BANNER;
     bidRequestData.imp = bannerMediaType.sizes.map(size => {
-      let ext;
-
-      if (validBidRequest.params.imageOutput || validBidRequest.params.videoOutput) {
-        ext = {
-          image_output: validBidRequest.params.imageOutput ? validBidRequest.params.imageOutput : undefined,
-          video_output: validBidRequest.params.videoOutput ? validBidRequest.params.videoOutput : undefined,
-        }
-      }
 
       return ({
         'id': validBidRequest.params.impressionId,
@@ -106,7 +101,10 @@ function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
           'w': size[0],
           'h': size[1],
           'mimes': validBidRequest.params.mimes ? validBidRequest.params.mimes : undefined,
-          ext
+          'ext': {
+            image_output: htmlImageOutput,
+            video_output: htmlVideoOutput,
+          }
         },
       });
     });
