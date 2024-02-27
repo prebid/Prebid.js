@@ -4,46 +4,46 @@ import {GreedyPromise} from '../../src/utils/promise.js';
  * @typedef {function} CMPClient
  *
  * @param {{}} params CMP parameters. Currently this is a subset of {command, callback, parameter, version}.
- * @param {bool} once if true, discard cross-frame event listeners once a reply message is received.
+ * @param {boolean} once if true, discard cross-frame event listeners once a reply message is received.
  * @returns {Promise<*>} a promise to the API's "result" - see the `mode` argument to `cmpClient` on how that's determined.
  * @property {boolean} isDirect true if the CMP is directly accessible (no postMessage required)
  * @property {() => void} close close the client; currently, this just stops listening for cross-frame messages.
- */
-
-/**
- * Returns a client function that can interface with a CMP regardless of where it's located.
- *
- * @param apiName name of the CMP api, e.g. "__gpp"
- * @param apiVersion? CMP API version
- * @param apiArgs? names of the arguments taken by the api function, in order.
- * @param callbackArgs? names of the cross-frame response payload properties that should be passed as callback arguments, in order
- * @param mode? controls the callbacks passed to the underlying API, and how the promises returned by the client are resolved.
- *
- *  The client behaves differently when it's provided a `callback` argument vs when it's not - for short, let's name these
- *  cases "subscriptions" and "one-shot calls" respectively:
- *
- *  With `mode: MODE_MIXED` (the default), promises returned on subscriptions are resolved to undefined when the callback
- *  is first run (that is, the promise resolves when the CMP replies, but what it replies with is discarded and
- *  left for the callback to deal with). For one-shot calls, the returned promise is resolved to the API's
- *  return value when it's directly accessible, or with the result from the first (and, presumably, the only)
- *  cross-frame reply when it's not;
- *
- *  With `mode: MODE_RETURN`, the returned promise always resolves to the API's return value - which is taken to be undefined
- *  when cross-frame;
- *
- *  With `mode: MODE_CALLBACK`, the underlying API is expected to never directly return anything significant; instead,
- *  it should always accept a callback and - for one-shot calls - invoke it only once with the result. The client will
- *  automatically generate an appropriate callback for one-shot calls and use the result it's given to resolve
- *  the returned promise. Subscriptions are treated in the same way as MODE_MIXED.
- *
- * @param win
- * @returns {CMPClient} CMP invocation function (or null if no CMP was found).
  */
 
 export const MODE_MIXED = 0;
 export const MODE_RETURN = 1;
 export const MODE_CALLBACK = 2;
 
+/**
+ * Returns a client function that can interface with a CMP regardless of where it's located.
+ *
+ * @param {object} obj
+ * @param obj.apiName name of the CMP api, e.g. "__gpp"
+ * @param [obj.apiVersion] CMP API version
+ * @param [obj.apiArgs] names of the arguments taken by the api function, in order.
+ * @param [obj.callbackArgs] names of the cross-frame response payload properties that should be passed as callback arguments, in order
+ * @param [obj.mode] controls the callbacks passed to the underlying API, and how the promises returned by the client are resolved.
+ *
+ * The client behaves differently when it's provided a `callback` argument vs when it's not - for short, let's name these
+ * cases "subscriptions" and "one-shot calls" respectively:
+ *
+ * With `mode: MODE_MIXED` (the default), promises returned on subscriptions are resolved to undefined when the callback
+ * is first run (that is, the promise resolves when the CMP replies, but what it replies with is discarded and
+ * left for the callback to deal with). For one-shot calls, the returned promise is resolved to the API's
+ * return value when it's directly accessible, or with the result from the first (and, presumably, the only)
+ * cross-frame reply when it's not;
+ *
+ * With `mode: MODE_RETURN`, the returned promise always resolves to the API's return value - which is taken to be undefined
+ * when cross-frame;
+ *
+ * With `mode: MODE_CALLBACK`, the underlying API is expected to never directly return anything significant; instead,
+ * it should always accept a callback and - for one-shot calls - invoke it only once with the result. The client will
+ * automatically generate an appropriate callback for one-shot calls and use the result it's given to resolve
+ * the returned promise. Subscriptions are treated in the same way as MODE_MIXED.
+ *
+ * @param win
+ * @returns {CMPClient} CMP invocation function (or null if no CMP was found).
+ */
 export function cmpClient(
   {
     apiName,

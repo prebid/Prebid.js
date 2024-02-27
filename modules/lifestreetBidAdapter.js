@@ -2,6 +2,10 @@ import { isInteger } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ */
+
 const BIDDER_CODE = 'lifestreet';
 const ADAPTER_VERSION = '$prebid.version$';
 

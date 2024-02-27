@@ -118,20 +118,6 @@ describe('freewheelSSP BidAdapter Test', () => {
       }
     ];
 
-    it('should get correct value from content object', () => {
-      config.setConfig({
-        content: {
-          'title': 'freewheel',
-          'series': 'abc',
-          'id': 'iris_5e7'
-        }
-      });
-
-      const request = spec.buildRequests(bidRequests);
-      const payload = request[0].data;
-      expect(payload._fw_prebid_content).to.deep.equal('{\"title\":\"freewheel\",\"series\":\"abc\",\"id\":\"iris_5e7\"}');
-    });
-
     it('should get bidfloor value from params if no getFloor method', () => {
       const request = spec.buildRequests(bidRequests);
       const payload = request[0].data;
@@ -218,6 +204,14 @@ describe('freewheelSSP BidAdapter Test', () => {
       let bidderRequest = {
         'gdprConsent': {
           'consentString': gdprConsentString
+        },
+        'ortb2': {
+          'site': {
+            'content': {
+              'test': 'news',
+              'test2': 'param'
+            }
+          }
         }
       };
 
@@ -231,6 +225,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.playerSize).to.equal('300x600');
       expect(payload._fw_gdpr_consent).to.exist.and.to.be.a('string');
       expect(payload._fw_gdpr_consent).to.equal(gdprConsentString);
+      expect(payload._fw_prebid_content).to.deep.equal('{\"test\":\"news\",\"test2\":\"param\"}');
 
       let gdprConsent = {
         'gdprApplies': true,
