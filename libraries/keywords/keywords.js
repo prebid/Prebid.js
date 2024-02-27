@@ -6,7 +6,7 @@ const ORTB_KEYWORDS_PATHS = ['user.keywords'].concat(
 );
 
 /**
- * @param commaSeparatedKeywords: any number of either keyword arrays, or comma-separated keyword strings
+ * @param commaSeparatedKeywords any number of either keyword arrays, or comma-separated keyword strings
  * @returns an array with all unique keywords contained across all inputs
  */
 export function mergeKeywords(...commaSeparatedKeywords) {

@@ -2,6 +2,14 @@ import {deepAccess, isArray, isBoolean, isNumber, isStr, logWarn, triggerPixel} 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').Bids} Bids
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
+
 const BIDDER_CODE = 'zmaticoo';
 const ENDPOINT_URL = 'https://bid.zmaticoo.com/prebid/bid';
 const DEFAULT_CUR = 'USD';
