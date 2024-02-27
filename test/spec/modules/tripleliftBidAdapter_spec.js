@@ -753,9 +753,6 @@ describe('triplelift adapter', function () {
       ];
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const payload = request.data;
-      console.log(payload.user);
-      console.log('===============================')
-      console.log('===============================')
       expect(payload).to.exist;
       expect(payload.user).to.deep.equal({ext: {eids: [{source: 'adserver.org', uids: [{id: tdid, atype: 1, ext: {rtiPartner: 'TDID'}}]}]}});
     });
