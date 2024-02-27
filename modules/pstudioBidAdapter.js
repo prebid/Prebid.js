@@ -1,9 +1,18 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, isArray, isNumber, generateUUID } from '../src/utils.js';
+import {
+  deepAccess,
+  isArray,
+  isNumber,
+  generateUUID,
+  isEmpty,
+  isFn,
+  isPlainObject,
+} from '../src/utils.js';
+import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'pstudio';
-const ENDPOINT = 'https://nft-exchange.pre-prod.pstudio.tadex.id/prebid-bid'
+const ENDPOINT = 'http://localhost:8080/prebid-bid';
 const TIME_TO_LIVE = 300;
 // in case that the publisher limits number of user syncs, thisse syncs will be discarded from the end of the list
 // so more improtant syncing calls should be at the start of the list
@@ -40,6 +49,8 @@ const VIDEO_PARAMS = [
   'api',
   'linearity',
 ];
+
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 
 export const spec = {
   code: BIDDER_CODE,
@@ -133,7 +144,7 @@ function buildRequestData(bid, bidderRequest) {
 
 function buildBaseObject(bid, bidderRequest) {
   const firstPartyData = prepareFirstPartyData(bidderRequest.ortb2);
-  const { pubid, floorPrice, bcat, badv, bapp } = bid.params;
+  const { pubid, bcat, badv, bapp } = bid.params;
   const { userId } = bid;
   const uid2Token = userId?.uid2?.id;
 
@@ -156,7 +167,7 @@ function buildBaseObject(bid, bidderRequest) {
   return {
     id: bid.bidId,
     pubid,
-    floor_price: floorPrice,
+    floor_price: getBidFloor(bid),
     adtagid: bid.adUnitCode,
     ...(bcat && { bcat }),
     ...(badv && { badv }),
@@ -199,13 +210,13 @@ function buildVideoObject(bid, payloadObject) {
 
 function readUserIdFromCookie(key) {
   try {
-    const re = new RegExp(`^(.*;\\s*)?${key}=([^;]+)(;.*)?$`);
-    const match = document.cookie.match(re);
-    if (match !== null) {
-      const matchedUserIdIndex = 2;
-      return match[matchedUserIdIndex];
+    const storedValue = storage.getCookie(key);
+
+    if (storedValue !== null) {
+      return storedValue;
     }
   } catch (error) {
+    return;
   }
 }
 
@@ -218,11 +229,12 @@ function daysToMs(days) {
 }
 
 function writeIdToCookie(key, value) {
-  const expires = new Date(
-    Date.now() + daysToMs(parseInt(COOKIE_TTL_DAYS))
-  ).toUTCString();
-
-  document.cookie = `${key}=${value};Expires=${expires};`;
+  if (storage.cookiesAreEnabled()) {
+    const expires = new Date(
+      Date.now() + daysToMs(parseInt(COOKIE_TTL_DAYS))
+    ).toUTCString();
+    storage.setCookie(key, value, expires, '/');
+  }
 }
 
 function prepareFirstPartyData({ user, device, site, app, regs }) {
@@ -366,17 +378,13 @@ function cleanObject(data) {
     if (typeof data[key] == 'object') {
       cleanObject(data[key]);
 
-      if (isEmptyObject(data[key])) delete data[key];
+      if (isEmpty(data[key])) delete data[key];
     }
 
     if (data[key] === undefined) delete data[key];
   }
 
   return data;
-}
-
-function isEmptyObject(object) {
-  return Object.keys(object).length === 0;
 }
 
 function isVideoRequestValid(bidRequest) {
@@ -407,6 +415,26 @@ function validateSizes(sizes) {
       (size) => isArray(size) && size.length === 2 && size.every(isNumber)
     )
   );
+}
+
+function getBidFloor(bid) {
+  if (bid.params.floorPrice) {
+    return bid.params.floorPrice;
+  }
+
+  if (!isFn(bid.getFloor)) {
+    return null;
+  }
+
+  let floor = bid.getFloor({
+    currency: 'USD',
+    mediaType: '*',
+    size: '*',
+  });
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+    return floor.floor;
+  }
+  return null;
 }
 
 registerBidder(spec);

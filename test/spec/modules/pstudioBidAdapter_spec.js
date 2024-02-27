@@ -1,11 +1,20 @@
 import { assert } from 'chai';
-import { spec } from 'modules/pstudioBidAdapter.js';
+import sinon from 'sinon';
+import { spec, storage } from 'modules/pstudioBidAdapter.js';
 import { deepClone } from '../../../src/utils.js';
-
-const uuidRegex =
-  /[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}/;
+import * as utilsModule from '../../../src/utils.js';
 
 describe('PStudioAdapter', function () {
+  let sandbox;
+
+  beforeEach(function () {
+    sandbox = sinon.createSandbox();
+  });
+
+  afterEach(function () {
+    sandbox.restore();
+  });
+
   const bannerBid = {
     bidder: 'pstudio',
     params: {
@@ -335,7 +344,7 @@ describe('PStudioAdapter', function () {
 
     it('should set user id if proper cookie is present', function () {
       const cookie = '157bc918-b961-4216-ac72-29fc6363edcb';
-      document.cookie = `__tadexid=${cookie}`;
+      sandbox.stub(storage, 'getCookie').returns(cookie);
 
       const request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
       const payload = JSON.parse(request[0].data);
@@ -344,8 +353,6 @@ describe('PStudioAdapter', function () {
     });
 
     it('should not set user id if proper cookie not present', function () {
-      document.cookie = '__tadexid=';
-
       const request = spec.buildRequests([bannerBid], emptyOrtb2BidderRequest);
       const payload = JSON.parse(request[0].data);
 
@@ -462,7 +469,8 @@ describe('PStudioAdapter', function () {
 
   describe('getUserSyncs', function () {
     it('should return sync object with correctly injected user id', function () {
-      document.cookie = '__tadexid=testid;Expires=120000';
+      sandbox.stub(storage, 'getCookie').returns('testid');
+
       const result = spec.getUserSyncs({}, {}, {}, {});
 
       expect(result).to.deep.equal([
@@ -478,12 +486,12 @@ describe('PStudioAdapter', function () {
     });
 
     it('should generate user id and put it into sync object', function () {
+      const newUUID = 'newUUID';
+
+      sandbox.stub(utilsModule, 'generateUUID').returns(newUUID);
+
       const result = spec.getUserSyncs({}, {}, {}, {});
-      const re = new RegExp(`^(.*;\\s*)?__tadexid=([^;]+)(;.*)?$`);
 
-      const newUUID = document.cookie.match(re)[2];
-
-      expect(newUUID).match(uuidRegex);
       expect(result[0]).deep.equal({
         type: 'image',
         url: `https://match.adsrvr.org/track/cmf/generic?ttd_pid=k1on5ig&ttd_tpi=1&ttd_puid=${newUUID}&dsp=ttd`,
@@ -492,10 +500,6 @@ describe('PStudioAdapter', function () {
         type: 'image',
         url: `https://dsp.myads.telkomsel.com/api/v1/pixel?uid=${newUUID}`,
       });
-    });
-
-    afterEach(function () {
-      document.cookie = '__tadexid=';
     });
   });
 });
