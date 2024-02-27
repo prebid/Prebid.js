@@ -13,9 +13,7 @@ const defaultCurrency = 'EUR';
 const defaultTtl = 500;
 
 function isDevEnv() {
-  return location.hostname.endsWith('.ngrok-free.app') ||
-    location.hostname === 'localhost' ||
-    location.href.startsWith('https://ayads.io/test');
+  return location.hostname.endsWith('.ngrok-free.app') || location.href.startsWith('https://ayads.io/test');
 }
 
 function isBidRequestValid(bidRequest) {
@@ -157,6 +155,7 @@ export const spec = {
   interpretResponse,
   onBidWon,
   onTimeout,
+  isDevEnv,
 };
 
 // noinspection JSCheckFunctionSignatures
