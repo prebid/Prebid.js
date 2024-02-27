@@ -8,7 +8,7 @@ const bidderCode = 'lucead';
 let baseUrl = 'https://lucead.com';
 let staticUrl = 'https://s.lucead.com';
 let companionUrl = 'https://cdn.jsdelivr.net/gh/lucead/prebid-js-external-js-lucead@master/dist/prod.min.js';
-let endpointUrl = 'https://prebid.ayads.io/go';
+let endpointUrl = 'https://prebid.lucead.com/go';
 const defaultCurrency = 'EUR';
 const defaultTtl = 500;
 
