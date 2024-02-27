@@ -157,8 +157,8 @@ function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
       'bidfloor': validBidRequest.params.bidfloor,
       'bidfloorcur': validBidRequest.params.bidfloorcur,
       'video': {
-        'mimes': validBidRequest.params.imp.video.mimes,
-        'protocols': validBidRequest.params.imp.video.protocols,
+        'mimes': videoMediaType.mimes,
+        'protocols': videoMediaType.protocols,
       },
       'ext': validBidRequest.params.imp.ext
     }];
@@ -396,12 +396,10 @@ function handleValidORTB2Dot4(bid) {
     (nativeInfo ? bid.params.native &&
       nativeInfo.ortb.assets &&
       nativeInfo.ortb.assets.some(asset => !!asset.img) : true) &&
-    (videoInfo ? (bid.params.imp &&
-      hasValue(bid.params.imp.video) &&
-      bid.params.imp.video.mimes &&
-      bid.params.imp.video.mimes.length > 0 &&
-      bid.params.imp.video.protocols &&
-      bid.params.imp.video.protocols.length > 0) : true));
+    (videoInfo ? ( videoInfo.mimes &&
+      videoInfo.mimes.length > 0 &&
+      videoInfo.protocols &&
+      videoInfo.protocols.length > 0) : true));
   if (!isValid) {
     utils.logError('Validation Error');
   }

@@ -120,10 +120,6 @@ describe('exadsBidAdapterTest', function () {
       bidfloor: 0.00000011,
       bidfloorcur: 'EUR',
       imp: {
-        video: {
-          mimes: ['video/mp4'],
-          protocols: [3, 6]
-        },
         ext: {
           video_cta: 0
         }

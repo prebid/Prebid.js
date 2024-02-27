@@ -13,7 +13,7 @@ Module that connects to EXADS' bidder for bids.
 ### Build
 If you don't need to use the prebidJS video module, please remove the videojsVideoProvider module.
 ```
-gulp build --modules="--modules=consentManagement,exadsBidAdapter,videojsVideoProvider"  
+gulp build --modules=consentManagement,exadsBidAdapter,videojsVideoProvider 
 ```
 
 ### Configuration
@@ -196,7 +196,7 @@ adUnits =
 * **partner** (required) - currently we support rtb 2.4 ("ortb_2_4") only (string)
 * **siteId** (recommended) - unique Site ID (string)
 * **userIp** (required) - IP address of the user, ipv4 or ipv6 (string)
-* **userId** (*required) - unique user ID (string). *If you cannot generate a user ID, you can leave it empty (""). The request will get a response as long as "user" object is included in the request
+* **userId** (required) - unique user ID (string). *If you cannot generate a user ID, you can leave it empty (""). The request will get a response as long as "user" object is included in the request
 * **country** - Country ISO3 (string)
 * **impressionId** (required) - unique impression ID within this bid request (string)
 * **keywords** - keywords can be used to ensure ad zones get the right type of advertising. Keywords should be a string of comma-separated words
@@ -204,7 +204,9 @@ adUnits =
 * **bidfloorcur** - currency for minimum bid value specified using ISO-4217 alpha codes (string)
 * **bcat** - blocked advertiser categories using the IAB content categories (string array)
 * **badv** - block list of advertisers by their domains (string array)
-* **video.mimes** - list of supported mime types (string array)
+* **mediaTypes.video** (required)
+    * **mimes** (required) - list of supported mime types (string array)
+    * **protocols** (required) - list of supported video bid response protocols (integer array) 
 * **dsa** - DSA transparency information
     * **dsarequired** - flag to indicate if DSA information should be made available (integer)
         * 0 - Not required
@@ -220,7 +222,6 @@ adUnits =
         * 1 - optional to send transparency data
         * 2 - send transparency data
 * **context** - (recommended) - the video context, either 'instream', 'outstream'. Defaults to ‘instream’ (string)
-* **protocols** - list of supported video bid response protocols (integer array) 
 * **endpoint** (required) - EXADS endpoint (URL)
 
 ```javascript

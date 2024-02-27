@@ -108,10 +108,6 @@
                         mimes: ['video/mp4'],
                         protocols: [3, 6],
                         divId: 'player', // required to indicate which player is being used to render this ad unit.
-                        /*renderer: {
-                            url: 'example.com/videoRenderer.js',
-                            render: function (bid) { renderVideo(...)  }
-                        }*/
                     }
                 },
                 bids: [{
@@ -124,12 +120,7 @@
                         userIp: 0, // DO NOT EDIT - Client side data
                         userId: userId,
                         impressionId: impressionId.toString(), // DO NOT EDIT - Custom hash
-                        imp: {
-                            video: {
-                                mimes: ['video/mp4'],
-                                protocols: [3,6],
-                            },
-                            
+                        imp: {                            
                             ext: {
                                 video_cta: 0
                             }
