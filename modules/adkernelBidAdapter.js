@@ -23,12 +23,16 @@ import {config} from '../src/config.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
-/*
+/**
  * In case you're AdKernel whitelable platform's client who needs branded adapter to
  * work with Adkernel platform - DO NOT COPY THIS ADAPTER UNDER NEW NAME
  *
- * Please contact prebid@adkernel.com and we'll add your adapter as an alias.
+ * Please contact prebid@adkernel.com and we'll add your adapter as an alias
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
+
 const VIDEO_PARAMS = ['pos', 'context', 'placement', 'plcmt', 'api', 'mimes', 'protocols', 'playbackmethod', 'minduration', 'maxduration',
   'startdelay', 'linearity', 'skip', 'skipmin', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackend', 'boxingallowed'];
 const VIDEO_FPD = ['battr', 'pos'];
@@ -66,6 +70,11 @@ const NATIVE_INDEX = NATIVE_MODEL.reduce((acc, val, idx) => {
   acc[val.name] = {id: idx, ...val};
   return acc;
 }, {});
+
+const MULTI_FORMAT_SUFFIX = '__mf';
+const MULTI_FORMAT_SUFFIX_BANNER = 'b' + MULTI_FORMAT_SUFFIX;
+const MULTI_FORMAT_SUFFIX_VIDEO = 'v' + MULTI_FORMAT_SUFFIX;
+const MULTI_FORMAT_SUFFIX_NATIVE = 'n' + MULTI_FORMAT_SUFFIX;
 
 /**
  * Adapter for requesting bids from AdKernel white-label display platform
@@ -173,6 +182,9 @@ export const spec = {
         ttl: 360,
         netRevenue: true
       };
+      if (prBid.requestId.endsWith(MULTI_FORMAT_SUFFIX)) {
+        prBid.requestId = stripMultiformatSuffix(prBid.requestId);
+      }
       if ('banner' in imp) {
         prBid.mediaType = BANNER;
         prBid.width = rtbBid.w;
@@ -239,13 +251,13 @@ registerBidder(spec);
 function groupImpressionsByHostZone(bidRequests, refererInfo) {
   let secure = (refererInfo && refererInfo.page?.indexOf('https:') === 0);
   return Object.values(
-    bidRequests.map(bidRequest => buildImp(bidRequest, secure))
+    bidRequests.map(bidRequest => buildImps(bidRequest, secure))
       .reduce((acc, curr, index) => {
         let bidRequest = bidRequests[index];
         let {zoneId, host} = bidRequest.params;
         let key = `${host}_${zoneId}`;
         acc[key] = acc[key] || {host: host, zoneId: zoneId, imps: []};
-        acc[key].imps.push(curr);
+        acc[key].imps.push(...curr);
         return acc;
       }, {})
   );
@@ -264,61 +276,90 @@ function getBidFloor(bid, mediaType, sizes) {
 }
 
 /**
- *  Builds rtb imp object for single adunit
+ *  Builds rtb imp object(s) for single adunit
  *  @param bidRequest {BidRequest}
  *  @param secure {boolean}
  */
-function buildImp(bidRequest, secure) {
-  const imp = {
+function buildImps(bidRequest, secure) {
+  let imp = {
     'id': bidRequest.bidId,
     'tagid': bidRequest.adUnitCode
   };
-  var mediaType;
+  if (secure) {
+    imp.secure = 1;
+  }
   var sizes = [];
+  let mediaTypes = bidRequest.mediaTypes;
+  let isMultiformat = (~~!!mediaTypes?.banner + ~~!!mediaTypes?.video + ~~!!mediaTypes?.native) > 1;
+  let result = [];
+  let typedImp;
 
-  if (bidRequest.mediaTypes?.banner) {
+  if (mediaTypes?.banner) {
+    if (isMultiformat) {
+      typedImp = {...imp};
+      typedImp.id = imp.id + MULTI_FORMAT_SUFFIX_BANNER;
+    } else {
+      typedImp = imp;
+    }
     sizes = getAdUnitSizes(bidRequest);
-    let pbBanner = bidRequest.mediaTypes.banner;
-    imp.banner = {
+    let pbBanner = mediaTypes.banner;
+    typedImp.banner = {
       ...getDefinedParamsOrEmpty(bidRequest.ortb2Imp, BANNER_FPD),
       ...getDefinedParamsOrEmpty(pbBanner, BANNER_PARAMS),
       format: sizes.map(wh => parseGPTSingleSizeArrayToRtbSize(wh)),
       topframe: 0
     };
-    mediaType = BANNER;
-  } else if (bidRequest.mediaTypes?.video) {
-    let pbVideo = bidRequest.mediaTypes.video;
-    imp.video = {
+    initImpBidfloor(typedImp, bidRequest, sizes, isMultiformat ? '*' : BANNER);
+    result.push(typedImp);
+  }
+
+  if (mediaTypes?.video) {
+    if (isMultiformat) {
+      typedImp = {...imp};
+      typedImp.id = typedImp.id + MULTI_FORMAT_SUFFIX_VIDEO;
+    } else {
+      typedImp = imp;
+    }
+    let pbVideo = mediaTypes.video;
+    typedImp.video = {
       ...getDefinedParamsOrEmpty(bidRequest.ortb2Imp, VIDEO_FPD),
       ...getDefinedParamsOrEmpty(pbVideo, VIDEO_PARAMS)
     };
     if (pbVideo.playerSize) {
       sizes = pbVideo.playerSize[0];
-      imp.video = Object.assign(imp.video, parseGPTSingleSizeArrayToRtbSize(sizes) || {});
+      typedImp.video = Object.assign(typedImp.video, parseGPTSingleSizeArrayToRtbSize(sizes) || {});
     } else if (pbVideo.w && pbVideo.h) {
-      imp.video.w = pbVideo.w;
-      imp.video.h = pbVideo.h;
+      typedImp.video.w = pbVideo.w;
+      typedImp.video.h = pbVideo.h;
     }
-    mediaType = VIDEO;
-  } else if (bidRequest.mediaTypes?.native) {
-    let nativeRequest = buildNativeRequest(bidRequest.mediaTypes.native);
-    imp.native = {
+    initImpBidfloor(typedImp, bidRequest, sizes, isMultiformat ? '*' : VIDEO);
+    result.push(typedImp);
+  }
+
+  if (mediaTypes?.native) {
+    if (isMultiformat) {
+      typedImp = {...imp};
+      typedImp.id = typedImp.id + MULTI_FORMAT_SUFFIX_NATIVE;
+    } else {
+      typedImp = imp;
+    }
+    let nativeRequest = buildNativeRequest(mediaTypes.native);
+    typedImp.native = {
       ...getDefinedParamsOrEmpty(bidRequest.ortb2Imp, NATIVE_FPD),
       ver: '1.1',
       request: JSON.stringify(nativeRequest)
     };
-    mediaType = NATIVE;
-  } else {
-    throw new Error('Unsupported bid received');
+    initImpBidfloor(typedImp, bidRequest, sizes, isMultiformat ? '*' : NATIVE);
+    result.push(typedImp);
   }
-  let floor = getBidFloor(bidRequest, mediaType, sizes);
-  if (floor) {
-    imp.bidfloor = floor;
+  return result;
+}
+
+function initImpBidfloor(imp, bid, sizes, mediaType) {
+  let bidfloor = getBidFloor(bid, mediaType, sizes);
+  if (bidfloor) {
+    imp.bidfloor = bidfloor;
   }
-  if (secure) {
-    imp.secure = 1;
-  }
-  return imp;
 }
 
 function getDefinedParamsOrEmpty(object, params) {
@@ -642,4 +683,8 @@ function buildNativeAd(nativeResp) {
     });
   });
   return cleanObj(nativeAd);
+}
+
+function stripMultiformatSuffix(impid) {
+  return impid.substr(0, impid.length - MULTI_FORMAT_SUFFIX.length - 1);
 }

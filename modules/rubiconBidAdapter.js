@@ -17,10 +17,15 @@ import {
   logMessage,
   logWarn,
   mergeDeep,
-  parseSizesInput, _each
+  parseSizesInput,
+  pick,
+  _each
 } from '../src/utils.js';
 import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
-import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ */
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
@@ -124,6 +129,7 @@ var sizeMap = {
   278: '320x500',
   282: '320x400',
   288: '640x380',
+  484: '720x1280',
   524: '1x2',
   548: '500x1000',
   550: '980x480',
@@ -407,6 +413,8 @@ export const spec = {
         'x_source.tid',
         'l_pb_bid_id',
         'p_screen_res',
+        'o_ae',
+        'o_cdep',
         'rp_floor',
         'rp_secure',
         'tk_user_key'
@@ -480,6 +488,7 @@ export const spec = {
       'x_source.tid': bidderRequest.ortb2?.source?.tid,
       'x_imp.ext.tid': bidRequest.ortb2Imp?.ext?.tid,
       'l_pb_bid_id': bidRequest.bidId,
+      'o_cdep': bidRequest.ortb2?.device?.ext?.cdep,
       'p_screen_res': _getScreenResolution(),
       'tk_user_key': params.userId,
       'p_geo.latitude': isNaN(parseFloat(latitude)) ? undefined : parseFloat(latitude).toFixed(4),
@@ -519,6 +528,12 @@ export const spec = {
     if (configUserId) {
       data['ppuid'] = configUserId;
     }
+
+    if (bidRequest?.ortb2Imp?.ext?.ae) {
+      data['o_ae'] = 1;
+    }
+
+    addDesiredSegtaxes(bidderRequest, data);
     // loop through userIds and add to request
     if (bidRequest.userIdAsEids) {
       bidRequest.userIdAsEids.forEach(eid => {
@@ -618,7 +633,7 @@ export const spec = {
    * @param {*} responseObj
    * @param {BidRequest|Object.<string, BidRequest[]>} request - if request was SRA the bidRequest argument will be a keyed BidRequest array object,
    * non-SRA responses return a plain BidRequest object
-   * @return {Bid[]} An array of bids which
+   * @return {{fledgeAuctionConfigs: *, bids: *}} An array of bids which
    */
   interpretResponse: function (responseObj, request) {
     responseObj = responseObj.body;
@@ -628,7 +643,6 @@ export const spec = {
     if (!responseObj || typeof responseObj !== 'object') {
       return [];
     }
-
     // Response from PBS Java openRTB
     if (responseObj.seatbid) {
       const responseErrors = deepAccess(responseObj, 'ext.errors.rubicon');
@@ -654,7 +668,7 @@ export const spec = {
       return [];
     }
 
-    return ads.reduce((bids, ad, i) => {
+    let bids = ads.reduce((bids, ad, i) => {
       (ad.impression_id && lastImpId === ad.impression_id) ? multibid++ : lastImpId = ad.impression_id;
 
       if (ad.status !== 'ok') {
@@ -683,6 +697,10 @@ export const spec = {
 
         if (ad.creative_type) {
           bid.mediaType = ad.creative_type;
+        }
+
+        if (ad.dsa && Object.keys(ad.dsa).length) {
+          bid.meta.dsa = ad.dsa;
         }
 
         if (ad.adomain) {
@@ -715,6 +733,16 @@ export const spec = {
     }, []).sort((adA, adB) => {
       return (adB.cpm || 0.0) - (adA.cpm || 0.0);
     });
+
+    let fledgeAuctionConfigs = responseObj.component_auction_config?.map(config => {
+      return { config, bidId: config.bidId }
+    });
+
+    if (fledgeAuctionConfigs) {
+      return { bids, fledgeAuctionConfigs };
+    } else {
+      return bids;
+    }
   },
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     if (!hasSynced && syncOptions.iframeEnabled) {
@@ -747,19 +775,6 @@ export const spec = {
         url: `https://${rubiConf.syncHost || 'eus'}.rubiconproject.com/usync.html` + params
       };
     }
-  },
-  /**
-   * Covert bid param types for S2S
-   * @param {Object} params bid params
-   * @param {Boolean} isOpenRtb boolean to check openrtb2 protocol
-   * @return {Object} params bid params
-   */
-  transformBidParams: function(params, isOpenRtb) {
-    return convertTypes({
-      'accountId': 'number',
-      'siteId': 'number',
-      'zoneId': 'number'
-    }, params);
   }
 };
 
@@ -816,7 +831,14 @@ function renderBid(bid) {
   hideSmartAdServerIframe(adUnitElement);
 
   // configure renderer
-  const config = bid.renderer.getConfig();
+  const defaultConfig = {
+    align: 'center',
+    position: 'append',
+    closeButton: false,
+    label: undefined,
+    collapse: true
+  };
+  const config = { ...defaultConfig, ...bid.renderer.getConfig() };
   bid.renderer.push(() => {
     window.MagniteApex.renderAd({
       width: bid.width,
@@ -824,12 +846,12 @@ function renderBid(bid) {
       vastUrl: bid.vastUrl,
       placement: {
         attachTo: adUnitElement,
-        align: config.align || 'center',
-        position: config.position || 'append'
+        align: config.align,
+        position: config.position
       },
-      closeButton: config.closeButton || false,
-      label: config.label || undefined,
-      collapse: config.collapse || true
+      closeButton: config.closeButton,
+      label: config.label,
+      collapse: config.collapse
     });
   });
 }
@@ -897,6 +919,7 @@ function applyFPD(bidRequest, mediaType, data) {
   let impExtData = deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
 
   const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+  const dsa = deepAccess(fpd, 'regs.ext.dsa');
   const SEGTAX = {user: [4], site: [1, 2, 5, 6]};
   const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
   const validate = function(prop, key, parentName) {
@@ -952,9 +975,56 @@ function applyFPD(bidRequest, mediaType, data) {
       data['p_gpid'] = gpid;
     }
 
+    // add dsa signals
+    if (dsa && Object.keys(dsa).length) {
+      pick(dsa, [
+        'dsainfo', (dsainfo) => data['dsainfo'] = dsainfo,
+        'dsarequired', (required) => data['dsarequired'] = required,
+        'pubrender', (pubrender) => data['dsapubrender'] = pubrender,
+        'datatopub', (datatopub) => data['dsadatatopubs'] = datatopub,
+        'transparency', (transparency) => {
+          if (Array.isArray(transparency) && transparency.length) {
+            data['dsatransparency'] = transparency.reduce((param, transp) => {
+              if (param) {
+                param += '~~'
+              }
+              return param += `${transp.domain}~${transp.dsaparams.join('_')}`
+            }, '')
+          }
+        }
+      ])
+    }
+
     // only send one of pbadslot or dfp adunit code (prefer pbadslot)
     if (data['tg_i.pbadslot']) {
       delete data['tg_i.dfp_ad_unit_code'];
+    }
+
+    // High Entropy stuff -> sua object is the ORTB standard (default to pass unless specifically disabled)
+    const clientHints = deepAccess(fpd, 'device.sua');
+    if (clientHints && rubiConf.chEnabled !== false) {
+      // pick out client hints we want to send (any that are undefined or empty will NOT be sent)
+      pick(clientHints, [
+        'architecture', arch => data.m_ch_arch = arch,
+        'bitness', bitness => data.m_ch_bitness = bitness,
+        'browsers', browsers => {
+          if (!Array.isArray(browsers)) return;
+          // reduce down into ua and full version list attributes
+          const [ua, fullVer] = browsers.reduce((accum, browserData) => {
+            accum[0].push(`"${browserData?.brand}"|v="${browserData?.version?.[0]}"`);
+            accum[1].push(`"${browserData?.brand}"|v="${browserData?.version?.join?.('.')}"`);
+            return accum;
+          }, [[], []]);
+          data.m_ch_ua = ua?.join?.(',');
+          data.m_ch_full_ver = fullVer?.join?.(',');
+        },
+        'mobile', isMobile => data.m_ch_mobile = `?${isMobile}`,
+        'model', model => data.m_ch_model = model,
+        'platform', platform => {
+          data.m_ch_platform = platform?.brand;
+          data.m_ch_platform_ver = platform?.version?.join?.('.');
+        }
+      ])
     }
   } else {
     if (Object.keys(impExt).length) {
@@ -966,6 +1036,27 @@ function applyFPD(bidRequest, mediaType, data) {
     }
 
     mergeDeep(data, fpd);
+  }
+}
+
+function addDesiredSegtaxes(bidderRequest, target) {
+  if (rubiConf.readTopics === false) {
+    return;
+  }
+  let iSegments = [1, 2, 5, 6, 7, 507].concat(rubiConf.sendSiteSegtax?.map(seg => Number(seg)) || []);
+  let vSegments = [4, 508].concat(rubiConf.sendUserSegtax?.map(seg => Number(seg)) || []);
+  let userData = bidderRequest.ortb2?.user?.data || [];
+  let siteData = bidderRequest.ortb2?.site?.content?.data || [];
+  userData.forEach(iterateOverSegmentData(target, 'v', vSegments));
+  siteData.forEach(iterateOverSegmentData(target, 'i', iSegments));
+}
+
+function iterateOverSegmentData(target, char, segments) {
+  return (topic) => {
+    const taxonomy = Number(topic.ext?.segtax);
+    if (segments.includes(taxonomy)) {
+      target[`tg_${char}.tax${taxonomy}`] = topic.segment?.map(seg => seg.id).join(',');
+    }
   }
 }
 
@@ -1137,8 +1228,7 @@ export function hasValidVideoParams(bid) {
   var requiredParams = {
     mimes: arrayType,
     protocols: arrayType,
-    linearity: numberType,
-    api: arrayType
+    linearity: numberType
   }
   // loop through each param and verify it has the correct
   Object.keys(requiredParams).forEach(function(param) {
@@ -1153,7 +1243,7 @@ export function hasValidVideoParams(bid) {
 /**
  * Make sure the required params are present
  * @param {Object} schain
- * @param {Bool}
+ * @param {boolean}
  */
 export function hasValidSupplyChainParams(schain) {
   let isValid = false;

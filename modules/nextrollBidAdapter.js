@@ -14,6 +14,12 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 import {find} from '../src/polyfill.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
 const BIDDER_CODE = 'nextroll';
 const BIDDER_ENDPOINT = 'https://d.adroll.com/bid/prebid/';
 const ADAPTER_VERSION = 5;

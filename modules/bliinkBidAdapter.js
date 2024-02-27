@@ -4,6 +4,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { config } from '../src/config.js'
 import { _each, deepAccess, deepSetValue, getWindowSelf, getWindowTop } from '../src/utils.js'
 export const BIDDER_CODE = 'bliink'
+export const GVL_ID = 658
 export const BLIINK_ENDPOINT_ENGINE = 'https://engine.bliink.io/prebid'
 
 export const BLIINK_ENDPOINT_COOKIE_SYNC_IFRAME = 'https://tag.bliink.io/usersync.html'
@@ -133,8 +134,8 @@ function canAccessTopWindow() {
 }
 
 /**
-  * domLoading feature is computed on window.top if reachable.
-  */
+ * domLoading feature is computed on window.top if reachable.
+ */
 export function getDomLoadingDuration() {
   let domLoadingDuration = -1;
   let performance;
@@ -152,7 +153,7 @@ export function getDomLoadingDuration() {
 }
 
 /**
- * @param bidRequest
+ * @param bidResponse
  * @return {({cpm, netRevenue: boolean, requestId, width: number, currency, ttl: number, creativeId, height: number}&{mediaType: string, vastXml})|null}
  */
 export const buildBid = (bidResponse) => {
@@ -284,7 +285,6 @@ export const buildRequests = (validBidRequests, bidderRequest) => {
  * @description Parse the response (from buildRequests) and generate one or more bid objects.
  *
  * @param serverResponse
- * @param request
  * @return
  */
 const interpretResponse = (serverResponse) => {
@@ -343,6 +343,7 @@ const getUserSyncs = (syncOptions, serverResponses, gdprConsent, uspConsent) => 
  */
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVL_ID,
   aliases: aliasBidderCode,
   supportedMediaTypes: supportedMediaTypes,
   isBidRequestValid,

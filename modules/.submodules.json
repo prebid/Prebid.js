@@ -47,7 +47,8 @@
       "adqueryIdSystem",
       "gravitoIdSystem",
       "freepassIdSystem",
-      "operaadsIdSystem"
+      "operaadsIdSystem",
+      "mygaruIdSystem"
     ],
     "adpod": [
       "freeWheelAdserverVideo",
@@ -65,7 +66,8 @@
       "blueconicRtdProvider",
       "brandmetricsRtdProvider",
       "browsiRtdProvider",
-      "cleanioRtdProvider",
+      "captifyRtdProvider",
+      "mediafilterRtdProvider",
       "confiantRtdProvider",
       "dgkeywordRtdProvider",
       "experianRtdProvider",
@@ -100,6 +102,9 @@
     "videoModule": [
       "jwplayerVideoProvider",
       "videojsVideoProvider"
+    ],
+    "paapi": [
+      "fledgeForGpt"
     ]
   }
 }
