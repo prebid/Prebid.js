@@ -31,7 +31,7 @@ Compile the Azerion Edge RTD module (`azerionedgeRtdProvider`) into your Prebid 
 along with the parent RTD Module (`rtdModule`):
 
 ```bash
-gulp build --modules=rtdModule,azerionedgeRtdProvider,improvedigitalBidAdapter
+gulp build --modules=rtdModule,azerionedgeRtdProvider
 ```
 
 Set configuration via `pbjs.setConfig`.
@@ -99,7 +99,7 @@ as exception, as shown below:
 To view an example:
 
 ```bash
-gulp serve-fast --modules=rtdModule,azerionedgeRtdProvider,improvedigitalBidAdapter
+gulp serve-fast --modules=rtdModule,azerionedgeRtdProvider
 ```
 
 Access [http://localhost:9999/integrationExamples/gpt/azerionedgeRtdProvider_example.html](http://localhost:9999/integrationExamples/gpt/azerionedgeRtdProvider_example.html)
