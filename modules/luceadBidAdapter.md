@@ -1,7 +1,9 @@
 # Overview
 
 Module Name: Lucead Bidder Adapter
+
 Module Type: Bidder Adapter
+
 Maintainer: prebid@lucead.com
 
 # Description
