@@ -135,7 +135,7 @@ export const spec = {
         groupId: bid.params.group_id,
         bidId: bid.bidId,
         tid: bid.transactionId,
-        eids: [],
+        eids: bid.userIdAsEids || [],
         floor: {}
       };
 
