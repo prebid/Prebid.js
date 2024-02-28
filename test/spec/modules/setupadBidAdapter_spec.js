@@ -237,163 +237,86 @@ describe('SetupadAdapter', function () {
     });
   });
 
-  describe('getPixelUrl', function () {
-    const REPORT_ENDPOINT = 'https://adapter-analytics.setupad.io';
-    const mockData = [
-      {
-        timestamp: 123456789,
-        eventName: 'bidRequested',
-        bid: {
-          auctionId: 'test-auction-id',
-          bidderCode: 'appnexus',
-          bids: [{ bidder: 'appnexus', params: {} }],
-        },
+  describe('onBidWon', function () {
+    it('should stop if bidder is not equal to BIDDER_CODE', function () {
+      const bid = {
+        bidder: 'rubicon',
+      };
+      const result = spec.onBidWon(bid);
+      expect(result).to.be.undefined;
+    });
 
-        expected: undefined,
-      },
+    it('should stop if bid.params is not provided', function () {
+      const bid = {
+        bidder: 'setupad',
+      };
+      const result = spec.onBidWon(bid);
+      expect(result).to.be.undefined;
+    });
 
-      {
-        timestamp: 123456789,
-        eventName: 'bidRequested',
-        bid: {
-          auctionId: 'test-auction-id',
-          bidderCode: 'appnexus',
-          bids: [{ bidder: 'appnexus', params: { account_id: 'test' } }],
-        },
+    it('should stop if bid.params is empty array', function () {
+      const bid = {
+        bidder: 'setupad',
+        params: [],
+      };
+      const result = spec.onBidWon(bid);
+      expect(result).to.be.undefined;
+    });
 
-        expected: undefined,
-      },
-
-      {
-        timestamp: 123456789,
-        eventName: 'bidRequested',
-        bid: {
-          auctionId: 'test-auction-id',
-          bidderCode: 'appnexus',
-          bids: [{ bidder: 'appnexus', params: { placement_id: '123' } }],
-        },
-
-        expected: undefined,
-      },
-
-      {
-        timestamp: 123456789,
-        eventName: 'bidRequested',
-        bid: {
-          auctionId: 'test-auction-id',
-          bidderCode: 'setupad',
-          bids: [{ bidder: 'setupad', params: { placement_id: '123' } }],
-        },
-
-        expected: `${REPORT_ENDPOINT}?event=bidRequested&bidder=setupad&placementIds=123&auctionId=test-auction-id&timestamp=123456789`,
-      },
-
-      {
-        timestamp: 123456789,
-        eventName: 'bidRequested',
-        bid: {
-          auctionId: 'test-auction-id',
-          bidderCode: 'setupad',
-          bids: [
-            { bidder: 'setupad', params: { placement_id: '123' } },
-            { bidder: 'setupad', params: { placement_id: '321' } },
-          ],
-        },
-
-        expected: `${REPORT_ENDPOINT}?event=bidRequested&bidder=setupad&placementIds=123;321&auctionId=test-auction-id&timestamp=123456789`,
-      },
-
-      {
-        timestamp: 123456789,
-        eventName: 'bidResponse',
-        bid: {
-          auctionId: 'test-auction-id',
-          bidderCode: 'appnexus',
-        },
-
-        expected: undefined,
-      },
-
-      {
-        timestamp: 123456789,
-        eventName: 'bidResponse',
-        bid: {
-          auctionId: 'test-auction-id',
-          bidderCode: 'setupad',
-          originalCurrency: 'USD',
-          params: { placement_id: '123' },
-        },
-
-        expected: `${REPORT_ENDPOINT}?event=bidResponse&bidder={"testBidder":0.8}&placementIds=123&auctionId=test-auction-id&currency=USD&timestamp=123456789`,
-      },
-
-      {
-        timestamp: 123456789,
-        eventName: 'noBid',
-        bid: {
-          auctionId: 'test-auction-id',
-          bidder: 'appnexus',
-        },
-
-        expected: undefined,
-      },
-
-      {
-        timestamp: 123456789,
-        eventName: 'noBid',
-        bid: {
-          auctionId: 'test-auction-id',
+    it('should stop if bid.params is not array', function () {
+      expect(
+        spec.onBidWon({
           bidder: 'setupad',
-          params: { placement_id: '123' },
-        },
+          params: {},
+        })
+      ).to.be.undefined;
 
-        expected: `${REPORT_ENDPOINT}?event=noBid&bidder=setupad&placementIds=123&auctionId=test-auction-id&timestamp=123456789`,
-      },
-
-      {
-        timestamp: 123456789,
-        eventName: 'bidTimeout',
-        bid: {
-          auctionId: 'test-auction-id',
-          bidder: 'appnexus',
-        },
-
-        expected: undefined,
-      },
-
-      {
-        timestamp: 123456789,
-        eventName: 'bidTimeout',
-        bid: {
-          auctionId: 'test-auction-id',
+      expect(
+        spec.onBidWon({
           bidder: 'setupad',
-          params: { placement_id: '123' },
-        },
+          params: 'test',
+        })
+      ).to.be.undefined;
 
-        expected: `${REPORT_ENDPOINT}?event=bidTimeout&bidder=setupad&placementIds=123&auctionId=test-auction-id&timestamp=123456789`,
-      },
-
-      {
-        timestamp: 123456789,
-        eventName: 'bidWon',
-        bid: {
-          auctionId: 'test-auction-id',
+      expect(
+        spec.onBidWon({
           bidder: 'setupad',
-          originalCpm: 0.8,
-          creativeId: 'test-bid-id',
-          originalCurrency: 'USD',
-          params: { placement_id: '123', account_id: 'test' },
-        },
+          params: 1,
+        })
+      ).to.be.undefined;
 
-        expected: `${REPORT_ENDPOINT}?event=bidWon&bidder=testBidder&placementIds=123&auctionId=test-auction-id&cpm=0.8&currency=USD&timestamp=123456789`,
-      },
-    ];
+      expect(
+        spec.onBidWon({
+          bidder: 'setupad',
+          params: null,
+        })
+      ).to.be.undefined;
 
-    it('should return correct url', function () {
-      mockData.forEach(({ eventName, bid, timestamp, expected }) => {
-        const url = spec.getPixelUrl(eventName, bid, timestamp);
-        expect(url).to.equal(expected);
-      });
+      expect(
+        spec.onBidWon({
+          bidder: 'setupad',
+          params: undefined,
+        })
+      ).to.be.undefined;
+    });
+
+    it('should stop if bid.params.placement_id is not provided', function () {
+      const bid = {
+        bidder: 'setupad',
+        params: [{ account_id: 'test' }],
+      };
+      const result = spec.onBidWon(bid);
+      expect(result).to.be.undefined;
+    });
+
+    it('should stop if bid.params is not provided and bid.bids is not an array', function () {
+      const bid = {
+        bidder: 'setupad',
+        params: undefined,
+        bids: {},
+      };
+      const result = spec.onBidWon(bid);
+      expect(result).to.be.undefined;
     });
   });
 });

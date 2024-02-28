@@ -9,24 +9,16 @@ import {
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getRefererInfo } from '../src/refererDetection.js';
-import { config } from '../src/config.js';
-import * as events from '../src/events.js';
 import { BANNER } from '../src/mediaTypes.js';
-import CONSTANTS from '../src/constants.json';
 
 const BIDDER_CODE = 'setupad';
 const ENDPOINT = 'https://prebid.setupad.io/openrtb2/auction';
 const SYNC_ENDPOINT = 'https://cookie.stpd.cloud/sync?';
-const REPORT_ENDPOINT = 'https://adapter-analytics.setupad.io';
+const REPORT_ENDPOINT = 'https://adapter-analytics.setupad.io/api/adapter-analytics';
 const GVLID = 1241;
 const TIME_TO_LIVE = 360;
 const biddersCpms = {};
 const biddersCreativeIds = {};
-
-const sendingDataStatistic = initSendingDataStatistic();
-events.on(CONSTANTS.EVENTS.AUCTION_INIT, () => {
-  sendingDataStatistic.initEvents();
-});
 
 function getEids(bidRequest) {
   if (deepAccess(bidRequest, 'userIdAsEids')) return bidRequest.userIdAsEids;
@@ -204,7 +196,7 @@ export const spec = {
     return [];
   },
 
-  getPixelUrl: function (eventName, bid, timestamp) {
+  onBidWon: function (bid) {
     let bidder = bid.bidder || bid.bidderCode;
     const auctionId = bid.auctionId;
     if (bidder !== BIDDER_CODE) return;
@@ -218,7 +210,7 @@ export const spec = {
       }
     }
 
-    if (!params.length) return;
+    if (!params?.length) return;
 
     const placementIdsArray = [];
     params.forEach((param) => {
@@ -232,32 +224,22 @@ export const spec = {
 
     let extraBidParams = '';
 
-    if (eventName === CONSTANTS.EVENTS.BID_RESPONSE) {
-      bidder = JSON.stringify(biddersCpms);
-
-      // Add extra parameters
-      extraBidParams = `&currency=${bid.originalCurrency}`;
-    }
-
-    if (eventName === CONSTANTS.EVENTS.BID_WON) {
-      // Iterate through all bidders to find the winning bidder by using creativeId as identification
-      for (const bidderName in biddersCreativeIds) {
-        if (
-          biddersCreativeIds.hasOwnProperty(bidderName) &&
-          biddersCreativeIds[bidderName] === bid.creativeId
-        ) {
-          bidder = bidderName;
-          break; // Exit the loop if a match is found
-        }
+    // Iterate through all bidders to find the winning bidder by using creativeId as identification
+    for (const bidderName in biddersCreativeIds) {
+      if (
+        biddersCreativeIds.hasOwnProperty(bidderName) &&
+        biddersCreativeIds[bidderName] === bid.creativeId
+      ) {
+        bidder = bidderName;
+        break; // Exit the loop if a match is found
       }
-
-      // Add extra parameters
-      extraBidParams = `&cpm=${bid.originalCpm}&currency=${bid.originalCurrency}`;
     }
 
-    const url = `${REPORT_ENDPOINT}?event=${eventName}&bidder=${bidder}&placementIds=${placementIds}&auctionId=${auctionId}${extraBidParams}&timestamp=${timestamp}`;
+    // Add extra parameters
+    extraBidParams = `&cpm=${bid.originalCpm}&currency=${bid.originalCurrency}`;
 
-    return url;
+    const url = `${REPORT_ENDPOINT}?event=bidWon&bidder=${bidder}&placementIds=${placementIds}&auctionId=${auctionId}${extraBidParams}&timestamp=${Date.now()}`;
+    triggerPixel(url);
   },
 };
 
@@ -312,80 +294,6 @@ function getDeviceObj() {
       window.document.body.clientHeight ||
       0,
   };
-}
-
-function initSendingDataStatistic() {
-  class SendingDataStatistic {
-    eventNames = [
-      CONSTANTS.EVENTS.BID_TIMEOUT,
-      CONSTANTS.EVENTS.BID_RESPONSE,
-      CONSTANTS.EVENTS.BID_REQUESTED,
-      CONSTANTS.EVENTS.NO_BID,
-      CONSTANTS.EVENTS.BID_WON,
-    ];
-
-    disabledSending = false;
-    enabledSending = false;
-    auctionIds = {};
-    eventHandlers = {};
-
-    initEvents() {
-      this.disabledSending = !!config.getBidderConfig()?.setupad?.disabledSendingStatisticData;
-      if (this.disabledSending) {
-        this.removeEvents();
-      } else {
-        this.createEvents();
-      }
-    }
-
-    createEvents() {
-      if (this.enabledSending) return;
-
-      this.enabledSending = true;
-      for (let eventName of this.eventNames) {
-        if (!this.eventHandlers[eventName]) {
-          this.eventHandlers[eventName] = this.eventHandler(eventName);
-        }
-
-        events.on(eventName, this.eventHandlers[eventName]);
-      }
-    }
-
-    removeEvents() {
-      if (!this.enabledSending) return;
-
-      this.enabledSending = false;
-      for (let eventName of this.eventNames) {
-        if (!this.eventHandlers[eventName]) continue;
-
-        events.off(eventName, this.eventHandlers[eventName]);
-      }
-    }
-
-    eventHandler(eventName) {
-      return this.getEventHandler(eventName);
-    }
-
-    getEventHandler(eventName) {
-      return (bid) => {
-        if (this.disabledSending) return;
-        if (
-          this.auctionIds[bid.auctionId] === bid.bidder &&
-          eventName === CONSTANTS.EVENTS.BID_RESPONSE
-        ) {
-          return;
-        }
-        if (eventName === CONSTANTS.EVENTS.BID_RESPONSE) {
-          this.auctionIds[bid.auctionId] = bid.bidder;
-        }
-        const url = spec.getPixelUrl(eventName, bid, Date.now());
-        if (!url) return;
-        triggerPixel(url);
-      };
-    }
-  }
-
-  return new SendingDataStatistic();
 }
 
 registerBidder(spec);
