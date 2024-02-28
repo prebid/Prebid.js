@@ -202,6 +202,7 @@ export const spec = {
     const response = (serverResponse || {}).body;
     if (response && response.seatbid && response.seatbid[0].bid && response.seatbid[0].bid.length) {
       response.seatbid.forEach(zetaSeatbid => {
+        const seat = zetaSeatbid.seat;
         zetaSeatbid.bid.forEach(zetaBid => {
           let bid = {
             requestId: zetaBid.impid,
@@ -222,6 +223,9 @@ export const spec = {
           provideMediaType(zetaBid, bid, bidRequest.data);
           if (bid.mediaType === VIDEO) {
             bid.vastXml = bid.ad;
+          }
+          if (seat) {
+            bid.dspId = seat;
           }
           bidResponses.push(bid);
         })
