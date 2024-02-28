@@ -20,10 +20,10 @@ The adapter supports Video(instream) & Banner.
 
 | Name | Scope | Type | Description                                                       | Example
 | ---- | ----- | ---- |-------------------------------------------------------------------| -------
-| `org` | required | String | STN publisher Id provided by your STN representative              | "0987654321abcdef87654321"
+| `org` | required | String | STN publisher Id provided by your STN representative              | "STN_0000013"
 | `floorPrice` | optional | Number | Minimum price in USD. Misuse of this parameter can impact revenue | 2.00
 | `placementId` | optional | String | A unique placement identifier                                     | "12345678"
-| `testMode` | optional | Boolean | This activates the test mode                                      | false
+| `testMode` | optional | Boolean | This activates the test mode                                      | true
 | `currency` | optional | String | 3 letters currency                                                | "EUR"
 
 # Test Parameters
@@ -44,10 +44,10 @@ var adUnits = [{
         bids: [{
             bidder: 'stn',
             params: {
-                org: '0987654321abcdef87654321', // Required
+                org: 'STN_0000013', // Required
                 floorPrice: 2.00, // Optional
                 placementId: 'video-test', // Optional
-                testMode: false // Optional
+                testMode: true // Optional
             }
         }]
     },
@@ -66,10 +66,10 @@ var adUnits = [{
         bids: [{
             bidder: 'stn',
             params: {
-                org: '0987654321abcdef87654321', // Required
+                org: 'STN_0000013', // Required
                 floorPrice: 2.00, // Optional
                 placementId: 'banner-test', // Optional
-                testMode: false // Optional
+                testMode: true // Optional
             }
         }]
     }
