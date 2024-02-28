@@ -14,13 +14,6 @@ import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 // eslint-disable-next-line prebid/validate-imports
 import { Uid2GetId, Uid2CodeVersion, extractIdentityFromParams } from './uid2IdSystem_shared.js';
 
-/**
- * @typedef {import('../modules/userId/index.js').Submodule} Submodule
- * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
- * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
- * @typedef {import('../modules/userId/index.js').euidId} euidId
- */
-
 const MODULE_NAME = 'euid';
 const MODULE_REVISION = Uid2CodeVersion;
 const PREBID_VERSION = '$prebid.version$';
@@ -110,6 +103,7 @@ export const euidIdSubmodule = {
       mappedConfig.cstg = {
         serverPublicKey: config?.params?.serverPublicKey,
         subscriptionId: config?.params?.subscriptionId,
+        optoutCheck: 1,
         ...extractIdentityFromParams(config?.params ?? {})
       }
     }
@@ -134,6 +128,10 @@ function decodeImpl(value) {
     _logInfo('Found server-only token. Refresh is unavailable for this token.');
     const result = { euid: { id: value } };
     return result;
+  }
+  if (value.latestToken === 'optout') {
+    _logInfo('Found optout token.  Refresh is unavailable for this token.');
+    return { euid: { optout: true } };
   }
   if (Date.now() < value.latestToken.identity_expires) {
     return { euid: { id: value.latestToken.advertising_token } };

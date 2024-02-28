@@ -10,6 +10,8 @@ Maintainer: support@ad-stir.com
 
 Module that connects to adstir's demand sources
 
+Prebid.js version 8.24.0 or above is required to use this adapter.
+
 # Test Parameters
 
 ```

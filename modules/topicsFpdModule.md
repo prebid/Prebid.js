@@ -56,6 +56,10 @@ pbjs.setConfig({
                 bidder: 'onetag',
                 iframeURL: 'https://onetag-sys.com/static/topicsapi.html',
                 expiry: 7 // Configurable expiry days
+            }, {
+                bidder: 'taboola',
+                iframeURL: 'https://cdn.taboola.com/libtrc/static/topics/taboola-prebid-browsing-topics.html',
+                expiry: 7 // Configurable expiry days
             }]
         }
         ....

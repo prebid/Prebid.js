@@ -9,6 +9,8 @@ import {ajax} from '../src/ajax.js';
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').Bids} Bids
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  */
 
 const BIDDER_CODE = 'zeta_global_ssp';
@@ -381,6 +383,10 @@ function provideMediaType(zetaBid, bid, bidRequest) {
 
 function clearEmpties(o) {
   for (let k in o) {
+    if (o[k] === null) {
+      delete o[k];
+      continue;
+    }
     if (!o[k] || typeof o[k] !== 'object') {
       continue;
     }

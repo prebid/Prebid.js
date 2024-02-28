@@ -9,7 +9,12 @@ import {
   decorateAdUnitsWithNativeParams,
   isOpenRTBBidRequestValid,
   isNativeOpenRTBBidValid,
-  toOrtbNativeRequest, toOrtbNativeResponse, legacyPropertiesToOrtbNative, fireImpressionTrackers, fireClickTrackers,
+  toOrtbNativeRequest,
+  toOrtbNativeResponse,
+  legacyPropertiesToOrtbNative,
+  fireImpressionTrackers,
+  fireClickTrackers,
+  setNativeResponseProperties,
 } from 'src/native.js';
 import CONSTANTS from 'src/constants.json';
 import { stubAuctionIndex } from '../helpers/indexStub.js';
@@ -345,73 +350,10 @@ describe('native.js', function () {
     ]);
   });
 
-  it('should copy over rendererUrl to bid object and include it in targeting', function () {
-    const adUnit = {
-      adUnitId: 'au',
-      nativeParams: {
-        image: {
-          required: true,
-          sizes: [150, 50],
-        },
-        title: {
-          required: true,
-          len: 80,
-        },
-        rendererUrl: {
-          url: 'https://www.renderer.com/',
-        },
-      },
-    };
-    const targeting = getNativeTargeting(bid, deps(adUnit));
-
-    expect(Object.keys(targeting)).to.deep.equal([
-      CONSTANTS.NATIVE_KEYS.title,
-      CONSTANTS.NATIVE_KEYS.body,
-      CONSTANTS.NATIVE_KEYS.cta,
-      CONSTANTS.NATIVE_KEYS.image,
-      CONSTANTS.NATIVE_KEYS.icon,
-      CONSTANTS.NATIVE_KEYS.sponsoredBy,
-      CONSTANTS.NATIVE_KEYS.clickUrl,
-      CONSTANTS.NATIVE_KEYS.privacyLink,
-      CONSTANTS.NATIVE_KEYS.rendererUrl,
-    ]);
-
-    expect(bid.native.rendererUrl).to.deep.equal('https://www.renderer.com/');
-    delete bid.native.rendererUrl;
-  });
-
-  it('should copy over adTemplate to bid object and include it in targeting', function () {
-    const adUnit = {
-      adUnitId: 'au',
-      nativeParams: {
-        image: {
-          required: true,
-          sizes: [150, 50],
-        },
-        title: {
-          required: true,
-          len: 80,
-        },
-        adTemplate: '<div><p>##hb_native_body##</p></div>',
-      },
-    };
-    const targeting = getNativeTargeting(bid, deps(adUnit));
-
-    expect(Object.keys(targeting)).to.deep.equal([
-      CONSTANTS.NATIVE_KEYS.title,
-      CONSTANTS.NATIVE_KEYS.body,
-      CONSTANTS.NATIVE_KEYS.cta,
-      CONSTANTS.NATIVE_KEYS.image,
-      CONSTANTS.NATIVE_KEYS.icon,
-      CONSTANTS.NATIVE_KEYS.sponsoredBy,
-      CONSTANTS.NATIVE_KEYS.clickUrl,
-      CONSTANTS.NATIVE_KEYS.privacyLink,
-    ]);
-
-    expect(bid.native.adTemplate).to.deep.equal(
-      '<div><p>##hb_native_body##</p></div>'
-    );
-    delete bid.native.adTemplate;
+  it('should include rendererUrl in targeting', function () {
+    const rendererUrl = 'https://www.renderer.com/';
+    const targeting = getNativeTargeting({...bid, native: {...bid.native, rendererUrl: {url: rendererUrl}}}, deps({}));
+    expect(targeting[CONSTANTS.NATIVE_KEYS.rendererUrl]).to.eql(rendererUrl);
   });
 
   it('fires impression trackers', function () {
@@ -644,6 +586,58 @@ describe('native.js', function () {
       expect(actual.impressionTrackers.length).to.equal(2);
       expect(actual.impressionTrackers).to.contain('https://sampleurl.com');
       expect(actual.impressionTrackers).to.contain('https://sample-imp.com');
+    });
+  });
+
+  describe('setNativeResponseProperties', () => {
+    let adUnit;
+    beforeEach(() => {
+      adUnit = {
+        mediaTypes: {
+          native: {},
+        },
+        nativeParams: {}
+      };
+    });
+    it('sets legacy response', () => {
+      adUnit.nativeOrtbRequest = {
+        assets: [{
+          id: 1,
+          data: {
+            type: 2
+          }
+        }]
+      };
+      const ortbBid = {
+        ...bid,
+        native: {
+          ortb: {
+            link: {
+              url: 'clickurl'
+            },
+            assets: [{
+              id: 1,
+              data: {
+                value: 'body'
+              }
+            }]
+          }
+        }
+      };
+      setNativeResponseProperties(ortbBid, adUnit);
+      expect(ortbBid.native.clickUrl).to.eql('clickurl');
+      expect(ortbBid.native.body).to.eql('body');
+    });
+
+    it('sets rendererUrl', () => {
+      adUnit.nativeParams.rendererUrl = {url: 'renderer'};
+      setNativeResponseProperties(bid, adUnit);
+      expect(bid.native.rendererUrl).to.eql('renderer');
+    });
+    it('sets adTemplate', () => {
+      adUnit.nativeParams.adTemplate = 'template';
+      setNativeResponseProperties(bid, adUnit);
+      expect(bid.native.adTemplate).to.eql('template');
     });
   });
 });
