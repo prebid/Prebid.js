@@ -139,8 +139,7 @@ On this section we will explain the `params.weboUserDataConf` subconfiguration:
 The WAM User-Centric configuration will check for user consent if gdpr applies. It will check for consent:
 
 * Vendor ID 284 (Weborama)
-* Purpose IDs: 1, 3, 4, 5, 6 and 9
-* Special Feature 1 (use precise geolocation data)
+* Purpose IDs: 1, 3, 4, 5 and 6
 
 If the user consent does not match such conditions, this module will not load, means we will not check for any data in local storage and the default profile will be ignored.
 
