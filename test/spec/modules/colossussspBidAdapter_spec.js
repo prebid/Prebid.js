@@ -264,36 +264,36 @@ describe('ColossussspAdapter', function () {
     clonedBid.userId.uid2 = { id: 'uid2id123' };
     clonedBid.userIdAsEids = [
       {
-          "source": "pubcid.org",
-          "uids": [
-              {
-                  "id": "4679e98e-1d83-4718-8aba-aa88hhhaaa",
-                  "atype": 1
-              }
-          ]
+        'source': 'pubcid.org',
+        'uids': [
+          {
+            'id': '4679e98e-1d83-4718-8aba-aa88hhhaaa',
+            'atype': 1
+          }
+        ]
       },
       {
-        "source": "adserver.org",
-        "uids": [
-            {
-                "id": "e804908e-57b4-4f46-a097-08be44321e79",
-                "atype": 1,
-                "ext": {
-                    "rtiPartner": "TDID"
-                }
+        'source': 'adserver.org',
+        'uids': [
+          {
+            'id': 'e804908e-57b4-4f46-a097-08be44321e79',
+            'atype': 1,
+            'ext': {
+              'rtiPartner': 'TDID'
             }
+          }
         ]
-    },
-    {
-        "source": "neustar.biz",
-        "uids": [
-            {
-                "id": "E1:Bvss1x8hXM2zHeqiqj2umJUziavSvLT6E_ORri5fDCsZb-5sfD18oNWycTmdx6QBNdbURBVv466hLJiKSwHCaTxvROo8smjqj6GfvlKfzQI",
-                "atype": 1
-            }
+      },
+      {
+        'source': 'neustar.biz',
+        'uids': [
+          {
+            'id': 'E1:Bvss1x8hXM2zHeqiqj2umJUziavSvLT6E_ORri5fDCsZb-5sfD18oNWycTmdx6QBNdbURBVv466hLJiKSwHCaTxvROo8smjqj6GfvlKfzQI',
+            'atype': 1
+          }
         ]
-    }
-   ];
+      }
+    ];
     let serverRequest = spec.buildRequests([clonedBid], bidderRequest);
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
@@ -307,7 +307,7 @@ describe('ColossussspAdapter', function () {
         for (let index in placement.eids) {
           let v = placement.eids[index];
           expect(v).to.have.all.keys('source', 'uids')
-          expect(v.source).to.be.oneOf(['pubcid.org','adserver.org','neustar.biz','britepool.com', 'identityLink', 'id5-sync.com', 'adserver.org', 'uidapi.com'])
+          expect(v.source).to.be.oneOf(['pubcid.org', 'adserver.org', 'neustar.biz', 'britepool.com', 'identityLink', 'id5-sync.com', 'adserver.org', 'uidapi.com'])
           expect(v.uids).to.be.an('array');
           expect(v.uids.length).to.be.equal(1)
           expect(v.uids[0]).to.have.property('id')
