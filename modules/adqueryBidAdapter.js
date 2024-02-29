@@ -137,7 +137,7 @@ export const spec = {
     const bidString = JSON.stringify(bid);
     let copyOfBid = JSON.parse(bidString);
     delete copyOfBid.ad;
-    const shortBidString = JSON.stringify(bid);
+    const shortBidString = JSON.stringify(copyOfBid);
     const encodedBuf = window.btoa(shortBidString);
 
     let params = {
