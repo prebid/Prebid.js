@@ -1,7 +1,6 @@
 import {
   deepAccess,
-  deepClone,
-  getKeyByValue,
+  deepClone, getDefinedParams,
   insertHtmlIntoIframe,
   isArray,
   isBoolean,
@@ -16,6 +15,11 @@ import {includes} from './polyfill.js';
 import {auctionManager} from './auctionManager.js';
 import CONSTANTS from './constants.json';
 import {NATIVE} from './mediaTypes.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 export const nativeAdapters = [];
 
@@ -98,6 +102,12 @@ const TRACKER_EVENTS = {
   'viewable-mrc50': 2,
   'viewable-mrc100': 3,
   'viewable-video50': 4,
+}
+
+export function isNativeResponse(bidResponse) {
+  // check for native data and not mediaType; it's possible
+  // to treat banner responses as native
+  return bidResponse.native && typeof bidResponse.native === 'object';
 }
 
 /**
@@ -328,6 +338,23 @@ export function fireClickTrackers(nativeResponse, assetId = null, {fetchURL = tr
   }
 }
 
+export function setNativeResponseProperties(bid, adUnit) {
+  const nativeOrtbRequest = adUnit?.nativeOrtbRequest;
+  const nativeOrtbResponse = bid.native?.ortb;
+
+  if (nativeOrtbRequest && nativeOrtbResponse) {
+    const legacyResponse = toLegacyResponse(nativeOrtbResponse, nativeOrtbRequest);
+    Object.assign(bid.native, legacyResponse);
+  }
+
+  ['rendererUrl', 'adTemplate'].forEach(prop => {
+    const val = adUnit?.nativeParams?.[prop];
+    if (val) {
+      bid.native[prop] = getAssetValue(val);
+    }
+  });
+}
+
 /**
  * Gets native targeting key-value pairs
  * @param {Object} bid
@@ -336,11 +363,6 @@ export function fireClickTrackers(nativeResponse, assetId = null, {fetchURL = tr
 export function getNativeTargeting(bid, {index = auctionManager.index} = {}) {
   let keyValues = {};
   const adUnit = index.getAdUnit(bid);
-  if (deepAccess(adUnit, 'nativeParams.rendererUrl')) {
-    bid['native']['rendererUrl'] = getAssetValue(adUnit.nativeParams['rendererUrl']);
-  } else if (deepAccess(adUnit, 'nativeParams.adTemplate')) {
-    bid['native']['adTemplate'] = getAssetValue(adUnit.nativeParams['adTemplate']);
-  }
 
   const globalSendTargetingKeys = deepAccess(
     adUnit,
@@ -385,49 +407,50 @@ export function getNativeTargeting(bid, {index = auctionManager.index} = {}) {
   return keyValues;
 }
 
+function getNativeAssets(nativeProps, keys, ext = false) {
+  let assets = [];
+  Object.entries(nativeProps)
+    .filter(([k, v]) => v && ((ext === false && k === 'ext') || keys == null || keys.includes(k)))
+    .forEach(([key, value]) => {
+      if (ext === false && key === 'ext') {
+        assets.push(...getNativeAssets(value, keys, true));
+      } else if (ext || NATIVE_KEYS.hasOwnProperty(key)) {
+        assets.push({key, value: getAssetValue(value)});
+      }
+    });
+  return assets;
+}
+
+export function getNativeRenderingData(bid, adUnit, keys) {
+  const data = {
+    ...getDefinedParams(bid.native, ['rendererUrl', 'adTemplate']),
+    assets: getNativeAssets(bid.native, keys),
+    nativeKeys: CONSTANTS.NATIVE_KEYS
+  };
+  if (bid.native.ortb) {
+    data.ortb = bid.native.ortb;
+  } else if (adUnit.mediaTypes?.native?.ortb) {
+    data.ortb = toOrtbNativeResponse(bid.native, adUnit.nativeOrtbRequest);
+  }
+  return data;
+}
+
 function assetsMessage(data, adObject, keys, {index = auctionManager.index} = {}) {
-  const message = {
+  return {
     message: 'assetResponse',
     adId: data.adId,
+    ...getNativeRenderingData(adObject, index.getAdUnit(adObject), keys)
   };
-
-  const adUnit = index.getAdUnit(adObject);
-  let nativeResp = adObject.native;
-
-  if (adObject.native.ortb) {
-    message.ortb = adObject.native.ortb;
-  } else if (adUnit.mediaTypes?.native?.ortb) {
-    message.ortb = toOrtbNativeResponse(adObject.native, adUnit.nativeOrtbRequest);
-  }
-  message.assets = [];
-
-  (keys == null ? Object.keys(nativeResp) : keys).forEach(function(key) {
-    if (key === 'adTemplate' && nativeResp[key]) {
-      message.adTemplate = getAssetValue(nativeResp[key]);
-    } else if (key === 'rendererUrl' && nativeResp[key]) {
-      message.rendererUrl = getAssetValue(nativeResp[key]);
-    } else if (key === 'ext') {
-      Object.keys(nativeResp[key]).forEach(extKey => {
-        if (nativeResp[key][extKey]) {
-          const value = getAssetValue(nativeResp[key][extKey]);
-          message.assets.push({ key: extKey, value });
-        }
-      })
-    } else if (nativeResp[key] && CONSTANTS.NATIVE_KEYS.hasOwnProperty(key)) {
-      const value = getAssetValue(nativeResp[key]);
-
-      message.assets.push({ key, value });
-    }
-  });
-  return message;
 }
+
+const NATIVE_KEYS_INVERTED = Object.fromEntries(Object.entries(CONSTANTS.NATIVE_KEYS).map(([k, v]) => [v, k]));
 
 /**
  * Constructs a message object containing asset values for each of the
  * requested data keys.
  */
 export function getAssetMessage(data, adObject) {
-  const keys = data.assets.map((k) => getKeyByValue(CONSTANTS.NATIVE_KEYS, k));
+  const keys = data.assets.map((k) => NATIVE_KEYS_INVERTED[k]);
   return assetsMessage(data, adObject, keys);
 }
 
@@ -477,6 +500,11 @@ export function toOrtbNativeRequest(legacyNativeAssets) {
     if (NATIVE_KEYS_THAT_ARE_NOT_ASSETS.includes(key)) continue;
     if (!NATIVE_KEYS.hasOwnProperty(key)) {
       logError(`Unrecognized native asset code: ${key}. Asset will be ignored.`);
+      continue;
+    }
+
+    if (key === 'privacyLink') {
+      ortb.privacy = 1;
       continue;
     }
 
@@ -623,6 +651,9 @@ export function fromOrtbNativeRequest(openRTBRequest) {
         oldNativeObject[prebidAssetName].len = asset.data.len;
       }
     }
+    if (openRTBRequest.privacy) {
+      oldNativeObject.privacyLink = { required: false };
+    }
     // video was not supported by old prebid assets
   }
   return oldNativeObject;
@@ -696,8 +727,11 @@ export function legacyPropertiesToOrtbNative(legacyNative) {
         // in general, native trackers seem to be neglected and/or broken
         response.jstracker = Array.isArray(value) ? value.join('') : value;
         break;
+      case 'privacyLink':
+        response.privacy = value;
+        break;
     }
-  })
+  });
   return response;
 }
 
@@ -780,8 +814,8 @@ export function toLegacyResponse(ortbResponse, ortbRequest) {
   legacyResponse.impressionTrackers = [];
   let jsTrackers = [];
 
-  if (ortbRequest?.imptrackers) {
-    legacyResponse.impressionTrackers.push(...ortbRequest.imptrackers);
+  if (ortbResponse.imptrackers) {
+    legacyResponse.impressionTrackers.push(...ortbResponse.imptrackers);
   }
   for (const eventTracker of ortbResponse?.eventtrackers || []) {
     if (eventTracker.event === TRACKER_EVENTS.impression && eventTracker.method === TRACKER_METHODS.img) {

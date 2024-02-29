@@ -1,9 +1,9 @@
-import { expect } from 'chai'
-import { spec, _getPlatform } from 'modules/sonobiBidAdapter.js'
-import { newBidder } from 'src/adapters/bidderFactory.js'
+import { expect } from 'chai';
+import { _getPlatform, spec } from 'modules/sonobiBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
 import { userSync } from '../../../src/userSync.js';
 import { config } from 'src/config.js';
-import * as utils from '../../../src/utils.js';
+import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
 
 describe('SonobiBidAdapter', function () {
   const adapter = newBidder(spec)
@@ -248,13 +248,13 @@ describe('SonobiBidAdapter', function () {
     let sandbox;
     beforeEach(function () {
       sinon.stub(userSync, 'canBidderRegisterSync');
-      sinon.stub(utils, 'getGptSlotInfoForAdUnitCode')
+      sinon.stub(gptUtils, 'getGptSlotInfoForAdUnitCode')
         .onFirstCall().returns({ gptSlot: '/123123/gpt_publisher/adunit-code-3', divId: 'adunit-code-3-div-id' });
       sandbox = sinon.createSandbox();
     });
     afterEach(function () {
       userSync.canBidderRegisterSync.restore();
-      utils.getGptSlotInfoForAdUnitCode.restore();
+      gptUtils.getGptSlotInfoForAdUnitCode.restore();
       sandbox.restore();
     });
     let bidRequest = [{
@@ -295,7 +295,10 @@ describe('SonobiBidAdapter', function () {
       mediaTypes: {
         video: {
           playerSize: [640, 480],
-          context: 'outstream'
+          context: 'outstream',
+          playbackmethod: [1, 2, 3],
+          plcmt: 3,
+          placement: 2
         }
       }
     },
@@ -339,7 +342,7 @@ describe('SonobiBidAdapter', function () {
     }];
 
     let keyMakerData = {
-      '30b31c1838de1f': '1a2b3c4d5e6f1a2b3c4d|640x480|f=1.25,gpid=/123123/gpt_publisher/adunit-code-1,c=v,',
+      '30b31c1838de1f': '1a2b3c4d5e6f1a2b3c4d|640x480|f=1.25,gpid=/123123/gpt_publisher/adunit-code-1,c=v,pm=1:2:3,p=2,pl=3,',
       '30b31c1838de1d': '1a2b3c4d5e6f1a2b3c4e|300x250,300x600|f=0.42,gpid=/123123/gpt_publisher/adunit-code-3,c=d,',
       '/7780971/sparks_prebid_LB|30b31c1838de1e': '300x250,300x600|gpid=/7780971/sparks_prebid_LB,c=d,',
     };
@@ -356,7 +359,9 @@ describe('SonobiBidAdapter', function () {
         'page': 'https://example.com',
         'stack': ['https://example.com']
       },
-      uspConsent: 'someCCPAString'
+      uspConsent: 'someCCPAString',
+      ortb2: {}
+
     };
 
     it('should set fpd if there is any data in ortb2', function () {
@@ -488,6 +493,14 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data.ref).not.to.be.empty
       expect(bidRequests.data.s).not.to.be.empty
       expect(bidRequests.data.hfa).to.equal('hfakey')
+    })
+
+    it('should return a properly formatted request with expData and expKey', function () {
+      bidderRequests.ortb2.experianRtidData = 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg==';
+      bidderRequests.ortb2.experianRtidKey = 'sovrn-encryption-key-1';
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+      expect(bidRequests.data.expData).to.equal('IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg==');
+      expect(bidRequests.data.expKey).to.equal('sovrn-encryption-key-1');
     })
 
     it('should return null if there is nothing to bid on', function () {

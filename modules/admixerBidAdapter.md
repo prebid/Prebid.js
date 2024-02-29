@@ -50,3 +50,48 @@ Please use ```admixer``` as the bidder code.
            },
        ];
 ```
+
+### AdmixerWL Test Parameters
+```
+    var adUnits = [
+           {
+               code: 'desktop-banner-ad-div',
+               sizes: [[300, 250]],  // a display size
+               bids: [
+                   {
+                       bidder: "admixer",
+                       params: {
+                           endpointId: 41512,
+                           clientId: 62
+                       }
+                   }
+               ]
+           },{
+               code: 'mobile-banner-ad-div',
+               sizes: [[300, 50]],   // a mobile size
+               bids: [
+                   {
+                       bidder: "admixer",
+                       params: {
+                           endpointId: 41512,
+                           clientId: 62
+                       }
+                   }
+               ]
+           },{
+               code: 'video-ad',
+               sizes: [[300, 50]],
+               mediaType: 'video',
+               bids: [
+                   {
+                       bidder: "admixer",
+                       params: {
+                           endpointId: 41512,
+                           clientId: 62
+                       }
+                   }
+               ]
+           },
+       ];
+```
+

@@ -21,8 +21,9 @@ let saveEvents = {}
 let allEvents = {}
 let auctionEnd = {}
 let initOptions = {}
+let mode = {};
 let endpoint = 'https://default'
-let requestsAttributes = ['adUnitCode', 'auctionId', 'bidder', 'bidderCode', 'bidId', 'cpm', 'creativeId', 'currency', 'width', 'height', 'mediaType', 'netRevenue', 'originalCpm', 'originalCurrency', 'requestId', 'size', 'source', 'status', 'timeToRespond', 'transactionId', 'ttl', 'sizes', 'mediaTypes', 'src', 'params', 'userId', 'labelAny', 'bids', 'adId'];
+let requestsAttributes = ['adUnitCode', 'auctionId', 'bidder', 'bidderCode', 'bidId', 'cpm', 'creativeId', 'currency', 'width', 'height', 'mediaType', 'netRevenue', 'originalCpm', 'originalCurrency', 'requestId', 'size', 'source', 'status', 'timeToRespond', 'transactionId', 'ttl', 'sizes', 'mediaTypes', 'src', 'params', 'userId', 'labelAny', 'bids', 'adId', 'ova'];
 
 function getAdapterNameForAlias(aliasName) {
   return adapterManager.aliasRegistry[aliasName] || aliasName;
@@ -41,16 +42,27 @@ function filterAttributes(arg, removead) {
     }
     if (typeof arg['gdprConsent'] != 'undefined') {
       response['gdprConsent'] = {};
-      if (typeof arg['gdprConsent']['consentString'] != 'undefined') { response['gdprConsent']['consentString'] = arg['gdprConsent']['consentString']; }
+      if (typeof arg['gdprConsent']['consentString'] != 'undefined') {
+        response['gdprConsent']['consentString'] = arg['gdprConsent']['consentString'];
+      }
     }
-    if (typeof arg['meta'] == 'object' && typeof arg['meta']['advertiserDomains'] != 'undefined') {
-      response['meta'] = {'advertiserDomains': arg['meta']['advertiserDomains']};
+    if (typeof arg['meta'] == 'object') {
+      response['meta'] = {};
+      if (typeof arg['meta']['advertiserDomains'] != 'undefined') {
+        response['meta']['advertiserDomains'] = arg['meta']['advertiserDomains'];
+      }
+      if (typeof arg['meta']['demandSource'] == 'string') {
+        response['meta']['demandSource'] = arg['meta']['demandSource'];
+      }
     }
     requestsAttributes.forEach((attr) => {
       if (typeof arg[attr] != 'undefined') { response[attr] = arg[attr]; }
     });
-    if (typeof response['creativeId'] == 'number') { response['creativeId'] = response['creativeId'].toString(); }
+    if (typeof response['creativeId'] == 'number') {
+      response['creativeId'] = response['creativeId'].toString();
+    }
   }
+  response['oxxionMode'] = mode;
   return response;
 }
 
@@ -171,6 +183,15 @@ function handleBidWon(args) {
           }
         });
       }
+      if (auction['auctionId'] == args['auctionId'] && typeof auction['bidderRequests'] == 'object') {
+        auction['bidderRequests'].forEach((req) => {
+          req.bids.forEach((bid) => {
+            if (bid['bidId'] == args['requestId'] && bid['transactionId'] == args['transactionId']) {
+              args['ova'] = bid['ova'];
+            }
+          });
+        });
+      }
     });
   }
   args['cpmIncrement'] = increment;
@@ -220,7 +241,8 @@ let oxxionAnalytics = Object.assign(adapter({url, analyticsType}), {
         addTimeout(args);
         break;
     }
-  }});
+  }
+});
 
 // save the base class function
 oxxionAnalytics.originEnableAnalytics = oxxionAnalytics.enableAnalytics;
@@ -229,7 +251,12 @@ oxxionAnalytics.originEnableAnalytics = oxxionAnalytics.enableAnalytics;
 oxxionAnalytics.enableAnalytics = function (config) {
   oxxionAnalytics.originEnableAnalytics(config); // call the base class function
   initOptions = config.options;
-  if (initOptions.domain) { endpoint = 'https://' + initOptions.domain; }
+  if (initOptions.domain) {
+    endpoint = 'https://' + initOptions.domain;
+  }
+  if (window.OXXION_MODE) {
+    mode = window.OXXION_MODE;
+  }
 };
 
 adapterManager.registerAnalyticsAdapter({

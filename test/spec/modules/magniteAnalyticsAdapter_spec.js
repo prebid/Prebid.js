@@ -3,7 +3,8 @@ import magniteAdapter, {
   getHostNameFromReferer,
   storage,
   rubiConf,
-  detectBrowserFromUa
+  detectBrowserFromUa,
+  callPrebidCacheHook
 } from '../../../modules/magniteAnalyticsAdapter.js';
 import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config.js';
@@ -550,7 +551,7 @@ describe('magnite analytics adapter', function () {
       expect(server.requests.length).to.equal(1);
       let request = server.requests[0];
 
-      expect(request.url).to.equal('//localhost:9999/event');
+      expect(request.url).to.match(/\/\/localhost:9999\/event/);
 
       let message = JSON.parse(request.requestBody);
 
@@ -724,7 +725,7 @@ describe('magnite analytics adapter', function () {
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
 
-        expect(request.url).to.equal('//localhost:9999/event');
+        expect(request.url).to.match(/\/\/localhost:9999\/event/);
 
         let message = JSON.parse(request.requestBody);
 
@@ -1137,6 +1138,39 @@ describe('magnite analytics adapter', function () {
       });
     });
 
+    it('should not use pbsBidId if the bid was client side cached', function () {
+      // bid response
+      let seatBidResponse = utils.deepClone(MOCK.BID_RESPONSE);
+      seatBidResponse.pbsBidId = 'do-not-use-me';
+
+      // Run auction
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+      // mock client side cache call
+      callPrebidCacheHook(() => {}, {}, seatBidResponse);
+
+      events.emit(BID_RESPONSE, seatBidResponse);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+      // emmit gpt events and bidWon
+      mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
+
+      events.emit(BID_WON, MOCK.BID_WON);
+
+      // tick the event delay time plus processing delay
+      clock.tick(rubiConf.analyticsEventDelay + rubiConf.analyticsProcessDelay);
+
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
+
+      // Expect the ids sent to server to use the original bidId not the pbsBidId thing
+      expect(message.auctions[0].adUnits[0].bids[0].bidId).to.equal(MOCK.BID_RESPONSE.requestId);
+      expect(message.bidsWon[0].bidId).to.equal(MOCK.BID_RESPONSE.requestId);
+    });
+
     [0, '0'].forEach(pbsParam => {
       it(`should generate new bidId if incoming pbsBidId is ${pbsParam}`, function () {
         // bid response
@@ -1491,6 +1525,40 @@ describe('magnite analytics adapter', function () {
       expectedMessage.bidsWon[0].source = 'server';
       expect(message).to.deep.equal(expectedMessage);
     });
+
+    describe('when eventDispatcher is present', () => {
+      beforeEach(() => {
+        window.pbjs = window.pbjs || {};
+        pbjs.rp = pbjs.rp || {};
+        pbjs.rp.eventDispatcher = pbjs.rp.eventDispatcher || document.createElement('fakeElem');
+      });
+
+      afterEach(() => {
+        delete pbjs.rp.eventDispatcher;
+        delete pbjs.rp;
+      });
+
+      it('should dispatch beforeSendingMagniteAnalytics if possible', () => {
+        pbjs.rp.eventDispatcher.addEventListener('beforeSendingMagniteAnalytics', (data) => {
+          data.detail.test = 'testData';
+        });
+
+        performStandardAuction();
+
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+
+        expect(request.url).to.equal('http://localhost:9999/event');
+
+        let message = JSON.parse(request.requestBody);
+
+        const AnalyticsMessageWithCustomData = {
+          ...ANALYTICS_MESSAGE,
+          test: 'testData'
+        }
+        expect(message).to.deep.equal(AnalyticsMessageWithCustomData);
+      });
+    })
 
     describe('when handling bid caching', () => {
       let auctionInits, bidRequests, bidResponses, bidsWon;

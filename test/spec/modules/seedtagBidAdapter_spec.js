@@ -2,9 +2,23 @@ import { expect } from 'chai';
 import { spec, getTimeoutUrl } from 'modules/seedtagBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { config } from '../../../src/config.js';
+import * as mockGpt from 'test/spec/integration/faker/googletag.js';
 
 const PUBLISHER_ID = '0000-0000-01';
 const ADUNIT_ID = '000000';
+
+const adUnitCode = '/19968336/header-bid-tag-0'
+
+// create a default adunit
+const slot = document.createElement('div');
+slot.id = adUnitCode;
+slot.style.width = '300px'
+slot.style.height = '250px'
+slot.style.position = 'absolute'
+slot.style.top = '10px'
+slot.style.left = '20px'
+
+document.body.appendChild(slot);
 
 function getSlotConfigs(mediaTypes, params) {
   return {
@@ -25,7 +39,7 @@ function getSlotConfigs(mediaTypes, params) {
         tid: 'd704d006-0d6e-4a09-ad6c-179e7e758096',
       }
     },
-    adUnitCode: 'adunit-code',
+    adUnitCode: adUnitCode,
   };
 }
 
@@ -46,6 +60,13 @@ const createBannerSlotConfig = (placement, mediatypes) => {
 };
 
 describe('Seedtag Adapter', function () {
+  beforeEach(function () {
+    mockGpt.reset();
+  });
+
+  afterEach(function () {
+    mockGpt.enable();
+  });
   describe('isBidRequestValid method', function () {
     describe('returns true', function () {
       describe('when banner slot config has all mandatory params', () => {
@@ -277,7 +298,7 @@ describe('Seedtag Adapter', function () {
       expect(data.auctionStart).to.be.greaterThanOrEqual(now);
       expect(data.ttfb).to.be.greaterThanOrEqual(0);
 
-      expect(data.bidRequests[0].adUnitCode).to.equal('adunit-code');
+      expect(data.bidRequests[0].adUnitCode).to.equal(adUnitCode);
     });
 
     describe('GDPR params', function () {
@@ -374,6 +395,35 @@ describe('Seedtag Adapter', function () {
         expect(videoBid.sizes[1][1]).to.equal(600);
         expect(videoBid.requestCount).to.equal(1);
       });
+
+      it('should have geom parameters if slot is available', function() {
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        const bidRequests = data.bidRequests;
+        const bannerBid = bidRequests[0];
+
+        // on some CI, the DOM is not initialized, so we need to check if the slot is available
+        const slot = document.getElementById(adUnitCode)
+        if (slot) {
+          expect(bannerBid).to.have.property('geom')
+
+          const params = [['width', 300], ['height', 250], ['top', 10], ['left', 20], ['scrollY', 0]]
+          params.forEach(([param, value]) => {
+            expect(bannerBid.geom).to.have.property(param)
+            expect(bannerBid.geom[param]).to.be.a('number')
+            expect(bannerBid.geom[param]).to.be.equal(value)
+          })
+
+          expect(bannerBid.geom).to.have.property('viewport')
+          const viewportParams = ['width', 'height']
+          viewportParams.forEach(param => {
+            expect(bannerBid.geom.viewport).to.have.property(param)
+            expect(bannerBid.geom.viewport[param]).to.be.a('number')
+          })
+        } else {
+          expect(bannerBid).to.not.have.property('geom')
+        }
+      })
     });
 
     describe('COPPA param', function () {

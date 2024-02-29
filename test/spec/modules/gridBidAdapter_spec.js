@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec, resetUserSync, getSyncUrl, storage } from 'modules/gridBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { config } from 'src/config.js';
+import {ENDPOINT_DOMAIN, ENDPOINT_PROTOCOL} from '../../../modules/adpartnerBidAdapter';
 
 describe('TheMediaGrid Adapter', function () {
   const adapter = newBidder(spec);
@@ -785,6 +786,74 @@ describe('TheMediaGrid Adapter', function () {
       });
     });
 
+    it('should prioritize pbadslot over adslot', function() {
+      const ortb2Imp = [{
+        ext: {
+          data: {
+            adserver: {
+              adslot: 'adslot'
+            }
+          }
+        }
+      }, {
+        ext: {
+          data: {
+            adserver: {
+              adslot: 'adslot'
+            },
+            pbadslot: 'pbadslot'
+          }
+        }
+      }];
+      const bidRequestsWithOrtb2Imp = bidRequests.slice(0, 2).map((bid, ind) => {
+        return Object.assign({}, bid, ortb2Imp[ind] ? { ortb2Imp: {...bid.ortb2Imp, ...ortb2Imp[ind]} } : {});
+      });
+      const [request] = spec.buildRequests(bidRequestsWithOrtb2Imp, bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload.imp[0].ext.gpid).to.equal(ortb2Imp[0].ext.data.adserver.adslot);
+      expect(payload.imp[1].ext.gpid).to.equal(ortb2Imp[1].ext.data.pbadslot);
+    });
+
+    it('should prioritize gpid over pbadslot and adslot', function() {
+      const ortb2Imp = [{
+        ext: {
+          gpid: 'gpid',
+          data: {
+            adserver: {
+              adslot: 'adslot'
+            },
+            pbadslot: 'pbadslot'
+          }
+        }
+      }, {
+        ext: {
+          gpid: 'gpid',
+          data: {
+            adserver: {
+              adslot: 'adslot'
+            }
+          }
+        }
+      }, {
+        ext: {
+          gpid: 'gpid',
+          data: {
+            pbadslot: 'pbadslot'
+          }
+        }
+      }];
+      const bidRequestsWithOrtb2Imp = bidRequests.slice(0, 3).map((bid, ind) => {
+        return Object.assign({}, bid, ortb2Imp[ind] ? { ortb2Imp: {...bid.ortb2Imp, ...ortb2Imp[ind]} } : {});
+      });
+      const [request] = spec.buildRequests(bidRequestsWithOrtb2Imp, bidderRequest);
+      expect(request.data).to.be.an('string');
+      const payload = parseRequest(request.data);
+      expect(payload.imp[0].ext.gpid).to.equal(ortb2Imp[0].ext.gpid);
+      expect(payload.imp[1].ext.gpid).to.equal(ortb2Imp[1].ext.gpid);
+      expect(payload.imp[2].ext.gpid).to.equal(ortb2Imp[2].ext.gpid);
+    });
+
     it('should contain imp[].instl if available', function() {
       const ortb2Imp = [{
         instl: 1
@@ -872,6 +941,15 @@ describe('TheMediaGrid Adapter', function () {
       getDataFromLocalStorageStub.restore();
     })
 
+    it('tmax should be set as integer', function() {
+      let [request] = spec.buildRequests([bidRequests[0]], {...bidderRequest, timeout: '10'});
+      let payload = parseRequest(request.data);
+      expect(payload.tmax).to.equal(10);
+      [request] = spec.buildRequests([bidRequests[0]], {...bidderRequest, timeout: 'ddqwdwdq'});
+      payload = parseRequest(request.data);
+      expect(payload.tmax).to.equal(null);
+    })
+
     describe('floorModule', function () {
       const floorTestData = {
         'currency': 'USD',
@@ -905,6 +983,15 @@ describe('TheMediaGrid Adapter', function () {
         expect(request.data).to.be.an('string');
         const payload = parseRequest(request.data);
         expect(payload.imp[0].bidfloor).to.equal(bidfloor);
+      });
+      it('should return the bidfloor string value if it is greater than getFloor.floor', function () {
+        const bidfloor = '1.80';
+        const bidRequestsWithFloor = { ...bidRequest };
+        bidRequestsWithFloor.params = Object.assign({bidFloor: bidfloor}, bidRequestsWithFloor.params);
+        const [request] = spec.buildRequests([bidRequestsWithFloor], bidderRequest);
+        expect(request.data).to.be.an('string');
+        const payload = parseRequest(request.data);
+        expect(payload.imp[0].bidfloor).to.equal(1.80);
       });
     });
   });
@@ -1265,7 +1352,7 @@ describe('TheMediaGrid Adapter', function () {
 
     it('complicated case', function () {
       const fullResponse = [
-        {'bid': [{'impid': '2164be6358b9', 'adid': '32_52_7543', 'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 1, 'h': 250, 'w': 300, dealid: 11}], 'seat': '1'},
+        {'bid': [{'impid': '2164be6358b9', 'adid': '32_52_7543', 'price': 1.15, 'adm': '<div>test content 1</div>', 'auid': 1, 'h': 250, 'w': 300, dealid: 11, 'ext': {'dsa': {'adrender': 1}}}], 'seat': '1'},
         {'bid': [{'impid': '4e111f1b66e4', 'adid': '32_54_4535', 'price': 0.5, 'adm': '<div>test content 2</div>', 'auid': 2, 'h': 600, 'w': 300, dealid: 12}], 'seat': '1'},
         {'bid': [{'impid': '26d6f897b516', 'adid': '32_53_75467', 'price': 0.15, 'adm': '<div>test content 3</div>', 'auid': 1, 'h': 90, 'w': 728}], 'seat': '1'},
         {'bid': [{'impid': '326bde7fbf69', 'adid': '32_54_12342', 'price': 0.15, 'adm': '<div>test content 4</div>', 'auid': 1, 'h': 600, 'w': 300}], 'seat': '1'},
@@ -1343,6 +1430,7 @@ describe('TheMediaGrid Adapter', function () {
           'netRevenue': true,
           'ttl': 360,
           'meta': {
+            adrender: 1,
             advertiserDomains: []
           },
         },
@@ -1462,6 +1550,19 @@ describe('TheMediaGrid Adapter', function () {
 
       const result = spec.interpretResponse({'body': {'seatbid': [serverResponse]}}, request);
       expect(result).to.deep.equal(expectedResponse);
+    });
+  });
+
+  describe('onDataDeletionRequest', function() {
+    let ajaxStub;
+    beforeEach(function() {
+      ajaxStub = sinon.stub(spec, 'ajaxCall');
+    });
+
+    it('should send right request on onDataDeletionRequest call', function() {
+      spec.onDataDeletionRequest([{}]);
+      expect(ajaxStub.calledOnce).to.equal(true);
+      expect(ajaxStub.firstCall.args[0]).to.equal('https://media.grid.bidswitch.net/uspapi_delete_c2s');
     });
   });
 

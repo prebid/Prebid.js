@@ -1,9 +1,20 @@
-import {_each, chunk, deepAccess, isFn, parseSizesInput, parseUrl, uniques, isArray} from '../src/utils.js';
+import {
+  _each,
+  deepAccess,
+  isFn,
+  parseSizesInput,
+  parseUrl,
+  uniques,
+  isArray,
+  formatQS,
+  triggerPixel
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {bidderSettings} from '../src/bidderSettings.js';
 import {config} from '../src/config.js';
+import {chunk} from '../libraries/chunk/chunk.js';
 
 const GVLID = 744;
 const DEFAULT_SUB_DOMAIN = 'prebid';
@@ -56,7 +67,6 @@ function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout
     adUnitCode,
     schain,
     mediaTypes,
-    auctionId,
     ortb2Imp,
     bidderRequestId,
     bidRequestsCount,
@@ -112,8 +122,6 @@ function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout
     gpid: gpid,
     cat: cat,
     pagecat: pagecat,
-    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-    auctionId: auctionId,
     transactionId: ortb2Imp?.ext?.tid,
     bidderRequestId: bidderRequestId,
     bidRequestsCount: bidRequestsCount,
@@ -179,9 +187,9 @@ function buildSingleRequest(bidRequests, bidderRequest, topWindowUrl, bidderTime
     const sizes = parseSizesInput(bid.sizes);
     return buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout)
   });
-  const CHUNK_SIZE = Math.min(10, config.getConfig('vidazoo.chunkSize') || 10);
+  const chunkSize = Math.min(20, config.getConfig('vidazoo.chunkSize') || 10);
 
-  const chunkedData = chunk(data, CHUNK_SIZE);
+  const chunkedData = chunk(data, chunkSize);
   return chunkedData.map(chunk => {
     return {
       method: 'POST',
@@ -226,14 +234,15 @@ function buildRequests(validBidRequests, bidderRequest) {
   const requests = [];
 
   if (singleRequestMode) {
-    // We need to split the requests into banner and video requests
+    // banner bids are sent as a single request
     const bannerBidRequests = validBidRequests.filter(bid => isArray(bid.mediaTypes) ? bid.mediaTypes.includes(BANNER) : bid.mediaTypes[BANNER] !== undefined);
     if (bannerBidRequests.length > 0) {
       const singleRequests = buildSingleRequest(bannerBidRequests, bidderRequest, topWindowUrl, bidderTimeout);
       requests.push(...singleRequests);
     }
 
-    // Video Logic
+    // video bids are sent as a single request for each bid
+
     const videoBidRequests = validBidRequests.filter(bid => bid.mediaTypes[VIDEO] !== undefined);
     videoBidRequests.forEach(validBidRequest => {
       const sizes = parseSizesInput(validBidRequest.sizes);
@@ -272,6 +281,7 @@ function interpretResponse(serverResponse, request) {
         height,
         currency,
         bidId,
+        nurl,
         advertiserDomains,
         metaData,
         mediaType = BANNER
@@ -290,6 +300,10 @@ function interpretResponse(serverResponse, request) {
         netRevenue: true,
         ttl: exp || TTL_SECONDS,
       };
+
+      if (nurl) {
+        response.nurl = nurl;
+      }
 
       if (metaData) {
         Object.assign(response, {
@@ -322,13 +336,20 @@ function interpretResponse(serverResponse, request) {
   }
 }
 
-function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '') {
+function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '', gppConsent = {}) {
   let syncs = [];
   const {iframeEnabled, pixelEnabled} = syncOptions;
   const {gdprApplies, consentString = ''} = gdprConsent;
+  const {gppString, applicableSections} = gppConsent;
 
   const cidArr = responses.filter(resp => deepAccess(resp, 'body.cid')).map(resp => resp.body.cid).filter(uniques);
-  const params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`
+  let params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`;
+
+  if (gppString && applicableSections?.length) {
+    params += '&gpp=' + encodeURIComponent(gppString);
+    params += '&gpp_sid=' + encodeURIComponent(applicableSections.join(','));
+  }
+
   if (iframeEnabled) {
     syncs.push({
       type: 'iframe',
@@ -342,6 +363,33 @@ function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '')
     });
   }
   return syncs;
+}
+
+/**
+ * @param {Bid} bid
+ */
+function onBidWon(bid) {
+  if (!bid.nurl) {
+    return;
+  }
+  const wonBid = {
+    adId: bid.adId,
+    creativeId: bid.creativeId,
+    auctionId: bid.auctionId,
+    transactionId: bid.transactionId,
+    adUnitCode: bid.adUnitCode,
+    cpm: bid.cpm,
+    currency: bid.currency,
+    originalCpm: bid.originalCpm,
+    originalCurrency: bid.originalCurrency,
+    netRevenue: bid.netRevenue,
+    mediaType: bid.mediaType,
+    timeToRespond: bid.timeToRespond,
+    status: bid.status,
+  };
+  const qs = formatQS(wonBid);
+  const url = bid.nurl + (bid.nurl.indexOf('?') === -1 ? '?' : '&') + qs;
+  triggerPixel(url);
 }
 
 export function hashCode(s, prefix = '_') {
@@ -439,7 +487,8 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs
+  getUserSyncs,
+  onBidWon
 };
 
 registerBidder(spec);

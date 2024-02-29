@@ -10,10 +10,20 @@ import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import { gppDataHandler } from '../src/adapterManager.js';
+
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
 
 const MODULE_NAME = 'identityLink';
 
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+
+const liverampEnvelopeName = '_lr_env';
 
 /** @type {Submodule} */
 export const identityLinkSubmodule = {
@@ -51,18 +61,21 @@ export const identityLinkSubmodule = {
     }
     const hasGdpr = (consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies) ? 1 : 0;
     const gdprConsentString = hasGdpr ? consentData.consentString : '';
-    const tcfPolicyV2 = utils.deepAccess(consentData, 'vendorData.tcfPolicyVersion') === 2;
     // use protocol relative urls for http or https
     if (hasGdpr && (!gdprConsentString || gdprConsentString === '')) {
       utils.logInfo('identityLink: Consent string is required to call envelope API.');
       return;
     }
-    const url = `https://api.rlcdn.com/api/identity/envelope?pid=${configParams.pid}${hasGdpr ? (tcfPolicyV2 ? '&ct=4&cv=' : '&ct=1&cv=') + gdprConsentString : ''}`;
+    const gppData = gppDataHandler.getConsentData();
+    const gppString = gppData && gppData.gppString ? gppData.gppString : false;
+    const gppSectionId = gppData && gppData.gppString && gppData.applicableSections.length > 0 && gppData.applicableSections[0] !== -1 ? gppData.applicableSections[0] : false;
+    const hasGpp = gppString && gppSectionId;
+    const url = `https://api.rlcdn.com/api/identity/envelope?pid=${configParams.pid}${hasGdpr ? '&ct=4&cv=' + gdprConsentString : ''}${hasGpp ? '&gpp=' + gppString + '&gpp_sid=' + gppSectionId : ''}`;
     let resp;
     resp = function (callback) {
       // Check ats during callback so it has a chance to initialise.
       // If ats library is available, use it to retrieve envelope. If not use standard third party endpoint
-      if (window.ats) {
+      if (window.ats && window.ats.retrieveEnvelope) {
         utils.logInfo('identityLink: ATS exists!');
         window.ats.retrieveEnvelope(function (envelope) {
           if (envelope) {
@@ -74,11 +87,24 @@ export const identityLinkSubmodule = {
           }
         });
       } else {
-        getEnvelope(url, callback, configParams);
+        // try to get envelope directly from storage if ats lib is not present on a page
+        let envelope = getEnvelopeFromStorage();
+        if (envelope) {
+          utils.logInfo('identityLink: LiveRamp envelope successfully retrieved from storage!');
+          callback(JSON.parse(envelope).envelope);
+        } else {
+          getEnvelope(url, callback, configParams);
+        }
       }
     };
 
     return { callback: resp };
+  },
+  eids: {
+    'idl_env': {
+      source: 'liveramp.com',
+      atype: 3
+    },
   }
 };
 // return envelope from third party endpoint
@@ -119,6 +145,11 @@ function setEnvelopeSource(src) {
   let now = new Date();
   now.setTime(now.getTime() + 2592000000);
   storage.setCookie('_lr_env_src_ats', src, now.toUTCString());
+}
+
+export function getEnvelopeFromStorage() {
+  let rawEnvelope = storage.getCookie(liverampEnvelopeName) || storage.getDataFromLocalStorage(liverampEnvelopeName);
+  return rawEnvelope ? window.atob(rawEnvelope) : undefined;
 }
 
 submodule('userId', identityLinkSubmodule);

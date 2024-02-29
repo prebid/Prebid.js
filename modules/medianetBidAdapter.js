@@ -1,7 +1,6 @@
 import {
   buildUrl,
   deepAccess,
-  getGptSlotInfoForAdUnitCode,
   getWindowTop,
   isArray,
   isEmpty,
@@ -18,9 +17,18 @@ import {getRefererInfo} from '../src/refererDetection.js';
 import {Renderer} from '../src/Renderer.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import {getGlobal} from '../src/prebidGlobal.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
+ */
 
 const BIDDER_CODE = 'medianet';
+const TRUSTEDSTACK_CODE = 'trustedstack';
 const BID_URL = 'https://prebid.media.net/rtb/prebid';
+const TRUSTEDSTACK_URL = 'https://prebid.trustedstack.com/rtb/trustedstack';
 const PLAYER_URL = 'https://prebid.media.net/video/bundle.js';
 const SLOT_VISIBILITY = {
   NOT_DETERMINED: 0,
@@ -49,7 +57,7 @@ mnData.urlData = {
 };
 
 const aliases = [
-  { code: 'aax', gvlid: 720 },
+  { code: TRUSTEDSTACK_CODE },
 ];
 
 getGlobal().medianetGlobals = getGlobal().medianetGlobals || {};
@@ -323,8 +331,9 @@ function normalizeCoordinates(coordinates) {
   }
 }
 
-function getBidderURL(cid) {
-  return BID_URL + '?cid=' + encodeURIComponent(cid);
+function getBidderURL(bidderCode, cid) {
+  const url = (bidderCode === TRUSTEDSTACK_CODE) ? TRUSTEDSTACK_URL : BID_URL;
+  return url + '?cid=' + encodeURIComponent(cid);
 }
 
 function generatePayload(bidRequests, bidderRequests) {
@@ -463,7 +472,7 @@ export const spec = {
     let payload = generatePayload(bidRequests, bidderRequests);
     return {
       method: 'POST',
-      url: getBidderURL(payload.ext.customer_id),
+      url: getBidderURL(bidderRequests.bidderCode, payload.ext.customer_id),
       data: JSON.stringify(payload)
     };
   },

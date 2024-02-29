@@ -3,6 +3,7 @@ import {spec} from 'modules/stroeerCoreBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {BANNER, VIDEO} from '../../../src/mediaTypes.js';
 import {find} from 'src/polyfill.js';
+import sinon from 'sinon';
 
 describe('stroeerCore bid adapter', function () {
   let sandbox;
@@ -51,8 +52,6 @@ describe('stroeerCore bid adapter', function () {
     assert.notProperty(bidObject, 'ad');
   }
 
-  const AUCTION_ID = utils.getUniqueIdentifierStr();
-
   // Vendor user ids and associated data
   const userIds = Object.freeze({
     criteoId: 'criteo-user-id',
@@ -72,7 +71,6 @@ describe('stroeerCore bid adapter', function () {
   });
 
   const buildBidderRequest = () => ({
-    auctionId: AUCTION_ID,
     bidderRequestId: 'bidder-request-id-123',
     bidderCode: 'stroeerCore',
     timeout: 5000,
@@ -394,6 +392,10 @@ describe('stroeerCore bid adapter', function () {
         clock.tick(13500);
         const bidReq = buildBidderRequest();
 
+        const UUID = 'fb6a39e3-083f-424c-9046-f1095e15f3d5';
+
+        const generateUUIDStub = sinon.stub(utils, 'generateUUID').returns(UUID);
+
         const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
 
         const expectedTimeout = bidderRequest.timeout - (13500 - bidderRequest.auctionStart);
@@ -401,7 +403,7 @@ describe('stroeerCore bid adapter', function () {
         assert.equal(expectedTimeout, 1500);
 
         const expectedJsonPayload = {
-          'id': AUCTION_ID,
+          'id': UUID,
           'timeout': expectedTimeout,
           'ref': 'https://www.example.com/?search=monkey',
           'mpa': true,
@@ -429,8 +431,9 @@ describe('stroeerCore bid adapter', function () {
 
         // trim away fields with undefined
         const actualJsonPayload = JSON.parse(JSON.stringify(serverRequestInfo.data));
-
         assert.deepEqual(actualJsonPayload, expectedJsonPayload);
+
+        generateUUIDStub.restore();
       });
 
       describe('video bids', () => {
@@ -841,6 +844,39 @@ describe('stroeerCore bid adapter', function () {
           assert.nestedPropertyVal(bid, 'ban.fp.cur', 'EUR');
           assert.deepNestedPropertyVal(bid, 'ban.fp.siz', [{w: 160, h: 60, p: 2.7}]);
         });
+
+        it('should add the DSA signals', () => {
+          const bidReq = buildBidderRequest();
+          const dsa = {
+            dsarequired: 3,
+            pubrender: 0,
+            datatopub: 2,
+            transparency: [
+              {
+                domain: 'testplatform.com',
+                dsaparams: [1],
+              },
+              {
+                domain: 'testdomain.com',
+                dsaparams: [1, 2]
+              }
+            ]
+          }
+          const ortb2 = {
+            regs: {
+              ext: {
+                dsa
+              }
+            }
+          }
+
+          bidReq.ortb2 = utils.deepClone(ortb2);
+
+          const serverRequestInfo = spec.buildRequests(bidReq.bids, bidReq);
+          const sentOrtb2 = serverRequestInfo.data.ortb2;
+
+          assert.deepEqual(sentOrtb2, ortb2);
+        });
       });
     });
   });
@@ -879,13 +915,32 @@ describe('stroeerCore bid adapter', function () {
       assertStandardFieldsOnVideoBid(videoBidResponse, 'bid1', '<vast>video</vast>', 800, 250, 4);
     })
 
-    it('should add data to meta object', () => {
+    it('should add advertiser domains to meta object', () => {
       const response = buildBidderResponse();
       response.bids[0] = Object.assign(response.bids[0], {adomain: ['website.org', 'domain.com']});
       const result = spec.interpretResponse({body: response});
-      assert.deepPropertyVal(result[0], 'meta', {advertiserDomains: ['website.org', 'domain.com']});
-      // nothing provided for the second bid
-      assert.deepPropertyVal(result[1], 'meta', {advertiserDomains: undefined});
+      assert.deepPropertyVal(result[0].meta, 'advertiserDomains', ['website.org', 'domain.com']);
+      assert.propertyVal(result[1].meta, 'advertiserDomains', undefined);
+    });
+
+    it('should add dsa info to meta object', () => {
+      const dsaResponse = {
+        behalf: 'AdvertiserA',
+        paid: 'AdvertiserB',
+        transparency: [{
+          domain: 'dspexample.com',
+          dsaparams: [1, 2],
+        }],
+        adrender: 1
+      };
+
+      const response = buildBidderResponse();
+      response.bids[0] = Object.assign(response.bids[0], {dsa: utils.deepClone(dsaResponse)});
+
+      const result = spec.interpretResponse({body: response});
+
+      assert.deepPropertyVal(result[0].meta, 'dsa', dsaResponse);
+      assert.propertyVal(result[1].meta, 'dsa', undefined);
     });
   });
 
