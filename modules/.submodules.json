@@ -48,8 +48,7 @@
       "gravitoIdSystem",
       "freepassIdSystem",
       "operaadsIdSystem",
-      "mygaruIdSystem",
-      "lockrAIMIdSystem"
+      "mygaruIdSystem"
     ],
     "adpod": ["freeWheelAdserverVideo", "dfpAdServerVideo"],
     "rtdModule": [
