@@ -133,10 +133,10 @@ export const getPmgUID = () => {
   let pmgUid = storage.getCookie(COOKIE_KEY_PMGUID);
   if (!pmgUid) {
     pmgUid = utils.generateUUID();
-    try {
-      storage.setCookie(COOKIE_KEY_PMGUID, pmgUid, getCurrentTimeToUTCString());
-    } catch (e) {}
   }
+  try {
+    storage.setCookie(COOKIE_KEY_PMGUID, pmgUid, getCurrentTimeToUTCString());
+  } catch (e) {}
   return pmgUid;
 };
 
