@@ -105,14 +105,14 @@ const storageTool = (function () {
 
   const getUsi = function (meta, ortb2, bidderRequest) {
     // Fetch user id from parameters.
-    const paramUsi = (bidderRequest.bids) ? bidderRequest.bids.find(bid => {
+    const bidWithUserId = bidderRequest.bids.find(bid => {
       if (bid.params && bid.params.userId) return true
-    }).params.userId : false
+    })
     let usi = (meta && meta.usi) ? meta.usi : false
     if (ortb2 && ortb2.user && ortb2.user.id) {
       usi = ortb2.user.id
     }
-    if (paramUsi) usi = paramUsi
+    if (bidWithUserId) usi = bidWithUserId.params?.userId
     return usi;
   }
 
