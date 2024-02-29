@@ -2644,7 +2644,7 @@ describe('The Criteo bidding adapter', function () {
             },
           },
           perBuyerTimeout: {
-            '*': 50,
+            '*': 500,
             'buyer1': 100,
             'buyer2': 200
           },
@@ -2687,7 +2687,7 @@ describe('The Criteo bidding adapter', function () {
             },
           },
           perBuyerTimeout: {
-            '*': 50,
+            '*': 500,
             'buyer1': 100,
             'buyer2': 200
           },

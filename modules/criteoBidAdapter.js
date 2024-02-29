@@ -298,7 +298,7 @@ export const spec = {
         if (!sellerSignals.floor && bidRequest.params.bidFloor) {
           sellerSignals.floor = bidRequest.params.bidFloor;
         }
-        let perBuyerTimeout = { '*': 50 };
+        let perBuyerTimeout = { '*': 500 };
         if (sellerSignals.perBuyerTimeout) {
           for (const buyer in sellerSignals.perBuyerTimeout) {
             perBuyerTimeout[buyer] = sellerSignals.perBuyerTimeout[buyer];
