@@ -114,10 +114,11 @@ describe('anonymisedRtdProvider', function() {
       expect(bidConfig.ortb2Fragments.global.user.keywords).to.include('perid=93SUG3H540WBJMYNT03KX8N3');
     });
 
-    it('do not set rtd if `bidders` parameter undefined', function() {
+    it('gets rtd from local storage and set to ortb2.user.data if `bidders` parameter undefined', function() {
       const rtdConfig = {
         params: {
           cohortStorageKey: 'cohort_ids',
+          segtax: 503
         }
       };
 
@@ -127,11 +128,27 @@ describe('anonymisedRtdProvider', function() {
         }
       };
 
+      const rtdUserObj1 = {
+        name: 'anonymised.io',
+        ext: {
+          segtax: 503
+        },
+        segment: [
+          {
+            id: 'TCZPQOWPEJG3MJOTUQUF793A'
+          },
+          {
+            id: '93SUG3H540WBJMYNT03KX8N3'
+          }
+        ]
+      };
+
       getDataFromLocalStorageStub.withArgs('cohort_ids')
-        .returns(JSON.stringify(['randomsegmentid']));
+        .returns(JSON.stringify(['TCZPQOWPEJG3MJOTUQUF793A', '93SUG3H540WBJMYNT03KX8N3']));
 
       getRealTimeData(bidConfig, () => {}, rtdConfig, {});
-      expect(bidConfig.ortb2Fragments.global.user).to.be.undefined;
+      expect(bidConfig.ortb2Fragments.global.user.data).to.deep.include.members([rtdUserObj1]);
+      expect(bidConfig.ortb2Fragments.global.user.keywords).to.be.undefined;
     });
 
     it('do not set rtd if `cohortStorageKey` parameter undefined', function() {
@@ -190,7 +207,7 @@ describe('anonymisedRtdProvider', function() {
       expect(config.getConfig().ortb2).to.be.undefined;
     });
 
-    it('should initalise and return with config', function () {
+    it('should initialize and return with config', function () {
       expect(getRealTimeData(testReqBidsConfigObj, onDone, cmoduleConfig)).to.equal(undefined)
     });
   });
