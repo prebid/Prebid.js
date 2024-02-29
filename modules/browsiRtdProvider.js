@@ -191,7 +191,6 @@ function getAllSlots() {
 /**
  * get prediction and return valid object for key value set
  * @param {number} p
- * @param {string?} keyName
  * @return {Object} key:value
  */
 function getKVObject(p) {

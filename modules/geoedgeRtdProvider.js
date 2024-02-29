@@ -56,7 +56,7 @@ let preloaded;
 
 /**
  * fetches the creative wrapper
- * @param {function} sucess - success callback
+ * @param {function} success - success callback
  */
 export function fetchWrapper(success) {
   if (wrapperReady) {

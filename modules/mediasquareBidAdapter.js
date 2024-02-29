@@ -62,6 +62,8 @@ export const spec = {
             if (tmpFloor != {}) { floor[value.join('x')] = tmpFloor; }
           });
         }
+        let tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: '*'});
+        if (tmpFloor != {}) { floor['*'] = tmpFloor; }
       }
       codes.push({
         owner: adunitValue.params.owner,
