@@ -28,9 +28,9 @@ export function createRtdProvider(moduleName) {
     }
   }
   /**
-  * Try parsing stringified array of segment IDs.
-  * @param {String} data
-  */
+   * Try parsing stringified array of segment IDs.
+   * @param {String} data
+   */
   function tryParse(data) {
     try {
       return JSON.parse(data);
@@ -40,12 +40,12 @@ export function createRtdProvider(moduleName) {
     }
   }
   /**
-  * Real-time data retrieval from Anonymised
-  * @param {Object} reqBidsConfigObj
-  * @param {function} onDone
-  * @param {Object} rtdConfig
-  * @param {Object} userConsent
-  */
+   * Real-time data retrieval from Anonymised
+   * @param {Object} reqBidsConfigObj
+   * @param {function} onDone
+   * @param {Object} rtdConfig
+   * @param {Object} userConsent
+   */
   function getRealTimeData(reqBidsConfigObj, onDone, rtdConfig, userConsent) {
     if (rtdConfig && isPlainObject(rtdConfig.params)) {
       const cohortStorageKey = rtdConfig.params.cohortStorageKey;
@@ -95,11 +95,11 @@ export function createRtdProvider(moduleName) {
     }
   }
   /**
-  * Module init
-  * @param {Object} provider
-  * @param {Object} userConsent
-  * @return {boolean}
-  */
+   * Module init
+   * @param {Object} provider
+   * @param {Object} userConsent
+   * @return {boolean}
+   */
   function init(provider, userConsent) {
     return true;
   }
