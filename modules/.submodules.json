@@ -48,9 +48,13 @@
       "gravitoIdSystem",
       "freepassIdSystem",
       "operaadsIdSystem",
-      "mygaruIdSystem"
+      "mygaruIdSystem",
+      "lockrAIMIdSystem"
     ],
-    "adpod": ["freeWheelAdserverVideo", "dfpAdServerVideo"],
+    "adpod": [
+      "freeWheelAdserverVideo",
+      "dfpAdServerVideo"
+    ],
     "rtdModule": [
       "1plusXRtdProvider",
       "a1MediaRtdProvider",
@@ -92,8 +96,13 @@
       "timeoutRtdProvider",
       "weboramaRtdProvider"
     ],
-    "fpdModule": ["validationFpdModule", "topicsFpdModule"],
-    "videoModule": ["jwplayerVideoProvider", "videojsVideoProvider"],
-    "paapi": ["fledgeForGpt"]
+    "fpdModule": [
+      "validationFpdModule",
+      "topicsFpdModule"
+    ],
+    "videoModule": [
+      "jwplayerVideoProvider",
+      "videojsVideoProvider"
+    ]
   }
 }
