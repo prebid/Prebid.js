@@ -79,7 +79,7 @@ pbjs.setConfig({
 
 Each module can perform two actions:
 
-* set targeting on [GPT](https://docs.prebid.org/dev-docs/publisher-api-reference/setTargetingForGPTAsync.html) / [AST](https://docs.prebid.org/dev-docs/publisher-api-reference/setTargetingForAst.html]) via `prebid.js`
+* set targeting on [GPT](https://docs.prebid.org/dev-docs/publisher-api-reference/setTargetingForGPTAsync.html) / [AST](https://docs.prebid.org/dev-docs/publisher-api-reference/setTargetingForAst.html) via `prebid.js`
 
 * send data to other `prebid.js` bidder modules (check the complete list at the end of this page)
 
