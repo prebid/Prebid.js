@@ -26,6 +26,8 @@ import {createBid} from '../../../src/bidfactory.js';
 import {enrichFPD} from '../../../src/fpd/enrichment.js';
 import {mockFpdEnrichments} from '../../helpers/fpd.js';
 import {generateUUID} from '../../../src/utils.js';
+import {getCreativeRenderer} from '../../../src/creativeRenderers.js';
+
 var assert = require('chai').assert;
 var expect = require('chai').expect;
 
@@ -200,11 +202,13 @@ window.apntag = {
 describe('Unit: Prebid Module', function () {
   let bidExpiryStub, sandbox;
 
-  before(() => {
+  before((done) => {
     hook.ready();
     $$PREBID_GLOBAL$$.requestBids.getHooks().remove();
     resetDebugging();
     sinon.stub(filters, 'isActualBid').returns(true); // stub this out so that we can use vanilla objects as bids
+    // preload creative renderer
+    getCreativeRenderer({}).then(() => done());
   });
 
   beforeEach(function () {
@@ -556,6 +560,7 @@ describe('Unit: Prebid Module', function () {
             'bidderRequestId': '331f3cf3f1d9c8',
             'auctionId': '20882439e3238c',
             'transactionId': 'trdiv-gpt-ad-1460505748561-0',
+            'adUnitId': 'audiv-gpt-ad-1460505748561-0',
           }
         ],
         'auctionStart': 1505250713622,
@@ -573,6 +578,7 @@ describe('Unit: Prebid Module', function () {
       let auctionManagerInstance = newAuctionManager();
       targeting = newTargeting(auctionManagerInstance);
       let adUnits = [{
+        adUnitId: 'audiv-gpt-ad-1460505748561-0',
         transactionId: 'trdiv-gpt-ad-1460505748561-0',
         code: 'div-gpt-ad-1460505748561-0',
         sizes: [[300, 250], [300, 600]],
@@ -718,6 +724,7 @@ describe('Unit: Prebid Module', function () {
 
       const adUnit = {
         transactionId: `tr${code}`,
+        adUnitId: `au${code}`,
         code: code,
         sizes: [[300, 250], [300, 600]],
         bids: [{
@@ -820,6 +827,7 @@ describe('Unit: Prebid Module', function () {
               },
               'adUnitCode': 'div-gpt-ad-1460505748561-0',
               'transactionId': 'trdiv-gpt-ad-1460505748561-0',
+              'adUnitId': 'audiv-gpt-ad-1460505748561-0',
               'sizes': [
                 [
                   300,
@@ -1082,35 +1090,6 @@ describe('Unit: Prebid Module', function () {
       expect(slots[0].spySetTargeting.args).to.deep.contain.members(expected);
     });
 
-    it('should find correct gpt slot based on ad id rather than ad unit code when resizing secure creative', function () {
-      var slots = [
-        new Slot('div-not-matching-adunit-code-1', config.adUnitCodes[0]),
-        new Slot('div-not-matching-adunit-code-2', config.adUnitCodes[0]),
-        new Slot('div-not-matching-adunit-code-3', config.adUnitCodes[0])
-      ];
-
-      slots[1].setTargeting('hb_adid', ['someAdId']);
-      slots[1].spyGetSlotElementId.resetHistory();
-      window.googletag.pubads().setSlots(slots);
-
-      const mockAdObject = {
-        adId: 'someAdId',
-        ad: '<script src="http://prebid.org/creative/${AUCTION_PRICE}"></script>',
-        adUrl: 'http://creative.prebid.org/${AUCTION_PRICE}',
-        width: 300,
-        height: 250,
-        renderer: null,
-        cpm: '1.00',
-        adUnitCode: config.adUnitCodes[0],
-      };
-
-      resizeRemoteCreative(mockAdObject);
-
-      expect(slots[0].spyGetSlotElementId.called).to.equal(false);
-      expect(slots[1].spyGetSlotElementId.called).to.equal(true);
-      expect(slots[2].spyGetSlotElementId.called).to.equal(false);
-    });
-
     it('Calling enableSendAllBids should set targeting to include standard keys with bidder' +
       ' append to key name', function () {
       var slots = createSlotArray();
@@ -1232,10 +1211,14 @@ describe('Unit: Prebid Module', function () {
             height: 0
           }
         },
+        body: {
+          appendChild: sinon.stub()
+        },
         getElementsByTagName: sinon.stub(),
         querySelector: sinon.stub(),
         createElement: sinon.stub(),
       };
+      doc.defaultView.document = doc;
 
       elStub = {
         insertBefore: sinon.stub()
@@ -1532,6 +1515,7 @@ describe('Unit: Prebid Module', function () {
           }
         },
         transactionId: 'mock-tid',
+        adUnitId: 'mock-au',
         bids: [
           {bidder: BIDDER_CODE, params: {placementId: 'id'}},
         ]
@@ -1606,6 +1590,7 @@ describe('Unit: Prebid Module', function () {
         height: 250,
         adUnitCode: bidRequests[0].bids[0].adUnitCode,
         transactionId: 'mock-tid',
+        adUnitId: 'mock-au',
         adserverTargeting: {
           'hb_bidder': BIDDER_CODE,
           'hb_adid': bidId,
@@ -1684,7 +1669,8 @@ describe('Unit: Prebid Module', function () {
             const bid = {
               bidder: 'mock-bidder',
               adUnitCode: adUnits[0].code,
-              transactionId: adUnits[0].transactionId
+              transactionId: adUnits[0].transactionId,
+              adUnitId: adUnits[0].adUnitId,
             }
             requestBids({
               adUnits,
@@ -1968,6 +1954,102 @@ describe('Unit: Prebid Module', function () {
           .and.not.to.equal('d0676a3c-ff32-45a5-af65-8175a8e7ddca');
         expect(auctionArgs.adUnits[1]).to.have.property('transactionId')
           .and.to.match(/[a-f0-9\-]{36}/i);
+      });
+
+      it('should use the same transactionID for ad units with the same code', () => {
+        $$PREBID_GLOBAL$$.requestBids({
+          adUnits: [
+            {
+              code: 'twin',
+              mediaTypes: { banner: { sizes: [] } },
+              bids: []
+            }, {
+              code: 'twin',
+              mediaTypes: { banner: { sizes: [] } },
+              bids: []
+            }
+          ]
+        });
+        const tid = auctionArgs.adUnits[0].transactionId;
+        expect(tid).to.exist;
+        expect(auctionArgs.adUnits[1].transactionId).to.eql(tid);
+      });
+
+      it('should re-use pub-provided transaction ID for ad units with the same code', () => {
+        $$PREBID_GLOBAL$$.requestBids({
+          adUnits: [
+            {
+              code: 'twin',
+              mediaTypes: { banner: { sizes: [] } },
+              bids: [],
+            }, {
+              code: 'twin',
+              mediaTypes: { banner: { sizes: [] } },
+              bids: [],
+              ortb2Imp: {
+                ext: {
+                  tid: 'pub-tid'
+                }
+              }
+            }
+          ]
+        });
+        expect(auctionArgs.adUnits.map(au => au.transactionId)).to.eql(['pub-tid', 'pub-tid']);
+      });
+
+      it('should use pub-provided TIDs when they conflict for ad units with the same code', () => {
+        $$PREBID_GLOBAL$$.requestBids({
+          adUnits: [
+            {
+              code: 'twin',
+              mediaTypes: { banner: { sizes: [] } },
+              bids: [],
+              ortb2Imp: {
+                ext: {
+                  tid: 't1'
+                }
+              }
+            }, {
+              code: 'twin',
+              mediaTypes: { banner: { sizes: [] } },
+              bids: [],
+              ortb2Imp: {
+                ext: {
+                  tid: 't2'
+                }
+              }
+            }
+          ]
+        });
+        expect(auctionArgs.adUnits.map(au => au.transactionId)).to.eql(['t1', 't2']);
+      });
+
+      it('should generate unique adUnitId', () => {
+        $$PREBID_GLOBAL$$.requestBids({
+          adUnits: [
+            {
+              code: 'single',
+              mediaTypes: { banner: { sizes: [] } },
+              bids: []
+            }, {
+              code: 'twin',
+              mediaTypes: { banner: { sizes: [] } },
+              bids: []
+            },
+            {
+              code: 'twin',
+              mediaTypes: { banner: { sizes: [] } },
+              bids: []
+            }
+          ]
+        });
+
+        const ids = new Set();
+        auctionArgs.adUnits.forEach(au => {
+          expect(au.adUnitId).to.exist;
+          ids.add(au.adUnitId);
+        });
+        expect(ids.size).to.eql(3);
       });
 
       describe('transactionId', () => {
@@ -3546,7 +3628,7 @@ describe('Unit: Prebid Module', function () {
       {
         code: 'adUnit-code-1',
         mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } },
-        transactionId: '1234567890',
+        adUnitId: '1234567890',
         bids: [
           { bidder: 'pubmatic', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code-1' }
         ]
@@ -3555,15 +3637,15 @@ describe('Unit: Prebid Module', function () {
         code: 'adUnit-code-2',
         deferBilling: true,
         mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } },
-        transactionId: '0987654321',
+        adUnitId: '0987654321',
         bids: [
           { bidder: 'pubmatic', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code-2' }
         ]
       }
     ];
 
-    let winningBid1 = { adapterCode: 'pubmatic', bidder: 'pubmatic', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code-1', transactionId: '1234567890', adId: 'abcdefg' }
-    let winningBid2 = { adapterCode: 'pubmatic', bidder: 'pubmatic', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code-2', transactionId: '0987654321' }
+    let winningBid1 = { adapterCode: 'pubmatic', bidder: 'pubmatic', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code-1', adUnitId: '1234567890', adId: 'abcdefg' }
+    let winningBid2 = { adapterCode: 'pubmatic', bidder: 'pubmatic', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code-2', adUnitId: '0987654321' }
     let adUnitCodes = ['adUnit-code-1', 'adUnit-code-2'];
     let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 2000});
 

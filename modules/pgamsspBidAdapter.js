@@ -40,7 +40,8 @@ function getPlacementReqData(bid) {
   };
 
   if (bid.userId) {
-    getUserId(placement.eids, bid.userId.uid2 && bid.userId.uid2.id, 'uidapi.com');
+    getUserId(placement.eids, bid.userId.uid2?.id, 'uidapi.com');
+    getUserId(placement.eids, bid.userId.id5id?.uid, 'id5-sync.com');
   }
 
   if (placementId) {

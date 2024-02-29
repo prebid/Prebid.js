@@ -258,6 +258,9 @@ export const spec = {
           if (slot.ext?.meta?.networkName) {
             bid.meta = Object.assign({}, bid.meta, { networkName: slot.ext.meta.networkName })
           }
+          if (slot.ext?.dsa?.adrender) {
+            bid.meta = Object.assign({}, bid.meta, { adrender: slot.ext.dsa.adrender })
+          }
           if (slot.native) {
             if (bidRequest.params.nativeCallback) {
               bid.ad = createNativeAd(bidId, slot.native, bidRequest.params.nativeCallback);
@@ -295,8 +298,17 @@ export const spec = {
         if (!sellerSignals.floor && bidRequest.params.bidFloor) {
           sellerSignals.floor = bidRequest.params.bidFloor;
         }
-        if (!sellerSignals.sellerCurrency && bidRequest.params.bidFloorCur) {
-          sellerSignals.sellerCurrency = bidRequest.params.bidFloorCur;
+        let perBuyerTimeout = { '*': 50 };
+        if (sellerSignals.perBuyerTimeout) {
+          for (const buyer in sellerSignals.perBuyerTimeout) {
+            perBuyerTimeout[buyer] = sellerSignals.perBuyerTimeout[buyer];
+          }
+        }
+        let perBuyerGroupLimits = { '*': 60 };
+        if (sellerSignals.perBuyerGroupLimits) {
+          for (const buyer in sellerSignals.perBuyerGroupLimits) {
+            perBuyerGroupLimits[buyer] = sellerSignals.perBuyerGroupLimits[buyer];
+          }
         }
         if (body?.ext?.sellerSignalsPerImp !== undefined) {
           const sellerSignalsPerImp = body.ext.sellerSignalsPerImp[bidId];
@@ -311,9 +323,12 @@ export const spec = {
             sellerSignals,
             sellerTimeout,
             perBuyerSignals,
+            perBuyerTimeout,
+            perBuyerGroupLimits,
             auctionSignals: {},
             decisionLogicUrl: FLEDGE_DECISION_LOGIC_URL,
             interestGroupBuyers: Object.keys(perBuyerSignals),
+            sellerCurrency: sellerSignals.currency || '???',
           },
         });
       });
@@ -503,17 +518,16 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   let networkId;
   let schain;
   let userIdAsEids;
+  let regs = Object.assign({}, {
+    coppa: bidderRequest.coppa === true ? 1 : (bidderRequest.coppa === false ? 0 : undefined)
+  }, bidderRequest.ortb2?.regs);
   const request = {
     id: generateUUID(),
     publisher: {
       url: context.url,
       ext: bidderRequest.publisherExt,
     },
-    regs: {
-      coppa: bidderRequest.coppa === true ? 1 : (bidderRequest.coppa === false ? 0 : undefined),
-      gpp: bidderRequest.ortb2?.regs?.gpp,
-      gpp_sid: bidderRequest.ortb2?.regs?.gpp_sid
-    },
+    regs: regs,
     slots: bidRequests.map(bidRequest => {
       if (!userIdAsEids) {
         userIdAsEids = bidRequest.userIdAsEids;

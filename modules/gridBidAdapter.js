@@ -361,6 +361,16 @@ export const spec = {
         request.regs.coppa = 1;
       }
 
+      if (ortb2Regs?.ext?.dsa) {
+        if (!request.regs) {
+          request.regs = {ext: {}};
+        }
+        if (!request.regs.ext) {
+          request.regs.ext = {};
+        }
+        request.regs.ext.dsa = ortb2Regs.ext.dsa;
+      }
+
       const site = deepAccess(bidderRequest, 'ortb2.site');
       if (site) {
         const pageCategory = [...(site.cat || []), ...(site.pagecat || [])].filter((category) => {
@@ -532,7 +542,7 @@ function _addBidResponse(serverBid, bidRequest, bidResponses, RendererConst, bid
         netRevenue: true,
         ttl: TIME_TO_LIVE,
         meta: {
-          advertiserDomains: serverBid.adomain ? serverBid.adomain : []
+          advertiserDomains: serverBid.adomain ? serverBid.adomain : [],
         },
         dealId: serverBid.dealid
       };
@@ -542,6 +552,10 @@ function _addBidResponse(serverBid, bidRequest, bidResponses, RendererConst, bid
       if (serverBid.ext && serverBid.ext.bidder && serverBid.ext.bidder.grid && serverBid.ext.bidder.grid.demandSource) {
         bidResponse.adserverTargeting = { 'hb_ds': serverBid.ext.bidder.grid.demandSource };
         bidResponse.meta.demandSource = serverBid.ext.bidder.grid.demandSource;
+      }
+
+      if (serverBid.ext && serverBid.ext.dsa && serverBid.ext.dsa.adrender) {
+        bidResponse.meta.adrender = serverBid.ext.dsa.adrender;
       }
 
       if (serverBid.content_type === 'video') {
