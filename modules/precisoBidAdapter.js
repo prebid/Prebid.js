@@ -135,13 +135,12 @@ export const spec = {
           meta: {
             advertiserDomains: bid.adomain || '',
           },
-        }) 
+        })
       })
     })
 
     return bids
   },
- 
 
   getUserSyncs: (syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '', gppConsent = '') => {
     let syncs = [];
