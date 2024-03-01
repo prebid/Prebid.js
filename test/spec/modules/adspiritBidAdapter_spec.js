@@ -7,7 +7,6 @@ const RTB_URL = '/rtb/getbid.php?rtbprovider=prebid';
 const SCRIPT_URL = '/adasync.min.js';
 
 describe('Adspirit Bidder Spec', function () {
-  
   // isBidRequestValid ---case
   describe('isBidRequestValid', function () {
     it('should return true if the bid request is valid', function () {
@@ -217,7 +216,6 @@ describe('Adspirit Bidder Spec', function () {
         impressionTrackers: ['view_tracker_url']
       });
     });
-
 
     const bannerBidRequestMock = {
       bidRequest: {
