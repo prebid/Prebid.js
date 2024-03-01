@@ -6,7 +6,7 @@ import {deepClone, generateUUID, logError, logInfo, logWarn} from '../src/utils.
 
 const analyticsType = 'endpoint';
 
-export const ANALYTICS_VERSION = '2.0.0';
+export const ANALYTICS_VERSION = '2.2.0';
 
 const ANALYTICS_SERVER = 'https://a.greenbids.ai';
 
@@ -27,19 +27,24 @@ export const BIDDER_STATUS = {
 
 const analyticsOptions = {};
 
-export const isSampled = function(greenbidsId, samplingRate) {
+export const isSampled = function(greenbidsId, samplingRate, exploratorySamplingSplit) {
   if (samplingRate < 0 || samplingRate > 1) {
     logWarn('Sampling rate must be between 0 and 1');
     return true;
   }
+  const exploratorySamplingRate = samplingRate * exploratorySamplingSplit;
+  const throttledSamplingRate = samplingRate * (1.0 - exploratorySamplingSplit);
   const hashInt = parseInt(greenbidsId.slice(-4), 16);
-
-  return hashInt < samplingRate * (0xFFFF + 1);
+  const isPrimarySampled = hashInt < exploratorySamplingRate * (0xFFFF + 1);
+  if (isPrimarySampled) return true;
+  const isExtraSampled = hashInt >= (1 - throttledSamplingRate) * (0xFFFF + 1);
+  return isExtraSampled;
 }
 
 export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER, analyticsType}), {
 
   cachedAuctions: {},
+  exploratorySamplingSplit: 0.9,
 
   initConfig(config) {
     analyticsOptions.options = deepClone(config.options);
@@ -59,8 +64,6 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
     if (typeof analyticsOptions.options.sampling === 'number') {
       logWarn('"options.sampling" is deprecated, please use "greenbidsSampling" instead.');
       analyticsOptions.options.greenbidsSampling = analyticsOptions.options.sampling;
-      // Set sampling to null to prevent prebid analytics integrated sampling to happen
-      analyticsOptions.options.sampling = null;
     }
 
     /**
@@ -69,6 +72,14 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
     if (typeof analyticsOptions.options.greenbidsSampling !== 'number' || analyticsOptions.options.greenbidsSampling >= 1) {
       logWarn('"options.greenbidsSampling" is not set or >=1, using this analytics module unsampled is discouraged.');
       analyticsOptions.options.greenbidsSampling = 1;
+    }
+
+    /**
+     *  Add optional debug parameter to override exploratorySamplingSplit
+     */
+    if (typeof analyticsOptions.options.exploratorySamplingSplit === 'number') {
+      logInfo('Greenbids Analytics: Overriding "exploratorySamplingSplit".');
+      this.exploratorySamplingSplit = analyticsOptions.options.exploratorySamplingSplit;
     }
 
     analyticsOptions.pbuid = config.options.pbuid
@@ -175,7 +186,7 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
       logInfo("Couldn't find Greenbids RTD info, assuming analytics only");
       cachedAuction.greenbidsId = generateUUID();
     }
-    cachedAuction.isSampled = isSampled(cachedAuction.greenbidsId, analyticsOptions.options.greenbidsSampling);
+    cachedAuction.isSampled = isSampled(cachedAuction.greenbidsId, analyticsOptions.options.greenbidsSampling, this.exploratorySamplingSplit);
   },
   handleAuctionEnd(auctionEndArgs) {
     const cachedAuction = this.getCachedAuction(auctionEndArgs.auctionId);
@@ -228,6 +239,10 @@ greenbidsAnalyticsAdapter.originEnableAnalytics = greenbidsAnalyticsAdapter.enab
 
 greenbidsAnalyticsAdapter.enableAnalytics = function(config) {
   this.initConfig(config);
+  if (typeof config.options.sampling === 'number') {
+    // Set sampling to 1 to prevent prebid analytics integrated sampling to happen
+    config.options.sampling = 1;
+  }
   logInfo('loading greenbids analytics');
   greenbidsAnalyticsAdapter.originEnableAnalytics(config);
 };

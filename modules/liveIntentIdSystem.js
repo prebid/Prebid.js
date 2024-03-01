@@ -12,6 +12,7 @@ import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterM
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import {UID2_EIDS} from '../libraries/uid2Eids/uid2Eids.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -234,6 +235,10 @@ export const liveIntentIdSubmodule = {
         result.sovrn = { 'id': value.sovrn, ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
+      if (value.thetradedesk) {
+        result.thetradedesk = { 'id': value.thetradedesk, ext: { provider: getRefererInfo().domain || LI_PROVIDER_DOMAIN } }
+      }
+
       return result
     }
 
@@ -362,6 +367,18 @@ export const liveIntentIdSubmodule = {
     },
     'sovrn': {
       source: 'liveintent.sovrn.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'thetradedesk': {
+      source: 'adserver.org',
       atype: 3,
       getValue: function(data) {
         return data.id;

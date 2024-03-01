@@ -78,7 +78,7 @@ export function convertKeywordStringToANMap(keyStr) {
 }
 
 /**
- * @param {Array<String>} kwarray: keywords as an array of strings
+ * @param {Array<String>} kwarray keywords as an array of strings
  * @return {{}} appnexus-style keyword map
  */
 function convertKeywordsToANMap(kwarray) {

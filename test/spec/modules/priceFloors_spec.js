@@ -116,7 +116,8 @@ describe('the price floors module', function () {
     bidder: 'rubicon',
     adUnitCode: 'test_div_1',
     auctionId: '1234-56-789',
-    transactionId: 'tr_test_div_1'
+    transactionId: 'tr_test_div_1',
+    adUnitId: 'tr_test_div_1',
   };
 
   function getAdUnitMock(code = 'adUnit-code') {
@@ -618,8 +619,8 @@ describe('the price floors module', function () {
         });
       });
       it('picks the gptSlot from the adUnit and does not call the slotMatching', function () {
-        const newBidRequest1 = { ...basicBidRequest, transactionId: 'au1' };
-        adUnits = [{code: newBidRequest1.code, transactionId: 'au1'}];
+        const newBidRequest1 = { ...basicBidRequest, adUnitId: 'au1' };
+        adUnits = [{code: newBidRequest1.adUnitCode, adUnitId: 'au1'}];
         utils.deepSetValue(adUnits[0], 'ortb2Imp.ext.data.adserver', {
           name: 'gam',
           adslot: '/12345/news/politics'
@@ -632,8 +633,8 @@ describe('the price floors module', function () {
           matchingRule: '/12345/news/politics'
         });
 
-        const newBidRequest2 = { ...basicBidRequest, adUnitCode: 'test_div_2', transactionId: 'au2' };
-        adUnits = [{code: newBidRequest2.adUnitCode, transactionId: newBidRequest2.transactionId}];
+        const newBidRequest2 = { ...basicBidRequest, adUnitCode: 'test_div_2', adUnitId: 'au2' };
+        adUnits = [{code: newBidRequest2.adUnitCode, adUnitId: newBidRequest2.adUnitId}];
         utils.deepSetValue(adUnits[0], 'ortb2Imp.ext.data.adserver', {
           name: 'gam',
           adslot: '/12345/news/weather'
@@ -729,6 +730,23 @@ describe('the price floors module', function () {
 
       expect(floorData.skipRate).to.equal(101);
       expect(floorData.skipped).to.equal(true);
+    });
+
+    it('should have skippedReason set to "not_found" if there is no valid floor data', function() {
+      floorConfig.data = {}
+      handleSetFloorsConfig(floorConfig);
+
+      const floorData = createFloorsDataForAuction(adUnits, 'id');
+      expect(floorData.skippedReason).to.equal(CONSTANTS.FLOOR_SKIPPED_REASON.NOT_FOUND);
+    });
+
+    it('should have skippedReason set to "random" if there is floor data and skipped is true', function() {
+      // this will force skipped to be true
+      floorConfig.skipRate = 101;
+      handleSetFloorsConfig(floorConfig);
+
+      const floorData = createFloorsDataForAuction(adUnits, 'id');
+      expect(floorData.skippedReason).to.equal(CONSTANTS.FLOOR_SKIPPED_REASON.RANDOM);
     });
   });
 
@@ -2345,7 +2363,7 @@ describe('the price floors module', function () {
     }
 
     const resp = {
-      transactionId: req.transactionId,
+      adUnitId: req.adUnitId,
       size: [100, 100],
       mediaType: 'banner',
     }
@@ -2356,7 +2374,7 @@ describe('the price floors module', function () {
         adUnits: [
           {
             code: req.adUnitCode,
-            transactionId: req.transactionId,
+            adUnitId: req.adUnitId,
             ortb2Imp: {ext: {data: {adserver: {name: 'gam', adslot: 'slot'}}}}
           }
         ]
