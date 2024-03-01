@@ -1,14 +1,14 @@
 # Overview
 
-Module Name: Lucead Bidder Adapter
+Module Name: Adlive Plus Bidder Adapter
 
 Module Type: Bidder Adapter
 
-Maintainer: prebid@lucead.com
+Maintainer: support@adlive.io
 
 # Description
 
-Module that connects to Lucead demand source to fetch bids.
+Module that connects to Adlive plus demand source to fetch bids.
 
 # Test Parameters
 ```
@@ -18,9 +18,9 @@ const adUnits = [
            sizes: [[300, 250]],
            bids: [
                {
-                   bidder: 'lucead',
+                   bidder: 'adliveplus',
                    params: {
-                       placementId: '2',
+                       placementId: '1',
                    }
                }
            ]
