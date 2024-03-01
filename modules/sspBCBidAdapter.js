@@ -77,7 +77,7 @@ const getContentLanguage = () => {
 
 /**
  * Get Bid parameters - returns bid params from Object, or 1el array
- * @param {*} bidData - bid (bidWon), or array of bids (timeout)
+ * @param {*} bidParams - bid (bidWon), or array of bids (timeout)
  * @returns {object} params object
  */
 const unpackParams = (bidParams) => {
@@ -246,7 +246,7 @@ const applyGdpr = (bidderRequest, ortbRequest) => {
  * returns floor = 0 if getFloor() is not defined
  *
  * @param {object} slot bid request adslot
- * @returns {float} floorprice
+ * @returns {number} floorprice
  */
 const getHighestFloor = (slot) => {
   const currency = getCurrency();
@@ -573,6 +573,7 @@ const parseNative = (nativeData, adUnitCode) => {
 }
 
 const renderCreative = (site, auctionId, bid, seat, request) => {
+  const { adLabel, id, slot, sn, page, publisherId, ref } = site;
   let gam;
 
   const mcad = {
@@ -622,16 +623,16 @@ const renderCreative = (site, auctionId, bid, seat, request) => {
   }
 </style>
   <script>
-  window.rekid = ${site.id};
-  window.slot = ${parseInt(site.slot, 10)};
+  window.rekid = ${id};
+  window.slot = ${parseInt(slot, 10)};
   window.responseTimestamp = ${Date.now()};
-  window.wp_sn = "${site.sn}";
+  window.wp_sn = "${sn}";
   window.mcad = JSON.parse(decodeURI(atob("${mcbase}")));
-  window.gdpr = ${JSON.stringify(request.gdprConsent)};
-  window.page = "${site.page}";
-  window.ref = "${site.ref}";
-  window.adlabel = "${site.adLabel ? site.adLabel : ''}";
-  window.pubid = "${site.publisherId ? site.publisherId : ''}";
+  window.tcString = "${request.gdprConsent?.consentString || ''}";
+  window.page = "${page}";
+  window.ref = "${ref}";
+  window.adlabel = "${adLabel || ''}";
+  window.pubid = "${publisherId || ''}";
   window.requestPVID = "${pageView.id}";
   `;
 
