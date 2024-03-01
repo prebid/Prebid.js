@@ -12,7 +12,7 @@ const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const GVLID = 676;
 const TMAX = 450;
-const BIDDER_VERSION = '5.92';
+const BIDDER_VERSION = '5.93';
 const DEFAULT_CURRENCY = 'PLN';
 const W = window;
 const { navigator } = W;
@@ -216,8 +216,11 @@ const applyTopics = (validBidRequest, ortbRequest) => {
 };
 
 const applyUserIds = (validBidRequest, ortbRequest) => {
-  const eids = validBidRequest.userIdAsEids
-  if (eids && eids.length) {
+  const { userIdAsEids: eidsVbr = [], ortb2 } = validBidRequest;
+  const eidsOrtb = ortb2.user.ext?.data?.eids || [];
+  const eids = [...eidsVbr, ...eidsOrtb];
+
+  if (eids.length) {
     const ids = { eids };
     ortbRequest.user = { ...ortbRequest.user, ...ids };
   }
@@ -654,7 +657,7 @@ const spec = {
     return true;
   },
   buildRequests(validBidRequests, bidderRequest) {
-    logWarn('DEBUG: buildRequests', bidderRequest.auctionId, bidderRequest.bidderRequestId);
+    logWarn('DEBUG: buildRequests', validBidRequests, bidderRequest);
 
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
@@ -663,6 +666,7 @@ const spec = {
       return false;
     }
 
+    const { regs = {} } = validBidRequests[0].ortb2;
     const siteId = setOnAny(validBidRequests, 'params.siteId');
     const publisherId = setOnAny(validBidRequests, 'params.publisherId');
     const page = setOnAny(validBidRequests, 'params.page') || bidderRequest.refererInfo.page;
@@ -686,7 +690,7 @@ const spec = {
       cur: [getCurrency()],
       tmax,
       user: {},
-      regs: {},
+      regs,
       device: {
         language: getBrowserLanguage(),
         w: screen.width,
@@ -740,7 +744,7 @@ const spec = {
           const { bidId } = bidRequest || {};
 
           // get ext data from bid
-          const { siteid = site.id, slotid = site.slot, pubid, adlabel, cache: creativeCache, vurls = [] } = ext;
+          const { siteid = site.id, slotid = site.slot, pubid, adlabel, cache: creativeCache, vurls = [], dsa } = ext;
 
           // update site data
           site = {
@@ -772,6 +776,7 @@ const spec = {
                 advertiserDomains: adomain,
                 networkName: seat,
                 pricepl: ext && ext.pricepl,
+                dsa,
               },
               netRevenue: true,
               vurls,
