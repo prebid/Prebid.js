@@ -135,8 +135,7 @@ export const spec = {
           meta: {
             advertiserDomains: bid.adomain || '',
           },
-        }),
-         
+        }) 
       })
     })
 
