@@ -34,6 +34,7 @@ describe('the rubicon adapter', function () {
     logErrorSpy;
 
   /**
+   * @typedef {import('../../../src/adapters/bidderFactory.js').BidRequest} BidRequest
    * @typedef {Object} sizeMapConverted
    * @property {string} sizeId
    * @property {string} size
@@ -2769,6 +2770,56 @@ describe('the rubicon adapter', function () {
           const slotParams = spec.createSlotParams(localBidRequest, bidderRequest);
 
           expect(slotParams['o_ae']).to.equal(1)
+        });
+
+        it('should pass along desired segtaxes, but not non-desired ones', () => {
+          const localBidderRequest = Object.assign({}, bidderRequest);
+          localBidderRequest.refererInfo = {domain: 'bob'};
+          config.setConfig({
+            rubicon: {
+              sendUserSegtax: [9],
+              sendSiteSegtax: [10]
+            }
+          });
+          localBidderRequest.ortb2.user = {
+            data: [{
+              ext: {
+                segtax: '404'
+              },
+              segment: [{id: 5}, {id: 6}]
+            }, {
+              ext: {
+                segtax: '508'
+              },
+              segment: [{id: 5}, {id: 2}]
+            }, {
+              ext: {
+                segtax: '9'
+              },
+              segment: [{id: 1}, {id: 2}]
+            }]
+          }
+          localBidderRequest.ortb2.site = {
+            content: {
+              data: [{
+                ext: {
+                  segtax: '10'
+                },
+                segment: [{id: 2}, {id: 3}]
+              }, {
+                ext: {
+                  segtax: '507'
+                },
+                segment: [{id: 3}, {id: 4}]
+              }]
+            }
+          }
+          const slotParams = spec.createSlotParams(bidderRequest.bids[0], localBidderRequest);
+          expect(slotParams['tg_i.tax507']).is.equal('3,4');
+          expect(slotParams['tg_v.tax508']).is.equal('5,2');
+          expect(slotParams['tg_v.tax9']).is.equal('1,2');
+          expect(slotParams['tg_i.tax10']).is.equal('2,3');
+          expect(slotParams['tg_v.tax404']).is.equal(undefined);
         });
       });
 
