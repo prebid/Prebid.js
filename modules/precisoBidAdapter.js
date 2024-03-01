@@ -1,7 +1,7 @@
-import { logMessage, isFn, deepAccess, logInfo } from '../src/utils.js';
+import { isFn, deepAccess, logInfo } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
+// import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
@@ -9,6 +9,7 @@ import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 const BIDDER_CODE = 'preciso';
 const COOKIE_NAME = '_sharedid';
 const AD_URL = 'https://ssp-bidder.mndtrk.com/bid_request/openrtb';
+// const AD_URL = 'http://localhost:80/bid_request/openrtb';
 const URL_SYNC = 'https://ck.2trk.info/rtb/user/usersync.aspx?';
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 const GVLID = 874;
@@ -43,8 +44,8 @@ export const spec = {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     userId = validBidRequests[0].userId.pubcid;
-    let winTop = window;
-    let location;
+    // let winTop = window;
+    // let location;
     var offset = new Date().getTimezoneOffset();
     logInfo('timezone ' + offset);
     var city = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -53,28 +54,18 @@ export const spec = {
 
     const countryCode = getCountryCodeByTimezone(city);
     logInfo(`The country code for ${city} is ${countryCode}`);
-
-    // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
-    try {
-      location = new URL(bidderRequest.refererInfo.page)
-      winTop = window.top;
-    } catch (e) {
-      location = winTop.location;
-      logMessage(e);
-    };
-
     let request = {
-      id: validBidRequests[0].bidderRequestId,
-
+      // bidRequest: bidderRequest,
+      id: validBidRequests[0].auctionId,
+      cur: 'USD',
       imp: validBidRequests.map(request => {
-        const { bidId, sizes, mediaType, ortb2 } = request
+        const { bidId, sizes } = request
         const item = {
           id: bidId,
-          region: request.params.region,
-          traffic: mediaType,
+          // region: request.params.region,
+          // traffic: mediaType,
           bidFloor: getBidFloor(request),
-          ortb2: ortb2
-
+          bidfloorcur: request.params.currency
         }
 
         if (request.mediaTypes.banner) {
@@ -82,36 +73,26 @@ export const spec = {
             format: (request.mediaTypes.banner.sizes || sizes).map(size => {
               return { w: size[0], h: size[1] }
             }),
+
           }
-        }
-
-        if (request.schain) {
-          item.schain = request.schain;
-        }
-
-        if (request.floorData) {
-          item.bidFloor = request.floorData.floorMin;
         }
         return item
       }),
-      auctionId: validBidRequests[0].auctionId,
-      'deviceWidth': winTop.screen.width,
-      'deviceHeight': winTop.screen.height,
-      'language': (navigator && navigator.language) ? navigator.language : '',
-      geo: navigator.geolocation.getCurrentPosition(position => {
-        const { latitude, longitude } = position.coords;
-        return {
-          latitude: latitude,
-          longitude: longitude
-        }
-        // Show a map centered at latitude / longitude.
-      }) || { utcoffset: new Date().getTimezoneOffset() },
-      city: city,
-      'host': location.host,
-      'page': location.pathname,
-      'coppa': config.getConfig('coppa') === true ? 1 : 0
-      // userId: validBidRequests[0].userId
+      user: {
+        id: validBidRequests[0].userId.pubcid || '',
+        buyeruid: window.localStorage.getItem('_pre|id'),
+        geo: {
+          region: validBidRequests[0].params.region || city,
+        },
+        // consent: validBidRequests[0].ortb2.user.consent,
+
+      },
+      device: validBidRequests[0].ortb2.device,
+      site: validBidRequests[0].ortb2.site,
+      source: validBidRequests[0].ortb2.source
     };
+    request.device.dnt = (validBidRequests[0].ortb2.device.dnt == 1);
+    request.device.sua.mobile = (validBidRequests[0].ortb2.device.sua.mobile == 1);
 
     request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
     if (bidderRequest) {
@@ -152,14 +133,16 @@ export const spec = {
           netRevenue: true,
           ttl: 300,
           meta: {
-            advertiserDomains: bid.adomain || [],
+            advertiserDomains: bid.adomain || '',
           },
-        })
+        }),
+         
       })
     })
 
     return bids
   },
+ 
 
   getUserSyncs: (syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '', gppConsent = '') => {
     let syncs = [];

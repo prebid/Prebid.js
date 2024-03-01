@@ -3,8 +3,8 @@
 <head>
   <link rel="icon" type="image/png" href="/favicon.png">
 
-  <!--script async src="//cdn.preciso.net/Preciso_Prebid/prebid.js"></script--> 
-  <script async src="../../build/dev/prebid.js"></script>
+  <script async src="//cdn.preciso.net/Preciso_Prebid/prebid.js"></script> 
+  <!--script async src="../../build/dev/prebid.js"></script-->
   <script>
     var div_1_sizes = [
       [300, 250],
@@ -34,7 +34,9 @@
             publisherId: '123456',
             host: 'prebid',
             region: 'prebid-eu',
-            traffic: 'banner'
+            traffic: 'banner',
+            bifloor : 0.27,
+            currency: "USD"
           }
         }]
       },
@@ -51,7 +53,9 @@
             publisherId: '123456',
             host: 'prebid',
             region: 'prebid-eu',
-            traffic: 'banner'
+            traffic: 'banner',
+            bifloor : 0.28,
+            currency: "USD"
           }
         }]
       }
