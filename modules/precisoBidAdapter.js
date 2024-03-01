@@ -43,7 +43,9 @@ export const spec = {
   buildRequests: (validBidRequests = [], bidderRequest) => {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-    userId = validBidRequests[0].userId.pubcid;
+    if (validBidRequests !== 'undefined' && validBidRequests.length > 0) {
+      userId = validBidRequests[0].userId.pubcid;
+    }
     // let winTop = window;
     // let location;
     var offset = new Date().getTimezoneOffset();
@@ -91,10 +93,10 @@ export const spec = {
       site: validBidRequests[0].ortb2.site,
       source: validBidRequests[0].ortb2.source
     };
-    request.device.dnt = (validBidRequests[0].ortb2.device.dnt == 1);
-    request.device.sua.mobile = (validBidRequests[0].ortb2.device.sua.mobile == 1);
+    // request.device.dnt = (validBidRequests[0].ortb2.device.dnt == 1);
+    // request.device.sua.mobile = (validBidRequests[0].ortb2.device.sua.mobile == 1);
 
-    request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
+    //  request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
     if (bidderRequest) {
       if (bidderRequest.uspConsent) {
         request.ccpa = bidderRequest.uspConsent;

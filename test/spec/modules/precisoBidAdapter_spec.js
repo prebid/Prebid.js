@@ -35,20 +35,20 @@ describe('PrecisoAdapter', function () {
         region: 'IND',
       }
     },
-    device: {
-      w: 1920,
-      h: 166,
-      dnt: 0,
-      ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-      language: 'en',
-      sua: {
-        source: 1,
-        platform: {brand: 'Windows'},
-        browsers: [
-          {brand: 'Not A(Brand', version: ['99']},
-          {brand: 'Google Chrome', version: ['121']},
-          {brand: 'Chromium', version: ['121']}],
-        mobile: 0}},
+    ortb2: {
+      device: {
+        w: 1920,
+        h: 166,
+        dnt: 0,
+      },
+      site: {
+        domain: 'localHost'
+      },
+      source: {
+        tid: 'eaff09b-a1ab-4ec6-a81e-c5a75bc1dde3'
+      }
+
+    }
 
   };
 
@@ -79,44 +79,18 @@ describe('PrecisoAdapter', function () {
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
       expect(data).to.be.an('object');
-
-      // expect(data).to.have.all.keys('bidId', 'imp', 'site', 'deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'coppa');
-
-      // expect(data.deviceWidth).to.be.a('number');
-      // expect(data.deviceHeight).to.be.a('number');
-      // expect(data.coppa).to.be.a('number');
-      // expect(data.language).to.be.a('string');
-      // expect(data.secure).to.be.within(0, 1);
-      // expect(data.host).to.be.a('string');
-      // expect(data.page).to.be.a('string');
-
-      // expect(data.city).to.be.a('string');
-      // expect(data.geo).to.be.a('object');
-      // expect(data.userId).to.be.a('string');
       expect(data.device).to.be.a('object');
+      expect(data.user).to.be.a('object');
+      expect(data.source).to.be.a('object');
+      expect(data.site).to.be.a('object');
     });
-    // it('Returns empty data if no valid requests are passed', function () {
-    /// serverRequest = spec.buildRequests([]);
-    // let data = serverRequest.data;
-    // expect(data.imp).to.be.an('array').that.is.empty;
-    // });
+    it('Returns empty data if no valid requests are passed', function () {
+      delete bid.ortb2.device;
+      serverRequest = spec.buildRequests([bid]);
+      let data = serverRequest.data;
+      expect(data.device).to.be.undefined;
+    });
   });
-
-  // describe('with COPPA', function () {
-  //   beforeEach(function () {
-  //     sinon.stub(config, 'getConfig')
-  //       .withArgs('coppa')
-  //       .returns(true);
-  //   });
-  //   afterEach(function () {
-  //     config.getConfig.restore();
-  //   });
-
-  //   it('should send the Coppa "required" flag set to "1" in the request', function () {
-  //     let serverRequest = spec.buildRequests([bid]);
-  //     expect(serverRequest.data.coppa).to.equal(1);
-  //   });
-  // });
 
   describe('interpretResponse', function () {
     it('should get correct bid response', function () {
