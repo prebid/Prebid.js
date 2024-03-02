@@ -463,6 +463,9 @@ describe('publirAdapter', function () {
   })
 
   describe('onBidWon', function() {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
     afterEach(function() {
       utils.triggerPixel.restore();
     });
