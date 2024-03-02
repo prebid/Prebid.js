@@ -18,6 +18,12 @@ describe('publirAdapter', function () {
     });
   });
 
+  describe('bid adapter', function () {
+    it('should have aliases', function () {
+      expect(spec.aliases).to.be.an('array').that.is.not.empty;
+    });
+  });
+
   describe('isBidRequestValid', function () {
     const bid = {
       'bidder': spec.code,
@@ -30,6 +36,16 @@ describe('publirAdapter', function () {
 
     it('should return true when required params are passed', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
+    });
+
+    it('should return false when pubId is missing', function () {
+      const bid = {
+        'bidder': spec.code,
+        'adUnitCode': 'adunit-code',
+        'sizes': [['640', '480']],
+        'params': {}
+      };
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
 
     it('should return false when required params are not found', function () {
@@ -333,7 +349,8 @@ describe('publirAdapter', function () {
           height: 250,
           requestId: '21e12606d47ba7',
           adomain: ['abc.com'],
-          mediaType: BANNER
+          mediaType: BANNER,
+          campId: '65902db45721d690ee0bc8c3'
         }]
     };
 
@@ -341,8 +358,8 @@ describe('publirAdapter', function () {
       requestId: '21e12606d47ba7',
       cpm: 12.5,
       currency: 'USD',
-      width: 640,
-      height: 480,
+      width: 300,
+      height: 250,
       ttl: TTL,
       creativeId: '639153ddd0s443',
       netRevenue: true,
@@ -350,15 +367,15 @@ describe('publirAdapter', function () {
       mediaType: BANNER,
       meta: {
         mediaType: BANNER,
-        ad_key: '65830dfda639153ddd012905'
+        ad_key: '9b5e00f2-8831-4efa-a933-c4f68710ffc0'
       },
       ad: '"<img src=\"https://...\"/>"',
+      campId: '65902db45721d690ee0bc8c3',
       bidder: 'publir'
     };
 
     it('should get correct bid response', function () {
       const result = spec.interpretResponse({ body: response });
-      // logWarn(result);
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedBannerResponse));
     });
   })
@@ -446,9 +463,6 @@ describe('publirAdapter', function () {
   })
 
   describe('onBidWon', function() {
-    beforeEach(function() {
-      sinon.stub(utils, 'triggerPixel');
-    });
     afterEach(function() {
       utils.triggerPixel.restore();
     });

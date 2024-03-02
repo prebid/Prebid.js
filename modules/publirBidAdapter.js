@@ -8,15 +8,14 @@ import {
   contains,
   timestamp,
   triggerPixel,
-  isInteger,
   getDNT,
   getBidIdParameter
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import {getStorageManager} from '../src/storageManager.js';
-import {ajax} from '../src/ajax.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { ajax } from '../src/ajax.js';
 
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'publir';
@@ -30,18 +29,13 @@ const SUPPORTED_SYNC_METHODS = {
   PIXEL: 'pixel'
 }
 
-export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 export const spec = {
   code: BIDDER_CODE,
   version: ADAPTER_VERSION,
   aliases: ['plr'],
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function (bidRequest) {
-    if (!bidRequest.params) {
-      logWarn('no params have been set to Publir adapter');
-      return false;
-    }
-
     if (!bidRequest.params.pubId) {
       logWarn('pubId is a mandatory param for Publir adapter');
       return false;
@@ -106,6 +100,8 @@ export const spec = {
         bidResponse.bidder = BIDDER_CODE;
         bidResponses.push(bidResponse);
       });
+    } else {
+      return [];
     }
     return bidResponses;
   },
@@ -135,7 +131,7 @@ export const spec = {
       return;
     }
     logInfo('onBidWon:', bid);
-    ajax(DEFAULT_IMPS_ENDPOINT, null, JSON.stringify(bid), {method: 'POST', mode: 'no-cors', credentials: 'include', headers: { 'Content-Type': 'application/json' }});
+    ajax(DEFAULT_IMPS_ENDPOINT, null, JSON.stringify(bid), { method: 'POST', mode: 'no-cors', credentials: 'include', headers: { 'Content-Type': 'application/json' } });
     if (bid.hasOwnProperty('nurl') && bid.nurl.length > 0) {
       triggerPixel(bid.nurl);
     }
@@ -145,10 +141,10 @@ export const spec = {
 registerBidder(spec);
 
 /**
-   * Get floor price
-   * @param bid {bid}
-   * @returns {Number}
-   */
+ * Get floor price
+ * @param bid {bid}
+ * @returns {Number}
+ */
 function getFloor(bid, mediaType) {
   if (!isFn(bid.getFloor)) {
     return 0;
@@ -162,10 +158,10 @@ function getFloor(bid, mediaType) {
 }
 
 /**
-   * Get the the ad sizes array from the bid
-   * @param bid {bid}
-   * @returns {Array}
-   */
+ * Get the the ad sizes array from the bid
+ * @param bid {bid}
+ * @returns {Array}
+ */
 function getSizesArray(bid, mediaType) {
   let sizesArray = []
 
@@ -179,10 +175,10 @@ function getSizesArray(bid, mediaType) {
 }
 
 /**
-   * Get schain string value
-   * @param schainObject {Object}
-   * @returns {string}
-   */
+ * Get schain string value
+ * @param schainObject {Object}
+ * @returns {string}
+ */
 function getSupplyChain(schainObject) {
   if (isEmpty(schainObject)) {
     return '';
@@ -201,19 +197,14 @@ function getSupplyChain(schainObject) {
 }
 
 /**
-   * Get encoded node value
-   * @param val {string}
-   * @returns {string}
-   */
+ * Get encoded node value
+ * @param val {string}
+ * @returns {string}
+ */
 function getEncodedValIfNotEmpty(val) {
   return !isEmpty(val) ? encodeURIComponent(val) : '';
 }
 
-/**
-   * Get preferred user-sync method based on publisher configuration
-   * @param bidderCode {string}
-   * @returns {string}
-   */
 function getAllowedSyncMethod(filterSettings, bidderCode) {
   const iframeConfigsToCheck = ['all', 'iframe'];
   const pixelConfigToCheck = 'image';
@@ -226,11 +217,11 @@ function getAllowedSyncMethod(filterSettings, bidderCode) {
 }
 
 /**
-   * Check if sync rule is supported
-   * @param syncRule {Object}
-   * @param bidderCode {string}
-   * @returns {boolean}
-   */
+ * Check if sync rule is supported
+ * @param syncRule {Object}
+ * @param bidderCode {string}
+ * @returns {boolean}
+ */
 function isSyncMethodAllowed(syncRule, bidderCode) {
   if (!syncRule) {
     return false;
@@ -241,10 +232,10 @@ function isSyncMethodAllowed(syncRule, bidderCode) {
 }
 
 /**
-   * get device type
-   * @param uad {ua}
-   * @returns {string}
-   */
+ * get device type
+ * @param ua {ua}
+ * @returns {string}
+ */
 function getDeviceType(ua) {
   if (/ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(ua.toLowerCase())) {
     return '5';
@@ -270,11 +261,11 @@ function generatePubBidParams(validBidRequests, bidderRequest) {
 }
 
 /**
-   * Generate bid specific parameters
-   * @param {bid} bid
-   * @param {bidderRequest} bidderRequest
-   * @returns {Object} bid specific params object
-   */
+ * Generate bid specific parameters
+ * @param {bid} bid
+ * @param {bidderRequest} bidderRequest
+ * @returns {Object} bid specific params object
+ */
 function generateBidParameters(bid, bidderRequest) {
   const { params } = bid;
   const mediaType = isBanner(bid) ? BANNER : VIDEO;
@@ -297,29 +288,9 @@ function generateBidParameters(bid, bidderRequest) {
     coppa: 0
   };
 
-  const pos = deepAccess(bid, `mediaTypes.${mediaType}.pos`);
-  if (pos) {
-    bidObject.pos = pos;
-  }
-
-  const gpid = deepAccess(bid, `ortb2Imp.ext.gpid`);
-  if (gpid) {
-    bidObject.gpid = gpid;
-  }
-
   const pubId = params.pubId;
   if (pubId) {
     bidObject.pubId = pubId;
-  }
-
-  const mimes = deepAccess(bid, `mediaTypes.${mediaType}.mimes`);
-  if (mimes) {
-    bidObject.mimes = mimes;
-  }
-
-  const api = deepAccess(bid, `mediaTypes.${mediaType}.api`);
-  if (api) {
-    bidObject.api = api;
   }
 
   const sua = deepAccess(bid, `ortb2.device.sua`);
@@ -332,58 +303,6 @@ function generateBidParameters(bid, bidderRequest) {
     bidObject.coppa = 1;
   }
 
-  if (mediaType === VIDEO) {
-    const playbackMethod = deepAccess(bid, `mediaTypes.video.playbackmethod`);
-    let playbackMethodValue;
-
-    // verify playbackMethod is of type integer array, or integer only.
-    if (Array.isArray(playbackMethod) && isInteger(playbackMethod[0])) {
-      // only the first playbackMethod in the array will be used, according to OpenRTB 2.5 recommendation
-      playbackMethodValue = playbackMethod[0];
-    } else if (isInteger(playbackMethod)) {
-      playbackMethodValue = playbackMethod;
-    }
-
-    if (playbackMethodValue) {
-      bidObject.playbackMethod = playbackMethodValue;
-    }
-
-    const placement = deepAccess(bid, `mediaTypes.video.placement`);
-    if (placement) {
-      bidObject.placement = placement;
-    }
-
-    const minDuration = deepAccess(bid, `mediaTypes.video.minduration`);
-    if (minDuration) {
-      bidObject.minDuration = minDuration;
-    }
-
-    const maxDuration = deepAccess(bid, `mediaTypes.video.maxduration`);
-    if (maxDuration) {
-      bidObject.maxDuration = maxDuration;
-    }
-
-    const skip = deepAccess(bid, `mediaTypes.video.skip`);
-    if (skip) {
-      bidObject.skip = skip;
-    }
-
-    const linearity = deepAccess(bid, `mediaTypes.video.linearity`);
-    if (linearity) {
-      bidObject.linearity = linearity;
-    }
-
-    const protocols = deepAccess(bid, `mediaTypes.video.protocols`);
-    if (protocols) {
-      bidObject.protocols = protocols;
-    }
-
-    const plcmt = deepAccess(bid, `mediaTypes.video.plcmt`);
-    if (plcmt) {
-      bidObject.plcmt = plcmt;
-    }
-  }
-
   return bidObject;
 }
 
@@ -392,7 +311,6 @@ function isBanner(bid) {
 }
 
 function getLocalStorage(cookieObjName) {
-  // return localStorage.getItem('_publir_prebid_creative');
   if (storage.localStorageIsEnabled()) {
     const lstData = storage.getDataFromLocalStorage(cookieObjName);
     return lstData;
@@ -401,20 +319,17 @@ function getLocalStorage(cookieObjName) {
 }
 
 /**
-   * Generate params that are common between all bids
-   * @param {single bid object} generalObject
-   * @param {bidderRequest} bidderRequest
-   * @returns {object} the common params object
-   */
+ * Generate params that are common between all bids
+ * @param generalObject
+ * @param {bidderRequest} bidderRequest
+ * @returns {object} the common params object
+ */
 function generatePubGeneralsParams(generalObject, bidderRequest) {
   const domain = bidderRequest.refererInfo;
   const { syncEnabled, filterSettings } = config.getConfig('userSync') || {};
   const { bidderCode } = bidderRequest;
   const generalBidParams = generalObject.params;
   const timeout = bidderRequest.timeout;
-
-  // these params are snake_case instead of camelCase to allow backwards compatability on the server.
-  // in the future, these will be converted to camelCase to match our convention.
   const generalParams = {
     wrapper_type: 'prebidjs',
     wrapper_vendor: '$$PREBID_GLOBAL$$',
@@ -462,18 +377,11 @@ function generatePubGeneralsParams(generalObject, bidderRequest) {
     generalParams.gdpr_consent = bidderRequest.gdprConsent.consentString;
   }
 
-  if (generalBidParams.ifa) {
-    generalParams.ifa = generalBidParams.ifa;
-  }
-
   if (generalObject.schain) {
     generalParams.schain = getSupplyChain(generalObject.schain);
   }
 
   if (bidderRequest && bidderRequest.refererInfo) {
-    // TODO: is 'ref' the right value here?
-    generalParams.referrer = deepAccess(bidderRequest, 'refererInfo.ref');
-    // TODO: does the fallback make sense here?
     generalParams.page_url = deepAccess(bidderRequest, 'refererInfo.page') || deepAccess(window, 'location.href');
   }
 
