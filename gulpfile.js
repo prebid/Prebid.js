@@ -27,6 +27,8 @@ const {minify} = require('terser');
 const Vinyl = require('vinyl');
 const wrap = require('gulp-wrap');
 const rename = require('gulp-rename');
+var ts = require('gulp-typescript');
+var tsProject = ts.createProject('tsconfig.json');
 
 var prebid = require('./package.json');
 var port = 9999;
@@ -148,6 +150,7 @@ function makeDevpackPkg() {
   const moduleSources = helpers.getModulePaths(externalModules);
 
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+    .pipe(tsProject()).js
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
     .pipe(gulp.dest('build/dev'))
@@ -167,6 +170,7 @@ function makeWebpackPkg(extraConfig = {}) {
     const moduleSources = helpers.getModulePaths(externalModules);
 
     return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+      .pipe(tsProject()).js
       .pipe(helpers.nameModules(externalModules))
       .pipe(webpackStream(cloned, webpack))
       .pipe(gulp.dest('build/dist'));
