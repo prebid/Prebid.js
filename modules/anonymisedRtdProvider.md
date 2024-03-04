@@ -50,5 +50,5 @@ To view an example of available segments returned by Anonymised:
 ```bash
 gulp serve --modules=rtdModule,anonymisedRtdProvider,pubmaticBidAdapter
 ```
-and then point your browser at:
+And then point your browser at:
 "http://localhost:9999/integrationExamples/gpt/anonymised_segments_example.html"
