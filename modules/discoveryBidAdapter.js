@@ -134,7 +134,7 @@ export const getPmgUID = () => {
   if (!pmgUid) {
     pmgUid = utils.generateUUID();
   }
-  // 无限续期
+  // Extend the expiration time of pmguid
   try {
     storage.setCookie(COOKIE_KEY_PMGUID, pmgUid, getCurrentTimeToUTCString());
   } catch (e) {}
