@@ -30,14 +30,14 @@ const storageTool = (function () {
 
   const getMetaInternal = function () {
     if (!storage.localStorageIsEnabled()) {
-      return {};
+      return [];
     }
 
     let parsedJson;
     try {
       parsedJson = JSON.parse(storage.getDataFromLocalStorage(META_DATA_KEY));
     } catch (e) {
-      return {};
+      return [];
     }
 
     let filteredEntries = parsedJson ? parsedJson.filter((datum) => {
@@ -63,7 +63,7 @@ const storageTool = (function () {
     }
 
     const updateVoidAuIds = function (currentVoidAuIds, auIdsAsString) {
-      const newAuIds = auIdsAsString ? auIdsAsString.split(';') : [];
+      const newAuIds = isStr(auIdsAsString) ? auIdsAsString.split(';') : [];
       const notNewExistingAuIds = currentVoidAuIds.filter(auIdObj => {
         return newAuIds.indexOf(auIdObj.value) < -1;
       }) || [];
@@ -83,7 +83,7 @@ const storageTool = (function () {
         }
       }
     }
-    const currentAuIds = updateVoidAuIds(metaAsObj.voidAuIds || [], apiResponse.voidAuIds || []);
+    const currentAuIds = updateVoidAuIds(metaAsObj.voidAuIds || [], apiResponse.voidAuIds);
     if (currentAuIds.length > 0) {
       metaAsObj.voidAuIds = { value: currentAuIds };
     }
@@ -103,11 +103,16 @@ const storageTool = (function () {
     storage.setDataInLocalStorage(META_DATA_KEY, JSON.stringify(metaDataForSaving));
   };
 
-  const getUsi = function (meta, ortb2) {
-    let usi = (meta && meta.usi) ? meta.usi : false;
+  const getUsi = function (meta, ortb2, bidderRequest) {
+    // Fetch user id from parameters.
+    const paramUsi = (bidderRequest.bids) ? bidderRequest.bids.find(bid => {
+      if (bid.params && bid.params.userId) return true
+    }).params.userId : false
+    let usi = (meta && meta.usi) ? meta.usi : false
     if (ortb2 && ortb2.user && ortb2.user.id) {
       usi = ortb2.user.id
     }
+    if (paramUsi) usi = paramUsi
     return usi;
   }
 
@@ -131,7 +136,7 @@ const storageTool = (function () {
     refreshStorage: function (bidderRequest) {
       const ortb2 = bidderRequest.ortb2 || {};
       metaInternal = getMetaInternal().reduce((a, entry) => ({ ...a, [entry.key]: entry.value }), {});
-      metaInternal.usi = getUsi(metaInternal, ortb2);
+      metaInternal.usi = getUsi(metaInternal, ortb2, bidderRequest);
       if (!metaInternal.usi) {
         delete metaInternal.usi;
       }

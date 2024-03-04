@@ -142,6 +142,49 @@ describe('Adf adapter', function () {
         assert.equal(request.user, undefined);
         assert.equal(request.regs, undefined);
       });
+
+      it('should transfer DSA info', function () {
+        let validBidRequests = [ { bidId: 'bidId', params: { siteId: 'siteId' } } ];
+
+        let request = JSON.parse(
+          spec.buildRequests(validBidRequests, {
+            refererInfo: { page: 'page' },
+            ortb2: {
+              regs: {
+                ext: {
+                  dsa: {
+                    dsarequired: '1',
+                    pubrender: '2',
+                    datatopub: '3',
+                    transparency: [
+                      {
+                        domain: 'test.com',
+                        dsaparams: [1, 2, 3]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }).data
+        );
+
+        assert.deepEqual(request.regs, {
+          ext: {
+            dsa: {
+              dsarequired: '1',
+              pubrender: '2',
+              datatopub: '3',
+              transparency: [
+                {
+                  domain: 'test.com',
+                  dsaparams: [1, 2, 3]
+                }
+              ]
+            }
+          }
+        });
+      });
     });
 
     it('should add test and is_debug to request, if test is set in parameters', function () {
@@ -1007,7 +1050,16 @@ describe('Adf adapter', function () {
                 adomain: [ 'demo.com' ],
                 ext: {
                   prebid: {
-                    type: 'native'
+                    type: 'native',
+                  },
+                  dsa: {
+                    behalf: 'some-behalf',
+                    paid: 'some-paid',
+                    transparency: [{
+                      domain: 'test.com',
+                      dsaparams: [1, 2, 3]
+                    }],
+                    adrender: 1
                   }
                 }
               }
@@ -1070,6 +1122,15 @@ describe('Adf adapter', function () {
       assert.deepEqual(bids[0].mediaType, 'native');
       assert.deepEqual(bids[0].meta.mediaType, 'native');
       assert.deepEqual(bids[0].meta.advertiserDomains, [ 'demo.com' ]);
+      assert.deepEqual(bids[0].meta.dsa, {
+        behalf: 'some-behalf',
+        paid: 'some-paid',
+        transparency: [{
+          domain: 'test.com',
+          dsaparams: [1, 2, 3]
+        }],
+        adrender: 1
+      });
       assert.deepEqual(bids[0].dealId, 'deal-id');
     });
     it('should set correct native params', function () {

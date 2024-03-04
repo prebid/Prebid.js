@@ -2,6 +2,12 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {_each, getBidIdParameter, getValue, logError, logInfo} from '../src/utils.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
+
 const BIDDER_CODE = 'videonow';
 const RTB_URL = 'https://adx.videonow.ru/yhb'
 const DEFAULT_CURRENCY = 'RUB'

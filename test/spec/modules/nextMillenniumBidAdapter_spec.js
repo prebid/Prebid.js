@@ -4,6 +4,7 @@ import {
   replaceUsersyncMacros,
   setConsentStrings,
   setOrtb2Parameters,
+  setEids,
   spec,
 } from 'modules/nextMillenniumBidAdapter.js';
 
@@ -18,10 +19,20 @@ describe('nextMillenniumBidAdapterTests', () => {
             mediaTypes: {banner: {sizes: [[300, 250], [320, 250]]}},
             adUnitCode: 'test-banner-1',
           },
+
+          mediaTypes: {
+            banner: {
+              data: {sizes: [[300, 250], [320, 250]]},
+              bidfloorcur: 'EUR',
+              bidfloor: 1.11,
+            },
+          },
         },
 
         expected: {
           id: 'test-banner-1',
+          bidfloorcur: 'EUR',
+          bidfloor: 1.11,
           ext: {prebid: {storedrequest: {id: '123'}}},
           banner: {format: [{w: 300, h: 250}, {w: 320, h: 250}]},
         },
@@ -35,10 +46,18 @@ describe('nextMillenniumBidAdapterTests', () => {
             mediaTypes: {video: {playerSize: [400, 300]}},
             adUnitCode: 'test-video-1',
           },
+
+          mediaTypes: {
+            video: {
+              data: {playerSize: [400, 300]},
+              bidfloorcur: 'USD',
+            },
+          },
         },
 
         expected: {
           id: 'test-video-1',
+          bidfloorcur: 'USD',
           ext: {prebid: {storedrequest: {id: '234'}}},
           video: {w: 400, h: 300},
         },
@@ -47,8 +66,8 @@ describe('nextMillenniumBidAdapterTests', () => {
 
     for (let {title, data, expected} of dataTests) {
       it(title, () => {
-        const {bid, id} = data;
-        const imp = getImp(bid, id);
+        const {bid, id, mediaTypes} = data;
+        const imp = getImp(bid, id, mediaTypes);
         expect(imp).to.deep.equal(expected);
       });
     }
@@ -373,6 +392,28 @@ describe('nextMillenniumBidAdapterTests', () => {
       },
 
       {
+        title: 'site.keywords, site.content.keywords and user.keywords',
+        data: {
+          postBody: {},
+          ortb2: {
+            user: {keywords: 'key7,key8,key9'},
+            site: {
+              keywords: 'key1,key2,key3',
+              content: {keywords: 'key4,key5,key6'},
+            },
+          },
+        },
+
+        expected: {
+          user: {keywords: 'key7,key8,key9'},
+          site: {
+            keywords: 'key1,key2,key3',
+            content: {keywords: 'key4,key5,key6'},
+          },
+        },
+      },
+
+      {
         title: 'only site.content.language',
         data: {
           postBody: {site: {domain: 'some.domain'}},
@@ -401,6 +442,78 @@ describe('nextMillenniumBidAdapterTests', () => {
       it(title, () => {
         const {postBody, ortb2} = data;
         setOrtb2Parameters(postBody, ortb2);
+        expect(postBody).to.deep.equal(expected);
+      });
+    };
+  });
+
+  describe('function setEids', () => {
+    const dataTests = [
+      {
+        title: 'setEids - userIdAsEids is empty',
+        data: {
+          postBody: {},
+          bid: {
+            userIdAsEids: undefined,
+          },
+        },
+
+        expected: {},
+      },
+
+      {
+        title: 'setEids - userIdAsEids - array is empty',
+        data: {
+          postBody: {},
+          bid: {
+            userIdAsEids: [],
+          },
+        },
+
+        expected: {},
+      },
+
+      {
+        title: 'setEids - userIdAsEids is',
+        data: {
+          postBody: {},
+          bid: {
+            userIdAsEids: [
+              {
+                source: '33across.com',
+                uids: [{id: 'some-random-id-value', atype: 1}],
+              },
+
+              {
+                source: 'utiq.com',
+                uids: [{id: 'some-random-id-value', atype: 1}],
+              },
+            ],
+          },
+        },
+
+        expected: {
+          user: {
+            eids: [
+              {
+                source: '33across.com',
+                uids: [{id: 'some-random-id-value', atype: 1}],
+              },
+
+              {
+                source: 'utiq.com',
+                uids: [{id: 'some-random-id-value', atype: 1}],
+              },
+            ],
+          },
+        },
+      },
+    ];
+
+    for (let { title, data, expected } of dataTests) {
+      it(title, () => {
+        const { postBody, bid } = data;
+        setEids(postBody, bid);
         expect(postBody).to.deep.equal(expected);
       });
     }

@@ -115,6 +115,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}
         bids.push(Object.assign({}, bid, {
           adUnitCode: adUnit.code,
           transactionId: adUnit.transactionId,
+          adUnitId: adUnit.adUnitId,
           sizes: deepAccess(mediaTypes, 'banner.sizes') || deepAccess(mediaTypes, 'video.playerSize') || [],
           bidId: bid.bid_id || getUniqueIdentifierStr(),
           bidderRequestId,
@@ -413,8 +414,10 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
         if (s2sBidRequest.ad_units.length) {
           let doneCbs = uniqueServerRequests.map(bidRequest => {
             bidRequest.start = timestamp();
-            return function () {
-              onTimelyResponse(bidRequest.bidderRequestId);
+            return function (timedOut) {
+              if (!timedOut) {
+                onTimelyResponse(bidRequest.bidderRequestId);
+              }
               doneCb.apply(bidRequest, arguments);
             }
           });
@@ -433,7 +436,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
             s2sBidRequest,
             serverBidderRequests,
             addBidResponse,
-            () => doneCbs.forEach(done => done()),
+            (timedOut) => doneCbs.forEach(done => done(timedOut)),
             s2sAjax
           );
         }

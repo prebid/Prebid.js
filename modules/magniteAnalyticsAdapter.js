@@ -25,6 +25,7 @@ import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import { getHook } from '../src/hook.js';
 
 const RUBICON_GVL_ID = 52;
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: 'magnite' });
@@ -75,7 +76,8 @@ const resetConfs = () => {
     pendingEvents: {},
     eventPending: false,
     elementIdMap: {},
-    sessionData: {}
+    sessionData: {},
+    bidsCachedClientSide: new WeakSet()
   }
   rubiConf = {
     pvid: generateUUID().slice(0, 8),
@@ -671,7 +673,19 @@ function enableMgniAnalytics(config = {}) {
     window.googletag.cmd = window.googletag.cmd || [];
     window.googletag.cmd.push(() => subscribeToGamSlots());
   }
+
+  // Edge case handler for client side video caching
+  getHook('callPrebidCache').before(callPrebidCacheHook);
 };
+
+/*
+  We want to know if a bid was cached client side
+    And if it was we will use the actual bidId instead of the pbsBidId override in our BID_RESPONSE handler
+*/
+export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
+  cache.bidsCachedClientSide.add(bidResponse);
+  fn.call(this, auctionInstance, bidResponse, afterBidAdded, videoMediaType);
+}
 
 const handleBidWon = args => {
   const bidWon = formatBidWon(args);
@@ -687,6 +701,7 @@ magniteAdapter.disableAnalytics = function () {
   endpoint = undefined;
   accountId = undefined;
   resetConfs();
+  getHook('callPrebidCache').getHooks({ hook: callPrebidCacheHook }).remove();
   magniteAdapter.originDisableAnalytics();
 };
 
@@ -749,7 +764,7 @@ const handleBidResponse = (args, bidStatus) => {
 
   // if pbs gave us back a bidId, we need to use it and update our bidId to PBA
   const pbsBidId = (args.pbsBidId == 0 ? generateUUID() : args.pbsBidId) || (args.seatBidId == 0 ? generateUUID() : args.seatBidId);
-  if (pbsBidId) {
+  if (pbsBidId && !cache.bidsCachedClientSide.has(args)) {
     bid.pbsBidId = pbsBidId;
   }
 }

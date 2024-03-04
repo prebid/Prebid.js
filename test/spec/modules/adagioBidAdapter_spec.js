@@ -975,6 +975,41 @@ describe('Adagio bid adapter', () => {
         expect(requests[0].data.adUnits[0].gpid).to.exist.and.equal(gpid);
       });
     });
+
+    describe('with DSA', function() {
+      it('should add DSA to the request', function() {
+        const dsaObject = {
+          dsarequired: 1,
+          pubrender: 1,
+          datatopub: 2,
+          transparency: [{
+            domain: 'domain.com',
+            dsaparams: [1, 2]
+          }]
+        }
+
+        const bid01 = new BidRequestBuilder().withParams().build();
+
+        const bidderRequest = new BidderRequestBuilder({
+          ortb2: {
+            regs: {
+              ext: {
+                dsa: dsaObject
+              }
+            }
+          }
+        }).build();
+        const requests = spec.buildRequests([bid01], bidderRequest);
+        expect(requests[0].data.regs.dsa).to.deep.equal(dsaObject);
+      });
+
+      it('should not add DSA to the request if not present', function() {
+        const bid01 = new BidRequestBuilder().withParams().build();
+        const bidderRequest = new BidderRequestBuilder().build();
+        const requests = spec.buildRequests([bid01], bidderRequest);
+        expect(requests[0].data.regs.dsa).to.be.undefined;
+      });
+    })
   });
 
   describe('interpretResponse()', function() {
@@ -1129,7 +1164,7 @@ describe('Adagio bid adapter', () => {
       utilsMock.verify();
     });
 
-    describe('Response with video outstream', () => {
+    describe('Response with video outstream', function() {
       const bidRequestWithOutstream = utils.deepClone(bidRequest);
       bidRequestWithOutstream.data.adUnits[0].mediaTypes.video = {
         context: 'outstream',
@@ -1202,7 +1237,7 @@ describe('Adagio bid adapter', () => {
       });
     });
 
-    describe('Response with native add', () => {
+    describe('Response with native add', function() {
       const serverResponseWithNative = utils.deepClone(serverResponse)
       serverResponseWithNative.body.bids[0].mediaType = 'native';
       serverResponseWithNative.body.bids[0].admNative = {
@@ -1379,6 +1414,24 @@ describe('Adagio bid adapter', () => {
         expect(r[0].native.javascriptTrackers).to.equal(expected);
       });
     });
+
+    describe('Response with DSA', function() {
+      const dsaResponseObj = {
+        'behalf': 'Advertiser',
+        'paid': 'Advertiser',
+        'transparency': {
+          'domain': 'dsp1domain.com',
+          'params': [1, 2]
+        },
+        'adrender': 1
+      };
+
+      const serverResponseWithDsa = utils.deepClone(serverResponse);
+      serverResponseWithDsa.body.bids[0].meta.dsa = dsaResponseObj;
+
+      const bidResponse = spec.interpretResponse(serverResponseWithDsa, bidRequest)[0];
+      expect(bidResponse.meta.dsa).to.to.deep.equals(dsaResponseObj);
+    })
   });
 
   describe('getUserSyncs()', function() {
@@ -1497,8 +1550,8 @@ describe('Adagio bid adapter', () => {
       expect(result.user_timestamp).to.be.a('String');
     });
 
-    it('should return `adunit_position` feature when the slot is hidden', function () {
-      const elem = fixtures.getElementById();
+    it('should return `adunit_position` feature when the slot is hidden with value 0x0', function () {
+      const elem = fixtures.getElementById('0', '0', '0', '0');
       sandbox.stub(window.top.document, 'getElementById').returns(elem);
       sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'none' });
       sandbox.stub(utils, 'inIframe').returns(false);
@@ -1516,8 +1569,7 @@ describe('Adagio bid adapter', () => {
       const requests = spec.buildRequests([bidRequest], bidderRequest);
       const result = requests[0].data.adUnits[0].features;
 
-      expect(result.adunit_position).to.match(/^[\d]+x[\d]+$/);
-      expect(elem.style.display).to.equal(null); // set null to reset style
+      expect(result.adunit_position).to.equal('0x0');
     });
   });
 
