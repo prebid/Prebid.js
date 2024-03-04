@@ -33,6 +33,7 @@ function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
     'badv': validBidRequest.params.badv,
     'site': {
       'id': validBidRequest.params.siteId,
+      'name': validBidRequest.params.siteName,
       'domain': envParams.domain,
       'page': envParams.page,
       'keywords': validBidRequest.params.keywords

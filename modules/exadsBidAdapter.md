@@ -79,6 +79,7 @@ Now you will find the different parameters to set, based on publisher website. T
 * **fid** (required) - you can get it from the endpoint created after configuring the zones (string)
 * **partner** (required) - currently we support rtb 2.4 ("ortb_2_4") only (string)
 * **siteId** (recommended) - unique Site ID (string)
+* **siteName** site name (string)
 * **banner.sizes** (required) - one integer array - [width, height]
 * **userIp** (required) - IP address of the user, ipv4 or ipv6 (string)
 * **userId** (*required) - unique user ID (string). *If you cannot generate a user ID, you can leave it empty (""). The request will get a response as long as "user" object is included in the request
@@ -124,6 +125,7 @@ adUnits =
                     fid: '829a896f011475d50da0d82cfdd1af8d9cdb07ff',
                     partner: 'ortb_2_4',
                     siteId: '123',
+                    siteName: 'test.com',
                     userIp: '0.0.0.0',
                     userId: '1234',
                     country: 'IRL',
@@ -162,6 +164,7 @@ adUnits =
                     fid: '829a896f011475d50da0d82cfdd1af8d9cdb07ff',
                     partner: 'ortb_2_4',
                     siteId: '123',
+                    siteName: 'test.com',
                     userIp: '0.0.0.0',
                     userId: '1234',
                     country: 'IRL',
@@ -189,6 +192,7 @@ adUnits =
 * **fid** (required) - you can get it from the endpoint created after configuring the zones (string)
 * **partner** (required) - currently we support rtb 2.4 ("ortb_2_4") only (string)
 * **siteId** (recommended) - unique Site ID (string)
+* **siteName** site name (string)
 * **userIp** (required) - IP address of the user, ipv4 or ipv6 (string)
 * **userId** (required) - unique user ID (string). *If you cannot generate a user ID, you can leave it empty (""). The request will get a response as long as "user" object is included in the request
 * **country** - Country ISO3 (string)
@@ -235,6 +239,7 @@ adUnits = [{
             fid: '829a896f011475d50da0d82cfdd1af8d9cdb07ff',
             partner: 'ortb_2_4',
             siteId: '123',
+            siteName: 'test.com',
             userIp: '0.0.0.0',
             userId: '1234',
             impressionId: '1234',
@@ -270,6 +275,7 @@ adUnits = [{
 * **fid** (required) - you can get it from the endpoint created after configuring the zones (string)
 * **partner** (required) - currently we support rtb 2.4 ("ortb_2_4") only (string)
 * **siteId** (recommended) - unique Site ID (string)
+* **siteName** site name (string)
 * **userIp** (required) - IP address of the user, ipv4 or ipv6 (string)
 * **userId** (*required) - unique user ID (string). *If you cannot generate a user ID, you can leave it empty (""). The request will get a response as long as "user" object is included in the request
 * **country** - country ISO3 (string)
@@ -364,6 +370,7 @@ adUnits = [{
                 fid: '829a896f011475d50da0d82cfdd1af8d9cdb07ff',
                 partner: 'ortb_2_4',
                 siteId: '123',
+                siteName: 'test.com',
                 userIp: '0.0.0.0',
                 userId: '1234',
                 impressionId: '1234',
