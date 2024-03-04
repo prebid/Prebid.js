@@ -45,7 +45,7 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {validBidRequests} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -143,7 +143,7 @@ export const spec = {
 
   /**
    * Formats placement ids for adserver ingestion purposes
-   * @param {string[]} The placement ID/s in an array
+   * @param {string[]} placementId the placement ID/s in an array
    */
   setPlacementID: function (placementId) {
     if (Array.isArray(placementId)) {

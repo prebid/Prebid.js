@@ -391,7 +391,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
     // getGptSlotInfoForAdUnitCode returns gptslot corresponding to adunit provided as input.
     let slotObject = {
       'sn': adUnitId,
-      'au': origAdUnit.adUnitId || getGptSlotInfoForAdUnitCode(adUnitId)?.gptSlot || adUnitId,
+      'au': origAdUnit.owAdUnitId || getGptSlotInfoForAdUnitCode(adUnitId)?.gptSlot || adUnitId,
       'mt': getAdUnitAdFormats(origAdUnit),
       'sz': getSizesForAdUnit(adUnit, adUnitId),
       'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId)),
@@ -450,6 +450,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
     return;
   }
   let origAdUnit = getAdUnit(cache.auctions[auctionId].origAdUnits, adUnitId) || {};
+  let owAdUnitId = origAdUnit.owAdUnitId || getGptSlotInfoForAdUnitCode(adUnitId)?.gptSlot || adUnitId;
   let auctionCache = cache.auctions[auctionId];
   let floorData = auctionCache.floorData;
   let wiid = cache.auctions[auctionId]?.wiid || auctionId;
@@ -466,7 +467,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&pid=' + enc(profileId);
   pixelURL += '&pdvid=' + enc(profileVersionId);
   pixelURL += '&slot=' + enc(adUnitId);
-  pixelURL += '&au=' + enc(origAdUnit.adUnitId || adUnitId);
+  pixelURL += '&au=' + enc(owAdUnitId);
   pixelURL += '&pn=' + enc(adapterName);
   pixelURL += '&bc=' + enc(winningBid.bidderCode || winningBid.bidder);
   pixelURL += '&en=' + enc(winningBid.bidResponse.bidPriceUSD);
