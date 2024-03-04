@@ -3,9 +3,16 @@
     "noImplicitAny": false,
     "allowJs": true,
     "sourceMap": true,
-    "target": "es5"
+    "target": "es2018",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "moduleResolution": "NodeNext",
   },
   "include": [
-    "./src/**/*"
+    "./src/**/*",
+    "./modules/**/*",
+    "./libraries/**/*",
+    "./creatives/**/*",
+    "./test/**/*"
   ]
 }
