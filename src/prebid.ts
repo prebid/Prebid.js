@@ -44,7 +44,9 @@ import {renderAdDirect} from './adRendering.js';
 import {getHighestCpm} from './utils/reducers.js';
 import {fillVideoDefaults} from './video.js';
 
-const pbjsInstance = getGlobal();
+declare const FEATURES: any;
+
+const pbjsInstance: any = getGlobal();
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
@@ -88,7 +90,7 @@ function checkDefinedPlacement(id) {
   return true;
 }
 
-function validateSizes(sizes, targLength) {
+function validateSizes(sizes, targLength?: number) {
   let cleanSizes = [];
   if (isArray(sizes) && ((targLength) ? sizes.length === targLength : sizes.length > 0)) {
     // check if an array of arrays or array of numbers
@@ -510,7 +512,7 @@ pbjsInstance.requestBids = (function() {
     }
     const ortb2Fragments = {
       global: mergeDeep({}, config.getAnyConfig('ortb2') || {}, ortb2 || {}),
-      bidder: Object.fromEntries(Object.entries(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, cfg.ortb2]).filter(([_, ortb2]) => ortb2 != null))
+      bidder: Object.fromEntries(Object.entries<any>(config.getBidderConfig()).map(([bidder, cfg]) => [bidder, cfg.ortb2]).filter(([_, ortb2]) => ortb2 != null))
     }
     return enrichFPD(GreedyPromise.resolve(ortb2Fragments.global)).then(global => {
       ortb2Fragments.global = global;
@@ -518,7 +520,7 @@ pbjsInstance.requestBids = (function() {
     })
   }, 'requestBids');
 
-  return wrapHook(delegate, function requestBids(req = {}) {
+  return wrapHook(delegate, function requestBids(req: any = {}) {
     // unlike the main body of `delegate`, this runs before any other hook has a chance to;
     // it's also not restricted in its return value in the way `async` hooks are.
 
@@ -541,7 +543,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
   fillAdUnitDefaults(adUnits);
   adUnits = useMetrics(metrics).measureTime('requestBids.validate', () => checkAdUnitSetup(adUnits));
 
-  function auctionDone(bids, timedOut, auctionId) {
+  function auctionDone(bids?: any, timedOut?: boolean, auctionId?: string) {
     if (typeof bidsBackHandler === 'function') {
       try {
         bidsBackHandler(bids, timedOut, auctionId);

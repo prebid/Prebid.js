@@ -149,7 +149,7 @@ function makeDevpackPkg() {
   const analyticsSources = helpers.getAnalyticsSources();
   const moduleSources = helpers.getModulePaths(externalModules);
 
-  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.ts'))
     .pipe(tsProject()).js
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
@@ -169,7 +169,7 @@ function makeWebpackPkg(extraConfig = {}) {
     const analyticsSources = helpers.getAnalyticsSources();
     const moduleSources = helpers.getModulePaths(externalModules);
 
-    return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+    return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.ts'))
       .pipe(tsProject()).js
       .pipe(helpers.nameModules(externalModules))
       .pipe(webpackStream(cloned, webpack))
