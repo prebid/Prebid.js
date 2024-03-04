@@ -12,8 +12,8 @@ let constants = require('src/constants.json');
 
 /**
  * Emit analytics events
- * @param {Array} eventArr - array of objects to define the events that will fire
- *    @param {object} eventObj - key is eventType, value is event
+ * @param {Array} eventType - array of objects to define the events that will fire
+ * @param {object} event - key is eventType, value is event
  * @param {string} auctionId - the auction id to attached to the events
  */
 function emitEvent(eventType, event, auctionId) {
