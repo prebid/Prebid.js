@@ -93,7 +93,6 @@ function handleReqORTB2Dot4(validBidRequest, endpointUrl, bidderRequest) {
   if (bannerMediaType != null) {
     impData.mediaType = BANNER;
     bidRequestData.imp = bannerMediaType.sizes.map(size => {
-
       return ({
         'id': validBidRequest.params.impressionId,
         'bidfloor': validBidRequest.params.bidfloor,
@@ -390,12 +389,12 @@ function handleValidORTB2Dot4(bid) {
     ((!hasValue(bid.params.bcat) ||
       bid.params.bcat.length > 0)) &&
     ((!hasValue(bid.params.badv) ||
-        bid.params.badv.length > 0)) &&      
+        bid.params.badv.length > 0)) &&
     (bannerInfo || nativeInfo || videoInfo) &&
     (nativeInfo ? bid.params.native &&
       nativeInfo.ortb.assets &&
       nativeInfo.ortb.assets.some(asset => !!asset.img) : true) &&
-    (videoInfo ? ( videoInfo.mimes &&
+    (videoInfo ? (videoInfo.mimes &&
       videoInfo.mimes.length > 0 &&
       videoInfo.protocols &&
       videoInfo.protocols.length > 0) : true));

@@ -30,12 +30,12 @@ describe('exadsBidAdapterTest', function () {
       keywords: 'lifestyle, humour',
       bidfloor: 0.00000011,
       bidfloorcur: 'EUR',
-      bcat: ['IAB25', 'IAB7-39','IAB8-18','IAB8-5','IAB9-9'],
+      bcat: ['IAB25', 'IAB7-39', 'IAB8-18', 'IAB8-5', 'IAB9-9'],
       badv: ['first.com', 'second.com'],
       mimes: ['image/jpg'],
       endpoint: 'test.com',
       dsa: {
-        dsarequired: 3, 
+        dsarequired: 3,
         pubrender: 0,
         datatopub: 2
       },
@@ -91,7 +91,7 @@ describe('exadsBidAdapterTest', function () {
         plcmtcnt: 4,
       },
       dsa: {
-        dsarequired: 3, 
+        dsarequired: 3,
         pubrender: 0,
         datatopub: 2
       },
