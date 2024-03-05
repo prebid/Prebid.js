@@ -91,7 +91,6 @@ describe('exadsBidAdapterTest', function () {
         plcmtcnt: 4,
       },
       dsa: {
-        dsarequired: 3,
         pubrender: 0,
         datatopub: 2
       },
@@ -127,8 +126,6 @@ describe('exadsBidAdapterTest', function () {
         }
       },
       dsa: {
-        dsarequired: 3,
-        pubrender: 0,
         datatopub: 2
       },
       endpoint: 'test.com',
