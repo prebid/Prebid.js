@@ -1,4 +1,4 @@
-import { isFn, deepAccess, logInfo,replaceAuctionPrice } from '../src/utils.js';
+import { isFn, deepAccess, logInfo, replaceAuctionPrice } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 // import { config } from '../src/config.js';
@@ -92,7 +92,7 @@ export const spec = {
       site: validBidRequests[0].ortb2.site,
       source: validBidRequests[0].ortb2.source
     };
- 
+
     //  request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
     if (bidderRequest) {
       if (bidderRequest.uspConsent) {
@@ -127,10 +127,10 @@ export const spec = {
           width: bid.w,
           height: bid.h,
           creativeId: bid.crid,
-          ad: macroReplace (bid.adm,bid.price), 
+          ad: macroReplace (bid.adm, bid.price),
           currency: 'USD',
           netRevenue: true,
-          ttl: 300, 
+          ttl: 300,
           meta: {
             advertiserDomains: bid.adomain || '',
           },
@@ -165,8 +165,8 @@ export const spec = {
 };
 
 /* replacing auction_price macro from adm */
-function macroReplace(adm, cpm){
-  let replacedadm = replaceAuctionPrice(adm,cpm);
+function macroReplace(adm, cpm) {
+  let replacedadm = replaceAuctionPrice(adm, cpm);
   return replacedadm;
 }
 
