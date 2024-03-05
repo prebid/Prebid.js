@@ -264,16 +264,20 @@ export function summarizeAuctionEnd(args, adapterConfig) {
         // or less than timeout and assign it either a timeout bid or a valid valid
         // The bidsReceived array has both timeout bids and the valid bids
         const keys = ['bidsRejected', 'noBids', 'bidsReceived']
+        let bidStatus = null, bidAmount = null, bidResponseTime = null;
         for (let i = 0; i < keys.length; i += 1) {
           const status = keys[i]
           const data = getBidStatusAmtsAndResponseTime(status, fbr, args)
           if (data) {
-            bidStatuss.push(data.bidStatus)
-            bidAmounts.push(data.bidAmount)
-            bidResponseTimes.push(data.bidResponseTime)
+            bidStatus = data.bidStatus;
+            bidAmount = data.bidAmount;
+            bidResponseTime = data.bidResponseTime;
             break
           }
         }
+        bidStatuss.push(bidStatus)
+        bidAmounts.push(bidAmount)
+        bidResponseTimes.push(bidResponseTime)
       }
     })
     bidderss.push(bidders)
