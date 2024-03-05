@@ -104,6 +104,9 @@ describe('minutemediaAdapter', function () {
       bidderCode: 'minutemedia',
     }
     const placementId = '12345678';
+    const api = [1, 2];
+    const mimes = ['application/javascript', 'video/mp4', 'video/quicktime'];
+    const protocols = [2, 3, 5, 6];
 
     it('sends the placementId to ENDPOINT via POST', function () {
       bidRequests[0].params.placementId = placementId;
@@ -111,15 +114,22 @@ describe('minutemediaAdapter', function () {
       expect(request.data.bids[0].placementId).to.equal(placementId);
     });
 
+    it('sends the plcmt to ENDPOINT via POST', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.bids[0].plcmt).to.equal(1);
+    });
+
+    it('sends the is_wrapper parameter to ENDPOINT via POST', function() {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.have.property('is_wrapper');
+      expect(request.data.params.is_wrapper).to.equal(false);
+    });
+
     it('sends bid request to ENDPOINT via POST', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.url).to.equal(ENDPOINT);
       expect(request.method).to.equal('POST');
-    });
-
-    it('sends the plcmt to ENDPOINT via POST', function () {
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.bids[0].plcmt).to.equal(1);
     });
 
     it('sends bid request to TEST ENDPOINT via POST', function () {
@@ -131,6 +141,27 @@ describe('minutemediaAdapter', function () {
     it('should send the correct bid Id', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.bids[0].bidId).to.equal('299ffc8cca0b87');
+    });
+
+    it('should send the correct supported api array', function () {
+      bidRequests[0].mediaTypes.video.api = api;
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.bids[0].api).to.be.an('array');
+      expect(request.data.bids[0].api).to.eql([1, 2]);
+    });
+
+    it('should send the correct mimes array', function () {
+      bidRequests[1].mediaTypes.banner.mimes = mimes;
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.bids[1].mimes).to.be.an('array');
+      expect(request.data.bids[1].mimes).to.eql(['application/javascript', 'video/mp4', 'video/quicktime']);
+    });
+
+    it('should send the correct protocols array', function () {
+      bidRequests[0].mediaTypes.video.protocols = protocols;
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.bids[0].protocols).to.be.an('array');
+      expect(request.data.bids[0].protocols).to.eql([2, 3, 5, 6]);
     });
 
     it('should send the correct sizes array', function () {
@@ -145,6 +176,16 @@ describe('minutemediaAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.bids[0].mediaType).to.equal(VIDEO)
       expect(request.data.bids[1].mediaType).to.equal(BANNER)
+    });
+
+    it('should send the correct currency in bid request', function () {
+      const bid = utils.deepClone(bidRequests[0]);
+      bid.params = {
+        'currency': 'EUR'
+      };
+      const expectedCurrency = bid.params.currency;
+      const request = spec.buildRequests([bid], bidderRequest);
+      expect(request.data.bids[0].currency).to.equal(expectedCurrency);
     });
 
     it('should respect syncEnabled option', function() {
@@ -258,6 +299,22 @@ describe('minutemediaAdapter', function () {
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.have.property('gdpr', true);
       expect(request.data.params).to.have.property('gdpr_consent', 'test-consent-string');
+    });
+
+    it('should not send the gpp param if gppConsent is false in the bidRequest', function () {
+      const bidderRequestWithGPP = Object.assign({gppConsent: false}, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.not.have.property('gpp');
+      expect(request.data.params).to.not.have.property('gpp_sid');
+    });
+
+    it('should send the gpp param if gppConsent is true in the bidRequest', function () {
+      const bidderRequestWithGPP = Object.assign({gppConsent: {gppString: 'test-consent-string', applicableSections: [7]}}, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.have.property('gpp', 'test-consent-string');
+      expect(request.data.params.gpp_sid[0]).to.be.equal(7);
     });
 
     it('should have schain param if it is available in the bidRequest', () => {

@@ -1,5 +1,4 @@
 import {
-  getBidIdParameter,
   isArray,
   getWindowTop,
   getUniqueIdentifierStr,
@@ -9,7 +8,7 @@ import {
   createTrackPixelHtml,
   getWindowSelf,
   isFn,
-  isPlainObject,
+  isPlainObject, getBidIdParameter,
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';

@@ -2,12 +2,18 @@ import { logInfo } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const WHO = 'BKSHBID-005';
 const BIDDER_CODE = 'bucksense';
 const URL = 'https://directo.prebidserving.com/prebidjs/';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 235,
   supportedMediaTypes: [BANNER],
 
   /**
@@ -15,7 +21,7 @@ export const spec = {
    *
    * @param {object} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
-  */
+   */
   isBidRequestValid: function (bid) {
     logInfo(WHO + ' isBidRequestValid() - INPUT bid:', bid);
     if (bid.bidder !== BIDDER_CODE || typeof bid.params === 'undefined') {
@@ -28,10 +34,10 @@ export const spec = {
   },
 
   /**
-    * Make a server request from the list of BidRequests.
-    *
-    * @param {BidRequest[]} validBidRequests A non-empty list of valid bid requests that should be sent to the Server.
-    * @return ServerRequest Info describing the request to the server.
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {BidRequest[]} validBidRequests A non-empty list of valid bid requests that should be sent to the Server.
+   * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
     logInfo(WHO + ' buildRequests() - INPUT validBidRequests:', validBidRequests, 'INPUT bidderRequest:', bidderRequest);
@@ -73,7 +79,7 @@ export const spec = {
    *
    * @param {*} serverResponse A successful response from the server.
    * @return {Bid[]} An array of bids which were nested inside the server.
-  */
+   */
   interpretResponse: function (serverResponse, request) {
     logInfo(WHO + ' interpretResponse() - INPUT serverResponse:', serverResponse, 'INPUT request:', request);
 

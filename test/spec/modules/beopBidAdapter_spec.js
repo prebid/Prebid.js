@@ -130,15 +130,15 @@ describe('BeOp Bid Adapter tests', () => {
       expect(payload.url).to.exist;
       // check that the protocol is added correctly
       expect(payload.url).to.equal('http://test.te');
-      expect(payload.psegs).to.not.exist;
     });
 
-    it('should call the endpoint with psegs data if any', function () {
+    it('should call the endpoint with psegs and bpsegs (stringified) data if any or [] if none', function () {
       let bidderRequest =
       {
         'ortb2': {
           'user': {
             'ext': {
+              'bpsegs': ['axed', 'axec', 1234],
               'data': {
                 'permutive': [1234, 5678, 910]
               }
@@ -154,6 +154,22 @@ describe('BeOp Bid Adapter tests', () => {
       expect(payload.psegs).to.include(5678);
       expect(payload.psegs).to.include(910);
       expect(payload.psegs).to.not.include(1);
+      expect(payload.bpsegs).to.exist;
+      expect(payload.bpsegs).to.include('axed');
+      expect(payload.bpsegs).to.include('axec');
+      expect(payload.bpsegs).to.include('1234');
+
+      let bidderRequest2 =
+      {
+        'ortb2': {}
+      };
+
+      const request2 = spec.buildRequests(bidRequests, bidderRequest2);
+      const payload2 = JSON.parse(request2.data);
+      expect(payload2.psegs).to.exist;
+      expect(payload2.psegs).to.be.empty;
+      expect(payload2.bpsegs).to.exist;
+      expect(payload2.bpsegs).to.be.empty;
     });
 
     it('should not prepend the protocol in page url if already present', function () {
@@ -295,5 +311,23 @@ describe('BeOp Bid Adapter tests', () => {
       expect(payload.kwds).to.include('of');
       expect(payload.kwds).to.include('keywords');
     })
+  })
+
+  describe('Ensure eids are get', function() {
+    let bidRequests = [];
+    afterEach(function () {
+      bidRequests = [];
+    });
+
+    it(`should get eids from bid`, function () {
+      let bid = Object.assign({}, validBid);
+      bid.userIdAsEids = [{source: 'provider.com', uids: [{id: 'someid', atype: 1, ext: {whatever: true}}]}];
+      bidRequests.push(bid);
+
+      const request = spec.buildRequests(bidRequests, {});
+      const payload = JSON.parse(request.data);
+      expect(payload.eids).to.exist;
+      expect(payload.eids[0].source).to.equal('provider.com');
+    });
   })
 });

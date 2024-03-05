@@ -3,7 +3,8 @@ import magniteAdapter, {
   getHostNameFromReferer,
   storage,
   rubiConf,
-  detectBrowserFromUa
+  detectBrowserFromUa,
+  callPrebidCacheHook
 } from '../../../modules/magniteAnalyticsAdapter.js';
 import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config.js';
@@ -25,7 +26,8 @@ const {
     BID_WON,
     BID_TIMEOUT,
     BILLABLE_EVENT,
-    SEAT_NON_BID
+    SEAT_NON_BID,
+    BID_REJECTED
   }
 } = CONSTANTS;
 
@@ -549,7 +551,7 @@ describe('magnite analytics adapter', function () {
       expect(server.requests.length).to.equal(1);
       let request = server.requests[0];
 
-      expect(request.url).to.equal('//localhost:9999/event');
+      expect(request.url).to.match(/\/\/localhost:9999\/event/);
 
       let message = JSON.parse(request.requestBody);
 
@@ -723,7 +725,7 @@ describe('magnite analytics adapter', function () {
         expect(server.requests.length).to.equal(1);
         let request = server.requests[0];
 
-        expect(request.url).to.equal('//localhost:9999/event');
+        expect(request.url).to.match(/\/\/localhost:9999\/event/);
 
         let message = JSON.parse(request.requestBody);
 
@@ -1136,6 +1138,39 @@ describe('magnite analytics adapter', function () {
       });
     });
 
+    it('should not use pbsBidId if the bid was client side cached', function () {
+      // bid response
+      let seatBidResponse = utils.deepClone(MOCK.BID_RESPONSE);
+      seatBidResponse.pbsBidId = 'do-not-use-me';
+
+      // Run auction
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+      // mock client side cache call
+      callPrebidCacheHook(() => {}, {}, seatBidResponse);
+
+      events.emit(BID_RESPONSE, seatBidResponse);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+      // emmit gpt events and bidWon
+      mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
+
+      events.emit(BID_WON, MOCK.BID_WON);
+
+      // tick the event delay time plus processing delay
+      clock.tick(rubiConf.analyticsEventDelay + rubiConf.analyticsProcessDelay);
+
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
+
+      // Expect the ids sent to server to use the original bidId not the pbsBidId thing
+      expect(message.auctions[0].adUnits[0].bids[0].bidId).to.equal(MOCK.BID_RESPONSE.requestId);
+      expect(message.bidsWon[0].bidId).to.equal(MOCK.BID_RESPONSE.requestId);
+    });
+
     [0, '0'].forEach(pbsParam => {
       it(`should generate new bidId if incoming pbsBidId is ${pbsParam}`, function () {
         // bid response
@@ -1490,6 +1525,40 @@ describe('magnite analytics adapter', function () {
       expectedMessage.bidsWon[0].source = 'server';
       expect(message).to.deep.equal(expectedMessage);
     });
+
+    describe('when eventDispatcher is present', () => {
+      beforeEach(() => {
+        window.pbjs = window.pbjs || {};
+        pbjs.rp = pbjs.rp || {};
+        pbjs.rp.eventDispatcher = pbjs.rp.eventDispatcher || document.createElement('fakeElem');
+      });
+
+      afterEach(() => {
+        delete pbjs.rp.eventDispatcher;
+        delete pbjs.rp;
+      });
+
+      it('should dispatch beforeSendingMagniteAnalytics if possible', () => {
+        pbjs.rp.eventDispatcher.addEventListener('beforeSendingMagniteAnalytics', (data) => {
+          data.detail.test = 'testData';
+        });
+
+        performStandardAuction();
+
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+
+        expect(request.url).to.equal('http://localhost:9999/event');
+
+        let message = JSON.parse(request.requestBody);
+
+        const AnalyticsMessageWithCustomData = {
+          ...ANALYTICS_MESSAGE,
+          test: 'testData'
+        }
+        expect(message).to.deep.equal(AnalyticsMessageWithCustomData);
+      });
+    })
 
     describe('when handling bid caching', () => {
       let auctionInits, bidRequests, bidResponses, bidsWon;
@@ -2144,6 +2213,97 @@ describe('magnite analytics adapter', function () {
       ];
       statuses.forEach((info, index) => {
         checkStatusAgainstCode(info.status, info.code, info.error, index);
+      });
+    });
+  });
+
+  describe('BID_REJECTED events', () => {
+    let bidRejectedArgs;
+
+    const runBidRejectedAuction = () => {
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+      events.emit(BID_REJECTED, bidRejectedArgs)
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+      clock.tick(rubiConf.analyticsBatchTimeout + 1000);
+    };
+    beforeEach(() => {
+      magniteAdapter.enableAnalytics({
+        options: {
+          endpoint: '//localhost:9999/event',
+          accountId: 1001
+        }
+      });
+      bidRejectedArgs = utils.deepClone(MOCK.BID_RESPONSE);
+    });
+
+    it('updates the bid to be rejected by floors', () => {
+      bidRejectedArgs.floorData = {
+        floorValue: 0.5,
+        floorRule: 'banner',
+        floorRuleValue: 0.5,
+        floorCurrency: 'USD',
+        cpmAfterAdjustments: 0.15,
+        enforcements: {
+          enforceJS: true,
+          enforcePBS: false,
+          floorDeals: false,
+          bidAdjustment: true
+        },
+        matchedFields: {
+          mediaType: 'banner'
+        }
+      }
+      bidRejectedArgs.rejectionReason = 'Bid does not meet price floor';
+
+      runBidRejectedAuction();
+      let message = JSON.parse(server.requests[0].requestBody);
+
+      expect(message.auctions[0].adUnits[0].bids[0]).to.deep.equal({
+        bidder: 'rubicon',
+        bidId: '23fcd8cf4bf0d7',
+        source: 'client',
+        status: 'rejected-ipf',
+        clientLatencyMillis: 271,
+        httpLatencyMillis: 240,
+        bidResponse: {
+          bidPriceUSD: 0.15,
+          mediaType: 'banner',
+          dimensions: {
+            width: 300,
+            height: 250
+          },
+          floorValue: 0.5,
+          floorRuleValue: 0.5,
+          rejectionReason: 'Bid does not meet price floor'
+        }
+      });
+    });
+
+    it('does general rejection', () => {
+      bidRejectedArgs
+      bidRejectedArgs.rejectionReason = 'this bid is rejected';
+
+      runBidRejectedAuction();
+      let message = JSON.parse(server.requests[0].requestBody);
+
+      expect(message.auctions[0].adUnits[0].bids[0]).to.deep.equal({
+        bidder: 'rubicon',
+        bidId: '23fcd8cf4bf0d7',
+        source: 'client',
+        status: 'rejected',
+        clientLatencyMillis: 271,
+        httpLatencyMillis: 240,
+        bidResponse: {
+          bidPriceUSD: 3.4,
+          mediaType: 'banner',
+          dimensions: {
+            width: 300,
+            height: 250
+          },
+          rejectionReason: 'this bid is rejected'
+        }
       });
     });
   });

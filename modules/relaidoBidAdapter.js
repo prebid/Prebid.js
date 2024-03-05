@@ -1,4 +1,14 @@
-import { deepAccess, logWarn, getBidIdParameter, parseQueryStringParameters, triggerPixel, generateUUID, isArray, isNumber, parseSizesInput } from '../src/utils.js';
+import {
+  deepAccess,
+  logWarn,
+  parseQueryStringParameters,
+  triggerPixel,
+  generateUUID,
+  isArray,
+  isNumber,
+  parseSizesInput,
+  getBidIdParameter
+} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
@@ -85,15 +95,17 @@ function buildRequests(validBidRequests, bidderRequest) {
     bids.push({
       bid_id: bidRequest.bidId,
       placement_id: getBidIdParameter('placementId', bidRequest.params),
-      transaction_id: bidRequest.transactionId,
+      transaction_id: bidRequest.ortb2Imp?.ext?.tid,
       bidder_request_id: bidRequest.bidderRequestId,
       ad_unit_code: bidRequest.adUnitCode,
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auction_id: bidRequest.auctionId,
       player: bidRequest.params.player,
       width: width,
       height: height,
       banner_sizes: getBannerSizes(bidRequest),
-      media_type: mediaType
+      media_type: mediaType,
+      userIdAsEids: bidRequest.userIdAsEids || {},
     });
   }
 
@@ -106,6 +118,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     uuid: getUuid(),
     pv: '$prebid.version$',
     imuid: imuid,
+    canonical_url: bidderRequest.refererInfo?.canonicalUrl || null,
     canonical_url_hash: getCanonicalUrlHash(bidderRequest.refererInfo),
     ref: bidderRequest.refererInfo.page
   });
@@ -131,6 +144,7 @@ function interpretResponse(serverResponse, bidRequest) {
     const playerUrl = res.playerUrl || bidRequest.player || body.playerUrl;
     let bidResponse = {
       requestId: res.bidId,
+      placementId: res.placementId,
       width: res.width,
       height: res.height,
       cpm: res.price,

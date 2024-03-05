@@ -22,6 +22,12 @@ describe('riseAdapter', function () {
     });
   });
 
+  describe('bid adapter', function () {
+    it('should have aliases', function () {
+      expect(spec.aliases).to.be.an('array').that.is.not.empty;
+    });
+  });
+
   describe('isBidRequestValid', function () {
     const bid = {
       'bidder': spec.code,
@@ -53,7 +59,7 @@ describe('riseAdapter', function () {
         'adUnitCode': 'adunit-code',
         'sizes': [[640, 480]],
         'params': {
-          'org': 'jdye8weeyirk00000001'
+          'org': 'jdye8weeyirk00000001',
         },
         'bidId': '299ffc8cca0b87',
         'loop': 1,
@@ -195,6 +201,16 @@ describe('riseAdapter', function () {
       expect(request.data.bids[1].mediaType).to.equal(BANNER)
     });
 
+    it('should send the correct currency in bid request', function () {
+      const bid = utils.deepClone(bidRequests[0]);
+      bid.params = {
+        'currency': 'EUR'
+      };
+      const expectedCurrency = bid.params.currency;
+      const request = spec.buildRequests([bid], bidderRequest);
+      expect(request.data.bids[0].currency).to.equal(expectedCurrency);
+    });
+
     it('should respect syncEnabled option', function() {
       config.setConfig({
         userSync: {
@@ -306,6 +322,24 @@ describe('riseAdapter', function () {
       expect(request.data.params).to.be.an('object');
       expect(request.data.params).to.have.property('gdpr', true);
       expect(request.data.params).to.have.property('gdpr_consent', 'test-consent-string');
+    });
+
+    it('should not send the gpp param if gppConsent is false in the bidRequest', function () {
+      const bidderRequestWithoutGPP = Object.assign({gppConsent: false}, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithoutGPP);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.not.have.property('gpp');
+      expect(request.data.params).to.not.have.property('gpp_sid');
+    });
+
+    it('should send the gpp param if gppConsent is true in the bidRequest', function () {
+      const bidderRequestWithGPP = Object.assign({gppConsent: {gppString: 'gpp-consent', applicableSections: [7]}}, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
+      console.log('request.data.params');
+      console.log(request.data.params);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.have.property('gpp', 'gpp-consent');
+      expect(request.data.params.gpp_sid[0]).to.be.equal(7);
     });
 
     it('should have schain param if it is available in the bidRequest', () => {

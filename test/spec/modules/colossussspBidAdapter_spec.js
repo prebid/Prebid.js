@@ -25,7 +25,6 @@ describe('ColossussspAdapter', function () {
         }
       }
     },
-    transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
     schain: {
       ver: '1.0',
       complete: 1,

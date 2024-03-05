@@ -41,7 +41,7 @@ export const spec = {
       cur: [currency],
       source: {
         fd: 1,
-        tid: bidderRequest.auctionId,
+        tid: bidderRequest.ortb2?.source?.tid,
         ext: {
           prebid: '$prebid.version$'
         }
@@ -349,7 +349,7 @@ function nativeResponse(imp, bid) {
         keys.cta = asset.data && asset.id === 5 ? asset.data.value : keys.cta;
       });
       if (nativeAd.link) {
-        keys.clickUrl = encodeURIComponent(nativeAd.link.url);
+        keys.clickUrl = nativeAd.link.url;
       }
       const trackers = nativeAd.imptrackers || [];
       trackers.unshift(replaceAuctionPrice(bid.burl, bid.price));

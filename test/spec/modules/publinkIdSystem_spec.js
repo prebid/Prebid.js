@@ -72,16 +72,49 @@ describe('PublinkIdSystem', () => {
       expect(result.callback).to.be.a('function');
     });
 
-    it('Use local copy', () => {
-      const result = publinkIdSubmodule.getId({}, undefined, TEST_COOKIE_VALUE);
-      expect(result).to.be.undefined;
-    });
-
     describe('callout for id', () => {
       let callbackSpy = sinon.spy();
 
       beforeEach(() => {
         callbackSpy.resetHistory();
+      });
+
+      it('Has cached id', () => {
+        const config = {storage: {type: 'cookie'}};
+        let submoduleCallback = publinkIdSubmodule.getId(config, undefined, TEST_COOKIE_VALUE).callback;
+        submoduleCallback(callbackSpy);
+
+        const request = server.requests[0];
+        const parsed = parseUrl(request.url);
+
+        expect(parsed.hostname).to.equal('proc.ad.cpe.dotomi.com');
+        expect(parsed.pathname).to.equal('/cvx/client/sync/publink/refresh');
+        expect(parsed.search.mpn).to.equal('Prebid.js');
+        expect(parsed.search.mpv).to.equal('$prebid.version$');
+        expect(parsed.search.publink).to.equal(TEST_COOKIE_VALUE);
+
+        request.respond(200, {}, JSON.stringify(serverResponse));
+        expect(callbackSpy.calledOnce).to.be.true;
+        expect(callbackSpy.lastCall.lastArg).to.equal(serverResponse.publink);
+      });
+
+      it('Request path has priority', () => {
+        const config = {storage: {type: 'cookie'}, params: {e: 'ca11c0ca7', site_id: '102030'}};
+        let submoduleCallback = publinkIdSubmodule.getId(config, undefined, TEST_COOKIE_VALUE).callback;
+        submoduleCallback(callbackSpy);
+
+        const request = server.requests[0];
+        const parsed = parseUrl(request.url);
+
+        expect(parsed.hostname).to.equal('proc.ad.cpe.dotomi.com');
+        expect(parsed.pathname).to.equal('/cvx/client/sync/publink');
+        expect(parsed.search.mpn).to.equal('Prebid.js');
+        expect(parsed.search.mpv).to.equal('$prebid.version$');
+        expect(parsed.search.publink).to.equal(TEST_COOKIE_VALUE);
+
+        request.respond(200, {}, JSON.stringify(serverResponse));
+        expect(callbackSpy.calledOnce).to.be.true;
+        expect(callbackSpy.lastCall.lastArg).to.equal(serverResponse.publink);
       });
 
       it('Fetch with consent data', () => {
@@ -120,7 +153,7 @@ describe('PublinkIdSystem', () => {
         expect(parsed.search.mpn).to.equal('Prebid.js');
         expect(parsed.search.mpv).to.equal('$prebid.version$');
 
-        request.respond(204, {}, JSON.stringify(serverResponse));
+        request.respond(204);
         expect(callbackSpy.called).to.be.false;
       });
 

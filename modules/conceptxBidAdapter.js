@@ -3,23 +3,23 @@ import { BANNER } from '../src/mediaTypes.js';
 // import { logError, logInfo, logWarn, parseUrl } from '../src/utils.js';
 
 const BIDDER_CODE = 'conceptx';
-let ENDPOINT_URL = 'https://conceptx.cncpt-central.com/openrtb';
+const ENDPOINT_URL = 'https://conceptx.cncpt-central.com/openrtb';
 // const LOG_PREFIX = 'ConceptX: ';
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
   isBidRequestValid: function (bid) {
-    return !!(bid.bidId);
+    return !!(bid.bidId && bid.params.site && bid.params.adunit);
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
     // logWarn(LOG_PREFIX + 'all native assets containing URL should be sent as placeholders with sendId(icon, image, clickUrl, displayUrl, privacyLink, privacyIcon)');
     const requests = [];
-
+    let requestUrl = `${ENDPOINT_URL}`
     if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
-      ENDPOINT_URL += '?gdpr_applies=' + bidderRequest.gdprConsent.gdprApplies;
-      ENDPOINT_URL += '&consentString=' + bidderRequest.gdprConsent.consentString;
+      requestUrl += '?gdpr_applies=' + bidderRequest.gdprConsent.gdprApplies;
+      requestUrl += '&consentString=' + bidderRequest.gdprConsent.consentString;
     }
     for (var i = 0; i < validBidRequests.length; i++) {
       const requestParent = { adUnits: [], meta: {} };
@@ -33,7 +33,7 @@ export const spec = {
       requestParent.adUnits.push(adUnit);
       requests.push({
         method: 'POST',
-        url: ENDPOINT_URL,
+        url: requestUrl,
         options: {
           withCredentials: false,
         },
@@ -45,10 +45,16 @@ export const spec = {
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
-    const bidResponsesFromServer = serverResponse.body.bidResponses;
-    const firstDummy = bidResponsesFromServer[0]
-    const firstSeat = firstDummy.ads[0]
     const bidResponses = [];
+    const bidResponsesFromServer = serverResponse.body.bidResponses;
+    if (Array.isArray(bidResponsesFromServer) && bidResponsesFromServer.length === 0) {
+      return bidResponses
+    }
+    const firstBid = bidResponsesFromServer[0]
+    if (!firstBid) {
+      return bidResponses
+    }
+    const firstSeat = firstBid.ads[0]
     const bidResponse = {
       requestId: firstSeat.requestId,
       cpm: firstSeat.cpm,

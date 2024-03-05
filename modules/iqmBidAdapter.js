@@ -3,6 +3,10 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {INSTREAM} from '../src/video.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ */
+
 const BIDDER_CODE = 'iqm';
 const VERSION = 'v.1.0.0';
 const VIDEO_ORTB_PARAMS = [
@@ -111,6 +115,7 @@ export const spec = {
         device: device,
         site: site,
         imp: imp,
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: bid.auctionId,
         adUnitCode: bid.adUnitCode,
         bidderRequestId: bid.bidderRequestId,
