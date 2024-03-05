@@ -1,4 +1,4 @@
-import { isFn, deepAccess, logInfo } from '../src/utils.js';
+import { isFn, deepAccess, logInfo,replaceAuctionPrice } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 // import { config } from '../src/config.js';
@@ -86,16 +86,13 @@ export const spec = {
         geo: {
           region: validBidRequests[0].params.region || city,
         },
-        // consent: validBidRequests[0].ortb2.user.consent,
 
       },
       device: validBidRequests[0].ortb2.device,
       site: validBidRequests[0].ortb2.site,
       source: validBidRequests[0].ortb2.source
     };
-    // request.device.dnt = (validBidRequests[0].ortb2.device.dnt == 1);
-    // request.device.sua.mobile = (validBidRequests[0].ortb2.device.sua.mobile == 1);
-
+ 
     //  request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
     if (bidderRequest) {
       if (bidderRequest.uspConsent) {
@@ -130,17 +127,16 @@ export const spec = {
           width: bid.w,
           height: bid.h,
           creativeId: bid.crid,
-          ad: bid.adm,
+          ad: macroReplace (bid.adm,bid.price), 
           currency: 'USD',
           netRevenue: true,
-          ttl: 300,
+          ttl: 300, 
           meta: {
             advertiserDomains: bid.adomain || '',
           },
         })
       })
     })
-
     return bids
   },
 
@@ -167,6 +163,12 @@ export const spec = {
   }
 
 };
+
+/* replacing auction_price macro from adm */
+function macroReplace(adm, cpm){
+  let replacedadm = replaceAuctionPrice(adm,cpm);
+  return replacedadm;
+}
 
 function getCountryCodeByTimezone(city) {
   try {
