@@ -658,8 +658,6 @@ const spec = {
     return true;
   },
   buildRequests(validBidRequests, bidderRequest) {
-    logWarn('DEBUG: buildRequests', validBidRequests, bidderRequest);
-
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
