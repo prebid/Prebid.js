@@ -35,6 +35,7 @@ describe('dailymotionBidAdapterTests', () => {
     const bidRequestData = [{
       auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
       bidId: 123456,
+      adUnitCode: 'preroll',
       mediaTypes: {
         video: {
           playerSize: [[1280, 720]],
@@ -83,7 +84,7 @@ describe('dailymotionBidAdapterTests', () => {
 
     expect(reqData.config).to.eql(dmConfig);
     expect(reqData.coppa).to.be.true;
-    expect(reqData.bidder_request).to.eql(bidderRequestData)
+    expect(reqData.bidder_request).to.eql(bidderRequestData);
     expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId);
     expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
     expect(reqData.request.mediaTypes.video.api).to.eql(bidRequestData[0].mediaTypes.video.api);
@@ -140,6 +141,7 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.request).to.eql({
       auctionId: '',
       bidId: '',
+      adUnitCode: '',
       mediaTypes: {
         video: {
           playerSize: [],

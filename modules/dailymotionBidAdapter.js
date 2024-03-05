@@ -86,6 +86,7 @@ export const spec = {
           },
         },
         sizes: bid.sizes || [],
+        adUnitCode: bid.adUnitCode || '',
       },
       video_metadata: getVideoMetadata(bid),
     },
