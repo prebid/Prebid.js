@@ -6,7 +6,7 @@ import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
-const VERSION = '2.0.0';
+const VERSION = '2.0.1';
 const MODULE_NAME = 'nobidAnalyticsAdapter';
 const ANALYTICS_OPT_FLUSH_TIMEOUT_SECONDS = 5 * 1000;
 const RETENTION_SECONDS = 1 * 24 * 3600;
@@ -54,6 +54,7 @@ function sendEvent (event, eventType) {
     return;
   }
   try {
+    event.version = VERSION;
     const endpoint = `${resolveEndpoint()}/event/${eventType}?pubid=${nobidAnalytics.initOptions.siteId}`;
     ajax(endpoint,
       function (response) {
@@ -83,7 +84,7 @@ function cleanupObjectAttributes (obj, attributes) {
 }
 function sendBidWonEvent (event, eventType) {
   const data = deepClone(event);
-  cleanupObjectAttributes(data, ['bidderCode', 'size', 'statusMessage', 'adId', 'requestId', 'mediaType', 'adUnitCode', 'cpm', 'timeToRespond']);
+  cleanupObjectAttributes(data, ['bidderCode', 'size', 'statusMessage', 'adId', 'requestId', 'mediaType', 'adUnitCode', 'cpm', 'currency', 'originalCpm', 'originalCurrency', 'timeToRespond']);
   if (nobidAnalytics.topLocation) data.topLocation = nobidAnalytics.topLocation;
   sendEvent(data, eventType);
 }
@@ -95,7 +96,7 @@ function sendAuctionEndEvent (event, eventType) {
 
   cleanupObjectAttributes(data, ['timestamp', 'timeout', 'auctionId', 'bidderRequests', 'bidsReceived']);
   if (data) cleanupObjectAttributes(data.bidderRequests, ['bidderCode', 'bidderRequestId', 'bids', 'refererInfo']);
-  if (data) cleanupObjectAttributes(data.bidsReceived, ['bidderCode', 'width', 'height', 'adUnitCode', 'statusMessage', 'requestId', 'mediaType', 'cpm']);
+  if (data) cleanupObjectAttributes(data.bidsReceived, ['bidderCode', 'width', 'height', 'adUnitCode', 'statusMessage', 'requestId', 'mediaType', 'cpm', 'currency', 'originalCpm', 'originalCurrency']);
   if (data) cleanupObjectAttributes(data.noBids, ['bidder', 'sizes', 'bidId']);
   if (data.bidderRequests) {
     data.bidderRequests.forEach(bidderRequest => {
