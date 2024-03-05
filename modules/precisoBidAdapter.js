@@ -127,7 +127,7 @@ export const spec = {
           width: bid.w,
           height: bid.h,
           creativeId: bid.crid,
-          ad: macroReplace (bid.adm, bid.price),
+          ad: macroReplace(bid.adm, bid.price),
           currency: 'USD',
           netRevenue: true,
           ttl: 300,
