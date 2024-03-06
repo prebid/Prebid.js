@@ -114,7 +114,7 @@ export const spec = {
           url: response.body.params.userSyncURL
         });
       }
-      if(response.body && response.body.params){
+      if (response.body && response.body.params) {
         if (syncOptions.pixelEnabled && isArray(response.body.params.userSyncPixels)) {
           const pixels = response.body.params.userSyncPixels.map(pixel => {
             return {
