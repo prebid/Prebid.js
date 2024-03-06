@@ -459,10 +459,6 @@ function getImpression(bid) {
     code: bid.adUnitCode
   };
 
-  if (bid.floorData != null && bid.floorData.floorMin > 0) {
-    imp.floor = bid.floorData.floorMin;
-  }
-
   if (bid.bidRequestsCount > 0) {
     imp.bidRequestCount = bid.bidRequestsCount;
   }
@@ -493,6 +489,20 @@ function getImpression(bid) {
 
     if (bid.mediaTypes.native != null) {
       imp.native = bid.mediaTypes.native;
+    }
+
+    if (typeof bid.getFloor === 'function') {
+      let floorInfo;
+      try {
+        floorInfo = bid.getFloor({
+          currency: 'USD',
+          mediaType: bid.mediaTypes.video ? 'video' : 'banner',
+          size: '*'
+        });
+      } catch (e) {
+        logError('Kargo: getFloor threw an error: ', e);
+      }
+      imp.floor = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
     }
   }
 
