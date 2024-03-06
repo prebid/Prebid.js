@@ -452,32 +452,6 @@ function sendTimeoutData(auctionId, auctionTimeout) {
   } catch (e) {}
 }
 
-function getBidFloors(bid, mediaType) {
-  let floorInfo;
-  try {
-    floorInfo = bid.getFloor({
-      currency: 'USD',
-      mediaType,
-      size: '*'
-    });
-  } catch (e) {
-    logError('Kargo: getFloor threw an error: ', e);
-  }
-  return typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
-}
-
-function getHighestFloor(bannerFloor, videoFloor, nativeFloor) {
-  const validFloors = [bannerFloor, videoFloor, nativeFloor].filter(floor => !isNaN(floor));
-
-  if (validFloors.length === 0) {
-    return null;
-  }
-
-  const highestFloor = Math.max(...validFloors);
-
-  return highestFloor;
-}
-
 function getImpression(bid) {
   const imp = {
     id: bid.bidId,
@@ -507,33 +481,31 @@ function getImpression(bid) {
 
   if (bid.mediaTypes) {
     const { banner, video, native } = bid.mediaTypes;
-    let bannerFloor, videoFloor, nativeFloor;
-    const hasGetFloor = typeof bid.getFloor === 'function';
 
     if (banner) {
       imp.banner = banner;
-      if (hasGetFloor) {
-        bannerFloor = getBidFloors(bid, 'banner');
-      }
     }
 
     if (video) {
       imp.video = video;
-      if (hasGetFloor) {
-        videoFloor = getBidFloors(bid, 'video');
-      }
     }
 
     if (native) {
       imp.native = native;
-      if (hasGetFloor) {
-        nativeFloor = getBidFloors(bid, 'native');
-      }
     }
 
-    const highestFloor = getHighestFloor(bannerFloor, videoFloor, nativeFloor);
-    if (highestFloor) {
-      imp.floor = highestFloor;
+    if (typeof bid.getFloor === 'function') {
+      let floorInfo;
+      try {
+        floorInfo = bid.getFloor({
+          currency: 'USD',
+          mediaType: '*',
+          size: '*'
+        });
+      } catch (e) {
+        logError('Kargo: getFloor threw an error: ', e);
+      }
+      imp.floor = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
     }
   }
 
