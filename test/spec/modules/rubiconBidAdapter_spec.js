@@ -34,6 +34,7 @@ describe('the rubicon adapter', function () {
     logErrorSpy;
 
   /**
+   * @typedef {import('../../../src/adapters/bidderFactory.js').BidRequest} BidRequest
    * @typedef {Object} sizeMapConverted
    * @property {string} sizeId
    * @property {string} size
