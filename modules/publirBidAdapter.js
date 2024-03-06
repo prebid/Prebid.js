@@ -114,14 +114,16 @@ export const spec = {
           url: response.body.params.userSyncURL
         });
       }
-      if (syncOptions.pixelEnabled && isArray(response.body.params.userSyncPixels)) {
-        const pixels = response.body.params.userSyncPixels.map(pixel => {
-          return {
-            type: 'image',
-            url: pixel
-          }
-        })
-        syncs.push(...pixels)
+      if(response.body && response.body.params){
+        if (syncOptions.pixelEnabled && isArray(response.body.params.userSyncPixels)) {
+          const pixels = response.body.params.userSyncPixels.map(pixel => {
+            return {
+              type: 'image',
+              url: pixel
+            }
+          })
+          syncs.push(...pixels)
+        }
       }
     }
     return syncs;
