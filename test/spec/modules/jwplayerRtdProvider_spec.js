@@ -215,23 +215,23 @@ describe('jwplayerRtdProvider', function() {
         expect(targeting).to.be.null;
       });
 
-      it('returns segments when media ID matches a playlist item with segments', function () {
+      it('returns targeting when media ID matches a playlist item', function () {
         const targeting = getVatFromPlayer(validPlayerID, mediaIdWithSegment);
         expect(targeting).to.deep.equal(targetingForMediaWithSegment);
       });
 
-      it('caches segments when media ID matches a playist item with segments', function () {
+      it('caches item when media ID matches a valid playist item', function () {
         getVatFromPlayer(validPlayerID, mediaIdWithSegment);
         const vat = getVatFromCache(mediaIdWithSegment);
         expect(vat).to.deep.equal(targetingForMediaWithSegment);
       });
 
-      it('returns segments of current item when media ID is missing', function () {
+      it('returns targeting of current item when media ID is missing', function () {
         const targeting = getVatFromPlayer(validPlayerID);
         expect(targeting).to.deep.equal(targetingForCurrentItem);
       });
 
-      it('caches segments from the current item', function () {
+      it('caches metadata from the current item', function () {
         getVatFromPlayer(validPlayerID);
 
         window.jwplayer = null;
@@ -506,7 +506,9 @@ describe('jwplayerRtdProvider', function() {
           playlist: [
             {
               file: 'test.mp4',
-              jwpseg: validSegments
+              jwpseg: validSegments,
+              title: 'test title',
+              description: 'test description',
             }
           ]
         })
@@ -515,6 +517,9 @@ describe('jwplayerRtdProvider', function() {
       expect(ortb2Fragments.global).to.have.property('site');
       expect(ortb2Fragments.global.site).to.have.property('content');
       expect(ortb2Fragments.global.site.content).to.have.property('id', 'jw_' + testIdForSuccess);
+      expect(ortb2Fragments.global.site.content).to.have.property('url', 'test.mp4');
+      expect(ortb2Fragments.global.site.content).to.have.property('title', 'test title');
+      expect(ortb2Fragments.global.site.content.ext).to.have.property('description', 'test description');
       expect(ortb2Fragments.global.site.content).to.have.property('data');
       const data = ortb2Fragments.global.site.content.data;
       expect(data).to.have.length(1);

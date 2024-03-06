@@ -167,7 +167,7 @@ export function enrichAdUnits(adUnits, ortb2Fragments = {}) {
       const contentData = getContentData(mediaId, contentSegments);
       const targeting = formatTargetingResponse(vat);
       enrichBids(adUnit.bids, targeting, contentId, contentData);
-      addOrtbSiteContent(ortb2Fragments.global, contentId, contentData, vat.title, vat.description);
+      addOrtbSiteContent(ortb2Fragments.global, contentId, contentData, vat.title, vat.description, vat.mediaUrl);
     };
     loadVat(jwTargeting, onVatResponse);
   });
