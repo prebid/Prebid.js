@@ -23,7 +23,7 @@ import {getGlobal} from '../src/prebidGlobal.js';
 
 const SUBMODULE_NAME = 'jwplayer';
 const JWPLAYER_DOMAIN = SUBMODULE_NAME + '.com';
-const segCache = {};
+const playlistItemCache = {};
 const pendingRequests = {};
 let activeRequestCount = 0;
 let resumeBidRequest;
@@ -77,9 +77,9 @@ export function fetchTargetingForMediaId(mediaId) {
   pendingRequests[mediaId] = null;
   ajax(`https://cdn.${JWPLAYER_DOMAIN}/v2/media/${mediaId}`, {
     success: function (response) {
-      const segment = parseSegment(response);
-      cacheSegments(segment, mediaId);
-      onRequestCompleted(mediaId, !!segment);
+      const item = parsePlaylistItem(response);
+      cachePlaylistItem(item, mediaId);
+      onRequestCompleted(mediaId, !!item);
     },
     error: function () {
       logError('failed to retrieve targeting information');
@@ -88,8 +88,8 @@ export function fetchTargetingForMediaId(mediaId) {
   });
 }
 
-function parseSegment(response) {
-  let segment;
+function parsePlaylistItem(response) {
+  let item;
   try {
     const data = JSON.parse(response);
     if (!data) {
@@ -101,16 +101,16 @@ function parseSegment(response) {
       throw ('Empty playlist');
     }
 
-    segment = playlist[0].jwpseg;
+    item = playlist[0];
   } catch (err) {
     logError(err);
   }
-  return segment;
+  return item;
 }
 
-function cacheSegments(jwpseg, mediaId) {
-  if (jwpseg && mediaId) {
-    segCache[mediaId] = jwpseg;
+function cachePlaylistItem(playlistItem, mediaId) {
+  if (playlistItem && mediaId) {
+    playlistItemCache[mediaId] = playlistItem;
   }
 }
 
@@ -167,7 +167,7 @@ export function enrichAdUnits(adUnits, ortb2Fragments = {}) {
       const contentData = getContentData(mediaId, contentSegments);
       const targeting = formatTargetingResponse(vat);
       enrichBids(adUnit.bids, targeting, contentId, contentData);
-      addOrtbSiteContent(ortb2Fragments.global, contentId, contentData);
+      addOrtbSiteContent(ortb2Fragments.global, contentId, contentData, vat.title, vat.description);
     };
     loadVat(jwTargeting, onVatResponse);
   });
@@ -217,14 +217,17 @@ function loadVatForPendingRequest(playerDivId, mediaID, callback) {
 }
 
 export function getVatFromCache(mediaID) {
-  const segments = segCache[mediaID];
+  const item = playlistItemCache[mediaID];
 
-  if (!segments) {
+  if (!item) {
     return null;
   }
 
   return {
-    segments,
+    segments: item.jwpseg,
+    title: item.title,
+    description: item.description,
+    mediaUrl: item.file,
     mediaID
   };
 }
@@ -241,12 +244,18 @@ export function getVatFromPlayer(playerDivId, mediaID) {
   }
 
   mediaID = mediaID || item.mediaid;
+  const title = item.title;
+  const description = item.description;
+  const mediaUrl = item.file;
   const segments = item.jwpseg;
-  cacheSegments(segments, mediaID)
+  cachePlaylistItem(item, mediaID)
 
   return {
     segments,
-    mediaID
+    mediaID,
+    title,
+    mediaUrl,
+    description
   };
 }
 
@@ -313,7 +322,7 @@ export function getContentData(mediaId, segments) {
   return contentData;
 }
 
-export function addOrtbSiteContent(ortb2, contentId, contentData) {
+export function addOrtbSiteContent(ortb2, contentId, contentData, contentTitle, contentDescription, contentUrl) {
   if (!contentId && !contentData) {
     return;
   }
@@ -327,6 +336,18 @@ export function addOrtbSiteContent(ortb2, contentId, contentData) {
 
   if (contentId) {
     content.id = contentId;
+  }
+
+  if (contentUrl) {
+    content.url = contentUrl;
+  }
+
+  if (contentTitle) {
+    content.title = contentTitle;
+  }
+
+  if (contentDescription) {
+    content.ext = { description: contentDescription };
   }
 
   const currentData = content.data = content.data || [];

@@ -150,26 +150,41 @@ describe('jwplayerRtdProvider', function() {
     describe('When jwplayer.js is on page', function () {
       const playlistItemWithSegmentMock = {
         mediaid: mediaIdWithSegment,
+        title: 'Media With Segment',
+        description: 'The media has segments',
+        file: 'mediaWithSegments.mp4',
         jwpseg: validSegments
       };
 
       const targetingForMediaWithSegment = {
         segments: validSegments,
-        mediaID: mediaIdWithSegment
+        mediaID: mediaIdWithSegment,
+        title: 'Media With Segment',
+        description: 'The media has segments',
+        mediaUrl: 'mediaWithSegments.mp4',
       };
 
       const playlistItemNoSegmentMock = {
-        mediaid: mediaIdNoSegment
+        mediaid: mediaIdNoSegment,
+        title: 'Media Without Segment',
+        description: 'The media has no segments',
+        file: 'mediaWithoutSegments.mp4',
       };
 
       const currentItemSegments = ['test_seg_3', 'test_seg_4'];
       const currentPlaylistItemMock = {
         mediaid: mediaIdForCurrentItem,
-        jwpseg: currentItemSegments
+        jwpseg: currentItemSegments,
+        title: 'Current Item',
+        description: 'The current playlist item',
+        file: 'currentItem.mp4',
       };
       const targetingForCurrentItem = {
         segments: currentItemSegments,
-        mediaID: mediaIdForCurrentItem
+        mediaID: mediaIdForCurrentItem,
+        title: 'Current Item',
+        description: 'The current playlist item',
+        mediaUrl: 'currentItem.mp4',
       };
 
       const playerInstanceMock = {
@@ -225,10 +240,11 @@ describe('jwplayerRtdProvider', function() {
 
       it('returns undefined segments when segments are absent', function () {
         const targeting = getVatFromPlayer(validPlayerID, mediaIdNoSegment);
-        expect(targeting).to.deep.equal({
-          mediaID: mediaIdNoSegment,
-          segments: undefined
-        });
+        expect(targeting.segments).to.be.undefined;
+        expect(targeting.mediaID).to.equal(mediaIdNoSegment);
+        expect(targeting.title).to.equal('Media Without Segment');
+        expect(targeting.description).to.equal('The media has no segments');
+        expect(targeting.mediaUrl).to.equal('mediaWithoutSegments.mp4');
       });
 
       describe('Get Bid Request Data', function () {
