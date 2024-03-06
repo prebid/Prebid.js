@@ -223,7 +223,7 @@ describe('jwplayerRtdProvider', function() {
       it('caches segments when media ID matches a playist item with segments', function () {
         getVatFromPlayer(validPlayerID, mediaIdWithSegment);
         const vat = getVatFromCache(mediaIdWithSegment);
-        expect(vat.segments).to.deep.equal(validSegments);
+        expect(vat).to.deep.equal(targetingForMediaWithSegment);
       });
 
       it('returns segments of current item when media ID is missing', function () {
