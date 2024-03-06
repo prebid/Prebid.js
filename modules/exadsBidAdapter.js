@@ -242,6 +242,12 @@ function handleResORTB2Dot4(serverResponse, request, adPartner) {
           mediaType = VIDEO;
         }
 
+        const metaData = {};
+
+        if (hasValue(bidData.ext.dsa)) {
+          metaData.dsa = bidData.ext.dsa;
+        }
+
         const bidResponse = {
           requestId: requestId,
           currency: currency,
@@ -254,9 +260,7 @@ function handleResORTB2Dot4(serverResponse, request, adPartner) {
           height: h,
           netRevenue: true,
           mediaType: mediaType,
-          meta: {
-            dsa: bidData.ext.dsa
-          },
+          meta: metaData,
           nurl: bidData.nurl.replace(/^http:\/\//i, 'https://')
         };
 
