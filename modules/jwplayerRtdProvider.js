@@ -343,10 +343,11 @@ export function addOrtbSiteContent(ortb2, contentId, contentData, contentTitle, 
   }
 
   if (contentDescription) {
-    content.ext = { description: contentDescription };
+    content.ext = content.ext || {};
+    content.ext.description = contentDescription;
   }
 
-  const currentData = content.data = content.data || [];
+  const currentData = content.data || [];
   // remove old jwplayer data
   const data = currentData.filter(datum => datum.name !== JWPLAYER_DOMAIN);
 
@@ -354,7 +355,9 @@ export function addOrtbSiteContent(ortb2, contentId, contentData, contentTitle, 
     data.push(contentData);
   }
 
-  content.data = data;
+  if (data.length) {
+    content.data = data;
+  }
 
   return ortb2;
 }
