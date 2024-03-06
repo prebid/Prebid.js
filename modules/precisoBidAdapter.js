@@ -48,14 +48,7 @@ export const spec = {
     }
     // let winTop = window;
     // let location;
-    var offset = new Date().getTimezoneOffset();
-    logInfo('timezone ' + offset);
     var city = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    logInfo('location test' + city);
-    logInfo('test log');
-
-    const countryCode = getCountryCodeByTimezone(city);
-    logInfo(`The country code for ${city} is ${countryCode}`);
     let request = {
       // bidRequest: bidderRequest,
       id: validBidRequests[0].auctionId,
@@ -168,33 +161,6 @@ export const spec = {
 function macroReplace(adm, cpm) {
   let replacedadm = replaceAuctionPrice(adm, cpm);
   return replacedadm;
-}
-
-function getCountryCodeByTimezone(city) {
-  try {
-    const now = new Date();
-    const options = {
-      timeZone: city,
-      timeZoneName: 'long',
-    };
-    const [timeZoneName] = new Intl.DateTimeFormat('en-US', options)
-      .formatToParts(now)
-      .filter((part) => part.type === 'timeZoneName');
-
-    if (timeZoneName) {
-      // Extract the country code from the timezone name
-      const parts = timeZoneName.value.split('-');
-      if (parts.length >= 2) {
-        return parts[1];
-      }
-    }
-  } catch (error) {
-    // Handle errors, such as an invalid timezone city
-    logInfo(error);
-  }
-
-  // Handle the case where the city is not found or an error occurred
-  return 'Unknown';
 }
 
 function getBidFloor(bid) {
