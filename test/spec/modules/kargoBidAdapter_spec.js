@@ -491,7 +491,8 @@ describe('kargo adapter tests', function () {
             },
             fpd: {
               gpid: '/22558409563,18834096/dfy_mobile_adhesion'
-            }
+            },
+            floor: 1
           },
           {
             code: '303',
@@ -503,7 +504,8 @@ describe('kargo adapter tests', function () {
             },
             fpd: {
               gpid: '/22558409563,18834096/dfy_mobile_adhesion'
-            }
+            },
+            floor: 1
           }
         ],
         socan: {
@@ -604,6 +606,10 @@ describe('kargo adapter tests', function () {
       if (gdpr) {
         payload['gdprConsent'] = gdpr
       }
+
+      clonedBids.forEach(bid => {
+        bid.getFloor = () => ({ currency: 'USD', floor: 1 });
+      });
 
       var request = spec.buildRequests(clonedBids, payload);
       var krakenParams = request.data;
