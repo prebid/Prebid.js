@@ -37,7 +37,7 @@ export const spec = {
       }
     }
 
-    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.publisherId) && bid.params.host == 'prebid' && precisoBid);
+    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.publisherId) && precisoBid);
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
