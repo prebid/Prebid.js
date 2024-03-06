@@ -12,6 +12,12 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ */
+
 const BIDDER_CODE = 'beop';
 const ENDPOINT_URL = 'https://hb.beop.io/bid';
 const TCF_VENDOR_ID = 666;
@@ -25,7 +31,7 @@ export const spec = {
   /**
    * Test if the bid request is valid.
    *
-   * @param {bid} : The Bid params
+   * @param {Bid} bid The Bid params
    * @return boolean true if the bid request is valid (aka contains a valid accountId or networkId and is open for BANNER), false otherwise.
    */
   isBidRequestValid: function(bid) {
@@ -41,8 +47,8 @@ export const spec = {
   /**
    * Create a BeOp server request from a list of BidRequest
    *
-   * @param {validBidRequests[], ...} : The array of validated bidRequests
-   * @param {... , bidderRequest} : Common params for each bidRequests
+   * @param {validBidRequests} validBidRequests The array of validated bidRequests
+   * @param {BidderRequest} bidderRequest Common params for each bidRequests
    * @return ServerRequest Info describing the request to the BeOp's server
    */
   buildRequests: function(validBidRequests, bidderRequest) {
@@ -72,6 +78,7 @@ export const spec = {
       is_amp: deepAccess(bidderRequest, 'referrerInfo.isAmp'),
       gdpr_applies: gdpr ? gdpr.gdprApplies : false,
       tc_string: (gdpr && gdpr.gdprApplies) ? gdpr.consentString : null,
+      eids: firstSlot.eids,
     };
 
     const payloadString = JSON.stringify(payloadObject);
@@ -159,6 +166,7 @@ function beOpRequestSlotsMaker(bid) {
     brc: getBidIdParameter('bidRequestsCount', bid),
     bdrc: getBidIdParameter('bidderRequestCount', bid),
     bwc: getBidIdParameter('bidderWinsCount', bid),
+    eids: bid.userIdAsEids,
   }
 }
 

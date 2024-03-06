@@ -585,6 +585,27 @@ describe('sharethrough adapter spec', function () {
 
             expect(videoImp.placement).to.equal(4);
           });
+
+          it('should not override "placement" value if "plcmt" prop is present', () => {
+            // ASSEMBLE
+            const ARBITRARY_PLACEMENT_VALUE = 99;
+            const ARBITRARY_PLCMT_VALUE = 100;
+
+            bidRequests[1].mediaTypes.video.context = 'instream';
+            bidRequests[1].mediaTypes.video.placement = ARBITRARY_PLACEMENT_VALUE;
+
+            // adding "plcmt" property - this should prevent "placement" prop
+            // from getting overridden to 1
+            bidRequests[1].mediaTypes.video['plcmt'] = ARBITRARY_PLCMT_VALUE;
+
+            // ACT
+            const builtRequest = spec.buildRequests(bidRequests, bidderRequest)[1];
+            const videoImp = builtRequest.data.imp[0].video;
+
+            // ASSERT
+            expect(videoImp.placement).to.equal(ARBITRARY_PLACEMENT_VALUE);
+            expect(videoImp.plcmt).to.equal(ARBITRARY_PLCMT_VALUE);
+          });
         });
       });
 
@@ -690,6 +711,22 @@ describe('sharethrough adapter spec', function () {
 
           expect(openRtbReq.regs.ext.gpp).to.equal(firstPartyData.regs.gpp);
           expect(openRtbReq.regs.ext.gpp_sid).to.equal(firstPartyData.regs.gpp_sid);
+        });
+      });
+
+      describe('fledge', () => {
+        it('should attach "ae" as a property to the request if 1) fledge auctions are enabled, and 2) request is display (only supporting display for now)', () => {
+          // ASSEMBLE
+          const EXPECTED_AE_VALUE = 1;
+
+          // ACT
+          bidderRequest['fledgeEnabled'] = true;
+          const builtRequests = spec.buildRequests(bidRequests, bidderRequest);
+          const ACTUAL_AE_VALUE = builtRequests[0].data.imp[0].ext.ae;
+
+          // ASSERT
+          expect(ACTUAL_AE_VALUE).to.equal(EXPECTED_AE_VALUE);
+          expect(builtRequests[1].data.imp[0].ext.ae).to.be.undefined;
         });
       });
     });

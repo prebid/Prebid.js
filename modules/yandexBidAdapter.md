@@ -8,7 +8,9 @@ Maintainer: prebid@yandex-team.com
 
 # Description
 
-Yandex Bidder Adapter for Prebid.js.
+The Yandex Prebid Adapter is designed for seamless integration with Yandex's advertising services. It facilitates effective bidding by leveraging Yandex's robust ad-serving technology, ensuring publishers can maximize their ad revenue through efficient and targeted ad placements.
+
+For comprehensive auction analytics, consider using the [Yandex Analytics Adapter](https://docs.prebid.org/dev-docs/analytics/yandex.html). This tool provides essential insights into auction dynamics and user interactions, empowering publishers to fine-tune their strategies for optimal ad performance.
 
 # Parameters
 

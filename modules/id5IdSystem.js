@@ -10,6 +10,7 @@ import {
   deepSetValue,
   isEmpty,
   isEmptyStr,
+  isPlainObject,
   logError,
   logInfo,
   logWarn,
@@ -21,8 +22,8 @@ import {getRefererInfo} from '../src/refererDetection.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {uspDataHandler, gppDataHandler} from '../src/adapterManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
-import { GreedyPromise } from '../src/utils/promise.js';
-import { loadExternalScript } from '../src/adloader.js';
+import {GreedyPromise} from '../src/utils/promise.js';
+import {loadExternalScript} from '../src/adloader.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -39,6 +40,7 @@ export const ID5_PRIVACY_STORAGE_NAME = `${ID5_STORAGE_NAME}_privacy`;
 const LOCAL_STORAGE = 'html5';
 const LOG_PREFIX = 'User ID - ID5 submodule: ';
 const ID5_API_CONFIG_URL = 'https://id5-sync.com/api/config/prebid';
+const ID5_DOMAIN = 'id5-sync.com';
 
 // order the legacy cookie names in reverse priority order so the last
 // cookie in the array is the most preferred to use
@@ -51,26 +53,26 @@ export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleNam
  * @property {string} [universal_uid] - The encrypted ID5 ID to pass to bidders
  * @property {Object} [ext] - The extensions object to pass to bidders
  * @property {Object} [ab_testing] - A/B testing configuration
-*/
+ */
 
 /**
  * @typedef {Object} FetchCallConfig
  * @property {string} [url] - The URL for the fetch endpoint
  * @property {Object} [overrides] - Overrides to apply to fetch parameters
-*/
+ */
 
 /**
  * @typedef {Object} ExtensionsCallConfig
  * @property {string} [url] - The URL for the extensions endpoint
  * @property {string} [method] - Overrides the HTTP method to use to make the call
  * @property {Object} [body] - Specifies a body to pass to the extensions endpoint
-*/
+ */
 
 /**
  * @typedef {Object} DynamicConfig
  * @property {FetchCallConfig} [fetchCall] - The fetch call configuration
  * @property {ExtensionsCallConfig} [extensionsCall] - The extensions call configuration
-*/
+ */
 
 /**
  * @typedef {Object} ABTestingConfig
@@ -146,8 +148,16 @@ export const id5IdSubmodule = {
       id5id: {
         uid: universalUid,
         ext: ext
-      }
+      },
     };
+
+    if (isPlainObject(ext.euid)) {
+      responseObj.euid = {
+        uid: ext.euid.uids[0].id,
+        source: ext.euid.source,
+        ext: {provider: ID5_DOMAIN}
+      }
+    }
 
     const abTestingResult = deepAccess(value, 'ab_testing.result');
     switch (abTestingResult) {
@@ -232,7 +242,7 @@ export const id5IdSubmodule = {
       getValue: function(data) {
         return data.uid
       },
-      source: 'id5-sync.com',
+      source: ID5_DOMAIN,
       atype: 1,
       getUidExt: function(data) {
         if (data.ext) {
@@ -240,6 +250,20 @@ export const id5IdSubmodule = {
         }
       }
     },
+    'euid': {
+      getValue: function (data) {
+        return data.uid;
+      },
+      getSource: function (data) {
+        return data.source;
+      },
+      atype: 3,
+      getUidExt: function (data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    }
   },
 };
 

@@ -1,4 +1,3 @@
-// ver V1.0.4
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -155,15 +154,16 @@ export const spec = {
   },
 
   buildRequests(bidRequests, bidderRequest) {
+    const reqArr = [];
     const videoBids = bidRequests.filter((bid) => isVideoBid(bid));
     const bannerBids = bidRequests.filter((bid) => isBannerBid(bid));
-    let requests = bannerBids.length
-      ? [createRequest(bannerBids, bidderRequest, BANNER)]
-      : [];
+    bannerBids.forEach((bid) => {
+      reqArr.push(createRequest([bid], bidderRequest, BANNER));
+    })
     videoBids.forEach((bid) => {
-      requests.push(createRequest([bid], bidderRequest, VIDEO));
+      reqArr.push(createRequest([bid], bidderRequest, VIDEO));
     });
-    return requests;
+    return reqArr;
   },
 
   interpretResponse(response, request) {
