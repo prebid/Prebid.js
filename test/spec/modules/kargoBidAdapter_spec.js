@@ -492,7 +492,7 @@ describe('kargo adapter tests', function () {
             fpd: {
               gpid: '/22558409563,18834096/dfy_mobile_adhesion'
             },
-            floor: 1
+            floor: 2
           },
           {
             code: '303',
@@ -505,7 +505,7 @@ describe('kargo adapter tests', function () {
             fpd: {
               gpid: '/22558409563,18834096/dfy_mobile_adhesion'
             },
-            floor: 1
+            floor: 3
           }
         ],
         socan: {
@@ -608,7 +608,13 @@ describe('kargo adapter tests', function () {
       }
 
       clonedBids.forEach(bid => {
-        bid.getFloor = () => ({ currency: 'USD', floor: 1 });
+        if (bid.mediaTypes.banner) {
+          bid.getFloor = () => ({ currency: 'USD', floor: 1 });
+        } else if (bid.mediaTypes.video) {
+          bid.getFloor = () => ({ currency: 'USD', floor: 2 });
+        } else if (bid.mediaTypes.native) {
+          bid.getFloor = () => ({ currency: 'USD', floor: 3 });
+        }
       });
 
       var request = spec.buildRequests(clonedBids, payload);

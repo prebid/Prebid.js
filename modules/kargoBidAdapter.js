@@ -13,6 +13,7 @@ const BIDDER = Object.freeze({
   REQUEST_ENDPOINT: '/api/v1/prebid',
   TIMEOUT_ENDPOINT: '/api/v1/event/timeout',
   GVLID: 972,
+  //  NATIVE?? Referenced below as well as https://docs.prebid.org/dev-docs/bidders/kargo.html
   SUPPORTED_MEDIA_TYPES: [BANNER, VIDEO],
 });
 
@@ -451,6 +452,32 @@ function sendTimeoutData(auctionId, auctionTimeout) {
   } catch (e) {}
 }
 
+function getBidFloors(bid, mediaType) {
+  let floorInfo;
+  try {
+    floorInfo = bid.getFloor({
+      currency: 'USD',
+      mediaType,
+      size: '*'
+    });
+  } catch (e) {
+    logError('Kargo: getFloor threw an error: ', e);
+  }
+  return typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
+}
+
+function getHighestFloor(bannerFloor, videoFloor, nativeFloor) {
+  const validFloors = [bannerFloor, videoFloor, nativeFloor].filter(floor => !isNaN(floor));
+
+  if (validFloors.length === 0) {
+    return null;
+  }
+
+  const highestFloor = Math.max(...validFloors);
+
+  return highestFloor;
+}
+
 function getImpression(bid) {
   const imp = {
     id: bid.bidId,
@@ -478,31 +505,35 @@ function getImpression(bid) {
     }
   }
 
-  if (bid.mediaTypes != null) {
-    if (bid.mediaTypes.banner != null) {
-      imp.banner = bid.mediaTypes.banner;
-    }
+  if (bid.mediaTypes) {
+    const { banner, video, native } = bid.mediaTypes;
+    let bannerFloor, videoFloor, nativeFloor;
+    const hasGetFloor = typeof bid.getFloor === 'function';
 
-    if (bid.mediaTypes.video != null) {
-      imp.video = bid.mediaTypes.video;
-    }
-
-    if (bid.mediaTypes.native != null) {
-      imp.native = bid.mediaTypes.native;
-    }
-
-    if (typeof bid.getFloor === 'function') {
-      let floorInfo;
-      try {
-        floorInfo = bid.getFloor({
-          currency: 'USD',
-          mediaType: bid.mediaTypes.video ? 'video' : 'banner',
-          size: '*'
-        });
-      } catch (e) {
-        logError('Kargo: getFloor threw an error: ', e);
+    if (banner) {
+      imp.banner = banner;
+      if (hasGetFloor) {
+        bannerFloor = getBidFloors(bid, 'banner');
       }
-      imp.floor = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
+    }
+
+    if (video) {
+      imp.video = video;
+      if (hasGetFloor) {
+        videoFloor = getBidFloors(bid, 'video');
+      }
+    }
+
+    if (native) {
+      imp.native = native;
+      if (hasGetFloor) {
+        nativeFloor = getBidFloors(bid, 'native');
+      }
+    }
+
+    const highestFloor = getHighestFloor(bannerFloor, videoFloor, nativeFloor);
+    if (highestFloor) {
+      imp.floor = highestFloor;
     }
   }
 
