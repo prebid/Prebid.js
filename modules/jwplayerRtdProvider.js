@@ -38,7 +38,7 @@ export const jwplayerSubmodule = {
   /**
    * add targeting data to bids and signal completion to realTimeData module
    * @function
-   * @param {Obj} bidReqConfig
+   * @param {object} bidReqConfig
    * @param {function} onDone
    */
   getBidRequestData: enrichBidRequest,
@@ -323,10 +323,6 @@ export function getContentData(mediaId, segments) {
 }
 
 export function addOrtbSiteContent(ortb2, contentId, contentData, contentTitle, contentDescription, contentUrl) {
-  if (!contentId && !contentData) {
-    return;
-  }
-
   if (ortb2 == null) {
     ortb2 = {};
   }

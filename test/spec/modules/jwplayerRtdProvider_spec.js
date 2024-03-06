@@ -783,9 +783,15 @@ describe('jwplayerRtdProvider', function() {
     it('should create a structure compliant with the oRTB 2 spec', function() {
       const ortb2 = {}
       const expectedId = 'expectedId';
+      const expectedUrl = 'expectedUrl';
+      const expectedTitle = 'expectedTitle';
+      const expectedDescription = 'expectedDescription';
       const expectedData = { datum: 'datum' };
-      addOrtbSiteContent(ortb2, expectedId, expectedData);
+      addOrtbSiteContent(ortb2, expectedId, expectedData, expectedTitle, expectedDescription, expectedUrl);
       expect(ortb2).to.have.nested.property('site.content.id', expectedId);
+      expect(ortb2).to.have.nested.property('site.content.url', expectedUrl);
+      expect(ortb2).to.have.nested.property('site.content.title', expectedTitle);
+      expect(ortb2).to.have.nested.property('site.content.ext.description', expectedDescription);
       expect(ortb2).to.have.nested.property('site.content.data');
       expect(ortb2.site.content.data[0]).to.be.deep.equal(expectedData);
     });
@@ -794,11 +800,14 @@ describe('jwplayerRtdProvider', function() {
       const ortb2 = {
         site: {
           content: {
-            id: 'oldId'
+            id: 'oldId',
+            ext: {
+              random_field: 'randomField'
+            }
           },
           random: {
             random_sub: 'randomSub'
-          }
+          },
         },
         app: {
           content: {
@@ -808,11 +817,18 @@ describe('jwplayerRtdProvider', function() {
       };
 
       const expectedId = 'expectedId';
+      const expectedUrl = 'expectedUrl';
+      const expectedTitle = 'expectedTitle';
+      const expectedDescription = 'expectedDescription';
       const expectedData = { datum: 'datum' };
-      addOrtbSiteContent(ortb2, expectedId, expectedData);
+      addOrtbSiteContent(ortb2, expectedId, expectedData, expectedTitle, expectedDescription, expectedUrl);
       expect(ortb2).to.have.nested.property('site.random.random_sub', 'randomSub');
       expect(ortb2).to.have.nested.property('app.content.id', 'appId');
+      expect(ortb2).to.have.nested.property('site.content.ext.random_field', 'randomField');
       expect(ortb2).to.have.nested.property('site.content.id', expectedId);
+      expect(ortb2).to.have.nested.property('site.content.url', expectedUrl);
+      expect(ortb2).to.have.nested.property('site.content.title', expectedTitle);
+      expect(ortb2).to.have.nested.property('site.content.ext.description', expectedDescription);
       expect(ortb2).to.have.nested.property('site.content.data');
       expect(ortb2.site.content.data[0]).to.be.deep.equal(expectedData);
     });
@@ -894,6 +910,115 @@ describe('jwplayerRtdProvider', function() {
       expect(ortb2.site.content.data).to.have.length(1);
       expect(ortb2.site.content.data[0]).to.be.deep.equal(expectedData);
       expect(ortb2).to.have.nested.property('site.content.id', expectedId);
+    });
+
+    it('should set content title', function () {
+      const ortb2 = {};
+      const expectedTitle = 'expectedTitle';
+      addOrtbSiteContent(ortb2, null, null, expectedTitle);
+      expect(ortb2).to.have.nested.property('site.content.title', expectedTitle);
+    });
+
+    it('should override content title', function () {
+      const ortb2 = {
+        site: {
+          content: {
+            title: 'oldTitle'
+          }
+        }
+      };
+
+      const expectedTitle = 'expectedTitle';
+      addOrtbSiteContent(ortb2, null, null, expectedTitle);
+      expect(ortb2).to.have.nested.property('site.content.title', expectedTitle);
+    });
+
+    it('should keep previous content title when not set', function () {
+      const ortb2 = {
+        site: {
+          content: {
+            title: 'oldTitle',
+            data: [{ datum: 'first_datum' }]
+          }
+        }
+      };
+
+      addOrtbSiteContent(ortb2, null, { datum: 'new_datum' });
+      expect(ortb2).to.have.nested.property('site.content.title', 'oldTitle');
+    });
+
+    it('should set content description', function () {
+      const ortb2 = {};
+      const expectedDescription = 'expectedDescription';
+      addOrtbSiteContent(ortb2, null, null, null, expectedDescription);
+      expect(ortb2).to.have.nested.property('site.content.ext.description', expectedDescription);
+    });
+
+    it('should override content description', function () {
+      const ortb2 = {
+        site: {
+          content: {
+            ext: {
+              description: 'oldDescription'
+            }
+          }
+        }
+      };
+
+      const expectedDescription = 'expectedDescription';
+      addOrtbSiteContent(ortb2, null, null, null, expectedDescription);
+      expect(ortb2).to.have.nested.property('site.content.ext.description', expectedDescription);
+    });
+
+    it('should keep previous content description when not set', function () {
+      const ortb2 = {
+        site: {
+          content: {
+            data: [{ datum: 'first_datum' }],
+            ext: {
+              description: 'oldDescription'
+            }
+          }
+        }
+      };
+
+      addOrtbSiteContent(ortb2, null, { datum: 'new_datum' });
+      expect(ortb2).to.have.nested.property('site.content.ext.description', 'oldDescription');
+    });
+
+    it('should set content url', function () {
+      const ortb2 = {};
+      const expectedUrl = 'expectedUrl';
+      addOrtbSiteContent(ortb2, null, null, null, null, expectedUrl);
+      expect(ortb2).to.have.nested.property('site.content.url', expectedUrl);
+    });
+
+    it('should override content url', function () {
+      const ortb2 = {
+        site: {
+          content: {
+            url: 'oldUrl'
+          }
+        }
+      };
+
+      const expectedUrl = 'expectedUrl';
+      addOrtbSiteContent(ortb2, null, null, null, null, expectedUrl);
+      expect(ortb2).to.have.nested.property('site.content.url', expectedUrl);
+    });
+
+    it('should keep previous content url when not set', function () {
+      const ortb2 = {
+        site: {
+          content: {
+            url: 'oldUrl',
+            data: [{ datum: 'first_datum' }]
+          }
+        }
+      };
+
+      addOrtbSiteContent(ortb2, null, { datum: 'new_datum' });
+      expect(ortb2).to.have.nested.property('site.content.url', 'oldUrl');
     });
   });
 
