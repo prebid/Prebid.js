@@ -44,6 +44,7 @@ describe('dailymotionBidAdapterTests', () => {
           duration: 300,
           iabcat2: 'test_cat',
           lang: 'ENG',
+          startdelay: 0,
         },
       },
       sizes: [[1920, 1080]],
@@ -89,6 +90,7 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
     expect(reqData.request.mediaTypes.video.api).to.eql(bidRequestData[0].mediaTypes.video.api);
     expect(reqData.request.mediaTypes.video.playerSize).to.eql(bidRequestData[0].mediaTypes.video.playerSize);
+    expect(reqData.request.mediaTypes.video.startDelay).to.eql(bidRequestData[0].mediaTypes.video.startdelay);
     expect(reqData.video_metadata).to.eql({
       description: bidRequestData[0].mediaTypes.video.description,
       iabcat2: bidRequestData[0].mediaTypes.video.iabcat2,
@@ -145,6 +147,7 @@ describe('dailymotionBidAdapterTests', () => {
       mediaTypes: {
         video: {
           playerSize: [],
+          startDelay: 0,
           api: [],
         },
       },

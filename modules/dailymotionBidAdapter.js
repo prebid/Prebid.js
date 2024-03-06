@@ -83,6 +83,7 @@ export const spec = {
           video: {
             playerSize: bid.mediaTypes?.[VIDEO]?.playerSize || [],
             api: bid.mediaTypes?.[VIDEO]?.api || [],
+            startDelay: bid.mediaTypes?.[VIDEO]?.startdelay || 0,
           },
         },
         sizes: bid.sizes || [],
