@@ -484,6 +484,139 @@ describe('exadsBidAdapterTest', function () {
     });
   });
 
+  describe('checking dsa information', function() {
+    it('should add dsa information to the request via bidderRequest.params.dsa', function () {
+      const bidRequests = [imageBanner];
+
+      const requests = spec.buildRequests(bidRequests, {});
+
+      requests.forEach(function(requestItem) {
+        const payload = JSON.parse(requestItem.data);
+
+        expect(payload.regs.ext.dsa).to.exist;
+        expect(payload.regs.ext.dsa.dsarequired).to.equal(3);
+        expect(payload.regs.ext.dsa.pubrender).to.equal(0);
+        expect(payload.regs.ext.dsa.datatopub).to.equal(2);
+      });
+    });
+
+    it('should test the dsa interpretResponse', function () {
+      const dsaResponse = {
+        'behalf': '...',
+        'paid': '...',
+        'transparency': [
+          {
+            'params': [
+              2
+            ]
+          }
+        ],
+        'adrender': 0
+      };
+
+      const serverResponse = {
+        body: {
+          'id': '2d2a496527398e',
+          'seatbid': [
+            {
+              'bid': [
+                {
+                  'id': '8f7fa506af97bc193e7bf099d8ed6930bd50aaf1',
+                  'impid': '270544423272657',
+                  'price': 0.0045000000000000005,
+                  'adm': '<?xml version="1.0"?>\n<ad><imageAd><clickUrl><![CDATA[https://your-ad-network.com--]]></clickUrl><imgUrl><![CDATA[https://your-ad-network.com]]></imgUrl></imageAd></ad>\n',
+                  'ext': {
+                    'btype': 1,
+                    'asset_mime_type': [
+                      'image/jpeg',
+                      'image/jpg'
+                    ],
+                    'dsa': dsaResponse
+                  },
+                  'nurl': 'http://your-ad-network.com/',
+                  'cid': '6260389',
+                  'crid': '89453173',
+                  'adomain': [
+                    'test.com'
+                  ],
+                  'w': 300,
+                  'h': 250,
+                  'attr': [
+                    12
+                  ]
+                }
+              ]
+            }
+          ],
+          'cur': 'USD'
+        }
+      };
+
+      const bidResponses = spec.interpretResponse(serverResponse, {
+        data: JSON.stringify({
+          'id': '2d2a496527398e',
+          'at': 1,
+          'imp': [
+            {
+              'id': '270544423272657',
+              'bidfloor': 1.1e-7,
+              'bidfloorcur': 'EUR',
+              'banner': {
+                'w': 300,
+                'h': 250
+              }
+            }
+          ],
+          'site': {
+            'id': '12345',
+            'domain': 'your-ad-network.com',
+            'cat': [
+              'IAB25-3'
+            ],
+            'page': 'https://your-ad-network.com/prebidJS-client-RTB-banner.html',
+            'keywords': 'lifestyle, humour'
+          },
+          'device': {
+            'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+            'ip': '95.233.216.174',
+            'geo': {
+              'country': 'ITA'
+            },
+            'language': 'en',
+            'os': 'MacOS',
+            'js': 0,
+            'ext': {
+              'remote_addr': '',
+              'x_forwarded_for': '',
+              'accept_language': 'en-GB'
+            }
+          },
+          'user': {
+            'id': ''
+          },
+          'ext': {
+            'sub': 0
+          },
+          'regs': {
+            'ext': {
+              'dsa': {
+                'dsarequired': 3,
+                'pubrender': 0,
+                'datatopub': 2
+              }
+            }
+          }
+        })
+      });
+
+      expect(bidResponses).to.be.an('array').that.is.not.empty;
+      const bidResponse = bidResponses[0];
+      expect(bidResponse.meta).to.exist;
+      expect(bidResponse.meta.dsa).to.exist;
+      expect(bidResponse.meta.dsa).equal(dsaResponse);
+    });
+  });
+
   describe('on getting the win event', function() {
     it('should not create nurl request if bid is undefined', function() {
       const result = spec.onBidWon({});

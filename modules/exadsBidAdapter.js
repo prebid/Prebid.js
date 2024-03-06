@@ -254,6 +254,9 @@ function handleResORTB2Dot4(serverResponse, request, adPartner) {
           height: h,
           netRevenue: true,
           mediaType: mediaType,
+          meta: {
+            dsa: bidData.ext.dsa
+          },
           nurl: bidData.nurl.replace(/^http:\/\//i, 'https://')
         };
 

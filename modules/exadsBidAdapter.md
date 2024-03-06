@@ -393,6 +393,26 @@ adUnits = [{
         }]
 }];
 ```
+# DSA Transparency
+All DSA information, returned by the ad server, can be found into the **meta** tag of the response. As:
+```
+"meta": {
+    "dsa": {
+        "behalf": "...",
+        "paid": "...",
+        "transparency": [
+            {
+                "params": [
+                    ...
+                ]
+            }
+        ],
+        "adrender": ...
+    }
+}
+```
+For more information navigate to https://docs.prebid.org/dev-docs/bidder-adaptor.html.
+
 # Tools and suggestions
 This section contains some suggestions that allow to set some parameters automatically.
 
