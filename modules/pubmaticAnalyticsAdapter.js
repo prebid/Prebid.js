@@ -151,6 +151,7 @@ function parseBidResponse(bid) {
     'cpm', () => window.parseFloat(Number(bid.cpm).toFixed(BID_PRECISION)),
     'originalCpm', () => window.parseFloat(Number(bid.originalCpm).toFixed(BID_PRECISION)),
     'originalCurrency',
+    'adserverTargeting',
     'dealChannel',
     'meta',
     'status',
@@ -303,7 +304,8 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
         'ocry': bid.bidResponse ? (bid.bidResponse.originalCurrency || CURRENCY_USD) : CURRENCY_USD,
         'piid': bid.bidResponse ? (bid.bidResponse.partnerImpId || EMPTY_STRING) : EMPTY_STRING,
         'frv': bid.bidResponse ? bid.bidResponse.floorData?.floorRuleValue : undefined,
-        'md': bid.bidResponse ? getMetadata(bid.bidResponse.meta) : undefined
+        'md': bid.bidResponse ? getMetadata(bid.bidResponse.meta) : undefined,
+        'pb': bid.bidResponse?.adserverTargeting?.hb_pb || bid.bidResponse?.adserverTargeting?.pwtpb || undefined
       });
     });
     return partnerBids;
@@ -475,6 +477,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&kgpv=' + enc(getValueForKgpv(winningBid, adUnitId));
   pixelURL += '&piid=' + enc(winningBid.bidResponse.partnerImpId || EMPTY_STRING);
   pixelURL += '&di=' + enc(winningBid?.bidResponse?.dealId || OPEN_AUCTION_DEAL_ID);
+  pixelURL += '&pb=' + enc(winningBid?.bidResponse?.adserverTargeting?.hb_pb || winningBid?.bidResponse?.adserverTargeting?.pwtpb || undefined);
 
   pixelURL += '&plt=' + enc(getDevicePlatform());
   pixelURL += '&psz=' + enc((winningBid?.bidResponse?.dimensions?.width || '0') + 'x' +
