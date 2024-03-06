@@ -47,7 +47,9 @@ describe('jwplayerRtdProvider', function() {
             playlist: [
               {
                 file: 'test.mp4',
-                jwpseg: validSegments
+                jwpseg: validSegments,
+                title: 'test',
+                description: 'this is a test'
               }
             ]
           })
@@ -57,7 +59,10 @@ describe('jwplayerRtdProvider', function() {
 
         const validTargeting = {
           segments: validSegments,
-          mediaID: testIdForSuccess
+          mediaID: testIdForSuccess,
+          mediaUrl: 'test.mp4',
+          title: 'test',
+          description: 'this is a test'
         };
 
         expect(targetingInfo).to.deep.equal(validTargeting);
@@ -82,16 +87,12 @@ describe('jwplayerRtdProvider', function() {
         expect(targetingInfo).to.be.null;
       });
 
-      it('should not write to cache when segments are absent', function() {
+      it('should not write to cache when playlist is empty', function() {
         request.respond(
           200,
           responseHeader,
           JSON.stringify({
-            playlist: [
-              {
-                file: 'test.mp4'
-              }
-            ]
+            playlist: []
           })
         );
         const targetingInfo = getVatFromCache(testIdForFailure);
