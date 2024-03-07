@@ -216,8 +216,8 @@ const applyTopics = (validBidRequest, ortbRequest) => {
 };
 
 const applyUserIds = (validBidRequest, ortbRequest) => {
-  const { userIdAsEids: eidsVbr = [], ortb2 } = validBidRequest;
-  const eidsOrtb = ortb2.user.ext?.data?.eids || [];
+  const { userIdAsEids: eidsVbr = [], ortb2 = {} } = validBidRequest;
+  const eidsOrtb = ortb2.user?.ext?.data?.eids || [];
   const eids = [...eidsVbr, ...eidsOrtb];
 
   if (eids.length) {
@@ -665,7 +665,7 @@ const spec = {
       return false;
     }
 
-    const { regs = {} } = validBidRequests[0].ortb2;
+    const ortb2 = setOnAny(validBidRequests, 'ortb2');
     const siteId = setOnAny(validBidRequests, 'params.siteId');
     const publisherId = setOnAny(validBidRequests, 'params.publisherId');
     const page = setOnAny(validBidRequests, 'params.page') || bidderRequest.refererInfo.page;
@@ -674,6 +674,7 @@ const spec = {
     const pbver = '$prebid.version$';
     const testMode = setOnAny(validBidRequests, 'params.test') ? 1 : undefined;
     const ref = bidderRequest.refererInfo.ref;
+    const { regs = {} } = ortb2 || {};
 
     const payload = {
       id: bidderRequest.bidderRequestId,
