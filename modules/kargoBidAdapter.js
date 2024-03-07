@@ -221,7 +221,7 @@ function interpretResponse(response, bidRequest) {
       width: adUnit.width,
       height: adUnit.height,
       ttl: 300,
-      creativeId: adUnit.creativeID,
+      creativeId: adUnit.creativeId,
       dealId: adUnit.targetingCustom,
       netRevenue: true,
       currency: adUnit.currency || bidRequest.currency,
