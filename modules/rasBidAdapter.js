@@ -143,7 +143,7 @@ function parseOrtbResponse(ad) {
   };
 
   if (dsaurl) {
-    ortb.privacy=  dsaurl
+    ortb.privacy = dsaurl
   }
 
   return ortb
@@ -168,7 +168,7 @@ function parseNativeResponse(ad) {
 
     clickUrl: link,
     cta: Calltoaction || '',
-    body: leadtext || Body ||'',
+    body: leadtext || Body || '',
     sponsoredBy: deepAccess(ad, 'data.meta.advertiser_name', null) || '',
     ortb: parseOrtbResponse(ad)
   };
@@ -196,7 +196,7 @@ const buildBid = (ad, mediaType) => {
     actgMatch: ad.actg_match || 0,
     meta: { mediaType: BANNER },
     mediaType: BANNER,
-    ad:  ad.html || null,
+    ad: ad.html || null,
     width: ad.width || 0,
     height: ad.height || 0
   }
@@ -303,7 +303,7 @@ const getAdUnitCreFormat = (adUnit) => {
   let mediaTypes = Object.keys(adUnit.mediaTypes);
 
   if (mediaTypes && mediaTypes.length === 1 && mediaTypes.includes('native')) {
-      creFormat = 'native';
+    creFormat = 'native';
   }
 
   return creFormat;
@@ -333,7 +333,7 @@ export const spec = {
       sizes: getAdUnitSizes(bid),
       params: bid.params,
       fledgeEnabled: fledgeEligible,
-      mediaType: !!(bid.mediaTypes && bid.mediaTypes.banner) ? 'display' : NATIVE
+      mediaType: (bid.mediaTypes && bid.mediaTypes.banner) ? NATIVE : 'display'
     }));
 
     return [{

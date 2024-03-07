@@ -445,7 +445,7 @@ describe('rasBidAdapter', function () {
               Headline: 'Headline',
               Image: '//img.url',
               Sponsorlabel: 'nie',
-              Thirdpartyclicktracker: "//link.url",
+              Thirdpartyclicktracker: '//link.url',
               imp: '//imp.url'
             },
             meta: {
@@ -472,19 +472,19 @@ describe('rasBidAdapter', function () {
             h: 1
           }
         },
-          {
-            id: 4,
-            title: {
-              text: 'Headline'
-            }
-          },
-          {
-            id: 3,
-            data: {
-              value: 'Test Onet',
-              type: 1
-            }
+        {
+          id: 4,
+          title: {
+            text: 'Headline'
           }
+        },
+        {
+          id: 3,
+          data: {
+            value: 'Test Onet',
+            type: 1
+          }
+        }
       ],
       link: {
         url: '//adclick.url//link.url'
@@ -511,24 +511,23 @@ describe('rasBidAdapter', function () {
           url: '//impressionJs1.url'
         }
       ],
-      privacy:  '//dsa.url',
+      privacy: '//dsa.url'
     };
     const expectedTeaserStandardResponse = {
-        sendTargetingKeys: false,
-        title: 'Headline',
-        image: {
-          url: '//img.url',
-          width: 1,
-          height: 1
-        },
-
-        clickUrl: '//adclick.url//link.url',
-        cta: '',
-        body: 'BODY',
-        sponsoredBy: 'Test Onet',
-        ortb: expectedTeaserStandardOrtbResponse,
-        privacyLink:  '//dsa.url',
-      };
+      sendTargetingKeys: false,
+      title: 'Headline',
+      image: {
+        url: '//img.url',
+        width: 1,
+        height: 1
+      },
+      clickUrl: '//adclick.url//link.url',
+      cta: '',
+      body: 'BODY',
+      sponsoredBy: 'Test Onet',
+      ortb: expectedTeaserStandardOrtbResponse,
+      privacyLink: '//dsa.url'
+    };
     const expectedNativeInFeedOrtbResponse = {
       ver: '1.2',
       assets: [
@@ -540,19 +539,19 @@ describe('rasBidAdapter', function () {
             h: 1
           }
         },
-          {
-            id: 4,
-            title: {
-              text: 'Headline'
-            }
-          },
-          {
-            id: 3,
-            data: {
-              value: 'Test Onet',
-              type: 1
-            }
+        {
+          id: 4,
+          title: {
+            text: 'Headline'
           }
+        },
+        {
+          id: 3,
+          data: {
+            value: 'Test Onet',
+            type: 1
+          }
+        }
       ],
       link: {
         url: '//adclick.url//link.url'
@@ -569,23 +568,23 @@ describe('rasBidAdapter', function () {
           url: '//imp.url'
         }
       ],
-      privacy:  '//dsa.url',
+      privacy: '//dsa.url',
     };
     const expectedNativeInFeedResponse = {
-        sendTargetingKeys: false,
-        title: 'Headline',
-        image: {
-          url: '//img.url',
-          width: 1,
-          height: 1
-        },
-        clickUrl: '//adclick.url//link.url',
-        cta: 'Calltoaction',
-        body: 'BODY',
-        sponsoredBy: 'Test Onet',
-        ortb: expectedNativeInFeedOrtbResponse,
-        privacyLink:  '//dsa.url'
-      };
+      sendTargetingKeys: false,
+      title: 'Headline',
+      image: {
+        url: '//img.url',
+        width: 1,
+        height: 1
+      },
+      clickUrl: '//adclick.url//link.url',
+      cta: 'Calltoaction',
+      body: 'BODY',
+      sponsoredBy: 'Test Onet',
+      ortb: expectedNativeInFeedOrtbResponse,
+      privacyLink: '//dsa.url'
+    };
 
     it('should get correct bid native response', function () {
       const resp = spec.interpretResponse({ body: response }, { bidIds: [{ slot: 'nativestd', bidId: 1, mediaType: 'native' }] });
