@@ -12,7 +12,7 @@
 import {submodule} from '../src/hook.js';
 import {config} from '../src/config.js';
 import {ajaxBuilder} from '../src/ajax.js';
-import {deepAccess, logError} from '../src/utils.js';
+import { deepAccess, logError, logWarn } from '../src/utils.js'
 import {find} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
@@ -436,10 +436,18 @@ function getPlayer(playerDivId) {
     return;
   }
 
-  const player = jwplayer(playerDivId);
-  if (!player || !player.getPlaylist) {
-    logError('player ID did not match any players');
-    return;
+  let player = jwplayer(playerDivId);
+  if (player && player.getPlaylist) {
+    return player;
   }
-  return player;
+
+  let errorMessage = `player Div ID ${playerID} did not match any players.`;
+  player = jwplayer();
+
+  if (player && player.getPlaylist) {
+    logWarn(`${errorMessage} Targeting player Div ID ${player.id} instead`);
+    return player;
+  }
+
+  logError(errorMessage);
 }
