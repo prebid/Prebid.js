@@ -333,7 +333,7 @@ export const spec = {
       sizes: getAdUnitSizes(bid),
       params: bid.params,
       fledgeEnabled: fledgeEligible,
-      mediaType: (bid.mediaTypes && bid.mediaTypes.banner) ? NATIVE : 'display'
+      mediaType: !!(bid.mediaTypes && bid.mediaTypes.banner) ? 'display' : NATIVE
     }));
 
     return [{
