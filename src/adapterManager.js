@@ -115,6 +115,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}
         bids.push(Object.assign({}, bid, {
           adUnitCode: adUnit.code,
           transactionId: adUnit.transactionId,
+          adUnitId: adUnit.adUnitId,
           sizes: deepAccess(mediaTypes, 'banner.sizes') || deepAccess(mediaTypes, 'video.playerSize') || [],
           bidId: bid.bid_id || getUniqueIdentifierStr(),
           bidderRequestId,

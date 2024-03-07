@@ -118,6 +118,7 @@ const PBS_CONVERTER = ortbConverter({
         src: CONSTANTS.S2S.SRC,
         bidId: bidRequest ? (bidRequest.bidId || bidRequest.bid_Id) : null,
         transactionId: context.adUnit.transactionId,
+        adUnitId: context.adUnit.adUnitId,
         auctionId: context.bidderRequest.auctionId,
       }), bidResponse),
       adUnit: context.adUnit.code

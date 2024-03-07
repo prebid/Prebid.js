@@ -34,7 +34,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           bidfloorcur: 'EUR',
           bidfloor: 1.11,
           ext: {prebid: {storedrequest: {id: '123'}}},
-          banner: {format: [{w: 300, h: 250}, {w: 320, h: 250}]},
+          banner: {w: 300, h: 250, format: [{w: 300, h: 250}, {w: 320, h: 250}]},
         },
       },
 
@@ -389,6 +389,28 @@ describe('nextMillenniumBidAdapterTests', () => {
           pagecat: ['IAB2-11', 'IAB2-12', 'IAB2-14'],
           content: {cat: ['IAB2-11', 'IAB2-12', 'IAB2-14'], language: 'EN'},
         }},
+      },
+
+      {
+        title: 'site.keywords, site.content.keywords and user.keywords',
+        data: {
+          postBody: {},
+          ortb2: {
+            user: {keywords: 'key7,key8,key9'},
+            site: {
+              keywords: 'key1,key2,key3',
+              content: {keywords: 'key4,key5,key6'},
+            },
+          },
+        },
+
+        expected: {
+          user: {keywords: 'key7,key8,key9'},
+          site: {
+            keywords: 'key1,key2,key3',
+            content: {keywords: 'key4,key5,key6'},
+          },
+        },
       },
 
       {
@@ -880,7 +902,7 @@ describe('nextMillenniumBidAdapterTests', () => {
     ];
 
     for (let {eventName, bid, expected} of dataForTests) {
-      const url = spec.getUrlPixelMetric(eventName, bid);
+      const url = spec._getUrlPixelMetric(eventName, bid);
       expect(url).to.equal(expected);
     };
   })

@@ -3,6 +3,16 @@ import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { deepAccess, deepSetValue } from '../src/utils.js';
 import { config } from '../src/config.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
+
 const BIDDER_CODE = 'dsp_geniee';
 const ENDPOINT_URL = 'https://rt.gsspat.jp/prebid_auction';
 const ENDPOINT_URL_UNCOMFORTABLE = 'https://rt.gsspat.jp/prebid_uncomfortable';
@@ -44,7 +54,7 @@ export const spec = {
   /**
    * Determines whether or not the given bid request is valid.
    *
-   * @param {BidRequest} - The bid params to validate.
+   * @param {BidRequest} _ The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (_) {
@@ -53,8 +63,8 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
-   * @param {bidderRequest} - the master bidRequest object
+   * @param {validBidRequests} validBidRequests - an array of bids
+   * @param {BidderRequest} bidderRequest - the master bidRequest object
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
