@@ -108,7 +108,19 @@ const BIDDER_REQUEST = {
   'ortb2': {
     'site': {
       'cat': ['IAB2'],
-      'pagecat': ['IAB2-2']
+      'pagecat': ['IAB2-2'],
+      'content': {
+        'data': [{
+          'name': 'example.com',
+          'ext': {
+            'segtax': 7
+          },
+          'segments': [
+            {'id': 'segId1'},
+            {'id': 'segId2'}
+          ]
+        }]
+      }
     },
     'regs': {
       'gpp': 'gpp_string',
@@ -131,6 +143,15 @@ const BIDDER_REQUEST = {
         'bitness': '64',
         'architecture': ''
       }
+    },
+    user: {
+      data: [
+        {
+          ext: {segtax: 600, segclass: '1'},
+          name: 'example.com',
+          segment: [{id: '243'}],
+        },
+      ],
     }
   },
 };
@@ -318,6 +339,23 @@ describe('VidazooBidAdapter', function () {
             'bitness': '64',
             'architecture': ''
           },
+          contentData: [{
+            'name': 'example.com',
+            'ext': {
+              'segtax': 7
+            },
+            'segments': [
+              {'id': 'segId1'},
+              {'id': 'segId2'}
+            ]
+          }],
+          userData: [
+            {
+              ext: {segtax: 600, segclass: '1'},
+              name: 'example.com',
+              segment: [{id: '243'}],
+            },
+          ],
           uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
           uqs: getTopWindowQueryParams(),
           isStorageAllowed: true,
@@ -340,7 +378,8 @@ describe('VidazooBidAdapter', function () {
             }
           }
         }
-      });
+      })
+      ;
     });
 
     it('should build banner request for each size', function () {
@@ -405,6 +444,23 @@ describe('VidazooBidAdapter', function () {
           gpid: '1234567890',
           cat: ['IAB2'],
           pagecat: ['IAB2-2'],
+          contentData: [{
+            'name': 'example.com',
+            'ext': {
+              'segtax': 7
+            },
+            'segments': [
+              {'id': 'segId1'},
+              {'id': 'segId2'}
+            ]
+          }],
+          userData: [
+            {
+              ext: {segtax: 600, segclass: '1'},
+              name: 'example.com',
+              segment: [{id: '243'}],
+            },
+          ],
           webSessionId: webSessionId
         }
       });
@@ -478,6 +534,23 @@ describe('VidazooBidAdapter', function () {
         gpid: '1234567890',
         cat: ['IAB2'],
         pagecat: ['IAB2-2'],
+        contentData: [{
+          'name': 'example.com',
+          'ext': {
+            'segtax': 7
+          },
+          'segments': [
+            {'id': 'segId1'},
+            {'id': 'segId2'}
+          ]
+        }],
+        userData: [
+          {
+            ext: {segtax: 600, segclass: '1'},
+            name: 'example.com',
+            segment: [{id: '243'}],
+          },
+        ],
         webSessionId: webSessionId
       };
 
