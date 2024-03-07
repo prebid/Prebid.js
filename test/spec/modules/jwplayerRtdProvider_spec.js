@@ -67,6 +67,40 @@ describe('jwplayerRtdProvider', function() {
 
         expect(targetingInfo).to.deep.equal(validTargeting);
       });
+
+      it('should obtain file from sources', function () {
+        request.respond(
+          200,
+          responseHeader,
+          JSON.stringify({
+            playlist: [
+              {
+                sources: [{
+                  label: 'missing file',
+                }, {
+                  file: 'source.mp4',
+                  label: 'valid file'
+                }],
+                jwpseg: validSegments,
+                title: 'test',
+                description: 'this is a test'
+              }
+            ]
+          })
+        );
+
+        const targetingInfo = getVatFromCache(testIdForSuccess);
+
+        const validTargeting = {
+          segments: validSegments,
+          mediaID: testIdForSuccess,
+          mediaUrl: 'source.mp4',
+          title: 'test',
+          description: 'this is a test'
+        };
+
+        expect(targetingInfo).to.deep.equal(validTargeting);
+      });
     });
 
     describe('Fetch fails', function () {

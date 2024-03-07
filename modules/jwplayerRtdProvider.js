@@ -223,13 +223,32 @@ export function getVatFromCache(mediaID) {
     return null;
   }
 
+  let mediaUrl = item.file;
+  if (!mediaUrl) {
+    mediaUrl = getFileFromSources(item);
+  }
+
   return {
     segments: item.jwpseg,
     title: item.title,
     description: item.description,
-    mediaUrl: item.file,
+    mediaUrl,
     mediaID
   };
+}
+
+function getFileFromSources(playlistItem) {
+  const sources = playlistItem.sources;
+  if (!sources || !sources.length) {
+    return;
+  }
+
+  const validSource = sources.find(source => !!source.file);
+  if (!validSource) {
+    return;
+  }
+
+  return validSource.file;
 }
 
 export function getVatFromPlayer(playerDivId, mediaID) {
