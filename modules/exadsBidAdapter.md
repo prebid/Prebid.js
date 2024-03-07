@@ -205,6 +205,7 @@ adUnits =
 * **mediaTypes.video** (required)
     * **mimes** (required) - list of supported mime types (string array)
     * **protocols** (required) - list of supported video bid response protocols (integer array) 
+    * **context** - (recommended) - the video context, either 'instream', 'outstream'. Defaults to ‘instream’ (string)
 * **dsa** - DSA transparency information
     * **dsarequired** - flag to indicate if DSA information should be made available (integer)
         * 0 - Not required
@@ -219,7 +220,6 @@ adUnits =
         * 0 - do not send transparency data
         * 1 - optional to send transparency data
         * 2 - send transparency data
-* **context** - (recommended) - the video context, either 'instream', 'outstream'. Defaults to ‘instream’ (string)
 * **endpoint** (required) - EXADS endpoint (URL)
 
 ```javascript
