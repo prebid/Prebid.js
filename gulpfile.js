@@ -513,8 +513,8 @@ gulp.task(escapePostbidConfig);
 gulp.task('build-creative-dev', gulp.series(buildCreative(argv.creativeDev ? 'development' : 'production'), updateCreativeRenderers));
 gulp.task('build-creative-prod', gulp.series(buildCreative(), updateCreativeRenderers));
 
-gulp.task('build-bundle-dev', gulp.series('build-creative-dev', makeDevpackPkg, gulpBundle.bind(null, true)));
-gulp.task('build-bundle-prod', gulp.series('build-creative-prod', makeWebpackPkg(), gulpBundle.bind(null, false)));
+gulp.task('build-bundle-dev', gulp.series(transpile, 'build-creative-dev', makeDevpackPkg, gulpBundle.bind(null, true)));
+gulp.task('build-bundle-prod', gulp.series(transpile, 'build-creative-prod', makeWebpackPkg(), gulpBundle.bind(null, false)));
 // build-bundle-verbose - prod bundle except names and comments are preserved. Use this to see the effects
 // of dead code elimination.
 gulp.task('build-bundle-verbose', gulp.series(makeWebpackPkg({
@@ -538,17 +538,17 @@ gulp.task('build-bundle-verbose', gulp.series(makeWebpackPkg({
 gulp.task('transpile', gulp.series(transpile));
 gulp.task('test-only', test);
 gulp.task('test-all-features-disabled', testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false}));
-gulp.task('test', gulp.series(clean, lint, transpile, 'test-all-features-disabled', 'test-only'));
+gulp.task('test', gulp.series(clean, transpile, lint, 'test-all-features-disabled', 'test-only'));
 
 gulp.task('test-coverage', gulp.series(clean, testCoverage));
 gulp.task(viewCoverage);
 
 gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 
-gulp.task('build', gulp.series(clean, 'build-bundle-prod', updateCreativeExample));
+gulp.task('build', gulp.series(clean, transpile, 'build-bundle-prod', updateCreativeExample));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
-gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
+gulp.task('serve', gulp.series(clean, transpile, lint, gulp.parallel('build-bundle-dev', watch, test)));
 gulp.task('serve-fast', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast)));
 gulp.task('serve-prod', gulp.series(clean, gulp.parallel('build-bundle-prod', startLocalServer)));
 gulp.task('serve-and-test', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast, testTaskMaker({watch: true}))));
