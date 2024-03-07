@@ -3,8 +3,8 @@
 <head>
   <link rel="icon" type="image/png" href="/favicon.png">
 
-  <script async src="//cdn.preciso.net/Preciso_Prebid/prebid.js"></script> 
-  <!--script async src="../../build/dev/prebid.js"></script-->
+  <!--script async src="//cdn.preciso.net/Preciso_Prebid/prebid.js"></script-->
+  <script async src="../../build/dev/prebid.js"></script>
   <script>
     var div_1_sizes = [
       [300, 250],
@@ -18,7 +18,7 @@
     var FAILSAFE_TIMEOUT = 3000;
     var adslot1 = 'preciso-adslot-1';
     var adslot2 = 'preciso-adslot-2';
-   
+
     // define  Ad units 
     var adUnits = [
       {
@@ -32,11 +32,9 @@
           bidder: 'preciso',
           params: {
             publisherId: '123456',
-            host: 'prebid',
-            region: 'prebid-eu',
+            region: 'USA',
             traffic: 'banner',
-            bifloor : 0.27,
-            currency: "USD"
+            bidfloor: 0.12,
           }
         }]
       },
@@ -54,14 +52,13 @@
             host: 'prebid',
             region: 'prebid-eu',
             traffic: 'banner',
-            bifloor : 0.28,
-            currency: "USD"
+            bidfloor: 0.28
           }
         }]
       }
     ];
 
-  
+
 
     var pbjs = pbjs || {};
     pbjs.que = pbjs.que || [];
@@ -100,55 +97,53 @@
           }]
         },
         floors: {
-
           floorMin: 0.32,
-          currency: 'USD'
-
-
-
+          currency: ['USD']
         },
-        enableTIDs: true,
-        deviceAccess: true
+        ortb2: {
+          bcat: ['IAB1-1'],
+          badv: ['example.com'],
+          wlang: ['fr', 'en']
+        },
+        enableTIDs: true
       });
       pbjs.setTargetingForGPTAsync();
       pbjs.requestBids({
         bidsBackHandler: function () {
-            // call for the bid response which have the high bid price 
-          let ad1 =pbjs.getHighestCpmBids(adslot1)
-          let ad2 =pbjs.getHighestCpmBids(adslot2)
+          // call for the bid response which have the high bid price 
+          let ad1 = pbjs.getHighestCpmBids(adslot1)
+          let ad2 = pbjs.getHighestCpmBids(adslot2)
           if (ad1 && ad1.length > 0) {
             var iframe1 = document.getElementById('preciso-iframe-1');
             var iframe1Doc = iframe1.contentWindow.document;
             try {
-                pbjs.renderAd(iframe1Doc, ad1[0]['adId']);
+              pbjs.renderAd(iframe1Doc, ad1[0]['adId']);
             } catch (e) {
-                console.log(e);
+              console.log(e);
             }
-        }  else 
-        {
-          console.log("No bids for the adslot : "+adslot1);
-        };
-        if(ad2 && ad2.length>0){
-          var iframe2 = document.getElementById('preciso-iframe-2');
-          var iframe2Doc = iframe2.contentWindow.document;
-          try{
-            pbjs.renderAd(iframe2Doc, ad2[0]['adId']);
-          }catch(e){
-            console.log(e)
-          }
-        }else{
-          console.log("No bids for the adslot : "+adslot2);
-        };
+          } else {
+            console.log("No bids for the adslot : " + adslot1);
+          };
+          if (ad2 && ad2.length > 0) {
+            var iframe2 = document.getElementById('preciso-iframe-2');
+            var iframe2Doc = iframe2.contentWindow.document;
+            try {
+              pbjs.renderAd(iframe2Doc, ad2[0]['adId']);
+            } catch (e) {
+              console.log(e)
+            }
+          } else {
+            console.log("No bids for the adslot : " + adslot2);
+          };
 
           var bids = pbjs.getBidResponses();
           console.log('Bids received Test test:', bids);
           pbjs.setTargetingForAst();
           console.log('Rendering ads...');
-          
         },
         timeout: PREBID_TIMEOUT
       });
-     
+
     });
 
   </script>
@@ -156,16 +151,16 @@
 </head>
 
 <body>
-    <!-- Ad slot Creation  -->
+  <!-- Ad slot Creation  -->
   <h2>Basic Prebid.js Example with Preciso Bidder</h2>
   <h3>Adslot-1</h3>
   <div id='div-1' style="display: inline-block;">
-    <iframe id='preciso-iframe-1' style="min-width: 350px; min-height: 600px; padding: 0%;" scrolling="no" ></iframe>
+    <iframe id='preciso-iframe-1' style="min-width: 350px; min-height: 600px; padding: 0%;" scrolling="no"></iframe>
   </div>
-  
+
   <div id='div-2' style="margin-left: 30; vertical-align: top; display: inline-block;">
     <h3>Adslot-2</h3>
-    <iframe id='preciso-iframe-2' style="min-width: 970px; min-height: 250px;  " scrolling="no" ></iframe>
+    <iframe id='preciso-iframe-2' style="min-width: 970px; min-height: 250px;  " scrolling="no"></iframe>
   </div>
 
 </body>

@@ -52,13 +52,11 @@ export const spec = {
     let request = {
       // bidRequest: bidderRequest,
       id: validBidRequests[0].auctionId,
-      cur: 'USD',
+      cur: validBidRequests[0].params.currency || ['USD'],
       imp: validBidRequests.map(request => {
         const { bidId, sizes } = request
         const item = {
           id: bidId,
-          // region: request.params.region,
-          // traffic: mediaType,
           bidFloor: getBidFloor(request),
           bidfloorcur: request.params.currency
         }
@@ -83,7 +81,10 @@ export const spec = {
       },
       device: validBidRequests[0].ortb2.device,
       site: validBidRequests[0].ortb2.site,
-      source: validBidRequests[0].ortb2.source
+      source: validBidRequests[0].ortb2.source,
+      bcat: validBidRequests[0].ortb2.bcat || validBidRequests[0].params.bcat,
+      badv: validBidRequests[0].ortb2.badv || validBidRequests[0].params.badv,
+      wlang: validBidRequests[0].ortb2.wlang || validBidRequests[0].params.wlang
     };
 
     //  request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
@@ -134,6 +135,7 @@ export const spec = {
   },
 
   getUserSyncs: (syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '', gppConsent = '') => {
+    userId = readFromAllStorages(COOKIE_NAME)
     let syncs = [];
     let { gdprApplies, consentString = '' } = gdprConsent;
 
