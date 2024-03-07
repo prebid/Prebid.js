@@ -441,9 +441,20 @@ function getPlayer(playerDivId) {
     return player;
   }
 
-  let errorMessage = `player Div ID ${playerID} did not match any players.`;
-  player = jwplayer();
+  const playerOnPageCount = document.getElementsByClassName('jwplayer').length;
+  if (playerOnPageCount === 0) {
+    logError('No JWPlayer instances have been detected on the page');
+    return;
+  }
 
+  let errorMessage = `player Div ID ${playerID} did not match any players.`;
+  // If there are multiple instances on the page, we cannot guess which one should be targeted.
+  if (playerOnPageCount > 1) {
+    logError(errorMessage);
+    return;
+  }
+
+  player = jwplayer();
   if (player && player.getPlaylist) {
     logWarn(`${errorMessage} Targeting player Div ID ${player.id} instead`);
     return player;
