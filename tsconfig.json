@@ -2,17 +2,22 @@
   "compilerOptions": {
     "noImplicitAny": false,
     "allowJs": true,
+    "checkJs": false,
     "sourceMap": true,
     "target": "es2018",
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": false,
+    "rootDir": "./",
+    "noEmitHelpers": true
   },
   "include": [
-    "./src/**/*",
-    "./modules/**/*",
-    "./libraries/**/*",
-    "./creatives/**/*",
-    "./test/**/*"
+    "./src/**/*.ts",
+    "./modules/**/*.ts",
+    "./creatives/**/*.ts",
+    "./test/**/*.ts"
   ]
+  
 }

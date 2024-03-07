@@ -76,12 +76,13 @@ function escapePostbidConfig() {
 };
 escapePostbidConfig.displayName = 'escape-postbid-config';
 
+const isFixed = function (file) {
+  return file.eslint != null && file.eslint.fixed;
+}
+
 function lint(done) {
   if (argv.nolint) {
     return done();
-  }
-  const isFixed = function (file) {
-    return file.eslint != null && file.eslint.fixed;
   }
   return gulp.src([
     'src/**/*.js',
@@ -129,6 +130,26 @@ function viewReview(done) {
 
 viewReview.displayName = 'view-review';
 
+function transpile() {
+  var externalModules = helpers.getArgModules();
+  const analyticsSources = helpers.getAnalyticsSources();
+  const moduleSources = helpers.getModulePaths(externalModules);
+
+  const tsFiles = [].concat(moduleSources, analyticsSources, 'src/prebid.ts').filter(file => file.endsWith('.ts'));
+
+  gutil.log('transpiling ' + tsFiles.length + ' ts files ');
+  gutil.log(tsFiles.join('\n'));
+
+  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.ts').filter(file => file.endsWith('.ts')))
+    .pipe(tsProject()).js
+    // the generated files should all be fixed
+    .pipe(eslint({ fix: true, quiet: true }))
+    .pipe(eslint.format('stylish'))
+    .pipe(eslint.failAfterError())
+    // pipe the files next to their ts file so they can be imported by other js files during the migration period
+    .pipe(gulp.dest(file => file.base));
+}
+
 function makeDevpackPkg() {
   var cloned = _.cloneDeep(webpackConfig);
   Object.assign(cloned, {
@@ -149,7 +170,7 @@ function makeDevpackPkg() {
   const analyticsSources = helpers.getAnalyticsSources();
   const moduleSources = helpers.getModulePaths(externalModules);
 
-  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.ts'))
+  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
     .pipe(tsProject()).js
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
@@ -169,7 +190,7 @@ function makeWebpackPkg(extraConfig = {}) {
     const analyticsSources = helpers.getAnalyticsSources();
     const moduleSources = helpers.getModulePaths(externalModules);
 
-    return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.ts'))
+    return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
       .pipe(tsProject()).js
       .pipe(helpers.nameModules(externalModules))
       .pipe(webpackStream(cloned, webpack))
@@ -514,9 +535,10 @@ gulp.task('build-bundle-verbose', gulp.series(makeWebpackPkg({
 }), gulpBundle.bind(null, false)));
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
+gulp.task('transpile', gulp.series(transpile));
 gulp.task('test-only', test);
 gulp.task('test-all-features-disabled', testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false}));
-gulp.task('test', gulp.series(clean, lint, 'test-all-features-disabled', 'test-only'));
+gulp.task('test', gulp.series(clean, lint, transpile, 'test-all-features-disabled', 'test-only'));
 
 gulp.task('test-coverage', gulp.series(clean, testCoverage));
 gulp.task(viewCoverage);
