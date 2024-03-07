@@ -9,6 +9,8 @@ import {ajax} from '../src/ajax.js';
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').Bids} Bids
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  */
 
 const BIDDER_CODE = 'zeta_global_ssp';
@@ -200,6 +202,7 @@ export const spec = {
     const response = (serverResponse || {}).body;
     if (response && response.seatbid && response.seatbid[0].bid && response.seatbid[0].bid.length) {
       response.seatbid.forEach(zetaSeatbid => {
+        const seat = zetaSeatbid.seat;
         zetaSeatbid.bid.forEach(zetaBid => {
           let bid = {
             requestId: zetaBid.impid,
@@ -220,6 +223,9 @@ export const spec = {
           provideMediaType(zetaBid, bid, bidRequest.data);
           if (bid.mediaType === VIDEO) {
             bid.vastXml = bid.ad;
+          }
+          if (seat) {
+            bid.dspId = seat;
           }
           bidResponses.push(bid);
         })
@@ -381,6 +387,10 @@ function provideMediaType(zetaBid, bid, bidRequest) {
 
 function clearEmpties(o) {
   for (let k in o) {
+    if (o[k] === null) {
+      delete o[k];
+      continue;
+    }
     if (!o[k] || typeof o[k] !== 'object') {
       continue;
     }

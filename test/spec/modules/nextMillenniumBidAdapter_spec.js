@@ -34,7 +34,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           bidfloorcur: 'EUR',
           bidfloor: 1.11,
           ext: {prebid: {storedrequest: {id: '123'}}},
-          banner: {format: [{w: 300, h: 250}, {w: 320, h: 250}]},
+          banner: {w: 300, h: 250, format: [{w: 300, h: 250}, {w: 320, h: 250}]},
         },
       },
 
@@ -902,7 +902,7 @@ describe('nextMillenniumBidAdapterTests', () => {
     ];
 
     for (let {eventName, bid, expected} of dataForTests) {
-      const url = spec.getUrlPixelMetric(eventName, bid);
+      const url = spec._getUrlPixelMetric(eventName, bid);
       expect(url).to.equal(expected);
     };
   })
