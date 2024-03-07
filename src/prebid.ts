@@ -488,6 +488,20 @@ pbjsInstance.removeAdUnit = function (adUnitCode) {
   });
 };
 
+export type RequestOptions = {
+  bidsBackHandler?: Function;
+  ttlBuffer?: number;
+  timeout?: number;
+  adUnits?: any[];
+  adUnitCodes?: string[];
+  labels?: string[];
+  auctionId?: string;
+  metrics?: any;
+  defer?: any;
+  ortb2Fragments?: any; // this seems to be only available for the startAuction method
+  ortb2?: any; // this seems to be only available for the requestBids method
+}
+
 /**
  * @param {Object} requestOptions
  * @param {function} requestOptions.bidsBackHandler
@@ -499,7 +513,7 @@ pbjsInstance.removeAdUnit = function (adUnitCode) {
  * @alias module:pbjs.requestBids
  */
 pbjsInstance.requestBids = (function() {
-  const delegate = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2, metrics, defer } = {}) {
+  const delegate = hook('async', function ({ bidsBackHandler, timeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2, metrics, defer }: RequestOptions = {}) {
     events.emit(REQUEST_BIDS);
     const cbTimeout = timeout || config.getConfig('bidderTimeout');
     logInfo('Invoking $$PREBID_GLOBAL$$.requestBids', arguments);
@@ -532,13 +546,14 @@ pbjsInstance.requestBids = (function() {
 
     req.metrics = newMetrics();
     req.metrics.checkpoint('requestBids');
-    req.defer = defer({promiseFactory: (r) => new Promise(r)})
+    req.defer = defer({promiseFactory: (r) => new Promise(r) as any}) // the promiseFactory is inferred to return a GreedyPromise, but a Promise is not a GreedyPromise and is missing two fields, which is why we need to cast it to any
     delegate.call(this, req);
     return req.defer.promise;
   });
 })();
 
-export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer } = {}) {
+
+export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer }: RequestOptions = {}) {
   const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
   fillAdUnitDefaults(adUnits);
   adUnits = useMetrics(metrics).measureTime('requestBids.validate', () => checkAdUnitSetup(adUnits));
