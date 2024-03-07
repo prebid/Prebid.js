@@ -326,7 +326,7 @@ adUnits = [{
             * 3 - large image preview for the ad (integer)
         * **w** - width of the image in pixels, optional (integer)
         * **h** - height of the image in pixels, optional (integer)
-    
+ * **endpoint** (required) - EXADS endpoint (URL)   
 ```javascript
 adUnits = [{
     code: 'postbid_iframe',
