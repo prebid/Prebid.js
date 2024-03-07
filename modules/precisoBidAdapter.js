@@ -15,6 +15,7 @@ const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 const GVLID = 874;
 let userId = 'NA';
 let precisoId = 'NA';
+let sharedId = 'NA'
 
 export const storage2 = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: BIDDER_CODE });
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'sharedId' });
@@ -25,7 +26,7 @@ export const spec = {
   gvlid: GVLID,
 
   isBidRequestValid: (bid) => {
-    let sharedId = readFromAllStorages(COOKIE_NAME);
+    sharedId = readFromAllStorages(COOKIE_NAME);
     let precisoBid = true;
     const preCall = 'https://ssp-usersync.mndtrk.com/getUUID?sharedId=' + sharedId;
     precisoId = window.localStorage.getItem('_pre|id');
@@ -135,7 +136,7 @@ export const spec = {
   },
 
   getUserSyncs: (syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '', gppConsent = '') => {
-    userId = readFromAllStorages(COOKIE_NAME)
+    userId = sharedId;
     let syncs = [];
     let { gdprApplies, consentString = '' } = gdprConsent;
 
