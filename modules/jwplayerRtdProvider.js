@@ -447,7 +447,8 @@ function getPlayer(playerDivId) {
     return;
   }
 
-  let errorMessage = `player Div ID ${playerID} did not match any players.`;
+  let errorMessage = `player Div ID ${playerDivId} did not match any players.`;
+
   // If there are multiple instances on the page, we cannot guess which one should be targeted.
   if (playerOnPageCount > 1) {
     logError(errorMessage);
