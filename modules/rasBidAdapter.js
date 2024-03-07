@@ -237,7 +237,11 @@ const getSlots = (bidRequests) => {
     const creFormat = getAdUnitCreFormat(adunit);
     const sizes = creFormat === 'native' ? 'fluid' : parseSizesInput(getAdUnitSizes(adunit)).join(',');
 
-    queryString += `&slot${i}=${encodeURIComponent(adunit.params.slot)}&id${i}=${encodeURIComponent(adunit.bidId)}&composition${i}=CHILD&cre_format${i}=${encodeURIComponent(creFormat)}`;
+    queryString += `&slot${i}=${encodeURIComponent(adunit.params.slot)}&id${i}=${encodeURIComponent(adunit.bidId)}&composition${i}=CHILD`;
+
+    if (creFormat === 'native') {
+      queryString += `&cre_format${i}=native`;
+    }
 
     if (sizes) {
       queryString += `&iusizes${i}=${encodeURIComponent(sizes)}`;
@@ -299,7 +303,7 @@ const getAdUnitCreFormat = (adUnit) => {
     return;
   }
 
-  let creFormat = 'banner';
+  let creFormat = 'html';
   let mediaTypes = Object.keys(adUnit.mediaTypes);
 
   if (mediaTypes && mediaTypes.length === 1 && mediaTypes.includes('native')) {
