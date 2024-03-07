@@ -244,10 +244,6 @@ adUnits = [{
             userId: '1234',
             impressionId: '1234',
             imp: {
-                video: {
-                    mimes: ['video/mp4'],
-                    protocols: [3,6]
-                },
                 ext: {
                     video_cta: 0
                 }
