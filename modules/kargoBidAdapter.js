@@ -13,7 +13,6 @@ const BIDDER = Object.freeze({
   REQUEST_ENDPOINT: '/api/v1/prebid',
   TIMEOUT_ENDPOINT: '/api/v1/event/timeout',
   GVLID: 972,
-  //  NATIVE?? Referenced below as well as https://docs.prebid.org/dev-docs/bidders/kargo.html
   SUPPORTED_MEDIA_TYPES: [BANNER, VIDEO],
 });
 
