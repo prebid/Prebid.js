@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, generateUUID, inIframe, mergeDeep } from '../src/utils.js';
+import { deepAccess, generateUUID, inIframe, mergeDeep, isArray, isNumber, isPlainObject, isStr, isEmpty } from '../src/utils.js';
 
 const VERSION = '4.3.0';
 const BIDDER_CODE = 'sharethrough';
@@ -90,6 +90,26 @@ export const sharethroughAdapterSpec = {
     } else if (bidderRequest?.ortb2?.regs?.gpp) {
       req.regs.ext.gpp = bidderRequest.ortb2.regs.gpp;
       req.regs.ext.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
+    }
+
+    if (bidderRequest?.ortb2?.regs?.ext?.dsa) {
+      const pubDsaObj = bidderRequest.ortb2.regs.ext.dsa;
+      const dsaObj = {};
+      ['dsarequired', 'pubrender', 'datatopub'].forEach((dsaKey) => {
+        if (isNumber(pubDsaObj[dsaKey])) {
+          dsaObj[dsaKey] = pubDsaObj[dsaKey];
+        }
+      });
+
+      if (isArray(pubDsaObj.transparency) && pubDsaObj.transparency.every((v) => isPlainObject(v))) {
+       const tpData = pubDsaObj.transparency.filter(
+         (tpObj) => isStr(tpObj.domain) && tpObj.domain != '' && isArray(tpObj.dsaparams) && tpObj.dsaparams.every((v) => isNumber(v)))
+        if (tpData.length > 0) {
+          dsaObj.transparency = tpData;
+        }
+      }
+
+      if (!isEmpty(dsaObj)) req.regs.ext.dsa = dsaObj;
     }
 
     const imps = bidRequests
