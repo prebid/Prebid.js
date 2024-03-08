@@ -1,4 +1,3 @@
-
 const allowedModules = require('./allowedModules.js');
 
 module.exports = {
@@ -12,7 +11,7 @@ module.exports = {
         moduleDirectory: ['node_modules', './']
       }
     },
-    'jsdoc': {
+    jsdoc: {
       mode: 'typescript',
       tagNamePreference: {
         'tag constructor': 'constructor',
@@ -24,20 +23,23 @@ module.exports = {
   },
   extends: [
     'standard',
-    'plugin:jsdoc/recommended'
+    'plugin:jsdoc/recommended',
+    // 'plugin:@typescript-eslint/eslint-recommended',
+    // 'plugin:@typescript-eslint/recommended'
   ],
   plugins: [
     'prebid',
     'import',
-    'jsdoc'
+    'jsdoc', // this can be removed after the typescript integration
+    '@typescript-eslint'
   ],
   globals: {
-    'BROWSERSTACK_USERNAME': false,
-    'BROWSERSTACK_KEY': false,
-    'FEATURES': 'readonly',
+    BROWSERSTACK_USERNAME: false,
+    BROWSERSTACK_KEY: false,
+    FEATURES: 'readonly',
   },
   // use babel as parser for fancy syntax
-  parser: '@babel/eslint-parser',
+  parser: '@typescript-eslint/parser',
   parserOptions: {
     sourceType: 'module',
     ecmaVersion: 2018,

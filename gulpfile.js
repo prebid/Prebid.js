@@ -15,7 +15,7 @@ var helpers = require('./gulpHelpers.js');
 var concat = require('gulp-concat');
 var replace = require('gulp-replace');
 var shell = require('gulp-shell');
-var eslint = require('gulp-eslint');
+var eslint = require('gulp-eslint-new');
 var gulpif = require('gulp-if');
 var sourcemaps = require('gulp-sourcemaps');
 var through = require('through2');
@@ -91,8 +91,13 @@ function lint(done) {
     'creative/**/*.js',
     'test/**/*.js',
     'plugins/**/*.js',
-    '!plugins/**/node_modules/**',
-    './*.js'
+    'src/**/*.ts',
+    'modules/**/*.ts',
+    'libraries/**/*.ts',
+    'creative/**/*.ts',
+    'test/**/*.ts',
+    'plugins/**/*.ts',
+    '!plugins/**/node_modules/**'
   ], { base: './' })
     .pipe(eslint({ fix: !argv.nolintfix, quiet: !(typeof argv.lintWarnings === 'boolean' ? argv.lintWarnings : true) }))
     .pipe(eslint.format('stylish'))
