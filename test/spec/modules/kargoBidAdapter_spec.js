@@ -738,7 +738,7 @@ describe('kargo adapter tests', function () {
             width: 320,
             height: 50,
             metadata: {},
-            creativeId: 'bar'
+            creativeID: 'bar'
           },
           2: {
             id: 'bar',
@@ -750,7 +750,7 @@ describe('kargo adapter tests', function () {
             metadata: {
               landingPageDomain: ['https://foobar.com']
             },
-            creativeId: 'foo'
+            creativeID: 'foo'
           },
           3: {
             id: 'bar',
@@ -758,7 +758,7 @@ describe('kargo adapter tests', function () {
             adm: '<div id="2"></div>',
             width: 300,
             height: 250,
-            creativeId: 'foo'
+            creativeID: 'foo'
           },
           4: {
             id: 'bar',
@@ -768,7 +768,7 @@ describe('kargo adapter tests', function () {
             height: 250,
             mediaType: 'banner',
             metadata: {},
-            creativeId: 'foo',
+            creativeID: 'foo',
             currency: 'EUR'
           },
           5: {
@@ -779,7 +779,7 @@ describe('kargo adapter tests', function () {
             height: 250,
             mediaType: 'video',
             metadata: {},
-            creativeId: 'foo',
+            creativeID: 'foo',
             currency: 'EUR'
           },
           6: {
@@ -791,7 +791,7 @@ describe('kargo adapter tests', function () {
             height: 250,
             mediaType: 'video',
             metadata: {},
-            creativeId: 'foo',
+            creativeID: 'foo',
             currency: 'EUR'
           }
         }
