@@ -3,7 +3,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import {deepAccess, deepSetValue, getWindowSelf, replaceAuctionPrice} from '../src/utils.js';
+import {deepAccess, deepSetValue, getWindowSelf, replaceAuctionPrice, isArray} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
@@ -151,12 +151,46 @@ export const spec = {
     if (!serverResponse || !serverResponse.body) {
       return [];
     }
-
+    const bids = [];
+    const fledgeAuctionConfigs = [];
     if (!serverResponse.body.seatbid || !serverResponse.body.seatbid.length || !serverResponse.body.seatbid[0].bid || !serverResponse.body.seatbid[0].bid.length) {
-      return [];
+      if (!serverResponse.body.ext || !serverResponse.body.ext.igbid || !serverResponse.body.ext.igbid.length) {
+        return [];
+      }
+    } else {
+      bids.push(...converter.fromORTB({response: serverResponse.body, request: request.data}).bids);
+    }
+    if (isArray(serverResponse.body.ext?.igbid)) {
+      serverResponse.body.ext.igbid.forEach((igbid) => {
+        const buyerdata = JSON.parse(igbid.igbuyer[0]?.buyerdata)
+        const perBuyerSignals = {};
+        igbid.igbuyer.forEach(buyerItem => {
+          perBuyerSignals[buyerItem.origin] = JSON.parse(buyerItem.buyerdata).perBuyerSignals[buyerItem.origin];
+        });
+        const impId = igbid.impid;
+        fledgeAuctionConfigs.push({
+          impId,
+          config: {
+            seller: buyerdata.seller,
+            resolveToConfig: buyerdata.resolveToConfig,
+            sellerSignals: {},
+            sellerTimeout: buyerdata.sellerTimeout,
+            perBuyerSignals,
+            auctionSignals: {},
+            decisionLogicUrl: buyerdata.decisionLogicUrl,
+            interestGroupBuyers: buyerdata.interestGroupBuyers,
+            perBuyerTimeouts: buyerdata.perBuyerTimeouts,
+          },
+        });
+      });
     }
 
-    const bids = converter.fromORTB({response: serverResponse.body, request: request.data}).bids;
+    if (fledgeAuctionConfigs.length) {
+      return {
+        bids,
+        fledgeAuctionConfigs,
+      };
+    }
     return bids;
   },
   onBidWon: (bid) => {
