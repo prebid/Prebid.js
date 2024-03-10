@@ -162,24 +162,39 @@ export const spec = {
     }
     if (isArray(serverResponse.body.ext?.igbid)) {
       serverResponse.body.ext.igbid.forEach((igbid) => {
-        const buyerdata = JSON.parse(igbid.igbuyer[0]?.buyerdata)
+        let buyerdata;
+        try {
+          buyerdata = JSON.parse(igbid.igbuyer[0]?.buyerdata)
+        } catch (e) {
+          return;
+        }
         const perBuyerSignals = {};
         igbid.igbuyer.forEach(buyerItem => {
-          perBuyerSignals[buyerItem.origin] = JSON.parse(buyerItem.buyerdata).perBuyerSignals[buyerItem.origin];
+          if (!buyerItem || !buyerItem.buyerdata || !buyerItem.origin) {
+            return;
+          }
+          try {
+            let parsedData = JSON.parse(buyerItem.buyerdata)
+            if (!parsedData || !parsedData.perBuyerSignals || !(buyerItem.origin in parsedData.perBuyerSignals)) {
+              return;
+            }
+            perBuyerSignals[buyerItem.origin] = parsedData.perBuyerSignals[buyerItem.origin];
+          } catch (e) {
+          }
         });
-        const impId = igbid.impid;
+        const impId = igbid?.impid;
         fledgeAuctionConfigs.push({
           impId,
           config: {
-            seller: buyerdata.seller,
-            resolveToConfig: buyerdata.resolveToConfig,
+            seller: buyerdata?.seller,
+            resolveToConfig: buyerdata?.resolveToConfig,
             sellerSignals: {},
-            sellerTimeout: buyerdata.sellerTimeout,
+            sellerTimeout: buyerdata?.sellerTimeout,
             perBuyerSignals,
             auctionSignals: {},
-            decisionLogicUrl: buyerdata.decisionLogicUrl,
-            interestGroupBuyers: buyerdata.interestGroupBuyers,
-            perBuyerTimeouts: buyerdata.perBuyerTimeouts,
+            decisionLogicUrl: buyerdata?.decisionLogicUrl,
+            interestGroupBuyers: buyerdata?.interestGroupBuyers,
+            perBuyerTimeouts: buyerdata?.perBuyerTimeouts,
           },
         });
       });
