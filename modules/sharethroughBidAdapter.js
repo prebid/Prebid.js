@@ -102,8 +102,8 @@ export const sharethroughAdapterSpec = {
       });
 
       if (isArray(pubDsaObj.transparency) && pubDsaObj.transparency.every((v) => isPlainObject(v))) {
-       const tpData = pubDsaObj.transparency.filter(
-         (tpObj) => isStr(tpObj.domain) && tpObj.domain != '' && isArray(tpObj.dsaparams) && tpObj.dsaparams.every((v) => isNumber(v)))
+         const tpData = pubDsaObj.transparency.filter(
+           (tpObj) => isStr(tpObj.domain) && tpObj.domain != '' && isArray(tpObj.dsaparams) && tpObj.dsaparams.every((v) => isNumber(v)))
         if (tpData.length > 0) {
           dsaObj.transparency = tpData;
         }
