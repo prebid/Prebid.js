@@ -223,7 +223,7 @@ export function getVatFromCache(mediaID) {
     return null;
   }
 
-const mediaUrl = item.file ?? getFileFromSources(item);
+  const mediaUrl = item.file ?? getFileFromSources(item);
 
   return {
     segments: item.jwpseg,
@@ -235,7 +235,7 @@ const mediaUrl = item.file ?? getFileFromSources(item);
 }
 
 function getFileFromSources(playlistItem) {
-return playlistItem.sources?.find?.(source => source.file)?.file;
+  return playlistItem.sources?.find?.(source => !!source.file)?.file;
 }
 
 export function getVatFromPlayer(playerDivId, mediaID) {
