@@ -223,10 +223,7 @@ export function getVatFromCache(mediaID) {
     return null;
   }
 
-  let mediaUrl = item.file;
-  if (!mediaUrl) {
-    mediaUrl = getFileFromSources(item);
-  }
+const mediaUrl = item.file ?? getFileFromSources(item);
 
   return {
     segments: item.jwpseg,
