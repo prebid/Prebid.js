@@ -3,7 +3,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import {deepAccess, deepSetValue, getWindowSelf, replaceAuctionPrice, isArray} from '../src/utils.js';
+import {deepAccess, deepSetValue, getWindowSelf, replaceAuctionPrice, isArray, safeJSONParse} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
@@ -162,10 +162,11 @@ export const spec = {
     }
     if (isArray(serverResponse.body.ext?.igbid)) {
       serverResponse.body.ext.igbid.forEach((igbid) => {
-        let buyerdata;
-        try {
-          buyerdata = JSON.parse(igbid.igbuyer[0]?.buyerdata)
-        } catch (e) {
+        if (!igbid || !igbid.igbuyer || !igbid.igbuyer.length || !igbid.igbuyer[0].buyerdata) {
+          return;
+        }
+        let buyerdata = safeJSONParse(igbid.igbuyer[0]?.buyerdata)
+        if (!buyerdata) {
           return;
         }
         const perBuyerSignals = {};
@@ -173,14 +174,11 @@ export const spec = {
           if (!buyerItem || !buyerItem.buyerdata || !buyerItem.origin) {
             return;
           }
-          try {
-            let parsedData = JSON.parse(buyerItem.buyerdata)
-            if (!parsedData || !parsedData.perBuyerSignals || !(buyerItem.origin in parsedData.perBuyerSignals)) {
-              return;
-            }
-            perBuyerSignals[buyerItem.origin] = parsedData.perBuyerSignals[buyerItem.origin];
-          } catch (e) {
+          let parsedData = safeJSONParse(buyerItem.buyerdata)
+          if (!parsedData || !parsedData.perBuyerSignals || !(buyerItem.origin in parsedData.perBuyerSignals)) {
+            return;
           }
+          perBuyerSignals[buyerItem.origin] = parsedData.perBuyerSignals[buyerItem.origin];
         });
         const impId = igbid?.impid;
         fledgeAuctionConfigs.push({
