@@ -157,7 +157,7 @@ describe('Taboola Adapter', function () {
       spec.onBidderError({error, bidderRequest});
       expect(server.requests[0].method).to.equal('POST');
       expect(server.requests[0].url).to.equal(EVENT_ENDPOINT + '/bidError');
-      expect(JSON.parse(server.requests[0].requestBody)).to.deep.equal(error, bidderRequest);
+      expect(JSON.parse(server.requests[0].requestBody)).to.deep.equal({error, bidderRequest});
     });
   });
 

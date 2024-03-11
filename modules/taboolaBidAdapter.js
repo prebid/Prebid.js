@@ -200,7 +200,7 @@ export const spec = {
   },
 
   onBidderError: ({ error, bidderRequest }) => {
-    ajax(EVENT_ENDPOINT + '/bidError', null, JSON.stringify(error, bidderRequest), {method: 'POST'});
+    ajax(EVENT_ENDPOINT + '/bidError', null, JSON.stringify({error, bidderRequest}), {method: 'POST'});
   },
 };
 
