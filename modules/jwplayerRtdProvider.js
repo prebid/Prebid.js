@@ -235,17 +235,7 @@ const mediaUrl = item.file ?? getFileFromSources(item);
 }
 
 function getFileFromSources(playlistItem) {
-  const sources = playlistItem.sources;
-  if (!sources || !sources.length) {
-    return;
-  }
-
-  const validSource = sources.find(source => !!source.file);
-  if (!validSource) {
-    return;
-  }
-
-  return validSource.file;
+return playlistItem.sources?.find?.(source => source.file)?.file;
 }
 
 export function getVatFromPlayer(playerDivId, mediaID) {
