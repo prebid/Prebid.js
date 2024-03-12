@@ -65,7 +65,7 @@ const NATIVERET = {
 };
 
 /**
- * get page title
+ * get page title111
  * @returns {string}
  */
 
@@ -133,10 +133,11 @@ export const getPmgUID = () => {
   let pmgUid = storage.getCookie(COOKIE_KEY_PMGUID);
   if (!pmgUid) {
     pmgUid = utils.generateUUID();
-    try {
-      storage.setCookie(COOKIE_KEY_PMGUID, pmgUid, getCurrentTimeToUTCString());
-    } catch (e) {}
   }
+  // Extend the expiration time of pmguid
+  try {
+    storage.setCookie(COOKIE_KEY_PMGUID, pmgUid, getCurrentTimeToUTCString());
+  } catch (e) {}
   return pmgUid;
 };
 
