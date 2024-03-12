@@ -2,11 +2,14 @@ import { ajax } from "../src/ajax.js";
 import { config } from "../src/config.js";
 import { submodule } from "../src/hook.js";
 import { deepAccess } from "../src/utils.js";
+import { createFloorsDataForAuction } from "./priceFloors.js";
 
 const MODULE_NAME = "realTimeData";
 const SUBMODULE_NAME = "pubxai";
+let floorRulesPromise = null;
 
-const getFloorsConfig = (provider, floorsResponse) => {
+export const getFloorsConfig = (provider, floorsResponse) => {
+  console.log("pubx", "getFloorsConfig called");
   const floorsConfig = {
     floors: {
       enforcement: { floorDeals: true },
@@ -23,69 +26,105 @@ const getFloorsConfig = (provider, floorsResponse) => {
   return floorsConfig;
 };
 
-// TODO: how to set prebid auctionDelay?
-
-const setDefaultConfig = (provider) => {
-  const { data } = deepAccess(provider, "params");
-  const floorsConfig = getFloorsConfig(provider, data);
-  config.setConfig(floorsConfig);
-  console.log("pubx: setting default floors config", floorsConfig);
-  window.__pubxLoaded__ = true;
+export const setFloorsConfig = (provider, data) => {
+  console.log("pubx", "setFloorsConfig called");
+  if (data) {
+    const floorsConfig = getFloorsConfig(provider, data);
+    config.setConfig(floorsConfig);
+    window.__pubxLoaded__ = true;
+    window.__pubxFloorsConfig__ = floorsConfig;
+  } else {
+    window.__pubxLoaded__ = false;
+    window.__pubxFloorsConfig__ = null;
+  }
   console.log("pubx", "loaded", window.__pubxLoaded__);
+  console.log("pubx", "floors config", window.__pubxFloorsConfig__);
 };
 
-const setConfig = (provider, floorsResponse) => {
-  const floorsConfig = getFloorsConfig(provider, floorsResponse);
-  config.setConfig(floorsConfig);
-  console.log("pubx: setting floors config", floorsConfig);
-  window.__pubxLoaded__ = true;
+export const setDefaultPriceFloors = (provider) => {
+  console.log("pubx", "setDefaultFloorsConfig called");
+  const data = deepAccess(provider, "params.data");
+  setFloorsConfig(provider, data);
 };
 
-const setFloorsConfig = async (provider) => {
+export const setPriceFloors = async (provider) => {
+  console.log("pubx", "setPriceFloors called");
+  setDefaultPriceFloors(provider);
+  return fetchFloorRules(provider)
+    .then((floorsResponse) => {
+      setFloorsConfig(provider, floorsResponse);
+    })
+    .catch((error) => {
+      console.log("pubx", "error");
+    });
+};
+
+export const fetchFloorRules = async (provider) => {
   const url = deepAccess(provider, "params.endpoint");
-  console.log("pubx", "endpoint", url);
-  // TODO: set API timeout?
-  ajax(url, {
-    success: (responseText, response) => {
-      console.log("pubx", "success response", response);
-      console.log("pubx", "success responseText", responseText);
-      try {
-        if (responseText) {
-          // "content-type" is 'text/plain; charset=utf-8'
-          const floorsResponse = JSON.parse(response.response);
-          console.log("pubx", "success floorsResponse", floorsResponse);
-          setConfig(provider, floorsResponse);
-        } else {
-          window.__pubxLoaded__ = false;
+  console.log("pubx", "fetchFloorRules called", url);
+  return new Promise((resolve, reject) => {
+    console.log("pubx", "initiate ajax call");
+    ajax(url, {
+      success: (responseText, response) => {
+        console.log("pubx", "success response", response);
+        console.log("pubx", "success responseText", responseText);
+        try {
+          if (response.response) {
+            // "content-type" is 'text/plain; charset=utf-8'
+            const floorsResponse = JSON.parse(response.response);
+            console.log("pubx", "success floorsResponse", floorsResponse);
+            resolve(floorsResponse);
+          } else {
+            resolve(null);
+          }
+        } catch (error) {
+          console.log("pubx", "error parsing success response", error);
+          reject(error);
         }
-        console.log("pubx", "loaded", window.__pubxLoaded__);
-      } catch (error) {
-        console.log("pubx", "error parsing response", error);
-        setDefaultConfig(provider);
-        // TODO: Wrong JSON response from server (unlikely). Do we want to log this in instrumentation?
-      }
-    },
-    error: (responseText, response) => {
-      // TODO: timeout or error. Do we want to log this in instrumentation?
-      // TODO: default value here?
-      console.log("pubx", "error response", response);
-      setDefaultConfig(provider);
-    },
+      },
+      error: (responseText, response) => {
+        console.log("pubx", "ajax error response", response);
+        reject(response);
+      },
+    });
   });
 };
 
 const init = (provider) => {
+  console.log("pubx", "init called");
   const useRtd = deepAccess(provider, "params.useRtd");
   if (!useRtd) {
     return false;
   }
-  setFloorsConfig(provider);
+  floorRulesPromise = setPriceFloors(provider);
   return true;
 };
+
+const getBidRequestData = (() => {
+  let floorsAttached = false;
+  return (reqBidsConfigObj, onDone) => {
+    if (!floorsAttached) {
+      console.log("pubx", "getBidRequestData called");
+      createFloorsDataForAuction(
+        reqBidsConfigObj.adUnits,
+        reqBidsConfigObj.auctionId
+      );
+      floorRulesPromise.then(() => {
+        createFloorsDataForAuction(
+          reqBidsConfigObj.adUnits,
+          reqBidsConfigObj.auctionId
+        );
+        onDone();
+      });
+      floorsAttached = true;
+    }
+  };
+})();
 
 export const pubxaiSubmodule = {
   name: SUBMODULE_NAME,
   init,
+  getBidRequestData,
 };
 
 export const beforeInit = () => {
