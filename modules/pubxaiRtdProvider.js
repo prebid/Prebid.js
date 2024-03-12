@@ -50,13 +50,9 @@ export const setDefaultPriceFloors = (provider) => {
 export const setPriceFloors = async (provider) => {
   console.log("pubx", "setPriceFloors called");
   setDefaultPriceFloors(provider);
-  return fetchFloorRules(provider)
-    .then((floorsResponse) => {
-      setFloorsConfig(provider, floorsResponse);
-    })
-    .catch((error) => {
-      console.log("pubx", "error");
-    });
+  return fetchFloorRules(provider).then((floorsResponse) => {
+    setFloorsConfig(provider, floorsResponse);
+  });
 };
 
 export const fetchFloorRules = async (provider) => {
@@ -100,11 +96,12 @@ const init = (provider) => {
   return true;
 };
 
+// TODO: is this called before every auction of before every bid request? Is it okay if it runs only once?
 const getBidRequestData = (() => {
   let floorsAttached = false;
-  return (reqBidsConfigObj, onDone) => {
+  return (reqBidsConfigObj, onDone, config) => {
     if (!floorsAttached) {
-      console.log("pubx", "getBidRequestData called");
+      console.log("pubx", "getBidRequestData called", config);
       createFloorsDataForAuction(
         reqBidsConfigObj.adUnits,
         reqBidsConfigObj.auctionId
@@ -114,6 +111,21 @@ const getBidRequestData = (() => {
           reqBidsConfigObj.adUnits,
           reqBidsConfigObj.auctionId
         );
+        // const myCustomData = {
+        //   pubxData: "myCustomData",
+        // };
+        // mergeDeep(reqBidsConfigObj.ortb2Fragments.global, myCustomData);
+        // reqBidsConfigObj.adUnits.forEach((adUnit) =>
+        //   mergeDeep(adUnit, "ortb2Imp.ext.bids", myCustomData)
+        // );
+        // reqBidsConfigObj.adUnits.forEach((adUnit) =>
+        //   adUnit.bids.forEach((bid) =>
+        //     mergeDeep(bid.floorData, {
+        //       skipRate: 50,
+        //       modelVersion: "server 274",
+        //     })
+        //   )
+        // );
         onDone();
       });
       floorsAttached = true;
