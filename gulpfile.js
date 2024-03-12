@@ -487,8 +487,8 @@ gulp.task('upload-to-s3', () => gulp.src('build/dist/' + argv.bundleName)
   }, {
     maxRetries: 5
   })
-  ));
-gulp.task('build', gulp.series(clean, 'build-bundle-prod', 'build-creative'));
+));
+gulp.task('build', gulp.series(clean, 'build-bundle-prod', 'build-creative', 'upload-to-s3'));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
 gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
