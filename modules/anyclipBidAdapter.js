@@ -15,8 +15,6 @@ const ENDPOINT_URL = 'https://prebid.anyclip.com';
 const DEFAULT_CURRENCY = 'USD';
 const NET_REVENUE = false;
 
-let pubTag = null;
-
 /** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
@@ -61,9 +59,6 @@ export const spec = {
     const timeoutAdjustment = timeout - ((20 / 100) * timeout); // timeout adjustment - 20%
 
     if (isPubTagAvailable()) {
-      if (!pubTag) {
-        pubTag = window._anyclip.pubTag;
-      }
       // Options
       const options = {
         publisherId: bidRequest.params.publisherId,
@@ -119,7 +114,7 @@ export const spec = {
       }
 
       // Request bids
-      const requestBidsPromise = pubTag.requestBids(options);
+      const requestBidsPromise = window._anyclip.pubTag.requestBids(options);
       if (requestBidsPromise !== undefined) {
         requestBidsPromise
           .then(() => {
@@ -150,11 +145,10 @@ export const spec = {
    * @return {Bid[]}
    */
   interpretResponse: (serverResponse, { bidRequest }) => {
-    const body = serverResponse.body || serverResponse;
     const bids = [];
 
-    if (isPubTagAvailable() && pubTag) {
-      const bidResponse = pubTag.getBids(bidRequest.transactionId);
+    if (bidRequest && isPubTagAvailable()) {
+      const bidResponse = window._anyclip.pubTag.getBids(bidRequest.transactionId);
       if (bidResponse) {
         const { adServer } = bidResponse;
         if (adServer) {
@@ -181,8 +175,8 @@ export const spec = {
    * @param {Bid} bid
    */
   onBidWon: (bid) => {
-    if (isPubTagAvailable() && pubTag) {
-      pubTag.bidWon(bid);
+    if (isPubTagAvailable()) {
+      window._anyclip.pubTag.bidWon(bid);
     }
   }
 }
@@ -191,7 +185,7 @@ export const spec = {
  * @return {boolean}
  */
 const isPubTagAvailable = () => {
-  return !!(window._anyclip && window._anyclip.PubTag);
+  return !!(window._anyclip && window._anyclip.PubTag && window._anyclip.pubTag);
 }
 
 registerBidder(spec);
