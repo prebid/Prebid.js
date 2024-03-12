@@ -1,11 +1,15 @@
 import {getValue, logError, deepAccess, parseSizesInput, isArray, getBidIdParameter} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {startDetection, isAutoplayEnabled} from '../libraries/autoplayDetection/autoplay.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
+
+// start autoplay detection as soon as Prebid is loading
+startDetection();
 
 const BIDDER_CODE = 'teads';
 const GVL_ID = 132;
@@ -124,7 +128,13 @@ export const spec = {
     serverResponse = serverResponse.body;
 
     if (serverResponse.responses) {
+      const autoplayEnabled = isAutoplayEnabled();
       serverResponse.responses.forEach(function (bid) {
+        // ignore this bid if it requires autoplay but it is not enabled on this browser
+        if (bid.needAutoplay && !autoplayEnabled) {
+          return;
+        };
+
         const bidResponse = {
           cpm: bid.cpm,
           width: bid.width,
