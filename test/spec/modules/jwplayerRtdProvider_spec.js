@@ -244,6 +244,41 @@ describe('jwplayerRtdProvider', function() {
                 data: {
                   jwTargeting: {
                     mediaID: mediaIdWithSegment,
+                    playerDivId: validPlayerID
+                  }
+                }
+              }
+            },
+            bids: [
+              bid
+            ]
+          };
+          const expectedContentId = 'jw_' + mediaIdWithSegment;
+          const expectedTargeting = {
+            segments: validSegments,
+            content: {
+              id: expectedContentId
+            }
+          };
+          jwplayerSubmodule.getBidRequestData({ adUnits: [adUnit] }, bidRequestSpy);
+          expect(bidRequestSpy.calledOnce).to.be.true;
+          expect(bid.rtd.jwplayer).to.have.deep.property('targeting', expectedTargeting);
+          server.respond();
+          expect(bidRequestSpy.calledOnce).to.be.true;
+        });
+
+        it('includes backwards support for playerID when playerDivId is not set', function () {
+          const bidRequestSpy = sinon.spy();
+
+          fetchTargetingForMediaId(mediaIdWithSegment);
+
+          const bid = {};
+          const adUnit = {
+            ortb2Imp: {
+              ext: {
+                data: {
+                  jwTargeting: {
+                    mediaID: mediaIdWithSegment,
                     playerID: validPlayerID
                   }
                 }
@@ -605,23 +640,23 @@ describe('jwplayerRtdProvider', function() {
     it('should prioritize adUnit properties ', function () {
       const expectedMediaID = 'test_media_id';
       const expectedPlayerID = 'test_player_id';
-      const config = { playerID: 'bad_id', mediaID: 'bad_id' };
+      const config = { playerDivId: 'bad_id', mediaID: 'bad_id' };
 
-      const adUnit = { ortb2Imp: { ext: { data: { jwTargeting: { mediaID: expectedMediaID, playerID: expectedPlayerID } } } } };
+      const adUnit = { ortb2Imp: { ext: { data: { jwTargeting: { mediaID: expectedMediaID, playerDivId: expectedPlayerID } } } } };
       const targeting = extractPublisherParams(adUnit, config);
       expect(targeting).to.have.property('mediaID', expectedMediaID);
-      expect(targeting).to.have.property('playerID', expectedPlayerID);
+      expect(targeting).to.have.property('playerDivId', expectedPlayerID);
     });
 
     it('should use config properties as fallbacks', function () {
       const expectedMediaID = 'test_media_id';
       const expectedPlayerID = 'test_player_id';
-      const config = { playerID: expectedPlayerID, mediaID: 'bad_id' };
+      const config = { playerDivId: expectedPlayerID, mediaID: 'bad_id' };
 
       const adUnit = { ortb2Imp: { ext: { data: { jwTargeting: { mediaID: expectedMediaID } } } } };
       const targeting = extractPublisherParams(adUnit, config);
       expect(targeting).to.have.property('mediaID', expectedMediaID);
-      expect(targeting).to.have.property('playerID', expectedPlayerID);
+      expect(targeting).to.have.property('playerDivId', expectedPlayerID);
     });
 
     it('should return undefined when Publisher Params are absent', function () {
