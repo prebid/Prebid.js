@@ -34,6 +34,7 @@ export const setFloorsConfig = (provider, data) => {
     window.__pubxLoaded__ = true;
     window.__pubxFloorsConfig__ = floorsConfig;
   } else {
+    config.setConfig({ floors: window.__pubxPrevFloorsConfig__ });
     window.__pubxLoaded__ = false;
     window.__pubxFloorsConfig__ = null;
   }
@@ -43,6 +44,7 @@ export const setFloorsConfig = (provider, data) => {
 
 export const setDefaultPriceFloors = (provider) => {
   console.log("pubx", "setDefaultFloorsConfig called");
+  window.__pubxPrevFloorsConfig__ = config.getConfig("floors");
   const data = deepAccess(provider, "params.data");
   setFloorsConfig(provider, data);
 };
@@ -65,8 +67,8 @@ export const fetchFloorRules = async (provider) => {
         console.log("pubx", "success response", response);
         console.log("pubx", "success responseText", responseText);
         try {
-          if (response.response) {
-            // "content-type" is 'text/plain; charset=utf-8'
+          if (response && response.response) {
+            // "content-type" = 'text/plain; charset=utf-8'
             const floorsResponse = JSON.parse(response.response);
             console.log("pubx", "success floorsResponse", floorsResponse);
             resolve(floorsResponse);
