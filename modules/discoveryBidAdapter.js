@@ -478,6 +478,7 @@ function getParam(validBidRequests, bidderRequest) {
       user: {
         buyeruid: storage.getCookie(COOKIE_KEY_MGUID) || undefined,
         id: sharedid || pubcid,
+        data: (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.user) ? bidderRequest.ortb2.user.data : undefined,
       },
       tmax: timeout,
       site: {
