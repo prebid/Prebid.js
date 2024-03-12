@@ -417,12 +417,8 @@ function validateSizes(sizes) {
 }
 
 function getBidFloor(bid) {
-  if (bid.params.floorPrice) {
-    return bid.params.floorPrice;
-  }
-
   if (!isFn(bid.getFloor)) {
-    return null;
+    return bid.params.floorPrice ? bid.params.floorPrice : null;
   }
 
   let floor = bid.getFloor({
