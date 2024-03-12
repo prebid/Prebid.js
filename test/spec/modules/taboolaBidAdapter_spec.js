@@ -828,7 +828,7 @@ describe('Taboola Adapter', function () {
       }
     };
 
-    const serverResponseWithEmptyIgBidWrongPa = {
+    const serverResponseWithEmptyIgbidWIthWrongPa = {
       body: {
         'id': '49ffg4d58ef9a163a69fhgfghd4fad03621b9e036f24f7_15',
         'seatbid': [
@@ -1194,7 +1194,7 @@ describe('Taboola Adapter', function () {
         }
       ]
 
-      const res = spec.interpretResponse(serverResponseWithEmptyIgBidWrongPa, request)
+      const res = spec.interpretResponse(serverResponseWithEmptyIgbidWIthWrongPa, request)
       expect(res).to.deep.equal(expectedRes)
     });
 
