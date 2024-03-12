@@ -7,6 +7,7 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'aso';
 const DEFAULT_SERVER_URL = 'https://srv.aso1.net';
 const DEFAULT_SERVER_PATH = '/prebid/bidder';
+const DEFAULT_CURRENCY = 'USD';
 const VERSION = '$prebid.version$_2.0';
 const TTL = 300;
 
@@ -109,6 +110,11 @@ const converter = ortbConverter({
         deepSetValue(request, 'user.ext.consents', consentsIds);
       }
     }
+
+    if (!request.cur) {
+      request.cur = [DEFAULT_CURRENCY];
+    }
+
     return request;
   },
 
