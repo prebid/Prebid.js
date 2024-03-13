@@ -22,7 +22,10 @@ import {
   _each
 } from '../src/utils.js';
 import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
-import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ */
 
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
@@ -529,6 +532,8 @@ export const spec = {
     if (bidRequest?.ortb2Imp?.ext?.ae) {
       data['o_ae'] = 1;
     }
+
+    addDesiredSegtaxes(bidderRequest, data);
     // loop through userIds and add to request
     if (bidRequest.userIdAsEids) {
       bidRequest.userIdAsEids.forEach(eid => {
@@ -694,6 +699,10 @@ export const spec = {
           bid.mediaType = ad.creative_type;
         }
 
+        if (ad.dsa && Object.keys(ad.dsa).length) {
+          bid.meta.dsa = ad.dsa;
+        }
+
         if (ad.adomain) {
           bid.meta.advertiserDomains = Array.isArray(ad.adomain) ? ad.adomain : [ad.adomain];
         }
@@ -766,19 +775,6 @@ export const spec = {
         url: `https://${rubiConf.syncHost || 'eus'}.rubiconproject.com/usync.html` + params
       };
     }
-  },
-  /**
-   * Covert bid param types for S2S
-   * @param {Object} params bid params
-   * @param {Boolean} isOpenRtb boolean to check openrtb2 protocol
-   * @return {Object} params bid params
-   */
-  transformBidParams: function(params, isOpenRtb) {
-    return convertTypes({
-      'accountId': 'number',
-      'siteId': 'number',
-      'zoneId': 'number'
-    }, params);
   }
 };
 
@@ -835,7 +831,14 @@ function renderBid(bid) {
   hideSmartAdServerIframe(adUnitElement);
 
   // configure renderer
-  const config = bid.renderer.getConfig();
+  const defaultConfig = {
+    align: 'center',
+    position: 'append',
+    closeButton: false,
+    label: undefined,
+    collapse: true
+  };
+  const config = { ...defaultConfig, ...bid.renderer.getConfig() };
   bid.renderer.push(() => {
     window.MagniteApex.renderAd({
       width: bid.width,
@@ -843,12 +846,12 @@ function renderBid(bid) {
       vastUrl: bid.vastUrl,
       placement: {
         attachTo: adUnitElement,
-        align: config.align || 'center',
-        position: config.position || 'append'
+        align: config.align,
+        position: config.position
       },
-      closeButton: config.closeButton || false,
-      label: config.label || undefined,
-      collapse: config.collapse || true
+      closeButton: config.closeButton,
+      label: config.label,
+      collapse: config.collapse
     });
   });
 }
@@ -916,6 +919,7 @@ function applyFPD(bidRequest, mediaType, data) {
   let impExtData = deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
 
   const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+  const dsa = deepAccess(fpd, 'regs.ext.dsa');
   const SEGTAX = {user: [4], site: [1, 2, 5, 6]};
   const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
   const validate = function(prop, key, parentName) {
@@ -971,6 +975,26 @@ function applyFPD(bidRequest, mediaType, data) {
       data['p_gpid'] = gpid;
     }
 
+    // add dsa signals
+    if (dsa && Object.keys(dsa).length) {
+      pick(dsa, [
+        'dsainfo', (dsainfo) => data['dsainfo'] = dsainfo,
+        'dsarequired', (required) => data['dsarequired'] = required,
+        'pubrender', (pubrender) => data['dsapubrender'] = pubrender,
+        'datatopub', (datatopub) => data['dsadatatopubs'] = datatopub,
+        'transparency', (transparency) => {
+          if (Array.isArray(transparency) && transparency.length) {
+            data['dsatransparency'] = transparency.reduce((param, transp) => {
+              if (param) {
+                param += '~~'
+              }
+              return param += `${transp.domain}~${transp.dsaparams.join('_')}`
+            }, '')
+          }
+        }
+      ])
+    }
+
     // only send one of pbadslot or dfp adunit code (prefer pbadslot)
     if (data['tg_i.pbadslot']) {
       delete data['tg_i.dfp_ad_unit_code'];
@@ -1012,6 +1036,27 @@ function applyFPD(bidRequest, mediaType, data) {
     }
 
     mergeDeep(data, fpd);
+  }
+}
+
+function addDesiredSegtaxes(bidderRequest, target) {
+  if (rubiConf.readTopics === false) {
+    return;
+  }
+  let iSegments = [1, 2, 5, 6, 7, 507].concat(rubiConf.sendSiteSegtax?.map(seg => Number(seg)) || []);
+  let vSegments = [4, 508].concat(rubiConf.sendUserSegtax?.map(seg => Number(seg)) || []);
+  let userData = bidderRequest.ortb2?.user?.data || [];
+  let siteData = bidderRequest.ortb2?.site?.content?.data || [];
+  userData.forEach(iterateOverSegmentData(target, 'v', vSegments));
+  siteData.forEach(iterateOverSegmentData(target, 'i', iSegments));
+}
+
+function iterateOverSegmentData(target, char, segments) {
+  return (topic) => {
+    const taxonomy = Number(topic.ext?.segtax);
+    if (segments.includes(taxonomy)) {
+      target[`tg_${char}.tax${taxonomy}`] = topic.segment?.map(seg => seg.id).join(',');
+    }
   }
 }
 
@@ -1183,8 +1228,7 @@ export function hasValidVideoParams(bid) {
   var requiredParams = {
     mimes: arrayType,
     protocols: arrayType,
-    linearity: numberType,
-    api: arrayType
+    linearity: numberType
   }
   // loop through each param and verify it has the correct
   Object.keys(requiredParams).forEach(function(param) {
@@ -1199,7 +1243,7 @@ export function hasValidVideoParams(bid) {
 /**
  * Make sure the required params are present
  * @param {Object} schain
- * @param {Bool}
+ * @param {boolean}
  */
 export function hasValidSupplyChainParams(schain) {
   let isValid = false;

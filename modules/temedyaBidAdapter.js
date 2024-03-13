@@ -3,6 +3,14 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'temedya';
 const ENDPOINT_URL = 'https://adm.vidyome.com/';
 const ENDPOINT_METHOD = 'GET';
@@ -12,20 +20,20 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE],
   /**
-  * Determines whether or not the given bid request is valid.
-  *
-  * @param {BidRequest} bid The bid params to validate.
-  * @return boolean True if this is a valid bid, and false otherwise.
-  */
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function (bid) {
     return !!(bid.params.widgetId);
   },
   /**
-  * Make a server request from the list of BidRequests.
-  *
-  * @param {validBidRequests[]} - an array of bids
-  * @return ServerRequest Info describing the request to the server.
-  */
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {validBidRequests[]} - an array of bids
+   * @return ServerRequest Info describing the request to the server.
+   */
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
@@ -54,11 +62,11 @@ export const spec = {
     });
   },
   /**
-  * Unpack the response from the server into a list of bids.
-  *
-  * @param {ServerResponse} serverResponse A successful response from the server.
-  * @return {Bid[]} An array of bids which were nested inside the server.
-  */
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {ServerResponse} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
   interpretResponse: function (serverResponse, bidRequest) {
     try {
       const bidResponse = serverResponse.body;

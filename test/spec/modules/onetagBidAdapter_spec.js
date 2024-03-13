@@ -189,7 +189,7 @@ describe('onetag', function () {
     });
     it('Should contain all keys', function () {
       expect(data).to.be.an('object');
-      expect(data).to.include.all.keys('location', 'referrer', 'stack', 'numIframes', 'sHeight', 'sWidth', 'docHeight', 'wHeight', 'wWidth', 'oHeight', 'oWidth', 'aWidth', 'aHeight', 'sLeft', 'sTop', 'hLength', 'bids', 'docHidden', 'xOffset', 'yOffset', 'networkConnectionType', 'networkEffectiveConnectionType', 'timing', 'version');
+      expect(data).to.include.all.keys('location', 'referrer', 'stack', 'numIframes', 'sHeight', 'sWidth', 'docHeight', 'wHeight', 'wWidth', 'oHeight', 'oWidth', 'aWidth', 'aHeight', 'sLeft', 'sTop', 'hLength', 'bids', 'docHidden', 'xOffset', 'yOffset', 'networkConnectionType', 'networkEffectiveConnectionType', 'timing', 'version', 'fledgeEnabled');
       expect(data.location).to.satisfy(function (value) {
         return value === null || typeof value === 'string';
       });
@@ -213,6 +213,7 @@ describe('onetag', function () {
       expect(data.networkEffectiveConnectionType).to.satisfy(function (value) {
         return value === null || typeof value === 'string'
       });
+      expect(data.fledgeEnabled).to.be.a('boolean');
       expect(data.bids).to.be.an('array');
       expect(data.version).to.have.all.keys('prebid', 'adapter');
       const bids = data['bids'];
@@ -395,14 +396,90 @@ describe('onetag', function () {
       expect(payload.ortb2).to.exist;
       expect(payload.ortb2).to.exist.and.to.deep.equal(firtPartyData);
     });
+    it('Should send DSA (ortb2 field)', function () {
+      const dsa = {
+        'regs': {
+          'ext': {
+            'dsa': {
+              'required': 1,
+              'pubrender': 0,
+              'datatopub': 1,
+              'transparency': [{
+                'domain': 'dsa-domain',
+                'params': [1, 2]
+              }]
+            }
+          }
+        }
+      };
+      let bidderRequest = {
+        'bidderCode': 'onetag',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'ortb2': dsa
+      }
+      let serverRequest = spec.buildRequests([bannerBid], bidderRequest);
+      const payload = JSON.parse(serverRequest.data);
+      expect(payload.ortb2).to.exist;
+      expect(payload.ortb2).to.exist.and.to.deep.equal(dsa);
+    });
+    it('Should send FLEDGE eligibility flag when FLEDGE is enabled', function () {
+      let bidderRequest = {
+        'bidderCode': 'onetag',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'fledgeEnabled': true
+      };
+      let serverRequest = spec.buildRequests([bannerBid], bidderRequest);
+      const payload = JSON.parse(serverRequest.data);
+
+      expect(payload.fledgeEnabled).to.exist;
+      expect(payload.fledgeEnabled).to.exist.and.to.equal(bidderRequest.fledgeEnabled);
+    });
+    it('Should send FLEDGE eligibility flag when FLEDGE is not enabled', function () {
+      let bidderRequest = {
+        'bidderCode': 'onetag',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'fledgeEnabled': false
+      };
+      let serverRequest = spec.buildRequests([bannerBid], bidderRequest);
+      const payload = JSON.parse(serverRequest.data);
+
+      expect(payload.fledgeEnabled).to.exist;
+      expect(payload.fledgeEnabled).to.exist.and.to.equal(bidderRequest.fledgeEnabled);
+    });
+    it('Should send FLEDGE eligibility flag set to false when fledgeEnabled is not defined', function () {
+      let bidderRequest = {
+        'bidderCode': 'onetag',
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+      };
+      let serverRequest = spec.buildRequests([bannerBid], bidderRequest);
+      const payload = JSON.parse(serverRequest.data);
+
+      expect(payload.fledgeEnabled).to.exist;
+      expect(payload.fledgeEnabled).to.exist.and.to.equal(false);
+    });
   });
   describe('interpretResponse', function () {
     const request = getBannerVideoRequest();
     const response = getBannerVideoResponse();
+    const fledgeResponse = getFledgeBannerResponse();
     const requestData = JSON.parse(request.data);
     it('Returns an array of valid server responses if response object is valid', function () {
       const interpretedResponse = spec.interpretResponse(response, request);
+      const fledgeInterpretedResponse = spec.interpretResponse(fledgeResponse, request);
       expect(interpretedResponse).to.be.an('array').that.is.not.empty;
+      expect(fledgeInterpretedResponse).to.be.an('object');
+      expect(fledgeInterpretedResponse.bids).to.satisfy(function (value) {
+        return value === null || Array.isArray(value);
+      });
+      expect(fledgeInterpretedResponse.fledgeAuctionConfigs).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < interpretedResponse.length; i++) {
         let dataItem = interpretedResponse[i];
         expect(dataItem).to.include.all.keys('requestId', 'cpm', 'width', 'height', 'ttl', 'creativeId', 'netRevenue', 'currency', 'meta', 'dealId');
@@ -436,6 +513,21 @@ describe('onetag', function () {
     it('Returns an empty array if response is not valid', function () {
       const serverResponses = spec.interpretResponse('invalid_response', { data: '{}' });
       expect(serverResponses).to.be.an('array').that.is.empty;
+    });
+    it('Returns meta dsa field if dsa field is present in response', function () {
+      const dsaResponseObj = {
+        'behalf': 'Advertiser',
+        'paid': 'Advertiser',
+        'transparency': {
+          'domain': 'dsp1domain.com',
+          'params': [1, 2]
+        },
+        'adrender': 1
+      };
+      const responseWithDsa = {...response};
+      responseWithDsa.body.bids.forEach(bid => bid.dsa = {...dsaResponseObj});
+      const serverResponse = spec.interpretResponse(responseWithDsa, request);
+      serverResponse.forEach(bid => expect(bid.meta.dsa).to.deep.equals(dsaResponseObj));
     });
   });
   describe('getUserSyncs', function () {
@@ -598,6 +690,24 @@ function getBannerVideoResponse() {
       ]
     }
   };
+}
+
+function getFledgeBannerResponse() {
+  const bannerVideoResponse = getBannerVideoResponse();
+  bannerVideoResponse.body.fledgeAuctionConfigs = [
+    {
+      bidId: 'fledge',
+      config: {
+        seller: 'https://onetag-sys.com',
+        decisionLogicUrl:
+          'https://onetag-sys.com/paapi/decision_logic.js',
+        interestGroupBuyers: [
+          'https://onetag-sys.com'
+        ],
+      }
+    }
+  ]
+  return bannerVideoResponse;
 }
 
 function getBannerVideoRequest() {

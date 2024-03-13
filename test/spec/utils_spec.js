@@ -1002,6 +1002,15 @@ describe('Utils', function () {
       const obj = {key: 'value'};
       expect(deepEqual({outer: obj}, {outer: new Typed(obj)}, {checkTypes: true})).to.be.false;
     });
+    it('should work when adding properties to the prototype of Array', () => {
+      after(function () {
+        // eslint-disable-next-line no-extend-native
+        delete Array.prototype.unitTestTempProp;
+      });
+      // eslint-disable-next-line no-extend-native
+      Array.prototype.unitTestTempProp = 'testing';
+      expect(deepEqual([], [])).to.be.true;
+    });
 
     describe('cyrb53Hash', function() {
       it('should return the same hash for the same string', function() {
