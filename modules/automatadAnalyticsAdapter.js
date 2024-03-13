@@ -195,8 +195,6 @@ let atmtdAdapter = Object.assign({}, baseAdapter, {
     baseAdapter.disableAnalytics.apply(this, arguments);
   },
 
-  // qBeingUsed = undefined && qTraversalComplete 
-
   track({eventType, args}) {
     const shouldNotPushToQueue = !self.qBeingUsed
     switch (eventType) {
