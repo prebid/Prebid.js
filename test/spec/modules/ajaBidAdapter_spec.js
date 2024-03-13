@@ -62,11 +62,43 @@ describe('AjaAdapter', function () {
               model: 'SM-G955U',
               bitness: '64',
               architecture: ''
+            },
+            ext: {
+              cdep: 'example_label_1'
             }
           }
-        }
+        },
+        ortb2Imp: {
+          ext: {
+            tid: 'cea1eb09-d970-48dc-8585-634d3a7b0544',
+            gpid: '/1111/homepage#300x250'
+          }
+        },
+        schain: {
+          ver: '1.0',
+          complete: 1,
+          nodes: [
+            {
+              asi: 'exchange1.com',
+              sid: '1234',
+              hp: 1,
+              rid: 'bid-request-1',
+              name: 'publisher',
+              domain: 'publisher.com'
+            },
+            {
+              asi: 'exchange2.com',
+              sid: 'abcd',
+              hp: 1,
+              rid: 'bid-request-2',
+              name: 'intermediary',
+              domain: 'intermediary.com'
+            }
+          ]
+        },
       }
     ];
+    const serializedSchain = encodeURIComponent('1.0,1!exchange1.com,1234,1,bid-request-1,publisher,publisher.com!exchange2.com,abcd,1,bid-request-2,intermediary,intermediary.com')
 
     const bidderRequest = {
       refererInfo: {
@@ -78,7 +110,7 @@ describe('AjaAdapter', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[0].url).to.equal(ENDPOINT);
       expect(requests[0].method).to.equal('GET');
-      expect(requests[0].data).to.equal('asi=123456&skt=5&prebid_id=30b31c1838de1e&prebid_ver=$prebid.version$&page_url=https%3A%2F%2Fhoge.com&sua=%7B%22source%22%3A2%2C%22platform%22%3A%7B%22brand%22%3A%22Android%22%2C%22version%22%3A%5B%228%22%2C%220%22%2C%220%22%5D%7D%2C%22browsers%22%3A%5B%7B%22brand%22%3A%22Not_A%20Brand%22%2C%22version%22%3A%5B%2299%22%2C%220%22%2C%220%22%2C%220%22%5D%7D%2C%7B%22brand%22%3A%22Google%20Chrome%22%2C%22version%22%3A%5B%22109%22%2C%220%22%2C%225414%22%2C%22119%22%5D%7D%2C%7B%22brand%22%3A%22Chromium%22%2C%22version%22%3A%5B%22109%22%2C%220%22%2C%225414%22%2C%22119%22%5D%7D%5D%2C%22mobile%22%3A1%2C%22model%22%3A%22SM-G955U%22%2C%22bitness%22%3A%2264%22%2C%22architecture%22%3A%22%22%7D&');
+      expect(requests[0].data).to.equal(`asi=123456&skt=5&gpid=%2F1111%2Fhomepage%23300x250&tid=cea1eb09-d970-48dc-8585-634d3a7b0544&cdep=example_label_1&prebid_id=30b31c1838de1e&prebid_ver=$prebid.version$&page_url=https%3A%2F%2Fhoge.com&schain=${serializedSchain}&ad_format_ids=2&sua=%7B%22source%22%3A2%2C%22platform%22%3A%7B%22brand%22%3A%22Android%22%2C%22version%22%3A%5B%228%22%2C%220%22%2C%220%22%5D%7D%2C%22browsers%22%3A%5B%7B%22brand%22%3A%22Not_A%20Brand%22%2C%22version%22%3A%5B%2299%22%2C%220%22%2C%220%22%2C%220%22%5D%7D%2C%7B%22brand%22%3A%22Google%20Chrome%22%2C%22version%22%3A%5B%22109%22%2C%220%22%2C%225414%22%2C%22119%22%5D%7D%2C%7B%22brand%22%3A%22Chromium%22%2C%22version%22%3A%5B%22109%22%2C%220%22%2C%225414%22%2C%22119%22%5D%7D%5D%2C%22mobile%22%3A1%2C%22model%22%3A%22SM-G955U%22%2C%22bitness%22%3A%2264%22%2C%22architecture%22%3A%22%22%7D&`);
     });
   });
 
@@ -116,7 +148,7 @@ describe('AjaAdapter', function () {
       const requests = spec.buildRequests(bidRequests, bidderRequest);
       expect(requests[0].url).to.equal(ENDPOINT);
       expect(requests[0].method).to.equal('GET');
-      expect(requests[0].data).to.equal('asi=123456&skt=5&prebid_id=30b31c1838de1e&prebid_ver=$prebid.version$&page_url=https%3A%2F%2Fhoge.com&eids=%7B%22eids%22%3A%5B%7B%22source%22%3A%22pubcid.org%22%2C%22uids%22%3A%5B%7B%22id%22%3A%22some-random-id-value%22%2C%22atype%22%3A1%7D%5D%7D%5D%7D&');
+      expect(requests[0].data).to.equal('asi=123456&skt=5&prebid_id=30b31c1838de1e&prebid_ver=$prebid.version$&page_url=https%3A%2F%2Fhoge.com&ad_format_ids=2&eids=%7B%22eids%22%3A%5B%7B%22source%22%3A%22pubcid.org%22%2C%22uids%22%3A%5B%7B%22id%22%3A%22some-random-id-value%22%2C%22atype%22%3A1%7D%5D%7D%5D%7D&');
     });
   });
 
@@ -171,138 +203,6 @@ describe('AjaAdapter', function () {
       let bidderRequest;
       let result = spec.interpretResponse({ body: response }, {bidderRequest});
       expect(Object.keys(result[0])).to.have.members(Object.keys(expectedResponse[0]));
-    });
-
-    it('handles video responses', function () {
-      let response = {
-        'is_ad_return': true,
-        'ad': {
-          'ad_type': 3,
-          'prebid_id': '51ef8751f9aead',
-          'price': 12.34,
-          'currency': 'JPY',
-          'creative_id': '123abc',
-          'video': {
-            'w': 300,
-            'h': 250,
-            'vtag': '<VAST></VAST>',
-            'purl': 'https://cdn/player',
-            'progress': true,
-            'loop': false,
-            'inread': false,
-            'adomain': [
-              'www.example.com'
-            ]
-          }
-        },
-        'syncs': [
-          'https://example.com'
-        ]
-      };
-
-      let bidderRequest;
-      let result = spec.interpretResponse({ body: response }, {bidderRequest});
-      expect(result[0]).to.have.property('vastXml');
-      expect(result[0]).to.have.property('renderer');
-      expect(result[0]).to.have.property('mediaType', 'video');
-    });
-
-    it('handles native response', function () {
-      let response = {
-        'is_ad_return': true,
-        'ad': {
-          'ad_type': 2,
-          'prebid_id': '51ef8751f9aead',
-          'price': 12.34,
-          'currency': 'JPY',
-          'creative_id': '123abc',
-          'native': {
-            'template_and_ads': {
-              'head': '',
-              'body_wrapper': '',
-              'body': '',
-              'ads': [
-                {
-                  'ad_format_id': 10,
-                  'assets': {
-                    'ad_spot_id': '123abc',
-                    'index': 0,
-                    'adchoice_url': 'https://aja-kk.co.jp/optout',
-                    'cta_text': 'cta',
-                    'img_icon': 'https://example.com/img_icon',
-                    'img_icon_width': '50',
-                    'img_icon_height': '50',
-                    'img_main': 'https://example.com/img_main',
-                    'img_main_width': '200',
-                    'img_main_height': '100',
-                    'lp_link': 'https://example.com/lp?k=v',
-                    'sponsor': 'sponsor',
-                    'title': 'ad_title',
-                    'description': 'ad_desc'
-                  },
-                  'imps': [
-                    'https://example.com/imp'
-                  ],
-                  'inviews': [
-                    'https://example.com/inview'
-                  ],
-                  'jstracker': '',
-                  'disable_trimming': false,
-                  'adomain': [
-                    'www.example.com'
-                  ]
-                }
-              ]
-            }
-          }
-        },
-        'syncs': [
-          'https://example.com'
-        ]
-      };
-
-      let expectedResponse = [
-        {
-          'requestId': '51ef8751f9aead',
-          'cpm': 12.34,
-          'creativeId': '123abc',
-          'dealId': undefined,
-          'mediaType': 'native',
-          'currency': 'JPY',
-          'ttl': 300,
-          'netRevenue': true,
-          'native': {
-            'title': 'ad_title',
-            'body': 'ad_desc',
-            'cta': 'cta',
-            'sponsoredBy': 'sponsor',
-            'image': {
-              'url': 'https://example.com/img_main',
-              'width': 200,
-              'height': 100
-            },
-            'icon': {
-              'url': 'https://example.com/img_icon',
-              'width': 50,
-              'height': 50
-            },
-            'clickUrl': 'https://example.com/lp?k=v',
-            'impressionTrackers': [
-              'https://example.com/imp'
-            ],
-            'privacyLink': 'https://aja-kk.co.jp/optout'
-          },
-          'meta': {
-            'advertiserDomains': [
-              'www.example.com'
-            ]
-          }
-        }
-      ];
-
-      let bidderRequest;
-      let result = spec.interpretResponse({ body: response }, {bidderRequest})
-      expect(result).to.deep.equal(expectedResponse)
     });
 
     it('handles nobid responses', function () {

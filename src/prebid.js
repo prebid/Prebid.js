@@ -40,7 +40,7 @@ import {newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {defer, GreedyPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
 import {allConsent} from './consentHandler.js';
-import {renderAdDirect} from '../libraries/creativeRender/direct.js';
+import {renderAdDirect} from './adRendering.js';
 import {getHighestCpm} from './utils/reducers.js';
 import {fillVideoDefaults} from './video.js';
 
@@ -552,6 +552,8 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
     defer.resolve({bids, timedOut, auctionId})
   }
 
+  const tids = {};
+
   /*
    * for a given adunit which supports a set of mediaTypes
    * and a given bidder which supports a set of mediaTypes
@@ -567,15 +569,18 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
     const bidderRegistry = adapterManager.bidderRegistry;
 
     const bidders = allBidders.filter(bidder => !s2sBidders.has(bidder));
-
-    const tid = adUnit.ortb2Imp?.ext?.tid || generateUUID();
-    adUnit.transactionId = tid;
+    adUnit.adUnitId = generateUUID();
+    const tid = adUnit.ortb2Imp?.ext?.tid;
+    if (tid) {
+      if (tids.hasOwnProperty(adUnit.code)) {
+        logWarn(`Multiple distinct ortb2Imp.ext.tid were provided for twin ad units '${adUnit.code}'`)
+      } else {
+        tids[adUnit.code] = tid;
+      }
+    }
     if (ttlBuffer != null && !adUnit.hasOwnProperty('ttlBuffer')) {
       adUnit.ttlBuffer = ttlBuffer;
     }
-    // Populate ortb2Imp.ext.tid with transactionId. Specifying a transaction ID per item in the ortb impression array, lets multiple transaction IDs be transmitted in a single bid request.
-    deepSetValue(adUnit, 'ortb2Imp.ext.tid', tid);
-
     bidders.forEach(bidder => {
       const adapter = bidderRegistry[bidder];
       const spec = adapter && adapter.getSpec && adapter.getSpec();
@@ -594,11 +599,18 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
     });
     adunitCounter.incrementRequestsCounter(adUnit.code);
   });
-
   if (!adUnits || adUnits.length === 0) {
     logMessage('No adUnits configured. No bids requested.');
     auctionDone();
   } else {
+    adUnits.forEach(au => {
+      const tid = au.ortb2Imp?.ext?.tid || tids[au.code] || generateUUID();
+      if (!tids.hasOwnProperty(au.code)) {
+        tids[au.code] = tid;
+      }
+      au.transactionId = tid;
+      deepSetValue(au, 'ortb2Imp.ext.tid', tid);
+    });
     const auction = auctionManager.createAuction({
       adUnits,
       adUnitCodes,

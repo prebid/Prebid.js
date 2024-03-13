@@ -290,7 +290,7 @@ describe('consentManagementGpp', function () {
     });
 
     it('should not re-use errors', (done) => {
-      cmpResult = Promise.reject(new Error());
+      cmpResult = GreedyPromise.reject(new Error());
       GPPClient.init(makeCmp).catch(() => {
         cmpResult = {signalStatus: 'ready'};
         return GPPClient.init(makeCmp).then(([client]) => {
