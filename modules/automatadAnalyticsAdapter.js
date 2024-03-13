@@ -199,8 +199,10 @@ let atmtdAdapter = Object.assign({}, baseAdapter, {
     baseAdapter.disableAnalytics.apply(this, arguments);
   },
 
+  // qBeingUsed = undefined && qTraversalComplete 
+
   track({eventType, args}) {
-    const shouldNotPushToQueue = !(self.qBeingUsed && !self.qTraversalComplete)
+    const shouldNotPushToQueue = !self.qBeingUsed
     switch (eventType) {
       case CONSTANTS.EVENTS.AUCTION_INIT:
         if (window.atmtdAnalytics && window.atmtdAnalytics.auctionInitHandler && shouldNotPushToQueue) {
