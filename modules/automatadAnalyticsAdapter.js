@@ -145,22 +145,18 @@ const addGPTHandlers = () => {
   googletag.cmd = googletag.cmd || []
   googletag.cmd.push(() => {
     googletag.pubads().addEventListener('slotRenderEnded', (event) => {
-      if (window.atmtdAnalytics && window.atmtdAnalytics.slotRenderEndedGPTHandler) {
-        if (window.__atmtdAggregatorFirstAuctionInitialized === true) {
-          window.atmtdAnalytics.slotRenderEndedGPTHandler(event)
-          return;
-        }
+      if (window.atmtdAnalytics && window.atmtdAnalytics.slotRenderEndedGPTHandler && !self.qBeingUsed) {
+        window.atmtdAnalytics.slotRenderEndedGPTHandler(event)
+        return;
       }
       self.__atmtdAnalyticsQueue.push(['slotRenderEnded', event])
       self.prettyLog(`warn`, `Aggregator not initialised at auctionInit, exiting slotRenderEnded handler and pushing to que instead`)
     })
 
     googletag.pubads().addEventListener('impressionViewable', (event) => {
-      if (window.atmtdAnalytics && window.atmtdAnalytics.impressionViewableHandler) {
-        if (window.__atmtdAggregatorFirstAuctionInitialized === true) {
-          window.atmtdAnalytics.impressionViewableHandler(event)
-          return;
-        }
+      if (window.atmtdAnalytics && window.atmtdAnalytics.impressionViewableHandler && !self.qBeingUsed) {
+        window.atmtdAnalytics.impressionViewableHandler(event)
+        return;
       }
       self.__atmtdAnalyticsQueue.push(['impressionViewable', event])
       self.prettyLog(`warn`, `Aggregator not initialised at auctionInit, exiting impressionViewable handler and pushing to que instead`)
