@@ -55,7 +55,6 @@ module.exports = {
     semi: 'off',
     'space-before-function-paren': 'off',
     'import/extensions': ['error', 'ignorePackages'],
-    'no-prototype-builtins': 'warn',
 
     // Exceptions below this line are temporary, so that eslint can be added into the CI process.
     // Violations of these styles should be fixed, and the exceptions removed over time.
@@ -84,7 +83,15 @@ module.exports = {
     'jsdoc/require-returns-type': 'off',
     'jsdoc/require-yields': 'off',
     'jsdoc/require-yields-check': 'off',
-    'jsdoc/tag-lines': 'off'
+    'jsdoc/tag-lines': 'off',
+    // added with latest eslint upgrade
+    'no-prototype-builtins': 'off',
+    'object-curly-spacing': 'off',
+    'prefer-const': 'off',
+    'no-var': 'off',
+    'quote-props': 'off',
+    'dot-notation': 'off',
+    'quotes': 'off'
   },
   overrides: Object.keys(allowedModules).map((key) => ({
     files: key + '/**/*.js',
