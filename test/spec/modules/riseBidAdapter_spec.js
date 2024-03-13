@@ -28,6 +28,63 @@ describe('riseAdapter', function () {
     });
   });
 
+  describe('isBidPosition Passed', function () {
+    let mediaType = BANNER
+    let bidObject = {};
+    const bid = {
+      bidder: 'rise',
+      mediaTypes: {
+        banner: {
+          pos: 1,
+          sizes: [
+            [
+              300,
+              250
+            ],
+            [
+              320,
+              480
+            ]
+          ]
+        }
+      }
+    }
+    function assignPos (bidObject, bid) {
+      const pos = utils.deepAccess(bid, `mediaTypes.${mediaType}.pos`);
+      if (pos || pos === 0) {
+        bidObject.pos = pos;
+      }
+      return pos;
+    }
+
+    it('bidObject should own pos property', function() {
+      const pos = assignPos(bidObject, bid);
+      expect(bidObject.pos).to.equal(pos);
+    })
+    it('bidObject should own pos property 0', function() {
+      bid.mediaTypes.banner.pos = 0;
+      const pos = assignPos(bidObject, bid);
+      expect(bidObject.pos).to.equal(pos);
+    })
+    it('bidObject should not own pos property', function() {
+      bidObject = {};
+      bid.mediaTypes.banner = {
+        sizes: [
+          [
+            300,
+            250
+          ],
+          [
+            320,
+            480
+          ]
+        ]
+      }
+      const pos = assignPos(bidObject, bid);
+      expect(bidObject.pos).to.equal(pos);
+    })
+  })
+
   describe('isBidRequestValid', function () {
     const bid = {
       'bidder': spec.code,
