@@ -305,7 +305,7 @@ atmtdAdapter.enableAnalytics = function (configuration) {
   atmtdAdapter.originEnableAnalytics(configuration)
 };
 
-/// /////////// ADAPTER REGISTRATION //////////////
+/// /////////// ADAPTER REGISTRATION /////////////
 
 adapterManager.registerAnalyticsAdapter({
   adapter: atmtdAdapter,
