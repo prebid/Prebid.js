@@ -462,6 +462,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   let fskp = floorData ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined;
   let pg = window.parseFloat(Number(winningBid?.bidResponse?.adserverTargeting?.hb_pb || winningBid?.bidResponse?.adserverTargeting?.pwtpb)) || undefined;
   let pixelURL = END_POINT_WIN_BID_LOGGER;
+
   pixelURL += 'pubid=' + publisherId;
   pixelURL += '&purl=' + enc(config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '');
   pixelURL += '&tst=' + Math.round((new window.Date()).getTime() / 1000);
