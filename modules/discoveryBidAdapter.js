@@ -463,6 +463,7 @@ function getParam(validBidRequests, bidderRequest) {
         firstPartyData,
         ssppid: storage.getCookie(COOKIE_KEY_SSPPID) || undefined,
         pmguid: getPmgUID(),
+        tpData: (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.user) ? bidderRequest.ortb2.user.data : undefined,
         page: {
           title: title ? title.slice(0, 100) : undefined,
           desc: desc ? desc.slice(0, 300) : undefined,
@@ -478,7 +479,6 @@ function getParam(validBidRequests, bidderRequest) {
       user: {
         buyeruid: storage.getCookie(COOKIE_KEY_MGUID) || undefined,
         id: sharedid || pubcid,
-        data: (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.user) ? bidderRequest.ortb2.user.data : undefined,
       },
       tmax: timeout,
       site: {
