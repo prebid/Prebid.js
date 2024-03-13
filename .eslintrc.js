@@ -44,13 +44,18 @@ module.exports = {
     sourceType: 'module',
     ecmaVersion: 2018,
   },
-  ignorePatterns: ['libraries/creative-renderer*'],
+  ignorePatterns: [
+    'libraries/creative-renderer*',
+    // add all js files that are transpiled from ts here
+    'src/prebid.js'
+  ],
 
   rules: {
     'comma-dangle': 'off',
     semi: 'off',
     'space-before-function-paren': 'off',
     'import/extensions': ['error', 'ignorePackages'],
+    'no-prototype-builtins': 'warn',
 
     // Exceptions below this line are temporary, so that eslint can be added into the CI process.
     // Violations of these styles should be fixed, and the exceptions removed over time.

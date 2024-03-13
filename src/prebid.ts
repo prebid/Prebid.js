@@ -1,6 +1,6 @@
 /** @module pbjs */
 
-import {getGlobal} from './prebidGlobal.js';
+import { getGlobal } from './prebidGlobal.js';
 import {
   deepAccess,
   deepClone,
@@ -22,27 +22,27 @@ import {
   uniques,
   unsupportedBidderMessage
 } from './utils.js';
-import {listenMessagesFromCreative} from './secureCreatives.js';
-import {userSync} from './userSync.js';
-import {config} from './config.js';
-import {auctionManager} from './auctionManager.js';
-import {isBidUsable, targeting} from './targeting.js';
-import {hook, wrapHook} from './hook.js';
-import {loadSession} from './debugging.js';
-import {includes} from './polyfill.js';
-import {adunitCounter} from './adUnits.js';
-import {createBid} from './bidfactory.js';
-import {storageCallbacks} from './storageManager.js';
-import {default as adapterManager, getS2SBidderSet} from './adapterManager.js';
+import { listenMessagesFromCreative } from './secureCreatives.js';
+import { userSync } from './userSync.js';
+import { config } from './config.js';
+import { auctionManager } from './auctionManager.js';
+import { isBidUsable, targeting } from './targeting.js';
+import { hook, wrapHook } from './hook.js';
+import { loadSession } from './debugging.js';
+import { includes } from './polyfill.js';
+import { adunitCounter } from './adUnits.js';
+import { createBid } from './bidfactory.js';
+import { storageCallbacks } from './storageManager.js';
+import adapterManager from './adapterManager.js';
 import CONSTANTS from './constants.json';
 import * as events from './events.js';
-import {newMetrics, useMetrics} from './utils/perfMetrics.js';
-import {defer, GreedyPromise} from './utils/promise.js';
-import {enrichFPD} from './fpd/enrichment.js';
-import {allConsent} from './consentHandler.js';
-import {renderAdDirect} from './adRendering.js';
-import {getHighestCpm} from './utils/reducers.js';
-import {fillVideoDefaults} from './video.js';
+import { newMetrics, useMetrics } from './utils/perfMetrics.js';
+import { defer, GreedyPromise } from './utils/promise.js';
+import { enrichFPD } from './fpd/enrichment.js';
+import { allConsent } from './consentHandler.js';
+import { renderAdDirect } from './adRendering.js';
+import { getHighestCpm } from './utils/reducers.js';
+import { fillVideoDefaults } from './video.js';
 
 declare const FEATURES: any;
 
@@ -78,7 +78,7 @@ pbjsInstance.adUnits = pbjsInstance.adUnits || [];
 pbjsInstance.triggerUserSyncs = triggerUserSyncs;
 
 function checkDefinedPlacement(id) {
-  var adUnitCodes = auctionManager.getBidsRequested().map(bidSet => bidSet.bids.map(bid => bid.adUnitCode))
+  const adUnitCodes = auctionManager.getBidsRequested().map(bidSet => bidSet.bids.map(bid => bid.adUnitCode))
     .reduce(flatten)
     .filter(uniques);
 
@@ -122,7 +122,7 @@ function validateVideoMediaType(adUnit) {
   const validatedAdUnit = deepClone(adUnit);
   const video = validatedAdUnit.mediaTypes.video;
   if (video.playerSize) {
-    let tarPlayerSizeLen = (typeof video.playerSize[0] === 'number') ? 2 : 1;
+    const tarPlayerSizeLen = (typeof video.playerSize[0] === 'number') ? 2 : 1;
 
     const videoSizes = validateSizes(video.playerSize, tarPlayerSizeLen);
     if (videoSizes.length > 0) {
@@ -169,13 +169,13 @@ function validateNativeMediaType(adUnit) {
 }
 
 function validateAdUnitPos(adUnit, mediaType) {
-  let pos = deepAccess(adUnit, `mediaTypes.${mediaType}.pos`);
+  const pos = deepAccess(adUnit, `mediaTypes.${mediaType}.pos`);
 
   if (!isNumber(pos) || isNaN(pos) || !isFinite(pos)) {
-    let warning = `Value of property 'pos' on ad unit ${adUnit.code} should be of type: Number`;
+    const warning = `Value of property 'pos' on ad unit ${adUnit.code} should be of type: Number`;
 
     logWarn(warning);
-    events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'WARNING', arguments: warning});
+    events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, { type: 'WARNING', arguments: warning });
     delete adUnit.mediaTypes[mediaType].pos;
   }
 
@@ -189,20 +189,20 @@ function validateAdUnit(adUnit) {
   const bids = adUnit.bids;
 
   if (bids != null && !isArray(bids)) {
-    logError(msg(`defines 'adUnit.bids' that is not an array. Removing adUnit from auction`));
+    logError(msg('defines \'adUnit.bids\' that is not an array. Removing adUnit from auction'));
     return null;
   }
   if (bids == null && adUnit.ortb2Imp == null) {
-    logError(msg(`has no 'adUnit.bids' and no 'adUnit.ortb2Imp'. Removing adUnit from auction`));
+    logError(msg('has no \'adUnit.bids\' and no \'adUnit.ortb2Imp\'. Removing adUnit from auction'));
     return null;
   }
   if (!mediaTypes || Object.keys(mediaTypes).length === 0) {
-    logError(msg(`does not define a 'mediaTypes' object.  This is a required field for the auction, so this adUnit has been removed.`));
+    logError(msg('does not define a \'mediaTypes\' object.  This is a required field for the auction, so this adUnit has been removed.'));
     return null;
   }
   if (adUnit.ortb2Imp != null && (bids == null || bids.length === 0)) {
-    adUnit.bids = [{bidder: null}]; // the 'null' bidder is treated as an s2s-only placeholder by adapterManager
-    logMessage(msg(`defines 'adUnit.ortb2Imp' with no 'adUnit.bids'; it will be seen only by S2S adapters`));
+    adUnit.bids = [{ bidder: null }]; // the 'null' bidder is treated as an s2s-only placeholder by adapterManager
+    logMessage(msg('defines \'adUnit.ortb2Imp\' with no \'adUnit.bids\'; it will be seen only by S2S adapters'));
   }
 
   return adUnit;
@@ -215,7 +215,7 @@ export const adUnitSetupChecks = {
 };
 
 if (FEATURES.NATIVE) {
-  Object.assign(adUnitSetupChecks, {validateNativeMediaType});
+  Object.assign(adUnitSetupChecks, { validateNativeMediaType });
 }
 
 if (FEATURES.VIDEO) {
@@ -277,7 +277,7 @@ pbjsInstance.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
 
   // call to retrieve bids array
   if (adunitCode) {
-    var res = pbjsInstance.getAdserverTargetingForAdUnitCode(adunitCode);
+    const res = pbjsInstance.getAdserverTargetingForAdUnitCode(adunitCode);
     return transformAdServerTargetingObj(res);
   } else {
     logMessage('Need to call getAdserverTargetingForAdUnitCodeStr with adunitCode');
@@ -407,7 +407,7 @@ pbjsInstance.setTargetingForGPTAsync = function (adUnit, customSlotMatching) {
   }
 
   // get our ad unit codes
-  let targetingSet = targeting.getAllTargeting(adUnit);
+  const targetingSet = targeting.getAllTargeting(adUnit);
 
   // first reset any old targeting
   targeting.resetPresetTargeting(adUnit, customSlotMatching);
@@ -530,7 +530,7 @@ pbjsInstance.requestBids = (function() {
     }
     return enrichFPD(GreedyPromise.resolve(ortb2Fragments.global)).then(global => {
       ortb2Fragments.global = global;
-      return startAuction({bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2Fragments, metrics, defer});
+      return startAuction({ bidsBackHandler, timeout: cbTimeout, adUnits, adUnitCodes, labels, auctionId, ttlBuffer, ortb2Fragments, metrics, defer });
     })
   }, 'requestBids');
 
@@ -541,20 +541,19 @@ pbjsInstance.requestBids = (function() {
     // if the request does not specify adUnits, clone the global adUnit array;
     // otherwise, if the caller goes on to use addAdUnits/removeAdUnits, any asynchronous logic
     // in any hook might see their effects.
-    let adUnits = req.adUnits || pbjsInstance.adUnits;
+    const adUnits = req.adUnits || pbjsInstance.adUnits;
     req.adUnits = (isArray(adUnits) ? adUnits.slice() : [adUnits]);
 
     req.metrics = newMetrics();
     req.metrics.checkpoint('requestBids');
-    req.defer = defer({promiseFactory: (r) => new Promise(r) as any}) // the promiseFactory is inferred to return a GreedyPromise, but a Promise is not a GreedyPromise and is missing two fields, which is why we need to cast it to any
+    req.defer = defer({ promiseFactory: (r) => new Promise(r) as any }) // the promiseFactory is inferred to return a GreedyPromise, but a Promise is not a GreedyPromise and is missing two fields, which is why we need to cast it to any
     delegate.call(this, req);
     return req.defer.promise;
   });
 })();
 
-
 export const startAuction = hook('async', function ({ bidsBackHandler, timeout: cbTimeout, adUnits, ttlBuffer, adUnitCodes, labels, auctionId, ortb2Fragments, metrics, defer }: RequestOptions = {}) {
-  const s2sBidders = getS2SBidderSet(config.getConfig('s2sConfig') || []);
+  const s2sBidders = adapterManager.getS2SBidderSet(config.getConfig('s2sConfig') || []);
   fillAdUnitDefaults(adUnits);
   adUnits = useMetrics(metrics).measureTime('requestBids.validate', () => checkAdUnitSetup(adUnits));
 
@@ -566,7 +565,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
         logError('Error executing bidsBackHandler', null, e);
       }
     }
-    defer.resolve({bids, timedOut, auctionId})
+    defer.resolve({ bids, timedOut, auctionId })
   }
 
   const tids = {};
@@ -579,7 +578,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
    */
   adUnits.forEach(adUnit => {
     // get the adunit's mediaTypes, defaulting to banner if mediaTypes isn't present
-    const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || { 'banner': 'banner' });
+    const adUnitMediaTypes = Object.keys(adUnit.mediaTypes || { banner: 'banner' });
 
     // get the bidder's mediaTypes
     const allBidders = adUnit.bids.map(bid => bid.bidder);
@@ -589,6 +588,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
     adUnit.adUnitId = generateUUID();
     const tid = adUnit.ortb2Imp?.ext?.tid;
     if (tid) {
+      // eslint-disable-next-line no-prototype-builtins
       if (tids.hasOwnProperty(adUnit.code)) {
         logWarn(`Multiple distinct ortb2Imp.ext.tid were provided for twin ad units '${adUnit.code}'`)
       } else {
@@ -639,7 +639,7 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
       metrics,
     });
 
-    let adUnitsLen = adUnits.length;
+    const adUnitsLen = adUnits.length;
     if (adUnitsLen > 15) {
       logInfo(`Current auction ${auction.getAuctionId()} contains ${adUnitsLen} adUnits.`, adUnits);
     }
@@ -655,7 +655,7 @@ export function executeCallbacks(fn, reqBidsConfigObj) {
   fn.call(this, reqBidsConfigObj);
 
   function runAll(queue) {
-    var queued;
+    let queued;
     while ((queued = queue.shift())) {
       queued();
     }

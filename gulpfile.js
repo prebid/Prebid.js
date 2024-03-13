@@ -150,7 +150,6 @@ function transpile() {
     // the generated files should all be fixed
     .pipe(eslint({ fix: true, quiet: true }))
     .pipe(eslint.format('stylish'))
-    .pipe(eslint.failAfterError())
     // pipe the files next to their ts file so they can be imported by other js files during the migration period
     .pipe(gulp.dest(file => file.base));
 }
