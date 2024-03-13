@@ -185,7 +185,7 @@ export const spec = {
  * @return {boolean}
  */
 const isPubTagAvailable = () => {
-  return !!(window._anyclip && window._anyclip.PubTag && window._anyclip.pubTag);
+  return !!(window._anyclip && window._anyclip.pubTag);
 }
 
 registerBidder(spec);

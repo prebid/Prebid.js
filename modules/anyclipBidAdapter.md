@@ -20,13 +20,14 @@ Use `anyclip` as bidder.
 
 | Key           | Required | Example                  | Description                           |
 |---------------|----------|--------------------------|---------------------------------------|
-| `publisherId` | Yes      | `12345`                  | The publisher ID provided by AnyClip  |
+| `publisherId` | Yes      | `'12345'`                | The publisher ID provided by AnyClip  |
 | `supplyTagId` | Yes      | `'-mptNo0BycUG4oCDgGrU'` | The supply tag ID provided by AnyClip |
+| `floor`       | No       | `0.5`                    | Floor price                           |
 
 
 # Sample Ad Unit: For Publishers
 ## Sample Banner only Ad Unit
-```
+```js
 var adUnits = [{
   code: 'adunit1', // ad slot HTML element ID  
   mediaTypes: {
