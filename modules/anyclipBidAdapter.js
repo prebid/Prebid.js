@@ -1,6 +1,6 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {deepAccess, isArray, logError, logInfo} from '../src/utils.js';
+import {deepAccess, isArray, isFn, logError, logInfo} from '../src/utils.js';
 import {config} from '../src/config.js';
 
 /**
@@ -14,6 +14,28 @@ const BIDDER_CODE = 'anyclip';
 const ENDPOINT_URL = 'https://prebid.anyclip.com';
 const DEFAULT_CURRENCY = 'USD';
 const NET_REVENUE = false;
+
+/*
+ * Get the bid floor value from the bidRequest object, either using the getFloor function or by accessing the 'params.floor' property.
+ * If the bid floor cannot be determined, return 0 as a fallback value.
+ */
+function getBidFloor(bidRequest) {
+  if (!isFn(bidRequest.getFloor)) {
+    return deepAccess(bidRequest, 'params.floor', 0);
+  }
+
+  try {
+    const bidFloor = bidRequest.getFloor({
+      currency: DEFAULT_CURRENCY,
+      mediaType: '*',
+      size: '*',
+    });
+    return bidFloor.floor;
+  } catch (err) {
+    logError(err);
+    return 0;
+  }
+}
 
 /** @type {BidderSpec} */
 export const spec = {
@@ -75,7 +97,7 @@ export const spec = {
         })
       }
       // Floor
-      const floor = parseFloat(deepAccess(bidRequest, 'params.floor'));
+      const floor = parseFloat(getBidFloor(bidRequest));
       if (!isNaN(floor)) {
         options.ext.floor = floor;
       }
@@ -118,10 +140,10 @@ export const spec = {
       if (requestBidsPromise !== undefined) {
         requestBidsPromise
           .then(() => {
-            logInfo('PubTag requestBids > DONE');
+            logInfo('PubTag requestBids done');
           })
           .catch((err) => {
-            logInfo('PubTag requestBids > ERROR', err);
+            logError('PubTag requestBids error', err);
           });
       }
 
