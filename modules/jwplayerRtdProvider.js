@@ -12,7 +12,7 @@
 import {submodule} from '../src/hook.js';
 import {config} from '../src/config.js';
 import {ajaxBuilder} from '../src/ajax.js';
-import {deepAccess, logError} from '../src/utils.js';
+import { deepAccess, logError, logWarn } from '../src/utils.js'
 import {find} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
@@ -373,10 +373,30 @@ function getPlayer(playerDivId) {
     return;
   }
 
-  const player = jwplayer(playerDivId);
-  if (!player || !player.getPlaylist) {
-    logError('player ID did not match any players');
+  let player = jwplayer(playerDivId);
+  if (player && player.getPlaylist) {
+    return player;
+  }
+
+  const playerOnPageCount = document.getElementsByClassName('jwplayer').length;
+  if (playerOnPageCount === 0) {
+    logError('No JWPlayer instances have been detected on the page');
     return;
   }
-  return player;
+
+  let errorMessage = `player Div ID ${playerDivId} did not match any players.`;
+
+  // If there are multiple instances on the page, we cannot guess which one should be targeted.
+  if (playerOnPageCount > 1) {
+    logError(errorMessage);
+    return;
+  }
+
+  player = jwplayer();
+  if (player && player.getPlaylist) {
+    logWarn(`${errorMessage} Targeting player Div ID ${player.id} instead`);
+    return player;
+  }
+
+  logError(errorMessage);
 }
