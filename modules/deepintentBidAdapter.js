@@ -1,6 +1,7 @@
 import { generateUUID, deepSetValue, deepAccess, isArray, isInteger, logError, logWarn } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
 const BIDDER_CODE = 'deepintent';
 const GVL_ID = 541;
 const BIDDER_ENDPOINT = 'https://prebid.deepintent.com/prebid';
@@ -96,6 +97,20 @@ export const spec = {
     if (bidderRequest && bidderRequest.gdprConsent) {
       deepSetValue(openRtbBidRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
       deepSetValue(openRtbBidRequest, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
+    }
+
+    // GPP Consent
+    if (bidderRequest?.gppConsent?.gppString) {
+      deepSetValue(openRtbBidRequest, 'regs.gpp', bidderRequest.gppConsent.gppString);
+      deepSetValue(openRtbBidRequest, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
+    } else if (bidderRequest?.ortb2?.regs?.gpp) {
+      deepSetValue(openRtbBidRequest, 'regs.gpp', bidderRequest.ortb2.regs.gpp);
+      deepSetValue(openRtbBidRequest, 'regs.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
+    }
+
+    // coppa compliance
+    if (config.getConfig('coppa') === true) {
+      deepSetValue(openRtbBidRequest, 'regs.coppa', 1);
     }
 
     injectEids(openRtbBidRequest, validBidRequests);

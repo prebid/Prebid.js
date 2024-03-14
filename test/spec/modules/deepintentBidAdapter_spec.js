@@ -1,5 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/deepintentBidAdapter.js';
+import {config} from '../../../src/config.js';
 import * as utils from '../../../src/utils.js';
 
 describe('Deepintent adapter', function () {
@@ -357,5 +358,41 @@ describe('Deepintent adapter', function () {
       let response = spec.interpretResponse(invalidResponse, bRequest);
       expect(response[0].mediaType).to.equal(undefined);
     });
-  })
+  });
+  describe('GPP and coppa', function() {
+    it('Request params check with GPP Consent', function () {
+      let bidderReq = {gppConsent: {gppString: 'gpp-string-test', applicableSections: [5]}};
+      let bRequest = spec.buildRequests(request, bidderReq);
+      let data = JSON.parse(bRequest.data);
+      expect(data.regs.gpp).to.equal('gpp-string-test');
+      expect(data.regs.gpp_sid[0]).to.equal(5);
+    });
+    it('Request params check with GPP Consent read from ortb2', function () {
+      let bidderReq = {
+        ortb2: {
+          regs: {
+            gpp: 'gpp-string-test',
+            gpp_sid: [5]
+          }
+        }
+      };
+      let bRequest = spec.buildRequests(request, bidderReq);
+      let data = JSON.parse(bRequest.data);
+      expect(data.regs.gpp).to.equal('gpp-string-test');
+      expect(data.regs.gpp_sid[0]).to.equal(5);
+    });
+    it('should include coppa flag in bid request if coppa is set to true', () => {
+      let sandbox = sinon.sandbox.create();
+      sandbox.stub(config, 'getConfig').callsFake(key => {
+        const config = {
+          'coppa': true
+        };
+        return config[key];
+      });
+      const bRequest = spec.buildRequests(request);
+      let data = JSON.parse(bRequest.data);
+      expect(data.regs.coppa).to.equal(1);
+      sandbox.restore();
+    });
+  });
 });
