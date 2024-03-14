@@ -50,6 +50,7 @@ const VIDEO_CUSTOM_PARAMS = {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 469,
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
