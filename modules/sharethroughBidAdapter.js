@@ -1,7 +1,7 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { deepAccess, deepSetValue, generateUUID, inIframe, mergeDeep } from '../src/utils.js';
+import { deepAccess, generateUUID, inIframe, mergeDeep } from '../src/utils.js';
 
 const VERSION = '4.3.0';
 const BIDDER_CODE = 'sharethrough';
