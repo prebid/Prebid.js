@@ -300,7 +300,7 @@ export function getImpVideo(imp, video) {
   if (video.bidfloorcur) imp.bidfloorcur = video.bidfloorcur;
   if (video.bidfloor) imp.bidfloor = video.bidfloor;
 
-  imp.video = getDefinedParams(video, VIDEO_PARAMS);
+  imp.video = getDefinedParams(video.data, VIDEO_PARAMS);
   Object.keys(VIDEO_PARAMS_DEFAULT)
     .filter(videoParamName => VIDEO_PARAMS_DEFAULT[videoParamName])
     .forEach(videoParamName => {
@@ -309,9 +309,9 @@ export function getImpVideo(imp, video) {
 
   if (video.data.playerSize) {
     imp.video = Object.assign(imp.video, parseGPTSingleSizeArrayToRtbSize(video.data?.playerSize) || {});
-  } else if (video.w && video.h) {
-    imp.video.w = video.w;
-    imp.video.h = video.h;
+  } else if (video.data.w && video.data.h) {
+    imp.video.w = video.data.w;
+    imp.video.h = video.data.h;
   };
 };
 
