@@ -157,7 +157,7 @@ describe('Taboola Adapter', function () {
       spec.onBidderError({error, bidderRequest});
       expect(server.requests[0].method).to.equal('POST');
       expect(server.requests[0].url).to.equal(EVENT_ENDPOINT + '/bidError');
-      expect(JSON.parse(server.requests[0].requestBody)).to.deep.equal(error, bidderRequest);
+      expect(JSON.parse(server.requests[0].requestBody)).to.deep.equal({error, bidderRequest});
     });
   });
 
@@ -397,6 +397,30 @@ describe('Taboola Adapter', function () {
         }
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.ext.example).to.deep.equal(bidderRequest.ortb2.ext.example);
+      });
+
+      it('should pass additional parameter in request for topics', function () {
+        const ortb2 = {
+          ...commonBidderRequest,
+          ortb2: {
+            user: {
+              data: {
+                segment: [
+                  {
+                    id: '243'
+                  }
+                ],
+                name: 'pa.taboola.com',
+                ext: {
+                  segclass: '4',
+                  segtax: 601
+                }
+              }
+            }
+          }
+        }
+        const res = spec.buildRequests([defaultBidRequest], {...ortb2})
+        expect(res.data.user.data).to.deep.equal(ortb2.ortb2.user.data);
       });
     });
 
