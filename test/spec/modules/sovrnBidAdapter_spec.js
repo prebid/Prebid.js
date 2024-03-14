@@ -530,6 +530,45 @@ describe('sovrnBidAdapter', function() {
 
       expect(impression.bidfloor).to.equal(2.00)
     })
+    it('floor should be undefined if there is no floor from the floor module and params', function() {
+      const floorBid = {
+        ...baseBidRequest
+      }
+      floorBid.params = {
+        tagid: 1234
+      }
+      const request = spec.buildRequests([floorBid], baseBidderRequest)
+      const impression = JSON.parse(request.data).imp[0]
+
+      expect(impression.bidfloor).to.be.undefined
+    })
+    it('floor should be undefined if there is incorrect floor value from the floor module', function() {
+      const floorBid = {
+        ...baseBidRequest,
+        getFloor: () => ({currency: 'USD', floor: 'incorrect_value'}),
+        params: {
+          tagid: 1234
+        }
+      }
+      const request = spec.buildRequests([floorBid], baseBidderRequest)
+      const impression = JSON.parse(request.data).imp[0]
+
+      expect(impression.bidfloor).to.be.undefined
+    })
+    it('floor should be undefined if there is incorrect floor value from the params', function() {
+      const floorBid = {
+        ...baseBidRequest,
+        getFloor: () => ({})
+      }
+      floorBid.params = {
+        tagid: 1234,
+        bidfloor: 'incorrect_value'
+      }
+      const request = spec.buildRequests([floorBid], baseBidderRequest)
+      const impression = JSON.parse(request.data).imp[0]
+
+      expect(impression.bidfloor).to.be.undefined
+    })
     describe('First Party Data', function () {
       it('should provide first party data if provided', function() {
         const ortb2 = {
