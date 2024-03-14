@@ -105,7 +105,7 @@ function init(rtdConfig, userConsent) {
 
 /**
  * Real-time data retrieval from AirGrid
- * @param {Object} reqBidsConfigObj
+ * @param {Object} bidConfig
  * @param {function} onDone
  * @param {Object} rtdConfig
  * @param {Object} userConsent

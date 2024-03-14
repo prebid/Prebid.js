@@ -2,6 +2,8 @@ import { liveIntentIdSubmodule, reset as resetLiveIntentIdSubmodule, storage } f
 import * as utils from 'src/utils.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../../src/adapterManager.js';
 import { server } from 'test/mocks/xhr.js';
+import * as refererDetection from '../../../src/refererDetection.js';
+
 resetLiveIntentIdSubmodule();
 liveIntentIdSubmodule.setModuleMode('standard')
 const PUBLISHER_ID = '89899';
@@ -16,6 +18,7 @@ describe('LiveIntentId', function() {
   let getCookieStub;
   let getDataFromLocalStorageStub;
   let imgStub;
+  let refererInfoStub;
 
   beforeEach(function() {
     liveIntentIdSubmodule.setModuleMode('standard');
@@ -26,6 +29,7 @@ describe('LiveIntentId', function() {
     uspConsentDataStub = sinon.stub(uspDataHandler, 'getConsentData');
     gdprConsentDataStub = sinon.stub(gdprDataHandler, 'getConsentData');
     gppConsentDataStub = sinon.stub(gppDataHandler, 'getConsentData');
+    refererInfoStub = sinon.stub(refererDetection, 'getRefererInfo');
   });
 
   afterEach(function() {
@@ -36,6 +40,7 @@ describe('LiveIntentId', function() {
     uspConsentDataStub.restore();
     gdprConsentDataStub.restore();
     gppConsentDataStub.restore();
+    refererInfoStub.restore();
     resetLiveIntentIdSubmodule();
   });
 
@@ -421,6 +426,13 @@ describe('LiveIntentId', function() {
   it('should decode an pubmatic id to a separate object when present', function() {
     const result = liveIntentIdSubmodule.decode({ nonId: 'foo', pubmatic: 'bar' });
     expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'pubmatic': 'bar'}, 'pubmatic': {'id': 'bar', 'ext': {'provider': 'liveintent.com'}}});
+  });
+
+  it('should decode a thetradedesk id to a separate object when present', function() {
+    const provider = 'liveintent.com'
+    refererInfoStub.returns({domain: provider})
+    const result = liveIntentIdSubmodule.decode({ nonId: 'foo', thetradedesk: 'bar' });
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'tdid': 'bar'}, 'tdid': {'id': 'bar', 'ext': {'rtiPartner': 'TDID', 'provider': provider}}});
   });
 
   it('should allow disabling nonId resolution', function() {

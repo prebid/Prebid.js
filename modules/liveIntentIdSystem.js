@@ -11,7 +11,9 @@ import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/val
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import {UID1_EIDS} from '../libraries/uid1Eids/uid1Eids.js';
 import {UID2_EIDS} from '../libraries/uid2Eids/uid2Eids.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -234,6 +236,12 @@ export const liveIntentIdSubmodule = {
         result.sovrn = { 'id': value.sovrn, ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
+      if (value.thetradedesk) {
+        result.lipb = {...result.lipb, tdid: value.thetradedesk}
+        result.tdid = { 'id': value.thetradedesk, ext: { rtiPartner: 'TDID', provider: getRefererInfo().domain || LI_PROVIDER_DOMAIN } }
+        delete result.lipb.thetradedesk
+      }
+
       return result
     }
 
@@ -273,6 +281,7 @@ export const liveIntentIdSubmodule = {
     return { callback: result };
   },
   eids: {
+    ...UID1_EIDS,
     ...UID2_EIDS,
     'lipb': {
       getValue: function(data) {

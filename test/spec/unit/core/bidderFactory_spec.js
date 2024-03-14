@@ -1109,7 +1109,7 @@ describe('bidderFactory', () => {
     if (FEATURES.NATIVE) {
       it('should add native bids that do have required assets', function () {
         adUnits = [{
-          transactionId: 'au',
+          adUnitId: 'au',
           nativeParams: {
             title: {'required': true},
           }
@@ -1120,7 +1120,7 @@ describe('bidderFactory', () => {
             bidId: '1',
             auctionId: 'first-bid-id',
             adUnitCode: 'mock/placement',
-            transactionId: 'au',
+            adUnitId: 'au',
             params: {
               param: 5
             },
