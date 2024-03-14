@@ -453,6 +453,9 @@ describe('sharethrough adapter spec', function () {
           expect(openRtbReq.regs.ext.dsa.transparency).to.deep.equal([{
             'domain': 'good-domain',
             'dsaparams': [1, 2]
+          }, {
+            'domain': 'bad-setup',
+            'dsaparams': ['1', 3]
           }]);
         });
       });
