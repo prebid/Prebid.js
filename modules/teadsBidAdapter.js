@@ -124,17 +124,18 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidderRequest) {
-    const bidResponses = [];
     serverResponse = serverResponse.body;
 
-    if (serverResponse.responses) {
-      const autoplayEnabled = isAutoplayEnabled();
-      serverResponse.responses.forEach(function (bid) {
-        // ignore this bid if it requires autoplay but it is not enabled on this browser
-        if (bid.needAutoplay && !autoplayEnabled) {
-          return;
-        };
+    if (!serverResponse.responses) {
+      return [];
+    }
 
+    const autoplayEnabled = isAutoplayEnabled();
+    return serverResponse.responses
+      .filter((bid) =>
+        // ignore this bid if it requires autoplay but it is not enabled on this browser
+        !(bid.needAutoplay && !autoplayEnabled)
+      ).map((bid) => {
         const bidResponse = {
           cpm: bid.cpm,
           width: bid.width,
@@ -156,10 +157,8 @@ export const spec = {
         if (bid?.ext?.dsa) {
           bidResponse.meta.dsa = bid.ext.dsa;
         }
-        bidResponses.push(bidResponse);
+        return bidResponse;
       });
-    }
-    return bidResponses;
   }
 };
 
