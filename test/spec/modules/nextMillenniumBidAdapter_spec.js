@@ -59,7 +59,36 @@ describe('nextMillenniumBidAdapterTests', () => {
           id: 'test-video-1',
           bidfloorcur: 'USD',
           ext: {prebid: {storedrequest: {id: '234'}}},
-          video: {w: 400, h: 300},
+          video: {
+            mimes: ['video/mp4', 'video/x-ms-wmv', 'application/javascript'],
+            w: 400,
+            h: 300,
+          },
+        },
+      },
+
+      {
+        title: 'imp - mediaTypes.video is empty',
+        data: {
+          id: '234',
+          bid: {
+            mediaTypes: {video: {}},
+            adUnitCode: 'test-video-1',
+          },
+
+          mediaTypes: {
+            video: {
+              data: {},
+              bidfloorcur: 'USD',
+            },
+          },
+        },
+
+        expected: {
+          id: 'test-video-1',
+          bidfloorcur: 'USD',
+          ext: {prebid: {storedrequest: {id: '234'}}},
+          video: {mimes: ['video/mp4', 'video/x-ms-wmv', 'application/javascript']},
         },
       },
     ];

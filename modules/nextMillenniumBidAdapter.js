@@ -31,18 +31,24 @@ const REPORT_ENDPOINT = 'https://report2.hb.brainlyads.com/statistics/metric';
 const TIME_TO_LIVE = 360;
 const DEFAULT_CURRENCY = 'USD';
 
-const VIDEO_PARAMS = [
-  'api',
-  'linearity',
-  'maxduration',
-  'mimes',
-  'minduration',
-  'placement',
-  'playbackmethod',
-  'protocols',
-  'startdelay',
-];
+const VIDEO_PARAMS_DEFAULT = {
+  api: undefined,
+  linearity: undefined,
+  maxduration: undefined,
+  mimes: [
+    'video/mp4',
+    'video/x-ms-wmv',
+    'application/javascript',
+  ],
 
+  minduration: undefined,
+  placement: undefined,
+  playbackmethod: undefined,
+  protocols: undefined,
+  startdelay: undefined,
+};
+
+const VIDEO_PARAMS = Object.keys(VIDEO_PARAMS_DEFAULT);
 const ALLOWED_ORTB2_PARAMETERS = [
   'site.pagecat',
   'site.content.cat',
@@ -267,33 +273,46 @@ export function getImp(bid, id, mediaTypes) {
     },
   };
 
-  if (banner) {
-    if (banner.bidfloorcur) imp.bidfloorcur = banner.bidfloorcur;
-    if (banner.bidfloor) imp.bidfloor = banner.bidfloor;
-
-    const format = (banner.data?.sizes || []).map(s => { return {w: s[0], h: s[1]} })
-    const {w, h} = (format[0] || {})
-    imp.banner = {
-      w,
-      h,
-      format,
-    };
-  };
-
-  if (video) {
-    if (video.bidfloorcur) imp.bidfloorcur = video.bidfloorcur;
-    if (video.bidfloor) imp.bidfloor = video.bidfloor;
-
-    imp.video = getDefinedParams(video, VIDEO_PARAMS);
-    if (video.data.playerSize) {
-      imp.video = Object.assign(imp.video, parseGPTSingleSizeArrayToRtbSize(video.data.playerSize) || {});
-    } else if (video.w && video.h) {
-      imp.video.w = video.w;
-      imp.video.h = video.h;
-    };
-  };
+  getImpBanner(imp, banner);
+  getImpVideo(imp, video);
 
   return imp;
+};
+
+export function getImpBanner(imp, banner) {
+  if (!banner) return;
+
+  if (banner.bidfloorcur) imp.bidfloorcur = banner.bidfloorcur;
+  if (banner.bidfloor) imp.bidfloor = banner.bidfloor;
+
+  const format = (banner.data?.sizes || []).map(s => { return {w: s[0], h: s[1]} })
+  const {w, h} = (format[0] || {})
+  imp.banner = {
+    w,
+    h,
+    format,
+  };
+};
+
+export function getImpVideo(imp, video) {
+  if (!video) return;
+
+  if (video.bidfloorcur) imp.bidfloorcur = video.bidfloorcur;
+  if (video.bidfloor) imp.bidfloor = video.bidfloor;
+
+  imp.video = getDefinedParams(video, VIDEO_PARAMS);
+  Object.keys(VIDEO_PARAMS_DEFAULT)
+    .filter(videoParamName => VIDEO_PARAMS_DEFAULT[videoParamName])
+    .forEach(videoParamName => {
+      if (typeof imp.video[videoParamName] === 'undefined') imp.video[videoParamName] = VIDEO_PARAMS_DEFAULT[videoParamName];
+    });
+
+  if (video.data.playerSize) {
+    imp.video = Object.assign(imp.video, parseGPTSingleSizeArrayToRtbSize(video.data?.playerSize) || {});
+  } else if (video.w && video.h) {
+    imp.video.w = video.w;
+    imp.video.h = video.h;
+  };
 };
 
 export function setConsentStrings(postBody = {}, bidderRequest) {
