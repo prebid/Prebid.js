@@ -209,7 +209,7 @@ describe('discovery:BidAdapterTests', function () {
     it('should pass additional parameter in request for topics', function () {
       const request = spec.buildRequests(bidRequestData.bids, bidRequestData);
       let res = JSON.parse(request.data);
-      expect(res.user.data).to.deep.equal(bidRequestData.ortb2.user.data);
+      expect(res.ext.tpData).to.deep.equal(bidRequestData.ortb2.user.data);
     });
   });
 
