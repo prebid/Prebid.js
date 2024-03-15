@@ -304,9 +304,8 @@ export const spec = {
     let syncs = [];
     serverResponses[0].body.userSyncs.forEach(function(sync) {
       if (syncOptions.iframeEnabled) {
-        syncs.push(sync.uf ? { url: sync.uf, type: 'iframe'}: { url: sync.up, type: 'image'});
-      }
-      else if (syncOptions.pixelEnabled && sync.up) {
+        syncs.push(sync.uf ? { url: sync.uf, type: 'iframe'} : { url: sync.up, type: 'image'});
+      } else if (syncOptions.pixelEnabled && sync.up) {
         syncs.push({url: sync.up, type: 'image'})
       }
     })
