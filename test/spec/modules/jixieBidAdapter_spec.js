@@ -710,7 +710,7 @@ describe('jixie Adapter', function () {
 
   describe('getUserSyncs', function () {
     it('it should favour iframe over pixel if publisher allows iframe usersync', function () {
-      const syncOptions = { 
+      const syncOptions = {
         'iframeEnabled': true,
         'pixelEnabled': true,
       }
@@ -769,6 +769,5 @@ describe('jixie Adapter', function () {
       let result = spec.getUserSyncs(syncOptions, [{ body: response }]);
       expect(result.length).to.equal(0)
     })
-    
   })
 });
