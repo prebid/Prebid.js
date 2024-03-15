@@ -7,6 +7,12 @@ import { createFloorsDataForAuction } from "./priceFloors.js";
 const MODULE_NAME = "realTimeData";
 const SUBMODULE_NAME = "pubxai";
 let floorRulesPromise = null;
+const FloorsApiStatus = Object.freeze({
+  IN_PROGRESS: "IN_PROGRESS",
+  SUCCESS: "SUCCESS",
+  ERROR: "ERROR",
+});
+const FLOORS_EVENT_HANDLE = "floorsApi";
 
 export const getFloorsConfig = (provider, floorsResponse) => {
   console.log("pubx", "getFloorsConfig called");
@@ -44,17 +50,30 @@ export const setFloorsConfig = (provider, data) => {
 
 export const setDefaultPriceFloors = (provider) => {
   console.log("pubx", "setDefaultFloorsConfig called");
-  window.__pubxPrevFloorsConfig__ = config.getConfig("floors");
   const data = deepAccess(provider, "params.data");
   setFloorsConfig(provider, data);
 };
 
 export const setPriceFloors = async (provider) => {
   console.log("pubx", "setPriceFloors called");
+  window.__pubxPrevFloorsConfig__ = config.getConfig("floors");
   setDefaultPriceFloors(provider);
-  return fetchFloorRules(provider).then((floorsResponse) => {
-    setFloorsConfig(provider, floorsResponse);
-  });
+  return fetchFloorRules(provider)
+    .then((floorsResponse) => {
+      setFloorsConfig(provider, floorsResponse);
+      setFloorsApiStatus(FloorsApiStatus.SUCCESS);
+    })
+    .catch((error) => {
+      setFloorsApiStatus(FloorsApiStatus.ERROR);
+    });
+};
+
+const setFloorsApiStatus = (status) => {
+  window.__pubxFloorsApiStatus__ = status;
+  console.log("pubx", "api status set to", status);
+  window.dispatchEvent(
+    new CustomEvent(FLOORS_EVENT_HANDLE, { detail: { status } })
+  );
 };
 
 export const fetchFloorRules = async (provider) => {
@@ -62,6 +81,9 @@ export const fetchFloorRules = async (provider) => {
   console.log("pubx", "fetchFloorRules called", url);
   return new Promise((resolve, reject) => {
     console.log("pubx", "initiate ajax call");
+    setFloorsApiStatus(FloorsApiStatus.IN_PROGRESS);
+    // When the api call exceeds auctionDelay, the api call doesn't fail but the auction starts.
+    // TODO: do we want to introduce a timeout for the api call?
     ajax(url, {
       success: (responseText, response) => {
         console.log("pubx", "success response", response);
