@@ -6,6 +6,15 @@ import {getStorageManager} from '../src/storageManager.js';
 import {includes} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'gumgum';
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
 const ALIAS_BIDDER_CODE = ['gg'];
@@ -14,6 +23,7 @@ const JCSI = { t: 0, rq: 8, pbv: '$prebid.version$' }
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
 const TIME_TO_LIVE = 60;
 const DELAY_REQUEST_TIME = 1800000; // setting to 30 mins
+const pubProvidedIdSources = ['dac.co.jp', 'audigent.com', 'id5-sync.com', 'liveramp.com', 'intentiq.com', 'liveintent.com', 'crwdcntrl.net', 'quantcast.com', 'adserver.org', 'yahoo.com']
 
 let invalidRequestIds = {};
 let pageViewId = null;
@@ -175,6 +185,7 @@ function _getVidParams(attributes) {
     linearity: li,
     startdelay: sd,
     placement: pt,
+    plcmt,
     protocols = [],
     playerSize = []
   } = attributes;
@@ -186,7 +197,7 @@ function _getVidParams(attributes) {
     pr = protocols.join(',');
   }
 
-  return {
+  const result = {
     mind,
     maxd,
     li,
@@ -196,6 +207,11 @@ function _getVidParams(attributes) {
     viw,
     vih
   };
+    // Add vplcmt property to the result object if plcmt is available
+  if (plcmt !== undefined && plcmt !== null) {
+    result.vplcmt = plcmt;
+  }
+  return result;
 }
 
 /**
@@ -310,7 +326,23 @@ function buildRequests(validBidRequests, bidderRequest) {
     // ADTS-174 Removed unnecessary checks to fix failing test
     data.lt = lt;
     data.to = to;
-
+    function jsoStringifynWithMaxLength(data, maxLength) {
+      let jsonString = JSON.stringify(data);
+      if (jsonString.length <= maxLength) {
+        return jsonString;
+      } else {
+        const truncatedData = data.slice(0, Math.floor(data.length * (maxLength / jsonString.length)));
+        jsonString = JSON.stringify(truncatedData);
+        return jsonString;
+      }
+    }
+    // Send filtered pubProvidedId's
+    if (userId && userId.pubProvidedId) {
+      let filteredData = userId.pubProvidedId.filter(item => pubProvidedIdSources.includes(item.source));
+      let maxLength = 1800; // replace this with your desired maximum length
+      let truncatedJsonString = jsoStringifynWithMaxLength(filteredData, maxLength);
+      data.pubProvidedId = truncatedJsonString
+    }
     // ADJS-1286 Read id5 id linktype field
     if (userId && userId.id5id && userId.id5id.uid && userId.id5id.ext) {
       data.id5Id = userId.id5id.uid || null
@@ -322,15 +354,15 @@ function buildRequests(validBidRequests, bidderRequest) {
     // ADTS-134 Retrieve ID envelopes
     for (const eid in eids) data[eid] = eids[eid];
 
-    // ADJS-1024 & ADSS-1297 & ADTS-175
-    gpid && (data.gpid = gpid);
-
     if (mediaTypes.banner) {
       sizes = mediaTypes.banner.sizes;
     } else if (mediaTypes.video) {
       sizes = mediaTypes.video.playerSize;
       data = _getVidParams(mediaTypes.video);
     }
+
+    // ADJS-1024 & ADSS-1297 & ADTS-175
+    gpid && (data.gpid = gpid);
 
     if (pageViewId) {
       data.pv = pageViewId;
@@ -521,10 +553,11 @@ function interpretResponse(serverResponse, bidRequest) {
     sizes = [`${maxw}x${maxh}`];
   } else if (product === 5 && includes(sizes, '1x1')) {
     sizes = ['1x1'];
-  } else if (product === 2 && includes(sizes, '1x1')) {
+  // added logic for in-slot multi-szie
+  } else if ((product === 2 && includes(sizes, '1x1')) || product === 3) {
     const requestSizesThatMatchResponse = (bidRequest.sizes && bidRequest.sizes.reduce((result, current) => {
       const [ width, height ] = current;
-      if (responseWidth === width || responseHeight === height) result.push(current.join('x'));
+      if (responseWidth === width && responseHeight === height) result.push(current.join('x'));
       return result
     }, [])) || [];
     sizes = requestSizesThatMatchResponse.length ? requestSizesThatMatchResponse : parseSizesInput(bidRequest.sizes)

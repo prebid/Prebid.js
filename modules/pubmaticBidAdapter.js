@@ -1,4 +1,4 @@
-import { getBidRequest, logWarn, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, uniques, isPlainObject, isInteger } from '../src/utils.js';
+import { getBidRequest, logWarn, isBoolean, isStr, isArray, inIframe, mergeDeep, deepAccess, isNumber, deepSetValue, logInfo, logError, deepClone, uniques, isPlainObject, isInteger, generateUUID } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO, NATIVE, ADPOD } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -6,6 +6,12 @@ import { Renderer } from '../src/Renderer.js';
 import { bidderSettings } from '../src/bidderSettings.js';
 import CONSTANTS from '../src/constants.json';
 import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
 
 const BIDDER_CODE = 'pubmatic';
 const LOG_WARN_PREFIX = 'PubMatic: ';
@@ -734,9 +740,9 @@ function _addImpressionFPD(imp, bid) {
   const ortb2 = {...deepAccess(bid, 'ortb2Imp.ext.data')};
   Object.keys(ortb2).forEach(prop => {
     /**
-      * Prebid AdSlot
-      * @type {(string|undefined)}
-    */
+     * Prebid AdSlot
+     * @type {(string|undefined)}
+     */
     if (prop === 'pbadslot') {
       if (typeof ortb2[prop] === 'string' && ortb2[prop]) deepSetValue(imp, 'ext.data.pbadslot', ortb2[prop]);
     } else if (prop === 'adserver') {
@@ -758,6 +764,9 @@ function _addImpressionFPD(imp, bid) {
       deepSetValue(imp, `ext.data.${prop}`, ortb2[prop]);
     }
   });
+
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
+  gpid && deepSetValue(imp, `ext.gpid`, gpid);
 }
 
 function _addFloorFromFloorModule(impObj, bid) {
@@ -1008,11 +1017,11 @@ export const spec = {
   gvlid: 76,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
-  * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
-  *
-  * @param {BidRequest} bid The bid params to validate.
-  * @return boolean True if this is a valid bid, and false otherwise.
-  */
+   * Determines whether or not the given bid request is valid. Valid bid request must have placementId and hbid
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: bid => {
     if (bid && bid.params) {
       if (!isStr(bid.params.publisherId)) {
@@ -1061,7 +1070,7 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {validBidRequests} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
@@ -1078,8 +1087,10 @@ export const spec = {
     var bid;
     var blockedIabCategories = [];
     var allowedIabCategories = [];
+    var wiid = generateUUID();
 
     validBidRequests.forEach(originalBid => {
+      originalBid.params.wiid = originalBid.params.wiid || bidderRequest.auctionId || wiid;
       bid = deepClone(originalBid);
       bid.params.adSlot = bid.params.adSlot || '';
       _parseAdSlot(bid);
@@ -1210,7 +1221,7 @@ export const spec = {
 
     // First Party Data
     const commonFpd = (bidderRequest && bidderRequest.ortb2) || {};
-    const { user, device, site, bcat } = commonFpd;
+    const { user, device, site, bcat, badv } = commonFpd;
     if (site) {
       const { page, domain, ref } = payload.site;
       mergeDeep(payload, {site: site});
@@ -1221,12 +1232,19 @@ export const spec = {
     if (user) {
       mergeDeep(payload, {user: user});
     }
+    if (badv) {
+      mergeDeep(payload, {badv: badv});
+    }
     if (bcat) {
       blockedIabCategories = blockedIabCategories.concat(bcat);
     }
     // check if fpd ortb2 contains device property with sua object
     if (device?.sua) {
       payload.device.sua = device?.sua;
+    }
+
+    if (device?.ext?.cdep) {
+      deepSetValue(payload, 'device.ext.cdep', device.ext.cdep);
     }
 
     if (user?.geo && device?.geo) {

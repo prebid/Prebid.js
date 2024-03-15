@@ -368,93 +368,6 @@ describe('The Criteo bidding adapter', function () {
         bidder: 'criteo',
         mediaTypes: {
           video: {
-            mimes: ['video/mpeg'],
-            playerSize: [640, 480],
-            protocols: [5, 6],
-            maxduration: 30,
-            api: [1, 2]
-          }
-        },
-        params: {
-          networkId: 456,
-          video: {
-            skip: 1,
-            placement: 1,
-            playbackmethod: 1
-          }
-        },
-      })).to.equal(false);
-
-      expect(spec.isBidRequestValid({
-        bidder: 'criteo',
-        mediaTypes: {
-          video: {
-            context: 'instream',
-            mimes: ['video/mpeg'],
-            playerSize: [640, 480],
-            protocols: [5, 6],
-            maxduration: 30,
-            api: [1, 2]
-          }
-        },
-        params: {
-          networkId: 456,
-          video: {
-            skip: 1,
-            placement: 2,
-            playbackmethod: 1
-          }
-        },
-      })).to.equal(false);
-
-      expect(spec.isBidRequestValid({
-        bidder: 'criteo',
-        mediaTypes: {
-          video: {
-            context: 'outstream',
-            mimes: ['video/mpeg'],
-            playerSize: [640, 480],
-            protocols: [5, 6],
-            maxduration: 30,
-            api: [1, 2]
-          }
-        },
-        params: {
-          networkId: 456,
-          video: {
-            skip: 1,
-            placement: 1,
-            playbackmethod: 1
-          }
-        },
-      })).to.equal(false);
-
-      expect(spec.isBidRequestValid({
-        bidder: 'criteo',
-        mediaTypes: {
-          video: {
-            context: 'adpod',
-            mimes: ['video/mpeg'],
-            playerSize: [640, 480],
-            protocols: [5, 6],
-            maxduration: 30,
-            api: [1, 2]
-          }
-        },
-        params: {
-          networkId: 456,
-          video: {
-            skip: 1,
-            placement: 1,
-            playbackmethod: 1
-          }
-        },
-      })).to.equal(false);
-
-      expect(spec.isBidRequestValid({
-        bidder: 'criteo',
-        mediaTypes: {
-          video: {
             context: 'instream',
             playerSize: [640, 480],
             protocols: [5, 6],
@@ -1122,6 +1035,30 @@ describe('The Criteo bidding adapter', function () {
       expect(request.data.user.uspIab).to.equal('1YNY');
     });
 
+    it('should properly build a request with site and app ortb fields', function () {
+      const bidRequests = [];
+      let app = {
+        publisher: {
+          id: 'appPublisherId'
+        }
+      };
+      let site = {
+        publisher: {
+          id: 'sitePublisherId'
+        }
+      };
+      const bidderRequest = {
+        ortb2: {
+          app: app,
+          site: site
+        }
+      };
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+
+      expect(request.data.app).to.equal(app);
+      expect(request.data.site).to.equal(site);
+    });
+
     it('should properly build a request with device sua field', function () {
       const sua = {}
       const bidRequests = [
@@ -1173,7 +1110,7 @@ describe('The Criteo bidding adapter', function () {
       const ortb2 = {
         regs: {
           gpp: 'gpp_consent_string',
-          gpp_sid: [0, 1, 2]
+          gpp_sid: [0, 1, 2],
         }
       };
 
@@ -1181,6 +1118,48 @@ describe('The Criteo bidding adapter', function () {
       expect(request.data.regs).to.not.be.null;
       expect(request.data.regs.gpp).to.equal('gpp_consent_string');
       expect(request.data.regs.gpp_sid).to.deep.equal([0, 1, 2]);
+    });
+
+    it('should properly build a request with dsa object', function () {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            zoneId: 123,
+          },
+        },
+      ];
+      let dsa = {
+        required: 3,
+        pubrender: 0,
+        datatopub: 2,
+        transparency: [{
+          domain: 'platform1domain.com',
+          params: [1]
+        }, {
+          domain: 'SSP2domain.com',
+          params: [1, 2]
+        }]
+      };
+      const ortb2 = {
+        regs: {
+          ext: {
+            dsa: dsa
+          }
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, { ...bidderRequest, ortb2 });
+      expect(request.data.regs).to.not.be.null;
+      expect(request.data.regs.ext).to.not.be.null;
+      expect(request.data.regs.ext.dsa).to.deep.equal(dsa);
     });
 
     it('should properly build a request with schain object', function () {
@@ -1326,12 +1305,25 @@ describe('The Criteo bidding adapter', function () {
           sizes: [[640, 480]],
           mediaTypes: {
             video: {
+              context: 'instream',
               playerSize: [640, 480],
               mimes: ['video/mp4', 'video/x-flv'],
               maxduration: 30,
               api: [1, 2],
               protocols: [2, 3],
-              plcmt: 3
+              plcmt: 3,
+              w: 640,
+              h: 480,
+              linearity: 1,
+              skipmin: 30,
+              skipafter: 30,
+              minbitrate: 10000,
+              maxbitrate: 48000,
+              delivery: [1, 2, 3],
+              pos: 1,
+              playbackend: 1,
+              adPodDurationSec: 30,
+              durationRangeSec: [1, 30],
             }
           },
           params: {
@@ -1350,6 +1342,7 @@ describe('The Criteo bidding adapter', function () {
       expect(request.url).to.match(/^https:\/\/bidder\.criteo\.com\/cdb\?profileId=207&av=\d+&wv=[^&]+&cb=\d/);
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
+      expect(ortbRequest.slots[0].video.context).to.equal('instream');
       expect(ortbRequest.slots[0].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
       expect(ortbRequest.slots[0].sizes).to.deep.equal([]);
       expect(ortbRequest.slots[0].video.playersizes).to.deep.equal(['640x480']);
@@ -1362,6 +1355,18 @@ describe('The Criteo bidding adapter', function () {
       expect(ortbRequest.slots[0].video.playbackmethod).to.deep.equal([1, 3]);
       expect(ortbRequest.slots[0].video.placement).to.equal(2);
       expect(ortbRequest.slots[0].video.plcmt).to.equal(3);
+      expect(ortbRequest.slots[0].video.w).to.equal(640);
+      expect(ortbRequest.slots[0].video.h).to.equal(480);
+      expect(ortbRequest.slots[0].video.linearity).to.equal(1);
+      expect(ortbRequest.slots[0].video.skipmin).to.equal(30);
+      expect(ortbRequest.slots[0].video.skipafter).to.equal(30);
+      expect(ortbRequest.slots[0].video.minbitrate).to.equal(10000);
+      expect(ortbRequest.slots[0].video.maxbitrate).to.equal(48000);
+      expect(ortbRequest.slots[0].video.delivery).to.deep.equal([1, 2, 3]);
+      expect(ortbRequest.slots[0].video.pos).to.equal(1);
+      expect(ortbRequest.slots[0].video.playbackend).to.equal(1);
+      expect(ortbRequest.slots[0].video.adPodDurationSec).to.equal(30);
+      expect(ortbRequest.slots[0].video.durationRangeSec).to.deep.equal([1, 30]);
     });
 
     it('should properly build a video request with more than one player size', function () {
@@ -1879,6 +1884,86 @@ describe('The Criteo bidding adapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.slots[0].rwdd).to.be.undefined;
     });
+
+    it('should properly build a request when FLEDGE is enabled', function () {
+      const bidderRequest = {
+        fledgeEnabled: true,
+      };
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            zoneId: 123,
+            ext: {
+              bidfloor: 0.75
+            }
+          },
+          ortb2Imp: {
+            ext: {
+              ae: 1
+            }
+          }
+        },
+      ];
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.slots[0].ext.ae).to.equal(1);
+    });
+
+    it('should properly build a request when FLEDGE is disabled', function () {
+      const bidderRequest = {
+        fledgeEnabled: false,
+      };
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            zoneId: 123,
+            ext: {
+              bidfloor: 0.75
+            }
+          },
+          ortb2Imp: {
+            ext: {
+              ae: 1
+            }
+          }
+        },
+      ];
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.slots[0].ext).to.not.have.property('ae');
+    });
+
+    it('should properly transmit device.ext.cdep if available', function () {
+      const bidderRequest = {
+        ortb2: {
+          device: {
+            ext: {
+              cdep: 'cookieDeprecationLabel'
+            }
+          }
+        }
+      };
+      const bidRequests = [];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const ortbRequest = request.data;
+      expect(ortbRequest.device.ext.cdep).to.equal('cookieDeprecationLabel');
+    });
   });
 
   describe('interpretResponse', function () {
@@ -1934,6 +2019,48 @@ describe('The Criteo bidding adapter', function () {
       expect(bids[0].dealId).to.equal('myDealCode');
       expect(bids[0].meta.advertiserDomains[0]).to.equal('criteo.com');
       expect(bids[0].meta.networkName).to.equal('Criteo');
+    });
+
+    it('should properly parse a bid response with dsa', function () {
+      const response = {
+        body: {
+          slots: [{
+            impid: 'test-requestId',
+            cpm: 1.23,
+            creative: 'test-ad',
+            creativecode: 'test-crId',
+            width: 728,
+            height: 90,
+            deal: 'myDealCode',
+            adomain: ['criteo.com'],
+            ext: {
+              dsa: {
+                adrender: 1
+              },
+              meta: {
+                networkName: 'Criteo'
+              }
+            }
+          }],
+        },
+      };
+      const request = {
+        bidRequests: [{
+          adUnitCode: 'test-requestId',
+          bidId: 'test-bidId',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            networkId: 456,
+          }
+        }]
+      };
+      const bids = spec.interpretResponse(response, request);
+      expect(bids).to.have.lengthOf(1);
+      expect(bids[0].meta.adrender).to.equal(1);
     });
 
     it('should properly parse a bid response with a networkId with twin ad unit banner win', function () {
@@ -2408,6 +2535,184 @@ describe('The Criteo bidding adapter', function () {
       expect(bids[0].ad).to.equal('test-ad');
       expect(bids[0].width).to.equal(728);
       expect(bids[0].height).to.equal(90);
+    });
+
+    it('should properly parse a bid response with FLEDGE auction configs', function () {
+      const response = {
+        body: {
+          ext: {
+            igbid: [{
+              impid: 'test-bidId',
+              igbuyer: [{
+                origin: 'https://first-buyer-domain.com',
+                buyerdata: {
+                  foo: 'bar',
+                },
+              }, {
+                origin: 'https://second-buyer-domain.com',
+                buyerdata: {
+                  foo: 'baz',
+                },
+              }]
+            }, {
+              impid: 'test-bidId-2',
+              igbuyer: [{
+                origin: 'https://first-buyer-domain.com',
+                buyerdata: {
+                  foo: 'bar',
+                },
+              }, {
+                origin: 'https://second-buyer-domain.com',
+                buyerdata: {
+                  foo: 'baz',
+                },
+              }]
+            }],
+            seller: 'https://seller-domain.com',
+            sellerTimeout: 500,
+            sellerSignals: {
+              foo: 'bar',
+              perBuyerTimeout: { 'buyer1': 100, 'buyer2': 200 },
+              perBuyerGroupLimits: { 'buyer1': 300, 'buyer2': 400 },
+            },
+            sellerSignalsPerImp: {
+              'test-bidId': {
+                foo2: 'bar2',
+                currency: 'USD'
+              },
+            },
+          },
+        },
+      };
+      const bidderRequest = {
+        ortb2: {
+          source: {
+            tid: 'abc'
+          }
+        }
+      };
+      const bidRequests = [
+        {
+          bidId: 'test-bidId',
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            bidFloor: 1,
+            bidFloorCur: 'EUR'
+          }
+        },
+        {
+          bidId: 'test-bidId-2',
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            bidFloor: 1,
+            bidFloorCur: 'EUR'
+          }
+        },
+      ];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const interpretedResponse = spec.interpretResponse(response, request);
+      expect(interpretedResponse).to.have.property('bids');
+      expect(interpretedResponse).to.have.property('fledgeAuctionConfigs');
+      expect(interpretedResponse.bids).to.have.lengthOf(0);
+      expect(interpretedResponse.fledgeAuctionConfigs).to.have.lengthOf(2);
+      expect(interpretedResponse.fledgeAuctionConfigs[0]).to.deep.equal({
+        bidId: 'test-bidId',
+        config: {
+          auctionSignals: {},
+          decisionLogicUrl: 'https://grid-mercury.criteo.com/fledge/decision',
+          interestGroupBuyers: ['https://first-buyer-domain.com', 'https://second-buyer-domain.com'],
+          perBuyerSignals: {
+            'https://first-buyer-domain.com': {
+              foo: 'bar',
+            },
+            'https://second-buyer-domain.com': {
+              foo: 'baz'
+            },
+          },
+          perBuyerTimeout: {
+            '*': 500,
+            'buyer1': 100,
+            'buyer2': 200
+          },
+          perBuyerGroupLimits: {
+            '*': 60,
+            'buyer1': 300,
+            'buyer2': 400
+          },
+          seller: 'https://seller-domain.com',
+          sellerTimeout: 500,
+          sellerSignals: {
+            foo: 'bar',
+            foo2: 'bar2',
+            floor: 1,
+            currency: 'USD',
+            perBuyerTimeout: {
+              'buyer1': 100,
+              'buyer2': 200
+            },
+            perBuyerGroupLimits: {
+              'buyer1': 300,
+              'buyer2': 400
+            },
+          },
+          sellerCurrency: 'USD',
+        },
+      });
+      expect(interpretedResponse.fledgeAuctionConfigs[1]).to.deep.equal({
+        bidId: 'test-bidId-2',
+        config: {
+          auctionSignals: {},
+          decisionLogicUrl: 'https://grid-mercury.criteo.com/fledge/decision',
+          interestGroupBuyers: ['https://first-buyer-domain.com', 'https://second-buyer-domain.com'],
+          perBuyerSignals: {
+            'https://first-buyer-domain.com': {
+              foo: 'bar',
+            },
+            'https://second-buyer-domain.com': {
+              foo: 'baz'
+            },
+          },
+          perBuyerTimeout: {
+            '*': 500,
+            'buyer1': 100,
+            'buyer2': 200
+          },
+          perBuyerGroupLimits: {
+            '*': 60,
+            'buyer1': 300,
+            'buyer2': 400
+          },
+          seller: 'https://seller-domain.com',
+          sellerTimeout: 500,
+          sellerSignals: {
+            foo: 'bar',
+            floor: 1,
+            perBuyerTimeout: {
+              'buyer1': 100,
+              'buyer2': 200
+            },
+            perBuyerGroupLimits: {
+              'buyer1': 300,
+              'buyer2': 400
+            },
+          },
+          sellerCurrency: '???'
+        },
+      });
     });
 
     [{

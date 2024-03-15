@@ -18,6 +18,14 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
 import {find, includes} from '../src/polyfill.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ */
+
 const BIDDER_CODE = 'yieldmo';
 const GVLID = 173;
 const CURRENCY = 'USD';
@@ -29,7 +37,7 @@ const VIDEO_PATH = '/exchange/prebidvideo';
 const STAGE_DOMAIN = 'https://ads-stg.yieldmo.com';
 const PROD_DOMAIN = 'https://ads.yieldmo.com';
 const OUTSTREAM_VIDEO_PLAYER_URL = 'https://prebid-outstream.yieldmo.com/bundle.js';
-const OPENRTB_VIDEO_BIDPARAMS = ['mimes', 'startdelay', 'placement', 'startdelay', 'skipafter', 'protocols', 'api',
+const OPENRTB_VIDEO_BIDPARAMS = ['mimes', 'startdelay', 'placement', 'plcmt', 'skipafter', 'protocols', 'api',
   'playbackmethod', 'maxduration', 'minduration', 'pos', 'skip', 'skippable'];
 const OPENRTB_VIDEO_SITEPARAMS = ['name', 'domain', 'cat', 'keywords'];
 const LOCAL_WINDOW = getWindowTop();
@@ -45,8 +53,8 @@ export const spec = {
   gvlid: GVLID,
   /**
    * Determines whether or not the given bid request is valid.
-   * @param {object} bid, bid to validate
-   * @return boolean, true if valid, otherwise false
+   * @param {object} bid bid to validate
+   * @return {boolean} true if valid, otherwise false
    */
   isBidRequestValid: function (bid) {
     return !!(bid && bid.adUnitCode && bid.bidId && (hasBannerMediaType(bid) || hasVideoMediaType(bid)) &&
@@ -68,7 +76,7 @@ export const spec = {
     const videoBidRequests = bidRequests.filter(request => hasVideoMediaType(request));
     let serverRequests = [];
     const eids = getEids(bidRequests[0]) || [];
-
+    const topicsData = getTopics(bidderRequest);
     if (bannerBidRequests.length > 0) {
       let serverRequest = {
         pbav: '$prebid.version$',
@@ -78,15 +86,25 @@ export const spec = {
         bust: new Date().getTime().toString(),
         dnt: getDNT(),
         description: getPageDescription(),
+        tmax: bidderRequest.timeout || 400,
         userConsent: JSON.stringify({
           // case of undefined, stringify will remove param
-          gdprApplies: deepAccess(bidderRequest, 'gdprConsent.gdprApplies') || '',
+          gdprApplies:
+            deepAccess(bidderRequest, 'gdprConsent.gdprApplies') || '',
           cmp: deepAccess(bidderRequest, 'gdprConsent.consentString') || '',
           gpp: deepAccess(bidderRequest, 'gppConsent.gppString') || '',
-          gpp_sid: deepAccess(bidderRequest, 'gppConsent.applicableSections') || []
+          gpp_sid:
+            deepAccess(bidderRequest, 'gppConsent.applicableSections') || [],
         }),
-        us_privacy: deepAccess(bidderRequest, 'uspConsent') || ''
+        us_privacy: deepAccess(bidderRequest, 'uspConsent') || '',
       };
+      if (topicsData) {
+        serverRequest.topics = JSON.stringify(topicsData);
+      }
+      const gpc = getGPCSignal(bidderRequest);
+      if (gpc) {
+        serverRequest.gpc = gpc;
+      }
 
       if (canAccessTopWindow()) {
         serverRequest.pr = (LOCAL_WINDOW.document && LOCAL_WINDOW.document.referrer) || '';
@@ -151,6 +169,9 @@ export const spec = {
 
     if (videoBidRequests.length > 0) {
       const serverRequest = openRtbRequest(videoBidRequests, bidderRequest);
+      if (topicsData) {
+        serverRequest.topics = topicsData;
+      }
       if (eids.length) {
         serverRequest.user = { eids };
       };
@@ -401,13 +422,39 @@ function openRtbRequest(bidRequests, bidderRequest) {
   if (schain) {
     openRtbRequest.schain = schain;
   }
-
+  const gpc = getGPCSignal(bidderRequest);
+  if (gpc) {
+    deepSetValue(openRtbRequest, 'regs.ext.gpc', gpc);
+  }
   if (bidRequests[0].auctionId) {
     openRtbRequest.auctionId = bidRequests[0].auctionId;
   }
   populateOpenRtbGdpr(openRtbRequest, bidderRequest);
-
   return openRtbRequest;
+}
+
+function getGPCSignal(bidderRequest) {
+  const gpc = deepAccess(bidderRequest, 'ortb2.regs.ext.gpc');
+  return gpc;
+}
+
+function getTopics(bidderRequest) {
+  const userData = deepAccess(bidderRequest, 'ortb2.user.data') || [];
+  const topicsData = userData.filter((dataObj) => {
+    const segtax = dataObj.ext?.segtax;
+    return segtax >= 600 && segtax <= 609;
+  })[0];
+
+  if (topicsData) {
+    let topicsObject = {
+      taxonomy: topicsData.ext.segtax,
+      classifier: topicsData.ext.segclass,
+      // topics needs to be array of numbers
+      topics: Object.values(topicsData.segment).map(i => Number(i)),
+    };
+    return topicsObject;
+  }
+  return null;
 }
 
 /**
@@ -446,7 +493,7 @@ function openRtbImpression(bidRequest) {
     imp.video.skip = 1;
     delete imp.video.skippable;
   }
-  if (imp.video.placement !== 1) {
+  if (imp.video.plcmt !== 1 || imp.video.placement !== 1) {
     imp.video.startdelay = DEFAULT_START_DELAY;
     imp.video.playbackmethod = [ DEFAULT_PLAYBACK_METHOD ];
   }
@@ -537,8 +584,8 @@ function populateOpenRtbGdpr(openRtbRequest, bidderRequest) {
 
 /**
  * Determines whether or not the given video bid request is valid. If it's not a video bid, returns true.
- * @param {object} bid, bid to validate
- * @return boolean, true if valid, otherwise false
+ * @param {object} bid bid to validate
+ * @return {boolean} true if valid, otherwise false
  */
 function validateVideoParams(bid) {
   if (!hasVideoMediaType(bid)) {
@@ -643,9 +690,9 @@ function validateVideoParams(bid) {
 /**
  * Shortcut object property and check if required characters count was deleted
  *
- * @param {number} extraCharacters, count of characters to remove
- * @param {object} target, object on which string property length should be reduced
- * @param {string} propertyName, name of property to reduce
+ * @param {number} extraCharacters count of characters to remove
+ * @param {object} target object on which string property length should be reduced
+ * @param {string} propertyName name of property to reduce
  * @return {number} 0 if required characters count was removed otherwise count of how many left
  */
 function shortcutProperty(extraCharacters, target, propertyName) {
@@ -664,7 +711,7 @@ function shortcutProperty(extraCharacters, target, propertyName) {
 
 /**
  * Creates and returnes eids arr using createEidsArray from './userId/eids.js' module;
- * @param {Object} openRtbRequest OpenRTB's request as a cource of userId.
+ * @param {Object} bidRequest OpenRTB's request as a cource of userId.
  * @return array of eids objects
  */
 function getEids(bidRequest) {

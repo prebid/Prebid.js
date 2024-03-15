@@ -9,14 +9,21 @@
  */
 
 /**
-  * @typedef {Object} AdUnit An object containing the adUnit configuration.
-  *
-  * @property {string} code A code which will be used to uniquely identify this bidder. This should be the same
-  *   one as is used in the call to registerBidAdapter
-  * @property {Array.<size>} sizes A list of size for adUnit.
-  * @property {object} params Any bidder-specific params which the publisher used in their bid request.
-  *   This is guaranteed to have passed the spec.areParamsValid() test.
-  */
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/config.js').MediaTypePriceGranularity} MediaTypePriceGranularity
+ * @typedef {import('../src/mediaTypes.js').MediaType} MediaType
+ */
+
+/**
+ * @typedef {Object} AdUnit An object containing the adUnit configuration.
+ *
+ * @property {string} code A code which will be used to uniquely identify this bidder. This should be the same
+ *   one as is used in the call to registerBidAdapter
+ * @property {Array.<size>} sizes A list of size for adUnit.
+ * @property {object} params Any bidder-specific params which the publisher used in their bid request.
+ *   This is guaranteed to have passed the spec.areParamsValid() test.
+ */
 
 /**
  * @typedef {Array.<number>} size
@@ -38,6 +45,7 @@
  * @property {refererInfo} refererInfo - referer info object
  * @property {string} [tid] - random UUID (used for s2s)
  * @property {string} [src] - s2s or client (used for s2s)
+ * @property {import('./types/ortb2.js').Ortb2.BidRequest} [ortb2] Global (not specific to any adUnit) first party data to use for all requests in this auction.
  */
 
 /**
@@ -58,6 +66,7 @@
  */
 
 import {
+  callBurl,
   deepAccess,
   generateUUID,
   getValue,
@@ -72,7 +81,7 @@ import {
   timestamp
 } from './utils.js';
 import {getPriceBucketString} from './cpmBucketManager.js';
-import {getNativeTargeting, toLegacyResponse} from './native.js';
+import {getNativeTargeting, isNativeResponse, setNativeResponseProperties} from './native.js';
 import {getCacheUrl, store} from './videoCache.js';
 import {Renderer} from './Renderer.js';
 import {config} from './config.js';
@@ -118,19 +127,20 @@ export function resetAuctionState() {
 }
 
 /**
-  * Creates new auction instance
-  *
-  * @param {Object} requestConfig
-  * @param {AdUnit} requestConfig.adUnits
-  * @param {AdUnitCode} requestConfig.adUnitCodes
-  * @param {function():void} requestConfig.callback
-  * @param {number} requestConfig.cbTimeout
-  * @param {Array.<string>} requestConfig.labels
-  * @param {string} requestConfig.auctionId
-  * @param {{global: {}, bidder: {}}} ortb2Fragments first party data, separated into global
-  *    (from getConfig('ortb2') + requestBids({ortb2})) and bidder (a map from bidderCode to ortb2)
-  * @returns {Auction} auction instance
-  */
+ * Creates new auction instance
+ *
+ * @param {Object} requestConfig
+ * @param {AdUnit} requestConfig.adUnits
+ * @param {AdUnitCode} requestConfig.adUnitCodes
+ * @param {function():void} requestConfig.callback
+ * @param {number} requestConfig.cbTimeout
+ * @param {Array.<string>} requestConfig.labels
+ * @param {string} requestConfig.auctionId
+ * @param {{global: {}, bidder: {}}} requestConfig.ortb2Fragments first party data, separated into global
+ *    (from getConfig('ortb2') + requestBids({ortb2})) and bidder (a map from bidderCode to ortb2)
+ * @param {Object} requestConfig.metrics
+ * @returns {Auction} auction instance
+ */
 export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, auctionId, ortb2Fragments, metrics}) {
   metrics = useMetrics(metrics);
   const _adUnits = adUnits;
@@ -185,6 +195,8 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   function executeCallback(timedOut) {
     if (!timedOut) {
       clearTimeout(_timeoutTimer);
+    } else {
+      events.emit(CONSTANTS.EVENTS.AUCTION_TIMEOUT, getProperties());
     }
     if (_auctionEnd === undefined) {
       let timedOutRequests = [];
@@ -358,8 +370,9 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   }
 
   function addWinningBid(winningBid) {
-    const winningAd = adUnits.find(adUnit => adUnit.transactionId === winningBid.transactionId);
+    const winningAd = adUnits.find(adUnit => adUnit.adUnitId === winningBid.adUnitId);
     _winningBids = _winningBids.concat(winningBid);
+    callBurl(winningBid);
     adapterManager.callBidWonBidder(winningBid.adapterCode || winningBid.bidder, winningBid, adUnits);
     if (winningAd && !winningAd.deferBilling) adapterManager.callBidBillableBidder(winningBid);
   }
@@ -402,13 +415,22 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
 /**
  * Hook into this to intercept bids before they are added to an auction.
  *
+ * @type {Function}
  * @param adUnitCode
  * @param bid
- * @param {function(String)} reject: a function that, when called, rejects `bid` with the given reason.
+ * @param {function(String): void} reject a function that, when called, rejects `bid` with the given reason.
  */
 export const addBidResponse = hook('sync', function(adUnitCode, bid, reject) {
   this.dispatch.call(null, adUnitCode, bid);
 }, 'addBidResponse');
+
+/**
+ * Delay hook for adapter responses.
+ *
+ * `ready` is a promise; auctions wait for it to resolve before closing. Modules can hook into this
+ * to delay the end of auctions while they perform initialization that does not need to delay their start.
+ */
+export const responsesReady = hook('sync', (ready) => ready, 'responsesReady');
 
 export const addBidderRequests = hook('sync', function(bidderRequests) {
   this.dispatch.call(this.context, bidderRequests);
@@ -425,32 +447,6 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
   let allAdapterCalledDone = false;
   let bidderRequestsDone = new Set();
   let bidResponseMap = {};
-  const ready = {};
-
-  function waitFor(requestId, result) {
-    if (ready[requestId] == null) {
-      ready[requestId] = GreedyPromise.resolve();
-    }
-    ready[requestId] = ready[requestId].then(() => GreedyPromise.resolve(result).catch(() => {}))
-  }
-
-  function guard(bidderRequest, fn) {
-    let timeout = bidderRequest.timeout;
-    if (timeout == null || timeout > auctionInstance.getTimeout()) {
-      timeout = auctionInstance.getTimeout();
-    }
-    const timeRemaining = auctionInstance.getAuctionStart() + timeout - Date.now();
-    const wait = ready[bidderRequest.bidderRequestId];
-    const orphanWait = ready['']; // also wait for "orphan" responses that are not associated with any request
-    if ((wait != null || orphanWait != null) && timeRemaining > 0) {
-      GreedyPromise.race([
-        GreedyPromise.timeout(timeRemaining),
-        GreedyPromise.resolve(orphanWait).then(() => wait)
-      ]).then(fn);
-    } else {
-      fn();
-    }
-  }
 
   function afterBidAdded() {
     outstandingBidsAdded--;
@@ -469,14 +465,12 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
   function acceptBidResponse(adUnitCode, bid) {
     handleBidResponse(adUnitCode, bid, (done) => {
       let bidResponse = getPreparedBidForAuction(bid);
-
+      events.emit(CONSTANTS.EVENTS.BID_ACCEPTED, bidResponse);
       if (FEATURES.VIDEO && bidResponse.mediaType === VIDEO) {
         tryAddVideoBid(auctionInstance, bidResponse, done);
       } else {
-        if (FEATURES.NATIVE && bidResponse.native != null && typeof bidResponse.native === 'object') {
-          // NOTE: augment bidResponse.native even if bidResponse.mediaType !== NATIVE; it's possible
-          // to treat banner responses as native
-          addLegacyFieldsIfNeeded(bidResponse);
+        if (FEATURES.NATIVE && isNativeResponse(bidResponse)) {
+          setNativeResponseProperties(bidResponse, index.getAdUnit(bidResponse));
         }
         addBidToAuction(auctionInstance, bidResponse);
         done();
@@ -525,8 +519,7 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
   return {
     addBidResponse: (function () {
       function addBid(adUnitCode, bid) {
-        const bidderRequest = index.getBidderRequest(bid);
-        waitFor((bidderRequest && bidderRequest.bidderRequestId) || '', addBidResponse.call({
+        addBidResponse.call({
           dispatch: acceptBidResponse,
         }, adUnitCode, bid, (() => {
           let rejected = false;
@@ -536,13 +529,13 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
               rejected = true;
             }
           }
-        })()));
+        })())
       }
       addBid.reject = rejectBidResponse;
       return addBid;
     })(),
     adapterDone: function () {
-      guard(this, adapterDone.bind(this))
+      responsesReady(GreedyPromise.resolve()).finally(() => adapterDone.call(this));
     }
   }
 }
@@ -563,7 +556,7 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
   const videoMediaType = deepAccess(
     index.getMediaTypes({
       requestId: bidResponse.originalRequestId || bidResponse.requestId,
-      transactionId: bidResponse.transactionId
+      adUnitId: bidResponse.adUnitId
     }), 'video');
   const context = videoMediaType && deepAccess(videoMediaType, 'context');
   const useCacheKey = videoMediaType && deepAccess(videoMediaType, 'useCacheKey');
@@ -580,17 +573,6 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
   if (addBid) {
     addBidToAuction(auctionInstance, bidResponse);
     afterBidAdded();
-  }
-}
-
-// Native bid response might be in ortb2 format - adds legacy field for backward compatibility
-const addLegacyFieldsIfNeeded = (bidResponse) => {
-  const nativeOrtbRequest = auctionManager.index.getAdUnit(bidResponse)?.nativeOrtbRequest;
-  const nativeOrtbResponse = bidResponse.native?.ortb
-
-  if (nativeOrtbRequest && nativeOrtbResponse) {
-    const legacyResponse = toLegacyResponse(nativeOrtbResponse, nativeOrtbRequest);
-    Object.assign(bidResponse.native, legacyResponse);
   }
 }
 
@@ -765,8 +747,9 @@ export function getMediaTypeGranularity(mediaType, mediaTypes, mediaTypePriceGra
 
 /**
  * This function returns the price granularity defined. It can be either publisher defined or default value
- * @param bid bid response object
- * @param index
+ * @param {Bid} bid bid response object
+ * @param {object} obj
+ * @param {object} obj.index
  * @returns {string} granularity
  */
 export const getPriceGranularity = (bid, {index = auctionManager.index} = {}) => {
@@ -874,7 +857,6 @@ function defaultAdserverTargeting() {
 /**
  * @param {string} mediaType
  * @param {string} bidderCode
- * @param {BidRequest} bidReq
  * @returns {*}
  */
 export function getStandardBidderSettings(mediaType, bidderCode) {

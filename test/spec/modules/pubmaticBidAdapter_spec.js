@@ -82,6 +82,7 @@ describe('PubMatic adapter', function () {
         ortb2Imp: {
           ext: {
             tid: '92489f71-1bf2-49a0-adf9-000cea934729',
+            gpid: '/1111/homepage-leftnav'
           }
         },
         schain: schainConfig
@@ -103,6 +104,7 @@ describe('PubMatic adapter', function () {
         params: {
           publisherId: '5890',
           adSlot: 'Div1@0x0', // ad_id or tagid
+          wiid: 'new-unique-wiid',
           video: {
             mimes: ['video/mp4', 'video/x-flv'],
             skippable: true,
@@ -153,6 +155,7 @@ describe('PubMatic adapter', function () {
         params: {
           publisherId: '5890',
           adSlot: 'Div1@640x480', // ad_id or tagid
+          wiid: '1234567890',
           video: {
             mimes: ['video/mp4', 'video/x-flv'],
             skippable: true,
@@ -212,6 +215,7 @@ describe('PubMatic adapter', function () {
       params: {
         publisherId: '5670',
         adSlot: '/43743431/NativeAutomationPrebid@1x1',
+        wiid: 'new-unique-wiid'
       },
       bidId: '2a5571261281d4',
       requestId: 'B68287E1-DC39-4B38-9790-FE4F179739D6',
@@ -277,6 +281,7 @@ describe('PubMatic adapter', function () {
       params: {
         publisherId: '5670',
         adSlot: '/43743431/NativeAutomationPrebid@1x1',
+        wiid: 'new-unique-wiid'
       },
       bidId: '2a5571261281d4',
       requestId: 'B68287E1-DC39-4B38-9790-FE4F179739D6',
@@ -303,6 +308,7 @@ describe('PubMatic adapter', function () {
       params: {
         publisherId: '5670',
         adSlot: '/43743431/NativeAutomationPrebid@1x1',
+        wiid: 'new-unique-wiid'
       }
     }];
 
@@ -343,6 +349,7 @@ describe('PubMatic adapter', function () {
       params: {
         publisherId: '5670',
         adSlot: '/43743431/NativeAutomationPrebid@1x1',
+        wiid: 'new-unique-wiid'
       }
     }];
 
@@ -501,6 +508,7 @@ describe('PubMatic adapter', function () {
         params: {
           publisherId: '301',
           adSlot: '/15671365/DMDemo@300x250:0',
+          wiid: 'new-unique-wiid',
           video: {
             mimes: ['video/mp4', 'video/x-flv'],
             skippable: true,
@@ -571,6 +579,7 @@ describe('PubMatic adapter', function () {
         params: {
           publisherId: '301',
           adSlot: '/15671365/DMDemo@300x250:0',
+          wiid: 'new-unique-wiid',
           video: {
             mimes: ['video/mp4', 'video/x-flv'],
             skippable: true,
@@ -1172,6 +1181,7 @@ describe('PubMatic adapter', function () {
   		  expect(data.imp[0].tagid).to.equal('/15671365/DMDemo'); // tagid
   		  expect(data.imp[0].banner.w).to.equal(300); // width
   		  expect(data.imp[0].banner.h).to.equal(250); // height
+        expect(data.imp[0].ext.gpid).to.equal(bidRequests[0].ortb2Imp.ext.gpid);
   		  expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
         expect(data.imp[0].ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
@@ -1439,6 +1449,7 @@ describe('PubMatic adapter', function () {
         expect(data.imp[0].banner.w).to.equal(728); // width
         expect(data.imp[0].banner.h).to.equal(90); // height
         expect(data.imp[0].banner.format).to.deep.equal([{w: 160, h: 600}]);
+        expect(data.imp[0].ext.gpid).to.equal(bidRequests[0].ortb2Imp.ext.gpid);
         expect(data.imp[0].ext.key_val).to.exist.and.to.equal(bidRequests[0].params.dctr);
         expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
@@ -1663,6 +1674,7 @@ describe('PubMatic adapter', function () {
         expect(data.imp[0].tagid).to.equal('/15671365/DMDemo'); // tagid
         expect(data.imp[0].banner.w).to.equal(300); // width
         expect(data.imp[0].banner.h).to.equal(250); // height
+        expect(data.imp[0].ext.gpid).to.equal(bidRequests[0].ortb2Imp.ext.gpid);
         expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
       });
 
@@ -1711,6 +1723,7 @@ describe('PubMatic adapter', function () {
   		  expect(data.imp[0].id).to.equal(bidRequests[0].bidId); // Prebid bid id is passed as id
   		  expect(data.imp[0].bidfloor).to.equal(parseFloat(bidRequests[0].params.kadfloor)); // kadfloor
   		  expect(data.imp[0].tagid).to.equal('/15671365/DMDemo'); // tagid
+        expect(data.imp[0].ext.gpid).to.equal(bidRequests[0].ortb2Imp.ext.gpid);
   		  expect(data.imp[0].banner.w).to.equal(300); // width
   		  expect(data.imp[0].banner.h).to.equal(250); // height
   		  expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
@@ -1759,6 +1772,7 @@ describe('PubMatic adapter', function () {
         expect(data.imp[0].tagid).to.equal('/15671365/DMDemo'); // tagid
         expect(data.imp[0].banner.w).to.equal(300); // width
         expect(data.imp[0].banner.h).to.equal(250); // height
+        expect(data.imp[0].ext.gpid).to.equal(bidRequests[0].ortb2Imp.ext.gpid);
         expect(data.imp[0].ext.pmZoneId).to.equal(bidRequests[0].params.pmzoneid.split(',').slice(0, 50).map(id => id.trim()).join()); // pmzoneid
 
         // second request without USP/CCPA
@@ -1908,7 +1922,43 @@ describe('PubMatic adapter', function () {
           expect(data.user.yob).to.equal(1985);
         });
 
+        it('ortb2.badv should be merged in the request', function() {
+          const ortb2 = {
+            badv: ['example.com']
+          };
+          const request = spec.buildRequests(bidRequests, {ortb2});
+          let data = JSON.parse(request.data);
+          expect(data.badv).to.deep.equal(['example.com']);
+        });
+
         describe('ortb2Imp', function() {
+          describe('ortb2Imp.ext.gpid', function() {
+            beforeEach(function () {
+              if (bidRequests[0].hasOwnProperty('ortb2Imp')) {
+                delete bidRequests[0].ortb2Imp;
+              }
+            });
+
+            it('should send gpid if imp[].ext.gpid is specified', function() {
+              bidRequests[0].ortb2Imp = {
+                ext: {
+                  gpid: 'ortb2Imp.ext.gpid'
+                }
+              };
+              const request = spec.buildRequests(bidRequests, {});
+              let data = JSON.parse(request.data);
+              expect(data.imp[0].ext).to.have.property('gpid');
+              expect(data.imp[0].ext.gpid).to.equal('ortb2Imp.ext.gpid');
+            });
+
+            it('should not send if imp[].ext.gpid is not specified', function() {
+              bidRequests[0].ortb2Imp = { ext: { } };
+              const request = spec.buildRequests(bidRequests, {});
+              let data = JSON.parse(request.data);
+              expect(data.imp[0].ext).to.not.have.property('gpid');
+            });
+          });
+
           describe('ortb2Imp.ext.data.pbadslot', function() {
             beforeEach(function () {
               if (bidRequests[0].hasOwnProperty('ortb2Imp')) {
@@ -2276,6 +2326,23 @@ describe('PubMatic adapter', function () {
         let data = JSON.parse(request.data);
         expect(data.device.sua).to.exist.and.to.be.an('object');
         expect(data.device.sua).to.deep.equal(suaObject);
+      });
+
+      it('should pass device.ext.cdep if present in bidderRequest fpd ortb2 object', function () {
+        const cdepObj = {
+          cdep: 'example_label_1'
+        };
+        let request = spec.buildRequests(multipleMediaRequests, {
+          auctionId: 'new-auction-id',
+          ortb2: {
+            device: {
+              ext: cdepObj
+            }
+          }
+        });
+        let data = JSON.parse(request.data);
+        expect(data.device.ext.cdep).to.exist.and.to.be.an('string');
+        expect(data.device.ext).to.deep.equal(cdepObj);
       });
 
       it('Request params should have valid native bid request for all valid params', function () {

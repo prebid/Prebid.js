@@ -1,4 +1,4 @@
-import { _each, isEmpty, buildUrl, deepAccess, pick, triggerPixel } from '../src/utils.js';
+import { _each, isEmpty, buildUrl, deepAccess, pick, triggerPixel, logError } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -24,6 +24,7 @@ const CURRENCY = Object.freeze({
 });
 
 const REQUEST_KEYS = Object.freeze({
+  USER_DATA: 'ortb2.user.data',
   SOCIAL_CANVAS: 'params.socialCanvas',
   SUA: 'ortb2.device.sua',
   TDID_ADAPTER: 'userId.tdid',
@@ -97,15 +98,26 @@ function buildRequests(validBidRequests, bidderRequest) {
     user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids, bidderRequest.gppConsent),
   });
 
+  if (firstBidRequest.ortb2 != null) {
+    krakenParams.site = {
+      cat: firstBidRequest.ortb2.site.cat
+    }
+  }
+
+  // Add schain
   if (firstBidRequest.schain && firstBidRequest.schain.nodes) {
     krakenParams.schain = firstBidRequest.schain
   }
+
+  // Add user data object if available
+  krakenParams.user.data = deepAccess(firstBidRequest, REQUEST_KEYS.USER_DATA) || [];
 
   const reqCount = getRequestCount()
   if (reqCount != null) {
     krakenParams.requestCount = reqCount;
   }
 
+  // Add currency if not USD
   if (currency != null && currency != CURRENCY.US_DOLLAR) {
     krakenParams.cur = currency;
   }
@@ -209,7 +221,7 @@ function interpretResponse(response, bidRequest) {
       width: adUnit.width,
       height: adUnit.height,
       ttl: 300,
-      creativeId: adUnit.id,
+      creativeId: adUnit.creativeID,
       dealId: adUnit.targetingCustom,
       netRevenue: true,
       currency: adUnit.currency || bidRequest.currency,
@@ -447,10 +459,6 @@ function getImpression(bid) {
     code: bid.adUnitCode
   };
 
-  if (bid.floorData != null && bid.floorData.floorMin > 0) {
-    imp.floor = bid.floorData.floorMin;
-  }
-
   if (bid.bidRequestsCount > 0) {
     imp.bidRequestCount = bid.bidRequestsCount;
   }
@@ -463,51 +471,44 @@ function getImpression(bid) {
     imp.bidderWinCount = bid.bidderWinsCount;
   }
 
-  const gpid = getGPID(bid)
-  if (gpid != null && gpid != '') {
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  if (gpid) {
     imp.fpd = {
       gpid: gpid
     }
   }
 
-  if (bid.mediaTypes != null) {
-    if (bid.mediaTypes.banner != null) {
-      imp.banner = bid.mediaTypes.banner;
+  if (bid.mediaTypes) {
+    const { banner, video, native } = bid.mediaTypes;
+
+    if (banner) {
+      imp.banner = banner;
     }
 
-    if (bid.mediaTypes.video != null) {
-      imp.video = bid.mediaTypes.video;
+    if (video) {
+      imp.video = video;
     }
 
-    if (bid.mediaTypes.native != null) {
-      imp.native = bid.mediaTypes.native;
+    if (native) {
+      imp.native = native;
+    }
+
+    if (typeof bid.getFloor === 'function') {
+      let floorInfo;
+      try {
+        floorInfo = bid.getFloor({
+          currency: 'USD',
+          mediaType: '*',
+          size: '*'
+        });
+      } catch (e) {
+        logError('Kargo: getFloor threw an error: ', e);
+      }
+      imp.floor = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
     }
   }
 
   return imp
-}
-
-function getGPID(bid) {
-  if (bid.ortb2Imp != null) {
-    if (bid.ortb2Imp.gpid != null && bid.ortb2Imp.gpid != '') {
-      return bid.ortb2Imp.gpid;
-    }
-
-    if (bid.ortb2Imp.ext != null && bid.ortb2Imp.ext.data != null) {
-      if (bid.ortb2Imp.ext.data.pbAdSlot != null && bid.ortb2Imp.ext.data.pbAdSlot != '') {
-        return bid.ortb2Imp.ext.data.pbAdSlot;
-      }
-
-      if (bid.ortb2Imp.ext.data.adServer != null && bid.ortb2Imp.ext.data.adServer.adSlot != null && bid.ortb2Imp.ext.data.adServer.adSlot != '') {
-        return bid.ortb2Imp.ext.data.adServer.adSlot;
-      }
-    }
-  }
-
-  if (bid.adUnitCode != null && bid.adUnitCode != '') {
-    return bid.adUnitCode;
-  }
-  return '';
 }
 
 export const spec = {
