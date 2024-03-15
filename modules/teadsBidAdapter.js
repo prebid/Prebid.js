@@ -134,7 +134,7 @@ export const spec = {
     return serverResponse.responses
       .filter((bid) =>
         // ignore this bid if it requires autoplay but it is not enabled on this browser
-        !(bid.needAutoplay && !autoplayEnabled)
+        !bid.needAutoplay || autoplayEnabled
       ).map((bid) => {
         const bidResponse = {
           cpm: bid.cpm,
