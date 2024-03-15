@@ -80,12 +80,12 @@ export const spec = {
       }
 
       data = tryAppendQueryString(data, 'tp', bidderRequest.refererInfo.page);
-      if (isIos()) {
-        const hyperId = getHyperId(validReq);
-        if (hyperId != null) {
-          data = tryAppendQueryString(data, 'hyper_id', hyperId);
-        }
+
+      const hyperId = getHyperId(validReq);
+      if (hyperId != null) {
+        data = tryAppendQueryString(data, 'hyper_id', hyperId);
       }
+
       // remove the trailing "&"
       if (data.lastIndexOf('&') === data.length - 1) {
         data = data.substring(0, data.length - 1);
@@ -335,10 +335,6 @@ function getHyperId(validReq) {
     return validReq.userId.novatiq.snowflake.id;
   }
   return null;
-}
-
-function isIos() {
-  return (/(ios|ipod|ipad|iphone)/i).test(window.navigator.userAgent);
 }
 
 registerBidder(spec);
