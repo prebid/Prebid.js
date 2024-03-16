@@ -8,7 +8,6 @@ import {
   logWarn,
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { getRefererInfo } from '../src/refererDetection.js';
 import { BANNER } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'setupad';
@@ -17,7 +16,6 @@ const SYNC_ENDPOINT = 'https://cookie.stpd.cloud/sync?';
 const REPORT_ENDPOINT = 'https://adapter-analytics.setupad.io/api/adapter-analytics';
 const GVLID = 1241;
 const TIME_TO_LIVE = 360;
-const biddersCpms = {};
 const biddersCreativeIds = {};
 
 function getEids(bidRequest) {
@@ -35,9 +33,8 @@ export const spec = {
 
   buildRequests: function (validBidRequests, bidderRequest) {
     const requests = [];
-    window.nmmRefreshCounts = window.nmmRefreshCounts || {};
+
     _each(validBidRequests, function (bid) {
-      window.nmmRefreshCounts[bid.adUnitCode] = window.nmmRefreshCounts[bid.adUnitCode] || 0;
       const id = getBidIdParameter('placement_id', bid.params);
       const accountId = getBidIdParameter('account_id', bid.params);
       const auctionId = bid.auctionId;
@@ -46,8 +43,15 @@ export const spec = {
       let sizes = bid.sizes;
       if (sizes && !Array.isArray(sizes[0])) sizes = [sizes];
 
-      const site = getSiteObj();
-      const device = getDeviceObj();
+      const site = {
+        page: bidderRequest?.refererInfo?.page,
+        ref: bidderRequest?.refererInfo?.ref,
+        domain: bidderRequest?.refererInfo?.domain,
+      };
+      const device = {
+        w: bidderRequest?.ortb2?.device?.w,
+        h: bidderRequest?.ortb2?.device?.h,
+      };
 
       const payload = {
         id: bid?.bidderRequestId,
@@ -156,9 +160,8 @@ export const spec = {
           },
         };
 
-        // Set all bidders obj for later use in getPixelUrl()
-        biddersCpms[res.seat] = bidResponse.cpm;
-        biddersCreativeIds[res.seat] = bidResponse.creativeId;
+        // set a seat for creativeId for triggerPixel url
+        biddersCreativeIds[bidResponse.creativeId] = res.seat;
 
         bidResponse.ad = ad;
         bidResponse.adUrl = adUrl;
@@ -224,15 +227,9 @@ export const spec = {
 
     let extraBidParams = '';
 
-    // Iterate through all bidders to find the winning bidder by using creativeId as identification
-    for (const bidderName in biddersCreativeIds) {
-      if (
-        biddersCreativeIds.hasOwnProperty(bidderName) &&
-        biddersCreativeIds[bidderName] === bid.creativeId
-      ) {
-        bidder = bidderName;
-        break; // Exit the loop if a match is found
-      }
+    // find the winning bidder by using creativeId as identification
+    if (biddersCreativeIds.hasOwnProperty(bid.creativeId) && biddersCreativeIds[bid.creativeId]) {
+      bidder = biddersCreativeIds[bid.creativeId];
     }
 
     // Add extra parameters
@@ -254,7 +251,7 @@ function getBidders(serverResponse) {
 }
 
 function getAd(bid) {
-  let ad, adUrl, vastXml, vastUrl;
+  let ad, adUrl;
 
   switch (deepAccess(bid, 'ext.prebid.type')) {
     default:
@@ -268,32 +265,7 @@ function getAd(bid) {
       }
   }
 
-  return { ad, adUrl, vastXml, vastUrl };
-}
-
-function getSiteObj() {
-  const refInfo = (getRefererInfo && getRefererInfo()) || {};
-
-  return {
-    page: refInfo.page,
-    ref: refInfo.ref,
-    domain: refInfo.domain,
-  };
-}
-
-function getDeviceObj() {
-  return {
-    w:
-      window.innerWidth ||
-      window.document.documentElement.clientWidth ||
-      window.document.body.clientWidth ||
-      0,
-    h:
-      window.innerHeight ||
-      window.document.documentElement.clientHeight ||
-      window.document.body.clientHeight ||
-      0,
-  };
+  return { ad, adUrl };
 }
 
 registerBidder(spec);

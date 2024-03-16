@@ -44,6 +44,20 @@ describe('SetupadAdapter', function () {
     },
   ];
 
+  const bidderRequest = {
+    ortb2: {
+      device: {
+        w: 1500,
+        h: 1000,
+      },
+    },
+    refererInfo: {
+      domain: 'test.com',
+      page: 'http://test.com',
+      ref: '',
+    },
+  };
+
   const serverResponse = {
     body: {
       id: 'f7b3d2da-e762-410c-b069-424f92c4c4b2',
@@ -128,9 +142,21 @@ describe('SetupadAdapter', function () {
       expect(JSON.parse(request[0].data).id).to.equal('15246a574e859f');
     });
 
-    it('check if domain was added', function () {
-      const request = spec.buildRequests(bidRequests);
-      expect(JSON.parse(request[0].data).site.domain).to.exist;
+    it('check if correct site object was added', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const siteObj = JSON.parse(request[0].data).site;
+
+      expect(siteObj.domain).to.equal('test.com');
+      expect(siteObj.page).to.equal('http://test.com');
+      expect(siteObj.ref).to.equal('');
+    });
+
+    it('check if correct device object was added', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const deviceObj = JSON.parse(request[0].data).device;
+
+      expect(deviceObj.w).to.equal(1500);
+      expect(deviceObj.h).to.equal(1000);
     });
 
     it('check if imp object was added', function () {
