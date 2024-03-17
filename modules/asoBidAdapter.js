@@ -68,6 +68,10 @@ export const spec = {
         query = tryAppendQueryString(query, 'us_privacy', uspConsent);
       }
 
+      if (query.slice(-1) === '&') {
+        query = query.slice(0, -1);
+      }
+
       serverResponses.forEach(resp => {
         const userSyncs = deepAccess(resp, 'body.ext.user_syncs');
         if (!userSyncs) {
@@ -75,9 +79,14 @@ export const spec = {
         }
 
         userSyncs.forEach(us => {
+          let url = us.url;
+          if (query) {
+            url = url + (url.indexOf('?') === -1 ? '?' : '&') + query;
+          }
+
           urls.push({
             type: us.type,
-            url: us.url + (query ? '?' + query : '')
+            url: url
           });
         });
       });
