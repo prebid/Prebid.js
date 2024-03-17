@@ -16,9 +16,9 @@ describe('Adserver.Online bidding adapter', function () {
       zone: 1
     },
     adUnitCode: 'adunit-banner',
-    bidId: 'bidid1',
+    bidId: 'bid-banner',
     mediaTypes: {
-      banner: {
+      [BANNER]: {
         sizes: [
           [300, 250],
           [240, 400],
@@ -41,15 +41,52 @@ describe('Adserver.Online bidding adapter', function () {
       zone: 2
     },
     adUnitCode: 'adunit-video',
-    bidId: 'bidid2',
+    bidId: 'bid-video',
     mediaTypes: {
-      video: {
+      [VIDEO]: {
         context: OUTSTREAM,
         playerSize: [[640, 480]],
         protocols: [1, 2],
         mimes: ['video/mp4'],
       }
     }
+  };
+
+  const nativeOrtbRequest = {
+    assets: [
+      {
+        id: 0,
+        required: 1,
+        title: {
+          len: 140
+        }
+      },
+      {
+        id: 1,
+        required: 1,
+        img: {
+          type: 3,
+          w: 300,
+          h: 600
+        }
+      }]
+  };
+
+  const nativeRequest = {
+    bidder: 'aso',
+    params: {
+      zone: 3
+    },
+    adUnitCode: 'adunit-native',
+    bidId: 'bid-native',
+    mediaTypes: {
+      [NATIVE]: {
+        ortb: {
+          ...nativeOrtbRequest
+        }
+      }
+    },
+    nativeOrtbRequest
   };
 
   const bidderRequest = {
@@ -76,6 +113,14 @@ describe('Adserver.Online bidding adapter', function () {
           3: false
         }
       }
+    }
+  };
+
+  const gdprNotApplies = {
+    gdprApplies: false,
+    consentString: '',
+    vendorData: {
+      purpose: {}
     }
   };
 
@@ -197,6 +242,32 @@ describe('Adserver.Online bidding adapter', function () {
         expect(payload.imp[0].banner).to.not.exist;
       });
     }
+
+    if (FEATURES.NATIVE) {
+      it('creates a valid native request', function () {
+        const requests = spec.buildRequests([nativeRequest], syncAddFPDToBidderRequest(bidderRequest));
+        expect(requests).to.have.lengthOf(1);
+        const request = requests[0];
+
+        expect(request).to.exist;
+        expect(request.data).to.not.be.empty;
+
+        const payload = request.data;
+
+        expect(payload.site).to.exist;
+        expect(payload.site.page).to.equal('https://example.com/page.html');
+
+        expect(payload.device).to.exist;
+        expect(payload.device.w).to.equal(window.innerWidth);
+        expect(payload.device.h).to.equal(window.innerHeight);
+
+        expect(payload.imp).to.have.lengthOf(1);
+
+        expect(payload.imp[0].tagid).to.equal('adunit-native');
+        expect(payload.imp[0].native).to.exist;
+        expect(payload.imp[0].native.request).to.exist;
+      });
+    }
   });
 
   describe('GDPR/USP compliance', function () {
@@ -241,7 +312,7 @@ describe('Adserver.Online bidding adapter', function () {
         seatbid: [{
           bid: [
             {
-              impid: 'bidid1',
+              impid: 'bid-banner',
               price: 0.3,
               crid: 321,
               adm: '<!-- HTML/JS -->',
@@ -273,7 +344,7 @@ describe('Adserver.Online bidding adapter', function () {
         seatbid: [{
           bid: [
             {
-              impid: 'bidid2',
+              impid: 'bid-video',
               price: 0.5,
               crid: 123,
               adm: '<!-- VAST XML -->',
@@ -283,6 +354,33 @@ describe('Adserver.Online bidding adapter', function () {
               ext: {
                 prebid: {
                   type: 'video'
+                }
+              }
+            }
+          ]
+        }],
+        cur: 'USD'
+      },
+    };
+
+    const nativeResponse = {
+      body: {
+        seatbid: [{
+          bid: [
+            {
+              impid: 'bid-native',
+              price: 0.5,
+              crid: 123,
+              adm: JSON.stringify({
+                assets: [
+                  {id: 0, title: {text: 'Title'}},
+                  {id: 1, img: {type: 3, url: 'https://img'}},
+                ],
+              }),
+              adomain: ['example.com'],
+              ext: {
+                prebid: {
+                  type: 'native'
                 }
               }
             }
@@ -315,18 +413,35 @@ describe('Adserver.Online bidding adapter', function () {
     if (FEATURES.VIDEO) {
       it('handles video responses', function () {
         const request = spec.buildRequests([videoRequest], bidderRequest)[0];
-        const result = spec.interpretResponse(videoResponse, request);
-        expect(result).to.have.lengthOf(1);
+        const bids = spec.interpretResponse(videoResponse, request);
+        expect(bids).to.have.lengthOf(1);
 
-        expect(result[0].width).to.equal(640);
-        expect(result[0].height).to.equal(480);
-        expect(result[0].mediaType).to.equal(VIDEO);
-        expect(result[0].creativeId).to.equal(123);
-        expect(result[0].cpm).to.equal(0.5);
-        expect(result[0].vastXml).to.equal('<!-- VAST XML -->');
-        expect(result[0].currency).to.equal('USD');
-        expect(result[0].netRevenue).to.equal(true);
-        expect(result[0].ttl).to.equal(300);
+        expect(bids[0].width).to.equal(640);
+        expect(bids[0].height).to.equal(480);
+        expect(bids[0].mediaType).to.equal(VIDEO);
+        expect(bids[0].creativeId).to.equal(123);
+        expect(bids[0].cpm).to.equal(0.5);
+        expect(bids[0].vastXml).to.equal('<!-- VAST XML -->');
+        expect(bids[0].currency).to.equal('USD');
+        expect(bids[0].netRevenue).to.equal(true);
+        expect(bids[0].ttl).to.equal(300);
+      });
+    }
+
+    if (FEATURES.NATIVE) {
+      it('handles native responses', function () {
+        const request = spec.buildRequests([nativeRequest], bidderRequest)[0];
+        const bids = spec.interpretResponse(nativeResponse, request);
+        expect(bids).to.have.lengthOf(1);
+
+        expect(bids[0].mediaType).to.equal(NATIVE);
+        expect(bids[0].creativeId).to.equal(123);
+        expect(bids[0].cpm).to.equal(0.5);
+        expect(bids[0].currency).to.equal('USD');
+        expect(bids[0].netRevenue).to.equal(true);
+        expect(bids[0].ttl).to.equal(300);
+
+        expect(bids[0].native.ortb.assets).to.have.lengthOf(2);
       });
     }
 
@@ -344,10 +459,26 @@ describe('Adserver.Online bidding adapter', function () {
       };
 
       it('should return iframe sync option', function () {
-        expect(spec.getUserSyncs(syncOptions, [bannerResponse], gdprConsent, uspConsent)[0].type).to.equal('iframe');
-        expect(spec.getUserSyncs(syncOptions, [bannerResponse], gdprConsent, uspConsent)[0].url).to.equal(
-          'sync_url?gdpr=1&consents_str=consentString&consents=1%2C2&us_privacy=usp_consent&'
+        const syncs = spec.getUserSyncs(syncOptions, [bannerResponse], gdprConsent, uspConsent);
+        expect(syncs).to.have.lengthOf(1);
+        expect(syncs[0].type).to.equal('iframe');
+        expect(syncs[0].url).to.equal(
+          'sync_url?gdpr=1&consents_str=consentString&consents=1%2C2&us_privacy=usp_consent'
         );
+      });
+
+      it('should return iframe sync option - gdpr not applies', function () {
+        const syncs = spec.getUserSyncs(syncOptions, [bannerResponse], gdprNotApplies, uspConsent);
+        expect(syncs).to.have.lengthOf(1);
+
+        expect(syncs[0].url).to.equal(
+          'sync_url?us_privacy=usp_consent'
+        );
+      });
+
+      it('should return no sync option', function () {
+        const syncs = spec.getUserSyncs(syncOptions, [videoResponse], gdprNotApplies, uspConsent);
+        expect(syncs).to.have.lengthOf(0);
       });
     });
   });
