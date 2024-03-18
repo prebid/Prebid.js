@@ -16,7 +16,7 @@ Weborama provides a Real-Time Data Submodule for `Prebid.js`, allowing to easy i
 
 * LiTE by SFBX® (Local inApp Trust Engine) provides “Zero Party Data” given by users, stored and calculated only on the user’s device. Through a unique cohorting system, it enables better monetization in a consent/consentless and identity-less mode.
 
-Contact prebid-support@weborama.com for more information.
+Contact [prebid-support@weborama.com] for more information.
 
 ### Publisher Usage
 
@@ -79,7 +79,7 @@ pbjs.setConfig({
 
 Each module can perform two actions:
 
-* set targeting on [GPT](https://docs.prebid.org/dev-docs/publisher-api-reference/setTargetingForGPTAsync.html) / [AST](https://docs.prebid.org/dev-docs/publisher-api-reference/setTargetingForAst.html]) via `prebid.js`
+* set targeting on [GPT](https://docs.prebid.org/dev-docs/publisher-api-reference/setTargetingForGPTAsync.html) / [AST](https://docs.prebid.org/dev-docs/publisher-api-reference/setTargetingForAst.html) via `prebid.js`
 
 * send data to other `prebid.js` bidder modules (check the complete list at the end of this page)
 
@@ -117,9 +117,9 @@ On this section we will explain the `params.weboCtxConf` subconfiguration:
 | enabled | Boolean| if false, will ignore this configuration| Default is `true` if this section is present|
 | baseURLProfileAPI | String| if present, update the domain of the contextual api| Optional. Default is `ctx.weborama.com` |
 
-#### WAM User-Centric Configuration
+#### User-Centric Configuration
 
-To be possible use the integration with Weborama Audience Manager (WAM) you must be a client with an account id and you lust include the `wamfactory` script in your pages with `wam2gam` feature activated.
+To be possible use the integration with Weborama Audience Manager (WAM) you must be a client with an account id and you must include the `wamfactory` script in your pages with `wam2gam` feature activated.
 Please contact weborama if you don't have it.
 
 On this section we will explain the `params.weboUserDataConf` subconfiguration:
@@ -133,6 +133,15 @@ On this section we will explain the `params.weboUserDataConf` subconfiguration:
 | defaultProfile | Object | default value of the profile to be used when there are no response from contextual api (such as timeout)| Optional. Default is `{}` |
 | localStorageProfileKey| String | can be used to customize the local storage key | Optional |
 | enabled | Boolean| if false, will ignore this configuration| Default is `true` if this section is present|
+
+##### User Consent
+
+The WAM User-Centric configuration will check for user consent if gdpr applies. It will check for consent:
+
+* Vendor ID 284 (Weborama)
+* Purpose IDs: 1, 3, 4, 5 and 6
+
+If the user consent does not match such conditions, this module will not load, means we will not check for any data in local storage and the default profile will be ignored.
 
 #### Sfbx LiTE Site-Centric Configuration
 
