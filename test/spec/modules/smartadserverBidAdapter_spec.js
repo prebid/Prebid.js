@@ -787,7 +787,7 @@ describe('Smart bid adapter tests', function () {
         const requestContent = JSON.parse(request[0].data);
         expect(requestContent).to.have.property('videoData');
         expect(requestContent.videoData).not.to.have.property('videoProtocol').eq(true);
-        expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(2);
+        expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(1);
       });
 
       it('Verify videoData params override meta values', function () {
@@ -1097,7 +1097,7 @@ describe('Smart bid adapter tests', function () {
       const requestContent = JSON.parse(request[0].data);
       expect(requestContent).to.have.property('videoData');
       expect(requestContent.videoData).not.to.have.property('videoProtocol').eq(true);
-      expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(2);
+      expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(1);
     });
 
     it('Verify videoData params override meta values', function () {
