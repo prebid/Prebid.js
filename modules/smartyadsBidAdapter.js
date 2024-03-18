@@ -41,8 +41,16 @@ function getAdUrlByRegion(bid) {
     try {
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const region = timezone.split('/')[0];
-      if (region === 'Europe') adUrl = adUrls['EU'];
-      else adUrl = adUrls['US_EAST'];
+
+      switch (region) {
+        case 'Europe':
+          adUrl = adUrls['EU'];
+          break;
+        case 'Asia':
+          adUrl = adUrls['SGP'];
+          break;
+        default: adUrl = adUrls['US_EAST'];
+      }
     } catch (err) {
       adUrl = adUrls['US_EAST'];
     }

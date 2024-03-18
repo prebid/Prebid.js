@@ -491,7 +491,8 @@ describe('kargo adapter tests', function () {
             },
             fpd: {
               gpid: '/22558409563,18834096/dfy_mobile_adhesion'
-            }
+            },
+            floor: 2
           },
           {
             code: '303',
@@ -503,7 +504,8 @@ describe('kargo adapter tests', function () {
             },
             fpd: {
               gpid: '/22558409563,18834096/dfy_mobile_adhesion'
-            }
+            },
+            floor: 3
           }
         ],
         socan: {
@@ -604,6 +606,16 @@ describe('kargo adapter tests', function () {
       if (gdpr) {
         payload['gdprConsent'] = gdpr
       }
+
+      clonedBids.forEach(bid => {
+        if (bid.mediaTypes.banner) {
+          bid.getFloor = () => ({ currency: 'USD', floor: 1 });
+        } else if (bid.mediaTypes.video) {
+          bid.getFloor = () => ({ currency: 'USD', floor: 2 });
+        } else if (bid.mediaTypes.native) {
+          bid.getFloor = () => ({ currency: 'USD', floor: 3 });
+        }
+      });
 
       var request = spec.buildRequests(clonedBids, payload);
       var krakenParams = request.data;
@@ -725,7 +737,8 @@ describe('kargo adapter tests', function () {
             adm: '<div id="1"></div>',
             width: 320,
             height: 50,
-            metadata: {}
+            metadata: {},
+            creativeID: 'bar'
           },
           2: {
             id: 'bar',
@@ -736,14 +749,16 @@ describe('kargo adapter tests', function () {
             targetingCustom: 'dmpmptest1234',
             metadata: {
               landingPageDomain: ['https://foobar.com']
-            }
+            },
+            creativeID: 'foo'
           },
           3: {
             id: 'bar',
             cpm: 2.5,
             adm: '<div id="2"></div>',
             width: 300,
-            height: 250
+            height: 250,
+            creativeID: 'foo'
           },
           4: {
             id: 'bar',
@@ -753,6 +768,7 @@ describe('kargo adapter tests', function () {
             height: 250,
             mediaType: 'banner',
             metadata: {},
+            creativeID: 'foo',
             currency: 'EUR'
           },
           5: {
@@ -763,6 +779,7 @@ describe('kargo adapter tests', function () {
             height: 250,
             mediaType: 'video',
             metadata: {},
+            creativeID: 'foo',
             currency: 'EUR'
           },
           6: {
@@ -774,6 +791,7 @@ describe('kargo adapter tests', function () {
             height: 250,
             mediaType: 'video',
             metadata: {},
+            creativeID: 'foo',
             currency: 'EUR'
           }
         }
@@ -818,7 +836,7 @@ describe('kargo adapter tests', function () {
         width: 320,
         height: 50,
         ttl: 300,
-        creativeId: 'foo',
+        creativeId: 'bar',
         dealId: undefined,
         netRevenue: true,
         currency: 'USD',
@@ -833,7 +851,7 @@ describe('kargo adapter tests', function () {
         width: 300,
         height: 250,
         ttl: 300,
-        creativeId: 'bar',
+        creativeId: 'foo',
         dealId: 'dmpmptest1234',
         netRevenue: true,
         currency: 'USD',
@@ -850,7 +868,7 @@ describe('kargo adapter tests', function () {
         width: 300,
         height: 250,
         ttl: 300,
-        creativeId: 'bar',
+        creativeId: 'foo',
         dealId: undefined,
         netRevenue: true,
         currency: 'USD',
@@ -865,7 +883,7 @@ describe('kargo adapter tests', function () {
         width: 300,
         height: 250,
         ttl: 300,
-        creativeId: 'bar',
+        creativeId: 'foo',
         dealId: undefined,
         netRevenue: true,
         currency: 'EUR',
@@ -880,7 +898,7 @@ describe('kargo adapter tests', function () {
         height: 250,
         vastXml: '<VAST></VAST>',
         ttl: 300,
-        creativeId: 'bar',
+        creativeId: 'foo',
         dealId: undefined,
         netRevenue: true,
         currency: 'EUR',
@@ -895,7 +913,7 @@ describe('kargo adapter tests', function () {
         height: 250,
         vastUrl: 'https://foobar.com/vast_adm',
         ttl: 300,
-        creativeId: 'bar',
+        creativeId: 'foo',
         dealId: undefined,
         netRevenue: true,
         currency: 'EUR',
