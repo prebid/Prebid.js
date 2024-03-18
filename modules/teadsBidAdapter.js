@@ -1,15 +1,12 @@
 import {getValue, logError, deepAccess, parseSizesInput, isArray, getBidIdParameter} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {startDetection, isAutoplayEnabled} from '../libraries/autoplayDetection/autoplay.js';
+import {isAutoplayEnabled} from '../libraries/autoplayDetection/autoplay.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
-
-// start autoplay detection as soon as Prebid is loading
-startDetection();
 
 const BIDDER_CODE = 'teads';
 const GVL_ID = 132;
