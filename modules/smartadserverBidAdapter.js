@@ -135,9 +135,7 @@ export const spec = {
     if (videoParams?.startDelay) {
       return videoParams.startDelay;
     } else if (videoMediaType) {
-      switch (videoMediaType) {
-        case 0:
-          return 1;
+      switch (videoMediaType.startdelay) {
         case -1:
           return 2;
         case -2:
