@@ -33,6 +33,8 @@ const DEFAULT_CURRENCY = 'USD';
 
 const VIDEO_PARAMS_DEFAULT = {
   api: undefined,
+  context: undefined,
+  delivery: undefined,
   linearity: undefined,
   maxduration: undefined,
   mimes: [
@@ -43,8 +45,14 @@ const VIDEO_PARAMS_DEFAULT = {
 
   minduration: undefined,
   placement: undefined,
+  plcmt: undefined,
+  playbackend: undefined,
   playbackmethod: undefined,
+  pos: undefined,
   protocols: undefined,
+  skip: undefined,
+  skipafter: undefined,
+  skipmin: undefined,
   startdelay: undefined,
 };
 
