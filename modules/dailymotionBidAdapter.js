@@ -21,7 +21,7 @@ function getVideoMetadata(bidRequest) {
   const videoMetadata = {
     description: videoParams.description || '',
     duration: videoParams.duration || 0,
-    iabcat2: videoParams.iabcat2 || '',
+    iabcat2: Array.isArray(videoParams.iabcat2) ? videoParams.iabcat2 : [],
     id: videoParams.id || '',
     lang: videoParams.lang || '',
     private: videoParams.private || false,
