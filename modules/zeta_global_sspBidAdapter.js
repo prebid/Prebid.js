@@ -272,7 +272,12 @@ export const spec = {
 
   onTimeout: function(timeoutData) {
     if (timeoutData) {
-      ajax(TIMEOUT_URL, null, JSON.stringify(timeoutData), {
+      const payload = timeoutData.map(d => ({
+        bidder: d?.bidder,
+        shortname: d?.params?.map(p => p?.tags?.shortname).find(p => p),
+        country: d?.params?.map(p => p?.device?.geo?.country).find(p => p)
+      }));
+      ajax(TIMEOUT_URL, null, JSON.stringify(payload), {
         method: 'POST',
         options: {
           withCredentials: false,
