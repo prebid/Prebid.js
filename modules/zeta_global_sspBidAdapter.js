@@ -275,7 +275,9 @@ export const spec = {
       const payload = timeoutData.map(d => ({
         bidder: d?.bidder,
         shortname: d?.params?.map(p => p?.tags?.shortname).find(p => p),
-        country: d?.params?.map(p => p?.device?.geo?.country).find(p => p)
+        sid: d?.params?.map(p => p?.sid).find(p => p),
+        country: d?.ortb2?.device?.geo?.country,
+        devicetype: d?.ortb2?.device?.devicetype
       }));
       ajax(TIMEOUT_URL, null, JSON.stringify(payload), {
         method: 'POST',
