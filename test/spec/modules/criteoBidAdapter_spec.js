@@ -2572,11 +2572,14 @@ describe('The Criteo bidding adapter', function () {
             sellerTimeout: 500,
             sellerSignals: {
               foo: 'bar',
+              perBuyerTimeout: { 'buyer1': 100, 'buyer2': 200 },
+              perBuyerGroupLimits: { 'buyer1': 300, 'buyer2': 400 },
             },
             sellerSignalsPerImp: {
               'test-bidId': {
                 foo2: 'bar2',
-              }
+                currency: 'USD'
+              },
             },
           },
         },
@@ -2640,14 +2643,33 @@ describe('The Criteo bidding adapter', function () {
               foo: 'baz'
             },
           },
+          perBuyerTimeout: {
+            '*': 500,
+            'buyer1': 100,
+            'buyer2': 200
+          },
+          perBuyerGroupLimits: {
+            '*': 60,
+            'buyer1': 300,
+            'buyer2': 400
+          },
           seller: 'https://seller-domain.com',
           sellerTimeout: 500,
           sellerSignals: {
             foo: 'bar',
             foo2: 'bar2',
             floor: 1,
-            sellerCurrency: 'EUR',
+            currency: 'USD',
+            perBuyerTimeout: {
+              'buyer1': 100,
+              'buyer2': 200
+            },
+            perBuyerGroupLimits: {
+              'buyer1': 300,
+              'buyer2': 400
+            },
           },
+          sellerCurrency: 'USD',
         },
       });
       expect(interpretedResponse.fledgeAuctionConfigs[1]).to.deep.equal({
@@ -2664,13 +2686,31 @@ describe('The Criteo bidding adapter', function () {
               foo: 'baz'
             },
           },
+          perBuyerTimeout: {
+            '*': 500,
+            'buyer1': 100,
+            'buyer2': 200
+          },
+          perBuyerGroupLimits: {
+            '*': 60,
+            'buyer1': 300,
+            'buyer2': 400
+          },
           seller: 'https://seller-domain.com',
           sellerTimeout: 500,
           sellerSignals: {
             foo: 'bar',
             floor: 1,
-            sellerCurrency: 'EUR',
+            perBuyerTimeout: {
+              'buyer1': 100,
+              'buyer2': 200
+            },
+            perBuyerGroupLimits: {
+              'buyer1': 300,
+              'buyer2': 400
+            },
           },
+          sellerCurrency: '???'
         },
       });
     });

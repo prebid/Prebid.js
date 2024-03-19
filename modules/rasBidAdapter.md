@@ -9,7 +9,7 @@ Maintainer: support@ringpublishing.com
 # Description
 
 Module that connects to Ringer Axel Springer demand sources.
-Only banner format is supported.
+Only banner and native format is supported.
 
 # Test Parameters
 ```js

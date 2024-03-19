@@ -107,18 +107,11 @@ export const spec = {
         }
         iv = iv || getBidIdParameter('iv', bid.params)
 
-        const floorInfo = (bid.getFloor && typeof bid.getFloor === 'function') ? bid.getFloor({
-          currency: 'USD',
-          mediaType: bid.mediaTypes && bid.mediaTypes.banner ? 'banner' : 'video',
-          size: '*'
-        }) : {}
-        floorInfo.floor = floorInfo.floor || getBidIdParameter('bidfloor', bid.params)
-
         const imp = {
           adunitcode: bid.adUnitCode,
           id: bid.bidId,
           tagid: String(getBidIdParameter('tagid', bid.params)),
-          bidfloor: floorInfo.floor
+          bidfloor: _getBidFloors(bid)
         }
 
         if (deepAccess(bid, 'mediaTypes.banner')) {
@@ -330,6 +323,20 @@ function _buildVideoRequestObj(bid) {
     }
   })
   return videoObj
+}
+
+function _getBidFloors(bid) {
+  const floorInfo = (bid.getFloor && typeof bid.getFloor === 'function') ? bid.getFloor({
+    currency: 'USD',
+    mediaType: bid.mediaTypes && bid.mediaTypes.banner ? 'banner' : 'video',
+    size: '*'
+  }) : {}
+  const floorModuleValue = parseFloat(floorInfo.floor)
+  if (!isNaN(floorModuleValue)) {
+    return floorModuleValue
+  }
+  const paramValue = parseFloat(getBidIdParameter('bidfloor', bid.params))
+  return !isNaN(paramValue) ? paramValue : undefined
 }
 
 registerBidder(spec)
