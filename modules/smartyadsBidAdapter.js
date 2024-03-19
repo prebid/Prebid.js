@@ -94,7 +94,7 @@ export const spec = {
       'coppa': config.getConfig('coppa') === true ? 1 : 0,
       'placements': placements,
       'eeid': validBidRequests[0].userIdAsEids,
-      'ifa': bidderRequest.ortb2?.device?.ifa,
+      'ifa': bidderRequest?.ortb2?.device?.ifa,
     };
     request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
     if (bidderRequest) {
