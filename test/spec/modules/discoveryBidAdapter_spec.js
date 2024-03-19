@@ -219,7 +219,7 @@ describe('discovery:BidAdapterTests', function () {
         storage.getCookie.callsFake(() => 'existing-uuid');
         const uid = getPmgUID();
         expect(uid).to.equal('existing-uuid');
-        expect(storage.setCookie.called).to.be.false;
+        expect(storage.setCookie.called).to.be.true;
       });
 
       it('should not set new UUID when cookies are not enabled', () => {

@@ -148,7 +148,7 @@ const yandexAnalytics = Object.assign(buildAdapter({ analyticsType: 'endpoint' }
 
 adapterManager.registerAnalyticsAdapter({
   adapter: yandexAnalytics,
-  code: 'yandexAnalytics'
+  code: 'yandex'
 });
 
 export default yandexAnalytics;
