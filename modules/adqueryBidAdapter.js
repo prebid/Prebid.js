@@ -134,9 +134,8 @@ export const spec = {
    */
   onBidWon: (bid) => {
     logInfo('onBidWon', bid);
-    const bidString = JSON.stringify(bid);
-    let copyOfBid = JSON.parse(bidString);
-    delete copyOfBid.ad;
+    let copyOfBid = { ...bid }
+    delete copyOfBid.ad
     const shortBidString = JSON.stringify(copyOfBid);
     const encodedBuf = window.btoa(shortBidString);
 
