@@ -880,6 +880,19 @@ describe('gumgumAdapter', function () {
         expect(result.height = expectedSize[1]);
       })
 
+      it('request size that  matches response size for in-slot', function () {
+        const request = { ...bidRequest };
+        const body = { ...serverResponse };
+        const expectedSize = [[ 320, 50 ], [300, 600], [300, 250]];
+        let result;
+        request.pi = 3;
+        body.ad.width = 300;
+        body.ad.height = 600;
+        result = spec.interpretResponse({ body }, request)[0];
+        expect(result.width = expectedSize[1][0]);
+        expect(result.height = expectedSize[1][1]);
+      })
+
       it('defaults to use bidRequest sizes', function () {
         const { ad, jcsi, pag, thms, meta } = serverResponse
         const noAdSizes = { ...ad }

@@ -114,13 +114,19 @@ const ENRICHMENTS = {
       const w = win.innerWidth || win.document.documentElement.clientWidth || win.document.body.clientWidth;
       const h = win.innerHeight || win.document.documentElement.clientHeight || win.document.body.clientHeight;
 
-      return {
+      const device = {
         w,
         h,
         dnt: getDNT() ? 1 : 0,
         ua: win.navigator.userAgent,
         language: win.navigator.language.split('-').shift(),
       };
+
+      if (win.navigator?.webdriver) {
+        deepSetValue(device, 'ext.webdriver', true);
+      }
+
+      return device;
     })
   },
   regs() {

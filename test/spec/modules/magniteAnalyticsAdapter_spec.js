@@ -3,7 +3,8 @@ import magniteAdapter, {
   getHostNameFromReferer,
   storage,
   rubiConf,
-  detectBrowserFromUa
+  detectBrowserFromUa,
+  callPrebidCacheHook
 } from '../../../modules/magniteAnalyticsAdapter.js';
 import CONSTANTS from 'src/constants.json';
 import { config } from 'src/config.js';
@@ -1135,6 +1136,39 @@ describe('magnite analytics adapter', function () {
         expectedMessage.bidsWon[0].bidId = 'abc-123-do-re-me';
         expect(message).to.deep.equal(expectedMessage);
       });
+    });
+
+    it('should not use pbsBidId if the bid was client side cached', function () {
+      // bid response
+      let seatBidResponse = utils.deepClone(MOCK.BID_RESPONSE);
+      seatBidResponse.pbsBidId = 'do-not-use-me';
+
+      // Run auction
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+      // mock client side cache call
+      callPrebidCacheHook(() => {}, {}, seatBidResponse);
+
+      events.emit(BID_RESPONSE, seatBidResponse);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+      // emmit gpt events and bidWon
+      mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
+
+      events.emit(BID_WON, MOCK.BID_WON);
+
+      // tick the event delay time plus processing delay
+      clock.tick(rubiConf.analyticsEventDelay + rubiConf.analyticsProcessDelay);
+
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
+
+      // Expect the ids sent to server to use the original bidId not the pbsBidId thing
+      expect(message.auctions[0].adUnits[0].bids[0].bidId).to.equal(MOCK.BID_RESPONSE.requestId);
+      expect(message.bidsWon[0].bidId).to.equal(MOCK.BID_RESPONSE.requestId);
     });
 
     [0, '0'].forEach(pbsParam => {

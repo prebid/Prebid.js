@@ -1,8 +1,50 @@
-import { formatQS, deepAccess, deepSetValue, triggerPixel, _each, _map } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js'
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { config } from '../src/config.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel } from '../src/utils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/auction.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/mediaTypes.js').MediaType} MediaType
+ * @typedef {import('../src/utils.js').MediaTypes} MediaTypes
+ * @typedef {import('../modules/priceFloors.js').getFloor} GetFloor
+ */
+
+/**
+ * @typedef {Object} CustomServerRequestFields
+ * @property {BidRequest} bidRequest
+ */
+
+/**
+ * @typedef {ServerRequest & CustomServerRequestFields} YandexServerRequest
+ */
+
+/**
+ * Yandex bidder-specific params which the publisher used in their bid request.
+ *
+ * @typedef {Object} YandexBidRequestParams
+ * @property {string} placementId Possible formats: `R-I-123456-2`, `R-123456-1`, `123456-789`.
+ * @property {number} [pageId] Deprecated. Please use `placementId` instead.
+ * @property {number} [impId] Deprecated. Please use `placementId` instead.
+ */
+
+/**
+ * @typedef {Object} AdditionalBidRequestFields
+ * @property {GetFloor} [getFloor]
+ * @property {MediaTypes} [mediaTypes]
+ */
+
+/**
+ * @typedef {BidRequest & AdditionalBidRequestFields} ExtendedBidRequest
+ */
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
@@ -53,7 +95,7 @@ const DEFAULT_CURRENCY = 'EUR';
 /**
  * @type {MediaType[]}
  */
-const SUPPORTED_MEDIA_TYPES = [ BANNER, NATIVE ];
+const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
 const SSP_ID = 10500;
 
 const IMAGE_ASSET_TYPES = {
@@ -87,7 +129,7 @@ export const NATIVE_ASSETS = {
 const NATIVE_ASSETS_IDS = {};
 _each(NATIVE_ASSETS, (asset, key) => { NATIVE_ASSETS_IDS[asset[0]] = key });
 
-/** @type BidderSpec */
+/** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['ya'], // short code
@@ -121,15 +163,7 @@ export const spec = {
   buildRequests: function(validBidRequests, bidderRequest) {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
-    let referrer = '';
-    let domain = '';
-    let page = '';
-
-    if (bidderRequest && bidderRequest.refererInfo) {
-      referrer = bidderRequest.refererInfo.ref;
-      domain = bidderRequest.refererInfo.domain;
-      page = bidderRequest.refererInfo.page;
-    }
+    const ortb2 = bidderRequest.ortb2;
 
     let timeout = null;
     if (bidderRequest) {
@@ -146,7 +180,7 @@ export const spec = {
 
       const queryParams = {
         'imp-id': impId,
-        'target-ref': targetRef || domain,
+        'target-ref': targetRef || ortb2?.site?.domain,
         'ssp-id': SSP_ID,
       };
 
@@ -177,12 +211,10 @@ export const spec = {
       const data = {
         id: bidRequest.bidId,
         imp: [imp],
-        site: {
-          ref: referrer,
-          page,
-          domain,
-        },
+        site: ortb2?.site,
         tmax: timeout,
+        user: ortb2?.user,
+        device: ortb2?.device,
       };
 
       const eids = deepAccess(bidRequest, 'userIdAsEids');
@@ -274,8 +306,8 @@ function getBidfloor(bidRequest) {
         const floorInfo = bidRequest.getFloor({
           currency: DEFAULT_CURRENCY,
           mediaType: type,
-          size: bidRequest.sizes || '*' }
-        )
+          size: bidRequest.sizes || '*'
+        })
         floors.push(floorInfo);
       }
     });
@@ -332,7 +364,7 @@ function mapNative(bidRequest) {
 }
 
 function mapAsset(assetCode, adUnitAssetParams, nativeAsset) {
-  const [ nativeAssetId, nativeAssetType ] = nativeAsset;
+  const [nativeAssetId, nativeAssetType] = nativeAsset;
   const asset = {
     id: nativeAssetId,
   };
