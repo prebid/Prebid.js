@@ -80,24 +80,13 @@ export const auctionCache = new Proxy(
             ...initOptions,
             auctionId: name, // back-compat
           },
-          sendAs: [],
+          sentAs: [],
         };
       }
       return target[name];
     },
   }
 );
-
-/**
- *
- * @returns {boolean} whether or not the browser session supports sendBeacon
- */
-const hasSendBeaconSupport = () => {
-  if (!navigator.sendBeacon || !document.visibilityState) {
-    return false;
-  }
-  return true;
-};
 
 /**
  * Fetch extra ad server data for a specific ad slot (bid)
@@ -192,13 +181,9 @@ const track = ({ eventType, args }) => {
     case CONSTANTS.EVENTS.AUCTION_END:
       Object.assign(
         auctionCache[args.auctionId].floorDetail,
-        args.adUnits
-          .map((i) => i?.bids.length && i.bids[0]?.floorData)
-          .find((i) => i) || {}
+        deepAccess(args, 'adUnits.0.bids.0.floorData')
       );
-      auctionCache[args.auctionId].deviceDetail.cdep = args.bidderRequests
-        .map((bidRequest) => bidRequest.ortb2?.device?.ext?.cdep)
-        .find((i) => i);
+      auctionCache[args.auctionId].pageDetail.adUnits = args.adUnitCodes;
       Object.assign(auctionCache[args.auctionId].auctionDetail, {
         adUnitCodes: args.adUnits.map((i) => i.code),
         timestamp: args.timestamp,
@@ -206,7 +191,7 @@ const track = ({ eventType, args }) => {
       if (
         auctionCache[args.auctionId].bids.every((bid) => bid.renderStatus === 3)
       ) {
-        prepareSend(args.auctionId);
+        send(args.auctionId);
       }
       break;
     // send the prebid winning bid back to pubx
@@ -226,7 +211,7 @@ const track = ({ eventType, args }) => {
       });
       winningBid.adServerData = getAdServerDataForBid(winningBid);
       auctionCache[winningBid.auctionId].winningBid = winningBid;
-      prepareSend(winningBid.auctionId);
+      send(winningBid.auctionId);
       break;
     // do nothing
     default:
@@ -301,10 +286,10 @@ const shouldFireEventRequest = (auctionId, samplingRate = 1) => {
 };
 
 /**
- * prepare the payload for sending auction data back to pubx.ai
+ * Send auction data back to pubx.ai
  * @param {string} auctionId the auction to send
  */
-const prepareSend = (auctionId) => {
+const send = (auctionId) => {
   const auctionData = Object.assign({}, auctionCache[auctionId]);
   if (!shouldFireEventRequest(auctionId, initOptions.samplingRate)) {
     return;
@@ -345,7 +330,7 @@ const prepareSend = (auctionId) => {
       requiredKeys.map((key) => [key, auctionData[key]])
     );
     if (
-      auctionCache[auctionId].sendAs.includes(eventType) ||
+      auctionCache[auctionId].sentAs.includes(eventType) ||
       !requiredKeys.every((key) => !!auctionData[key])
     ) {
       return;
@@ -385,8 +370,8 @@ const send = () => {
         payloadStart = index;
       }
     });
-
-    events.splice(0);
+    navigator.sendBeacon(pubxaiAnalyticsRequestUrl, payload);
+    auctionCache[auctionId].sentAs.push(eventType);
   });
 };
 
@@ -407,6 +392,7 @@ var pubxaiAnalyticsAdapter = Object.assign(
   }),
   { track }
 );
+pubxaiAnalyticsAdapter.track = track;
 
 pubxaiAnalyticsAdapter.originEnableAnalytics =
   pubxaiAnalyticsAdapter.enableAnalytics;
