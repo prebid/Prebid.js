@@ -3455,6 +3455,10 @@ describe('IndexexchangeAdapter', function () {
   });
 
   describe('buildRequestFledge', function () {
+    afterEach(() => {
+      config.resetConfig();
+    });
+
     it('impression should have ae=1 in ext when fledge module is enabled and ae is set in ad unit', function () {
       const bidderRequest = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0]);
@@ -3506,6 +3510,29 @@ describe('IndexexchangeAdapter', function () {
       const request = spec.buildRequests([bid], bidderRequestWithFledgeEnabled);
       const diagObj = extractPayload(request[0]).ext.ixdiag;
       expect(diagObj.ae).to.equal(true);
+    });
+
+    it('should set ixDiag property correctly for fledgeAutoConfig', function () {
+      config.setConfig({
+        paapi: {
+          gpt: {
+            autoconfig: true
+          }
+        }
+      });
+      const bid = DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0];
+      const bidderRequestWithFledgeEnabled = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
+      const request = spec.buildRequests([bid], bidderRequestWithFledgeEnabled);
+      const diagObj = extractPayload(request[0]).ext.ixdiag;
+      expect(diagObj.fac).to.equal(true);
+    });
+
+    it('should set ixDiag property correctly for fledgeAutoConfig when its not set', function () {
+      const bid = DEFAULT_BANNER_VALID_BID[0];
+      const bidderRequest = deepClone(DEFAULT_OPTION);
+      const request = spec.buildRequests([bid], bidderRequest);
+      const diagObj = extractPayload(request[0]).ext.ixdiag;
+      expect(diagObj.fac).to.equal(false);
     });
 
     it('should log warning for non integer auction environment in ad unit for fledge', () => {
