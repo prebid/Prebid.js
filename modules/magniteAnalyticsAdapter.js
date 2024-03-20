@@ -46,6 +46,7 @@ const pbsErrorMap = {
   4: 'request-error',
   999: 'generic-error'
 }
+let cookieless;
 
 let prebidGlobal = getGlobal();
 const {
@@ -332,10 +333,14 @@ const getTopLevelDetails = () => {
 
   // Add DM wrapper details
   if (rubiConf.wrapperName) {
+    let rule;
+    if (cookieless) {
+      rule = rubiConf.rule_name ? rubiConf.rule_name.concat('_cookieless') : 'cookieless';
+    }
     payload.wrapper = {
       name: rubiConf.wrapperName,
       family: rubiConf.wrapperFamily,
-      rule: rubiConf.rule_name
+      rule
     }
   }
 
@@ -821,6 +826,15 @@ magniteAdapter.track = ({ eventType, args }) => {
       const floorData = deepAccess(args, 'bidderRequests.0.bids.0.floorData');
       if (floorData) {
         auctionData.floors = addFloorData(floorData);
+      }
+
+      // Identify chrome cookieless trafic
+      if (!cookieless) {
+        const cdep = deepAccess(args, 'bidderRequests.0.ortb2.device.ext.cdep');
+        if (cdep && (cdep.indexOf('treatment') !== -1 || cdep.indexOf('control_2') !== -1)) {
+          cookieless = 1;
+          auctionData.cdep = 1;
+        }
       }
 
       // GDPR info
