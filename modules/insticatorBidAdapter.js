@@ -190,17 +190,59 @@ function buildDevice(bidRequest) {
   return device;
 }
 
+function _getCoppa() {
+  return config.getConfig('coppa') === true ? 1 : 0;
+}
+
+function _getGppConsent(bidderRequest) {
+  let gpp = deepAccess(bidderRequest, 'gppConsent.gppString')
+  let gppSid = deepAccess(bidderRequest, 'gppConsent.applicableSections')
+
+  if (!gpp || !gppSid) {
+    gpp = deepAccess(bidderRequest, 'ortb2.regs.gpp', '')
+    gppSid = deepAccess(bidderRequest, 'ortb2.regs.gpp_sid', [])
+  }
+  return { gpp, gppSid }
+}
+
+function _getUspConsent(bidderRequest) {
+  return (deepAccess(bidderRequest, 'uspConsent')) ? { uspConsent: bidderRequest.uspConsent } : false;
+}
+
 function buildRegs(bidderRequest) {
+  let regs = {
+    ext: {},
+  };
   if (bidderRequest.gdprConsent) {
-    return {
-      ext: {
-        gdpr: bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
-        gdprConsentString: bidderRequest.gdprConsent.consentString,
-      },
-    };
+    regs.ext.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+    regs.ext.gdprConsentString = bidderRequest.gdprConsent.consentString;
   }
 
-  return {};
+  regs.coppa = _getCoppa();
+
+  const { gpp, gppSid } = _getGppConsent(bidderRequest);
+
+  if (gpp) {
+    regs.ext.gpp = gpp;
+  }
+
+  if (gppSid) {
+    regs.ext.gppSid = gppSid;
+  }
+
+  const usp = _getUspConsent(bidderRequest);
+
+  if (usp) {
+    regs.ext.us_privacy = usp.uspConsent;
+    regs.ext.ccpa = usp.uspConsent
+  }
+
+  const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
+  if (dsa) {
+    regs.ext.dsa = dsa;
+  }
+
+  return regs;
 }
 
 function buildUser(bid) {
@@ -324,6 +366,13 @@ function buildBid(bid, bidderRequest) {
   // Inticator bid adaptor only returns `vastXml` for video bids. No VastUrl or videoCache.
   if (!bidResponse.vastUrl && bidResponse.vastXml) {
     bidResponse.vastUrl = 'data:text/xml;charset=utf-8;base64,' + window.btoa(bidResponse.vastXml.replace(/\\"/g, '"'));
+  }
+
+  if (bid.ext && bid.ext.dsa) {
+    bidResponse.ext = {
+      ...bidResponse.ext,
+      dsa: bid.ext.dsa,
+    }
   }
 
   return bidResponse;

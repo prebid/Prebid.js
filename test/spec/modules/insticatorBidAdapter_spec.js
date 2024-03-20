@@ -497,11 +497,57 @@ describe('InsticatorBidAdapter', function () {
 
       expect(data.user.id).to.equal(USER_ID_STUBBED);
     });
-    it('should return empty regs object if no gdprConsent is passed', function () {
+    it('should return with coppa regs object if no gdprConsent is passed', function () {
       const requests = spec.buildRequests([bidRequest], { ...bidderRequest, ...{ gdprConsent: false } });
       const data = JSON.parse(requests[0].data);
-      expect(data.regs).to.be.an('object').that.is.empty;
+      expect(data.regs).to.be.an('object');
+      expect(data.regs.coppa).to.be.oneOf([0, 1]);
     });
+
+    it('should return with us_privacy string if uspConsent is passed', function () {
+      const requests = spec.buildRequests([bidRequest], { ...bidderRequest, ...{ uspConsent: '1YNN' } });
+      const data = JSON.parse(requests[0].data);
+      expect(data.regs).to.be.an('object');
+      expect(data.regs.ext).to.be.an('object');
+      expect(data.regs.ext.us_privacy).to.equal('1YNN');
+      expect(data.regs.ext.ccpa).to.equal('1YNN');
+    });
+
+    it('should return with gpp if gppConsent is passed', function () {
+      const requests = spec.buildRequests([bidRequest], { ...bidderRequest, ...{ gppConsent: { gppString: '1YNN', applicableSections: ['1', '2'] } } });
+      const data = JSON.parse(requests[0].data);
+      expect(data.regs).to.be.an('object');
+      expect(data.regs.ext).to.be.an('object');
+      expect(data.regs.ext.gppSid).to.deep.equal(['1', '2']);
+    });
+
+    it('should create the request with dsa data and return with dsa object', function() {
+      const dsa = {
+        dsarequired: 2,
+        pubrender: 1,
+        datatopub: 2,
+        transparency: [{
+          domain: 'google.com',
+          dsaparams: [1, 2]
+        }]
+      }
+      const bidRequestWithDsa = {
+        ...bidderRequest,
+        ortb2: {
+          regs: {
+            ext: {
+              dsa: dsa
+            }
+          }
+        }
+      }
+      const requests = spec.buildRequests([bidRequest], {...bidRequestWithDsa});
+      const data = JSON.parse(requests[0].data);
+      expect(data.regs).to.be.an('object');
+      expect(data.regs.ext).to.be.an('object');
+      expect(data.regs.ext.dsa).to.deep.equal(dsa);
+    });
+
     it('should return empty array if no valid requests are passed', function () {
       expect(spec.buildRequests([], bidderRequest)).to.be.an('array').that.have.lengthOf(0);
     });
@@ -837,4 +883,105 @@ describe('InsticatorBidAdapter', function () {
       expect(bidResponse.vastUrl).to.match(/^data:text\/xml;charset=utf-8;base64,[\w+/=]+$/)
     });
   })
+
+  describe(`Response with DSA data`, function() {
+    const bidRequestDsa = {
+      method: 'POST',
+      url: 'https://ex.ingage.tech/v1/openrtb',
+      options: {
+        contentType: 'application/json',
+        withCredentials: true,
+      },
+      data: '',
+      bidderRequest: {
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
+        timeout: 300,
+        bids: [
+          {
+            bidder: 'insticator',
+            params: {
+              adUnitId: '1a2b3c4d5e6f1a2b3c4d'
+            },
+            adUnitCode: 'adunit-code-1',
+            mediaTypes: {
+              video: {
+                mimes: [
+                  'video/mp4',
+                  'video/mpeg',
+                ],
+                playerSize: [[250, 300]],
+                placement: 2,
+                plcmt: 2,
+              }
+            },
+            bidId: 'bid1',
+          }
+        ],
+        ortb2: {
+          regs: {
+            ext: {
+              dsa: {
+                dsarequired: 2,
+                pubrender: 1,
+                datatopub: 2,
+                transparency: [{
+                  domain: 'google.com',
+                  dsaparams: [1, 2]
+                }]
+              }
+            }}
+        },
+      }
+    };
+
+    const bidResponseDsa = {
+      body: {
+        id: '22edbae2733bf6',
+        bidid: 'foo9876',
+        cur: 'USD',
+        seatbid: [
+          {
+            seat: 'some-dsp',
+            bid: [
+              {
+                ad: '<Vast></Vast>',
+                impid: 'bid1',
+                crid: 'crid1',
+                price: 0.5,
+                w: 300,
+                h: 250,
+                adm: '<VAST version="4.0"><Ad></Ad></VAST>',
+                exp: 60,
+                adomain: ['test1.com'],
+                ext: {
+                  meta: {
+                    test: 1,
+                  },
+                  dsa: {
+                    behalf: 'Advertiser',
+                    paid: 'Advertiser',
+                    transparency: [{
+                      domain: 'google.com',
+                      dsaparams: [1, 2]
+                    }],
+                    adrender: 1
+                  }
+                },
+              }
+            ],
+          },
+        ]
+      }
+    };
+    const bidRequestWithDsa = utils.deepClone(bidRequestDsa);
+    it('should have related properties for DSA data', function() {
+      const serverResponseWithDsa = utils.deepClone(bidResponseDsa);
+      const bidResponse = spec.interpretResponse(serverResponseWithDsa, bidRequestWithDsa)[0];
+      expect(bidResponse).to.have.any.keys('ext');
+      expect(bidResponse.ext.dsa).to.have.property('behalf', 'Advertiser');
+      expect(bidResponse.ext.dsa).to.have.property('paid', 'Advertiser');
+      expect(bidResponse.ext.dsa).to.have.property('adrender', 1);
+    });
+  });
 });
