@@ -12,33 +12,41 @@ const USER_ID_COOKIE_EXP = 2592000000; // 30 days
 const BID_TTL = 300; // 5 minutes
 const GVLID = 910;
 
-const isSubarray = (arr, target) => {
+const filterArray = (arr, target) => {
   if (!isArrayOfNums(arr) || arr.length === 0) {
-    return false;
+    return [];
   }
   const targetSet = new Set(target);
-  return arr.every(el => targetSet.has(el));
+  return arr.filter(el => targetSet.has(el));
 };
+
+const VIDEO_NUM_ARRAY_PARAMS = {
+  'protocols': [2, 3, 5, 6, 7, 8],
+  'api': [1, 2, 3, 4, 5, 6, 7],
+  'playbackmethod': [1, 2, 3, 4, 5, 6, 7],
+  'delivery': [1, 2, 3],
+  'battr': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+}
 
 export const OPTIONAL_VIDEO_PARAMS = {
   'minduration': (value) => isInteger(value),
   'maxduration': (value) => isInteger(value),
-  'protocols': (value) => isSubarray(value, [2, 3, 5, 6, 7, 8]), // protocols values supported by Inticator, according to the OpenRTB spec
+  'protocols': (value) => isArrayOfNums(value), // protocols values supported by Inticator, according to the OpenRTB spec
   'startdelay': (value) => isInteger(value),
   'linearity': (value) => isInteger(value) && [1].includes(value),
   'skip': (value) => isInteger(value) && [1, 0].includes(value),
   'skipmin': (value) => isInteger(value),
   'skipafter': (value) => isInteger(value),
   'sequence': (value) => isInteger(value),
-  'battr': (value) => isSubarray(value, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]),
+  'battr': (value) => isArrayOfNums(value),
   'maxextended': (value) => isInteger(value),
   'minbitrate': (value) => isInteger(value),
   'maxbitrate': (value) => isInteger(value),
-  'playbackmethod': (value) => isSubarray(value, [1, 2, 3, 4]),
+  'playbackmethod': (value) => isArrayOfNums(value),
   'playbackend': (value) => isInteger(value) && [1, 2, 3].includes(value),
-  'delivery': (value) => isSubarray(value, [1, 2, 3]),
+  'delivery': (value) => isArrayOfNums(value),
   'pos': (value) => isInteger(value) && [0, 1, 2, 3, 4, 5, 6, 7].includes(value),
-  'api': (value) => isSubarray(value, [1, 2, 3, 4, 5, 6, 7]),
+  'api': (value) => isArrayOfNums(value),
 };
 
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
@@ -121,10 +129,18 @@ function buildVideo(bidRequest) {
 
   const bidRequestVideo = deepAccess(bidRequest, 'mediaTypes.video');
   const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
+  const videoParams = {
+    ...bidRequestVideo,
+    ...videoBidderParams // bidder specific overrides for video
+  }
   let optionalParams = {};
   for (const param in OPTIONAL_VIDEO_PARAMS) {
-    if (bidRequestVideo[param]) {
-      optionalParams[param] = bidRequestVideo[param];
+    if (videoParams[param]) {
+      if (param in VIDEO_NUM_ARRAY_PARAMS) {
+        optionalParams[param] = filterArray(videoParams[param], VIDEO_NUM_ARRAY_PARAMS[param]);
+      } else {
+        optionalParams[param] = videoParams[param];
+      }
     }
   }
 
@@ -137,8 +153,7 @@ function buildVideo(bidRequest) {
     mimes,
     w,
     h,
-    ...optionalParams,
-    ...videoBidderParams // bidder specific overrides for video
+    ...videoParams // bidder specific overrides for video
   }
 
   return videoObj
