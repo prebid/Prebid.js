@@ -59,7 +59,7 @@ const adUnits = [
         api: [2,7],
         description: 'this is a video description',
         duration: 556,
-        iabcat2: 'test_cat',
+        iabcat2: ['6', '17'],
         id: '54321',
         lang: 'FR',
         private: false,
@@ -75,7 +75,7 @@ const adUnits = [
         video: {
           description: 'this is a test video description',
           duration: 330,
-          iabcat2: 'test_cat',
+          iabcat2: ['6', '17'],
           id: '54321',
           lang: 'FR',
           private: false,
@@ -94,14 +94,14 @@ Following video metadata fields can be added in mediaTypes.video or bids.params.
 
 * `description` - Video description
 * `duration` - Video duration in seconds
-* `iabcat2` - Video IAB category
+* `iabcat2` - List of IAB category IDs from the [2.0 taxonomy](https://github.com/InteractiveAdvertisingBureau/Taxonomies/blob/main/Content%20Taxonomies/Content%20Taxonomy%202.0.tsv)
 * `id` - Video unique ID in host video infrastructure
 * `lang` - ISO 639-1 code for main language used in the video
 * `private` - True if video is not publicly available
 * `tags` - Tags for the video, comma separated
 * `title` - Video title
 * `topics` - Main topics for the video, comma separated
-* `xid` - Dailymotion video identifier (only applicable if using the Dailymotion player) and allows better targeting
+* `xid` - Dailymotion video identifier (only applicable if using the Dailymotion player), allows better targeting
 
 # Integrating the adapter
 

@@ -42,7 +42,7 @@ describe('dailymotionBidAdapterTests', () => {
           api: [2, 7],
           description: 'this is a test video',
           duration: 300,
-          iabcat2: 'test_cat',
+          iabcat2: ['6', '17'],
           lang: 'ENG',
           startdelay: 0,
         },
@@ -152,6 +152,19 @@ describe('dailymotionBidAdapterTests', () => {
         },
       },
       sizes: [],
+    });
+
+    expect(reqData.video_metadata).to.eql({
+      description: '',
+      duration: 0,
+      iabcat2: [],
+      id: '',
+      lang: '',
+      private: false,
+      tags: '',
+      title: '',
+      topics: '',
+      xid: '',
     });
   });
 
