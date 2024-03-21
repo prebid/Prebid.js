@@ -49,6 +49,16 @@ export const OPTIONAL_VIDEO_PARAMS = {
   'api': (value) => isArrayOfNums(value),
 };
 
+const ORTB_SITE_FIRST_PARTY_DATA = {
+  'cat': v => Array.isArray(v) && v.every(c => typeof c === 'string'),
+  'sectioncat': v => Array.isArray(v) && v.every(c => typeof c === 'string'),
+  'pagecat': v => Array.isArray(v) && v.every(c => typeof c === 'string'),
+  'search': v => typeof v === 'string',
+  'mobile': v => isInteger(),
+  'content': v => typeof v === 'object',
+  'keywords': v => typeof v === 'string',
+}
+
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 config.setDefaults({
@@ -340,6 +350,15 @@ function buildRequest(validBidRequests, bidderRequest) {
     req.user.ext = { eids };
   }
 
+  const ortb2SiteData = deepAccess(bidderRequest, 'ortb2.site');
+  if (ortb2SiteData) {
+    for (const key in ORTB_SITE_FIRST_PARTY_DATA) {
+      const value = ortb2SiteData[key];
+      if (value && ORTB_SITE_FIRST_PARTY_DATA[key](value)) {
+        req.site[key] = value;
+      }
+    }
+  }
   return req;
 }
 

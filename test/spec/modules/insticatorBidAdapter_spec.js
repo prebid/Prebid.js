@@ -75,7 +75,7 @@ describe('InsticatorBidAdapter', function () {
     ortb2: {
       source: {
         tid: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
-      }
+      },
     },
     timeout: 300,
     gdprConsent: {
@@ -497,6 +497,7 @@ describe('InsticatorBidAdapter', function () {
 
       expect(data.user.id).to.equal(USER_ID_STUBBED);
     });
+
     it('should return with coppa regs object if no gdprConsent is passed', function () {
       const requests = spec.buildRequests([bidRequest], { ...bidderRequest, ...{ gdprConsent: false } });
       const data = JSON.parse(requests[0].data);
@@ -584,6 +585,41 @@ describe('InsticatorBidAdapter', function () {
       expect(data.imp[0].video.plcmt).to.equal(4);
       expect(data.imp[0].video.w).to.equal(640);
       expect(data.imp[0].video.h).to.equal(480);
+    });
+
+    it('should have sites first party data if present in bidderRequest ortb2', function () {
+      bidderRequest = {
+        ...bidderRequest,
+        ortb2: {
+          ...bidderRequest.ortb2,
+          site: {
+            keywords: 'keyword1,keyword2',
+            search: 'search',
+            content: {
+              title: 'title',
+              keywords: 'keyword3,keyword4',
+              genre: 'rock'
+            },
+            cat: ['IAB1', 'IAB2']
+          }
+        }
+      }
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data).to.have.property('site');
+      expect(data.site).to.have.property('keywords');
+      expect(data.site.keywords).to.equal('keyword1,keyword2');
+      expect(data.site).to.have.property('search');
+      expect(data.site.search).to.equal('search');
+      expect(data.site).to.have.property('content');
+      expect(data.site.content).to.have.property('title');
+      expect(data.site.content.title).to.equal('title');
+      expect(data.site.content).to.have.property('keywords');
+      expect(data.site.content.keywords).to.equal('keyword3,keyword4');
+      expect(data.site.content).to.have.property('genre');
+      expect(data.site.content.genre).to.equal('rock');
+      expect(data.site).to.have.property('cat');
+      expect(data.site.cat).to.deep.equal(['IAB1', 'IAB2']);
     });
   });
 
