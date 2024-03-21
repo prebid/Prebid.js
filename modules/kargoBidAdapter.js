@@ -1,4 +1,4 @@
-import { _each, isEmpty, buildUrl, deepAccess, pick, triggerPixel } from '../src/utils.js';
+import { _each, isEmpty, buildUrl, deepAccess, pick, triggerPixel, logError } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -221,7 +221,7 @@ function interpretResponse(response, bidRequest) {
       width: adUnit.width,
       height: adUnit.height,
       ttl: 300,
-      creativeId: adUnit.id,
+      creativeId: adUnit.creativeID,
       dealId: adUnit.targetingCustom,
       netRevenue: true,
       currency: adUnit.currency || bidRequest.currency,
@@ -459,10 +459,6 @@ function getImpression(bid) {
     code: bid.adUnitCode
   };
 
-  if (bid.floorData != null && bid.floorData.floorMin > 0) {
-    imp.floor = bid.floorData.floorMin;
-  }
-
   if (bid.bidRequestsCount > 0) {
     imp.bidRequestCount = bid.bidRequestsCount;
   }
@@ -482,17 +478,33 @@ function getImpression(bid) {
     }
   }
 
-  if (bid.mediaTypes != null) {
-    if (bid.mediaTypes.banner != null) {
-      imp.banner = bid.mediaTypes.banner;
+  if (bid.mediaTypes) {
+    const { banner, video, native } = bid.mediaTypes;
+
+    if (banner) {
+      imp.banner = banner;
     }
 
-    if (bid.mediaTypes.video != null) {
-      imp.video = bid.mediaTypes.video;
+    if (video) {
+      imp.video = video;
     }
 
-    if (bid.mediaTypes.native != null) {
-      imp.native = bid.mediaTypes.native;
+    if (native) {
+      imp.native = native;
+    }
+
+    if (typeof bid.getFloor === 'function') {
+      let floorInfo;
+      try {
+        floorInfo = bid.getFloor({
+          currency: 'USD',
+          mediaType: '*',
+          size: '*'
+        });
+      } catch (e) {
+        logError('Kargo: getFloor threw an error: ', e);
+      }
+      imp.floor = typeof floorInfo === 'object' && floorInfo.currency === 'USD' && !isNaN(parseInt(floorInfo.floor)) ? floorInfo.floor : undefined;
     }
   }
 
