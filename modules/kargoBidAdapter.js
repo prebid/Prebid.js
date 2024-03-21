@@ -95,13 +95,16 @@ function buildRequests(validBidRequests, bidderRequest) {
       ]
     },
     imp: impressions,
-    user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids, bidderRequest.gppConsent),
+    user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids, bidderRequest.gppConsent)
   });
 
-  if (firstBidRequest.ortb2 != null) {
-    krakenParams.site = {
-      cat: firstBidRequest.ortb2.site.cat
+  // Add full ortb2 object as backup
+  if (firstBidRequest.ortb2) {
+    const siteCat = firstBidRequest.ortb2.site?.cat;
+    if (siteCat != null) {
+      krakenParams.site = { cat: siteCat };
     }
+    krakenParams.ext = { ortb2: firstBidRequest.ortb2 };
   }
 
   // Add schain
@@ -476,6 +479,11 @@ function getImpression(bid) {
     imp.fpd = {
       gpid: gpid
     }
+  }
+
+  // Add full ortb2Imp object as backup
+  if (bid.ortb2Imp) {
+    imp.ext = { ortb2Imp: bid.ortb2Imp };
   }
 
   if (bid.mediaTypes) {
