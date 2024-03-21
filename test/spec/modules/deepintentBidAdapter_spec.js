@@ -371,14 +371,14 @@ describe('Deepintent adapter', function () {
       let bidderReq = {
         ortb2: {
           regs: {
-            gpp: 'gpp-string-test',
+            gpp: 'gpp-test-string',
             gpp_sid: [5]
           }
         }
       };
       let bRequest = spec.buildRequests(request, bidderReq);
       let data = JSON.parse(bRequest.data);
-      expect(data.regs.gpp).to.equal('gpp-string-test');
+      expect(data.regs.gpp).to.equal('gpp-test-string');
       expect(data.regs.gpp_sid[0]).to.equal(5);
     });
     it('should include coppa flag in bid request if coppa is set to true', () => {
