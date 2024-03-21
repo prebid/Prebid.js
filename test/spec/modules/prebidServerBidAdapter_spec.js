@@ -37,6 +37,7 @@ import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {deepSetValue} from '../../../src/utils.js';
 import {ACTIVITY_TRANSMIT_UFPD} from '../../../src/activities/activities.js';
 import {MODULE_TYPE_PREBID} from '../../../src/activities/modules.js';
+import {Renderer} from '../../../src/Renderer.js';
 
 let CONFIG = {
   accountId: '1',
@@ -3144,6 +3145,7 @@ describe('S2S Adapter', function () {
         expect(response).to.have.property('requestId', '123');
         expect(response).to.have.property('cpm', 10);
         expect(response).to.have.property('rendererurl', 'https://example-player.com/renderer.js');
+        expect(response.renderer).to.be.an.instanceOf(Renderer);
       });
 
       it('handles response cache from ext.prebid.cache.vastXml', function () {

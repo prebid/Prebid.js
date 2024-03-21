@@ -171,19 +171,5 @@ describe('video.js', function () {
       const valid = isValidVideoBid(bid, {index: stubAuctionIndex({adUnits})});
       expect(valid).to.equal(false);
     });
-    it('valid outstream bids via dynamic rendererurl', function () {
-      const bid = {
-        transactionId: 'au',
-        rendererurl: 'https://example-player.com/renderer.js'
-      };
-      const adUnits = [{
-        transactionId: 'au',
-        mediaTypes: {
-          video: {context: 'outstream'}
-        }
-      }];
-      const valid = isValidVideoBid(bid, {index: stubAuctionIndex({adUnits})});
-      expect(valid).to.equal(true);
-    });
   })
 });

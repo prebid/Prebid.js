@@ -699,19 +699,6 @@ function getPreparedBidForAuction(bid, {index = auctionManager.index} = {}) {
     bid.renderer.setRender(renderer.render);
   }
 
-  if (bid.rendererurl) {
-    try {
-      bid.renderer = Renderer.install({ url: bid.rendererurl });
-      bid.renderer.setRender((bid) => {
-        bid.renderer.push(() => {
-          window.renderAd(bid);
-        })
-      })
-    } catch (e) {
-      logWarn('Unable to set renderer via rendererurl: ', e);
-    }
-  }
-
   // Use the config value 'mediaTypeGranularity' if it has been defined for mediaType, else use 'customPriceBucket'
   const mediaTypeGranularity = getMediaTypeGranularity(bid.mediaType, mediaTypes, config.getConfig('mediaTypePriceGranularity'));
   const priceStringsObj = getPriceBucketString(

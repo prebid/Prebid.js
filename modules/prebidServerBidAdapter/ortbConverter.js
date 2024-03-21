@@ -25,6 +25,7 @@ import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_TRANSMIT_TID} from '../../src/activities/activities.js';
 import {currencyCompare} from '../../libraries/currencyUtils/currency.js';
 import {minimum} from '../../src/utils/reducers.js';
+import {Renderer} from '../../src/Renderer.js';
 
 const DEFAULT_S2S_TTL = 60;
 const DEFAULT_S2S_CURRENCY = 'USD';
@@ -110,6 +111,19 @@ const PBS_CONVERTER = ortbConverter({
       // Any consumers can now get the same object from bidResponse.native.ortb;
       // I could not find any, which raises the question - who is looking for this?
       bidResponse.adm = bidResponse.native.ortb;
+    }
+
+    if (bidResponse.rendererurl) {
+      try {
+        bidResponse.renderer = Renderer.install({ url: bidResponse.rendererurl });
+        bidResponse.renderer.setRender((bid) => {
+          bidResponse.renderer.push(() => {
+            window.renderAd(bid);
+          })
+        })
+      } catch (e) {
+        logWarn('Unable to set renderer via rendererurl: ', e);
+      }
     }
 
     // because core has special treatment for PBS adapter responses, we need some additional processing
