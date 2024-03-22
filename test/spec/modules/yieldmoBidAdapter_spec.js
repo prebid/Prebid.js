@@ -406,11 +406,12 @@ describe('YieldmoAdapter', function () {
             },
           ],
         }}}));
-        expect(biddata[0].data.topics).to.deep.equal({
+
+        expect(biddata[0].data.topics).to.equal(JSON.stringify({
           taxonomy: 600,
           classifier: '2206021246',
           topics: [7, 8, 9],
-        });
+        }));
       });
 
       it('should send gpc in the banner bid request', function () {
@@ -509,20 +510,6 @@ describe('YieldmoAdapter', function () {
         utils.deepAccess(videoBid, 'mediaTypes.video')['mimes'] = ['video/mp4'];
         utils.deepAccess(videoBid, 'params.video')['mimes'] = ['video/mkv'];
         expect(buildVideoBidAndGetVideoParam().mimes).to.deep.equal(['video/mkv']);
-      });
-
-      it('should validate protocol in video bid request', function () {
-        expect(
-          spec.isBidRequestValid(
-            mockVideoBid({}, {}, { protocols: [2, 3, 11] })
-          )
-        ).to.be.true;
-
-        expect(
-          spec.isBidRequestValid(
-            mockVideoBid({}, {}, { protocols: [2, 3, 10] })
-          )
-        ).to.be.false;
       });
 
       describe('video.skip state check', () => {

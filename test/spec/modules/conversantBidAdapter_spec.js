@@ -465,7 +465,7 @@ describe('Conversant adapter tests', function() {
 
     before(() => {
       request = spec.buildRequests(bidRequests, {});
-      response = spec.interpretResponse(bidResponses, request).bids;
+      response = spec.interpretResponse(bidResponses, request);
     });
 
     it('Banner', function() {

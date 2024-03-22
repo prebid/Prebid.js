@@ -1,5 +1,11 @@
 import * as id5System from '../../../modules/id5IdSystem.js';
-import {coreStorage, getConsentHash, init, requestBidsHook, setSubmoduleRegistry} from '../../../modules/userId/index.js';
+import {
+  coreStorage,
+  getConsentHash,
+  init,
+  requestBidsHook,
+  setSubmoduleRegistry
+} from '../../../modules/userId/index.js';
 import {config} from '../../../src/config.js';
 import * as events from '../../../src/events.js';
 import CONSTANTS from '../../../src/constants.json';
@@ -10,7 +16,7 @@ import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 import {server} from '../../mocks/xhr.js';
 import {expect} from 'chai';
-import { GreedyPromise } from '../../../src/utils/promise.js';
+import {GreedyPromise} from '../../../src/utils/promise.js';
 
 const IdFetchFlow = id5System.IdFetchFlow;
 
@@ -35,6 +41,22 @@ describe('ID5 ID System', function () {
     'signature': ID5_STORED_SIGNATURE,
     'ext': {
       'linkType': ID5_STORED_LINK_TYPE
+    }
+  };
+  const EUID_STORED_ID = 'EUID_1';
+  const EUID_SOURCE = 'uidapi.com';
+  const ID5_STORED_OBJ_WITH_EUID = {
+    'universal_uid': ID5_STORED_ID,
+    'signature': ID5_STORED_SIGNATURE,
+    'ext': {
+      'linkType': ID5_STORED_LINK_TYPE,
+      'euid': {
+        'source': EUID_SOURCE,
+        'uids': [{
+          'id': EUID_STORED_ID,
+          'aType': 3
+        }]
+      }
     }
   };
   const ID5_RESPONSE_ID = 'newid5id';
@@ -886,6 +908,35 @@ describe('ID5 ID System', function () {
       }, {adUnits});
     });
 
+    it('should add stored EUID from cache to bids', function (done) {
+      id5System.storeInLocalStorage(id5System.ID5_STORAGE_NAME, JSON.stringify(ID5_STORED_OBJ_WITH_EUID), 1);
+
+      init(config);
+      setSubmoduleRegistry([id5System.id5IdSubmodule]);
+      config.setConfig(getFetchLocalStorageConfig());
+
+      requestBidsHook(function () {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            expect(bid).to.have.deep.nested.property(`userId.euid`);
+            expect(bid.userId.euid.uid).is.equal(EUID_STORED_ID);
+            expect(bid.userIdAsEids[0].uids[0].id).is.equal(ID5_STORED_ID);
+            expect(bid.userIdAsEids[1]).is.deep.equal({
+              source: EUID_SOURCE,
+              uids: [{
+                id: EUID_STORED_ID,
+                atype: 3,
+                ext: {
+                  provider: ID5_SOURCE
+                }
+              }]
+            })
+          });
+        });
+        done();
+      }, {adUnits});
+    });
+
     it('should add config value ID to bids', function (done) {
       init(config);
       setSubmoduleRegistry([id5System.id5IdSubmodule]);
@@ -983,6 +1034,13 @@ describe('ID5 ID System', function () {
     });
     it('should return undefined if passed a string', function () {
       expect(id5System.id5IdSubmodule.decode('somestring', getId5FetchConfig())).is.eq(undefined);
+    });
+    it('should decode euid from a stored object with EUID', function () {
+      expect(id5System.id5IdSubmodule.decode(ID5_STORED_OBJ_WITH_EUID, getId5FetchConfig()).euid).is.deep.equal({
+        'source': EUID_SOURCE,
+        'uid': EUID_STORED_ID,
+        'ext': {'provider': ID5_SOURCE}
+      });
     });
   });
 

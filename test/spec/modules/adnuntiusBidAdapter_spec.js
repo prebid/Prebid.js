@@ -660,6 +660,47 @@ describe('adnuntiusBidAdapter', function() {
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL);
     });
+
+    it('should user in user', function () {
+      config.setBidderConfig({
+        bidders: ['adnuntius'],
+      });
+      const req = [
+        {
+          bidId: 'adn-000000000008b6bc',
+          bidder: 'adnuntius',
+          params: {
+            auId: '000000000008b6bc',
+            network: 'adnuntius',
+            userId: 'different_user_id'
+          }
+        }
+      ]
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, { bids: req }));
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url')
+      expect(request[0].url).to.equal(`${ENDPOINT_URL_BASE}&userId=different_user_id`);
+    });
+
+    it('should handle no user specified', function () {
+      config.setBidderConfig({
+        bidders: ['adnuntius'],
+      });
+      const req = [
+        {
+          bidId: 'adn-000000000008b6bc',
+          bidder: 'adnuntius',
+          params: {
+            auId: '000000000008b6bc',
+            network: 'adnuntius'
+          }
+        }
+      ]
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, { bids: req }));
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url')
+      expect(request[0].url).to.equal(ENDPOINT_URL);
+    });
   });
 
   describe('user privacy', function() {
