@@ -621,6 +621,51 @@ describe('InsticatorBidAdapter', function () {
       expect(data.site).to.have.property('cat');
       expect(data.site.cat).to.deep.equal(['IAB1', 'IAB2']);
     });
+
+    it('should have device.sua if present in bidderRequest ortb2', function () {
+      bidderRequest = {
+        ...bidderRequest,
+        ortb2: {
+          ...bidderRequest.ortb2,
+          device: {
+            ...bidderRequest.ortb2.device,
+            sua: {}
+          }
+        }
+      }
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data).to.have.property('device');
+      expect(data.device).to.have.property('sua');
+    })
+
+    it('should use param bid_endpoint_request_url for request endpoint if present', function () {
+      const tempBiddRequest = {
+        ...bidRequest,
+        params: {
+          ...bidRequest.params,
+          bid_endpoint_request_url: 'https://example.com'
+        }
+      }
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      expect(requests[0].url).to.equal('https://example.com');
+    });
+
+    it('should have user keywords if present in bidrequest', function () {
+      const tempBiddRequest = {
+        ...bidRequest,
+        params: {
+          ...bidRequest.params,
+          user: {
+            keywords: 'keyword1,keyword2'
+          }
+        }
+      }
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.user).to.have.property('keywords');
+      expect(data.user.keywords).to.equal('keyword1,keyword2');
+    });
   });
 
   describe('interpretResponse', function () {

@@ -274,14 +274,32 @@ function buildUser(bid) {
   const userId = getUserId() || generateUUID();
   const yob = deepAccess(bid, 'params.user.yob')
   const gender = deepAccess(bid, 'params.user.gender')
+  const keywords = deepAccess(bid, 'params.user.keywords')
+  const data = deepAccess(bid, 'params.user.data')
 
   setUserId(userId);
 
-  return {
+  const userData = {
     id: userId,
-    yob,
-    gender,
-  };
+  }
+
+  if (yob) {
+    userData.yob = yob;
+  }
+
+  if (gender) {
+    userData.gender = gender;
+  }
+
+  if (keywords) {
+    userData.keywords = keywords;
+  }
+
+  if (data) {
+    userData.data = data;
+  }
+
+  return userData
 }
 
 function extractSchain(bids, requestId) {
@@ -567,6 +585,13 @@ export const spec = {
     const requests = [];
     let endpointUrl = config.getConfig('insticator.endpointUrl') || ENDPOINT;
     endpointUrl = endpointUrl.replace(/^http:/, 'https:');
+
+    // Use the first bid request's bid_request_url if it exists ( for updating server url)
+    if (validBidRequests.length > 0) {
+      if (deepAccess(validBidRequests[0], 'params.bid_endpoint_request_url')) {
+        endpointUrl = deepAccess(validBidRequests[0], 'params.bid_endpoint_request_url').replace(/^http:/, 'https:');
+      }
+    }
 
     if (validBidRequests.length > 0) {
       requests.push({
