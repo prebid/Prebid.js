@@ -85,12 +85,24 @@ module.exports = {
     'jsdoc/require-yields-check': 'off',
     'jsdoc/tag-lines': 'off',
     // added with latest eslint upgrade
-    'no-unused-expressions': 'off', // this is a good rule, but we have a lot of violations
+    'no-unused-vars': 'warn', // this is a good rule, but we have a lot of violations
+    'n/no-callback-literal': 'warn',
+    'array-bracket-spacing': 'off',
+    'no-unused-expressions': 'warn', // this is a good rule, but we have a lot of violations
     'no-prototype-builtins': 'off',
     'object-curly-spacing': 'off',
     'object-curly-newline': 'off',
+    'object-shorthand': 'off',
+    'lines-between-class-members': 'off',
     'prefer-const': 'off',
-    'no-var': 'off',
+    'no-case-declarations': 'warn', // this is a good rule, but we have a lot of violations
+    'no-loss-of-precision': 'warn', // this is a good rule, but we have a lot of violations
+    'no-multiple-empty-lines': 'off',
+    'computed-property-spacing': 'off',
+    'no-void': 'off',
+    'import/no-absolute-path': 'off',
+    'import/no-named-default': 'warn', // this is a good rule, but we have a lot of violations
+    'multiline-ternary': 'off',
     'quote-props': 'off',
     'dot-notation': 'off',
     'quotes': 'off',

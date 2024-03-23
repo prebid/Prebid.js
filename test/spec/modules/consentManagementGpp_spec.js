@@ -865,7 +865,6 @@ describe('consentManagementGpp', function () {
         return function (command, callback) {
           switch (command) {
             case 'addEventListener':
-              // eslint-disable-next-line standard/no-callback-literal
               callback({eventName: 'sectionChange', pingData})
               break;
             case 'ping':

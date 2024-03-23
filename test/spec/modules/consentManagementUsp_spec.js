@@ -515,7 +515,6 @@ describe('consentManagement', function () {
           if (cmd === 'registerDeletion') {
             throw new Error('CMP not compliant');
           } else if (cmd === 'getUSPData') {
-            // eslint-disable-next-line standard/no-callback-literal
             cb({uspString: 'string'}, true);
           }
         });
@@ -528,7 +527,6 @@ describe('consentManagement', function () {
           if (cmd === 'registerDeletion') {
             cb(null, false);
           } else {
-            // eslint-disable-next-line standard/no-callback-literal
             cb({uspString: 'string'}, true);
           }
         });

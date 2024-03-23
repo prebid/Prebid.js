@@ -135,6 +135,7 @@ function compareOnKeys(lhs, rhs) {
   }
 
   for (var key in rhs) {
+    // eslint-disable-next-line no-empty
     if (key in lhs) {
     } else {
       ronly.push(rhs[key]);
