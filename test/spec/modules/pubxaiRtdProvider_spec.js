@@ -1,3 +1,4 @@
+import * as priceFloors from "../../../modules/priceFloors";
 import {
   beforeInit,
   fetchFloorRules,
@@ -36,6 +37,7 @@ const resetGlobals = () => {
   window.__pubxLoaded__ = undefined;
   window.__pubxPrevFloorsConfig__ = undefined;
   window.__pubxFloorsConfig__ = undefined;
+  window.__pubxFloorRulesPromise__ = null;
 };
 
 const fakeServer = (
@@ -62,6 +64,11 @@ const fakeServer = (
   return fakeServer;
 };
 
+const stubConfig = () => {
+  const stub = sinon.stub(config, "setConfig");
+  return stub;
+};
+
 describe("pubxaiRtdProvider", () => {
   describe("beforeInit", () => {
     it("should register RTD submodule provider", function () {
@@ -79,8 +86,13 @@ describe("pubxaiRtdProvider", () => {
     });
   });
   describe("init", () => {
+    let stub;
     beforeEach(() => {
       resetGlobals();
+      stub = stubConfig();
+    });
+    afterEach(() => {
+      stub.restore();
     });
     it("will return true when `useRtd` is true in the provider config", () => {
       const initResult = pubxaiSubmodule.init({ params: { useRtd: true } });
@@ -95,8 +107,36 @@ describe("pubxaiRtdProvider", () => {
       expect(window.__pubxLoaded__).to.equal(true);
     });
   });
-  // TODO: add getBidRequestData tests
-  describe("getBidRequestData", () => {});
+  describe("getBidRequestData", () => {
+    const reqBidsConfigObj = {
+      adUnits: [{ code: "ad-slot-code-0" }],
+      auctionId: "auction-id-0",
+    };
+    let stub;
+    beforeEach(() => {
+      window.__pubxFloorRulesPromise__ = Promise.resolve();
+      stub = sinon.stub(priceFloors, "createFloorsDataForAuction");
+    });
+    afterEach(() => {
+      resetGlobals();
+      stub.restore();
+    });
+    it("createFloorsDataForAuction called once before and once after __pubxFloorRulesPromise__. Also getBidRequestData executed only once", async () => {
+      pubxaiSubmodule.getBidRequestData(reqBidsConfigObj, () => {});
+      assert(priceFloors.createFloorsDataForAuction.calledOnce);
+      await window.__pubxFloorRulesPromise__;
+      assert(priceFloors.createFloorsDataForAuction.calledTwice);
+      assert(
+        priceFloors.createFloorsDataForAuction.alwaysCalledWith(
+          reqBidsConfigObj.adUnits,
+          reqBidsConfigObj.auctionId
+        )
+      );
+      pubxaiSubmodule.getBidRequestData(reqBidsConfigObj, () => {});
+      await window.__pubxFloorRulesPromise__;
+      assert(priceFloors.createFloorsDataForAuction.calledTwice);
+    });
+  });
   describe("fetchFloorRules", () => {
     const providerConfig = getConfig();
     const floorsResponse = getFloorsResponse();
@@ -127,12 +167,14 @@ describe("pubxaiRtdProvider", () => {
   describe("setPriceFloors", () => {
     const providerConfig = getConfig();
     const floorsResponse = getFloorsResponse();
-    let server;
+    let server, stub;
     beforeEach(() => {
       resetGlobals();
+      stub = stubConfig();
     });
     afterEach(() => {
       server.restore();
+      stub.restore();
     });
     it("with floors response", async () => {
       server = fakeServer(floorsResponse);
@@ -178,21 +220,26 @@ describe("pubxaiRtdProvider", () => {
   });
   describe("setFloorsConfig", () => {
     const providerConfig = getConfig();
+    let stub;
     beforeEach(() => {
       resetGlobals();
+      stub = stubConfig();
+    });
+    afterEach(function () {
+      stub.restore();
     });
     it("non-empty floorResponse", () => {
       const floorsResponse = getFloorsResponse();
       setFloorsConfig(providerConfig, floorsResponse);
       const floorsConfig = getFloorsConfig(providerConfig, floorsResponse);
-      expect(config.getConfig("floors")).to.deep.equal(floorsConfig.floors);
+      assert(config.setConfig.calledOnceWith(floorsConfig));
       expect(window.__pubxLoaded__).to.be.true;
       expect(window.__pubxFloorsConfig__).to.deep.equal(floorsConfig);
     });
     it("empty floorResponse", () => {
       const floorsResponse = null;
       setFloorsConfig(providerConfig, floorsResponse);
-      expect(config.getConfig("floors")).to.equal(undefined);
+      assert(config.setConfig.calledOnceWith({ floors: undefined }));
       expect(window.__pubxLoaded__).to.be.false;
       expect(window.__pubxFloorsConfig__).to.be.null;
     });
@@ -256,29 +303,23 @@ describe("pubxaiRtdProvider", () => {
     });
   });
   describe("setDefaultPriceFloors", () => {
+    let stub;
     beforeEach(() => {
       resetGlobals();
+      stub = stubConfig();
+    });
+    afterEach(function () {
+      stub.restore();
     });
     it("should set default floors config", () => {
       const providerConfig = getConfig();
       setDefaultPriceFloors(providerConfig);
-      expect(config.getConfig("floors")).to.deep.equal(
-        getFloorsConfig(providerConfig, providerConfig.params.data).floors
+      assert(
+        config.setConfig.calledOnceWith(
+          getFloorsConfig(providerConfig, providerConfig.params.data)
+        )
       );
       expect(window.__pubxLoaded__).to.be.true;
     });
   });
 });
-
-// describe("getBidRequestData call", () => {
-//   it("will set floors and buckets to window object", () => {
-//     const endpoint =
-//       "https://qvyrma0fd5.execute-api.ap-south-1.amazonaws.com/default/floors-test";
-//     const providerConfig = { params: { useRtd: false, endpoint } };
-//     pubxaiSubmodule.getBidRequestData(null, null, providerConfig);
-//     setTimeout(() => {
-//       expect(window.__PBXCNFG__.prb).to.be.equal("");
-//       expect(window.__PBXCNFG__.flrs).to.be.equal("");
-//     }, 1000);
-//   });
-// });
