@@ -85,8 +85,10 @@ module.exports = {
     'jsdoc/require-yields-check': 'off',
     'jsdoc/tag-lines': 'off',
     // added with latest eslint upgrade
+    'no-unused-expressions': 'off', // this is a good rule, but we have a lot of violations
     'no-prototype-builtins': 'off',
     'object-curly-spacing': 'off',
+    'object-curly-newline': 'off',
     'prefer-const': 'off',
     'no-var': 'off',
     'quote-props': 'off',
