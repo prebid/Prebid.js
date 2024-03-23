@@ -91,7 +91,9 @@ module.exports = {
     'no-var': 'off',
     'quote-props': 'off',
     'dot-notation': 'off',
-    'quotes': 'off'
+    'quotes': 'off',
+    'prefer-regex-literals': 'off',
+    'array-callback-return': 'off', // this is a good rule, but we have a lot of violations
   },
   overrides: Object.keys(allowedModules).map((key) => ({
     files: key + '/**/*.js',
