@@ -479,6 +479,21 @@ describe('kargo adapter tests', function () {
             floor: 1,
             fpd: {
               gpid: '/22558409563,18834096/dfy_mobile_adhesion'
+            },
+            ext: {
+              ortb2Imp: {
+                ext: {
+                  tid: '10101',
+                  data: {
+                    adServer: {
+                      name: 'gam',
+                      adslot: '/22558409563,18834096/dfy_mobile_adhesion'
+                    },
+                    pbadslot: '/22558409563,18834096/dfy_mobile_adhesion'
+                  },
+                  gpid: '/22558409563,18834096/dfy_mobile_adhesion'
+                }
+              }
             }
           },
           {
@@ -492,7 +507,21 @@ describe('kargo adapter tests', function () {
             fpd: {
               gpid: '/22558409563,18834096/dfy_mobile_adhesion'
             },
-            floor: 2
+            floor: 2,
+            ext: {
+              ortb2Imp: {
+                ext: {
+                  tid: '20202',
+                  data: {
+                    adServer: {
+                      name: 'gam',
+                      adslot: '/22558409563,18834096/dfy_mobile_adhesion'
+                    },
+                    pbadslot: '/22558409563,18834096/dfy_mobile_adhesion'
+                  }
+                }
+              }
+            }
           },
           {
             code: '303',
@@ -505,7 +534,21 @@ describe('kargo adapter tests', function () {
             fpd: {
               gpid: '/22558409563,18834096/dfy_mobile_adhesion'
             },
-            floor: 3
+            floor: 3,
+            ext: {
+              ortb2Imp: {
+                ext: {
+                  tid: '30303',
+                  data: {
+                    adServer: {
+                      name: 'gam',
+                      adslot: '/22558409563,18834096/dfy_mobile_adhesion'
+                    }
+                  },
+                  gpid: '/22558409563,18834096/dfy_mobile_adhesion'
+                }
+              }
+            }
           }
         ],
         socan: {
@@ -555,6 +598,56 @@ describe('kargo adapter tests', function () {
               ]
             }
           ]
+        },
+        ext: {
+          ortb2: {
+            device: {
+              sua: {
+                platform: {
+                  brand: 'macOS',
+                  version: ['12', '6', '0']
+                },
+                browsers: [
+                  {
+                    brand: 'Chromium',
+                    version: ['106', '0', '5249', '119']
+                  },
+                  {
+                    brand: 'Google Chrome',
+                    version: ['106', '0', '5249', '119']
+                  },
+                  {
+                    brand: 'Not;A=Brand',
+                    version: ['99', '0', '0', '0']
+                  }
+                ],
+                mobile: 1,
+                model: 'model',
+                source: 1,
+              }
+            },
+            site: {
+              id: '1234',
+              name: 'SiteName',
+              cat: ['IAB1', 'IAB2', 'IAB3']
+            },
+            user: {
+              data: [
+                {
+                  name: 'prebid.org',
+                  ext: {
+                    segtax: 600,
+                    segclass: 'v1',
+                  },
+                  segment: [
+                    {
+                      id: '133'
+                    },
+                  ]
+                },
+              ]
+            }
+          }
         }
       };
 
