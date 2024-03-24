@@ -53,8 +53,10 @@ function buildRequests(bidReqs, bidderRequest) {
           format: processedSizes,
           ext: {
             viewability: viewabilityAmountRounded,
-            ...gpidData
           }
+        },
+        ext: {
+          ...gpidData
         },
         tagid: String(bid.adUnitCode)
       };
