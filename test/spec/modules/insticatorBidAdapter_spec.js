@@ -683,6 +683,14 @@ describe('InsticatorBidAdapter', function () {
       expect(data.user.ext).to.have.property('consent');
       expect(data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
     });
+
+    it('should have one or more privacy policies if present in bidrequest, like gpp, gdpr and us_privacy', function () {
+      const requests = spec.buildRequests([bidRequest], { ...bidderRequest, ...{ uspConsent: '1YNN' } });
+      const data = JSON.parse(requests[0].data);
+      expect(data.regs.ext).to.have.property('gdpr');
+      expect(data.regs.ext).to.have.property('us_privacy');
+      expect(data.regs.ext).to.have.property('gppSid');
+    });
   });
 
   describe('interpretResponse', function () {
