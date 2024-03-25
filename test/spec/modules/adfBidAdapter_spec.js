@@ -1321,6 +1321,32 @@ describe('Adf adapter', function () {
         assert.equal(bids[0].meta.mediaType, 'video');
       });
 
+      it('should set vastUrl if nurl is present in response', function () {
+        let vastUrl = 'http://url.to/vast'
+        let serverResponse = {
+          body: {
+            seatbid: [{
+              bid: [{ impid: '1', adm: '<vast>', nurl: vastUrl, ext: { prebid: { type: 'video' } } }]
+            }]
+          }
+        };
+        let bidRequest = {
+          data: {},
+          bids: [
+            {
+              bidId: 'bidId1',
+              params: { mid: 1000 }
+            }
+          ]
+        };
+
+        bids = spec.interpretResponse(serverResponse, bidRequest);
+        assert.equal(bids.length, 1);
+        assert.equal(bids[0].vastUrl, vastUrl);
+        assert.equal(bids[0].mediaType, 'video');
+        assert.equal(bids[0].meta.mediaType, 'video');
+      });
+
       it('should add renderer for outstream bids', function () {
         let serverResponse = {
           body: {
