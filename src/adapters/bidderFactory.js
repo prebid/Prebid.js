@@ -293,15 +293,13 @@ export function newBidder(spec) {
           onTimelyResponse(spec.code);
           responses.push(resp)
         },
-        onFledgeAuctionConfigs: (fledgeAuctionConfigs) => {
-          fledgeAuctionConfigs.forEach((fledgeAuctionConfig) => {
-            const bidRequest = bidRequestMap[fledgeAuctionConfig.bidId];
-            if (bidRequest) {
-              addComponentAuction(bidRequest, fledgeAuctionConfig.config);
-            } else {
-              logWarn('Received fledge auction configuration for an unknown bidId', fledgeAuctionConfig);
-            }
-          });
+        onPaapi: (paapiConfig) => {
+          const bidRequest = bidRequestMap[paapiConfig.bidId];
+          if (bidRequest) {
+            addComponentAuction(bidRequest, paapiConfig.config);
+          } else {
+            logWarn('Received fledge auction configuration for an unknown bidId', paapiConfig);
+          }
         },
         // If the server responds with an error, there's not much we can do beside logging.
         onError: (errorMessage, error) => {
@@ -378,7 +376,7 @@ export function newBidder(spec) {
  * @param onBid {function({})} invoked once for each bid in the response - with the bid as returned by interpretResponse
  * @param onCompletion {function()} invoked once when all bid requests have been processed
  */
-export const processBidderRequests = hook('sync', function (spec, bids, bidderRequest, ajax, wrapCallback, {onRequest, onResponse, onFledgeAuctionConfigs, onError, onBid, onCompletion}) {
+export const processBidderRequests = hook('sync', function (spec, bids, bidderRequest, ajax, wrapCallback, {onRequest, onResponse, onPaapi, onError, onBid, onCompletion}) {
   const metrics = adapterMetrics(bidderRequest);
   onCompletion = metrics.startTiming('total').stopBefore(onCompletion);
 
@@ -427,7 +425,7 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
       let bids;
       // Extract additional data from a structured {BidderAuctionResponse} response
       if (response && isArray(response.fledgeAuctionConfigs)) {
-        onFledgeAuctionConfigs(response.fledgeAuctionConfigs);
+        response.fledgeAuctionConfigs.forEach(onPaapi);
         bids = response.bids;
       } else {
         bids = response;

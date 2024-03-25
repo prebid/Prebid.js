@@ -173,6 +173,7 @@ describe('MediaSquare bid adapter tests', function () {
     const responsefloor = JSON.parse(requestfloor.data);
     expect(responsefloor.codes[0]).to.have.property('floor').exist;
     expect(responsefloor.codes[0].floor).to.have.property('300x250').and.to.have.property('floor').and.to.equal(1);
+    expect(responsefloor.codes[0].floor).to.have.property('*');
   });
 
   it('Verify parse response', function () {
