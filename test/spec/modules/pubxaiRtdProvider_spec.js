@@ -158,8 +158,17 @@ describe('pubxaiRtdProvider', () => {
       const res = await fetchFloorRules(providerConfig);
       expect(res).to.equal(null);
     });
-    it('failure case', async () => {
+    it('API call error', async () => {
       server = fakeServer(undefined, undefined, 404);
+      try {
+        const res = await fetchFloorRules(providerConfig);
+        expect(true).to.be.false;
+      } catch (e) {
+        expect(e).to.not.be.undefined;
+      }
+    });
+    it('Wrong API response', async () => {
+      server = fakeServer('floorsResponse');
       try {
         const res = await fetchFloorRules(providerConfig);
         expect(true).to.be.false;
