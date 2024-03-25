@@ -78,6 +78,7 @@ describe('InsticatorBidAdapter', function () {
       },
     },
     timeout: 300,
+    gdprApplies: 1,
     gdprConsent: {
       consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
       vendorData: {},
@@ -259,25 +260,6 @@ describe('InsticatorBidAdapter', function () {
           }
         }
       })).to.be.true;
-    });
-
-    it('should return false if optional video fields are not valid', () => {
-      expect(spec.isBidRequestValid({
-        ...bidRequest,
-        ...{
-          mediaTypes: {
-            video: {
-              mimes: [
-                'video/mp4',
-                'video/mpeg',
-              ],
-              playerSize: [250, 300],
-              placement: 1,
-              startdelay: 'NaN',
-            },
-          }
-        }
-      })).to.be.false;
     });
 
     it('should return false if video min duration > max duration', () => {
@@ -665,6 +647,41 @@ describe('InsticatorBidAdapter', function () {
       const data = JSON.parse(requests[0].data);
       expect(data.user).to.have.property('keywords');
       expect(data.user.keywords).to.equal('keyword1,keyword2');
+    });
+
+    it('should remove video params if they are invalid', function () {
+      const tempBiddRequest = {
+        ...bidRequest,
+        mediaTypes: {
+          ...bidRequest.mediaTypes,
+          video: {
+            mimes: [
+              'video/mp4',
+              'video/mpeg',
+              'video/x-flv',
+              'video/webm',
+              'video/ogg',
+            ],
+            protocols: 'NaN',
+            w: '300',
+            h: '250',
+          }
+        }
+      }
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.imp[0].video).to.not.have.property('plcmt');
+    });
+
+    it('should have user consent and gdpr string if gdprConsent is passed', function () {
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.regs).to.be.an('object');
+      expect(data.regs.ext).to.be.an('object');
+      expect(data.regs.ext.gdpr).to.equal(1);
+      expect(data.regs.ext.gdprConsentString).to.equal(bidderRequest.gdprConsent.consentString);
+      expect(data.user.ext).to.have.property('consent');
+      expect(data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
     });
   });
 

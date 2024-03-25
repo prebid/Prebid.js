@@ -12,22 +12,6 @@ const USER_ID_COOKIE_EXP = 2592000000; // 30 days
 const BID_TTL = 300; // 5 minutes
 const GVLID = 910;
 
-const filterArray = (arr, target) => {
-  if (!isArrayOfNums(arr) || arr.length === 0) {
-    return [];
-  }
-  const targetSet = new Set(target);
-  return arr.filter(el => targetSet.has(el));
-};
-
-const VIDEO_NUM_ARRAY_PARAMS = {
-  'protocols': [2, 3, 5, 6, 7, 8],
-  'api': [1, 2, 3, 4, 5, 6, 7],
-  'playbackmethod': [1, 2, 3, 4, 5, 6, 7],
-  'delivery': [1, 2, 3],
-  'battr': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
-}
-
 export const OPTIONAL_VIDEO_PARAMS = {
   'minduration': (value) => isInteger(value),
   'maxduration': (value) => isInteger(value),
@@ -139,18 +123,15 @@ function buildVideo(bidRequest) {
 
   const bidRequestVideo = deepAccess(bidRequest, 'mediaTypes.video');
   const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
-  const videoParams = {
-    ...bidRequestVideo,
-    ...videoBidderParams // bidder specific overrides for video
-  }
+
   let optionalParams = {};
   for (const param in OPTIONAL_VIDEO_PARAMS) {
-    if (videoParams[param]) {
-      if (param in VIDEO_NUM_ARRAY_PARAMS) {
-        optionalParams[param] = filterArray(videoParams[param], VIDEO_NUM_ARRAY_PARAMS[param]);
-      } else {
-        optionalParams[param] = videoParams[param];
-      }
+    if (bidRequestVideo[param] && OPTIONAL_VIDEO_PARAMS[param](bidRequestVideo[param])) {
+      optionalParams[param] = bidRequestVideo[param];
+    }
+    // remove invalid optional params from bidder specific overrides
+    if (videoBidderParams[param] && !OPTIONAL_VIDEO_PARAMS[param](videoBidderParams[param])) {
+      delete videoBidderParams[param];
     }
   }
 
@@ -163,7 +144,8 @@ function buildVideo(bidRequest) {
     mimes,
     w,
     h,
-    ...videoParams // bidder specific overrides for video
+    ...optionalParams,
+    ...videoBidderParams // bidder specific overrides for video
   }
 
   return videoObj
@@ -276,6 +258,7 @@ function buildUser(bid) {
   const gender = deepAccess(bid, 'params.user.gender')
   const keywords = deepAccess(bid, 'params.user.keywords')
   const data = deepAccess(bid, 'params.user.data')
+  const ext = deepAccess(bid, 'params.user.ext')
 
   setUserId(userId);
 
@@ -297,6 +280,10 @@ function buildUser(bid) {
 
   if (data) {
     userData.data = data;
+  }
+
+  if (ext) {
+    userData.ext = ext;
   }
 
   return userData
@@ -377,6 +364,11 @@ function buildRequest(validBidRequests, bidderRequest) {
       }
     }
   }
+
+  if (req.regs.ext.gdpr === 1 && req.regs.ext.gdprConsentString) {
+    req.user.ext.consent = req.regs.ext.gdprConsentString || '';
+  }
+
   return req;
 }
 
@@ -554,7 +546,6 @@ function validateVideo(bid) {
     if (video[param]) {
       if (!OPTIONAL_VIDEO_PARAMS[param](video[param])) {
         logError(`insticator: video ${param} is invalid or not supported by insticator`);
-        return false
       }
     }
   }
