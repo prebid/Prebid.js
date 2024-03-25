@@ -100,7 +100,7 @@ const BID2 = Object.assign({}, BID, {
   adserverTargeting: {
     'hb_bidder': 'pubmatic',
     'hb_adid': '3bd4ebb1c900e2',
-    'hb_pb': '1.500',
+    'hb_pb': 1.50,
     'hb_size': '728x90',
     'hb_source': 'server'
   },
@@ -606,6 +606,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].ps[0].ocpm).to.equal(1.23);
       expect(data.s[0].ps[0].ocry).to.equal('USD');
       expect(data.s[0].ps[0].frv).to.equal(1.1);
+      expect(data.s[0].ps[0].pb).to.equal(1.2);
       // slot 2
       expect(data.s[1].sn).to.equal('/19968336/header-bid-tag-1');
       expect(data.s[1].fskp).to.equal(0);
@@ -640,6 +641,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].ocpm).to.equal(1.52);
       expect(data.s[1].ps[0].ocry).to.equal('USD');
       expect(data.s[1].ps[0].frv).to.equal(1.1);
+      expect(data.s[1].ps[0].pb).to.equal(1.50);
 
       // tracker slot1
       let firstTracker = requests[0].url;
@@ -812,6 +814,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].ps[0].ocpm).to.equal(1.23);
       expect(data.s[0].ps[0].ocry).to.equal('USD');
       expect(data.s[1].ps[0].frv).to.equal(1.1);
+      expect(data.s[1].ps[0].pb).to.equal(1.50);
       // tracker slot1
       let firstTracker = requests[0].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
@@ -1035,6 +1038,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].ocpm).to.equal(1.52);
       expect(data.s[1].ps[0].ocry).to.equal('USD');
       expect(data.s[1].ps[0].frv).to.equal(1.1);
+      expect(data.s[1].ps[0].pb).to.equal(1.50);
     });
 
     it('Logger: currency conversion check', function() {
@@ -1149,6 +1153,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].ocpm).to.equal(1.52);
       expect(data.s[1].ps[0].ocry).to.equal('USD');
       expect(data.s[1].ps[0].frv).to.equal(1.1);
+      expect(data.s[1].ps[0].pb).to.equal(1.50);
       expect(data.dvc).to.deep.equal({'plt': 2});
       // respective tracker slot
       let firstTracker = requests[1].url;
@@ -1209,6 +1214,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].ocry).to.equal('USD');
       expect(data.dvc).to.deep.equal({'plt': 1});
       expect(data.s[1].ps[0].frv).to.equal(1.1);
+      expect(data.s[1].ps[0].pb).to.equal(1.50);
       // respective tracker slot
       let firstTracker = requests[1].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
@@ -1267,6 +1273,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].ocpm).to.equal(1.52);
       expect(data.s[1].ps[0].ocry).to.equal('USD');
       expect(data.s[1].ps[0].frv).to.equal(1.1);
+      expect(data.s[1].ps[0].pb).to.equal(1.50);
       // respective tracker slot
       let firstTracker = requests[1].url;
       expect(firstTracker.split('?')[0]).to.equal('https://t.pubmatic.com/wt');
@@ -1388,6 +1395,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].ocpm).to.equal(1.52);
       expect(data.s[1].ps[0].ocry).to.equal('USD');
       expect(data.s[1].ps[0].frv).to.equal(1.1);
+      expect(data.s[1].ps[0].pb).to.equal(1.50);
     });
 
     it('Logger: best case + win tracker in case of Bidder Aliases', function() {
@@ -1466,6 +1474,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].ps[0].ocpm).to.equal(1.23);
       expect(data.s[0].ps[0].ocry).to.equal('USD');
       expect(data.s[0].ps[0].frv).to.equal(1.1);
+      expect(data.s[0].ps[0].pb).to.equal(1.2);
 
       // slot 2
       expect(data.s[1].sn).to.equal('/19968336/header-bid-tag-1');
@@ -1501,6 +1510,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[1].ps[0].ocpm).to.equal(1.52);
       expect(data.s[1].ps[0].ocry).to.equal('USD');
       expect(data.s[1].ps[0].frv).to.equal(1.1);
+      expect(data.s[1].ps[0].pb).to.equal(1.50);
 
       // tracker slot1
       let firstTracker = requests[0].url;
@@ -1596,6 +1606,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.s[0].ps[0].ocpm).to.equal(1.23);
       expect(data.s[0].ps[0].ocry).to.equal('USD');
       expect(data.s[0].ps[0].frv).to.equal(1.1);
+      expect(data.s[0].ps[0].pb).to.equal(1.2);
 
       // slot 2
       expect(data.s[1].sn).to.equal('/19968336/header-bid-tag-1');

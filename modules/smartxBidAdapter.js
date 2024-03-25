@@ -21,6 +21,12 @@ import {
 import {
   VIDEO
 } from '../src/mediaTypes.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'smartx';
 const URL = 'https://bid.sxp.smartclip.net/bid/1000';
 const GVLID = 115;

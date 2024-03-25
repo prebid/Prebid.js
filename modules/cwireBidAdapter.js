@@ -4,12 +4,19 @@ import {BANNER} from '../src/mediaTypes.js';
 import {generateUUID, getParameterByName, isNumber, logError, logInfo} from '../src/utils.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
+
 // ------------------------------------
 const BIDDER_CODE = 'cwire';
 const CWID_KEY = 'cw_cwid';
 
 export const BID_ENDPOINT = 'https://prebid.cwi.re/v1/bid';
 export const EVENT_ENDPOINT = 'https://prebid.cwi.re/v1/event';
+export const GVL_ID = 1081;
 
 /**
  * Allows limiting ad impressions per site render. Unique per prebid instance ID.
@@ -134,6 +141,7 @@ function getCwExtension() {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVL_ID,
   supportedMediaTypes: [BANNER],
 
   /**

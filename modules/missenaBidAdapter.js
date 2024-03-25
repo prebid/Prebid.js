@@ -1,6 +1,7 @@
 import {
   buildUrl,
   formatQS,
+  generateUUID,
   isFn,
   logInfo,
   safeJSONParse,
@@ -11,12 +12,20 @@ import { BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'missena';
 const ENDPOINT_URL = 'https://bid.missena.io/';
 const EVENTS_DOMAIN = 'events.missena.io';
 const EVENTS_DOMAIN_DEV = 'events.staging.missena.xyz';
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
+window.msna_ik = window.msna_ik || generateUUID();
 
 /* Get Floor price information */
 function getFloor(bidRequest) {
@@ -72,6 +81,7 @@ export const spec = {
     return validBidRequests.map((bidRequest) => {
       const payload = {
         adunit: bidRequest.adUnitCode,
+        ik: window.msna_ik,
         request_id: bidRequest.bidId,
         timeout: bidderRequest.timeout,
       };
@@ -99,7 +109,11 @@ export const spec = {
       if (bidRequest.params.isInternal) {
         payload.is_internal = bidRequest.params.isInternal;
       }
+      if (bidRequest.ortb2?.device?.ext?.cdep) {
+        payload.cdep = bidRequest.ortb2?.device?.ext?.cdep;
+      }
       payload.userEids = bidRequest.userIdAsEids || [];
+      payload.version = '$prebid.version$';
 
       const bidFloor = getFloor(bidRequest);
       payload.floor = bidFloor?.floor;

@@ -2,6 +2,14 @@ import {getValue, formatQS, logError, deepAccess, isArray, getBidIdParameter} fr
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
+import { Renderer } from '../src/Renderer.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ */
+
 export const OPENRTB = {
   NATIVE: {
     IMAGE_TYPE: {
@@ -26,11 +34,13 @@ export const OPENRTB = {
 
 let SYNC_URL = '';
 const BIDDER_CODE = 'admatic';
+const RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 1281,
   aliases: [
-    {code: 'pixad'}
+    {code: 'pixad', gvlid: 1281}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
@@ -183,38 +193,45 @@ export const spec = {
   interpretResponse: (response, request) => {
     const body = response.body;
     const bidResponses = [];
+
     if (body && body?.data && isArray(body.data)) {
       body.data.forEach(bid => {
-        const resbid = {
-          requestId: bid.id,
-          cpm: bid.price,
-          width: bid.width,
-          height: bid.height,
-          currency: body.cur || 'TRY',
-          netRevenue: true,
-          creativeId: bid.creative_id,
-          meta: {
-            model: bid.mime_type,
-            advertiserDomains: bid && bid.adomain ? bid.adomain : []
-          },
-          bidder: bid.bidder,
-          mediaType: bid.type,
-          ttl: 60
-        };
+        const bidRequest = getAssociatedBidRequest(request.data.imp, bid);
+        if (bidRequest) {
+          const resbid = {
+            requestId: bid.id,
+            cpm: bid.price,
+            width: bid.width,
+            height: bid.height,
+            currency: body.cur || 'TRY',
+            netRevenue: true,
+            creativeId: bid.creative_id,
+            meta: {
+              model: bid.mime_type,
+              advertiserDomains: bid && bid.adomain ? bid.adomain : []
+            },
+            bidder: bid.bidder,
+            mediaType: bid.type,
+            ttl: 60
+          };
 
-        if (resbid.mediaType === 'video' && isUrl(bid.party_tag)) {
-          resbid.vastUrl = bid.party_tag;
-          resbid.vastImpUrl = bid.iurl;
-        } else if (resbid.mediaType === 'video') {
-          resbid.vastXml = bid.party_tag;
-          resbid.vastImpUrl = bid.iurl;
-        } else if (resbid.mediaType === 'banner') {
-          resbid.ad = bid.party_tag;
-        } else if (resbid.mediaType === 'native') {
-          resbid.native = interpretNativeAd(bid.party_tag)
-        };
+          if (resbid.mediaType === 'video' && isUrl(bid.party_tag)) {
+            resbid.vastUrl = bid.party_tag;
+          } else if (resbid.mediaType === 'video') {
+            resbid.vastXml = bid.party_tag;
+          } else if (resbid.mediaType === 'banner') {
+            resbid.ad = bid.party_tag;
+          } else if (resbid.mediaType === 'native') {
+            resbid.native = interpretNativeAd(bid.party_tag)
+          };
 
-        bidResponses.push(resbid);
+          const context = deepAccess(bidRequest, 'mediatype.context');
+          if (resbid.mediaType === 'video' && context === 'outstream') {
+            resbid.renderer = createOutstreamVideoRenderer(bid);
+          }
+
+          bidResponses.push(resbid);
+        }
       });
     }
     return bidResponses;
@@ -264,6 +281,40 @@ function isUrl(str) {
     return false;
   }
 };
+
+function outstreamRender (bid) {
+  bid.renderer.push(() => {
+    window.ANOutstreamVideo.renderAd({
+      targetId: bid.adUnitCode,
+      adResponse: bid.adResponse
+    });
+  });
+}
+
+function createOutstreamVideoRenderer(bid) {
+  const renderer = Renderer.install({
+    id: bid.bidId,
+    url: RENDERER_URL,
+    loaded: false
+  });
+
+  try {
+    renderer.setRender(outstreamRender);
+  } catch (err) {
+    logError('Prebid Error calling setRender on renderer' + err);
+  }
+
+  return renderer;
+}
+
+function getAssociatedBidRequest(bidRequests, bid) {
+  for (const request of bidRequests) {
+    if (request.id === bid.id) {
+      return request;
+    }
+  }
+  return undefined;
+}
 
 function enrichSlotWithFloors(slot, bidRequest) {
   try {

@@ -20,6 +20,7 @@ const BIDDER_CODE = 'rise';
 const ADAPTER_VERSION = '6.0.0';
 const TTL = 360;
 const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_GVLID = 1043;
 const DEFAULT_SELLER_ENDPOINT = 'https://hb.yellowblue.io/';
 const MODES = {
   PRODUCTION: 'hb-multi',
@@ -32,7 +33,11 @@ const SUPPORTED_SYNC_METHODS = {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: 1043,
+  aliases: [
+    { code: 'risexchange', gvlid: DEFAULT_GVLID },
+    { code: 'openwebxchange', gvlid: 280 }
+  ],
+  gvlid: DEFAULT_GVLID,
   version: ADAPTER_VERSION,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function (bidRequest) {
@@ -463,6 +468,14 @@ function generateGeneralParams(generalObject, bidderRequest) {
   if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
     generalParams.gdpr = bidderRequest.gdprConsent.gdprApplies;
     generalParams.gdpr_consent = bidderRequest.gdprConsent.consentString;
+  }
+
+  if (bidderRequest && bidderRequest.gppConsent) {
+    generalParams.gpp = bidderRequest.gppConsent.gppString;
+    generalParams.gpp_sid = bidderRequest.gppConsent.applicableSections;
+  } else if (bidderRequest.ortb2?.regs?.gpp) {
+    generalParams.gpp = bidderRequest.ortb2.regs.gpp;
+    generalParams.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
   }
 
   if (generalBidParams.ifa) {
