@@ -15,7 +15,7 @@ var helpers = require('./gulpHelpers.js');
 var concat = require('gulp-concat');
 var replace = require('gulp-replace');
 var shell = require('gulp-shell');
-var eslint = require('gulp-eslint');
+var eslint = require('gulp-eslint-new');
 var gulpif = require('gulp-if');
 var sourcemaps = require('gulp-sourcemaps');
 var through = require('through2');
@@ -27,6 +27,8 @@ const {minify} = require('terser');
 const Vinyl = require('vinyl');
 const wrap = require('gulp-wrap');
 const rename = require('gulp-rename');
+var ts = require('gulp-typescript');
+var tsProject = ts.createProject('tsconfig.json');
 
 var prebid = require('./package.json');
 var port = 9999;
@@ -74,12 +76,13 @@ function escapePostbidConfig() {
 };
 escapePostbidConfig.displayName = 'escape-postbid-config';
 
+const isFixed = function (file) {
+  return file.eslint != null && file.eslint.fixed;
+}
+
 function lint(done) {
   if (argv.nolint) {
     return done();
-  }
-  const isFixed = function (file) {
-    return file.eslint != null && file.eslint.fixed;
   }
   return gulp.src([
     'src/**/*.js',
@@ -88,8 +91,13 @@ function lint(done) {
     'creative/**/*.js',
     'test/**/*.js',
     'plugins/**/*.js',
-    '!plugins/**/node_modules/**',
-    './*.js'
+    'src/**/*.ts',
+    'modules/**/*.ts',
+    'libraries/**/*.ts',
+    'creative/**/*.ts',
+    'test/**/*.ts',
+    'plugins/**/*.ts',
+    '!plugins/**/node_modules/**'
   ], { base: './' })
     .pipe(eslint({ fix: !argv.nolintfix, quiet: !(typeof argv.lintWarnings === 'boolean' ? argv.lintWarnings : true) }))
     .pipe(eslint.format('stylish'))
@@ -127,6 +135,25 @@ function viewReview(done) {
 
 viewReview.displayName = 'view-review';
 
+function transpile() {
+  var externalModules = helpers.getArgModules();
+  const analyticsSources = helpers.getAnalyticsSources();
+  const moduleSources = helpers.getModulePaths(externalModules);
+
+  const tsFiles = [].concat(moduleSources, analyticsSources, 'src/prebid.ts').filter(file => file.endsWith('.ts'));
+
+  gutil.log('transpiling ' + tsFiles.length + ' ts files ');
+  gutil.log(tsFiles.join('\n'));
+
+  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.ts').filter(file => file.endsWith('.ts')))
+    .pipe(tsProject()).js
+    // the generated files should all be fixed
+    .pipe(eslint({ fix: true, quiet: true }))
+    .pipe(eslint.format('stylish'))
+    // pipe the files next to their ts file so they can be imported by other js files during the migration period
+    .pipe(gulp.dest(file => file.base));
+}
+
 function makeDevpackPkg() {
   var cloned = _.cloneDeep(webpackConfig);
   Object.assign(cloned, {
@@ -148,6 +175,7 @@ function makeDevpackPkg() {
   const moduleSources = helpers.getModulePaths(externalModules);
 
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+    .pipe(tsProject()).js
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(cloned, webpack))
     .pipe(gulp.dest('build/dev'))
@@ -167,6 +195,7 @@ function makeWebpackPkg(extraConfig = {}) {
     const moduleSources = helpers.getModulePaths(externalModules);
 
     return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+      .pipe(tsProject()).js
       .pipe(helpers.nameModules(externalModules))
       .pipe(webpackStream(cloned, webpack))
       .pipe(gulp.dest('build/dist'));
@@ -488,8 +517,8 @@ gulp.task(escapePostbidConfig);
 gulp.task('build-creative-dev', gulp.series(buildCreative(argv.creativeDev ? 'development' : 'production'), updateCreativeRenderers));
 gulp.task('build-creative-prod', gulp.series(buildCreative(), updateCreativeRenderers));
 
-gulp.task('build-bundle-dev', gulp.series('build-creative-dev', makeDevpackPkg, gulpBundle.bind(null, true)));
-gulp.task('build-bundle-prod', gulp.series('build-creative-prod', makeWebpackPkg(), gulpBundle.bind(null, false)));
+gulp.task('build-bundle-dev', gulp.series(transpile, 'build-creative-dev', makeDevpackPkg, gulpBundle.bind(null, true)));
+gulp.task('build-bundle-prod', gulp.series(transpile, 'build-creative-prod', makeWebpackPkg(), gulpBundle.bind(null, false)));
 // build-bundle-verbose - prod bundle except names and comments are preserved. Use this to see the effects
 // of dead code elimination.
 gulp.task('build-bundle-verbose', gulp.series(makeWebpackPkg({
@@ -510,19 +539,20 @@ gulp.task('build-bundle-verbose', gulp.series(makeWebpackPkg({
 }), gulpBundle.bind(null, false)));
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
+gulp.task('transpile', gulp.series(transpile));
 gulp.task('test-only', test);
 gulp.task('test-all-features-disabled', testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false}));
-gulp.task('test', gulp.series(clean, lint, 'test-all-features-disabled', 'test-only'));
+gulp.task('test', gulp.series(clean, transpile, lint, 'test-all-features-disabled', 'test-only'));
 
 gulp.task('test-coverage', gulp.series(clean, testCoverage));
 gulp.task(viewCoverage);
 
 gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 
-gulp.task('build', gulp.series(clean, 'build-bundle-prod', updateCreativeExample));
+gulp.task('build', gulp.series(clean, transpile, 'build-bundle-prod', updateCreativeExample));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
-gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
+gulp.task('serve', gulp.series(clean, transpile, lint, gulp.parallel('build-bundle-dev', watch, test)));
 gulp.task('serve-fast', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast)));
 gulp.task('serve-prod', gulp.series(clean, gulp.parallel('build-bundle-prod', startLocalServer)));
 gulp.task('serve-and-test', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast, testTaskMaker({watch: true}))));

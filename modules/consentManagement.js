@@ -159,7 +159,6 @@ function loadConsentData(cb) {
 function loadIfMissing(cb) {
   if (consentData) {
     logInfo('User consent information already known.  Pulling internally stored information...');
-    // eslint-disable-next-line standard/no-callback-literal
     cb(false);
   } else {
     loadConsentData(cb);

@@ -411,7 +411,6 @@ export function newConfig() {
       if (topic === ALL_TOPICS) {
         callback(getConfig());
       } else {
-        // eslint-disable-next-line standard/no-callback-literal
         callback({[topic]: getConfig(topic)});
       }
     }

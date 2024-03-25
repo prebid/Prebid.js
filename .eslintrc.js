@@ -1,4 +1,3 @@
-
 const allowedModules = require('./allowedModules.js');
 
 module.exports = {
@@ -12,7 +11,7 @@ module.exports = {
         moduleDirectory: ['node_modules', './']
       }
     },
-    'jsdoc': {
+    jsdoc: {
       mode: 'typescript',
       tagNamePreference: {
         'tag constructor': 'constructor',
@@ -24,25 +23,32 @@ module.exports = {
   },
   extends: [
     'standard',
-    'plugin:jsdoc/recommended'
+    'plugin:jsdoc/recommended',
+    // 'plugin:@typescript-eslint/eslint-recommended',
+    // 'plugin:@typescript-eslint/recommended'
   ],
   plugins: [
     'prebid',
     'import',
-    'jsdoc'
+    'jsdoc', // this can be removed after the typescript integration
+    '@typescript-eslint'
   ],
   globals: {
-    'BROWSERSTACK_USERNAME': false,
-    'BROWSERSTACK_KEY': false,
-    'FEATURES': 'readonly',
+    BROWSERSTACK_USERNAME: false,
+    BROWSERSTACK_KEY: false,
+    FEATURES: 'readonly',
   },
   // use babel as parser for fancy syntax
-  parser: '@babel/eslint-parser',
+  parser: '@typescript-eslint/parser',
   parserOptions: {
     sourceType: 'module',
     ecmaVersion: 2018,
   },
-  ignorePatterns: ['libraries/creative-renderer*'],
+  ignorePatterns: [
+    'libraries/creative-renderer*',
+    // add all js files that are transpiled from ts here
+    'src/prebid.js'
+  ],
 
   rules: {
     'comma-dangle': 'off',
@@ -77,7 +83,31 @@ module.exports = {
     'jsdoc/require-returns-type': 'off',
     'jsdoc/require-yields': 'off',
     'jsdoc/require-yields-check': 'off',
-    'jsdoc/tag-lines': 'off'
+    'jsdoc/tag-lines': 'off',
+    // added with latest eslint upgrade
+    'no-unused-vars': 'warn', // this is a good rule, but we have a lot of violations
+    'n/no-callback-literal': 'warn',
+    'array-bracket-spacing': 'off',
+    'no-unused-expressions': 'warn', // this is a good rule, but we have a lot of violations
+    'no-prototype-builtins': 'off',
+    'object-curly-spacing': 'off',
+    'object-curly-newline': 'off',
+    'object-shorthand': 'off',
+    'lines-between-class-members': 'off',
+    'prefer-const': 'off',
+    'no-case-declarations': 'warn', // this is a good rule, but we have a lot of violations
+    'no-loss-of-precision': 'warn', // this is a good rule, but we have a lot of violations
+    'no-multiple-empty-lines': 'off',
+    'computed-property-spacing': 'off',
+    'no-void': 'off',
+    'import/no-absolute-path': 'off',
+    'import/no-named-default': 'warn', // this is a good rule, but we have a lot of violations
+    'multiline-ternary': 'off',
+    'quote-props': 'off',
+    'dot-notation': 'off',
+    'quotes': 'off',
+    'prefer-regex-literals': 'off',
+    'array-callback-return': 'off', // this is a good rule, but we have a lot of violations
   },
   overrides: Object.keys(allowedModules).map((key) => ({
     files: key + '/**/*.js',

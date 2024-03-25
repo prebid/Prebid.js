@@ -236,11 +236,11 @@ function interpretResponse(serverResponse, bidRequest) {
 
               bidResponses.push(bidResponse);
             }
-          } else {}
-        } else {}
+          }
+        }
       } catch (e) {}
     }
-  } else {}
+  }
 
   return bidResponses;
 }
