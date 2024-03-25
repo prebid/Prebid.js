@@ -5,7 +5,8 @@ export function makePbsInterceptor({createBid}) {
   return function pbsBidInterceptor(next, interceptBids, s2sBidRequest, bidRequests, ajax, {
     onResponse,
     onError,
-    onBid
+    onBid,
+    onFledge,
   }) {
     let responseArgs;
     const done = delayExecution(() => onResponse(...responseArgs), bidRequests.length + 1)
@@ -20,7 +21,19 @@ export function makePbsInterceptor({createBid}) {
       })
     }
     bidRequests = bidRequests
-      .map((req) => interceptBids({bidRequest: req, addBid, done}).bidRequest)
+      .map((req) => interceptBids({
+        bidRequest: req,
+        addBid,
+        addPaapiConfig(config, bidRequest, bidderRequest) {
+          onFledge({
+            adUnitCode: bidRequest.adUnitCode,
+            ortb2: bidderRequest.ortb2,
+            ortb2Imp: bidRequest.ortb2Imp,
+            config
+          })
+        },
+        done
+      }).bidRequest)
       .filter((req) => req.bids.length > 0)
 
     if (bidRequests.length > 0) {

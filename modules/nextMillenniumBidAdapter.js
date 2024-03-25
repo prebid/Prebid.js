@@ -8,7 +8,6 @@ import {
   getWindowTop,
   isArray,
   isStr,
-  logMessage,
   parseGPTSingleSizeArrayToRtbSize,
   parseUrl,
   triggerPixel,
@@ -18,7 +17,6 @@ import {getGlobal} from '../src/prebidGlobal.js';
 import CONSTANTS from '../src/constants.json';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import * as events from '../src/events.js';
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
@@ -33,33 +31,41 @@ const REPORT_ENDPOINT = 'https://report2.hb.brainlyads.com/statistics/metric';
 const TIME_TO_LIVE = 360;
 const DEFAULT_CURRENCY = 'USD';
 
-const VIDEO_PARAMS = [
-  'api',
-  'linearity',
-  'maxduration',
-  'mimes',
-  'minduration',
-  'placement',
-  'playbackmethod',
-  'protocols',
-  'startdelay',
-];
+const VIDEO_PARAMS_DEFAULT = {
+  api: undefined,
+  context: undefined,
+  delivery: undefined,
+  linearity: undefined,
+  maxduration: undefined,
+  mimes: [
+    'video/mp4',
+    'video/x-ms-wmv',
+    'application/javascript',
+  ],
 
+  minduration: undefined,
+  placement: undefined,
+  plcmt: undefined,
+  playbackend: undefined,
+  playbackmethod: undefined,
+  pos: undefined,
+  protocols: undefined,
+  skip: undefined,
+  skipafter: undefined,
+  skipmin: undefined,
+  startdelay: undefined,
+};
+
+const VIDEO_PARAMS = Object.keys(VIDEO_PARAMS_DEFAULT);
 const ALLOWED_ORTB2_PARAMETERS = [
   'site.pagecat',
   'site.content.cat',
   'site.content.language',
   'device.sua',
+  'site.keywords',
+  'site.content.keywords',
+  'user.keywords',
 ];
-
-const sendingDataStatistic = initSendingDataStatistic();
-events.on(CONSTANTS.EVENTS.AUCTION_INIT, auctionInitHandler);
-
-const EXPIRENCE_WURL = 20 * 60000;
-const wurlMap = {};
-cleanWurl();
-
-events.on(CONSTANTS.EVENTS.BID_WON, bidWonHandler);
 
 export const spec = {
   code: BIDDER_CODE,
@@ -76,7 +82,7 @@ export const spec = {
     const requests = [];
     window.nmmRefreshCounts = window.nmmRefreshCounts || {};
 
-    _each(validBidRequests, function(bid) {
+    _each(validBidRequests, (bid) => {
       window.nmmRefreshCounts[bid.adUnitCode] = window.nmmRefreshCounts[bid.adUnitCode] || 0;
       const id = getPlacementId(bid);
       const auctionId = bid.auctionId;
@@ -132,6 +138,8 @@ export const spec = {
         params,
         auctionId,
       });
+
+      this.getUrlPixelMetric(CONSTANTS.EVENTS.BID_REQUESTED, bid);
     });
 
     return requests;
@@ -145,11 +153,6 @@ export const spec = {
       _each(resp.bid, (bid) => {
         const requestId = bidRequest.bidId;
         const params = bidRequest.params;
-        const auctionId = bidRequest.auctionId;
-        const wurl = deepAccess(bid, 'ext.prebid.events.win');
-
-        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-        addWurl({auctionId, requestId, wurl});
 
         const {ad, adUrl, vastUrl, vastXml} = getAd(bid);
 
@@ -179,6 +182,8 @@ export const spec = {
         };
 
         bidResponses.push(bidResponse);
+
+        this.getUrlPixelMetric(CONSTANTS.EVENTS.BID_RESPONSE, bid);
       });
     });
 
@@ -200,7 +205,7 @@ export const spec = {
       responses.forEach(response => {
         if (syncOptions.pixelEnabled) setPixelImages(response);
         if (syncOptions.iframeEnabled) setPixelIframes(response);
-      })
+      });
     }
 
     if (!pixels.length) {
@@ -212,6 +217,16 @@ export const spec = {
   },
 
   getUrlPixelMetric(eventName, bid) {
+    const disabledSending = !!config.getBidderConfig()?.nextMillennium?.disabledSendingStatisticData;
+    if (disabledSending) return;
+
+    const url = this._getUrlPixelMetric(eventName, bid);
+    if (!url) return;
+
+    triggerPixel(url);
+  },
+
+  _getUrlPixelMetric(eventName, bid) {
     const bidder = bid.bidder || bid.bidderCode;
     if (bidder != BIDDER_CODE) return;
 
@@ -245,6 +260,12 @@ export const spec = {
 
     return url;
   },
+
+  onTimeout(bids) {
+    for (const bid of bids) {
+      this.getUrlPixelMetric(CONSTANTS.EVENTS.BID_TIMEOUT, bid);
+    };
+  },
 };
 
 export function getImp(bid, id, mediaTypes) {
@@ -260,29 +281,46 @@ export function getImp(bid, id, mediaTypes) {
     },
   };
 
-  if (banner) {
-    if (banner.bidfloorcur) imp.bidfloorcur = banner.bidfloorcur;
-    if (banner.bidfloor) imp.bidfloor = banner.bidfloor;
-
-    imp.banner = {
-      format: (banner.data?.sizes || []).map(s => { return {w: s[0], h: s[1]} }),
-    };
-  };
-
-  if (video) {
-    if (video.bidfloorcur) imp.bidfloorcur = video.bidfloorcur;
-    if (video.bidfloor) imp.bidfloor = video.bidfloor;
-
-    imp.video = getDefinedParams(video, VIDEO_PARAMS);
-    if (video.data.playerSize) {
-      imp.video = Object.assign(imp.video, parseGPTSingleSizeArrayToRtbSize(video.data.playerSize) || {});
-    } else if (video.w && video.h) {
-      imp.video.w = video.w;
-      imp.video.h = video.h;
-    };
-  };
+  getImpBanner(imp, banner);
+  getImpVideo(imp, video);
 
   return imp;
+};
+
+export function getImpBanner(imp, banner) {
+  if (!banner) return;
+
+  if (banner.bidfloorcur) imp.bidfloorcur = banner.bidfloorcur;
+  if (banner.bidfloor) imp.bidfloor = banner.bidfloor;
+
+  const format = (banner.data?.sizes || []).map(s => { return {w: s[0], h: s[1]} })
+  const {w, h} = (format[0] || {})
+  imp.banner = {
+    w,
+    h,
+    format,
+  };
+};
+
+export function getImpVideo(imp, video) {
+  if (!video) return;
+
+  if (video.bidfloorcur) imp.bidfloorcur = video.bidfloorcur;
+  if (video.bidfloor) imp.bidfloor = video.bidfloor;
+
+  imp.video = getDefinedParams(video.data, VIDEO_PARAMS);
+  Object.keys(VIDEO_PARAMS_DEFAULT)
+    .filter(videoParamName => VIDEO_PARAMS_DEFAULT[videoParamName])
+    .forEach(videoParamName => {
+      if (typeof imp.video[videoParamName] === 'undefined') imp.video[videoParamName] = VIDEO_PARAMS_DEFAULT[videoParamName];
+    });
+
+  if (video.data.playerSize) {
+    imp.video = Object.assign(imp.video, parseGPTSingleSizeArrayToRtbSize(video.data?.playerSize) || {});
+  } else if (video.data.w && video.data.h) {
+    imp.video.w = video.data.w;
+    imp.video.h = video.data.h;
+  };
 };
 
 export function setConsentStrings(postBody = {}, bidderRequest) {
@@ -482,128 +520,6 @@ function getSua() {
     mobile: Number(!!mobile),
     platform: (platform && {brand: platform}) || undefined,
   };
-}
-
-function getKeyWurl({auctionId, requestId}) {
-  return `${auctionId}-${requestId}`;
-}
-
-function addWurl({wurl, requestId, auctionId}) {
-  if (!wurl) return;
-
-  const expirence = Date.now() + EXPIRENCE_WURL;
-  const key = getKeyWurl({auctionId, requestId});
-  wurlMap[key] = {wurl, expirence};
-}
-
-function removeWurl({auctionId, requestId}) {
-  const key = getKeyWurl({auctionId, requestId});
-  delete wurlMap[key];
-}
-
-function getWurl({auctionId, requestId}) {
-  const key = getKeyWurl({auctionId, requestId});
-  return wurlMap[key] && wurlMap[key].wurl;
-}
-
-function bidWonHandler(bid) {
-  const {auctionId, requestId} = bid;
-  const wurl = getWurl({auctionId, requestId});
-  if (wurl) {
-    logMessage(`(nextmillennium) Invoking image pixel for wurl on BID_WIN: "${wurl}"`);
-    triggerPixel(wurl);
-    removeWurl({auctionId, requestId});
-  };
-}
-
-function auctionInitHandler() {
-  sendingDataStatistic.initEvents();
-}
-
-function cleanWurl() {
-  const dateNow = Date.now();
-  Object.keys(wurlMap).forEach(key => {
-    if (dateNow >= wurlMap[key].expirence) {
-      delete wurlMap[key];
-    };
-  });
-
-  setTimeout(cleanWurl, 60000);
-}
-
-function initSendingDataStatistic() {
-  class SendingDataStatistic {
-    eventNames = [
-      CONSTANTS.EVENTS.BID_TIMEOUT,
-      CONSTANTS.EVENTS.BID_RESPONSE,
-      CONSTANTS.EVENTS.BID_REQUESTED,
-      CONSTANTS.EVENTS.NO_BID,
-    ];
-
-    disabledSending = false;
-    enabledSending = false;
-    eventHendlers = {};
-
-    initEvents() {
-      this.disabledSending = !!config.getBidderConfig()?.nextMillennium?.disabledSendingStatisticData;
-      if (this.disabledSending) {
-        this.removeEvents();
-      } else {
-        this.createEvents();
-      };
-    }
-
-    createEvents() {
-      if (this.enabledSending) return;
-
-      this.enabledSending = true;
-      for (let eventName of this.eventNames) {
-        if (!this.eventHendlers[eventName]) {
-          this.eventHendlers[eventName] = this.eventHandler(eventName);
-        };
-
-        events.on(eventName, this.eventHendlers[eventName]);
-      };
-    }
-
-    removeEvents() {
-      if (!this.enabledSending) return;
-
-      this.enabledSending = false;
-      for (let eventName of this.eventNames) {
-        if (!this.eventHendlers[eventName]) continue;
-
-        events.off(eventName, this.eventHendlers[eventName]);
-      };
-    }
-
-    eventHandler(eventName) {
-      const eventHandlerFunc = this.getEventHandler(eventName);
-      if (eventName == CONSTANTS.EVENTS.BID_TIMEOUT) {
-        return bids => {
-          if (this.disabledSending || !Array.isArray(bids)) return;
-
-          for (let bid of bids) {
-            eventHandlerFunc(bid);
-          };
-        }
-      };
-
-      return eventHandlerFunc;
-    }
-
-    getEventHandler(eventName) {
-      return bid => {
-        if (this.disabledSending) return;
-
-        const url = spec.getUrlPixelMetric(eventName, bid);
-        if (!url) return;
-        triggerPixel(url);
-      };
-    }
-  };
-
-  return new SendingDataStatistic();
 }
 
 registerBidder(spec);

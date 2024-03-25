@@ -22,13 +22,28 @@ export function reset() {
 }
 
 const bidderIframeList = {
-  maxTopicCaller: 2,
+  maxTopicCaller: 4,
   bidders: [{
     bidder: 'pubmatic',
     iframeURL: 'https://ads.pubmatic.com/AdServer/js/topics/topics_frame.html'
   }, {
     bidder: 'rtbhouse',
     iframeURL: 'https://topics.authorizedvault.com/topicsapi.html'
+  }, {
+    bidder: 'openx',
+    iframeURL: 'https://pa.openx.net/topics_frame.html'
+  }, {
+    bidder: 'improvedigital',
+    iframeURL: 'https://hb.360yield.com/privacy-sandbox/topics.html'
+  }, {
+    bidder: 'onetag',
+    iframeURL: 'https://onetag-sys.com/static/topicsapi.html'
+  }, {
+    bidder: 'taboola',
+    iframeURL: 'https://cdn.taboola.com/libtrc/static/topics/taboola-prebid-browsing-topics.html'
+  }, {
+    bidder: 'discovery',
+    iframeURL: 'https://api.popin.cc/topic/prebid-topics-frame.html'
   }]
 }
 
