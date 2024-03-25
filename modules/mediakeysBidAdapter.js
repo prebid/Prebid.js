@@ -20,8 +20,7 @@ import {
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {createEidsArray} from './userId/eids.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
 const AUCTION_TYPE = 1;
 const BIDDER_CODE = 'mediakeys';
@@ -120,7 +119,7 @@ function getOS() {
  *
  * @param {*} bid a Prebid.js bid (request) object
  * @param {string} mediaType the mediaType or the wildcard '*'
- * @param {string|array} size the size array or the wildcard '*'
+ * @param {string|Array} size the size array or the wildcard '*'
  * @returns {number|boolean}
  */
 function getFloor(bid, mediaType, size = '*') {
@@ -607,10 +606,8 @@ export const spec = {
 
     const payload = createOrtbTemplate();
 
-    // Pass the auctionId as ortb2 id
-    // See https://github.com/prebid/Prebid.js/issues/6563
-    deepSetValue(payload, 'id', bidderRequest.auctionId);
-    deepSetValue(payload, 'source.tid', bidderRequest.auctionId);
+    deepSetValue(payload, 'id', bidderRequest.bidderRequestId);
+    deepSetValue(payload, 'source.tid', bidderRequest.ortb2.source?.tid);
 
     validBidRequests.forEach(validBid => {
       let bid = deepClone(validBid);
@@ -638,8 +635,8 @@ export const spec = {
       deepSetValue(payload, 'regs.coppa', 1);
     }
 
-    if (deepAccess(validBidRequests[0], 'userId')) {
-      deepSetValue(payload, 'user.ext.eids', createEidsArray(validBidRequests[0].userId));
+    if (deepAccess(validBidRequests[0], 'userIdAsEids')) {
+      deepSetValue(payload, 'user.ext.eids', validBidRequests[0].userIdAsEids);
     }
 
     // Assign payload.site from refererinfo

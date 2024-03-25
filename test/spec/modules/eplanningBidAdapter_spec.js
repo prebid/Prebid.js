@@ -74,6 +74,53 @@ describe('E-Planning Adapter', function () {
     },
     'sizes': [[300, 250], [300, 600]],
   };
+  const validBidSpaceNameWithBidFloor = {
+    bidder: 'eplanning',
+    'bidId': BID_ID,
+    params: {
+      'ci': CI,
+      'sn': SN,
+    },
+    getFloor: () => ({ currency: 'USD', floor: 1.16 }),
+    'sizes': [[300, 250], [300, 600]],
+  };
+  const validBidSpaceOutstreamWithBidFloor = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'sn': SN,
+    },
+    getFloor: () => ({ currency: 'USD', floor: 1.16 }),
+    'mediaTypes': {
+      'video': {
+        'context': 'outstream',
+        'playerSize': [300, 600],
+        'mimes': ['video/mp4'],
+        'protocols': [1, 2, 3, 4, 5, 6],
+        'playbackmethod': [2],
+        'skip': 1
+      }
+    },
+  };
+  const validBidSpaceInstreamWithBidFloor = {
+    'bidder': 'eplanning',
+    'bidId': BID_ID,
+    'params': {
+      'ci': CI,
+      'sn': SN,
+    },
+    getFloor: () => ({ currency: 'USD', floor: 1.16 }),
+    'mediaTypes': {
+      'video': {
+        'context': 'instream',
+        'mimes': ['video/mp4'],
+        'protocols': [1, 2, 3, 4, 5, 6],
+        'playbackmethod': [2],
+        'skip': 1
+      }
+    },
+  };
   const validBidSpaceOutstream = {
     'bidder': 'eplanning',
     'bidId': BID_ID,
@@ -573,6 +620,26 @@ describe('E-Planning Adapter', function () {
       expect(e).to.equal(SN + ':300x250,300x600');
     });
 
+    it('should return e parameter with space name attribute with value according to the adunit sizes and bidFloor', function () {
+      const e = spec.buildRequests([validBidSpaceNameWithBidFloor], bidderRequest).data.e;
+      expect(e).to.equal(SN + ':300x250,300x600|' + validBidSpaceNameWithBidFloor.getFloor().floor);
+    });
+
+    it('should return correct e parameter with support vast with one space with size outstream and bidFloor', function () {
+      const data = spec.buildRequests([validBidSpaceOutstreamWithBidFloor], bidderRequest).data;
+      expect(data.e).to.equal('video_300x600_0:300x600;1|' + validBidSpaceOutstreamWithBidFloor.getFloor().floor);
+      expect(data.vctx).to.equal(2);
+      expect(data.vv).to.equal(3);
+    });
+
+    it('should return correct e parameter with support vast with one space with size instream with bidFloor', function () {
+      let bidRequests = [validBidSpaceInstreamWithBidFloor];
+      const data = spec.buildRequests(bidRequests, bidderRequest).data;
+      expect(data.e).to.equal('video_640x480_0:640x480;1|' + validBidSpaceInstreamWithBidFloor.getFloor().floor);
+      expect(data.vctx).to.equal(1);
+      expect(data.vv).to.equal(3);
+    });
+
     it('should return correct e parameter with more than one adunit', function () {
       const NEW_CODE = ADUNIT_CODE + '2';
       const CLEAN_NEW_CODE = CLEAN_ADUNIT_CODE + '2';
@@ -729,10 +796,45 @@ describe('E-Planning Adapter', function () {
       expect(ur).to.equal(bidderRequest.refererInfo.page);
     });
 
+    it('should return ur parameter without params query string when current window url length is greater than 255', function () {
+      let bidderRequestParams = bidderRequest;
+
+      bidderRequestParams.refererInfo.page = refererUrl + '?param=' + 'x'.repeat(255);
+      const ur = spec.buildRequests(bidRequests, bidderRequest).data.ur;
+      expect(ur).to.equal(refererUrl);
+    });
+
+    it('should return ur parameter with a length of 255 when url length is greater than 255', function () {
+      let bidderRequestParams = bidderRequest;
+      let url_255_characters = 'https://localhost/abc' + '/subse'.repeat(39);
+      let refererUrl = url_255_characters + '/ext'.repeat(5) + '?param=' + 'x'.repeat(15);
+
+      bidderRequestParams.refererInfo.page = refererUrl;
+      const ur = spec.buildRequests(bidRequests, bidderRequest).data.ur;
+      expect(ur).to.equal(url_255_characters);
+    });
+
     it('should return fr parameter when there is a referrer', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const dataRequest = request.data;
       expect(dataRequest.fr).to.equal(refererUrl);
+    });
+    it('should return fr parameter without params query string when ref length is greater than 255', function () {
+      let bidderRequestParams = bidderRequest;
+
+      bidderRequestParams.refererInfo.ref = refererUrl + '?param=' + 'x'.repeat(255);
+      const fr = spec.buildRequests(bidRequests, bidderRequest).data.fr;
+      expect(fr).to.equal(refererUrl);
+    });
+
+    it('should return fr parameter with a length of 255 when url length is greater than 255', function () {
+      let bidderRequestParams = bidderRequest;
+      let url_255_characters = 'https://localhost/abc' + '/subse'.repeat(39);
+      let refererUrl = url_255_characters + '/ext'.repeat(5) + '?param=' + 'x'.repeat(15);
+
+      bidderRequestParams.refererInfo.ref = refererUrl;
+      const fr = spec.buildRequests(bidRequests, bidderRequest).data.fr;
+      expect(fr).to.equal(url_255_characters);
     });
 
     it('should return crs parameter with document charset', function () {

@@ -5,6 +5,13 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {find} from '../src/polyfill.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'hybrid';
 const DSP_ENDPOINT = 'https://hbe198.hybrid.ai/prebidhb';
 const TRAFFIC_TYPE_WEB = 1;
@@ -25,7 +32,7 @@ function buildBidRequests(validBidRequests) {
     const params = validBidRequest.params;
     const bidRequest = {
       bidId: validBidRequest.bidId,
-      transactionId: validBidRequest.transactionId,
+      transactionId: validBidRequest.ortb2Imp?.ext?.tid,
       sizes: validBidRequest.sizes,
       placement: placementTypes[params.placement],
       placeId: params.placeId,
@@ -88,6 +95,7 @@ function buildBid(bidData) {
     bid.vastXml = bidData.content;
     bid.mediaType = VIDEO;
 
+    // TODO: why does this need to iterate through every ad unit?
     let adUnit = find(auctionManager.getAdUnits(), function (unit) {
       return unit.transactionId === bidData.transactionId;
     });
@@ -244,7 +252,6 @@ export const spec = {
           return item.bidId === bid.bidId;
         });
         bid.placement = rawBid.placement;
-        bid.transactionId = rawBid.transactionId;
         bid.placeId = rawBid.placeId;
         return buildBid(bid);
       });

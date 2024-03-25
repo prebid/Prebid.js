@@ -22,6 +22,12 @@ describe('riseAdapter', function () {
     });
   });
 
+  describe('bid adapter', function () {
+    it('should have aliases', function () {
+      expect(spec.aliases).to.be.an('array').that.is.not.empty;
+    });
+  });
+
   describe('isBidRequestValid', function () {
     const bid = {
       'bidder': spec.code,
@@ -53,7 +59,7 @@ describe('riseAdapter', function () {
         'adUnitCode': 'adunit-code',
         'sizes': [[640, 480]],
         'params': {
-          'org': 'jdye8weeyirk00000001'
+          'org': 'jdye8weeyirk00000001',
         },
         'bidId': '299ffc8cca0b87',
         'loop': 1,
@@ -62,7 +68,8 @@ describe('riseAdapter', function () {
         'mediaTypes': {
           'video': {
             'playerSize': [[640, 480]],
-            'context': 'instream'
+            'context': 'instream',
+            'plcmt': 1
           }
         },
         'vastXml': '"<VAST version=\\\"2.0\\\">...</VAST>"'
@@ -114,6 +121,11 @@ describe('riseAdapter', function () {
       bidRequests[0].params.placementId = placementId;
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.bids[0].placementId).to.equal(placementId);
+    });
+
+    it('sends the plcmt to ENDPOINT via POST', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.bids[0].plcmt).to.equal(1);
     });
 
     it('sends the is_wrapper parameter to ENDPOINT via POST', function() {
@@ -187,6 +199,16 @@ describe('riseAdapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.bids[0].mediaType).to.equal(VIDEO)
       expect(request.data.bids[1].mediaType).to.equal(BANNER)
+    });
+
+    it('should send the correct currency in bid request', function () {
+      const bid = utils.deepClone(bidRequests[0]);
+      bid.params = {
+        'currency': 'EUR'
+      };
+      const expectedCurrency = bid.params.currency;
+      const request = spec.buildRequests([bid], bidderRequest);
+      expect(request.data.bids[0].currency).to.equal(expectedCurrency);
     });
 
     it('should respect syncEnabled option', function() {
@@ -340,6 +362,86 @@ describe('riseAdapter', function () {
       const request = spec.buildRequests([bid], bidderRequest);
       expect(request.data.bids[0]).to.be.an('object');
       expect(request.data.bids[0]).to.have.property('floorPrice', 1.5);
+    });
+
+    it('should check sua param in bid request', function() {
+      const sua = {
+        'platform': {
+          'brand': 'macOS',
+          'version': ['12', '4', '0']
+        },
+        'browsers': [
+          {
+            'brand': 'Chromium',
+            'version': [ '106', '0', '5249', '119' ]
+          },
+          {
+            'brand': 'Google Chrome',
+            'version': [ '106', '0', '5249', '119' ]
+          },
+          {
+            'brand': 'Not;A=Brand',
+            'version': [ '99', '0', '0', '0' ]
+          }
+        ],
+        'mobile': 0,
+        'model': '',
+        'bitness': '64',
+        'architecture': 'x86'
+      }
+      const bid = utils.deepClone(bidRequests[0]);
+      bid.ortb2 = {
+        'device': {
+          'sua': {
+            'platform': {
+              'brand': 'macOS',
+              'version': [ '12', '4', '0' ]
+            },
+            'browsers': [
+              {
+                'brand': 'Chromium',
+                'version': [ '106', '0', '5249', '119' ]
+              },
+              {
+                'brand': 'Google Chrome',
+                'version': [ '106', '0', '5249', '119' ]
+              },
+              {
+                'brand': 'Not;A=Brand',
+                'version': [ '99', '0', '0', '0' ]
+              }
+            ],
+            'mobile': 0,
+            'model': '',
+            'bitness': '64',
+            'architecture': 'x86'
+          }
+        }
+      }
+      const requestWithSua = spec.buildRequests([bid], bidderRequest);
+      const data = requestWithSua.data;
+      expect(data.bids[0].sua).to.exist;
+      expect(data.bids[0].sua).to.deep.equal(sua);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.bids[0].sua).to.not.exist;
+    });
+
+    describe('COPPA Param', function() {
+      it('should set coppa equal 0 in bid request if coppa is set to false', function() {
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request.data.bids[0].coppa).to.be.equal(0);
+      });
+
+      it('should set coppa equal 1 in bid request if coppa is set to true', function() {
+        const bid = utils.deepClone(bidRequests[0]);
+        bid.ortb2 = {
+          'regs': {
+            'coppa': true,
+          }
+        };
+        const request = spec.buildRequests([bid], bidderRequest);
+        expect(request.data.bids[0].coppa).to.be.equal(1);
+      });
     });
   });
 

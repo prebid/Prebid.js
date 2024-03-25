@@ -33,31 +33,41 @@
 
     pbjs.que.push(function() {
         var adUnits = [{
-            code: 'div-gpt-ad-1460505748561-0',
-            mediaTypes: {
-              banner: {
-                sizes: [[300, 250]]
-              } 
-            },
-            bids: [
-              {
-                bidder: 'appnexus',
-                params: {
-                   placementId: 13144370
-                }
+          code: 'div-gpt-ad-1460505748561-0',
+          mediaTypes: {
+            banner: {
+              sizes: [600, 500]
+            } 
+          },
+          bids: [
+            {
+              bidder: 'appnexus',
+              params: {
+                placementId: 12883451
               }
-            ]
-          }];
+            }
+          ]
+        }];
 
+        pbjs.bidderSettings = {
+          appnexus: {
+            bidCpmAdjustment: function () {
+              return 10;
+            }
+          }
+        }  
         pbjs.setConfig({
           bidderTimeout: 3000,
           s2sConfig : {
             accountId : '1',
             enabled : true, //default value set to false
-            defaultVendor: 'appnexus',
+            defaultVendor: 'appnexuspsp',
             bidders : ['appnexus'],
             timeout : 1000, //default value is 1000
             adapter : 'prebidServer', //if we have any other s2s adapter, default value is s2s
+          },
+          ortb2: {
+            test: 1
           }
         });
 

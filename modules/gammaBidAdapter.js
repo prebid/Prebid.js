@@ -1,5 +1,10 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const ENDPOINT = 'https://hb.gammaplatform.com';
 const ENDPOINT_USERSYNC = 'https://cm-supply-web.gammaplatform.com';
 const BIDDER_CODE = 'gamma';

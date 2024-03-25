@@ -1,6 +1,11 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { logInfo, logError, isArray } from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {isArray, logError, logInfo} from '../src/utils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const BIDDER_CODE = 'pxyz';
 const URL = 'https://ads.playground.xyz/host-config/prebid?v=2';
@@ -42,7 +47,7 @@ export const spec = {
     }
 
     const payload = {
-      id: bidRequests[0].auctionId,
+      id: bidderRequest.bidderRequestId,
       site: {
         domain: protocol + '//' + hostname,
         name: hostname,

@@ -3,6 +3,11 @@ import {BANNER} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ */
+
 const BIDDER_CODE = 'unicorn';
 const UNICORN_ENDPOINT = 'https://ds.uncn.jp/pb/0/bid.json';
 const UNICORN_DEFAULT_CURRENCY = 'JPY';
@@ -55,7 +60,7 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     };
   });
   const request = {
-    id: bidderRequest.auctionId,
+    id: bidderRequest.bidderRequestId,
     at: 1,
     imp,
     cur: [UNICORN_DEFAULT_CURRENCY],
@@ -87,8 +92,31 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
       accountId: deepAccess(validBidRequests[0], 'params.accountId')
     }
   };
+  const eids = initializeEids(validBidRequests[0]);
+  if (eids.length > 0) {
+    request.user.eids = eids;
+  }
+
   logInfo('[UNICORN] OpenRTB Formatted Request:', request);
   return JSON.stringify(request);
+}
+
+const initializeEids = (bidRequest) => {
+  let eids = [];
+
+  let id5 = deepAccess(bidRequest, 'userId.id5id.uid');
+  if (id5) {
+    eids.push({
+      source: 'id5-sync.com',
+      uids: [
+        {
+          id: id5
+        }
+      ]
+    });
+  }
+
+  return eids;
 }
 
 const interpretResponse = (serverResponse, request) => {

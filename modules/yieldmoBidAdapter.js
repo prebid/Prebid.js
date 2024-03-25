@@ -17,7 +17,13 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {Renderer} from '../src/Renderer.js';
 import {find, includes} from '../src/polyfill.js';
-import {createEidsArray} from './userId/eids.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ */
 
 const BIDDER_CODE = 'yieldmo';
 const GVLID = 173;
@@ -30,7 +36,7 @@ const VIDEO_PATH = '/exchange/prebidvideo';
 const STAGE_DOMAIN = 'https://ads-stg.yieldmo.com';
 const PROD_DOMAIN = 'https://ads.yieldmo.com';
 const OUTSTREAM_VIDEO_PLAYER_URL = 'https://prebid-outstream.yieldmo.com/bundle.js';
-const OPENRTB_VIDEO_BIDPARAMS = ['mimes', 'startdelay', 'placement', 'startdelay', 'skipafter', 'protocols', 'api',
+const OPENRTB_VIDEO_BIDPARAMS = ['mimes', 'startdelay', 'placement', 'plcmt', 'skipafter', 'protocols', 'api',
   'playbackmethod', 'maxduration', 'minduration', 'pos', 'skip', 'skippable'];
 const OPENRTB_VIDEO_SITEPARAMS = ['name', 'domain', 'cat', 'keywords'];
 const LOCAL_WINDOW = getWindowTop();
@@ -69,6 +75,7 @@ export const spec = {
     const videoBidRequests = bidRequests.filter(request => hasVideoMediaType(request));
     let serverRequests = [];
     const eids = getEids(bidRequests[0]) || [];
+    const topicsData = getTopics(bidderRequest);
     if (bannerBidRequests.length > 0) {
       let serverRequest = {
         pbav: '$prebid.version$',
@@ -78,13 +85,25 @@ export const spec = {
         bust: new Date().getTime().toString(),
         dnt: getDNT(),
         description: getPageDescription(),
+        tmax: bidderRequest.timeout || 400,
         userConsent: JSON.stringify({
           // case of undefined, stringify will remove param
-          gdprApplies: deepAccess(bidderRequest, 'gdprConsent.gdprApplies') || '',
-          cmp: deepAccess(bidderRequest, 'gdprConsent.consentString') || ''
+          gdprApplies:
+            deepAccess(bidderRequest, 'gdprConsent.gdprApplies') || '',
+          cmp: deepAccess(bidderRequest, 'gdprConsent.consentString') || '',
+          gpp: deepAccess(bidderRequest, 'gppConsent.gppString') || '',
+          gpp_sid:
+            deepAccess(bidderRequest, 'gppConsent.applicableSections') || [],
         }),
-        us_privacy: deepAccess(bidderRequest, 'uspConsent') || ''
+        us_privacy: deepAccess(bidderRequest, 'uspConsent') || '',
       };
+      if (topicsData) {
+        serverRequest.topics = topicsData;
+      }
+      const gpc = getGPCSignal(bidderRequest);
+      if (gpc) {
+        serverRequest.gpc = gpc;
+      }
 
       if (canAccessTopWindow()) {
         serverRequest.pr = (LOCAL_WINDOW.document && LOCAL_WINDOW.document.referrer) || '';
@@ -149,6 +168,9 @@ export const spec = {
 
     if (videoBidRequests.length > 0) {
       const serverRequest = openRtbRequest(videoBidRequests, bidderRequest);
+      if (topicsData) {
+        serverRequest.topics = topicsData;
+      }
       if (eids.length) {
         serverRequest.user = { eids };
       };
@@ -256,6 +278,7 @@ function addPlacement(request) {
     placementInfo.tid = transactionId;
   }
   if (request.auctionId) {
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     placementInfo.auctionId = request.auctionId;
   }
   return JSON.stringify(placementInfo);
@@ -382,6 +405,7 @@ function openRtbRequest(bidRequests, bidderRequest) {
   const schain = bidRequests[0].schain;
   let openRtbRequest = {
     id: bidRequests[0].bidderRequestId,
+    tmax: bidderRequest.timeout || 400,
     at: 1,
     imp: bidRequests.map(bidRequest => openRtbImpression(bidRequest)),
     site: openRtbSite(bidRequests[0], bidderRequest),
@@ -397,13 +421,39 @@ function openRtbRequest(bidRequests, bidderRequest) {
   if (schain) {
     openRtbRequest.schain = schain;
   }
-
+  const gpc = getGPCSignal(bidderRequest);
+  if (gpc) {
+    deepSetValue(openRtbRequest, 'regs.ext.gpc', gpc);
+  }
   if (bidRequests[0].auctionId) {
     openRtbRequest.auctionId = bidRequests[0].auctionId;
   }
   populateOpenRtbGdpr(openRtbRequest, bidderRequest);
-
   return openRtbRequest;
+}
+
+function getGPCSignal(bidderRequest) {
+  const gpc = deepAccess(bidderRequest, 'ortb2.regs.ext.gpc');
+  return gpc;
+}
+
+function getTopics(bidderRequest) {
+  const userData = deepAccess(bidderRequest, 'ortb2.user.data') || [];
+  const topicsData = userData.filter((dataObj) => {
+    const segtax = dataObj.ext?.segtax;
+    return segtax >= 600 && segtax <= 609;
+  })[0];
+
+  if (topicsData) {
+    let topicsObject = {
+      taxonomy: topicsData.ext.segtax,
+      classifier: topicsData.ext.segclass,
+      // topics needs to be array of numbers
+      topics: Object.values(topicsData.segment).map(i => Number(i)),
+    };
+    return topicsObject;
+  }
+  return null;
 }
 
 /**
@@ -428,12 +478,12 @@ function openRtbImpression(bidRequest) {
     }
   };
 
-  const mediaTypesParams = deepAccess(bidRequest, 'mediaTypes.video');
+  const mediaTypesParams = deepAccess(bidRequest, 'mediaTypes.video', {});
   Object.keys(mediaTypesParams)
     .filter(param => includes(OPENRTB_VIDEO_BIDPARAMS, param))
     .forEach(param => imp.video[param] = mediaTypesParams[param]);
 
-  const videoParams = deepAccess(bidRequest, 'params.video');
+  const videoParams = deepAccess(bidRequest, 'params.video', {});
   Object.keys(videoParams)
     .filter(param => includes(OPENRTB_VIDEO_BIDPARAMS, param))
     .forEach(param => imp.video[param] = videoParams[param]);
@@ -442,7 +492,7 @@ function openRtbImpression(bidRequest) {
     imp.video.skip = 1;
     delete imp.video.skippable;
   }
-  if (imp.video.placement !== 1) {
+  if (imp.video.plcmt !== 1 || imp.video.placement !== 1) {
     imp.video.startdelay = DEFAULT_START_DELAY;
     imp.video.playbackmethod = [ DEFAULT_PLAYBACK_METHOD ];
   }
@@ -514,12 +564,19 @@ function openRtbSite(bidRequest, bidderRequest) {
  */
 function populateOpenRtbGdpr(openRtbRequest, bidderRequest) {
   const gdpr = bidderRequest.gdprConsent;
-  if (gdpr && 'gdprApplies' in gdpr) {
-    deepSetValue(openRtbRequest, 'regs.ext.gdpr', gdpr.gdprApplies ? 1 : 0);
-    deepSetValue(openRtbRequest, 'user.ext.consent', gdpr.consentString);
+  const gpp = deepAccess(bidderRequest, 'gppConsent.gppString');
+  const gppsid = deepAccess(bidderRequest, 'gppConsent.applicableSections');
+  if (gpp) {
+    deepSetValue(openRtbRequest, 'regs.ext.gpp', gpp);
+  } else {
+    deepSetValue(openRtbRequest, 'regs.ext.gdpr', gdpr && gdpr.gdprApplies ? 1 : 0);
+    deepSetValue(openRtbRequest, 'user.ext.consent', gdpr && gdpr.consentString ? gdpr.consentString : '');
+  }
+  if (gppsid && gppsid.length > 0) {
+    deepSetValue(openRtbRequest, 'regs.ext.gpp_sid', gppsid);
   }
   const uspConsent = deepAccess(bidderRequest, 'uspConsent');
-  if (uspConsent) {
+  if (!gpp && uspConsent) {
     deepSetValue(openRtbRequest, 'regs.ext.us_privacy', uspConsent);
   }
 }
@@ -596,8 +653,14 @@ function validateVideoParams(bid) {
     }
 
     validate('video.protocols', val => isDefined(val), paramRequired);
-    validate('video.protocols', val => isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),
-      paramInvalid, 'array of numbers, ex: [2,3]');
+    validate(
+      'video.protocols',
+      (val) =>
+        isArrayOfNums(val) &&
+        val.every((v) => v >= 1 && v <= 12 && v != 9 && v != 10), // 9 and 10 are for DAST which are not supported.
+      paramInvalid,
+      'array of numbers between 1 and 12 except for 9 or 10 , ex: [2,3, 7, 11]'
+    );
 
     validate('video.api', val => isDefined(val), paramRequired);
     validate('video.api', val => isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),
@@ -651,8 +714,8 @@ function shortcutProperty(extraCharacters, target, propertyName) {
  * @return array of eids objects
  */
 function getEids(bidRequest) {
-  if (deepAccess(bidRequest, 'userId')) {
-    return createEidsArray(bidRequest.userId) || [];
+  if (deepAccess(bidRequest, 'userIdAsEids')) {
+    return bidRequest.userIdAsEids || [];
   }
 };
 

@@ -1,6 +1,11 @@
-import { _each, isArray, getBidIdParameter, deepClone, getUniqueIdentifierStr } from '../src/utils.js';
-// import {config} from 'src/config.js';
+import {_each, isArray, deepClone, getUniqueIdentifierStr, getBidIdParameter} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
 
 const BIDDER_CODE = 'bidglass';
 

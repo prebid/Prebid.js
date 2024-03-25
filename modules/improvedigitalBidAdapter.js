@@ -7,6 +7,14 @@ import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {loadExternalScript} from '../src/adloader.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
+
 const BIDDER_CODE = 'improvedigital';
 const CREATIVE_TTL = 300;
 
@@ -150,8 +158,7 @@ export const CONVERTER = ortbConverter({
     mergeDeep(request, {
       id: getUniqueIdentifierStr(),
       source: {
-        // TODO: once https://github.com/prebid/Prebid.js/issues/8573 is resolved, this should be handled by the base ortbConverter logic
-        tid: context.bidRequests[0].transactionId,
+
       },
       ext: {
         improvedigital: {
@@ -183,6 +190,10 @@ export const CONVERTER = ortbConverter({
     })();
     const bidResponse = buildBidResponse(bid, context);
     const idExt = deepAccess(bid, `ext.${BIDDER_CODE}`, {});
+    // Programmatic guaranteed flag
+    if (idExt.pg === 1) {
+      bidResponse.adserverTargeting = { hb_deal_type_improve: 'pg' };
+    }
     Object.assign(bidResponse, {
       dealId: (typeof idExt.buying_type === 'string' && idExt.buying_type !== 'rtb') ? idExt.line_item_id : undefined,
       netRevenue: idExt.is_net || false,
@@ -378,7 +389,7 @@ const ID_RAZR = {
       }
     };
 
-    const cfgStr = JSON.stringify(cfg).replace(/<\/script>/g, '\\x3C/script>');
+    const cfgStr = JSON.stringify(cfg).replace(/<\/script>/ig, '\\x3C/script>');
     const s = `<script>window.__razr_config = ${cfgStr};</script>`;
     bid.ad = bid.ad.replace(/<body[^>]*>/, match => match + s);
 
