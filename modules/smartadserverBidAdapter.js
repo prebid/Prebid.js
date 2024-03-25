@@ -134,12 +134,11 @@ export const spec = {
   getStartDelayForVideoBidRequest: function(videoMediaType, videoParams) {
     if (videoParams?.startDelay) {
       return videoParams.startDelay;
-    } else if (videoMediaType) {
-      switch (videoMediaType.startdelay) {
-        case -1:
-          return 2;
-        case -2:
-          return 3;
+    } else if (videoMediaType?.startdelay) {
+      if (videoMediaType.startdelay > 0 || videoMediaType.startdelay == -1) {
+        return 2;
+      } else if (videoMediaType.startdelay == -2) {
+        return 3;
       }
     }
     return 1; // SADR-5619
