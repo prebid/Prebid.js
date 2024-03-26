@@ -5,7 +5,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
  */
 
-const ENDPOINT_USERSYNC = 'https://cm-supply-web.gammaplatform.com';
 const BIDDER_CODE = 'gamma';
 const ENDPOINTS = {
   SGP: 'https://hb.gammaplatform.com',
@@ -67,15 +66,6 @@ export const spec = {
     }
 
     return bids;
-  },
-
-  getUserSyncs: function(syncOptions) {
-    if (syncOptions.iframeEnabled) {
-      return [{
-        type: 'iframe',
-        url: ENDPOINT_USERSYNC + '/adx/usersync'
-      }];
-    }
   }
 }
 
@@ -85,10 +75,10 @@ export const spec = {
  * @return aUrl
  */
 function getAdUrlByRegion(bid) {
-  let adUrl;
+  let ENDPOINT;
 
   if (bid.params.region && ENDPOINTS[bid.params.region]) {
-    adUrl = ENDPOINTS[bid.params.region];
+    ENDPOINT = ENDPOINTS[bid.params.region];
   } else {
     try {
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -96,25 +86,25 @@ function getAdUrlByRegion(bid) {
 
       switch (region) {
         case 'Europe':
-          adUrl = ENDPOINTS['EU'];
+          ENDPOINT = ENDPOINTS['EU'];
           break;
         case 'Australia':
-          adUrl = ENDPOINTS['JPN'];
+          ENDPOINT = ENDPOINTS['JPN'];
           break;
         case 'Asia':
-          adUrl = ENDPOINTS['SGP'];
+          ENDPOINT = ENDPOINTS['SGP'];
           break;
         case 'America':
-          adUrl = ENDPOINTS['US_WEST'];
+          ENDPOINT = ENDPOINTS['US_WEST'];
           break;
-        default: adUrl = ENDPOINTS['SGP'];
+        default: ENDPOINT = ENDPOINTS['SGP'];
       }
     } catch (err) {
-      adUrl = ENDPOINTS['SGP'];
+      ENDPOINT = ENDPOINTS['SGP'];
     }
   }
 
-  return adUrl;
+  return ENDPOINT;
 }
 
 /**
