@@ -108,31 +108,31 @@
         });
 
         function raa() {
-            const cfg = pbjs.getPAAPIConfig();
             return Promise.all(
-                Object.entries(cfg).map(([adUnitCode, auctionConfig]) => {
-                    return navigator.runAdAuction({
-                        seller: window.location.origin,
-                        decisionLogicUrl: new URL('decisionLogic.js', window.location).toString(),
-                        resolveToConfig: false,
-                        ...auctionConfig
-                    }).then(urn => {
-                        if (urn) {
-                            // if we have a paapi winner, replace the adunit div
-                            // with an iframe that renders it
-                            const iframe = document.createElement('iframe');
-                            Object.assign(iframe, {
-                                src: urn,
-                                frameBorder: 0,
-                                scrolling: 'no',
-                            }, auctionConfig.requestedSize);
-                            const div = document.getElementById(adUnitCode);
-                            div.parentElement.insertBefore(iframe, div);
-                            div.remove();
-                            return true;
-                        }
-                    });
-                })
+                Object.entries(pbjs.getPAAPIConfig())
+                    .map(([adUnitCode, auctionConfig]) => {
+                        return navigator.runAdAuction({
+                            seller: window.location.origin,
+                            decisionLogicUrl: new URL('decisionLogic.js', window.location).toString(),
+                            resolveToConfig: false,
+                            ...auctionConfig
+                        }).then(urn => {
+                            if (urn) {
+                                // if we have a paapi winner, replace the adunit div
+                                // with an iframe that renders it
+                                const iframe = document.createElement('iframe');
+                                Object.assign(iframe, {
+                                    src: urn,
+                                    frameBorder: 0,
+                                    scrolling: 'no',
+                                }, auctionConfig.requestedSize);
+                                const div = document.getElementById(adUnitCode);
+                                div.parentElement.insertBefore(iframe, div);
+                                div.remove();
+                                return true;
+                            }
+                        });
+                    })
             ).then(won => won.every(el => el));
         }
 
@@ -171,7 +171,7 @@
 <p>Chrome flags:</p>
 <code>--enable-features=CookieDeprecationFacilitatedTesting:label/treatment_1.2/force_eligible/true
     --privacy-sandbox-enrollment-overrides=https://localhost:9999</code>
-<p>Join interest group at <a href="https://www.rtbfashion.net/">https://privacysandbox.openx.net/fledge/advertiser</a>
+<p>Join interest group at <a href="https://privacysandbox.openx.net/fledge/advertiser">https://privacysandbox.openx.net/fledge/advertiser</a>
 </p>
 <h5>Div-1</h5>
 <div id='div-1' style='min-width: 300px; min-height: 250px;'>
