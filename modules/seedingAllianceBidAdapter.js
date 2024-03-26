@@ -3,16 +3,20 @@
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
-import {_map, deepSetValue, isArray, isEmpty, replaceAuctionPrice} from '../src/utils.js';
+import {_map, generateUUID, deepSetValue, isArray, isEmpty, replaceAuctionPrice} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const GVL_ID = 371;
 const BIDDER_CODE = 'seedingAlliance';
 const DEFAULT_CUR = 'EUR';
 const ENDPOINT_URL = 'https://b.nativendo.de/cds/rtb/bid?format=openrtb2.5&ssp=pb';
+const NATIVENDO_KEY = 'nativendo_id';
 
 const NATIVE_ASSET_IDS = { 0: 'title', 1: 'body', 2: 'sponsoredBy', 3: 'image', 4: 'cta', 5: 'icon' };
+
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 const NATIVE_PARAMS = {
   title: { id: 0, name: 'title' },
@@ -37,6 +41,7 @@ export const spec = {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
     let url = bidderRequest.refererInfo.page;
+    let eids = getEids(validBidRequests[0]);
 
     const imps = validBidRequests.map((bidRequest, id) => {
       const imp = {
@@ -130,11 +135,14 @@ export const spec = {
 
       deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
       deepSetValue(request, 'regs.ext.gdpr', (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean' && bidderRequest.gdprConsent.gdprApplies) ? 1 : 0);
+      deepSetValue(request, 'user.ext.eids', eids);
     }
+
+    let endpoint = config.getConfig('seedingAlliance.endpoint') || ENDPOINT_URL;
 
     return {
       method: 'POST',
-      url: config.getConfig('seedingAlliance.endpoint') || ENDPOINT_URL,
+      url: endpoint,
       data: JSON.stringify(request),
       bidRequests: validBidRequests
     };
@@ -190,6 +198,45 @@ export const spec = {
       .filter(Boolean);
   }
 };
+
+const getNativendoID = () => {
+  let nativendoID = storage.localStorageIsEnabled() &&
+      storage.getDataFromLocalStorage(NATIVENDO_KEY);
+
+  if (!nativendoID) {
+    if (storage.localStorageIsEnabled()) {
+      nativendoID = generateUUID();
+      storage.setDataInLocalStorage(NATIVENDO_KEY, nativendoID);
+    }
+  }
+
+  return nativendoID;
+}
+
+const getEids = (bidRequest) => {
+  const eids = [];
+  const nativendoID = getNativendoID();
+
+  if (nativendoID) {
+    const nativendoUserEid = {
+      source: 'nativendo.de',
+      uids: [
+        {
+          id: nativendoID,
+          atype: 1
+        }
+      ]
+    };
+
+    eids.push(nativendoUserEid);
+  }
+
+  if (bidRequest.userIdAsEids) {
+    eids.push(bidRequest.userIdAsEids);
+  }
+
+  return eids;
+}
 
 function transformSizes(requestSizes) {
   if (!isArray(requestSizes)) {
