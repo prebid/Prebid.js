@@ -6,10 +6,10 @@ import {
   deepAccess,
   isEmpty,
   contains,
-  timestamp,
   triggerPixel,
   isInteger,
-  getBidIdParameter
+  getBidIdParameter,
+  getDNT
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -67,7 +67,7 @@ export const spec = {
   interpretResponse: function ({body}) {
     const bidResponses = [];
 
-    if (body.bids) {
+    if (body && body.bids && body.bids.length) {
       body.bids.forEach(adUnit => {
         const bidResponse = {
           requestId: adUnit.requestId,
@@ -406,11 +406,10 @@ function isBanner(bid) {
  * @returns {object} the common params object
  */
 function generateGeneralParams(generalObject, bidderRequest) {
-  const domain = window.location.hostname;
+  const domain = deepAccess(bidderRequest, 'refererInfo.domain') || window.location.hostname;
   const {syncEnabled, filterSettings} = config.getConfig('userSync') || {};
-  const {bidderCode} = bidderRequest;
+  const {bidderCode, timeout} = bidderRequest;
   const generalBidParams = generalObject.params;
-  const timeout = bidderRequest.timeout;
 
   // these params are snake_case instead of camelCase to allow backwards compatability on the server.
   // in the future, these will be converted to camelCase to match our convention.
@@ -419,11 +418,10 @@ function generateGeneralParams(generalObject, bidderRequest) {
     wrapper_vendor: '$$PREBID_GLOBAL$$',
     wrapper_version: '$prebid.version$',
     adapter_version: ADAPTER_VERSION,
-    auction_start: timestamp(),
     publisher_id: generalBidParams.org,
     publisher_name: domain,
     site_domain: domain,
-    dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
+    dnt: getDNT() ? 1 : 0,
     device_type: getDeviceType(navigator.userAgent),
     ua: navigator.userAgent,
     is_wrapper: !!generalBidParams.isWrapper,
@@ -449,6 +447,10 @@ function generateGeneralParams(generalObject, bidderRequest) {
     if (allowedSyncMethod) {
       generalParams.cs_method = allowedSyncMethod;
     }
+  }
+
+  if (bidderRequest.auctionStart) {
+    generalParams.auction_start = bidderRequest.auctionStart;
   }
 
   if (bidderRequest.uspConsent) {
