@@ -129,6 +129,30 @@ describe('paapi module', () => {
             expect(getPAAPIConfig({auctionId})).to.eql({});
           });
 
+          it('should use first size as requestedSize', () => {
+            addComponentAuctionHook(nextFnSpy, {
+              auctionId,
+              adUnitCode: 'au1',
+            }, fledgeAuctionConfig);
+            events.emit(CONSTANTS.EVENTS.AUCTION_END, {
+              auctionId,
+              adUnits: [
+                {
+                  code: 'au1',
+                  mediaTypes: {
+                    banner: {
+                      sizes: [[200, 100], [300, 200]]
+                    }
+                  }
+                }
+              ]
+            });
+            expect(getPAAPIConfig({auctionId}).au1.requestedSize).to.eql({
+              width: '200',
+              height: '100'
+            })
+          })
+
           it('should augment auctionSignals with FPD', () => {
             addComponentAuctionHook(nextFnSpy, {
               auctionId,
