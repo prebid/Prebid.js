@@ -1,7 +1,7 @@
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums} from '../src/utils.js';
+import {deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums, deepSetValue} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {find} from '../src/polyfill.js';
 
@@ -365,8 +365,8 @@ function buildRequest(validBidRequests, bidderRequest) {
     }
   }
 
-  if (req.regs.ext.gdpr === 1 && req.regs.ext.gdprConsentString) {
-    req.user.ext.consent = req.regs.ext.gdprConsentString || '';
+  if (bidderRequest.gdprConsent) {
+    deepSetValue(req, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
   }
 
   return req;
