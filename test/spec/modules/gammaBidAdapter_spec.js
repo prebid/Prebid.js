@@ -9,7 +9,8 @@ describe('gammaBidAdapter', function() {
     'bidder': 'gamma',
     'params': {
       siteId: '1465446377',
-      zoneId: '1515999290'
+      zoneId: '1515999290',
+      region: 'SGP'
     },
     'adUnitCode': 'adunit-code',
     'sizes': [
