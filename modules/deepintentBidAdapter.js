@@ -1,7 +1,6 @@
 import { generateUUID, deepSetValue, deepAccess, isArray, isInteger, logError, logWarn } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
-import {config} from '../src/config.js';
 const BIDDER_CODE = 'deepintent';
 const GVL_ID = 541;
 const BIDDER_ENDPOINT = 'https://prebid.deepintent.com/prebid';
@@ -109,7 +108,7 @@ export const spec = {
     }
 
     // coppa compliance
-    if (config.getConfig('coppa') === true) {
+    if (bidderRequest?.coppa) {
       deepSetValue(openRtbBidRequest, 'regs.coppa', 1);
     }
 
