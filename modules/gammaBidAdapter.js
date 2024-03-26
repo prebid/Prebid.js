@@ -87,7 +87,7 @@ export const spec = {
 function getAdUrlByRegion(bid) {
   let adUrl;
 
-  if (bid.params.region && adUrls[bid.params.region]) {
+  if (bid.params.region && ENDPOINTS[bid.params.region]) {
     adUrl = ENDPOINTS[bid.params.region];
   } else {
     try {
