@@ -108,7 +108,7 @@ export const spec = {
     }
 
     // coppa compliance
-    if (bidderRequest?.coppa) {
+    if (bidderRequest?.ortb2?.regs?.coppa) {
       deepSetValue(openRtbBidRequest, 'regs.coppa', 1);
     }
 
