@@ -10,7 +10,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import { submodule } from '../src/hook.js';
 
 const MODULE_NAME = 'pirId';
-const ID_TOKEN = 'pirIdToken';
+const ID_TOKEN = 'WPxid';
 export const storage = getStorageManager({ moduleName: MODULE_NAME, moduleType: MODULE_TYPE_UID });
 
 /**
@@ -35,41 +35,15 @@ export const pirIdSubmodule = {
   },
 
   /**
-   * Sets the ID token in local storage or cookies, if enabled.
-   * @param {Object} config The configuration object.
-   */
-  setId(config) {
-    if (typeof config !== 'object' || !config.params || !config.params.pirIdToken) return;
-
-    const { pirIdToken } = config.params;
-    const isLSEnabled = storage.localStorageIsEnabled();
-    const isCookiesEnabled = storage.cookiesAreEnabled();
-
-    if (isCookiesEnabled) {
-      storage.setCookie(ID_TOKEN, pirIdToken, undefined, undefined, 'pir.wp.pl');
-    } else if (isLSEnabled) {
-      storage.setDataInLocalStorage(ID_TOKEN, pirIdToken);
-    }
-  },
-
-  /**
-   * performs action to obtain id and return a value in the callback's response argument
+   * performs action to obtain id and return a value
    * @function
    * @param {SubmoduleConfig} [config]
-   * @returns {IdResponse|undefined}
+   * @returns {Id|undefined}
    */
-  getId(config) {
-    let pirIdToken = readId();
+  getId() {
+    const pirIdToken = readId();
 
-    if (!pirIdToken && config.params && config.params.pirIdToken) {
-      pirIdSubmodule.setId(config);
-
-      ({ pirIdToken } = config.params);
-    }
-
-    if (pirIdToken) {
-      return { id: pirIdToken };
-    }
+    return pirIdToken ? { id: pirIdToken } : undefined;
   },
   eids: {
     'pirId': {
@@ -77,6 +51,7 @@ export const pirIdSubmodule = {
       atype: 1
     },
   },
+
   /**
    * Extracts the top-level domain from the current window's location.
    *

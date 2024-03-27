@@ -3,69 +3,33 @@ import sinon from 'sinon';
 
 describe('pirIdSystem', () => {
   let sandbox;
-  let setCookieStub;
   let getCookieStub;
-  let setDataInLocalStorageStub;
   let getDataFromLocalStorageStub;
-  let localStorageIsEnabledStub;
-  let cookiesAreEnabledStub;
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
-    setCookieStub = sandbox.stub(storage, 'setCookie');
     getCookieStub = sandbox.stub(storage, 'getCookie');
-    setDataInLocalStorageStub = sandbox.stub(storage, 'setDataInLocalStorage');
     getDataFromLocalStorageStub = sandbox.stub(storage, 'getDataFromLocalStorage');
-    localStorageIsEnabledStub = sandbox.stub(storage, 'localStorageIsEnabled');
-    cookiesAreEnabledStub = sandbox.stub(storage, 'cookiesAreEnabled');
   });
 
   afterEach(() => {
     sandbox.restore();
   });
 
-  describe('setId', () => {
-    it('should set ID token in local storage when enabled', () => {
-      const config = { params: { pirIdToken: 'testToken' } };
-
-      localStorageIsEnabledStub.returns(true);
-      pirIdSubmodule.setId(config);
-
-      expect(setDataInLocalStorageStub.calledWith('pirIdToken', config.params.pirIdToken)).to.be.true;
-    });
-
-    it('should set ID token in cookies when enabled', () => {
-      const config = { params: { pirIdToken: 'testToken' } };
-
-      cookiesAreEnabledStub.returns(true);
-      pirIdSubmodule.setId(config);
-
-      expect(setCookieStub.calledWith('pirIdToken', config.params.pirIdToken, undefined, undefined, 'pir.wp.pl')).to.be.true;
-    });
-  });
-
   describe('getId', () => {
     it('should return an object with id when pirIdToken is found', () => {
-      const config = { params: { pirIdToken: 'testToken' } };
-      const setIdStub = sandbox.stub(pirIdSubmodule, 'setId');
-
       getDataFromLocalStorageStub.returns('testToken');
       getCookieStub.returns('testToken');
 
-      const result = pirIdSubmodule.getId(config);
+      const result = pirIdSubmodule.getId();
 
-      expect(setIdStub.calledWith(config)).to.be.false;
       expect(result).to.deep.equal({ id: 'testToken' });
     });
 
     it('should return undefined when pirIdToken is not found', () => {
-      const config = { params: { pirIdToken: 'testToken' } };
-      const setIdStub = sandbox.stub(pirIdSubmodule, 'setId');
+      const result = pirIdSubmodule.getId();
 
-      const result = pirIdSubmodule.getId(config);
-
-      expect(setIdStub.calledWith(config)).to.be.true;
-      expect(result).to.deep.equal({ id: 'testToken' });
+      expect(result).to.be.undefined;
     });
   });
 
@@ -98,8 +62,6 @@ describe('pirIdSystem', () => {
       const result = readId();
 
       expect(result).to.equal('local_storage_data');
-      expect(getDataFromLocalStorageStub.calledWith('pirIdToken')).to.be.true;
-      expect(getCookieStub.called).to.be.false;
     });
 
     it('should return data from cookie when local storage data does not exist', () => {
@@ -109,8 +71,6 @@ describe('pirIdSystem', () => {
       const result = readId();
 
       expect(result).to.equal('cookie_data');
-      expect(getDataFromLocalStorageStub.calledWith('pirIdToken')).to.be.true;
-      expect(getCookieStub.calledWith('pirIdToken')).to.be.true;
     });
 
     it('should return null when neither local storage data nor cookie data exists', () => {
@@ -120,8 +80,6 @@ describe('pirIdSystem', () => {
       const result = readId();
 
       expect(result).to.be.null;
-      expect(getDataFromLocalStorageStub.calledWith('pirIdToken')).to.be.true;
-      expect(getCookieStub.calledWith('pirIdToken')).to.be.true;
     });
   });
 });

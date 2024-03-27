@@ -21,9 +21,6 @@ pbjs.setConfig({
                 expires: 7,
                 refreshInSeconds: 360
             },
-            params: {
-                pirIdToken: xID106724346777
-            }
         }]
     }
 });
