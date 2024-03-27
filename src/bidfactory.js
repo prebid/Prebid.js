@@ -14,20 +14,23 @@ import { getUniqueIdentifierStr } from './utils.js';
  dealId,
  priceKeyString;
  */
-function Bid(statusCode, {src = 'client', bidder = '', bidId, transactionId, auctionId} = {}) {
+function Bid(statusCode, {src = 'client', bidder = '', bidId, transactionId, adUnitId, auctionId} = {}) {
   var _bidSrc = src;
   var _statusCode = statusCode || 0;
 
-  this.bidderCode = bidder;
-  this.width = 0;
-  this.height = 0;
-  this.statusMessage = _getStatus();
-  this.adId = getUniqueIdentifierStr();
-  this.requestId = bidId;
-  this.transactionId = transactionId;
-  this.auctionId = auctionId;
-  this.mediaType = 'banner';
-  this.source = _bidSrc;
+  Object.assign(this, {
+    bidderCode: bidder,
+    width: 0,
+    height: 0,
+    statusMessage: _getStatus(),
+    adId: getUniqueIdentifierStr(),
+    requestId: bidId,
+    transactionId,
+    adUnitId,
+    auctionId,
+    mediaType: 'banner',
+    source: _bidSrc
+  })
 
   function _getStatus() {
     switch (_statusCode) {
@@ -57,6 +60,7 @@ function Bid(statusCode, {src = 'client', bidder = '', bidId, transactionId, auc
       bidder: this.bidderCode,
       bidId: this.requestId,
       transactionId: this.transactionId,
+      adUnitId: this.adUnitId,
       auctionId: this.auctionId
     }
   };

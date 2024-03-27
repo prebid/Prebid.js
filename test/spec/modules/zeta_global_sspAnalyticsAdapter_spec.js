@@ -9,7 +9,7 @@ let events = require('src/events');
 
 const EVENTS = {
   AUCTION_END: {
-    'auctionId': '75e394d9-ccce-4978-9238-91e6a1ac88a1',
+    'auctionId': '75e394d9',
     'timestamp': 1638441234544,
     'auctionEnd': 1638441234784,
     'auctionStatus': 'completed',
@@ -61,7 +61,7 @@ const EVENTS = {
             600
           ]
         ],
-        'transactionId': '6b29369c-0c2e-414e-be1f-5867aec18d83'
+        'transactionId': '6b29369c'
       }
     ],
     'adUnitCodes': [
@@ -70,7 +70,7 @@ const EVENTS = {
     'bidderRequests': [
       {
         'bidderCode': 'zeta_global_ssp',
-        'auctionId': '75e394d9-ccce-4978-9238-91e6a1ac88a1',
+        'auctionId': '75e394d9',
         'bidderRequestId': '1207cb49191887',
         'bids': [
           {
@@ -90,7 +90,7 @@ const EVENTS = {
               }
             },
             'adUnitCode': '/19968336/header-bid-tag-0',
-            'transactionId': '6b29369c-0c2e-414e-be1f-5867aec18d83',
+            'transactionId': '6b29369c',
             'sizes': [
               [
                 300,
@@ -103,7 +103,7 @@ const EVENTS = {
             ],
             'bidId': '206be9a13236af',
             'bidderRequestId': '1207cb49191887',
-            'auctionId': '75e394d9-ccce-4978-9238-91e6a1ac88a1',
+            'auctionId': '75e394d9',
             'src': 'client',
             'bidRequestsCount': 1,
             'bidderRequestsCount': 1,
@@ -126,7 +126,7 @@ const EVENTS = {
       },
       {
         'bidderCode': 'appnexus',
-        'auctionId': '75e394d9-ccce-4978-9238-91e6a1ac88a1',
+        'auctionId': '75e394d9',
         'bidderRequestId': '32b97f0a935422',
         'bids': [
           {
@@ -149,7 +149,7 @@ const EVENTS = {
               }
             },
             'adUnitCode': '/19968336/header-bid-tag-0',
-            'transactionId': '6b29369c-0c2e-414e-be1f-5867aec18d83',
+            'transactionId': '6b29369c',
             'sizes': [
               [
                 300,
@@ -162,7 +162,7 @@ const EVENTS = {
             ],
             'bidId': '41badc0e164c758',
             'bidderRequestId': '32b97f0a935422',
-            'auctionId': '75e394d9-ccce-4978-9238-91e6a1ac88a1',
+            'auctionId': '75e394d9',
             'src': 'client',
             'bidRequestsCount': 1,
             'bidderRequestsCount': 1,
@@ -205,7 +205,7 @@ const EVENTS = {
           }
         },
         'adUnitCode': '/19968336/header-bid-tag-0',
-        'transactionId': '6b29369c-0c2e-414e-be1f-5867aec18d83',
+        'transactionId': '6b29369c',
         'sizes': [
           [
             300,
@@ -218,7 +218,7 @@ const EVENTS = {
         ],
         'bidId': '41badc0e164c758',
         'bidderRequestId': '32b97f0a935422',
-        'auctionId': '75e394d9-ccce-4978-9238-91e6a1ac88a1',
+        'auctionId': '75e394d9',
         'src': 'client',
         'bidRequestsCount': 1,
         'bidderRequestsCount': 1,
@@ -243,12 +243,12 @@ const EVENTS = {
         'netRevenue': true,
         'meta': {
           'advertiserDomains': [
-            'viaplay.fi'
+            'example.adomain'
           ]
         },
         'originalCpm': 2.258302852806723,
         'originalCurrency': 'USD',
-        'auctionId': '75e394d9-ccce-4978-9238-91e6a1ac88a1',
+        'auctionId': '75e394d9',
         'responseTimestamp': 1638441234670,
         'requestTimestamp': 1638441234547,
         'bidder': 'zeta_global_ssp',
@@ -268,7 +268,7 @@ const EVENTS = {
           'hb_size': '480x320',
           'hb_source': 'client',
           'hb_format': 'banner',
-          'hb_adomain': 'viaplay.fi'
+          'hb_adomain': 'example.adomain'
         }
       }
     ],
@@ -311,12 +311,12 @@ const EVENTS = {
       'netRevenue': true,
       'meta': {
         'advertiserDomains': [
-          'viaplay.fi'
+          'example.adomain'
         ]
       },
       'originalCpm': 2.258302852806723,
       'originalCurrency': 'USD',
-      'auctionId': '75e394d9-ccce-4978-9238-91e6a1ac88a1',
+      'auctionId': '75e394d9',
       'responseTimestamp': 1638441234670,
       'requestTimestamp': 1638441234547,
       'bidder': 'zeta_global_ssp',
@@ -336,7 +336,7 @@ const EVENTS = {
         'hb_size': '480x320',
         'hb_source': 'client',
         'hb_format': 'banner',
-        'hb_adomain': 'viaplay.fi'
+        'hb_adomain': 'example.adomain'
       },
       'status': 'rendered',
       'params': [
@@ -409,16 +409,19 @@ describe('Zeta Global SSP Analytics Adapter', function() {
       const auctionEnd = JSON.parse(requests[0].requestBody);
       const auctionSucceeded = JSON.parse(requests[1].requestBody);
 
-      expect(auctionEnd.adUnitCodes[0]).to.be.equal('/19968336/header-bid-tag-0');
+      expect(auctionEnd.adUnitCodes).to.be.undefined;
       expect(auctionEnd.adUnits[0].bids[0].bidder).to.be.equal('zeta_global_ssp');
-      expect(auctionEnd.auctionEnd).to.be.equal(1638441234784);
-      expect(auctionEnd.auctionId).to.be.equal('75e394d9-ccce-4978-9238-91e6a1ac88a1');
+      expect(auctionEnd.auctionEnd).to.be.undefined;
+      expect(auctionEnd.auctionId).to.be.equal('75e394d9');
       expect(auctionEnd.bidderRequests[0].bidderCode).to.be.equal('zeta_global_ssp');
+      expect(auctionEnd.bidderRequests[0].bids[0].bidId).to.be.equal('206be9a13236af');
+      expect(auctionEnd.bidderRequests[0].bids[0].adUnitCode).to.be.equal('/19968336/header-bid-tag-0');
       expect(auctionEnd.bidsReceived[0].bidderCode).to.be.equal('zeta_global_ssp');
-      expect(auctionEnd.noBids[0].bidder).to.be.equal('appnexus');
+      expect(auctionEnd.bidsReceived[0].adserverTargeting.hb_adomain).to.be.equal('example.adomain');
+      expect(auctionEnd.bidsReceived[0].auctionId).to.be.equal('75e394d9');
 
       expect(auctionSucceeded.adId).to.be.equal('5759bb3ef7be1e8');
-      expect(auctionSucceeded.bid.auctionId).to.be.equal('75e394d9-ccce-4978-9238-91e6a1ac88a1');
+      expect(auctionSucceeded.bid.auctionId).to.be.equal('75e394d9');
       expect(auctionSucceeded.bid.requestId).to.be.equal('206be9a13236af');
       expect(auctionSucceeded.bid.bidderCode).to.be.equal('zeta_global_ssp');
       expect(auctionSucceeded.bid.creativeId).to.be.equal('456456456');

@@ -638,7 +638,7 @@ describe('SSPBC adapter', function () {
       expect(adcode).to.be.a('string');
       expect(adcode).to.contain('window.rekid');
       expect(adcode).to.contain('window.mcad');
-      expect(adcode).to.contain('window.gdpr');
+      expect(adcode).to.contain('window.tcString');
       expect(adcode).to.contain('window.page');
       expect(adcode).to.contain('window.requestPVID');
     });

@@ -80,8 +80,7 @@ However, there are two restrictions (to avoid them, use the [other customization
     )   
     ```
 
-<a id="fine-customization" />
-### Fine grained customization - imp, request, bidResponse, response
+### <a id="fine-customization" /> Fine grained customization - imp, request, bidResponse, response
 
 When invoked, `toORTB({bidRequests, bidderRequest})` first loops through each request in `bidRequests`, converting them into ORTB `imp` objects.
 It then packages them into a single ORTB request, adding other parameters that are not imp-specific (such as for example `request.tmax`).
@@ -91,7 +90,7 @@ a single return value.
 
 You can customize each of these steps using the `ortbConverter` arguments `imp`, `request`, `bidResponse` and `response`:
 
-### <a id="imp" />Customizing imps: `imp(buildImp, bidRequest, context)`
+### <a id="imp" /> Customizing imps: `imp(buildImp, bidRequest, context)`
 
 Invoked once for each input `bidRequest`; should return the ORTB `imp` object to include in the request.
 The arguments are:
@@ -101,7 +100,7 @@ The arguments are:
 - `context`: a [context object](#context) that contains at least:
    - `bidderRequest`: the `bidderRequest` argument passed to `toORTB`.
    
-#### <a id="params" />Example: attaching custom bid params
+#### <a id="params" /> Example: attaching custom bid params
 
 ```javascript
 const converter = ortbConverter({
@@ -351,7 +350,7 @@ const converter = ortbConverter({
 - the `context` argument of `ortbConverter`: e.g. `ortbConverter({context: {ttl: 30}})`. This will set `context.ttl = 30` globally for the converter.
 - the `context` argument of `toORTB`: e.g. `converter.toORTB({bidRequests, bidderRequest, context: {ttl: 30}})`. This will set `context.ttl = 30` only for this request.
 
-### <a id="special-context"/> Special `context` properties
+### <a id="special-context" /> Special `context` properties
 
 For ease of use, the conversion logic gives special meaning to some context properties:
 

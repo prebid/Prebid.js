@@ -9,6 +9,10 @@ import { loadExternalScript } from '../src/adloader.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { deepAccess, deepSetValue, isEmptyStr } from '../src/utils.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 const MODULE_NAME = 'dynamicAdBoost';
 const SCRIPT_URL = 'https://adxbid.info';
 const CLIENT_SUPPORTS_IO = window.IntersectionObserver && window.IntersectionObserverEntry && window.IntersectionObserverEntry.prototype &&

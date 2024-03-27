@@ -1,5 +1,17 @@
 import { expect } from 'chai';
-import { spec } from 'modules/mediagoBidAdapter.js';
+import {
+  spec,
+  getPmgUID,
+  storage,
+  getPageTitle,
+  getPageDescription,
+  getPageKeywords,
+  getConnectionDownLink,
+  THIRD_PARTY_COOKIE_ORIGIN,
+  COOKIE_KEY_MGUID,
+  getCurrentTimeToUTCString
+} from 'modules/mediagoBidAdapter.js';
+import * as utils from 'src/utils.js';
 
 describe('mediago:BidAdapterTests', function () {
   let bidRequestData = {
@@ -161,6 +173,47 @@ describe('mediago:BidAdapterTests', function () {
     expect(req_data.imp).to.have.lengthOf(1);
   });
 
+  describe('mediago: buildRequests', function() {
+    describe('getPmgUID function', function() {
+      let sandbox;
+
+      beforeEach(() => {
+        sandbox = sinon.sandbox.create();
+        sandbox.stub(storage, 'getCookie');
+        sandbox.stub(storage, 'setCookie');
+        sandbox.stub(utils, 'generateUUID').returns('new-uuid');
+        sandbox.stub(storage, 'cookiesAreEnabled');
+      })
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should generate new UUID and set cookie if not exists', () => {
+        storage.cookiesAreEnabled.callsFake(() => true);
+        storage.getCookie.callsFake(() => null);
+        const uid = getPmgUID();
+        expect(uid).to.equal('new-uuid');
+        expect(storage.setCookie.calledOnce).to.be.true;
+      });
+
+      it('should return existing UUID from cookie', () => {
+        storage.cookiesAreEnabled.callsFake(() => true);
+        storage.getCookie.callsFake(() => 'existing-uuid');
+        const uid = getPmgUID();
+        expect(uid).to.equal('existing-uuid');
+        expect(storage.setCookie.called).to.be.false;
+      });
+
+      it('should not set new UUID when cookies are not enabled', () => {
+        storage.cookiesAreEnabled.callsFake(() => false);
+        storage.getCookie.callsFake(() => null);
+        getPmgUID();
+        expect(storage.setCookie.calledOnce).to.be.false;
+      });
+    })
+  });
+
   it('mediago:validate_response_params', function () {
     let adm =
       '<link rel="stylesheet" href="https://cdn.mediago.io/js/style/style_banner_300*250.css"><div id="mgcontainer-99afea272c2b0e8626489674ddb7a0bb" class="mediago-placement imgTopTitleBottom" style="position:relative;width:298px;height:248px;overflow:hidden"><a href="https://trace.mediago.io/api/bidder/track?tn=39934c2bda4debbe4c680be1dd02f5d3&price=djUJcggeuWWfbm28q4WXHdgMFkO28DrGw49FnubQ0Bk&evt=102&rid=6e28cfaf115a354ea1ad8e1304d6d7b8&campaignid=1339145&impid=44-300x250-1&offerid=24054386&test=0&time=1660789795&cp=jZDh1xu6_QqJLlKVtCkiHIP_TER6gL9jeTrlHCBoxOM&clickid=44_6e28cfaf115a354ea1ad8e1304d6d7b8_44-300x250-1&acid=599&trackingid=99afea272c2b0e8626489674ddb7a0bb&uid=a865b9ae-fa9e-4c09-8204-2db99ac7c8f7&jt=2&url=oxZA2i2aUVY76Xy2t3HffaK_ZtBDsgFwFc_Nbnw-bz3yCxmoUyZvATKnFc9ZkUfT1eQizhtczCwDzjHwwwDgTehUnp1EwdY4g1LRcuOwlRpXnVTt3zPQdaVx5nVDw25by7lQ0q469LCv2eEFDTAv_FOuVT32WiOx_ArOIlxCnDGpjPLUNyxm3cTZFGOJn4B7&bm=2&la=en&cn=us&cid=3998296&info=Si3oM-qfCbw2iZRYs01BkUWyH6c5CQWHrA8CQLE0VHcXAcf4ljY9dyLzQ4vAlTWd6-j_ou4ySor3e70Ll7wlKiiauQKaUkZqNoTizHm73C4FK8DYJSTP3VkhJV8RzrYk&sid=128__110__1__12__28__38__163__96__58__24__47__99&sp=djUJcggeuWWfbm28q4WXHdgMFkO28DrGw49FnubQ0Bk&scp=zK0DRYY1UV-syqSpmcMYBpOebtoQJV9ZEJT0JFqbTQg&acu=USD&scu=USD&sgcp=zK0DRYY1UV-syqSpmcMYBpOebtoQJV9ZEJT0JFqbTQg&gprice=djUJcggeuWWfbm28q4WXHdgMFkO28DrGw49FnubQ0Bk&gcp=zK0DRYY1UV-syqSpmcMYBpOebtoQJV9ZEJT0JFqbTQg&ah=&pb=&de=wjh.popin.cc&cat=&iv=0" target="_blank" class="mediago-placement-track" style="display: inline-block;"><img alt="Ranger\'s spot giant lion - vet is shocked when looking at the ultrasound" src="https://d2cli4kgl5uxre.cloudfront.net/ML/ff32b6f9b3bbc45c00b78b6674a2952e__scv1__300x175.png" style="height:70%;width:100%;border-width:0;border:none;"><h3 class="title" style="font-size:16px;">Ranger\'s spot giant lion - vet is shocked when looking at the ultrasound</h3></a><span class="source"><a class="sourcename" href="//www.mediago.io" target="_blank"><span>Ad</span> </a><a class="mgmgsrcnameadslabelurl" href="//www.mediago.io/privacy" target="_blank"><span>soo-healthy</span></a></span></div>';
@@ -206,5 +259,325 @@ describe('mediago:BidAdapterTests', function () {
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);
     expect(bid.currency).to.equal('USD');
+  });
+
+  describe('mediago: getUserSyncs', function() {
+    const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediago.io/js/cookieSync.html';
+    const IFRAME_ENABLED = {
+      iframeEnabled: true,
+      pixelEnabled: false,
+    };
+    const IFRAME_DISABLED = {
+      iframeEnabled: false,
+      pixelEnabled: false,
+    };
+    const GDPR_CONSENT = {
+      consentString: 'gdprConsentString',
+      gdprApplies: true
+    };
+    const USP_CONSENT = {
+      consentString: 'uspConsentString'
+    }
+
+    let syncParamUrl = `dm=${encodeURIComponent(location.origin || `https://${location.host}`)}`;
+    syncParamUrl += '&gdpr=1&gdpr_consent=gdprConsentString&ccpa_consent=uspConsentString';
+    const expectedIframeSyncs = [
+      {
+        type: 'iframe',
+        url: `${COOKY_SYNC_IFRAME_URL}?${syncParamUrl}`
+      }
+    ];
+
+    it('should return nothing if iframe is disabled', () => {
+      const userSyncs = spec.getUserSyncs(IFRAME_DISABLED, undefined, GDPR_CONSENT, USP_CONSENT, undefined);
+      expect(userSyncs).to.be.undefined;
+    });
+
+    it('should do userSyncs if iframe is enabled', () => {
+      const userSyncs = spec.getUserSyncs(IFRAME_ENABLED, undefined, GDPR_CONSENT, USP_CONSENT, undefined);
+      expect(userSyncs).to.deep.equal(expectedIframeSyncs);
+    });
+  });
+});
+
+describe('mediago Bid Adapter Tests', function () {
+  describe('buildRequests', () => {
+    describe('getPageTitle function', function() {
+      let sandbox;
+
+      beforeEach(() => {
+        sandbox = sinon.createSandbox();
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should return the top document title if available', function() {
+        const fakeTopDocument = {
+          title: 'Top Document Title',
+          querySelector: () => ({ content: 'Top Document Title test' })
+        };
+        const fakeTopWindow = {
+          document: fakeTopDocument
+        };
+        const result = getPageTitle({ top: fakeTopWindow });
+        expect(result).to.equal('Top Document Title');
+      });
+
+      it('should return the content of top og:title meta tag if title is empty', function() {
+        const ogTitleContent = 'Top OG Title Content';
+        const fakeTopWindow = {
+          document: {
+            title: '',
+            querySelector: sandbox.stub().withArgs('meta[property="og:title"]').returns({ content: ogTitleContent })
+          }
+        };
+
+        const result = getPageTitle({ top: fakeTopWindow });
+        expect(result).to.equal(ogTitleContent);
+      });
+
+      it('should return the document title if no og:title meta tag is present', function() {
+        document.title = 'Test Page Title';
+        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns(null);
+
+        const result = getPageTitle({ top: undefined });
+        expect(result).to.equal('Test Page Title');
+      });
+
+      it('should return the content of og:title meta tag if present', function() {
+        document.title = '';
+        const ogTitleContent = 'Top OG Title Content';
+        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns({ content: ogTitleContent });
+        const result = getPageTitle({ top: undefined });
+        expect(result).to.equal(ogTitleContent);
+      });
+
+      it('should return an empty string if no title or og:title meta tag is found', function() {
+        document.title = '';
+        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns(null);
+        const result = getPageTitle({ top: undefined });
+        expect(result).to.equal('');
+      });
+
+      it('should handle exceptions when accessing top.document and fallback to current document', function() {
+        const fakeWindow = {
+          get top() {
+            throw new Error('Access denied');
+          }
+        };
+        const ogTitleContent = 'Current OG Title Content';
+        document.title = 'Current Document Title';
+        sandbox.stub(document, 'querySelector').withArgs('meta[property="og:title"]').returns({ content: ogTitleContent });
+        const result = getPageTitle(fakeWindow);
+        expect(result).to.equal('Current Document Title');
+      });
+    });
+
+    describe('getPageDescription function', function() {
+      let sandbox;
+
+      beforeEach(() => {
+        sandbox = sinon.createSandbox();
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should return the top document description if available', function() {
+        const descriptionContent = 'Top Document Description';
+        const fakeTopDocument = {
+          querySelector: sandbox.stub().withArgs('meta[name="description"]').returns({ content: descriptionContent })
+        };
+        const fakeTopWindow = { document: fakeTopDocument };
+        const result = getPageDescription({ top: fakeTopWindow });
+        expect(result).to.equal(descriptionContent);
+      });
+
+      it('should return the top document og:description if description is not present', function() {
+        const ogDescriptionContent = 'Top OG Description';
+        const fakeTopDocument = {
+          querySelector: sandbox.stub().withArgs('meta[property="og:description"]').returns({ content: ogDescriptionContent })
+        };
+        const fakeTopWindow = { document: fakeTopDocument };
+        const result = getPageDescription({ top: fakeTopWindow });
+        expect(result).to.equal(ogDescriptionContent);
+      });
+
+      it('should return the current document description if top document is not accessible', function() {
+        const descriptionContent = 'Current Document Description';
+        sandbox.stub(document, 'querySelector')
+          .withArgs('meta[name="description"]').returns({ content: descriptionContent })
+        const fakeWindow = {
+          get top() {
+            throw new Error('Access denied');
+          }
+        };
+        const result = getPageDescription(fakeWindow);
+        expect(result).to.equal(descriptionContent);
+      });
+
+      it('should return the current document og:description if description is not present and top document is not accessible', function() {
+        const ogDescriptionContent = 'Current OG Description';
+        sandbox.stub(document, 'querySelector')
+          .withArgs('meta[property="og:description"]').returns({ content: ogDescriptionContent });
+
+        const fakeWindow = {
+          get top() {
+            throw new Error('Access denied');
+          }
+        };
+        const result = getPageDescription(fakeWindow);
+        expect(result).to.equal(ogDescriptionContent);
+      });
+    });
+
+    describe('getPageKeywords function', function() {
+      let sandbox;
+
+      beforeEach(() => {
+        sandbox = sinon.createSandbox();
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should return the top document keywords if available', function() {
+        const keywordsContent = 'keyword1, keyword2, keyword3';
+        const fakeTopDocument = {
+          querySelector: sandbox.stub()
+            .withArgs('meta[name="keywords"]').returns({ content: keywordsContent })
+        };
+        const fakeTopWindow = { document: fakeTopDocument };
+
+        const result = getPageKeywords({ top: fakeTopWindow });
+        expect(result).to.equal(keywordsContent);
+      });
+
+      it('should return the current document keywords if top document is not accessible', function() {
+        const keywordsContent = 'keyword1, keyword2, keyword3';
+        sandbox.stub(document, 'querySelector')
+          .withArgs('meta[name="keywords"]').returns({ content: keywordsContent });
+
+        // 模拟顶层窗口访问异常
+        const fakeWindow = {
+          get top() {
+            throw new Error('Access denied');
+          }
+        };
+
+        const result = getPageKeywords(fakeWindow);
+        expect(result).to.equal(keywordsContent);
+      });
+
+      it('should return an empty string if no keywords meta tag is found', function() {
+        sandbox.stub(document, 'querySelector').withArgs('meta[name="keywords"]').returns(null);
+
+        const result = getPageKeywords();
+        expect(result).to.equal('');
+      });
+    });
+    describe('getConnectionDownLink function', function() {
+      let sandbox;
+
+      beforeEach(() => {
+        sandbox = sinon.createSandbox();
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should return the downlink value as a string if available', function() {
+        const downlinkValue = 2.5;
+        const fakeNavigator = {
+          connection: {
+            downlink: downlinkValue
+          }
+        };
+
+        const result = getConnectionDownLink({ navigator: fakeNavigator });
+        expect(result).to.equal(downlinkValue.toString());
+      });
+
+      it('should return undefined if downlink is not available', function() {
+        const fakeNavigator = {
+          connection: {}
+        };
+
+        const result = getConnectionDownLink({ navigator: fakeNavigator });
+        expect(result).to.be.undefined;
+      });
+
+      it('should return undefined if connection is not available', function() {
+        const fakeNavigator = {};
+
+        const result = getConnectionDownLink({ navigator: fakeNavigator });
+        expect(result).to.be.undefined;
+      });
+
+      it('should handle cases where navigator is not defined', function() {
+        const result = getConnectionDownLink({});
+        expect(result).to.be.undefined;
+      });
+    });
+
+    describe('getUserSyncs with message event listener', function() {
+      function messageHandler(event) {
+        if (!event.data || event.origin !== THIRD_PARTY_COOKIE_ORIGIN) {
+          return;
+        }
+
+        window.removeEventListener('message', messageHandler, true);
+        event.stopImmediatePropagation();
+
+        const response = event.data;
+        if (!response.optout && response.mguid) {
+          storage.setCookie(COOKIE_KEY_MGUID, response.mguid, getCurrentTimeToUTCString());
+        }
+      }
+
+      let sandbox;
+
+      beforeEach(() => {
+        sandbox = sinon.createSandbox();
+        sandbox.stub(storage, 'setCookie');
+        sandbox.stub(window, 'removeEventListener');
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should set a cookie when a valid message is received', () => {
+        const fakeEvent = {
+          data: { optout: '', mguid: '12345' },
+          origin: THIRD_PARTY_COOKIE_ORIGIN,
+          stopImmediatePropagation: sinon.spy()
+        };
+
+        messageHandler(fakeEvent);
+
+        expect(fakeEvent.stopImmediatePropagation.calledOnce).to.be.true;
+        expect(window.removeEventListener.calledWith('message', messageHandler, true)).to.be.true;
+        expect(storage.setCookie.calledWith(COOKIE_KEY_MGUID, '12345', sinon.match.string)).to.be.true;
+      });
+      it('should not do anything when an invalid message is received', () => {
+        const fakeEvent = {
+          data: null,
+          origin: 'http://invalid-origin.com',
+          stopImmediatePropagation: sinon.spy()
+        };
+
+        messageHandler(fakeEvent);
+
+        expect(fakeEvent.stopImmediatePropagation.notCalled).to.be.true;
+        expect(window.removeEventListener.notCalled).to.be.true;
+        expect(storage.setCookie.notCalled).to.be.true;
+      });
+    });
   });
 });

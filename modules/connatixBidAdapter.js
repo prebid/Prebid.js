@@ -98,6 +98,7 @@ export const spec = {
       ortb2: bidderRequest.ortb2,
       gdprConsent: bidderRequest.gdprConsent,
       uspConsent: bidderRequest.uspConsent,
+      gppConsent: bidderRequest.gppConsent,
       refererInfo: bidderRequest.refererInfo,
       bidRequests,
     };
