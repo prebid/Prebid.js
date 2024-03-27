@@ -319,9 +319,11 @@ describe('paapi module', () => {
                     it('should populate bidfloor/bidfloorcur', () => {
                       addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au'}, fledgeAuctionConfig);
                       events.emit(CONSTANTS.EVENTS.AUCTION_END, payload);
-                      const signals = getPAAPIConfig({auctionId}).au.componentAuctions[0].auctionSignals;
-                      expect(signals.prebid?.bidfloor).to.eql(bidfloor);
-                      expect(signals.prebid?.bidfloorcur).to.eql(bidfloorcur);
+                      const cfg = getPAAPIConfig({auctionId}).au;
+                      const signals = cfg.auctionSignals;
+                      sinon.assert.match(cfg.componentAuctions[0].auctionSignals, signals || {});
+                      expect(signals?.prebid?.bidfloor).to.eql(bidfloor);
+                      expect(signals?.prebid?.bidfloorcur).to.eql(bidfloorcur);
                     });
                   });
                 });

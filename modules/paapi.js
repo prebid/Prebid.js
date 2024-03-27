@@ -101,6 +101,7 @@ function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes, adU
     const forThisAdUnit = (bid) => bid.adUnitCode === adUnitCode;
     const slotSignals = getSlotSignals(bidsReceived?.filter(forThisAdUnit), allReqs?.filter(forThisAdUnit));
     paapiConfigs[adUnitCode] = {
+      ...slotSignals,
       componentAuctions: auctionConfigs.map(cfg => mergeDeep({}, slotSignals, cfg))
     };
     // TODO: need to flesh out size treatment:
