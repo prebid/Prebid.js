@@ -7,6 +7,23 @@ import {config} from '../src/config.js';
 import {OUTSTREAM} from '../src/video.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').MediaType} MediaType
+ * @typedef {import('../src/adapters/bidderFactory.js').Site} Site
+ * @typedef {import('../src/adapters/bidderFactory.js').Device} Device
+ * @typedef {import('../src/adapters/bidderFactory.js').User} User
+ * @typedef {import('../src/adapters/bidderFactory.js').Banner} Banner
+ * @typedef {import('../src/adapters/bidderFactory.js').Video} Video
+ * @typedef {import('../src/adapters/bidderFactory.js').AdUnit} AdUnit
+ * @typedef {import('../src/adapters/bidderFactory.js').Imp} Imp
+ */
+
 const BIDDER_CODE = 'adot';
 const ADAPTER_VERSION = 'v2.0.0';
 const GVLID = 272;

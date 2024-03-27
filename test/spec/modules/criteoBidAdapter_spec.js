@@ -2538,49 +2538,102 @@ describe('The Criteo bidding adapter', function () {
     });
 
     it('should properly parse a bid response with FLEDGE auction configs', function () {
+      let auctionConfig1 = {
+        auctionSignals: {},
+        decisionLogicUrl: 'https://grid-mercury.criteo.com/fledge/decision',
+        interestGroupBuyers: ['https://first-buyer-domain.com', 'https://second-buyer-domain.com'],
+        perBuyerSignals: {
+          'https://first-buyer-domain.com': {
+            foo: 'bar',
+          },
+          'https://second-buyer-domain.com': {
+            foo: 'baz'
+          },
+        },
+        perBuyerTimeout: {
+          '*': 500,
+          'buyer1': 100,
+          'buyer2': 200
+        },
+        perBuyerGroupLimits: {
+          '*': 60,
+          'buyer1': 300,
+          'buyer2': 400
+        },
+        seller: 'https://seller-domain.com',
+        sellerTimeout: 500,
+        sellerSignals: {
+          foo: 'bar',
+          foo2: 'bar2',
+          floor: 1,
+          currency: 'USD',
+          perBuyerTimeout: {
+            'buyer1': 100,
+            'buyer2': 200
+          },
+          perBuyerGroupLimits: {
+            'buyer1': 300,
+            'buyer2': 400
+          },
+        },
+        sellerCurrency: 'USD',
+      };
+      let auctionConfig2 = {
+        auctionSignals: {},
+        decisionLogicUrl: 'https://grid-mercury.criteo.com/fledge/decision',
+        interestGroupBuyers: ['https://first-buyer-domain.com', 'https://second-buyer-domain.com'],
+        perBuyerSignals: {
+          'https://first-buyer-domain.com': {
+            foo: 'bar',
+          },
+          'https://second-buyer-domain.com': {
+            foo: 'baz'
+          },
+        },
+        perBuyerTimeout: {
+          '*': 500,
+          'buyer1': 100,
+          'buyer2': 200
+        },
+        perBuyerGroupLimits: {
+          '*': 60,
+          'buyer1': 300,
+          'buyer2': 400
+        },
+        seller: 'https://seller-domain.com',
+        sellerTimeout: 500,
+        sellerSignals: {
+          foo: 'bar',
+          floor: 1,
+          perBuyerTimeout: {
+            'buyer1': 100,
+            'buyer2': 200
+          },
+          perBuyerGroupLimits: {
+            'buyer1': 300,
+            'buyer2': 400
+          },
+        },
+        sellerCurrency: '???'
+      };
       const response = {
         body: {
           ext: {
-            igbid: [{
+            igi: [{
               impid: 'test-bidId',
-              igbuyer: [{
-                origin: 'https://first-buyer-domain.com',
-                buyerdata: {
-                  foo: 'bar',
-                },
-              }, {
-                origin: 'https://second-buyer-domain.com',
-                buyerdata: {
-                  foo: 'baz',
-                },
+              igs: [{
+                impid: 'test-bidId',
+                bidId: 'test-bidId',
+                config: auctionConfig1
               }]
             }, {
               impid: 'test-bidId-2',
-              igbuyer: [{
-                origin: 'https://first-buyer-domain.com',
-                buyerdata: {
-                  foo: 'bar',
-                },
-              }, {
-                origin: 'https://second-buyer-domain.com',
-                buyerdata: {
-                  foo: 'baz',
-                },
+              igs: [{
+                impid: 'test-bidId-2',
+                bidId: 'test-bidId-2',
+                config: auctionConfig2
               }]
-            }],
-            seller: 'https://seller-domain.com',
-            sellerTimeout: 500,
-            sellerSignals: {
-              foo: 'bar',
-              perBuyerTimeout: { 'buyer1': 100, 'buyer2': 200 },
-              perBuyerGroupLimits: { 'buyer1': 300, 'buyer2': 400 },
-            },
-            sellerSignalsPerImp: {
-              'test-bidId': {
-                foo2: 'bar2',
-                currency: 'USD'
-              },
-            },
+            }]
           },
         },
       };
@@ -2631,87 +2684,13 @@ describe('The Criteo bidding adapter', function () {
       expect(interpretedResponse.fledgeAuctionConfigs).to.have.lengthOf(2);
       expect(interpretedResponse.fledgeAuctionConfigs[0]).to.deep.equal({
         bidId: 'test-bidId',
-        config: {
-          auctionSignals: {},
-          decisionLogicUrl: 'https://grid-mercury.criteo.com/fledge/decision',
-          interestGroupBuyers: ['https://first-buyer-domain.com', 'https://second-buyer-domain.com'],
-          perBuyerSignals: {
-            'https://first-buyer-domain.com': {
-              foo: 'bar',
-            },
-            'https://second-buyer-domain.com': {
-              foo: 'baz'
-            },
-          },
-          perBuyerTimeout: {
-            '*': 50,
-            'buyer1': 100,
-            'buyer2': 200
-          },
-          perBuyerGroupLimits: {
-            '*': 60,
-            'buyer1': 300,
-            'buyer2': 400
-          },
-          seller: 'https://seller-domain.com',
-          sellerTimeout: 500,
-          sellerSignals: {
-            foo: 'bar',
-            foo2: 'bar2',
-            floor: 1,
-            currency: 'USD',
-            perBuyerTimeout: {
-              'buyer1': 100,
-              'buyer2': 200
-            },
-            perBuyerGroupLimits: {
-              'buyer1': 300,
-              'buyer2': 400
-            },
-          },
-          sellerCurrency: 'USD',
-        },
+        impid: 'test-bidId',
+        config: auctionConfig1,
       });
       expect(interpretedResponse.fledgeAuctionConfigs[1]).to.deep.equal({
         bidId: 'test-bidId-2',
-        config: {
-          auctionSignals: {},
-          decisionLogicUrl: 'https://grid-mercury.criteo.com/fledge/decision',
-          interestGroupBuyers: ['https://first-buyer-domain.com', 'https://second-buyer-domain.com'],
-          perBuyerSignals: {
-            'https://first-buyer-domain.com': {
-              foo: 'bar',
-            },
-            'https://second-buyer-domain.com': {
-              foo: 'baz'
-            },
-          },
-          perBuyerTimeout: {
-            '*': 50,
-            'buyer1': 100,
-            'buyer2': 200
-          },
-          perBuyerGroupLimits: {
-            '*': 60,
-            'buyer1': 300,
-            'buyer2': 400
-          },
-          seller: 'https://seller-domain.com',
-          sellerTimeout: 500,
-          sellerSignals: {
-            foo: 'bar',
-            floor: 1,
-            perBuyerTimeout: {
-              'buyer1': 100,
-              'buyer2': 200
-            },
-            perBuyerGroupLimits: {
-              'buyer1': 300,
-              'buyer2': 400
-            },
-          },
-          sellerCurrency: '???'
-        },
+        impid: 'test-bidId-2',
+        config: auctionConfig2,
       });
     });
 

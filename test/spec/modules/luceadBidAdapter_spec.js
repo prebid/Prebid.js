@@ -15,6 +15,12 @@ describe('Lucead Adapter', () => {
     });
   });
 
+  describe('utils functions', function () {
+    it('returns false', function () {
+      expect(spec.isDevEnv()).to.be.false;
+    });
+  });
+
   describe('isBidRequestValid', function () {
     let bid;
     beforeEach(function () {
@@ -33,7 +39,7 @@ describe('Lucead Adapter', () => {
 
   describe('onBidWon', function () {
     let sandbox;
-    const bid = { foo: 'bar' };
+    const bid = { foo: 'bar', creativeId: 'ssp:improve' };
 
     beforeEach(function () {
       sandbox = sinon.sandbox.create();

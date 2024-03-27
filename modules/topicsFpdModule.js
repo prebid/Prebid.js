@@ -38,6 +38,12 @@ const bidderIframeList = {
   }, {
     bidder: 'onetag',
     iframeURL: 'https://onetag-sys.com/static/topicsapi.html'
+  }, {
+    bidder: 'taboola',
+    iframeURL: 'https://cdn.taboola.com/libtrc/static/topics/taboola-prebid-browsing-topics.html'
+  }, {
+    bidder: 'discovery',
+    iframeURL: 'https://api.popin.cc/topic/prebid-topics-frame.html'
   }]
 }
 
