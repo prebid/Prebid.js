@@ -16,6 +16,11 @@ import {deepAccess, logError} from '../src/utils.js';
 import {find} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ * @typedef {import('../modules/rtdModule/index.js').adUnit} adUnit
+ */
+
 const SUBMODULE_NAME = 'jwplayer';
 const JWPLAYER_DOMAIN = SUBMODULE_NAME + '.com';
 const segCache = {};
@@ -26,16 +31,16 @@ let resumeBidRequest;
 /** @type {RtdSubmodule} */
 export const jwplayerSubmodule = {
   /**
-     * used to link submodule with realTimeData
-     * @type {string}
-     */
+   * used to link submodule with realTimeData
+   * @type {string}
+   */
   name: SUBMODULE_NAME,
   /**
-     * add targeting data to bids and signal completion to realTimeData module
-     * @function
-     * @param {Obj} bidReqConfig
-     * @param {function} onDone
-     */
+   * add targeting data to bids and signal completion to realTimeData module
+   * @function
+   * @param {Obj} bidReqConfig
+   * @param {function} onDone
+   */
   getBidRequestData: enrichBidRequest,
   init
 };
@@ -187,18 +192,22 @@ export function extractPublisherParams(adUnit, fallback) {
 }
 
 function loadVat(params, onCompletion) {
-  const { playerID, mediaID } = params;
+  let { playerID, playerDivId, mediaID } = params;
+  if (!playerDivId) {
+    playerDivId = playerID;
+  }
+
   if (pendingRequests[mediaID] !== undefined) {
-    loadVatForPendingRequest(playerID, mediaID, onCompletion);
+    loadVatForPendingRequest(playerDivId, mediaID, onCompletion);
     return;
   }
 
-  const vat = getVatFromCache(mediaID) || getVatFromPlayer(playerID, mediaID) || { mediaID };
+  const vat = getVatFromCache(mediaID) || getVatFromPlayer(playerDivId, mediaID) || { mediaID };
   onCompletion(vat);
 }
 
-function loadVatForPendingRequest(playerID, mediaID, callback) {
-  const vat = getVatFromPlayer(playerID, mediaID);
+function loadVatForPendingRequest(playerDivId, mediaID, callback) {
+  const vat = getVatFromPlayer(playerDivId, mediaID);
   if (vat) {
     callback(vat);
   } else {
@@ -220,8 +229,8 @@ export function getVatFromCache(mediaID) {
   };
 }
 
-export function getVatFromPlayer(playerID, mediaID) {
-  const player = getPlayer(playerID);
+export function getVatFromPlayer(playerDivId, mediaID) {
+  const player = getPlayer(playerDivId);
   if (!player) {
     return null;
   }
@@ -357,14 +366,14 @@ export function addTargetingToBid(bid, targeting) {
   bid.rtd = Object.assign({}, rtd, jwRtd);
 }
 
-function getPlayer(playerID) {
+function getPlayer(playerDivId) {
   const jwplayer = window.jwplayer;
   if (!jwplayer) {
     logError(SUBMODULE_NAME + '.js was not found on page');
     return;
   }
 
-  const player = jwplayer(playerID);
+  const player = jwplayer(playerDivId);
   if (!player || !player.getPlaylist) {
     logError('player ID did not match any players');
     return;
