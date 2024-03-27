@@ -70,11 +70,14 @@
                             when: {
                                 bidder: 'openx',
                             },
+                            then: {
+                                cpm: 0.1
+                            },
                             paapi() {
                                 return [
                                     {
                                         'seller': 'https://privacysandbox.openx.net',
-                                        'decisionLogicUrl': 'https://privacysandbox.openx.net/fledge/decision-logic-component.js',
+                                        'decisionLogicURL': 'https://privacysandbox.openx.net/fledge/decision-logic-component.js',
                                         'sellerSignals': {
                                             'floor': 0.01,
                                             'currency': 'USD',
@@ -113,7 +116,7 @@
                     .map(([adUnitCode, auctionConfig]) => {
                         return navigator.runAdAuction({
                             seller: window.location.origin,
-                            decisionLogicUrl: new URL('decisionLogic.js', window.location).toString(),
+                            decisionLogicURL: new URL('decisionLogic.js', window.location).toString(),
                             resolveToConfig: false,
                             ...auctionConfig
                         }).then(urn => {
