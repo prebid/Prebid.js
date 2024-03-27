@@ -11,7 +11,7 @@
       [300, 600]
     ];
     var div_2_sizes = [
-      [728, 90],
+      [300, 250],
       [970, 250]
     ];
     var PREBID_TIMEOUT = 1000;
@@ -31,8 +31,7 @@
         bids: [{
           bidder: 'preciso',
           params: {
-            publisherId: '123456',
-            region: 'IND',
+            publisherId: 'PRECISO_TEST00001',
             traffic: 'banner',
             bidFloor: 0.12,
           }
@@ -48,9 +47,8 @@
         bids: [{
           bidder: 'preciso',
           params: {
-            publisherId: '123456',
+            publisherId: 'PRECISO_TEST00001',
             host: 'prebid',
-            region: 'prebid-eu',
             traffic: 'banner',
             bidFloor: 0.28
           }

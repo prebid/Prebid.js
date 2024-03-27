@@ -1,6 +1,7 @@
 import { isFn, deepAccess, logInfo, replaceAuctionPrice } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.js';
+import {ajax} from '../src/ajax.js';
 // import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getStorageManager } from '../src/storageManager.js';
@@ -11,7 +12,7 @@ const COOKIE_NAME = '_sharedid';
 const AD_URL = 'https://ssp-bidder.mndtrk.com/bid_request/openrtb';
 // const AD_URL = 'http://localhost:80/bid_request/openrtb';
 const URL_SYNC = 'https://ck.2trk.info/rtb/user/usersync.aspx?';
-const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
+const SUPPORTED_MEDIA_TYPES = [BANNER];
 const GVLID = 874;
 let userId = 'NA';
 let precisoId = 'NA';
@@ -38,7 +39,7 @@ export const spec = {
       }
     }
 
-    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.publisherId) && precisoBid);
+    return Boolean(bid.bidId && bid.params && bid.params.publisherId && precisoBid);
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
@@ -76,7 +77,7 @@ export const spec = {
         id: validBidRequests[0].userId.pubcid || '',
         buyeruid: window.localStorage.getItem('_pre|id'),
         geo: {
-          region: validBidRequests[0].params.region || city,
+          country: validBidRequests[0].params.region || city,
         },
 
       },
@@ -85,7 +86,10 @@ export const spec = {
       source: validBidRequests[0].ortb2.source,
       bcat: validBidRequests[0].ortb2.bcat || validBidRequests[0].params.bcat,
       badv: validBidRequests[0].ortb2.badv || validBidRequests[0].params.badv,
-      wlang: validBidRequests[0].ortb2.wlang || validBidRequests[0].params.wlang
+      wlang: validBidRequests[0].ortb2.wlang || validBidRequests[0].params.wlang,
+    };
+    request.site.publisher = {
+      publisherId: validBidRequests[0].params.publisherId
     };
 
     //  request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
@@ -133,6 +137,13 @@ export const spec = {
       })
     })
     return bids
+  },
+
+  onBidWon: (bid) => {
+    if (bid.nurl) {
+      const resolvedNurl = replaceAuctionPrice(bid.nurl, bid.price);
+      ajax(resolvedNurl);
+    }
   },
 
   getUserSyncs: (syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '', gppConsent = '') => {
