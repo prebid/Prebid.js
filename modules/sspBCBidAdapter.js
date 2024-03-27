@@ -12,7 +12,7 @@ const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const GVLID = 676;
 const TMAX = 450;
-const BIDDER_VERSION = '5.92';
+const BIDDER_VERSION = '5.93';
 const DEFAULT_CURRENCY = 'PLN';
 const W = window;
 const { navigator } = W;
@@ -77,7 +77,7 @@ const getContentLanguage = () => {
 
 /**
  * Get Bid parameters - returns bid params from Object, or 1el array
- * @param {*} bidData - bid (bidWon), or array of bids (timeout)
+ * @param {*} bidParams - bid (bidWon), or array of bids (timeout)
  * @returns {object} params object
  */
 const unpackParams = (bidParams) => {
@@ -216,8 +216,11 @@ const applyTopics = (validBidRequest, ortbRequest) => {
 };
 
 const applyUserIds = (validBidRequest, ortbRequest) => {
-  const eids = validBidRequest.userIdAsEids
-  if (eids && eids.length) {
+  const { userIdAsEids: eidsVbr = [], ortb2 = {} } = validBidRequest;
+  const eidsOrtb = ortb2.user?.ext?.data?.eids || [];
+  const eids = [...eidsVbr, ...eidsOrtb];
+
+  if (eids.length) {
     const ids = { eids };
     ortbRequest.user = { ...ortbRequest.user, ...ids };
   }
@@ -243,7 +246,7 @@ const applyGdpr = (bidderRequest, ortbRequest) => {
  * returns floor = 0 if getFloor() is not defined
  *
  * @param {object} slot bid request adslot
- * @returns {float} floorprice
+ * @returns {number} floorprice
  */
 const getHighestFloor = (slot) => {
   const currency = getCurrency();
@@ -570,6 +573,7 @@ const parseNative = (nativeData, adUnitCode) => {
 }
 
 const renderCreative = (site, auctionId, bid, seat, request) => {
+  const { adLabel, id, slot, sn, page, publisherId, ref } = site;
   let gam;
 
   const mcad = {
@@ -619,16 +623,16 @@ const renderCreative = (site, auctionId, bid, seat, request) => {
   }
 </style>
   <script>
-  window.rekid = ${site.id};
-  window.slot = ${parseInt(site.slot, 10)};
+  window.rekid = ${id};
+  window.slot = ${parseInt(slot, 10)};
   window.responseTimestamp = ${Date.now()};
-  window.wp_sn = "${site.sn}";
+  window.wp_sn = "${sn}";
   window.mcad = JSON.parse(decodeURI(atob("${mcbase}")));
-  window.gdpr = ${JSON.stringify(request.gdprConsent)};
-  window.page = "${site.page}";
-  window.ref = "${site.ref}";
-  window.adlabel = "${site.adLabel ? site.adLabel : ''}";
-  window.pubid = "${site.publisherId ? site.publisherId : ''}";
+  window.tcString = "${request.gdprConsent?.consentString || ''}";
+  window.page = "${page}";
+  window.ref = "${ref}";
+  window.adlabel = "${adLabel || ''}";
+  window.pubid = "${publisherId || ''}";
   window.requestPVID = "${pageView.id}";
   `;
 
@@ -654,8 +658,6 @@ const spec = {
     return true;
   },
   buildRequests(validBidRequests, bidderRequest) {
-    logWarn('DEBUG: buildRequests', bidderRequest.auctionId, bidderRequest.bidderRequestId);
-
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
@@ -663,6 +665,7 @@ const spec = {
       return false;
     }
 
+    const ortb2 = setOnAny(validBidRequests, 'ortb2');
     const siteId = setOnAny(validBidRequests, 'params.siteId');
     const publisherId = setOnAny(validBidRequests, 'params.publisherId');
     const page = setOnAny(validBidRequests, 'params.page') || bidderRequest.refererInfo.page;
@@ -671,6 +674,7 @@ const spec = {
     const pbver = '$prebid.version$';
     const testMode = setOnAny(validBidRequests, 'params.test') ? 1 : undefined;
     const ref = bidderRequest.refererInfo.ref;
+    const { regs = {} } = ortb2 || {};
 
     const payload = {
       id: bidderRequest.bidderRequestId,
@@ -686,7 +690,7 @@ const spec = {
       cur: [getCurrency()],
       tmax,
       user: {},
-      regs: {},
+      regs,
       device: {
         language: getBrowserLanguage(),
         w: screen.width,
@@ -740,7 +744,7 @@ const spec = {
           const { bidId } = bidRequest || {};
 
           // get ext data from bid
-          const { siteid = site.id, slotid = site.slot, pubid, adlabel, cache: creativeCache, vurls = [] } = ext;
+          const { siteid = site.id, slotid = site.slot, pubid, adlabel, cache: creativeCache, vurls = [], dsa } = ext;
 
           // update site data
           site = {
@@ -772,6 +776,7 @@ const spec = {
                 advertiserDomains: adomain,
                 networkName: seat,
                 pricepl: ext && ext.pricepl,
+                dsa,
               },
               netRevenue: true,
               vurls,
