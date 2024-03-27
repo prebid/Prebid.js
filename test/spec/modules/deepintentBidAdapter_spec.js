@@ -382,17 +382,10 @@ describe('Deepintent adapter', function () {
       expect(data.regs.gpp_sid[0]).to.equal(5);
     });
     it('should include coppa flag in bid request if coppa is set to true', () => {
-      let sandbox = sinon.sandbox.create();
-      sandbox.stub(config, 'getConfig').callsFake(key => {
-        const config = {
-          'coppa': true
-        };
-        return config[key];
-      });
-      const bRequest = spec.buildRequests(request);
+      let bidderReq = {ortb2: {regs: {coppa: 1}}};
+      let bRequest = spec.buildRequests(request, bidderReq);
       let data = JSON.parse(bRequest.data);
       expect(data.regs.coppa).to.equal(1);
-      sandbox.restore();
     });
   });
 });
