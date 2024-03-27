@@ -7,17 +7,19 @@ import {
   isArray,
   isNumber,
   parseSizesInput,
-  getBidIdParameter
+  getBidIdParameter,
+  isGptPubadsDefined
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { getStorageManager } from '../src/storageManager.js';
 import sha1 from 'crypto-js/sha1';
+import { isSlotMatchingAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 
 const BIDDER_CODE = 'relaido';
 const BIDDER_DOMAIN = 'api.relaido.jp';
-const ADAPTER_VERSION = '1.1.0';
+const ADAPTER_VERSION = '1.2.0';
 const DEFAULT_TTL = 300;
 const UUID_KEY = 'relaido_uuid';
 
@@ -106,6 +108,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       banner_sizes: getBannerSizes(bidRequest),
       media_type: mediaType,
       userIdAsEids: bidRequest.userIdAsEids || {},
+      pagekvt: getTargeting(bidRequest),
     });
   }
 
@@ -347,6 +350,44 @@ function getBannerSizes(bidRequest) {
     return null;
   }
   return parseSizesInput(sizes).join(',');
+}
+
+function getTargeting(bidRequest) {
+  const targetings = {};
+  const pubads = getPubads();
+  if (pubads) {
+    const keys = pubads.getTargetingKeys();
+    for (const key of keys) {
+      const values = pubads.getTargeting(key);
+      targetings[key] = values;
+    }
+  }
+  const adUnitSlot = getAdUnit(bidRequest.adUnitCode);
+  if (adUnitSlot) {
+    const keys = adUnitSlot.getTargetingKeys();
+    for (const key of keys) {
+      const values = adUnitSlot.getTargeting(key);
+      targetings[key] = values;
+    }
+  }
+  return targetings;
+}
+
+function getPubads() {
+  return (isGptPubadsDefined()) ? window.googletag.pubads() : null;
+}
+
+function getAdUnit(adUnitCode) {
+  if (isGptPubadsDefined()) {
+    const adSlots = window.googletag.pubads().getSlots();
+    const isMatchingAdSlot = isSlotMatchingAdUnitCode(adUnitCode);
+    for (let i = 0; i < adSlots.length; i++) {
+      if (isMatchingAdSlot(adSlots[i])) {
+        return adSlots[i];
+      }
+    }
+  }
+  return null;
 }
 
 export const spec = {

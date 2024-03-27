@@ -3,6 +3,7 @@ import {spec} from 'modules/relaidoBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {VIDEO} from 'src/mediaTypes.js';
 import {getCoreStorageManager} from '../../../src/storageManager.js';
+import * as mockGpt from '../integration/faker/googletag.js';
 
 const UUID_KEY = 'relaido_uuid';
 const relaido_uuid = 'hogehoge';
@@ -21,6 +22,7 @@ describe('RelaidoAdapter', function () {
   });
 
   beforeEach(function () {
+    mockGpt.disable();
     generateUUIDStub = sinon.stub(utils, 'generateUUID').returns(relaido_uuid);
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
     bidRequest = {
@@ -251,6 +253,7 @@ describe('RelaidoAdapter', function () {
       expect(request.bid_id).to.equal(bidRequest.bidId);
       expect(request.transaction_id).to.equal(bidRequest.ortb2Imp.ext.tid);
       expect(request.media_type).to.equal('video');
+      expect(request.pagekvt).to.deep.equal({});
       expect(data.uuid).to.equal(relaido_uuid);
       expect(data.pv).to.equal('$prebid.version$');
     });
@@ -334,6 +337,19 @@ describe('RelaidoAdapter', function () {
       const data = JSON.parse(bidRequests.data);
       expect(data.bids[0].userIdAsEids).to.have.lengthOf(1);
       expect(data.bids[0].userIdAsEids[0].source).to.equal('hogehoge.com');
+    });
+
+    it('should get pagekvt', function () {
+      mockGpt.enable();
+      window.googletag.pubads().clearTargeting();
+      window.googletag.pubads().setTargeting('testkey', ['testvalue']);
+      bidRequest.adUnitCode = 'test-adunit-code-1';
+      window.googletag.pubads().setSlots([mockGpt.makeSlot({ code: bidRequest.adUnitCode })]);
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(bidRequests.data);
+      expect(data.bids).to.have.lengthOf(1);
+      const request = data.bids[0];
+      expect(request.pagekvt).to.deep.equal({testkey: ['testvalue']});
     });
   });
 
