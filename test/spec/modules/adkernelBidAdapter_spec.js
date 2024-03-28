@@ -3,6 +3,7 @@ import {spec} from 'modules/adkernelBidAdapter';
 import * as utils from 'src/utils';
 import {NATIVE, BANNER, VIDEO} from 'src/mediaTypes';
 import {config} from 'src/config';
+import {parseDomain} from '../../../src/refererDetection.js';
 
 describe('Adkernel adapter', function () {
   const bid1_zone1 = {
@@ -14,8 +15,13 @@ describe('Adkernel adapter', function () {
       auctionId: 'auc-001',
       mediaTypes: {
         banner: {
-          sizes: [[300, 250], [300, 200]]
+          sizes: [[300, 250], [300, 200]],
+          pos: 1
         }
+      },
+      ortb2Imp: {
+        battr: [6, 7, 9],
+        pos: 2
       }
     }, bid2_zone2 = {
       bidder: 'adkernel',
@@ -28,7 +34,15 @@ describe('Adkernel adapter', function () {
         banner: {
           sizes: [[728, 90]]
         }
-      }
+      },
+      userIdAsEids: [
+        {
+          source: 'crwdcntrl.net',
+          uids: [
+            {atype: 1, id: '97d09fbba28542b7acbb6317c9534945a702b74c5993c352f332cfe83f40cdd9'}
+          ]
+        }
+      ]
     }, bid3_host2 = {
       bidder: 'adkernel',
       params: {zoneId: 1, host: 'rtb-private.adkernel.com'},
@@ -86,12 +100,16 @@ describe('Adkernel adapter', function () {
       params: {
         zoneId: 1,
         host: 'rtb.adkernel.com',
-        video: {api: [1, 2]}
       },
       mediaTypes: {
         video: {
           context: 'instream',
-          playerSize: [[640, 480]]
+          playerSize: [[640, 480]],
+          api: [1, 2],
+          placement: 1,
+          plcmt: 1,
+          skip: 1,
+          pos: 1
         }
       },
       adUnitCode: 'ad-unit-1'
@@ -232,6 +250,31 @@ describe('Adkernel adapter', function () {
       }],
       bidid: 'pTuOlf5KHUo',
       cur: 'EUR'
+    },
+    multiformat_response = {
+      id: '47ce4badcf7482',
+      seatbid: [{
+        bid: [{
+          id: 'sZSYq5zYMxo_0',
+          impid: 'Bid_01b__mf',
+          crid: '100_003',
+          price: 0.00145,
+          adid: '158801',
+          adm: '<!-- admarkup -->',
+          nurl: 'https://rtb.com/win?i=sZSYq5zYMxo_0&f=nurl',
+          cid: '16855'
+        }, {
+          id: 'sZSYq5zYMxo_1',
+          impid: 'Bid_01v__mf',
+          crid: '100_003',
+          price: 0.25,
+          adid: '158801',
+          nurl: 'https://rtb.com/win?i=sZSYq5zYMxo_1&f=nurl',
+          cid: '16855'
+        }]
+      }],
+      bidid: 'pTuOlf5KHUo',
+      cur: 'USD'
     };
 
   var sandbox;
@@ -245,12 +288,13 @@ describe('Adkernel adapter', function () {
   });
 
   function buildBidderRequest(url = 'https://example.com/index.html', params = {}) {
-    return Object.assign({}, params, {refererInfo: {referer: url, reachedTop: true}, timeout: 3000, bidderCode: 'adkernel'});
+    return Object.assign({}, params, {refererInfo: {page: url, domain: parseDomain(url), reachedTop: true}, timeout: 3000, bidderCode: 'adkernel'});
   }
   const DEFAULT_BIDDER_REQUEST = buildBidderRequest();
 
   function buildRequest(bidRequests, bidderRequest = DEFAULT_BIDDER_REQUEST, dnt = true) {
     let dntmock = sandbox.stub(utils, 'getDNT').callsFake(() => dnt);
+    bidderRequest.bids = bidRequests;
     let pbRequests = spec.buildRequests(bidRequests, bidderRequest);
     dntmock.restore();
     let rtbRequests = pbRequests.map(r => JSON.parse(r.data));
@@ -283,6 +327,7 @@ describe('Adkernel adapter', function () {
 
   describe('banner request building', function () {
     let bidRequest, bidRequests, _;
+
     before(function () {
       [_, bidRequests] = buildRequest([bid1_zone1]);
       bidRequest = bidRequests[0];
@@ -327,6 +372,16 @@ describe('Adkernel adapter', function () {
       expect(bidRequest.device).to.have.property('dnt', 1);
     });
 
+    it('should copy FPD to imp.banner', function() {
+      expect(bidRequest.imp[0].banner).to.have.property('battr');
+      expect(bidRequest.imp[0].banner.battr).to.be.eql([6, 7, 9]);
+    });
+
+    it('should respect mediatypes attributes over FPD', function() {
+      expect(bidRequest.imp[0].banner).to.have.property('pos');
+      expect(bidRequest.imp[0].banner.pos).to.be.eql(1);
+    });
+
     it('shouldn\'t contain gdpr nor ccpa information for default request', function () {
       let [_, bidRequests] = buildRequest([bid1_zone1]);
       expect(bidRequests[0]).to.not.have.property('regs');
@@ -335,11 +390,16 @@ describe('Adkernel adapter', function () {
 
     it('should contain gdpr-related information if consent is configured', function () {
       let [_, bidRequests] = buildRequest([bid1_zone1],
-        buildBidderRequest('https://example.com/index.html',
-          {gdprConsent: {gdprApplies: true, consentString: 'test-consent-string', vendorData: {}}, uspConsent: '1YNN'}));
+        buildBidderRequest('https://example.com/index.html', {
+          gdprConsent: {gdprApplies: true, consentString: 'test-consent-string', vendorData: {}},
+          uspConsent: '1YNN',
+          gppConsent: {gppString: 'DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA', applicableSections: [2]}}
+        ));
       let bidRequest = bidRequests[0];
       expect(bidRequest).to.have.property('regs');
       expect(bidRequest.regs.ext).to.be.eql({'gdpr': 1, 'us_privacy': '1YNN'});
+      expect(bidRequest.regs.gpp).to.be.eql('DBABMA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA');
+      expect(bidRequest.regs.gpp_sid).to.be.eql([2]);
       expect(bidRequest).to.have.property('user');
       expect(bidRequest.user.ext).to.be.eql({'consent': 'test-consent-string'});
     });
@@ -381,6 +441,17 @@ describe('Adkernel adapter', function () {
       let [_, bidRequests] = buildRequest([bid]);
       expect(bidRequests[0].imp[0]).to.have.property('bidfloor', 0.145);
     });
+
+    it('should forward user ids if available', function() {
+      let bid = Object.assign({}, bid2_zone2);
+      let [_, bidRequests] = buildRequest([bid]);
+      expect(bidRequests[0]).to.have.property('user');
+      expect(bidRequests[0].user).to.have.property('ext');
+      expect(bidRequests[0].user.ext).to.have.property('eids');
+      expect(bidRequests[0].user.ext.eids).to.be.an('array').that.is.not.empty;
+      expect(bidRequests[0].user.ext.eids[0]).to.have.property('source');
+      expect(bidRequests[0].user.ext.eids[0]).to.have.property('uids');
+    });
   });
 
   describe('video request building', function () {
@@ -403,24 +474,40 @@ describe('Adkernel adapter', function () {
     });
 
     it('should have openrtb video impression parameters', function() {
-      expect(bidRequests[0].imp[0].video).to.have.property('api');
-      expect(bidRequests[0].imp[0].video.api).to.be.eql([1, 2]);
+      let video = bidRequests[0].imp[0].video;
+      expect(video).to.have.property('api');
+      expect(video.api).to.be.eql([1, 2]);
+      expect(video.placement).to.be.eql(1);
+      expect(video.plcmt).to.be.eql(1);
+      expect(video.skip).to.be.eql(1);
+      expect(video.pos).to.be.eql(1);
     });
   });
 
   describe('multiformat request building', function () {
-    let _, bidRequests;
+    let pbRequests, bidRequests;
     before(function () {
-      [_, bidRequests] = buildRequest([bid_multiformat]);
+      [pbRequests, bidRequests] = buildRequest([bid_multiformat]);
     });
     it('should contain single request', function () {
       expect(bidRequests).to.have.length(1);
-      expect(bidRequests[0].imp).to.have.length(1);
     });
-    it('should contain banner-only impression', function () {
-      expect(bidRequests[0].imp).to.have.length(1);
+    it('should contain both impression', function () {
+      expect(bidRequests[0].imp).to.have.length(2);
       expect(bidRequests[0].imp[0]).to.have.property('banner');
-      expect(bidRequests[0].imp[0]).to.not.have.property('video');
+      expect(bidRequests[0].imp[1]).to.have.property('video');
+      // check that splitted imps do not share same impid
+      expect(bidRequests[0].imp[0].id).to.be.not.eql('Bid_01');
+      expect(bidRequests[0].imp[1].id).to.be.not.eql('Bid_01');
+      expect(bidRequests[0].imp[1].id).to.be.not.eql(bidRequests[0].imp[0].id);
+    });
+    it('x', function() {
+      let bids = spec.interpretResponse({body: multiformat_response}, pbRequests[0]);
+      expect(bids).to.have.length(2);
+      expect(bids[0].requestId).to.be.eql('Bid_01');
+      expect(bids[0].mediaType).to.be.eql('banner');
+      expect(bids[1].requestId).to.be.eql('Bid_01');
+      expect(bids[1].mediaType).to.be.eql('video');
     });
   });
 

@@ -1,5 +1,10 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const ENDPOINT = 'https://hb.gammaplatform.com';
 const ENDPOINT_USERSYNC = 'https://cm-supply-web.gammaplatform.com';
 const BIDDER_CODE = 'gamma';
@@ -27,7 +32,7 @@ export const spec = {
    */
   buildRequests: function(bidRequests, bidderRequest) {
     const serverRequests = [];
-    const bidderRequestReferer = (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) || '';
+    const bidderRequestReferer = bidderRequest?.refererInfo?.page || '';
     for (var i = 0, len = bidRequests.length; i < len; i++) {
       const gaxObjParams = bidRequests[i];
       serverRequests.push({
@@ -84,7 +89,10 @@ function newBid(serverBid) {
     mediaType: serverBid.type,
     netRevenue: true,
     requestId: serverBid.id,
-    ttl: serverBid.seatbid[0].bid[0].ttl || 300
+    ttl: serverBid.seatbid[0].bid[0].ttl || 300,
+    meta: {
+      advertiserDomains: serverBid.seatbid[0].bid[0].adomain && serverBid.seatbid[0].bid[0].adomain.length ? serverBid.seatbid[0].bid[0].adomain : []
+    }
   };
 
   if (serverBid.type == 'video') {

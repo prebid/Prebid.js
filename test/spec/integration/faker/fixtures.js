@@ -23,7 +23,7 @@ export function makeBidder(overrides = {}) {
     bidder: `${faker.company.bsBuzz()}Media`,
     params: {
       abc: faker.random.alphaNumeric(10),
-      xyz: faker.random.number({ max: 10, precision: 2 })
+      xyz: faker.datatype.number({ max: 10, precision: 2 })
     },
     callBids: sinon.spy()
   }, overrides);
@@ -39,4 +39,4 @@ export function makeRequest(overrides = {}) {
   }, overrides);
 }
 
-export function randomFive() { return faker.random.number({ min: 10000, max: 99999 }); }
+export function randomFive() { return faker.datatype.number({ min: 10000, max: 99999 }); }

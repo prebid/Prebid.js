@@ -1,6 +1,15 @@
-import * as utils from '../src/utils.js';
+import { parseSizesInput, parseQueryStringParameters, logError } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
 
 const BIDDER_CODE = 'temedya';
 const ENDPOINT_URL = 'https://adm.vidyome.com/';
@@ -11,21 +20,24 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE],
   /**
-  * Determines whether or not the given bid request is valid.
-  *
-  * @param {BidRequest} bid The bid params to validate.
-  * @return boolean True if this is a valid bid, and false otherwise.
-  */
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function (bid) {
     return !!(bid.params.widgetId);
   },
   /**
-  * Make a server request from the list of BidRequests.
-  *
-  * @param {validBidRequests[]} - an array of bids
-  * @return ServerRequest Info describing the request to the server.
-  */
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {validBidRequests[]} - an array of bids
+   * @return ServerRequest Info describing the request to the server.
+   */
   buildRequests: function (validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     return validBidRequests.map(req => {
       const mediaType = this._isBannerRequest(req) ? 'display' : NATIVE;
       const data = {
@@ -36,7 +48,7 @@ export const spec = {
         requestid: req.bidId
       };
       if (mediaType === 'display') {
-        data.sizes = utils.parseSizesInput(
+        data.sizes = parseSizesInput(
           req.mediaTypes && req.mediaTypes.banner && req.mediaTypes.banner.sizes
         ).join('|')
       }
@@ -44,17 +56,17 @@ export const spec = {
       return {
         method: ENDPOINT_METHOD,
         url: ENDPOINT_URL,
-        data: utils.parseQueryStringParameters(data),
+        data: parseQueryStringParameters(data),
         options: { withCredentials: false, requestId: req.bidId, mediaType: mediaType }
       };
     });
   },
   /**
-  * Unpack the response from the server into a list of bids.
-  *
-  * @param {ServerResponse} serverResponse A successful response from the server.
-  * @return {Bid[]} An array of bids which were nested inside the server.
-  */
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {ServerResponse} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
   interpretResponse: function (serverResponse, bidRequest) {
     try {
       const bidResponse = serverResponse.body;
@@ -128,7 +140,7 @@ export const spec = {
       }
       return bidResponses;
     } catch (err) {
-      utils.logError(err);
+      logError(err);
       return [];
     }
   },

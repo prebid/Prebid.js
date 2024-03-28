@@ -1,5 +1,6 @@
 import {expect} from 'chai';
 import {spec} from 'modules/adheseBidAdapter.js';
+import {config} from 'src/config.js';
 
 const BID_ID = 456;
 const TTL = 360;
@@ -66,7 +67,7 @@ describe('AdheseAdapter', function () {
         consentString: 'CONSENT_STRING'
       },
       refererInfo: {
-        referer: 'http://prebid.org/dev-docs/subjects?_d=1'
+        page: 'http://prebid.org/dev-docs/subjects?_d=1'
       }
     };
 
@@ -131,10 +132,19 @@ describe('AdheseAdapter', function () {
       expect(JSON.parse(req.data)).to.not.have.key('eids');
     });
 
-    it('should request vast content as url', function () {
+    it('should request vast content as url by default', function () {
       let req = spec.buildRequests([ minimalBid() ], bidderRequest);
 
       expect(JSON.parse(req.data).vastContentAsUrl).to.equal(true);
+    });
+
+    it('should request vast content as markup when configured', function () {
+      sinon.stub(config, 'getConfig').withArgs('adhese').returns({ vastContentAsUrl: false });
+
+      let req = spec.buildRequests([ minimalBid() ], bidderRequest);
+
+      expect(JSON.parse(req.data).vastContentAsUrl).to.equal(false);
+      config.getConfig.restore();
     });
 
     it('should include bids', function () {
@@ -154,6 +164,22 @@ describe('AdheseAdapter', function () {
       let req = spec.buildRequests([ minimalBid() ], bidderRequest);
 
       expect(req.url).to.equal('https://ads-demo.adhese.com/json');
+    });
+
+    it('should include params specified in the config', function () {
+      sinon.stub(config, 'getConfig').withArgs('adhese').returns({ globalTargets: { 'tl': [ 'all' ] } });
+      let req = spec.buildRequests([ minimalBid() ], bidderRequest);
+
+      expect(JSON.parse(req.data).parameters).to.deep.include({ 'tl': [ 'all' ] });
+      config.getConfig.restore();
+    });
+
+    it('should give priority to bid params over config params', function () {
+      sinon.stub(config, 'getConfig').withArgs('adhese').returns({ globalTargets: { 'xt': ['CONFIG_CONSENT_STRING'] } });
+      let req = spec.buildRequests([ minimalBid() ], bidderRequest);
+
+      expect(JSON.parse(req.data).parameters).to.deep.include({ 'xt': [ 'CONSENT_STRING' ] });
+      config.getConfig.restore();
     });
   });
 
@@ -186,7 +212,10 @@ describe('AdheseAdapter', function () {
             body: '<div style="background-color:red; height:250px; width:300px"></div>',
             tracker: 'https://hosts-demo.adhese.com/rtb_gateway/handlers/client/track/?id=a2f39296-6dd0-4b3c-be85-7baa22e7ff4a',
             impressionCounter: 'https://hosts-demo.adhese.com/rtb_gateway/handlers/client/track/?id=a2f39296-6dd0-4b3c-be85-7baa22e7ff4a',
-            extension: {'prebid': {'cpm': {'amount': '1.000000', 'currency': 'USD'}}, mediaType: 'banner'}
+            extension: {'prebid': {'cpm': {'amount': '1.000000', 'currency': 'USD'}}, mediaType: 'banner'},
+            adomain: [
+              'www.example.com'
+            ]
           }
         ]
       };
@@ -217,7 +246,12 @@ describe('AdheseAdapter', function () {
             slotId: '10',
             slotName: '_main_page_-leaderboard'
           }
-        }
+        },
+        meta: {
+          advertiserDomains: [
+            'www.example.com'
+          ]
+        },
       }];
       expect(spec.interpretResponse(sspBannerResponse, bidRequest)).to.deep.equal(expectedResponse);
     });
@@ -254,7 +288,10 @@ describe('AdheseAdapter', function () {
           origin: 'RUBICON',
           originInstance: '',
           originData: {}
-        }
+        },
+        meta: {
+          advertiserDomains: []
+        },
       }];
       expect(spec.interpretResponse(sspVideoResponse, bidRequest)).to.deep.equal(expectedResponse);
     });
@@ -291,7 +328,10 @@ describe('AdheseAdapter', function () {
           origin: 'RUBICON',
           originInstance: '',
           originData: {}
-        }
+        },
+        meta: {
+          advertiserDomains: []
+        },
       }];
       expect(spec.interpretResponse(sspCachedVideoResponse, bidRequest)).to.deep.equal(expectedResponse);
     });
@@ -369,6 +409,9 @@ describe('AdheseAdapter', function () {
         mediaType: 'banner',
         netRevenue: NET_REVENUE,
         ttl: TTL,
+        meta: {
+          advertiserDomains: []
+        },
       }];
       expect(spec.interpretResponse(adheseBannerResponse, bidRequest)).to.deep.equal(expectedResponse);
     });
@@ -433,6 +476,9 @@ describe('AdheseAdapter', function () {
         mediaType: 'video',
         netRevenue: NET_REVENUE,
         ttl: TTL,
+        meta: {
+          advertiserDomains: []
+        },
       }];
       expect(spec.interpretResponse(adheseVideoResponse, bidRequest)).to.deep.equal(expectedResponse);
     });
@@ -497,6 +543,9 @@ describe('AdheseAdapter', function () {
         mediaType: 'video',
         netRevenue: NET_REVENUE,
         ttl: TTL,
+        meta: {
+          advertiserDomains: []
+        },
       }];
       expect(spec.interpretResponse(adheseVideoResponse, bidRequest)).to.deep.equal(expectedResponse);
     });
