@@ -27,6 +27,11 @@ const playlistItemCache = {};
 const pendingRequests = {};
 let activeRequestCount = 0;
 let resumeBidRequest;
+// defaults to True for backwards compatibility
+let overrideContentId = true;
+let overrideContentUrl = false;
+let overrideContentTitle = false;
+let overrideContentDescription = false;
 
 /** @type {RtdSubmodule} */
 export const jwplayerSubmodule = {
@@ -53,6 +58,13 @@ config.getConfig('realTimeData', ({realTimeData}) => {
     return;
   }
   fetchTargetingInformation(params);
+  if (params.overrideContentId !== undefined) {
+    // For backwards compatibility, default to true unless overriden by Publisher.
+    overrideContentId = params.overrideContentId;
+  }
+  overrideContentUrl = !!params.overrideContentUrl;
+  overrideContentTitle = !!params.overrideContentTitle;
+  overrideContentDescription = !!params.overrideContentDescription;
 });
 
 submodule('realTimeData', jwplayerSubmodule);
@@ -336,19 +348,24 @@ export function addOrtbSiteContent(ortb2, contentId, contentData, contentTitle, 
   let site = ortb2.site = ortb2.site || {};
   let content = site.content = site.content || {};
 
-  if (contentId) {
+  const shouldSetContentId = !content.id || overrideContentId;
+  if (contentId && shouldSetContentId) {
     content.id = contentId;
   }
 
-  if (contentUrl) {
+  const shouldSetContentUrl = !content.url || overrideContentUrl;
+  if (contentUrl && shouldSetContentUrl) {
     content.url = contentUrl;
   }
 
-  if (contentTitle) {
+  const shouldSetContentTitle = !content.title || overrideContentTitle;
+  if (contentTitle && shouldSetContentTitle) {
     content.title = contentTitle;
   }
 
-  if (contentDescription) {
+  const isDescriptionSet = content.ext && content.ext.description;
+  const shouldSetContentDescription = !isDescriptionSet || overrideContentDescription;
+  if (contentDescription && shouldSetContentDescription) {
     content.ext = content.ext || {};
     content.ext.description = contentDescription;
   }
