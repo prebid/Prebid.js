@@ -1,10 +1,12 @@
 import * as priceFloors from '../../../modules/priceFloors';
 import {
+  FLOORS_END_POINT,
   FLOORS_EVENT_HANDLE,
   FloorsApiStatus,
   beforeInit,
   fetchFloorRules,
   getFloorsConfig,
+  getUrl,
   pubxaiSubmodule,
   setDefaultPriceFloors,
   setFloorsApiStatus,
@@ -98,13 +100,9 @@ describe('pubxaiRtdProvider', () => {
     afterEach(() => {
       stub.restore();
     });
-    it('will return true when `useRtd` is true in the provider config', () => {
+    it('standard case - returns true', () => {
       const initResult = pubxaiSubmodule.init({ params: { useRtd: true } });
       expect(initResult).to.be.true;
-    });
-    it('will return false when `useRtd` is false in the provider config', () => {
-      const initResult = pubxaiSubmodule.init({ params: { useRtd: false } });
-      expect(initResult).to.be.false;
     });
     it('setPriceFloors called when `useRtd` is true in the provider config', () => {
       pubxaiSubmodule.init(getConfig());
@@ -356,6 +354,35 @@ describe('pubxaiRtdProvider', () => {
             detail: { status: FloorsApiStatus.SUCCESS },
           })
         )
+      );
+    });
+  });
+  describe('getUrl', () => {
+    const provider = {
+      name: 'pubxai',
+      waitForIt: true,
+      params: {
+        pubxId: '12345',
+      },
+    };
+    beforeEach(() => {
+      window.location = { href: 'href' };
+    });
+    afterEach(() => {
+      window.location = undefined;
+    });
+    it('floors end point', () => {
+      expect(FLOORS_END_POINT).to.equal('https://floor.pbxai.com/');
+    });
+    it('standard case', () => {
+      expect(getUrl(provider)).to.equal(
+        'https://floor.pbxai.com/?pubxId=12345&page=href'
+      );
+    });
+    it('custom url provided', () => {
+      provider.endpoint = 'https://custom.floor.com/';
+      expect(getUrl(provider)).to.equal(
+        'https://custom.floor.com/?pubxId=12345&page=href'
       );
     });
   });

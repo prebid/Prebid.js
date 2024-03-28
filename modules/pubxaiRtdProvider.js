@@ -1,18 +1,19 @@
-import { ajax } from "../src/ajax.js";
-import { config } from "../src/config.js";
-import { submodule } from "../src/hook.js";
-import { deepAccess } from "../src/utils.js";
-import { createFloorsDataForAuction } from "./priceFloors.js"; // eslint-disable-line prebid/validate-imports
+import { ajax } from '../src/ajax.js';
+import { config } from '../src/config.js';
+import { submodule } from '../src/hook.js';
+import { deepAccess } from '../src/utils.js';
+import { createFloorsDataForAuction } from './priceFloors.js'; // eslint-disable-line prebid/validate-imports
 
-const MODULE_NAME = "realTimeData";
-const SUBMODULE_NAME = "pubxai";
+const MODULE_NAME = 'realTimeData';
+const SUBMODULE_NAME = 'pubxai';
 window.__pubxFloorRulesPromise__ = null;
 export const FloorsApiStatus = Object.freeze({
-  IN_PROGRESS: "IN_PROGRESS",
-  SUCCESS: "SUCCESS",
-  ERROR: "ERROR",
+  IN_PROGRESS: 'IN_PROGRESS',
+  SUCCESS: 'SUCCESS',
+  ERROR: 'ERROR',
 });
-export const FLOORS_EVENT_HANDLE = "floorsApi";
+export const FLOORS_EVENT_HANDLE = 'floorsApi';
+export const FLOORS_END_POINT = 'https://floor.pbxai.com/';
 
 export const getFloorsConfig = (provider, floorsResponse) => {
   const floorsConfig = {
@@ -21,7 +22,7 @@ export const getFloorsConfig = (provider, floorsResponse) => {
       data: floorsResponse,
     },
   };
-  const { floorMin, enforcement } = deepAccess(provider, "params");
+  const { floorMin, enforcement } = deepAccess(provider, 'params');
   if (floorMin) {
     floorsConfig.floors.floorMin = floorMin;
   }
@@ -45,12 +46,12 @@ export const setFloorsConfig = (provider, data) => {
 };
 
 export const setDefaultPriceFloors = (provider) => {
-  const data = deepAccess(provider, "params.data");
+  const data = deepAccess(provider, 'params.data');
   setFloorsConfig(provider, data);
 };
 
 export const setPriceFloors = async (provider) => {
-  window.__pubxPrevFloorsConfig__ = config.getConfig("floors");
+  window.__pubxPrevFloorsConfig__ = config.getConfig('floors');
   setDefaultPriceFloors(provider);
   return fetchFloorRules(provider)
     .then((floorsResponse) => {
@@ -69,12 +70,18 @@ export const setFloorsApiStatus = (status) => {
   );
 };
 
+export const getUrl = (provider) => {
+  const { pubxId, endpoint } = deepAccess(provider, 'params');
+  return `${endpoint || FLOORS_END_POINT}?pubxId=${pubxId}&page=${
+    window.location.href
+  }`;
+};
+
 export const fetchFloorRules = async (provider) => {
-  const url = deepAccess(provider, "params.endpoint");
   return new Promise((resolve, reject) => {
     setFloorsApiStatus(FloorsApiStatus.IN_PROGRESS);
     // When the api call exceeds auctionDelay, the api call doesn't fail but the auction starts.
-    ajax(url, {
+    ajax(getUrl(provider), {
       success: (responseText, response) => {
         try {
           if (response && response.response) {
