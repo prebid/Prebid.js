@@ -422,15 +422,21 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
         return;
       }
 
-      let bids;
-      // Extract additional data from a structured {BidderAuctionResponse} response
-      if (response && isArray(response.fledgeAuctionConfigs)) {
-        response.fledgeAuctionConfigs.forEach(onPaapi);
-        bids = response.bids;
+      // adapters can reply with:
+      // a single bid
+      // an array of bids
+      // an object with {bids: [*], fledgeAuctionConfigs: [*]}
+
+      const RESPONSE_PROPS = ['bids', 'fledgeAuctionConfigs'];
+      let bids, paapiConfigs;
+      if (response && !Object.keys(response).some(key => !RESPONSE_PROPS.includes(key))) {
+        [bids, paapiConfigs] = RESPONSE_PROPS.map(k => response[k]);
       } else {
         bids = response;
       }
-
+      if (isArray(paapiConfigs)) {
+        paapiConfigs.forEach(onPaapi);
+      }
       if (bids) {
         if (isArray(bids)) {
           bids.forEach(addBid);

@@ -1462,6 +1462,26 @@ describe('bidderFactory', () => {
           foo: 'bar'
         }
       }
+
+      it('should unwrap bids', function() {
+        const bidder = newBidder(spec);
+        spec.interpretResponse.returns({
+          bids: bids,
+        });
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        sinon.assert.calledWith(addBidResponseStub, 'mock/placement', sinon.match(bids[0]));
+      });
+
+      it('does not unwrap bids from a bid that happens to have a "bids" property', () => {
+        const bidder = newBidder(spec);
+        const bid = Object.assign({
+          bids: ['a', 'b']
+        }, bids[0]);
+        spec.interpretResponse.returns(bid);
+        bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        sinon.assert.calledWith(addBidResponseStub, 'mock/placement', sinon.match(bid));
+      })
+
       describe('when response has FLEDGE auction config', function() {
         let fledgeStub;
 
@@ -1479,17 +1499,6 @@ describe('bidderFactory', () => {
 
         beforeEach(function () {
           fledgeStub = sinon.stub();
-        });
-
-        it('should unwrap bids', function() {
-          const bidder = newBidder(spec);
-          spec.interpretResponse.returns({
-            bids: bids,
-            fledgeAuctionConfigs: []
-          });
-          bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-          expect(addBidResponseStub.calledOnce).to.equal(true);
-          expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
         });
 
         it('should call fledgeManager with FLEDGE configs', function() {
