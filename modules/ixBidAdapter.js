@@ -721,10 +721,10 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   let r = createRequest(validBidRequests);
 
   // Add FTs to be requested from Exchange
-  r = addRequestedFeatureToggles(r, FEATURE_TOGGLES.REQUESTED_FEATURE_TOGGLES)
+  r = addRequestedFeatureToggles(r, FEATURE_TOGGLES.REQUESTED_FEATURE_TOGGLES);
 
   // getting ixdiags for adunits of the video, outstream & multi format (MF) style
-  const fledgeEnabled = deepAccess(bidderRequest, 'fledgeEnabled')
+  const fledgeEnabled = deepAccess(bidderRequest, 'fledgeEnabled');
   let ixdiag = buildIXDiag(validBidRequests, fledgeEnabled);
   for (let key in ixdiag) {
     r.ext.ixdiag[key] = ixdiag[key];
@@ -1332,6 +1332,7 @@ function buildIXDiag(validBidRequests, fledgeEnabled) {
     url: window.location.href.split('?')[0],
     vpd: defaultVideoPlacement,
     ae: fledgeEnabled,
+    fac: checkFledgeAutoConfig(),
     eidLength: allEids.length
   };
 
@@ -1369,6 +1370,16 @@ function buildIXDiag(validBidRequests, fledgeEnabled) {
   }
 
   return ixdiag;
+}
+
+// Function to check the fledgeAutoConfig settings in pbjs config
+function checkFledgeAutoConfig() {
+  const pbjsConfig = config.getConfig();
+
+  const autoConfigPaapi = deepAccess(pbjsConfig, 'paapi.gpt.autoconfig', false);
+  const autoConfigFledge = deepAccess(pbjsConfig, 'fledgeForGpt.autoconfig', false);
+
+  return autoConfigPaapi || autoConfigFledge;
 }
 
 /**
