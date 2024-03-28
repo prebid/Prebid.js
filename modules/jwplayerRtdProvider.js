@@ -58,13 +58,7 @@ config.getConfig('realTimeData', ({realTimeData}) => {
     return;
   }
   fetchTargetingInformation(params);
-  if (params.overrideContentId !== undefined) {
-    // For backwards compatibility, default to true unless overriden by Publisher.
-    overrideContentId = params.overrideContentId;
-  }
-  overrideContentUrl = !!params.overrideContentUrl;
-  overrideContentTitle = !!params.overrideContentTitle;
-  overrideContentDescription = !!params.overrideContentDescription;
+  setOverrides(params);
 });
 
 submodule('realTimeData', jwplayerSubmodule);
@@ -81,6 +75,16 @@ export function fetchTargetingInformation(jwTargeting) {
   mediaIDs.forEach(mediaID => {
     fetchTargetingForMediaId(mediaID);
   });
+}
+
+export function setOverrides(params) {
+  if (params.overrideContentId !== undefined) {
+    // For backwards compatibility, default to true unless overriden by Publisher.
+    overrideContentId = params.overrideContentId;
+  }
+  overrideContentUrl = !!params.overrideContentUrl;
+  overrideContentTitle = !!params.overrideContentTitle;
+  overrideContentDescription = !!params.overrideContentDescription;
 }
 
 export function fetchTargetingForMediaId(mediaId) {
