@@ -12,6 +12,14 @@ Connects to Gamma exchange for bids.
 
 Gamma bid adapter supports Banner, Video.
 
+# Parameters
+
+| Name          | Scope    | Description               | Example              |
+| :------------ | :------- | :------------------------ | :------------------- |
+| `zoneId`      | required                     | Zone ID | "1398219417" |
+| `siteId`      | required                     | Website ID | "1398219351" |
+| `region`      | optional (for prebid.js)     | Prefix of the region to which prebid must send requests. Possible values: "SGP", "JPN", "US_WEST", "EU" | "SGP" |
+
 # Test Parameters: For Banner
 ```
 var adUnits = [{
@@ -22,8 +30,9 @@ var adUnits = [{
           bids: [{
 			bidder: 'gamma',
             params: {
-				siteId: '1465446377',
-				zoneId: '1515999290'
+				siteId: '1398219351',
+				zoneId: '1398219417',
+				region: 'SGP'	
             }
           }]
   
@@ -39,8 +48,9 @@ var adUnits = [{
           bids: [{
 			bidder: 'gamma',
             params: {
-				siteId: '1465446377',
-				zoneId: '1493280341'
+				siteId: '1398219351',
+				zoneId: '1614755846',
+				region: 'SGP'
             }
           }]
   
@@ -59,8 +69,9 @@ In order to receive bids please map localhost to (any) test domain.
         bids: [{
 		bidder: 'gamma',
             params: {
-		siteId: '1465446377',
-		zoneId: '1515999290'
+		siteId: '1398219351',
+		zoneId: '1398219417',
+		region: 'SGP'
             }
           }]
     }];
