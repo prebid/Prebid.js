@@ -15,6 +15,7 @@ import {
 } from '../../../modules/pubxaiRtdProvider';
 import { config } from '../../../src/config';
 import * as hook from '../../../src/hook.js';
+import { server } from '../../mocks/xhr.js';
 
 const getConfig = () => ({
   params: {
@@ -55,19 +56,13 @@ const fakeServer = (
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
   };
-  const fakeServer = sinon.createFakeServer();
-  fakeServer.respondImmediately = true;
-  fakeServer.autoRespond = true;
-  fakeServer.respondWith(
-    'GET',
-    providerConfig ? providerConfig.params.endpoint : '*',
-    [
-      statusCode,
-      fakeResponseHeaders,
-      fakeResponse ? JSON.stringify(fakeResponse) : '',
-    ]
+  const request = server.requests[0];
+  request.respond(
+    statusCode,
+    fakeResponseHeaders,
+    fakeResponse ? JSON.stringify(fakeResponse) : ''
   );
-  return fakeServer;
+  return request;
 };
 
 const stubConfig = () => {
@@ -142,91 +137,110 @@ describe('pubxaiRtdProvider', () => {
   describe('fetchFloorRules', () => {
     const providerConfig = getConfig();
     const floorsResponse = getFloorsResponse();
-    let server;
-    afterEach(() => {
-      server.restore();
+    it('success with floors response', (done) => {
+      const promise = fetchFloorRules(providerConfig);
+      fakeServer(floorsResponse);
+      promise.then((res) => {
+        expect(res).to.deep.equal(floorsResponse);
+        done();
+      });
     });
-    it('success with floors response', async () => {
-      server = fakeServer(floorsResponse);
-      const res = await fetchFloorRules(providerConfig);
-      expect(res).to.deep.equal(floorsResponse);
+    it('success with no floors response', (done) => {
+      const promise = fetchFloorRules(providerConfig);
+      fakeServer(undefined);
+      promise.then((res) => {
+        expect(res).to.deep.equal(null);
+        done();
+      });
     });
-    it('success with no floors response', async () => {
-      server = fakeServer(undefined);
-      const res = await fetchFloorRules(providerConfig);
-      expect(res).to.equal(null);
+    it('API call error', (done) => {
+      const promise = fetchFloorRules(providerConfig);
+      fakeServer(undefined, undefined, 404);
+      promise
+        .then((res) => {
+          expect(true).to.be.false;
+        })
+        .catch((e) => {
+          expect(e).to.not.be.undefined;
+        })
+        .finally(() => {
+          done();
+        });
     });
-    it('API call error', async () => {
-      server = fakeServer(undefined, undefined, 404);
-      try {
-        const res = await fetchFloorRules(providerConfig);
-        expect(true).to.be.false;
-      } catch (e) {
-        expect(e).to.not.be.undefined;
-      }
-    });
-    it('Wrong API response', async () => {
-      server = fakeServer('floorsResponse');
-      try {
-        const res = await fetchFloorRules(providerConfig);
-        expect(true).to.be.false;
-      } catch (e) {
-        expect(e).to.not.be.undefined;
-      }
+    it('Wrong API response', (done) => {
+      const promise = fetchFloorRules(providerConfig);
+      fakeServer('floorsResponse');
+      promise
+        .then((res) => {
+          expect(true).to.be.false;
+        })
+        .catch((e) => {
+          expect(e).to.not.be.undefined;
+        })
+        .finally(() => {
+          done();
+        });
     });
   });
   describe('setPriceFloors', () => {
     const providerConfig = getConfig();
     const floorsResponse = getFloorsResponse();
-    let server, stub;
+    let stub;
     beforeEach(() => {
       resetGlobals();
       stub = stubConfig();
     });
     afterEach(() => {
-      server.restore();
       stub.restore();
     });
-    it('with floors response', async () => {
-      server = fakeServer(floorsResponse);
+    it('with floors response', (done) => {
       const floorsPromise = setPriceFloors(providerConfig);
+      fakeServer(floorsResponse);
       expect(window.__pubxLoaded__).to.be.true;
       expect(window.__pubxFloorsConfig__).to.deep.equal(
         getFloorsConfig(providerConfig, providerConfig.params.data)
       );
-      await floorsPromise;
-      expect(window.__pubxLoaded__).to.be.true;
-      expect(window.__pubxFloorsConfig__).to.deep.equal(
-        getFloorsConfig(providerConfig, floorsResponse)
-      );
-    });
-    it('without floors response', async () => {
-      server = fakeServer(undefined);
-      const floorsPromise = setPriceFloors(providerConfig);
-      expect(window.__pubxLoaded__).to.be.true;
-      expect(window.__pubxFloorsConfig__).to.deep.equal(
-        getFloorsConfig(providerConfig, providerConfig.params.data)
-      );
-      await floorsPromise;
-      expect(window.__pubxLoaded__).to.be.false;
-      expect(window.__pubxFloorsConfig__).to.deep.equal(null);
-    });
-    it('default floors', async () => {
-      server = fakeServer(undefined, undefined, 404);
-      const floorsPromise = setPriceFloors(providerConfig);
-      expect(window.__pubxLoaded__).to.be.true;
-      expect(window.__pubxFloorsConfig__).to.deep.equal(
-        getFloorsConfig(providerConfig, providerConfig.params.data)
-      );
-      try {
-        await floorsPromise;
-        expect(true).to.be.false;
-      } catch (e) {
+      floorsPromise.then(() => {
         expect(window.__pubxLoaded__).to.be.true;
         expect(window.__pubxFloorsConfig__).to.deep.equal(
-          getFloorsConfig(providerConfig, providerConfig.params.data)
+          getFloorsConfig(providerConfig, floorsResponse)
         );
-      }
+        done();
+      });
+    });
+    it('without floors response', async () => {
+      const floorsPromise = setPriceFloors(providerConfig);
+      fakeServer(undefined);
+      expect(window.__pubxLoaded__).to.be.true;
+      expect(window.__pubxFloorsConfig__).to.deep.equal(
+        getFloorsConfig(providerConfig, providerConfig.params.data)
+      );
+      floorsPromise.then(() => {
+        expect(window.__pubxLoaded__).to.be.false;
+        expect(window.__pubxFloorsConfig__).to.deep.equal(null);
+        done();
+      });
+    });
+    it('default floors', (done) => {
+      const floorsPromise = setPriceFloors(providerConfig);
+      fakeServer(undefined, undefined, 404);
+      expect(window.__pubxLoaded__).to.be.true;
+      expect(window.__pubxFloorsConfig__).to.deep.equal(
+        getFloorsConfig(providerConfig, providerConfig.params.data)
+      );
+      floorsPromise
+        .then(() => {
+          expect(true).to.be.false;
+        })
+        .catch((e) => {
+          expect(window.__pubxLoaded__).to.be.true;
+          expect(window.__pubxFloorsConfig__).to.deep.equal(
+            getFloorsConfig(providerConfig, providerConfig.params.data)
+          );
+        })
+        .finally(() => {
+          done();
+        });
     });
   });
   describe('setFloorsConfig', () => {
