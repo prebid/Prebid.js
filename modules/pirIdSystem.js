@@ -27,7 +27,7 @@ export const pirIdSubmodule = {
   /**
    * decode the stored id value for passing to bid requests
    * @function decode
-   * @param {(Object|string)} value
+   * @param {string} value
    * @returns {(Object|undefined)}
    */
   decode(value) {
@@ -37,8 +37,7 @@ export const pirIdSubmodule = {
   /**
    * performs action to obtain id and return a value
    * @function
-   * @param {SubmoduleConfig} [config]
-   * @returns {Id|undefined}
+   * @returns {Id: string|undefined}
    */
   getId() {
     const pirIdToken = readId();
