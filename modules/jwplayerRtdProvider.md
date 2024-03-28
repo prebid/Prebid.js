@@ -94,6 +94,8 @@ Example:
         site: {
             content: {
                 id: 'jw_abc123',
+                title: 'media title',
+                url: 'https:www.cdn.com/media.mp4',
                 data: [{
                     name: 'jwplayer.com',
                     ext: {
@@ -105,7 +107,10 @@ Example:
                     }, { 
                         id: '456'
                     }]
-                }]
+                }],
+                ext: {
+                  description: 'media description'
+              }
             }
         }   
     }
@@ -116,7 +121,10 @@ where:
 - `ortb2` is an object containing first party data
   - `site` is an object containing page specific information
     - `content` is an object containing metadata for the media. It may contain the following information: 
-      - `id` is a unique identifier for the specific media asset
+      - `id` is a unique identifier for the specific media asset,
+      - `title` is the title of the media content
+      - `url` is the url of the media asset
+      - `ext.description` is the description of the media content
       - `data` is an array containing segment taxonomy objects that have the following parameters:
         - `name` is the `jwplayer.com` string indicating the provider name
         - `ext.segtax` whose `502` value is the unique identifier for JW Player's proprietary taxonomy
