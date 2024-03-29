@@ -8,7 +8,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
  */
 
 const BIDDER_CODE = 'revbid';
-const ENDPOINT_URL = 'https://bid-pls.revbidder.de';
+const ENDPOINT_URL = 'https://revbidder.de';
 
 export const spec = {
   code: BIDDER_CODE,
