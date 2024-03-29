@@ -1373,148 +1373,6 @@ describe('jwplayerRtdProvider', function() {
     });
 
 
-    it('should keep previous content title by default when already defined', function () {
-      const ortb2 = {
-        site: {
-          content: {
-            title: 'oldTitle'
-          }
-        }
-      };
-
-      addOrtbSiteContent(ortb2, null, null, 'newTitle');
-      expect(ortb2).to.have.nested.property('site.content.title', 'oldTitle');
-    });
-
-    it('should keep previous content title by default when new value is not available', function () {
-
-      const ortb2 = {
-        site: {
-          content: {
-            title: 'oldTitle',
-            data: [{ datum: 'first_datum' }]
-          }
-        }
-      };
-
-      addOrtbSiteContent(ortb2, null, { datum: 'new_datum' });
-      expect(ortb2).to.have.nested.property('site.content.title', 'oldTitle');
-    });
-
-    it('should override content title when override is always', function () {
-      setOverrides({
-        overrideContentTitle: 'always',
-      });
-
-      const ortb2 = {
-        site: {
-          content: {
-            title: 'oldTitle'
-          }
-        }
-      };
-
-      addOrtbSiteContent(ortb2, null, 'newTitle');
-      expect(ortb2).to.have.nested.property('site.content.title', 'newTitle');
-    });
-
-    it('should keep previous content title when override is always and new value is not available', function () {
-      setOverrides({
-        overrideContentTitle: 'always',
-      });
-
-      const ortb2 = {
-        site: {
-          content: {
-            title: 'oldTitle'
-          }
-        }
-      };
-
-      addOrtbSiteContent(ortb2);
-      expect(ortb2).to.have.nested.property('site.content.title', 'oldTitle');
-    });
-
-    it('should populate content title when override is whenEmpty and value is empty', function () {
-      setOverrides({
-        overrideContentTitle: 'whenEmpty',
-      });
-
-      const ortb2 = {
-        site: {
-          content: {
-          }
-        }
-      };
-
-      addOrtbSiteContent(ortb2, null, null, 'newTitle');
-      expect(ortb2).to.have.nested.property('site.content.title', 'newTitle');
-    });
-
-    it('should keep previous content title when override is whenEmpty and value is already populated', function () {
-      setOverrides({
-        overrideContentTitle: 'whenEmpty',
-      });
-
-      const ortb2 = {
-        site: {
-          content: {
-            title: 'oldTitle'
-          }
-        }
-      };
-
-      addOrtbSiteContent(ortb2, null, null, 'newTitle');
-      expect(ortb2).to.have.nested.property('site.content.title', 'oldTitle');
-    });
-
-    it('should keep previous content title when override is whenEmpty and new value is not available', function () {
-      setOverrides({
-        overrideContentTitle: 'whenEmpty',
-      });
-
-      const ortb2 = {
-        site: {
-          content: {
-          }
-        }
-      };
-
-      addOrtbSiteContent(ortb2);
-      expect(ortb2.site.content.title).to.be.undefined;
-    });
-
-    it('should keep previous content title when override is set to never', function () {
-      setOverrides({
-        overrideContentTitle: 'never',
-      });
-
-      const ortb2 = {
-        site: {
-          content: {
-            title: 'oldTitle'
-          }
-        }
-      };
-
-      addOrtbSiteContent(ortb2, null, null, 'newTitle');
-      expect(ortb2).to.have.nested.property('site.content.title', 'oldTitle');
-    });
-
-    it('should not populate content title when override is set to never', function () {
-      setOverrides({
-        overrideContentTitle: 'never',
-      });
-
-      const ortb2 = {
-        site: {
-          content: {}
-        }
-      };
-
-      addOrtbSiteContent(ortb2,null, null, 'newTitle');
-      expect(ortb2.site.content.title).to.be.undefined;
-    });
 
     it('should set content url by default when absent from ortb2', function () {
       const ortb2 = {};
@@ -1523,15 +1381,42 @@ describe('jwplayerRtdProvider', function() {
       expect(ortb2).to.have.nested.property('site.content.url', expectedUrl);
     });
 
-    it('should override content url when configured to do so', function () {
+    it('should keep previous content url by default when new value is not available', function () {
+      const ortb2 = {
+        site: {
+          content: {
+            url: 'oldUrl',
+            data: [{ datum: 'first_datum' }]
+          }
+        }
+      };
+
+      addOrtbSiteContent(ortb2, null, { datum: 'new_datum' });
+      expect(ortb2).to.have.nested.property('site.content.url', 'oldUrl');
+    });
+
+    it('should keep previous content url by default when already defined', function () {
+      const ortb2 = {
+        site: {
+          content: {
+            url: 'oldUrl',
+          }
+        }
+      };
+
+      addOrtbSiteContent(ortb2, null, null, null, null, 'newUrl');
+      expect(ortb2).to.have.nested.property('site.content.title', 'oldUrl');
+    });
+
+    it('should override content url when override is always', function () {
       setOverrides({
-        overrideContentUrl: true
+        overrideContentUrl: 'always',
       });
 
       const ortb2 = {
         site: {
           content: {
-            url: 'oldUrl'
+            url: 'oldUrl',
           }
         }
       };
@@ -1541,33 +1426,103 @@ describe('jwplayerRtdProvider', function() {
       expect(ortb2).to.have.nested.property('site.content.url', expectedUrl);
     });
 
-    it('should keep previous content url by default when new value is not available', function () {
+    it('should keep previous content url when override is always and new value is not available', function () {
+      setOverrides({
+        overrideContentUrl: 'always',
+      });
 
       const ortb2 = {
         site: {
           content: {
             url: 'oldUrl',
-            data: [{ datum: 'first_datum' }]
           }
         }
       };
 
-      addOrtbSiteContent(ortb2, null, { datum: 'new_datum' });
+      addOrtbSiteContent(ortb2);
       expect(ortb2).to.have.nested.property('site.content.url', 'oldUrl');
     });
 
-    it('should keep previous content url when not set', function () {
+    it('should populate content url when override is whenEmpty and value is empty', function () {
+      setOverrides({
+        overrideContentUrl: 'whenEmpty',
+      });
+
       const ortb2 = {
         site: {
           content: {
-            url: 'oldUrl',
-            data: [{ datum: 'first_datum' }]
           }
         }
       };
 
-      addOrtbSiteContent(ortb2, null, { datum: 'new_datum' });
-      expect(ortb2).to.have.nested.property('site.content.url', 'oldUrl');
+      const expectedUrl = 'expectedUrl';
+      addOrtbSiteContent(ortb2, null, null, null, null, expectedUrl);
+      expect(ortb2).to.have.nested.property('site.content.url', expectedUrl);
+    });
+
+    it('should keep previous content url when override is whenEmpty and value is already populated', function () {
+      setOverrides({
+        overrideContentUrl: 'whenEmpty',
+      });
+
+      const ortb2 = {
+        site: {
+          content: {
+            url: 'oldUrl',
+          }
+        }
+      };
+
+      addOrtbSiteContent(ortb2, null, null, null, null, 'newUrl');
+      expect(ortb2).to.have.nested.property('site.content.title', 'oldUrl');
+    });
+
+    it('should keep previous content url when override is whenEmpty and new value is not available', function () {
+      setOverrides({
+        overrideContentUrl: 'whenEmpty',
+      });
+
+      const ortb2 = {
+        site: {
+          content: {
+          }
+        }
+      };
+
+      addOrtbSiteContent(ortb2);
+      expect(ortb2.site.content.url).to.be.undefined;
+    });
+
+    it('should keep previous content url when override is set to never', function () {
+      setOverrides({
+        overrideContentUrl: 'never',
+      });
+
+      const ortb2 = {
+        site: {
+          content: {
+            url: 'oldUrl',
+          }
+        }
+      };
+
+      addOrtbSiteContent(ortb2, null, null, null, null, 'newUrl');
+      expect(ortb2).to.have.nested.property('site.content.title', 'oldUrl');
+    });
+
+    it('should not populate content url when override is set to never', function () {
+      setOverrides({
+        overrideContentUrl: 'never',
+      });
+
+      const ortb2 = {
+        site: {
+          content: {}
+        }
+      };
+
+      addOrtbSiteContent(ortb2, null, null, null, null, 'newUrl');
+      expect(ortb2.site.content.url).to.be.undefined;
     });
   });
 
