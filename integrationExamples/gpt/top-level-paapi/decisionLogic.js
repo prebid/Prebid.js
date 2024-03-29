@@ -13,18 +13,21 @@ function scoreAd(
   browserSignals,
   directFromSellerSignals
 ) {
-  console.group(...LOG_PREFIX, 'Context:', {
+  console.group(...LOG_PREFIX, 'Buyer:', browserSignals.interestGroupOwner);
+  console.log('Context:', JSON.stringify({
     adMetadata,
     bid,
-    auctionConfig,
+    auctionConfig: {
+      ...auctionConfig,
+      componentAuctions: '[omitted]'
+    },
     trustedScoringSignals,
     browserSignals,
     directFromSellerSignals
-  });
+  }, ' ', ' '));
 
   const result = {
     desirability: bid,
-    rejectReason: 'not-available',
     allowComponentAuction: true,
   };
   const {bidfloor, bidfloorcur} = auctionConfig.auctionSignals?.prebid || {};
@@ -42,3 +45,5 @@ function scoreAd(
   console.log(...LOG_PREFIX, 'Result:', result);
   return result;
 }
+
+function reportResult() {}
