@@ -99,7 +99,7 @@ export const spec = {
     let response;
 
     try {
-      response = serverResponse.body
+      response = serverResponse.body;
       bid = response.seatbid[0].bid[0];
     } catch (e) {
       response = null;
@@ -149,6 +149,7 @@ export const spec = {
 registerBidder(spec);
 
 function buildSite(bidderRequest) {
+  // TODO: should name/domain be the domain?
   let site = {
     name: window.location.hostname,
     publisher: {
@@ -160,12 +161,12 @@ function buildSite(bidderRequest) {
     deepSetValue(
       site,
       'page',
-      bidderRequest.refererInfo.referer.href ? bidderRequest.refererInfo.referer.href : '',
+      bidderRequest.refererInfo.page
     );
     deepSetValue(
       site,
       'ref',
-      bidderRequest.refererInfo.referer ? bidderRequest.refererInfo.referer : '',
+      bidderRequest.refererInfo.ref
     );
   }
   return site;

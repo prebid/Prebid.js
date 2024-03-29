@@ -951,13 +951,20 @@ const bidderRequest = {
   bidderRequestId: '999ccceeee11',
   timeout: 200,
   refererInfo: {
-    referer: 'http://example-domain.com/foo',
+    page: 'http://mock-page.com',
+    domain: 'mock-page.com',
+    ref: 'http://example-domain.com/foo',
   },
   gdprConsent: {
     gdprApplies: 1,
     consentString: 'gdprConsentString',
   },
   uspConsent: 'uspConsentString',
+  ortb2: {
+    source: {
+      tid: 'aaccee333311'
+    }
+  }
 };
 
 const bannerBid = {
@@ -999,8 +1006,8 @@ const bannerExchangeRequest = {
     },
   },
   site: {
-    domain: location.hostname,
-    page: location.href,
+    domain: 'mock-page.com',
+    page: 'http://mock-page.com',
     ref: 'http://example-domain.com/foo',
   },
   source: {
@@ -1089,8 +1096,8 @@ const videoExchangeRequest = {
     },
   },
   site: {
-    domain: location.hostname,
-    page: location.href,
+    domain: 'mock-page.com',
+    page: 'http://mock-page.com',
     ref: 'http://example-domain.com/foo',
   },
   source: {
@@ -1171,8 +1178,8 @@ const mixedExchangeRequest = {
     },
   },
   site: {
-    domain: location.hostname,
-    page: location.href,
+    domain: 'mock-page.com',
+    page: 'http://mock-page.com',
     ref: 'http://example-domain.com/foo',
   },
   source: {

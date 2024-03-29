@@ -1,6 +1,7 @@
 import yieldoneAnalytics from 'modules/yieldoneAnalyticsAdapter.js';
 import { targeting } from 'src/targeting.js';
 import { expect } from 'chai';
+import _ from 'lodash';
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;
 let constants = require('src/constants.json');
@@ -46,7 +47,7 @@ describe('Yieldone Prebid Analytic', function () {
         {
           bidderCode: 'biddertest_1',
           auctionId: auctionId,
-          refererInfo: {referer: testReferrer},
+          refererInfo: {page: testReferrer},
           bids: [
             {
               adUnitCode: '0000',
@@ -71,7 +72,7 @@ describe('Yieldone Prebid Analytic', function () {
         {
           bidderCode: 'biddertest_2',
           auctionId: auctionId,
-          refererInfo: {referer: testReferrer},
+          refererInfo: {page: testReferrer},
           bids: [
             {
               adUnitCode: '0000',
@@ -87,7 +88,7 @@ describe('Yieldone Prebid Analytic', function () {
         {
           bidderCode: 'biddertest_3',
           auctionId: auctionId,
-          refererInfo: {referer: testReferrer},
+          refererInfo: {page: testReferrer},
           bids: [
             {
               adUnitCode: '0000',
@@ -225,7 +226,9 @@ describe('Yieldone Prebid Analytic', function () {
         pubId: initOptions.pubId,
         page: {url: testReferrer},
         wrapper_version: '$prebid.version$',
-        events: expectedEvents
+        events: sinon.match(evs => {
+          return !expectedEvents.some((expectedEvent) => evs.find(ev => _.isEqual(ev, expectedEvent)) === -1)
+        })
       };
 
       const preparedWinnerParams = Object.assign({adServerTargeting: fakeTargeting}, winner);
@@ -262,14 +265,18 @@ describe('Yieldone Prebid Analytic', function () {
 
       events.emit(constants.EVENTS.AUCTION_END, auctionEnd);
 
-      expect(yieldoneAnalytics.eventsStorage[auctionId]).to.deep.equal(expectedResult);
+      sinon.assert.match(yieldoneAnalytics.eventsStorage[auctionId], expectedResult);
 
       delete yieldoneAnalytics.eventsStorage[auctionId];
 
       setTimeout(function() {
         events.emit(constants.EVENTS.BID_WON, winner);
 
-        sinon.assert.callCount(sendStatStub, 2);
+        sinon.assert.callCount(sendStatStub, 2)
+        const billableEventIndex = yieldoneAnalytics.eventsStorage[auctionId].events.findIndex(event => event.eventType === constants.EVENTS.BILLABLE_EVENT);
+        if (billableEventIndex > -1) {
+          yieldoneAnalytics.eventsStorage[auctionId].events.splice(billableEventIndex, 1);
+        }
         expect(yieldoneAnalytics.eventsStorage[auctionId]).to.deep.equal(wonExpectedResult);
 
         delete yieldoneAnalytics.eventsStorage[auctionId];

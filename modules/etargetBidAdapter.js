@@ -1,5 +1,4 @@
 import { deepSetValue, isFn, isPlainObject } from '../src/utils.js';
-import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
@@ -36,7 +35,7 @@ export const spec = {
         lastCountry = countryMap[bid.params.country];
       }
       reqParams = bid.params;
-      reqParams.transactionId = bid.transactionId;
+      reqParams.transactionId = bid.ortb2Imp?.ext?.tid;
       request.push(formRequestUrl(reqParams));
       floors[i] = getBidFloor(bid);
     }
@@ -91,7 +90,7 @@ export const spec = {
         mts['title'] = [(document.getElementsByTagName('title')[0] || []).innerHTML];
         mts['base'] = [(document.getElementsByTagName('base')[0] || {}).href];
         mts['referer'] = [document.location.href];
-        mts['ortb2'] = (config.getConfig('ortb2') || {});
+        mts['ortb2'] = (bidderRequest.ortb2 || {});
       } catch (e) {
         mts.error = e;
       }
@@ -138,7 +137,6 @@ export const spec = {
           vastXml: data.vast_content,
           vastUrl: data.vast_link,
           mediaType: data.response,
-          transactionId: bid.transactionId
         };
         if (bidRequest.gdpr) {
           bidObject.gdpr = bidRequest.gdpr.gdpr;

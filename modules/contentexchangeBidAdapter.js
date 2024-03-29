@@ -2,10 +2,12 @@ import { isFn, deepAccess, logMessage } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'contentexchange';
 const AD_URL = 'https://eu2.adnetwork.agency/pbjs';
 const SYNC_URL = 'https://sync2.adnetwork.agency';
+const GVLID = 864;
 
 function isBidResponseValid (bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
@@ -87,6 +89,7 @@ function getBidFloor(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid = {}) => {
@@ -113,6 +116,9 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest = {}) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     let deviceWidth = 0;
     let deviceHeight = 0;
 
@@ -127,7 +133,7 @@ export const spec = {
       winLocation = window.location;
     }
 
-    const refferUrl = bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
+    const refferUrl = bidderRequest.refererInfo && bidderRequest.refererInfo.page;
     let refferLocation;
     try {
       refferLocation = refferUrl && new URL(refferUrl);
@@ -135,6 +141,7 @@ export const spec = {
       logMessage(e);
     }
 
+    // TODO: does the fallback to 'window.location' make sense?
     let location = refferLocation || winLocation;
     const language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
     const host = location.host;
@@ -152,7 +159,7 @@ export const spec = {
       coppa: config.getConfig('coppa') === true ? 1 : 0,
       ccpa: bidderRequest.uspConsent || undefined,
       gdpr: bidderRequest.gdprConsent || undefined,
-      tmax: config.getConfig('bidderTimeout')
+      tmax: bidderRequest.timeout
     };
 
     const len = validBidRequests.length;

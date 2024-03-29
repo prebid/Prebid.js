@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec, storage } from '../../../modules/insticatorBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js'
-import { userSync } from '../../../src/userSync.js';
 
 const USER_ID_KEY = 'hb_insticator_uid';
 const USER_ID_DUMMY_VALUE = '74f78609-a92d-4cf1-869f-1b244bbfb5d2';
@@ -18,15 +17,30 @@ describe('InsticatorBidAdapter', function () {
     adUnitCode: 'adunit-code',
     params: {
       adUnitId: '1a2b3c4d5e6f1a2b3c4d',
+      user: {
+        yob: 1984,
+        gender: 'M'
+      },
     },
     sizes: [[300, 250], [300, 600]],
     mediaTypes: {
       banner: {
-        sizes: [[300, 250], [300, 600]]
-      }
+        sizes: [[300, 250], [300, 600]],
+        pos: 4,
+      },
+      video: {
+        mimes: [
+          'video/mp4',
+          'video/mpeg',
+        ],
+        w: 250,
+        h: 300,
+        placement: 2,
+      },
     },
     bidId: '30b31c1838de1e',
     ortb2Imp: {
+      instl: 1,
       ext: {
         gpid: '1111/homepage'
       }
@@ -58,7 +72,11 @@ describe('InsticatorBidAdapter', function () {
 
   let bidderRequest = {
     bidderRequestId,
-    auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
+    ortb2: {
+      source: {
+        tid: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
+      }
+    },
     timeout: 300,
     gdprConsent: {
       consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
@@ -68,7 +86,9 @@ describe('InsticatorBidAdapter', function () {
     refererInfo: {
       numIframes: 0,
       reachedTop: true,
-      referer: 'https://example.com',
+      page: 'https://example.com',
+      domain: 'example.com',
+      ref: 'https://referrer.com',
       stack: ['https://example.com']
     },
   };
@@ -91,16 +111,16 @@ describe('InsticatorBidAdapter', function () {
     });
 
     it('should return false if there is no adUnitId param', () => {
-      expect(spec.isBidRequestValid({...bidRequest, ...{params: {}}})).to.be.false;
+      expect(spec.isBidRequestValid({ ...bidRequest, ...{ params: {} } })).to.be.false;
     });
 
     it('should return false if there is no mediaTypes', () => {
-      expect(spec.isBidRequestValid({...bidRequest, ...{mediaTypes: {}}})).to.be.false;
+      expect(spec.isBidRequestValid({ ...bidRequest, ...{ mediaTypes: {} } })).to.be.false;
     });
 
     it('should return false if there are no banner sizes and no sizes', () => {
       bidRequest.mediaTypes.banner = {};
-      expect(spec.isBidRequestValid({...bidRequest, ...{sizes: {}}})).to.be.false;
+      expect(spec.isBidRequestValid({ ...bidRequest, ...{ sizes: {} } })).to.be.false;
     });
 
     it('should return true if there is sizes and no banner sizes', () => {
@@ -109,7 +129,205 @@ describe('InsticatorBidAdapter', function () {
 
     it('should return true if there is banner sizes and no sizes', () => {
       bidRequest.mediaTypes.banner.sizes = [[300, 250], [300, 600]];
-      expect(spec.isBidRequestValid({...bidRequest, ...{sizes: {}}})).to.be.true;
+      expect(spec.isBidRequestValid({ ...bidRequest, ...{ sizes: {} } })).to.be.true;
+    });
+
+    it('should return true if there is video and video sizes', () => {
+      expect(spec.isBidRequestValid({
+        ...bidRequest,
+        ...{
+          mediaTypes: {
+            video: {
+              mimes: [
+                'video/mp4',
+                'video/mpeg',
+              ],
+              w: 250,
+              h: 300,
+            },
+          }
+        }
+      })).to.be.true;
+    });
+
+    it('should return false if there is no video sizes', () => {
+      expect(spec.isBidRequestValid({
+        ...bidRequest,
+        ...{
+          mediaTypes: {
+            video: {},
+          }
+        }
+      })).to.be.false;
+    });
+
+    it('should return true if video object is absent/undefined', () => {
+      expect(spec.isBidRequestValid({
+        ...bidRequest,
+        ...{
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [300, 600]],
+            },
+          }
+        }
+      })).to.be.true;
+    })
+
+    it('should return false if video placement is not a number', () => {
+      expect(spec.isBidRequestValid({
+        ...bidRequest,
+        ...{
+          mediaTypes: {
+            video: {
+              mimes: [
+                'video/mp4',
+                'video/mpeg',
+              ],
+              w: 250,
+              h: 300,
+              placement: 'NaN',
+            },
+          }
+        }
+      })).to.be.false;
+    });
+
+    it('should return false if video plcmt is not a number', () => {
+      expect(spec.isBidRequestValid({
+        ...bidRequest,
+        ...{
+          mediaTypes: {
+            video: {
+              mimes: [
+                'video/mp4',
+                'video/mpeg',
+              ],
+              w: 250,
+              h: 300,
+              plcmt: 'NaN',
+            },
+          }
+        }
+      })).to.be.false;
+    });
+
+    it('should return true if playerSize is present instead of w and h', () => {
+      expect(spec.isBidRequestValid({
+        ...bidRequest,
+        ...{
+          mediaTypes: {
+            video: {
+              mimes: [
+                'video/mp4',
+                'video/mpeg',
+              ],
+              playerSize: [250, 300],
+              placement: 1,
+            },
+          }
+        }
+      })).to.be.true;
+    });
+
+    it('should return true if optional video fields are valid', () => {
+      expect(spec.isBidRequestValid({
+        ...bidRequest,
+        ...{
+          mediaTypes: {
+            video: {
+              mimes: [
+                'video/mp4',
+                'video/mpeg',
+              ],
+              playerSize: [250, 300],
+              placement: 1,
+              startdelay: 1,
+              skip: 1,
+              skipmin: 1,
+              skipafter: 1,
+              minduration: 1,
+              maxduration: 1,
+              api: [1, 2],
+              protocols: [2],
+              battr: [1, 2],
+              playbackmethod: [1, 2],
+              playbackend: 1,
+              delivery: [1, 2],
+              pos: 1,
+            },
+          }
+        }
+      })).to.be.true;
+    });
+
+    it('should return false if optional video fields are not valid', () => {
+      expect(spec.isBidRequestValid({
+        ...bidRequest,
+        ...{
+          mediaTypes: {
+            video: {
+              mimes: [
+                'video/mp4',
+                'video/mpeg',
+              ],
+              playerSize: [250, 300],
+              placement: 1,
+              startdelay: 'NaN',
+            },
+          }
+        }
+      })).to.be.false;
+    });
+
+    it('should return false if video min duration > max duration', () => {
+      expect(spec.isBidRequestValid({
+        ...bidRequest,
+        ...{
+          mediaTypes: {
+            video: {
+              mimes: [
+                'video/mp4',
+                'video/mpeg',
+              ],
+              playerSize: [250, 300],
+              placement: 1,
+              minduration: 5,
+              maxduration: 4,
+            },
+          }
+        }
+      })).to.be.false;
+    });
+
+    it('should return true when video bidder params override bidRequest video params', () => {
+      expect(spec.isBidRequestValid({
+        ...bidRequest,
+        ...{
+          mediaTypes: {
+            video: {
+              mimes: [
+                'video/mp4',
+                'video/mpeg',
+              ],
+              playerSize: [250, 300],
+              placement: 1,
+            },
+          }
+        },
+        params: {
+          ...bidRequest.params,
+          video: {
+            mimes: [
+              'video/mp4',
+              'video/mpeg',
+              'video/x-flv',
+              'video/webm',
+            ],
+            placement: 2,
+          },
+        }
+      })).to.be.true;
     });
   });
 
@@ -117,8 +335,14 @@ describe('InsticatorBidAdapter', function () {
     let getDataFromLocalStorageStub, localStorageIsEnabledStub;
     let getCookieStub, cookiesAreEnabledStub;
     let sandbox;
+    let serverRequests, serverRequest;
 
     beforeEach(() => {
+      $$PREBID_GLOBAL$$.bidderSettings = {
+        insticator: {
+          storageAllowed: true
+        }
+      };
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       localStorageIsEnabledStub = sinon.stub(storage, 'localStorageIsEnabled');
       getCookieStub = sinon.stub(storage, 'getCookie');
@@ -134,14 +358,18 @@ describe('InsticatorBidAdapter', function () {
       localStorageIsEnabledStub.restore();
       getCookieStub.restore();
       cookiesAreEnabledStub.restore();
+      $$PREBID_GLOBAL$$.bidderSettings = {};
     });
 
-    const serverRequests = spec.buildRequests([bidRequest], bidderRequest);
+    before(() => {
+      serverRequests = spec.buildRequests([bidRequest], bidderRequest);
+      serverRequest = serverRequests[0];
+    })
+
     it('should create a request', function () {
       expect(serverRequests).to.have.length(1);
     });
 
-    const serverRequest = serverRequests[0];
     it('should create a request object with method, URL, options and data', function () {
       expect(serverRequest).to.exist;
       expect(serverRequest.method).to.exist;
@@ -178,7 +406,7 @@ describe('InsticatorBidAdapter', function () {
       expect(data.tmax).to.equal(bidderRequest.timeout);
       expect(data.source).to.have.all.keys('fd', 'tid', 'ext');
       expect(data.source.fd).to.equal(1);
-      expect(data.source.tid).to.equal(bidderRequest.auctionId);
+      expect(data.source.tid).to.equal(bidderRequest.ortb2.source.tid);
       expect(data.source.ext).to.have.property('schain').to.deep.equal({
         ver: '1.0',
         complete: 1,
@@ -194,7 +422,7 @@ describe('InsticatorBidAdapter', function () {
       expect(data.site).to.be.an('object');
       expect(data.site.domain).not.to.be.empty;
       expect(data.site.page).not.to.be.empty;
-      expect(data.site.ref).to.equal(bidderRequest.refererInfo.referer);
+      expect(data.site.ref).to.equal(bidderRequest.refererInfo.ref);
       expect(data.device).to.be.an('object');
       expect(data.device.w).to.equal(window.innerWidth);
       expect(data.device.h).to.equal(window.innerHeight);
@@ -206,7 +434,10 @@ describe('InsticatorBidAdapter', function () {
       expect(data.regs.ext.gdpr).to.equal(1);
       expect(data.regs.ext.gdprConsentString).to.equal(bidderRequest.gdprConsent.consentString);
       expect(data.user).to.be.an('object');
-      expect(data.user.id).to.equal(USER_ID_DUMMY_VALUE);
+      expect(data.user).to.have.property('yob');
+      expect(data.user.yob).to.equal(1984);
+      expect(data.user).to.have.property('gender');
+      expect(data.user.gender).to.equal('M');
       expect(data.user.ext).to.have.property('eids');
       expect(data.user.ext.eids).to.deep.equal([
         {
@@ -223,11 +454,22 @@ describe('InsticatorBidAdapter', function () {
       expect(data.imp).to.deep.equal([{
         id: bidRequest.bidId,
         tagid: bidRequest.adUnitCode,
+        instl: 1,
+        secure: 0,
         banner: {
           format: [
-            {w: 300, h: 250},
-            {w: 300, h: 600},
+            { w: 300, h: 250 },
+            { w: 300, h: 600 }
           ]
+        },
+        video: {
+          mimes: [
+            'video/mp4',
+            'video/mpeg',
+          ],
+          h: 300,
+          w: 250,
+          placement: 2,
         },
         ext: {
           gpid: bidRequest.ortb2Imp.ext.gpid,
@@ -256,12 +498,46 @@ describe('InsticatorBidAdapter', function () {
       expect(data.user.id).to.equal(USER_ID_STUBBED);
     });
     it('should return empty regs object if no gdprConsent is passed', function () {
-      const requests = spec.buildRequests([bidRequest], {...bidderRequest, ...{gdprConsent: false}});
+      const requests = spec.buildRequests([bidRequest], { ...bidderRequest, ...{ gdprConsent: false } });
       const data = JSON.parse(requests[0].data);
       expect(data.regs).to.be.an('object').that.is.empty;
     });
     it('should return empty array if no valid requests are passed', function () {
       expect(spec.buildRequests([], bidderRequest)).to.be.an('array').that.have.lengthOf(0);
+    });
+
+    it('should have bidder params override bidRequest mediatypes', function () {
+      const tempBiddRequest = {
+        ...bidRequest,
+        params: {
+          ...bidRequest.params,
+          video: {
+            mimes: [
+              'video/mp4',
+              'video/mpeg',
+              'video/x-flv',
+              'video/webm',
+              'video/ogg',
+            ],
+            plcmt: 4,
+            w: 640,
+            h: 480,
+          }
+        }
+      }
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.imp[0].video.mimes).to.deep.equal([
+        'video/mp4',
+        'video/mpeg',
+        'video/x-flv',
+        'video/webm',
+        'video/ogg',
+      ])
+      expect(data.imp[0].video.placement).to.equal(2);
+      expect(data.imp[0].video.plcmt).to.equal(4);
+      expect(data.imp[0].video.w).to.equal(640);
+      expect(data.imp[0].video.h).to.equal(480);
     });
   });
 
@@ -384,14 +660,12 @@ describe('InsticatorBidAdapter', function () {
         width: 300,
         height: 200,
         mediaType: 'banner',
-        meta: {
-          advertiserDomains: [
-            'test1.com'
-          ],
-          test: 1
-        },
         ad: 'adm1',
         adUnitCode: 'adunit-code-1',
+        meta: {
+          advertiserDomains: ['test1.com'],
+          test: 1
+        }
       },
       {
         requestId: 'bid2',
@@ -480,4 +754,87 @@ describe('InsticatorBidAdapter', function () {
       expect(spec.getUserSyncs({}, [response])).to.have.length(0);
     })
   });
+
+  describe('Response with video Instream', function () {
+    const bidRequestVid = {
+      method: 'POST',
+      url: 'https://ex.ingage.tech/v1/openrtb',
+      options: {
+        contentType: 'application/json',
+        withCredentials: true,
+      },
+      data: '',
+      bidderRequest: {
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
+        timeout: 300,
+        bids: [
+          {
+            bidder: 'insticator',
+            params: {
+              adUnitId: '1a2b3c4d5e6f1a2b3c4d'
+            },
+            adUnitCode: 'adunit-code-1',
+            mediaTypes: {
+              video: {
+                mimes: [
+                  'video/mp4',
+                  'video/mpeg',
+                ],
+                playerSize: [[250, 300]],
+                placement: 2,
+                plcmt: 2,
+              }
+            },
+            bidId: 'bid1',
+          }
+        ]
+      }
+    };
+
+    const bidResponseVid = {
+      body: {
+        id: '22edbae2733bf6',
+        bidid: 'foo9876',
+        cur: 'USD',
+        seatbid: [
+          {
+            seat: 'some-dsp',
+            bid: [
+              {
+                ad: '<Vast></Vast>',
+                impid: 'bid1',
+                crid: 'crid1',
+                price: 0.5,
+                w: 300,
+                h: 250,
+                adm: '<VAST version="4.0"><Ad></Ad></VAST>',
+                exp: 60,
+                adomain: ['test1.com'],
+                ext: {
+                  meta: {
+                    test: 1
+                  }
+                },
+              }
+            ],
+          },
+        ]
+      }
+    };
+    const bidRequestWithVideo = utils.deepClone(bidRequestVid);
+
+    it('should have related properties for video Instream', function() {
+      const serverResponseWithInstream = utils.deepClone(bidResponseVid);
+      serverResponseWithInstream.body.seatbid[0].bid[0].vastXml = '<VAST version="4.0"><Ad></Ad></VAST>';
+      serverResponseWithInstream.body.seatbid[0].bid[0].mediaType = 'video';
+      const bidResponse = spec.interpretResponse(serverResponseWithInstream, bidRequestWithVideo)[0];
+      expect(bidResponse).to.have.any.keys('mediaType', 'vastXml', 'vastUrl');
+      expect(bidResponse).to.have.property('mediaType', 'video');
+      expect(bidResponse.width).to.equal(300);
+      expect(bidResponse.height).to.equal(250);
+      expect(bidResponse).to.have.property('vastXml', '<VAST version="4.0"><Ad></Ad></VAST>');
+      expect(bidResponse.vastUrl).to.match(/^data:text\/xml;charset=utf-8;base64,[\w+/=]+$/)
+    });
+  })
 });

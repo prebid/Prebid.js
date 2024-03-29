@@ -9,10 +9,10 @@ const EVENTS_ENDPOINT = `events.${DOMAIN}/diag`;
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: 52,
+  gvlid: 202,
   aliases: [
-    { code: 'tremor', gvlid: 52 },
-    { code: 'tremorvideo', gvlid: 52 }
+    { code: 'tremor', gvlid: 202 },
+    { code: 'tremorvideo', gvlid: 202 }
   ],
   supportedMediaTypes: [VIDEO],
   /**
@@ -235,7 +235,7 @@ function generateUrl(bid, bidderRequest) {
 
     url += `${getUrlParams(params, bid.schain)}`;
 
-    url += (`&transactionId=${bid.transactionId}`);
+    url += (`&transactionId=${bid.ortb2Imp?.ext?.tid}`);
 
     if (bidderRequest) {
       if (bidderRequest.gdprConsent) {
@@ -247,8 +247,9 @@ function generateUrl(bid, bidderRequest) {
         }
       }
 
-      if (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-        url += (`&referrer=${encodeURIComponent(bidderRequest.refererInfo.referer)}`);
+      if (bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
+        // TODO: is 'page' the right value here?
+        url += (`&referrer=${encodeURIComponent(bidderRequest.refererInfo.page)}`);
       }
     }
 

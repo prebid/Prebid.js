@@ -3,6 +3,11 @@ import {getBidRequest} from '../src/utils.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const SOURCE = 'pbjs';
 const BIDDER_CODE = 'targetVideo';
 const ENDPOINT_URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -42,6 +47,24 @@ export const spec = {
       },
       schain: schain
     };
+
+    if (bidderRequest && bidderRequest.gdprConsent) {
+      payload.gdpr_consent = {
+        consent_string: bidderRequest.gdprConsent.consentString,
+        consent_required: bidderRequest.gdprConsent.gdprApplies
+      };
+
+      if (bidderRequest.gdprConsent.addtlConsent && bidderRequest.gdprConsent.addtlConsent.indexOf('~') !== -1) {
+        let ac = bidderRequest.gdprConsent.addtlConsent;
+        let acStr = ac.substring(ac.indexOf('~') + 1);
+        payload.gdpr_consent.addtl_consent = acStr.split('.').map(id => parseInt(id, 10));
+      }
+    }
+
+    if (bidderRequest && bidderRequest.uspConsent) {
+      payload.us_privacy = bidderRequest.uspConsent
+    }
+
     return formatRequest(payload, bidderRequest);
   },
 
@@ -114,7 +137,7 @@ function createVideoTag(bid) {
   tag.ad_types = [VIDEO];
   tag.uuid = bid.bidId;
   tag.allow_smaller_sizes = false;
-  tag.use_pmt_rule = false
+  tag.use_pmt_rule = false;
   tag.prebid = true;
   tag.disable_psa = true;
   tag.hb_source = 1;
@@ -139,7 +162,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
   const sizes = getSizes(bidRequest);
   const bid = {
     requestId: serverBid.uuid,
-    cpm: rtbBid.cpm * MARGIN,
+    cpm: rtbBid.cpm / MARGIN,
     creativeId: rtbBid.creative_id,
     dealId: rtbBid.deal_id,
     currency: 'USD',

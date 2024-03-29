@@ -1,7 +1,27 @@
-import { deepAccess, getDNT, getBidIdParameter, tryAppendQueryString, isEmpty, createTrackPixelHtml, logError, deepSetValue, getWindowTop, getWindowLocation } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER } from '../src/mediaTypes.js';
+import {
+  createTrackPixelHtml,
+  deepAccess,
+  deepSetValue, getBidIdParameter,
+  getDNT,
+  getWindowTop,
+  isEmpty,
+  logError
+} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'gmossp';
 const ENDPOINT = 'https://sp.gmossp-sp.jp/hb/prebid/query.ad';
 
@@ -22,7 +42,8 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {validBidRequests} validBidRequests an array of bids
+   * @param {BidderRequest} bidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -36,7 +57,7 @@ export const spec = {
       let queryString = '';
 
       const request = validBidRequests[i];
-      const tid = request.transactionId;
+      const tid = request.ortb2Imp?.ext?.tid;
       const bid = request.bidId;
       const imuid = deepAccess(request, 'userId.imuid');
       const sharedId = deepAccess(request, 'userId.pubcid');
@@ -155,9 +176,10 @@ function getUrlInfo(refererInfo) {
   }
 
   return {
-    url: getUrl(refererInfo),
     canonicalLink: canonicalLink,
-    ref: getReferrer(),
+    // TODO: are these the right refererInfo values?
+    url: refererInfo.topmostLocation,
+    ref: refererInfo.ref || window.document.referrer,
   };
 }
 
@@ -166,26 +188,6 @@ function getMetaElements() {
     return getWindowTop.document.getElementsByTagName('meta');
   } catch (e) {
     return document.getElementsByTagName('meta');
-  }
-}
-
-function getUrl(refererInfo) {
-  if (refererInfo && refererInfo.referer) {
-    return refererInfo.referer;
-  }
-
-  try {
-    return getWindowTop.location.href;
-  } catch (e) {
-    return getWindowLocation.href;
-  }
-}
-
-function getReferrer() {
-  try {
-    return getWindowTop.document.referrer;
-  } catch (e) {
-    return document.referrer;
   }
 }
 

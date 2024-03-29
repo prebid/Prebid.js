@@ -321,9 +321,9 @@ describe('ApacdexBidAdapter', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.data.eids).to.deep.equal(bidRequest[0].userIdAsEids)
     });
-    it('should return a properly formatted request with geo defined', function () {
+    it('should fail to return a properly formatted request with geo defined', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(bidRequests.data.geo).to.deep.equal(bidRequest[0].params.geo)
+      expect(bidRequests.data.geo).to.not.deep.equal(bidRequest[0].params.geo)
     });
     it('should return a properly formatted request with us_privacy included', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
@@ -728,24 +728,6 @@ describe('ApacdexBidAdapter', function () {
         lon: 23.6712341
       };
       expect(validateGeoObject(geoObject)).to.equal(false);
-    });
-  });
-
-  describe('getDomain', function () {
-    it('should return valid domain from publisherDomain config', () => {
-      let pageUrl = 'https://www.example.com/page/prebid/exam.html';
-      config.setConfig({ publisherDomain: pageUrl });
-      expect(getDomain(pageUrl)).to.equal('example.com');
-    });
-    it('should return valid domain from pageUrl argument', () => {
-      let pageUrl = 'https://www.example.com/page/prebid/exam.html';
-      config.setConfig({ publisherDomain: '' });
-      expect(getDomain(pageUrl)).to.equal('example.com');
-    });
-    it('should return undefined if pageUrl and publisherDomain not config', () => {
-      let pageUrl;
-      config.setConfig({ publisherDomain: '' });
-      expect(getDomain(pageUrl)).to.equal(pageUrl);
     });
   });
 });

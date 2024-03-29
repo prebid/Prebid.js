@@ -146,10 +146,10 @@
     pbjs.que.push(function () {
       pbjs.addAdUnits(adUnits);
       pbjs.setConfig({
+        enableTIDs: true,
         consentManagement: {
           gdpr: {
             cmpApi: 'static',
-            allowAuctionWithoutConsent: true,
             consentData: {
               getConsentData: {
                 'gdprApplies': true,

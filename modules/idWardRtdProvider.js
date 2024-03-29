@@ -5,32 +5,35 @@
  * @module modules/idWardRtdProvider
  * @requires module:modules/realTimeData
  */
-import {config} from '../src/config.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {submodule} from '../src/hook.js';
 import {isPlainObject, mergeDeep, logMessage, logError} from '../src/utils.js';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'idWard';
 
-export const storage = getStorageManager({moduleName: SUBMODULE_NAME});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME});
 /**
-  * Add real-time data & merge segments.
-  * @param {Object} rtd
-  */
-function addRealTimeData(rtd) {
+ * Add real-time data & merge segments.
+ * @param ortb2 object to merge into
+ * @param {Object} rtd
+ */
+function addRealTimeData(ortb2, rtd) {
   if (isPlainObject(rtd.ortb2)) {
-    const ortb2 = config.getConfig('ortb2') || {};
     logMessage('idWardRtdProvider: merging original: ', ortb2);
     logMessage('idWardRtdProvider: merging in: ', rtd.ortb2);
-    config.setConfig({ortb2: mergeDeep(ortb2, rtd.ortb2)});
+    mergeDeep(ortb2, rtd.ortb2);
   }
 }
 
 /**
-  * Try parsing stringified array of segment IDs.
-  * @param {String} data
-  */
+ * Try parsing stringified array of segment IDs.
+ * @param {String} data
+ */
 function tryParse(data) {
   try {
     return JSON.parse(data);
@@ -41,12 +44,12 @@ function tryParse(data) {
 }
 
 /**
-  * Real-time data retrieval from ID Ward
-  * @param {Object} reqBidsConfigObj
-  * @param {function} onDone
-  * @param {Object} rtdConfig
-  * @param {Object} userConsent
-  */
+ * Real-time data retrieval from ID Ward
+ * @param {Object} reqBidsConfigObj
+ * @param {function} onDone
+ * @param {Object} rtdConfig
+ * @param {Object} userConsent
+ */
 export function getRealTimeData(reqBidsConfigObj, onDone, rtdConfig, userConsent) {
   if (rtdConfig && isPlainObject(rtdConfig.params)) {
     const jsonData = storage.getDataFromLocalStorage(rtdConfig.params.cohortStorageKey)
@@ -78,18 +81,18 @@ export function getRealTimeData(reqBidsConfigObj, onDone, rtdConfig, userConsent
           }
         }
       };
-      addRealTimeData(data.rtd);
+      addRealTimeData(reqBidsConfigObj.ortb2Fragments?.global, data.rtd);
       onDone();
     }
   }
 }
 
 /**
-  * Module init
-  * @param {Object} provider
-  * @param {Object} userConsent
-  * @return {boolean}
-  */
+ * Module init
+ * @param {Object} provider
+ * @param {Object} userConsent
+ * @return {boolean}
+ */
 function init(provider, userConsent) {
   return true;
 }

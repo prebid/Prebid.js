@@ -14,6 +14,36 @@ describe('Nobid Adapter', function () {
     });
   });
 
+  describe('buildRequestsWithFloor', function () {
+    const SITE_ID = 2;
+    const REFERER = 'https://www.examplereferer.com';
+    let bidRequests = [
+      {
+        'bidder': 'nobid',
+        'params': {
+          'siteId': SITE_ID
+        },
+        'getFloor': () => { return { currency: 'USD', floor: 1.00 } },
+        'adUnitCode': 'adunit-code',
+        'sizes': [[300, 250]],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475'
+      }
+    ];
+
+    let bidderRequest = {
+      refererInfo: {page: REFERER}
+    }
+
+    it('should FLoor = 1', function () {
+      spec.buildRequests(bidRequests, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.a[0].floor).to.equal(1);
+    });
+  });
+
   describe('isBidRequestValid', function () {
     let bid = {
       'bidder': 'nobid',
@@ -70,7 +100,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}, bidderCode: BIDDER_CODE
+      refererInfo: {page: REFERER}, bidderCode: BIDDER_CODE
     }
 
     const siteName = 'example';
@@ -84,22 +114,20 @@ describe('Nobid Adapter', function () {
     const sitePageCat = 'IAB2-12';
 
     it('ortb2 should exist', function () {
-      config.setConfig({
-        ortb2: {
-          site: {
-            name: siteName,
-            domain: siteDomain,
-            cat: [ siteCat ],
-            sectioncat: [ siteSectionCat ],
-            pagecat: [ sitePageCat ],
-            page: sitePage,
-            ref: siteRef,
-            keywords: siteKeywords,
-            search: siteSearch
-          }
+      const ortb2 = {
+        site: {
+          name: siteName,
+          domain: siteDomain,
+          cat: [ siteCat ],
+          sectioncat: [ siteSectionCat ],
+          pagecat: [ sitePageCat ],
+          page: sitePage,
+          ref: siteRef,
+          keywords: siteKeywords,
+          search: siteSearch
         }
-      });
-      const request = spec.buildRequests(bidRequests, bidderRequest);
+      };
+      const request = spec.buildRequests(bidRequests, {...bidderRequest, ortb2});
       let payload = JSON.parse(request.data);
       payload = JSON.parse(JSON.stringify(payload));
       expect(payload.sid).to.equal(SITE_ID);
@@ -112,6 +140,61 @@ describe('Nobid Adapter', function () {
       expect(payload.ortb2.site.cat[0]).to.equal(siteCat);
       expect(payload.ortb2.site.sectioncat[0]).to.equal(siteSectionCat);
       expect(payload.ortb2.site.pagecat[0]).to.equal(sitePageCat);
+    });
+  });
+
+  describe('Request with GPP', function () {
+    const SITE_ID = 2;
+    const REFERER = 'https://www.examplereferer.com';
+    const BIDDER_CODE = 'duration';
+    let bidRequests = [
+      {
+        'bidder': BIDDER_CODE,
+        'params': {
+          'siteId': SITE_ID
+        },
+        'adUnitCode': 'adunit-code',
+        'sizes': [[300, 250]],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475'
+      }
+    ];
+
+    const GPP = 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN';
+    const GPP_SID = [1, 3];
+
+    const bidderRequest = {
+      refererInfo: {page: REFERER},
+      bidderCode: BIDDER_CODE,
+      gppConsent: {gppString: GPP, applicableSections: GPP_SID}
+    }
+
+    it('gpp should match', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      let payload = JSON.parse(request.data);
+      payload = JSON.parse(JSON.stringify(payload));
+      expect(payload.gpp).to.equal(GPP);
+      expect(payload.gpp_sid.join(',')).to.equal(GPP_SID.join(','));
+    });
+
+    it('gpp should not be set', function () {
+      delete bidderRequest.gppConsent.applicableSections;
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      let payload = JSON.parse(request.data);
+      payload = JSON.parse(JSON.stringify(payload));
+      expect(typeof payload.gpp).to.equal('undefined');
+      expect(typeof payload.gpp_sid).to.equal('undefined');
+    });
+
+    it('gpp ortb2 should match', function () {
+      delete bidderRequest.gppConsent;
+      bidderRequest.ortb2 = {regs: {gpp: GPP, gpp_sid: GPP_SID}};
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      let payload = JSON.parse(request.data);
+      payload = JSON.parse(JSON.stringify(payload));
+      expect(payload.gpp).to.equal(GPP);
+      expect(payload.gpp_sid.join(',')).to.equal(GPP_SID.join(','));
     });
   });
 
@@ -134,7 +217,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}, bidderCode: BIDDER_CODE
+      refererInfo: {page: REFERER}, bidderCode: BIDDER_CODE
     }
 
     it('should add source and version to the tag', function () {
@@ -308,7 +391,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}
+      refererInfo: {page: REFERER}
     }
 
     it('should add source and version to the tag', function () {
@@ -397,7 +480,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}
+      refererInfo: {page: REFERER}
     }
 
     it('should add source and version to the tag', function () {
@@ -483,7 +566,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}
+      refererInfo: {page: REFERER}
     }
 
     it('should criteo eid', function () {
@@ -517,7 +600,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}
+      refererInfo: {page: REFERER}
     }
 
     it('should add source and version to the tag', function () {
@@ -651,7 +734,7 @@ describe('Nobid Adapter', function () {
     ];
 
     let bidderRequest = {
-      refererInfo: {referer: REFERER}
+      refererInfo: {page: REFERER}
     }
 
     it('should refreshCount = 4', function () {

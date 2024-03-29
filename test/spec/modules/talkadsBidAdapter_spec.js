@@ -207,6 +207,7 @@ describe('TalkAds adapter', function () {
         ttl: 60,
         creativeId: 'c123a456',
         netRevenue: false,
+        params: [Object.assign({}, commonBidRequest.params)],
       }
       spec.onBidWon(loBid)
       expect(server.requests.length).to.equals(0);
@@ -222,7 +223,8 @@ describe('TalkAds adapter', function () {
         ttl: 60,
         creativeId: 'c123a456',
         netRevenue: false,
-        pbid: '6147833a65749742875ace47'
+        pbid: '6147833a65749742875ace47',
+        params: [Object.assign({}, commonBidRequest.params)],
       }
       spec.onBidWon(loBid)
       expect(server.requests[0].url).to.equals('https://test.natexo-programmatic.com/tad/tag/prebidwon/6147833a65749742875ace47');

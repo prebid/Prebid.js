@@ -2,7 +2,7 @@
 ```
 Module Name: NextMillennium Bid Adapter
 Module Type: Bidder Adapter
-Maintainer: mihail.ivanchenko@nextmillennium.io
+Maintainer: accountmanagers@nextmillennium.io
 ```
 
 # Description

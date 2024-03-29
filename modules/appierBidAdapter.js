@@ -2,6 +2,11 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 export const ADAPTER_VERSION = '1.0.0';
 const SUPPORTED_AD_TYPES = [BANNER];
 
@@ -32,7 +37,7 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {bidRequests[]} - an array of bids
+   * @param {object} bidRequests - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (bidRequests, bidderRequest) {
@@ -43,7 +48,8 @@ export const spec = {
     const bidderApiUrl = `//${server}${BIDDER_API_ENDPOINT}`
     const payload = {
       'bids': bidRequests,
-      'refererInfo': bidderRequest.refererInfo,
+      // TODO: please do not pass internal data structures over to the network
+      'refererInfo': bidderRequest.refererInfo.legacy,
       'version': ADAPTER_VERSION
     };
     return [{

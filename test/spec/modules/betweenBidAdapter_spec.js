@@ -85,6 +85,23 @@ describe('betweenBidAdapterTests', function () {
 
     expect(req_data.cur).to.equal('THX');
   });
+  it('validate default cur USD', function() {
+    let bidRequestData = [{
+      bidId: 'bid1234',
+      bidder: 'between',
+      params: {
+        w: 240,
+        h: 400,
+        s: 1112
+      },
+      sizes: [[240, 400]]
+    }];
+
+    let request = spec.buildRequests(bidRequestData);
+    let req_data = JSON.parse(request.data)[0].data;
+
+    expect(req_data.cur).to.equal('USD');
+  });
   it('validate subid param', function() {
     let bidRequestData = [{
       bidId: 'bid1234',

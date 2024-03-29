@@ -7,6 +7,12 @@
 
 import {submodule} from '../src/hook.js';
 import { logInfo, isArray } from '../src/utils.js';
+import {VENDORLESS_GVLID} from '../src/consentHandler.js';
+
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ */
 
 const MODULE_NAME = 'pubProvidedId';
 
@@ -18,12 +24,13 @@ export const pubProvidedIdSubmodule = {
    * @type {string}
    */
   name: MODULE_NAME,
+  gvlid: VENDORLESS_GVLID,
 
   /**
    * decode the stored id value for passing to bid request
    * @function
    * @param {string} value
-   * @returns {{pubProvidedId: array}} or undefined if value doesn't exists
+   * @returns {{pubProvidedId: Array}} or undefined if value doesn't exists
    */
   decode(value) {
     const res = value ? {pubProvidedId: value} : undefined;
@@ -35,7 +42,7 @@ export const pubProvidedIdSubmodule = {
    * performs action to obtain id and return a value.
    * @function
    * @param {SubmoduleConfig} [config]
-   * @returns {{id: array}}
+   * @returns {{id: Array}}
    */
   getId(config) {
     const configParams = (config && config.params) || {};

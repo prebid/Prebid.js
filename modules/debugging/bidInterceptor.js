@@ -3,10 +3,8 @@ import {
   deepClone,
   deepEqual,
   delayExecution,
-  prefixLog,
   mergeDeep
 } from '../../src/utils.js';
-const { logMessage, logWarn, logError } = prefixLog('DEBUG:');
 
 /**
  * @typedef {Number|String|boolean|null|undefined} Scalar
@@ -14,6 +12,7 @@ const { logMessage, logWarn, logError } = prefixLog('DEBUG:');
 
 export function BidInterceptor(opts = {}) {
   ({setTimeout: this.setTimeout = window.setTimeout.bind(window)} = opts);
+  this.logger = opts.logger;
   this.rules = [];
 }
 
@@ -22,10 +21,10 @@ Object.assign(BidInterceptor.prototype, {
     delay: 0
   },
   serializeConfig(ruleDefs) {
-    function isSerializable(ruleDef, i) {
+    const isSerializable = (ruleDef, i) => {
       const serializable = deepEqual(ruleDef, JSON.parse(JSON.stringify(ruleDef)), {checkTypes: true});
       if (!serializable && !deepAccess(ruleDef, 'options.suppressWarnings')) {
-        logWarn(`Bid interceptor rule definition #${i + 1} is not serializable and will be lost after a refresh. Rule definition: `, ruleDef);
+        this.logger.logWarn(`Bid interceptor rule definition #${i + 1} is not serializable and will be lost after a refresh. Rule definition: `, ruleDef);
       }
       return serializable;
     }
@@ -55,8 +54,9 @@ Object.assign(BidInterceptor.prototype, {
     return {
       no: ruleNo,
       match: this.matcher(ruleDef.when, ruleNo),
-      replace: this.replacer(ruleDef.then || {}, ruleNo),
+      replace: this.replacer(ruleDef.then, ruleNo),
       options: Object.assign({}, this.DEFAULT_RULE_OPTIONS, ruleDef.options),
+      paapi: this.paapiReplacer(ruleDef.paapi || [], ruleNo)
     }
   },
   /**
@@ -79,7 +79,7 @@ Object.assign(BidInterceptor.prototype, {
       return matchDef;
     }
     if (typeof matchDef !== 'object') {
-      logError(`Invalid 'when' definition for debug bid interceptor (in rule #${ruleNo})`);
+      this.logger.logError(`Invalid 'when' definition for debug bid interceptor (in rule #${ruleNo})`);
       return () => false;
     }
     function matches(candidate, {ref = matchDef, args = []}) {
@@ -115,19 +115,23 @@ Object.assign(BidInterceptor.prototype, {
    * @return {ReplacerFn}
    */
   replacer(replDef, ruleNo) {
+    if (replDef === null) {
+      return () => null
+    }
+    replDef = replDef || {};
     let replFn;
     if (typeof replDef === 'function') {
       replFn = ({args}) => replDef(...args);
     } else if (typeof replDef !== 'object') {
-      logError(`Invalid 'then' definition for debug bid interceptor (in rule #${ruleNo})`);
+      this.logger.logError(`Invalid 'then' definition for debug bid interceptor (in rule #${ruleNo})`);
       replFn = () => ({});
     } else {
       replFn = ({args, ref = replDef}) => {
-        const result = {};
+        const result = Array.isArray(ref) ? [] : {};
         Object.entries(ref).forEach(([key, val]) => {
           if (typeof val === 'function') {
             result[key] = val(...args);
-          } else if (typeof val === 'object') {
+          } else if (val != null && typeof val === 'object') {
             result[key] = replFn({args, ref: val})
           } else {
             result[key] = val;
@@ -139,13 +143,24 @@ Object.assign(BidInterceptor.prototype, {
     return (bid, ...args) => {
       const response = this.responseDefaults(bid);
       mergeDeep(response, replFn({args: [bid, ...args]}));
-      if (!response.ad) {
+      if (!response.hasOwnProperty('ad') && !response.hasOwnProperty('adUrl')) {
         response.ad = this.defaultAd(bid, response);
       }
       response.isDebug = true;
       return response;
     }
   },
+
+  paapiReplacer(paapiDef, ruleNo) {
+    if (Array.isArray(paapiDef)) {
+      return () => paapiDef;
+    } else if (typeof paapiDef === 'function') {
+      return paapiDef
+    } else {
+      this.logger.logError(`Invalid 'paapi' definition for debug bid interceptor (in rule #${ruleNo})`);
+    }
+  },
+
   responseDefaults(bid) {
     return {
       requestId: bid.bidId,
@@ -199,11 +214,12 @@ Object.assign(BidInterceptor.prototype, {
    * @param {{}[]} bids?
    * @param {BidRequest} bidRequest
    * @param {function(*)} addBid called once for each mock response
+   * @param addPaapiConfig called once for each mock PAAPI config
    * @param {function()} done called once after all mock responses have been run through `addBid`
    * @returns {{bids: {}[], bidRequest: {}} remaining bids that did not match any rule (this applies also to
    * bidRequest.bids)
    */
-  intercept({bids, bidRequest, addBid, done}) {
+  intercept({bids, bidRequest, addBid, addPaapiConfig, done}) {
     if (bids == null) {
       bids = bidRequest.bids;
     }
@@ -212,10 +228,12 @@ Object.assign(BidInterceptor.prototype, {
       const callDone = delayExecution(done, matches.length);
       matches.forEach((match) => {
         const mockResponse = match.rule.replace(match.bid, bidRequest);
+        const mockPaapi = match.rule.paapi(match.bid, bidRequest);
         const delay = match.rule.options.delay;
-        logMessage(`Intercepted bid request (matching rule #${match.rule.no}), mocking response in ${delay}ms. Request, response:`, match.bid, mockResponse)
+        this.logger.logMessage(`Intercepted bid request (matching rule #${match.rule.no}), mocking response in ${delay}ms. Request, response, PAAPI configs:`, match.bid, mockResponse, mockPaapi)
         this.setTimeout(() => {
-          addBid(mockResponse, match.bid);
+          mockResponse && addBid(mockResponse, match.bid);
+          mockPaapi.forEach(cfg => addPaapiConfig(cfg, match.bid, bidRequest));
           callDone();
         }, delay)
       });

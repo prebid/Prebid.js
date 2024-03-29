@@ -7,6 +7,16 @@ import {
 import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
 
 const BIDDER_CODE = 'theadx';
 const ENDPOINT_URL = 'https://ssp.theadx.com/request';
@@ -141,6 +151,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     logInfo('theadx.buildRequests', 'validBidRequests', validBidRequests, 'bidderRequest', bidderRequest);
     let results = [];
     const requestType = 'POST';
@@ -155,12 +168,13 @@ export const spec = {
               withCredentials: true,
             },
             bidder: 'theadx',
-            referrer: encodeURIComponent(bidderRequest.refererInfo.referer),
+            referrer: encodeURIComponent(bidderRequest.refererInfo.page || ''),
             data: generatePayload(bidRequest, bidderRequest),
             mediaTypes: bidRequest['mediaTypes'],
             requestId: bidderRequest.bidderRequestId,
             bidId: bidRequest.bidId,
             adUnitCode: bidRequest['adUnitCode'],
+            // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
             auctionId: bidRequest['auctionId'],
           };
         }
@@ -201,7 +215,7 @@ export const spec = {
         let bidWidth = nullify(bid.w);
         let bidHeight = nullify(bid.h);
 
-        let creative = null
+        let creative = null;
         let videoXml = null;
         let mediaType = null;
         let native = null;
@@ -248,7 +262,6 @@ export const spec = {
         }
 
         let response = {
-          bidderCode: BIDDER_CODE,
           requestId: request.bidId,
           cpm: bid.price,
           width: bidWidth | 0,
@@ -256,6 +269,7 @@ export const spec = {
           ad: creative,
           ttl: ttl || 3000,
           creativeId: bid.crid,
+          dealId: bid.dealid || null,
           netRevenue: true,
           currency: responseBody.cur,
           mediaType: mediaType,
@@ -314,7 +328,7 @@ export const spec = {
 }
 
 let buildSiteComponent = (bidRequest, bidderRequest) => {
-  let loc = parseUrl(bidderRequest.refererInfo.referer, {
+  let loc = parseUrl(bidderRequest.refererInfo.page || '', {
     decodeSearchAsString: true
   });
 
@@ -384,7 +398,7 @@ let extractValidSize = (bidRequest, bidderRequest) => {
       requestedSizes = mediaTypes.video.sizes;
     }
   } else if (!isEmpty(bidRequest.sizes)) {
-    requestedSizes = bidRequest.sizes
+    requestedSizes = bidRequest.sizes;
   }
 
   // Ensure the size array is normalized
@@ -461,11 +475,19 @@ let generateImpBody = (bidRequest, bidderRequest) => {
   } else if (mediaTypes && mediaTypes.native) {
     native = generateNativeComponent(bidRequest, bidderRequest);
   }
-
   const result = {
     id: bidRequest.index,
     tagid: bidRequest.params.tagId + '',
   };
+
+  // deals support
+  if (bidRequest.params.deals && Array.isArray(bidRequest.params.deals) && bidRequest.params.deals.length > 0) {
+    result.pmp = {
+      deals: bidRequest.params.deals,
+      private_auction: 0,
+    };
+  }
+
   if (banner) {
     result['banner'] = banner;
   }

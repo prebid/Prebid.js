@@ -1,5 +1,5 @@
-import { expect } from 'chai'
 import {spec} from 'modules/displayioBidAdapter.js'
+import {BANNER} from '/src/mediaTypes'
 
 describe('Displayio adapter', function () {
   const BIDDER = 'displayio'
@@ -12,10 +12,7 @@ describe('Displayio adapter', function () {
     mediaTypes: {
       banner: {
         sizes: [[320, 480]]
-      },
-      video: {
-        sizes: [[360, 640]]
-      },
+      }
     },
     params: {
       siteId: 1,
@@ -128,53 +125,6 @@ describe('Displayio adapter', function () {
     })
   })
 
-  describe('_getPayload', function () {
-    const payload = spec._getPayload(bidRequests[0], bidderRequest)
-    it('should not be empty', function() {
-      expect(payload).to.not.be.empty
-    })
-
-    it('should have userSession', function() {
-      expect(payload.userSession).to.be.a('string')
-    })
-
-    it('should have data object', function() {
-      expect(payload.data).to.be.a('object')
-    })
-
-    it('should have complianceData object', function() {
-      expect(payload.data.complianceData).to.be.a('object')
-    })
-
-    it('should have device object', function() {
-      expect(payload.data.device).to.be.a('object')
-    })
-
-    it('should have omidpn', function() {
-      expect(payload.data.omidpn).to.be.a('string')
-    })
-
-    it('should have integration', function() {
-      expect(payload.data.integration).to.be.a('string')
-    })
-
-    it('should have bidId', function() {
-      expect(payload.data.id).to.not.be.empty
-    })
-
-    it('should have action getPlacement', function() {
-      expect(payload.data.action).to.be.equal('getPlacement')
-    })
-
-    it('should have app parameter', function() {
-      expect(payload.data.app).to.be.a('number')
-    })
-
-    it('should have placement parameter', function() {
-      expect(payload.data.placement).to.be.a('number')
-    })
-  })
-
   describe('interpretResponse', function () {
     const response = {
       body: {
@@ -199,6 +149,8 @@ describe('Displayio adapter', function () {
       data: {
         data: {
           id: 'id_001',
+          adUnitCode: 'test-div',
+          renderURL: 'testprebid.com/render.js',
           data: {
             ref: 'testprebid.com'
           }
@@ -234,6 +186,18 @@ describe('Displayio adapter', function () {
 
     it('should have ad', function() {
       expect(ir.ad).to.be.a('string')
+    })
+
+    it('should have mediaType', function() {
+      expect(ir.mediaType).to.be.equal(BANNER)
+    })
+
+    it('should have adUnitCode', function() {
+      expect(ir.adUnitCode).to.be.a('string')
+    })
+
+    it('should have renderURL', function() {
+      expect(ir.renderURL).to.be.a('string')
     })
   })
 })

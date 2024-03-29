@@ -1,10 +1,30 @@
-import { logWarn, isArray, isStr, triggerPixel, deepAccess, deepSetValue, isPlainObject, generateUUID, parseUrl, isFn, getDNT, logError } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
-import { Renderer } from '../src/Renderer.js';
-import { OUTSTREAM } from '../src/video.js';
+import {
+  deepAccess,
+  deepSetValue,
+  generateUUID,
+  getDNT,
+  isArray,
+  isFn,
+  isPlainObject,
+  isStr,
+  logError,
+  logWarn,
+  triggerPixel
+} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {Renderer} from '../src/Renderer.js';
+import {OUTSTREAM} from '../src/video.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
 const BIDDER_CODE = 'operaads';
 
 const ENDPOINT = 'https://s.adx.opera.com/ortb/v2/';
@@ -57,7 +77,7 @@ const NATIVE_DEFAULTS = {
 
 export const spec = {
   code: BIDDER_CODE,
-
+  gvlid: 1135,
   // short code
   aliases: ['opera'],
 
@@ -106,6 +126,9 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     return validBidRequests.map(validBidRequest => (buildOpenRtbBidRequest(validBidRequest, bidderRequest)))
   },
 
@@ -209,21 +232,13 @@ export const spec = {
  * @returns {Request}
  */
 function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
-  const pageReferrer = deepAccess(bidderRequest, 'refererInfo.referer');
-
   // build OpenRTB request body
   const payload = {
-    id: bidderRequest.auctionId,
-    tmax: bidderRequest.timeout || config.getConfig('bidderTimeout'),
+    id: bidderRequest.bidderRequestId,
+    tmax: bidderRequest.timeout,
     test: config.getConfig('debug') ? 1 : 0,
     imp: createImp(bidRequest),
     device: getDevice(),
-    site: {
-      id: String(deepAccess(bidRequest, 'params.publisherId')),
-      domain: getDomain(pageReferrer),
-      page: pageReferrer,
-      ref: window.self === window.top ? document.referrer : '',
-    },
     at: 1,
     bcat: getBcat(bidRequest),
     cur: [DEFAULT_CURRENCY],
@@ -235,6 +250,7 @@ function buildOpenRtbBidRequest(bidRequest, bidderRequest) {
       buyeruid: getUserId(bidRequest)
     }
   }
+  fulfillInventoryInfo(payload, bidRequest, bidderRequest);
 
   const gdprConsent = deepAccess(bidderRequest, 'gdprConsent');
   if (!!gdprConsent && gdprConsent.gdprApplies) {
@@ -534,7 +550,7 @@ function createImp(bidRequest) {
   const floorDetail = getBidFloor(bidRequest, {
     mediaType: mediaType || '*',
     size: size || '*'
-  })
+  });
 
   impItem.bidfloor = floorDetail.floor;
   impItem.bidfloorcur = floorDetail.currency;
@@ -665,6 +681,11 @@ function mapNativeImage(image, type) {
  * @returns {String} userId
  */
 function getUserId(bidRequest) {
+  let operaId = deepAccess(bidRequest, 'userId.operaId');
+  if (operaId) {
+    return operaId;
+  }
+
   let sharedId = deepAccess(bidRequest, 'userId.sharedid.id');
   if (sharedId) {
     return sharedId;
@@ -678,23 +699,6 @@ function getUserId(bidRequest) {
   }
 
   return generateUUID();
-}
-
-/**
- * Get publisher domain
- *
- * @param {String} referer
- * @returns {String} domain
- */
-function getDomain(referer) {
-  let domain;
-
-  if (!(domain = config.getConfig('publisherDomain'))) {
-    const u = parseUrl(referer);
-    domain = u.hostname;
-  }
-
-  return domain.replace(/^https?:\/\/([\w\-\.]+)(?::\d+)?/, '$1');
 }
 
 /**
@@ -759,6 +763,38 @@ function getDevice() {
     ? device.dnt : (getDNT() ? 1 : 0);
 
   return device;
+}
+
+/**
+ * Fulfill inventory info
+ *
+ * @param payload
+ * @param bidRequest
+ * @param bidderRequest
+ */
+function fulfillInventoryInfo(payload, bidRequest, bidderRequest) {
+  let info = deepAccess(bidRequest, 'params.site');
+  // 1.If the inventory info for site specified, use the site object provided in params.
+  let key = 'site';
+  if (!isPlainObject(info)) {
+    info = deepAccess(bidRequest, 'params.app');
+    if (isPlainObject(info)) {
+      // 2.If the inventory info for app specified, use the app object provided in params.
+      key = 'app';
+    } else {
+      // 3.Otherwise, we use site by default.
+      info = {};
+    }
+  }
+  // Fulfill key parameters.
+  info.id = String(deepAccess(bidRequest, 'params.publisherId'));
+  info.domain = info.domain || bidderRequest?.refererInfo?.domain || window.location.host;
+  if (key === 'site') {
+    info.ref = info.ref || bidderRequest?.refererInfo?.ref || '';
+    info.page = info.page || bidderRequest?.refererInfo?.page;
+  }
+
+  payload[key] = info;
 }
 
 /**
