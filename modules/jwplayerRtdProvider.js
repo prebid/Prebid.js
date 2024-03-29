@@ -388,11 +388,11 @@ export function addOrtbSiteContent(ortb2, contentId, contentData, contentTitle, 
 function shouldOverride(currentValue, newValue, configValue) {
   switch (configValue) {
     case ENRICH_ALWAYS:
-      return newValue !== undefined;
+      return !!newValue;
     case ENRICH_NEVER:
       return false;
     case ENRICH_WHEN_EMPTY:
-      return newValue !== undefined && currentValue === undefined;
+      return !!newValue && currentValue === undefined;
     default:
       return false;
   }

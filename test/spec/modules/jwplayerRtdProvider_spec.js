@@ -1098,7 +1098,6 @@ describe('jwplayerRtdProvider', function() {
     });
 
     it('should keep previous content title by default when new value is not available', function () {
-
       const ortb2 = {
         site: {
           content: {
@@ -1125,7 +1124,7 @@ describe('jwplayerRtdProvider', function() {
         }
       };
 
-      addOrtbSiteContent(ortb2, null, 'newTitle');
+      addOrtbSiteContent(ortb2, null, null, 'newTitle');
       expect(ortb2).to.have.nested.property('site.content.title', 'newTitle');
     });
 
@@ -1223,7 +1222,7 @@ describe('jwplayerRtdProvider', function() {
         }
       };
 
-      addOrtbSiteContent(ortb2,null, null, 'newTitle');
+      addOrtbSiteContent(ortb2, null, null, 'newTitle');
       expect(ortb2.site.content.title).to.be.undefined;
     });
 
@@ -1335,7 +1334,7 @@ describe('jwplayerRtdProvider', function() {
       };
 
       addOrtbSiteContent(ortb2);
-      expect(ortb2.site.content.ext.description).to.be.undefined;
+      expect(ortb2.site.content.ext).to.be.undefined;
     });
 
     it('should keep previous content description when override is set to never', function () {
@@ -1369,10 +1368,8 @@ describe('jwplayerRtdProvider', function() {
       };
 
       addOrtbSiteContent(ortb2);
-      expect(ortb2.site.content.ext.description).to.be.undefined;
+      expect(ortb2.site.content.ext).to.be.undefined;
     });
-
-
 
     it('should set content url by default when absent from ortb2', function () {
       const ortb2 = {};
@@ -1405,7 +1402,7 @@ describe('jwplayerRtdProvider', function() {
       };
 
       addOrtbSiteContent(ortb2, null, null, null, null, 'newUrl');
-      expect(ortb2).to.have.nested.property('site.content.title', 'oldUrl');
+      expect(ortb2).to.have.nested.property('site.content.url', 'oldUrl');
     });
 
     it('should override content url when override is always', function () {
@@ -1474,7 +1471,7 @@ describe('jwplayerRtdProvider', function() {
       };
 
       addOrtbSiteContent(ortb2, null, null, null, null, 'newUrl');
-      expect(ortb2).to.have.nested.property('site.content.title', 'oldUrl');
+      expect(ortb2).to.have.nested.property('site.content.url', 'oldUrl');
     });
 
     it('should keep previous content url when override is whenEmpty and new value is not available', function () {
@@ -1507,7 +1504,7 @@ describe('jwplayerRtdProvider', function() {
       };
 
       addOrtbSiteContent(ortb2, null, null, null, null, 'newUrl');
-      expect(ortb2).to.have.nested.property('site.content.title', 'oldUrl');
+      expect(ortb2).to.have.nested.property('site.content.url', 'oldUrl');
     });
 
     it('should not populate content url when override is set to never', function () {
