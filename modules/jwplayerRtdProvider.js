@@ -23,15 +23,18 @@ import {getGlobal} from '../src/prebidGlobal.js';
 
 const SUBMODULE_NAME = 'jwplayer';
 const JWPLAYER_DOMAIN = SUBMODULE_NAME + '.com';
+const ENRICH_ALWAYS = 'always';
+const ENRICH_WHEN_EMPTY = 'whenEmpty';
+const ENRICH_NEVER = 'never';
 const playlistItemCache = {};
 const pendingRequests = {};
 let activeRequestCount = 0;
 let resumeBidRequest;
 // defaults to True for backwards compatibility
-let overrideContentId = true;
-let overrideContentUrl = false;
-let overrideContentTitle = false;
-let overrideContentDescription = false;
+let overrideContentId = ENRICH_ALWAYS;
+let overrideContentUrl = ENRICH_WHEN_EMPTY;
+let overrideContentTitle = ENRICH_WHEN_EMPTY;
+let overrideContentDescription = ENRICH_WHEN_EMPTY;
 
 /** @type {RtdSubmodule} */
 export const jwplayerSubmodule = {
@@ -78,13 +81,11 @@ export function fetchTargetingInformation(jwTargeting) {
 }
 
 export function setOverrides(params) {
-  if (params.overrideContentId !== undefined) {
-    // For backwards compatibility, default to true unless overriden by Publisher.
-    overrideContentId = params.overrideContentId;
-  }
-  overrideContentUrl = !!params.overrideContentUrl;
-  overrideContentTitle = !!params.overrideContentTitle;
-  overrideContentDescription = !!params.overrideContentDescription;
+  // For backwards compatibility, default to always unless overriden by Publisher.
+  overrideContentId = params.overrideContentId || ENRICH_ALWAYS;
+  overrideContentUrl = params.overrideContentUrl || ENRICH_WHEN_EMPTY;
+  overrideContentTitle = params.overrideContentTitle || ENRICH_WHEN_EMPTY;
+  overrideContentDescription = params.overrideContentDescription || ENRICH_WHEN_EMPTY;
 }
 
 export function fetchTargetingForMediaId(mediaId) {
@@ -352,24 +353,19 @@ export function addOrtbSiteContent(ortb2, contentId, contentData, contentTitle, 
   let site = ortb2.site = ortb2.site || {};
   let content = site.content = site.content || {};
 
-  const shouldSetContentId = !content.id || overrideContentId;
-  if (contentId && shouldSetContentId) {
+  if (shouldOverride(content.id, contentId, overrideContentId)) {
     content.id = contentId;
   }
 
-  const shouldSetContentUrl = !content.url || overrideContentUrl;
-  if (contentUrl && shouldSetContentUrl) {
+  if (shouldOverride(content.url, contentUrl, overrideContentUrl)) {
     content.url = contentUrl;
   }
 
-  const shouldSetContentTitle = !content.title || overrideContentTitle;
-  if (contentTitle && shouldSetContentTitle) {
+  if (shouldOverride(content.title, contentTitle, overrideContentTitle)) {
     content.title = contentTitle;
   }
 
-  const isDescriptionSet = content.ext && content.ext.description;
-  const shouldSetContentDescription = !isDescriptionSet || overrideContentDescription;
-  if (contentDescription && shouldSetContentDescription) {
+  if (shouldOverride(content.ext && content.ext.description, contentDescription, overrideContentDescription)) {
     content.ext = content.ext || {};
     content.ext.description = contentDescription;
   }
@@ -387,6 +383,19 @@ export function addOrtbSiteContent(ortb2, contentId, contentData, contentTitle, 
   }
 
   return ortb2;
+}
+
+function shouldOverride(currentValue, newValue, configValue) {
+  switch (configValue) {
+    case ENRICH_ALWAYS:
+      return newValue !== undefined;
+    case ENRICH_NEVER:
+      return false;
+    case ENRICH_WHEN_EMPTY:
+      return newValue !== undefined && currentValue === undefined;
+    default:
+      return false;
+  }
 }
 
 function enrichBids(bids, targeting, contentId, contentData) {
