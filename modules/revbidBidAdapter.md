@@ -3,12 +3,13 @@
 ```
 Module Name: Revbid Bidder Adapter
 Module Type: Revbid Adapter
-Maintainer: contact@revbid.net
+Maintainer: bern@revbid.net
 ```
 
 # Description
 
-RevBid.net Bid Adapter
+Bid Adapter for RevBid.net
+
 # Test Parameters
 ```
   var adUnits = [{
