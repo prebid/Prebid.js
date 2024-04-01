@@ -452,8 +452,8 @@ describe('paapi module', () => {
           ]
         }];
 
-        function expectFledgeFlags(...enableFlags) {
-          const bidRequests = Object.fromEntries(
+        function mark() {
+          return Object.fromEntries(
             adapterManager.makeBidRequests(
               adUnits,
               Date.now(),
@@ -463,12 +463,24 @@ describe('paapi module', () => {
               []
             ).map(b => [b.bidderCode, b])
           );
+        }
 
+        function expectFledgeFlags(...enableFlags) {
+          const bidRequests = mark();
           expect(bidRequests.appnexus.fledgeEnabled).to.eql(enableFlags[0].enabled);
           bidRequests.appnexus.bids.forEach(bid => expect(bid.ortb2Imp.ext.ae).to.eql(enableFlags[0].ae));
 
           expect(bidRequests.rubicon.fledgeEnabled).to.eql(enableFlags[1].enabled);
           bidRequests.rubicon.bids.forEach(bid => expect(bid.ortb2Imp?.ext?.ae).to.eql(enableFlags[1].ae));
+
+          Object.values(bidRequests).flatMap(req => req.bids).forEach(bid => {
+            if (bid.ortb2Imp?.ext?.ae) {
+              sinon.assert.match(bid.ortb2Imp.ext.igs, {
+                ae: bid.ortb2Imp.ext.ae,
+                biddable: 1
+              });
+            }
+          })
         }
 
         describe('with setBidderConfig()', () => {
@@ -519,6 +531,46 @@ describe('paapi module', () => {
             Object.assign(adUnits[0], {ortb2Imp: {ext: {ae: 0}}});
             expectFledgeFlags({enabled: true, ae: 0}, {enabled: true, ae: 0});
           });
+
+          it('should populate ext.igs when request has ext.ae', () => {
+            config.setConfig({
+              bidderSequence: 'fixed',
+              [configNS]: {
+                enabled: true
+              }
+            });
+            Object.assign(adUnits[0], {ortb2Imp: {ext: {ae: 3}}});
+            expectFledgeFlags({enabled: true, ae: 3}, {enabled: true, ae: 3});
+          })
+
+          it('should not override pub-defined ext.igs', () => {
+            config.setConfig({
+              [configNS]: {
+                enabled: true
+              }
+            });
+            Object.assign(adUnits[0], {ortb2Imp: {ext: {ae: 1, igs: {biddable: 0}}}});
+            const bidReqs = mark();
+            Object.values(bidReqs).flatMap(req => req.bids).forEach(bid => {
+              sinon.assert.match(bid.ortb2Imp.ext, {
+                ae: 1,
+                igs: {
+                  ae: 1,
+                  biddable: 0
+                }
+              })
+            })
+          });
+
+          it('should fill ext.ae from ext.igs, if defined', () => {
+            config.setConfig({
+              [configNS]: {
+                enabled: true
+              }
+            });
+            Object.assign(adUnits[0], {ortb2Imp: {ext: {igs: {}}}});
+            expectFledgeFlags({enabled: true, ae: 1}, {enabled: true, ae: 1})
+          });
         });
       });
     });
@@ -526,14 +578,20 @@ describe('paapi module', () => {
 
   describe('ortb processors for fledge', () => {
     it('imp.ext.ae should be removed if fledge is not enabled', () => {
-      const imp = {ext: {ae: 1}};
+      const imp = {ext: {ae: 1, igs: {}}};
       setImpExtAe(imp, {}, {bidderRequest: {}});
       expect(imp.ext.ae).to.not.exist;
+      expect(imp.ext.igs).to.not.exist;
     });
     it('imp.ext.ae should be left intact if fledge is enabled', () => {
-      const imp = {ext: {ae: 2}};
+      const imp = {ext: {ae: 2, igs: {biddable: 0}}};
       setImpExtAe(imp, {}, {bidderRequest: {fledgeEnabled: true}});
-      expect(imp.ext.ae).to.equal(2);
+      expect(imp.ext).to.eql({
+        ae: 2,
+        igs: {
+          biddable: 0
+        }
+      })
     });
     describe('parseExtPrebidFledge', () => {
       function packageConfigs(configs) {

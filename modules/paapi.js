@@ -185,7 +185,22 @@ export function markForFledge(next, bidderRequests) {
         const {enabled, ae} = getFledgeConfig();
         Object.assign(bidderReq, {fledgeEnabled: enabled});
         bidderReq.bids.forEach(bidReq => {
-          deepSetValue(bidReq, 'ortb2Imp.ext.ae', bidReq.ortb2Imp?.ext?.ae ?? ae);
+          // https://github.com/InteractiveAdvertisingBureau/openrtb/blob/main/extensions/community_extensions/Protected%20Audience%20Support.md
+          const igsAe = bidReq.ortb2Imp?.ext?.igs != null
+            ? bidReq.ortb2Imp.ext.igs.ae || 1
+            : null
+          const extAe = bidReq.ortb2Imp?.ext?.ae;
+          if (igsAe !== extAe && igsAe != null && extAe != null) {
+            logWarn(`Bid request defines conflicting ortb2Imp.ext.ae and ortb2Imp.ext.igs, using the latter`, bidReq);
+          }
+          const bidAe = igsAe ?? extAe ?? ae;
+          if (bidAe) {
+            deepSetValue(bidReq, 'ortb2Imp.ext.ae', bidAe);
+            bidReq.ortb2Imp.ext.igs = Object.assign({
+              ae: bidAe,
+              biddable: 1
+            }, bidReq.ortb2Imp.ext.igs)
+          }
         });
       });
     });
@@ -194,8 +209,9 @@ export function markForFledge(next, bidderRequests) {
 }
 
 export function setImpExtAe(imp, bidRequest, context) {
-  if (imp.ext?.ae && !context.bidderRequest.fledgeEnabled) {
+  if (!context.bidderRequest.fledgeEnabled) {
     delete imp.ext?.ae;
+    delete imp.ext?.igs;
   }
 }
 
