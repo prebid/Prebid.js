@@ -217,29 +217,56 @@ export function setImpExtAe(imp, bidRequest, context) {
 
 registerOrtbProcessor({type: IMP, name: 'impExtAe', fn: setImpExtAe});
 
-// to make it easier to share code between the PBS adapter and adapters whose backend is PBS, break up
-// fledge response processing in two steps: first aggregate all the auction configs by their imp...
-
-export function parseExtPrebidFledge(response, ortbResponse, context) {
-  (ortbResponse.ext?.prebid?.fledge?.auctionconfigs || []).forEach((cfg) => {
-    const impCtx = context.impContext[cfg.impid];
+function paapiResponseParser(configs, response, context) {
+  configs.forEach((config) => {
+    const impCtx = context.impContext[config.impid];
     if (!impCtx?.imp?.ext?.ae) {
-      logWarn('Received fledge auction configuration for an impression that was not in the request or did not ask for it', cfg, impCtx?.imp);
+      logWarn('Received PAAPI auction configuration for an impression that was not in the request or did not ask for it', config, impCtx?.imp);
     } else {
-      impCtx.fledgeConfigs = impCtx.fledgeConfigs || [];
-      impCtx.fledgeConfigs.push(cfg);
+      impCtx.paapiConfigs = impCtx.paapiConfigs || [];
+      impCtx.paapiConfigs.push(config);
     }
   });
 }
 
+export function parseExtIgiIgs(response, ortbResponse, context) {
+  paapiResponseParser(
+    (ortbResponse.ext?.igi || []).flatMap(igi => {
+      return (igi?.igs || []).map(igs => {
+        if (igs.impid !== igi.impid && igs.impid != null && igi.impid != null) {
+          logWarn('ORTB response ext.igi.igs.impid conflicts with parent\'s impid', igi);
+        }
+        return {
+          config: igs.config,
+          impid: igs.impid ?? igi.impid
+        }
+      })
+    }),
+    response,
+    context
+  )
+}
+
+// to make it easier to share code between the PBS adapter and adapters whose backend is PBS, break up
+// fledge response processing in two steps: first aggregate all the auction configs by their imp...
+
+export function parseExtPrebidFledge(response, ortbResponse, context) {
+  paapiResponseParser(
+    (ortbResponse.ext?.prebid?.fledge?.auctionconfigs || []),
+    response,
+    context
+  )
+}
+
 registerOrtbProcessor({type: RESPONSE, name: 'extPrebidFledge', fn: parseExtPrebidFledge, dialects: [PBS]});
+registerOrtbProcessor({type: RESPONSE, name: 'extIgiIgs', fn: parseExtIgiIgs});
 
 // ...then, make them available in the adapter's response. This is the client side version, for which the
 // interpretResponse api is {fledgeAuctionConfigs: [{bidId, config}]}
 
-export function setResponseFledgeConfigs(response, ortbResponse, context) {
+export function setResponsePaapiConfigs(response, ortbResponse, context) {
   const configs = Object.values(context.impContext)
-    .flatMap((impCtx) => (impCtx.fledgeConfigs || []).map(cfg => ({
+    .flatMap((impCtx) => (impCtx.paapiConfigs || []).map(cfg => ({
       bidId: impCtx.bidRequest.bidId,
       config: cfg.config
     })));
@@ -252,6 +279,5 @@ registerOrtbProcessor({
   type: RESPONSE,
   name: 'fledgeAuctionConfigs',
   priority: -1,
-  fn: setResponseFledgeConfigs,
-  dialects: [PBS]
+  fn: setResponsePaapiConfigs,
 });
