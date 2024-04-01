@@ -1,35 +1,16 @@
 import { parseSizesInput } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
-/**
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
- */
-
 const BIDDER_CODE = 'revbid';
 const ENDPOINT_URL = 'https://revbidder.de';
 
 export const spec = {
   code: BIDDER_CODE,
-  
-  /**
-   * Determines whether or not the given bid request is valid.
-   *
-   * @param {BidRequest} bid The bid params to validate.
-   * @return boolean True if this is a valid bid, and false otherwise.
-   */
+
   isBidRequestValid: function (bid) {
     return !!(bid.params.placementId);
   },
 
-  /**
-   * Make a server request from the list of BidRequests.
-   *
-   * @return Array Info describing the request to the server.
-   * @param validBidRequests
-   * @param bidderRequest
-   */
   buildRequests: function (validBidRequests, bidderRequest) {
     if (validBidRequests.length === 0) {
       return [];
@@ -43,7 +24,6 @@ export const spec = {
         width: width,
         height: height,
         bidId: bidRequest.bidId,
-        // TODO: is 'page' the right value here?
         referer: bidderRequest.refererInfo.page,
       };
       return {
@@ -54,13 +34,6 @@ export const spec = {
     });
   },
 
-  /**
-   * Unpack the response from the server into a list of bids.
-   *
-   * @param {ServerResponse} serverResponse A successful response from the server.
-   * @param bidRequest
-   * @return {Bid[]} An array of bids which were nested inside the server.
-   */
   interpretResponse: function (serverResponse, bidRequest) {
     const bidResponses = [];
     const response = serverResponse.body;
@@ -70,7 +43,7 @@ export const spec = {
     const cpm = response.cpm || 0;
     if (width !== 0 && height !== 0 && cpm !== 0 && creativeId !== 0) {
       const dealId = response.dealid || '';
-      const currency = response.currency || 'EUR';
+      const currency = response.currency || 'USD';
       const netRevenue = (response.netRevenue === undefined) ? true : response.netRevenue;
       const referrer = bidRequest.data.referer;
       const bidResponse = {
