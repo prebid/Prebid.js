@@ -437,6 +437,7 @@ function getParam(validBidRequests, bidderRequest) {
   const page = utils.deepAccess(bidderRequest, 'refererInfo.page');
   const referer = utils.deepAccess(bidderRequest, 'refererInfo.ref');
   const firstPartyData = bidderRequest.ortb2;
+  const tpData = utils.deepAccess(bidderRequest, 'ortb2.user.data') || undefined;
   const topWindow = window.top;
   const title = getPageTitle();
   const desc = getPageDescription();
@@ -463,6 +464,7 @@ function getParam(validBidRequests, bidderRequest) {
         firstPartyData,
         ssppid: storage.getCookie(COOKIE_KEY_SSPPID) || undefined,
         pmguid: getPmgUID(),
+        tpData,
         page: {
           title: title ? title.slice(0, 100) : undefined,
           desc: desc ? desc.slice(0, 300) : undefined,
