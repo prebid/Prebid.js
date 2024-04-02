@@ -18,9 +18,9 @@ const adUnits = [
            sizes: [[300, 250]],
            bids: [
                {
-                   bidder: "lucead",
+                   bidder: 'lucead',
                    params: {
-                       placementId: '1',
+                       placementId: '2',
                    }
                }
            ]
