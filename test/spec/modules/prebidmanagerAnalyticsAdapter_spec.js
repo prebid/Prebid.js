@@ -1,9 +1,8 @@
-import prebidmanagerAnalytics, {
-  storage
-} from 'modules/prebidmanagerAnalyticsAdapter.js';
+import prebidmanagerAnalytics, {storage} from 'modules/prebidmanagerAnalyticsAdapter.js';
 import {expect} from 'chai';
 import {server} from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
+import {expectEvents} from '../../helpers/analytics.js';
 
 let events = require('src/events');
 let constants = require('src/constants.json');
@@ -71,7 +70,7 @@ describe('Prebid Manager Analytics Adapter', function () {
       prebidmanagerAnalytics.flush();
 
       expect(server.requests.length).to.equal(1);
-      expect(server.requests[0].url).to.equal('https://endpoint.prebidmanager.com/endpoint');
+      expect(server.requests[0].url).to.equal('https://endpt.prebidmanager.com/endpoint');
       expect(server.requests[0].requestBody.substring(0, 2)).to.equal('1:');
 
       const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));
@@ -95,19 +94,13 @@ describe('Prebid Manager Analytics Adapter', function () {
         }
       });
 
-      events.emit(constants.EVENTS.AUCTION_INIT, {});
-      events.emit(constants.EVENTS.BID_REQUESTED, {});
-      events.emit(constants.EVENTS.BID_RESPONSE, {});
-      events.emit(constants.EVENTS.BID_WON, {});
-      events.emit(constants.EVENTS.AUCTION_END, {});
-      events.emit(constants.EVENTS.BID_TIMEOUT, {});
-
-      sinon.assert.callCount(prebidmanagerAnalytics.track, 6);
+      expectEvents().to.beTrackedBy(prebidmanagerAnalytics.track);
     });
   });
 
   describe('build utm tag data', function () {
     let getDataFromLocalStorageStub;
+    this.timeout(4000)
     beforeEach(function () {
       getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
       getDataFromLocalStorageStub.withArgs('pm_utm_source').returns('utm_source');
@@ -115,7 +108,6 @@ describe('Prebid Manager Analytics Adapter', function () {
       getDataFromLocalStorageStub.withArgs('pm_utm_campaign').returns('utm_camp');
       getDataFromLocalStorageStub.withArgs('pm_utm_term').returns('');
       getDataFromLocalStorageStub.withArgs('pm_utm_content').returns('');
-      getDataFromLocalStorageStub.withArgs('pm_utm_source').returns('utm_source');
     });
     afterEach(function () {
       getDataFromLocalStorageStub.restore();

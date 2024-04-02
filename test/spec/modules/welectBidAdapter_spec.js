@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec as adapter} from 'modules/welectBidAdapter.js';
+import { expect } from 'chai';
+import { spec as adapter } from 'modules/welectBidAdapter.js';
 
 describe('WelectAdapter', function () {
   describe('Check methods existance', function () {
@@ -147,6 +147,9 @@ describe('WelectAdapter', function () {
           ad: {
             video: 'some vast url'
           },
+          meta: {
+            advertiserDomains: [],
+          },
           cpm: 17,
           creativeId: 'svmpreview',
           currency: 'EUR',
@@ -183,6 +186,9 @@ describe('WelectAdapter', function () {
       ad: {
         video: 'some vast url'
       },
+      meta: {
+        advertiserDomains: []
+      },
       cpm: 17,
       creativeId: 'svmpreview',
       currency: 'EUR',
@@ -198,7 +204,7 @@ describe('WelectAdapter', function () {
       expect(adapter.interpretResponse(unavailableResponse, bid)).to.deep.equal([]);
     });
 
-    it('if response reflects availability, should equal result', function() {
+    it('if response reflects availability, should equal result', function () {
       expect(adapter.interpretResponse(availableResponse, bid)).to.deep.equal([result])
     })
   });

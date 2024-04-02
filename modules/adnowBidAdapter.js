@@ -1,13 +1,18 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { NATIVE, BANNER } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {deepAccess, parseQueryStringParameters, parseSizesInput} from '../src/utils.js';
+import {includes} from '../src/polyfill.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'adnow';
-const ENDPOINT = 'https://n.ads3-adnow.com/a';
+const ENDPOINT = 'https://n.nnowa.com/a';
 
 /**
  * @typedef {object} CommonBidData
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
  *
  * @property {string} requestId The specific BidRequest which this bid is aimed at.
  *   This should match the BidRequest.bidId which this Bid targets.
@@ -48,6 +53,9 @@ export const spec = {
    * @return {ServerRequest}
    */
   buildRequests(validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     return validBidRequests.map(req => {
       const mediaType = this._isBannerRequest(req) ? BANNER : NATIVE;
       const codeId = parseInt(req.params.codeId, 10);
@@ -61,13 +69,13 @@ export const spec = {
       };
 
       if (mediaType === BANNER) {
-        data.sizes = utils.parseSizesInput(
+        data.sizes = parseSizesInput(
           req.mediaTypes && req.mediaTypes.banner && req.mediaTypes.banner.sizes
-        ).join('|')
+        ).join('|');
       } else {
         data.width = data.height = 200;
 
-        let sizes = utils.deepAccess(req, 'mediaTypes.native.image.sizes', []);
+        let sizes = deepAccess(req, 'mediaTypes.native.image.sizes', []);
 
         if (sizes.length > 0) {
           const size = Array.isArray(sizes[0]) ? sizes[0] : sizes;
@@ -81,7 +89,7 @@ export const spec = {
       return {
         method: 'GET',
         url: ENDPOINT,
-        data: utils.parseQueryStringParameters(data),
+        data: parseQueryStringParameters(data),
         options: {
           withCredentials: false,
           crossOrigin: true

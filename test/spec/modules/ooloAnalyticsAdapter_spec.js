@@ -2,7 +2,7 @@ import ooloAnalytics, { PAGEVIEW_ID } from 'modules/ooloAnalyticsAdapter.js';
 import {expect} from 'chai';
 import {server} from 'test/mocks/xhr.js';
 import constants from 'src/constants.json'
-import events from 'src/events'
+import * as events from 'src/events'
 import { config } from 'src/config';
 import { buildAuctionData, generatePageViewId } from 'modules/ooloAnalyticsAdapter';
 
@@ -194,7 +194,7 @@ describe('oolo Prebid Analytic', () => {
       })
 
       const conf = {}
-      const pbjsConfig = config.getConfig()
+      const pbjsConfig = JSON.parse(JSON.stringify(config.getConfig()))
 
       Object.keys(pbjsConfig).forEach(key => {
         if (key[0] !== '_') {
@@ -663,7 +663,7 @@ describe('oolo Prebid Analytic', () => {
 
       events.emit(constants.EVENTS.AUCTION_INIT, { ...auctionInit });
 
-      expect(server.requests[3].url).to.equal('https://pbjs.com')
+      expect(server.requests[3].url).to.equal('https://pbjs.com/')
     })
 
     it('should send raw events based on server configuration', () => {

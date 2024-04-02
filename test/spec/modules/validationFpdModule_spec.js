@@ -309,5 +309,87 @@ describe('the first party data validation module', function () {
       validated = validateFpd(duplicate);
       expect(validated).to.deep.equal(expected);
     });
+
+    it('filters bcat, badv for invalid data type', function () {
+      const duplicate = utils.deepClone(ortb2);
+      duplicate.badv = 'adadadbcd.com';
+      duplicate.bcat = ['IAB25', 'IAB7-39'];
+
+      const expected = {
+        device: {
+          h: 911,
+          w: 1733
+        },
+        user: {
+          data: [{
+            segment: [{
+              id: 'foo'
+            }],
+            name: 'bar'
+          }]
+        },
+        site: {
+          content: {
+            data: [{
+              segment: [{
+                id: 'test'
+              }],
+              name: 'content',
+              ext: {
+                foo: 'bar'
+              }
+            }]
+          }
+        },
+        bcat: ['IAB25', 'IAB7-39']
+      };
+
+      const validated = validateFpd(duplicate);
+      expect(validated).to.deep.equal(expected);
+    });
+
+    it('filters site.publisher object properties for invalid data type', function () {
+      const duplicate = utils.deepClone(ortb2);
+      duplicate.site.publisher = {
+        id: '1',
+        domain: ['xyz.com'],
+        name: 'xyz',
+      };
+
+      const expected = {
+        device: {
+          h: 911,
+          w: 1733
+        },
+        user: {
+          data: [{
+            segment: [{
+              id: 'foo'
+            }],
+            name: 'bar'
+          }]
+        },
+        site: {
+          content: {
+            data: [{
+              segment: [{
+                id: 'test'
+              }],
+              name: 'content',
+              ext: {
+                foo: 'bar'
+              }
+            }]
+          },
+          publisher: {
+            id: '1',
+            name: 'xyz',
+          }
+        }
+      };
+
+      const validated = validateFpd(duplicate);
+      expect(validated).to.deep.equal(expected);
+    });
   });
 });

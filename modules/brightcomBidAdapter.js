@@ -1,4 +1,17 @@
-import * as utils from '../src/utils.js';
+import {
+  _each,
+  isArray,
+  getWindowTop,
+  getUniqueIdentifierStr,
+  deepSetValue,
+  logError,
+  logWarn,
+  createTrackPixelHtml,
+  getWindowSelf,
+  isFn,
+  isPlainObject,
+  getBidIdParameter
+} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -9,6 +22,7 @@ const URL = 'https://brightcombid.marphezis.com/hb';
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
+  gvlid: 883,
   isBidRequestValid,
   buildRequests,
   interpretResponse,
@@ -19,20 +33,20 @@ function buildRequests(bidReqs, bidderRequest) {
   try {
     let referrer = '';
     if (bidderRequest && bidderRequest.refererInfo) {
-      referrer = bidderRequest.refererInfo.referer;
+      referrer = bidderRequest.refererInfo.page;
     }
     const brightcomImps = [];
-    const publisherId = utils.getBidIdParameter('publisherId', bidReqs[0].params);
-    utils._each(bidReqs, function (bid) {
+    const publisherId = getBidIdParameter('publisherId', bidReqs[0].params);
+    _each(bidReqs, function (bid) {
       let bidSizes = (bid.mediaTypes && bid.mediaTypes.banner && bid.mediaTypes.banner.sizes) || bid.sizes;
-      bidSizes = ((utils.isArray(bidSizes) && utils.isArray(bidSizes[0])) ? bidSizes : [bidSizes]);
-      bidSizes = bidSizes.filter(size => utils.isArray(size));
+      bidSizes = ((isArray(bidSizes) && isArray(bidSizes[0])) ? bidSizes : [bidSizes]);
+      bidSizes = bidSizes.filter(size => isArray(size));
       const processedSizes = bidSizes.map(size => ({w: parseInt(size[0], 10), h: parseInt(size[1], 10)}));
 
       const element = document.getElementById(bid.adUnitCode);
       const minSize = _getMinSize(processedSizes);
       const viewabilityAmount = _isViewabilityMeasurable(element)
-        ? _getViewability(element, utils.getWindowTop(), minSize)
+        ? _getViewability(element, getWindowTop(), minSize)
         : 'na';
       const viewabilityAmountRounded = isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount);
 
@@ -53,10 +67,10 @@ function buildRequests(bidReqs, bidderRequest) {
       brightcomImps.push(imp);
     });
     const brightcomBidReq = {
-      id: utils.getUniqueIdentifierStr(),
+      id: getUniqueIdentifierStr(),
       imp: brightcomImps,
       site: {
-        domain: utils.parseUrl(referrer).host,
+        domain: bidderRequest?.refererInfo?.domain || '',
         page: referrer,
         publisher: {
           id: publisherId
@@ -67,22 +81,41 @@ function buildRequests(bidReqs, bidderRequest) {
         w: screen.width,
         h: screen.height
       },
-      tmax: config.getConfig('bidderTimeout')
+      tmax: bidderRequest?.timeout
     };
 
     if (bidderRequest && bidderRequest.gdprConsent) {
-      utils.deepSetValue(brightcomBidReq, 'regs.ext.gdpr', +bidderRequest.gdprConsent.gdprApplies);
-      utils.deepSetValue(brightcomBidReq, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+      deepSetValue(brightcomBidReq, 'regs.ext.gdpr', +bidderRequest.gdprConsent.gdprApplies);
+      deepSetValue(brightcomBidReq, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
+    }
+
+    if (bidderRequest && bidderRequest.uspConsent) {
+      deepSetValue(brightcomBidReq, 'regs.ext.us_privacy', bidderRequest.uspConsent);
+    }
+
+    if (config.getConfig('coppa') === true) {
+      deepSetValue(brightcomBidReq, 'regs.coppa', 1);
+    }
+
+    if (bidReqs[0] && bidReqs[0].schain) {
+      deepSetValue(brightcomBidReq, 'source.ext.schain', bidReqs[0].schain)
+    }
+
+    if (bidReqs[0] && bidReqs[0].userIdAsEids) {
+      deepSetValue(brightcomBidReq, 'user.ext.eids', bidReqs[0].userIdAsEids || [])
+    }
+
+    if (bidReqs[0] && bidReqs[0].userId) {
+      deepSetValue(brightcomBidReq, 'user.ext.ids', bidReqs[0].userId || [])
     }
 
     return {
       method: 'POST',
       url: URL,
       data: JSON.stringify(brightcomBidReq),
-      options: {contentType: 'text/plain', withCredentials: false}
     };
   } catch (e) {
-    utils.logError(e, {bidReqs, bidderRequest});
+    logError(e, {bidReqs, bidderRequest});
   }
 }
 
@@ -100,10 +133,10 @@ function isBidRequestValid(bid) {
 
 function interpretResponse(serverResponse) {
   if (!serverResponse.body || typeof serverResponse.body != 'object') {
-    utils.logWarn('Brightcom server returned empty/non-json response: ' + JSON.stringify(serverResponse.body));
+    logWarn('Brightcom server returned empty/non-json response: ' + JSON.stringify(serverResponse.body));
     return [];
   }
-  const { body: {id, seatbid} } = serverResponse;
+  const {body: {id, seatbid}} = serverResponse;
   try {
     const brightcomBidResponses = [];
     if (id &&
@@ -131,7 +164,7 @@ function interpretResponse(serverResponse) {
     }
     return brightcomBidResponses;
   } catch (e) {
-    utils.logError(e, {id, seatbid});
+    logError(e, {id, seatbid});
   }
 }
 
@@ -155,7 +188,7 @@ function _getDeviceType() {
 function _getAdMarkup(bid) {
   let adm = bid.adm;
   if ('nurl' in bid) {
-    adm += utils.createTrackPixelHtml(bid.nurl);
+    adm += createTrackPixelHtml(bid.nurl);
   }
   return adm;
 }
@@ -164,15 +197,15 @@ function _isViewabilityMeasurable(element) {
   return !_isIframe() && element !== null;
 }
 
-function _getViewability(element, topWin, { w, h } = {}) {
-  return utils.getWindowTop().document.visibilityState === 'visible'
-    ? _getPercentInView(element, topWin, { w, h })
+function _getViewability(element, topWin, {w, h} = {}) {
+  return getWindowTop().document.visibilityState === 'visible'
+    ? _getPercentInView(element, topWin, {w, h})
     : 0;
 }
 
 function _isIframe() {
   try {
-    return utils.getWindowSelf() !== utils.getWindowTop();
+    return getWindowSelf() !== getWindowTop();
   } catch (e) {
     return true;
   }
@@ -182,8 +215,8 @@ function _getMinSize(sizes) {
   return sizes.reduce((min, size) => size.h * size.w < min.h * min.w ? size : min);
 }
 
-function _getBoundingBox(element, { w, h } = {}) {
-  let { width, height, left, top, right, bottom } = element.getBoundingClientRect();
+function _getBoundingBox(element, {w, h} = {}) {
+  let {width, height, left, top, right, bottom} = element.getBoundingClientRect();
 
   if ((width === 0 || height === 0) && w && h) {
     width = w;
@@ -192,7 +225,7 @@ function _getBoundingBox(element, { w, h } = {}) {
     bottom = top + h;
   }
 
-  return { width, height, left, top, right, bottom };
+  return {width, height, left, top, right, bottom};
 }
 
 function _getIntersectionOfRects(rects) {
@@ -225,16 +258,16 @@ function _getIntersectionOfRects(rects) {
   return bbox;
 }
 
-function _getPercentInView(element, topWin, { w, h } = {}) {
-  const elementBoundingBox = _getBoundingBox(element, { w, h });
+function _getPercentInView(element, topWin, {w, h} = {}) {
+  const elementBoundingBox = _getBoundingBox(element, {w, h});
 
   // Obtain the intersection of the element and the viewport
-  const elementInViewBoundingBox = _getIntersectionOfRects([ {
+  const elementInViewBoundingBox = _getIntersectionOfRects([{
     left: 0,
     top: 0,
     right: topWin.innerWidth,
     bottom: topWin.innerHeight
-  }, elementBoundingBox ]);
+  }, elementBoundingBox]);
 
   let elementInViewArea, elementTotalArea;
 
@@ -252,7 +285,7 @@ function _getPercentInView(element, topWin, { w, h } = {}) {
 }
 
 function _getBidFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
+  if (!isFn(bid.getFloor)) {
     return bid.params.bidFloor ? bid.params.bidFloor : null;
   }
 
@@ -261,7 +294,7 @@ function _getBidFloor(bid) {
     mediaType: '*',
     size: '*'
   });
-  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'USD') {
     return floor.floor;
   }
   return null;

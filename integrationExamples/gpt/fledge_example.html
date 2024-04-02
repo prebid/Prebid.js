@@ -1,0 +1,100 @@
+<html>
+<head>
+  <!--
+    FLEDGE (Protected Audience API) configuration with GPT and FLEDGE-supporting adapter
+
+    gulp serve --modules=fledgeForGpt,openxBidAdapter
+  -->
+  <script async src="../../build/dev/prebid.js"></script>
+  <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+  <script>
+    var FAILSAFE_TIMEOUT = 3000;
+    var PREBID_TIMEOUT = 1500;
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+
+    googletag.cmd.push(function() {
+      googletag.pubads().disableInitialLoad();
+    });
+
+    var adUnits = [{
+      code: 'div-gpt-ad-1460505748561-0',
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]]
+        }
+      },
+      bids: [{
+        bidder: 'openx',
+        params: {
+          platform: '8869ec2c-9d3f-4f16-9d2f-49aaab8978fb',
+          unit: '111111'
+        }
+      }],
+      ortb2Imp: {
+        ext: {
+          ae: 1
+        }
+      }
+    }];
+
+    pbjs.que.push(function() {
+      pbjs.setConfig({
+        paapi: {
+          enabled: true,
+          gpt: {
+              autoconfig: false
+          }
+        }
+      });
+
+      pbjs.addAdUnits(adUnits);
+
+      pbjs.requestBids({
+        bidsBackHandler: sendAdserverRequest,
+        timeout: PREBID_TIMEOUT
+      });
+
+      function sendAdserverRequest() {
+        if (pbjs.adserverRequestSent) return;
+        pbjs.adserverRequestSent = true;
+        googletag.cmd.push(function() {
+          pbjs.que.push(function() {
+            pbjs.setTargetingForGPTAsync();
+            pbjs.setPAAPIConfigForGPT();
+            googletag.pubads().refresh();
+          });
+        });
+      }
+
+      setTimeout(function() {
+        sendAdserverRequest();
+      }, FAILSAFE_TIMEOUT);
+    });
+
+    googletag.cmd.push(function() {
+      googletag
+        .defineSlot('/19968336/header-bid-tag-0', adUnits[0].mediaTypes.banner.sizes, 'div-gpt-ad-1460505748561-0')
+        .addService(googletag.pubads());
+
+      googletag.pubads().enableSingleRequest();
+      googletag.enableServices();
+    });
+  </script>
+</head>
+
+<body>
+    <h2>Prebid.js FLEDGE+GPT Example</h2>
+
+    <h5>Div-1</h5>
+    <div id='div-gpt-ad-1460505748561-0'>
+    <script type='text/javascript'>
+        googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
+    </script>
+    </div>
+</body>
+</html>

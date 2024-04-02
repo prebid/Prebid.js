@@ -1,6 +1,7 @@
 import { expect } from 'chai';
-import { spec, tryGetPubtag, hasCCPAConsent } from 'modules/nextrollBidAdapter.js';
+import { spec } from 'modules/nextrollBidAdapter.js';
 import * as utils from 'src/utils.js';
+import { deepClone } from '../../../src/utils';
 
 describe('nextrollBidAdapter', function() {
   let utilsMock;
@@ -116,6 +117,27 @@ describe('nextrollBidAdapter', function() {
       expect(request.data.imp.ext.zone.id).to.be.equal('zone1');
     });
 
+    it('builds a request with the correct floor object', function () {
+      // bidfloor is defined, getFloor isn't
+      let bid = deepClone(validBid);
+      let request = spec.buildRequests([bid], {})[0];
+      expect(request.data.imp.bidfloor).to.be.equal(1);
+
+      // bidfloor not defined, getFloor not defined
+      bid = deepClone(validBid);
+      bid.params.bidfloor = null;
+      request = spec.buildRequests([bid], {})[0];
+      expect(request.data.imp.bidfloor).to.not.exist;
+
+      // bidfloor defined, getFloor defined, use getFloor
+      let getFloorResponse = { currency: 'USD', floor: 3 };
+      bid = deepClone(validBid);
+      bid.getFloor = () => getFloorResponse;
+      request = spec.buildRequests([bid], {})[0];
+
+      expect(request.data.imp.bidfloor).to.exist.and.to.equal(3);
+    });
+
     it('includes the sizes into the request correctly', function () {
       const bannerObject = spec.buildRequests([validBid], {})[0].data.imp.banner;
 
@@ -222,8 +244,8 @@ describe('nextrollBidAdapter', function() {
       let expectedResponse = {
         clickUrl: clickUrl,
         impressionTrackers: [impUrl],
-        privacyLink: 'https://info.evidon.com/pub_info/573',
-        privacyIcon: 'https://c.betrad.com/pub/icon1.png',
+        privacyLink: 'https://app.adroll.com/optout/personalized',
+        privacyIcon: 'https://s.adroll.com/j/ad-choices-small.png',
         title: titleText,
         image: {url: imgUrl, width: imgW, height: imgH},
         sponsoredBy: brandText,
@@ -252,8 +274,8 @@ describe('nextrollBidAdapter', function() {
         impressionTrackers: [impUrl],
         jstracker: [],
         clickTrackers: [],
-        privacyLink: 'https://info.evidon.com/pub_info/573',
-        privacyIcon: 'https://c.betrad.com/pub/icon1.png',
+        privacyLink: 'https://app.adroll.com/optout/personalized',
+        privacyIcon: 'https://s.adroll.com/j/ad-choices-small.png',
         title: titleText,
         image: {url: imgUrl, width: imgW, height: imgH},
         icon: {url: iconUrl, width: iconW, height: iconH},

@@ -1,12 +1,14 @@
-import adapter from '../src/AnalyticsAdapter.js';
+import { logInfo, logError, parseUrl, _each } from '../src/utils.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
-import * as utils from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
-const storageObj = getStorageManager();
+const MODULE_CODE = 'staq';
+const storageObj = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
 
 const ANALYTICS_VERSION = '1.0.0';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
@@ -21,12 +23,13 @@ const STAQ_EVENTS = {
   BID_WON: 'bidWon',
   AUCTION_END: 'auctionEnd',
   TIMEOUT: 'adapterTimedOut'
-}
+};
 
 function buildRequestTemplate(connId) {
-  const url = staqAdapterRefWin.referer;
-  const ref = staqAdapterRefWin.referer;
-  const topLocation = staqAdapterRefWin.referer;
+  // TODO: what should these pick from refererInfo?
+  const url = staqAdapterRefWin.topmostLocation;
+  const ref = staqAdapterRefWin.topmostLocation;
+  const topLocation = staqAdapterRefWin.topmostLocation;
 
   return {
     ver: ANALYTICS_VERSION,
@@ -94,14 +97,14 @@ analyticsAdapter.context = {};
 analyticsAdapter.originEnableAnalytics = analyticsAdapter.enableAnalytics;
 
 analyticsAdapter.enableAnalytics = (config) => {
-  utils.logInfo('Enabling STAQ Adapter');
+  logInfo('Enabling STAQ Adapter');
   staqAdapterRefWin = getRefererInfo(window);
   if (!config.options.connId) {
-    utils.logError('ConnId is not defined. STAQ Analytics won\'t work');
+    logError('ConnId is not defined. STAQ Analytics won\'t work');
     return;
   }
   if (!config.options.url) {
-    utils.logError('URL is not defined. STAQ Analytics won\'t work');
+    logError('URL is not defined. STAQ Analytics won\'t work');
     return;
   }
   analyticsAdapter.context = {
@@ -116,7 +119,7 @@ analyticsAdapter.enableAnalytics = (config) => {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: analyticsAdapter,
-  code: 'staq'
+  code: MODULE_CODE,
 });
 
 export default analyticsAdapter;
@@ -133,7 +136,7 @@ function sendAll() {
 }
 
 analyticsAdapter.ajaxCall = function ajaxCall(data) {
-  utils.logInfo('SENDING DATA: ' + data);
+  logInfo('SENDING DATA: ' + data);
   ajax(`https://${analyticsAdapter.context.url}/prebid/${analyticsAdapter.context.connectionId}`, () => {}, data, { contentType: 'text/plain' });
 };
 
@@ -248,7 +251,7 @@ export function getUmtSource(pageUrl, referrer) {
       if (se) {
         return asUtm(se, ORGANIC, ORGANIC);
       }
-      let parsedUrl = utils.parseUrl(pageUrl);
+      let parsedUrl = parseUrl(pageUrl);
       let [refHost, refPath] = getReferrer(referrer);
       if (refHost && refHost !== parsedUrl.hostname) {
         return asUtm(refHost, REFERRAL, REFERRAL, '', refPath);
@@ -275,17 +278,17 @@ export function getUmtSource(pageUrl, referrer) {
   }
 
   function getReferrer(referrer) {
-    let ref = utils.parseUrl(referrer);
+    let ref = parseUrl(referrer);
     return [ref.hostname, ref.pathname];
   }
 
   function getUTM(pageUrl) {
-    let urlParameters = utils.parseUrl(pageUrl).search;
+    let urlParameters = parseUrl(pageUrl).search;
     if (!urlParameters['utm_campaign'] || !urlParameters['utm_source']) {
       return;
     }
     let utmArgs = [];
-    utils._each(UTM_TAGS, (utmTagName) => {
+    _each(UTM_TAGS, (utmTagName) => {
       let utmValue = urlParameters[utmTagName] || '';
       utmArgs.push(utmValue);
     });

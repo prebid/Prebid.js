@@ -12,19 +12,46 @@ Module that connects to orbidder demand sources
 
 # Test Parameters
 ```
-var adUnits = [{
-    code: '/105091519/bidder_test',
-    mediaTypes: {
-        banner: {
-            sizes: [728, 90]
-        }
+var adUnits = [
+    {
+        code: 'test_banner',
+        mediaTypes: {
+            banner: {
+                sizes: [728, 90]
+            }
+        },
+        bids: [{
+            bidder: 'orbidder',
+            params: {
+                accountId: "someAccount",
+                placementId: "somePlace"
+            }
+        }],
     },
-    bids: [{
-        bidder: 'orbidder'
-        params: {
-            accountId: "someAccount",
-            placementId: "somePlace"
-        }
-    }]
-}];
+    {
+        code: 'test_native',
+        mediaTypes: {
+            native: {
+                title: {
+                    required: true,
+                    len: 80
+                },
+                image: {
+                    required: true,
+                    sizes: [150, 50]
+                },
+                sponsoredBy: {
+                    required: true
+                }
+            },
+        },
+        bids: [{
+            bidder: 'orbidder',
+            params: {
+                accountId: "someAccount",
+                placementId: "somePlace"
+            }
+        }],
+    }
+];
 ```

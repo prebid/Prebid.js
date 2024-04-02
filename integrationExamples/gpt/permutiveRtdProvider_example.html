@@ -15,7 +15,8 @@
                 _papns: ['appnexus1', 'appnexus2'],
                 _psegs: ['1234', '1000001', '1000002'],
                 _ppam: ['ppam1', 'ppam2'],
-                _pcrprs: ['pcrprs1', 'pcrprs2']
+                _pcrprs: ['pcrprs1', 'pcrprs2'],
+                _pssps: { ssps: ['appnexus', 'some other'], cohorts: ['abcd', 'efgh', 'ijkl'] },
               }
 
               for (let key in data) {
@@ -23,7 +24,7 @@
               }
             }
 
-            setLocalStorageData()
+            setLocalStorageData();
 
             var div_1_sizes = [
                 [300, 250],
@@ -45,6 +46,12 @@
                   }
                 },
                 bids: [
+                  {
+                    bidder: 'ix',
+                    params: {
+                      siteId: '123456',
+                    }
+                  },
                   {
                     bidder: 'appnexus',
                     params: {
@@ -135,6 +142,7 @@
             pbjs.que.push(function() {
               pbjs.setConfig({
                 debug: true,
+                pageUrl: 'http://www.test.com/test.html',
                 realTimeData: {
                   auctionDelay: 80, // maximum time for RTD modules to respond
                   dataProviders: [
@@ -142,8 +150,20 @@
                       name: 'permutive',
                       waitForIt: true,
                       params: {
-                        acBidders: ['appnexus', 'rubicon', 'ozone', 'trustx'],
+                        acBidders: ['appnexus', 'rubicon', 'ozone', 'trustx', 'ix'],
                         maxSegs: 500,
+                        transformations: [
+                          {
+                            id: 'iab',
+                            config: {
+                              segtax: 4,
+                              iabIds: {
+                                1000001: '777777',
+                                1000002: '888888'
+                              }
+                            }
+                          }
+                        ],
                         overwrites: {
                           rubicon: function (bid, data, acEnabled, utils, defaultFn) {
                             if (defaultFn){
@@ -157,6 +177,37 @@
                       }
                     }
                   ]
+                }
+              });
+              pbjs.setBidderConfig({
+                bidders: ['appnexus', 'rubicon', 'ix'],
+                config: {
+                  ortb2: {
+                    site: {
+                      name: "example",
+                      domain: "page.example.com",
+                      cat: ["IAB2"],
+                      sectioncat: ["IAB2-2"],
+                      pagecat: ["IAB2-2"],
+                      page: "https://page.example.com/here.html",
+                      ref: "https://ref.example.com",
+                      keywords: "power tools, drills",
+                      search: "drill",
+                      content: {}
+                    },
+                    user: {
+                      yob: 1985,
+                      gender: 'm',
+                      keywords: 'a,b',
+                      data: [
+                        {
+                          name: 'permutive.com',
+                          ext: { segtax: 6 },
+                          segment: [{ id: '1' }]
+                        }
+                      ]
+                    }
+                  }
                 }
               });
               pbjs.addAdUnits(adUnits);

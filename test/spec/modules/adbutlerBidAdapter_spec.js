@@ -1,22 +1,19 @@
-import {expect} from 'chai';
-import {spec} from 'modules/adbutlerBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from 'modules/adbutlerBidAdapter.js';
 
 describe('AdButler adapter', function () {
-  let bidRequests;
+  let validBidRequests;
 
   beforeEach(function () {
-    bidRequests = [
+    validBidRequests = [
       {
         bidder: 'adbutler',
         params: {
-          accountID: '167283',
-          zoneID: '210093',
+          accountID: '181556',
+          zoneID: '705374',
           keyword: 'red',
           minCPM: '1.00',
           maxCPM: '5.00',
-          extra: {
-            foo: 'bar',
-          }
         },
         placementCode: '/19968336/header-bid-tag-1',
         mediaTypes: {
@@ -27,131 +24,266 @@ describe('AdButler adapter', function () {
         bidId: '23acc48ad47af5',
         auctionId: '0fb4905b-9456-4152-86be-c6f6d259ba99',
         bidderRequestId: '1c56ad30b9b8ca8',
-        transactionId: '92489f71-1bf2-49a0-adf9-000cea934729'
-      }
+        transactionId: '92489f71-1bf2-49a0-adf9-000cea934729',
+      },
     ];
   });
 
-  describe('implementation', function () {
-    describe('for requests', function () {
-      it('should accept valid bid', function () {
-        let validBid = {
-            bidder: 'adbutler',
-            params: {
-              accountID: '167283',
-              zoneID: '210093'
-            }
+  describe('for requests', function () {
+    describe('without account ID', function () {
+      it('rejects the bid', function () {
+        const invalidBid = {
+          bidder: 'adbutler',
+          params: {
+            zoneID: '210093',
           },
-          isValid = spec.isBidRequestValid(validBid);
+        };
+        const isValid = spec.isBidRequestValid(invalidBid);
+
+        expect(isValid).to.equal(false);
+      });
+    });
+
+    describe('without a zone ID', function () {
+      it('rejects the bid', function () {
+        const invalidBid = {
+          bidder: 'adbutler',
+          params: {
+            accountID: '167283',
+          },
+        };
+        const isValid = spec.isBidRequestValid(invalidBid);
+
+        expect(isValid).to.equal(false);
+      });
+    });
+
+    describe('with a valid bid', function () {
+      describe('with a custom domain', function () {
+        it('uses the custom domain', function () {
+          validBidRequests[0].params.domain = 'customadbutlerdomain.com';
+
+          const requests = spec.buildRequests(validBidRequests);
+          const requestURL = requests[0].url;
+
+          expect(requestURL).to.have.string('customadbutlerdomain.com');
+        });
+      });
+
+      it('accepts the bid', function () {
+        const validBid = {
+          bidder: 'adbutler',
+          params: {
+            accountID: '167283',
+            zoneID: '210093',
+          },
+        };
+        const isValid = spec.isBidRequestValid(validBid);
 
         expect(isValid).to.equal(true);
       });
 
-      it('should reject invalid bid', function () {
-        let invalidBid = {
-            bidder: 'adbutler',
-            params: {
-              accountID: '167283',
-            }
-          },
-          isValid = spec.isBidRequestValid(invalidBid);
-
-        expect(isValid).to.equal(false);
-      });
-
-      it('should use custom domain string', function () {
-        let bidRequests = [
-            {
-              bidId: '3c9408cdbf2f68',
-              sizes: [[300, 250]],
-              bidder: 'adbutler',
-              params: {
-                accountID: '107878',
-                zoneID: '86133',
-                domain: 'servedbyadbutler.com.dan.test'
-              },
-              auctionId: '10b327aa396609',
-              placementCode: '/123456/header-bid-tag-1'
-            }
-          ],
-          requests = spec.buildRequests(bidRequests),
-          requestURL = requests[0].url;
-
-        expect(requestURL).to.have.string('.dan.test');
-      });
-
-      it('should set default domain', function () {
-        let requests = spec.buildRequests(bidRequests),
-          request = requests[0];
+      it('sets default domain', function () {
+        const requests = spec.buildRequests(validBidRequests);
+        const request = requests[0];
 
         let [domain] = request.url.split('/adserve/');
 
         expect(domain).to.equal('https://servedbyadbutler.com');
       });
 
-      it('should set the keyword parameter', function () {
-        let requests = spec.buildRequests(bidRequests),
-          requestURL = requests[0].url;
+      it('sets the keyword parameter', function () {
+        const requests = spec.buildRequests(validBidRequests);
+        const requestURL = requests[0].url;
 
         expect(requestURL).to.have.string(';kw=red;');
       });
 
-      it('should set the extra parameter', () => {
-        let requests = spec.buildRequests(bidRequests);
-        let requestURL = requests[0].url;
+      describe('with extra params', function () {
+        beforeEach(function() {
+          validBidRequests[0].params.extra = {
+            foo: 'bar',
+          };
+        });
 
-        expect(requestURL).to.have.string(';foo=bar;');
+        it('sets the extra parameter', function () {
+          const requests = spec.buildRequests(validBidRequests);
+          const requestURL = requests[0].url;
+
+          expect(requestURL).to.have.string(';foo=bar;');
+        });
       });
 
-      it('should increment the count for the same zone', function () {
-        let bidRequests = [
-            {
-              sizes: [[300, 250]],
-              bidder: 'adbutler',
-              params: {
-                accountID: '107878',
-                zoneID: '86133',
-              }
-            }, {
-              sizes: [[300, 250]],
-              bidder: 'adbutler',
-              params: {
-                accountID: '107878',
-                zoneID: '86133',
-              }
-            },
-          ],
-          requests = spec.buildRequests(bidRequests),
-          firstRequest = requests[0].url,
-          secondRequest = requests[1].url;
+      describe('with multiple bids to the same zone', function () {
+        it('increments the place count', function () {
+          const requests = spec.buildRequests([validBidRequests[0], validBidRequests[0]]);
+          const firstRequest = requests[0].url;
+          const secondRequest = requests[1].url;
 
-        expect(firstRequest).to.have.string(';place=0;');
-        expect(secondRequest).to.have.string(';place=1;');
+          expect(firstRequest).to.have.string(';place=0;');
+          expect(secondRequest).to.have.string(';place=1;');
+        });
+      });
+    });
+  });
+
+  describe('for server responses', function () {
+    let serverResponse;
+
+    describe('with no body', function () {
+      beforeEach(function() {
+        serverResponse = {
+          body: null,
+        };
+      });
+
+      it('does not return any bids', function () {
+        const bids = spec.interpretResponse(serverResponse, { bidRequest: validBidRequests[0] });
+
+        expect(bids).to.be.length(0);
       });
     });
 
-    describe('bid responses', function () {
-      it('should return complete bid response', function () {
-        let serverResponse = {
-            body: {
-              status: 'SUCCESS',
-              account_id: 167283,
-              zone_id: 210093,
-              cpm: 1.5,
-              width: 300,
-              height: 250,
-              place: 0,
-              ad_code: '<img src="http://image.source.com/img" alt="" title="" border="0" width="300" height="250">',
-              tracking_pixels: [
-                'http://tracking.pixel.com/params=info'
-              ]
-            }
+    describe('with an incorrect size', function () {
+      beforeEach(function() {
+        serverResponse = {
+          body: {
+            status: 'SUCCESS',
+            account_id: 167283,
+            zone_id: 210083,
+            cpm: 1.5,
+            width: 728,
+            height: 90,
+            place: 0,
           },
-          bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
+        };
+      });
 
-        expect(bids).to.be.lengthOf(1);
+      it('does not return any bids', function () {
+        const bids = spec.interpretResponse(serverResponse, { bidRequest: validBidRequests[0] });
 
-        expect(bids[0].bidderCode).to.equal('adbutler');
+        expect(bids).to.be.length(0);
+      });
+    });
+
+    describe('with a failed status', function () {
+      beforeEach(function() {
+        serverResponse = {
+          body: {
+            status: 'NO_ELIGIBLE_ADS',
+            zone_id: 210083,
+            width: 300,
+            height: 250,
+            place: 0,
+          },
+        };
+      });
+
+      it('does not return any bids', function () {
+        const bids = spec.interpretResponse(serverResponse, { bidRequest: validBidRequests[0] });
+
+        expect(bids).to.be.length(0);
+      });
+    });
+
+    describe('with low CPM', function () {
+      beforeEach(function() {
+        serverResponse = {
+          body: {
+            status: 'SUCCESS',
+            account_id: 167283,
+            zone_id: 210093,
+            cpm: 0.75,
+            width: 300,
+            height: 250,
+            place: 0,
+            ad_code: '<img src="http://image.source.com/img" alt="" title="" border="0" width="300" height="250">',
+            tracking_pixels: [],
+          },
+        }
+      });
+
+      describe('with a minimum CPM', function () {
+        it('does not return any bids', function () {
+          const bids = spec.interpretResponse(serverResponse, { bidRequest: validBidRequests[0] });
+          expect(bids).to.be.length(0);
+        });
+      });
+
+      describe('with no minimum CPM', function () {
+        beforeEach(function() {
+          delete validBidRequests[0].params.minCPM;
+        });
+
+        it('returns a bid', function() {
+          const bids = spec.interpretResponse(serverResponse, { bidRequest: validBidRequests[0] });
+
+          expect(bids).to.be.length(1);
+        });
+      });
+    });
+
+    describe('with high CPM', function () {
+      beforeEach(function() {
+        serverResponse = {
+          body: {
+            status: 'SUCCESS',
+            account_id: 167283,
+            zone_id: 210093,
+            cpm: 999,
+            width: 300,
+            height: 250,
+            place: 0,
+            ad_code: '<img src="http://image.source.com/img" alt="" title="" border="0" width="300" height="250">',
+            tracking_pixels: [],
+          },
+        }
+      });
+
+      describe('with a maximum CPM', function () {
+        it('does not return any bids', function () {
+          const bids = spec.interpretResponse(serverResponse, { bidRequest: validBidRequests[0] });
+
+          expect(bids).to.be.length(0);
+        });
+      });
+
+      describe('with no maximum CPM', function () {
+        beforeEach(function() {
+          delete validBidRequests[0].params.maxCPM;
+        });
+
+        it('returns a bid', function() {
+          const bids = spec.interpretResponse(serverResponse, { bidRequest: validBidRequests[0] });
+
+          expect(bids).to.be.length(1);
+        });
+      });
+    });
+
+    describe('with a valid ad', function () {
+      beforeEach(function() {
+        serverResponse = {
+          body: {
+            status: 'SUCCESS',
+            account_id: 167283,
+            zone_id: 210093,
+            cpm: 1.5,
+            width: 300,
+            height: 250,
+            place: 0,
+            ad_code: '<img src="http://image.source.com/img" alt="" title="" border="0" width="300" height="250">',
+            tracking_pixels: [
+              'http://tracking.pixel.com/params=info',
+            ],
+          },
+        };
+      });
+
+      it('returns a complete bid', function () {
+        const bids = spec.interpretResponse(serverResponse, { bidRequest: validBidRequests[0] });
+
+        expect(bids).to.be.length(1);
         expect(bids[0].cpm).to.equal(1.5);
         expect(bids[0].width).to.equal(300);
         expect(bids[0].height).to.equal(250);
@@ -161,70 +293,36 @@ describe('AdButler adapter', function () {
         expect(bids[0].ad).to.have.string('http://tracking.pixel.com/params=info');
       });
 
-      it('should return empty bid response', function () {
-        let serverResponse = {
-            body: {
-              status: 'NO_ELIGIBLE_ADS',
-              zone_id: 210083,
-              width: 300,
-              height: 250,
-              place: 0
-            }
-          },
-          bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
+      describe('for a bid request without banner media type', function () {
+        beforeEach(function() {
+          delete validBidRequests[0].mediaTypes.banner;
+        });
 
-        expect(bids).to.be.lengthOf(0);
+        it('does not return any bids', function () {
+          const bids = spec.interpretResponse(serverResponse, { bidRequest: validBidRequests[0] });
+
+          expect(bids).to.be.length(0);
+        });
       });
 
-      it('should return empty bid response on incorrect size', function () {
-        let serverResponse = {
-            body: {
-              status: 'SUCCESS',
-              account_id: 167283,
-              zone_id: 210083,
-              cpm: 1.5,
-              width: 728,
-              height: 90,
-              place: 0
-            }
-          },
-          bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
+      describe('with advertiser meta', function () {
+        beforeEach(function() {
+          serverResponse.body.advertiser = {
+            id: 123,
+            name: 'Advertiser Name',
+            domain: 'advertiser.com',
+          };
+        });
 
-        expect(bids).to.be.lengthOf(0);
-      });
+        it('returns a bid including advertiser meta', function () {
+          const bids = spec.interpretResponse(serverResponse, { bidRequest: validBidRequests[0] });
 
-      it('should return empty bid response with CPM too low', function () {
-        let serverResponse = {
-            body: {
-              status: 'SUCCESS',
-              account_id: 167283,
-              zone_id: 210093,
-              cpm: 0.75,
-              width: 300,
-              height: 250,
-              place: 0
-            }
-          },
-          bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
-
-        expect(bids).to.be.lengthOf(0);
-      });
-
-      it('should return empty bid response with CPM too high', function () {
-        let serverResponse = {
-            body: {
-              status: 'SUCCESS',
-              account_id: 167283,
-              zone_id: 210093,
-              cpm: 7,
-              width: 300,
-              height: 250,
-              place: 0
-            }
-          },
-          bids = spec.interpretResponse(serverResponse, {'bidRequest': bidRequests[0]});
-
-        expect(bids).to.be.lengthOf(0);
+          expect(bids).to.be.length(1);
+          expect(bids[0]).to.have.property('meta');
+          expect(bids[0].meta.advertiserId).to.equal(123);
+          expect(bids[0].meta.advertiserName).to.equal('Advertiser Name');
+          expect(bids[0].meta.advertiserDomains).to.contain('advertiser.com');
+        });
       });
     });
   });

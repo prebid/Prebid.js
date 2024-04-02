@@ -110,11 +110,11 @@ Please reach out to your Technical account manager for more information.
 			renderer: {
 				url: 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js',
 				render: function (bid) {
-					bid.renderer.push(() => { 
-						ANOutstreamVideo.renderAd({ 
+					bid.renderer.push(() => {
+						ANOutstreamVideo.renderAd({
 							targetId: bid.adUnitCode,
-							adResponse: bid 
-						}); 
+							adResponse: bid
+						});
 					});
 				}
 			},
@@ -133,4 +133,34 @@ Please reach out to your Technical account manager for more information.
 				}
 			}]
 		};
+```
+
+##  Double Mediatype Setup (Banner & Video)
+
+```
+    var adUnits = [{
+        code: 'prebid_tag_001',
+        mediaTypes: {
+            banner: {
+                sizes: [[300,250]]
+            },
+            video: {
+                context: 'outstream',
+                playerSize: [640, 480]
+            }
+        },
+        bids: [{
+            bidder: 'smartadserver',
+            params: {
+                domain: 'https://prg.smartadserver.com',
+                siteId: 411951,
+                pageId: 1383641,
+                formatId: 84313,
+                target: 'iid=8984466',
+                video: {
+                    protocol: 6, // Stands for "up to VAST 3". For "up to VAST 4" it is 8
+                }
+            }
+        }]
+    }];
 ```

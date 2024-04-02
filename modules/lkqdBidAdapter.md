@@ -12,7 +12,7 @@ Connects to LKQD exchange for bids.
 
 LKQD bid adapter supports Video ads currently.
 
-For more information about [LKQD Ad Serving and Management](http://www.lkqd.com/ad-serving-and-management/), please contact [info@lkqd.com](info@lkqd.com).
+For more information about [LKQD Ad Serving and Management](http://www.lkqd.com/ad-serving-and-management/), please contact [vgi-video-prebid@verve.com](vgi-video-prebid@verve.com).
 
 # Sample Ad Unit: For Publishers
 ```javascript

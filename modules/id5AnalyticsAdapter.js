@@ -1,9 +1,10 @@
-import buildAdapter from '../src/AnalyticsAdapter.js';
+import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
 import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
 import { logInfo, logError } from '../src/utils.js';
-import events from '../src/events.js';
+import * as events from '../src/events.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 const {
   EVENTS: {
@@ -34,7 +35,7 @@ const FLUSH_EVENTS = [
 
 const CONFIG_URL_PREFIX = 'https://api.id5-sync.com/analytics'
 const TZ = new Date().getTimezoneOffset();
-const PBJS_VERSION = $$PREBID_GLOBAL$$.version;
+const PBJS_VERSION = getGlobal().version;
 const ID5_REDACTED = '__ID5_REDACTED__';
 const isArray = Array.isArray;
 
@@ -141,7 +142,7 @@ const ENABLE_FUNCTION = (config) => {
     logInfo('id5Analytics: Tracking events', _this.eventsToTrack);
     if (sampling > 0 && _this.random() < (1 / sampling)) {
       // Init the module only if we got lucky
-      logInfo('id5Analytics: Selected by sampling. Starting up!')
+      logInfo('id5Analytics: Selected by sampling. Starting up!');
 
       // Clean start
       _this.eventBuffer = {};
@@ -243,10 +244,14 @@ function deepTransformingClone(obj, transform, currentPath = []) {
 // takes (obj, prop) and transforms property "prop" in object "obj".
 // The "match" is an array of path parts. Each part is either a string or an array.
 // In case of array, it represents alternatives which all would match.
-// Special path part '*' matches any subproperty
+// Special path part '*' matches any subproperty or array index.
+// Prefixing a part with "!" makes it negative match (doesn't work with multiple alternatives)
 const CLEANUP_RULES = {};
 CLEANUP_RULES[AUCTION_END] = [{
-  match: [['adUnits', 'bidderRequests'], '*', 'bids', '*', ['userId', 'crumbs'], '*'],
+  match: [['adUnits', 'bidderRequests'], '*', 'bids', '*', ['userId', 'crumbs'], '!id5id'],
+  apply: 'redact'
+}, {
+  match: [['adUnits', 'bidderRequests'], '*', 'bids', '*', ['userId', 'crumbs'], 'id5id', 'uid'],
   apply: 'redact'
 }, {
   match: [['adUnits', 'bidderRequests'], '*', 'bids', '*', 'userIdAsEids', '*', 'uids', '*', ['id', 'ext']],
@@ -288,7 +293,10 @@ function transformFnFromCleanupRules(eventType) {
       }
       for (let fragment = 0; fragment < ruleMatcher.length && match; fragment++) {
         const choices = makeSureArray(ruleMatcher[fragment]);
-        match = !choices.every((choice) => choice !== '*' && path[fragment] !== choice);
+        match = !choices.every((choice) => choice !== '*' &&
+          (choice.charAt(0) === '!'
+            ? path[fragment] === choice.substring(1)
+            : path[fragment] !== choice));
       }
       if (match) {
         const transformfn = TRANSFORM_FUNCTIONS[transformation];

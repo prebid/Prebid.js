@@ -1,71 +1,104 @@
-import * as utils from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
 
 const BIDDER_CODE = 'admedia';
 const ENDPOINT_URL = 'https://prebid.admedia.com/bidder/';
 
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER],
 
+  /**
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function (bid) {
-    return bid.params && !!bid.params.aid;
+    return !!(bid.params.placementId);
   },
 
+  /**
+   * Make a server request from the list of BidRequests.
+   *
+   * @return Array Info describing the request to the server.
+   * @param validBidRequests
+   * @param bidderRequest
+   */
   buildRequests: function (validBidRequests, bidderRequest) {
-    let payload = {};
-
-    if (bidderRequest && bidderRequest.refererInfo) {
-      payload.referer = encodeURIComponent(bidderRequest.refererInfo.referer);
+    if (validBidRequests.length === 0) {
+      return [];
     }
+    return validBidRequests.map(bidRequest => {
+      let sizes = []
+      if (bidRequest.mediaTypes && bidRequest.mediaTypes[BANNER] && bidRequest.mediaTypes[BANNER].sizes) {
+        sizes = bidRequest.mediaTypes[BANNER].sizes;
+      }
 
-    payload.tags = [];
+      var tagData = [];
+      for (var i = 0, j = sizes.length; i < j; i++) {
+        let tag = {};
+        tag.sizes = [];
+        tag.id = bidRequest.params.placementId;
+        tag.aid = bidRequest.params.aid;
+        tag.sizes.push(sizes[i].toString().replace(',', 'x'));
+        tagData.push(tag);
+      }
 
-    utils._each(validBidRequests, function (bid) {
-      const tag = {
-        id: bid.bidId,
-        sizes: bid.sizes,
-        aid: bid.params.aid
+      const payload = {
+        id: bidRequest.params.placementId,
+        aid: bidRequest.params.aid,
+        tags: tagData,
+        bidId: bidRequest.bidId,
+        referer: encodeURIComponent(bidderRequest.refererInfo.page)
       };
-      payload.tags.push(tag);
-    });
 
-    const payloadString = JSON.stringify(payload);
-    return {
-      method: 'POST',
-      url: ENDPOINT_URL,
-      data: payloadString,
-    };
+      return {
+        method: 'POST',
+        url: ENDPOINT_URL,
+        data: payload
+      };
+    });
   },
 
+  /**
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {ServerResponse} serverResponse A successful response from the server.
+   * @param bidRequest
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
   interpretResponse: function (serverResponse, bidRequest) {
-    const bidResponses = [];
+    const requiredKeys = ['requestId', 'cpm', 'width', 'height', 'ad', 'ttl', 'creativeId', 'netRevenue', 'currency', 'meta'];
+    const validBidResponses = [];
+    serverResponse = serverResponse.body.tags;
 
-    if (!serverResponse.body.tags) {
-      return bidResponses;
+    if (serverResponse && (serverResponse.length > 0)) {
+      serverResponse.forEach((bid) => {
+        const bidResponse = {};
+        for (const requiredKey of requiredKeys) {
+          if (!bid.hasOwnProperty(requiredKey)) {
+            return [];
+          }
+          bidResponse[requiredKey] = bid[requiredKey];
+        }
+        if (!(typeof bid.meta.advertiserDomains !== 'undefined' && bid.meta.advertiserDomains.length > 0)) {
+          return [];
+        }
+        validBidResponses.push(bidResponse);
+      });
     }
-
-    utils._each(serverResponse.body.tags, function (response) {
-      if (!response.error && response.cpm > 0) {
-        const bidResponse = {
-          requestId: response.id,
-          cpm: response.cpm,
-          width: response.width,
-          height: response.height,
-          creativeId: response.id,
-          dealId: response.id,
-          currency: 'USD',
-          netRevenue: true,
-          ttl: 120,
-          // referrer: REFERER,
-          ad: response.ad
-        };
-
-        bidResponses.push(bidResponse);
-      }
-    });
-
-    return bidResponses;
-  }
+    return validBidResponses;
+  },
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {},
+  onTimeout: function(timeoutData) {},
+  onBidWon: function (bid) {}
 };
 
 registerBidder(spec);
