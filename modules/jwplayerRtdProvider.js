@@ -26,11 +26,12 @@ const JWPLAYER_DOMAIN = SUBMODULE_NAME + '.com';
 const ENRICH_ALWAYS = 'always';
 const ENRICH_WHEN_EMPTY = 'whenEmpty';
 const ENRICH_NEVER = 'never';
+const overrideValidationRegex = /^(always|never|whenEmpty)$/;
 const playlistItemCache = {};
 const pendingRequests = {};
 let activeRequestCount = 0;
 let resumeBidRequest;
-// defaults to True for backwards compatibility
+// defaults to 'always' for backwards compatibility
 let overrideContentId = ENRICH_ALWAYS;
 let overrideContentUrl = ENRICH_WHEN_EMPTY;
 let overrideContentTitle = ENRICH_WHEN_EMPTY;
@@ -81,11 +82,19 @@ export function fetchTargetingInformation(jwTargeting) {
 }
 
 export function setOverrides(params) {
-  // For backwards compatibility, default to always unless overriden by Publisher.
-  overrideContentId = params.overrideContentId || ENRICH_ALWAYS;
-  overrideContentUrl = params.overrideContentUrl || ENRICH_WHEN_EMPTY;
-  overrideContentTitle = params.overrideContentTitle || ENRICH_WHEN_EMPTY;
-  overrideContentDescription = params.overrideContentDescription || ENRICH_WHEN_EMPTY;
+  // For backwards compatibility, default to always unless overridden by Publisher.
+  overrideContentId = sanitizeOverrideParam(params.overrideContentId, ENRICH_ALWAYS);
+  overrideContentUrl = sanitizeOverrideParam(params.overrideContentUrl, ENRICH_WHEN_EMPTY);
+  overrideContentTitle = sanitizeOverrideParam(params.overrideContentTitle, ENRICH_WHEN_EMPTY);
+  overrideContentDescription = sanitizeOverrideParam(params.overrideContentDescription, ENRICH_WHEN_EMPTY);
+}
+
+function sanitizeOverrideParam(overrideParam, defaultValue) {
+  if (overrideValidationRegex.test(overrideParam)) {
+    return overrideParam;
+  }
+
+  return defaultValue;
 }
 
 export function fetchTargetingForMediaId(mediaId) {
