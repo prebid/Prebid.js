@@ -111,6 +111,13 @@ describe('pubxai analytics adapter', () => {
                 bidderWinsCount: 0,
               },
             ],
+            ortb2: {
+              device: {
+                ext: {
+                  cdep: true,
+                },
+              },
+            },
             auctionStart: 1603865707180,
             timeout: 1000,
             refererInfo: {
@@ -168,6 +175,13 @@ describe('pubxai analytics adapter', () => {
             bidderWinsCount: 0,
           },
         ],
+        ortb2: {
+          device: {
+            ext: {
+              cdep: true,
+            },
+          },
+        },
         auctionStart: 1603865707180,
         timeout: 1000,
         refererInfo: {
@@ -319,6 +333,13 @@ describe('pubxai analytics adapter', () => {
                 bidderWinsCount: 0,
               },
             ],
+            ortb2: {
+              device: {
+                ext: {
+                  cdep: true,
+                },
+              },
+            },
             auctionStart: 1603865707180,
             timeout: 1000,
             refererInfo: {
@@ -484,16 +505,6 @@ describe('pubxai analytics adapter', () => {
           },
         ],
       },
-      // pageDetail: {
-      //   host: location.host,
-      //   path: location.pathname,
-      //   search: location.search,
-      // },
-      // pmcDetail: {
-      //   bidDensity: storage.getItem("pbx:dpbid"),
-      //   maxBid: storage.getItem("pbx:mxbid"),
-      //   auctionId: storage.getItem("pbx:aucid"),
-      // },
     };
 
     let expectedAfterBid = {
@@ -552,7 +563,6 @@ describe('pubxai analytics adapter', () => {
         host: location.host,
         path: location.pathname,
         search: location.search,
-        adUnits: ['/19968336/header-bid-tag-1'],
       },
       floorDetail: {
         fetchStatus: 'success',
@@ -567,9 +577,13 @@ describe('pubxai analytics adapter', () => {
         deviceType: getDeviceType(),
         deviceOS: getOS(),
         browser: getBrowser(),
+        cdep: true,
       },
       userDetail: {
         userIdTypes: [],
+      },
+      consentDetail: {
+        consentTypes: [],
       },
       pmacDetail: JSON.parse(storage.getItem('pbx:pmac')) || {},
       initOptions: {
@@ -642,7 +656,6 @@ describe('pubxai analytics adapter', () => {
         host: location.host,
         path: location.pathname,
         search: location.search,
-        adUnits: ['/19968336/header-bid-tag-1'],
       },
       floorDetail: {
         fetchStatus: 'success',
@@ -657,9 +670,13 @@ describe('pubxai analytics adapter', () => {
         deviceType: getDeviceType(),
         deviceOS: getOS(),
         browser: getBrowser(),
+        cdep: true,
       },
       userDetail: {
         userIdTypes: [],
+      },
+      consentDetail: {
+        consentTypes: [],
       },
       pmacDetail: JSON.parse(storage.getItem('pbx:pmac')) || {},
       initOptions: {

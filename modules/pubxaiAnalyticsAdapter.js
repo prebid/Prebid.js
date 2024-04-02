@@ -181,9 +181,13 @@ const track = ({ eventType, args }) => {
     case CONSTANTS.EVENTS.AUCTION_END:
       Object.assign(
         auctionCache[args.auctionId].floorDetail,
-        deepAccess(args, 'adUnits.0.bids.0.floorData')
+        args.adUnits
+          .map((i) => i?.bids.length && i.bids[0]?.floorData)
+          .find((i) => i) || {}
       );
-      auctionCache[args.auctionId].pageDetail.adUnits = args.adUnitCodes;
+      auctionCache[args.auctionId].deviceDetail.cdep = args.bidderRequests
+        .map((bidRequest) => bidRequest.ortb2?.device?.ext?.cdep)
+        .find((i) => i);
       Object.assign(auctionCache[args.auctionId].auctionDetail, {
         adUnitCodes: args.adUnits.map((i) => i.code),
         timestamp: args.timestamp,
