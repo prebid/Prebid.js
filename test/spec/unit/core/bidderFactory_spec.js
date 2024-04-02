@@ -1456,7 +1456,7 @@ describe('bidderFactory', () => {
           transactionId: 'au',
         }]
       };
-      const fledgeAuctionConfig = {
+      const paapiConfig = {
         bidId: '1',
         config: {
           foo: 'bar'
@@ -1482,50 +1482,59 @@ describe('bidderFactory', () => {
         sinon.assert.calledWith(addBidResponseStub, 'mock/placement', sinon.match(bid));
       })
 
-      describe('when response has FLEDGE auction config', function() {
-        let fledgeStub;
+      describe('when response has PAAPI auction config', function() {
+        let paapiStub;
 
-        function fledgeHook(next, ...args) {
-          fledgeStub(...args);
+        function paapiHook(next, ...args) {
+          paapiStub(...args);
         }
 
         before(() => {
-          addComponentAuction.before(fledgeHook);
+          addComponentAuction.before(paapiHook);
         });
 
         after(() => {
-          addComponentAuction.getHooks({hook: fledgeHook}).remove();
+          addComponentAuction.getHooks({hook: paapiHook}).remove();
         })
 
         beforeEach(function () {
-          fledgeStub = sinon.stub();
+          paapiStub = sinon.stub();
         });
 
-        it('should call fledgeManager with FLEDGE configs', function() {
-          const bidder = newBidder(spec);
-          spec.interpretResponse.returns({
-            bids: bids,
-            fledgeAuctionConfigs: [fledgeAuctionConfig]
-          });
-          bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        ['fledgeAuctionConfigs', 'paapiAuctionConfigs'].forEach(paapiProp => {
+          describe(`using ${paapiProp}`, () => {
+            it('should call paapi hook with PAAPI configs', function() {
+              const bidder = newBidder(spec);
+              spec.interpretResponse.returns({
+                bids: bids,
+                [paapiProp]: [paapiConfig]
+              });
+              bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-          expect(fledgeStub.calledOnce).to.equal(true);
-          sinon.assert.calledWith(fledgeStub, bidRequest.bids[0], fledgeAuctionConfig.config);
-          expect(addBidResponseStub.calledOnce).to.equal(true);
-          expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
-        })
+              expect(paapiStub.calledOnce).to.equal(true);
+              sinon.assert.calledWith(paapiStub, bidRequest.bids[0], paapiConfig.config);
+              expect(addBidResponseStub.calledOnce).to.equal(true);
+              expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
+            })
 
-        it('should call fledgeManager with FLEDGE configs even if no bids returned', function() {
-          const bidder = newBidder(spec);
-          spec.interpretResponse.returns({
-            bids: [],
-            fledgeAuctionConfigs: [fledgeAuctionConfig]
-          });
-          bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+            Object.entries({
+              'missing': undefined,
+              'an empty array': []
+            }).forEach(([t, bids]) => {
+              it(`should call paapi hook with PAAPI configs even when bids is ${t}`, function() {
+                const bidder = newBidder(spec);
+                spec.interpretResponse.returns({
+                  bids,
+                  [paapiProp]: [paapiConfig]
+                });
+                bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
 
-          expect(fledgeStub.calledOnce).to.be.true;
-          sinon.assert.calledWith(fledgeStub, bidRequest.bids[0], fledgeAuctionConfig.config);
-          expect(addBidResponseStub.calledOnce).to.equal(false);
+                expect(paapiStub.calledOnce).to.be.true;
+                sinon.assert.calledWith(paapiStub, bidRequest.bids[0], paapiConfig.config);
+                expect(addBidResponseStub.calledOnce).to.equal(false);
+              })
+            })
+          })
         })
       })
     })
