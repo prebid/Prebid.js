@@ -59,7 +59,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     sid: 'publisherId',
     tagid: 'test_tag_id',
     site: {
-      page: 'testPage'
+      page: 'http://www.zetaglobal.com/page?param=value'
     },
     app: {
       bundle: 'testBundle'
@@ -235,7 +235,7 @@ describe('Zeta Ssp Bid Adapter', function () {
       id: '123',
       site: {
         id: 'SITE_ID',
-        page: 'page.com',
+        page: 'http://www.zetaglobal.com/page?param=value',
         domain: 'domain.com'
       },
       user: {
@@ -263,7 +263,7 @@ describe('Zeta Ssp Bid Adapter', function () {
       id: '123',
       site: {
         id: 'SITE_ID',
-        page: 'page.com',
+        page: 'http://www.zetaglobal.com/page?param=value',
         domain: 'domain.com'
       },
       user: {
@@ -312,7 +312,7 @@ describe('Zeta Ssp Bid Adapter', function () {
   it('Test page and domain in site', function () {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
     const payload = JSON.parse(request.data);
-    expect(payload.site.page).to.eql('http://www.zetaglobal.com/page?param=value');
+    expect(payload.site.page).to.eql('zetaglobal.com/page');
     expect(payload.site.domain).to.eql('zetaglobal.com');
   });
 

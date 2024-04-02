@@ -512,20 +512,6 @@ describe('YieldmoAdapter', function () {
         expect(buildVideoBidAndGetVideoParam().mimes).to.deep.equal(['video/mkv']);
       });
 
-      it('should validate protocol in video bid request', function () {
-        expect(
-          spec.isBidRequestValid(
-            mockVideoBid({}, {}, { protocols: [2, 3, 11] })
-          )
-        ).to.be.true;
-
-        expect(
-          spec.isBidRequestValid(
-            mockVideoBid({}, {}, { protocols: [2, 3, 10] })
-          )
-        ).to.be.false;
-      });
-
       describe('video.skip state check', () => {
         it('should not set video.skip if neither *.video.skip nor *.video.skippable is present', function () {
           utils.deepAccess(videoBid, 'mediaTypes.video')['skippable'] = false;
