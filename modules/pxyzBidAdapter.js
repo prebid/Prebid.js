@@ -129,7 +129,7 @@ export const spec = {
     return bids;
   },
 
-  getUserSyncs: function (syncOptions) {
+  getUserSyncs: function () {
     return [{
       type: 'image',
       url: '//ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID'
