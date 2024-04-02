@@ -56,6 +56,9 @@ export const auctionCache = new Proxy(
           userDetail: {
             userIdTypes: Object.keys(getGlobal().getUserIds?.() || {}),
           },
+          consentDetail: {
+            consentTypes: Object.keys(getGlobal().getConsentMetadata?.() || {}),
+          },
           pmacDetail: JSON.parse(getStorage()?.getItem('pubx:pmac')) || {}, // {auction_1: {floor:0.23,maxBid:0.34,bidCount:3},auction_2:{floor:0.13,maxBid:0.14,bidCount:2}
           initOptions: {
             ...initOptions,
@@ -78,7 +81,14 @@ const getAdServerDataForBid = (bid) => {
   const gptSlot = getGptSlotForAdUnitCode(bid);
   if (gptSlot) {
     return Object.fromEntires(
-      gptSlot.getTargetingKeys().map((key) => [key, gptSlot.getTargeting(key)])
+      gptSlot
+        .getTargetingKeys()
+        .filter(
+          (key) =>
+            key.startsWith('pubx-') ||
+            (key.startsWith('hb_') && (key.match(/_/g) || []).length === 1)
+        )
+        .map((key) => [key, gptSlot.getTargeting(key)])
     );
   }
   return {}; // TODO: support more ad servers
@@ -155,9 +165,13 @@ const track = ({ eventType, args }) => {
     case CONSTANTS.EVENTS.AUCTION_END:
       Object.assign(
         auctionCache[args.auctionId].floorDetail,
-        deepAccess(args, 'adUnits.0.bids.0.floorData')
+        args.adUnits
+          .map((i) => i?.bids.length && i.bids[0]?.floorData)
+          .find((i) => i) || {}
       );
-      auctionCache[args.auctionId].pageDetail.adUnits = args.adUnitCodes;
+      auctionCache[args.auctionId].deviceDetail.cdep = args.bidderRequests
+        .map((bidRequest) => bidRequest.ortb2?.device?.ext?.cdep)
+        .find((i) => i);
       Object.assign(auctionCache[args.auctionId].auctionDetail, {
         adUnitCodes: args.adUnits.map((i) => i.code),
         timestamp: args.timestamp,
@@ -284,6 +298,7 @@ const send = (auctionId) => {
         'floorDetail',
         'auctionDetail',
         'userDetail',
+        'consentDetail',
         'pmacDetail',
         'initOptions',
       ],
@@ -298,6 +313,7 @@ const send = (auctionId) => {
         'floorDetail',
         'auctionDetail',
         'userDetail',
+        'consentDetail',
         'pmacDetail',
         'initOptions',
       ],
