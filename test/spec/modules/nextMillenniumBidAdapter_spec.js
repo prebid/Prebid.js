@@ -34,7 +34,7 @@ describe('nextMillenniumBidAdapterTests', () => {
           bidfloorcur: 'EUR',
           bidfloor: 1.11,
           ext: {prebid: {storedrequest: {id: '123'}}},
-          banner: {format: [{w: 300, h: 250}, {w: 320, h: 250}]},
+          banner: {w: 300, h: 250, format: [{w: 300, h: 250}, {w: 320, h: 250}]},
         },
       },
 
@@ -43,13 +43,13 @@ describe('nextMillenniumBidAdapterTests', () => {
         data: {
           id: '234',
           bid: {
-            mediaTypes: {video: {playerSize: [400, 300]}},
+            mediaTypes: {video: {playerSize: [400, 300], api: [2], placement: 1, plcmt: 1}},
             adUnitCode: 'test-video-1',
           },
 
           mediaTypes: {
             video: {
-              data: {playerSize: [400, 300]},
+              data: {playerSize: [400, 300], api: [2], placement: 1, plcmt: 1},
               bidfloorcur: 'USD',
             },
           },
@@ -59,7 +59,39 @@ describe('nextMillenniumBidAdapterTests', () => {
           id: 'test-video-1',
           bidfloorcur: 'USD',
           ext: {prebid: {storedrequest: {id: '234'}}},
-          video: {w: 400, h: 300},
+          video: {
+            mimes: ['video/mp4', 'video/x-ms-wmv', 'application/javascript'],
+            api: [2],
+            placement: 1,
+            plcmt: 1,
+            w: 400,
+            h: 300,
+          },
+        },
+      },
+
+      {
+        title: 'imp - mediaTypes.video is empty',
+        data: {
+          id: '234',
+          bid: {
+            mediaTypes: {video: {w: 640, h: 480}},
+            adUnitCode: 'test-video-2',
+          },
+
+          mediaTypes: {
+            video: {
+              data: {w: 640, h: 480},
+              bidfloorcur: 'USD',
+            },
+          },
+        },
+
+        expected: {
+          id: 'test-video-2',
+          bidfloorcur: 'USD',
+          ext: {prebid: {storedrequest: {id: '234'}}},
+          video: {w: 640, h: 480, mimes: ['video/mp4', 'video/x-ms-wmv', 'application/javascript']},
         },
       },
     ];
@@ -902,7 +934,7 @@ describe('nextMillenniumBidAdapterTests', () => {
     ];
 
     for (let {eventName, bid, expected} of dataForTests) {
-      const url = spec.getUrlPixelMetric(eventName, bid);
+      const url = spec._getUrlPixelMetric(eventName, bid);
       expect(url).to.equal(expected);
     };
   })

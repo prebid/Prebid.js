@@ -88,6 +88,22 @@ describe('discovery:BidAdapterTests', function () {
         bidderWinsCount: 0,
       },
     ],
+    ortb2: {
+      user: {
+        data: {
+          segment: [
+            {
+              id: '412'
+            }
+          ],
+          name: 'test.popin.cc',
+          ext: {
+            segclass: '1',
+            segtax: 503
+          }
+        }
+      }
+    }
   };
   let request = [];
 
@@ -189,6 +205,13 @@ describe('discovery:BidAdapterTests', function () {
     let req_data = JSON.parse(request.data);
     expect(req_data.imp).to.have.lengthOf(1);
   });
+  describe('first party data', function () {
+    it('should pass additional parameter in request for topics', function () {
+      const request = spec.buildRequests(bidRequestData.bids, bidRequestData);
+      let res = JSON.parse(request.data);
+      expect(res.ext.tpData).to.deep.equal(bidRequestData.ortb2.user.data);
+    });
+  });
 
   describe('discovery: buildRequests', function() {
     describe('getPmgUID function', function() {
@@ -219,7 +242,7 @@ describe('discovery:BidAdapterTests', function () {
         storage.getCookie.callsFake(() => 'existing-uuid');
         const uid = getPmgUID();
         expect(uid).to.equal('existing-uuid');
-        expect(storage.setCookie.called).to.be.false;
+        expect(storage.setCookie.called).to.be.true;
       });
 
       it('should not set new UUID when cookies are not enabled', () => {
