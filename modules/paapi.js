@@ -116,19 +116,19 @@ function setFPDSignals(auctionConfig, fpd) {
   auctionConfig.auctionSignals = mergeDeep({}, {prebid: fpd}, auctionConfig.auctionSignals);
 }
 
-export function addComponentAuctionHook(next, request, componentAuctionConfig) {
+export function addComponentAuctionHook(next, request, paapiConfig) {
   if (getFledgeConfig().enabled) {
     const {adUnitCode, auctionId, ortb2, ortb2Imp} = request;
     const configs = pendingForAuction(auctionId);
     if (configs != null) {
-      setFPDSignals(componentAuctionConfig, {ortb2, ortb2Imp});
+      setFPDSignals(paapiConfig.config, {ortb2, ortb2Imp});
       !configs.hasOwnProperty(adUnitCode) && (configs[adUnitCode] = []);
-      configs[adUnitCode].push(componentAuctionConfig);
+      configs[adUnitCode].push(paapiConfig.config);
     } else {
-      logWarn(MODULE, `Received component auction config for auction that has closed (auction '${auctionId}', adUnit '${adUnitCode}')`, componentAuctionConfig);
+      logWarn(MODULE, `Received component auction config for auction that has closed (auction '${auctionId}', adUnit '${adUnitCode}')`, paapiConfig);
     }
   }
-  next(request, componentAuctionConfig);
+  next(request, paapiConfig);
 }
 
 /**

@@ -31,7 +31,7 @@ import {hook} from '../../../src/hook.js';
 import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
 import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
-import {addComponentAuction, registerBidder} from 'src/adapters/bidderFactory.js';
+import {addPaapiConfig, registerBidder} from 'src/adapters/bidderFactory.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
 import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {deepSetValue} from '../../../src/utils.js';
@@ -3482,11 +3482,11 @@ describe('S2S Adapter', function () {
       }
 
       before(() => {
-        addComponentAuction.before(fledgeHook);
+        addPaapiConfig.before(fledgeHook);
       });
 
       after(() => {
-        addComponentAuction.getHooks({hook: fledgeHook}).remove();
+        addPaapiConfig.getHooks({hook: fledgeHook}).remove();
       })
 
       beforeEach(function () {
@@ -3515,8 +3515,8 @@ describe('S2S Adapter', function () {
 
       function expectFledgeCalls() {
         const auctionId = bidderRequests[0].auctionId;
-        sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: bidderRequests[0].ortb2, ortb2Imp: bidderRequests[0].bids[0].ortb2Imp}), {id: 1})
-        sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: undefined, ortb2Imp: undefined}), {id: 2})
+        sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: bidderRequests[0].ortb2, ortb2Imp: bidderRequests[0].bids[0].ortb2Imp}), {config: {id: 1}})
+        sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: undefined, ortb2Imp: undefined}), {config: {id: 2}})
       }
 
       it('calls addComponentAuction alongside addBidResponse', function () {
