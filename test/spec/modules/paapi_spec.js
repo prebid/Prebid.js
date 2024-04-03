@@ -12,7 +12,7 @@ import {
   registerSubmodule,
   setImpExtAe,
   setResponsePaapiConfigs,
-  reset, parseExtIgiIgs, mergeBuyers, IGB_TO_CONFIG
+  reset, parseExtIgiIgs, mergeBuyers, IGB_TO_CONFIG, partitionBuyers
 } from 'modules/paapi.js';
 import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
@@ -20,7 +20,7 @@ import {getGlobal} from '../../../src/prebidGlobal.js';
 import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {AuctionIndex} from '../../../src/auctionIndex.js';
-import {deepAccess} from '../../../src/utils.js';
+import {deepAccess, deepClone} from '../../../src/utils.js';
 
 describe('paapi module', () => {
   let sandbox;
@@ -580,7 +580,7 @@ describe('paapi module', () => {
     });
   });
 
-  describe('mergeBuyers', () => {
+  describe('igb', () => {
     let igb1, igb2;
     beforeEach(() => {
       igb1 = {
@@ -605,58 +605,85 @@ describe('paapi module', () => {
           priority: 2
         }
       }
-    })
-    it('should merge multiple igb into a partial auction config', () => {
-      sinon.assert.match(mergeBuyers([igb1, igb2]), {
-        interestGroupBuyers: ['buyer1', 'buyer2'],
-        perBuyerCurrencies: {
-          buyer1: 'EUR',
-          buyer2: 'USD'
-        },
-        perBuyerSignals: {
-          buyer1: {
-            signal: 1
+    });
+
+    describe('mergeBuyers', () => {
+      it('should merge multiple igb into a partial auction config', () => {
+        sinon.assert.match(mergeBuyers([igb1, igb2]), {
+          interestGroupBuyers: ['buyer1', 'buyer2'],
+          perBuyerCurrencies: {
+            buyer1: 'EUR',
+            buyer2: 'USD'
           },
-          buyer2: {
-            signal: 2
-          }
-        },
-        perBuyerPrioritySignals: {
-          buyer1: {
-            priority: 1
+          perBuyerSignals: {
+            buyer1: {
+              signal: 1
+            },
+            buyer2: {
+              signal: 2
+            }
           },
-          buyer2: {
-            priority: 2
-          }
-        },
-        auctionSignals: {
-          prebid: {
-            perBuyerMaxbid: {
-              buyer1: 1,
-              buyer2: 2
+          perBuyerPrioritySignals: {
+            buyer1: {
+              priority: 1
+            },
+            buyer2: {
+              priority: 2
+            }
+          },
+          auctionSignals: {
+            prebid: {
+              perBuyerMaxbid: {
+                buyer1: 1,
+                buyer2: 2
+              }
             }
           }
-        }
+        });
       });
-    });
 
-    Object.entries(IGB_TO_CONFIG).forEach(([igbField, configField]) => {
-      it(`should not set ${configField} if ${igbField} is undefined`, () => {
-        delete igb1[igbField];
-        expect(deepAccess(mergeBuyers([igb1, igb2]), configField).buyer1).to.not.exist;
+      Object.entries(IGB_TO_CONFIG).forEach(([igbField, configField]) => {
+        it(`should not set ${configField} if ${igbField} is undefined`, () => {
+          delete igb1[igbField];
+          expect(deepAccess(mergeBuyers([igb1, igb2]), configField).buyer1).to.not.exist;
+        });
       });
+
+      it('ignores igbs that have no origin', () => {
+        delete igb1.origin;
+        expect(mergeBuyers([igb1, igb2])).to.eql(mergeBuyers([igb2]));
+      });
+
+      it('ignores igbs with duplicate origin', () => {
+        igb2.origin = igb1.origin;
+        expect(mergeBuyers([igb1, igb2])).to.eql(mergeBuyers([igb1]));
+      })
     });
 
-    it('ignores igbs that have no origin', () => {
-      delete igb1.origin;
-      expect(mergeBuyers([igb1, igb2])).to.eql(mergeBuyers([igb2]));
-    });
-
-    it('ignores igbs with duplicate origin', () => {
-      igb2.origin = igb1.origin;
-      expect(mergeBuyers([igb1, igb2])).to.eql(mergeBuyers([igb1]));
+    describe('partitionBuyers', () => {
+      it('should return a single partition when there are no duplicates', () => {
+        expect(partitionBuyers([igb1, igb2])).to.eql([[igb1, igb2]]);
+      });
+      it('should ignore igbs that have no origin', () => {
+        delete igb1.origin;
+        expect(partitionBuyers([igb1, igb2])).to.eql([[igb2]]);
+      })
+      it('should return a single partition when duplicates exist, but do not conflict', () => {
+        expect(partitionBuyers([igb1, igb2, deepClone(igb1)])).to.eql([[igb1, igb2]]);
+      });
+      it('should return multiple partitions when there are conflicts', () => {
+        const igb3 = deepClone(igb1);
+        const igb4 = deepClone(igb1);
+        igb3.pbs.signal = 'conflict';
+        igb4.ps.signal = 'conflict';
+        expect(partitionBuyers([igb1, igb2, igb3, igb4])).to.eql([
+          [igb1, igb2],
+          [igb3],
+          [igb4]
+        ]);
+      })
     })
-  });
+  })
 
   describe('ortb processors for fledge', () => {
     it('imp.ext.ae should be removed if fledge is not enabled', () => {

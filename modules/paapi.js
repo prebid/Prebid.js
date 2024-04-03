@@ -3,7 +3,7 @@
  */
 import {config} from '../src/config.js';
 import {getHook, module} from '../src/hook.js';
-import {deepSetValue, logInfo, logWarn, mergeDeep} from '../src/utils.js';
+import {deepSetValue, logInfo, logWarn, mergeDeep, deepEqual} from '../src/utils.js';
 import {IMP, PBS, registerOrtbProcessor, RESPONSE} from '../src/pbjsORTB.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
@@ -11,6 +11,7 @@ import {currencyCompare} from '../libraries/currencyUtils/currency.js';
 import {maximum, minimum} from '../src/utils/reducers.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {getGlobal} from '../src/prebidGlobal.js';
+
 
 const MODULE = 'PAAPI';
 
@@ -138,11 +139,20 @@ export const IGB_TO_CONFIG = {
   maxbid: 'auctionSignals.prebid.perBuyerMaxbid',
 }
 
+function checkOrigin(igb) {
+  if (igb.origin) return true;
+  logWarn('PAAPI buyer does not specify origin and will be ignored', igb);
+}
+
+/**
+ * Convert a list of InterestGroupBuyer (igb) objects into a partial auction config.
+ * https://github.com/InteractiveAdvertisingBureau/openrtb/blob/main/extensions/community_extensions/Protected%20Audience%20Support.md
+ */
 export function mergeBuyers(igbs) {
   const buyers = new Set();
   return Object.assign(
     igbs.reduce((config, igb) => {
-      if (igb.origin) {
+      if (checkOrigin(igb)) {
         if (!buyers.has(igb.origin)) {
           buyers.add(igb.origin);
           Object.entries(IGB_TO_CONFIG).forEach(([igbField, configField]) => {
@@ -151,10 +161,8 @@ export function mergeBuyers(igbs) {
             }
           });
         } else {
-          logWarn(`Duplicate PAAPI buyer: ${igb.origin}. All but the first will be ignored`, igbs)
+          logWarn(`Duplicate PAAPI buyer: ${igb.origin}. All but the first will be ignored`, igbs);
         }
-      } else {
-        logWarn('PAAPI buyer does not specify origin and will be ignored', igb);
       }
       return config;
     }, {}),
@@ -162,6 +170,25 @@ export function mergeBuyers(igbs) {
       interestGroupBuyers: Array.from(buyers.keys())
     }
   );
+}
+
+/**
+ * Partition a list of InterestGroupBuyer (igb) object into sets that can each be merged into a single auction.
+ * If the same buyer (origin) appears more than once, it will be split across different partition unless the igb objects
+ * are identical.
+ */
+export function partitionBuyers(igbs) {
+  return igbs.reduce((partitions, igb) => {
+    if (checkOrigin(igb)) {
+      let partition = partitions.find(part => !part.hasOwnProperty(igb.origin) || deepEqual(part[igb.origin], igb));
+      if (!partition) {
+        partition = {};
+        partitions.push(partition);
+      }
+      partition[igb.origin] = igb;
+    }
+    return partitions;
+  }, []).map(part => Object.values(part));
 }
 
 /**
