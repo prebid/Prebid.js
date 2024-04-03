@@ -47,7 +47,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return (typeof bid.params.apiKey !== 'undefined');
+    return (typeof bid.params.apiKey === 'string');
   },
 
   /**
