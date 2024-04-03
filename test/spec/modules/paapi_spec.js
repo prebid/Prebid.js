@@ -12,7 +12,7 @@ import {
   registerSubmodule,
   setImpExtAe,
   setResponsePaapiConfigs,
-  reset, parseExtIgiIgs
+  reset, parseExtIgiIgs, mergeBuyers, IGB_TO_CONFIG
 } from 'modules/paapi.js';
 import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
@@ -20,6 +20,7 @@ import {getGlobal} from '../../../src/prebidGlobal.js';
 import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {AuctionIndex} from '../../../src/auctionIndex.js';
+import {deepAccess} from '../../../src/utils.js';
 
 describe('paapi module', () => {
   let sandbox;
@@ -577,6 +578,84 @@ describe('paapi module', () => {
         });
       });
     });
+  });
+
+  describe('mergeBuyers', () => {
+    let igb1, igb2;
+    beforeEach(() => {
+      igb1 = {
+        origin: 'buyer1',
+        cur: 'EUR',
+        maxbid: 1,
+        pbs: {
+          signal: 1
+        },
+        ps: {
+          priority: 1
+        }
+      };
+      igb2 = {
+        origin: 'buyer2',
+        cur: 'USD',
+        maxbid: 2,
+        pbs: {
+          signal: 2
+        },
+        ps: {
+          priority: 2
+        }
+      }
+    })
+    it('should merge multiple igb into a partial auction config', () => {
+      sinon.assert.match(mergeBuyers([igb1, igb2]), {
+        interestGroupBuyers: ['buyer1', 'buyer2'],
+        perBuyerCurrencies: {
+          buyer1: 'EUR',
+          buyer2: 'USD'
+        },
+        perBuyerSignals: {
+          buyer1: {
+            signal: 1
+          },
+          buyer2: {
+            signal: 2
+          }
+        },
+        perBuyerPrioritySignals: {
+          buyer1: {
+            priority: 1
+          },
+          buyer2: {
+            priority: 2
+          }
+        },
+        auctionSignals: {
+          prebid: {
+            perBuyerMaxbid: {
+              buyer1: 1,
+              buyer2: 2
+            }
+          }
+        }
+      });
+    });
+
+    Object.entries(IGB_TO_CONFIG).forEach(([igbField, configField]) => {
+      it(`should not set ${configField} if ${igbField} is undefined`, () => {
+        delete igb1[igbField];
+        expect(deepAccess(mergeBuyers([igb1, igb2]), configField).buyer1).to.not.exist;
+      });
+    });
+
+    it('ignores igbs that have no origin', () => {
+      delete igb1.origin;
+      expect(mergeBuyers([igb1, igb2])).to.eql(mergeBuyers([igb2]));
+    });
+
+    it('ignores igbs with duplicate origin', () => {
+      igb2.origin = igb1.origin;
+      expect(mergeBuyers([igb1, igb2])).to.eql(mergeBuyers([igb1]));
+    })
   });
 
   describe('ortb processors for fledge', () => {

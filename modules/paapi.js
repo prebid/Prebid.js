@@ -24,7 +24,7 @@ export function registerSubmodule(submod) {
 
 module('paapi', registerSubmodule);
 
-function auctionConfigs() {
+function auctionStore() {
   const store = new WeakMap();
   return function (auctionId, init = {}) {
     const auction = auctionManager.index.getAuction({auctionId});
@@ -36,8 +36,8 @@ function auctionConfigs() {
   };
 }
 
-const pendingForAuction = auctionConfigs();
-const configsForAuction = auctionConfigs();
+const pendingConfigsForAuction = auctionStore();
+const configsForAuction = auctionStore();
 let latestAuctionForAdUnit = {};
 let moduleConfig = {};
 
@@ -96,7 +96,7 @@ function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes}) {
     paapiConfigs[au] = null;
     !latestAuctionForAdUnit.hasOwnProperty(au) && (latestAuctionForAdUnit[au] = null);
   })
-  Object.entries(pendingForAuction(auctionId) || {}).forEach(([adUnitCode, auctionConfigs]) => {
+  Object.entries(pendingConfigsForAuction(auctionId) || {}).forEach(([adUnitCode, auctionConfigs]) => {
     const forThisAdUnit = (bid) => bid.adUnitCode === adUnitCode;
     const slotSignals = getSlotSignals(bidsReceived?.filter(forThisAdUnit), allReqs?.filter(forThisAdUnit));
     paapiConfigs[adUnitCode] = {
@@ -119,7 +119,7 @@ function setFPDSignals(auctionConfig, fpd) {
 export function addComponentAuctionHook(next, request, paapiConfig) {
   if (getFledgeConfig().enabled) {
     const {adUnitCode, auctionId, ortb2, ortb2Imp} = request;
-    const configs = pendingForAuction(auctionId);
+    const configs = pendingConfigsForAuction(auctionId);
     if (configs != null) {
       setFPDSignals(paapiConfig.config, {ortb2, ortb2Imp});
       !configs.hasOwnProperty(adUnitCode) && (configs[adUnitCode] = []);
@@ -129,6 +129,39 @@ export function addComponentAuctionHook(next, request, paapiConfig) {
     }
   }
   next(request, paapiConfig);
+}
+
+export const IGB_TO_CONFIG = {
+  cur: 'perBuyerCurrencies',
+  pbs: 'perBuyerSignals',
+  ps: 'perBuyerPrioritySignals',
+  maxbid: 'auctionSignals.prebid.perBuyerMaxbid',
+}
+
+export function mergeBuyers(igbs) {
+  const buyers = new Set();
+  return Object.assign(
+    igbs.reduce((config, igb) => {
+      if (igb.origin) {
+        if (!buyers.has(igb.origin)) {
+          buyers.add(igb.origin);
+          Object.entries(IGB_TO_CONFIG).forEach(([igbField, configField]) => {
+            if (igb[igbField] != null) {
+              deepSetValue(config, `${configField}.${igb.origin}`, igb[igbField]);
+            }
+          });
+        } else {
+          logWarn(`Duplicate PAAPI buyer: ${igb.origin}. All but the first will be ignored`, igbs)
+        }
+      } else {
+        logWarn('PAAPI buyer does not specify origin and will be ignored', igb);
+      }
+      return config;
+    }, {}),
+    {
+      interestGroupBuyers: Array.from(buyers.keys())
+    }
+  );
 }
 
 /**
