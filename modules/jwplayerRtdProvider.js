@@ -32,6 +32,7 @@ const pendingRequests = {};
 let activeRequestCount = 0;
 let resumeBidRequest;
 // defaults to 'always' for backwards compatibility
+// TODO: Prebid 9 - replace with ENRICH_WHEN_EMPTY
 let overrideContentId = ENRICH_ALWAYS;
 let overrideContentUrl = ENRICH_WHEN_EMPTY;
 let overrideContentTitle = ENRICH_WHEN_EMPTY;
@@ -83,6 +84,7 @@ export function fetchTargetingInformation(jwTargeting) {
 
 export function setOverrides(params) {
   // For backwards compatibility, default to always unless overridden by Publisher.
+  // TODO: Prebid 9 - replace with ENRICH_WHEN_EMPTY
   overrideContentId = sanitizeOverrideParam(params.overrideContentId, ENRICH_ALWAYS);
   overrideContentUrl = sanitizeOverrideParam(params.overrideContentUrl, ENRICH_WHEN_EMPTY);
   overrideContentTitle = sanitizeOverrideParam(params.overrideContentTitle, ENRICH_WHEN_EMPTY);
