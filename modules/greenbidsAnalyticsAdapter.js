@@ -1,12 +1,13 @@
 import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import CONSTANTS from '../src/constants.json';
+import {config} from '../src/config.js';
 import adapterManager from '../src/adapterManager.js';
 import {deepClone, generateUUID, logError, logInfo, logWarn} from '../src/utils.js';
 
 const analyticsType = 'endpoint';
 
-export const ANALYTICS_VERSION = '2.2.0';
+export const ANALYTICS_VERSION = '2.1.0';
 
 const ANALYTICS_SERVER = 'https://a.greenbids.ai';
 
@@ -28,6 +29,11 @@ export const BIDDER_STATUS = {
 const analyticsOptions = {};
 
 export const isSampled = function(greenbidsId, samplingRate, exploratorySamplingSplit) {
+  let isDebug = config.getConfig('debug');
+  if(isDebug) {
+    logInfo("Greenbids Analytics: PBJS debug flag detected, forcing analytics");
+    return true;
+  }
   if (samplingRate < 0 || samplingRate > 1) {
     logWarn('Sampling rate must be between 0 and 1');
     return true;
