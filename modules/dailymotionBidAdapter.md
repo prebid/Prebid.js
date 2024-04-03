@@ -12,39 +12,41 @@ Dailymotion prebid adapter.
 
 # Configuration options
 
-Before calling this adapter, you need to set its configuration with a call like this:
+Before calling this adapter, you need to set at least the API key in the bid parameters:
 
 ```javascript
-pbjs.setBidderConfig({
-    bidders: ["dailymotion"],
-    config: {
-        dailymotion: {
-            api_key: 'fake_api_key',
-        }
-    }
-});
+const adUnits = [
+  {
+    bids: [{
+      bidder: 'dailymotion',
+      params: {
+        apiKey: 'fake_api_key'
+      }
+    }]
+  }
+];
 ```
 
-This call must be made before the first auction to allow proper authentication with our servers.
-
-`api_key` is your publisher API key. For testing purpose, you can use "dailymotion-testing".
+`apiKey` is your publisher API key. For testing purpose, you can use "dailymotion-testing".
 
 # Test Parameters
 
-By setting the following configuration options, you'll get a constant response to any request to validate your adapter integration:
+By setting the following bid parameters, you'll get a constant response to any request, to validate your adapter integration:
 
 ```javascript
-pbjs.setBidderConfig({
-    bidders: ["dailymotion"],
-    config: {
-        dailymotion: {
-            api_key: 'dailymotion-testing'
-        }
-    }
-});
+const adUnits = [
+  {
+    bids: [{
+      bidder: 'dailymotion',
+      params: {
+        apiKey: 'dailymotion-testing'
+      }
+    }]
+  }
+];
 ```
 
-Please note that failing to set these configuration options will result in the adapter not bidding at all.
+Please note that failing to set these will result in the adapter not bidding at all.
 
 # Sample video AdUnit
 
@@ -56,13 +58,20 @@ If you are using the Dailymotion player, you should only provide the video `xid`
 ```javascript
 const adUnits = [
   {
+    bids: [{
+      bidder: 'dailymotion',
+      params: {
+        apiKey: 'dailymotion-testing'
+      }
+    }],
     code: 'test-ad-unit',
     mediaTypes: {
       video: {
+        api: [2, 7],
         context: 'instream',
-        playerSize: [1280, 720],
-        api: [2,7],
-        xid: 'x123456'
+        playerSize: [ [1280, 720] ],
+        startDelay: 0,
+        xid: 'x123456'     // Dailymotion infrastructure unique video ID
       },
     }
   }
@@ -77,32 +86,33 @@ If you are using a third party video player, you should not provide any `xid` an
 ```javascript
 const adUnits = [
   {
+    bids: [{
+      bidder: 'dailymotion',
+      params: {
+        apiKey: 'dailymotion-testing',
+        video: {
+          description: 'overriden video description'
+        }
+      }
+    }],
     code: 'test-ad-unit',
     mediaTypes: {
       video: {
+        api: [2, 7],
         context: 'instream',
-        playerSize: [1280, 720],
-        api: [2,7],
         description: 'this is a video description',
         duration: 556,
         iabcat2: ['6', '17'],
         id: '54321',
         lang: 'FR',
+        playerSize: [ [1280, 720] ],
         private: false,
+        startDelay: 0,
         tags: 'tag_1,tag_2,tag_3',
         title: 'test video',
         topics: 'topic_1, topic_2',
       },
-    },
-    bids: [{
-      bidder: "dailymotion",
-      params: {
-        video: {
-          description: 'overriden video description',
-          duration: 330
-        }
-      }
-    }]
+    }
   }
 ];
 ```
@@ -125,6 +135,6 @@ If a field exists in both places, it will be overridden by bids.params.video.
 
 To use the adapter with any non-test request, you first need to ask an API key from Dailymotion. Please contact us through **DailymotionPrebid.js@dailymotion.com**.
 
-You will then be able to use it within the `config` before making a bid request.
+You will then be able to use it within the bid parameters before making a bid request.
 
 This API key will ensure proper identification of your inventory and allow you to get real bids.

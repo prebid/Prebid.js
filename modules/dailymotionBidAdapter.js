@@ -41,14 +41,13 @@ export const spec = {
 
   /**
    * Determines whether or not the given bid request is valid.
-   * The only mandatory parameters for a bid to be valid are the api_key and position configuration entries.
+   * The only mandatory parameter for a bid to be valid is the API key.
    * Other parameters are optional.
    *
    * @return boolean True if this is a valid bid, and false otherwise.
    */
-  isBidRequestValid: () => {
-    const dmConfig = config.getConfig('dailymotion');
-    return !!dmConfig?.api_key;
+  isBidRequestValid: function (bid) {
+    return (typeof bid.params.apiKey !== 'undefined');
   },
 
   /**
@@ -74,9 +73,12 @@ export const spec = {
         },
         uspConsent: bidderRequest?.uspConsent || '',
       },
-      config: config.getConfig('dailymotion'),
+      config: {
+        api_key = bid.params.apiKey
+      },
       coppa: config.getConfig('coppa'),
       request: {
+        adUnitCode: bid.adUnitCode || '',
         auctionId: bid.auctionId || '',
         bidId: bid.bidId || '',
         mediaTypes: {
@@ -87,7 +89,6 @@ export const spec = {
           },
         },
         sizes: bid.sizes || [],
-        adUnitCode: bid.adUnitCode || '',
       },
       video_metadata: getVideoMetadata(bid),
     },
