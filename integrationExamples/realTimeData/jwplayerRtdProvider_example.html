@@ -26,15 +26,20 @@
           },
           mediaTypes: {
               video: {
-                  sizes: [[320, 460]],
+                sizes: [[320, 460]],
+                mimes :  ["video/mp4"],
+                minduration : 3,
+                maxduration: 30,
+                protocols : [1,2]
               }
           },
           // Replace this object to test a new Adapter!
           bids: [{
-              bidder: 'appnexus',
-              params: {
-                  placementId: 13144370
-              }
+            bidder: 'ix',
+            params: {
+              siteId: '300',
+              video: {}
+            }
           }]
       }];
 
