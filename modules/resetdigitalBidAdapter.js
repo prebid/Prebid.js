@@ -194,14 +194,17 @@ export const spec = {
       }
     }
 
-    if (syncOptions.iframeEnabled || syncOptions.pixelEnabled) {
+    if (syncOptions.iframeEnabled) {
       syncs.push({
         type: 'iframe',
-        url:
-          'https://async.resetdigital.co/async_usersync.html?' +
-          gdprParams.length
-            ? gdprParams
-            : '',
+        url: `https://async.resetdigital.co/async_usersync.html?${gdprParams}`,
+      });
+    } else if (syncOptions.pixelEnabled) {
+      syncs.push({
+        type: 'image',
+        url: `https://meta.resetdigital.co/pchain${
+          gdprParams ? `?${gdprParams}` : ''
+        }`,
       });
     }
     return syncs;
