@@ -295,6 +295,21 @@ export const spec = {
       }
       return bidResponses;
     } else { return []; }
+  },
+
+  getUserSyncs: function(syncOptions, serverResponses) {
+    if (!serverResponses.length || !serverResponses[0].body || !serverResponses[0].body.userSyncs) {
+      return false;
+    }
+    let syncs = [];
+    serverResponses[0].body.userSyncs.forEach(function(sync) {
+      if (syncOptions.iframeEnabled) {
+        syncs.push(sync.uf ? { url: sync.uf, type: 'iframe' } : { url: sync.up, type: 'image' });
+      } else if (syncOptions.pixelEnabled && sync.up) {
+        syncs.push({url: sync.up, type: 'image'})
+      }
+    })
+    return syncs;
   }
 }
 

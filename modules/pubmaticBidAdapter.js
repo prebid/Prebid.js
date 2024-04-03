@@ -1010,6 +1010,10 @@ export function prepareMetaObject(br, bid, seat) {
     br.meta.secondaryCatIds = bid.cat;
     br.meta.primaryCatId = bid.cat[0];
   }
+
+  if (bid.ext && bid.ext.dsa && Object.keys(bid.ext.dsa).length) {
+    br.meta.dsa = bid.ext.dsa;
+  }
 }
 
 export const spec = {
@@ -1217,6 +1221,11 @@ export const spec = {
       deepSetValue(payload, 'regs.coppa', 1);
     }
 
+    // dsa
+    if (bidderRequest?.ortb2?.regs?.ext?.dsa) {
+      deepSetValue(payload, 'regs.ext.dsa', bidderRequest.ortb2.regs.ext.dsa);
+    }
+
     _handleEids(payload, validBidRequests);
 
     // First Party Data
@@ -1396,6 +1405,7 @@ export const spec = {
     } catch (error) {
       logError(error);
     }
+
     return bidResponses;
   },
 
