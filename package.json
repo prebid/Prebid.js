@@ -8,7 +8,7 @@
     "test": "gulp test",
     "lint": "gulp lint",
     "build:connatix": "gulp build-bundle-prod --disable NATIVE --modules=modules.json",
-    "build:partial": "gulp build-bundle-prod --disable NATIVE --modules=gannet-modules.json"
+    "build:connatix:gannett": "gulp build-bundle-prod --disable NATIVE --modules=gannet-modules.json"
   },
   "repository": {
     "type": "git",
