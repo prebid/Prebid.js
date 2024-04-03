@@ -1501,7 +1501,17 @@ describe('bidderFactory', () => {
           paapiStub = sinon.stub();
         });
 
-        ['fledgeAuctionConfigs', 'paapiAuctionConfigs'].forEach(paapiProp => {
+        const PAAPI_PROPS = ['fledgeAuctionConfigs', 'paapiAuctionConfigs'];
+
+        it(`should not accept both ${PAAPI_PROPS.join(' and ')}`, () => {
+          const bidder = newBidder(spec);
+          spec.interpretResponse.returns(Object.fromEntries(PAAPI_PROPS.map(prop => [prop, [paapiConfig]])))
+          expect(() => {
+            bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+          }).to.throw;
+        })
+
+        PAAPI_PROPS.forEach(paapiProp => {
           describe(`using ${paapiProp}`, () => {
             it('should call paapi hook with PAAPI configs', function() {
               const bidder = newBidder(spec);
