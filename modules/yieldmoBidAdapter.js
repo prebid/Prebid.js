@@ -443,10 +443,8 @@ function getGPCSignal(bidderRequest) {
 }
 
 function getCdep(bidderRequest) {
-  if (bidderRequest.ortb2?.device?.ext?.cdep) {
-    return bidderRequest.ortb2?.device?.ext?.cdep;
-  }
-  return null;
+  const cdep = deepAccess(bidderRequest, 'ortb2.device.ext.cdep') || null;
+  return cdep;
 }
 
 function getTopics(bidderRequest) {
