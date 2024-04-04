@@ -47,7 +47,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return (typeof bid.params.apiKey === 'string');
+    return ((typeof bid !== 'undefined') && (typeof bid?.params?.apiKey === 'string') && (bid.params.apiKey.length > 10));
   },
 
   /**
@@ -74,7 +74,7 @@ export const spec = {
         uspConsent: bidderRequest?.uspConsent || '',
       },
       config: {
-        api_key = bid.params.apiKey
+        api_key: bid.params.apiKey
       },
       coppa: config.getConfig('coppa'),
       request: {
