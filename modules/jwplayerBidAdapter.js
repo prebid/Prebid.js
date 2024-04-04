@@ -168,7 +168,8 @@ function getBidAdapter() {
       id: bidRequest.bidId,
       imp: getRequestImpressions(bidRequest, bidderRequest),
       site: getRequestSite(bidRequest, bidderRequest),
-      device: getRequestDevice()
+      device: getRequestDevice(bidderRequest.ortb2),
+      user: getRequestUser(bidderRequest.ortb2),
     };
 
     // GDPR Consent Params
@@ -219,6 +220,10 @@ function getBidAdapter() {
         video[param] = videoParams[param];
       }
     });
+
+    if (!videoParams.plcmt) {
+      logWarn(`${BIDDER_CODE}: Please set a value to mediaTypes.video.plcmt`);
+    }
 
     return video;
   }
@@ -273,17 +278,17 @@ function getBidAdapter() {
     return site;
   }
 
-  function getRequestDevice() {
-    const device = {
+  function getRequestDevice(ortb2) {
+    const device = Object.assign({
       h: screen.height,
       w: screen.width,
       ua: navigator.userAgent,
       dnt: getDNT() ? 1 : 0,
       js: 1
-    };
+    }, ortb2.device || {})
 
     const language = getLanguage();
-    if (language) {
+    if (!device.language && language) {
       device.language = language;
     }
 
@@ -302,6 +307,15 @@ function getBidAdapter() {
     }
 
     return languageCodeSegments[0];
+  }
+
+  function getRequestUser(ortb2) {
+    const user = ortb2.user || {};
+    if (config.getConfig('coppa') === true) {
+      user.coppa = true;
+    }
+
+    return user;
   }
 
   function hasContentUrl(ortb2) {
