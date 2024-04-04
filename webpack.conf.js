@@ -135,6 +135,7 @@ module.exports = {
         return Object.assign(libraries, {
           common_deps: {
             name: 'common_deps',
+            chunks: 'all',
             test(module) {
               return module.resource?.startsWith(nodeModules);
             }
