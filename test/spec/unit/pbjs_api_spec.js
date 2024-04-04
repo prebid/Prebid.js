@@ -27,6 +27,7 @@ import {enrichFPD} from '../../../src/fpd/enrichment.js';
 import {mockFpdEnrichments} from '../../helpers/fpd.js';
 import {generateUUID} from '../../../src/utils.js';
 import {getCreativeRenderer} from '../../../src/creativeRenderers.js';
+import CONSTANTS from 'src/constants.js';
 
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -34,7 +35,6 @@ var expect = require('chai').expect;
 var utils = require('src/utils');
 var adapterManager = require('src/adapterManager').default;
 var events = require('src/events');
-var CONSTANTS = require('src/constants.js');
 
 // These bid adapters are required to be loaded for the following tests to work
 require('modules/appnexusBidAdapter');

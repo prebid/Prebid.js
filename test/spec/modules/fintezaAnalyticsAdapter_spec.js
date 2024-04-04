@@ -3,10 +3,10 @@ import {includes} from 'src/polyfill.js';
 import { expect } from 'chai';
 import { parseUrl } from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
+import CONSTANTS from 'src/constants.js';
 
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
-let constants = require('src/constants.js');
 
 function setCookie(name, value, expires) {
   document.cookie = name + '=' + value +

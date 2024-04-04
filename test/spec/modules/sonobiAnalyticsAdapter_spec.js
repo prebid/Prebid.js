@@ -1,9 +1,10 @@
 import sonobiAnalytics, {DEFAULT_EVENT_URL} from 'modules/sonobiAnalyticsAdapter.js';
 import {expect} from 'chai';
 import {server} from 'test/mocks/xhr.js';
+import CONSTANTS from 'src/constants.js';
+
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;
-let constants = require('src/constants.js');
 
 describe('Sonobi Prebid Analytic', function () {
   var clock;

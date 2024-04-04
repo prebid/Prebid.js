@@ -3,9 +3,9 @@ import {expect} from 'chai';
 import {server} from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
 import {expectEvents} from '../../helpers/analytics.js';
+import CONSTANTS from 'src/constants.js';
 
 let events = require('src/events');
-let constants = require('src/constants.js');
 
 describe('AsterioBid Analytics Adapter', function () {
   let bidWonEvent = {

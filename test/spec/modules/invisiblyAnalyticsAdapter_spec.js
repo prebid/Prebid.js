@@ -2,8 +2,8 @@ import invisiblyAdapter from 'modules/invisiblyAnalyticsAdapter.js';
 import { expect } from 'chai';
 import {expectEvents} from '../../helpers/analytics.js';
 import {server} from '../../mocks/xhr.js';
+import CONSTANTS from 'src/constants.js';
 let events = require('src/events');
-let constants = require('src/constants.js');
 
 describe('Invisibly Analytics Adapter test suite', function () {
   let xhr;

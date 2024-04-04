@@ -3,10 +3,10 @@ import { expect } from 'chai';
 import * as utils from 'src/utils.js';
 import { getGlobal } from 'src/prebidGlobal.js';
 import { server } from 'test/mocks/xhr.js';
+import CONSTANTS from 'src/constants.js';
 
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
-let constants = require('src/constants.js');
 
 describe('adagio analytics adapter - adagio.js', () => {
   let sandbox;

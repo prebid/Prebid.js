@@ -4,9 +4,9 @@ import adapterManager from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import {server} from 'test/mocks/xhr.js';
 import {getGptSlotInfoForAdUnitCode} from '../../../libraries/gptUtils/gptUtils.js';
+import CONSTANTS from 'src/constants.js';
 
 let events = require('src/events');
-let constants = require('src/constants.js');
 
 describe('pubxai analytics adapter', function() {
   beforeEach(function() {

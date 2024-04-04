@@ -2,10 +2,10 @@ import oxxionAnalytics from 'modules/oxxionAnalyticsAdapter.js';
 import {dereferenceWithoutRenderer} from 'modules/oxxionAnalyticsAdapter.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
+import CONSTANTS from 'src/constants.js';
+
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
-let constants = require('src/constants.js');
-
 describe('Oxxion Analytics', function () {
   let timestamp = new Date() - 256;
   let auctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f';

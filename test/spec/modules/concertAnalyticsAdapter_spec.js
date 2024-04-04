@@ -1,10 +1,11 @@
 import concertAnalytics from 'modules/concertAnalyticsAdapter.js';
 import { expect } from 'chai';
 import {expectEvents} from '../../helpers/analytics.js';
+import CONSTANTS from 'src/constants.js';
+
 const sinon = require('sinon');
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
-let constants = require('src/constants.js');
 
 describe('ConcertAnalyticsAdapter', function() {
   let sandbox;

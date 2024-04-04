@@ -2,9 +2,9 @@ import adWMGAnalyticsAdapter from 'modules/adWMGAnalyticsAdapter.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
 import {expectEvents} from '../../helpers/analytics.js';
+import CONSTANTS from 'src/constants.js';
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
-let constants = require('src/constants.js');
 
 describe('adWMG Analytics', function () {
   let timestamp = new Date() - 256;

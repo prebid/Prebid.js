@@ -1,7 +1,8 @@
 import yuktamediaAnalyticsAdapter from 'modules/yuktamediaAnalyticsAdapter.js';
 import { expect } from 'chai';
+import CONSTANTS from 'src/constants.js';
+
 let events = require('src/events');
-let constants = require('src/constants.js');
 
 let prebidAuction = {
   'auctionInit': {

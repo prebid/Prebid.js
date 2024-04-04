@@ -2,9 +2,9 @@ import konduitAnalyticsAdapter from 'modules/konduitAnalyticsAdapter';
 import { expect } from 'chai';
 import { config } from '../../../src/config.js';
 import { server } from 'test/mocks/xhr.js';
+import CONSTANTS from 'src/constants.js';
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;
-let CONSTANTS = require('src/constants.js');
 
 const eventsData = {
   [CONSTANTS.EVENTS.AUCTION_INIT]: {

@@ -2,10 +2,10 @@ import {expect} from 'chai';
 import pubwiseAnalytics from 'modules/pubwiseAnalyticsAdapter.js';
 import {expectEvents} from '../../helpers/analytics.js';
 import {server} from '../../mocks/xhr.js';
+import CONSTANTS from 'src/constants.js';
 
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;
-let constants = require('src/constants.js');
 
 describe('PubWise Prebid Analytics', function () {
   let requests;

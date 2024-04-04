@@ -3,9 +3,9 @@ import { testSend } from 'modules/adxpremiumAnalyticsAdapter.js';
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import { server } from 'test/mocks/xhr.js';
+import CONSTANTS from 'src/constants.js';
 
 let events = require('src/events');
-let constants = require('src/constants.js');
 
 describe('AdxPremium analytics adapter', function () {
   beforeEach(function () {
