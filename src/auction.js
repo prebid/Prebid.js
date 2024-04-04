@@ -45,6 +45,7 @@
  * @property {refererInfo} refererInfo - referer info object
  * @property {string} [tid] - random UUID (used for s2s)
  * @property {string} [src] - s2s or client (used for s2s)
+ * @property {import('./types/ortb2.js').Ortb2.BidRequest} [ortb2] Global (not specific to any adUnit) first party data to use for all requests in this auction.
  */
 
 /**
@@ -80,7 +81,7 @@ import {
   timestamp
 } from './utils.js';
 import {getPriceBucketString} from './cpmBucketManager.js';
-import {getNativeTargeting, toLegacyResponse} from './native.js';
+import {getNativeTargeting, isNativeResponse, setNativeResponseProperties} from './native.js';
 import {getCacheUrl, store} from './videoCache.js';
 import {Renderer} from './Renderer.js';
 import {config} from './config.js';
@@ -369,7 +370,7 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   }
 
   function addWinningBid(winningBid) {
-    const winningAd = adUnits.find(adUnit => adUnit.transactionId === winningBid.transactionId);
+    const winningAd = adUnits.find(adUnit => adUnit.adUnitId === winningBid.adUnitId);
     _winningBids = _winningBids.concat(winningBid);
     callBurl(winningBid);
     adapterManager.callBidWonBidder(winningBid.adapterCode || winningBid.bidder, winningBid, adUnits);
@@ -468,10 +469,8 @@ export function auctionCallbacks(auctionDone, auctionInstance, {index = auctionM
       if (FEATURES.VIDEO && bidResponse.mediaType === VIDEO) {
         tryAddVideoBid(auctionInstance, bidResponse, done);
       } else {
-        if (FEATURES.NATIVE && bidResponse.native != null && typeof bidResponse.native === 'object') {
-          // NOTE: augment bidResponse.native even if bidResponse.mediaType !== NATIVE; it's possible
-          // to treat banner responses as native
-          addLegacyFieldsIfNeeded(bidResponse);
+        if (FEATURES.NATIVE && isNativeResponse(bidResponse)) {
+          setNativeResponseProperties(bidResponse, index.getAdUnit(bidResponse));
         }
         addBidToAuction(auctionInstance, bidResponse);
         done();
@@ -557,7 +556,7 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
   const videoMediaType = deepAccess(
     index.getMediaTypes({
       requestId: bidResponse.originalRequestId || bidResponse.requestId,
-      transactionId: bidResponse.transactionId
+      adUnitId: bidResponse.adUnitId
     }), 'video');
   const context = videoMediaType && deepAccess(videoMediaType, 'context');
   const useCacheKey = videoMediaType && deepAccess(videoMediaType, 'useCacheKey');
@@ -574,17 +573,6 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
   if (addBid) {
     addBidToAuction(auctionInstance, bidResponse);
     afterBidAdded();
-  }
-}
-
-// Native bid response might be in ortb2 format - adds legacy field for backward compatibility
-const addLegacyFieldsIfNeeded = (bidResponse) => {
-  const nativeOrtbRequest = auctionManager.index.getAdUnit(bidResponse)?.nativeOrtbRequest;
-  const nativeOrtbResponse = bidResponse.native?.ortb
-
-  if (nativeOrtbRequest && nativeOrtbResponse) {
-    const legacyResponse = toLegacyResponse(nativeOrtbResponse, nativeOrtbRequest);
-    Object.assign(bidResponse.native, legacyResponse);
   }
 }
 

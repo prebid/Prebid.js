@@ -312,4 +312,22 @@ describe('BeOp Bid Adapter tests', () => {
       expect(payload.kwds).to.include('keywords');
     })
   })
+
+  describe('Ensure eids are get', function() {
+    let bidRequests = [];
+    afterEach(function () {
+      bidRequests = [];
+    });
+
+    it(`should get eids from bid`, function () {
+      let bid = Object.assign({}, validBid);
+      bid.userIdAsEids = [{source: 'provider.com', uids: [{id: 'someid', atype: 1, ext: {whatever: true}}]}];
+      bidRequests.push(bid);
+
+      const request = spec.buildRequests(bidRequests, {});
+      const payload = JSON.parse(request.data);
+      expect(payload.eids).to.exist;
+      expect(payload.eids[0].source).to.equal('provider.com');
+    });
+  })
 });

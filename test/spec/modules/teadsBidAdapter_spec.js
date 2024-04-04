@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec, storage} from 'modules/teadsBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
-import { off } from '../../../src/events';
+import * as autoplay from 'libraries/autoplayDetection/autoplay.js'
 
 const ENDPOINT = 'https://a.teads.tv/hb/bid-request';
 const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="https://a.teads.tv/hb/getAdSettings"></script>"';
@@ -1005,6 +1005,45 @@ describe('teadsBidAdapter', () => {
         }
       });
     }
+
+    it('should add dsa info to payload if available', function () {
+      const bidRequestWithDsa = Object.assign({}, bidderRequestDefault, {
+        ortb2: {
+          regs: {
+            ext: {
+              dsa: {
+                dsarequired: '1',
+                pubrender: '2',
+                datatopub: '3',
+                transparency: [{
+                  domain: 'test.com',
+                  dsaparams: [1, 2, 3]
+                }]
+              }
+            }
+          }
+        }
+      });
+
+      const requestWithDsa = spec.buildRequests(bidRequests, bidRequestWithDsa);
+      const payload = JSON.parse(requestWithDsa.data);
+
+      expect(payload.dsa).to.exist;
+      expect(payload.dsa).to.deep.equal(
+        {
+          dsarequired: '1',
+          pubrender: '2',
+          datatopub: '3',
+          transparency: [{
+            domain: 'test.com',
+            dsaparams: [1, 2, 3]
+          }]
+        }
+      );
+
+      const defaultRequest = spec.buildRequests(bidRequests, bidderRequestDefault);
+      expect(JSON.parse(defaultRequest.data).dsa).to.not.exist;
+    });
   });
 
   describe('interpretResponse', function() {
@@ -1020,7 +1059,8 @@ describe('teadsBidAdapter', () => {
             'ttl': 360,
             'width': 300,
             'creativeId': 'er2ee',
-            'placementId': 34
+            'placementId': 34,
+            'needAutoplay': true
           }, {
             'ad': AD_SCRIPT,
             'cpm': 0.5,
@@ -1031,7 +1071,19 @@ describe('teadsBidAdapter', () => {
             'width': 350,
             'creativeId': 'fs3ff',
             'placementId': 34,
-            'dealId': 'ABC_123'
+            'needAutoplay': false,
+            'dealId': 'ABC_123',
+            'ext': {
+              'dsa': {
+                'behalf': 'some-behalf',
+                'paid': 'some-paid',
+                'transparency': [{
+                  'domain': 'test.com',
+                  'dsaparams': [1, 2, 3]
+                }],
+                'adrender': 1
+              }
+            }
           }]
         }
       };
@@ -1057,7 +1109,16 @@ describe('teadsBidAdapter', () => {
           'currency': 'USD',
           'netRevenue': true,
           'meta': {
-            advertiserDomains: []
+            advertiserDomains: [],
+            dsa: {
+              behalf: 'some-behalf',
+              paid: 'some-paid',
+              transparency: [{
+                domain: 'test.com',
+                dsaparams: [1, 2, 3]
+              }],
+              adrender: 1
+            }
           },
           'ttl': 360,
           'ad': AD_SCRIPT,
@@ -1070,6 +1131,70 @@ describe('teadsBidAdapter', () => {
       ;
 
       let result = spec.interpretResponse(bids);
+      expect(result).to.eql(expectedResponse);
+    });
+
+    it('should filter bid responses with needAutoplay:true when autoplay is disabled', function() {
+      let bids = {
+        'body': {
+          'responses': [{
+            'ad': AD_SCRIPT,
+            'cpm': 0.5,
+            'currency': 'USD',
+            'height': 250,
+            'bidId': '3ede2a3fa0db94',
+            'ttl': 360,
+            'width': 300,
+            'creativeId': 'er2ee',
+            'placementId': 34,
+            'needAutoplay': true
+          }, {
+            'ad': AD_SCRIPT,
+            'cpm': 0.5,
+            'currency': 'USD',
+            'height': 200,
+            'bidId': '4fef3b4gb1ec15',
+            'ttl': 360,
+            'width': 350,
+            'creativeId': 'fs3ff',
+            'placementId': 34,
+            'needAutoplay': false
+          }, {
+            'ad': AD_SCRIPT,
+            'cpm': 0.7,
+            'currency': 'USD',
+            'height': 600,
+            'bidId': 'a987fbc961d',
+            'ttl': 12,
+            'width': 300,
+            'creativeId': 'awuygfd',
+            'placementId': 12,
+            'needAutoplay': true
+          }]
+        }
+      };
+      let expectedResponse = [{
+        'cpm': 0.5,
+        'width': 350,
+        'height': 200,
+        'currency': 'USD',
+        'netRevenue': true,
+        'meta': {
+          advertiserDomains: [],
+        },
+        'ttl': 360,
+        'ad': AD_SCRIPT,
+        'requestId': '4fef3b4gb1ec15',
+        'creativeId': 'fs3ff',
+        'placementId': 34
+      }
+      ]
+      ;
+
+      const isAutoplayEnabledStub = sinon.stub(autoplay, 'isAutoplayEnabled');
+      isAutoplayEnabledStub.returns(false);
+      let result = spec.interpretResponse(bids);
+      isAutoplayEnabledStub.restore();
       expect(result).to.eql(expectedResponse);
     });
 

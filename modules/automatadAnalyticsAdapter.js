@@ -14,7 +14,7 @@ import { config } from '../src/config.js'
 const ADAPTER_CODE = 'automatadAnalytics'
 const trialCountMilsMapping = [1500, 3000, 5000, 10000];
 
-var isLoggingEnabled; var queuePointer = 0; var retryCount = 0; var timer = null; var __atmtdAnalyticsQueue = [];
+var isLoggingEnabled; var queuePointer = 0; var retryCount = 0; var timer = null; var __atmtdAnalyticsQueue = []; var qBeingUsed; var qTraversalComplete;
 
 const prettyLog = (level, text, isGroup = false, cb = () => {}) => {
   if (self.isLoggingEnabled === undefined) {
@@ -134,6 +134,9 @@ const processEvents = () => {
     if (trialCountMilsMapping[self.retryCount]) self.prettyLog('warn', `Adapter failed to process event as aggregator has not loaded. Retrying in ${trialCountMilsMapping[self.retryCount]}ms ...`);
     setTimeout(self.processEvents, trialCountMilsMapping[self.retryCount])
     self.retryCount = self.retryCount + 1
+  } else {
+    self.qBeingUsed = false
+    self.qTraversalComplete = true
   }
 }
 
@@ -142,22 +145,18 @@ const addGPTHandlers = () => {
   googletag.cmd = googletag.cmd || []
   googletag.cmd.push(() => {
     googletag.pubads().addEventListener('slotRenderEnded', (event) => {
-      if (window.atmtdAnalytics && window.atmtdAnalytics.slotRenderEndedGPTHandler) {
-        if (window.__atmtdAggregatorFirstAuctionInitialized === true) {
-          window.atmtdAnalytics.slotRenderEndedGPTHandler(event)
-          return;
-        }
+      if (window.atmtdAnalytics && window.atmtdAnalytics.slotRenderEndedGPTHandler && !self.qBeingUsed) {
+        window.atmtdAnalytics.slotRenderEndedGPTHandler(event)
+        return;
       }
       self.__atmtdAnalyticsQueue.push(['slotRenderEnded', event])
       self.prettyLog(`warn`, `Aggregator not initialised at auctionInit, exiting slotRenderEnded handler and pushing to que instead`)
     })
 
     googletag.pubads().addEventListener('impressionViewable', (event) => {
-      if (window.atmtdAnalytics && window.atmtdAnalytics.impressionViewableHandler) {
-        if (window.__atmtdAggregatorFirstAuctionInitialized === true) {
-          window.atmtdAnalytics.impressionViewableHandler(event)
-          return;
-        }
+      if (window.atmtdAnalytics && window.atmtdAnalytics.impressionViewableHandler && !self.qBeingUsed) {
+        window.atmtdAnalytics.impressionViewableHandler(event)
+        return;
       }
       self.__atmtdAnalyticsQueue.push(['impressionViewable', event])
       self.prettyLog(`warn`, `Aggregator not initialised at auctionInit, exiting impressionViewable handler and pushing to que instead`)
@@ -167,6 +166,7 @@ const addGPTHandlers = () => {
 
 const initializeQueue = () => {
   self.__atmtdAnalyticsQueue.push = (args) => {
+    self.qBeingUsed = true
     Array.prototype.push.apply(self.__atmtdAnalyticsQueue, [args]);
     if (timer) {
       clearTimeout(timer);
@@ -196,9 +196,10 @@ let atmtdAdapter = Object.assign({}, baseAdapter, {
   },
 
   track({eventType, args}) {
+    const shouldNotPushToQueue = !self.qBeingUsed
     switch (eventType) {
       case CONSTANTS.EVENTS.AUCTION_INIT:
-        if (window.atmtdAnalytics && window.atmtdAnalytics.auctionInitHandler) {
+        if (window.atmtdAnalytics && window.atmtdAnalytics.auctionInitHandler && shouldNotPushToQueue) {
           self.prettyLog('status', 'Aggregator loaded, initialising auction through handlers');
           window.atmtdAnalytics.auctionInitHandler(args);
         } else {
@@ -207,7 +208,7 @@ let atmtdAdapter = Object.assign({}, baseAdapter, {
         }
         break;
       case CONSTANTS.EVENTS.BID_REQUESTED:
-        if (window.atmtdAnalytics && window.atmtdAnalytics.bidRequestedHandler) {
+        if (window.atmtdAnalytics && window.atmtdAnalytics.bidRequestedHandler && shouldNotPushToQueue) {
           window.atmtdAnalytics.bidRequestedHandler(args);
         } else {
           self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
@@ -215,7 +216,7 @@ let atmtdAdapter = Object.assign({}, baseAdapter, {
         }
         break;
       case CONSTANTS.EVENTS.BID_REJECTED:
-        if (window.atmtdAnalytics && window.atmtdAnalytics.bidRejectedHandler) {
+        if (window.atmtdAnalytics && window.atmtdAnalytics.bidRejectedHandler && shouldNotPushToQueue) {
           window.atmtdAnalytics.bidRejectedHandler(args);
         } else {
           self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
@@ -223,7 +224,7 @@ let atmtdAdapter = Object.assign({}, baseAdapter, {
         }
         break;
       case CONSTANTS.EVENTS.BID_RESPONSE:
-        if (window.atmtdAnalytics && window.atmtdAnalytics.bidResponseHandler) {
+        if (window.atmtdAnalytics && window.atmtdAnalytics.bidResponseHandler && shouldNotPushToQueue) {
           window.atmtdAnalytics.bidResponseHandler(args);
         } else {
           self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
@@ -231,7 +232,7 @@ let atmtdAdapter = Object.assign({}, baseAdapter, {
         }
         break;
       case CONSTANTS.EVENTS.BIDDER_DONE:
-        if (window.atmtdAnalytics && window.atmtdAnalytics.bidderDoneHandler) {
+        if (window.atmtdAnalytics && window.atmtdAnalytics.bidderDoneHandler && shouldNotPushToQueue) {
           window.atmtdAnalytics.bidderDoneHandler(args);
         } else {
           self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
@@ -239,7 +240,7 @@ let atmtdAdapter = Object.assign({}, baseAdapter, {
         }
         break;
       case CONSTANTS.EVENTS.BID_WON:
-        if (window.atmtdAnalytics && window.atmtdAnalytics.bidWonHandler) {
+        if (window.atmtdAnalytics && window.atmtdAnalytics.bidWonHandler && shouldNotPushToQueue) {
           window.atmtdAnalytics.bidWonHandler(args);
         } else {
           self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
@@ -247,7 +248,7 @@ let atmtdAdapter = Object.assign({}, baseAdapter, {
         }
         break;
       case CONSTANTS.EVENTS.NO_BID:
-        if (window.atmtdAnalytics && window.atmtdAnalytics.noBidHandler) {
+        if (window.atmtdAnalytics && window.atmtdAnalytics.noBidHandler && shouldNotPushToQueue) {
           window.atmtdAnalytics.noBidHandler(args);
         } else {
           self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
@@ -255,7 +256,7 @@ let atmtdAdapter = Object.assign({}, baseAdapter, {
         }
         break;
       case CONSTANTS.EVENTS.AUCTION_DEBUG:
-        if (window.atmtdAnalytics && window.atmtdAnalytics.auctionDebugHandler) {
+        if (window.atmtdAnalytics && window.atmtdAnalytics.auctionDebugHandler && shouldNotPushToQueue) {
           window.atmtdAnalytics.auctionDebugHandler(args);
         } else {
           self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
@@ -263,7 +264,7 @@ let atmtdAdapter = Object.assign({}, baseAdapter, {
         }
         break;
       case CONSTANTS.EVENTS.BID_TIMEOUT:
-        if (window.atmtdAnalytics && window.atmtdAnalytics.bidderTimeoutHandler) {
+        if (window.atmtdAnalytics && window.atmtdAnalytics.bidderTimeoutHandler && shouldNotPushToQueue) {
           window.atmtdAnalytics.bidderTimeoutHandler(args);
         } else {
           self.prettyLog('warn', `Aggregator not loaded, pushing ${eventType} to que instead ...`);
@@ -304,7 +305,7 @@ atmtdAdapter.enableAnalytics = function (configuration) {
   atmtdAdapter.originEnableAnalytics(configuration)
 };
 
-/// /////////// ADAPTER REGISTRATION //////////////
+/// /////////// ADAPTER REGISTRATION /////////////
 
 adapterManager.registerAnalyticsAdapter({
   adapter: atmtdAdapter,
@@ -319,7 +320,15 @@ export var self = {
   prettyLog,
   queuePointer,
   retryCount,
-  isLoggingEnabled
+  isLoggingEnabled,
+  qBeingUsed,
+  qTraversalComplete
+}
+
+window.__atmtdAnalyticsGlobalObject = {
+  q: self.__atmtdAnalyticsQueue,
+  qBeingUsed: self.qBeingUsed,
+  qTraversalComplete: self.qTraversalComplete
 }
 
 export default atmtdAdapter;

@@ -478,13 +478,13 @@ export function PrebidServer() {
               adapterMetrics
             });
           }
-          done();
+          done(false);
           doClientSideSyncs(requestedBidders, gdprConsent, uspConsent, gppConsent);
         },
         onError(msg, error) {
           logError(`Prebid server call failed: '${msg}'`, error);
           bidRequests.forEach(bidderRequest => events.emit(CONSTANTS.EVENTS.BIDDER_ERROR, {error, bidderRequest}));
-          done();
+          done(error.timedOut);
         },
         onBid: function ({adUnit, bid}) {
           const metrics = bid.metrics = s2sBidRequest.metrics.fork().renameWith();
