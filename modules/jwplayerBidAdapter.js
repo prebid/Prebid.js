@@ -69,35 +69,43 @@ function getBidAdapter() {
     });
   }
 
-  function interpretResponse(serverResponse) {
+  function interpretResponse(serverResponse, bidRequest) {
     const bidResponses = [];
     const serverResponseBody = serverResponse.body;
 
-    const bidId = serverResponse.bidid;
+    logResponseWarnings(serverResponseBody);
+
+    const seatBids = serverResponseBody && serverResponseBody.seatbid;
+    if (!isArray(seatBids)) {
+      return bidResponses;
+    }
+
     const cur = serverResponse.cur;
 
-    if (serverResponseBody && isArray(serverResponseBody.seatbid)) {
-      serverResponseBody.seatbid.forEach(seatBids => {
-        seatBids.bid.forEach(bid => {
-          const bidResponse = {
-            requestId: bidId,
-            cpm: bid.price,
-            currency: cur,
-            width: bid.w,
-            height: bid.h,
-            creativeId: bid.adid,
-            vastXml: bid.adm,
-            netRevenue: true,
-            ttl: 500,
-            ad: bid.adm,
-            meta: {
-              advertiserDomains: bid.adomain
-            }
-          };
-          bidResponses.push(bidResponse);
-        });
+    seatBids.forEach(seatBid => {
+      seatBid.bid.forEach(bid => {
+        const bidResponse = {
+          requestId: serverResponse.id,
+          cpm: bid.price,
+          currency: cur,
+          width: bid.w,
+          height: bid.h,
+          ad: bid.adm,
+          vastXml: bid.adm,
+          ttl: bid.ttl || 3600,
+          netRevenue: false,
+          creativeId: bid.adid,
+          dealId: bid.dealid,
+          meta: {
+            advertiserDomains: bid.adomain,
+            mediaType: VIDEO,
+            primaryCatId: bid.cat,
+          }
+        };
+
+        bidResponses.push(bidResponse);
       });
-    }
+    });
 
     return bidResponses;
   }
@@ -137,12 +145,6 @@ function getBidAdapter() {
     interpretResponse,
     getUserSyncs
   }
-
-  // Optional?
-  // onTimeout: function(timeoutData) {},
-  // onBidWon: function(bid) {},
-  // onSetTargeting: function(bid) {},
-  // onBidderError: function({ error, bidderRequest }) {}
 
   function getUserSyncConsentQueryParams(gdprConsent) {
     if (!gdprConsent) {
@@ -345,6 +347,25 @@ function getBidAdapter() {
 
   function getMissingFieldMessage(fieldName) {
     return `Optional field ${fieldName} is not populated; we recommend populating for maximum performance.`
+  }
+
+  function logResponseWarnings(serverResponseBody) {
+    const warningPayload = deepAccess(serverResponseBody, 'ext.warnings');
+    if (!warningPayload) {
+      return;
+    }
+
+    const warningCategories = Object.keys(warningPayload);
+    warningCategories.forEach(category => {
+      const warnings = warningPayload[category];
+      if (!isArray(warnings)) {
+        return;
+      }
+
+      warnings.forEach(warning => {
+        logWarn(`${BIDDER_CODE}: [Bid Response][Warning Code: ${warning.code}] ${warning.message}`);
+      });
+    });
   }
 }
 
