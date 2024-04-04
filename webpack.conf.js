@@ -133,10 +133,16 @@ module.exports = {
         const nodeModules = path.resolve('./node_modules');
 
         return Object.assign(libraries, {
+          common_deps: {
+            name: 'common_deps',
+            test(module) {
+              return module.resource?.startsWith(nodeModules);
+            }
+          },
           core: {
             name: 'chunk-core',
             test: (module) => {
-              return module.resource?.startsWith(core) || module.resource?.startsWith(nodeModules);
+              return module.resource?.startsWith(core);
             }
           },
           paapi: {
