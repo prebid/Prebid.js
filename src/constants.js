@@ -78,7 +78,7 @@ export default {
     SIZE: 'hb_size',
     DEAL: 'hb_deal',
     SOURCE: 'hb_source',
-    FORMAT': 'hb_format',
+    FORMAT: 'hb_format',
     UUID: 'hb_uuid',
     CACHE_ID: 'hb_cache_id',
     CACHE_HOST: 'hb_cache_host',
