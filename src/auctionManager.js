@@ -23,7 +23,7 @@
 import { uniques, logWarn } from './utils.js';
 import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js';
 import {AuctionIndex} from './auctionIndex.js';
-import CONSTANTS from './constants.json';
+import CONSTANTS from './constants.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {ttlCollection} from './utils/ttlCollection.js';
 import {getTTL, onTTLBufferChange} from './bidTTL.js';

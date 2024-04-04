@@ -1,7 +1,7 @@
 import {config} from '../src/config.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {timedBidResponseHook} from '../src/utils/perfMetrics.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 import {getHook} from '../src/hook.js';
 import {logInfo, logWarn} from '../src/utils.js';
 

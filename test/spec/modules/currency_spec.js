@@ -13,7 +13,7 @@ import {
   responseReady
 } from 'modules/currency.js';
 import {createBid} from '../../../src/bidfactory.js';
-import CONSTANTS from '../../../src/constants.json';
+import CONSTANTS from '../../../src/constants.js';
 import {server} from '../../mocks/xhr.js';
 import * as events from 'src/events.js';
 

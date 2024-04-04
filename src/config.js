@@ -27,7 +27,7 @@ import {
   logWarn,
   mergeDeep
 } from './utils.js';
-import CONSTANTS from './constants.json';
+import CONSTANTS from './constants.js';
 
 const DEFAULT_DEBUG = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;

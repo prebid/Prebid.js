@@ -12,7 +12,7 @@ import {
   getServerTestingsAds,
   getBidRequests
 } from 'test/fixtures/fixtures.js';
-import CONSTANTS from 'src/constants.json';
+import CONSTANTS from 'src/constants.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';

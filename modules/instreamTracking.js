@@ -3,7 +3,7 @@ import { config } from '../src/config.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { INSTREAM } from '../src/video.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json'
+import CONSTANTS from '../src/constants.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

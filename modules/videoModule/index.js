@@ -3,7 +3,7 @@ import { find } from '../../src/polyfill.js';
 import * as events from '../../src/events.js';
 import {mergeDeep, logWarn, logError} from '../../src/utils.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
-import CONSTANTS from '../../src/constants.json';
+import CONSTANTS from '../../src/constants.js';
 import {
   videoEvents,
   AUCTION_AD_LOAD_ATTEMPT,

@@ -7,7 +7,7 @@ import {
   getPriceByGranularity,
   addBidResponse, resetAuctionState, responsesReady
 } from 'src/auction.js';
-import CONSTANTS from 'src/constants.json';
+import CONSTANTS from 'src/constants.js';
 import * as auctionModule from 'src/auction.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
 import { createBid } from 'src/bidfactory.js';

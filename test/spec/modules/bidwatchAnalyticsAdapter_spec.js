@@ -4,7 +4,7 @@ import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
-let constants = require('src/constants.json');
+let constants = require('src/constants.js');
 
 describe('BidWatch Analytics', function () {
   let timestamp = new Date() - 256;

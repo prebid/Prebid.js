@@ -1,7 +1,7 @@
 import { isArray, deepClone } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import { targeting } from '../src/targeting.js';
 import { auctionManager } from '../src/auctionManager.js';

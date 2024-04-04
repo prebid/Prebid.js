@@ -163,7 +163,7 @@ import {config} from '../../src/config.js';
 import {getHook, module} from '../../src/hook.js';
 import {logError, logInfo, logWarn} from '../../src/utils.js';
 import * as events from '../../src/events.js';
-import CONSTANTS from '../../src/constants.json';
+import CONSTANTS from '../../src/constants.js';
 import adapterManager, {gdprDataHandler, uspDataHandler, gppDataHandler} from '../../src/adapterManager.js';
 import {find} from '../../src/polyfill.js';
 import {timedAuctionHook} from '../../src/utils/perfMetrics.js';

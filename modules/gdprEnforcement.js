@@ -6,7 +6,7 @@ import {deepAccess, logError, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
 import adapterManager, {gdprDataHandler} from '../src/adapterManager.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 import {GDPR_GVLIDS, VENDORLESS_GVLID, FIRST_PARTY_GVLID} from '../src/consentHandler.js';
 import {
   MODULE_TYPE_ANALYTICS,

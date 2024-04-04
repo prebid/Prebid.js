@@ -14,7 +14,7 @@ import {
 } from '../src/utils.js';
 
 import {getGlobal} from '../src/prebidGlobal.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 

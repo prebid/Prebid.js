@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import {expectEvents} from '../../helpers/analytics.js';
 import {server} from '../../mocks/xhr.js';
 let events = require('src/events');
-let constants = require('src/constants.json');
+let constants = require('src/constants.js');
 
 describe('Invisibly Analytics Adapter test suite', function () {
   let xhr;

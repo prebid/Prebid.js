@@ -1,5 +1,5 @@
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import { logError, parseUrl, _each } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';

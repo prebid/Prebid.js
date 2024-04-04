@@ -7,7 +7,7 @@ import {
   handleNativeMessage,
   handleRender
 } from '../../../src/adRendering.js';
-import CONSTANTS from 'src/constants.json';
+import CONSTANTS from 'src/constants.js';
 import {expect} from 'chai/index.mjs';
 import {config} from 'src/config.js';
 import {VIDEO} from '../../../src/mediaTypes.js';

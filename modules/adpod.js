@@ -38,7 +38,7 @@ import {config} from '../src/config.js';
 import {ADPOD} from '../src/mediaTypes.js';
 import {find, arrayFrom as from} from '../src/polyfill.js';
 import {auctionManager} from '../src/auctionManager.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 
 const TARGETING_KEY_PB_CAT_DUR = 'hb_pb_cat_dur';
 const TARGETING_KEY_CACHE_ID = 'hb_cache_id';

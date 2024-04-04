@@ -18,7 +18,7 @@ import {
 } from '../src/utils.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 import { getStorageManager } from '../src/storageManager.js';
 import * as events from '../src/events.js';
 import { find } from '../src/polyfill.js';

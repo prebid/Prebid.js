@@ -5,7 +5,7 @@ import adapterManager from 'src/adapterManager.js';
 import { server } from 'test/mocks/xhr.js';
 
 let events = require('src/events');
-let constants = require('src/constants.json');
+let constants = require('src/constants.js');
 
 describe('AdxPremium analytics adapter', function () {
   beforeEach(function () {

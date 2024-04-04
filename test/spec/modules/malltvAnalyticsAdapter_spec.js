@@ -5,7 +5,7 @@ import {
 import { expect } from 'chai'
 import { getCpmInEur } from '../../../modules/malltvAnalyticsAdapter'
 import * as events from 'src/events'
-import constants from 'src/constants.json'
+import constants from 'src/constants.js'
 
 const auctionId = 'b0b39610-b941-4659-a87c-de9f62d3e13e'
 const propertyId = '123456'

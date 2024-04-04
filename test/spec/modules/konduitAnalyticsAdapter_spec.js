@@ -4,7 +4,7 @@ import { config } from '../../../src/config.js';
 import { server } from 'test/mocks/xhr.js';
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;
-let CONSTANTS = require('src/constants.json');
+let CONSTANTS = require('src/constants.js');
 
 const eventsData = {
   [CONSTANTS.EVENTS.AUCTION_INIT]: {

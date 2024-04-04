@@ -1,6 +1,6 @@
 import zetaAnalyticsAdapter from 'modules/zeta_global_sspAnalyticsAdapter.js';
 import {config} from 'src/config';
-import CONSTANTS from 'src/constants.json';
+import CONSTANTS from 'src/constants.js';
 import {server} from '../../mocks/xhr.js';
 import {logError} from '../../../src/utils';
 

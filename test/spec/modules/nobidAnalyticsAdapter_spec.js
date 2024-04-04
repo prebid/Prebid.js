@@ -3,7 +3,7 @@ import {expect} from 'chai';
 import {server} from 'test/mocks/xhr.js';
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;
-let constants = require('src/constants.json');
+let constants = require('src/constants.js');
 
 const TOP_LOCATION = 'https://www.somesite.com';
 const SITE_ID = 1234;

@@ -21,7 +21,7 @@ import {ADPOD} from './mediaTypes.js';
 import {hook} from './hook.js';
 import {bidderSettings} from './bidderSettings.js';
 import {find, includes} from './polyfill.js';
-import CONSTANTS from './constants.json';
+import CONSTANTS from './constants.js';
 import {getHighestCpm, getOldestHighestCpmBid} from './utils/reducers.js';
 import {getTTL} from './bidTTL.js';
 

@@ -6,7 +6,7 @@ import magniteAdapter, {
   detectBrowserFromUa,
   callPrebidCacheHook
 } from '../../../modules/magniteAnalyticsAdapter.js';
-import CONSTANTS from 'src/constants.json';
+import CONSTANTS from 'src/constants.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import * as mockGpt from '../integration/faker/googletag.js';

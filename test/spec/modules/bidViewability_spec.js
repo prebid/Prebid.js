@@ -5,7 +5,7 @@ import * as utils from 'src/utils.js';
 import * as sinon from 'sinon';
 import {expect, spy} from 'chai';
 import * as prebidGlobal from 'src/prebidGlobal.js';
-import CONSTANTS from 'src/constants.json';
+import CONSTANTS from 'src/constants.js';
 import adapterManager, { gdprDataHandler, uspDataHandler } from 'src/adapterManager.js';
 import parse from 'url-parse';
 

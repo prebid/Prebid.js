@@ -1,7 +1,7 @@
 import {logError, timestamp} from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adaptermanager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {find, includes} from '../src/polyfill.js';

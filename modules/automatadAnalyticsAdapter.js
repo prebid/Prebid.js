@@ -4,7 +4,7 @@ import {
   logMessage
 } from '../src/utils.js';
 
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { config } from '../src/config.js'

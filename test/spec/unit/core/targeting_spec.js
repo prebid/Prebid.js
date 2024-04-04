@@ -7,7 +7,7 @@ import {
 } from 'src/targeting.js';
 import {config} from 'src/config.js';
 import {createBidReceived} from 'test/fixtures/fixtures.js';
-import CONSTANTS from 'src/constants.json';
+import CONSTANTS from 'src/constants.js';
 import {auctionManager} from 'src/auctionManager.js';
 import * as utils from 'src/utils.js';
 import {deepClone} from 'src/utils.js';

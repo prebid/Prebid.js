@@ -1,6 +1,6 @@
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 import { ajax } from '../src/ajax.js';
 const analyticsType = 'endpoint';
 const url = 'https://analytics.wmgroup.us/analytic/collection';

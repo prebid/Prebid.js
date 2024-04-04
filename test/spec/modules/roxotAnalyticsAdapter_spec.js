@@ -3,7 +3,7 @@ import {expect} from 'chai';
 import {server} from 'test/mocks/xhr.js';
 
 let events = require('src/events');
-let constants = require('src/constants.json');
+let constants = require('src/constants.js');
 
 describe('Roxot Prebid Analytic', function () {
   let roxotConfigServerUrl = 'config-server';

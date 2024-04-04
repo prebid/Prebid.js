@@ -4,7 +4,7 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { targeting } from '../src/targeting.js';
 import { config } from '../src/config.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 
 const TRACKER_HOST = 'tracker.konduit.me';
 const KONDUIT_PREBID_MODULE_VERSION = '1.0.0';

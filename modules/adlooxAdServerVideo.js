@@ -9,7 +9,7 @@
 import { registerVideoSupport } from '../src/adServerManager.js';
 import { command as analyticsCommand, COMMAND } from './adlooxAnalyticsAdapter.js';
 import { ajax } from '../src/ajax.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 import { targeting } from '../src/targeting.js';
 import { logInfo, isFn, logError, isPlainObject, isStr, isBoolean, deepSetValue, deepClone, timestamp, logWarn } from '../src/utils.js';
 

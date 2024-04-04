@@ -1,7 +1,7 @@
 import {spec, resetBidderConfigs} from 'modules/relevantdigitalBidAdapter.js';
 import { parseUrl, deepClone } from 'src/utils.js';
 import { config } from 'src/config.js';
-import CONSTANTS from 'src/constants.json';
+import CONSTANTS from 'src/constants.js';
 
 import adapterManager, {
 } from 'src/adapterManager.js';

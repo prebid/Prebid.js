@@ -20,7 +20,7 @@ import {getHook, submodule} from '../src/hook.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {gdprDataHandler} from '../src/adapterManager.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 import {getPPID} from '../src/adserver.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {CLIENT_SECTIONS} from '../src/fpd/oneClient.js';

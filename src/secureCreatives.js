@@ -5,7 +5,7 @@
 
 import * as events from './events.js';
 import {getAllAssetsMessage, getAssetMessage} from './native.js';
-import CONSTANTS from './constants.json';
+import CONSTANTS from './constants.js';
 import {isApnGetTagDefined, isGptPubadsDefined, logError, logWarn} from './utils.js';
 import {auctionManager} from './auctionManager.js';
 import {find, includes} from './polyfill.js';

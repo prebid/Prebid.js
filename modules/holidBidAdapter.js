@@ -6,7 +6,7 @@ import {
   triggerPixel,
 } from '../src/utils.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 import {BANNER} from '../src/mediaTypes.js';
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';

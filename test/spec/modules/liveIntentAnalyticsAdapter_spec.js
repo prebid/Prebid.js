@@ -13,7 +13,7 @@ let clock;
 let now = new Date();
 
 let events = require('src/events');
-let constants = require('src/constants.json');
+let constants = require('src/constants.js');
 let auctionId = '99abbc81-c1f1-41cd-8f25-f7149244c897'
 
 const configWithSamplingAll = {

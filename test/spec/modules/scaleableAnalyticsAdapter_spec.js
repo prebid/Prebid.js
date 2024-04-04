@@ -1,7 +1,7 @@
 import scaleableAnalytics from 'modules/scaleableAnalyticsAdapter.js';
 import { expect } from 'chai';
 import * as events from 'src/events.js';
-import CONSTANTS from 'src/constants.json';
+import CONSTANTS from 'src/constants.js';
 import { server } from 'test/mocks/xhr.js';
 
 const BID_TIMEOUT = CONSTANTS.EVENTS.BID_TIMEOUT;

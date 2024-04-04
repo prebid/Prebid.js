@@ -8,7 +8,7 @@ import {
 } from 'modules/greenbidsRtdProvider.js';
 import { server } from '../../mocks/xhr.js';
 import * as events from '../../../src/events.js';
-import CONSTANTS from '../../../src/constants.json';
+import CONSTANTS from '../../../src/constants.js';
 
 describe('greenbidsRtdProvider', () => {
   const endPoint = 't.greenbids.ai';

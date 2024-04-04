@@ -4,7 +4,7 @@ import { expect } from 'chai';
 import _ from 'lodash';
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;
-let constants = require('src/constants.json');
+let constants = require('src/constants.js');
 
 describe('Yieldone Prebid Analytic', function () {
   let sendStatStub;

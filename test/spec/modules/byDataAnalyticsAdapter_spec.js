@@ -2,7 +2,7 @@ import ascAdapter from 'modules/byDataAnalyticsAdapter';
 import { expect } from 'chai';
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
-let constants = require('src/constants.json');
+let constants = require('src/constants.js');
 let auctionId = 'b70ef967-5c5b-4602-831e-f2cf16e59af2';
 const initOptions = {
   clientId: 'asc00000',

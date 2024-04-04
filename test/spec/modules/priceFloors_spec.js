@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import * as utils from 'src/utils.js';
 import { getGlobal } from 'src/prebidGlobal.js';
-import CONSTANTS from 'src/constants.json';
+import CONSTANTS from 'src/constants.js';
 import {
   _floorDataForAuction,
   getFloorsDataForAuction,

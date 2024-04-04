@@ -1,7 +1,7 @@
 import {config} from './config.js';
 import clone from 'just-clone';
 import {includes} from './polyfill.js';
-import CONSTANTS from './constants.json';
+import CONSTANTS from './constants.js';
 import {GreedyPromise} from './utils/promise.js';
 import {getGlobal} from './prebidGlobal.js';
 

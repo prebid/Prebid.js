@@ -1,7 +1,7 @@
 import relevantAnalytics from '../../../modules/relevantAnalyticsAdapter.js';
 import adapterManager from 'src/adapterManager';
 import * as events from 'src/events';
-import constants from 'src/constants.json'
+import constants from 'src/constants.js'
 import { expect } from 'chai';
 
 describe('Relevant Analytics Adapter', () => {

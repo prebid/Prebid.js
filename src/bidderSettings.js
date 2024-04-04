@@ -1,6 +1,6 @@
 import {deepAccess, mergeDeep} from './utils.js';
 import {getGlobal} from './prebidGlobal.js';
-import CONSTANTS from './constants.json';
+import CONSTANTS from './constants.js';
 
 export class ScopedSettings {
   constructor(getSettings, defaultScope) {

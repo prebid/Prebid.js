@@ -9,7 +9,7 @@ import {
 } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 import adapterManager, { gdprDataHandler } from '../src/adapterManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { config } from '../src/config.js';

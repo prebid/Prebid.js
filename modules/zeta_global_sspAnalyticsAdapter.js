@@ -1,7 +1,7 @@
 import {logInfo, logError} from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 

@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import medianetAnalytics from 'modules/medianetAnalyticsAdapter.js';
 import * as utils from 'src/utils.js';
-import CONSTANTS from 'src/constants.json';
+import CONSTANTS from 'src/constants.js';
 import * as events from 'src/events.js';
 import {clearEvents} from 'src/events.js';
 

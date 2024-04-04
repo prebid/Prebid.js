@@ -10,7 +10,7 @@ import { submodule } from '../src/hook.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { logError, generateUUID, insertElement } from '../src/utils.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule

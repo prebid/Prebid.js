@@ -1,6 +1,6 @@
 import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import adapterManager from '../src/adapterManager.js';
 import {logInfo, logWarn, logError, logMessage, deepAccess, isInteger} from '../src/utils.js';

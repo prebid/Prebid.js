@@ -1,5 +1,5 @@
 // eslint-disable-next-line prebid/validate-imports
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 
 export const MESSAGE_REQUEST = CONSTANTS.MESSAGES.REQUEST;
 export const MESSAGE_RESPONSE = CONSTANTS.MESSAGES.RESPONSE;

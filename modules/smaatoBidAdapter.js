@@ -3,7 +3,7 @@ import {find} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 import {fill} from '../libraries/appnexusUtils/anUtils.js';
 import {chunk} from '../libraries/chunk/chunk.js';

@@ -31,7 +31,7 @@ import {adunitCounter} from './adUnits.js';
 import {getRefererInfo} from './refererDetection.js';
 import {GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler, } from './consentHandler.js';
 import * as events from './events.js';
-import CONSTANTS from './constants.json';
+import CONSTANTS from './constants.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {auctionManager} from './auctionManager.js';
 import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID} from './activities/modules.js';

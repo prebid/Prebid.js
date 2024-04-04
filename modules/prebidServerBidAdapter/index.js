@@ -16,7 +16,7 @@ import {
   triggerPixel,
   uniques,
 } from '../../src/utils.js';
-import CONSTANTS from '../../src/constants.json';
+import CONSTANTS from '../../src/constants.js';
 import adapterManager, {s2sActivityParams} from '../../src/adapterManager.js';
 import {config} from '../../src/config.js';
 import {addComponentAuction, isValid} from '../../src/adapters/bidderFactory.js';

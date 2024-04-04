@@ -8,7 +8,7 @@ import {expectEvents, fireEvents} from '../../helpers/analytics.js';
 var assert = require('assert');
 
 let events = require('src/events');
-let constants = require('src/constants.json');
+let constants = require('src/constants.js');
 
 /**
  * Emit analytics events

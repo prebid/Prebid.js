@@ -1,5 +1,5 @@
 // jscs:disable
-import CONSTANTS from 'src/constants.json';
+import CONSTANTS from 'src/constants.js';
 import {createBid} from '../../src/bidfactory.js';
 const utils = require('src/utils.js');
 

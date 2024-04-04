@@ -1,6 +1,6 @@
 import {getAdServerTargeting} from 'test/fixtures/fixtures.js';
 import {expect} from 'chai';
-import CONSTANTS from 'src/constants.json';
+import CONSTANTS from 'src/constants.js';
 import * as utils from 'src/utils.js';
 import {getHighestCpm, getLatestHighestCpmBid, getOldestHighestCpmBid} from '../../src/utils/reducers.js';
 import {binarySearch, deepEqual, memoize, waitForElementToLoad} from 'src/utils.js';

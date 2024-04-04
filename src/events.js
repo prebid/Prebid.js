@@ -2,7 +2,7 @@
  * events.js
  */
 import * as utils from './utils.js'
-import CONSTANTS from './constants.json';
+import CONSTANTS from './constants.js';
 import {ttlCollection} from './utils/ttlCollection.js';
 import {config} from './config.js';
 const TTL_CONFIG = 'eventHistoryTTL';

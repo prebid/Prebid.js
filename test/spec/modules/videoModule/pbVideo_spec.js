@@ -1,7 +1,7 @@
 import 'src/prebid.js';
 import { expect } from 'chai';
 import { PbVideo } from 'modules/videoModule';
-import CONSTANTS from 'src/constants.json';
+import CONSTANTS from 'src/constants.js';
 
 let ortbVideoMock;
 let ortbContentMock;

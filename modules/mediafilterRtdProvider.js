@@ -14,7 +14,7 @@ import { submodule } from '../src/hook.js';
 import { logError, generateUUID } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 
 /** The event type for Media Filter. */
 export const MEDIAFILTER_EVENT_TYPE = 'com.mediatrust.pbjs.';

@@ -12,7 +12,7 @@ import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { createBid } from '../src/bidfactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
 
 /**

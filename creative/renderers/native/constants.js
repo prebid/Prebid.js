@@ -1,5 +1,5 @@
 // eslint-disable-next-line prebid/validate-imports
-import CONSTANTS from '../../../src/constants.json';
+import CONSTANTS from '../../../src/constants.js';
 
 export const MESSAGE_NATIVE = CONSTANTS.MESSAGES.NATIVE;
 export const ACTION_RESIZE = 'resizeNativeHeight';

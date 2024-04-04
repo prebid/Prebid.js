@@ -2,7 +2,7 @@ import { logError, deepClone, generateUUID, deepSetValue, deepAccess } from '../
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 
 const MODULE_NAME = 'greenbidsRtdProvider';
 const MODULE_VERSION = '2.0.0';

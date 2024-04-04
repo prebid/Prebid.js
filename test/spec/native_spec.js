@@ -16,7 +16,7 @@ import {
   fireClickTrackers,
   setNativeResponseProperties,
 } from 'src/native.js';
-import CONSTANTS from 'src/constants.json';
+import CONSTANTS from 'src/constants.js';
 import { stubAuctionIndex } from '../helpers/indexStub.js';
 import { convertOrtbRequestToProprietaryNative, fromOrtbNativeRequest } from '../../src/native.js';
 import {auctionManager} from '../../src/auctionManager.js';

@@ -2,7 +2,7 @@ import adapterManager from '../../../src/adapterManager.js';
 import hadronAnalyticsAdapter from '../../../modules/hadronAnalyticsAdapter.js';
 import { expect } from 'chai';
 import * as events from '../../../src/events.js';
-import constants from '../../../src/constants.json';
+import constants from '../../../src/constants.js';
 import { generateUUID } from '../../../src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 

@@ -4,7 +4,7 @@ import { server } from 'test/mocks/xhr.js';
 import {expectEvents} from '../../helpers/analytics.js';
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
-let constants = require('src/constants.json');
+let constants = require('src/constants.js');
 
 describe('adWMG Analytics', function () {
   let timestamp = new Date() - 256;

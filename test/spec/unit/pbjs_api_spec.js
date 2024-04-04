@@ -34,7 +34,7 @@ var expect = require('chai').expect;
 var utils = require('src/utils');
 var adapterManager = require('src/adapterManager').default;
 var events = require('src/events');
-var CONSTANTS = require('src/constants.json');
+var CONSTANTS = require('src/constants.js');
 
 // These bid adapters are required to be loaded for the following tests to work
 require('modules/appnexusBidAdapter');

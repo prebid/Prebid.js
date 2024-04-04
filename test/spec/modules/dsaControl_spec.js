@@ -1,5 +1,5 @@
 import {addBidResponseHook, setMetaDsa, reset} from '../../../modules/dsaControl.js';
-import CONSTANTS from 'src/constants.json';
+import CONSTANTS from 'src/constants.js';
 import {auctionManager} from '../../../src/auctionManager.js';
 import {AuctionIndex} from '../../../src/auctionIndex.js';
 

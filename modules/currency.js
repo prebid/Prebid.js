@@ -1,6 +1,6 @@
 import {logError, logInfo, logMessage, logWarn} from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {getHook} from '../src/hook.js';

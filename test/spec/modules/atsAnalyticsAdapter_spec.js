@@ -8,7 +8,7 @@ import {analyticsUrl} from '../../../modules/atsAnalyticsAdapter.js';
 let utils = require('src/utils');
 
 let events = require('src/events');
-let constants = require('src/constants.json');
+let constants = require('src/constants.js');
 
 const storage = getCoreStorageManager();
 let sandbox;

@@ -1,7 +1,7 @@
 import * as utils from 'src/utils';
 import * as ajax from 'src/ajax.js';
 import * as events from 'src/events.js';
-import CONSTANTS from '../../../src/constants.json';
+import CONSTANTS from '../../../src/constants.js';
 import {loadExternalScript} from 'src/adloader.js';
 import {
   qortexSubmodule as module,

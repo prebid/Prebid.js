@@ -1,7 +1,7 @@
 import analyticsAdapter, { ExpiringQueue, getUmtSource, storage } from 'modules/staqAnalyticsAdapter.js';
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
-import CONSTANTS from 'src/constants.json';
+import CONSTANTS from 'src/constants.js';
 
 const events = require('../../../src/events');
 

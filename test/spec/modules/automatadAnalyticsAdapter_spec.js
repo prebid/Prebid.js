@@ -3,7 +3,7 @@ import * as utils from 'src/utils.js';
 
 import spec, {self as exports} from 'modules/automatadAnalyticsAdapter.js';
 
-import CONSTANTS from 'src/constants.json';
+import CONSTANTS from 'src/constants.js';
 import { expect } from 'chai';
 
 const obj = {

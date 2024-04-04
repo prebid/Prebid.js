@@ -131,7 +131,7 @@ import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
 import adapterManager, {gdprDataHandler} from '../../src/adapterManager.js';
-import CONSTANTS from '../../src/constants.json';
+import CONSTANTS from '../../src/constants.js';
 import {module, ready as hooksReady} from '../../src/hook.js';
 import {buildEidPermissions, createEidsArray, EID_CONFIG} from './eids.js';
 import {

@@ -1,5 +1,5 @@
 import * as pbEvents from 'src/events.js';
-import constants from '../../src/constants.json';
+import constants from '../../src/constants.js';
 
 export function fireEvents(events = [
   constants.EVENTS.AUCTION_INIT,

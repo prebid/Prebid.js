@@ -3,7 +3,7 @@ import { ajax } from '../src/ajax.js';
 import { logWarn, mergeDeep, logMessage, generateUUID } from '../src/utils.js';
 import { loadExternalScript } from '../src/adloader.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 
 let requestUrl;
 let bidderArray;

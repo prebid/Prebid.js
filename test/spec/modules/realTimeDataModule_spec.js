@@ -1,7 +1,7 @@
 import * as rtdModule from 'modules/rtdModule/index.js';
 import {config} from 'src/config.js';
 import * as sinon from 'sinon';
-import {default as CONSTANTS} from '../../../src/constants.json';
+import { default as CONSTANTS } from '../../../src/constants.js';
 import * as events from '../../../src/events.js';
 import 'src/prebid.js';
 import {attachRealTimeDataProvider, onDataDeletionRequest} from 'modules/rtdModule/index.js';

@@ -1,6 +1,6 @@
 import {createIframe, deepAccess, inIframe, insertElement, logError, logWarn, replaceMacros} from './utils.js';
 import * as events from './events.js';
-import CONSTANTS from './constants.json';
+import CONSTANTS from './constants.js';
 import {config} from './config.js';
 import {executeRenderer, isRendererRequired} from './Renderer.js';
 import {VIDEO} from './mediaTypes.js';

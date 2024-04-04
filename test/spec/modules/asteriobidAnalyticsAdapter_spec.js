@@ -5,7 +5,7 @@ import * as utils from 'src/utils.js';
 import {expectEvents} from '../../helpers/analytics.js';
 
 let events = require('src/events');
-let constants = require('src/constants.json');
+let constants = require('src/constants.js');
 
 describe('AsterioBid Analytics Adapter', function () {
   let bidWonEvent = {

@@ -5,7 +5,7 @@ import {createBid} from '../bidfactory.js';
 import {userSync} from '../userSync.js';
 import {nativeBidIsValid} from '../native.js';
 import {isValidVideoBid} from '../video.js';
-import CONSTANTS from '../constants.json';
+import CONSTANTS from '../constants.js';
 import * as events from '../events.js';
 import {includes} from '../polyfill.js';
 import {

@@ -13,7 +13,7 @@ import {
 } from './utils.js';
 import {includes} from './polyfill.js';
 import {auctionManager} from './auctionManager.js';
-import CONSTANTS from './constants.json';
+import CONSTANTS from './constants.js';
 import {NATIVE} from './mediaTypes.js';
 
 /**

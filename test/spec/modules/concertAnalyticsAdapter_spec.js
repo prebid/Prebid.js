@@ -4,7 +4,7 @@ import {expectEvents} from '../../helpers/analytics.js';
 const sinon = require('sinon');
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
-let constants = require('src/constants.json');
+let constants = require('src/constants.js');
 
 describe('ConcertAnalyticsAdapter', function() {
   let sandbox;

@@ -6,7 +6,7 @@ import {getHook, module} from '../src/hook.js';
 import {deepSetValue, logInfo, logWarn, mergeDeep} from '../src/utils.js';
 import {IMP, PBS, registerOrtbProcessor, RESPONSE} from '../src/pbjsORTB.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 import {currencyCompare} from '../libraries/currencyUtils/currency.js';
 import {maximum, minimum} from '../src/utils/reducers.js';
 import {auctionManager} from '../src/auctionManager.js';

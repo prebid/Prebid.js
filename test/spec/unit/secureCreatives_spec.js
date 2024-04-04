@@ -13,7 +13,7 @@ import 'modules/nativeRendering.js';
 
 import {expect} from 'chai';
 
-var CONSTANTS = require('src/constants.json');
+var CONSTANTS = require('src/constants.js');
 
 describe('secureCreatives', () => {
   let sandbox;

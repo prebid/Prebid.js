@@ -4,7 +4,7 @@ import { log } from 'modules/33acrossAnalyticsAdapter.js';
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
 import * as events from 'src/events.js';
 import * as faker from 'faker';
-import CONSTANTS from 'src/constants.json';
+import CONSTANTS from 'src/constants.js';
 import { gdprDataHandler, gppDataHandler, uspDataHandler } from '../../../src/adapterManager';
 import { DEFAULT_ENDPOINT, POST_GAM_TIMEOUT, locals } from '../../../modules/33acrossAnalyticsAdapter';
 const { EVENTS, BID_STATUS } = CONSTANTS;

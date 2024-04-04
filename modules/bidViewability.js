@@ -4,7 +4,7 @@
 
 import {config} from '../src/config.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import CONSTANTS from '../src/constants.js';
 import {isFn, logWarn, triggerPixel} from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import adapterManager, {gdprDataHandler, uspDataHandler, gppDataHandler} from '../src/adapterManager.js';
