@@ -4,27 +4,30 @@
 
 **Module Type**: Bidder Adapter
 
-**Maintainer**: info@exads.com
+**Maintainer**: <info@exads.com>
 
-# Description
+## Description
 
 Module that connects to EXADS' bidder for bids.
 
-### Build
+## Build
+
 If you don't need to use the prebidJS video module, please remove the videojsVideoProvider module.
-```
+
+```bash
 gulp build --modules=consentManagement,exadsBidAdapter,videojsVideoProvider 
 ```
 
 ### Configuration
 
-Use `setConfig` to instruct Prebid.js to initilize the exadsBidAdapter, as specified below. 
+Use `setConfig` to instruct Prebid.js to initilize the exadsBidAdapter, as specified below.
+
 * Set "debug" as true if you need to read logs;
 * Set "gdprApplies" as true if you need to pass gdpr consent string;
 * The tcString is the iabtcf consent string for gdpr;
 * Uncomment the cache instruction if you need to configure a cache server (e.g. for instream video)
 
-```
+```js
 pbjs.setConfig({
     debug: false,
     //cache: { url: "https://prebid.adnxs.com/pbc/v1/cache" },
@@ -43,9 +46,11 @@ pbjs.setConfig({
     }
 });
 ```
+
 Add the `video` config if you need to render videos using the video module.
-For more info navigate to https://docs.prebid.org/prebid-video/video-module.html.
-```
+For more info navigate to <https://docs.prebid.org/prebid-video/video-module.html>.
+
+```js
 pbjs.setConfig({
     video: {
         providers: [{
@@ -68,11 +73,10 @@ pbjs.setConfig({
 });
 ```
 
+### Test Parameters
 
-# Test Parameters
- 
 Now you will find the different parameters to set, based on publisher website. They are optional unless otherwise specified.
- 
+
 #### RTB Banner 2.4
 
 * **zoneId** (required) - you can get it from the endpoint created after configuring the zones (integer)
@@ -82,34 +86,34 @@ Now you will find the different parameters to set, based on publisher website. T
 * **siteName** site name (string)
 * **banner.sizes** (required) - one integer array - [width, height]
 * **userIp** (required) - IP address of the user, ipv4 or ipv6 (string)
-* **userId** (*required) - unique user ID (string). *If you cannot generate a user ID, you can leave it empty (""). The request will get a response as long as "user" object is included in the request
+* **userId** (*required) - unique user ID (string).*If you cannot generate a user ID, you can leave it empty (""). The request will get a response as long as "user" object is included in the request
 * **country** - country ISO3
 * **impressionId** (required) - unique impression ID within this bid request (string)
 * **keywords** - keywords can be used to ensure ad zones get the right type of advertising. Keywords should be a string of comma-separated words
-* **bidfloor** - minimum bid for this impression (CPM) / click (CPC) and account currency (float) 
+* **bidfloor** - minimum bid for this impression (CPM) / click (CPC) and account currency (float)
 * **bidfloorcur** - currency for minimum bid value specified using ISO-4217 alpha codes (string)
 * **bcat** - blocked advertiser categories using the IAB content categories (string array)
 * **badv** - block list of advertisers by their domains (string array)
 * **mimes** - list of supported mime types. We support: image/jpeg, image/jpg, image/png, image/png, image/gif, image/webp, video/mp4 (string array)
 * **dsa** - DSA transparency information
-    * **dsarequired** - flag to indicate if DSA information should be made available (integer)
-        * 0 - Not required
+  * **dsarequired** - flag to indicate if DSA information should be made available (integer)
+        *0 - Not required
         * 1 - Supported, bid responses with or without DSA object will be accepted
-        * 2 - Required, bid responses without DSA object will not be accepted
+        *2 - Required, bid responses without DSA object will not be accepted
         * 3 - Required, bid responses without DSA object will not be accepted, Publisher is an Online Platform
     * **pubrender** - flag to indicate if the publisher will render the DSA Transparency info (integer)
-        * 0 - Publisher can't render
+      * 0 - Publisher can't render
         * 1 - Publisher could render depending on adrender
         * 2 - Publisher will render
     * **datatopub** - independent of pubrender, the publisher may need the transparency data for audit purposes (integer)
-        * 0 - do not send transparency data
+      * 0 - do not send transparency data
         * 1 - optional to send transparency data
         * 2 - send transparency data
 * **endpoint** (required) - EXADS endpoint (URL)
 
 ##### RTB Banner 2.4 (Image)
 
-```javascript
+```js
 
 adUnits = 
     [{  code: 'postbid_iframe', // the frame where to render the creative
@@ -149,7 +153,7 @@ adUnits =
 
 ##### RTB Banner 2.4 (Video)
 
-```javascript
+```js
 adUnits = 
     [{  code: 'postbid_iframe', // the frame where to render the creative
         mediaTypes: {
@@ -198,31 +202,31 @@ adUnits =
 * **country** - Country ISO3 (string)
 * **impressionId** (required) - unique impression ID within this bid request (string)
 * **keywords** - keywords can be used to ensure ad zones get the right type of advertising. Keywords should be a string of comma-separated words
-* **bidfloor** - minimum bid for this impression (CPM) / click (CPC) and account currency (float) 
+* **bidfloor** - minimum bid for this impression (CPM) / click (CPC) and account currency (float)
 * **bidfloorcur** - currency for minimum bid value specified using ISO-4217 alpha codes (string)
 * **bcat** - blocked advertiser categories using the IAB content categories (string array)
 * **badv** - block list of advertisers by their domains (string array)
 * **mediaTypes.video** (required)
-    * **mimes** (required) - list of supported mime types (string array)
-    * **protocols** (required) - list of supported video bid response protocols (integer array) 
+  * **mimes** (required) - list of supported mime types (string array)
+    * **protocols** (required) - list of supported video bid response protocols (integer array)
     * **context** - (recommended) - the video context, either 'instream', 'outstream'. Defaults to ‘instream’ (string)
 * **dsa** - DSA transparency information
-    * **dsarequired** - flag to indicate if DSA information should be made available (integer)
-        * 0 - Not required
+  * **dsarequired** - flag to indicate if DSA information should be made available (integer)
+        *0 - Not required
         * 1 - Supported, bid responses with or without DSA object will be accepted
-        * 2 - Required, bid responses without DSA object will not be accepted
+        *2 - Required, bid responses without DSA object will not be accepted
         * 3 - Required, bid responses without DSA object will not be accepted, Publisher is an Online Platform
     * **pubrender** - flag to indicate if the publisher will render the DSA Transparency info (integer)
-        * 0 - Publisher can't render
+      * 0 - Publisher can't render
         * 1 - Publisher could render depending on adrender
         * 2 - Publisher will render
     * **datatopub** - independent of pubrender, the publisher may need the transparency data for audit purposes (integer)
-        * 0 - do not send transparency data
+      * 0 - do not send transparency data
         * 1 - optional to send transparency data
         * 2 - send transparency data
 * **endpoint** (required) - EXADS endpoint (URL)
 
-```javascript
+```js
 adUnits = [{
     code: 'postbid_iframe',
     mediaTypes: {
@@ -273,61 +277,62 @@ adUnits = [{
 * **siteId** (recommended) - unique Site ID (string)
 * **siteName** site name (string)
 * **userIp** (required) - IP address of the user, ipv4 or ipv6 (string)
-* **userId** (*required) - unique user ID (string). *If you cannot generate a user ID, you can leave it empty (""). The request will get a response as long as "user" object is included in the request
+* **userId** (*required) - unique user ID (string).*If you cannot generate a user ID, you can leave it empty (""). The request will get a response as long as "user" object is included in the request
 * **country** - country ISO3 (string)
 * **impressionId** (required) - unique impression ID within this bid request (string)
 * **keywords** - keywords can be used to ensure ad zones get the right type of advertising. Keywords should be a string of comma-separated words
-* **bidfloor** - minimum bid for this impression (CPM) / click (CPC) and account currency (float) 
+* **bidfloor** - minimum bid for this impression (CPM) / click (CPC) and account currency (float)
 * **bidfloorcur** - currency for minimum bid value specified using ISO-4217 alpha codes (string)
 * **bcat** - blocked advertiser categories using the IAB content categories (string array)
 * **badv** - block list of advertisers by their domains (string array)
 * **dsa** - DSA transparency information
-    * **dsarequired** - flag to indicate if DSA information should be made available (integer)
-        * 0 - Not required
+  * **dsarequired** - flag to indicate if DSA information should be made available (integer)
+        *0 - Not required
         * 1 - Supported, bid responses with or without DSA object will be accepted
-        * 2 - Required, bid responses without DSA object will not be accepted
+        *2 - Required, bid responses without DSA object will not be accepted
         * 3 - Required, bid responses without DSA object will not be accepted, Publisher is an Online Platform
     * **pubrender** - flag to indicate if the publisher will render the DSA Transparency info (integer)
-        * 0 - Publisher can't render
+      * 0 - Publisher can't render
         * 1 - Publisher could render depending on adrender
         * 2 - Publisher will render
     * **datatopub** - independent of pubrender, the publisher may need the transparency data for audit purposes (integer)
-        * 0 - do not send transparency data
+      * 0 - do not send transparency data
         * 1 - optional to send transparency data
         * 2 - send transparency data
 * **native.plcmtcnt** - the number of identical placements in this Layout (integer)
 * **assets (title)**
-    * **id** - unique asset ID, assigned by exchange. Typically a counter for the array (integer): 
-        * 1 - image asset ID
+  * **id** - unique asset ID, assigned by exchange. Typically a counter for the array (integer):
+        *1 - image asset ID
         * 2 - title asset ID
         * 3 - description asset ID
     * **required** - set to 1 if asset is required or 0 if asset is optional (integer)
     * **title**
-        * len (required) - maximum length of the text in the title element (integer)
+      * len (required) - maximum length of the text in the title element (integer)
 * **assets (data)**
-    * **id** - unique asset ID, assigned by exchange. Typically a counter for the array (integer):
-        * 1 - image asset ID
+  * **id** - unique asset ID, assigned by exchange. Typically a counter for the array (integer):
+        *1 - image asset ID
         * 2 - title asset ID
         * 3 - description asset ID
     * **data**
-        * **type** - type ID of the element supported by the publisher (integer). We support: 
-            * 1 - sponsored - sponsored By message where response should contain the brand name of the sponsor
+      * **type** - type ID of the element supported by the publisher (integer). We support:
+            *1 - sponsored - sponsored By message where response should contain the brand name of the sponsor
             * 2 - desc - descriptive text associated with the product or service being advertised
         * **len** - maximum length of the text in the element’s response (integer)
 * **assets (img)**
-    * **id** - unique asset ID, assigned by exchange. Typically a counter for the array (integer): 
-        * 1 - image asset ID
+  * **id** - unique asset ID, assigned by exchange. Typically a counter for the array (integer):
+        *1 - image asset ID
         * 2 - title asset ID
         * 3 - description asset ID
     * **required** - set to 1 if asset is required or 0 if asset is optional (integer)
     * **img**
-        * **type** - type ID of the image element supported by the publisher. We support: 
-            * 1 - icon image (integer)
+      * **type** - type ID of the image element supported by the publisher. We support:
+            *1 - icon image (integer)
             * 3 - large image preview for the ad (integer)
         * **w** - width of the image in pixels, optional (integer)
         * **h** - height of the image in pixels, optional (integer)
- * **endpoint** (required) - EXADS endpoint (URL)   
-```javascript
+* **endpoint** (required) - EXADS endpoint (URL)
+
+```js
 adUnits = [{
     code: 'postbid_iframe',
     mediaTypes: {
@@ -389,9 +394,12 @@ adUnits = [{
         }]
 }];
 ```
-# DSA Transparency
+
+## DSA Transparency
+
 All DSA information, returned by the ad server, can be found into the **meta** tag of the response. As:
-```
+
+```js
 "meta": {
     "dsa": {
         "behalf": "...",
@@ -407,17 +415,20 @@ All DSA information, returned by the ad server, can be found into the **meta** t
     }
 }
 ```
-For more information navigate to https://docs.prebid.org/dev-docs/bidder-adaptor.html.
 
-# Tools and suggestions
+For more information navigate to <https://docs.prebid.org/dev-docs/bidder-adaptor.html>.
+
+## Tools and suggestions
+
 This section contains some suggestions that allow to set some parameters automatically.
 
 ### User Ip / Country
+
 In order to detect the current user ip there are different approaches. An example is using public web services as ```https://api.ipify.org```.
 
 Example of usage (to add to the publisher websites):
 
-```
+```html
 <script>
     let userIp = '';
     let ip_script = document.createElement("script");
@@ -430,13 +441,14 @@ Example of usage (to add to the publisher websites):
 </script>
 ```
 
-The same service gives the possibility to detect the country as well. Check the official web page about possible limitations of the free licence. 
+The same service gives the possibility to detect the country as well. Check the official web page about possible limitations of the free licence.
 
 ### Impression Id
+
 Each advertising request has to be identified uniquely by an id.
 One possible approach is using a classical hash function.
 
-```
+```html
 <script>
     let impression_id = hashCode(new Date().getTime().toString());
     
@@ -456,10 +468,11 @@ One possible approach is using a classical hash function.
 ```
 
 ### User Id
+
 The approach used for impression id could be used for generating a unique user id.
 Also, it is recommended to store the id locally, e.g. by the browser localStorage.
 
-```
+```html
 <script>
 let userId = localStorage.getItem('prebidJS.user_id');
 
