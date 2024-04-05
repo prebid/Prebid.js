@@ -30,8 +30,8 @@ const analyticsOptions = {};
 
 export const isSampled = function(greenbidsId, samplingRate, exploratorySamplingSplit) {
   let isDebug = config.getConfig('debug');
-  if(isDebug) {
-    logInfo("Greenbids Analytics: PBJS debug flag detected, forcing analytics");
+  if (isDebug) {
+    logInfo('Greenbids Analytics: PBJS debug flag detected, forcing analytics');
     return true;
   }
   if (samplingRate < 0 || samplingRate > 1) {

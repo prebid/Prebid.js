@@ -4,10 +4,11 @@ import {
   ANALYTICS_VERSION, BIDDER_STATUS
 } from 'modules/greenbidsAnalyticsAdapter.js';
 import {
-  generateUUID,
+  generateUUID
 } from '../../../src/utils.js';
 import {expect} from 'chai';
 import sinon from 'sinon';
+import {config} from '../../../src/config.js';
 
 const events = require('src/events');
 const constants = require('src/constants.json');
@@ -422,6 +423,12 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
 
     it('should return determinist false value for valid sampling rate given the predifined id and rate when we split to non exploration first', function() {
       expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.0001, 0.0, 1.0)).to.be.false;
+    });
+    it('should return determinist true given debug mode activated', function() {
+      config.setConfig({
+        debug: true
+      });
+      expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.0001, 0.0, 1.0)).to.be.true;
     });
   });
 });
