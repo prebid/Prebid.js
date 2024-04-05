@@ -192,6 +192,8 @@ describe('gumgumAdapter', function () {
       const request = { ...bidRequests[0] };
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data.aun).to.equal(bidRequests[0].adUnitCode);
+      expect(bidRequest.data.displaymanager).to.equal('Prebid.js - gumgum');
+      expect(bidRequest.data.displaymanagerver).to.equal(JCSI.pbv);
     });
     it('should set pubProvidedId if the uid and  pubProvidedId are available', function () {
       const request = { ...bidRequests[0] };
