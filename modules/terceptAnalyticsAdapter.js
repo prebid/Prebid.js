@@ -40,7 +40,7 @@ var terceptAnalyticsAdapter = Object.assign(adapter(
       }
     }
 
-      if (eventType === EVENTS.AUCTION_END) {
+    if (eventType === EVENTS.AUCTION_END) {
       send(events, 'auctionEnd');
     }
   }
