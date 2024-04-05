@@ -388,8 +388,8 @@ describe('Zeta Global SSP Analytics Adapter', function() {
     it('Move ZetaParams through analytics events', function() {
       this.timeout(3000);
 
-      events.emit(EVENTS.AUCTION_END, EVENTS.AUCTION_END);
-      events.emit(EVENTS.AD_RENDER_SUCCEEDED, EVENTS.AD_RENDER_SUCCEEDED);
+      events.emit(EVENTS.AUCTION_END, SAMPLE_EVENTS.AUCTION_END);
+      events.emit(EVENTS.AD_RENDER_SUCCEEDED, SAMPLE_EVENTS.AD_RENDER_SUCCEEDED);
 
       expect(requests.length).to.equal(2);
       const auctionEnd = JSON.parse(requests[0].requestBody);
@@ -402,8 +402,8 @@ describe('Zeta Global SSP Analytics Adapter', function() {
     it('Keep only needed fields', function() {
       this.timeout(3000);
 
-      events.emit(EVENTS.AUCTION_END, EVENTS.AUCTION_END);
-      events.emit(EVENTS.AD_RENDER_SUCCEEDED, EVENTS.AD_RENDER_SUCCEEDED);
+      events.emit(EVENTS.AUCTION_END, SAMPLE_EVENTS.AUCTION_END);
+      events.emit(EVENTS.AD_RENDER_SUCCEEDED, SAMPLE_EVENTS.AD_RENDER_SUCCEEDED);
 
       expect(requests.length).to.equal(2);
       const auctionEnd = JSON.parse(requests[0].requestBody);
