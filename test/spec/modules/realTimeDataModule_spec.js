@@ -255,7 +255,7 @@ describe('Real time module', function () {
   });
 
   describe('event', () => {
-    const EVENTS = {
+    const TEST_EVENTS = {
       [EVENTS.AUCTION_INIT]: 'onAuctionInitEvent',
       [EVENTS.AUCTION_END]: 'onAuctionEndEvent',
       [EVENTS.BID_RESPONSE]: 'onBidResponseEvent',
@@ -281,7 +281,7 @@ describe('Real time module', function () {
         name: name,
         init: () => true,
       }
-      Object.values(EVENTS).forEach((ev) => provider[ev] = sinon.spy());
+      Object.values(TEST_EVENTS).forEach((ev) => provider[ev] = sinon.spy());
       return provider;
     }
 
@@ -309,7 +309,7 @@ describe('Real time module', function () {
       });
     });
 
-    Object.entries(EVENTS).forEach(([event, hook]) => {
+    Object.entries(TEST_EVENTS).forEach(([event, hook]) => {
       it(`'${event}' should be propagated to providers through '${hook}'`, () => {
         const eventArg = {};
         mockEmitEvent(event, eventArg);
