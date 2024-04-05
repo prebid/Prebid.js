@@ -1,6 +1,6 @@
 import pubmaticAnalyticsAdapter, { getMetadata } from 'modules/pubmaticAnalyticsAdapter.js';
 import adapterManager from 'src/adapterManager.js';
-import { EVENTS } from 'src/constants.js';
+import { EVENTS, REJECTION_REASON } from 'src/constants.js';
 import { config } from 'src/config.js';
 import { setConfig } from 'modules/currency.js';
 import { server } from '../../mocks/xhr.js';
@@ -108,7 +108,7 @@ const BID2 = Object.assign({}, BID, {
 });
 
 const BID3 = Object.assign({}, BID2, {
-  rejectionReason: CONSTANTS.REJECTION_REASON.FLOOR_NOT_MET
+  rejectionReason: REJECTION_REASON.FLOOR_NOT_MET
 })
 const MOCK = {
   SET_TARGETING: {
