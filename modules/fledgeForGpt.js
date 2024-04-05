@@ -7,6 +7,11 @@ import {getGptSlotForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
+// import parent module to keep backwards-compat for NPM consumers after paapi was split from fledgeForGpt
+// there's a special case in webpack.conf.js to avoid duplicating build output on non-npm builds
+// TODO: remove this in prebid 9
+// eslint-disable-next-line prebid/validate-imports
+import './paapi.js';
 const MODULE = 'fledgeForGpt';
 
 let getPAAPIConfig;

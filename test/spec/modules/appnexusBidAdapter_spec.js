@@ -343,7 +343,7 @@ describe('AppNexusAdapter', function () {
         expect(payload.tags[0].hb_source).to.deep.equal(1);
       });
 
-      it('should include ORTB video values when video params were not set', function () {
+      it('should include ORTB video values when matching video params were not all set', function () {
         let bidRequest = deepClone(bidRequests[0]);
         bidRequest.params = {
           placementId: '1234235',
@@ -373,6 +373,61 @@ describe('AppNexusAdapter', function () {
           playback_method: 2,
           skippable: true,
           context: 4
+        });
+        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
+      });
+
+      it('should include ORTB video values when video params is empty - case 1', function () {
+        let bidRequest = deepClone(bidRequests[0]);
+        bidRequest.mediaTypes = {
+          video: {
+            playerSize: [640, 480],
+            context: 'outstream',
+            placement: 3,
+            mimes: ['video/mp4'],
+            skip: 0,
+            minduration: 5,
+            api: [1, 5, 6],
+            playbackmethod: [2, 4]
+          }
+        };
+
+        const request = spec.buildRequests([bidRequest]);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.tags[0].video).to.deep.equal({
+          minduration: 5,
+          playback_method: 2,
+          skippable: false,
+          context: 4
+        });
+        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
+      });
+
+      it('should include ORTB video values when video params is empty - case 2', function () {
+        let bidRequest = deepClone(bidRequests[0]);
+        bidRequest.mediaTypes = {
+          video: {
+            playerSize: [640, 480],
+            context: 'outstream',
+            plcmt: 2,
+            startdelay: -1,
+            mimes: ['video/mp4'],
+            skip: 1,
+            minduration: 5,
+            api: [1, 5, 6],
+            playbackmethod: [2, 4]
+          }
+        };
+
+        const request = spec.buildRequests([bidRequest]);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.tags[0].video).to.deep.equal({
+          minduration: 5,
+          playback_method: 2,
+          skippable: true,
+          context: 9
         });
         expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
       });
