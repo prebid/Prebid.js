@@ -14,6 +14,7 @@ export const FloorsApiStatus = Object.freeze({
 });
 export const FLOORS_EVENT_HANDLE = "floorsApi";
 export const FLOORS_END_POINT = "https://floor.pbxai.com/";
+export const FLOOR_PROVIDER = "PubxFloorProvider";
 
 export const getFloorsConfig = (provider, floorsResponse) => {
   const floorsConfig = {
@@ -48,6 +49,7 @@ export const setFloorsConfig = (provider, data) => {
 export const setDefaultPriceFloors = (provider) => {
   const { data } = deepAccess(provider, "params");
   if (data !== undefined) {
+    data.floorProvider = FLOOR_PROVIDER;
     setFloorsConfig(provider, data);
   }
 };

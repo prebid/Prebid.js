@@ -60,4 +60,4 @@ pbjs.setConfig({
 | params.endpoint    | String  | URL to get the floor data (optional)                             | `https://floor.pbxai.com/` |
 | params.floorMin    | Number  | Mimimum CPM floor (optional)                                     | `None`                     |
 | params.enforcement | Object  | Enforcement behavior within the Price Floors Module (optional)   | `None`                     |
-| params.data        | Object  | Default Floor data provided by (optional)                        | `None`                     |
+| params.data        | Object  | Default Floor data provided by pubx (optional)                   | `None`                     |
