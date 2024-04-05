@@ -428,7 +428,7 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
       config.setConfig({
         debug: true
       });
-      expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.0001, 0.0, 1.0)).to.be.true;
+      expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.0001, 0.0)).to.be.true;
     });
   });
 });

@@ -29,7 +29,7 @@ export const BIDDER_STATUS = {
 const analyticsOptions = {};
 
 export const isSampled = function(greenbidsId, samplingRate, exploratorySamplingSplit) {
-  let isDebug = config.getConfig('debug');
+  const isDebug = config.getConfig('debug');
   if (isDebug) {
     logInfo('Greenbids Analytics: PBJS debug flag detected, forcing analytics');
     return true;
