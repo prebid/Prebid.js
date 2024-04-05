@@ -1,7 +1,7 @@
 import * as rtdModule from 'modules/rtdModule/index.js';
 import {config} from 'src/config.js';
 import * as sinon from 'sinon';
-import { default as CONSTANTS } from '../../../src/constants.js';
+import { EVENTS } from '../../../src/constants.js';
 import * as events from '../../../src/events.js';
 import 'src/prebid.js';
 import {attachRealTimeDataProvider, onDataDeletionRequest} from 'modules/rtdModule/index.js';
@@ -256,10 +256,10 @@ describe('Real time module', function () {
 
   describe('event', () => {
     const EVENTS = {
-      [CONSTANTS.EVENTS.AUCTION_INIT]: 'onAuctionInitEvent',
-      [CONSTANTS.EVENTS.AUCTION_END]: 'onAuctionEndEvent',
-      [CONSTANTS.EVENTS.BID_RESPONSE]: 'onBidResponseEvent',
-      [CONSTANTS.EVENTS.BID_REQUESTED]: 'onBidRequestEvent'
+      [EVENTS.AUCTION_INIT]: 'onAuctionInitEvent',
+      [EVENTS.AUCTION_END]: 'onAuctionEndEvent',
+      [EVENTS.BID_RESPONSE]: 'onBidResponseEvent',
+      [EVENTS.BID_REQUESTED]: 'onBidRequestEvent'
     }
     const conf = {
       'realTimeData': {
@@ -303,7 +303,7 @@ describe('Real time module', function () {
         adUnitCodes: ['a1'],
         adUnits: [{code: 'a1'}]
       };
-      mockEmitEvent(CONSTANTS.EVENTS.AUCTION_END, auction);
+      mockEmitEvent(EVENTS.AUCTION_END, auction);
       providers.forEach(p => {
         expect(p.getTargetingData.calledWith(auction.adUnitCodes)).to.be.true;
       });
