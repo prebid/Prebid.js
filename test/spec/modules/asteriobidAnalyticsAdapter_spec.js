@@ -3,7 +3,7 @@ import {expect} from 'chai';
 import {server} from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
 import {expectEvents} from '../../helpers/analytics.js';
-import CONSTANTS from 'src/constants.js';
+import { EVENTS } from 'src/constants.js';
 
 let events = require('src/events');
 
@@ -66,7 +66,7 @@ describe('AsterioBid Analytics Adapter', function () {
         }
       });
 
-      events.emit(constants.EVENTS.BID_WON, bidWonEvent);
+      events.emit(EVENTS.BID_WON, bidWonEvent);
       asteriobidAnalytics.flush();
 
       expect(server.requests.length).to.equal(1);

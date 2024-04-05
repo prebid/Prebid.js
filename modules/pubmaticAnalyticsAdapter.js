@@ -1,7 +1,7 @@
 import {_each, isArray, isStr, logError, logWarn, pick, generateUUID} from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.js';
+import { BID_STATUS, EVENTS, FLOOR_VALUES, STATUS, REJECTION_REASON } from '../src/constants.js';
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
@@ -109,7 +109,7 @@ function copyRequiredBidDetails(bid) {
 
 function setBidStatus(bid, args) {
   switch (args.getStatusCode()) {
-    case CONSTANTS.STATUS.GOOD:
+    case STATUS.GOOD:
       bid.status = SUCCESS;
       delete bid.error; // it's possible for this to be set by a previous timeout
       break;
@@ -346,9 +346,9 @@ function getFloorFetchStatus(floorData) {
     return false;
   }
   const { location, fetchStatus } = floorData?.floorRequestData;
-  const isDataValid = location !== CONSTANTS.FLOOR_VALUES.NO_DATA;
-  const isFetchSuccessful = location === CONSTANTS.FLOOR_VALUES.FETCH && fetchStatus === CONSTANTS.FLOOR_VALUES.SUCCESS;
-  const isAdUnitOrSetConfig = location === CONSTANTS.FLOOR_VALUES.AD_UNIT || location === CONSTANTS.FLOOR_VALUES.SET_CONFIG;
+  const isDataValid = location !== FLOOR_VALUES.NO_DATA;
+  const isFetchSuccessful = location === FLOOR_VALUES.FETCH && fetchStatus === FLOOR_VALUES.SUCCESS;
+  const isAdUnitOrSetConfig = location === FLOOR_VALUES.AD_UNIT || location === FLOOR_VALUES.SET_CONFIG;
   return isDataValid && (isAdUnitOrSetConfig || isFetchSuccessful);
 }
 
@@ -404,16 +404,16 @@ function executeBidsLoggerCall(e, highestCpmBids) {
     if (floorData?.floorRequestData) {
       const { location, fetchStatus, floorProvider } = floorData?.floorRequestData;
       slotObject.ffs = {
-        [CONSTANTS.FLOOR_VALUES.SUCCESS]: 1,
-        [CONSTANTS.FLOOR_VALUES.ERROR]: 2,
-        [CONSTANTS.FLOOR_VALUES.TIMEOUT]: 4,
+        [FLOOR_VALUES.SUCCESS]: 1,
+        [FLOOR_VALUES.ERROR]: 2,
+        [FLOOR_VALUES.TIMEOUT]: 4,
         undefined: 0
       }[fetchStatus];
       slotObject.fsrc = {
-        [CONSTANTS.FLOOR_VALUES.FETCH]: 2,
-        [CONSTANTS.FLOOR_VALUES.NO_DATA]: 2,
-        [CONSTANTS.FLOOR_VALUES.AD_UNIT]: 1,
-        [CONSTANTS.FLOOR_VALUES.SET_CONFIG]: 1
+        [FLOOR_VALUES.FETCH]: 2,
+        [FLOOR_VALUES.NO_DATA]: 2,
+        [FLOOR_VALUES.AD_UNIT]: 1,
+        [FLOOR_VALUES.SET_CONFIG]: 1
       }[location];
       slotObject.fp = floorProvider;
     }
@@ -578,9 +578,9 @@ function bidResponseHandler(args) {
 function bidRejectedHandler(args) {
   // If bid is rejected due to floors value did not met
   // make cpm as 0, status as bidRejected and forward the bid for logging
-  if (args.rejectionReason === CONSTANTS.REJECTION_REASON.FLOOR_NOT_MET) {
+  if (args.rejectionReason === REJECTION_REASON.FLOOR_NOT_MET) {
     args.cpm = 0;
-    args.status = CONSTANTS.BID_STATUS.BID_REJECTED;
+    args.status = BID_STATUS.BID_REJECTED;
     bidResponseHandler(args);
   }
 }
@@ -674,28 +674,28 @@ let pubmaticAdapter = Object.assign({}, baseAdapter, {
 
   track({eventType, args}) {
     switch (eventType) {
-      case CONSTANTS.EVENTS.AUCTION_INIT:
+      case EVENTS.AUCTION_INIT:
         auctionInitHandler(args);
         break;
-      case CONSTANTS.EVENTS.BID_REQUESTED:
+      case EVENTS.BID_REQUESTED:
         bidRequestedHandler(args);
         break;
-      case CONSTANTS.EVENTS.BID_RESPONSE:
+      case EVENTS.BID_RESPONSE:
         bidResponseHandler(args);
         break;
-      case CONSTANTS.EVENTS.BID_REJECTED:
+      case EVENTS.BID_REJECTED:
         bidRejectedHandler(args)
         break;
-      case CONSTANTS.EVENTS.BIDDER_DONE:
+      case EVENTS.BIDDER_DONE:
         bidderDoneHandler(args);
         break;
-      case CONSTANTS.EVENTS.BID_WON:
+      case EVENTS.BID_WON:
         bidWonHandler(args);
         break;
-      case CONSTANTS.EVENTS.AUCTION_END:
+      case EVENTS.AUCTION_END:
         auctionEndHandler(args);
         break;
-      case CONSTANTS.EVENTS.BID_TIMEOUT:
+      case EVENTS.BID_TIMEOUT:
         bidTimeoutHandler(args);
         break;
     }

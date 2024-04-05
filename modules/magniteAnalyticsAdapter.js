@@ -19,7 +19,7 @@ import {
 } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.js';
+import { REJECTION_REASON } from '../src/constants.js';
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
@@ -921,7 +921,7 @@ magniteAdapter.track = ({ eventType, args }) => {
       handleBidResponse(args, 'success');
       break;
     case BID_REJECTED:
-      const bidStatus = args.rejectionReason === CONSTANTS.REJECTION_REASON.FLOOR_NOT_MET ? BID_REJECTED_IPF : 'rejected';
+      const bidStatus = args.rejectionReason === REJECTION_REASON.FLOOR_NOT_MET ? BID_REJECTED_IPF : 'rejected';
       handleBidResponse(args, bidStatus);
       break;
     case SEAT_NON_BID:

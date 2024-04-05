@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import * as utils from 'src/utils.js';
 import { getGlobal } from 'src/prebidGlobal.js';
 import { server } from 'test/mocks/xhr.js';
-import CONSTANTS from 'src/constants.js';
+import { EVENTS } from 'src/constants.js';
 
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
@@ -86,9 +86,9 @@ describe('adagio analytics adapter - adagio.js', () => {
       };
 
       const testEvents = {
-        [constants.EVENTS.BID_REQUESTED]: bidRequest,
-        [constants.EVENTS.BID_RESPONSE]: bidResponse,
-        [constants.EVENTS.AUCTION_END]: {}
+        [EVENTS.BID_REQUESTED]: bidRequest,
+        [EVENTS.BID_RESPONSE]: bidResponse,
+        [EVENTS.AUCTION_END]: {}
       };
 
       // Step 1-3: Send events
@@ -162,13 +162,13 @@ describe('adagio analytics adapter - adagio.js', () => {
       };
 
       // Step 1: Send bid requested event
-      events.emit(constants.EVENTS.BID_REQUESTED, bidRequest);
+      events.emit(EVENTS.BID_REQUESTED, bidRequest);
 
       // Step 2: Send bid response event
-      events.emit(constants.EVENTS.BID_RESPONSE, bidResponse);
+      events.emit(EVENTS.BID_RESPONSE, bidResponse);
 
       // Step 3: Send auction end event
-      events.emit(constants.EVENTS.AUCTION_END, {});
+      events.emit(EVENTS.AUCTION_END, {});
 
       utils.getWindowTop.restore();
 
@@ -659,12 +659,12 @@ describe('adagio analytics adapter', () => {
         return cpm * (convKeys[`${from}-${to}`] || 1);
       };
 
-      events.emit(constants.EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT.another);
-      events.emit(constants.EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.adagio);
-      events.emit(constants.EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.another);
-      events.emit(constants.EVENTS.AUCTION_END, MOCK.AUCTION_END.another);
-      events.emit(constants.EVENTS.BID_WON, MOCK.BID_WON.another);
-      events.emit(constants.EVENTS.AD_RENDER_SUCCEEDED, MOCK.AD_RENDER_SUCCEEDED.another);
+      events.emit(EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT.another);
+      events.emit(EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.adagio);
+      events.emit(EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.another);
+      events.emit(EVENTS.AUCTION_END, MOCK.AUCTION_END.another);
+      events.emit(EVENTS.BID_WON, MOCK.BID_WON.another);
+      events.emit(EVENTS.AD_RENDER_SUCCEEDED, MOCK.AD_RENDER_SUCCEEDED.another);
 
       expect(server.requests.length).to.equal(3, 'requests count');
       {
@@ -732,13 +732,13 @@ describe('adagio analytics adapter', () => {
         return cpm * (convKeys[`${from}-${to}`] || 1);
       };
 
-      events.emit(constants.EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT.bidcached);
-      events.emit(constants.EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT.another);
-      events.emit(constants.EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.adagio);
-      events.emit(constants.EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.another);
-      events.emit(constants.EVENTS.AUCTION_END, MOCK.AUCTION_END.another_nobid);
-      events.emit(constants.EVENTS.BID_WON, MOCK.BID_WON.bidcached);
-      events.emit(constants.EVENTS.AD_RENDER_FAILED, MOCK.AD_RENDER_FAILED.bidcached);
+      events.emit(EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT.bidcached);
+      events.emit(EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT.another);
+      events.emit(EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.adagio);
+      events.emit(EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.another);
+      events.emit(EVENTS.AUCTION_END, MOCK.AUCTION_END.another_nobid);
+      events.emit(EVENTS.BID_WON, MOCK.BID_WON.bidcached);
+      events.emit(EVENTS.AD_RENDER_FAILED, MOCK.AD_RENDER_FAILED.bidcached);
 
       expect(server.requests.length).to.equal(5, 'requests count');
       {

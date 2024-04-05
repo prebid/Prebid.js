@@ -1,6 +1,6 @@
 import ascAdapter from 'modules/byDataAnalyticsAdapter';
 import { expect } from 'chai';
-import CONSTANTS from 'src/constants.js';
+import {EVENTS} from 'src/constants.js';
 
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
@@ -177,9 +177,9 @@ describe('byData Analytics Adapter ', () => {
       });
     });
     it('sends and formatted auction data ', function () {
-      events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeoutArgs);
-      events.emit(constants.EVENTS.NO_BID, noBidArgs);
-      events.emit(constants.EVENTS.BID_WON, bidWonArgs)
+      events.emit(EVENTS.BID_TIMEOUT, bidTimeoutArgs);
+      events.emit(EVENTS.NO_BID, noBidArgs);
+      events.emit(EVENTS.BID_WON, bidWonArgs)
       var userToken = ascAdapter.getVisitorData(userData);
       var newAuData = ascAdapter.dataProcess(auctionEndArgs);
       var newBwData = ascAdapter.getBidWonData(bidWonArgs);
