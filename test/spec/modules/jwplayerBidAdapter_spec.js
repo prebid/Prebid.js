@@ -1,8 +1,7 @@
 import { expect, assert } from 'chai';
 import { spec } from 'modules/jwplayerBidAdapter.js';
-import { config } from 'src/config.js';
 
-describe('jwplayer bid adapter tests', function() {
+describe('jwplayerBidAdapter', function() {
   beforeEach(function() {
     this.defaultBidderRequest = {
       gdprConsent: {
@@ -45,39 +44,74 @@ describe('jwplayer bid adapter tests', function() {
     }
   });
 
+  it('should use jwplayer bidder code', function () {
+    expect(spec.code).to.equal('jwplayer');
+  });
+
+  it('should use jwplayer GVLID code', function () {
+    expect(spec.gvlid).to.equal(1046);
+  });
+
+  it('should support VIDEO media type only', function () {
+    expect(spec.supportedMediaTypes).to.have.length(1);
+    expect(spec.supportedMediaTypes[0]).to.equal('video');
+  });
+
   describe('isBidRequestValid', function() {
-    it('passes when the bid includes a placement ID, a publisher ID and a site ID', function() {
-      assert(spec.isBidRequestValid({params: {placementId: 'foo', publisherId: 'bar', siteId: 'siteId '}}) === true);
-    });
-
-    it('fails when the bid request only includes a publisher ID', function() {
-      assert(spec.isBidRequestValid({params: {publisherId: 'foo'}}) === false);
-    });
-
-    it('fails when the bid request only includes a placement ID', function() {
-      assert(spec.isBidRequestValid({params: {placementId: 'foo'}}) === false);
-    });
-
-    it('fails when the bid request only includes a site ID', function() {
-      assert(spec.isBidRequestValid({params: {siteId: 'foo'}}) === false);
-    });
-
-    it('fails when bid is undefined', function() {
+    it('should be invalid when bidRequest is undefined', function() {
       assert(spec.isBidRequestValid() === false);
     });
 
-    it('fails when bid is null', function() {
+    it('should be invalid when bidRequest is null', function() {
       assert(spec.isBidRequestValid(null) === false);
     });
 
-    it('fails when the bid has no params', function() {
+    it('should be invalid when the bidRequest has no params', function() {
       assert(spec.isBidRequestValid({}) === false);
+    });
+
+    it('should be invalid when the bid request only includes a publisher ID', function() {
+      assert(spec.isBidRequestValid({params: {publisherId: 'foo'}}) === false);
+    });
+
+    it('should be invalid when the bid request only includes a placement ID', function() {
+      assert(spec.isBidRequestValid({params: {placementId: 'foo'}}) === false);
+    });
+
+    it('should be invalid when the bid request only includes a site ID', function() {
+      assert(spec.isBidRequestValid({params: {siteId: 'foo'}}) === false);
+    });
+
+    it('should be valid when the bid includes a placement ID, a publisher ID and a site ID', function() {
+      assert(spec.isBidRequestValid({params: {placementId: 'foo', publisherId: 'bar', siteId: 'siteId '}}) === true);
     });
   });
 
   describe('buildRequests', function() {
-    it('should include proper ortb params in requests', function() {
-      const bidRequests = [
+    it('should return undefined when bidRequests is undefined', function () {
+      expect(spec.buildRequests()).to.be.undefined;
+    });
+
+    it('should return undefined when bidRequests is null', function () {
+      expect(spec.buildRequests(null)).to.be.undefined;
+    });
+
+    it('should return undefined when ortb site.content.url is absent', function () {
+      const request = spec.buildRequests({}, {
+        ortb2: {
+          site: {
+            content: {
+              url: null,
+            }
+          }
+        }
+      });
+
+      expect(request).to.be.undefined;
+    });
+
+    it('should build a valid request when bid request is complete', function() {
+      const incomingBidRequests = [
         {
           bidder: 'jwplayer',
           params: {
@@ -130,9 +164,9 @@ describe('jwplayer bid adapter tests', function() {
         }
       ];
 
-      const serverRequests = spec.buildRequests(bidRequests, this.defaultBidderRequest);
+      const outgoingBidRequests = spec.buildRequests(incomingBidRequests, this.defaultBidderRequest);
 
-      serverRequests.forEach(serverRequest => {
+      outgoingBidRequests.forEach(serverRequest => {
         expect(serverRequest.url).to.equal('https://vpb-server.jwplayer.com/openrtb2/auction');
         expect(serverRequest.method).to.equal('POST');
 
@@ -212,47 +246,49 @@ describe('jwplayer bid adapter tests', function() {
   });
 
   describe('interpretResponse', function() {
-    const bidResponse = {
-      id: 'testId',
-      impid: 'test-imp-id',
-      price: 1.000000,
-      adid: '97517771',
-      adm: 'some-test-ad',
-      adomain: ['prebid.com'],
-      w: 1,
-      h: 1,
-    }
-
     const serverResponse = {
       body: {
         id: 'test-request-id',
-        seatbid: [
-          {
-            bid: [ bidResponse ],
-            seat: 1000
-          }
-        ]
-      },
-      bidid: '123456789',
-      cur: 'USD'
-    }
+        cur: 'USD',
+        seatbid: [{
+          bid: [{
+            id: 'testId',
+            impid: 'test-imp-id',
+            price: 5.000,
+            adid: 'test-creative-id',
+            adm: 'test-ad-xml',
+            adomain: ['prebid.com'],
+            cat: ['test-iab-category'],
+            w: 200,
+            h: 150,
+          }],
+          seat: 1000
+        }]
+      }
+    };
 
     const bidResponses = spec.interpretResponse(serverResponse);
 
-    expect(bidResponses[0]).to.not.equal(null);
-    expect(bidResponses[0].requestId).to.equal('123456789');
-    expect(bidResponses[0].cpm).to.equal(1);
-    expect(bidResponses[0].currency).to.equal('USD');
-    expect(bidResponses[0].width).to.equal(1);
-    expect(bidResponses[0].height).to.equal(1);
-    expect(bidResponses[0].creativeId).to.equal('97517771');
-    expect(bidResponses[0].vastXml).to.equal('some-test-ad');
-    expect(bidResponses[0].netRevenue).to.equal(true);
-    expect(bidResponses[0].ttl).to.equal(500);
-    expect(bidResponses[0].ad).to.equal('some-test-ad');
-    expect(bidResponses[0].meta).to.not.equal(null);
-    expect(bidResponses[0].meta.advertiserDomains).to.not.equal(null);
-    expect(bidResponses[0].meta.advertiserDomains[0]).to.equal('prebid.com');
+    expect(bidResponses).to.have.length(1);
+    const bid = bidResponses[0];
+    expect(bid.requestId).to.equal('test-request-id');
+    expect(bid.cpm).to.equal(5);
+    expect(bid.currency).to.equal('USD');
+    expect(bid.width).to.equal(200);
+    expect(bid.height).to.equal(150);
+    expect(bid.creativeId).to.equal('test-creative-id');
+    expect(bid.vastXml).to.equal('test-ad-xml');
+    expect(bid.netRevenue).to.equal(false);
+    expect(bid.ttl).to.equal(3600);
+    expect(bid.ad).to.equal('test-ad-xml');
+
+    expect(bid.meta).to.not.be.undefined;
+
+    expect(bid.meta.advertiserDomains).to.have.length(1);
+    expect(bid.meta.advertiserDomains[0]).to.equal('prebid.com');
+
+    expect(bid.meta.primaryCatId).to.have.length(1);
+    expect(bid.meta.primaryCatId[0]).to.equal('test-iab-category');
   });
 
   describe('getUserSyncs', function() {

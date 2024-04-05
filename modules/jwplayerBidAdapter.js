@@ -69,23 +69,23 @@ function getBidAdapter() {
     });
   }
 
-  function interpretResponse(serverResponse, bidRequest) {
-    const bidResponses = [];
+  function interpretResponse(serverResponse) {
+    const outgoingBidResponses = [];
     const serverResponseBody = serverResponse.body;
 
     logResponseWarnings(serverResponseBody);
 
     const seatBids = serverResponseBody && serverResponseBody.seatbid;
     if (!isArray(seatBids)) {
-      return bidResponses;
+      return outgoingBidResponses;
     }
 
-    const cur = serverResponse.cur;
+    const cur = serverResponseBody.cur;
 
     seatBids.forEach(seatBid => {
       seatBid.bid.forEach(bid => {
         const bidResponse = {
-          requestId: serverResponse.id,
+          requestId: serverResponseBody.id,
           cpm: bid.price,
           currency: cur,
           width: bid.w,
@@ -103,11 +103,11 @@ function getBidAdapter() {
           }
         };
 
-        bidResponses.push(bidResponse);
+        outgoingBidResponses.push(bidResponse);
       });
     });
 
-    return bidResponses;
+    return outgoingBidResponses;
   }
 
   function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
