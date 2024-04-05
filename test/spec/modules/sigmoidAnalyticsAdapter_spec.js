@@ -1,7 +1,6 @@
 import sigmoidAnalytic from 'modules/sigmoidAnalyticsAdapter.js';
 import {expect} from 'chai';
 import {expectEvents} from '../../helpers/analytics.js';
-import CONSTANTS from 'src/constants.js';
 
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;

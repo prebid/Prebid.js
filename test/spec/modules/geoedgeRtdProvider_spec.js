@@ -3,7 +3,7 @@ import { loadExternalScript } from '../../../src/adloader.js';
 import * as geoedgeRtdModule from '../../../modules/geoedgeRtdProvider.js';
 import { server } from '../../../test/mocks/xhr.js';
 import * as events from '../../../src/events.js';
-import CONSTANTS from '../../../src/constants.js';
+import { EVENTS } from '../../../src/constants.js';
 
 const {
   geoedgeSubmodule,
@@ -93,7 +93,7 @@ describe('Geoedge RTD module', function () {
       });
       it('should emit billable events with applicable winning bids', function (done) {
         let counter = 0;
-        events.on(CONSTANTS.EVENTS.BILLABLE_EVENT, function (event) {
+        events.on(EVENTS.BILLABLE_EVENT, function (event) {
           if (event.vendor === geoedgeSubmodule.name && event.type === 'impression') {
             counter += 1;
           }

@@ -1,8 +1,8 @@
 import {defaultHandler, GenericAnalytics} from '../../../modules/genericAnalyticsAdapter.js';
 import * as events from 'src/events.js';
-import CONSTANTS from 'src/constants.js';
+import {EVENTS} from 'src/constants.js';
 
-const {AUCTION_INIT, BID_RESPONSE} = CONSTANTS.EVENTS;
+const {AUCTION_INIT, BID_RESPONSE} = EVENTS;
 
 describe('Generic analytics', () => {
   describe('adapter', () => {
