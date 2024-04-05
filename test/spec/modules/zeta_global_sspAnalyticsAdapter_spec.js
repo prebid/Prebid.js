@@ -395,7 +395,7 @@ describe('Zeta Global SSP Analytics Adapter', function() {
       const auctionEnd = JSON.parse(requests[0].requestBody);
       const auctionSucceeded = JSON.parse(requests[1].requestBody);
 
-      expect(auctionSucceeded.bid.params[0]).to.be.deep.equal(EVENTS.AUCTION_END.adUnits[0].bids[0].params);
+      expect(auctionSucceeded.bid.params[0]).to.be.deep.equal(SAMPLE_EVENTS.AUCTION_END.adUnits[0].bids[0].params);
       expect(SAMPLE_EVENTS.AUCTION_END.adUnits[0].bids[0].bidder).to.be.equal('zeta_global_ssp');
     });
 
