@@ -208,7 +208,7 @@ describe('pubxaiRtdProvider', () => {
         done();
       });
     });
-    it('without floors response', async () => {
+    it('without floors response', (done) => {
       const floorsPromise = setPriceFloors(providerConfig);
       fakeServer(undefined);
       expect(window.__pubxLoaded__).to.be.true;
@@ -379,24 +379,18 @@ describe('pubxaiRtdProvider', () => {
         pubxId: '12345',
       },
     };
-    beforeEach(() => {
-      window.location = { href: 'href' };
-    });
-    afterEach(() => {
-      window.location = undefined;
-    });
     it('floors end point', () => {
       expect(FLOORS_END_POINT).to.equal('https://floor.pbxai.com/');
     });
     it('standard case', () => {
       expect(getUrl(provider)).to.equal(
-        'https://floor.pbxai.com/?pubxId=12345&page=href'
+        `https://floor.pbxai.com/?pubxId=12345&page=${window.location.href}`
       );
     });
     it('custom url provided', () => {
-      provider.endpoint = 'https://custom.floor.com/';
+      provider.params.endpoint = 'https://custom.floor.com/';
       expect(getUrl(provider)).to.equal(
-        'https://custom.floor.com/?pubxId=12345&page=href'
+        `https://custom.floor.com/?pubxId=12345&page=${window.location.href}`
       );
     });
   });
