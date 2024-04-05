@@ -859,7 +859,6 @@ function defaultAdserverTargeting() {
  * @returns {*}
  */
 export function getStandardBidderSettings(mediaType, bidderCode) {
-  const TARGETING_KEYS = TARGETING_KEYS;
   const standardSettings = Object.assign({}, bidderSettings.settingsFor(null));
   if (!standardSettings[JSON_MAPPING.ADSERVER_TARGETING]) {
     standardSettings[JSON_MAPPING.ADSERVER_TARGETING] = defaultAdserverTargeting();
