@@ -126,6 +126,7 @@ describe('lassoBidAdapter', function () {
     it('should get the correct bid response', function () {
       let expectedResponse = {
         requestId: '123456789',
+        bidId: '123456789',
         cpm: 1,
         currency: 'USD',
         width: 728,
