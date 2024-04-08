@@ -12,7 +12,7 @@ import {
   registerSubmodule,
   setImpExtAe,
   setResponsePaapiConfigs,
-  reset, parseExtIgiIgs, mergeBuyers, IGB_TO_CONFIG, partitionBuyers
+  reset, parseExtIgiIgs, mergeBuyers, IGB_TO_CONFIG, partitionBuyers, pendingBuyersForAuction
 } from 'modules/paapi.js';
 import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
@@ -64,6 +64,81 @@ describe('paapi module', () => {
             const request = {auctionId, adUnitCode: 'auc'};
             addComponentAuctionHook(nextFnSpy, request, paapiConfig);
             sinon.assert.calledWith(nextFnSpy, request, paapiConfig);
+          });
+
+          describe('igb', () => {
+            let igb1, igb2, buyerAuctionConfig;
+            beforeEach(() => {
+              igb1 = {
+                origin: 'buyer1'
+              };
+              igb2 = {
+                origin: 'buyer2'
+              }
+              buyerAuctionConfig = {
+                seller: 'seller',
+                decisionLogicURL: 'seller-decision-logic'
+              }
+              config.mergeConfig({
+                [configNS]: {
+                  componentBuyers: {
+                    auctionConfig: buyerAuctionConfig
+                  }
+                }
+              });
+            });
+
+            function addIgb(request, igb) {
+              addComponentAuctionHook(nextFnSpy, Object.assign({auctionId}, request), {igb});
+            }
+
+            it('should be collected into an auction config', () => {
+              addIgb({adUnitCode: 'au1'}, igb1);
+              addIgb({adUnitCode: 'au1'}, igb2);
+              events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId, adUnitCodes: ['au1']});
+              const buyerConfig = getPAAPIConfig({auctionId}).au1.componentAuctions[0];
+              sinon.assert.match(buyerConfig, {
+                interestGroupBuyers: [igb1.origin, igb2.origin],
+                ...buyerAuctionConfig
+              })
+            });
+
+            describe('FPD', () => {
+              let ortb2, ortb2Imp;
+              beforeEach(() => {
+                ortb2 = {'fpd': 1};
+                ortb2Imp = {'fpd': 2}
+              });
+
+              function getBuyerAuctionConfig() {
+                addIgb({adUnitCode: 'au1', ortb2, ortb2Imp}, igb1);
+                events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId, adUnitCodes: ['au1']});
+                return getPAAPIConfig({auctionId}).au1.componentAuctions[0];
+              }
+
+              it('should be added to auction config', () => {
+                sinon.assert.match(getBuyerAuctionConfig().perBuyerSignals[igb1.origin], {
+                  prebid: {
+                    ortb2,
+                    ortb2Imp
+                  }
+                })
+              });
+
+              it('should not override existing perBuyerSignals', () => {
+                const original = {
+                  ortb2: {
+                    fpd: 'original'
+                  }
+                };
+                igb1.pbs = {
+                  prebid: deepClone(original)
+                }
+                sinon.assert.match(getBuyerAuctionConfig().perBuyerSignals[igb1.origin], {
+                  prebid: original
+                })
+              })
+            });
           });
 
           describe('should collect auction configs', () => {
@@ -133,28 +208,65 @@ describe('paapi module', () => {
             expect(getPAAPIConfig({auctionId})).to.eql({});
           });
 
-          it('should augment auctionSignals with FPD', () => {
-            addComponentAuctionHook(nextFnSpy, {
-              auctionId,
-              adUnitCode: 'au1',
-              ortb2: {fpd: 1},
-              ortb2Imp: {fpd: 2}
-            }, paapiConfig);
-            events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId});
-            sinon.assert.match(getPAAPIConfig({auctionId}), {
-              au1: {
-                componentAuctions: [{
-                  ...auctionConfig,
-                  auctionSignals: {
-                    prebid: {
-                      ortb2: {fpd: 1},
-                      ortb2Imp: {fpd: 2}
-                    }
-                  }
-                }]
-              }
+          describe('FPD', () => {
+            let ortb2, ortb2Imp;
+            beforeEach(() => {
+              ortb2 = {fpd: 1};
+              ortb2Imp = {fpd: 2};
             });
-          });
+
+            function getComponentAuctionConfig() {
+              addComponentAuctionHook(nextFnSpy, {
+                auctionId,
+                adUnitCode: 'au1',
+                ortb2: {fpd: 1},
+                ortb2Imp: {fpd: 2}
+              }, paapiConfig);
+              events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId});
+              return getPAAPIConfig({auctionId}).au1.componentAuctions[0];
+            }
+
+            it('should be added to auctionSignals', () => {
+              sinon.assert.match(getComponentAuctionConfig().auctionSignals, {
+                prebid: {ortb2, ortb2Imp}
+              })
+            });
+            it('should not override existing auctionSignals', () => {
+              auctionConfig.auctionSignals = {prebid: {ortb2: {fpd: 'original'}}}
+              sinon.assert.match(getComponentAuctionConfig().auctionSignals, {
+                prebid: {
+                  ortb2: {fpd: 'original'},
+                  ortb2Imp
+                }
+              })
+            })
+
+            it('should be added to perBuyerSignals', () => {
+              auctionConfig.interestGroupBuyers = ['buyer1', 'buyer2'];
+              const pbs = getComponentAuctionConfig().perBuyerSignals;
+              sinon.assert.match(pbs, {
+                buyer1: {prebid: {ortb2, ortb2Imp}},
+                buyer2: {prebid: {ortb2, ortb2Imp}}
+              })
+            });
+
+            it('should not override existing perBuyerSignals', () => {
+              auctionConfig.interestGroupBuyers = ['buyer'];
+              const original = {
+                prebid: {
+                  ortb2: {
+                    fpd: 'original'
+                  }
+                }
+              }
+              auctionConfig.perBuyerSignals = {
+                buyer: deepClone(original)
+              }
+              sinon.assert.match(getComponentAuctionConfig().perBuyerSignals.buyer, {
+                ...original
+              });
+            });
+          })
 
           describe('submodules', () => {
             let submods;

@@ -12,7 +12,6 @@ import {maximum, minimum} from '../src/utils/reducers.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
-
 const MODULE = 'PAAPI';
 
 const submodules = [];
@@ -39,6 +38,8 @@ function auctionStore() {
 
 const pendingConfigsForAuction = auctionStore();
 const configsForAuction = auctionStore();
+const pendingBuyersForAuction = auctionStore();
+
 let latestAuctionForAdUnit = {};
 let moduleConfig = {};
 
@@ -90,6 +91,10 @@ function getSlotSignals(bidsReceived = [], bidRequests = []) {
   return cfg;
 }
 
+function processBuyers(igbRequests, baseAuctionConfig, addConfig, split = partitionBuyers, merge = mergeBuyers) {
+  addConfig(Object.assign(merge(igbRequests.map(req => req[1])), baseAuctionConfig));
+}
+
 function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes}) {
   const allReqs = bidderRequests?.flatMap(br => br.bids);
   const paapiConfigs = {};
@@ -97,7 +102,19 @@ function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes}) {
     paapiConfigs[au] = null;
     !latestAuctionForAdUnit.hasOwnProperty(au) && (latestAuctionForAdUnit[au] = null);
   })
-  Object.entries(pendingConfigsForAuction(auctionId) || {}).forEach(([adUnitCode, auctionConfigs]) => {
+  const pendingConfigs = pendingConfigsForAuction(auctionId);
+  const pendingBuyers = pendingBuyersForAuction(auctionId);
+  if (pendingConfigs && pendingBuyers) {
+    Object.entries(pendingBuyers).forEach(([adUnitCode, igbRequests]) => {
+      processBuyers(
+        igbRequests,
+        moduleConfig.componentBuyers?.auctionConfig,
+        append.bind(null, pendingConfigs, adUnitCode)
+      )
+      delete pendingBuyers[adUnitCode];
+    })
+  }
+  Object.entries(pendingConfigs || {}).forEach(([adUnitCode, auctionConfigs]) => {
     const forThisAdUnit = (bid) => bid.adUnitCode === adUnitCode;
     const slotSignals = getSlotSignals(bidsReceived?.filter(forThisAdUnit), allReqs?.filter(forThisAdUnit));
     paapiConfigs[adUnitCode] = {
@@ -113,20 +130,36 @@ function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes}) {
   );
 }
 
-function setFPDSignals(auctionConfig, fpd) {
-  auctionConfig.auctionSignals = mergeDeep({}, {prebid: fpd}, auctionConfig.auctionSignals);
+function append(target, key, value) {
+  !target.hasOwnProperty(key) && (target[key] = []);
+  target[key].push(value);
 }
 
 export function addComponentAuctionHook(next, request, paapiConfig) {
   if (getFledgeConfig().enabled) {
     const {adUnitCode, auctionId, ortb2, ortb2Imp} = request;
-    const configs = pendingConfigsForAuction(auctionId);
-    if (configs != null) {
-      setFPDSignals(paapiConfig.config, {ortb2, ortb2Imp});
-      !configs.hasOwnProperty(adUnitCode) && (configs[adUnitCode] = []);
-      configs[adUnitCode].push(paapiConfig.config);
-    } else {
-      logWarn(MODULE, `Received component auction config for auction that has closed (auction '${auctionId}', adUnit '${adUnitCode}')`, paapiConfig);
+
+    // eslint-disable-next-line no-inner-declarations
+    function storePendingData(store, data) {
+      const target = store(auctionId);
+      if (target != null) {
+        append(target, adUnitCode, data)
+      } else {
+        logWarn(MODULE, `Received PAAPI config for auction that has closed (auction '${auctionId}', adUnit '${adUnitCode}')`, data);
+      }
+    }
+
+    const {config, igb} = paapiConfig;
+    if (config) {
+      deepSetValue(config, 'auctionSignals.prebid', mergeDeep({ortb2, ortb2Imp}, config.auctionSignals?.prebid));
+      (config.interestGroupBuyers || []).forEach(buyer => {
+        deepSetValue(config, `perBuyerSignals.${buyer}.prebid`, mergeDeep({ortb2, ortb2Imp}, config.perBuyerSignals?.[buyer]?.prebid));
+      })
+      storePendingData(pendingConfigsForAuction, config);
+    }
+    if (igb && checkOrigin(igb)) {
+      deepSetValue(igb, 'pbs.prebid', mergeDeep({ortb2, ortb2Imp}, igb.pbs?.prebid));
+      storePendingData(pendingBuyersForAuction, [request, igb])
     }
   }
   next(request, paapiConfig);
