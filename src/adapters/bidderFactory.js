@@ -550,7 +550,7 @@ export const registerSyncInner = hook('async', function(spec, responses, gdprCon
 }, 'registerSyncs')
 
 export const addPaapiConfig = hook('sync', (request, paapiConfig) => {
-}, 'addComponentAuction');
+}, 'addPaapiConfig');
 
 // check that the bid has a width and height set
 function validBidSize(adUnitCode, bid, {index = auctionManager.index} = {}) {

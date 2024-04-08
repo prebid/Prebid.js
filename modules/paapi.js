@@ -67,7 +67,7 @@ export function init(cfg, configNamespace) {
   }
 }
 
-getHook('addComponentAuction').before(addComponentAuctionHook);
+getHook('addPaapiConfig').before(addPaapiConfigHook);
 getHook('makeBidRequests').after(markForFledge);
 events.on(CONSTANTS.EVENTS.AUCTION_END, onAuctionEnd);
 
@@ -149,7 +149,7 @@ function setFPD(target, {ortb2, ortb2Imp}) {
   return target;
 }
 
-export function addComponentAuctionHook(next, request, paapiConfig) {
+export function addPaapiConfigHook(next, request, paapiConfig) {
   if (getFledgeConfig().enabled) {
     const {adUnitCode, auctionId} = request;
 
@@ -208,7 +208,7 @@ export function mergeBuyers(igbs) {
             }
           });
         } else {
-          logWarn(`Duplicate PAAPI buyer: ${igb.origin}. All but the first will be ignored`, igbs);
+          logWarn(MODULE, `Duplicate buyer: ${igb.origin}. All but the first will be ignored`, igbs);
         }
       }
       return config;
@@ -307,7 +307,7 @@ export function markForFledge(next, bidderRequests) {
             : null
           const extAe = bidReq.ortb2Imp?.ext?.ae;
           if (igsAe !== extAe && igsAe != null && extAe != null) {
-            logWarn(`Bid request defines conflicting ortb2Imp.ext.ae and ortb2Imp.ext.igs, using the latter`, bidReq);
+            logWarn(MODULE, `Bid request defines conflicting ortb2Imp.ext.ae and ortb2Imp.ext.igs, using the latter`, bidReq);
           }
           const bidAe = igsAe ?? extAe ?? ae;
           if (bidAe) {
@@ -337,7 +337,7 @@ function paapiResponseParser(configs, response, context) {
   configs.forEach((config) => {
     const impCtx = context.impContext[config.impid];
     if (!impCtx?.imp?.ext?.ae) {
-      logWarn('Received PAAPI auction configuration for an impression that was not in the request or did not ask for it', config, impCtx?.imp);
+      logWarn(MODULE, 'Received auction configuration for an impression that was not in the request or did not ask for it', config, impCtx?.imp);
     } else {
       impCtx.paapiConfigs = impCtx.paapiConfigs || [];
       impCtx.paapiConfigs.push(config);
@@ -350,7 +350,7 @@ export function parseExtIgiIgs(response, ortbResponse, context) {
     (ortbResponse.ext?.igi || []).flatMap(igi => {
       return (igi?.igs || []).map(igs => {
         if (igs.impid !== igi.impid && igs.impid != null && igi.impid != null) {
-          logWarn('ORTB response ext.igi.igs.impid conflicts with parent\'s impid', igi);
+          logWarn(MODULE, 'ORTB response ext.igi.igs.impid conflicts with parent\'s impid', igi);
         }
         return {
           config: igs.config,
@@ -384,10 +384,10 @@ export function setResponsePaapiConfigs(response, ortbResponse, context) {
   const configs = Object.values(context.impContext)
     .flatMap((impCtx) => (impCtx.paapiConfigs || []).map(cfg => ({
       bidId: impCtx.bidRequest.bidId,
-      config: cfg.config
+      ...cfg
     })));
   if (configs.length > 0) {
-    response.fledgeAuctionConfigs = configs;
+    response.paapi = configs;
   }
 }
 
