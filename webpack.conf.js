@@ -136,13 +136,13 @@ module.exports = {
           common_deps: {
             name: 'common_deps',
             test(module) {
-              return module.resource?.startsWith(nodeModules);
+              return module.resource && module.resource.startsWith(nodeModules);
             }
           },
           core: {
             name: 'chunk-core',
             test: (module) => {
-              return module.resource?.startsWith(core);
+              return module.resource && module.resource.startsWith(core);
             }
           },
           paapi: {
