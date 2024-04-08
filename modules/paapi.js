@@ -345,7 +345,7 @@ function paapiResponseParser(configs, response, context) {
   });
 }
 
-export function parseExtIgiIgs(response, ortbResponse, context) {
+export function parseExtIgi(response, ortbResponse, context) {
   paapiResponseParser(
     (ortbResponse.ext?.igi || []).flatMap(igi => {
       return (igi?.igs || []).map(igs => {
@@ -356,7 +356,10 @@ export function parseExtIgiIgs(response, ortbResponse, context) {
           config: igs.config,
           impid: igs.impid ?? igi.impid
         }
-      })
+      }).concat((igi?.igb || []).map(igb => ({
+        igb,
+        impid: igi.impid
+      })))
     }),
     response,
     context
@@ -375,7 +378,7 @@ export function parseExtPrebidFledge(response, ortbResponse, context) {
 }
 
 registerOrtbProcessor({type: RESPONSE, name: 'extPrebidFledge', fn: parseExtPrebidFledge, dialects: [PBS]});
-registerOrtbProcessor({type: RESPONSE, name: 'extIgiIgs', fn: parseExtIgiIgs});
+registerOrtbProcessor({type: RESPONSE, name: 'extIgiIgs', fn: parseExtIgi});
 
 // ...then, make them available in the adapter's response. This is the client side version, for which the
 // interpretResponse api is {fledgeAuctionConfigs: [{bidId, config}]}

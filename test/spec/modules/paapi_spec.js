@@ -13,7 +13,7 @@ import {
   setImpExtAe,
   setResponsePaapiConfigs,
   reset,
-  parseExtIgiIgs,
+  parseExtIgi,
   mergeBuyers,
   IGB_TO_CONFIG,
   partitionBuyers,
@@ -902,109 +902,150 @@ describe('paapi module', () => {
         }
       })
     });
-    Object.entries({
-      'parseExtPrebidFledge': {
-        parser: parseExtPrebidFledge,
-        responses: {
-          'ext.prebid.fledge'(configs) {
-            return {
-              ext: {
-                prebid: {
-                  fledge: {
-                    auctionconfigs: configs
+
+    describe('response parsing', () => {
+      function generateImpCtx(fledgeFlags) {
+        return Object.fromEntries(Object.entries(fledgeFlags).map(([impid, fledgeEnabled]) => [impid, {imp: {ext: {ae: fledgeEnabled}}}]));
+      }
+
+      function extractResult(type, ctx) {
+        return Object.fromEntries(
+          Object.entries(ctx)
+            .map(([impid, ctx]) => [impid, ctx.paapiConfigs?.map(cfg => cfg[type].id)])
+            .filter(([_, val]) => val != null)
+        );
+      }
+
+      Object.entries({
+        'parseExtPrebidFledge': {
+          parser: parseExtPrebidFledge,
+          responses: {
+            'ext.prebid.fledge'(configs) {
+              return {
+                ext: {
+                  prebid: {
+                    fledge: {
+                      auctionconfigs: configs
+                    }
                   }
                 }
+              };
+            },
+          }
+        },
+        'parseExtIgi': {
+          parser: parseExtIgi,
+          responses: {
+            'ext.igi.igs'(configs) {
+              return {
+                ext: {
+                  igi: [{
+                    igs: configs
+                  }]
+                }
               }
-            };
-          },
-        }
-      },
-      'parseExtIgiIgs': {
-        parser: parseExtIgiIgs,
-        responses: {
-          'ext.igi.igs'(configs) {
-            return {
-              ext: {
-                igi: [{
-                  igs: configs
-                }]
+            },
+            'ext.igi.igs with impid on igi'(configs) {
+              return {
+                ext: {
+                  igi: configs.map(cfg => {
+                    const impid = cfg.impid;
+                    delete cfg.impid;
+                    return {
+                      impid,
+                      igs: [cfg]
+                    }
+                  })
+                }
               }
-            }
-          },
-          'ext.igi.igs with impid on igi'(configs) {
-            return {
-              ext: {
-                igi: configs.map(cfg => {
-                  const impid = cfg.impid;
-                  delete cfg.impid;
-                  return {
-                    impid,
-                    igs: [cfg]
-                  }
-                })
-              }
-            }
-          },
-          'ext.igi.igs with conflicting impid'(configs) {
-            return {
-              ext: {
-                igi: [{
-                  impid: 'conflict',
-                  igs: configs
-                }]
+            },
+            'ext.igi.igs with conflicting impid'(configs) {
+              return {
+                ext: {
+                  igi: [{
+                    impid: 'conflict',
+                    igs: configs
+                  }]
+                }
               }
             }
           }
         }
-      }
-    }).forEach(([t, {parser, responses}]) => {
-      describe(t, () => {
-        Object.entries(responses).forEach(([t, packageConfigs]) => {
-          describe(`when response uses ${t}`, () => {
-            function generateImpCtx(fledgeFlags) {
-              return Object.fromEntries(Object.entries(fledgeFlags).map(([impid, fledgeEnabled]) => [impid, {imp: {ext: {ae: fledgeEnabled}}}]));
-            }
+      }).forEach(([t, {parser, responses}]) => {
+        describe(t, () => {
+          Object.entries(responses).forEach(([t, packageConfigs]) => {
+            describe(`when response uses ${t}`, () => {
+              function generateCfg(impid, ...ids) {
+                return ids.map((id) => ({impid, config: {id}}));
+              }
 
-            function generateCfg(impid, ...ids) {
-              return ids.map((id) => ({impid, config: {id}}));
-            }
-
-            function extractResult(ctx) {
-              return Object.fromEntries(
-                Object.entries(ctx)
-                  .map(([impid, ctx]) => [impid, ctx.paapiConfigs?.map(cfg => cfg.config.id)])
-                  .filter(([_, val]) => val != null)
-              );
-            }
-
-            it('should collect fledge configs by imp', () => {
-              const ctx = {
-                impContext: generateImpCtx({e1: 1, e2: 1, d1: 0})
-              };
-              const resp = packageConfigs(
-                generateCfg('e1', 1, 2, 3)
-                  .concat(generateCfg('e2', 4)
-                    .concat(generateCfg('d1', 5, 6)))
-              );
-              parser({}, resp, ctx);
-              expect(extractResult(ctx.impContext)).to.eql({
-                e1: [1, 2, 3],
-                e2: [4],
+              it('should collect auction configs by imp', () => {
+                const ctx = {
+                  impContext: generateImpCtx({e1: 1, e2: 1, d1: 0})
+                };
+                const resp = packageConfigs(
+                  generateCfg('e1', 1, 2, 3)
+                    .concat(generateCfg('e2', 4)
+                      .concat(generateCfg('d1', 5, 6)))
+                );
+                parser({}, resp, ctx);
+                expect(extractResult('config', ctx.impContext)).to.eql({
+                  e1: [1, 2, 3],
+                  e2: [4],
+                });
               });
-            });
-            it('should not choke if fledge config references unknown imp', () => {
-              const ctx = {impContext: generateImpCtx({i: 1})};
-              const resp = packageConfigs(generateCfg('unknown', 1));
-              parser({}, resp, ctx);
-              expect(extractResult(ctx.impContext)).to.eql({});
-            });
+              it('should not choke if fledge config references unknown imp', () => {
+                const ctx = {impContext: generateImpCtx({i: 1})};
+                const resp = packageConfigs(generateCfg('unknown', 1));
+                parser({}, resp, ctx);
+                expect(extractResult('config', ctx.impContext)).to.eql({});
+              });
+            })
           })
+        })
+      });
+
+      describe('response ext.igi.igb', () => {
+        it('should collect igb by imp', () => {
+          const ctx = {
+            impContext: generateImpCtx({e1: 1, e2: 1, d1: 0})
+          };
+          const resp = {
+            ext: {
+              igi: [
+                {
+                  impid: 'e1',
+                  igb: [
+                    {id: 1},
+                    {id: 2}
+                  ]
+                },
+                {
+                  impid: 'e2',
+                  igb: [
+                    {id: 3}
+                  ]
+                },
+                {
+                  impid: 'd1',
+                  igb: [
+                    {id: 4}
+                  ]
+                }
+              ]
+            }
+          }
+          parseExtIgi({}, resp, ctx);
+          expect(extractResult('igb', ctx.impContext)).to.eql({
+            e1: [1, 2],
+            e2: [3],
+          });
         })
       })
     })
 
     describe('setResponsePaapiConfigs', () => {
-      it('should set fledgeAuctionConfigs paired with their corresponding bid id', () => {
+      it('should set paapi configs/igb paired with their corresponding bid id', () => {
         const ctx = {
           impContext: {
             1: {
@@ -1017,6 +1058,10 @@ describe('paapi module', () => {
             },
             3: {
               bidRequest: {bidId: 'bid3'}
+            },
+            4: {
+              bidRequest: {bidId: 'bid1'},
+              paapiConfigs: [{igb: {id: 4}}]
             }
           }
         };
@@ -1026,9 +1071,10 @@ describe('paapi module', () => {
           {bidId: 'bid1', config: {id: 1}},
           {bidId: 'bid1', config: {id: 2}},
           {bidId: 'bid2', config: {id: 3}},
+          {bidId: 'bid1', igb: {id: 4}}
         ]);
       });
-      it('should not set fledgeAuctionConfigs if none exist', () => {
+      it('should not set paapi if no config or igb exists', () => {
         const resp = {};
         setResponsePaapiConfigs(resp, {}, {
           impContext: {
