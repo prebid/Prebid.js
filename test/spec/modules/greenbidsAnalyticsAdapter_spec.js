@@ -6,6 +6,7 @@ import {
 import {
   generateUUID
 } from '../../../src/utils.js';
+import * as utils from 'src/utils.js';
 import {expect} from 'chai';
 import sinon from 'sinon';
 import {config} from '../../../src/config.js';
@@ -424,10 +425,13 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
     it('should return determinist false value for valid sampling rate given the predifined id and rate when we split to non exploration first', function() {
       expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.0001, 0.0, 1.0)).to.be.false;
     });
-    it('should return determinist true given debug mode activated', function() {
-      config.setConfig({
-        debug: true
-      });
+  });
+
+  describe('isSampled when analytic isforced', function() {
+    before(() => {
+      sinon.stub(utils, 'getParameterByName').callsFake(par => par === 'greenbids_force_sampling' ? true : undefined);
+    });
+    it('should return determinist true when sampling flag activated', function() {
       expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.0001, 0.0)).to.be.true;
     });
   });
