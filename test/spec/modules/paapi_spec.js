@@ -12,7 +12,14 @@ import {
   registerSubmodule,
   setImpExtAe,
   setResponsePaapiConfigs,
-  reset, parseExtIgiIgs, mergeBuyers, IGB_TO_CONFIG, partitionBuyers, pendingBuyersForAuction
+  reset,
+  parseExtIgiIgs,
+  mergeBuyers,
+  IGB_TO_CONFIG,
+  partitionBuyers,
+  pendingBuyersForAuction,
+  partitionBuyersByBidder,
+  buyersToAuctionConfigs
 } from 'modules/paapi.js';
 import * as events from 'src/events.js';
 import CONSTANTS from 'src/constants.json';
@@ -262,9 +269,7 @@ describe('paapi module', () => {
               auctionConfig.perBuyerSignals = {
                 buyer: deepClone(original)
               }
-              sinon.assert.match(getComponentAuctionConfig().perBuyerSignals.buyer, {
-                ...original
-              });
+              sinon.assert.match(getComponentAuctionConfig().perBuyerSignals.buyer, original);
             });
           })
 
@@ -412,8 +417,8 @@ describe('paapi module', () => {
                       addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au'}, paapiConfig);
                       events.emit(CONSTANTS.EVENTS.AUCTION_END, payload);
                       const signals = getPAAPIConfig({auctionId}).au.componentAuctions[0].auctionSignals;
-                      expect(signals.prebid?.bidfloor).to.eql(bidfloor);
-                      expect(signals.prebid?.bidfloorcur).to.eql(bidfloorcur);
+                      expect(signals?.prebid?.bidfloor).to.eql(bidfloor);
+                      expect(signals?.prebid?.bidfloorcur).to.eql(bidfloorcur);
                     });
                   });
                 });
@@ -794,8 +799,92 @@ describe('paapi module', () => {
           [igb4]
         ]);
       })
-    })
-  })
+    });
+
+    describe('partitionBuyersByBidder', () => {
+      it('should split requests by bidder', () => {
+        expect(partitionBuyersByBidder([[{bidder: 'a'}, igb1], [{bidder: 'b'}, igb2]])).to.eql([
+          [{bidder: 'a'}, [igb1]],
+          [{bidder: 'b'}, [igb2]]
+        ]);
+      });
+
+      it('accepts repeated buyers, if from different bidders', () => {
+        expect(partitionBuyersByBidder([
+          [{bidder: 'a', extra: 'data'}, igb1],
+          [{bidder: 'b', more: 'data'}, igb1],
+          [{bidder: 'a'}, igb2],
+          [{bidder: 'b'}, igb2]
+        ])).to.eql([
+          [{bidder: 'a', extra: 'data'}, [igb1, igb2]],
+          [{bidder: 'b', more: 'data'}, [igb1, igb2]]
+        ])
+      })
+      describe('buyersToAuctionConfig', () => {
+        let config, partitioners, merge, igbRequests;
+        beforeEach(() => {
+          config = {
+            auctionConfig: {
+              decisionLogicURL: 'mock-decision-logic'
+            }
+          }
+          partitioners = {
+            compact: sinon.stub(),
+            expand: sinon.stub(),
+          }
+          let i = 0;
+          merge = sinon.stub().callsFake(() => ({config: i++}));
+          igbRequests = [
+            [{}, igb1],
+            [{}, igb2]
+          ];
+        });
+
+        function toAuctionConfig(reqs = igbRequests) {
+          return buyersToAuctionConfigs(reqs, merge, config, partitioners);
+        }
+
+        it('uses compact partitions by default, and returns an auction config for each one', () => {
+          partitioners.compact.returns([[{}, 1], [{}, 2]]);
+          const [cf1, cf2] = toAuctionConfig();
+          sinon.assert.match(cf1, {
+            ...config.auctionConfig,
+            config: 0
+          });
+          sinon.assert.match(cf2, {
+            ...config.auctionConfig,
+            config: 1
+          })
+          sinon.assert.calledWith(partitioners.compact, igbRequests);
+          [1, 2].forEach(mockPart => sinon.assert.calledWith(merge, mockPart));
+        });
+
+        it('uses per-bidder partition when config has separateAuctions', () => {
+          config.separateAuctions = true;
+          partitioners.expand.returns([]);
+          toAuctionConfig();
+          sinon.assert.called(partitioners.expand);
+        });
+
+        it('does not return any auction config when configuration does not specify auctionConfig', () => {
+          delete config.auctionConfig;
+          expect(toAuctionConfig()).to.eql([]);
+          Object.values(partitioners).forEach(part => sinon.assert.notCalled(part));
+        });
+
+        it('sets FPD in auction signals when partitioner returns it', () => {
+          const fpd = {
+            ortb2: {fpd: 1},
+            ortb2Imp: {fpd: 2}
+          }
+          partitioners.compact.returns([[{}], [fpd]]);
+          const [cf1, cf2] = toAuctionConfig();
+          expect(cf1.auctionSignals?.prebid).to.not.exist;
+          expect(cf2.auctionSignals.prebid).to.eql(fpd);
+        })
+      })
+    });
+  });
 
   describe('ortb processors for fledge', () => {
     it('imp.ext.ae should be removed if fledge is not enabled', () => {

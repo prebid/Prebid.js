@@ -91,8 +91,21 @@ function getSlotSignals(bidsReceived = [], bidRequests = []) {
   return cfg;
 }
 
-function processBuyers(igbRequests, baseAuctionConfig, addConfig, split = partitionBuyers, merge = mergeBuyers) {
-  addConfig(Object.assign(merge(igbRequests.map(req => req[1])), baseAuctionConfig));
+export function buyersToAuctionConfigs(igbRequests, merge = mergeBuyers, config = moduleConfig?.componentBuyers ?? {}, partitioners = {
+  compact: (igbRequests) => partitionBuyers(igbRequests.map(req => req[1])).map(part => [{}, part]),
+  expand: partitionBuyersByBidder
+}) {
+  if (!config.auctionConfig) {
+    logWarn(MODULE, 'Cannot use IG buyers: paapi.componentBuyers.auctionConfig not set', igbRequests.map(req => req[1]));
+    return [];
+  }
+  const partition = partitioners[config.separateAuctions ? 'expand' : 'compact'];
+  return partition(igbRequests)
+    .map(([request, igbRequests]) => {
+      const auctionConfig = mergeDeep(merge(igbRequests), config.auctionConfig);
+      auctionConfig.auctionSignals = setFPD(auctionConfig.auctionSignals || {}, request);
+      return auctionConfig;
+    });
 }
 
 function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes}) {
@@ -106,12 +119,7 @@ function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes}) {
   const pendingBuyers = pendingBuyersForAuction(auctionId);
   if (pendingConfigs && pendingBuyers) {
     Object.entries(pendingBuyers).forEach(([adUnitCode, igbRequests]) => {
-      processBuyers(
-        igbRequests,
-        moduleConfig.componentBuyers?.auctionConfig,
-        append.bind(null, pendingConfigs, adUnitCode)
-      )
-      delete pendingBuyers[adUnitCode];
+      buyersToAuctionConfigs(igbRequests).forEach(auctionConfig => append(pendingConfigs, adUnitCode, auctionConfig))
     })
   }
   Object.entries(pendingConfigs || {}).forEach(([adUnitCode, auctionConfigs]) => {
@@ -135,9 +143,15 @@ function append(target, key, value) {
   target[key].push(value);
 }
 
+function setFPD(target, {ortb2, ortb2Imp}) {
+  ortb2 != null && deepSetValue(target, 'prebid.ortb2', mergeDeep({}, ortb2, target.prebid?.ortb2));
+  ortb2Imp != null && deepSetValue(target, 'prebid.ortb2Imp', mergeDeep({}, ortb2Imp, target.prebid?.ortb2Imp));
+  return target;
+}
+
 export function addComponentAuctionHook(next, request, paapiConfig) {
   if (getFledgeConfig().enabled) {
-    const {adUnitCode, auctionId, ortb2, ortb2Imp} = request;
+    const {adUnitCode, auctionId} = request;
 
     // eslint-disable-next-line no-inner-declarations
     function storePendingData(store, data) {
@@ -151,14 +165,14 @@ export function addComponentAuctionHook(next, request, paapiConfig) {
 
     const {config, igb} = paapiConfig;
     if (config) {
-      deepSetValue(config, 'auctionSignals.prebid', mergeDeep({ortb2, ortb2Imp}, config.auctionSignals?.prebid));
+      config.auctionSignals = setFPD(config.auctionSignals || {}, request);
       (config.interestGroupBuyers || []).forEach(buyer => {
-        deepSetValue(config, `perBuyerSignals.${buyer}.prebid`, mergeDeep({ortb2, ortb2Imp}, config.perBuyerSignals?.[buyer]?.prebid));
+        deepSetValue(config, `perBuyerSignals.${buyer}`, setFPD(config.perBuyerSignals?.[buyer] || {}, request));
       })
       storePendingData(pendingConfigsForAuction, config);
     }
     if (igb && checkOrigin(igb)) {
-      deepSetValue(igb, 'pbs.prebid', mergeDeep({ortb2, ortb2Imp}, igb.pbs?.prebid));
+      igb.pbs = setFPD(igb.pbs || {}, request);
       storePendingData(pendingBuyersForAuction, [request, igb])
     }
   }
@@ -224,6 +238,15 @@ export function partitionBuyers(igbs) {
   }, []).map(part => Object.values(part));
 }
 
+export function partitionBuyersByBidder(igbRequests) {
+  const requests = {};
+  const igbs = {};
+  igbRequests.forEach(([request, igb]) => {
+    !requests.hasOwnProperty(request.bidder) && (requests[request.bidder] = request);
+    append(igbs, request.bidder, igb);
+  })
+  return Object.entries(igbs).map(([bidder, igbs]) => [requests[bidder], igbs])
+}
 /**
  * Get PAAPI auction configuration.
  *
