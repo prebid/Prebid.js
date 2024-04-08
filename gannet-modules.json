@@ -9,19 +9,8 @@
   "tripleliftBidAdapter",
   "gridBidAdapter",
   "undertoneBidAdapter",
-  "adpod",
-  "consentManagement",
-  "consentManagementUsp",
   "consentManagementGpp",
-  "gdprEnforcement",
-  "currency",
-  "priceFloors",
-  "schain",
-  "userId",
-  "identityLinkIdSystem",
-  "criteoIdSystem",
-  "sharedIdSystem",
-  "uid2IdSystem",
-  "rtdModule",
-  "permutiveRtdProvider"
+  "topicsFpdModule",
+  "gptPreAuction",
+  "dfpAdServerVideo"
 ]
