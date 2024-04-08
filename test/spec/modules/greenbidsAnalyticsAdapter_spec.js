@@ -9,7 +9,6 @@ import {
 import * as utils from 'src/utils.js';
 import {expect} from 'chai';
 import sinon from 'sinon';
-import {config} from '../../../src/config.js';
 
 const events = require('src/events');
 const constants = require('src/constants.json');
