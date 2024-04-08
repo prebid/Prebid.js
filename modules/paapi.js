@@ -101,8 +101,8 @@ export function buyersToAuctionConfigs(igbRequests, merge = mergeBuyers, config 
   }
   const partition = partitioners[config.separateAuctions ? 'expand' : 'compact'];
   return partition(igbRequests)
-    .map(([request, igbRequests]) => {
-      const auctionConfig = mergeDeep(merge(igbRequests), config.auctionConfig);
+    .map(([request, igbs]) => {
+      const auctionConfig = mergeDeep(merge(igbs), config.auctionConfig);
       auctionConfig.auctionSignals = setFPD(auctionConfig.auctionSignals || {}, request);
       return auctionConfig;
     });
