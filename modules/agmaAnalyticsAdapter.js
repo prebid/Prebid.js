@@ -127,6 +127,7 @@ export const getPayload = (auctionIds, options) => {
   };
 
   if (useExtendedPayload) {
+    const device = config.getConfig('device') || {};
     const { x, y } = getScreen();
     const userIdsAsEids = getUserIDs();
     payload = {
@@ -141,6 +142,8 @@ export const getPayload = (auctionIds, options) => {
       pageUrl: ri.page,
       screenWidth: x,
       screenHeight: y,
+      deviceWidth: device.w || screen.width,
+      deviceHeight: device.h || screen.height,
       userIdsAsEids,
     };
   }
