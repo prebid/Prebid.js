@@ -318,7 +318,8 @@ function buildRequests(validBidRequests, bidderRequest) {
     const gpid = deepAccess(ortb2Imp, 'ext.data.pbadslot') || deepAccess(ortb2Imp, 'ext.data.adserver.adslot');
     let sizes = [1, 1];
     let data = {};
-
+    data.displaymanager = 'Prebid.js - gumgum';
+    data.displaymanagerver = '$prebid.version$';
     const date = new Date();
     const lt = date.getTime();
     const to = date.getTimezoneOffset();
