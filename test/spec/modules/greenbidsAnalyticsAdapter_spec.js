@@ -433,5 +433,8 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
     it('should return determinist true when sampling flag activated', function() {
       expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.0001, 0.0)).to.be.true;
     });
+    after(() => {
+      utils.getParameterByName.restore();
+    });
   });
 });
