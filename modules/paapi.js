@@ -3,7 +3,7 @@
  */
 import {config} from '../src/config.js';
 import {getHook, module} from '../src/hook.js';
-import {deepSetValue, logInfo, logWarn, mergeDeep, deepEqual} from '../src/utils.js';
+import {deepSetValue, logInfo, logWarn, mergeDeep, deepEqual, deepAccess} from '../src/utils.js';
 import {IMP, PBS, registerOrtbProcessor, RESPONSE} from '../src/pbjsORTB.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
@@ -204,7 +204,9 @@ export function mergeBuyers(igbs) {
           buyers.add(igb.origin);
           Object.entries(IGB_TO_CONFIG).forEach(([igbField, configField]) => {
             if (igb[igbField] != null) {
-              deepSetValue(config, `${configField}.${igb.origin}`, igb[igbField]);
+              const entry = deepAccess(config, configField) || {}
+              entry[igb.origin] = igb[igbField];
+              deepSetValue(config, configField, entry);
             }
           });
         } else {

@@ -698,9 +698,11 @@ describe('paapi module', () => {
 
   describe('igb', () => {
     let igb1, igb2;
+    const buyer1 = 'https://buyer1.example';
+    const buyer2 = 'https://buyer2.example';
     beforeEach(() => {
       igb1 = {
-        origin: 'buyer1',
+        origin: buyer1,
         cur: 'EUR',
         maxbid: 1,
         pbs: {
@@ -711,7 +713,7 @@ describe('paapi module', () => {
         }
       };
       igb2 = {
-        origin: 'buyer2',
+        origin: buyer2,
         cur: 'USD',
         maxbid: 2,
         pbs: {
@@ -726,32 +728,32 @@ describe('paapi module', () => {
     describe('mergeBuyers', () => {
       it('should merge multiple igb into a partial auction config', () => {
         sinon.assert.match(mergeBuyers([igb1, igb2]), {
-          interestGroupBuyers: ['buyer1', 'buyer2'],
+          interestGroupBuyers: [buyer1, buyer2],
           perBuyerCurrencies: {
-            buyer1: 'EUR',
-            buyer2: 'USD'
+            [buyer1]: 'EUR',
+            [buyer2]: 'USD'
           },
           perBuyerSignals: {
-            buyer1: {
+            [buyer1]: {
               signal: 1
             },
-            buyer2: {
+            [buyer2]: {
               signal: 2
             }
           },
           perBuyerPrioritySignals: {
-            buyer1: {
+            [buyer1]: {
               priority: 1
             },
-            buyer2: {
+            [buyer2]: {
               priority: 2
             }
           },
           auctionSignals: {
             prebid: {
               perBuyerMaxbid: {
-                buyer1: 1,
-                buyer2: 2
+                [buyer1]: 1,
+                [buyer2]: 2
               }
             }
           }
@@ -761,7 +763,7 @@ describe('paapi module', () => {
       Object.entries(IGB_TO_CONFIG).forEach(([igbField, configField]) => {
         it(`should not set ${configField} if ${igbField} is undefined`, () => {
           delete igb1[igbField];
-          expect(deepAccess(mergeBuyers([igb1, igb2]), configField).buyer1).to.not.exist;
+          expect(deepAccess(mergeBuyers([igb1, igb2]), configField)[buyer1]).to.not.exist;
         });
       });
 

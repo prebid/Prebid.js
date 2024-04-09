@@ -204,7 +204,6 @@ describe('bid interceptor', () => {
           })
         })
       })
-
     })
 
     describe('.options', () => {
