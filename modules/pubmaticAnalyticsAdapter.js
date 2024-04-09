@@ -151,6 +151,7 @@ function parseBidResponse(bid) {
     'cpm', () => window.parseFloat(Number(bid.cpm).toFixed(BID_PRECISION)),
     'originalCpm', () => window.parseFloat(Number(bid.originalCpm).toFixed(BID_PRECISION)),
     'originalCurrency',
+    'adserverTargeting',
     'dealChannel',
     'meta',
     'status',
@@ -278,6 +279,7 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
       if (isOWPubmaticBid(adapterName) && isS2SBidder(bid.bidder)) {
         return;
       }
+      const pg = window.parseFloat(Number(bid.bidResponse?.adserverTargeting?.hb_pb || bid.bidResponse?.adserverTargeting?.pwtpb).toFixed(BID_PRECISION));
       partnerBids.push({
         'pn': adapterName,
         'bc': bid.bidderCode || bid.bidder,
@@ -303,7 +305,8 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
         'ocry': bid.bidResponse ? (bid.bidResponse.originalCurrency || CURRENCY_USD) : CURRENCY_USD,
         'piid': bid.bidResponse ? (bid.bidResponse.partnerImpId || EMPTY_STRING) : EMPTY_STRING,
         'frv': bid.bidResponse ? bid.bidResponse.floorData?.floorRuleValue : undefined,
-        'md': bid.bidResponse ? getMetadata(bid.bidResponse.meta) : undefined
+        'md': bid.bidResponse ? getMetadata(bid.bidResponse.meta) : undefined,
+        'pb': pg || undefined
       });
     });
     return partnerBids;
@@ -391,7 +394,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
     // getGptSlotInfoForAdUnitCode returns gptslot corresponding to adunit provided as input.
     let slotObject = {
       'sn': adUnitId,
-      'au': origAdUnit.adUnitId || getGptSlotInfoForAdUnitCode(adUnitId)?.gptSlot || adUnitId,
+      'au': origAdUnit.owAdUnitId || getGptSlotInfoForAdUnitCode(adUnitId)?.gptSlot || adUnitId,
       'mt': getAdUnitAdFormats(origAdUnit),
       'sz': getSizesForAdUnit(adUnit, adUnitId),
       'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId)),
@@ -450,14 +453,16 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
     return;
   }
   let origAdUnit = getAdUnit(cache.auctions[auctionId].origAdUnits, adUnitId) || {};
+  let owAdUnitId = origAdUnit.owAdUnitId || getGptSlotInfoForAdUnitCode(adUnitId)?.gptSlot || adUnitId;
   let auctionCache = cache.auctions[auctionId];
   let floorData = auctionCache.floorData;
   let wiid = cache.auctions[auctionId]?.wiid || auctionId;
   let referrer = config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '';
   let adv = winningBid.bidResponse ? getAdDomain(winningBid.bidResponse) || undefined : undefined;
   let fskp = floorData ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined;
-
+  let pg = window.parseFloat(Number(winningBid?.bidResponse?.adserverTargeting?.hb_pb || winningBid?.bidResponse?.adserverTargeting?.pwtpb)) || undefined;
   let pixelURL = END_POINT_WIN_BID_LOGGER;
+
   pixelURL += 'pubid=' + publisherId;
   pixelURL += '&purl=' + enc(config.getConfig('pageUrl') || cache.auctions[auctionId].referer || '');
   pixelURL += '&tst=' + Math.round((new window.Date()).getTime() / 1000);
@@ -466,7 +471,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&pid=' + enc(profileId);
   pixelURL += '&pdvid=' + enc(profileVersionId);
   pixelURL += '&slot=' + enc(adUnitId);
-  pixelURL += '&au=' + enc(origAdUnit.adUnitId || adUnitId);
+  pixelURL += '&au=' + enc(owAdUnitId);
   pixelURL += '&pn=' + enc(adapterName);
   pixelURL += '&bc=' + enc(winningBid.bidderCode || winningBid.bidder);
   pixelURL += '&en=' + enc(winningBid.bidResponse.bidPriceUSD);
@@ -474,6 +479,7 @@ function executeBidWonLoggerCall(auctionId, adUnitId) {
   pixelURL += '&kgpv=' + enc(getValueForKgpv(winningBid, adUnitId));
   pixelURL += '&piid=' + enc(winningBid.bidResponse.partnerImpId || EMPTY_STRING);
   pixelURL += '&di=' + enc(winningBid?.bidResponse?.dealId || OPEN_AUCTION_DEAL_ID);
+  pixelURL += '&pb=' + enc(pg);
 
   pixelURL += '&plt=' + enc(getDevicePlatform());
   pixelURL += '&psz=' + enc((winningBid?.bidResponse?.dimensions?.width || '0') + 'x' +

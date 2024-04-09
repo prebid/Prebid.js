@@ -4,6 +4,7 @@ import { isFn, deepAccess, logMessage } from '../src/utils.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'e_volution';
+const GVLID = 957;
 const AD_URL = 'https://service.e-volution.ai/?c=o&m=multi';
 const URL_SYNC = 'https://service.e-volution.ai/?c=o&m=sync';
 const NO_SYNC = true;
@@ -57,6 +58,7 @@ function getUserId(eids, id, source, uidExt) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   noSync: NO_SYNC,
 
