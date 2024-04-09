@@ -1,31 +1,31 @@
 ## Overview
 
-Module Name: pubX.ai RTD Provider
-Module Type: RTD Adapter
-Maintainer: phaneendra@pubx.ai
+- Module Name: pubX.ai RTD Provider
+- Module Type: RTD Adapter
+- Maintainer: phaneendra@pubx.ai
 
 ## Description
 
-RTD module for prebid provided by pubX.ai.
+This RTD module, provided by pubx.ai, is used to set dynamic floors within Prebid.
 
 ## Usage
 
-Make sure to have the following modules listed while building prebid : `priceFloors`
+Ensure that the following modules are listed when building Prebid: `priceFloors`.
 For example:
 
 ```shell
 gulp build --modules=priceFloors
 ```
 
-Inorder to compile the RTD module into your Prebid build:
+To compile the RTD module into your Prebid build:
 
 ```shell
 gulp build --modules=rtdModule,pubxaiRtdProvider
 ```
 
-Now to use the pubX.ai RTD module, add `realTimeData` with the below mentioned params to the Prebid config.
+To utilize the pubX.ai RTD module, add `realTimeData` with the parameters mentioned below to the Prebid config.
 
-```javascript
+```js
 const AUCTION_DELAY = 100;
 pbjs.setConfig({
 	// rest of the config
@@ -51,13 +51,18 @@ pbjs.setConfig({
 
 ## Parameters
 
-| Name               | Type    | Description                                                      | Default                    |
-| :----------------- | :------ | :--------------------------------------------------------------- | :------------------------- |
-| name               | String  | Real time data module name                                       | Always `pubxai`            |
-| waitForIt          | Boolean | Should be `true` if there's an `auctionDelay` defined (optional) | `false`                    |
-| params             | Object  |                                                                  |                            |
-| params.pubxId      | String  | Publisher Id                                                     |                            |
-| params.endpoint    | String  | URL to get the floor data (optional)                             | `https://floor.pbxai.com/` |
-| params.floorMin    | Number  | Mimimum CPM floor (optional)                                     | `None`                     |
-| params.enforcement | Object  | Enforcement behavior within the Price Floors Module (optional)   | `None`                     |
-| params.data        | Object  | Default Floor data provided by pubx (optional)                   | `None`                     |
+| Name               | Type    | Description                                                    | Default                    |
+| :----------------- | :------ | :------------------------------------------------------------- | :------------------------- |
+| name               | String  | Name of the real-time data module                              | Always `pubxai`            |
+| waitForIt          | Boolean | Should be `true` if an `auctionDelay` is defined (optional)    | `false`                    |
+| params             | Object  |                                                                |                            |
+| params.pubxId      | String  | Publisher ID                                                   |                            |
+| params.endpoint    | String  | URL to retrieve floor data (optional)                          | `https://floor.pbxai.com/` |
+| params.floorMin    | Number  | Minimum CPM floor (optional)                                   | `None`                     |
+| params.enforcement | Object  | Enforcement behavior within the Price Floors Module (optional) | `None`                     |
+| params.data        | Object  | Default floor data provided by pubX.ai (optional)              | `None`                     |
+
+## What Should Change in the Bid Request?
+
+There are no direct changes in the bid request due to our RTD module, but floor configuration will be set using the price floors module. These changes will be reflected in adunit bids or bidder requests as floor data.
+

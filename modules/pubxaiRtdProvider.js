@@ -2,6 +2,10 @@ import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
 import { submodule } from '../src/hook.js';
 import { deepAccess } from '../src/utils.js';
+/**
+ * This RTD module has a dependency on the priceFloors module.
+ * We utilize the createFloorsDataForAuction function from the priceFloors module to incorporate price floors data into the current auction.
+ */
 import { createFloorsDataForAuction } from './priceFloors.js'; // eslint-disable-line prebid/validate-imports
 
 const MODULE_NAME = 'realTimeData';
@@ -84,12 +88,10 @@ export const getUrl = (provider) => {
 export const fetchFloorRules = async (provider) => {
   return new Promise((resolve, reject) => {
     setFloorsApiStatus(FloorsApiStatus.IN_PROGRESS);
-    // When the api call exceeds auctionDelay, the api call doesn't fail but the auction starts.
     ajax(getUrl(provider), {
       success: (responseText, response) => {
         try {
           if (response && response.response) {
-            // "content-type" = 'text/plain; charset=utf-8'
             const floorsResponse = JSON.parse(response.response);
             resolve(floorsResponse);
           } else {
