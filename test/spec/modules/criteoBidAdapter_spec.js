@@ -2060,7 +2060,7 @@ describe('The Criteo bidding adapter', function () {
       };
       const bids = spec.interpretResponse(response, request);
       expect(bids).to.have.lengthOf(1);
-      expect(bids[0].meta.adrender).to.equal(1);
+      expect(bids[0].meta.dsa.adrender).to.equal(1);
     });
 
     it('should properly parse a bid response with a networkId with twin ad unit banner win', function () {

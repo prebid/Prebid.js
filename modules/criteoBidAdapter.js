@@ -255,8 +255,8 @@ export const spec = {
           if (slot.ext?.meta?.networkName) {
             bid.meta = Object.assign({}, bid.meta, { networkName: slot.ext.meta.networkName })
           }
-          if (slot.ext?.dsa?.adrender) {
-            bid.meta = Object.assign({}, bid.meta, { adrender: slot.ext.dsa.adrender })
+          if (slot.ext?.dsa) {
+            bid.meta = Object.assign({}, bid.meta, { dsa: slot.ext.dsa })
           }
           if (slot.native) {
             if (bidRequest.params.nativeCallback) {
