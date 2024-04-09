@@ -152,10 +152,17 @@ Object.assign(BidInterceptor.prototype, {
   },
 
   paapiReplacer(paapiDef, ruleNo) {
+    function wrap(configs = []) {
+      return configs.map(config => {
+        return Object.keys(config).some(k => !['config', 'igb'].includes(k))
+          ? {config}
+          : config
+      });
+    }
     if (Array.isArray(paapiDef)) {
-      return () => paapiDef;
+      return () => wrap(paapiDef);
     } else if (typeof paapiDef === 'function') {
-      return paapiDef
+      return (...args) => wrap(paapiDef(...args))
     } else {
       this.logger.logError(`Invalid 'paapi' definition for debug bid interceptor (in rule #${ruleNo})`);
     }

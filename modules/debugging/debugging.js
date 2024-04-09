@@ -103,7 +103,7 @@ export function bidderBidInterceptor(next, interceptBids, spec, bids, bidRequest
     bids,
     bidRequest,
     addBid: cbs.onBid,
-    addPaapiConfig: (config, bidRequest) => cbs.onPaapi({bidId: bidRequest.bidId, config}),
+    addPaapiConfig: (config, bidRequest) => cbs.onPaapi({bidId: bidRequest.bidId, ...config}),
     done
   }));
   if (bids.length === 0) {
