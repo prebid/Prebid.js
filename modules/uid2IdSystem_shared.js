@@ -196,7 +196,7 @@ if (FEATURES.UID2_CSTG) {
         _logWarn('CSTG opts.serverPublicKey must be a string');
         return false;
       }
-      const serverPublicKeyPrefix = /^UID2-X-[A-Z]-.+/;
+      const serverPublicKeyPrefix = /^(UID2|EUID)-X-[A-Z]-.+/;
       if (!serverPublicKeyPrefix.test(opts.serverPublicKey)) {
         _logWarn(
           `CSTG opts.serverPublicKey must match the regular expression ${serverPublicKeyPrefix}`

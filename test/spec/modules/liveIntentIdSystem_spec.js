@@ -432,7 +432,7 @@ describe('LiveIntentId', function() {
     const provider = 'liveintent.com'
     refererInfoStub.returns({domain: provider})
     const result = liveIntentIdSubmodule.decode({ nonId: 'foo', thetradedesk: 'bar' });
-    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'thetradedesk': 'bar'}, 'thetradedesk': {'id': 'bar', 'ext': {'provider': provider}}});
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'tdid': 'bar'}, 'tdid': {'id': 'bar', 'ext': {'rtiPartner': 'TDID', 'provider': provider}}});
   });
 
   it('should allow disabling nonId resolution', function() {

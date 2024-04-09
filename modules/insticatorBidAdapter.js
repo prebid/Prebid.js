@@ -128,6 +128,10 @@ function buildVideo(bidRequest) {
     }
   }
 
+  if (plcmt) {
+    optionalParams['plcmt'] = plcmt;
+  }
+
   let videoObj = {
     placement,
     mimes,
@@ -137,9 +141,6 @@ function buildVideo(bidRequest) {
     ...videoBidderParams // bidder specific overrides for video
   }
 
-  if (plcmt) {
-    videoObj['plcmt'] = plcmt;
-  }
   return videoObj
 }
 
@@ -386,16 +387,16 @@ function validateBanner(bid) {
 }
 
 function validateVideo(bid) {
-  const videoParams = deepAccess(bid, 'mediaTypes.video', {});
-  const videoBidderParams = deepAccess(bid, 'params.video', {});
+  const videoParams = deepAccess(bid, 'mediaTypes.video');
+  const videoBidderParams = deepAccess(bid, 'params.video');
   let video = {
     ...videoParams,
     ...videoBidderParams // bidder specific overrides for video
   }
-  // Check if the merged video object is empty
-  if (Object.keys(video).length === 0 || video === undefined) {
-    logError('insticator: video object is empty');
-    return false; // or handle the case where video parameters are undefined or empty
+
+  // Check if the video object is undefined
+  if (videoParams === undefined) {
+    return true;
   }
 
   let w = deepAccess(bid, 'mediaTypes.video.w');

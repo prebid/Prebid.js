@@ -77,7 +77,7 @@ export const ORTB_VIDEO_PARAMS = {
   'boxingallowed': (value) => isInteger(value),
   'playbackmethod': (value) => isArrayOfNums(value),
   'playbackend': (value) => isInteger(value),
-  'delivery': (value) => isInteger(value),
+  'delivery': (value) => isArrayOfNums(value),
   'pos': (value) => isInteger(value),
   'api': (value) => isArrayOfNums(value)
 };
