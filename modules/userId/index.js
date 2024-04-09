@@ -1096,7 +1096,7 @@ export function init(config, {delay = GreedyPromise.timeout} = {}) {
 // init config update listener to start the application
 init(config);
 
-module('userId', attachIdSystem);
+module('userId', attachIdSystem, { postInstallAllowed: true });
 
 export function setOrtbUserExtEids(ortbRequest, bidderRequest, context) {
   const eids = deepAccess(context, 'bidRequests.0.userIdAsEids');

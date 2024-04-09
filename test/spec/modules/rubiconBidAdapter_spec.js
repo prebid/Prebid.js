@@ -34,6 +34,7 @@ describe('the rubicon adapter', function () {
     logErrorSpy;
 
   /**
+   * @typedef {import('../../../src/adapters/bidderFactory.js').BidRequest} BidRequest
    * @typedef {Object} sizeMapConverted
    * @property {string} sizeId
    * @property {string} size
@@ -2267,17 +2268,6 @@ describe('the rubicon adapter', function () {
             expect(payload.ext.prebid.analytics).to.be.undefined;
           });
 
-          it('should send video exp param correctly when set', function () {
-            const bidderRequest = createVideoBidderRequest();
-            config.setConfig({s2sConfig: {defaultTtl: 600}});
-            let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
-            let post = request.data;
-
-            // should exp set to the right value according to config
-            let imp = post.imp[0];
-            expect(imp.exp).to.equal(600);
-          });
-
           it('should not send video exp at all if not set in s2sConfig config', function () {
             const bidderRequest = createVideoBidderRequest();
             let [request] = spec.buildRequests(bidderRequest.bids, bidderRequest);
@@ -2770,6 +2760,56 @@ describe('the rubicon adapter', function () {
 
           expect(slotParams['o_ae']).to.equal(1)
         });
+
+        it('should pass along desired segtaxes, but not non-desired ones', () => {
+          const localBidderRequest = Object.assign({}, bidderRequest);
+          localBidderRequest.refererInfo = {domain: 'bob'};
+          config.setConfig({
+            rubicon: {
+              sendUserSegtax: [9],
+              sendSiteSegtax: [10]
+            }
+          });
+          localBidderRequest.ortb2.user = {
+            data: [{
+              ext: {
+                segtax: '404'
+              },
+              segment: [{id: 5}, {id: 6}]
+            }, {
+              ext: {
+                segtax: '508'
+              },
+              segment: [{id: 5}, {id: 2}]
+            }, {
+              ext: {
+                segtax: '9'
+              },
+              segment: [{id: 1}, {id: 2}]
+            }]
+          }
+          localBidderRequest.ortb2.site = {
+            content: {
+              data: [{
+                ext: {
+                  segtax: '10'
+                },
+                segment: [{id: 2}, {id: 3}]
+              }, {
+                ext: {
+                  segtax: '507'
+                },
+                segment: [{id: 3}, {id: 4}]
+              }]
+            }
+          }
+          const slotParams = spec.createSlotParams(bidderRequest.bids[0], localBidderRequest);
+          expect(slotParams['tg_i.tax507']).is.equal('3,4');
+          expect(slotParams['tg_v.tax508']).is.equal('5,2');
+          expect(slotParams['tg_v.tax9']).is.equal('1,2');
+          expect(slotParams['tg_i.tax10']).is.equal('2,3');
+          expect(slotParams['tg_v.tax404']).is.equal(undefined);
+        });
       });
 
       describe('classifiedAsVideo', function () {
@@ -3036,7 +3076,7 @@ describe('the rubicon adapter', function () {
           expect(bids[0].width).to.equal(320);
           expect(bids[0].height).to.equal(50);
           expect(bids[0].cpm).to.equal(0.911);
-          expect(bids[0].ttl).to.equal(300);
+          expect(bids[0].ttl).to.equal(360);
           expect(bids[0].netRevenue).to.equal(true);
           expect(bids[0].rubicon.advertiserId).to.equal(7);
           expect(bids[0].rubicon.networkId).to.equal(8);
@@ -3053,7 +3093,7 @@ describe('the rubicon adapter', function () {
           expect(bids[1].width).to.equal(300);
           expect(bids[1].height).to.equal(250);
           expect(bids[1].cpm).to.equal(0.811);
-          expect(bids[1].ttl).to.equal(300);
+          expect(bids[1].ttl).to.equal(360);
           expect(bids[1].netRevenue).to.equal(true);
           expect(bids[1].rubicon.advertiserId).to.equal(7);
           expect(bids[1].rubicon.networkId).to.equal(8);
@@ -3865,7 +3905,7 @@ describe('the rubicon adapter', function () {
             expect(bids[0].seatBidId).to.equal('0');
             expect(bids[0].creativeId).to.equal('4259970');
             expect(bids[0].cpm).to.equal(2);
-            expect(bids[0].ttl).to.equal(300);
+            expect(bids[0].ttl).to.equal(360);
             expect(bids[0].netRevenue).to.equal(true);
             expect(bids[0].adserverTargeting).to.deep.equal({hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'});
             expect(bids[0].mediaType).to.equal('video');
@@ -3957,7 +3997,7 @@ describe('the rubicon adapter', function () {
             expect(bids[0].seatBidId).to.equal('0');
             expect(bids[0].creativeId).to.equal('4259970');
             expect(bids[0].cpm).to.equal(2);
-            expect(bids[0].ttl).to.equal(300);
+            expect(bids[0].ttl).to.equal(360);
             expect(bids[0].netRevenue).to.equal(true);
             expect(bids[0].adserverTargeting).to.deep.equal({hb_uuid: '0c498f63-5111-4bed-98e2-9be7cb932a64'});
             expect(bids[0].mediaType).to.equal('video');

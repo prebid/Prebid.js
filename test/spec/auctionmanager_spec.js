@@ -25,6 +25,11 @@ import {deepClone} from '../../src/utils.js';
 import { IMAGE as ortbNativeRequest } from 'src/native.js';
 import {PrebidServer} from '../../modules/prebidServerBidAdapter/index.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 var assert = require('assert');
 
 /* use this method to test individual files instead of the whole prebid.js project */

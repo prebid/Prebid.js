@@ -165,6 +165,7 @@ export const spec = {
   interpretResponse: function (serverResponse, originalRequest) {
     let bids;
 
+    const fledgeInterestGroupBuyers = config.getConfig('fledgeConfig.interestGroupBuyers') || [];
     const responseBody = serverResponse.body;
     let fledgeAuctionConfigs = null;
 
@@ -186,7 +187,7 @@ export const spec = {
           {
             seller,
             decisionLogicUrl,
-            interestGroupBuyers: Object.keys(perBuyerSignals),
+            interestGroupBuyers: [...fledgeInterestGroupBuyers, ...Object.keys(perBuyerSignals)],
             perBuyerSignals,
           },
           sellerTimeout

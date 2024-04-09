@@ -31,7 +31,8 @@ userIdAsEids = [
             id: 'some-random-id-value',
             atype: 1,
             ext: {
-                rtiPartner: 'TDID'
+                rtiPartner: 'TDID',
+                provider: 'liveintent.com'
             }
         }]
     },
@@ -173,17 +174,6 @@ userIdAsEids = [
         }]
     },
     
-    {
-        source: 'adserver.org',
-        uids: [{
-            id: 'some-random-id-value',
-            atype: 3,
-            ext: {
-                provider: 'liveintent.com'
-            }
-        }]
-    },
-
     {
         source: 'rubiconproject.com',
         uids: [{

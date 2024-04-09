@@ -65,7 +65,7 @@ const NATIVERET = {
 };
 
 /**
- * get page title
+ * get page title111
  * @returns {string}
  */
 
@@ -133,10 +133,11 @@ export const getPmgUID = () => {
   let pmgUid = storage.getCookie(COOKIE_KEY_PMGUID);
   if (!pmgUid) {
     pmgUid = utils.generateUUID();
-    try {
-      storage.setCookie(COOKIE_KEY_PMGUID, pmgUid, getCurrentTimeToUTCString());
-    } catch (e) {}
   }
+  // Extend the expiration time of pmguid
+  try {
+    storage.setCookie(COOKIE_KEY_PMGUID, pmgUid, getCurrentTimeToUTCString());
+  } catch (e) {}
   return pmgUid;
 };
 
@@ -436,6 +437,7 @@ function getParam(validBidRequests, bidderRequest) {
   const page = utils.deepAccess(bidderRequest, 'refererInfo.page');
   const referer = utils.deepAccess(bidderRequest, 'refererInfo.ref');
   const firstPartyData = bidderRequest.ortb2;
+  const tpData = utils.deepAccess(bidderRequest, 'ortb2.user.data') || undefined;
   const topWindow = window.top;
   const title = getPageTitle();
   const desc = getPageDescription();
@@ -462,6 +464,7 @@ function getParam(validBidRequests, bidderRequest) {
         firstPartyData,
         ssppid: storage.getCookie(COOKIE_KEY_SSPPID) || undefined,
         pmguid: getPmgUID(),
+        tpData,
         page: {
           title: title ? title.slice(0, 100) : undefined,
           desc: desc ? desc.slice(0, 300) : undefined,

@@ -111,7 +111,9 @@ export const spec = {
     {code: 'didnadisplay'},
     {code: 'qortex'},
     {code: 'adpluto'},
-    {code: 'headbidder'}
+    {code: 'headbidder'},
+    {code: 'digiad'},
+    {code: 'monetix'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
