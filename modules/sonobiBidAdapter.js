@@ -98,11 +98,6 @@ export const spec = {
       'iqid': bidderSettings.get(BIDDER_CODE, 'storageAllowed') ? JSON.stringify(loadOrCreateFirstPartyData()) : null,
     };
 
-    if (deepAccess(bidderRequest, 'ortb2.experianRtidData') && deepAccess(bidderRequest, 'ortb2.experianRtidKey')) {
-      payload.expData = deepAccess(bidderRequest, 'ortb2.experianRtidData');
-      payload.expKey = deepAccess(bidderRequest, 'ortb2.experianRtidKey');
-    }
-
     const fpd = bidderRequest.ortb2;
 
     if (fpd) {
