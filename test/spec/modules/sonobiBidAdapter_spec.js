@@ -1,8 +1,8 @@
-import {expect} from 'chai';
-import {_getPlatform, spec} from 'modules/sonobiBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {userSync} from '../../../src/userSync.js';
-import {config} from 'src/config.js';
+import { expect } from 'chai';
+import { _getPlatform, spec } from 'modules/sonobiBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { userSync } from '../../../src/userSync.js';
+import { config } from 'src/config.js';
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
 
 describe('SonobiBidAdapter', function () {
@@ -359,7 +359,9 @@ describe('SonobiBidAdapter', function () {
         'page': 'https://example.com',
         'stack': ['https://example.com']
       },
-      uspConsent: 'someCCPAString'
+      uspConsent: 'someCCPAString',
+      ortb2: {}
+
     };
 
     it('should set fpd if there is any data in ortb2', function () {
@@ -492,6 +494,12 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data.s).not.to.be.empty
       expect(bidRequests.data.hfa).to.equal('hfakey')
     })
+
+    it('should return a properly formatted request with experianRtidData and exexperianRtidKeypKey omitted from fpd', function () {
+      const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
+      expect(bidRequests.data.fpd.indexOf('experianRtidData')).to.equal(-1);
+      expect(bidRequests.data.fpd.indexOf('exexperianRtidKeypKey')).to.equal(-1);
+    });
 
     it('should return null if there is nothing to bid on', function () {
       const bidRequests = spec.buildRequests([{ params: {} }], bidderRequests)

@@ -2,6 +2,7 @@ import { generateUUID, deepSetValue, deepAccess, isArray, isInteger, logError, l
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 const BIDDER_CODE = 'deepintent';
+const GVL_ID = 541;
 const BIDDER_ENDPOINT = 'https://prebid.deepintent.com/prebid';
 const USER_SYNC_URL = 'https://cdn.deepintent.com/syncpixel.html';
 const DI_M_V = '1.0.0';
@@ -32,6 +33,7 @@ export const ORTB_VIDEO_PARAMS = {
 };
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVL_ID,
   supportedMediaTypes: [BANNER, VIDEO],
   aliases: [],
 
@@ -94,6 +96,20 @@ export const spec = {
     if (bidderRequest && bidderRequest.gdprConsent) {
       deepSetValue(openRtbBidRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
       deepSetValue(openRtbBidRequest, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
+    }
+
+    // GPP Consent
+    if (bidderRequest?.gppConsent?.gppString) {
+      deepSetValue(openRtbBidRequest, 'regs.gpp', bidderRequest.gppConsent.gppString);
+      deepSetValue(openRtbBidRequest, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
+    } else if (bidderRequest?.ortb2?.regs?.gpp) {
+      deepSetValue(openRtbBidRequest, 'regs.gpp', bidderRequest.ortb2.regs.gpp);
+      deepSetValue(openRtbBidRequest, 'regs.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
+    }
+
+    // coppa compliance
+    if (bidderRequest?.ortb2?.regs?.coppa) {
+      deepSetValue(openRtbBidRequest, 'regs.coppa', 1);
     }
 
     injectEids(openRtbBidRequest, validBidRequests);

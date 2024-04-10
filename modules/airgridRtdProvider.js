@@ -11,6 +11,10 @@ import {getStorageManager} from '../src/storageManager.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'airgrid';
 const AG_TCF_ID = 782;
@@ -101,7 +105,7 @@ function init(rtdConfig, userConsent) {
 
 /**
  * Real-time data retrieval from AirGrid
- * @param {Object} reqBidsConfigObj
+ * @param {Object} bidConfig
  * @param {function} onDone
  * @param {Object} rtdConfig
  * @param {Object} userConsent

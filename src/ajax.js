@@ -114,7 +114,8 @@ function toXHR({status, statusText = '', headers, url}, responseText) {
     getResponseHeader: (header) => headers?.has(header) ? headers.get(header) : null,
     toJSON() {
       return Object.assign({responseXML: getXML()}, this)
-    }
+    },
+    timedOut: false
   }
 }
 
@@ -130,7 +131,10 @@ export function attachCallbacks(fetchPm, callback) {
     .then(([response, responseText]) => {
       const xhr = toXHR(response, responseText);
       response.ok || response.status === 304 ? success(responseText, xhr) : error(response.statusText, xhr);
-    }, () => error('', toXHR({status: 0}, '')));
+    }, (reason) => error('', Object.assign(
+      toXHR({status: 0}, ''),
+      {reason, timedOut: reason?.name === 'AbortError'}))
+    );
 }
 
 export function ajaxBuilder(timeout = 3000, {request, done} = {}) {

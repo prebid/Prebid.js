@@ -3,6 +3,7 @@ const path = require('path');
 const _ = require('lodash');
 const resolveFrom = require('resolve-from');
 const MODULES_PATH = path.resolve(__dirname, '../../modules');
+const CREATIVE_PATH = path.resolve(__dirname, '../../creative');
 
 function isInDirectory(filename, dir) {
   const rel = path.relative(dir, filename);
@@ -29,6 +30,16 @@ function flagErrors(context, node, importPath) {
     // do not allow cross-module imports
     if (isInDirectory(absImportPath, MODULES_PATH) && (!isInDirectory(absImportPath, absFileDir) || absFileDir === MODULES_PATH)) {
       context.report(node, `import "${importPath}": importing from modules is not allowed`);
+    }
+
+    // do not allow imports into `creative`
+    if (isInDirectory(absImportPath, CREATIVE_PATH) && !isInDirectory(absFileDir, CREATIVE_PATH) && absFileDir !== CREATIVE_PATH) {
+      context.report(node, `import "${importPath}": importing from creative is not allowed`);
+    }
+
+    // do not allow imports outside `creative`
+    if (isInDirectory(absFileDir, CREATIVE_PATH) && !isInDirectory(absImportPath, CREATIVE_PATH) && absImportPath !== CREATIVE_PATH) {
+      context.report(node, `import "${importPath}": importing from outside creative is not allowed`);
     }
 
     // don't allow extension-less local imports

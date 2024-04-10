@@ -1,6 +1,4 @@
-import {
-  _sendAdToCreative, getReplier, receiveMessage
-} from 'src/secureCreatives.js';
+import {getReplier, receiveMessage, resizeRemoteCreative} from 'src/secureCreatives.js';
 import * as utils from 'src/utils.js';
 import {getAdUnits, getBidRequests, getBidResponses} from 'test/fixtures/fixtures.js';
 import {auctionManager} from 'src/auctionManager.js';
@@ -8,14 +6,26 @@ import * as auctionModule from 'src/auction.js';
 import * as native from 'src/native.js';
 import {fireNativeTrackers, getAllAssetsMessage} from 'src/native.js';
 import * as events from 'src/events.js';
-import { config as configObj } from 'src/config.js';
+import {config as configObj} from 'src/config.js';
+import * as creativeRenderers from 'src/creativeRenderers.js';
 import 'src/prebid.js';
+import 'modules/nativeRendering.js';
 
-import { expect } from 'chai';
+import {expect} from 'chai';
 
 var CONSTANTS = require('src/constants.json');
 
 describe('secureCreatives', () => {
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.sandbox.create();
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   function makeEvent(ev) {
     return Object.assign({origin: 'mock-origin', ports: []}, ev)
   }
@@ -51,40 +61,6 @@ describe('secureCreatives', () => {
       }
       const reply = getReplier(ev);
       expect(() => reply('test')).to.throw();
-    });
-  });
-
-  describe('_sendAdToCreative', () => {
-    beforeEach(function () {
-      sinon.stub(utils, 'logError');
-      sinon.stub(utils, 'logWarn');
-    });
-
-    afterEach(function () {
-      utils.logError.restore();
-      utils.logWarn.restore();
-    });
-    it('should macro replace ${AUCTION_PRICE} with the winning bid for ad and adUrl', () => {
-      const oldVal = window.googletag;
-      const oldapntag = window.apntag;
-      window.apntag = null
-      window.googletag = null;
-      const mockAdObject = {
-        adId: 'someAdId',
-        ad: '<script src="http://prebid.org/creative/${AUCTION_PRICE}"></script>',
-        adUrl: 'http://creative.prebid.org/${AUCTION_PRICE}',
-        width: 300,
-        height: 250,
-        renderer: null,
-        cpm: '1.00',
-        adUnitCode: 'some_dom_id'
-      };
-      const reply = sinon.spy();
-      _sendAdToCreative(mockAdObject, reply);
-      expect(reply.args[0][0].ad).to.equal('<script src="http://prebid.org/creative/1.00"></script>');
-      expect(reply.args[0][0].adUrl).to.equal('http://creative.prebid.org/1.00');
-      window.googletag = oldVal;
-      window.apntag = oldapntag;
     });
   });
 
@@ -149,19 +125,15 @@ describe('secureCreatives', () => {
     });
 
     beforeEach(function() {
-      spyAddWinningBid = sinon.spy(auctionManager, 'addWinningBid');
-      spyLogWarn = sinon.spy(utils, 'logWarn');
-      stubFireNativeTrackers = sinon.stub(native, 'fireNativeTrackers').callsFake(message => { return message.action; });
-      stubGetAllAssetsMessage = sinon.stub(native, 'getAllAssetsMessage');
-      stubEmit = sinon.stub(events, 'emit');
+      spyAddWinningBid = sandbox.spy(auctionManager, 'addWinningBid');
+      spyLogWarn = sandbox.spy(utils, 'logWarn');
+      stubFireNativeTrackers = sandbox.stub(native, 'fireNativeTrackers').callsFake(message => { return message.action; });
+      stubGetAllAssetsMessage = sandbox.stub(native, 'getAllAssetsMessage');
+      stubEmit = sandbox.stub(events, 'emit');
     });
 
     afterEach(function() {
-      spyAddWinningBid.restore();
-      spyLogWarn.restore();
-      stubFireNativeTrackers.restore();
-      stubGetAllAssetsMessage.restore();
-      stubEmit.restore();
+      sandbox.restore();
       resetAuction();
       adResponse.adId = bidId;
     });
@@ -305,6 +277,66 @@ describe('secureCreatives', () => {
           adId: bidId
         }));
       });
+
+      it('should include renderers in responses', () => {
+        sandbox.stub(creativeRenderers, 'getCreativeRendererSource').returns('mock-renderer');
+        pushBidResponseToAuction({});
+        const ev = makeEvent({
+          source: {
+            postMessage: sinon.stub()
+          },
+          data: JSON.stringify({adId: bidId, message: 'Prebid Request'})
+        });
+        receiveMessage(ev);
+        sinon.assert.calledWith(ev.source.postMessage, sinon.match(ob => JSON.parse(ob).renderer === 'mock-renderer'));
+      });
+
+      if (FEATURES.NATIVE) {
+        it('should include native rendering data in responses', () => {
+          const bid = {
+            native: {
+              ortb: {
+                assets: [
+                  {
+                    id: 1,
+                    data: {
+                      type: 2,
+                      value: 'vbody'
+                    }
+                  }
+                ]
+              },
+              body: 'vbody',
+              adTemplate: 'tpl',
+              rendererUrl: 'rurl'
+            }
+          }
+          pushBidResponseToAuction(bid);
+          const ev = makeEvent({
+            source: {
+              postMessage: sinon.stub()
+            },
+            data: JSON.stringify({adId: bidId, message: 'Prebid Request'})
+          })
+          receiveMessage(ev);
+          sinon.assert.calledWith(ev.source.postMessage, sinon.match(ob => {
+            const data = JSON.parse(ob);
+            ['width', 'height'].forEach(prop => expect(data[prop]).to.not.exist);
+            const native = data.native;
+            sinon.assert.match(native, {
+              ortb: bid.native.ortb,
+              adTemplate: bid.native.adTemplate,
+              rendererUrl: bid.native.rendererUrl,
+            })
+            expect(Object.fromEntries(native.assets.map(({key, value}) => [key, value]))).to.eql({
+              adTemplate: bid.native.adTemplate,
+              rendererUrl: bid.native.rendererUrl,
+              body: 'vbody'
+            });
+            return true;
+          }))
+        })
+      }
     });
 
     describe('Prebid Native', function() {
@@ -365,45 +397,6 @@ describe('secureCreatives', () => {
         receiveMessage(ev);
         stubEmit.withArgs(CONSTANTS.EVENTS.BID_WON, adResponse).calledOnce;
       });
-
-      it('Prebid native should fire trackers', function () {
-        let adId = 2;
-        pushBidResponseToAuction({adId});
-
-        const data = {
-          adId: adId,
-          message: 'Prebid Native',
-          action: 'click',
-        };
-
-        const ev = makeEvent({
-          data: JSON.stringify(data),
-          source: {
-            postMessage: sinon.stub()
-          },
-          origin: 'any origin'
-        });
-
-        receiveMessage(ev);
-
-        sinon.assert.neverCalledWith(spyLogWarn, warning);
-        sinon.assert.calledOnce(stubFireNativeTrackers);
-        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
-        sinon.assert.calledOnce(spyAddWinningBid);
-
-        resetHistories(ev.source.postMessage);
-
-        delete data.action;
-        ev.data = JSON.stringify(data);
-        receiveMessage(ev);
-
-        sinon.assert.neverCalledWith(spyLogWarn, warning);
-        sinon.assert.calledOnce(stubFireNativeTrackers);
-        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.BID_WON);
-        sinon.assert.notCalled(spyAddWinningBid);
-
-        expect(adResponse).to.have.property('status', CONSTANTS.BID_STATUS.RENDERED);
-      });
     });
 
     describe('Prebid Event', () => {
@@ -457,4 +450,53 @@ describe('secureCreatives', () => {
       });
     });
   });
+
+  describe('resizeRemoteCreative', () => {
+    let origGpt;
+    before(() => {
+      origGpt = window.googletag;
+    });
+    after(() => {
+      window.googletag = origGpt;
+    });
+    function mockSlot(elementId, pathId) {
+      let targeting = {};
+      return {
+        getSlotElementId: sinon.stub().callsFake(() => elementId),
+        getAdUnitPath: sinon.stub().callsFake(() => pathId),
+        setTargeting: sinon.stub().callsFake((key, value) => {
+          value = Array.isArray(value) ? value : [value];
+          targeting[key] = value;
+        }),
+        getTargetingKeys: sinon.stub().callsFake(() => Object.keys(targeting)),
+        getTargeting: sinon.stub().callsFake((key) => targeting[key] || [])
+      }
+    }
+    let slots;
+    beforeEach(() => {
+      slots = [
+        mockSlot('div1', 'au1'),
+        mockSlot('div2', 'au2'),
+        mockSlot('div3', 'au3')
+      ]
+      window.googletag = {
+        pubads: sinon.stub().returns({
+          getSlots: sinon.stub().returns(slots)
+        })
+      };
+      sandbox.stub(document, 'getElementById');
+    })
+
+    it('should find correct gpt slot based on ad id rather than ad unit code when resizing secure creative', function () {
+      slots[1].setTargeting('hb_adid', ['adId']);
+      resizeRemoteCreative({
+        adId: 'adId',
+        width: 300,
+        height: 250,
+      });
+      [0, 2].forEach((i) => sinon.assert.notCalled(slots[i].getSlotElementId))
+      sinon.assert.called(slots[1].getSlotElementId);
+      sinon.assert.calledWith(document.getElementById, 'div2');
+    });
+  })
 });
