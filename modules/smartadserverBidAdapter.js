@@ -132,18 +132,16 @@ export const spec = {
    * @returns positive integer value of startdelay
    */
   getStartDelayForVideoBidRequest: function(videoMediaType, videoParams) {
-    if (videoParams !== undefined && videoParams.startDelay) {
+    if (videoParams?.startDelay) {
       return videoParams.startDelay;
-    } else if (videoMediaType !== undefined) {
-      if (videoMediaType.startdelay == 0) {
-        return 1;
-      } else if (videoMediaType.startdelay == -1) {
+    } else if (videoMediaType?.startdelay) {
+      if (videoMediaType.startdelay > 0 || videoMediaType.startdelay == -1) {
         return 2;
       } else if (videoMediaType.startdelay == -2) {
         return 3;
       }
     }
-    return 2;// Default value for all exotic cases set to bid.params.video.startDelay midroll hence 2.
+    return 1; // SADR-5619
   },
 
   /**
