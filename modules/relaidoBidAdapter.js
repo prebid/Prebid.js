@@ -305,8 +305,13 @@ function getUuid() {
 }
 
 function getOgUrl() {
-  const ogURLElement = window.top.document.querySelector('meta[property="og:url"]');
-  return ogURLElement ? ogURLElement.content : null;
+  try {
+    const ogURLElement = window.top.document.querySelector('meta[property="og:url"]');
+    return ogURLElement ? ogURLElement.content : null;
+  } catch (e) {
+    const ogURLElement = document.querySelector('meta[property="og:url"]');
+    return ogURLElement ? ogURLElement.content : null;
+  }
 }
 
 function getCanonicalUrl(canonicalUrl, isOgUrlOption) {
