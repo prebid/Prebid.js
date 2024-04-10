@@ -11,14 +11,19 @@ import { Renderer } from '../src/Renderer.js';
 import { OUTSTREAM } from '../src/video.js';
 import { ajax } from '../src/ajax.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
+ */
+
 const GVLID = 91;
 export const ADAPTER_VERSION = 36;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const PROFILE_ID_INLINE = 207;
-const FLEDGE_SELLER_DOMAIN = 'https://grid-mercury.criteo.com';
-const FLEDGE_SELLER_TIMEOUT = 500;
-const FLEDGE_DECISION_LOGIC_URL = 'https://grid-mercury.criteo.com/fledge/decision';
 export const PROFILE_ID_PUBLISHERTAG = 185;
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const LOG_PREFIX = 'Criteo: ';
@@ -125,7 +130,8 @@ export const spec = {
     return [];
   },
 
-  /** f
+  /**
+   * f
    * @param {object} bid
    * @return {boolean}
    */
@@ -249,6 +255,9 @@ export const spec = {
           if (slot.ext?.meta?.networkName) {
             bid.meta = Object.assign({}, bid.meta, { networkName: slot.ext.meta.networkName })
           }
+          if (slot.ext?.dsa?.adrender) {
+            bid.meta = Object.assign({}, bid.meta, { adrender: slot.ext.dsa.adrender })
+          }
           if (slot.native) {
             if (bidRequest.params.nativeCallback) {
               bid.ad = createNativeAd(bidId, slot.native, bidRequest.params.nativeCallback);
@@ -272,35 +281,13 @@ export const spec = {
       });
     }
 
-    if (isArray(body.ext?.igbid)) {
-      const seller = body.ext.seller || FLEDGE_SELLER_DOMAIN;
-      const sellerTimeout = body.ext.sellerTimeout || FLEDGE_SELLER_TIMEOUT;
-      const sellerSignals = body.ext.sellerSignals || {};
-      body.ext.igbid.forEach((igbid) => {
-        const perBuyerSignals = {};
-        igbid.igbuyer.forEach(buyerItem => {
-          perBuyerSignals[buyerItem.origin] = buyerItem.buyerdata;
-        });
-        const bidRequest = request.bidRequests.find(b => b.bidId === igbid.impid);
-        if (!sellerSignals.floor && bidRequest.params.bidFloor) {
-          sellerSignals.floor = bidRequest.params.bidFloor;
+    if (isArray(body.ext?.igi)) {
+      body.ext.igi.forEach((igi) => {
+        if (isArray(igi?.igs)) {
+          igi.igs.forEach((igs) => {
+            fledgeAuctionConfigs.push(igs);
+          });
         }
-        if (!sellerSignals.sellerCurrency && bidRequest.params.bidFloorCur) {
-          sellerSignals.sellerCurrency = bidRequest.params.bidFloorCur;
-        }
-        const bidId = bidRequest.bidId;
-        fledgeAuctionConfigs.push({
-          bidId,
-          config: {
-            seller,
-            sellerSignals,
-            sellerTimeout,
-            perBuyerSignals,
-            auctionSignals: {},
-            decisionLogicUrl: FLEDGE_DECISION_LOGIC_URL,
-            interestGroupBuyers: Object.keys(perBuyerSignals),
-          },
-        });
       });
     }
 
@@ -488,17 +475,16 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   let networkId;
   let schain;
   let userIdAsEids;
+  let regs = Object.assign({}, {
+    coppa: bidderRequest.coppa === true ? 1 : (bidderRequest.coppa === false ? 0 : undefined)
+  }, bidderRequest.ortb2?.regs);
   const request = {
     id: generateUUID(),
     publisher: {
       url: context.url,
       ext: bidderRequest.publisherExt,
     },
-    regs: {
-      coppa: bidderRequest.coppa === true ? 1 : (bidderRequest.coppa === false ? 0 : undefined),
-      gpp: bidderRequest.ortb2?.regs?.gpp,
-      gpp_sid: bidderRequest.ortb2?.regs?.gpp_sid
-    },
+    regs: regs,
     slots: bidRequests.map(bidRequest => {
       if (!userIdAsEids) {
         userIdAsEids = bidRequest.userIdAsEids;
@@ -608,6 +594,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   request.user = bidderRequest.ortb2?.user || {};
   request.site = bidderRequest.ortb2?.site || {};
   request.app = bidderRequest.ortb2?.app || {};
+  request.device = bidderRequest.ortb2?.device || {};
   if (bidderRequest && bidderRequest.ceh) {
     request.user.ceh = bidderRequest.ceh;
   }
@@ -682,17 +669,7 @@ function hasValidVideoMediaType(bidRequest) {
     }
   });
 
-  if (isValid) {
-    const videoPlacement = bidRequest.mediaTypes.video.placement || bidRequest.params.video.placement;
-    // We do not support long form for now, also we have to check that context & placement are consistent
-    if (bidRequest.mediaTypes.video.context == 'instream' && videoPlacement === 1) {
-      return true;
-    } else if (bidRequest.mediaTypes.video.context == 'outstream' && videoPlacement !== 1) {
-      return true;
-    }
-  }
-
-  return false;
+  return isValid;
 }
 
 /**

@@ -6,6 +6,7 @@ const CURRENCY = 'EUR';
 const TTL = 60;
 const HTTP_METHOD = 'POST';
 const REQUEST_URL = 'https://bid.sparteo.com/auction';
+const USER_SYNC_URL_IFRAME = 'https://sync.sparteo.com/sync/iframe.html?from=prebidjs';
 
 const VALID_BID_BANNER = {
   bidder: 'sparteo',
@@ -435,6 +436,31 @@ describe('SparteoAdapter', function () {
         bids.forEach(function(bid) {
           expect(adapter.onBidWon.bind(adapter, bid)).to.not.throw();
         });
+      });
+    });
+  });
+
+  describe('getUserSyncs', function() {
+    describe('Check methods succeed', function () {
+      it('should return the sync url', function() {
+        const syncOptions = {
+          'iframeEnabled': true,
+          'pixelEnabled': false
+        };
+        const gdprConsent = {
+          gdprApplies: 1,
+          consentString: 'tcfv2'
+        };
+        const uspConsent = {
+          consentString: '1Y---'
+        };
+
+        const syncUrls = [{
+          type: 'iframe',
+          url: USER_SYNC_URL_IFRAME + '&gdpr=1&gdpr_consent=tcfv2&usp_consent=1Y---'
+        }];
+
+        expect(adapter.getUserSyncs(syncOptions, null, gdprConsent, uspConsent)).to.deep.equal(syncUrls);
       });
     });
   });

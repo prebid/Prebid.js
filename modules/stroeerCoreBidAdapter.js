@@ -1,4 +1,4 @@
-import { buildUrl, deepAccess, generateUUID, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn } from '../src/utils.js';
+import { buildUrl, deepAccess, deepSetValue, generateUUID, getWindowSelf, getWindowTop, isEmpty, isStr, logWarn } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {find} from '../src/polyfill.js';
@@ -76,6 +76,12 @@ export const spec = {
       };
     }
 
+    const DSA_KEY = 'ortb2.regs.ext.dsa';
+    const dsa = deepAccess(bidderRequest, DSA_KEY);
+    if (dsa) {
+      deepSetValue(basePayload, DSA_KEY, dsa);
+    }
+
     const bannerBids = validBidRequests
       .filter(hasBanner)
       .map(mapToPayloadBannerBid);
@@ -108,7 +114,8 @@ export const spec = {
           netRevenue: true,
           creativeId: '',
           meta: {
-            advertiserDomains: bidResponse.adomain
+            advertiserDomains: bidResponse.adomain,
+            dsa: bidResponse.dsa
           },
           mediaType,
         };

@@ -38,10 +38,6 @@ const MOCK_BIDS_REQUEST = {
   ]
 }
 
-function onTimelyResponseStub() {
-
-}
-
 before(() => {
   hook.ready();
 });
@@ -49,6 +45,10 @@ before(() => {
 let wrappedCallback = config.callbackWithBidder(CODE);
 
 describe('bidderFactory', () => {
+  let onTimelyResponseStub;
+  beforeEach(() => {
+    onTimelyResponseStub = sinon.stub();
+  })
   describe('bidders created by newBidder', function () {
     let spec;
     let bidder;
@@ -582,6 +582,14 @@ describe('bidderFactory', () => {
         utils.logError.restore();
       });
 
+      it('should call onTimelyResponse', () => {
+        const bidder = newBidder(spec);
+        spec.isBidRequestValid.returns(true);
+        spec.buildRequests.returns({method: 'POST', url: 'test', data: {}});
+        bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        sinon.assert.called(onTimelyResponseStub);
+      })
+
       it('should call spec.interpretResponse() with the response content', function () {
         const bidder = newBidder(spec);
 
@@ -800,12 +808,13 @@ describe('bidderFactory', () => {
       let ajaxStub;
       let callBidderErrorStub;
       let eventEmitterStub;
-      let xhrErrorMock = {
-        status: 500,
-        statusText: 'Internal Server Error'
-      };
+      let xhrErrorMock;
 
       beforeEach(function () {
+        xhrErrorMock = {
+          status: 500,
+          statusText: 'Internal Server Error'
+        };
         ajaxStub = sinon.stub(ajax, 'ajax').callsFake(function(url, callbacks) {
           callbacks.error('ajax call failed.', xhrErrorMock);
         });
@@ -820,6 +829,20 @@ describe('bidderFactory', () => {
         callBidderErrorStub.restore();
         eventEmitterStub.restore();
       });
+
+      Object.entries({
+        'timeouts': true,
+        'other errors': false
+      }).forEach(([t, timedOut]) => {
+        it(`should ${timedOut ? 'NOT ' : ''}call onTimelyResponse on ${t}`, () => {
+          Object.assign(xhrErrorMock, {timedOut});
+          const bidder = newBidder(spec);
+          spec.isBidRequestValid.returns(true);
+          spec.buildRequests.returns({method: 'POST', url: 'test', data: {}});
+          bidder.callBids(MOCK_BIDS_REQUEST, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+          sinon.assert[timedOut ? 'notCalled' : 'called'](onTimelyResponseStub);
+        })
+      })
 
       it('should not spec.interpretResponse()', function () {
         const bidder = newBidder(spec);
@@ -1086,7 +1109,7 @@ describe('bidderFactory', () => {
     if (FEATURES.NATIVE) {
       it('should add native bids that do have required assets', function () {
         adUnits = [{
-          transactionId: 'au',
+          adUnitId: 'au',
           nativeParams: {
             title: {'required': true},
           }
@@ -1097,7 +1120,7 @@ describe('bidderFactory', () => {
             bidId: '1',
             auctionId: 'first-bid-id',
             adUnitCode: 'mock/placement',
-            transactionId: 'au',
+            adUnitId: 'au',
             params: {
               param: 5
             },

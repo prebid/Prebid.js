@@ -1,7 +1,13 @@
-import { deepAccess, deepClone, logError, isFn, isPlainObject } from '../src/utils.js';
+import { deepAccess, deepClone, isArrayOfNums, isFn, isInteger, isPlainObject, logError } from '../src/utils.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ */
 
 const BIDDER_CODE = 'smartadserver';
 const GVL_ID = 45;
@@ -55,18 +61,51 @@ export const spec = {
    * Fills the payload with specific video attributes.
    *
    * @param {*} payload Payload that will be sent in the ServerRequest
-   * @param {*} videoMediaType Video media type.
+   * @param {*} videoMediaType Video media type
    */
   fillPayloadForVideoBidRequest: function(payload, videoMediaType, videoParams) {
     const playerSize = videoMediaType.playerSize[0];
-    payload.isVideo = videoMediaType.context === 'instream';
-    payload.mediaType = VIDEO;
-    payload.videoData = {
-      videoProtocol: this.getProtocolForVideoBidRequest(videoMediaType, videoParams),
-      playerWidth: playerSize[0],
-      playerHeight: playerSize[1],
-      adBreak: this.getStartDelayForVideoBidRequest(videoMediaType, videoParams)
+    const map = {
+      maxbitrate: 'vbrmax',
+      maxduration: 'vdmax',
+      minbitrate: 'vbrmin',
+      minduration: 'vdmin',
+      placement: 'vpt',
+      plcmt: 'vplcmt',
+      skip: 'skip'
     };
+
+    payload.mediaType = VIDEO;
+    payload.isVideo = videoMediaType.context === 'instream';
+    payload.videoData = {};
+
+    for (const [key, value] of Object.entries(map)) {
+      payload.videoData = {
+        ...payload.videoData,
+        ...this.getValuableProperty(value, videoMediaType[key])
+      };
+    }
+
+    payload.videoData = {
+      ...payload.videoData,
+      ...this.getValuableProperty('playerWidth', playerSize[0]),
+      ...this.getValuableProperty('playerHeight', playerSize[1]),
+      ...this.getValuableProperty('adBreak', this.getStartDelayForVideoBidRequest(videoMediaType, videoParams)),
+      ...this.getValuableProperty('videoProtocol', this.getProtocolForVideoBidRequest(videoMediaType, videoParams)),
+      ...(isArrayOfNums(videoMediaType.api) && videoMediaType.api.length ? { iabframeworks: videoMediaType.api.toString() } : {}),
+      ...(isArrayOfNums(videoMediaType.playbackmethod) && videoMediaType.playbackmethod.length ? { vpmt: videoMediaType.playbackmethod } : {})
+    };
+  },
+
+  /**
+   * Gets a property object if the value not falsy
+   * @param {string} property
+   * @param {number} value
+   * @returns object with the property or empty
+   */
+  getValuableProperty: function(property, value) {
+    return typeof property === 'string' && isInteger(value) && value
+      ? { [property]: value } : {};
   },
 
   /**

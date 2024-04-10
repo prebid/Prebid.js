@@ -1781,6 +1781,37 @@ describe('PubMatic adapter', function () {
         expect(data2.regs).to.equal(undefined);// USP/CCPAs
       });
 
+      it('Request params should include DSA signals if present', function () {
+        const dsa = {
+          dsarequired: 3,
+          pubrender: 0,
+          datatopub: 2,
+          transparency: [
+            {
+              domain: 'platform1domain.com',
+              dsaparams: [1]
+            },
+            {
+              domain: 'SSP2domain.com',
+              dsaparams: [1, 2]
+            }
+          ]
+        };
+
+        let bidRequest = {
+		      ortb2: {
+            regs: {
+              ext: {
+                dsa
+              }
+            }
+          }
+        };
+        let request = spec.buildRequests(bidRequests, bidRequest);
+        let data = JSON.parse(request.data);
+        assert.deepEqual(data.regs.ext.dsa, dsa);
+      });
+
       it('Request params check with JW player params', function() {
         let bidRequests = [
           {
@@ -1920,6 +1951,15 @@ describe('PubMatic adapter', function () {
           const request = spec.buildRequests(bidRequests, {ortb2});
           let data = JSON.parse(request.data);
           expect(data.user.yob).to.equal(1985);
+        });
+
+        it('ortb2.badv should be merged in the request', function() {
+          const ortb2 = {
+            badv: ['example.com']
+          };
+          const request = spec.buildRequests(bidRequests, {ortb2});
+          let data = JSON.parse(request.data);
+          expect(data.badv).to.deep.equal(['example.com']);
         });
 
         describe('ortb2Imp', function() {
@@ -3744,6 +3784,16 @@ describe('PubMatic adapter', function () {
 
     describe('Preapare metadata', function () {
       it('Should copy all fields from ext to meta', function () {
+        const dsa = {
+          behalf: 'Advertiser',
+          paid: 'Advertiser',
+          transparency: [{
+            domain: 'dsp1domain.com',
+            dsaparams: [1, 2]
+          }],
+          adrender: 1
+        };
+
         const bid = {
           'adomain': [
             'mystartab.com'
@@ -3755,6 +3805,7 @@ describe('PubMatic adapter', function () {
             'deal_channel': 1,
             'bidtype': 0,
             advertiserId: 'adid',
+            dsa,
             // networkName: 'nwnm',
             // primaryCatId: 'pcid',
             // advertiserName: 'adnm',
@@ -3786,6 +3837,7 @@ describe('PubMatic adapter', function () {
         expect(br.meta.secondaryCatIds[0]).to.equal('IAB_CATEGORY');
         expect(br.meta.advertiserDomains).to.be.an('array').with.length.above(0); // adomain
         expect(br.meta.clickUrl).to.equal('mystartab.com'); // adomain
+        expect(br.meta.dsa).to.equal(dsa); // dsa
       });
 
       it('Should be empty, when ext and adomain is absent in bid object', function () {

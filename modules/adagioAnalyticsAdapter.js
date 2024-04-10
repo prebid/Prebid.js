@@ -48,7 +48,7 @@ const enc = window.encodeURIComponent;
 
 /**
 /* BEGIN ADAGIO.JS CODE
-*/
+ */
 
 function canAccessTopWindow() {
   try {
@@ -71,12 +71,12 @@ const adagioEnqueue = function adagioEnqueue(action, data) {
 };
 
 /**
-* END ADAGIO.JS CODE
-*/
+ * END ADAGIO.JS CODE
+ */
 
 /**
-* UTILS FUNCTIONS
-*/
+ * UTILS FUNCTIONS
+ */
 
 const guard = {
   adagio: (value) => isAdagio(value),
@@ -97,6 +97,10 @@ function getAdapterNameForAlias(aliasName) {
 };
 
 function isAdagio(value) {
+  if (!value) {
+    return false
+  }
+
   return value.toLowerCase().includes('adagio') ||
     getAdapterNameForAlias(value).toLowerCase().includes('adagio');
 };
@@ -126,9 +130,9 @@ function addKeyPrefix(obj, prefix) {
 }
 
 /**
-* sendRequest to Adagio. It filter null values and encode each query param.
-* @param {Object} qp
-*/
+ * sendRequest to Adagio. It filter null values and encode each query param.
+ * @param {Object} qp
+ */
 function sendRequest(qp) {
   // Removing null values
   qp = Object.keys(qp).reduce((acc, key) => {
@@ -160,7 +164,7 @@ function getTargetedAuctionId(bid) {
 
 /**
  * END UTILS FUNCTIONS
-*/
+ */
 
 /**
  * HANDLERS
@@ -171,7 +175,7 @@ function getTargetedAuctionId(bid) {
  * - handlerAdRender
  *
  * Each handler is called when the event is fired.
-*/
+ */
 
 function handlerAuctionInit(event) {
   const w = getCurrentWindow();
@@ -267,7 +271,7 @@ function handlerAuctionInit(event) {
  * handlerBidResponse allow to track the adagio bid response
  * and to update the auction cache with the seat ID.
  * No beacon is sent here.
-*/
+ */
 function handlerBidResponse(event) {
   if (!guard.adagio(event.bidder)) {
     return;
@@ -368,7 +372,7 @@ function handlerAdRender(event, isSuccess) {
 
 /**
  * END HANDLERS
-*/
+ */
 
 let adagioAdapter = Object.assign(adapter({ emptyUrl, analyticsType }), {
   track: function(event) {

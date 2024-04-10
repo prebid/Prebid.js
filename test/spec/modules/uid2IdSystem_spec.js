@@ -476,37 +476,33 @@ describe(`UID2 module`, function () {
           })
 
           describe('When the storedToken is expired and can be refreshed ', function() {
-            it('it should calls refresh API', function() {
-              testApiSuccessAndFailure(async function(apiSucceeds) {
-                const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken, true, true);
-                const moduleCookie = {originalIdentity: makeOriginalIdentity('test@test.com'), latestToken: refreshedIdentity};
-                coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
-                config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com' }));
-                apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
+            testApiSuccessAndFailure(async function(apiSucceeds) {
+              const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken, true, true);
+              const moduleCookie = {originalIdentity: makeOriginalIdentity('test@test.com'), latestToken: refreshedIdentity};
+              coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
+              config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com' }));
+              apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
 
-                const bid = await runAuction();
+              const bid = await runAuction();
 
-                if (apiSucceeds) expectToken(bid, refreshedToken);
-                else expectNoIdentity(bid);
-              }, refreshApiUrl, 'it should use refreshed token in the auction', 'the auction should have no uid2');
-            });
+              if (apiSucceeds) expectToken(bid, refreshedToken);
+              else expectNoIdentity(bid);
+            }, refreshApiUrl, 'it should use refreshed token in the auction', 'the auction should have no uid2');
           })
 
           describe('When the storedToken is expired for refresh', function() {
-            it('it should calls CSTG API and not use the stored token', function() {
-              testApiSuccessAndFailure(async function(apiSucceeds) {
-                const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken, true, true, true);
-                const moduleCookie = {originalIdentity: makeOriginalIdentity('test@test.com'), latestToken: refreshedIdentity};
-                coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
-                config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com' }));
-                apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
+            testApiSuccessAndFailure(async function(apiSucceeds) {
+              const refreshedIdentity = apiHelpers.makeTokenResponse(refreshedToken, true, true, true);
+              const moduleCookie = {originalIdentity: makeOriginalIdentity('test@test.com'), latestToken: refreshedIdentity};
+              coreStorage.setCookie(moduleCookieName, JSON.stringify(moduleCookie), cookieHelpers.getFutureCookieExpiry());
+              config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com' }));
+              apiHelpers.respondAfterDelay(auctionDelayMs / 10, server);
 
-                const bid = await runAuction();
+              const bid = await runAuction();
 
-                if (apiSucceeds) expectToken(bid, clientSideGeneratedToken);
-                else expectNoIdentity(bid);
-              }, cstgApiUrl, 'it should use generated token in the auction', 'the auction should have no uid2', false, clientSideGeneratedToken);
-            });
+              if (apiSucceeds) expectToken(bid, clientSideGeneratedToken);
+              else expectNoIdentity(bid);
+            }, cstgApiUrl, 'it should use generated token in the auction', 'the auction should have no uid2', false, clientSideGeneratedToken);
           })
         })
 
