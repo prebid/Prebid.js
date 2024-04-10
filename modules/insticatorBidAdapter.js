@@ -105,6 +105,7 @@ function buildVideo(bidRequest) {
   const placement = deepAccess(bidRequest, 'mediaTypes.video.placement') || 3;
   const plcmt = deepAccess(bidRequest, 'mediaTypes.video.plcmt') || undefined;
   const playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
+  const context = deepAccess(bidRequest, 'mediaTypes.video.context');
 
   if (!w && playerSize) {
     if (Array.isArray(playerSize[0])) {
@@ -137,6 +138,10 @@ function buildVideo(bidRequest) {
 
   if (plcmt) {
     optionalParams['plcmt'] = plcmt;
+  }
+
+  if (context !== undefined) {
+    optionalParams['context'] = context;
   }
 
   let videoObj = {
@@ -197,7 +202,13 @@ function buildDevice(bidRequest) {
   return device;
 }
 
-function _getCoppa() {
+function _getCoppa(bidderRequest) {
+  const coppa = deepAccess(bidderRequest, 'ortb2.regs.coppa');
+
+  // If coppa is defined in the request, use it
+  if (coppa !== undefined) {
+    return coppa;
+  }
   return config.getConfig('coppa') === true ? 1 : 0;
 }
 
@@ -225,7 +236,7 @@ function buildRegs(bidderRequest) {
     regs.ext.gdprConsentString = bidderRequest.gdprConsent.consentString;
   }
 
-  regs.coppa = _getCoppa();
+  regs.coppa = _getCoppa(bidderRequest);
 
   const { gpp, gppSid } = _getGppConsent(bidderRequest);
 
