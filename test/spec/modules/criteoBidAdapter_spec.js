@@ -1984,13 +1984,13 @@ describe('The Criteo bidding adapter', function () {
           },
           params: {
             networkId: 456,
-            pubid: "pub-888"
+            pubid: 'pub-888'
           },
         },
       ];
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const ortbRequest = request.data;
-      expect(ortbRequest.publisher.pubid).to.equal("pub-888");
+      expect(ortbRequest.publisher.id).to.equal('pub-888');
     });
 
     it('should properly transmit device.ext.cdep if available', function () {
