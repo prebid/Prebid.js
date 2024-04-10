@@ -18,7 +18,8 @@ describe('limelightDigitalAdapter', function () {
       custom5: 'custom5'
     },
     refererInfo: {
-      page: 'https://publisher.com/page1'
+      page: 'https://publisher.com/page1',
+      ref: 'https://publisher.com/ref1'
     },
     placementCode: 'placement_0',
     auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
@@ -69,7 +70,8 @@ describe('limelightDigitalAdapter', function () {
       custom5: 'custom5'
     },
     refererInfo: {
-      page: 'https://publisher.com/page2'
+      page: 'https://publisher.com/page2',
+      ref: 'https://publisher.com/ref2'
     },
     placementCode: 'placement_1',
     auctionId: '482f88de-29ab-45c8-981a-d25e39454a34',
@@ -122,7 +124,8 @@ describe('limelightDigitalAdapter', function () {
       custom5: 'custom5'
     },
     refererInfo: {
-      page: 'https://publisher.com/page3'
+      page: 'https://publisher.com/page3',
+      ref: 'https://publisher.com/ref3'
     },
     placementCode: 'placement_2',
     auctionId: 'e4771143-6aa7-41ec-8824-ced4342c96c8',
@@ -172,7 +175,8 @@ describe('limelightDigitalAdapter', function () {
       custom5: 'custom5'
     },
     refererInfo: {
-      page: 'https://publisher.com/page4'
+      page: 'https://publisher.com/page4',
+      ref: 'https://publisher.com/ref4'
     },
     placementCode: 'placement_2',
     auctionId: 'e4771143-6aa7-41ec-8824-ced4342c96c8',
@@ -250,7 +254,8 @@ describe('limelightDigitalAdapter', function () {
             'custom3',
             'custom4',
             'custom5',
-            'page'
+            'page',
+            'referrer'
           );
           expect(adUnit.id).to.be.a('number');
           expect(adUnit.bidId).to.be.a('string');
@@ -265,6 +270,7 @@ describe('limelightDigitalAdapter', function () {
           expect(adUnit.custom4).to.be.a('string');
           expect(adUnit.custom5).to.be.a('string');
           expect(adUnit.page).to.be.a('string');
+          expect(adUnit.referrer).to.be.a('string');
         })
       })
     })
@@ -700,4 +706,5 @@ function validateAdUnit(adUnit, bid) {
   expect(adUnit.userIdAsEids).to.deep.equal(bid.userIdAsEids);
   expect(adUnit.supplyChain).to.deep.equal(bid.schain);
   expect(adUnit.page).to.equal(bid.refererInfo.page);
+  expect(adUnit.referrer).to.equal(bid.refererInfo.ref);
 }
