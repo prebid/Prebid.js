@@ -264,7 +264,7 @@ describe('limelightDigitalAdapter', function () {
           expect(adUnit.custom3).to.be.a('string');
           expect(adUnit.custom4).to.be.a('string');
           expect(adUnit.custom5).to.be.a('string');
-          expect(adUnit.page).to.be.a('string')
+          expect(adUnit.page).to.be.a('string');
         })
       })
     })
