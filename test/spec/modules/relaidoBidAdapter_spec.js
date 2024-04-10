@@ -260,6 +260,7 @@ describe('RelaidoAdapter', function () {
       expect(request.pagekvt).to.deep.equal({});
       expect(data.uuid).to.equal(relaido_uuid);
       expect(data.pv).to.equal('$prebid.version$');
+      expect(request.userIdAsEids).to.be.an('array');
     });
 
     it('should build bid requests by banner', function () {
