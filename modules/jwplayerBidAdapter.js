@@ -223,6 +223,8 @@ function getBidAdapter() {
       }
     });
 
+    setPlayerSize(video, videoParams);
+
     if (!videoParams.plcmt) {
       logWarn(`${BIDDER_CODE}: Please set a value to mediaTypes.video.plcmt`);
     }
@@ -240,6 +242,42 @@ function getBidAdapter() {
         }
       }
     };
+  }
+
+  function setPlayerSize(videoImp, videoParams) {
+    if (videoImp.w !== undefined && videoImp.h !== undefined) {
+      return;
+    }
+
+    const playerSize = getNormalizedPlayerSize(videoParams.playerSize);
+    if (!playerSize.length) {
+      logWarn(logWarn(`${BIDDER_CODE}: Video size has not been set. Please set values in video.h and video.w`));
+      return;
+    }
+
+    if (videoImp.w === undefined) {
+      videoImp.w = playerSize[0];
+    }
+
+    if (videoImp.h === undefined) {
+      videoImp.h = playerSize[1];
+    }
+  }
+
+  function getNormalizedPlayerSize(playerSize) {
+    if (!Array.isArray(playerSize)) {
+      return [];
+    }
+
+    if (Array.isArray(playerSize[0])) {
+      playerSize = playerSize[0];
+    }
+
+    if (playerSize.length < 2) {
+      return [];
+    }
+
+    return playerSize;
   }
 
   function getBidFloorData(bidRequest) {

@@ -174,32 +174,9 @@ describe('jwplayerBidAdapter', function() {
 
         expect(openrtbRequest.id).to.equal('testBidId');
 
-        expect(openrtbRequest.site.domain).to.equal('page.example.com');
-        expect(openrtbRequest.site.page).to.equal('https://examplepage.com');
-        expect(openrtbRequest.site.ref).to.equal('https://example.com');
-
-        expect(openrtbRequest.site.publisher.ext.jwplayer.publisherId).to.equal('testPublisherId');
-        expect(openrtbRequest.site.publisher.ext.jwplayer.siteId).to.equal('testSiteId');
-
-        expect(openrtbRequest.site.content.url).to.equal('media.mp4');
-        expect(openrtbRequest.site.content.id).to.equal('testMediaId');
-        expect(openrtbRequest.site.content.title).to.equal('testTile');
-        expect(openrtbRequest.site.content.ext.description).to.equal('testDescription');
-        expect(openrtbRequest.site.content.data.length).to.equal(1);
-        const datum = openrtbRequest.site.content.data[0];
-        expect(datum.name).to.equal('jwplayer.com');
-        expect(datum.segment).to.deep.equal([{
-          id: '00000000'
-        }, {
-          id: '88888888'
-        }, {
-          id: '80808080'
-        }]);
-        expect(datum.ext.segtax).to.equal(502);
-        expect(datum.ext.cids).to.deep.equal(['testMediaId', 'externalTestId']);
-        expect(openrtbRequest.device.ua).to.equal(navigator.userAgent);
-
         expect(openrtbRequest.imp[0].id).to.equal('testAdUnitCode');
+        expect(openrtbRequest.imp[0].video.w).to.equal(640);
+        expect(openrtbRequest.imp[0].video.h).to.equal(480);
         expect(openrtbRequest.imp[0].video.mimes).to.deep.equal(['video/mp4', 'application/javascript']);
         expect(openrtbRequest.imp[0].video.protocols).to.deep.equal([2, 3, 5, 6]);
         expect(openrtbRequest.imp[0].video.api).to.deep.equal([2]);
@@ -223,6 +200,37 @@ describe('jwplayerBidAdapter', function() {
 
         expect(openrtbRequest.imp[0].ext.prebid.bidder.jwplayer.placementId).to.equal('testPlacementId');
 
+        expect(openrtbRequest.site.domain).to.equal('page.example.com');
+        expect(openrtbRequest.site.page).to.equal('https://examplepage.com');
+        expect(openrtbRequest.site.ref).to.equal('https://example.com');
+
+        expect(openrtbRequest.site.publisher.ext.jwplayer.publisherId).to.equal('testPublisherId');
+        expect(openrtbRequest.site.publisher.ext.jwplayer.siteId).to.equal('testSiteId');
+
+        expect(openrtbRequest.site.content.url).to.equal('media.mp4');
+        expect(openrtbRequest.site.content.id).to.equal('testMediaId');
+        expect(openrtbRequest.site.content.title).to.equal('testTile');
+        expect(openrtbRequest.site.content.ext.description).to.equal('testDescription');
+        expect(openrtbRequest.site.content.data.length).to.equal(1);
+        const datum = openrtbRequest.site.content.data[0];
+        expect(datum.name).to.equal('jwplayer.com');
+        expect(datum.segment).to.deep.equal([{
+          id: '00000000'
+        }, {
+          id: '88888888'
+        }, {
+          id: '80808080'
+        }]);
+        expect(datum.ext.segtax).to.equal(502);
+        expect(datum.ext.cids).to.deep.equal(['testMediaId', 'externalTestId']);
+
+        expect(openrtbRequest.device.ua).to.equal(navigator.userAgent);
+        expect(openrtbRequest.device.w).to.not.be.undefined;
+        expect(openrtbRequest.device.h).to.not.be.undefined;
+        expect(openrtbRequest.device.dnt).to.not.be.undefined;
+        expect(openrtbRequest.device.js).to.equal(1);
+        expect(openrtbRequest.device.language).to.not.be.undefined;
+
         expect(openrtbRequest.user.ext.consent).to.equal('testConsentString');
 
         expect(openrtbRequest.regs.ext.gdpr).to.equal(1);
@@ -241,6 +249,18 @@ describe('jwplayerBidAdapter', function() {
         });
 
         expect(openrtbRequest.tmax).to.equal(1000);
+      });
+
+      it('should set w and h from playerSize', function () {
+
+      });
+
+      it('should normalize playerSize nested array', function () {
+
+      });
+
+      it('should set user coppa to true when configured', function () {
+
       });
     });
   });
@@ -261,6 +281,7 @@ describe('jwplayerBidAdapter', function() {
             cat: ['test-iab-category'],
             w: 200,
             h: 150,
+            dealid: 'test-deal-id'
           }],
           seat: 1000
         }]
@@ -281,11 +302,14 @@ describe('jwplayerBidAdapter', function() {
     expect(bid.netRevenue).to.equal(false);
     expect(bid.ttl).to.equal(3600);
     expect(bid.ad).to.equal('test-ad-xml');
+    expect(bid.dealId).to.equal('test-deal-id');
 
     expect(bid.meta).to.not.be.undefined;
 
     expect(bid.meta.advertiserDomains).to.have.length(1);
     expect(bid.meta.advertiserDomains[0]).to.equal('prebid.com');
+
+    expect(bid.meta.mediaType).to.equal('video');
 
     expect(bid.meta.primaryCatId).to.have.length(1);
     expect(bid.meta.primaryCatId[0]).to.equal('test-iab-category');
