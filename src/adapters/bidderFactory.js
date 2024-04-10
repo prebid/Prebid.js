@@ -89,8 +89,8 @@ import {ACTIVITY_TRANSMIT_TID, ACTIVITY_TRANSMIT_UFPD} from '../activities/activ
 /**
  * @typedef {object} BidderAuctionResponse An object encapsulating an adapter response for current Auction
  *
- * @property {Array<Bid>} bids Contextual bids returned by this adapter, if any
- * @property {object|null} fledgeAuctionConfigs Optional FLEDGE response, as a map of impid -> auction_config
+ * @property {Array<Bid>} bids? Contextual bids returned by this adapter, if any
+ * @property {Array<{bidId: String, config: {}}>} paapiAuctionConfigs? Array of paapi auction configs, each scoped to a particular bidId
  */
 
 /**
@@ -361,6 +361,18 @@ export function newBidder(spec) {
   }
 }
 
+// Transition from 'fledge' to 'paapi'
+// TODO: remove this in prebid 9
+const PAAPI_RESPONSE_PROPS = ['paapiAuctionConfigs', 'fledgeAuctionConfigs'];
+const RESPONSE_PROPS = ['bids'].concat(PAAPI_RESPONSE_PROPS);
+function getPaapiConfigs(adapterResponse) {
+  const [paapi, fledge] = PAAPI_RESPONSE_PROPS.map(prop => adapterResponse[prop]);
+  if (paapi != null && fledge != null) {
+    throw new Error(`Adapter response should use ${PAAPI_RESPONSE_PROPS[0]} over ${PAAPI_RESPONSE_PROPS[1]}, not both`);
+  }
+  return paapi ?? fledge;
+}
+
 /**
  * Run a set of bid requests - that entails converting them to HTTP requests, sending
  * them over the network, and parsing the responses.
@@ -422,15 +434,21 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
         return;
       }
 
-      let bids;
-      // Extract additional data from a structured {BidderAuctionResponse} response
-      if (response && isArray(response.fledgeAuctionConfigs)) {
-        response.fledgeAuctionConfigs.forEach(onPaapi);
+      // adapters can reply with:
+      // a single bid
+      // an array of bids
+      // a BidderAuctionResponse object ({bids: [*], paapiAuctionConfigs: [*]})
+
+      let bids, paapiConfigs;
+      if (response && !Object.keys(response).some(key => !RESPONSE_PROPS.includes(key))) {
         bids = response.bids;
+        paapiConfigs = getPaapiConfigs(response);
       } else {
         bids = response;
       }
-
+      if (isArray(paapiConfigs)) {
+        paapiConfigs.forEach(onPaapi);
+      }
       if (bids) {
         if (isArray(bids)) {
           bids.forEach(addBid);
