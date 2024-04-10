@@ -9,7 +9,8 @@ import {
   getConnectionDownLink,
   THIRD_PARTY_COOKIE_ORIGIN,
   COOKIE_KEY_MGUID,
-  getCurrentTimeToUTCString
+  getCurrentTimeToUTCString,
+  buildUTMTagData
 } from 'modules/discoveryBidAdapter.js';
 import * as utils from 'src/utils.js';
 
