@@ -170,8 +170,18 @@ describe('eightPodBidAdapter', function () {
   });
 
   describe('parseUserAgent function', function() {
+    let sandbox;
+
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
     it('should return the platform and version IOS', function() {
-      const uaStub = sinon.stub(window.navigator, 'userAgent');
+      const uaStub = sandbox.stub(window.navigator, 'userAgent');
       uaStub.value('Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1');
 
       const result = parseUserAgent();
@@ -181,7 +191,7 @@ describe('eightPodBidAdapter', function () {
     });
 
     it('should return the platform and version android', function() {
-      const uaStub = sinon.stub(window.navigator, 'userAgent');
+      const uaStub = sandbox.stub(window.navigator, 'userAgent');
       uaStub.value('Mozilla/5.0 (Linux; Android 5.0.1; SM-G920V Build/LRX22C) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.137 Mobile Safari/537.36');
 
       const result = parseUserAgent();
