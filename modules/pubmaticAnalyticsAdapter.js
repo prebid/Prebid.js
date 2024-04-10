@@ -1,11 +1,21 @@
 import {_each, isArray, isStr, logError, logWarn, pick, generateUUID} from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import { BID_STATUS, EVENTS, FLOOR_VALUES, STATUS, REJECTION_REASON } from '../src/constants.js';
+import { BID_STATUS, EVENTS, STATUS, REJECTION_REASON } from '../src/constants.js';
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+
+const FLOOR_VALUES = {
+  NO_DATA: 'noData',
+  AD_UNIT: 'adUnit',
+  SET_CONFIG: 'setConfig',
+  FETCH: 'fetch',
+  SUCCESS: 'success',
+  ERROR: 'error',
+  TIMEOUT: 'timeout'
+};
 
 /// /////////// CONSTANTS //////////////
 const ADAPTER_CODE = 'pubmatic';
