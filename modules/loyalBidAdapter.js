@@ -75,10 +75,6 @@ function getPlacementReqData(bid) {
 }
 
 function getBidFloor(bid) {
-  if (!isFn(bid.getFloor)) {
-    return deepAccess(bid, 'params.bidfloor', 0);
-  }
-
   try {
     const bidFloor = bid.getFloor({
       currency: 'USD',
