@@ -17,7 +17,7 @@ import sha1 from 'crypto-js/sha1';
 
 const BIDDER_CODE = 'relaido';
 const BIDDER_DOMAIN = 'api.relaido.jp';
-const ADAPTER_VERSION = '1.1.0';
+const ADAPTER_VERSION = '1.2.0';
 const DEFAULT_TTL = 300;
 const UUID_KEY = 'relaido_uuid';
 
@@ -105,7 +105,7 @@ function buildRequests(validBidRequests, bidderRequest) {
       height: height,
       banner_sizes: getBannerSizes(bidRequest),
       media_type: mediaType,
-      userIdAsEids: bidRequest.userIdAsEids || {},
+      userIdAsEids: bidRequest.userIdAsEids || [],
     });
   }
 
