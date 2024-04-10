@@ -831,12 +831,12 @@ describe('adagio analytics adapter', () => {
     it('send an "empty" cpm when adserver currency != USD and convertCurrency() is undefined', () => {
       sandbox.stub(prebidGlobal, 'getGlobal').returns({});
 
-      events.emit(constants.EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT.another);
-      events.emit(constants.EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.adagio);
-      events.emit(constants.EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.another);
-      events.emit(constants.EVENTS.AUCTION_END, MOCK.AUCTION_END.another);
-      events.emit(constants.EVENTS.BID_WON, MOCK.BID_WON.another);
-      events.emit(constants.EVENTS.AD_RENDER_SUCCEEDED, MOCK.AD_RENDER_SUCCEEDED.another);
+      events.emit(EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT.another);
+      events.emit(EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.adagio);
+      events.emit(EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.another);
+      events.emit(EVENTS.AUCTION_END, MOCK.AUCTION_END.another);
+      events.emit(EVENTS.BID_WON, MOCK.BID_WON.another);
+      events.emit(EVENTS.AD_RENDER_SUCCEEDED, MOCK.AD_RENDER_SUCCEEDED.another);
 
       expect(server.requests.length).to.equal(3, 'requests count');
 
