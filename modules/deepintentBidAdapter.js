@@ -98,6 +98,20 @@ export const spec = {
       deepSetValue(openRtbBidRequest, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
     }
 
+    // GPP Consent
+    if (bidderRequest?.gppConsent?.gppString) {
+      deepSetValue(openRtbBidRequest, 'regs.gpp', bidderRequest.gppConsent.gppString);
+      deepSetValue(openRtbBidRequest, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
+    } else if (bidderRequest?.ortb2?.regs?.gpp) {
+      deepSetValue(openRtbBidRequest, 'regs.gpp', bidderRequest.ortb2.regs.gpp);
+      deepSetValue(openRtbBidRequest, 'regs.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
+    }
+
+    // coppa compliance
+    if (bidderRequest?.ortb2?.regs?.coppa) {
+      deepSetValue(openRtbBidRequest, 'regs.coppa', 1);
+    }
+
     injectEids(openRtbBidRequest, validBidRequests);
 
     return {

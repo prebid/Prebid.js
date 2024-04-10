@@ -17,7 +17,7 @@ import { config } from '../src/config.js';
 const GVLID = 1122;
 const ModuleCode = 'agma';
 const analyticsType = 'endpoint';
-const scriptVersion = '1.7.1';
+const scriptVersion = '1.8.0';
 const batchDelayInMs = 1000;
 const agmaURL = 'https://pbc.agma-analytics.de/v1';
 const pageViewId = generateUUID();
@@ -123,6 +123,7 @@ export const getPayload = (auctionIds, options) => {
   };
 
   if (useExtendedPayload) {
+    const device = config.getConfig('device') || {};
     const { x, y } = getScreen();
     const userIdsAsEids = getUserIDs();
     payload = {
@@ -137,6 +138,8 @@ export const getPayload = (auctionIds, options) => {
       pageUrl: ri.page,
       screenWidth: x,
       screenHeight: y,
+      deviceWidth: device.w || screen.width,
+      deviceHeight: device.h || screen.height,
       userIdsAsEids,
     };
   }

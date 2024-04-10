@@ -27,9 +27,14 @@ export const spec = {
     };
 
     validBidRequests.forEach(function(validBidRequest) {
+      let sizes = validBidRequest.sizes;
+      if (typeof validBidRequest.params.sizes !== 'undefined') {
+        sizes = validBidRequest.params.sizes;
+      }
+
       let bidRequestObject = {
         adUnitCode: validBidRequest.adUnitCode,
-        sizes: validBidRequest.sizes,
+        sizes: sizes,
         bidId: validBidRequest.bidId,
         referer: referer
       };
@@ -47,7 +52,7 @@ export const spec = {
 
       bidRequests.push(bidRequestObject);
 
-      beaconParams.sizes.push(spec.joinSizesToString(validBidRequest.sizes));
+      beaconParams.sizes.push(spec.joinSizesToString(sizes));
       beaconParams.referer = encodeURIComponent(referer);
     });
 

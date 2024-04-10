@@ -15,8 +15,7 @@ function newWebpackConfig(codeCoverage, disableFeatures) {
     mode: 'development',
     devtool: 'inline-source-map',
   });
-
-  delete webpackConfig.entry;
+  ['entry', 'optimization'].forEach(prop => delete webpackConfig[prop]);
 
   webpackConfig.module.rules
     .flatMap((r) => r.use)
