@@ -137,6 +137,16 @@ export const spec = {
           imp.ext = imp.ext || {}
           imp.ext.deals = segmentsString.split(',').map(deal => deal.trim())
         }
+
+        if (bidderRequest.fledgeEnabled) {
+          imp.ext = imp.ext || {};
+          imp.ext.ae = bid?.ortb2Imp?.ext?.ae
+        } else {
+          if (imp.ext?.ae) {
+            delete imp.ext.ae;
+          }
+        }
+
         sovrnImps.push(imp)
       })
 
@@ -209,14 +219,14 @@ export const spec = {
 
   /**
    * Format Sovrn responses as Prebid bid responses
-   * @param {id, seatbid} sovrnResponse A successful response from Sovrn.
-   * @return {Bid[]} An array of formatted bids.
+   * @param {id, seatbid, ext} sovrnResponse A successful response from Sovrn.
+   * @return An array of formatted bids (+ fledgeAuctionConfigs if available)
    */
-  interpretResponse: function({ body: {id, seatbid} }) {
+  interpretResponse: function({ body: {id, seatbid, ext} }) {
     if (!id || !seatbid || !Array.isArray(seatbid)) return []
 
     try {
-      return seatbid
+      let bids = seatbid
         .filter(seat => seat)
         .map(seat => seat.bid.map(sovrnBid => {
           const bid = {
@@ -242,6 +252,23 @@ export const spec = {
           return bid
         }))
         .flat()
+
+      let fledgeAuctionConfigs = deepAccess(ext, 'fledge_auction_configs');
+      if (fledgeAuctionConfigs) {
+        fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
+          return {
+            bidId,
+            config: Object.assign({
+              auctionSignals: {},
+            }, cfg)
+          }
+        });
+        return {
+          bids,
+          fledgeAuctionConfigs,
+        }
+      }
+      return bids
     } catch (e) {
       logError('Could not interpret bidresponse, error details:', e)
       return e
