@@ -1,9 +1,11 @@
-const LOG_PREFIX = [
-  '%c PAAPI %c scoreAd %c',
-  'color: green;  background-color:yellow; border: 1px solid black',
-  'color: blue; border:1px solid black',
-  '',
-];
+function logPrefix(scope) {
+  return [
+    `%c PAAPI %c ${scope} %c`,
+    'color: green;  background-color:yellow; border: 1px solid black',
+    'color: blue; border:1px solid black',
+    '',
+  ];
+}
 
 function scoreAd(
   adMetadata,
@@ -13,7 +15,7 @@ function scoreAd(
   browserSignals,
   directFromSellerSignals
 ) {
-  console.group(...LOG_PREFIX, 'Buyer:', browserSignals.interestGroupOwner);
+  console.group(...logPrefix('scoreAd'), 'Buyer:', browserSignals.interestGroupOwner);
   console.log('Context:', JSON.stringify({
     adMetadata,
     bid,
@@ -41,9 +43,15 @@ function scoreAd(
       result.rejectReason = 'bid-below-auction-floor';
     }
   }
+  console.log('Result:', result);
   console.groupEnd();
-  console.log(...LOG_PREFIX, 'Result:', result);
   return result;
 }
 
-function reportResult() {}
+function reportResult(auctionConfig, browserSignals) {
+  console.group(...logPrefix('reportResult'));
+  console.log('Context', JSON.stringify({auctionConfig, browserSignals}, ' ', ' '));
+  console.groupEnd();
+  sendReportTo(`${auctionConfig.seller}/report/win?${Object.entries(browserSignals).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&')}`);
+  return {};
+}
