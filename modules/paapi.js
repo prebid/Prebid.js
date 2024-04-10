@@ -91,12 +91,12 @@ function getSlotSignals(bidsReceived = [], bidRequests = []) {
   return cfg;
 }
 
-export function buyersToAuctionConfigs(igbRequests, merge = mergeBuyers, config = moduleConfig?.componentBuyers ?? {}, partitioners = {
+export function buyersToAuctionConfigs(igbRequests, merge = mergeBuyers, config = moduleConfig?.componentSeller ?? {}, partitioners = {
   compact: (igbRequests) => partitionBuyers(igbRequests.map(req => req[1])).map(part => [{}, part]),
   expand: partitionBuyersByBidder
 }) {
   if (!config.auctionConfig) {
-    logWarn(MODULE, 'Cannot use IG buyers: paapi.componentBuyers.auctionConfig not set', igbRequests.map(req => req[1]));
+    logWarn(MODULE, 'Cannot use IG buyers: paapi.componentSeller.auctionConfig not set', igbRequests.map(req => req[1]));
     return [];
   }
   const partition = partitioners[config.separateAuctions ? 'expand' : 'compact'];

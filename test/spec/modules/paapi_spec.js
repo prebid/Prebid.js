@@ -87,7 +87,7 @@ describe('paapi module', () => {
               }
               config.mergeConfig({
                 [configNS]: {
-                  componentBuyers: {
+                  componentSeller: {
                     auctionConfig: buyerAuctionConfig
                   }
                 }
