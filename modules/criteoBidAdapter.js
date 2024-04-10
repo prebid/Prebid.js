@@ -515,6 +515,10 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       if (bidRequest.nativeOrtbRequest?.assets) {
         slot.ext = Object.assign({}, slot.ext, { assets: bidRequest.nativeOrtbRequest.assets });
       }
+      if (bidRequest.params.uid) {
+        slot.ext = Object.assign({}, slot.ext, { bidder: { uid: bidRequest.params.uid } });
+      }
+
       if (bidRequest.params.publisherSubId) {
         slot.publishersubid = bidRequest.params.publisherSubId;
       }
