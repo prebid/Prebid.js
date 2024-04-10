@@ -9,24 +9,10 @@ export const JSON_MAPPING = {
   BD_SETTING_STANDARD: 'standard'
 };
 
-export const FLOOR_SKIPPED_REASON = {
-  NOT_FOUND: 'not_found',
-  RANDOM: 'random'
-};
-
 export const DEBUG_MODE = 'pbjs_debug';
 
 export const STATUS = {
   GOOD: 1
-};
-
-export const CB = {
-  TYPE: {
-    ALL_BIDS_BACK: 'allRequestedBidsBack',
-    AD_UNIT_BIDS_BACK: 'adUnitBidsBack',
-    BID_WON: 'bidWon',
-    REQUEST_BIDS: 'requestBids'
-  }
 };
 
 export const EVENTS = {
@@ -195,16 +181,6 @@ export const NATIVE_KEYS_THAT_ARE_NOT_ASSETS = [
   'rendererUrl',
   'type'
 ];
-
-export const FLOOR_VALUES = {
-  NO_DATA: 'noData',
-  AD_UNIT: 'adUnit',
-  SET_CONFIG: 'setConfig',
-  FETCH: 'fetch',
-  SUCCESS: 'success',
-  ERROR: 'error',
-  TIMEOUT: 'timeout'
-};
 
 export const MESSAGES = {
   REQUEST: 'Prebid Request',
