@@ -49,6 +49,7 @@ function buildRequests(validBidRequests, bidderRequest) {
   let bidDomain = null;
   let bidder = null;
   let count = null;
+  let isOgUrlOption = false;
 
   for (let i = 0; i < validBidRequests.length; i++) {
     const bidRequest = validBidRequests[i];
@@ -94,6 +95,10 @@ function buildRequests(validBidRequests, bidderRequest) {
       count = bidRequest.bidRequestsCount;
     }
 
+    if (getBidIdParameter('ogUrl', bidRequest.params)) {
+      isOgUrlOption = true;
+    }
+
     bids.push({
       bid_id: bidRequest.bidId,
       placement_id: getBidIdParameter('placementId', bidRequest.params),
@@ -112,6 +117,8 @@ function buildRequests(validBidRequests, bidderRequest) {
     });
   }
 
+  const canonicalUrl = getCanonicalUrl(bidderRequest.refererInfo?.canonicalUrl, isOgUrlOption);
+
   const data = JSON.stringify({
     version: ADAPTER_VERSION,
     bids: bids,
@@ -121,8 +128,8 @@ function buildRequests(validBidRequests, bidderRequest) {
     uuid: getUuid(),
     pv: '$prebid.version$',
     imuid: imuid,
-    canonical_url: bidderRequest.refererInfo?.canonicalUrl || null,
-    canonical_url_hash: getCanonicalUrlHash(bidderRequest.refererInfo),
+    canonical_url: canonicalUrl,
+    canonical_url_hash: getCanonicalUrlHash(canonicalUrl),
     ref: bidderRequest.refererInfo.page
   });
 
@@ -297,12 +304,25 @@ function getUuid() {
   return newId;
 }
 
-function getCanonicalUrlHash(refererInfo) {
-  const canonicalUrl = refererInfo.canonicalUrl || null;
-  if (!canonicalUrl) {
-    return null;
+function getOgUrl() {
+  try {
+    const ogURLElement = window.top.document.querySelector('meta[property="og:url"]');
+    return ogURLElement ? ogURLElement.content : null;
+  } catch (e) {
+    const ogURLElement = document.querySelector('meta[property="og:url"]');
+    return ogURLElement ? ogURLElement.content : null;
   }
-  return sha1(canonicalUrl).toString();
+}
+
+function getCanonicalUrl(canonicalUrl, isOgUrlOption) {
+  if (!canonicalUrl) {
+    return (isOgUrlOption) ? getOgUrl() : null;
+  }
+  return canonicalUrl;
+}
+
+function getCanonicalUrlHash(canonicalUrl) {
+  return (canonicalUrl) ? sha1(canonicalUrl).toString() : null;
 }
 
 function hasBannerMediaType(bid) {

@@ -16,6 +16,8 @@ describe('RelaidoAdapter', function () {
   let serverRequest;
   let generateUUIDStub;
   let triggerPixelStub;
+  let sandbox;
+
   before(() => {
     const storage = getCoreStorageManager();
     storage.setCookie(UUID_KEY, relaido_uuid);
@@ -25,6 +27,7 @@ describe('RelaidoAdapter', function () {
     mockGpt.disable();
     generateUUIDStub = sinon.stub(utils, 'generateUUID').returns(relaido_uuid);
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+    sandbox = sinon.sandbox.create();
     bidRequest = {
       bidder: 'relaido',
       params: {
@@ -117,6 +120,7 @@ describe('RelaidoAdapter', function () {
   afterEach(() => {
     generateUUIDStub.restore();
     triggerPixelStub.restore();
+    sandbox.restore();
   });
 
   describe('spec.isBidRequestValid', function () {
@@ -253,6 +257,7 @@ describe('RelaidoAdapter', function () {
       expect(request.bid_id).to.equal(bidRequest.bidId);
       expect(request.transaction_id).to.equal(bidRequest.ortb2Imp.ext.tid);
       expect(request.media_type).to.equal('video');
+      expect(request.pagekvt).to.deep.equal({});
       expect(data.uuid).to.equal(relaido_uuid);
       expect(data.pv).to.equal('$prebid.version$');
       expect(request.userIdAsEids).to.be.an('array');
@@ -350,6 +355,47 @@ describe('RelaidoAdapter', function () {
       expect(data.bids).to.have.lengthOf(1);
       const request = data.bids[0];
       expect(request.pagekvt).to.deep.equal({testkey: ['testvalue']});
+    });
+
+    it('should get canonicalUrl (ogUrl:true)', function () {
+      bidRequest.params.ogUrl = true;
+      bidderRequest.refererInfo.canonicalUrl = null;
+      let documentStub = sandbox.stub(window.top.document, 'querySelector');
+      documentStub.withArgs('meta[property="og:url"]').returns({
+        content: 'http://localhost:9999/fb-test'
+      });
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(bidRequests.data);
+      expect(data.bids).to.have.lengthOf(1);
+      expect(data.canonical_url).to.equal('http://localhost:9999/fb-test');
+      expect(data.canonical_url_hash).to.equal('cd106829f866d60ee4ed43c6e2a5d0a5212ffc97');
+    });
+
+    it('should not get canonicalUrl (ogUrl:false)', function () {
+      bidRequest.params.ogUrl = false;
+      bidderRequest.refererInfo.canonicalUrl = null;
+      let documentStub = sandbox.stub(window.top.document, 'querySelector');
+      documentStub.withArgs('meta[property="og:url"]').returns({
+        content: 'http://localhost:9999/fb-test'
+      });
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(bidRequests.data);
+      expect(data.bids).to.have.lengthOf(1);
+      expect(data.canonical_url).to.be.null;
+      expect(data.canonical_url_hash).to.be.null;
+    });
+
+    it('should not get canonicalUrl (ogUrl:nothing)', function () {
+      bidderRequest.refererInfo.canonicalUrl = null;
+      let documentStub = sandbox.stub(window.top.document, 'querySelector');
+      documentStub.withArgs('meta[property="og:url"]').returns({
+        content: 'http://localhost:9999/fb-test'
+      });
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(bidRequests.data);
+      expect(data.bids).to.have.lengthOf(1);
+      expect(data.canonical_url).to.be.null;
+      expect(data.canonical_url_hash).to.be.null;
     });
   });
 
