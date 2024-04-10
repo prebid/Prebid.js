@@ -1,8 +1,9 @@
 import {expect} from 'chai';
 import * as utils from 'src/utils.js';
 import { getGlobal } from 'src/prebidGlobal.js';
-import { EVENTS, FLOOR_SKIPPED_REASON, STATUS } from 'src/constants.js';
+import { EVENTS, STATUS } from 'src/constants.js';
 import {
+  FLOOR_SKIPPED_REASON,
   _floorDataForAuction,
   getFloorsDataForAuction,
   getFirstMatchingFloor,

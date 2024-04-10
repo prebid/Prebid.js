@@ -19,7 +19,7 @@ import {getGlobal} from '../src/prebidGlobal.js';
 import {config} from '../src/config.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import * as events from '../src/events.js';
-import { EVENTS, FLOOR_SKIPPED_REASON, REJECTION_REASON } from '../src/constants.js';
+import { EVENTS, REJECTION_REASON } from '../src/constants.js';
 import {getHook} from '../src/hook.js';
 import {find} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
@@ -30,6 +30,11 @@ import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.j
 import {adjustCpm} from '../src/utils/cpm.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {convertCurrency} from '../libraries/currencyUtils/currency.js';
+
+export const FLOOR_SKIPPED_REASON = {
+  NOT_FOUND: 'not_found',
+  RANDOM: 'random'
+};
 
 /**
  * @summary This Module is intended to provide users with the ability to dynamically set and enforce price floors on a per auction basis.
