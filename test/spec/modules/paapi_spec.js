@@ -588,9 +588,11 @@ describe('paapi module', () => {
         function expectFledgeFlags(...enableFlags) {
           const bidRequests = mark();
           expect(bidRequests.appnexus.fledgeEnabled).to.eql(enableFlags[0].enabled);
+          expect(bidRequests.appnexus.paapi?.enabled).to.eql(enableFlags[0].enabled);
           bidRequests.appnexus.bids.forEach(bid => expect(bid.ortb2Imp.ext.ae).to.eql(enableFlags[0].ae));
 
           expect(bidRequests.rubicon.fledgeEnabled).to.eql(enableFlags[1].enabled);
+          expect(bidRequests.rubicon.paapi?.enabled).to.eql(enableFlags[1].enabled);
           bidRequests.rubicon.bids.forEach(bid => expect(bid.ortb2Imp?.ext?.ae).to.eql(enableFlags[1].ae));
 
           Object.values(bidRequests).flatMap(req => req.bids).forEach(bid => {
@@ -639,6 +641,34 @@ describe('paapi module', () => {
             });
             expectFledgeFlags({enabled: true, ae: 1}, {enabled: true, ae: 1});
           });
+
+          Object.entries({
+            'not set': {
+              cfg: {},
+              componentSeller: false
+            },
+            'set': {
+              cfg: {
+                componentSeller: {
+                  auctionConfig: {
+                    decisionLogicURL: 'publisher.example'
+                  }
+                }
+              },
+              componentSeller: true
+            }
+          }).forEach(([t, {cfg, componentSeller}]) => {
+            it(`should set request paapi.componentSeller = ${componentSeller} when config componentSeller is ${t}`, () => {
+              config.setConfig({
+                [configNS]: {
+                  enabled: true,
+                  defaultForSlots: 1,
+                  ...cfg
+                }
+              });
+              Object.values(mark()).forEach(br => expect(br.paapi?.componentSeller).to.eql(componentSeller));
+            })
+          })
 
           it('should not override pub-defined ext.ae', () => {
             config.setConfig({

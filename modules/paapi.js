@@ -301,7 +301,13 @@ export function markForFledge(next, bidderRequests) {
     bidderRequests.forEach((bidderReq) => {
       config.runWithBidder(bidderReq.bidderCode, () => {
         const {enabled, ae} = getFledgeConfig();
-        Object.assign(bidderReq, {fledgeEnabled: enabled});
+        Object.assign(bidderReq, {
+          fledgeEnabled: enabled,
+          paapi: {
+            enabled,
+            componentSeller: !!moduleConfig.componentSeller?.auctionConfig
+          }
+        });
         bidderReq.bids.forEach(bidReq => {
           // https://github.com/InteractiveAdvertisingBureau/openrtb/blob/main/extensions/community_extensions/Protected%20Audience%20Support.md
           const igsAe = bidReq.ortb2Imp?.ext?.igs != null
