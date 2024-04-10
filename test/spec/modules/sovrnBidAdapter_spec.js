@@ -877,20 +877,6 @@ describe('sovrnBidAdapter', function() {
       expect(result.fledgeAuctionConfigs[0].config).to.contain.keys('seller', 'interestGroupBuyers', 'sellerTimeout', 'perBuyerSignals')
     })
     it('should ignore invalid fledge auction configs', function () {
-      const expectedResponse = {
-        requestId: '263c448586f5a1',
-        cpm: 0.45882675,
-        width: 728,
-        height: 90,
-        creativeId: 'creativelycreatedcreativecreative',
-        dealId: null,
-        currency: 'USD',
-        netRevenue: true,
-        mediaType: 'banner',
-        ttl: 60000,
-        meta: { advertiserDomains: [] },
-        ad: decodeURIComponent(`<!-- Creative --><img src=<!-- NURL -->>`)
-      }
       const result = spec.interpretResponse(invalidFledgeResponse)
       expect(result).to.have.property('bids')
       expect(result).to.have.property('fledgeAuctionConfigs')
