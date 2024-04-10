@@ -170,8 +170,7 @@ function buildPlacement(bidRequest) {
       custom3: bidRequest.params.custom3,
       custom4: bidRequest.params.custom4,
       custom5: bidRequest.params.custom5,
-      page: bidRequest.refererInfo.page,
-      referrer: bidRequest.refererInfo.ref
+      page: bidRequest.refererInfo.page
     }
   }
 }
