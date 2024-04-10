@@ -124,7 +124,8 @@ describe('jwplayerBidAdapter', function() {
           mediaTypes: {
             video: {
               pos: 3,
-              playerSize: [640, 480],
+              w: 640,
+              h: 480,
               context: 'instream',
               mimes: [
                 'video/mp4',
@@ -249,18 +250,6 @@ describe('jwplayerBidAdapter', function() {
         });
 
         expect(openrtbRequest.tmax).to.equal(1000);
-      });
-
-      it('should set w and h from playerSize', function () {
-
-      });
-
-      it('should normalize playerSize nested array', function () {
-
-      });
-
-      it('should set user coppa to true when configured', function () {
-
       });
     });
   });
