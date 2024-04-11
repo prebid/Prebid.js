@@ -28,6 +28,8 @@ const extendedKey = [
   'referrer',
   'screenHeight',
   'screenWidth',
+  'deviceWidth',
+  'deviceHeight',
   'scriptVersion',
   'timestamp',
   'timezoneOffset',
@@ -333,6 +335,8 @@ describe('AGMA Analytics Adapter', () => {
       expect(request.url).to.equal(INGEST_URL);
       expect(requestBody).to.have.all.keys(extendedKey);
       expect(requestBody.triggerEvent).to.equal(constants.EVENTS.AUCTION_INIT);
+      expect(requestBody.deviceWidth).to.equal(screen.width);
+      expect(requestBody.deviceHeight).to.equal(screen.height);
       expect(server.requests).to.have.length(1);
       expect(agmaAnalyticsAdapter.auctionIds).to.have.length(0);
     });

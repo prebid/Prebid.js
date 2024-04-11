@@ -414,6 +414,25 @@ describe('YieldmoAdapter', function () {
         }));
       });
 
+      it('should add cdep to the banner bid request', function () {
+        const biddata = build(
+          [mockBannerBid()],
+          mockBidderRequest({
+            ortb2: {
+              device: {
+                ext: {
+                  cdep: 'test_cdep'
+                },
+              },
+            },
+          })
+        );
+
+        expect(biddata[0].data.cdep).to.equal(
+          'test_cdep'
+        );
+      });
+
       it('should send gpc in the banner bid request', function () {
         const biddata = build(
           [mockBannerBid()],
