@@ -30,13 +30,17 @@ pbjs.setConfig({
 
 ### Bidder Settings
 
-The Adagio bid adapter uses browser local storage. Since Prebid.js 7.x, the access to it must be explicitly set.
+- `storageAllowed`: Adagio uses browser local storage, explicit access to it must be configured _(since Prebid.js 7.x)_
+- `scriptVersion`: Adagio loads an additional script used for measurement. By default the adapter loads a specific version of this script, defined in the adapter itself. Two values can override this behavior:
+  - `latest`: allow to always get the more recent version of the script
+  - `none`: deactivates the feature, no script is loaded
 
 ```js
 // https://docs.prebid.org/dev-docs/publisher-api-reference/bidderSettings.html
 pbjs.bidderSettings = {
   adagio: {
-    storageAllowed: true
+    storageAllowed: true,
+    scriptVersion: 'latest'
   }
 }
 ```

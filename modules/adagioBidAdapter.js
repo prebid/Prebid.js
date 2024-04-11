@@ -23,7 +23,6 @@ import {
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {loadExternalScript} from '../src/adloader.js';
-import {verify} from 'criteo-direct-rsa-validate/build/verify.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {getRefererInfo, parseDomain} from '../src/refererDetection.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
@@ -33,14 +32,20 @@ import { getGlobal } from '../src/prebidGlobal.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { userSync } from '../src/userSync.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import {bidderSettings} from '../src/bidderSettings.js';
 
 const BIDDER_CODE = 'adagio';
 const LOG_PREFIX = 'Adagio:';
 const FEATURES_VERSION = '1';
 export const ENDPOINT = 'https://mp.4dex.io/prebid';
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
-const ADAGIO_TAG_URL = 'https://script.4dex.io/localstore.js';
-const ADAGIO_LOCALSTORAGE_KEY = 'adagioScript';
+
+const ADAGIOJS_VERSION_LOCK = '2.0.2';
+const ADAGIOJS_VERSION_LATEST = 'latest';
+const ADAGIOJS_VERSION_NONE = 'none';
+const ADAGIOJS_VERSION_PLACEHOLDER = '%ADAGIOJS_VERSION%';
+const PUBLISHER_TAG_URL_TEMPLATE = 'https://script.4dex.io/a' + ADAGIOJS_VERSION_PLACEHOLDER + '/adagio.js';
+
 const GVLID = 617;
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
@@ -49,8 +54,6 @@ const BB_RENDERER_DEFAULT = 'renderer';
 export const BB_RENDERER_URL = `https://${BB_PUBLICATION}.bbvms.com/r/$RENDERER.js`;
 
 const MAX_SESS_DURATION = 30 * 60 * 1000;
-const ADAGIO_PUBKEY = 'AL16XT44Sfp+8SHVF1UdC7hydPSMVLMhsYknKDdwqq+0ToDSJrP0+Qh0ki9JJI2uYm/6VEYo8TJED9WfMkiJ4vf02CW3RvSWwc35bif2SK1L8Nn/GfFYr/2/GG/Rm0vUsv+vBHky6nuuYls20Og0HDhMgaOlXoQ/cxMuiy5QSktp';
-const ADAGIO_PUBKEY_E = 65537;
 const CURRENCY = 'USD';
 
 // This provide a whitelist and a basic validation of OpenRTB 2.5 options used by the Adagio SSP.
@@ -145,58 +148,38 @@ export const GlobalExchange = (function() {
   };
 })();
 
-export function adagioScriptFromLocalStorageCb(ls) {
-  try {
-    if (!ls) {
-      logWarn(`${LOG_PREFIX} script not found.`);
-      return;
-    }
+/**
+ * @param {string|number} adagiojsVersion The external adagio.js script version to use
+ * @returns {string} https://script.4dex.io/a[/VERSION]/adagio.js
+ */
+export function computeAdagioScriptUrl(adagiojsVersion) {
+  let versionDir = `/${ADAGIOJS_VERSION_LOCK}`;
+  const semverRgx = /^\d+\.\d+\.\d+$/;
 
-    const hashRgx = /^(\/\/ hash: (.+)\n)(.+\n)$/;
-
-    if (!hashRgx.test(ls)) {
-      logWarn(`${LOG_PREFIX} no hash found.`);
-      storage.removeDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY);
-    } else {
-      const r = ls.match(hashRgx);
-      const hash = r[2];
-      const content = r[3];
-
-      if (verify(content, hash, ADAGIO_PUBKEY, ADAGIO_PUBKEY_E)) {
-        logInfo(`${LOG_PREFIX} start script.`);
-        Function(ls)(); // eslint-disable-line no-new-func
-      } else {
-        logWarn(`${LOG_PREFIX} invalid script found.`);
-        storage.removeDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY);
-      }
-    }
-  } catch (err) {
-    logError(LOG_PREFIX, err);
+  if (adagiojsVersion === ADAGIOJS_VERSION_LATEST || semverRgx.test(adagiojsVersion)) {
+    versionDir = `/${adagiojsVersion}`;
+  } else {
+    logInfo(`${LOG_PREFIX} Invalid adagio.js version. Using the default version.`);
   }
+
+  return PUBLISHER_TAG_URL_TEMPLATE.replace(ADAGIOJS_VERSION_PLACEHOLDER, versionDir);
 }
 
 export function getAdagioScript() {
-  storage.getDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY, (ls) => {
-    internal.adagioScriptFromLocalStorageCb(ls);
-  });
-
   storage.localStorageIsEnabled(isValid => {
-    if (isValid) {
-      loadExternalScript(ADAGIO_TAG_URL, BIDDER_CODE);
-    } else {
-      // Try-catch to avoid error when 3rd party cookies is disabled (e.g. in privacy mode)
-      try {
-        // ensure adagio removing for next time.
-        // It's an antipattern regarding the TCF2 enforcement logic
-        // but it's the only way to respect the user choice update.
-        window.localStorage.removeItem(ADAGIO_LOCALSTORAGE_KEY);
-        // Extra data from external script.
-        // This key is removed only if localStorage is not accessible.
-        window.localStorage.removeItem('adagio');
-      } catch (e) {
-        logInfo(`${LOG_PREFIX} unable to clear Adagio scripts from localstorage.`);
-      }
+    if (!isValid) {
+      return
     }
+
+    const adagiojsVersion = bidderSettings.get('adagio', 'scriptVersion') || config.getConfig('adagio.scriptVersion');
+
+    // If the publisher explicitly set the version to 'none', we don't load anything.
+    if (adagiojsVersion === ADAGIOJS_VERSION_NONE) {
+      return;
+    }
+
+    const url = computeAdagioScriptUrl(adagiojsVersion);
+    loadExternalScript(url, BIDDER_CODE, undefined, undefined, { id: `adagiojs-${getUniqueIdentifierStr()}`, version: adagiojsVersion });
   });
 }
 
@@ -362,7 +345,6 @@ export const internal = {
   getSite,
   getElementFromTopWindow,
   getRefererInfo,
-  adagioScriptFromLocalStorageCb,
   getCurrentWindow,
   canAccessTopWindow,
   isRendererPreferredFromPublisher,

@@ -1760,29 +1760,8 @@ describe('Adagio bid adapter', () => {
     });
   });
 
-  describe('adagioScriptFromLocalStorageCb()', function() {
-    const VALID_HASH = 'Lddcw3AADdQDrPtbRJkKxvA+o1CtScGDIMNRpHB3NnlC/FYmy/9RKXelKrYj/sjuWusl5YcOpo+lbGSkk655i8EKuDiOvK6ae/imxSrmdziIp+S/TA6hTFJXcB8k1Q9OIp4CMCT52jjXgHwX6G0rp+uYoCR25B1jHaHnpH26A6I=';
-    const INVALID_HASH = 'invalid';
-    const VALID_SCRIPT_CONTENT = 'var _ADAGIO=function(){};(_ADAGIO)();\n';
-    const INVALID_SCRIPT_CONTENT = 'var _ADAGIO=function(){//corrupted};(_ADAGIO)();\n';
-    const ADAGIO_LOCALSTORAGE_KEY = 'adagioScript';
-
-    beforeEach(function() {
-      localStorage.removeItem(ADAGIO_LOCALSTORAGE_KEY);
-    });
-
-    describe('getAdagioScript', function() {
-      it('should run storage.getDataFromLocalStorage callback and call adagioScriptFromLocalStorageCb() ', function() {
-        sandbox.spy(adagio, 'adagioScriptFromLocalStorageCb');
-        const getDataFromLocalStorageStub = sandbox.stub(storage, 'getDataFromLocalStorage').callsArg(1);
-        localStorage.setItem(ADAGIO_LOCALSTORAGE_KEY, '// hash: ' + VALID_HASH + '\n' + VALID_SCRIPT_CONTENT);
-
-        getAdagioScript();
-
-        sinon.assert.callCount(getDataFromLocalStorageStub, 1);
-        sinon.assert.callCount(adagio.adagioScriptFromLocalStorageCb, 1);
-      });
-
+  describe('adagio external script loading', function() {
+    describe('external script loading regarding the user consent storageAllowed flag', function() {
       it('should load external script if the user consent', function() {
         sandbox.stub(storage, 'localStorageIsEnabled').callsArgWith(0, true);
         getAdagioScript();
@@ -1796,75 +1775,52 @@ describe('Adagio bid adapter', () => {
 
         expect(loadExternalScript.called).to.be.false;
       });
+    })
 
-      it('should remove the localStorage key if exists and the user does not consent', function() {
-        sandbox.stub(storage, 'localStorageIsEnabled').callsArgWith(0, false);
-        localStorage.setItem(ADAGIO_LOCALSTORAGE_KEY, 'the script');
-
-        getAdagioScript();
-
-        expect(loadExternalScript.called).to.be.false;
-        expect(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY)).to.be.null;
+    describe('getAdagioScript with expected version accordingly to bidderSettings config', function() {
+      beforeEach(function() {
+        sandbox.stub(storage, 'localStorageIsEnabled').callsArgWith(0, true);
       });
-    });
 
-    it('should verify valid hash with valid script', function () {
-      localStorage.setItem(ADAGIO_LOCALSTORAGE_KEY, '// hash: ' + VALID_HASH + '\n' + VALID_SCRIPT_CONTENT);
+      const lockedVersion = '2.0.2';
 
-      utilsMock.expects('logInfo').withExactArgs('Adagio: start script.').once();
-      utilsMock.expects('logWarn').withExactArgs('Adagio: no hash found.').never();
-      utilsMock.expects('logWarn').withExactArgs('Adagio: invalid script found.').never();
+      it('loads a determined version', function() {
+        const version = '2.0.5';
+        $$PREBID_GLOBAL$$.bidderSettings.adagio.scriptVersion = version;
+        getAdagioScript();
+        expect(loadExternalScript.called).to.be.true;
+        expect(loadExternalScript.args[0][0]).to.deep.equal(`https://script.4dex.io/a/${version}/adagio.js`);
+      });
 
-      adagioScriptFromLocalStorageCb(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY));
+      it('loads the latest external script, bypass the lock version', function() {
+        const version = 'latest';
+        $$PREBID_GLOBAL$$.bidderSettings.adagio.scriptVersion = version;
+        getAdagioScript();
+        expect(loadExternalScript.called).to.be.true;
+        expect(loadExternalScript.args[0][0]).to.deep.equal(`https://script.4dex.io/a/${version}/adagio.js`);
+      });
 
-      expect(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY)).to.equals('// hash: ' + VALID_HASH + '\n' + VALID_SCRIPT_CONTENT);
-      utilsMock.verify();
-    });
+      it('loads the locked version, bad version provided', function() {
+        const version = 'false';
+        $$PREBID_GLOBAL$$.bidderSettings.adagio.scriptVersion = version;
+        getAdagioScript();
+        expect(loadExternalScript.called).to.be.true;
+        expect(loadExternalScript.args[0][0]).to.deep.equal(`https://script.4dex.io/a/${lockedVersion}/adagio.js`);
+      });
 
-    it('should verify valid hash with invalid script', function () {
-      localStorage.setItem(ADAGIO_LOCALSTORAGE_KEY, '// hash: ' + VALID_HASH + '\n' + INVALID_SCRIPT_CONTENT);
+      it('loads nothing', function() {
+        const version = 'none';
+        $$PREBID_GLOBAL$$.bidderSettings.adagio.scriptVersion = version;
+        getAdagioScript();
+        expect(loadExternalScript.called).to.be.false;
+      });
 
-      utilsMock.expects('logInfo').withExactArgs('Adagio: start script').never();
-      utilsMock.expects('logWarn').withExactArgs('Adagio: no hash found.').never();
-      utilsMock.expects('logWarn').withExactArgs('Adagio: invalid script found.').once();
-
-      adagioScriptFromLocalStorageCb(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY));
-
-      expect(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY)).to.be.null;
-      utilsMock.verify();
-    });
-
-    it('should verify invalid hash with valid script', function () {
-      localStorage.setItem(ADAGIO_LOCALSTORAGE_KEY, '// hash: ' + INVALID_HASH + '\n' + VALID_SCRIPT_CONTENT);
-
-      utilsMock.expects('logInfo').withExactArgs('Adagio: start script').never();
-      utilsMock.expects('logWarn').withExactArgs('Adagio: no hash found.').never();
-      utilsMock.expects('logWarn').withExactArgs('Adagio: invalid script found.').once();
-
-      adagioScriptFromLocalStorageCb(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY));
-
-      expect(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY)).to.be.null;
-      utilsMock.verify();
-    });
-
-    it('should verify missing hash', function () {
-      localStorage.setItem(ADAGIO_LOCALSTORAGE_KEY, VALID_SCRIPT_CONTENT);
-
-      utilsMock.expects('logInfo').withExactArgs('Adagio: start script').never();
-      utilsMock.expects('logWarn').withExactArgs('Adagio: no hash found.').once();
-      utilsMock.expects('logWarn').withExactArgs('Adagio: invalid script found.').never();
-
-      adagioScriptFromLocalStorageCb(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY));
-
-      expect(localStorage.getItem(ADAGIO_LOCALSTORAGE_KEY)).to.be.null;
-      utilsMock.verify();
-    });
-
-    it('should return false if content script does not exist in localStorage', function() {
-      sandbox.spy(utils, 'logWarn');
-      expect(adagioScriptFromLocalStorageCb(null)).to.be.undefined;
-      sinon.assert.callCount(utils.logWarn, 1);
-      sinon.assert.calledWith(utils.logWarn, 'Adagio: script not found.');
+      it('loads the locked version - default behavior', function() {
+        delete $$PREBID_GLOBAL$$.bidderSettings.adagio.scriptVersion;
+        getAdagioScript();
+        expect(loadExternalScript.called).to.be.true;
+        expect(loadExternalScript.args[0][0]).to.deep.equal(`https://script.4dex.io/a/${lockedVersion}/adagio.js`);
+      });
     });
   });
 });
