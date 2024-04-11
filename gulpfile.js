@@ -391,7 +391,7 @@ function runKarma(options, done) {
   // the karma server appears to leak memory; starting it multiple times in a row will run out of heap
   // here we run it in a separate process to bypass the problem
   options = Object.assign({browsers: helpers.parseBrowserArgs(argv)}, options)
-  const child = fork('./karmaRunner.js');
+  const child = fork('./karmaRunner.js', { silent: options.silent });
   child.on('exit', (exitCode) => {
     if (exitCode) {
       done(new Error('Karma tests failed with exit code ' + exitCode));
@@ -400,6 +400,7 @@ function runKarma(options, done) {
     }
   })
   child.send(options);
+  return child;
 }
 
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
@@ -542,3 +543,4 @@ gulp.task(viewReview);
 gulp.task('review-start', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, testCoverage), viewReview));
 
 module.exports = nodeBundle;
+module.exports.runKarma = runKarma;
