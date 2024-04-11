@@ -1,7 +1,7 @@
 import {expect} from 'chai';
 import {spec, storage} from 'modules/teadsBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
-import { off } from '../../../src/events';
+import * as autoplay from 'libraries/autoplayDetection/autoplay.js'
 
 const ENDPOINT = 'https://a.teads.tv/hb/bid-request';
 const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="https://a.teads.tv/hb/getAdSettings"></script>"';
@@ -255,6 +255,33 @@ describe('teadsBidAdapter', () => {
       expect(payload.pageReferrer).to.deep.equal(document.referrer);
     });
 
+    it('should add width info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+      const deviceWidth = screen.width
+
+      expect(payload.deviceWidth).to.exist;
+      expect(payload.deviceWidth).to.deep.equal(deviceWidth);
+    });
+
+    it('should add height info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+      const deviceHeight = screen.height
+
+      expect(payload.deviceHeight).to.exist;
+      expect(payload.deviceHeight).to.deep.equal(deviceHeight);
+    });
+
+    it('should add pixelRatio info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+      const pixelRatio = window.top.devicePixelRatio
+
+      expect(payload.devicePixelRatio).to.exist;
+      expect(payload.devicePixelRatio).to.deep.equal(pixelRatio);
+    });
+
     it('should add screenOrientation info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
@@ -288,6 +315,14 @@ describe('teadsBidAdapter', () => {
 
       expect(payload.viewportWidth).to.exist;
       expect(payload.viewportWidth).to.deep.equal(window.top.visualViewport.width);
+    });
+
+    it('should add viewportHeight info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.viewportHeight).to.exist;
+      expect(payload.viewportHeight).to.deep.equal(window.top.visualViewport.height);
     });
 
     it('should add hardwareConcurrency info to payload', function () {
@@ -1059,7 +1094,8 @@ describe('teadsBidAdapter', () => {
             'ttl': 360,
             'width': 300,
             'creativeId': 'er2ee',
-            'placementId': 34
+            'placementId': 34,
+            'needAutoplay': true
           }, {
             'ad': AD_SCRIPT,
             'cpm': 0.5,
@@ -1070,6 +1106,7 @@ describe('teadsBidAdapter', () => {
             'width': 350,
             'creativeId': 'fs3ff',
             'placementId': 34,
+            'needAutoplay': false,
             'dealId': 'ABC_123',
             'ext': {
               'dsa': {
@@ -1129,6 +1166,70 @@ describe('teadsBidAdapter', () => {
       ;
 
       let result = spec.interpretResponse(bids);
+      expect(result).to.eql(expectedResponse);
+    });
+
+    it('should filter bid responses with needAutoplay:true when autoplay is disabled', function() {
+      let bids = {
+        'body': {
+          'responses': [{
+            'ad': AD_SCRIPT,
+            'cpm': 0.5,
+            'currency': 'USD',
+            'height': 250,
+            'bidId': '3ede2a3fa0db94',
+            'ttl': 360,
+            'width': 300,
+            'creativeId': 'er2ee',
+            'placementId': 34,
+            'needAutoplay': true
+          }, {
+            'ad': AD_SCRIPT,
+            'cpm': 0.5,
+            'currency': 'USD',
+            'height': 200,
+            'bidId': '4fef3b4gb1ec15',
+            'ttl': 360,
+            'width': 350,
+            'creativeId': 'fs3ff',
+            'placementId': 34,
+            'needAutoplay': false
+          }, {
+            'ad': AD_SCRIPT,
+            'cpm': 0.7,
+            'currency': 'USD',
+            'height': 600,
+            'bidId': 'a987fbc961d',
+            'ttl': 12,
+            'width': 300,
+            'creativeId': 'awuygfd',
+            'placementId': 12,
+            'needAutoplay': true
+          }]
+        }
+      };
+      let expectedResponse = [{
+        'cpm': 0.5,
+        'width': 350,
+        'height': 200,
+        'currency': 'USD',
+        'netRevenue': true,
+        'meta': {
+          advertiserDomains: [],
+        },
+        'ttl': 360,
+        'ad': AD_SCRIPT,
+        'requestId': '4fef3b4gb1ec15',
+        'creativeId': 'fs3ff',
+        'placementId': 34
+      }
+      ]
+      ;
+
+      const isAutoplayEnabledStub = sinon.stub(autoplay, 'isAutoplayEnabled');
+      isAutoplayEnabledStub.returns(false);
+      let result = spec.interpretResponse(bids);
+      isAutoplayEnabledStub.restore();
       expect(result).to.eql(expectedResponse);
     });
 

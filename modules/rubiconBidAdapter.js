@@ -201,9 +201,6 @@ export const converter = ortbConverter({
     const imp = buildImp(bidRequest, context);
     imp.id = bidRequest.adUnitCode;
     delete imp.banner;
-    if (config.getConfig('s2sConfig.defaultTtl')) {
-      imp.exp = config.getConfig('s2sConfig.defaultTtl');
-    };
     bidRequest.params.position === 'atf' && imp.video && (imp.video.pos = 1);
     bidRequest.params.position === 'btf' && imp.video && (imp.video.pos = 3);
     delete imp.ext?.prebid?.storedrequest;
@@ -237,7 +234,7 @@ export const converter = ortbConverter({
   },
   context: {
     netRevenue: rubiConf.netRevenue !== false, // If anything other than false, netRev is true
-    ttl: 300,
+    ttl: 360,
   },
   processors: pbsExtensions
 });
@@ -685,7 +682,7 @@ export const spec = {
           creativeId: ad.creative_id || `${ad.network || ''}-${ad.advertiser || ''}`,
           cpm: ad.cpm || 0,
           dealId: ad.deal,
-          ttl: 300, // 5 minutes
+          ttl: 360, // 6 minutes
           netRevenue: rubiConf.netRevenue !== false, // If anything other than false, netRev is true
           rubicon: {
             advertiserId: ad.advertiser, networkId: ad.network
