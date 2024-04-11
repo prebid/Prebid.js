@@ -13,10 +13,16 @@ const defaultConfig = {
 const LIVE_RAMP_COOKIE = "_lr_env";
 const UID2_COOKIE = "_uid2_advertising_token";
 const ID5_COOKIE = "id5id";
+const dummyTokenValue = 'Success OK';
 
 const getDataFromStorage = (dataKey) => {
+  console.log("🚀 ~ getDataFromStorage ~ dataKey:", coreStorage.getDataFromLocalStorage(dataKey))
   return coreStorage.getDataFromLocalStorage(dataKey);
 };
+
+const mockHTTPRequestSuccess = (key, value) => {
+  coreStorage.setDataInLocalStorage(key, value);
+}
 
 describe("lockr AIM ID System", function () {
   before(() => {
@@ -44,21 +50,24 @@ describe("lockr AIM ID System", function () {
 
   describe("Generates the token successfully", function () {
     it("Generates the UID2 token successfully", async function () {
+      mockHTTPRequestSuccess(UID2_COOKIE, dummyTokenValue);
       await lockrAIMSystem.lockrAIMSubmodule.getId(defaultConfig);
       const uid2Cookie = getDataFromStorage(UID2_COOKIE);
-      expect(uid2Cookie).to.have.lengthOf(1);
+      expect(uid2Cookie).is.eq(dummyTokenValue);
     });
 
     it("Generates the ID5 token successfully", async function () {
+      mockHTTPRequestSuccess(ID5_COOKIE, dummyTokenValue);
       await lockrAIMSystem.lockrAIMSubmodule.getId(defaultConfig);
       const id5Cookie = getDataFromStorage(ID5_COOKIE);
-      expect(id5Cookie).to.have.lengthOf(1);
+      expect(id5Cookie).is.eq(dummyTokenValue);
     });
 
     it("Generates the liveramp token successfully", async function () {
+      mockHTTPRequestSuccess(LIVE_RAMP_COOKIE, dummyTokenValue);
       await lockrAIMSystem.lockrAIMSubmodule.getId(defaultConfig);
       const liveRampCookie = getDataFromStorage(LIVE_RAMP_COOKIE);
-      expect(liveRampCookie).to.have.lengthOf(1);
+      expect(liveRampCookie).is.eq(dummyTokenValue);
     });
   });
 });
