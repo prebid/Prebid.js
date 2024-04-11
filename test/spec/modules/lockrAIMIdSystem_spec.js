@@ -16,7 +16,6 @@ const ID5_COOKIE = "id5id";
 const dummyTokenValue = 'Success OK';
 
 const getDataFromStorage = (dataKey) => {
-  console.log("🚀 ~ getDataFromStorage ~ dataKey:", coreStorage.getDataFromLocalStorage(dataKey))
   return coreStorage.getDataFromLocalStorage(dataKey);
 };
 
