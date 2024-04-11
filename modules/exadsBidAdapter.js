@@ -8,6 +8,8 @@ const PARTNERS = {
   ORTB_2_4: 'ortb_2_4'
 };
 
+const GVL_ID = 1084;
+
 const htmlImageOutput = 'html';
 const htmlVideoOutput = 'html';
 
@@ -507,5 +509,6 @@ export const spec = {
 
 registerBidder({
   code: BIDDER,
+  gvlid: GVL_ID,
   ...spec
 });
