@@ -138,12 +138,13 @@ export const spec = {
           imp.ext.deals = segmentsString.split(',').map(deal => deal.trim())
         }
 
-        if (bidderRequest.fledgeEnabled) {
-          imp.ext = imp.ext || {};
-          imp.ext.ae = bid?.ortb2Imp?.ext?.ae
+        const auctionEnvironment = bid?.ortb2Imp?.ext?.ae
+        if (bidderRequest.fledgeEnabled && isInteger(auctionEnvironment)) {
+          imp.ext = imp.ext || {}
+          imp.ext.ae = auctionEnvironment
         } else {
           if (imp.ext?.ae) {
-            delete imp.ext.ae;
+            delete imp.ext.ae
           }
         }
 

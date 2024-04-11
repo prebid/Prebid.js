@@ -249,12 +249,12 @@ describe('sovrnBidAdapter', function() {
           ...baseBidRequest,
           ortb2Imp: {
             ext: {
-              ae: 2
+              ae: 1
             }
           },
         }
         const payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest).data)
-        expect(payload.imp[0].ext.ae).to.equal(2)
+        expect(payload.imp[0].ext.ae).to.equal(1)
       })
 
       it('when FLEDGE is not enabled, should not send ortb2imp.ext.ae', function () {
@@ -262,11 +262,28 @@ describe('sovrnBidAdapter', function() {
           ...baseBidRequest,
           ortb2Imp: {
             ext: {
-              ae: 2
+              ae: 1
             }
           },
         }
         const payload = JSON.parse(spec.buildRequests([bidRequest], baseBidderRequest).data)
+        expect(payload.imp[0].ext.ae).to.be.undefined
+      })
+
+      it('when FLEDGE is enabled, but env is malformed, should not send ortb2imp.ext.ae', function () {
+        const bidderRequest = {
+          ...baseBidderRequest,
+          fledgeEnabled: true
+        }
+        const bidRequest = {
+          ...baseBidRequest,
+          ortb2Imp: {
+            ext: {
+              ae: 'malformed'
+            }
+          },
+        }
+        const payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest).data)
         expect(payload.imp[0].ext.ae).to.be.undefined
       })
 
