@@ -1,4 +1,4 @@
-import { isFn, deepAccess, logMessage, logError } from '../src/utils.js';
+import { logMessage, logError } from '../src/utils.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 import { registerBidder } from '../src/adapters/bidderFactory.js';
