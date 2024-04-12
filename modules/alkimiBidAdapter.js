@@ -51,8 +51,8 @@ export const spec = {
 
     const id = getUserId()
     const alkimiConfig = config.getConfig('alkimi')
-    const fullPageAuction = ortb2?.source?.ext?.full_page_auction
-    const source = fullPageAuction != undefined ? { ext: { full_page_auction: fullPageAuction } } : undefined
+    const fpa = ortb2?.source?.ext?.fpa
+    const source = fpa != undefined ? { ext: { fpa } } : undefined
     const walletID = alkimiConfig && alkimiConfig.walletID
     const userParams = alkimiConfig && alkimiConfig.userParams
     const user = (walletID != undefined || userParams != undefined || id != undefined) ? { id, ext: { walletID, userParams } } : undefined
