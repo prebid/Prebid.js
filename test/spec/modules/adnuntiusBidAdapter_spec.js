@@ -37,12 +37,12 @@ describe('adnuntiusBidAdapter', function() {
   });
 
   const tzo = new Date().getTimezoneOffset();
-  const ENDPOINT_URL_BASE = `${URL}${tzo}&format=json`;
+  const ENDPOINT_URL_BASE = `${URL}${tzo}&format=prebid`;
   const ENDPOINT_URL = `${ENDPOINT_URL_BASE}&userId=${usi}`;
   const ENDPOINT_URL_VIDEO = `${ENDPOINT_URL_BASE}&userId=${usi}&tt=vast4`;
   const ENDPOINT_URL_NOCOOKIE = `${ENDPOINT_URL_BASE}&userId=${usi}&noCookies=true`;
   const ENDPOINT_URL_SEGMENTS = `${ENDPOINT_URL_BASE}&segments=segment1,segment2,segment3&userId=${usi}`;
-  const ENDPOINT_URL_CONSENT = `${EURO_URL}${tzo}&format=json&consentString=consentString&gdpr=1&userId=${usi}`;
+  const ENDPOINT_URL_CONSENT = `${EURO_URL}${tzo}&format=prebid&consentString=consentString&gdpr=1&userId=${usi}`;
   const adapter = newBidder(spec);
 
   const bidderRequests = [
