@@ -50,12 +50,17 @@
                           mediationLayerAdServer: "dfp",
                           bidTimeout: 2000
                         },
-                        bidders: [
-                          {
+                        bidders: [{
+                          bidder: 'jwplayer',
+                          params: {
+                            publisherId: 'test-publisher-id',
+                            siteId: 'test-site-id',
+                            placementId: 'test-placement-id'
+                          }
+                        }, {
                             name: "ix",
                             siteId: "300"
-                          }
-                        ]
+                        }]
                       }
                     }
                   }

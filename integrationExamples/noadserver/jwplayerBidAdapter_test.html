@@ -11,7 +11,7 @@
             pos: 0,
             w: 640,
             h: 480,
-            mimes :  ['video/x-ms-wmv', 'video/mp4'],
+            mimes :  ['application/vnd.apple.mpegurl', 'video/mp4'],
             minduration : 0,
             maxduration: 60,
             protocols : [2,3,7,5,6,8],
@@ -46,7 +46,11 @@
                 name: "jwplayer",
                 waitForIt: true,
                 params: {
-                  mediaIDs: ['test-media-id']
+                  mediaIDs: ['test-media-id'],
+                  overrideContentUrl: 'always',
+                  overrideContentId: 'always',
+                  overrideContentTitle: 'always',
+                  overrideContentDescription: 'always'
                 }
               }]
             },
