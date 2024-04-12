@@ -30,7 +30,7 @@ Performax bid adapter supports Banner.
                     }
                 }
             ]
-        }
+        },}
     ];
 ```
 

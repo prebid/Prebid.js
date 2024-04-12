@@ -1,7 +1,7 @@
-import {deepSetValue, deepAccess} from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {BANNER} from '../src/mediaTypes.js'
-import {ortbConverter} from '../libraries/ortbConverter/converter';
+import { deepSetValue, deepAccess } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { BANNER } from '../src/mediaTypes.js'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'performax';
 const BIDDER_SHORT_CODE = 'px';
@@ -68,7 +68,7 @@ export const spec = {
         }))
       }))
     };
-    return converter.fromORTB({response: data, request: request.data }).bids
+    return converter.fromORTB({ response: data, request: request.data }).bids
   },
 
 }
