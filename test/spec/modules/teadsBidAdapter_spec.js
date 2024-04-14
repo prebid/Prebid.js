@@ -1,23 +1,21 @@
 import {expect} from 'chai';
 import {spec, storage} from 'modules/teadsBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
-import {getStorageManager} from 'src/storageManager';
+import * as autoplay from 'libraries/autoplayDetection/autoplay.js'
 
 const ENDPOINT = 'https://a.teads.tv/hb/bid-request';
 const AD_SCRIPT = '<script type="text/javascript" class="teads" async="true" src="https://a.teads.tv/hb/getAdSettings"></script>"';
 
 describe('teadsBidAdapter', () => {
   const adapter = newBidder(spec);
-  let cookiesAreEnabledStub, getCookieStub;
+  let sandbox;
 
   beforeEach(function () {
-    cookiesAreEnabledStub = sinon.stub(storage, 'cookiesAreEnabled');
-    getCookieStub = sinon.stub(storage, 'getCookie');
+    sandbox = sinon.sandbox.create();
   });
 
   afterEach(function () {
-    cookiesAreEnabledStub.restore();
-    getCookieStub.restore();
+    sandbox.restore();
   });
 
   describe('inherited functions', () => {
@@ -257,20 +255,191 @@ describe('teadsBidAdapter', () => {
       expect(payload.pageReferrer).to.deep.equal(document.referrer);
     });
 
-    it('should add pageTitle info to payload', function () {
+    it('should add width info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
+      const deviceWidth = screen.width
 
-      expect(payload.pageTitle).to.exist;
-      expect(payload.pageTitle).to.deep.equal(window.top.document.title || document.title);
+      expect(payload.deviceWidth).to.exist;
+      expect(payload.deviceWidth).to.deep.equal(deviceWidth);
     });
 
-    it('should add pageDescription info to payload', function () {
+    it('should add height info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+      const deviceHeight = screen.height
+
+      expect(payload.deviceHeight).to.exist;
+      expect(payload.deviceHeight).to.deep.equal(deviceHeight);
+    });
+
+    it('should add pixelRatio info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+      const pixelRatio = window.top.devicePixelRatio
+
+      expect(payload.devicePixelRatio).to.exist;
+      expect(payload.devicePixelRatio).to.deep.equal(pixelRatio);
+    });
+
+    it('should add screenOrientation info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+      const screenOrientation = window.top.screen.orientation?.type
+
+      if (screenOrientation) {
+        expect(payload.screenOrientation).to.exist;
+        expect(payload.screenOrientation).to.deep.equal(screenOrientation);
+      } else expect(payload.screenOrientation).to.not.exist;
+    });
+
+    it('should add historyLength info to payload', function () {
       const request = spec.buildRequests(bidRequests, bidderRequestDefault);
       const payload = JSON.parse(request.data);
 
-      expect(payload.pageDescription).to.exist;
-      expect(payload.pageDescription).to.deep.equal('');
+      expect(payload.historyLength).to.exist;
+      expect(payload.historyLength).to.deep.equal(window.top.history.length);
+    });
+
+    it('should add viewportHeight info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.viewportHeight).to.exist;
+      expect(payload.viewportHeight).to.deep.equal(window.top.visualViewport.height);
+    });
+
+    it('should add viewportWidth info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.viewportWidth).to.exist;
+      expect(payload.viewportWidth).to.deep.equal(window.top.visualViewport.width);
+    });
+
+    it('should add viewportHeight info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.viewportHeight).to.exist;
+      expect(payload.viewportHeight).to.deep.equal(window.top.visualViewport.height);
+    });
+
+    it('should add hardwareConcurrency info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+      const hardwareConcurrency = window.top.navigator?.hardwareConcurrency
+
+      if (hardwareConcurrency) {
+        expect(payload.hardwareConcurrency).to.exist;
+        expect(payload.hardwareConcurrency).to.deep.equal(hardwareConcurrency);
+      } else expect(payload.hardwareConcurrency).to.not.exist
+    });
+
+    it('should add deviceMemory info to payload', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+      const payload = JSON.parse(request.data);
+      const deviceMemory = window.top.navigator.deviceMemory
+
+      if (deviceMemory) {
+        expect(payload.deviceMemory).to.exist;
+        expect(payload.deviceMemory).to.deep.equal(deviceMemory);
+      } else expect(payload.deviceMemory).to.not.exist;
+    });
+
+    describe('pageTitle', function () {
+      it('should add pageTitle info to payload based on document title', function () {
+        const testText = 'This is a title';
+        sandbox.stub(window.top.document, 'title').value(testText);
+
+        const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.pageTitle).to.exist;
+        expect(payload.pageTitle).to.deep.equal(testText);
+      });
+
+      it('should add pageTitle info to payload based on open-graph title', function () {
+        const testText = 'This is a title from open-graph';
+        sandbox.stub(window.top.document, 'title').value('');
+        sandbox.stub(window.top.document, 'querySelector').withArgs('meta[property="og:title"]').returns({ content: testText });
+
+        const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.pageTitle).to.exist;
+        expect(payload.pageTitle).to.deep.equal(testText);
+      });
+
+      it('should add pageTitle info to payload sliced on 300 first characters', function () {
+        const testText = Array(500).join('a');
+        sandbox.stub(window.top.document, 'title').value(testText);
+
+        const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.pageTitle).to.exist;
+        expect(payload.pageTitle).to.have.length(300);
+      });
+
+      it('should add pageTitle info to payload when fallbacking from window.top', function () {
+        const testText = 'This is a fallback title';
+        sandbox.stub(window.top.document, 'querySelector').throws();
+        sandbox.stub(document, 'title').value(testText);
+
+        const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.pageTitle).to.exist;
+        expect(payload.pageTitle).to.deep.equal(testText);
+      });
+    });
+
+    describe('pageDescription', function () {
+      it('should add pageDescription info to payload based on open-graph description', function () {
+        const testText = 'This is a description';
+        sandbox.stub(window.top.document, 'querySelector').withArgs('meta[name="description"]').returns({ content: testText });
+
+        const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.pageDescription).to.exist;
+        expect(payload.pageDescription).to.deep.equal(testText);
+      });
+
+      it('should add pageDescription info to payload based on open-graph description', function () {
+        const testText = 'This is a description from open-graph';
+        sandbox.stub(window.top.document, 'querySelector').withArgs('meta[property="og:description"]').returns({ content: testText });
+
+        const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.pageDescription).to.exist;
+        expect(payload.pageDescription).to.deep.equal(testText);
+      });
+
+      it('should add pageDescription info to payload sliced on 300 first characters', function () {
+        const testText = Array(500).join('a');
+        sandbox.stub(window.top.document, 'querySelector').withArgs('meta[name="description"]').returns({ content: testText });
+
+        const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.pageDescription).to.exist;
+        expect(payload.pageDescription).to.have.length(300);
+      });
+
+      it('should add pageDescription info to payload when fallbacking from window.top', function () {
+        const testText = 'This is a fallback description';
+        sandbox.stub(window.top.document, 'querySelector').throws();
+        sandbox.stub(document, 'querySelector').withArgs('meta[name="description"]').returns({ content: testText });
+
+        const request = spec.buildRequests(bidRequests, bidderRequestDefault);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.pageDescription).to.exist;
+        expect(payload.pageDescription).to.deep.equal(testText);
+      });
     });
 
     it('should add timeToFirstByte info to payload', function () {
@@ -697,7 +866,7 @@ describe('teadsBidAdapter', () => {
       describe('First-party cookie Teads ID', function () {
         it('should not add firstPartyCookieTeadsId param to payload if cookies are not enabled' +
             ' and teads user id not available', function () {
-          cookiesAreEnabledStub.returns(false);
+          sandbox.stub(storage, 'cookiesAreEnabled').returns(false);
 
           const bidRequest = {
             ...baseBidRequest,
@@ -714,8 +883,8 @@ describe('teadsBidAdapter', () => {
 
         it('should not add firstPartyCookieTeadsId param to payload if cookies are enabled ' +
             'but first-party cookie and teads user id are not available', function () {
-          cookiesAreEnabledStub.returns(true);
-          getCookieStub.withArgs('_tfpvi').returns(undefined);
+          sandbox.stub(storage, 'cookiesAreEnabled').returns(true);
+          sandbox.stub(storage, 'getCookie').withArgs('_tfpvi').returns(undefined);
 
           const bidRequest = {
             ...baseBidRequest,
@@ -732,8 +901,8 @@ describe('teadsBidAdapter', () => {
 
         it('should add firstPartyCookieTeadsId from cookie if it\'s available ' +
             'and teads user id is not', function () {
-          cookiesAreEnabledStub.returns(true);
-          getCookieStub.withArgs('_tfpvi').returns('my-teads-id');
+          sandbox.stub(storage, 'cookiesAreEnabled').returns(true);
+          sandbox.stub(storage, 'getCookie').withArgs('_tfpvi').returns('my-teads-id');
 
           const bidRequest = {
             ...baseBidRequest,
@@ -751,8 +920,8 @@ describe('teadsBidAdapter', () => {
 
         it('should add firstPartyCookieTeadsId from user id module if it\'s available ' +
             'even if cookie is available too', function () {
-          cookiesAreEnabledStub.returns(true);
-          getCookieStub.withArgs('_tfpvi').returns('my-teads-id');
+          sandbox.stub(storage, 'cookiesAreEnabled').returns(true);
+          sandbox.stub(storage, 'getCookie').withArgs('_tfpvi').returns('my-teads-id');
 
           const bidRequest = {
             ...baseBidRequest,
@@ -871,6 +1040,45 @@ describe('teadsBidAdapter', () => {
         }
       });
     }
+
+    it('should add dsa info to payload if available', function () {
+      const bidRequestWithDsa = Object.assign({}, bidderRequestDefault, {
+        ortb2: {
+          regs: {
+            ext: {
+              dsa: {
+                dsarequired: '1',
+                pubrender: '2',
+                datatopub: '3',
+                transparency: [{
+                  domain: 'test.com',
+                  dsaparams: [1, 2, 3]
+                }]
+              }
+            }
+          }
+        }
+      });
+
+      const requestWithDsa = spec.buildRequests(bidRequests, bidRequestWithDsa);
+      const payload = JSON.parse(requestWithDsa.data);
+
+      expect(payload.dsa).to.exist;
+      expect(payload.dsa).to.deep.equal(
+        {
+          dsarequired: '1',
+          pubrender: '2',
+          datatopub: '3',
+          transparency: [{
+            domain: 'test.com',
+            dsaparams: [1, 2, 3]
+          }]
+        }
+      );
+
+      const defaultRequest = spec.buildRequests(bidRequests, bidderRequestDefault);
+      expect(JSON.parse(defaultRequest.data).dsa).to.not.exist;
+    });
   });
 
   describe('interpretResponse', function() {
@@ -886,7 +1094,8 @@ describe('teadsBidAdapter', () => {
             'ttl': 360,
             'width': 300,
             'creativeId': 'er2ee',
-            'placementId': 34
+            'placementId': 34,
+            'needAutoplay': true
           }, {
             'ad': AD_SCRIPT,
             'cpm': 0.5,
@@ -897,7 +1106,19 @@ describe('teadsBidAdapter', () => {
             'width': 350,
             'creativeId': 'fs3ff',
             'placementId': 34,
-            'dealId': 'ABC_123'
+            'needAutoplay': false,
+            'dealId': 'ABC_123',
+            'ext': {
+              'dsa': {
+                'behalf': 'some-behalf',
+                'paid': 'some-paid',
+                'transparency': [{
+                  'domain': 'test.com',
+                  'dsaparams': [1, 2, 3]
+                }],
+                'adrender': 1
+              }
+            }
           }]
         }
       };
@@ -923,7 +1144,16 @@ describe('teadsBidAdapter', () => {
           'currency': 'USD',
           'netRevenue': true,
           'meta': {
-            advertiserDomains: []
+            advertiserDomains: [],
+            dsa: {
+              behalf: 'some-behalf',
+              paid: 'some-paid',
+              transparency: [{
+                domain: 'test.com',
+                dsaparams: [1, 2, 3]
+              }],
+              adrender: 1
+            }
           },
           'ttl': 360,
           'ad': AD_SCRIPT,
@@ -936,6 +1166,70 @@ describe('teadsBidAdapter', () => {
       ;
 
       let result = spec.interpretResponse(bids);
+      expect(result).to.eql(expectedResponse);
+    });
+
+    it('should filter bid responses with needAutoplay:true when autoplay is disabled', function() {
+      let bids = {
+        'body': {
+          'responses': [{
+            'ad': AD_SCRIPT,
+            'cpm': 0.5,
+            'currency': 'USD',
+            'height': 250,
+            'bidId': '3ede2a3fa0db94',
+            'ttl': 360,
+            'width': 300,
+            'creativeId': 'er2ee',
+            'placementId': 34,
+            'needAutoplay': true
+          }, {
+            'ad': AD_SCRIPT,
+            'cpm': 0.5,
+            'currency': 'USD',
+            'height': 200,
+            'bidId': '4fef3b4gb1ec15',
+            'ttl': 360,
+            'width': 350,
+            'creativeId': 'fs3ff',
+            'placementId': 34,
+            'needAutoplay': false
+          }, {
+            'ad': AD_SCRIPT,
+            'cpm': 0.7,
+            'currency': 'USD',
+            'height': 600,
+            'bidId': 'a987fbc961d',
+            'ttl': 12,
+            'width': 300,
+            'creativeId': 'awuygfd',
+            'placementId': 12,
+            'needAutoplay': true
+          }]
+        }
+      };
+      let expectedResponse = [{
+        'cpm': 0.5,
+        'width': 350,
+        'height': 200,
+        'currency': 'USD',
+        'netRevenue': true,
+        'meta': {
+          advertiserDomains: [],
+        },
+        'ttl': 360,
+        'ad': AD_SCRIPT,
+        'requestId': '4fef3b4gb1ec15',
+        'creativeId': 'fs3ff',
+        'placementId': 34
+      }
+      ]
+      ;
+
+      const isAutoplayEnabledStub = sinon.stub(autoplay, 'isAutoplayEnabled');
+      isAutoplayEnabledStub.returns(false);
+      let result = spec.interpretResponse(bids);
+      isAutoplayEnabledStub.restore();
       expect(result).to.eql(expectedResponse);
     });
 

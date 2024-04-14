@@ -11,6 +11,14 @@ import { Renderer } from '../src/Renderer.js';
 import { OUTSTREAM } from '../src/video.js';
 import { ajax } from '../src/ajax.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
+ */
+
 const GVLID = 91;
 export const ADAPTER_VERSION = 36;
 const BIDDER_CODE = 'criteo';
@@ -28,7 +36,7 @@ const LOG_PREFIX = 'Criteo: ';
   Unminified source code can be found in the privately shared repo: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
 */
 const FAST_BID_VERSION_PLACEHOLDER = '%FAST_BID_VERSION%';
-export const FAST_BID_VERSION_CURRENT = 139;
+export const FAST_BID_VERSION_CURRENT = 144;
 const FAST_BID_VERSION_LATEST = 'latest';
 const FAST_BID_VERSION_NONE = 'none';
 const PUBLISHER_TAG_URL_TEMPLATE = 'https://static.criteo.net/js/ld/publishertag.prebid' + FAST_BID_VERSION_PLACEHOLDER + '.js';
@@ -122,7 +130,8 @@ export const spec = {
     return [];
   },
 
-  /** f
+  /**
+   * f
    * @param {object} bid
    * @return {boolean}
    */
@@ -201,7 +210,7 @@ export const spec = {
   /**
    * @param {*} response
    * @param {ServerRequest} request
-   * @return {Bid[]}
+   * @return {Bid[] | {bids: Bid[], fledgeAuctionConfigs: object[]}}
    */
   interpretResponse: (response, request) => {
     const body = response.body || response;
@@ -215,6 +224,7 @@ export const spec = {
     }
 
     const bids = [];
+    const fledgeAuctionConfigs = [];
 
     if (body && body.slots && isArray(body.slots)) {
       body.slots.forEach(slot => {
@@ -245,6 +255,9 @@ export const spec = {
           if (slot.ext?.meta?.networkName) {
             bid.meta = Object.assign({}, bid.meta, { networkName: slot.ext.meta.networkName })
           }
+          if (slot.ext?.dsa) {
+            bid.meta = Object.assign({}, bid.meta, { dsa: slot.ext.dsa })
+          }
           if (slot.native) {
             if (bidRequest.params.nativeCallback) {
               bid.ad = createNativeAd(bidId, slot.native, bidRequest.params.nativeCallback);
@@ -266,6 +279,23 @@ export const spec = {
           bids.push(bid);
         }
       });
+    }
+
+    if (isArray(body.ext?.igi)) {
+      body.ext.igi.forEach((igi) => {
+        if (isArray(igi?.igs)) {
+          igi.igs.forEach((igs) => {
+            fledgeAuctionConfigs.push(igs);
+          });
+        }
+      });
+    }
+
+    if (fledgeAuctionConfigs.length) {
+      return {
+        bids,
+        fledgeAuctionConfigs,
+      };
     }
 
     return bids;
@@ -445,17 +475,16 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   let networkId;
   let schain;
   let userIdAsEids;
+  let regs = Object.assign({}, {
+    coppa: bidderRequest.coppa === true ? 1 : (bidderRequest.coppa === false ? 0 : undefined)
+  }, bidderRequest.ortb2?.regs);
   const request = {
     id: generateUUID(),
     publisher: {
       url: context.url,
       ext: bidderRequest.publisherExt,
     },
-    regs: {
-      coppa: bidderRequest.coppa === true ? 1 : (bidderRequest.coppa === false ? 0 : undefined),
-      gpp: bidderRequest.ortb2?.regs?.gpp,
-      gpp_sid: bidderRequest.ortb2?.regs?.gpp_sid
-    },
+    regs: regs,
     slots: bidRequests.map(bidRequest => {
       if (!userIdAsEids) {
         userIdAsEids = bidRequest.userIdAsEids;
@@ -503,6 +532,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
 
       if (hasVideoMediaType(bidRequest)) {
         const video = {
+          context: bidRequest.mediaTypes.video.context,
           playersizes: parseSizes(deepAccess(bidRequest, 'mediaTypes.video.playerSize'), parseSize),
           mimes: bidRequest.mediaTypes.video.mimes,
           protocols: bidRequest.mediaTypes.video.protocols,
@@ -513,7 +543,19 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
           minduration: bidRequest.mediaTypes.video.minduration,
           playbackmethod: bidRequest.mediaTypes.video.playbackmethod,
           startdelay: bidRequest.mediaTypes.video.startdelay,
-          plcmt: bidRequest.mediaTypes.video.plcmt
+          plcmt: bidRequest.mediaTypes.video.plcmt,
+          w: bidRequest.mediaTypes.video.w,
+          h: bidRequest.mediaTypes.video.h,
+          linearity: bidRequest.mediaTypes.video.linearity,
+          skipmin: bidRequest.mediaTypes.video.skipmin,
+          skipafter: bidRequest.mediaTypes.video.skipafter,
+          minbitrate: bidRequest.mediaTypes.video.minbitrate,
+          maxbitrate: bidRequest.mediaTypes.video.maxbitrate,
+          delivery: bidRequest.mediaTypes.video.delivery,
+          pos: bidRequest.mediaTypes.video.pos,
+          playbackend: bidRequest.mediaTypes.video.playbackend,
+          adPodDurationSec: bidRequest.mediaTypes.video.adPodDurationSec,
+          durationRangeSec: bidRequest.mediaTypes.video.durationRangeSec,
         };
         const paramsVideo = bidRequest.params.video;
         if (paramsVideo !== undefined) {
@@ -528,6 +570,10 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       }
 
       enrichSlotWithFloors(slot, bidRequest);
+
+      if (!bidderRequest.fledgeEnabled && slot.ext?.ae) {
+        delete slot.ext.ae;
+      }
 
       return slot;
     }),
@@ -547,6 +593,8 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   };
   request.user = bidderRequest.ortb2?.user || {};
   request.site = bidderRequest.ortb2?.site || {};
+  request.app = bidderRequest.ortb2?.app || {};
+  request.device = bidderRequest.ortb2?.device || {};
   if (bidderRequest && bidderRequest.ceh) {
     request.user.ceh = bidderRequest.ceh;
   }
@@ -621,17 +669,7 @@ function hasValidVideoMediaType(bidRequest) {
     }
   });
 
-  if (isValid) {
-    const videoPlacement = bidRequest.mediaTypes.video.placement || bidRequest.params.video.placement;
-    // We do not support long form for now, also we have to check that context & placement are consistent
-    if (bidRequest.mediaTypes.video.context == 'instream' && videoPlacement === 1) {
-      return true;
-    } else if (bidRequest.mediaTypes.video.context == 'outstream' && videoPlacement !== 1) {
-      return true;
-    }
-  }
-
-  return false;
+  return isValid;
 }
 
 /**

@@ -1,8 +1,18 @@
-import {tryAppendQueryString, getBidIdParameter, escapeUnsafeChars, deepAccess} from '../src/utils.js';
+import {deepAccess, getBidIdParameter} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
+import {escapeUnsafeChars} from '../libraries/htmlEscape/htmlEscape.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
 
 const ADG_BIDDER_CODE = 'adgeneration';
 

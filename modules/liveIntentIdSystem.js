@@ -8,10 +8,20 @@ import { triggerPixel, logError } from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
-import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
+import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import {UID1_EIDS} from '../libraries/uid1Eids/uid1Eids.js';
+import {UID2_EIDS} from '../libraries/uid2Eids/uid2Eids.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
+
+const DEFAULT_AJAX_TIMEOUT = 5000
 const EVENTS_TOPIC = 'pre_lips'
 const MODULE_NAME = 'liveIntentId';
 const LI_PROVIDER_DOMAIN = 'liveintent.com';
@@ -65,6 +75,7 @@ function parseLiveIntentCollectorConfig(collectConfig) {
   collectConfig.fpiStorageStrategy && (config.storageStrategy = collectConfig.fpiStorageStrategy);
   collectConfig.fpiExpirationDays && (config.expirationDays = collectConfig.fpiExpirationDays);
   collectConfig.collectorUrl && (config.collectorUrl = collectConfig.collectorUrl);
+  config.ajaxTimeout = collectConfig.ajaxTimeout || DEFAULT_AJAX_TIMEOUT;
   return config;
 }
 
@@ -99,9 +110,8 @@ function initializeLiveConnect(configParams) {
   if (configParams.url) {
     identityResolutionConfig.url = configParams.url
   }
-  if (configParams.ajaxTimeout) {
-    identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout;
-  }
+
+  identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout || DEFAULT_AJAX_TIMEOUT;
 
   const liveConnectConfig = parseLiveIntentCollectorConfig(configParams.liCollectConfig);
 
@@ -113,6 +123,7 @@ function initializeLiveConnect(configParams) {
   }
 
   liveConnectConfig.wrapperName = 'prebid';
+  liveConnectConfig.trackerVersion = '$prebid.version$';
   liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
   liveConnectConfig.fireEventDelay = configParams.fireEventDelay;
@@ -125,7 +136,11 @@ function initializeLiveConnect(configParams) {
     liveConnectConfig.gdprApplies = gdprConsent.gdprApplies;
     liveConnectConfig.gdprConsent = gdprConsent.consentString;
   }
-
+  const gppConsent = gppDataHandler.getConsentData();
+  if (gppConsent) {
+    liveConnectConfig.gppString = gppConsent.gppString;
+    liveConnectConfig.gppApplicableSections = gppConsent.applicableSections;
+  }
   // The second param is the storage object, LS & Cookie manipulation uses PBJS
   // The third param is the ajax and pixel object, the ajax and pixel use PBJS
   liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls);
@@ -150,7 +165,7 @@ function tryFireEvent() {
 
 /** @type {Submodule} */
 export const liveIntentIdSubmodule = {
-  moduleMode: process.env.LiveConnectMode,
+  moduleMode: '$$LIVE_INTENT_MODULE_MODE$$',
   /**
    * used to link submodule with config
    * @type {string}
@@ -209,6 +224,24 @@ export const liveIntentIdSubmodule = {
         result.index = { 'id': value.index, ext: { provider: LI_PROVIDER_DOMAIN } }
       }
 
+      if (value.openx) {
+        result.openx = { 'id': value.openx, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.pubmatic) {
+        result.pubmatic = { 'id': value.pubmatic, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.sovrn) {
+        result.sovrn = { 'id': value.sovrn, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.thetradedesk) {
+        result.lipb = {...result.lipb, tdid: value.thetradedesk}
+        result.tdid = { 'id': value.thetradedesk, ext: { rtiPartner: 'TDID', provider: getRefererInfo().domain || LI_PROVIDER_DOMAIN } }
+        delete result.lipb.thetradedesk
+      }
+
       return result
     }
 
@@ -248,6 +281,8 @@ export const liveIntentIdSubmodule = {
     return { callback: result };
   },
   eids: {
+    ...UID1_EIDS,
+    ...UID2_EIDS,
     'lipb': {
       getValue: function(data) {
         return data.lipbid;
@@ -300,6 +335,42 @@ export const liveIntentIdSubmodule = {
     },
     'index': {
       source: 'liveintent.indexexchange.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'openx': {
+      source: 'openx.net',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'pubmatic': {
+      source: 'pubmatic.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'sovrn': {
+      source: 'liveintent.sovrn.com',
       atype: 3,
       getValue: function(data) {
         return data.id;

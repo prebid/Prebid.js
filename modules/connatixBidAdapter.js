@@ -98,6 +98,7 @@ export const spec = {
       ortb2: bidderRequest.ortb2,
       gdprConsent: bidderRequest.gdprConsent,
       uspConsent: bidderRequest.uspConsent,
+      gppConsent: bidderRequest.gppConsent,
       refererInfo: bidderRequest.refererInfo,
       bidRequests,
     };
@@ -117,13 +118,12 @@ export const spec = {
   interpretResponse: (serverResponse) => {
     const responseBody = serverResponse.body;
     const bids = responseBody.Bids;
-    const playerId = responseBody.PlayerId;
-    const customerId = responseBody.CustomerId;
 
-    if (!isArray(bids) || !playerId || !customerId) {
+    if (!isArray(bids)) {
       return [];
     }
 
+    const referrer = responseBody.Referrer;
     return bids.map(bidResponse => ({
       requestId: bidResponse.RequestId,
       cpm: bidResponse.Cpm,
@@ -134,8 +134,8 @@ export const spec = {
       width: bidResponse.Width,
       height: bidResponse.Height,
       creativeId: bidResponse.CreativeId,
-      referrer: bidResponse.Referrer,
       ad: bidResponse.Ad,
+      referrer: referrer,
     }));
   },
 

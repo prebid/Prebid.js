@@ -96,8 +96,8 @@ export const spec = {
 
     payload.device = {};
     payload.device.ua = navigator.userAgent;
-    payload.device.height = window.screen.width;
-    payload.device.width = window.screen.height;
+    payload.device.height = window.screen.height;
+    payload.device.width = window.screen.width;
     payload.device.dnt = _getDoNotTrack();
     payload.device.language = navigator.language;
 
@@ -327,7 +327,7 @@ export function validateGeoObject(geo) {
  * Get bid floor from Price Floors Module
  *
  * @param {Object} bid
- * @returns {float||null}
+ * @returns {?number}
  */
 function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {

@@ -964,15 +964,42 @@ describe('adapterManager tests', function () {
       'start': 1462918897460
     }];
 
-    it('invokes callBids on the S2S adapter', function () {
-      adapterManager.callBids(
-        getAdUnits(),
-        bidRequests,
-        () => {},
-        () => () => {}
-      );
-      sinon.assert.calledTwice(prebidServerAdapterMock.callBids);
-    });
+    describe('invokes callBids on the S2S adapter', () => {
+      let onTimelyResponse, timedOut, done;
+      beforeEach(() => {
+        done = sinon.stub();
+        onTimelyResponse = sinon.stub();
+        prebidServerAdapterMock.callBids.callsFake((_1, _2, _3, done) => {
+          done(timedOut);
+        });
+      })
+
+      function runTest() {
+        adapterManager.callBids(
+          getAdUnits(),
+          bidRequests,
+          () => {},
+          done,
+          undefined,
+          undefined,
+          onTimelyResponse
+        );
+        sinon.assert.calledTwice(prebidServerAdapterMock.callBids);
+        sinon.assert.calledTwice(done);
+      }
+
+      it('and marks requests as timely if the adapter says timedOut = false', function () {
+        timedOut = false;
+        runTest();
+        bidRequests.forEach(br => sinon.assert.calledWith(onTimelyResponse, br.bidderRequestId));
+      });
+
+      it('and does NOT mark them as timely if it says timedOut = true', () => {
+        timedOut = true;
+        runTest();
+        sinon.assert.notCalled(onTimelyResponse);
+      })
+    })
 
     // Enable this test when prebidServer adapter is made 1.0 compliant
     it('invokes callBids with only s2s bids', function () {

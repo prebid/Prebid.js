@@ -290,7 +290,7 @@ describe('consentManagementGpp', function () {
     });
 
     it('should not re-use errors', (done) => {
-      cmpResult = Promise.reject(new Error());
+      cmpResult = GreedyPromise.reject(new Error());
       GPPClient.init(makeCmp).catch(() => {
         cmpResult = {signalStatus: 'ready'};
         return GPPClient.init(makeCmp).then(([client]) => {
@@ -572,6 +572,17 @@ describe('consentManagementGpp', function () {
           expect(err.message).to.eql('err');
           done();
         });
+      });
+
+      it('should not choke if supportedAPIs is missing', () => {
+        [gppData, pingData].forEach(ob => { delete ob.supportedAPIs; })
+        mockCmpCommands({
+          getGPPData: () => gppData
+        });
+        return gppClient.getGPPData(pingData).then(res => {
+          expect(res.gppString).to.eql(gppData.gppString);
+          expect(res.parsedSections).to.eql({});
+        })
       })
 
       describe('section data', () => {

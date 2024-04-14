@@ -1,13 +1,14 @@
-import {convertCamelToUnderscore, convertTypes, getBidRequest, logError} from '../src/utils.js';
+import {getBidRequest, logError} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import {auctionManager} from '../src/auctionManager.js';
 import {find, includes} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
-import {getANKeywordParam, transformBidderParamKeywords} from '../libraries/appnexusKeywords/anKeywords.js';
+import {getANKeywordParam, transformBidderParamKeywords} from '../libraries/appnexusUtils/anKeywords.js';
+import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
+import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
 const BIDDER_CODE = 'craft';
 const URL_BASE = 'https://gacraft.jp/prebid-v3';
@@ -184,12 +185,9 @@ function bidToTag(bid) {
   if (keywords.length) {
     tag.keywords = keywords;
   }
-  // TODO: why does this need to iterate through every ad unit?
-  let adUnit = find(auctionManager.getAdUnits(), au => bid.transactionId === au.transactionId);
-  if (adUnit && adUnit.mediaTypes && adUnit.mediaTypes.banner) {
+  if (bid.mediaTypes?.banner) {
     tag.ad_types.push(BANNER);
   }
-
   if (tag.ad_types.length === 0) {
     delete tag.ad_types;
   }
