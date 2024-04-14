@@ -24,7 +24,6 @@ The adapter supports Video(instream) & Banner.
 | `floorPrice` | optional | Number |  Minimum price in USD. Misuse of this parameter can impact revenue | 2.00
 | `placementId` | optional | String |  A unique placement identifier  | "12345678"
 | `testMode` | optional | Boolean |  This activates the test mode  | false
-| `currency` | optional | String | 3 letters currency | "EUR"
 
 # Test Parameters
 ```javascript
