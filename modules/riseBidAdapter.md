@@ -26,8 +26,6 @@ The adapter supports Video(instream).
 | `testMode` | optional | Boolean |  This activates the test mode  | false
 | `rtbDomain` | optional | String |  Sets the seller end point  | "www.test.com"
 | `is_wrapper` | private | Boolean |  Please don't use unless your account manager asked you to  | false
-| `currency` | optional | String | 3 letters currency | "EUR"
-
 
 # Test Parameters
 ```javascript
