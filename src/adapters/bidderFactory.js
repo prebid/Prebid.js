@@ -549,6 +549,7 @@ export const registerSyncInner = hook('async', function(spec, responses, gdprCon
 }, 'registerSyncs')
 
 export const addComponentAuction = hook('sync', (request, fledgeAuctionConfig) => {
+  events.emit(CONSTANTS.EVENTS.ADD_COMPONENT_AUCTION, request, fledgeAuctionConfig);
 }, 'addComponentAuction');
 
 // check that the bid has a width and height set

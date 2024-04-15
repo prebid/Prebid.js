@@ -1588,4 +1588,29 @@ describe('bidderFactory', () => {
       });
     })
   });
+
+  describe('addComponentAuction', () => {
+    let requestStub
+    let fledgeAuctionConfigStub
+    let eventEmitterSpy
+
+    beforeEach(() => {
+      eventEmitterSpy = sinon.spy(events, 'emit');
+      requestStub = sinon.stub();
+      fledgeAuctionConfigStub = sinon.stub();
+    })
+
+    afterEach(() => {
+      eventEmitterSpy.restore();
+    })
+
+    it(`should emit an addComponentAuction event`, () => {
+      addComponentAuction(requestStub, fledgeAuctionConfigStub);
+      const eventCall = eventEmitterSpy.withArgs(CONSTANTS.EVENTS.ADD_COMPONENT_AUCTION).getCalls()[0];
+      const [event, request, fledgeAuctionConfig] = eventCall.args;
+      assert.equal(event, CONSTANTS.EVENTS.ADD_COMPONENT_AUCTION)
+      assert.equal(request, requestStub);
+      assert.equal(fledgeAuctionConfig, fledgeAuctionConfigStub);
+    })
+  });
 })
