@@ -68,7 +68,7 @@ prebidTestUtils.loadBids = function (targetingArr, brandCatExclusion) {
 prebidTestUtils.setMockCategories = function () {
   const key = 'iabToFwMappingkey';
   const keyPub = 'iabToFwMappingkeyPub';
-  const keyBidder = 'appnexus';
+  const keyBidder = 'improvedigital';
   const currTime = new Date().getTime();
   const fwData = {
     "mapping": {
