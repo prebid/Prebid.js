@@ -359,56 +359,57 @@ function getUserIds(tdidAdapter, usp, gdpr, eids, gpp) {
     crbIDs: crb.syncIds || {}
   };
 
-  // Pull Trade Desk ID from adapter
-  if (tdidAdapter) {
+  // Pull Trade Desk ID
+  if (!tdidAdapter && crb.tdID) {
+    userIds.tdID = crb.tdID;
+  } else if (tdidAdapter) {
     userIds.tdID = tdidAdapter;
   }
 
-  // Pull Trade Desk ID from our storage
-  if (!tdidAdapter && crb.tdID) {
-    userIds.tdID = crb.tdID;
-  }
-
+  // USP
   if (usp) {
     userIds.usp = usp;
   }
 
-  try {
-    if (gdpr) {
-      userIds['gdpr'] = {
-        consent: gdpr.consentString || '',
-        applies: !!gdpr.gdprApplies,
-      }
-    }
-  } catch (e) {
+  // GDPR
+  if (gdpr) {
+    userIds.gdpr = {
+      consent: gdpr.consentString || '',
+      applies: !!gdpr.gdprApplies,
+    };
   }
 
+  // Kargo ID
   if (crb.lexId != null) {
     userIds.kargoID = crb.lexId;
   }
 
+  // Client ID
   if (crb.clientId != null) {
     userIds.clientID = crb.clientId;
   }
 
+  // Opt Out
   if (crb.optOut != null) {
     userIds.optOut = crb.optOut;
   }
 
+  // User ID Sub-Modules (userIdAsEids)
   if (eids != null) {
     userIds.sharedIDEids = eids;
   }
 
+  // GPP
   if (gpp) {
-    const parsedGPP = {}
-    if (gpp && gpp.consentString) {
-      parsedGPP.gppString = gpp.consentString
+    const parsedGPP = {};
+    if (gpp.consentString) {
+      parsedGPP.gppString = gpp.consentString;
     }
-    if (gpp && gpp.applicableSections) {
-      parsedGPP.applicableSections = gpp.applicableSections
+    if (gpp.applicableSections) {
+      parsedGPP.applicableSections = gpp.applicableSections;
     }
     if (!isEmpty(parsedGPP)) {
-      userIds.gpp = parsedGPP
+      userIds.gpp = parsedGPP;
     }
   }
 

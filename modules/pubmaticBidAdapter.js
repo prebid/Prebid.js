@@ -5,7 +5,6 @@ import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { bidderSettings } from '../src/bidderSettings.js';
 import CONSTANTS from '../src/constants.json';
-import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -1448,20 +1447,6 @@ export const spec = {
         url: USER_SYNC_URL_IMAGE + syncurl
       }];
     }
-  },
-
-  /**
-   * Covert bid param types for S2S
-   * @param {Object} params bid params
-   * @param {Boolean} isOpenRtb boolean to check openrtb2 protocol
-   * @return {Object} params bid params
-   */
-
-  transformBidParams: function (params, isOpenRtb, adUnit, bidRequests) {
-    return convertTypes({
-      'publisherId': 'string',
-      'adSlot': 'string'
-    }, params);
   }
 };
 
