@@ -5,7 +5,7 @@ import {expect} from 'chai';
 import {userSync} from 'src/userSync.js';
 import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 import * as events from 'src/events.js';
 import {hook} from '../../../../src/hook.js';
 import {auctionManager} from '../../../../src/auctionManager.js';
@@ -552,7 +552,7 @@ describe('bidderFactory', () => {
 
         expect(ajaxStub.calledTwice).to.equal(true);
         expect(eventEmitterSpy.getCalls()
-          .filter(call => call.args[0] === CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP)
+          .filter(call => call.args[0] === EVENTS.BEFORE_BIDDER_HTTP)
         ).to.length(2);
 
         eventEmitterSpy.restore();
@@ -863,7 +863,7 @@ describe('bidderFactory', () => {
         expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
         expect(callBidderErrorStub.firstCall.args[1]).to.equal(xhrErrorMock);
         expect(callBidderErrorStub.firstCall.args[2]).to.equal(MOCK_BIDS_REQUEST);
-        sinon.assert.calledWith(eventEmitterStub, CONSTANTS.EVENTS.BIDDER_ERROR, {
+        sinon.assert.calledWith(eventEmitterStub, EVENTS.BIDDER_ERROR, {
           error: xhrErrorMock,
           bidderRequest: MOCK_BIDS_REQUEST
         });
@@ -889,7 +889,7 @@ describe('bidderFactory', () => {
         expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
         expect(callBidderErrorStub.firstCall.args[1]).to.equal(xhrErrorMock);
         expect(callBidderErrorStub.firstCall.args[2]).to.equal(MOCK_BIDS_REQUEST);
-        sinon.assert.calledWith(eventEmitterStub, CONSTANTS.EVENTS.BIDDER_ERROR, {
+        sinon.assert.calledWith(eventEmitterStub, EVENTS.BIDDER_ERROR, {
           error: xhrErrorMock,
           bidderRequest: MOCK_BIDS_REQUEST
         });
@@ -915,7 +915,7 @@ describe('bidderFactory', () => {
         expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
         expect(callBidderErrorStub.firstCall.args[1]).to.equal(xhrErrorMock);
         expect(callBidderErrorStub.firstCall.args[2]).to.equal(MOCK_BIDS_REQUEST);
-        sinon.assert.calledWith(eventEmitterStub, CONSTANTS.EVENTS.BIDDER_ERROR, {
+        sinon.assert.calledWith(eventEmitterStub, EVENTS.BIDDER_ERROR, {
           error: xhrErrorMock,
           bidderRequest: MOCK_BIDS_REQUEST
         });
@@ -941,7 +941,7 @@ describe('bidderFactory', () => {
         expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
         expect(callBidderErrorStub.firstCall.args[1]).to.equal(xhrErrorMock);
         expect(callBidderErrorStub.firstCall.args[2]).to.equal(MOCK_BIDS_REQUEST);
-        sinon.assert.calledWith(eventEmitterStub, CONSTANTS.EVENTS.BIDDER_ERROR, {
+        sinon.assert.calledWith(eventEmitterStub, EVENTS.BIDDER_ERROR, {
           error: xhrErrorMock,
           bidderRequest: MOCK_BIDS_REQUEST
         });

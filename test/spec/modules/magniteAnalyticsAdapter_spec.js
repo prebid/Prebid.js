@@ -6,7 +6,7 @@ import magniteAdapter, {
   detectBrowserFromUa,
   callPrebidCacheHook
 } from '../../../modules/magniteAnalyticsAdapter.js';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import * as mockGpt from '../integration/faker/googletag.js';
@@ -17,19 +17,17 @@ let events = require('src/events.js');
 let utils = require('src/utils.js');
 
 const {
-  EVENTS: {
-    AUCTION_INIT,
-    AUCTION_END,
-    BID_REQUESTED,
-    BID_RESPONSE,
-    BIDDER_DONE,
-    BID_WON,
-    BID_TIMEOUT,
-    BILLABLE_EVENT,
-    SEAT_NON_BID,
-    BID_REJECTED
-  }
-} = CONSTANTS;
+  AUCTION_INIT,
+  AUCTION_END,
+  BID_REQUESTED,
+  BID_RESPONSE,
+  BIDDER_DONE,
+  BID_WON,
+  BID_TIMEOUT,
+  BILLABLE_EVENT,
+  SEAT_NON_BID,
+  BID_REJECTED
+} = EVENTS;
 
 const STUBBED_UUID = '12345678-1234-1234-1234-123456789abc';
 

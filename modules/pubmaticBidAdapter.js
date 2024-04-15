@@ -4,8 +4,7 @@ import { BANNER, VIDEO, NATIVE, ADPOD } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { bidderSettings } from '../src/bidderSettings.js';
-import CONSTANTS from '../src/constants.json';
-import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
+import { NATIVE_IMAGE_TYPES, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS, NATIVE_ASSET_TYPES } from '../src/constants.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -332,7 +331,6 @@ const PREBID_NATIVE_DATA_KEYS_TO_ORTB = {
   'displayurl': 'displayurl'
 };
 
-const { NATIVE_IMAGE_TYPES, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS, NATIVE_ASSET_TYPES } = CONSTANTS;
 const PREBID_NATIVE_DATA_KEY_VALUES = Object.values(PREBID_NATIVE_DATA_KEYS_TO_ORTB);
 
 // TODO remove this function when the support for 1.1 is removed
@@ -1448,20 +1446,6 @@ export const spec = {
         url: USER_SYNC_URL_IMAGE + syncurl
       }];
     }
-  },
-
-  /**
-   * Covert bid param types for S2S
-   * @param {Object} params bid params
-   * @param {Boolean} isOpenRtb boolean to check openrtb2 protocol
-   * @return {Object} params bid params
-   */
-
-  transformBidParams: function (params, isOpenRtb, adUnit, bidRequests) {
-    return convertTypes({
-      'publisherId': 'string',
-      'adSlot': 'string'
-    }, params);
   }
 };
 

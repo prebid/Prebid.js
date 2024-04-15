@@ -1,7 +1,7 @@
 import analyticsAdapter, { ExpiringQueue, getUmtSource, storage } from 'modules/staqAnalyticsAdapter.js';
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 
 const events = require('../../../src/events');
 
@@ -216,14 +216,14 @@ describe('', function() {
     });
 
     it('should handle auction init event', function() {
-      events.emit(CONSTANTS.EVENTS.AUCTION_INIT, { config: {}, timeout: 3000 });
+      events.emit(EVENTS.AUCTION_INIT, { config: {}, timeout: 3000 });
       const ev = analyticsAdapter.context.queue.peekAll();
       expect(ev).to.have.length(1);
       expect(ev[0]).to.be.eql({ event: 'auctionInit', auctionId: undefined });
     });
 
     it('should handle bid request event', function() {
-      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST);
+      events.emit(EVENTS.BID_REQUESTED, REQUEST);
       const ev = analyticsAdapter.context.queue.peekAll();
       expect(ev).to.have.length(2);
       expect(ev[1]).to.be.eql({
@@ -236,7 +236,7 @@ describe('', function() {
     });
 
     it('should handle bid response event', function() {
-      events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE);
+      events.emit(EVENTS.BID_RESPONSE, RESPONSE);
       const ev = analyticsAdapter.context.queue.peekAll();
       expect(ev).to.have.length(3);
       expect(ev[2]).to.be.eql({
@@ -255,7 +255,7 @@ describe('', function() {
     });
 
     it('should handle timeouts properly', function() {
-      events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, bidTimeoutArgsV1);
+      events.emit(EVENTS.BID_TIMEOUT, bidTimeoutArgsV1);
 
       const ev = analyticsAdapter.context.queue.peekAll();
       expect(ev).to.have.length(5); // remember, we added 2 timeout events
@@ -268,7 +268,7 @@ describe('', function() {
     });
 
     it('should handle winning bid', function() {
-      events.emit(CONSTANTS.EVENTS.BID_WON, RESPONSE);
+      events.emit(EVENTS.BID_WON, RESPONSE);
       const ev = analyticsAdapter.context.queue.peekAll();
       expect(ev).to.have.length(6);
       expect(ev[5]).to.be.eql({
@@ -287,7 +287,7 @@ describe('', function() {
 
     it('should handle auction end event', function() {
       timer.tick(447);
-      events.emit(CONSTANTS.EVENTS.AUCTION_END, RESPONSE);
+      events.emit(EVENTS.AUCTION_END, RESPONSE);
       let ev = analyticsAdapter.context.queue.peekAll();
       expect(ev).to.have.length(0);
       expect(ajaxStub.calledOnce).to.be.equal(true);

@@ -3,7 +3,6 @@ import { expect } from 'chai';
 import optimonAnalyticsAdapter from '../../../modules/optimonAnalyticsAdapter.js';
 import adapterManager from 'src/adapterManager';
 import * as events from 'src/events';
-import constants from 'src/constants.json'
 import {expectEvents} from '../../helpers/analytics.js';
 
 const AD_UNIT_CODE = 'demo-adunit-1';

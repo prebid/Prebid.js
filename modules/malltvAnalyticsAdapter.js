@@ -1,6 +1,6 @@
 import {ajax} from '../src/ajax.js'
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js'
-import CONSTANTS from '../src/constants.json'
+import { EVENTS } from '../src/constants.js'
 import adapterManager from '../src/adapterManager.js'
 import {getGlobal} from '../src/prebidGlobal.js'
 import {logInfo, logError, deepClone} from '../src/utils.js'
@@ -10,11 +10,9 @@ export const ANALYTICS_VERSION = '1.0.0'
 export const DEFAULT_SERVER = 'https://central.mall.tv/analytics'
 
 const {
-  EVENTS: {
-    AUCTION_END,
-    BID_TIMEOUT
-  }
-} = CONSTANTS
+  AUCTION_END,
+  BID_TIMEOUT
+} = EVENTS
 
 export const BIDDER_STATUS = {
   BID: 1,

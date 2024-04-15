@@ -9,7 +9,7 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {AUCTION_COMPLETED} from '../src/auction.js';
-import CONSTANTS from '../src/constants.json';
+import {EVENTS} from '../src/constants.js';
 import {find} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {
@@ -220,9 +220,9 @@ analyticsAdapter.url = function(url, args, bid) {
   return url + a2qs(args);
 }
 
-analyticsAdapter[`handle_${CONSTANTS.EVENTS.AUCTION_END}`] = function(auctionDetails) {
+analyticsAdapter[`handle_${EVENTS.AUCTION_END}`] = function(auctionDetails) {
   if (!(auctionDetails.auctionStatus == AUCTION_COMPLETED && auctionDetails.bidsReceived.length > 0)) return;
-  analyticsAdapter[`handle_${CONSTANTS.EVENTS.AUCTION_END}`] = NOOP;
+  analyticsAdapter[`handle_${EVENTS.AUCTION_END}`] = NOOP;
 
   logMessage(MODULE, 'preloading verification JS');
 
@@ -235,7 +235,7 @@ analyticsAdapter[`handle_${CONSTANTS.EVENTS.AUCTION_END}`] = function(auctionDet
   insertElement(link);
 }
 
-analyticsAdapter[`handle_${CONSTANTS.EVENTS.BID_WON}`] = function(bid) {
+analyticsAdapter[`handle_${EVENTS.BID_WON}`] = function(bid) {
   if (deepAccess(bid, 'ext.adloox.video.adserver')) {
     logMessage(MODULE, `measuring '${bid.mediaType}' ad unit code '${bid.adUnitCode}' via Ad Server module`);
     return;
