@@ -10,6 +10,10 @@ import {getStorageManager} from '../src/storageManager.js'
 import { logInfo } from '../src/utils.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ */
+
 const MODULE_NAME = 'pairId';
 const PAIR_ID_KEY = 'pairId';
 const DEFAULT_LIVERAMP_PAIR_ID_KEY = '_lr_pairId';

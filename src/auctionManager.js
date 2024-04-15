@@ -60,7 +60,9 @@ export function newAuctionManager() {
     }
   })
 
-  const auctionManager = {};
+  const auctionManager = {
+    onExpiry: _auctions.onExpiry
+  };
 
   function getAuction(auctionId) {
     for (const auction of _auctions) {

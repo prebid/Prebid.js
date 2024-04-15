@@ -11,6 +11,10 @@ import {loadExternalScript} from '../src/adloader.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 const MODULE_NAME = 'brandmetrics'
 const MODULE_CODE = MODULE_NAME
 const RECEIVED_EVENTS = []
@@ -74,6 +78,7 @@ function checkConsent (userConsent) {
 /**
  * Add event- listeners to hook in to brandmetrics events
  * @param {Object} reqBidsConfigObj
+ * @param {Object} moduleConfig
  * @param {function} callback
  */
 function processBrandmetricsEvents (reqBidsConfigObj, moduleConfig, callback) {
@@ -110,6 +115,7 @@ function processBrandmetricsEvents (reqBidsConfigObj, moduleConfig, callback) {
 /**
  * Sets bid targeting of specific bidders
  * @param {Object} reqBidsConfigObj
+ * @param {Object} moduleConfig
  * @param {string} key Targeting key
  * @param {string} val Targeting value
  */

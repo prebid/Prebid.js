@@ -11,6 +11,10 @@ import {submodule} from '../src/hook.js';
 import {mergeDeep, isPlainObject, logMessage, logError} from '../src/utils.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'blueconic';
 
@@ -33,9 +37,8 @@ function parseJson(data) {
 
 /**
  * Add real-time data & merge segments.
- * @param {Object} bidConfig
+ * @param {Object} ortb2
  * @param {Object} rtd
- * @param {Object} rtdConfig
  */
 export function addRealTimeData(ortb2, rtd) {
   if (isPlainObject(rtd.ortb2)) {
@@ -78,7 +81,7 @@ export function getRealTimeData(reqBidsConfigObj, onDone, rtdConfig, userConsent
 /**
  * Module init
  * @param {Object} provider
- * @param {Objkect} userConsent
+ * @param {Object} userConsent
  * @return {boolean}
  */
 function init(provider, userConsent) {

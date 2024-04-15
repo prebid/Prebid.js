@@ -1,6 +1,7 @@
 /**
  * This module adds Real time data support to prebid.js
  * @module modules/realTimeData
+ * @typedef {import('../../modules/rtdModule/index.js').SubmoduleConfig} SubmoduleConfig
  */
 
 /**
@@ -30,7 +31,7 @@
  */
 
 /**
- * @function?
+ * @function
  * @summary return real time data
  * @name RtdSubmodule#getTargetingData
  * @param {string[]} adUnitsCodes
@@ -40,7 +41,7 @@
  */
 
 /**
- * @function?
+ * @function
  * @summary modify bid request data
  * @name RtdSubmodule#getBidRequestData
  * @param {Object} reqBidsConfigObj
@@ -73,7 +74,7 @@
  */
 
 /**
- * @function?
+ * @function
  * @summary on auction init event
  * @name RtdSubmodule#onAuctionInitEvent
  * @param {Object} data
@@ -82,7 +83,7 @@
  */
 
 /**
- * @function?
+ * @function
  * @summary on auction end event
  * @name RtdSubmodule#onAuctionEndEvent
  * @param {Object} data
@@ -91,7 +92,7 @@
  */
 
 /**
- * @function?
+ * @function
  * @summary on bid response event
  * @name RtdSubmodule#onBidResponseEvent
  * @param {Object} data
@@ -100,7 +101,7 @@
  */
 
 /**
- * @function?
+ * @function
  * @summary on bid requested event
  * @name RtdSubmodule#onBidRequestEvent
  * @param {Object} data
@@ -109,7 +110,7 @@
  */
 
 /**
- * @function?
+ * @function
  * @summary on data deletion request
  * @name RtdSubmodule#onDataDeletionRequest
  * @param {SubmoduleConfig} config

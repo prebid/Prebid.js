@@ -13,13 +13,19 @@ import { config } from '../src/config.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
+
 const LOG_PREFIX = '[hadronIdSystem]';
 const HADRONID_LOCAL_NAME = 'auHadronId';
 const MODULE_NAME = 'hadronId';
 const AU_GVLID = 561;
 const DEFAULT_HADRON_URL_ENDPOINT = 'https://id.hadron.ad.gt/api/v1/pbhid';
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: 'hadron'});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 /**
  * Param or default.

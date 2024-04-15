@@ -20,6 +20,10 @@ import {
 import {submodule} from '../src/hook.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 export const imUidLocalName = '__im_uid';
 export const imVidCookieName = '_im_vid';
 export const imRtdLocalName = '__im_sids';
