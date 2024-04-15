@@ -41,7 +41,7 @@
           },
           bids: [
             {
-              bidder: 'improvedigital',
+              bidder: 'appnexus',
               params: {
                 placementId: 12883451
               }
@@ -50,7 +50,7 @@
         }];
 
         pbjs.bidderSettings = {
-          improvedigital: {
+          appnexus: {
             bidCpmAdjustment: function () {
               return 10;
             }
@@ -61,8 +61,8 @@
           s2sConfig : {
             accountId : '1',
             enabled : true, //default value set to false
-            defaultVendor: 'improvedigitalpsp',
-            bidders : ['improvedigital'],
+            defaultVendor: 'appnexuspsp',
+            bidders : ['appnexus'],
             timeout : 1000, //default value is 1000
             adapter : 'prebidServer', //if we have any other s2s adapter, default value is s2s
           },
