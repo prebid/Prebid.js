@@ -34,7 +34,7 @@ import {adunitCounter} from './adUnits.js';
 import {createBid} from './bidfactory.js';
 import {storageCallbacks} from './storageManager.js';
 import {default as adapterManager, getS2SBidderSet} from './adapterManager.js';
-import CONSTANTS from './constants.json';
+import { BID_STATUS, EVENTS, NATIVE_KEYS } from './constants.js';
 import * as events from './events.js';
 import {newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {defer, GreedyPromise} from './utils/promise.js';
@@ -48,7 +48,7 @@ const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
-const { ADD_AD_UNITS, REQUEST_BIDS, SET_TARGETING } = CONSTANTS.EVENTS;
+const { ADD_AD_UNITS, REQUEST_BIDS, SET_TARGETING } = EVENTS;
 
 const eventValidators = {
   bidWon: checkDefinedPlacement
@@ -143,7 +143,7 @@ function validateNativeMediaType(adUnit) {
   const native = validatedAdUnit.mediaTypes.native;
   // if native assets are specified in OpenRTB format, remove legacy assets and print a warn.
   if (native.ortb) {
-    const legacyNativeKeys = Object.keys(CONSTANTS.NATIVE_KEYS).filter(key => CONSTANTS.NATIVE_KEYS[key].includes('hb_native_'));
+    const legacyNativeKeys = Object.keys(NATIVE_KEYS).filter(key => NATIVE_KEYS[key].includes('hb_native_'));
     const nativeKeys = Object.keys(native);
     const intersection = nativeKeys.filter(nativeKey => legacyNativeKeys.includes(nativeKey));
     if (intersection.length > 0) {
@@ -173,7 +173,7 @@ function validateAdUnitPos(adUnit, mediaType) {
     let warning = `Value of property 'pos' on ad unit ${adUnit.code} should be of type: Number`;
 
     logWarn(warning);
-    events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'WARNING', arguments: warning});
+    events.emit(EVENTS.AUCTION_DEBUG, { type: 'WARNING', arguments: warning });
     delete adUnit.mediaTypes[mediaType].pos;
   }
 
@@ -416,7 +416,7 @@ pbjsInstance.setTargetingForGPTAsync = function (adUnit, customSlotMatching) {
   Object.keys(targetingSet).forEach((adUnitCode) => {
     Object.keys(targetingSet[adUnitCode]).forEach((targetingKey) => {
       if (targetingKey === 'hb_adid') {
-        auctionManager.setStatusForBids(targetingSet[adUnitCode][targetingKey], CONSTANTS.BID_STATUS.BID_TARGETING_SET);
+        auctionManager.setStatusForBids(targetingSet[adUnitCode][targetingKey], BID_STATUS.BID_TARGETING_SET);
       }
     });
   });
@@ -857,7 +857,7 @@ pbjsInstance.getAllWinningBids = function () {
  */
 pbjsInstance.getAllPrebidWinningBids = function () {
   return auctionManager.getBidsReceived()
-    .filter(bid => bid.status === CONSTANTS.BID_STATUS.BID_TARGETING_SET);
+    .filter(bid => bid.status === BID_STATUS.BID_TARGETING_SET);
 };
 
 /**

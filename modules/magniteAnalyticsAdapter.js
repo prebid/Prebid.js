@@ -19,7 +19,7 @@ import {
 } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS, REJECTION_REASON } from '../src/constants.js';
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
@@ -50,19 +50,17 @@ let cookieless;
 
 let prebidGlobal = getGlobal();
 const {
-  EVENTS: {
-    AUCTION_INIT,
-    AUCTION_END,
-    BID_REQUESTED,
-    BID_RESPONSE,
-    BIDDER_DONE,
-    BID_TIMEOUT,
-    BID_WON,
-    BILLABLE_EVENT,
-    SEAT_NON_BID,
-    BID_REJECTED
-  }
-} = CONSTANTS;
+  AUCTION_INIT,
+  AUCTION_END,
+  BID_REQUESTED,
+  BID_RESPONSE,
+  BIDDER_DONE,
+  BID_TIMEOUT,
+  BID_WON,
+  BILLABLE_EVENT,
+  SEAT_NON_BID,
+  BID_REJECTED
+} = EVENTS;
 
 // The saved state of rubicon specific setConfig controls
 export let rubiConf;
@@ -921,7 +919,7 @@ magniteAdapter.track = ({ eventType, args }) => {
       handleBidResponse(args, 'success');
       break;
     case BID_REJECTED:
-      const bidStatus = args.rejectionReason === CONSTANTS.REJECTION_REASON.FLOOR_NOT_MET ? BID_REJECTED_IPF : 'rejected';
+      const bidStatus = args.rejectionReason === REJECTION_REASON.FLOOR_NOT_MET ? BID_REJECTED_IPF : 'rejected';
       handleBidResponse(args, bidStatus);
       break;
     case SEAT_NON_BID:

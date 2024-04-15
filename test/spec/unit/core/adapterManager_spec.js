@@ -12,7 +12,7 @@ import {
   getServerTestingsAds,
   getBidRequests
 } from 'test/fixtures/fixtures.js';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS, S2S } from 'src/constants.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { registerBidder } from 'src/adapters/bidderFactory.js';
@@ -28,7 +28,7 @@ var events = require('../../../../src/events');
 
 const CONFIG = {
   enabled: true,
-  endpoint: CONSTANTS.S2S.DEFAULT_ENDPOINT,
+  endpoint: S2S.DEFAULT_ENDPOINT,
   timeout: 1000,
   maxBids: 1,
   adapter: 'prebidServer',
@@ -172,7 +172,7 @@ describe('adapterManager tests', function () {
       // function to count BID_REQUESTED events
       let cnt = 0;
       let count = () => cnt++;
-      events.on(CONSTANTS.EVENTS.BID_REQUESTED, count);
+      events.on(EVENTS.BID_REQUESTED, count);
       let bidRequests = [{
         'bidderCode': 'appnexus',
         'auctionId': '1863e370099523',
@@ -207,7 +207,7 @@ describe('adapterManager tests', function () {
       adapterManager.callBids(adUnits, bidRequests, () => {}, () => {});
       expect(cnt).to.equal(1);
       sinon.assert.calledOnce(appnexusAdapterMock.callBids);
-      events.off(CONSTANTS.EVENTS.BID_REQUESTED, count);
+      events.off(EVENTS.BID_REQUESTED, count);
     });
 
     it('should give bidders access to bidder-specific config', function(done) {
@@ -390,7 +390,7 @@ describe('adapterManager tests', function () {
       });
 
       it('should NOT call onBidWon when the bid is S2S', () => {
-        bids[0].src = CONSTANTS.S2S.SRC
+        bids[0].src = S2S.SRC
         adapterManager.callBidWonBidder(bids[0].bidder, bids[0], adUnits);
         sinon.assert.notCalled(criteoSpec.onBidWon);
       })
@@ -407,7 +407,7 @@ describe('adapterManager tests', function () {
       });
 
       it('should NOT call onSetTargeting when bid is S2S', () => {
-        bids[0].src = CONSTANTS.S2S.SRC;
+        bids[0].src = S2S.SRC;
         adapterManager.callSetTargetingBidder(bids[0].bidder, bids[0], adUnits);
         sinon.assert.notCalled(criteoSpec.onSetTargeting);
       })
@@ -421,7 +421,7 @@ describe('adapterManager tests', function () {
         sinon.assert.called(criteoSpec.onBidViewable);
       });
       it('should NOT call onBidViewable when bid is S2S', () => {
-        bids[0].src = CONSTANTS.S2S.SRC;
+        bids[0].src = S2S.SRC;
         adapterManager.callBidViewableBidder(bids[0].bidder, bids[0]);
         sinon.assert.notCalled(criteoSpec.onBidViewable);
       })
@@ -649,11 +649,11 @@ describe('adapterManager tests', function () {
       beforeEach(function () {
         prebidServerAdapterMock.callBids.reset();
         cnt = 0;
-        events.on(CONSTANTS.EVENTS.BID_REQUESTED, count);
+        events.on(EVENTS.BID_REQUESTED, count);
       });
 
       afterEach(function () {
-        events.off(CONSTANTS.EVENTS.BID_REQUESTED, count);
+        events.off(EVENTS.BID_REQUESTED, count);
       });
 
       it('should fire for s2s requests', function () {
@@ -1037,11 +1037,11 @@ describe('adapterManager tests', function () {
       beforeEach(function () {
         prebidServerAdapterMock.callBids.reset();
         cnt = 0;
-        events.on(CONSTANTS.EVENTS.BID_REQUESTED, count);
+        events.on(EVENTS.BID_REQUESTED, count);
       });
 
       afterEach(function () {
-        events.off(CONSTANTS.EVENTS.BID_REQUESTED, count);
+        events.off(EVENTS.BID_REQUESTED, count);
       });
 
       it('should fire for s2s requests', function () {
@@ -1691,7 +1691,7 @@ describe('adapterManager tests', function () {
           })
         }
 
-        events.on(CONSTANTS.EVENTS.BEFORE_REQUEST_BIDS, beforeReqBids);
+        events.on(EVENTS.BEFORE_REQUEST_BIDS, beforeReqBids);
         adapterManager.makeBidRequests(
           adUnits,
           Date.now(),
@@ -1700,7 +1700,7 @@ describe('adapterManager tests', function () {
           },
           []
         );
-        events.off(CONSTANTS.EVENTS.BEFORE_REQUEST_BIDS, beforeReqBids);
+        events.off(EVENTS.BEFORE_REQUEST_BIDS, beforeReqBids);
         expect(adUnits.map((u) => u.nativeParams).some(i => i == null)).to.be.false;
       });
     }
@@ -2075,11 +2075,11 @@ describe('adapterManager tests', function () {
         const ortb2Fragments = {};
         const req = {
           bidderCode: 'appnexus',
-          src: CONSTANTS.S2S.SRC,
+          src: S2S.SRC,
           adUnitsS2SCopy: adUnits,
           bids: [{
             bidder: 'appnexus',
-            src: CONSTANTS.S2S.SRC
+            src: S2S.SRC
           }]
         };
         adapterManager.callBids(adUnits, [req], sinon.stub(), sinon.stub(), {request: sinon.stub(), done: sinon.stub()}, 1000, sinon.stub(), ortb2Fragments);

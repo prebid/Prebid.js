@@ -255,8 +255,8 @@ export const spec = {
           if (slot.ext?.meta?.networkName) {
             bid.meta = Object.assign({}, bid.meta, { networkName: slot.ext.meta.networkName })
           }
-          if (slot.ext?.dsa?.adrender) {
-            bid.meta = Object.assign({}, bid.meta, { adrender: slot.ext.dsa.adrender })
+          if (slot.ext?.dsa) {
+            bid.meta = Object.assign({}, bid.meta, { dsa: slot.ext.dsa })
           }
           if (slot.native) {
             if (bidRequest.params.nativeCallback) {
@@ -473,6 +473,7 @@ function checkNativeSendId(bidRequest) {
  */
 function buildCdbRequest(context, bidRequests, bidderRequest) {
   let networkId;
+  let pubid;
   let schain;
   let userIdAsEids;
   let regs = Object.assign({}, {
@@ -490,6 +491,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
         userIdAsEids = bidRequest.userIdAsEids;
       }
       networkId = bidRequest.params.networkId || networkId;
+      pubid = bidRequest.params.pubid || pubid;
       schain = bidRequest.schain || schain;
       const slot = {
         slotid: bidRequest.bidId,
@@ -513,6 +515,10 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       if (bidRequest.nativeOrtbRequest?.assets) {
         slot.ext = Object.assign({}, slot.ext, { assets: bidRequest.nativeOrtbRequest.assets });
       }
+      if (bidRequest.params.uid) {
+        slot.ext = Object.assign({}, slot.ext, { bidder: { uid: bidRequest.params.uid } });
+      }
+
       if (bidRequest.params.publisherSubId) {
         slot.publishersubid = bidRequest.params.publisherSubId;
       }
@@ -580,6 +586,9 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   };
   if (networkId) {
     request.publisher.networkid = networkId;
+  }
+  if (pubid) {
+    request.publisher.id = pubid;
   }
 
   request.source = {
