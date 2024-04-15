@@ -1430,7 +1430,9 @@ describe('TheMediaGrid Adapter', function () {
           'netRevenue': true,
           'ttl': 360,
           'meta': {
-            adrender: 1,
+            dsa: {
+              adrender: 1
+            },
             advertiserDomains: []
           },
         },

@@ -1949,6 +1949,53 @@ describe('The Criteo bidding adapter', function () {
       expect(request.data.slots[0].ext).to.not.have.property('ae');
     });
 
+    it('should properly transmit the pubid and slot uid if available', function () {
+      const bidderRequest = {};
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          ortb2Imp: {
+            ext: {
+              tid: 'transaction-123',
+            },
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            zoneId: 123,
+          },
+        },
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-234',
+          ortb2Imp: {
+            ext: {
+              tid: 'transaction-234',
+            },
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [728, 90]]
+            }
+          },
+          params: {
+            networkId: 456,
+            pubid: 'pub-888',
+            uid: 888
+          },
+        },
+      ];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const ortbRequest = request.data;
+      expect(ortbRequest.publisher.id).to.equal('pub-888');
+      expect(request.data.slots[0].ext.bidder).to.be.undefined;
+      expect(request.data.slots[1].ext.bidder.uid).to.equal(888);
+    });
+
     it('should properly transmit device.ext.cdep if available', function () {
       const bidderRequest = {
         ortb2: {

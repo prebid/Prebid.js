@@ -182,7 +182,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const queryParamsAndValues = [];
     queryParamsAndValues.push('tzo=' + new Date().getTimezoneOffset())
-    queryParamsAndValues.push('format=json')
+    queryParamsAndValues.push('format=prebid')
     const gdprApplies = deepAccess(bidderRequest, 'gdprConsent.gdprApplies');
     const consentString = deepAccess(bidderRequest, 'gdprConsent.consentString');
     if (gdprApplies !== undefined) {
