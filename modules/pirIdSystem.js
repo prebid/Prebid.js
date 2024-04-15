@@ -8,6 +8,12 @@
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { submodule } from '../src/hook.js';
+import {domainOverrideToRootDomain} from '../libraries/domainOverrideToRootDomain/index.js';
+
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
 
 const MODULE_NAME = 'pirId';
 const ID_TOKEN = 'WPxid';
@@ -37,30 +43,20 @@ export const pirIdSubmodule = {
   /**
    * performs action to obtain id and return a value
    * @function
-   * @returns {Id: string|undefined}
-   */
+   * @returns {(IdResponse|undefined)}
+  */
   getId() {
     const pirIdToken = readId();
 
     return pirIdToken ? { id: pirIdToken } : undefined;
   },
+  domainOverride: domainOverrideToRootDomain(storage, MODULE_NAME),
   eids: {
     'pirId': {
       source: 'pir.wp.pl',
       atype: 1
     },
   },
-
-  /**
-   * Extracts the top-level domain from the current window's location.
-   *
-   * @returns {string} The top-level domain of the current window's location.
-   */
-  domainOverride() {
-    const topDomain = window.location.hostname.split('.').slice(-2).join('.');
-
-    return topDomain;
-  }
 };
 
 submodule('userId', pirIdSubmodule);

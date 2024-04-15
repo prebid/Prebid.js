@@ -47,14 +47,6 @@ describe('pirIdSystem', () => {
     });
   });
 
-  describe('domainOverride', () => {
-    it('should extract top-level domain from current windows location', () => {
-      const result = pirIdSubmodule.domainOverride();
-
-      expect(result).to.deep.equal('localhost');
-    });
-  });
-
   describe('readId', () => {
     it('should return data from local storage when it exists', () => {
       getDataFromLocalStorageStub.returns('local_storage_data');
