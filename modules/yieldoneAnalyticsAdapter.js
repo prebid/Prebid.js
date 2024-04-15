@@ -1,7 +1,7 @@
 import { isArray, deepClone } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import { targeting } from '../src/targeting.js';
 import { auctionManager } from '../src/auctionManager.js';
@@ -14,9 +14,9 @@ const requestedBidders = {};
 const requestedBids = {};
 const referrers = {};
 const ignoredEvents = {};
-ignoredEvents[CONSTANTS.EVENTS.BID_ADJUSTMENT] = true;
-ignoredEvents[CONSTANTS.EVENTS.BIDDER_DONE] = true;
-ignoredEvents[CONSTANTS.EVENTS.AUCTION_END] = true;
+ignoredEvents[EVENTS.BID_ADJUSTMENT] = true;
+ignoredEvents[EVENTS.BIDDER_DONE] = true;
+ignoredEvents[EVENTS.AUCTION_END] = true;
 
 let currentAuctionId = '';
 let url = defaultUrl;
@@ -69,7 +69,7 @@ function addAdUnitName(params, map) {
 const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
   getUrl() { return url; },
   track({eventType, args = {}}) {
-    if (eventType === CONSTANTS.EVENTS.BID_REQUESTED) {
+    if (eventType === EVENTS.BID_REQUESTED) {
       const reqBidderId = `${args.bidderCode}_${args.auctionId}`;
       requestedBidders[reqBidderId] = deepClone(args);
       requestedBidders[reqBidderId].bids = [];
@@ -77,7 +77,7 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
         requestedBids[`${bid.bidId}_${bid.auctionId}`] = bid;
       });
     }
-    if (eventType === CONSTANTS.EVENTS.BID_TIMEOUT && isArray(args)) {
+    if (eventType === EVENTS.BID_TIMEOUT && isArray(args)) {
       const eventsStorage = yieldoneAnalytics.eventsStorage;
       const reqBidders = {};
       args.forEach((bid) => {
@@ -118,7 +118,7 @@ const yieldoneAnalytics = Object.assign(adapter({analyticsType}), {
         }
 
         if (
-          eventType === CONSTANTS.EVENTS.AUCTION_END || eventType === CONSTANTS.EVENTS.BID_WON
+          eventType === EVENTS.AUCTION_END || eventType === EVENTS.BID_WON
         ) {
           params.adServerTargeting = targeting.getAllTargeting(
             auctionManager.getAdUnitCodes(),

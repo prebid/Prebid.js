@@ -44,7 +44,7 @@ export const pirIdSubmodule = {
    * performs action to obtain id and return a value
    * @function
    * @returns {(IdResponse|undefined)}
-  */
+   */
   getId() {
     const pirIdToken = readId();
 

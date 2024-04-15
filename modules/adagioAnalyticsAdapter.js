@@ -4,7 +4,7 @@
 
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import { ajax } from '../src/ajax.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getWindowTop, getWindowSelf, deepAccess, logInfo, logError } from '../src/utils.js';
@@ -12,7 +12,7 @@ import { getGlobal } from '../src/prebidGlobal.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
-const events = Object.keys(CONSTANTS.EVENTS).map(key => CONSTANTS.EVENTS[key]);
+const events = Object.keys(EVENTS).map(key => EVENTS[key]);
 const ADAGIO_GVLID = 617;
 const VERSION = '3.0.0';
 const PREBID_VERSION = '$prebid.version$';
@@ -383,22 +383,22 @@ let adagioAdapter = Object.assign(adapter({ emptyUrl, analyticsType }), {
 
     try {
       switch (eventType) {
-        case CONSTANTS.EVENTS.AUCTION_INIT:
+        case EVENTS.AUCTION_INIT:
           handlerAuctionInit(args);
           break;
-        case CONSTANTS.EVENTS.BID_RESPONSE:
+        case EVENTS.BID_RESPONSE:
           handlerBidResponse(args);
           break;
-        case CONSTANTS.EVENTS.AUCTION_END:
+        case EVENTS.AUCTION_END:
           handlerAuctionEnd(args);
           break;
-        case CONSTANTS.EVENTS.BID_WON:
+        case EVENTS.BID_WON:
           handlerBidWon(args);
           break;
         // AD_RENDER_SUCCEEDED seems redundant with BID_WON.
         // case CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED:
-        case CONSTANTS.EVENTS.AD_RENDER_FAILED:
-          handlerAdRender(args, eventType === CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED);
+        case EVENTS.AD_RENDER_FAILED:
+          handlerAdRender(args, eventType === EVENTS.AD_RENDER_SUCCEEDED);
           break;
       }
     } catch (error) {

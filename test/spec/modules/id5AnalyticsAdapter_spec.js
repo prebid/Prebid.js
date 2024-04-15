@@ -2,7 +2,7 @@ import adapterManager from '../../../src/adapterManager.js';
 import id5AnalyticsAdapter from '../../../modules/id5AnalyticsAdapter.js';
 import { expect } from 'chai';
 import * as events from '../../../src/events.js';
-import constants from '../../../src/constants.json';
+import { EVENTS } from '../../../src/constants.js';
 import { generateUUID } from '../../../src/utils.js';
 import {server} from '../../mocks/xhr.js';
 
@@ -98,7 +98,7 @@ describe('ID5 analytics adapter', () => {
     it('sends auction end events to the backend', () => {
       id5AnalyticsAdapter.enableAnalytics(config);
       server.respond();
-      events.emit(constants.EVENTS.AUCTION_END, auction);
+      events.emit(EVENTS.AUCTION_END, auction);
       server.respond();
 
       // Why 3? 1: config, 2: tcfEnforcement, 3: auctionEnd
@@ -307,7 +307,7 @@ describe('ID5 analytics adapter', () => {
 
       id5AnalyticsAdapter.enableAnalytics(config);
       server.respond();
-      events.emit(constants.EVENTS.AUCTION_END, auction);
+      events.emit(EVENTS.AUCTION_END, auction);
       server.respond();
 
       expect(server.requests).to.have.length(3);
@@ -360,7 +360,7 @@ describe('ID5 analytics adapter', () => {
       ]);
       id5AnalyticsAdapter.enableAnalytics(config);
       server.respond();
-      events.emit(constants.EVENTS.AUCTION_END, auction);
+      events.emit(EVENTS.AUCTION_END, auction);
       server.respond();
 
       expect(server.requests).to.have.length(2);
@@ -441,7 +441,7 @@ describe('ID5 analytics adapter', () => {
       ]);
       id5AnalyticsAdapter.enableAnalytics(config);
       server.respond();
-      events.emit(constants.EVENTS.AUCTION_END, auction);
+      events.emit(EVENTS.AUCTION_END, auction);
       server.respond();
 
       expect(server.requests).to.have.length(3);

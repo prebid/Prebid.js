@@ -10,7 +10,7 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 
 const events = require('src/events');
-const constants = require('src/constants.json');
+const constants = require('src/constants.js');
 
 const pbuid = 'pbuid-AA778D8A796AEA7A0843E2BBEB677766';
 const auctionId = 'b0b39610-b941-4659-a87c-de9f62d3e13e';

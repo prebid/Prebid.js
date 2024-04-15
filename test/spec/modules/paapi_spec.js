@@ -15,7 +15,7 @@ import {
   reset
 } from 'modules/paapi.js';
 import * as events from 'src/events.js';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
 import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
@@ -69,7 +69,7 @@ describe('paapi module', () => {
               cf2 = {...fledgeAuctionConfig, id: 2, seller: 'b2'};
               addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au1'}, cf1);
               addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au2'}, cf2);
-              events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId, adUnitCodes: ['au1', 'au2', 'au3']});
+              events.emit(EVENTS.AUCTION_END, { auctionId, adUnitCodes: ['au1', 'au2', 'au3'] });
             });
 
             it('and make them available at end of auction', () => {
@@ -123,9 +123,9 @@ describe('paapi module', () => {
           });
 
           it('should drop auction configs after end of auction', () => {
-            events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId});
+            events.emit(EVENTS.AUCTION_END, { auctionId });
             addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au'}, fledgeAuctionConfig);
-            events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId});
+            events.emit(EVENTS.AUCTION_END, { auctionId });
             expect(getPAAPIConfig({auctionId})).to.eql({});
           });
 
@@ -136,7 +136,7 @@ describe('paapi module', () => {
               ortb2: {fpd: 1},
               ortb2Imp: {fpd: 2}
             }, fledgeAuctionConfig);
-            events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId});
+            events.emit(EVENTS.AUCTION_END, { auctionId });
             sinon.assert.match(getPAAPIConfig({auctionId}), {
               au1: {
                 componentAuctions: [{
@@ -165,13 +165,13 @@ describe('paapi module', () => {
             describe('onAuctionConfig', () => {
               const auctionId = 'aid';
               it('is invoked with null configs when there\'s no config', () => {
-                events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId, adUnitCodes: ['au']});
+                events.emit(EVENTS.AUCTION_END, { auctionId, adUnitCodes: ['au'] });
                 submods.forEach(submod => sinon.assert.calledWith(submod.onAuctionConfig, auctionId, {au: null}));
               });
               it('is invoked with relevant configs', () => {
                 addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au1'}, fledgeAuctionConfig);
                 addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au2'}, fledgeAuctionConfig);
-                events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId, adUnitCodes: ['au1', 'au2', 'au3']});
+                events.emit(EVENTS.AUCTION_END, { auctionId, adUnitCodes: ['au1', 'au2', 'au3'] });
                 submods.forEach(submod => {
                   sinon.assert.calledWith(submod.onAuctionConfig, auctionId, {
                     au1: {componentAuctions: [fledgeAuctionConfig]},
@@ -185,12 +185,12 @@ describe('paapi module', () => {
                   markAsUsed('au1');
                 });
                 addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au1'}, fledgeAuctionConfig);
-                events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId, adUnitCodes: ['au1']});
+                events.emit(EVENTS.AUCTION_END, { auctionId, adUnitCodes: ['au1'] });
                 expect(getPAAPIConfig()).to.eql({});
               });
               it('keeps them available if they do not', () => {
                 addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au1'}, fledgeAuctionConfig);
-                events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId, adUnitCodes: ['au1']});
+                events.emit(EVENTS.AUCTION_END, { auctionId, adUnitCodes: ['au1'] });
                 expect(getPAAPIConfig()).to.not.be.empty;
               })
             });
@@ -294,7 +294,7 @@ describe('paapi module', () => {
 
                     it('should populate bidfloor/bidfloorcur', () => {
                       addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au'}, fledgeAuctionConfig);
-                      events.emit(CONSTANTS.EVENTS.AUCTION_END, payload);
+                      events.emit(EVENTS.AUCTION_END, payload);
                       const signals = getPAAPIConfig({auctionId}).au.componentAuctions[0].auctionSignals;
                       expect(signals.prebid?.bidfloor).to.eql(bidfloor);
                       expect(signals.prebid?.bidfloorcur).to.eql(bidfloorcur);
@@ -339,7 +339,7 @@ describe('paapi module', () => {
                 configs[auctionId][adUnitCode] = cfg;
                 addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode}, cfg);
               });
-              events.emit(CONSTANTS.EVENTS.AUCTION_END, {auctionId, adUnitCodes: adUnitCodes.concat(noConfigAdUnitCodes)});
+              events.emit(EVENTS.AUCTION_END, { auctionId, adUnitCodes: adUnitCodes.concat(noConfigAdUnitCodes) });
             });
           });
 
