@@ -80,7 +80,7 @@ function calculateQueryStringParams(pid, gdprConsentData, storageConfig) {
 
   const fp = getStoredValue(STORAGE_FPID_KEY, storageConfig);
   if (fp) {
-    params.fp = fp;
+    params.fp = encodeURIComponent(fp);
   }
 
   return params;
