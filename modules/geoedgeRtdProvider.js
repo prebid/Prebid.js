@@ -19,7 +19,7 @@ import { submodule } from '../src/hook.js';
 import { ajax } from '../src/ajax.js';
 import { generateUUID, createInvisibleIframe, insertElement, isEmpty, logError } from '../src/utils.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import { loadExternalScript } from '../src/adloader.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
@@ -237,7 +237,7 @@ function fireBillableEventsForApplicableBids(params) {
     let data = message.data;
     if (isBillingMessage(data, params)) {
       let winningBid = auctionManager.findBidByAdId(data.adId);
-      events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
+      events.emit(EVENTS.BILLABLE_EVENT, {
         vendor: SUBMODULE_NAME,
         billingId: data.impressionId,
         type: winningBid ? 'impression' : data.type,
