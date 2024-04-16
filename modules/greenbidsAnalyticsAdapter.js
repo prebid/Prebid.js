@@ -2,11 +2,11 @@ import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
-import {deepClone, generateUUID, logError, logInfo, logWarn} from '../src/utils.js';
+import {deepClone, generateUUID, logError, logInfo, logWarn, getParameterByName} from '../src/utils.js';
 
 const analyticsType = 'endpoint';
 
-export const ANALYTICS_VERSION = '2.2.0';
+export const ANALYTICS_VERSION = '2.2.1';
 
 const ANALYTICS_SERVER = 'https://a.greenbids.ai';
 
@@ -26,6 +26,11 @@ export const BIDDER_STATUS = {
 const analyticsOptions = {};
 
 export const isSampled = function(greenbidsId, samplingRate, exploratorySamplingSplit) {
+  const isSamplingForced = getParameterByName('greenbids_force_sampling');
+  if (isSamplingForced) {
+    logInfo('Greenbids Analytics: sampling flag detected, forcing analytics');
+    return true;
+  }
   if (samplingRate < 0 || samplingRate > 1) {
     logWarn('Sampling rate must be between 0 and 1');
     return true;
