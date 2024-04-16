@@ -226,6 +226,11 @@ export const spec = {
         payload.us_privacy = bidderRequest.uspConsent;
       }
 
+      const ae = deepAccess(bid, 'ortb2Imp.ext.ae');
+      if (bidderRequest && bidderRequest.fledgeEnabled && ae) {
+        payload.ae = ae;
+      }
+
       const bannerMediaType = deepAccess(bid, 'mediaTypes.banner');
       const videoMediaType = deepAccess(bid, 'mediaTypes.video');
       const isSupportedVideoContext = videoMediaType && (videoMediaType.context === 'instream' || videoMediaType.context === 'outstream');
@@ -266,7 +271,7 @@ export const spec = {
    */
   interpretResponse: function (serverResponse, bidRequestString) {
     const bidResponses = [];
-    let response = serverResponse.body;
+    const response = serverResponse.body;
     try {
       if (response && !response.isNoAd && (response.ad || response.adUrl)) {
         const bidRequest = JSON.parse(bidRequestString.data);
@@ -296,10 +301,19 @@ export const spec = {
         }
 
         bidResponses.push(bidResponse);
+
+        const fledgeAuctionConfigs = response.auctionConfigs;
+        if (fledgeAuctionConfigs && Array.isArray(fledgeAuctionConfigs)) {
+          return {
+            bids: bidResponses,
+            fledgeAuctionConfigs
+          };
+        }
       }
     } catch (error) {
       logError('Error while parsing smart server response', error);
     }
+
     return bidResponses;
   },
 
