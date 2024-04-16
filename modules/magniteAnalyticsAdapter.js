@@ -905,6 +905,8 @@ magniteAdapter.track = ({ eventType, args }) => {
           'source', () => bid.src === 's2s' ? 'server' : 'client',
           'status', () => 'no-bid'
         ]);
+        // add a pbs flag if one of the bids has a server source
+        if (adUnit.bids[bid.bidId].source === 'server') adUnit.pbsRequest = 1;
         // set acct site zone id on adunit
         if ((!adUnit.siteId || !adUnit.zoneId) && rubiconAliases.indexOf(bid.bidder) !== -1) {
           if (deepAccess(bid, 'params.accountId') == accountId) {

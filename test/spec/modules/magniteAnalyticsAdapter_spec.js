@@ -1520,6 +1520,8 @@ describe('magnite analytics adapter', function () {
 
       // bid source should be 'server'
       expectedMessage.auctions[0].adUnits[0].bids[0].source = 'server';
+      // if one of bids.source === server should add pbsRequest flag to adUnit
+      expectedMessage.auctions[0].adUnits[0].pbsRequest = 1;
       expectedMessage.bidsWon[0].source = 'server';
       expect(message).to.deep.equal(expectedMessage);
     });
