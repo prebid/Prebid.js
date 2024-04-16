@@ -2,10 +2,10 @@ import oxxionAnalytics from 'modules/oxxionAnalyticsAdapter.js';
 import {dereferenceWithoutRenderer} from 'modules/oxxionAnalyticsAdapter.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
+import { EVENTS } from 'src/constants.js';
+
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
-let constants = require('src/constants.json');
-
 describe('Oxxion Analytics', function () {
   let timestamp = new Date() - 256;
   let auctionId = '5018eb39-f900-4370-b71e-3bb5b48d324f';
@@ -303,10 +303,10 @@ describe('Oxxion Analytics', function () {
         }
       });
 
-      events.emit(constants.EVENTS.BID_REQUESTED, auctionEnd['bidderRequests'][0]);
-      events.emit(constants.EVENTS.BID_RESPONSE, auctionEnd['bidsReceived'][0]);
-      events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeout);
-      events.emit(constants.EVENTS.AUCTION_END, auctionEnd);
+      events.emit(EVENTS.BID_REQUESTED, auctionEnd['bidderRequests'][0]);
+      events.emit(EVENTS.BID_RESPONSE, auctionEnd['bidsReceived'][0]);
+      events.emit(EVENTS.BID_TIMEOUT, bidTimeout);
+      events.emit(EVENTS.AUCTION_END, auctionEnd);
       expect(server.requests.length).to.equal(1);
       let message = JSON.parse(server.requests[0].requestBody);
       expect(message).to.have.property('auctionEnd').exist;
@@ -336,7 +336,7 @@ describe('Oxxion Analytics', function () {
           domain: 'test'
         }
       });
-      events.emit(constants.EVENTS.BID_WON, bidWon);
+      events.emit(EVENTS.BID_WON, bidWon);
       expect(server.requests.length).to.equal(1);
       let message = JSON.parse(server.requests[0].requestBody);
       expect(message).not.to.have.property('ad');

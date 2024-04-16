@@ -77,6 +77,7 @@ export const spec = {
     let serverRequests = [];
     const eids = getEids(bidRequests[0]) || [];
     const topicsData = getTopics(bidderRequest);
+    const cdep = getCdep(bidderRequest);
     if (bannerBidRequests.length > 0) {
       let serverRequest = {
         pbav: '$prebid.version$',
@@ -104,6 +105,9 @@ export const spec = {
       const gpc = getGPCSignal(bidderRequest);
       if (gpc) {
         serverRequest.gpc = gpc;
+      }
+      if (cdep) {
+        serverRequest.cdep = cdep;
       }
 
       if (canAccessTopWindow()) {
@@ -436,6 +440,11 @@ function openRtbRequest(bidRequests, bidderRequest) {
 function getGPCSignal(bidderRequest) {
   const gpc = deepAccess(bidderRequest, 'ortb2.regs.ext.gpc');
   return gpc;
+}
+
+function getCdep(bidderRequest) {
+  const cdep = deepAccess(bidderRequest, 'ortb2.device.ext.cdep') || null;
+  return cdep;
 }
 
 function getTopics(bidderRequest) {

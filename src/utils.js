@@ -1,7 +1,7 @@
 import {config} from './config.js';
 import clone from 'just-clone';
 import {includes} from './polyfill.js';
-import CONSTANTS from './constants.json';
+import { EVENTS, S2S } from './constants.js';
 import {GreedyPromise} from './utils/promise.js';
 import {getGlobal} from './prebidGlobal.js';
 
@@ -202,7 +202,7 @@ export function logWarn() {
     // eslint-disable-next-line no-console
     console.warn.apply(console, decorateLog(arguments, 'WARNING:'));
   }
-  emitEvent(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'WARNING', arguments: arguments});
+  emitEvent(EVENTS.AUCTION_DEBUG, { type: 'WARNING', arguments: arguments });
 }
 
 export function logError() {
@@ -210,7 +210,7 @@ export function logError() {
     // eslint-disable-next-line no-console
     console.error.apply(console, decorateLog(arguments, 'ERROR:'));
   }
-  emitEvent(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'ERROR', arguments: arguments});
+  emitEvent(EVENTS.AUCTION_DEBUG, { type: 'ERROR', arguments: arguments });
 }
 
 export function prefixLog(prefix) {
@@ -444,7 +444,7 @@ export function triggerPixel(url, done, timeout) {
 }
 
 export function callBurl({ source, burl }) {
-  if (source === CONSTANTS.S2S.SRC && burl) {
+  if (source === S2S.SRC && burl) {
     internal.triggerPixel(burl);
   }
 }

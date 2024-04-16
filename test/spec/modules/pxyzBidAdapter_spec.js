@@ -210,30 +210,15 @@ describe('pxyzBidAdapter', function () {
   });
 
   describe('getUserSyncs', function () {
-    const syncUrl = '//ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID';
-
-    describe('when iframeEnabled is true', function () {
-      const syncOptions = {
-        'iframeEnabled': true
-      }
-      it('should return one image type user sync pixel', function () {
-        let result = spec.getUserSyncs(syncOptions);
-        expect(result.length).to.equal(1);
-        expect(result[0].type).to.equal('image')
-        expect(result[0].url).to.equal(syncUrl);
-      });
-    });
-
-    describe('when iframeEnabled is false', function () {
-      const syncOptions = {
-        'iframeEnabled': false
-      }
-      it('should return one image type user sync pixel', function () {
-        let result = spec.getUserSyncs(syncOptions);
-        expect(result.length).to.equal(1);
-        expect(result[0].type).to.equal('image')
-        expect(result[0].url).to.equal(syncUrl);
-      });
+    const syncImageUrl = '//ib.adnxs.com/getuidnb?https://ads.playground.xyz/usersync?partner=appnexus&uid=$UID';
+    const syncIframeUrl = '//rtb.gumgum.com/getuid/15801?r=https%3A%2F%2Fads.playground.xyz%2Fusersync%3Fpartner%3Dgumgum%26uid%3D';
+    it('should return one image type user sync pixel', function () {
+      let result = spec.getUserSyncs();
+      expect(result.length).to.equal(2);
+      expect(result[0].type).to.equal('image')
+      expect(result[0].url).to.equal(syncImageUrl);
+      expect(result[1].type).to.equal('iframe')
+      expect(result[1].url).to.equal(syncIframeUrl);
     });
   })
 });
