@@ -1,7 +1,7 @@
 import pianoDmpAnalytics from 'modules/pianoDmpAnalyticsAdapter.js';
 import adapterManager from 'src/adapterManager';
 import * as events from 'src/events';
-import constants from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 import { expect } from 'chai';
 
 describe('Piano DMP Analytics Adapter', () => {
@@ -31,14 +31,14 @@ describe('Piano DMP Analytics Adapter', () => {
 
     it('should pass events to call queue', () => {
       const eventsList = [
-        constants.EVENTS.AUCTION_INIT,
-        constants.EVENTS.AUCTION_END,
-        constants.EVENTS.BID_ADJUSTMENT,
-        constants.EVENTS.BID_TIMEOUT,
-        constants.EVENTS.BID_REQUESTED,
-        constants.EVENTS.BID_RESPONSE,
-        constants.EVENTS.NO_BID,
-        constants.EVENTS.BID_WON,
+        EVENTS.AUCTION_INIT,
+        EVENTS.AUCTION_END,
+        EVENTS.BID_ADJUSTMENT,
+        EVENTS.BID_TIMEOUT,
+        EVENTS.BID_REQUESTED,
+        EVENTS.BID_RESPONSE,
+        EVENTS.NO_BID,
+        EVENTS.BID_WON,
       ];
 
       // Given

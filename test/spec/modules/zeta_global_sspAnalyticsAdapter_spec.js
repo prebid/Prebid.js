@@ -1,13 +1,13 @@
 import zetaAnalyticsAdapter from 'modules/zeta_global_sspAnalyticsAdapter.js';
 import {config} from 'src/config';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 import {server} from '../../mocks/xhr.js';
 import {logError} from '../../../src/utils';
 
 let utils = require('src/utils');
 let events = require('src/events');
 
-const EVENTS = {
+const SAMPLE_EVENTS = {
   AUCTION_END: {
     'auctionId': '75e394d9',
     'timestamp': 1638441234544,
@@ -388,22 +388,22 @@ describe('Zeta Global SSP Analytics Adapter', function() {
     it('Move ZetaParams through analytics events', function() {
       this.timeout(3000);
 
-      events.emit(CONSTANTS.EVENTS.AUCTION_END, EVENTS.AUCTION_END);
-      events.emit(CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED, EVENTS.AD_RENDER_SUCCEEDED);
+      events.emit(EVENTS.AUCTION_END, SAMPLE_EVENTS.AUCTION_END);
+      events.emit(EVENTS.AD_RENDER_SUCCEEDED, SAMPLE_EVENTS.AD_RENDER_SUCCEEDED);
 
       expect(requests.length).to.equal(2);
       const auctionEnd = JSON.parse(requests[0].requestBody);
       const auctionSucceeded = JSON.parse(requests[1].requestBody);
 
-      expect(auctionSucceeded.bid.params[0]).to.be.deep.equal(EVENTS.AUCTION_END.adUnits[0].bids[0].params);
-      expect(EVENTS.AUCTION_END.adUnits[0].bids[0].bidder).to.be.equal('zeta_global_ssp');
+      expect(auctionSucceeded.bid.params[0]).to.be.deep.equal(SAMPLE_EVENTS.AUCTION_END.adUnits[0].bids[0].params);
+      expect(SAMPLE_EVENTS.AUCTION_END.adUnits[0].bids[0].bidder).to.be.equal('zeta_global_ssp');
     });
 
     it('Keep only needed fields', function() {
       this.timeout(3000);
 
-      events.emit(CONSTANTS.EVENTS.AUCTION_END, EVENTS.AUCTION_END);
-      events.emit(CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED, EVENTS.AD_RENDER_SUCCEEDED);
+      events.emit(EVENTS.AUCTION_END, SAMPLE_EVENTS.AUCTION_END);
+      events.emit(EVENTS.AD_RENDER_SUCCEEDED, SAMPLE_EVENTS.AD_RENDER_SUCCEEDED);
 
       expect(requests.length).to.equal(2);
       const auctionEnd = JSON.parse(requests[0].requestBody);

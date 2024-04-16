@@ -18,7 +18,7 @@ import {
 } from '../src/utils.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import { getStorageManager } from '../src/storageManager.js';
 import * as events from '../src/events.js';
 import { find } from '../src/polyfill.js';
@@ -1739,8 +1739,8 @@ export const spec = {
    */
   isBidRequestValid: function (bid) {
     if (!hasRegisteredHandler) {
-      events.on(CONSTANTS.EVENTS.AUCTION_DEBUG, localStorageHandler);
-      events.on(CONSTANTS.EVENTS.AD_RENDER_FAILED, localStorageHandler);
+      events.on(EVENTS.AUCTION_DEBUG, localStorageHandler);
+      events.on(EVENTS.AD_RENDER_FAILED, localStorageHandler);
       hasRegisteredHandler = true;
     }
 

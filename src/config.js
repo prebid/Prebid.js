@@ -27,9 +27,9 @@ import {
   logWarn,
   mergeDeep
 } from './utils.js';
-import CONSTANTS from './constants.json';
+import {DEBUG_MODE} from './constants.js';
 
-const DEFAULT_DEBUG = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
+const DEFAULT_DEBUG = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 const DEFAULT_DISABLE_AJAX_TIMEOUT = false;

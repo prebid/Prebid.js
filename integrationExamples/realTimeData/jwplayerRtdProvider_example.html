@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+    /* Paste JW Player script tag here */
+
     <script async src="../../build/dev/prebid.js"></script>
-    <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
     <meta charset="UTF-8">
     <title>JW Player RTD Provider Example</title>
     <script>
@@ -10,7 +12,7 @@
       var PREBID_TIMEOUT = 1000;
 
       var adUnits = [{
-          code: 'div-gpt-ad-1460505748561-0',
+          code: 'video-ad-unit',
           ortb2Imp: {
               ext: {
                   data: {
@@ -23,16 +25,21 @@
               }
           },
           mediaTypes: {
-              banner: {
-                  sizes: [[300, 250], [300,600]],
+              video: {
+                sizes: [[320, 460]],
+                mimes :  ["video/mp4"],
+                minduration : 3,
+                maxduration: 30,
+                protocols : [1,2]
               }
           },
           // Replace this object to test a new Adapter!
           bids: [{
-              bidder: 'appnexus',
-              params: {
-                  placementId: 13144370
-              }
+            bidder: 'ix',
+            params: {
+              siteId: '300',
+              video: {}
+            }
           }]
       }];
 
@@ -41,11 +48,6 @@
     </script>
 
     <script>
-      var googletag = googletag || {};
-      googletag.cmd = googletag.cmd || [];
-      googletag.cmd.push(function() {
-        googletag.pubads().disableInitialLoad();
-      });
 
       pbjs.que.push(function() {
         pbjs.setConfig({
@@ -63,44 +65,28 @@
         });
         pbjs.addAdUnits(adUnits);
         pbjs.requestBids({
-          bidsBackHandler: sendAdserverRequest,
+          bidsBackHandler: renderHighestBid,
           timeout: PREBID_TIMEOUT
         });
       });
 
-      function sendAdserverRequest() {
-        if (pbjs.adserverRequestSent) return;
-        pbjs.adserverRequestSent = true;
-        googletag.cmd.push(function() {
-          pbjs.que.push(function() {
-            pbjs.setTargetingForGPTAsync();
-            googletag.pubads().refresh();
-          });
-        });
+      function renderHighestBid() {
+        const highestBids = pbjs.getHighestCpmBids('video-ad-unit');
+        const highestBid = highestBids && highestBids.length && highestBids[0];
+        if (!highestBid) {
+          return;
+        }
+
+        if (highestBid.vastXml) {
+          jwplayer().loadAdXml(highestBid.vastXml);
+        } else if (highestBid.vastUrl) {
+          jwplayer().loadAdTag(highestBid.vastUrl);
+        }
       }
 
-      setTimeout(function() {
-        sendAdserverRequest();
-      }, FAILSAFE_TIMEOUT);
-
-    </script>
-
-    <script>
-      googletag.cmd.push(function () {
-        googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
-
-        googletag.pubads().enableSingleRequest();
-        googletag.enableServices();
-      });
     </script>
 </head>
 
 <body>
-<h5>Div-1</h5>
-<div id='div-gpt-ad-1460505748561-0'>
-    <script type='text/javascript'>
-      googletag.cmd.push(function() { googletag.display('div-gpt-ad-1460505748561-0'); });
-    </script>
-</div>
 </body>
 </html>

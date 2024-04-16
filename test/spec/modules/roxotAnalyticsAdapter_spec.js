@@ -1,9 +1,9 @@
 import roxotAnalytic from 'modules/roxotAnalyticsAdapter.js';
 import {expect} from 'chai';
 import {server} from 'test/mocks/xhr.js';
+import { EVENTS } from 'src/constants.js';
 
 let events = require('src/events');
-let constants = require('src/constants.json');
 
 describe('Roxot Prebid Analytic', function () {
   let roxotConfigServerUrl = 'config-server';
@@ -181,18 +181,18 @@ describe('Roxot Prebid Analytic', function () {
       expect(server.requests[0].url).to.equal('https://' + roxotConfigServerUrl + '/c?publisherId=' + publisherId + '&host=localhost');
       server.requests[0].respond(200, {'Content-Type': 'application/json'}, '{"a": 1, "i": 1, "bat": 1}');
 
-      events.emit(constants.EVENTS.AUCTION_INIT, auctionInit);
-      events.emit(constants.EVENTS.BID_REQUESTED, bidRequested);
-      events.emit(constants.EVENTS.BID_ADJUSTMENT, bidAdjustmentWithBid);
-      events.emit(constants.EVENTS.BID_RESPONSE, bidResponseWithBid);
-      events.emit(constants.EVENTS.BID_ADJUSTMENT, bidAdjustmentNoBid);
-      events.emit(constants.EVENTS.BID_RESPONSE, bidResponseNoBid);
-      events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeout);
-      events.emit(constants.EVENTS.AUCTION_END, auctionEnd);
-      events.emit(constants.EVENTS.BID_ADJUSTMENT, bidAdjustmentAfterTimeout);
-      events.emit(constants.EVENTS.BID_RESPONSE, bidResponseAfterTimeout);
-      events.emit(constants.EVENTS.BIDDER_DONE, bidderDone);
-      events.emit(constants.EVENTS.BID_WON, bidWon);
+      events.emit(EVENTS.AUCTION_INIT, auctionInit);
+      events.emit(EVENTS.BID_REQUESTED, bidRequested);
+      events.emit(EVENTS.BID_ADJUSTMENT, bidAdjustmentWithBid);
+      events.emit(EVENTS.BID_RESPONSE, bidResponseWithBid);
+      events.emit(EVENTS.BID_ADJUSTMENT, bidAdjustmentNoBid);
+      events.emit(EVENTS.BID_RESPONSE, bidResponseNoBid);
+      events.emit(EVENTS.BID_TIMEOUT, bidTimeout);
+      events.emit(EVENTS.AUCTION_END, auctionEnd);
+      events.emit(EVENTS.BID_ADJUSTMENT, bidAdjustmentAfterTimeout);
+      events.emit(EVENTS.BID_RESPONSE, bidResponseAfterTimeout);
+      events.emit(EVENTS.BIDDER_DONE, bidderDone);
+      events.emit(EVENTS.BID_WON, bidWon);
 
       expect(server.requests.length).to.equal(4);
 
@@ -260,18 +260,18 @@ describe('Roxot Prebid Analytic', function () {
       expect(server.requests[0].url).to.equal('https://' + roxotConfigServerUrl + '/c?publisherId=' + publisherId + '&host=localhost');
       server.requests[0].respond(200, {'Content-Type': 'application/json'}, '{"a": 1, "i": 1, "bat": 1}');
 
-      events.emit(constants.EVENTS.AUCTION_INIT, auctionInit);
-      events.emit(constants.EVENTS.BID_REQUESTED, bidRequested);
-      events.emit(constants.EVENTS.BID_ADJUSTMENT, bidAdjustmentWithBid);
-      events.emit(constants.EVENTS.BID_RESPONSE, bidResponseWithBid);
-      events.emit(constants.EVENTS.BID_ADJUSTMENT, bidAdjustmentNoBid);
-      events.emit(constants.EVENTS.BID_RESPONSE, bidResponseNoBid);
-      events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeout);
-      events.emit(constants.EVENTS.AUCTION_END, auctionEnd);
-      events.emit(constants.EVENTS.BID_ADJUSTMENT, bidAdjustmentAfterTimeout);
-      events.emit(constants.EVENTS.BID_RESPONSE, bidResponseAfterTimeout);
-      events.emit(constants.EVENTS.BIDDER_DONE, bidderDone);
-      events.emit(constants.EVENTS.BID_WON, bidWon);
+      events.emit(EVENTS.AUCTION_INIT, auctionInit);
+      events.emit(EVENTS.BID_REQUESTED, bidRequested);
+      events.emit(EVENTS.BID_ADJUSTMENT, bidAdjustmentWithBid);
+      events.emit(EVENTS.BID_RESPONSE, bidResponseWithBid);
+      events.emit(EVENTS.BID_ADJUSTMENT, bidAdjustmentNoBid);
+      events.emit(EVENTS.BID_RESPONSE, bidResponseNoBid);
+      events.emit(EVENTS.BID_TIMEOUT, bidTimeout);
+      events.emit(EVENTS.AUCTION_END, auctionEnd);
+      events.emit(EVENTS.BID_ADJUSTMENT, bidAdjustmentAfterTimeout);
+      events.emit(EVENTS.BID_RESPONSE, bidResponseAfterTimeout);
+      events.emit(EVENTS.BIDDER_DONE, bidderDone);
+      events.emit(EVENTS.BID_WON, bidWon);
 
       expect(server.requests.length).to.equal(3);
 
