@@ -36,7 +36,7 @@ const adUnit = {
       data: {
         jwTargeting: {
           // Note: the following Ids are placeholders and should be replaced with your Ids.
-          playerID: 'abcd',
+          playerDivId: 'abcd',
           mediaID: '1234'
         }
       }
@@ -51,7 +51,7 @@ pbjs.que.push(function() {
     });
 });
 ``` 
-**Note**: The player ID is the ID of the HTML div element used when instantiating the player. 
+**Note**: The player Div ID is the ID of the HTML div element used when instantiating the player. 
 You can retrieve this ID by calling `player.id`, where player is the JW Player instance variable.
 
 **Note**: You may also include `jwTargeting` information in the prebid config's `ortb2.site.ext.data`. Information provided in the adUnit will always supersede, and information in the config will be used as a fallback.
@@ -78,6 +78,19 @@ realTimeData = {
 };
 ```
 
+## Configuration syntax
+
+| Name  |Type | Description   | Notes  |
+| :------------ | :------------ | :------------ |:------------ |
+| name | String | Real time data module name | Always 'jwplayer' |
+| waitForIt | Boolean | Required to ensure that the auction is delayed until prefetch is complete | Optional. Defaults to false |
+| params | Object | | |
+| params.mediaIDs | Array of Strings | Media Ids for prefetching | Optional |
+| params.overrideContentId | String enum: 'always', 'whenEmpty' or 'never' | Determines when the module should update the oRTB site.content.id  | Defaults to 'always' |
+| params.overrideContentUrl | String enum: 'always', 'whenEmpty' or 'never' | Determines when the module should update the oRTB site.content.url | Defaults to 'whenEmpty' |
+| params.overrideContentTitle | String enum: 'always', 'whenEmpty' or 'never' | Determines when the module should update the oRTB site.content.title | Defaults to 'whenEmpty' |
+| params.overrideContentDescription | String enum: 'always', 'whenEmpty' or 'never' | Determines when the module should update the oRTB site.content.ext.description | Defaults to 'whenEmpty' |
+
 # Usage for Bid Adapters:
 
 Implement the `buildRequests` function. When it is called, the `bidRequests` param will be an array of bids.
@@ -94,6 +107,8 @@ Example:
         site: {
             content: {
                 id: 'jw_abc123',
+                title: 'media title',
+                url: 'https:www.cdn.com/media.mp4',
                 data: [{
                     name: 'jwplayer.com',
                     ext: {
@@ -105,7 +120,10 @@ Example:
                     }, { 
                         id: '456'
                     }]
-                }]
+                }],
+                ext: {
+                  description: 'media description'
+              }
             }
         }   
     }
@@ -116,7 +134,10 @@ where:
 - `ortb2` is an object containing first party data
   - `site` is an object containing page specific information
     - `content` is an object containing metadata for the media. It may contain the following information: 
-      - `id` is a unique identifier for the specific media asset
+      - `id` is a unique identifier for the specific media asset,
+      - `title` is the title of the media content
+      - `url` is the url of the media asset
+      - `ext.description` is the description of the media content
       - `data` is an array containing segment taxonomy objects that have the following parameters:
         - `name` is the `jwplayer.com` string indicating the provider name
         - `ext.segtax` whose `502` value is the unique identifier for JW Player's proprietary taxonomy

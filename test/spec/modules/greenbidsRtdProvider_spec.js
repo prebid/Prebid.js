@@ -8,7 +8,7 @@ import {
 } from 'modules/greenbidsRtdProvider.js';
 import { server } from '../../mocks/xhr.js';
 import * as events from '../../../src/events.js';
-import CONSTANTS from '../../../src/constants.json';
+import { EVENTS } from '../../../src/constants.js';
 
 describe('greenbidsRtdProvider', () => {
   const endPoint = 't.greenbids.ai';
@@ -332,7 +332,7 @@ describe('greenbidsRtdProvider', () => {
 
     it('should  emit billable event if greenbids has set the adunit.ext value', function (done) {
       let counter = 0;
-      events.on(CONSTANTS.EVENTS.BILLABLE_EVENT, function (event) {
+      events.on(EVENTS.BILLABLE_EVENT, function (event) {
         if (event.vendor === 'greenbidsRtdProvider' && event.type === 'auction') {
           counter += 1;
         }

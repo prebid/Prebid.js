@@ -64,6 +64,7 @@ export const spec = {
     const cur = currency && [ currency ];
     const eids = setOnAny(validBidRequests, 'userIdAsEids');
     const schain = setOnAny(validBidRequests, 'schain');
+    const dsa = commonFpd.regs?.ext?.dsa;
 
     const imp = validBidRequests.map((bid, id) => {
       bid.netRevenue = pt;
@@ -179,6 +180,10 @@ export const spec = {
       deepSetValue(request, 'source.ext.schain', schain);
     }
 
+    if (dsa) {
+      deepSetValue(request, 'regs.ext.dsa', dsa);
+    }
+
     return {
       method: 'POST',
       url: 'https://' + adxDomain + '/adx/openrtb',
@@ -201,6 +206,7 @@ export const spec = {
       const bidResponse = bidResponses[id];
       if (bidResponse) {
         const mediaType = deepAccess(bidResponse, 'ext.prebid.type');
+        const dsa = deepAccess(bidResponse, 'ext.dsa');
         const result = {
           requestId: bid.bidId,
           cpm: bidResponse.price,
@@ -214,7 +220,8 @@ export const spec = {
           dealId: bidResponse.dealid,
           meta: {
             mediaType,
-            advertiserDomains: bidResponse.adomain
+            advertiserDomains: bidResponse.adomain,
+            dsa
           }
         };
 
@@ -223,7 +230,14 @@ export const spec = {
             ortb: bidResponse.native
           };
         } else {
-          result[ mediaType === VIDEO ? 'vastXml' : 'ad' ] = bidResponse.adm;
+          if (mediaType === VIDEO) {
+            result.vastXml = bidResponse.adm;
+            if (bidResponse.nurl) {
+              result.vastUrl = bidResponse.nurl;
+            }
+          } else {
+            result.ad = bidResponse.adm;
+          }
         }
 
         if (!bid.renderer && mediaType === VIDEO && deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {

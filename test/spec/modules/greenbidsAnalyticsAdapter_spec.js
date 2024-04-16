@@ -4,13 +4,14 @@ import {
   ANALYTICS_VERSION, BIDDER_STATUS
 } from 'modules/greenbidsAnalyticsAdapter.js';
 import {
-  generateUUID,
+  generateUUID
 } from '../../../src/utils.js';
+import * as utils from 'src/utils.js';
 import {expect} from 'chai';
 import sinon from 'sinon';
 
 const events = require('src/events');
-const constants = require('src/constants.json');
+const constants = require('src/constants.js');
 
 const pbuid = 'pbuid-AA778D8A796AEA7A0843E2BBEB677766';
 const auctionId = 'b0b39610-b941-4659-a87c-de9f62d3e13e';
@@ -404,16 +405,36 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
 
   describe('isSampled', function() {
     it('should return true for invalid sampling rates', function() {
-      expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', -1)).to.be.true;
-      expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 1.2)).to.be.true;
+      expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', -1, 0.0)).to.be.true;
+      expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 1.2, 0.0)).to.be.true;
     });
 
     it('should return determinist falsevalue for valid sampling rate given the predifined id and rate', function() {
-      expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.0001)).to.be.false;
+      expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.0001, 0.0)).to.be.false;
     });
 
     it('should return determinist true value for valid sampling rate given the predifined id and rate', function() {
-      expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.9999)).to.be.true;
+      expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.9999, 0.0)).to.be.true;
+    });
+
+    it('should return determinist true value for valid sampling rate given the predifined id and rate when we split to non exploration first', function() {
+      expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.9999, 0.0, 1.0)).to.be.true;
+    });
+
+    it('should return determinist false value for valid sampling rate given the predifined id and rate when we split to non exploration first', function() {
+      expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.0001, 0.0, 1.0)).to.be.false;
+    });
+  });
+
+  describe('isSampled when analytic isforced', function() {
+    before(() => {
+      sinon.stub(utils, 'getParameterByName').callsFake(par => par === 'greenbids_force_sampling' ? true : undefined);
+    });
+    it('should return determinist true when sampling flag activated', function() {
+      expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.0001, 0.0)).to.be.true;
+    });
+    after(() => {
+      utils.getParameterByName.restore();
     });
   });
 });

@@ -19,12 +19,13 @@ import {
 } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS, REJECTION_REASON } from '../src/constants.js';
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
+import { getHook } from '../src/hook.js';
 
 const RUBICON_GVL_ID = 52;
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: 'magnite' });
@@ -33,6 +34,7 @@ const LAST_SEEN_EXPIRE_TIME = 1800000; // 30 mins
 const END_EXPIRE_TIME = 21600000; // 6 hours
 const MODULE_NAME = 'Magnite Analytics';
 const BID_REJECTED_IPF = 'rejected-ipf';
+const DEFAULT_INTEGRATION = 'pbjs';
 
 // List of known rubicon aliases
 // This gets updated on auction init to account for any custom aliases present
@@ -45,22 +47,27 @@ const pbsErrorMap = {
   4: 'request-error',
   999: 'generic-error'
 }
+let cookieless;
+
+let browser;
+let pageReferer;
+let auctionIndex = 0; // count of auctions on page
+let accountId;
+let endpoint;
 
 let prebidGlobal = getGlobal();
 const {
-  EVENTS: {
-    AUCTION_INIT,
-    AUCTION_END,
-    BID_REQUESTED,
-    BID_RESPONSE,
-    BIDDER_DONE,
-    BID_TIMEOUT,
-    BID_WON,
-    BILLABLE_EVENT,
-    SEAT_NON_BID,
-    BID_REJECTED
-  }
-} = CONSTANTS;
+  AUCTION_INIT,
+  AUCTION_END,
+  BID_REQUESTED,
+  BID_RESPONSE,
+  BIDDER_DONE,
+  BID_TIMEOUT,
+  BID_WON,
+  BILLABLE_EVENT,
+  SEAT_NON_BID,
+  BID_REJECTED
+} = EVENTS;
 
 // The saved state of rubicon specific setConfig controls
 export let rubiConf;
@@ -75,7 +82,8 @@ const resetConfs = () => {
     pendingEvents: {},
     eventPending: false,
     elementIdMap: {},
-    sessionData: {}
+    sessionData: {},
+    bidsCachedClientSide: new WeakSet()
   }
   rubiConf = {
     pvid: generateUUID().slice(0, 8),
@@ -103,8 +111,6 @@ let serverConfig;
 config.getConfig('s2sConfig', ({ s2sConfig }) => {
   serverConfig = s2sConfig;
 });
-
-const DEFAULT_INTEGRATION = 'pbjs';
 
 const adUnitIsOnlyInstream = adUnit => {
   return adUnit.mediaTypes && Object.keys(adUnit.mediaTypes).length === 1 && deepAccess(adUnit, 'mediaTypes.video.context') === 'instream';
@@ -308,8 +314,6 @@ const addFloorData = floorData => {
   }
 }
 
-let pageReferer;
-
 const getTopLevelDetails = () => {
   let payload = {
     channel: 'web',
@@ -330,10 +334,14 @@ const getTopLevelDetails = () => {
 
   // Add DM wrapper details
   if (rubiConf.wrapperName) {
+    let rule;
+    if (cookieless) {
+      rule = rubiConf.rule_name ? rubiConf.rule_name.concat('_cookieless') : 'cookieless';
+    }
     payload.wrapper = {
       name: rubiConf.wrapperName,
       family: rubiConf.wrapperFamily,
-      rule: rubiConf.rule_name
+      rule
     }
   }
 
@@ -640,9 +648,6 @@ export const detectBrowserFromUa = userAgent => {
   return 'OTHER';
 }
 
-let accountId;
-let endpoint;
-
 let magniteAdapter = adapter({ analyticsType: 'endpoint' });
 
 magniteAdapter.originEnableAnalytics = magniteAdapter.enableAnalytics;
@@ -671,7 +676,19 @@ function enableMgniAnalytics(config = {}) {
     window.googletag.cmd = window.googletag.cmd || [];
     window.googletag.cmd.push(() => subscribeToGamSlots());
   }
+
+  // Edge case handler for client side video caching
+  getHook('callPrebidCache').before(callPrebidCacheHook);
 };
+
+/*
+  We want to know if a bid was cached client side
+    And if it was we will use the actual bidId instead of the pbsBidId override in our BID_RESPONSE handler
+*/
+export function callPrebidCacheHook(fn, auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
+  cache.bidsCachedClientSide.add(bidResponse);
+  fn.call(this, auctionInstance, bidResponse, afterBidAdded, videoMediaType);
+}
 
 const handleBidWon = args => {
   const bidWon = formatBidWon(args);
@@ -686,7 +703,9 @@ magniteAdapter.disableAnalytics = function () {
   magniteAdapter._oldEnable = enableMgniAnalytics;
   endpoint = undefined;
   accountId = undefined;
+  auctionIndex = 0;
   resetConfs();
+  getHook('callPrebidCache').getHooks({ hook: callPrebidCacheHook }).remove();
   magniteAdapter.originDisableAnalytics();
 };
 
@@ -749,7 +768,7 @@ const handleBidResponse = (args, bidStatus) => {
 
   // if pbs gave us back a bidId, we need to use it and update our bidId to PBA
   const pbsBidId = (args.pbsBidId == 0 ? generateUUID() : args.pbsBidId) || (args.seatBidId == 0 ? generateUUID() : args.seatBidId);
-  if (pbsBidId) {
+  if (pbsBidId && !cache.bidsCachedClientSide.has(args)) {
     bid.pbsBidId = pbsBidId;
   }
 }
@@ -773,10 +792,10 @@ const getLatencies = (args, auctionStart) => {
   }
 }
 
-let browser;
 magniteAdapter.track = ({ eventType, args }) => {
   switch (eventType) {
     case AUCTION_INIT:
+      auctionIndex += 1;
       // Update session
       cache.sessionData = storage.localStorageIsEnabled() && updateRpaCookie();
       // set the rubicon aliases
@@ -792,6 +811,7 @@ magniteAdapter.track = ({ eventType, args }) => {
         'timeout as clientTimeoutMillis',
       ]);
       auctionData.accountId = accountId;
+      auctionData.auctionIndex = auctionIndex;
 
       // get browser
       if (!browser) {
@@ -806,6 +826,15 @@ magniteAdapter.track = ({ eventType, args }) => {
       const floorData = deepAccess(args, 'bidderRequests.0.bids.0.floorData');
       if (floorData) {
         auctionData.floors = addFloorData(floorData);
+      }
+
+      // Identify chrome cookieless trafic
+      if (!cookieless) {
+        const cdep = deepAccess(args, 'bidderRequests.0.ortb2.device.ext.cdep');
+        if (cdep && (cdep.indexOf('treatment') !== -1 || cdep.indexOf('control_2') !== -1)) {
+          cookieless = 1;
+          auctionData.cdep = 1;
+        }
       }
 
       // GDPR info
@@ -878,6 +907,8 @@ magniteAdapter.track = ({ eventType, args }) => {
           'source', () => bid.src === 's2s' ? 'server' : 'client',
           'status', () => 'no-bid'
         ]);
+        // add a pbs flag if one of the bids has a server source
+        if (adUnit.bids[bid.bidId].source === 'server') adUnit.pbsRequest = 1;
         // set acct site zone id on adunit
         if ((!adUnit.siteId || !adUnit.zoneId) && rubiconAliases.indexOf(bid.bidder) !== -1) {
           if (deepAccess(bid, 'params.accountId') == accountId) {
@@ -892,7 +923,7 @@ magniteAdapter.track = ({ eventType, args }) => {
       handleBidResponse(args, 'success');
       break;
     case BID_REJECTED:
-      const bidStatus = args.rejectionReason === CONSTANTS.REJECTION_REASON.FLOOR_NOT_MET ? BID_REJECTED_IPF : 'rejected';
+      const bidStatus = args.rejectionReason === REJECTION_REASON.FLOOR_NOT_MET ? BID_REJECTED_IPF : 'rejected';
       handleBidResponse(args, bidStatus);
       break;
     case SEAT_NON_BID:

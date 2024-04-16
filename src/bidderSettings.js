@@ -1,6 +1,6 @@
 import {deepAccess, mergeDeep} from './utils.js';
 import {getGlobal} from './prebidGlobal.js';
-import CONSTANTS from './constants.json';
+import { JSON_MAPPING } from './constants.js';
 
 export class ScopedSettings {
   constructor(getSettings, defaultScope) {
@@ -65,4 +65,4 @@ export class ScopedSettings {
   }
 }
 
-export const bidderSettings = new ScopedSettings(() => getGlobal().bidderSettings || {}, CONSTANTS.JSON_MAPPING.BD_SETTING_STANDARD);
+export const bidderSettings = new ScopedSettings(() => getGlobal().bidderSettings || {}, JSON_MAPPING.BD_SETTING_STANDARD);

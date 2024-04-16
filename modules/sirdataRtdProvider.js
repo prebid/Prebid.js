@@ -30,6 +30,7 @@ const partnerIds = {
   'appnexus': 27446,
   'appnexusAst': 27446,
   'brealtime': 27446,
+  'emetriq': 27446,
   'emxdigital': 27446,
   'pagescience': 27446,
   'gourmetads': 33394,
@@ -353,6 +354,7 @@ export function addSegmentData(reqBids, data, moduleConfig, onDone) {
           case 'appnexus':
           case 'appnexusAst':
           case 'brealtime':
+          case 'emetriq':
           case 'emxdigital':
           case 'pagescience':
           case 'gourmetads':

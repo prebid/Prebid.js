@@ -3,9 +3,10 @@ import magniteAdapter, {
   getHostNameFromReferer,
   storage,
   rubiConf,
-  detectBrowserFromUa
+  detectBrowserFromUa,
+  callPrebidCacheHook
 } from '../../../modules/magniteAnalyticsAdapter.js';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import * as mockGpt from '../integration/faker/googletag.js';
@@ -16,19 +17,17 @@ let events = require('src/events.js');
 let utils = require('src/utils.js');
 
 const {
-  EVENTS: {
-    AUCTION_INIT,
-    AUCTION_END,
-    BID_REQUESTED,
-    BID_RESPONSE,
-    BIDDER_DONE,
-    BID_WON,
-    BID_TIMEOUT,
-    BILLABLE_EVENT,
-    SEAT_NON_BID,
-    BID_REJECTED
-  }
-} = CONSTANTS;
+  AUCTION_INIT,
+  AUCTION_END,
+  BID_REQUESTED,
+  BID_RESPONSE,
+  BIDDER_DONE,
+  BID_WON,
+  BID_TIMEOUT,
+  BILLABLE_EVENT,
+  SEAT_NON_BID,
+  BID_REJECTED
+} = EVENTS;
 
 const STUBBED_UUID = '12345678-1234-1234-1234-123456789abc';
 
@@ -240,6 +239,7 @@ const ANALYTICS_MESSAGE = {
   },
   'auctions': [
     {
+      'auctionIndex': 1,
       'auctionId': '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
       'auctionStart': 1658868383741,
       'samplingFactor': 1,
@@ -602,7 +602,22 @@ describe('magnite analytics adapter', function () {
       it(`should parse browser from ${testData.expected} user agent correctly`, function () {
         expect(detectBrowserFromUa(testData.ua)).to.equal(testData.expected);
       });
-    })
+    });
+
+    it('should increment auctionIndex each auction', function () {
+      // run 3 auctions
+      performStandardAuction();
+      performStandardAuction();
+      performStandardAuction();
+
+      expect(server.requests.length).to.equal(3);
+      server.requests.forEach((request, index) => {
+        let message = JSON.parse(request.requestBody);
+
+        // should be index of array + 1
+        expect(message?.auctions?.[0].auctionIndex).to.equal(index + 1);
+      });
+    });
 
     it('should pass along 1x1 size if no sizes in adUnit', function () {
       const auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
@@ -1137,6 +1152,39 @@ describe('magnite analytics adapter', function () {
       });
     });
 
+    it('should not use pbsBidId if the bid was client side cached', function () {
+      // bid response
+      let seatBidResponse = utils.deepClone(MOCK.BID_RESPONSE);
+      seatBidResponse.pbsBidId = 'do-not-use-me';
+
+      // Run auction
+      events.emit(AUCTION_INIT, MOCK.AUCTION_INIT);
+      events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+
+      // mock client side cache call
+      callPrebidCacheHook(() => {}, {}, seatBidResponse);
+
+      events.emit(BID_RESPONSE, seatBidResponse);
+      events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+      events.emit(AUCTION_END, MOCK.AUCTION_END);
+
+      // emmit gpt events and bidWon
+      mockGpt.emitEvent(gptSlotRenderEnded0.eventName, gptSlotRenderEnded0.params);
+
+      events.emit(BID_WON, MOCK.BID_WON);
+
+      // tick the event delay time plus processing delay
+      clock.tick(rubiConf.analyticsEventDelay + rubiConf.analyticsProcessDelay);
+
+      expect(server.requests.length).to.equal(1);
+      let request = server.requests[0];
+      let message = JSON.parse(request.requestBody);
+
+      // Expect the ids sent to server to use the original bidId not the pbsBidId thing
+      expect(message.auctions[0].adUnits[0].bids[0].bidId).to.equal(MOCK.BID_RESPONSE.requestId);
+      expect(message.bidsWon[0].bidId).to.equal(MOCK.BID_RESPONSE.requestId);
+    });
+
     [0, '0'].forEach(pbsParam => {
       it(`should generate new bidId if incoming pbsBidId is ${pbsParam}`, function () {
         // bid response
@@ -1488,6 +1536,8 @@ describe('magnite analytics adapter', function () {
 
       // bid source should be 'server'
       expectedMessage.auctions[0].adUnits[0].bids[0].source = 'server';
+      // if one of bids.source === server should add pbsRequest flag to adUnit
+      expectedMessage.auctions[0].adUnits[0].pbsRequest = 1;
       expectedMessage.bidsWon[0].source = 'server';
       expect(message).to.deep.equal(expectedMessage);
     });
@@ -1705,6 +1755,79 @@ describe('magnite analytics adapter', function () {
           bidId: 'bidId-3',
         };
         expect(message1.bidsWon).to.deep.equal([expectedMessage1]);
+      });
+    });
+    describe('cookieless', () => {
+      beforeEach(() => {
+        magniteAdapter.enableAnalytics({
+          options: {
+            cookieles: undefined
+          }
+        });
+      })
+      afterEach(() => {
+        magniteAdapter.disableAnalytics();
+      })
+      it('should add sufix _cookieless to the wrapper.rule if ortb2.device.ext.cdep start with "treatment" or  "control_2"', () => {
+        // Set the confs
+        config.setConfig({
+          rubicon: {
+            wrapperName: '1001_general',
+            wrapperFamily: 'general',
+            rule_name: 'desktop-magnite.com',
+          }
+        });
+        const auctionId = MOCK.AUCTION_INIT.auctionId;
+
+        let auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
+        auctionInit.bidderRequests[0].ortb2.device.ext = { cdep: 'treatment' };
+        // Run auction
+        events.emit(AUCTION_INIT, auctionInit);
+        events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+        events.emit(BID_RESPONSE, MOCK.BID_RESPONSE);
+        events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+        events.emit(AUCTION_END, MOCK.AUCTION_END);
+        [gptSlotRenderEnded0].forEach(gptEvent => mockGpt.emitEvent(gptEvent.eventName, gptEvent.params));
+        events.emit(BID_WON, { ...MOCK.BID_WON, auctionId });
+        clock.tick(rubiConf.analyticsEventDelay);
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        expect(message.wrapper).to.deep.equal({
+          name: '1001_general',
+          family: 'general',
+          rule: 'desktop-magnite.com_cookieless',
+        });
+      })
+      it('should add cookieless to the wrapper.rule if ortb2.device.ext.cdep start with "treatment" or  "control_2"', () => {
+        // Set the confs
+        config.setConfig({
+          rubicon: {
+            wrapperName: '1001_general',
+            wrapperFamily: 'general',
+          }
+        });
+        const auctionId = MOCK.AUCTION_INIT.auctionId;
+
+        let auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
+        auctionInit.bidderRequests[0].ortb2.device.ext = { cdep: 'control_2' };
+        // Run auction
+        events.emit(AUCTION_INIT, auctionInit);
+        events.emit(BID_REQUESTED, MOCK.BID_REQUESTED);
+        events.emit(BID_RESPONSE, MOCK.BID_RESPONSE);
+        events.emit(BIDDER_DONE, MOCK.BIDDER_DONE);
+        events.emit(AUCTION_END, MOCK.AUCTION_END);
+        [gptSlotRenderEnded0].forEach(gptEvent => mockGpt.emitEvent(gptEvent.eventName, gptEvent.params));
+        events.emit(BID_WON, { ...MOCK.BID_WON, auctionId });
+        clock.tick(rubiConf.analyticsEventDelay);
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+        let message = JSON.parse(request.requestBody);
+        expect(message.wrapper).to.deep.equal({
+          family: 'general',
+          name: '1001_general',
+          rule: 'cookieless',
+        });
       });
     });
   });

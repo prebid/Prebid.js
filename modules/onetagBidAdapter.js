@@ -63,7 +63,8 @@ function buildRequests(validBidRequests, bidderRequest) {
   if (bidderRequest && bidderRequest.gdprConsent) {
     payload.gdprConsent = {
       consentString: bidderRequest.gdprConsent.consentString,
-      consentRequired: bidderRequest.gdprConsent.gdprApplies
+      consentRequired: bidderRequest.gdprConsent.gdprApplies,
+      addtlConsent: bidderRequest.gdprConsent.addtlConsent
     };
   }
   if (bidderRequest && bidderRequest.gppConsent) {
@@ -127,6 +128,9 @@ function interpretResponse(serverResponse, bidderRequest) {
       },
       ttl: bid.ttl || 300
     };
+    if (bid.dsa) {
+      responseBid.meta.dsa = bid.dsa;
+    }
     if (bid.mediaType === BANNER) {
       responseBid.ad = bid.ad;
     } else if (bid.mediaType === VIDEO) {

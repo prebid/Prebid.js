@@ -23,7 +23,7 @@
 import { uniques, logWarn } from './utils.js';
 import { newAuction, getStandardBidderSettings, AUCTION_COMPLETED } from './auction.js';
 import {AuctionIndex} from './auctionIndex.js';
-import CONSTANTS from './constants.json';
+import { BID_STATUS, JSON_MAPPING } from './constants.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {ttlCollection} from './utils/ttlCollection.js';
 import {getTTL, onTTLBufferChange} from './bidTTL.js';
@@ -60,7 +60,9 @@ export function newAuctionManager() {
     }
   })
 
-  const auctionManager = {};
+  const auctionManager = {
+    onExpiry: _auctions.onExpiry
+  };
 
   function getAuction(auctionId) {
     for (const auction of _auctions) {
@@ -75,7 +77,7 @@ export function newAuctionManager() {
     metrics.timeBetween('requestBids', 'bidWon', 'render.e2e');
     const auction = getAuction(bid.auctionId);
     if (auction) {
-      bid.status = CONSTANTS.BID_STATUS.RENDERED;
+      bid.status = BID_STATUS.RENDERED;
       auction.addWinningBid(bid);
     } else {
       logWarn(`Auction not found when adding winning bid`);
@@ -132,14 +134,14 @@ export function newAuctionManager() {
   };
 
   auctionManager.getStandardBidderAdServerTargeting = function() {
-    return getStandardBidderSettings()[CONSTANTS.JSON_MAPPING.ADSERVER_TARGETING];
+    return getStandardBidderSettings()[JSON_MAPPING.ADSERVER_TARGETING];
   };
 
   auctionManager.setStatusForBids = function(adId, status) {
     let bid = auctionManager.findBidByAdId(adId);
     if (bid) bid.status = status;
 
-    if (bid && status === CONSTANTS.BID_STATUS.BID_TARGETING_SET) {
+    if (bid && status === BID_STATUS.BID_TARGETING_SET) {
       const auction = getAuction(bid.auctionId);
       if (auction) auction.setBidTargeting(bid);
     }

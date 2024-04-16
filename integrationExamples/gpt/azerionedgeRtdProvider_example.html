@@ -1,0 +1,91 @@
+<html>
+  <head>
+    <meta name="keywords" content="football basketball rugby tenis" />
+    <script async src="../../build/dev/prebid.js" async></script>
+    <script
+      async
+      src="https://www.googletagservices.com/tag/js/gpt.js"
+    ></script>
+
+    <script>
+      const FAILSAFE_TIMEOUT = 1000;
+      const PREBID_TIMEOUT = 1000;
+      const TEST_DIV = "test-div";
+      const TEST_SIZES = [[300, 250]];
+      const TEST_OUTPUT = "azerion-segments";
+      const STORAGE_KEY = "ht-pa-v1-a";
+    </script>
+
+    <script>
+      var googletag = googletag || {};
+      googletag.cmd = googletag.cmd || [];
+      googletag.cmd.push(function () {
+        googletag
+          .defineSlot("/19968336/header-bid-tag-0", TEST_SIZES, TEST_DIV)
+          .addService(googletag.pubads());
+        googletag.pubads().disableInitialLoad();
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+      });
+    </script>
+
+    <script>
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+      pbjs.que.push(function () {
+        pbjs.setConfig({
+          debug: true,
+          realTimeData: {
+            dataProviders: [
+              {
+                name: "azerionedge",
+                waitForIt: true,
+                params: { bidders: ["improvedigital"] },
+              },
+            ],
+          },
+        });
+        pbjs.setBidderConfig({ bidders: ["improvedigital"], config: {} });
+        pbjs.addAdUnits([
+          {
+            code: TEST_DIV,
+            mediaTypes: { banner: { sizes: TEST_SIZES } },
+            bids: [{ bidder: "improvedigital", params: { placementId: 13144370 } }],
+          },
+        ]);
+        pbjs.requestBids({
+          bidsBackHandler: sendAdserverRequest,
+          timeout: PREBID_TIMEOUT,
+        });
+      });
+
+      function sendAdserverRequest() {
+        const output = document.getElementById(TEST_OUTPUT);
+        output.innerHTML = window.localStorage.getItem(STORAGE_KEY);
+
+        if (pbjs.adserverRequestSent) return;
+        pbjs.adserverRequestSent = true;
+        googletag.cmd.push(function () {
+          pbjs.que.push(function () {
+            pbjs.setTargetingForGPTAsync();
+            googletag.pubads().refresh();
+          });
+        });
+      }
+      setTimeout(sendAdserverRequest, FAILSAFE_TIMEOUT);
+    </script>
+  </head>
+
+  <body>
+    <h2>Azerion Edge RTD</h2>
+
+    <div id="test-div">
+      <script>
+        googletag.cmd.push(() => googletag.display(TEST_DIV));
+      </script>
+    </div>
+
+    Segments:
+    <div id="azerion-segments"></div>
+  </body>
+</html>
