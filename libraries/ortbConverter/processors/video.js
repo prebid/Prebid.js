@@ -1,6 +1,5 @@
-import {deepAccess, isEmpty, logWarn, mergeDeep} from '../../../src/utils.js';
+import {deepAccess, isEmpty, logWarn, mergeDeep, sizesToSizeTuples, sizeTupleToRtbSize} from '../../../src/utils.js';
 import {VIDEO} from '../../../src/mediaTypes.js';
-import {sizesToFormat} from '../lib/sizes.js';
 
 // parameters that share the same name & semantics between pbjs adUnits and imp.video
 const ORTB_VIDEO_PARAMS = new Set([
@@ -41,7 +40,7 @@ export function fillVideoImp(imp, bidRequest, context) {
         .filter(([name]) => ORTB_VIDEO_PARAMS.has(name))
     );
     if (videoParams.playerSize) {
-      const format = sizesToFormat(videoParams.playerSize);
+      const format = sizesToSizeTuples(videoParams.playerSize).map(sizeTupleToRtbSize);
       if (format.length > 1) {
         logWarn('video request specifies more than one playerSize; all but the first will be ignored')
       }

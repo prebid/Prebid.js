@@ -1,6 +1,12 @@
-import {createTrackPixelHtml, deepAccess, inIframe, mergeDeep} from '../../../src/utils.js';
+import {
+  createTrackPixelHtml,
+  deepAccess,
+  inIframe,
+  mergeDeep,
+  sizesToSizeTuples,
+  sizeTupleToRtbSize
+} from '../../../src/utils.js';
 import {BANNER} from '../../../src/mediaTypes.js';
-import {sizesToFormat} from '../lib/sizes.js';
 
 /**
  * fill in a request `imp` with banner parameters from `bidRequest`.
@@ -14,7 +20,7 @@ export function fillBannerImp(imp, bidRequest, context) {
       topframe: inIframe() === true ? 0 : 1
     };
     if (bannerParams.sizes) {
-      banner.format = sizesToFormat(bannerParams.sizes);
+      banner.format = sizesToSizeTuples(bannerParams.sizes).map(sizeTupleToRtbSize);
     }
     if (bannerParams.hasOwnProperty('pos')) {
       banner.pos = bannerParams.pos;
