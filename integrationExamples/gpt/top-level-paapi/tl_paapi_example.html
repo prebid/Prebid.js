@@ -1,0 +1,188 @@
+<html>
+<head>
+    <script async src="../../../../build/dev/prebid.js"></script>
+    <script>
+        // intercept navigator.runAdAuction and print parameters to console
+        (() => {
+            var originalRunAdAuction = navigator.runAdAuction;
+            navigator.runAdAuction = function (...args) {
+                console.log('%c runAdAuction', 'background: cyan; border: 2px; border-radius: 3px', ...args);
+                return originalRunAdAuction.apply(navigator, args);
+            };
+        })();
+    </script>
+
+    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+
+    <script>
+        var FAILSAFE_TIMEOUT = 3300;
+        var PREBID_TIMEOUT = 3000;
+        var adUnits = [{
+                code: 'div-1',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[300, 250]],
+                    }
+                },
+                ortb2Imp: {
+                    ext: {
+                        ae: 1
+                    }
+                },
+                bids: [
+                    {
+                        bidder: 'openx',
+                        params: {
+                            unit: '538703464',
+                            response_template_name: 'test_banner_ad',
+                            test: true,
+                            delDomain: 'sademo-d.openx.net'
+                        }
+                    },
+
+                ],
+            }
+            ]
+        ;
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+        googletag.cmd.push(function () {
+            googletag.pubads().disableInitialLoad();
+        });
+
+        pbjs.que.push(function () {
+            pbjs.setConfig({
+                debug: true,
+                paapi: {
+                    enabled: true,
+                    gpt: {
+                        autoconfig: false
+                    }
+                },
+                debugging: {
+                    enabled: true,
+                    intercept: [
+                        {
+                            when: {
+                                bidder: 'openx',
+                            },
+                            then: {
+                                cpm: 0.1
+                            },
+                            paapi() {
+                                return [
+                                    {
+                                        'seller': 'https://privacysandbox.openx.net',
+                                        'decisionLogicURL': 'https://privacysandbox.openx.net/fledge/decision-logic-component.js',
+                                        'sellerSignals': {
+                                            'floor': 0.01,
+                                            'currency': 'USD',
+                                            'auctionTimestamp': new Date().getTime(),
+                                            'publisherId': '537143056',
+                                            'adUnitId': '538703464'
+                                        },
+                                        'interestGroupBuyers': [
+                                            'https://privacysandbox.openx.net'
+                                        ],
+                                        'perBuyerSignals': {
+                                            'https://privacysandbox.openx.net': {
+                                                'bid': 1.5
+                                            }
+                                        },
+                                        'sellerCurrency': 'USD'
+                                    }
+                                ];
+                            }
+                        }
+                    ]
+                },
+            });
+
+            pbjs.addAdUnits(adUnits);
+            pbjs.requestBids({
+                bidsBackHandler: sendAdserverRequest,
+                timeout: PREBID_TIMEOUT
+            });
+        });
+
+        function raa() {
+            return Promise.all(
+                Object.entries(pbjs.getPAAPIConfig())
+                    .map(([adUnitCode, auctionConfig]) => {
+                        return navigator.runAdAuction({
+                            seller: window.location.origin,
+                            decisionLogicURL: new URL('decisionLogic.js', window.location).toString(),
+                            resolveToConfig: false,
+                            ...auctionConfig
+                        }).then(urn => {
+                            if (urn) {
+                                // if we have a paapi winner, replace the adunit div
+                                // with an iframe that renders it
+                                const iframe = document.createElement('iframe');
+                                Object.assign(iframe, {
+                                    src: urn,
+                                    frameBorder: 0,
+                                    scrolling: 'no',
+                                }, auctionConfig.requestedSize);
+                                const div = document.getElementById(adUnitCode);
+                                div.parentElement.insertBefore(iframe, div);
+                                div.remove();
+                                return true;
+                            }
+                        });
+                    })
+            ).then(won => won.every(el => el));
+        }
+
+        function sendAdserverRequest() {
+            if (pbjs.adserverRequestSent) return;
+            pbjs.adserverRequestSent = true;
+            raa().then((allPaapi) => {
+                if (!allPaapi) {
+                    googletag.cmd.push(function () {
+                        pbjs.que.push(function () {
+                            pbjs.setTargetingForGPTAsync();
+                            googletag.pubads().refresh();
+                        });
+                    });
+                }
+            });
+        }
+
+        setTimeout(function () {
+            sendAdserverRequest();
+        }, FAILSAFE_TIMEOUT);
+
+        googletag.cmd.push(function () {
+            googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-1').addService(googletag.pubads());
+
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+</head>
+
+<body>
+<h2>Standalone PAAPI Prebid.js Example</h2>
+<p>Start local server with:</p>
+<code>gulp serve-fast --https</code>
+<p>Chrome flags:</p>
+<code>--enable-features=CookieDeprecationFacilitatedTesting:label/treatment_1.2/force_eligible/true
+    --privacy-sandbox-enrollment-overrides=https://localhost:9999</code>
+<p>Join interest group at <a href="https://privacysandbox.openx.net/fledge/advertiser">https://privacysandbox.openx.net/fledge/advertiser</a>
+</p>
+<h5>Div-1</h5>
+<div id='div-1' style='min-width: 300px; min-height: 250px;'>
+    <script type='text/javascript'>
+        googletag.cmd.push(function () {
+            googletag.display('div-1');
+        });
+    </script>
+</div>
+
+</body>
+</html>

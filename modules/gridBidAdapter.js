@@ -554,8 +554,8 @@ function _addBidResponse(serverBid, bidRequest, bidResponses, RendererConst, bid
         bidResponse.meta.demandSource = serverBid.ext.bidder.grid.demandSource;
       }
 
-      if (serverBid.ext && serverBid.ext.dsa && serverBid.ext.dsa.adrender) {
-        bidResponse.meta.adrender = serverBid.ext.dsa.adrender;
+      if (serverBid.ext && serverBid.ext.dsa) {
+        bidResponse.meta.dsa = serverBid.ext.dsa;
       }
 
       if (serverBid.content_type === 'video') {

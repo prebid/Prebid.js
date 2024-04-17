@@ -1,17 +1,17 @@
 // jscs:disable
-import CONSTANTS from 'src/constants.json';
+import { TARGETING_KEYS, STATUS } from 'src/constants.js';
 import {createBid} from '../../src/bidfactory.js';
 const utils = require('src/utils.js');
 
 function convertTargetingsFromOldToNew(targetings) {
   var mapOfOldToNew = {
-    'hb_bidder': CONSTANTS.TARGETING_KEYS.BIDDER,
-    'hb_adid': CONSTANTS.TARGETING_KEYS.AD_ID,
-    'hb_pb': CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
-    'hb_size': CONSTANTS.TARGETING_KEYS.SIZE,
-    'hb_deal': CONSTANTS.TARGETING_KEYS.DEAL,
-    'hb_source': CONSTANTS.TARGETING_KEYS.SOURCE,
-    'hb_format': CONSTANTS.TARGETING_KEYS.FORMAT
+    'hb_bidder': TARGETING_KEYS.BIDDER,
+    'hb_adid': TARGETING_KEYS.AD_ID,
+    'hb_pb': TARGETING_KEYS.PRICE_BUCKET,
+    'hb_size': TARGETING_KEYS.SIZE,
+    'hb_deal': TARGETING_KEYS.DEAL,
+    'hb_source': TARGETING_KEYS.SOURCE,
+    'hb_format': TARGETING_KEYS.FORMAT
   };
   var newTargetings = {};
   utils._each(targetings, function(value, currentKey) {
@@ -1018,19 +1018,19 @@ export function getAdServerTargeting() {
 export function getTargetingKeys() {
   return [
     [
-      CONSTANTS.TARGETING_KEYS.BIDDER,
+      TARGETING_KEYS.BIDDER,
       'appnexus'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.AD_ID,
+      TARGETING_KEYS.AD_ID,
       '233bcbee889d46d'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
+      TARGETING_KEYS.PRICE_BUCKET,
       '10.00'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.SIZE,
+      TARGETING_KEYS.SIZE,
       '300x250'
     ],
     [
@@ -1045,19 +1045,19 @@ export function getTargetingKeys() {
 export function getTargetingKeysBidLandscape() {
   return [
     [
-      CONSTANTS.TARGETING_KEYS.BIDDER,
+      TARGETING_KEYS.BIDDER,
       'appnexus'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.AD_ID + '_appnexus',
+      TARGETING_KEYS.AD_ID + '_appnexus',
       '233bcbee889d46d'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.PRICE_BUCKET,
+      TARGETING_KEYS.PRICE_BUCKET,
       '10.00'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.SIZE,
+      TARGETING_KEYS.SIZE,
       '300x250'
     ],
     [
@@ -1065,111 +1065,111 @@ export function getTargetingKeysBidLandscape() {
       ['0x0', '300x250', '300x600']
     ],
     [
-      CONSTANTS.TARGETING_KEYS.BIDDER + '_triplelift',
+      TARGETING_KEYS.BIDDER + '_triplelift',
       'triplelift'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.AD_ID + '_triplelift',
+      TARGETING_KEYS.AD_ID + '_triplelift',
       '222bb26f9e8bd'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_triplelift',
+      TARGETING_KEYS.PRICE_BUCKET + '_triplelift',
       '10.00'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.SIZE + '_triplelift',
+      TARGETING_KEYS.SIZE + '_triplelift',
       '0x0'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.BIDDER + '_appnexus',
+      TARGETING_KEYS.BIDDER + '_appnexus',
       'appnexus'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_appnexus',
+      TARGETING_KEYS.PRICE_BUCKET + '_appnexus',
       '10.00'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.SIZE + '_appnexus',
+      TARGETING_KEYS.SIZE + '_appnexus',
       '300x250'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.BIDDER + '_pagescienc',
+      TARGETING_KEYS.BIDDER + '_pagescienc',
       'pagescience'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.AD_ID + '_pagescience',
+      TARGETING_KEYS.AD_ID + '_pagescience',
       '25bedd4813632d7'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_pagescience',
+      TARGETING_KEYS.PRICE_BUCKET + '_pagescience',
       '10.00'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.SIZE + '_pagescience',
+      TARGETING_KEYS.SIZE + '_pagescience',
       '300x250'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.BIDDER + '_brightcom',
+      TARGETING_KEYS.BIDDER + '_brightcom',
       'brightcom'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.AD_ID + '_brightcom',
+      TARGETING_KEYS.AD_ID + '_brightcom',
       '26e0795ab963896'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_brightcom',
+      TARGETING_KEYS.PRICE_BUCKET + '_brightcom',
       '10.00'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.SIZE + '_brightcom',
+      TARGETING_KEYS.SIZE + '_brightcom',
       '300x250'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.BIDDER + '_brealtime',
+      TARGETING_KEYS.BIDDER + '_brealtime',
       'brealtime'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.AD_ID + '_brealtime',
+      TARGETING_KEYS.AD_ID + '_brealtime',
       '275bd666f5a5a5d'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_brealtime',
+      TARGETING_KEYS.PRICE_BUCKET + '_brealtime',
       '10.00'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.SIZE + '_brealtime',
+      TARGETING_KEYS.SIZE + '_brealtime',
       '300x250'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.BIDDER + '_pubmatic',
+      TARGETING_KEYS.BIDDER + '_pubmatic',
       'pubmatic'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.AD_ID + '_pubmatic',
+      TARGETING_KEYS.AD_ID + '_pubmatic',
       '28f4039c636b6a7'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_pubmatic',
+      TARGETING_KEYS.PRICE_BUCKET + '_pubmatic',
       '10.00'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.SIZE + '_pubmatic',
+      TARGETING_KEYS.SIZE + '_pubmatic',
       '300x250'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.BIDDER + '_rubicon',
+      TARGETING_KEYS.BIDDER + '_rubicon',
       'rubicon'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.AD_ID + '_rubicon',
+      TARGETING_KEYS.AD_ID + '_rubicon',
       '29019e2ab586a5a'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.PRICE_BUCKET + '_rubicon',
+      TARGETING_KEYS.PRICE_BUCKET + '_rubicon',
       '10.00'
     ],
     [
-      CONSTANTS.TARGETING_KEYS.SIZE + '_rubicon',
+      TARGETING_KEYS.SIZE + '_rubicon',
       '300x600'
     ]
   ];
@@ -1262,7 +1262,7 @@ export function createBidReceived({bidder, cpm, auctionId, responseTimestamp, ad
   if (typeof status !== 'undefined') {
     bid.status = status;
   }
-  return Object.assign(createBid(CONSTANTS.STATUS.GOOD), bid);
+  return Object.assign(createBid(STATUS.GOOD), bid);
 }
 
 export function getServerTestingsAds() {
