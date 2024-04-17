@@ -3,7 +3,7 @@
  */
 import {config} from '../src/config.js';
 import {getHook, hook, module} from '../src/hook.js';
-import {deepSetValue, logInfo, logWarn, mergeDeep, parseSizesInput, sizesToSizeTuples} from '../src/utils.js';
+import {deepSetValue, logInfo, logWarn, mergeDeep, sizesToSizeTuples} from '../src/utils.js';
 import {IMP, PBS, registerOrtbProcessor, RESPONSE} from '../src/pbjsORTB.js';
 import * as events from '../src/events.js';
 import {EVENTS} from '../src/constants.js';
@@ -187,10 +187,12 @@ function getFledgeConfig() {
 /**
  * Given an array of size tuples, return the one that should be used for PAAPI.
  */
-export const getPAAPISize = hook('sync', function(sizes) {
-  return sizes
-    .filter(([w, h]) => !(w === h && w <= 5))
-    .reduce(maximum(keyCompare(([w, h]) => w * h)))
+export const getPAAPISize = hook('sync', function (sizes) {
+  if (sizes?.length) {
+    return sizes
+      .filter(([w, h]) => !(w === h && w <= 5))
+      .reduce(maximum(keyCompare(([w, h]) => w * h)));
+  }
 }, 'getPAAPISize');
 
 function getRequestedSize(adUnit) {

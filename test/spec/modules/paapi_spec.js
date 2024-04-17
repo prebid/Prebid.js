@@ -22,20 +22,10 @@ import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {AuctionIndex} from '../../../src/auctionIndex.js';
 
 describe('paapi module', () => {
-  let sandbox, getPAAPISizeStub;
-  function getPAAPISizeHook(next, sizes) {
-    next.bail(getPAAPISizeStub(sizes));
-  }
-  before(() => {
-    reset();
-    getPAAPISize.before(getPAAPISizeHook);
-  })
-  after(() => {
-    getPAAPISize.getHooks({hook: getPAAPISizeHook}).remove();
-  })
+  let sandbox;
+  before(reset)
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
-    getPAAPISizeStub = sinon.stub();
   });
   afterEach(() => {
     sandbox.restore();
@@ -47,6 +37,23 @@ describe('paapi module', () => {
     'paapi'
   ].forEach(configNS => {
     describe(`using ${configNS} for configuration`, () => {
+      let getPAAPISizeStub;
+      function getPAAPISizeHook(next, sizes) {
+        next.bail(getPAAPISizeStub(sizes));
+      }
+
+      before(() => {
+        getPAAPISize.before(getPAAPISizeHook, 100);
+      });
+
+      after(() => {
+        getPAAPISize.getHooks({hook: getPAAPISizeHook}).remove();
+      });
+
+      beforeEach(() => {
+        getPAAPISizeStub = sinon.stub()
+      });
+
       describe('getPAAPIConfig', function () {
         let nextFnSpy, fledgeAuctionConfig;
         before(() => {
@@ -525,7 +532,6 @@ describe('paapi module', () => {
           config.resetConfig();
         });
 
-
         function mark() {
           return Object.fromEntries(
             adapterManager.makeBidRequests(
@@ -669,6 +675,14 @@ describe('paapi module', () => {
       'picks largest size by area': {
         in: [[200, 100], [150, 150]],
         out: [150, 150]
+      },
+      'can handle no sizes': {
+        in: [],
+        out: undefined
+      },
+      'can handle no input': {
+        in: undefined,
+        out: undefined
       }
     }).forEach(([t, {in: input, out}]) => {
       it(t, () => {

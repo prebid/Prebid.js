@@ -194,7 +194,8 @@ describe('fledgeForGpt module', () => {
 
     Object.entries({
       'present': [],
-      'supported': [[123, 4], [321, 5]]
+      'supported': [[123, 4], [321, 5]],
+      'defined': undefined,
     }).forEach(([t, sizes]) => {
       it(`should defer to next when no size is ${t}`, () => {
         getPAAPISizeHook(next, sizes);

@@ -124,13 +124,15 @@ export const getPAAPISizeHook = (() => {
     .map(size => [size, sizeTupleToSizeString(size)]);
 
   return function(next, sizes) {
-    const sizeStrings = new Set(sizes.map(sizeTupleToSizeString));
-    const preferredSize = SUPPORTED_SIZES.find(([_, sizeStr]) => sizeStrings.has(sizeStr));
-    if (preferredSize) {
-      next.bail(preferredSize[0])
-    } else {
-      next(sizes);
+    if (sizes?.length) {
+      const sizeStrings = new Set(sizes.map(sizeTupleToSizeString));
+      const preferredSize = SUPPORTED_SIZES.find(([_, sizeStr]) => sizeStrings.has(sizeStr));
+      if (preferredSize) {
+        next.bail(preferredSize[0]);
+        return;
+      }
     }
+    next(sizes);
   }
 })();
 
