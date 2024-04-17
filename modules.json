@@ -51,5 +51,7 @@
     "pairIdSystem",
     "connectIdSystem",
     "33acrossIdSystem",
-    "id5IdSystem"
+    "id5IdSystem",
+    "carbonRtdProvider",
+    "carbonAnalyticsAdapter"
 ]
