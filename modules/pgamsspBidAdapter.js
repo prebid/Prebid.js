@@ -222,7 +222,7 @@ export const spec = {
   getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
     let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
     let syncUrl = SYNC_URL + `/${syncType}?pbjs=1`;
-    
+
     if (gdprConsent && gdprConsent.consentString) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
         syncUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
@@ -230,11 +230,11 @@ export const spec = {
         syncUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
       }
     }
-    
+
     if (uspConsent && uspConsent.consentString) {
       syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
     }
-    
+
     if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
       syncUrl += '&gpp=' + gppConsent.gppString;
       syncUrl += '&gpp_sid=' + gppConsent.applicableSections.join(',');
