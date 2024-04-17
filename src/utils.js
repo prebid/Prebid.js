@@ -157,7 +157,7 @@ export function parseSizesInput(sizeObj) {
   return sizesToSizeTuples(sizeObj).map(sizeTupleToSizeString);
 }
 
-function sizeTupleToSizeString(size) {
+export function sizeTupleToSizeString(size) {
   return size[0] + 'x' + size[1]
 }
 

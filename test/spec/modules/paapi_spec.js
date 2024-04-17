@@ -12,7 +12,7 @@ import {
   registerSubmodule,
   setImpExtAe,
   setResponseFledgeConfigs,
-  reset
+  reset, getPAAPISize
 } from 'modules/paapi.js';
 import * as events from 'src/events.js';
 import { EVENTS } from 'src/constants.js';
@@ -22,10 +22,20 @@ import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {AuctionIndex} from '../../../src/auctionIndex.js';
 
 describe('paapi module', () => {
-  let sandbox;
-  before(reset);
+  let sandbox, getPAAPISizeStub;
+  function getPAAPISizeHook(next, sizes) {
+    next.bail(getPAAPISizeStub(sizes));
+  }
+  before(() => {
+    reset();
+    getPAAPISize.before(getPAAPISizeHook);
+  })
+  after(() => {
+    getPAAPISize.getHooks({hook: getPAAPISizeHook}).remove();
+  })
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
+    getPAAPISizeStub = sinon.stub();
   });
   afterEach(() => {
     sandbox.restore();
@@ -128,30 +138,6 @@ describe('paapi module', () => {
             events.emit(EVENTS.AUCTION_END, { auctionId });
             expect(getPAAPIConfig({auctionId})).to.eql({});
           });
-
-          it('should use first size as requestedSize', () => {
-            addComponentAuctionHook(nextFnSpy, {
-              auctionId,
-              adUnitCode: 'au1',
-            }, fledgeAuctionConfig);
-            events.emit(EVENTS.AUCTION_END, {
-              auctionId,
-              adUnits: [
-                {
-                  code: 'au1',
-                  mediaTypes: {
-                    banner: {
-                      sizes: [[200, 100], [300, 200]]
-                    }
-                  }
-                }
-              ]
-            });
-            expect(getPAAPIConfig({auctionId}).au1.requestedSize).to.eql({
-              width: '200',
-              height: '100'
-            })
-          })
 
           it('should augment auctionSignals with FPD', () => {
             addComponentAuctionHook(nextFnSpy, {
@@ -330,6 +316,63 @@ describe('paapi module', () => {
               });
             });
           });
+
+          describe('requestedSize', () => {
+            let adUnit;
+            beforeEach(() => {
+              adUnit = {
+                code: 'au',
+              }
+            })
+            function getConfig() {
+              addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: adUnit.code}, fledgeAuctionConfig);
+              events.emit(EVENTS.AUCTION_END, {auctionId, adUnitCodes: [adUnit.code], adUnits: [adUnit]})
+              return getPAAPIConfig()[adUnit.code];
+            }
+            Object.entries({
+              'adUnit.ortb2Imp.ext.paapi.requestedSize'() {
+                adUnit.ortb2Imp = {
+                  ext: {
+                    paapi: {
+                      requestedSize: {
+                        width: '123',
+                        height: '321'
+                      }
+                    }
+                  }
+                }
+              },
+              'largest size'() {
+                getPAAPISizeStub.returns([123, 321]);
+              }
+            }).forEach(([t, setup]) => {
+              describe(`should be set from ${t}`, () => {
+                beforeEach(setup);
+
+                it('without overriding component auctions, if set', () => {
+                  fledgeAuctionConfig.requestedSize = {width: '1', height: '2'};
+                  expect(getConfig().componentAuctions[0].requestedSize).to.eql({
+                    width: '1',
+                    height: '2'
+                  })
+                });
+
+                it('on component auction, if missing', () => {
+                  expect(getConfig().componentAuctions[0].requestedSize).to.eql({
+                    width: '123',
+                    height: '321'
+                  });
+                });
+
+                it('on top level auction', () => {
+                  expect(getConfig().requestedSize).to.eql({
+                    width: '123',
+                    height: '321'
+                  })
+                })
+              });
+            });
+          });
         });
 
         describe('with multiple auctions', () => {
@@ -442,6 +485,7 @@ describe('paapi module', () => {
 
       describe('markForFledge', function () {
         const navProps = Object.fromEntries(['runAdAuction', 'joinAdInterestGroup'].map(p => [p, navigator[p]]));
+        let adUnits;
 
         before(function () {
           // navigator.runAdAuction & co may not exist, so we can't stub it normally with
@@ -457,29 +501,33 @@ describe('paapi module', () => {
           Object.entries(navProps).forEach(([p, orig]) => navigator[p] = orig);
         });
 
+        beforeEach(() => {
+          getPAAPISizeStub = sinon.stub();
+          adUnits = [{
+            'code': '/19968336/header-bid-tag1',
+            'mediaTypes': {
+              'banner': {
+                'sizes': [[728, 90]]
+              },
+            },
+            'bids': [
+              {
+                'bidder': 'appnexus',
+              },
+              {
+                'bidder': 'rubicon',
+              },
+            ]
+          }];
+        })
+
         afterEach(function () {
           config.resetConfig();
         });
 
-        const adUnits = [{
-          'code': '/19968336/header-bid-tag1',
-          'mediaTypes': {
-            'banner': {
-              'sizes': [[728, 90]]
-            },
-          },
-          'bids': [
-            {
-              'bidder': 'appnexus',
-            },
-            {
-              'bidder': 'rubicon',
-            },
-          ]
-        }];
 
-        function expectFledgeFlags(...enableFlags) {
-          const bidRequests = Object.fromEntries(
+        function mark() {
+          return Object.fromEntries(
             adapterManager.makeBidRequests(
               adUnits,
               Date.now(),
@@ -489,6 +537,10 @@ describe('paapi module', () => {
               []
             ).map(b => [b.bidderCode, b])
           );
+        }
+
+        function expectFledgeFlags(...enableFlags) {
+          const bidRequests = mark();
 
           expect(bidRequests.appnexus.fledgeEnabled).to.eql(enableFlags[0].enabled);
           bidRequests.appnexus.bids.forEach(bid => expect(bid.ortb2Imp.ext.ae).to.eql(enableFlags[0].ae));
@@ -546,8 +598,83 @@ describe('paapi module', () => {
             expectFledgeFlags({enabled: true, ae: 0}, {enabled: true, ae: 0});
           });
         });
+
+        describe('ortb2Imp.ext.paapi.requestedSize', () => {
+          beforeEach(() => {
+            config.setConfig({
+              [configNS]: {
+                enabled: true,
+                defaultForSlots: 1,
+              }
+            });
+          });
+
+          it('should default to value returned by getPAAPISize', () => {
+            getPAAPISizeStub.returns([123, 321]);
+            Object.values(mark()).flatMap(b => b.bids).forEach(bidRequest => {
+              sinon.assert.match(bidRequest.ortb2Imp.ext.paapi, {
+                requestedSize: {
+                  width: '123',
+                  height: '321'
+                }
+              })
+            });
+          });
+
+          it('should not be overridden, if provided by the pub', () => {
+            adUnits[0].ortb2Imp = {
+              ext: {
+                paapi: {
+                  requestedSize: {
+                    width: '123px',
+                    height: '321px'
+                  }
+                }
+              }
+            }
+            Object.values(mark()).flatMap(b => b.bids).forEach(bidRequest => {
+              sinon.assert.match(bidRequest.ortb2Imp.ext.paapi, {
+                requestedSize: {
+                  width: '123px',
+                  height: '321px'
+                }
+              })
+            });
+            sinon.assert.notCalled(getPAAPISizeStub);
+          });
+
+          it('should not be set if adUnit has no banner sizes', () => {
+            adUnits[0].mediaTypes = {
+              video: {}
+            };
+            Object.values(mark()).flatMap(b => b.bids).forEach(bidRequest => {
+              expect(bidRequest.ortb2Imp?.ext?.paapi?.requestedSize).to.not.exist;
+            });
+          });
+        })
       });
     });
+  });
+
+  describe('getPAAPISize', () => {
+    before(() => {
+      getPAAPISize.getHooks().remove();
+    });
+
+    Object.entries({
+      'ignores placeholders': {
+        in: [[1, 1], [0, 0], [3, 4]],
+        out: [3, 4]
+      },
+      'picks largest size by area': {
+        in: [[200, 100], [150, 150]],
+        out: [150, 150]
+      }
+    }).forEach(([t, {in: input, out}]) => {
+      it(t, () => {
+        expect(getPAAPISize(input)).to.eql(out);
+      })
+    })
   });
 
   describe('ortb processors for fledge', () => {

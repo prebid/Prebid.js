@@ -2,13 +2,13 @@
  * Collect PAAPI component auction configs from bid adapters and make them available through `pbjs.getPAAPIConfig()`
  */
 import {config} from '../src/config.js';
-import {getHook, module} from '../src/hook.js';
-import {deepSetValue, logInfo, logWarn, mergeDeep, parseSizesInput} from '../src/utils.js';
+import {getHook, hook, module} from '../src/hook.js';
+import {deepSetValue, logInfo, logWarn, mergeDeep, parseSizesInput, sizesToSizeTuples} from '../src/utils.js';
 import {IMP, PBS, registerOrtbProcessor, RESPONSE} from '../src/pbjsORTB.js';
 import * as events from '../src/events.js';
 import {EVENTS} from '../src/constants.js';
 import {currencyCompare} from '../libraries/currencyUtils/currency.js';
-import {maximum, minimum} from '../src/utils/reducers.js';
+import {keyCompare, maximum, minimum} from '../src/utils/reducers.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
@@ -69,7 +69,7 @@ getHook('addComponentAuction').before(addComponentAuctionHook);
 getHook('makeBidRequests').after(markForFledge);
 events.on(EVENTS.AUCTION_END, onAuctionEnd);
 
-function getSlotSignals(bidsReceived = [], bidRequests = []) {
+function getSlotSignals(adUnit = {}, bidsReceived = [], bidRequests = []) {
   let bidfloor, bidfloorcur;
   if (bidsReceived.length > 0) {
     const bestBid = bidsReceived.reduce(maximum(currencyCompare(bid => [bid.cpm, bid.currency])));
@@ -86,6 +86,10 @@ function getSlotSignals(bidsReceived = [], bidRequests = []) {
     deepSetValue(cfg, 'auctionSignals.prebid.bidfloor', bidfloor);
     bidfloorcur && deepSetValue(cfg, 'auctionSignals.prebid.bidfloorcur', bidfloorcur);
   }
+  const requestedSize = getRequestedSize(adUnit);
+  if (requestedSize) {
+    cfg.requestedSize = requestedSize;
+  }
   return cfg;
 }
 
@@ -99,23 +103,11 @@ function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes, adU
   });
   Object.entries(pendingForAuction(auctionId) || {}).forEach(([adUnitCode, auctionConfigs]) => {
     const forThisAdUnit = (bid) => bid.adUnitCode === adUnitCode;
-    const slotSignals = getSlotSignals(bidsReceived?.filter(forThisAdUnit), allReqs?.filter(forThisAdUnit));
+    const slotSignals = getSlotSignals(adUnitsByCode[adUnitCode], bidsReceived?.filter(forThisAdUnit), allReqs?.filter(forThisAdUnit));
     paapiConfigs[adUnitCode] = {
       ...slotSignals,
       componentAuctions: auctionConfigs.map(cfg => mergeDeep({}, slotSignals, cfg))
     };
-    // TODO: need to flesh out size treatment:
-    // - which size should the paapi auction pick? (this uses the first one defined)
-    // - should we signal it to SSPs, and how?
-    // - what should we do if adapters pick a different one?
-    // - what does size mean for video and native?
-    const size = parseSizesInput(adUnitsByCode[adUnitCode]?.mediaTypes?.banner?.sizes)?.[0]?.split('x');
-    if (size) {
-      paapiConfigs[adUnitCode].requestedSize = {
-        width: size[0],
-        height: size[1],
-      };
-    }
     latestAuctionForAdUnit[adUnitCode] = auctionId;
   });
   configsForAuction(auctionId, paapiConfigs);
@@ -192,6 +184,27 @@ function getFledgeConfig() {
   };
 }
 
+/**
+ * Given an array of size tuples, return the one that should be used for PAAPI.
+ */
+export const getPAAPISize = hook('sync', function(sizes) {
+  return sizes
+    .filter(([w, h]) => !(w === h && w <= 5))
+    .reduce(maximum(keyCompare(([w, h]) => w * h)))
+}, 'getPAAPISize');
+
+function getRequestedSize(adUnit) {
+  return adUnit.ortb2Imp?.ext?.paapi?.requestedSize || (() => {
+    const size = getPAAPISize(sizesToSizeTuples(adUnit.mediaTypes?.banner?.sizes));
+    if (size) {
+      return {
+        width: size[0].toString(),
+        height: size[1].toString()
+      }
+    }
+  })();
+}
+
 export function markForFledge(next, bidderRequests) {
   if (isFledgeSupported()) {
     bidderRequests.forEach((bidderReq) => {
@@ -200,6 +213,10 @@ export function markForFledge(next, bidderRequests) {
         Object.assign(bidderReq, {fledgeEnabled: enabled});
         bidderReq.bids.forEach(bidReq => {
           deepSetValue(bidReq, 'ortb2Imp.ext.ae', bidReq.ortb2Imp?.ext?.ae ?? ae);
+          const requestedSize = getRequestedSize(bidReq);
+          if (requestedSize) {
+            deepSetValue(bidReq, 'ortb2Imp.ext.paapi.requestedSize', requestedSize)
+          }
         });
       });
     });
