@@ -52,5 +52,7 @@
     "connectIdSystem",
     "33acrossIdSystem",
     "id5IdSystem",
-    "topicsFpdModule"
+    "topicsFpdModule",
+    "carbonRtdProvider",
+    "carbonAnalyticsAdapter"
 ]
