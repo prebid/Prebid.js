@@ -30,7 +30,6 @@ import {isBidUsable, targeting} from './targeting.js';
 import {hook, wrapHook} from './hook.js';
 import {loadSession} from './debugging.js';
 import {includes} from './polyfill.js';
-import {adunitCounter} from './adUnits.js';
 import {createBid} from './bidfactory.js';
 import {storageCallbacks} from './storageManager.js';
 import {default as adapterManager, getS2SBidderSet} from './adapterManager.js';
@@ -593,11 +592,8 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
         // drop the bidder from the ad unit if it's not compatible
         logWarn(unsupportedBidderMessage(adUnit, bidder));
         adUnit.bids = adUnit.bids.filter(bid => bid.bidder !== bidder);
-      } else {
-        adunitCounter.incrementBidderRequestsCounter(adUnit.code, bidder);
       }
     });
-    adunitCounter.incrementRequestsCounter(adUnit.code);
   });
   if (!adUnits || adUnits.length === 0) {
     logMessage('No adUnits configured. No bids requested.');
