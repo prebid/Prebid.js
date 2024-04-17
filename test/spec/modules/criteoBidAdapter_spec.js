@@ -38,7 +38,66 @@ describe('The Criteo bidding adapter', function () {
     ajaxStub.restore();
   });
 
-  describe('getUserSyncs', function () {
+  describe('getUserSyncs in pixel mode', function () {
+    const syncOptions = {
+      pixelEnabled: true
+    };
+
+    it('should not trigger sync if publisher did not enable pixel based syncs', function () {
+      const userSyncs = spec.getUserSyncs({
+        iframeEnabled: false
+      }, undefined, undefined, undefined);
+
+      expect(userSyncs).to.eql([]);
+    });
+
+    it('should not trigger sync if purpose one is not granted', function () {
+      const gdprConsent = {
+        gdprApplies: true,
+        consentString: 'ABC',
+        vendorData: {
+          purpose: {
+            consents: {
+              1: false
+            }
+          }
+        }
+      };
+      const userSyncs = spec.getUserSyncs(syncOptions, undefined, gdprConsent, undefined);
+
+      expect(userSyncs).to.eql([]);
+    });
+
+    it('should trigger sync with consent data', function () {
+      const usPrivacy = 'usp_string';
+
+      const gppConsent = {
+        gppString: 'gpp_string',
+        applicableSections: [ 1, 2 ]
+      };
+
+      const gdprConsent = {
+        gdprApplies: true,
+        consentString: 'ABC',
+        vendorData: {
+          purpose: {
+            consents: {
+              1: true
+            }
+          }
+        }
+      };
+
+      const userSyncs = spec.getUserSyncs(syncOptions, undefined, gdprConsent, usPrivacy, gppConsent);
+
+      expect(userSyncs).to.eql([{
+        type: 'image',
+        url: 'https://ssp-sync.criteo.com/user-sync/redirect?profile=207&gdprapplies=true&gdpr=ABC&ccpa=usp_string&gpp=gpp_string&gpp_sid=1&gpp_sid=2'
+      }]);
+    });
+  });
+
+  describe('getUserSyncs in iframe mode', function () {
     const syncOptionsIframeEnabled = {
       iframeEnabled: true
     };
@@ -151,7 +210,7 @@ describe('The Criteo bidding adapter', function () {
 
       expect(userSyncs).to.eql([{
         type: 'iframe',
-        url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com#${JSON.stringify(expectedHashWithCookieData, Object.keys(expectedHashWithCookieData).sort()).replace(/"/g, '%22')}`
+        url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com&gpp=#${JSON.stringify(expectedHashWithCookieData, Object.keys(expectedHashWithCookieData).sort()).replace(/"/g, '%22')}`
       }]);
     });
 
@@ -175,7 +234,7 @@ describe('The Criteo bidding adapter', function () {
 
       expect(userSyncs).to.eql([{
         type: 'iframe',
-        url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com#${JSON.stringify(expectedHashWithLocalStorageData, Object.keys(expectedHashWithLocalStorageData).sort()).replace(/"/g, '%22')}`
+        url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com&gpp=#${JSON.stringify(expectedHashWithLocalStorageData, Object.keys(expectedHashWithLocalStorageData).sort()).replace(/"/g, '%22')}`
       }]);
     });
 
@@ -195,7 +254,7 @@ describe('The Criteo bidding adapter', function () {
 
       expect(userSyncs).to.eql([{
         type: 'iframe',
-        url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com&gdpr=1&gdpr_consent=ABC#${JSON.stringify(expectedHash).replace(/"/g, '%22')}`
+        url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com&gdpr=1&gdpr_consent=ABC&gpp=#${JSON.stringify(expectedHash).replace(/"/g, '%22')}`
       }]);
     });
 
@@ -204,7 +263,7 @@ describe('The Criteo bidding adapter', function () {
 
       expect(userSyncs).to.eql([{
         type: 'iframe',
-        url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com&us_privacy=ABC#${JSON.stringify(expectedHash).replace(/"/g, '%22')}`
+        url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com&us_privacy=ABC&gpp=#${JSON.stringify(expectedHash).replace(/"/g, '%22')}`
       }]);
     });
 
