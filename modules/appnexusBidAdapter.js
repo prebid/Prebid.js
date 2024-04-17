@@ -111,6 +111,7 @@ export const spec = {
   aliases: [
     { code: 'appnexusAst', gvlid: 32 },
     { code: 'emxdigital', gvlid: 183 },
+    { code: 'emetriq', gvlid: 213 },
     { code: 'pagescience', gvlid: 32 },
     { code: 'gourmetads', gvlid: 32 },
     { code: 'matomy', gvlid: 32 },

@@ -3,7 +3,7 @@ import { config } from '../src/config.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { INSTREAM } from '../src/video.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json'
+import { EVENTS, TARGETING_KEYS, BID_STATUS } from '../src/constants.js'
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -11,9 +11,9 @@ import CONSTANTS from '../src/constants.json'
  * @typedef {import('../src/adapters/bidderFactory.js').AdUnit} AdUnit
  */
 
-const {CACHE_ID, UUID} = CONSTANTS.TARGETING_KEYS;
-const {BID_WON, AUCTION_END} = CONSTANTS.EVENTS;
-const {RENDERED} = CONSTANTS.BID_STATUS;
+const { CACHE_ID, UUID } = TARGETING_KEYS;
+const { BID_WON, AUCTION_END } = EVENTS;
+const { RENDERED } = BID_STATUS;
 
 const INSTREAM_TRACKING_DEFAULT_CONFIG = {
   enabled: false,

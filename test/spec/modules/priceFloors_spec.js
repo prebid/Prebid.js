@@ -1,8 +1,9 @@
 import {expect} from 'chai';
 import * as utils from 'src/utils.js';
 import { getGlobal } from 'src/prebidGlobal.js';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS, STATUS } from 'src/constants.js';
 import {
+  FLOOR_SKIPPED_REASON,
   _floorDataForAuction,
   getFloorsDataForAuction,
   getFirstMatchingFloor,
@@ -737,7 +738,7 @@ describe('the price floors module', function () {
       handleSetFloorsConfig(floorConfig);
 
       const floorData = createFloorsDataForAuction(adUnits, 'id');
-      expect(floorData.skippedReason).to.equal(CONSTANTS.FLOOR_SKIPPED_REASON.NOT_FOUND);
+      expect(floorData.skippedReason).to.equal(FLOOR_SKIPPED_REASON.NOT_FOUND);
     });
 
     it('should have skippedReason set to "random" if there is floor data and skipped is true', function() {
@@ -746,7 +747,7 @@ describe('the price floors module', function () {
       handleSetFloorsConfig(floorConfig);
 
       const floorData = createFloorsDataForAuction(adUnits, 'id');
-      expect(floorData.skippedReason).to.equal(CONSTANTS.FLOOR_SKIPPED_REASON.RANDOM);
+      expect(floorData.skippedReason).to.equal(FLOOR_SKIPPED_REASON.RANDOM);
     });
   });
 
@@ -2218,7 +2219,7 @@ describe('the price floors module', function () {
       let next = (adUnitCode, bid) => {
         returnedBidResponse = bid;
       };
-      addBidResponseHook(next, bidResp.adUnitCode, Object.assign(createBid(CONSTANTS.STATUS.GOOD, {auctionId: AUCTION_ID}), bidResp), reject);
+      addBidResponseHook(next, bidResp.adUnitCode, Object.assign(createBid(STATUS.GOOD, { auctionId: AUCTION_ID }), bidResp), reject);
     };
     it('continues with the auction if not floors data is present without any flooring', function () {
       runBidResponse();
@@ -2345,7 +2346,7 @@ describe('the price floors module', function () {
     it('should wait 3 seconds before deleting auction floor data', function () {
       handleSetFloorsConfig({enabled: true});
       _floorDataForAuction[AUCTION_END_EVENT.auctionId] = utils.deepClone(basicFloorConfig);
-      events.emit(CONSTANTS.EVENTS.AUCTION_END, AUCTION_END_EVENT);
+      events.emit(EVENTS.AUCTION_END, AUCTION_END_EVENT);
       // should still be here
       expect(_floorDataForAuction[AUCTION_END_EVENT.auctionId]).to.not.be.undefined;
       // tick for 4 seconds

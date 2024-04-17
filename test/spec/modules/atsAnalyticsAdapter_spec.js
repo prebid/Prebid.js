@@ -5,10 +5,10 @@ import {server} from '../../mocks/xhr.js';
 import {parseBrowser} from '../../../modules/atsAnalyticsAdapter.js';
 import {getCoreStorageManager, getStorageManager} from '../../../src/storageManager.js';
 import {analyticsUrl} from '../../../modules/atsAnalyticsAdapter.js';
-let utils = require('src/utils');
+import {EVENTS} from 'src/constants.js';
 
+let utils = require('src/utils');
 let events = require('src/events');
-let constants = require('src/constants.json');
 
 const storage = getCoreStorageManager();
 let sandbox;
@@ -160,22 +160,22 @@ describe('ats analytics adapter', function () {
       });
 
       // Step 1: Send auction init event
-      events.emit(constants.EVENTS.AUCTION_INIT, {
+      events.emit(EVENTS.AUCTION_INIT, {
         timestamp: auctionTimestamp
       });
       // Step 2: Send bid requested event
-      events.emit(constants.EVENTS.BID_REQUESTED, bidRequest);
+      events.emit(EVENTS.BID_REQUESTED, bidRequest);
 
       // Step 3: Send bid response event
-      events.emit(constants.EVENTS.BID_RESPONSE, bidResponse);
+      events.emit(EVENTS.BID_RESPONSE, bidResponse);
 
       // Step 4: Send bid time out event
-      events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeoutArgsV1);
+      events.emit(EVENTS.BID_TIMEOUT, bidTimeoutArgsV1);
 
       // Step 5: Send auction end event
-      events.emit(constants.EVENTS.AUCTION_END, {});
+      events.emit(EVENTS.AUCTION_END, {});
       // Step 6: Send bid won event
-      events.emit(constants.EVENTS.BID_WON, wonRequest);
+      events.emit(EVENTS.BID_WON, wonRequest);
 
       sandbox.stub($$PREBID_GLOBAL$$, 'getAllWinningBids').callsFake((key) => {
         return [wonRequest]
