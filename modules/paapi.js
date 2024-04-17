@@ -3,7 +3,7 @@
  */
 import {config} from '../src/config.js';
 import {getHook, module} from '../src/hook.js';
-import {deepSetValue, logInfo, logWarn, mergeDeep, deepEqual, deepAccess} from '../src/utils.js';
+import {deepSetValue, logInfo, logWarn, mergeDeep, deepEqual, parseSizesInput, deepAccess} from '../src/utils.js';
 import {IMP, PBS, registerOrtbProcessor, RESPONSE} from '../src/pbjsORTB.js';
 import * as events from '../src/events.js';
 import {EVENTS} from '../src/constants.js';
@@ -108,13 +108,14 @@ export function buyersToAuctionConfigs(igbRequests, merge = mergeBuyers, config 
     });
 }
 
-function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes}) {
+function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes, adUnits}) {
+  const adUnitsByCode = Object.fromEntries(adUnits?.map(au => [au.code, au]) || [])
   const allReqs = bidderRequests?.flatMap(br => br.bids);
   const paapiConfigs = {};
   (adUnitCodes || []).forEach(au => {
     paapiConfigs[au] = null;
     !latestAuctionForAdUnit.hasOwnProperty(au) && (latestAuctionForAdUnit[au] = null);
-  })
+  });
   const pendingConfigs = pendingConfigsForAuction(auctionId);
   const pendingBuyers = pendingBuyersForAuction(auctionId);
   if (pendingConfigs && pendingBuyers) {
@@ -126,8 +127,21 @@ function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes}) {
     const forThisAdUnit = (bid) => bid.adUnitCode === adUnitCode;
     const slotSignals = getSlotSignals(bidsReceived?.filter(forThisAdUnit), allReqs?.filter(forThisAdUnit));
     paapiConfigs[adUnitCode] = {
+      ...slotSignals,
       componentAuctions: auctionConfigs.map(cfg => mergeDeep({}, slotSignals, cfg))
     };
+    // TODO: need to flesh out size treatment:
+    // - which size should the paapi auction pick? (this uses the first one defined)
+    // - should we signal it to SSPs, and how?
+    // - what should we do if adapters pick a different one?
+    // - what does size mean for video and native?
+    const size = parseSizesInput(adUnitsByCode[adUnitCode]?.mediaTypes?.banner?.sizes)?.[0]?.split('x');
+    if (size) {
+      paapiConfigs[adUnitCode].requestedSize = {
+        width: size[0],
+        height: size[1],
+      };
+    }
     latestAuctionForAdUnit[adUnitCode] = auctionId;
   });
   configsForAuction(auctionId, paapiConfigs);
@@ -277,7 +291,7 @@ export function getPAAPIConfig({auctionId, adUnitCode} = {}, includeBlanks = fal
         output[au] = null;
       }
     }
-  })
+  });
   return output;
 }
 

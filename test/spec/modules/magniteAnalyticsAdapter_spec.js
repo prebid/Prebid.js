@@ -239,6 +239,7 @@ const ANALYTICS_MESSAGE = {
   },
   'auctions': [
     {
+      'auctionIndex': 1,
       'auctionId': '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
       'auctionStart': 1658868383741,
       'samplingFactor': 1,
@@ -601,7 +602,22 @@ describe('magnite analytics adapter', function () {
       it(`should parse browser from ${testData.expected} user agent correctly`, function () {
         expect(detectBrowserFromUa(testData.ua)).to.equal(testData.expected);
       });
-    })
+    });
+
+    it('should increment auctionIndex each auction', function () {
+      // run 3 auctions
+      performStandardAuction();
+      performStandardAuction();
+      performStandardAuction();
+
+      expect(server.requests.length).to.equal(3);
+      server.requests.forEach((request, index) => {
+        let message = JSON.parse(request.requestBody);
+
+        // should be index of array + 1
+        expect(message?.auctions?.[0].auctionIndex).to.equal(index + 1);
+      });
+    });
 
     it('should pass along 1x1 size if no sizes in adUnit', function () {
       const auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
@@ -1520,6 +1536,8 @@ describe('magnite analytics adapter', function () {
 
       // bid source should be 'server'
       expectedMessage.auctions[0].adUnits[0].bids[0].source = 'server';
+      // if one of bids.source === server should add pbsRequest flag to adUnit
+      expectedMessage.auctions[0].adUnits[0].pbsRequest = 1;
       expectedMessage.bidsWon[0].source = 'server';
       expect(message).to.deep.equal(expectedMessage);
     });

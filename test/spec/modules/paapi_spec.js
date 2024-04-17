@@ -208,11 +208,35 @@ describe('paapi module', () => {
           });
 
           it('should drop auction configs after end of auction', () => {
-            events.emit(EVENTS.AUCTION_END, {auctionId});
+            events.emit(EVENTS.AUCTION_END, { auctionId });
             addPaapiConfigHook(nextFnSpy, {auctionId, adUnitCode: 'au'}, paapiConfig);
-            events.emit(EVENTS.AUCTION_END, {auctionId});
+            events.emit(EVENTS.AUCTION_END, { auctionId });
             expect(getPAAPIConfig({auctionId})).to.eql({});
           });
+
+          it('should use first size as requestedSize', () => {
+            addPaapiConfigHook(nextFnSpy, {
+              auctionId,
+              adUnitCode: 'au1',
+            }, paapiConfig);
+            events.emit(EVENTS.AUCTION_END, {
+              auctionId,
+              adUnits: [
+                {
+                  code: 'au1',
+                  mediaTypes: {
+                    banner: {
+                      sizes: [[200, 100], [300, 200]]
+                    }
+                  }
+                }
+              ]
+            });
+            expect(getPAAPIConfig({auctionId}).au1.requestedSize).to.eql({
+              width: '200',
+              height: '100'
+            })
+          })
 
           describe('FPD', () => {
             let ortb2, ortb2Imp;
@@ -415,7 +439,9 @@ describe('paapi module', () => {
                     it('should populate bidfloor/bidfloorcur', () => {
                       addPaapiConfigHook(nextFnSpy, {auctionId, adUnitCode: 'au'}, paapiConfig);
                       events.emit(EVENTS.AUCTION_END, payload);
-                      const signals = getPAAPIConfig({auctionId}).au.componentAuctions[0].auctionSignals;
+                      const cfg = getPAAPIConfig({auctionId}).au;
+                      const signals = cfg.auctionSignals;
+                      sinon.assert.match(cfg.componentAuctions[0].auctionSignals, signals || {});
                       expect(signals?.prebid?.bidfloor).to.eql(bidfloor);
                       expect(signals?.prebid?.bidfloorcur).to.eql(bidfloorcur);
                     });
