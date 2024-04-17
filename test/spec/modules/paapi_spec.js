@@ -129,6 +129,30 @@ describe('paapi module', () => {
             expect(getPAAPIConfig({auctionId})).to.eql({});
           });
 
+          it('should use first size as requestedSize', () => {
+            addComponentAuctionHook(nextFnSpy, {
+              auctionId,
+              adUnitCode: 'au1',
+            }, fledgeAuctionConfig);
+            events.emit(EVENTS.AUCTION_END, {
+              auctionId,
+              adUnits: [
+                {
+                  code: 'au1',
+                  mediaTypes: {
+                    banner: {
+                      sizes: [[200, 100], [300, 200]]
+                    }
+                  }
+                }
+              ]
+            });
+            expect(getPAAPIConfig({auctionId}).au1.requestedSize).to.eql({
+              width: '200',
+              height: '100'
+            })
+          })
+
           it('should augment auctionSignals with FPD', () => {
             addComponentAuctionHook(nextFnSpy, {
               auctionId,
@@ -295,9 +319,11 @@ describe('paapi module', () => {
                     it('should populate bidfloor/bidfloorcur', () => {
                       addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au'}, fledgeAuctionConfig);
                       events.emit(EVENTS.AUCTION_END, payload);
-                      const signals = getPAAPIConfig({auctionId}).au.componentAuctions[0].auctionSignals;
-                      expect(signals.prebid?.bidfloor).to.eql(bidfloor);
-                      expect(signals.prebid?.bidfloorcur).to.eql(bidfloorcur);
+                      const cfg = getPAAPIConfig({auctionId}).au;
+                      const signals = cfg.auctionSignals;
+                      sinon.assert.match(cfg.componentAuctions[0].auctionSignals, signals || {});
+                      expect(signals?.prebid?.bidfloor).to.eql(bidfloor);
+                      expect(signals?.prebid?.bidfloorcur).to.eql(bidfloorcur);
                     });
                   });
                 });
