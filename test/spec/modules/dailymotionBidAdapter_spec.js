@@ -78,7 +78,18 @@ describe('dailymotionBidAdapterTests', () => {
         },
         site: {
           content: {
-            cat: ['IAB-1', '200'],
+            data: [
+              {
+                name: 'dataprovider.com',
+                ext: { segtax: 4 },
+                segment: [{ id: 'IAB-1' }],
+              },
+              {
+                name: 'dataprovider.com',
+                ext: { segtax: 5 },
+                segment: [{ id: '200' }],
+              },
+            ],
           },
         },
       },
@@ -171,7 +182,46 @@ describe('dailymotionBidAdapterTests', () => {
         },
         site: {
           content: {
-            cat: ['6', '17'],
+            data: [
+              undefined, // Undefined to check proper handling of edge cases
+              {}, // Empty object to check proper handling of edge cases
+              { ext: {} }, // Empty ext to check proper handling of edge cases
+              {
+                name: 'dataprovider.com',
+                ext: { segtax: 22 }, // Invalid segtax to check proper handling of edge cases
+                segment: [{ id: '400' }],
+              },
+              {
+                name: 'dataprovider.com',
+                ext: { segtax: 5 },
+                segment: undefined, // Invalid segment to check proper handling of edge cases
+              },
+              {
+                name: 'dataprovider.com',
+                ext: { segtax: 4 },
+                segment: undefined, // Invalid segment to check proper handling of edge cases
+              },
+              {
+                name: 'dataprovider.com',
+                ext: { segtax: 4 },
+                segment: [{ id: 2222 }], // Invalid segment id to check proper handling of edge cases
+              },
+              {
+                name: 'dataprovider.com',
+                ext: { segtax: 5 },
+                segment: [{ id: '6' }],
+              },
+              {
+                name: 'dataprovider.com',
+                ext: { segtax: 5 },
+                segment: [{ id: '6' }], // Check that same cat won't be duplicated
+              },
+              {
+                name: 'dataprovider.com',
+                ext: { segtax: 5 },
+                segment: [{ id: '17' }, { id: '20' }],
+              },
+            ],
           },
         },
       },
@@ -206,7 +256,7 @@ describe('dailymotionBidAdapterTests', () => {
       description: bidRequestData[0].mediaTypes.video.description,
       // No iabcat1 here because nothing matches taxonomy
       iabcat1: [],
-      iabcat2: bidderRequestData.ortb2.site.content.cat,
+      iabcat2: ['6', '17', '20'],
       id: bidRequestData[0].params.video.id,
       lang: bidRequestData[0].params.video.lang,
       private: bidRequestData[0].params.video.private,
