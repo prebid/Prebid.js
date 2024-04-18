@@ -1,12 +1,12 @@
 import * as pbEvents from 'src/events.js';
-import constants from '../../src/constants.json';
+import { EVENTS } from '../../src/constants.js';
 
 export function fireEvents(events = [
-  constants.EVENTS.AUCTION_INIT,
-  constants.EVENTS.AUCTION_END,
-  constants.EVENTS.BID_REQUESTED,
-  constants.EVENTS.BID_RESPONSE,
-  constants.EVENTS.BID_WON
+  EVENTS.AUCTION_INIT,
+  EVENTS.AUCTION_END,
+  EVENTS.BID_REQUESTED,
+  EVENTS.BID_RESPONSE,
+  EVENTS.BID_WON
 ]) {
   return events.map((ev, i) => {
     ev = Array.isArray(ev) ? ev : [ev, {i: i}];

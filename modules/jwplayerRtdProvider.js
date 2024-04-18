@@ -23,10 +23,20 @@ import {getGlobal} from '../src/prebidGlobal.js';
 
 const SUBMODULE_NAME = 'jwplayer';
 const JWPLAYER_DOMAIN = SUBMODULE_NAME + '.com';
-const segCache = {};
+const ENRICH_ALWAYS = 'always';
+const ENRICH_WHEN_EMPTY = 'whenEmpty';
+const ENRICH_NEVER = 'never';
+const overrideValidationRegex = /^(always|never|whenEmpty)$/;
+const playlistItemCache = {};
 const pendingRequests = {};
 let activeRequestCount = 0;
 let resumeBidRequest;
+// defaults to 'always' for backwards compatibility
+// TODO: Prebid 9 - replace with ENRICH_WHEN_EMPTY
+let overrideContentId = ENRICH_ALWAYS;
+let overrideContentUrl = ENRICH_WHEN_EMPTY;
+let overrideContentTitle = ENRICH_WHEN_EMPTY;
+let overrideContentDescription = ENRICH_WHEN_EMPTY;
 
 /** @type {RtdSubmodule} */
 export const jwplayerSubmodule = {
@@ -38,7 +48,7 @@ export const jwplayerSubmodule = {
   /**
    * add targeting data to bids and signal completion to realTimeData module
    * @function
-   * @param {Obj} bidReqConfig
+   * @param {object} bidReqConfig
    * @param {function} onDone
    */
   getBidRequestData: enrichBidRequest,
@@ -53,6 +63,7 @@ config.getConfig('realTimeData', ({realTimeData}) => {
     return;
   }
   fetchTargetingInformation(params);
+  setOverrides(params);
 });
 
 submodule('realTimeData', jwplayerSubmodule);
@@ -71,15 +82,32 @@ export function fetchTargetingInformation(jwTargeting) {
   });
 }
 
+export function setOverrides(params) {
+  // For backwards compatibility, default to always unless overridden by Publisher.
+  // TODO: Prebid 9 - replace with ENRICH_WHEN_EMPTY
+  overrideContentId = sanitizeOverrideParam(params.overrideContentId, ENRICH_ALWAYS);
+  overrideContentUrl = sanitizeOverrideParam(params.overrideContentUrl, ENRICH_WHEN_EMPTY);
+  overrideContentTitle = sanitizeOverrideParam(params.overrideContentTitle, ENRICH_WHEN_EMPTY);
+  overrideContentDescription = sanitizeOverrideParam(params.overrideContentDescription, ENRICH_WHEN_EMPTY);
+}
+
+function sanitizeOverrideParam(overrideParam, defaultValue) {
+  if (overrideValidationRegex.test(overrideParam)) {
+    return overrideParam;
+  }
+
+  return defaultValue;
+}
+
 export function fetchTargetingForMediaId(mediaId) {
   const ajax = ajaxBuilder();
   // TODO: Avoid checking undefined vs null by setting a callback to pendingRequests.
   pendingRequests[mediaId] = null;
   ajax(`https://cdn.${JWPLAYER_DOMAIN}/v2/media/${mediaId}`, {
     success: function (response) {
-      const segment = parseSegment(response);
-      cacheSegments(segment, mediaId);
-      onRequestCompleted(mediaId, !!segment);
+      const item = parsePlaylistItem(response);
+      cachePlaylistItem(item, mediaId);
+      onRequestCompleted(mediaId, !!item);
     },
     error: function () {
       logError('failed to retrieve targeting information');
@@ -88,8 +116,8 @@ export function fetchTargetingForMediaId(mediaId) {
   });
 }
 
-function parseSegment(response) {
-  let segment;
+function parsePlaylistItem(response) {
+  let item;
   try {
     const data = JSON.parse(response);
     if (!data) {
@@ -101,16 +129,16 @@ function parseSegment(response) {
       throw ('Empty playlist');
     }
 
-    segment = playlist[0].jwpseg;
+    item = playlist[0];
   } catch (err) {
     logError(err);
   }
-  return segment;
+  return item;
 }
 
-function cacheSegments(jwpseg, mediaId) {
-  if (jwpseg && mediaId) {
-    segCache[mediaId] = jwpseg;
+function cachePlaylistItem(playlistItem, mediaId) {
+  if (playlistItem && mediaId) {
+    playlistItemCache[mediaId] = playlistItem;
   }
 }
 
@@ -167,7 +195,7 @@ export function enrichAdUnits(adUnits, ortb2Fragments = {}) {
       const contentData = getContentData(mediaId, contentSegments);
       const targeting = formatTargetingResponse(vat);
       enrichBids(adUnit.bids, targeting, contentId, contentData);
-      addOrtbSiteContent(ortb2Fragments.global, contentId, contentData);
+      addOrtbSiteContent(ortb2Fragments.global, contentId, contentData, vat.title, vat.description, vat.mediaUrl);
     };
     loadVat(jwTargeting, onVatResponse);
   });
@@ -217,16 +245,25 @@ function loadVatForPendingRequest(playerDivId, mediaID, callback) {
 }
 
 export function getVatFromCache(mediaID) {
-  const segments = segCache[mediaID];
+  const item = playlistItemCache[mediaID];
 
-  if (!segments) {
+  if (!item) {
     return null;
   }
 
+  const mediaUrl = item.file ?? getFileFromSources(item);
+
   return {
-    segments,
+    segments: item.jwpseg,
+    title: item.title,
+    description: item.description,
+    mediaUrl,
     mediaID
   };
+}
+
+function getFileFromSources(playlistItem) {
+  return playlistItem.sources?.find?.(source => !!source.file)?.file;
 }
 
 export function getVatFromPlayer(playerDivId, mediaID) {
@@ -241,12 +278,18 @@ export function getVatFromPlayer(playerDivId, mediaID) {
   }
 
   mediaID = mediaID || item.mediaid;
+  const title = item.title;
+  const description = item.description;
+  const mediaUrl = item.file;
   const segments = item.jwpseg;
-  cacheSegments(segments, mediaID)
+  cachePlaylistItem(item, mediaID)
 
   return {
     segments,
-    mediaID
+    mediaID,
+    title,
+    mediaUrl,
+    description
   };
 }
 
@@ -313,11 +356,7 @@ export function getContentData(mediaId, segments) {
   return contentData;
 }
 
-export function addOrtbSiteContent(ortb2, contentId, contentData) {
-  if (!contentId && !contentData) {
-    return;
-  }
-
+export function addOrtbSiteContent(ortb2, contentId, contentData, contentTitle, contentDescription, contentUrl) {
   if (ortb2 == null) {
     ortb2 = {};
   }
@@ -325,11 +364,24 @@ export function addOrtbSiteContent(ortb2, contentId, contentData) {
   let site = ortb2.site = ortb2.site || {};
   let content = site.content = site.content || {};
 
-  if (contentId) {
+  if (shouldOverride(content.id, contentId, overrideContentId)) {
     content.id = contentId;
   }
 
-  const currentData = content.data = content.data || [];
+  if (shouldOverride(content.url, contentUrl, overrideContentUrl)) {
+    content.url = contentUrl;
+  }
+
+  if (shouldOverride(content.title, contentTitle, overrideContentTitle)) {
+    content.title = contentTitle;
+  }
+
+  if (shouldOverride(content.ext && content.ext.description, contentDescription, overrideContentDescription)) {
+    content.ext = content.ext || {};
+    content.ext.description = contentDescription;
+  }
+
+  const currentData = content.data || [];
   // remove old jwplayer data
   const data = currentData.filter(datum => datum.name !== JWPLAYER_DOMAIN);
 
@@ -337,9 +389,24 @@ export function addOrtbSiteContent(ortb2, contentId, contentData) {
     data.push(contentData);
   }
 
-  content.data = data;
+  if (data.length) {
+    content.data = data;
+  }
 
   return ortb2;
+}
+
+function shouldOverride(currentValue, newValue, configValue) {
+  switch (configValue) {
+    case ENRICH_ALWAYS:
+      return !!newValue;
+    case ENRICH_NEVER:
+      return false;
+    case ENRICH_WHEN_EMPTY:
+      return !!newValue && currentValue === undefined;
+    default:
+      return false;
+  }
 }
 
 function enrichBids(bids, targeting, contentId, contentData) {

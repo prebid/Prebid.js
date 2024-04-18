@@ -3,7 +3,7 @@ import {ajaxBuilder} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import {getStorageManager} from '../src/storageManager.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 /**
@@ -208,7 +208,7 @@ function handleEvent(eventType, eventArgs) {
   const pmEvent = {};
 
   switch (eventType) {
-    case CONSTANTS.EVENTS.AUCTION_INIT: {
+    case EVENTS.AUCTION_INIT: {
       pmEvent.auctionId = eventArgs.auctionId;
       pmEvent.timeout = eventArgs.timeout;
       pmEvent.eventType = eventArgs.eventType;
@@ -218,7 +218,7 @@ function handleEvent(eventType, eventArgs) {
       _bidRequestTimeout = pmEvent.timeout;
       break;
     }
-    case CONSTANTS.EVENTS.AUCTION_END: {
+    case EVENTS.AUCTION_END: {
       pmEvent.auctionId = eventArgs.auctionId;
       pmEvent.end = eventArgs.end;
       pmEvent.start = eventArgs.start;
@@ -228,15 +228,15 @@ function handleEvent(eventType, eventArgs) {
       pmEvent.end = Date.now();
       break;
     }
-    case CONSTANTS.EVENTS.BID_ADJUSTMENT: {
+    case EVENTS.BID_ADJUSTMENT: {
       break;
     }
-    case CONSTANTS.EVENTS.BID_TIMEOUT: {
+    case EVENTS.BID_TIMEOUT: {
       pmEvent.bidders = eventArgs && eventArgs.map ? eventArgs.map(trimBid) : eventArgs;
       pmEvent.duration = _bidRequestTimeout;
       break;
     }
-    case CONSTANTS.EVENTS.BID_REQUESTED: {
+    case EVENTS.BID_REQUESTED: {
       pmEvent.auctionId = eventArgs.auctionId;
       pmEvent.bidderCode = eventArgs.bidderCode;
       pmEvent.doneCbCallCount = eventArgs.doneCbCallCount;
@@ -247,7 +247,7 @@ function handleEvent(eventType, eventArgs) {
       pmEvent.timeout = eventArgs.timeout;
       break;
     }
-    case CONSTANTS.EVENTS.BID_RESPONSE: {
+    case EVENTS.BID_RESPONSE: {
       pmEvent.bidderCode = eventArgs.bidderCode;
       pmEvent.width = eventArgs.width;
       pmEvent.height = eventArgs.height;
@@ -266,7 +266,7 @@ function handleEvent(eventType, eventArgs) {
       pmEvent.adserverTargeting = eventArgs.adserverTargeting;
       break;
     }
-    case CONSTANTS.EVENTS.BID_WON: {
+    case EVENTS.BID_WON: {
       pmEvent.auctionId = eventArgs.auctionId;
       pmEvent.adId = eventArgs.adId;
       pmEvent.adserverTargeting = eventArgs.adserverTargeting;
@@ -284,7 +284,7 @@ function handleEvent(eventType, eventArgs) {
       pmEvent.bidder = eventArgs.bidder;
       break;
     }
-    case CONSTANTS.EVENTS.BIDDER_DONE: {
+    case EVENTS.BIDDER_DONE: {
       pmEvent.auctionId = eventArgs.auctionId;
       pmEvent.auctionStart = eventArgs.auctionStart;
       pmEvent.bidderCode = eventArgs.bidderCode;
@@ -297,16 +297,16 @@ function handleEvent(eventType, eventArgs) {
       pmEvent.src = eventArgs.src;
       break;
     }
-    case CONSTANTS.EVENTS.SET_TARGETING: {
+    case EVENTS.SET_TARGETING: {
       break;
     }
-    case CONSTANTS.EVENTS.REQUEST_BIDS: {
+    case EVENTS.REQUEST_BIDS: {
       break;
     }
-    case CONSTANTS.EVENTS.ADD_AD_UNITS: {
+    case EVENTS.ADD_AD_UNITS: {
       break;
     }
-    case CONSTANTS.EVENTS.AD_RENDER_FAILED: {
+    case EVENTS.AD_RENDER_FAILED: {
       pmEvent.bid = eventArgs.bid;
       pmEvent.message = eventArgs.message;
       pmEvent.reason = eventArgs.reason;
@@ -326,7 +326,7 @@ function sendEvent(event) {
   _eventQueue.push(event);
   logInfo(`${analyticsName} Event ${event.eventType}:`, event);
 
-  if (event.eventType === CONSTANTS.EVENTS.AUCTION_END) {
+  if (event.eventType === EVENTS.AUCTION_END) {
     flush();
   }
 }

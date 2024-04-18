@@ -1,7 +1,7 @@
 import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { logError, logInfo } from '../src/utils.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import * as events from '../src/events.js';
 
 const timeoutIds = {};
@@ -32,7 +32,7 @@ const {
   BIDDER_DONE,
   AUCTION_END,
   BID_TIMEOUT,
-} = CONSTANTS.EVENTS;
+} = EVENTS;
 
 export const EVENTS_TO_TRACK = [
   BID_REQUESTED,

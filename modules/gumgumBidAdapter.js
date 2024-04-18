@@ -318,7 +318,8 @@ function buildRequests(validBidRequests, bidderRequest) {
     const gpid = deepAccess(ortb2Imp, 'ext.data.pbadslot') || deepAccess(ortb2Imp, 'ext.data.adserver.adslot');
     let sizes = [1, 1];
     let data = {};
-
+    data.displaymanager = 'Prebid.js - gumgum';
+    data.displaymanagerver = '$prebid.version$';
     const date = new Date();
     const lt = date.getTime();
     const to = date.getTimezoneOffset();
@@ -420,6 +421,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     } else if (!gppConsent && bidderRequest?.ortb2?.regs?.gpp) {
       data.gppString = bidderRequest.ortb2.regs.gpp
       data.gppSid = Array.isArray(bidderRequest.ortb2.regs.gpp_sid) ? bidderRequest.ortb2.regs.gpp_sid.join(',') : ''
+    }
+    const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
+    if (dsa) {
+      data.dsa = dsa
     }
     if (coppa) {
       data.coppa = coppa;
@@ -548,7 +553,6 @@ function interpretResponse(serverResponse, bidRequest) {
     mediaType: type || mediaType
   };
   let sizes = parseSizesInput(bidRequest.sizes);
-
   if (maxw && maxh) {
     sizes = [`${maxw}x${maxh}`];
   } else if (product === 5 && includes(sizes, '1x1')) {

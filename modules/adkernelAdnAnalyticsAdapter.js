@@ -1,5 +1,5 @@
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import {EVENTS} from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import { logError, parseUrl, _each } from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
@@ -51,26 +51,26 @@ let analyticsAdapter = Object.assign(adapter({analyticsType: 'endpoint'}),
       }
       let handler = null;
       switch (eventType) {
-        case CONSTANTS.EVENTS.AUCTION_INIT:
+        case EVENTS.AUCTION_INIT:
           if (analyticsAdapter.context.queue) {
             analyticsAdapter.context.queue.init();
           }
           initPrivacy(analyticsAdapter.context.requestTemplate, args.bidderRequests);
           handler = trackAuctionInit;
           break;
-        case CONSTANTS.EVENTS.BID_REQUESTED:
+        case EVENTS.BID_REQUESTED:
           handler = trackBidRequest;
           break;
-        case CONSTANTS.EVENTS.BID_RESPONSE:
+        case EVENTS.BID_RESPONSE:
           handler = trackBidResponse;
           break;
-        case CONSTANTS.EVENTS.BID_WON:
+        case EVENTS.BID_WON:
           handler = trackBidWon;
           break;
-        case CONSTANTS.EVENTS.BID_TIMEOUT:
+        case EVENTS.BID_TIMEOUT:
           handler = trackBidTimeout;
           break;
-        case CONSTANTS.EVENTS.AUCTION_END:
+        case EVENTS.AUCTION_END:
           handler = trackAuctionEnd;
           break;
       }
@@ -79,7 +79,7 @@ let analyticsAdapter = Object.assign(adapter({analyticsType: 'endpoint'}),
         if (analyticsAdapter.context.queue) {
           analyticsAdapter.context.queue.push(events);
         }
-        if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
+        if (eventType === EVENTS.AUCTION_END) {
           sendAll();
         }
       }

@@ -16,7 +16,7 @@ import {
   fireClickTrackers,
   setNativeResponseProperties,
 } from 'src/native.js';
-import CONSTANTS from 'src/constants.json';
+import { NATIVE_KEYS } from 'src/constants.js';
 import { stubAuctionIndex } from '../helpers/indexStub.js';
 import { convertOrtbRequestToProprietaryNative, fromOrtbNativeRequest } from '../../src/native.js';
 import {auctionManager} from '../../src/auctionManager.js';
@@ -199,9 +199,9 @@ describe('native.js', function () {
 
   it('gets native targeting keys', function () {
     const targeting = getNativeTargeting(bid);
-    expect(targeting[CONSTANTS.NATIVE_KEYS.title]).to.equal(bid.native.title);
-    expect(targeting[CONSTANTS.NATIVE_KEYS.body]).to.equal(bid.native.body);
-    expect(targeting[CONSTANTS.NATIVE_KEYS.clickUrl]).to.equal(
+    expect(targeting[NATIVE_KEYS.title]).to.equal(bid.native.title);
+    expect(targeting[NATIVE_KEYS.body]).to.equal(bid.native.body);
+    expect(targeting[NATIVE_KEYS.clickUrl]).to.equal(
       bid.native.clickUrl
     );
     expect(targeting.hb_native_foo).to.equal(bid.native.foo);
@@ -230,11 +230,11 @@ describe('native.js', function () {
     };
     const targeting = getNativeTargeting(bid, deps(adUnit));
 
-    expect(targeting[CONSTANTS.NATIVE_KEYS.title]).to.equal(bid.native.title);
-    expect(targeting[CONSTANTS.NATIVE_KEYS.body]).to.equal(
+    expect(targeting[NATIVE_KEYS.title]).to.equal(bid.native.title);
+    expect(targeting[NATIVE_KEYS.body]).to.equal(
       'hb_native_body:123'
     );
-    expect(targeting[CONSTANTS.NATIVE_KEYS.clickUrl]).to.equal(
+    expect(targeting[NATIVE_KEYS.clickUrl]).to.equal(
       'hb_native_linkurl:123'
     );
     expect(targeting.hb_native_foo).to.equal(bid.native.ext.foo);
@@ -244,9 +244,9 @@ describe('native.js', function () {
   it('sends placeholdes targetings with ortb native response', function () {
     const targeting = getNativeTargeting(completeNativeBid);
 
-    expect(targeting[CONSTANTS.NATIVE_KEYS.title]).to.equal('Native Creative');
-    expect(targeting[CONSTANTS.NATIVE_KEYS.body]).to.equal('Cool description great stuff');
-    expect(targeting[CONSTANTS.NATIVE_KEYS.clickUrl]).to.equal('https://www.link.example');
+    expect(targeting[NATIVE_KEYS.title]).to.equal('Native Creative');
+    expect(targeting[NATIVE_KEYS.body]).to.equal('Cool description great stuff');
+    expect(targeting[NATIVE_KEYS.clickUrl]).to.equal('https://www.link.example');
   });
 
   it('should only include native targeting keys with values', function () {
@@ -269,9 +269,9 @@ describe('native.js', function () {
     const targeting = getNativeTargeting(bidWithUndefinedFields, deps(adUnit));
 
     expect(Object.keys(targeting)).to.deep.equal([
-      CONSTANTS.NATIVE_KEYS.title,
-      CONSTANTS.NATIVE_KEYS.sponsoredBy,
-      CONSTANTS.NATIVE_KEYS.clickUrl,
+      NATIVE_KEYS.title,
+      NATIVE_KEYS.sponsoredBy,
+      NATIVE_KEYS.clickUrl,
       'hb_native_foo',
     ]);
   });
@@ -294,7 +294,7 @@ describe('native.js', function () {
     };
     const targeting = getNativeTargeting(bid, deps(adUnit));
 
-    expect(Object.keys(targeting)).to.deep.equal([CONSTANTS.NATIVE_KEYS.title]);
+    expect(Object.keys(targeting)).to.deep.equal([NATIVE_KEYS.title]);
   });
 
   it('should only include targeting if sendTargetingKeys not set to false', function () {
@@ -342,10 +342,10 @@ describe('native.js', function () {
     const targeting = getNativeTargeting(bid, deps(adUnit));
 
     expect(Object.keys(targeting)).to.deep.equal([
-      CONSTANTS.NATIVE_KEYS.title,
-      CONSTANTS.NATIVE_KEYS.body,
-      CONSTANTS.NATIVE_KEYS.image,
-      CONSTANTS.NATIVE_KEYS.clickUrl,
+      NATIVE_KEYS.title,
+      NATIVE_KEYS.body,
+      NATIVE_KEYS.image,
+      NATIVE_KEYS.clickUrl,
       'hb_native_foo',
     ]);
   });
@@ -353,7 +353,7 @@ describe('native.js', function () {
   it('should include rendererUrl in targeting', function () {
     const rendererUrl = 'https://www.renderer.com/';
     const targeting = getNativeTargeting({...bid, native: {...bid.native, rendererUrl: {url: rendererUrl}}}, deps({}));
-    expect(targeting[CONSTANTS.NATIVE_KEYS.rendererUrl]).to.eql(rendererUrl);
+    expect(targeting[NATIVE_KEYS.rendererUrl]).to.eql(rendererUrl);
   });
 
   it('fires impression trackers', function () {

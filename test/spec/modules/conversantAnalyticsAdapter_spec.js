@@ -1,13 +1,13 @@
 import sinon from 'sinon';
-import {expect} from 'chai';
-import {default as conversantAnalytics, CNVR_CONSTANTS, cnvrHelper} from 'modules/conversantAnalyticsAdapter';
+import { expect } from 'chai';
+import { default as conversantAnalytics, CNVR_CONSTANTS, cnvrHelper } from 'modules/conversantAnalyticsAdapter';
 import * as utils from 'src/utils.js';
 import * as prebidGlobal from 'src/prebidGlobal';
-import {server} from '../../mocks/xhr.js';
+import { server } from '../../mocks/xhr.js';
 
-import constants from 'src/constants.json'
+import {EVENTS} from 'src/constants.js'
 
-let events = require('src/events');
+const events = require('src/events');
 
 describe('Conversant analytics adapter tests', function() {
   let sandbox; // sinon sandbox to make restoring all stubbed objects easier
@@ -39,7 +39,7 @@ describe('Conversant analytics adapter tests', function() {
     requests = server.requests;
     sandbox = sinon.sandbox.create();
     sandbox.stub(events, 'getEvents').returns([]); // need to stub this otherwise unwanted events seem to get fired during testing
-    let getGlobalStub = {
+    const getGlobalStub = {
       version: PREBID_VERSION,
       getUserIds: function() { // userIdTargeting.js init() gets called on AUCTION_END so we need to mock this function.
         return {};
@@ -98,7 +98,7 @@ describe('Conversant analytics adapter tests', function() {
     it('should NOT sample when sampling set to 0', function() {
       sandbox.stub(utils, 'logError');
       const NEVER_SAMPLE_CONFIG = utils.deepClone(VALID_ALWAYS_SAMPLE_CONFIG);
-      NEVER_SAMPLE_CONFIG['options'].cnvr_sampling = 0;
+      NEVER_SAMPLE_CONFIG.options.cnvr_sampling = 0;
       conversantAnalytics.disableAnalytics();
       conversantAnalytics.enableAnalytics(NEVER_SAMPLE_CONFIG);
       expect(utils.logError.called).to.equal(false);
@@ -110,17 +110,17 @@ describe('Conversant analytics adapter tests', function() {
     it('should cleanup up cache objects', function() {
       conversantAnalytics.enableAnalytics(VALID_CONFIGURATION);
 
-      cnvrHelper.adIdLookup['keep'] = {timeReceived: DATESTAMP + 1};
-      cnvrHelper.adIdLookup['delete'] = {timeReceived: DATESTAMP - CNVR_CONSTANTS.MAX_MILLISECONDS_IN_CACHE};
+      cnvrHelper.adIdLookup.keep = { timeReceived: DATESTAMP + 1 };
+      cnvrHelper.adIdLookup.delete = { timeReceived: DATESTAMP - CNVR_CONSTANTS.MAX_MILLISECONDS_IN_CACHE };
 
-      cnvrHelper.timeoutCache['keep'] = {timeReceived: DATESTAMP + 1};
-      cnvrHelper.timeoutCache['delete'] = {timeReceived: DATESTAMP - CNVR_CONSTANTS.MAX_MILLISECONDS_IN_CACHE};
+      cnvrHelper.timeoutCache.keep = { timeReceived: DATESTAMP + 1 };
+      cnvrHelper.timeoutCache.delete = { timeReceived: DATESTAMP - CNVR_CONSTANTS.MAX_MILLISECONDS_IN_CACHE };
 
-      cnvrHelper.auctionIdTimestampCache['keep'] = {timeReceived: DATESTAMP + 1};
-      cnvrHelper.auctionIdTimestampCache['delete'] = {timeReceived: DATESTAMP - CNVR_CONSTANTS.MAX_MILLISECONDS_IN_CACHE};
+      cnvrHelper.auctionIdTimestampCache.keep = { timeReceived: DATESTAMP + 1 };
+      cnvrHelper.auctionIdTimestampCache.delete = { timeReceived: DATESTAMP - CNVR_CONSTANTS.MAX_MILLISECONDS_IN_CACHE };
 
-      cnvrHelper.bidderErrorCache['keep'] = {timeReceived: DATESTAMP + 1, errors: []};
-      cnvrHelper.bidderErrorCache['delete'] = {timeReceived: DATESTAMP - CNVR_CONSTANTS.MAX_MILLISECONDS_IN_CACHE, errors: []};
+      cnvrHelper.bidderErrorCache.keep = { timeReceived: DATESTAMP + 1, errors: [] };
+      cnvrHelper.bidderErrorCache.delete = { timeReceived: DATESTAMP - CNVR_CONSTANTS.MAX_MILLISECONDS_IN_CACHE, errors: [] };
 
       expect(Object.keys(cnvrHelper.adIdLookup)).to.have.lengthOf(2);
       expect(Object.keys(cnvrHelper.timeoutCache)).to.have.lengthOf(2);
@@ -145,12 +145,12 @@ describe('Conversant analytics adapter tests', function() {
     it('createBid() should return correct object', function() {
       const EVENT_CODE = 1;
       const TIME = 2;
-      let bid = cnvrHelper.createBid(EVENT_CODE, 2);
-      expect(bid).to.deep.equal({'eventCodes': [EVENT_CODE], 'timeToRespond': TIME});
+      const bid = cnvrHelper.createBid(EVENT_CODE, 2);
+      expect(bid).to.deep.equal({ eventCodes: [EVENT_CODE], timeToRespond: TIME });
     });
 
     it('createAdUnit() should return correct object', function() {
-      let adUnit = cnvrHelper.createAdUnit();
+      const adUnit = cnvrHelper.createAdUnit();
       expect(adUnit).to.deep.equal({
         sizes: [],
         mediaTypes: [],
@@ -160,13 +160,13 @@ describe('Conversant analytics adapter tests', function() {
 
     it('createAdSize() should return correct object', function() {
       let adSize = cnvrHelper.createAdSize(1, 2);
-      expect(adSize).to.deep.equal({w: 1, h: 2});
+      expect(adSize).to.deep.equal({ w: 1, h: 2 });
 
       adSize = cnvrHelper.createAdSize();
-      expect(adSize).to.deep.equal({w: -1, h: -1});
+      expect(adSize).to.deep.equal({ w: -1, h: -1 });
 
       adSize = cnvrHelper.createAdSize('foo', 'bar');
-      expect(adSize).to.deep.equal({w: -1, h: -1});
+      expect(adSize).to.deep.equal({ w: -1, h: -1 });
     });
 
     it('getLookupKey() should return correct object', function() {
@@ -183,7 +183,7 @@ describe('Conversant analytics adapter tests', function() {
       const myDate = Date.now();
       conversantAnalytics.enableAnalytics(VALID_ALWAYS_SAMPLE_CONFIG);
 
-      let payload = cnvrHelper.createPayload(REQUEST_TYPE, AUCTION_ID, myDate);
+      const payload = cnvrHelper.createPayload(REQUEST_TYPE, AUCTION_ID, myDate);
       expect(payload).to.deep.equal({
         bidderErrors: [],
         cnvrSampleRate: 1,
@@ -200,7 +200,7 @@ describe('Conversant analytics adapter tests', function() {
     });
 
     it('keyExistsAndIsObject() should return correct data', function() {
-      let data = {
+      const data = {
         a: [],
         b: 1,
         c: 'foo',
@@ -216,21 +216,21 @@ describe('Conversant analytics adapter tests', function() {
     });
 
     it('deduplicateArray() should return correct data', function () {
-      let arrayOfObjects = [{w: 1, h: 2}, {w: 2, h: 3}, {w: 1, h: 2}];
-      let array = [3, 2, 1, 1, 2, 3];
+      const arrayOfObjects = [{ w: 1, h: 2 }, { w: 2, h: 3 }, { w: 1, h: 2 }];
+      const array = [3, 2, 1, 1, 2, 3];
       let empty;
-      let notArray = 3;
-      let emptyArray = [];
+      const notArray = 3;
+      const emptyArray = [];
 
       expect(JSON.stringify(cnvrHelper.deduplicateArray(array))).to.equal(JSON.stringify([3, 2, 1]));
-      expect(JSON.stringify(cnvrHelper.deduplicateArray(arrayOfObjects))).to.equal(JSON.stringify([{w: 1, h: 2}, {w: 2, h: 3}]));
+      expect(JSON.stringify(cnvrHelper.deduplicateArray(arrayOfObjects))).to.equal(JSON.stringify([{ w: 1, h: 2 }, { w: 2, h: 3 }]));
       expect(JSON.stringify(cnvrHelper.deduplicateArray(emptyArray))).to.equal(JSON.stringify([]));
       expect(cnvrHelper.deduplicateArray(empty)).to.be.undefined;
       expect(cnvrHelper.deduplicateArray(notArray)).to.equal(notArray);
     });
 
     it('getSampleRate() should return correct data', function () {
-      let obj = {
+      const obj = {
         sampling: 1,
         cnvr_sampling: 0.5,
         too_big: 1.2,
@@ -249,7 +249,7 @@ describe('Conversant analytics adapter tests', function() {
     });
 
     it('getPageUrl() should return correct data', function() {
-      let url = cnvrHelper.getPageUrl();
+      const url = cnvrHelper.getPageUrl();
       expect(url.length).to.be.above(1);
     });
 
@@ -313,20 +313,20 @@ describe('Conversant analytics adapter tests', function() {
 
   describe('Bid Timeout Event Tests', function() {
     const BID_TIMEOUT_PAYLOAD = [{
-      'bidId': '80882409358b8a8',
-      'bidder': 'conversant',
-      'adUnitCode': 'MedRect',
-      'auctionId': 'afbd6e0b-e45b-46ab-87bf-c0bac0cb8881'
+      bidId: '80882409358b8a8',
+      bidder: 'conversant',
+      adUnitCode: 'MedRect',
+      auctionId: 'afbd6e0b-e45b-46ab-87bf-c0bac0cb8881'
     }, {
-      'bidId': '9da4c107a6f24c8',
-      'bidder': 'conversant',
-      'adUnitCode': 'Leaderboard',
-      'auctionId': 'afbd6e0b-e45b-46ab-87bf-c0bac0cb8881'
+      bidId: '9da4c107a6f24c8',
+      bidder: 'conversant',
+      adUnitCode: 'Leaderboard',
+      auctionId: 'afbd6e0b-e45b-46ab-87bf-c0bac0cb8881'
     }];
 
     it('should put both items in timeout cache', function() {
       expect(Object.keys(cnvrHelper.timeoutCache)).to.have.lengthOf(0);
-      events.emit(constants.EVENTS.BID_TIMEOUT, BID_TIMEOUT_PAYLOAD);
+      events.emit(EVENTS.BID_TIMEOUT, BID_TIMEOUT_PAYLOAD);
       expect(Object.keys(cnvrHelper.timeoutCache)).to.have.lengthOf(2);
 
       BID_TIMEOUT_PAYLOAD.forEach(timeoutBid => {
@@ -358,7 +358,7 @@ describe('Conversant analytics adapter tests', function() {
       };
 
       expect(Object.keys(cnvrHelper.adIdLookup)).to.have.lengthOf(1);
-      events.emit(constants.EVENTS.AD_RENDER_FAILED, RENDER_FAILED_PAYLOAD);
+      events.emit(EVENTS.AD_RENDER_FAILED, RENDER_FAILED_PAYLOAD);
       expect(Object.keys(cnvrHelper.adIdLookup)).to.have.lengthOf(0); // object should be removed
       expect(requests).to.have.lengthOf(1);
       const data = JSON.parse(requests[0].requestBody);
@@ -366,8 +366,8 @@ describe('Conversant analytics adapter tests', function() {
       expect(data.auction.auctionId).to.equal('auctionId');
       expect(data.auction.preBidVersion).to.equal(PREBID_VERSION);
       expect(data.auction.sid).to.equal(SITE_ID);
-      expect(data.adUnits['adUnitCode'].bids['bidderCode'][0].eventCodes.includes(CNVR_CONSTANTS.RENDER_FAILED)).to.be.true;
-      expect(data.adUnits['adUnitCode'].bids['bidderCode'][0].message).to.have.lengthOf.above(0);
+      expect(data.adUnits.adUnitCode.bids.bidderCode[0].eventCodes.includes(CNVR_CONSTANTS.RENDER_FAILED)).to.be.true;
+      expect(data.adUnits.adUnitCode.bids.bidderCode[0].message).to.have.lengthOf.above(0);
     });
 
     it('should not send data if no adId', function() {
@@ -379,14 +379,14 @@ describe('Conversant analytics adapter tests', function() {
       };
 
       expect(Object.keys(cnvrHelper.adIdLookup)).to.have.lengthOf(1);
-      events.emit(constants.EVENTS.AD_RENDER_FAILED, RENDER_FAILED_PAYLOAD_NO_ADID);
+      events.emit(EVENTS.AD_RENDER_FAILED, RENDER_FAILED_PAYLOAD_NO_ADID);
       expect(requests).to.have.lengthOf(1);
       expect(Object.keys(cnvrHelper.adIdLookup)).to.have.lengthOf(1); // same object in cache as before... no change
       expect(cnvrHelper.adIdLookup[RENDER_FAILED_PAYLOAD.adId]).to.not.be.undefined;
 
       expect(requests[0].url).to.contain('cvx/event/prebidanalyticerrors');
       const data = JSON.parse(requests[0].requestBody);
-      expect(data.event).to.be.equal(constants.EVENTS.AD_RENDER_FAILED);
+      expect(data.event).to.be.equal(EVENTS.AD_RENDER_FAILED);
       expect(data.siteId).to.be.equal(SITE_ID);
       expect(data.message).to.not.be.undefined;
       expect(data.prebidVersion).to.not.be.undefined;
@@ -402,13 +402,13 @@ describe('Conversant analytics adapter tests', function() {
       };
       expect(requests).to.have.lengthOf(0);
       expect(Object.keys(cnvrHelper.adIdLookup)).to.have.lengthOf(1);
-      events.emit(constants.EVENTS.AD_RENDER_FAILED, RENDER_FAILED_PAYLOAD);
+      events.emit(EVENTS.AD_RENDER_FAILED, RENDER_FAILED_PAYLOAD);
       expect(Object.keys(cnvrHelper.adIdLookup)).to.have.lengthOf(0); // object should be removed but no call made to send data
       expect(requests).to.have.lengthOf(1);
 
       expect(requests[0].url).to.contain('cvx/event/prebidanalyticerrors');
       const data = JSON.parse(requests[0].requestBody);
-      expect(data.event).to.be.equal(constants.EVENTS.AD_RENDER_FAILED);
+      expect(data.event).to.be.equal(EVENTS.AD_RENDER_FAILED);
       expect(data.siteId).to.be.equal(SITE_ID);
       expect(data.message).to.not.be.undefined;
       expect(data.prebidVersion).to.not.be.undefined;
@@ -492,14 +492,14 @@ describe('Conversant analytics adapter tests', function() {
     it('should not send data or put a record in adIdLookup when bad data provided', function() {
       expect(requests).to.have.lengthOf(0);
       expect(Object.keys(cnvrHelper.adIdLookup)).to.have.lengthOf(0);
-      events.emit(constants.EVENTS.BID_WON, BAD_BID_WON_ARGS);
+      events.emit(EVENTS.BID_WON, BAD_BID_WON_ARGS);
       expect(requests).to.have.lengthOf(1);
       expect(Object.keys(cnvrHelper.adIdLookup)).to.have.lengthOf(0);
 
       // check for error event
       expect(requests[0].url).to.contain('cvx/event/prebidanalyticerrors');
       const data = JSON.parse(requests[0].requestBody);
-      expect(data.event).to.be.equal(constants.EVENTS.BID_WON);
+      expect(data.event).to.be.equal(EVENTS.BID_WON);
       expect(data.siteId).to.be.equal(SITE_ID);
       expect(data.message).to.not.be.undefined;
       expect(data.prebidVersion).to.not.be.undefined;
@@ -509,11 +509,11 @@ describe('Conversant analytics adapter tests', function() {
 
     it('should send data and put a record in adIdLookup', function() {
       const myAuctionStart = Date.now();
-      cnvrHelper.auctionIdTimestampCache[GOOD_BID_WON_ARGS.auctionId] = {timeReceived: myAuctionStart};
+      cnvrHelper.auctionIdTimestampCache[GOOD_BID_WON_ARGS.auctionId] = { timeReceived: myAuctionStart };
 
       expect(requests).to.have.lengthOf(0);
       expect(Object.keys(cnvrHelper.adIdLookup)).to.have.lengthOf(0);
-      events.emit(constants.EVENTS.BID_WON, GOOD_BID_WON_ARGS);
+      events.emit(EVENTS.BID_WON, GOOD_BID_WON_ARGS);
 
       // Check that adIdLookup was set correctly
       expect(Object.keys(cnvrHelper.adIdLookup)).to.have.lengthOf(1);
@@ -914,16 +914,16 @@ describe('Conversant analytics adapter tests', function() {
     it('should not do anything when auction id doesnt exist', function() {
       sandbox.stub(utils, 'logError');
 
-      let BAD_ARGS = JSON.parse(JSON.stringify(AUCTION_END_PAYLOAD));
+      const BAD_ARGS = JSON.parse(JSON.stringify(AUCTION_END_PAYLOAD));
       delete BAD_ARGS.auctionId;
       expect(requests).to.have.lengthOf(0);
-      events.emit(constants.EVENTS.AUCTION_END, BAD_ARGS);
+      events.emit(EVENTS.AUCTION_END, BAD_ARGS);
       expect(requests).to.have.lengthOf(1);
 
       // check for error event
       expect(requests[0].url).to.contain('cvx/event/prebidanalyticerrors');
       const data = JSON.parse(requests[0].requestBody);
-      expect(data.event).to.be.equal(constants.EVENTS.AUCTION_END);
+      expect(data.event).to.be.equal(EVENTS.AUCTION_END);
       expect(data.siteId).to.be.equal(SITE_ID);
       expect(data.message).to.not.be.undefined;
       expect(data.prebidVersion).to.not.be.undefined;
@@ -961,7 +961,7 @@ describe('Conversant analytics adapter tests', function() {
       expect(Object.keys(cnvrHelper.auctionIdTimestampCache)).to.have.lengthOf(0);
       expect(Object.keys(cnvrHelper.bidderErrorCache)).to.have.lengthOf(1);
 
-      events.emit(constants.EVENTS.AUCTION_END, AUCTION_END_PAYLOAD);
+      events.emit(EVENTS.AUCTION_END, AUCTION_END_PAYLOAD);
       expect(utils.logError.called).to.equal(false);
       expect(requests).to.have.lengthOf(1);
       expect(Object.keys(cnvrHelper.timeoutCache)).to.have.lengthOf(0);
@@ -993,7 +993,7 @@ describe('Conversant analytics adapter tests', function() {
       expect(data.adUnits[AD_UNIT_CODE_NATIVE].sizes).to.have.lengthOf(0);
 
       expect(Object.keys(data.adUnits[AD_UNIT_CODE].bids)).to.have.lengthOf(2);
-      const cnvrBidsArray = data.adUnits[AD_UNIT_CODE].bids['conversant'];
+      const cnvrBidsArray = data.adUnits[AD_UNIT_CODE].bids.conversant;
       // testing multiple bids from same bidder
       expect(cnvrBidsArray).to.have.lengthOf(2);
       expect(cnvrBidsArray[0].eventCodes.includes(CNVR_CONSTANTS.BID)).to.be.true;
@@ -1014,7 +1014,7 @@ describe('Conversant analytics adapter tests', function() {
       expect(cnvrBidsArray[1].adSize.h).to.equal(100);
       expect(cnvrBidsArray[1].mediaType).to.equal('banner');
 
-      const apnBidsArray = data.adUnits[AD_UNIT_CODE].bids['appnexus'];
+      const apnBidsArray = data.adUnits[AD_UNIT_CODE].bids.appnexus;
       expect(apnBidsArray).to.have.lengthOf(2);
       let apnBid = apnBidsArray[0];
       expect(apnBid.originalCpm).to.be.undefined;
@@ -1034,7 +1034,7 @@ describe('Conversant analytics adapter tests', function() {
       expect(apnBid.mediaType).to.be.undefined;
 
       expect(Object.keys(data.adUnits[AD_UNIT_CODE_NATIVE].bids)).to.have.lengthOf(1);
-      const apnNativeBidsArray = data.adUnits[AD_UNIT_CODE_NATIVE].bids['appnexus'];
+      const apnNativeBidsArray = data.adUnits[AD_UNIT_CODE_NATIVE].bids.appnexus;
       expect(apnNativeBidsArray).to.have.lengthOf(1);
       const apnNativeBid = apnNativeBidsArray[0];
       expect(apnNativeBid.eventCodes.includes(CNVR_CONSTANTS.BID)).to.be.true;
@@ -1075,7 +1075,7 @@ describe('Conversant analytics adapter tests', function() {
       bidderCode: 'myBidderCode',
       bidderRequestId: '15246a574e859f',
       bids: [{}],
-      gdprConsent: {consentString: 'BOtmiBKOtmiBKABABAENAFAAAAACeAAA', vendorData: {}, gdprApplies: true},
+      gdprConsent: { consentString: 'BOtmiBKOtmiBKABABAENAFAAAAACeAAA', vendorData: {}, gdprApplies: true },
       refererInfo: {
         canonicalUrl: null,
         page: 'http://mypage.org?pbjs_debug=true',
@@ -1089,12 +1089,12 @@ describe('Conversant analytics adapter tests', function() {
     };
 
     it('should record error when bidder_error called', function() {
-      let warnStub = sandbox.stub(utils, 'logWarn');
+      const warnStub = sandbox.stub(utils, 'logWarn');
       expect(requests).to.have.lengthOf(0);
       expect(Object.keys(cnvrHelper.bidderErrorCache)).to.have.lengthOf(0);
       expect(warnStub.calledOnce).to.be.false;
 
-      events.emit(constants.EVENTS.BIDDER_ERROR, {'error': XHR_ERROR_MOCK, 'bidderRequest': MOCK_BID_REQUEST});
+      events.emit(EVENTS.BIDDER_ERROR, { error: XHR_ERROR_MOCK, bidderRequest: MOCK_BID_REQUEST });
       expect(Object.keys(cnvrHelper.bidderErrorCache)).to.have.lengthOf(1);
       expect(warnStub.calledOnce).to.be.true;
 
@@ -1105,7 +1105,7 @@ describe('Conversant analytics adapter tests', function() {
       expect(errorObj.errors[0].bidderCode).to.equal(MOCK_BID_REQUEST.bidderCode);
       expect(errorObj.errors[0].url).to.not.be.undefined;
 
-      events.emit(constants.EVENTS.BIDDER_ERROR, {'error': XHR_ERROR_MOCK, 'bidderRequest': MOCK_BID_REQUEST});
+      events.emit(EVENTS.BIDDER_ERROR, { error: XHR_ERROR_MOCK, bidderRequest: MOCK_BID_REQUEST });
       errorObj = cnvrHelper.bidderErrorCache[MOCK_BID_REQUEST.auctionId];
       expect(errorObj.errors).to.have.lengthOf(2);
     });
