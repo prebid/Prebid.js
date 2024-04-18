@@ -72,10 +72,10 @@ export const spec = {
         },
         uspConsent: bidderRequest?.uspConsent || '',
         gppConsent: {
-          gppString: deepAccess(bidderRequest, 'gppConsent.gppString')
-            || deepAccess(bidderRequest, 'ortb2.regs.gpp', ''),
-          applicableSections: deepAccess(bidderRequest, 'gppConsent.applicableSections')
-            || deepAccess(bidderRequest, 'ortb2.regs.gpp_sid', []),
+          gppString: deepAccess(bidderRequest, 'gppConsent.gppString') ||
+            deepAccess(bidderRequest, 'ortb2.regs.gpp', ''),
+          applicableSections: deepAccess(bidderRequest, 'gppConsent.applicableSections') ||
+            deepAccess(bidderRequest, 'ortb2.regs.gpp_sid', []),
         },
       },
       config: {
