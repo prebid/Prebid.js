@@ -9,6 +9,7 @@ const BIDDER_CODE_DEAL_ALIAS_BASE = 'adndeal';
 const BIDDER_CODE_DEAL_ALIASES = [1, 2, 3, 4, 5].map(num => {
   return BIDDER_CODE_DEAL_ALIAS_BASE + num;
 });
+const DEV_ENDPOINT_URL = 'https://adserver.dev.adnuntius.com/i';
 const ENDPOINT_URL = 'https://ads.adnuntius.delivery/i';
 const ENDPOINT_URL_EUROPE = 'https://europe.delivery.adnuntius.com/i';
 const GVLID = 855;
@@ -258,10 +259,11 @@ export const spec = {
 
     const requests = [];
     const networkKeys = Object.keys(networks);
+    const devEnv = config.getConfig().env === 'dev';
     for (let j = 0; j < networkKeys.length; j++) {
       const network = networkKeys[j];
       if (network.indexOf('_video') > -1) { queryParamsAndValues.push('tt=' + DEFAULT_VAST_VERSION) }
-      const requestURL = gdprApplies ? ENDPOINT_URL_EUROPE : ENDPOINT_URL
+      const requestURL = devEnv ? DEV_ENDPOINT_URL : gdprApplies ? ENDPOINT_URL_EUROPE : ENDPOINT_URL
       requests.push({
         method: 'POST',
         url: requestURL + '?' + queryParamsAndValues.join('&'),
