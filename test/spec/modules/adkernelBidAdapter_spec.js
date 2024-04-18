@@ -190,7 +190,8 @@ describe('Adkernel adapter', function () {
           adm: '<!-- admarkup here -->',
           w: 300,
           h: 250,
-          dealid: 'deal'
+          dealid: 'deal',
+          mtype: 1
         }]
       }],
       ext: {
@@ -206,7 +207,8 @@ describe('Adkernel adapter', function () {
           price: 0.00145,
           adid: '158801',
           nurl: 'https://rtb.com/win?i=sZSYq5zYMxo_0&f=nurl',
-          cid: '16855'
+          cid: '16855',
+          mtype: 2
         }]
       }],
     }, usersyncOnlyResponse = {
@@ -241,6 +243,7 @@ describe('Adkernel adapter', function () {
           cat: ['IAB1-4', 'IAB8-16', 'IAB25-5'],
           cid: '1',
           crid: '4',
+          mtype: 4,
           ext: {
             'advertiser_id': 777,
             'advertiser_name': 'advertiser',
@@ -262,7 +265,8 @@ describe('Adkernel adapter', function () {
           adid: '158801',
           adm: '<!-- admarkup -->',
           nurl: 'https://rtb.com/win?i=sZSYq5zYMxo_0&f=nurl',
-          cid: '16855'
+          cid: '16855',
+          mtype: 1
         }, {
           id: 'sZSYq5zYMxo_1',
           impid: 'Bid_01v__mf',
@@ -270,7 +274,8 @@ describe('Adkernel adapter', function () {
           price: 0.25,
           adid: '158801',
           nurl: 'https://rtb.com/win?i=sZSYq5zYMxo_1&f=nurl',
-          cid: '16855'
+          cid: '16855',
+          mtype: 2
         }]
       }],
       bidid: 'pTuOlf5KHUo',
