@@ -4,7 +4,14 @@
 
 **Module Type:** Bidder Adapter
 
-**Maintainer:** 
+**Maintainer:** yoni@twist.win
+
+
+
+
+
+
+
 
 # Description
 
