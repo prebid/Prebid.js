@@ -20,14 +20,20 @@ function getVideoMetadata(bidRequest, bidderRequest) {
   const videoMetadata = {
     description: videoParams.description || '',
     duration: videoParams.duration || 0,
-    iabcat1: deepAccess(bidderRequest, 'ortb2.site.content.cat', [])
+    iabcat1: deepAccess(bidderRequest, 'ortb2.site.content.data', [])
       // Only take IAB cats of taxonomy V1
-      .filter(cat => cat.toLowerCase().indexOf('iab-') === 0),
+      // See https://docs.prebid.org/features/firstPartyData.html#segments-and-taxonomy
+      .filter(data => data?.ext?.segtax === 4)
+      .map(data => (Array.isArray(data?.segment) ? data.segment : []).map(seg => seg.id).concat())
+      .flat(1),
     iabcat2: Array.isArray(videoParams.iabcat2)
       ? videoParams.iabcat2
-      // Only take IAB cats of taxonomy V2 or higher by excluding "IAB-" type categories
-      : deepAccess(bidderRequest, 'ortb2.site.content.cat', [])
-        .filter(cat => cat.toLowerCase().indexOf('iab-') !== 0),
+      : deepAccess(bidderRequest, 'ortb2.site.content.data', [])
+        // Only take IAB cats of taxonomy V2 or higher
+        // See https://docs.prebid.org/features/firstPartyData.html#segments-and-taxonomy
+        .filter(data => [5, 6, 7].includes(data?.ext?.segtax))
+        .map(data => (Array.isArray(data?.segment) ? data.segment : []).map(seg => seg.id).concat())
+        .flat(1),
     id: videoParams.id || '',
     lang: videoParams.lang || '',
     private: videoParams.private || false,
