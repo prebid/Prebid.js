@@ -8,7 +8,7 @@ import { deepAccess } from '../src/utils.js';
  * @param {BidRequest} bidRequest A valid bid requests that should be sent to the Server.
  * @return video metadata
  */
-function getVideoMetadata(bidRequest) {
+function getVideoMetadata(bidRequest, bidderRequest) {
   const videoAdUnit = deepAccess(bidRequest, 'mediaTypes.video', {});
   const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
 
@@ -20,7 +20,14 @@ function getVideoMetadata(bidRequest) {
   const videoMetadata = {
     description: videoParams.description || '',
     duration: videoParams.duration || 0,
-    iabcat2: Array.isArray(videoParams.iabcat2) ? videoParams.iabcat2 : [],
+    iabcat1: deepAccess(bidderRequest, 'ortb2.site.content.cat', [])
+      // Only take IAB cats of taxonomy V1
+      .filter(cat => cat.toLowerCase().indexOf('iab-') === 0),
+    iabcat2: Array.isArray(videoParams.iabcat2)
+      ? videoParams.iabcat2
+      // Only take IAB cats of taxonomy V2 or higher by excluding "IAB-" type categories
+      : deepAccess(bidderRequest, 'ortb2.site.content.cat', [])
+        .filter(cat => cat.toLowerCase().indexOf('iab-') !== 0),
     id: videoParams.id || '',
     lang: videoParams.lang || '',
     private: videoParams.private || false,
@@ -96,7 +103,7 @@ export const spec = {
         },
         sizes: bid.sizes || [],
       },
-      video_metadata: getVideoMetadata(bid),
+      video_metadata: getVideoMetadata(bid, bidderRequest),
     },
     options: {
       withCredentials: true,

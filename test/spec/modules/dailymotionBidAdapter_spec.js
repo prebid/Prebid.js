@@ -76,6 +76,11 @@ describe('dailymotionBidAdapterTests', () => {
         regs: {
           coppa: 1,
         },
+        site: {
+          content: {
+            cat: ['IAB-1', '200'],
+          },
+        },
       },
     };
 
@@ -103,6 +108,7 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.request.mediaTypes.video.startDelay).to.eql(bidRequestData[0].mediaTypes.video.startdelay);
     expect(reqData.video_metadata).to.eql({
       description: bidRequestData[0].mediaTypes.video.description,
+      iabcat1: ['IAB-1'], // Taxonomy v2 or higher is excluded
       iabcat2: bidRequestData[0].mediaTypes.video.iabcat2,
       id: bidRequestData[0].params.video.id,
       lang: bidRequestData[0].params.video.lang,
@@ -116,7 +122,7 @@ describe('dailymotionBidAdapterTests', () => {
     });
   });
 
-  it('validates buildRequests with fallback values on ortb2 for gpp', () => {
+  it('validates buildRequests with fallback values on ortb2 for gpp & iabcat', () => {
     const bidRequestData = [{
       auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
       bidId: 123456,
@@ -127,7 +133,6 @@ describe('dailymotionBidAdapterTests', () => {
           api: [2, 7],
           description: 'this is a test video',
           duration: 300,
-          iabcat2: ['6', '17'],
           lang: 'ENG',
           startdelay: 0,
         },
@@ -164,6 +169,11 @@ describe('dailymotionBidAdapterTests', () => {
           gpp_sid: [5],
           coppa: 0,
         },
+        site: {
+          content: {
+            cat: ['6', '17'],
+          },
+        },
       },
     };
 
@@ -194,7 +204,9 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.request.mediaTypes.video.startDelay).to.eql(bidRequestData[0].mediaTypes.video.startdelay);
     expect(reqData.video_metadata).to.eql({
       description: bidRequestData[0].mediaTypes.video.description,
-      iabcat2: bidRequestData[0].mediaTypes.video.iabcat2,
+      // No iabcat1 here because nothing matches taxonomy
+      iabcat1: [],
+      iabcat2: bidderRequestData.ortb2.site.content.cat,
       id: bidRequestData[0].params.video.id,
       lang: bidRequestData[0].params.video.lang,
       private: bidRequestData[0].params.video.private,
@@ -259,6 +271,7 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.video_metadata).to.eql({
       description: '',
       duration: 0,
+      iabcat1: [],
       iabcat2: [],
       id: '',
       lang: '',
