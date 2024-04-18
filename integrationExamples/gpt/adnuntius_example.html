@@ -16,8 +16,8 @@
                 bids: [{
                     bidder: 'adnuntius',
                     params: {
-                        auId: "201208",
-                        network: "adnuntius",
+                        auId: "4d0",
+                        network: "60",
                         bidType: 'netBid'
                     }
                 }]
@@ -46,7 +46,8 @@
             pbjs.setBidderConfig({
                 bidders: ['adnuntius'],
                 config: {
-                    bidType: 'netBid'
+                    bidType: 'netBid',
+                    env: 'dev'
                 }
             });
 

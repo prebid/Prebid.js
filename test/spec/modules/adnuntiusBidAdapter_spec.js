@@ -9,6 +9,7 @@ import {getGlobal} from '../../../src/prebidGlobal';
 
 describe('adnuntiusBidAdapter', function() {
   const URL = 'https://ads.adnuntius.delivery/i?tzo=';
+  const DEV_URL = 'https://adserver.dev.adnuntius.com/i?tzo=';
   const EURO_URL = 'https://europe.delivery.adnuntius.com/i?tzo=';
   const usi = utils.generateUUID()
 
@@ -39,6 +40,7 @@ describe('adnuntiusBidAdapter', function() {
   const tzo = new Date().getTimezoneOffset();
   const ENDPOINT_URL_BASE = `${URL}${tzo}&format=prebid`;
   const ENDPOINT_URL = `${ENDPOINT_URL_BASE}&userId=${usi}`;
+  const DEV_ENDPOINT_URL = `${DEV_URL}${tzo}&format=prebid&userId=${usi}`;
   const ENDPOINT_URL_VIDEO = `${ENDPOINT_URL_BASE}&userId=${usi}&tt=vast4`;
   const ENDPOINT_URL_NOCOOKIE = `${ENDPOINT_URL_BASE}&userId=${usi}&noCookies=true`;
   const ENDPOINT_URL_SEGMENTS = `${ENDPOINT_URL_BASE}&segments=segment1,segment2,segment3&userId=${usi}`;
@@ -456,6 +458,25 @@ describe('adnuntiusBidAdapter', function() {
 
   describe('buildRequests', function() {
     it('Test requests', function() {
+      config.setBidderConfig({
+        bidders: ['adnuntius'],
+        config: {
+          env: 'dev'
+        }
+      });
+
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, {}));
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('bid');
+      const bid = request[0].bid[0]
+      expect(bid).to.have.property('bidId');
+      expect(request[0]).to.have.property('url');
+      expect(request[0].url).to.equal(DEV_ENDPOINT_URL);
+      expect(request[0]).to.have.property('data');
+      expect(request[0].data).to.equal('{"adUnits":[{"auId":"000000000008b6bc","targetId":"123","maxDeals":1,"dimensions":[[640,480],[600,400]]},{"auId":"0000000000000551","targetId":"adn-0000000000000551","dimensions":[[1640,1480],[1600,1400]]}],"metaData":{"valid":"also-valid"}}');
+    });
+
+    it('Test dev requests', function() {
       const request = spec.buildRequests(bidderRequests, {});
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('bid');
