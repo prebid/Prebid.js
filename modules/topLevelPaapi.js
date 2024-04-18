@@ -16,6 +16,10 @@ function onAuctionConfig(auctionId, aucitonConfigs) {
   }
 }
 
+export function getPAAPIBids({adUnitCode, auctionId}) {
+
+}
+
 export const topLevelPAAPI = {
   name: 'topLevelPAAPI',
   init(params) {

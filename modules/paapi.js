@@ -9,8 +9,8 @@ import * as events from '../src/events.js';
 import {EVENTS} from '../src/constants.js';
 import {currencyCompare} from '../libraries/currencyUtils/currency.js';
 import {keyCompare, maximum, minimum} from '../src/utils/reducers.js';
-import {auctionManager} from '../src/auctionManager.js';
 import {getGlobal} from '../src/prebidGlobal.js';
+import {auctionStore} from '../libraries/weakStore/weakStore.js';
 
 const MODULE = 'PAAPI';
 
@@ -19,25 +19,15 @@ const USED = new WeakSet();
 
 export function registerSubmodule(submod) {
   submodules.push(submod);
-  submod.init && submod.init({getPAAPIConfig});
+  submod.init && submod.init({
+    getPAAPIConfig,
+  });
 }
 
 module('paapi', registerSubmodule);
 
-function auctionConfigs() {
-  const store = new WeakMap();
-  return function (auctionId, init = {}) {
-    const auction = auctionManager.index.getAuction({auctionId});
-    if (auction == null) return;
-    if (!store.has(auction)) {
-      store.set(auction, init);
-    }
-    return store.get(auction);
-  };
-}
-
-const pendingForAuction = auctionConfigs();
-const configsForAuction = auctionConfigs();
+const pendingForAuction = auctionStore();
+const configsForAuction = auctionStore();
 let latestAuctionForAdUnit = {};
 let moduleConfig = {};
 
@@ -137,35 +127,43 @@ export function addComponentAuctionHook(next, request, componentAuctionConfig) {
   next(request, componentAuctionConfig);
 }
 
+function expandFilters({auctionId, adUnitCode} = {}) {
+  let adUnitCodes = [];
+  if (adUnitCode == null) {
+    adUnitCodes = Object.keys(latestAuctionForAdUnit);
+  } else if (latestAuctionForAdUnit.hasOwnProperty(adUnitCode)) {
+    adUnitCodes = [adUnitCode];
+  }
+  return Object.fromEntries(
+    adUnitCodes.map(au => [au, auctionId ?? latestAuctionForAdUnit[au]])
+  )
+}
+
 /**
  * Get PAAPI auction configuration.
  *
- * @param auctionId? optional auction filter; if omitted, the latest auction for each ad unit is used
- * @param adUnitCode? optional ad unit filter
+ * @param filters
+ * @param filters.auctionId? optional auction filter; if omitted, the latest auction for each ad unit is used
+ * @param filters.adUnitCode? optional ad unit filter
  * @param includeBlanks if true, include null entries for ad units that match the given filters but do not have any available auction configs.
  * @returns {{}} a map from ad unit code to auction config for the ad unit.
  */
-export function getPAAPIConfig({auctionId, adUnitCode} = {}, includeBlanks = false) {
+export function getPAAPIConfig(filters = {}, includeBlanks = false) {
   const output = {};
-  const targetedAuctionConfigs = auctionId && configsForAuction(auctionId);
-  Object.keys((auctionId != null ? targetedAuctionConfigs : latestAuctionForAdUnit) ?? []).forEach(au => {
-    const latestAuctionId = latestAuctionForAdUnit[au];
-    const auctionConfigs = targetedAuctionConfigs ?? (latestAuctionId && configsForAuction(latestAuctionId));
-    if ((adUnitCode ?? au) === au) {
-      let candidate;
-      if (targetedAuctionConfigs?.hasOwnProperty(au)) {
-        candidate = targetedAuctionConfigs[au];
-      } else if (auctionId == null && auctionConfigs?.hasOwnProperty(au)) {
-        candidate = auctionConfigs[au];
-      }
+  Object.entries(expandFilters(filters)).forEach(([au, auctionId]) => {
+    const auctionConfigs = configsForAuction(auctionId);
+    if (auctionConfigs?.hasOwnProperty(au)) {
+      const candidate = auctionConfigs[au];
       if (candidate && !USED.has(candidate)) {
         output[au] = candidate;
         USED.add(candidate);
       } else if (includeBlanks) {
         output[au] = null;
       }
+    } else if (auctionId == null && includeBlanks) {
+      output[au] = null;
     }
-  });
+  })
   return output;
 }
 
