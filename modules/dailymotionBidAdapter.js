@@ -1,4 +1,3 @@
-import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO } from '../src/mediaTypes.js';
 import { deepAccess } from '../src/utils.js';
@@ -47,7 +46,7 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return ((typeof bid !== 'undefined') && (typeof bid?.params?.apiKey === 'string') && (bid.params.apiKey.length > 10));
+    return typeof bid?.params?.apiKey === 'string' && bid.params.apiKey.length > 10;
   },
 
   /**
@@ -72,11 +71,18 @@ export const spec = {
           page: bidderRequest?.refererInfo?.page || '',
         },
         uspConsent: bidderRequest?.uspConsent || '',
+        gppConsent: {
+          gppString: deepAccess(bidderRequest, 'gppConsent.gppString')
+            || deepAccess(bidderRequest, 'ortb2.regs.gpp', ''),
+          applicableSections: deepAccess(bidderRequest, 'gppConsent.applicableSections')
+            || deepAccess(bidderRequest, 'ortb2.regs.gpp_sid', []),
+        },
       },
       config: {
         api_key: bid.params.apiKey
       },
-      coppa: config.getConfig('coppa'),
+      // Cast boolean in any case (value should be 0 or 1) to ensure type
+      coppa: !!deepAccess(bidderRequest, 'ortb2.regs.coppa'),
       request: {
         adUnitCode: bid.adUnitCode || '',
         auctionId: bid.auctionId || '',
