@@ -21,6 +21,7 @@ export function registerSubmodule(submod) {
   submodules.push(submod);
   submod.init && submod.init({
     getPAAPIConfig,
+    expandFilters
   });
 }
 
@@ -84,7 +85,7 @@ function getSlotSignals(adUnit = {}, bidsReceived = [], bidRequests = []) {
 }
 
 function onAuctionEnd({auctionId, bidsReceived, bidderRequests, adUnitCodes, adUnits}) {
-  const adUnitsByCode = Object.fromEntries(adUnits?.map(au => [au.code, au]) || [])
+  const adUnitsByCode = Object.fromEntries(adUnits?.map(au => [au.code, au]) || []);
   const allReqs = bidderRequests?.flatMap(br => br.bids);
   const paapiConfigs = {};
   (adUnitCodes || []).forEach(au => {
@@ -127,6 +128,16 @@ export function addComponentAuctionHook(next, request, componentAuctionConfig) {
   next(request, componentAuctionConfig);
 }
 
+/**
+ * Expand PAAPI api filters into a map from ad unit code to auctionId.
+ *
+ * @param auctionId when specified, the result will have this as the value for each entry.
+ * when not specified, each ad unit will map to the latest auction that involved that ad unit.
+ * @param adUnitCode when specified, the result will contain only one entry (for this ad unit) or be empty (if this ad
+ * unit was never involved in an auction).
+ * when not specified, the result will contain an entry for every ad unit that was involved in any auction.
+ * @return {{[adUnitCode: string]: string}}
+ */
 function expandFilters({auctionId, adUnitCode} = {}) {
   let adUnitCodes = [];
   if (adUnitCode == null) {
@@ -136,7 +147,7 @@ function expandFilters({auctionId, adUnitCode} = {}) {
   }
   return Object.fromEntries(
     adUnitCodes.map(au => [au, auctionId ?? latestAuctionForAdUnit[au]])
-  )
+  );
 }
 
 /**
@@ -153,6 +164,7 @@ export function getPAAPIConfig(filters = {}, includeBlanks = false) {
   Object.entries(expandFilters(filters)).forEach(([au, auctionId]) => {
     const auctionConfigs = configsForAuction(auctionId);
     if (auctionConfigs?.hasOwnProperty(au)) {
+      // ad unit was involved in a PAAPI auction
       const candidate = auctionConfigs[au];
       if (candidate && !USED.has(candidate)) {
         output[au] = candidate;
@@ -161,9 +173,10 @@ export function getPAAPIConfig(filters = {}, includeBlanks = false) {
         output[au] = null;
       }
     } else if (auctionId == null && includeBlanks) {
+      // ad unit was involved in a non-PAAPI auction
       output[au] = null;
     }
-  })
+  });
   return output;
 }
 
@@ -200,7 +213,7 @@ function getRequestedSize(adUnit) {
       return {
         width: size[0].toString(),
         height: size[1].toString()
-      }
+      };
     }
   })();
 }
@@ -215,7 +228,7 @@ export function markForFledge(next, bidderRequests) {
           deepSetValue(bidReq, 'ortb2Imp.ext.ae', bidReq.ortb2Imp?.ext?.ae ?? ae);
           const requestedSize = getRequestedSize(bidReq);
           if (requestedSize) {
-            deepSetValue(bidReq, 'ortb2Imp.ext.paapi.requestedSize', requestedSize)
+            deepSetValue(bidReq, 'ortb2Imp.ext.paapi.requestedSize', requestedSize);
           }
         });
       });
