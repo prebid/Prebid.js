@@ -76,7 +76,24 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return typeof bid?.params?.apiKey === 'string' && bid.params.apiKey.length > 10;
+    if (bid?.params) {
+      // We only accept video adUnits
+      if (!bid?.mediaTypes?.[VIDEO]) return false;
+
+      // As `context`, `placement` & `plcmt` are optional (although recommended)
+      // values, we check the 3 of them to see if we are in an instream video context
+      const isInstream = bid.mediaTypes[VIDEO].context === 'instream' ||
+        bid.mediaTypes[VIDEO].placement === 1 ||
+        bid.mediaTypes[VIDEO].plcmt === 1;
+
+      // We only accept instream video context
+      if (!isInstream) return false;
+
+      // We need API key
+      return typeof bid.params.apiKey === 'string' && bid.params.apiKey.length > 10;
+    }
+
+    return false;
   },
 
   /**

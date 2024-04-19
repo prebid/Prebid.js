@@ -1,7 +1,7 @@
 import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { spec } from 'modules/dailymotionBidAdapter.js';
-import { VIDEO } from '../../../src/mediaTypes';
+import { BANNER, VIDEO } from '../../../src/mediaTypes';
 
 describe('dailymotionBidAdapterTests', () => {
   // Validate that isBidRequestValid only validates requests with apiKey
@@ -12,6 +12,11 @@ describe('dailymotionBidAdapterTests', () => {
       params: {
         apiKey: '',
       },
+      mediaTypes: {
+        [VIDEO]: {
+          context: 'instream',
+        },
+      },
     };
 
     expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithEmptyApi))).to.be.false;
@@ -20,9 +25,57 @@ describe('dailymotionBidAdapterTests', () => {
       params: {
         apiKey: 'test_api_key',
       },
+      mediaTypes: {
+        [VIDEO]: {
+          context: 'instream',
+        },
+      },
     };
 
     expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithApi))).to.be.true;
+
+    const bidWithEmptyMediaTypes = {
+      params: {
+        apiKey: '',
+      },
+    };
+
+    expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithEmptyMediaTypes))).to.be.false;
+
+    const bidWithEmptyVideoAdUnit = {
+      params: {
+        apiKey: '',
+      },
+      mediaTypes: {
+        [VIDEO]: {},
+      },
+    };
+
+    expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithEmptyVideoAdUnit))).to.be.false;
+
+    const bidWithBannerMediaType = {
+      params: {
+        apiKey: 'test_api_key',
+      },
+      mediaTypes: {
+        [BANNER]: {},
+      },
+    };
+
+    expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithBannerMediaType))).to.be.false;
+
+    const bidWithOutstreamContext = {
+      params: {
+        apiKey: 'test_api_key',
+      },
+      mediaTypes: {
+        video: {
+          context: 'outstream',
+        },
+      },
+    };
+
+    expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithOutstreamContext))).to.be.false;
   });
 
   // Validate request generation

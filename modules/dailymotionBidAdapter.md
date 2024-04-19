@@ -9,10 +9,11 @@ Maintainer: ad-leo-engineering@dailymotion.com
 # Description
 
 Dailymotion prebid adapter.
+Supports video ad units in instream context.
 
 # Configuration options
 
-Before calling this adapter, you need to set at least the API key in the bid parameters:
+Before calling this adapter, you need to at least set a video adUnit in an instream context and the API key in the bid parameters:
 
 ```javascript
 const adUnits = [
@@ -21,8 +22,14 @@ const adUnits = [
       bidder: 'dailymotion',
       params: {
         apiKey: 'fake_api_key'
-      }
-    }]
+      },
+    }],
+    code: 'test-ad-unit',
+    mediaTypes: {
+      video: {
+        context: 'instream',
+      },
+    },
   }
 ];
 ```
@@ -40,8 +47,14 @@ const adUnits = [
       bidder: 'dailymotion',
       params: {
         apiKey: 'dailymotion-testing'
-      }
-    }]
+      },
+    }],
+    code: 'test-ad-unit',
+    mediaTypes: {
+      video: {
+        context: 'instream',
+      },
+    },
   }
 ];
 ```
