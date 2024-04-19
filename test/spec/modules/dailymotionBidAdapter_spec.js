@@ -86,13 +86,21 @@ describe('dailymotionBidAdapterTests', () => {
       adUnitCode: 'preroll',
       mediaTypes: {
         video: {
-          playerSize: [[1280, 720]],
           api: [2, 7],
           description: 'this is a test video',
           duration: 300,
           iabcat2: ['6', '17'],
           lang: 'ENG',
+          mimes: ['video/mp4'],
+          minduration: 5,
+          maxduration: 30,
+          protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+          skip: 1,
+          skipafter: 5,
+          skipmin: 10,
           startdelay: 0,
+          w: 1280,
+          h: 720
         },
       },
       sizes: [[1920, 1080]],
@@ -271,8 +279,16 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId);
     expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
     expect(reqData.request.mediaTypes.video.api).to.eql(bidRequestData[0].mediaTypes.video.api);
-    expect(reqData.request.mediaTypes.video.playerSize).to.eql(bidRequestData[0].mediaTypes.video.playerSize);
-    expect(reqData.request.mediaTypes.video.startDelay).to.eql(bidRequestData[0].mediaTypes.video.startdelay);
+    expect(reqData.request.mediaTypes.video.mimes).to.eql(bidRequestData[0].mediaTypes.video.mimes);
+    expect(reqData.request.mediaTypes.video.minduration).to.eql(bidRequestData[0].mediaTypes.video.minduration);
+    expect(reqData.request.mediaTypes.video.maxduration).to.eql(bidRequestData[0].mediaTypes.video.maxduration);
+    expect(reqData.request.mediaTypes.video.protocols).to.eql(bidRequestData[0].mediaTypes.video.protocols);
+    expect(reqData.request.mediaTypes.video.skip).to.eql(bidRequestData[0].mediaTypes.video.skip);
+    expect(reqData.request.mediaTypes.video.skipafter).to.eql(bidRequestData[0].mediaTypes.video.skipafter);
+    expect(reqData.request.mediaTypes.video.skipmin).to.eql(bidRequestData[0].mediaTypes.video.skipmin);
+    expect(reqData.request.mediaTypes.video.startdelay).to.eql(bidRequestData[0].mediaTypes.video.startdelay);
+    expect(reqData.request.mediaTypes.video.w).to.eql(bidRequestData[0].mediaTypes.video.w);
+    expect(reqData.request.mediaTypes.video.h).to.eql(bidRequestData[0].mediaTypes.video.h);
     expect(reqData.video_metadata).to.eql({
       description: bidRequestData[0].mediaTypes.video.description,
       iabcat1: ['IAB-1'], // Taxonomy v2 or higher is excluded
@@ -296,7 +312,6 @@ describe('dailymotionBidAdapterTests', () => {
       adUnitCode: 'preroll',
       mediaTypes: {
         video: {
-          playerSize: [[1280, 720]],
           api: [2, 7],
           description: 'this is a test video',
           duration: 300,
@@ -407,7 +422,7 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
     expect(reqData.request.mediaTypes.video.api).to.eql(bidRequestData[0].mediaTypes.video.api);
     expect(reqData.request.mediaTypes.video.playerSize).to.eql(bidRequestData[0].mediaTypes.video.playerSize);
-    expect(reqData.request.mediaTypes.video.startDelay).to.eql(bidRequestData[0].mediaTypes.video.startdelay);
+    expect(reqData.request.mediaTypes.video.startdelay).to.eql(bidRequestData[0].mediaTypes.video.startdelay);
     expect(reqData.video_metadata).to.eql({
       description: bidRequestData[0].mediaTypes.video.description,
       // No iabcat1 here because nothing matches taxonomy
@@ -466,9 +481,17 @@ describe('dailymotionBidAdapterTests', () => {
       adUnitCode: '',
       mediaTypes: {
         video: {
-          playerSize: [],
-          startDelay: 0,
           api: [],
+          mimes: [],
+          minduration: 0,
+          maxduration: 0,
+          protocols: [],
+          skip: 0,
+          skipafter: 0,
+          skipmin: 0,
+          startdelay: 0,
+          w: 0,
+          h: 0,
         },
       },
       sizes: [],
