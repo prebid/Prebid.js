@@ -10,7 +10,7 @@ const {
   }
 } = CONSTANTS;
 
-describe('', function() {
+describe('eightPodAnalyticAdapter', function() {
   let sandbox;
 
   beforeEach(function() {
