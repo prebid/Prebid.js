@@ -58,6 +58,9 @@ function getVideoMetadata(bidRequest, bidderRequest) {
     title: videoParams.title || deepAccess(contentObj, 'title', ''),
     topics: videoParams.topics || '',
     xid: videoParams.xid || '',
+    livestream: typeof videoParams.livestream === 'number'
+      ? !!videoParams.livestream
+      : !!deepAccess(contentObj, 'livestream', 0),
   };
 
   return videoMetadata;
@@ -109,15 +112,15 @@ export const spec = {
     data: {
       bidder_request: {
         gdprConsent: {
-          apiVersion: bidderRequest?.gdprConsent?.apiVersion || 1,
-          consentString: bidderRequest?.gdprConsent?.consentString || '',
+          apiVersion: deepAccess(bidderRequest, 'gdprConsent.apiVersion', 1),
+          consentString: deepAccess(bidderRequest, 'gdprConsent.consentString', ''),
           // Cast boolean in any case (eg: if value is int) to ensure type
-          gdprApplies: !!bidderRequest?.gdprConsent?.gdprApplies,
+          gdprApplies: !!deepAccess(bidderRequest, 'gdprConsent.gdprApplies'),
         },
         refererInfo: {
-          page: bidderRequest?.refererInfo?.page || '',
+          page: deepAccess(bidderRequest, 'refererInfo.page', ''),
         },
-        uspConsent: bidderRequest?.uspConsent || '',
+        uspConsent: deepAccess(bidderRequest, 'uspConsent', ''),
         gppConsent: {
           gppString: deepAccess(bidderRequest, 'gppConsent.gppString') ||
             deepAccess(bidderRequest, 'ortb2.regs.gpp', ''),
@@ -130,10 +133,15 @@ export const spec = {
       },
       // Cast boolean in any case (value should be 0 or 1) to ensure type
       coppa: !!deepAccess(bidderRequest, 'ortb2.regs.coppa'),
+      // In app context, we need to retrieve additional informations
+      ...(!deepAccess(bidderRequest, 'ortb2.site') && !!deepAccess(bidderRequest, 'ortb2.app') ? {
+        appBundle: deepAccess(bidderRequest, 'ortb2.app.bundle', ''),
+        appStoreUrl: deepAccess(bidderRequest, 'ortb2.app.storeurl', ''),
+      } : {}),
       request: {
-        adUnitCode: bid.adUnitCode || '',
-        auctionId: bid.auctionId || '',
-        bidId: bid.bidId || '',
+        adUnitCode: deepAccess(bid, 'adUnitCode', ''),
+        auctionId: deepAccess(bid, 'auctionId', ''),
+        bidId: deepAccess(bid, 'bidId', ''),
         mediaTypes: {
           video: {
             api: bid.mediaTypes?.[VIDEO]?.api || [],

@@ -116,6 +116,7 @@ describe('dailymotionBidAdapterTests', () => {
           title: 'test video',
           topics: 'topic_1, topic_2',
           xid: 'x123456',
+          livestream: 1,
         },
       },
     }];
@@ -173,7 +174,7 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
     expect(reqData.request.mediaTypes.video.api).to.eql(bidRequestData[0].mediaTypes.video.api);
     expect(reqData.request.mediaTypes.video.playerSize).to.eql(bidRequestData[0].mediaTypes.video.playerSize);
-    expect(reqData.request.mediaTypes.video.startDelay).to.eql(bidRequestData[0].mediaTypes.video.startdelay);
+    expect(reqData.request.mediaTypes.video.startdelay).to.eql(bidRequestData[0].mediaTypes.video.startdelay);
     expect(reqData.video_metadata).to.eql({
       description: bidRequestData[0].mediaTypes.video.description,
       iabcat1: ['IAB-1'], // Taxonomy v2 or higher is excluded
@@ -187,6 +188,7 @@ describe('dailymotionBidAdapterTests', () => {
       xid: bidRequestData[0].params.video.xid,
       // Overriden through bidder params
       duration: bidRequestData[0].params.video.duration,
+      livestream: !!bidRequestData[0].params.video.livestream,
     });
   });
 
@@ -197,13 +199,21 @@ describe('dailymotionBidAdapterTests', () => {
       adUnitCode: 'preroll',
       mediaTypes: {
         video: {
-          playerSize: [[1280, 720]],
           api: [2, 7],
           description: 'this is a test video',
           duration: 300,
           iabcat2: ['6', '17'],
           lang: 'ENG',
+          mimes: ['video/mp4'],
+          minduration: 5,
+          maxduration: 30,
+          protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+          skip: 1,
+          skipafter: 5,
+          skipmin: 10,
           startdelay: 0,
+          w: 1280,
+          h: 720,
         },
       },
       sizes: [[1920, 1080]],
@@ -218,6 +228,7 @@ describe('dailymotionBidAdapterTests', () => {
           title: 'test video',
           topics: 'topic_1, topic_2',
           xid: 'x123456',
+          livestream: 1,
         },
       },
     }];
@@ -241,6 +252,8 @@ describe('dailymotionBidAdapterTests', () => {
           coppa: 1,
         },
         app: {
+          bundle: 'app-bundle',
+          storeurl: 'https://play.google.com/store/apps/details?id=app-bundle',
           content: {
             data: [
               {
@@ -276,6 +289,8 @@ describe('dailymotionBidAdapterTests', () => {
     });
     expect(reqData.config.api_key).to.eql(bidRequestData[0].params.apiKey);
     expect(reqData.coppa).to.be.true;
+    expect(reqData.appBundle).to.eql(bidderRequestData.ortb2.app.bundle);
+    expect(reqData.appStoreUrl).to.eql(bidderRequestData.ortb2.app.storeurl);
     expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId);
     expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
     expect(reqData.request.mediaTypes.video.api).to.eql(bidRequestData[0].mediaTypes.video.api);
@@ -302,6 +317,7 @@ describe('dailymotionBidAdapterTests', () => {
       xid: bidRequestData[0].params.video.xid,
       // Overriden through bidder params
       duration: bidRequestData[0].params.video.duration,
+      livestream: !!bidRequestData[0].params.video.livestream,
     });
   });
 
@@ -353,6 +369,7 @@ describe('dailymotionBidAdapterTests', () => {
             language: 'FR',
             keywords: 'tag_1,tag_2,tag_3',
             title: 'test video',
+            livestream: 1,
             data: [
               undefined, // Undefined to check proper handling of edge cases
               {}, // Empty object to check proper handling of edge cases
@@ -437,6 +454,7 @@ describe('dailymotionBidAdapterTests', () => {
       xid: bidRequestData[0].params.video.xid,
       // Overriden through bidder params
       duration: bidRequestData[0].params.video.duration,
+      livestream: !!bidderRequestData.ortb2.site.content.livestream,
     });
   });
 
@@ -509,6 +527,7 @@ describe('dailymotionBidAdapterTests', () => {
       title: '',
       topics: '',
       xid: '',
+      livestream: false,
     });
   });
 

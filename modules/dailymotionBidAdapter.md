@@ -120,6 +120,7 @@ const adUnits = [
         iabcat2: ['6', '17'],
         id: '54321',
         lang: 'FR',
+        livestream: 0,
         private: false,
         startdelay: 0,
         tags: 'tag_1,tag_2,tag_3',
@@ -142,6 +143,7 @@ If a field exists in both places, it will be overridden by bids.params.video.
 * `iabcat2` - List of IAB category IDs from the [2.0 taxonomy](https://github.com/InteractiveAdvertisingBureau/Taxonomies/blob/main/Content%20Taxonomies/Content%20Taxonomy%202.0.tsv) and above
 * `id` - Video unique ID in host video infrastructure
 * `lang` - ISO 639-1 code for main language used in the video
+* `livestream` - 0 = not live, 1 = content is live
 * `private` - True if video is not publicly available
 * `tags` - Tags for the video, comma separated
 * `title` - Video title
@@ -156,6 +158,7 @@ If you already specify [First-Party data](https://docs.prebid.org/features/first
 | `ortb2.site.content.data`  where  `ext.segtax`  is  `5`, `6` or `7` | `iabcat2`       |
 | `ortb2.site.content.id`                                             | `id`            |
 | `ortb2.site.content.language`                                       | `lang`          |
+| `ortb2.site.content.livestream`                                     | `livestream`    |
 | `ortb2.site.content.keywords`                                       | `tags`          |
 | `ortb2.site.content.title`                                          | `title`         |
 
