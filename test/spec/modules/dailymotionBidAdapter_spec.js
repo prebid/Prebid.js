@@ -129,7 +129,7 @@ describe('dailymotionBidAdapterTests', () => {
     });
   });
 
-  it('validates buildRequests with fallback values on ortb2 for iabcat1', () => {
+  it('validates buildRequests with content values from App', () => {
     const bidRequestData = [{
       auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
       bidId: 123456,
@@ -179,7 +179,7 @@ describe('dailymotionBidAdapterTests', () => {
         regs: {
           coppa: 1,
         },
-        site: {
+        app: {
           content: {
             data: [
               {

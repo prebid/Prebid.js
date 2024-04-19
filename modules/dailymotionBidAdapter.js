@@ -17,11 +17,18 @@ function getVideoMetadata(bidRequest, bidderRequest) {
     ...videoBidderParams, // Bidder Specific overrides
   };
 
+  // As per oRTB 2.5 spec, "A bid request must not contain both an App and a Site object."
+  // See section 3.2.14
+  // Content object is either from Object: Site or Object: App
+  const contentObj = deepAccess(bidderRequest, 'ortb2.site')
+    ? deepAccess(bidderRequest, 'ortb2.site.content')
+    : deepAccess(bidderRequest, 'ortb2.app.content');
+
   // Store as object keys to ensure uniqueness
   const iabcat1 = {};
   const iabcat2 = {};
 
-  deepAccess(bidderRequest, 'ortb2.site.content.data', []).forEach((data) => {
+  deepAccess(contentObj, 'data', []).forEach((data) => {
     if ([4, 5, 6, 7].includes(data?.ext?.segtax)) {
       (Array.isArray(data.segment) ? data.segment : []).forEach((segment) => {
         if (typeof segment.id === 'string') {
@@ -44,15 +51,11 @@ function getVideoMetadata(bidRequest, bidderRequest) {
     iabcat2: Array.isArray(videoParams.iabcat2)
       ? videoParams.iabcat2
       : Object.keys(iabcat2),
-    id: videoParams.id ||
-      deepAccess(bidderRequest, 'ortb2.site.content.id', ''),
-    lang: videoParams.lang ||
-      deepAccess(bidderRequest, 'ortb2.site.content.language', ''),
+    id: videoParams.id || deepAccess(contentObj, 'id', ''),
+    lang: videoParams.lang || deepAccess(contentObj, 'language', ''),
     private: videoParams.private || false,
-    tags: videoParams.tags ||
-      deepAccess(bidderRequest, 'ortb2.site.content.keywords', ''),
-    title: videoParams.title ||
-      deepAccess(bidderRequest, 'ortb2.site.content.title', ''),
+    tags: videoParams.tags || deepAccess(contentObj, 'keywords', ''),
+    title: videoParams.title || deepAccess(contentObj, 'title', ''),
     topics: videoParams.topics || '',
     xid: videoParams.xid || '',
   };
