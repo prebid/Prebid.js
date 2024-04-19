@@ -122,7 +122,7 @@ export const spec = {
     }
 
     const {prebidResponse} = serverBody;
-    if (!prebidResponse || typeof prebidResponse !== 'object') {
+    if (!Array.isArray(prebidResponse)) {
       return [];
     }
 
@@ -160,7 +160,7 @@ export const spec = {
       if (!serverBody || typeof serverBody !== 'object') return [];
 
       const { iframeList } = serverBody;
-      if (!iframeList || typeof iframeList !== 'object') return [];
+      if (!Array.isArray(iframeList)) return [];
 
       const urls = [];
       iframeList.forEach(url => {
