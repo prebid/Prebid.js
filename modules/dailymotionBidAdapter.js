@@ -42,11 +42,15 @@ function getVideoMetadata(bidRequest, bidderRequest) {
     iabcat2: Array.isArray(videoParams.iabcat2)
       ? videoParams.iabcat2
       : Object.keys(iabcat2),
-    id: videoParams.id || '',
-    lang: videoParams.lang || '',
+    id: videoParams.id ||
+      deepAccess(bidderRequest, 'ortb2.site.content.id', ''),
+    lang: videoParams.lang ||
+      deepAccess(bidderRequest, 'ortb2.site.content.language', ''),
     private: videoParams.private || false,
-    tags: videoParams.tags || '',
-    title: videoParams.title || '',
+    tags: videoParams.tags ||
+      deepAccess(bidderRequest, 'ortb2.site.content.keywords', ''),
+    title: videoParams.title ||
+      deepAccess(bidderRequest, 'ortb2.site.content.title', ''),
     topics: videoParams.topics || '',
     xid: videoParams.xid || '',
   };

@@ -144,7 +144,6 @@ describe('dailymotionBidAdapterTests', () => {
           api: [2, 7],
           description: 'this is a test video',
           duration: 300,
-          lang: 'ENG',
           startdelay: 0,
         },
       },
@@ -153,10 +152,7 @@ describe('dailymotionBidAdapterTests', () => {
         apiKey: 'test_api_key',
         video: {
           duration: 556,
-          id: '54321',
-          lang: 'FR',
           private: false,
-          tags: 'tag_1,tag_2,tag_3',
           title: 'test video',
           topics: 'topic_1, topic_2',
           xid: 'x123456',
@@ -182,6 +178,10 @@ describe('dailymotionBidAdapterTests', () => {
         },
         site: {
           content: {
+            id: '54321',
+            language: 'FR',
+            keywords: 'tag_1,tag_2,tag_3',
+            title: 'test video',
             data: [
               undefined, // Undefined to check proper handling of edge cases
               {}, // Empty object to check proper handling of edge cases
@@ -257,11 +257,11 @@ describe('dailymotionBidAdapterTests', () => {
       // No iabcat1 here because nothing matches taxonomy
       iabcat1: [],
       iabcat2: ['6', '17', '20'],
-      id: bidRequestData[0].params.video.id,
-      lang: bidRequestData[0].params.video.lang,
+      id: bidderRequestData.ortb2.site.content.id,
+      lang: bidderRequestData.ortb2.site.content.language,
       private: bidRequestData[0].params.video.private,
-      tags: bidRequestData[0].params.video.tags,
-      title: bidRequestData[0].params.video.title,
+      tags: bidderRequestData.ortb2.site.content.keywords,
+      title: bidderRequestData.ortb2.site.content.title,
       topics: bidRequestData[0].params.video.topics,
       xid: bidRequestData[0].params.video.xid,
       // Overriden through bidder params
