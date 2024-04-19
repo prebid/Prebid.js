@@ -66,19 +66,20 @@ const partnerIds = {
 };
 
 export function getSegmentsAndCategories(reqBidsConfigObj, onDone, moduleConfig, userConsent) {
-  logInfo("Sirdata RTD :","init");
+  logInfo(LOG_PREFIX, 'init');
   moduleConfig.params = moduleConfig.params || {};
 
-  var tcString = (userConsent && userConsent.gdpr && userConsent.gdpr.consentString ? userConsent.gdpr.consentString : '');
-  var gdprApplies = (userConsent && userConsent.gdpr && userConsent.gdpr.gdprApplies ? userConsent.gdpr.gdprApplies : '');
+  let tcString = (userConsent && userConsent.gdpr && userConsent.gdpr.consentString ? userConsent.gdpr.consentString : '');
+  let gdprApplies = (userConsent && userConsent.gdpr && userConsent.gdpr.gdprApplies ? userConsent.gdpr.gdprApplies : '');
 
   moduleConfig.params.partnerId = moduleConfig.params.partnerId ? moduleConfig.params.partnerId : 1;
   moduleConfig.params.key = moduleConfig.params.key ? moduleConfig.params.key : 1;
+  moduleConfig.params.actualUrl = moduleConfig.params.actualUrl || null;
 
-  var sirdataDomain;
-  var sendWithCredentials;
+  let sirdataDomain;
+  let sendWithCredentials;
 
-  if (userConsent.coppa || (userConsent.usp && (userConsent.usp[0] == '1' && (userConsent.usp[1] == 'N' || userConsent.usp[2] == 'Y')))) {
+  if (userConsent.coppa || (userConsent.usp && (userConsent.usp[0] === '1' && (userConsent.usp[1] === 'N' || userConsent.usp[2] === 'Y')))) {
     // if children or "Do not Sell" management in California, no segments, page categories only whatever TCF signal
     sirdataDomain = 'cookieless-data.com';
     sendWithCredentials = false;
@@ -97,7 +98,7 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, moduleConfig,
     sendWithCredentials = true;
   }
 
-  var actualUrl = moduleConfig.params.actualUrl || getRefererInfo().stack.pop() || getRefererInfo().page;
+  let actualUrl = moduleConfig.params.actualUrl || getRefererInfo().stack.pop() || getRefererInfo().page;
 
   const url = 'https://kvt.' + sirdataDomain + '/api/v1/public/p/' + moduleConfig.params.partnerId + '/d/' + moduleConfig.params.key + '/s?callback=&gdpr=' + gdprApplies + '&gdpr_consent=' + tcString + (actualUrl ? '&url=' + encodeURIComponent(actualUrl) : '');
 
@@ -169,7 +170,7 @@ export function setOrtb2Sda(ortb2Fragments, bidder, type, segments, segtaxValue)
     if (segtaxValue) {
       ortb2Data[0].ext = { segtax: segtaxValue };
     }
-    let ortb2Conf = (type == 'site' ? {site: {content: {data: ortb2Data}}} : {user: {data: ortb2Data}});
+    let ortb2Conf = (type === 'site' ? {site: {content: {data: ortb2Data}}} : {user: {data: ortb2Data}});
     if (bidder) {
       ortb2Conf = {[bidder]: ortb2Conf};
     }
@@ -218,7 +219,7 @@ export function getSegAndCatsArray(data, minScore, pid) {
         if (data.contextual_categories.hasOwnProperty(catId) && data.contextual_categories[catId]) {
           let value = data.contextual_categories[catId];
           if (value >= minScore && sirdataData.categories.indexOf(catId) === -1) {
-            if (pid && pid == '27440' && cattaxid) { // Equativ only
+            if (pid && pid === '27440' && cattaxid) { // Equativ only
               sirdataData.categories.push(pid.toString() + 'cc' + catId.toString());
             } else {
               sirdataData.categories.push(catId.toString());
@@ -236,7 +237,7 @@ export function getSegAndCatsArray(data, minScore, pid) {
       for (let segId in data.segments) {
         if (data.segments.hasOwnProperty(segId) && data.segments[segId]) {
           let id = data.segments[segId].toString();
-          if (pid && pid == '27440' && segtaxid) { // Equativ only
+          if (pid && pid === '27440' && segtaxid) { // Equativ only
             sirdataData.segments.push(pid.toString() + 'us' + id);
           } else {
             sirdataData.segments.push(id);
@@ -254,7 +255,7 @@ export function applySdaGetSpecificData(data, sirdataData, biddersParamsExist, m
   // only share SDA data if whitelisted
   if (!biddersParamsExist || indexFound) {
     // SDA Publisher
-    let sirdataDataForSDA = getSegAndCatsArray(data, minScore, moduleConfig.params.partnerId);
+    let sirdataDataForSDA = getSegAndCatsArray(data, minScore, moduleConfig.params.partnerId.toString());
     pushToOrtb2(reqBids.ortb2Fragments?.bidder, bid.bidder, sirdataDataForSDA, data.segtaxid, data.cattaxid);
   }
 
@@ -264,7 +265,7 @@ export function applySdaGetSpecificData(data, sirdataData, biddersParamsExist, m
     // seller defined audience & bidder specific data
     if (data.shared_taxonomy && data.shared_taxonomy[curationId]) {
       // Get Bidder Specific Data
-      let curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore, curationId);
+      let curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], minScore, curationId.toString());
       pushToOrtb2(reqBids.ortb2Fragments?.bidder, bid.bidder, curationData, data.shared_taxonomy[curationId].segtaxid, data.shared_taxonomy[curationId].cattaxid);
     }
   }
@@ -289,7 +290,7 @@ export function addSegmentData(reqBids, data, moduleConfig, onDone) {
   moduleConfig = moduleConfig || {};
   moduleConfig.params = moduleConfig.params || {};
   const globalMinScore = moduleConfig.params.hasOwnProperty('contextualMinRelevancyScore') ? moduleConfig.params.contextualMinRelevancyScore : 30;
-  var sirdataData = getSegAndCatsArray(data, globalMinScore, null);
+  let sirdataData = getSegAndCatsArray(data, globalMinScore, null);
 
   const biddersParamsExist = (!!(moduleConfig.params && moduleConfig.params.bidders && moduleConfig.params.bidders.length > 0));
 
@@ -308,10 +309,12 @@ export function addSegmentData(reqBids, data, moduleConfig, onDone) {
   if (typeof window.googletag !== 'undefined' && (moduleConfig.params.setGptKeyValues || !moduleConfig.params.hasOwnProperty('setGptKeyValues'))) {
     try {
       let gptCurationId = (moduleConfig.params.gptCurationId ? moduleConfig.params.gptCurationId : (partnerIds['sdRtdForGpt'] ? partnerIds['sdRtdForGpt'] : null));
-      let sirdataMergedList = sirdataData.segments.concat(sirdataData.categories);
+      let sirdataMergedList = [];
       if (gptCurationId && data.shared_taxonomy && data.shared_taxonomy[gptCurationId]) {
         let gamCurationData = getSegAndCatsArray(data.shared_taxonomy[gptCurationId], globalMinScore, null);
         sirdataMergedList = sirdataMergedList.concat(gamCurationData.segments).concat(gamCurationData.categories);
+      } else {
+        sirdataMergedList = sirdataData.segments.concat(sirdataData.categories);
       }
       window.googletag.cmd.push(function() {
         window.googletag.pubads().getSlots().forEach(function (n) {
@@ -326,8 +329,8 @@ export function addSegmentData(reqBids, data, moduleConfig, onDone) {
   }
 
   // Bid targeting level for FPD non-generic biders
-  var bidderIndex = '';
-  var indexFound = false;
+  let bidderIndex = '';
+  let indexFound = false;
 
   adUnits.forEach(adUnit => {
     adUnit.hasOwnProperty('bids') && adUnit.bids.forEach(bid => {
@@ -337,7 +340,6 @@ export function addSegmentData(reqBids, data, moduleConfig, onDone) {
       indexFound = (!!(typeof bidderIndex == 'number' && bidderIndex >= 0));
       try {
         let minScore = (indexFound && moduleConfig.params.bidders[bidderIndex].hasOwnProperty('contextualMinRelevancyScore') ? moduleConfig.params.bidders[bidderIndex].contextualMinRelevancyScore : globalMinScore);
-
         switch (bid.bidder) {
           case 'appnexus':
           case 'appnexusAst':
@@ -375,12 +377,12 @@ export function addSegmentData(reqBids, data, moduleConfig, onDone) {
       }
     })
   });
-
   onDone();
   return adUnits;
 }
 
 export function init(config) {
+  logInfo(LOG_PREFIX, config);
   return true;
 }
 
