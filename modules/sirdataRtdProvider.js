@@ -7,17 +7,19 @@
  * @module modules/sirdataRtdProvider
  * @requires module:modules/realTimeData
  */
-import {deepAccess, deepSetValue, isEmpty, logError, mergeDeep} from '../src/utils.js';
+import {deepAccess, deepSetValue, isEmpty, logError, logInfo, mergeDeep} from '../src/utils.js';
 import {submodule} from '../src/hook.js';
 import {ajax} from '../src/ajax.js';
 import {findIndex} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {config} from '../src/config.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
 /** @type {string} */
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'SirdataRTDModule';
 const ORTB2_NAME = 'sirdata.com';
+const LOG_PREFIX = 'Sirdata RTD: ';
 
 const partnerIds = {
   'criteo': 27443,
@@ -63,9 +65,8 @@ const partnerIds = {
   'zeta_global_ssp': 33385,
 };
 
-let CONTEXT_ONLY = true;
-
 export function getSegmentsAndCategories(reqBidsConfigObj, onDone, moduleConfig, userConsent) {
+  logInfo("Sirdata RTD :","init");
   moduleConfig.params = moduleConfig.params || {};
 
   var tcString = (userConsent && userConsent.gdpr && userConsent.gdpr.consentString ? userConsent.gdpr.consentString : '');
@@ -84,7 +85,7 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, moduleConfig,
     gdprApplies = null;
     tcString = '';
   } else if (config.getConfig('consentManagement.gdpr')) {
-    // Default endpoint is cookieless if gdpr management is set. Needed because the cookie-based endpoint will fail and return error if user is located in Europe and no consent has been given
+    // Default endpoint for Contextual results only is cookieless if gdpr management is set. Needed because the cookie-based endpoint will fail and return error if user is located in Europe and no consent has been given
     sirdataDomain = 'cookieless-data.com';
     sendWithCredentials = false;
   }
@@ -94,7 +95,6 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, moduleConfig,
   if (!sirdataDomain || !gdprApplies || (deepAccess(userConsent, 'gdpr.vendorData.vendor.consents') && userConsent.gdpr.vendorData.vendor.consents[53] && userConsent.gdpr.vendorData.purpose.consents[1] && userConsent.gdpr.vendorData.purpose.consents[4])) {
     sirdataDomain = 'sddan.com';
     sendWithCredentials = true;
-    CONTEXT_ONLY = false;
   }
 
   var actualUrl = moduleConfig.params.actualUrl || getRefererInfo().stack.pop() || getRefererInfo().page;
@@ -218,7 +218,7 @@ export function getSegAndCatsArray(data, minScore, pid) {
         if (data.contextual_categories.hasOwnProperty(catId) && data.contextual_categories[catId]) {
           let value = data.contextual_categories[catId];
           if (value >= minScore && sirdataData.categories.indexOf(catId) === -1) {
-            if (pid && cattaxid) {
+            if (pid && pid == '27440' && cattaxid) { // Equativ only
               sirdataData.categories.push(pid.toString() + 'cc' + catId.toString());
             } else {
               sirdataData.categories.push(catId.toString());
@@ -236,15 +236,10 @@ export function getSegAndCatsArray(data, minScore, pid) {
       for (let segId in data.segments) {
         if (data.segments.hasOwnProperty(segId) && data.segments[segId]) {
           let id = data.segments[segId].toString();
-          if (pid && CONTEXT_ONLY) {
-            if (segtaxid) {
-              sirdataData.categories.push(pid.toString() + 'uc' + id);
-            } else {
-              sirdataData.categories.push(id);
-              sirdataData.categories_score[id] = 100;
-            }
+          if (pid && pid == '27440' && segtaxid) { // Equativ only
+            sirdataData.segments.push(pid.toString() + 'us' + id);
           } else {
-            sirdataData.segments.push((pid && segtaxid) ? pid.toString() + 'us' + id : id);
+            sirdataData.segments.push(id);
           }
         }
       }
@@ -284,26 +279,19 @@ export function applySdaGetSpecificData(data, sirdataData, biddersParamsExist, m
   }
 }
 
-export function applySdaAndDefaultSpecificData(data, sirdataData, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit) {
-  sirdataData = applySdaGetSpecificData(data, sirdataData, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit);
-  /*
-  if (sirdataData.segments && sirdataData.segments.length > 0) {
-    setOrtb2(reqBids.ortb2Fragments?.bidder, bid.bidder, 'user.ext.data', {sd_rtd: sirdataData.segments});
-  }
-  if (sirdataData.categories && sirdataData.categories.length > 0) {
-    setOrtb2(reqBids.ortb2Fragments?.bidder, bid.bidder, 'site.ext.data', {sd_rtd: sirdataData.categories});
-  }
-  */
-}
-
 export function addSegmentData(reqBids, data, moduleConfig, onDone) {
-  const adUnits = reqBids.adUnits;
+  const adUnits = (reqBids && reqBids.adUnits) || getGlobal().adUnits;
+  if (!adUnits) {
+    onDone();
+    return;
+  }
+
   moduleConfig = moduleConfig || {};
   moduleConfig.params = moduleConfig.params || {};
   const globalMinScore = moduleConfig.params.hasOwnProperty('contextualMinRelevancyScore') ? moduleConfig.params.contextualMinRelevancyScore : 30;
   var sirdataData = getSegAndCatsArray(data, globalMinScore, null);
 
-  const biddersParamsExist = (!!(moduleConfig.params && moduleConfig.params.bidders));
+  const biddersParamsExist = (!!(moduleConfig.params && moduleConfig.params.bidders && moduleConfig.params.bidders.length > 0));
 
   // Global ortb2 SDA
   if (data.global_taxonomy && !isEmpty(data.global_taxonomy)) {
@@ -379,7 +367,7 @@ export function addSegmentData(reqBids, data, moduleConfig, onDone) {
 
           default:
             if (!biddersParamsExist || (indexFound && (!moduleConfig.params.bidders[bidderIndex].hasOwnProperty('adUnitCodes') || moduleConfig.params.bidders[bidderIndex].adUnitCodes.indexOf(adUnit.code) !== -1))) {
-              applySdaAndDefaultSpecificData(data, sirdataData, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit);
+              applySdaGetSpecificData(data, sirdataData, biddersParamsExist, minScore, reqBids, bid, moduleConfig, indexFound, bidderIndex, adUnit);
             }
         }
       } catch (e) {
