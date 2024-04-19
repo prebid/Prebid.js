@@ -82,8 +82,9 @@ const adUnits = [
       video: {
         api: [2, 7],
         context: 'instream',
-        playerSize: [ [1280, 720] ],
-        startDelay: 0,
+        startdelay: 0,
+        w: 1280,
+        h: 720,
         xid: 'x123456'     // Dailymotion infrastructure unique video ID
       },
     }
@@ -119,12 +120,13 @@ const adUnits = [
         iabcat2: ['6', '17'],
         id: '54321',
         lang: 'FR',
-        playerSize: [ [1280, 720] ],
         private: false,
-        startDelay: 0,
+        startdelay: 0,
         tags: 'tag_1,tag_2,tag_3',
         title: 'test video',
         topics: 'topic_1, topic_2',
+        w: 1280,
+        h: 720,
       },
     }
   }
