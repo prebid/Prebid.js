@@ -47,6 +47,109 @@ describe('dailymotionBidAdapterTests', () => {
         apiKey: 'test_api_key',
         video: {
           duration: 556,
+          iabcat1: ['IAB-1'],
+          id: '54321',
+          lang: 'FR',
+          private: false,
+          tags: 'tag_1,tag_2,tag_3',
+          title: 'test video',
+          topics: 'topic_1, topic_2',
+          xid: 'x123456',
+        },
+      },
+    }];
+
+    const bidderRequestData = {
+      refererInfo: {
+        page: 'https://publisher.com',
+      },
+      uspConsent: '1YN-',
+      gdprConsent: {
+        apiVersion: 2,
+        consentString: 'xxx',
+        gdprApplies: true,
+      },
+      gppConsent: {
+        gppString: 'xxx',
+        applicableSections: [5],
+      },
+      ortb2: {
+        regs: {
+          coppa: 1,
+        },
+        site: {
+          content: {
+            data: [
+              {
+                name: 'dataprovider.com',
+                ext: { segtax: 5 },
+                segment: [{ id: '200' }],
+              },
+            ],
+          },
+        },
+      },
+    };
+
+    const [request] = config.runWithBidder(
+      'dailymotion',
+      () => spec.buildRequests(bidRequestData, bidderRequestData),
+    );
+
+    const { data: reqData } = request;
+
+    expect(request.url).to.equal('https://pb.dmxleo.com');
+
+    expect(reqData.bidder_request).to.eql({
+      refererInfo: bidderRequestData.refererInfo,
+      uspConsent: bidderRequestData.uspConsent,
+      gdprConsent: bidderRequestData.gdprConsent,
+      gppConsent: bidderRequestData.gppConsent,
+    });
+    expect(reqData.config.api_key).to.eql(bidRequestData[0].params.apiKey);
+    expect(reqData.coppa).to.be.true;
+    expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId);
+    expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
+    expect(reqData.request.mediaTypes.video.api).to.eql(bidRequestData[0].mediaTypes.video.api);
+    expect(reqData.request.mediaTypes.video.playerSize).to.eql(bidRequestData[0].mediaTypes.video.playerSize);
+    expect(reqData.request.mediaTypes.video.startDelay).to.eql(bidRequestData[0].mediaTypes.video.startdelay);
+    expect(reqData.video_metadata).to.eql({
+      description: bidRequestData[0].mediaTypes.video.description,
+      iabcat1: ['IAB-1'], // Taxonomy v2 or higher is excluded
+      iabcat2: bidRequestData[0].mediaTypes.video.iabcat2,
+      id: bidRequestData[0].params.video.id,
+      lang: bidRequestData[0].params.video.lang,
+      private: bidRequestData[0].params.video.private,
+      tags: bidRequestData[0].params.video.tags,
+      title: bidRequestData[0].params.video.title,
+      topics: bidRequestData[0].params.video.topics,
+      xid: bidRequestData[0].params.video.xid,
+      // Overriden through bidder params
+      duration: bidRequestData[0].params.video.duration,
+    });
+  });
+
+  it('validates buildRequests with fallback values on ortb2 for iabcat1', () => {
+    const bidRequestData = [{
+      auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+      bidId: 123456,
+      adUnitCode: 'preroll',
+      mediaTypes: {
+        video: {
+          playerSize: [[1280, 720]],
+          api: [2, 7],
+          description: 'this is a test video',
+          duration: 300,
+          iabcat2: ['6', '17'],
+          lang: 'ENG',
+          startdelay: 0,
+        },
+      },
+      sizes: [[1920, 1080]],
+      params: {
+        apiKey: 'test_api_key',
+        video: {
+          duration: 556,
           id: '54321',
           lang: 'FR',
           private: false,
@@ -133,7 +236,7 @@ describe('dailymotionBidAdapterTests', () => {
     });
   });
 
-  it('validates buildRequests with fallback values on ortb2 for gpp & iabcat', () => {
+  it('validates buildRequests with fallback values on ortb2 (gpp, iabcat2, id...)', () => {
     const bidRequestData = [{
       auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
       bidId: 123456,

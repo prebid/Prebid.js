@@ -38,7 +38,9 @@ function getVideoMetadata(bidRequest, bidderRequest) {
   const videoMetadata = {
     description: videoParams.description || '',
     duration: videoParams.duration || 0,
-    iabcat1: Object.keys(iabcat1),
+    iabcat1: Array.isArray(videoParams.iabcat1)
+      ? videoParams.iabcat1
+      : Object.keys(iabcat1),
     iabcat2: Array.isArray(videoParams.iabcat2)
       ? videoParams.iabcat2
       : Object.keys(iabcat2),

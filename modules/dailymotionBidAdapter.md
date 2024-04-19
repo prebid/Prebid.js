@@ -51,7 +51,7 @@ Please note that failing to set these will result in the adapter not bidding at 
 # Sample video AdUnit
 
 To allow better targeting, you should provide as much context about the video as possible.
-There are two ways of doing this depending on if you're using Dailymotion player or a third party one.
+There are three ways of doing this depending on if you're using Dailymotion player or a third party one.
 
 If you are using the Dailymotion player, you should only provide the video `xid` in your ad unit, example:
 
@@ -102,6 +102,7 @@ const adUnits = [
         context: 'instream',
         description: 'this is a video description',
         duration: 556,
+        iabcat1: ['IAB-2'],
         iabcat2: ['6', '17'],
         id: '54321',
         lang: 'FR',
@@ -122,7 +123,8 @@ If a field exists in both places, it will be overridden by bids.params.video.
 
 * `description` - Video description
 * `duration` - Video duration in seconds
-* `iabcat2` - List of IAB category IDs from the [2.0 taxonomy](https://github.com/InteractiveAdvertisingBureau/Taxonomies/blob/main/Content%20Taxonomies/Content%20Taxonomy%202.0.tsv)
+* `iabcat1` - List of IAB category IDs from the [1.0 taxonomy](https://github.com/InteractiveAdvertisingBureau/Taxonomies/blob/main/Content%20Taxonomies/Content%20Taxonomy%201.0.tsv)
+* `iabcat2` - List of IAB category IDs from the [2.0 taxonomy](https://github.com/InteractiveAdvertisingBureau/Taxonomies/blob/main/Content%20Taxonomies/Content%20Taxonomy%202.0.tsv) and above
 * `id` - Video unique ID in host video infrastructure
 * `lang` - ISO 639-1 code for main language used in the video
 * `private` - True if video is not publicly available
@@ -130,6 +132,17 @@ If a field exists in both places, it will be overridden by bids.params.video.
 * `title` - Video title
 * `topics` - Main topics for the video, comma separated
 * `xid` - Dailymotion video identifier (only applicable if using the Dailymotion player)
+
+If you already specify [First-Party data](https://docs.prebid.org/features/firstPartyData.html) through the `ortb2` object when calling [`pbjs.requestBids(requestObj)`](https://docs.prebid.org/dev-docs/publisher-api-reference/requestBids.html), we will fallback to those values when possible. See the mapping below.
+
+| From ortb2                                                          | Metadata fields |
+|---------------------------------------------------------------------|-----------------|
+| `ortb2.site.content.data` where `ext.segtax` is `4`                 | `iabcat1`       |
+| `ortb2.site.content.data`  where  `ext.segtax`  is  `5`, `6` or `7` | `iabcat2`       |
+| `ortb2.site.content.id`                                             | `id`            |
+| `ortb2.site.content.language`                                       | `lang`          |
+| `ortb2.site.content.keywords`                                       | `tags`          |
+| `ortb2.site.content.title`                                          | `title`         |
 
 # Integrating the adapter
 
