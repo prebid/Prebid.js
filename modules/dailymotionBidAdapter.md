@@ -46,7 +46,7 @@ const adUnits = [
     bids: [{
       bidder: 'dailymotion',
       params: {
-        apiKey: 'dailymotion-testing'
+        apiKey: 'dailymotion-testing',
       },
     }],
     code: 'test-ad-unit',
@@ -74,7 +74,10 @@ const adUnits = [
     bids: [{
       bidder: 'dailymotion',
       params: {
-        apiKey: 'dailymotion-testing'
+        apiKey: 'dailymotion-testing',
+        video: {
+          xid: 'x123456'     // Dailymotion infrastructure unique video ID
+        },
       }
     }],
     code: 'test-ad-unit',
@@ -85,7 +88,6 @@ const adUnits = [
         startdelay: 0,
         w: 1280,
         h: 720,
-        xid: 'x123456'     // Dailymotion infrastructure unique video ID
       },
     }
   }
@@ -105,7 +107,17 @@ const adUnits = [
       params: {
         apiKey: 'dailymotion-testing',
         video: {
-          description: 'overriden video description'
+          description: 'this is a video description',
+          duration: 556,
+          iabcat1: ['IAB-2'],
+          iabcat2: ['6', '17'],
+          id: '54321',
+          lang: 'FR',
+          livestream: 0,
+          private: false,
+          tags: 'tag_1,tag_2,tag_3',
+          title: 'test video',
+          topics: 'topic_1, topic_2',
         }
       }
     }],
@@ -114,18 +126,7 @@ const adUnits = [
       video: {
         api: [2, 7],
         context: 'instream',
-        description: 'this is a video description',
-        duration: 556,
-        iabcat1: ['IAB-2'],
-        iabcat2: ['6', '17'],
-        id: '54321',
-        lang: 'FR',
-        livestream: 0,
-        private: false,
         startdelay: 0,
-        tags: 'tag_1,tag_2,tag_3',
-        title: 'test video',
-        topics: 'topic_1, topic_2',
         w: 1280,
         h: 720,
       },
