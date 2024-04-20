@@ -9,13 +9,7 @@ import { deepAccess } from '../src/utils.js';
  * @return video metadata
  */
 function getVideoMetadata(bidRequest, bidderRequest) {
-  const videoAdUnit = deepAccess(bidRequest, 'mediaTypes.video', {});
-  const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
-
-  const videoParams = {
-    ...videoAdUnit,
-    ...videoBidderParams, // Bidder Specific overrides
-  };
+  const videoParams = deepAccess(bidRequest, 'params.video', {});
 
   // As per oRTB 2.5 spec, "A bid request must not contain both an App and a Site object."
   // See section 3.2.14
@@ -24,9 +18,11 @@ function getVideoMetadata(bidRequest, bidderRequest) {
     ? deepAccess(bidderRequest, 'ortb2.site.content')
     : deepAccess(bidderRequest, 'ortb2.app.content');
 
-  // Store as object keys to ensure uniqueness
-  const iabcat1 = {};
-  const iabcat2 = {};
+  const parsedContentData = {
+    // Store as object keys to ensure uniqueness
+    iabcat1: {},
+    iabcat2: {},
+  };
 
   deepAccess(contentObj, 'data', []).forEach((data) => {
     if ([4, 5, 6, 7].includes(data?.ext?.segtax)) {
@@ -34,9 +30,12 @@ function getVideoMetadata(bidRequest, bidderRequest) {
         if (typeof segment.id === 'string') {
           // See https://docs.prebid.org/features/firstPartyData.html#segments-and-taxonomy
           // Only take IAB cats of taxonomy V1
-          if (data.ext.segtax === 4) iabcat1[segment.id] = 1;
-          // Only take IAB cats of taxonomy V2 or higher
-          if ([5, 6, 7].includes(data.ext.segtax)) iabcat2[segment.id] = 1;
+          if (data.ext.segtax === 4) {
+            parsedContentData.iabcat1[segment.id] = 1;
+          } else {
+            // Only take IAB cats of taxonomy V2 or higher
+            parsedContentData.iabcat2[segment.id] = 1;
+          }
         }
       });
     }
@@ -44,13 +43,15 @@ function getVideoMetadata(bidRequest, bidderRequest) {
 
   const videoMetadata = {
     description: videoParams.description || '',
-    duration: videoParams.duration || 0,
+    duration: videoParams.duration || deepAccess(contentObj, 'len', 0),
     iabcat1: Array.isArray(videoParams.iabcat1)
       ? videoParams.iabcat1
-      : Object.keys(iabcat1),
+      : Array.isArray(deepAccess(contentObj, 'cat'))
+        ? contentObj.cat
+        : Object.keys(parsedContentData.iabcat1),
     iabcat2: Array.isArray(videoParams.iabcat2)
       ? videoParams.iabcat2
-      : Object.keys(iabcat2),
+      : Object.keys(parsedContentData.iabcat2),
     id: videoParams.id || deepAccess(contentObj, 'id', ''),
     lang: videoParams.lang || deepAccess(contentObj, 'language', ''),
     private: videoParams.private || false,

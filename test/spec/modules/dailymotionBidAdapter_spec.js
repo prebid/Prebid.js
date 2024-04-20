@@ -87,10 +87,6 @@ describe('dailymotionBidAdapterTests', () => {
       mediaTypes: {
         video: {
           api: [2, 7],
-          description: 'this is a test video',
-          duration: 300,
-          iabcat2: ['6', '17'],
-          lang: 'ENG',
           mimes: ['video/mp4'],
           minduration: 5,
           maxduration: 30,
@@ -107,8 +103,10 @@ describe('dailymotionBidAdapterTests', () => {
       params: {
         apiKey: 'test_api_key',
         video: {
+          description: 'this is a test video',
           duration: 556,
           iabcat1: ['IAB-1'],
+          iabcat2: ['6', '17'],
           id: '54321',
           lang: 'FR',
           private: false,
@@ -176,9 +174,9 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.request.mediaTypes.video.playerSize).to.eql(bidRequestData[0].mediaTypes.video.playerSize);
     expect(reqData.request.mediaTypes.video.startdelay).to.eql(bidRequestData[0].mediaTypes.video.startdelay);
     expect(reqData.video_metadata).to.eql({
-      description: bidRequestData[0].mediaTypes.video.description,
-      iabcat1: ['IAB-1'], // Taxonomy v2 or higher is excluded
-      iabcat2: bidRequestData[0].mediaTypes.video.iabcat2,
+      description: bidRequestData[0].params.video.description,
+      iabcat1: ['IAB-1'],
+      iabcat2: bidRequestData[0].params.video.iabcat2,
       id: bidRequestData[0].params.video.id,
       lang: bidRequestData[0].params.video.lang,
       private: bidRequestData[0].params.video.private,
@@ -186,7 +184,6 @@ describe('dailymotionBidAdapterTests', () => {
       title: bidRequestData[0].params.video.title,
       topics: bidRequestData[0].params.video.topics,
       xid: bidRequestData[0].params.video.xid,
-      // Overriden through bidder params
       duration: bidRequestData[0].params.video.duration,
       livestream: !!bidRequestData[0].params.video.livestream,
     });
@@ -200,10 +197,6 @@ describe('dailymotionBidAdapterTests', () => {
       mediaTypes: {
         video: {
           api: [2, 7],
-          description: 'this is a test video',
-          duration: 300,
-          iabcat2: ['6', '17'],
-          lang: 'ENG',
           mimes: ['video/mp4'],
           minduration: 5,
           maxduration: 30,
@@ -220,7 +213,8 @@ describe('dailymotionBidAdapterTests', () => {
       params: {
         apiKey: 'test_api_key',
         video: {
-          duration: 556,
+          description: 'this is a test video',
+          iabcat2: ['6', '17'],
           id: '54321',
           lang: 'FR',
           private: false,
@@ -255,6 +249,7 @@ describe('dailymotionBidAdapterTests', () => {
           bundle: 'app-bundle',
           storeurl: 'https://play.google.com/store/apps/details?id=app-bundle',
           content: {
+            len: 556,
             data: [
               {
                 name: 'dataprovider.com',
@@ -305,9 +300,9 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.request.mediaTypes.video.w).to.eql(bidRequestData[0].mediaTypes.video.w);
     expect(reqData.request.mediaTypes.video.h).to.eql(bidRequestData[0].mediaTypes.video.h);
     expect(reqData.video_metadata).to.eql({
-      description: bidRequestData[0].mediaTypes.video.description,
-      iabcat1: ['IAB-1'], // Taxonomy v2 or higher is excluded
-      iabcat2: bidRequestData[0].mediaTypes.video.iabcat2,
+      description: bidRequestData[0].params.video.description,
+      iabcat1: ['IAB-1'],
+      iabcat2: bidRequestData[0].params.video.iabcat2,
       id: bidRequestData[0].params.video.id,
       lang: bidRequestData[0].params.video.lang,
       private: bidRequestData[0].params.video.private,
@@ -316,7 +311,7 @@ describe('dailymotionBidAdapterTests', () => {
       topics: bidRequestData[0].params.video.topics,
       xid: bidRequestData[0].params.video.xid,
       // Overriden through bidder params
-      duration: bidRequestData[0].params.video.duration,
+      duration: bidderRequestData.ortb2.app.content.len,
       livestream: !!bidRequestData[0].params.video.livestream,
     });
   });
@@ -329,8 +324,6 @@ describe('dailymotionBidAdapterTests', () => {
       mediaTypes: {
         video: {
           api: [2, 7],
-          description: 'this is a test video',
-          duration: 300,
           startdelay: 0,
         },
       },
@@ -338,6 +331,7 @@ describe('dailymotionBidAdapterTests', () => {
       params: {
         apiKey: 'test_api_key',
         video: {
+          description: 'this is a test video',
           duration: 556,
           private: false,
           title: 'test video',
@@ -370,6 +364,7 @@ describe('dailymotionBidAdapterTests', () => {
             keywords: 'tag_1,tag_2,tag_3',
             title: 'test video',
             livestream: 1,
+            cat: ['IAB-2'],
             data: [
               undefined, // Undefined to check proper handling of edge cases
               {}, // Empty object to check proper handling of edge cases
@@ -391,7 +386,7 @@ describe('dailymotionBidAdapterTests', () => {
               },
               {
                 name: 'dataprovider.com',
-                ext: { segtax: 4 },
+                ext: { segtax: 5 },
                 segment: [{ id: 2222 }], // Invalid segment id to check proper handling of edge cases
               },
               {
@@ -441,9 +436,8 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.request.mediaTypes.video.playerSize).to.eql(bidRequestData[0].mediaTypes.video.playerSize);
     expect(reqData.request.mediaTypes.video.startdelay).to.eql(bidRequestData[0].mediaTypes.video.startdelay);
     expect(reqData.video_metadata).to.eql({
-      description: bidRequestData[0].mediaTypes.video.description,
-      // No iabcat1 here because nothing matches taxonomy
-      iabcat1: [],
+      description: bidRequestData[0].params.video.description,
+      iabcat1: ['IAB-2'],
       iabcat2: ['6', '17', '20'],
       id: bidderRequestData.ortb2.site.content.id,
       lang: bidderRequestData.ortb2.site.content.language,
@@ -452,7 +446,6 @@ describe('dailymotionBidAdapterTests', () => {
       title: bidderRequestData.ortb2.site.content.title,
       topics: bidRequestData[0].params.video.topics,
       xid: bidRequestData[0].params.video.xid,
-      // Overriden through bidder params
       duration: bidRequestData[0].params.video.duration,
       livestream: !!bidderRequestData.ortb2.site.content.livestream,
     });

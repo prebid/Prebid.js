@@ -134,8 +134,7 @@ const adUnits = [
 ];
 ```
 
-Each of the following video metadata fields can be added in mediaTypes.video or bids.params.video.
-If a field exists in both places, it will be overridden by bids.params.video.
+Each of the following video metadata fields can be added in bids.params.video.
 
 * `description` - Video description
 * `duration` - Video duration in seconds
@@ -152,15 +151,15 @@ If a field exists in both places, it will be overridden by bids.params.video.
 
 If you already specify [First-Party data](https://docs.prebid.org/features/firstPartyData.html) through the `ortb2` object when calling [`pbjs.requestBids(requestObj)`](https://docs.prebid.org/dev-docs/publisher-api-reference/requestBids.html), we will fallback to those values when possible. See the mapping below.
 
-| From ortb2                                                          | Metadata fields |
-|---------------------------------------------------------------------|-----------------|
-| `ortb2.site.content.data` where `ext.segtax` is `4`                 | `iabcat1`       |
-| `ortb2.site.content.data`  where  `ext.segtax`  is  `5`, `6` or `7` | `iabcat2`       |
-| `ortb2.site.content.id`                                             | `id`            |
-| `ortb2.site.content.language`                                       | `lang`          |
-| `ortb2.site.content.livestream`                                     | `livestream`    |
-| `ortb2.site.content.keywords`                                       | `tags`          |
-| `ortb2.site.content.title`                                          | `title`         |
+| From ortb2                                                                      | Metadata fields |
+|---------------------------------------------------------------------------------|-----------------|
+| `ortb2.site.content.cat` OR `ortb2.site.content.data` where `ext.segtax` is `4` | `iabcat1`       |
+| `ortb2.site.content.data` where `ext.segtax` is `5`, `6` or `7`                 | `iabcat2`       |
+| `ortb2.site.content.id`                                                         | `id`            |
+| `ortb2.site.content.language`                                                   | `lang`          |
+| `ortb2.site.content.livestream`                                                 | `livestream`    |
+| `ortb2.site.content.keywords`                                                   | `tags`          |
+| `ortb2.site.content.title`                                                      | `title`         |
 
 # Integrating the adapter
 
