@@ -4,28 +4,22 @@
  * @requires module:modules/userId
  */
 
-import { MODULE_TYPE_UID } from "../src/activities/modules.js";
-import { submodule } from "../src/hook.js";
-import { getStorageManager } from "../src/storageManager.js";
-import { logInfo } from "../src/utils.js";
+import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { submodule } from '../src/hook.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { logInfo } from '../src/utils.js';
 
-/**
- * @typedef {import('../modules/userId/index.js').Submodule} Submodule
- * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
- * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
- */
+const BIDDER_CODE = 'yandex';
+const YANDEX_ID_KEY = 'yandexId';
 
-const BIDDER_CODE = "yandex";
+const USER_ID_KEY = '_ym_uid';
+const USER_ID_COOKIE_EXP_MS = 31536000000; // 365 days
 
-const USER_ID_KEY = "_ym_uid";
-const USER_ID_COOKIE_EXP = 31536000000; // 365 days
-
-export const cookieStorage = getStorageManager({
+export const storage = getStorageManager({
   moduleType: MODULE_TYPE_UID,
   moduleName: BIDDER_CODE,
 });
 
-/** @type {Submodule} */
 export const yandexIdSubmodule = {
   /**
    * Used to link submodule with config.
@@ -37,12 +31,12 @@ export const yandexIdSubmodule = {
    * @param {string} value
    */
   decode(value) {
-    logInfo("decoded value yandexId", value);
+    logInfo('decoded value yandexId', value);
 
-    return { yandexId: value };
+    return { [YANDEX_ID_KEY]: value };
   },
   getId() {
-    const yandexUidStorage = new YandexUidStorage(cookieStorage);
+    const yandexUidStorage = new YandexUidStorage(storage);
 
     if (!yandexUidStorage.checkIsAvailable()) {
       return;
@@ -53,8 +47,8 @@ export const yandexIdSubmodule = {
     };
   },
   eids: {
-    yandexId: {
-      source: "yandex",
+    [YANDEX_ID_KEY]: {
+      source: BIDDER_CODE,
       atype: 1,
     },
   },
@@ -80,7 +74,7 @@ class YandexUidStorage {
 
   _setUid(userId) {
     if (this._cookieStorage.cookiesAreEnabled()) {
-      const expires = new Date(Date.now() + USER_ID_COOKIE_EXP).toString();
+      const expires = new Date(Date.now() + USER_ID_COOKIE_EXP_MS).toString();
 
       this._cookieStorage.setCookie(USER_ID_KEY, userId, expires);
     }
@@ -109,7 +103,9 @@ class YandexUidGenerator {
    * @param {number} max
    */
   _getRandomInteger(min, max) {
-    return Math.floor(Math.random() * (max - min)) + min;
+    const generateRandom = this._getRandomGenerator();
+
+    return Math.floor(generateRandom() * (max - min)) + min;
   }
 
   _getCurrentSecTimestamp() {
@@ -120,8 +116,22 @@ class YandexUidGenerator {
     return [
       this._getCurrentSecTimestamp(),
       this._getRandomInteger(1000000, 999999999),
-    ].join("");
+    ].join('');
+  }
+
+  _getRandomGenerator() {
+    if (crypto) {
+      return () => {
+        const buffer = new Uint32Array(1);
+        crypto.getRandomValues(buffer);
+
+        return buffer[0] / 0xffffffff;
+      };
+    }
+
+    // Polyfill for environments that don't support Crypto API
+    return () => Math.random();
   }
 }
 
-submodule("userId", yandexIdSubmodule);
+submodule('userId', yandexIdSubmodule);
