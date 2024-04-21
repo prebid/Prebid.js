@@ -17,7 +17,7 @@ import {config} from '../src/config.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 
 const GVLID = 1292;
-const DEFAULT_SUB_DOMAIN = 'prebid';
+const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'twistdigital';
 const BIDDER_VERSION = '1.0.0';
 const CURRENCY = 'USD';
