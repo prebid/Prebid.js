@@ -3,7 +3,7 @@ import { find } from '../../src/polyfill.js';
 import * as events from '../../src/events.js';
 import {mergeDeep, logWarn, logError} from '../../src/utils.js';
 import { getGlobal } from '../../src/prebidGlobal.js';
-import CONSTANTS from '../../src/constants.json';
+import { EVENTS } from '../../src/constants.js';
 import {
   videoEvents,
   AUCTION_AD_LOAD_ATTEMPT,
@@ -71,7 +71,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
     requestBids.before(beforeBidsRequested, 40);
 
-    pbEvents.on(CONSTANTS.EVENTS.BID_ADJUSTMENT, function (bid) {
+    pbEvents.on(EVENTS.BID_ADJUSTMENT, function (bid) {
       videoImpressionVerifier.trackBid(bid);
     });
 
@@ -107,7 +107,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
 
     const bidsBackHandler = bidderRequest.bidsBackHandler;
     if (!bidsBackHandler || typeof bidsBackHandler !== 'function') {
-      pbEvents.on(CONSTANTS.EVENTS.AUCTION_END, auctionEnd);
+      pbEvents.on(EVENTS.AUCTION_END, auctionEnd);
     }
 
     return nextFn.call(this, bidderRequest);
@@ -192,7 +192,7 @@ export function PbVideo(videoCore_, getConfig_, pbGlobal_, pbEvents_, videoEvent
         renderWinningBid(adUnit);
       }
     });
-    pbEvents.off(CONSTANTS.EVENTS.AUCTION_END, auctionEnd);
+    pbEvents.off(EVENTS.AUCTION_END, auctionEnd);
   }
 
   function getAdServerConfig(adUnitVideoConfig) {

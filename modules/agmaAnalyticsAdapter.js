@@ -9,7 +9,7 @@ import {
 } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import adapterManager, { gdprDataHandler } from '../src/adapterManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { config } from '../src/config.js';
@@ -21,10 +21,6 @@ const scriptVersion = '1.8.0';
 const batchDelayInMs = 1000;
 const agmaURL = 'https://pbc.agma-analytics.de/v1';
 const pageViewId = generateUUID();
-
-const {
-  EVENTS: { AUCTION_INIT },
-} = CONSTANTS;
 
 // Helper functions
 const getScreen = () => {
@@ -212,7 +208,7 @@ agmaAnalytics.enableAnalytics = function (config = {}) {
   }
 
   agmaAnalytics.options = {
-    triggerEvent: AUCTION_INIT,
+    triggerEvent: EVENTS.AUCTION_INIT,
     ...options,
   };
 
