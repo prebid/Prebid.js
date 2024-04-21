@@ -1,7 +1,7 @@
 import {logError, logInfo} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js'
 import {getStorageManager} from '../src/storageManager.js';
@@ -18,10 +18,8 @@ const trackerUrl = 'https://demo.8pod.com/tracker/track';
 export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_NAME})
 
 const {
-  EVENTS: {
-    BID_WON
-  }
-} = CONSTANTS;
+  BID_WON
+} = EVENTS;
 
 export let queue = [];
 export let context;

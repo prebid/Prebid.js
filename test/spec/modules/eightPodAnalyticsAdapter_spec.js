@@ -2,13 +2,11 @@ import analyticsAdapter, { storage, queue, context, trackEvent } from 'modules/e
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import eightPodAnalytics from 'modules/eightPodAnalyticsAdapter.js';
-import CONSTANTS from '../../../src/constants.json';
+import { EVENTS } from '../../../src/constants.js';
 
 const {
-  EVENTS: {
-    BID_WON
-  }
-} = CONSTANTS;
+  BID_WON
+} = EVENTS;
 
 describe('eightPodAnalyticAdapter', function() {
   let sandbox;
