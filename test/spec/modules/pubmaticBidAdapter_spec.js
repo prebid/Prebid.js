@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, checkVideoPlacement, _getDomainFromURL, assignDealTier, prepareMetaObject, getDeviceConnectionType} from 'modules/pubmaticBidAdapter.js';
+import { spec, checkVideoPlacement, _getDomainFromURL, assignDealTier, prepareMetaObject, getDeviceConnectionType } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
@@ -2965,13 +2965,13 @@ describe('PubMatic adapter', function () {
         });
       });
 
-	  it('should send connectiontype parameter if browser contains navigator.connection property', function () {
+      it('should send connectiontype parameter if browser contains navigator.connection property', function () {
         const bidRequest = spec.buildRequests(bidRequests);
-		let data = JSON.parse(bidRequest.data);
-		if(window.navigator && window.navigator.connection) {
-			expect(data.device).to.include.any.keys('connectiontype');
-		}
-	  });
+        let data = JSON.parse(bidRequest.data);
+        if (window.navigator && window.navigator.connection) {
+          expect(data.device).to.include.any.keys('connectiontype');
+        }
+      });
   	});
 
     it('Request params dctr check', function () {
@@ -4028,28 +4028,28 @@ describe('PubMatic adapter', function () {
       });
     });
 
-	describe('getDeviceConnectionType', function() {
-		it('is a function', function(done) {
-            getDeviceConnectionType.should.be.a('function');
-            done();
-        });
+    describe('getDeviceConnectionType', function() {
+      it('is a function', function(done) {
+        getDeviceConnectionType.should.be.a('function');
+        done();
+      });
 
-		it('should return matched value if navigator.connection is present', function(done) {
-			const connectionValue = getDeviceConnectionType();
-			if(window?.navigator?.connection) {
-				expect(connectionValue).to.be.a('number');
-			}
-			done();
-		});
+      it('should return matched value if navigator.connection is present', function(done) {
+        const connectionValue = getDeviceConnectionType();
+        if (window?.navigator?.connection) {
+          expect(connectionValue).to.be.a('number');
+        }
+        done();
+      });
 
-		it('should not return anything if navigator.connection doesnot supported in browser', function(done) {
-			const connectionValue = getDeviceConnectionType();
-			if(!window?.navigator?.connection) {
-				expect(connectionValue).to.be.a('undefined');
-			}
-			done();
-		})
-	});
+      it('should not return anything if navigator.connection doesnot supported in browser', function(done) {
+        const connectionValue = getDeviceConnectionType();
+        if (!window?.navigator?.connection) {
+          expect(connectionValue).to.be.a('undefined');
+        }
+        done();
+      })
+    });
 
     if (FEATURES.VIDEO) {
       describe('Checking for Video.Placement property', function() {
