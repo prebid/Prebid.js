@@ -65,7 +65,7 @@ export const utiqMtpIdSubmodule = {
   /**
    * Decodes the stored id value for passing to bid requests.
    * @function
-   * @returns {{utiq-mtp: string} | null}
+   * @returns {{utiqMtp: string} | null}
    */
   decode(bidId) {
     logInfo(`${LOG_PREFIX}: Decoded ID value ${JSON.stringify(bidId)}`);
@@ -74,7 +74,7 @@ export const utiqMtpIdSubmodule = {
   /**
    * Get the id from helper function and initiate a new user sync.
    * @param config
-   * @returns {{callback: result}|{id: {utiq: string}}}
+   * @returns {{callback: result}|{id: {utiqMtp: string}}}
    */
   getId: function (config) {
     const data = getUtiqFromStorage();
