@@ -18,7 +18,7 @@ let initOptions;
 
 const emptyUrl = "";
 const analyticsType = "endpoint";
-const pubxaiAnalyticsVersion = "v1.2.0";
+const pubxaiAnalyticsVersion = "v2.0.0";
 const defaultHost = "api.pbxai.com";
 const auctionPath = "/analytics/auction";
 const winningBidPath = "/analytics/bidwon";
@@ -261,25 +261,25 @@ export const getDeviceType = () => {
  * @returns {string}
  */
 export const getBrowser = () => {
-  if (
+  if (/Edg/.test(navigator.userAgent)) return "Microsoft Edge";
+  else if (
     /Chrome/.test(navigator.userAgent) &&
     /Google Inc/.test(navigator.vendor)
-  ) {
+  )
     return "Chrome";
-  } else if (navigator.userAgent.match("CriOS")) return "Chrome";
+  else if (navigator.userAgent.match("CriOS")) return "Chrome";
   else if (/Firefox/.test(navigator.userAgent)) return "Firefox";
-  else if (/Edg/.test(navigator.userAgent)) return "Microsoft Edge";
   else if (
     /Safari/.test(navigator.userAgent) &&
     /Apple Computer/.test(navigator.vendor)
-  ) {
+  )
     return "Safari";
-  } else if (
+  else if (
     /Trident/.test(navigator.userAgent) ||
     /MSIE/.test(navigator.userAgent)
-  ) {
+  )
     return "Internet Explorer";
-  } else return "Others";
+  else return "Others";
 };
 
 /**
