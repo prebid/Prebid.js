@@ -133,7 +133,7 @@ describe('topLevelPaapi', () => {
           function expectBids(actual, expected) {
             expect(Object.keys(actual)).to.eql(Object.keys(expected));
             Object.entries(expected).forEach(([au, val]) => {
-              sinon.assert.match(actual[au], {
+              sinon.assert.match(actual[au], val == null ? val : {
                 width: '123',
                 height: '321',
                 ...unpack(val)
@@ -156,6 +156,13 @@ describe('topLevelPaapi', () => {
               });
             });
 
+            it('should resolve to null when runAdAuction returns null', () => {
+              raa = sinon.stub().callsFake(() => Promise.resolve());
+              return getBids({adUnitCode: 'au', auctionId: 'auct'}).then(result => {
+                expectBids(result, {au: null});
+              });
+            });
+
             it('should resolve to the same result when called again', () => {
               getBids({adUnitCode: 'au', auctionId});
               return getBids({adUnitCode: 'au', auctionId: 'auct'}).then(result => {
@@ -163,6 +170,7 @@ describe('topLevelPaapi', () => {
                 expectBids(result, {au: 'raa-au-auct'});
               });
             });
+
             describe('events', () => {
               beforeEach(() => {
                 sandbox.stub(events, 'emit');
@@ -248,10 +256,8 @@ describe('topLevelPaapi', () => {
               });
             });
           });
-
         });
       });
-
     });
   });
 

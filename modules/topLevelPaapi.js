@@ -52,18 +52,18 @@ export function getPAAPIBids(filters, raa = (...args) => navigator.runAdAuction(
               auctionConfig
             });
             bids[adUnitCode] = raa(auctionConfig).then(result => {
-              let bid = null;
               if (result) {
-                bid = {
+                const bid = {
+                  ...(auctionConfig.requestedSize || {}),
                   adUnitCode,
                   auctionId,
                   [typeof result === 'string' ? 'urn' : 'frameConfig']: result,
-                  ...(auctionConfig.requestedSize || {})
                 }
                 emit(EVENTS.PAAPI_BID, bid);
                 return bid;
               } else {
-                emit(EVENTS.PAAPI_NO_BID, {auctionId, adUnitCode})
+                emit(EVENTS.PAAPI_NO_BID, {auctionId, adUnitCode});
+                return null;
               }
             });
           }

@@ -61,6 +61,12 @@
                     enabled: true,
                     gpt: {
                         autoconfig: false
+                    },
+                    topLevelSeller: {
+                        auctionConfig: {
+                            seller: window.location.origin,
+                            decisionLogicURL: new URL('decisionLogic.js', window.location).toString(),
+                        }
                     }
                 },
                 debugging: {
@@ -110,39 +116,36 @@
         });
 
         function raa() {
-            return Promise.all(
-                Object.entries(pbjs.getPAAPIConfig())
-                    .map(([adUnitCode, auctionConfig]) => {
-                        return navigator.runAdAuction({
-                            seller: window.location.origin,
-                            decisionLogicURL: new URL('decisionLogic.js', window.location).toString(),
-                            resolveToConfig: false,
-                            ...auctionConfig
-                        }).then(urn => {
-                            if (urn) {
-                                // if we have a paapi winner, replace the adunit div
-                                // with an iframe that renders it
-                                const iframe = document.createElement('iframe');
-                                Object.assign(iframe, {
-                                    src: urn,
-                                    frameBorder: 0,
-                                    scrolling: 'no',
-                                }, auctionConfig.requestedSize);
-                                const div = document.getElementById(adUnitCode);
-                                div.parentElement.insertBefore(iframe, div);
-                                div.remove();
-                                return true;
-                            }
+            return pbjs.getPAAPIBids().then(bids => {
+                let contextual = false;
+                Object.entries(bids).forEach(([adUnitCode, bid]) => {
+                    // if we have a paapi winner, replace the adunit div
+                    // with an iframe that renders it
+                    if (bid) {
+                        const iframe = document.createElement('iframe');
+                        Object.assign(iframe, {
+                            src: bid.urn,
+                            frameBorder: 0,
+                            scrolling: 'no',
+                            width: bid.width,
+                            height: bid.height,
                         });
-                    })
-            ).then(won => won.every(el => el));
+                        const div = document.getElementById(adUnitCode);
+                        div.parentElement.insertBefore(iframe, div);
+                        div.remove();
+                    } else {
+                        contextual = true;
+                    }
+                })
+                return contextual;
+            })
         }
 
         function sendAdserverRequest() {
             if (pbjs.adserverRequestSent) return;
             pbjs.adserverRequestSent = true;
-            raa().then((allPaapi) => {
-                if (!allPaapi) {
+            raa().then((contextual) => {
+                if (contextual) {
                     googletag.cmd.push(function () {
                         pbjs.que.push(function () {
                             pbjs.setTargetingForGPTAsync();
