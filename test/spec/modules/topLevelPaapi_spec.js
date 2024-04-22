@@ -51,7 +51,19 @@ describe('topLevelPaapi', () => {
       };
     }
     if (!auction.adUnits.hasOwnProperty(adUnitCode)) {
-      auction.adUnits[adUnitCode] = {code: adUnitCode};
+      auction.adUnits[adUnitCode] = {
+        code: adUnitCode,
+        ortb2Imp: {
+          ext: {
+            paapi: {
+              requestedSize: {
+                width: '123',
+                height: '321'
+              }
+            }
+          }
+        }
+      };
     }
     addComponentAuctionHook(next, {adUnitCode, auctionId: _auctionId}, {
       ...auctionConfig,
@@ -95,129 +107,151 @@ describe('topLevelPaapi', () => {
     });
 
     describe('getPAAPIBids', () => {
-      let raa;
-      beforeEach(() => {
-        raa = sinon.stub().callsFake((cfg) => {
-          const {auctionId, adUnitCode} = cfg.componentAuctions[0];
-          return Promise.resolve(`raa-${adUnitCode}-${auctionId}`);
-        });
-      });
-
-      function getBids(filters) {
-        return getPAAPIBids(filters, raa);
-      }
-
-      describe('with one auction config', () => {
-        beforeEach(() => {
-          addPaapiConfig('au', paapiConfig, 'auct');
-          endAuctions();
-        });
-        it('should resolve to raa result', () => {
-          return getBids({adUnitCode: 'au', auctionId}).then(result => {
-            sinon.assert.calledWith(raa, sinon.match({
-              ...auctionConfig,
-              componentAuctions: sinon.match(cmp => cmp.find(cfg => sinon.match(cfg, paapiConfig)))
-            }));
-            expect(result).to.eql({
-              au: 'raa-au-auct'
-            });
-          });
-        });
-
-        it('should resolve to the same result when called again', () => {
-          getBids({adUnitCode: 'au', auctionId});
-          return getBids({adUnitCode: 'au', auctionId: 'auct'}).then(result => {
-            sinon.assert.calledOnce(raa);
-            expect(result).to.eql({
-              au: 'raa-au-auct'
-            });
-          });
-        });
-        describe('events', () => {
+      Object.entries({
+        'a string URN': {
+          pack: (val) => val,
+          unpack: (urn) => ({urn})
+        },
+        'a frameConfig object': {
+          pack: (val) => ({val}),
+          unpack: (val) => ({frameConfig: {val}})
+        }
+      }).forEach(([t, {pack, unpack}]) => {
+        describe(`when runAdAuction returns ${t}`, () => {
+          let raa;
           beforeEach(() => {
-            sandbox.stub(events, 'emit');
+            raa = sinon.stub().callsFake((cfg) => {
+              const {auctionId, adUnitCode} = cfg.componentAuctions[0];
+              return Promise.resolve(pack(`raa-${adUnitCode}-${auctionId}`));
+            });
           });
-          it('should fire PAAPI_RUN_AUCTION', () => {
-            return Promise.all([
-              getBids({adUnitCode: 'au', auctionId}),
-              getBids({adUnitCode: 'other', auctionId})
-            ]).then(() => {
-              sinon.assert.calledWith(events.emit, EVENTS.RUN_PAAPI_AUCTION, {
-                adUnitCode: 'au',
-                auctionId,
-                auctionConfig: sinon.match(auctionConfig)
+
+          function getBids(filters) {
+            return getPAAPIBids(filters, raa);
+          }
+
+          function expectBids(actual, expected) {
+            expect(Object.keys(actual)).to.eql(Object.keys(expected));
+            Object.entries(expected).forEach(([au, val]) => {
+              sinon.assert.match(actual[au], {
+                width: '123',
+                height: '321',
+                ...unpack(val)
               });
-              sinon.assert.neverCalledWith(events.emit, EVENTS.RUN_PAAPI_AUCTION, {
-                adUnitCode: 'other'
+            });
+          }
+
+          describe('with one auction config', () => {
+            beforeEach(() => {
+              addPaapiConfig('au', paapiConfig, 'auct');
+              endAuctions();
+            });
+            it('should resolve to raa result', () => {
+              return getBids({adUnitCode: 'au', auctionId}).then(result => {
+                sinon.assert.calledWith(raa, sinon.match({
+                  ...auctionConfig,
+                  componentAuctions: sinon.match(cmp => cmp.find(cfg => sinon.match(cfg, paapiConfig)))
+                }));
+                expectBids(result, {au: 'raa-au-auct'});
+              });
+            });
+
+            it('should resolve to the same result when called again', () => {
+              getBids({adUnitCode: 'au', auctionId});
+              return getBids({adUnitCode: 'au', auctionId: 'auct'}).then(result => {
+                sinon.assert.calledOnce(raa);
+                expectBids(result, {au: 'raa-au-auct'});
+              });
+            });
+            describe('events', () => {
+              beforeEach(() => {
+                sandbox.stub(events, 'emit');
+              });
+              it('should fire PAAPI_RUN_AUCTION', () => {
+                return Promise.all([
+                  getBids({adUnitCode: 'au', auctionId}),
+                  getBids({adUnitCode: 'other', auctionId})
+                ]).then(() => {
+                  sinon.assert.calledWith(events.emit, EVENTS.RUN_PAAPI_AUCTION, {
+                    adUnitCode: 'au',
+                    auctionId,
+                    auctionConfig: sinon.match(auctionConfig)
+                  });
+                  sinon.assert.neverCalledWith(events.emit, EVENTS.RUN_PAAPI_AUCTION, {
+                    adUnitCode: 'other'
+                  });
+                });
+              });
+              it('should fire PAAPI_BID', () => {
+                return getBids({adUnitCode: 'au', auctionId}).then(() => {
+                  sinon.assert.calledWith(events.emit, EVENTS.PAAPI_BID, sinon.match({
+                    ...unpack('raa-au-auct'),
+                    adUnitCode: 'au',
+                    auctionId: 'auct'
+                  }));
+                });
+              });
+              it('should fire PAAPI_NO_BID', () => {
+                raa = sinon.stub().callsFake(() => Promise.resolve(null));
+                return getBids({adUnitCode: 'au', auctionId}).then(() => {
+                  sinon.assert.calledWith(events.emit, EVENTS.PAAPI_NO_BID, {
+                    adUnitCode: 'au',
+                    auctionId: 'auct'
+                  });
+                });
               });
             });
           });
-          it('should fire PAAPI_BID', () => {
-            return getBids({adUnitCode: 'au', auctionId}).then(() => {
-              sinon.assert.calledWith(events.emit, EVENTS.PAAPI_BID, {
-                bid: 'raa-au-auct',
-                adUnitCode: 'au',
-                auctionId: 'auct'
+
+          it('should resolve the same result from different filters', () => {
+            const targets = {
+              auct1: ['au1', 'au2'],
+              auct2: ['au1', 'au3']
+            };
+            Object.entries(targets).forEach(([auctionId, adUnitCodes]) => {
+              adUnitCodes.forEach(au => addPaapiConfig(au, paapiConfig, auctionId));
+            });
+            endAuctions();
+            return Promise.all(
+              [
+                [
+                  {adUnitCode: 'au1', auctionId: 'auct1'},
+                  {
+                    au1: 'raa-au1-auct1'
+                  }
+                ],
+                [
+                  {},
+                  {
+                    au1: 'raa-au1-auct2',
+                    au2: 'raa-au2-auct1',
+                    au3: 'raa-au3-auct2'
+                  }
+                ],
+                [
+                  {auctionId: 'auct1'},
+                  {
+                    au1: 'raa-au1-auct1',
+                    au2: 'raa-au2-auct1'
+                  }
+                ],
+                [
+                  {adUnitCode: 'au1'},
+                  {
+                    au1: 'raa-au1-auct2'
+                  }
+                ],
+              ].map(([filters, expected]) => getBids(filters).then(res => [res, expected]))
+            ).then(res => {
+              res.forEach(([actual, expected]) => {
+                expectBids(actual, expected);
               });
             });
           });
-          it('should fire PAAPI_NO_BID', () => {
-            raa = sinon.stub().callsFake(() => Promise.resolve(null));
-            return getBids({adUnitCode: 'au', auctionId}).then(() => {
-              sinon.assert.calledWith(events.emit, EVENTS.PAAPI_NO_BID, {
-                adUnitCode: 'au',
-                auctionId: 'auct'
-              });
-            });
-          });
+
         });
       });
 
-      it('should resolve the same result from different filters', () => {
-        const targets = {
-          auct1: ['au1', 'au2'],
-          auct2: ['au1', 'au3']
-        };
-        Object.entries(targets).forEach(([auctionId, adUnitCodes]) => {
-          adUnitCodes.forEach(au => addPaapiConfig(au, paapiConfig, auctionId));
-        });
-        endAuctions();
-        return Promise.all(
-          [
-            [
-              {adUnitCode: 'au1', auctionId: 'auct1'},
-              {
-                au1: 'raa-au1-auct1'
-              }
-            ],
-            [
-              {},
-              {
-                au1: 'raa-au1-auct2',
-                au2: 'raa-au2-auct1',
-                au3: 'raa-au3-auct2'
-              }
-            ],
-            [
-              {auctionId: 'auct1'},
-              {
-                au1: 'raa-au1-auct1',
-                au2: 'raa-au2-auct1'
-              }
-            ],
-            [
-              {adUnitCode: 'au1'},
-              {
-                au1: 'raa-au1-auct2'
-              }
-            ],
-          ].map(([filters, expected]) => getBids(filters).then(res => [res, expected]))
-        ).then(res => {
-          res.forEach(([actual, expected]) => {
-            expect(actual).to.eql(expected);
-          });
-        });
-      });
     });
   });
 

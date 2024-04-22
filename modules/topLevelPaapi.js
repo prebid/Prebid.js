@@ -31,7 +31,7 @@ function onAuctionConfig(auctionId, auctionConfigs) {
 
 /**
  * Returns the PAAPI runAdAuction result for the given filters, as a map from ad unit code to auction result
- * (either a URN or a FencedFrameConfig, depending on the configured auction config).
+ * (an object with `width`, `height`, and one of `urn` or `frameConfig`).
  *
  * @param filters
  * @param raa
@@ -51,11 +51,20 @@ export function getPAAPIBids(filters, raa = (...args) => navigator.runAdAuction(
               adUnitCode,
               auctionConfig
             });
-            bids[adUnitCode] = raa(auctionConfig).then(bid => {
-              const evt = {auctionId, adUnitCode};
-              if (bid) Object.assign(evt, {bid})
-              emit(bid ? EVENTS.PAAPI_BID : EVENTS.PAAPI_NO_BID, evt);
-              return bid;
+            bids[adUnitCode] = raa(auctionConfig).then(result => {
+              let bid = null;
+              if (result) {
+                bid = {
+                  adUnitCode,
+                  auctionId,
+                  [typeof result === 'string' ? 'urn' : 'frameConfig']: result,
+                  ...(auctionConfig.requestedSize || {})
+                }
+                emit(EVENTS.PAAPI_BID, bid);
+                return bid;
+              } else {
+                emit(EVENTS.PAAPI_NO_BID, {auctionId, adUnitCode})
+              }
             });
           }
         }
