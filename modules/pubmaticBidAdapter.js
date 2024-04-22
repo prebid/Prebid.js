@@ -300,7 +300,7 @@ function _createOrtbTemplate(conf) {
       h: screen.height,
       w: screen.width,
       language: navigator.language,
-	  connectiontype: getDeviceConnectionType()
+      connectiontype: getDeviceConnectionType()
     },
     user: {},
     ext: {}
