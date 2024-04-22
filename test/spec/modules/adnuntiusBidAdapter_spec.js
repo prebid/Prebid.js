@@ -12,7 +12,7 @@ describe('adnuntiusBidAdapter', function() {
   const EURO_URL = 'https://europe.delivery.adnuntius.com/i?tzo=';
   const usi = utils.generateUUID()
 
-  const meta = [{key: 'valueless'}, {value: 'keyless'}, {key: 'voidAuIds'}, {key: 'voidAuIds', value: [{auId: '11118b6bc', exp: misc.getUnixTimestamp()}, {exp: misc.getUnixTimestamp(1)}]}, {key: 'valid', value: 'also-valid', exp: misc.getUnixTimestamp(1)}, {key: 'expired', value: 'fwefew', exp: misc.getUnixTimestamp()}, {key: 'usi', value: 'should be skipped because timestamp', exp: misc.getUnixTimestamp()}, {key: 'usi', value: usi, exp: misc.getUnixTimestamp(100)}, {key: 'usi', value: 'should be skipped because timestamp', exp: misc.getUnixTimestamp()}]
+  const meta = [{key: 'valueless'}, {value: 'keyless'}, {key: 'voidAuIds'}, {key: 'voidAuIds', value: [{auId: '11118b6bc', exp: misc.getUnixTimestamp()}, {exp: misc.getUnixTimestamp(1)}]}, {key: 'valid-withnetwork', value: 'also-valid-network', network: 'the-network', exp: misc.getUnixTimestamp(1)}, {key: 'valid', value: 'also-valid', exp: misc.getUnixTimestamp(1)}, {key: 'expired', value: 'fwefew', exp: misc.getUnixTimestamp()}, {key: 'usi', value: 'should be skipped because timestamp', exp: misc.getUnixTimestamp(), network: 'adnuntius'}, {key: 'usi', value: usi, exp: misc.getUnixTimestamp(100), network: 'adnuntius'}, {key: 'usi', value: 'should be skipped because timestamp', exp: misc.getUnixTimestamp()}]
   let storage;
 
   before(() => {
@@ -37,12 +37,12 @@ describe('adnuntiusBidAdapter', function() {
   });
 
   const tzo = new Date().getTimezoneOffset();
-  const ENDPOINT_URL_BASE = `${URL}${tzo}&format=json`;
+  const ENDPOINT_URL_BASE = `${URL}${tzo}&format=prebid`;
   const ENDPOINT_URL = `${ENDPOINT_URL_BASE}&userId=${usi}`;
   const ENDPOINT_URL_VIDEO = `${ENDPOINT_URL_BASE}&userId=${usi}&tt=vast4`;
   const ENDPOINT_URL_NOCOOKIE = `${ENDPOINT_URL_BASE}&userId=${usi}&noCookies=true`;
   const ENDPOINT_URL_SEGMENTS = `${ENDPOINT_URL_BASE}&segments=segment1,segment2,segment3&userId=${usi}`;
-  const ENDPOINT_URL_CONSENT = `${EURO_URL}${tzo}&format=json&consentString=consentString&gdpr=1&userId=${usi}`;
+  const ENDPOINT_URL_CONSENT = `${EURO_URL}${tzo}&format=prebid&consentString=consentString&gdpr=1&userId=${usi}`;
   const adapter = newBidder(spec);
 
   const bidderRequests = [
@@ -257,7 +257,8 @@ describe('adnuntiusBidAdapter', function() {
         'usi': 'from-api-server dude',
         'voidAuIds': '00000000000abcde;00000000000fffff',
         'randomApiKey': 'randomApiValue'
-      }
+      },
+      'network': 'some-network-id'
     }
   }
   const serverVideoResponse = {
@@ -464,7 +465,7 @@ describe('adnuntiusBidAdapter', function() {
       expect(request[0]).to.have.property('url');
       expect(request[0].url).to.equal(ENDPOINT_URL);
       expect(request[0]).to.have.property('data');
-      expect(request[0].data).to.equal('{"adUnits":[{"auId":"000000000008b6bc","targetId":"123","maxDeals":1,"dimensions":[[640,480],[600,400]]},{"auId":"0000000000000551","targetId":"adn-0000000000000551","dimensions":[[1640,1480],[1600,1400]]}],"metaData":{"valid":"also-valid"}}');
+      expect(request[0].data).to.equal('{"adUnits":[{"auId":"000000000008b6bc","targetId":"123","maxDeals":1,"dimensions":[[640,480],[600,400]]},{"auId":"0000000000000551","targetId":"adn-0000000000000551","dimensions":[[1640,1480],[1600,1400]]}]}');
     });
 
     it('Test requests with no local storage', function() {
@@ -695,7 +696,7 @@ describe('adnuntiusBidAdapter', function() {
             network: 'adnuntius'
           }
         }
-      ]
+      ];
       const request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, { bids: req }));
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
@@ -913,10 +914,11 @@ describe('adnuntiusBidAdapter', function() {
       expect(interpretedResponse[1].dealCount).to.equal(0);
 
       const results = JSON.parse(storage.getDataFromLocalStorage('adn.metaData'));
-      const usiEntry = results.find(entry => entry.key === 'usi');
+      const usiEntry = results.find(entry => entry.key === 'usi' && entry.network === 'some-network-id');
       expect(usiEntry.key).to.equal('usi');
       expect(usiEntry.value).to.equal('from-api-server dude');
       expect(usiEntry.exp).to.be.greaterThan(misc.getUnixTimestamp(90));
+      expect(usiEntry.network).to.equal('some-network-id')
 
       const voidAuIdsEntry = results.find(entry => entry.key === 'voidAuIds');
       expect(voidAuIdsEntry.key).to.equal('voidAuIds');
@@ -937,6 +939,7 @@ describe('adnuntiusBidAdapter', function() {
       const randomApiEntry = results.find(entry => entry.key === 'randomApiKey');
       expect(randomApiEntry.key).to.equal('randomApiKey');
       expect(randomApiEntry.value).to.equal('randomApiValue');
+      expect(randomApiEntry.network).to.equal('some-network-id');
       expect(randomApiEntry.exp).to.be.greaterThan(misc.getUnixTimestamp(90));
     });
 

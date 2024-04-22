@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import { spec, getTimeoutUrl } from 'modules/seedtagBidAdapter.js';
+import { getTimeoutUrl, spec } from 'modules/seedtagBidAdapter.js';
 import * as utils from 'src/utils.js';
-import { config } from '../../../src/config.js';
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
+import { config } from '../../../src/config.js';
 
 const PUBLISHER_ID = '0000-0000-01';
 const ADUNIT_ID = '000000';
@@ -536,8 +536,61 @@ describe('Seedtag Adapter', function () {
         expect(data.gppConsent).to.be.undefined;
       });
     });
-  });
 
+    describe('User param', function () {
+      it('should be added to payload user data param when bidderRequest has ortb2 user info', function () {
+        var ortb2 = {
+
+          user: {
+
+            data: [
+              {
+                ext: {
+                  segtax: 601,
+                  segclass: '4'
+                },
+                segment: [
+                  {
+                    id: '149'
+                  }
+                ],
+                name: 'randomname'
+              }
+
+            ]
+          }
+        }
+        bidderRequest['ortb2'] = ortb2
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+
+        expect(data.user).to.exist;
+        expect(data.user.topics).to.exist;
+        expect(data.user.topics).to.be.an('array').that.is.not.empty;
+        expect(data.user.topics[0].ext).to.eql(ortb2.user.data[0].ext);
+        expect(data.user.topics[0].segment).to.eql(ortb2.user.data[0].segment);
+        expect(data.user.topics[0].name).to.eql(ortb2.user.data[0].name);
+      })
+
+      it('should be added to payload user eids param when validRequest has userId info', function () {
+        var userIdAsEids = [{
+          source: 'sourceid',
+          uids: [{
+            atype: 1,
+            id: 'randomId'
+          }]
+        }]
+        validBidRequests[0]['userIdAsEids'] = userIdAsEids
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+
+        expect(data.user).to.exist;
+        expect(data.user.eids).to.exist;
+        expect(data.user.eids).to.be.an('array').that.is.not.empty;
+        expect(data.user.eids).to.deep.equal(userIdAsEids);
+      })
+    });
+  })
   describe('interpret response method', function () {
     it('should return a void array, when the server response are not correct.', function () {
       const request = { data: JSON.stringify({}) };

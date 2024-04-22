@@ -295,8 +295,7 @@ function bundle(dev, moduleArr) {
   [coreFile].concat(moduleFiles).map(name => path.basename(name)).forEach((file) => {
     (depGraph[file] || []).forEach((dep) => dependencies.add(helpers.getBuiltPath(dev, dep)));
   });
-
-  const entries = [coreFile].concat(Array.from(dependencies), moduleFiles);
+  const entries = _.uniq([coreFile].concat(Array.from(dependencies), moduleFiles));
 
   var outputFileName = argv.bundleName ? argv.bundleName : 'prebid.js';
 
@@ -447,7 +446,15 @@ function startLocalServer(options = {}) {
     port: port,
     host: INTEG_SERVER_HOST,
     root: './',
-    livereload: options.livereload
+    livereload: options.livereload,
+    middleware: function () {
+      return [
+        function (req, res, next) {
+          res.setHeader('Ad-Auction-Allowed', 'True');
+          next();
+        }
+      ];
+    }
   });
 }
 

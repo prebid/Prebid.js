@@ -57,7 +57,7 @@ mnData.urlData = {
 };
 
 const aliases = [
-  { code: TRUSTEDSTACK_CODE },
+  { code: TRUSTEDSTACK_CODE, gvlid: 1288 },
 ];
 
 getGlobal().medianetGlobals = getGlobal().medianetGlobals || {};

@@ -5,11 +5,11 @@
  * @module modules/brandmetricsRtdProvider
  * @requires module:modules/realTimeData
  */
-import {submodule} from '../src/hook.js';
-import {deepAccess, deepSetValue, logError, mergeDeep, generateUUID} from '../src/utils.js';
-import {loadExternalScript} from '../src/adloader.js';
+import { submodule } from '../src/hook.js';
+import { deepAccess, deepSetValue, logError, mergeDeep, generateUUID } from '../src/utils.js';
+import { loadExternalScript } from '../src/adloader.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
@@ -156,7 +156,7 @@ function initializeBillableEvents() {
         handler: (ev) => {
           if (ev.source && ev.source.type === 'pbj') {
             const bid = ev.source.data;
-            events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
+            events.emit(EVENTS.BILLABLE_EVENT, {
               vendor: 'brandmetrics',
               type: 'creative_in_view',
               measurementId: ev.mid,
@@ -202,7 +202,7 @@ export const brandmetricsSubmodule = {
       logError(e)
     }
   },
-  init: init
+  init
 }
 
 submodule('realTimeData', brandmetricsSubmodule)

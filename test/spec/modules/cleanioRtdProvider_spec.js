@@ -2,7 +2,7 @@ import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 import * as utils from '../../../src/utils.js';
 import * as hook from '../../../src/hook.js'
 import * as events from '../../../src/events.js';
-import CONSTANTS from '../../../src/constants.json';
+import { EVENTS } from '../../../src/constants.js';
 
 import { __TEST__ } from '../../../modules/cleanioRtdProvider.js';
 
@@ -193,16 +193,16 @@ describe('clean.io RTD module', function () {
       const eventCounter = { registerCleanioBillingEvent: function() {} };
       sinon.spy(eventCounter, 'registerCleanioBillingEvent');
 
-      events.on(CONSTANTS.EVENTS.BILLABLE_EVENT, (evt) => {
+      events.on(EVENTS.BILLABLE_EVENT, (evt) => {
         if (evt.vendor === 'clean.io') {
           eventCounter.registerCleanioBillingEvent()
         }
       });
 
-      events.emit(CONSTANTS.EVENTS.BID_WON, {});
-      events.emit(CONSTANTS.EVENTS.BID_WON, {});
-      events.emit(CONSTANTS.EVENTS.BID_WON, {});
-      events.emit(CONSTANTS.EVENTS.BID_WON, {});
+      events.emit(EVENTS.BID_WON, {});
+      events.emit(EVENTS.BID_WON, {});
+      events.emit(EVENTS.BID_WON, {});
+      events.emit(EVENTS.BID_WON, {});
 
       sinon.assert.callCount(eventCounter.registerCleanioBillingEvent, 4);
     });

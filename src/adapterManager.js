@@ -27,11 +27,16 @@ import {ajaxBuilder} from './ajax.js';
 import {config, RANDOM} from './config.js';
 import {hook} from './hook.js';
 import {find, includes} from './polyfill.js';
-import {adunitCounter} from './adUnits.js';
+import {
+  getBidderRequestsCounter,
+  getBidderWinsCounter,
+  getRequestsCounter, incrementBidderRequestsCounter,
+  incrementBidderWinsCounter, incrementRequestsCounter
+} from './adUnits.js';
 import {getRefererInfo} from './refererDetection.js';
 import {GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler, } from './consentHandler.js';
 import * as events from './events.js';
-import CONSTANTS from './constants.json';
+import { EVENTS, S2S } from './constants.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {auctionManager} from './auctionManager.js';
 import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID} from './activities/modules.js';
@@ -112,6 +117,10 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}
           );
         }
 
+        if (src === 'client') {
+          incrementBidderRequestsCounter(adUnit.code, bidderCode);
+        }
+
         bids.push(Object.assign({}, bid, {
           adUnitCode: adUnit.code,
           transactionId: adUnit.transactionId,
@@ -122,9 +131,9 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}
           auctionId,
           src,
           metrics,
-          bidRequestsCount: adunitCounter.getRequestsCounter(adUnit.code),
-          bidderRequestsCount: adunitCounter.getBidderRequestsCounter(adUnit.code, bid.bidder),
-          bidderWinsCount: adunitCounter.getBidderWinsCounter(adUnit.code, bid.bidder),
+          bidRequestsCount: getRequestsCounter(adUnit.code),
+          bidderRequestsCount: getBidderRequestsCounter(adUnit.code, bid.bidder),
+          bidderWinsCount: getBidderWinsCounter(adUnit.code, bid.bidder),
         }));
         return bids;
       }, [])
@@ -242,7 +251,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
    * emit and pass adunits for external modification
    * @see {@link https://github.com/prebid/Prebid.js/issues/4149|Issue}
    */
-  events.emit(CONSTANTS.EVENTS.BEFORE_REQUEST_BIDS, adUnits);
+  events.emit(EVENTS.BEFORE_REQUEST_BIDS, adUnits);
   if (FEATURES.NATIVE) {
     decorateAdUnitsWithNativeParams(adUnits);
   }
@@ -253,6 +262,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
     }
     // filter out bidders that cannot participate in the auction
     au.bids = au.bids.filter((bid) => !bid.bidder || dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder)))
+    incrementRequestsCounter(au.code);
   });
 
   adUnits = setupAdUnitMediaTypes(adUnits, labels);
@@ -300,10 +310,10 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
           auctionId,
           bidderRequestId,
           uniquePbsTid,
-          bids: hookedGetBids({bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsS2SCopy), src: CONSTANTS.S2S.SRC, metrics}),
+          bids: hookedGetBids({ bidderCode, auctionId, bidderRequestId, 'adUnits': deepClone(adUnitsS2SCopy), src: S2S.SRC, metrics }),
           auctionStart: auctionStart,
           timeout: s2sConfig.timeout,
-          src: CONSTANTS.S2S.SRC,
+          src: S2S.SRC,
           refererInfo,
           metrics,
         }, s2sParams);
@@ -375,7 +385,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
   }
 
   let [clientBidderRequests, serverBidderRequests] = bidRequests.reduce((partitions, bidRequest) => {
-    partitions[Number(typeof bidRequest.src !== 'undefined' && bidRequest.src === CONSTANTS.S2S.SRC)].push(bidRequest);
+    partitions[Number(typeof bidRequest.src !== 'undefined' && bidRequest.src === S2S.SRC)].push(bidRequest);
     return partitions;
   }, [[], []]);
 
@@ -428,7 +438,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
           // fire BID_REQUESTED event for each s2s bidRequest
           uniqueServerRequests.forEach(bidRequest => {
             // add the new sourceTid
-            events.emit(CONSTANTS.EVENTS.BID_REQUESTED, {...bidRequest, tid: bidRequest.auctionId});
+            events.emit(EVENTS.BID_REQUESTED, { ...bidRequest, tid: bidRequest.auctionId });
           });
 
           // make bid requests
@@ -454,7 +464,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
     const adapter = _bidderRegistry[bidderRequest.bidderCode];
     config.runWithBidder(bidderRequest.bidderCode, () => {
       logMessage(`CALLING BIDDER`);
-      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, bidderRequest);
+      events.emit(EVENTS.BID_REQUESTED, bidderRequest);
     });
     let ajax = ajaxBuilder(requestBidsTimeout, requestCallbacks ? {
       request: requestCallbacks.request.bind(null, bidderRequest.bidderCode),
@@ -630,7 +640,7 @@ function invokeBidderMethod(bidder, method, spec, fn, ...params) {
 }
 
 function tryCallBidderMethod(bidder, method, param) {
-  if (param?.src !== CONSTANTS.S2S.SRC) {
+  if (param?.src !== S2S.SRC) {
     const target = getBidderMethod(bidder, method);
     if (target != null) {
       invokeBidderMethod(bidder, method, ...target, param);
@@ -655,7 +665,7 @@ adapterManager.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeou
 adapterManager.callBidWonBidder = function(bidder, bid, adUnits) {
   // Adding user configured params to bidWon event data
   bid.params = getUserConfiguredParams(adUnits, bid.adUnitCode, bid.bidder);
-  adunitCounter.incrementBidderWinsCounter(bid.adUnitCode, bid.bidder);
+  incrementBidderWinsCounter(bid.adUnitCode, bid.bidder);
   tryCallBidderMethod(bidder, 'onBidWon', bid);
 };
 

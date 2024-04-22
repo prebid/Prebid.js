@@ -1,13 +1,13 @@
 import { expect } from 'chai';
 import medianetAnalytics from 'modules/medianetAnalyticsAdapter.js';
 import * as utils from 'src/utils.js';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 import * as events from 'src/events.js';
 import {clearEvents} from 'src/events.js';
 
 const {
-  EVENTS: { AUCTION_INIT, BID_REQUESTED, BID_RESPONSE, NO_BID, BID_TIMEOUT, AUCTION_END, SET_TARGETING, BID_WON }
-} = CONSTANTS;
+  AUCTION_INIT, BID_REQUESTED, BID_RESPONSE, NO_BID, BID_TIMEOUT, AUCTION_END, SET_TARGETING, BID_WON
+} = EVENTS;
 
 const ERROR_WINNING_BID_ABSENT = 'winning_bid_absent';
 
