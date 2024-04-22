@@ -15,16 +15,18 @@ config.getConfig('paapi', (cfg) => {
 });
 
 function getBaseAuctionConfig() {
-  return Object.assign({
-    resolveToConfig: false
-  }, moduleConfig.auctionConfig);
+  if (moduleConfig?.auctionConfig) {
+    return Object.assign({
+      resolveToConfig: false
+    }, moduleConfig.auctionConfig);
+  }
 }
 
 function onAuctionConfig(auctionId, auctionConfigs) {
-  if (moduleConfig) {
-    const base = getBaseAuctionConfig();
+  const base = getBaseAuctionConfig();
+  if (base) {
     Object.values(auctionConfigs).forEach(auctionConfig => {
-      mergeDeep(auctionConfig, base, auctionConfig);
+      mergeDeep(auctionConfig, base);
     });
   }
 }

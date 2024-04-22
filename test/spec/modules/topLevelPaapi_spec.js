@@ -100,6 +100,15 @@ describe('topLevelPaapi', () => {
       sinon.assert.match(getPAAPIConfig().au, auctionConfig);
     });
 
+    it('should not choke if auction config is not defined', () => {
+      const cfg = config.getConfig('paapi');
+      delete cfg.topLevelSeller.auctionConfig;
+      config.setConfig(cfg);
+      addPaapiConfig('au', paapiConfig);
+      endAuctions();
+      expect(getPAAPIConfig().au.componentAuctions).to.exist;
+    })
+
     it('should default resolveToConfig: false', () => {
       addPaapiConfig('au', paapiConfig);
       endAuctions();
