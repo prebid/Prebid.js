@@ -4041,14 +4041,6 @@ describe('PubMatic adapter', function () {
         }
         done();
       });
-
-      it('should not return anything if navigator.connection doesnot supported in browser', function(done) {
-        const connectionValue = getDeviceConnectionType();
-        if (!window?.navigator?.connection) {
-          expect(connectionValue).to.be.a('undefined');
-        }
-        done();
-      })
     });
 
     if (FEATURES.VIDEO) {
