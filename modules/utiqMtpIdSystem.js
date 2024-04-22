@@ -20,7 +20,7 @@ export const storage = getStorageManager({
 /**
  * Get the "mtid" from html5 local storage to make it available to the UserId module.
  * @param config
- * @returns {{utiq-mtp: (*|string)}}
+ * @returns {{utiqMtp: (*|string)}}
  */
 function getUtiqFromStorage() {
   let utiqPass;
