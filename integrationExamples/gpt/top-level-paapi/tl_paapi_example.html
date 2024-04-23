@@ -31,15 +31,11 @@
                 },
                 bids: [
                     {
-                        bidder: 'openx',
+                        bidder: 'optable',
                         params: {
-                            unit: '538703464',
-                            response_template_name: 'test_banner_ad',
-                            test: true,
-                            delDomain: 'sademo-d.openx.net'
-                        }
+                            site: 'daa30ba1-5613-4a2c-b7f0-34e2c033202a'
+                        },
                     },
-
                 ],
             }
             ]
@@ -68,43 +64,6 @@
                             decisionLogicURL: new URL('decisionLogic.js', window.location).toString(),
                         }
                     }
-                },
-                debugging: {
-                    enabled: true,
-                    intercept: [
-                        {
-                            when: {
-                                bidder: 'openx',
-                            },
-                            then: {
-                                cpm: 0.1
-                            },
-                            paapi() {
-                                return [
-                                    {
-                                        'seller': 'https://privacysandbox.openx.net',
-                                        'decisionLogicURL': 'https://privacysandbox.openx.net/fledge/decision-logic-component.js',
-                                        'sellerSignals': {
-                                            'floor': 0.01,
-                                            'currency': 'USD',
-                                            'auctionTimestamp': new Date().getTime(),
-                                            'publisherId': '537143056',
-                                            'adUnitId': '538703464'
-                                        },
-                                        'interestGroupBuyers': [
-                                            'https://privacysandbox.openx.net'
-                                        ],
-                                        'perBuyerSignals': {
-                                            'https://privacysandbox.openx.net': {
-                                                'bid': 1.5
-                                            }
-                                        },
-                                        'sellerCurrency': 'USD'
-                                    }
-                                ];
-                            }
-                        }
-                    ]
                 },
             });
 
@@ -183,7 +142,7 @@
 <p>Chrome flags:</p>
 <code>--enable-features=CookieDeprecationFacilitatedTesting:label/treatment_1.2/force_eligible/true
     --privacy-sandbox-enrollment-overrides=https://localhost:9999</code>
-<p>Join interest group at <a href="https://privacysandbox.openx.net/fledge/advertiser">https://privacysandbox.openx.net/fledge/advertiser</a>
+<p>Join interest group at <a href="https://www.optable.co/">https://www.optable.co/</a>
 </p>
 <h5>Div-1</h5>
 
