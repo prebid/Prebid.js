@@ -7,8 +7,17 @@ import {
 import {config} from 'src/config.js';
 import {EVENTS} from 'src/constants.js';
 import * as events from 'src/events.js';
-import {getPAAPIBids, topLevelPAAPI} from '/modules/topLevelPaapi.js';
+import {
+  getPaapiAdId,
+  getPAAPIBids,
+  getRenderingDataHook, markWinningBidHook,
+  parsePaapiAdId,
+  parsePaapiSize,
+  topLevelPAAPI
+} from '/modules/topLevelPaapi.js';
 import {auctionManager} from '../../../src/auctionManager.js';
+import {expect} from 'chai/index.js';
+import {getBidToRender} from '../../../src/adRendering.js';
 
 describe('topLevelPaapi', () => {
   let sandbox, paapiConfig, next, auctionId, auctions;
@@ -107,7 +116,7 @@ describe('topLevelPaapi', () => {
       addPaapiConfig('au', paapiConfig);
       endAuctions();
       expect(getPAAPIConfig().au.componentAuctions).to.exist;
-    })
+    });
 
     it('should default resolveToConfig: false', () => {
       addPaapiConfig('au', paapiConfig);
@@ -119,13 +128,15 @@ describe('topLevelPaapi', () => {
       Object.entries({
         'a string URN': {
           pack: (val) => val,
-          unpack: (urn) => ({urn})
+          unpack: (urn) => ({urn}),
+          canRender: true,
         },
         'a frameConfig object': {
           pack: (val) => ({val}),
-          unpack: (val) => ({frameConfig: {val}})
+          unpack: (val) => ({frameConfig: {val}}),
+          canRender: false
         }
-      }).forEach(([t, {pack, unpack}]) => {
+      }).forEach(([t, {pack, unpack, canRender}]) => {
         describe(`when runAdAuction returns ${t}`, () => {
           let raa;
           beforeEach(() => {
@@ -143,8 +154,10 @@ describe('topLevelPaapi', () => {
             expect(Object.keys(actual)).to.eql(Object.keys(expected));
             Object.entries(expected).forEach(([au, val]) => {
               sinon.assert.match(actual[au], val == null ? val : {
+                adId: sinon.match(val => parsePaapiAdId(val)[1] === au),
                 width: 123,
                 height: 321,
+                source: 'paapi',
                 ...unpack(val)
               });
             });
@@ -226,9 +239,9 @@ describe('topLevelPaapi', () => {
                     adUnitCode: 'au',
                     auctionId: 'auct',
                     error: sinon.match({message: 'message'})
-                  })
-                })
-              })
+                  });
+                });
+              });
             });
           });
 
@@ -277,6 +290,20 @@ describe('topLevelPaapi', () => {
               });
             });
           });
+
+          it('should hook into getBidToRender', () => {
+            addPaapiConfig('au', paapiConfig, 'auct');
+            endAuctions();
+            return getBids({adUnitCode: 'au', auctionId}).then(res => {
+              return getBidToRender(res.au.adId).then(bidToRender => [res.au, bidToRender])
+            }).then(([paapiBid, bidToRender]) => {
+              if (canRender) {
+                expect(bidToRender).to.eql(paapiBid)
+              } else {
+                expect(bidToRender).to.not.exist;
+              }
+            })
+          })
         });
       });
     });
@@ -287,6 +314,80 @@ describe('topLevelPaapi', () => {
       addPaapiConfig('au', paapiConfig);
       endAuctions();
       expect(getPAAPIConfig().au.seller).to.not.exist;
+    });
+  });
+
+  describe('paapi adId', () => {
+    [
+      ['auctionId', 'adUnitCode'],
+      ['auction:id', 'adUnit:code'],
+      ['auction:uid', 'ad:unit']
+    ].forEach(([auctionId, adUnitCode]) => {
+      it(`can encode and decode ${auctionId}, ${adUnitCode}`, () => {
+        expect(parsePaapiAdId(getPaapiAdId(auctionId, adUnitCode))).to.eql([auctionId, adUnitCode]);
+      });
+    });
+
+    [undefined, null, 'not-a-paapi-ad', 'paapi:/malformed'].forEach(adId => {
+      it(`returns null for adId ${adId}`, () => {
+        expect(parsePaapiAdId(adId)).to.not.exist;
+      });
+    });
+  });
+
+  describe('parsePaapiSize', () => {
+    [
+      [null, null],
+      [undefined, null],
+      [123, 123],
+      ['123', 123],
+      ['123px', 123],
+      ['1sw', null],
+      ['garbage', null]
+    ].forEach(([input, expected]) => {
+      it(`can parse ${input} => ${expected}`, () => {
+        expect(parsePaapiSize(input)).to.eql(expected);
+      });
+    });
+  });
+
+  describe('rendering hooks', () => {
+    let next;
+    beforeEach(() => {
+      next = sinon.stub()
+      next.bail = sinon.stub()
+    });
+    describe('getRenderingDataHook', () => {
+      it('intercepts paapi bids', () => {
+        getRenderingDataHook(next, {
+          source: 'paapi',
+          width: 123,
+          height: null,
+          urn: 'url'
+        });
+        sinon.assert.calledWith(next.bail, {
+          width: 123,
+          height: null,
+          adUrl: 'url'
+        });
+      });
+      it('does not touch non-paapi bids', () => {
+        getRenderingDataHook(next, {bid: 'data'}, {other: 'options'});
+        sinon.assert.calledWith(next, {bid: 'data'}, {other: 'options'});
+      });
+    });
+
+    describe('markWinnigBidsHook', () => {
+      it('stops paapi bids', () => {
+        markWinningBidHook(next, {source: 'paapi'});
+        sinon.assert.notCalled(next);
+        sinon.assert.called(next.bail);
+      });
+      it('ignores non-paapi bids', () => {
+        markWinningBidHook(next, {other: 'bid'});
+        sinon.assert.calledWith(next, {other: 'bid'});
+        sinon.assert.notCalled(next.bail);
+      });
     });
   });
 });

@@ -79,27 +79,19 @@
                 let contextual = false;
                 Object.entries(bids).forEach(([adUnitCode, bid]) => {
                     const container = document.getElementById(adUnitCode);
-                    const paapiDiv = container.querySelector('.paapi');
+                    const paapiFrame = container.querySelector('.paapi');
                     const gamDiv = container.querySelector('.gam');
                     if (bid) {
                         // if we have a paapi winner, hide the GAM slot
-                        // and insert a paapi iframe
-                        const iframe = document.createElement('iframe');
-                        Object.assign(iframe, {
-                            src: bid.urn,
-                            frameBorder: 0,
-                            scrolling: 'no',
-                            width: bid.width,
-                            height: bid.height,
-                        });
-                        paapiDiv.innerHTML = '';
-                        paapiDiv.appendChild(iframe);
-                        paapiDiv.style.display = 'block'
+                        // render in the paapi iframe
+                        paapiFrame.contentDocument.body.innerHTML = '';
+                        pbjs.renderAd(paapiFrame.contentDocument, bid.adId);
+                        paapiFrame.style.display = 'block'
                         gamDiv.style.display = 'none';
                     } else {
                         // otherwise, hide the paapi iframe and show the ad slot
                         contextual = true;
-                        paapiDiv.style.display = 'none';
+                        paapiFrame.style.display = 'none';
                         gamDiv.style.display = 'block';
                     }
                 });
@@ -147,7 +139,7 @@
 <h5>Div-1</h5>
 
 <div id="div-1" style='min-width: 300px; min-height: 250px;'>
-    <div class="paapi"></div>
+    <iframe class="paapi" marginwidth="0" marginheight="0" scrolling="no" frameborder="0"></iframe>
     <div id='div-1-gam' class="gam">
         <script type='text/javascript'>
             googletag.cmd.push(function () {

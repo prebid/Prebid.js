@@ -17,12 +17,12 @@ export const getBidToRender = hook('sync', function (adId, override = GreedyProm
   return override
     .then(bid => bid ?? auctionManager.findBidByAdId(adId))
     .catch(() => {})
-}, 'getBidToRender')
+})
 
 export const markWinningBid = hook('sync', function (bid) {
   events.emit(BID_WON, bid);
   auctionManager.addWinningBid(bid);
-}, 'markWinningBid')
+})
 
 /**
  * Emit the AD_RENDER_FAILED event.

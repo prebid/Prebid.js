@@ -15,15 +15,16 @@ import {
   reset, getPAAPISize
 } from 'modules/paapi.js';
 import * as events from 'src/events.js';
-import { EVENTS } from 'src/constants.js';
+import {EVENTS} from 'src/constants.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
 import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {AuctionIndex} from '../../../src/auctionIndex.js';
+import {getPaapiAdId, parsePaapiAdId, parsePaapiSize} from '../../../modules/topLevelPaapi.js';
 
 describe('paapi module', () => {
   let sandbox;
-  before(reset)
+  before(reset);
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
   });
@@ -38,6 +39,7 @@ describe('paapi module', () => {
   ].forEach(configNS => {
     describe(`using ${configNS} for configuration`, () => {
       let getPAAPISizeStub;
+
       function getPAAPISizeHook(next, sizes) {
         next.bail(getPAAPISizeStub(sizes));
       }
@@ -51,7 +53,7 @@ describe('paapi module', () => {
       });
 
       beforeEach(() => {
-        getPAAPISizeStub = sinon.stub()
+        getPAAPISizeStub = sinon.stub();
       });
 
       describe('getPAAPIConfig', function () {
@@ -86,7 +88,7 @@ describe('paapi module', () => {
               cf2 = {...fledgeAuctionConfig, id: 2, seller: 'b2'};
               addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au1'}, cf1);
               addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au2'}, cf2);
-              events.emit(EVENTS.AUCTION_END, { auctionId, adUnitCodes: ['au1', 'au2', 'au3'] });
+              events.emit(EVENTS.AUCTION_END, {auctionId, adUnitCodes: ['au1', 'au2', 'au3']});
             });
 
             it('and make them available at end of auction', () => {
@@ -119,11 +121,11 @@ describe('paapi module', () => {
                 const cfg = getPAAPIConfig({}, true);
                 expect(Object.keys(cfg)).to.have.members(['au1', 'au2', 'au3']);
                 expect(cfg.au3).to.eql(null);
-              })
+              });
               it('includes the targeted adUnit', () => {
                 expect(getPAAPIConfig({adUnitCode: 'au3'}, true)).to.eql({
                   au3: null
-                })
+                });
               });
               it('includes the targeted auction', () => {
                 const cfg = getPAAPIConfig({auctionId}, true);
@@ -135,14 +137,14 @@ describe('paapi module', () => {
               });
               it('does not include non-existing auctions', () => {
                 expect(getPAAPIConfig({auctionId: 'other'})).to.eql({});
-              })
+              });
             });
           });
 
           it('should drop auction configs after end of auction', () => {
-            events.emit(EVENTS.AUCTION_END, { auctionId });
+            events.emit(EVENTS.AUCTION_END, {auctionId});
             addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au'}, fledgeAuctionConfig);
-            events.emit(EVENTS.AUCTION_END, { auctionId });
+            events.emit(EVENTS.AUCTION_END, {auctionId});
             expect(getPAAPIConfig({auctionId})).to.eql({});
           });
 
@@ -153,7 +155,7 @@ describe('paapi module', () => {
               ortb2: {fpd: 1},
               ortb2Imp: {fpd: 2}
             }, fledgeAuctionConfig);
-            events.emit(EVENTS.AUCTION_END, { auctionId });
+            events.emit(EVENTS.AUCTION_END, {auctionId});
             sinon.assert.match(getPAAPIConfig({auctionId}), {
               au1: {
                 componentAuctions: [{
@@ -182,19 +184,19 @@ describe('paapi module', () => {
             describe('onAuctionConfig', () => {
               const auctionId = 'aid';
               it('is invoked with null configs when there\'s no config', () => {
-                events.emit(EVENTS.AUCTION_END, { auctionId, adUnitCodes: ['au'] });
+                events.emit(EVENTS.AUCTION_END, {auctionId, adUnitCodes: ['au']});
                 submods.forEach(submod => sinon.assert.calledWith(submod.onAuctionConfig, auctionId, {au: null}));
               });
               it('is invoked with relevant configs', () => {
                 addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au1'}, fledgeAuctionConfig);
                 addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au2'}, fledgeAuctionConfig);
-                events.emit(EVENTS.AUCTION_END, { auctionId, adUnitCodes: ['au1', 'au2', 'au3'] });
+                events.emit(EVENTS.AUCTION_END, {auctionId, adUnitCodes: ['au1', 'au2', 'au3']});
                 submods.forEach(submod => {
                   sinon.assert.calledWith(submod.onAuctionConfig, auctionId, {
                     au1: {componentAuctions: [fledgeAuctionConfig]},
                     au2: {componentAuctions: [fledgeAuctionConfig]},
                     au3: null
-                  })
+                  });
                 });
               });
               it('removes configs from getPAAPIConfig if the module calls markAsUsed', () => {
@@ -202,14 +204,14 @@ describe('paapi module', () => {
                   markAsUsed('au1');
                 });
                 addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au1'}, fledgeAuctionConfig);
-                events.emit(EVENTS.AUCTION_END, { auctionId, adUnitCodes: ['au1'] });
+                events.emit(EVENTS.AUCTION_END, {auctionId, adUnitCodes: ['au1']});
                 expect(getPAAPIConfig()).to.eql({});
               });
               it('keeps them available if they do not', () => {
                 addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: 'au1'}, fledgeAuctionConfig);
-                events.emit(EVENTS.AUCTION_END, { auctionId, adUnitCodes: ['au1'] });
+                events.emit(EVENTS.AUCTION_END, {auctionId, adUnitCodes: ['au1']});
                 expect(getPAAPIConfig()).to.not.be.empty;
-              })
+              });
             });
           });
 
@@ -329,13 +331,15 @@ describe('paapi module', () => {
             beforeEach(() => {
               adUnit = {
                 code: 'au',
-              }
-            })
+              };
+            });
+
             function getConfig() {
               addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode: adUnit.code}, fledgeAuctionConfig);
-              events.emit(EVENTS.AUCTION_END, {auctionId, adUnitCodes: [adUnit.code], adUnits: [adUnit]})
+              events.emit(EVENTS.AUCTION_END, {auctionId, adUnitCodes: [adUnit.code], adUnits: [adUnit]});
               return getPAAPIConfig()[adUnit.code];
             }
+
             Object.entries({
               'adUnit.ortb2Imp.ext.paapi.requestedSize'() {
                 adUnit.ortb2Imp = {
@@ -347,7 +351,7 @@ describe('paapi module', () => {
                       }
                     }
                   }
-                }
+                };
               },
               'largest size'() {
                 getPAAPISizeStub.returns([123, 321]);
@@ -361,7 +365,7 @@ describe('paapi module', () => {
                   expect(getConfig().componentAuctions[0].requestedSize).to.eql({
                     width: '1px',
                     height: '2px'
-                  })
+                  });
                 });
 
                 it('on component auction, if missing', () => {
@@ -375,8 +379,8 @@ describe('paapi module', () => {
                   expect(getConfig().requestedSize).to.eql({
                     width: 123,
                     height: 321,
-                  })
-                })
+                  });
+                });
               });
             });
           });
@@ -415,7 +419,7 @@ describe('paapi module', () => {
                 configs[auctionId][adUnitCode] = cfg;
                 addComponentAuctionHook(nextFnSpy, {auctionId, adUnitCode}, cfg);
               });
-              events.emit(EVENTS.AUCTION_END, { auctionId, adUnitCodes: adUnitCodes.concat(noConfigAdUnitCodes) });
+              events.emit(EVENTS.AUCTION_END, {auctionId, adUnitCodes: adUnitCodes.concat(noConfigAdUnitCodes)});
             });
           });
 
@@ -483,9 +487,9 @@ describe('paapi module', () => {
                   } else {
                     expect(cfg[au]).to.be.null;
                   }
-                })
-              })
-            })
+                });
+              });
+            });
           });
         });
       });
@@ -526,7 +530,7 @@ describe('paapi module', () => {
               },
             ]
           }];
-        })
+        });
 
         afterEach(function () {
           config.resetConfig();
@@ -623,7 +627,7 @@ describe('paapi module', () => {
                   width: 123,
                   height: 321
                 }
-              })
+              });
             });
           });
 
@@ -637,14 +641,14 @@ describe('paapi module', () => {
                   }
                 }
               }
-            }
+            };
             Object.values(mark()).flatMap(b => b.bids).forEach(bidRequest => {
               sinon.assert.match(bidRequest.ortb2Imp.ext.paapi, {
                 requestedSize: {
                   width: '123px',
                   height: '321px'
                 }
-              })
+              });
             });
             sinon.assert.notCalled(getPAAPISizeStub);
           });
@@ -657,7 +661,7 @@ describe('paapi module', () => {
               expect(bidRequest.ortb2Imp?.ext?.paapi?.requestedSize).to.not.exist;
             });
           });
-        })
+        });
       });
     });
   });
@@ -687,8 +691,8 @@ describe('paapi module', () => {
     }).forEach(([t, {in: input, out}]) => {
       it(t, () => {
         expect(getPAAPISize(input)).to.eql(out);
-      })
-    })
+      });
+    });
   });
 
   describe('ortb processors for fledge', () => {
