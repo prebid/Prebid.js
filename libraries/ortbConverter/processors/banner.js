@@ -1,4 +1,4 @@
-import {createTrackPixelHtml, deepAccess, inIframe, mergeDeep} from '../../../src/utils.js';
+import {createTrackPixelHtml, deepAccess, encodeMacroURI, inIframe, mergeDeep} from '../../../src/utils.js';
 import {BANNER} from '../../../src/mediaTypes.js';
 import {sizesToFormat} from '../lib/sizes.js';
 
@@ -24,7 +24,7 @@ export function fillBannerImp(imp, bidRequest, context) {
   }
 }
 
-export function bannerResponseProcessor({createPixel = (url) => createTrackPixelHtml(decodeURIComponent(url))} = {}) {
+export function bannerResponseProcessor({createPixel = (url) => createTrackPixelHtml(decodeURIComponent(url), encodeMacroURI)} = {}) {
   return function fillBannerResponse(bidResponse, bid) {
     if (bidResponse.mediaType === BANNER) {
       if (bid.adm && bid.nurl) {
