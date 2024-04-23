@@ -1,10 +1,51 @@
-import {deepAccess, logError} from './utils.js';
+import {deepAccess, isArrayOfNums, isInteger, isNumber, isStr, logError, logWarn} from './utils.js';
 import {config} from '../src/config.js';
 import {hook} from './hook.js';
 import {auctionManager} from './auctionManager.js';
 
 export const OUTSTREAM = 'outstream';
 export const INSTREAM = 'instream';
+
+/**
+ * Basic validation of OpenRTB 2.x video object properties.
+ * Not included: `companionad`, `durfloors`, `ext`
+ * reference: https://github.com/InteractiveAdvertisingBureau/openrtb2.x/blob/main/2.6.md
+ */
+export const ORTB_VIDEO_PARAMS = new Map([
+  [ 'mimes', { validate: (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string') } ],
+  [ 'minduration', { validate: (value) => isInteger(value) } ],
+  [ 'maxduration', { validate: (value) => isInteger(value) } ],
+  [ 'startdelay', { validate: (value) => isInteger(value) } ],
+  [ 'maxseq', { validate: (value) => isInteger(value) } ],
+  [ 'poddur', { validate: (value) => isInteger(value) } ],
+  [ 'protocols', { validate: (value) => isArrayOfNums(value) } ],
+  [ 'w', { validate: (value) => isInteger(value) } ],
+  [ 'h', { validate: (value) => isInteger(value) } ],
+  [ 'podid', { validate: (value) => isStr(value) } ],
+  [ 'podseq', { validate: (value) => isInteger(value) } ],
+  [ 'rqddurs', { validate: (value) => isArrayOfNums(value) } ],
+  [ 'placement', { validate: (value) => isInteger(value) } ], // deprecated, see plcmt
+  [ 'plcmt', { validate: (value) => isInteger(value) } ],
+  [ 'linearity', { validate: (value) => isInteger(value) } ],
+  [ 'skip', { validate: (value) => [1, 0].includes(value) } ],
+  [ 'skipmin', { validate: (value) => isInteger(value) } ],
+  [ 'skipafter', { validate: (value) => isInteger(value) } ],
+  [ 'sequence', { validate: (value) => isInteger(value) } ], // deprecated
+  [ 'slotinpod', { validate: (value) => isInteger(value) } ],
+  [ 'mincpmpersec', { validate: (value) => isNumber(value) } ],
+  [ 'battr', { validate: (value) => isArrayOfNums(value) } ],
+  [ 'maxextended', { validate: (value) => isInteger(value) } ],
+  [ 'minbitrate', { validate: (value) => isInteger(value) } ],
+  [ 'maxbitrate', { validate: (value) => isInteger(value) } ],
+  [ 'boxingallowed', { validate: (value) => isInteger(value) } ],
+  [ 'playbackmethod', { validate: (value) => isArrayOfNums(value) } ],
+  [ 'playbackend', { validate: (value) => isInteger(value) } ],
+  [ 'delivery', { validate: (value) => isArrayOfNums(value) } ],
+  [ 'pos', { validate: (value) => isInteger(value) } ],
+  [ 'api', { validate: (value) => isArrayOfNums(value) } ],
+  [ 'companiontype', { validate: (value) => isArrayOfNums(value) } ],
+  [ 'poddedupe', { validate: (value) => isArrayOfNums(value) } ],
+]);
 
 export function fillVideoDefaults(adUnit) {
   const video = adUnit?.mediaTypes?.video;
@@ -14,6 +55,28 @@ export function fillVideoDefaults(adUnit) {
     } else if (video.context !== OUTSTREAM && [2, 6].includes(video.playbackmethod)) {
       video.plcmt = 2;
     }
+  }
+}
+
+/**
+ * validateOrtbVideoFields mutates the `videoParams` object by removing invalid ortb properties.
+ * Other properties are ignored and kept as is.
+ *
+ * @param {object} videoParams
+ * @returns {void}
+ */
+export function validateOrtbVideoFields(videoParams) {
+  if (videoParams != null) {
+    Object.entries(videoParams)
+      .forEach(([key, value]) => {
+        if (ORTB_VIDEO_PARAMS.has(key)) {
+          const valid = ORTB_VIDEO_PARAMS.get(key).validate(value);
+          if (!valid) {
+            delete videoParams[key];
+            logWarn(`Invalid value for mediaTypes.video.${key} ORTB property. The property has been removed.`);
+          }
+        }
+      });
   }
 }
 

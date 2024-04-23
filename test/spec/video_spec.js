@@ -1,4 +1,4 @@
-import {fillVideoDefaults, isValidVideoBid} from 'src/video.js';
+import {fillVideoDefaults, isValidVideoBid, validateOrtbVideoFields} from 'src/video.js';
 import {hook} from '../../src/hook.js';
 import {stubAuctionIndex} from '../helpers/indexStub.js';
 
@@ -75,6 +75,64 @@ describe('video.js', function () {
         })
       })
     })
+  })
+
+  describe('validateOrtbVideoFields', () => {
+    function validate(videoMediaType = {}) {
+      const adUnit = {
+        mediaTypes: { video: videoMediaType }
+      };
+      const video = adUnit.mediaTypes.video;
+      validateOrtbVideoFields(video);
+      return adUnit.mediaTypes.video;
+    }
+
+    it('remove incorrect ortb properties, and keep non ortb ones', () => {
+      const mt = {
+        content: 'outstream',
+
+        mimes: ['video/mp4'],
+        minduration: 5,
+        maxduration: 15,
+        startdelay: 0,
+        maxseq: 0,
+        poddur: 0,
+        protocols: [7],
+        w: 600,
+        h: 480,
+        podid: 'an-id',
+        podseq: 0,
+        rqddurs: [5],
+        placement: 1,
+        plcmt: 1,
+        linearity: 1,
+        skip: 0,
+        skipmin: 3,
+        skipafter: 3,
+        sequence: 0,
+        slotinpod: 0,
+        mincpmpersec: 2.5,
+        battr: [6, 7],
+        maxextended: 0,
+        minbitrate: 800,
+        maxbitrate: 1000,
+        boxingallowed: 1,
+        playbackmethod: [1],
+        playbackend: 1,
+        delivery: [2],
+        pos: 0,
+        api: 6, // -- INVALID
+        companiontype: [1, 2, 3],
+        poddedupe: [1],
+
+        otherOne: 'test',
+      };
+
+      const expected = {...mt};
+      delete expected.api;
+
+      expect(validate(mt)).to.eql(expected)
+    });
   })
 
   describe('isValidVideoBid', () => {
