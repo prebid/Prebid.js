@@ -493,7 +493,7 @@ describe('33acrossIdSystem', () => {
     });
 
     context('when a first-party ID is present in local storage', () => {
-      it('should call endpoint with the first-party ID included', () => {
+      it('should call endpoint with the encoded first-party ID included', () => {
         const completeCallback = () => {};
         const { callback } = thirthyThreeAcrossIdSubmodule.getId({
           params: {
@@ -506,13 +506,13 @@ describe('33acrossIdSystem', () => {
 
         sinon.stub(storage, 'getDataFromLocalStorage')
           .withArgs('33acrossIdFp')
-          .returns('33acrossIdFpValue');
+          .returns('33acrossIdFpValue+');
 
         callback(completeCallback);
 
         const [request] = server.requests;
 
-        expect(request.url).to.contain('fp=33acrossIdFpValue');
+        expect(request.url).to.contain('fp=33acrossIdFpValue%2B');
 
         storage.getDataFromLocalStorage.restore();
       });

@@ -1,7 +1,7 @@
 import {ajax} from '../src/ajax.js';
 import { generateUUID, logInfo, logWarn } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
@@ -11,7 +11,7 @@ const URL = 'https://wba.liadm.com/analytic-events';
 const GVL_ID = 148;
 const ADAPTER_CODE = 'liveintent';
 const DEFAULT_BID_WON_TIMEOUT = 2000;
-const { EVENTS: { AUCTION_END } } = CONSTANTS;
+const { AUCTION_END } = EVENTS;
 let bidWonTimeout;
 
 function handleAuctionEnd(args) {
