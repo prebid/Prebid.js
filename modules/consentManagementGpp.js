@@ -425,7 +425,7 @@ function processCmpData(consentData) {
   }
   if (
     (consentData?.parsedSections != null && isPlainObject(consentData.parsedSections.usnatv1)) ||
-    (consentData?.parsedSections != null && !isPlainObject(consentData.parsedSections.uscav1))
+    (consentData?.parsedSections != null && isPlainObject(consentData.parsedSections.uscav1))
   ) {
     throw new GPPError('CMP returned invalid section during lookup process.', consentData);
   } 
