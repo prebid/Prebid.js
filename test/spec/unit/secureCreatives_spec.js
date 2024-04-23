@@ -14,9 +14,21 @@ import 'modules/nativeRendering.js';
 import {expect} from 'chai';
 
 import {AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS} from 'src/constants.js';
+import {getBidToRender} from '../../../src/adRendering.js';
 
 describe('secureCreatives', () => {
   let sandbox;
+
+  function getBidToRenderHook(next, adId) {
+    // make sure that bids can be retrieved asynchronously
+    next(adId, new Promise((resolve) => setTimeout(resolve)))
+  }
+  before(() => {
+    getBidToRender.before(getBidToRenderHook);
+  });
+  after(() => {
+    getBidToRender.getHooks({hook: getBidToRenderHook}).remove()
+  });
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
@@ -31,8 +43,7 @@ describe('secureCreatives', () => {
   }
 
   function receive(ev) {
-    // make sure that bids can be retrieved asynchronously (from getBidToRender)
-    return Promise.resolve().then(() => receiveMessage(ev));
+    return Promise.resolve(receiveMessage(ev));
   }
 
   describe('getReplier', () => {

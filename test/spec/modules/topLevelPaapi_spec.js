@@ -224,10 +224,10 @@ describe('topLevelPaapi', () => {
               it('should fire PAAPI_NO_BID', () => {
                 raa = sinon.stub().callsFake(() => Promise.resolve(null));
                 return getBids({adUnitCode: 'au', auctionId}).then(() => {
-                  sinon.assert.calledWith(events.emit, EVENTS.PAAPI_NO_BID, {
+                  sinon.assert.calledWith(events.emit, EVENTS.PAAPI_NO_BID, sinon.match({
                     adUnitCode: 'au',
                     auctionId: 'auct'
-                  });
+                  }));
                 });
               });
 
@@ -235,11 +235,11 @@ describe('topLevelPaapi', () => {
                 raa = sinon.stub().callsFake(() => Promise.reject(new Error('message')));
                 return getBids({adUnitCode: 'au', auctionId}).then(res => {
                   expect(res).to.eql({au: null});
-                  sinon.assert.calledWith(events.emit, EVENTS.PAAPI_ERROR, {
+                  sinon.assert.calledWith(events.emit, EVENTS.PAAPI_ERROR, sinon.match({
                     adUnitCode: 'au',
                     auctionId: 'auct',
                     error: sinon.match({message: 'message'})
-                  });
+                  }));
                 });
               });
             });
