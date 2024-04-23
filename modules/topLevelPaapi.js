@@ -145,12 +145,12 @@ export function getPAAPIBids(filters, raa = (...args) => navigator.runAdAuction(
                 emit(EVENTS.PAAPI_BID, bid);
                 return bid;
               } else {
-                emit(EVENTS.PAAPI_NO_BID, {auctionId, adUnitCode});
+                emit(EVENTS.PAAPI_NO_BID, {auctionId, adUnitCode, auctionConfig});
                 return null;
               }
             }).catch(error => {
               logError(MODULE_NAME, `error (auction "${auctionId}", adUnit "${adUnitCode}"):`, error)
-              emit(EVENTS.PAAPI_ERROR, {auctionId, adUnitCode, error})
+              emit(EVENTS.PAAPI_ERROR, {auctionId, adUnitCode, error, auctionConfig})
               return null;
             })
           }
