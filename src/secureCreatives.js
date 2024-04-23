@@ -3,18 +3,14 @@
    access to a publisher page from creative payloads.
  */
 
-import * as events from './events.js';
 import {getAllAssetsMessage, getAssetMessage} from './native.js';
-import { BID_STATUS, EVENTS, MESSAGES } from './constants.js';
+import {BID_STATUS, MESSAGES} from './constants.js';
 import {isApnGetTagDefined, isGptPubadsDefined, logError, logWarn} from './utils.js';
-import {auctionManager} from './auctionManager.js';
 import {find, includes} from './polyfill.js';
-import {handleCreativeEvent, handleNativeMessage, handleRender} from './adRendering.js';
+import {getBidToRender, handleCreativeEvent, handleNativeMessage, handleRender, markWinningBid} from './adRendering.js';
 import {getCreativeRendererSource} from './creativeRenderers.js';
 
 const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
-
-const BID_WON = EVENTS.BID_WON;
 
 const HANDLER_MAP = {
   [REQUEST]: handleRenderRequest,
@@ -28,7 +24,9 @@ if (FEATURES.NATIVE) {
 }
 
 export function listenMessagesFromCreative() {
-  window.addEventListener('message', receiveMessage, false);
+  window.addEventListener('message', function (ev) {
+    receiveMessage(ev);
+  }, false);
 }
 
 export function getReplier(ev) {
@@ -58,13 +56,10 @@ export function receiveMessage(ev) {
     return;
   }
 
-  if (data && data.adId && data.message) {
-    const adObject = find(auctionManager.getBidsReceived(), function (bid) {
-      return bid.adId === data.adId;
-    });
-    if (HANDLER_MAP.hasOwnProperty(data.message)) {
+  if (data && data.adId && data.message && HANDLER_MAP.hasOwnProperty(data.message)) {
+    return getBidToRender(data.adId).then(adObject => {
       HANDLER_MAP[data.message](getReplier(ev), data, adObject);
-    }
+    })
   }
 }
 
@@ -100,8 +95,7 @@ function handleNativeRequest(reply, data, adObject) {
   }
 
   if (adObject.status !== BID_STATUS.RENDERED) {
-    auctionManager.addWinningBid(adObject);
-    events.emit(BID_WON, adObject);
+    markWinningBid(adObject);
   }
 
   switch (data.action) {

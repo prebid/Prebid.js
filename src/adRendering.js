@@ -8,9 +8,21 @@ import {auctionManager} from './auctionManager.js';
 import {getCreativeRenderer} from './creativeRenderers.js';
 import {hook} from './hook.js';
 import {fireNativeTrackers} from './native.js';
+import {GreedyPromise} from './utils/promise.js';
 
 const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON } = EVENTS;
 const { EXCEPTION } = AD_RENDER_FAILED_REASON;
+
+export const getBidToRender = hook('sync', function (adId, override = GreedyPromise.resolve()) {
+  return override
+    .then(bid => bid ?? auctionManager.findBidByAdId(adId))
+    .catch(() => undefined)
+}, 'getBidToRender')
+
+export const markWinningBid = hook('sync', function (bid) {
+  events.emit(BID_WON, bid);
+  auctionManager.addWinningBid(bid);
+}, 'markWinningBid')
 
 /**
  * Emit the AD_RENDER_FAILED event.
@@ -168,8 +180,7 @@ export function handleRender({renderFn, resizeFn, adId, options, bidResponse, do
       bid: bidResponse
     });
   }
-  auctionManager.addWinningBid(bidResponse);
-  events.emit(BID_WON, bidResponse);
+  markWinningBid(bidResponse);
 }
 
 export function renderAdDirect(doc, adId, options) {
