@@ -16,7 +16,7 @@ const { EXCEPTION } = AD_RENDER_FAILED_REASON;
 export const getBidToRender = hook('sync', function (adId, override = GreedyPromise.resolve()) {
   return override
     .then(bid => bid ?? auctionManager.findBidByAdId(adId))
-    .catch(() => undefined)
+    .catch(() => {})
 }, 'getBidToRender')
 
 export const markWinningBid = hook('sync', function (bid) {
@@ -222,12 +222,13 @@ export function renderAdDirect(doc, adId, options) {
     if (!adId || !doc) {
       fail(AD_RENDER_FAILED_REASON.MISSING_DOC_OR_ADID, `missing ${adId ? 'doc' : 'adId'}`);
     } else {
-      bid = auctionManager.findBidByAdId(adId);
-
       if ((doc === document && !inIframe())) {
         fail(AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT, `renderAd was prevented from writing to the main document.`);
       } else {
-        handleRender({renderFn, resizeFn, adId, options: {clickUrl: options?.clickThrough}, bidResponse: bid, doc});
+        getBidToRender(adId).then(bidResponse => {
+          bid = bidResponse;
+          handleRender({renderFn, resizeFn, adId, options: {clickUrl: options?.clickThrough}, bidResponse, doc});
+        });
       }
     }
   } catch (e) {

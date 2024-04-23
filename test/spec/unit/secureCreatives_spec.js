@@ -144,7 +144,6 @@ describe('secureCreatives', () => {
     });
 
     describe('Prebid Request', function() {
-
       it('should render', function () {
         pushBidResponseToAuction({
           renderer: {render: sinon.stub(), url: 'some url'}
@@ -170,7 +169,6 @@ describe('secureCreatives', () => {
 
           expect(adResponse).to.have.property('status', BID_STATUS.RENDERED);
         });
-
       });
 
       it('should allow stale rendering without config', function () {
