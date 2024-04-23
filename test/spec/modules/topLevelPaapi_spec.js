@@ -217,6 +217,18 @@ describe('topLevelPaapi', () => {
                   });
                 });
               });
+
+              it('should fire PAAPI_ERROR', () => {
+                raa = sinon.stub().callsFake(() => Promise.reject(new Error('message')));
+                return getBids({adUnitCode: 'au', auctionId}).then(res => {
+                  expect(res).to.eql({au: null});
+                  sinon.assert.calledWith(events.emit, EVENTS.PAAPI_ERROR, {
+                    adUnitCode: 'au',
+                    auctionId: 'auct',
+                    error: sinon.match({message: 'message'})
+                  })
+                })
+              })
             });
           });
 

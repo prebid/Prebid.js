@@ -1,6 +1,6 @@
 import {submodule} from '../src/hook.js';
 import {config} from '../src/config.js';
-import {mergeDeep} from '../src/utils.js';
+import {logError, mergeDeep} from '../src/utils.js';
 import {auctionStore} from '../libraries/weakStore/weakStore.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {emit} from '../src/events.js';
@@ -66,10 +66,14 @@ export function getPAAPIBids(filters, raa = (...args) => navigator.runAdAuction(
                 emit(EVENTS.PAAPI_NO_BID, {auctionId, adUnitCode});
                 return null;
               }
-            });
+            }).catch(error => {
+              logError(`topLevelPaapi error (auction "${auctionId}", adUnit "${adUnitCode}"):`, error)
+              emit(EVENTS.PAAPI_ERROR, {auctionId, adUnitCode, error})
+              return null;
+            }).then(res => [adUnitCode, res]);
           }
         }
-        return bids?.[adUnitCode] ? bids[adUnitCode].then(result => [adUnitCode, result]) : null;
+        return bids?.[adUnitCode]
       }).filter(e => e)
   ).then(result => Object.fromEntries(result));
 }
