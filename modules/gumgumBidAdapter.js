@@ -424,7 +424,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     }
     const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
     if (dsa) {
-      data.dsa = dsa
+      data.dsa = JSON.stringify(dsa)
     }
     if (coppa) {
       data.coppa = coppa;

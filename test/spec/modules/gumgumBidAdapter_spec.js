@@ -610,7 +610,7 @@ describe('gumgumAdapter', function () {
       // Call the buildRequests function to generate the bid request
       const [bidRequest] = spec.buildRequests(bidRequests, fakeBidRequest);
       // Assert that the DSA information in the bid request matches the provided ORTB2 data
-      expect(bidRequest.data.dsa).to.deep.equal(fakeBidRequest.ortb2.regs.ext.dsa);
+      expect(bidRequest.data.dsa).to.deep.equal(JSON.stringify(fakeBidRequest.ortb2.regs.ext.dsa));
     });
     it('should not set coppa parameter if coppa config is set to false', function () {
       config.setConfig({
