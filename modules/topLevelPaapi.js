@@ -42,10 +42,9 @@ function onAuctionConfig(auctionId, auctionConfigs) {
 export function getPAAPIBids(filters, raa = (...args) => navigator.runAdAuction(...args)) {
   return Promise.all(
     Object.entries(expandFilters(filters))
-      .map(([adUnitCode, auctionId]) => [adUnitCode, auctionId, paapiBids(auctionId)])
-      .filter(([_1, _2, bids]) => bids)
-      .map(([adUnitCode, auctionId, bids]) => {
-        if (!bids.hasOwnProperty(adUnitCode)) {
+      .map(([adUnitCode, auctionId]) => {
+        const bids = paapiBids(auctionId);
+        if (bids && !bids.hasOwnProperty(adUnitCode)) {
           const auctionConfig = getPAAPIConfig({adUnitCode, auctionId})[adUnitCode];
           if (auctionConfig) {
             emit(EVENTS.RUN_PAAPI_AUCTION, {
@@ -70,9 +69,9 @@ export function getPAAPIBids(filters, raa = (...args) => navigator.runAdAuction(
             });
           }
         }
-        return bids[adUnitCode] ? bids[adUnitCode].then(result => [adUnitCode, result]) : Promise.resolve();
-      })
-  ).then(result => Object.fromEntries(result.filter(r => r)));
+        return bids?.[adUnitCode] ? bids[adUnitCode].then(result => [adUnitCode, result]) : null;
+      }).filter(e => e)
+  ).then(result => Object.fromEntries(result));
 }
 
 getGlobal().getPAAPIBids = (filters) => getPAAPIBids(filters);
