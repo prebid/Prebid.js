@@ -16,7 +16,7 @@ import {
   triggerPixel,
   uniques,
 } from '../../src/utils.js';
-import CONSTANTS from '../../src/constants.json';
+import { EVENTS, REJECTION_REASON, S2S } from '../../src/constants.js';
 import adapterManager, {s2sActivityParams} from '../../src/adapterManager.js';
 import {config} from '../../src/config.js';
 import {addComponentAuction, isValid} from '../../src/adapters/bidderFactory.js';
@@ -33,7 +33,7 @@ import {ACTIVITY_TRANSMIT_UFPD} from '../../src/activities/activities.js';
 
 const getConfig = config.getConfig;
 
-const TYPE = CONSTANTS.S2S.SRC;
+const TYPE = S2S.SRC;
 let _syncCount = 0;
 let _s2sConfigs;
 
@@ -467,10 +467,10 @@ export function PrebidServer() {
       processPBSRequest(s2sBidRequest, bidRequests, ajax, {
         onResponse: function (isValid, requestedBidders, response) {
           if (isValid) {
-            bidRequests.forEach(bidderRequest => events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest));
+            bidRequests.forEach(bidderRequest => events.emit(EVENTS.BIDDER_DONE, bidderRequest));
           }
           if (shouldEmitNonbids(s2sBidRequest.s2sConfig, response)) {
-            events.emit(CONSTANTS.EVENTS.SEAT_NON_BID, {
+            events.emit(EVENTS.SEAT_NON_BID, {
               seatnonbid: response.ext.seatnonbid,
               auctionId: bidRequests[0].auctionId,
               requestedBidders,
@@ -483,7 +483,7 @@ export function PrebidServer() {
         },
         onError(msg, error) {
           logError(`Prebid server call failed: '${msg}'`, error);
-          bidRequests.forEach(bidderRequest => events.emit(CONSTANTS.EVENTS.BIDDER_ERROR, {error, bidderRequest}));
+          bidRequests.forEach(bidderRequest => events.emit(EVENTS.BIDDER_ERROR, { error, bidderRequest }));
           done(error.timedOut);
         },
         onBid: function ({adUnit, bid}) {
@@ -491,7 +491,7 @@ export function PrebidServer() {
           metrics.checkpoint('addBidResponse');
           if ((bid.requestId == null || bid.requestBidder == null) && !s2sBidRequest.s2sConfig.allowUnknownBidderCodes) {
             logWarn(`PBS adapter received bid from unknown bidder (${bid.bidder}), but 's2sConfig.allowUnknownBidderCodes' is not set. Ignoring bid.`);
-            addBidResponse.reject(adUnit, bid, CONSTANTS.REJECTION_REASON.BIDDER_DISALLOWED);
+            addBidResponse.reject(adUnit, bid, REJECTION_REASON.BIDDER_DISALLOWED);
           } else {
             if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnit, bid))) {
               addBidResponse(adUnit, bid);
@@ -499,7 +499,7 @@ export function PrebidServer() {
                 addWurl(bid.auctionId, bid.adId, bid.pbsWurl);
               }
             } else {
-              addBidResponse.reject(adUnit, bid, CONSTANTS.REJECTION_REASON.INVALID);
+              addBidResponse.reject(adUnit, bid, REJECTION_REASON.INVALID);
             }
           }
         },
@@ -511,7 +511,7 @@ export function PrebidServer() {
   };
 
   // Listen for bid won to call wurl
-  events.on(CONSTANTS.EVENTS.BID_WON, bidWonHandler);
+  events.on(EVENTS.BID_WON, bidWonHandler);
 
   return Object.assign(this, {
     callBids: baseAdapter.callBids,

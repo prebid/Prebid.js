@@ -8,7 +8,7 @@ import {
 } from '../../../modules/userId/index.js';
 import {config} from '../../../src/config.js';
 import * as events from '../../../src/events.js';
-import CONSTANTS from '../../../src/constants.json';
+import { EVENTS } from '../../../src/constants.js';
 import * as utils from '../../../src/utils.js';
 import {uspDataHandler, gppDataHandler} from '../../../src/adapterManager.js';
 import '../../../src/prebid.js';
@@ -1004,7 +1004,7 @@ describe('ID5 ID System', function () {
         }, {adUnits});
       }).then(() => {
         expect(xhrServerMock.hasReceivedAnyRequest()).is.false;
-        events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
+        events.emit(EVENTS.AUCTION_END, {});
         return xhrServerMock.expectFetchRequest();
       }).then(request => {
         const requestBody = JSON.parse(request.requestBody);

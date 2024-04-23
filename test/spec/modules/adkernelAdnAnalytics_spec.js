@@ -1,7 +1,7 @@
 import analyticsAdapter, {ExpiringQueue, getUmtSource, storage} from 'modules/adkernelAdnAnalyticsAdapter';
 import {expect} from 'chai';
 import adapterManager from 'src/adapterManager';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 
 const events = require('../../../src/events');
 
@@ -230,21 +230,21 @@ describe('', function () {
     });
 
     it('should handle auction init event', function () {
-      events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {config: {}, bidderRequests: [REQUEST], timeout: 3000});
+      events.emit(EVENTS.AUCTION_INIT, {config: {}, bidderRequests: [REQUEST], timeout: 3000});
       const ev = analyticsAdapter.context.queue.peekAll();
       expect(ev).to.have.length(1);
       expect(ev[0]).to.be.eql({event: 'auctionInit'});
     });
 
     it('should handle bid request event', function () {
-      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, REQUEST);
+      events.emit(EVENTS.BID_REQUESTED, REQUEST);
       const ev = analyticsAdapter.context.queue.peekAll();
       expect(ev).to.have.length(2);
       expect(ev[1]).to.be.eql({event: 'bidRequested', adapter: 'adapter', tagid: 'container-1'});
     });
 
     it('should handle bid response event', function () {
-      events.emit(CONSTANTS.EVENTS.BID_RESPONSE, RESPONSE);
+      events.emit(EVENTS.BID_RESPONSE, RESPONSE);
       const ev = analyticsAdapter.context.queue.peekAll();
       expect(ev).to.have.length(3);
       expect(ev[2]).to.be.eql({
@@ -258,7 +258,7 @@ describe('', function () {
 
     it('should handle auction end event', function () {
       timer.tick(447);
-      events.emit(CONSTANTS.EVENTS.AUCTION_END, RESPONSE);
+      events.emit(EVENTS.AUCTION_END, RESPONSE);
       let ev = analyticsAdapter.context.queue.peekAll();
       expect(ev).to.have.length(0);
       expect(ajaxStub.calledOnce).to.be.equal(true);
@@ -267,7 +267,7 @@ describe('', function () {
     });
 
     it('should handle winning bid', function () {
-      events.emit(CONSTANTS.EVENTS.BID_WON, RESPONSE);
+      events.emit(EVENTS.BID_WON, RESPONSE);
       timer.tick(4500);
       expect(ajaxStub.calledTwice).to.be.equal(true);
       let ev = JSON.parse(ajaxStub.secondCall.args[0]).hb_ev;

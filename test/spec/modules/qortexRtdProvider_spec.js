@@ -1,7 +1,7 @@
 import * as utils from 'src/utils';
 import * as ajax from 'src/ajax.js';
 import * as events from 'src/events.js';
-import CONSTANTS from '../../../src/constants.json';
+import { EVENTS } from '../../../src/constants.js';
 import {loadExternalScript} from 'src/adloader.js';
 import {
   qortexSubmodule as module,
@@ -127,7 +127,7 @@ describe('qortexRtdProvider', () => {
     let config = cloneDeep(validModuleConfig);
     config.params.tagConfig = validTagConfig;
 
-    events.on(CONSTANTS.EVENTS.BILLABLE_EVENT, (e) => {
+    events.on(EVENTS.BILLABLE_EVENT, (e) => {
       billableEvents.push(e);
     })
 

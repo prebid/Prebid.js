@@ -13,7 +13,7 @@ import 'modules/nativeRendering.js';
 
 import {expect} from 'chai';
 
-var CONSTANTS = require('src/constants.json');
+import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS } from 'src/constants.js';
 
 describe('secureCreatives', () => {
   let sandbox;
@@ -160,10 +160,10 @@ describe('secureCreatives', () => {
         sinon.assert.calledWith(spyAddWinningBid, adResponse);
         sinon.assert.calledOnce(adResponse.renderer.render);
         sinon.assert.calledWith(adResponse.renderer.render, adResponse);
-        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
-        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.STALE_RENDER);
+        sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
+        sinon.assert.neverCalledWith(stubEmit, EVENTS.STALE_RENDER);
 
-        expect(adResponse).to.have.property('status', CONSTANTS.BID_STATUS.RENDERED);
+        expect(adResponse).to.have.property('status', BID_STATUS.RENDERED);
       });
 
       it('should allow stale rendering without config', function () {
@@ -187,10 +187,10 @@ describe('secureCreatives', () => {
         sinon.assert.calledWith(spyAddWinningBid, adResponse);
         sinon.assert.calledOnce(adResponse.renderer.render);
         sinon.assert.calledWith(adResponse.renderer.render, adResponse);
-        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
-        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.STALE_RENDER);
+        sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
+        sinon.assert.neverCalledWith(stubEmit, EVENTS.STALE_RENDER);
 
-        expect(adResponse).to.have.property('status', CONSTANTS.BID_STATUS.RENDERED);
+        expect(adResponse).to.have.property('status', BID_STATUS.RENDERED);
 
         resetHistories(adResponse.renderer.render);
 
@@ -201,8 +201,8 @@ describe('secureCreatives', () => {
         sinon.assert.calledWith(spyAddWinningBid, adResponse);
         sinon.assert.calledOnce(adResponse.renderer.render);
         sinon.assert.calledWith(adResponse.renderer.render, adResponse);
-        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
-        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.STALE_RENDER, adResponse);
+        sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
+        sinon.assert.calledWith(stubEmit, EVENTS.STALE_RENDER, adResponse);
       });
 
       it('should stop stale rendering with config', function () {
@@ -228,10 +228,10 @@ describe('secureCreatives', () => {
         sinon.assert.calledWith(spyAddWinningBid, adResponse);
         sinon.assert.calledOnce(adResponse.renderer.render);
         sinon.assert.calledWith(adResponse.renderer.render, adResponse);
-        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
-        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.STALE_RENDER);
+        sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
+        sinon.assert.neverCalledWith(stubEmit, EVENTS.STALE_RENDER);
 
-        expect(adResponse).to.have.property('status', CONSTANTS.BID_STATUS.RENDERED);
+        expect(adResponse).to.have.property('status', BID_STATUS.RENDERED);
 
         resetHistories(adResponse.renderer.render);
 
@@ -240,8 +240,8 @@ describe('secureCreatives', () => {
         sinon.assert.calledWith(spyLogWarn, warning);
         sinon.assert.notCalled(spyAddWinningBid);
         sinon.assert.notCalled(adResponse.renderer.render);
-        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
-        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.STALE_RENDER, adResponse);
+        sinon.assert.neverCalledWith(stubEmit, EVENTS.BID_WON, adResponse);
+        sinon.assert.calledWith(stubEmit, EVENTS.STALE_RENDER, adResponse);
 
         configObj.setConfig({'auctionOptions': {}});
       });
@@ -254,8 +254,8 @@ describe('secureCreatives', () => {
           })
         });
         receiveMessage(ev);
-        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.AD_RENDER_FAILED, sinon.match({
-          reason: CONSTANTS.AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
+        sinon.assert.calledWith(stubEmit, EVENTS.AD_RENDER_FAILED, sinon.match({
+          reason: AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
           adId: 'missing'
         }));
       });
@@ -272,8 +272,8 @@ describe('secureCreatives', () => {
           })
         });
         receiveMessage(ev)
-        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.AD_RENDER_FAILED, sinon.match({
-          reason: CONSTANTS.AD_RENDER_FAILED_REASON.EXCEPTION,
+        sinon.assert.calledWith(stubEmit, EVENTS.AD_RENDER_FAILED, sinon.match({
+          reason: AD_RENDER_FAILED_REASON.EXCEPTION,
           adId: bidId
         }));
       });
@@ -368,9 +368,9 @@ describe('secureCreatives', () => {
         sinon.assert.calledWith(stubGetAllAssetsMessage, data, adResponse);
         sinon.assert.calledOnce(ev.source.postMessage);
         sinon.assert.notCalled(stubFireNativeTrackers);
-        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
+        sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
         sinon.assert.calledOnce(spyAddWinningBid);
-        sinon.assert.neverCalledWith(stubEmit, CONSTANTS.EVENTS.STALE_RENDER);
+        sinon.assert.neverCalledWith(stubEmit, EVENTS.STALE_RENDER);
       });
 
       it('Prebid native should not fire BID_WON when receiveMessage is called more than once', () => {
@@ -392,17 +392,17 @@ describe('secureCreatives', () => {
         });
 
         receiveMessage(ev);
-        sinon.assert.calledWith(stubEmit, CONSTANTS.EVENTS.BID_WON, adResponse);
+        sinon.assert.calledWith(stubEmit, EVENTS.BID_WON, adResponse);
 
         receiveMessage(ev);
-        stubEmit.withArgs(CONSTANTS.EVENTS.BID_WON, adResponse).calledOnce;
+        stubEmit.withArgs(EVENTS.BID_WON, adResponse).calledOnce;
       });
     });
 
     describe('Prebid Event', () => {
       Object.entries({
         'unrendered': [false, (bid) => { delete bid.status; }],
-        'rendered': [true, (bid) => { bid.status = CONSTANTS.BID_STATUS.RENDERED }]
+        'rendered': [true, (bid) => { bid.status = BID_STATUS.RENDERED }]
       }).forEach(([test, [shouldEmit, prepBid]]) => {
         describe(`for ${test} bids`, () => {
           beforeEach(() => {
@@ -414,7 +414,7 @@ describe('secureCreatives', () => {
             const event = makeEvent({
               data: JSON.stringify({
                 message: 'Prebid Event',
-                event: CONSTANTS.EVENTS.AD_RENDER_FAILED,
+                event: EVENTS.AD_RENDER_FAILED,
                 adId: bidId,
                 info: {
                   reason: 'Fail reason',
@@ -423,7 +423,7 @@ describe('secureCreatives', () => {
               })
             });
             receiveMessage(event);
-            expect(stubEmit.calledWith(CONSTANTS.EVENTS.AD_RENDER_FAILED, {
+            expect(stubEmit.calledWith(EVENTS.AD_RENDER_FAILED, {
               adId: bidId,
               bid: adResponse,
               reason: 'Fail reason',
@@ -435,12 +435,12 @@ describe('secureCreatives', () => {
             const event = makeEvent({
               data: JSON.stringify({
                 message: 'Prebid Event',
-                event: CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED,
+                event: EVENTS.AD_RENDER_SUCCEEDED,
                 adId: bidId,
               })
             });
             receiveMessage(event);
-            expect(stubEmit.calledWith(CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED, {
+            expect(stubEmit.calledWith(EVENTS.AD_RENDER_SUCCEEDED, {
               adId: bidId,
               bid: adResponse,
               doc: null
