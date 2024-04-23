@@ -211,8 +211,8 @@ function getRequestedSize(adUnit) {
     const size = getPAAPISize(sizesToSizeTuples(adUnit.mediaTypes?.banner?.sizes));
     if (size) {
       return {
-        width: size[0].toString(),
-        height: size[1].toString()
+        width: size[0],
+        height: size[1]
       };
     }
   })();

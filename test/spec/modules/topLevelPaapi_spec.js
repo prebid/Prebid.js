@@ -57,8 +57,8 @@ describe('topLevelPaapi', () => {
           ext: {
             paapi: {
               requestedSize: {
-                width: '123',
-                height: '321'
+                width: 123,
+                height: 321
               }
             }
           }
@@ -143,8 +143,8 @@ describe('topLevelPaapi', () => {
             expect(Object.keys(actual)).to.eql(Object.keys(expected));
             Object.entries(expected).forEach(([au, val]) => {
               sinon.assert.match(actual[au], val == null ? val : {
-                width: '123',
-                height: '321',
+                width: 123,
+                height: 321,
                 ...unpack(val)
               });
             });

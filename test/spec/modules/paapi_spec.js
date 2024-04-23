@@ -342,8 +342,8 @@ describe('paapi module', () => {
                   ext: {
                     paapi: {
                       requestedSize: {
-                        width: '123',
-                        height: '321'
+                        width: 123,
+                        height: 321
                       }
                     }
                   }
@@ -357,24 +357,24 @@ describe('paapi module', () => {
                 beforeEach(setup);
 
                 it('without overriding component auctions, if set', () => {
-                  fledgeAuctionConfig.requestedSize = {width: '1', height: '2'};
+                  fledgeAuctionConfig.requestedSize = {width: '1px', height: '2px'};
                   expect(getConfig().componentAuctions[0].requestedSize).to.eql({
-                    width: '1',
-                    height: '2'
+                    width: '1px',
+                    height: '2px'
                   })
                 });
 
                 it('on component auction, if missing', () => {
                   expect(getConfig().componentAuctions[0].requestedSize).to.eql({
-                    width: '123',
-                    height: '321'
+                    width: 123,
+                    height: 321
                   });
                 });
 
                 it('on top level auction', () => {
                   expect(getConfig().requestedSize).to.eql({
-                    width: '123',
-                    height: '321'
+                    width: 123,
+                    height: 321,
                   })
                 })
               });
@@ -620,8 +620,8 @@ describe('paapi module', () => {
             Object.values(mark()).flatMap(b => b.bids).forEach(bidRequest => {
               sinon.assert.match(bidRequest.ortb2Imp.ext.paapi, {
                 requestedSize: {
-                  width: '123',
-                  height: '321'
+                  width: 123,
+                  height: 321
                 }
               })
             });
