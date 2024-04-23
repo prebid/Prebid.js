@@ -423,7 +423,32 @@ describe('optidigitalAdapterTests', function () {
       bidderRequest.uspConsent = '1YYY';
       const request = spec.buildRequests(validBidRequests, bidderRequest);
       const payload = JSON.parse(request.data);
-      expect(payload.uspConsent).to.exist;
+      expect(payload.us_privacy).to.exist;
+    });
+
+    it('should send gppConsent to given endpoint where there is gppConsent', function() {
+      let consentString = 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==';
+      bidderRequest.gppConsent = {
+        'gppString': consentString,
+        'applicableSections': [7]
+      };
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.gpp).to.exist;
+    });
+
+    it('should send gppConsent to given endpoint when there is gpp in ortb2', function() {
+      let consentString = 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==';
+      bidderRequest.gppConsent = undefined;
+      bidderRequest.ortb2 = {
+        regs: {
+          gpp: consentString,
+          gpp_sid: [7]
+        }
+      }
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.gpp).to.exist;
     });
 
     it('should use appropriate mediaTypes banner sizes', function() {
@@ -546,9 +571,14 @@ describe('optidigitalAdapterTests', function () {
         type: 'iframe', url: `${syncurlIframe}&gdpr=1&gdpr_consent=`
       }]);
     });
-    it('should return appropriate URL with GDPR equals to 1, GDPR consent and CCPA consent', function() {
-      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, {consentString: 'fooUsp'})).to.deep.equal([{
-        type: 'iframe', url: `${syncurlIframe}&gdpr=1&gdpr_consent=foo&ccpa_consent=fooUsp`
+    it('should return appropriate URL with GDPR equals to 1, GDPR consent and US Privacy consent', function() {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, 'fooUsp')).to.deep.equal([{
+        type: 'iframe', url: `${syncurlIframe}&gdpr=1&gdpr_consent=foo&us_privacy=fooUsp`
+      }]);
+    });
+    it('should return appropriate URL with GDPR equals to 1, GDPR consent, US Privacy consent and GPP consent', function() {
+      expect(spec.getUserSyncs({ iframeEnabled: true }, {}, {gdprApplies: true, consentString: 'foo'}, 'fooUsp', {gppString: 'fooGpp', applicableSections: [7]})).to.deep.equal([{
+        type: 'iframe', url: `${syncurlIframe}&gdpr=1&gdpr_consent=foo&us_privacy=fooUsp&gpp=fooGpp&gpp_sid=7`
       }]);
     });
   });

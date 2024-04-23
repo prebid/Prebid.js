@@ -11,7 +11,7 @@ import {
   timestamp
 } from '../../src/utils.js';
 import {config} from '../../src/config.js';
-import CONSTANTS from '../../src/constants.json';
+import { STATUS, S2S } from '../../src/constants.js';
 import {createBid} from '../../src/bidfactory.js';
 import {pbsExtensions} from '../../libraries/pbsExtensions/pbsExtensions.js';
 import {setImpBidParams} from '../../libraries/pbsExtensions/processors/params.js';
@@ -114,8 +114,8 @@ const PBS_CONVERTER = ortbConverter({
     // because core has special treatment for PBS adapter responses, we need some additional processing
     bidResponse.requestTimestamp = context.requestTimestamp;
     return {
-      bid: Object.assign(createBid(CONSTANTS.STATUS.GOOD, {
-        src: CONSTANTS.S2S.SRC,
+      bid: Object.assign(createBid(STATUS.GOOD, {
+        src: S2S.SRC,
         bidId: bidRequest ? (bidRequest.bidId || bidRequest.bid_Id) : null,
         transactionId: context.adUnit.transactionId,
         adUnitId: context.adUnit.adUnitId,
