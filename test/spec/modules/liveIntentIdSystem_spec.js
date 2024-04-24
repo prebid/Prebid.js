@@ -100,7 +100,7 @@ describe('LiveIntentId', function() {
   });
 
   it('should initialize LiveConnect and forward the prebid version when decode and emit an event', function(done) {
-    liveIntentIdSubmodule.decode({}, defaultConfigParams });
+    liveIntentIdSubmodule.decode({}, defaultConfigParams);
     setTimeout(() => {
       expect(server.requests[0].url).to.contain('tv=$prebid.version$')
       done();
