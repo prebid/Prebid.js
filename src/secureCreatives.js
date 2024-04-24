@@ -47,6 +47,12 @@ export function getReplier(ev) {
   }
 }
 
+function ensureAdId(adId, reply) {
+  return function (data, ...args) {
+    return reply(Object.assign(data, {adId}), ...args);
+  }
+}
+
 export function receiveMessage(ev) {
   var key = ev.message ? 'message' : 'data';
   var data = {};
@@ -57,15 +63,18 @@ export function receiveMessage(ev) {
   }
 
   if (data && data.adId && data.message && HANDLER_MAP.hasOwnProperty(data.message)) {
-    return getBidToRender(data.adId).then(adObject => {
-      HANDLER_MAP[data.message](getReplier(ev), data, adObject);
+    return getBidToRender(data.adId, data.message === MESSAGES.REQUEST).then(adObject => {
+      HANDLER_MAP[data.message](ensureAdId(data.adId, getReplier(ev)), data, adObject);
     })
   }
 }
 
-function getResizer(bidResponse) {
+function getResizer(adId, bidResponse) {
+  // in some situations adId !== bidResponse.adId
+  // the first is the one that was requested and is tied to the element
+  // the second is the one that is being rendered (sometimes different, e.g. in some paapi setups)
   return function (width, height) {
-    resizeRemoteCreative({...bidResponse, width, height});
+    resizeRemoteCreative({...bidResponse, width, height, adId});
   }
 }
 function handleRenderRequest(reply, message, bidResponse) {
@@ -76,7 +85,7 @@ function handleRenderRequest(reply, message, bidResponse) {
         renderer: getCreativeRendererSource(bidResponse)
       }, adData));
     },
-    resizeFn: getResizer(bidResponse),
+    resizeFn: getResizer(message.adId, bidResponse),
     options: message.options,
     adId: message.adId,
     bidResponse

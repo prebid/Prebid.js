@@ -1,6 +1,6 @@
 import {submodule} from '../src/hook.js';
 import {config} from '../src/config.js';
-import {logError, logWarn, mergeDeep} from '../src/utils.js';
+import {logError, logInfo, logWarn, mergeDeep} from '../src/utils.js';
 import {auctionStore} from '../libraries/weakStore/weakStore.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {emit} from '../src/events.js';
@@ -40,7 +40,10 @@ function bidIfRenderable(bid) {
   return bid;
 }
 
-function renderPaapiHook(next, adId, override = GreedyPromise.resolve()) {
+const forRenderCtx = [];
+
+function renderPaapiHook(next, adId, forRender = true, override = GreedyPromise.resolve()) {
+  forRenderCtx.push(forRender);
   const ids = parsePaapiAdId(adId);
   if (ids) {
     override = override.then((bid) => {
@@ -54,18 +57,25 @@ function renderPaapiHook(next, adId, override = GreedyPromise.resolve()) {
       });
     });
   }
-  next(adId, override);
+  next(adId, forRender, override);
 }
 
 function renderOverrideHook(next, bidPm) {
+  const forRender = forRenderCtx.pop();
   if (moduleConfig?.overrideWinner) {
     bidPm = bidPm.then((bid) => {
       if (isPaapiBid(bid)) return bid;
       return getPAAPIBids({adUnitCode: bid.adUnitCode}).then(res => {
         let paapiBid = bidIfRenderable(res[bid.adUnitCode]);
-        return paapiBid && paapiBid.status !== BID_STATUS.RENDERED
-          ? paapiBid
-          : bid;
+        if (paapiBid) {
+          if (!forRender) return paapiBid;
+          if (forRender && paapiBid.status !== BID_STATUS.RENDERED) {
+            paapiBid.overriddenAdId = bid.adId;
+            logInfo(MODULE_NAME, 'overriding contextual bid with PAAPI bid', bid, paapiBid)
+            return paapiBid;
+          }
+        }
+        return bid;
       });
     });
   }
@@ -85,7 +95,12 @@ export function getRenderingDataHook(next, bid, options) {
 }
 
 export function markWinningBidHook(next, bid) {
-  isPaapiBid(bid) ? next.bail() : next(bid);
+  if (isPaapiBid(bid)) {
+    bid.status = BID_STATUS.RENDERED;
+    next.bail();
+  } else {
+    next(bid);
+  }
 }
 
 function getBaseAuctionConfig() {

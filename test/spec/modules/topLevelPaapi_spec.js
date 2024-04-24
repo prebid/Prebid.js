@@ -12,7 +12,7 @@ import {
   getPAAPIBids,
   getRenderingDataHook, markWinningBidHook,
   parsePaapiAdId,
-  parsePaapiSize,
+  parsePaapiSize, resizeCreativeHook,
   topLevelPAAPI
 } from '/modules/topLevelPaapi.js';
 import {auctionManager} from '../../../src/auctionManager.js';
@@ -311,6 +311,7 @@ describe('topLevelPaapi', () => {
                 ]).then(([paapiBid, bidToRender]) => {
                   if (canRender) {
                     expect(bidToRender).to.eql(paapiBid);
+                    expect(paapiBid.overriddenAdId).to.eql(mockContextual.adId);
                   } else {
                     expect(bidToRender).to.eql(mockContextual)
                   }
@@ -332,14 +333,21 @@ describe('topLevelPaapi', () => {
                 })
               });
 
-              it('should not not override when the bid was already rendered', () => {
-                return getBids({adUnitCode: 'au', auctionId}).then(res => {
-                  res.au.status = BID_STATUS.RENDERED;
-                  return getBidToRender(mockContextual.adId)
-                }).then(bidToRender => {
-                  expect(bidToRender).to.eql(mockContextual);
+              if (canRender) {
+                it('should not not override when the bid was already rendered', () => {
+                  getBids();
+                  return getBidToRender(mockContextual.adId, true).then((bid) => {
+                    expect(bid.source).to.eql('paapi');
+                    bid.status = BID_STATUS.RENDERED;
+                    return getBidToRender(mockContextual.adId, false).then(bidToRender => [bid, bidToRender])
+                  }).then(([paapiBid, bidToRender]) => {
+                    expect(bidToRender).to.eql(paapiBid);
+                    return getBidToRender(mockContextual.adId);
+                  }).then(bidToRender => {
+                    expect(bidToRender).to.eql(mockContextual);
+                  });
                 })
-              })
+              }
             });
           });
 
@@ -463,9 +471,11 @@ describe('topLevelPaapi', () => {
 
     describe('markWinnigBidsHook', () => {
       it('stops paapi bids', () => {
-        markWinningBidHook(next, {source: 'paapi'});
+        const bid = {source: 'paapi'};
+        markWinningBidHook(next, bid);
         sinon.assert.notCalled(next);
         sinon.assert.called(next.bail);
+        expect(bid.status).to.eql(BID_STATUS.RENDERED);
       });
       it('ignores non-paapi bids', () => {
         markWinningBidHook(next, {other: 'bid'});

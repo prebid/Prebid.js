@@ -13,7 +13,7 @@ import {GreedyPromise} from './utils/promise.js';
 const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON } = EVENTS;
 const { EXCEPTION } = AD_RENDER_FAILED_REASON;
 
-export const getBidToRender = hook('sync', function (adId, override = GreedyPromise.resolve()) {
+export const getBidToRender = hook('sync', function (adId, forRender = true, override = GreedyPromise.resolve()) {
   return override
     .then(bid => bid ?? auctionManager.findBidByAdId(adId))
     .catch(() => {})

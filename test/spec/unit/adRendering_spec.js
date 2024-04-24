@@ -29,19 +29,19 @@ describe('adRendering', () => {
       sandbox.stub(auctionManager, 'findBidByAdId').callsFake(() => 'auction-bid')
     });
     it('should default to bid from auctionManager', () => {
-      return getBidToRender('adId', Promise.resolve(null)).then((res) => {
+      return getBidToRender('adId', true, Promise.resolve(null)).then((res) => {
         expect(res).to.eql('auction-bid');
         sinon.assert.calledWith(auctionManager.findBidByAdId, 'adId');
       });
     });
     it('should give precedence to override promise', () => {
-      return getBidToRender('adId', Promise.resolve('override')).then((res) => {
+      return getBidToRender('adId', true, Promise.resolve('override')).then((res) => {
         expect(res).to.eql('override');
         sinon.assert.notCalled(auctionManager.findBidByAdId);
       })
     });
     it('should return undef when override rejects', () => {
-      return getBidToRender('adId', Promise.reject(new Error('any reason'))).then(res => {
+      return getBidToRender('adId', true, Promise.reject(new Error('any reason'))).then(res => {
         expect(res).to.not.exist;
       })
     })
