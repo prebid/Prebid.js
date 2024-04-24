@@ -49,7 +49,7 @@ export function getReplier(ev) {
 
 function ensureAdId(adId, reply) {
   return function (data, ...args) {
-    return reply(Object.assign(data, {adId}), ...args);
+    return reply(Object.assign({}, data, {adId}), ...args);
   }
 }
 
