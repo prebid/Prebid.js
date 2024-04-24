@@ -209,6 +209,11 @@ export const spec = {
       queryParamsAndValues.push('gdpr=' + flag);
     }
 
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.has('script-override')) {
+      queryParamsAndValues.push('so=' + searchParams.get('script-override'));
+    }
+
     storageTool.refreshStorage(bidderRequest);
 
     const urlRelatedMetaData = storageTool.getUrlRelatedData();

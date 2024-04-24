@@ -4,7 +4,8 @@ import {
   inIframe,
   mergeDeep,
   sizesToSizeTuples,
-  sizeTupleToRtbSize
+  sizeTupleToRtbSize,
+  encodeMacroURI
 } from '../../../src/utils.js';
 import {BANNER} from '../../../src/mediaTypes.js';
 
@@ -30,7 +31,7 @@ export function fillBannerImp(imp, bidRequest, context) {
   }
 }
 
-export function bannerResponseProcessor({createPixel = (url) => createTrackPixelHtml(decodeURIComponent(url))} = {}) {
+export function bannerResponseProcessor({createPixel = (url) => createTrackPixelHtml(decodeURIComponent(url), encodeMacroURI)} = {}) {
   return function fillBannerResponse(bidResponse, bid) {
     if (bidResponse.mediaType === BANNER) {
       if (bid.adm && bid.nurl) {

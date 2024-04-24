@@ -1,9 +1,8 @@
 import {getAdServerTargeting} from 'test/fixtures/fixtures.js';
 import {expect} from 'chai';
-import { TARGETING_KEYS } from 'src/constants.js';
+import {TARGETING_KEYS} from 'src/constants.js';
 import * as utils from 'src/utils.js';
-import {getHighestCpm, getLatestHighestCpmBid, getOldestHighestCpmBid} from '../../src/utils/reducers.js';
-import {binarySearch, deepEqual, memoize, sizesToSizeTuples, waitForElementToLoad} from 'src/utils.js';
+import {binarySearch, deepEqual, encodeMacroURI, memoize, sizesToSizeTuples, waitForElementToLoad} from 'src/utils.js';
 import {convertCamelToUnderscore} from '../../libraries/appnexusUtils/anUtils.js';
 
 var assert = require('assert');
@@ -815,6 +814,22 @@ describe('Utils', function () {
         expect(parsed.search).to.equal('?search=test&foo=bar&bar=foo&foo=xxx');
       });
     });
+
+    describe('encodeMacroURI', () => {
+      [
+        ['https://www.example.com', 'https://www.example.com'],
+        ['https://www.example/${MACRO}', 'https://www.example/${MACRO}'],
+        ['http://www.example/è', `http://www.example/${encodeURIComponent('è')}`],
+        ['https://www.${MACRO_1}/${MACRO_1}/${MACRO_2}è', 'https://www.${MACRO_1}/${MACRO_1}/${MACRO_2}' + encodeURIComponent('è')],
+        ['http://${MACRO}${MACRO}/${MACRO}', 'http://${MACRO}${MACRO}/${MACRO}'],
+        ['{MACRO}${MACRO}', `${encodeURIComponent('{MACRO}')}\${MACRO}`],
+        ['https://www.example.com?p=${AUCTION_PRICE}', 'https://www.example.com?p=${AUCTION_PRICE}']
+      ].forEach(([input, expected]) => {
+        it(`can encode ${input} -> ${expected}`, () => {
+          expect(encodeMacroURI(input)).to.eql(expected);
+        })
+      })
+    })
   });
 
   describe('insertElement', function () {
