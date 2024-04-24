@@ -1,6 +1,11 @@
 import {getBidIdParameter, isFn, isInteger} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'getintent';
 const IS_NET_REVENUE = true;
 const BID_HOST = 'px.adhigh.net';
@@ -106,8 +111,8 @@ function buildUrl(bid) {
 /**
  * Builds GI bid request from BidRequest.
  *
- * @param {BidRequest} bidRequest.
- * @return {object} GI bid request.
+ * @param {BidRequest} bidRequest
+ * @return {object} GI bid request
  */
 function buildGiBidRequest(bidRequest) {
   let giBidRequest = {

@@ -3,6 +3,12 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { ajax } from '../src/ajax.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
+
 const BIDDER_CODE = 'limelightDigital';
 
 /**
@@ -163,7 +169,8 @@ function buildPlacement(bidRequest) {
       custom2: bidRequest.params.custom2,
       custom3: bidRequest.params.custom3,
       custom4: bidRequest.params.custom4,
-      custom5: bidRequest.params.custom5
+      custom5: bidRequest.params.custom5,
+      page: bidRequest.refererInfo.page
     }
   }
 }

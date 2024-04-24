@@ -2,6 +2,8 @@ import {isData, objectTransformer, sessionedApplies} from '../../src/activities/
 import {deepAccess, deepClone, deepEqual, deepSetValue} from '../../src/utils.js';
 
 /**
+ * @typedef {import('../src/activities/redactor.js').TransformationRuleDef} TransformationRuleDef
+ * @typedef {import('../src/adapters/bidderFactory.js').TransformationRule} TransformationRule
  * @typedef {Object} ObjectGuard
  * @property {*} obj a view on the guarded object
  * @property {function(): void} verify a function that checks for and rolls back disallowed changes to the guarded object

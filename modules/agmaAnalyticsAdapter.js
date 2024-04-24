@@ -9,7 +9,7 @@ import {
 } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import adapterManager, { gdprDataHandler } from '../src/adapterManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { config } from '../src/config.js';
@@ -17,14 +17,10 @@ import { config } from '../src/config.js';
 const GVLID = 1122;
 const ModuleCode = 'agma';
 const analyticsType = 'endpoint';
-const scriptVersion = '1.7.0';
+const scriptVersion = '1.8.0';
 const batchDelayInMs = 1000;
 const agmaURL = 'https://pbc.agma-analytics.de/v1';
 const pageViewId = generateUUID();
-
-const {
-  EVENTS: { AUCTION_INIT },
-} = CONSTANTS;
 
 // Helper functions
 const getScreen = () => {
@@ -61,7 +57,7 @@ export const getOrtb2Data = (options) => {
     }
   }
   try {
-    const configData = config.getConfig('agma');
+    const configData = config.getConfig();
     // try to fallback to global config
     if (configData.ortb2) {
       site = site || configData.ortb2.site;
@@ -127,6 +123,7 @@ export const getPayload = (auctionIds, options) => {
   };
 
   if (useExtendedPayload) {
+    const device = config.getConfig('device') || {};
     const { x, y } = getScreen();
     const userIdsAsEids = getUserIDs();
     payload = {
@@ -141,6 +138,8 @@ export const getPayload = (auctionIds, options) => {
       pageUrl: ri.page,
       screenWidth: x,
       screenHeight: y,
+      deviceWidth: device.w || screen.width,
+      deviceHeight: device.h || screen.height,
       userIdsAsEids,
     };
   }
@@ -209,7 +208,7 @@ agmaAnalytics.enableAnalytics = function (config = {}) {
   }
 
   agmaAnalytics.options = {
-    triggerEvent: AUCTION_INIT,
+    triggerEvent: EVENTS.AUCTION_INIT,
     ...options,
   };
 

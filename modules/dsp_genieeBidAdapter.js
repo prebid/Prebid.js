@@ -3,6 +3,16 @@ import { BANNER } from '../src/mediaTypes.js';
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { deepAccess, deepSetValue } from '../src/utils.js';
 import { config } from '../src/config.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
+
 const BIDDER_CODE = 'dsp_geniee';
 const ENDPOINT_URL = 'https://rt.gsspat.jp/prebid_auction';
 const ENDPOINT_URL_UNCOMFORTABLE = 'https://rt.gsspat.jp/prebid_uncomfortable';
@@ -42,21 +52,21 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER],
   /**
-     * Determines whether or not the given bid request is valid.
-     *
-     * @param {BidRequest} - The bid params to validate.
-     * @return boolean True if this is a valid bid, and false otherwise.
-     */
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} _ The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function (_) {
     return true;
   },
   /**
-     * Make a server request from the list of BidRequests.
-     *
-     * @param {validBidRequests[]} - an array of bids
-     * @param {bidderRequest} - the master bidRequest object
-     * @return ServerRequest Info describing the request to the server.
-     */
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {validBidRequests} validBidRequests - an array of bids
+   * @param {BidderRequest} bidderRequest - the master bidRequest object
+   * @return ServerRequest Info describing the request to the server.
+   */
   buildRequests: function (validBidRequests, bidderRequest) {
     if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies') || // gdpr
             USPConsent(bidderRequest.uspConsent) || // usp
@@ -84,12 +94,12 @@ export const spec = {
     };
   },
   /**
-     * Unpack the response from the server into a list of bids.
-     *
-     * @param {ServerResponse} serverResponse A successful response from the server.
-     * @param {BidRequest} bidRequest - the master bidRequest object
-     * @return {bids} - An array of bids which were nested inside the server.
-     */
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {ServerResponse} serverResponse A successful response from the server.
+   * @param {BidRequest} bidRequest - the master bidRequest object
+   * @return {bids} - An array of bids which were nested inside the server.
+   */
   interpretResponse: function (serverResponse, bidRequest) {
     if (!serverResponse.body) { // empty response (no bids)
       return [];
@@ -99,12 +109,12 @@ export const spec = {
   },
 
   /**
-     * Register the user sync pixels which should be dropped after the auction.
-     *
-     * @param {SyncOptions} syncOptions Which user syncs are allowed?
-     * @param {ServerResponse[]} serverResponses List of server's responses.
-     * @return {UserSync[]} The user syncs which should be dropped.
-     */
+   * Register the user sync pixels which should be dropped after the auction.
+   *
+   * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {ServerResponse[]} serverResponses List of server's responses.
+   * @return {UserSync[]} The user syncs which should be dropped.
+   */
   getUserSyncs: function (syncOptions, serverResponses, gdprConsent, uspConsent) {
     const syncs = [];
     // gdpr & usp

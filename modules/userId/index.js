@@ -131,7 +131,7 @@ import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
 import adapterManager, {gdprDataHandler} from '../../src/adapterManager.js';
-import CONSTANTS from '../../src/constants.json';
+import { EVENTS } from '../../src/constants.js';
 import {module, ready as hooksReady} from '../../src/hook.js';
 import {buildEidPermissions, createEidsArray, EID_CONFIG} from './eids.js';
 import {
@@ -538,8 +538,8 @@ function idSystemInitializer({delay = GreedyPromise.timeout} = {}) {
       if (auctionDelay > 0) {
         startCallbacks.resolve();
       } else {
-        events.on(CONSTANTS.EVENTS.AUCTION_END, function auctionEndHandler() {
-          events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
+        events.on(EVENTS.AUCTION_END, function auctionEndHandler() {
+          events.off(EVENTS.AUCTION_END, auctionEndHandler);
           delay(syncDelay).then(startCallbacks.resolve);
         });
       }
@@ -1096,7 +1096,7 @@ export function init(config, {delay = GreedyPromise.timeout} = {}) {
 // init config update listener to start the application
 init(config);
 
-module('userId', attachIdSystem);
+module('userId', attachIdSystem, { postInstallAllowed: true });
 
 export function setOrtbUserExtEids(ortbRequest, bidderRequest, context) {
   const eids = deepAccess(context, 'bidRequests.0.userIdAsEids');

@@ -2,6 +2,11 @@ import {logInfo} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const CONSTANTS = {
   BIDDER_CODE: 'invibes',
   BID_ENDPOINT: '.videostep.com/Bid/VideoAdContent',

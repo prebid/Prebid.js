@@ -1,7 +1,7 @@
 import {logInfo, logError} from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 
@@ -48,7 +48,7 @@ function getZetaParams(event) {
 /// /////////// ADAPTER EVENT HANDLER FUNCTIONS //////////////
 
 function adRenderSucceededHandler(args) {
-  let eventType = CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED
+  let eventType = EVENTS.AD_RENDER_SUCCEEDED
   logInfo(LOG_PREFIX + 'handle ' + eventType + ' event');
 
   const event = {
@@ -88,18 +88,48 @@ function adRenderSucceededHandler(args) {
 }
 
 function auctionEndHandler(args) {
-  let eventType = CONSTANTS.EVENTS.AUCTION_END;
+  let eventType = EVENTS.AUCTION_END;
   logInfo(LOG_PREFIX + 'handle ' + eventType + ' event');
 
   const event = {
-    adUnitCodes: args.adUnitCodes,
-    adUnits: args.adUnits,
-    auctionEnd: args.auctionEnd,
     auctionId: args.auctionId,
-    bidderRequests: args.bidderRequests,
-    bidsReceived: args.bidsReceived,
-    noBids: args.noBids,
-    winningBids: args.winningBids
+    adUnits: args.adUnits,
+    bidderRequests: args.bidderRequests?.map(br => ({
+      bidderCode: br?.bidderCode,
+      refererInfo: br?.refererInfo,
+      bids: br?.bids?.map(b => ({
+        adUnitCode: b?.adUnitCode,
+        auctionId: b?.auctionId,
+        bidId: b?.bidId,
+        requestId: b?.requestId,
+        bidderCode: b?.bidderCode,
+        mediaTypes: b?.mediaTypes,
+        sizes: b?.sizes,
+        bidder: b?.bidder,
+        params: b?.params
+      }))
+    })),
+    bidsReceived: args.bidsReceived?.map(br => ({
+      adId: br?.adId,
+      adserverTargeting: {
+        hb_adomain: br?.adserverTargeting?.hb_adomain
+      },
+      cpm: br?.cpm,
+      creativeId: br?.creativeId,
+      mediaType: br?.mediaType,
+      renderer: br?.renderer,
+      size: br?.size,
+      timeToRespond: br?.timeToRespond,
+      adUnitCode: br?.adUnitCode,
+      auctionId: br?.auctionId,
+      bidId: br?.bidId,
+      requestId: br?.requestId,
+      bidderCode: br?.bidderCode,
+      mediaTypes: br?.mediaTypes,
+      sizes: br?.sizes,
+      bidder: br?.bidder,
+      params: br?.params
+    }))
   }
 
   // save zetaParams to cache
@@ -147,10 +177,10 @@ let zetaAdapter = Object.assign({}, baseAdapter, {
 
   track({ eventType, args }) {
     switch (eventType) {
-      case CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED:
+      case EVENTS.AD_RENDER_SUCCEEDED:
         adRenderSucceededHandler(args);
         break;
-      case CONSTANTS.EVENTS.AUCTION_END:
+      case EVENTS.AUCTION_END:
         auctionEndHandler(args);
         break;
     }

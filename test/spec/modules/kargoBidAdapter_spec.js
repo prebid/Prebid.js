@@ -112,6 +112,24 @@ describe('kargo adapter tests', function () {
                   }
                 }
               ]
+            },
+            {
+              'source': 'adquery.io',
+              'uids': [
+                {
+                  'id': 'adqueryId-123',
+                  'atype': 1
+                }
+              ]
+            },
+            {
+              'source': 'criteo.com',
+              'uids': [
+                {
+                  'id': 'criteoId-456',
+                  'atype': 1
+                }
+              ]
             }
           ],
           floorData: {
@@ -479,6 +497,21 @@ describe('kargo adapter tests', function () {
             floor: 1,
             fpd: {
               gpid: '/22558409563,18834096/dfy_mobile_adhesion'
+            },
+            ext: {
+              ortb2Imp: {
+                ext: {
+                  tid: '10101',
+                  data: {
+                    adServer: {
+                      name: 'gam',
+                      adslot: '/22558409563,18834096/dfy_mobile_adhesion'
+                    },
+                    pbadslot: '/22558409563,18834096/dfy_mobile_adhesion'
+                  },
+                  gpid: '/22558409563,18834096/dfy_mobile_adhesion'
+                }
+              }
             }
           },
           {
@@ -491,6 +524,21 @@ describe('kargo adapter tests', function () {
             },
             fpd: {
               gpid: '/22558409563,18834096/dfy_mobile_adhesion'
+            },
+            floor: 2,
+            ext: {
+              ortb2Imp: {
+                ext: {
+                  tid: '20202',
+                  data: {
+                    adServer: {
+                      name: 'gam',
+                      adslot: '/22558409563,18834096/dfy_mobile_adhesion'
+                    },
+                    pbadslot: '/22558409563,18834096/dfy_mobile_adhesion'
+                  }
+                }
+              }
             }
           },
           {
@@ -503,6 +551,21 @@ describe('kargo adapter tests', function () {
             },
             fpd: {
               gpid: '/22558409563,18834096/dfy_mobile_adhesion'
+            },
+            floor: 3,
+            ext: {
+              ortb2Imp: {
+                ext: {
+                  tid: '30303',
+                  data: {
+                    adServer: {
+                      name: 'gam',
+                      adslot: '/22558409563,18834096/dfy_mobile_adhesion'
+                    }
+                  },
+                  gpid: '/22558409563,18834096/dfy_mobile_adhesion'
+                }
+              }
             }
           }
         ],
@@ -537,6 +600,24 @@ describe('kargo adapter tests', function () {
                   }
                 }
               ]
+            },
+            {
+              source: 'adquery.io',
+              uids: [
+                {
+                  id: 'adqueryId-123',
+                  atype: 1
+                }
+              ]
+            },
+            {
+              source: 'criteo.com',
+              uids: [
+                {
+                  id: 'criteoId-456',
+                  atype: 1
+                }
+              ]
             }
           ],
           data: [
@@ -553,6 +634,56 @@ describe('kargo adapter tests', function () {
               ]
             }
           ]
+        },
+        ext: {
+          ortb2: {
+            device: {
+              sua: {
+                platform: {
+                  brand: 'macOS',
+                  version: ['12', '6', '0']
+                },
+                browsers: [
+                  {
+                    brand: 'Chromium',
+                    version: ['106', '0', '5249', '119']
+                  },
+                  {
+                    brand: 'Google Chrome',
+                    version: ['106', '0', '5249', '119']
+                  },
+                  {
+                    brand: 'Not;A=Brand',
+                    version: ['99', '0', '0', '0']
+                  }
+                ],
+                mobile: 1,
+                model: 'model',
+                source: 1,
+              }
+            },
+            site: {
+              id: '1234',
+              name: 'SiteName',
+              cat: ['IAB1', 'IAB2', 'IAB3']
+            },
+            user: {
+              data: [
+                {
+                  name: 'prebid.org',
+                  ext: {
+                    segtax: 600,
+                    segclass: 'v1',
+                  },
+                  segment: [
+                    {
+                      id: '133'
+                    },
+                  ]
+                },
+              ]
+            }
+          }
         }
       };
 
@@ -604,6 +735,16 @@ describe('kargo adapter tests', function () {
       if (gdpr) {
         payload['gdprConsent'] = gdpr
       }
+
+      clonedBids.forEach(bid => {
+        if (bid.mediaTypes.banner) {
+          bid.getFloor = () => ({ currency: 'USD', floor: 1 });
+        } else if (bid.mediaTypes.video) {
+          bid.getFloor = () => ({ currency: 'USD', floor: 2 });
+        } else if (bid.mediaTypes.native) {
+          bid.getFloor = () => ({ currency: 'USD', floor: 3 });
+        }
+      });
 
       var request = spec.buildRequests(clonedBids, payload);
       var krakenParams = request.data;
@@ -725,7 +866,8 @@ describe('kargo adapter tests', function () {
             adm: '<div id="1"></div>',
             width: 320,
             height: 50,
-            metadata: {}
+            metadata: {},
+            creativeID: 'bar'
           },
           2: {
             id: 'bar',
@@ -736,14 +878,16 @@ describe('kargo adapter tests', function () {
             targetingCustom: 'dmpmptest1234',
             metadata: {
               landingPageDomain: ['https://foobar.com']
-            }
+            },
+            creativeID: 'foo'
           },
           3: {
             id: 'bar',
             cpm: 2.5,
             adm: '<div id="2"></div>',
             width: 300,
-            height: 250
+            height: 250,
+            creativeID: 'foo'
           },
           4: {
             id: 'bar',
@@ -753,6 +897,7 @@ describe('kargo adapter tests', function () {
             height: 250,
             mediaType: 'banner',
             metadata: {},
+            creativeID: 'foo',
             currency: 'EUR'
           },
           5: {
@@ -763,6 +908,7 @@ describe('kargo adapter tests', function () {
             height: 250,
             mediaType: 'video',
             metadata: {},
+            creativeID: 'foo',
             currency: 'EUR'
           },
           6: {
@@ -774,6 +920,7 @@ describe('kargo adapter tests', function () {
             height: 250,
             mediaType: 'video',
             metadata: {},
+            creativeID: 'foo',
             currency: 'EUR'
           }
         }
@@ -818,7 +965,7 @@ describe('kargo adapter tests', function () {
         width: 320,
         height: 50,
         ttl: 300,
-        creativeId: 'foo',
+        creativeId: 'bar',
         dealId: undefined,
         netRevenue: true,
         currency: 'USD',
@@ -833,7 +980,7 @@ describe('kargo adapter tests', function () {
         width: 300,
         height: 250,
         ttl: 300,
-        creativeId: 'bar',
+        creativeId: 'foo',
         dealId: 'dmpmptest1234',
         netRevenue: true,
         currency: 'USD',
@@ -850,7 +997,7 @@ describe('kargo adapter tests', function () {
         width: 300,
         height: 250,
         ttl: 300,
-        creativeId: 'bar',
+        creativeId: 'foo',
         dealId: undefined,
         netRevenue: true,
         currency: 'USD',
@@ -865,7 +1012,7 @@ describe('kargo adapter tests', function () {
         width: 300,
         height: 250,
         ttl: 300,
-        creativeId: 'bar',
+        creativeId: 'foo',
         dealId: undefined,
         netRevenue: true,
         currency: 'EUR',
@@ -880,7 +1027,7 @@ describe('kargo adapter tests', function () {
         height: 250,
         vastXml: '<VAST></VAST>',
         ttl: 300,
-        creativeId: 'bar',
+        creativeId: 'foo',
         dealId: undefined,
         netRevenue: true,
         currency: 'EUR',
@@ -895,7 +1042,7 @@ describe('kargo adapter tests', function () {
         height: 250,
         vastUrl: 'https://foobar.com/vast_adm',
         ttl: 300,
-        creativeId: 'bar',
+        creativeId: 'foo',
         dealId: undefined,
         netRevenue: true,
         currency: 'EUR',

@@ -192,6 +192,8 @@ describe('gumgumAdapter', function () {
       const request = { ...bidRequests[0] };
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data.aun).to.equal(bidRequests[0].adUnitCode);
+      expect(bidRequest.data.displaymanager).to.equal('Prebid.js - gumgum');
+      expect(bidRequest.data.displaymanagerver).to.equal(JCSI.pbv);
     });
     it('should set pubProvidedId if the uid and  pubProvidedId are available', function () {
       const request = { ...bidRequests[0] };
@@ -587,6 +589,29 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.gppString).to.eq('')
       expect(bidRequest.data.gppSid).to.eq('')
     });
+    it('should add DSA information to payload if available', function () {
+      // Define the sample ORTB2 object with DSA information
+      const ortb2 = {
+        regs: {
+          ext: {
+            dsa: {
+              dsarequired: '1',
+              pubrender: '2',
+              datatopub: '3',
+              transparency: [{
+                domain: 'test.com',
+                dsaparams: [1, 2, 3]
+              }]
+            }
+          }
+        }
+      };
+      const fakeBidRequest = { ortb2 };
+      // Call the buildRequests function to generate the bid request
+      const [bidRequest] = spec.buildRequests(bidRequests, fakeBidRequest);
+      // Assert that the DSA information in the bid request matches the provided ORTB2 data
+      expect(bidRequest.data.dsa).to.deep.equal(JSON.stringify(fakeBidRequest.ortb2.regs.ext.dsa));
+    });
     it('should not set coppa parameter if coppa config is set to false', function () {
       config.setConfig({
         coppa: false
@@ -878,6 +903,19 @@ describe('gumgumAdapter', function () {
 
         expect(result.width = expectedSize[0]);
         expect(result.height = expectedSize[1]);
+      })
+
+      it('request size that  matches response size for in-slot', function () {
+        const request = { ...bidRequest };
+        const body = { ...serverResponse };
+        const expectedSize = [[ 320, 50 ], [300, 600], [300, 250]];
+        let result;
+        request.pi = 3;
+        body.ad.width = 300;
+        body.ad.height = 600;
+        result = spec.interpretResponse({ body }, request)[0];
+        expect(result.width = expectedSize[1][0]);
+        expect(result.height = expectedSize[1][1]);
       })
 
       it('defaults to use bidRequest sizes', function () {

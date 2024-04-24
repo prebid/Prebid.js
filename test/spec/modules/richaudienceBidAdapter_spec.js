@@ -293,7 +293,7 @@ describe('Richaudience adapter tests', function () {
     expect(requestContent.sizes[3]).to.have.property('w').and.to.equal(970);
     expect(requestContent.sizes[3]).to.have.property('h').and.to.equal(250);
     expect(requestContent).to.have.property('transactionId').and.to.equal('29df2112-348b-4961-8863-1b33684d95e6');
-    expect(requestContent).to.have.property('timeout').and.to.equal(3000);
+    expect(requestContent).to.have.property('timeout').and.to.equal(600);
     expect(requestContent).to.have.property('numIframes').and.to.equal(0);
     expect(typeof requestContent.scr_rsl === 'string')
     expect(typeof requestContent.cpuc === 'number')
@@ -916,14 +916,21 @@ describe('Richaudience adapter tests', function () {
     it('onTimeout exist as a function', () => {
       expect(spec.onTimeout).to.exist.and.to.be.a('function');
     });
-    it('should send timeout', function () {
+    it('should send timeouts', function () {
       spec.onTimeout(DEFAULT_PARAMS_VIDEO_TIMEOUT);
       expect(utils.triggerPixel.called).to.equal(true);
-      expect(utils.triggerPixel.firstCall.args[0]).to.equal('https://s.richaudience.com/err/?ec=6&ev=3000&pla=ADb1f40rmi&int=PREBID&pltfm=&node=&dm=http%3A%2F%2Fdomain.com');
+      expect(utils.triggerPixel.firstCall.args[0]).to.equal('https://s.richaudience.com/err/?ec=6&ev=3000&pla=ADb1f40rmi&int=PREBID&pltfm=&node=&dm=localhost:9876');
     });
   });
 
   describe('userSync', function () {
+    let sandbox;
+    beforeEach(function () {
+      sandbox = sinon.sandbox.create();
+    });
+    afterEach(function() {
+      sandbox.restore();
+    });
     it('Verifies user syncs iframe include', function () {
       config.setConfig({
         'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'include'}}}
@@ -1260,6 +1267,38 @@ describe('Richaudience adapter tests', function () {
         pixelEnabled: false
       }, [], {consentString: '', gdprApplies: true});
       expect(syncs).to.have.lengthOf(0);
+    });
+
+    it('Verifies user syncs iframe/image include with GPP', function () {
+      config.setConfig({
+        'userSync': {filterSettings: {iframe: {bidders: '*', filter: 'include'}}}
+      })
+
+      var syncs = spec.getUserSyncs({iframeEnabled: true}, [BID_RESPONSE], {
+        gppString: 'DBABL~BVVqAAEABgA.QA',
+        applicableSections: [7]},
+      );
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('iframe');
+
+      config.setConfig({
+        'userSync': {filterSettings: {image: {bidders: '*', filter: 'include'}}}
+      })
+
+      var syncs = spec.getUserSyncs({pixelEnabled: true}, [BID_RESPONSE], {
+        gppString: 'DBABL~BVVqAAEABgA.QA',
+        applicableSections: [7, 5]},
+      );
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('image');
+    });
+
+    it('Verifies user syncs URL image include with GPP', function () {
+      const gppConsent = { gppString: 'DBACMYA~CP5P4cAP5P4cAPoABAESAlEAAAAAAAAAAAAAA2QAQA2ADZABADYAAAAA.QA2QAQA2AAAA.IA2QAQA2AAAA~BP5P4cAP5P4cAPoABABGBACAAAAAAAAAAAAAAAAAAA.YAAAAAAAAAA', applicableSections: [0] };
+      const result = spec.getUserSyncs({pixelEnabled: true}, undefined, undefined, undefined, gppConsent);
+      expect(result).to.deep.equal([{
+        type: 'image', url: `https://sync.richaudience.com/bf7c142f4339da0278e83698a02b0854/?referrer=http%3A%2F%2Fdomain.com&gpp=DBACMYA~CP5P4cAP5P4cAPoABAESAlEAAAAAAAAAAAAAA2QAQA2ADZABADYAAAAA.QA2QAQA2AAAA.IA2QAQA2AAAA~BP5P4cAP5P4cAPoABABGBACAAAAAAAAAAAAAAAAAAA.YAAAAAAAAAA&gpp_sid=0`
+      }]);
     });
   })
 });

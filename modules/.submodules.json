@@ -63,6 +63,7 @@
       "airgridRtdProvider",
       "akamaiDapRtdProvider",
       "arcspanRtdProvider",
+      "azerionedgeRtdProvider",
       "blueconicRtdProvider",
       "brandmetricsRtdProvider",
       "browsiRtdProvider",
@@ -102,6 +103,9 @@
     "videoModule": [
       "jwplayerVideoProvider",
       "videojsVideoProvider"
+    ],
+    "paapi": [
+      "fledgeForGpt"
     ]
   }
 }
