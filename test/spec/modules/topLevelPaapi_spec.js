@@ -5,7 +5,7 @@ import {
   reset as resetPaapi
 } from '../../../modules/paapi.js';
 import {config} from 'src/config.js';
-import {EVENTS} from 'src/constants.js';
+import {BID_STATUS, EVENTS} from 'src/constants.js';
 import * as events from 'src/events.js';
 import {
   getPaapiAdId,
@@ -97,7 +97,8 @@ describe('topLevelPaapi', () => {
       config.mergeConfig({
         paapi: {
           topLevelSeller: {
-            auctionConfig
+            auctionConfig,
+            autorun: false
           }
         }
       });
@@ -122,6 +123,30 @@ describe('topLevelPaapi', () => {
       addPaapiConfig('au', paapiConfig);
       endAuctions();
       expect(getPAAPIConfig()['au'].resolveToConfig).to.eql(false);
+    });
+
+    describe('when autoRun is set', () => {
+      let origRaa;
+      beforeEach(() => {
+        origRaa = navigator.runAdAuction;
+        navigator.runAdAuction = sinon.stub();
+      });
+      afterEach(() => {
+        navigator.runAdAuction = origRaa;
+      });
+
+      it('should start auctions automatically, when autoRun is set', () => {
+        config.mergeConfig({
+          paapi: {
+            topLevelSeller: {
+              autorun: true
+            }
+          }
+        })
+        addPaapiConfig('au', paapiConfig);
+        endAuctions();
+        sinon.assert.called(navigator.runAdAuction);
+      });
     });
 
     describe('getPAAPIBids', () => {
@@ -178,12 +203,18 @@ describe('topLevelPaapi', () => {
               });
             });
 
-            it('should resolve to null when runAdAuction returns null', () => {
-              raa = sinon.stub().callsFake(() => Promise.resolve());
-              return getBids({adUnitCode: 'au', auctionId: 'auct'}).then(result => {
-                expectBids(result, {au: null});
+            Object.entries({
+              'returns null': () => Promise.resolve(),
+              'throws': () => { throw new Error() },
+              'rejects': () => Promise.reject(new Error())
+            }).forEach(([t, behavior]) => {
+              it('should resolve to null when runAdAuction returns null', () => {
+                raa = sinon.stub().callsFake(behavior);
+                return getBids({adUnitCode: 'au', auctionId: 'auct'}).then(result => {
+                  expectBids(result, {au: null});
+                });
               });
-            });
+            })
 
             it('should resolve to the same result when called again', () => {
               getBids({adUnitCode: 'au', auctionId});
@@ -243,6 +274,73 @@ describe('topLevelPaapi', () => {
                 });
               });
             });
+
+            it('should hook into getBidToRender', () => {
+              return getBids({adUnitCode: 'au', auctionId}).then(res => {
+                return getBidToRender(res.au.adId).then(bidToRender => [res.au, bidToRender])
+              }).then(([paapiBid, bidToRender]) => {
+                if (canRender) {
+                  expect(bidToRender).to.eql(paapiBid)
+                } else {
+                  expect(bidToRender).to.not.exist;
+                }
+              });
+            });
+
+            describe('when overrideWinner is set', () => {
+              let mockContextual;
+              beforeEach(() => {
+                mockContextual = {
+                  adId: 'mock',
+                  adUnitCode: 'au'
+                }
+                sandbox.stub(auctionManager, 'findBidByAdId').returns(mockContextual);
+                config.mergeConfig({
+                  paapi: {
+                    topLevelSeller: {
+                      overrideWinner: true
+                    }
+                  }
+                });
+              });
+
+              it(`should ${!canRender ? 'NOT' : ''} override winning bid for the same adUnit`, () => {
+                return Promise.all([
+                  getBids({adUnitCode: 'au', auctionId}).then(res => res.au),
+                  getBidToRender(mockContextual.adId)
+                ]).then(([paapiBid, bidToRender]) => {
+                  if (canRender) {
+                    expect(bidToRender).to.eql(paapiBid);
+                  } else {
+                    expect(bidToRender).to.eql(mockContextual)
+                  }
+                })
+              });
+
+              it('should not override when the ad unit has no paapi winner', () => {
+                mockContextual.adUnitCode = 'other';
+                return getBidToRender(mockContextual.adId).then(bidToRender => {
+                  expect(bidToRender).to.eql(mockContextual);
+                })
+              });
+
+              it('should not override when already a paapi bid', () => {
+                return getBids({adUnitCode: 'au', auctionId}).then(res => {
+                  return getBidToRender(res.au.adId).then((bidToRender) => [bidToRender, res.au]);
+                }).then(([bidToRender, paapiBid]) => {
+                  expect(bidToRender).to.eql(canRender ? paapiBid : mockContextual)
+                })
+              });
+
+              it('should not not override when the bid was already rendered', () => {
+                return getBids({adUnitCode: 'au', auctionId}).then(res => {
+                  res.au.status = BID_STATUS.RENDERED;
+                  return getBidToRender(mockContextual.adId)
+                }).then(bidToRender => {
+                  expect(bidToRender).to.eql(mockContextual);
+                })
+              })
+            });
           });
 
           it('should resolve the same result from different filters', () => {
@@ -290,20 +388,6 @@ describe('topLevelPaapi', () => {
               });
             });
           });
-
-          it('should hook into getBidToRender', () => {
-            addPaapiConfig('au', paapiConfig, 'auct');
-            endAuctions();
-            return getBids({adUnitCode: 'au', auctionId}).then(res => {
-              return getBidToRender(res.au.adId).then(bidToRender => [res.au, bidToRender])
-            }).then(([paapiBid, bidToRender]) => {
-              if (canRender) {
-                expect(bidToRender).to.eql(paapiBid)
-              } else {
-                expect(bidToRender).to.not.exist;
-              }
-            })
-          })
         });
       });
     });
