@@ -15,6 +15,9 @@ describe('adnuntiusBidAdapter', function() {
   const meta = [{key: 'valueless'}, {value: 'keyless'}, {key: 'voidAuIds'}, {key: 'voidAuIds', value: [{auId: '11118b6bc', exp: misc.getUnixTimestamp()}, {exp: misc.getUnixTimestamp(1)}]}, {key: 'valid-withnetwork', value: 'also-valid-network', network: 'the-network', exp: misc.getUnixTimestamp(1)}, {key: 'valid', value: 'also-valid', exp: misc.getUnixTimestamp(1)}, {key: 'expired', value: 'fwefew', exp: misc.getUnixTimestamp()}, {key: 'usi', value: 'should be skipped because timestamp', exp: misc.getUnixTimestamp(), network: 'adnuntius'}, {key: 'usi', value: usi, exp: misc.getUnixTimestamp(100), network: 'adnuntius'}, {key: 'usi', value: 'should be skipped because timestamp', exp: misc.getUnixTimestamp()}]
   let storage;
 
+  // need this to make the restore work correctly -- something to do with stubbing static prototype methods
+  let stub1 = {}, stub2 = {};
+
   before(() => {
     getGlobal().bidderSettings = {
       adnuntius: {
@@ -34,6 +37,13 @@ describe('adnuntiusBidAdapter', function() {
 
   afterEach(function() {
     config.resetConfig();
+
+    if (stub1.restore) {
+      stub1.restore();
+    }
+    if (stub2.restore) {
+      stub2.restore();
+    }
   });
 
   const tzo = new Date().getTimezoneOffset();
@@ -457,13 +467,20 @@ describe('adnuntiusBidAdapter', function() {
 
   describe('buildRequests', function() {
     it('Test requests', function() {
+      stub1 = sinon.stub(URLSearchParams.prototype, 'has').callsFake(() => {
+        return true;
+      });
+      stub2 = sinon.stub(URLSearchParams.prototype, 'get').callsFake(() => {
+        return 'overridden-value';
+      });
+
       const request = spec.buildRequests(bidderRequests, {});
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('bid');
       const bid = request[0].bid[0]
       expect(bid).to.have.property('bidId');
       expect(request[0]).to.have.property('url');
-      expect(request[0].url).to.equal(ENDPOINT_URL);
+      expect(request[0].url).to.equal(ENDPOINT_URL.replace('format=prebid', 'format=prebid&so=overridden-value'));
       expect(request[0]).to.have.property('data');
       expect(request[0].data).to.equal('{"adUnits":[{"auId":"000000000008b6bc","targetId":"123","maxDeals":1,"dimensions":[[640,480],[600,400]]},{"auId":"0000000000000551","targetId":"adn-0000000000000551","dimensions":[[1640,1480],[1600,1400]]}]}');
     });
