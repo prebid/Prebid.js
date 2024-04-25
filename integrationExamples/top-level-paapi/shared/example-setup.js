@@ -14,14 +14,15 @@ function addExampleControls(requestBids) {
   ctl.innerHTML = `
     <span style="border: 1px solid lightgray; border-radius: 5px; padding: 10px">
        Simulate contextual bid:
-        <button data-cpm="1">1 CPM</button>
-        <button data-cpm="20">20 CPM</button>
+        <input class="cpm" type="number" style="width: 3.5em; text-align: right" value="1"/>
+        CPM
+        <button class="bid" style="margin-left: 0.5em">BID</button>
     </span>
   `;
   ctl.style = 'margin-top: 30px';
   document.body.appendChild(ctl);
-  ctl.addEventListener('click', function (ev) {
-    const cpm = ev.target?.dataset?.cpm;
+  ctl.querySelector('.bid').addEventListener('click', function (ev) {
+    const cpm = ctl.querySelector('.cpm').value;
     if (cpm) {
       setupContextualResponse(parseInt(cpm, 10));
     }
