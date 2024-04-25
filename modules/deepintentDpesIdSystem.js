@@ -45,18 +45,13 @@ export const deepintentDpesSubmodule = {
    * @return {{id: string | undefined} | undefined}
    */
   getId(config, consentData, cacheIdObj) {
-    return cacheIdObj;
+    if (cacheIdObj?.id) return cacheIdObj;
+    return cacheIdObj ? {id: cacheIdObj} : cacheIdObj;
   },
   eids: {
     'deepintentId': {
       source: 'deepintent.com',
       atype: 3,
-      getValue: (userIdData) => {
-        if (isPlainObject(userIdData) && userIdData?.id) {
-          return userIdData.id;
-        }
-        return userIdData;
-      }
     },
   },
 };
