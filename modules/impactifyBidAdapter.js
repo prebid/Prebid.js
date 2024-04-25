@@ -238,9 +238,6 @@ export const spec = {
     if (bid.params.format !== 'screen' && bid.params.format !== 'display') {
       return false;
     }
-    if (bid.params.style !== 'inline' && bid.params.style !== 'impact' && bid.params.style !== 'static') {
-      return false;
-    }
     if (isBanner && (typeof bid.params.size != 'string' || !bid.params.size.includes('x') || bid.params.size.split('x').length != 2)) {
       return false;
     }

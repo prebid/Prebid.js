@@ -208,12 +208,7 @@ describe('ImpactifyAdapter', function () {
       }
     });
 
-    it('should return false when style is missing', () => {
-      const bid = utils.deepClone(validBids[0]);
-      delete bid.params.style;
 
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
-    });
 
     it('should return false when style is not a string', () => {
       const bid = utils.deepClone(validBids[0]);
