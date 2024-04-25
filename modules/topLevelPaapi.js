@@ -40,10 +40,10 @@ function bidIfRenderable(bid) {
   return bid;
 }
 
-const forRenderCtx = [];
+const forRenderStack = [];
 
 function renderPaapiHook(next, adId, forRender = true, override = GreedyPromise.resolve()) {
-  forRenderCtx.push(forRender);
+  forRenderStack.push(forRender);
   const ids = parsePaapiAdId(adId);
   if (ids) {
     override = override.then((bid) => {
@@ -61,10 +61,10 @@ function renderPaapiHook(next, adId, forRender = true, override = GreedyPromise.
 }
 
 function renderOverrideHook(next, bidPm) {
-  const forRender = forRenderCtx.pop();
+  const forRender = forRenderStack.pop();
   if (moduleConfig?.overrideWinner) {
     bidPm = bidPm.then((bid) => {
-      if (isPaapiBid(bid)) return bid;
+      if (isPaapiBid(bid) || bid?.status === BID_STATUS.RENDERED) return bid;
       return getPAAPIBids({adUnitCode: bid.adUnitCode}).then(res => {
         let paapiBid = bidIfRenderable(res[bid.adUnitCode]);
         if (paapiBid) {
