@@ -26,7 +26,7 @@ Performax bid adapter supports Banner.
                 {
                     bidder: "performax",
                     params: {
-                        slotId: "sample"   // required
+                        tagid: "sample"   // required
                     }
                 }
             ]
