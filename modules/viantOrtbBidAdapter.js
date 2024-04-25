@@ -51,10 +51,10 @@ export const spec = {
   onBidWon: function (bid) {
     if (bid.burl) {
       utils.triggerPixel(bid.burl);
-      utils.replaceAuctionPrice(bid.burl, bid.price);
+      utils.triggerPixel(utils.replaceAuctionPrice(bid.burl, bid.originalCpm || bid.cpm || bid.price));
     } else if (bid.nurl) {
       utils.triggerPixel(bid.nurl);
-      utils.replaceAuctionPrice(bid.nurl, bid.price);
+      utils.triggerPixel(utils.replaceAuctionPrice(bid.nurl, bid.originalCpm || bid.cpm || bid.price));
     }
   }
 }
