@@ -8,6 +8,7 @@
 import { submodule } from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import {isPlainObject} from '../src/utils.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -44,13 +45,18 @@ export const deepintentDpesSubmodule = {
    * @return {{id: string | undefined} | undefined}
    */
   getId(config, consentData, cacheIdObj) {
-    if (cacheIdObj?.id) return cacheIdObj;
-    return cacheIdObj ? {id: cacheIdObj} : cacheIdObj;
+    return cacheIdObj;
   },
   eids: {
     'deepintentId': {
       source: 'deepintent.com',
-      atype: 3
+      atype: 3,
+      getValue: (userIdData) => {
+        if (isPlainObject(userIdData) && userIdData?.id) {
+          return userIdData.id;
+        }
+        return userIdData;
+      }
     },
   },
 };
