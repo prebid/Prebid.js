@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Delegate-CH" content="sec-ch-ua-full-version-list https://cloud.51degrees.com; sec-ch-ua-model https://cloud.51degrees.com; sec-ch-ua-platform https://cloud.51degrees.com; sec-ch-ua-platform-version https://cloud.51degrees.com">
+    <script async src="//www.googletagservices.com/tag/js/gpt.js"></script>
+    <script async src="../../build/dev/prebid.js"></script>
+    <meta charset="utf-8">
+    <style>
+        body {
+            color: #555;
+            font-family: sans-serif;
+        }
+    </style>
+    <script>
+        var PREBID_TIMEOUT = 1000;
+        var FAILSAFE_TIMEOUT = 3000;
+
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        function initAdserver() {
+            if (pbjs.initAdserverSet) return;
+
+            googletag.cmd.push(function () {
+                pbjs.que.push(function () {
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
+                });
+            });
+
+            pbjs.initAdserverSet = true;
+        }
+
+        pbjs.que.push(function () {
+            var adUnits = [{
+                code: 'div-banner-native-1',
+                mediaTypes: {
+                    banner: {
+                        sizes: [
+                            [300, 250]
+                        ]
+                    },
+                    native: {
+                        type: 'image'
+                    },
+                },
+                bids: [{
+                    bidder: 'appnexus',
+                    params: {
+                        placementId: 13232392,
+                    }
+                }]
+            },
+                {
+                    code: 'div-banner-native-2',
+                    mediaTypes: {
+                        banner: {
+                            sizes: [
+                                [300, 250]
+                            ]
+                        },
+                        native: {
+                            title: {
+                                required: true
+                            },
+                            image: {
+                                required: true
+                            },
+                            sponsoredBy: {
+                                required: true
+                            }
+                        }
+                    },
+                    bids: [{
+                        bidder: 'appnexus',
+                        params: {
+                            placementId: 13232392,
+                        }
+                    }]
+                }
+            ];
+
+            pbjs.setConfig({
+                debug: true,
+                cache: {
+                    url: false
+                },
+                realTimeData: {
+                    auctionDelay: 1000, // should be set lower in production use
+                    dataProviders: [
+                        {
+                            name: '51Degrees',
+                            waitForIt: true,
+                            params: {
+                                // Get your resource key from https://configure.51degrees.com/AQRVdgJ-9x1dNvxk3Eg
+                                resourceKey: '<YOUR_RESOURCE_KEY>',
+                                // onPremiseJSUrl: 'https://localhost/51Degrees.core.js'
+                            }
+                        }
+                    ]
+                },
+            });
+
+            pbjs.addAdUnits(adUnits);
+            pbjs.requestBids({
+                timeout: PREBID_TIMEOUT,
+                bidsBackHandler: function (bidResponses) {
+                    initAdserver();
+                }
+            });
+        });
+        setTimeout(initAdserver, FAILSAFE_TIMEOUT);
+    </script>
+
+    <script>
+        googletag.cmd.push(function () {
+            googletag
+                .defineSlot(
+                    '/19968336/prebid_multiformat_test', [
+                        [300, 250],
+                        [360, 360]
+                    ],
+                    'div-banner-native-1'
+                )
+                .addService(googletag.pubads());
+
+            googletag
+                .defineSlot(
+                    '/19968336/prebid_multiformat_test', [
+                        [300, 250],
+                        [360, 360]
+                    ],
+                    'div-banner-native-2'
+                )
+                .addService(googletag.pubads());
+
+            googletag.pubads().disableInitialLoad();
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+    <title>51Degrees RTD submodule example - Prebid.js</title>
+</head>
+<body>
+    <h2>51Degrees RTD submodule - example of usage</h2>
+
+    <h3>div-banner-native-1</h3>
+    <div id='div-banner-native-1'>
+        <p>No response</p>
+        <script type='text/javascript'>
+            googletag.cmd.push(function () {
+                googletag.display('div-banner-native-1');
+            });
+        </script>
+    </div>
+
+    <h3>div-banner-native-2</h3>
+    <div id='div-banner-native-2'>
+        <p>No response</p>
+        <script type='text/javascript'>
+            googletag.cmd.push(function () {
+                googletag.display('div-banner-native-2');
+            });
+        </script>
+    </div>
+</body>
+</html>
