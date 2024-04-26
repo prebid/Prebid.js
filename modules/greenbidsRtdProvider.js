@@ -1,11 +1,11 @@
-import { logError, deepClone, generateUUID, deepSetValue, deepAccess } from '../src/utils.js';
+import { logError, logInfo, deepClone, generateUUID, deepSetValue, deepAccess, getParameterByName } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 import * as events from '../src/events.js';
 import { EVENTS } from '../src/constants.js';
 
 const MODULE_NAME = 'greenbidsRtdProvider';
-const MODULE_VERSION = '2.0.0';
+const MODULE_VERSION = '2.0.1';
 const ENDPOINT = 'https://t.greenbids.ai';
 
 const rtdOptions = {};
@@ -78,6 +78,7 @@ function processSuccessResponse(response, timeoutId, reqBidsConfigObj, greenbids
 }
 
 function updateAdUnitsBasedOnResponse(adUnits, responseAdUnits, greenbidsId) {
+  const isFilteringForced = getParameterByName('greenbids_force_filtering');
   adUnits.forEach((adUnit) => {
     const matchingAdUnit = findMatchingAdUnit(responseAdUnits, adUnit.code);
     if (matchingAdUnit) {
@@ -86,7 +87,10 @@ function updateAdUnitsBasedOnResponse(adUnits, responseAdUnits, greenbidsId) {
         keptInAuction: matchingAdUnit.bidders,
         isExploration: matchingAdUnit.isExploration
       });
-      if (!matchingAdUnit.isExploration) {
+      if (isFilteringForced) {
+        adUnit.bids = [];
+        logInfo('Greenbids Rtd: filtering flag detected, forcing filtering of Rtd module.');
+      } else if (!matchingAdUnit.isExploration) {
         removeFalseBidders(adUnit, matchingAdUnit);
       }
     }
