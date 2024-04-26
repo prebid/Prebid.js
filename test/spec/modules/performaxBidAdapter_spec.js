@@ -104,7 +104,7 @@ describe('Performax adapter', function () {
               h: 300,
               adm: 'My ad'
             }
-            ]}]},
+         ]}]},
   }
 
   describe('isBidRequestValid', function () {
