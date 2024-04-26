@@ -16,7 +16,6 @@ import {getStorageManager} from '../src/storageManager.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
 import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
-import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
