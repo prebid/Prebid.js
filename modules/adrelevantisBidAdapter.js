@@ -19,8 +19,6 @@ import {find, includes} from '../src/polyfill.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
-import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
-import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 
 /**
