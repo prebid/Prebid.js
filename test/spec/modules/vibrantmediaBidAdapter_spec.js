@@ -1071,7 +1071,6 @@ describe('VibrantMediaBidAdapter', function () {
   describe('Flow tests', function () {
     describe('For successive API calls to the public functions', function () {
       it('should succeed with one media type per bid', function () {
-
         const bannerBid = {
           bidder: 'vibrantmedia',
           params: VALID_BANNER_BID_PARAMS,
