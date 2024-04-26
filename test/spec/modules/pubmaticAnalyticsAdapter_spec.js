@@ -1,6 +1,6 @@
 import pubmaticAnalyticsAdapter, { getMetadata } from 'modules/pubmaticAnalyticsAdapter.js';
 import adapterManager from 'src/adapterManager.js';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS, REJECTION_REASON } from 'src/constants.js';
 import { config } from 'src/config.js';
 import { setConfig } from 'modules/currency.js';
 import { server } from '../../mocks/xhr.js';
@@ -18,18 +18,16 @@ const setUAMobile = () => { window.navigator.__defineGetter__('userAgent', funct
 const setUANull = () => { window.navigator.__defineGetter__('userAgent', function () { return null }) };
 
 const {
-  EVENTS: {
-    AUCTION_INIT,
-    AUCTION_END,
-    BID_REQUESTED,
-    BID_RESPONSE,
-    BID_REJECTED,
-    BIDDER_DONE,
-    BID_WON,
-    BID_TIMEOUT,
-    SET_TARGETING
-  }
-} = CONSTANTS;
+  AUCTION_INIT,
+  AUCTION_END,
+  BID_REQUESTED,
+  BID_RESPONSE,
+  BID_REJECTED,
+  BIDDER_DONE,
+  BID_WON,
+  BID_TIMEOUT,
+  SET_TARGETING
+} = EVENTS;
 
 const BID = {
   'bidder': 'pubmatic',
@@ -110,7 +108,7 @@ const BID2 = Object.assign({}, BID, {
 });
 
 const BID3 = Object.assign({}, BID2, {
-  rejectionReason: CONSTANTS.REJECTION_REASON.FLOOR_NOT_MET
+  rejectionReason: REJECTION_REASON.FLOOR_NOT_MET
 })
 const MOCK = {
   SET_TARGETING: {

@@ -112,6 +112,24 @@ describe('kargo adapter tests', function () {
                   }
                 }
               ]
+            },
+            {
+              'source': 'adquery.io',
+              'uids': [
+                {
+                  'id': 'adqueryId-123',
+                  'atype': 1
+                }
+              ]
+            },
+            {
+              'source': 'criteo.com',
+              'uids': [
+                {
+                  'id': 'criteoId-456',
+                  'atype': 1
+                }
+              ]
             }
           ],
           floorData: {
@@ -580,6 +598,24 @@ describe('kargo adapter tests', function () {
                   ext: {
                     rtiPartner: 'TDID'
                   }
+                }
+              ]
+            },
+            {
+              source: 'adquery.io',
+              uids: [
+                {
+                  id: 'adqueryId-123',
+                  atype: 1
+                }
+              ]
+            },
+            {
+              source: 'criteo.com',
+              uids: [
+                {
+                  id: 'criteoId-456',
+                  atype: 1
                 }
               ]
             }

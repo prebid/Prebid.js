@@ -101,6 +101,8 @@ export const spec = {
     const fpd = bidderRequest.ortb2;
 
     if (fpd) {
+      delete fpd.experianRtidData; // Omit the experian data since we already pass this through a dedicated query param
+      delete fpd.experianRtidKey
       payload.fpd = JSON.stringify(fpd);
     }
 
@@ -154,11 +156,6 @@ export const spec = {
       payload.coppa = 1;
     } else {
       payload.coppa = 0;
-    }
-
-    if (deepAccess(bidderRequest, 'ortb2.experianRtidData') && deepAccess(bidderRequest, 'ortb2.experianRtidKey')) {
-      payload.expData = deepAccess(bidderRequest, 'ortb2.experianRtidData');
-      payload.expKey = deepAccess(bidderRequest, 'ortb2.experianRtidKey');
     }
 
     // If there is no key_maker data, then don't make the request.

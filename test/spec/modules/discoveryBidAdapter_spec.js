@@ -9,7 +9,8 @@ import {
   getConnectionDownLink,
   THIRD_PARTY_COOKIE_ORIGIN,
   COOKIE_KEY_MGUID,
-  getCurrentTimeToUTCString
+  getCurrentTimeToUTCString,
+  buildUTMTagData
 } from 'modules/discoveryBidAdapter.js';
 import * as utils from 'src/utils.js';
 
@@ -249,6 +250,39 @@ describe('discovery:BidAdapterTests', function () {
         storage.cookiesAreEnabled.callsFake(() => false);
         storage.getCookie.callsFake(() => null);
         getPmgUID();
+        expect(storage.setCookie.calledOnce).to.be.false;
+      });
+    })
+    describe('buildUTMTagData function', function() {
+      let sandbox;
+
+      beforeEach(() => {
+        sandbox = sinon.sandbox.create();
+        sandbox.stub(storage, 'getCookie');
+        sandbox.stub(storage, 'setCookie');
+        sandbox.stub(utils, 'parseUrl').returns({
+          search: {
+            utm_source: 'example.com'
+          }
+        });
+        sandbox.stub(storage, 'cookiesAreEnabled');
+      })
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should set UTM cookie', () => {
+        storage.cookiesAreEnabled.callsFake(() => true);
+        storage.getCookie.callsFake(() => null);
+        buildUTMTagData();
+        expect(storage.setCookie.calledOnce).to.be.true;
+      });
+
+      it('should not set UTM when cookies are not enabled', () => {
+        storage.cookiesAreEnabled.callsFake(() => false);
+        storage.getCookie.callsFake(() => null);
+        buildUTMTagData();
         expect(storage.setCookie.calledOnce).to.be.false;
       });
     })

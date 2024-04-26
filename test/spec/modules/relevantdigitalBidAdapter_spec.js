@@ -1,7 +1,7 @@
 import {spec, resetBidderConfigs} from 'modules/relevantdigitalBidAdapter.js';
 import { parseUrl, deepClone } from 'src/utils.js';
 import { config } from 'src/config.js';
-import CONSTANTS from 'src/constants.json';
+import { S2S } from 'src/constants.js';
 
 import adapterManager, {
 } from 'src/adapterManager.js';
@@ -16,7 +16,7 @@ const TEST_PAGE = `https://${TEST_DOMAIN}/page.html`;
 
 const CONFIG = {
   enabled: true,
-  endpoint: CONSTANTS.S2S.DEFAULT_ENDPOINT,
+  endpoint: S2S.DEFAULT_ENDPOINT,
   timeout: 1000,
   maxBids: 1,
   adapter: 'prebidServer',
