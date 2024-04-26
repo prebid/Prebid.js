@@ -17,9 +17,7 @@ describe('Performax adapter', function () {
       banner: {
         sizes: [
           [300, 300],
-        ]
-      }
-    },
+        ]}},
     adUnitCode: 'postbid_iframe',
     transactionId: '84deda92-e9ba-4b0d-a797-43be5e522430',
     adUnitId: '4ee4643b-931f-4a17-a571-ccba57886dc8',
@@ -38,8 +36,8 @@ describe('Performax adapter', function () {
       site: {},
       device: {}
     },
-
   },
+
   {
     bidder: 'performax',
     params: {
@@ -52,9 +50,7 @@ describe('Performax adapter', function () {
       banner: {
         sizes: [
           [300, 600],
-        ]
-      }
-    },
+        ]}},
     adUnitCode: 'postbid_halfpage_iframe',
     transactionId: '84deda92-e9ba-4b0d-a797-43be5e522430',
     adUnitId: '4ee4643b-931f-4a17-a571-ccba57886dc8',
@@ -84,8 +80,7 @@ describe('Performax adapter', function () {
       regs: {
         ext: {
           gdpr: 1
-        }
-      },
+        }},
       user: {
         ext: {
           consent: 'consent-string'
@@ -93,8 +88,7 @@ describe('Performax adapter', function () {
       },
       site: {},
       device: {}
-    },
-  };
+    }};
 
   serverResponse = {
     body: {
@@ -110,22 +104,18 @@ describe('Performax adapter', function () {
               h: 300,
               adm: 'My ad'
             }
-          ]
-        }
-      ]
-    },
-    'headers': {}
+            ]}]},
   }
 
   describe('isBidRequestValid', function () {
     let bid = {};
-
     it('should return false when missing "tagid" param', function() {
       bid.params = {slotId: 'param'};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
       bid.params = {};
       expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
+
     it('should return true when tagid is correct', function() {
       bid.params = {tagid: 'sample'};
       expect(spec.isBidRequestValid(bid)).to.equal(true);
@@ -168,9 +158,9 @@ describe('Performax adapter', function () {
 
   describe('interpretResponse', function () {
     it('should map params correctly', function () {
-      let ortbRequest = {data: converter.toORTB({bidderRequest, bids})}
-      serverResponse.body.id = ortbRequest.data.id
-      serverResponse.body.seatbid[0].bid[0].imp_id = ortbRequest.data.imp[0].id
+      let ortbRequest = {data: converter.toORTB({bidderRequest, bids})};
+      serverResponse.body.id = ortbRequest.data.id;
+      serverResponse.body.seatbid[0].bid[0].imp_id = ortbRequest.data.imp[0].id;
 
       let result = spec.interpretResponse(serverResponse, ortbRequest);
       expect(result).to.be.an('array').that.has.lengthOf(1);
