@@ -7,7 +7,7 @@ const BIDDER_CODE = 'performax';
 const BIDDER_SHORT_CODE = 'px';
 const GVLID = 732
 const ENDPOINT = 'https://dale.performax.cz/ortb'
-const converter = ortbConverter({
+export const converter = ortbConverter({
 
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
