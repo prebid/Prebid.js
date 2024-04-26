@@ -1018,7 +1018,7 @@ function getContextFromPlcmt(ortbPlcmt, ortbStartDelay) {
   }
 
   if (ortbPlcmt === 2) {
-    if (!ortbStartDelay) {
+    if (typeof ortbStartDelay === 'undefined') {
       return;
     }
     if (ortbStartDelay === 0) {

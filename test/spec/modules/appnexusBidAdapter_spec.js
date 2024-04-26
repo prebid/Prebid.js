@@ -411,7 +411,7 @@ describe('AppNexusAdapter', function () {
             playerSize: [640, 480],
             context: 'outstream',
             plcmt: 2,
-            startdelay: -1,
+            startdelay: 0,
             mimes: ['video/mp4'],
             skip: 1,
             minduration: 5,
@@ -427,7 +427,7 @@ describe('AppNexusAdapter', function () {
           minduration: 5,
           playback_method: 2,
           skippable: true,
-          context: 9
+          context: 8
         });
         expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
       });
