@@ -271,7 +271,7 @@ export const spec = {
             params.push(['informer', iidArr[0]]);
             tracks.push({
               type: 'iframe',
-              url: 'https://ap.lijit.com/beacon?' + params.map(p => p.join('=')).join('&')
+              url: 'https://ce.lijit.com/beacon?' + params.map(p => p.join('=')).join('&')
             });
           }
         }

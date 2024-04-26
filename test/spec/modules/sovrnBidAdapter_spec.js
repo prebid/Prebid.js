@@ -931,7 +931,7 @@ describe('sovrnBidAdapter', function() {
     it('should return if iid present on server response & iframe syncs enabled', function() {
       const expectedReturnStatement = {
         type: 'iframe',
-        url: 'https://ap.lijit.com/beacon?informer=13487408',
+        url: 'https://ce.lijit.com/beacon?informer=13487408',
       }
       const returnStatement = spec.getUserSyncs(syncOptions, serverResponse)
 
@@ -945,7 +945,7 @@ describe('sovrnBidAdapter', function() {
       }
       const expectedReturnStatement = {
         type: 'iframe',
-        url: `https://ap.lijit.com/beacon?gdpr_consent=${gdprConsent.consentString}&informer=13487408`,
+        url: `https://ce.lijit.com/beacon?gdpr_consent=${gdprConsent.consentString}&informer=13487408`,
       }
 
       const returnStatement = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent, '', null)
@@ -957,7 +957,7 @@ describe('sovrnBidAdapter', function() {
       const uspString = '1NYN'
       const expectedReturnStatement = {
         type: 'iframe',
-        url: `https://ap.lijit.com/beacon?us_privacy=${uspString}&informer=13487408`,
+        url: `https://ce.lijit.com/beacon?us_privacy=${uspString}&informer=13487408`,
       }
 
       const returnStatement = spec.getUserSyncs(syncOptions, serverResponse, null, uspString, null)
@@ -972,7 +972,7 @@ describe('sovrnBidAdapter', function() {
       }
       const expectedReturnStatement = {
         type: 'iframe',
-        url: `https://ap.lijit.com/beacon?gpp=${gppConsent.gppString}&gpp_sid=${gppConsent.applicableSections}&informer=13487408`,
+        url: `https://ce.lijit.com/beacon?gpp=${gppConsent.gppString}&gpp_sid=${gppConsent.applicableSections}&informer=13487408`,
       }
 
       const returnStatement = spec.getUserSyncs(syncOptions, serverResponse, null, '', gppConsent)
@@ -993,7 +993,7 @@ describe('sovrnBidAdapter', function() {
 
       const expectedReturnStatement = {
         type: 'iframe',
-        url: `https://ap.lijit.com/beacon?gdpr_consent=${gdprConsent.consentString}&us_privacy=${uspString}&gpp=${gppConsent.gppString}&gpp_sid=${gppConsent.applicableSections}&informer=13487408`,
+        url: `https://ce.lijit.com/beacon?gdpr_consent=${gdprConsent.consentString}&us_privacy=${uspString}&gpp=${gppConsent.gppString}&gpp_sid=${gppConsent.applicableSections}&informer=13487408`,
       }
 
       const returnStatement = spec.getUserSyncs(syncOptions, serverResponse, gdprConsent, uspString, gppConsent)

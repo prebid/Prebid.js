@@ -195,25 +195,19 @@ function buildRequests(validBidRequests, bidderRequest) {
 }
 
 function interpretResponse(response, bidRequest) {
-  let bids = response.body;
+  const bids = response.body;
   const bidResponses = [];
 
-  if (isEmpty(bids)) {
+  if (isEmpty(bids) || typeof bids !== 'object') {
     return bidResponses;
   }
 
-  if (typeof bids !== 'object') {
-    return bidResponses;
-  }
-
-  Object.entries(bids).forEach((entry) => {
-    const [bidID, adUnit] = entry;
-
+  for (const [bidID, adUnit] of Object.entries(bids)) {
     let meta = {
       mediaType: adUnit.mediaType && BIDDER.SUPPORTED_MEDIA_TYPES.includes(adUnit.mediaType) ? adUnit.mediaType : BANNER
     };
 
-    if (adUnit.metadata && adUnit.metadata.landingPageDomain) {
+    if (adUnit.metadata?.landingPageDomain) {
       meta.clickUrl = adUnit.metadata.landingPageDomain[0];
       meta.advertiserDomains = adUnit.metadata.landingPageDomain;
     }
@@ -243,7 +237,7 @@ function interpretResponse(response, bidRequest) {
     }
 
     bidResponses.push(bidResponse);
-  })
+  }
 
   return bidResponses;
 }

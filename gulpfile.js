@@ -446,7 +446,15 @@ function startLocalServer(options = {}) {
     port: port,
     host: INTEG_SERVER_HOST,
     root: './',
-    livereload: options.livereload
+    livereload: options.livereload,
+    middleware: function () {
+      return [
+        function (req, res, next) {
+          res.setHeader('Ad-Auction-Allowed', 'True');
+          next();
+        }
+      ];
+    }
   });
 }
 
