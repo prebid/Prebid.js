@@ -26,7 +26,6 @@ import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {APPNEXUS_CATEGORY_MAPPING} from '../libraries/categoryTranslationMapping/index.js';
 import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
 import {convertCamelToUnderscore, fill} from '../libraries/appnexusUtils/anUtils.js';
-import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 
 /**
