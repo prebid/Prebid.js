@@ -1,9 +1,9 @@
 import nobidAnalytics from 'modules/nobidAnalyticsAdapter.js';
 import {expect} from 'chai';
 import {server} from 'test/mocks/xhr.js';
+import { EVENTS } from 'src/constants.js';
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;
-let constants = require('src/constants.json');
 
 const TOP_LOCATION = 'https://www.somesite.com';
 const SITE_ID = 1234;
@@ -46,7 +46,7 @@ describe('NoBid Prebid Analytic', function () {
       });
 
       // Step 2: Send init auction event
-      events.emit(constants.EVENTS.AUCTION_INIT, {config: initOptions,
+      events.emit(EVENTS.AUCTION_INIT, {config: initOptions,
         auctionId: '13',
         timestamp: Date.now(),
         bidderRequests: [{refererInfo: {topmostLocation: TOP_LOCATION}}]});
@@ -77,27 +77,27 @@ describe('NoBid Prebid Analytic', function () {
       });
 
       // Step 2: Send init auction event
-      events.emit(constants.EVENTS.AUCTION_INIT, {config: initOptions,
+      events.emit(EVENTS.AUCTION_INIT, {config: initOptions,
         auctionId: '13',
         timestamp: Date.now(),
         bidderRequests: [{refererInfo: {topmostLocation: TOP_LOCATION}}]});
-      events.emit(constants.EVENTS.BID_WON, {});
+      events.emit(EVENTS.BID_WON, {});
       clock.tick(5000);
       expect(server.requests).to.have.length(1);
 
-      events.emit(constants.EVENTS.BID_REQUESTED, {});
+      events.emit(EVENTS.BID_REQUESTED, {});
       clock.tick(5000);
       expect(server.requests).to.have.length(1);
 
-      events.emit(constants.EVENTS.BID_RESPONSE, {});
+      events.emit(EVENTS.BID_RESPONSE, {});
       clock.tick(5000);
       expect(server.requests).to.have.length(1);
 
-      events.emit(constants.EVENTS.BID_TIMEOUT, {});
+      events.emit(EVENTS.BID_TIMEOUT, {});
       clock.tick(5000);
       expect(server.requests).to.have.length(1);
 
-      events.emit(constants.EVENTS.AD_RENDER_SUCCEEDED, {});
+      events.emit(EVENTS.AD_RENDER_SUCCEEDED, {});
       clock.tick(5000);
       expect(server.requests).to.have.length(1);
 
@@ -191,13 +191,13 @@ describe('NoBid Prebid Analytic', function () {
       });
 
       // Step 2: Send init auction event
-      events.emit(constants.EVENTS.AUCTION_INIT, {config: initOptions,
+      events.emit(EVENTS.AUCTION_INIT, {config: initOptions,
         auctionId: '13',
         timestamp: Date.now(),
         bidderRequests: [{refererInfo: {topmostLocation: TOP_LOCATION}}]});
 
       // Step 3: Send bid won event
-      events.emit(constants.EVENTS.BID_WON, requestIncoming);
+      events.emit(EVENTS.BID_WON, requestIncoming);
       clock.tick(5000);
       expect(server.requests).to.have.length(1);
       const bidWonRequest = JSON.parse(server.requests[0].requestBody);
@@ -388,13 +388,13 @@ describe('NoBid Prebid Analytic', function () {
       });
 
       // Step 2: Send init auction event
-      events.emit(constants.EVENTS.AUCTION_INIT, {config: initOptions,
+      events.emit(EVENTS.AUCTION_INIT, {config: initOptions,
         auctionId: '13',
         timestamp: Date.now(),
         bidderRequests: [{refererInfo: {topmostLocation: `${TOP_LOCATION}_something`}}]});
 
       // Step 3: Send bid won event
-      events.emit(constants.EVENTS.AUCTION_END, requestIncoming);
+      events.emit(EVENTS.AUCTION_END, requestIncoming);
       clock.tick(5000);
       expect(server.requests).to.have.length(1);
       const auctionEndRequest = JSON.parse(server.requests[0].requestBody);
@@ -428,22 +428,22 @@ describe('NoBid Prebid Analytic', function () {
       nobidAnalytics.processServerResponse(JSON.stringify({disabled: 0}));
       disabled = nobidAnalytics.isAnalyticsDisabled();
       expect(disabled).to.equal(false);
-      events.emit(constants.EVENTS.AUCTION_END, {auctionId: '1234567890'});
+      events.emit(EVENTS.AUCTION_END, {auctionId: '1234567890'});
       clock.tick(1000);
       expect(server.requests).to.have.length(1);
-      events.emit(constants.EVENTS.AUCTION_END, {auctionId: '12345678901'});
+      events.emit(EVENTS.AUCTION_END, {auctionId: '12345678901'});
       clock.tick(1000);
       expect(server.requests).to.have.length(2);
 
       nobidAnalytics.processServerResponse('disabled: true');
-      events.emit(constants.EVENTS.AUCTION_END, {auctionId: '12345678902'});
+      events.emit(EVENTS.AUCTION_END, {auctionId: '12345678902'});
       clock.tick(1000);
       expect(server.requests).to.have.length(3);
 
       nobidAnalytics.processServerResponse(JSON.stringify({disabled: 1}));
       disabled = nobidAnalytics.isAnalyticsDisabled();
       expect(disabled).to.equal(true);
-      events.emit(constants.EVENTS.AUCTION_END, {auctionId: '12345678902'});
+      events.emit(EVENTS.AUCTION_END, {auctionId: '12345678902'});
       clock.tick(5000);
       expect(server.requests).to.have.length(3);
 
@@ -481,7 +481,7 @@ describe('NoBid Prebid Analytic', function () {
       nobidAnalytics.enableAnalytics(initOptions);
       adapterManager.enableAnalytics({ provider: 'nobid', options: initOptions });
 
-      let eventType = constants.EVENTS.AUCTION_END;
+      let eventType = EVENTS.AUCTION_END;
       let disabled;
       nobidAnalytics.processServerResponse(JSON.stringify({disabled: 0}));
       disabled = nobidAnalytics.isAnalyticsDisabled();
@@ -508,14 +508,14 @@ describe('NoBid Prebid Analytic', function () {
       nobidAnalytics.processServerResponse(JSON.stringify({disabled_auctionEnd: 0}));
       disabled = nobidAnalytics.isAnalyticsDisabled(eventType);
       expect(disabled).to.equal(false);
-      events.emit(constants.EVENTS.AUCTION_END, {auctionId: '1234567890'});
+      events.emit(EVENTS.AUCTION_END, {auctionId: '1234567890'});
       clock.tick(1000);
       expect(server.requests).to.have.length(1);
 
       server.requests.length = 0;
       expect(server.requests).to.have.length(0);
 
-      eventType = constants.EVENTS.BID_WON;
+      eventType = EVENTS.BID_WON;
       nobidAnalytics.processServerResponse(JSON.stringify({disabled_bidWon: 1}));
       disabled = nobidAnalytics.isAnalyticsDisabled(eventType);
       expect(disabled).to.equal(true);
@@ -526,7 +526,7 @@ describe('NoBid Prebid Analytic', function () {
       server.requests.length = 0;
       expect(server.requests).to.have.length(0);
 
-      eventType = constants.EVENTS.AUCTION_END;
+      eventType = EVENTS.AUCTION_END;
       nobidAnalytics.processServerResponse(JSON.stringify({disabled: 1}));
       disabled = nobidAnalytics.isAnalyticsDisabled(eventType);
       expect(disabled).to.equal(true);
@@ -537,16 +537,16 @@ describe('NoBid Prebid Analytic', function () {
       server.requests.length = 0;
       expect(server.requests).to.have.length(0);
 
-      eventType = constants.EVENTS.AUCTION_END;
+      eventType = EVENTS.AUCTION_END;
       nobidAnalytics.processServerResponse(JSON.stringify({disabled_auctionEnd: 1, disabled_bidWon: 0}));
       disabled = nobidAnalytics.isAnalyticsDisabled(eventType);
       expect(disabled).to.equal(true);
       events.emit(eventType, {auctionId: '1234567890'});
       clock.tick(1000);
       expect(server.requests).to.have.length(0);
-      disabled = nobidAnalytics.isAnalyticsDisabled(constants.EVENTS.BID_WON);
+      disabled = nobidAnalytics.isAnalyticsDisabled(EVENTS.BID_WON);
       expect(disabled).to.equal(false);
-      events.emit(constants.EVENTS.BID_WON, {bidderCode: 'nobid'});
+      events.emit(EVENTS.BID_WON, {bidderCode: 'nobid'});
       clock.tick(1000);
       expect(server.requests).to.have.length(1);
 

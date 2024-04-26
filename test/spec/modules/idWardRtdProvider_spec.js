@@ -52,7 +52,7 @@ describe('idWardRtdProvider', function() {
       };
 
       const rtdUserObj1 = {
-        name: 'id-ward.com',
+        name: 'anonymised.io',
         ext: {
           segtax: 503
         },
@@ -109,7 +109,7 @@ describe('idWardRtdProvider', function() {
       expect(config.getConfig().ortb2).to.be.undefined;
     });
 
-    it('should initalise and return with config', function () {
+    it('should initialize and return with config', function () {
       expect(getRealTimeData(testReqBidsConfigObj, onDone, cmoduleConfig)).to.equal(undefined)
     });
   });

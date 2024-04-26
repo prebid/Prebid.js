@@ -12,7 +12,7 @@ import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { createBid } from '../src/bidfactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import CONSTANTS from '../src/constants.json';
+import { STATUS } from '../src/constants.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
 
 /**
@@ -416,7 +416,7 @@ function buildBannerResponse(bidRequest, bidResponse) {
     if (bidRequest) {
       let bidResponse = createBid(1);
       placementCode = bidRequest.placementCode;
-      bidRequest.status = CONSTANTS.STATUS.GOOD;
+      bidRequest.status = STATUS.GOOD;
       responseCPM = parseFloat(bidderBid.price);
       if (responseCPM === 0 || isNaN(responseCPM)) {
         let bid = createBid(2);
@@ -457,7 +457,7 @@ function buildNativeResponse(bidRequest, response) {
     if (bidRequest) {
       let bidResponse = createBid(1);
       placementCode = bidRequest.placementCode;
-      bidRequest.status = CONSTANTS.STATUS.GOOD;
+      bidRequest.status = STATUS.GOOD;
       responseCPM = parseFloat(bidderBid.price);
       if (responseCPM === 0 || isNaN(responseCPM)) {
         let bid = createBid(2);
@@ -506,7 +506,7 @@ function buildVideoResponse(bidRequest, response) {
     if (bidRequest) {
       let bidResponse = createBid(1);
       placementCode = bidRequest.placementCode;
-      bidRequest.status = CONSTANTS.STATUS.GOOD;
+      bidRequest.status = STATUS.GOOD;
       responseCPM = parseFloat(bidderBid.price);
       if (responseCPM === 0 || isNaN(responseCPM)) {
         let bid = createBid(2);
