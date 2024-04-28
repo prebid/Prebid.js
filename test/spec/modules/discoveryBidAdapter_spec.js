@@ -179,6 +179,17 @@ describe('discovery:BidAdapterTests', function () {
     ],
   };
 
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.sandbox.create();
+    sandbox.stub(storage, 'getCookie');
+  })
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   it('discovery:validate_pub_params', function () {
     expect(
       spec.isBidRequestValid({
@@ -202,6 +213,7 @@ describe('discovery:BidAdapterTests', function () {
   });
 
   it('discovery:validate_generated_params', function () {
+    storage.getCookie.withArgs('_ss_pp_utm').callsFake(() => '{"utm_source":"example.com","utm_medium":"123","utm_campaign":"456"}');
     request = spec.buildRequests(bidRequestData.bids, bidRequestData);
     let req_data = JSON.parse(request.data);
     expect(req_data.imp).to.have.lengthOf(1);
