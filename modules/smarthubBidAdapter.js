@@ -114,7 +114,7 @@ function buildRequestParams(bidderRequest = {}, placements = []) {
     winLocation = window.location;
   }
 
-  const refferUrl = bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
+  const refferUrl = bidderRequest.refererInfo && bidderRequest.refererInfo.page;
   let refferLocation;
   try {
     refferLocation = refferUrl && new URL(refferUrl);
@@ -138,7 +138,7 @@ function buildRequestParams(bidderRequest = {}, placements = []) {
     coppa: config.getConfig('coppa') === true ? 1 : 0,
     ccpa: bidderRequest.uspConsent || undefined,
     gdpr: bidderRequest.gdprConsent || undefined,
-    tmax: config.getConfig('bidderTimeout')
+    tmax: bidderRequest.timeout
   };
 }
 
@@ -164,6 +164,8 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest = {}) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
     const tempObj = {};
 
     const len = validBidRequests.length;
