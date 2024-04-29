@@ -85,28 +85,26 @@ describe('LiveIntentId', function() {
     setTimeout(() => {
       expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*&us_privacy=1YNY.*&wpn=prebid.*&gdpr=1&n3pc=1&n3pct=1&nb=1&gdpr_consent=consentDataString&gpp_s=gppConsentDataString&gpp_as=1.*/);
       done();
-    }, 200);
+    }, 300);
   });
 
   it('should fire an event when getId and a hash is provided', function(done) {
     liveIntentIdSubmodule.getId({ params: {
-      ...defaultConfigParams,
+      ...defaultConfigParams.params,
       emailHash: '58131bc547fb87af94cebdaf3102321f'
     }});
     setTimeout(() => {
       expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*e=58131bc547fb87af94cebdaf3102321f.+/)
       done();
-    }, 200);
+    }, 300);
   });
 
   it('should initialize LiveConnect and forward the prebid version when decode and emit an event', function(done) {
-    liveIntentIdSubmodule.decode({}, { params: {
-      ...defaultConfigParams
-    }});
+    liveIntentIdSubmodule.decode({}, defaultConfigParams);
     setTimeout(() => {
       expect(server.requests[0].url).to.contain('tv=$prebid.version$')
       done();
-    }, 200);
+    }, 300);
   });
 
   it('should initialize LiveConnect with the config params when decode and emit an event', function (done) {
@@ -123,7 +121,7 @@ describe('LiveIntentId', function() {
     setTimeout(() => {
       expect(server.requests[0].url).to.match(/https:\/\/collector.liveintent.com\/j\?.*aid=a-0001.*&wpn=prebid.*/);
       done();
-    }, 200);
+    }, 300);
   });
 
   it('should fire an event with the provided distributorId', function (done) {
@@ -131,7 +129,7 @@ describe('LiveIntentId', function() {
     setTimeout(() => {
       expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*did=did-1111.*&wpn=prebid.*/);
       done();
-    }, 200);
+    }, 300);
   });
 
   it('should fire an event without the provided distributorId when appId is provided', function (done) {
@@ -140,7 +138,7 @@ describe('LiveIntentId', function() {
       expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*aid=a-0001.*&wpn=prebid.*/);
       expect(server.requests[0].url).to.not.match(/.*did=*/);
       done();
-    }, 200);
+    }, 300);
   });
 
   it('should initialize LiveConnect and emit an event with a privacy string when decode', function(done) {
@@ -157,7 +155,7 @@ describe('LiveIntentId', function() {
     setTimeout(() => {
       expect(server.requests[0].url).to.match(/.*us_privacy=1YNY.*&gdpr=0&gdpr_consent=consentDataString.*&gpp_s=gppConsentDataString&gpp_as=1.*/);
       done();
-    }, 200);
+    }, 300);
   });
 
   it('should fire an event when decode and a hash is provided', function(done) {
@@ -168,11 +166,11 @@ describe('LiveIntentId', function() {
     setTimeout(() => {
       expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*e=58131bc547fb87af94cebdaf3102321f.+/);
       done();
-    }, 200);
+    }, 300);
   });
 
   it('should not return a decoded identifier when the unifiedId is not present in the value', function() {
-    const result = liveIntentIdSubmodule.decode({ additionalData: 'data' });
+    const result = liveIntentIdSubmodule.decode({ fireEventDelay: 1, additionalData: 'data' });
     expect(result).to.be.eql({});
   });
 
@@ -181,7 +179,7 @@ describe('LiveIntentId', function() {
     setTimeout(() => {
       expect(server.requests[0].url).to.be.not.null
       done();
-    }, 200);
+    }, 300);
   });
 
   it('should initialize LiveConnect and send data only once', function(done) {
@@ -192,7 +190,7 @@ describe('LiveIntentId', function() {
     setTimeout(() => {
       expect(server.requests.length).to.be.eq(1);
       done();
-    }, 200);
+    }, 300);
   });
 
   it('should call the custom URL of the LiveIntent Identity Exchange endpoint', function() {
@@ -432,7 +430,7 @@ describe('LiveIntentId', function() {
     const provider = 'liveintent.com'
     refererInfoStub.returns({domain: provider})
     const result = liveIntentIdSubmodule.decode({ nonId: 'foo', thetradedesk: 'bar' });
-    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'thetradedesk': 'bar'}, 'thetradedesk': {'id': 'bar', 'ext': {'provider': provider}}});
+    expect(result).to.eql({'lipb': {'lipbid': 'foo', 'nonId': 'foo', 'tdid': 'bar'}, 'tdid': {'id': 'bar', 'ext': {'rtiPartner': 'TDID', 'provider': provider}}});
   });
 
   it('should allow disabling nonId resolution', function() {

@@ -77,6 +77,7 @@ export const spec = {
     let serverRequests = [];
     const eids = getEids(bidRequests[0]) || [];
     const topicsData = getTopics(bidderRequest);
+    const cdep = getCdep(bidderRequest);
     if (bannerBidRequests.length > 0) {
       let serverRequest = {
         pbav: '$prebid.version$',
@@ -104,6 +105,9 @@ export const spec = {
       const gpc = getGPCSignal(bidderRequest);
       if (gpc) {
         serverRequest.gpc = gpc;
+      }
+      if (cdep) {
+        serverRequest.cdep = cdep;
       }
 
       if (canAccessTopWindow()) {
@@ -438,6 +442,11 @@ function getGPCSignal(bidderRequest) {
   return gpc;
 }
 
+function getCdep(bidderRequest) {
+  const cdep = deepAccess(bidderRequest, 'ortb2.device.ext.cdep') || null;
+  return cdep;
+}
+
 function getTopics(bidderRequest) {
   const userData = deepAccess(bidderRequest, 'ortb2.user.data') || [];
   const topicsData = userData.filter((dataObj) => {
@@ -654,14 +663,6 @@ function validateVideoParams(bid) {
     }
 
     validate('video.protocols', val => isDefined(val), paramRequired);
-    validate(
-      'video.protocols',
-      (val) =>
-        isArrayOfNums(val) &&
-        val.every((v) => v >= 1 && v <= 12 && v != 9 && v != 10), // 9 and 10 are for DAST which are not supported.
-      paramInvalid,
-      'array of numbers between 1 and 12 except for 9 or 10 , ex: [2,3, 7, 11]'
-    );
 
     validate('video.api', val => isDefined(val), paramRequired);
     validate('video.api', val => isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),

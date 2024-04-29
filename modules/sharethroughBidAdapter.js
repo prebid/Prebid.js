@@ -92,6 +92,10 @@ export const sharethroughAdapterSpec = {
       req.regs.ext.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
     }
 
+    if (bidderRequest?.ortb2?.regs?.ext?.dsa) {
+      req.regs.ext.dsa = bidderRequest.ortb2.regs.ext.dsa;
+    }
+
     const imps = bidRequests
       .map((bidReq) => {
         const impression = { ext: {} };
