@@ -423,11 +423,6 @@ function processCmpData(consentData) {
   ) {
     throw new GPPError('CMP returned unexpected value during lookup process.', consentData);
   }
-  ['usnatv1', 'uscav1'].forEach(section => {
-    if (consentData?.parsedSections?.[section]) {
-      logWarn(`Received invalid section from cmp: '${section}'. Some functionality may not work as expected`, consentData)
-    }
-  })
   return storeConsentData(consentData);
 }
 
