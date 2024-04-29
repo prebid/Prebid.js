@@ -1,5 +1,5 @@
 import {config} from './config.js';
-import clone from 'just-clone';
+import {klona} from 'klona/json';
 import {includes} from './polyfill.js';
 import { EVENTS, S2S } from './constants.js';
 import {GreedyPromise} from './utils/promise.js';
@@ -609,7 +609,7 @@ export function shuffle(array) {
 }
 
 export function deepClone(obj) {
-  return clone(obj);
+  return klona(obj) || {};
 }
 
 export function inIframe() {
