@@ -4,7 +4,7 @@
 
     Module Name: 51Degrees Rtd Provider
     Module Type: Rtd Provider
-    Maintainer: engineering@51degrees.com
+    Maintainer: support@51degrees.com
 
 ## Description
 
