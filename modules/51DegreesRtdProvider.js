@@ -104,7 +104,11 @@ export const is51DegreesMetaPresent = () => {
   if (!meta51.length) {
     return false;
   }
-  return meta51.values().some(meta => meta.content.includes('cloud.51degrees.com'));
+  return Array.from(meta51).some(
+    meta => !meta.content
+      ? false
+      : meta.content.includes('cloud.51degrees.com')
+  );
 }
 
 /**
