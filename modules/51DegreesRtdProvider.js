@@ -17,7 +17,9 @@ const ORTB_DEVICE_TYPE = {
   OOH_DEVICE: 8
 };
 
-// Map of 51Degrees device types to ORTB device types
+// Map of 51Degrees device types to ORTB device types. See
+// https://51degrees.com/developers/property-dictionary?item=Device%7CDevice
+// for available properties and values.
 const ORTB_DEVICE_TYPE_MAP = new Map([
   ['Phone', ORTB_DEVICE_TYPE.PHONE],
   ['Console', ORTB_DEVICE_TYPE.SET_TOP_BOX],
@@ -53,6 +55,9 @@ export const extractConfig = (moduleConfig, reqBidsConfigObj) => {
   } else if (resourceKey && onPremiseJSUrl) {
     throw new Error(LOG_PREFIX + ' Only one of resourceKey or onPremiseJSUrl should be provided in moduleConfig');
   }
+  if (resourceKey === '<YOUR_RESOURCE_KEY>') {
+    throw new Error(LOG_PREFIX + ' replace <YOUR_RESOURCE_KEY> in configuration with a resource key obtained from https://configure.51degrees.com/tWrhNfY6');
+  }
 
   return {resourceKey, onPremiseJSUrl};
 }
@@ -68,7 +73,7 @@ export const get51DegreesJSURL = (pathData) => {
   if (pathData.onPremiseJSUrl) {
     return pathData.onPremiseJSUrl;
   }
-  return `https://cloud.51degrees.com/api/v4/${pathData.resourceKey}.js?fod-js-enable-cookies=false`;
+  return `https://cloud.51degrees.com/api/v4/${pathData.resourceKey}.js`;
 }
 
 /**

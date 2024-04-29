@@ -8,7 +8,17 @@
 
 ## Description
 
-51Degrees module enriches an OpenRTB request with the device data using [51Degrees Cloud API](https://51degrees.com/documentation/4.4/index.html) (can also be used with a self-hosted 51Degrees service). 51Degrees detects and sets the following fields of the device object: `make`, `model`, `os`, `osv`, `h`, `w`, `ppi`, `pixelratio` - interested bidder adapters may use these fields as needed.  In addition the module sets `device.ext.fiftyonedegrees_deviceId` to a permanent device ID which may be used with a 51Degrees data file to look up over 250 properties on the backend.
+51Degrees module enriches an OpenRTB request with [51Degrees Device Data](https://51degrees.com/documentation/index.html).
+
+51Degrees module sets the following fields of the device object: `make`, `model`, `os`, `osv`, `h`, `w`, `ppi`, `pixelratio` - interested bidder adapters may use these fields as needed. In addition the module sets `device.ext.fiftyonedegrees_deviceId` to a permanent device ID which can be rapidly looked up in on premise data exposing over 250 properties including the device age, chip set, codec support, and price, operating system and app/browser versions, age, and embedded features.
+
+The module supports on premise and cloud device detection services with free options for both. 
+
+A free resource key for use with 51Degrees cloud service can be obtained from [51Degrees cloud configuration](https://configure.51degrees.com/tWrhNfY6).  This is the simplest approach to trial the module.
+
+An interface compatible self hosted service can be used with .NET, Java, Node, PHP, and Python.  See [51Degrees examples](https://51degrees.com/documentation/_examples__device_detection__getting_started__web__on_premise.html).
+
+Free cloud and on premise solutions can be expanded to support unlimited requests, additional properties, and automatic daily on premise data updates via a [subscription](https://51degrees.com/pricing).
 
 ## Usage
 
@@ -25,7 +35,7 @@ gulp build --modules="rtdModule,51DegreesRtdProvider,appnexusBidAdapter,..."
 ### Prerequisites
 
 #### Resource Key
-In order to use the module please first obtain a Resource Key using the [Configurator tool](https://configure.51degrees.com/AQRVdgJ-9x1dNvxk3Eg) - choose the following properties:
+In order to use the module please first obtain a Resource Key using the [Configurator tool](https://configure.51degrees.com/tWrhNfY6) - choose the following properties:
 * DeviceId
 * DeviceType
 * HardwareVendor
@@ -39,11 +49,11 @@ In order to use the module please first obtain a Resource Key using the [Configu
 * ScreenInchesWidth
 * PixelRatio (optional)
 
-PixelRatio is desirable, but it's a paid property so will work either in a free trial mode or with a license.  Also free API service is limited to 500,000 requests per month - consider picking a [51Degrees pricing plan](https://51degrees.com/pricing) that fits your needs. 
+PixelRatio is desirable, but it's a paid property requiring a paid license.  Also free API service is limited to 500,000 requests per month - consider picking a [51Degrees pricing plan](https://51degrees.com/pricing) that fits your needs. 
 
-#### Client Hint Permissions
+#### User Agent Client Hint (UA-CH) Permissions
 
-Some client-hint headers are not available to third parties. To allow 51Degrees cloud service to access these headers for more accurate detection and lower latency, it is highly recommended to set `Permissions-Policy` in one of two ways:
+Some UA-CH headers are not available to third parties. To allow 51Degrees cloud service to access these headers for more accurate detection and lower latency, it is highly recommended to set `Permissions-Policy` in one of two ways:
 
 In the HTML of the publisher's web page where Prebid.js wrapper is integrated:
 
@@ -59,6 +69,8 @@ Permissions-Policy: ch-ua-arch=(self "https://cloud.51degrees.com"), ch-ua-full-
 Accept-CH: sec-ch-ua-arch, sec-ch-ua-full-version, sec-ch-ua-full-version-list, sec-ch-ua-model, sec-ch-ua-platform, sec-ch-ua-platform-version
 ```
 
+See the [51Degrees documentation](https://51degrees.com/documentation/_device_detection__features__u_a_c_h__overview.html) for more information concerning UA-CH and permissions.
+
 ### Configuration
 
 This module is configured as part of the `realTimeData.dataProviders`
@@ -73,9 +85,9 @@ pbjs.setConfig({
                 name: '51Degrees',
                 waitForIt: true, // should be true, otherwise the auctionDelay will be ignored
                 params: {
-                    // Get your resource key from https://configure.51degrees.com/AQRVdgJ-9x1dNvxk3Eg
+                    // Get your resource key from https://configure.51degrees.com/tWrhNfY6 to connect to cloud.51degrees.com
                     resourceKey: '<YOUR_RESOURCE_KEY>',
-                    // alternatively, you can use the on-premise version of the 51Degrees service
+                    // alternatively, you can use the on-premise version of the 51Degrees service and connect to your chosen end point
                     // onPremiseJSUrl: 'https://localhost/51Degrees.core.js'
                 },
             },
@@ -86,7 +98,7 @@ pbjs.setConfig({
 
 ### Parameters 
 
-> Note that `resourceKey` and `onPremiseJSUrl` are mutually exclusive parameters. Use strictly one of them: either a `resourceKey` for cloud integration and `onPremiseJSUrl` for the on-premise self-hosted integration. 
+> Note that `resourceKey` and `onPremiseJSUrl` are mutually exclusive parameters.  Use strictly one of them: either a `resourceKey` for cloud integration and `onPremiseJSUrl` for the on-premise self-hosted integration. 
 
 | Name                  | Type    | Description                                                                                  | Default            |
 |:----------------------|:--------|:---------------------------------------------------------------------------------------------|:-------------------|
@@ -112,3 +124,7 @@ and then open the following URL in your browser:
 `http://localhost:9999/integrationExamples/gpt/51DegreesRtdProvider_example.html`
 
 Open the browser console to see the logs.
+
+## Customer Notices
+
+When using the 51Degrees cloud service publishers need to reference the 51Degrees [client services privacy policy](https://51degrees.com/terms/client-services-privacy-policy) in their customer notices.
