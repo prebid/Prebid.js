@@ -19,7 +19,7 @@ import {getGlobal} from '../src/prebidGlobal.js';
 import {config} from '../src/config.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS, REJECTION_REASON } from '../src/constants.js';
 import {getHook} from '../src/hook.js';
 import {find} from '../src/polyfill.js';
 import {getRefererInfo} from '../src/refererDetection.js';
@@ -30,6 +30,11 @@ import {timedAuctionHook, timedBidResponseHook} from '../src/utils/perfMetrics.j
 import {adjustCpm} from '../src/utils/cpm.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {convertCurrency} from '../libraries/currencyUtils/currency.js';
+
+export const FLOOR_SKIPPED_REASON = {
+  NOT_FOUND: 'not_found',
+  RANDOM: 'random'
+};
 
 /**
  * @summary This Module is intended to provide users with the ability to dynamically set and enforce price floors on a per auction basis.
@@ -412,13 +417,13 @@ export function createFloorsDataForAuction(adUnits, auctionId) {
   // if we still do not have a valid floor data then floors is not on for this auction, so skip
   if (Object.keys(deepAccess(resolvedFloorsData, 'data.values') || {}).length === 0) {
     resolvedFloorsData.skipped = true;
-    resolvedFloorsData.skippedReason = CONSTANTS.FLOOR_SKIPPED_REASON.NOT_FOUND
+    resolvedFloorsData.skippedReason = FLOOR_SKIPPED_REASON.NOT_FOUND
   } else {
     // determine the skip rate now
     const auctionSkipRate = getParameterByName('pbjs_skipRate') || (deepAccess(resolvedFloorsData, 'data.skipRate') ?? resolvedFloorsData.skipRate);
     const isSkipped = Math.random() * 100 < parseFloat(auctionSkipRate);
     resolvedFloorsData.skipped = isSkipped;
-    if (isSkipped) resolvedFloorsData.skippedReason = CONSTANTS.FLOOR_SKIPPED_REASON.RANDOM
+    if (isSkipped) resolvedFloorsData.skippedReason = FLOOR_SKIPPED_REASON.RANDOM
   }
   // copy FloorMin to floorData.data
   if (resolvedFloorsData.hasOwnProperty('floorMin')) resolvedFloorsData.data.floorMin = resolvedFloorsData.floorMin;
@@ -701,7 +706,7 @@ export function handleSetFloorsConfig(config) {
     if (!addedFloorsHook) {
       // register hooks / listening events
       // when auction finishes remove it's associated floor data after 3 seconds so we stil have it for latent responses
-      events.on(CONSTANTS.EVENTS.AUCTION_END, (args) => {
+      events.on(EVENTS.AUCTION_END, (args) => {
         setTimeout(() => delete _floorDataForAuction[args.auctionId], 3000);
       });
 
@@ -802,7 +807,7 @@ export const addBidResponseHook = timedBidResponseHook('priceFloors', function a
   // now do the compare!
   if (shouldFloorBid(floorData, floorInfo, bid)) {
     // bid fails floor -> throw it out
-    reject(CONSTANTS.REJECTION_REASON.FLOOR_NOT_MET);
+    reject(REJECTION_REASON.FLOOR_NOT_MET);
     logWarn(`${MODULE_NAME}: ${bid.bidderCode}'s Bid Response for ${adUnitCode} was rejected due to floor not met (adjusted cpm: ${bid?.floorData?.cpmAfterAdjustments}, floor: ${floorInfo?.matchingFloor})`, bid);
     return;
   }

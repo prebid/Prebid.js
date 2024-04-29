@@ -1,36 +1,41 @@
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getUniqueIdentifierStr, logInfo} from '../src/utils.js';
+import {getUniqueIdentifierStr, logInfo, deepSetValue} from '../src/utils.js';
 import {fetch} from '../src/ajax.js';
 
 const bidderCode = 'lucead';
-let baseUrl = 'https://ayads.io';
-let staticUrl = 'https://s.ayads.io';
+const bidderName = 'Lucead';
+let baseUrl = 'https://lucead.com';
+let staticUrl = 'https://s.lucead.com';
 let companionUrl = 'https://cdn.jsdelivr.net/gh/lucead/prebid-js-external-js-lucead@master/dist/prod.min.js';
-let endpointUrl = 'https://prebid.ayads.io/go';
+let endpointUrl = 'https://prebid.lucead.com/go';
 const defaultCurrency = 'EUR';
 const defaultTtl = 500;
-const isDevEnv = location.hostname.endsWith('.ngrok-free.app');
+const aliases = ['adliveplus'];
+
+function isDevEnv() {
+  return location.hash.includes('prebid-dev') || location.href.startsWith('https://ayads.io/test');
+}
 
 function isBidRequestValid(bidRequest) {
   return !!bidRequest?.params?.placementId;
 }
 
 export function log(msg, obj) {
-  logInfo('Lucead - ' + msg, obj);
+  logInfo(`${bidderName} - ${msg}`, obj);
 }
 
-function buildRequests(validBidRequests, bidderRequest) {
-  if (isDevEnv) {
-    baseUrl = `https://${location.hostname}`;
+function buildRequests(bidRequests, bidderRequest) {
+  if (isDevEnv()) {
+    baseUrl = location.origin;
     staticUrl = baseUrl;
     companionUrl = `${staticUrl}/dist/prebid-companion.js`;
     endpointUrl = `${baseUrl}/go`;
   }
 
   log('buildRequests', {
-    validBidRequests,
+    bidRequests,
     bidderRequest,
   });
 
@@ -39,15 +44,17 @@ function buildRequests(validBidRequests, bidderRequest) {
     static_url: staticUrl,
     endpoint_url: endpointUrl,
     request_id: bidderRequest.bidderRequestId,
-    validBidRequests,
+    prebid_version: '$prebid.version$',
+    bidRequests,
     bidderRequest,
     getUniqueIdentifierStr,
     ortbConverter,
+    deepSetValue,
   };
 
   loadExternalScript(companionUrl, bidderCode, () => window.ayads_prebid && window.ayads_prebid(companionData));
 
-  return validBidRequests.map(bidRequest => ({
+  return bidRequests.map(bidRequest => ({
     method: 'POST',
     url: `${endpointUrl}/prebid/sub`,
     data: JSON.stringify({
@@ -80,7 +87,7 @@ function interpretResponse(serverResponse, bidRequest) {
     height: (response?.size && response?.size?.height) || 250,
     currency: response?.currency || defaultCurrency,
     ttl: response?.ttl || defaultTtl,
-    creativeId: response?.ad_id || '0',
+    creativeId: response.ssp ? `ssp:${response.ssp}` : (response?.ad_id || '0'),
     netRevenue: response?.netRevenue || true,
     ad: response?.ad || '',
     meta: {
@@ -119,13 +126,22 @@ function report(type = 'impression', data = {}) {
 function onBidWon(bid) {
   log('Bid won', bid);
 
-  return report(`impression`, {
+  let data = {
     bid_id: bid?.bidId,
-    ad_id: bid?.creativeId,
     placement_id: bid?.params ? bid?.params[0]?.placementId : 0,
     spent: bid?.cpm,
     currency: bid?.currency,
-  });
+  };
+
+  if (bid.creativeId) {
+    if (bid.creativeId.toString().startsWith('ssp:')) {
+      data.ssp = bid.creativeId.split(':')[1];
+    } else {
+      data.ad_id = bid.creativeId;
+    }
+  }
+
+  return report(`impression`, data);
 }
 
 function onTimeout(timeoutData) {
@@ -135,12 +151,13 @@ function onTimeout(timeoutData) {
 export const spec = {
   code: bidderCode,
   // gvlid: BIDDER_GVLID,
-  aliases: [],
+  aliases,
   isBidRequestValid,
   buildRequests,
   interpretResponse,
   onBidWon,
   onTimeout,
+  isDevEnv,
 };
 
 // noinspection JSCheckFunctionSignatures

@@ -140,7 +140,7 @@ export const spec = {
         groupId: bid.params.group_id,
         bidId: bid.bidId,
         tid: bid.ortb2Imp?.ext?.tid,
-        eids: [],
+        eids: bid.userIdAsEids || [],
         floor: {}
       };
 

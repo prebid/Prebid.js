@@ -1,7 +1,7 @@
-import { isArray, _map, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { _map, isArray, triggerPixel } from '../src/utils.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -125,7 +125,7 @@ function buildBidRequest(validBidRequest) {
     adUnitCode: validBidRequest.adUnitCode,
     geom: geom(validBidRequest.adUnitCode),
     placement: params.placement,
-    requestCount: validBidRequest.bidderRequestsCount || 1, // FIXME : in unit test the parameter bidderRequestsCount is undefined
+    requestCount: validBidRequest.bidderRequestsCount || 1, // FIXME : in unit test the parameter bidderRequestsCount is undefinedt
   };
 
   if (hasVideoMediaType(validBidRequest)) {
@@ -284,6 +284,7 @@ export const spec = {
       auctionStart: bidderRequest.auctionStart || Date.now(),
       ttfb: ttfb(),
       bidRequests: _map(validBidRequests, buildBidRequest),
+      user: { topics: [], eids: [] }
     };
 
     if (payload.cmp) {
@@ -316,7 +317,15 @@ export const spec = {
       }
     }
 
+    if (bidderRequest.ortb2?.user?.data) {
+      payload.user.topics = bidderRequest.ortb2.user.data
+    }
+    if (validBidRequests[0] && validBidRequests[0].userIdAsEids) {
+      payload.user.eids = validBidRequests[0].userIdAsEids
+    }
+
     const payloadString = JSON.stringify(payload);
+
     return {
       method: 'POST',
       url: SEEDTAG_SSP_ENDPOINT,

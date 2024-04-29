@@ -60,6 +60,14 @@ pbjs.setConfig({
                 bidder: 'taboola',
                 iframeURL: 'https://cdn.taboola.com/libtrc/static/topics/taboola-prebid-browsing-topics.html',
                 expiry: 7 // Configurable expiry days
+            }, {
+                bidder: 'discovery',
+                iframeURL: 'https://api.popin.cc/topic/prebid-topics-frame.html',
+                expiry: 7 // Configurable expiry days
+            }, {
+                bidder: 'undertone',
+                iframeURL: 'https://creative-p.undertone.com/spk-public/topics_frame.html',
+                expiry: 7 // Configurable expiry days
             }]
         }
         ....
