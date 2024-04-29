@@ -71,12 +71,14 @@ describe('51DegreesRtdProvider', function() {
     });
 
     it('injects the 51Degrees script into the document head', function(done) {
-      inject51DegreesScript('https://localhost/51Degrees.core.js')
+      inject51DegreesScript('https://localhost.fake:12345/51Degrees.core.js')
         .catch(() => {
           // Ignore the error, since the script is not available
         })
         .finally(() => {
-          const script = document.head.querySelector('script[src="https://localhost/51Degrees.core.js"]');
+          const script = document.head.querySelector(
+            'script[src="https://localhost.fake:12345/51Degrees.core.js"]'
+          );
           expect(script).to.not.be.null;
           done();
         });
