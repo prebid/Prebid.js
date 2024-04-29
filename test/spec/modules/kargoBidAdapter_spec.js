@@ -1955,12 +1955,12 @@ describe('kargo adapter tests', function() {
   });
 
   describe('onTimeout', function() {
-    before(function() {
-      sinon.spy(utils, 'triggerPixel');
+    beforeEach(function () {
+      sinon.stub(utils, 'triggerPixel');
     });
 
-    afterEach(function() {
-      utils.triggerPixel.resetHistory();
+    afterEach(function () {
+      utils.triggerPixel.restore();
     });
 
     it('does not call triggerPixel if timeout data is not provided', function() {
