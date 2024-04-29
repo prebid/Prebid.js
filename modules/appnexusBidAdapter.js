@@ -774,6 +774,18 @@ function bidToTag(bid) {
   } else {
     tag.code = bid.params.inv_code;
   }
+  // Xandr expects GET variable to be in a following format:
+  // page.html?ast_override_div=divId:creativeId,divId2:creativeId2
+  const overrides = getParameterByName('ast_override_div');
+  if (isStr(overrides) && overrides !== '') {
+    const adUnitOverride = overrides.split(',').find((pair) => pair.startsWith(`${bid.adUnitCode}:`));
+    if (adUnitOverride) {
+      const forceCreativeId = adUnitOverride.split(':')[1];
+      if (forceCreativeId) {
+        tag.force_creative_id = parseInt(forceCreativeId, 10);
+      }
+    }
+  }
   tag.allow_smaller_sizes = bid.params.allow_smaller_sizes || false;
   tag.use_pmt_rule = (typeof bid.params.use_payment_rule === 'boolean') ? bid.params.use_payment_rule
     : (typeof bid.params.use_pmt_rule === 'boolean') ? bid.params.use_pmt_rule : false;
@@ -1018,7 +1030,7 @@ function getContextFromPlcmt(ortbPlcmt, ortbStartDelay) {
   }
 
   if (ortbPlcmt === 2) {
-    if (!ortbStartDelay) {
+    if (typeof ortbStartDelay === 'undefined') {
       return;
     }
     if (ortbStartDelay === 0) {
