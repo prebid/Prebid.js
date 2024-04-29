@@ -70,12 +70,16 @@ describe('51DegreesRtdProvider', function() {
       document.head.innerHTML = initialHeadInnerHTML;
     });
 
-    it('injects the 51Degrees script into the document head', async function() {
-      await inject51DegreesScript('https://localhost/51Degrees.core.js').catch(() => {
-        // Ignore the error, since the script is not available
-      });
-      const script = document.head.querySelector('script[src="https://localhost/51Degrees.core.js"]');
-      expect(script).to.not.be.null;
+    it('injects the 51Degrees script into the document head', function(done) {
+      inject51DegreesScript('https://localhost/51Degrees.core.js')
+        .catch(() => {
+          // Ignore the error, since the script is not available
+        })
+        .finally(() => {
+          const script = document.head.querySelector('script[src="https://localhost/51Degrees.core.js"]');
+          expect(script).to.not.be.null;
+          done();
+        });
     });
   });
 
