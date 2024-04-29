@@ -49,7 +49,7 @@ describe('51DegreesRtdProvider', function() {
     it('returns the cloud URL if the resourceKey is provided', function() {
       const config = {resourceKey: 'TEST_RESOURCE_KEY'};
       expect(get51DegreesJSURL(config)).to.equal(
-        'https://cloud.51degrees.com/api/v4/TEST_RESOURCE_KEY.js?fod-js-enable-cookies=false'
+        'https://cloud.51degrees.com/api/v4/TEST_RESOURCE_KEY.js'
       );
     });
 
