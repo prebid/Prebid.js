@@ -1959,7 +1959,7 @@ describe('kargo adapter tests', function() {
       sinon.spy(utils, 'triggerPixel');
     });
 
-    beforeEach(function() {
+    afterEach(function() {
       utils.triggerPixel.resetHistory();
     });
 
