@@ -2,10 +2,7 @@ import { expect } from 'chai';
 import { spec, converter } from 'modules/performaxBidAdapter.js';
 
 describe('Performax adapter', function () {
-  let bids = [];
-  let bidderRequest = {};
-  let serverResponse = {};
-  bids = [{
+  let bids = [{
     bidder: 'performax',
     params: {
       tagid: 'sample'
@@ -70,7 +67,7 @@ describe('Performax adapter', function () {
       device: {}
     }}];
 
-  bidderRequest = {
+  let bidderRequest = {
     bidderCode: 'performax2',
     auctionId: 'acd97e55-01e1-45ad-813c-67fa27fc5c1b',
     id: 'acd97e55-01e1-45ad-813c-67fa27fc5c1b',
@@ -90,7 +87,7 @@ describe('Performax adapter', function () {
       device: {}
     }};
 
-  serverResponse = {
+  let serverResponse = {
     body: {
       cur: 'CZK',
       seatbid: [
