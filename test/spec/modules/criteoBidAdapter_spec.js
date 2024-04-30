@@ -2009,7 +2009,15 @@ describe('The Criteo bidding adapter', function () {
     });
 
     it('should properly transmit the pubid and slot uid if available', function () {
-      const bidderRequest = {};
+      const bidderRequest = {
+        ortb2: {
+          site: {
+            publisher: {
+              id: 'pub-777'
+            }
+          }
+        }
+      };
       const bidRequests = [
         {
           bidder: 'criteo',
@@ -2050,7 +2058,8 @@ describe('The Criteo bidding adapter', function () {
       ];
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const ortbRequest = request.data;
-      expect(ortbRequest.publisher.id).to.equal('pub-888');
+      expect(ortbRequest.publisher.id).to.be.undefined;
+      expect(ortbRequest.site.publisher.id).to.equal('pub-888');
       expect(request.data.slots[0].ext.bidder).to.be.undefined;
       expect(request.data.slots[1].ext.bidder.uid).to.equal(888);
     });
