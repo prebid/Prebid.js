@@ -1,7 +1,9 @@
+import {loadExternalScript} from '../src/adloader.js';
 import {submodule} from '../src/hook.js';
 import {prefixLog, deepAccess, mergeDeep} from '../src/utils.js';
 
-export const LOG_PREFIX = '[51Degrees RTD Submodule]:';
+const MODULE_NAME = '51Degrees';
+export const LOG_PREFIX = `[${MODULE_NAME} RTD Submodule]:`;
 const {logMessage, logWarn, logError} = prefixLog(LOG_PREFIX);
 
 // ORTB device types
@@ -74,23 +76,6 @@ export const get51DegreesJSURL = (pathData) => {
     return pathData.onPremiseJSUrl;
   }
   return `https://cloud.51degrees.com/api/v4/${pathData.resourceKey}.js`;
-}
-
-/**
- * Injects 51Degrees script into the document head
- * @param {string} url 51Degrees JS URL
- * @returns {Promise} Promise that resolves when the script is loaded
- */
-export const inject51DegreesScript = (url) => {
-  const script = document.createElement('script');
-  script.src = url;
-  script.async = true;
-  document.head.appendChild(script);
-
-  return new Promise((resolve, reject) => {
-    script.onload = resolve;
-    script.onerror = reject;
-  });
 }
 
 /**
@@ -209,25 +194,20 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
     }
 
     // Inject 51Degrees script, get device data and merge it into the ORTB2 object
-    inject51DegreesScript(scriptURL)
-      .then(() => {
-        logMessage('Successfully injected 51Degrees script');
-        const fod = /** @type {Object} */ (window.fod);
-        // Convert and merge device data in the callback
-        fod.complete((data) => {
-          logMessage('51Degrees raw data: ', data);
-          mergeDeep(
-            reqBidsConfigObj.ortb2Fragments.global,
-            {device: convert51DegreesDeviceToOrtb2(data.device)},
-          )
-          logMessage('reqBidsConfigObj: ', reqBidsConfigObj);
-          callback();
-        });
-      })
-      .catch((error) => {
-        logError('Error injecting 51Degrees script: ', error);
+    loadExternalScript(scriptURL, MODULE_NAME, () => {
+      logMessage('Successfully injected 51Degrees script');
+      const fod = /** @type {Object} */ (window.fod);
+      // Convert and merge device data in the callback
+      fod.complete((data) => {
+        logMessage('51Degrees raw data: ', data);
+        mergeDeep(
+          reqBidsConfigObj.ortb2Fragments.global,
+          {device: convert51DegreesDeviceToOrtb2(data.device)},
+        )
+        logMessage('reqBidsConfigObj: ', reqBidsConfigObj);
         callback();
       });
+    });
   } catch (error) {
     // In case of an error, log it and continue
     logError(error);
@@ -247,7 +227,7 @@ const init = (config, userConsent) => {
 
 // 51Degrees RTD submodule object to be registered
 export const fiftyOneDegreesSubmodule = {
-  name: '51Degrees',
+  name: MODULE_NAME,
   init,
   getBidRequestData,
 }

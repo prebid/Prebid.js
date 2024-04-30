@@ -1,7 +1,6 @@
 import {
   extractConfig,
   get51DegreesJSURL,
-  inject51DegreesScript,
   is51DegreesMetaPresent,
   setOrtb2KeyIfNotEmpty,
   convert51DegreesDeviceToOrtb2,
@@ -56,32 +55,6 @@ describe('51DegreesRtdProvider', function() {
     it('returns the on-premise URL if the onPremiseJSUrl is provided', function() {
       const config = {onPremiseJSUrl: 'https://example.com/51Degrees.core.js'};
       expect(get51DegreesJSURL(config)).to.equal('https://example.com/51Degrees.core.js');
-    });
-  });
-
-  describe('inject51DegreesScript', function() {
-    let initialHeadInnerHTML;
-
-    before(function() {
-      initialHeadInnerHTML = document.head.innerHTML;
-    });
-
-    afterEach(function() {
-      document.head.innerHTML = initialHeadInnerHTML;
-    });
-
-    it('injects the 51Degrees script into the document head', function(done) {
-      inject51DegreesScript('https://localhost.fake:12345/51Degrees.core.js')
-        .catch(() => {
-          // Ignore the error, since the script is not available
-        })
-        .finally(() => {
-          const script = document.head.querySelector(
-            'script[src="https://localhost.fake:12345/51Degrees.core.js"]'
-          );
-          expect(script).to.not.be.null;
-          done();
-        });
     });
   });
 
