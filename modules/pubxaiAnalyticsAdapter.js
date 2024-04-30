@@ -4,24 +4,40 @@ import {
   getWindowLocation,
   buildUrl,
   cyrb53Hash,
-} from '../src/utils.js';
-import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
-import { getGlobal } from '../src/prebidGlobal.js';
+} from "../src/utils.js";
+import adapter from "../libraries/analyticsAdapter/AnalyticsAdapter.js";
+import adapterManager from "../src/adapterManager.js";
+import CONSTANTS from "../src/constants.json";
+import { getGlobal } from "../src/prebidGlobal.js";
 import {
   getGptSlotInfoForAdUnitCode,
   getGptSlotForAdUnitCode,
-} from '../libraries/gptUtils/gptUtils.js';
+} from "../libraries/gptUtils/gptUtils.js";
 
 let initOptions;
 
-const emptyUrl = '';
-const analyticsType = 'endpoint';
-const pubxaiAnalyticsVersion = 'v1.2.0';
-const defaultHost = 'api.pbxai.com';
-const auctionPath = '/analytics/auction';
-const winningBidPath = '/analytics/bidwon';
+const emptyUrl = "";
+const analyticsType = "endpoint";
+const pubxaiAnalyticsVersion = "v1.2.0";
+const defaultHost = "api.pbxai.com";
+const auctionPath = "/analytics/auction";
+const winningBidPath = "/analytics/bidwon";
+
+/**
+ * The sendCache is a global cache object which tracks the pending sends
+ * back to pubx.ai. The data may be removed from this cache, post send.
+ */
+export const sendCache = new Proxy(
+  {},
+  {
+    get: (target, name) => {
+      if (!Object.hasOwn(target, name)) {
+        target[name] = [];
+      }
+      return target[name];
+    },
+  }
+);
 
 /**
  * auctionCache is a global cache object which stores all auction histories
@@ -59,18 +75,29 @@ export const auctionCache = new Proxy(
           consentDetail: {
             consentTypes: Object.keys(getGlobal().getConsentMetadata?.() || {}),
           },
-          pmacDetail: JSON.parse(getStorage()?.getItem('pubx:pmac')) || {}, // {auction_1: {floor:0.23,maxBid:0.34,bidCount:3},auction_2:{floor:0.13,maxBid:0.14,bidCount:2}
+          pmacDetail: JSON.parse(getStorage()?.getItem("pubx:pmac")) || {}, // {auction_1: {floor:0.23,maxBid:0.34,bidCount:3},auction_2:{floor:0.13,maxBid:0.14,bidCount:2}
           initOptions: {
             ...initOptions,
             auctionId: name, // back-compat
           },
-          sentAs: [],
+          sendAs: [],
         };
       }
       return target[name];
     },
   }
 );
+
+/**
+ *
+ * @returns {boolean} whether or not the browser session supports sendBeacon
+ */
+const hasSendBeaconSupport = () => {
+  if (!navigator.sendBeacon || !document.visibilityState) {
+    return false;
+  }
+  return true;
+};
 
 /**
  * Fetch extra ad server data for a specific ad slot (bid)
@@ -85,8 +112,8 @@ const getAdServerDataForBid = (bid) => {
         .getTargetingKeys()
         .filter(
           (key) =>
-            key.startsWith('pubx-') ||
-            (key.startsWith('hb_') && (key.match(/_/g) || []).length === 1)
+            key.startsWith("pubx-") ||
+            (key.startsWith("hb_") && (key.match(/_/g) || []).length === 1)
         )
         .map((key) => [key, gptSlot.getTargeting(key)])
     );
@@ -100,7 +127,7 @@ const getAdServerDataForBid = (bid) => {
  */
 const getStorage = () => {
   try {
-    return window.top['sessionStorage'];
+    return window.top["sessionStorage"];
   } catch (e) {
     return null;
   }
@@ -135,7 +162,7 @@ const extractBid = (bidResponse) => {
     transactionId: bidResponse.transactionId,
     bidId: bidResponse.bidId || bidResponse.requestId,
     placementId: bidResponse.params
-      ? deepAccess(bidResponse, 'params.0.placementId')
+      ? deepAccess(bidResponse, "params.0.placementId")
       : null,
   };
 };
@@ -179,7 +206,7 @@ const track = ({ eventType, args }) => {
       if (
         auctionCache[args.auctionId].bids.every((bid) => bid.renderStatus === 3)
       ) {
-        send(args.auctionId);
+        prepareSend(args.auctionId);
       }
       break;
     // send the prebid winning bid back to pubx
@@ -199,7 +226,7 @@ const track = ({ eventType, args }) => {
       });
       winningBid.adServerData = getAdServerDataForBid(winningBid);
       auctionCache[winningBid.auctionId].winningBid = winningBid;
-      send(winningBid.auctionId);
+      prepareSend(winningBid.auctionId);
       break;
     // do nothing
     default:
@@ -217,16 +244,16 @@ export const getDeviceType = () => {
       navigator.userAgent.toLowerCase()
     )
   ) {
-    return 'tablet';
+    return "tablet";
   }
   if (
     /iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(
       navigator.userAgent.toLowerCase()
     )
   ) {
-    return 'mobile';
+    return "mobile";
   }
-  return 'desktop';
+  return "desktop";
 };
 
 /**
@@ -238,21 +265,21 @@ export const getBrowser = () => {
     /Chrome/.test(navigator.userAgent) &&
     /Google Inc/.test(navigator.vendor)
   ) {
-    return 'Chrome';
-  } else if (navigator.userAgent.match('CriOS')) return 'Chrome';
-  else if (/Firefox/.test(navigator.userAgent)) return 'Firefox';
-  else if (/Edg/.test(navigator.userAgent)) return 'Microsoft Edge';
+    return "Chrome";
+  } else if (navigator.userAgent.match("CriOS")) return "Chrome";
+  else if (/Firefox/.test(navigator.userAgent)) return "Firefox";
+  else if (/Edg/.test(navigator.userAgent)) return "Microsoft Edge";
   else if (
     /Safari/.test(navigator.userAgent) &&
     /Apple Computer/.test(navigator.vendor)
   ) {
-    return 'Safari';
+    return "Safari";
   } else if (
     /Trident/.test(navigator.userAgent) ||
     /MSIE/.test(navigator.userAgent)
   ) {
-    return 'Internet Explorer';
-  } else return 'Others';
+    return "Internet Explorer";
+  } else return "Others";
 };
 
 /**
@@ -260,13 +287,13 @@ export const getBrowser = () => {
  * @returns {string}
  */
 export const getOS = () => {
-  if (navigator.userAgent.indexOf('Android') != -1) return 'Android';
-  if (navigator.userAgent.indexOf('like Mac') != -1) return 'iOS';
-  if (navigator.userAgent.indexOf('Win') != -1) return 'Windows';
-  if (navigator.userAgent.indexOf('Mac') != -1) return 'Macintosh';
-  if (navigator.userAgent.indexOf('Linux') != -1) return 'Linux';
-  if (navigator.appVersion.indexOf('X11') != -1) return 'Unix';
-  return 'Others';
+  if (navigator.userAgent.indexOf("Android") != -1) return "Android";
+  if (navigator.userAgent.indexOf("like Mac") != -1) return "iOS";
+  if (navigator.userAgent.indexOf("Win") != -1) return "Windows";
+  if (navigator.userAgent.indexOf("Mac") != -1) return "Macintosh";
+  if (navigator.userAgent.indexOf("Linux") != -1) return "Linux";
+  if (navigator.appVersion.indexOf("X11") != -1) return "Unix";
+  return "Others";
 };
 
 /**
@@ -280,10 +307,10 @@ const shouldFireEventRequest = (auctionId, samplingRate = 1) => {
 };
 
 /**
- * Send auction data back to pubx.ai
+ * prepare the payload for sending auction data back to pubx.ai
  * @param {string} auctionId the auction to send
  */
-const send = (auctionId) => {
+const prepareSend = (auctionId) => {
   const auctionData = Object.assign({}, auctionCache[auctionId]);
   if (!shouldFireEventRequest(auctionId, initOptions.samplingRate)) {
     return;
@@ -292,45 +319,45 @@ const send = (auctionId) => {
     {
       path: winningBidPath,
       requiredKeys: [
-        'winningBid',
-        'pageDetail',
-        'deviceDetail',
-        'floorDetail',
-        'auctionDetail',
-        'userDetail',
-        'consentDetail',
-        'pmacDetail',
-        'initOptions',
+        "winningBid",
+        "pageDetail",
+        "deviceDetail",
+        "floorDetail",
+        "auctionDetail",
+        "userDetail",
+        "consentDetail",
+        "pmacDetail",
+        "initOptions",
       ],
-      eventType: 'win',
+      eventType: "win",
     },
     {
       path: auctionPath,
       requiredKeys: [
-        'bids',
-        'pageDetail',
-        'deviceDetail',
-        'floorDetail',
-        'auctionDetail',
-        'userDetail',
-        'consentDetail',
-        'pmacDetail',
-        'initOptions',
+        "bids",
+        "pageDetail",
+        "deviceDetail",
+        "floorDetail",
+        "auctionDetail",
+        "userDetail",
+        "consentDetail",
+        "pmacDetail",
+        "initOptions",
       ],
-      eventType: 'auction',
+      eventType: "auction",
     },
   ].forEach(({ path, requiredKeys, eventType }) => {
     const data = Object.fromEntries(
       requiredKeys.map((key) => [key, auctionData[key]])
     );
     if (
-      auctionCache[auctionId].sentAs.includes(eventType) ||
+      auctionCache[auctionId].sendAs.includes(eventType) ||
       !requiredKeys.every((key) => !!auctionData[key])
     ) {
       return;
     }
     const pubxaiAnalyticsRequestUrl = buildUrl({
-      protocol: 'https',
+      protocol: "https",
       hostname:
         (auctionData.initOptions && auctionData.initOptions.hostName) ||
         defaultHost,
@@ -341,14 +368,44 @@ const send = (auctionId) => {
         prebidVersion: getGlobal().version,
       },
     });
-    const payload = new Blob([JSON.stringify(data)], {
-      type: 'text/json',
-    });
-    navigator.sendBeacon(pubxaiAnalyticsRequestUrl, payload);
-    auctionCache[auctionId].sentAs.push(eventType);
+    sendCache[pubxaiAnalyticsRequestUrl].push(data);
+    auctionCache[auctionId].sendAs.push(eventType);
   });
 };
 
+const send = () => {
+  const toBlob = (d) => new Blob([JSON.stringify(d)], { type: "text/json" });
+
+  Object.entries(sendCache).forEach(([requestUrl, events]) => {
+    let payloadStart = 0;
+
+    events.forEach((event, index, arr) => {
+      const payload = arr.slice(payloadStart, index + 2);
+      const payloadTooLarge = toBlob(payload).size > 65536;
+
+      if (payloadTooLarge || index + 1 === arr.length) {
+        navigator.sendBeacon(
+          requestUrl,
+          toBlob(payloadTooLarge ? payload.slice(0, -1) : payload)
+        );
+        payloadStart = index;
+      }
+    });
+
+    events.splice(0);
+  });
+};
+
+// register event listener to send logs when user leaves page
+if (hasSendBeaconSupport()) {
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      send();
+    }
+  });
+}
+
+// declare the analytics adapter
 var pubxaiAnalyticsAdapter = Object.assign(
   adapter({
     emptyUrl,
@@ -356,7 +413,6 @@ var pubxaiAnalyticsAdapter = Object.assign(
   }),
   { track }
 );
-pubxaiAnalyticsAdapter.track = track;
 
 pubxaiAnalyticsAdapter.originEnableAnalytics =
   pubxaiAnalyticsAdapter.enableAnalytics;
@@ -367,7 +423,7 @@ pubxaiAnalyticsAdapter.enableAnalytics = (config) => {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: pubxaiAnalyticsAdapter,
-  code: 'pubxai',
+  code: "pubxai",
 });
 
 export default pubxaiAnalyticsAdapter;
