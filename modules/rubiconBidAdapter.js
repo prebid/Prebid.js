@@ -992,7 +992,7 @@ function applyFPD(bidRequest, mediaType, data) {
               } else if (Array.isArray(transp.params)) {
                 dsaparams = transp.params.join('_');
               }
-              return param += `${transp.domain}~${transp.dsaparams.join('_')}`
+              return param += `${domain}~${dsaparams}`;
             }, '')
           }
         }
