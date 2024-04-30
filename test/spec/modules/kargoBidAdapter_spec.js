@@ -4,7 +4,7 @@ import { config } from 'src/config.js';
 const utils = require('src/utils');
 
 describe('kargo adapter tests', function() {
-  let bid, outstreamBid, testBids, sandbox, clock, frozenNow = new Date();
+  let bid, outstreamBid, testBids, sandbox, clock, frozenNow = new Date(), oldBidderSettings;
 
   const topUrl = 'https://random.com/this/is/a/url';
   const domain = 'random.com';
@@ -147,6 +147,7 @@ describe('kargo adapter tests', function() {
   }
 
   beforeEach(function() {
+    oldBidderSettings = $$PREBID_GLOBAL$$.bidderSettings;
     $$PREBID_GLOBAL$$.bidderSettings = {
       kargo: { storageAllowed: true }
     };
@@ -207,6 +208,7 @@ describe('kargo adapter tests', function() {
   afterEach(function() {
     sandbox.restore();
     clock.restore();
+    $$PREBID_GLOBAL$$.bidderSettings = oldBidderSettings;
   });
 
   describe('gvlid', function() {
