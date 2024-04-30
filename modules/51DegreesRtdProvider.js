@@ -107,7 +107,7 @@ export const is51DegreesMetaPresent = () => {
   return Array.from(meta51).some(
     meta => !meta.content
       ? false
-      : meta.content.includes('cloud.51degrees.com')
+      : meta.content.includes('https://cloud.51degrees.com')
   );
 }
 
