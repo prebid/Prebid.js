@@ -675,6 +675,25 @@ describe('The Criteo bidding adapter', function () {
       expect(ortbRequest.source.tid).to.equal('abc');
     });
 
+    it('should properly transmit tmax if available', function () {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {}
+        },
+      ];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const ortbRequest = request.data;
+      expect(ortbRequest.tmax).to.equal(bidderRequest.timeout);
+    });
+
     it('should properly transmit bidId if available', function () {
       const bidderRequest = {
         ortb2: {
