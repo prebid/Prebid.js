@@ -985,6 +985,13 @@ function applyFPD(bidRequest, mediaType, data) {
               if (param) {
                 param += '~~'
               }
+              const domain = transp.domain || '';
+              let dsaparams = '';
+              if (Array.isArray(transp.dsaparams)) {
+                dsaparams = transp.dsaparams.join('_');
+              } else if (Array.isArray(transp.params)) {
+                dsaparams = transp.params.join('_');
+              }
               return param += `${transp.domain}~${transp.dsaparams.join('_')}`
             }, '')
           }
