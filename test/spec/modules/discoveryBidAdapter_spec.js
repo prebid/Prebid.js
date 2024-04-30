@@ -15,6 +15,20 @@ import {
 import * as utils from 'src/utils.js';
 
 describe('discovery:BidAdapterTests', function () {
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.sandbox.create();
+    sandbox.stub(storage, 'getCookie');
+    sandbox.stub(storage, 'setCookie');
+    sandbox.stub(utils, 'generateUUID').returns('new-uuid');
+    sandbox.stub(storage, 'cookiesAreEnabled');
+  })
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   let bidRequestData = {
     bidderCode: 'discovery',
     auctionId: 'ff66e39e-4075-4d18-9854-56fde9b879ac',
@@ -200,25 +214,12 @@ describe('discovery:BidAdapterTests', function () {
       })
     ).to.equal(true);
   });
-
-  describe('discovery:validate_generated_params', function() {
-    let sandbox;
-
-    beforeEach(() => {
-      sandbox = sinon.sandbox.create();
-      sandbox.stub(storage, 'getCookie');
-    })
-
-    afterEach(() => {
-      sandbox.restore();
-    });
-    it('should be a imp array', function () {
-      storage.getCookie.withArgs('_ss_pp_utm').callsFake(() => '{"utm_source":"example.com","utm_medium":"123","utm_campaign":"456"}');
-      request = spec.buildRequests(bidRequestData.bids, bidRequestData);
-      let req_data = JSON.parse(request.data);
-      expect(req_data.imp).to.have.lengthOf(1);
-    });
-  })
+  it('discovery:validate_generated_params', function () {
+    storage.getCookie.withArgs('_ss_pp_utm').callsFake(() => '{"utm_source":"example.com","utm_medium":"123","utm_campaign":"456"}');
+    request = spec.buildRequests(bidRequestData.bids, bidRequestData);
+    let req_data = JSON.parse(request.data);
+    expect(req_data.imp).to.have.lengthOf(1);
+  });
   describe('first party data', function () {
     it('should pass additional parameter in request for topics', function () {
       const request = spec.buildRequests(bidRequestData.bids, bidRequestData);
@@ -229,20 +230,6 @@ describe('discovery:BidAdapterTests', function () {
 
   describe('discovery: buildRequests', function() {
     describe('getPmgUID function', function() {
-      let sandbox;
-
-      beforeEach(() => {
-        sandbox = sinon.sandbox.create();
-        sandbox.stub(storage, 'getCookie');
-        sandbox.stub(storage, 'setCookie');
-        sandbox.stub(utils, 'generateUUID').returns('new-uuid');
-        sandbox.stub(storage, 'cookiesAreEnabled');
-      })
-
-      afterEach(() => {
-        sandbox.restore();
-      });
-
       it('should generate new UUID and set cookie if not exists', () => {
         storage.cookiesAreEnabled.callsFake(() => true);
         storage.getCookie.callsFake(() => null);
