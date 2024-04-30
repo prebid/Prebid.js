@@ -22,6 +22,11 @@ describe('discovery:BidAdapterTests', function () {
     sandbox.stub(storage, 'getCookie');
     sandbox.stub(storage, 'setCookie');
     sandbox.stub(utils, 'generateUUID').returns('new-uuid');
+    sandbox.stub(utils, 'parseUrl').returns({
+      search: {
+        utm_source: 'example.com'
+      }
+    });
     sandbox.stub(storage, 'cookiesAreEnabled');
   })
 
@@ -254,24 +259,6 @@ describe('discovery:BidAdapterTests', function () {
       });
     })
     describe('buildUTMTagData function', function() {
-      let sandbox;
-
-      beforeEach(() => {
-        sandbox = sinon.sandbox.create();
-        sandbox.stub(storage, 'getCookie');
-        sandbox.stub(storage, 'setCookie');
-        sandbox.stub(utils, 'parseUrl').returns({
-          search: {
-            utm_source: 'example.com'
-          }
-        });
-        sandbox.stub(storage, 'cookiesAreEnabled');
-      })
-
-      afterEach(() => {
-        sandbox.restore();
-      });
-
       it('should set UTM cookie', () => {
         storage.cookiesAreEnabled.callsFake(() => true);
         storage.getCookie.callsFake(() => null);
