@@ -975,8 +975,10 @@ describe('kargo adapter tests', function() {
       });
 
       it('retrieves CRB from cookies if localstorage is not functional', function() {
+        // Note: this does not cause localStorage to throw an error in Firefox so in that browser this
+        // test is not 100% true to its name
         sandbox.stub(localStorage, 'getItem').throws();
-        setCrb('valid', 'valid');
+        setCrb('valid', 'invalid');
 
         const payload = getPayloadFromTestBids(testBids, bidderRequest);
 
