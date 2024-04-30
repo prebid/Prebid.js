@@ -14,6 +14,7 @@ import {
   getGptSlotForAdUnitCode,
 } from "../libraries/gptUtils/gptUtils.js";
 
+
 let initOptions;
 
 const emptyUrl = "";
@@ -166,6 +167,7 @@ const extractBid = (bidResponse) => {
       : null,
   };
 };
+
 
 /**
  * Track the events emitted by prebid and handle each case. See https://docs.prebid.org/dev-docs/publisher-api-reference/getEvents.html for more info

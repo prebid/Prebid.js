@@ -495,13 +495,11 @@ describe('SonobiBidAdapter', function () {
       expect(bidRequests.data.hfa).to.equal('hfakey')
     })
 
-    it('should return a properly formatted request with expData and expKey', function () {
-      bidderRequests.ortb2.experianRtidData = 'IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg==';
-      bidderRequests.ortb2.experianRtidKey = 'sovrn-encryption-key-1';
+    it('should return a properly formatted request with experianRtidData and exexperianRtidKeypKey omitted from fpd', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests)
-      expect(bidRequests.data.expData).to.equal('IkhlbGxvLCB3b3JsZC4gSGVsbG8sIHdvcmxkLiBIZWxsbywgd29ybGQuIg==');
-      expect(bidRequests.data.expKey).to.equal('sovrn-encryption-key-1');
-    })
+      expect(bidRequests.data.fpd.indexOf('experianRtidData')).to.equal(-1);
+      expect(bidRequests.data.fpd.indexOf('exexperianRtidKeypKey')).to.equal(-1);
+    });
 
     it('should return null if there is nothing to bid on', function () {
       const bidRequests = spec.buildRequests([{ params: {} }], bidderRequests)

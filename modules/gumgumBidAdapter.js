@@ -318,7 +318,8 @@ function buildRequests(validBidRequests, bidderRequest) {
     const gpid = deepAccess(ortb2Imp, 'ext.data.pbadslot') || deepAccess(ortb2Imp, 'ext.data.adserver.adslot');
     let sizes = [1, 1];
     let data = {};
-
+    data.displaymanager = 'Prebid.js - gumgum';
+    data.displaymanagerver = '$prebid.version$';
     const date = new Date();
     const lt = date.getTime();
     const to = date.getTimezoneOffset();
@@ -420,6 +421,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     } else if (!gppConsent && bidderRequest?.ortb2?.regs?.gpp) {
       data.gppString = bidderRequest.ortb2.regs.gpp
       data.gppSid = Array.isArray(bidderRequest.ortb2.regs.gpp_sid) ? bidderRequest.ortb2.regs.gpp_sid.join(',') : ''
+    }
+    const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
+    if (dsa) {
+      data.dsa = JSON.stringify(dsa)
     }
     if (coppa) {
       data.coppa = coppa;
@@ -548,15 +553,15 @@ function interpretResponse(serverResponse, bidRequest) {
     mediaType: type || mediaType
   };
   let sizes = parseSizesInput(bidRequest.sizes);
-
   if (maxw && maxh) {
     sizes = [`${maxw}x${maxh}`];
   } else if (product === 5 && includes(sizes, '1x1')) {
     sizes = ['1x1'];
-  } else if (product === 2 && includes(sizes, '1x1')) {
+  // added logic for in-slot multi-szie
+  } else if ((product === 2 && includes(sizes, '1x1')) || product === 3) {
     const requestSizesThatMatchResponse = (bidRequest.sizes && bidRequest.sizes.reduce((result, current) => {
       const [ width, height ] = current;
-      if (responseWidth === width || responseHeight === height) result.push(current.join('x'));
+      if (responseWidth === width && responseHeight === height) result.push(current.join('x'));
       return result
     }, [])) || [];
     sizes = requestSizesThatMatchResponse.length ? requestSizesThatMatchResponse : parseSizesInput(bidRequest.sizes)

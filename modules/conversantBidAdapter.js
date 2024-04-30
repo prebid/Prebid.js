@@ -94,7 +94,10 @@ const converter = ortbConverter({
     const bidResponse = buildBidResponse(bid, context);
     return bidResponse;
   },
-
+  response(buildResponse, bidResponses, ortbResponse, context) {
+    const response = buildResponse(bidResponses, ortbResponse, context);
+    return response.bids;
+  },
   overrides: {
     imp: {
       banner(fillBannerImp, imp, bidRequest, context) {

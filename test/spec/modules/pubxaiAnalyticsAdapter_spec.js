@@ -9,8 +9,8 @@ import adapterManager from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import { getGptSlotInfoForAdUnitCode } from '../../../libraries/gptUtils/gptUtils.js';
 
+
 let events = require('src/events');
-let constants = require('src/constants.json');
 
 describe('pubxai analytics adapter', () => {
   beforeEach(() => {
@@ -713,19 +713,19 @@ describe('pubxai analytics adapter', () => {
 
     it('builds and sends auction data', async () => {
       // Step 1: Send auction init event
-      events.emit(constants.EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
+      events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
 
       // Step 2: Send bid requested event
-      events.emit(constants.EVENTS.BID_REQUESTED, prebidEvent['bidRequested']);
+      events.emit(EVENTS.BID_REQUESTED, prebidEvent['bidRequested']);
 
       // Step 3: Send bid response event
-      events.emit(constants.EVENTS.BID_RESPONSE, prebidEvent['bidResponse']);
+      events.emit(EVENTS.BID_RESPONSE, prebidEvent['bidResponse']);
 
       // Step 4: Send bid time out event
-      events.emit(constants.EVENTS.BID_TIMEOUT, prebidEvent['bidTimeout']);
+      events.emit(EVENTS.BID_TIMEOUT, prebidEvent['bidTimeout']);
 
       // Step 5: Send auction end event
-      events.emit(constants.EVENTS.AUCTION_END, prebidEvent['auctionEnd']);
+      events.emit(EVENTS.AUCTION_END, prebidEvent['auctionEnd']);
 
       // Simulate "navigate away" behaviour
       document.dispatchEvent(new Event('visibilitychange'));
@@ -733,7 +733,7 @@ describe('pubxai analytics adapter', () => {
       expect(navigator.sendBeacon.callCount).to.equal(0);
 
       // Step 6: Send auction bid won event
-      events.emit(constants.EVENTS.BID_WON, prebidEvent['bidWon']);
+      events.emit(EVENTS.BID_WON, prebidEvent['bidWon']);
 
       // Simulate end of session
       document.dispatchEvent(new Event('visibilitychange'));

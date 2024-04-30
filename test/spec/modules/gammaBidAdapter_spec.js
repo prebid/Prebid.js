@@ -8,8 +8,9 @@ describe('gammaBidAdapter', function() {
   let bid = {
     'bidder': 'gamma',
     'params': {
-      siteId: '1465446377',
-      zoneId: '1515999290'
+      siteId: '1398219351',
+      zoneId: '1398219417',
+      region: 'SGP'
     },
     'adUnitCode': 'adunit-code',
     'sizes': [
@@ -84,7 +85,7 @@ describe('gammaBidAdapter', function() {
         'width': 300,
         'height': 250,
         'creativeId': '1515999070',
-        'dealId': 'gax-paj2qarjf2g',
+        'dealId': 'gax-lvpjgs5b9k4n',
         'currency': 'USD',
         'netRevenue': true,
         'ttl': 300,

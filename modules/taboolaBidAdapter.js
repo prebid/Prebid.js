@@ -3,7 +3,7 @@
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import {deepAccess, deepSetValue, getWindowSelf, replaceAuctionPrice} from '../src/utils.js';
+import {deepAccess, deepSetValue, getWindowSelf, replaceAuctionPrice, isArray, safeJSONParse} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
@@ -18,6 +18,7 @@ const USER_ID = 'user-id';
 const STORAGE_KEY = `taboola global:${USER_ID}`;
 const COOKIE_KEY = 'trc_cookie_storage';
 const TGID_COOKIE_KEY = 't_gid';
+const TGID_PT_COOKIE_KEY = 't_pt_gid';
 const TBLA_ID_COOKIE_KEY = 'tbla_id';
 export const EVENT_ENDPOINT = 'https://beacon.bidder.taboola.com';
 
@@ -43,11 +44,18 @@ export const userData = {
     const {cookiesAreEnabled, getCookie} = userData.storageManager;
     if (cookiesAreEnabled()) {
       const cookieData = getCookie(COOKIE_KEY);
-      let userId = userData.getCookieDataByKey(cookieData, USER_ID);
+      let userId;
+      if (cookieData) {
+        userId = userData.getCookieDataByKey(cookieData, USER_ID);
+      }
       if (userId) {
         return userId;
       }
       userId = getCookie(TGID_COOKIE_KEY);
+      if (userId) {
+        return userId;
+      }
+      userId = getCookie(TGID_PT_COOKIE_KEY);
       if (userId) {
         return userId;
       }
@@ -58,6 +66,9 @@ export const userData = {
     }
   },
   getCookieDataByKey(cookieData, key) {
+    if (!cookieData) {
+      return undefined;
+    }
     const [, value = ''] = cookieData.split(`${key}=`)
     return value;
   },
@@ -140,12 +151,59 @@ export const spec = {
     if (!serverResponse || !serverResponse.body) {
       return [];
     }
-
+    const bids = [];
+    const fledgeAuctionConfigs = [];
     if (!serverResponse.body.seatbid || !serverResponse.body.seatbid.length || !serverResponse.body.seatbid[0].bid || !serverResponse.body.seatbid[0].bid.length) {
-      return [];
+      if (!serverResponse.body.ext || !serverResponse.body.ext.igbid || !serverResponse.body.ext.igbid.length) {
+        return [];
+      }
+    } else {
+      bids.push(...converter.fromORTB({response: serverResponse.body, request: request.data}).bids);
+    }
+    if (isArray(serverResponse.body.ext?.igbid)) {
+      serverResponse.body.ext.igbid.forEach((igbid) => {
+        if (!igbid || !igbid.igbuyer || !igbid.igbuyer.length || !igbid.igbuyer[0].buyerdata) {
+          return;
+        }
+        let buyerdata = safeJSONParse(igbid.igbuyer[0]?.buyerdata)
+        if (!buyerdata) {
+          return;
+        }
+        const perBuyerSignals = {};
+        igbid.igbuyer.forEach(buyerItem => {
+          if (!buyerItem || !buyerItem.buyerdata || !buyerItem.origin) {
+            return;
+          }
+          let parsedData = safeJSONParse(buyerItem.buyerdata)
+          if (!parsedData || !parsedData.perBuyerSignals || !(buyerItem.origin in parsedData.perBuyerSignals)) {
+            return;
+          }
+          perBuyerSignals[buyerItem.origin] = parsedData.perBuyerSignals[buyerItem.origin];
+        });
+        const impId = igbid?.impid;
+        fledgeAuctionConfigs.push({
+          impId,
+          config: {
+            seller: buyerdata?.seller,
+            resolveToConfig: buyerdata?.resolveToConfig,
+            sellerSignals: {},
+            sellerTimeout: buyerdata?.sellerTimeout,
+            perBuyerSignals,
+            auctionSignals: {},
+            decisionLogicUrl: buyerdata?.decisionLogicUrl,
+            interestGroupBuyers: buyerdata?.interestGroupBuyers,
+            perBuyerTimeouts: buyerdata?.perBuyerTimeouts,
+          },
+        });
+      });
     }
 
-    const bids = converter.fromORTB({response: serverResponse.body, request: request.data}).bids;
+    if (fledgeAuctionConfigs.length) {
+      return {
+        bids,
+        fledgeAuctionConfigs,
+      };
+    }
     return bids;
   },
   onBidWon: (bid) => {
@@ -166,7 +224,7 @@ export const spec = {
     }
 
     if (gppConsent) {
-      queryParams.push('gpp=' + encodeURIComponent(gppConsent));
+      queryParams.push('gpp=' + encodeURIComponent(gppConsent.gppString || '') + '&gpp_sid=' + encodeURIComponent((gppConsent.applicableSections || []).join(',')));
     }
 
     if (syncOptions.iframeEnabled) {
@@ -189,7 +247,7 @@ export const spec = {
   },
 
   onBidderError: ({ error, bidderRequest }) => {
-    ajax(EVENT_ENDPOINT + '/bidError', null, JSON.stringify(error, bidderRequest), {method: 'POST'});
+    ajax(EVENT_ENDPOINT + '/bidError', null, JSON.stringify({error, bidderRequest}), {method: 'POST'});
   },
 };
 
@@ -214,10 +272,13 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data) {
   const {refererInfo, gdprConsent = {}, uspConsent} = bidderRequest;
   const site = getSiteProperties(bidRequest.params, refererInfo, bidderRequest.ortb2);
   const device = {ua: navigator.userAgent};
-  const user = {
+  let user = {
     buyeruid: userData.getUserId(gdprConsent, uspConsent),
     ext: {}
   };
+  if (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.user) {
+    user.data = bidderRequest.ortb2.user.data;
+  }
   const regs = {
     coppa: 0,
     ext: {}
@@ -258,6 +319,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data) {
   data.user = user;
   data.regs = regs;
   deepSetValue(data, 'ext.pageType', ortb2?.ext?.data?.pageType || ortb2?.ext?.data?.section || bidRequest.params.pageType);
+  deepSetValue(data, 'ext.prebid.version', '$prebid.version$');
 }
 
 function fillTaboolaImpData(bid, imp) {

@@ -1,5 +1,5 @@
 import {GreedyPromise} from './promise.js';
-import {binarySearch, timestamp} from '../utils.js';
+import {binarySearch, logError, timestamp} from '../utils.js';
 
 /**
  * Create a set-like collection that automatically forgets items after a certain time.
@@ -27,6 +27,7 @@ export function ttlCollection(
   } = {}
 ) {
   const items = new Map();
+  const callbacks = [];
   const pendingPurge = [];
   const markForPurge = monotonic
     ? (entry) => pendingPurge.push(entry)
@@ -43,6 +44,13 @@ export function ttlCollection(
         let cnt = 0;
         for (const entry of pendingPurge) {
           if (entry.expiry > now) break;
+          callbacks.forEach(cb => {
+            try {
+              cb(entry.item)
+            } catch (e) {
+              logError(e);
+            }
+          });
           items.delete(entry.item)
           cnt++;
         }
@@ -135,5 +143,20 @@ export function ttlCollection(
         entry.refresh();
       }
     },
+    /**
+     * Register a callback to be run when an item has expired and is about to be
+     * removed the from the collection.
+     * @param cb a callback that takes the expired item as argument
+     * @return an unregistration function.
+     */
+    onExpiry(cb) {
+      callbacks.push(cb);
+      return () => {
+        const idx = callbacks.indexOf(cb);
+        if (idx >= 0) {
+          callbacks.splice(idx, 1);
+        }
+      }
+    }
   };
 }

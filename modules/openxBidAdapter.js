@@ -107,9 +107,11 @@ const converter = ortbConverter({
       fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
         return {
           bidId,
-          config: Object.assign({
-            auctionSignals: {},
-          }, cfg)
+          config: mergeDeep(Object.assign({}, cfg), {
+            auctionSignals: {
+              ortb2Imp: context.impContext[bidId]?.imp,
+            },
+          }),
         }
       });
       return {

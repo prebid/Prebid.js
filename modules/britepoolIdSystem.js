@@ -38,7 +38,7 @@ export const britepoolIdSubmodule = {
    * @function
    * @param {SubmoduleConfig} [submoduleConfig]
    * @param {ConsentData|undefined} consentData
-   * @returns {function(callback:function)}
+   * @returns {function}
    */
   getId(submoduleConfig, consentData) {
     const submoduleConfigParams = (submoduleConfig && submoduleConfig.params) || {};

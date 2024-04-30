@@ -21,6 +21,7 @@ import {find, includes} from '../src/polyfill.js';
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
  * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
  */
@@ -52,8 +53,8 @@ export const spec = {
   gvlid: GVLID,
   /**
    * Determines whether or not the given bid request is valid.
-   * @param {object} bid, bid to validate
-   * @return boolean, true if valid, otherwise false
+   * @param {object} bid bid to validate
+   * @return {boolean} true if valid, otherwise false
    */
   isBidRequestValid: function (bid) {
     return !!(bid && bid.adUnitCode && bid.bidId && (hasBannerMediaType(bid) || hasVideoMediaType(bid)) &&
@@ -76,6 +77,7 @@ export const spec = {
     let serverRequests = [];
     const eids = getEids(bidRequests[0]) || [];
     const topicsData = getTopics(bidderRequest);
+    const cdep = getCdep(bidderRequest);
     if (bannerBidRequests.length > 0) {
       let serverRequest = {
         pbav: '$prebid.version$',
@@ -98,11 +100,14 @@ export const spec = {
         us_privacy: deepAccess(bidderRequest, 'uspConsent') || '',
       };
       if (topicsData) {
-        serverRequest.topics = topicsData;
+        serverRequest.topics = JSON.stringify(topicsData);
       }
       const gpc = getGPCSignal(bidderRequest);
       if (gpc) {
         serverRequest.gpc = gpc;
+      }
+      if (cdep) {
+        serverRequest.cdep = cdep;
       }
 
       if (canAccessTopWindow()) {
@@ -437,6 +442,11 @@ function getGPCSignal(bidderRequest) {
   return gpc;
 }
 
+function getCdep(bidderRequest) {
+  const cdep = deepAccess(bidderRequest, 'ortb2.device.ext.cdep') || null;
+  return cdep;
+}
+
 function getTopics(bidderRequest) {
   const userData = deepAccess(bidderRequest, 'ortb2.user.data') || [];
   const topicsData = userData.filter((dataObj) => {
@@ -583,8 +593,8 @@ function populateOpenRtbGdpr(openRtbRequest, bidderRequest) {
 
 /**
  * Determines whether or not the given video bid request is valid. If it's not a video bid, returns true.
- * @param {object} bid, bid to validate
- * @return boolean, true if valid, otherwise false
+ * @param {object} bid bid to validate
+ * @return {boolean} true if valid, otherwise false
  */
 function validateVideoParams(bid) {
   if (!hasVideoMediaType(bid)) {
@@ -653,14 +663,6 @@ function validateVideoParams(bid) {
     }
 
     validate('video.protocols', val => isDefined(val), paramRequired);
-    validate(
-      'video.protocols',
-      (val) =>
-        isArrayOfNums(val) &&
-        val.every((v) => v >= 1 && v <= 12 && v != 9 && v != 10), // 9 and 10 are for DAST which are not supported.
-      paramInvalid,
-      'array of numbers between 1 and 12 except for 9 or 10 , ex: [2,3, 7, 11]'
-    );
 
     validate('video.api', val => isDefined(val), paramRequired);
     validate('video.api', val => isArrayOfNums(val) && val.every(v => (v >= 1 && v <= 6)),
@@ -689,9 +691,9 @@ function validateVideoParams(bid) {
 /**
  * Shortcut object property and check if required characters count was deleted
  *
- * @param {number} extraCharacters, count of characters to remove
- * @param {object} target, object on which string property length should be reduced
- * @param {string} propertyName, name of property to reduce
+ * @param {number} extraCharacters count of characters to remove
+ * @param {object} target object on which string property length should be reduced
+ * @param {string} propertyName name of property to reduce
  * @return {number} 0 if required characters count was removed otherwise count of how many left
  */
 function shortcutProperty(extraCharacters, target, propertyName) {
@@ -710,7 +712,7 @@ function shortcutProperty(extraCharacters, target, propertyName) {
 
 /**
  * Creates and returnes eids arr using createEidsArray from './userId/eids.js' module;
- * @param {Object} openRtbRequest OpenRTB's request as a cource of userId.
+ * @param {Object} bidRequest OpenRTB's request as a cource of userId.
  * @return array of eids objects
  */
 function getEids(bidRequest) {

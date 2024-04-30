@@ -423,6 +423,11 @@ function processCmpData(consentData) {
   ) {
     throw new GPPError('CMP returned unexpected value during lookup process.', consentData);
   }
+  ['usnatv1', 'uscav1'].forEach(section => {
+    if (consentData?.parsedSections?.[section]) {
+      logWarn(`Received invalid section from cmp: '${section}'. Some functionality may not work as expected`, consentData)
+    }
+  })
   return storeConsentData(consentData);
 }
 
@@ -455,7 +460,7 @@ export function resetConsentData() {
 
 /**
  * A configuration function that initializes some module variables, as well as add a hook into the requestBids function
- * @param {{cmp:string, timeout:number, allowAuctionWithoutConsent:boolean, defaultGdprScope:boolean}} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
+ * @param {{cmp:string, timeout:number, defaultGdprScope:boolean}} config required; consentManagement module config settings; cmp (string), timeout (int))
  */
 export function setConsentConfig(config) {
   config = config && config.gpp;

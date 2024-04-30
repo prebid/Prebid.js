@@ -625,6 +625,45 @@ describe('IndexexchangeAdapter', function () {
     ]
   };
 
+  const DEFAULT_BANNER_BID_RESPONSE_WITH_DSA = {
+    cur: 'USD',
+    id: '11a22b33c44d',
+    seatbid: [
+      {
+        bid: [
+          {
+            crid: '12345',
+            adomain: ['www.abc.com'],
+            adid: '14851455',
+            impid: '1a2b3c4d',
+            cid: '3051266',
+            price: 100,
+            w: 300,
+            h: 250,
+            id: '1',
+            ext: {
+              dspid: 50,
+              pricelevel: '_100',
+              advbrandid: 303325,
+              advbrand: 'OECTA',
+              dsa: {
+                behalf: 'Advertiser',
+                paid: 'Advertiser',
+                transparency: [{
+                  domain: 'dsp1domain.com',
+                  dsaparams: [1, 2]
+                }],
+                'adrender': 1
+              }
+            },
+            adm: '<a target="_blank" href="https://www.indexexchange.com"></a>'
+          }
+        ],
+        seat: '3970'
+      }
+    ]
+  };
+
   const DEFAULT_BANNER_BID_RESPONSE_WITHOUT_ADOMAIN = {
     cur: 'USD',
     id: '11a22b33c44d',
@@ -918,6 +957,23 @@ describe('IndexexchangeAdapter', function () {
   };
 
   const extractPayload = function (bidRequest) { return bidRequest.data }
+
+  const generateEid = function (numEid) {
+    const eids = [];
+
+    for (let i = 1; i <= numEid; i++) {
+      const newEid = {
+        source: `eid_source_${i}.com`,
+        uids: [{
+          id: `uid_id_${i}`,
+        }]
+      };
+
+      eids.push(newEid);
+    }
+
+    return eids;
+  }
 
   describe('inherited functions', function () {
     it('should exists and is a function', function () {
@@ -1485,6 +1541,17 @@ describe('IndexexchangeAdapter', function () {
   describe('buildRequestsUserId', function () {
     let validIdentityResponse;
     let validUserIdPayload;
+    const serverResponse = {
+      body: {
+        ext: {
+          pbjs_allow_all_eids: {
+            test: {
+              activated: false
+            }
+          }
+        }
+      }
+    };
 
     beforeEach(function () {
       window.headertag = {};
@@ -1495,6 +1562,12 @@ describe('IndexexchangeAdapter', function () {
 
     afterEach(function () {
       delete window.headertag;
+      serverResponse.body.ext.features = {
+        pbjs_allow_all_eids: {
+          activated: false
+        }
+      };
+      validIdentityResponse = {}
     });
 
     it('IX adapter reads supported user modules from Prebid and adds it to Video', function () {
@@ -1504,6 +1577,91 @@ describe('IndexexchangeAdapter', function () {
       const payload = extractPayload(request);
       expect(payload.user.eids).to.have.lengthOf(11);
       expect(payload.user.eids).to.have.deep.members(DEFAULT_USERID_PAYLOAD);
+    });
+
+    it('IX adapter filters eids from prebid past the maximum eid limit', function () {
+      serverResponse.body.ext.features = {
+        pbjs_allow_all_eids: {
+          activated: true
+        }
+      };
+      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
+      const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+      let eid_sent_from_prebid = generateEid(55);
+      cloneValidBid[0].userIdAsEids = utils.deepClone(eid_sent_from_prebid);
+      const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
+      const payload = extractPayload(request);
+      expect(payload.user.eids).to.have.lengthOf(50);
+      let eid_accepted = eid_sent_from_prebid.slice(0, 50);
+      expect(payload.user.eids).to.have.deep.members(eid_accepted);
+      expect(payload.ext.ixdiag.eidLength).to.equal(55);
+    });
+
+    it('IX adapter filters eids from IXL past the maximum eid limit', function () {
+      validIdentityResponse = {
+        MerkleIp: {
+          responsePending: false,
+          data: {
+            source: 'merkle.com',
+            uids: [{
+              id: '1234-5678-9012-3456',
+              ext: {
+                keyID: '1234-5678',
+                enc: 1
+              }
+            }]
+          }
+        },
+        LiveIntentIp: {
+          responsePending: false,
+          data: {
+            source: 'liveintent.com',
+            uids: [{
+              id: '1234-5678-9012-3456',
+              ext: {
+                keyID: '1234-5678',
+                rtiPartner: 'LDID',
+                enc: 1
+              }
+            }]
+          }
+        }
+      };
+      serverResponse.body.ext.features = {
+        pbjs_allow_all_eids: {
+          activated: true
+        }
+      };
+      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
+      const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+      let eid_sent_from_prebid = generateEid(49);
+      cloneValidBid[0].userIdAsEids = utils.deepClone(eid_sent_from_prebid);
+      const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
+      const payload = extractPayload(request);
+      expect(payload.user.eids).to.have.lengthOf(50);
+      eid_sent_from_prebid.push({
+        source: 'merkle.com',
+        uids: [{
+          id: '1234-5678-9012-3456',
+          ext: {
+            keyID: '1234-5678',
+            enc: 1
+          }
+        }]
+      })
+      expect(payload.user.eids).to.have.deep.members(eid_sent_from_prebid);
+      expect(payload.ext.ixdiag.eidLength).to.equal(49);
+    });
+
+    it('All incoming eids are from unsupported source with feature toggle off', function () {
+      FEATURE_TOGGLES.setFeatureToggles(serverResponse);
+      const cloneValidBid = utils.deepClone(DEFAULT_VIDEO_VALID_BID);
+      let eid_sent_from_prebid = generateEid(20);
+      cloneValidBid[0].userIdAsEids = utils.deepClone(eid_sent_from_prebid);
+      const request = spec.buildRequests(cloneValidBid, DEFAULT_OPTION)[0];
+      const payload = extractPayload(request);
+      expect(payload.user.eids).to.be.undefined
+      expect(payload.ext.ixdiag.eidLength).to.equal(20);
     });
 
     it('We continue to send in IXL identity info and Prebid takes precedence over IXL', function () {
@@ -1784,6 +1942,72 @@ describe('IndexexchangeAdapter', function () {
       expect(r.user.testProperty).to.be.undefined;
     });
 
+    it('should set dsa field when defined', function () {
+      const dsa = {
+        dsarequired: 3,
+        pubrender: 0,
+        datatopub: 2,
+        transparency: [{
+          domain: 'domain.com',
+          dsaparams: [1]
+        }]
+      }
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2: {regs: {
+        ext: {
+          dsa: deepClone(dsa)
+        }
+      }
+      }})[0];
+      const r = extractPayload(request);
+
+      expect(r.regs.ext.dsa.dsarequired).to.equal(dsa.dsarequired);
+      expect(r.regs.ext.dsa.pubrender).to.equal(dsa.pubrender);
+      expect(r.regs.ext.dsa.datatopub).to.equal(dsa.datatopub);
+      expect(r.regs.ext.dsa.transparency).to.be.an('array');
+      expect(r.regs.ext.dsa.transparency).to.have.deep.members(dsa.transparency);
+    });
+    it('should not set dsa fields when fields arent appropriately defined', function () {
+      const dsa = {
+        dsarequired: '3',
+        pubrender: '0',
+        datatopub: '2',
+        transparency: 20
+      }
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2: {regs: {
+        ext: {
+          dsa: deepClone(dsa)
+        }
+      }
+      }})[0];
+      const r = extractPayload(request);
+
+      expect(r.regs).to.be.undefined;
+    });
+    it('should not set dsa transparency when fields arent appropriately defined', function () {
+      const dsa = {
+        transparency: [{
+          domain: 3,
+          dsaparams: [1]
+        },
+        {
+          domain: 'domain.com',
+          dsaparams: 'params'
+        },
+        {
+          domain: 'domain.com',
+          dsaparams: ['1']
+        }]
+      }
+      const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2: {regs: {
+        ext: {
+          dsa: deepClone(dsa)
+        }
+      }
+      }})[0];
+      const r = extractPayload(request);
+
+      expect(r.regs).to.be.undefined;
+    });
     it('should set gpp and gpp_sid field when defined', function () {
       const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2: {regs: {gpp: 'gpp', gpp_sid: [1]}} })[0];
       const r = extractPayload(request);
@@ -1792,7 +2016,7 @@ describe('IndexexchangeAdapter', function () {
       expect(r.regs.gpp_sid).to.be.an('array');
       expect(r.regs.gpp_sid).to.include(1);
     });
-    it('should not set gpp and gpp_sid field when not defined', function () {
+    it('should not set gpp, gpp_sid and dsa field when not defined', function () {
       const request = spec.buildRequests(DEFAULT_BANNER_VALID_BID, { ortb2: {regs: {}} })[0];
       const r = extractPayload(request);
 
@@ -3407,6 +3631,40 @@ describe('IndexexchangeAdapter', function () {
         }
       ];
       const result = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE }, bannerBidderRequest);
+      expect(result[0]).to.deep.equal(expectedParse[0]);
+    });
+
+    it('should get correct bid response for banner ad with dsa signals', function () {
+      const expectedParse = [
+        {
+          requestId: '1a2b3c4d',
+          cpm: 1,
+          creativeId: '12345',
+          width: 300,
+          height: 250,
+          mediaType: 'banner',
+          ad: '<a target="_blank" href="https://www.indexexchange.com"></a>',
+          currency: 'USD',
+          ttl: 300,
+          netRevenue: true,
+          meta: {
+            networkId: 50,
+            brandId: 303325,
+            brandName: 'OECTA',
+            advertiserDomains: ['www.abc.com'],
+            dsa: {
+              behalf: 'Advertiser',
+              paid: 'Advertiser',
+              transparency: [{
+                domain: 'dsp1domain.com',
+                dsaparams: [1, 2]
+              }],
+              'adrender': 1
+            }
+          }
+        }
+      ];
+      const result = spec.interpretResponse({ body: DEFAULT_BANNER_BID_RESPONSE_WITH_DSA }, bannerBidderRequest);
       expect(result[0]).to.deep.equal(expectedParse[0]);
     });
 

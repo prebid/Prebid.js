@@ -127,11 +127,15 @@ describe('pangle bid adapter', function () {
 
   describe('buildRequests', function () {
     it('creates request data', function () {
-      let request = spec.buildRequests(REQUEST, DEFAULT_OPTIONS)[0];
-      expect(request).to.exist.and.to.be.a('object');
-      const payload = request.data;
-      expect(payload.imp[0]).to.have.property('id', REQUEST[0].bidId);
-      expect(payload.imp[1]).to.have.property('id', REQUEST[1].bidId);
+      let request1 = spec.buildRequests(REQUEST, DEFAULT_OPTIONS)[0];
+      expect(request1).to.exist.and.to.be.a('object');
+      const payload1 = request1.data;
+      expect(payload1.imp[0]).to.have.property('id', REQUEST[0].bidId);
+
+      let request2 = spec.buildRequests(REQUEST, DEFAULT_OPTIONS)[1];
+      expect(request2).to.exist.and.to.be.a('object');
+      const payload2 = request2.data;
+      expect(payload2.imp[0]).to.have.property('id', REQUEST[1].bidId);
     });
   });
 

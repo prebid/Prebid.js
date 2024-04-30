@@ -3,9 +3,10 @@ import {includes} from 'src/polyfill.js';
 import { expect } from 'chai';
 import { parseUrl } from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
+import { EVENTS } from 'src/constants.js';
+
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
-let constants = require('src/constants.json');
 
 describe('eplanning analytics adapter', function () {
   beforeEach(function () {
@@ -82,22 +83,22 @@ describe('eplanning analytics adapter', function () {
       // Emit the events with the "real" arguments
 
       // Step 1: Send auction init event
-      events.emit(constants.EVENTS.AUCTION_INIT, {
+      events.emit(EVENTS.AUCTION_INIT, {
         auctionId: pauctionId,
         timestamp: auctionTimestamp
       });
 
       // Step 2: Send bid requested event
-      events.emit(constants.EVENTS.BID_REQUESTED, bidRequest);
+      events.emit(EVENTS.BID_REQUESTED, bidRequest);
 
       // Step 3: Send bid response event
-      events.emit(constants.EVENTS.BID_RESPONSE, bidResponse);
+      events.emit(EVENTS.BID_RESPONSE, bidResponse);
 
       // Step 4: Send bid time out event
-      events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeout);
+      events.emit(EVENTS.BID_TIMEOUT, bidTimeout);
 
       // Step 5: Send auction bid won event
-      events.emit(constants.EVENTS.BID_WON, {
+      events.emit(EVENTS.BID_WON, {
         adId: 'adIdData',
         ad: 'adContent',
         auctionId: pauctionId,
@@ -106,7 +107,7 @@ describe('eplanning analytics adapter', function () {
       });
 
       // Step 6: Send auction end event
-      events.emit(constants.EVENTS.AUCTION_END, {auctionId: pauctionId});
+      events.emit(EVENTS.AUCTION_END, { auctionId: pauctionId });
 
       // Step 7: Find the request data sent (filtering other hosts)
       let requests = server.requests.filter(req => {
@@ -127,22 +128,28 @@ describe('eplanning analytics adapter', function () {
       // Step 9 verify that we only receive the parameters we need
       let expectedEventValues = [
         // AUCTION INIT
-        {ec: constants.EVENTS.AUCTION_INIT,
+        {
+          ec: EVENTS.AUCTION_INIT,
           p: {auctionId: pauctionId, time: auctionTimestamp}},
         // BID REQ
-        {ec: constants.EVENTS.BID_REQUESTED,
+        {
+          ec: EVENTS.BID_REQUESTED,
           p: {auctionId: pauctionId, time: 1509369418389, bidder: pbidderCode, bids: [{time: 1509369418389, sizes: [[300, 250]], bidder: pbidderCode, placementCode: 'container-1', auctionId: pauctionId}]}},
         // BID RESP
-        {ec: constants.EVENTS.BID_RESPONSE,
+        {
+          ec: EVENTS.BID_RESPONSE,
           p: {auctionId: pauctionId, bidder: pbidderCode, cpm: 0.015, size: '300x250', time: 1509369418832}},
         // BID T.O.
-        {ec: constants.EVENTS.BID_TIMEOUT,
+        {
+          ec: EVENTS.BID_TIMEOUT,
           p: [{auctionId: pauctionId, bidder: pbidderCode}]},
         // BID WON
-        {ec: constants.EVENTS.BID_WON,
+        {
+          ec: EVENTS.BID_WON,
           p: {auctionId: pauctionId, size: '300x250'}},
         // AUCTION END
-        {ec: constants.EVENTS.AUCTION_END,
+        {
+          ec: EVENTS.AUCTION_END,
           p: {auctionId: pauctionId}}
       ];
 

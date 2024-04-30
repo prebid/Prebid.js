@@ -62,7 +62,7 @@ export const spec = {
     }
     const placements = groupBy(validBidRequests.map(bidRequest => buildPlacement(bidRequest)), 'host')
     return Object.keys(placements)
-      .map(host => buildRequest(winTop, host, placements[host].map(placement => placement.adUnit)));
+      .map(host => buildRequest(winTop, host, placements[host].map(placement => placement.adUnit), bidderRequest));
   },
 
   /**
@@ -119,7 +119,7 @@ export const spec = {
 
 registerBidder(spec);
 
-function buildRequest(winTop, host, adUnits) {
+function buildRequest(winTop, host, adUnits, bidderRequest) {
   return {
     method: 'POST',
     url: `https://${host}/hb`,
@@ -127,7 +127,8 @@ function buildRequest(winTop, host, adUnits) {
       secure: (location.protocol === 'https:'),
       deviceWidth: winTop.screen.width,
       deviceHeight: winTop.screen.height,
-      adUnits: adUnits
+      adUnits: adUnits,
+      sua: bidderRequest?.ortb2?.device?.sua
     }
   }
 }
@@ -169,7 +170,8 @@ function buildPlacement(bidRequest) {
       custom2: bidRequest.params.custom2,
       custom3: bidRequest.params.custom3,
       custom4: bidRequest.params.custom4,
-      custom5: bidRequest.params.custom5
+      custom5: bidRequest.params.custom5,
+      page: bidRequest.refererInfo.page
     }
   }
 }

@@ -97,6 +97,9 @@ export const DEFAULT_PROCESSORS = {
         if (bid.adomain) {
           bidResponse.meta.advertiserDomains = bid.adomain;
         }
+        if (bid.ext?.dsa) {
+          bidResponse.meta.dsa = bid.ext.dsa;
+        }
       }
     }
   }
