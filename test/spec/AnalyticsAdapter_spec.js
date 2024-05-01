@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import * as events from 'src/events.js';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 import {server} from 'test/mocks/xhr.js';
 import {disableAjaxForAnalytics, enableAjaxForAnalytics} from '../mocks/analyticsStub.js';
 import {clearEvents} from 'src/events.js';
@@ -10,8 +10,8 @@ import {
   setDebounceDelay
 } from '../../libraries/analyticsAdapter/AnalyticsAdapter.js';
 
-const BID_WON = CONSTANTS.EVENTS.BID_WON;
-const NO_BID = CONSTANTS.EVENTS.NO_BID;
+const BID_WON = EVENTS.BID_WON;
+const NO_BID = EVENTS.NO_BID;
 
 const AnalyticsAdapter = require('libraries/analyticsAdapter/AnalyticsAdapter.js').default;
 const config = {
