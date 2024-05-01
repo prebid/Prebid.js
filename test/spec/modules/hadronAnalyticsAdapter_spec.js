@@ -2,7 +2,7 @@ import adapterManager from '../../../src/adapterManager.js';
 import hadronAnalyticsAdapter from '../../../modules/hadronAnalyticsAdapter.js';
 import { expect } from 'chai';
 import * as events from '../../../src/events.js';
-import constants from '../../../src/constants.json';
+import { EVENTS } from '../../../src/constants.js';
 import { generateUUID } from '../../../src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 
@@ -48,13 +48,13 @@ describe('Hadron analytics adapter', () => {
         adUnitCodes: ['usr1234']
       }],
     };
-    events.emit(constants.EVENTS.AUCTION_END, auction);
+    events.emit(EVENTS.AUCTION_END, auction);
     assert(server.requests.length > 0)
     const body = JSON.parse(server.requests[0].requestBody);
     var eventTypes = [];
     body.events.forEach(e => eventTypes.push(e.eventType));
     assert(eventTypes.length > 0)
-    assert(eventTypes.indexOf(constants.EVENTS.AUCTION_END) > -1);
+    assert(eventTypes.indexOf(EVENTS.AUCTION_END) > -1);
     hadronAnalyticsAdapter.disableAnalytics();
   });
 });
