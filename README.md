@@ -237,6 +237,12 @@ To lint the code:
 gulp lint
 ```
 
+To lint and only show errors
+
+```bash
+gulp lint --no-lint-warnings
+```
+
 To run the unit tests:
 
 ```bash
@@ -245,7 +251,7 @@ gulp test
 
 To run the unit tests for a particular file (example for pubmaticBidAdapter_spec.js):
 ```bash
-gulp test --file "test/spec/modules/pubmaticBidAdapter_spec.js"
+gulp test --file "test/spec/modules/pubmaticBidAdapter_spec.js" --nolint
 ```
 
 To generate and view the code coverage reports:

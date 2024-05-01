@@ -208,7 +208,19 @@ describe('limelightDigitalAdapter', function () {
   }
 
   describe('buildRequests', function () {
-    const serverRequests = spec.buildRequests([bid1, bid2, bid3, bid4])
+    const bidderRequest = {
+      ortb2: {
+        device: {
+          sua: {
+            browsers: [],
+            platform: [],
+            mobile: 1,
+            architecture: 'arm'
+          }
+        }
+      }
+    }
+    const serverRequests = spec.buildRequests([bid1, bid2, bid3, bid4], bidderRequest)
     it('Creates two ServerRequests', function() {
       expect(serverRequests).to.exist
       expect(serverRequests).to.have.lengthOf(2)
@@ -230,7 +242,8 @@ describe('limelightDigitalAdapter', function () {
           'deviceWidth',
           'deviceHeight',
           'secure',
-          'adUnits'
+          'adUnits',
+          'sua'
         );
         expect(data.deviceWidth).to.be.a('number');
         expect(data.deviceHeight).to.be.a('number');
@@ -266,6 +279,10 @@ describe('limelightDigitalAdapter', function () {
           expect(adUnit.custom5).to.be.a('string');
           expect(adUnit.page).to.be.a('string');
         })
+        expect(data.sua.browsers).to.be.a('array');
+        expect(data.sua.platform).to.be.a('array');
+        expect(data.sua.mobile).to.be.a('number');
+        expect(data.sua.architecture).to.be.a('string');
       })
     })
     it('Returns valid URL', function () {

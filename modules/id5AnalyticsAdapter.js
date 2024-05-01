@@ -1,5 +1,5 @@
 import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import { ajax } from '../src/ajax.js';
 import { logInfo, logError } from '../src/utils.js';
@@ -7,14 +7,12 @@ import * as events from '../src/events.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
 const {
-  EVENTS: {
-    AUCTION_END,
-    TCF2_ENFORCEMENT,
-    BID_WON,
-    BID_VIEWABLE,
-    AD_RENDER_FAILED
-  }
-} = CONSTANTS
+  AUCTION_END,
+  TCF2_ENFORCEMENT,
+  BID_WON,
+  BID_VIEWABLE,
+  AD_RENDER_FAILED
+} = EVENTS
 
 const GVLID = 131;
 
