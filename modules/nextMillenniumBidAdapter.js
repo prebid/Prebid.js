@@ -14,7 +14,7 @@ import {
 } from '../src/utils.js';
 
 import {getGlobal} from '../src/prebidGlobal.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 
@@ -139,7 +139,7 @@ export const spec = {
         auctionId,
       });
 
-      this.getUrlPixelMetric(CONSTANTS.EVENTS.BID_REQUESTED, bid);
+      this.getUrlPixelMetric(EVENTS.BID_REQUESTED, bid);
     });
 
     return requests;
@@ -183,7 +183,7 @@ export const spec = {
 
         bidResponses.push(bidResponse);
 
-        this.getUrlPixelMetric(CONSTANTS.EVENTS.BID_RESPONSE, bid);
+        this.getUrlPixelMetric(EVENTS.BID_RESPONSE, bid);
       });
     });
 
@@ -263,7 +263,7 @@ export const spec = {
 
   onTimeout(bids) {
     for (const bid of bids) {
-      this.getUrlPixelMetric(CONSTANTS.EVENTS.BID_TIMEOUT, bid);
+      this.getUrlPixelMetric(EVENTS.BID_TIMEOUT, bid);
     };
   },
 };
