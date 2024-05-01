@@ -982,15 +982,20 @@ function applyFPD(bidRequest, mediaType, data) {
         'transparency', (transparency) => {
           if (Array.isArray(transparency) && transparency.length) {
             data['dsatransparency'] = transparency.reduce((param, transp) => {
+              const domain = transp.domain || '';
+              if (!domain) {
+                return '';
+              }
               if (param) {
                 param += '~~'
               }
-              const domain = transp.domain || '';
               let dsaparams = '';
-              if (Array.isArray(transp.dsaparams)) {
+              if (Array.isArray(transp.dsaparams) && transp.dsaparams.length > 0) {
                 dsaparams = transp.dsaparams.join('_');
-              } else if (Array.isArray(transp.params)) {
+              } else if (Array.isArray(transp.params) && transp.params.length > 0) {
                 dsaparams = transp.params.join('_');
+              } else {
+                return '';
               }
               return param += `${domain}~${dsaparams}`;
             }, '')
