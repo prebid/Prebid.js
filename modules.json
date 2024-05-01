@@ -54,5 +54,6 @@
     "id5IdSystem",
     "topicsFpdModule",
     "carbonRtdProvider",
-    "carbonAnalyticsAdapter"
+    "carbonAnalyticsAdapter",
+    "airgridRtdProvider"
 ]
