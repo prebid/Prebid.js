@@ -101,7 +101,7 @@ export const is51DegreesMetaPresent = () => {
   return Array.from(meta51).some(
     meta => !meta.content
       ? false
-      : meta.content.includes('https://cloud.51degrees.com')
+      : meta.content.includes('cloud.51degrees')
   );
 }
 
@@ -212,7 +212,7 @@ export const getBidRequestData = (reqBidsConfigObj, callback, moduleConfig, user
         mergeDeep(
           reqBidsConfigObj.ortb2Fragments.global,
           {device: convert51DegreesDeviceToOrtb2(data.device)},
-        )
+        );
         logMessage('reqBidsConfigObj: ', reqBidsConfigObj);
         callback();
       });
