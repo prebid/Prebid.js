@@ -61,6 +61,14 @@ export const spec = {
     const gdpr = bidderRequest.gdprConsent;
     const firstSlot = slots[0];
     const kwdsFromRequest = firstSlot.kwds;
+    const dnt = navigator.doNotTrack === '1' ||
+    window.doNotTrack === '1' ||
+    navigator.msDoNotTrack === '1' ||
+    navigator.doNotTrack === 'yes'
+      ? 1
+      : 0;
+    const sh = screen.height;
+    const sw = screen.width;
     let keywords = getAllOrtbKeywords(bidderRequest.ortb2, kwdsFromRequest);
 
     const payloadObject = {
@@ -79,6 +87,9 @@ export const spec = {
       gdpr_applies: gdpr ? gdpr.gdprApplies : false,
       tc_string: (gdpr && gdpr.gdprApplies) ? gdpr.consentString : null,
       eids: firstSlot.eids,
+      dnt: dnt,
+      sh: sh,
+      sw: sw
     };
 
     const payloadString = JSON.stringify(payloadObject);

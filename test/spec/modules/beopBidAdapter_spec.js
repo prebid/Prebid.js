@@ -330,4 +330,25 @@ describe('BeOp Bid Adapter tests', () => {
       expect(payload.eids[0].source).to.equal('provider.com');
     });
   })
+
+  describe('Ensure dnt, sw and sh are get', function() {
+    let bidRequests = [];
+    afterEach(function () {
+      bidRequests = [];
+    });
+
+    it(`should get dnt from navigator, sh and sw from screen`, function () {
+      let bid = Object.assign({}, validBid);
+      bidRequests.push(bid);
+
+      const request = spec.buildRequests(bidRequests, {});
+      const payload = JSON.parse(request.data);
+      expect(payload.dnt).to.exist;
+      expect(payload.sh).to.exist;
+      expect(payload.sw).to.exist;
+      expect(payload.dnt).to.equal(0);
+      expect(payload.sh).to.be.greaterThan(300);
+      expect(payload.sw).to.be.greaterThan(300);
+    });
+  })
 });
