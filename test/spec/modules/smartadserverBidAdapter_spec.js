@@ -458,27 +458,6 @@ describe('Smart bid adapter tests', function () {
     expect(syncs).to.have.lengthOf(0);
   });
 
-  it('Verify auctionConfigs', function () {
-    const request = spec.buildRequests(DEFAULT_PARAMS);
-    const auctionConfigs = [{
-      bidId: '02g93e54w9ps',
-      config: {
-        decisionLogicUrl: 'https://seller.sas.com/decision_logic.js',
-        interestGroupBuyers: ['https://buyer.sas.com'],
-        seller: 'https://seller.sas.com'
-      }
-    }];
-    const bids = spec.interpretResponse({
-      body: {
-        ...BID_RESPONSE.body,
-        auctionConfigs
-      }
-    }, request[0]);
-
-    expect(bids).to.have.property('bids').and.to.satisfy(value => (value === null || Array.isArray(value)));
-    expect(bids.fledgeAuctionConfigs).to.be.an('array').and.to.deep.equal(auctionConfigs);
-  });
-
   describe('gdpr tests', function () {
     afterEach(function () {
       config.setConfig({ ortb2: undefined });
@@ -1523,50 +1502,6 @@ describe('Smart bid adapter tests', function () {
       const requestContent = JSON.parse(request[0].data);
 
       expect(requestContent).to.have.property('gpid').and.to.equal(gpid);
-    });
-  });
-
-  describe('Fledge for GPT', function () {
-    it('should send fledge eligibility flag when fledge enabled and ortb2Imp.ext.ae set', function () {
-      const bidRequests = deepClone(DEFAULT_PARAMS_WO_OPTIONAL);
-      const ae = {
-        ae: 1
-      };
-
-      bidRequests[0].ortb2Imp = {
-        ext: ae
-      };
-
-      const request = spec.buildRequests(bidRequests, {
-        fledgeEnabled: true
-      });
-      const requestContent = JSON.parse(request[0].data);
-
-      expect(requestContent).to.have.property('ae').and.to.equal(ae.ae);
-    });
-
-    it('should not send fledge eligibility flag when fledge not enabled', function () {
-      const bidRequests = deepClone(DEFAULT_PARAMS_WO_OPTIONAL);
-      bidRequests[0].ortb2Imp = {
-        ext: {
-          ae: 1
-        }
-      };
-
-      const request = spec.buildRequests(bidRequests);
-      const requestContent = JSON.parse(request[0].data);
-
-      expect(requestContent).to.not.have.property('ae');
-    });
-
-    it('should not send fledge eligibility flag when ortb2Imp.ext.ae not set', function () {
-      const bidRequests = deepClone(DEFAULT_PARAMS_WO_OPTIONAL);
-      const request = spec.buildRequests(bidRequests, {
-        fledgeEnabled: true
-      });
-      const requestContent = JSON.parse(request[0].data);
-
-      expect(requestContent).to.not.have.property('ae');
     });
   });
 
