@@ -8,6 +8,13 @@ import {
   fiftyOneDegreesSubmodule,
 } from 'modules/51DegreesRtdProvider';
 
+const inject51DegreesMeta = () => {
+  const meta = document.createElement('meta');
+  meta.httpEquiv = 'Delegate-CH';
+  meta.content = 'sec-ch-ua-full-version-list https://cloud.51degrees.com; sec-ch-ua-model https://cloud.51degrees.com; sec-ch-ua-platform https://cloud.51degrees.com; sec-ch-ua-platform-version https://cloud.51degrees.com';
+  document.head.appendChild(meta);
+};
+
 describe('51DegreesRtdProvider', function() {
   describe('extractConfig', function() {
     it('returns the resourceKey from the moduleConfig', function() {
@@ -42,6 +49,12 @@ describe('51DegreesRtdProvider', function() {
       }};
       expect(() => extractConfig(moduleConfig, reqBidsConfigObj)).to.throw();
     });
+
+    it('throws an error if the resourceKey is equal to "<YOUR_RESOURCE_KEY>" from example', function() {
+      const reqBidsConfigObj = {};
+      const moduleConfig = {params: {resourceKey: '<YOUR_RESOURCE_KEY>'}};
+      expect(() => extractConfig(moduleConfig, reqBidsConfigObj)).to.throw();
+    });
   });
 
   describe('get51DegreesJSURL', function() {
@@ -60,12 +73,6 @@ describe('51DegreesRtdProvider', function() {
 
   describe('is51DegreesMetaPresent', function() {
     let initialHeadInnerHTML;
-    const inject51DegreesMeta = () => {
-      const meta = document.createElement('meta');
-      meta.httpEquiv = 'Delegate-CH';
-      meta.content = 'sec-ch-ua-full-version-list https://cloud.51degrees.com; sec-ch-ua-model https://cloud.51degrees.com; sec-ch-ua-platform https://cloud.51degrees.com; sec-ch-ua-platform-version https://cloud.51degrees.com';
-      document.head.appendChild(meta);
-    };
 
     before(function() {
       initialHeadInnerHTML = document.head.innerHTML;
@@ -82,6 +89,20 @@ describe('51DegreesRtdProvider', function() {
 
     it('returns false if the 51Degrees meta tag is not present', function() {
       expect(is51DegreesMetaPresent()).to.be.false;
+    });
+
+    it('works with multiple meta tags, even if those are not to include any `content`', function() {
+      const meta1 = document.createElement('meta');
+      meta1.httpEquiv = 'Delegate-CH';
+      document.head.appendChild(meta1);
+
+      inject51DegreesMeta();
+
+      const meta2 = document.createElement('meta');
+      meta2.httpEquiv = 'Delegate-CH';
+      document.head.appendChild(meta2);
+
+      expect(is51DegreesMetaPresent()).to.be.true;
     });
   });
 
@@ -173,10 +194,49 @@ describe('51DegreesRtdProvider', function() {
   });
 
   describe('getBidRequestData', function() {
+    let initialHeadInnerHTML;
+    const reqBidsConfigObj = {
+      ortb2Fragments: {
+        global: {
+          device: {},
+        },
+      },
+    };
+
+    before(function() {
+      initialHeadInnerHTML = document.head.innerHTML;
+
+      const mockScript = document.createElement('script');
+      mockScript.innerHTML = `
+      const fiftyOneDegreesDevice = {
+        'screenpixelswidth': 5120,
+        'screenpixelsheight': 1440,
+        'hardwarevendor': 'Apple',
+        'hardwaremodel': 'Macintosh',
+        'hardwarename': [
+          'Macintosh',
+        ],
+        'platformname': 'macOS',
+        'platformversion': '14.1.2',
+        'screeninchesheight': 13.27,
+        'screenincheswidth': 47.17,
+        'devicetype': 'Desktop',
+        'pixelratio': 1,
+        'deviceid': '17595-131215-132535-18092',
+      };
+      window.fod = {complete: (_callback) => _callback({device: fiftyOneDegreesDevice})};
+      `;
+      document.head.appendChild(mockScript);
+    });
+
+    after(function() {
+      document.head.innerHTML = initialHeadInnerHTML;
+    });
+
     it('calls the callback even if submodule fails (wrong config)', function() {
       const callback = sinon.spy();
       const moduleConfig = {params: {}};
-      getBidRequestData({}, callback, moduleConfig, {});
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
       expect(callback.calledOnce).to.be.true;
     });
 
@@ -184,22 +244,27 @@ describe('51DegreesRtdProvider', function() {
       const callback = sinon.spy();
       const moduleConfig = {params: {onPremiseJSUrl: 'http://localhost:12345/test/51Degrees.core.js'}};
 
-      getBidRequestData({}, callback, moduleConfig, {});
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
       await new Promise(resolve => setTimeout(resolve, 100));
-      expect(() => getBidRequestData(
-        {}, callback, moduleConfig, {}
-      )).to.not.throw();
+      expect(callback.calledOnce).to.be.true;
     });
 
     it('calls the callback even if submodule fails (invalid resource key)', async function() {
       const callback = sinon.spy();
       const moduleConfig = {params: {resourceKey: 'INVALID_RESOURCE_KEY'}};
 
-      getBidRequestData({}, callback, moduleConfig, {});
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
       await new Promise(resolve => setTimeout(resolve, 100));
-      expect(() => getBidRequestData(
-        {}, callback, moduleConfig, {}
-      )).to.not.throw();
+      expect(callback.calledOnce).to.be.true;
+    });
+
+    it('works with Delegate-CH meta tag', async function() {
+      inject51DegreesMeta();
+      const callback = sinon.spy();
+      const moduleConfig = {params: {resourceKey: 'INVALID_RESOURCE_KEY'}};
+      getBidRequestData(reqBidsConfigObj, callback, moduleConfig, {});
+      await new Promise(resolve => setTimeout(resolve, 100));
+      expect(callback.calledOnce).to.be.true;
     });
   });
 
