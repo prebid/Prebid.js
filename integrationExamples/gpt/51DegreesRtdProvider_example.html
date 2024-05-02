@@ -103,6 +103,18 @@
             });
 
             pbjs.addAdUnits(adUnits);
+
+            pbjs.onEvent('bidRequested', function (data) {
+              try {
+                fod.complete(() => {
+                  document.getElementById('enriched-51').style.display = 'block';
+                  document.getElementById('enriched-51-data').textContent = JSON.stringify(data.ortb2.device, null, 2);
+                });
+              } catch (e) {
+                console.error('Error while trying to display enriched data', e);
+              }
+            });
+
             pbjs.requestBids({
                 timeout: PREBID_TIMEOUT,
                 bidsBackHandler: function (bidResponses) {
@@ -163,6 +175,11 @@
                 googletag.display('div-banner-native-2');
             });
         </script>
+    </div>
+
+    <div id="enriched-51" style="display: none">
+        <h3>Enriched ORTB2 device data</h3>
+        <pre id="enriched-51-data"></pre>
     </div>
 </body>
 </html>
