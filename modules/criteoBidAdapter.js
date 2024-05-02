@@ -621,9 +621,6 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   if (networkId) {
     request.publisher.networkid = networkId;
   }
-  if (pubid) {
-    request.publisher.id = pubid;
-  }
 
   request.source = {
     tid: bidderRequest.ortb2?.source?.tid
@@ -637,6 +634,12 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   request.user = bidderRequest.ortb2?.user || {};
   request.site = bidderRequest.ortb2?.site || {};
   request.app = bidderRequest.ortb2?.app || {};
+
+  if (pubid) {
+    request.site.publisher = {...request.site.publisher, ...{ id: pubid }};
+    request.app.publisher = {...request.app.publisher, ...{ id: pubid }};
+  }
+
   request.device = bidderRequest.ortb2?.device || {};
   if (bidderRequest && bidderRequest.ceh) {
     request.user.ceh = bidderRequest.ceh;
@@ -671,6 +674,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   if (bidderRequest && bidderRequest.ortb2?.bapp) {
     request.bapp = bidderRequest.ortb2.bapp;
   }
+  request.tmax = bidderRequest.timeout;
   return request;
 }
 

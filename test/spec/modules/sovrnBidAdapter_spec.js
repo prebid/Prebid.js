@@ -240,6 +240,53 @@ describe('sovrnBidAdapter', function() {
         expect(payload.imp[0]?.ext?.tid).to.equal('1a2c032473f4983')
       })
 
+      it('when FLEDGE is enabled, should send ortb2imp.ext.ae', function () {
+        const bidderRequest = {
+          ...baseBidderRequest,
+          fledgeEnabled: true
+        }
+        const bidRequest = {
+          ...baseBidRequest,
+          ortb2Imp: {
+            ext: {
+              ae: 1
+            }
+          },
+        }
+        const payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest).data)
+        expect(payload.imp[0].ext.ae).to.equal(1)
+      })
+
+      it('when FLEDGE is not enabled, should not send ortb2imp.ext.ae', function () {
+        const bidRequest = {
+          ...baseBidRequest,
+          ortb2Imp: {
+            ext: {
+              ae: 1
+            }
+          },
+        }
+        const payload = JSON.parse(spec.buildRequests([bidRequest], baseBidderRequest).data)
+        expect(payload.imp[0].ext.ae).to.be.undefined
+      })
+
+      it('when FLEDGE is enabled, but env is malformed, should not send ortb2imp.ext.ae', function () {
+        const bidderRequest = {
+          ...baseBidderRequest,
+          fledgeEnabled: true
+        }
+        const bidRequest = {
+          ...baseBidRequest,
+          ortb2Imp: {
+            ext: {
+              ae: 'malformed'
+            }
+          },
+        }
+        const payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest).data)
+        expect(payload.imp[0].ext.ae).to.be.undefined
+      })
+
       it('includes the ad unit code in the request', function() {
         const impression = payload.imp[0]
         expect(impression.adunitcode).to.equal('adunit-code')
@@ -777,6 +824,80 @@ describe('sovrnBidAdapter', function() {
 
       expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedResponse))
       expect(Object.keys(result[1])).to.deep.equal(Object.keys(expectedResponse))
+    })
+  })
+
+  describe('fledge response', function () {
+    let fledgeResponse = {
+      body: {
+        id: '37386aade21a71',
+        seatbid: [{
+          bid: [{
+            id: 'a_403370_332fdb9b064040ddbec05891bd13ab28',
+            crid: 'creativelycreatedcreativecreative',
+            impid: '263c448586f5a1',
+            price: 0.45882675,
+            nurl: '<!-- NURL -->',
+            adm: '<!-- Creative -->',
+            h: 90,
+            w: 728
+          }]
+        }],
+        ext: {
+          fledge_auction_configs: {
+            'test_bid_id': {
+              seller: 'ap.lijit.com',
+              interestGroupBuyers: ['dsp1.com'],
+              sellerTimeout: 0,
+              perBuyerSignals: {
+                'dsp1.com': {
+                  bid_macros: 0.1,
+                  disallowed_adv_ids: [
+                    '8765',
+                    '4321'
+                  ],
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    let invalidFledgeResponse = {
+      body: {
+        id: '37386aade21a71',
+        seatbid: [{
+          bid: [{
+            id: 'a_403370_332fdb9b064040ddbec05891bd13ab28',
+            crid: 'creativelycreatedcreativecreative',
+            impid: '263c448586f5a1',
+            price: 0.45882675,
+            nurl: '<!-- NURL -->',
+            adm: '<!-- Creative -->',
+            h: 90,
+            w: 728
+          }]
+        }],
+        ext: {
+          fledge_auction_configs: {
+          }
+        }
+      }
+    }
+    it('should return fledge auction configs alongside bids', function () {
+      const result = spec.interpretResponse(fledgeResponse)
+      expect(result).to.have.property('bids')
+      expect(result).to.have.property('fledgeAuctionConfigs')
+      expect(result.fledgeAuctionConfigs.length).to.equal(1)
+      expect(result.fledgeAuctionConfigs[0].bidId).to.equal('test_bid_id')
+      expect(result.fledgeAuctionConfigs[0].config).to.not.be.undefined
+      expect(result.fledgeAuctionConfigs[0].config).to.contain.keys('seller', 'interestGroupBuyers', 'sellerTimeout', 'perBuyerSignals')
+    })
+    it('should ignore invalid fledge auction configs', function () {
+      const result = spec.interpretResponse(invalidFledgeResponse)
+      expect(result).to.have.property('bids')
+      expect(result).to.have.property('fledgeAuctionConfigs')
+      expect(result.fledgeAuctionConfigs.length).to.equal(0)
     })
   })
 

@@ -1,4 +1,4 @@
-import { _each, deepAccess, isArray, isFn, isPlainObject, timestamp } from '../src/utils.js';
+import { _each, deepAccess, isArray, isEmptyStr, isFn, isPlainObject, timestamp } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { find } from '../src/polyfill.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -129,6 +129,13 @@ export const spec = {
             }
           }
         }
+      }
+
+      const topics = getGoogleTopics(bidderRequest);
+      if (topics) {
+        assignIfNotUndefined(query, 'segtax', topics.segtax);
+        assignIfNotUndefined(query, 'segclass', topics.segclass);
+        assignIfNotUndefined(query, 'segments', topics.segments);
       }
     }
 
@@ -605,6 +612,24 @@ function assignIfNotUndefined(obj, key, value) {
   if (value !== undefined) {
     obj[key] = value;
   }
+}
+
+function getGoogleTopics(bid) {
+  const userData = deepAccess(bid, 'ortb2.user.data') || [];
+  const validData = userData.filter(dataObj =>
+    dataObj.segment && isArray(dataObj.segment) && dataObj.segment.length > 0 &&
+      dataObj.segment.every(seg => (seg.id && !isEmptyStr(seg.id) && isFinite(seg.id)))
+  )[0];
+
+  if (validData) {
+    return {
+      segtax: validData.ext?.segtax,
+      segclass: validData.ext?.segclass,
+      segments: validData.segment.map(seg => Number(seg.id)).join(','),
+    };
+  }
+
+  return undefined;
 }
 
 registerBidder(spec);
