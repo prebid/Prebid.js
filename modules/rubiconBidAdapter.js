@@ -984,7 +984,7 @@ function applyFPD(bidRequest, mediaType, data) {
             data['dsatransparency'] = transparency.reduce((param, transp) => {
               const domain = transp.domain || '';
               if (!domain) {
-                return '';
+                return param;
               }
               if (param) {
                 param += '~~'
@@ -995,7 +995,7 @@ function applyFPD(bidRequest, mediaType, data) {
               } else if (Array.isArray(transp.params) && transp.params.length > 0) {
                 dsaparams = transp.params.join('_');
               } else {
-                return '';
+                return param;
               }
               return param += `${domain}~${dsaparams}`;
             }, '')

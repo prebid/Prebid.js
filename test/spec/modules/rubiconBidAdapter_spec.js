@@ -1735,8 +1735,27 @@ describe('the rubicon adapter', function () {
                 }
               }
             }
+            it('should send valid dsaparams but filter out invalid ones', function () {
+              const ortb2Clone = JSON.parse(JSON.stringify(ortb2));
+              ortb2Clone.regs.ext.dsa.transparency = [
+                {
+                  domain: 'testdomain.com',
+                  dsaparams: [1],
+                },
+                {
+                  domain: '',
+                  dsaparams: [2],
+                }
+              ];
+
+              const expectedTransparency = 'testdomain.com~1';
+              const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({ ...b, ortb2: ortb2Clone })), bidderRequest);
+              const data = parseQuery(request.data);
+
+              expect(data['dsatransparency']).to.equal(expectedTransparency);
+            })
             it('should send dsaparams if \"ortb2.regs.ext.dsa.transparancy[0].params\"', function() {
-              const ortb2Clone = JSON.parse(JSON.stringify(ortb2)); // create a deep copy of ortb2
+              const ortb2Clone = JSON.parse(JSON.stringify(ortb2));
 
               ortb2Clone.regs.ext.dsa.transparency = [{
                 domain: 'testdomain.com',
@@ -1750,7 +1769,7 @@ describe('the rubicon adapter', function () {
               expect(data['dsatransparency']).to.equal(expectedTransparency);
             })
             it('should pass an empty transparency param if \"ortb2.regs.ext.dsa.transparency[0].params\" is empty', function() {
-              const ortb2Clone = JSON.parse(JSON.stringify(ortb2)); // create a deep copy of ortb2
+              const ortb2Clone = JSON.parse(JSON.stringify(ortb2));
 
               ortb2Clone.regs.ext.dsa.transparency = [{
                 domain: 'testdomain.com',
@@ -1762,7 +1781,7 @@ describe('the rubicon adapter', function () {
               expect(data['dsatransparency']).to.be.undefined
             })
             it('should send an empty transparency if \"ortb2.regs.ext.dsa.transparency[0].domain\" is empty', function() {
-              const ortb2Clone = JSON.parse(JSON.stringify(ortb2)); // create a deep copy of ortb2
+              const ortb2Clone = JSON.parse(JSON.stringify(ortb2));
 
               ortb2Clone.regs.ext.dsa.transparency = [{
                 domain: '',
