@@ -81,7 +81,7 @@ describe('ccxAdapter', function () {
     });
 
     it('Valid bid request - default', function () {
-      let response = spec.buildRequests(bids, {bids});
+      let response = spec.buildRequests(bids, {bids, bidderRequestId: 'id'});
       expect(response).to.be.not.empty;
       expect(response.data).to.be.not.empty;
 

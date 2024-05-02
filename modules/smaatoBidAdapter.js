@@ -1,27 +1,38 @@
-import { deepAccess, getDNT, deepSetValue, logInfo, logError, isEmpty, getAdUnitSizes, fill, chunk, getMaxValueFromArray, getMinValueFromArray } from '../src/utils.js';
+import {deepAccess, deepSetValue, getDNT, isEmpty, isNumber, logError, logInfo} from '../src/utils.js';
+import {find} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
-import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.js';
+import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import { NATIVE_IMAGE_TYPES } from '../src/constants.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+import {fill} from '../libraries/appnexusUtils/anUtils.js';
+import {chunk} from '../libraries/chunk/chunk.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
 
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
-const SMAATO_CLIENT = 'prebid_js_$prebid.version$_1.6'
+const SMAATO_CLIENT = 'prebid_js_$prebid.version$_1.8'
 const CURRENCY = 'USD';
 
 const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
   const requestTemplate = {
-    id: bidderRequest.auctionId,
+    id: bidderRequest.bidderRequestId,
     at: 1,
     cur: [CURRENCY],
     tmax: bidderRequest.timeout,
     site: {
       id: window.location.hostname,
-      publisher: {
-        id: deepAccess(bidRequest, 'params.publisherId')
-      },
-      domain: window.location.hostname,
-      page: window.location.href,
-      ref: bidderRequest.refererInfo.referer
+      // TODO: do the fallbacks make sense here?
+      domain: bidderRequest.refererInfo.domain || window.location.hostname,
+      page: bidderRequest.refererInfo.page || window.location.href,
+      ref: bidderRequest.refererInfo.ref
     },
     device: {
       language: (navigator && navigator.language) ? navigator.language.split('-')[0] : '',
@@ -47,9 +58,11 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
     }
   };
 
-  let ortb2 = config.getConfig('ortb2') || {};
+  let ortb2 = bidderRequest.ortb2 || {};
   Object.assign(requestTemplate.user, ortb2.user);
   Object.assign(requestTemplate.site, ortb2.site);
+
+  deepSetValue(requestTemplate, 'site.publisher.id', deepAccess(bidRequest, 'params.publisherId'));
 
   if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies === true) {
     deepSetValue(requestTemplate, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
@@ -60,11 +73,28 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
     deepSetValue(requestTemplate, 'regs.ext.us_privacy', bidderRequest.uspConsent);
   }
 
+  if (ortb2.regs?.gpp !== undefined) {
+    deepSetValue(requestTemplate, 'regs.ext.gpp', ortb2.regs.gpp);
+    deepSetValue(requestTemplate, 'regs.ext.gpp_sid', ortb2.regs.gpp_sid);
+  }
+
+  if (ortb2.device?.ifa !== undefined) {
+    deepSetValue(requestTemplate, 'device.ifa', ortb2.device.ifa);
+  }
+
+  if (ortb2.device?.geo !== undefined) {
+    deepSetValue(requestTemplate, 'device.geo', ortb2.device.geo);
+  }
+
   if (deepAccess(bidRequest, 'params.app')) {
-    const geo = deepAccess(bidRequest, 'params.app.geo');
-    deepSetValue(requestTemplate, 'device.geo', geo);
-    const ifa = deepAccess(bidRequest, 'params.app.ifa')
-    deepSetValue(requestTemplate, 'device.ifa', ifa);
+    if (!deepAccess(requestTemplate, 'device.geo')) {
+      const geo = deepAccess(bidRequest, 'params.app.geo');
+      deepSetValue(requestTemplate, 'device.geo', geo);
+    }
+    if (!deepAccess(requestTemplate, 'device.ifa')) {
+      const ifa = deepAccess(bidRequest, 'params.app.ifa');
+      deepSetValue(requestTemplate, 'device.ifa', ifa);
+    }
   }
 
   const eids = deepAccess(bidRequest, 'userIdAsEids');
@@ -91,6 +121,12 @@ const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
     }
   }
 
+  const nativeOrtbRequest = bidRequest.nativeOrtbRequest;
+  if (nativeOrtbRequest) {
+    const nativeRequest = Object.assign({}, requestTemplate, createNativeImp(bidRequest, nativeOrtbRequest));
+    requests.push(nativeRequest);
+  }
+
   return requests;
 }
 
@@ -109,10 +145,11 @@ const buildServerRequest = (validBidRequest, data) => {
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
+  gvlid: 82,
 
   /**
-   * Determines whether or not the given bid request is valid.
+   * Determines whether the given bid request is valid.
    *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
@@ -170,6 +207,7 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {ServerResponse} serverResponse A successful response from the server.
+   * @param {BidRequest} bidRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: (serverResponse, bidRequest) => {
@@ -209,7 +247,7 @@ export const spec = {
           }
         };
 
-        const videoContext = deepAccess(JSON.parse(bidRequest.data).imp[0], 'video.ext.context')
+        const videoContext = deepAccess(JSON.parse(bidRequest.data).imp[0], 'video.ext.context');
         if (videoContext === ADPOD) {
           resultingBid.vastXml = bid.adm;
           resultingBid.mediaType = VIDEO;
@@ -236,6 +274,11 @@ export const spec = {
             case 'Video':
               resultingBid.vastXml = bid.adm;
               resultingBid.mediaType = VIDEO;
+              bids.push(resultingBid);
+              break;
+            case 'Native':
+              resultingBid.native = createNativeAd(bid.adm);
+              resultingBid.mediaType = NATIVE;
               bids.push(resultingBid);
               break;
             default:
@@ -296,6 +339,13 @@ const createRichmediaAd = (adm) => {
   return markup + '</div>';
 };
 
+const createNativeAd = (adm) => {
+  const nativeResponse = JSON.parse(adm).native;
+  return {
+    ortb: nativeResponse
+  }
+};
+
 function createBannerImp(bidRequest) {
   const adUnitSizes = getAdUnitSizes(bidRequest);
   const sizes = adUnitSizes.map((size) => ({w: size[0], h: size[1]}));
@@ -339,6 +389,33 @@ function createVideoImp(bidRequest, videoMediaType) {
       }
     }]
   };
+}
+
+function createNativeImp(bidRequest, nativeRequest) {
+  return {
+    imp: [{
+      id: bidRequest.bidId,
+      tagid: deepAccess(bidRequest, 'params.adspaceId'),
+      bidfloor: getBidFloor(bidRequest, NATIVE, getNativeMainImageSize(nativeRequest)),
+      native: {
+        request: JSON.stringify(nativeRequest),
+        ver: '1.2'
+      }
+    }]
+  };
+}
+
+function getNativeMainImageSize(nativeRequest) {
+  const mainImage = find(nativeRequest.assets, asset => asset.hasOwnProperty('img') && asset.img.type === NATIVE_IMAGE_TYPES.MAIN)
+  if (mainImage) {
+    if (isNumber(mainImage.img.w) && isNumber(mainImage.img.h)) {
+      return [[mainImage.img.w, mainImage.img.h]]
+    }
+    if (isNumber(mainImage.img.wmin) && isNumber(mainImage.img.hmin)) {
+      return [[mainImage.img.wmin, mainImage.img.hmin]]
+    }
+  }
+  return []
 }
 
 function createAdPodImp(bidRequest, videoMediaType) {
@@ -386,7 +463,7 @@ function createAdPodImp(bidRequest, videoMediaType) {
     });
   } else {
     // all maxdurations should be the same
-    const maxDuration = getMaxValueFromArray(durationRangeSec);
+    const maxDuration = Math.max(...durationRangeSec);
     imps.map((imp, index) => {
       const sequence = index + 1;
       imp.video.maxduration = maxDuration
@@ -401,7 +478,7 @@ function createAdPodImp(bidRequest, videoMediaType) {
 
 function getAdPodNumberOfPlacements(videoMediaType) {
   const {adPodDurationSec, durationRangeSec, requireExactDuration} = videoMediaType
-  const minAllowedDuration = getMinValueFromArray(durationRangeSec)
+  const minAllowedDuration = Math.min(...durationRangeSec)
   const numberOfPlacements = Math.floor(adPodDurationSec / minAllowedDuration)
 
   return requireExactDuration

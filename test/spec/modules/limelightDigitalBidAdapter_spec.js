@@ -1,5 +1,5 @@
-import {expect} from 'chai';
-import {spec} from '../../../modules/limelightDigitalBidAdapter.js';
+import { expect } from 'chai';
+import { spec } from '../../../modules/limelightDigitalBidAdapter.js';
 
 describe('limelightDigitalAdapter', function () {
   const bid1 = {
@@ -10,7 +10,15 @@ describe('limelightDigitalAdapter', function () {
       host: 'exchange.ortb.net',
       adUnitId: 123,
       adUnitType: 'banner',
-      publisherId: 'perfectPublisher'
+      publisherId: 'perfectPublisher',
+      custom1: 'custom1',
+      custom2: 'custom2',
+      custom3: 'custom3',
+      custom4: 'custom4',
+      custom5: 'custom5'
+    },
+    refererInfo: {
+      page: 'https://publisher.com/page1'
     },
     placementCode: 'placement_0',
     auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
@@ -19,7 +27,11 @@ describe('limelightDigitalAdapter', function () {
         sizes: [[300, 250]]
       }
     },
-    transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
+    ortb2Imp: {
+      ext: {
+        tid: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
+      }
+    },
     userIdAsEids: [
       {
         source: 'test1.org',
@@ -29,7 +41,18 @@ describe('limelightDigitalAdapter', function () {
           }
         ]
       }
-    ]
+    ],
+    schain: {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'example.com',
+          sid: '1',
+          hp: 1
+        }
+      ]
+    }
   }
   const bid2 = {
     bidId: '58ee9870c3164a',
@@ -38,12 +61,24 @@ describe('limelightDigitalAdapter', function () {
     params: {
       host: 'ads.project-limelight.com',
       adUnitId: 456,
-      adUnitType: 'banner'
+      adUnitType: 'banner',
+      custom1: 'custom1',
+      custom2: 'custom2',
+      custom3: 'custom3',
+      custom4: 'custom4',
+      custom5: 'custom5'
+    },
+    refererInfo: {
+      page: 'https://publisher.com/page2'
     },
     placementCode: 'placement_1',
     auctionId: '482f88de-29ab-45c8-981a-d25e39454a34',
     sizes: [[350, 200]],
-    transactionId: '068867d1-46ec-40bb-9fa0-e24611786fb4',
+    ortb2Imp: {
+      ext: {
+        tid: '068867d1-46ec-40bb-9fa0-e24611786fb4',
+      }
+    },
     userIdAsEids: [
       {
         source: 'test2.org',
@@ -53,7 +88,23 @@ describe('limelightDigitalAdapter', function () {
           }
         ]
       }
-    ]
+    ],
+    schain: {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'example.com',
+          sid: '1',
+          hp: 1
+        },
+        {
+          asi: 'example1.com',
+          sid: '2',
+          hp: 1
+        }
+      ]
+    }
   }
   const bid3 = {
     bidId: '019645c7d69460',
@@ -63,12 +114,24 @@ describe('limelightDigitalAdapter', function () {
       host: 'exchange.ortb.net',
       adUnitId: 789,
       adUnitType: 'video',
-      publisherId: 'secondPerfectPublisher'
+      publisherId: 'secondPerfectPublisher',
+      custom1: 'custom1',
+      custom2: 'custom2',
+      custom3: 'custom3',
+      custom4: 'custom4',
+      custom5: 'custom5'
+    },
+    refererInfo: {
+      page: 'https://publisher.com/page3'
     },
     placementCode: 'placement_2',
     auctionId: 'e4771143-6aa7-41ec-8824-ced4342c96c8',
     sizes: [[800, 600]],
-    transactionId: '738d5915-6651-43b9-9b6b-d50517350917',
+    ortb2Imp: {
+      ext: {
+        tid: '738d5915-6651-43b9-9b6b-d50517350917',
+      }
+    },
     userIdAsEids: [
       {
         source: 'test3.org',
@@ -81,7 +144,18 @@ describe('limelightDigitalAdapter', function () {
           }
         ]
       }
-    ]
+    ],
+    schain: {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'example.com',
+          sid: '1',
+          hp: 1
+        }
+      ]
+    }
   }
   const bid4 = {
     bidId: '019645c7d69460',
@@ -90,14 +164,26 @@ describe('limelightDigitalAdapter', function () {
     params: {
       host: 'exchange.ortb.net',
       adUnitId: 789,
-      adUnitType: 'video'
+      adUnitType: 'video',
+      custom1: 'custom1',
+      custom2: 'custom2',
+      custom3: 'custom3',
+      custom4: 'custom4',
+      custom5: 'custom5'
+    },
+    refererInfo: {
+      page: 'https://publisher.com/page4'
     },
     placementCode: 'placement_2',
     auctionId: 'e4771143-6aa7-41ec-8824-ced4342c96c8',
     video: {
       playerSize: [800, 600]
     },
-    transactionId: '738d5915-6651-43b9-9b6b-d50517350917',
+    ortb2Imp: {
+      ext: {
+        tid: '738d5915-6651-43b9-9b6b-d50517350917',
+      }
+    },
     userIdAsEids: [
       {
         source: 'test.org',
@@ -107,11 +193,34 @@ describe('limelightDigitalAdapter', function () {
           }
         ]
       }
-    ]
+    ],
+    schain: {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'example.com',
+          sid: '1',
+          hp: 1
+        }
+      ]
+    }
   }
 
   describe('buildRequests', function () {
-    const serverRequests = spec.buildRequests([bid1, bid2, bid3, bid4])
+    const bidderRequest = {
+      ortb2: {
+        device: {
+          sua: {
+            browsers: [],
+            platform: [],
+            mobile: 1,
+            architecture: 'arm'
+          }
+        }
+      }
+    }
+    const serverRequests = spec.buildRequests([bid1, bid2, bid3, bid4], bidderRequest)
     it('Creates two ServerRequests', function() {
       expect(serverRequests).to.exist
       expect(serverRequests).to.have.lengthOf(2)
@@ -133,7 +242,8 @@ describe('limelightDigitalAdapter', function () {
           'deviceWidth',
           'deviceHeight',
           'secure',
-          'adUnits'
+          'adUnits',
+          'sua'
         );
         expect(data.deviceWidth).to.be.a('number');
         expect(data.deviceHeight).to.be.a('number');
@@ -146,7 +256,14 @@ describe('limelightDigitalAdapter', function () {
             'sizes',
             'transactionId',
             'publisherId',
-            'userIdAsEids'
+            'userIdAsEids',
+            'supplyChain',
+            'custom1',
+            'custom2',
+            'custom3',
+            'custom4',
+            'custom5',
+            'page'
           );
           expect(adUnit.id).to.be.a('number');
           expect(adUnit.bidId).to.be.a('string');
@@ -154,7 +271,18 @@ describe('limelightDigitalAdapter', function () {
           expect(adUnit.transactionId).to.be.a('string');
           expect(adUnit.sizes).to.be.an('array');
           expect(adUnit.userIdAsEids).to.be.an('array');
+          expect(adUnit.supplyChain).to.be.an('object');
+          expect(adUnit.custom1).to.be.a('string');
+          expect(adUnit.custom2).to.be.a('string');
+          expect(adUnit.custom3).to.be.a('string');
+          expect(adUnit.custom4).to.be.a('string');
+          expect(adUnit.custom5).to.be.a('string');
+          expect(adUnit.page).to.be.a('string');
         })
+        expect(data.sua.browsers).to.be.a('array');
+        expect(data.sua.platform).to.be.a('array');
+        expect(data.sua.mobile).to.be.a('number');
+        expect(data.sua.architecture).to.be.a('string');
       })
     })
     it('Returns valid URL', function () {
@@ -359,107 +487,84 @@ describe('limelightDigitalAdapter', function () {
     });
   });
   describe('getUserSyncs', function () {
-    const serverResponses = [
-      {
-        body: [
-          {
-            ext: {
-              sync: {
-                iframe: 'iframeUrl',
+    it('should return trackers for lm(only iframe) if server responses contain lm user sync header and iframe and image enabled', function () {
+      const serverResponses = [
+        {
+          headers: {
+            get: function (header) {
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-lm.ortb.net/sync';
+              }
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-lm.ortb.net/sync.html';
               }
             }
           },
-          {
-            ext: {
-              sync: {
-                pixel: 'pixelUrl'
-              }
-            }
-          },
-          {},
-          {
-            ext: {}
-          },
-          {
-            ext: {
-              sync: {}
-            }
-          },
-          {
-            ext: {
-              sync: {
-                iframe: 'iframeUrl2',
-                pixel: 'pixelUrl3'
-              }
-            }
-          }
-        ]
-      },
-      {
-        body: [
-          {
-            ext: {
-              sync: {
-                iframe: 'iframeUrl2',
-                pixel: 'pixelUrl2'
-              }
-            }
-          },
-          {
-            ext: {
-              sync: {
-                iframe: 'iframeUrl3',
-                pixel: 'pixelUrl3'
-              }
-            }
-          }
-        ]
-      }
-    ];
-    it('should return empty array if server responses do not contain sync urls', function () {
+          body: []
+        }
+      ];
       const syncOptions = {
         iframeEnabled: true,
         pixelEnabled: true
       };
-      const serverResponsesWithoutSyncUrls = serverResponses.map(serverResponse => {
-        const serverResponseWithoutSyncUrls = Object.assign({}, serverResponse);
-        serverResponseWithoutSyncUrls.body = serverResponse.body.map(serverResponseBody => {
-          const serverResponseBodyWithoutSyncUrls = Object.assign({}, serverResponseBody);
-          delete serverResponseBodyWithoutSyncUrls.ext;
-          return serverResponseBodyWithoutSyncUrls;
-        });
-        return serverResponseWithoutSyncUrls;
-      });
-      expect(spec.getUserSyncs(syncOptions, serverResponsesWithoutSyncUrls)).to.be.an('array').that.is.empty;
+      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
+        {
+          type: 'iframe',
+          url: 'https://tracker-lm.ortb.net/sync.html'
+        }
+      ]);
     });
     it('should return empty array if all sync types are disabled', function () {
+      const serverResponses = [
+        {
+          headers: {
+            get: function (header) {
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-1.ortb.net/sync';
+              }
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-1.ortb.net/sync.html';
+              }
+            }
+          },
+          body: []
+        }
+      ];
       const syncOptions = {
         iframeEnabled: false,
         pixelEnabled: false
       };
       expect(spec.getUserSyncs(syncOptions, serverResponses)).to.be.an('array').that.is.empty;
     });
-    it('should return iframe sync urls if iframe sync is enabled', function () {
+    it('should return no pixels if iframe sync is enabled and headers are blank', function () {
+      const serverResponses = [
+        {
+          headers: null,
+          body: []
+        }
+      ];
       const syncOptions = {
         iframeEnabled: true,
         pixelEnabled: false
       };
-      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
-        {
-          type: 'iframe',
-          url: 'iframeUrl'
-        },
-        {
-          type: 'iframe',
-          url: 'iframeUrl2'
-        },
-        {
-          type: 'iframe',
-          url: 'iframeUrl3'
-        }
-      ]);
+      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.be.an('array').that.is.empty;
     });
-    it('should return image sync urls if pixel sync is enabled', function () {
+    it('should return image sync urls for lm if pixel sync is enabled and headers have lm pixel', function () {
+      const serverResponses = [
+        {
+          headers: {
+            get: function (header) {
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-lm.ortb.net/sync';
+              }
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-lm.ortb.net/sync.html';
+              }
+            }
+          },
+          body: []
+        }
+      ];
       const syncOptions = {
         iframeEnabled: false,
         pixelEnabled: true
@@ -467,47 +572,118 @@ describe('limelightDigitalAdapter', function () {
       expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
         {
           type: 'image',
-          url: 'pixelUrl'
-        },
-        {
-          type: 'image',
-          url: 'pixelUrl3'
-        },
-        {
-          type: 'image',
-          url: 'pixelUrl2'
+          url: 'https://tracker-lm.ortb.net/sync'
         }
       ]);
     });
-    it('should return all sync urls if all sync types are enabled', function () {
+    it('should return image sync urls for client1 and clien2 if pixel sync is enabled and two responses and headers have two pixels', function () {
+      const serverResponses = [
+        {
+          headers: {
+            get: function (header) {
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-1.ortb.net/sync';
+              }
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-1.ortb.net/sync.html';
+              }
+            }
+          },
+          body: []
+        },
+        {
+          headers: {
+            get: function (header) {
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-2.ortb.net/sync';
+              }
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-2.ortb.net/sync.html';
+              }
+            }
+          },
+          body: []
+        }
+      ];
+      const syncOptions = {
+        iframeEnabled: false,
+        pixelEnabled: true
+      };
+      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
+        {
+          type: 'image',
+          url: 'https://tracker-1.ortb.net/sync'
+        },
+        {
+          type: 'image',
+          url: 'https://tracker-2.ortb.net/sync'
+        }
+      ]);
+    });
+    it('should return image sync url for pll if pixel sync is enabled and two responses and headers have two same pixels', function () {
+      const serverResponses = [
+        {
+          headers: {
+            get: function (header) {
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-lm.ortb.net/sync';
+              }
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-lm.ortb.net/sync.html';
+              }
+            }
+          },
+          body: []
+        },
+        {
+          headers: {
+            get: function (header) {
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-lm.ortb.net/sync';
+              }
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-lm.ortb.net/sync.html';
+              }
+            }
+          },
+          body: []
+        }
+      ];
+      const syncOptions = {
+        iframeEnabled: false,
+        pixelEnabled: true
+      };
+      expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
+        {
+          type: 'image',
+          url: 'https://tracker-lm.ortb.net/sync'
+        }
+      ]);
+    });
+    it('should return iframe sync url for pll if pixel sync is enabled and iframe is enables and headers have both iframe and img pixels', function () {
+      const serverResponses = [
+        {
+          headers: {
+            get: function (header) {
+              if (header === 'X-PLL-UserSync-Image') {
+                return 'https://tracker-lm.ortb.net/sync';
+              }
+              if (header === 'X-PLL-UserSync-Iframe') {
+                return 'https://tracker-lm.ortb.net/sync.html';
+              }
+            }
+          },
+          body: []
+        }
+      ];
       const syncOptions = {
         iframeEnabled: true,
         pixelEnabled: true
-      }
+      };
       expect(spec.getUserSyncs(syncOptions, serverResponses)).to.deep.equal([
         {
           type: 'iframe',
-          url: 'iframeUrl'
-        },
-        {
-          type: 'iframe',
-          url: 'iframeUrl2'
-        },
-        {
-          type: 'iframe',
-          url: 'iframeUrl3'
-        },
-        {
-          type: 'image',
-          url: 'pixelUrl'
-        },
-        {
-          type: 'image',
-          url: 'pixelUrl3'
-        },
-        {
-          type: 'image',
-          url: 'pixelUrl2'
+          url: 'https://tracker-lm.ortb.net/sync.html'
         }
       ]);
     });
@@ -518,7 +694,7 @@ function validateAdUnit(adUnit, bid) {
   expect(adUnit.id).to.equal(bid.params.adUnitId);
   expect(adUnit.bidId).to.equal(bid.bidId);
   expect(adUnit.type).to.equal(bid.params.adUnitType.toUpperCase());
-  expect(adUnit.transactionId).to.equal(bid.transactionId);
+  expect(adUnit.transactionId).to.equal(bid.ortb2Imp.ext.tid);
   let bidSizes = [];
   if (bid.mediaTypes) {
     if (bid.mediaTypes.video && bid.mediaTypes.video.playerSize) {
@@ -539,4 +715,6 @@ function validateAdUnit(adUnit, bid) {
   }));
   expect(adUnit.publisherId).to.equal(bid.params.publisherId);
   expect(adUnit.userIdAsEids).to.deep.equal(bid.userIdAsEids);
+  expect(adUnit.supplyChain).to.deep.equal(bid.schain);
+  expect(adUnit.page).to.equal(bid.refererInfo.page);
 }

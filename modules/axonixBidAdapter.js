@@ -1,8 +1,8 @@
-import { isArray, logError, deepAccess, isEmpty, triggerPixel, replaceAuctionPrice } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
-import { ajax } from '../src/ajax.js';
+import {deepAccess, isArray, isEmpty, logError, replaceAuctionPrice, triggerPixel} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
+import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'axonix';
 const BIDDER_VERSION = '1.0.2';
@@ -25,12 +25,11 @@ function getBidFloor(bidRequest) {
 }
 
 function getPageUrl(bidRequest, bidderRequest) {
-  let pageUrl = config.getConfig('pageUrl');
-
+  let pageUrl;
   if (bidRequest.params.referrer) {
     pageUrl = bidRequest.params.referrer;
-  } else if (!pageUrl) {
-    pageUrl = bidderRequest.refererInfo.referer;
+  } else {
+    pageUrl = bidderRequest.refererInfo.page;
   }
 
   return bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
@@ -151,7 +150,7 @@ export const spec = {
     for (const resp of response) {
       if (resp.requestId) {
         responses.push(Object.assign(resp, {
-          ttl: config.getConfig('_bidderTimeout')
+          ttl: 60
         }));
       }
     }
@@ -177,7 +176,7 @@ export const spec = {
     const { nurl } = bid || {};
 
     if (bid.nurl) {
-      triggerPixel(replaceAuctionPrice(nurl, bid.cpm));
+      triggerPixel(replaceAuctionPrice(nurl, bid.originalCpm || bid.cpm));
     };
   }
 }

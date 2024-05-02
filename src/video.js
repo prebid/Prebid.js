@@ -1,25 +1,21 @@
-import adapterManager from './adapterManager.js';
-import { deepAccess, logError } from './utils.js';
-import { config } from '../src/config.js';
-import includes from 'core-js-pure/features/array/includes.js';
-import { hook } from './hook.js';
+import {deepAccess, logError} from './utils.js';
+import {config} from '../src/config.js';
+import {hook} from './hook.js';
 import {auctionManager} from './auctionManager.js';
 
-const VIDEO_MEDIA_TYPE = 'video';
 export const OUTSTREAM = 'outstream';
 export const INSTREAM = 'instream';
 
-/**
- * Helper functions for working with video-enabled adUnits
- */
-export const videoAdUnit = adUnit => {
-  const mediaType = adUnit.mediaType === VIDEO_MEDIA_TYPE;
-  const mediaTypes = deepAccess(adUnit, 'mediaTypes.video');
-  return mediaType || mediaTypes;
-};
-export const videoBidder = bid => includes(adapterManager.videoAdapters, bid.bidder);
-export const hasNonVideoBidder = adUnit =>
-  adUnit.bids.filter(bid => !videoBidder(bid)).length;
+export function fillVideoDefaults(adUnit) {
+  const video = adUnit?.mediaTypes?.video;
+  if (video != null && video.plcmt == null) {
+    if (video.context === OUTSTREAM || [2, 3, 4].includes(video.placement)) {
+      video.plcmt = 4;
+    } else if (video.context !== OUTSTREAM && [2, 6].includes(video.playbackmethod)) {
+      video.plcmt = 2;
+    }
+  }
+}
 
 /**
  * @typedef {object} VideoBid
@@ -35,15 +31,16 @@ export const hasNonVideoBidder = adUnit =>
 export function isValidVideoBid(bid, {index = auctionManager.index} = {}) {
   const videoMediaType = deepAccess(index.getMediaTypes(bid), 'video');
   const context = videoMediaType && deepAccess(videoMediaType, 'context');
+  const useCacheKey = videoMediaType && deepAccess(videoMediaType, 'useCacheKey');
   const adUnit = index.getAdUnit(bid);
 
   // if context not defined assume default 'instream' for video bids
   // instream bids require a vast url or vast xml content
-  return checkVideoBidSetup(bid, adUnit, videoMediaType, context);
+  return checkVideoBidSetup(bid, adUnit, videoMediaType, context, useCacheKey);
 }
 
-export const checkVideoBidSetup = hook('sync', function(bid, adUnit, videoMediaType, context) {
-  if (videoMediaType && context !== OUTSTREAM) {
+export const checkVideoBidSetup = hook('sync', function(bid, adUnit, videoMediaType, context, useCacheKey) {
+  if (videoMediaType && (useCacheKey || context !== OUTSTREAM)) {
     // xml-only video bids require a prebid cache url
     if (!config.getConfig('cache.url') && bid.vastXml && !bid.vastUrl) {
       logError(`
@@ -57,7 +54,7 @@ export const checkVideoBidSetup = hook('sync', function(bid, adUnit, videoMediaT
   }
 
   // outstream bids require a renderer on the bid or pub-defined on adunit
-  if (context === OUTSTREAM) {
+  if (context === OUTSTREAM && !useCacheKey) {
     return !!(bid.renderer || (adUnit && adUnit.renderer) || videoMediaType.renderer);
   }
 

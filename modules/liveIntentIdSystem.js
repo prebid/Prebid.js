@@ -7,13 +7,26 @@
 import { triggerPixel, logError } from '../src/utils.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
-import { LiveConnect } from 'live-connect-js/esm/initializer.js';
-import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { MinimalLiveConnect } from 'live-connect-js/esm/minimal-live-connect.js';
+import { LiveConnect } from 'live-connect-js'; // eslint-disable-line prebid/validate-imports
+import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../src/adapterManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import {UID1_EIDS} from '../libraries/uid1Eids/uid1Eids.js';
+import {UID2_EIDS} from '../libraries/uid2Eids/uid2Eids.js';
+import { getRefererInfo } from '../src/refererDetection.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
+
+const DEFAULT_AJAX_TIMEOUT = 5000
+const EVENTS_TOPIC = 'pre_lips'
 const MODULE_NAME = 'liveIntentId';
-export const storage = getStorageManager(null, MODULE_NAME);
+const LI_PROVIDER_DOMAIN = 'liveintent.com';
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
+const defaultRequestedAttributes = {'nonId': true}
 const calls = {
   ajaxGet: (url, onSuccess, onError, timeout) => {
     ajaxBuilder(timeout)(
@@ -39,12 +52,20 @@ let liveConnect = null;
  * This function is used in tests
  */
 export function reset() {
-  if (window && window.liQ) {
-    window.liQ = [];
+  if (window && window.liQ_instances) {
+    window.liQ_instances.forEach(i => i.eventBus.off(EVENTS_TOPIC, setEventFiredFlag))
+    window.liQ_instances = [];
   }
   liveIntentIdSubmodule.setModuleMode(null)
   eventFired = false;
   liveConnect = null;
+}
+
+/**
+ * This function is also used in tests
+ */
+export function setEventFiredFlag() {
+  eventFired = true;
 }
 
 function parseLiveIntentCollectorConfig(collectConfig) {
@@ -54,7 +75,25 @@ function parseLiveIntentCollectorConfig(collectConfig) {
   collectConfig.fpiStorageStrategy && (config.storageStrategy = collectConfig.fpiStorageStrategy);
   collectConfig.fpiExpirationDays && (config.expirationDays = collectConfig.fpiExpirationDays);
   collectConfig.collectorUrl && (config.collectorUrl = collectConfig.collectorUrl);
+  config.ajaxTimeout = collectConfig.ajaxTimeout || DEFAULT_AJAX_TIMEOUT;
   return config;
+}
+
+/**
+ * Create requestedAttributes array to pass to liveconnect
+ * @function
+ * @param {Object} overrides - object with boolean values that will override defaults { 'foo': true, 'bar': false }
+ * @returns {Array}
+ */
+function parseRequestedAttributes(overrides) {
+  function createParameterArray(config) {
+    return Object.entries(config).flatMap(([k, v]) => (typeof v === 'boolean' && v) ? [k] : []);
+  }
+  if (typeof overrides === 'object') {
+    return createParameterArray({...defaultRequestedAttributes, ...overrides})
+  } else {
+    return createParameterArray(defaultRequestedAttributes);
+  }
 }
 
 function initializeLiveConnect(configParams) {
@@ -65,23 +104,29 @@ function initializeLiveConnect(configParams) {
 
   const publisherId = configParams.publisherId || 'any';
   const identityResolutionConfig = {
-    source: 'prebid',
-    publisherId: publisherId
+    publisherId: publisherId,
+    requestedAttributes: parseRequestedAttributes(configParams.requestedAttributesOverrides)
   };
   if (configParams.url) {
     identityResolutionConfig.url = configParams.url
   }
-  if (configParams.partner) {
-    identityResolutionConfig.source = configParams.partner
-  }
-  if (configParams.ajaxTimeout) {
-    identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout;
-  }
+
+  identityResolutionConfig.ajaxTimeout = configParams.ajaxTimeout || DEFAULT_AJAX_TIMEOUT;
 
   const liveConnectConfig = parseLiveIntentCollectorConfig(configParams.liCollectConfig);
+
+  if (!liveConnectConfig.appId && configParams.distributorId) {
+    liveConnectConfig.distributorId = configParams.distributorId;
+    identityResolutionConfig.source = configParams.distributorId;
+  } else {
+    identityResolutionConfig.source = configParams.partner || 'prebid'
+  }
+
   liveConnectConfig.wrapperName = 'prebid';
+  liveConnectConfig.trackerVersion = '$prebid.version$';
   liveConnectConfig.identityResolutionConfig = identityResolutionConfig;
   liveConnectConfig.identifiersToResolve = configParams.identifiersToResolve || [];
+  liveConnectConfig.fireEventDelay = configParams.fireEventDelay;
   const usPrivacyString = uspDataHandler.getConsentData();
   if (usPrivacyString) {
     liveConnectConfig.usPrivacyString = usPrivacyString;
@@ -91,7 +136,11 @@ function initializeLiveConnect(configParams) {
     liveConnectConfig.gdprApplies = gdprConsent.gdprApplies;
     liveConnectConfig.gdprConsent = gdprConsent.consentString;
   }
-
+  const gppConsent = gppDataHandler.getConsentData();
+  if (gppConsent) {
+    liveConnectConfig.gppString = gppConsent.gppString;
+    liveConnectConfig.gppApplicableSections = gppConsent.applicableSections;
+  }
   // The second param is the storage object, LS & Cookie manipulation uses PBJS
   // The third param is the ajax and pixel object, the ajax and pixel use PBJS
   liveConnect = liveIntentIdSubmodule.getInitializer()(liveConnectConfig, storage, calls);
@@ -103,14 +152,20 @@ function initializeLiveConnect(configParams) {
 
 function tryFireEvent() {
   if (!eventFired && liveConnect) {
-    liveConnect.fire();
-    eventFired = true;
+    const eventDelay = liveConnect.config.fireEventDelay || 500
+    setTimeout(() => {
+      const instances = window.liQ_instances
+      instances.forEach(i => i.eventBus.once(EVENTS_TOPIC, setEventFiredFlag))
+      if (!eventFired && liveConnect) {
+        liveConnect.fire();
+      }
+    }, eventDelay)
   }
 }
 
 /** @type {Submodule} */
 export const liveIntentIdSubmodule = {
-  moduleMode: process.env.LiveConnectMode,
+  moduleMode: '$$LIVE_INTENT_MODULE_MODE$$',
   /**
    * used to link submodule with config
    * @type {string}
@@ -121,7 +176,7 @@ export const liveIntentIdSubmodule = {
     this.moduleMode = mode
   },
   getInitializer() {
-    return this.moduleMode === 'minimal' ? MinimalLiveConnect : LiveConnect
+    return (liveConnectConfig, storage, calls) => LiveConnect(liveConnectConfig, storage, calls, this.moduleMode)
   },
 
   /**
@@ -136,9 +191,58 @@ export const liveIntentIdSubmodule = {
   decode(value, config) {
     const configParams = (config && config.params) || {};
     function composeIdObject(value) {
-      const base = { 'lipbid': value.unifiedId };
-      delete value.unifiedId;
-      return { 'lipb': { ...base, ...value } };
+      const result = {};
+
+      // old versions stored lipbid in unifiedId. Ensure that we can still read the data.
+      const lipbid = value.nonId || value.unifiedId
+      if (lipbid) {
+        value.lipbid = lipbid
+        delete value.unifiedId
+        result.lipb = value
+      }
+
+      // Lift usage of uid2 by exposing uid2 if we were asked to resolve it.
+      // As adapters are applied in lexicographical order, we will always
+      // be overwritten by the 'proper' uid2 module if it is present.
+      if (value.uid2) {
+        result.uid2 = { 'id': value.uid2, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.bidswitch) {
+        result.bidswitch = { 'id': value.bidswitch, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.medianet) {
+        result.medianet = { 'id': value.medianet, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.magnite) {
+        result.magnite = { 'id': value.magnite, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.index) {
+        result.index = { 'id': value.index, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.openx) {
+        result.openx = { 'id': value.openx, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.pubmatic) {
+        result.pubmatic = { 'id': value.pubmatic, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.sovrn) {
+        result.sovrn = { 'id': value.sovrn, ext: { provider: LI_PROVIDER_DOMAIN } }
+      }
+
+      if (value.thetradedesk) {
+        result.lipb = {...result.lipb, tdid: value.thetradedesk}
+        result.tdid = { 'id': value.thetradedesk, ext: { rtiPartner: 'TDID', provider: getRefererInfo().domain || LI_PROVIDER_DOMAIN } }
+        delete result.lipb.thetradedesk
+      }
+
+      return result
     }
 
     if (!liveConnect) {
@@ -146,7 +250,7 @@ export const liveIntentIdSubmodule = {
     }
     tryFireEvent();
 
-    return (value && typeof value['unifiedId'] === 'string') ? composeIdObject(value) : undefined;
+    return composeIdObject(value);
   },
 
   /**
@@ -175,6 +279,108 @@ export const liveIntentIdSubmodule = {
     }
 
     return { callback: result };
+  },
+  eids: {
+    ...UID1_EIDS,
+    ...UID2_EIDS,
+    'lipb': {
+      getValue: function(data) {
+        return data.lipbid;
+      },
+      source: 'liveintent.com',
+      atype: 3,
+      getEidExt: function(data) {
+        if (Array.isArray(data.segments) && data.segments.length) {
+          return {
+            segments: data.segments
+          };
+        }
+      }
+    },
+    'bidswitch': {
+      source: 'bidswitch.net',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'medianet': {
+      source: 'media.net',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'magnite': {
+      source: 'rubiconproject.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'index': {
+      source: 'liveintent.indexexchange.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'openx': {
+      source: 'openx.net',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'pubmatic': {
+      source: 'pubmatic.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    },
+    'sovrn': {
+      source: 'liveintent.sovrn.com',
+      atype: 3,
+      getValue: function(data) {
+        return data.id;
+      },
+      getUidExt: function(data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
+    }
   }
 };
 

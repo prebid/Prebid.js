@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {spec, storage} from 'modules/livewrappedBidAdapter.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
-import { BANNER, NATIVE, VIDEO } from 'src/mediaTypes.js';
+import { NATIVE, VIDEO } from 'src/mediaTypes.js';
 
 describe('Livewrapped adapter tests', function () {
   let sandbox,
@@ -12,6 +12,10 @@ describe('Livewrapped adapter tests', function () {
     sandbox = sinon.sandbox.create();
 
     window.livewrapped = undefined;
+
+    config.setConfig({
+      device: { w: 100, h: 100 }
+    });
 
     bidderRequest = {
       bidderCode: 'livewrapped',
@@ -32,7 +36,11 @@ describe('Livewrapped adapter tests', function () {
           bidId: '2ffb201a808da7',
           bidderRequestId: '178e34bad3658f',
           auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+          ortb2Imp: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+            }
+          },
         }
       ],
       start: 1472239426002,
@@ -43,6 +51,7 @@ describe('Livewrapped adapter tests', function () {
 
   afterEach(function () {
     sandbox.restore();
+    config.resetConfig();
   });
 
   describe('isBidRequestValid', function() {
@@ -110,8 +119,49 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
-          formats: [{width: 980, height: 240}, {width: 980, height: 120}]
+          formats: [{width: 980, height: 240}, {width: 980, height: 120}],
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          }
+        }]
+      };
+
+      expect(data).to.deep.equal(expectedQuery);
+    });
+
+    it('should send ortb2Imp', function() {
+      sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
+      let ortb2ImpRequest = clone(bidderRequest);
+      ortb2ImpRequest.bids[0].ortb2Imp.ext.data = {key: 'value'};
+      let result = spec.buildRequests(ortb2ImpRequest.bids, ortb2ImpRequest);
+      let data = JSON.parse(result.data);
+
+      expect(result.url).to.equal('https://lwadm.com/ad');
+
+      let expectedQuery = {
+        auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
+        publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
+        userId: 'user id',
+        url: 'https://www.domain.com',
+        seats: {'dsp': ['seat 1']},
+        version: '1.4',
+        width: 100,
+        height: 100,
+        cookieSupport: true,
+        adRequests: [{
+          adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
+          callerAdUnitId: 'panorama_d_1',
+          bidId: '2ffb201a808da7',
+          formats: [{width: 980, height: 240}, {width: 980, height: 120}],
+          rtbData: {
+            ext: {
+              data: {key: 'value'},
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          }
         }]
       };
 
@@ -147,12 +197,20 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }, {
           callerAdUnitId: 'box_d_1',
           bidId: '3ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 300, height: 250}]
         }]
       };
@@ -184,7 +242,11 @@ describe('Livewrapped adapter tests', function () {
         adRequests: [{
           callerAdUnitId: 'caller id 1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -215,7 +277,11 @@ describe('Livewrapped adapter tests', function () {
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -246,7 +312,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -279,7 +349,11 @@ describe('Livewrapped adapter tests', function () {
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -312,7 +386,11 @@ describe('Livewrapped adapter tests', function () {
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -342,7 +420,11 @@ describe('Livewrapped adapter tests', function () {
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}],
           options: {keyvalues: [{key: 'key', value: 'value'}]}
         }]
@@ -351,7 +433,7 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should make a well-formed single request object with ad blocker revovered parameter', function() {
+    it('should make a well-formed single request object with ad blocker recovered parameter', function() {
       sandbox.stub(utils, 'getWindowTop').returns({ I12C: { Morph: 1 } });
       sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
       sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
@@ -374,7 +456,11 @@ describe('Livewrapped adapter tests', function () {
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -404,7 +490,11 @@ describe('Livewrapped adapter tests', function () {
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}],
           native: {'nativedata': 'content parsed serverside only'}
         }]
@@ -435,7 +525,11 @@ describe('Livewrapped adapter tests', function () {
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}],
           native: {'nativedata': 'content parsed serverside only'},
           banner: true
@@ -467,7 +561,11 @@ describe('Livewrapped adapter tests', function () {
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}],
           video: {'videodata': 'content parsed serverside only'}
         }]
@@ -489,7 +587,7 @@ describe('Livewrapped adapter tests', function () {
           return {bundle: 'bundle', domain: 'https://appdomain.com'};
         }
         if (key === 'device') {
-          return {ifa: 'ifa', width: 300, height: 200};
+          return {ifa: 'ifa', w: 300, h: 200};
         }
         return origGetConfig.apply(config, arguments);
       });
@@ -515,7 +613,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -545,7 +647,11 @@ describe('Livewrapped adapter tests', function () {
         adRequests: [{
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 728, height: 90}]
         }]
       };
@@ -582,7 +688,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -617,7 +727,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -650,7 +764,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -690,7 +808,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -720,7 +842,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -750,7 +876,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -758,9 +888,9 @@ describe('Livewrapped adapter tests', function () {
       expect(data).to.deep.equal(expectedQuery);
     });
 
-    it('should use params.url, then config pageUrl, then bidderRequest.refererInfo.referer', function() {
+    it('should use params.url, then bidderRequest.refererInfo.page', function() {
       let testRequest = clone(bidderRequest);
-      testRequest.refererInfo = {referer: 'https://www.topurl.com'};
+      testRequest.refererInfo = {page: 'https://www.topurl.com'};
 
       let result = spec.buildRequests(testRequest.bids, testRequest);
       let data = JSON.parse(result.data);
@@ -773,19 +903,6 @@ describe('Livewrapped adapter tests', function () {
       data = JSON.parse(result.data);
 
       expect(data.url).to.equal('https://www.topurl.com');
-
-      let origGetConfig = config.getConfig;
-      sandbox.stub(config, 'getConfig').callsFake(function (key) {
-        if (key === 'pageUrl') {
-          return 'https://www.configurl.com';
-        }
-        return origGetConfig.apply(config, arguments);
-      });
-
-      result = spec.buildRequests(testRequest.bids, testRequest);
-      data = JSON.parse(result.data);
-
-      expect(data.url).to.equal('https://www.configurl.com');
     });
 
     it('should make use of pubcid if available', function() {
@@ -813,7 +930,11 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
         }]
       };
@@ -845,8 +966,300 @@ describe('Livewrapped adapter tests', function () {
           adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
           callerAdUnitId: 'panorama_d_1',
           bidId: '2ffb201a808da7',
-          transactionId: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
           formats: [{width: 980, height: 240}, {width: 980, height: 120}]
+        }]
+      };
+
+      expect(data).to.deep.equal(expectedQuery);
+    });
+
+    it('width and height should default to values from window when not set in config', function() {
+      sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
+
+      config.resetConfig();
+
+      let testbidRequest = clone(bidderRequest);
+      let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
+      let data = JSON.parse(result.data);
+
+      expect(result.url).to.equal('https://lwadm.com/ad');
+
+      let expectedQuery = {
+        auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
+        publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
+        userId: 'user id',
+        url: 'https://www.domain.com',
+        seats: {'dsp': ['seat 1']},
+        version: '1.4',
+        width: window.innerWidth,
+        height: window.innerHeight,
+        cookieSupport: true,
+        adRequests: [{
+          adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
+          callerAdUnitId: 'panorama_d_1',
+          bidId: '2ffb201a808da7',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
+          formats: [{width: 980, height: 240}, {width: 980, height: 120}]
+        }]
+      };
+
+      expect(data).to.deep.equal(expectedQuery);
+    });
+  });
+
+  describe('price floors module', function() {
+    it('price floors module disabled', function() {
+      sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
+
+      let testbidRequest = clone(bidderRequest);
+      let result = spec.buildRequests(testbidRequest.bids, testbidRequest);
+      let data = JSON.parse(result.data);
+
+      expect(result.url).to.equal('https://lwadm.com/ad');
+
+      let expectedQuery = {
+        auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
+        publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
+        userId: 'user id',
+        url: 'https://www.domain.com',
+        seats: {'dsp': ['seat 1']},
+        version: '1.4',
+        width: 100,
+        height: 100,
+        cookieSupport: true,
+        adRequests: [{
+          adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
+          callerAdUnitId: 'panorama_d_1',
+          bidId: '2ffb201a808da7',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
+          formats: [{width: 980, height: 240}, {width: 980, height: 120}]
+        }]
+      };
+
+      expect(data).to.deep.equal(expectedQuery);
+    });
+
+    it('getFloor does not return an object', function() {
+      sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
+
+      let testbidRequest = clone(bidderRequest);
+      let bids = testbidRequest.bids.map(b => {
+        b.getFloor = function () { return undefined; }
+        return b;
+      });
+      let result = spec.buildRequests(bids, testbidRequest);
+      let data = JSON.parse(result.data);
+
+      expect(result.url).to.equal('https://lwadm.com/ad');
+
+      let expectedQuery = {
+        auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
+        publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
+        userId: 'user id',
+        url: 'https://www.domain.com',
+        seats: {'dsp': ['seat 1']},
+        version: '1.4',
+        width: 100,
+        height: 100,
+        cookieSupport: true,
+        adRequests: [{
+          adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
+          callerAdUnitId: 'panorama_d_1',
+          bidId: '2ffb201a808da7',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
+          formats: [{width: 980, height: 240}, {width: 980, height: 120}]
+        }]
+      };
+
+      expect(data).to.deep.equal(expectedQuery);
+    });
+
+    it('getFloor returns a NaN floor', function() {
+      sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
+
+      let testbidRequest = clone(bidderRequest);
+      let bids = testbidRequest.bids.map(b => {
+        b.getFloor = function () { return { floor: undefined }; }
+        return b;
+      });
+      let result = spec.buildRequests(bids, testbidRequest);
+      let data = JSON.parse(result.data);
+
+      expect(result.url).to.equal('https://lwadm.com/ad');
+
+      let expectedQuery = {
+        auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
+        publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
+        userId: 'user id',
+        url: 'https://www.domain.com',
+        seats: {'dsp': ['seat 1']},
+        version: '1.4',
+        width: 100,
+        height: 100,
+        cookieSupport: true,
+        adRequests: [{
+          adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
+          callerAdUnitId: 'panorama_d_1',
+          bidId: '2ffb201a808da7',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
+          formats: [{width: 980, height: 240}, {width: 980, height: 120}]
+        }]
+      };
+
+      expect(data).to.deep.equal(expectedQuery);
+    });
+
+    it('getFloor returns unexpected currency', function() {
+      sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
+
+      let testbidRequest = clone(bidderRequest);
+      let bids = testbidRequest.bids.map(b => {
+        b.getFloor = function () { return { floor: 10, currency: 'EUR' }; }
+        return b;
+      });
+      let result = spec.buildRequests(bids, testbidRequest);
+      let data = JSON.parse(result.data);
+
+      expect(result.url).to.equal('https://lwadm.com/ad');
+
+      let expectedQuery = {
+        auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
+        publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
+        userId: 'user id',
+        url: 'https://www.domain.com',
+        seats: {'dsp': ['seat 1']},
+        version: '1.4',
+        width: 100,
+        height: 100,
+        cookieSupport: true,
+        adRequests: [{
+          adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
+          callerAdUnitId: 'panorama_d_1',
+          bidId: '2ffb201a808da7',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
+          formats: [{width: 980, height: 240}, {width: 980, height: 120}]
+        }]
+      };
+
+      expect(data).to.deep.equal(expectedQuery);
+    });
+
+    it('getFloor returns valid floor - ad server currency', function() {
+      sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
+
+      let origGetConfig = config.getConfig;
+      sandbox.stub(config, 'getConfig').callsFake(function (key) {
+        if (key === 'currency.adServerCurrency') {
+          return 'EUR';
+        }
+        return origGetConfig.apply(config, arguments);
+      });
+
+      let testbidRequest = clone(bidderRequest);
+      let bids = testbidRequest.bids.map(b => {
+        b.getFloor = function () { return { floor: 10, currency: 'EUR' }; }
+        return b;
+      });
+      let result = spec.buildRequests(bids, testbidRequest);
+      let data = JSON.parse(result.data);
+
+      expect(result.url).to.equal('https://lwadm.com/ad');
+
+      let expectedQuery = {
+        auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
+        publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
+        userId: 'user id',
+        url: 'https://www.domain.com',
+        seats: {'dsp': ['seat 1']},
+        version: '1.4',
+        width: 100,
+        height: 100,
+        cookieSupport: true,
+        flrCur: 'EUR',
+        adRequests: [{
+          adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
+          callerAdUnitId: 'panorama_d_1',
+          bidId: '2ffb201a808da7',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
+          formats: [{width: 980, height: 240}, {width: 980, height: 120}],
+          flr: 10
+        }]
+      };
+
+      expect(data).to.deep.equal(expectedQuery);
+    });
+
+    it('getFloor returns valid floor - default currency', function() {
+      sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
+      sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
+
+      let testbidRequest = clone(bidderRequest);
+      let bids = testbidRequest.bids.map(b => {
+        b.getFloor = function () { return { floor: 10, currency: 'USD' }; }
+        return b;
+      });
+      let result = spec.buildRequests(bids, testbidRequest);
+      let data = JSON.parse(result.data);
+
+      expect(result.url).to.equal('https://lwadm.com/ad');
+
+      let expectedQuery = {
+        auctionId: 'F7557995-65F5-4682-8782-7D5D34D82A8C',
+        publisherId: '26947112-2289-405D-88C1-A7340C57E63E',
+        userId: 'user id',
+        url: 'https://www.domain.com',
+        seats: {'dsp': ['seat 1']},
+        version: '1.4',
+        width: 100,
+        height: 100,
+        cookieSupport: true,
+        flrCur: 'USD',
+        adRequests: [{
+          adUnitId: '9E153CED-61BC-479E-98DF-24DC0D01BA37',
+          callerAdUnitId: 'panorama_d_1',
+          bidId: '2ffb201a808da7',
+          rtbData: {
+            ext: {
+              tid: '3D1C8CF7-D288-4D7F-8ADD-97C553056C3D'
+            },
+          },
+          formats: [{width: 980, height: 240}, {width: 980, height: 120}],
+          flr: 10
         }]
       };
 
@@ -889,15 +1302,9 @@ describe('Livewrapped adapter tests', function () {
     sandbox.stub(utils, 'isSafariBrowser').callsFake(() => false);
     sandbox.stub(storage, 'cookiesAreEnabled').callsFake(() => true);
 
-    let origGetConfig = config.getConfig;
-    sandbox.stub(config, 'getConfig').callsFake(function (key) {
-      if (key === 'ortb2') {
-        return {user: {ext: {prop: 'value'}}};
-      }
-      return origGetConfig.apply(config, arguments);
-    });
+    const ortb2 = {user: {ext: {prop: 'value'}}};
 
-    let testbidRequest = clone(bidderRequest);
+    let testbidRequest = {...clone(bidderRequest), ortb2};
     delete testbidRequest.bids[0].params.userId;
     testbidRequest.bids[0].userIdAsEids = [
       {
@@ -914,6 +1321,7 @@ describe('Livewrapped adapter tests', function () {
     var expected = {user: {ext: {prop: 'value', eids: testbidRequest.bids[0].userIdAsEids}}}
 
     expect(data.rtbData).to.deep.equal(expected);
+    expect(ortb2).to.deep.equal({user: {ext: {prop: 'value'}}});
   });
 
   it('should send schain object if available', function() {
@@ -964,7 +1372,6 @@ describe('Livewrapped adapter tests', function () {
 
       let expectedResponse = [{
         requestId: '32e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 2.565917,
         width: 300,
         height: 250,
@@ -1004,7 +1411,6 @@ describe('Livewrapped adapter tests', function () {
 
       let expectedResponse = [{
         requestId: '32e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 2.565917,
         width: 300,
         height: 250,
@@ -1046,7 +1452,6 @@ describe('Livewrapped adapter tests', function () {
 
       let expectedResponse = [{
         requestId: '32e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 2.565917,
         width: 300,
         height: 250,
@@ -1100,7 +1505,6 @@ describe('Livewrapped adapter tests', function () {
 
       let expectedResponse = [{
         requestId: '32e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 2.565917,
         width: 300,
         height: 250,
@@ -1112,7 +1516,6 @@ describe('Livewrapped adapter tests', function () {
         meta: undefined
       }, {
         requestId: '42e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 3.565917,
         width: 980,
         height: 240,
@@ -1151,7 +1554,6 @@ describe('Livewrapped adapter tests', function () {
 
       let expectedResponse = [{
         requestId: '32e50fad901ae89',
-        bidderCode: 'livewrapped',
         cpm: 2.565917,
         width: 300,
         height: 250,

@@ -86,7 +86,7 @@ describe('AdpartnerAdapter', function () {
 
     let bidderRequest = {
       refererInfo: {
-        referer: 'https://test.domain'
+        page: 'https://test.domain'
       }
     };
 

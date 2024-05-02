@@ -72,21 +72,21 @@ describe('optoutAdapterTest', function () {
     }];
 
     it('bidRequest HTTP method', function () {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, {});
       requests.forEach(function(requestItem) {
         expect(requestItem.method).to.equal('POST');
       });
     });
 
     it('bidRequest url without consent', function () {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, {});
       requests.forEach(function(requestItem) {
         expect(requestItem.url).to.match(new RegExp('adscience-nocookie\\.nl/prebid/display'));
       });
     });
 
     it('bidRequest id', function () {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, {});
       expect(requests[0].data.requestId).to.equal('9304jr394ddfj');
       expect(requests[1].data.requestId).to.equal('893j4f94e8jei');
     });
@@ -99,7 +99,7 @@ describe('optoutAdapterTest', function () {
         }
       })
 
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, {});
       expect(requests[0].data.cur.adServerCurrency).to.equal('USD');
       expect(requests[1].data.cur.adServerCurrency).to.equal('USD');
     });
@@ -107,7 +107,7 @@ describe('optoutAdapterTest', function () {
     it('bidRequest without config for currency', function () {
       config.resetConfig();
 
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, {});
       expect(requests[0].data.cur.adServerCurrency).to.equal('EUR');
       expect(requests[1].data.cur.adServerCurrency).to.equal('EUR');
     });

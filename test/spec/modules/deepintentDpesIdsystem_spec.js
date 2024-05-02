@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import find from 'core-js-pure/features/array/find.js';
+import {find} from 'src/polyfill.js';
 import { storage, deepintentDpesSubmodule } from 'modules/deepintentDpesIdSystem.js';
 import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
 import { config } from 'src/config.js';

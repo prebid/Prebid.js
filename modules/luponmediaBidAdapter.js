@@ -1,8 +1,20 @@
-import {isArray, logMessage, deepAccess, logWarn, parseSizesInput, deepSetValue, generateUUID, isEmpty, logError, _each, isFn} from '../src/utils.js';
+import {
+  _each,
+  deepAccess,
+  deepSetValue,
+  generateUUID,
+  isArray,
+  isEmpty,
+  isFn,
+  logError,
+  logMessage,
+  logWarn,
+  parseSizesInput
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER} from '../src/mediaTypes.js';
-import { ajax } from '../src/ajax.js';
+import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'luponmedia';
 const ENDPOINT_URL = 'https://rtb.adxpremium.services/openrtb2/auction';
@@ -176,7 +188,7 @@ export const spec = {
       responses.forEach(csResp => {
         if (csResp.body && csResp.body.ext && csResp.body.ext.usersyncs) {
           try {
-            let response = csResp.body.ext.usersyncs
+            let response = csResp.body.ext.usersyncs;
             let bidders = response.bidder_status;
             for (let synci in bidders) {
               let thisSync = bidders[synci];
@@ -287,12 +299,12 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
   }
 
   const data = {
-    id: bidRequest.transactionId,
+    id: bidderRequest.bidderRequestId,
     test: config.getConfig('debug') ? 1 : 0,
     source: {
-      tid: bidRequest.transactionId
+      tid: bidderRequest.ortb2?.source?.tid,
     },
-    tmax: config.getConfig('timeout') || 1500,
+    tmax: bidderRequest.timeout,
     imp: currentImps.concat([{
       id: bidRequest.bidId,
       secure: 1,
@@ -314,7 +326,7 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
     },
     user: {
     }
-  }
+  };
 
   let bidFloor;
   if (isFn(bidRequest.getFloor) && !config.getConfig('disableFloors')) {
@@ -431,6 +443,10 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
     deepSetValue(data, 'source.ext.schain', bidRequest.schain);
   }
 
+  // TODO: getConfig('fpd.context') should not have worked even with legacy FPD support - 'fpd' gets translated
+  // into 'ortb2' by `setConfig`
+  // Unclear what the intent was here - maybe `const {context: siteData, user: userData} = getLegacyFpd(config.getConfig('ortb2'))` ?
+  // (with PB7 `config.getConfig('ortb2')` should be replaced by `bidderRequest.ortb2`)
   const siteData = Object.assign({}, bidRequest.params.inventory, config.getConfig('fpd.context'));
   const userData = Object.assign({}, bidRequest.params.visitor, config.getConfig('fpd.user'));
 
@@ -453,6 +469,8 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
     deepSetValue(data, 'ext.prebid.bidderconfig.0', bidderData);
   }
 
+  // TODO: bidRequest.fpd is not the right place for pbadslot - who's filling that in, if anyone?
+  // is this meant to be bidRequest.ortb2Imp.ext.data.pbadslot?
   const pbAdSlot = deepAccess(bidRequest, 'fpd.context.pbAdSlot');
   if (typeof pbAdSlot === 'string' && pbAdSlot) {
     deepSetValue(data.imp[0].ext, 'context.data.adslot', pbAdSlot);
@@ -494,11 +512,12 @@ function _getDigiTrustQueryParams(bidRequest = {}, endpointName) {
 }
 
 function _getPageUrl(bidRequest, bidderRequest) {
-  let pageUrl = config.getConfig('pageUrl');
+  // TODO: do the fallbacks make sense here?
+  let pageUrl = bidderRequest.refererInfo.page;
   if (bidRequest.params.referrer) {
     pageUrl = bidRequest.params.referrer;
   } else if (!pageUrl) {
-    pageUrl = bidderRequest.refererInfo.referer;
+    pageUrl = bidderRequest.refererInfo.topmostLocation;
   }
   return bidRequest.params.secure ? pageUrl.replace(/^http:/i, 'https:') : pageUrl;
 }
@@ -559,7 +578,7 @@ function parseSizes(bid, mediaType) {
   } else if (typeof deepAccess(bid, 'mediaTypes.banner.sizes') !== 'undefined') {
     sizes = mapSizes(bid.mediaTypes.banner.sizes);
   } else if (Array.isArray(bid.sizes) && bid.sizes.length > 0) {
-    sizes = mapSizes(bid.sizes)
+    sizes = mapSizes(bid.sizes);
   } else {
     logWarn('LuponMedia: no sizes are setup or found');
   }

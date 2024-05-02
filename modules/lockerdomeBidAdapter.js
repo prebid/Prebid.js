@@ -1,6 +1,6 @@
-import { getBidIdParameter } from '../src/utils.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {getBidIdParameter} from '../src/utils.js';
 
 export const spec = {
   code: 'lockerdome',
@@ -21,12 +21,11 @@ export const spec = {
       };
     });
 
-    const bidderRequestCanonicalUrl = (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.canonicalUrl) || '';
-    const bidderRequestReferer = (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) || '';
     const payload = {
       bidRequests: adUnitBidRequests,
-      url: encodeURIComponent(bidderRequestCanonicalUrl),
-      referrer: encodeURIComponent(bidderRequestReferer)
+      // TODO: are these the right refererInfo values?
+      url: encodeURIComponent(bidderRequest?.refererInfo?.canonicalUrl || ''),
+      referrer: encodeURIComponent(bidderRequest?.refererInfo?.topmostLocation || '')
     };
     if (schain) {
       payload.schain = schain;

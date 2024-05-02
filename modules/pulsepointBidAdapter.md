@@ -2,7 +2,7 @@
 
 **Module Name**: PulsePoint Bidder Adapter  
 **Module Type**: Bidder Adapter  
-**Maintainer**: ExchangeTeam@pulsepoint.com  
+**Maintainer**: ExchangeTeam@pulsepoint.com
 
 # Description
 
@@ -18,55 +18,49 @@ Please use ```pulsepoint``` as the bidder code.
       sizes: [[300, 250]],
       bids: [{
           bidder: 'pulsepoint',
-          params: { 
-              cf: '300X250',
+          params: {
               cp: 512379,
               ct: 486653
           }
       }]
     },{
-      code: 'native-ad-div',
-      sizes: [[1, 1]],
-      nativeParams: {
-          title: { required: true, len: 75  },
-          image: { required: true  },
-          body: { len: 200  },
-          sponsoredBy: { len: 20 }
-      },
-      bids: [{
-          bidder: 'pulsepoint',
-          params: { 
-              cp: 512379,
-              ct: 505642
-          }
-      }]
-    },{
-      code: 'outstream-div',
-      mediaTypes: {
-        video: {
-            playerSize: [640, 480],
-            context: 'outstream',
-            h: 300,
-            w: 400,
-            minduration: 1,
-            maxduration: 210,
-            linearity: 1,
-            mimes: ["video/mp4", "video/ogg", "video/webm"],
-            pos: 3
-        }
-      },
-      bids: [{
-          bidder: 'pulsepoint',
-          params: { 
-              cp: 512379,
-              ct: 505642
-          }
-      }],
-      renderer: {
-        options: {
-            text: "PulsePoint Outstream"
-        }
-      }
+        code: 'native-1-slot',
+        mediaTypes: {
+             native: {
+                   ortb: {
+                   assets: [{
+                      id: 1,
+                      required: 1,
+                          img: {
+                               type: 3,
+                               w: 150,
+                               h: 50,
+                          }
+                     },
+                     {
+                     id: 2,
+                     required: 1,
+                     title: {
+                         len: 80
+                      }
+                },
+                {
+                     id: 3,
+                     required: 1,
+                     data: {
+                       type: 1
+                     }
+                }]
+               }
+            }
+        },
+        bids: [{
+            bidder: 'pulsepoint',
+            params: {
+                cp: 512379,
+                ct: 694973
+            }
+        }]
     },{
         code: 'instream',
         mediaTypes: {

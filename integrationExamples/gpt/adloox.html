@@ -148,7 +148,12 @@
                             auctionDelay: AUCTION_DELAY,
                             dataProviders: [
                                 {
+                                    name: 'intersection',
+                                    waitForIt: true
+                                },
+                                {
                                     name: 'adloox',
+                                    waitForIt: true,
                                     params: {             // optional, defaults shown
                                         thresholds: [ 50, 60, 70, 80, 90 ],
                                         slotinpath: false
@@ -161,7 +166,11 @@
                         },
                         rubicon: {
                             singleRequest: true
-                        }
+                        },
+                        // RTD module honors pageUrl for referrer detection and
+                        // the analytics module uses this for the 'pageurl' macro
+                        // N.B. set this to a non-example.com URL to see the video
+                        //pageUrl: 'https://yourdomain.com/some/path/to/content.html'
                     });
                     pbjs.enableAnalytics({
                         provider: 'adloox',

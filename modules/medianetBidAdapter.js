@@ -1,12 +1,34 @@
-import { parseUrl, getWindowTop, isArray, getGptSlotInfoForAdUnitCode, isStr, deepAccess, isEmpty, logError, triggerPixel, buildUrl, isEmptyStr, logInfo } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { getRefererInfo } from '../src/refererDetection.js';
-import { Renderer } from '../src/Renderer.js';
+import {
+  buildUrl,
+  deepAccess,
+  getWindowTop,
+  isArray,
+  isEmpty,
+  isEmptyStr,
+  isStr,
+  logError,
+  logInfo,
+  triggerPixel
+} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {getRefererInfo} from '../src/refererDetection.js';
+import {Renderer} from '../src/Renderer.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
+ */
 
 const BIDDER_CODE = 'medianet';
+const TRUSTEDSTACK_CODE = 'trustedstack';
 const BID_URL = 'https://prebid.media.net/rtb/prebid';
+const TRUSTEDSTACK_URL = 'https://prebid.trustedstack.com/rtb/trustedstack';
 const PLAYER_URL = 'https://prebid.media.net/video/bundle.js';
 const SLOT_VISIBILITY = {
   NOT_DETERMINED: 0,
@@ -19,6 +41,8 @@ const EVENTS = {
 };
 const EVENT_PIXEL_URL = 'qsearch-a.akamaihd.net/log';
 const OUTSTREAM = 'outstream';
+
+// TODO: this should be picked from bidderRequest
 let refererInfo = getRefererInfo();
 
 let mnData = {};
@@ -27,12 +51,16 @@ window.mnet = window.mnet || {};
 window.mnet.queue = window.mnet.queue || [];
 
 mnData.urlData = {
-  domain: parseUrl(refererInfo.referer).hostname,
-  page: refererInfo.referer,
+  domain: refererInfo.domain,
+  page: refererInfo.page,
   isTop: refererInfo.reachedTop
-}
+};
 
-$$PREBID_GLOBAL$$.medianetGlobals = $$PREBID_GLOBAL$$.medianetGlobals || {};
+const aliases = [
+  { code: TRUSTEDSTACK_CODE, gvlid: 1288 },
+];
+
+getGlobal().medianetGlobals = getGlobal().medianetGlobals || {};
 
 function getTopWindowReferrer() {
   try {
@@ -42,13 +70,15 @@ function getTopWindowReferrer() {
   }
 }
 
-function siteDetails(site) {
+function siteDetails(site, bidderRequest) {
+  const urlData = bidderRequest.refererInfo;
   site = site || {};
   let siteData = {
-    domain: site.domain || mnData.urlData.domain,
-    page: site.page || mnData.urlData.page,
+    domain: site.domain || urlData.domain,
+    page: site.page || urlData.page,
     ref: site.ref || getTopWindowReferrer(),
-    isTop: site.isTop || mnData.urlData.isTop
+    topMostLocation: urlData.topmostLocation,
+    isTop: site.isTop || urlData.reachedTop
   };
 
   return Object.assign(siteData, getPageMeta());
@@ -156,7 +186,7 @@ function extParams(bidRequest, bidderRequests) {
   const coppaApplies = !!(config.getConfig('coppa'));
   return Object.assign({},
     { customer_id: params.cid },
-    { prebid_version: $$PREBID_GLOBAL$$.version },
+    { prebid_version: getGlobal().version },
     { gdpr_applies: gdprApplies },
     (gdprApplies) && { gdpr_consent_string: gdpr.consentString || '' },
     { usp_applies: uspApplies },
@@ -164,7 +194,7 @@ function extParams(bidRequest, bidderRequests) {
     {coppa_applies: coppaApplies},
     windowSize.w !== -1 && windowSize.h !== -1 && { screen: windowSize },
     userId && { user_id: userId },
-    $$PREBID_GLOBAL$$.medianetGlobals.analyticsEnabled && { analytics: true },
+    getGlobal().medianetGlobals.analyticsEnabled && { analytics: true },
     !isEmpty(sChain) && {schain: sChain}
   );
 }
@@ -173,6 +203,7 @@ function slotParams(bidRequest) {
   // check with Media.net Account manager for  bid floor and crid parameters
   let params = {
     id: bidRequest.bidId,
+    transactionId: bidRequest.ortb2Imp?.ext?.tid,
     ext: {
       dfp_id: bidRequest.adUnitCode,
       display_count: bidRequest.bidRequestsCount
@@ -300,17 +331,20 @@ function normalizeCoordinates(coordinates) {
   }
 }
 
-function getBidderURL(cid) {
-  return BID_URL + '?cid=' + encodeURIComponent(cid);
+function getBidderURL(bidderCode, cid) {
+  const url = (bidderCode === TRUSTEDSTACK_CODE) ? TRUSTEDSTACK_URL : BID_URL;
+  return url + '?cid=' + encodeURIComponent(cid);
 }
 
 function generatePayload(bidRequests, bidderRequests) {
   return {
-    site: siteDetails(bidRequests[0].params.site),
+    site: siteDetails(bidRequests[0].params.site, bidderRequests),
     ext: extParams(bidRequests[0], bidderRequests),
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     id: bidRequests[0].auctionId,
     imp: bidRequests.map(request => slotParams(request)),
-    tmax: bidderRequests.timeout || config.getConfig('bidderTimeout')
+    ortb2: bidderRequests.ortb2,
+    tmax: bidderRequests.timeout
   }
 }
 
@@ -335,7 +369,7 @@ function getLoggingData(event, data) {
   params.evtid = 'projectevents';
   params.project = 'prebid';
   params.acid = deepAccess(data, '0.auctionId') || '';
-  params.cid = $$PREBID_GLOBAL$$.medianetGlobals.cid || '';
+  params.cid = getGlobal().medianetGlobals.cid || '';
   params.crid = data.map((adunit) => deepAccess(adunit, 'params.0.crid') || adunit.adUnitCode).join('|');
   params.adunit_count = data.length || 0;
   params.dn = mnData.urlData.domain || '';
@@ -399,7 +433,7 @@ export const spec = {
 
   code: BIDDER_CODE,
   gvlid: 142,
-
+  aliases,
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
 
   /**
@@ -419,7 +453,7 @@ export const spec = {
       return false;
     }
 
-    Object.assign($$PREBID_GLOBAL$$.medianetGlobals, !$$PREBID_GLOBAL$$.medianetGlobals.cid && {cid: bid.params.cid});
+    Object.assign(getGlobal().medianetGlobals, !getGlobal().medianetGlobals.cid && {cid: bid.params.cid});
 
     return true;
   },
@@ -432,10 +466,13 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(bidRequests, bidderRequests) {
+    // convert Native ORTB definition to old-style prebid native definition
+    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
+
     let payload = generatePayload(bidRequests, bidderRequests);
     return {
       method: 'POST',
-      url: getBidderURL(payload.ext.customer_id),
+      url: getBidderURL(bidderRequests.bidderCode, payload.ext.customer_id),
       data: JSON.stringify(payload)
     };
   },

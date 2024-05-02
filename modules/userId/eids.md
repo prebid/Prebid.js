@@ -3,7 +3,14 @@
 ```
 userIdAsEids = [
     {
-        source: 'trustpid.com',
+        source: '33across.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
+    },
+    {
+        source: 'utiq.com',
         uids: [{
             id: 'some-random-id-value',
             atype: 1
@@ -24,7 +31,8 @@ userIdAsEids = [
             id: 'some-random-id-value',
             atype: 1,
             ext: {
-                rtiPartner: 'TDID'
+                rtiPartner: 'TDID',
+                provider: 'liveintent.com'
             }
         }]
     },
@@ -66,6 +74,14 @@ userIdAsEids = [
     },
 
     {
+        source: 'flashtalking.com',
+        uids: [{
+            id: 'the-ids-object-stringified',
+            atype: 1
+        }]
+    },
+
+    {
         source: 'parrable.com',
         uids: [{
             id: 'some-random-id-value',
@@ -90,6 +106,83 @@ userIdAsEids = [
         ext: {
             segments: ['s1', 's2']
         }
+    },
+    
+    {
+        source: 'bidswitch.net',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },
+    
+    {
+        source: 'liveintent.indexexchange.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },
+
+    {
+        source: 'liveintent.sovrn.com'',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },
+
+    {
+        source: 'openx.net'',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },
+
+    {
+        source: 'pubmatic.com'',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },   
+
+    {
+        source: 'media.net',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
+    },
+    
+    {
+        source: 'rubiconproject.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3,
+            ext: {
+                provider: 'liveintent.com'
+            }
+        }]
     },
 
     {
@@ -134,14 +227,6 @@ userIdAsEids = [
 
     {
         source: 'zeotap.com',
-        uids: [{
-            id: 'some-random-id-value',
-            atype: 1
-        }]
-    },
-
-    {
-        source: 'nextroll.com',
         uids: [{
             id: 'some-random-id-value',
             atype: 1
@@ -200,13 +285,6 @@ userIdAsEids = [
         }]
     },
     {
-    source: 'akamai.com',
-        uids: [{
-            id: 'some-random-id-value',
-            atype: 1
-        }]
-    },
-    {
         source: 'admixer.net',
         uids: [{
             id: 'some-random-id-value',
@@ -233,6 +311,27 @@ userIdAsEids = [
               id: 'some-random-id-value',
               atype: 3
          }]
+    },
+    {
+        source: 'thenewco.it',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
+        }]
+    },
+    {
+        source: 'euid.eu',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 3
+        }]
+    },
+    {
+        source: 'mygaru.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
+        }]
     }
 ]
 ```

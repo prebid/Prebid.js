@@ -8,6 +8,7 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 function RhythmOneBidAdapter() {
   this.code = 'rhythmone';
   this.supportedMediaTypes = [VIDEO, BANNER];
+  this.gvlid = 36;
 
   let SUPPORTED_VIDEO_PROTOCOLS = [2, 3, 5, 6];
   let SUPPORTED_VIDEO_MIMES = ['video/mp4'];
@@ -15,7 +16,6 @@ function RhythmOneBidAdapter() {
   let SUPPORTED_VIDEO_DELIVERY = [1];
   let SUPPORTED_VIDEO_API = [1, 2, 5];
   let slotsToBids = {};
-  let that = this;
   let version = '2.1';
 
   this.isBidRequestValid = function (bid) {
@@ -61,25 +61,11 @@ function RhythmOneBidAdapter() {
   }
 
   function frameSite(bidderRequest) {
-    var site = {
-      domain: '',
-      page: '',
-      ref: ''
+    return {
+      domain: bidderRequest?.refererInfo?.domain || '',
+      page: bidderRequest?.refererInfo?.page || '',
+      ref: bidderRequest?.refererInfo?.ref || ''
     }
-    if (bidderRequest && bidderRequest.refererInfo) {
-      var ri = bidderRequest.refererInfo;
-      site.ref = ri.referer;
-
-      if (ri.stack.length) {
-        site.page = ri.stack[ri.stack.length - 1];
-
-        // clever trick to get the domain
-        var el = document.createElement('a');
-        el.href = ri.stack[0];
-        site.domain = el.hostname;
-      }
-    }
-    return site;
   }
 
   function frameDevice() {
@@ -250,7 +236,6 @@ function RhythmOneBidAdapter() {
       let bidRequest = slotsToBids[bid.impid];
       let bidResponse = {
         requestId: bidRequest.bidId,
-        bidderCode: that.code,
         cpm: parseFloat(bid.price),
         width: bid.w,
         height: bid.h,

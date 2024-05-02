@@ -7,8 +7,15 @@
 
 import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
-import { logError, formatQS } from '../src/utils.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {formatQS, logError} from '../src/utils.js';
+import {includes} from '../src/polyfill.js';
+
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
 
 const MODULE_NAME = 'verizonMediaId';
 const VENDOR_ID = 25;
@@ -99,6 +106,12 @@ export const verizonMediaIdSubmodule = {
    */
   getAjaxFn() {
     return ajax;
+  },
+  eids: {
+    'connectid': {
+      source: 'verizonmedia.com',
+      atype: 3
+    },
   }
 };
 

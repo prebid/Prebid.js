@@ -3,11 +3,13 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { deepAccess, isFn, isStr, isNumber, isArray, isEmpty, isPlainObject, generateUUID, logInfo, logWarn } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 
 const INTEGRATION_METHOD = 'prebid.js';
-const BIDDER_CODE = 'yahoossp';
+const BIDDER_CODE = 'yahooAds';
+const BIDDER_ALIASES = ['yahoossp', 'yahooAdvertising']
 const GVLID = 25;
-const ADAPTER_VERSION = '1.0.2';
+const ADAPTER_VERSION = '1.1.0';
 const PREBID_VERSION = '$prebid.version$';
 const DEFAULT_BID_TTL = 300;
 const TEST_MODE_DCN = '8a969516017a7a396ec539d97f540011';
@@ -23,12 +25,13 @@ const SUPPORTED_USER_ID_SOURCES = [
   'adserver.org',
   'adtelligent.com',
   'akamai.com',
-  'amxrtb.com',
+  'amxdt.net',
   'audigent.com',
   'britepool.com',
   'criteo.com',
   'crwdcntrl.net',
   'deepintent.com',
+  'epsilon.com',
   'hcn.health',
   'id5-sync.com',
   'idx.lat',
@@ -45,22 +48,17 @@ const SUPPORTED_USER_ID_SOURCES = [
   'parrable.com',
   'pubcid.org',
   'quantcast.com',
-  'quantcast.com',
   'tapad.com',
   'uidapi.com',
-  'verizonmedia.com',
   'yahoo.com',
   'zeotap.com'
 ];
 
 /* Utility functions */
-function hasPurpose1Consent(bidderRequest) {
-  if (bidderRequest && bidderRequest.gdprConsent) {
-    if (bidderRequest.gdprConsent.gdprApplies && bidderRequest.gdprConsent.apiVersion === 2) {
-      return deepAccess(bidderRequest.gdprConsent, 'vendorData.purpose.consents.1') === true;
-    }
-  }
-  return true;
+
+function getConfigValue(bid, key) {
+  const bidderCode = bid.bidder || bid.bidderCode;
+  return config.getConfig(`${bidderCode}.${key}`);
 }
 
 function getSize(size) {
@@ -108,6 +106,38 @@ function extractUserSyncUrls(syncOptions, pixels) {
   return userSyncObjects;
 }
 
+/**
+ * @param {string} url
+ * @param {object} consentData
+ * @param {object} consentData.gpp
+ * @param {string} consentData.gpp.gppConsent
+ * @param {Array} consentData.gpp.applicableSections
+ * @param {object} consentData.gdpr
+ * @param {object} consentData.gdpr.consentString
+ * @param {object} consentData.gdpr.gdprApplies
+ * @param {string} consentData.uspConsent
+ */
+function updateConsentQueryParams(url, consentData) {
+  const parameterMap = {
+    'gdpr_consent': consentData.gdpr ? consentData.gdpr.consentString : '',
+    'gdpr': consentData.gdpr && consentData.gdpr.gdprApplies ? '1' : '0',
+    'us_privacy': consentData.uspConsent ? consentData.uspConsent : '',
+    'gpp': consentData.gpp ? consentData.gpp.gppString : '',
+    'gpp_sid': consentData.gpp && Array.isArray(consentData.gpp.applicableSections)
+      ? consentData.gpp.applicableSections.join(',') : ''
+  }
+
+  const existingUrl = new URL(url);
+  const params = existingUrl.searchParams;
+
+  for (const [key, value] of Object.entries(parameterMap)) {
+    params.set(key, value);
+  }
+
+  existingUrl.search = params.toString();
+  return existingUrl.toString();
+};
+
 function getSupportedEids(bid) {
   if (isArray(deepAccess(bid, 'userIdAsEids'))) {
     return bid.userIdAsEids.filter(eid => {
@@ -131,8 +161,8 @@ function getPubIdMode(bid) {
   return pubIdMode;
 };
 
-function getAdapterMode() {
-  let adapterMode = config.getConfig('yahoossp.mode');
+function getAdapterMode(bid) {
+  let adapterMode = getConfigValue(bid, 'mode');
   adapterMode = adapterMode ? adapterMode.toLowerCase() : undefined;
   if (typeof adapterMode === 'undefined' || adapterMode === BANNER) {
     return BANNER;
@@ -153,7 +183,7 @@ function getResponseFormat(bid) {
 };
 
 function getFloorModuleData(bid) {
-  const adapterMode = getAdapterMode();
+  const adapterMode = getAdapterMode(bid);
   const getFloorRequestObject = {
     currency: deepAccess(bid, 'params.bidOverride.cur') || DEFAULT_CURRENCY,
     mediaType: adapterMode,
@@ -163,7 +193,7 @@ function getFloorModuleData(bid) {
 };
 
 function filterBidRequestByMode(validBidRequests) {
-  const mediaTypesMode = getAdapterMode();
+  const mediaTypesMode = getAdapterMode(validBidRequests[0]);
   let result = [];
   if (mediaTypesMode === BANNER) {
     result = validBidRequests.filter(bid => {
@@ -220,7 +250,7 @@ function validateAppendObject(validationType, allowedKeys, inputObject, appendTo
 };
 
 function getTtl(bidderRequest) {
-  const globalTTL = config.getConfig('yahoossp.ttl');
+  const globalTTL = getConfigValue(bidderRequest, 'ttl');
   return globalTTL ? validateTTL(globalTTL) : validateTTL(deepAccess(bidderRequest, 'params.ttl'));
 };
 
@@ -239,17 +269,21 @@ function generateOpenRtbObject(bidderRequest, bid) {
       cur: [getFloorModuleData(bidderRequest).currency || deepAccess(bid, 'params.bidOverride.cur') || DEFAULT_CURRENCY],
       imp: [],
       site: {
-        page: deepAccess(bidderRequest, 'refererInfo.referer'),
+        page: deepAccess(bidderRequest, 'refererInfo.page'),
       },
       device: {
         dnt: 0,
         ua: navigator.userAgent,
-        ip: deepAccess(bid, 'params.bidOverride.device.ip') || deepAccess(bid, 'params.ext.ip') || undefined
+        ip: deepAccess(bid, 'params.bidOverride.device.ip') || deepAccess(bid, 'params.ext.ip') || undefined,
+        w: window.screen.width,
+        h: window.screen.height
       },
       regs: {
         ext: {
           'us_privacy': bidderRequest.uspConsent ? bidderRequest.uspConsent : '',
-          gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? 1 : 0
+          gdpr: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? 1 : 0,
+          gpp: bidderRequest.gppConsent ? bidderRequest.gppConsent.gppString : '',
+          gpp_sid: bidderRequest.gppConsent ? bidderRequest.gppConsent.applicableSections : []
         }
       },
       source: {
@@ -284,11 +318,17 @@ function generateOpenRtbObject(bidderRequest, bid) {
       outBoundBidRequest.site.id = bid.params.dcn;
     };
 
-    if (config.getConfig('ortb2')) {
+    if (bidderRequest.ortb2?.regs?.gpp) {
+      outBoundBidRequest.regs.ext.gpp = bidderRequest.ortb2.regs.gpp;
+      outBoundBidRequest.regs.ext.gpp_sid = bidderRequest.ortb2.regs.gpp_sid
+    };
+
+    if (bidderRequest.ortb2) {
       outBoundBidRequest = appendFirstPartyData(outBoundBidRequest, bid);
     };
 
-    if (deepAccess(bid, 'schain')) {
+    const schainData = deepAccess(bid, 'schain.nodes');
+    if (isArray(schainData) && schainData.length > 0) {
       outBoundBidRequest.source.ext.schain = bid.schain;
       outBoundBidRequest.source.ext.schain.nodes[0].rid = outBoundBidRequest.id;
     };
@@ -298,7 +338,7 @@ function generateOpenRtbObject(bidderRequest, bid) {
 };
 
 function appendImpObject(bid, openRtbObject) {
-  const mediaTypeMode = getAdapterMode();
+  const mediaTypeMode = getAdapterMode(bid);
 
   if (openRtbObject && bid) {
     const impObject = {
@@ -376,9 +416,10 @@ function appendImpObject(bid, openRtbObject) {
 };
 
 function appendFirstPartyData(outBoundBidRequest, bid) {
-  const ortb2Object = config.getConfig('ortb2');
+  const ortb2Object = bid.ortb2;
   const siteObject = deepAccess(ortb2Object, 'site') || undefined;
   const siteContentObject = deepAccess(siteObject, 'content') || undefined;
+  const sitePublisherObject = deepAccess(siteObject, 'publisher') || undefined;
   const siteContentDataArray = deepAccess(siteObject, 'content.data') || undefined;
   const appContentObject = deepAccess(ortb2Object, 'app.content') || undefined;
   const appContentDataArray = deepAccess(ortb2Object, 'app.content.data') || undefined;
@@ -392,6 +433,11 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
     outBoundBidRequest.site = validateAppendObject('array', allowedSiteArrayKeys, siteObject, outBoundBidRequest.site);
     outBoundBidRequest.site = validateAppendObject('object', allowedSiteObjectKeys, siteObject, outBoundBidRequest.site);
   };
+
+  if (sitePublisherObject && isPlainObject(sitePublisherObject)) {
+    const allowedPublisherObjectKeys = ['ext'];
+    outBoundBidRequest.site.publisher = validateAppendObject('object', allowedPublisherObjectKeys, sitePublisherObject, outBoundBidRequest.site.publisher);
+  }
 
   if (siteContentObject && isPlainObject(siteContentObject)) {
     const allowedContentStringKeys = ['id', 'title', 'series', 'season', 'genre', 'contentrating', 'language'];
@@ -414,7 +460,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
         newDataObject = validateAppendObject('object', allowedContentDataObjectKeys, dataObject, newDataObject);
         outBoundBidRequest.site.content.data = [];
         outBoundBidRequest.site.content.data.push(newDataObject);
-      })
+      });
     };
   };
 
@@ -434,7 +480,7 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
           }
         };
         outBoundBidRequest.app.content.data.push(newDataObject);
-      })
+      });
     };
   };
 
@@ -454,20 +500,21 @@ function appendFirstPartyData(outBoundBidRequest, bid) {
 
 function generateServerRequest({payload, requestOptions, bidderRequest}) {
   const pubIdMode = getPubIdMode(bidderRequest);
-  let sspEndpoint = config.getConfig('yahoossp.endpoint') || SSP_ENDPOINT_DCN_POS;
+  const overrideEndpoint = getConfigValue(bidderRequest, 'endpoint');
+  let sspEndpoint = overrideEndpoint || SSP_ENDPOINT_DCN_POS;
 
   if (pubIdMode === true) {
-    sspEndpoint = config.getConfig('yahoossp.endpoint') || SSP_ENDPOINT_PUBID;
+    sspEndpoint = overrideEndpoint || SSP_ENDPOINT_PUBID;
   };
 
   if (deepAccess(bidderRequest, 'params.testing.e2etest') === true) {
-    logInfo('yahoossp adapter e2etest mode is active');
+    logInfo('Adapter e2etest mode is active');
     requestOptions.withCredentials = false;
 
     if (pubIdMode === true) {
       payload.site.id = TEST_MODE_PUBID_DCN;
     } else {
-      const mediaTypeMode = getAdapterMode();
+      const mediaTypeMode = getAdapterMode(bidderRequest);
       payload.site.id = TEST_MODE_DCN;
       payload.imp.forEach(impObject => {
         impObject.ext.e2eTestMode = true;
@@ -476,26 +523,26 @@ function generateServerRequest({payload, requestOptions, bidderRequest}) {
         } else if (mediaTypeMode === VIDEO) {
           impObject.tagid = TEST_MODE_VIDEO_POS; // video passback
         } else {
-          logWarn('yahoossp adapter e2etest mode does not support yahoossp.mode="all". \n Please specify either "banner" or "video"');
-          logWarn('yahoossp adapter e2etest mode: Please make sure your adUnit matches the yahoossp.mode video or banner');
+          const bidderCode = bidderRequest.bidderCode;
+          logWarn(`e2etest mode does not support ${bidderCode}.mode="all". \n Please specify either "banner" or "video"`);
+          logWarn(`Adapter e2etest mode: Please make sure your adUnit matches the ${bidderCode}.mode video or banner`);
         }
       });
     }
   };
-  logWarn('yahoossp adapter endpoint override enabled. Pointing requests to: ', sspEndpoint);
 
   return {
     url: sspEndpoint,
     method: 'POST',
     data: payload,
     options: requestOptions,
-    bidderRequest: bidderRequest
+    bidderRequest // Additional data for use in interpretResponse()
   };
 };
 
 function createRenderer(bidderRequest, bidResponse) {
   const renderer = Renderer.install({
-    url: 'https://cdn.vidible.tv/prod/hb-outstream-renderer/renderer.js',
+    url: 'https://s.yimg.com/kp/prebid-outstream-renderer/renderer.js',
     loaded: false,
     adUnitCode: bidderRequest.adUnitCode
   })
@@ -508,16 +555,17 @@ function createRenderer(bidderRequest, bidResponse) {
       }, deepAccess(bidderRequest, 'params.testing.renderer.setTimeout') || DEFAULT_RENDERER_TIMEOUT);
     });
   } catch (error) {
-    logWarn('yahoossp renderer error: setRender() failed', error);
+    logWarn('Renderer error: setRender() failed', error);
   }
   return renderer;
 }
+
 /* Utility functions */
 
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: [],
+  aliases: BIDDER_ALIASES,
   supportedMediaTypes: [BANNER, VIDEO],
 
   isBidRequestValid: function(bid) {
@@ -530,14 +578,14 @@ export const spec = {
     ) {
       return true;
     } else {
-      logWarn('yahoossp bidder params missing or incorrect, please pass object with either: dcn & pos OR pubId');
+      logWarn('Bidder params missing or incorrect, please pass object with either: dcn & pos OR pubId');
       return false;
     }
   },
 
   buildRequests: function(validBidRequests, bidderRequest) {
     if (isEmpty(validBidRequests) || isEmpty(bidderRequest)) {
-      logWarn('yahoossp Adapter: buildRequests called with either empty "validBidRequests" or "bidderRequest"');
+      logWarn('buildRequests called with either empty "validBidRequests" or "bidderRequest"');
       return undefined;
     };
 
@@ -548,17 +596,16 @@ export const spec = {
       }
     };
 
-    requestOptions.withCredentials = hasPurpose1Consent(bidderRequest);
+    requestOptions.withCredentials = hasPurpose1Consent(bidderRequest.gdprConsent);
 
     const filteredBidRequests = filterBidRequestByMode(validBidRequests);
 
-    if (config.getConfig('yahoossp.singleRequestMode') === true) {
+    if (getConfigValue(bidderRequest, 'singleRequestMode') === true) {
       const payload = generateOpenRtbObject(bidderRequest, filteredBidRequests[0]);
       filteredBidRequests.forEach(bid => {
         appendImpObject(bid, payload);
       });
-
-      return generateServerRequest({payload, requestOptions, bidderRequest});
+      return [generateServerRequest({payload, requestOptions, bidderRequest})];
     }
 
     return filteredBidRequests.map(bid => {
@@ -568,12 +615,11 @@ export const spec = {
     });
   },
 
-  interpretResponse: function(serverResponse, { data, bidderRequest }) {
+  interpretResponse: function(serverResponse, { bidderRequest }) {
     const response = [];
     if (!serverResponse.body || !Array.isArray(serverResponse.body.seatbid)) {
       return response;
     }
-
     let seatbids = serverResponse.body.seatbid;
     seatbids.forEach(seatbid => {
       let bid;
@@ -588,9 +634,7 @@ export const spec = {
 
       let bidResponse = {
         adId: deepAccess(bid, 'adId') ? bid.adId : bid.impid || bid.crid,
-        adUnitCode: bidderRequest.adUnitCode,
         requestId: bid.impid,
-        bidderCode: spec.code,
         cpm: cpm,
         width: bid.w,
         height: bid.h,
@@ -629,11 +673,19 @@ export const spec = {
     return response;
   },
 
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     const bidResponse = !isEmpty(serverResponses) && serverResponses[0].body;
 
     if (bidResponse && bidResponse.ext && bidResponse.ext.pixels) {
-      return extractUserSyncUrls(syncOptions, bidResponse.ext.pixels);
+      const userSyncObjects = extractUserSyncUrls(syncOptions, bidResponse.ext.pixels);
+      userSyncObjects.forEach(userSyncObject => {
+        userSyncObject.url = updateConsentQueryParams(userSyncObject.url, {
+          gpp: gppConsent,
+          gdpr: gdprConsent,
+          uspConsent: uspConsent
+        });
+      });
+      return userSyncObjects;
     }
 
     return [];

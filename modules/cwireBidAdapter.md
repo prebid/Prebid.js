@@ -1,23 +1,28 @@
 # Overview
 
-Module Name: C-WIRE Bid Adapter
-Module Type: Adagio Adapter
-Maintainer: dragan@cwire.ch
+```
+Module Name:  C-WIRE Bid Adapter
+Module Type:  Bidder Adapter
+Maintainer: devs@cwire.com
+```
 
 ## Description
 
-Connects to C-WIRE demand source to fetch bids.
+Prebid.js Adapter for C-Wire.
 
 ## Configuration
 
-
 Below, the list of C-WIRE params and where they can be set.
 
-| Param name | Global config | AdUnit config | Type | Required |
-| ---------- | ------------- | ------------- | ---- | ---------|
-| pageId |  | x | number | YES |
-| placementId |  | x | number | YES |
-| adUnitElementId |  | x | string | NO |
+| Param name  | URL parameter | AdUnit config |   Type   |   Required    |
+|-------------|:-------------:|:-------------:|:--------:|:-------------:|
+| pageId      |               |       x       |  number  |      YES      |
+| placementId |               |       x       |  number  |      YES      |
+| cwgroups    |       x       |               |  string  |      NO       |
+| cwcreative  |       x       |               |  string  |      NO       |
+| cwdebug     |       x       |               | boolean  |      NO       |
+| cwfeatures  |       x       |               |  string  |      NO       |
+
 
 ### adUnit configuration
 
@@ -29,15 +34,22 @@ var adUnits = [
       bidder: 'cwire',
       mediaTypes: {
         banner: {
-          sizes: [[1, 1]],
+          sizes: [[400, 600]],
         }
       },
       params: {
         pageId: 1422,                 // required - number
         placementId: 2211521,         // required - number
-        adUnitElementId: 'other_div', // optional, div id to write to, if not set it will default to ad unit code  
       }
     }]
   }
 ];
 ```
+
+### URL parameters
+
+For debugging and testing purposes url parameters can be set.
+
+**Example:**
+
+`https://www.some-site.com/article.html?cwdebug=true&cwfeatures=feature1,feature2&cwcreative=1234`

@@ -1,8 +1,11 @@
-import { deepAccess, getBidIdParameter, isArray, _each, getWindowTop, parseUrl } from '../src/utils.js';
+import {_each, deepAccess, getBidIdParameter, isArray} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {INSTREAM} from '../src/video.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ */
 
 const BIDDER_CODE = 'iqm';
 const VERSION = 'v.1.0.0';
@@ -102,7 +105,7 @@ export const spec = {
         imp.video = _buildVideoORTB(bid);
         imp.mediatype = 'video';
       }
-      const site = getSite(bid);
+      const site = getSite(bidderRequest);
       let device = getDevice(bid.params);
       finalRequest = {
         sizes: bid.sizes,
@@ -112,10 +115,13 @@ export const spec = {
         device: device,
         site: site,
         imp: imp,
+        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: bid.auctionId,
         adUnitCode: bid.adUnitCode,
         bidderRequestId: bid.bidderRequestId,
         uuid: bid.bidId,
+        // TODO: please do not send internal data structures over the network
+        // I am not going to attempt to accommodate this, no way this is usable on their end, it changes way too frequently
         bidderRequest
       }
       const request = {
@@ -153,7 +159,7 @@ export const spec = {
               auctionId: bidRequest.data.auctionId,
               mediaType: bidRequest.data.imp.mediatype,
 
-              ttl: bid.ttl || config.getConfig('_bidderTimeout')
+              ttl: bid.ttl || 60
             };
 
             if (bidRequest.data.imp.mediatype === VIDEO) {
@@ -227,19 +233,10 @@ function getSite(bidderRequest) {
 
   const {refererInfo} = bidderRequest;
 
-  if (canAccessTopWindow()) {
-    const wt = getWindowTop();
-    domain = wt.location.hostname;
-    page = wt.location.href;
-    referrer = wt.document.referrer || '';
-  } else if (refererInfo.reachedTop) {
-    const url = parseUrl(refererInfo.referer);
-    domain = url.hostname;
-    page = refererInfo.referer;
-  } else if (refererInfo.stack && refererInfo.stack.length && refererInfo.stack[0]) {
-    const url = parseUrl(refererInfo.stack[0]);
-    domain = url.hostname;
-  }
+  // TODO: are these the right refererInfo values?
+  domain = refererInfo.domain;
+  page = refererInfo.page;
+  referrer = refererInfo.ref;
 
   return {
     domain,
@@ -249,20 +246,10 @@ function getSite(bidderRequest) {
   };
 };
 
-function canAccessTopWindow() {
-  try {
-    if (getWindowTop().location.href) {
-      return true;
-    }
-  } catch (error) {
-    return false;
-  }
-}
-
 function _buildVideoORTB(bidRequest) {
   const videoAdUnit = deepAccess(bidRequest, 'mediaTypes.video');
   const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
-  const video = {}
+  const video = {};
 
   const videoParams = {
     ...videoAdUnit,

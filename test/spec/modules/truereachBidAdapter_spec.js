@@ -83,7 +83,7 @@ describe('truereachBidAdapterTests', function () {
   });
 
   describe('user_sync', function() {
-    const user_sync_url = 'http://ads.momagic.com/jsp/usersync.jsp';
+    const user_sync_url = 'https://ads-sg.momagic.com/jsp/usersync.jsp';
     it('register_iframe_pixel_if_iframeEnabled_is_true', function() {
       let syncs = spec.getUserSyncs(
         {iframeEnabled: true}

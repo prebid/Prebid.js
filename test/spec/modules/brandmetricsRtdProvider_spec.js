@@ -1,5 +1,7 @@
 import * as brandmetricsRTD from '../../../modules/brandmetricsRtdProvider.js';
 import {config} from 'src/config.js';
+import * as events from '../../../src/events';
+import * as sinon from 'sinon';
 
 const VALID_CONFIG = {
   name: 'brandmetrics',
@@ -65,6 +67,8 @@ const NO_USP_CONSENT = {
   usp: '1NYY'
 };
 
+const UNDEFINED_USER_CONSENT = {};
+
 function mockSurveyLoaded(surveyConf) {
   const commands = window._brandmetrics || [];
   commands.forEach(command => {
@@ -77,14 +81,16 @@ function mockSurveyLoaded(surveyConf) {
   });
 }
 
-function scriptTagExists(url) {
-  const tags = document.getElementsByTagName('script');
-  for (let i = 0; i < tags.length; i++) {
-    if (tags[i].src === url) {
-      return true;
+function mockCreativeInView(creativeInViewConf) {
+  const commands = window._brandmetrics || [];
+  commands.forEach(command => {
+    if (command.cmd === '_addeventlistener') {
+      const conf = command.val;
+      if (conf.event === 'creative_in_view') {
+        conf.handler(creativeInViewConf);
+      }
     }
-  }
-  return false;
+  })
 }
 
 describe('BrandmetricsRTD module', () => {
@@ -116,6 +122,10 @@ describe('BrandmetricsRTD module', () => {
   it('should not init when there is no usp- consent', () => {
     expect(brandmetricsRTD.brandmetricsSubmodule.init(VALID_CONFIG, NO_USP_CONSENT)).to.equal(false);
   });
+
+  it('should init if there are no consent- objects defined', () => {
+    expect(brandmetricsRTD.brandmetricsSubmodule.init(VALID_CONFIG, UNDEFINED_USER_CONSENT)).to.equal(true);
+  });
 });
 
 describe('getBidRequestData', () => {
@@ -124,12 +134,12 @@ describe('getBidRequestData', () => {
   })
 
   it('should set targeting keys for specified bidders', () => {
-    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({}, () => {
-      const bidderConfig = config.getBidderConfig()
+    const bidderOrtb2 = {};
+    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({ortb2Fragments: {bidder: bidderOrtb2}}, () => {
       const expected = VALID_CONFIG.params.bidders
 
       expected.forEach(exp => {
-        expect(bidderConfig[exp].ortb2.user.ext.data.mockTargetKey).to.equal('mockMeasurementId')
+        expect(bidderOrtb2[exp].user.ext.data.mockTargetKey).to.equal('mockMeasurementId')
       })
     }, VALID_CONFIG);
 
@@ -161,9 +171,9 @@ describe('getBidRequestData', () => {
       }
     });
 
-    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({}, () => {}, VALID_CONFIG);
-    const bidderConfig = config.getBidderConfig()
-    expect(Object.keys(bidderConfig).length).to.equal(0)
+    const bidderOrtb2 = {};
+    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({ortb2Fragments: {bidder: bidderOrtb2}}, () => {}, VALID_CONFIG);
+    expect(Object.keys(bidderOrtb2).length).to.equal(0)
   });
 
   it('should use a default targeting key name if the brandmetrics- configuration does not include one', () => {
@@ -179,13 +189,71 @@ describe('getBidRequestData', () => {
       }
     });
 
-    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({}, () => {}, VALID_CONFIG);
+    const bidderOrtb2 = {};
+    brandmetricsRTD.brandmetricsSubmodule.getBidRequestData({ortb2Fragments: {bidder: bidderOrtb2}}, () => {}, VALID_CONFIG);
 
-    const bidderConfig = config.getBidderConfig()
     const expected = VALID_CONFIG.params.bidders
 
     expected.forEach(exp => {
-      expect(bidderConfig[exp].ortb2.user.ext.data.brandmetrics_survey).to.equal('mockMeasurementId')
+      expect(bidderOrtb2[exp].user.ext.data.brandmetrics_survey).to.equal('mockMeasurementId')
     })
+  });
+
+  describe('billable events', () => {
+    let sandbox;
+    let eventsEmitSpy;
+
+    before(() => {
+      sandbox = sinon.sandbox.create();
+      eventsEmitSpy = sandbox.spy(events, ['emit']);
+    });
+
+    beforeEach(() => {
+      eventsEmitSpy.resetHistory();
+    })
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it('should emit billable event from prebid events', () => {
+      const expectedEvent = {
+        vendor: 'brandmetrics',
+        type: 'creative_in_view',
+        measurementId: 'mockMeasurementId',
+        auctionId: 'mockAuctionId',
+        transactionId: 'mockTransactionId'
+      };
+
+      mockCreativeInView({
+        mid: expectedEvent.measurementId,
+        source: {
+          type: 'pbj',
+          data: {
+            auctionId: expectedEvent.auctionId,
+            transactionId: expectedEvent.transactionId
+          },
+        }
+      });
+
+      expect(eventsEmitSpy.callCount).to.equal(1);
+
+      const event = eventsEmitSpy.getCalls()[0].args[1];
+      delete event['billingId'];
+
+      expect(event).to.deep.equal(expectedEvent);
+    });
+
+    it('should not emit billable event from non prebid- sources', () => {
+      mockCreativeInView({
+        mid: 'mockMeasurementId',
+        source: {
+          type: 'gpt',
+          data: {},
+        }
+      });
+
+      expect(eventsEmitSpy.callCount).to.equal(0);
+    });
   });
 });

@@ -1,0 +1,12 @@
+<!-- start a locally ran server under a different port than 9999 and run gulp serve.
+  load this page from the local server to properly replicate loading prebid.js within a 3rd party iframe -->
+<html>
+<head>
+  <script type="text/javascript" data-cmp-ab="1" src="https://cdn.consentmanager.net/delivery/autoblocking/599af61faf55.js" 
+      data-cmp-host="delivery.consentmanager.net" data-cmp-cdn="cdn.consentmanager.net" data-cmp-codesrc="1"></script>
+</head>
+<body>
+  <iframe style="width: 100%; height: 100%;" src="http://test.localhost:9999/integrationExamples/gpt/gpp_us_hello_world_iframe_subpage.html"></iframe>
+</body>
+</html>
+

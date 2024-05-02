@@ -1,5 +1,5 @@
 import livewrappedAnalyticsAdapter, { BID_WON_TIMEOUT } from 'modules/livewrappedAnalyticsAdapter.js';
-import CONSTANTS from 'src/constants.json';
+import { AD_RENDER_FAILED_REASON, EVENTS, STATUS } from 'src/constants.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import { setConfig } from 'modules/currency.js';
@@ -9,21 +9,16 @@ let utils = require('src/utils');
 let adapterManager = require('src/adapterManager').default;
 
 const {
-  EVENTS: {
-    AUCTION_INIT,
-    AUCTION_END,
-    BID_REQUESTED,
-    BID_RESPONSE,
-    BIDDER_DONE,
-    BID_WON,
-    BID_TIMEOUT,
-    SET_TARGETING,
-    AD_RENDER_FAILED
-  },
-  STATUS: {
-    GOOD
-  }
-} = CONSTANTS;
+  AUCTION_INIT,
+  AUCTION_END,
+  BID_REQUESTED,
+  BID_RESPONSE,
+  BIDDER_DONE,
+  BID_WON,
+  BID_TIMEOUT,
+  SET_TARGETING,
+  AD_RENDER_FAILED
+} = EVENTS;
 
 const BID1 = {
   width: 980,
@@ -38,8 +33,12 @@ const BID1 = {
   adId: '2ecff0db240757',
   auctionId: '25c6d7f5-699a-4bfc-87c9-996f915341fa',
   mediaType: 'banner',
+  meta: {
+    data: 'value1'
+  },
+  dealId: 'dealid',
   getStatusCode() {
-    return CONSTANTS.STATUS.GOOD;
+    return STATUS.GOOD;
   }
 };
 
@@ -54,6 +53,10 @@ const BID2 = Object.assign({}, BID1, {
   bidId: '3ecff0db240757',
   requestId: '3ecff0db240757',
   adId: '3ecff0db240757',
+  meta: {
+    data: 'value2'
+  },
+  dealId: undefined
 });
 
 const BID3 = {
@@ -63,7 +66,7 @@ const BID3 = {
   auctionId: '25c6d7f5-699a-4bfc-87c9-996f915341fa',
   mediaType: 'banner',
   getStatusCode() {
-    return CONSTANTS.STATUS.NO_BID;
+    return STATUS.GOOD;
   }
 };
 
@@ -127,7 +130,7 @@ const MOCK = {
   AD_RENDER_FAILED: [
     {
       'bidId': '2ecff0db240757',
-      'reason': CONSTANTS.AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
+      'reason': AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
       'message': 'message',
       'bid': BID1
     }
@@ -190,7 +193,10 @@ const ANALYTICS_MESSAGE = {
       IsBid: true,
       mediaType: 1,
       gdpr: 0,
-      auctionId: 0
+      auctionId: 0,
+      meta: {
+        data: 'value1'
+      }
     },
     {
       timeStamp: 1519149562216,
@@ -205,7 +211,10 @@ const ANALYTICS_MESSAGE = {
       IsBid: true,
       mediaType: 1,
       gdpr: 0,
-      auctionId: 0
+      auctionId: 0,
+      meta: {
+        data: 'value2'
+      }
     },
     {
       timeStamp: 1519149562216,
@@ -231,7 +240,11 @@ const ANALYTICS_MESSAGE = {
       orgCpm: 120,
       mediaType: 1,
       gdpr: 0,
-      auctionId: 0
+      auctionId: 0,
+      meta: {
+        data: 'value1'
+      },
+      dealId: 'dealid'
     },
     {
       timeStamp: 1519149562216,
@@ -244,7 +257,10 @@ const ANALYTICS_MESSAGE = {
       orgCpm: 230,
       mediaType: 1,
       gdpr: 0,
-      auctionId: 0
+      auctionId: 0,
+      meta: {
+        data: 'value2'
+      }
     }
   ],
   rf: [
@@ -254,7 +270,7 @@ const ANALYTICS_MESSAGE = {
       adUnitId: 'adunitid',
       bidder: 'livewrapped',
       auctionId: 0,
-      rsn: CONSTANTS.AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
+      rsn: AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
       msg: 'message'
     },
   ]

@@ -2,15 +2,28 @@
  * This module adds [DFP support]{@link https://www.doubleclickbygoogle.com/} for Video to Prebid.
  */
 
-import { registerVideoSupport } from '../src/adServerManager.js';
-import { targeting } from '../src/targeting.js';
-import { deepAccess, isEmpty, logError, parseSizesInput, formatQS, parseUrl, buildUrl } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { getHook, submodule } from '../src/hook.js';
-import { auctionManager } from '../src/auctionManager.js';
-import { gdprDataHandler, uspDataHandler } from '../src/adapterManager.js';
-import events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import {registerVideoSupport} from '../src/adServerManager.js';
+import {targeting} from '../src/targeting.js';
+import {
+  isNumber,
+  buildUrl,
+  deepAccess,
+  formatQS,
+  isEmpty,
+  logError,
+  parseSizesInput,
+  parseUrl,
+  uniques
+} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {getHook, submodule} from '../src/hook.js';
+import {auctionManager} from '../src/auctionManager.js';
+import {gdprDataHandler} from '../src/adapterManager.js';
+import * as events from '../src/events.js';
+import { EVENTS } from '../src/constants.js';
+import {getPPID} from '../src/adserver.js';
+import {getRefererInfo} from '../src/refererDetection.js';
+import {CLIENT_SECTIONS} from '../src/fpd/oneClient.js';
 
 /**
  * @typedef {Object} DfpVideoParams
@@ -51,6 +64,10 @@ const defaultParamConstants = {
 
 export const adpodUtils = {};
 
+export const dep = {
+  ri: getRefererInfo
+}
+
 /**
  * Merge all the bid data and publisher-supplied options into a single URL, and then return it.
  *
@@ -88,7 +105,14 @@ export function buildDfpVideoUrl(options) {
     sz: parseSizesInput(deepAccess(adUnit, 'mediaTypes.video.playerSize')).join('|'),
     url: encodeURIComponent(location.href),
   };
-  const encodedCustomParams = getCustParams(bid, options);
+
+  const urlSearchComponent = urlComponents.search;
+  const urlSzParam = urlSearchComponent && urlSearchComponent.sz;
+  if (urlSzParam) {
+    derivedParams.sz = urlSzParam + '|' + derivedParams.sz;
+  }
+
+  let encodedCustomParams = getCustParams(bid, options, urlSearchComponent && urlSearchComponent.cust_params);
 
   const queryParams = Object.assign({},
     defaultParamConstants,
@@ -100,7 +124,6 @@ export function buildDfpVideoUrl(options) {
 
   const descriptionUrl = getDescriptionUrl(bid, options, 'params');
   if (descriptionUrl) { queryParams.description_url = descriptionUrl; }
-
   const gdprConsent = gdprDataHandler.getConsentData();
   if (gdprConsent) {
     if (typeof gdprConsent.gdprApplies === 'boolean') { queryParams.gdpr = Number(gdprConsent.gdprApplies); }
@@ -108,15 +131,82 @@ export function buildDfpVideoUrl(options) {
     if (gdprConsent.addtlConsent) { queryParams.addtl_consent = gdprConsent.addtlConsent; }
   }
 
-  const uspConsent = uspDataHandler.getConsentData();
-  if (uspConsent) { queryParams.us_privacy = uspConsent; }
+  if (!queryParams.ppid) {
+    const ppid = getPPID();
+    if (ppid != null) {
+      queryParams.ppid = ppid;
+    }
+  }
 
-  return buildUrl({
+  const video = options.adUnit?.mediaTypes?.video;
+  Object.entries({
+    plcmt: () => video?.plcmt,
+    min_ad_duration: () => isNumber(video?.minduration) ? video.minduration * 1000 : null,
+    max_ad_duration: () => isNumber(video?.maxduration) ? video.maxduration * 1000 : null,
+    vpos() {
+      const startdelay = video?.startdelay;
+      if (isNumber(startdelay)) {
+        if (startdelay === -2) return 'postroll';
+        if (startdelay === -1 || startdelay > 0) return 'midroll';
+        return 'preroll';
+      }
+    },
+    vconp: () => Array.isArray(video?.playbackmethod) && video.playbackmethod.every(m => m === 7) ? '2' : undefined,
+    vpa() {
+      // playbackmethod = 3 is play on click; 1, 2, 4, 5, 6 are autoplay
+      if (Array.isArray(video?.playbackmethod)) {
+        const click = video.playbackmethod.some(m => m === 3);
+        const auto = video.playbackmethod.some(m => [1, 2, 4, 5, 6].includes(m));
+        if (click && !auto) return 'click';
+        if (auto && !click) return 'auto';
+      }
+    },
+    vpmute() {
+      // playbackmethod = 2, 6 are muted; 1, 3, 4, 5 are not
+      if (Array.isArray(video?.playbackmethod)) {
+        const muted = video.playbackmethod.some(m => [2, 6].includes(m));
+        const talkie = video.playbackmethod.some(m => [1, 3, 4, 5].includes(m));
+        if (muted && !talkie) return '1';
+        if (talkie && !muted) return '0';
+      }
+    }
+  }).forEach(([param, getter]) => {
+    if (!queryParams.hasOwnProperty(param)) {
+      const val = getter();
+      if (val != null) {
+        queryParams[param] = val;
+      }
+    }
+  });
+  const fpd = auctionManager.index.getBidRequest(options.bid || {})?.ortb2 ??
+    auctionManager.index.getAuction(options.bid || {})?.getFPD()?.global;
+
+  function getSegments(sections, segtax) {
+    return sections
+      .flatMap(section => deepAccess(fpd, section) || [])
+      .filter(datum => datum.ext?.segtax === segtax)
+      .flatMap(datum => datum.segment?.map(seg => seg.id))
+      .filter(ob => ob)
+      .filter(uniques)
+  }
+
+  const signals = Object.entries({
+    IAB_AUDIENCE_1_1: getSegments(['user.data'], 4),
+    IAB_CONTENT_2_2: getSegments(CLIENT_SECTIONS.map(section => `${section}.content.data`), 6)
+  }).map(([taxonomy, values]) => values.length ? {taxonomy, values} : null)
+    .filter(ob => ob);
+
+  if (signals.length) {
+    queryParams.ppsj = btoa(JSON.stringify({
+      PublisherProvidedTaxonomySignals: signals
+    }))
+  }
+
+  return buildUrl(Object.assign({
     protocol: 'https',
     host: 'securepubads.g.doubleclick.net',
-    pathname: '/gampad/ads',
-    search: queryParams
-  });
+    pathname: '/gampad/ads'
+  }, urlComponents, { search: queryParams }));
 }
 
 export function notifyTranslationModule(fn) {
@@ -140,6 +230,8 @@ if (config.getConfig('brandCategoryTranslation.translationFile')) { getHook('reg
  * @returns {string} A URL which calls DFP with custom adpod targeting key values to compete with rest of the demand in DFP
  */
 export function buildAdpodVideoUrl({code, params, callback} = {}) {
+  // TODO: the public API for this does not take in enough info to fill all DFP params (adUnit/bid),
+  // and is marked "alpha": https://docs.prebid.org/dev-docs/publisher-api-reference/adServers.dfp.buildAdpodVideoUrl.html
   if (!params || !callback) {
     logError(`A params object and a callback is required to use pbjs.adServers.dfp.buildAdpodVideoUrl`);
     return;
@@ -172,7 +264,7 @@ export function buildAdpodVideoUrl({code, params, callback} = {}) {
     let initialValue = {
       [adpodUtils.TARGETING_KEY_PB_CAT_DUR]: undefined,
       [adpodUtils.TARGETING_KEY_CACHE_ID]: undefined
-    }
+    };
     let customParams = {};
     if (targeting[code]) {
       customParams = targeting[code].reduce((acc, curValue) => {
@@ -201,9 +293,6 @@ export function buildAdpodVideoUrl({code, params, callback} = {}) {
       if (gdprConsent.addtlConsent) { queryParams.addtl_consent = gdprConsent.addtlConsent; }
     }
 
-    const uspConsent = uspDataHandler.getConsentData();
-    if (uspConsent) { queryParams.us_privacy = uspConsent; }
-
     const masterTag = buildUrl({
       protocol: 'https',
       host: 'securepubads.g.doubleclick.net',
@@ -225,11 +314,11 @@ export function buildAdpodVideoUrl({code, params, callback} = {}) {
  */
 function buildUrlFromAdserverUrlComponents(components, bid, options) {
   const descriptionUrl = getDescriptionUrl(bid, components, 'search');
-  if (descriptionUrl) { components.search.description_url = descriptionUrl; }
+  if (descriptionUrl) {
+    components.search.description_url = descriptionUrl;
+  }
 
-  const encodedCustomParams = getCustParams(bid, options);
-  components.search.cust_params = (components.search.cust_params) ? components.search.cust_params + '%26' + encodedCustomParams : encodedCustomParams;
-
+  components.search.cust_params = getCustParams(bid, options, components.search.cust_params);
   return buildUrl(components);
 }
 
@@ -242,14 +331,7 @@ function buildUrlFromAdserverUrlComponents(components, bid, options) {
  * @return {string | undefined} The encoded vast url if it exists, or undefined
  */
 function getDescriptionUrl(bid, components, prop) {
-  if (config.getConfig('cache.url')) { return; }
-
-  if (!deepAccess(components, `${prop}.description_url`)) {
-    const vastUrl = bid && bid.vastUrl;
-    if (vastUrl) { return encodeURIComponent(vastUrl); }
-  } else {
-    logError(`input cannnot contain description_url`);
-  }
+  return deepAccess(components, `${prop}.description_url`) || encodeURIComponent(dep.ri().page);
 }
 
 /**
@@ -258,7 +340,7 @@ function getDescriptionUrl(bid, components, prop) {
  * @param {Object} options this is the options passed in from the `buildDfpVideoUrl` function
  * @return {Object} Encoded key value pairs for cust_params
  */
-function getCustParams(bid, options) {
+function getCustParams(bid, options, urlCustParams) {
   const adserverTargeting = (bid && bid.adserverTargeting) || {};
 
   let allTargetingData = {};
@@ -276,12 +358,19 @@ function getCustParams(bid, options) {
     allTargetingData,
     adserverTargeting,
   );
-  events.emit(CONSTANTS.EVENTS.SET_TARGETING, {[adUnit.code]: prebidTargetingSet});
+
+  // TODO: WTF is this? just firing random events, guessing at the argument, hoping noone notices?
+  events.emit(EVENTS.SET_TARGETING, {[adUnit.code]: prebidTargetingSet});
 
   // merge the prebid + publisher targeting sets
   const publisherTargetingSet = deepAccess(options, 'params.cust_params');
   const targetingSet = Object.assign({}, prebidTargetingSet, publisherTargetingSet);
-  return encodeURIComponent(formatQS(targetingSet));
+  let encodedParams = encodeURIComponent(formatQS(targetingSet));
+  if (urlCustParams) {
+    encodedParams = urlCustParams + '%26' + encodedParams;
+  }
+
+  return encodedParams;
 }
 
 registerVideoSupport('dfp', {

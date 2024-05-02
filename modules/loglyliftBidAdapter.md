@@ -12,6 +12,22 @@ Currently module supports only native mediaType.
 # Test Parameters
 ```
 var adUnits = [
+  // Banner adUnit
+  {
+    code: 'test-banner-code',
+    sizes: [[300, 250], [300, 600]],
+    mediaTypes: {
+      banner: {
+        sizes: [[300, 250], [300, 600]]
+      }
+    },
+    bids: [{
+      bidder: 'loglylift',
+      params: {
+        adspotId: 1302078
+      }
+    }]
+  },
   // Native adUnit
   {
     code: 'test-native-code',

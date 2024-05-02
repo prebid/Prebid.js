@@ -1,20 +1,21 @@
 import zetaAnalyticsAdapter from 'modules/zeta_global_sspAnalyticsAdapter.js';
 import {config} from 'src/config';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
+import {server} from '../../mocks/xhr.js';
 import {logError} from '../../../src/utils';
 
 let utils = require('src/utils');
 let events = require('src/events');
 
-const MOCK = {
-  STUB: {
-    'auctionId': '25c6d7f5-699a-4bfc-87c9-996f915341fa'
-  },
+const SAMPLE_EVENTS = {
   AUCTION_END: {
-    'auctionId': '75e394d9-ccce-4978-9238-91e6a1ac88a1',
+    'auctionId': '75e394d9',
     'timestamp': 1638441234544,
     'auctionEnd': 1638441234784,
     'auctionStatus': 'completed',
+    'metrics': {
+      'someMetric': 1
+    },
     'adUnits': [
       {
         'code': '/19968336/header-bid-tag-0',
@@ -60,7 +61,7 @@ const MOCK = {
             600
           ]
         ],
-        'transactionId': '6b29369c-0c2e-414e-be1f-5867aec18d83'
+        'transactionId': '6b29369c'
       }
     ],
     'adUnitCodes': [
@@ -69,18 +70,11 @@ const MOCK = {
     'bidderRequests': [
       {
         'bidderCode': 'zeta_global_ssp',
-        'auctionId': '75e394d9-ccce-4978-9238-91e6a1ac88a1',
+        'auctionId': '75e394d9',
         'bidderRequestId': '1207cb49191887',
         'bids': [
           {
             'bidder': 'zeta_global_ssp',
-            'params': {
-              'sid': 111,
-              'tags': {
-                'shortname': 'prebid_analytics_event_test_shortname',
-                'position': 'test_position'
-              }
-            },
             'mediaTypes': {
               'banner': {
                 'sizes': [
@@ -96,7 +90,7 @@ const MOCK = {
               }
             },
             'adUnitCode': '/19968336/header-bid-tag-0',
-            'transactionId': '6b29369c-0c2e-414e-be1f-5867aec18d83',
+            'transactionId': '6b29369c',
             'sizes': [
               [
                 300,
@@ -109,7 +103,7 @@ const MOCK = {
             ],
             'bidId': '206be9a13236af',
             'bidderRequestId': '1207cb49191887',
-            'auctionId': '75e394d9-ccce-4978-9238-91e6a1ac88a1',
+            'auctionId': '75e394d9',
             'src': 'client',
             'bidRequestsCount': 1,
             'bidderRequestsCount': 1,
@@ -132,7 +126,7 @@ const MOCK = {
       },
       {
         'bidderCode': 'appnexus',
-        'auctionId': '75e394d9-ccce-4978-9238-91e6a1ac88a1',
+        'auctionId': '75e394d9',
         'bidderRequestId': '32b97f0a935422',
         'bids': [
           {
@@ -155,7 +149,7 @@ const MOCK = {
               }
             },
             'adUnitCode': '/19968336/header-bid-tag-0',
-            'transactionId': '6b29369c-0c2e-414e-be1f-5867aec18d83',
+            'transactionId': '6b29369c',
             'sizes': [
               [
                 300,
@@ -168,7 +162,7 @@ const MOCK = {
             ],
             'bidId': '41badc0e164c758',
             'bidderRequestId': '32b97f0a935422',
-            'auctionId': '75e394d9-ccce-4978-9238-91e6a1ac88a1',
+            'auctionId': '75e394d9',
             'src': 'client',
             'bidRequestsCount': 1,
             'bidderRequestsCount': 1,
@@ -211,7 +205,7 @@ const MOCK = {
           }
         },
         'adUnitCode': '/19968336/header-bid-tag-0',
-        'transactionId': '6b29369c-0c2e-414e-be1f-5867aec18d83',
+        'transactionId': '6b29369c',
         'sizes': [
           [
             300,
@@ -224,7 +218,7 @@ const MOCK = {
         ],
         'bidId': '41badc0e164c758',
         'bidderRequestId': '32b97f0a935422',
-        'auctionId': '75e394d9-ccce-4978-9238-91e6a1ac88a1',
+        'auctionId': '75e394d9',
         'src': 'client',
         'bidRequestsCount': 1,
         'bidderRequestsCount': 1,
@@ -249,12 +243,12 @@ const MOCK = {
         'netRevenue': true,
         'meta': {
           'advertiserDomains': [
-            'viaplay.fi'
+            'example.adomain'
           ]
         },
         'originalCpm': 2.258302852806723,
         'originalCurrency': 'USD',
-        'auctionId': '75e394d9-ccce-4978-9238-91e6a1ac88a1',
+        'auctionId': '75e394d9',
         'responseTimestamp': 1638441234670,
         'requestTimestamp': 1638441234547,
         'bidder': 'zeta_global_ssp',
@@ -274,7 +268,7 @@ const MOCK = {
           'hb_size': '480x320',
           'hb_source': 'client',
           'hb_format': 'banner',
-          'hb_adomain': 'viaplay.fi'
+          'hb_adomain': 'example.adomain'
         }
       }
     ],
@@ -309,17 +303,20 @@ const MOCK = {
       'cpm': 2.258302852806723,
       'currency': 'USD',
       'ad': 'test_ad',
+      'metrics': {
+        'someMetric': 0
+      },
       'ttl': 200,
       'creativeId': '456456456',
       'netRevenue': true,
       'meta': {
         'advertiserDomains': [
-          'viaplay.fi'
+          'example.adomain'
         ]
       },
       'originalCpm': 2.258302852806723,
       'originalCurrency': 'USD',
-      'auctionId': '75e394d9-ccce-4978-9238-91e6a1ac88a1',
+      'auctionId': '75e394d9',
       'responseTimestamp': 1638441234670,
       'requestTimestamp': 1638441234547,
       'bidder': 'zeta_global_ssp',
@@ -339,16 +336,12 @@ const MOCK = {
         'hb_size': '480x320',
         'hb_source': 'client',
         'hb_format': 'banner',
-        'hb_adomain': 'viaplay.fi'
+        'hb_adomain': 'example.adomain'
       },
       'status': 'rendered',
       'params': [
         {
-          'sid': 111,
-          'tags': {
-            'shortname': 'prebid_analytics_event_test_shortname',
-            'position': 'test_position'
-          }
+          'nonZetaParam': 'nonZetaValue'
         }
       ]
     },
@@ -358,14 +351,11 @@ const MOCK = {
 
 describe('Zeta Global SSP Analytics Adapter', function() {
   let sandbox;
-  let xhr;
   let requests;
 
   beforeEach(function() {
     sandbox = sinon.sandbox.create();
-    requests = [];
-    xhr = sandbox.useFakeXMLHttpRequest();
-    xhr.onCreate = request => requests.push(request);
+    requests = server.requests;
     sandbox.stub(events, 'getEvents').returns([]);
   });
 
@@ -395,33 +385,48 @@ describe('Zeta Global SSP Analytics Adapter', function() {
       zetaAnalyticsAdapter.disableAnalytics();
     });
 
-    it('events are sent', function() {
-      this.timeout(5000);
-      events.emit(CONSTANTS.EVENTS.AUCTION_INIT, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.AUCTION_END, MOCK.AUCTION_END);
-      events.emit(CONSTANTS.EVENTS.BID_ADJUSTMENT, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.BID_TIMEOUT, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.BID_REQUESTED, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.BID_RESPONSE, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.NO_BID, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.BID_WON, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.BIDDER_DONE, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.BIDDER_ERROR, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.SET_TARGETING, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.BEFORE_REQUEST_BIDS, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.REQUEST_BIDS, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.ADD_AD_UNITS, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.AD_RENDER_FAILED, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED, MOCK.AD_RENDER_SUCCEEDED);
-      events.emit(CONSTANTS.EVENTS.TCF2_ENFORCEMENT, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.BID_VIEWABLE, MOCK.STUB);
-      events.emit(CONSTANTS.EVENTS.STALE_RENDER, MOCK.STUB);
+    it('Move ZetaParams through analytics events', function() {
+      this.timeout(3000);
+
+      events.emit(EVENTS.AUCTION_END, SAMPLE_EVENTS.AUCTION_END);
+      events.emit(EVENTS.AD_RENDER_SUCCEEDED, SAMPLE_EVENTS.AD_RENDER_SUCCEEDED);
 
       expect(requests.length).to.equal(2);
-      expect(JSON.parse(requests[0].requestBody)).to.deep.equal(MOCK.AUCTION_END);
-      expect(JSON.parse(requests[1].requestBody)).to.deep.equal(MOCK.AD_RENDER_SUCCEEDED);
+      const auctionEnd = JSON.parse(requests[0].requestBody);
+      const auctionSucceeded = JSON.parse(requests[1].requestBody);
+
+      expect(auctionSucceeded.bid.params[0]).to.be.deep.equal(SAMPLE_EVENTS.AUCTION_END.adUnits[0].bids[0].params);
+      expect(SAMPLE_EVENTS.AUCTION_END.adUnits[0].bids[0].bidder).to.be.equal('zeta_global_ssp');
+    });
+
+    it('Keep only needed fields', function() {
+      this.timeout(3000);
+
+      events.emit(EVENTS.AUCTION_END, SAMPLE_EVENTS.AUCTION_END);
+      events.emit(EVENTS.AD_RENDER_SUCCEEDED, SAMPLE_EVENTS.AD_RENDER_SUCCEEDED);
+
+      expect(requests.length).to.equal(2);
+      const auctionEnd = JSON.parse(requests[0].requestBody);
+      const auctionSucceeded = JSON.parse(requests[1].requestBody);
+
+      expect(auctionEnd.adUnitCodes).to.be.undefined;
+      expect(auctionEnd.adUnits[0].bids[0].bidder).to.be.equal('zeta_global_ssp');
+      expect(auctionEnd.auctionEnd).to.be.undefined;
+      expect(auctionEnd.auctionId).to.be.equal('75e394d9');
+      expect(auctionEnd.bidderRequests[0].bidderCode).to.be.equal('zeta_global_ssp');
+      expect(auctionEnd.bidderRequests[0].bids[0].bidId).to.be.equal('206be9a13236af');
+      expect(auctionEnd.bidderRequests[0].bids[0].adUnitCode).to.be.equal('/19968336/header-bid-tag-0');
+      expect(auctionEnd.bidsReceived[0].bidderCode).to.be.equal('zeta_global_ssp');
+      expect(auctionEnd.bidsReceived[0].adserverTargeting.hb_adomain).to.be.equal('example.adomain');
+      expect(auctionEnd.bidsReceived[0].auctionId).to.be.equal('75e394d9');
+
+      expect(auctionSucceeded.adId).to.be.equal('5759bb3ef7be1e8');
+      expect(auctionSucceeded.bid.auctionId).to.be.equal('75e394d9');
+      expect(auctionSucceeded.bid.requestId).to.be.equal('206be9a13236af');
+      expect(auctionSucceeded.bid.bidderCode).to.be.equal('zeta_global_ssp');
+      expect(auctionSucceeded.bid.creativeId).to.be.equal('456456456');
+      expect(auctionSucceeded.bid.size).to.be.equal('480x320');
+      expect(auctionSucceeded.doc.location.hostname).to.be.equal('localhost');
     });
   });
 });
