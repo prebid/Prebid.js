@@ -5,6 +5,12 @@ import { getStorageManager } from '../src/storageManager.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ */
+
 const COOKIE_NAME = 'ucf_uid';
 const VER = 'ADGENT_PREBID-2018011501';
 const BIDDER_CODE = 'ucfunnel';
@@ -64,7 +70,7 @@ export const spec = {
    * Format ucfunnel responses as Prebid bid responses
    * @param {ucfunnelResponseObj} ucfunnelResponse A successful response from ucfunnel.
    * @return {Bid[]} An array of formatted bids.
-  */
+   */
   interpretResponse: function (ucfunnelResponseObj, request) {
     const bidRequest = request.bidRequest;
     const ad = ucfunnelResponseObj ? ucfunnelResponseObj.body : {};

@@ -7,23 +7,23 @@ const utils = {
   testPageURL: function(name) {
     return `${utils.protocol}://${utils.host}:9999/test/pages/${name}`
   },
-  waitForElement: function(elementRef, time = DEFAULT_TIMEOUT) {
+  waitForElement: async function(elementRef, time = DEFAULT_TIMEOUT) {
     let element = $(elementRef);
-    element.waitForExist({timeout: time});
+    await element.waitForExist({timeout: time});
   },
-  switchFrame: function(frameRef) {
-    let iframe = $(frameRef);
+  switchFrame: async function(frameRef) {
+    let iframe = await $(frameRef);
     browser.switchToFrame(iframe);
   },
-  loadAndWaitForElement(url, selector, pause = 3000, timeout = DEFAULT_TIMEOUT, retries = 3, attempt = 1) {
-    browser.url(url);
-    browser.pause(pause);
+  async loadAndWaitForElement(url, selector, pause = 3000, timeout = DEFAULT_TIMEOUT, retries = 3, attempt = 1) {
+    await browser.url(url);
+    await browser.pause(pause);
     if (selector != null) {
       try {
-        utils.waitForElement(selector, timeout);
+        await utils.waitForElement(selector, timeout);
       } catch (e) {
         if (attempt < retries) {
-          utils.loadAndWaitForElement(url, selector, pause, timeout, retries, attempt + 1);
+          await utils.loadAndWaitForElement(url, selector, pause, timeout, retries, attempt + 1);
         }
       }
     }
@@ -35,14 +35,15 @@ const utils = {
       fn.call(this);
       if (expectGAMCreative) {
         expectGAMCreative = expectGAMCreative === true ? waitFor : expectGAMCreative;
-        it(`should render GAM creative`, () => {
-          utils.switchFrame(expectGAMCreative);
+        it(`should render GAM creative`, async () => {
+          await utils.switchFrame(expectGAMCreative);
           const creative = [
             '> a > img', // banner
             '> div[class="card"]' // native
           ].map((child) => `body > div[class="GoogleActiveViewElement"] ${child}`)
             .join(', ');
-          expect($(creative).isExisting()).to.be.true;
+          const existing = await $(creative).isExisting();
+          expect(existing).to.be.true;
         });
       }
     });

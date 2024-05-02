@@ -90,6 +90,10 @@ describe('connatixBidAdapter', function () {
         gdprApplies: true
       },
       uspConsent: '1YYY',
+      gppConsent: {
+        gppString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+        applicableSections: [7]
+      },
       ortb2: {
         site: {
           data: {
@@ -128,6 +132,7 @@ describe('connatixBidAdapter', function () {
       expect(serverRequest.data.refererInfo).to.equal(bidderRequest.refererInfo);
       expect(serverRequest.data.gdprConsent).to.equal(bidderRequest.gdprConsent);
       expect(serverRequest.data.uspConsent).to.equal(bidderRequest.uspConsent);
+      expect(serverRequest.data.gppConsent).to.equal(bidderRequest.gppConsent);
       expect(serverRequest.data.ortb2).to.equal(bidderRequest.ortb2);
     });
   });

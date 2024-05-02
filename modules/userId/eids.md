@@ -31,7 +31,8 @@ userIdAsEids = [
             id: 'some-random-id-value',
             atype: 1,
             ext: {
-                rtiPartner: 'TDID'
+                rtiPartner: 'TDID',
+                provider: 'liveintent.com'
             }
         }]
     },
@@ -172,7 +173,7 @@ userIdAsEids = [
             }
         }]
     },
-
+    
     {
         source: 'rubiconproject.com',
         uids: [{
@@ -323,6 +324,13 @@ userIdAsEids = [
         uids: [{
             id: 'some-random-id-value',
             atype: 3
+        }]
+    },
+    {
+        source: 'mygaru.com',
+        uids: [{
+            id: 'some-random-id-value',
+            atype: 1
         }]
     }
 ]

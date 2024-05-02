@@ -7,6 +7,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 const BIDDER_CODE = 'contentexchange';
 const AD_URL = 'https://eu2.adnetwork.agency/pbjs';
 const SYNC_URL = 'https://sync2.adnetwork.agency';
+const GVLID = 864;
 
 function isBidResponseValid (bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
@@ -88,6 +89,7 @@ function getBidFloor(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid = {}) => {

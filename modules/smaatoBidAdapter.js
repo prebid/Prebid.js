@@ -3,12 +3,19 @@ import {find} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
-import CONSTANTS from '../src/constants.json';
+import { NATIVE_IMAGE_TYPES } from '../src/constants.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 import {fill} from '../libraries/appnexusUtils/anUtils.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 
-const { NATIVE_IMAGE_TYPES } = CONSTANTS;
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
+
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
 const SMAATO_CLIENT = 'prebid_js_$prebid.version$_1.8'

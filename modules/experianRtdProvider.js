@@ -12,6 +12,12 @@ import {
 } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ * @typedef {import('../modules/rtdModule/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/rtdModule/index.js').UserConsentData} UserConsentData
+ */
+
 export const SUBMODULE_NAME = 'experian_rtid';
 export const EXPERIAN_RTID_DATA_KEY = 'experian_rtid_data';
 export const EXPERIAN_RTID_EXPIRATION_KEY = 'experian_rtid_expiration';

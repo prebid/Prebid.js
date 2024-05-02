@@ -2,6 +2,8 @@ import {expect} from 'chai';
 import {spec} from 'modules/snigelBidAdapter.js';
 import {config} from 'src/config.js';
 import {isValid} from 'src/adapters/bidderFactory.js';
+import {registerActivityControl} from 'src/activities/rules.js';
+import {ACTIVITY_ACCESS_DEVICE} from 'src/activities/activities.js';
 
 const BASE_BID_REQUEST = {
   adUnitCode: 'top_leaderboard',
@@ -343,6 +345,68 @@ describe('snigelBidAdapter', function () {
       expect(sync.type).to.equal('iframe');
       expect(sync).to.have.property('url');
       expect(sync.url).to.equal(`https://somesyncurl?gdpr=1&gdpr_consent=${DUMMY_GDPR_CONSENT_STRING}`);
+    });
+
+    it('should omit session ID if no device access', function() {
+      const bidderRequest = makeBidderRequest();
+      const unregisterRule = registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'denyAccess', () => {
+        return {allow: false, reason: 'no consent'};
+      });
+
+      try {
+        const request = spec.buildRequests([], bidderRequest);
+        expect(request).to.have.property('data');
+        const data = JSON.parse(request.data);
+        expect(data.sessionId).to.be.undefined;
+      } finally {
+        unregisterRule();
+      }
+    });
+
+    it('should determine full GDPR consent correctly', function () {
+      const baseBidderRequest = makeBidderRequest({
+        gdprConsent: {
+          gdprApplies: true,
+          vendorData: {
+            purpose: {
+              consents: {1: true, 2: true, 3: true, 4: true, 5: true},
+            },
+            vendor: {
+              consents: {[spec.gvlid]: true},
+            }
+          },
+        }
+      });
+      let request = spec.buildRequests([], baseBidderRequest);
+      expect(request).to.have.property('data');
+      let data = JSON.parse(request.data);
+      expect(data.gdprConsent).to.be.true;
+
+      let bidderRequest = {...baseBidderRequest, ...{gdprConsent: {vendorData: {purpose: {consents: {1: false}}}}}};
+      request = spec.buildRequests([], bidderRequest);
+      expect(request).to.have.property('data');
+      data = JSON.parse(request.data);
+      expect(data.gdprConsent).to.be.false;
+
+      bidderRequest = {...baseBidderRequest, ...{gdprConsent: {vendorData: {vendor: {consents: {[spec.gvlid]: false}}}}}};
+      request = spec.buildRequests([], bidderRequest);
+      expect(request).to.have.property('data');
+      data = JSON.parse(request.data);
+      expect(data.gdprConsent).to.be.false;
+    });
+
+    it('should increment auction counter upon every request', function() {
+      const bidderRequest = makeBidderRequest({});
+
+      let request = spec.buildRequests([], bidderRequest);
+      expect(request).to.have.property('data');
+      let data = JSON.parse(request.data);
+      const previousCounter = data.counter;
+
+      request = spec.buildRequests([], bidderRequest);
+      expect(request).to.have.property('data');
+      data = JSON.parse(request.data);
+      expect(data.counter).to.equal(previousCounter + 1);
     });
   });
 });

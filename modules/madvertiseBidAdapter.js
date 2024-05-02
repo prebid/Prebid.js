@@ -2,6 +2,11 @@ import { parseSizesInput, _each } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 // use protocol relative urls for http or https
 const MADVERTISE_ENDPOINT = 'https://mobile.mng-ads.com/';
 

@@ -281,7 +281,7 @@ describe('dxkultureBidAdapter', function() {
 
     it('should return expected request object', function() {
       const bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
-      expect(bidRequest.url).equal('https://ads.kulture.media/pbjs?pid=publisherId&placementId=123456');
+      expect(bidRequest.url).equal('https://ads.dxkulture.com/pbjs?pid=publisherId&placementId=123456');
       expect(bidRequest.method).equal('POST');
     });
   });
@@ -606,7 +606,14 @@ describe('dxkultureBidAdapter', function() {
     });
   });
 
-  describe('user sync', function () {
+  describe('getUserSyncs', function () {
+    let bidRequest, bidderResponse;
+    beforeEach(function() {
+      const bidderRequest = getVideoRequest();
+      bidRequest = spec.buildRequests(bidderRequest.bids, bidderRequest);
+      bidderResponse = getBidderResponse();
+    });
+
     it('handles no parameters', function () {
       let opts = spec.getUserSyncs({});
       expect(opts).to.be.an('array').that.is.empty;
@@ -617,66 +624,26 @@ describe('dxkultureBidAdapter', function() {
       expect(opts).to.be.an('array').that.is.empty;
     });
 
-    describe('when gdpr applies', function () {
-      let gdprConsent;
-      let gdprPixelUrl;
-      const consentString = 'gdpr-pixel-consent';
-      const gdprApplies = '1';
-      beforeEach(() => {
-        gdprConsent = {
-          consentString,
-          gdprApplies: true
-        };
+    it('iframe sync enabled should return results', function () {
+      let opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: false}, [bidderResponse]);
 
-        gdprPixelUrl = `${SYNC_URL}&gdpr=${gdprApplies}&gdpr_consent=${consentString}`;
-      });
-
-      it('when there is a response, it should have the gdpr query params', () => {
-        let [{url}] = spec.getUserSyncs(
-          {iframeEnabled: true, pixelEnabled: true},
-          [],
-          gdprConsent
-        );
-
-        expect(url).to.have.string(`gdpr_consent=${consentString}`);
-        expect(url).to.have.string(`gdpr=${gdprApplies}`);
-      });
-
-      it('should not send signals if no consent object is available', function () {
-        let [{url}] = spec.getUserSyncs(
-          {iframeEnabled: true, pixelEnabled: true},
-          [],
-        );
-        expect(url).to.not.have.string('gdpr_consent=');
-        expect(url).to.not.have.string('gdpr=');
-      });
+      expect(opts.length).to.equal(1);
+      expect(opts[0].type).to.equal('iframe');
+      expect(opts[0].url).to.equal(bidderResponse.body.ext.usersync['sovrn'].syncs[0].url);
     });
 
-    describe('when ccpa applies', function () {
-      let usPrivacyConsent;
-      let uspPixelUrl;
-      const privacyString = 'TEST';
-      beforeEach(() => {
-        usPrivacyConsent = 'TEST';
-        uspPixelUrl = `${SYNC_URL}&us_privacy=${privacyString}`
-      });
-      it('should send the us privacy string, ', () => {
-        let [{url}] = spec.getUserSyncs(
-          {iframeEnabled: true, pixelEnabled: true},
-          [],
-          undefined,
-          usPrivacyConsent
-        );
-        expect(url).to.have.string(`us_privacy=${privacyString}`);
-      });
+    it('pixel sync enabled should return results', function () {
+      let opts = spec.getUserSyncs({iframeEnabled: false, pixelEnabled: true}, [bidderResponse]);
 
-      it('should not send signals if no consent string is available', function () {
-        let [{url}] = spec.getUserSyncs(
-          {iframeEnabled: true, pixelEnabled: true},
-          [],
-        );
-        expect(url).to.not.have.string('us_privacy=');
-      });
+      expect(opts.length).to.equal(1);
+      expect(opts[0].type).to.equal('image');
+      expect(opts[0].url).to.equal(bidderResponse.body.ext.usersync['appnexus'].syncs[0].url);
+    });
+
+    it('all sync enabled should prioritize iframe', function () {
+      let opts = spec.getUserSyncs({iframeEnabled: true, pixelEnabled: true}, [bidderResponse]);
+
+      expect(opts.length).to.equal(1);
     });
   });
 });

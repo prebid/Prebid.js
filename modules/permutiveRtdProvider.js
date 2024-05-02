@@ -12,6 +12,10 @@ import {deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safe
 import {includes} from '../src/polyfill.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 const MODULE_NAME = 'permutive'
 
 const logger = prefixLog('[PermutiveRTD]')
@@ -100,6 +104,7 @@ export function setBidderRtb (bidderOrtb2, moduleConfig, segmentData) {
 
   const ssps = segmentData?.ssp?.ssps ?? []
   const sspCohorts = segmentData?.ssp?.cohorts ?? []
+  const topics = segmentData?.topics ?? {}
 
   const bidders = new Set([...acBidders, ...ssps])
   bidders.forEach(function (bidder) {
@@ -117,7 +122,7 @@ export function setBidderRtb (bidderOrtb2, moduleConfig, segmentData) {
       cohorts = [...new Set([...cohorts, ...sspCohorts])].slice(0, maxSegs)
     }
 
-    const nextConfig = updateOrtbConfig(bidder, currConfig, cohorts, sspCohorts, transformationConfigs, segmentData)
+    const nextConfig = updateOrtbConfig(bidder, currConfig, cohorts, sspCohorts, topics, transformationConfigs, segmentData)
     bidderOrtb2[bidder] = nextConfig.ortb2
   })
 }
@@ -130,10 +135,11 @@ export function setBidderRtb (bidderOrtb2, moduleConfig, segmentData) {
  *                                           the transformations on user data to include the ORTB2 object
  * @param {string[]} segmentIDs - Permutive segment IDs
  * @param {string[]} sspSegmentIDs - Permutive SSP segment IDs
+ * @param {Object} topics - Privacy Sandbox Topics, keyed by IAB taxonomy version (600, 601, etc.)
  * @param {Object} segmentData - The segments available for targeting
  * @return {Object} Merged ortb2 object
  */
-function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, transformationConfigs, segmentData) {
+function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, topics, transformationConfigs, segmentData) {
   logger.logInfo(`Current ortb2 config`, { bidder, config: currConfig })
 
   const customCohortsData = deepAccess(segmentData, bidder) || []
@@ -157,9 +163,21 @@ function updateOrtbConfig(bidder, currConfig, segmentIDs, sspSegmentIDs, transfo
   const ortbConfig = mergeDeep({}, currConfig)
   const currentUserData = deepAccess(ortbConfig, 'ortb2.user.data') || []
 
+  let topicsUserData = []
+  for (const [k, value] of Object.entries(topics)) {
+    topicsUserData.push({
+      name,
+      ext: {
+        segtax: Number(k)
+      },
+      segment: value.map(topic => ({ id: topic.toString() })),
+    })
+  }
+
   const updatedUserData = currentUserData
     .filter(el => el.name !== permutiveUserData.name && el.name !== customCohortsUserData.name)
     .concat(permutiveUserData, transformedUserData, customCohortsUserData)
+    .concat(topicsUserData)
 
   logger.logInfo(`Updating ortb2.user.data`, { bidder, user_data: updatedUserData })
   deepSetValue(ortbConfig, 'ortb2.user.data', updatedUserData)
@@ -307,12 +325,17 @@ export function getSegments (maxSegs) {
       cohorts: [],
       ssps: []
     }),
+    topics: readSegments('_ppsts', {}),
   }
 
   for (const bidder in segments) {
     if (bidder === 'ssp') {
       if (segments[bidder].cohorts && Array.isArray(segments[bidder].cohorts)) {
         segments[bidder].cohorts = segments[bidder].cohorts.slice(0, maxSegs)
+      }
+    } else if (bidder === 'topics') {
+      for (const taxonomy in segments[bidder]) {
+        segments[bidder][taxonomy] = segments[bidder][taxonomy].slice(0, maxSegs)
       }
     } else {
       segments[bidder] = segments[bidder].slice(0, maxSegs)
