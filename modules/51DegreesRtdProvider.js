@@ -81,6 +81,15 @@ export const get51DegreesJSURL = (pathData) => {
 /**
  * Check if meta[http-equiv="Delegate-CH"] tag is present in the document head and points to 51Degrees cloud
  *
+ * The way to delegate processing User-Agent Client Hints to a 3rd party is either
+ * via setting Permissions-Policy + Accept-CH response headers or Delegate-CH meta-http equiv.
+ * Of those two, Delegate-CH meta http-equiv is an easier and more performant option
+ * (client hints are sent on the very first request without a round trip required).
+ * Using the getHighEntropyValues() API is an alternative;
+ * however, Google is likely to restrict it as part of the Privacy Sandbox in future
+ * versions of Chrome, so we want to be future-proof and transparent here.
+ * Hence, a check that would output the warning if the user does not have proper delegation of UA-CH.
+ *
  * @returns {boolean} True if 51Degrees meta is present
  * @returns {boolean} False if 51Degrees meta is not present
  */
