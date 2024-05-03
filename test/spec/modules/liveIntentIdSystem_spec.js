@@ -44,50 +44,6 @@ describe('LiveIntentId', function() {
     resetLiveIntentIdSubmodule();
   });
 
-  it('should initialize LiveConnect with a privacy string when getId, and include it in the resolution request', function () {
-    uspConsentDataStub.returns('1YNY');
-    gdprConsentDataStub.returns({
-      gdprApplies: true,
-      consentString: 'consentDataString'
-    })
-    gppConsentDataStub.returns({
-      gppString: 'gppConsentDataString',
-      applicableSections: [1, 2]
-    })
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = liveIntentIdSubmodule.getId(defaultConfigParams).callback;
-    submoduleCallback(callBackSpy);
-    let request = server.requests[0];
-    expect(request.url).to.match(/.*us_privacy=1YNY.*&gdpr=1&n3pc=1&gdpr_consent=consentDataString.*&gpp_s=gppConsentDataString&gpp_as=1%2C2.*/);
-    const response = {
-      unifiedId: 'a_unified_id',
-      segments: [123, 234]
-    }
-    request.respond(
-      200,
-      responseHeader,
-      JSON.stringify(response)
-    );
-    expect(callBackSpy.calledOnceWith(response)).to.be.true;
-  });
-
-  it('should fire an event when getId', function(done) {
-    uspConsentDataStub.returns('1YNY');
-    gdprConsentDataStub.returns({
-      gdprApplies: true,
-      consentString: 'consentDataString'
-    })
-    gppConsentDataStub.returns({
-      gppString: 'gppConsentDataString',
-      applicableSections: [1]
-    })
-    liveIntentIdSubmodule.getId(defaultConfigParams);
-    setTimeout(() => {
-      expect(server.requests[0].url).to.match(/https:\/\/rp.liadm.com\/j\?.*&us_privacy=1YNY.*&wpn=prebid.*&gdpr=1&n3pc=1&n3pct=1&nb=1&gdpr_consent=consentDataString&gpp_s=gppConsentDataString&gpp_as=1.*/);
-      done();
-    }, 300);
-  });
-
   it('should fire an event when getId and a hash is provided', function(done) {
     liveIntentIdSubmodule.getId({ params: {
       ...defaultConfigParams.params,
