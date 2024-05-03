@@ -22,6 +22,7 @@ export const converter = ortbConverter({
 
     return buildBidResponse(bid, context)
   },
+
   context: {
     ttl: 360,
   }
