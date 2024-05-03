@@ -1,7 +1,7 @@
 import {createEidsArray} from 'modules/userId/eids.js';
 import {expect} from 'chai';
 
-//  Note: In unit tets cases for bidders, call the createEidsArray function over userId object that is used for calling fetchBids
+//  Note: In unit test cases for bidders, call the createEidsArray function over userId object that is used for calling fetchBids
 //      this way the request will stay consistent and unit test cases will not need lots of changes.
 
 describe('eids array generation for known sub-modules', function() {
@@ -181,6 +181,20 @@ describe('eids array generation for known sub-modules', function() {
       source: 'liveintent.com',
       uids: [{id: 'some-random-id-value', atype: 3}],
       ext: {segments: ['s1', 's2']}
+    });
+  });
+
+  it('fpid; getValue call', function() {
+    const userId = {
+      lipb: {
+        idCookie: 'some-random-id-value'
+      }
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'fpid.liveintent.com',
+      uids: [{id: 'some-random-id-value', atype: 1}]
     });
   });
 
