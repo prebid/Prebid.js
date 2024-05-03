@@ -186,8 +186,8 @@ describe('eids array generation for known sub-modules', function() {
 
   it('fpid; getValue call', function() {
     const userId = {
-      lipb: {
-        idCookie: 'some-random-id-value'
+      fpid: {
+        id: 'some-random-id-value'
       }
     };
     const newEids = createEidsArray(userId);
