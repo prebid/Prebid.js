@@ -295,6 +295,7 @@ describe('LiveIntentId', function() {
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
     expect(request.url).to.be.eq(`https://idx.liadm.com/idex/prebid/89899?duid=${oldCookie}&cd=.localhost&resolve=nonId`);
+    expect(request.url).to.be.eq(`https://idx.liadm.com/idex/prebid/89899?duid=${oldCookie}&cd=.localhost&resolve=nonId`);
     request.respond(
       200,
       responseHeader,
