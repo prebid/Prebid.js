@@ -20,8 +20,8 @@ Performax bid adapter supports Banner.
         {
             code: 'performax-div',
             mediaTypes: {
-                banner: { sizes: [[300, 300]]},
-           
+                banner: {sizes: [[300, 300]]},
+            },
             bids: [
                 {
                     bidder: "performax",
@@ -30,7 +30,7 @@ Performax bid adapter supports Banner.
                     }
                 }
             ]
-        },}
+        },
     ];
 ```
 
