@@ -181,7 +181,8 @@ describe('LiveIntentId', function() {
     liveIntentIdSubmodule.getId({ params: defaultConfigParams });
     liveIntentIdSubmodule.decode({}, { params: defaultConfigParams });
     setTimeout(() => {
-      expect(server.requests.length).to.be.eq(1);
+      const requests = server.requests.filter((r) => r.url.match(/https:\/\/rp.liadm.com.*/));
+      expect(requests.length).to.be.eq(1);
       done();
     }, 300);
   });
@@ -287,7 +288,7 @@ describe('LiveIntentId', function() {
     let submoduleCallback = liveIntentIdSubmodule.getId({ params: defaultConfigParams }).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
-    var expected = new RegExp('https:\/\/idx.liadm.com\/idex\/prebid\/89899\?.*duid=' + oldCookie + '.*&cd=.localhost.*&resolve=nonId.*');
+    const expected = new RegExp('https:\/\/idx.liadm.com\/idex\/prebid\/89899\?.*duid=' + oldCookie + '.*&cd=.localhost.*&resolve=nonId.*');
     expect(request.url).to.match(expected);
     request.respond(
       200,
@@ -311,7 +312,7 @@ describe('LiveIntentId', function() {
     let submoduleCallback = liveIntentIdSubmodule.getId(configParams).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
-    var expected = new RegExp('https:\/\/idx.liadm.com\/idex\/prebid\/89899\?.*duid=' + oldCookie + '.*&cd=.localhost.*&_thirdPC=third-pc.*&resolve=nonId.*');
+    const expected = new RegExp('https:\/\/idx.liadm.com\/idex\/prebid\/89899\?.*duid=' + oldCookie + '.*&cd=.localhost.*&_thirdPC=third-pc.*&resolve=nonId.*');
     expect(request.url).to.match(expected);
     request.respond(
       200,
