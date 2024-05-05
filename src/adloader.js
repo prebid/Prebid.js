@@ -10,6 +10,7 @@ const _approvedLoadExternalJSList = [
   'outstream',
   'adagio',
   'spotx',
+  'kueezrtb',
   'browsi',
   'brandmetrics',
   'justtag',
