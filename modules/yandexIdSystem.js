@@ -10,6 +10,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import { logInfo } from '../src/utils.js';
 
 const BIDDER_CODE = 'yandex';
+const BIDDER_EID_KEY = 'yandex.com';
 const YANDEX_ID_KEY = 'yandexId';
 
 const USER_ID_KEY = '_ym_uid';
@@ -48,7 +49,7 @@ export const yandexIdSubmodule = {
   },
   eids: {
     [YANDEX_ID_KEY]: {
-      source: BIDDER_CODE,
+      source: BIDDER_EID_KEY,
       atype: 1,
     },
   },
