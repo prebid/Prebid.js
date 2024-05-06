@@ -346,6 +346,7 @@ describe('LiveIntentId', function() {
       JSON.stringify({})
     );
     expect(callBackSpy.calledOnce).to.be.true;
+    expect(callBackSpy.calledOnce).to.be.true;
   });
 
   it('should send an error when the cookie jar throws an unexpected error', function() {
