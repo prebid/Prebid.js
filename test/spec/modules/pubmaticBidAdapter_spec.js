@@ -1,10 +1,10 @@
 import { expect } from 'chai';
-import { spec, checkVideoPlacement, _getDomainFromURL, assignDealTier, prepareMetaObject } from 'modules/pubmaticBidAdapter.js';
+import { spec, checkVideoPlacement, _getDomainFromURL, assignDealTier, prepareMetaObject, getDeviceConnectionType } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
 import { bidderSettings } from 'src/bidderSettings.js';
-const constants = require('src/constants.json');
+const constants = require('src/constants.js');
 
 describe('PubMatic adapter', function () {
   let bidRequests;
@@ -1781,6 +1781,37 @@ describe('PubMatic adapter', function () {
         expect(data2.regs).to.equal(undefined);// USP/CCPAs
       });
 
+      it('Request params should include DSA signals if present', function () {
+        const dsa = {
+          dsarequired: 3,
+          pubrender: 0,
+          datatopub: 2,
+          transparency: [
+            {
+              domain: 'platform1domain.com',
+              dsaparams: [1]
+            },
+            {
+              domain: 'SSP2domain.com',
+              dsaparams: [1, 2]
+            }
+          ]
+        };
+
+        let bidRequest = {
+		      ortb2: {
+            regs: {
+              ext: {
+                dsa
+              }
+            }
+          }
+        };
+        let request = spec.buildRequests(bidRequests, bidRequest);
+        let data = JSON.parse(request.data);
+        assert.deepEqual(data.regs.ext.dsa, dsa);
+      });
+
       it('Request params check with JW player params', function() {
         let bidRequests = [
           {
@@ -2933,6 +2964,14 @@ describe('PubMatic adapter', function () {
           expect(data.imp[0].ext.ae).to.equal(1);
         });
       });
+
+      it('should send connectiontype parameter if browser contains navigator.connection property', function () {
+        const bidRequest = spec.buildRequests(bidRequests);
+        let data = JSON.parse(bidRequest.data);
+        if (window.navigator && window.navigator.connection) {
+          expect(data.device).to.include.any.keys('connectiontype');
+        }
+      });
   	});
 
     it('Request params dctr check', function () {
@@ -3753,6 +3792,16 @@ describe('PubMatic adapter', function () {
 
     describe('Preapare metadata', function () {
       it('Should copy all fields from ext to meta', function () {
+        const dsa = {
+          behalf: 'Advertiser',
+          paid: 'Advertiser',
+          transparency: [{
+            domain: 'dsp1domain.com',
+            dsaparams: [1, 2]
+          }],
+          adrender: 1
+        };
+
         const bid = {
           'adomain': [
             'mystartab.com'
@@ -3764,6 +3813,7 @@ describe('PubMatic adapter', function () {
             'deal_channel': 1,
             'bidtype': 0,
             advertiserId: 'adid',
+            dsa,
             // networkName: 'nwnm',
             // primaryCatId: 'pcid',
             // advertiserName: 'adnm',
@@ -3795,6 +3845,7 @@ describe('PubMatic adapter', function () {
         expect(br.meta.secondaryCatIds[0]).to.equal('IAB_CATEGORY');
         expect(br.meta.advertiserDomains).to.be.an('array').with.length.above(0); // adomain
         expect(br.meta.clickUrl).to.equal('mystartab.com'); // adomain
+        expect(br.meta.dsa).to.equal(dsa); // dsa
       });
 
       it('Should be empty, when ext and adomain is absent in bid object', function () {
@@ -3974,6 +4025,21 @@ describe('PubMatic adapter', function () {
             type: 'image', url: `${syncurl_image}&gpp=${encodeURIComponent(gppConsent.gppString)}&gpp_sid=${encodeURIComponent(gppConsent.applicableSections)}`
           }]);
         });
+      });
+    });
+
+    describe('getDeviceConnectionType', function() {
+      it('is a function', function(done) {
+        getDeviceConnectionType.should.be.a('function');
+        done();
+      });
+
+      it('should return matched value if navigator.connection is present', function(done) {
+        const connectionValue = getDeviceConnectionType();
+        if (window?.navigator?.connection) {
+          expect(connectionValue).to.be.a('number');
+        }
+        done();
       });
     });
 

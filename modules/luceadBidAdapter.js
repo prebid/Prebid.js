@@ -5,15 +5,17 @@ import {getUniqueIdentifierStr, logInfo, deepSetValue} from '../src/utils.js';
 import {fetch} from '../src/ajax.js';
 
 const bidderCode = 'lucead';
+const bidderName = 'Lucead';
 let baseUrl = 'https://lucead.com';
 let staticUrl = 'https://s.lucead.com';
 let companionUrl = 'https://cdn.jsdelivr.net/gh/lucead/prebid-js-external-js-lucead@master/dist/prod.min.js';
 let endpointUrl = 'https://prebid.lucead.com/go';
 const defaultCurrency = 'EUR';
 const defaultTtl = 500;
+const aliases = ['adliveplus'];
 
 function isDevEnv() {
-  return location.hostname.endsWith('.ngrok-free.app') || location.href.startsWith('https://ayads.io/test');
+  return location.hash.includes('prebid-dev') || location.href.startsWith('https://ayads.io/test');
 }
 
 function isBidRequestValid(bidRequest) {
@@ -21,7 +23,7 @@ function isBidRequestValid(bidRequest) {
 }
 
 export function log(msg, obj) {
-  logInfo('Lucead - ' + msg, obj);
+  logInfo(`${bidderName} - ${msg}`, obj);
 }
 
 function buildRequests(bidRequests, bidderRequest) {
@@ -149,7 +151,7 @@ function onTimeout(timeoutData) {
 export const spec = {
   code: bidderCode,
   // gvlid: BIDDER_GVLID,
-  aliases: [],
+  aliases,
   isBidRequestValid,
   buildRequests,
   interpretResponse,

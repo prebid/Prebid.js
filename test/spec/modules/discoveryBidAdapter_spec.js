@@ -9,7 +9,8 @@ import {
   getConnectionDownLink,
   THIRD_PARTY_COOKIE_ORIGIN,
   COOKIE_KEY_MGUID,
-  getCurrentTimeToUTCString
+  getCurrentTimeToUTCString,
+  buildUTMTagData
 } from 'modules/discoveryBidAdapter.js';
 import * as utils from 'src/utils.js';
 
@@ -88,6 +89,22 @@ describe('discovery:BidAdapterTests', function () {
         bidderWinsCount: 0,
       },
     ],
+    ortb2: {
+      user: {
+        data: {
+          segment: [
+            {
+              id: '412'
+            }
+          ],
+          name: 'test.popin.cc',
+          ext: {
+            segclass: '1',
+            segtax: 503
+          }
+        }
+      }
+    }
   };
   let request = [];
 
@@ -189,6 +206,13 @@ describe('discovery:BidAdapterTests', function () {
     let req_data = JSON.parse(request.data);
     expect(req_data.imp).to.have.lengthOf(1);
   });
+  describe('first party data', function () {
+    it('should pass additional parameter in request for topics', function () {
+      const request = spec.buildRequests(bidRequestData.bids, bidRequestData);
+      let res = JSON.parse(request.data);
+      expect(res.ext.tpData).to.deep.equal(bidRequestData.ortb2.user.data);
+    });
+  });
 
   describe('discovery: buildRequests', function() {
     describe('getPmgUID function', function() {
@@ -226,6 +250,39 @@ describe('discovery:BidAdapterTests', function () {
         storage.cookiesAreEnabled.callsFake(() => false);
         storage.getCookie.callsFake(() => null);
         getPmgUID();
+        expect(storage.setCookie.calledOnce).to.be.false;
+      });
+    })
+    describe('buildUTMTagData function', function() {
+      let sandbox;
+
+      beforeEach(() => {
+        sandbox = sinon.sandbox.create();
+        sandbox.stub(storage, 'getCookie');
+        sandbox.stub(storage, 'setCookie');
+        sandbox.stub(utils, 'parseUrl').returns({
+          search: {
+            utm_source: 'example.com'
+          }
+        });
+        sandbox.stub(storage, 'cookiesAreEnabled');
+      })
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should set UTM cookie', () => {
+        storage.cookiesAreEnabled.callsFake(() => true);
+        storage.getCookie.callsFake(() => null);
+        buildUTMTagData();
+        expect(storage.setCookie.calledOnce).to.be.true;
+      });
+
+      it('should not set UTM when cookies are not enabled', () => {
+        storage.cookiesAreEnabled.callsFake(() => false);
+        storage.getCookie.callsFake(() => null);
+        buildUTMTagData();
         expect(storage.setCookie.calledOnce).to.be.false;
       });
     })

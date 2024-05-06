@@ -125,7 +125,8 @@ describe('Adkernel adapter', function () {
       bidId: 'Bid_01',
       bidderRequestId: 'req-001',
       auctionId: 'auc-001'
-    }, bid_native = {
+    },
+    bid_native = {
       bidder: 'adkernel',
       params: {zoneId: 1, host: 'rtb.adkernel.com'},
       mediaTypes: {
@@ -171,6 +172,33 @@ describe('Adkernel adapter', function () {
           }
         }
       },
+      nativeOrtbRequest: {
+        ver: '1.2',
+        assets: [
+          {
+            id: 0, required: 1, title: {len: 80}
+          }, {
+            id: 1, required: 1, data: {type: 2}},
+          {
+            id: 2, required: 1, data: {type: 10}
+          }, {
+            id: 3, required: 1, img: {type: 1, wmin: 50, hmin: 50}
+          }, {
+            id: 4, required: 1, img: {type: 3, w: 300, h: 200}
+          }, {
+            id: 5, required: 0, data: {type: 3}
+          }, {
+            id: 6, required: 0, data: {type: 6}
+          }, {
+            id: 7, required: 0, data: {type: 12}
+          }, {
+            id: 8, required: 0, data: {type: 1}
+          }, {
+            id: 9, required: 0, data: {type: 11}
+          }
+        ],
+        privacy: 1
+      },
       adUnitCode: 'ad-unit-1',
       transactionId: 'f82c64b8-c602-42a4-9791-4a268f6559ed',
       bidId: 'Bid_01',
@@ -190,7 +218,8 @@ describe('Adkernel adapter', function () {
           adm: '<!-- admarkup here -->',
           w: 300,
           h: 250,
-          dealid: 'deal'
+          dealid: 'deal',
+          mtype: 1
         }]
       }],
       ext: {
@@ -206,7 +235,8 @@ describe('Adkernel adapter', function () {
           price: 0.00145,
           adid: '158801',
           nurl: 'https://rtb.com/win?i=sZSYq5zYMxo_0&f=nurl',
-          cid: '16855'
+          cid: '16855',
+          mtype: 2
         }]
       }],
     }, usersyncOnlyResponse = {
@@ -241,6 +271,7 @@ describe('Adkernel adapter', function () {
           cat: ['IAB1-4', 'IAB8-16', 'IAB25-5'],
           cid: '1',
           crid: '4',
+          mtype: 4,
           ext: {
             'advertiser_id': 777,
             'advertiser_name': 'advertiser',
@@ -262,7 +293,8 @@ describe('Adkernel adapter', function () {
           adid: '158801',
           adm: '<!-- admarkup -->',
           nurl: 'https://rtb.com/win?i=sZSYq5zYMxo_0&f=nurl',
-          cid: '16855'
+          cid: '16855',
+          mtype: 1
         }, {
           id: 'sZSYq5zYMxo_1',
           impid: 'Bid_01v__mf',
@@ -270,7 +302,8 @@ describe('Adkernel adapter', function () {
           price: 0.25,
           adid: '158801',
           nurl: 'https://rtb.com/win?i=sZSYq5zYMxo_1&f=nurl',
-          cid: '16855'
+          cid: '16855',
+          mtype: 2
         }]
       }],
       bidid: 'pTuOlf5KHUo',
@@ -679,18 +712,18 @@ describe('Adkernel adapter', function () {
       expect(bidRequests[0].imp[0]).to.have.property('native');
       expect(bidRequests[0].imp[0].native).to.have.property('request');
       let request = JSON.parse(bidRequests[0].imp[0].native.request);
-      expect(request).to.have.property('ver', '1.1');
+      expect(request).to.have.property('ver', '1.2');
       expect(request.assets).to.have.length(10);
       expect(request.assets[0]).to.be.eql({id: 0, required: 1, title: {len: 80}});
-      expect(request.assets[1]).to.be.eql({id: 3, required: 1, data: {type: 2}});
-      expect(request.assets[2]).to.be.eql({id: 4, required: 1, data: {type: 10}});
-      expect(request.assets[3]).to.be.eql({id: 1, required: 1, img: {wmin: 50, hmin: 50, type: 1}});
-      expect(request.assets[4]).to.be.eql({id: 2, required: 1, img: {w: 300, h: 200, type: 3}});
-      expect(request.assets[5]).to.be.eql({id: 11, required: 0, data: {type: 3}});
-      expect(request.assets[6]).to.be.eql({id: 8, required: 0, data: {type: 6}});
-      expect(request.assets[7]).to.be.eql({id: 10, required: 0, data: {type: 12}});
-      expect(request.assets[8]).to.be.eql({id: 5, required: 0, data: {type: 1}});
-      expect(request.assets[9]).to.be.eql({id: 14, required: 0, data: {type: 11}});
+      expect(request.assets[1]).to.be.eql({id: 1, required: 1, data: {type: 2}});
+      expect(request.assets[2]).to.be.eql({id: 2, required: 1, data: {type: 10}});
+      expect(request.assets[3]).to.be.eql({id: 3, required: 1, img: {wmin: 50, hmin: 50, type: 1}});
+      expect(request.assets[4]).to.be.eql({id: 4, required: 1, img: {w: 300, h: 200, type: 3}});
+      expect(request.assets[5]).to.be.eql({id: 5, required: 0, data: {type: 3}});
+      expect(request.assets[6]).to.be.eql({id: 6, required: 0, data: {type: 6}});
+      expect(request.assets[7]).to.be.eql({id: 7, required: 0, data: {type: 12}});
+      expect(request.assets[8]).to.be.eql({id: 8, required: 0, data: {type: 1}});
+      expect(request.assets[9]).to.be.eql({id: 9, required: 0, data: {type: 11}});
     });
 
     it('native response processing', () => {
@@ -707,15 +740,21 @@ describe('Adkernel adapter', function () {
       expect(resp.meta.secondaryCatIds).to.be.eql(['IAB1-4', 'IAB8-16', 'IAB25-5']);
       expect(resp).to.have.property('mediaType', NATIVE);
       expect(resp).to.have.property('native');
-      expect(resp.native).to.have.property('clickUrl', 'http://rtb.com/click?i=pTuOlf5KHUo_0');
-      expect(resp.native.impressionTrackers).to.be.eql(['http://rtb.com/win?i=pTuOlf5KHUo_0&f=imp']);
-      expect(resp.native).to.have.property('title', 'Title');
-      expect(resp.native).to.have.property('body', 'Description');
-      expect(resp.native).to.have.property('body2', 'Additional description');
-      expect(resp.native.icon).to.be.eql({url: 'http://rtb.com/thumbnail?i=pTuOlf5KHUo_0&imgt=icon', width: 50, height: 50});
-      expect(resp.native.image).to.be.eql({url: 'http://rtb.com/thumbnail?i=pTuOlf5KHUo_0', width: 300, height: 200});
-      expect(resp.native).to.have.property('sponsoredBy', 'Sponsor.com');
-      expect(resp.native).to.have.property('displayUrl', 'displayurl.com');
+      expect(resp.native).to.have.property('ortb');
+
+      expect(resp.native.ortb).to.be.eql({
+        assets: [
+          {id: 0, title: {text: 'Title'}},
+          {id: 3, data: {value: 'Description'}},
+          {id: 4, data: {value: 'Additional description'}},
+          {id: 1, img: {url: 'http://rtb.com/thumbnail?i=pTuOlf5KHUo_0&imgt=icon', w: 50, h: 50}},
+          {id: 2, img: {url: 'http://rtb.com/thumbnail?i=pTuOlf5KHUo_0', w: 300, h: 200}},
+          {id: 5, data: {value: 'Sponsor.com'}},
+          {id: 14, data: {value: 'displayurl.com'}}
+        ],
+        link: {url: 'http://rtb.com/click?i=pTuOlf5KHUo_0'},
+        imptrackers: ['http://rtb.com/win?i=pTuOlf5KHUo_0&f=imp']
+      });
     });
   });
 });

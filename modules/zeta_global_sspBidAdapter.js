@@ -50,6 +50,7 @@ const VIDEO_CUSTOM_PARAMS = {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: 469,
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**
@@ -140,7 +141,7 @@ export const spec = {
     };
     const rInfo = bidderRequest.refererInfo;
     // TODO: do the fallbacks make sense here?
-    payload.site.page = rInfo.page || rInfo.topmostLocation;
+    payload.site.page = cropPage(rInfo.page || rInfo.topmostLocation);
     payload.site.domain = parseDomain(payload.site.page, {noLeadingWww: true});
 
     payload.device.ua = navigator.userAgent;
@@ -271,7 +272,14 @@ export const spec = {
 
   onTimeout: function(timeoutData) {
     if (timeoutData) {
-      ajax(TIMEOUT_URL, null, JSON.stringify(timeoutData), {
+      const payload = timeoutData.map(d => ({
+        bidder: d?.bidder,
+        shortname: d?.params?.map(p => p?.tags?.shortname).find(p => p),
+        sid: d?.params?.map(p => p?.sid).find(p => p),
+        country: d?.ortb2?.device?.geo?.country,
+        devicetype: d?.ortb2?.device?.devicetype
+      }));
+      ajax(TIMEOUT_URL, null, JSON.stringify(payload), {
         method: 'POST',
         options: {
           withCredentials: false,
@@ -383,6 +391,30 @@ function provideMediaType(zetaBid, bid, bidRequest) {
   } else {
     bid.mediaType = bidRequest.imp[0].video ? VIDEO : BANNER;
   }
+}
+
+function cropPage(page) {
+  if (page) {
+    if (page.length > 100) {
+      page = page.substring(0, 100);
+    }
+    if (page.startsWith('https://')) {
+      page = page.substring(8);
+    } else if (page.startsWith('http://')) {
+      page = page.substring(7);
+    }
+    if (page.startsWith('www.')) {
+      page = page.substring(4);
+    }
+    for (let i = 3; i < page.length; i++) {
+      const c = page[i];
+      if (c === '#' || c === '?') {
+        return page.substring(0, i);
+      }
+    }
+    return page;
+  }
+  return '';
 }
 
 function clearEmpties(o) {
