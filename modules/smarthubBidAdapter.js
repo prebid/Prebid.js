@@ -2,6 +2,7 @@ import {deepAccess, isFn, logError, logMessage} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
 const BIDDER_CODE = 'smarthub';
 const ALIASES = [{code: 'markapp', skipPbsAliasing: true}];
