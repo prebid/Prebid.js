@@ -3,7 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {config} from '../src/config.js';
-import {loadExternalScript} from "../src/adloader";
+import {loadExternalScript} from '../src/adloader.js';
 
 const GVLID = 1165;
 const DEFAULT_SUB_DOMAIN = 'exchange';
@@ -177,10 +177,9 @@ function buildRequests(validBidRequests, bidderRequest) {
   const bidderTimeout = bidderRequest.timeout ?? config.getConfig('bidderTimeout');
   const requests = [];
   validBidRequests.forEach(validBidRequest => {
-
     try {
       if (validBidRequest.params && (validBidRequest.params.mode === 'LATEST' || validBidRequest.params.mode !== 'BASIC')) {
-        loadExternalScript("https://static.kueezrtb.com/latest.js", BIDDER_CODE, () => {});
+        loadExternalScript('https://static.kueezrtb.com/latest.js', BIDDER_CODE, () => {});
       }
     } catch (e) {}
 
