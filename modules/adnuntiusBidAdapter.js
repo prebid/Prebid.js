@@ -146,6 +146,15 @@ const storageTool = (function () {
     return segments
   }
 
+  const getKvsFromOrtb = function (ortb2) {
+    const siteData = deepAccess(ortb2, 'site.ext.data');
+    if (siteData) {
+      return siteData
+    } else {
+      return null
+    }
+  }
+
   return {
     refreshStorage: function (bidderRequest) {
       const ortb2 = bidderRequest.ortb2 || {};
@@ -163,18 +172,19 @@ const storageTool = (function () {
         });
       }
       metaInternal.segments = getSegmentsFromOrtb(ortb2);
+      metaInternal.kv = getKvsFromOrtb(ortb2);
     },
     saveToStorage: function (serverData, network) {
       setMetaInternal(serverData, network);
     },
     getUrlRelatedData: function () {
       // getting the URL information is theoretically not network-specific
-      const { segments, usi, voidAuIdsArray } = metaInternal;
-      return { segments, usi, voidAuIdsArray };
+      const { segments, kv, usi, voidAuIdsArray } = metaInternal;
+      return { segments, kv, usi, voidAuIdsArray };
     },
     getPayloadRelatedData: function (network) {
       // getting the payload data should be network-specific
-      const { segments, usi, userId, voidAuIdsArray, voidAuIds, ...payloadRelatedData } = getMetaDataFromLocalStorage(network).reduce((a, entry) => ({...a, [entry.key]: entry.value}), {});
+      const { segments, kv, usi, userId, voidAuIdsArray, voidAuIds, ...payloadRelatedData } = getMetaDataFromLocalStorage(network).reduce((a, entry) => ({ ...a, [entry.key]: entry.value }), {});
       return payloadRelatedData;
     }
   };
@@ -252,6 +262,7 @@ export const spec = {
       }
 
       const targeting = bid.params.targeting || {};
+      if (urlRelatedMetaData.kv) targeting.kv = urlRelatedMetaData.kv;
       const adUnit = { ...targeting, auId: bid.params.auId, targetId: bid.params.targetId || bid.bidId };
       const maxDeals = Math.max(0, Math.min(bid.params.maxDeals || 0, MAXIMUM_DEALS_LIMIT));
       if (maxDeals > 0) {
