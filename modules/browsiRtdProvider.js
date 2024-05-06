@@ -34,7 +34,7 @@ import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 const MODULE_NAME = 'browsi';
 
 const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME});
-const RANDOM = Math.floor(Math.random() * 10) +1;
+const RANDOM = Math.floor(Math.random() * 10) + 1;
 
 /** @type {ModuleParams} */
 let _moduleParams = {};
@@ -67,13 +67,13 @@ export function addBrowsiTag(data) {
   return script;
 }
 
-function setKeyValue(){
+function setKeyValue() {
   const key = _moduleParams.splitKey;
-  if (!key || typeof key !== "string") return;
+  if (!key || typeof key !== 'string') return;
   window.googletag = window.googletag || {cmd: []};
   window.googletag.cmd = window.googletag.cmd || [];
   window.googletag.cmd.push(() => {
-      window.googletag.pubads().setTargeting(key, RANDOM.toString());
+    window.googletag.pubads().setTargeting(key, RANDOM.toString());
   });
 }
 
