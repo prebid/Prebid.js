@@ -1,4 +1,5 @@
 **Table of Contents**
+
 - [Release Schedule](#release-schedule)
 - [Release Process](#release-process)
   - [1. Make sure that all PRs have been named and labeled properly per the PR Process](#1-make-sure-that-all-prs-have-been-named-and-labeled-properly-per-the-pr-process)
