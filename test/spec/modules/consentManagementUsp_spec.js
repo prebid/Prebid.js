@@ -52,7 +52,7 @@ describe('consentManagement', function () {
         }
       }
     });
-    expect(uspDataHandler.get()).to.equal('1YYY');
+    expect(uspDataHandler.getConsentData()).to.equal('1YYY');
   })
 
   describe('setConsentConfig tests:', function () {
