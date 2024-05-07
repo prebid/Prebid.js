@@ -18,8 +18,7 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs,
-  transformBidParams
+  getUserSyncs
 };
 
 registerBidder(spec);
@@ -152,13 +151,6 @@ const converter = ortbConverter({
     }
   }
 });
-
-function transformBidParams(params, isOpenRtb) {
-  return convertTypes({
-    'unit': 'string',
-    'customFloor': 'number'
-  }, params);
-}
 
 function isBidRequestValid(bidRequest) {
   const hasDelDomainOrPlatform = bidRequest.params.delDomain ||
