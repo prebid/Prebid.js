@@ -171,7 +171,8 @@ const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;
 const LOCAL_STORAGE = STORAGE_TYPE_LOCALSTORAGE;
 const DEFAULT_SYNC_DELAY = 500;
-const NO_AUCTION_DELAY = 0;
+/* see https://github.com/prebid/Prebid.js/issues/8311 */
+const NO_AUCTION_DELAY = 500;
 export const PBJS_USER_ID_OPTOUT_NAME = '_pbjs_id_optout';
 export const coreStorage = getCoreStorageManager('userId');
 export const dep = {
