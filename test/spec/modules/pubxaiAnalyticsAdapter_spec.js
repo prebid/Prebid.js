@@ -9,7 +9,6 @@ import adapterManager from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import { getGptSlotInfoForAdUnitCode } from '../../../libraries/gptUtils/gptUtils.js';
 
-
 let events = require('src/events');
 
 describe('pubxai analytics adapter', () => {
