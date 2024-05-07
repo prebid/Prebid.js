@@ -9,27 +9,33 @@ import { deepAccess } from '../src/utils.js';
  * @return video metadata
  */
 function getVideoMetadata(bidRequest, bidderRequest) {
-  const videoAdUnit = deepAccess(bidRequest, 'mediaTypes.video', {});
-  const videoBidderParams = deepAccess(bidRequest, 'params.video', {});
+  const videoParams = deepAccess(bidRequest, 'params.video', {});
 
-  const videoParams = {
-    ...videoAdUnit,
-    ...videoBidderParams, // Bidder Specific overrides
+  // As per oRTB 2.5 spec, "A bid request must not contain both an App and a Site object."
+  // See section 3.2.14
+  // Content object is either from Object: Site or Object: App
+  const contentObj = deepAccess(bidderRequest, 'ortb2.site')
+    ? deepAccess(bidderRequest, 'ortb2.site.content')
+    : deepAccess(bidderRequest, 'ortb2.app.content');
+
+  const parsedContentData = {
+    // Store as object keys to ensure uniqueness
+    iabcat1: {},
+    iabcat2: {},
   };
 
-  // Store as object keys to ensure uniqueness
-  const iabcat1 = {};
-  const iabcat2 = {};
-
-  deepAccess(bidderRequest, 'ortb2.site.content.data', []).forEach((data) => {
+  deepAccess(contentObj, 'data', []).forEach((data) => {
     if ([4, 5, 6, 7].includes(data?.ext?.segtax)) {
       (Array.isArray(data.segment) ? data.segment : []).forEach((segment) => {
         if (typeof segment.id === 'string') {
           // See https://docs.prebid.org/features/firstPartyData.html#segments-and-taxonomy
           // Only take IAB cats of taxonomy V1
-          if (data.ext.segtax === 4) iabcat1[segment.id] = 1;
-          // Only take IAB cats of taxonomy V2 or higher
-          if ([5, 6, 7].includes(data.ext.segtax)) iabcat2[segment.id] = 1;
+          if (data.ext.segtax === 4) {
+            parsedContentData.iabcat1[segment.id] = 1;
+          } else {
+            // Only take IAB cats of taxonomy V2 or higher
+            parsedContentData.iabcat2[segment.id] = 1;
+          }
         }
       });
     }
@@ -37,18 +43,25 @@ function getVideoMetadata(bidRequest, bidderRequest) {
 
   const videoMetadata = {
     description: videoParams.description || '',
-    duration: videoParams.duration || 0,
-    iabcat1: Object.keys(iabcat1),
+    duration: videoParams.duration || deepAccess(contentObj, 'len', 0),
+    iabcat1: Array.isArray(videoParams.iabcat1)
+      ? videoParams.iabcat1
+      : Array.isArray(deepAccess(contentObj, 'cat'))
+        ? contentObj.cat
+        : Object.keys(parsedContentData.iabcat1),
     iabcat2: Array.isArray(videoParams.iabcat2)
       ? videoParams.iabcat2
-      : Object.keys(iabcat2),
-    id: videoParams.id || '',
-    lang: videoParams.lang || '',
+      : Object.keys(parsedContentData.iabcat2),
+    id: videoParams.id || deepAccess(contentObj, 'id', ''),
+    lang: videoParams.lang || deepAccess(contentObj, 'language', ''),
     private: videoParams.private || false,
-    tags: videoParams.tags || '',
-    title: videoParams.title || '',
+    tags: videoParams.tags || deepAccess(contentObj, 'keywords', ''),
+    title: videoParams.title || deepAccess(contentObj, 'title', ''),
     topics: videoParams.topics || '',
     xid: videoParams.xid || '',
+    livestream: typeof videoParams.livestream === 'number'
+      ? !!videoParams.livestream
+      : !!deepAccess(contentObj, 'livestream', 0),
   };
 
   return videoMetadata;
@@ -67,7 +80,24 @@ export const spec = {
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    return typeof bid?.params?.apiKey === 'string' && bid.params.apiKey.length > 10;
+    if (bid?.params) {
+      // We only accept video adUnits
+      if (!bid?.mediaTypes?.[VIDEO]) return false;
+
+      // As `context`, `placement` & `plcmt` are optional (although recommended)
+      // values, we check the 3 of them to see if we are in an instream video context
+      const isInstream = bid.mediaTypes[VIDEO].context === 'instream' ||
+        bid.mediaTypes[VIDEO].placement === 1 ||
+        bid.mediaTypes[VIDEO].plcmt === 1;
+
+      // We only accept instream video context
+      if (!isInstream) return false;
+
+      // We need API key
+      return typeof bid.params.apiKey === 'string' && bid.params.apiKey.length > 10;
+    }
+
+    return false;
   },
 
   /**
@@ -83,15 +113,15 @@ export const spec = {
     data: {
       bidder_request: {
         gdprConsent: {
-          apiVersion: bidderRequest?.gdprConsent?.apiVersion || 1,
-          consentString: bidderRequest?.gdprConsent?.consentString || '',
+          apiVersion: deepAccess(bidderRequest, 'gdprConsent.apiVersion', 1),
+          consentString: deepAccess(bidderRequest, 'gdprConsent.consentString', ''),
           // Cast boolean in any case (eg: if value is int) to ensure type
-          gdprApplies: !!bidderRequest?.gdprConsent?.gdprApplies,
+          gdprApplies: !!deepAccess(bidderRequest, 'gdprConsent.gdprApplies'),
         },
         refererInfo: {
-          page: bidderRequest?.refererInfo?.page || '',
+          page: deepAccess(bidderRequest, 'refererInfo.page', ''),
         },
-        uspConsent: bidderRequest?.uspConsent || '',
+        uspConsent: deepAccess(bidderRequest, 'uspConsent', ''),
         gppConsent: {
           gppString: deepAccess(bidderRequest, 'gppConsent.gppString') ||
             deepAccess(bidderRequest, 'ortb2.regs.gpp', ''),
@@ -104,15 +134,28 @@ export const spec = {
       },
       // Cast boolean in any case (value should be 0 or 1) to ensure type
       coppa: !!deepAccess(bidderRequest, 'ortb2.regs.coppa'),
+      // In app context, we need to retrieve additional informations
+      ...(!deepAccess(bidderRequest, 'ortb2.site') && !!deepAccess(bidderRequest, 'ortb2.app') ? {
+        appBundle: deepAccess(bidderRequest, 'ortb2.app.bundle', ''),
+        appStoreUrl: deepAccess(bidderRequest, 'ortb2.app.storeurl', ''),
+      } : {}),
       request: {
-        adUnitCode: bid.adUnitCode || '',
-        auctionId: bid.auctionId || '',
-        bidId: bid.bidId || '',
+        adUnitCode: deepAccess(bid, 'adUnitCode', ''),
+        auctionId: deepAccess(bid, 'auctionId', ''),
+        bidId: deepAccess(bid, 'bidId', ''),
         mediaTypes: {
           video: {
-            playerSize: bid.mediaTypes?.[VIDEO]?.playerSize || [],
             api: bid.mediaTypes?.[VIDEO]?.api || [],
-            startDelay: bid.mediaTypes?.[VIDEO]?.startdelay || 0,
+            mimes: bid.mediaTypes?.[VIDEO]?.mimes || [],
+            minduration: bid.mediaTypes?.[VIDEO]?.minduration || 0,
+            maxduration: bid.mediaTypes?.[VIDEO]?.maxduration || 0,
+            protocols: bid.mediaTypes?.[VIDEO]?.protocols || [],
+            skip: bid.mediaTypes?.[VIDEO]?.skip || 0,
+            skipafter: bid.mediaTypes?.[VIDEO]?.skipafter || 0,
+            skipmin: bid.mediaTypes?.[VIDEO]?.skipmin || 0,
+            startdelay: bid.mediaTypes?.[VIDEO]?.startdelay || 0,
+            w: bid.mediaTypes?.[VIDEO]?.w || 0,
+            h: bid.mediaTypes?.[VIDEO]?.h || 0,
           },
         },
         sizes: bid.sizes || [],
