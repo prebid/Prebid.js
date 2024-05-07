@@ -4,11 +4,11 @@ import {
   getWindowLocation,
   buildUrl,
   cyrb53Hash,
-} from '../src/utils.js';
-import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.js';
-import { getGlobal } from '../src/prebidGlobal.js';
+} from "../src/utils.js";
+import adapter from "../libraries/analyticsAdapter/AnalyticsAdapter.js";
+import adapterManager from "../src/adapterManager.js";
+import { EVENTS } from "../src/constants.js";
+import { getGlobal } from "../src/prebidGlobal.js";
 import {
   getGptSlotInfoForAdUnitCode,
   getGptSlotForAdUnitCode,
@@ -176,20 +176,20 @@ const extractBid = (bidResponse) => {
 const track = ({ eventType, args }) => {
   switch (eventType) {
     // handle invalid bids, and remove them from the adUnit cache
-    case CONSTANTS.EVENTS.BID_TIMEOUT:
+    case EVENTS.BID_TIMEOUT:
       args.map(extractBid).forEach((bid) => {
         bid.renderStatus = 3;
         auctionCache[bid.auctionId].bids.push(bid);
       });
       break;
     // handle valid bid responses and record them as part of an auction
-    case CONSTANTS.EVENTS.BID_RESPONSE:
+    case EVENTS.BID_RESPONSE:
       const bid = Object.assign(extractBid(args), { renderStatus: 2 });
       auctionCache[bid.auctionId].bids.push(bid);
       break;
     // capture extra information from the auction, and if there were no bids
     // (and so no chance of a win) send the auction
-    case CONSTANTS.EVENTS.AUCTION_END:
+    case EVENTS.AUCTION_END:
       Object.assign(
         auctionCache[args.auctionId].floorDetail,
         args.adUnits
@@ -210,7 +210,7 @@ const track = ({ eventType, args }) => {
       }
       break;
     // send the prebid winning bid back to pubx
-    case CONSTANTS.EVENTS.BID_WON:
+    case EVENTS.BID_WON:
       const winningBid = extractBid(args);
       const floorDetail = auctionCache[winningBid.auctionId].floorDetail;
       Object.assign(winningBid, {
@@ -265,21 +265,21 @@ export const getBrowser = () => {
   else if (
     /Chrome/.test(navigator.userAgent) &&
     /Google Inc/.test(navigator.vendor)
-  )
+  ) {
     return "Chrome";
-  else if (navigator.userAgent.match("CriOS")) return "Chrome";
+  } else if (navigator.userAgent.match("CriOS")) return "Chrome";
   else if (/Firefox/.test(navigator.userAgent)) return "Firefox";
   else if (
     /Safari/.test(navigator.userAgent) &&
     /Apple Computer/.test(navigator.vendor)
-  )
+  ) {
     return "Safari";
-  else if (
+  } else if (
     /Trident/.test(navigator.userAgent) ||
     /MSIE/.test(navigator.userAgent)
-  )
+  ) {
     return "Internet Explorer";
-  else return "Others";
+  } else return "Others";
 };
 
 /**
