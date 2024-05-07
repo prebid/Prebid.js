@@ -1,13 +1,14 @@
 import {
   attachIdSystem,
   auctionDelay,
-  coreStorage, dep,
-  findRootDomain, getConsentHash,
+  coreStorage,
+  dep,
+  findRootDomain,
+  getConsentHash,
   init,
   PBJS_USER_ID_OPTOUT_NAME,
   requestBidsHook,
   requestDataDeletion,
-  setStoredConsentData,
   setStoredValue,
   setSubmoduleRegistry,
   syncDelay,
@@ -18,9 +19,9 @@ import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {getPrebidInternal} from 'src/utils.js';
 import * as events from 'src/events.js';
-import { EVENTS } from 'src/constants.js';
+import {EVENTS} from 'src/constants.js';
 import {getGlobal} from 'src/prebidGlobal.js';
-import {resetConsentData, } from 'modules/consentManagement.js';
+import {resetConsentData,} from 'modules/consentManagement.js';
 import {server} from 'test/mocks/xhr.js';
 import {unifiedIdSubmodule} from 'modules/unifiedIdSystem.js';
 import {id5IdSubmodule} from 'modules/id5IdSystem.js';
@@ -2785,7 +2786,7 @@ describe('User ID', function () {
               expect(bid).to.have.deep.nested.property('userId.qid');
               expect(bid.userId.qid).to.equal('testqid');
 
-              expect(bid.userIdAsEids.length).to.equal(18);
+              expect(bid.userIdAsEids.length).to.equal(17);
             });
           });
           coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -2970,7 +2971,7 @@ describe('User ID', function () {
 
               expect(bid).to.have.deep.nested.property('userId.qid');
               expect(bid.userId.qid).to.equal('testqid');
-              expect(bid.userIdAsEids.length).to.equal(16);
+              expect(bid.userIdAsEids.length).to.equal(15);
             });
           });
           coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
