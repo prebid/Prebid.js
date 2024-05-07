@@ -229,6 +229,16 @@ Or, if you are consuming Prebid through npm, with the `disableFeatures` option i
 
 **Note**: this is still a work in progress - at the moment, `NATIVE` is the only feature that can be disabled this way, resulting in a minimal decrease in size (but you can expect that to improve over time).
 
+## Unminified code
+
+You can get a version of the code that's unminified for debugging with `build-bundle-dev`:
+
+```bash
+gulp build-bundle-dev --modules=bidderA,module1,...
+```
+
+The results will be in build/dev/prebid.js.
+
 ## Test locally
 
 To lint the code:
