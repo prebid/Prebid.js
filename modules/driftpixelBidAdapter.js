@@ -4,6 +4,14 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {parseSizesInput, isFn, deepAccess, getBidIdParameter, logError, isArray} from '../src/utils.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
+
 const CUR = 'USD';
 const BIDDER_CODE = 'driftpixel';
 const ENDPOINT = 'https://pbjs.driftpixel.live';
@@ -14,18 +22,18 @@ const ENDPOINT = 'https://pbjs.driftpixel.live';
  * @param {BidRequest} bid The bid params to validate.
  * @return boolean True  if this is a valid bid, and false otherwise.
  */
-function isBidRequestValid(req) {
-  if (req && typeof req.params !== 'object') {
+function isBidRequestValid(bid) {
+  if (bid && typeof bid.params !== 'object') {
     logError('Params is not defined or is incorrect in the bidder settings');
     return false;
   }
 
-  if (!getBidIdParameter('env', req.params) || !getBidIdParameter('pid', req.params)) {
+  if (!getBidIdParameter('env', bid.params) || !getBidIdParameter('pid', bid.params)) {
     logError('Env or pid is not present in bidder params');
     return false;
   }
 
-  if (deepAccess(req, 'mediaTypes.video') && !isArray(deepAccess(req, 'mediaTypes.video.playerSize'))) {
+  if (deepAccess(bid, 'mediaTypes.video') && !isArray(deepAccess(bid, 'mediaTypes.video.playerSize'))) {
     logError('mediaTypes.video.playerSize is required for video');
     return false;
   }
