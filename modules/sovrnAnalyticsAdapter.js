@@ -1,7 +1,7 @@
 import {logError, timestamp} from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adaptermanager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {find, includes} from '../src/polyfill.js';
@@ -10,14 +10,12 @@ import {getRefererInfo} from '../src/refererDetection.js';
 const ajax = ajaxBuilder(0)
 
 const {
-  EVENTS: {
-    AUCTION_END,
-    BID_REQUESTED,
-    BID_ADJUSTMENT,
-    BID_RESPONSE,
-    BID_WON
-  }
-} = CONSTANTS
+  AUCTION_END,
+  BID_REQUESTED,
+  BID_ADJUSTMENT,
+  BID_RESPONSE,
+  BID_WON
+} = EVENTS;
 
 let pbaUrl = 'https://pba.aws.lijit.com/analytics'
 let currentAuctions = {};

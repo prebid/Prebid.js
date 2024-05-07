@@ -1,6 +1,7 @@
 import {getValue, logError, deepAccess, parseSizesInput, isArray, getBidIdParameter} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {isAutoplayEnabled} from '../libraries/autoplayDetection/autoplay.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -61,6 +62,8 @@ export const spec = {
       timeToFirstByte: getTimeToFirstByte(window),
       data: bids,
       deviceWidth: screen.width,
+      deviceHeight: screen.height,
+      devicePixelRatio: topWindow.devicePixelRatio,
       screenOrientation: screen.orientation?.type,
       historyLength: topWindow.history?.length,
       viewportHeight: topWindow.visualViewport?.height,
@@ -120,11 +123,18 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidderRequest) {
-    const bidResponses = [];
     serverResponse = serverResponse.body;
 
-    if (serverResponse.responses) {
-      serverResponse.responses.forEach(function (bid) {
+    if (!serverResponse.responses) {
+      return [];
+    }
+
+    const autoplayEnabled = isAutoplayEnabled();
+    return serverResponse.responses
+      .filter((bid) =>
+        // ignore this bid if it requires autoplay but it is not enabled on this browser
+        !bid.needAutoplay || autoplayEnabled
+      ).map((bid) => {
         const bidResponse = {
           cpm: bid.cpm,
           width: bid.width,
@@ -146,10 +156,8 @@ export const spec = {
         if (bid?.ext?.dsa) {
           bidResponse.meta.dsa = bid.ext.dsa;
         }
-        bidResponses.push(bidResponse);
+        return bidResponse;
       });
-    }
-    return bidResponses;
   }
 };
 

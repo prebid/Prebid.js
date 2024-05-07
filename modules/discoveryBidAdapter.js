@@ -25,6 +25,9 @@ const COOKIE_RETENTION_TIME = 365 * 24 * 60 * 60 * 1000; // 1 year
 const COOKY_SYNC_IFRAME_URL = 'https://asset.popin.cc/js/cookieSync.html';
 export const THIRD_PARTY_COOKIE_ORIGIN = 'https://asset.popin.cc';
 
+const UTM_KEY = '_ss_pp_utm';
+let UTMValue = {};
+
 const NATIVERET = {
   id: 'id',
   bidfloor: 0,
@@ -65,7 +68,7 @@ const NATIVERET = {
 };
 
 /**
- * get page title
+ * get page title111
  * @returns {string}
  */
 
@@ -133,10 +136,11 @@ export const getPmgUID = () => {
   let pmgUid = storage.getCookie(COOKIE_KEY_PMGUID);
   if (!pmgUid) {
     pmgUid = utils.generateUUID();
-    try {
-      storage.setCookie(COOKIE_KEY_PMGUID, pmgUid, getCurrentTimeToUTCString());
-    } catch (e) {}
   }
+  // Extend the expiration time of pmguid
+  try {
+    storage.setCookie(COOKIE_KEY_PMGUID, pmgUid, getCurrentTimeToUTCString());
+  } catch (e) {}
   return pmgUid;
 };
 
@@ -408,6 +412,20 @@ function getItems(validBidRequests, bidderRequest) {
   return items;
 }
 
+export const buildUTMTagData = (url) => {
+  if (!storage.cookiesAreEnabled()) return;
+  const urlParams = utils.parseUrl(url).search || {};
+  const UTMParams = {};
+  Object.keys(urlParams).forEach(key => {
+    if (/^utm_/.test(key)) {
+      UTMParams[key] = urlParams[key];
+    }
+  });
+  UTMValue = JSON.parse(storage.getCookie(UTM_KEY) || '{}');
+  Object.assign(UTMValue, UTMParams);
+  storage.setCookie(UTM_KEY, JSON.stringify(UTMValue), getCurrentTimeToUTCString());
+}
+
 /**
  * get rtb qequest params
  *
@@ -436,10 +454,15 @@ function getParam(validBidRequests, bidderRequest) {
   const page = utils.deepAccess(bidderRequest, 'refererInfo.page');
   const referer = utils.deepAccess(bidderRequest, 'refererInfo.ref');
   const firstPartyData = bidderRequest.ortb2;
+  const tpData = utils.deepAccess(bidderRequest, 'ortb2.user.data') || undefined;
   const topWindow = window.top;
   const title = getPageTitle();
   const desc = getPageDescription();
   const keywords = getPageKeywords();
+
+  try {
+    buildUTMTagData(page);
+  } catch (error) { }
 
   if (items && items.length) {
     let c = {
@@ -462,6 +485,8 @@ function getParam(validBidRequests, bidderRequest) {
         firstPartyData,
         ssppid: storage.getCookie(COOKIE_KEY_SSPPID) || undefined,
         pmguid: getPmgUID(),
+        tpData,
+        utm: storage.getCookie(UTM_KEY),
         page: {
           title: title ? title.slice(0, 100) : undefined,
           desc: desc ? desc.slice(0, 300) : undefined,

@@ -20,7 +20,7 @@ import {getHook, submodule} from '../src/hook.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {gdprDataHandler} from '../src/adapterManager.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import {getPPID} from '../src/adserver.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {CLIENT_SECTIONS} from '../src/fpd/oneClient.js';
@@ -360,7 +360,7 @@ function getCustParams(bid, options, urlCustParams) {
   );
 
   // TODO: WTF is this? just firing random events, guessing at the argument, hoping noone notices?
-  events.emit(CONSTANTS.EVENTS.SET_TARGETING, {[adUnit.code]: prebidTargetingSet});
+  events.emit(EVENTS.SET_TARGETING, {[adUnit.code]: prebidTargetingSet});
 
   // merge the prebid + publisher targeting sets
   const publisherTargetingSet = deepAccess(options, 'params.cust_params');
