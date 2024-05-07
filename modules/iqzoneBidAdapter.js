@@ -26,7 +26,7 @@ function isBidResponseValid(bid) {
 }
 
 function getPlacementReqData(bid) {
-  const { params, bidId, mediaTypes } = bid;
+  const { params, bidId, mediaTypes, transactionId, userIdAsEids } = bid;
   const schain = bid.schain || {};
   const { placementId, endpointId } = params;
   const bidfloor = getBidFloor(bid);
@@ -68,6 +68,15 @@ function getPlacementReqData(bid) {
   } else if (mediaTypes && mediaTypes[NATIVE]) {
     placement.native = mediaTypes[NATIVE];
     placement.adFormat = NATIVE;
+  }
+
+  if (transactionId) {
+    placement.ext = placement.ext || {};
+    placement.ext.tid = transactionId;
+  }
+
+  if (userIdAsEids && userIdAsEids.length) {
+    placement.eids = userIdAsEids;
   }
 
   return placement;
