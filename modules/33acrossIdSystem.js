@@ -11,6 +11,7 @@ import { submodule } from '../src/hook.js';
 import { uspDataHandler, coppaDataHandler, gppDataHandler } from '../src/adapterManager.js';
 import { getStorageManager, STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { domainOverrideToRootDomain } from '../libraries/domainOverrideToRootDomain/index.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -27,6 +28,10 @@ const GVLID = 58;
 const STORAGE_FPID_KEY = '33acrossIdFp';
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
+
+export const domainUtils = {
+  domainOverride: domainOverrideToRootDomain(storage, MODULE_NAME)
+};
 
 function calculateResponseObj(response) {
   if (!response.succeeded) {
@@ -197,6 +202,7 @@ export const thirthyThreeAcrossIdSubmodule = {
       }
     };
   },
+  domainOverride: domainUtils.domainOverride,
   eids: {
     '33acrossId': {
       source: '33across.com',
