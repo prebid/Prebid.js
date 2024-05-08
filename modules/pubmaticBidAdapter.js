@@ -263,6 +263,25 @@ function _handleCustomParams(params, conf) {
   return conf;
 }
 
+export function getDeviceConnectionType() {
+  let connection = window.navigator && (window.navigator.connection || window.navigator.mozConnection || window.navigator.webkitConnection);
+  switch (connection?.effectiveType) {
+    case 'ethernet':
+      return 1;
+    case 'wifi':
+      return 2;
+    case 'slow-2g':
+    case '2g':
+      return 4;
+    case '3g':
+      return 5;
+    case '4g':
+      return 6;
+    default:
+      return 0;
+  }
+}
+
 function _createOrtbTemplate(conf) {
   return {
     id: '' + new Date().getTime(),
@@ -280,7 +299,8 @@ function _createOrtbTemplate(conf) {
       dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
       h: screen.height,
       w: screen.width,
-      language: navigator.language
+      language: navigator.language,
+      connectiontype: getDeviceConnectionType()
     },
     user: {},
     ext: {}
