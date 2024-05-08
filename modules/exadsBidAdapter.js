@@ -332,11 +332,11 @@ function getEnvParams() {
     envParams.osName = 'MacOS';
   } else if (envParams.userAgent.match(/Unix/i)) {
     envParams.osName = 'Unix';
-  } else if (envParams.userAgent.userAgent.match(/Android/i)) {
+  } else if (envParams.userAgent.match(/Android/i)) {
     envParams.osName = 'Android';
-  } else if (envParams.userAgent.userAgent.match(/iPhone|iPad|iPod/i)) {
+  } else if (envParams.userAgent.match(/iPhone|iPad|iPod/i)) {
     envParams.osName = 'iOS';
-  } else if (envParams.userAgent.userAgent.match(/Linux/i)) {
+  } else if (envParams.userAgent.match(/Linux/i)) {
     envParams.osName = 'Linux';
   } else {
     envParams.osName = 'Unknown';
