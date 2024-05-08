@@ -982,23 +982,25 @@ function applyFPD(bidRequest, mediaType, data) {
         'transparency', (transparency) => {
           if (Array.isArray(transparency) && transparency.length) {
             data['dsatransparency'] = transparency.reduce((param, transp) => {
+              // make sure domain is there, otherwise skip entry
               const domain = transp.domain || '';
               if (!domain) {
                 return param;
               }
+
+              // make sure dsaParam array is there (try both 'dsaparams' and 'params', but prefer dsaparams)
+              const dsaParamArray = transp.dsaparams || transp.params;
+              if (!Array.isArray(dsaParamArray) || dsaParamArray.length === 0) {
+                return param;
+              }
+
+              // finally we will add this one, if param has been added already, add our seperator
               if (param) {
                 param += '~~'
               }
-              let dsaparams = '';
-              if (Array.isArray(transp.dsaparams) && transp.dsaparams.length > 0) {
-                dsaparams = transp.dsaparams.join('_');
-              } else if (Array.isArray(transp.params) && transp.params.length > 0) {
-                dsaparams = transp.params.join('_');
-              } else {
-                return param;
-              }
-              return param += `${domain}~${dsaparams}`;
-            }, '')
+
+              return param += `${domain}~${dsaParamArray.join('_')}`;
+            }, '');
           }
         }
       ])
