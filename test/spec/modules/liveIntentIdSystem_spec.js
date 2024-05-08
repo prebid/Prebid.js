@@ -201,7 +201,7 @@ describe('LiveIntentId', function() {
     liveIntentIdSubmodule.getId(defaultConfigParams);
     liveIntentIdSubmodule.decode({}, defaultConfigParams);
     setTimeout(() => {
-      expect(rpRequests()).to.be.eq(1);
+      expect(rpRequests().length).to.be.eq(1);
       done();
     }, 300);
   });
