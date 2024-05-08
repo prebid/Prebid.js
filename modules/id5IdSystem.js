@@ -148,7 +148,7 @@ export const id5IdSubmodule = {
       id5id: {
         uid: universalUid,
         ext: ext
-      },
+      }
     };
 
     if (isPlainObject(ext.euid)) {
@@ -156,7 +156,7 @@ export const id5IdSubmodule = {
         uid: ext.euid.uids[0].id,
         source: ext.euid.source,
         ext: {provider: ID5_DOMAIN}
-      }
+      };
     }
 
     const abTestingResult = deepAccess(value, 'ab_testing.result');
@@ -196,7 +196,7 @@ export const id5IdSubmodule = {
     }
 
     if (!hasWriteConsentToLocalStorage(consentData)) {
-      logInfo(LOG_PREFIX + 'Skipping ID5 local storage write because no consent given.')
+      logInfo(LOG_PREFIX + 'Skipping ID5 local storage write because no consent given.');
       return undefined;
     }
 
@@ -204,7 +204,7 @@ export const id5IdSubmodule = {
       const fetchFlow = new IdFetchFlow(submoduleConfig, consentData, cacheIdObj, uspDataHandler.getConsentData(), gppDataHandler.getConsentData());
       fetchFlow.execute()
         .then(response => {
-          cbFunction(response)
+          cbFunction(response);
         })
         .catch(error => {
           logError(LOG_PREFIX + 'getId fetch encountered an error', error);
@@ -227,7 +227,7 @@ export const id5IdSubmodule = {
    */
   extendId(config, consentData, cacheIdObj) {
     if (!hasWriteConsentToLocalStorage(consentData)) {
-      logInfo(LOG_PREFIX + 'No consent given for ID5 local storage writing, skipping nb increment.')
+      logInfo(LOG_PREFIX + 'No consent given for ID5 local storage writing, skipping nb increment.');
       return cacheIdObj;
     }
 
@@ -239,12 +239,12 @@ export const id5IdSubmodule = {
   },
   eids: {
     'id5id': {
-      getValue: function(data) {
-        return data.uid
+      getValue: function (data) {
+        return data.uid;
       },
       source: ID5_DOMAIN,
       atype: 1,
-      getUidExt: function(data) {
+      getUidExt: function (data) {
         if (data.ext) {
           return data.ext;
         }
@@ -264,16 +264,16 @@ export const id5IdSubmodule = {
         }
       }
     }
-  },
+  }
 };
 
 export class IdFetchFlow {
   constructor(submoduleConfig, gdprConsentData, cacheIdObj, usPrivacyData, gppData) {
-    this.submoduleConfig = submoduleConfig
-    this.gdprConsentData = gdprConsentData
-    this.cacheIdObj = cacheIdObj
-    this.usPrivacyData = usPrivacyData
-    this.gppData = gppData
+    this.submoduleConfig = submoduleConfig;
+    this.gdprConsentData = gdprConsentData;
+    this.cacheIdObj = cacheIdObj;
+    this.usPrivacyData = usPrivacyData;
+    this.gppData = gppData;
   }
 
   /**
@@ -324,7 +324,11 @@ export class IdFetchFlow {
     let url = this.submoduleConfig.params.configUrl || ID5_API_CONFIG_URL; // override for debug/test purposes only
     const response = await fetch(url, {
       method: 'POST',
-      body: JSON.stringify(this.submoduleConfig)
+      body: JSON.stringify({
+        ...this.submoduleConfig,
+        bounce: true
+      }),
+      credentials: 'include'
     });
     if (!response.ok) {
       throw new Error('Error while calling config endpoint: ', response);
@@ -342,7 +346,7 @@ export class IdFetchFlow {
     const extensionsUrl = extensionsCallConfig.url;
     const method = extensionsCallConfig.method || 'GET';
     const body = method === 'GET' ? undefined : JSON.stringify(extensionsCallConfig.body || {});
-    const response = await fetch(extensionsUrl, { method, body });
+    const response = await fetch(extensionsUrl, {method, body});
     if (!response.ok) {
       throw new Error('Error while calling extensions endpoint: ', response);
     }
@@ -360,7 +364,7 @@ export class IdFetchFlow {
       ...additionalData,
       extensions: extensionsData
     });
-    const response = await fetch(fetchUrl, { method: 'POST', body, credentials: 'include' });
+    const response = await fetch(fetchUrl, {method: 'POST', body, credentials: 'include'});
     if (!response.ok) {
       throw new Error('Error while calling fetch endpoint: ', response);
     }
@@ -456,7 +460,7 @@ function validateConfig(config) {
     return false;
   }
 
-  const partner = config.params.partner
+  const partner = config.params.partner;
   if (typeof partner === 'string' || partner instanceof String) {
     let parsedPartnerId = parseInt(partner);
     if (isNaN(parsedPartnerId) || parsedPartnerId < 0) {
@@ -566,8 +570,8 @@ export function storeInLocalStorage(key, value, expDays) {
  */
 function hasWriteConsentToLocalStorage(consentData) {
   const hasGdpr = consentData && typeof consentData.gdprApplies === 'boolean' && consentData.gdprApplies;
-  const localstorageConsent = deepAccess(consentData, `vendorData.purpose.consents.1`)
-  const id5VendorConsent = deepAccess(consentData, `vendorData.vendor.consents.${GVLID.toString()}`)
+  const localstorageConsent = deepAccess(consentData, `vendorData.purpose.consents.1`);
+  const id5VendorConsent = deepAccess(consentData, `vendorData.vendor.consents.${GVLID.toString()}`);
   if (hasGdpr && (!localstorageConsent || !id5VendorConsent)) {
     return false;
   }
