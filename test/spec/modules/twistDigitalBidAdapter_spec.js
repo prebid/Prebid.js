@@ -10,7 +10,6 @@ import {
   setStorageItem,
   tryParseJSON,
   getUniqueDealId,
-  getNextDealId,
   webSessionId
 } from 'modules/twistDigitalBidAdapter.js';
 import * as utils from 'src/utils.js';
@@ -301,7 +300,6 @@ describe('TwistDigitalBidAdapter', function () {
           cat: ['IAB2'],
           pagecat: ['IAB2-2'],
           cb: 1000,
-          dealId: 1,
           gdpr: 1,
           gdprConsent: 'consent_string',
           usPrivacy: 'consent_string',
@@ -426,7 +424,6 @@ describe('TwistDigitalBidAdapter', function () {
           bidId: '2d52001cabd527',
           adUnitCode: 'div-gpt-ad-12345-0',
           publisherId: '59ac17c192832d0011283fe3',
-          dealId: 2,
           uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
           bidderVersion: adapter.version,
           prebidVersion: version,
@@ -514,7 +511,6 @@ describe('TwistDigitalBidAdapter', function () {
         bidId: '2d52001cabd527',
         adUnitCode: 'div-gpt-ad-12345-0',
         publisherId: '59ac17c192832d0011283fe3',
-        dealId: 3,
         uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
         bidderVersion: adapter.version,
         prebidVersion: version,
@@ -552,7 +548,6 @@ describe('TwistDigitalBidAdapter', function () {
       REQUEST_DATA2.bidId = '2d52001cabd528';
       REQUEST_DATA2.adUnitCode = 'div-gpt-ad-12345-1';
       REQUEST_DATA2.sizes = ['300x250'];
-      REQUEST_DATA2.dealId = 4;
 
       const requests = adapter.buildRequests([BID, BID2], BIDDER_REQUEST);
       expect(requests).to.have.length(1);
@@ -793,22 +788,6 @@ describe('TwistDigitalBidAdapter', function () {
     });
     after(function () {
       $$PREBID_GLOBAL$$.bidderSettings = {};
-    });
-    const key = 'myDealKey';
-
-    it('should get the next deal id', function () {
-      const dealId = getNextDealId(key);
-      const nextDealId = getNextDealId(key);
-      expect(dealId).to.be.equal(1);
-      expect(nextDealId).to.be.equal(2);
-    });
-
-    it('should get the first deal id on expiration', function (done) {
-      setTimeout(function () {
-        const dealId = getNextDealId(key, 100);
-        expect(dealId).to.be.equal(1);
-        done();
-      }, 200);
     });
   });
 

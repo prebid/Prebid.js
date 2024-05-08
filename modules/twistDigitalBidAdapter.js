@@ -22,7 +22,6 @@ const BIDDER_CODE = 'twistdigital';
 const BIDDER_VERSION = '1.0.0';
 const CURRENCY = 'USD';
 const TTL_SECONDS = 60 * 5;
-const DEAL_ID_EXPIRY = 1000 * 60 * 15;
 const UNIQUE_DEAL_ID_EXPIRY = 1000 * 60 * 60;
 
 export const webSessionId = 'wsid_' + parseInt(Date.now() * Math.random());
@@ -75,7 +74,6 @@ function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout
   const {ext} = params;
   let {bidFloor} = params;
   const hashUrl = hashCode(topWindowUrl);
-  const dealId = getNextDealId(hashUrl);
   const uniqueDealId = getUniqueDealId(hashUrl);
   const pId = extractPID(params);
   const isStorageAllowed = bidderSettings.get(BIDDER_CODE, 'storageAllowed');
@@ -108,7 +106,6 @@ function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout
     adUnitCode: adUnitCode,
     publisherId: pId,
     sizes: sizes,
-    dealId: dealId,
     uniqueDealId: uniqueDealId,
     bidderVersion: BIDDER_VERSION,
     prebidVersion: '$prebid.version$',
@@ -407,25 +404,6 @@ export function hashCode(s, prefix = '_') {
     }
   }
   return prefix + h;
-}
-
-export function getNextDealId(key, expiry = DEAL_ID_EXPIRY) {
-  try {
-    const data = getStorageItem(key);
-    let currentValue = 0;
-    let timestamp;
-
-    if (data && data.value && Date.now() - data.created < expiry) {
-      currentValue = data.value;
-      timestamp = data.created;
-    }
-
-    const nextValue = currentValue + 1;
-    setStorageItem(key, nextValue, timestamp);
-    return nextValue;
-  } catch (e) {
-    return 0;
-  }
 }
 
 export function getUniqueDealId(key, expiry = UNIQUE_DEAL_ID_EXPIRY) {
