@@ -57,7 +57,7 @@ export function addBrowsiTag(data) {
   script.setAttribute('prebidbpt', 'true');
   script.setAttribute('id', 'browsi-tag');
   script.setAttribute('src', data.u);
-  script.prebidData = deepClone(data);
+  script.prebidData = deepClone(typeof data === 'string' ? Object(data) : data)
   if (_moduleParams.keyName) {
     script.prebidData.kn = _moduleParams.keyName;
   }
