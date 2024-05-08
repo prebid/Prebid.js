@@ -67,9 +67,8 @@ export function addBrowsiTag(data) {
   return script;
 }
 
-function setKeyValue() {
-  const key = _moduleParams.splitKey;
-  if (!key || typeof key !== 'string') return;
+export function setKeyValue(key) {
+  if (!key || typeof key !== 'string') return false;
   window.googletag = window.googletag || {cmd: []};
   window.googletag.cmd = window.googletag.cmd || [];
   window.googletag.cmd.push(() => {
@@ -393,7 +392,7 @@ function init(moduleConfig) {
   _moduleParams = moduleConfig.params;
   if (_moduleParams && _moduleParams.siteKey && _moduleParams.pubKey && _moduleParams.url) {
     collectData();
-    setKeyValue();
+    setKeyValue(_moduleParams.splitKey);
   } else {
     logError('missing params for Browsi provider');
   }
