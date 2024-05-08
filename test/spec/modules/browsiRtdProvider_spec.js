@@ -5,7 +5,6 @@ import * as sinon from 'sinon';
 import {sendPageviewEvent} from '../../../modules/browsiRtdProvider.js';
 import * as mockGpt from 'test/spec/integration/faker/googletag.js';
 
-
 describe('browsi Real time  data sub module', function () {
   const conf = {
     'auctionDelay': 250,
@@ -279,7 +278,7 @@ describe('browsi Real time  data sub module', function () {
   describe('set targeting - valid params', function () {
     let slot;
     const splitKey = 'splitTest';
-    before(()=>{
+    before(() => {
       mockGpt.reset();
       window.googletag.pubads().clearTargeting();
       slot = mockGpt.makeSlot({code: '/123/split', divId: 'split'});
