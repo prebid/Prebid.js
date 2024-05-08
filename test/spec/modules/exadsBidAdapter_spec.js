@@ -3,7 +3,7 @@ import { spec, imps } from 'modules/exadsBidAdapter.js';
 import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 
 describe('exadsBidAdapterTest', function () {
-  const bidder = 'exadsadserver';
+  const bidder = 'exads';
 
   const partners = {
     ORTB_2_4: 'ortb_2_4'
