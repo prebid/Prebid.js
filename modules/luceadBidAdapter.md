@@ -10,20 +10,31 @@ Maintainer: prebid@lucead.com
 
 Module that connects to Lucead demand source to fetch bids.
 
-# Test Parameters
+# Params type definition
+
+```typescript
+type Params = {
+    placementId: string;
+    region?: 'eu' | 'us' | 'ap';
+};
 ```
-const adUnits = [
-       {
-           code: 'test-div',
-           sizes: [[300, 250]],
-           bids: [
-               {
-                   bidder: 'lucead',
-                   params: {
-                       placementId: '2',
-                   }
-               }
-           ]
-       }
-   ];
+
+# Test Parameters
+
+```javascript
+const adUnits=[
+	{
+		code:'test-div',
+		sizes:[[300,250]],
+		bids:[
+			{
+				bidder:'lucead',
+				params:{
+					placementId:'2',
+					region:'us', // optional: 'eu', 'us', 'ap'
+				}
+			}
+		]
+	}
+];
 ```
