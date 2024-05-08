@@ -319,13 +319,13 @@ function getEnvParams() {
     language: ''
   };
 
+  // TODO: all of this is already in first party data
   envParams.domain = window.location.hostname;
   envParams.page = window.location.protocol + '//' + window.location.host + window.location.pathname;
   envParams.lang = navigator.language.indexOf('-') > -1
     ? navigator.language.split('-')[0]
     : navigator.language;
   envParams.userAgent = navigator.userAgent;
-
   if (envParams.userAgent.match(/Windows/i)) {
     envParams.osName = 'Windows';
   } else if (envParams.userAgent.match(/Mac OS|Macintosh/i)) {
