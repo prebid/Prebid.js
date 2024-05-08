@@ -2,7 +2,7 @@ import * as utils from '../src/utils.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
-const BIDDER = 'exadsadserver';
+const BIDDER = 'exads';
 
 const PARTNERS = {
   ORTB_2_4: 'ortb_2_4'
