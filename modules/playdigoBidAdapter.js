@@ -73,6 +73,10 @@ function getPlacementReqData(bid) {
 }
 
 function getBidFloor(bid) {
+  if (!bid.getFloor || typeof bid.getFloor !== 'function') {
+    return 0;
+  }
+
   try {
     const bidFloor = bid.getFloor({
       currency: 'USD',
