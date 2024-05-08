@@ -6,7 +6,7 @@ import {
   logError,
   deepAccess,
   isInteger,
-  logWarn, getBidIdParameter
+  logWarn, getBidIdParameter, isEmptyStr
 } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import {
@@ -254,16 +254,38 @@ export const spec = {
         }))
         .flat()
 
-      let fledgeAuctionConfigs = deepAccess(ext, 'fledge_auction_configs');
+      let fledgeAuctionConfigs = null;
+      if (isArray(ext?.igbid)) {
+        const seller = ext.seller
+        const decisionLogicUrl = ext.decisionLogicUrl
+        const sellerTimeout = ext.sellerTimeout
+        ext.igbid.filter(item => isValidIgBid(item)).forEach((igbid) => {
+          const perBuyerSignals = {}
+          igbid.igbuyer.filter(item => isValidIgBuyer(item)).forEach(buyerItem => {
+            perBuyerSignals[buyerItem.igdomain] = buyerItem.buyerdata
+          })
+          const interestGroupBuyers = [...Object.keys(perBuyerSignals)]
+          if (interestGroupBuyers.length) {
+            fledgeAuctionConfigs = fledgeAuctionConfigs || {}
+            fledgeAuctionConfigs[igbid.impid] = {
+              seller,
+              decisionLogicUrl,
+              sellerTimeout,
+              interestGroupBuyers: interestGroupBuyers,
+              perBuyerSignals,
+            }
+          }
+        })
+      }
       if (fledgeAuctionConfigs) {
         fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
           return {
             bidId,
             config: Object.assign({
-              auctionSignals: {},
+              auctionSignals: {}
             }, cfg)
           }
-        });
+        })
         return {
           bids,
           fledgeAuctionConfigs,
@@ -365,6 +387,14 @@ function _getBidFloors(bid) {
   }
   const paramValue = parseFloat(getBidIdParameter('bidfloor', bid.params))
   return !isNaN(paramValue) ? paramValue : undefined
+}
+
+function isValidIgBid(igBid) {
+  return !isEmptyStr(igBid.impid) && isArray(igBid.igbuyer) && igBid.igbuyer.length
+}
+
+function isValidIgBuyer(igBuyer) {
+  return !isEmptyStr(igBuyer.igdomain)
 }
 
 registerBidder(spec)

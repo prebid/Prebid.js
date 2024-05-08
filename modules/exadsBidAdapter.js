@@ -319,24 +319,25 @@ function getEnvParams() {
     language: ''
   };
 
+  // TODO: all of this is already in first party data
   envParams.domain = window.location.hostname;
   envParams.page = window.location.protocol + '//' + window.location.host + window.location.pathname;
   envParams.lang = navigator.language.indexOf('-') > -1
     ? navigator.language.split('-')[0]
     : navigator.language;
   envParams.userAgent = navigator.userAgent;
-
   if (envParams.userAgent.match(/Windows/i)) {
     envParams.osName = 'Windows';
   } else if (envParams.userAgent.match(/Mac OS|Macintosh/i)) {
     envParams.osName = 'MacOS';
   } else if (envParams.userAgent.match(/Unix/i)) {
     envParams.osName = 'Unix';
-  } else if (envParams.userAgent.userAgent.match(/Android/i)) {
+  // TODO: what is userAgent.userAgent supposed to be?
+  } else if (envParams.userAgent.userAgent?.match(/Android/i)) {
     envParams.osName = 'Android';
-  } else if (envParams.userAgent.userAgent.match(/iPhone|iPad|iPod/i)) {
+  } else if (envParams.userAgent.userAgent?.match(/iPhone|iPad|iPod/i)) {
     envParams.osName = 'iOS';
-  } else if (envParams.userAgent.userAgent.match(/Linux/i)) {
+  } else if (envParams.userAgent.userAgent?.match(/Linux/i)) {
     envParams.osName = 'Linux';
   } else {
     envParams.osName = 'Unknown';
