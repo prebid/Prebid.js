@@ -188,10 +188,25 @@ function buildImpression(bidRequest) {
   if (isFn(bidRequest.getFloor)) {
     let moduleBidFloor;
 
-    const mediaType = deepAccess(bidRequest, 'mediaTypes.banner') ? 'banner' : 'video';
-    let _mediaType = mediaType === 'banner' ? 'banner' : 'video';
-    let _size = mediaType === 'banner' ? deepAccess(bidRequest, 'mediaTypes.banner.sizes') : [deepAccess(bidRequest, 'mediaTypes.video.w'), deepAccess(bidRequest, 'mediaTypes.video.h')];
+    const mediaType = deepAccess(bidRequest, 'mediaTypes.banner') ? 'banner' : deepAccess(bidRequest, 'mediaTypes.video') ? 'video' : undefined;
+
+    let _mediaType = mediaType;
+    let _size = '*';
+
     if (mediaType && ['banner', 'video'].includes(mediaType)) {
+      if (mediaType === 'banner') {
+        const { w: width, h: height } = imp[mediaType];
+        if (width && height) {
+          _size = [width, height];
+        }
+      } else {
+        const sizes = deepAccess(bidRequest, 'mediaTypes.banner.format');
+        if (sizes && sizes.length > 0) {
+          const [width, height] = sizes[0];
+          _size = [width, height];
+        }
+      }
+    } else if (mediaType === 'video') {
       const { w: width, h: height } = imp[mediaType];
       _mediaType = mediaType;
       _size = [width, height];
