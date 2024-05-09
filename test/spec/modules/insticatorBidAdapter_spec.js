@@ -569,6 +569,20 @@ describe('InsticatorBidAdapter', function () {
       expect(data.imp[0].video.h).to.equal(480);
     });
 
+    it('should have bidder bidfloor from the request', function () {
+      const tempBiddRequest = {
+        ...bidRequest,
+        params: {
+          ...bidRequest.params,
+          floor: 0.5,
+        },
+      }
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.imp[0].bidfloor).to.equal(0.5);
+      expect(data.imp[0].bidfloorcur).to.equal('USD');
+    });
+
     it('should have sites first party data if present in bidderRequest ortb2', function () {
       bidderRequest = {
         ...bidderRequest,
