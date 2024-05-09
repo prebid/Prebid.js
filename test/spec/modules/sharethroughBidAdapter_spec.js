@@ -425,6 +425,41 @@ describe('sharethrough adapter spec', function () {
         });
       });
 
+      describe('dsa', () => {
+        it('should properly attach dsa information to the request when applicable', () => {
+          bidderRequest.ortb2 = {
+            regs: {
+              ext: {
+                dsa: {
+                  'dsarequired': 1,
+                  'pubrender': 0,
+                  'datatopub': 1,
+                  'transparency': [{
+                    'domain': 'good-domain',
+                    'dsaparams': [1, 2]
+                  }, {
+                    'domain': 'bad-setup',
+                    'dsaparams': ['1', 3]
+                  }]
+                }
+              }
+            }
+          }
+
+          const openRtbReq = spec.buildRequests(bidRequests, bidderRequest)[0].data;
+          expect(openRtbReq.regs.ext.dsa.dsarequired).to.equal(1);
+          expect(openRtbReq.regs.ext.dsa.pubrender).to.equal(0);
+          expect(openRtbReq.regs.ext.dsa.datatopub).to.equal(1);
+          expect(openRtbReq.regs.ext.dsa.transparency).to.deep.equal([{
+            'domain': 'good-domain',
+            'dsaparams': [1, 2]
+          }, {
+            'domain': 'bad-setup',
+            'dsaparams': ['1', 3]
+          }]);
+        });
+      });
+
       describe('transaction id at the impression level', () => {
         it('should include transaction id when provided', () => {
           const requests = spec.buildRequests(bidRequests, bidderRequest);

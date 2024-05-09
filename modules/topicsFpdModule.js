@@ -41,6 +41,12 @@ const bidderIframeList = {
   }, {
     bidder: 'taboola',
     iframeURL: 'https://cdn.taboola.com/libtrc/static/topics/taboola-prebid-browsing-topics.html'
+  }, {
+    bidder: 'discovery',
+    iframeURL: 'https://api.popin.cc/topic/prebid-topics-frame.html'
+  }, {
+    bidder: 'undertone',
+    iframeURL: 'https://creative-p.undertone.com/spk-public/topics_frame.html'
   }]
 }
 

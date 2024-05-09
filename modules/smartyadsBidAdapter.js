@@ -41,8 +41,16 @@ function getAdUrlByRegion(bid) {
     try {
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const region = timezone.split('/')[0];
-      if (region === 'Europe') adUrl = adUrls['EU'];
-      else adUrl = adUrls['US_EAST'];
+
+      switch (region) {
+        case 'Europe':
+          adUrl = adUrls['EU'];
+          break;
+        case 'Asia':
+          adUrl = adUrls['SGP'];
+          break;
+        default: adUrl = adUrls['US_EAST'];
+      }
     } catch (err) {
       adUrl = adUrls['US_EAST'];
     }
@@ -74,6 +82,7 @@ export const spec = {
       location = winTop.location;
       logMessage(e);
     };
+
     let placements = [];
     let request = {
       'deviceWidth': winTop.screen.width,
@@ -83,7 +92,9 @@ export const spec = {
       'host': location.host,
       'page': location.pathname,
       'coppa': config.getConfig('coppa') === true ? 1 : 0,
-      'placements': placements
+      'placements': placements,
+      'eeid': validBidRequests[0]?.userIdAsEids,
+      'ifa': bidderRequest?.ortb2?.device?.ifa,
     };
     request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
     if (bidderRequest) {
@@ -103,8 +114,10 @@ export const spec = {
 
     for (let i = 0; i < len; i++) {
       let bid = validBidRequests[i];
+
       if (i === 0) adUrl = getAdUrlByRegion(bid);
-      let traff = bid.params.traffic || BANNER
+
+      let traff = bid.params.traffic || BANNER;
       placements.push({
         placementId: bid.params.sourceid,
         bidId: bid.bidId,

@@ -18,7 +18,7 @@ import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {getPrebidInternal} from 'src/utils.js';
 import * as events from 'src/events.js';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 import {getGlobal} from 'src/prebidGlobal.js';
 import {resetConsentData, } from 'modules/consentManagement.js';
 import {server} from 'test/mocks/xhr.js';
@@ -1714,7 +1714,7 @@ describe('User ID', function () {
             // check user sync is delayed after auction is ended
             mockIdCallback.calledOnce.should.equal(false);
             events.on.calledOnce.should.equal(true);
-            events.on.calledWith(CONSTANTS.EVENTS.AUCTION_END, sinon.match.func);
+            events.on.calledWith(EVENTS.AUCTION_END, sinon.match.func);
 
             // once auction is ended, sync user ids after delay
             events.on.callArg(1);
@@ -1748,7 +1748,7 @@ describe('User ID', function () {
             // sync delay after auction is ended
             mockIdCallback.calledOnce.should.equal(false);
             events.on.calledOnce.should.equal(true);
-            events.on.calledWith(CONSTANTS.EVENTS.AUCTION_END, sinon.match.func);
+            events.on.calledWith(EVENTS.AUCTION_END, sinon.match.func);
 
             // once auction is ended, if no sync delay, fetch ids
             events.on.callArg(1);
@@ -3104,7 +3104,7 @@ describe('User ID', function () {
       });
 
       function endAuction() {
-        events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
+        events.emit(EVENTS.AUCTION_END, {});
         return new Promise((resolve) => setTimeout(resolve));
       }
 

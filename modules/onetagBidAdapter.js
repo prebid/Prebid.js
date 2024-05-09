@@ -63,7 +63,8 @@ function buildRequests(validBidRequests, bidderRequest) {
   if (bidderRequest && bidderRequest.gdprConsent) {
     payload.gdprConsent = {
       consentString: bidderRequest.gdprConsent.consentString,
-      consentRequired: bidderRequest.gdprConsent.gdprApplies
+      consentRequired: bidderRequest.gdprConsent.gdprApplies,
+      addtlConsent: bidderRequest.gdprConsent.addtlConsent
     };
   }
   if (bidderRequest && bidderRequest.gppConsent) {
