@@ -108,7 +108,6 @@ class UspConsentHandler extends ConsentHandler {
     const consentData = this.getConsentData();
     if (consentData && this.generatedTime) {
       return {
-        usp: consentData,
         generatedAt: this.generatedTime
       };
     }

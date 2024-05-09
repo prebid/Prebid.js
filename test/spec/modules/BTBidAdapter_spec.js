@@ -10,7 +10,6 @@ import 'modules/priceFloors.js';
 import 'modules/consentManagement.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/consentManagementGpp.js';
-import 'modules/enrichmentFpdModule.js';
 import 'modules/gdprEnforcement.js';
 import 'modules/gppControl_usnat.js';
 import 'modules/schain.js';
