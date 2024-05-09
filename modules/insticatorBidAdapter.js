@@ -175,6 +175,11 @@ function buildImpression(bidRequest) {
   if (!isNaN(bidFloor)) {
     imp.bidfloor = deepAccess(bidRequest, 'params.floor');
     imp.bidfloorcur = 'USD';
+    const bidfloorcur = deepAccess(bidRequest, 'params.bidfloorcur')
+    if (bidfloorcur && bidfloorcur !== 'USD') {
+      delete imp.bidfloor;
+      delete imp.bidfloorcur;
+    }
   }
 
   if (deepAccess(bidRequest, 'mediaTypes.banner')) {
