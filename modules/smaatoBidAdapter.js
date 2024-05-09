@@ -19,7 +19,7 @@ import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
-const SMAATO_CLIENT = 'prebid_js_$prebid.version$_2.0'
+const SMAATO_CLIENT = 'prebid_js_$prebid.version$_3.0'
 const TTL = 300;
 const CURRENCY = 'USD';
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE];
@@ -160,12 +160,8 @@ export const spec = {
         } else {
           switch (smtAdType) {
             case 'Img':
-              resultingBid.ad = createImgAd(bid.adm);
-              resultingBid.mediaType = BANNER;
-              bids.push(resultingBid);
-              break;
             case 'Richmedia':
-              resultingBid.ad = createRichmediaAd(bid.adm);
+              resultingBid.ad = createBannerAd(bid);
               resultingBid.mediaType = BANNER;
               bids.push(resultingBid);
               break;
@@ -370,37 +366,17 @@ const converter = ortbConverter({
   }
 });
 
-const createImgAd = (adm) => {
-  const image = JSON.parse(adm).image;
-
+const createBannerAd = (bid) => {
   let clickEvent = '';
-  image.clicktrackers.forEach(src => {
-    clickEvent += `fetch(decodeURIComponent('${encodeURIComponent(src)}'), {cache: 'no-cache'});`;
-  })
+  if (bid.ext && bid.ext.curls) {
+    let clicks = ''
+    bid.ext.curls.forEach(src => {
+      clicks += `fetch(decodeURIComponent('${encodeURIComponent(src)}'), {cache: 'no-cache'});`;
+    })
+    clickEvent = `onclick="${clicks}"`
+  }
 
-  let markup = `<div style="cursor:pointer" onclick="${clickEvent};window.open(decodeURIComponent('${encodeURIComponent(image.img.ctaurl)}'));"><img src="${image.img.url}" width="${image.img.w}" height="${image.img.h}"/>`;
-
-  image.impressiontrackers.forEach(src => {
-    markup += `<img src="${src}" alt="" width="0" height="0"/>`;
-  });
-
-  return markup + '</div>';
-};
-
-const createRichmediaAd = (adm) => {
-  const rich = JSON.parse(adm).richmedia;
-  let clickEvent = '';
-  rich.clicktrackers.forEach(src => {
-    clickEvent += `fetch(decodeURIComponent('${encodeURIComponent(src)}'), {cache: 'no-cache'});`;
-  })
-
-  let markup = `<div onclick="${clickEvent}">${rich.mediadata.content}`;
-
-  rich.impressiontrackers.forEach(src => {
-    markup += `<img src="${src}" alt="" width="0" height="0"/>`;
-  });
-
-  return markup + '</div>';
+  return `<div style="cursor:pointer" ${clickEvent}>${bid.adm}</div>`;
 };
 
 const createNativeAd = (adm) => {
