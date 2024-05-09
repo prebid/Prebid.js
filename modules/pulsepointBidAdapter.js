@@ -1,7 +1,6 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import {isArray} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
 const DEFAULT_CURRENCY = 'USD';
 const KNOWN_PARAMS = ['cp', 'ct', 'cf', 'battr', 'deals'];
