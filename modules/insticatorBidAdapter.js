@@ -1,7 +1,7 @@
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums, deepSetValue} from '../src/utils.js';
+import {deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums, deepSetValue, isFn, logWarn} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {find} from '../src/polyfill.js';
 
@@ -183,6 +183,33 @@ function buildImpression(bidRequest) {
 
   if (deepAccess(bidRequest, 'mediaTypes.video')) {
     imp.video = buildVideo(bidRequest);
+  }
+
+  if (isFn(bidRequest.getFloor)) {
+    let moduleBidFloor;
+
+    const mediaType = deepAccess(bidRequest, 'mediaTypes.banner') ? 'banner' : 'video';
+    let _mediaType = mediaType === 'banner' ? 'banner' : 'video';
+    let _size = mediaType === 'banner' ? deepAccess(bidRequest, 'mediaTypes.banner.sizes') : [deepAccess(bidRequest, 'mediaTypes.video.w'), deepAccess(bidRequest, 'mediaTypes.video.h')];
+    if (mediaType && ['banner', 'video'].includes(mediaType)) {
+      const { w: width, h: height } = imp[mediaType];
+      _mediaType = mediaType;
+      _size = [width, height];
+    }
+    try {
+      moduleBidFloor = bidRequest.getFloor({
+        mediaType: _mediaType,
+        size: _size
+      });
+    } catch (err) {
+      // continue with no module floors
+      logWarn('priceFloors module call getFloor failed, error : ', err);
+    }
+
+    if (moduleBidFloor && moduleBidFloor.currency === 'USD') {
+      imp.bidfloor = moduleBidFloor.floor;
+      imp.bidfloorcur = moduleBidFloor.currency;
+    }
   }
 
   return imp;
