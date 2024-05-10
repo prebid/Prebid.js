@@ -13,7 +13,6 @@ import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
 
 const ADTYPE_IMG = 'Img';
-const ADTYPE_RICHMEDIA = 'Richmedia';
 const ADTYPE_VIDEO = 'Video';
 const ADTYPE_NATIVE = 'Native';
 
@@ -1300,43 +1299,7 @@ describe('smaatoBidAdapterTest', () => {
 
       switch (adType) {
         case ADTYPE_IMG:
-          adm = JSON.stringify(
-            {
-              image: {
-                img: {
-                  url: 'https://prebid/static/ad.jpg',
-                  w: 320,
-                  h: 50,
-                  ctaurl: 'https://prebid/track/ctaurl'
-                },
-                impressiontrackers: [
-                  'https://prebid/track/imp/1',
-                  'https://prebid/track/imp/2'
-                ],
-                clicktrackers: [
-                  'https://prebid/track/click/1'
-                ]
-              }
-            });
-          break;
-        case ADTYPE_RICHMEDIA:
-          adm = JSON.stringify(
-            {
-              richmedia: {
-                mediadata: {
-                  content: '<div><h3>RICHMEDIA CONTENT</h3></div>',
-                  w: 800,
-                  h: 600
-                },
-                impressiontrackers: [
-                  'https://prebid/track/imp/1',
-                  'https://prebid/track/imp/2'
-                ],
-                clicktrackers: [
-                  'https://prebid/track/click/1'
-                ]
-              }
-            });
+          adm = '<a rel="nofollow" href="https://prebid.net/click"><img src="https://prebid.net/images/image.png" alt="" width="480" height="320" /></a>'
           break;
         case ADTYPE_VIDEO:
           adm = '<VAST version="2.0"></VAST>';
@@ -1372,7 +1335,10 @@ describe('smaatoBidAdapterTest', () => {
                   'nurl': 'https://prebid/nurl',
                   'price': 0.01,
                   'w': 350,
-                  'h': 50
+                  'h': 50,
+                  'ext': {
+                    curls: ['https://prebid/track/click/1']
+                  }
                 }
               ],
               seat: 'CM6523'
@@ -1398,7 +1364,7 @@ describe('smaatoBidAdapterTest', () => {
     });
 
     describe('non ad pod', () => {
-      it('single image response', () => {
+      it('single banner response', () => {
         const bids = spec.interpretResponse(buildOpenRtbBidResponse(ADTYPE_IMG), buildBidRequest());
 
         expect(bids).to.deep.equal([
@@ -1407,33 +1373,7 @@ describe('smaatoBidAdapterTest', () => {
             cpm: 0.01,
             width: 350,
             height: 50,
-            ad: '<div style="cursor:pointer" onclick="fetch(decodeURIComponent(\'https%3A%2F%2Fprebid%2Ftrack%2Fclick%2F1\'), {cache: \'no-cache\'});;window.open(decodeURIComponent(\'https%3A%2F%2Fprebid%2Ftrack%2Fctaurl\'));"><img src="https://prebid/static/ad.jpg" width="320" height="50"/><img src="https://prebid/track/imp/1" alt="" width="0" height="0"/><img src="https://prebid/track/imp/2" alt="" width="0" height="0"/></div>',
-            ttl: 300,
-            creativeId: 'CR69381',
-            dealId: '12345',
-            netRevenue: true,
-            currency: 'USD',
-            mediaType: 'banner',
-            meta: {
-              advertiserDomains: ['smaato.com'],
-              agencyId: 'CM6523',
-              networkName: 'smaato',
-              mediaType: 'banner'
-            }
-          }
-        ]);
-      });
-
-      it('single richmedia response', () => {
-        const bids = spec.interpretResponse(buildOpenRtbBidResponse(ADTYPE_RICHMEDIA), buildBidRequest());
-
-        expect(bids).to.deep.equal([
-          {
-            requestId: '226416e6e6bf41',
-            cpm: 0.01,
-            width: 350,
-            height: 50,
-            ad: '<div onclick="fetch(decodeURIComponent(\'https%3A%2F%2Fprebid%2Ftrack%2Fclick%2F1\'), {cache: \'no-cache\'});"><div><h3>RICHMEDIA CONTENT</h3></div><img src="https://prebid/track/imp/1" alt="" width="0" height="0"/><img src="https://prebid/track/imp/2" alt="" width="0" height="0"/></div>',
+            ad: '<div style="cursor:pointer" onclick="fetch(decodeURIComponent(\'https%3A%2F%2Fprebid%2Ftrack%2Fclick%2F1\'), {cache: \'no-cache\'});"><a rel="nofollow" href="https://prebid.net/click"><img src="https://prebid.net/images/image.png" alt="" width="480" height="320" /></a></div>',
             ttl: 300,
             creativeId: 'CR69381',
             dealId: '12345',

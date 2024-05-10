@@ -1,7 +1,7 @@
 import { config } from 'src/config.js';
 import { expect } from 'chai';
 import { spec } from 'modules/dailymotionBidAdapter.js';
-import { VIDEO } from '../../../src/mediaTypes';
+import { BANNER, VIDEO } from '../../../src/mediaTypes';
 
 describe('dailymotionBidAdapterTests', () => {
   // Validate that isBidRequestValid only validates requests with apiKey
@@ -12,6 +12,11 @@ describe('dailymotionBidAdapterTests', () => {
       params: {
         apiKey: '',
       },
+      mediaTypes: {
+        [VIDEO]: {
+          context: 'instream',
+        },
+      },
     };
 
     expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithEmptyApi))).to.be.false;
@@ -20,9 +25,57 @@ describe('dailymotionBidAdapterTests', () => {
       params: {
         apiKey: 'test_api_key',
       },
+      mediaTypes: {
+        [VIDEO]: {
+          context: 'instream',
+        },
+      },
     };
 
     expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithApi))).to.be.true;
+
+    const bidWithEmptyMediaTypes = {
+      params: {
+        apiKey: '',
+      },
+    };
+
+    expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithEmptyMediaTypes))).to.be.false;
+
+    const bidWithEmptyVideoAdUnit = {
+      params: {
+        apiKey: '',
+      },
+      mediaTypes: {
+        [VIDEO]: {},
+      },
+    };
+
+    expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithEmptyVideoAdUnit))).to.be.false;
+
+    const bidWithBannerMediaType = {
+      params: {
+        apiKey: 'test_api_key',
+      },
+      mediaTypes: {
+        [BANNER]: {},
+      },
+    };
+
+    expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithBannerMediaType))).to.be.false;
+
+    const bidWithOutstreamContext = {
+      params: {
+        apiKey: 'test_api_key',
+      },
+      mediaTypes: {
+        video: {
+          context: 'outstream',
+        },
+      },
+    };
+
+    expect(config.runWithBidder('dailymotion', () => spec.isBidRequestValid(bidWithOutstreamContext))).to.be.false;
   });
 
   // Validate request generation
@@ -33,20 +86,27 @@ describe('dailymotionBidAdapterTests', () => {
       adUnitCode: 'preroll',
       mediaTypes: {
         video: {
-          playerSize: [[1280, 720]],
           api: [2, 7],
-          description: 'this is a test video',
-          duration: 300,
-          iabcat2: ['6', '17'],
-          lang: 'ENG',
+          mimes: ['video/mp4'],
+          minduration: 5,
+          maxduration: 30,
+          protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+          skip: 1,
+          skipafter: 5,
+          skipmin: 10,
           startdelay: 0,
+          w: 1280,
+          h: 720
         },
       },
       sizes: [[1920, 1080]],
       params: {
         apiKey: 'test_api_key',
         video: {
+          description: 'this is a test video',
           duration: 556,
+          iabcat1: ['IAB-1'],
+          iabcat2: ['6', '17'],
           id: '54321',
           lang: 'FR',
           private: false,
@@ -54,6 +114,7 @@ describe('dailymotionBidAdapterTests', () => {
           title: 'test video',
           topics: 'topic_1, topic_2',
           xid: 'x123456',
+          livestream: 1,
         },
       },
     }];
@@ -78,6 +139,117 @@ describe('dailymotionBidAdapterTests', () => {
         },
         site: {
           content: {
+            data: [
+              {
+                name: 'dataprovider.com',
+                ext: { segtax: 5 },
+                segment: [{ id: '200' }],
+              },
+            ],
+          },
+        },
+      },
+    };
+
+    const [request] = config.runWithBidder(
+      'dailymotion',
+      () => spec.buildRequests(bidRequestData, bidderRequestData),
+    );
+
+    const { data: reqData } = request;
+
+    expect(request.url).to.equal('https://pb.dmxleo.com');
+
+    expect(reqData.bidder_request).to.eql({
+      refererInfo: bidderRequestData.refererInfo,
+      uspConsent: bidderRequestData.uspConsent,
+      gdprConsent: bidderRequestData.gdprConsent,
+      gppConsent: bidderRequestData.gppConsent,
+    });
+    expect(reqData.config.api_key).to.eql(bidRequestData[0].params.apiKey);
+    expect(reqData.coppa).to.be.true;
+    expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId);
+    expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
+    expect(reqData.request.mediaTypes.video.api).to.eql(bidRequestData[0].mediaTypes.video.api);
+    expect(reqData.request.mediaTypes.video.playerSize).to.eql(bidRequestData[0].mediaTypes.video.playerSize);
+    expect(reqData.request.mediaTypes.video.startdelay).to.eql(bidRequestData[0].mediaTypes.video.startdelay);
+    expect(reqData.video_metadata).to.eql({
+      description: bidRequestData[0].params.video.description,
+      iabcat1: ['IAB-1'],
+      iabcat2: bidRequestData[0].params.video.iabcat2,
+      id: bidRequestData[0].params.video.id,
+      lang: bidRequestData[0].params.video.lang,
+      private: bidRequestData[0].params.video.private,
+      tags: bidRequestData[0].params.video.tags,
+      title: bidRequestData[0].params.video.title,
+      topics: bidRequestData[0].params.video.topics,
+      xid: bidRequestData[0].params.video.xid,
+      duration: bidRequestData[0].params.video.duration,
+      livestream: !!bidRequestData[0].params.video.livestream,
+    });
+  });
+
+  it('validates buildRequests with content values from App', () => {
+    const bidRequestData = [{
+      auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
+      bidId: 123456,
+      adUnitCode: 'preroll',
+      mediaTypes: {
+        video: {
+          api: [2, 7],
+          mimes: ['video/mp4'],
+          minduration: 5,
+          maxduration: 30,
+          protocols: [1, 2, 3, 4, 5, 6, 7, 8],
+          skip: 1,
+          skipafter: 5,
+          skipmin: 10,
+          startdelay: 0,
+          w: 1280,
+          h: 720,
+        },
+      },
+      sizes: [[1920, 1080]],
+      params: {
+        apiKey: 'test_api_key',
+        video: {
+          description: 'this is a test video',
+          iabcat2: ['6', '17'],
+          id: '54321',
+          lang: 'FR',
+          private: false,
+          tags: 'tag_1,tag_2,tag_3',
+          title: 'test video',
+          topics: 'topic_1, topic_2',
+          xid: 'x123456',
+          livestream: 1,
+        },
+      },
+    }];
+
+    const bidderRequestData = {
+      refererInfo: {
+        page: 'https://publisher.com',
+      },
+      uspConsent: '1YN-',
+      gdprConsent: {
+        apiVersion: 2,
+        consentString: 'xxx',
+        gdprApplies: true,
+      },
+      gppConsent: {
+        gppString: 'xxx',
+        applicableSections: [5],
+      },
+      ortb2: {
+        regs: {
+          coppa: 1,
+        },
+        app: {
+          bundle: 'app-bundle',
+          storeurl: 'https://play.google.com/store/apps/details?id=app-bundle',
+          content: {
+            len: 556,
             data: [
               {
                 name: 'dataprovider.com',
@@ -112,15 +284,25 @@ describe('dailymotionBidAdapterTests', () => {
     });
     expect(reqData.config.api_key).to.eql(bidRequestData[0].params.apiKey);
     expect(reqData.coppa).to.be.true;
+    expect(reqData.appBundle).to.eql(bidderRequestData.ortb2.app.bundle);
+    expect(reqData.appStoreUrl).to.eql(bidderRequestData.ortb2.app.storeurl);
     expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId);
     expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
     expect(reqData.request.mediaTypes.video.api).to.eql(bidRequestData[0].mediaTypes.video.api);
-    expect(reqData.request.mediaTypes.video.playerSize).to.eql(bidRequestData[0].mediaTypes.video.playerSize);
-    expect(reqData.request.mediaTypes.video.startDelay).to.eql(bidRequestData[0].mediaTypes.video.startdelay);
+    expect(reqData.request.mediaTypes.video.mimes).to.eql(bidRequestData[0].mediaTypes.video.mimes);
+    expect(reqData.request.mediaTypes.video.minduration).to.eql(bidRequestData[0].mediaTypes.video.minduration);
+    expect(reqData.request.mediaTypes.video.maxduration).to.eql(bidRequestData[0].mediaTypes.video.maxduration);
+    expect(reqData.request.mediaTypes.video.protocols).to.eql(bidRequestData[0].mediaTypes.video.protocols);
+    expect(reqData.request.mediaTypes.video.skip).to.eql(bidRequestData[0].mediaTypes.video.skip);
+    expect(reqData.request.mediaTypes.video.skipafter).to.eql(bidRequestData[0].mediaTypes.video.skipafter);
+    expect(reqData.request.mediaTypes.video.skipmin).to.eql(bidRequestData[0].mediaTypes.video.skipmin);
+    expect(reqData.request.mediaTypes.video.startdelay).to.eql(bidRequestData[0].mediaTypes.video.startdelay);
+    expect(reqData.request.mediaTypes.video.w).to.eql(bidRequestData[0].mediaTypes.video.w);
+    expect(reqData.request.mediaTypes.video.h).to.eql(bidRequestData[0].mediaTypes.video.h);
     expect(reqData.video_metadata).to.eql({
-      description: bidRequestData[0].mediaTypes.video.description,
-      iabcat1: ['IAB-1'], // Taxonomy v2 or higher is excluded
-      iabcat2: bidRequestData[0].mediaTypes.video.iabcat2,
+      description: bidRequestData[0].params.video.description,
+      iabcat1: ['IAB-1'],
+      iabcat2: bidRequestData[0].params.video.iabcat2,
       id: bidRequestData[0].params.video.id,
       lang: bidRequestData[0].params.video.lang,
       private: bidRequestData[0].params.video.private,
@@ -129,22 +311,19 @@ describe('dailymotionBidAdapterTests', () => {
       topics: bidRequestData[0].params.video.topics,
       xid: bidRequestData[0].params.video.xid,
       // Overriden through bidder params
-      duration: bidRequestData[0].params.video.duration,
+      duration: bidderRequestData.ortb2.app.content.len,
+      livestream: !!bidRequestData[0].params.video.livestream,
     });
   });
 
-  it('validates buildRequests with fallback values on ortb2 for gpp & iabcat', () => {
+  it('validates buildRequests with fallback values on ortb2 (gpp, iabcat2, id...)', () => {
     const bidRequestData = [{
       auctionId: 'b06c5141-fe8f-4cdf-9d7d-54415490a917',
       bidId: 123456,
       adUnitCode: 'preroll',
       mediaTypes: {
         video: {
-          playerSize: [[1280, 720]],
           api: [2, 7],
-          description: 'this is a test video',
-          duration: 300,
-          lang: 'ENG',
           startdelay: 0,
         },
       },
@@ -152,11 +331,9 @@ describe('dailymotionBidAdapterTests', () => {
       params: {
         apiKey: 'test_api_key',
         video: {
+          description: 'this is a test video',
           duration: 556,
-          id: '54321',
-          lang: 'FR',
           private: false,
-          tags: 'tag_1,tag_2,tag_3',
           title: 'test video',
           topics: 'topic_1, topic_2',
           xid: 'x123456',
@@ -182,6 +359,12 @@ describe('dailymotionBidAdapterTests', () => {
         },
         site: {
           content: {
+            id: '54321',
+            language: 'FR',
+            keywords: 'tag_1,tag_2,tag_3',
+            title: 'test video',
+            livestream: 1,
+            cat: ['IAB-2'],
             data: [
               undefined, // Undefined to check proper handling of edge cases
               {}, // Empty object to check proper handling of edge cases
@@ -203,7 +386,7 @@ describe('dailymotionBidAdapterTests', () => {
               },
               {
                 name: 'dataprovider.com',
-                ext: { segtax: 4 },
+                ext: { segtax: 5 },
                 segment: [{ id: 2222 }], // Invalid segment id to check proper handling of edge cases
               },
               {
@@ -251,21 +434,20 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
     expect(reqData.request.mediaTypes.video.api).to.eql(bidRequestData[0].mediaTypes.video.api);
     expect(reqData.request.mediaTypes.video.playerSize).to.eql(bidRequestData[0].mediaTypes.video.playerSize);
-    expect(reqData.request.mediaTypes.video.startDelay).to.eql(bidRequestData[0].mediaTypes.video.startdelay);
+    expect(reqData.request.mediaTypes.video.startdelay).to.eql(bidRequestData[0].mediaTypes.video.startdelay);
     expect(reqData.video_metadata).to.eql({
-      description: bidRequestData[0].mediaTypes.video.description,
-      // No iabcat1 here because nothing matches taxonomy
-      iabcat1: [],
+      description: bidRequestData[0].params.video.description,
+      iabcat1: ['IAB-2'],
       iabcat2: ['6', '17', '20'],
-      id: bidRequestData[0].params.video.id,
-      lang: bidRequestData[0].params.video.lang,
+      id: bidderRequestData.ortb2.site.content.id,
+      lang: bidderRequestData.ortb2.site.content.language,
       private: bidRequestData[0].params.video.private,
-      tags: bidRequestData[0].params.video.tags,
-      title: bidRequestData[0].params.video.title,
+      tags: bidderRequestData.ortb2.site.content.keywords,
+      title: bidderRequestData.ortb2.site.content.title,
       topics: bidRequestData[0].params.video.topics,
       xid: bidRequestData[0].params.video.xid,
-      // Overriden through bidder params
       duration: bidRequestData[0].params.video.duration,
+      livestream: !!bidderRequestData.ortb2.site.content.livestream,
     });
   });
 
@@ -310,9 +492,17 @@ describe('dailymotionBidAdapterTests', () => {
       adUnitCode: '',
       mediaTypes: {
         video: {
-          playerSize: [],
-          startDelay: 0,
           api: [],
+          mimes: [],
+          minduration: 0,
+          maxduration: 0,
+          protocols: [],
+          skip: 0,
+          skipafter: 0,
+          skipmin: 0,
+          startdelay: 0,
+          w: 0,
+          h: 0,
         },
       },
       sizes: [],
@@ -330,6 +520,7 @@ describe('dailymotionBidAdapterTests', () => {
       title: '',
       topics: '',
       xid: '',
+      livestream: false,
     });
   });
 
