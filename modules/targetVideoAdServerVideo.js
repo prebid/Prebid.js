@@ -27,16 +27,16 @@ export function buildVideoUrl(options) {
   const bid = options.bid || targeting.getWinningBids(adUnit.code)[0];
 
   if (isURL.test(options.params.iu)) {
-    const url = new URL(decodeURIComponent(options.params?.iu));
+    const url = new URL(options.params?.iu);
 
     for (const [key, value] of Object.entries(bid.adserverTargeting)) {
       url.searchParams.append(key, value);
     }
 
-    return url.href;
+    return decodeURIComponent(url.href);
   }
 
-  let search = {
+  const search = {
     iu: options.params.iu,
   };
 

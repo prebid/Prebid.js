@@ -56,7 +56,7 @@ describe('TargetVideo Ad Server Video', function() {
   });
 
   it('should build URL correctly with valid parameters', function() {
-    const params = { iu: 'https://example.com/ads/bid?iu=video' };
+    const params = { iu: 'https://example.com/ads/bid?iu=/video' };
     const adUnit = { code: 'ad_unit_1' };
     const adserverTargeting = {
       hb_adid: 'value1',
@@ -66,22 +66,22 @@ describe('TargetVideo Ad Server Video', function() {
 
     const url = buildVideoUrl({ params, bid, adUnit });
 
-    expect(url).to.equal('https://example.com/ads/bid?iu=video&hb_adid=value1&hb_cache=value2');
+    expect(url).to.equal('https://example.com/ads/bid?iu=/video&hb_adid=value1&hb_cache=value2');
   });
 
   it('should build URL correctly with default parameters', function() {
-    const params = { iu: 'video' };
+    const params = { iu: '/video' };
     const adUnit = { code: 'ad_unit_1' };
     const adserverTargeting = { hb_adid: 'value1', hb_cache: 'value2' };
     const bid = { adserverTargeting };
 
     const url = buildVideoUrl({ params, bid, adUnit });
 
-    expect(url).to.equal('https://go-eu.dipcod.com/ads/bid?iu=video&hb_adid=value1&hb_cache=value2');
+    expect(url).to.equal('https://go-eu.dipcod.com/ads/bid?iu=/video&hb_adid=value1&hb_cache=value2');
   });
 
   it('should append only valid parameters', function() {
-    const params = { iu: 'video' };
+    const params = { iu: '/video' };
     const adUnit = { code: 'ad_unit_1' };
     const adserverTargeting = {
       hb_adid: 'ad_id',
