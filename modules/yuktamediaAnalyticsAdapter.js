@@ -86,13 +86,13 @@ function send(data, status) {
     pathname: '/api/bids'
   });
   fetch(yuktamediaAnalyticsRequestUrl, {
-      body: JSON.stringify(data),
-      keepalive: true,
-      withCredentials: true,
-      method: 'POST'
-    }).catch((_e) => {
-      ajax(yuktamediaAnalyticsRequestUrl, undefined, JSON.stringify(data), { method: 'POST', contentType: 'text/plain' });
-    });
+    body: JSON.stringify(data),
+    keepalive: true,
+    withCredentials: true,
+    method: 'POST'
+  }).catch((_e) => {
+    ajax(yuktamediaAnalyticsRequestUrl, undefined, JSON.stringify(data), { method: 'POST', contentType: 'text/plain' });
+  });
 }
 
 var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }), {
