@@ -1,6 +1,6 @@
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import { ajax } from '../src/ajax.js';
 
 const {
@@ -14,7 +14,7 @@ const {
   AD_RENDER_FAILED,
   AD_RENDER_SUCCEEDED,
   AUCTION_TIMEOUT
-} = CONSTANTS.EVENTS;
+} = EVENTS;
 
 const URL = 'https://ps.itdsmr.com';
 const ANALYTICS_TYPE = 'endpoint';
