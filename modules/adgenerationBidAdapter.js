@@ -38,7 +38,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-    const ADGENE_PREBID_VERSION = '1.6.3';
+    const ADGENE_PREBID_VERSION = '1.6.4';
     let serverRequests = [];
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const validReq = validBidRequests[i];
@@ -52,6 +52,9 @@ export const spec = {
       const gpid = deepAccess(validReq, 'ortb2Imp.ext.gpid');
       const sua = deepAccess(validReq, 'ortb2.device.sua');
       const uid2 = deepAccess(validReq, 'userId.uid2.id');
+      const topics = getTopics(validReq);
+      const cdep = deepAccess(validReq, 'ortb2.device.ext.cdep');
+
       let data = ``;
       data = tryAppendQueryString(data, 'posall', 'SSPLOC');
       const id = getBidIdParameter('id', validReq.params);
@@ -73,6 +76,8 @@ export const spec = {
       data = tryAppendQueryString(data, 'gpid', gpid);
       data = tryAppendQueryString(data, 'uach', sua ? JSON.stringify(sua) : null);
       data = tryAppendQueryString(data, 'schain', validReq.schain ? JSON.stringify(validReq.schain) : null);
+      data = tryAppendQueryString(data, 'topics', topics ? JSON.stringify(topics) : null);
+      data = tryAppendQueryString(data, 'cdep', cdep);
 
       // native以外にvideo等の対応が入った場合は要修正
       if (!validReq.mediaTypes || !validReq.mediaTypes.native) {
@@ -333,6 +338,19 @@ function validId5(validReq) {
 function getHyperId(validReq) {
   if (validReq.userId && validReq.userId.novatiq && validReq.userId.novatiq.snowflake.syncResponse === 1) {
     return validReq.userId.novatiq.snowflake.id;
+  }
+  return null;
+}
+
+function getTopics(validReq) {
+  // 600,601 used Chromium Topics API taxonomy. Held for future Chromium Topics API taxonomies 602-609
+  const userData = deepAccess(validReq, 'ortb2.user.data');
+  if (!userData || !Array.isArray(userData)) {
+    return null;
+  }
+  const topics = userData.filter(data => data?.ext?.segtax >= 600 && data?.ext?.segtax <= 609);
+  if (topics.length > 0) {
+    return topics;
   }
   return null;
 }

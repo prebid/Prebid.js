@@ -176,6 +176,57 @@ describe('AdgenerationAdapter', function () {
           }
         },
         schain: {ver: '1.0', complete: 1, nodes: [{asi: 'indirectseller.com', sid: '00001', hp: 1}]}
+      },
+      { // bannerWithTopics
+        bidder: 'adg',
+        params: {
+          id: '58278', // banner
+        },
+        adUnitCode: 'adunit-code',
+        sizes: [[320, 100]],
+        bidId: '2f6ac468a9c15e',
+        bidderRequestId: '14a9f773e30243',
+        auctionId: '4aae9f05-18c6-4fcd-80cf-282708cd584a',
+        transactionTd: 'f76f6dfd-d64f-4645-a29f-682bac7f431a',
+        ortb2: {
+          device: {
+            ext: {
+              cdep: 'fake_label_only_1.1'
+            }
+          },
+          user: {
+            data: [
+              {
+                ext: {
+                  segtax: 600,
+                  segclass: 'm1'
+                },
+                segment: [
+                  {id: '1'},
+                  {id: '2'}
+                ]
+              },
+              {
+                ext: {
+                  segtax: 600,
+                  segclass: 'm2'
+                },
+                segment: [
+                  {id: '3'}
+                ]
+              },
+              {
+                ext: {
+                  segtax: 599,
+                  segclass: 'm2'
+                },
+                segment: [
+                  {id: '3'}
+                ]
+              }
+            ]
+          }
+        }
       }
     ];
     const bidderRequest = {
@@ -184,12 +235,13 @@ describe('AdgenerationAdapter', function () {
       }
     };
     const data = {
-      banner: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.6.3&imark=1&tp=https%3A%2F%2Fexample.com`,
-      bannerUSD: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=USD&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.6.3&imark=1&tp=https%3A%2F%2Fexample.com`,
-      native: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=1x1&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.6.3&tp=https%3A%2F%2Fexample.com`,
-      bannerWithHyperId: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.6.3&imark=1&tp=https%3A%2F%2Fexample.com&hyper_id=novatiqId`,
-      bannerWithAdgextCriteoId: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.6.3&adgext_criteo_id=criteo-id-test-1234567890&imark=1&tp=https%3A%2F%2Fexample.com`,
-      bannerWithAdgextIds: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.6.3&adgext_id5_id=id5-id-test-1234567890&adgext_id5_id_link_type=2&adgext_imuid=i.KrAH6ZAZTJOnH5S4N2sogA&adgext_uid2=AgAAAAVacu1uAxgAxH%2BHJ8%2BnWlS2H4uVqr6i%2BHBDCNREHD8WKsio%2Fx7D8xXFuq1cJycUU86yXfTH9Xe%2F4C8KkH%2B7UCiU7uQxhyD7Qxnv251pEs6K8oK%2BBPLYR%2B8BLY%2FsJKesa%2FkoKwx1FHgUzIBum582tSy2Oo%2B7C6wYUaaV4QcLr%2F4LPA%3D&gpid=%2F1111%2Fhomepage%23300x250&uach=%7B%22source%22%3A2%2C%22platform%22%3A%7B%22brand%22%3A%22macOS%22%7D%2C%22browsers%22%3A%5B%7B%22brand%22%3A%22Chromium%22%2C%22version%22%3A%5B%22112%22%5D%7D%2C%7B%22brand%22%3A%22Google%20Chrome%22%2C%22version%22%3A%5B%22112%22%5D%7D%2C%7B%22brand%22%3A%22Not%3AA-Brand%22%2C%22version%22%3A%5B%2299%22%5D%7D%5D%2C%22mobile%22%3A0%7D&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22indirectseller.com%22%2C%22sid%22%3A%2200001%22%2C%22hp%22%3A1%7D%5D%7D&imark=1&tp=https%3A%2F%2Fexample.com`,
+      banner: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.6.4&imark=1&tp=https%3A%2F%2Fexample.com`,
+      bannerUSD: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=300x250%2C320x100&currency=USD&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.6.4&imark=1&tp=https%3A%2F%2Fexample.com`,
+      native: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=1x1&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.6.4&tp=https%3A%2F%2Fexample.com`,
+      bannerWithHyperId: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.6.4&imark=1&tp=https%3A%2F%2Fexample.com&hyper_id=novatiqId`,
+      bannerWithAdgextCriteoId: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.6.4&adgext_criteo_id=criteo-id-test-1234567890&imark=1&tp=https%3A%2F%2Fexample.com`,
+      bannerWithAdgextIds: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.6.4&adgext_id5_id=id5-id-test-1234567890&adgext_id5_id_link_type=2&adgext_imuid=i.KrAH6ZAZTJOnH5S4N2sogA&adgext_uid2=AgAAAAVacu1uAxgAxH%2BHJ8%2BnWlS2H4uVqr6i%2BHBDCNREHD8WKsio%2Fx7D8xXFuq1cJycUU86yXfTH9Xe%2F4C8KkH%2B7UCiU7uQxhyD7Qxnv251pEs6K8oK%2BBPLYR%2B8BLY%2FsJKesa%2FkoKwx1FHgUzIBum582tSy2Oo%2B7C6wYUaaV4QcLr%2F4LPA%3D&gpid=%2F1111%2Fhomepage%23300x250&uach=%7B%22source%22%3A2%2C%22platform%22%3A%7B%22brand%22%3A%22macOS%22%7D%2C%22browsers%22%3A%5B%7B%22brand%22%3A%22Chromium%22%2C%22version%22%3A%5B%22112%22%5D%7D%2C%7B%22brand%22%3A%22Google%20Chrome%22%2C%22version%22%3A%5B%22112%22%5D%7D%2C%7B%22brand%22%3A%22Not%3AA-Brand%22%2C%22version%22%3A%5B%2299%22%5D%7D%5D%2C%22mobile%22%3A0%7D&schain=%7B%22ver%22%3A%221.0%22%2C%22complete%22%3A1%2C%22nodes%22%3A%5B%7B%22asi%22%3A%22indirectseller.com%22%2C%22sid%22%3A%2200001%22%2C%22hp%22%3A1%7D%5D%7D&imark=1&tp=https%3A%2F%2Fexample.com`,
+      bannerWithTopics: `posall=SSPLOC&id=58278&sdktype=0&hb=true&t=json3&sizes=320x100&currency=JPY&pbver=${prebid.version}&sdkname=prebidjs&adapterver=1.6.4&topics=%5B%7B%22ext%22%3A%7B%22segtax%22%3A600%2C%22segclass%22%3A%22m1%22%7D%2C%22segment%22%3A%5B%7B%22id%22%3A%221%22%7D%2C%7B%22id%22%3A%222%22%7D%5D%7D%2C%7B%22ext%22%3A%7B%22segtax%22%3A600%2C%22segclass%22%3A%22m2%22%7D%2C%22segment%22%3A%5B%7B%22id%22%3A%223%22%7D%5D%7D%5D&cdep=fake_label_only_1.1&imark=1&tp=https%3A%2F%2Fexample.com`,
     };
     it('sends bid request to ENDPOINT via GET', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[0];
@@ -235,6 +287,10 @@ describe('AdgenerationAdapter', function () {
     it('should attache params to the bannerWithAdgextIds request', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest)[4];
       expect(request.data).to.equal(data.bannerWithAdgextIds);
+    });
+    it('should attache params to the bannerWithTopics request', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest)[5];
+      expect(request.data).to.equal(data.bannerWithTopics);
     });
 
     it('allows setConfig to set bidder currency for JPY', function () {
