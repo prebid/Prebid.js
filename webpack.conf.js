@@ -51,9 +51,6 @@ module.exports = {
       'prebid-core': {
         import: './src/prebid.js'
       },
-      'debugging-standalone': {
-        import: './modules/debugging/standalone.js'
-      }
     };
     const selectedModules = new Set(helpers.getArgModules());
 
@@ -130,15 +127,8 @@ module.exports = {
         );
         const core = path.resolve('./src');
         const paapiMod = path.resolve('./modules/paapi.js');
-        const nodeModules = path.resolve('./node_modules');
 
         return Object.assign(libraries, {
-          common_deps: {
-            name: 'common_deps',
-            test(module) {
-              return module.resource && module.resource.startsWith(nodeModules);
-            }
-          },
           core: {
             name: 'chunk-core',
             test: (module) => {
