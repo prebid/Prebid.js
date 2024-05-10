@@ -218,6 +218,7 @@ function buildImpression(bidRequest) {
     }
     try {
       moduleBidFloor = bidRequest.getFloor({
+        currency: 'USD',
         mediaType: _mediaType,
         size: _size
       });
@@ -226,7 +227,7 @@ function buildImpression(bidRequest) {
       logWarn('priceFloors module call getFloor failed, error : ', err);
     }
 
-    if (moduleBidFloor && moduleBidFloor.currency === 'USD') {
+    if (moduleBidFloor) {
       imp.bidfloor = moduleBidFloor.floor;
       imp.bidfloorcur = moduleBidFloor.currency;
     }
