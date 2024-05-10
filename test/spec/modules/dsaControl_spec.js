@@ -1,5 +1,5 @@
 import {addBidResponseHook, setMetaDsa, reset} from '../../../modules/dsaControl.js';
-import CONSTANTS from 'src/constants.json';
+import { REJECTION_REASON } from 'src/constants.js';
 import {auctionManager} from '../../../src/auctionManager.js';
 import {AuctionIndex} from '../../../src/auctionIndex.js';
 
@@ -51,7 +51,7 @@ describe('DSA transparency', () => {
         });
 
         it('should reject bids that have no meta.dsa', () => {
-          expectRejection(CONSTANTS.REJECTION_REASON.DSA_REQUIRED);
+          expectRejection(REJECTION_REASON.DSA_REQUIRED);
         });
 
         it('should accept bids that do', () => {
@@ -66,7 +66,7 @@ describe('DSA transparency', () => {
 
           it('should reject bids with adrender = 0 (advertiser will not render)', () => {
             bid.meta = {dsa: {adrender: 0}};
-            expectRejection(CONSTANTS.REJECTION_REASON.DSA_MISMATCH);
+            expectRejection(REJECTION_REASON.DSA_MISMATCH);
           });
 
           it('should accept bids with adrender = 1 (advertiser will render)', () => {
@@ -81,7 +81,7 @@ describe('DSA transparency', () => {
 
           it('should reject bids with adrender = 1 (advertiser will render)', () => {
             bid.meta = {dsa: {adrender: 1}};
-            expectRejection(CONSTANTS.REJECTION_REASON.DSA_MISMATCH);
+            expectRejection(REJECTION_REASON.DSA_MISMATCH);
           });
 
           it('should accept bids with adrender = 0 (advertiser will not render)', () => {

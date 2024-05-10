@@ -1,15 +1,15 @@
 'use strict';
 // LiftIgniter or Petametrics
 
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import adaptermanager from '../src/adapterManager.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { config } from '../src/config.js';
 import { logError, logInfo, logWarn } from '../src/utils.js';
 
 // Standard Analytics Adapter code
-const AUCTION_END = CONSTANTS.EVENTS.AUCTION_END
-const AUCTION_INIT = CONSTANTS.EVENTS.AUCTION_INIT
+const AUCTION_END = EVENTS.AUCTION_END
+const AUCTION_INIT = EVENTS.AUCTION_INIT
 
 // Internal controls
 const BATCH_MESSAGE_FREQUENCY = 1000; // Send results batched on a 1s delay
@@ -264,7 +264,7 @@ export function summarizeAuctionEnd(args, adapterConfig) {
         // or less than timeout and assign it either a timeout bid or a valid valid
         // The bidsReceived array has both timeout bids and the valid bids
         const keys = ['bidsRejected', 'noBids', 'bidsReceived']
-        let bidStatus = null, bidAmount = null, bidResponseTime = null;
+        let bidStatus = null; let bidAmount = null; let bidResponseTime = null;
         for (let i = 0; i < keys.length; i += 1) {
           const status = keys[i]
           const data = getBidStatusAmtsAndResponseTime(status, fbr, args)

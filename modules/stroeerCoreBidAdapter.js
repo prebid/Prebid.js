@@ -76,11 +76,13 @@ export const spec = {
       };
     }
 
-    const DSA_KEY = 'ortb2.regs.ext.dsa';
-    const dsa = deepAccess(bidderRequest, DSA_KEY);
-    if (dsa) {
-      deepSetValue(basePayload, DSA_KEY, dsa);
-    }
+    const ORTB2_KEYS = ['regs.ext.dsa', 'device.ext.cdep'];
+    ORTB2_KEYS.forEach(key => {
+      const value = deepAccess(bidderRequest.ortb2, key);
+      if (value !== undefined) {
+        deepSetValue(basePayload, `ortb2.${key}`, value);
+      }
+    });
 
     const bannerBids = validBidRequests
       .filter(hasBanner)

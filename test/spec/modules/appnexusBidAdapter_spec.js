@@ -343,7 +343,7 @@ describe('AppNexusAdapter', function () {
         expect(payload.tags[0].hb_source).to.deep.equal(1);
       });
 
-      it('should include ORTB video values when video params were not set', function () {
+      it('should include ORTB video values when matching video params were not all set', function () {
         let bidRequest = deepClone(bidRequests[0]);
         bidRequest.params = {
           placementId: '1234235',
@@ -373,6 +373,61 @@ describe('AppNexusAdapter', function () {
           playback_method: 2,
           skippable: true,
           context: 4
+        });
+        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
+      });
+
+      it('should include ORTB video values when video params is empty - case 1', function () {
+        let bidRequest = deepClone(bidRequests[0]);
+        bidRequest.mediaTypes = {
+          video: {
+            playerSize: [640, 480],
+            context: 'outstream',
+            placement: 3,
+            mimes: ['video/mp4'],
+            skip: 0,
+            minduration: 5,
+            api: [1, 5, 6],
+            playbackmethod: [2, 4]
+          }
+        };
+
+        const request = spec.buildRequests([bidRequest]);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.tags[0].video).to.deep.equal({
+          minduration: 5,
+          playback_method: 2,
+          skippable: false,
+          context: 4
+        });
+        expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
+      });
+
+      it('should include ORTB video values when video params is empty - case 2', function () {
+        let bidRequest = deepClone(bidRequests[0]);
+        bidRequest.mediaTypes = {
+          video: {
+            playerSize: [640, 480],
+            context: 'outstream',
+            plcmt: 2,
+            startdelay: 0,
+            mimes: ['video/mp4'],
+            skip: 1,
+            minduration: 5,
+            api: [1, 5, 6],
+            playbackmethod: [2, 4]
+          }
+        };
+
+        const request = spec.buildRequests([bidRequest]);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.tags[0].video).to.deep.equal({
+          minduration: 5,
+          playback_method: 2,
+          skippable: true,
+          context: 8
         });
         expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
       });
@@ -1385,6 +1440,88 @@ describe('AppNexusAdapter', function () {
       expect(payload.user.coppa).to.equal(true);
 
       config.getConfig.restore();
+    });
+
+    describe('ast_override_div', function () {
+      let getParamStub;
+      let bidRequest = Object.assign({}, bidRequests[0]);
+      let bidRequest2 = deepClone(bidRequests[0]);
+      bidRequest2.adUnitCode = 'adUnit_code_2';
+      let bidRequest3 = deepClone(bidRequests[0]);
+      bidRequest3.adUnitCode = 'adUnit_code_3';
+
+      before(function () {
+        getParamStub = sinon.stub(utils, 'getParameterByName');
+      });
+
+      it('should set forced creative id if one adUnitCode passed', function () {
+        getParamStub.callsFake(function(par) {
+          if (par === 'ast_override_div') return 'adunit-code:1234';
+          return '';
+        });
+
+        const request = spec.buildRequests([bidRequest, bidRequest2]);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.tags[0].force_creative_id).to.deep.equal(1234);
+        expect(payload.tags[1].force_creative_id).to.not.exist;
+      });
+
+      it('should set forced creative id if `ast_override_div` is set to override multiple adUnitCode', function () {
+        getParamStub.callsFake(function(par) {
+          if (par === 'ast_override_div') return 'adunit-code:1234,adUnit_code_2:5678';
+          return '';
+        });
+
+        const request = spec.buildRequests([bidRequest, bidRequest2, bidRequest3]);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.tags[0].force_creative_id).to.deep.equal(1234);
+        expect(payload.tags[1].force_creative_id).to.deep.equal(5678);
+        expect(payload.tags[2].force_creative_id).to.not.exist;
+      });
+
+      it('should not set forced creative id if `ast_override_div` is missing creativeId', function () {
+        getParamStub.callsFake(function(par) {
+          if (par === 'ast_override_div') return 'adunit-code';
+          return '';
+        });
+
+        const request = spec.buildRequests([bidRequest, bidRequest2]);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.tags[0].force_creative_id).to.not.exist;
+        expect(payload.tags[1].force_creative_id).to.not.exist;
+      });
+
+      it('should not set forced creative id if `ast_override_div` is in the wrong format', function () {
+        getParamStub.callsFake(function(par) {
+          if (par === 'ast_override_div') return 'adunit-code;adUnit_code_2:5678';
+          return '';
+        }); ;
+
+        const request = spec.buildRequests([bidRequest, bidRequest2]);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.tags[0].force_creative_id).to.not.exist;
+        expect(payload.tags[1].force_creative_id).to.not.exist;
+      });
+
+      it('should not set forced creative id if `ast_override_div` is missing', function () {
+        getParamStub.callsFake(function(par) {
+          return '';
+        }); ;
+
+        const request = spec.buildRequests([bidRequest, bidRequest2]);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.tags[0].force_creative_id).to.not.exist;
+        expect(payload.tags[1].force_creative_id).to.not.exist;
+      });
+
+      after(function () {
+        getParamStub.restore();
+      });
     });
 
     it('should set the X-Is-Test customHeader if test flag is enabled', function () {
