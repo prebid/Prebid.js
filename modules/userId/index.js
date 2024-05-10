@@ -315,7 +315,9 @@ function deleteValueFromLocalStorage(submodule) {
 }
 
 export function deleteStoredValue(submodule) {
-  calculateEnabledStorageTypes(submodule).forEach(storageType => {
+  populateEnabledStorageTypes(submodule);
+
+  submodule.enabledStorageTypes.forEach(storageType => {
     switch (storageType) {
       case COOKIE:
         deleteValueFromCookie(submodule);
@@ -881,9 +883,7 @@ function initSubmodules(dest, submodules, forceRefresh = false) {
   return uidMetrics().fork().measureTime('userId.init.modules', function () {
     if (!submodules.length) return []; // to simplify log messages from here on
 
-    submodules.forEach(submod => {
-      submod.enabledStorageTypes = calculateEnabledStorageTypes(submod);
-    });
+    submodules.forEach(submod => populateEnabledStorageTypes(submod));
 
     /**
      * filter out submodules that:
@@ -1005,10 +1005,14 @@ function canUseCookies(submodule) {
   return true
 }
 
-function calculateEnabledStorageTypes(submodule) {
+function populateEnabledStorageTypes(submodule) {
+  if (submodule.enabledStorageTypes) {
+    return;
+  }
+
   const storageTypes = getConfiguredStorageTypes(submodule.config);
 
-  return storageTypes.filter(type => {
+  submodule.enabledStorageTypes = storageTypes.filter(type => {
     switch (type) {
       case LOCAL_STORAGE:
         return canUseLocalStorage(submodule);
