@@ -1275,20 +1275,6 @@ export const spec = {
 
     return syncs;
   },
-
-  /**
-   * Handle custom logic in s2s context
-   *
-   * @param {*} params
-   * @param {boolean} isOrtb Is an s2s context
-   * @param {*} adUnit
-   * @param {*} bidRequests
-   * @returns {object} updated params
-   */
-  transformBidParams(params, isOrtb, adUnit, bidRequests) {
-    // We do not have a prebid server adapter. So let's return unchanged params.
-    return params;
-  }
 };
 
 initAdagio();

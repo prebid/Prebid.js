@@ -1465,33 +1465,6 @@ describe('Adagio bid adapter', () => {
     });
   });
 
-  describe('transformBidParams', function() {
-    it('Compute additional params in s2s mode', function() {
-      const adUnit = {
-        code: 'adunit-code',
-        params: {
-          organizationId: '1000'
-        }
-      };
-      const bid01 = new BidRequestBuilder({
-        'mediaTypes': {
-          banner: { sizes: [[300, 250]] },
-          video: {
-            context: 'outstream',
-            playerSize: [300, 250],
-            renderer: {
-              url: 'https://url.tld',
-              render: () => true
-            }
-          }
-        }
-      }).withParams().build();
-
-      const params = spec.transformBidParams({ param01: 'test' }, true, adUnit, [{ bidderCode: 'adagio', auctionId: bid01.auctionId, bids: [bid01] }]);
-      expect(params.param01).eq('test');
-    });
-  });
-
   describe('Adagio features when prebid in top.window', function() {
     it('should return all expected features when all expected bidder params are available', function() {
       sandbox.stub(window.top.document, 'getElementById').returns(
