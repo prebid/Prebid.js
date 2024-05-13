@@ -180,7 +180,7 @@ function buildRequest(bidRequests, bidderRequest) {
     preventPageViewEvent: preventPageViewEvent,
     isPlacementRefresh: isPlacementRefresh,
     isInfiniteScrollPage: isInfiniteScrollPage,
-	pageReferrer: bidderRequest.refererInfo.ref.substring(0, 300)
+    pageReferrer: bidderRequest.refererInfo.ref.substring(0, 300)
   };
 
   let hid = invibes.getCookie('handIid');
