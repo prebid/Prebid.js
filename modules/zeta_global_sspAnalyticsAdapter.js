@@ -77,6 +77,10 @@ function auctionEndHandler(args) {
   sendEvent(EVENTS.AUCTION_END, event);
 }
 
+function bidTimeoutHandler(args) {
+  sendEvent(EVENTS.BID_TIMEOUT, args);
+}
+
 /// /////////// ADAPTER DEFINITION ///////////////////////////
 
 let baseAdapter = adapter({analyticsType: 'endpoint'});
@@ -104,6 +108,9 @@ let zetaAdapter = Object.assign({}, baseAdapter, {
         break;
       case EVENTS.AUCTION_END:
         auctionEndHandler(args);
+        break;
+      case EVENTS.BID_TIMEOUT:
+        bidTimeoutHandler(args);
         break;
     }
   }
