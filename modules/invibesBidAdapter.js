@@ -179,9 +179,11 @@ function buildRequest(bidRequests, bidderRequest) {
     isLocalStorageEnabled: storage.hasLocalStorage(),
     preventPageViewEvent: preventPageViewEvent,
     isPlacementRefresh: isPlacementRefresh,
-    isInfiniteScrollPage: isInfiniteScrollPage,
-    pageReferrer: bidderRequest.refererInfo.ref.substring(0, 300)
+    isInfiniteScrollPage: isInfiniteScrollPage
   };
+
+  if (bidderRequest.refererInfo && bidderRequest.refererInfo.ref)
+    data.pageReferrer = bidderRequest.refererInfo.ref.substring(0, 300);
 
   let hid = invibes.getCookie('handIid');
   if (hid) {
