@@ -113,6 +113,8 @@ const SAMPLE_EVENTS = {
         'auctionStart': 1638441234544,
         'timeout': 400,
         'refererInfo': {
+          'page': 'http://test-zeta-ssp.net:63342/zeta-ssp/ssp/_dev/examples/page_banner.html',
+          'domain': 'test-zeta-ssp.net:63342',
           'referer': 'http://test-zeta-ssp.net:63342/zeta-ssp/ssp/_dev/examples/page_banner.html',
           'reachedTop': true,
           'isAmp': false,
@@ -172,6 +174,8 @@ const SAMPLE_EVENTS = {
         'auctionStart': 1638441234544,
         'timeout': 400,
         'refererInfo': {
+          'page': 'http://test-zeta-ssp.net:63342/zeta-ssp/ssp/_dev/examples/page_banner.html',
+          'domain': 'test-zeta-ssp.net:63342',
           'referer': 'http://test-zeta-ssp.net:63342/zeta-ssp/ssp/_dev/examples/page_banner.html',
           'reachedTop': true,
           'isAmp': false,
@@ -397,6 +401,8 @@ describe('Zeta Global SSP Analytics Adapter', function () {
         zetaParams: {sid: 111, tags: {position: 'top', shortname: 'name'}},
         bidderRequests: [{
           bidderCode: 'zeta_global_ssp',
+          domain: 'test-zeta-ssp.net:63342',
+          page: 'http://test-zeta-ssp.net:63342/zeta-ssp/ssp/_dev/examples/page_banner.html',
           bids: [{
             bidId: '206be9a13236af',
             auctionId: '75e394d9',
@@ -406,6 +412,8 @@ describe('Zeta Global SSP Analytics Adapter', function () {
           }]
         }, {
           bidderCode: 'appnexus',
+          domain: 'test-zeta-ssp.net:63342',
+          page: 'http://test-zeta-ssp.net:63342/zeta-ssp/ssp/_dev/examples/page_banner.html',
           bids: [{
             bidId: '41badc0e164c758',
             auctionId: '75e394d9',
