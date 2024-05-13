@@ -142,6 +142,11 @@ function validateNativeMediaType(adUnit) {
   const native = validatedAdUnit.mediaTypes.native;
   // if native assets are specified in OpenRTB format, remove legacy assets and print a warn.
   if (native.ortb) {
+    if (native.ortb.assets?.some(asset => !isNumber(asset.id) || asset.id < 0)) {
+      logError(`Native asset ID must be a nonnegative integer`, adUnit);
+      delete validatedAdUnit.mediaTypes.native;
+      return validatedAdUnit;
+    }
     const legacyNativeKeys = Object.keys(NATIVE_KEYS).filter(key => NATIVE_KEYS[key].includes('hb_native_'));
     const nativeKeys = Object.keys(native);
     const intersection = nativeKeys.filter(nativeKey => legacyNativeKeys.includes(nativeKey));
