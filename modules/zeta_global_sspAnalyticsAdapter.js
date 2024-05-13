@@ -1,7 +1,7 @@
 import {logError} from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
+import {ajax} from '../src/ajax.js';
 import adapterManager from '../src/adapterManager.js';
-import { EVENTS } from '../src/constants.js';
+import {EVENTS} from '../src/constants.js';
 
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 
@@ -79,15 +79,13 @@ function auctionEndHandler(args) {
 
 /// /////////// ADAPTER DEFINITION ///////////////////////////
 
-let baseAdapter = adapter({ analyticsType: 'endpoint' });
+let baseAdapter = adapter({analyticsType: 'endpoint'});
 let zetaAdapter = Object.assign({}, baseAdapter, {
 
   enableAnalytics(config = {}) {
-    if (typeof config.options === 'object') {
-      if (config.options) {
-        zetaParams = config.options;
-        baseAdapter.enableAnalytics.call(this, config);
-      }
+    if (config.options && config.options.sid) {
+      zetaParams = config.options;
+      baseAdapter.enableAnalytics.call(this, config);
     } else {
       logError(LOG_PREFIX + 'Config not found');
       logError(LOG_PREFIX + 'Analytics is disabled due to error(s)');
@@ -99,7 +97,7 @@ let zetaAdapter = Object.assign({}, baseAdapter, {
     baseAdapter.disableAnalytics.apply(this, arguments);
   },
 
-  track({ eventType, args }) {
+  track({eventType, args}) {
     switch (eventType) {
       case EVENTS.AD_RENDER_SUCCEEDED:
         adRenderSucceededHandler(args);
