@@ -7,6 +7,7 @@ import pubxaiAnalyticsAdapter, {
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 import { getGptSlotInfoForAdUnitCode } from '../../../libraries/gptUtils/gptUtils.js';
 import { EVENTS } from '../../../src/constants.js';
 
@@ -15,6 +16,7 @@ let events = require('src/events');
 describe('pubxai analytics adapter', () => {
   beforeEach(() => {
     sinon.stub(events, 'getEvents').returns([]);
+    sinon.stub()
   });
 
   afterEach(() => {
@@ -26,6 +28,9 @@ describe('pubxai analytics adapter', () => {
       samplingRate: '1',
       pubxId: '6c415fc0-8b0e-4cf5-be73-01526a4db625',
     };
+
+    let originalHD;
+    let originalVS;
 
     let location = utils.getWindowLocation();
     let storage = window.top['sessionStorage'];
@@ -584,7 +589,7 @@ describe('pubxai analytics adapter', () => {
         userIdTypes: [],
       },
       consentDetail: {
-        consentTypes: [],
+        consentTypes: Object.keys(getGlobal().getConsentMetadata?.() || {}),
       },
       pmacDetail: JSON.parse(storage.getItem('pbx:pmac')) || {},
       initOptions: {
@@ -677,7 +682,7 @@ describe('pubxai analytics adapter', () => {
         userIdTypes: [],
       },
       consentDetail: {
-        consentTypes: [],
+        consentTypes: Object.keys(getGlobal().getConsentMetadata?.() || {}),
       },
       pmacDetail: JSON.parse(storage.getItem('pbx:pmac')) || {},
       initOptions: {
@@ -692,15 +697,19 @@ describe('pubxai analytics adapter', () => {
     });
 
     beforeEach(() => {
-      Object.defineProperty(document, 'visibilityState', {
-        value: 'hidden',
-        writable: true,
-      }); // prep for the document visibility state change
       adapterManager.enableAnalytics({
         provider: 'pubxai',
         options: initOptions,
       });
       sinon.stub(navigator, 'sendBeacon').returns(true);
+      originalHD = document.hidden;
+      originalVS = document.visibilityState;
+      document['__defineGetter__']('hidden', function () {
+        return 1;
+      });
+      document['__defineGetter__']('visibilityState', function () {
+        return 'hidden';
+      });
     });
 
     afterEach(() => {
@@ -708,6 +717,12 @@ describe('pubxai analytics adapter', () => {
       navigator.sendBeacon.restore();
       delete auctionCache['bc3806e4-873e-453c-8ae5-204f35e923b4'];
       delete auctionCache['auction2'];
+      document['__defineGetter__']('hidden', function () {
+        return originalHD;
+      });
+      document['__defineGetter__']('visibilityState', function () {
+        return originalVS;
+      });
     });
 
     it('builds and sends auction data', async () => {
@@ -748,7 +763,7 @@ describe('pubxai analytics adapter', () => {
         expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
           auctionTimestamp: '1616654312804',
           pubxaiAnalyticsVersion: 'v2.0.0',
-          prebidVersion: 'undefined', // not configured for test case
+          prebidVersion: getGlobal()?.version,
         });
         expect(expectedData.type).to.equal('text/json');
         expect(JSON.parse(await expectedData.text())).to.deep.equal([
@@ -791,7 +806,7 @@ describe('pubxai analytics adapter', () => {
       expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
         auctionTimestamp: '1616654312804',
         pubxaiAnalyticsVersion: 'v2.0.0',
-        prebidVersion: 'undefined', // not configured for test case
+        prebidVersion: getGlobal()?.version,
       });
 
       // Step 9: check that the data sent in the request is correct
@@ -916,7 +931,7 @@ describe('pubxai analytics adapter', () => {
         expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
           auctionTimestamp: '1616654312804',
           pubxaiAnalyticsVersion: 'v2.0.0',
-          prebidVersion: 'undefined', // not configured for test case
+          prebidVersion: getGlobal()?.version,
         });
         expect(expectedData.type).to.equal('text/json');
         expect(JSON.parse(await expectedData.text())).to.deep.equal([
@@ -1032,7 +1047,7 @@ describe('pubxai analytics adapter', () => {
         expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
           auctionTimestamp: '1616654312804',
           pubxaiAnalyticsVersion: 'v2.0.0',
-          prebidVersion: 'undefined', // not configured for test case
+          prebidVersion: getGlobal()?.version,
         });
         expect(expectedData.type).to.equal('text/json');
         expect(JSON.parse(await expectedData.text())).to.deep.equal([
