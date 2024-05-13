@@ -421,6 +421,9 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
  * @param {function(String): void} reject a function that, when called, rejects `bid` with the given reason.
  */
 export const addBidResponse = hook('sync', function(adUnitCode, bid, reject) {
+  if (!isValidPrice(bid)) {
+    reject('Bid price exceeds maximum value')
+  }
   this.dispatch.call(null, adUnitCode, bid);
 }, 'addBidResponse');
 
@@ -973,4 +976,20 @@ function groupByPlacement(bidsByPlacement, bid) {
   if (!bidsByPlacement[bid.adUnitCode]) { bidsByPlacement[bid.adUnitCode] = { bids: [] }; }
   bidsByPlacement[bid.adUnitCode].bids.push(bid);
   return bidsByPlacement;
+}
+
+/**
+ * isValidPrice is price validation function 
+ * which checks if price from bid response
+ * is not higher than top limit set in config
+ */
+function isValidPrice(bid) {
+  const maxBidValue = config.getConfig('maxBid');
+  const maxBidCurrency = config.getConfig('maxBidCur');
+
+  if (!maxBidValue) return true;
+  if (maxBidCurrency && bid.currency && (bid.currency !== maxBidCurrency) && bid.getCpmInNewCurrency) {
+    return Number(bid.getCpmInNewCurrency(maxBidCurrency)) <= maxBidValue;
+  }  
+  return maxBidValue >= Number(bid.cpm);
 }
