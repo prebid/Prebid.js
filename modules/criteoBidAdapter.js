@@ -1,9 +1,8 @@
-import { deepAccess, generateUUID, isArray, logError, logInfo, logWarn, parseUrl } from '../src/utils.js';
-import { loadExternalScript } from '../src/adloader.js';
+import { deepAccess, generateUUID, isArray, logError, logWarn, parseUrl } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { verify } from 'criteo-direct-rsa-validate/build/verify.js'; // ref#2
+
 import { getStorageManager } from '../src/storageManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { hasPurpose1Consent } from '../src/utils/gpdr.js';
@@ -28,22 +27,7 @@ export const PROFILE_ID_PUBLISHERTAG = 185;
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const LOG_PREFIX = 'Criteo: ';
 
-/*
-  If you don't want to use the FastBid adapter feature, you can lighten criteoBidAdapter size by :
-  1. commenting the tryGetCriteoFastBid function inner content (see ref#1)
-  2. removing the line 'verify' function import line (see ref#2)
-
-  Unminified source code can be found in the privately shared repo: https://github.com/Prebid-org/prebid-js-external-js-criteo/blob/master/dist/prod.js
-*/
-const FAST_BID_VERSION_PLACEHOLDER = '%FAST_BID_VERSION%';
-export const FAST_BID_VERSION_CURRENT = 144;
-const FAST_BID_VERSION_LATEST = 'latest';
-const FAST_BID_VERSION_NONE = 'none';
-const PUBLISHER_TAG_URL_TEMPLATE = 'https://static.criteo.net/js/ld/publishertag.prebid' + FAST_BID_VERSION_PLACEHOLDER + '.js';
 const PUBLISHER_TAG_OUTSTREAM_SRC = 'https://static.criteo.net/js/ld/publishertag.renderer.js'
-const FAST_BID_PUBKEY_E = 65537;
-const FAST_BID_PUBKEY_N = 'ztQYwCE5BU7T9CDM5he6rKoabstXRmkzx54zFPZkWbK530dwtLBDeaWBMxHBUT55CYyboR/EZ4efghPi3CoNGfGWezpjko9P6p2EwGArtHEeS4slhu/SpSIFMjG6fdrpRoNuIAMhq1Z+Pr/+HOd1pThFKeGFr2/NhtAg+TXAzaU=';
-
 const OPTOUT_COOKIE_NAME = 'cto_optout';
 const BUNDLE_COOKIE_NAME = 'cto_bundle';
 const GUID_RETENTION_TIME_HOUR = 24 * 30 * 13; // 13 months
@@ -58,15 +42,10 @@ export const spec = {
   getUserSyncs: function (syncOptions, _, gdprConsent, uspConsent, gppConsent = {}) {
     let { gppString = '', applicableSections = [] } = gppConsent;
 
+    const refererInfo = getRefererInfo();
+    const origin = 'criteoPrebidAdapter';
+
     if (syncOptions.iframeEnabled && hasPurpose1Consent(gdprConsent)) {
-      const fastBidVersion = config.getConfig('criteo.fastBidVersion');
-      if (canFastBid(fastBidVersion)) {
-        return [];
-      }
-
-      const refererInfo = getRefererInfo();
-      const origin = 'criteoPrebidAdapter';
-
       const queryParams = [];
       queryParams.push(`origin=${origin}`);
       queryParams.push(`topUrl=${refererInfo.domain}`);
@@ -201,40 +180,9 @@ export const spec = {
       ceh: config.getConfig('criteo.ceh'),
       coppa: config.getConfig('coppa')
     });
-
-    // If publisher tag not already loaded try to get it from fast bid
-    const fastBidVersion = config.getConfig('criteo.fastBidVersion');
-    const canLoadPublisherTag = canFastBid(fastBidVersion);
-    if (!publisherTagAvailable() && canLoadPublisherTag) {
-      window.Criteo = window.Criteo || {};
-      window.Criteo.usePrebidEvents = false;
-
-      tryGetCriteoFastBid();
-
-      const fastBidUrl = getFastBidUrl(fastBidVersion);
-      // Reload the PublisherTag after the timeout to ensure FastBid is up-to-date and tracking done properly
-      setTimeout(() => {
-        loadExternalScript(fastBidUrl, BIDDER_CODE);
-      }, bidderRequest.timeout);
-    }
-
-    if (publisherTagAvailable()) {
-      // eslint-disable-next-line no-undef
-      const adapter = new Criteo.PubTag.Adapters.Prebid(
-        PROFILE_ID_PUBLISHERTAG,
-        ADAPTER_VERSION,
-        bidRequests,
-        bidderRequest,
-        '$prebid.version$',
-        { createOutstreamVideoRenderer: createOutstreamVideoRenderer }
-      );
-      url = adapter.buildCdbUrl();
-      data = adapter.buildCdbRequest();
-    } else {
-      const context = buildContext(bidRequests, bidderRequest);
-      url = buildCdbUrl(context);
-      data = buildCdbRequest(context, bidRequests, bidderRequest);
-    }
+    const context = buildContext(bidRequests, bidderRequest);
+    url = buildCdbUrl(context);
+    data = buildCdbRequest(context, bidRequests, bidderRequest);
 
     if (data) {
       return { method: 'POST', url, data, bidRequests };
@@ -248,14 +196,6 @@ export const spec = {
    */
   interpretResponse: (response, request) => {
     const body = response.body || response;
-
-    if (publisherTagAvailable()) {
-      // eslint-disable-next-line no-undef
-      const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(request);
-      if (adapter) {
-        return adapter.interpretResponse(body, request);
-      }
-    }
 
     const bids = [];
     const fledgeAuctionConfigs = [];
@@ -334,44 +274,6 @@ export const spec = {
 
     return bids;
   },
-  /**
-   * @param {TimedOutBid} timeoutData
-   */
-  onTimeout: (timeoutData) => {
-    if (publisherTagAvailable() && Array.isArray(timeoutData)) {
-      var auctionsIds = [];
-      timeoutData.forEach((bid) => {
-        if (auctionsIds.indexOf(bid.auctionId) === -1) {
-          auctionsIds.push(bid.auctionId);
-          // eslint-disable-next-line no-undef
-          const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
-          adapter.handleBidTimeout();
-        }
-      });
-    }
-  },
-
-  /**
-   * @param {Bid} bid
-   */
-  onBidWon: (bid) => {
-    if (publisherTagAvailable() && bid) {
-      // eslint-disable-next-line no-undef
-      const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
-      adapter.handleBidWon(bid);
-    }
-  },
-
-  /**
-   * @param {Bid} bid
-   */
-  onSetTargeting: (bid) => {
-    if (publisherTagAvailable()) {
-      // eslint-disable-next-line no-undef
-      const adapter = Criteo.PubTag.Adapters.Prebid.GetAdapter(bid.auctionId);
-      adapter.handleSetTargeting(bid);
-    }
-  },
 
   /**
    * @param {BidRequest[]} bidRequests
@@ -410,14 +312,6 @@ function saveOnAllStorages(name, value, expirationTimeHours) {
 function deleteFromAllStorages(name) {
   storage.setCookie(name, '', 0);
   storage.removeDataFromLocalStorage(name);
-}
-
-/**
- * @return {boolean}
- */
-function publisherTagAvailable() {
-  // eslint-disable-next-line no-undef
-  return typeof Criteo !== 'undefined' && Criteo.PubTag && Criteo.PubTag.Adapters && Criteo.PubTag.Adapters.Prebid;
 }
 
 /**
@@ -639,7 +533,6 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
     request.site.publisher = {...request.site.publisher, ...{ id: pubid }};
     request.app.publisher = {...request.app.publisher, ...{ id: pubid }};
   }
-
   request.device = bidderRequest.ortb2?.device || {};
   if (bidderRequest && bidderRequest.ceh) {
     request.user.ceh = bidderRequest.ceh;
@@ -823,27 +716,6 @@ function enrichSlotWithFloors(slot, bidRequest) {
   }
 }
 
-export function canFastBid(fastBidVersion) {
-  return fastBidVersion !== FAST_BID_VERSION_NONE;
-}
-
-export function getFastBidUrl(fastBidVersion) {
-  let version;
-  if (fastBidVersion === FAST_BID_VERSION_LATEST) {
-    version = '';
-  } else if (fastBidVersion) {
-    let majorVersion = String(fastBidVersion).split('.')[0];
-    if (majorVersion < 102) {
-      logWarn('Specifying a Fastbid version which is not supporting version selection.')
-    }
-    version = '.' + fastBidVersion;
-  } else {
-    version = '.' + FAST_BID_VERSION_CURRENT;
-  }
-
-  return PUBLISHER_TAG_URL_TEMPLATE.replace(FAST_BID_VERSION_PLACEHOLDER, version);
-}
-
 function createOutstreamVideoRenderer(slot) {
   if (slot.ext.videoPlayerConfig === undefined || slot.ext.videoPlayerType === undefined) {
     return undefined;
@@ -892,41 +764,6 @@ function getAssociatedBidRequest(bidRequests, slot) {
     }
   }
   return undefined;
-}
-
-export function tryGetCriteoFastBid() {
-  // begin ref#1
-  try {
-    const fastBidStorageKey = 'criteo_fast_bid';
-    const hashPrefix = '// Hash: ';
-    const fastBidFromStorage = storage.getDataFromLocalStorage(fastBidStorageKey);
-
-    if (fastBidFromStorage !== null) {
-      // The value stored must contain the file's encrypted hash as first line
-      const firstLineEndPosition = fastBidFromStorage.indexOf('\n');
-      const firstLine = fastBidFromStorage.substr(0, firstLineEndPosition).trim();
-
-      if (firstLine.substr(0, hashPrefix.length) !== hashPrefix) {
-        logWarn('No hash found in FastBid');
-        storage.removeDataFromLocalStorage(fastBidStorageKey);
-      } else {
-        // Remove the hash part from the locally stored value
-        const publisherTagHash = firstLine.substr(hashPrefix.length);
-        const publisherTag = fastBidFromStorage.substr(firstLineEndPosition + 1);
-
-        if (verify(publisherTag, publisherTagHash, FAST_BID_PUBKEY_N, FAST_BID_PUBKEY_E)) {
-          logInfo('Using Criteo FastBid');
-          eval(publisherTag); // eslint-disable-line no-eval
-        } else {
-          logWarn('Invalid Criteo FastBid found');
-          storage.removeDataFromLocalStorage(fastBidStorageKey);
-        }
-      }
-    }
-  } catch (e) {
-    // Unable to get fast bid
-  }
-  // end ref#1
 }
 
 registerBidder(spec);
