@@ -55,7 +55,7 @@ function calculateResponseObj(response) {
   };
 }
 
-function calculateQueryStringParams(pid, gdprConsentData, storageConfig) {
+function calculateQueryStringParams(pid, gdprConsentData, enabledStorageTypes) {
   const uspString = uspDataHandler.getConsentData();
   const coppaValue = coppaDataHandler.getCoppa();
   const gppConsent = gppDataHandler.getConsentData();
@@ -83,7 +83,7 @@ function calculateQueryStringParams(pid, gdprConsentData, storageConfig) {
     params.gdpr_consent = gdprConsentData.consentString;
   }
 
-  const fp = getStoredValue(STORAGE_FPID_KEY, storageConfig);
+  const fp = getStoredValue(STORAGE_FPID_KEY, enabledStorageTypes);
   if (fp) {
     params.fp = encodeURIComponent(fp);
   }
@@ -95,32 +95,42 @@ function deleteFromStorage(key) {
   if (storage.cookiesAreEnabled()) {
     const expiredDate = new Date(0).toUTCString();
 
-    storage.setCookie(key, '', expiredDate, 'Lax');
+    storage.setCookie(key, '', expiredDate, 'Lax', domainUtils.domainOverride());
   }
 
   storage.removeDataFromLocalStorage(key);
 }
 
-function storeValue(key, value, storageConfig = {}) {
-  if (storageConfig.type === STORAGE_TYPE_COOKIES && storage.cookiesAreEnabled()) {
-    const expirationInMs = 60 * 60 * 24 * 1000 * storageConfig.expires;
-    const expirationTime = new Date(Date.now() + expirationInMs);
+function storeValue(key, value, { enabledStorageTypes, expires }) {
+  enabledStorageTypes.forEach(storageType => {
+    if (storageType === STORAGE_TYPE_COOKIES) {
+      const expirationInMs = 60 * 60 * 24 * 1000 * expires;
+      const expirationTime = new Date(Date.now() + expirationInMs);
 
-    storage.setCookie(key, value, expirationTime.toUTCString(), 'Lax');
-  } else if (storageConfig.type === STORAGE_TYPE_LOCALSTORAGE) {
-    storage.setDataInLocalStorage(key, value);
-  }
+      storage.setCookie(key, value, expirationTime.toUTCString(), 'Lax', domainUtils.domainOverride());
+    } else if (storageType === STORAGE_TYPE_LOCALSTORAGE) {
+      storage.setDataInLocalStorage(key, value);
+    }
+  });
 }
 
-function getStoredValue(key, storageConfig = {}) {
-  if (storageConfig.type === STORAGE_TYPE_COOKIES && storage.cookiesAreEnabled()) {
-    return storage.getCookie(key);
-  } else if (storageConfig.type === STORAGE_TYPE_LOCALSTORAGE) {
-    return storage.getDataFromLocalStorage(key);
-  }
+function getStoredValue(key, enabledStorageTypes) {
+  let storedValue;
+
+  enabledStorageTypes.find(storageType => {
+    if (storageType === STORAGE_TYPE_COOKIES) {
+      storedValue = storage.getCookie(key);
+    } else if (storageType === STORAGE_TYPE_LOCALSTORAGE) {
+      storedValue = storage.getDataFromLocalStorage(key);
+    }
+
+    return !!storedValue;
+  });
+
+  return storedValue;
 }
 
-function handleFpId(fpId, storageConfig = {}) {
+function handleFpId(fpId, storageConfig) {
   fpId
     ? storeValue(STORAGE_FPID_KEY, fpId, storageConfig)
     : deleteFromStorage(STORAGE_FPID_KEY);
@@ -156,7 +166,7 @@ export const thirthyThreeAcrossIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId({ params = { }, storage: storageConfig }, gdprConsentData) {
+  getId({ params = { }, enabledStorageTypes = [], storage: storageConfig }, gdprConsentData) {
     if (typeof params.pid !== 'string') {
       logError(`${MODULE_NAME}: Submodule requires a partner ID to be defined`);
 
@@ -188,7 +198,10 @@ export const thirthyThreeAcrossIdSubmodule = {
             }
 
             if (storeFpid) {
-              handleFpId(responseObj.fp, storageConfig);
+              handleFpId(responseObj.fp, {
+                enabledStorageTypes,
+                expires: storageConfig.expires
+              });
             }
 
             cb(responseObj.envelope);
@@ -198,7 +211,10 @@ export const thirthyThreeAcrossIdSubmodule = {
 
             cb();
           }
-        }, calculateQueryStringParams(pid, gdprConsentData, storageConfig), { method: 'GET', withCredentials: true });
+        }, calculateQueryStringParams(pid, gdprConsentData, enabledStorageTypes), {
+          method: 'GET',
+          withCredentials: true
+        });
       }
     };
   },
