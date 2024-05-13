@@ -275,11 +275,17 @@ export function setStoredValue(submodule, value) {
   try {
     const expiresStr = (new Date(Date.now() + (storage.expires * (60 * 60 * 24 * 1000)))).toUTCString();
     const valueStr = isPlainObject(value) ? JSON.stringify(value) : value;
-    if (storage.type === COOKIE) {
-      setValueInCookie(submodule, valueStr, expiresStr);
-    } else if (storage.type === LOCAL_STORAGE) {
-      setValueInLocalStorage(submodule, valueStr, expiresStr);
-    }
+
+    submodule.enabledStorageTypes.forEach(storageType => {
+      switch (storageType) {
+        case COOKIE:
+          setValueInCookie(submodule, valueStr, expiresStr);
+          break;
+        case LOCAL_STORAGE:
+          setValueInLocalStorage(submodule, valueStr, expiresStr);
+          break;
+      }
+    });
   } catch (error) {
     logError(error);
   }
@@ -309,13 +315,18 @@ function deleteValueFromLocalStorage(submodule) {
 }
 
 export function deleteStoredValue(submodule) {
-  const storageType = submodule.config?.storage?.type;
+  populateEnabledStorageTypes(submodule);
 
-  if (storageType === COOKIE) {
-    deleteValueFromCookie(submodule);
-  } else if (storageType === LOCAL_STORAGE) {
-    deleteValueFromLocalStorage(submodule);
-  }
+  submodule.enabledStorageTypes.forEach(storageType => {
+    switch (storageType) {
+      case COOKIE:
+        deleteValueFromCookie(submodule);
+        break;
+      case LOCAL_STORAGE:
+        deleteValueFromLocalStorage(submodule);
+        break;
+    }
+  });
 }
 
 function setPrebidServerEidPermissions(initializedSubmodules) {
@@ -352,11 +363,19 @@ function getStoredValue(submodule, key = undefined) {
   const storedKey = key ? `${storage.name}_${key}` : storage.name;
   let storedValue;
   try {
-    if (storage.type === COOKIE) {
-      storedValue = getValueFromCookie(submodule, storedKey);
-    } else if (storage.type === LOCAL_STORAGE) {
-      storedValue = getValueFromLocalStorage(submodule, storedKey);
-    }
+    submodule.enabledStorageTypes.find(storageType => {
+      switch (storageType) {
+        case COOKIE:
+          storedValue = getValueFromCookie(submodule, storedKey);
+          break;
+        case LOCAL_STORAGE:
+          storedValue = getValueFromLocalStorage(submodule, storedKey);
+          break;
+      }
+
+      return !!storedValue;
+    });
+
     // support storing a string or a stringified object
     if (typeof storedValue === 'string' && storedValue.trim().charAt(0) === '{') {
       storedValue = JSON.parse(storedValue);
@@ -804,8 +823,10 @@ function populateSubmoduleId(submodule, forceRefresh, allSubmodules) {
     }
 
     if (!storedId || refreshNeeded || forceRefresh || consentChanged(submodule)) {
+      const extendedConfig = Object.assign({ enabledStorageTypes: submodule.enabledStorageTypes }, submodule.config);
+
       // No id previously saved, or a refresh is needed, or consent has changed. Request a new id from the submodule.
-      response = submodule.submodule.getId(submodule.config, gdprConsent, storedId);
+      response = submodule.submodule.getId(extendedConfig, gdprConsent, storedId);
     } else if (typeof submodule.submodule.extendId === 'function') {
       // If the id exists already, give submodule a chance to decide additional actions that need to be taken
       response = submodule.submodule.extendId(submodule.config, gdprConsent, storedId);
@@ -862,6 +883,8 @@ function initSubmodules(dest, submodules, forceRefresh = false) {
   return uidMetrics().fork().measureTime('userId.init.modules', function () {
     if (!submodules.length) return []; // to simplify log messages from here on
 
+    submodules.forEach(submod => populateEnabledStorageTypes(submod));
+
     /**
      * filter out submodules that:
      *
@@ -912,6 +935,16 @@ function updateInitializedSubmodules(dest, submodule) {
   }
 }
 
+function getConfiguredStorageTypes(config) {
+  return config?.storage?.type?.trim().split(/\s*&\s*/) || [];
+}
+
+function hasValidStorageTypes(config) {
+  const storageTypes = getConfiguredStorageTypes(config);
+
+  return storageTypes.every(storageType => ALL_STORAGE_TYPES.has(storageType));
+}
+
 /**
  * list of submodule configurations with valid 'storage' or 'value' obj definitions
  * storage config: contains values for storing/retrieving User ID data in browser storage
@@ -933,7 +966,7 @@ function getValidSubmoduleConfigs(configRegistry) {
     if (config.storage &&
       !isEmptyStr(config.storage.type) &&
       !isEmptyStr(config.storage.name) &&
-      ALL_STORAGE_TYPES.has(config.storage.type)) {
+      hasValidStorageTypes(config)) {
       carry.push(config);
     } else if (isPlainObject(config.value)) {
       carry.push(config);
@@ -972,15 +1005,27 @@ function canUseCookies(submodule) {
   return true
 }
 
-function canUseStorage(submodule) {
-  const storageType = submodule?.config?.storage?.type;
-  if (storageType === COOKIE) {
-    return canUseCookies(submodule);
-  } else if (storageType === LOCAL_STORAGE) {
-    return canUseLocalStorage(submodule);
+function populateEnabledStorageTypes(submodule) {
+  if (submodule.enabledStorageTypes) {
+    return;
   }
 
-  return false;
+  const storageTypes = getConfiguredStorageTypes(submodule.config);
+
+  submodule.enabledStorageTypes = storageTypes.filter(type => {
+    switch (type) {
+      case LOCAL_STORAGE:
+        return canUseLocalStorage(submodule);
+      case COOKIE:
+        return canUseCookies(submodule);
+    }
+
+    return false;
+  });
+}
+
+function canUseStorage(submodule) {
+  return !!submodule.enabledStorageTypes.length;
 }
 
 function updateEIDConfig(submodules) {
