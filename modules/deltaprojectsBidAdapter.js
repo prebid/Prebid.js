@@ -16,7 +16,7 @@ export const BIDDER_CODE = 'deltaprojects';
 export const BIDDER_ENDPOINT_URL = 'https://d5p.de17a.com/dogfight/prebid';
 export const USERSYNC_URL = 'https://userservice.de17a.com/getuid/prebid';
 
-/** -- isBidRequestValid --**/
+/** -- isBidRequestValid -- */
 function isBidRequestValid(bid) {
   if (!bid) return false;
 
@@ -32,9 +32,9 @@ function isBidRequestValid(bid) {
   return true;
 }
 
-/** -- Build requests --**/
+/** -- Build requests -- */
 function buildRequests(validBidRequests, bidderRequest) {
-  /** == shared ==**/
+  /** == shared == */
   // -- build id
   const id = bidderRequest.bidderRequestId;
 
@@ -146,7 +146,7 @@ function buildImpressionBanner(bid, bannerMediaType) {
   };
 }
 
-/** -- Interpret response --**/
+/** -- Interpret response -- */
 function interpretResponse(serverResponse) {
   if (!serverResponse.body) {
     logWarn('Response body is invalid, return !!');
@@ -189,7 +189,7 @@ function interpretResponse(serverResponse) {
   return bidResponses;
 }
 
-/** -- On Bid Won -- **/
+/** -- On Bid Won -- */
 function onBidWon(bid) {
   let cpm = bid.cpm;
   if (bid.currency && bid.currency !== bid.originalCurrency && typeof bid.getCpmInNewCurrency === 'function') {
@@ -200,7 +200,7 @@ function onBidWon(bid) {
   bid.ad = bid.ad.replace(wonPriceMacroPatten, wonPrice);
 }
 
-/** -- Get user syncs --**/
+/** -- Get user syncs -- */
 function getUserSyncs(syncOptions, serverResponses, gdprConsent) {
   const syncs = []
 
@@ -223,7 +223,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent) {
   return syncs;
 }
 
-/** -- Get bid floor --**/
+/** -- Get bid floor -- */
 export function getBidFloor(bid, mediaType, size, currency) {
   if (isFn(bid.getFloor)) {
     const bidFloorCurrency = currency || 'USD';
@@ -234,7 +234,7 @@ export function getBidFloor(bid, mediaType, size, currency) {
   }
 }
 
-/** -- Helper methods --**/
+/** -- Helper methods -- */
 function setOnAny(collection, key) {
   for (let i = 0, result; i < collection.length; i++) {
     result = deepAccess(collection[i], key);

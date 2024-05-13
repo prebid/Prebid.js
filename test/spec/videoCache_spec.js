@@ -1,10 +1,10 @@
 import chai from 'chai';
-import { getCacheUrl, store } from 'src/videoCache.js';
-import { config } from 'src/config.js';
-import { server } from 'test/mocks/xhr.js';
+import {getCacheUrl, store} from 'src/videoCache.js';
+import {config} from 'src/config.js';
+import {server} from 'test/mocks/xhr.js';
 import {auctionManager} from '../../src/auctionManager.js';
 import {AuctionIndex} from '../../src/auctionIndex.js';
-import { batchingCache } from '../../src/auction.js';
+import {batchingCache} from '../../src/auction.js';
 
 const should = chai.should();
 
@@ -127,7 +127,7 @@ describe('The video cache', function () {
       <Wrapper>
         <AdSystem>prebid.org wrapper</AdSystem>
         <VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI>
-        <Impression></Impression>
+        
         <Creatives></Creatives>
       </Wrapper>
     </Ad>
@@ -147,6 +147,20 @@ describe('The video cache', function () {
     </Ad>
   </VAST>`;
       assertRequestMade({ vastUrl: 'my-mock-url.com', vastImpUrl: 'imptracker.com', ttl: 25 }, expectedValue)
+    });
+
+    it('should include multiple vastImpUrl when it\'s an array', function() {
+      const expectedValue = `<VAST version="3.0">
+    <Ad>
+      <Wrapper>
+        <AdSystem>prebid.org wrapper</AdSystem>
+        <VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI>
+        <Impression><![CDATA[https://vasttracking.mydomain.com/vast?cpm=1.2]]></Impression><Impression><![CDATA[imptracker.com]]></Impression>
+        <Creatives></Creatives>
+      </Wrapper>
+    </Ad>
+  </VAST>`;
+      assertRequestMade({ vastUrl: 'my-mock-url.com', vastImpUrl: ['https://vasttracking.mydomain.com/vast?cpm=1.2', 'imptracker.com'], ttl: 25, cpm: 1.2 }, expectedValue)
     });
 
     it('should make the expected request when store() is called on an ad with vastXml', function () {

@@ -29,6 +29,18 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
+  it('unifiedId: ext generation with provider', function() {
+    const userId = {
+      tdid: {'id': 'some-sample_id', 'ext': {'provider': 'some.provider.com'}}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'adserver.org',
+      uids: [{id: 'some-sample_id', atype: 1, ext: { rtiPartner: 'TDID', provider: 'some.provider.com' }}]
+    });
+  });
+
   describe('id5Id', function() {
     it('does not include an ext if not provided', function() {
       const userId = {

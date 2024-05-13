@@ -2,7 +2,7 @@
  * events.js
  */
 import * as utils from './utils.js'
-import CONSTANTS from './constants.json';
+import { EVENTS, EVENT_ID_PATHS } from './constants.js';
 import {ttlCollection} from './utils/ttlCollection.js';
 import {config} from './config.js';
 const TTL_CONFIG = 'eventHistoryTTL';
@@ -28,9 +28,9 @@ let slice = Array.prototype.slice;
 let push = Array.prototype.push;
 
 // define entire events
-let allEvents = Object.values(CONSTANTS.EVENTS);
+let allEvents = Object.values(EVENTS);
 
-const idPaths = CONSTANTS.EVENT_ID_PATHS;
+const idPaths = EVENT_ID_PATHS;
 
 const _public = (function () {
   let _handlers = {};
@@ -61,12 +61,13 @@ const _public = (function () {
       elapsedTime: utils.getPerformanceNow(),
     });
 
-    /** Push each specific callback to the `callbacks` array.
+    /**
+     * Push each specific callback to the `callbacks` array.
      * If the `event` map has a key that matches the value of the
      * event payload id path, e.g. `eventPayload[idPath]`, then apply
      * each function in the `que` array as an argument to push to the
      * `callbacks` array
-     * */
+     */
     if (key && eventKeys.includes(key)) {
       push.apply(callbacks, event[key].que);
     }

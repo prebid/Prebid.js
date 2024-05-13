@@ -23,6 +23,10 @@ import { logInfo, logError } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 /** @type {ModuleParams} */
 let _moduleParams = {};
 
@@ -30,7 +34,8 @@ let _moduleParams = {};
  * Default Optimera Key Name
  * This can default to hb_deal_optimera for publishers
  * who used the previous Optimera Bidder Adapter.
- * @type {string} */
+ * @type {string}
+ */
 export let optimeraKeyName = 'hb_deal_optimera';
 
 /**

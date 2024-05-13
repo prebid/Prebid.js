@@ -9,23 +9,23 @@ const uuidRegex = /(\d|\w){8}-((\d|\w){4}-){3}(\d|\w){12}/;
 
 describe('longform ads without using brandCategoryExclusion', function() {
   this.retries(3);
-  it('process the bids successfully', function() {
-    browser.url(protocol + '://' + host + ':9999/integrationExamples/longform/basic_wo_brandCategoryExclusion.html?pbjs_debug=true');
-    browser.pause(7000);
+  it('process the bids successfully', async function() {
+    await browser.url(protocol + '://' + host + ':9999/integrationExamples/longform/basic_wo_brandCategoryExclusion.html?pbjs_debug=true');
+    await browser.pause(7000);
 
     const loadPrebidBtnXpath = '//*[@id="loadPrebidRequestBtn"]';
-    waitForElement(loadPrebidBtnXpath);
-    const prebidBtn = $(loadPrebidBtnXpath);
-    prebidBtn.click();
-    browser.pause(5000);
+    await waitForElement(loadPrebidBtnXpath);
+    const prebidBtn = await $(loadPrebidBtnXpath);
+    await prebidBtn.click();
+    await browser.pause(5000);
 
     const listOfCpmsXpath = '/html/body/div[1]/div/div/div/div[1]/div[2]/div/table/tbody/tr/td[2]';
     const listOfDurationsXpath = '/html/body/div[1]/div/div/div/div[1]/div[2]/div/table/tbody/tr/td[4]';
 
-    waitForElement(listOfCpmsXpath);
+    await waitForElement(listOfCpmsXpath);
 
-    let listOfCpms = $$(listOfCpmsXpath);
-    let listOfDuras = $$(listOfDurationsXpath);
+    let listOfCpms = await $$(listOfCpmsXpath);
+    let listOfDuras = await $$(listOfDurationsXpath);
 
     expect(listOfCpms.length).to.equal(listOfDuras.length);
     for (let i = 0; i < listOfCpms.length; i++) {
@@ -36,14 +36,14 @@ describe('longform ads without using brandCategoryExclusion', function() {
     }
   });
 
-  it('formats the targeting keys properly', function () {
+  it('formats the targeting keys properly', async function () {
     const listOfKeyElementsXpath = '/html/body/div[1]/div/div/div/div[2]/div[2]/div/table/tbody/tr/td[1]';
     const listOfKeyValuesXpath = '/html/body/div[1]/div/div/div/div[2]/div[2]/div/table/tbody/tr/td[2]';
-    waitForElement(listOfKeyElementsXpath);
-    waitForElement(listOfKeyValuesXpath);
+    await waitForElement(listOfKeyElementsXpath);
+    await waitForElement(listOfKeyValuesXpath);
 
-    let listOfKeyElements = $$(listOfKeyElementsXpath);
-    let listOfKeyValues = $$(listOfKeyValuesXpath);
+    let listOfKeyElements = await $$(listOfKeyElementsXpath);
+    let listOfKeyValues = await $$(listOfKeyValuesXpath);
 
     let firstKey = listOfKeyElements[0].getText();
     expect(firstKey).to.equal('hb_pb_cat_dur');

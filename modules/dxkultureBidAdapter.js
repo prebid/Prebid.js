@@ -12,6 +12,11 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'dxkulture';
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_NET_REVENUE = true;
@@ -91,7 +96,7 @@ export const spec = {
   /**
    * Determines whether or not the given bid request is valid.
    *
-   * @param {BidRequest} bidRequest The bid params to validate.
+   * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
@@ -264,7 +269,7 @@ function _validateParams(bidRequest) {
 
 /**
  * Validates banner bid request. If it is not banner media type returns true.
- * @param {object} bid, bid to validate
+ * @param {BidRequest} bidRequest bid to validate
  * @return boolean, true if valid, otherwise false
  */
 function _validateBanner(bidRequest) {
@@ -282,7 +287,7 @@ function _validateBanner(bidRequest) {
 
 /**
  * Validates video bid request. If it is not video media type returns true.
- * @param {object} bid, bid to validate
+ * @param {BidRequest} bidRequest, bid to validate
  * @return boolean, true if valid, otherwise false
  */
 function _validateVideo(bidRequest) {

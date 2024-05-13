@@ -6,6 +6,14 @@ import { config } from '../src/config.js';
 import { ajax } from '../src/ajax.js';
 import { getStorageManager } from '../src/storageManager.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
+
 const BIDDER_CODE = 'impactify';
 const BIDDER_ALIAS = ['imp'];
 const DEFAULT_CURRENCY = 'USD';
@@ -360,7 +368,7 @@ export const spec = {
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
    * @param {Bid} The bid that won the auction
-  */
+   */
   onBidWon: function (bid) {
     ajax(`${LOGGER_URI}/prebid/won`, null, JSON.stringify(bid), {
       method: 'POST',
@@ -373,7 +381,7 @@ export const spec = {
   /**
    * Register bidder specific code, which will execute if bidder timed out after an auction
    * @param {data} Containing timeout specific data
-  */
+   */
   onTimeout: function (data) {
     ajax(`${LOGGER_URI}/prebid/timeout`, null, JSON.stringify(data[0]), {
       method: 'POST',

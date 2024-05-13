@@ -37,7 +37,6 @@ describe('gdpr enforcement', function () {
   let staticConfig = {
     cmpApi: 'static',
     timeout: 7500,
-    allowAuctionWithoutConsent: false,
     consentData: {
       getTCData: {
         'tcString': 'COuqj-POu90rDBcBkBENAZCgAPzAAAPAACiQFwwBAABAA1ADEAbQC4YAYAAgAxAG0A',
@@ -894,7 +893,6 @@ describe('gdpr enforcement', function () {
       setEnforcementConfig({
         gdpr: {
           cmpApi: 'iab',
-          allowAuctionWithoutConsent: true,
           timeout: 5000
         }
       });

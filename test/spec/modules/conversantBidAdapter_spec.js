@@ -2,13 +2,20 @@ import {expect} from 'chai';
 import {spec, storage} from 'modules/conversantBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {createEidsArray} from 'modules/userId/eids.js';
-import { config } from '../../../src/config.js';
 import {deepAccess} from 'src/utils';
+// load modules that register ORTB processors
+import 'src/prebid.js'
+import 'modules/currency.js';
+import 'modules/userId/index.js'; // handles eids
+import 'modules/priceFloors.js';
+import 'modules/consentManagement.js';
+import 'modules/consentManagementUsp.js';
+import 'modules/schain.js'; // handles schain
+import {hook} from '../../../src/hook.js'
 
 describe('Conversant adapter tests', function() {
   const siteId = '108060';
   const versionPattern = /^\d+\.\d+\.\d+(.)*$/;
-
   const bidRequests = [
     // banner with single size
     {
@@ -19,13 +26,18 @@ describe('Conversant adapter tests', function() {
         tag_id: 'tagid-1',
         bidfloor: 0.5
       },
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 250]],
+        }
+      },
       placementCode: 'pcode000',
       transactionId: 'tx000',
-      sizes: [[300, 250]],
       bidId: 'bid000',
       bidderRequestId: '117d765b87bed38',
       auctionId: 'req000'
     },
+
     // banner with sizes in mediaTypes.banner.sizes
     {
       bidder: 'conversant',
@@ -51,9 +63,13 @@ describe('Conversant adapter tests', function() {
         position: 2,
         tag_id: ''
       },
+      mediaTypes: {
+        banner: {
+          sizes: [[300, 600], [160, 600]],
+        }
+      },
       placementCode: 'pcode002',
       transactionId: 'tx002',
-      sizes: [[300, 600], [160, 600]],
       bidId: 'bid002',
       bidderRequestId: '117d765b87bed38',
       auctionId: 'req000'
@@ -77,7 +93,6 @@ describe('Conversant adapter tests', function() {
       },
       placementCode: 'pcode003',
       transactionId: 'tx003',
-      sizes: [640, 480],
       bidId: 'bid003',
       bidderRequestId: '117d765b87bed38',
       auctionId: 'req000'
@@ -125,16 +140,15 @@ describe('Conversant adapter tests', function() {
       bidderRequestId: '117d765b87bed38',
       auctionId: 'req000'
     },
-    // video with first party data
+    // banner with first party data
     {
       bidder: 'conversant',
       params: {
         site_id: siteId
       },
       mediaTypes: {
-        video: {
-          context: 'instream',
-          mimes: ['video/mp4', 'video/x-flv']
+        banner: {
+          sizes: [[300, 600], [160, 600]],
         }
       },
       ortb2Imp: {
@@ -148,23 +162,6 @@ describe('Conversant adapter tests', function() {
       placementCode: 'pcode006',
       transactionId: 'tx006',
       bidId: 'bid006',
-      bidderRequestId: '117d765b87bed38',
-      auctionId: 'req000'
-    },
-    {
-      bidder: 'conversant',
-      params: {
-        site_id: siteId
-      },
-      mediaTypes: {
-        banner: {
-          sizes: [[728, 90], [468, 60]],
-          pos: 5
-        }
-      },
-      placementCode: 'pcode001',
-      transactionId: 'tx001',
-      bidId: 'bid007',
       bidderRequestId: '117d765b87bed38',
       auctionId: 'req000'
     }
@@ -217,7 +214,14 @@ describe('Conversant adapter tests', function() {
         }]
       }]
     },
-    headers: {}};
+    headers: {}
+  };
+
+  before(() => {
+    // ortbConverter depends on other modules to be setup to work as expected so run hook.ready to register some
+    // submodules so functions like setOrtbSourceExtSchain and setOrtbUserExtEids are available
+    hook.ready();
+  });
 
   it('Verify basic properties', function() {
     expect(spec.code).to.equal('conversant');
@@ -232,12 +236,9 @@ describe('Conversant adapter tests', function() {
     expect(spec.isBidRequestValid({})).to.be.false;
     expect(spec.isBidRequestValid({params: {}})).to.be.false;
     expect(spec.isBidRequestValid({params: {site_id: '123'}})).to.be.true;
-    expect(spec.isBidRequestValid(bidRequests[0])).to.be.true;
-    expect(spec.isBidRequestValid(bidRequests[1])).to.be.true;
-    expect(spec.isBidRequestValid(bidRequests[2])).to.be.true;
-    expect(spec.isBidRequestValid(bidRequests[3])).to.be.true;
-    expect(spec.isBidRequestValid(bidRequests[4])).to.be.true;
-    expect(spec.isBidRequestValid(bidRequests[5])).to.be.true;
+    bidRequests.forEach((bid) => {
+      expect(spec.isBidRequestValid(bid)).to.be.true;
+    });
 
     const simpleVideo = JSON.parse(JSON.stringify(bidRequests[3]));
     simpleVideo.params.site_id = 123;
@@ -251,152 +252,171 @@ describe('Conversant adapter tests', function() {
     expect(spec.isBidRequestValid(simpleVideo)).to.be.true;
   });
 
-  it('Verify buildRequest', function() {
-    const page = 'http://test.com?a=b&c=123';
-    const bidderRequest = {
-      refererInfo: {
-        page: page
-      },
-      ortb2: {
-        source: {
-          tid: 'tid000'
+  describe('Verify buildRequest', function() {
+    let page, bidderRequest, request, payload;
+    before(() => {
+      page = 'http://test.com?a=b&c=123';
+      // ortbConverter uses the site/device information from the ortb2 object passed in the bidderRequest object
+      bidderRequest = {
+        refererInfo: {
+          page: page
+        },
+        ortb2: {
+          source: {
+            tid: 'tid000'
+          },
+          site: {
+            mobile: 0,
+            page: page,
+          },
+          device: {
+            w: screen.width,
+            h: screen.height,
+            dnt: 0,
+            ua: navigator.userAgent
+          }
         }
-      }
-    };
-    const request = spec.buildRequests(bidRequests, bidderRequest);
-    expect(request.method).to.equal('POST');
-    expect(request.url).to.equal('https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25');
-    const payload = request.data;
+      };
+      request = spec.buildRequests(bidRequests, bidderRequest);
+      payload = request.data;
+    });
 
-    expect(payload).to.have.property('id');
-    expect(payload.source).to.have.property('tid', 'tid000');
-    expect(payload).to.have.property('at', 1);
-    expect(payload).to.have.property('imp');
-    expect(payload.imp).to.be.an('array').with.lengthOf(8);
+    it('Verify common elements', function() {
+      expect(request.method).to.equal('POST');
+      expect(request.url).to.equal('https://web.hb.ad.cpe.dotomi.com/cvx/client/hb/ortb/25');
 
-    expect(payload.imp[0]).to.have.property('id', 'bid000');
-    expect(payload.imp[0]).to.have.property('secure', 1);
-    expect(payload.imp[0]).to.have.property('bidfloor', 0.5);
-    expect(payload.imp[0]).to.have.property('displaymanager', 'Prebid.js');
-    expect(payload.imp[0]).to.have.property('displaymanagerver').that.matches(versionPattern);
-    expect(payload.imp[0]).to.have.property('tagid', 'tagid-1');
-    expect(payload.imp[0]).to.have.property('banner');
-    expect(payload.imp[0].banner).to.have.property('pos', 1);
-    expect(payload.imp[0].banner).to.have.property('format');
-    expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}]);
-    expect(payload.imp[0]).to.not.have.property('video');
+      expect(payload).to.have.property('id');
+      expect(payload.source).to.have.property('tid', 'tid000');
+      expect(payload).to.have.property('at', 1);
+      expect(payload).to.have.property('imp');
+      expect(payload.imp).to.be.an('array').with.lengthOf(bidRequests.length);
 
-    expect(payload.imp[1]).to.have.property('id', 'bid001');
-    expect(payload.imp[1]).to.have.property('secure', 1);
-    expect(payload.imp[1]).to.have.property('bidfloor', 0);
-    expect(payload.imp[1]).to.have.property('displaymanager', 'Prebid.js');
-    expect(payload.imp[1]).to.have.property('displaymanagerver').that.matches(versionPattern);
-    expect(payload.imp[1]).to.not.have.property('tagid');
-    expect(payload.imp[1]).to.have.property('banner');
-    expect(payload.imp[1].banner).to.not.have.property('pos');
-    expect(payload.imp[1].banner).to.have.property('format');
-    expect(payload.imp[1].banner.format).to.deep.equal([{w: 728, h: 90}, {w: 468, h: 60}]);
+      expect(payload).to.have.property('site');
+      expect(payload.site).to.have.property('id', siteId);
+      expect(payload.site).to.have.property('mobile').that.is.oneOf([0, 1]);
 
-    expect(payload.imp[2]).to.have.property('id', 'bid002');
-    expect(payload.imp[2]).to.have.property('secure', 1);
-    expect(payload.imp[2]).to.have.property('bidfloor', 0);
-    expect(payload.imp[2]).to.have.property('displaymanager', 'Prebid.js');
-    expect(payload.imp[2]).to.have.property('displaymanagerver').that.matches(versionPattern);
-    expect(payload.imp[2]).to.have.property('banner');
-    expect(payload.imp[2].banner).to.have.property('pos', 2);
-    expect(payload.imp[2].banner).to.have.property('format');
-    expect(payload.imp[2].banner.format).to.deep.equal([{w: 300, h: 600}, {w: 160, h: 600}]);
+      expect(payload.site).to.have.property('page', page);
 
-    expect(payload.imp[3]).to.have.property('id', 'bid003');
-    expect(payload.imp[3]).to.have.property('secure', 1);
-    expect(payload.imp[3]).to.have.property('bidfloor', 0);
-    expect(payload.imp[3]).to.have.property('displaymanager', 'Prebid.js');
-    expect(payload.imp[3]).to.have.property('displaymanagerver').that.matches(versionPattern);
-    expect(payload.imp[3]).to.not.have.property('tagid');
-    expect(payload.imp[3]).to.have.property('video');
-    expect(payload.imp[3].video).to.have.property('pos', 3);
-    expect(payload.imp[3].video).to.have.property('w', 632);
-    expect(payload.imp[3].video).to.have.property('h', 499);
-    expect(payload.imp[3].video).to.have.property('mimes');
-    expect(payload.imp[3].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
-    expect(payload.imp[3].video).to.have.property('protocols');
-    expect(payload.imp[3].video.protocols).to.deep.equal([1, 2]);
-    expect(payload.imp[3].video).to.have.property('api');
-    expect(payload.imp[3].video.api).to.deep.equal([2]);
-    expect(payload.imp[3].video).to.have.property('maxduration', 30);
-    expect(payload.imp[3]).to.not.have.property('banner');
+      expect(payload).to.have.property('device');
+      expect(payload.device).to.have.property('w', screen.width);
+      expect(payload.device).to.have.property('h', screen.height);
+      expect(payload.device).to.have.property('dnt').that.is.oneOf([0, 1]);
+      expect(payload.device).to.have.property('ua', navigator.userAgent);
 
-    expect(payload.imp[4]).to.have.property('id', 'bid004');
-    expect(payload.imp[4]).to.have.property('secure', 1);
-    expect(payload.imp[4]).to.have.property('bidfloor', 0);
-    expect(payload.imp[4]).to.have.property('displaymanager', 'Prebid.js');
-    expect(payload.imp[4]).to.have.property('displaymanagerver').that.matches(versionPattern);
-    expect(payload.imp[4]).to.not.have.property('tagid');
-    expect(payload.imp[4]).to.have.property('video');
-    expect(payload.imp[4].video).to.not.have.property('pos');
-    expect(payload.imp[4].video).to.have.property('w', 1024);
-    expect(payload.imp[4].video).to.have.property('h', 768);
-    expect(payload.imp[4].video).to.have.property('mimes');
-    expect(payload.imp[4].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
-    expect(payload.imp[4].video).to.have.property('protocols');
-    expect(payload.imp[4].video.protocols).to.deep.equal([1, 2, 3]);
-    expect(payload.imp[4].video).to.have.property('api');
-    expect(payload.imp[4].video.api).to.deep.equal([2, 3]);
-    expect(payload.imp[4].video).to.have.property('maxduration', 30);
-    expect(payload.imp[4]).to.not.have.property('banner');
+      expect(payload).to.not.have.property('user'); // there should be no user by default
+      expect(payload).to.not.have.property('tmax'); // there should be no user by default
+    });
 
-    expect(payload.imp[5]).to.have.property('id', 'bid005');
-    expect(payload.imp[5]).to.have.property('secure', 1);
-    expect(payload.imp[5]).to.have.property('bidfloor', 0);
-    expect(payload.imp[5]).to.have.property('displaymanager', 'Prebid.js');
-    expect(payload.imp[5]).to.have.property('displaymanagerver').that.matches(versionPattern);
-    expect(payload.imp[5]).to.not.have.property('tagid');
-    expect(payload.imp[5]).to.have.property('video');
-    expect(payload.imp[5].video).to.have.property('pos', 2);
-    expect(payload.imp[5].video).to.not.have.property('w');
-    expect(payload.imp[5].video).to.not.have.property('h');
-    expect(payload.imp[5].video).to.have.property('mimes');
-    expect(payload.imp[5].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
-    expect(payload.imp[5].video).to.not.have.property('protocols');
-    expect(payload.imp[5].video).to.not.have.property('api');
-    expect(payload.imp[5].video).to.not.have.property('maxduration');
-    expect(payload.imp[5]).to.not.have.property('banner');
+    it('Simple banner', () => {
+      expect(payload.imp[0]).to.have.property('id', 'bid000');
+      expect(payload.imp[0]).to.have.property('secure', 1);
+      expect(payload.imp[0]).to.have.property('bidfloor', 0.5);
+      expect(payload.imp[0]).to.have.property('displaymanager', 'Prebid.js');
+      expect(payload.imp[0]).to.have.property('displaymanagerver').that.matches(versionPattern);
+      expect(payload.imp[0]).to.have.property('tagid', 'tagid-1');
+      expect(payload.imp[0]).to.have.property('banner');
+      expect(payload.imp[0].banner).to.have.property('pos', 1);
+      expect(payload.imp[0].banner).to.have.property('format');
+      expect(payload.imp[0].banner.format).to.deep.equal([{w: 300, h: 250}]);
+      expect(payload.imp[0]).to.not.have.property('video');
+    });
 
-    expect(payload.imp[6]).to.have.property('id', 'bid006');
-    expect(payload.imp[6]).to.have.property('video');
-    expect(payload.imp[6].video).to.have.property('mimes');
-    expect(payload.imp[6].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
-    expect(payload.imp[6]).to.not.have.property('banner');
-    expect(payload.imp[6]).to.have.property('instl');
-    expect(payload.imp[6]).to.have.property('ext');
-    expect(payload.imp[6].ext).to.have.property('data');
-    expect(payload.imp[6].ext.data).to.have.property('pbadslot');
+    it('Banner multiple sizes', () => {
+      expect(payload.imp[1]).to.have.property('id', 'bid001');
+      expect(payload.imp[1]).to.have.property('secure', 1);
+      expect(payload.imp[1]).to.have.property('bidfloor', 0);
+      expect(payload.imp[1]).to.have.property('displaymanager', 'Prebid.js');
+      expect(payload.imp[1]).to.have.property('displaymanagerver').that.matches(versionPattern);
+      expect(payload.imp[1]).to.not.have.property('tagid');
+      expect(payload.imp[1]).to.have.property('banner');
+      expect(payload.imp[1].banner).to.not.have.property('pos');
+      expect(payload.imp[1].banner).to.have.property('format');
+      expect(payload.imp[1].banner.format).to.deep.equal([{w: 728, h: 90}, {w: 468, h: 60}]);
+    });
 
-    expect(payload.imp[7]).to.have.property('id', 'bid007');
-    expect(payload.imp[7]).to.have.property('secure', 1);
-    expect(payload.imp[7]).to.have.property('bidfloor', 0);
-    expect(payload.imp[7]).to.have.property('displaymanager', 'Prebid.js');
-    expect(payload.imp[7]).to.have.property('displaymanagerver').that.matches(versionPattern);
-    expect(payload.imp[7]).to.not.have.property('tagid');
-    expect(payload.imp[7]).to.have.property('banner');
-    expect(payload.imp[7].banner).to.have.property('pos', 5);
-    expect(payload.imp[7].banner).to.have.property('format');
-    expect(payload.imp[7].banner.format).to.deep.equal([{w: 728, h: 90}, {w: 468, h: 60}]);
+    it('Banner with tagid and position', () => {
+      expect(payload.imp[2]).to.have.property('id', 'bid002');
+      expect(payload.imp[2]).to.have.property('secure', 1);
+      expect(payload.imp[2]).to.have.property('bidfloor', 0);
+      expect(payload.imp[2]).to.have.property('displaymanager', 'Prebid.js');
+      expect(payload.imp[2]).to.have.property('displaymanagerver').that.matches(versionPattern);
+      expect(payload.imp[2]).to.have.property('banner');
+      expect(payload.imp[2].banner).to.have.property('pos', 2);
+      expect(payload.imp[2].banner).to.have.property('format');
+      expect(payload.imp[2].banner.format).to.deep.equal([{w: 300, h: 600}, {w: 160, h: 600}]);
+    });
 
-    expect(payload).to.have.property('site');
-    expect(payload.site).to.have.property('id', siteId);
-    expect(payload.site).to.have.property('mobile').that.is.oneOf([0, 1]);
+    if (FEATURES.VIDEO) {
+      it('Simple video', () => {
+        expect(payload.imp[3]).to.have.property('id', 'bid003');
+        expect(payload.imp[3]).to.have.property('secure', 1);
+        expect(payload.imp[3]).to.have.property('bidfloor', 0);
+        expect(payload.imp[3]).to.have.property('displaymanager', 'Prebid.js');
+        expect(payload.imp[3]).to.have.property('displaymanagerver').that.matches(versionPattern);
+        expect(payload.imp[3]).to.not.have.property('tagid');
+        expect(payload.imp[3]).to.have.property('video');
+        expect(payload.imp[3].video).to.have.property('pos', 3);
+        expect(payload.imp[3].video).to.have.property('w', 632);
+        expect(payload.imp[3].video).to.have.property('h', 499);
+        expect(payload.imp[3].video).to.have.property('mimes');
+        expect(payload.imp[3].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
+        expect(payload.imp[3].video).to.have.property('protocols');
+        expect(payload.imp[3].video.protocols).to.deep.equal([1, 2]);
+        expect(payload.imp[3].video).to.have.property('api');
+        expect(payload.imp[3].video.api).to.deep.equal([2]);
+        expect(payload.imp[3].video).to.have.property('maxduration', 30);
+        expect(payload.imp[3]).to.not.have.property('banner');
+      });
 
-    expect(payload.site).to.have.property('page', page);
+      it('Video with playerSize', () => {
+        expect(payload.imp[4]).to.have.property('id', 'bid004');
+        expect(payload.imp[4]).to.have.property('secure', 1);
+        expect(payload.imp[4]).to.have.property('bidfloor', 0);
+        expect(payload.imp[4]).to.have.property('displaymanager', 'Prebid.js');
+        expect(payload.imp[4]).to.have.property('displaymanagerver').that.matches(versionPattern);
+        expect(payload.imp[4]).to.not.have.property('tagid');
+        expect(payload.imp[4]).to.have.property('video');
+        expect(payload.imp[4].video).to.not.have.property('pos');
+        expect(payload.imp[4].video).to.have.property('w', 1024);
+        expect(payload.imp[4].video).to.have.property('h', 768);
+        expect(payload.imp[4].video).to.have.property('mimes');
+        expect(payload.imp[4].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
+        expect(payload.imp[4].video).to.have.property('protocols');
+        expect(payload.imp[4].video.protocols).to.deep.equal([1, 2, 3]);
+        expect(payload.imp[4].video).to.have.property('api');
+        expect(payload.imp[4].video.api).to.deep.equal([1, 2, 3]);
+        expect(payload.imp[4].video).to.have.property('maxduration', 30);
+      });
 
-    expect(payload).to.have.property('device');
-    expect(payload.device).to.have.property('w', screen.width);
-    expect(payload.device).to.have.property('h', screen.height);
-    expect(payload.device).to.have.property('dnt').that.is.oneOf([0, 1]);
-    expect(payload.device).to.have.property('ua', navigator.userAgent);
+      it('Video without sizes', () => {
+        expect(payload.imp[5]).to.have.property('id', 'bid005');
+        expect(payload.imp[5]).to.have.property('secure', 1);
+        expect(payload.imp[5]).to.have.property('bidfloor', 0);
+        expect(payload.imp[5]).to.have.property('displaymanager', 'Prebid.js');
+        expect(payload.imp[5]).to.have.property('displaymanagerver').that.matches(versionPattern);
+        expect(payload.imp[5]).to.not.have.property('tagid');
+        expect(payload.imp[5]).to.have.property('video');
+        expect(payload.imp[5].video).to.have.property('pos', 2);
+        expect(payload.imp[5].video).to.not.have.property('w');
+        expect(payload.imp[5].video).to.not.have.property('h');
+        expect(payload.imp[5].video).to.have.property('mimes');
+        expect(payload.imp[5].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
+        expect(payload.imp[5].video).to.not.have.property('protocols');
+        expect(payload.imp[5].video).to.not.have.property('api');
+        expect(payload.imp[5].video).to.not.have.property('maxduration');
+        expect(payload.imp[5]).to.not.have.property('banner');
+      });
+    }
 
-    expect(payload).to.not.have.property('user'); // there should be no user by default
-    expect(payload).to.not.have.property('tmax'); // there should be no user by default
+    it('With FPD', () => {
+      expect(payload.imp[6]).to.have.property('id', 'bid006');
+      expect(payload.imp[6]).to.have.property('banner');
+      expect(payload.imp[6]).to.not.have.property('video');
+      expect(payload.imp[6]).to.have.property('instl');
+      expect(payload.imp[6]).to.have.property('ext');
+      expect(payload.imp[6].ext).to.have.property('data');
+      expect(payload.imp[6].ext.data).to.have.property('pbadslot');
+    });
   });
 
   it('Verify timeout', () => {
@@ -440,59 +460,62 @@ describe('Conversant adapter tests', function() {
     expect(request.url).to.equal(testUrl);
   });
 
-  it('Verify interpretResponse', function() {
-    const request = spec.buildRequests(bidRequests, {});
-    const response = spec.interpretResponse(bidResponses, request);
-    expect(response).to.be.an('array').with.lengthOf(4);
+  describe('Verify interpretResponse', function() {
+    let bid, request, response;
 
-    let bid = response[0];
-    expect(bid).to.have.property('requestId', 'bid000');
-    expect(bid).to.have.property('currency', 'USD');
-    expect(bid).to.have.property('cpm', 0.99);
-    expect(bid).to.have.property('creativeId', '1000');
-    expect(bid).to.have.property('width', 300);
-    expect(bid).to.have.property('height', 250);
-    expect(bid.meta.advertiserDomains).to.deep.equal(['https://example.com']);
-    expect(bid).to.have.property('ad', 'markup000<img src="notify000" />');
-    expect(bid).to.have.property('ttl', 300);
-    expect(bid).to.have.property('netRevenue', true);
+    before(() => {
+      request = spec.buildRequests(bidRequests, {});
+      response = spec.interpretResponse(bidResponses, request);
+    });
+
+    it('Banner', function() {
+      expect(response).to.be.an('array').with.lengthOf(4);
+      bid = response[0];
+      expect(bid).to.have.property('requestId', 'bid000');
+      expect(bid).to.have.property('cpm', 0.99);
+      expect(bid).to.have.property('creativeId', '1000');
+      expect(bid).to.have.property('width', 300);
+      expect(bid).to.have.property('height', 250);
+      expect(bid.meta.advertiserDomains).to.deep.equal(['https://example.com']);
+      expect(bid).to.have.property('ad', 'markup000<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="notify000"></div>');
+      expect(bid).to.have.property('ttl', 300);
+      expect(bid).to.have.property('netRevenue', true);
+    });
 
     // There is no bid001 because cpm is $0
 
-    bid = response[1];
-    expect(bid).to.have.property('requestId', 'bid002');
-    expect(bid).to.have.property('currency', 'USD');
-    expect(bid).to.have.property('cpm', 2.99);
-    expect(bid).to.have.property('creativeId', '1002');
-    expect(bid).to.have.property('width', 300);
-    expect(bid).to.have.property('height', 600);
-    expect(bid).to.have.property('ad', 'markup002<img src="notify002" />');
-    expect(bid).to.have.property('ttl', 300);
-    expect(bid).to.have.property('netRevenue', true);
+    it('Banner multiple sizes', function() {
+      bid = response[1];
+      expect(bid).to.have.property('requestId', 'bid002');
+      expect(bid).to.have.property('cpm', 2.99);
+      expect(bid).to.have.property('creativeId', '1002');
+      expect(bid).to.have.property('width', 300);
+      expect(bid).to.have.property('height', 600);
+      expect(bid).to.have.property('ad', 'markup002<div style="position:absolute;left:0px;top:0px;visibility:hidden;"><img src="notify002"></div>');
+      expect(bid).to.have.property('ttl', 300);
+      expect(bid).to.have.property('netRevenue', true);
+    });
 
-    bid = response[2];
-    expect(bid).to.have.property('requestId', 'bid003');
-    expect(bid).to.have.property('currency', 'USD');
-    expect(bid).to.have.property('cpm', 3.99);
-    expect(bid).to.have.property('creativeId', '1003');
-    expect(bid).to.have.property('width', 632);
-    expect(bid).to.have.property('height', 499);
-    expect(bid).to.have.property('vastUrl', 'markup003');
-    expect(bid).to.have.property('mediaType', 'video');
-    expect(bid).to.have.property('ttl', 300);
-    expect(bid).to.have.property('netRevenue', true);
+    if (FEATURES.VIDEO) {
+      it('Video', function () {
+        bid = response[2];
+        expect(bid).to.have.property('requestId', 'bid003');
+        expect(bid).to.have.property('cpm', 3.99);
+        expect(bid).to.have.property('creativeId', '1003');
+        expect(bid).to.have.property('playerWidth', 632);
+        expect(bid).to.have.property('playerHeight', 499);
+        expect(bid).to.have.property('vastUrl', 'notify003');
+        expect(bid).to.have.property('vastXml', 'markup003');
+        expect(bid).to.have.property('mediaType', 'video');
+        expect(bid).to.have.property('ttl', 300);
+        expect(bid).to.have.property('netRevenue', true);
+      });
 
-    bid = response[3];
-    expect(bid).to.have.property('vastXml', '<?xml><VAST></VAST>');
-  });
-
-  it('Verify handling of bad responses', function() {
-    let response = spec.interpretResponse({}, {});
-    expect(response).to.be.an('array').with.lengthOf(0);
-    response = spec.interpretResponse({id: '123'}, {});
-    expect(response).to.be.an('array').with.lengthOf(0);
-    response = spec.interpretResponse({id: '123', seatbid: []}, {});
-    expect(response).to.be.an('array').with.lengthOf(0);
+      it('Empty Video', function() {
+        bid = response[3];
+        expect(bid).to.have.property('vastXml', '<?xml><VAST></VAST>');
+      });
+    }
   });
 
   it('Verify publisher commond id support', function() {
@@ -524,79 +547,23 @@ describe('Conversant adapter tests', function() {
     expect(payload).to.not.have.nested.property('user.ext.eids');
   });
 
-  it('Verify GDPR bid request', function() {
-    // add gdpr info
-    const bidderRequest = {
-      gdprConsent: {
-        consentString: 'BOJObISOJObISAABAAENAA4AAAAAoAAA',
-        gdprApplies: true
-      }
-    };
-
-    const payload = spec.buildRequests(bidRequests, bidderRequest).data;
-    expect(payload).to.have.deep.nested.property('user.ext.consent', 'BOJObISOJObISAABAAENAA4AAAAAoAAA');
-    expect(payload).to.have.deep.nested.property('regs.ext.gdpr', 1);
-  });
-
-  it('Verify GDPR bid request without gdprApplies', function() {
-    // add gdpr info
-    const bidderRequest = {
-      gdprConsent: {
-        consentString: ''
-      }
-    };
-
-    const payload = spec.buildRequests(bidRequests, bidderRequest).data;
-    expect(payload).to.have.deep.nested.property('user.ext.consent', '');
-    expect(payload).to.not.have.deep.nested.property('regs.ext.gdpr');
-  });
-
-  describe('CCPA', function() {
-    it('should have us_privacy', function() {
-      const bidderRequest = {
-        uspConsent: '1NYN'
-      };
-
-      const payload = spec.buildRequests(bidRequests, bidderRequest).data;
-      expect(payload).to.have.deep.nested.property('regs.ext.us_privacy', '1NYN');
-      expect(payload).to.not.have.deep.nested.property('regs.ext.gdpr');
-    });
-
-    it('should have no us_privacy', function() {
-      const payload = spec.buildRequests(bidRequests, {}).data;
-      expect(payload).to.not.have.deep.nested.property('regs.ext.us_privacy');
-    });
-
-    it('should have both gdpr and us_privacy', function() {
-      const bidderRequest = {
-        gdprConsent: {
-          consentString: 'BOJObISOJObISAABAAENAA4AAAAAoAAA',
-          gdprApplies: true
-        },
-        uspConsent: '1NYN'
-      };
-
-      const payload = spec.buildRequests(bidRequests, bidderRequest).data;
-      expect(payload).to.have.deep.nested.property('user.ext.consent', 'BOJObISOJObISAABAAENAA4AAAAAoAAA');
-      expect(payload).to.have.deep.nested.property('regs.ext.gdpr', 1);
-      expect(payload).to.have.deep.nested.property('regs.ext.us_privacy', '1NYN');
-    });
-  });
-
   describe('Extended ID', function() {
     it('Verify unifiedid and liveramp', function() {
       // clone bidRequests
       let requests = utils.deepClone(bidRequests);
 
+      const uid = {pubcid: '112233', idl_env: '334455'};
+      const eidArray = [{'source': 'pubcid.org', 'uids': [{'id': '112233', 'atype': 1}]}, {'source': 'liveramp.com', 'uids': [{'id': '334455', 'atype': 3}]}];
+
       // add pubcid to every entry
       requests.forEach((unit) => {
-        Object.assign(unit, {userId: {pubcid: '112233', tdid: '223344', idl_env: '334455'}});
-        Object.assign(unit, {userIdAsEids: createEidsArray(unit.userId)});
+        Object.assign(unit, {userId: uid});
+        Object.assign(unit, {userIdAsEids: eidArray});
       });
       //  construct http post payload
       const payload = spec.buildRequests(requests, {}).data;
       expect(payload).to.have.deep.nested.property('user.ext.eids', [
-        {source: 'adserver.org', uids: [{id: '223344', atype: 1, ext: {rtiPartner: 'TDID'}}]},
+        {source: 'pubcid.org', uids: [{id: '112233', atype: 1}]},
         {source: 'liveramp.com', uids: [{id: '334455', atype: 3}]}
       ]);
     });

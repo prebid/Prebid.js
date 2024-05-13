@@ -2,7 +2,7 @@ import {buildUrl, generateUUID, getWindowLocation, logError, logInfo, parseSizes
 import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS, STATUS } from '../src/constants.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {includes as strIncludes} from '../src/polyfill.js';
@@ -100,13 +100,13 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoin
   track({ eventType, args }) {
     if (typeof args !== 'undefined') {
       switch (eventType) {
-        case CONSTANTS.EVENTS.AUCTION_INIT:
+        case EVENTS.AUCTION_INIT:
           logInfo(localStoragePrefix + 'AUCTION_INIT:', JSON.stringify(args));
           if (typeof args.auctionId !== 'undefined' && args.auctionId.length) {
             events.auctions[args.auctionId] = { bids: {} };
           }
           break;
-        case CONSTANTS.EVENTS.BID_REQUESTED:
+        case EVENTS.BID_REQUESTED:
           logInfo(localStoragePrefix + 'BID_REQUESTED:', JSON.stringify(args));
           if (typeof args.auctionId !== 'undefined' && args.auctionId.length) {
             if (typeof events.auctions[args.auctionId] === 'undefined') {
@@ -135,14 +135,14 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoin
             });
           }
           break;
-        case CONSTANTS.EVENTS.BID_RESPONSE:
+        case EVENTS.BID_RESPONSE:
           logInfo(localStoragePrefix + 'BID_RESPONSE:', JSON.stringify(args));
           if (typeof args.auctionId !== 'undefined' && args.auctionId.length) {
             if (typeof events.auctions[args.auctionId] === 'undefined') {
               events.auctions[args.auctionId] = { bids: {} };
             } else if (Object.keys(events.auctions[args.auctionId]['bids']).length) {
               let bidResponse = events.auctions[args.auctionId]['bids'][args.requestId];
-              bidResponse.isBid = args.getStatusCode() === CONSTANTS.STATUS.GOOD;
+              bidResponse.isBid = args.getStatusCode() === STATUS.GOOD;
               bidResponse.cpm = args.cpm;
               bidResponse.currency = args.currency;
               bidResponse.netRevenue = args.netRevenue;
@@ -165,7 +165,7 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoin
             }
           }
           break;
-        case CONSTANTS.EVENTS.NO_BID:
+        case EVENTS.NO_BID:
           logInfo(localStoragePrefix + 'NO_BID:', JSON.stringify(args));
           if (typeof args.auctionId !== 'undefined' && args.auctionId.length) {
             if (typeof events.auctions[args.auctionId] === 'undefined') {
@@ -176,7 +176,7 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoin
             }
           }
           break;
-        case CONSTANTS.EVENTS.BID_WON:
+        case EVENTS.BID_WON:
           logInfo(localStoragePrefix + 'BID_WON:', JSON.stringify(args));
           if (typeof initOptions.enableSession !== 'undefined' && initOptions.enableSession) {
             updateSessionId();
@@ -192,7 +192,7 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoin
             }
           }
           break;
-        case CONSTANTS.EVENTS.BID_TIMEOUT:
+        case EVENTS.BID_TIMEOUT:
           logInfo(localStoragePrefix + 'BID_TIMEOUT:', JSON.stringify(args));
           if (args.length) {
             args.forEach(timeout => {
@@ -208,7 +208,7 @@ var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoin
             });
           }
           break;
-        case CONSTANTS.EVENTS.AUCTION_END:
+        case EVENTS.AUCTION_END:
           logInfo(localStoragePrefix + 'AUCTION_END:', JSON.stringify(args));
           if (typeof initOptions.enableSession !== 'undefined' && initOptions.enableSession) {
             updateSessionId();

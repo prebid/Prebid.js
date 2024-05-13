@@ -1,7 +1,7 @@
 # Overview
 **Module Name:** Yahoo Advertising Bid Adapter
 **Module Type:** Bidder Adapter
-**Maintainer:** hb-fe-tech@yahooinc.com
+**Maintainer:** prebid-tech-team@yahooinc.com
 
 # Description
 The Yahoo Advertising Bid Adapter is an OpenRTB interface that consolidates all previous "Oath.inc" adapters such as: "aol", "oneMobile", "oneDisplay" & "oneVideo" supply-side platforms.

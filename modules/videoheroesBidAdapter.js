@@ -4,6 +4,11 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'videoheroes';
 const DEFAULT_CUR = 'USD';
 const ENDPOINT_URL = `https://point.contextualadv.com/?t=2&partner=hash`;

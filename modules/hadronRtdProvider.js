@@ -14,6 +14,10 @@ import {isFn, isStr, isArray, deepEqual, isPlainObject, logError, logInfo} from 
 import {loadExternalScript} from '../src/adloader.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 const LOG_PREFIX = 'User ID - HadronRtdProvider submodule: ';
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'hadron';

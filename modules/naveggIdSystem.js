@@ -10,6 +10,11 @@ import { ajax } from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ */
+
 const MODULE_NAME = 'naveggId';
 const OLD_NAVEGG_ID = 'nid';
 const NAVEGG_ID = 'nvggid';
@@ -74,16 +79,16 @@ function readnavIDFromCookie() {
 /** @type {Submodule} */
 export const naveggIdSubmodule = {
   /**
-  * used to link submodule with config
-  * @type {string}
-  */
+   * used to link submodule with config
+   * @type {string}
+   */
   name: MODULE_NAME,
   /**
-  * decode the stored id value for passing to bid requests
-  * @function
-  * @param { Object | string | undefined } value
-  * @return { Object | string | undefined }
-  */
+   * decode the stored id value for passing to bid requests
+   * @function
+   * @param { Object | string | undefined } value
+   * @return { Object | string | undefined }
+   */
   decode(value) {
     const naveggIdVal = value ? isStr(value) ? value : isPlainObject(value) ? value.id : undefined : undefined;
     return naveggIdVal ? {
@@ -91,11 +96,11 @@ export const naveggIdSubmodule = {
     } : undefined;
   },
   /**
-  * performs action to obtain id and return a value in the callback's response argument
-  * @function
-  * @param {SubmoduleConfig} config
-  * @return {{id: string | undefined } | undefined}
-  */
+   * performs action to obtain id and return a value in the callback's response argument
+   * @function
+   * @param {SubmoduleConfig} config
+   * @return {{id: string | undefined } | undefined}
+   */
   getId() {
     const naveggIdString = readnaveggIdFromLocalStorage() || readnaveggIDFromCookie() || getNaveggIdFromApi() || readoldnaveggIDFromCookie() || readnvgIDFromCookie() || readnavIDFromCookie();
 
