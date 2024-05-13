@@ -39,7 +39,7 @@ export const spec = {
         t: 'i',
         d: HOST_NAME,
         fpc: params.fpc,
-        pageUrl: params.pageurl,
+        _u: window.location.href,
         mediaTypes: Object.assign({}, mediaTypes, bidRequest.mediaTypes)
       };
       if (params.keywords) payload.keywords = params.keywords;
