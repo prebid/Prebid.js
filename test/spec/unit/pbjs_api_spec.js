@@ -2478,6 +2478,7 @@ describe('Unit: Prebid Module', function () {
             Object.entries({
               missing: {},
               negative: {id: -1},
+              'not an integer': {id: 1.23},
               NaN: {id: 'garbage'}
             }).forEach(([t, props]) => {
               it(`should reject native ortb when asset ID is ${t}`, () => {
@@ -2496,8 +2497,27 @@ describe('Unit: Prebid Module', function () {
                   adUnits: [adUnit]
                 });
                 expect(auctionArgs.adUnits[0].bids.length).to.equal(0);
+              });
+            });
+
+            ['sendTargetingKeys', 'types'].forEach(key => {
+              it(`should reject native that includes both ortb and ${key}`, () => {
+                const adUnit = {
+                  code: 'au',
+                  mediaTypes: {
+                    native: {
+                      ortb: {},
+                      [key]: {}
+                    }
+                  },
+                  bids: [{bidder: 'appnexus'}]
+                };
+                $$PREBID_GLOBAL$$.requestBids({
+                  adUnits: [adUnit]
+                });
+                expect(auctionArgs.adUnits[0].bids.length).to.equal(0);
               })
-            })
+            });
           }
 
           it('should throw error message and remove adUnit if adUnit.bids is not defined correctly', function () {
