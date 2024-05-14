@@ -9,7 +9,6 @@ const _approvedLoadExternalJSList = [
   'criteo',
   'outstream',
   'adagio',
-  'spotx',
   'browsi',
   'brandmetrics',
   'justtag',
