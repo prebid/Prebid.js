@@ -10,7 +10,7 @@
 
 51Degrees module enriches an OpenRTB request with [51Degrees Device Data](https://51degrees.com/documentation/index.html).
 
-51Degrees module sets the following fields of the device object: `make`, `model`, `os`, `osv`, `h`, `w`, `ppi`, `pixelratio` - interested bidder adapters may use these fields as needed. In addition the module sets `device.ext.fiftyonedegrees_deviceId` to a permanent device ID which can be rapidly looked up in on premise data exposing over 250 properties including the device age, chip set, codec support, and price, operating system and app/browser versions, age, and embedded features.
+51Degrees module sets the following fields of the device object: `make`, `model`, `os`, `osv`, `h`, `w`, `ppi`, `pxratio` - interested bidder adapters may use these fields as needed. In addition the module sets `device.ext.fiftyonedegrees_deviceId` to a permanent device ID which can be rapidly looked up in on premise data exposing over 250 properties including the device age, chip set, codec support, and price, operating system and app/browser versions, age, and embedded features.
 
 The module supports on premise and cloud device detection services with free options for both. 
 
@@ -71,13 +71,28 @@ Accept-CH: sec-ch-ua-arch, sec-ch-ua-full-version, sec-ch-ua-full-version-list, 
 
 See the [51Degrees documentation](https://51degrees.com/documentation/_device_detection__features__u_a_c_h__overview.html) for more information concerning UA-CH and permissions.
 
+##### Why not use GetHighEntropyValues API instead? 
+Thanks for asking.
+
+The script this module injects has a fall back to the GetHighEntropyValues API, but does not rely on it as a first (or only) choice route - please see the illustrative cases below. Albeit it seems easier, GHEV API is not supported by all browsers (so the decision to call it should be conditional) and also even in Chrome this API will likely be a subject to the Privacy Budget in the future.
+
+In summary we recommend using `Delegate-CH` http-equiv as the preferred method of obtaining the necessary evidence because it is the fastest and future proof method.
+
+##### Illustrative Cases
+
+* if the device is iPhone/iPad then there is no point checking for or calling GetHighEntropyValues at the moment because iOS does not support this API. However this might change in the future.  Platforms like iOS require additional techniques to identify the model which are not covered via a single API call, and change from version to version of the operating system and browser rendering engine. **When used with iOS 51Degrees resolves the [iPhone/iPad model groups](https://51degrees.com/documentation/4.4/_device_detection__features__apple_device_table.html) using these techniques.** That is one of the benefits the module brings to the Prebid community as most solutions do not resolve iPhone/iPad model groups. More on Apple Device Detection [here](https://51degrees.com/documentation/4.4/_device_detection__features__apple_detection.html).
+
+* if the browser is Brave on Android then there is similarly no point requesting GHEV as the API is not supported.
+
+* if the browser is Chrome then the `Delegate-CH` if enabled by the publisher would enable the browser to provide the necessary evidence. However if this is not implemented - then the dynamic script would fall back to GHEV which is slower.
+
 ### Configuration
 
 This module is configured as part of the `realTimeData.dataProviders`
 
 ```javascript
 pbjs.setConfig({
-    debug: true, // we recommend turning this on for testing as it adds more logging
+    debug: true, // turn on for testing, remove in production
     realTimeData: {
         auctionDelay: 1000, // should be set lower in production use
         dataProviders: [
