@@ -2,13 +2,13 @@
 
 **Module Name:** Contxtful RTD Provider  
 **Module Type:** RTD Provider  
-**Maintainer:** [prebid@contxtful.com](mailto:prebid@contxtful.com)
+**Maintainer:** [contact@contxtful.com](mailto:contact@contxtful.com)
 
 # Description
 
 The Contxtful RTD module offers a unique feature—Receptivity. Receptivity is an efficiency metric, enabling the qualification of any instant in a session in real time based on attention. The core idea is straightforward: the likelihood of an ad’s success increases when it grabs attention and is presented in the right context at the right time.
 
-To utilize this module, you need to register for an account with [Contxtful](https://contxtful.com). For inquiries, please contact [prebid@contxtful.com](mailto:prebid@contxtful.com).
+To utilize this module, you need to register for an account with [Contxtful](https://contxtful.com). For inquiries, please contact [contact@contxtful.com](mailto:contact@contxtful.com).
 
 # Configuration
 
@@ -17,7 +17,26 @@ To utilize this module, you need to register for an account with [Contxtful](htt
 To incorporate this module into your `prebid.js`, compile the module using the following command:
 
 ```sh
-gulp build --modules=contxtfulRtdProvider,<other modules...>
+gulp build --modules=rtdModule,contxtfulRtdProvider,<other modules...>
+```
+
+## Testing
+
+To run the test server locally:
+```sh
+gulp serve --modules=rtdModule,contxtfulRtdProvider,<other modules...> --fix --nolint --notest
+chrome http://localhost:9999/integrationExamples/gpt/contxtfulRtdProvider_example.html
+```
+
+To run the unit tests:
+
+```bash
+gulp test
+```
+
+To run the unit tests for a particular file:
+```bash
+gulp test --file "test/spec/modules/contxtfulRtdProvider_spec.js" --nolint
 ```
 
 ## Module Configuration
@@ -35,8 +54,11 @@ pbjs.setConfig({
         "name": "contxtful",
         "waitForIt": true,
         "params": {
-          "version": "<API Version>",
-          "customer": "<Contxtful Customer ID>"
+          "version": "Contact contact@contxtful.com for the API version",
+          "customer": "Contact contact@contxtful.com for the customer ID",
+          "hostname": "api.receptivity.io", // Optional, default: "api.receptivity.io"
+          "bidders": ["bidderCode1", "bidderCode", "..."], // list of bidders
+          "adServerTargeting": true, // Optional, default: true
         }
       }
     ]
@@ -46,20 +68,70 @@ pbjs.setConfig({
 
 ### Configuration Parameters
 
-| Name       | Type     | Scope    | Description                               |
-|------------|----------|----------|-------------------------------------------|
-| `version`  | `string` | Required | Specifies the API version of Contxtful.   |
-| `customer` | `string` | Required | Your unique customer identifier.          |
+| Name                | Type     | Scope    | Description                                |
+|---------------------|----------|----------|--------------------------------------------|
+| `version`           | `String` | Required | Specifies the version of the Contxtful     |
+|                     |          |          | Receptivity API.                           |
+| `customer`          | `String` | Required | Your unique customer identifier.           |
+| `hostname`          | `String` | Optional | Default is "api.receptivity.io"            |
+| `adServerTargeting` | `Boolean`| Optional | `getTargetingData` will do nothing when    |
+|                     |          |          | `adServerTargeting` === false.             |
+|                     |          |          | Default is true.                           |
+| `bidders`           | `Array`  | Optional | `getBidRequestData` will write receptivity |
+|                     |          |          | to `ortb2Fragments.bidder[bidderCode]` for |
+|                     |          |          | these `bidders`. Default is [].            |
+
 
 # Usage
 
-The `contxtfulRtdProvider` module loads an external JavaScript file and authenticates with Contxtful APIs. The `getTargetingData` function then adds a `ReceptivityState` to each ad slot, which can have one of two values: `Receptive` or `NonReceptive`.
+The `contxtfulRtdProvider` module loads an external JavaScript file and authenticates with Contxtful APIs.
+
+The receptivity, dubbed "rx", contains a key `ReceptivityState`.
+This key can have one of two values: `Receptive` or `NonReceptive`.
+
+The `getTargetingData` function adds receptivity to each ad unit when `adServerTargeting` is not false.
 
 ```json
 {
   "adUnitCode1": { "ReceptivityState": "Receptive" },
-  "adUnitCode2": { "ReceptivityState": "NonReceptive" }
+  "adUnitCode2": { "ReceptivityState": "Receptive" }
+}
+```
+
+The `getBidRequestData` function writes receptivity to `ortb2Fragments.bidder[bidderCode]` for each bidder code in `bidders`.
+
+```json
+"ortb2Fragments": {
+  "global": {},
+  "bidder": {
+    "mock-bidder-code": {
+      "user": {
+        "data": [
+          {
+            "id": "50",
+            "name": "contxtful",
+            "segment": [],
+            "ext": {
+              "rx": { "ReceptivityState": "Receptive" },
+              "params": {
+                "ev": "v1",
+                "ci": "CUSTOMER"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
 }
 ```
 
 This module also integrates seamlessly with Google Ad Manager, ensuring that the `ReceptivityState` is available as early as possible in the ad serving process.
+
+# Links
+
+- [Basic Prebid.js Example](https://docs.prebid.org/dev-docs/examples/basic-example.html)
+- [How Bid Adapters Should Read First Party Data](https://docs.prebid.org/features/firstPartyData.html#how-bid-adapters-should-read-first-party-data)
+- [getBidRequestData](https://docs.prebid.org/dev-docs/add-rtd-submodule.html#getbidrequestdata)
+- [getTargetingData](https://docs.prebid.org/dev-docs/add-rtd-submodule.html#gettargetingdata)
+- [Contxtful Documentation](https://documentation.contxtful.com/)
