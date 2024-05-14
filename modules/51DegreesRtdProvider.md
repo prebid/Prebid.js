@@ -71,7 +71,8 @@ Accept-CH: sec-ch-ua-arch, sec-ch-ua-full-version, sec-ch-ua-full-version-list, 
 
 See the [51Degrees documentation](https://51degrees.com/documentation/_device_detection__features__u_a_c_h__overview.html) for more information concerning UA-CH and permissions.
 
-##### Why not use GetHighEntropyValues API instead? 
+##### Why not use GetHighEntropyValues API instead?
+
 Thanks for asking.
 
 The script this module injects has a fall back to the GetHighEntropyValues API, but does not rely on it as a first (or only) choice route - please see the illustrative cases below. Albeit it seems easier, GHEV API is not supported by all browsers (so the decision to call it should be conditional) and also even in Chrome this API will likely be a subject to the Privacy Budget in the future.
@@ -82,7 +83,7 @@ In summary we recommend using `Delegate-CH` http-equiv as the preferred method o
 
 * if the device is iPhone/iPad then there is no point checking for or calling GetHighEntropyValues at the moment because iOS does not support this API. However this might change in the future.  Platforms like iOS require additional techniques to identify the model which are not covered via a single API call, and change from version to version of the operating system and browser rendering engine. **When used with iOS 51Degrees resolves the [iPhone/iPad model groups](https://51degrees.com/documentation/4.4/_device_detection__features__apple_device_table.html) using these techniques.** That is one of the benefits the module brings to the Prebid community as most solutions do not resolve iPhone/iPad model groups. More on Apple Device Detection [here](https://51degrees.com/documentation/4.4/_device_detection__features__apple_detection.html).
 
-* if the browser is Brave on Android then there is similarly no point requesting GHEV as the API is not supported.
+* if the browser is Firefox on Android or Desktop then there is similarly no point requesting GHEV as the API is not supported.
 
 * if the browser is Chrome then the `Delegate-CH` if enabled by the publisher would enable the browser to provide the necessary evidence. However if this is not implemented - then the dynamic script would fall back to GHEV which is slower.
 
