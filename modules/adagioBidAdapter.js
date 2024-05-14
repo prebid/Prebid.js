@@ -64,7 +64,11 @@ export const ORTB_VIDEO_PARAMS = {
   'w': (value) => isInteger(value),
   'h': (value) => isInteger(value),
   'startdelay': (value) => isInteger(value),
-  'placement': (value) => isInteger(value),
+  'placement': (value) => {
+    logWarn(LOG_PREFIX, 'The OpenRTB video param `placement` is deprecated and should not be used anymore.');
+    return isInteger(value)
+  },
+  'plcmt': (value) => isInteger(value),
   'linearity': (value) => isInteger(value),
   'skip': (value) => [1, 0].includes(value),
   'skipmin': (value) => isInteger(value),
@@ -964,6 +968,7 @@ export const spec = {
 
     autoFillParams(bid);
 
+    // Note: `bid.params.placement` is not related to the video param `placement`.
     if (!(bid.params.organizationId && bid.params.site && bid.params.placement)) {
       logWarn(`${LOG_PREFIX} at least one required param is missing.`);
       // internal.enqueue(debugData());
