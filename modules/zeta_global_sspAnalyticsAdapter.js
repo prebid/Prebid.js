@@ -78,7 +78,18 @@ function auctionEndHandler(args) {
 }
 
 function bidTimeoutHandler(args) {
-  sendEvent(EVENTS.BID_TIMEOUT, args);
+  const event = {
+    zetaParams: zetaParams,
+    timeouts: args.map(t => ({
+      bidId: t?.bidId,
+      auctionId: t?.auctionId,
+      bidder: t?.bidder,
+      mediaType: t?.mediaTypes?.video ? 'VIDEO' : (t?.mediaTypes?.banner ? 'BANNER' : undefined),
+      size: t?.sizes?.filter(s => s && s.length === 2).filter(s => Number.isInteger(s[0]) && Number.isInteger(s[1])).map(s => s[0] + 'x' + s[1]).find(s => s),
+      timeout: t?.timeout
+    }))
+  }
+  sendEvent(EVENTS.BID_TIMEOUT, event);
 }
 
 /// /////////// ADAPTER DEFINITION ///////////////////////////
