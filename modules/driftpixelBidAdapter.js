@@ -3,6 +3,7 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {parseSizesInput, isFn, deepAccess, getBidIdParameter, logError, isArray} from '../src/utils.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+import {findIndex} from '../src/polyfill.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -137,12 +138,18 @@ function interpretResponse(serverResponse, {bidderRequest}) {
   }
 
   serverResponse.body.data.forEach(serverBid => {
-    const bid = {
-      requestId: bidderRequest.bidId,
-      dealId: bidderRequest.dealId || null,
-      ...serverBid
-    };
-    response.push(bid);
+    const bidIndex = findIndex(bidderRequest.bids, (bidRequest) => {
+      return bidRequest.bidId === serverBid.requestId;
+    });
+
+    if (bidIndex !== -1) {
+      const bid = {
+        requestId: serverBid.requestId,
+        dealId: bidderRequest.dealId || null,
+        ...serverBid
+      };
+      response.push(bid);
+    }
   });
 
   return response;
