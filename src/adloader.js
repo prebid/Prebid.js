@@ -6,14 +6,14 @@ const _requestCache = new WeakMap();
 const _approvedLoadExternalJSList = [
   // Prebid maintained modules:
   'debugging',
-  // Bid Modules: 
+  // Bid Modules:
   'adagio',
   'improvedigital',
   'lucead',
   // RTD modules:
   'aaxBlockmeter',
   'adloox',
-  'akamaidap',  
+  'akamaidap',
   'arcspan',
   'airgrid',
   'browsi',
