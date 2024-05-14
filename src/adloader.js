@@ -6,6 +6,7 @@ const _requestCache = new WeakMap();
 const _approvedLoadExternalJSList = [
   // Prebid maintained modules:
   'debugging',
+  'outstream',
   // Bid Modules:
   'adagio',
   'improvedigital',
