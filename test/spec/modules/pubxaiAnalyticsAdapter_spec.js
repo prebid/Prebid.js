@@ -13,6 +13,15 @@ import { EVENTS } from '../../../src/constants.js';
 
 let events = require('src/events');
 
+const readBlobSafariCompat = (blob) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = reject
+    reader.readAsText(blob)
+  })
+}
+
 describe('pubxai analytics adapter', () => {
   beforeEach(() => {
     sinon.stub(events, 'getEvents').returns([]);
@@ -702,11 +711,7 @@ describe('pubxai analytics adapter', () => {
         options: initOptions,
       });
       sinon.stub(navigator, 'sendBeacon').returns(true);
-      originalHD = document.hidden;
       originalVS = document.visibilityState;
-      document['__defineGetter__']('hidden', function () {
-        return 1;
-      });
       document['__defineGetter__']('visibilityState', function () {
         return 'hidden';
       });
@@ -717,9 +722,6 @@ describe('pubxai analytics adapter', () => {
       navigator.sendBeacon.restore();
       delete auctionCache['bc3806e4-873e-453c-8ae5-204f35e923b4'];
       delete auctionCache['auction2'];
-      document['__defineGetter__']('hidden', function () {
-        return originalHD;
-      });
       document['__defineGetter__']('visibilityState', function () {
         return originalVS;
       });
@@ -766,7 +768,7 @@ describe('pubxai analytics adapter', () => {
           prebidVersion: getGlobal()?.version,
         });
         expect(expectedData.type).to.equal('text/json');
-        expect(JSON.parse(await expectedData.text())).to.deep.equal([
+        expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([
           [expectedAfterBidWon, expectedAfterBid][index],
         ]);
       }
@@ -811,7 +813,7 @@ describe('pubxai analytics adapter', () => {
 
       // Step 9: check that the data sent in the request is correct
       expect(expectedData.type).to.equal('text/json');
-      expect(JSON.parse(await expectedData.text())).to.deep.equal([
+      expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([
         {
           ...expectedAfterBid,
           bids: [],
@@ -934,7 +936,7 @@ describe('pubxai analytics adapter', () => {
           prebidVersion: getGlobal()?.version,
         });
         expect(expectedData.type).to.equal('text/json');
-        expect(JSON.parse(await expectedData.text())).to.deep.equal([
+        expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([
           auctionIdMapFn([expectedAfterBidWon, expectedAfterBid][index % 2], [
             {
               field: 'auctionId',
@@ -1050,7 +1052,7 @@ describe('pubxai analytics adapter', () => {
           prebidVersion: getGlobal()?.version,
         });
         expect(expectedData.type).to.equal('text/json');
-        expect(JSON.parse(await expectedData.text())).to.deep.equal([
+        expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([
           [expectedAfterBidWon, expectedAfterBid][index],
           replaceProperty([expectedAfterBidWon, expectedAfterBid][index], [
             {
