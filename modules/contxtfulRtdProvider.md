@@ -71,7 +71,7 @@ pbjs.setConfig({
 |                     |          |          | Receptivity API.                           |
 | `customer`          | `String` | Required | Your unique customer identifier.           |
 | `hostname`          | `String` | Optional | Target URL for CONTXTFUL external JavaScript file. Default is "api.receptivity.io". Changing default behaviour is not recommended. Please reach out to contact@contxtful.com if you experience issues. |
-| `adServerTargeting` | `Boolean`| Optional | Enables the `getTargetingData` to inject targeting value in ad units. Setting this parameter to true enables the feature. [Default] Setting this parameter to false disables the feature.       |
+| `adServerTargeting` | `Boolean`| Optional | Enables the `getTargetingData` to inject targeting value in ad units. Setting to true enables the feature, false disables the feature. Default is true      |
 | `bidders`           | `Array`  | Optional | Setting this array enables Receptivity in the `ortb2` object through `getBidRequestData` for all the listed `bidders`. Default is `[]` (an empty array). RECOMMENDED : Add all the bidders active like this `["bidderCode1", "bidderCode", "..."]` |
 
 ## Usage: Injection in Ad Servers
@@ -92,6 +92,7 @@ This module also integrates seamlessly with Google Ad Manager, ensuring that the
 Setting the `bidders` field in the configuration parameters enables Receptivity in the `ortb2` object through `getBidRequestData` for all the listed bidders.
 On a Bid Request Event, all bidders in the configuration will inherit the Receptivity data through `ortb2`
 Default is `[]` (an empty array)
+
 RECOMMENDED : Add all the bidders active like this `["bidderCode1", "bidderCode", "..."]`
 
 The `getBidRequestData` function writes receptivity to `ortb2Fragments.bidder[bidderCode]` for each bidder code in `bidders`.
