@@ -45,14 +45,15 @@ pbjs.setConfig({
 
 ### Parameters 
 
-| Name              | Type          | Description                                                      | Default           |
-| :---------------- | :------------ | :--------------------------------------------------------------- |:----------------- |
-| name              | String        | Real time data module name                                       | Always '1plusX'   |
-| waitForIt         | Boolean       | Should be `true` if there's an `auctionDelay` defined (optional) | `false`           |
-| params            | Object        |                                                                  |                   |
-| params.customerId | String        | Your 1plusX customer id                                          |                   |
-| params.bidders    | Array<string> | List of bidders for which you would like data to be set          |                   |
-| params.timeout    | Integer       | timeout (ms)                                                     | 1000ms            |
+| Name                      | Type          | Description                                                      | Default           |
+| :------------------------ | :------------ | :--------------------------------------------------------------- |:----------------- |
+| name                      | String        | Real time data module name                                       | Always '1plusX'   |
+| waitForIt                 | Boolean       | Should be `true` if there's an `auctionDelay` defined (optional) | `false`           |
+| params                    | Object        |                                                                  |                   |
+| params.customerId         | String        | Your 1plusX customer id                                          |                   |
+| params.bidders            | Array<string> | List of bidders for which you would like data to be set          |                   |
+| params.timeout            | Integer       | timeout (ms)                                                     | 1000ms            |
+| params.fpidStorageType    | String        | Either "html5" (local storage) or "cookie" (first party cookie)  | html5             |
 
 ## Testing 
 
