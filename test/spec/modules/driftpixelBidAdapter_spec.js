@@ -44,6 +44,17 @@ defaultRequestVideo.mediaTypes = {
     skipppable: true
   }
 };
+
+const videoBidderRequest = {
+  bidderCode: 'driftpixel',
+  bids: [{mediaTypes: {video: {}}, bidId: 'qwerty'}]
+};
+
+const displayBidderRequest = {
+  bidderCode: 'driftpixel',
+  bids: [{bidId: 'qwerty'}]
+};
+
 describe('driftpixelBidAdapter', () => {
   describe('isBidRequestValid', function () {
     it('should return false when request params is missing', function () {
@@ -278,7 +289,7 @@ describe('driftpixelBidAdapter', () => {
         }
       };
 
-      const validResponse = spec.interpretResponse(serverResponse, {bidderRequest: defaultRequest});
+      const validResponse = spec.interpretResponse(serverResponse, {bidderRequest: displayBidderRequest});
       const bid = validResponse[0];
       expect(validResponse).to.be.an('array').that.is.not.empty;
       expect(bid.requestId).to.equal('qwerty');
@@ -308,7 +319,7 @@ describe('driftpixelBidAdapter', () => {
         }
       };
 
-      const validResponseBanner = spec.interpretResponse(serverResponse, {bidderRequest: defaultRequest});
+      const validResponseBanner = spec.interpretResponse(serverResponse, {bidderRequest: displayBidderRequest});
       const bid = validResponseBanner[0];
       expect(validResponseBanner).to.be.an('array').that.is.not.empty;
       expect(bid.mediaType).to.equal('banner');
@@ -334,7 +345,7 @@ describe('driftpixelBidAdapter', () => {
         }
       };
 
-      const validResponseBanner = spec.interpretResponse(serverResponse, {bidderRequest: defaultRequestVideo});
+      const validResponseBanner = spec.interpretResponse(serverResponse, {bidderRequest: videoBidderRequest});
       const bid = validResponseBanner[0];
       expect(validResponseBanner).to.be.an('array').that.is.not.empty;
       expect(bid.mediaType).to.equal('video');
