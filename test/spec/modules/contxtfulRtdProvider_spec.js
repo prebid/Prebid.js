@@ -224,13 +224,13 @@ describe('contxtfulRtdProvider', function () {
 
   describe('getTargetingData', function () {
     const theories = [
-      //[undefined, {}, 'undefined ad-slots'],
-      //[[], {}, 'empty ad-slots'],
-      /*[
+      [undefined, {}, 'undefined ad-slots'],
+      [[], {}, 'empty ad-slots'],
+      [
         ['ad-slot'],
-        { 'ad-slot': { ReceptivityState: 'Receptive' } },
+        { 'ad-slot': RX_FROM_API },
         'single ad-slot',
-      ],*/
+      ],
       [
         ['ad-slot-1', 'ad-slot-2'],
         {
