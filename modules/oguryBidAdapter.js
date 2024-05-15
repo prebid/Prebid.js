@@ -81,7 +81,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
 function buildRequests(validBidRequests, bidderRequest) {
   const openRtbBidRequestBanner = {
     id: bidderRequest.bidderRequestId,
-    tmax: DEFAULT_TIMEOUT,
+    tmax: Math.min(DEFAULT_TIMEOUT, bidderRequest.timeout),
     at: 1,
     regs: {
       ext: {

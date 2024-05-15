@@ -787,7 +787,7 @@ describe('Smart bid adapter tests', function () {
         const requestContent = JSON.parse(request[0].data);
         expect(requestContent).to.have.property('videoData');
         expect(requestContent.videoData).not.to.have.property('videoProtocol').eq(true);
-        expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(2);
+        expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(1);
       });
 
       it('Verify videoData params override meta values', function () {
@@ -1097,7 +1097,7 @@ describe('Smart bid adapter tests', function () {
       const requestContent = JSON.parse(request[0].data);
       expect(requestContent).to.have.property('videoData');
       expect(requestContent.videoData).not.to.have.property('videoProtocol').eq(true);
-      expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(2);
+      expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(1);
     });
 
     it('Verify videoData params override meta values', function () {
@@ -1142,6 +1142,50 @@ describe('Smart bid adapter tests', function () {
       expect(requestContent).to.have.property('videoData');
       expect(requestContent.videoData).to.have.property('videoProtocol').and.to.equal(6);
       expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(3);
+    });
+
+    it('should handle value of videoMediaType.startdelay', function () {
+      const request = spec.buildRequests([{
+        bidder: 'smartadserver',
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            playerSize: [[640, 480]],
+            startdelay: -2
+          }
+        },
+        params: {
+          siteId: 123,
+          pageId: 456,
+          formatId: 78
+        }
+      }]);
+
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent).to.have.property('videoData');
+      expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(3);
+    });
+
+    it('should return specified value of videoMediaType.startdelay', function () {
+      const request = spec.buildRequests([{
+        bidder: 'smartadserver',
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            playerSize: [[640, 480]],
+            startdelay: 60
+          }
+        },
+        params: {
+          siteId: 123,
+          pageId: 456,
+          formatId: 78
+        }
+      }]);
+
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent).to.have.property('videoData');
+      expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(2);
     });
   });
 

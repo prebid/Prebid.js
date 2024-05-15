@@ -196,7 +196,22 @@ describe('limelightDigitalAdapter', function () {
   }
 
   describe('buildRequests', function () {
-    const serverRequests = spec.buildRequests([bid1, bid2, bid3, bid4])
+    const bidderRequest = {
+      ortb2: {
+        device: {
+          sua: {
+            browsers: [],
+            platform: [],
+            mobile: 1,
+            architecture: 'arm'
+          }
+        }
+      },
+      refererInfo: {
+        page: 'testPage'
+      }
+    }
+    const serverRequests = spec.buildRequests([bid1, bid2, bid3, bid4], bidderRequest)
     it('Creates two ServerRequests', function() {
       expect(serverRequests).to.exist
       expect(serverRequests).to.have.lengthOf(2)
@@ -218,7 +233,9 @@ describe('limelightDigitalAdapter', function () {
           'deviceWidth',
           'deviceHeight',
           'secure',
-          'adUnits'
+          'adUnits',
+          'sua',
+          'page'
         );
         expect(data.deviceWidth).to.be.a('number');
         expect(data.deviceHeight).to.be.a('number');
@@ -252,6 +269,12 @@ describe('limelightDigitalAdapter', function () {
           expect(adUnit.custom4).to.be.a('string');
           expect(adUnit.custom5).to.be.a('string');
         })
+        expect(data.sua.browsers).to.be.a('array');
+        expect(data.sua.platform).to.be.a('array');
+        expect(data.sua.mobile).to.be.a('number');
+        expect(data.sua.architecture).to.be.a('string');
+        expect(data.page).to.be.a('string');
+        expect(data.page).to.be.equal('testPage');
       })
     })
     it('Returns valid URL', function () {
@@ -266,6 +289,17 @@ describe('limelightDigitalAdapter', function () {
     it('Returns empty data if no valid requests are passed', function () {
       const serverRequests = spec.buildRequests([])
       expect(serverRequests).to.be.an('array').that.is.empty
+    })
+    it('Returns request with page field value from ortb2 object if ortb2 has page field', function () {
+      bidderRequest.ortb2.site = {
+        page: 'testSitePage'
+      }
+      const serverRequests = spec.buildRequests([bid1], bidderRequest)
+      expect(serverRequests).to.have.lengthOf(1)
+      serverRequests.forEach(serverRequest => {
+        expect(serverRequest.data.page).to.be.a('string');
+        expect(serverRequest.data.page).to.be.equal('testSitePage');
+      })
     })
   })
   describe('interpretBannerResponse', function () {

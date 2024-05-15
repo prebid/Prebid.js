@@ -44,6 +44,9 @@ const bidderIframeList = {
   }, {
     bidder: 'discovery',
     iframeURL: 'https://api.popin.cc/topic/prebid-topics-frame.html'
+  }, {
+    bidder: 'undertone',
+    iframeURL: 'https://creative-p.undertone.com/spk-public/topics_frame.html'
   }]
 }
 

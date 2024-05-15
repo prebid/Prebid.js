@@ -18,15 +18,12 @@ import {
 } from '../src/utils.js';
 import { BANNER, VIDEO, NATIVE } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import CONSTANTS from '../src/constants.json';
 import { getStorageManager } from '../src/storageManager.js';
-import * as events from '../src/events.js';
 import { find } from '../src/polyfill.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
-import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 
 const BIDDER_CODE = 'ix';
 const ALIAS_BIDDER_CODE = 'roundel';
@@ -49,17 +46,6 @@ const PRICE_TO_DOLLAR_FACTOR = {
 const IFRAME_USER_SYNC_URL = 'https://js-sec.indexww.com/um/ixmatch.html';
 const FLOOR_SOURCE = { PBJS: 'p', IX: 'x' };
 const IMG_USER_SYNC_URL = 'https://dsum.casalemedia.com/pbusermatch?origin=prebid';
-export const ERROR_CODES = {
-  BID_SIZE_INVALID_FORMAT: 1,
-  BID_SIZE_NOT_INCLUDED: 2,
-  PROPERTY_NOT_INCLUDED: 3,
-  SITE_ID_INVALID_VALUE: 4,
-  BID_FLOOR_INVALID_FORMAT: 5,
-  IX_FPD_EXCEEDS_MAX_SIZE: 6,
-  EXCEEDS_MAX_SIZE: 7,
-  PB_FPD_EXCEEDS_MAX_SIZE: 8,
-  VIDEO_DURATION_INVALID: 9
-};
 const FIRST_PARTY_DATA = {
   SITE: [
     'id', 'name', 'domain', 'cat', 'sectioncat', 'pagecat', 'page', 'ref', 'search', 'mobile',
@@ -110,7 +96,6 @@ const VIDEO_PARAMS_ALLOW_LIST = [
 ];
 const LOCAL_STORAGE_KEY = 'ixdiag';
 export const LOCAL_STORAGE_FEATURE_TOGGLES_KEY = `${BIDDER_CODE}_features`;
-let hasRegisteredHandler = false;
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 export const FEATURE_TOGGLES = {
   // Update with list of CFTs to be requested from Exchange
@@ -262,8 +247,7 @@ export function bidToVideoImp(bid) {
 
   if (imp.video.minduration > imp.video.maxduration) {
     logError(
-      `IX Bid Adapter: video minduration [${imp.video.minduration}] cannot be greater than video maxduration [${imp.video.maxduration}]`,
-      { bidder: BIDDER_CODE, code: ERROR_CODES.VIDEO_DURATION_INVALID }
+      `IX Bid Adapter: video minduration [${imp.video.minduration}] cannot be greater than video maxduration [${imp.video.maxduration}]`
     );
     return {};
   }
@@ -881,13 +865,6 @@ function enrichRequest(r, bidderRequest, impressions, validBidRequests, userEids
 
   if (config.getConfig('userSync')) {
     r.ext.ixdiag.syncsPerBidder = config.getConfig('userSync').syncsPerBidder;
-  }
-
-  // Get cached errors stored in LocalStorage
-  const cachedErrors = getCachedErrors();
-
-  if (!isEmpty(cachedErrors)) {
-    r.ext.ixdiag.err = cachedErrors;
   }
 
   // Add number of available imps to ixDiag.
@@ -1547,104 +1524,6 @@ function createMissingBannerImp(bid, imp, newSize) {
 }
 
 /**
- * @typedef {Array[message: string, err: Object<bidder: string, code: number>]} ErrorData
- * @property {string} message - The error message.
- * @property {object} err - The error object.
- * @property {string} err.bidder - The bidder of the error.
- * @property {string} err.code - The error code.
- */
-
-/**
- * Error Event handler that receives type and arguments in a data object.
- *
- * @param {ErrorData} data
- */
-function storeErrorEventData(data) {
-  if (!storage.localStorageIsEnabled()) {
-    return;
-  }
-
-  let currentStorage;
-
-  try {
-    currentStorage = JSON.parse(storage.getDataFromLocalStorage(LOCAL_STORAGE_KEY) || '{}');
-  } catch (e) {
-    logWarn('ix can not read ixdiag from localStorage.');
-  }
-
-  const todayDate = new Date();
-
-  Object.keys(currentStorage).map((errorDate) => {
-    const date = new Date(errorDate);
-
-    if (date.setDate(date.getDate() + 7) - todayDate < 0) {
-      delete currentStorage[errorDate];
-    }
-  });
-
-  if (data.type === 'ERROR' && data.arguments && data.arguments[1] && data.arguments[1].bidder === BIDDER_CODE) {
-    const todayString = todayDate.toISOString().slice(0, 10);
-
-    const errorCode = data.arguments[1].code;
-
-    if (errorCode) {
-      currentStorage[todayString] = currentStorage[todayString] || {};
-
-      if (!Number(currentStorage[todayString][errorCode])) {
-        currentStorage[todayString][errorCode] = 0;
-      }
-
-      currentStorage[todayString][errorCode]++;
-    };
-  }
-
-  storage.setDataInLocalStorage(LOCAL_STORAGE_KEY, JSON.stringify(currentStorage));
-}
-
-/**
- * Event handler for storing data into local storage. It will only store data if
- * local storage premissions are avaliable
- */
-function localStorageHandler(data) {
-  if (data.type === 'ERROR' && data.arguments && data.arguments[1] && data.arguments[1].bidder === BIDDER_CODE) {
-    storeErrorEventData(data);
-  }
-}
-
-/**
- * Get ixdiag stored in LocalStorage and format to be added to request payload
- *
- * @returns {Object} Object with error codes and counts
- */
-function getCachedErrors() {
-  if (!storage.localStorageIsEnabled()) {
-    return;
-  }
-
-  const errors = {};
-  let currentStorage;
-
-  try {
-    currentStorage = JSON.parse(storage.getDataFromLocalStorage(LOCAL_STORAGE_KEY) || '{}');
-  } catch (e) {
-    logError('ix can not read ixdiag from localStorage.');
-    return null;
-  }
-
-  Object.keys(currentStorage).forEach((date) => {
-    Object.keys(currentStorage[date]).forEach((code) => {
-      if (typeof currentStorage[date][code] === 'number') {
-        errors[code] = errors[code]
-          ? errors[code] + currentStorage[date][code]
-          : currentStorage[date][code];
-      }
-    });
-  });
-
-  return errors;
-}
-
-/**
  *
  * Initialize IX Outstream Renderer
  * @param {Object} bid
@@ -1738,12 +1617,6 @@ export const spec = {
    * @return {boolean}     True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function (bid) {
-    if (!hasRegisteredHandler) {
-      events.on(CONSTANTS.EVENTS.AUCTION_DEBUG, localStorageHandler);
-      events.on(CONSTANTS.EVENTS.AD_RENDER_FAILED, localStorageHandler);
-      hasRegisteredHandler = true;
-    }
-
     const paramsVideoRef = deepAccess(bid, 'params.video');
     const paramsSize = deepAccess(bid, 'params.size');
     const mediaTypeBannerSizes = deepAccess(bid, 'mediaTypes.banner.sizes');
@@ -1765,14 +1638,14 @@ export const spec = {
       // since there is an ix bidder level size, make sure its valid
       const ixSize = getFirstSize(paramsSize);
       if (!ixSize) {
-        logError('IX Bid Adapter: size has invalid format.', { bidder: BIDDER_CODE, code: ERROR_CODES.BID_SIZE_INVALID_FORMAT });
+        logError('IX Bid Adapter: size has invalid format.');
         return false;
       }
       // check if the ix bidder level size, is present in ad unit level
       if (!includesSize(bid.sizes, ixSize) &&
         !(includesSize(mediaTypeVideoPlayerSize, ixSize)) &&
         !(includesSize(mediaTypeBannerSizes, ixSize))) {
-        logError('IX Bid Adapter: bid size is not included in ad unit sizes or player size.', { bidder: BIDDER_CODE, code: ERROR_CODES.BID_SIZE_NOT_INCLUDED });
+        logError('IX Bid Adapter: bid size is not included in ad unit sizes or player size.');
         return false;
       }
     }
@@ -1784,19 +1657,19 @@ export const spec = {
 
     if (bid.params.siteId !== undefined) {
       if (typeof bid.params.siteId !== 'string' && typeof bid.params.siteId !== 'number') {
-        logError('IX Bid Adapter: siteId must be string or number type.', { bidder: BIDDER_CODE, code: ERROR_CODES.SITE_ID_INVALID_VALUE });
+        logError('IX Bid Adapter: siteId must be string or number type.');
         return false;
       }
 
       if (typeof bid.params.siteId !== 'string' && isNaN(Number(bid.params.siteId))) {
-        logError('IX Bid Adapter: siteId must valid value', { bidder: BIDDER_CODE, code: ERROR_CODES.SITE_ID_INVALID_VALUE });
+        logError('IX Bid Adapter: siteId must valid value');
         return false;
       }
     }
 
     if (hasBidFloor || hasBidFloorCur) {
       if (!(hasBidFloor && hasBidFloorCur && isValidBidFloorParams(bid.params.bidFloor, bid.params.bidFloorCur))) {
-        logError('IX Bid Adapter: bidFloor / bidFloorCur parameter has invalid format.', { bidder: BIDDER_CODE, code: ERROR_CODES.BID_FLOOR_INVALID_FORMAT });
+        logError('IX Bid Adapter: bidFloor / bidFloorCur parameter has invalid format.');
         return false;
       }
     }
@@ -1815,7 +1688,7 @@ export const spec = {
 
       if (errorList.length) {
         errorList.forEach((err) => {
-          logError(err, { bidder: BIDDER_CODE, code: ERROR_CODES.PROPERTY_NOT_INCLUDED });
+          logError(err);
         });
         return false;
       }
@@ -1995,18 +1868,6 @@ export const spec = {
     } else {
       return bids;
     }
-  },
-
-  /**
-   * Covert bid param types for S2S
-   * @param {Object} params bid params
-   * @param {Boolean} isOpenRtb boolean to check openrtb2 protocol
-   * @return {Object} params bid params
-   */
-  transformBidParams: function (params, isOpenRtb) {
-    return convertTypes({
-      'siteID': 'number'
-    }, params);
   },
 
   /**
