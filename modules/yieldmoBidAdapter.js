@@ -337,6 +337,32 @@ function createNewVideoBid(response, bidRequest) {
       mediaType: VIDEO,
     },
   };
+  if (imp.video.plcmt && imp.video.plcmt !== 1) {
+    const renderer = Renderer.install({
+      url: OUTSTREAM_VIDEO_PLAYER_URL,
+      config: {
+        width: result.width,
+        height: result.height,
+        vastTimeout: VAST_TIMEOUT,
+        maxAllowedVastTagRedirects: 5,
+        allowVpaid: true,
+        autoPlay: true,
+        preload: true,
+        mute: true,
+      },
+      id: imp.tagid,
+      loaded: false,
+    });
+
+    renderer.setRender(function (bid) {
+      bid.renderer.push(() => {
+        const { id, config } = bid.renderer;
+        window.YMoutstreamPlayer(bid, id, config);
+      });
+    });
+
+    result.renderer = renderer;
+  }
 
   return result;
 }
