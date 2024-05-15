@@ -121,9 +121,6 @@ describe('1plusXRtdProvider', () => {
         }, 100);
       }
     })
-    it('callback is called after getBidRequestData', () => {
-
-    })
   })
 
   describe('extractConfig', () => {
