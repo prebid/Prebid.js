@@ -95,36 +95,6 @@ Default is `[]` (an empty array)
 
 RECOMMENDED : Add all the bidders active like this `["bidderCode1", "bidderCode", "..."]`
 
-The `getBidRequestData` function writes receptivity to `ortb2Fragments.bidder[bidderCode]` for each bidder code in `bidders`.
-
-```json
-"ortb2Fragments": {
-  "global": {},
-  "bidder": {
-    "mock-bidder-code": {
-      "user": {
-        "data": [
-          {
-            "id": "50",
-            "name": "contxtful",
-            "segment": [],
-            "ext": {
-              "rx": { "ReceptivityState": "Receptive" },
-              "params": {
-                "ev": "v1",
-                "ci": "CUSTOMER"
-              }
-            }
-          }
-        ]
-      }
-    }
-  }
-}
-```
-
-This module also integrates seamlessly with Google Ad Manager, ensuring that the `ReceptivityState` is available as early as possible in the ad serving process.
-
 ## Links
 
 - [Basic Prebid.js Example](https://docs.prebid.org/dev-docs/examples/basic-example.html)
