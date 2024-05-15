@@ -257,7 +257,7 @@ function hasVideoMediaType(bidRequest) {
  * @param request bid request
  */
 function addPlacement(request) {
-  const gpid = deepAccess(request, 'ortb2Imp.ext.data.pbadslot');
+  const gpid = deepAccess(request, 'ortb2Imp.ext.gpid') || deepAccess(request, 'ortb2Imp.ext.data.pbadslot');
   const placementInfo = {
     placement_id: request.adUnitCode,
     callback_id: request.bidId,
@@ -337,33 +337,6 @@ function createNewVideoBid(response, bidRequest) {
       mediaType: VIDEO,
     },
   };
-
-  if (imp.video.placement && imp.video.placement !== 1) {
-    const renderer = Renderer.install({
-      url: OUTSTREAM_VIDEO_PLAYER_URL,
-      config: {
-        width: result.width,
-        height: result.height,
-        vastTimeout: VAST_TIMEOUT,
-        maxAllowedVastTagRedirects: 5,
-        allowVpaid: true,
-        autoPlay: true,
-        preload: true,
-        mute: true
-      },
-      id: imp.tagid,
-      loaded: false,
-    });
-
-    renderer.setRender(function (bid) {
-      bid.renderer.push(() => {
-        const { id, config } = bid.renderer;
-        window.YMoutstreamPlayer(bid, id, config);
-      });
-    });
-
-    result.renderer = renderer;
-  }
 
   return result;
 }
@@ -471,7 +444,7 @@ function getTopics(bidderRequest) {
  * @return Object OpenRTB's 'imp' (impression) object
  */
 function openRtbImpression(bidRequest) {
-  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+  const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
   const size = extractPlayerSize(bidRequest);
   const imp = {
     id: bidRequest.bidId,
@@ -654,8 +627,7 @@ function validateVideoParams(bid) {
     validate('video.mimes', val => isArray(val) && val.every(v => isStr(v)), paramInvalid,
       'array of strings, ex: ["video/mp4"]');
 
-    const placement = validate('video.placement', val => isDefined(val), paramRequired);
-    validate('video.placement', val => val >= 1 && val <= 5, paramInvalid);
+    const placement = validate('video.plcmt', val => isDefined(val), paramRequired);
     if (placement === 1) {
       validate('video.startdelay', val => isDefined(val),
         (field, v) => paramRequired(field, v, 'placement == 1'));
