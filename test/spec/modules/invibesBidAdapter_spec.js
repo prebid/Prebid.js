@@ -560,6 +560,50 @@ describe('invibesBidAdapter:', function () {
       expect(request.data.lId).to.exist;
     });
 
+    it('does not send handIid when it doesnt exist in cookie', function () {
+      top.window.invibes.optIn = 1;
+      top.window.invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
+      global.document.cookie = '';
+      let bidderRequest = {
+        gdprConsent: {
+          vendorData: {
+            vendorConsents: {
+              436: true
+            }
+          }
+        },
+        refererInfo: {
+          page: 'https://randomWeb.com?someFakePara=fakeValue&secondParam=secondValue'
+        }
+      };
+      SetBidderAccess();
+
+      let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.handIid).to.not.exist;
+    });
+
+    it('sends handIid when comes on cookie', function () {
+      top.window.invibes.optIn = 1;
+      top.window.invibes.purposes = [true, false, false, false, false, false, false, false, false, false];
+      global.document.cookie = 'handIid=abcdefghijkk';
+      let bidderRequest = {
+        gdprConsent: {
+          vendorData: {
+            vendorConsents: {
+              436: true
+            }
+          }
+        },
+        refererInfo: {
+          page: 'https://randomWeb.com?someFakePara=fakeValue&secondParam=secondValue'
+        }
+      };
+      SetBidderAccess();
+
+      let request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.handIid).to.equal('abcdefghijkk');
+    });
+
     it('should send purpose 1', function () {
       let bidderRequest = {
         gdprConsent: {
