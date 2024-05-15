@@ -67,8 +67,7 @@ pbjs.setConfig({
 
 | Name                | Type     | Scope    | Description                                |
 |---------------------|----------|----------|--------------------------------------------|
-| `version`           | `String` | Required | Specifies the version of the Contxtful     |
-|                     |          |          | Receptivity API.                           |
+| `version`           | `String` | Required | Specifies the version of the Contxtful Receptivity API.  |
 | `customer`          | `String` | Required | Your unique customer identifier.           |
 | `hostname`          | `String` | Optional | Target URL for CONTXTFUL external JavaScript file. Default is "api.receptivity.io". Changing default behaviour is not recommended. Please reach out to contact@contxtful.com if you experience issues. |
 | `adServerTargeting` | `Boolean`| Optional | Enables the `getTargetingData` to inject targeting value in ad units. Setting to true enables the feature, false disables the feature. Default is true      |
