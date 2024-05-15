@@ -42,7 +42,7 @@ module.exports = {
     sourceType: 'module',
     ecmaVersion: 2018,
   },
-  //ignorePatterns: ['libraries/creative-renderer*'],
+  ignorePatterns: ['libraries/creative-renderer*'],
 
   rules: {
     'comma-dangle': 'off',
