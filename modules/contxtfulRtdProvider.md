@@ -10,8 +10,6 @@ The Contxtful RTD module offers a unique feature—Receptivity. Receptivity is a
 
 To utilize this module, you need to register for an account with [Contxtful](https://contxtful.com). For inquiries, please contact [contact@contxtful.com](mailto:contact@contxtful.com).
 
-# Configuration
-
 ## Build Instructions
 
 To incorporate this module into your `prebid.js`, compile the module using the following command:
@@ -126,7 +124,7 @@ The `getBidRequestData` function writes receptivity to `ortb2Fragments.bidder[bi
 
 This module also integrates seamlessly with Google Ad Manager, ensuring that the `ReceptivityState` is available as early as possible in the ad serving process.
 
-# Links
+## Links
 
 - [Basic Prebid.js Example](https://docs.prebid.org/dev-docs/examples/basic-example.html)
 - [How Bid Adapters Should Read First Party Data](https://docs.prebid.org/features/firstPartyData.html#how-bid-adapters-should-read-first-party-data)
