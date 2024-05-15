@@ -31,7 +31,7 @@ pbjs.setConfig({
     userSync: {
         ...,
         topics: { 
-            maxTopicCaller: 3, // SSP rotation 
+            maxTopicCaller: 4, // SSP rotation 
             bidders: [{
                 bidder: 'pubmatic',
                 iframeURL: 'https://ads.pubmatic.com/AdServer/js/topics/topics_frame.html',
@@ -67,6 +67,10 @@ pbjs.setConfig({
             }, {
                 bidder: 'undertone',
                 iframeURL: 'https://creative-p.undertone.com/spk-public/topics_frame.html',
+                expiry: 7 // Configurable expiry days
+            }, {
+                bidder: 'smartadserver',
+                iframeURL: 'https://ced-ns.sascdn.com/diff/js/assets/topics_frame.html'
                 expiry: 7 // Configurable expiry days
             }]
         }

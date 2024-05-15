@@ -47,6 +47,9 @@ const bidderIframeList = {
   }, {
     bidder: 'undertone',
     iframeURL: 'https://creative-p.undertone.com/spk-public/topics_frame.html'
+  }, {
+    bidder: 'smartadserver',
+    iframeURL: 'https://ced-ns.sascdn.com/diff/js/assets/topics_frame.html'
   }]
 }
 
