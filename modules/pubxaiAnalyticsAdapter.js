@@ -31,7 +31,7 @@ export const sendCache = new Proxy(
   {},
   {
     get: (target, name) => {
-      if (!Object.hasOwn(target, name)) {
+      if (!target.hasOwnProperty(name)) {
         target[name] = [];
       }
       return target[name];
@@ -50,7 +50,7 @@ export const auctionCache = new Proxy(
   {},
   {
     get: (target, name) => {
-      if (!Object.hasOwn(target, name)) {
+      if (!target.hasOwnProperty(name)) {
         target[name] = {
           bids: [],
           auctionDetail: {
@@ -107,7 +107,7 @@ const hasSendBeaconSupport = () => {
 const getAdServerDataForBid = (bid) => {
   const gptSlot = getGptSlotForAdUnitCode(bid);
   if (gptSlot) {
-    return Object.fromEntires(
+    return Object.fromEntries(
       gptSlot
         .getTargetingKeys()
         .filter(
