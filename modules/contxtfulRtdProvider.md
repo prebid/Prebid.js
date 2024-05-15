@@ -39,7 +39,7 @@ To run the unit tests for a particular file:
 gulp test --file "test/spec/modules/contxtfulRtdProvider_spec.js" --nolint
 ```
 
-## Module Configuration
+## Configuration
 
 Configure the `contxtfulRtdProvider` by passing the required settings through the `setConfig` function in `prebid.js`.
 
@@ -65,31 +65,20 @@ pbjs.setConfig({
   }
 });
 ```
-
-### Configuration Parameters
+## Parameters
 
 | Name                | Type     | Scope    | Description                                |
 |---------------------|----------|----------|--------------------------------------------|
 | `version`           | `String` | Required | Specifies the version of the Contxtful     |
 |                     |          |          | Receptivity API.                           |
 | `customer`          | `String` | Required | Your unique customer identifier.           |
-| `hostname`          | `String` | Optional | Default is "api.receptivity.io"            |
-| `adServerTargeting` | `Boolean`| Optional | `getTargetingData` will do nothing when    |
-|                     |          |          | `adServerTargeting` === false.             |
-|                     |          |          | Default is true.                           |
-| `bidders`           | `Array`  | Optional | `getBidRequestData` will write receptivity |
-|                     |          |          | to `ortb2Fragments.bidder[bidderCode]` for |
-|                     |          |          | these `bidders`. Default is [].            |
+| `hostname`          | `String` | Optional | Target URL for CONTXTFUL external JavaScript file. Default is "api.receptivity.io". Changing default behaviour is not recommended. Please reach out to contact@contxtful.com if you experience issues. |
+| `adServerTargeting` | `Boolean`| Optional | Enables the `getTargetingData` to inject targeting value in ad units. Setting this parameter to true enables the feature. [Default] Setting this parameter to false disables the feature.       |
+| `bidders`           | `Array`  | Optional | Setting this array enables Receptivity in the `ortb2` object through `getBidRequestData` for all the listed `bidders`. Default is `[]` (an empty array). RECOMMENDED : Add all the bidders active like this `["bidderCode1", "bidderCode", "..."]` |
 
+## Usage: Injection in Ad Servers
 
-# Usage
-
-The `contxtfulRtdProvider` module loads an external JavaScript file and authenticates with Contxtful APIs.
-
-The receptivity, dubbed "rx", contains a key `ReceptivityState`.
-This key can have one of two values: `Receptive` or `NonReceptive`.
-
-The `getTargetingData` function adds receptivity to each ad unit when `adServerTargeting` is not false.
+The `contxtfulRtdProvider` module loads an external JavaScript file and authenticates with Contxtful APIs. The `getTargetingData` function then adds a `ReceptivityState` to each ad slot, which can have one of two values: `Receptive` or `NonReceptive`.
 
 ```json
 {
@@ -97,6 +86,15 @@ The `getTargetingData` function adds receptivity to each ad unit when `adServerT
   "adUnitCode2": { "ReceptivityState": "Receptive" }
 }
 ```
+
+This module also integrates seamlessly with Google Ad Manager, ensuring that the `ReceptivityState` is available as early as possible in the ad serving process.
+
+## Usage: Injection in ortb2 for bidders
+
+Setting the `bidders` field in the configuration parameters enables Receptivity in the `ortb2` object through `getBidRequestData` for all the listed bidders.
+On a Bid Request Event, all bidders in the configuration will inherit the Receptivity data through `ortb2`
+Default is `[]` (an empty array)
+RECOMMENDED : Add all the bidders active like this `["bidderCode1", "bidderCode", "..."]`
 
 The `getBidRequestData` function writes receptivity to `ortb2Fragments.bidder[bidderCode]` for each bidder code in `bidders`.
 
