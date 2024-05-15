@@ -422,6 +422,10 @@ function buildRequests(validBidRequests, bidderRequest) {
       data.gppString = bidderRequest.ortb2.regs.gpp
       data.gppSid = Array.isArray(bidderRequest.ortb2.regs.gpp_sid) ? bidderRequest.ortb2.regs.gpp_sid.join(',') : ''
     }
+    const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
+    if (dsa) {
+      data.dsa = JSON.stringify(dsa)
+    }
     if (coppa) {
       data.coppa = coppa;
     }
@@ -549,7 +553,6 @@ function interpretResponse(serverResponse, bidRequest) {
     mediaType: type || mediaType
   };
   let sizes = parseSizesInput(bidRequest.sizes);
-
   if (maxw && maxh) {
     sizes = [`${maxw}x${maxh}`];
   } else if (product === 5 && includes(sizes, '1x1')) {

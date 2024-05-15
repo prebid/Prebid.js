@@ -358,6 +358,9 @@ pbjs.setConfig({
         },
         {
             name: 'naveggId',
+        },
+        {
+            name: 'lmpid',
         }],
         syncDelay: 5000
     }
