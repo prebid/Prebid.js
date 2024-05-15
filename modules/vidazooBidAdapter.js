@@ -83,7 +83,7 @@ function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout
   const ptrace = getCacheOpt();
   const isStorageAllowed = bidderSettings.get(BIDDER_CODE, 'storageAllowed');
 
-  let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', '');
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', '');
   const cat = deepAccess(bidderRequest, 'ortb2.site.cat', []);
   const pagecat = deepAccess(bidderRequest, 'ortb2.site.pagecat', []);
   const contentData = deepAccess(bidderRequest, 'ortb2.site.content.data', []);
