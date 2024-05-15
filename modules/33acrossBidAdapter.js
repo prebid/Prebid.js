@@ -35,7 +35,7 @@ const VIDEO_ORTB_PARAMS = [
   'mimes',
   'minduration',
   'maxduration',
-  'placement',
+  'plcmt',
   'protocols',
   'startdelay',
   'skip',
@@ -141,8 +141,8 @@ function _validateVideo(bid) {
 
   // If placement if defined, it must be a number
   if (
-    typeof videoParams.placement !== 'undefined' &&
-    typeof videoParams.placement !== 'number'
+    typeof videoParams.plcmt !== 'undefined' &&
+    typeof videoParams.plcmt !== 'number'
   ) {
     return false;
   }
@@ -491,11 +491,11 @@ function _buildVideoORTB(bidRequest) {
   // Placement Inference Rules:
   // - If no placement is defined then default to 2 (In Banner)
   // - If product is instream (for instream context) then override placement to 1
-  video.placement = video.placement || 2;
+  video.plcmt = video.plcmt || 2;
 
   if (product === PRODUCT.INSTREAM) {
     video.startdelay = video.startdelay || 0;
-    video.placement = 1;
+    video.plcmt = 1;
   }
 
   // bidfloors

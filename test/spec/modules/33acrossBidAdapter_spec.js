@@ -121,7 +121,7 @@ describe('33acrossBidAdapter:', function () {
           video: {
             w: 300,
             h: 250,
-            placement: 2,
+            plcmt: 2,
             ...params
           }
         });
@@ -734,7 +734,7 @@ describe('33acrossBidAdapter:', function () {
         ];
 
         invalidPlacement.forEach((placement) => {
-          this.bid.mediaTypes.video.placement = placement;
+          this.bid.mediaTypes.video.plcmt = placement;
           expect(spec.isBidRequestValid(this.bid)).to.be.false;
         });
       });
@@ -1533,7 +1533,7 @@ describe('33acrossBidAdapter:', function () {
           .withProduct('instream')
           .build();
 
-        ttxRequest.imp[0].video.placement = 1;
+        ttxRequest.imp[0].video.plcmt = 1;
         ttxRequest.imp[0].video.startdelay = 0;
 
         const serverRequest = new ServerRequestBuilder()
@@ -1552,7 +1552,7 @@ describe('33acrossBidAdapter:', function () {
         );
 
         const ttxRequest = new TtxRequestBuilder()
-          .withVideo({startdelay: -2, placement: 1})
+          .withVideo({startdelay: -2, plcmt: 1})
           .withProduct('instream')
           .build();
 
@@ -1575,7 +1575,7 @@ describe('33acrossBidAdapter:', function () {
           .withProduct('siab')
           .build();
 
-        ttxRequest.imp[0].video.placement = 2;
+        ttxRequest.imp[0].video.plcmt = 2;
 
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
@@ -1588,12 +1588,12 @@ describe('33acrossBidAdapter:', function () {
       it('builds siab request with video params passed', function() {
         const bidRequests = (
           new BidRequestsBuilder()
-            .withVideo({context: 'outstream', placement: 3, playbackmethod: [2]})
+            .withVideo({context: 'outstream', plcmt: 3, playbackmethod: [2]})
             .build()
         );
 
         const ttxRequest = new TtxRequestBuilder()
-          .withVideo({placement: 3, playbackmethod: [2]})
+          .withVideo({plcmt: 3, playbackmethod: [2]})
           .withProduct('siab')
           .build();
 
@@ -1686,7 +1686,7 @@ describe('33acrossBidAdapter:', function () {
           .withProduct('siab')
           .build();
 
-        ttxRequest.imp[0].video.placement = 2;
+        ttxRequest.imp[0].video.plcmt = 2;
 
         const serverRequest = new ServerRequestBuilder()
           .withData(ttxRequest)
