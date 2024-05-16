@@ -1,7 +1,14 @@
+/**
+ * Lucead Bid Adapter
+ * Must be used with the Lucead RTD Provider.
+ *
+ * @module modules/luceadBidAdapter
+ * @requires module:modules/luceadRtdProvider
+ */
+
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
-import {loadExternalScript} from '../src/adloader.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getUniqueIdentifierStr, logInfo, deepSetValue} from '../src/utils.js';
+import {getUniqueIdentifierStr, deepSetValue, logInfo, logError} from '../src/utils.js';
 import {fetch} from '../src/ajax.js';
 
 const bidderCode = 'lucead';
@@ -14,7 +21,6 @@ const domain = 'lucead.com'
 let baseUrl = `https://${domain}`;
 let staticUrl = `https://s.${domain}`;
 let endpointUrl = baseUrl;
-let companionUrl = 'https://cdn.jsdelivr.net/gh/lucead/prebid-js-external-js-lucead@master/dist/prod.min.js';
 
 function isDevEnv() {
   return location.hash.includes('prebid-dev');
@@ -24,10 +30,6 @@ function isBidRequestValid(bidRequest) {
   return !!bidRequest?.params?.placementId;
 }
 
-export function log(msg, obj) {
-  logInfo(`${bidderName} - ${msg}`, obj);
-}
-
 function buildRequests(bidRequests, bidderRequest) {
   const region = bidRequests[0]?.params?.region || defaultRegion;
   endpointUrl = `https://${region}.${domain}`;
@@ -35,11 +37,10 @@ function buildRequests(bidRequests, bidderRequest) {
   if (isDevEnv()) {
     baseUrl = location.origin;
     staticUrl = baseUrl;
-    companionUrl = `${staticUrl}/dist/prebid-companion.js`;
     endpointUrl = `${baseUrl}`;
   }
 
-  log('buildRequests', {
+  logInfo('buildRequests', {
     bidRequests,
     bidderRequest,
   });
@@ -59,10 +60,19 @@ function buildRequests(bidRequests, bidderRequest) {
     region,
   };
 
-  loadExternalScript(companionUrl, bidderCode, () => {
+  const loadScriptPromise = window.lucead_prebid_load_promise;
+
+  (async () => {
+    if (!loadScriptPromise) { logError(`Please include the ${bidderName} RTD Provider`); }
+    await loadScriptPromise;
     const fn = window.lucead_prebid;
-    return fn && fn(companionData);
-  });
+
+    if (fn) {
+      fn(companionData);
+    } else {
+      logError(`Failed to load the ${bidderName} script.`);
+    }
+  })();
 
   return {
     method: 'POST',
@@ -76,6 +86,7 @@ function buildRequests(bidRequests, bidderRequest) {
           sizes: bidRequest.sizes,
           media_types: bidRequest.mediaTypes,
           placement_id: bidRequest.params.placementId,
+          schain: bidRequest.schain,
         };
       }),
     }),
@@ -106,11 +117,11 @@ function interpretResponse(serverResponse, bidRequest) {
     },
   }));
 
-  log('interpretRespoonetagnse', {serverResponse, bidRequest, bidRequestData, bids});
+  logInfo('interpretResponse', {serverResponse, bidRequest, bidRequestData, bids});
 
   if (response?.enable_pa === false) { return bids; }
 
-  const paapi = response.bids.map(bid => ({
+  const fledgeAuctionConfigs = (response.bids || []).map(bid => ({
     bidId: bid?.bid_id,
     config: {
       seller: baseUrl,
@@ -134,7 +145,7 @@ function interpretResponse(serverResponse, bidRequest) {
     }
   }));
 
-  return {bids, paapi};
+  return {bids, fledgeAuctionConfigs};
 }
 
 function report(type, data) {
@@ -147,7 +158,7 @@ function report(type, data) {
 }
 
 function onBidWon(bid) {
-  log('Bid won', bid);
+  logInfo('Bid won', bid);
 
   let data = {
     bid_id: bid?.bidId,
@@ -171,7 +182,7 @@ function onBidWon(bid) {
 }
 
 function onTimeout(timeoutData) {
-  log('Timeout from adapter', timeoutData);
+  logInfo('Timeout from adapter', timeoutData);
 }
 
 export const spec = {

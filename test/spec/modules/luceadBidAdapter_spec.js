@@ -166,7 +166,7 @@ describe('Lucead Adapter', () => {
       const bidRequest = {data: JSON.stringify({
         bidder: 'lucead',
         params: {
-          placementId: '2',
+          placementId: '1',
         }
       })};
 
