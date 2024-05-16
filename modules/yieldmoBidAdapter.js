@@ -654,6 +654,7 @@ function validateVideoParams(bid) {
       'array of strings, ex: ["video/mp4"]');
 
     const placement = validate('video.plcmt', val => isDefined(val), paramRequired);
+    validate('video.plcmt', (val) => val >= 1 && val <= 5, paramInvalid);
     if (placement === 1) {
       validate('video.startdelay', val => isDefined(val),
         (field, v) => paramRequired(field, v, 'placement == 1'));
