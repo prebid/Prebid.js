@@ -99,6 +99,7 @@ export const extractConsent = ({ gdpr }) => {
 
 /**
  * Extracts the OPE first party id field
+ * @param {string} fpidStorageType indicates where fpid should be read from
  * @returns fpid string if found, else null
  */
 export const extractFpid = (fpidStorageType) => {

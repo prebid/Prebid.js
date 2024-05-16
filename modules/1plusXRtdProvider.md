@@ -53,8 +53,8 @@ pbjs.setConfig({
 | params.customerId         | String        | Your 1plusX customer id                                          |                   |
 | params.bidders            | Array<string> | List of bidders for which you would like data to be set          |                   |
 | params.timeout            | Integer       | timeout (ms)                                                     | 1000ms            |
-| params.fpidStorageType    | String        | Either "html5" (local storage) or "cookie" (first party cookie)  | html5             |
-
+| params.fpidStorageType    | String        | Specifies where the 1plusX fpid should be read from. Either      | html5             |
+|                           |               | "html5" (local storage) or "cookie" (first party cookie)         |                   |
 ## Testing 
 
 To view an example of how the 1plusX RTD module works :
