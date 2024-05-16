@@ -57,26 +57,25 @@ describe('Nobid Adapter', function () {
       'auctionId': '1d1a030790a475',
     };
 
-    it('should return true when required params found 1', function () {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
-    it('should return true when required params found 2', function () {
-      let mybid = Object.assign({}, bid);
-      delete mybid.params;
-      mybid.params = {
+    it('should return true when required params found', function () {
+      delete bid.params;
+      bid.params = {
         'siteId': 2
       };
-      expect(spec.isBidRequestValid(mybid)).to.equal(true);
+
+      expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
 
     it('should return false when required params are not passed', function () {
-      let mybid = Object.assign({}, bid);
-      delete mybid.params;
-      mybid.params = {
+      delete bid.params;
+      bid.params = {
         'siteId': 0
       };
-      expect(spec.isBidRequestValid(mybid)).to.equal(false);
+      expect(spec.isBidRequestValid(bid)).to.equal(false);
     });
   });
 
@@ -252,12 +251,12 @@ describe('Nobid Adapter', function () {
     });
 
     it('sends bid request to site id', function () {
-      const request = spec.buildRequests(bidRequests);
-      const payload = JSON.parse(request.data);
-      expect(payload.a).to.exist;
-      expect(payload.a[0].sid).to.equal(2);
-      expect(payload.a[0].at).to.equal('banner');
-      expect(payload.a[0].params.siteId).to.equal(2);
+	  const request = spec.buildRequests(bidRequests);
+	  const payload = JSON.parse(request.data);
+	  expect(payload.a).to.exist;
+	  expect(payload.a[0].sid).to.equal(2);
+	  expect(payload.a[0].at).to.equal('banner');
+	  expect(payload.a[0].params.siteId).to.equal(2);
     });
 
     it('sends bid request to ad type', function () {
@@ -398,6 +397,7 @@ describe('Nobid Adapter', function () {
       const payload = JSON.parse(request.data);
       expect(payload.sid).to.equal(SITE_ID);
       expect(payload.pjbdr).to.equal('nobid');
+      expect(payload.pbver).to.equal('$prebid.version$');
       expect(payload.l).to.exist.and.to.equal(encodeURIComponent(REFERER));
       expect(payload.a).to.exist;
       expect(payload.t).to.exist;
@@ -419,58 +419,6 @@ describe('Nobid Adapter', function () {
       expect(payload.a[0].params.video.frameworks[3]).to.exist.and.to.equal(4);
       expect(payload.a[0].params.video.frameworks[4]).to.exist.and.to.equal(5);
       expect(payload.a[0].params.video.frameworks[5]).to.exist.and.to.equal(6);
-    });
-  });
-
-  describe('First Party ID Test', function () {
-    const CREATIVE_ID_300x250 = 'CREATIVE-100';
-    const ADUNIT_300x250 = 'ADUNIT-1';
-    const ADMARKUP_300x250 = 'ADMARKUP-300x250';
-    const PRICE_300x250 = 0.51;
-    const REQUEST_ID = '3db3773286ee59';
-    const DEAL_ID = 'deal123';
-    let response = {
-      country: 'US',
-      ip: '68.83.15.75',
-      device: 'COMPUTER',
-      site: 2,
-      fpid: true,
-      bids: [
-        {id: 1,
-          bdrid: 101,
-          divid: ADUNIT_300x250,
-          creativeid: CREATIVE_ID_300x250,
-          size: {'w': 300, 'h': 250},
-          adm: ADMARKUP_300x250,
-          price: '' + PRICE_300x250
-        }
-      ]
-    };
-
-    it('first party ID', function () {
-      const bidderRequest = {
-        bids: [{
-          bidId: REQUEST_ID,
-          adUnitCode: ADUNIT_300x250
-        }]
-      }
-      const bidRequests = [
-        {
-          'bidder': 'nobid',
-          'params': {
-            'siteId': 2
-          },
-          'adUnitCode': 'adunit-code',
-          'sizes': [[300, 250]],
-          'bidId': '30b31c1838de1e',
-          'bidderRequestId': '22edbae2733bf6',
-          'auctionId': '1d1a030790a475',
-        }
-      ];
-      const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.method).to.equal('POST');
-      spec.interpretResponse({ body: response }, {bidderRequest: bidderRequest});
-      expect(window.nobid.firstPartyIdEnabled).to.equal(true);
     });
   });
 
@@ -686,12 +634,12 @@ describe('Nobid Adapter', function () {
     });
 
     it('sends bid request to site id', function () {
-      const request = spec.buildRequests(bidRequests);
-      const payload = JSON.parse(request.data);
-      expect(payload.a).to.exist;
-      expect(payload.a[0].sid).to.equal(2);
-      expect(payload.a[0].at).to.equal('banner');
-      expect(payload.a[0].params.siteId).to.equal(2);
+	  const request = spec.buildRequests(bidRequests);
+	  const payload = JSON.parse(request.data);
+	  expect(payload.a).to.exist;
+	  expect(payload.a[0].sid).to.equal(2);
+	  expect(payload.a[0].at).to.equal('banner');
+	  expect(payload.a[0].params.siteId).to.equal(2);
     });
 
     it('sends bid request to ad type', function () {
@@ -990,19 +938,19 @@ describe('Nobid Adapter', function () {
         auctionId: '1d1a030790a475',
         coppa: true,
         schain: {
-  	    validation: 'strict',
-  	    config: {
-  	      ver: '1.0',
-  	      complete: 1,
-  	      nodes: [
-  	        {
-  	          asi: 'indirectseller.com',
-  	          sid: '00001',
-  	          name: 'name.com',
-  	          hp: 1
-  	        }
-  	      ]
-  	    }
+		    validation: 'strict',
+		    config: {
+		      ver: '1.0',
+		      complete: 1,
+		      nodes: [
+		        {
+		          asi: 'indirectseller.com',
+		          sid: '00001',
+		          name: 'name.com',
+		          hp: 1
+		        }
+		      ]
+		    }
         }
       }
     ];
@@ -1052,7 +1000,7 @@ describe('Nobid Adapter', function () {
       ]
     };
 
-    it('Limit should be respected', function () {
+    it('should ULimit be respected', function () {
       const bidderRequest = {
         bids: [{
           bidId: REQUEST_ID,
@@ -1111,8 +1059,8 @@ describe('Nobid Adapter', function () {
     });
 
     it('should get correct user sync when !iframeEnabled', function () {
-      let pixel = spec.getUserSyncs({})
-      expect(pixel.length).to.equal(0);
+	  let pixel = spec.getUserSyncs({})
+	  expect(pixel.length).to.equal(0);
     });
   });
 

@@ -103,8 +103,8 @@ describe('bid interceptor', () => {
   });
 
   describe('rule', () => {
-    function matchingRule({replace, options}) {
-      setRules({when: {}, then: replace, options: options});
+    function matchingRule({replace, options, paapi}) {
+      setRules({when: {}, then: replace, options: options, paapi});
       return interceptor.match({});
     }
 
@@ -164,6 +164,24 @@ describe('bid interceptor', () => {
       });
     });
 
+    describe('paapi', () => {
+      it('should accept literals', () => {
+        const mockConfig = [
+          {paapi: 1},
+          {paapi: 2}
+        ]
+        const paapi = matchingRule({paapi: mockConfig}).paapi({});
+        expect(paapi).to.eql(mockConfig);
+      });
+
+      it('should accept a function and pass extra args to it', () => {
+        const paapiDef = sinon.stub();
+        const args = [{}, {}, {}];
+        matchingRule({paapi: paapiDef}).paapi(...args);
+        expect(paapiDef.calledOnceWith(...args.map(sinon.match.same))).to.be.true;
+      })
+    })
+
     describe('.options', () => {
       it('should include default rule options', () => {
         const optDef = {someOption: 'value'};
@@ -181,16 +199,17 @@ describe('bid interceptor', () => {
   });
 
   describe('intercept()', () => {
-    let done, addBid;
+    let done, addBid, addPaapiConfig;
 
     function intercept(args = {}) {
       const bidRequest = {bids: args.bids || []};
-      return interceptor.intercept(Object.assign({bidRequest, done, addBid}, args));
+      return interceptor.intercept(Object.assign({bidRequest, done, addBid, addPaapiConfig}, args));
     }
 
     beforeEach(() => {
       done = sinon.spy();
       addBid = sinon.spy();
+      addPaapiConfig = sinon.spy();
     });
 
     describe('on no match', () => {
@@ -252,6 +271,29 @@ describe('bid interceptor', () => {
           expect(mockSetTimeout.calledWith(sinon.match.any, delay)).to.be.true;
         });
       });
+
+      it('should call addPaapiConfigs when provided', () => {
+        const mockPaapiConfigs = [
+          {paapi: 1},
+          {paapi: 2}
+        ]
+        setRules({
+          when: {id: 2},
+          paapi: mockPaapiConfigs,
+        });
+        intercept({bidRequest: REQUEST});
+        expect(addPaapiConfig.callCount).to.eql(2);
+        mockPaapiConfigs.forEach(cfg => sinon.assert.calledWith(addPaapiConfig, cfg))
+      })
+
+      it('should not call onBid when then is null', () => {
+        setRules({
+          when: {id: 2},
+          then: null
+        });
+        intercept({bidRequest: REQUEST});
+        sinon.assert.notCalled(addBid);
+      })
 
       it('should call done()', () => {
         intercept({bidRequest: REQUEST});

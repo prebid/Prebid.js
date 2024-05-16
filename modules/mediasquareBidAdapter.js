@@ -6,6 +6,15 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import {Renderer} from '../src/Renderer.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'mediasquare';
 const BIDDER_URL_PROD = 'https://pbs-front.mediasquare.fr/'
 const BIDDER_URL_TEST = 'https://bidder-test.mediasquare.fr/'
@@ -20,20 +29,20 @@ export const spec = {
   aliases: ['msq'], // short code
   supportedMediaTypes: [BANNER, NATIVE, VIDEO],
   /**
-         * Determines whether or not the given bid request is valid.
-         *
-         * @param {BidRequest} bid The bid params to validate.
-         * @return boolean True if this is a valid bid, and false otherwise.
-         */
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function(bid) {
     return !!(bid.params.owner && bid.params.code);
   },
   /**
-         * Make a server request from the list of BidRequests.
-         *
-         * @param {validBidRequests[]} - an array of bids
-         * @return ServerRequest Info describing the request to the server.
-         */
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {validBidRequests[]} - an array of bids
+   * @return ServerRequest Info describing the request to the server.
+   */
   buildRequests: function(validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
@@ -53,6 +62,8 @@ export const spec = {
             if (tmpFloor != {}) { floor[value.join('x')] = tmpFloor; }
           });
         }
+        let tmpFloor = adunitValue.getFloor({currency: 'USD', mediaType: '*', size: '*'});
+        if (tmpFloor != {}) { floor['*'] = tmpFloor; }
       }
       codes.push({
         owner: adunitValue.params.owner,
@@ -86,6 +97,7 @@ export const spec = {
       } else if (bidderRequest.hasOwnProperty('bids') && typeof bidderRequest.bids == 'object' && bidderRequest.bids.length > 0 && bidderRequest.bids[0].hasOwnProperty('userId')) {
         payload.userId = bidderRequest.bids[0].userId;
       }
+      if (bidderRequest.ortb2?.regs?.ext?.dsa) { payload.dsa = bidderRequest.ortb2.regs.ext.dsa }
     };
     if (test) { payload.debug = true; }
     const payloadString = JSON.stringify(payload);
@@ -96,11 +108,11 @@ export const spec = {
     };
   },
   /**
-         * Unpack the response from the server into a list of bids.
-         *
-         * @param {ServerResponse} serverResponse A successful response from the server.
-         * @return {Bid[]} An array of bids which were nested inside the server.
-         */
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {ServerResponse} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
   interpretResponse: function(serverResponse, bidRequest) {
     const serverBody = serverResponse.body;
     // const headerValue = serverResponse.headers.get('some-response-header');
@@ -125,6 +137,7 @@ export const spec = {
             'advertiserDomains': value['adomain']
           }
         };
+        if ('dsa' in value) { bidResponse.meta.dsa = value['dsa']; }
         let paramsToSearchFor = ['bidder', 'code', 'match', 'hasConsent', 'context', 'increment', 'ova'];
         paramsToSearchFor.forEach(param => {
           if (param in value) {
@@ -148,12 +161,12 @@ export const spec = {
   },
 
   /**
-     * Register the user sync pixels which should be dropped after the auction.
-     *
-     * @param {SyncOptions} syncOptions Which user syncs are allowed?
-     * @param {ServerResponse[]} serverResponses List of server's responses.
-     * @return {UserSync[]} The user syncs which should be dropped.
-     */
+   * Register the user sync pixels which should be dropped after the auction.
+   *
+   * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {ServerResponse[]} serverResponses List of server's responses.
+   * @return {UserSync[]} The user syncs which should be dropped.
+   */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     if (typeof serverResponses === 'object' && serverResponses != null && serverResponses.length > 0 && serverResponses[0].hasOwnProperty('body') &&
         serverResponses[0].body.hasOwnProperty('cookies') && typeof serverResponses[0].body.cookies === 'object') {
@@ -164,9 +177,9 @@ export const spec = {
   },
 
   /**
-     * Register bidder specific code, which will execute if a bid from this bidder won the auction
-     * @param {Bid} The bid that won the auction
-     */
+   * Register bidder specific code, which will execute if a bid from this bidder won the auction
+   * @param {Bid} The bid that won the auction
+   */
   onBidWon: function(bid) {
     // fires a pixel to confirm a winning bid
     if (bid.hasOwnProperty('mediaType') && bid.mediaType == 'video') {

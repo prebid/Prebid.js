@@ -5,6 +5,13 @@ import {
 import {
   ajax
 } from '../src/ajax.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'slimcut';
 const ENDPOINT_URL = 'https://sb.freeskreen.com/pbr';
 export const spec = {
@@ -13,11 +20,11 @@ export const spec = {
   aliases: [{ code: 'scm', gvlid: 102 }],
   supportedMediaTypes: ['video', 'banner'],
   /**
-     * Determines whether or not the given bid request is valid.
-     *
-     * @param {BidRequest} bid The bid params to validate.
-     * @return boolean True if this is a valid bid, and false otherwise.
-     */
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function(bid) {
     let isValid = false;
     if (typeof bid.params !== 'undefined' && !isNaN(parseInt(getValue(bid.params, 'placementId'))) && parseInt(getValue(bid.params, 'placementId')) > 0) {
@@ -26,11 +33,11 @@ export const spec = {
     return isValid;
   },
   /**
-     * Make a server request from the list of BidRequests.
-     *
-     * @param {validBidRequests[]} an array of bids
-     * @return ServerRequest Info describing the request to the server.
-     */
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {validBidRequests[]} an array of bids
+   * @return ServerRequest Info describing the request to the server.
+   */
   buildRequests: function(validBidRequests, bidderRequest) {
     const bids = validBidRequests.map(buildRequestObject);
     const payload = {
@@ -55,11 +62,11 @@ export const spec = {
     };
   },
   /**
-     * Unpack the response from the server into a list of bids.
-     *
-     * @param {*} serverResponse A successful response from the server.
-     * @return {Bid[]} An array of bids which were nested inside the server.
-     */
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {*} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
   interpretResponse: function(serverResponse, request) {
     const bidResponses = [];
     serverResponse = serverResponse.body;

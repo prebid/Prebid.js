@@ -1,7 +1,7 @@
 import ooloAnalytics, { PAGEVIEW_ID } from 'modules/ooloAnalyticsAdapter.js';
 import {expect} from 'chai';
 import {server} from 'test/mocks/xhr.js';
-import constants from 'src/constants.json'
+import { EVENTS } from 'src/constants.js'
 import * as events from 'src/events'
 import { config } from 'src/config';
 import { buildAuctionData, generatePageViewId } from 'modules/ooloAnalyticsAdapter';
@@ -151,12 +151,12 @@ const bidWon = {
 }
 
 function simulateAuction () {
-  events.emit(constants.EVENTS.AUCTION_INIT, auctionInit);
-  events.emit(constants.EVENTS.BID_REQUESTED, bidRequested);
-  events.emit(constants.EVENTS.BID_RESPONSE, bidResponse);
-  events.emit(constants.EVENTS.NO_BID, noBid);
-  events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeout);
-  events.emit(constants.EVENTS.AUCTION_END, auctionEnd);
+  events.emit(EVENTS.AUCTION_INIT, auctionInit);
+  events.emit(EVENTS.BID_REQUESTED, bidRequested);
+  events.emit(EVENTS.BID_RESPONSE, bidResponse);
+  events.emit(EVENTS.NO_BID, noBid);
+  events.emit(EVENTS.BID_TIMEOUT, bidTimeout);
+  events.emit(EVENTS.AUCTION_END, auctionEnd);
 }
 
 describe('oolo Prebid Analytic', () => {
@@ -321,16 +321,16 @@ describe('oolo Prebid Analytic', () => {
         }
       })
 
-      events.emit(constants.EVENTS.AUCTION_INIT, auctionInit);
-      events.emit(constants.EVENTS.BID_REQUESTED, bidRequested);
-      events.emit(constants.EVENTS.BID_RESPONSE, bidResponse);
+      events.emit(EVENTS.AUCTION_INIT, auctionInit);
+      events.emit(EVENTS.BID_REQUESTED, bidRequested);
+      events.emit(EVENTS.BID_RESPONSE, bidResponse);
 
       // configuration returned in an arbitrary moment
       server.requests[0].respond(500)
 
-      events.emit(constants.EVENTS.NO_BID, noBid);
-      events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeout);
-      events.emit(constants.EVENTS.AUCTION_END, auctionEnd);
+      events.emit(EVENTS.NO_BID, noBid);
+      events.emit(EVENTS.BID_TIMEOUT, bidTimeout);
+      events.emit(EVENTS.AUCTION_END, auctionEnd);
 
       clock.tick(1500)
 
@@ -442,7 +442,7 @@ describe('oolo Prebid Analytic', () => {
 
       server.requests[0].respond(500)
       simulateAuction()
-      events.emit(constants.EVENTS.BID_WON, bidWon);
+      events.emit(EVENTS.BID_WON, bidWon);
       clock.tick(1500)
 
       // no bidWon
@@ -466,7 +466,7 @@ describe('oolo Prebid Analytic', () => {
       }))
 
       simulateAuction()
-      events.emit(constants.EVENTS.BID_WON, bidWon);
+      events.emit(EVENTS.BID_WON, bidWon);
       clock.tick(499)
 
       // no auction data
@@ -491,7 +491,7 @@ describe('oolo Prebid Analytic', () => {
       server.requests[0].respond(500)
       simulateAuction()
       clock.tick(1500)
-      events.emit(constants.EVENTS.BID_WON, bidWon);
+      events.emit(EVENTS.BID_WON, bidWon);
 
       expect(server.requests).to.have.length(5)
 
@@ -516,7 +516,7 @@ describe('oolo Prebid Analytic', () => {
       server.requests[0].respond(500)
       simulateAuction()
       clock.tick(1500)
-      events.emit(constants.EVENTS.AD_RENDER_FAILED, { bidId: 'abcdef', reason: 'exception' });
+      events.emit(EVENTS.AD_RENDER_FAILED, { bidId: 'abcdef', reason: 'exception' });
 
       expect(server.requests).to.have.length(5)
 
@@ -557,12 +557,12 @@ describe('oolo Prebid Analytic', () => {
         }
       }))
 
-      events.emit(constants.EVENTS.AUCTION_INIT, { ...auctionInit });
-      events.emit(constants.EVENTS.BID_REQUESTED, { ...bidRequested, bids: bidRequested.bids.map(b => { b.transactionId = '123'; return b }) });
-      events.emit(constants.EVENTS.NO_BID, { ...noBid, src: 'client' });
-      events.emit(constants.EVENTS.BID_RESPONSE, { ...bidResponse, adUrl: '...' });
-      events.emit(constants.EVENTS.AUCTION_END, { ...auctionEnd, winningBids: [] });
-      events.emit(constants.EVENTS.BID_WON, { ...bidWon, statusMessage: 'msg2' });
+      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit });
+      events.emit(EVENTS.BID_REQUESTED, { ...bidRequested, bids: bidRequested.bids.map(b => { b.transactionId = '123'; return b }) });
+      events.emit(EVENTS.NO_BID, { ...noBid, src: 'client' });
+      events.emit(EVENTS.BID_RESPONSE, { ...bidResponse, adUrl: '...' });
+      events.emit(EVENTS.AUCTION_END, { ...auctionEnd, winningBids: [] });
+      events.emit(EVENTS.BID_WON, { ...bidWon, statusMessage: 'msg2' });
 
       clock.tick(1500)
 
@@ -596,12 +596,12 @@ describe('oolo Prebid Analytic', () => {
         }
       }))
 
-      events.emit(constants.EVENTS.AUCTION_INIT, { ...auctionInit, custom_1: true });
-      events.emit(constants.EVENTS.BID_REQUESTED, { ...bidRequested, bids: bidRequested.bids.map(b => { b.custom_2 = true; return b }) });
-      events.emit(constants.EVENTS.NO_BID, { ...noBid, custom_3: true });
-      events.emit(constants.EVENTS.BID_RESPONSE, { ...bidResponse, custom_4: true });
-      events.emit(constants.EVENTS.AUCTION_END, { ...auctionEnd });
-      events.emit(constants.EVENTS.BID_WON, { ...bidWon, custom_5: true });
+      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, custom_1: true });
+      events.emit(EVENTS.BID_REQUESTED, { ...bidRequested, bids: bidRequested.bids.map(b => { b.custom_2 = true; return b }) });
+      events.emit(EVENTS.NO_BID, { ...noBid, custom_3: true });
+      events.emit(EVENTS.BID_RESPONSE, { ...bidResponse, custom_4: true });
+      events.emit(EVENTS.AUCTION_END, { ...auctionEnd });
+      events.emit(EVENTS.BID_WON, { ...bidWon, custom_5: true });
 
       clock.tick(1500)
 
@@ -633,7 +633,7 @@ describe('oolo Prebid Analytic', () => {
         }
       }))
 
-      events.emit(constants.EVENTS.AUCTION_INIT, { ...auctionInit, custom_1: true });
+      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit, custom_1: true });
 
       clock.tick(1500)
 
@@ -661,7 +661,7 @@ describe('oolo Prebid Analytic', () => {
         }
       }))
 
-      events.emit(constants.EVENTS.AUCTION_INIT, { ...auctionInit });
+      events.emit(EVENTS.AUCTION_INIT, { ...auctionInit });
 
       expect(server.requests[3].url).to.equal('https://pbjs.com/')
     })
@@ -686,8 +686,8 @@ describe('oolo Prebid Analytic', () => {
         }
       }))
 
-      events.emit(constants.EVENTS.AUCTION_INIT, auctionInit)
-      events.emit(constants.EVENTS.BID_REQUESTED, bidRequested);
+      events.emit(EVENTS.AUCTION_INIT, auctionInit)
+      events.emit(EVENTS.BID_REQUESTED, bidRequested);
 
       const request = JSON.parse(server.requests[3].requestBody)
 

@@ -6,7 +6,13 @@ import { Renderer } from '../src/Renderer.js';
 import { userSync } from '../src/userSync.js';
 import { bidderSettings } from '../src/bidderSettings.js';
 import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
-import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'sonobi';
 const STR_ENDPOINT = 'https://apex.go.sonobi.com/trinity.json';
 const PAGEVIEW_ID = generateUUID();
@@ -95,6 +101,8 @@ export const spec = {
     const fpd = bidderRequest.ortb2;
 
     if (fpd) {
+      delete fpd.experianRtidData; // Omit the experian data since we already pass this through a dedicated query param
+      delete fpd.experianRtidKey
       payload.fpd = JSON.stringify(fpd);
     }
 
@@ -321,7 +329,7 @@ function _validateFloor(bid) {
 }
 
 function _validateGPID(bid) {
-  const gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot') || deepAccess(getGptSlotInfoForAdUnitCode(bid.adUnitCode), 'gptSlot') || bid.params.ad_unit;
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot') || deepAccess(getGptSlotInfoForAdUnitCode(bid.adUnitCode), 'gptSlot') || bid.params.ad_unit;
 
   if (gpid) {
     return `gpid=${gpid},`
