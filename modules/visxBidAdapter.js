@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import {deepAccess, logError, parseSizesInput, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
@@ -64,6 +65,7 @@ export const spec = {
     let payloadUserId;
     let payloadUserEids;
     let timeout;
+    let payloadDevice;
 
     if (currencyWhiteList.indexOf(currency) === -1) {
       logError(LOG_ERROR_MESS.notAllowedCurrency + currency);
@@ -80,9 +82,9 @@ export const spec = {
         imp.push(impObj);
         bidsMap[bid.bidId] = bid;
       }
-
-      const { params: { uid }, schain, userId, userIdAsEids } = bid;
-
+      console.log(bid);
+      const { params: { uid }, schain, userId, userIdAsEids, ortb2 } = bid;
+      const { device } = ortb2;
       if (!payloadSchain && schain) {
         payloadSchain = schain;
       }
@@ -92,6 +94,10 @@ export const spec = {
 
       if (!payloadUserId && userId) {
         payloadUserId = userId;
+      }
+
+      if (device) {
+        payloadDevice = device;
       }
       auids.push(uid);
     });
@@ -145,7 +151,8 @@ export const spec = {
       source,
       site: { page: payload.u },
       ...(Object.keys(user.ext).length && { user }),
-      ...(regs && { regs })
+      ...(regs && { regs }),
+      ...(payloadDevice && { device: payloadDevice }),
     };
 
     return {
