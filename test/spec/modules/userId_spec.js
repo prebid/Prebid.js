@@ -198,6 +198,7 @@ describe('User ID', function () {
 
   afterEach(() => {
     sandbox.restore();
+    config.resetConfig();
   });
 
   describe('GVL IDs', () => {
@@ -1361,7 +1362,6 @@ describe('User ID', function () {
       coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '', EXPIRED_COOKIE_DATE);
       $$PREBID_GLOBAL$$.requestBids.removeAll();
       utils.logInfo.restore();
-      config.resetConfig();
     });
 
     it('does not fetch ids if opt out cookie exists', function () {
@@ -1391,7 +1391,6 @@ describe('User ID', function () {
     afterEach(function () {
       $$PREBID_GLOBAL$$.requestBids.removeAll();
       utils.logInfo.restore();
-      config.resetConfig();
     });
 
     it('handles config with no usersync object', function () {
@@ -1559,7 +1558,7 @@ describe('User ID', function () {
       expect(auctionDelay).to.equal(100);
     });
 
-    it('config auctionDelay defaults to 0 if not a number', function () {
+    it('config auctionDelay defaults to 500 if not a number', function () {
       init(config);
       setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule, id5IdSubmodule, identityLinkSubmodule, netIdSubmodule, intentIqIdSubmodule, zeotapIdPlusSubmodule, hadronIdSubmodule, pubProvidedIdSubmodule, criteoIdSubmodule, mwOpenLinkIdSubModule, tapadIdSubmodule, uid2IdSubmodule, euidIdSubmodule, admixerIdSubmodule, deepintentDpesSubmodule, dmdIdSubmodule, amxIdSubmodule, kinessoIdSubmodule, adqueryIdSubmodule]);
       config.setConfig({
@@ -1571,7 +1570,7 @@ describe('User ID', function () {
           }]
         }
       });
-      expect(auctionDelay).to.equal(0);
+      expect(auctionDelay).to.equal(500);
     });
 
     describe('auction and user sync delays', function () {
@@ -1689,19 +1688,16 @@ describe('User ID', function () {
         });
       });
 
-      it('does not delay auction if not set, delays id fetch after auction ends with syncDelay', function () {
+      it('does not delay auction if set to 0, delays id fetch after auction ends with syncDelay', function () {
         config.setConfig({
           userSync: {
+            auctionDelay: 0,
             syncDelay: 77,
             userIds: [{
               name: 'mockId', storage: {name: 'MOCKID', type: 'cookie'}
             }]
           }
         });
-
-        // check config has been set correctly
-        expect(auctionDelay).to.equal(0);
-        expect(syncDelay).to.equal(77);
 
         return expectImmediateBidHook(auctionSpy, {adUnits})
           .then(() => {
@@ -1728,14 +1724,13 @@ describe('User ID', function () {
       it('does not delay user id sync after auction ends if set to 0', function () {
         config.setConfig({
           userSync: {
+            auctionDelay: 0,
             syncDelay: 0,
             userIds: [{
               name: 'mockId', storage: {name: 'MOCKID', type: 'cookie'}
             }]
           }
         });
-
-        expect(syncDelay).to.equal(0);
 
         return expectImmediateBidHook(auctionSpy, {adUnits})
           .then(() => {
@@ -3046,6 +3041,12 @@ describe('User ID', function () {
 
     describe('callbacks at the end of auction', function () {
       beforeEach(function () {
+        config.setConfig({
+          // callbacks run after auction end only when auctionDelay is 0
+          userSync: {
+            auctionDelay: 0,
+          }
+        })
         sinon.stub(events, 'getEvents').returns([]);
         sinon.stub(utils, 'triggerPixel');
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -3069,17 +3070,13 @@ describe('User ID', function () {
       }
 
       it('pubcid callback with url', function () {
-        let adUnits = [getAdUnitMock()];
-        let innerAdUnits;
         let customCfg = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
         customCfg = addConfig(customCfg, 'params', {pixelUrl: '/any/pubcid/url'});
 
         init(config);
         setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule]);
-        config.setConfig(customCfg);
-        return runBidsHook((config) => {
-          innerAdUnits = config.adUnits
-        }, {adUnits}).then(() => {
+        config.mergeConfig(customCfg);
+        return runBidsHook({}).then(() => {
           expect(utils.triggerPixel.called).to.be.false;
           return endAuction();
         }).then(() => {
@@ -3088,17 +3085,13 @@ describe('User ID', function () {
       });
 
       it('unifiedid callback with url', function () {
-        let adUnits = [getAdUnitMock()];
-        let innerAdUnits;
         let customCfg = getConfigMock(['unifiedId', 'unifiedid', 'cookie']);
         addConfig(customCfg, 'params', {url: '/any/unifiedid/url'});
 
         init(config);
         setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule]);
-        config.setConfig(customCfg);
-        return runBidsHook((config) => {
-          innerAdUnits = config.adUnits
-        }, {adUnits}).then(() => {
+        config.mergeConfig(customCfg);
+        return runBidsHook({}).then(() => {
           expect(server.requests).to.be.empty;
           return endAuction();
         }).then(() => {
@@ -3107,17 +3100,13 @@ describe('User ID', function () {
       });
 
       it('unifiedid callback with partner', function () {
-        let adUnits = [getAdUnitMock()];
-        let innerAdUnits;
         let customCfg = getConfigMock(['unifiedId', 'unifiedid', 'cookie']);
         addConfig(customCfg, 'params', {partner: 'rubicon'});
 
         init(config);
         setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule]);
-        config.setConfig(customCfg);
-        return runBidsHook((config) => {
-          innerAdUnits = config.adUnits
-        }, {adUnits}).then(() => {
+        config.mergeConfig(customCfg);
+        return runBidsHook({}).then(() => {
           expect(server.requests).to.be.empty;
           return endAuction();
         }).then(() => {

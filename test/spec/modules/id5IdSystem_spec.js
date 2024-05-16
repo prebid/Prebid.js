@@ -1005,6 +1005,7 @@ describe('ID5 ID System', function () {
       id5System.storeNbInCache(ID5_TEST_PARTNER_ID, 1);
       let id5Config = getFetchLocalStorageConfig();
       id5Config.userSync.userIds[0].storage.refreshInSeconds = 2;
+      id5Config.userSync.auctionDelay = 0; // do not trigger callback before auction
       init(config);
       setSubmoduleRegistry([id5System.id5IdSubmodule]);
       config.setConfig(id5Config);
