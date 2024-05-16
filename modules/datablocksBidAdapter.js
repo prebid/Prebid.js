@@ -1,10 +1,11 @@
-import {deepAccess, getAdUnitSizes, getWindowTop, isEmpty, isGptPubadsDefined} from '../src/utils.js';
+import {deepAccess, getWindowTop, isEmpty, isGptPubadsDefined} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {ajax} from '../src/ajax.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 export const storage = getStorageManager({bidderCode: 'datablocks'});
 

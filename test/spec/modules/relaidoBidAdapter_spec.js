@@ -3,6 +3,7 @@ import {spec} from 'modules/relaidoBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {VIDEO} from 'src/mediaTypes.js';
 import {getCoreStorageManager} from '../../../src/storageManager.js';
+import * as mockGpt from '../integration/faker/googletag.js';
 
 const UUID_KEY = 'relaido_uuid';
 const relaido_uuid = 'hogehoge';
@@ -15,14 +16,18 @@ describe('RelaidoAdapter', function () {
   let serverRequest;
   let generateUUIDStub;
   let triggerPixelStub;
+  let sandbox;
+
   before(() => {
     const storage = getCoreStorageManager();
     storage.setCookie(UUID_KEY, relaido_uuid);
   });
 
   beforeEach(function () {
+    mockGpt.disable();
     generateUUIDStub = sinon.stub(utils, 'generateUUID').returns(relaido_uuid);
     triggerPixelStub = sinon.stub(utils, 'triggerPixel');
+    sandbox = sinon.sandbox.create();
     bidRequest = {
       bidder: 'relaido',
       params: {
@@ -115,6 +120,7 @@ describe('RelaidoAdapter', function () {
   afterEach(() => {
     generateUUIDStub.restore();
     triggerPixelStub.restore();
+    sandbox.restore();
   });
 
   describe('spec.isBidRequestValid', function () {
@@ -239,6 +245,7 @@ describe('RelaidoAdapter', function () {
       const request = data.bids[0];
       expect(bidRequests.method).to.equal('POST');
       expect(bidRequests.url).to.equal('https://api.relaido.jp/bid/v1/sprebid');
+      expect(data.canonical_url).to.equal('https://publisher.com/home');
       expect(data.canonical_url_hash).to.equal('e6092f44a0044903ae3764126eedd6187c1d9f04');
       expect(data.ref).to.equal(bidderRequest.refererInfo.page);
       expect(data.timeout_ms).to.equal(bidderRequest.timeout);
@@ -250,8 +257,10 @@ describe('RelaidoAdapter', function () {
       expect(request.bid_id).to.equal(bidRequest.bidId);
       expect(request.transaction_id).to.equal(bidRequest.ortb2Imp.ext.tid);
       expect(request.media_type).to.equal('video');
+      expect(request.pagekvt).to.deep.equal({});
       expect(data.uuid).to.equal(relaido_uuid);
       expect(data.pv).to.equal('$prebid.version$');
+      expect(request.userIdAsEids).to.be.an('array');
     });
 
     it('should build bid requests by banner', function () {
@@ -317,6 +326,77 @@ describe('RelaidoAdapter', function () {
       expect(data.bids).to.have.lengthOf(1);
       expect(data.imuid).to.equal('i.tjHcK_7fTcqnbrS_YA2vaw');
     });
+
+    it('should get userIdAsEids', function () {
+      const userIdAsEids = [
+        {
+          source: 'hogehoge.com',
+          uids: {
+            atype: 1,
+            id: 'hugahuga'
+          }
+        }
+      ]
+      bidRequest.userIdAsEids = userIdAsEids
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(bidRequests.data);
+      expect(data.bids[0].userIdAsEids).to.have.lengthOf(1);
+      expect(data.bids[0].userIdAsEids[0].source).to.equal('hogehoge.com');
+    });
+
+    it('should get pagekvt', function () {
+      mockGpt.enable();
+      window.googletag.pubads().clearTargeting();
+      window.googletag.pubads().setTargeting('testkey', ['testvalue']);
+      bidRequest.adUnitCode = 'test-adunit-code-1';
+      window.googletag.pubads().setSlots([mockGpt.makeSlot({ code: bidRequest.adUnitCode })]);
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(bidRequests.data);
+      expect(data.bids).to.have.lengthOf(1);
+      const request = data.bids[0];
+      expect(request.pagekvt).to.deep.equal({testkey: ['testvalue']});
+    });
+
+    it('should get canonicalUrl (ogUrl:true)', function () {
+      bidRequest.params.ogUrl = true;
+      bidderRequest.refererInfo.canonicalUrl = null;
+      let documentStub = sandbox.stub(window.top.document, 'querySelector');
+      documentStub.withArgs('meta[property="og:url"]').returns({
+        content: 'http://localhost:9999/fb-test'
+      });
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(bidRequests.data);
+      expect(data.bids).to.have.lengthOf(1);
+      expect(data.canonical_url).to.equal('http://localhost:9999/fb-test');
+      expect(data.canonical_url_hash).to.equal('cd106829f866d60ee4ed43c6e2a5d0a5212ffc97');
+    });
+
+    it('should not get canonicalUrl (ogUrl:false)', function () {
+      bidRequest.params.ogUrl = false;
+      bidderRequest.refererInfo.canonicalUrl = null;
+      let documentStub = sandbox.stub(window.top.document, 'querySelector');
+      documentStub.withArgs('meta[property="og:url"]').returns({
+        content: 'http://localhost:9999/fb-test'
+      });
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(bidRequests.data);
+      expect(data.bids).to.have.lengthOf(1);
+      expect(data.canonical_url).to.be.null;
+      expect(data.canonical_url_hash).to.be.null;
+    });
+
+    it('should not get canonicalUrl (ogUrl:nothing)', function () {
+      bidderRequest.refererInfo.canonicalUrl = null;
+      let documentStub = sandbox.stub(window.top.document, 'querySelector');
+      documentStub.withArgs('meta[property="og:url"]').returns({
+        content: 'http://localhost:9999/fb-test'
+      });
+      const bidRequests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(bidRequests.data);
+      expect(data.bids).to.have.lengthOf(1);
+      expect(data.canonical_url).to.be.null;
+      expect(data.canonical_url_hash).to.be.null;
+    });
   });
 
   describe('spec.interpretResponse', function () {
@@ -325,6 +405,7 @@ describe('RelaidoAdapter', function () {
       expect(bidResponses).to.have.lengthOf(1);
       const response = bidResponses[0];
       expect(response.requestId).to.equal(serverRequest.data.bids[0].bidId);
+      expect(response.placementId).to.equal(serverResponse.body.ads[0].placementId);
       expect(response.width).to.equal(serverRequest.data.bids[0].width);
       expect(response.height).to.equal(serverRequest.data.bids[0].height);
       expect(response.cpm).to.equal(serverResponse.body.ads[0].price);
@@ -343,6 +424,7 @@ describe('RelaidoAdapter', function () {
       expect(bidResponses).to.have.lengthOf(1);
       const response = bidResponses[0];
       expect(response.requestId).to.equal(serverRequest.data.bids[0].bidId);
+      expect(response.placementId).to.equal(serverResponse.body.ads[0].placementId);
       expect(response.width).to.equal(serverRequest.data.bids[0].width);
       expect(response.height).to.equal(serverRequest.data.bids[0].height);
       expect(response.cpm).to.equal(serverResponse.body.ads[0].price);
@@ -360,6 +442,7 @@ describe('RelaidoAdapter', function () {
       expect(bidResponses).to.have.lengthOf(1);
       const response = bidResponses[0];
       expect(response.requestId).to.equal(serverRequest.data.bids[0].bidId);
+      expect(response.placementId).to.equal(serverResponseBanner.body.ads[0].placementId);
       expect(response.cpm).to.equal(serverResponseBanner.body.ads[0].price);
       expect(response.currency).to.equal(serverResponseBanner.body.ads[0].currency);
       expect(response.creativeId).to.equal(serverResponseBanner.body.ads[0].creativeId);

@@ -1,4 +1,4 @@
-import { getValue, getBidIdParameter } from '../src/utils.js';
+import {getBidIdParameter, getValue} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'videoreach';
 const ENDPOINT_URL = 'https://a.videoreach.com/hb/';

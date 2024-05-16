@@ -255,13 +255,46 @@ describe('ColossussspAdapter', function () {
   });
 
   describe('buildRequests with user ids', function () {
-    bid.userId = {}
-    bid.userId.britepoolid = 'britepoolid123';
-    bid.userId.idl_env = 'idl_env123';
-    bid.userId.tdid = 'tdid123';
-    bid.userId.id5id = { uid: 'id5id123' };
-    bid.userId.uid2 = { id: 'uid2id123' };
-    let serverRequest = spec.buildRequests([bid], bidderRequest);
+    var clonedBid = JSON.parse(JSON.stringify(bid));
+    clonedBid.userId = {}
+    clonedBid.userId.britepoolid = 'britepoolid123';
+    clonedBid.userId.idl_env = 'idl_env123';
+    clonedBid.userId.tdid = 'tdid123';
+    clonedBid.userId.id5id = { uid: 'id5id123' };
+    clonedBid.userId.uid2 = { id: 'uid2id123' };
+    clonedBid.userIdAsEids = [
+      {
+        'source': 'pubcid.org',
+        'uids': [
+          {
+            'id': '4679e98e-1d83-4718-8aba-aa88hhhaaa',
+            'atype': 1
+          }
+        ]
+      },
+      {
+        'source': 'adserver.org',
+        'uids': [
+          {
+            'id': 'e804908e-57b4-4f46-a097-08be44321e79',
+            'atype': 1,
+            'ext': {
+              'rtiPartner': 'TDID'
+            }
+          }
+        ]
+      },
+      {
+        'source': 'neustar.biz',
+        'uids': [
+          {
+            'id': 'E1:Bvss1x8hXM2zHeqiqj2umJUziavSvLT6E_ORri5fDCsZb-5sfD18oNWycTmdx6QBNdbURBVv466hLJiKSwHCaTxvROo8smjqj6GfvlKfzQI',
+            'atype': 1
+          }
+        ]
+      }
+    ];
+    let serverRequest = spec.buildRequests([clonedBid], bidderRequest);
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
       let placements = data['placements'];
@@ -270,11 +303,11 @@ describe('ColossussspAdapter', function () {
         let placement = placements[i];
         expect(placement).to.have.property('eids')
         expect(placement.eids).to.be.an('array')
-        expect(placement.eids.length).to.be.equal(5)
+        expect(placement.eids.length).to.be.equal(8)
         for (let index in placement.eids) {
           let v = placement.eids[index];
           expect(v).to.have.all.keys('source', 'uids')
-          expect(v.source).to.be.oneOf(['britepool.com', 'identityLink', 'adserver.org', 'id5-sync.com', 'uidapi.com'])
+          expect(v.source).to.be.oneOf(['pubcid.org', 'adserver.org', 'neustar.biz', 'britepool.com', 'identityLink', 'id5-sync.com', 'adserver.org', 'uidapi.com'])
           expect(v.uids).to.be.an('array');
           expect(v.uids.length).to.be.equal(1)
           expect(v.uids[0]).to.have.property('id')

@@ -6,7 +6,6 @@ import {
   getWindowTop,
   isArray,
   isGptPubadsDefined,
-  isSlotMatchingAdUnitCode,
   logInfo,
   logWarn,
   mergeDeep,
@@ -14,6 +13,7 @@ import {
   uniques
 } from '../src/utils.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 // **************************** UTILS *************************** //
 const BIDDER_CODE = '33across';

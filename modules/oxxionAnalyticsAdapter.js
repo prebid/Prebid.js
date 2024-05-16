@@ -1,6 +1,6 @@
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import { ajax } from '../src/ajax.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 
@@ -8,14 +8,12 @@ const analyticsType = 'endpoint';
 const url = 'URL_TO_SERVER_ENDPOINT';
 
 const {
-  EVENTS: {
-    AUCTION_END,
-    BID_WON,
-    BID_RESPONSE,
-    BID_REQUESTED,
-    BID_TIMEOUT,
-  }
-} = CONSTANTS;
+  AUCTION_END,
+  BID_WON,
+  BID_RESPONSE,
+  BID_REQUESTED,
+  BID_TIMEOUT,
+} = EVENTS;
 
 let saveEvents = {}
 let allEvents = {}
@@ -23,7 +21,7 @@ let auctionEnd = {}
 let initOptions = {}
 let mode = {};
 let endpoint = 'https://default'
-let requestsAttributes = ['adUnitCode', 'auctionId', 'bidder', 'bidderCode', 'bidId', 'cpm', 'creativeId', 'currency', 'width', 'height', 'mediaType', 'netRevenue', 'originalCpm', 'originalCurrency', 'requestId', 'size', 'source', 'status', 'timeToRespond', 'transactionId', 'ttl', 'sizes', 'mediaTypes', 'src', 'params', 'userId', 'labelAny', 'bids', 'adId'];
+let requestsAttributes = ['adUnitCode', 'auctionId', 'bidder', 'bidderCode', 'bidId', 'cpm', 'creativeId', 'currency', 'width', 'height', 'mediaType', 'netRevenue', 'originalCpm', 'originalCurrency', 'requestId', 'size', 'source', 'status', 'timeToRespond', 'transactionId', 'ttl', 'sizes', 'mediaTypes', 'src', 'params', 'userId', 'labelAny', 'bids', 'adId', 'ova'];
 
 function getAdapterNameForAlias(aliasName) {
   return adapterManager.aliasRegistry[aliasName] || aliasName;
@@ -183,6 +181,15 @@ function handleBidWon(args) {
           }
         });
       }
+      if (auction['auctionId'] == args['auctionId'] && typeof auction['bidderRequests'] == 'object') {
+        auction['bidderRequests'].forEach((req) => {
+          req.bids.forEach((bid) => {
+            if (bid['bidId'] == args['requestId'] && bid['transactionId'] == args['transactionId']) {
+              args['ova'] = bid['ova'];
+            }
+          });
+        });
+      }
     });
   }
   args['cpmIncrement'] = increment;
@@ -232,7 +239,8 @@ let oxxionAnalytics = Object.assign(adapter({url, analyticsType}), {
         addTimeout(args);
         break;
     }
-  }});
+  }
+});
 
 // save the base class function
 oxxionAnalytics.originEnableAnalytics = oxxionAnalytics.enableAnalytics;

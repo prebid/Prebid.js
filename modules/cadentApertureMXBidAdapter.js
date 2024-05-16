@@ -1,7 +1,6 @@
 import {
   _each,
-  deepAccess,
-  getBidIdParameter,
+  deepAccess, getBidIdParameter,
   isArray,
   isFn,
   isPlainObject,

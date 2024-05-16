@@ -90,7 +90,7 @@ function lookupUspConsent({onSuccess, onError}) {
 
   cmp({
     command: 'registerDeletion',
-    callback: adapterManager.callDataDeletionRequest
+    callback: (res, success) => (success == null || success) && adapterManager.callDataDeletionRequest(res)
   }).catch(e => {
     logError('Error invoking CMP `registerDeletion`:', e);
   });
@@ -202,7 +202,7 @@ export function resetConsentData() {
 
 /**
  * A configuration function that initializes some module variables, as well as add a hook into the requestBids function
- * @param {object} config required; consentManagementUSP module config settings; usp (string), timeout (int), allowAuctionWithoutConsent (boolean)
+ * @param {object} config required; consentManagementUSP module config settings; usp (string), timeout (int)
  */
 export function setConsentConfig(config) {
   config = config && config.usp;

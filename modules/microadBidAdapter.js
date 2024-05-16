@@ -115,6 +115,26 @@ export const spec = {
         params['aids'] = JSON.stringify(aidsParams)
       }
 
+      const pbadslot = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || pbadslot;
+      if (gpid) {
+        params['gpid'] = gpid;
+      }
+
+      if (pbadslot) {
+        params['pbadslot'] = pbadslot;
+      }
+
+      const adservname = deepAccess(bid, 'ortb2Imp.ext.data.adserver.name');
+      if (adservname) {
+        params['adservname'] = adservname;
+      }
+
+      const adservadslot = deepAccess(bid, 'ortb2Imp.ext.data.adserver.adslot');
+      if (adservadslot) {
+        params['adservadslot'] = adservadslot;
+      }
+
       requests.push({
         method: 'GET',
         url: ENDPOINT_URLS[ENVIRONMENT],

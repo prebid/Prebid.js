@@ -12,6 +12,13 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {OUTSTREAM} from '../src/video.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ */
+
 const BIDDER_CODE = 'vibrantmedia';
 const VIBRANT_MEDIA_PREBID_URL = 'https://prebid.intellitxt.com/prebid';
 const VALID_PIXEL_URL_REGEX = /^https?:\/\/[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+([/?].*)?$/;
@@ -89,17 +96,6 @@ const transformBidRequests = function(bidRequests) {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
-
-  /**
-   * Transforms the 'raw' bid params into ones that this adapter can use, prior to creating the bid request.
-   *
-   * @param {object} bidParams the params to transform.
-   *
-   * @returns {object} the bid params.
-   */
-  transformBidParams: function(bidParams) {
-    return bidParams;
-  },
 
   /**
    * Determines whether or not the given bid request is valid. For all bid requests passed to the buildRequests

@@ -67,6 +67,33 @@ describe('ttlCollection', () => {
           });
         });
 
+        it('should run onExpiry when items are cleared', () => {
+          const i1 = {ttl: 1000, some: 'data'};
+          const i2 = {ttl: 2000, some: 'data'};
+          coll.add(i1);
+          coll.add(i2);
+          const cb = sinon.stub();
+          coll.onExpiry(cb);
+          return waitForPromises().then(() => {
+            clock.tick(500);
+            sinon.assert.notCalled(cb);
+            clock.tick(SLACK + 500);
+            sinon.assert.calledWith(cb, i1);
+            clock.tick(3000);
+            sinon.assert.calledWith(cb, i2);
+          })
+        });
+
+        it('should allow unregistration of onExpiry callbacks', () => {
+          const cb = sinon.stub();
+          coll.add({ttl: 500});
+          coll.onExpiry(cb)();
+          return waitForPromises().then(() => {
+            clock.tick(500 + SLACK);
+            sinon.assert.notCalled(cb);
+          })
+        })
+
         it('should not wait too long if a shorter ttl shows up', () => {
           coll.add({ttl: 4000});
           coll.add({ttl: 1000});

@@ -229,12 +229,28 @@ Or, if you are consuming Prebid through npm, with the `disableFeatures` option i
 
 **Note**: this is still a work in progress - at the moment, `NATIVE` is the only feature that can be disabled this way, resulting in a minimal decrease in size (but you can expect that to improve over time).
 
+## Unminified code
+
+You can get a version of the code that's unminified for debugging with `build-bundle-dev`:
+
+```bash
+gulp build-bundle-dev --modules=bidderA,module1,...
+```
+
+The results will be in build/dev/prebid.js.
+
 ## Test locally
 
 To lint the code:
 
 ```bash
 gulp lint
+```
+
+To lint and only show errors
+
+```bash
+gulp lint --no-lint-warnings
 ```
 
 To run the unit tests:
@@ -245,7 +261,7 @@ gulp test
 
 To run the unit tests for a particular file (example for pubmaticBidAdapter_spec.js):
 ```bash
-gulp test --file "test/spec/modules/pubmaticBidAdapter_spec.js"
+gulp test --file "test/spec/modules/pubmaticBidAdapter_spec.js" --nolint
 ```
 
 To generate and view the code coverage reports:
@@ -253,6 +269,12 @@ To generate and view the code coverage reports:
 ```bash
 gulp test-coverage
 gulp view-coverage
+```
+
+Local end-to-end testing can be done with:
+
+```bash
+gulp e2e-test --local
 ```
 
 For Prebid.org members with access to BrowserStack, additional end-to-end testing can be done with:

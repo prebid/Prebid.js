@@ -2069,6 +2069,19 @@ describe('ozone Adapter', function () {
       expect(request.length).to.equal(3);
       config.resetConfig();
     });
+    it('should not batch into 10s if config is set to false and singleRequest is true', function () {
+      config.setConfig({ozone: {'batchRequests': false, 'singleRequest': true}});
+      var specMock = utils.deepClone(spec);
+      let arrReq = [];
+      for (let i = 0; i < 15; i++) {
+        let b = validBidRequests[0];
+        b.adUnitCode += i;
+        arrReq.push(b);
+      }
+      const request = specMock.buildRequests(arrReq, validBidderRequest);
+      expect(request.method).to.equal('POST');
+      config.resetConfig();
+    });
     it('should use GET values auction=dev & cookiesync=dev if set', function() {
       var specMock = utils.deepClone(spec);
       specMock.getGetParametersAsObject = function() {

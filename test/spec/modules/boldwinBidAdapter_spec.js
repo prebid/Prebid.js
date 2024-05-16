@@ -314,7 +314,7 @@ describe('BoldwinBidAdapter', function () {
       expect(userSync[0].type).to.exist;
       expect(userSync[0].url).to.exist;
       expect(userSync[0].type).to.be.equal('image');
-      expect(userSync[0].url).to.be.equal('https://cs.videowalldirect.com');
+      expect(userSync[0].url).to.be.equal('https://sync.videowalldirect.com');
     });
   });
 });

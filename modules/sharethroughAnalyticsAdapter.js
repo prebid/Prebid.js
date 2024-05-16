@@ -1,6 +1,6 @@
-import { tryAppendQueryString } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';

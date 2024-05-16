@@ -9,6 +9,15 @@ import {
 } from '../src/adapters/bidderFactory.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'theadx';
 const ENDPOINT_URL = 'https://ssp.theadx.com/request';
 
@@ -159,7 +168,6 @@ export const spec = {
               withCredentials: true,
             },
             bidder: 'theadx',
-            // TODO: is 'page' the right value here?
             referrer: encodeURIComponent(bidderRequest.refererInfo.page || ''),
             data: generatePayload(bidRequest, bidderRequest),
             mediaTypes: bidRequest['mediaTypes'],
@@ -261,6 +269,7 @@ export const spec = {
           ad: creative,
           ttl: ttl || 3000,
           creativeId: bid.crid,
+          dealId: bid.dealid || null,
           netRevenue: true,
           currency: responseBody.cur,
           mediaType: mediaType,
@@ -466,11 +475,19 @@ let generateImpBody = (bidRequest, bidderRequest) => {
   } else if (mediaTypes && mediaTypes.native) {
     native = generateNativeComponent(bidRequest, bidderRequest);
   }
-
   const result = {
     id: bidRequest.index,
     tagid: bidRequest.params.tagId + '',
   };
+
+  // deals support
+  if (bidRequest.params.deals && Array.isArray(bidRequest.params.deals) && bidRequest.params.deals.length > 0) {
+    result.pmp = {
+      deals: bidRequest.params.deals,
+      private_auction: 0,
+    };
+  }
+
   if (banner) {
     result['banner'] = banner;
   }

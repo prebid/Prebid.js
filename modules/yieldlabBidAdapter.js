@@ -1,9 +1,18 @@
-import { _each, deepAccess, isArray, isFn, isPlainObject, timestamp } from '../src/utils.js';
+import { _each, deepAccess, isArray, isEmptyStr, isFn, isPlainObject, timestamp } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { find } from '../src/polyfill.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
 
 const ENDPOINT = 'https://ad.yieldlab.net';
 const BIDDER_CODE = 'yieldlab';
@@ -25,10 +34,7 @@ export const spec = {
    * @returns {boolean}
    */
   isBidRequestValid(bid) {
-    if (bid && bid.params && bid.params.adslotId && bid.params.supplyId) {
-      return true;
-    }
-    return false;
+    return !!(bid && bid.params && bid.params.adslotId && bid.params.supplyId);
   },
 
   /**
@@ -97,6 +103,40 @@ export const spec = {
           query.consent = bidderRequest.gdprConsent.consentString;
         }
       }
+
+      if (bidderRequest.ortb2?.regs?.ext?.dsa !== undefined) {
+        const dsa = bidderRequest.ortb2.regs.ext.dsa;
+
+        assignIfNotUndefined(query, 'dsarequired', dsa.dsarequired);
+        assignIfNotUndefined(query, 'dsapubrender', dsa.pubrender);
+        assignIfNotUndefined(query, 'dsadatatopub', dsa.datatopub);
+
+        if (Array.isArray(dsa.transparency)) {
+          const filteredTransparencies = dsa.transparency.filter(({ domain, dsaparams }) => {
+            return domain && !domain.includes('~') && Array.isArray(dsaparams) && dsaparams.length > 0 && dsaparams.every(param => typeof param === 'number');
+          });
+
+          if (filteredTransparencies.length === 1) {
+            const { domain, dsaparams } = filteredTransparencies[0];
+            assignIfNotUndefined(query, 'dsadomain', domain);
+            assignIfNotUndefined(query, 'dsaparams', dsaparams.join(','));
+          } else if (filteredTransparencies.length > 1) {
+            const dsatransparency = filteredTransparencies.map(({ domain, dsaparams }) =>
+              `${domain}~${dsaparams.join('_')}`
+            ).join('~~');
+            if (dsatransparency) {
+              query.dsatransparency = dsatransparency;
+            }
+          }
+        }
+      }
+
+      const topics = getGoogleTopics(bidderRequest);
+      if (topics) {
+        assignIfNotUndefined(query, 'segtax', topics.segtax);
+        assignIfNotUndefined(query, 'segclass', topics.segclass);
+        assignIfNotUndefined(query, 'segments', topics.segments);
+      }
     }
 
     const adslots = adslotIds.join(',');
@@ -164,6 +204,11 @@ export const spec = {
             advertiserDomains: (matchedBid.advertiser) ? matchedBid.advertiser : 'n/a',
           },
         };
+
+        const dsa = getDigitalServicesActObjectFromMatchedBid(matchedBid)
+        if (dsa !== undefined) {
+          bidResponse.meta = { ...bidResponse.meta, dsa: dsa };
+        }
 
         if (isVideo(bidRequest, adType)) {
           const playersize = getPlayerSize(bidRequest);
@@ -534,6 +579,57 @@ function hasValidProperty(obj, propName) {
  */
 function isImageAssetOfType(type) {
   return asset => asset?.img?.type === type;
+}
+
+/**
+ * Retrieves the Digital Services Act (DSA) object from a matched bid.
+ * Only includes specific attributes (behalf, paid, transparency, adrender) from the DSA object.
+ *
+ * @param {Object} matchedBid - The server response body to inspect for the DSA information.
+ * @returns {Object|undefined} A copy of the DSA object if it exists, or undefined if not.
+ */
+function getDigitalServicesActObjectFromMatchedBid(matchedBid) {
+  if (matchedBid.dsa) {
+    const { behalf, paid, transparency, adrender } = matchedBid.dsa;
+    return {
+      ...(behalf !== undefined && { behalf }),
+      ...(paid !== undefined && { paid }),
+      ...(transparency !== undefined && { transparency }),
+      ...(adrender !== undefined && { adrender })
+    };
+  }
+  return undefined;
+}
+
+/**
+ * Conditionally assigns a value to a specified key on an object if the value is not undefined.
+ *
+ * @param {Object} obj - The object to which the value will be assigned.
+ * @param {string} key - The key under which the value should be assigned.
+ * @param {*} value - The value to be assigned, if it is not undefined.
+ */
+function assignIfNotUndefined(obj, key, value) {
+  if (value !== undefined) {
+    obj[key] = value;
+  }
+}
+
+function getGoogleTopics(bid) {
+  const userData = deepAccess(bid, 'ortb2.user.data') || [];
+  const validData = userData.filter(dataObj =>
+    dataObj.segment && isArray(dataObj.segment) && dataObj.segment.length > 0 &&
+      dataObj.segment.every(seg => (seg.id && !isEmptyStr(seg.id) && isFinite(seg.id)))
+  )[0];
+
+  if (validData) {
+    return {
+      segtax: validData.ext?.segtax,
+      segclass: validData.ext?.segclass,
+      segments: validData.segment.map(seg => Number(seg.id)).join(','),
+    };
+  }
+
+  return undefined;
 }
 
 registerBidder(spec);

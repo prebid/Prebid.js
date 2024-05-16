@@ -26,12 +26,12 @@ export const runAuction = async () => {
 }
 
 export const apiHelpers = {
-  makeTokenResponse: (token, shouldRefresh = false, expired = false) => ({
+  makeTokenResponse: (token, shouldRefresh = false, expired = false, refreshExpired = false) => ({
     advertising_token: token,
     refresh_token: 'fake-refresh-token',
     identity_expires: expired ? Date.now() - 1000 : Date.now() + 60 * 60 * 1000,
     refresh_from: shouldRefresh ? Date.now() - 1000 : Date.now() + 60 * 1000,
-    refresh_expires: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+    refresh_expires: refreshExpired ? Date.now() - 1000 : Date.now() + 24 * 60 * 60 * 1000, // 24 hours
     refresh_response_key: 'wR5t6HKMfJ2r4J7fEGX9Gw==', // Fake data
   }),
   respondAfterDelay: (delay, srv = server) => new Promise((resolve) => setTimeout(() => {

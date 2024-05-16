@@ -1,7 +1,6 @@
 import {
   buildUrl,
   deepAccess,
-  getGptSlotInfoForAdUnitCode,
   getWindowTop,
   isArray,
   isEmpty,
@@ -18,6 +17,13 @@ import {getRefererInfo} from '../src/refererDetection.js';
 import {Renderer} from '../src/Renderer.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import {getGlobal} from '../src/prebidGlobal.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
+ */
 
 const BIDDER_CODE = 'medianet';
 const TRUSTEDSTACK_CODE = 'trustedstack';
@@ -51,7 +57,7 @@ mnData.urlData = {
 };
 
 const aliases = [
-  { code: TRUSTEDSTACK_CODE },
+  { code: TRUSTEDSTACK_CODE, gvlid: 1288 },
 ];
 
 getGlobal().medianetGlobals = getGlobal().medianetGlobals || {};
