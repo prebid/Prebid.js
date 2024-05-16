@@ -652,15 +652,6 @@ function validateVideoParams(bid) {
     validate('video.mimes', val => isDefined(val), paramRequired);
     validate('video.mimes', val => isArray(val) && val.every(v => isStr(v)), paramInvalid,
       'array of strings, ex: ["video/mp4"]');
-
-    const placement = validate('video.plcmt', val => isDefined(val), paramRequired);
-    validate('video.plcmt', (val) => val >= 1 && val <= 5, paramInvalid);
-    if (placement === 1) {
-      validate('video.startdelay', val => isDefined(val),
-        (field, v) => paramRequired(field, v, 'placement == 1'));
-      validate('video.startdelay', val => isNumber(val), paramInvalid, 'number, ex: 5');
-    }
-
     validate('video.protocols', val => isDefined(val), paramRequired);
 
     validate('video.api', val => isDefined(val), paramRequired);
