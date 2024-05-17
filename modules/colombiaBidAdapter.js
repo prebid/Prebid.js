@@ -48,12 +48,6 @@ export const spec = {
       if (params.incognito) payload.ic = params.incognito;
       if (params.dsmi) payload.smi = params.dsmi;
       if (params.optout) payload.out = params.optout;
-      if (params.yob) payload.yob = params.yob;
-      if (params.gender) payload.g = params.gender;
-      if (params.floor) payload.fb = params.floor;
-      if (params.currency) payload.cur = params.currency;
-      if (params.bcat) payload.cat = params.bcat;
-      if (params.bcat) payload.cat = params.bcat;
       if (bidRequest && bidRequest.hasOwnProperty('ortb2Imp') && bidRequest.ortb2Imp.hasOwnProperty('ext')) {
         payload.ext = bidRequest.ortb2Imp.ext;
         if (bidRequest.ortb2Imp.ext.hasOwnProperty('gpid')) payload.pubAdCode = bidRequest.ortb2Imp.ext.gpid.split('#')[0];
