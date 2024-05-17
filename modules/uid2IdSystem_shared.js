@@ -187,11 +187,15 @@ if (FEATURES.UID2_CSTG) {
   clientSideTokenGenerator = {
     isCSTGOptionsValid(maybeOpts, _logWarn) {
       if (typeof maybeOpts !== 'object' || maybeOpts === null) {
-        _logWarn('CSTG opts must be an object');
+        _logWarn('CSTG has been enabled but opts is not an object');
         return false;
       }
 
       const opts = maybeOpts;
+      if (!opts.serverPublicKey && !opts.subscriptionId) {
+        _logWarn('CSTG has been enabled but its parameters have not been set.');
+        return false;
+      }
       if (typeof opts.serverPublicKey !== 'string') {
         _logWarn('CSTG opts.serverPublicKey must be a string');
         return false;
