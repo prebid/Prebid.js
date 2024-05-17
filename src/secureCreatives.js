@@ -5,16 +5,16 @@
 
 import * as events from './events.js';
 import {getAllAssetsMessage, getAssetMessage} from './native.js';
-import CONSTANTS from './constants.json';
+import { BID_STATUS, EVENTS, MESSAGES } from './constants.js';
 import {isApnGetTagDefined, isGptPubadsDefined, logError, logWarn} from './utils.js';
 import {auctionManager} from './auctionManager.js';
 import {find, includes} from './polyfill.js';
 import {handleCreativeEvent, handleNativeMessage, handleRender} from './adRendering.js';
 import {getCreativeRendererSource} from './creativeRenderers.js';
 
-const {REQUEST, RESPONSE, NATIVE, EVENT} = CONSTANTS.MESSAGES;
+const { REQUEST, RESPONSE, NATIVE, EVENT } = MESSAGES;
 
-const BID_WON = CONSTANTS.EVENTS.BID_WON;
+const BID_WON = EVENTS.BID_WON;
 
 const HANDLER_MAP = {
   [REQUEST]: handleRenderRequest,
@@ -99,7 +99,7 @@ function handleNativeRequest(reply, data, adObject) {
     return;
   }
 
-  if (adObject.status !== CONSTANTS.BID_STATUS.RENDERED) {
+  if (adObject.status !== BID_STATUS.RENDERED) {
     auctionManager.addWinningBid(adObject);
     events.emit(BID_WON, adObject);
   }
@@ -121,7 +121,7 @@ function handleEventRequest(reply, data, adObject) {
     logError(`Cannot find ad '${data.adId}' for x-origin event request`);
     return;
   }
-  if (adObject.status !== CONSTANTS.BID_STATUS.RENDERED) {
+  if (adObject.status !== BID_STATUS.RENDERED) {
     logWarn(`Received x-origin event request without corresponding render request for ad '${adObject.adId}'`);
     return;
   }
