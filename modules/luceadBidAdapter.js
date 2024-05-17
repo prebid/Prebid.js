@@ -152,9 +152,12 @@ function interpretResponse(serverResponse, bidRequest) {
 function report(type, data) {
   // noinspection JSCheckFunctionSignatures
   return fetch(`${endpointUrl}/go/report/${type}`, {
-    body: JSON.stringify(data),
+    body: JSON.stringify({
+      ...data,
+      domain: location.hostname,
+    }),
     method: 'POST',
-    contentType: 'text/plain'
+    contentType: 'text/plain',
   });
 }
 
