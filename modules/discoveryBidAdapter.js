@@ -116,6 +116,36 @@ export function getPageKeywords(win = window) {
   return (element && element.content) || '';
 }
 
+export function getHLen(win = window) {
+  let hLen;
+  try {
+    hLen = win.top.history.length;
+  } catch (error) {
+    hLen = undefined;
+  }
+  return hLen;
+}
+
+export function getHC(win = window) {
+  let hc;
+  try {
+    hc = win.top.navigator.hardwareConcurrency;
+  } catch (error) {
+    hc = undefined;
+  }
+  return hc;
+}
+
+export function getDM(win = window) {
+  let dm;
+  try {
+    dm = win.top.navigator.deviceMemory;
+  } catch (error) {
+    dm = undefined;
+  }
+  return dm;
+}
+
 /**
  * get connection downlink
  * @returns {number}
@@ -455,11 +485,31 @@ function getParam(validBidRequests, bidderRequest) {
   const referer = utils.deepAccess(bidderRequest, 'refererInfo.ref');
   const firstPartyData = bidderRequest.ortb2;
   const tpData = utils.deepAccess(bidderRequest, 'ortb2.user.data') || undefined;
-  const topWindow = window.top;
   const title = getPageTitle();
   const desc = getPageDescription();
   const keywords = getPageKeywords();
-
+  let ext = {};
+  try {
+    ext = {
+      eids,
+      firstPartyData,
+      ssppid: storage.getCookie(COOKIE_KEY_SSPPID) || undefined,
+      pmguid: getPmgUID(),
+      tpData,
+      utm: storage.getCookie(UTM_KEY),
+      page: {
+        title: title ? title.slice(0, 100) : undefined,
+        desc: desc ? desc.slice(0, 300) : undefined,
+        keywords: keywords ? keywords.slice(0, 100) : undefined,
+        hLen: getHLen(),
+      },
+      device: {
+        nbw: getConnectionDownLink(),
+        hc: getHC(),
+        dm: getDM()
+      }
+    }
+  } catch (error) {}
   try {
     buildUTMTagData(page);
   } catch (error) { }
@@ -480,25 +530,7 @@ function getParam(validBidRequests, bidderRequest) {
         ua: navigator.userAgent,
         language: /en/.test(navigator.language) ? 'en' : navigator.language,
       },
-      ext: {
-        eids,
-        firstPartyData,
-        ssppid: storage.getCookie(COOKIE_KEY_SSPPID) || undefined,
-        pmguid: getPmgUID(),
-        tpData,
-        utm: storage.getCookie(UTM_KEY),
-        page: {
-          title: title ? title.slice(0, 100) : undefined,
-          desc: desc ? desc.slice(0, 300) : undefined,
-          keywords: keywords ? keywords.slice(0, 100) : undefined,
-          hLen: topWindow.history?.length || undefined,
-        },
-        device: {
-          nbw: getConnectionDownLink(),
-          hc: topWindow.navigator?.hardwareConcurrency || undefined,
-          dm: topWindow.navigator?.deviceMemory || undefined,
-        }
-      },
+      ext,
       user: {
         buyeruid: storage.getCookie(COOKIE_KEY_MGUID) || undefined,
         id: sharedid || pubcid,

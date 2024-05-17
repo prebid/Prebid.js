@@ -10,7 +10,10 @@ import {
   THIRD_PARTY_COOKIE_ORIGIN,
   COOKIE_KEY_MGUID,
   getCurrentTimeToUTCString,
-  buildUTMTagData
+  buildUTMTagData,
+  getHLen,
+  getHC,
+  getDM,
 } from 'modules/discoveryBidAdapter.js';
 import * as utils from 'src/utils.js';
 
@@ -631,6 +634,75 @@ describe('discovery Bid Adapter Tests', function () {
         expect(fakeEvent.stopImmediatePropagation.notCalled).to.be.true;
         expect(window.removeEventListener.notCalled).to.be.true;
         expect(storage.setCookie.notCalled).to.be.true;
+      });
+    });
+    describe('getHLen', () => {
+      it('should return the correct length of history when accessible', () => {
+        const mockWindow = {
+          top: {
+            history: {
+              length: 3
+            }
+          }
+        };
+        const result = getHLen(mockWindow);
+        expect(result).to.equal(3);
+      });
+
+      it('should return undefined when accessing win.top.history.length throws an error', () => {
+        const mockWindow = {
+          get top() {
+            throw new Error('Access denied');
+          }
+        };
+        const result = getHLen(mockWindow);
+        expect(result).be.undefined;
+      });
+    });
+
+    describe('getHC', () => {
+      it('should return the correct value of hardwareConcurrency when accessible', () => {
+        const mockWindow = {
+          top: {
+            navigator: {
+              hardwareConcurrency: 4
+            }
+          }
+        };
+        const result = getHC(mockWindow);
+        expect(result).to.equal(4);
+      });
+      it('should return undefined when accessing win.top.navigator.hardwareConcurrency throws an error', () => {
+        const mockWindow = {
+          get top() {
+            throw new Error('Access denied');
+          }
+        };
+        const result = getHC(mockWindow);
+        expect(result).be.undefined;
+      });
+    });
+
+    describe('getDM', () => {
+      it('should return the correct value of deviceMemory when accessible', () => {
+        const mockWindow = {
+          top: {
+            navigator: {
+              deviceMemory: 4
+            }
+          }
+        };
+        const result = getDM(mockWindow);
+        expect(result).to.equal(4);
+      });
+      it('should return undefined when accessing win.top.navigator.deviceMemory throws an error', () => {
+        const mockWindow = {
+          get top() {
+            throw new Error('Access denied');
+          }
+        };
+        const result = getDM(mockWindow);
+        expect(result).be.undefined;
       });
     });
   });
