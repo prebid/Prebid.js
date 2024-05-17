@@ -9,7 +9,8 @@ import {loadExternalScript} from '../src/adloader.js';
 import {submodule} from '../src/hook.js';
 import {logInfo} from '../src/utils.js';
 
-const bidderCode = 'lucead';
+const name = 'lucead';
+const gvlid = 1309;
 const staticUrl = 'https://s.lucead.com';
 let companionUrl = `${staticUrl}/dist/prebid-companion.js`;
 
@@ -23,7 +24,7 @@ export function init() {
   }
 
   window.lucead_prebid_load_promise = new Promise(resolve => {
-    loadExternalScript(companionUrl, bidderCode, () => {
+    loadExternalScript(companionUrl, name, () => {
       resolve(true);
     });
   });
@@ -36,7 +37,8 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
 }
 
 submodule('realTimeData', {
-  name: bidderCode,
+  name,
+  gvlid,
   init,
   getBidRequestData,
 });
