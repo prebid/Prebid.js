@@ -237,29 +237,6 @@ export const CONVERTER = ortbConverter({
           imp.video.placement = VIDEO_PARAMS.PLACEMENT_TYPE.OUTSTREAM;
         }
       }
-    },
-    request: {
-      gdprAddtlConsent(setAddtlConsent, ortbRequest, bidderRequest) {
-        const additionalConsent = bidderRequest?.gdprConsent?.addtlConsent;
-        if (!additionalConsent) {
-          return;
-        }
-        if (spec.syncStore.extendMode) {
-          setAddtlConsent(ortbRequest, bidderRequest);
-          return;
-        }
-        if (additionalConsent && additionalConsent.indexOf('~') !== -1) {
-          // Google Ad Tech Provider IDs
-          const atpIds = additionalConsent.substring(additionalConsent.indexOf('~') + 1);
-          if (atpIds) {
-            deepSetValue(
-              ortbRequest,
-              'user.ext.consented_providers_settings.consented_providers',
-              atpIds.split('.').map(id => parseInt(id, 10))
-            );
-          }
-        }
-      }
     }
   }
 })
