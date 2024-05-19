@@ -364,7 +364,7 @@ describe('Taboola Adapter', function () {
             badv: ['site.com'],
             wlang: ['de'],
             user: {
-              id: 'externalUserId'
+              id: 'externalUserIdPassed'
             }
           }
         }
