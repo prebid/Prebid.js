@@ -363,6 +363,9 @@ describe('Taboola Adapter', function () {
             bcat: ['EX1', 'EX2', 'EX3'],
             badv: ['site.com'],
             wlang: ['de'],
+            user: {
+              buyeruid: 'buyeruid_examle'
+            }
           }
         }
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
