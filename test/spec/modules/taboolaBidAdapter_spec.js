@@ -199,6 +199,13 @@ describe('Taboola Adapter', function () {
         }],
         id: 'mock-uuid',
         'test': 0,
+        'device': {'ua': navigator.userAgent},
+        'user': {
+          'buyeruid': 0,
+          'ext': {},
+        },
+        'regs': {'ext': {}, 'coppa': 0},
+        'source': {'fd': 1},
         'site': {
           'id': commonBidRequest.params.publisherId,
           'name': commonBidRequest.params.publisherId,
@@ -208,16 +215,9 @@ describe('Taboola Adapter', function () {
           'publisher': {'id': commonBidRequest.params.publisherId},
           'content': {'language': navigator.language}
         },
-        'device': {'ua': navigator.userAgent},
-        'source': {'fd': 1},
         'bcat': [],
         'badv': [],
         'wlang': [],
-        'user': {
-          'buyeruid': 0,
-          'ext': {},
-        },
-        'regs': {'coppa': 0, 'ext': {}},
         'ext': {
           'prebid': {
             'version': '$prebid.version$'
@@ -363,12 +363,16 @@ describe('Taboola Adapter', function () {
             bcat: ['EX1', 'EX2', 'EX3'],
             badv: ['site.com'],
             wlang: ['de'],
+            user: {
+              id: 'externalUserId'
+            }
           }
         }
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
         expect(res.data.bcat).to.deep.equal(bidderRequest.ortb2.bcat)
         expect(res.data.badv).to.deep.equal(bidderRequest.ortb2.badv)
         expect(res.data.wlang).to.deep.equal(bidderRequest.ortb2.wlang)
+        expect(res.data.user.id).to.deep.equal(bidderRequest.ortb2.user.id)
       });
 
       it('should pass pageType if exists in ortb2', function () {
