@@ -68,17 +68,22 @@ describe('colombiaBidAdapter', function() {
         'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
       }
     ];
+    let bidderRequest = {
+      refererInfo: {
+        numIframes: 0,
+        reachedTop: true,
+        referer: 'http://example.com',
+        stack: ['http://example.com']
+      }
+    };
 
     const request = spec.buildRequests(bidRequests);
-
     it('sends bid request to our endpoint via POST', function () {
       expect(request[0].method).to.equal('POST');
-      // expect(request[1].method).to.equal('POST');
     });
 
     it('attaches source and version to endpoint URL as query params', function () {
       expect(request[0].url).to.equal(ENDPOINT);
-      // expect(request[1].url).to.equal(ENDPOINT);
     });
   });
 

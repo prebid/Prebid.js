@@ -14,6 +14,9 @@ export const spec = {
     return !!(bid.params.placementId);
   },
   buildRequests: function(validBidRequests, bidderRequest) {
+    if (validBidRequests.length === 0) {
+      return [];
+    }
     let payloadArr = []
     let ctr = 1;
     validBidRequests = validBidRequests.map(bidRequest => {
