@@ -4,7 +4,6 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'colombia';
 const ENDPOINT_URL = 'https://ade.clmbtech.com/cde/prebid.htm';
-//const ENDPOINT_URL = 'https://originqaade.clmbtech.com/cde/prebid.htm';
 const HOST_NAME = document.location.protocol + '//' + window.location.host;
 
 export const spec = {
