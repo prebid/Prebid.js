@@ -276,9 +276,7 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data) {
     buyeruid: userData.getUserId(gdprConsent, uspConsent),
     ext: {}
   };
-  if (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.user) {
-    user.data = bidderRequest.ortb2.user.data;
-  }
+
   const regs = {
     coppa: 0,
     ext: {}
@@ -307,6 +305,12 @@ function fillTaboolaReqData(bidderRequest, bidRequest, data) {
     badv: [],
     wlang: []
   };
+
+  if (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.user) {
+    user.data = bidderRequest.ortb2.user.data;
+  } else {
+    data.user = user;
+  }
 
   data.id = bidderRequest.bidderRequestId;
   data.site = site;
