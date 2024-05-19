@@ -3,8 +3,7 @@ import { spec } from 'modules/colombiaBidAdapter';
 import { newBidder } from 'src/adapters/bidderFactory';
 
 const HOST_NAME = document.location.protocol + '//' + window.location.host;
-// const ENDPOINT = 'https://ade.clmbtech.com/cde/prebid.htm';
-const ENDPOINT = 'https://originqaade.clmbtech.com/cde/prebid.htm';
+const ENDPOINT = 'https://ade.clmbtech.com/cde/prebid.htm';
 
 describe('colombiaBidAdapter', function() {
   const adapter = newBidder(spec);
