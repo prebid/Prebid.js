@@ -12,7 +12,7 @@ import {
   STRICT_STORAGE_ENFORCEMENT,
   syncUserRule, ufpdRule,
   validateRules
-} from 'modules/gdprEnforcement.js';
+} from 'modules/tcfControl.js';
 import {config} from 'src/config.js';
 import adapterManager, {gdprDataHandler} from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
