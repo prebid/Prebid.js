@@ -64,7 +64,7 @@ describe('colombiaBidAdapter', function() {
           [300, 250]
         ],
         'bidId': '382091349b149f"',
-        'bidderRequestId': '"1f9c98192de251"',
+        'bidderRequestId': '"1f9c98192de2511"',
         'auctionId': '61466567-d482-4a16-96f0-fe5f25ffbdf1',
       }
     ];
