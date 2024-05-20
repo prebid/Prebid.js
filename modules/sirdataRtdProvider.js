@@ -318,7 +318,7 @@ export function sanitizeContent(content) {
     // Clean any potential PII
     content.documentElement.innerHTML = removePII(content.documentElement.innerHTML);
     // Compress the content
-    content.documentElement.innerHTML = content.documentElement.innerHTML.replace(/\s+/g, ' ').replace(/>\s+</g, '><').replace(/<!--.*?-->/g, '');
+    content.documentElement.innerHTML = content.documentElement.innerHTML.replace(/\s+/g, ' ').replace(/>\s+</g, '><').replace(/<!--[\s\S]*?-->/g, '')
   }
   return content;
 }
