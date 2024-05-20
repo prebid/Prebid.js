@@ -46,48 +46,6 @@ import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel } from '.
  * @typedef {BidRequest & AdditionalBidRequestFields} ExtendedBidRequest
  */
 
-/**
- * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
- * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
- * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
- * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
- * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
- * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
- * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
- * @typedef {import('../src/auction.js').BidderRequest} BidderRequest
- * @typedef {import('../src/mediaTypes.js').MediaType} MediaType
- * @typedef {import('../src/utils.js').MediaTypes} MediaTypes
- * @typedef {import('../modules/priceFloors.js').getFloor} GetFloor
- */
-
-/**
- * @typedef {Object} CustomServerRequestFields
- * @property {BidRequest} bidRequest
- */
-
-/**
- * @typedef {ServerRequest & CustomServerRequestFields} YandexServerRequest
- */
-
-/**
- * Yandex bidder-specific params which the publisher used in their bid request.
- *
- * @typedef {Object} YandexBidRequestParams
- * @property {string} placementId Possible formats: `R-I-123456-2`, `R-123456-1`, `123456-789`.
- * @property {number} [pageId] Deprecated. Please use `placementId` instead.
- * @property {number} [impId] Deprecated. Please use `placementId` instead.
- */
-
-/**
- * @typedef {Object} AdditionalBidRequestFields
- * @property {GetFloor} [getFloor]
- * @property {MediaTypes} [mediaTypes]
- */
-
-/**
- * @typedef {BidRequest & AdditionalBidRequestFields} ExtendedBidRequest
- */
-
 const BIDDER_CODE = 'yandex';
 const BIDDER_URL = 'https://bs.yandex.ru/prebid';
 const DEFAULT_TTL = 180;
@@ -220,11 +178,6 @@ export const spec = {
       const eids = deepAccess(bidRequest, 'userIdAsEids');
       if (eids && eids.length) {
         deepSetValue(data, 'user.ext.eids', eids);
-      }
-
-      const userData = deepAccess(bidRequest, 'ortb2.user.data');
-      if (userData && userData.length) {
-        deepSetValue(data, 'user.data', userData);
       }
 
       const queryParamsString = formatQS(queryParams);

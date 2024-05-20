@@ -45,14 +45,18 @@ function buildRequests(bidReqs, bidderRequest) {
       const minSize = _getMinSize(processedSizes);
       const viewabilityAmount = _isViewabilityMeasurable(element) ? _getViewability(element, getWindowTop(), minSize) : 'na';
       const viewabilityAmountRounded = isNaN(viewabilityAmount) ? viewabilityAmount : Math.round(viewabilityAmount);
+      const gpidData = _extractGpidData(bid);
 
       const imp = {
         id: bid.bidId,
         banner: {
           format: processedSizes,
           ext: {
-            viewability: viewabilityAmountRounded
+            viewability: viewabilityAmountRounded,
           }
+        },
+        ext: {
+          ...gpidData
         },
         tagid: String(bid.adUnitCode)
       };
@@ -239,6 +243,15 @@ function _isViewabilityMeasurable(element) {
 
 function _getViewability(element, topWin, {w, h} = {}) {
   return getWindowTop().document.visibilityState === 'visible' ? percentInView(element, topWin, {w, h}) : 0;
+}
+
+function _extractGpidData(bid) {
+  return {
+    gpid: bid?.ortb2Imp?.ext?.gpid,
+    adserverName: bid?.ortb2Imp?.ext?.data?.adserver?.name,
+    adslot: bid?.ortb2Imp?.ext?.data?.adserver?.adslot,
+    pbadslot: bid?.ortb2Imp?.ext?.data?.pbadslot,
+  }
 }
 
 function _isIframe() {

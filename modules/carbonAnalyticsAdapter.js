@@ -5,7 +5,7 @@ import {getGlobal} from '../src/prebidGlobal.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 import adapterManager from '../src/adapterManager.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 
 const CARBON_GVL_ID = 493;
 const ANALYTICS_VERSION = 'v1.0';
@@ -33,7 +33,7 @@ export let carbonAdapter = Object.assign(adapter({analyticsHost, ANALYTICS_TYPE}
   track({eventType, args}) {
     args = args ? JSON.parse(JSON.stringify(args)) : {};
     switch (eventType) {
-      case CONSTANTS.EVENTS.AUCTION_END: {
+      case EVENTS.AUCTION_END: {
         registerEngagement();
         let present = Date.now();
 
@@ -46,7 +46,7 @@ export let carbonAdapter = Object.assign(adapter({analyticsHost, ANALYTICS_TYPE}
 
         break;
       }
-      case CONSTANTS.EVENTS.TCF2_ENFORCEMENT: {
+      case EVENTS.TCF2_ENFORCEMENT: {
         // check for relevant tcf information on the event before recording
         if (args.storageBlocked?.length > 0 || args.biddersBlocked?.length > 0 || args.analyticsBlocked?.length > 0) {
           registerEngagement();

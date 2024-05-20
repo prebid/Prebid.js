@@ -230,7 +230,14 @@ export const spec = {
             ortb: bidResponse.native
           };
         } else {
-          result[ mediaType === VIDEO ? 'vastXml' : 'ad' ] = bidResponse.adm;
+          if (mediaType === VIDEO) {
+            result.vastXml = bidResponse.adm;
+            if (bidResponse.nurl) {
+              result.vastUrl = bidResponse.nurl;
+            }
+          } else {
+            result.ad = bidResponse.adm;
+          }
         }
 
         if (!bid.renderer && mediaType === VIDEO && deepAccess(bid, 'mediaTypes.video.context') === 'outstream') {

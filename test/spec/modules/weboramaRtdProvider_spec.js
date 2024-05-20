@@ -48,6 +48,120 @@ describe('weboramaRtdProvider', function() {
       };
       expect(weboramaSubmodule.init(moduleConfig)).to.equal(true);
     });
+
+    it('instantiate with empty sfbxLiteData should return true', function() {
+      const moduleConfig = {
+        params: {
+          sfbxLiteDataConf: {},
+        }
+      };
+      expect(weboramaSubmodule.init(moduleConfig)).to.equal(true);
+    });
+
+    describe('webo user data should check gdpr consent', function() {
+      it('should initialize if gdpr does not applies', function() {
+        const moduleConfig = {
+          params: {
+            weboUserDataConf: {}
+          }
+        };
+        const userConsent = {
+          gdpr: {
+            gdprApplies: false,
+          },
+        }
+        expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(true);
+      });
+      it('should initialize if gdpr applies and consent is ok', function() {
+        const moduleConfig = {
+          params: {
+            weboUserDataConf: {}
+          }
+        };
+        const userConsent = {
+          gdpr: {
+            gdprApplies: true,
+            vendorData: {
+              purpose: {
+                consents: {
+                  1: true,
+                  3: true,
+                  4: true,
+                  5: true,
+                  6: true,
+                  9: true,
+                },
+              },
+              specialFeatureOptins: {
+                1: true,
+              },
+              vendor: {
+                consents: {
+                  284: true,
+                },
+              }
+            },
+          },
+        }
+        expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(true);
+      });
+      it('should NOT initialize if gdpr applies and consent is nok: miss consent vendor id', function() {
+        const moduleConfig = {
+          params: {
+            weboUserDataConf: {}
+          }
+        };
+        const userConsent = {
+          gdpr: {
+            gdprApplies: true,
+            vendorData: {
+              purpose: {
+                consents: {
+                  1: true,
+                  3: true,
+                  4: true,
+                },
+              },
+              specialFeatureOptins: {},
+              vendor: {
+                consents: {
+                  284: false,
+                },
+              }
+            },
+          },
+        }
+        expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(false);
+      });
+      it('should NOT initialize if gdpr applies and consent is nok: miss one purpose id', function() {
+        const moduleConfig = {
+          params: {
+            weboUserDataConf: {}
+          }
+        };
+        const userConsent = {
+          gdpr: {
+            gdprApplies: true,
+            vendorData: {
+              purpose: {
+                consents: {
+                  1: false,
+                  3: true,
+                  4: true,
+                },
+              },
+              specialFeatureOptins: {},
+              vendor: {
+                consents: {
+                  284: true,
+                },
+              }
+            },
+          },
+        }
+        expect(weboramaSubmodule.init(moduleConfig, userConsent)).to.equal(false);
+      });
+    });
   });
 
   describe('Handle Set Targeting and Bid Request', function() {

@@ -55,11 +55,6 @@ export const spec = {
 
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const bidRequest = validBidRequests[i];
-      if (
-        (bidRequest.mediaTypes?.native || bidRequest.mediaTypes?.video) &&
-        bidRequest.mediaTypes?.banner) {
-        continue
-      }
 
       let queryString = '';
 
@@ -87,11 +82,6 @@ export const spec = {
       }
 
       const sua = bidRequest.ortb2?.device?.sua
-      if (sua) {
-        queryString = tryAppendQueryString(queryString, 'sua', JSON.stringify(sua));
-      }
-
-      const sua = deepAccess(bidRequest, 'ortb2.device.sua');
       if (sua) {
         queryString = tryAppendQueryString(queryString, 'sua', JSON.stringify(sua));
       }
