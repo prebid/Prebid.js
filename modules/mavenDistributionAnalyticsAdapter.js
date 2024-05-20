@@ -162,7 +162,7 @@ export function summarizeAuctionInit(args, adapterConfig) {
     flattenedBidRequests.forEach(fbr => {
       if (fbr.adUnitCode === adUnit.code) {
         bidders.push(fbr.bidder)
-        let floor = fbr?.getFloor()?.floor ?? null;
+        let floor = fbr?.getFloor?.()?.floor ?? null;
         if (floor) {
           floor = Math.round((floor || 0) * 1000);
         }
