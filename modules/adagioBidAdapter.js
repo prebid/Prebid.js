@@ -64,7 +64,11 @@ export const ORTB_VIDEO_PARAMS = {
   'w': (value) => isInteger(value),
   'h': (value) => isInteger(value),
   'startdelay': (value) => isInteger(value),
-  'placement': (value) => isInteger(value),
+  'placement': (value) => {
+    logWarn(LOG_PREFIX, 'The OpenRTB video param `placement` is deprecated and should not be used anymore.');
+    return isInteger(value)
+  },
+  'plcmt': (value) => isInteger(value),
   'linearity': (value) => isInteger(value),
   'skip': (value) => [1, 0].includes(value),
   'skipmin': (value) => isInteger(value),
@@ -964,6 +968,7 @@ export const spec = {
 
     autoFillParams(bid);
 
+    // Note: `bid.params.placement` is not related to the video param `placement`.
     if (!(bid.params.organizationId && bid.params.site && bid.params.placement)) {
       logWarn(`${LOG_PREFIX} at least one required param is missing.`);
       // internal.enqueue(debugData());
@@ -1275,20 +1280,6 @@ export const spec = {
 
     return syncs;
   },
-
-  /**
-   * Handle custom logic in s2s context
-   *
-   * @param {*} params
-   * @param {boolean} isOrtb Is an s2s context
-   * @param {*} adUnit
-   * @param {*} bidRequests
-   * @returns {object} updated params
-   */
-  transformBidParams(params, isOrtb, adUnit, bidRequests) {
-    // We do not have a prebid server adapter. So let's return unchanged params.
-    return params;
-  }
 };
 
 initAdagio();

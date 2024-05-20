@@ -15,7 +15,7 @@ const ENDPOINT_URL = 'https://pbs.prebrid.tv/openrtb2/auction';
 const GVLID = 934;
 const TIME_TO_LIVE = 300;
 const VIDEO_PARAMS = [
-  'api', 'linearity', 'maxduration', 'mimes', 'minduration', 'placement',
+  'api', 'linearity', 'maxduration', 'mimes', 'minduration', 'plcmt',
   'playbackmethod', 'protocols', 'startdelay'
 ];
 

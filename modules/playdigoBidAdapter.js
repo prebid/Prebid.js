@@ -1,25 +1,11 @@
-import {
-  isFn,
-  deepAccess,
-  logMessage,
-  logError,
-  isPlainObject,
-  isNumber,
-  isArray,
-  isStr
-} from '../src/utils.js';
+import { logMessage, logError } from '../src/utils.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import { USERSYNC_DEFAULT_CONFIG } from '../src/userSync.js';
 
-const BIDDER_CODE = 'mgidX';
-const GVLID = 358;
-const AD_URL = 'https://#{REGION}#.mgid.com/pbjs';
-const PIXEL_SYNC_URL = 'https://cm.mgid.com/i.gif';
-const IFRAME_SYNC_URL = 'https://cm.mgid.com/i.html';
+const BIDDER_CODE = 'playdigo';
+const AD_URL = 'https://server.playdigo.com/pbjs';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId || !bid.ttl || !bid.currency) {
@@ -87,8 +73,8 @@ function getPlacementReqData(bid) {
 }
 
 function getBidFloor(bid) {
-  if (!isFn(bid.getFloor)) {
-    return deepAccess(bid, 'params.bidfloor', 0);
+  if (!bid.getFloor || typeof bid.getFloor !== 'function') {
+    return 0;
   }
 
   try {
@@ -106,7 +92,6 @@ function getBidFloor(bid) {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid = {}) => {
@@ -166,7 +151,7 @@ export const spec = {
       placements,
       coppa: config.getConfig('coppa') === true ? 1 : 0,
       ccpa: bidderRequest.uspConsent || undefined,
-      tmax: bidderRequest.timeout
+      tmax: config.getConfig('bidderTimeout')
     };
 
     if (bidderRequest.gdprConsent) {
@@ -175,24 +160,23 @@ export const spec = {
       };
     }
 
+    if (bidderRequest.gppConsent) {
+      request.gpp = bidderRequest.gppConsent.gppString;
+      request.gpp_sid = bidderRequest.gppConsent.applicableSections;
+    } else if (bidderRequest.ortb2?.regs?.gpp) {
+      request.gpp = bidderRequest.ortb2.regs.gpp;
+      request.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
+    }
+
     const len = validBidRequests.length;
     for (let i = 0; i < len; i++) {
       const bid = validBidRequests[i];
       placements.push(getPlacementReqData(bid));
     }
 
-    const region = validBidRequests[0].params?.region;
-
-    let url;
-    if (region === 'eu') {
-      url = AD_URL.replace('#{REGION}#', 'eu');
-    } else {
-      url = AD_URL.replace('#{REGION}#', 'us-east-x');
-    }
-
     return {
       method: 'POST',
-      url: url,
+      url: AD_URL,
       data: request
     };
   },
@@ -209,68 +193,6 @@ export const spec = {
       }
     }
     return response;
-  },
-
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
-    const spb = isPlainObject(config.getConfig('userSync')) &&
-    isNumber(config.getConfig('userSync').syncsPerBidder)
-      ? config.getConfig('userSync').syncsPerBidder : USERSYNC_DEFAULT_CONFIG.syncsPerBidder;
-
-    if (spb > 0 && isPlainObject(syncOptions) && (syncOptions.iframeEnabled || syncOptions.pixelEnabled)) {
-      let pixels = [];
-      if (serverResponses &&
-        isArray(serverResponses) &&
-        serverResponses.length > 0 &&
-        isPlainObject(serverResponses[0].body) &&
-        isPlainObject(serverResponses[0].body.ext) &&
-        isArray(serverResponses[0].body.ext.cm) &&
-        serverResponses[0].body.ext.cm.length > 0) {
-        pixels = serverResponses[0].body.ext.cm;
-      }
-
-      const syncs = [];
-      const query = [];
-      query.push('cbuster={cbuster}');
-      query.push('gdpr_consent=' + encodeURIComponent(isPlainObject(gdprConsent) && isStr(gdprConsent?.consentString) ? gdprConsent.consentString : ''));
-      if (isPlainObject(gdprConsent) && typeof gdprConsent?.gdprApplies === 'boolean' && gdprConsent.gdprApplies) {
-        query.push('gdpr=1');
-      } else {
-        query.push('gdpr=0');
-      }
-      if (isPlainObject(uspConsent) && uspConsent?.consentString) {
-        query.push(`us_privacy=${encodeURIComponent(uspConsent?.consentString)}`);
-      }
-      if (isPlainObject(gppConsent) && gppConsent?.gppString) {
-        query.push(`gppString=${encodeURIComponent(gppConsent?.gppString)}`);
-      }
-      if (config.getConfig('coppa')) {
-        query.push('coppa=1')
-      }
-      const q = query.join('&')
-      if (syncOptions.iframeEnabled) {
-        syncs.push({
-          type: 'iframe',
-          url: IFRAME_SYNC_URL + '?' + q.replace('{cbuster}', Math.round(new Date().getTime()))
-        });
-      } else if (syncOptions.pixelEnabled) {
-        if (pixels.length === 0) {
-          for (let i = 0; i < spb; i++) {
-            syncs.push({
-              type: 'image',
-              url: PIXEL_SYNC_URL + '?' + q.replace('{cbuster}', Math.round(new Date().getTime())) // randomly selects partner if sync required
-            });
-          }
-        } else {
-          for (let i = 0; i < spb && i < pixels.length; i++) {
-            syncs.push({
-              type: 'image',
-              url: pixels[i] + (pixels[i].indexOf('?') > 0 ? '&' : '?') + q.replace('{cbuster}', Math.round(new Date().getTime()))
-            });
-          }
-        }
-      }
-      return syncs;
-    }
   }
 };
 

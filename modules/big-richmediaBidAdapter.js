@@ -112,11 +112,6 @@ export const spec = {
     return baseAdapter.getUserSyncs(syncOptions, responses, gdprConsent);
   },
 
-  transformBidParams: function (params, isOpenRtb) {
-    if (!baseAdapter.transformBidParams) { return params; }
-    return baseAdapter.transformBidParams(params, isOpenRtb);
-  },
-
   /**
    * Add element selector to javascript tracker to improve native viewability
    * @param {Bid} bid
