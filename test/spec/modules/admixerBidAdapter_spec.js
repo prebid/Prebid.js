@@ -175,12 +175,6 @@ describe('AdmixerAdapter', function () {
       expect(request.url).to.equal('https://inv-nets.admixer.net/prebid.1.2.aspx');
       expect(request.method).to.equal('POST');
     });
-    it('build request for adsyield', function () {
-      const requestParams = requestParamsFor('adsyield');
-      const request = spec.buildRequests(requestParams.validRequest, requestParams.bidderRequest);
-      expect(request.url).to.equal('https://ads.adsyield.com/prebid.1.2.aspx');
-      expect(request.method).to.equal('POST');
-    });
     it('build request for futureads', function () {
       const requestParams = requestParamsFor('futureads');
       const request = spec.buildRequests(requestParams.validRequest, requestParams.bidderRequest);
