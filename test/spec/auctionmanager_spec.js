@@ -1471,20 +1471,18 @@ describe('auctionmanager.js', function () {
     });
 
     it('should reject bid for price higher than limit for the same currency', () => {
-      sinon.stub(auction, 'addBidRejected')
+      sinon.stub(auction, 'addBidRejected');
       setCurrencyConfig({ adServerCurrency: 'USD' })
       config.setConfig({
         maxBid: 1,
         maxBidCur: 'USD'
-      })
+      });
 
       auction.callBids();
       sinon.assert.calledWith(auction.addBidRejected, sinon.match({rejectionReason: 'Bid price exceeds maximum value'}));
       setCurrencyConfig({});
     })
-    
   });
-
 
   describe('addBidRequests', function () {
     let createAuctionStub;

@@ -979,9 +979,12 @@ function groupByPlacement(bidsByPlacement, bid) {
 }
 
 /**
- * isValidPrice is price validation function 
+ * isValidPrice is price validation function
  * which checks if price from bid response
  * is not higher than top limit set in config
+ * @type {Function}
+ * @param bid
+ * @returns {boolean}
  */
 function isValidPrice(bid) {
   const maxBidValue = config.getConfig('maxBid');
@@ -990,6 +993,6 @@ function isValidPrice(bid) {
   if (!maxBidValue) return true;
   if (maxBidCurrency && bid.currency && (bid.currency !== maxBidCurrency) && bid.getCpmInNewCurrency) {
     return Number(bid.getCpmInNewCurrency(maxBidCurrency)) <= maxBidValue;
-  }  
+  }
   return maxBidValue >= Number(bid.cpm);
 }
