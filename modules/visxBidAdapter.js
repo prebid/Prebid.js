@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import {deepAccess, logError, parseSizesInput, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
@@ -51,7 +50,7 @@ export const spec = {
     }
     return !!bid.params.uid && !isNaN(parseInt(bid.params.uid));
   },
-  buildRequests: function(validBidRequests, bidderRequest) {
+  buildRequests: async function(validBidRequests, bidderRequest) {
     const auids = [];
     const bidsMap = {};
     const bids = validBidRequests || [];
@@ -60,12 +59,18 @@ export const spec = {
       config.getConfig('currency.adServerCurrency') ||
       DEFAULT_CUR;
 
+    let request;
+
     let reqId;
     let payloadSchain;
     let payloadUserId;
     let payloadUserEids;
     let timeout;
     let payloadDevice;
+    let payloadUserAgentClientHints;
+    let payloadSite;
+    let payloadUser;
+    let payloadRegs;
 
     if (currencyWhiteList.indexOf(currency) === -1) {
       logError(LOG_ERROR_MESS.notAllowedCurrency + currency);
@@ -82,9 +87,8 @@ export const spec = {
         imp.push(impObj);
         bidsMap[bid.bidId] = bid;
       }
-      console.log(bid);
-      const { params: { uid }, schain, userId, userIdAsEids, ortb2 } = bid;
-      const { device } = ortb2;
+      const { params: { uid, paramsDevice }, schain, userId, userIdAsEids, ortb2 } = bid;
+      const { device, site, user, regs } = ortb2;
       if (!payloadSchain && schain) {
         payloadSchain = schain;
       }
@@ -97,7 +101,19 @@ export const spec = {
       }
 
       if (device) {
+        if (!device.ext?.cdep && paramsDevice) {
+          device.ext = {cdep: paramsDevice.ext.cdep}; // to test
+        }
         payloadDevice = device;
+      }
+      if (site) {
+        payloadSite = site;
+      }
+      if (user) {
+        payloadUser = user;
+      }
+      if (regs) {
+        payloadRegs = regs;
       }
       auids.push(uid);
     });
@@ -106,10 +122,7 @@ export const spec = {
 
     if (bidderRequest) {
       timeout = bidderRequest.timeout;
-      if (bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
-        // TODO: is 'page' the right value here?
-        payload.u = bidderRequest.refererInfo.page;
-      }
+
       if (bidderRequest.gdprConsent) {
         if (bidderRequest.gdprConsent.consentString) {
           payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
@@ -130,29 +143,51 @@ export const spec = {
     };
 
     const vads = _getUserId();
-    const user = {
-      ext: {
-        ...(payloadUserEids && { eids: payloadUserEids }),
-        ...(payload.gdpr_consent && { consent: payload.gdpr_consent }),
-        ...(vads && { vads })
-      }
-    };
-    const regs = ('gdpr_applies' in payload) && {
-      ext: {
-        gdpr: payload.gdpr_applies
-      }
+
+    if (payloadUser === undefined) {
+      payloadUser = {
+        user: {
+          ext: {
+            ...(payloadUserEids && { eids: payloadUserEids }),
+            ...(payload.gdpr_consent && { consent: payload.gdpr_consent }),
+            ...(vads && { vads })
+          }
+        }
+      };
+    }
+    if (payloadRegs === undefined) {
+      payloadRegs = ('gdpr_applies' in payload) && {
+        ext: {
+          gdpr: payload.gdpr_applies
+        }
+      };
+    }
+
+    let getUA = async function () {
+      const ua = await navigator.userAgentData
+        .getHighEntropyValues([
+          'architecture',
+          'model',
+          'platform',
+          'platformVersion',
+          'fullVersionList',
+        ])
+      return ua;
     };
 
-    const request = {
+    payloadUserAgentClientHints = await getUA();
+
+    request = {
       id: reqId,
       imp,
       tmax,
       cur: [currency],
       source,
-      site: { page: payload.u },
-      ...(Object.keys(user.ext).length && { user }),
-      ...(regs && { regs }),
+      ...(Object.keys(payloadUser.user.ext).length && { payloadUser }),
+      ...(payloadRegs && { payloadRegs }),
       ...(payloadDevice && { device: payloadDevice }),
+      ...(payloadSite && { site: payloadSite }),
+      ...(payloadUserAgentClientHints && { userAgentClientHints: payloadUserAgentClientHints }),
     };
 
     return {
