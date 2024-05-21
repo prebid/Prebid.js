@@ -329,7 +329,6 @@ export function sanitizeContent(content) {
     htmlContent = htmlContent.replace(/>\s+</g, '><');
     // Assign the cleaned content
     content.documentElement.innerHTML = htmlContent;
-
   }
   return content;
 }
