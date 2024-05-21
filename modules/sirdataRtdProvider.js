@@ -198,7 +198,7 @@ export function postContentForSemanticAnalysis(postContentToken, actualUrl) {
     // Clone the current document content to avoid altering the original page content
     content.documentElement.innerHTML = document.documentElement.innerHTML;
     // Sanitize the cloned content to remove unnecessary elements and PII
-    content = sanitizeContent(content);
+    content = completeSanitization(content);
     // Serialize the sanitized content to a string
     const payload = new XMLSerializer().serializeToString(content.documentElement);
 
