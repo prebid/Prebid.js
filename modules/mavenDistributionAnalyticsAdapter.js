@@ -151,7 +151,6 @@ function getCommonEventToSend(args, adapterConfig) {
  * @return {AuctionEndSummary}
  */
 export function summarizeAuctionInit(args, adapterConfig) {
-  const floorData = config.getConfig('floors')
   const flattenedBidRequests = args.bidderRequests.reduce((total, curr) => {
     return [...total, ...curr.bids]
   }, [])
@@ -163,19 +162,10 @@ export function summarizeAuctionInit(args, adapterConfig) {
     flattenedBidRequests.forEach(fbr => {
       if (fbr.adUnitCode === adUnit.code) {
         bidders.push(fbr.bidder)
-        // Initiate with the with bid floor value
-        let floor = fbr?.floorData?.floorMin
-        // If value not found and mediaType is banner
-        // Add the default the default banner value from global config
-        if (!floor && fbr?.mediaTypes?.banner) {
-          floor = floorData?.data?.values?.banner
+        let floor = fbr?.getFloor?.()?.floor ?? null;
+        if (floor) {
+          floor = Math.round((floor || 0) * 1000);
         }
-        // If value not found and mediaType is video
-        // Add the default the default video value from global config
-        if (!floor && fbr?.mediaTypes?.video) {
-          floor = floorData?.data?.values?.video
-        }
-        floor = Math.round((floor || 0) * 1000)
         floors.push(floor)
       }
     })
