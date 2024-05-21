@@ -198,7 +198,7 @@ export function postContentForSemanticAnalysis(postContentToken, actualUrl) {
     // Clone the current document content to avoid altering the original page content
     content.documentElement.innerHTML = document.documentElement.innerHTML;
     // Sanitize the cloned content to remove unnecessary elements and PII
-    content = completeSanitization(content);
+    content = sanitizeContent(content);
     // Serialize the sanitized content to a string
     const payload = new XMLSerializer().serializeToString(content.documentElement);
 
@@ -267,31 +267,6 @@ export function removePII(content) {
 }
 
 /**
- * Completely sanitizes the content by recursively removing unnecessary elements and PII until content is stable,
- * to avoid an HTML element injection vulnerability.
- * E.g. The string may not contain <!-- anymore, which may cause an HTML element injection vulnerability.
- * E.g. <!<!— comment —>> and <scrip<script>is removed</script>t>alert(123)</script> are removed.
- * @param {Object} content - The content to be sanitized.
- * @param {Number} occurrence - The occurrence number; we should stop if >20.
- * @returns {Object} - The sanitized content.
- */
-export function completeSanitization(content, occurrence = 0) {
-  if (occurrence > 20) return document.implementation.createHTMLDocument(''); // Stop if occurrence is greater than 20
-
-  // Clone the current document content to avoid altering the original page content
-  const originalHTML = content.documentElement.innerHTML;
-  const sanitizedDoc = sanitizeContent(content);
-
-  // If the content is stable, return the sanitized content
-  if (sanitizedDoc.documentElement.innerHTML === originalHTML) {
-    return sanitizedDoc;
-  }
-
-  // Else recursively sanitize the content if it is not stable
-  return completeSanitization(sanitizedDoc, occurrence + 1);
-}
-
-/**
  * Sanitizes the content by removing unnecessary elements and PII
  * @param {Object} content - The content to be sanitized
  * @returns {Object} - The sanitized content
@@ -343,8 +318,18 @@ export function sanitizeContent(content) {
 
     // Clean any potential PII
     content.documentElement.innerHTML = removePII(content.documentElement.innerHTML);
-    // Compress the content
-    content.documentElement.innerHTML = content.documentElement.innerHTML.replace(/\s+/g, ' ').replace(/>\s+</g, '><').replace(/<!--[\s\S]*?-->/g, '')
+
+    let htmlContent = content.documentElement.innerHTML;
+    // Remove HTML comments
+    // This regex removes HTML comments, including those that might not be properly closed
+    htmlContent = htmlContent.replace(/<!--[\s\S]*?(?:-->|$)/g, '');
+    // Remove multiple spaces
+    htmlContent = htmlContent.replace(/\s+/g, ' ');
+    // Remove spaces between tags
+    htmlContent = htmlContent.replace(/>\s+</g, '><');
+    // Assign the cleaned content
+    content.documentElement.innerHTML = htmlContent;
+
   }
   return content;
 }
@@ -636,7 +621,7 @@ export function addSegmentData(reqBids, data, adUnits, onDone) {
   // Global ortb2 SDA
   if (!isEmpty(data.global_taxonomy)) {
     for (let i in data.global_taxonomy) {
-      let globalData = {'segments': [], 'categories': [], 'categories_score': []};
+      let globalData;
       if (!isEmpty(data.global_taxonomy[i])) {
         globalData = getSegAndCatsArray(data.global_taxonomy[i], params.contextualMinRelevancyScore, '');
         if (!isEmpty(globalData)) {
