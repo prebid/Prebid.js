@@ -1,12 +1,14 @@
-import { deepAccess, getGptSlotInfoForAdUnitCode, parseSizesInput, getWindowLocation, buildUrl } from '../src/utils.js';
+import { deepAccess, parseSizesInput, getWindowLocation, buildUrl } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
-const pubxaiAnalyticsVersion = 'v1.1.0';
+const pubxaiAnalyticsVersion = 'v1.2.0';
 const defaultHost = 'api.pbxai.com';
 const auctionPath = '/analytics/auction';
 const winningBidPath = '/analytics/bidwon';
@@ -36,9 +38,9 @@ var pubxaiAnalyticsAdapter = Object.assign(adapter(
   }), {
   track({ eventType, args }) {
     if (typeof args !== 'undefined') {
-      if (eventType === CONSTANTS.EVENTS.BID_TIMEOUT) {
+      if (eventType === EVENTS.BID_TIMEOUT) {
         args.forEach(item => { mapBidResponse(item, 'timeout'); });
-      } else if (eventType === CONSTANTS.EVENTS.AUCTION_INIT) {
+      } else if (eventType === EVENTS.AUCTION_INIT) {
         events.auctionInit = args;
         events.floorDetail = {};
         events.bids = [];
@@ -47,15 +49,15 @@ var pubxaiAnalyticsAdapter = Object.assign(adapter(
           Object.assign(events.floorDetail, floorData);
         }
         auctionTimestamp = args.timestamp;
-      } else if (eventType === CONSTANTS.EVENTS.BID_RESPONSE) {
+      } else if (eventType === EVENTS.BID_RESPONSE) {
         mapBidResponse(args, 'response');
-      } else if (eventType === CONSTANTS.EVENTS.BID_WON) {
+      } else if (eventType === EVENTS.BID_WON) {
         send({
           winningBid: mapBidResponse(args, 'bidwon')
         }, 'bidwon');
       }
     }
-    if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
+    if (eventType === EVENTS.AUCTION_END) {
       send(events, 'auctionEnd');
     }
   }
@@ -154,7 +156,7 @@ function send(data, status) {
       search: location.search
     });
     if (typeof data !== 'undefined' && typeof data.auctionInit !== 'undefined') {
-      data.pageDetail.adUnitCount = data.auctionInit.adUnitCodes ? data.auctionInit.adUnitCodes.length : null;
+      data.pageDetail.adUnits = data.auctionInit.adUnitCodes;
       data.initOptions.auctionId = data.auctionInit.auctionId;
       delete data.auctionInit;
 
@@ -180,7 +182,7 @@ function send(data, status) {
       search: {
         auctionTimestamp: auctionTimestamp,
         pubxaiAnalyticsVersion: pubxaiAnalyticsVersion,
-        prebidVersion: $$PREBID_GLOBAL$$.version
+        prebidVersion: getGlobal().version
       }
     });
     if (status == 'bidwon') {

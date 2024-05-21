@@ -1,8 +1,8 @@
-
 import * as utils from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { VIDEO, BANNER } from '../src/mediaTypes.js';
-import { config } from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {config} from '../src/config.js';
+import {getBidIdParameter} from '../src/utils.js';
 
 const BIDDER_CODE = 'cpmstar';
 
@@ -49,13 +49,13 @@ export const spec = {
       var bidRequest = validBidRequests[i];
       var referer = bidderRequest.refererInfo.page ? bidderRequest.refererInfo.page : bidderRequest.refererInfo.domain;
       referer = encodeURIComponent(referer);
-      var e = utils.getBidIdParameter('endpoint', bidRequest.params);
+      var e = getBidIdParameter('endpoint', bidRequest.params);
       var ENDPOINT = e == 'dev' ? ENDPOINT_DEV : e == 'staging' ? ENDPOINT_STAGING : ENDPOINT_PRODUCTION;
       var mediaType = spec.getMediaType(bidRequest);
       var playerSize = spec.getPlayerSize(bidRequest);
       var videoArgs = '&fv=0' + (playerSize ? ('&w=' + playerSize[0] + '&h=' + playerSize[1]) : '');
       var url = ENDPOINT + '?media=' + mediaType + (mediaType == VIDEO ? videoArgs : '') +
-        '&json=c_b&mv=1&poolid=' + utils.getBidIdParameter('placementId', bidRequest.params) +
+        '&json=c_b&mv=1&poolid=' + getBidIdParameter('placementId', bidRequest.params) +
         '&reachedTop=' + encodeURIComponent(bidderRequest.refererInfo.reachedTop) +
         '&requestid=' + bidRequest.bidId +
         '&referer=' + encodeURIComponent(referer);

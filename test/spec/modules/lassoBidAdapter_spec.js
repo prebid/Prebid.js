@@ -79,10 +79,12 @@ describe('lassoBidAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    const validBidRequests = spec.buildRequests([bid], bidderRequest);
-    expect(validBidRequests).to.be.an('array').that.is.not.empty;
-
-    const bidRequest = validBidRequests[0];
+    let validBidRequests, bidRequest;
+    before(() => {
+      validBidRequests = spec.buildRequests([bid], bidderRequest);
+      expect(validBidRequests).to.be.an('array').that.is.not.empty;
+      bidRequest = validBidRequests[0];
+    })
 
     it('Returns valid bidRequest', function () {
       expect(bidRequest).to.exist;
@@ -124,6 +126,7 @@ describe('lassoBidAdapter', function () {
     it('should get the correct bid response', function () {
       let expectedResponse = {
         requestId: '123456789',
+        bidId: '123456789',
         cpm: 1,
         currency: 'USD',
         width: 728,

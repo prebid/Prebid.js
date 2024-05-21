@@ -1,10 +1,10 @@
 import chai from 'chai';
-import { getCacheUrl, store } from 'src/videoCache.js';
-import { config } from 'src/config.js';
-import { server } from 'test/mocks/xhr.js';
+import {getCacheUrl, store} from 'src/videoCache.js';
+import {config} from 'src/config.js';
+import {server} from 'test/mocks/xhr.js';
 import {auctionManager} from '../../src/auctionManager.js';
 import {AuctionIndex} from '../../src/auctionIndex.js';
-import { batchingCache } from '../../src/auction.js';
+import {batchingCache} from '../../src/auction.js';
 
 const should = chai.should();
 
@@ -72,6 +72,29 @@ describe('The video cache', function () {
       config.resetConfig();
     });
 
+    describe('cache.timeout', () => {
+      let getAjax, cb;
+      beforeEach(() => {
+        getAjax = sinon.stub().callsFake(() => sinon.stub());
+        cb = sinon.stub();
+      });
+
+      it('should be respected', () => {
+        config.setConfig({
+          cache: {
+            timeout: 1
+          }
+        });
+        store([{ vastUrl: 'my-mock-url.com' }], cb, getAjax);
+        sinon.assert.calledWith(getAjax, 1);
+      });
+
+      it('should use default when not specified', () => {
+        store([], cb, getAjax);
+        sinon.assert.calledWith(getAjax, undefined);
+      })
+    });
+
     it('should execute the callback with a successful result when store() is called', function () {
       const uuid = 'c488b101-af3e-4a99-b538-00423e5a3371';
       const callback = fakeServerCall(
@@ -104,7 +127,7 @@ describe('The video cache', function () {
       <Wrapper>
         <AdSystem>prebid.org wrapper</AdSystem>
         <VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI>
-        <Impression></Impression>
+        
         <Creatives></Creatives>
       </Wrapper>
     </Ad>
@@ -124,6 +147,20 @@ describe('The video cache', function () {
     </Ad>
   </VAST>`;
       assertRequestMade({ vastUrl: 'my-mock-url.com', vastImpUrl: 'imptracker.com', ttl: 25 }, expectedValue)
+    });
+
+    it('should include multiple vastImpUrl when it\'s an array', function() {
+      const expectedValue = `<VAST version="3.0">
+    <Ad>
+      <Wrapper>
+        <AdSystem>prebid.org wrapper</AdSystem>
+        <VASTAdTagURI><![CDATA[my-mock-url.com]]></VASTAdTagURI>
+        <Impression><![CDATA[https://vasttracking.mydomain.com/vast?cpm=1.2]]></Impression><Impression><![CDATA[imptracker.com]]></Impression>
+        <Creatives></Creatives>
+      </Wrapper>
+    </Ad>
+  </VAST>`;
+      assertRequestMade({ vastUrl: 'my-mock-url.com', vastImpUrl: ['https://vasttracking.mydomain.com/vast?cpm=1.2', 'imptracker.com'], ttl: 25, cpm: 1.2 }, expectedValue)
     });
 
     it('should make the expected request when store() is called on an ad with vastXml', function () {
@@ -151,7 +188,7 @@ describe('The video cache', function () {
       const request = server.requests[0];
       request.method.should.equal('POST');
       request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
-      request.requestHeaders['Content-Type'].should.equal('text/plain;charset=utf-8');
+      request.requestHeaders['Content-Type'].should.equal('text/plain');
       let payload = {
         puts: [{
           type: 'xml',
@@ -201,7 +238,7 @@ describe('The video cache', function () {
       const request = server.requests[0];
       request.method.should.equal('POST');
       request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
-      request.requestHeaders['Content-Type'].should.equal('text/plain;charset=utf-8');
+      request.requestHeaders['Content-Type'].should.equal('text/plain');
       let payload = {
         puts: [{
           type: 'xml',
@@ -272,7 +309,7 @@ describe('The video cache', function () {
       const request = server.requests[0];
       request.method.should.equal('POST');
       request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
-      request.requestHeaders['Content-Type'].should.equal('text/plain;charset=utf-8');
+      request.requestHeaders['Content-Type'].should.equal('text/plain');
       let payload = {
         puts: [{
           type: 'xml',
@@ -333,7 +370,7 @@ describe('The video cache', function () {
       const request = server.requests[0];
       request.method.should.equal('POST');
       request.url.should.equal('https://prebid.adnxs.com/pbc/v1/cache');
-      request.requestHeaders['Content-Type'].should.equal('text/plain;charset=utf-8');
+      request.requestHeaders['Content-Type'].should.equal('text/plain');
 
       JSON.parse(request.requestBody).should.deep.equal({
         puts: [{

@@ -19,7 +19,7 @@ import { PLAYBACK_MODE } from 'libraries/video/constants/constants.js';
 function getPlayerMock() {
   return makePlayerFactoryMock({
     getState: function () {},
-    setup: function () {},
+    setup: function () { return this; },
     getViewable: function () {},
     getPercentViewable: function () {},
     getMute: function () {},
@@ -30,8 +30,8 @@ function getPlayerMock() {
     getFullscreen: function () {},
     getPlaylistItem: function () {},
     playAd: function () {},
-    on: function () {},
-    off: function () {},
+    on: function () { return this; },
+    off: function () { return this; },
     remove: function () {},
     getAudioTracks: function () {},
     getCurrentAudioTrack: function () {},
@@ -142,7 +142,7 @@ describe('JWPlayerProvider', function () {
     it('should instantiate the player when uninstantiated', function () {
       const player = getPlayerMock();
       config.playerConfig = {};
-      const setupSpy = player.setup = sinon.spy();
+      const setupSpy = player.setup = sinon.spy(player.setup);
       const provider = JWPlayerProvider(config, makePlayerFactoryMock(player), adState, timeState, callbackStorage, utilsMock, sharedUtils);
       provider.init();
       expect(setupSpy.calledOnce).to.be.true;
@@ -156,6 +156,19 @@ describe('JWPlayerProvider', function () {
       provider.onEvent(SETUP_COMPLETE, setupComplete, {});
       provider.init();
       expect(setupComplete.calledOnce).to.be.true;
+    });
+
+    it('should support multiple setup complete event handlers', function () {
+      const player = getPlayerMock();
+      player.getState = () => 'idle';
+      const provider = JWPlayerProvider(config, makePlayerFactoryMock(player), adState, timeState, callbackStorage, utilsMock, sharedUtils);
+      const setupComplete = sinon.spy();
+      const setupComplete2 = sinon.spy();
+      provider.onEvent(SETUP_COMPLETE, setupComplete, {});
+      provider.onEvent(SETUP_COMPLETE, setupComplete2, {});
+      provider.init();
+      expect(setupComplete.calledOnce).to.be.true;
+      expect(setupComplete2.calledOnce).to.be.true;
     });
 
     it('should not reinstantiate player', function () {

@@ -1,6 +1,7 @@
+import 'src/prebid.js';
 import { expect } from 'chai';
 import { PbVideo } from 'modules/videoModule';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 
 let ortbVideoMock;
 let ortbContentMock;
@@ -26,7 +27,8 @@ function resetTestVars() {
     onEvents: sinon.spy(),
     getOrtbVideo: () => ortbVideoMock,
     getOrtbContent: () => ortbContentMock,
-    setAdTagUrl: sinon.spy()
+    setAdTagUrl: sinon.spy(),
+    hasProviderFor: sinon.spy(),
   };
   getConfigMock = () => {};
   requestBidsMock = {
@@ -174,6 +176,37 @@ describe('Prebid Video', function () {
       expect(nextFn.calledOnce).to.be.true;
       expect(nextFn.getCall(0).args[0].ortb2).to.be.deep.equal({ site: { content: { test: 'contentTestValue' } } });
     });
+
+    it('allows publishers to override video param', function () {
+      const getOrtbVideoSpy = videoCoreMock.getOrtbVideo = sinon.spy(() => ({
+        test: 'videoTestValue',
+        test2: 'videoModuleValue'
+      }));
+
+      let beforeBidRequestCallback;
+      const requestBids = {
+        before: callback_ => beforeBidRequestCallback = callback_
+      };
+
+      pbVideoFactory(null, null, Object.assign({}, pbGlobalMock, { requestBids }));
+      expect(beforeBidRequestCallback).to.not.be.undefined;
+      const nextFn = sinon.spy();
+      const adUnits = [{
+        code: 'ad1',
+        mediaTypes: {
+          video: {
+            test2: 'publisherValue'
+          }
+        },
+        video: { divId: 'divId' }
+      }];
+      beforeBidRequestCallback(nextFn, { adUnits });
+      expect(getOrtbVideoSpy.calledOnce).to.be.true;
+      const adUnit = adUnits[0];
+      expect(adUnit.mediaTypes.video).to.have.property('test', 'videoTestValue');
+      expect(adUnit.mediaTypes.video).to.have.property('test2', 'publisherValue');
+      expect(nextFn.calledOnce).to.be.true;
+    });
   });
 
   describe('Ad tag injection', function () {
@@ -192,7 +225,7 @@ describe('Prebid Video', function () {
     const pbEvents = {
       emit: () => {},
       on: (event, callback) => {
-        if (event === CONSTANTS.EVENTS.AUCTION_END) {
+        if (event === EVENTS.AUCTION_END) {
           auctionEndCallback = callback
         }
       },
@@ -304,7 +337,7 @@ describe('Prebid Video', function () {
 
     const pbEvents = {
       on: (event, callback) => {
-        if (event === CONSTANTS.EVENTS.BID_ADJUSTMENT) {
+        if (event === EVENTS.BID_ADJUSTMENT) {
           bidAdjustmentCb = callback;
         } else if (event === 'videoAdImpression') {
           adImpressionCb = callback;

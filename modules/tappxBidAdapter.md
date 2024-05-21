@@ -80,7 +80,7 @@ Ads sizes available: [300,250], [320,50], [320,480], [480,320], [728,90], [768,1
                         protocols: [ 2, 3 ],        // Optional
                         battr: [ 13, 14 ],          // Optional
                         linearity: 1,               // Optional
-                        placement: 2,               // Optional
+                        plcmt: 2,                   // Optional
                         minbitrate: 10,             // Optional
                         maxbitrate: 10              // Optional
                     },
@@ -91,4 +91,21 @@ Ads sizes available: [300,250], [320,50], [320,480], [480,320], [728,90], [768,1
             }]
         }
     ];
+```
+### Configuration
+
+Use `setConfig` to configure this submodule ortb2.device.geo, this will allow geolocation
+`Geo` object to bring First Party Information.
+
+```javascript
+var TIMEOUT = 1000;
+pbjs.setConfig({
+    ortb2:{
+        device:{
+            geo:{
+                country:'US'
+            }
+        }
+    }
+});
 ```

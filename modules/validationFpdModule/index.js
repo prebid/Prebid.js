@@ -5,9 +5,10 @@
 import {deepAccess, isEmpty, isNumber, logWarn} from '../../src/utils.js';
 import {ORTB_MAP} from './config.js';
 import {submodule} from '../../src/hook.js';
-import {getStorageManager} from '../../src/storageManager.js';
+import {getCoreStorageManager} from '../../src/storageManager.js';
 
-const STORAGE = getStorageManager();
+// TODO: do FPD modules need their own namespace?
+const STORAGE = getCoreStorageManager('FPDValidation');
 let optout;
 
 /**

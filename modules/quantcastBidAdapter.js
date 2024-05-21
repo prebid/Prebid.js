@@ -6,6 +6,11 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {find} from '../src/polyfill.js';
 import {parseDomain} from '../src/refererDetection.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'quantcast';
 const DEFAULT_BID_FLOOR = 0.0000000001;
 
@@ -22,7 +27,7 @@ export const QUANTCAST_PROTOCOL = 'https';
 export const QUANTCAST_PORT = '8443';
 export const QUANTCAST_FPA = '__qca';
 
-export const storage = getStorageManager({gvlid: QUANTCAST_VENDOR_ID, bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 function makeVideoImp(bid) {
   const videoInMediaType = deepAccess(bid, 'mediaTypes.video') || {};

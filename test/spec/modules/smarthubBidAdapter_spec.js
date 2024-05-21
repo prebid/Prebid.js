@@ -91,7 +91,8 @@ describe('SmartHubBidAdapter', function () {
     gdprConsent: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
     refererInfo: {
       page: 'https://test.com'
-    }
+    },
+    timeout: 500
   };
 
   describe('isBidRequestValid', function () {

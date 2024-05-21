@@ -7,6 +7,7 @@ import {getRefererInfo} from 'src/refererDetection.js';
 
 function createBidderRequest(auctionId, timeout, pageUrl) {
   return {
+    bidderRequestId: 'mock-uuid',
     auctionId: auctionId || 'c1243d83-0bed-4fdb-8c76-42b456be17d0',
     timeout: timeout || 2000,
     refererInfo: {
@@ -37,6 +38,16 @@ function createValidBidRequest(params, bidId, sizes) {
 }
 
 describe('KoblerAdapter', function () {
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.sandbox.create();
+  });
+
+  afterEach(() => {
+    sandbox.restore()
+  });
+
   describe('inherited functions', function () {
     it('exists and is a function', function () {
       const adapter = newBidder(spec);
@@ -207,7 +218,7 @@ describe('KoblerAdapter', function () {
       const openRtbRequest = JSON.parse(result.data);
 
       expect(openRtbRequest.tmax).to.be.equal(timeout);
-      expect(openRtbRequest.id).to.be.equal(auctionId);
+      expect(openRtbRequest.id).to.exist;
       expect(openRtbRequest.site.page).to.be.equal(testUrl);
     });
 
@@ -366,26 +377,6 @@ describe('KoblerAdapter', function () {
       expect(openRtbRequest.imp[1].pmp.deals[1].id).to.be.equal(dealIds2[1]);
     });
 
-    it('should read timeout from config', function () {
-      const timeout = 4000;
-      const validBidRequests = [createValidBidRequest()];
-      // No timeout field
-      const bidderRequest = {
-        auctionId: 'c1243d83-0bed-4fdb-8c76-42b456be17d0',
-        refererInfo: {
-          page: 'example.com'
-        }
-      };
-      config.setConfig({
-        bidderTimeout: timeout
-      });
-
-      const result = spec.buildRequests(validBidRequests, bidderRequest);
-      const openRtbRequest = JSON.parse(result.data);
-
-      expect(openRtbRequest.tmax).to.be.equal(timeout);
-    });
-
     it('should read floor price using floors module', function () {
       const floorPriceFor580x400 = 6.5148;
       const floorPriceForAnySize = 4.2343;
@@ -455,7 +446,7 @@ describe('KoblerAdapter', function () {
       const openRtbRequest = JSON.parse(result.data);
 
       const expectedOpenRtbRequest = {
-        id: '9ff580cf-e10e-4b66-add7-40ac0c804e21',
+        id: 'mock-uuid',
         at: 1,
         tmax: 4500,
         cur: ['USD'],

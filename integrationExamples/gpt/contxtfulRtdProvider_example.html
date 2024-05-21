@@ -1,0 +1,91 @@
+<html>
+
+<head>
+  <script src="http://localhost:9999/build/dev/prebid.js" async></script>
+  <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
+  <script async>
+    const FAILSAFE_TIMEOUT = 8000;
+    const PREBID_TIMEOUT = 5000;
+
+    const bidders = [
+      {
+        bidder: 'appnexus',
+        params: {
+          placementId: 13144370
+        }
+      }
+    ];
+
+    var adUnits = [
+      {
+        code: 'div-gpt-ad-1460505748561-0',
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250], [300, 600]],
+          }
+        },
+        bids: bidders,
+      }
+    ];
+
+
+    var pbjs = pbjs || {};
+    pbjs.que = pbjs.que || [];
+    var googletag = googletag || {};
+    googletag.cmd = googletag.cmd || [];
+    googletag.cmd.push(function () {
+      googletag.pubads().disableInitialLoad();
+      googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
+      googletag.pubads().enableSingleRequest();
+      googletag.enableServices();
+    });
+
+    pbjs.que.push(function () {
+      pbjs.setConfig({
+        debug: true,
+        realTimeData: {
+          auctionDelay: 100,
+          dataProviders: [
+            {
+              name: "contxtful",
+              waitForIt: true,
+              params: {
+                version: "Contact contact@contxtful.com for the API version",
+                customer: "Contact contact@contxtful.com for the customer ID"
+              }
+            }
+          ]
+        }
+      });
+      pbjs.addAdUnits(adUnits);
+      pbjs.requestBids({
+        bidsBackHandler: sendAdserverRequest,
+        timeout: PREBID_TIMEOUT
+      });
+    });
+
+    function sendAdserverRequest() {
+      if (pbjs.adserverRequestSent) return;
+      pbjs.adserverRequestSent = true;
+      googletag.cmd.push(function () {
+        pbjs.que.push(function () {
+          pbjs.setTargetingForGPTAsync();
+          googletag.pubads().refresh();
+        });
+      });
+    }
+
+    setTimeout(function () {
+      sendAdserverRequest();
+    }, FAILSAFE_TIMEOUT);
+
+  </script>
+</head>
+
+<body>
+  <h2>Contxtful RTD Provider</h2>
+  <div id='div-gpt-ad-1460505748561-0'></div>
+  </div>
+</body>
+
+</html>

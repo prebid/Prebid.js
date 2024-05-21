@@ -3,9 +3,9 @@ import {expect} from 'chai';
 import {server} from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
 import {expectEvents} from '../../helpers/analytics.js';
+import { EVENTS } from 'src/constants.js';
 
 let events = require('src/events');
-let constants = require('src/constants.json');
 
 describe('Prebid Manager Analytics Adapter', function () {
   let bidWonEvent = {
@@ -66,11 +66,11 @@ describe('Prebid Manager Analytics Adapter', function () {
         }
       });
 
-      events.emit(constants.EVENTS.BID_WON, bidWonEvent);
+      events.emit(EVENTS.BID_WON, bidWonEvent);
       prebidmanagerAnalytics.flush();
 
       expect(server.requests.length).to.equal(1);
-      expect(server.requests[0].url).to.equal('https://endpoint.prebidmanager.com/endpoint');
+      expect(server.requests[0].url).to.equal('https://endpt.prebidmanager.com/endpoint');
       expect(server.requests[0].requestBody.substring(0, 2)).to.equal('1:');
 
       const pmEvents = JSON.parse(server.requests[0].requestBody.substring(2));

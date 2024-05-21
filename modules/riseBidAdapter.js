@@ -1,4 +1,16 @@
-import { logWarn, logInfo, isArray, isFn, deepAccess, isEmpty, contains, timestamp, getBidIdParameter, triggerPixel, isInteger } from '../src/utils.js';
+import {
+  logWarn,
+  logInfo,
+  isArray,
+  isFn,
+  deepAccess,
+  isEmpty,
+  contains,
+  timestamp,
+  triggerPixel,
+  isInteger,
+  getBidIdParameter
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -7,7 +19,8 @@ const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'rise';
 const ADAPTER_VERSION = '6.0.0';
 const TTL = 360;
-const CURRENCY = 'USD';
+const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_GVLID = 1043;
 const DEFAULT_SELLER_ENDPOINT = 'https://hb.yellowblue.io/';
 const MODES = {
   PRODUCTION: 'hb-multi',
@@ -20,7 +33,11 @@ const SUPPORTED_SYNC_METHODS = {
 
 export const spec = {
   code: BIDDER_CODE,
-  gvlid: 1043,
+  aliases: [
+    { code: 'risexchange', gvlid: DEFAULT_GVLID },
+    { code: 'openwebxchange', gvlid: 280 }
+  ],
+  gvlid: DEFAULT_GVLID,
   version: ADAPTER_VERSION,
   supportedMediaTypes: SUPPORTED_AD_TYPES,
   isBidRequestValid: function (bidRequest) {
@@ -61,7 +78,7 @@ export const spec = {
         const bidResponse = {
           requestId: adUnit.requestId,
           cpm: adUnit.cpm,
-          currency: adUnit.currency || CURRENCY,
+          currency: adUnit.currency || DEFAULT_CURRENCY,
           width: adUnit.width,
           height: adUnit.height,
           ttl: adUnit.ttl || TTL,
@@ -128,6 +145,7 @@ registerBidder(spec);
 /**
  * Get floor price
  * @param bid {bid}
+ * @param mediaType {string}
  * @returns {Number}
  */
 function getFloor(bid, mediaType) {
@@ -135,11 +153,11 @@ function getFloor(bid, mediaType) {
     return 0;
   }
   let floorResult = bid.getFloor({
-    currency: CURRENCY,
+    currency: DEFAULT_CURRENCY,
     mediaType: mediaType,
     size: '*'
   });
-  return floorResult.currency === CURRENCY && floorResult.floor ? floorResult.floor : 0;
+  return floorResult.currency === DEFAULT_CURRENCY && floorResult.floor ? floorResult.floor : 0;
 }
 
 /**
@@ -277,7 +295,6 @@ function generateBidParameters(bid, bidderRequest) {
   const {params} = bid;
   const mediaType = isBanner(bid) ? BANNER : VIDEO;
   const sizesArray = getSizesArray(bid, mediaType);
-
   // fix floor price in case of NAN
   if (isNaN(params.floorPrice)) {
     params.floorPrice = 0;
@@ -291,7 +308,8 @@ function generateBidParameters(bid, bidderRequest) {
     bidId: getBidIdParameter('bidId', bid),
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
     loop: getBidIdParameter('bidderRequestsCount', bid),
-    transactionId: getBidIdParameter('transactionId', bid),
+    transactionId: bid.ortb2Imp?.ext?.tid,
+    coppa: 0,
   };
 
   const pos = deepAccess(bid, `mediaTypes.${mediaType}.pos`);
@@ -317,6 +335,16 @@ function generateBidParameters(bid, bidderRequest) {
   const api = deepAccess(bid, `mediaTypes.${mediaType}.api`);
   if (api) {
     bidObject.api = api;
+  }
+
+  const sua = deepAccess(bid, `ortb2.device.sua`);
+  if (sua) {
+    bidObject.sua = sua;
+  }
+
+  const coppa = deepAccess(bid, `ortb2.regs.coppa`)
+  if (coppa) {
+    bidObject.coppa = 1;
   }
 
   if (mediaType === VIDEO) {
@@ -364,6 +392,11 @@ function generateBidParameters(bid, bidderRequest) {
     if (protocols) {
       bidObject.protocols = protocols;
     }
+
+    const plcmt = deepAccess(bid, `mediaTypes.video.plcmt`);
+    if (plcmt) {
+      bidObject.plcmt = plcmt;
+    }
   }
 
   return bidObject;
@@ -384,7 +417,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
   const {syncEnabled, filterSettings} = config.getConfig('userSync') || {};
   const {bidderCode} = bidderRequest;
   const generalBidParams = generalObject.params;
-  const timeout = config.getConfig('bidderTimeout');
+  const timeout = bidderRequest.timeout;
 
   // these params are snake_case instead of camelCase to allow backwards compatability on the server.
   // in the future, these will be converted to camelCase to match our convention.
@@ -401,7 +434,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
     device_type: getDeviceType(navigator.userAgent),
     ua: navigator.userAgent,
     is_wrapper: !!generalBidParams.isWrapper,
-    session_id: generalBidParams.sessionId || getBidIdParameter('auctionId', generalObject),
+    session_id: generalBidParams.sessionId || getBidIdParameter('bidderRequestId', generalObject),
     tmax: timeout
   };
 
@@ -432,6 +465,14 @@ function generateGeneralParams(generalObject, bidderRequest) {
   if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
     generalParams.gdpr = bidderRequest.gdprConsent.gdprApplies;
     generalParams.gdpr_consent = bidderRequest.gdprConsent.consentString;
+  }
+
+  if (bidderRequest && bidderRequest.gppConsent) {
+    generalParams.gpp = bidderRequest.gppConsent.gppString;
+    generalParams.gpp_sid = bidderRequest.gppConsent.applicableSections;
+  } else if (bidderRequest.ortb2?.regs?.gpp) {
+    generalParams.gpp = bidderRequest.ortb2.regs.gpp;
+    generalParams.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
   }
 
   if (generalBidParams.ifa) {

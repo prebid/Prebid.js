@@ -1,8 +1,20 @@
-import {isArray, logMessage, deepAccess, logWarn, parseSizesInput, deepSetValue, generateUUID, isEmpty, logError, _each, isFn} from '../src/utils.js';
+import {
+  _each,
+  deepAccess,
+  deepSetValue,
+  generateUUID,
+  isArray,
+  isEmpty,
+  isFn,
+  logError,
+  logMessage,
+  logWarn,
+  parseSizesInput
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER} from '../src/mediaTypes.js';
-import { ajax } from '../src/ajax.js';
+import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'luponmedia';
 const ENDPOINT_URL = 'https://rtb.adxpremium.services/openrtb2/auction';
@@ -287,12 +299,12 @@ function newOrtbBidRequest(bidRequest, bidderRequest, currentImps) {
   }
 
   const data = {
-    id: bidRequest.transactionId,
+    id: bidderRequest.bidderRequestId,
     test: config.getConfig('debug') ? 1 : 0,
     source: {
-      tid: bidRequest.transactionId
+      tid: bidderRequest.ortb2?.source?.tid,
     },
-    tmax: config.getConfig('timeout') || 1500,
+    tmax: bidderRequest.timeout,
     imp: currentImps.concat([{
       id: bidRequest.bidId,
       secure: 1,
