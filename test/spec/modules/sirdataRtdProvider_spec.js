@@ -1,5 +1,6 @@
 import {
   addSegmentData,
+  completeSanitization,
   getSegmentsAndCategories,
   getUidFromStorage,
   loadCustomFunction,
@@ -8,7 +9,6 @@ import {
   onDocumentReady,
   postContentForSemanticAnalysis,
   removePII,
-  sanitizeContent,
   setOrtb2,
   setUidInStorage,
   sirdataSubmodule
@@ -52,7 +52,7 @@ describe('sirdataRtdProvider', function () {
       div.appendChild(div2);
       doc.body.appendChild(div);
       const cleanedDom = removePII(doc.documentElement.innerHTML);
-      const sanitizedDom = sanitizeContent(doc);
+      const sanitizedDom = completeSanitization(doc);
       expect(cleanedDom).to.equal('<head><title></title></head><body><div class="test" test="test">My email is , My bank account number is , my SSN is , and my credit card number is .Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.<div><div>hello</div></div></div></body>');
       expect(sanitizedDom.documentElement.innerHTML).to.equal('<head></head><body><div>My email is , My bank account number is , my SSN is , and my credit card number is .Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.<div><div>hello</div></div></div></body>');
     });
