@@ -10,7 +10,7 @@ import { config } from '../../../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../../../src/mediaTypes.js';
 import {syncAddFPDToBidderRequest} from '../../helpers/fpd';
 import 'modules/userId/index.js';
-import 'modules/consentManagement.js';
+import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/consentManagementGpp.js';
 import 'modules/schain.js';
