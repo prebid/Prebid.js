@@ -50,7 +50,7 @@ export const spec = {
     }
     return !!bid.params.uid && !isNaN(parseInt(bid.params.uid));
   },
-  buildRequests: async function(validBidRequests, bidderRequest) {
+  buildRequests: function(validBidRequests, bidderRequest) {
     const auids = [];
     const bidsMap = {};
     const bids = validBidRequests || [];
@@ -67,7 +67,6 @@ export const spec = {
     let payloadUserEids;
     let timeout;
     let payloadDevice;
-    let payloadUserAgentClientHints;
     let payloadSite;
     let payloadUser;
     let payloadRegs;
@@ -163,20 +162,6 @@ export const spec = {
       };
     }
 
-    let getUA = async function () {
-      const ua = await navigator.userAgentData
-        .getHighEntropyValues([
-          'architecture',
-          'model',
-          'platform',
-          'platformVersion',
-          'fullVersionList',
-        ])
-      return ua;
-    };
-
-    payloadUserAgentClientHints = await getUA();
-
     request = {
       id: reqId,
       imp,
@@ -187,7 +172,6 @@ export const spec = {
       ...(payloadRegs && { payloadRegs }),
       ...(payloadDevice && { device: payloadDevice }),
       ...(payloadSite && { site: payloadSite }),
-      ...(payloadUserAgentClientHints && { userAgentClientHints: payloadUserAgentClientHints }),
     };
 
     return {
