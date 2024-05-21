@@ -37,7 +37,6 @@ const DEFAULT_BID_CACHE = false;
 const DEFAULT_DEVICE_ACCESS = true;
 const DEFAULT_MAX_NESTED_IFRAMES = 10;
 const DEFAULT_MAXBID_VALUE = 5000
-const DEFAULT_MAXBID_CURRENCY = 'USD'
 
 const DEFAULT_TIMEOUTBUFFER = 400;
 
@@ -164,8 +163,7 @@ export function newConfig() {
       maxNestedIframes: DEFAULT_MAX_NESTED_IFRAMES,
 
       // default max bid
-      maxBid: DEFAULT_MAXBID_VALUE,
-      maxBidCur: DEFAULT_MAXBID_CURRENCY
+      maxBid: DEFAULT_MAXBID_VALUE
     };
 
     Object.defineProperties(newConfig,

@@ -26,6 +26,7 @@ import { IMAGE as ortbNativeRequest } from 'src/native.js';
 import {PrebidServer} from '../../modules/prebidServerBidAdapter/index.js';
 import '../../modules/currency.js'
 import { setConfig as setCurrencyConfig } from '../../modules/currency.js';
+import { REJECTION_REASON } from '../../src/constants.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -1472,15 +1473,12 @@ describe('auctionmanager.js', function () {
 
     it('should reject bid for price higher than limit for the same currency', () => {
       sinon.stub(auction, 'addBidRejected');
-      setCurrencyConfig({ adServerCurrency: 'USD' })
       config.setConfig({
-        maxBid: 1,
-        maxBidCur: 'USD'
+        maxBid: 1
       });
 
       auction.callBids();
-      sinon.assert.calledWith(auction.addBidRejected, sinon.match({rejectionReason: 'Bid price exceeds maximum value'}));
-      setCurrencyConfig({});
+      sinon.assert.calledWith(auction.addBidRejected, sinon.match({rejectionReason: REJECTION_REASON.PRICE_TOO_HIGH}));
     })
   });
 
