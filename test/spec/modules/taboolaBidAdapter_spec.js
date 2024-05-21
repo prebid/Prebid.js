@@ -375,6 +375,23 @@ describe('Taboola Adapter', function () {
         expect(res.data.user.id).to.deep.equal(bidderRequest.ortb2.user.id)
       });
 
+      it('should pass user entities', function () {
+        const bidderRequest = {
+          ...commonBidderRequest,
+          ortb2: {
+            user: {
+              id: 'userid',
+              buyeruid: 'buyeruid',
+              yob: 1990
+            }
+          }
+        }
+        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        expect(res.data.user.id).to.deep.equal(bidderRequest.ortb2.user.id)
+        expect(res.data.user.buyeruid).to.deep.equal(bidderRequest.ortb2.user.buyeruid)
+        expect(res.data.user.yob).to.deep.equal(bidderRequest.ortb2.user.yob)
+      });
+
       it('should pass pageType if exists in ortb2', function () {
         const bidderRequest = {
           ...commonBidderRequest,
@@ -504,6 +521,28 @@ describe('Taboola Adapter', function () {
           ...commonBidderRequest
         };
         const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        expect(res.data.user.buyeruid).to.equal('12121212');
+      });
+
+      it('should get buyeruid from cookie as priority and external user id from ortb2 object', function () {
+        getDataFromLocalStorage.returns(51525152);
+        hasLocalStorage.returns(false);
+        localStorageIsEnabled.returns(false);
+        cookiesAreEnabled.returns(true);
+        getCookie.returns('taboola%20global%3Auser-id=12121212');
+
+        const bidderRequest = {
+          ...commonBidderRequest,
+          ortb2: {
+            user: {
+              id: 'userid',
+              buyeruid: 'buyeruid',
+              yob: 1990
+            }
+          }
+        };
+        const res = spec.buildRequests([defaultBidRequest], bidderRequest);
+        expect(res.data.user.id).to.deep.equal('userid')
         expect(res.data.user.buyeruid).to.equal('12121212');
       });
 
