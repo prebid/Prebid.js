@@ -122,9 +122,6 @@ describe('Adagio bid adapter', () => {
     GlobalExchange.clearFeatures();
     GlobalExchange.clearExchangeData();
 
-    adagioMock = sinon.mock(adagio);
-    utilsMock = sinon.mock(utils);
-
     $$PREBID_GLOBAL$$.bidderSettings = {
       adagio: {
         storageAllowed: true
@@ -132,14 +129,13 @@ describe('Adagio bid adapter', () => {
     };
 
     sandbox = sinon.createSandbox();
+    adagioMock = sandbox.mock(adagio);
+    utilsMock = sandbox.mock(utils);
   });
 
   afterEach(() => {
     window.ADAGIO = undefined;
     $$PREBID_GLOBAL$$.bidderSettings = {};
-
-    adagioMock.restore();
-    utilsMock.restore();
 
     sandbox.restore();
   });
@@ -267,6 +263,7 @@ describe('Adagio bid adapter', () => {
       'schain',
       'prebidVersion',
       'featuresVersion',
+      'hasRtd',
       'data',
       'usIfr',
       'adgjs',
@@ -1625,7 +1622,7 @@ describe('Adagio bid adapter', () => {
 
   describe('Adagio features when prebid in crossdomain iframe', function() {
     it('should return all expected features', function() {
-      sandbox.stub(utils, 'getWindowTop').throws();
+      sandbox.stub(utils, 'canAccessWindowTop').returns(false);
 
       const bidRequest = new BidRequestBuilder({
         'mediaTypes': {
@@ -1669,7 +1666,7 @@ describe('Adagio bid adapter', () => {
     });
 
     it('should returns domain and page in a cross-domain w/ top domain reached context', function() {
-      sandbox.stub(utils, 'getWindowTop').throws();
+      sandbox.stub(utils, 'canAccessWindowTop').returns(false);
       sandbox.stub(utils, 'getWindowSelf').returns({
         document: {
           referrer: 'https://google.com'
@@ -1704,7 +1701,7 @@ describe('Adagio bid adapter', () => {
     });
 
     it('should return info in a cross-domain w/o top domain reached and w/o ancestor context', function() {
-      sandbox.stub(utils, 'getWindowTop').throws();
+      sandbox.stub(utils, 'canAccessWindowTop').returns(false);
 
       const info = {
         numIframes: 2,

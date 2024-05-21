@@ -426,7 +426,12 @@ function bidWonHandler(bid) {
 }
 
 function getMatchingConsentUrl(urlProp, gdprConsent) {
-  return hasPurpose1Consent(gdprConsent) ? urlProp.p1Consent : urlProp.noP1Consent;
+  const hasPurpose = hasPurpose1Consent(gdprConsent);
+  const url = hasPurpose ? urlProp.p1Consent : urlProp.noP1Consent
+  if (!url) {
+    logWarn('Missing matching consent URL when gdpr=' + hasPurpose);
+  }
+  return url;
 }
 
 function getConsentData(bidRequests) {
