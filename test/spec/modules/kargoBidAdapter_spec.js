@@ -1807,6 +1807,55 @@ describe('kargo adapter tests', function() {
         advertiserDomains: [ 'https://foo.com', 'https://bar.com' ]
       });
     });
+
+    it('should return fledgeAuctionConfigs if provided in bid response', function () {
+      const auctionConfig = {
+        seller: 'https://kargo.com',
+        decisionLogicUrl: 'https://kargo.com/decision_logic.js',
+        interestGroupBuyers: ['https://some_buyer.com'],
+        perBuyerSignals: {
+          'https://some_buyer.com': { a: 1 }
+        }
+      }
+
+      const body = response.body;
+      for (const key in body) {
+        if (body.hasOwnProperty(key)) {
+          if (key % 2 !== 0) { // Add auctionConfig to every other object
+            body[key].auctionConfig = auctionConfig;
+          }
+        }
+      }
+
+      let result = spec.interpretResponse(response, bidderRequest);
+
+      // Test properties of bidResponses
+      result.bids.forEach(bid => {
+        expect(bid).to.have.property('requestId');
+        expect(bid).to.have.property('cpm');
+        expect(bid).to.have.property('width');
+        expect(bid).to.have.property('height');
+        expect(bid).to.have.property('ttl');
+        expect(bid).to.have.property('creativeId');
+        expect(bid.netRevenue).to.be.true;
+        expect(bid).to.have.property('meta').that.is.an('object');
+      });
+
+      // Test properties of fledgeAuctionConfigs
+      expect(result.fledgeAuctionConfigs).to.have.lengthOf(3);
+
+      const expectedBidIds = ['1', '3', '5']; // Expected bidIDs
+      result.fledgeAuctionConfigs.forEach(config => {
+        expect(config).to.have.property('bidId');
+        expect(expectedBidIds).to.include(config.bidId);
+
+        expect(config).to.have.property('config').that.is.an('object');
+        expect(config.config).to.have.property('seller', 'https://kargo.com');
+        expect(config.config).to.have.property('decisionLogicUrl', 'https://kargo.com/decision_logic.js');
+        expect(config.config.interestGroupBuyers).to.be.an('array').that.includes('https://some_buyer.com');
+        expect(config.config.perBuyerSignals).to.have.property('https://some_buyer.com').that.deep.equals({ a: 1 });
+      });
+    });
   });
 
   describe('getUserSyncs', function() {

@@ -1,9 +1,12 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'mabidder';
 export const baseUrl = 'https://prebid.ecdrsvc.com/bid';
+const converter = ortbConverter({})
+
 export const spec = {
   supportedMediaTypes: [BANNER],
   code: BIDDER_CODE,
@@ -14,7 +17,8 @@ export const spec = {
     return !!(bid.params.ppid && bid.sizes && Array.isArray(bid.sizes) && Array.isArray(bid.sizes[0]))
   },
   buildRequests: function(validBidRequests, bidderRequest) {
-    const fpd = bidderRequest.ortb2;
+    const fpd = converter.toORTB({ bidRequests: validBidRequests, bidderRequest: bidderRequest });
+
     const bids = [];
     validBidRequests.forEach(bidRequest => {
       const sizes = [];
