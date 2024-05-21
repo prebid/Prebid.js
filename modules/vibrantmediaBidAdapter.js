@@ -98,17 +98,6 @@ export const spec = {
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
   /**
-   * Transforms the 'raw' bid params into ones that this adapter can use, prior to creating the bid request.
-   *
-   * @param {object} bidParams the params to transform.
-   *
-   * @returns {object} the bid params.
-   */
-  transformBidParams: function(bidParams) {
-    return bidParams;
-  },
-
-  /**
    * Determines whether or not the given bid request is valid. For all bid requests passed to the buildRequests
    * function, each will have been passed to this function and this function will have returned true.
    *

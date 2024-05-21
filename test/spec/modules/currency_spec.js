@@ -13,7 +13,7 @@ import {
   responseReady
 } from 'modules/currency.js';
 import {createBid} from '../../../src/bidfactory.js';
-import CONSTANTS from '../../../src/constants.json';
+import { EVENTS, STATUS, REJECTION_REASON } from '../../../src/constants.js';
 import {server} from '../../mocks/xhr.js';
 import * as events from 'src/events.js';
 
@@ -28,7 +28,7 @@ describe('currency', function () {
   let fn = sinon.spy();
 
   function makeBid(bidProps) {
-    return Object.assign(createBid(CONSTANTS.STATUS.GOOD), bidProps);
+    return Object.assign(createBid(STATUS.GOOD), bidProps);
   }
 
   beforeEach(function () {
@@ -335,7 +335,7 @@ describe('currency', function () {
         addBidResponseHook(addBidResponse, 'au', bid, reject);
         fakeCurrencyFileServer.respond();
         sinon.assert.notCalled(addBidResponse);
-        sinon.assert.calledWith(reject, CONSTANTS.REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
+        sinon.assert.calledWith(reject, REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
       });
 
       it('attempts to load rates again on the next auction', () => {
@@ -344,7 +344,7 @@ describe('currency', function () {
         });
         fakeCurrencyFileServer.respond();
         fakeCurrencyFileServer.respondWith(JSON.stringify(getCurrencyRates()));
-        events.emit(CONSTANTS.EVENTS.AUCTION_INIT, {});
+        events.emit(EVENTS.AUCTION_INIT, {});
         addBidResponseHook(addBidResponse, 'au', bid, reject);
         fakeCurrencyFileServer.respond();
         sinon.assert.calledWith(addBidResponse, 'au', bid, reject);
@@ -462,12 +462,12 @@ describe('currency', function () {
       const addBidResponse = sinon.spy();
       addBidResponseHook(addBidResponse, 'au', bid, reject);
       addBidResponseHook(addBidResponse, 'au', noConversionBid, reject);
-      events.emit(CONSTANTS.EVENTS.AUCTION_TIMEOUT, {auctionId: 'aid'});
+      events.emit(EVENTS.AUCTION_TIMEOUT, { auctionId: 'aid' });
       fakeCurrencyFileServer.respond();
       sinon.assert.calledOnce(addBidResponse);
       sinon.assert.calledWith(addBidResponse, 'au', noConversionBid, reject);
       sinon.assert.calledOnce(reject);
-      sinon.assert.calledWith(reject, CONSTANTS.REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
+      sinon.assert.calledWith(reject, REJECTION_REASON.CANNOT_CONVERT_CURRENCY);
     })
 
     it('should return 1 when currency support is enabled and same currency code is requested as is set to adServerCurrency', function () {
