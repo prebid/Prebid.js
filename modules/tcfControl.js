@@ -6,8 +6,8 @@ import {deepAccess, logError, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
 import adapterManager, {gdprDataHandler} from '../src/adapterManager.js';
 import * as events from '../src/events.js';
-import { EVENTS } from '../src/constants.js';
-import {GDPR_GVLIDS, VENDORLESS_GVLID, FIRST_PARTY_GVLID} from '../src/consentHandler.js';
+import {EVENTS} from '../src/constants.js';
+import {GDPR_GVLIDS, VENDORLESS_GVLID} from '../src/consentHandler.js';
 import {
   MODULE_TYPE_ANALYTICS,
   MODULE_TYPE_BIDDER,
@@ -23,10 +23,14 @@ import {
 import {registerActivityControl} from '../src/activities/rules.js';
 import {
   ACTIVITY_ACCESS_DEVICE,
-  ACTIVITY_ENRICH_EIDS, ACTIVITY_ENRICH_UFPD,
+  ACTIVITY_ENRICH_EIDS,
+  ACTIVITY_ENRICH_UFPD,
   ACTIVITY_FETCH_BIDS,
   ACTIVITY_REPORT_ANALYTICS,
-  ACTIVITY_SYNC_USER, ACTIVITY_TRANSMIT_EIDS, ACTIVITY_TRANSMIT_PRECISE_GEO, ACTIVITY_TRANSMIT_UFPD
+  ACTIVITY_SYNC_USER,
+  ACTIVITY_TRANSMIT_EIDS,
+  ACTIVITY_TRANSMIT_PRECISE_GEO,
+  ACTIVITY_TRANSMIT_UFPD
 } from '../src/activities/activities.js';
 
 export const STRICT_STORAGE_ENFORCEMENT = 'strictStorageEnforcement';
@@ -37,7 +41,7 @@ export const ACTIVE_RULES = {
 };
 
 const CONSENT_PATHS = {
-  purpose: 'purpose.consents',
+  purpose: false,
   feature: 'specialFeatureOptins'
 };
 
@@ -98,6 +102,7 @@ const RULE_HANDLES = [];
 
 // in JS we do not have access to the GVL; assume that everyone declares legitimate interest for basic ads
 const LI_PURPOSES = [2];
+const PUBLISHER_LI_PURPOSES = [2, 7, 9, 10];
 
 /**
  * Retrieve a module's GVL ID.
@@ -111,7 +116,7 @@ export function getGvlid(moduleType, moduleName, fallbackFn) {
     if (gvlMapping && gvlMapping[moduleName]) {
       return gvlMapping[moduleName];
     } else if (moduleType === MODULE_TYPE_PREBID) {
-      return moduleName === 'cdep' ? FIRST_PARTY_GVLID : VENDORLESS_GVLID;
+      return VENDORLESS_GVLID;
     } else {
       let {gvlid, modules} = GDPR_GVLIDS.get(moduleName);
       if (gvlid == null && Object.keys(modules).length > 0) {
@@ -163,15 +168,25 @@ export function shouldEnforce(consentData, purpose, name) {
   return consentData && consentData.gdprApplies;
 }
 
-function getConsent(consentData, type, id, gvlId) {
-  let purpose = !!deepAccess(consentData, `vendorData.${CONSENT_PATHS[type]}.${id}`);
-  let vendor = !!deepAccess(consentData, `vendorData.vendor.consents.${gvlId}`);
+function getConsentOrLI(consentData, path, id, acceptLI) {
+  const data = deepAccess(consentData, `vendorData.${path}`);
+  return !!data?.consents?.[id] || (acceptLI && !!data?.legitimateInterests?.[id]);
+}
 
-  if (type === 'purpose' && LI_PURPOSES.includes(id)) {
-    purpose ||= !!deepAccess(consentData, `vendorData.purpose.legitimateInterests.${id}`);
-    vendor ||= !!deepAccess(consentData, `vendorData.vendor.legitimateInterests.${gvlId}`);
+function getConsent(consentData, type, purposeNo, gvlId) {
+  let purpose;
+  if (CONSENT_PATHS[type] !== false) {
+    purpose = !!deepAccess(consentData, `vendorData.${CONSENT_PATHS[type]}.${purposeNo}`);
+  } else {
+    const [path, liPurposes] = gvlId === VENDORLESS_GVLID
+      ? ['publisher', PUBLISHER_LI_PURPOSES]
+      : ['purpose', LI_PURPOSES];
+    purpose = getConsentOrLI(consentData, path, purposeNo, liPurposes.includes(purposeNo));
   }
-  return {purpose, vendor};
+  return {
+    purpose,
+    vendor: getConsentOrLI(consentData, 'vendor', gvlId, LI_PURPOSES.includes(purposeNo))
+  }
 }
 
 /**
@@ -192,14 +207,7 @@ export function validateRules(rule, consentData, currentModule, gvlId) {
   }
   const vendorConsentRequred = rule.enforceVendor && !((gvlId === VENDORLESS_GVLID || (rule.softVendorExceptions || []).includes(currentModule)));
   const {purpose, vendor} = getConsent(consentData, ruleOptions.type, ruleOptions.id, gvlId);
-
-  let validation = (!rule.enforcePurpose || purpose) && (!vendorConsentRequred || vendor);
-
-  if (gvlId === FIRST_PARTY_GVLID) {
-    validation = (!rule.enforcePurpose || !!deepAccess(consentData, `vendorData.publisher.consents.${ruleOptions.id}`));
-  }
-
-  return validation;
+  return (!rule.enforcePurpose || purpose) && (!vendorConsentRequred || vendor);
 }
 
 function gdprRule(purposeNo, checkConsent, blocked = null, gvlidFallback = () => null) {
