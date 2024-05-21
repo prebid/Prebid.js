@@ -187,7 +187,7 @@ if (FEATURES.UID2_CSTG) {
   clientSideTokenGenerator = {
     isCSTGOptionsValid(maybeOpts, _logWarn) {
       if (typeof maybeOpts !== 'object' || maybeOpts === null) {
-        _logWarn('CSTG has been enabled but opts is not an object');
+        _logWarn('CSTG is not being used, but is included in the Prebid.js bundle. You can reduce the bundle size by passing "--disable UID2_CSTG" to the Prebid.js build.');
         return false;
       }
 
