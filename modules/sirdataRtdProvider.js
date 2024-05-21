@@ -62,6 +62,7 @@ const biddersId = { // Partner IDs mapping for different SSPs and DSPs
   'rtbhouse': 33406,
   'zeta_global_ssp': 33385,
 };
+
 // params
 let params = {
   partnerId: 1,
@@ -583,20 +584,19 @@ export function getSegAndCatsArray(data, minScore, pid) {
  * @param {boolean} biddersParamsExist - Flag indicating if bidder parameters exist
  * @param {Object} reqBids - The request bids object
  * @param {Object} bid - The bid object
- * @param {boolean} indexFound - The index of the bidder
  * @param {number} bidderIndex - The bidder index
  * @param {Object} adUnit - The ad unit object
  * @param {string} aliasActualBidder - The bidder Alias
  * @returns {Object} - The modified Sirdata data
  */
-export function applySdaGetSpecificData(data, sirdataData, biddersParamsExist, reqBids, bid, indexFound, bidderIndex, adUnit, aliasActualBidder) {
+export function applySdaGetSpecificData(data, sirdataData, biddersParamsExist, reqBids, bid, bidderIndex, adUnit, aliasActualBidder) {
   // Apply custom function or return Bidder Specific Data if publisher is ok
-  if (params.bidders[bidderIndex]?.customFunction && typeof (params.bidders[bidderIndex].customFunction) === 'function') {
+  if (bidderIndex && params.bidders[bidderIndex]?.customFunction && typeof (params.bidders[bidderIndex]?.customFunction) === 'function') {
     return loadCustomFunction(params.bidders[bidderIndex].customFunction, adUnit, sirdataData, data, bid);
   }
 
   // Only share Publisher SDA data if whitelisted
-  if (!biddersParamsExist || indexFound) {
+  if (!biddersParamsExist || bidderIndex) {
     // SDA Publisher
     let sirdataDataForSDA = getSegAndCatsArray(data, params.contextualMinRelevancyScore, params.partnerId.toString());
     pushToOrtb2(reqBids.ortb2Fragments?.bidder, bid.bidder, sirdataDataForSDA, data.segtaxid, data.cattaxid);
@@ -604,7 +604,7 @@ export function applySdaGetSpecificData(data, sirdataData, biddersParamsExist, r
 
   // Always share SDA for curation
   if (!isEmpty(data.shared_taxonomy)) {
-    let curationId = params.bidders[bidderIndex]?.curationId || biddersId[aliasActualBidder];
+    let curationId = (bidderIndex && params.bidders[bidderIndex]?.curationId) || biddersId[aliasActualBidder];
     if (curationId && data.shared_taxonomy[curationId]) {
       // Seller defined audience & bidder specific data
       let curationData = getSegAndCatsArray(data.shared_taxonomy[curationId], params.contextualMinRelevancyScore, curationId.toString());
@@ -670,13 +670,12 @@ export function addSegmentData(reqBids, data, adUnits, onDone) {
   }
 
   adUnits.forEach(adUnit => {
-    adUnit.bids?.forEach(bid => {
+    return adUnit.bids?.forEach(bid => {
       const bidderIndex = findIndex(params.bidders, function (i) { return i.bidder === bid.bidder; });
-      const indexFound = typeof bidderIndex === 'number' && bidderIndex >= 0;
       try {
         const aliasActualBidder = bidderAliasRegistry[bid.bidder] || bid.bidder;
         if (aliasActualBidder === 'appnexus') {
-          let xandrData = applySdaGetSpecificData(data, sirdataData, biddersParamsExist, reqBids, bid, indexFound, bidderIndex, adUnit, aliasActualBidder);
+          let xandrData = applySdaGetSpecificData(data, sirdataData, biddersParamsExist, reqBids, bid, bidderIndex, adUnit, aliasActualBidder);
           // Surprisingly, to date Xandr doesn't support SDA, we need to set specific 'keywords' entries
           if (xandrData.segments.length > 0) {
             setOrtb2(reqBids.ortb2Fragments?.bidder, bid.bidder, 'user.keywords', `sd_rtd=${xandrData.segments.join(',sd_rtd=')}`);
@@ -685,7 +684,7 @@ export function addSegmentData(reqBids, data, adUnits, onDone) {
             setOrtb2(reqBids.ortb2Fragments?.bidder, bid.bidder, 'site.content.keywords', `sd_rtd=${xandrData.categories.join(',sd_rtd=')}`);
           }
         } else {
-          applySdaGetSpecificData(data, sirdataData, biddersParamsExist, reqBids, bid, indexFound, bidderIndex, adUnit, aliasActualBidder);
+          applySdaGetSpecificData(data, sirdataData, biddersParamsExist, reqBids, bid, bidderIndex, adUnit, aliasActualBidder);
         }
       } catch (e) {
         logError(LOG_PREFIX, e);
