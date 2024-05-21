@@ -544,7 +544,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
   // WE DON'T FULLY SUPPORT THIS ATM - future spot for adomain code; creating a stub for 5.0 compliance
   if (rtbBid.adomain) {
-    bid.meta = Object.assign({}, bid.meta, { advertiserDomains: [] });
+    bid.meta = Object.assign({}, bid.meta, { advertiserDomains: [rtbBid.adomain] });
   }
 
   if (rtbBid.advertiser_id) {
