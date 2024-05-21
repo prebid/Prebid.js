@@ -681,7 +681,7 @@ export function addSegmentData(reqBids, data, adUnits, onDone) {
           if (xandrData.segments.length > 0) {
             setOrtb2(reqBids.ortb2Fragments?.bidder, bid.bidder, 'user.keywords', `sd_rtd=${xandrData.segments.join(',sd_rtd=')}`);
           }
-          if (sirdataData.categories.length > 0) {
+          if (xandrData.categories.length > 0) {
             setOrtb2(reqBids.ortb2Fragments?.bidder, bid.bidder, 'site.content.keywords', `sd_rtd=${xandrData.categories.join(',sd_rtd=')}`);
           }
         } else {
