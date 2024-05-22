@@ -36,6 +36,28 @@ const adUnits = [
 
 `apiKey` is your publisher API key. For testing purpose, you can use "dailymotion-testing".
 
+## User Sync
+
+To enable user synchronization, add the following code. Dailymotion highly recommends using iframes and/or pixels for user syncing. This feature enhances DSP user match rates, resulting in higher bid rates and bid prices. Ensure that `pbjs.setConfig()` is called only once.
+
+```javascript
+pbjs.setConfig({
+  userSync: {
+    syncEnabled: true,
+    filterSettings: {
+      iframe: {
+        bidders: '*', // Or add dailymotion to your list included bidders
+        filter: 'include'
+      },
+      image: {
+        bidders: '*', // Or add dailymotion to your list of included bidders
+        filter: 'include'
+      },
+    },
+  },
+});
+```
+
 # Test Parameters
 
 By setting the following bid parameters, you'll get a constant response to any request, to validate your adapter integration:

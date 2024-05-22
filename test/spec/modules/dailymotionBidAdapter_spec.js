@@ -567,4 +567,83 @@ describe('dailymotionBidAdapterTests', () => {
 
     expect(spec.interpretResponse(undefined)).to.have.lengthOf(0);
   });
+
+  it('validates getUserSyncs', () => {
+    // Nothing sent in getUserSyncs
+    expect(config.runWithBidder('dailymotion', () => spec.getUserSyncs())).to.eql([]);
+
+    // No server response
+    {
+      const responses = [];
+      const syncOptions = { iframeEnabled: true, pixelEnabled: true };
+
+      expect(config.runWithBidder(
+        'dailymotion',
+        () => spec.getUserSyncs(syncOptions, responses),
+      )).to.eql([]);
+    }
+
+    // No permissions
+    {
+      const responses = [{ user_syncs: [{ url: 'https://usersyncurl.com', type: 'image' }] }];
+      const syncOptions = { iframeEnabled: false, pixelEnabled: false };
+
+      expect(config.runWithBidder(
+        'dailymotion',
+        () => spec.getUserSyncs(syncOptions, responses),
+      )).to.eql([]);
+    }
+
+    // Has permissions but no user_syncs urls
+    {
+      const responses = [{}];
+      const syncOptions = { iframeEnabled: false, pixelEnabled: true };
+
+      expect(config.runWithBidder(
+        'dailymotion',
+        () => spec.getUserSyncs(syncOptions, responses),
+      )).to.eql([]);
+    }
+
+    // Return user_syncs urls for pixels
+    {
+      const responses = [{
+        user_syncs: [
+          { url: 'https://usersyncurl.com', type: 'image' },
+          { url: 'https://usersyncurl2.com', type: 'image' },
+          { url: 'https://usersyncurl3.com', type: 'iframe' }
+        ],
+      }];
+
+      const syncOptions = { iframeEnabled: false, pixelEnabled: true };
+
+      expect(config.runWithBidder(
+        'dailymotion',
+        () => spec.getUserSyncs(syncOptions, responses),
+      )).to.eql([
+        { type: 'image', url: 'https://usersyncurl.com' },
+        { type: 'image', url: 'https://usersyncurl2.com' },
+      ]);
+    }
+
+    // Return user_syncs urls for iframes
+    {
+      const responses = [{
+        user_syncs: [
+          { url: 'https://usersyncurl.com', type: 'image' },
+          { url: 'https://usersyncurl2.com', type: 'image' },
+          { url: 'https://usersyncurl3.com', type: 'iframe' }
+        ],
+      }];
+
+      const syncOptions = { iframeEnabled: true, pixelEnabled: true };
+
+      expect(config.runWithBidder(
+        'dailymotion',
+        () => spec.getUserSyncs(syncOptions, responses),
+      )).to.eql([
+        { type: 'iframe', url: 'https://usersyncurl3.com' },
+      ]);
+    }
+  });
 });
