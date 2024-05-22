@@ -675,7 +675,7 @@ function _createImpressionObject(bid, bidderRequest) {
     },
     bidfloorcur: bid.params.currency ? _parseSlotParam('currency', bid.params.currency) : DEFAULT_CURRENCY,
     displaymanager: 'Prebid.js',
-    displaymanagerver: '$prebid.version$'
+    displaymanagerver: '$prebid.version$' // prebid version
   };
 
   _addPMPDealsInImpression(impObj, bid);
