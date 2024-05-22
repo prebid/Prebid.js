@@ -1,4 +1,4 @@
-import { logMessage, logError } from '../src/utils.js';
+import { logMessage, logError, deepAccess } from '../src/utils.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -156,7 +156,7 @@ export const spec = {
       host,
       page,
       placements,
-      coppa: config.getConfig('coppa') === true ? 1 : 0,
+      coppa: deepAccess(bidderRequest, 'ortb2.regs.coppa') ? 1 : 0,
       tmax: bidderRequest.timeout
     };
 
