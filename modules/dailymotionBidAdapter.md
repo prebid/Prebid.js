@@ -126,6 +126,12 @@ const adUnits = [
       video: {
         api: [2, 7],
         context: 'instream',
+        mimes: ['video/mp4'],
+        minduration: 5,
+        maxduration: 30,
+        playbackmethod: [3],
+        plcmt: 1,
+        protocols: [7, 8, 11, 12, 13, 14]
         startdelay: 0,
         w: 1280,
         h: 720,

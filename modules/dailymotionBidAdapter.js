@@ -54,14 +54,14 @@ function getVideoMetadata(bidRequest, bidderRequest) {
       : Object.keys(parsedContentData.iabcat2),
     id: videoParams.id || deepAccess(contentObj, 'id', ''),
     lang: videoParams.lang || deepAccess(contentObj, 'language', ''),
+    livestream: typeof videoParams.livestream === 'number'
+      ? !!videoParams.livestream
+      : !!deepAccess(contentObj, 'livestream', 0),
     private: videoParams.private || false,
     tags: videoParams.tags || deepAccess(contentObj, 'keywords', ''),
     title: videoParams.title || deepAccess(contentObj, 'title', ''),
     topics: videoParams.topics || '',
     xid: videoParams.xid || '',
-    livestream: typeof videoParams.livestream === 'number'
-      ? !!videoParams.livestream
-      : !!deepAccess(contentObj, 'livestream', 0),
   };
 
   return videoMetadata;
@@ -149,6 +149,8 @@ export const spec = {
             mimes: bid.mediaTypes?.[VIDEO]?.mimes || [],
             minduration: bid.mediaTypes?.[VIDEO]?.minduration || 0,
             maxduration: bid.mediaTypes?.[VIDEO]?.maxduration || 0,
+            playbackmethod: bid.mediaTypes?.[VIDEO]?.playbackmethod || [],
+            plcmt: bid.mediaTypes?.[VIDEO]?.plcmt || 1, // Fallback to instream considering logic of `isBidRequestValid`
             protocols: bid.mediaTypes?.[VIDEO]?.protocols || [],
             skip: bid.mediaTypes?.[VIDEO]?.skip || 0,
             skipafter: bid.mediaTypes?.[VIDEO]?.skipafter || 0,

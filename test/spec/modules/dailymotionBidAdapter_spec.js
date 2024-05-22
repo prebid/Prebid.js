@@ -90,6 +90,8 @@ describe('dailymotionBidAdapterTests', () => {
           mimes: ['video/mp4'],
           minduration: 5,
           maxduration: 30,
+          playbackmethod: [3],
+          plcmt: 1,
           protocols: [1, 2, 3, 4, 5, 6, 7, 8],
           skip: 1,
           skipafter: 5,
@@ -170,9 +172,8 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.coppa).to.be.true;
     expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId);
     expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
-    expect(reqData.request.mediaTypes.video.api).to.eql(bidRequestData[0].mediaTypes.video.api);
-    expect(reqData.request.mediaTypes.video.playerSize).to.eql(bidRequestData[0].mediaTypes.video.playerSize);
-    expect(reqData.request.mediaTypes.video.startdelay).to.eql(bidRequestData[0].mediaTypes.video.startdelay);
+
+    expect(reqData.request.mediaTypes.video).to.eql(bidRequestData[0].mediaTypes.video);
     expect(reqData.video_metadata).to.eql({
       description: bidRequestData[0].params.video.description,
       iabcat1: ['IAB-1'],
@@ -200,6 +201,8 @@ describe('dailymotionBidAdapterTests', () => {
           mimes: ['video/mp4'],
           minduration: 5,
           maxduration: 30,
+          playbackmethod: [3],
+          plcmt: 1,
           protocols: [1, 2, 3, 4, 5, 6, 7, 8],
           skip: 1,
           skipafter: 5,
@@ -288,17 +291,9 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.appStoreUrl).to.eql(bidderRequestData.ortb2.app.storeurl);
     expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId);
     expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
-    expect(reqData.request.mediaTypes.video.api).to.eql(bidRequestData[0].mediaTypes.video.api);
-    expect(reqData.request.mediaTypes.video.mimes).to.eql(bidRequestData[0].mediaTypes.video.mimes);
-    expect(reqData.request.mediaTypes.video.minduration).to.eql(bidRequestData[0].mediaTypes.video.minduration);
-    expect(reqData.request.mediaTypes.video.maxduration).to.eql(bidRequestData[0].mediaTypes.video.maxduration);
-    expect(reqData.request.mediaTypes.video.protocols).to.eql(bidRequestData[0].mediaTypes.video.protocols);
-    expect(reqData.request.mediaTypes.video.skip).to.eql(bidRequestData[0].mediaTypes.video.skip);
-    expect(reqData.request.mediaTypes.video.skipafter).to.eql(bidRequestData[0].mediaTypes.video.skipafter);
-    expect(reqData.request.mediaTypes.video.skipmin).to.eql(bidRequestData[0].mediaTypes.video.skipmin);
-    expect(reqData.request.mediaTypes.video.startdelay).to.eql(bidRequestData[0].mediaTypes.video.startdelay);
-    expect(reqData.request.mediaTypes.video.w).to.eql(bidRequestData[0].mediaTypes.video.w);
-    expect(reqData.request.mediaTypes.video.h).to.eql(bidRequestData[0].mediaTypes.video.h);
+
+    expect(reqData.request.mediaTypes.video).to.eql(bidRequestData[0].mediaTypes.video);
+
     expect(reqData.video_metadata).to.eql({
       description: bidRequestData[0].params.video.description,
       iabcat1: ['IAB-1'],
@@ -432,9 +427,22 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.coppa).to.be.false;
     expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId);
     expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
-    expect(reqData.request.mediaTypes.video.api).to.eql(bidRequestData[0].mediaTypes.video.api);
-    expect(reqData.request.mediaTypes.video.playerSize).to.eql(bidRequestData[0].mediaTypes.video.playerSize);
-    expect(reqData.request.mediaTypes.video.startdelay).to.eql(bidRequestData[0].mediaTypes.video.startdelay);
+
+    expect(reqData.request.mediaTypes.video).to.eql({
+      ...bidRequestData[0].mediaTypes.video,
+      mimes: [],
+      minduration: 0,
+      maxduration: 0,
+      playbackmethod: [],
+      plcmt: 1,
+      protocols: [],
+      skip: 0,
+      skipafter: 0,
+      skipmin: 0,
+      w: 0,
+      h: 0,
+    });
+
     expect(reqData.video_metadata).to.eql({
       description: bidRequestData[0].params.video.description,
       iabcat1: ['IAB-2'],
@@ -496,6 +504,8 @@ describe('dailymotionBidAdapterTests', () => {
           mimes: [],
           minduration: 0,
           maxduration: 0,
+          playbackmethod: [],
+          plcmt: 1,
           protocols: [],
           skip: 0,
           skipafter: 0,
