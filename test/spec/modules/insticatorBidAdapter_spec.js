@@ -75,9 +75,10 @@ describe('InsticatorBidAdapter', function () {
     ortb2: {
       source: {
         tid: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
-      }
+      },
     },
     timeout: 300,
+    gdprApplies: 1,
     gdprConsent: {
       consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
       vendorData: {},
@@ -259,25 +260,6 @@ describe('InsticatorBidAdapter', function () {
           }
         }
       })).to.be.true;
-    });
-
-    it('should return false if optional video fields are not valid', () => {
-      expect(spec.isBidRequestValid({
-        ...bidRequest,
-        ...{
-          mediaTypes: {
-            video: {
-              mimes: [
-                'video/mp4',
-                'video/mpeg',
-              ],
-              playerSize: [250, 300],
-              placement: 1,
-              startdelay: 'NaN',
-            },
-          }
-        }
-      })).to.be.false;
     });
 
     it('should return false if video min duration > max duration', () => {
@@ -497,11 +479,58 @@ describe('InsticatorBidAdapter', function () {
 
       expect(data.user.id).to.equal(USER_ID_STUBBED);
     });
-    it('should return empty regs object if no gdprConsent is passed', function () {
+
+    it('should return with coppa regs object if no gdprConsent is passed', function () {
       const requests = spec.buildRequests([bidRequest], { ...bidderRequest, ...{ gdprConsent: false } });
       const data = JSON.parse(requests[0].data);
-      expect(data.regs).to.be.an('object').that.is.empty;
+      expect(data.regs).to.be.an('object');
+      expect(data.regs.coppa).to.be.oneOf([0, 1]);
     });
+
+    it('should return with us_privacy string if uspConsent is passed', function () {
+      const requests = spec.buildRequests([bidRequest], { ...bidderRequest, ...{ uspConsent: '1YNN' } });
+      const data = JSON.parse(requests[0].data);
+      expect(data.regs).to.be.an('object');
+      expect(data.regs.ext).to.be.an('object');
+      expect(data.regs.ext.us_privacy).to.equal('1YNN');
+      expect(data.regs.ext.ccpa).to.equal('1YNN');
+    });
+
+    it('should return with gpp if gppConsent is passed', function () {
+      const requests = spec.buildRequests([bidRequest], { ...bidderRequest, ...{ gppConsent: { gppString: '1YNN', applicableSections: ['1', '2'] } } });
+      const data = JSON.parse(requests[0].data);
+      expect(data.regs).to.be.an('object');
+      expect(data.regs.ext).to.be.an('object');
+      expect(data.regs.ext.gppSid).to.deep.equal(['1', '2']);
+    });
+
+    it('should create the request with dsa data and return with dsa object', function() {
+      const dsa = {
+        dsarequired: 2,
+        pubrender: 1,
+        datatopub: 2,
+        transparency: [{
+          domain: 'google.com',
+          dsaparams: [1, 2]
+        }]
+      }
+      const bidRequestWithDsa = {
+        ...bidderRequest,
+        ortb2: {
+          regs: {
+            ext: {
+              dsa: dsa
+            }
+          }
+        }
+      }
+      const requests = spec.buildRequests([bidRequest], {...bidRequestWithDsa});
+      const data = JSON.parse(requests[0].data);
+      expect(data.regs).to.be.an('object');
+      expect(data.regs.ext).to.be.an('object');
+      expect(data.regs.ext.dsa).to.deep.equal(dsa);
+    });
+
     it('should return empty array if no valid requests are passed', function () {
       expect(spec.buildRequests([], bidderRequest)).to.be.an('array').that.have.lengthOf(0);
     });
@@ -538,6 +567,129 @@ describe('InsticatorBidAdapter', function () {
       expect(data.imp[0].video.plcmt).to.equal(4);
       expect(data.imp[0].video.w).to.equal(640);
       expect(data.imp[0].video.h).to.equal(480);
+    });
+
+    it('should have sites first party data if present in bidderRequest ortb2', function () {
+      bidderRequest = {
+        ...bidderRequest,
+        ortb2: {
+          ...bidderRequest.ortb2,
+          site: {
+            keywords: 'keyword1,keyword2',
+            search: 'search',
+            content: {
+              title: 'title',
+              keywords: 'keyword3,keyword4',
+              genre: 'rock'
+            },
+            cat: ['IAB1', 'IAB2']
+          }
+        }
+      }
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data).to.have.property('site');
+      expect(data.site).to.have.property('keywords');
+      expect(data.site.keywords).to.equal('keyword1,keyword2');
+      expect(data.site).to.have.property('search');
+      expect(data.site.search).to.equal('search');
+      expect(data.site).to.have.property('content');
+      expect(data.site.content).to.have.property('title');
+      expect(data.site.content.title).to.equal('title');
+      expect(data.site.content).to.have.property('keywords');
+      expect(data.site.content.keywords).to.equal('keyword3,keyword4');
+      expect(data.site.content).to.have.property('genre');
+      expect(data.site.content.genre).to.equal('rock');
+      expect(data.site).to.have.property('cat');
+      expect(data.site.cat).to.deep.equal(['IAB1', 'IAB2']);
+    });
+
+    it('should have device.sua if present in bidderRequest ortb2', function () {
+      bidderRequest = {
+        ...bidderRequest,
+        ortb2: {
+          ...bidderRequest.ortb2,
+          device: {
+            ...bidderRequest.ortb2.device,
+            sua: {}
+          }
+        }
+      }
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data).to.have.property('device');
+      expect(data.device).to.have.property('sua');
+    })
+
+    it('should use param bid_endpoint_request_url for request endpoint if present', function () {
+      const tempBiddRequest = {
+        ...bidRequest,
+        params: {
+          ...bidRequest.params,
+          bid_endpoint_request_url: 'https://example.com'
+        }
+      }
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      expect(requests[0].url).to.equal('https://example.com');
+    });
+
+    it('should have user keywords if present in bidrequest', function () {
+      const tempBiddRequest = {
+        ...bidRequest,
+        params: {
+          ...bidRequest.params,
+          user: {
+            keywords: 'keyword1,keyword2'
+          }
+        }
+      }
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.user).to.have.property('keywords');
+      expect(data.user.keywords).to.equal('keyword1,keyword2');
+    });
+
+    it('should remove video params if they are invalid', function () {
+      const tempBiddRequest = {
+        ...bidRequest,
+        mediaTypes: {
+          ...bidRequest.mediaTypes,
+          video: {
+            mimes: [
+              'video/mp4',
+              'video/mpeg',
+              'video/x-flv',
+              'video/webm',
+              'video/ogg',
+            ],
+            protocols: 'NaN',
+            w: '300',
+            h: '250',
+          }
+        }
+      }
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.imp[0].video).to.not.have.property('plcmt');
+    });
+
+    it('should have user consent and gdpr string if gdprConsent is passed', function () {
+      const requests = spec.buildRequests([bidRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.regs).to.be.an('object');
+      expect(data.regs.ext).to.be.an('object');
+      expect(data.regs.ext.gdpr).to.equal(1);
+      expect(data.regs.ext.gdprConsentString).to.equal(bidderRequest.gdprConsent.consentString);
+      expect(data.user.ext).to.have.property('consent');
+      expect(data.user.ext.consent).to.equal(bidderRequest.gdprConsent.consentString);
+    });
+
+    it('should have one or more privacy policies if present in bidrequest, like gpp, gdpr and us_privacy', function () {
+      const requests = spec.buildRequests([bidRequest], { ...bidderRequest, ...{ uspConsent: '1YNN' } });
+      const data = JSON.parse(requests[0].data);
+      expect(data.regs.ext).to.have.property('gdpr');
+      expect(data.regs.ext).to.have.property('us_privacy');
+      expect(data.regs.ext).to.have.property('gppSid');
     });
   });
 
@@ -837,4 +989,105 @@ describe('InsticatorBidAdapter', function () {
       expect(bidResponse.vastUrl).to.match(/^data:text\/xml;charset=utf-8;base64,[\w+/=]+$/)
     });
   })
+
+  describe(`Response with DSA data`, function() {
+    const bidRequestDsa = {
+      method: 'POST',
+      url: 'https://ex.ingage.tech/v1/openrtb',
+      options: {
+        contentType: 'application/json',
+        withCredentials: true,
+      },
+      data: '',
+      bidderRequest: {
+        bidderRequestId: '22edbae2733bf6',
+        auctionId: '74f78609-a92d-4cf1-869f-1b244bbfb5d2',
+        timeout: 300,
+        bids: [
+          {
+            bidder: 'insticator',
+            params: {
+              adUnitId: '1a2b3c4d5e6f1a2b3c4d'
+            },
+            adUnitCode: 'adunit-code-1',
+            mediaTypes: {
+              video: {
+                mimes: [
+                  'video/mp4',
+                  'video/mpeg',
+                ],
+                playerSize: [[250, 300]],
+                placement: 2,
+                plcmt: 2,
+              }
+            },
+            bidId: 'bid1',
+          }
+        ],
+        ortb2: {
+          regs: {
+            ext: {
+              dsa: {
+                dsarequired: 2,
+                pubrender: 1,
+                datatopub: 2,
+                transparency: [{
+                  domain: 'google.com',
+                  dsaparams: [1, 2]
+                }]
+              }
+            }}
+        },
+      }
+    };
+
+    const bidResponseDsa = {
+      body: {
+        id: '22edbae2733bf6',
+        bidid: 'foo9876',
+        cur: 'USD',
+        seatbid: [
+          {
+            seat: 'some-dsp',
+            bid: [
+              {
+                ad: '<Vast></Vast>',
+                impid: 'bid1',
+                crid: 'crid1',
+                price: 0.5,
+                w: 300,
+                h: 250,
+                adm: '<VAST version="4.0"><Ad></Ad></VAST>',
+                exp: 60,
+                adomain: ['test1.com'],
+                ext: {
+                  meta: {
+                    test: 1,
+                  },
+                  dsa: {
+                    behalf: 'Advertiser',
+                    paid: 'Advertiser',
+                    transparency: [{
+                      domain: 'google.com',
+                      dsaparams: [1, 2]
+                    }],
+                    adrender: 1
+                  }
+                },
+              }
+            ],
+          },
+        ]
+      }
+    };
+    const bidRequestWithDsa = utils.deepClone(bidRequestDsa);
+    it('should have related properties for DSA data', function() {
+      const serverResponseWithDsa = utils.deepClone(bidResponseDsa);
+      const bidResponse = spec.interpretResponse(serverResponseWithDsa, bidRequestWithDsa)[0];
+      expect(bidResponse).to.have.any.keys('ext');
+      expect(bidResponse.ext.dsa).to.have.property('behalf', 'Advertiser');
+      expect(bidResponse.ext.dsa).to.have.property('paid', 'Advertiser');
+      expect(bidResponse.ext.dsa).to.have.property('adrender', 1);
+    });
+  });
 });

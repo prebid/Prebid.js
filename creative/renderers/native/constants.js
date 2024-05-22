@@ -1,7 +1,7 @@
 // eslint-disable-next-line prebid/validate-imports
-import CONSTANTS from '../../../src/constants.json';
+import { MESSAGES } from '../../../src/constants.js';
 
-export const MESSAGE_NATIVE = CONSTANTS.MESSAGES.NATIVE;
+export const MESSAGE_NATIVE = MESSAGES.NATIVE;
 export const ACTION_RESIZE = 'resizeNativeHeight';
 export const ACTION_CLICK = 'click';
 export const ACTION_IMP = 'fireNativeImpressionTrackers';

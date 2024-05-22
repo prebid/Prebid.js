@@ -1,7 +1,7 @@
 import {config} from './config.js';
-import clone from 'just-clone';
+import {klona} from 'klona/json';
 import {includes} from './polyfill.js';
-import CONSTANTS from './constants.json';
+import { EVENTS, S2S } from './constants.js';
 import {GreedyPromise} from './utils/promise.js';
 import {getGlobal} from './prebidGlobal.js';
 
@@ -202,7 +202,7 @@ export function logWarn() {
     // eslint-disable-next-line no-console
     console.warn.apply(console, decorateLog(arguments, 'WARNING:'));
   }
-  emitEvent(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'WARNING', arguments: arguments});
+  emitEvent(EVENTS.AUCTION_DEBUG, { type: 'WARNING', arguments: arguments });
 }
 
 export function logError() {
@@ -210,7 +210,7 @@ export function logError() {
     // eslint-disable-next-line no-console
     console.error.apply(console, decorateLog(arguments, 'ERROR:'));
   }
-  emitEvent(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'ERROR', arguments: arguments});
+  emitEvent(EVENTS.AUCTION_DEBUG, { type: 'ERROR', arguments: arguments });
 }
 
 let getTimestamp
@@ -458,7 +458,7 @@ export function triggerPixel(url, done, timeout) {
 }
 
 export function callBurl({ source, burl }) {
-  if (source === CONSTANTS.S2S.SRC && burl) {
+  if (source === S2S.SRC && burl) {
     internal.triggerPixel(burl);
   }
 }
@@ -503,18 +503,31 @@ export function insertUserSyncIframe(url, done, timeout) {
 /**
  * Creates a snippet of HTML that retrieves the specified `url`
  * @param  {string} url URL to be requested
+ * @param encode
  * @return {string}     HTML snippet that contains the img src = set to `url`
  */
-export function createTrackPixelHtml(url) {
+export function createTrackPixelHtml(url, encode = encodeURI) {
   if (!url) {
     return '';
   }
 
-  let escapedUrl = encodeURI(url);
+  let escapedUrl = encode(url);
   let img = '<div style="position:absolute;left:0px;top:0px;visibility:hidden;">';
   img += '<img src="' + escapedUrl + '"></div>';
   return img;
 };
+
+/**
+ * encodeURI, but preserves macros of the form '${MACRO}' (e.g. '${AUCTION_PRICE}')
+ * @param url
+ * @return {string}
+ */
+export function encodeMacroURI(url) {
+  const macros = Array.from(url.matchAll(/\$({[^}]+})/g)).map(match => match[1]);
+  return macros.reduce((str, macro) => {
+    return str.replace('$' + encodeURIComponent(macro), '$' + macro)
+  }, encodeURI(url))
+}
 
 /**
  * Creates a snippet of Iframe HTML that retrieves the specified `url`
@@ -610,7 +623,7 @@ export function shuffle(array) {
 }
 
 export function deepClone(obj) {
-  return clone(obj);
+  return klona(obj) || {};
 }
 
 export function inIframe() {
