@@ -276,10 +276,10 @@ function onBidRequest(bidderRequest, _config, _userConsent) {
  * Update both the `ortb2Fragments` and `ortb2Imp` objects with features computed for Adagio.
  *
  * @param {*} bidReqConfig
- * @param {*} _cb
+ * @param {*} callback
  * @param {*} _config
  */
-function onGetBidRequestData(bidReqConfig, _cb, _config) {
+function onGetBidRequestData(bidReqConfig, callback, _config) {
   const ortb2Fragments = bidReqConfig.ortb2Fragments || {};
   const features = _internal.getFeatures().get();
   const ext = {
@@ -314,6 +314,8 @@ function onGetBidRequestData(bidReqConfig, _cb, _config) {
       bid.ortb2Imp = ortb2Imp;
     });
   });
+
+  callback();
 }
 
 export const adagioRtdSubmodule = {
