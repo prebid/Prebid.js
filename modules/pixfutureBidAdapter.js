@@ -3,10 +3,11 @@ import {getStorageManager} from '../src/storageManager.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {find, includes} from '../src/polyfill.js';
-import {convertCamelToUnderscore, deepAccess, isArray, isFn, isNumber, isPlainObject} from '../src/utils.js';
+import {deepAccess, isArray, isFn, isNumber, isPlainObject} from '../src/utils.js';
 import {auctionManager} from '../src/auctionManager.js';
 import {getGlobal} from '../src/prebidGlobal.js';
-import {getANKeywordParam} from '../libraries/appnexusKeywords/anKeywords.js';
+import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
+import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
 
 const SOURCE = 'pbjs';
 const storageManager = getStorageManager({bidderCode: 'pixfuture'});

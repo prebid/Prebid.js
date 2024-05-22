@@ -3,9 +3,9 @@ import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
+import { EVENTS } from 'src/constants.js';
 
 let events = require('src/events');
-let constants = require('src/constants.json');
 
 describe('tercept analytics adapter', function () {
   beforeEach(function () {
@@ -753,19 +753,19 @@ describe('tercept analytics adapter', function () {
 
     it('builds and sends auction data', function () {
       // Step 1: Send auction init event
-      events.emit(constants.EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
+      events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
 
       // Step 2: Send bid requested event
-      events.emit(constants.EVENTS.BID_REQUESTED, prebidEvent['bidRequested']);
+      events.emit(EVENTS.BID_REQUESTED, prebidEvent['bidRequested']);
 
       // Step 3: Send bid response event
-      events.emit(constants.EVENTS.BID_RESPONSE, prebidEvent['bidResponse']);
+      events.emit(EVENTS.BID_RESPONSE, prebidEvent['bidResponse']);
 
       // Step 4: Send bid time out event
-      events.emit(constants.EVENTS.BID_TIMEOUT, prebidEvent['bidTimeout']);
+      events.emit(EVENTS.BID_TIMEOUT, prebidEvent['bidTimeout']);
 
       // Step 5: Send auction end event
-      events.emit(constants.EVENTS.AUCTION_END, prebidEvent['auctionEnd']);
+      events.emit(EVENTS.AUCTION_END, prebidEvent['auctionEnd']);
 
       expect(server.requests.length).to.equal(1);
 
@@ -774,7 +774,7 @@ describe('tercept analytics adapter', function () {
       expect(realAfterBid).to.deep.equal(expectedAfterBid);
 
       // Step 6: Send auction bid won event
-      events.emit(constants.EVENTS.BID_WON, prebidEvent['bidWon']);
+      events.emit(EVENTS.BID_WON, prebidEvent['bidWon']);
 
       expect(server.requests.length).to.equal(2);
 

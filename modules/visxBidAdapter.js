@@ -1,9 +1,11 @@
-import { triggerPixel, parseSizesInput, deepAccess, logError, getGptSlotInfoForAdUnitCode } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { INSTREAM as VIDEO_INSTREAM } from '../src/video.js';
+import {deepAccess, logError, parseSizesInput, triggerPixel} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {INSTREAM as VIDEO_INSTREAM} from '../src/video.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+
 const BIDDER_CODE = 'visx';
 const GVLID = 154;
 const BASE_URL = 'https://t.visx.net';
@@ -13,6 +15,7 @@ const TIME_TO_LIVE = 360;
 const DEFAULT_CUR = 'EUR';
 const ADAPTER_SYNC_PATH = '/push_sync';
 const TRACK_TIMEOUT_PATH = '/track/bid_timeout';
+const RUNTIME_STATUS_RESPONSE_TIME = 999000;
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
   noAdm: 'Bid from response has no adm parameter - ',
@@ -31,6 +34,7 @@ const LOG_ERROR_MESS = {
 };
 const currencyWhiteList = ['EUR', 'USD', 'GBP', 'PLN'];
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const _bidResponseTimeLogged = [];
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -110,8 +114,7 @@ export const spec = {
       }
     }
 
-    const bidderTimeout = Number(config.getConfig('bidderTimeout')) || timeout;
-    const tmax = timeout ? Math.min(bidderTimeout, timeout) : bidderTimeout;
+    const tmax = timeout;
     const source = {
       ext: {
         wrapperType: 'Prebid_js',
@@ -205,6 +208,12 @@ export const spec = {
     // Call '/track/win' with the corresponding bid.requestId
     if (bid.ext && bid.ext.events && bid.ext.events.win) {
       triggerPixel(bid.ext.events.win);
+    }
+    // Call 'track/runtime' with the corresponding bid.requestId - only once per auction
+    if (bid.ext && bid.ext.events && bid.ext.events.runtime && !_bidResponseTimeLogged.includes(bid.auctionId)) {
+      _bidResponseTimeLogged.push(bid.auctionId);
+      const _roundedTime = _roundResponseTime(bid.timeToRespond, 50);
+      triggerPixel(bid.ext.events.runtime.replace('{STATUS_CODE}', RUNTIME_STATUS_RESPONSE_TIME + _roundedTime));
     }
   },
   onTimeout: function(timeoutData) {
@@ -319,6 +328,10 @@ function _addBidResponse(serverBid, bidsMap, currency, bidResponses) {
 
         if (serverBid.ext && serverBid.ext.prebid) {
           bidResponse.ext = serverBid.ext.prebid;
+          if (serverBid.ext.visx && serverBid.ext.visx.events) {
+            const prebidExtEvents = bidResponse.ext.events || {};
+            bidResponse.ext.events = Object.assign(prebidExtEvents, serverBid.ext.visx.events);
+          }
         }
 
         const visxTargeting = deepAccess(serverBid, 'ext.prebid.targeting');
@@ -430,6 +443,17 @@ function _getUserId() {
   }
 
   return null;
+}
+
+function _roundResponseTime(time, timeRange) {
+  if (time <= 0) {
+    return 0; // Special code for scriptLoadTime of 0 ms or less
+  } else if (time > 5000) {
+    return 100; // Constant code for scriptLoadTime greater than 5000 ms
+  } else {
+    const roundedValue = Math.floor((time - 1) / timeRange) + 1;
+    return roundedValue;
+  }
 }
 
 registerBidder(spec);

@@ -5,7 +5,7 @@ import {ortbConverter} from '../libraries/ortbConverter/converter.js'
 import {deepAccess, getBidIdParameter, logError} from '../src/utils.js';
 
 const BIDDER_CODE = 'viant';
-const ENDPOINT = 'https://bidders-us-east-1.adelphic.net/d/rtb/v25/prebid/bidder_test'
+const ENDPOINT = 'https://bidders-us-east-1.adelphic.net/d/rtb/v25/prebid/bidder'
 
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
@@ -51,8 +51,10 @@ export const spec = {
   onBidWon: function (bid) {
     if (bid.burl) {
       utils.triggerPixel(bid.burl);
+      utils.triggerPixel(utils.replaceAuctionPrice(bid.burl, bid.originalCpm || bid.cpm));
     } else if (bid.nurl) {
       utils.triggerPixel(bid.nurl);
+      utils.triggerPixel(utils.replaceAuctionPrice(bid.nurl, bid.originalCpm || bid.cpm));
     }
   }
 }

@@ -5,6 +5,12 @@ import {Renderer} from '../src/Renderer.js';
 import {OUTSTREAM} from '../src/video.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
+
 const BIDDER_CODE = 'buzzoola';
 const ENDPOINT = 'https://exchange.buzzoola.com/ssp/prebidjs';
 const RENDERER_SRC = 'https://tube.buzzoola.com/new/build/buzzlibrary.js';
@@ -47,7 +53,6 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {ServerResponse} serverResponse A successful response from the server.
-   * @param bidderRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function ({body}, {data}) {

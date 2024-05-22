@@ -111,7 +111,7 @@ function extractUserSyncUrls(syncOptions, pixels) {
  * @param {object} consentData
  * @param {object} consentData.gpp
  * @param {string} consentData.gpp.gppConsent
- * @param {array} consentData.gpp.applicableSections
+ * @param {Array} consentData.gpp.applicableSections
  * @param {object} consentData.gdpr
  * @param {object} consentData.gdpr.consentString
  * @param {object} consentData.gdpr.gdprApplies

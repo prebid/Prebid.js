@@ -26,9 +26,9 @@ Module that connects to TheAdx demand sources
                {
                    bidder: "theadx",
                    params: {
-                        pid: 1000, // publisher id
-                        wid: 2000, //website id
-                        tagId: 5000, //zone id
+                        pid: 1, // publisher id
+                        wid: 7, //website id
+                        tagId: 19, //zone id
                     }
                }
            ]
@@ -43,9 +43,10 @@ Module that connects to TheAdx demand sources
                {
                    bidder: "theadx",
                    params: {
-                        pid: 1000, // publisher id
-                        wid: 2000, //website id
-                        tagId: 5000, //zone id
+                        pid: 1, // publisher id
+                        wid: 7, //website id
+                        tagId: 18, //zone id
+                        deals:[{"id":"theadx:137"}] //optional
                     }
                }
            ]
@@ -80,9 +81,9 @@ Module that connects to TheAdx demand sources
                {
                    bidder: "theadx",
                    params: {
-                        pid: 1000, // publisher id
-                        wid: 2000, //website id
-                        tagId: 5000, //zone id
+                        pid: 1, // publisher id
+                        wid: 7, //website id
+                        tagId: 20, //zone id
                     }
                }
            ]

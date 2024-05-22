@@ -1,26 +1,26 @@
 import {find} from '../src/polyfill.js';
 import {
-  _map,
+  canAccessWindowTop,
   cleanObj,
   deepAccess,
   deepClone,
   generateUUID,
   getDNT,
-  getGptSlotInfoForAdUnitCode,
   getUniqueIdentifierStr,
   getWindowSelf,
   getWindowTop,
-  inIframe,
   isArray,
+  isArrayOfNums,
   isFn,
+  inIframe,
   isInteger,
   isNumber,
-  isArrayOfNums,
+  isSafeFrameWindow,
+  isStr,
   logError,
   logInfo,
   logWarn,
   mergeDeep,
-  isStr,
 } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -34,6 +34,7 @@ import {OUTSTREAM} from '../src/video.js';
 import { getGlobal } from '../src/prebidGlobal.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { userSync } from '../src/userSync.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 const BIDDER_CODE = 'adagio';
 const LOG_PREFIX = 'Adagio:';
@@ -54,8 +55,9 @@ const ADAGIO_PUBKEY = 'AL16XT44Sfp+8SHVF1UdC7hydPSMVLMhsYknKDdwqq+0ToDSJrP0+Qh0k
 const ADAGIO_PUBKEY_E = 65537;
 const CURRENCY = 'USD';
 
-// This provide a whitelist and a basic validation of OpenRTB 2.6 options used by the Adagio SSP.
-// https://iabtechlab.com/wp-content/uploads/2022/04/OpenRTB-2-6_FINAL.pdf
+// This provide a whitelist and a basic validation of OpenRTB 2.5 options used by the Adagio SSP.
+// Accept all options but 'protocol', 'companionad', 'companiontype', 'ext'
+// https://www.iab.com/wp-content/uploads/2016/03/OpenRTB-API-Specification-Version-2-5-FINAL.pdf
 export const ORTB_VIDEO_PARAMS = {
   'mimes': (value) => Array.isArray(value) && value.length > 0 && value.every(v => typeof v === 'string'),
   'minduration': (value) => isInteger(value),
@@ -64,7 +66,11 @@ export const ORTB_VIDEO_PARAMS = {
   'w': (value) => isInteger(value),
   'h': (value) => isInteger(value),
   'startdelay': (value) => isInteger(value),
-  'placement': (value) => isInteger(value),
+  'placement': (value) => {
+    logWarn(LOG_PREFIX, 'The OpenRTB video param `placement` is deprecated and should not be used anymore.');
+    return isInteger(value)
+  },
+  'plcmt': (value) => isInteger(value),
   'linearity': (value) => isInteger(value),
   'skip': (value) => [1, 0].includes(value),
   'skipmin': (value) => isInteger(value),
@@ -77,7 +83,7 @@ export const ORTB_VIDEO_PARAMS = {
   'boxingallowed': (value) => isInteger(value),
   'playbackmethod': (value) => isArrayOfNums(value),
   'playbackend': (value) => isInteger(value),
-  'delivery': (value) => isInteger(value),
+  'delivery': (value) => isArrayOfNums(value),
   'pos': (value) => isInteger(value),
   'api': (value) => isArrayOfNums(value)
 };
@@ -100,13 +106,15 @@ export const GlobalExchange = (function() {
     getOrSetGlobalFeatures: function () {
       if (!features) {
         features = {
+          type: 'bidAdapter',
           page_dimensions: getPageDimensions().toString(),
           viewport_dimensions: getViewPortDimensions().toString(),
           user_timestamp: getTimestampUTC().toString(),
           dom_loading: getDomLoadingDuration().toString(),
         }
       }
-      return features;
+
+      return { ...features };
     },
 
     prepareExchangeData(storageValue) {
@@ -126,7 +134,7 @@ export const GlobalExchange = (function() {
       const data = {
         session: {
           new: newSession,
-          rnd: random
+          rnd: random,
         }
       }
 
@@ -145,6 +153,9 @@ export const GlobalExchange = (function() {
   };
 })();
 
+/**
+ * @deprecated will be removed in Prebid.js 9.
+ */
 export function adagioScriptFromLocalStorageCb(ls) {
   try {
     if (!ls) {
@@ -175,6 +186,9 @@ export function adagioScriptFromLocalStorageCb(ls) {
   }
 }
 
+/**
+ * @deprecated will be removed in Prebid.js 9.
+ */
 export function getAdagioScript() {
   storage.getDataFromLocalStorage(ADAGIO_LOCALSTORAGE_KEY, (ls) => {
     internal.adagioScriptFromLocalStorageCb(ls);
@@ -200,31 +214,14 @@ export function getAdagioScript() {
   });
 }
 
-function canAccessTopWindow() {
-  try {
-    if (getWindowTop().location.href) {
-      return true;
-    }
-  } catch (error) {
-    return false;
-  }
-}
-
 function getCurrentWindow() {
   return currentWindow || getWindowSelf();
 }
 
-function isSafeFrameWindow() {
-  const ws = getWindowSelf();
-  return !!(ws.$sf && ws.$sf.ext);
-}
-
 function initAdagio() {
-  if (canAccessTopWindow()) {
-    currentWindow = (canAccessTopWindow()) ? getWindowTop() : getWindowSelf();
-  }
+  currentWindow = (canAccessWindowTop()) ? getWindowTop() : getWindowSelf();
 
-  const w = internal.getCurrentWindow();
+  const w = currentWindow;
 
   w.ADAGIO = w.ADAGIO || {};
   w.ADAGIO.adUnits = w.ADAGIO.adUnits || {};
@@ -236,13 +233,16 @@ function initAdagio() {
 
   storage.getDataFromLocalStorage('adagio', (storageData) => {
     try {
-      GlobalExchange.prepareExchangeData(storageData);
+      if (w.ADAGIO.hasRtd !== true) {
+        logInfo(`${LOG_PREFIX} RTD module not found. Loading external script from adagioBidAdapter is deprecated and will be removed in Prebid.js 9.`);
+
+        GlobalExchange.prepareExchangeData(storageData);
+        getAdagioScript();
+      }
     } catch (e) {
       logError(LOG_PREFIX, e);
     }
   });
-
-  getAdagioScript();
 }
 
 function enqueue(ob) {
@@ -355,6 +355,12 @@ function setPlayerName(bidRequest) {
   return playerName;
 }
 
+function hasRtd() {
+  const w = internal.getCurrentWindow();
+
+  return !!(w.ADAGIO && w.ADAGIO.hasRtd);
+};
+
 export const internal = {
   enqueue,
   getPageviewId,
@@ -364,9 +370,10 @@ export const internal = {
   getRefererInfo,
   adagioScriptFromLocalStorageCb,
   getCurrentWindow,
-  canAccessTopWindow,
+  canAccessWindowTop,
   isRendererPreferredFromPublisher,
-  isNewSession
+  isNewSession,
+  hasRtd
 };
 
 function _getGdprConsent(bidderRequest) {
@@ -569,6 +576,7 @@ function _parseNativeBidResponse(bid) {
   bid.native = native
 }
 
+// bidRequest param must be the `bidRequest` object with the original `auctionId` value.
 function _getFloors(bidRequest) {
   if (!isFn(bidRequest.getFloor)) {
     return false;
@@ -680,7 +688,7 @@ function autoFillParams(bid) {
 }
 
 function getPageDimensions() {
-  if (isSafeFrameWindow() || !canAccessTopWindow()) {
+  if (isSafeFrameWindow() || !canAccessWindowTop()) {
     return '';
   }
 
@@ -699,11 +707,11 @@ function getPageDimensions() {
 }
 
 /**
-* @todo Move to prebid Core as Utils.
-* @returns
-*/
+ * @todo Move to prebid Core as Utils.
+ * @returns
+ */
 function getViewPortDimensions() {
-  if (!isSafeFrameWindow() && !canAccessTopWindow()) {
+  if (!isSafeFrameWindow() && !canAccessWindowTop()) {
     return '';
   }
 
@@ -741,7 +749,7 @@ function getSlotPosition(adUnitElementId) {
     return '';
   }
 
-  if (!isSafeFrameWindow() && !canAccessTopWindow()) {
+  if (!isSafeFrameWindow() && !canAccessWindowTop()) {
     return '';
   }
 
@@ -764,7 +772,7 @@ function getSlotPosition(adUnitElementId) {
 
     position.x = Math.round(sfGeom.t);
     position.y = Math.round(sfGeom.l);
-  } else if (canAccessTopWindow()) {
+  } else if (canAccessWindowTop()) {
     try {
       // window.top based computing
       const wt = getWindowTop();
@@ -794,16 +802,12 @@ function getSlotPosition(adUnitElementId) {
       const scrollLeft = wt.pageXOffset || docEl.scrollLeft || body.scrollLeft;
 
       const elComputedStyle = wt.getComputedStyle(domElement, null);
-      const elComputedDisplay = elComputedStyle.display || 'block';
-      const mustDisplayElement = elComputedDisplay === 'none';
+      const mustDisplayElement = elComputedStyle.display === 'none';
 
       if (mustDisplayElement) {
-        domElement.style = domElement.style || {};
-        const originalDisplay = domElement.style.display;
-        domElement.style.display = 'block';
-        box = domElement.getBoundingClientRect();
-        domElement.style.display = originalDisplay || null;
+        logWarn(LOG_PREFIX, 'The element is hidden. The slot position cannot be computed.');
       }
+
       position.x = Math.round(box.left + scrollLeft - clientLeft);
       position.y = Math.round(box.top + scrollTop - clientTop);
     } catch (err) {
@@ -822,22 +826,14 @@ function getTimestampUTC() {
   return Math.floor(new Date().getTime() / 1000) - new Date().getTimezoneOffset() * 60;
 }
 
-function getPrintNumber(adUnitCode, bidderRequest) {
-  if (!bidderRequest.bids || !bidderRequest.bids.length) {
-    return 1;
-  }
-  const adagioBid = find(bidderRequest.bids, bid => bid.adUnitCode === adUnitCode);
-  return adagioBid.bidderRequestsCount || 1;
-}
-
 /**
-  * domLoading feature is computed on window.top if reachable.
-  */
+ * domLoading feature is computed on window.top if reachable.
+ */
 function getDomLoadingDuration() {
   let domLoadingDuration = -1;
   let performance;
 
-  performance = (canAccessTopWindow()) ? getWindowTop().performance : getWindowSelf().performance;
+  performance = (canAccessWindowTop()) ? getWindowTop().performance : getWindowSelf().performance;
 
   if (performance && performance.timing && performance.timing.navigationStart > 0) {
     const val = performance.timing.domLoading - performance.timing.navigationStart;
@@ -957,6 +953,31 @@ const OUTSTREAM_RENDERER = {
   }
 };
 
+/**
+ *
+ * @param {*} bidRequest
+ * @returns
+ */
+const _getFeatures = (bidRequest) => {
+  const f = { ...deepAccess(bidRequest, 'ortb2.ext.features', GlobalExchange.getOrSetGlobalFeatures()) } || {};
+
+  f.print_number = deepAccess(bidRequest, 'bidderRequestsCount', 1).toString();
+
+  if (f.type === 'bidAdapter') {
+    f.adunit_position = getSlotPosition(bidRequest.params.adUnitElementId)
+  } else {
+    f.adunit_position = deepAccess(bidRequest, 'ortb2Imp.ext.data.adunit_position');
+  }
+
+  Object.keys(f).forEach((prop) => {
+    if (f[prop] === '') {
+      delete f[prop];
+    }
+  });
+
+  return f;
+}
+
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -967,6 +988,7 @@ export const spec = {
 
     autoFillParams(bid);
 
+    // Note: `bid.params.placement` is not related to the video param `placement`.
     if (!(bid.params.organizationId && bid.params.site && bid.params.placement)) {
       logWarn(`${LOG_PREFIX} at least one required param is missing.`);
       // internal.enqueue(debugData());
@@ -984,6 +1006,7 @@ export const spec = {
     const device = internal.getDevice();
     const site = internal.getSite(bidderRequest);
     const pageviewId = internal.getPageviewId();
+    const hasRtd = internal.hasRtd();
     const gdprConsent = _getGdprConsent(bidderRequest) || {};
     const uspConsent = _getUspConsent(bidderRequest) || {};
     const coppa = _getCoppa();
@@ -993,20 +1016,19 @@ export const spec = {
     const syncEnabled = deepAccess(config.getConfig('userSync'), 'syncEnabled')
     const usIfr = syncEnabled && userSync.canBidderRegisterSync('iframe', 'adagio')
 
+    // We don't validate the dsa object in adapter and let our server do it.
+    const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
+
+    let rtdSamplingSession = deepAccess(bidderRequest, 'ortb2.ext.session');
+    const dataExchange = (rtdSamplingSession) ? { session: rtdSamplingSession } : GlobalExchange.getExchangeData();
+
     const aucId = generateUUID()
 
-    const adUnits = _map(validBidRequests, (rawBidRequest) => {
+    const adUnits = validBidRequests.map(rawBidRequest => {
       const bidRequest = deepClone(rawBidRequest);
 
       // Fix https://github.com/prebid/Prebid.js/issues/9781
       bidRequest.auctionId = aucId
-
-      const globalFeatures = GlobalExchange.getOrSetGlobalFeatures();
-      const features = {
-        ...globalFeatures,
-        print_number: getPrintNumber(bidRequest.adUnitCode, bidderRequest).toString(),
-        adunit_position: getSlotPosition(bidRequest.params.adUnitElementId) // adUnitElementId à déplacer ???
-      };
 
       // Force the Split Keyword to be a String
       if (bidRequest.params.splitKeyword) {
@@ -1018,6 +1040,9 @@ export const spec = {
           logWarn(LOG_PREFIX, 'The splitKeyword param have been removed because the type is invalid, accepted type: number or string.');
         }
       }
+
+      // Enforce the organizationId param to be a string
+      bidRequest.params.organizationId = bidRequest.params.organizationId.toString();
 
       // Force the Data Layer key and value to be a String
       if (bidRequest.params.dataLayer) {
@@ -1048,26 +1073,26 @@ export const spec = {
         }
       }
 
-      Object.keys(features).forEach((prop) => {
-        if (features[prop] === '') {
-          delete features[prop];
-        }
-      });
-
+      const features = _getFeatures(bidRequest);
       bidRequest.features = features;
 
-      internal.enqueue({
-        action: 'features',
-        ts: Date.now(),
-        data: {
-          features: bidRequest.features,
-          params: bidRequest.params,
-          adUnitCode: bidRequest.adUnitCode
-        }
-      });
+      if (!hasRtd) {
+        internal.enqueue({
+          action: 'features',
+          ts: Date.now(),
+          data: {
+            features,
+            params: { ...bidRequest.params },
+            adUnitCode: bidRequest.adUnitCode
+          }
+        });
+      }
 
       // Handle priceFloors module
-      const computedFloors = _getFloors(bidRequest);
+      // We need to use `rawBidRequest` as param because:
+      // - adagioBidAdapter generates its own auctionId due to transmitTid activity limitation (see https://github.com/prebid/Prebid.js/pull/10079)
+      // - the priceFloors.getFloor() uses a `_floorDataForAuction` map to store the floors based on the auctionId.
+      const computedFloors = _getFloors(rawBidRequest);
       if (isArray(computedFloors) && computedFloors.length) {
         bidRequest.floors = computedFloors
 
@@ -1111,30 +1136,43 @@ export const spec = {
         _buildVideoBidRequest(bidRequest);
       }
 
-      storeRequestInAdagioNS(bidRequest);
+      const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
+      if (gpid) {
+        bidRequest.gpid = gpid;
+      }
 
-      // Remove these fields at the very end, so we can still use them before.
-      delete bidRequest.transactionId;
-      delete bidRequest.ortb2Imp;
-      delete bidRequest.ortb2;
-      delete bidRequest.sizes;
+      if (!hasRtd) {
+        // store the whole bidRequest (adUnit) object in the ADAGIO namespace.
+        storeRequestInAdagioNS(bidRequest);
+      }
 
-      return bidRequest;
+      // Remove some params that are not needed on the server side.
+      delete bidRequest.params.siteId;
+
+      // whitelist the fields that are allowed to be sent to the server.
+      const adUnit = {
+        adUnitCode: bidRequest.adUnitCode,
+        auctionId: bidRequest.auctionId,
+        bidder: bidRequest.bidder,
+        bidId: bidRequest.bidId,
+        params: bidRequest.params,
+        features: bidRequest.features,
+        gpid: bidRequest.gpid,
+        mediaTypes: bidRequest.mediaTypes,
+        nativeParams: bidRequest.nativeParams,
+        score: bidRequest.score,
+        transactionId: bidRequest.transactionId,
+      }
+
+      return adUnit;
     });
 
     // Group ad units by organizationId
     const groupedAdUnits = adUnits.reduce((groupedAdUnits, adUnit) => {
-      const adUnitCopy = deepClone(adUnit);
-      adUnitCopy.params.organizationId = adUnitCopy.params.organizationId.toString();
+      const organizationId = adUnit.params.organizationId
 
-      // remove useless props
-      delete adUnitCopy.floorData;
-      delete adUnitCopy.params.siteId;
-      delete adUnitCopy.userId;
-      delete adUnitCopy.userIdAsEids;
-
-      groupedAdUnits[adUnitCopy.params.organizationId] = groupedAdUnits[adUnitCopy.params.organizationId] || [];
-      groupedAdUnits[adUnitCopy.params.organizationId].push(adUnitCopy);
+      groupedAdUnits[organizationId] = groupedAdUnits[organizationId] || [];
+      groupedAdUnits[organizationId].push(adUnit);
 
       return groupedAdUnits;
     }, {});
@@ -1148,24 +1186,26 @@ export const spec = {
     });
 
     // Build one request per organizationId
-    const requests = _map(Object.keys(groupedAdUnits), organizationId => {
+    const requests = Object.keys(groupedAdUnits).map(organizationId => {
       return {
         method: 'POST',
         url: ENDPOINT,
         data: {
           organizationId: organizationId,
+          hasRtd: hasRtd ? 1 : 0,
           secure: secure,
           device: device,
           site: site,
           pageviewId: pageviewId,
           adUnits: groupedAdUnits[organizationId],
-          data: GlobalExchange.getExchangeData(),
+          data: dataExchange,
           regs: {
             gdpr: gdprConsent,
             coppa: coppa,
             ccpa: uspConsent,
             gpp: gppConsent.gpp,
-            gppSid: gppConsent.gppSid
+            gppSid: gppConsent.gppSid,
+            dsa: dsa // populated if exists
           },
           schain: schain,
           user: {
@@ -1202,6 +1242,7 @@ export const spec = {
             const bidReq = (find(bidRequest.data.adUnits, bid => bid.bidId === bidObj.requestId));
 
             if (bidReq) {
+              // bidObj.meta is the `bidResponse.meta` object according to https://docs.prebid.org/dev-docs/bidder-adaptor.html#interpreting-the-response
               bidObj.meta = deepAccess(bidObj, 'meta', {});
               bidObj.meta.mediaType = bidObj.mediaType;
               bidObj.meta.advertiserDomains = (Array.isArray(bidObj.aDomain) && bidObj.aDomain.length) ? bidObj.aDomain : [];
@@ -1256,20 +1297,6 @@ export const spec = {
 
     return syncs;
   },
-
-  /**
-   * Handle custom logic in s2s context
-   *
-   * @param {*} params
-   * @param {boolean} isOrtb Is an s2s context
-   * @param {*} adUnit
-   * @param {*} bidRequests
-   * @returns {object} updated params
-   */
-  transformBidParams(params, isOrtb, adUnit, bidRequests) {
-    // We do not have a prebid server adapter. So let's return unchanged params.
-    return params;
-  }
 };
 
 initAdagio();

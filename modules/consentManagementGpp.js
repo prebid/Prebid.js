@@ -70,13 +70,18 @@ export class GPPClient {
    *  - a promise to GPP data.
    */
   static init(mkCmp = cmpClient) {
-    if (this.INST == null) {
-      this.INST = this.ping(mkCmp).catch(e => {
-        this.INST = null;
+    let inst = this.INST;
+    if (!inst) {
+      let err;
+      const reset = () => err && (this.INST = null);
+      inst = this.INST = this.ping(mkCmp).catch(e => {
+        err = true;
+        reset();
         throw e;
       });
+      reset();
     }
-    return this.INST.then(([client, pingData]) => [
+    return inst.then(([client, pingData]) => [
       client,
       client.initialized ? client.refresh() : client.init(pingData)
     ]);
@@ -418,6 +423,11 @@ function processCmpData(consentData) {
   ) {
     throw new GPPError('CMP returned unexpected value during lookup process.', consentData);
   }
+  ['usnatv1', 'uscav1'].forEach(section => {
+    if (consentData?.parsedSections?.[section]) {
+      logWarn(`Received invalid section from cmp: '${section}'. Some functionality may not work as expected`, consentData)
+    }
+  })
   return storeConsentData(consentData);
 }
 
@@ -450,7 +460,7 @@ export function resetConsentData() {
 
 /**
  * A configuration function that initializes some module variables, as well as add a hook into the requestBids function
- * @param {{cmp:string, timeout:number, allowAuctionWithoutConsent:boolean, defaultGdprScope:boolean}} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
+ * @param {{cmp:string, timeout:number, defaultGdprScope:boolean}} config required; consentManagement module config settings; cmp (string), timeout (int))
  */
 export function setConsentConfig(config) {
   config = config && config.gpp;

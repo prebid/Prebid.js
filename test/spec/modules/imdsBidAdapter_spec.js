@@ -1362,17 +1362,17 @@ describe('imdsBidAdapter ', function () {
       expect(usersyncs[0].url).to.contain('https://ad-cdn.technoratimedia.com/html/usersync.html');
     });
 
-    it('should return a pixel usersync when pixels is enabled', function () {
+    it('should return an image usersync when pixels are enabled', function () {
       let usersyncs = spec.getUserSyncs({
         pixelEnabled: true
       }, null);
       expect(usersyncs).to.be.an('array').with.lengthOf(1);
-      expect(usersyncs[0]).to.have.property('type', 'pixel');
+      expect(usersyncs[0]).to.have.property('type', 'image');
       expect(usersyncs[0]).to.have.property('url');
       expect(usersyncs[0].url).to.contain('https://sync.technoratimedia.com/services');
     });
 
-    it('should return an iframe usersync when both iframe and pixels is enabled', function () {
+    it('should return an iframe usersync when both iframe and pixel are enabled', function () {
       let usersyncs = spec.getUserSyncs({
         iframeEnabled: true,
         pixelEnabled: true

@@ -9,6 +9,10 @@ import {
 import {objectGuard, writeProtectRule} from './objectGuard.js';
 import {mergeDeep} from '../../src/utils.js';
 
+/**
+ * @typedef {import('./objectGuard.js').ObjectGuard} ObjectGuard
+ */
+
 function ortb2EnrichRules(isAllowed = isActivityAllowed) {
   return [
     {

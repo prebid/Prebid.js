@@ -12,12 +12,13 @@ import {
   setSubmoduleRegistry,
   syncDelay,
 } from 'modules/userId/index.js';
+import {UID1_EIDS} from 'libraries/uid1Eids/uid1Eids.js';
 import {createEidsArray, EID_CONFIG} from 'modules/userId/eids.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import {getPrebidInternal} from 'src/utils.js';
 import * as events from 'src/events.js';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 import {getGlobal} from 'src/prebidGlobal.js';
 import {resetConsentData, } from 'modules/consentManagement.js';
 import {server} from 'test/mocks/xhr.js';
@@ -96,6 +97,25 @@ describe('User ID', function () {
       },
       aliasName,
       eids
+    }
+  }
+
+  function createMockEid(name, source) {
+    return {
+      [name]: {
+        source: source || `${name}Source`,
+        atype: 3,
+        getValue: function(data) {
+          if (data.id) {
+            return data.id;
+          } else {
+            return data;
+          }
+        },
+        getUidExt: function(data) {
+          return data.ext
+        }
+      }
     }
   }
 
@@ -382,6 +402,93 @@ describe('User ID', function () {
       });
     });
 
+    describe('createEidsArray', () => {
+      beforeEach(() => {
+        init(config);
+        setSubmoduleRegistry([
+          createMockIdSubmodule('mockId1', null, null,
+            {'mockId1': {source: 'mock1source', atype: 1}}),
+          createMockIdSubmodule('mockId2v1', null, null,
+            {'mockId2v1': {source: 'mock2source', atype: 2, getEidExt: () => ({v: 1})}}),
+          createMockIdSubmodule('mockId2v2', null, null,
+            {'mockId2v2': {source: 'mock2source', atype: 2, getEidExt: () => ({v: 2})}}),
+        ]);
+      });
+
+      it('should group UIDs by source and ext', () => {
+        const eids = createEidsArray({
+          mockId1: ['mock-1-1', 'mock-1-2'],
+          mockId2v1: ['mock-2-1', 'mock-2-2'],
+          mockId2v2: ['mock-2-1', 'mock-2-2']
+        });
+        expect(eids).to.eql([
+          {
+            source: 'mock1source',
+            uids: [
+              {
+                id: 'mock-1-1',
+                atype: 1,
+              },
+              {
+                id: 'mock-1-2',
+                atype: 1,
+              }
+            ]
+          },
+          {
+            source: 'mock2source',
+            ext: {
+              v: 1
+            },
+            uids: [
+              {
+                id: 'mock-2-1',
+                atype: 2,
+              },
+              {
+                id: 'mock-2-2',
+                atype: 2,
+              }
+            ]
+          },
+          {
+            source: 'mock2source',
+            ext: {
+              v: 2
+            },
+            uids: [
+              {
+                id: 'mock-2-1',
+                atype: 2,
+              },
+              {
+                id: 'mock-2-2',
+                atype: 2,
+              }
+            ]
+          }
+        ])
+      });
+
+      it('when merging with pubCommonId, should not alter its eids', () => {
+        const uid = {
+          pubProvidedId: [
+            {
+              source: 'mock1Source',
+              uids: [
+                {id: 'uid2'}
+              ]
+            }
+          ],
+          mockId1: 'uid1',
+        };
+        const eids = createEidsArray(uid);
+        expect(eids).to.have.length(1);
+        expect(eids[0].uids.map(u => u.id)).to.have.members(['uid1', 'uid2']);
+        expect(uid.pubProvidedId[0].uids).to.eql([{id: 'uid2'}]);
+      });
+    })
+
     it('pbjs.getUserIds', function (done) {
       init(config);
       setSubmoduleRegistry([sharedIdSystemSubmodule]);
@@ -557,10 +664,10 @@ describe('User ID', function () {
     it('pbjs.getUserIdsAsEids should prioritize user ids according to config available to core', () => {
       init(config);
       setSubmoduleRegistry([
-        createMockIdSubmodule('mockId1Module', {id: {uid2: {id: 'uid2_value'}}}),
-        createMockIdSubmodule('mockId2Module', {id: {pubcid: 'pubcid_value', lipb: {lipbid: 'lipbid_value_from_mockId2Module'}}}),
-        createMockIdSubmodule('mockId3Module', {id: {uid2: {id: 'uid2_value_from_mockId3Module'}, pubcid: 'pubcid_value_from_mockId3Module', lipb: {lipbid: 'lipbid_value'}, merkleId: {id: 'merkleId_value_from_mockId3Module'}}}),
-        createMockIdSubmodule('mockId4Module', {id: {merkleId: {id: 'merkleId_value'}}})
+        createMockIdSubmodule('mockId1Module', {id: {uid2: {id: 'uid2_value'}}}, null, createMockEid('uid2')),
+        createMockIdSubmodule('mockId2Module', {id: {pubcid: 'pubcid_value', lipb: {lipbid: 'lipbid_value_from_mockId2Module'}}}, null, createMockEid('pubcid')),
+        createMockIdSubmodule('mockId3Module', {id: {uid2: {id: 'uid2_value_from_mockId3Module'}, pubcid: 'pubcid_value_from_mockId3Module', lipb: {lipbid: 'lipbid_value'}, merkleId: {id: 'merkleId_value_from_mockId3Module'}}}, null, {...createMockEid('uid2'), ...createMockEid('merkleId'), ...createMockEid('lipb')}),
+        createMockIdSubmodule('mockId4Module', {id: {merkleId: {id: 'merkleId_value'}}}, null, createMockEid('merkleId'))
       ]);
       config.setConfig({
         userSync: {
@@ -590,6 +697,38 @@ describe('User ID', function () {
         const expected = createEidsArray(ids);
         expect(eids).to.deep.equal(expected);
       });
+    });
+
+    it('pbjs.getUserIdsAsEids should prioritize the uid1 according to config available to core', () => {
+      init(config);
+      setSubmoduleRegistry([
+        createMockIdSubmodule('mockId1Module', {id: {tdid: {id: 'uid1_value'}}}, null, UID1_EIDS),
+        createMockIdSubmodule('mockId2Module', {id: {tdid: {id: 'uid1Id_value_from_mockId2Module'}}}, null, UID1_EIDS),
+        createMockIdSubmodule('mockId3Module', {id: {tdid: {id: 'uid1Id_value_from_mockId3Module'}}}, null, UID1_EIDS)
+      ]);
+      config.setConfig({
+        userSync: {
+          idPriority: {
+            tdid: ['mockId2Module', 'mockId3Module', 'mockId1Module']
+          },
+          auctionDelay: 10, // with auctionDelay > 0, no auction is needed to complete init
+          userIds: [
+            { name: 'mockId1Module' },
+            { name: 'mockId2Module' },
+            { name: 'mockId3Module' }
+          ]
+        }
+      });
+
+      const ids = {
+        'tdid': { id: 'uid1Id_value_from_mockId2Module' },
+      };
+
+      return getGlobal().getUserIdsAsync().then(() => {
+        const eids = getGlobal().getUserIdsAsEids();
+        const expected = createEidsArray(ids);
+        expect(eids).to.deep.equal(expected);
+      })
     });
 
     describe('EID updateConfig', () => {
@@ -1575,7 +1714,7 @@ describe('User ID', function () {
             // check user sync is delayed after auction is ended
             mockIdCallback.calledOnce.should.equal(false);
             events.on.calledOnce.should.equal(true);
-            events.on.calledWith(CONSTANTS.EVENTS.AUCTION_END, sinon.match.func);
+            events.on.calledWith(EVENTS.AUCTION_END, sinon.match.func);
 
             // once auction is ended, sync user ids after delay
             events.on.callArg(1);
@@ -1609,7 +1748,7 @@ describe('User ID', function () {
             // sync delay after auction is ended
             mockIdCallback.calledOnce.should.equal(false);
             events.on.calledOnce.should.equal(true);
-            events.on.calledWith(CONSTANTS.EVENTS.AUCTION_END, sinon.match.func);
+            events.on.calledWith(EVENTS.AUCTION_END, sinon.match.func);
 
             // once auction is ended, if no sync delay, fetch ids
             events.on.callArg(1);
@@ -2965,7 +3104,7 @@ describe('User ID', function () {
       });
 
       function endAuction() {
-        events.emit(CONSTANTS.EVENTS.AUCTION_END, {});
+        events.emit(EVENTS.AUCTION_END, {});
         return new Promise((resolve) => setTimeout(resolve));
       }
 
@@ -3467,11 +3606,16 @@ describe('User ID', function () {
 
       it('pbjs.getUserIdsAsEidBySource with priority config available to core', () => {
         init(config);
+        const uid2Eids = createMockEid('uid2', 'uidapi.com')
+        const pubcEids = createMockEid('pubcid', 'pubcid.org')
+        const liveIntentEids = createMockEid('lipb', 'liveintent.com')
+        const merkleEids = createMockEid('merkleId', 'merkleinc.com')
+
         setSubmoduleRegistry([
-          createMockIdSubmodule('mockId1Module', {id: {uid2: {id: 'uid2_value'}}}),
-          createMockIdSubmodule('mockId2Module', {id: {pubcid: 'pubcid_value', lipb: {lipbid: 'lipbid_value_from_mockId2Module'}}}),
-          createMockIdSubmodule('mockId3Module', {id: {uid2: {id: 'uid2_value_from_mockId3Module'}, pubcid: 'pubcid_value_from_mockId3Module', lipb: {lipbid: 'lipbid_value'}, merkleId: {id: 'merkleId_value_from_mockId3Module'}}}),
-          createMockIdSubmodule('mockId4Module', {id: {merkleId: {id: 'merkleId_value'}}})
+          createMockIdSubmodule('mockId1Module', {id: {uid2: {id: 'uid2_value'}}}, null, uid2Eids),
+          createMockIdSubmodule('mockId2Module', {id: {pubcid: 'pubcid_value', lipb: {lipbid: 'lipbid_value_from_mockId2Module'}}}, null, {...pubcEids, ...liveIntentEids}),
+          createMockIdSubmodule('mockId3Module', {id: {uid2: {id: 'uid2_value_from_mockId3Module'}, pubcid: 'pubcid_value_from_mockId3Module', lipb: {lipbid: 'lipbid_value'}, merkleId: {id: 'merkleId_value_from_mockId3Module'}}}, null, {...uid2Eids, ...pubcEids, ...liveIntentEids}),
+          createMockIdSubmodule('mockId4Module', {id: {merkleId: {id: 'merkleId_value'}}}, null, merkleEids)
         ]);
         config.setConfig({
           userSync: {

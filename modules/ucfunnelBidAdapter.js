@@ -5,6 +5,12 @@ import { getStorageManager } from '../src/storageManager.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ */
+
 const COOKIE_NAME = 'ucf_uid';
 const VER = 'ADGENT_PREBID-2018011501';
 const BIDDER_CODE = 'ucfunnel';
@@ -64,11 +70,10 @@ export const spec = {
    * Format ucfunnel responses as Prebid bid responses
    * @param {ucfunnelResponseObj} ucfunnelResponse A successful response from ucfunnel.
    * @return {Bid[]} An array of formatted bids.
-  */
+   */
   interpretResponse: function (ucfunnelResponseObj, request) {
     const bidRequest = request.bidRequest;
     const ad = ucfunnelResponseObj ? ucfunnelResponseObj.body : {};
-    const videoPlayerSize = parseSizes(bidRequest);
 
     let bid = {
       requestId: bidRequest.bidId,
@@ -117,10 +122,10 @@ export const spec = {
           vastXml: ad.vastXml
         });
 
-        if (videoPlayerSize && videoPlayerSize.length === 2) {
+        if (bidRequest.sizes && bidRequest.sizes.length > 0) {
           Object.assign(bid, {
-            width: videoPlayerSize[0],
-            height: videoPlayerSize[1]
+            width: bidRequest.sizes[0][0],
+            height: bidRequest.sizes[0][1]
           });
         }
         break;
@@ -128,8 +133,8 @@ export const spec = {
       default:
         var size = parseSizes(bidRequest);
         Object.assign(bid, {
-          width: ad.width || size[0],
-          height: ad.height || size[1],
+          width: ad.width || size[0][0],
+          height: ad.height || size[0][1],
           ad: ad.adm || ''
         });
     }
@@ -156,12 +161,6 @@ export const spec = {
 };
 registerBidder(spec);
 
-function transformSizes(requestSizes) {
-  if (typeof requestSizes === 'object' && requestSizes.length) {
-    return requestSizes[0];
-  }
-}
-
 function getCookieSyncParameter(gdprApplies, apiVersion, consentString, uspConsent) {
   let param = '?';
   if (gdprApplies == '1') {
@@ -187,11 +186,10 @@ function parseSizes(bid) {
         params.video.playerWidth,
         params.video.playerHeight
       ];
-      return size;
+      return [size];
     }
   }
-
-  return transformSizes(bid.sizes);
+  return bid.sizes;
 }
 
 function getSupplyChain(schain) {
@@ -244,6 +242,20 @@ function getFloor(bid, size, mediaTypes) {
   return undefined;
 }
 
+function addBidData(bidData, key, value) {
+  if (value) {
+    bidData[key] = value;
+  }
+}
+
+function getFormat(size) {
+  let formatList = []
+  for (var i = 0; i < size.length; i++) {
+    formatList.push(size[i].join(','));
+  }
+  return (formatList.length > 0) ? formatList.join(';') : '';
+}
+
 function getRequestData(bid, bidderRequest) {
   const size = parseSizes(bid);
   const language = navigator.language;
@@ -264,14 +276,8 @@ function getRequestData(bid, bidderRequest) {
     schain: supplyChain
   };
 
-  if (bidFloor) {
-    bidData.fp = bidFloor;
-  }
-
-  if (gpid) {
-    bidData.gpid = gpid;
-  }
-
+  addBidData(bidData, 'fp', bidFloor);
+  addBidData(bidData, 'gpid', gpid);
   addUserId(bidData, bid.userId);
 
   bidData.u = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
@@ -293,10 +299,11 @@ function getRequestData(bid, bidderRequest) {
     }
   }
 
-  if (size != undefined && size.length == 2) {
-    bidData.w = size[0];
-    bidData.h = size[1];
+  if (size != undefined && size.length > 0 && size[0].length == 2) {
+    bidData.w = size[0][0];
+    bidData.h = size[0][1];
   }
+  addBidData(bidData, 'format', getFormat(size));
 
   if (bidderRequest && bidderRequest.uspConsent) {
     Object.assign(bidData, {

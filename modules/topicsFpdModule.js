@@ -14,26 +14,46 @@ const MODULE_NAME = 'topicsFpd';
 const DEFAULT_EXPIRATION_DAYS = 21;
 const DEFAULT_FETCH_RATE_IN_DAYS = 1;
 let LOAD_TOPICS_INITIALISE = false;
+let iframeLoadedURL = [];
 
 export function reset() {
   LOAD_TOPICS_INITIALISE = false;
+  iframeLoadedURL = [];
 }
 
 const bidderIframeList = {
-  maxTopicCaller: 2,
+  maxTopicCaller: 4,
   bidders: [{
     bidder: 'pubmatic',
     iframeURL: 'https://ads.pubmatic.com/AdServer/js/topics/topics_frame.html'
   }, {
     bidder: 'rtbhouse',
     iframeURL: 'https://topics.authorizedvault.com/topicsapi.html'
+  }, {
+    bidder: 'openx',
+    iframeURL: 'https://pa.openx.net/topics_frame.html'
+  }, {
+    bidder: 'improvedigital',
+    iframeURL: 'https://hb.360yield.com/privacy-sandbox/topics.html'
+  }, {
+    bidder: 'onetag',
+    iframeURL: 'https://onetag-sys.com/static/topicsapi.html'
+  }, {
+    bidder: 'taboola',
+    iframeURL: 'https://cdn.taboola.com/libtrc/static/topics/taboola-prebid-browsing-topics.html'
+  }, {
+    bidder: 'discovery',
+    iframeURL: 'https://api.popin.cc/topic/prebid-topics-frame.html'
+  }, {
+    bidder: 'undertone',
+    iframeURL: 'https://creative-p.undertone.com/spk-public/topics_frame.html'
   }]
 }
+
 export const coreStorage = getCoreStorageManager(MODULE_NAME);
 export const topicStorageName = 'prebid:topics';
 export const lastUpdated = 'lastUpdated';
 
-const iframeLoadedURL = [];
 const TAXONOMIES = {
   // map from topic taxonomyVersion to IAB segment taxonomy
   '1': 600,
@@ -160,7 +180,7 @@ export function getCachedTopics() {
 }
 
 /**
- * Recieve messages from iframe loaded for bidders to fetch topic
+ * Receive messages from iframe loaded for bidders to fetch topic
  * @param {MessageEvent} evt
  */
 export function receiveMessage(evt) {
@@ -177,9 +197,9 @@ export function receiveMessage(evt) {
 }
 
 /**
-Function to store Topics data recieved from iframe in storage(name: "prebid:topics")
-* @param {Topics} topics
-*/
+Function to store Topics data received from iframe in storage(name: "prebid:topics")
+ * @param {Topics} topics
+ */
 export function storeInLocalStorage(bidder, topics) {
   const storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
   const topicsObj = {
@@ -202,8 +222,8 @@ function isCachedDataExpired(storedTime, cacheTime) {
 }
 
 /**
-* Function to get random bidders based on count passed with array of bidders
-**/
+ * Function to get random bidders based on count passed with array of bidders
+ */
 function getRandomBidders(arr, count) {
   return ([...arr].sort(() => 0.5 - Math.random())).slice(0, count)
 }

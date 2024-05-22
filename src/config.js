@@ -12,15 +12,24 @@
  * @property {(string|Object)} [video-outstream]
  */
 
-import { isValidPriceConfig } from './cpmBucketManager.js';
-import {find, includes, arrayFrom as from} from './polyfill.js';
+import {isValidPriceConfig} from './cpmBucketManager.js';
+import {arrayFrom as from, find, includes} from './polyfill.js';
 import {
-  mergeDeep, deepClone, getParameterByName, isPlainObject, logMessage, logWarn, logError,
-  isArray, isStr, isBoolean, deepAccess, bind
+  deepAccess,
+  deepClone,
+  getParameterByName,
+  isArray,
+  isBoolean,
+  isPlainObject,
+  isStr,
+  logError,
+  logMessage,
+  logWarn,
+  mergeDeep
 } from './utils.js';
-import CONSTANTS from './constants.json';
+import {DEBUG_MODE} from './constants.js';
 
-const DEFAULT_DEBUG = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
+const DEFAULT_DEBUG = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
@@ -49,13 +58,6 @@ const GRANULARITY_OPTIONS = {
 };
 
 const ALL_TOPICS = '*';
-
-/**
- * @typedef {object} PrebidConfig
- *
- * @property {string} cache.url Set a url if we should use prebid-cache to store video bids before adding
- *   bids to the auction. **NOTE** This must be set if you want to use the dfpAdServerVideo module.
- */
 
 export function newConfig() {
   let listeners = [];
@@ -505,7 +507,7 @@ export function newConfig() {
     return function(cb) {
       return function(...args) {
         if (typeof cb === 'function') {
-          return runWithBidder(bidder, bind.call(cb, this, ...args))
+          return runWithBidder(bidder, cb.bind(this, ...args))
         } else {
           logWarn('config.callbackWithBidder callback is not a function');
         }
@@ -542,4 +544,8 @@ export function newConfig() {
   };
 }
 
+/**
+ * Set a `cache.url` if we should use prebid-cache to store video bids before adding bids to the auction.
+ * This must be set if you want to use the dfpAdServerVideo module.
+ */
 export const config = newConfig();

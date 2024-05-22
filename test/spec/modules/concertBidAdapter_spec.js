@@ -94,7 +94,7 @@ describe('ConcertAdapter', function () {
   });
 
   describe('spec.isBidRequestValid', function() {
-    it('should return when it recieved all the required params', function() {
+    it('should return when it received all the required params', function() {
       const bid = bidRequests[0];
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
@@ -116,7 +116,20 @@ describe('ConcertAdapter', function () {
       expect(payload).to.have.property('meta');
       expect(payload).to.have.property('slots');
 
-      const metaRequiredFields = ['prebidVersion', 'pageUrl', 'screen', 'debug', 'uid', 'optedOut', 'adapterVersion', 'uspConsent', 'gdprConsent', 'gppConsent', 'browserLanguage'];
+      const metaRequiredFields = [
+        'prebidVersion',
+        'pageUrl',
+        'screen',
+        'debug',
+        'uid',
+        'optedOut',
+        'adapterVersion',
+        'uspConsent',
+        'gdprConsent',
+        'gppConsent',
+        'browserLanguage',
+        'tdid'
+      ];
       const slotsRequiredFields = ['name', 'bidId', 'transactionId', 'sizes', 'partnerId', 'slotType'];
 
       metaRequiredFields.forEach(function(field) {
@@ -199,6 +212,31 @@ describe('ConcertAdapter', function () {
       expect(slot.offsetCoordinates.x).to.equal(100)
       expect(slot.offsetCoordinates.y).to.equal(0)
     })
+
+    it('should not pass along tdid if the user has opted out', function() {
+      storage.setDataInLocalStorage('c_nap', 'true');
+      const request = spec.buildRequests(bidRequests, bidRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.meta.tdid).to.be.null;
+    });
+
+    it('should not pass along tdid if USP consent disallows', function() {
+      storage.removeDataFromLocalStorage('c_nap');
+      const request = spec.buildRequests(bidRequests, { ...bidRequest, uspConsent: '1YY' });
+      const payload = JSON.parse(request.data);
+
+      expect(payload.meta.tdid).to.be.null;
+    });
+
+    it('should pass along tdid if the user has not opted out', function() {
+      storage.removeDataFromLocalStorage('c_nap', 'true');
+      const tdid = '123abc';
+      const bidRequestsWithTdid = [{ ...bidRequests[0], userId: { tdid } }]
+      const request = spec.buildRequests(bidRequestsWithTdid, bidRequest);
+      const payload = JSON.parse(request.data);
+      expect(payload.meta.tdid).to.equal(tdid);
+    });
   });
 
   describe('spec.interpretResponse', function() {

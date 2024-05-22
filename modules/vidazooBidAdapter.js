@@ -1,9 +1,20 @@
-import {_each, chunk, deepAccess, isFn, parseSizesInput, parseUrl, uniques, isArray} from '../src/utils.js';
+import {
+  _each,
+  deepAccess,
+  isFn,
+  parseSizesInput,
+  parseUrl,
+  uniques,
+  isArray,
+  formatQS,
+  triggerPixel
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {bidderSettings} from '../src/bidderSettings.js';
 import {config} from '../src/config.js';
+import {chunk} from '../libraries/chunk/chunk.js';
 
 const GVLID = 744;
 const DEFAULT_SUB_DOMAIN = 'prebid';
@@ -72,9 +83,11 @@ function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout
   const ptrace = getCacheOpt();
   const isStorageAllowed = bidderSettings.get(BIDDER_CODE, 'storageAllowed');
 
-  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid', deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', ''));
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', '');
   const cat = deepAccess(bidderRequest, 'ortb2.site.cat', []);
   const pagecat = deepAccess(bidderRequest, 'ortb2.site.pagecat', []);
+  const contentData = deepAccess(bidderRequest, 'ortb2.site.content.data', []);
+  const userData = deepAccess(bidderRequest, 'ortb2.user.data', []);
 
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
@@ -110,6 +123,8 @@ function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout
     isStorageAllowed: isStorageAllowed,
     gpid: gpid,
     cat: cat,
+    contentData,
+    userData: userData,
     pagecat: pagecat,
     transactionId: ortb2Imp?.ext?.tid,
     bidderRequestId: bidderRequestId,
@@ -146,6 +161,13 @@ function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout
   } else if (bidderRequest.ortb2?.regs?.gpp) {
     data.gppString = bidderRequest.ortb2.regs.gpp;
     data.gppSid = bidderRequest.ortb2.regs.gpp_sid;
+  }
+
+  if (bidderRequest.fledgeEnabled) {
+    const fledge = deepAccess(bidderRequest, 'ortb2Imp.ext.ae');
+    if (fledge) {
+      data.fledge = fledge;
+    }
   }
 
   _each(ext, (value, key) => {
@@ -270,6 +292,7 @@ function interpretResponse(serverResponse, request) {
         height,
         currency,
         bidId,
+        nurl,
         advertiserDomains,
         metaData,
         mediaType = BANNER
@@ -288,6 +311,10 @@ function interpretResponse(serverResponse, request) {
         netRevenue: true,
         ttl: exp || TTL_SECONDS,
       };
+
+      if (nurl) {
+        response.nurl = nurl;
+      }
 
       if (metaData) {
         Object.assign(response, {
@@ -347,6 +374,33 @@ function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '',
     });
   }
   return syncs;
+}
+
+/**
+ * @param {Bid} bid
+ */
+function onBidWon(bid) {
+  if (!bid.nurl) {
+    return;
+  }
+  const wonBid = {
+    adId: bid.adId,
+    creativeId: bid.creativeId,
+    auctionId: bid.auctionId,
+    transactionId: bid.transactionId,
+    adUnitCode: bid.adUnitCode,
+    cpm: bid.cpm,
+    currency: bid.currency,
+    originalCpm: bid.originalCpm,
+    originalCurrency: bid.originalCurrency,
+    netRevenue: bid.netRevenue,
+    mediaType: bid.mediaType,
+    timeToRespond: bid.timeToRespond,
+    status: bid.status,
+  };
+  const qs = formatQS(wonBid);
+  const url = bid.nurl + (bid.nurl.indexOf('?') === -1 ? '?' : '&') + qs;
+  triggerPixel(url);
 }
 
 export function hashCode(s, prefix = '_') {
@@ -444,7 +498,8 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs
+  getUserSyncs,
+  onBidWon
 };
 
 registerBidder(spec);
