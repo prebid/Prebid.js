@@ -145,12 +145,10 @@ export const spec = {
 
     if (payloadUser === undefined) {
       payloadUser = {
-        user: {
-          ext: {
-            ...(payloadUserEids && { eids: payloadUserEids }),
-            ...(payload.gdpr_consent && { consent: payload.gdpr_consent }),
-            ...(vads && { vads })
-          }
+        ext: {
+          ...(payloadUserEids && { eids: payloadUserEids }),
+          ...(payload.gdpr_consent && { consent: payload.gdpr_consent }),
+          ...(vads && { vads })
         }
       };
     }
@@ -168,8 +166,8 @@ export const spec = {
       tmax,
       cur: [currency],
       source,
-      ...(Object.keys(payloadUser.user.ext).length && { payloadUser }),
-      ...(payloadRegs && { payloadRegs }),
+      ...(Object.keys(payloadUser.ext).length && {user: payloadUser}),
+      ...(payloadRegs && {regs: payloadRegs}),
       ...(payloadDevice && { device: payloadDevice }),
       ...(payloadSite && { site: payloadSite }),
     };
