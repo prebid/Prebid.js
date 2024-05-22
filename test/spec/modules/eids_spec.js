@@ -429,18 +429,6 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('britepoolId', function() {
-    const userId = {
-      britepoolid: 'some-random-id-value'
-    };
-    const newEids = createEidsArray(userId);
-    expect(newEids.length).to.equal(1);
-    expect(newEids[0]).to.deep.equal({
-      source: 'britepool.com',
-      uids: [{id: 'some-random-id-value', atype: 3}]
-    });
-  });
-
   it('lotamePanoramaId', function () {
     const userId = {
       lotamePanoramaId: 'some-random-id-value',

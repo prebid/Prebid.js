@@ -1,5 +1,5 @@
 import {buildUrl, generateUUID, getWindowLocation, logError, logInfo, parseSizesInput, parseUrl} from '../src/utils.js';
-import {ajax} from '../src/ajax.js';
+import {ajax, fetch} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { EVENTS, STATUS } from '../src/constants.js';
@@ -51,10 +51,6 @@ function getParameterByName(param) {
   return vars[param] ? vars[param] : '';
 }
 
-function isNavigatorSendBeaconSupported() {
-  return ('navigator' in window) && ('sendBeacon' in window.navigator);
-}
-
 function updateSessionId() {
   if (isSessionIdTimeoutExpired()) {
     let newSessionId = generateUUID();
@@ -89,11 +85,14 @@ function send(data, status) {
     hostname: 'analytics-prebid.yuktamedia.com',
     pathname: '/api/bids'
   });
-  if (isNavigatorSendBeaconSupported()) {
-    window.navigator.sendBeacon(yuktamediaAnalyticsRequestUrl, JSON.stringify(data));
-  } else {
+  fetch(yuktamediaAnalyticsRequestUrl, {
+    body: JSON.stringify(data),
+    keepalive: true,
+    withCredentials: true,
+    method: 'POST'
+  }).catch((_e) => {
     ajax(yuktamediaAnalyticsRequestUrl, undefined, JSON.stringify(data), { method: 'POST', contentType: 'text/plain' });
-  }
+  });
 }
 
 var yuktamediaAnalyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }), {

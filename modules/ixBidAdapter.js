@@ -74,7 +74,6 @@ const SOURCE_RTI_MAPPING = {
   'google.com': ''
 };
 const PROVIDERS = [
-  'britepoolid',
   'lipbid',
   'criteoId',
   'merkleId',
