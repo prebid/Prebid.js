@@ -3,11 +3,11 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 
-const BIDDER_CODE = 'bizzclick';
+const BIDDER_CODE = 'blasto';
 const SOURCE_ID_MACRO = '[sourceid]';
 const ACCOUNT_ID_MACRO = '[accountid]';
 const HOST_MACRO = '[host]';
-const URL = `https://${HOST_MACRO}.bizzclick.com/bid?rtb_seat_id=${SOURCE_ID_MACRO}&secret_key=${ACCOUNT_ID_MACRO}&integration_type=prebidjs`;
+const URL = `https://${HOST_MACRO}.blasto.ai/bid?rtb_seat_id=${SOURCE_ID_MACRO}&secret_key=${ACCOUNT_ID_MACRO}&integration_type=prebidjs`;
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_HOST = 'us-e-node1';
 
@@ -53,7 +53,7 @@ export const spec = {
   buildRequests: (validBidRequests, bidderRequest) => {
     if (validBidRequests && validBidRequests.length === 0) return [];
     const { sourceId, accountId } = validBidRequests[0].params;
-    const host = validBidRequests[0].params.host || 'USE';
+    const host = validBidRequests[0].params.host;
     const endpointURL = URL.replace(HOST_MACRO, host || DEFAULT_HOST)
       .replace(ACCOUNT_ID_MACRO, accountId)
       .replace(SOURCE_ID_MACRO, sourceId);

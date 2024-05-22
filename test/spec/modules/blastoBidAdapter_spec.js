@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec } from 'modules/bizzclickBidAdapter';
+import { spec } from 'modules/blastoBidAdapter';
 import 'modules/priceFloors.js';
 import { newBidder } from 'src/adapters/bidderFactory';
 import { config } from '../../../src/config.js';
@@ -16,7 +16,7 @@ import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
 
 const SIMPLE_BID_REQUEST = {
-  bidder: 'bizzclick',
+  bidder: 'blasto',
   params: {
     accountId: 'testAccountId',
     sourceId: 'testSourceId',
@@ -46,7 +46,7 @@ const SIMPLE_BID_REQUEST = {
 }
 
 const BANNER_BID_REQUEST = {
-  bidder: 'bizzclick',
+  bidder: 'blasto',
   params: {
     accountId: 'testAccountId',
     sourceId: 'testSourceId',
@@ -85,7 +85,7 @@ const VIDEO_BID_REQUEST = {
       protocols: [1, 2, 4]
     }
   },
-  bidder: 'bizzclick',
+  bidder: 'blasto',
   params: {
     accountId: '123',
     sourceId: '123',
@@ -128,7 +128,7 @@ const NATIVE_BID_REQUEST = {
       }
     }
   },
-  bidder: 'bizzclick',
+  bidder: 'blasto',
   params: {
     accountId: 'testAccountId',
     sourceId: 'testSourceId',
@@ -158,7 +158,7 @@ const gdprConsent = {
   addtlConsent: '1~1.35.41.101',
 }
 
-describe('bizzclickAdapter', function () {
+describe('blastoAdapter', function () {
   const adapter = newBidder(spec);
   describe('inherited functions', function () {
     it('exists and is a function', function () {
@@ -251,7 +251,7 @@ describe('bizzclickAdapter', function () {
     beforeEach(function () {
       bidRequests = [{
         'bidId': '28ffdk2B952532',
-        'bidder': 'bizzclick',
+        'bidder': 'blasto',
         'userId': {
           'freepassId': {
             'userIp': '172.21.0.1',
