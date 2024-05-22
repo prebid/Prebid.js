@@ -771,6 +771,19 @@ describe('S2S Adapter', function () {
       expect(req.tmax).to.eql(123);
     });
 
+    it('should set tmax correctly if tmaxmax present in configuration', () => {
+      const tmaxCfg = {
+        ext: {
+          tmaxmax: 4242
+        }
+      }
+      const cfg = { ...CONFIG, ortb2: tmaxCfg };
+      config.setConfig({ s2sConfig: cfg });
+      adapter.callBids({ ...REQUEST, s2sConfig: cfg }, BID_REQUESTS, addBidResponse, done, ajax);
+      const req = JSON.parse(server.requests[0].requestBody);
+      expect(req.tmax).to.eql(4242);
+    });
+
     it('should block request if config did not define p1Consent URL in endpoint object config', function () {
       let badConfig = utils.deepClone(CONFIG);
       badConfig.endpoint = { noP1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction' };

@@ -57,7 +57,7 @@ const PBS_CONVERTER = ortbConverter({
       let {s2sBidRequest, requestedBidders, eidPermissions} = context;
       const request = buildRequest(imps, proxyBidderRequest, context);
 
-      request.tmax = s2sBidRequest.s2sConfig.timeout;
+      request.tmax = s2sBidRequest.s2sConfig.ortb2?.ext?.tmaxmax || s2sBidRequest.s2sConfig.timeout;
 
       [request.app, request.dooh, request.site].forEach(section => {
         if (section && !section.publisher?.id) {
