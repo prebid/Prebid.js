@@ -308,7 +308,7 @@ describe('sirdataRtdProvider', function () {
       };
 
       getSegmentsAndCategories(reqBidsConfigObj, () => {
-      }, {});
+      }, {}, {});
 
       let request = server.requests[0];
       request.respond(200, responseHeader, JSON.stringify(data));

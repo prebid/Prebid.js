@@ -339,7 +339,7 @@ export function sanitizeContent(content) {
  * @param {function} onDone - The callback function to be called upon completion
  * @param {Object} userConsent - The user consent information
  */
-export function getSegmentsAndCategories(reqBidsConfigObj, onDone, userConsent) {
+export function getSegmentsAndCategories(reqBidsConfigObj, onDone, moduleConfig, userConsent) {
   logInfo(LOG_PREFIX, 'get Segments And Categories');
   const adUnits = (reqBidsConfigObj && reqBidsConfigObj.adUnits) || getGlobal().adUnits;
   if (!adUnits) {
