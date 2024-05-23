@@ -226,6 +226,7 @@ describe('onetag', function () {
             'bidId',
             'bidderRequestId',
             'pubId',
+            'ortb2Imp',
             'transactionId',
             'context',
             'playerSize',
@@ -240,6 +241,7 @@ describe('onetag', function () {
             'bidId',
             'bidderRequestId',
             'pubId',
+            'ortb2Imp',
             'transactionId',
             'mediaTypeInfo',
             'sizes',
@@ -270,6 +272,7 @@ describe('onetag', function () {
       expect(payload.bids).to.exist.and.to.have.length(1);
       expect(payload.bids[0].auctionId).to.equal(bannerBid.ortb2.source.tid);
       expect(payload.bids[0].transactionId).to.equal(bannerBid.ortb2Imp.ext.tid);
+      expect(payload.bids[0].ortb2Imp).to.deep.equal(bannerBid.ortb2Imp);
     });
     it('should send GDPR consent data', function () {
       let consentString = 'consentString';
