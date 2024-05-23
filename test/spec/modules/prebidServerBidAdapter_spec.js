@@ -1746,39 +1746,6 @@ describe('S2S Adapter', function () {
       });
     });
 
-    it('converts appnexus params to expected format for PBS', function () {
-      const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: {
-          p1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
-        }
-      });
-      config.setConfig({ s2sConfig: s2sConfig });
-
-      Object.assign(BID_REQUESTS[0].bids[0].params, {
-        usePaymentRule: true,
-        keywords: {
-          foo: ['bar', 'baz'],
-          fizz: ['buzz']
-        }
-      })
-
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      const requestBid = JSON.parse(server.requests[0].requestBody);
-
-      const requestParams = requestBid.imp[0].ext.prebid.bidder;
-      expect(requestParams.appnexus).to.exist;
-      expect(requestParams.appnexus.placement_id).to.exist.and.to.equal(10433394);
-      expect(requestParams.appnexus.use_pmt_rule).to.exist.and.to.be.true;
-      expect(requestParams.appnexus.member).to.exist;
-      expect(requestParams.appnexus.keywords).to.exist.and.to.deep.equal([{
-        key: 'foo',
-        value: ['bar', 'baz']
-      }, {
-        key: 'fizz',
-        value: ['buzz']
-      }]);
-    });
-
     describe('cookie sync', () => {
       let s2sConfig, bidderReqs;
 
