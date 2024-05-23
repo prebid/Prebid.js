@@ -44,7 +44,7 @@ export const ceeIdSubmodule = {
    * performs action to obtain id and return a value
    * @function
    * @returns {(IdResponse|undefined)}
-  */
+   */
   getId() {
     const ceeIdToken = readId();
 

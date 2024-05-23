@@ -160,7 +160,7 @@ const handleSetGptConfig = moduleConfig => {
       typeof customGptSlotMatching === 'function' && customGptSlotMatching,
     'customPbAdSlot', customPbAdSlot => typeof customPbAdSlot === 'function' && customPbAdSlot,
     'customPreAuction', customPreAuction => typeof customPreAuction === 'function' && customPreAuction,
-    'useDefaultPreAuction', useDefaultPreAuction => useDefaultPreAuction === true,
+    'useDefaultPreAuction', useDefaultPreAuction => useDefaultPreAuction ?? true,
   ]);
 
   if (_currentConfig.enabled) {
