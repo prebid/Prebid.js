@@ -771,17 +771,24 @@ describe('S2S Adapter', function () {
       expect(req.tmax).to.eql(123);
     });
 
-    it('should set tmax correctly if tmaxmax present in configuration', () => {
-      const tmaxCfg = {
-        ext: {
-          tmaxmax: 4242
+    it('should set tmaxmax correctly', () => {
+      const cfg = {...CONFIG};
+
+      // publisher has specified a tmaxmax in their setup
+      const ortb2Fragments = {
+        global: {
+          ext: {
+            tmaxmax: 4242
+          }
         }
-      }
-      const cfg = { ...CONFIG, ortb2: tmaxCfg };
-      config.setConfig({ s2sConfig: cfg });
-      adapter.callBids({ ...REQUEST, s2sConfig: cfg }, BID_REQUESTS, addBidResponse, done, ajax);
+      };
+      const s2sCfg = {...REQUEST, cfg}
+      const payloadWithFragments = { ...s2sCfg, ortb2Fragments };
+
+      adapter.callBids(payloadWithFragments, BID_REQUESTS, addBidResponse, done, ajax);
       const req = JSON.parse(server.requests[0].requestBody);
-      expect(req.tmax).to.eql(4242);
+
+      expect(req.ext.tmaxmax).to.eql(4242);
     });
 
     it('should block request if config did not define p1Consent URL in endpoint object config', function () {
