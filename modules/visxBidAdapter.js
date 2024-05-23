@@ -60,7 +60,6 @@ export const spec = {
       DEFAULT_CUR;
 
     let request;
-
     let reqId;
     let payloadSchain;
     let payloadUserId;
@@ -70,6 +69,7 @@ export const spec = {
     let payloadSite;
     let payloadUser;
     let payloadRegs;
+    let payloadContent;
 
     if (currencyWhiteList.indexOf(currency) === -1) {
       logError(LOG_ERROR_MESS.notAllowedCurrency + currency);
@@ -86,8 +86,7 @@ export const spec = {
         imp.push(impObj);
         bidsMap[bid.bidId] = bid;
       }
-      const { params: { uid, paramsDevice }, schain, userId, userIdAsEids, ortb2 } = bid;
-      const { device, site, user, regs } = ortb2;
+      const { params: { uid }, schain, userId, userIdAsEids } = bid;
       if (!payloadSchain && schain) {
         payloadSchain = schain;
       }
@@ -99,21 +98,6 @@ export const spec = {
         payloadUserId = userId;
       }
 
-      if (device) {
-        if (!device.ext?.cdep && paramsDevice) {
-          device.ext = {cdep: paramsDevice.ext.cdep}; // to test
-        }
-        payloadDevice = device;
-      }
-      if (site) {
-        payloadSite = site;
-      }
-      if (user) {
-        payloadUser = user;
-      }
-      if (regs) {
-        payloadRegs = regs;
-      }
       auids.push(uid);
     });
 
@@ -129,6 +113,24 @@ export const spec = {
         payload.gdpr_applies =
             (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
               ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
+      }
+
+      const { ortb2 } = bidderRequest;
+      const { device, site, user, regs, content } = ortb2;
+      if (device) {
+        payloadDevice = device;
+      }
+      if (site) {
+        payloadSite = site;
+      }
+      if (user) {
+        payloadUser = user;
+      }
+      if (regs) {
+        payloadRegs = regs;
+      }
+      if (content) {
+        payloadContent = content;
       }
     }
 
@@ -170,6 +172,7 @@ export const spec = {
       ...(payloadRegs && {regs: payloadRegs}),
       ...(payloadDevice && { device: payloadDevice }),
       ...(payloadSite && { site: payloadSite }),
+      ...(payloadContent && { content: payloadContent }),
     };
 
     return {
