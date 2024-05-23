@@ -241,6 +241,9 @@ function _getORTBVideo(bidRequest) {
     if (!video.placement) {
       video.placement = 1;
     }
+    if (!video.plcmt) {
+      video.plcmt = 1;
+    }
   }
   if (video.context === 'outstream') {
     if (!video.placement) {
@@ -248,6 +251,9 @@ function _getORTBVideo(bidRequest) {
     } else if ([3, 4, 5].indexOf(video.placement) === -1) {
       logMessage(`video.placement value of ${video.placement} is invalid for outstream context. Setting placement to 3`)
       video.placement = 3
+    }
+    if (!video.plcmt) {
+      video.plcmt = 4;
     }
   }
   if (video.playbackmethod && Number.isInteger(video.playbackmethod)) {
