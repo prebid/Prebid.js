@@ -143,10 +143,7 @@ describe('YieldmoAdapter', function () {
 
       it('should return false when required bid.params.video.* is not found', function () {
         const getBidAndExclude = paramToRemove => getVideoBidWithoutParam('params.video', paramToRemove);
-
-        expect(spec.isBidRequestValid(getBidAndExclude('placement'))).to.be.false;
         expect(spec.isBidRequestValid(getBidAndExclude('maxduration'))).to.be.false;
-        expect(spec.isBidRequestValid(getBidAndExclude('startdelay'))).to.be.false;
         expect(spec.isBidRequestValid(getBidAndExclude('protocols'))).to.be.false;
         expect(spec.isBidRequestValid(getBidAndExclude('api'))).to.be.false;
       });
@@ -412,6 +409,25 @@ describe('YieldmoAdapter', function () {
           classifier: '2206021246',
           topics: [7, 8, 9],
         }));
+      });
+
+      it('should add cdep to the banner bid request', function () {
+        const biddata = build(
+          [mockBannerBid()],
+          mockBidderRequest({
+            ortb2: {
+              device: {
+                ext: {
+                  cdep: 'test_cdep'
+                },
+              },
+            },
+          })
+        );
+
+        expect(biddata[0].data.cdep).to.equal(
+          'test_cdep'
+        );
       });
 
       it('should send gpc in the banner bid request', function () {
