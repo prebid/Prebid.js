@@ -497,7 +497,7 @@ describe('triplelift adapter', function () {
               context: 'outstream',
               playerSize: [640, 480],
               placement: 5,
-              plcmt: 5
+              plcmt: 4
             }
           },
           adUnitCode: 'adunit-code-instream',
@@ -693,7 +693,7 @@ describe('triplelift adapter', function () {
       expect(payload.imp[11]).to.have.property('video');
       expect(payload.imp[11].video).to.exist.and.to.be.a('object');
       expect(payload.imp[11].video.placement).to.equal(5);
-      expect(payload.imp[11].video.plcmt).to.equal(5);
+      expect(payload.imp[11].video.plcmt).to.equal(4);
       // outstream video; undefined placement
       expect(payload.imp[12]).to.not.have.property('banner');
       expect(payload.imp[12]).to.have.property('video');
