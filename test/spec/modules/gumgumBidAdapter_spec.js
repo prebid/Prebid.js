@@ -285,10 +285,21 @@ describe('gumgumAdapter', function () {
     });
 
     it('should set the global placement id (gpid) if in adserver property', function () {
-      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: { adserver: { name: 'test', adslot: 123456 } } } } }
+      const req = { ...bidRequests[0],
+        ortb2Imp: {
+          ext: {
+            gpid: '/17037559/jeusol/jeusol_D_1',
+            data: {
+              adserver: {
+                name: 'test',
+                adslot: 123456
+              }
+            }
+          }
+        } }
       const bidRequest = spec.buildRequests([req])[0];
       expect(bidRequest.data).to.have.property('gpid');
-      expect(bidRequest.data.gpid).to.equal(123456);
+      expect(bidRequest.data.gpid).to.equal('/17037559/jeusol/jeusol_D_1');
     });
 
     it('should set the global placement id (gpid) if in pbadslot property', function () {
