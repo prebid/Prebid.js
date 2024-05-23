@@ -643,7 +643,7 @@ describe('triplelift adapter', function () {
       expect(payload.imp[2]).to.have.property('video');
       expect(payload.imp[2]).to.have.property('banner');
       expect(payload.imp[2].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
-      expect(payload.imp[2].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream', 'placement': 4, 'plcmt': 4});
+      expect(payload.imp[2].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream', 'placement': 3, 'plcmt': 4});
       // banner and incomplete video
       expect(payload.imp[3]).to.not.have.property('video');
       expect(payload.imp[3]).to.have.property('banner');
@@ -661,16 +661,16 @@ describe('triplelift adapter', function () {
       expect(payload.imp[6]).to.have.property('video');
       expect(payload.imp[6]).to.have.property('banner');
       expect(payload.imp[6].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
-      expect(payload.imp[6].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream', 'placement': 4, 'plcmt': 4});
+      expect(payload.imp[6].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream', 'placement': 3, 'plcmt': 4});
       // outstream video only
       expect(payload.imp[7]).to.have.property('video');
       expect(payload.imp[7]).to.not.have.property('banner');
-      expect(payload.imp[7].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream', 'placement': 4, 'plcmt': 4});
+      expect(payload.imp[7].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'w': 640, 'h': 480, 'context': 'outstream', 'placement': 3, 'plcmt': 4});
       // banner and incomplete outstream (missing size); video request is permitted so banner can still monetize
       expect(payload.imp[8]).to.have.property('video');
       expect(payload.imp[8]).to.have.property('banner');
       expect(payload.imp[8].banner.format).to.deep.equal([{w: 300, h: 250}, {w: 300, h: 600}]);
-      expect(payload.imp[8].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'context': 'outstream', 'placement': 4, 'plcmt': 4});
+      expect(payload.imp[8].video).to.deep.equal({'mimes': ['video/mp4'], 'maxduration': 30, 'minduration': 6, 'context': 'outstream', 'placement': 3, 'plcmt': 4});
     });
 
     it('should check for valid outstream placement values', function () {
@@ -698,13 +698,13 @@ describe('triplelift adapter', function () {
       expect(payload.imp[12]).to.not.have.property('banner');
       expect(payload.imp[12]).to.have.property('video');
       expect(payload.imp[12].video).to.exist.and.to.be.a('object');
-      expect(payload.imp[12].video.placement).to.equal(4);
+      expect(payload.imp[12].video.placement).to.equal(3);
       expect(payload.imp[12].video.plcmt).to.equal(4);
       // outstream video; invalid placement
       expect(payload.imp[13]).to.not.have.property('banner');
       expect(payload.imp[13]).to.have.property('video');
       expect(payload.imp[13].video).to.exist.and.to.be.a('object');
-      expect(payload.imp[13].video.placement).to.equal(6);
+      expect(payload.imp[13].video.placement).to.equal(3);
       expect(payload.imp[13].video.plcmt).to.equal(4);
     });
 
