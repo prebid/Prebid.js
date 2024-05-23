@@ -179,6 +179,7 @@ function buildImpression(bidRequest) {
     if (bidfloorcur && bidfloorcur !== 'USD') {
       delete imp.bidfloor;
       delete imp.bidfloorcur;
+      logWarn('insticator: bidfloorcur supported by insticator is USD only. ignoring bidfloor and bidfloorcur params');
     }
   }
 
