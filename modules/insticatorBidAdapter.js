@@ -203,18 +203,18 @@ function buildImpression(bidRequest) {
         const { w: width, h: height } = imp[mediaType];
         if (width && height) {
           _size = [width, height];
+        } else {
+          const sizes = deepAccess(bidRequest, 'mediaTypes.banner.format');
+          if (sizes && sizes.length > 0) {
+            const {w: width, h: height} = sizes[0];
+            _size = [width, height];
+          }
         }
-      } else {
-        const sizes = deepAccess(bidRequest, 'mediaTypes.banner.format');
-        if (sizes && sizes.length > 0) {
-          const [width, height] = sizes[0];
-          _size = [width, height];
-        }
+      } else if (mediaType === 'video') {
+        const { w: width, h: height } = imp[mediaType];
+        _mediaType = mediaType;
+        _size = [width, height];
       }
-    } else if (mediaType === 'video') {
-      const { w: width, h: height } = imp[mediaType];
-      _mediaType = mediaType;
-      _size = [width, height];
     }
     try {
       moduleBidFloor = bidRequest.getFloor({
