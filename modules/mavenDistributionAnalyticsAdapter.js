@@ -48,33 +48,8 @@ const MAX_BATCH_SIZE_PER_EVENT_TYPE = 32
  * }} AuctionEventArgs
  */
 
-const getAdModelProperty = (adUnit, prop) => {
-  // First check the adUnit model property itself, if present.
-  if (adUnit.model) {
-    return adUnit.model[prop];
-  } else if (window.googletag && window.googletag.pubads) {
-    // Fallback to looking at targeting from the GPT ad slot. The
-    // target name will have an 'ad' prefix.
-    const slot = window.googletag.pubads().getSlots().find(slot => slot.getSlotElementId() === adUnit.code);
-    if (slot) {
-      const target = slot.getTargeting('ad' + prop);
-      if (target.length) {
-        return target[0];
-      }
-    }
-  }
-  return null;
-};
-
-export const getAdIndex = (adUnit) => {
-  const idx = getAdModelProperty(adUnit, 'index');
-  if (idx != null) {
-    return Number(idx);
-  }
-  return idx;
-};
-
-const getAdZone = (adUnit) => getAdModelProperty(adUnit, 'zone');
+export const getAdIndex = (adUnit) =>
+  adUnit.model ? Number(adUnit.model.index) : null
 
 export const filterDuplicateAdUnits = (adUnits) =>
   Array.from(new Map(adUnits.map(adUnit => [
@@ -93,7 +68,7 @@ function getCommonEventToSend(args, adapterConfig) {
 
   args.adUnits.forEach(adUnit => {
     const zoneIndex = getAdIndex(adUnit)
-    const zoneName = getAdZone(adUnit);
+    const zoneName = adUnit.model?.zone ?? null
     const zoneIndexNonNull = zoneIndex != null
     const zoneNameNonNull = zoneName != null
 
