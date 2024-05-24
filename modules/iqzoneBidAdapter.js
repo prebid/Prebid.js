@@ -1,4 +1,4 @@
-import { logMessage, logError } from '../src/utils.js';
+import { logMessage, logError, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -56,7 +56,7 @@ function getPlacementReqData(bid) {
     placement.mimes = mediaTypes[VIDEO].mimes;
     placement.protocols = mediaTypes[VIDEO].protocols;
     placement.startdelay = mediaTypes[VIDEO].startdelay;
-    placement.placement = mediaTypes[VIDEO].placement;
+    placement.plcmt = mediaTypes[VIDEO].plcmt;
     placement.skip = mediaTypes[VIDEO].skip;
     placement.skipafter = mediaTypes[VIDEO].skipafter;
     placement.minbitrate = mediaTypes[VIDEO].minbitrate;
@@ -156,7 +156,7 @@ export const spec = {
       host,
       page,
       placements,
-      coppa: config.getConfig('coppa') === true ? 1 : 0,
+      coppa: deepAccess(bidderRequest, 'ortb2.regs.coppa') ? 1 : 0,
       tmax: bidderRequest.timeout
     };
 
