@@ -26,7 +26,7 @@ export const OUTSTREAM_SRC = 'https://player-cdn.beachfrontmedia.com/playerapi/l
 export const SYNC_IFRAME_ENDPOINT = 'https://sync.bfmio.com/sync_iframe';
 export const SYNC_IMAGE_ENDPOINT = 'https://sync.bfmio.com/syncb';
 
-export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'plcmt', 'skip', 'skipmin', 'skipafter'];
+export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'placement', 'plcmt', 'skip', 'skipmin', 'skipafter'];
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 
 export const SUPPORTED_USER_IDS = [
