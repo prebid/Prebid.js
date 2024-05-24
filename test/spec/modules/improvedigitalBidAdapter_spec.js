@@ -405,8 +405,7 @@ describe('Improve Digital Adapter Tests', function () {
       const payload = JSON.parse(spec.buildRequests([bidRequest], syncAddFPDToBidderRequest(bidderRequestGdpr))[0].data);
       expect(payload.regs.ext.gdpr).to.exist.and.to.equal(1);
       expect(payload.user.ext.consent).to.equal('CONSENT');
-      expect(payload.user.ext.ConsentedProvidersSettings).to.not.exist;
-      expect(payload.user.ext.consented_providers_settings.consented_providers).to.exist.and.to.deep.equal([1, 35, 41, 101]);
+      expect(payload.user.ext.ConsentedProvidersSettings.consented_providers).to.exist.and.to.deep.equal('1~1.35.41.101');
     });
 
     it('should not add consented providers when empty', function () {

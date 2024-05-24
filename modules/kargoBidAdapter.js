@@ -196,6 +196,7 @@ function buildRequests(validBidRequests, bidderRequest) {
 
 function interpretResponse(response, bidRequest) {
   const bids = response.body;
+  const fledgeAuctionConfigs = [];
   const bidResponses = [];
 
   if (isEmpty(bids) || typeof bids !== 'object') {
@@ -237,9 +238,23 @@ function interpretResponse(response, bidRequest) {
     }
 
     bidResponses.push(bidResponse);
+
+    if (adUnit.auctionConfig) {
+      fledgeAuctionConfigs.push({
+        bidId: bidID,
+        config: adUnit.auctionConfig
+      })
+    }
   }
 
-  return bidResponses;
+  if (fledgeAuctionConfigs.length > 0) {
+    return {
+      bids: bidResponses,
+      fledgeAuctionConfigs
+    }
+  } else {
+    return bidResponses;
+  }
 }
 
 function getUserSyncs(syncOptions, _, gdprConsent, usPrivacy, gppConsent) {
