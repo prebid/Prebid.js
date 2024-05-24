@@ -116,6 +116,7 @@ describe('PubMatic adapter', function () {
             protocols: [2, 3],
             battr: [13, 14],
             linearity: 1,
+            placement: 2,
             // plcmt: 2,
             plcmt: 1,
             minbitrate: 10,
@@ -169,6 +170,7 @@ describe('PubMatic adapter', function () {
             h: 480,
             battr: [13, 14],
             linearity: 1,
+            placement: 2,
             // plcmt: 2,
             plcmt: 1,
             minbitrate: 100,
@@ -394,6 +396,7 @@ describe('PubMatic adapter', function () {
             h: 480,
             battr: [13, 14],
             linearity: 1,
+            placement: 2,
             // plcmt: 2,
             plcmt: 1,
             minbitrate: 100,
@@ -522,6 +525,7 @@ describe('PubMatic adapter', function () {
             h: 480,
             battr: [13, 14],
             linearity: 1,
+            placement: 2,
             // plcmt: 2,
             plcmt: 1,
             minbitrate: 100,
@@ -593,6 +597,7 @@ describe('PubMatic adapter', function () {
             h: 480,
             battr: [13, 14],
             linearity: 1,
+            placement: 2,
             // plcmt: 2,
             plcmt: 1,
             minbitrate: 100,
@@ -2564,6 +2569,7 @@ describe('PubMatic adapter', function () {
           expect(data.imp[1]['video']['battr'][1]).to.equal(multipleMediaRequests[1].params.video['battr'][1]);
 
           expect(data.imp[1]['video']['linearity']).to.equal(multipleMediaRequests[1].params.video['linearity']);
+          expect(data.imp[1]['video']['placement']).to.equal(multipleMediaRequests[1].params.video['placement']);
           expect(data.imp[1]['video']['plcmt']).to.equal(multipleMediaRequests[1].params.video['plcmt']);
           expect(data.imp[1]['video']['minbitrate']).to.equal(multipleMediaRequests[1].params.video['minbitrate']);
           expect(data.imp[1]['video']['maxbitrate']).to.equal(multipleMediaRequests[1].params.video['maxbitrate']);
@@ -2859,6 +2865,7 @@ describe('PubMatic adapter', function () {
           expect(data.imp[0]['video']['battr'][1]).to.equal(videoBidRequests[0].params.video['battr'][1]);
 
           expect(data.imp[0]['video']['linearity']).to.equal(videoBidRequests[0].params.video['linearity']);
+          expect(data.imp[0]['video']['placement']).to.equal(videoBidRequests[0].params.video['placement']);
           expect(data.imp[0]['video']['plcmt']).to.equal(videoBidRequests[0].params.video['plcmt']);
           expect(data.imp[0]['video']['minbitrate']).to.equal(videoBidRequests[0].params.video['minbitrate']);
           expect(data.imp[0]['video']['maxbitrate']).to.equal(videoBidRequests[0].params.video['maxbitrate']);
@@ -4069,11 +4076,11 @@ describe('PubMatic adapter', function () {
           sandbox.restore();
         })
 
-        it('should log Video.Placement param missing', function() {
+        it('should log Video.plcmt param missing', function() {
           checkVideoPlacement(videoData, adUnit);
           sinon.assert.calledWith(utils.logWarn, msg_placement_missing);
         })
-        it('shoud not log Video.Placement param missing', function() {
+        it('shoud not log Video.plcmt param missing', function() {
           videoData['plcmt'] = 1;
           checkVideoPlacement(videoData, adUnit);
           sinon.assert.neverCalledWith(utils.logWarn, msg_placement_missing);
