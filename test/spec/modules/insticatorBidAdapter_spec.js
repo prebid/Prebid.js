@@ -569,6 +569,100 @@ describe('InsticatorBidAdapter', function () {
       expect(data.imp[0].video.h).to.equal(480);
     });
 
+    it('should have bidder bidfloor from the request', function () {
+      const tempBiddRequest = {
+        ...bidRequest,
+        params: {
+          ...bidRequest.params,
+          floor: 0.5,
+        },
+      }
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.imp[0].bidfloor).to.equal(0.5);
+      expect(data.imp[0].bidfloorcur).to.equal('USD');
+    });
+
+    it('should have bidder bidfloorcur from the request', function () {
+      const expectedFloor = 1.5;
+      const currency = 'USD';
+      const tempBiddRequest = {
+        ...bidRequest,
+        params: {
+          ...bidRequest.params,
+          floor: 0.5,
+          currency: 'USD',
+        },
+      }
+      tempBiddRequest.getFloor = () => ({ floor: expectedFloor, currency })
+
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.imp[0].bidfloor).to.equal(1.5);
+      expect(data.imp[0].bidfloorcur).to.equal('USD');
+    });
+
+    it('should have 1 floor for banner 300x250 and 1.5 for 300x600', function () {
+      const tempBiddRequest = {
+        ...bidRequest,
+        params: {
+          ...bidRequest.params,
+        },
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]],
+            format: [{ w: 300, h: 250 }]
+          },
+        },
+      }
+      tempBiddRequest.getFloor = (params) => {
+        return { floor: params.size[1] === 250 ? 1 : 1.5, currency: 'USD' }
+      }
+
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.imp[0].bidfloor).to.equal(1);
+
+      tempBiddRequest.mediaTypes.banner.format = [ { w: 300, h: 600 },
+      ];
+      const request2 = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data2 = JSON.parse(request2[0].data);
+      expect(data2.imp[0].bidfloor).to.equal(1.5);
+    });
+
+    it('should have 4 floor for video 300x250 and 4.5 for 300x600', function () {
+      const tempBiddRequest = {
+        ...bidRequest,
+        params: {
+          ...bidRequest.params,
+        },
+        mediaTypes: {
+          video: {
+            mimes: [
+              'video/mp4',
+              'video/mpeg',
+            ],
+            w: 300,
+            h: 250,
+            placement: 2,
+          },
+        },
+      }
+      tempBiddRequest.getFloor = (params) => {
+        return { floor: params.size[1] === 250 ? 4 : 4.5, currency: 'USD' }
+      }
+
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.imp[0].bidfloor).to.equal(4);
+
+      tempBiddRequest.mediaTypes.video.w = 300;
+      tempBiddRequest.mediaTypes.video.h = 600;
+      const request2 = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data2 = JSON.parse(request2[0].data);
+      expect(data2.imp[0].bidfloor).to.equal(4.5);
+    });
+
     it('should have sites first party data if present in bidderRequest ortb2', function () {
       bidderRequest = {
         ...bidderRequest,
