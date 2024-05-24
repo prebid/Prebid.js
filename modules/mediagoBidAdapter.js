@@ -18,7 +18,6 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 const BIDDER_CODE = 'mediago';
 // const PROTOCOL = window.document.location.protocol;
 const ENDPOINT_URL = 'https://gbid.mediago.io/api/bid?tn=';
-//SHOULD THIS STILL BE COMMENTED?
 // const COOKY_SYNC_URL = 'https://gtrace.mediago.io/ju/cs/eplist';
 const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediago.io/js/cookieSync.html';
 export const THIRD_PARTY_COOKIE_ORIGIN = 'https://cdn.mediago.io';

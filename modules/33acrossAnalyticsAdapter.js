@@ -1,12 +1,10 @@
 import { deepAccess, logInfo, logWarn, logError, deepClone } from '../src/utils.js';
 import buildAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager, { coppaDataHandler, gdprDataHandler, gppDataHandler, uspDataHandler } from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
-
 /**
- * @typedef {typeof import('../src/constants.json').EVENTS} EVENTS
+ * @typedef {typeof import('../src/constants.js').EVENTS} EVENTS
  */
-const { EVENTS } = CONSTANTS;
+import { EVENTS } from '../src/constants.js';
 
 /** @typedef {'pending'|'available'|'targetingSet'|'rendered'|'timeout'|'rejected'|'noBid'|'error'} BidStatus */
 /**

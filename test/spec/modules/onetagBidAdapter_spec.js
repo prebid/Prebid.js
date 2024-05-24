@@ -273,6 +273,7 @@ describe('onetag', function () {
     });
     it('should send GDPR consent data', function () {
       let consentString = 'consentString';
+      let addtlConsent = '2~1.35.41.101~dv.9.21.81';
       let bidderRequest = {
         'bidderCode': 'onetag',
         'auctionId': '1d1a030790a475',
@@ -280,7 +281,8 @@ describe('onetag', function () {
         'timeout': 3000,
         'gdprConsent': {
           consentString: consentString,
-          gdprApplies: true
+          gdprApplies: true,
+          addtlConsent: addtlConsent
         }
       };
       let serverRequest = spec.buildRequests([bannerBid], bidderRequest);
@@ -289,6 +291,7 @@ describe('onetag', function () {
       expect(payload).to.exist;
       expect(payload.gdprConsent).to.exist;
       expect(payload.gdprConsent.consentString).to.exist.and.to.equal(consentString);
+      expect(payload.gdprConsent.addtlConsent).to.exist.and.to.equal(addtlConsent);
       expect(payload.gdprConsent.consentRequired).to.exist.and.to.be.true;
     });
     it('Should send GPP consent data', function () {

@@ -1,10 +1,10 @@
 {
   "name": "prebid.js",
-  "version": "8.40.2",
+  "version": "8.49.0",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
-    "serve": "gulp serve-fast",
+    "serve": "gulp serve",
     "test": "gulp test",
     "lint": "gulp lint",
     "build": "gulp build --modules=modules.json"
@@ -135,7 +135,7 @@
     "express": "^4.15.4",
     "fun-hooks": "^0.9.9",
     "gulp-wrap": "^0.15.0",
-    "just-clone": "^1.0.2",
+    "klona": "^2.0.6",
     "live-connect-js": "^6.3.4"
   },
   "optionalDependencies": {

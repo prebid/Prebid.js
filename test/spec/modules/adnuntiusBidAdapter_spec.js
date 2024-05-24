@@ -1,19 +1,22 @@
 // import or require modules necessary for the test, e.g.:
-import {expect} from 'chai'; // may prefer 'assert' in place of 'expect'
-import {misc, spec} from 'modules/adnuntiusBidAdapter.js';
-import {newBidder} from 'src/adapters/bidderFactory.js';
-import {config} from 'src/config.js';
+import { expect } from 'chai'; // may prefer 'assert' in place of 'expect'
+import { misc, spec } from 'modules/adnuntiusBidAdapter.js';
+import { newBidder } from 'src/adapters/bidderFactory.js';
+import { config } from 'src/config.js';
 import * as utils from 'src/utils.js';
-import {getStorageManager} from 'src/storageManager.js';
-import {getGlobal} from '../../../src/prebidGlobal';
+import { getStorageManager } from 'src/storageManager.js';
+import { getGlobal } from '../../../src/prebidGlobal';
 
-describe('adnuntiusBidAdapter', function() {
+describe('adnuntiusBidAdapter', function () {
   const URL = 'https://ads.adnuntius.delivery/i?tzo=';
   const EURO_URL = 'https://europe.delivery.adnuntius.com/i?tzo=';
   const usi = utils.generateUUID()
 
-  const meta = [{key: 'valueless'}, {value: 'keyless'}, {key: 'voidAuIds'}, {key: 'voidAuIds', value: [{auId: '11118b6bc', exp: misc.getUnixTimestamp()}, {exp: misc.getUnixTimestamp(1)}]}, {key: 'valid', value: 'also-valid', exp: misc.getUnixTimestamp(1)}, {key: 'expired', value: 'fwefew', exp: misc.getUnixTimestamp()}, {key: 'usi', value: 'should be skipped because timestamp', exp: misc.getUnixTimestamp()}, {key: 'usi', value: usi, exp: misc.getUnixTimestamp(100)}, {key: 'usi', value: 'should be skipped because timestamp', exp: misc.getUnixTimestamp()}]
+  const meta = [{ key: 'valueless' }, { value: 'keyless' }, { key: 'voidAuIds' }, { key: 'voidAuIds', value: [{ auId: '11118b6bc', exp: misc.getUnixTimestamp() }, { exp: misc.getUnixTimestamp(1) }] }, { key: 'valid-withnetwork', value: 'also-valid-network', network: 'the-network', exp: misc.getUnixTimestamp(1) }, { key: 'valid', value: 'also-valid', exp: misc.getUnixTimestamp(1) }, { key: 'expired', value: 'fwefew', exp: misc.getUnixTimestamp() }, { key: 'usi', value: 'should be skipped because timestamp', exp: misc.getUnixTimestamp(), network: 'adnuntius' }, { key: 'usi', value: usi, exp: misc.getUnixTimestamp(100), network: 'adnuntius' }, { key: 'usi', value: 'should be skipped because timestamp', exp: misc.getUnixTimestamp() }]
   let storage;
+
+  // need this to make the restore work correctly -- something to do with stubbing static prototype methods
+  let stub1 = {}, stub2 = {};
 
   before(() => {
     getGlobal().bidderSettings = {
@@ -21,7 +24,7 @@ describe('adnuntiusBidAdapter', function() {
         storageAllowed: true
       }
     };
-    storage = getStorageManager({bidderCode: 'adnuntius'});
+    storage = getStorageManager({ bidderCode: 'adnuntius' });
   });
 
   beforeEach(() => {
@@ -32,17 +35,24 @@ describe('adnuntiusBidAdapter', function() {
     getGlobal().bidderSettings = {};
   });
 
-  afterEach(function() {
+  afterEach(function () {
     config.resetConfig();
+
+    if (stub1.restore) {
+      stub1.restore();
+    }
+    if (stub2.restore) {
+      stub2.restore();
+    }
   });
 
   const tzo = new Date().getTimezoneOffset();
-  const ENDPOINT_URL_BASE = `${URL}${tzo}&format=json`;
+  const ENDPOINT_URL_BASE = `${URL}${tzo}&format=prebid`;
   const ENDPOINT_URL = `${ENDPOINT_URL_BASE}&userId=${usi}`;
   const ENDPOINT_URL_VIDEO = `${ENDPOINT_URL_BASE}&userId=${usi}&tt=vast4`;
   const ENDPOINT_URL_NOCOOKIE = `${ENDPOINT_URL_BASE}&userId=${usi}&noCookies=true`;
   const ENDPOINT_URL_SEGMENTS = `${ENDPOINT_URL_BASE}&segments=segment1,segment2,segment3&userId=${usi}`;
-  const ENDPOINT_URL_CONSENT = `${EURO_URL}${tzo}&format=json&consentString=consentString&gdpr=1&userId=${usi}`;
+  const ENDPOINT_URL_CONSENT = `${EURO_URL}${tzo}&format=prebid&consentString=consentString&gdpr=1&userId=${usi}`;
   const adapter = newBidder(spec);
 
   const bidderRequests = [
@@ -257,7 +267,8 @@ describe('adnuntiusBidAdapter', function() {
         'usi': 'from-api-server dude',
         'voidAuIds': '00000000000abcde;00000000000fffff',
         'randomApiKey': 'randomApiValue'
-      }
+      },
+      'network': 'some-network-id'
     }
   }
   const serverVideoResponse = {
@@ -442,32 +453,39 @@ describe('adnuntiusBidAdapter', function() {
     }
   }
 
-  describe('inherited functions', function() {
-    it('exists and is a function', function() {
+  describe('inherited functions', function () {
+    it('exists and is a function', function () {
       expect(adapter.callBids).to.exist.and.to.be.a('function');
     });
   });
 
-  describe('isBidRequestValid', function() {
-    it('should return true when required params found', function() {
+  describe('isBidRequestValid', function () {
+    it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bidderRequests[0])).to.equal(true);
     });
   });
 
-  describe('buildRequests', function() {
-    it('Test requests', function() {
+  describe('buildRequests', function () {
+    it('Test requests', function () {
+      stub1 = sinon.stub(URLSearchParams.prototype, 'has').callsFake(() => {
+        return true;
+      });
+      stub2 = sinon.stub(URLSearchParams.prototype, 'get').callsFake(() => {
+        return 'overridden-value';
+      });
+
       const request = spec.buildRequests(bidderRequests, {});
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('bid');
       const bid = request[0].bid[0]
       expect(bid).to.have.property('bidId');
       expect(request[0]).to.have.property('url');
-      expect(request[0].url).to.equal(ENDPOINT_URL);
+      expect(request[0].url).to.equal(ENDPOINT_URL.replace('format=prebid', 'format=prebid&so=overridden-value'));
       expect(request[0]).to.have.property('data');
-      expect(request[0].data).to.equal('{"adUnits":[{"auId":"000000000008b6bc","targetId":"123","maxDeals":1,"dimensions":[[640,480],[600,400]]},{"auId":"0000000000000551","targetId":"adn-0000000000000551","dimensions":[[1640,1480],[1600,1400]]}],"metaData":{"valid":"also-valid"}}');
+      expect(request[0].data).to.equal('{"adUnits":[{"auId":"000000000008b6bc","targetId":"123","maxDeals":1,"dimensions":[[640,480],[600,400]]},{"auId":"0000000000000551","targetId":"adn-0000000000000551","dimensions":[[1640,1480],[1600,1400]]}]}');
     });
 
-    it('Test requests with no local storage', function() {
+    it('Test requests with no local storage', function () {
       storage.setDataInLocalStorage('adn.metaData', JSON.stringify([{}]));
       const request = spec.buildRequests(bidderRequests, {});
       expect(request.length).to.equal(1);
@@ -486,8 +504,8 @@ describe('adnuntiusBidAdapter', function() {
       expect(request2[0].url).to.equal(ENDPOINT_URL_BASE);
     });
 
-    it('Test request changes for voided au ids', function() {
-      storage.setDataInLocalStorage('adn.metaData', JSON.stringify([{key: 'voidAuIds', value: [{auId: '11118b6bc', exp: misc.getUnixTimestamp(1)}, {auId: '0000000000000023', exp: misc.getUnixTimestamp(1)}]}]));
+    it('Test request changes for voided au ids', function () {
+      storage.setDataInLocalStorage('adn.metaData', JSON.stringify([{ key: 'voidAuIds', value: [{ auId: '11118b6bc', exp: misc.getUnixTimestamp(1) }, { auId: '0000000000000023', exp: misc.getUnixTimestamp(1) }] }]));
       const bRequests = bidderRequests.concat([{
         bidId: 'adn-11118b6bc',
         bidder: 'adnuntius',
@@ -538,7 +556,7 @@ describe('adnuntiusBidAdapter', function() {
       expect(request[0].data).to.equal('{"adUnits":[{"auId":"000000000008b6bc","targetId":"123","maxDeals":1,"dimensions":[[640,480],[600,400]]},{"auId":"0000000000000551","targetId":"adn-0000000000000551","dimensions":[[1640,1480],[1600,1400]]},{"auId":"13","targetId":"adn-13","dimensions":[[164,140],[10,1400]]}]}');
     });
 
-    it('Test Video requests', function() {
+    it('Test Video requests', function () {
       const request = spec.buildRequests(videoBidderRequest, {});
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('bid');
@@ -548,12 +566,12 @@ describe('adnuntiusBidAdapter', function() {
       expect(request[0].url).to.equal(ENDPOINT_URL_VIDEO);
     });
 
-    it('should pass segments if available in config', function() {
+    it('should pass segments if available in config', function () {
       const ortb2 = {
         user: {
           data: [{
             name: 'adnuntius',
-            segment: [{id: 'segment1'}, {id: 'segment2'}, {invalidSegment: 'invalid'}, {id: 123}, {id: ['3332']}]
+            segment: [{ id: 'segment1' }, { id: 'segment2' }, { invalidSegment: 'invalid' }, { id: 123 }, { id: ['3332'] }]
           },
           {
             name: 'other',
@@ -562,18 +580,55 @@ describe('adnuntiusBidAdapter', function() {
         }
       };
 
-      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, {ortb2}));
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, { ortb2 }));
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL_SEGMENTS);
     });
 
-    it('should skip segments in config if not either id or array of strings', function() {
+    it('should pass site data ext as key values to ad server', function () {
+      const ortb2 = {
+        site: {
+          ext: {
+            data: {
+              '12345': 'true',
+              '45678': 'true'
+            }
+          }
+        }
+      };
+
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, { ortb2 }));
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url')
+      const data = JSON.parse(request[0].data);
+      expect(data.adUnits[0].kv).to.have.property('12345');
+      expect(data.adUnits[0].kv['12345']).to.equal('true');
+      expect(data.adUnits[0].kv).to.have.property('45678');
+      expect(data.adUnits[0].kv['45678']).to.equal('true');
+    });
+
+    it('should skip passing site data ext if missing', function () {
+      const ortb2 = {
+        site: {
+          ext: {
+          }
+        }
+      };
+
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, { ortb2 }));
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url')
+      const data = JSON.parse(request[0].data);
+      expect(data.adUnits[0]).to.not.have.property('kv');
+    });
+
+    it('should skip segments in config if not either id or array of strings', function () {
       const ortb2 = {
         user: {
           data: [{
             name: 'adnuntius',
-            segment: [{id: 'segment1'}, {id: 'segment2'}, {id: 'segment3'}]
+            segment: [{ id: 'segment1' }, { id: 'segment2' }, { id: 'segment3' }]
           },
           {
             name: 'other',
@@ -584,34 +639,34 @@ describe('adnuntiusBidAdapter', function() {
         }
       };
 
-      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, {ortb2}));
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, { ortb2 }));
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL_SEGMENTS);
     });
   });
 
-  describe('user privacy', function() {
-    it('should send GDPR Consent data if gdprApplies', function() {
-      let request = spec.buildRequests(bidderRequests, {gdprConsent: {gdprApplies: true, consentString: 'consentString'}});
+  describe('user privacy', function () {
+    it('should send GDPR Consent data if gdprApplies', function () {
+      let request = spec.buildRequests(bidderRequests, { gdprConsent: { gdprApplies: true, consentString: 'consentString' } });
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL_CONSENT);
     });
 
-    it('should not send GDPR Consent data if gdprApplies equals undefined', function() {
-      let request = spec.buildRequests(bidderRequests, {gdprConsent: {gdprApplies: undefined, consentString: 'consentString'}});
+    it('should not send GDPR Consent data if gdprApplies equals undefined', function () {
+      let request = spec.buildRequests(bidderRequests, { gdprConsent: { gdprApplies: undefined, consentString: 'consentString' } });
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL);
     });
 
-    it('should pass segments if available in config', function() {
+    it('should pass segments if available in config', function () {
       const ortb2 = {
         user: {
           data: [{
             name: 'adnuntius',
-            segment: [{id: 'segment1'}, {id: 'segment2'}]
+            segment: [{ id: 'segment1' }, { id: 'segment2' }]
           },
           {
             name: 'other',
@@ -620,18 +675,18 @@ describe('adnuntiusBidAdapter', function() {
         }
       }
 
-      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, {ortb2}));
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, { ortb2 }));
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL_SEGMENTS);
     });
 
-    it('should skip segments in config if not either id or array of strings', function() {
+    it('should skip segments in config if not either id or array of strings', function () {
       const ortb2 = {
         user: {
           data: [{
             name: 'adnuntius',
-            segment: [{id: 'segment1'}, {id: 'segment2'}, {id: 'segment3'}]
+            segment: [{ id: 'segment1' }, { id: 'segment2' }, { id: 'segment3' }]
           },
           {
             name: 'other',
@@ -642,20 +697,61 @@ describe('adnuntiusBidAdapter', function() {
         }
       };
 
-      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, {ortb2}));
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, { ortb2 }));
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL_SEGMENTS);
     });
 
-    it('should user user ID if present in ortb2.user.id field', function() {
+    it('should user user ID if present in ortb2.user.id field', function () {
       const ortb2 = {
         user: {
           id: usi
         }
       };
 
-      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, {ortb2}));
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, { ortb2 }));
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url')
+      expect(request[0].url).to.equal(ENDPOINT_URL);
+    });
+
+    it('should user in user', function () {
+      config.setBidderConfig({
+        bidders: ['adnuntius'],
+      });
+      const req = [
+        {
+          bidId: 'adn-000000000008b6bc',
+          bidder: 'adnuntius',
+          params: {
+            auId: '000000000008b6bc',
+            network: 'adnuntius',
+            userId: 'different_user_id'
+          }
+        }
+      ]
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, { bids: req }));
+      expect(request.length).to.equal(1);
+      expect(request[0]).to.have.property('url')
+      expect(request[0].url).to.equal(`${ENDPOINT_URL_BASE}&userId=different_user_id`);
+    });
+
+    it('should handle no user specified', function () {
+      config.setBidderConfig({
+        bidders: ['adnuntius'],
+      });
+      const req = [
+        {
+          bidId: 'adn-000000000008b6bc',
+          bidder: 'adnuntius',
+          params: {
+            auId: '000000000008b6bc',
+            network: 'adnuntius'
+          }
+        }
+      ];
+      const request = config.runWithBidder('adnuntius', () => spec.buildRequests(req, { bids: req }));
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL);
@@ -703,24 +799,24 @@ describe('adnuntiusBidAdapter', function() {
     });
   });
 
-  describe('user privacy', function() {
-    it('should send GDPR Consent data if gdprApplies', function() {
-      let request = spec.buildRequests(bidderRequests, {gdprConsent: {gdprApplies: true, consentString: 'consentString'}});
+  describe('user privacy', function () {
+    it('should send GDPR Consent data if gdprApplies', function () {
+      let request = spec.buildRequests(bidderRequests, { gdprConsent: { gdprApplies: true, consentString: 'consentString' } });
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL_CONSENT);
     });
 
-    it('should not send GDPR Consent data if gdprApplies equals undefined', function() {
-      let request = spec.buildRequests(bidderRequests, {gdprConsent: {gdprApplies: undefined, consentString: 'consentString'}});
+    it('should not send GDPR Consent data if gdprApplies equals undefined', function () {
+      let request = spec.buildRequests(bidderRequests, { gdprConsent: { gdprApplies: undefined, consentString: 'consentString' } });
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL);
     });
   });
 
-  describe('use cookie', function() {
-    it('should send noCookie in url if set to false.', function() {
+  describe('use cookie', function () {
+    it('should send noCookie in url if set to false.', function () {
       config.setBidderConfig({
         bidders: ['adnuntius'],
         config: {
@@ -735,8 +831,8 @@ describe('adnuntiusBidAdapter', function() {
     });
   });
 
-  describe('validate auId', function() {
-    it('should fail when auId is not hexadecimal', function() {
+  describe('validate auId', function () {
+    it('should fail when auId is not hexadecimal', function () {
       const invalidRequest = {
         bidId: 'adn-000000000008b6bc',
         bidder: 'adnuntius',
@@ -748,7 +844,7 @@ describe('adnuntiusBidAdapter', function() {
       expect(valid).to.equal(false);
     });
 
-    it('should pass when auId is  hexadecimal', function() {
+    it('should pass when auId is  hexadecimal', function () {
       const invalidRequest = {
         bidId: 'adn-000000000008b6bc',
         bidder: 'adnuntius',
@@ -761,8 +857,8 @@ describe('adnuntiusBidAdapter', function() {
     });
   });
 
-  describe('request deals', function() {
-    it('Should set max deals.', function() {
+  describe('request deals', function () {
+    it('Should set max deals.', function () {
       config.setBidderConfig({
         bidders: ['adnuntius']
       });
@@ -779,7 +875,7 @@ describe('adnuntiusBidAdapter', function() {
       expect(bidderRequests[1].params).to.not.have.property('maxBids');
       expect(data.adUnits[1].maxDeals).to.equal(undefined);
     });
-    it('Should allow a maximum of 5 deals.', function() {
+    it('Should allow a maximum of 5 deals.', function () {
       config.setBidderConfig({
         bidders: ['adnuntius'],
       });
@@ -802,7 +898,7 @@ describe('adnuntiusBidAdapter', function() {
       expect(data.adUnits.length).to.equal(1);
       expect(data.adUnits[0].maxDeals).to.equal(5);
     });
-    it('Should allow a minumum of 0 deals.', function() {
+    it('Should allow a minumum of 0 deals.', function () {
       config.setBidderConfig({
         bidders: ['adnuntius'],
       });
@@ -825,7 +921,7 @@ describe('adnuntiusBidAdapter', function() {
       expect(data.adUnits.length).to.equal(1);
       expect(data.adUnits[0].maxDeals).to.equal(undefined);
     });
-    it('Should set max deals using bidder config.', function() {
+    it('Should set max deals using bidder config.', function () {
       config.setBidderConfig({
         bidders: ['adnuntius'],
         config: {
@@ -838,7 +934,7 @@ describe('adnuntiusBidAdapter', function() {
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL + '&ds=2');
     });
-    it('Should allow a maximum of 5 deals when using bidder config.', function() {
+    it('Should allow a maximum of 5 deals when using bidder config.', function () {
       config.setBidderConfig({
         bidders: ['adnuntius'],
         config: {
@@ -851,7 +947,7 @@ describe('adnuntiusBidAdapter', function() {
       expect(request[0]).to.have.property('url')
       expect(request[0].url).to.equal(ENDPOINT_URL + '&ds=5');
     });
-    it('Should allow a minimum of 0 deals when using bidder config.', function() {
+    it('Should allow a minimum of 0 deals when using bidder config.', function () {
       config.setBidderConfig({
         bidders: ['adnuntius'],
         config: {
@@ -867,8 +963,8 @@ describe('adnuntiusBidAdapter', function() {
     });
   });
 
-  describe('interpretResponse', function() {
-    it('should return valid response when passed valid server response', function() {
+  describe('interpretResponse', function () {
+    it('should return valid response when passed valid server response', function () {
       config.setBidderConfig({
         bidders: ['adnuntius'],
         config: {
@@ -913,10 +1009,11 @@ describe('adnuntiusBidAdapter', function() {
       expect(interpretedResponse[1].dealCount).to.equal(0);
 
       const results = JSON.parse(storage.getDataFromLocalStorage('adn.metaData'));
-      const usiEntry = results.find(entry => entry.key === 'usi');
+      const usiEntry = results.find(entry => entry.key === 'usi' && entry.network === 'some-network-id');
       expect(usiEntry.key).to.equal('usi');
       expect(usiEntry.value).to.equal('from-api-server dude');
       expect(usiEntry.exp).to.be.greaterThan(misc.getUnixTimestamp(90));
+      expect(usiEntry.network).to.equal('some-network-id')
 
       const voidAuIdsEntry = results.find(entry => entry.key === 'voidAuIds');
       expect(voidAuIdsEntry.key).to.equal('voidAuIds');
@@ -937,10 +1034,11 @@ describe('adnuntiusBidAdapter', function() {
       const randomApiEntry = results.find(entry => entry.key === 'randomApiKey');
       expect(randomApiEntry.key).to.equal('randomApiKey');
       expect(randomApiEntry.value).to.equal('randomApiValue');
+      expect(randomApiEntry.network).to.equal('some-network-id');
       expect(randomApiEntry.exp).to.be.greaterThan(misc.getUnixTimestamp(90));
     });
 
-    it('should not process valid response when passed alt bidder that is an adndeal', function() {
+    it('should not process valid response when passed alt bidder that is an adndeal', function () {
       const altBidder = {
         bid: [
           {
@@ -958,7 +1056,7 @@ describe('adnuntiusBidAdapter', function() {
       serverResponse.body.adUnits[0].deals = deals;
     });
 
-    it('should return valid response when passed alt bidder', function() {
+    it('should return valid response when passed alt bidder', function () {
       const altBidder = {
         bid: [
           {
@@ -995,8 +1093,8 @@ describe('adnuntiusBidAdapter', function() {
     });
   });
 
-  describe('interpretVideoResponse', function() {
-    it('should return valid response when passed valid server response', function() {
+  describe('interpretVideoResponse', function () {
+    it('should return valid response when passed valid server response', function () {
       const interpretedResponse = spec.interpretResponse(serverVideoResponse, videoBidRequest);
       const ad = serverVideoResponse.body.adUnits[0].ads[0]
       const deal = serverVideoResponse.body.adUnits[0].deals[0]

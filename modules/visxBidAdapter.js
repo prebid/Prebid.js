@@ -114,8 +114,7 @@ export const spec = {
       }
     }
 
-    const bidderTimeout = Number(config.getConfig('bidderTimeout')) || timeout;
-    const tmax = timeout ? Math.min(bidderTimeout, timeout) : bidderTimeout;
+    const tmax = timeout;
     const source = {
       ext: {
         wrapperType: 'Prebid_js',

@@ -4,7 +4,7 @@
 
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import { ajax } from '../src/ajax.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getWindowTop, getWindowSelf, deepAccess, logInfo, logError } from '../src/utils.js';
@@ -12,11 +12,13 @@ import { getGlobal } from '../src/prebidGlobal.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
-const events = Object.keys(CONSTANTS.EVENTS).map(key => CONSTANTS.EVENTS[key]);
+const events = Object.keys(EVENTS).map(key => EVENTS[key]);
 const ADAGIO_GVLID = 617;
 const VERSION = '3.0.0';
 const PREBID_VERSION = '$prebid.version$';
 const ENDPOINT = 'https://c.4dex.io/pba.gif';
+const CURRENCY_USD = 'USD';
+const ADAGIO_CODE = 'adagio';
 const cache = {
   auctions: {},
   getAuction: function(auctionId, adUnitCode) {
@@ -92,17 +94,11 @@ function removeDuplicates(arr, getKey) {
   });
 };
 
-function getAdapterNameForAlias(aliasName) {
-  return adapterManager.aliasRegistry[aliasName] || aliasName;
-};
-
-function isAdagio(value) {
-  if (!value) {
+function isAdagio(alias) {
+  if (!alias) {
     return false
   }
-
-  return value.toLowerCase().includes('adagio') ||
-    getAdapterNameForAlias(value).toLowerCase().includes('adagio');
+  return (alias + adapterManager.aliasRegistry[alias]).toLowerCase().includes(ADAGIO_CODE);
 };
 
 function getMediaTypeAlias(mediaType) {
@@ -127,6 +123,26 @@ function addKeyPrefix(obj, prefix) {
     acc[`${prefix}${key}`] = obj[key];
     return acc;
   }, {});
+}
+
+function getUsdCpm(cpm, currency) {
+  let netCpm = cpm
+
+  if (typeof currency === 'string' && currency.toUpperCase() !== CURRENCY_USD) {
+    if (typeof getGlobal().convertCurrency === 'function') {
+      netCpm = parseFloat(Number(getGlobal().convertCurrency(cpm, currency, CURRENCY_USD))).toFixed(3);
+    } else {
+      netCpm = null
+    }
+  }
+  return netCpm
+}
+
+function getCurrencyData(bid) {
+  return {
+    netCpm: getUsdCpm(bid.cpm, bid.currency),
+    orginalCpm: getUsdCpm(bid.originalCpm, bid.originalCurrency)
+  }
 }
 
 /**
@@ -258,7 +274,7 @@ function handlerAuctionInit(event) {
       t_v: params.testVersion || null,
       mts: mediaTypesKeys.join(','),
       ban_szs: bannerSizes.join(','),
-      bdrs: bidders.map(bidder => getAdapterNameForAlias(bidder.bidder)).sort().join(','),
+      bdrs: bidders.map(bidder => bidder.bidder).sort().join(','),
       adg_mts: adagioMediaTypes.join(',')
     };
 
@@ -299,15 +315,22 @@ function handlerAuctionEnd(event) {
 
   const adUnitCodes = cache.getAllAdUnitCodes(auctionId);
   adUnitCodes.forEach(adUnitCode => {
-    const mapper = (bidder) => event.bidsReceived.find(bid => bid.adUnitCode === adUnitCode && bid.bidder === bidder) ? '1' : '0';
+    const bidResponseMapper = (bidder) => {
+      const bid = event.bidsReceived.find(bid => bid.adUnitCode === adUnitCode && bid.bidder === bidder)
+      return bid ? '1' : '0'
+    }
+    const bidCpmMapper = (bidder) => {
+      const bid = event.bidsReceived.find(bid => bid.adUnitCode === adUnitCode && bid.bidder === bidder)
+      return bid ? getCurrencyData(bid).netCpm : null
+    }
 
     cache.updateAuction(auctionId, adUnitCode, {
-      bdrs_bid: cache.getBiddersFromAuction(auctionId, adUnitCode).map(mapper).join(',')
+      bdrs_bid: cache.getBiddersFromAuction(auctionId, adUnitCode).map(bidResponseMapper).join(','),
+      bdrs_cpm: cache.getBiddersFromAuction(auctionId, adUnitCode).map(bidCpmMapper).join(',')
     });
     sendNewBeacon(auctionId, adUnitCode);
   });
 }
-
 function handlerBidWon(event) {
   let auctionId = getTargetedAuctionId(event);
 
@@ -315,20 +338,7 @@ function handlerBidWon(event) {
     return;
   }
 
-  let adsCurRateToUSD = (event.currency === 'USD') ? 1 : null;
-  let ogCurRateToUSD = (event.originalCurrency === 'USD') ? 1 : null;
-  try {
-    if (typeof getGlobal().convertCurrency === 'function') {
-      // Currency module is loaded, we can calculate the conversion rate.
-
-      // Get the conversion rate from the original currency to USD.
-      ogCurRateToUSD = getGlobal().convertCurrency(1, event.originalCurrency, 'USD');
-      // Get the conversion rate from the ad server currency to USD.
-      adsCurRateToUSD = getGlobal().convertCurrency(1, event.currency, 'USD');
-    }
-  } catch (error) {
-    logError('Error on Adagio Analytics Adapter - handlerBidWon', error);
-  }
+  const currencyData = getCurrencyData(event)
 
   const adagioAuctionCacheId = (
     (event.latestTargetedAuctionId && event.latestTargetedAuctionId !== event.auctionId)
@@ -336,19 +346,12 @@ function handlerBidWon(event) {
       : null);
 
   cache.updateAuction(auctionId, event.adUnitCode, {
-    win_bdr: getAdapterNameForAlias(event.bidder),
+    win_bdr: event.bidder,
     win_mt: getMediaTypeAlias(event.mediaType),
     win_ban_sz: event.mediaType === BANNER ? `${event.width}x${event.height}` : null,
 
-    // ad server currency
-    win_cpm: event.cpm,
-    cur: event.currency,
-    cur_rate: adsCurRateToUSD,
-
-    // original currency from bidder
-    og_cpm: event.originalCpm,
-    og_cur: event.originalCurrency,
-    og_cur_rate: ogCurRateToUSD,
+    win_net_cpm: currencyData.netCpm,
+    win_og_cpm: currencyData.orginalCpm,
 
     // cache bid id
     auct_id_c: adagioAuctionCacheId,
@@ -380,22 +383,22 @@ let adagioAdapter = Object.assign(adapter({ emptyUrl, analyticsType }), {
 
     try {
       switch (eventType) {
-        case CONSTANTS.EVENTS.AUCTION_INIT:
+        case EVENTS.AUCTION_INIT:
           handlerAuctionInit(args);
           break;
-        case CONSTANTS.EVENTS.BID_RESPONSE:
+        case EVENTS.BID_RESPONSE:
           handlerBidResponse(args);
           break;
-        case CONSTANTS.EVENTS.AUCTION_END:
+        case EVENTS.AUCTION_END:
           handlerAuctionEnd(args);
           break;
-        case CONSTANTS.EVENTS.BID_WON:
+        case EVENTS.BID_WON:
           handlerBidWon(args);
           break;
         // AD_RENDER_SUCCEEDED seems redundant with BID_WON.
         // case CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED:
-        case CONSTANTS.EVENTS.AD_RENDER_FAILED:
-          handlerAdRender(args, eventType === CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED);
+        case EVENTS.AD_RENDER_FAILED:
+          handlerAdRender(args, eventType === EVENTS.AD_RENDER_SUCCEEDED);
           break;
       }
     } catch (error) {
@@ -428,7 +431,7 @@ adagioAdapter.enableAnalytics = config => {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: adagioAdapter,
-  code: 'adagio',
+  code: ADAGIO_CODE,
   gvlid: ADAGIO_GVLID,
 });
 

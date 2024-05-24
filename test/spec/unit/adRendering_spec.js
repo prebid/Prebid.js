@@ -7,7 +7,7 @@ import {
   handleNativeMessage,
   handleRender
 } from '../../../src/adRendering.js';
-import CONSTANTS from 'src/constants.json';
+import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS } from 'src/constants.js';
 import {expect} from 'chai/index.mjs';
 import {config} from 'src/config.js';
 import {VIDEO} from '../../../src/mediaTypes.js';
@@ -65,7 +65,7 @@ describe('adRendering', () => {
     });
 
     function expectAdRenderFailedEvent(reason) {
-      sinon.assert.calledWith(events.emit, CONSTANTS.EVENTS.AD_RENDER_FAILED, sinon.match({adId, reason}));
+      sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_FAILED, sinon.match({ adId, reason }));
     }
 
     describe('doRender', () => {
@@ -103,7 +103,7 @@ describe('adRendering', () => {
 
         it('emits AD_RENDER_SUCCEDED', () => {
           doRender({renderFn, bidResponse});
-          sinon.assert.calledWith(events.emit, CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED, sinon.match({
+          sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED, sinon.match({
             bid: bidResponse,
             adId: bidResponse.adId
           }));
@@ -114,7 +114,7 @@ describe('adRendering', () => {
         it('should emit AD_RENDER_FAILED on video bids', () => {
           bidResponse.mediaType = VIDEO;
           doRender({renderFn, bidResponse});
-          expectAdRenderFailedEvent(CONSTANTS.AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT)
+          expectAdRenderFailedEvent(AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT)
         });
       }
 
@@ -159,26 +159,26 @@ describe('adRendering', () => {
       describe('should emit AD_RENDER_FAILED', () => {
         it('when bidResponse is missing', () => {
           handleRender({adId});
-          expectAdRenderFailedEvent(CONSTANTS.AD_RENDER_FAILED_REASON.CANNOT_FIND_AD);
+          expectAdRenderFailedEvent(AD_RENDER_FAILED_REASON.CANNOT_FIND_AD);
           sinon.assert.notCalled(doRenderStub);
         });
         it('on exceptions', () => {
           doRenderStub.throws(new Error());
           handleRender({adId, bidResponse});
-          expectAdRenderFailedEvent(CONSTANTS.AD_RENDER_FAILED_REASON.EXCEPTION);
+          expectAdRenderFailedEvent(AD_RENDER_FAILED_REASON.EXCEPTION);
         });
       })
 
       describe('when bid was already rendered', () => {
         beforeEach(() => {
-          bidResponse.status = CONSTANTS.BID_STATUS.RENDERED;
+          bidResponse.status = BID_STATUS.RENDERED;
         });
         afterEach(() => {
           config.resetConfig();
         })
         it('should emit STALE_RENDER', () => {
           handleRender({adId, bidResponse});
-          sinon.assert.calledWith(events.emit, CONSTANTS.EVENTS.STALE_RENDER, bidResponse);
+          sinon.assert.calledWith(events.emit, EVENTS.STALE_RENDER, bidResponse);
           sinon.assert.called(doRenderStub);
         });
         it('should skip rendering if suppressStaleRender', () => {
@@ -190,7 +190,7 @@ describe('adRendering', () => {
 
       it('should mark bid as won and emit BID_WON', () => {
         handleRender({renderFn, bidResponse});
-        sinon.assert.calledWith(events.emit, CONSTANTS.EVENTS.BID_WON, bidResponse);
+        sinon.assert.calledWith(events.emit, EVENTS.BID_WON, bidResponse);
         sinon.assert.calledWith(auctionManager.addWinningBid, bidResponse);
       })
     })
@@ -201,17 +201,17 @@ describe('adRendering', () => {
     beforeEach(() => {
       sandbox.stub(events, 'emit');
       bid = {
-        status: CONSTANTS.BID_STATUS.RENDERED
+        status: BID_STATUS.RENDERED
       }
     });
     it('emits AD_RENDER_FAILED with given reason', () => {
-      handleCreativeEvent({event: CONSTANTS.EVENTS.AD_RENDER_FAILED, info: {reason: 'reason', message: 'message'}}, bid);
-      sinon.assert.calledWith(events.emit, CONSTANTS.EVENTS.AD_RENDER_FAILED, sinon.match({bid, reason: 'reason', message: 'message'}));
+      handleCreativeEvent({ event: EVENTS.AD_RENDER_FAILED, info: { reason: 'reason', message: 'message' } }, bid);
+      sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_FAILED, sinon.match({ bid, reason: 'reason', message: 'message' }));
     });
 
     it('emits AD_RENDER_SUCCEEDED', () => {
-      handleCreativeEvent({event: CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED}, bid);
-      sinon.assert.calledWith(events.emit, CONSTANTS.EVENTS.AD_RENDER_SUCCEEDED, sinon.match({bid}));
+      handleCreativeEvent({ event: EVENTS.AD_RENDER_SUCCEEDED }, bid);
+      sinon.assert.calledWith(events.emit, EVENTS.AD_RENDER_SUCCEEDED, sinon.match({ bid }));
     });
 
     it('logs an error on other events', () => {

@@ -6,7 +6,7 @@ import {deepAccess, logError, logWarn} from '../src/utils.js';
 import {config} from '../src/config.js';
 import adapterManager, {gdprDataHandler} from '../src/adapterManager.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import {GDPR_GVLIDS, VENDORLESS_GVLID, FIRST_PARTY_GVLID} from '../src/consentHandler.js';
 import {
   MODULE_TYPE_ANALYTICS,
@@ -292,11 +292,11 @@ function emitTCF2FinalResults() {
     geoBlocked: formatSet(geoBlocked)
   };
 
-  events.emit(CONSTANTS.EVENTS.TCF2_ENFORCEMENT, tcf2FinalResults);
+  events.emit(EVENTS.TCF2_ENFORCEMENT, tcf2FinalResults);
   [storageBlocked, biddersBlocked, analyticsBlocked, ufpdBlocked, eidsBlocked, geoBlocked].forEach(el => el.clear());
 }
 
-events.on(CONSTANTS.EVENTS.AUCTION_END, emitTCF2FinalResults);
+events.on(EVENTS.AUCTION_END, emitTCF2FinalResults);
 
 /**
  * A configuration function that initializes some module variables, as well as adds hooks

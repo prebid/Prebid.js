@@ -1,9 +1,9 @@
 import adomikAnalytics from 'modules/adomikAnalyticsAdapter.js';
 import { expect } from 'chai';
+import {EVENTS} from 'src/constants.js';
 
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;
-let constants = require('src/constants.json');
 
 describe('Adomik Prebid Analytic', function () {
   let sendEventStub;
@@ -70,7 +70,7 @@ describe('Adomik Prebid Analytic', function () {
       });
 
       // Step 2: Send init auction event
-      events.emit(constants.EVENTS.AUCTION_INIT, {config: initOptions, auctionId: 'test-test-test'});
+      events.emit(EVENTS.AUCTION_INIT, {config: initOptions, auctionId: 'test-test-test'});
 
       expect(adomikAnalytics.currentContext).to.deep.equal({
         uid: '123456',
@@ -81,7 +81,7 @@ describe('Adomik Prebid Analytic', function () {
       });
 
       // Step 3: Send bid requested event
-      events.emit(constants.EVENTS.BID_REQUESTED, { bids: [bid] });
+      events.emit(EVENTS.BID_REQUESTED, { bids: [bid] });
 
       expect(adomikAnalytics.bucketEvents.length).to.equal(1);
       expect(adomikAnalytics.bucketEvents[0]).to.deep.equal({
@@ -93,7 +93,7 @@ describe('Adomik Prebid Analytic', function () {
       });
 
       // Step 4: Send bid response event
-      events.emit(constants.EVENTS.BID_RESPONSE, bid);
+      events.emit(EVENTS.BID_RESPONSE, bid);
 
       expect(adomikAnalytics.bucketEvents.length).to.equal(2);
       expect(adomikAnalytics.bucketEvents[1]).to.deep.equal({
@@ -114,17 +114,17 @@ describe('Adomik Prebid Analytic', function () {
       });
 
       // Step 5: Send bid won event
-      events.emit(constants.EVENTS.BID_WON, bid);
+      events.emit(EVENTS.BID_WON, bid);
 
       expect(adomikAnalytics.bucketEvents.length).to.equal(2);
 
       // Step 6: Send bid timeout event
-      events.emit(constants.EVENTS.BID_TIMEOUT, {});
+      events.emit(EVENTS.BID_TIMEOUT, {});
 
       expect(adomikAnalytics.currentContext.timeouted).to.equal(true);
 
       // Step 7: Send auction end event
-      events.emit(constants.EVENTS.AUCTION_END, {});
+      events.emit(EVENTS.AUCTION_END, {});
 
       setTimeout(function() {
         sinon.assert.callCount(sendEventStub, 1);

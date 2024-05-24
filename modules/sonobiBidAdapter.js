@@ -101,6 +101,8 @@ export const spec = {
     const fpd = bidderRequest.ortb2;
 
     if (fpd) {
+      delete fpd.experianRtidData; // Omit the experian data since we already pass this through a dedicated query param
+      delete fpd.experianRtidKey
       payload.fpd = JSON.stringify(fpd);
     }
 
@@ -332,7 +334,7 @@ function _validateFloor(bid) {
 }
 
 function _validateGPID(bid) {
-  const gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot') || deepAccess(getGptSlotInfoForAdUnitCode(bid.adUnitCode), 'gptSlot') || bid.params.ad_unit;
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot') || deepAccess(getGptSlotInfoForAdUnitCode(bid.adUnitCode), 'gptSlot') || bid.params.ad_unit;
 
   if (gpid) {
     return `gpid=${gpid},`
