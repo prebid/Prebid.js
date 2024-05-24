@@ -63,6 +63,18 @@ const biddersId = { // Partner IDs mapping for different SSPs and DSPs
   'zeta_global_ssp': 33385,
 };
 
+const eidsProvidersMap = {
+  'id5': 'id5-sync.com',
+  'id5id': 'id5-sync.com',
+  'id5_id': 'id5-sync.com',
+  'pubprovided_id': 'pubProvidedId',
+  'ppid': 'pubProvidedId',
+  'first-id.fr': 'pubProvidedId',
+  'sharedid': 'pubcid.org',
+  'publishercommonid': 'pubcid.org',
+  'pubcid.org': 'pubcid.org',
+}
+
 // params
 let params = {
   partnerId: 1,
@@ -72,7 +84,7 @@ let params = {
   setGptKeyValues: true,
   contextualMinRelevancyScore: 30,
   preprod: false,
-  avoidPostEids: false,
+  authorizedEids: ['pubProvidedId', 'id5-sync.com', 'pubcid.org'],
   avoidPostContent: false,
   sirdataDomain: 'cookieless-data.com',
   bidders: []
@@ -337,6 +349,7 @@ export function sanitizeContent(content) {
  * Fetches segments and categories from Sirdata server and processes the response
  * @param {Object} reqBidsConfigObj - The bids configuration object
  * @param {function} onDone - The callback function to be called upon completion
+ * @param {Object} moduleConfig - The module Config
  * @param {Object} userConsent - The user consent information
  */
 export function getSegmentsAndCategories(reqBidsConfigObj, onDone, moduleConfig, userConsent) {
@@ -368,10 +381,31 @@ export function getSegmentsAndCategories(reqBidsConfigObj, onDone, moduleConfig,
       privacySignals = `&gpp=${userConsent.gpp.gppString}${sid}`;
     }
 
-    // EUIDS from storage and sync global for graph
+    // Authorized EUIDS from storage and sync global for graph
     euids = getUidFromStorage(); // Sirdata Id
-    if (!params.avoidPostEids && typeof getGlobal().getUserIdsAsEids === 'function') {
-      euids = mergeEuidsArrays(euids, getGlobal().getUserIdsAsEids()); // for graph id
+
+    if (!isEmpty(params.authorizedEids) && typeof getGlobal().getUserIds === 'function') {
+      let filteredEids = {};
+      const authorizedEids = params.authorizedEids;
+      const globalUserIds = getGlobal().getUserIds();
+      const globalUserIdsAsEids = getGlobal().getUserIdsAsEids();
+
+      const hasPubProvidedId = authorizedEids.indexOf('pubProvidedId') !== -1;
+
+      if (hasPubProvidedId && !isEmpty(globalUserIds.pubProvidedId)) { // Publisher allows pubProvidedId
+        filteredEids = mergeEuidsArrays(filteredEids, globalUserIds.pubProvidedId);
+      }
+
+      if (!hasPubProvidedId || authorizedEids.length > 1) { // Publisher allows other Id providers
+        const filteredGlobalEids = globalUserIdsAsEids.filter(entry => authorizedEids.includes(entry.source));
+        if (!isEmpty(filteredGlobalEids)) {
+          filteredEids = mergeEuidsArrays(filteredEids, filteredGlobalEids);
+        }
+      }
+
+      if (!isEmpty(filteredEids)) {
+        euids = mergeEuidsArrays(euids, filteredEids); // merge ids for graph id
+      }
     }
   }
 
@@ -699,6 +733,19 @@ export function addSegmentData(reqBids, data, adUnits, onDone) {
 export function init(moduleConfig) {
   logInfo(LOG_PREFIX, moduleConfig);
   if (typeof (moduleConfig.params) !== 'object' || !moduleConfig.params.key) return false;
+  if (typeof (moduleConfig.params.authorizedEids) !== 'object' || !Array.isArray(moduleConfig.params.authorizedEids)) {
+    delete (moduleConfig.params.authorizedEids); // must be array of strings
+  } else {
+    // we need it if the publishers uses user Id module name instead of key or source
+    const resultSet = new Set(
+      moduleConfig.params.authorizedEids.map(item => {
+        const formattedItem = item.toLowerCase().replace(/\s+/g, '_'); // Normalize
+        return eidsProvidersMap[formattedItem] || formattedItem;
+      })
+    );
+    moduleConfig.params.authorizedEids = Array.from(resultSet);
+  }
+  if (typeof (moduleConfig.params.bidders) !== 'object' || !Array.isArray(moduleConfig.params.bidders)) delete (moduleConfig.params.bidders); // must be array of objects
   delete (moduleConfig.params.sirdataDomain); // delete cookieless domain if specified => shouldn't be overridden by publisher
   params = Object.assign({}, params, moduleConfig.params);
   return true;
