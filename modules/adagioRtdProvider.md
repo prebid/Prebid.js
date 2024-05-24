@@ -29,6 +29,7 @@ pbjs.setConfig({
       name: 'adagio',
       params: {
         organizationId: '1000' // Required. Provided by Adagio
+        site: 'my-site' // Required. Provided by Adagio
       }
     }]
   }

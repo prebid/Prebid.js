@@ -13,6 +13,7 @@ import { getStorageManager } from '../src/storageManager.js';
 import {
   canAccessWindowTop,
   deepAccess,
+  deepSetValue,
   generateUUID,
   getUniqueIdentifierStr,
   getWindowSelf,
@@ -21,8 +22,6 @@ import {
   isNumber,
   isSafeFrameWindow,
   isStr,
-  logWarn,
-  mergeDeep,
   prefixLog
 } from '../src/utils.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
@@ -31,14 +30,17 @@ import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  * @typedef {import('../modules/rtdModule/index.js').adUnit} adUnit
  */
-const SUBMODULE_NAME = 'adagio'
+const SUBMODULE_NAME = 'adagio';
 const ADAGIO_BIDDER_CODE = 'adagio';
 const GVLID = 617;
 const SCRIPT_URL = 'https://script.4dex.io/a/latest/adagio.js';
 const SESS_DURATION = 30 * 60 * 1000;
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
 
-const { logError, logInfo } = prefixLog('AdagioRtdProvider:');
+const { logError, logWarn } = prefixLog('AdagioRtdProvider:');
+
+// Guard to avoid storing the same bid data several times.
+const guard = new Set();
 
 /**
  * Returns the window.ADAGIO global object used to store Adagio data.
@@ -75,8 +77,8 @@ const _SESSION = (function() {
       // helper function to determine if the session is new.
       const isNewSession = (lastActivity) => {
         const now = Date.now();
-        return (!isNumber(lastActivity) || (now - lastActivity) > SESS_DURATION)
-      }
+        return (!isNumber(lastActivity) || (now - lastActivity) > SESS_DURATION);
+      };
 
       storage.getDataFromLocalStorage('adagio', (storageValue) => {
         // session can be an empty object
@@ -89,7 +91,7 @@ const _SESSION = (function() {
           ...(vwSmplg !== undefined && { vwSmplg }),
           ...(vwSmplgNxt !== undefined && { vwSmplgNxt }),
           ...(lastActivityTime !== undefined && { lastActivityTime })
-        }
+        };
 
         if (isNewSession(lastActivityTime)) {
           data.session.new = true;
@@ -110,7 +112,7 @@ const _SESSION = (function() {
     get: function() {
       return data.session;
     }
-  }
+  };
 })();
 
 const _FEATURES = (function() {
@@ -135,13 +137,13 @@ const _FEATURES = (function() {
           viewport_dimensions: getViewPortDimensions().toString(),
           user_timestamp: getTimestampUTC().toString(),
           dom_loading: getDomLoadingDuration().toString(),
-        }
+        };
         features.initialized = true;
       }
 
       return { ...features.data };
     }
-  }
+  };
 })();
 
 export const _internal = {
@@ -157,6 +159,10 @@ export const _internal = {
     return _FEATURES;
   },
 
+  getGuard: function() {
+    return guard;
+  },
+
   /**
    * Ensure that the bidder is Adagio.
    *
@@ -165,7 +171,7 @@ export const _internal = {
    */
   isAdagioBidder: function (alias) {
     if (!alias) {
-      return false
+      return false;
     }
     return (alias + adapterManager.aliasRegistry[alias]).toLowerCase().includes(ADAGIO_BIDDER_CODE);
   },
@@ -190,12 +196,12 @@ export const _internal = {
 
     return (!obj || !obj.session) ? _default : obj.session;
   }
-}
+};
 
 function loadAdagioScript(config) {
   storage.localStorageIsEnabled(isValid => {
     if (!isValid) {
-      return
+      return;
     }
 
     loadExternalScript(SCRIPT_URL, SUBMODULE_NAME, undefined, undefined, { id: `adagiojs-${getUniqueIdentifierStr()}`, 'data-pid': config.params.organizationId });
@@ -209,12 +215,12 @@ function loadAdagioScript(config) {
  * @returns {boolean}
  */
 function init(config, _userConsent) {
-  if (!config.params?.organizationId || !isStr(config.params.organizationId)) {
+  if (!isStr(config.params?.organizationId) || !isStr(config.params?.site)) {
     logError('organizationId is required and must be a string.');
     return false;
   }
 
-  _internal.getAdagioNs().hasRtd = true
+  _internal.getAdagioNs().hasRtd = true;
 
   _internal.getSession().init();
 
@@ -229,44 +235,29 @@ function init(config, _userConsent) {
  * onBidRequest is called for each bidder during an auction and contains the bids for that bidder.
  *
  * @param {*} bidderRequest
- * @param {*} _config
+ * @param {*} config
  * @param {*} _userConsent
  */
-function onBidRequest(bidderRequest, _config, _userConsent) {
-  if (!_internal.isAdagioBidder(bidderRequest.bidderCode)) {
-    return;
-  }
-
-  // setTimeout trick to ensure that the `bidderRequest.params` values updated by the bidder adapter are taken into account.
+function onBidRequest(bidderRequest, config, _userConsent) {
+  // setTimeout trick to ensure that the `bidderRequest.params` values updated by a bidder adapter are taken into account.
   // @todo: Check why we have to do it like this, and if there is a better way. Check how the event is dispatched in rtdModule/index.js
   setTimeout(() => {
     bidderRequest.bids.forEach(bid => {
-      const featuresExtended = {
-        ...deepAccess(bid, 'ortb2.ext.features', {}),
-        adunit_position: deepAccess(bid, 'ortb2Imp.ext.data.adunit_position'),
-
-        // TODO: `bidderRequestsCount` must be incremented with s2s context, actually works only for `client` context
-        // see: https://github.com/prebid/Prebid.js/pull/11295/files#diff-d5c9b255c545e5097d1cd2f49e7dad309b731e34d788f9c28432ad43ebcd7785L114
-        print_number: deepAccess(bid, 'bidderRequestsCount', 1).toString()
-      };
-
-      const data = {
-        features: featuresExtended,
-        params: { ...bid.params },
-        adUnitCode: bid.adUnitCode
+      const uid = deepAccess(bid, 'ortb2.site.ext.data.adg_rtd.uid');
+      if (!uid) {
+        logError('The `uid` is required to store the request in the ADAGIO namespace.');
+        return;
       }
 
-      try {
-        _internal.getAdagioNs().queue.push({
-          action: 'features',
-          ts: Date.now(),
-          data
-        });
-      } catch (e) {
-        logWarn('Unable to enqueue `features` to adagio.js.', e);
+      // No need to store the same info several times.
+      // `uid` is unique as it is generated by the RTD module itself for each auction.
+      const key = `${bid.adUnitCode}-${uid}`;
+      if (_internal.getGuard().has(key)) {
+        return;
       }
 
-      storeRequestInAdagioNS(bid);
+      _internal.getGuard().add(key);
+      storeRequestInAdagioNS(bid, config);
     });
   }, 1);
 }
@@ -277,42 +268,67 @@ function onBidRequest(bidderRequest, _config, _userConsent) {
  *
  * @param {*} bidReqConfig
  * @param {*} callback
- * @param {*} _config
+ * @param {*} config
  */
-function onGetBidRequestData(bidReqConfig, callback, _config) {
-  const ortb2Fragments = bidReqConfig.ortb2Fragments || {};
+function onGetBidRequestData(bidReqConfig, callback, config) {
+  const { site: ortb2Site } = bidReqConfig.ortb2Fragments.global;
   const features = _internal.getFeatures().get();
   const ext = {
+    uid: generateUUID(),
     features: { ...features },
     session: { ..._SESSION.get() }
-  }
+  };
 
-  mergeDeep(ortb2Fragments, {
-    bidder: {
-      adagio: { ext }
-    }
-  });
-
-  bidReqConfig.ortb2Fragments = ortb2Fragments;
+  deepSetValue(ortb2Site, `ext.data.adg_rtd`, ext);
 
   const adUnits = bidReqConfig.adUnits || getGlobal().adUnits || [];
   adUnits.forEach(adUnit => {
-    adUnit.bids.forEach(bid => {
-      if (!_internal.isAdagioBidder(bid.bidder)) {
-        return;
+    const ortb2Imp = deepAccess(adUnit, 'ortb2Imp');
+    // A divId is required to compute the slot position and later to track viewability.
+    // If nothing has been explicitly set, we try to get the divId from the GPT slot and fallback to the adUnit code in last resort.
+    if (!deepAccess(ortb2Imp, 'ext.data.divId')) {
+      const divId = getGptSlotInfoForAdUnitCode(adUnit.code).divId;
+      deepSetValue(ortb2Imp, `ext.data.divId`, divId || adUnit.code);
+    }
+
+    const slotPosition = getSlotPosition(adUnit);
+    deepSetValue(ortb2Imp, `ext.data.adg_rtd.adunit_position`, slotPosition);
+
+    // We expect `pagetype` `category` are defined in FPD `ortb2.site.ext.data` object.
+    // `placement` is expected in FPD `adUnits[].ortb2Imp.ext.data` object. (Please note that this `placement` is not related to the oRTB video property.)
+    // Btw, we have to ensure compatibility with publishers that use the "legacy" adagio params at the adUnit.params level.
+    const adagioBid = adUnit.bids.find(bid => _internal.isAdagioBidder(bid.bidder));
+    if (adagioBid) {
+      // ortb2 level
+      let mustWarnOrtb2 = false;
+      if (!deepAccess(ortb2Site, 'ext.data.pagetype') && adagioBid.params.pagetype) {
+        deepSetValue(ortb2Site, 'ext.data.pagetype', adagioBid.params.pagetype);
+        mustWarnOrtb2 = true;
+      }
+      if (!deepAccess(ortb2Site, 'ext.data.category') && adagioBid.params.category) {
+        deepSetValue(ortb2Site, 'ext.data.category', adagioBid.params.category);
+        mustWarnOrtb2 = true;
       }
 
-      const slotPosition = getSlotPosition(bid, adUnit.code);
-      const ortb2Imp = bid.ortb2Imp || {}
-
-      mergeDeep(ortb2Imp, {
-        ext: {
-          data: { adunit_position: slotPosition }
+      // ortb2Imp level
+      let mustWarnOrtb2Imp = false;
+      if (!deepAccess(ortb2Imp, 'ext.data.placement')) {
+        if (adagioBid.params.placement) {
+          deepSetValue(ortb2Imp, 'ext.data.placement', adagioBid.params.placement);
+          mustWarnOrtb2Imp = true;
+        } else {
+          // If the placement is not defined, we fallback to the adUnit code.
+          deepSetValue(ortb2Imp, 'ext.data.placement', adUnit.code);
         }
-      });
+      }
 
-      bid.ortb2Imp = ortb2Imp;
-    });
+      if (mustWarnOrtb2) {
+        logWarn('`pagetype` and `category` must be defined in the FPD `ortb2.site.ext.data` object. Relying on `adUnits[].bids.adagio.params` is deprecated.');
+      }
+      if (mustWarnOrtb2Imp) {
+        logWarn('`placement` must be defined in the FPD `adUnits[].ortb2Imp.ext.data` object. Relying on `adUnits[].bids.adagio.params` is deprecated.');
+      }
+    }
   });
 
   callback();
@@ -340,36 +356,41 @@ submodule('realTimeData', adagioRtdSubmodule);
  * storeRequestInAdagioNS store ad-units in the ADAGIO namespace for further usage.
  * Not all the properties are stored, only the ones that are useful for adagio.js.
  *
- * @param {*} bidRequest
+ * @param {*} bid - The bid object. Correspond to the bidRequest.bids[i] object.
+ * @param {*} config - The RTD module configuration.
  * @returns {void}
  */
-function storeRequestInAdagioNS(bidRequest) {
+function storeRequestInAdagioNS(bid, config) {
   try {
-    _internal.getAdagioNs().pbjsAdUnits = _internal.getAdagioNs().pbjsAdUnits.filter((adUnit) => adUnit.code !== bidRequest.adUnitCode);
+    const { bidder, adUnitCode, mediaTypes, params, auctionId, bidderRequestsCount, ortb2, ortb2Imp } = bid;
 
-    const printNumber = deepAccess(bidRequest, 'features.print_number', bidRequest.bidderRequestsCount || 1);
+    const { organizationId, site } = config.params;
 
-    _internal.getAdagioNs().pbjsAdUnits.push({
-      code: bidRequest.adUnitCode,
-      mediaTypes: bidRequest.mediaTypes || {},
-      sizes: (bidRequest.mediaTypes && bidRequest.mediaTypes.banner && Array.isArray(bidRequest.mediaTypes.banner.sizes)) ? bidRequest.mediaTypes.banner.sizes : bidRequest.sizes,
-      bids: [{
-        bidder: bidRequest.bidder,
-        params: bidRequest.params // use the updated bid.params object with auto-detected params
-      }],
-      auctionId: bidRequest.params.adagioAuctionId, // this auctionId has been generated by adagioBidAdapter
-      pageviewId: _internal.getAdagioNs().pageviewId,
-      printNumber,
+    const ortb2Data = deepAccess(ortb2, 'site.ext.data', {});
+    const ortb2ImpData = deepAccess(ortb2Imp, 'ext.data', {});
+
+    // TODO: `bidderRequestsCount` must be incremented with s2s context, actually works only for `client` context
+    // see: https://github.com/prebid/Prebid.js/pull/11295/files#diff-d5c9b255c545e5097d1cd2f49e7dad309b731e34d788f9c28432ad43ebcd7785L114
+    const data = {
+      bidder,
+      adUnitCode,
+      mediaTypes,
+      params,
+      auctionId,
+      bidderRequestsCount,
+      ortb2: ortb2Data,
+      ortb2Imp: ortb2ImpData,
       localPbjs: '$$PREBID_GLOBAL$$',
-      localPbjsRef: getGlobal()
-    });
-
-    // (legacy) Store internal adUnit information
-    _internal.getAdagioNs().adUnits[bidRequest.adUnitCode] = {
-      auctionId: bidRequest.params.adagioAuctionId, // this auctionId has been generated by adagioBidAdapter
-      pageviewId: _internal.getAdagioNs().pageviewId,
-      printNumber,
+      localPbjsRef: getGlobal(),
+      organizationId,
+      site
     };
+
+    _internal.getAdagioNs().queue.push({
+      action: 'store',
+      ts: Date.now(),
+      data
+    });
   } catch (e) {
     logError(e);
   }
@@ -399,21 +420,7 @@ function getElementFromTopWindow(element, currentWindow) {
   }
 };
 
-function getSlotPosition(bid, adUnitCode, property = 'adUnitElementId') {
-  let adUnitElementId = deepAccess(bid, 'ortb2Imp.ext.data.elementId', null) || bid.params[property] || '';
-
-  if (!adUnitElementId) {
-    adUnitElementId = getGptSlotInfoForAdUnitCode(adUnitCode).divId;
-  }
-  if (!adUnitElementId) {
-    adUnitElementId = adUnitCode;
-  }
-
-  if (!adUnitElementId) {
-    logInfo('Unable to compute slot position. Try to add `bid.params.adUnitElementId = "{dom-element-id}"` in your ad-unit config.')
-    return '';
-  }
-
+function getSlotPosition(adUnit) {
   if (!isSafeFrameWindow() && !canAccessWindowTop()) {
     return '';
   }
@@ -436,6 +443,7 @@ function getSlotPosition(bid, adUnitCode, property = 'adUnitElementId') {
       // window.top based computing
       const wt = getWindowTop();
       const d = wt.document;
+      const adUnitElementId = deepAccess(adUnit, 'ortb2Imp.ext.data.divId');
 
       let domElement;
 
@@ -594,9 +602,9 @@ function registerEventsForAdServers(config) {
       ws[namespace][command] = ws[namespace][command] || [];
       cb();
     } catch (e) {
-      logError(e)
+      logError(e);
     }
-  }
+  };
 
   register('googletag', 'cmd', ws, 'gpt', () => {
     ws.googletag.cmd.push(() => {
@@ -642,7 +650,7 @@ function registerEventsForAdServers(config) {
       });
       selfStoredWindow.adserver = 'ast';
     });
-  })
+  });
 };
 
 // --- end of internal functions ----- //

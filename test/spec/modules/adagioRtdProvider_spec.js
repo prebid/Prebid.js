@@ -2,6 +2,7 @@ import { adagioRtdSubmodule, _internal, storage } from 'modules/adagioRtdProvide
 import * as utils from 'src/utils.js';
 import { loadExternalScript } from '../../../src/adloader.js';
 import { expect } from 'chai';
+import { getGlobal } from '../../../src/prebidGlobal.js';
 
 describe('Adagio Rtd Provider', function () {
   const SUBMODULE_NAME = 'adagio';
@@ -46,7 +47,8 @@ describe('Adagio Rtd Provider', function () {
     const config = {
       name: SUBMODULE_NAME,
       params: {
-        organizationId: '1000'
+        organizationId: '1000',
+        site: 'mysite'
       }
     };
 
@@ -73,13 +75,25 @@ describe('Adagio Rtd Provider', function () {
       const value = adagioRtdSubmodule.init({
         name: SUBMODULE_NAME,
         params: {
-          organizationId: 1000
+          organizationId: 1000,
+          site: 'mysite'
         }
       });
       expect(value).to.equal(false);
     });
 
-    it('returns true if organizationId param included', function () {
+    it('returns false if `site` param is not a string', function () {
+      const value = adagioRtdSubmodule.init({
+        name: SUBMODULE_NAME,
+        params: {
+          organizationId: '1000',
+          site: 123
+        }
+      });
+      expect(value).to.equal(false);
+    });
+
+    it('returns true if `organizationId` and `site` params included', function () {
       const value = adagioRtdSubmodule.init(config);
       expect(value).to.equal(true);
     });
@@ -190,6 +204,7 @@ describe('Adagio Rtd Provider', function () {
               'sizes': [[300, 250]]
             }
           },
+          'ortb2Imp': {},
           'bids': [
             {
               'bidder': 'adagio',
@@ -239,6 +254,8 @@ describe('Adagio Rtd Provider', function () {
       }
     };
 
+    function cb() {}
+
     beforeEach(function() {
       _internal.getFeatures().reset();
     });
@@ -247,32 +264,23 @@ describe('Adagio Rtd Provider', function () {
       expect(adagioRtdSubmodule.getBidRequestData).to.be.a('function');
     });
 
-    it('update the ortb2Fragments object for the Adagio bidder only', function() {
+    it('update the ortb2Fragments object with adg_rtd signals', function() {
       const bidRequest = utils.deepClone(bidReqConfig);
 
       sandbox.stub(window.top.document, 'getElementById').returns(getElementByIdMock());
       sandbox.stub(window.top, 'getComputedStyle').returns({ display: 'block' });
       sandbox.stub(utils, 'inIframe').returns(false);
 
-      adagioRtdSubmodule.getBidRequestData(bidRequest);
+      adagioRtdSubmodule.getBidRequestData(bidRequest, cb);
+      const signals = bidRequest.ortb2Fragments.global.site.ext.data.adg_rtd;
+      expect(signals).to.have.property('features');
+      expect(signals).to.have.property('session');
+      expect(signals).to.have.property('uid');
+      expect(signals.features.viewport_dimensions).to.match(/\d+x\d+/);
+      expect(signals.features.page_dimensions).to.match(/\d+x\d+/);
 
-      Object.keys(bidRequest.ortb2Fragments.bidder).forEach(bidderCode => {
-        if (bidderCode !== 'adagio') {
-          expect(bidRequest.ortb2Fragments.bidder[bidderCode]).to.be.empty;
-          expect(bidRequest.adUnits[0].bids[0]).to.have.property('ortb2Imp');
-          expect(bidRequest.adUnits[0].bids[0].ortb2Imp.ext.data.adunit_position).to.not.exist;
-        } else {
-          const bidderExt = bidRequest.ortb2Fragments.bidder.adagio.ext;
-          expect(bidderExt).to.have.property('features');
-          expect(bidderExt).to.have.property('session');
-          expect(bidderExt.features.viewport_dimensions).to.match(/\d+x\d+/);
-          expect(bidderExt.features.page_dimensions).to.match(/\d+x\d+/);
-
-          expect(bidRequest.adUnits[0].bids[0]).to.have.property('ortb2Imp');
-          expect(bidRequest.adUnits[0].bids[0].ortb2Imp.ext).to.have.property('data');
-          expect(bidRequest.adUnits[0].bids[0].ortb2Imp.ext.data.adunit_position).to.match(/\d+x\d+/);
-        }
-      });
+      expect(bidRequest.adUnits[0]).to.have.property('ortb2Imp');
+      expect(bidRequest.adUnits[0].ortb2Imp.ext.data.adg_rtd.adunit_position).to.match(/\d+x\d+/);
     });
 
     describe('update the ortb2Fragments object a SafeFrame context', function() {
@@ -292,14 +300,14 @@ describe('Adagio Rtd Provider', function () {
         };
 
         const bidRequest = utils.deepClone(bidReqConfig);
-        adagioRtdSubmodule.getBidRequestData(bidRequest);
+        adagioRtdSubmodule.getBidRequestData(bidRequest, cb);
 
-        const bidderFragmentExt = bidRequest.ortb2Fragments.bidder.adagio.ext;
-        expect(bidderFragmentExt.features.viewport_dimensions).equal('1920x1177');
-        expect(bidderFragmentExt.features.page_dimensions).equal('');
+        const fragmentExt = bidRequest.ortb2Fragments.global.site.ext.data.adg_rtd;
+        expect(fragmentExt.features.viewport_dimensions).equal('1920x1177');
+        expect(fragmentExt.features.page_dimensions).equal('');
 
-        const ortb2ImpExt = bidRequest.adUnits[0].bids[0].ortb2Imp.ext;
-        expect(ortb2ImpExt.data.adunit_position).equal('210x859');
+        const ortb2ImpExt = bidRequest.adUnits[0].ortb2Imp.ext.data.adg_rtd;
+        expect(ortb2ImpExt.adunit_position).equal('210x859');
 
         window.$sf = undefined;
       });
@@ -315,14 +323,14 @@ describe('Adagio Rtd Provider', function () {
         };
 
         const bidRequest = utils.deepClone(bidReqConfig);
-        adagioRtdSubmodule.getBidRequestData(bidRequest);
+        adagioRtdSubmodule.getBidRequestData(bidRequest, cb);
 
-        const bidderFragmentExt = bidRequest.ortb2Fragments.bidder.adagio.ext;
-        expect(bidderFragmentExt.features.viewport_dimensions).equal('');
-        expect(bidderFragmentExt.features.page_dimensions).equal('');
+        const fragmentExt = bidRequest.ortb2Fragments.global.site.ext.data.adg_rtd;
+        expect(fragmentExt.features.viewport_dimensions).equal('');
+        expect(fragmentExt.features.page_dimensions).equal('');
 
-        const ortb2ImpExt = bidRequest.adUnits[0].bids[0].ortb2Imp.ext;
-        expect(ortb2ImpExt.data.adunit_position).equal('');
+        const ortb2ImpExt = bidRequest.adUnits[0].ortb2Imp.ext.data.adg_rtd;
+        expect(ortb2ImpExt.adunit_position).equal('');
 
         window.$sf = undefined;
       });
@@ -335,10 +343,10 @@ describe('Adagio Rtd Provider', function () {
         sandbox.stub(utils, 'inIframe').returns(true);
 
         const bidRequest = utils.deepClone(bidReqConfig);
-        adagioRtdSubmodule.getBidRequestData(bidRequest);
+        adagioRtdSubmodule.getBidRequestData(bidRequest, cb);
 
-        const ortb2ImpExt = bidRequest.adUnits[0].bids[0].ortb2Imp.ext;
-        expect(ortb2ImpExt.data.adunit_position).equal('');
+        const ortb2ImpExt = bidRequest.adUnits[0].ortb2Imp.ext.data.adg_rtd;
+        expect(ortb2ImpExt.adunit_position).equal('');
       });
 
       it('catch error when window.top is accessible', function() {
@@ -347,10 +355,10 @@ describe('Adagio Rtd Provider', function () {
         sandbox.stub(window.document, 'getElementById').throws();
 
         const bidRequest = utils.deepClone(bidReqConfig);
-        adagioRtdSubmodule.getBidRequestData(bidRequest);
+        adagioRtdSubmodule.getBidRequestData(bidRequest, cb);
 
-        const ortb2ImpExt = bidRequest.adUnits[0].bids[0].ortb2Imp.ext;
-        expect(ortb2ImpExt.data.adunit_position).equal('');
+        const ortb2ImpExt = bidRequest.adUnits[0].ortb2Imp.ext.data.adg_rtd;
+        expect(ortb2ImpExt.adunit_position).equal('');
       });
     });
 
@@ -359,14 +367,14 @@ describe('Adagio Rtd Provider', function () {
       sandbox.stub(utils, 'isSafeFrameWindow').returns(false);
 
       const bidRequest = utils.deepClone(bidReqConfig);
-      adagioRtdSubmodule.getBidRequestData(bidRequest);
+      adagioRtdSubmodule.getBidRequestData(bidRequest, cb);
 
-      const bidderFragmentExt = bidRequest.ortb2Fragments.bidder.adagio.ext;
-      expect(bidderFragmentExt.features.viewport_dimensions).equal('');
-      expect(bidderFragmentExt.features.page_dimensions).equal('');
+      const fragmentExt = bidRequest.ortb2Fragments.global.site.ext.data.adg_rtd;
+      expect(fragmentExt.features.viewport_dimensions).equal('');
+      expect(fragmentExt.features.page_dimensions).equal('');
 
-      const ortb2ImpExt = bidRequest.adUnits[0].bids[0].ortb2Imp.ext;
-      expect(ortb2ImpExt.data.adunit_position).equal('');
+      const ortb2ImpExt = bidRequest.adUnits[0].ortb2Imp.ext.data.adg_rtd;
+      expect(ortb2ImpExt.adunit_position).equal('');
     });
   });
 
@@ -423,76 +431,99 @@ describe('Adagio Rtd Provider', function () {
           'bidderRequestsCount': 1,
           'bidderWinsCount': 0,
           'ortb2': {
-            'ext': {
-              'features': {
-                'page_dimensions': '1359x1353',
-                'viewport_dimensions': '1359x1253',
-                'user_timestamp': '1715621032',
-                'dom_loading': '28'
-              },
-              'session': {
-                'new': true,
-                'rnd': 0.020644826280300954,
-                'vwSmplg': 0.1,
-                'vwSmplgNxt': 0.1
+            'site': {
+              'ext': {
+                'data': {
+                  'adg_rtd': {
+                    'uid': 'dfb9b067-e5c4-4212-97bb-c67d6313ecaf',
+                    'features': {
+                      'page_dimensions': '1359x1353',
+                      'viewport_dimensions': '1359x1253',
+                      'user_timestamp': '1715621032',
+                      'dom_loading': '28'
+                    },
+                    'session': {
+                      'new': true,
+                      'rnd': 0.020644826280300954,
+                      'vwSmplg': 0.1,
+                      'vwSmplgNxt': 0.1
+                    }
+                  }
+                }
               }
             }
-          }
+          },
         },
       ],
       'auctionStart': 1715613832791,
       'timeout': 700,
       'ortb2': {
-        'ext': {
-          'features': {
-            'page_dimensions': '1359x1353',
-            'viewport_dimensions': '1359x1253',
-            'user_timestamp': '1715621032',
-            'dom_loading': '28'
-          },
-          'session': {
-            'new': true,
-            'rnd': 0.020644826280300954,
-            'vwSmplg': 0.1,
-            'vwSmplgNxt': 0.1
+        'site': {
+          'ext': {
+            'data': {
+              'adg_rtd': {
+                'features': {
+                  'page_dimensions': '1359x1353',
+                  'viewport_dimensions': '1359x1253',
+                  'user_timestamp': '1715621032',
+                  'dom_loading': '28'
+                },
+                'session': {
+                  'new': true,
+                  'rnd': 0.020644826280300954,
+                  'vwSmplg': 0.1,
+                  'vwSmplgNxt': 0.1
+                }
+              }
+            }
           }
         }
       },
       'start': 1715613832796
     }
 
-    it('do nothing if bidderCode is not "adagio"', function() {
-      const bidderRequestCopy = utils.deepClone(bidderRequest);
-      bidderRequestCopy.bidderCode = 'anotherAdapter';
-
-      adagioRtdSubmodule.onBidRequestEvent(bidderRequestCopy);
-      clock.tick(1);
-      expect(bidderRequestCopy.bids[0].features).to.not.exist;
-    });
-
     it('store a copy of computed property', function() {
       const spy = sandbox.spy(_internal.getAdagioNs().queue, 'push')
       sandbox.stub(Date, 'now').returns(12345);
 
+      _internal.getGuard().clear();
+
+      const config = {
+        params: {
+          organizationId: '1000',
+          site: 'example'
+        }
+      };
       const bidderRequestCopy = utils.deepClone(bidderRequest);
-      adagioRtdSubmodule.onBidRequestEvent(bidderRequestCopy);
+      adagioRtdSubmodule.onBidRequestEvent(bidderRequestCopy, config);
 
       clock.tick(1);
 
+      const {
+        bidder,
+        adUnitCode,
+        mediaTypes,
+        params,
+        auctionId,
+        bidderRequestsCount } = bidderRequestCopy.bids[0];
+
       const expected = {
-        features: {
-          ...bidderRequestCopy.bids[0].ortb2.ext.features,
-          ...{
-            print_number: bidderRequestCopy.bids[0].bidRequestsCount.toString(),
-            adunit_position: bidderRequestCopy.bids[0].ortb2Imp.ext.data.adunit_position,
-          },
-        },
-        params: { ...bidderRequestCopy.bids[0].params },
-        adUnitCode: bidderRequestCopy.bids[0].adUnitCode,
+        bidder,
+        adUnitCode,
+        mediaTypes,
+        ortb2: bidderRequestCopy.bids[0].ortb2.site.ext.data,
+        ortb2Imp: bidderRequestCopy.bids[0].ortb2Imp.ext.data,
+        params,
+        auctionId,
+        bidderRequestsCount,
+        organizationId: config.params.organizationId,
+        site: config.params.site,
+        localPbjs: 'pbjs',
+        localPbjsRef: getGlobal()
       }
 
       expect(spy.withArgs({
-        action: 'features',
+        action: 'store',
         ts: Date.now(),
         data: expected,
       }).calledOnce).to.be.true;
