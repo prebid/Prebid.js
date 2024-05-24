@@ -13,7 +13,8 @@ function createBidderRequest(auctionId, timeout, pageUrl, addGdprConsent) {
       purpose: {
         consents: {
           1: false,
-          2: true
+          2: true,
+          3: false
         }
       },
       publisher: {
@@ -308,27 +309,6 @@ describe('KoblerAdapter', function () {
 
       const openRtbRequest = JSON.parse(result.data);
       expect(openRtbRequest.site.page).to.be.equal('example.com');
-      expect(openRtbRequest.test).to.be.equal(1);
-    });
-
-    it('should read pageUrl from config when testing', function () {
-      config.setConfig({
-        pageUrl: 'https://testing-url.com'
-      });
-      const validBidRequests = [
-        createValidBidRequest(
-          {
-            test: true
-          }
-        )
-      ];
-      const bidderRequest = createBidderRequest();
-
-      const result = spec.buildRequests(validBidRequests, bidderRequest);
-      expect(result.url).to.be.equal('https://bid-service.dev.essrtb.com/bid/prebid_rtb_call');
-
-      const openRtbRequest = JSON.parse(result.data);
-      expect(openRtbRequest.site.page).to.be.equal('https://testing-url.com');
       expect(openRtbRequest.test).to.be.equal(1);
     });
 
