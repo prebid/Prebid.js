@@ -62,6 +62,8 @@ export const spec = {
       timeToFirstByte: getTimeToFirstByte(window),
       data: bids,
       deviceWidth: screen.width,
+      deviceHeight: screen.height,
+      devicePixelRatio: topWindow.devicePixelRatio,
       screenOrientation: screen.orientation?.type,
       historyLength: topWindow.history?.length,
       viewportHeight: topWindow.visualViewport?.height,
@@ -77,6 +79,18 @@ export const spec = {
 
     if (firstBidRequest.schain) {
       payload.schain = firstBidRequest.schain;
+    }
+
+    let gpp = bidderRequest.gppConsent;
+    if (bidderRequest && gpp) {
+      let isValidConsentString = typeof gpp.gppString === 'string';
+      let validateApplicableSections =
+        Array.isArray(gpp.applicableSections) &&
+        gpp.applicableSections.every((section) => typeof (section) === 'number')
+      payload.gpp = {
+        consentString: isValidConsentString ? gpp.gppString : '',
+        applicableSectionIds: validateApplicableSections ? gpp.applicableSections : [],
+      };
     }
 
     let gdpr = bidderRequest.gdprConsent;
