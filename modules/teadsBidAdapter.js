@@ -62,6 +62,8 @@ export const spec = {
       timeToFirstByte: getTimeToFirstByte(window),
       data: bids,
       deviceWidth: screen.width,
+      deviceHeight: screen.height,
+      devicePixelRatio: topWindow.devicePixelRatio,
       screenOrientation: screen.orientation?.type,
       historyLength: topWindow.history?.length,
       viewportHeight: topWindow.visualViewport?.height,
