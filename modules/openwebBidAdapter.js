@@ -46,6 +46,11 @@ export const spec = {
       return false;
     }
 
+    if (!bidRequest.params.placementId) {
+      logWarn('placementId is a mandatory param for OpenWeb adapter');
+      return false;
+    }
+
     return true;
   },
   buildRequests: function (validBidRequests, bidderRequest) {
