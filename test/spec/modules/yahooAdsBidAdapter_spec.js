@@ -1169,7 +1169,8 @@ describe('Yahoo Advertising Bid Adapter:', () => {
           pos: undefined,
           playbackmethod: undefined,
           rewarded: undefined,
-          placement: undefined
+          placement: undefined,
+          plcmt: undefined
         });
       });
 
@@ -1201,7 +1202,8 @@ describe('Yahoo Advertising Bid Adapter:', () => {
           pos: undefined,
           playbackmethod: undefined,
           rewarded: undefined,
-          placement: undefined
+          placement: undefined,
+          plcmt: undefined
         });
       });
     });
@@ -1298,7 +1300,8 @@ describe('Yahoo Advertising Bid Adapter:', () => {
           pos: undefined,
           playbackmethod: undefined,
           rewarded: undefined,
-          placement: undefined
+          placement: undefined,
+          plcmt: undefined
         });
       });
     });
@@ -1351,7 +1354,8 @@ describe('Yahoo Advertising Bid Adapter:', () => {
         pos: undefined,
         playbackmethod: undefined,
         rewarded: undefined,
-        placement: undefined
+        placement: undefined,
+        plcmt: undefined
       });
     });
   });
@@ -1381,7 +1385,8 @@ describe('Yahoo Advertising Bid Adapter:', () => {
               pos: 123456,
               playbackmethod: 1,
               rewarded: 1,
-              placement: 1
+              placement: 1,
+              plcmt: 1
             }
           }
         }
@@ -1410,7 +1415,8 @@ describe('Yahoo Advertising Bid Adapter:', () => {
           delivery: 1,
           pos: 123456,
           playbackmethod: 1,
-          placement: 1
+          placement: 1,
+          plcmt: 1
         }
         const validBidRequests = [bidRequest];
         bidderRequest.bids = validBidRequests;
@@ -1430,6 +1436,7 @@ describe('Yahoo Advertising Bid Adapter:', () => {
           pos: 123456,
           playbackmethod: 1,
           placement: 1,
+          plcmt: 1,
           rewarded: undefined
         });
       });
