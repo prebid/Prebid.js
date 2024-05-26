@@ -41,6 +41,7 @@ export const internal = {
   createTrackPixelIframeHtml,
   getWindowSelf,
   getWindowTop,
+  canAccessWindowTop,
   getWindowLocation,
   insertUserSyncIframe,
   insertElement,
@@ -178,6 +179,16 @@ export function getWindowSelf() {
 
 export function getWindowLocation() {
   return window.location;
+}
+
+export function canAccessWindowTop() {
+  try {
+    if (internal.getWindowTop().location.href) {
+      return true;
+    }
+  } catch (e) {
+    return false;
+  }
 }
 
 /**
@@ -618,6 +629,18 @@ export function inIframe() {
   } catch (e) {
     return true;
   }
+}
+
+/**
+ * https://iabtechlab.com/wp-content/uploads/2016/03/SafeFrames_v1.1_final.pdf
+ */
+export function isSafeFrameWindow() {
+  if (!inIframe()) {
+    return false;
+  }
+
+  const ws = internal.getWindowSelf();
+  return !!(ws.$sf && ws.$sf.ext);
 }
 
 export function isSafariBrowser() {
