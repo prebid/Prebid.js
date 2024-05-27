@@ -54,6 +54,7 @@ export const spec = {
       const uid2 = deepAccess(validReq, 'userId.uid2.id');
       const topics = getTopics(validReq);
       const cdep = deepAccess(validReq, 'ortb2.device.ext.cdep');
+      const hyperId = getHyperId(validReq);
 
       let data = ``;
       data = tryAppendQueryString(data, 'posall', 'SSPLOC');
@@ -76,7 +77,6 @@ export const spec = {
       data = tryAppendQueryString(data, 'gpid', gpid);
       data = tryAppendQueryString(data, 'uach', sua ? JSON.stringify(sua) : null);
       data = tryAppendQueryString(data, 'schain', validReq.schain ? JSON.stringify(validReq.schain) : null);
-      data = tryAppendQueryString(data, 'topics', topics ? JSON.stringify(topics) : null);
       data = tryAppendQueryString(data, 'cdep', cdep);
 
       // native以外にvideo等の対応が入った場合は要修正
@@ -85,11 +85,8 @@ export const spec = {
       }
 
       data = tryAppendQueryString(data, 'tp', bidderRequest.refererInfo.page);
-
-      const hyperId = getHyperId(validReq);
-      if (hyperId != null) {
-        data = tryAppendQueryString(data, 'hyper_id', hyperId);
-      }
+      data = tryAppendQueryString(data, 'hyper_id', hyperId);
+      data = tryAppendQueryString(data, 'ptopics', topics ? JSON.stringify(topics) : null);
 
       // remove the trailing "&"
       if (data.lastIndexOf('&') === data.length - 1) {
