@@ -12,7 +12,7 @@ const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const GVLID = 676;
 const TMAX = 450;
-const BIDDER_VERSION = '5.93';
+const BIDDER_VERSION = '5.94';
 const DEFAULT_CURRENCY = 'PLN';
 const W = window;
 const { navigator } = W;
@@ -97,6 +97,7 @@ const getNotificationPayload = bidData => {
         siteId: [],
         slotId: [],
         tagid: [],
+        platform: 'wpartner',
       }
       bids.forEach(bid => {
         const { adUnitCode, cpm, creativeId, meta, mediaType, params: bidParams, bidderRequestId, requestId, timeout } = bid;
@@ -126,7 +127,7 @@ const getNotificationPayload = bidData => {
 
         if (cpm) {
           // non-empty bid data
-          const { advertiserDomains = [], networkName, pricepl } = meta;
+          const { advertiserDomains = [], networkName, pricepl, platform } = meta;
           const bidNonEmptyData = {
             cpm,
             cpmpl: pricepl,
@@ -134,6 +135,7 @@ const getNotificationPayload = bidData => {
             adomain: advertiserDomains[0],
             adtype: mediaType,
             networkName,
+            platform,
           }
           result = { ...result, ...bidNonEmptyData }
         }
@@ -744,7 +746,7 @@ const spec = {
           const { bidId } = bidRequest || {};
 
           // get ext data from bid
-          const { siteid = site.id, slotid = site.slot, pubid, adlabel, cache: creativeCache, vurls = [], dsa } = ext;
+          const { siteid = site.id, slotid = site.slot, pubid, adlabel, cache: creativeCache, vurls = [], dsa, pricepl, platform } = ext;
 
           // update site data
           site = {
@@ -775,7 +777,8 @@ const spec = {
               meta: {
                 advertiserDomains: adomain,
                 networkName: seat,
-                pricepl: ext && ext.pricepl,
+                platform,
+                pricepl,
                 dsa,
               },
               netRevenue: true,
