@@ -24,6 +24,7 @@
   "smartadserverBidAdapter",
   "smilewantedBidAdapter",
   "tripleliftBidAdapter",
+  "viouslyBidAdapter",
   "yahoosspBidAdapter",
 
   "adlooxRtdProvider",
