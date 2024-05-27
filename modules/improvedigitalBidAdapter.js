@@ -7,6 +7,14 @@ import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {loadExternalScript} from '../src/adloader.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
+
 const BIDDER_CODE = 'improvedigital';
 const CREATIVE_TTL = 300;
 
@@ -229,29 +237,6 @@ export const CONVERTER = ortbConverter({
           imp.video.placement = VIDEO_PARAMS.PLACEMENT_TYPE.OUTSTREAM;
         }
       }
-    },
-    request: {
-      gdprAddtlConsent(setAddtlConsent, ortbRequest, bidderRequest) {
-        const additionalConsent = bidderRequest?.gdprConsent?.addtlConsent;
-        if (!additionalConsent) {
-          return;
-        }
-        if (spec.syncStore.extendMode) {
-          setAddtlConsent(ortbRequest, bidderRequest);
-          return;
-        }
-        if (additionalConsent && additionalConsent.indexOf('~') !== -1) {
-          // Google Ad Tech Provider IDs
-          const atpIds = additionalConsent.substring(additionalConsent.indexOf('~') + 1);
-          if (atpIds) {
-            deepSetValue(
-              ortbRequest,
-              'user.ext.consented_providers_settings.consented_providers',
-              atpIds.split('.').map(id => parseInt(id, 10))
-            );
-          }
-        }
-      }
     }
   }
 })
@@ -383,7 +368,8 @@ const ID_RAZR = {
 
     const cfgStr = JSON.stringify(cfg).replace(/<\/script>/ig, '\\x3C/script>');
     const s = `<script>window.__razr_config = ${cfgStr};</script>`;
-    bid.ad = bid.ad.replace(/<body[^>]*>/, match => match + s);
+    // prepend RAZR config to ad markup:
+    bid.ad = s + bid.ad;
 
     this.installListener();
   },

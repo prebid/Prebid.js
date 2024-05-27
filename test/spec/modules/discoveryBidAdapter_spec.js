@@ -1,8 +1,39 @@
 import { expect } from 'chai';
-import { spec, getPmgUID, storage, getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLink } from 'modules/discoveryBidAdapter.js';
+import {
+  spec,
+  getPmgUID,
+  storage,
+  getPageTitle,
+  getPageDescription,
+  getPageKeywords,
+  getConnectionDownLink,
+  THIRD_PARTY_COOKIE_ORIGIN,
+  COOKIE_KEY_MGUID,
+  getCurrentTimeToUTCString,
+  buildUTMTagData
+} from 'modules/discoveryBidAdapter.js';
 import * as utils from 'src/utils.js';
 
 describe('discovery:BidAdapterTests', function () {
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.sandbox.create();
+    sandbox.stub(storage, 'getCookie');
+    sandbox.stub(storage, 'setCookie');
+    sandbox.stub(utils, 'generateUUID').returns('new-uuid');
+    sandbox.stub(utils, 'parseUrl').returns({
+      search: {
+        utm_source: 'example.com'
+      }
+    });
+    sandbox.stub(storage, 'cookiesAreEnabled');
+  })
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   let bidRequestData = {
     bidderCode: 'discovery',
     auctionId: 'ff66e39e-4075-4d18-9854-56fde9b879ac',
@@ -77,8 +108,95 @@ describe('discovery:BidAdapterTests', function () {
         bidderWinsCount: 0,
       },
     ],
+    ortb2: {
+      user: {
+        data: {
+          segment: [
+            {
+              id: '412'
+            }
+          ],
+          name: 'test.popin.cc',
+          ext: {
+            segclass: '1',
+            segtax: 503
+          }
+        }
+      }
+    }
   };
   let request = [];
+
+  let bidRequestDataNoParams = {
+    bidderCode: 'discovery',
+    auctionId: 'ff66e39e-4075-4d18-9854-56fde9b879ac',
+    bidderRequestId: '4fec04e87ad785',
+    bids: [
+      {
+        bidder: 'discovery',
+        params: {
+          referrer: 'https://discovery.popin.cc',
+        },
+        refererInfo: {
+          page: 'https://discovery.popin.cc',
+          stack: [
+            'a.com',
+            'b.com'
+          ]
+        },
+        mediaTypes: {
+          banner: {
+            sizes: [[300, 250]],
+            pos: 'left',
+          },
+        },
+        ortb2: {
+          user: {
+            ext: {
+              data: {
+                CxSegments: []
+              }
+            }
+          },
+          site: {
+            domain: 'discovery.popin.cc',
+            publisher: {
+              domain: 'discovery.popin.cc'
+            },
+            page: 'https://discovery.popin.cc',
+            cat: ['IAB-19', 'IAB-20'],
+          },
+        },
+        ortb2Imp: {
+          ext: {
+            gpid: 'adslot_gpid',
+            tid: 'tid_01',
+            data: {
+              browsi: {
+                browsiViewability: 'NA',
+              },
+              adserver: {
+                name: 'adserver_name',
+                adslot: 'adslot_name',
+              },
+              keywords: ['travel', 'sport'],
+              pbadslot: '202309999'
+            }
+          }
+        },
+        adUnitCode: 'regular_iframe',
+        transactionId: 'd163f9e2-7ecd-4c2c-a3bd-28ceb52a60ee',
+        sizes: [[300, 250]],
+        bidId: '276092a19e05eb',
+        bidderRequestId: '1fadae168708b',
+        auctionId: 'ff66e39e-4075-4d18-9854-56fde9b879ac',
+        src: 'client',
+        bidRequestsCount: 1,
+        bidderRequestsCount: 1,
+        bidderWinsCount: 0,
+      },
+    ],
+  };
 
   it('discovery:validate_pub_params', function () {
     expect(
@@ -93,28 +211,30 @@ describe('discovery:BidAdapterTests', function () {
     ).to.equal(true);
   });
 
+  it('isBidRequestValid:no_params', function () {
+    expect(
+      spec.isBidRequestValid({
+        bidder: 'discovery',
+        params: {},
+      })
+    ).to.equal(true);
+  });
   it('discovery:validate_generated_params', function () {
+    storage.getCookie.withArgs('_ss_pp_utm').callsFake(() => '{"utm_source":"example.com","utm_medium":"123","utm_campaign":"456"}');
     request = spec.buildRequests(bidRequestData.bids, bidRequestData);
     let req_data = JSON.parse(request.data);
     expect(req_data.imp).to.have.lengthOf(1);
   });
+  describe('first party data', function () {
+    it('should pass additional parameter in request for topics', function () {
+      const request = spec.buildRequests(bidRequestData.bids, bidRequestData);
+      let res = JSON.parse(request.data);
+      expect(res.ext.tpData).to.deep.equal(bidRequestData.ortb2.user.data);
+    });
+  });
 
   describe('discovery: buildRequests', function() {
     describe('getPmgUID function', function() {
-      let sandbox;
-
-      beforeEach(() => {
-        sandbox = sinon.sandbox.create();
-        sandbox.stub(storage, 'getCookie');
-        sandbox.stub(storage, 'setCookie');
-        sandbox.stub(utils, 'generateUUID').returns('new-uuid');
-        sandbox.stub(storage, 'cookiesAreEnabled');
-      })
-
-      afterEach(() => {
-        sandbox.restore();
-      });
-
       it('should generate new UUID and set cookie if not exists', () => {
         storage.cookiesAreEnabled.callsFake(() => true);
         storage.getCookie.callsFake(() => null);
@@ -128,13 +248,28 @@ describe('discovery:BidAdapterTests', function () {
         storage.getCookie.callsFake(() => 'existing-uuid');
         const uid = getPmgUID();
         expect(uid).to.equal('existing-uuid');
-        expect(storage.setCookie.called).to.be.false;
+        expect(storage.setCookie.called).to.be.true;
       });
 
       it('should not set new UUID when cookies are not enabled', () => {
         storage.cookiesAreEnabled.callsFake(() => false);
         storage.getCookie.callsFake(() => null);
         getPmgUID();
+        expect(storage.setCookie.calledOnce).to.be.false;
+      });
+    })
+    describe('buildUTMTagData function', function() {
+      it('should set UTM cookie', () => {
+        storage.cookiesAreEnabled.callsFake(() => true);
+        storage.getCookie.callsFake(() => null);
+        buildUTMTagData();
+        expect(storage.setCookie.calledOnce).to.be.true;
+      });
+
+      it('should not set UTM when cookies are not enabled', () => {
+        storage.cookiesAreEnabled.callsFake(() => false);
+        storage.getCookie.callsFake(() => null);
+        buildUTMTagData();
         expect(storage.setCookie.calledOnce).to.be.false;
       });
     })
@@ -441,6 +576,61 @@ describe('discovery Bid Adapter Tests', function () {
       it('should handle cases where navigator is not defined', function() {
         const result = getConnectionDownLink({});
         expect(result).to.be.undefined;
+      });
+    });
+
+    describe('getUserSyncs with message event listener', function() {
+      function messageHandler(event) {
+        if (!event.data || event.origin !== THIRD_PARTY_COOKIE_ORIGIN) {
+          return;
+        }
+
+        window.removeEventListener('message', messageHandler, true);
+        event.stopImmediatePropagation();
+
+        const response = event.data;
+        if (!response.optout && response.mguid) {
+          storage.setCookie(COOKIE_KEY_MGUID, response.mguid, getCurrentTimeToUTCString());
+        }
+      }
+
+      let sandbox;
+
+      beforeEach(() => {
+        sandbox = sinon.createSandbox();
+        sandbox.stub(storage, 'setCookie');
+        sandbox.stub(window, 'removeEventListener');
+      });
+
+      afterEach(() => {
+        sandbox.restore();
+      });
+
+      it('should set a cookie when a valid message is received', () => {
+        const fakeEvent = {
+          data: { optout: '', mguid: '12345' },
+          origin: THIRD_PARTY_COOKIE_ORIGIN,
+          stopImmediatePropagation: sinon.spy()
+        };
+
+        messageHandler(fakeEvent);
+
+        expect(fakeEvent.stopImmediatePropagation.calledOnce).to.be.true;
+        expect(window.removeEventListener.calledWith('message', messageHandler, true)).to.be.true;
+        expect(storage.setCookie.calledWith(COOKIE_KEY_MGUID, '12345', sinon.match.string)).to.be.true;
+      });
+      it('should not do anything when an invalid message is received', () => {
+        const fakeEvent = {
+          data: null,
+          origin: 'http://invalid-origin.com',
+          stopImmediatePropagation: sinon.spy()
+        };
+
+        messageHandler(fakeEvent);
+
+        expect(fakeEvent.stopImmediatePropagation.notCalled).to.be.true;
+        expect(window.removeEventListener.notCalled).to.be.true;
+        expect(storage.setCookie.notCalled).to.be.true;
       });
     });
   });

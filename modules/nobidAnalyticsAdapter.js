@@ -2,11 +2,11 @@ import {deepClone, logError, getParameterByName} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {getStorageManager} from '../src/storageManager.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
-const VERSION = '1.1.0';
+const VERSION = '2.0.2';
 const MODULE_NAME = 'nobidAnalyticsAdapter';
 const ANALYTICS_OPT_FLUSH_TIMEOUT_SECONDS = 5 * 1000;
 const RETENTION_SECONDS = 1 * 24 * 3600;
@@ -17,16 +17,14 @@ const url = 'localhost:8383/event';
 const GVLID = 816;
 const storage = getStorageManager({gvlid: GVLID, moduleName: MODULE_NAME, moduleType: MODULE_TYPE_ANALYTICS});
 const {
-  EVENTS: {
-    AUCTION_INIT,
-    BID_REQUESTED,
-    BID_TIMEOUT,
-    BID_RESPONSE,
-    BID_WON,
-    AUCTION_END,
-    AD_RENDER_SUCCEEDED
-  }
-} = CONSTANTS;
+  AUCTION_INIT,
+  BID_REQUESTED,
+  BID_TIMEOUT,
+  BID_RESPONSE,
+  BID_WON,
+  AUCTION_END,
+  AD_RENDER_SUCCEEDED
+} = EVENTS;
 function log (msg) {
   // eslint-disable-next-line no-console
   console.log(`%cNoBid Analytics ${VERSION}`, 'padding: 2px 8px 2px 8px; background-color:#f50057; color: white', msg);
@@ -49,11 +47,13 @@ function sendEvent (event, eventType) {
     return ret;
   }
   if (!nobidAnalytics.initOptions || !nobidAnalytics.initOptions.siteId || !event) return;
-  if (nobidAnalytics.isAnalyticsDisabled()) {
+  if (nobidAnalytics.isAnalyticsDisabled(eventType)) {
     log('NoBid Analytics is Disabled');
     return;
   }
   try {
+    event.version = VERSION;
+    event.pbver = '$prebid.version$';
     const endpoint = `${resolveEndpoint()}/event/${eventType}?pubid=${nobidAnalytics.initOptions.siteId}`;
     ajax(endpoint,
       function (response) {
@@ -83,7 +83,7 @@ function cleanupObjectAttributes (obj, attributes) {
 }
 function sendBidWonEvent (event, eventType) {
   const data = deepClone(event);
-  cleanupObjectAttributes(data, ['bidderCode', 'size', 'statusMessage', 'adId', 'requestId', 'mediaType', 'adUnitCode', 'cpm', 'timeToRespond']);
+  cleanupObjectAttributes(data, ['bidderCode', 'size', 'statusMessage', 'adId', 'requestId', 'mediaType', 'adUnitCode', 'cpm', 'currency', 'originalCpm', 'originalCurrency', 'timeToRespond']);
   if (nobidAnalytics.topLocation) data.topLocation = nobidAnalytics.topLocation;
   sendEvent(data, eventType);
 }
@@ -95,10 +95,18 @@ function sendAuctionEndEvent (event, eventType) {
 
   cleanupObjectAttributes(data, ['timestamp', 'timeout', 'auctionId', 'bidderRequests', 'bidsReceived']);
   if (data) cleanupObjectAttributes(data.bidderRequests, ['bidderCode', 'bidderRequestId', 'bids', 'refererInfo']);
-  if (data) cleanupObjectAttributes(data.bidsReceived, ['bidderCode', 'width', 'height', 'adUnitCode', 'statusMessage', 'requestId', 'mediaType', 'cpm']);
+  if (data) cleanupObjectAttributes(data.bidsReceived, ['bidderCode', 'width', 'height', 'adUnitCode', 'statusMessage', 'requestId', 'mediaType', 'cpm', 'currency', 'originalCpm', 'originalCurrency']);
   if (data) cleanupObjectAttributes(data.noBids, ['bidder', 'sizes', 'bidId']);
-  if (data.bidderRequests) cleanupObjectAttributes(data.bidderRequests.bids, ['mediaTypes', 'adUnitCode', 'sizes', 'bidId']);
-  if (data.bidderRequests) cleanupObjectAttributes(data.bidderRequests.refererInfo, ['topmostLocation']);
+  if (data.bidderRequests) {
+    data.bidderRequests.forEach(bidderRequest => {
+      cleanupObjectAttributes(bidderRequest.bids, ['mediaTypes', 'adUnitCode', 'sizes', 'bidId']);
+    });
+  }
+  if (data.bidderRequests) {
+    data.bidderRequests.forEach(bidderRequest => {
+      cleanupObjectAttributes(bidderRequest.refererInfo, ['topmostLocation']);
+    });
+  }
   sendEvent(data, eventType);
 }
 function auctionInit (event) {
@@ -147,12 +155,18 @@ nobidAnalytics = {
   isExpired (data) {
     return isExpired(data, this.retentionSeconds);
   },
-  isAnalyticsDisabled () {
+  isAnalyticsDisabled (eventType) {
     let stored = storage.getDataFromLocalStorage(this.ANALYTICS_DATA_NAME);
     if (!isJson(stored)) return false;
     stored = JSON.parse(stored);
     if (this.isExpired(stored)) return false;
-    return stored.disabled;
+    if (stored.disabled === 1) return true;
+    else if (stored.disabled === 0) return false;
+    if (eventType) {
+      if (stored[`disabled_${eventType}`] === 1) return true;
+      else if (stored[`disabled_${eventType}`] === 0) return false;
+    }
+    return false;
   },
   processServerResponse (response) {
     if (!isJson(response)) return;
@@ -162,10 +176,9 @@ nobidAnalytics = {
   ANALYTICS_DATA_NAME: 'analytics.nobid.io',
   ANALYTICS_OPT_NAME: 'analytics.nobid.io.optData'
 }
-
 adapterManager.registerAnalyticsAdapter({
   adapter: nobidAnalytics,
-  code: 'nobidAnalytics',
+  code: 'nobid',
   gvlid: GVLID
 });
 nobidAnalytics.originalAdUnits = {};

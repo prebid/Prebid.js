@@ -16,6 +16,13 @@ import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import { Uid2GetId, Uid2CodeVersion, extractIdentityFromParams } from './uid2IdSystem_shared.js';
 import {UID2_EIDS} from '../libraries/uid2Eids/uid2Eids.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').uid2Id} uid2Id
+ */
+
 const MODULE_NAME = 'uid2';
 const MODULE_REVISION = Uid2CodeVersion;
 const PREBID_VERSION = '$prebid.version$';

@@ -23,6 +23,10 @@ import {
 } from '../src/utils.js';
 import {getAllOrtbKeywords} from '../libraries/keywords/keywords.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ */
+
 const DEFAULT_INTEGRATION = 'pbjs_lite';
 const DEFAULT_PBS_INTEGRATION = 'pbjs';
 const DEFAULT_RENDERER_URL = 'https://video-outstream.rubiconproject.com/apex-2.2.1.js';
@@ -197,9 +201,6 @@ export const converter = ortbConverter({
     const imp = buildImp(bidRequest, context);
     imp.id = bidRequest.adUnitCode;
     delete imp.banner;
-    if (config.getConfig('s2sConfig.defaultTtl')) {
-      imp.exp = config.getConfig('s2sConfig.defaultTtl');
-    };
     bidRequest.params.position === 'atf' && imp.video && (imp.video.pos = 1);
     bidRequest.params.position === 'btf' && imp.video && (imp.video.pos = 3);
     delete imp.ext?.prebid?.storedrequest;
@@ -233,7 +234,7 @@ export const converter = ortbConverter({
   },
   context: {
     netRevenue: rubiConf.netRevenue !== false, // If anything other than false, netRev is true
-    ttl: 300,
+    ttl: 360,
   },
   processors: pbsExtensions
 });
@@ -528,6 +529,8 @@ export const spec = {
     if (bidRequest?.ortb2Imp?.ext?.ae) {
       data['o_ae'] = 1;
     }
+
+    addDesiredSegtaxes(bidderRequest, data);
     // loop through userIds and add to request
     if (bidRequest.userIdAsEids) {
       bidRequest.userIdAsEids.forEach(eid => {
@@ -679,7 +682,7 @@ export const spec = {
           creativeId: ad.creative_id || `${ad.network || ''}-${ad.advertiser || ''}`,
           cpm: ad.cpm || 0,
           dealId: ad.deal,
-          ttl: 300, // 5 minutes
+          ttl: 360, // 6 minutes
           netRevenue: rubiConf.netRevenue !== false, // If anything other than false, netRev is true
           rubicon: {
             advertiserId: ad.advertiser, networkId: ad.network
@@ -691,6 +694,10 @@ export const spec = {
 
         if (ad.creative_type) {
           bid.mediaType = ad.creative_type;
+        }
+
+        if (ad.dsa && Object.keys(ad.dsa).length) {
+          bid.meta.dsa = ad.dsa;
         }
 
         if (ad.adomain) {
@@ -821,7 +828,14 @@ function renderBid(bid) {
   hideSmartAdServerIframe(adUnitElement);
 
   // configure renderer
-  const config = bid.renderer.getConfig();
+  const defaultConfig = {
+    align: 'center',
+    position: 'append',
+    closeButton: false,
+    label: undefined,
+    collapse: true
+  };
+  const config = { ...defaultConfig, ...bid.renderer.getConfig() };
   bid.renderer.push(() => {
     window.MagniteApex.renderAd({
       width: bid.width,
@@ -829,12 +843,12 @@ function renderBid(bid) {
       vastUrl: bid.vastUrl,
       placement: {
         attachTo: adUnitElement,
-        align: config.align || 'center',
-        position: config.position || 'append'
+        align: config.align,
+        position: config.position
       },
-      closeButton: config.closeButton || false,
-      label: config.label || undefined,
-      collapse: config.collapse || true
+      closeButton: config.closeButton,
+      label: config.label,
+      collapse: config.collapse
     });
   });
 }
@@ -902,6 +916,7 @@ function applyFPD(bidRequest, mediaType, data) {
   let impExtData = deepAccess(bidRequest.ortb2Imp, 'ext.data') || {};
 
   const gpid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid');
+  const dsa = deepAccess(fpd, 'regs.ext.dsa');
   const SEGTAX = {user: [4], site: [1, 2, 5, 6]};
   const MAP = {user: 'tg_v.', site: 'tg_i.', adserver: 'tg_i.dfp_ad_unit_code', pbadslot: 'tg_i.pbadslot', keywords: 'kw'};
   const validate = function(prop, key, parentName) {
@@ -957,6 +972,40 @@ function applyFPD(bidRequest, mediaType, data) {
       data['p_gpid'] = gpid;
     }
 
+    // add dsa signals
+    if (dsa && Object.keys(dsa).length) {
+      pick(dsa, [
+        'dsainfo', (dsainfo) => data['dsainfo'] = dsainfo,
+        'dsarequired', (required) => data['dsarequired'] = required,
+        'pubrender', (pubrender) => data['dsapubrender'] = pubrender,
+        'datatopub', (datatopub) => data['dsadatatopubs'] = datatopub,
+        'transparency', (transparency) => {
+          if (Array.isArray(transparency) && transparency.length) {
+            data['dsatransparency'] = transparency.reduce((param, transp) => {
+              // make sure domain is there, otherwise skip entry
+              const domain = transp.domain || '';
+              if (!domain) {
+                return param;
+              }
+
+              // make sure dsaParam array is there (try both 'dsaparams' and 'params', but prefer dsaparams)
+              const dsaParamArray = transp.dsaparams || transp.params;
+              if (!Array.isArray(dsaParamArray) || dsaParamArray.length === 0) {
+                return param;
+              }
+
+              // finally we will add this one, if param has been added already, add our seperator
+              if (param) {
+                param += '~~'
+              }
+
+              return param += `${domain}~${dsaParamArray.join('_')}`;
+            }, '');
+          }
+        }
+      ])
+    }
+
     // only send one of pbadslot or dfp adunit code (prefer pbadslot)
     if (data['tg_i.pbadslot']) {
       delete data['tg_i.dfp_ad_unit_code'];
@@ -998,6 +1047,27 @@ function applyFPD(bidRequest, mediaType, data) {
     }
 
     mergeDeep(data, fpd);
+  }
+}
+
+function addDesiredSegtaxes(bidderRequest, target) {
+  if (rubiConf.readTopics === false) {
+    return;
+  }
+  let iSegments = [1, 2, 5, 6, 7, 507].concat(rubiConf.sendSiteSegtax?.map(seg => Number(seg)) || []);
+  let vSegments = [4, 508].concat(rubiConf.sendUserSegtax?.map(seg => Number(seg)) || []);
+  let userData = bidderRequest.ortb2?.user?.data || [];
+  let siteData = bidderRequest.ortb2?.site?.content?.data || [];
+  userData.forEach(iterateOverSegmentData(target, 'v', vSegments));
+  siteData.forEach(iterateOverSegmentData(target, 'i', iSegments));
+}
+
+function iterateOverSegmentData(target, char, segments) {
+  return (topic) => {
+    const taxonomy = Number(topic.ext?.segtax);
+    if (segments.includes(taxonomy)) {
+      target[`tg_${char}.tax${taxonomy}`] = topic.segment?.map(seg => seg.id).join(',');
+    }
   }
 }
 

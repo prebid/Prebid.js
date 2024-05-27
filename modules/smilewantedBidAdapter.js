@@ -1,35 +1,69 @@
-import { isArray, logError, logWarn, isFn, isPlainObject } from '../src/utils.js';
-import { Renderer } from '../src/Renderer.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import {deepAccess, deepClone, isArray, isFn, isPlainObject, logError, logWarn} from '../src/utils.js';
+import {Renderer} from '../src/Renderer.js';
+import {config} from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {INSTREAM, OUTSTREAM} from '../src/video.js';
+import {convertOrtbRequestToProprietaryNative, toOrtbNativeRequest, toLegacyResponse} from '../src/native.js';
+
+const BIDDER_CODE = 'smilewanted';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
 
 const GVL_ID = 639;
 
 export const spec = {
-  code: 'smilewanted',
-  aliases: ['smile', 'sw'],
+  code: BIDDER_CODE,
   gvlid: GVL_ID,
-  supportedMediaTypes: [BANNER, VIDEO],
+  aliases: ['smile', 'sw'],
+  supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
    * Determines whether or not the given bid request is valid.
    *
-   * @param {object} bid The bid to validate.
+   * @param {BidRequest} bid The bid to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: function(bid) {
-    return !!(bid.params && bid.params.zoneId);
+    if (!bid.params || !bid.params.zoneId) {
+      return false;
+    }
+
+    if (deepAccess(bid, 'mediaTypes.video')) {
+      const videoMediaTypesParams = deepAccess(bid, 'mediaTypes.video', {});
+      const videoBidderParams = deepAccess(bid, 'params.video', {});
+
+      const videoParams = {
+        ...videoMediaTypesParams,
+        ...videoBidderParams
+      };
+
+      if (!videoParams.context || ![INSTREAM, OUTSTREAM].includes(videoParams.context)) {
+        return false;
+      }
+    }
+
+    return true;
   },
 
   /**
    * Make a server request from the list of BidRequests.
    *
    * @param {BidRequest[]} validBidRequests A non-empty list of valid bid requests that should be sent to the Server.
+   * @param {BidderRequest} bidderRequest bidder request object.
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     return validBidRequests.map(bid => {
-      var payload = {
+      const payload = {
         zoneId: bid.params.zoneId,
         currencyCode: config.getConfig('currency.adServerCurrency') || 'EUR',
         tagId: bid.adUnitCode,
@@ -60,20 +94,41 @@ export const spec = {
         payload.bidfloor = bid.params.bidfloor;
       }
 
-      if (bidderRequest && bidderRequest.refererInfo) {
+      if (bidderRequest?.refererInfo) {
         payload.pageDomain = bidderRequest.refererInfo.page || '';
       }
 
-      if (bidderRequest && bidderRequest.gdprConsent) {
+      if (bidderRequest?.gdprConsent) {
         payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
         payload.gdpr = bidderRequest.gdprConsent.gdprApplies; // we're handling the undefined case server side
       }
 
-      if (bid && bid.userIdAsEids) {
-        payload.eids = bid.userIdAsEids;
+      payload.eids = bid?.userIdAsEids;
+
+      const videoMediaType = deepAccess(bid, 'mediaTypes.video');
+      const context = deepAccess(bid, 'mediaTypes.video.context');
+
+      if (bid.mediaType === 'video' || (videoMediaType && context === INSTREAM) || (videoMediaType && context === OUTSTREAM)) {
+        payload.context = context;
+        payload.videoParams = deepClone(videoMediaType);
       }
 
-      var payloadString = JSON.stringify(payload);
+      const nativeMediaType = deepAccess(bid, 'mediaTypes.native');
+
+      if (nativeMediaType) {
+        payload.context = 'native';
+        payload.nativeParams = nativeMediaType;
+        let sizes = deepAccess(bid, 'mediaTypes.native.image.sizes', []);
+
+        if (sizes.length > 0) {
+          const size = Array.isArray(sizes[0]) ? sizes[0] : sizes;
+
+          payload.width = size[0] || payload.width;
+          payload.height = size[1] || payload.height;
+        }
+      }
+
+      const payloadString = JSON.stringify(payload);
       return {
         method: 'POST',
         url: 'https://prebid.smilewanted.com',
@@ -85,18 +140,21 @@ export const spec = {
   /**
    * Unpack the response from the server into a list of bids.
    *
-   * @param {*} serverResponse A successful response from the server.
+   * @param {ServerResponse} serverResponse A successful response from the server.
+   * @param {BidRequest} bidRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
+    if (!serverResponse.body) return [];
     const bidResponses = [];
-    var response = serverResponse.body;
 
     try {
+      const response = serverResponse.body;
+      const bidRequestData = JSON.parse(bidRequest.data);
       if (response) {
         const dealId = response.dealId || '';
         const bidResponse = {
-          requestId: JSON.parse(bidRequest.data).bidId,
+          requestId: bidRequestData.bidId,
           cpm: response.cpm,
           width: response.width,
           height: response.height,
@@ -108,14 +166,21 @@ export const spec = {
           ad: response.ad,
         };
 
-        if (response.formatTypeSw == 'video_instream' || response.formatTypeSw == 'video_outstream') {
+        if (response.formatTypeSw === 'video_instream' || response.formatTypeSw === 'video_outstream') {
           bidResponse['mediaType'] = 'video';
           bidResponse['vastUrl'] = response.ad;
           bidResponse['ad'] = null;
+
+          if (response.formatTypeSw === 'video_outstream') {
+            bidResponse['renderer'] = newRenderer(bidRequestData, response);
+          }
         }
 
-        if (response.formatTypeSw == 'video_outstream') {
-          bidResponse['renderer'] = newRenderer(JSON.parse(bidRequest.data), response);
+        if (response.formatTypeSw === 'native') {
+          const nativeAdResponse = JSON.parse(response.ad);
+          const ortbNativeRequest = toOrtbNativeRequest(bidRequestData.nativeParams);
+          bidResponse['mediaType'] = 'native';
+          bidResponse['native'] = toLegacyResponse(nativeAdResponse, ortbNativeRequest);
         }
 
         if (dealId.length > 0) {
@@ -123,7 +188,7 @@ export const spec = {
         }
 
         bidResponse.meta = {};
-        if (response.meta && response.meta.advertiserDomains && isArray(response.meta.advertiserDomains)) {
+        if (response.meta?.advertiserDomains && isArray(response.meta.advertiserDomains)) {
           bidResponse.meta.advertiserDomains = response.meta.advertiserDomains;
         }
         bidResponses.push(bidResponse);
@@ -131,15 +196,18 @@ export const spec = {
     } catch (error) {
       logError('Error while parsing smilewanted response', error);
     }
+
     return bidResponses;
   },
 
   /**
-   * User syncs.
+   * Register the user sync pixels which should be dropped after the auction.
    *
-   * @param {*} syncOptions Publisher prebid configuration.
-   * @param {*} serverResponses A successful response from the server.
-   * @return {Syncs[]} An array of syncs that should be executed.
+   * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {ServerResponse[]} responses List of server's responses.
+   * @param {Object} gdprConsent The GDPR consent parameters
+   * @param {Object} uspConsent The USP consent parameters
+   * @return {UserSync[]} The user syncs which should be dropped.
    */
   getUserSyncs: function(syncOptions, responses, gdprConsent, uspConsent) {
     let params = '';
@@ -172,7 +240,8 @@ export const spec = {
 
 /**
  * Create SmileWanted renderer
- * @param requestId
+ * @param bidRequest
+ * @param bidResponse
  * @returns {*}
  */
 function newRenderer(bidRequest, bidResponse) {

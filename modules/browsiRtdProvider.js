@@ -13,6 +13,7 @@
  * @property {string} pubKey
  * @property {string} url
  * @property {?string} keyName
+ * @property {?string} splitKey
  */
 
 import {deepClone, deepSetValue, isFn, isGptPubadsDefined, isNumber, logError, logInfo, generateUUID} from '../src/utils.js';
@@ -23,11 +24,17 @@ import {getStorageManager} from '../src/storageManager.js';
 import {find, includes} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import {EVENTS} from '../src/constants.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
+
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 const MODULE_NAME = 'browsi';
 
 const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME});
+const RANDOM = Math.floor(Math.random() * 10) + 1;
 
 /** @type {ModuleParams} */
 let _moduleParams = {};
@@ -52,17 +59,27 @@ export function addBrowsiTag(data) {
   script.setAttribute('prebidbpt', 'true');
   script.setAttribute('id', 'browsi-tag');
   script.setAttribute('src', data.u);
-  script.prebidData = deepClone(data);
+  script.prebidData = deepClone(typeof data === 'string' ? Object(data) : data)
+  script.brwRandom = RANDOM;
   if (_moduleParams.keyName) {
     script.prebidData.kn = _moduleParams.keyName;
   }
   return script;
 }
 
+export function setKeyValue(key) {
+  if (!key || typeof key !== 'string') return false;
+  window.googletag = window.googletag || {cmd: []};
+  window.googletag.cmd = window.googletag.cmd || [];
+  window.googletag.cmd.push(() => {
+    window.googletag.pubads().setTargeting(key, RANDOM.toString());
+  });
+}
+
 export function sendPageviewEvent(eventType) {
   if (eventType === 'PAGEVIEW') {
     window.addEventListener('browsi_pageview', () => {
-      events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
+      events.emit(EVENTS.BILLABLE_EVENT, {
         vendor: 'browsi',
         type: 'pageview',
         billingId: generateUUID()
@@ -186,7 +203,6 @@ function getAllSlots() {
 /**
  * get prediction and return valid object for key value set
  * @param {number} p
- * @param {string?} keyName
  * @return {Object} key:value
  */
 function getKVObject(p) {
@@ -359,7 +375,7 @@ function getTargetingData(uc, c, us, a) {
     }
     if (sendAdRequestEvent) {
       const transactionId = a.adUnits.find(adUnit => adUnit.code === auc).transactionId;
-      events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
+      events.emit(EVENTS.BILLABLE_EVENT, {
         vendor: 'browsi',
         type: 'adRequest',
         billingId: generateUUID(),
@@ -376,6 +392,7 @@ function init(moduleConfig) {
   _moduleParams = moduleConfig.params;
   if (_moduleParams && _moduleParams.siteKey && _moduleParams.pubKey && _moduleParams.url) {
     collectData();
+    setKeyValue(_moduleParams.splitKey);
   } else {
     logError('missing params for Browsi provider');
   }

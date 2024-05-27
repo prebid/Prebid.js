@@ -10,6 +10,13 @@ import {submodule} from '../src/hook.js';
 import {formatQS, logError} from '../src/utils.js';
 import {includes} from '../src/polyfill.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
+
 const MODULE_NAME = 'verizonMediaId';
 const VENDOR_ID = 25;
 const PLACEHOLDER = '__PIXEL_ID__';

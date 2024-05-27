@@ -1,9 +1,10 @@
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
-import {deepAccess, isArray, isFn, isPlainObject, inIframe, getDNT} from '../src/utils.js';
+import {deepAccess, isArray, isFn, isPlainObject, inIframe, getDNT, generateUUID} from '../src/utils.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 import {getGlobal} from '../src/prebidGlobal.js';
+import {getStorageManager} from '../src/storageManager.js';
 
 const BIDDER_CODE = 'snigel';
 const GVLID = 1076;
@@ -11,9 +12,14 @@ const DEFAULT_URL = 'https://adserv.snigelweb.com/bp/v1/prebid';
 const DEFAULT_TTL = 60;
 const DEFAULT_CURRENCIES = ['USD'];
 const FLOOR_MATCH_ALL_SIZES = '*';
+const SESSION_ID_KEY = '_sn_session_pba';
 
 const getConfig = config.getConfig;
+const storageManager = getStorageManager({bidderCode: BIDDER_CODE});
 const refreshes = {};
+const pageViewId = generateUUID();
+const pageViewStart = new Date().getTime();
+let auctionCounter = 0;
 
 export const spec = {
   code: BIDDER_CODE,
@@ -33,6 +39,11 @@ export const spec = {
         id: bidderRequest.auctionId,
         accountId: deepAccess(bidRequests, '0.params.accountId'),
         site: deepAccess(bidRequests, '0.params.site'),
+        sessionId: getSessionId(),
+        counter: auctionCounter++,
+        pageViewId: pageViewId,
+        pageViewStart: pageViewStart,
+        gdprConsent: gdprApplies === true ? hasFullGdprConsent(deepAccess(bidderRequest, 'gdprConsent')) : false,
         cur: getCurrencies(),
         test: getTestFlag(),
         version: getGlobal().version,
@@ -104,9 +115,7 @@ export const spec = {
 registerBidder(spec);
 
 function getPage(bidderRequest) {
-  return (
-    getConfig(`${BIDDER_CODE}.page`) || deepAccess(bidderRequest, 'refererInfo.page') || window.location.href
-  );
+  return getConfig(`${BIDDER_CODE}.page`) || deepAccess(bidderRequest, 'refererInfo.page') || window.location.href;
 }
 
 function getEndpoint() {
@@ -193,6 +202,19 @@ function hasSyncConsent(gdprConsent, uspConsent, gppConsent) {
   return hasPurpose1Consent(gdprConsent) && hasUspConsent(uspConsent) && hasGppConsent(gppConsent);
 }
 
+function hasFullGdprConsent(gdprConsent) {
+  try {
+    const purposeConsents = Object.values(gdprConsent.vendorData.purpose.consents);
+    return (
+      purposeConsents.length > 0 &&
+      purposeConsents.every((value) => value === true) &&
+      gdprConsent.vendorData.vendor.consents[GVLID] === true
+    );
+  } catch (e) {
+    return false;
+  }
+}
+
 function getSyncUrl(responses) {
   return getConfig(`${BIDDER_CODE}.syncUrl`) || deepAccess(responses[0], 'body.syncUrl');
 }
@@ -201,4 +223,21 @@ function getSyncEndpoint(url, gdprConsent) {
   return `${url}?gdpr=${gdprConsent?.gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(
     gdprConsent?.consentString || ''
   )}`;
+}
+
+function getSessionId() {
+  try {
+    if (storageManager.localStorageIsEnabled()) {
+      let sessionId = storageManager.getDataFromLocalStorage(SESSION_ID_KEY);
+      if (sessionId == null) {
+        sessionId = generateUUID();
+        storageManager.setDataInLocalStorage(SESSION_ID_KEY, sessionId);
+      }
+      return sessionId;
+    } else {
+      return undefined;
+    }
+  } catch (e) {
+    return undefined;
+  }
 }

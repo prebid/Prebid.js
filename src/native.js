@@ -1,6 +1,6 @@
 import {
   deepAccess,
-  deepClone,
+  deepClone, getDefinedParams,
   insertHtmlIntoIframe,
   isArray,
   isBoolean,
@@ -13,13 +13,20 @@ import {
 } from './utils.js';
 import {includes} from './polyfill.js';
 import {auctionManager} from './auctionManager.js';
-import CONSTANTS from './constants.json';
+import {NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS} from './constants.js';
 import {NATIVE} from './mediaTypes.js';
+import {getRenderingData} from './adRendering.js';
+import {getCreativeRendererSource} from './creativeRenderers.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 export const nativeAdapters = [];
 
-export const NATIVE_TARGETING_KEYS = Object.keys(CONSTANTS.NATIVE_KEYS).map(
-  key => CONSTANTS.NATIVE_KEYS[key]
+export const NATIVE_TARGETING_KEYS = Object.keys(NATIVE_KEYS).map(
+  key => NATIVE_KEYS[key]
 );
 
 export const IMAGE = {
@@ -79,8 +86,6 @@ const SUPPORTED_TYPES = {
   image: IMAGE
 };
 
-const { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS } = CONSTANTS;
-
 // inverse native maps useful for converting to legacy
 const PREBID_NATIVE_DATA_KEYS_TO_ORTB_INVERSE = inverse(PREBID_NATIVE_DATA_KEYS_TO_ORTB);
 const NATIVE_ASSET_TYPES_INVERSE = inverse(NATIVE_ASSET_TYPES);
@@ -97,6 +102,12 @@ const TRACKER_EVENTS = {
   'viewable-mrc50': 2,
   'viewable-mrc100': 3,
   'viewable-video50': 4,
+}
+
+export function isNativeResponse(bidResponse) {
+  // check for native data and not mediaType; it's possible
+  // to treat banner responses as native
+  return bidResponse.native && typeof bidResponse.native === 'object';
 }
 
 /**
@@ -327,6 +338,23 @@ export function fireClickTrackers(nativeResponse, assetId = null, {fetchURL = tr
   }
 }
 
+export function setNativeResponseProperties(bid, adUnit) {
+  const nativeOrtbRequest = adUnit?.nativeOrtbRequest;
+  const nativeOrtbResponse = bid.native?.ortb;
+
+  if (nativeOrtbRequest && nativeOrtbResponse) {
+    const legacyResponse = toLegacyResponse(nativeOrtbResponse, nativeOrtbRequest);
+    Object.assign(bid.native, legacyResponse);
+  }
+
+  ['rendererUrl', 'adTemplate'].forEach(prop => {
+    const val = adUnit?.nativeParams?.[prop];
+    if (val) {
+      bid.native[prop] = getAssetValue(val);
+    }
+  });
+}
+
 /**
  * Gets native targeting key-value pairs
  * @param {Object} bid
@@ -335,11 +363,6 @@ export function fireClickTrackers(nativeResponse, assetId = null, {fetchURL = tr
 export function getNativeTargeting(bid, {index = auctionManager.index} = {}) {
   let keyValues = {};
   const adUnit = index.getAdUnit(bid);
-  if (deepAccess(adUnit, 'nativeParams.rendererUrl')) {
-    bid['native']['rendererUrl'] = getAssetValue(adUnit.nativeParams['rendererUrl']);
-  } else if (deepAccess(adUnit, 'nativeParams.adTemplate')) {
-    bid['native']['adTemplate'] = getAssetValue(adUnit.nativeParams['adTemplate']);
-  }
 
   const globalSendTargetingKeys = deepAccess(
     adUnit,
@@ -384,44 +407,56 @@ export function getNativeTargeting(bid, {index = auctionManager.index} = {}) {
   return keyValues;
 }
 
+function getNativeAssets(nativeProps, keys, ext = false) {
+  let assets = [];
+  Object.entries(nativeProps)
+    .filter(([k, v]) => v && ((ext === false && k === 'ext') || keys == null || keys.includes(k)))
+    .forEach(([key, value]) => {
+      if (ext === false && key === 'ext') {
+        assets.push(...getNativeAssets(value, keys, true));
+      } else if (ext || NATIVE_KEYS.hasOwnProperty(key)) {
+        assets.push({key, value: getAssetValue(value)});
+      }
+    });
+  return assets;
+}
+
+export function getNativeRenderingData(bid, adUnit, keys) {
+  const data = {
+    ...getDefinedParams(bid.native, ['rendererUrl', 'adTemplate']),
+    assets: getNativeAssets(bid.native, keys),
+    nativeKeys: NATIVE_KEYS
+  };
+  if (bid.native.ortb) {
+    data.ortb = bid.native.ortb;
+  } else if (adUnit.mediaTypes?.native?.ortb) {
+    data.ortb = toOrtbNativeResponse(bid.native, adUnit.nativeOrtbRequest);
+  }
+  return data;
+}
+
 function assetsMessage(data, adObject, keys, {index = auctionManager.index} = {}) {
-  const message = {
+  const msg = {
     message: 'assetResponse',
     adId: data.adId,
   };
-
-  const adUnit = index.getAdUnit(adObject);
-  let nativeResp = adObject.native;
-
-  if (adObject.native.ortb) {
-    message.ortb = adObject.native.ortb;
-  } else if (adUnit.mediaTypes?.native?.ortb) {
-    message.ortb = toOrtbNativeResponse(adObject.native, adUnit.nativeOrtbRequest);
-  }
-  message.assets = [];
-
-  (keys == null ? Object.keys(nativeResp) : keys).forEach(function(key) {
-    if (key === 'adTemplate' && nativeResp[key]) {
-      message.adTemplate = getAssetValue(nativeResp[key]);
-    } else if (key === 'rendererUrl' && nativeResp[key]) {
-      message.rendererUrl = getAssetValue(nativeResp[key]);
-    } else if (key === 'ext') {
-      Object.keys(nativeResp[key]).forEach(extKey => {
-        if (nativeResp[key][extKey]) {
-          const value = getAssetValue(nativeResp[key][extKey]);
-          message.assets.push({ key: extKey, value });
-        }
-      })
-    } else if (nativeResp[key] && CONSTANTS.NATIVE_KEYS.hasOwnProperty(key)) {
-      const value = getAssetValue(nativeResp[key]);
-
-      message.assets.push({ key, value });
+  let renderData = getRenderingData(adObject).native;
+  if (renderData) {
+    // if we have native rendering data (set up by the nativeRendering module)
+    // include it in full ("all assets") together with the renderer.
+    // this is to allow PUC to use dynamic renderers without requiring changes in creative setup
+    msg.native = Object.assign({}, renderData);
+    msg.renderer = getCreativeRendererSource(adObject);
+    if (keys != null) {
+      renderData.assets = renderData.assets.filter(({key}) => keys.includes(key))
     }
-  });
-  return message;
+  } else {
+    renderData = getNativeRenderingData(adObject, index.getAdUnit(adObject), keys);
+  }
+  return Object.assign(msg, renderData);
 }
 
-const NATIVE_KEYS_INVERTED = Object.fromEntries(Object.entries(CONSTANTS.NATIVE_KEYS).map(([k, v]) => [v, k]));
+const NATIVE_KEYS_INVERTED = Object.fromEntries(Object.entries(NATIVE_KEYS).map(([k, v]) => [v, k]));
 
 /**
  * Constructs a message object containing asset values for each of the
@@ -454,7 +489,7 @@ function getNativeKeys(adUnit) {
   }
 
   return {
-    ...CONSTANTS.NATIVE_KEYS,
+    ...NATIVE_KEYS,
     ...extraNativeKeys
   }
 }

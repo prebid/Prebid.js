@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/rasBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import {getAdUnitSizes} from '../../../src/utils';
 
 const CSR_ENDPOINT = 'https://csr.onet.pl/4178463/csr-006/csr.json?nid=4178463&';
 
@@ -64,6 +63,20 @@ describe('rasBidAdapter', function () {
         customParams: {
           test: 'name=value'
         }
+      },
+      mediaTypes: {
+        banner: {
+          sizes: [
+            [
+              300,
+              250
+            ],
+            [
+              300,
+              600
+            ]
+          ]
+        }
       }
     };
     const bid2 = {
@@ -75,6 +88,16 @@ describe('rasBidAdapter', function () {
         area: 'areatest',
         site: 'test',
         network: '4178463'
+      },
+      mediaTypes: {
+        banner: {
+          sizes: [
+            [
+              750,
+              300
+            ]
+          ]
+        }
       }
     };
 
@@ -128,6 +151,7 @@ describe('rasBidAdapter', function () {
         }
       };
       const requests = spec.buildRequests([bidCopy, bid2]);
+
       expect(requests[0].url).to.have.string(CSR_ENDPOINT);
       expect(requests[0].url).to.have.string('slot0=test');
       expect(requests[0].url).to.have.string('id0=1');
@@ -147,6 +171,39 @@ describe('rasBidAdapter', function () {
       expect(requests[0].url).to.have.string('kwrd=val1%2Bval2');
       expect(requests[0].url).to.have.string('kvadunit=test%2Fareatest');
       expect(requests[0].url).to.have.string('pos0=0');
+    });
+
+    it('should parse dsainfo when available', function () {
+      const bidCopy = { ...bid };
+      bidCopy.params = {
+        ...bid.params,
+        pageContext: {
+          dv: 'test/areatest',
+          du: 'https://example.com/',
+          dr: 'https://example.org/',
+          keyWords: ['val1', 'val2'],
+          keyValues: {
+            adunit: 'test/areatest'
+          }
+        }
+      };
+      let bidderRequest = {
+        ortb2: {
+          regs: {
+            ext: {
+              dsa: {
+                required: 1
+              }
+            }
+          }
+        }
+      };
+      let requests = spec.buildRequests([bidCopy], bidderRequest);
+      expect(requests[0].url).to.have.string('dsainfo=1');
+
+      bidderRequest.ortb2.regs.ext.dsa.required = 0;
+      requests = spec.buildRequests([bidCopy], bidderRequest);
+      expect(requests[0].url).to.have.string('dsainfo=0');
     });
   });
 
@@ -172,7 +229,7 @@ describe('rasBidAdapter', function () {
 
     it('should get correct bid response', function () {
       const resp = spec.interpretResponse({ body: response }, { bidIds: [{ slot: 'flat-belkagorna', bidId: 1 }] });
-      expect(resp[0]).to.have.all.keys('cpm', 'currency', 'netRevenue', 'requestId', 'ttl', 'width', 'height', 'creativeId', 'dealId', 'ad', 'meta');
+      expect(resp[0]).to.have.all.keys('cpm', 'currency', 'netRevenue', 'requestId', 'ttl', 'width', 'height', 'creativeId', 'dealId', 'ad', 'meta', 'actgMatch', 'mediaType');
       expect(resp.length).to.equal(1);
     });
 
@@ -243,6 +300,311 @@ describe('rasBidAdapter', function () {
       }];
       const resp = spec.interpretResponse({body: {gctx: '1234567890'}}, bidRequest);
       expect(resp).to.deep.equal({bids: [], fledgeAuctionConfigs: auctionConfigs});
+    });
+  });
+
+  describe('buildNativeRequests', function () {
+    const bid = {
+      sizes: 'fluid',
+      bidder: 'ras',
+      bidId: 1,
+      params: {
+        slot: 'nativestd',
+        area: 'areatest',
+        site: 'test',
+        slotSequence: '0',
+        network: '4178463',
+        customParams: {
+          test: 'name=value'
+        }
+      },
+      mediaTypes: {
+        native: {
+          clickUrl: {
+            required: true
+          },
+          image: {
+            required: true
+          },
+          sponsoredBy: {
+            len: 25,
+            required: true
+          },
+          title: {
+            len: 50,
+            required: true
+          }
+        }
+      }
+    };
+
+    it('should parse bids to native request', function () {
+      const requests = spec.buildRequests([bid], {
+        'gdprConsent': {
+          'gdprApplies': true,
+          'consentString': 'some-consent-string'
+        },
+        'refererInfo': {
+          'ref': 'https://example.org/',
+          'page': 'https://example.com/'
+        }
+      });
+
+      expect(requests[0].url).to.have.string(CSR_ENDPOINT);
+      expect(requests[0].url).to.have.string('slot0=nativestd');
+      expect(requests[0].url).to.have.string('id0=1');
+      expect(requests[0].url).to.have.string('site=test');
+      expect(requests[0].url).to.have.string('area=areatest');
+      expect(requests[0].url).to.have.string('cre_format=html');
+      expect(requests[0].url).to.have.string('systems=das');
+      expect(requests[0].url).to.have.string('ems_url=1');
+      expect(requests[0].url).to.have.string('bid_rate=1');
+      expect(requests[0].url).to.have.string('gdpr_applies=true');
+      expect(requests[0].url).to.have.string('euconsent=some-consent-string');
+      expect(requests[0].url).to.have.string('du=https%3A%2F%2Fexample.com%2F');
+      expect(requests[0].url).to.have.string('dr=https%3A%2F%2Fexample.org%2F');
+      expect(requests[0].url).to.have.string('test=name%3Dvalue');
+      expect(requests[0].url).to.have.string('cre_format0=native');
+      expect(requests[0].url).to.have.string('iusizes0=fluid');
+    });
+  });
+
+  describe('interpretNativeResponse', function () {
+    const response = {
+      'adsCheck': 'ok',
+      'geoloc': {},
+      'ir': '92effd60-0c84-4dac-817e-763ea7b8ac65',
+      'iv': '202003191334467636346500',
+      'ads': [
+        {
+          'id': 'nativestd',
+          'slot': 'nativestd',
+          'prio': 10,
+          'type': 'native',
+          'bid_rate': 0.321123,
+          'adid': 'das,50463,152276',
+          'id_3': '12734'
+        }
+      ]
+    };
+    const responseTeaserStandard = {
+      adsCheck: 'ok',
+      geoloc: {},
+      ir: '92effd60-0c84-4dac-817e-763ea7b8ac65',
+      iv: '202003191334467636346500',
+      ads: [
+        {
+          id: 'nativestd',
+          slot: 'nativestd',
+          prio: 10,
+          type: 'native',
+          bid_rate: 0.321123,
+          adid: 'das,50463,152276',
+          id_3: '12734',
+          data: {
+            fields: {
+              leadtext: 'BODY',
+              title: 'Headline',
+              image: '//img.url',
+              url: '//link.url',
+              impression: '//impression.url',
+              impression1: '//impression1.url',
+              impressionJs1: '//impressionJs1.url'
+            },
+            meta: {
+              slot: 'nativestd',
+              height: 1,
+              width: 1,
+              advertiser_name: 'Test Onet',
+              dsaurl: '//dsa.url',
+              adclick: '//adclick.url'
+            }
+          },
+          ems_link: '//ems.url'
+        }
+      ]
+    };
+    const responseNativeInFeed = {
+      adsCheck: 'ok',
+      geoloc: {},
+      ir: '92effd60-0c84-4dac-817e-763ea7b8ac65',
+      iv: '202003191334467636346500',
+      ads: [
+        {
+          id: 'nativestd',
+          slot: 'nativestd',
+          prio: 10,
+          type: 'native',
+          bid_rate: 0.321123,
+          adid: 'das,50463,152276',
+          id_3: '12734',
+          data: {
+            fields: {
+              Body: 'BODY',
+              Calltoaction: 'Calltoaction',
+              Headline: 'Headline',
+              Image: '//img.url',
+              Sponsorlabel: 'nie',
+              Thirdpartyclicktracker: '//link.url',
+              imp: '//imp.url'
+            },
+            meta: {
+              slot: 'nativestd',
+              height: 1,
+              width: 1,
+              advertiser_name: 'Test Onet',
+              dsaurl: '//dsa.url',
+              adclick: '//adclick.url'
+            }
+          },
+          ems_link: '//ems.url'
+        }
+      ]
+    };
+    const expectedTeaserStandardOrtbResponse = {
+      ver: '1.2',
+      assets: [
+        {
+          id: 2,
+          img: {
+            url: '//img.url',
+            w: 1,
+            h: 1
+          }
+        },
+        {
+          id: 4,
+          title: {
+            text: 'Headline'
+          }
+        },
+        {
+          id: 3,
+          data: {
+            value: 'Test Onet',
+            type: 1
+          }
+        }
+      ],
+      link: {
+        url: '//adclick.url//link.url'
+      },
+      eventtrackers: [
+        {
+          event: 1,
+          method: 1,
+          url: '//ems.url'
+        },
+        {
+          event: 1,
+          method: 1,
+          url: '//impression.url'
+        },
+        {
+          event: 1,
+          method: 1,
+          url: '//impression1.url'
+        },
+        {
+          event: 1,
+          method: 2,
+          url: '//impressionJs1.url'
+        }
+      ],
+      privacy: '//dsa.url'
+    };
+    const expectedTeaserStandardResponse = {
+      sendTargetingKeys: false,
+      title: 'Headline',
+      image: {
+        url: '//img.url',
+        width: 1,
+        height: 1
+      },
+      clickUrl: '//adclick.url//link.url',
+      cta: '',
+      body: 'BODY',
+      sponsoredBy: 'Test Onet',
+      ortb: expectedTeaserStandardOrtbResponse,
+      privacyLink: '//dsa.url'
+    };
+    const expectedNativeInFeedOrtbResponse = {
+      ver: '1.2',
+      assets: [
+        {
+          id: 2,
+          img: {
+            url: '//img.url',
+            w: 1,
+            h: 1
+          }
+        },
+        {
+          id: 4,
+          title: {
+            text: 'Headline'
+          }
+        },
+        {
+          id: 3,
+          data: {
+            value: 'Test Onet',
+            type: 1
+          }
+        }
+      ],
+      link: {
+        url: '//adclick.url//link.url'
+      },
+      eventtrackers: [
+        {
+          event: 1,
+          method: 1,
+          url: '//ems.url'
+        },
+        {
+          event: 1,
+          method: 1,
+          url: '//imp.url'
+        }
+      ],
+      privacy: '//dsa.url',
+    };
+    const expectedNativeInFeedResponse = {
+      sendTargetingKeys: false,
+      title: 'Headline',
+      image: {
+        url: '//img.url',
+        width: 1,
+        height: 1
+      },
+      clickUrl: '//adclick.url//link.url',
+      cta: 'Calltoaction',
+      body: 'BODY',
+      sponsoredBy: 'Test Onet',
+      ortb: expectedNativeInFeedOrtbResponse,
+      privacyLink: '//dsa.url'
+    };
+
+    it('should get correct bid native response', function () {
+      const resp = spec.interpretResponse({ body: response }, { bidIds: [{ slot: 'nativestd', bidId: 1, mediaType: 'native' }] });
+
+      expect(resp[0]).to.have.all.keys('cpm', 'currency', 'netRevenue', 'requestId', 'ttl', 'width', 'height', 'creativeId', 'dealId', 'meta', 'actgMatch', 'mediaType', 'native');
+      expect(resp.length).to.equal(1);
+    });
+
+    it('should get correct native response for TeaserStandard', function () {
+      const resp = spec.interpretResponse({ body: responseTeaserStandard }, { bidIds: [{ slot: 'nativestd', bidId: 1, mediaType: 'native' }] });
+      const teaserStandardResponse = resp[0].native;
+
+      expect(JSON.stringify(teaserStandardResponse)).to.equal(JSON.stringify(expectedTeaserStandardResponse));
+    });
+
+    it('should get correct native response for NativeInFeed', function () {
+      const resp = spec.interpretResponse({ body: responseNativeInFeed }, { bidIds: [{ slot: 'nativestd', bidId: 1, mediaType: 'native' }] });
+      const nativeInFeedResponse = resp[0].native;
+
+      expect(JSON.stringify(nativeInFeedResponse)).to.equal(JSON.stringify(expectedNativeInFeedResponse));
     });
   });
 });

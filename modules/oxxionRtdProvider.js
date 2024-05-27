@@ -3,6 +3,10 @@ import { logInfo, logError } from '../src/utils.js'
 import { ajax } from '../src/ajax.js';
 import adapterManager from '../src/adapterManager.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 const LOG_PREFIX = 'oxxionRtdProvider submodule: ';
 
 const bidderAliasRegistry = adapterManager.aliasRegistry || {};

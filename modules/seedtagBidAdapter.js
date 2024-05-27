@@ -1,7 +1,16 @@
-import { isArray, _map, triggerPixel } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+import { BANNER, VIDEO } from '../src/mediaTypes.js';
+import { _map, isArray, triggerPixel } from '../src/utils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
 
 const BIDDER_CODE = 'seedtag';
 const SEEDTAG_ALIAS = 'st';
@@ -116,7 +125,7 @@ function buildBidRequest(validBidRequest) {
     adUnitCode: validBidRequest.adUnitCode,
     geom: geom(validBidRequest.adUnitCode),
     placement: params.placement,
-    requestCount: validBidRequest.bidderRequestsCount || 1, // FIXME : in unit test the parameter bidderRequestsCount is undefined
+    requestCount: validBidRequest.bidderRequestsCount || 1, // FIXME : in unit test the parameter bidderRequestsCount is undefinedt
   };
 
   if (hasVideoMediaType(validBidRequest)) {
@@ -275,6 +284,7 @@ export const spec = {
       auctionStart: bidderRequest.auctionStart || Date.now(),
       ttfb: ttfb(),
       bidRequests: _map(validBidRequests, buildBidRequest),
+      user: { topics: [], eids: [] }
     };
 
     if (payload.cmp) {
@@ -307,7 +317,23 @@ export const spec = {
       }
     }
 
+    if (bidderRequest.ortb2?.user?.data) {
+      payload.user.topics = bidderRequest.ortb2.user.data
+    }
+    if (validBidRequests[0] && validBidRequests[0].userIdAsEids) {
+      payload.user.eids = validBidRequests[0].userIdAsEids
+    }
+
+    if (bidderRequest.ortb2?.bcat) {
+      payload.bcat = bidderRequest.ortb2?.bcat
+    }
+
+    if (bidderRequest.ortb2?.badv) {
+      payload.badv = bidderRequest.ortb2?.badv
+    }
+
     const payloadString = JSON.stringify(payload);
+
     return {
       method: 'POST',
       url: SEEDTAG_SSP_ENDPOINT,

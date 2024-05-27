@@ -11,6 +11,10 @@ import { triggerPixel, logInfo } from '../src/utils.js';
 import { uspDataHandler, coppaDataHandler, gdprDataHandler } from '../src/adapterManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ */
+
 const QUANTCAST_FPA = '__qca';
 const DEFAULT_COOKIE_EXP_DAYS = 392; // (13 months - 2 days)
 const DAY_MS = 86400000;

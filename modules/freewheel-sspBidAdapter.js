@@ -3,6 +3,11 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'freewheel-ssp';
 const GVL_ID = 285;
 
@@ -71,7 +76,7 @@ function getPricing(xmlNode) {
     var priceNode = pricingExtNode.querySelector('Price');
     princingData = {
       currency: priceNode.getAttribute('currency'),
-      price: priceNode.textContent || priceNode.innerText
+      price: priceNode.textContent
     };
   } else {
     logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing pricing extension.');
@@ -105,7 +110,7 @@ function getAdvertiserDomain(xmlNode) {
   // Currently we only return one Domain
   if (brandExtNode) {
     var domainNode = brandExtNode.querySelector('Domain');
-    domain.push(domainNode.textContent || domainNode.innerText);
+    domain.push(domainNode.textContent);
   } else {
     logWarn('PREBID - ' + BIDDER_CODE + ': No bid received or missing StickyBrand extension.');
   }
@@ -477,7 +482,7 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {*} serverResponse A successful response from the server.
-   * @param {object} request: the built request object containing the initial bidRequest.
+   * @param {object} request the built request object containing the initial bidRequest.
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, request) {

@@ -76,7 +76,7 @@ export const spec = {
           width: adUnit.width,
           height: adUnit.height,
           ttl: adUnit.ttl || TTL,
-          creativeId: adUnit.requestId,
+          creativeId: adUnit.creativeId,
           netRevenue: adUnit.netRevenue || true,
           nurl: adUnit.nurl,
           mediaType: adUnit.mediaType,
@@ -141,16 +141,16 @@ registerBidder(spec);
  * @param bid {bid}
  * @returns {Number}
  */
-function getFloor(bid, mediaType, currency) {
+function getFloor(bid, mediaType) {
   if (!isFn(bid.getFloor)) {
     return 0;
   }
   let floorResult = bid.getFloor({
-    currency: currency,
+    currency: DEFAULT_CURRENCY,
     mediaType: mediaType,
     size: '*'
   });
-  return floorResult.currency === currency && floorResult.floor ? floorResult.floor : 0;
+  return floorResult.currency === DEFAULT_CURRENCY && floorResult.floor ? floorResult.floor : 0;
 }
 
 /**
@@ -286,7 +286,6 @@ function generateBidParameters(bid, bidderRequest) {
   const {params} = bid;
   const mediaType = isBanner(bid) ? BANNER : VIDEO;
   const sizesArray = getSizesArray(bid, mediaType);
-  const currency = params.currency || config.getConfig('currency.adServerCurrency') || DEFAULT_CURRENCY;
 
   // fix floor price in case of NAN
   if (isNaN(params.floorPrice)) {
@@ -297,8 +296,7 @@ function generateBidParameters(bid, bidderRequest) {
     mediaType,
     adUnitCode: getBidIdParameter('adUnitCode', bid),
     sizes: sizesArray,
-    currency: currency,
-    floorPrice: Math.max(getFloor(bid, mediaType, currency), params.floorPrice),
+    floorPrice: Math.max(getFloor(bid, mediaType), params.floorPrice),
     bidId: getBidIdParameter('bidId', bid),
     loop: getBidIdParameter('bidderRequestsCount', bid),
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
@@ -458,6 +456,14 @@ function generateGeneralParams(generalObject, bidderRequest) {
   if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
     generalParams.gdpr = bidderRequest.gdprConsent.gdprApplies;
     generalParams.gdpr_consent = bidderRequest.gdprConsent.consentString;
+  }
+
+  if (bidderRequest.gppConsent) {
+    generalParams.gpp = bidderRequest.gppConsent.gppString;
+    generalParams.gpp_sid = bidderRequest.gppConsent.applicableSections;
+  } else if (bidderRequest.ortb2?.regs?.gpp) {
+    generalParams.gpp = bidderRequest.ortb2.regs.gpp;
+    generalParams.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
   }
 
   if (generalBidParams.ifa) {
