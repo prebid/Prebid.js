@@ -13,6 +13,8 @@ const LOCAL_BASE_URL = 'http://127.0.0.1:8787';
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
 const REQUIRED_VIDEO_PARAMS = [ 'mimes', 'protocols', 'context' ];
 
+const pbjsVersion = '$prebid.version$';
+
 export const ERROR_CODES = {
   BID_SIZE_INVALID_FORMAT: 1,
   BID_SIZE_NOT_INCLUDED: 2,
@@ -59,7 +61,7 @@ const converter = ortbConverter({
     const request = buildRequest(imps, bidderRequest, context);
     deepSetValue(request, 'at', 1);
     setPrebidRequestEnvironment(request);
-    deepSetValue(request, 'regs', getRegs());
+    deepSetValue(request, 'regs', getRegs(bidderRequest));
     deepSetValue(request, 'site.publisher.id', bidderRequest.bids[0].params.publisherId);
     deepSetValue(request, 'site.id', bidderRequest.bids[0].params.siteId);
     return request;
@@ -106,22 +108,22 @@ function recur(obj) {
   return result;
 }
 
-function getRegs() {
+function getRegs(bidderRequest) {
   let regs = {};
-  const consentManagement = config.getConfig('consentManagement');
+  const euConsentManagement = bidderRequest.gdprConsent;
+  const usConsentManagement = bidderRequest.uspConsent;
   const coppa = config.getConfig('coppa');
-  if (consentManagement && !!(consentManagement.gdpr)) {
-    deepSetValue(regs, 'gdpr_applies', !!consentManagement.gdpr);
+  if (euConsentManagement && euConsentManagement.consentString) {
+    deepSetValue(regs, 'gdpr_applies', !!euConsentManagement.consentString);
   } else {
     deepSetValue(regs, 'gdpr_applies', false);
   }
-  if (consentManagement && deepAccess(consentManagement, 'usp.cmpApi') === 'static') {
-    deepSetValue(regs, 'usp_applies', !!deepAccess(consentManagement, 'usp'));
-    deepSetValue(regs, 'us_privacy', deepAccess(consentManagement, 'usp.consentData.getUSPData.uspString'));
+  if (usConsentManagement) {
+    deepSetValue(regs, 'usp_applies', true);
+    deepSetValue(regs, 'us_privacy', bidderRequest.uspConsent);
   } else {
     deepSetValue(regs, 'usp_applies', false);
   }
-
   if (isBoolean(coppa)) {
     deepSetValue(regs, 'coppa_applies', !!coppa);
   } else {

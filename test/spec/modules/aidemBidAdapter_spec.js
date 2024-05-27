@@ -168,7 +168,7 @@ const DEFAULT_VALID_BANNER_REQUESTS = [
     },
     params: {
       siteId: '1',
-      placementId: '13144370'
+      placementId: '13144370',
     },
     src: 'client',
     transactionId: 'db739693-9b4a-4669-9945-8eab938783cc'
@@ -193,7 +193,7 @@ const DEFAULT_VALID_VIDEO_REQUESTS = [
     },
     params: {
       siteId: '1',
-      placementId: '13144370'
+      placementId: '13144370',
     },
     src: 'client',
     transactionId: 'db739693-9b4a-4669-9945-8eab938783cc'
@@ -209,7 +209,7 @@ const VALID_BIDDER_REQUEST = {
       params: {
         placementId: '13144370',
         siteId: '23434',
-        publisherId: '7689670753'
+        publisherId: '7689670753',
       },
     }
   ],
@@ -218,6 +218,50 @@ const VALID_BIDDER_REQUEST = {
     domain: 'test-domain',
     ref: 'test-referer'
   },
+}
+
+const VALID_GDPR_BIDDER_REQUEST = {
+  auctionId: '19c97f22-5bd1-4b16-a128-80f75fb0a8a0',
+  bidderCode: 'aidem',
+  bidderRequestId: '1bbb7854dfa0d8',
+  bids: [
+    {
+      params: {
+        placementId: '13144370',
+        siteId: '23434',
+        publisherId: '7689670753',
+      },
+    }
+  ],
+  refererInfo: {
+    page: 'test-page',
+    domain: 'test-domain',
+    ref: 'test-referer'
+  },
+  gdprConsent: {
+    consentString: 'test-gdpr-string'
+  }
+}
+
+const VALID_USP_BIDDER_REQUEST = {
+  auctionId: '19c97f22-5bd1-4b16-a128-80f75fb0a8a0',
+  bidderCode: 'aidem',
+  bidderRequestId: '1bbb7854dfa0d8',
+  bids: [
+    {
+      params: {
+        placementId: '13144370',
+        siteId: '23434',
+        publisherId: '7689670753',
+      },
+    }
+  ],
+  refererInfo: {
+    page: 'test-page',
+    domain: 'test-domain',
+    ref: 'test-referer'
+  },
+  uspConsent: '1YYY'
 }
 
 const SERVER_RESPONSE_BANNER = {
@@ -601,19 +645,24 @@ describe('Aidem adapter', () => {
     });
 
     it(`should set gdpr to true`, function () {
-      config.setConfig({
+      /* config.setConfig({
+        consentManagement: {
         consentManagement: {
           gdpr: {
-            // any data here set gdpr to true
+            consentData: {
+              getTCData: {
+                tcString: 'Q1BsRDRFVVBsRDRFVUVXQUFBRU5DWkNBQUFBQUFBQUFBQUFBQUFBQUFBQUEuSUk3TmRfWF9fYlg5bi1fN182ZnQwZVkxZjlfcjM3dVF6RGhmTnMtOEYzTF9XX0x3WDMyRTdORjM2dHE0S21SNGt1MWJCSVFOdEhNblVEVW14YW9sVnJ6SHNhazJjcHlOS0pfSmtrbnNaZTJkWUdGOVBuOWxELVlLWjdfNV85X2Y1MlRfOV85Xy0zOXozXzlmX19fZHZfLV9fLXZqZl81OTluX3Y5ZlZfNzhfS2Y5X19fX19fLV9fX19fX19fX19fXzhB'
+              }
+            }
           },
         }
-      });
-      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
+      }); */
+      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_GDPR_BIDDER_REQUEST);
       expect(data.regs.gdpr_applies).to.equal(true)
     });
 
     it(`should set usp_consent string`, function () {
-      config.setConfig({
+      /* config.setConfig({
         consentManagement: {
           usp: {
             cmpApi: 'static',
@@ -624,13 +673,13 @@ describe('Aidem adapter', () => {
             }
           }
         }
-      });
-      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
+      }); */
+      const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_USP_BIDDER_REQUEST);
       expect(data.regs.us_privacy).to.equal('1YYY')
     });
 
     it(`should not set usp_consent string`, function () {
-      config.setConfig({
+      /*config.setConfig({
         consentManagement: {
           usp: {
             cmpApi: 'iab',
@@ -641,7 +690,7 @@ describe('Aidem adapter', () => {
             }
           }
         }
-      });
+      });*/
       const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
       expect(data.regs.us_privacy).to.undefined
     });
