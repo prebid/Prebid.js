@@ -94,7 +94,7 @@ import {auctionManager} from './auctionManager.js';
 import {bidderSettings} from './bidderSettings.js';
 import * as events from './events.js';
 import adapterManager from './adapterManager.js';
-import { EVENTS, GRANULARITY_OPTIONS, JSON_MAPPING, S2S, TARGETING_KEYS } from './constants.js';
+import { EVENTS, GRANULARITY_OPTIONS, JSON_MAPPING, REJECTION_REASON, S2S, TARGETING_KEYS } from './constants.js';
 import {defer, GreedyPromise} from './utils/promise.js';
 import {useMetrics} from './utils/perfMetrics.js';
 import {adjustCpm} from './utils/cpm.js';
@@ -421,7 +421,11 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
  * @param {function(String): void} reject a function that, when called, rejects `bid` with the given reason.
  */
 export const addBidResponse = hook('sync', function(adUnitCode, bid, reject) {
-  this.dispatch.call(null, adUnitCode, bid);
+  if (!isValidPrice(bid)) {
+    reject(REJECTION_REASON.PRICE_TOO_HIGH)
+  } else {
+    this.dispatch.call(null, adUnitCode, bid);
+  }
 }, 'addBidResponse');
 
 /**
@@ -973,4 +977,18 @@ function groupByPlacement(bidsByPlacement, bid) {
   if (!bidsByPlacement[bid.adUnitCode]) { bidsByPlacement[bid.adUnitCode] = { bids: [] }; }
   bidsByPlacement[bid.adUnitCode].bids.push(bid);
   return bidsByPlacement;
+}
+
+/**
+ * isValidPrice is price validation function
+ * which checks if price from bid response
+ * is not higher than top limit set in config
+ * @type {Function}
+ * @param bid
+ * @returns {boolean}
+ */
+function isValidPrice(bid) {
+  const maxBidValue = config.getConfig('maxBid');
+  if (!maxBidValue || !bid.cpm) return true;
+  return maxBidValue >= Number(bid.cpm);
 }
