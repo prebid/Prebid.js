@@ -667,13 +667,14 @@ function autoFillParams(bid) {
     bid.params.site = adgGlobalConf.siteId.split(':')[1];
   }
 
-  // Edge case. Useful when Prebid Manager cannot handle properly params setting…
-  if (adgGlobalConf.useAdUnitCodeAsPlacement === true || bid.params.useAdUnitCodeAsPlacement === true) {
+  // `useAdUnitCodeAsPlacement` is an edge case. Useful when a Prebid Manager cannot handle properly params setting.
+  // In Prebid.js 9, `placement` should be defined in ortb2Imp and the `useAdUnitCodeAsPlacement` param should be removed
+  bid.params.placement = deepAccess(bid, 'ortb2Imp.ext.data.placement', bid.params.placement);
+  if (!bid.params.placement && (adgGlobalConf.useAdUnitCodeAsPlacement === true || bid.params.useAdUnitCodeAsPlacement === true)) {
     bid.params.placement = bid.adUnitCode;
   }
 
-  bid.params.adUnitElementId = deepAccess(bid, 'ortb2Imp.ext.data.elementId', null) || bid.params.adUnitElementId;
-
+  bid.params.adUnitElementId = deepAccess(bid, 'ortb2Imp.ext.data.divId', bid.params.adUnitElementId);
   if (!bid.params.adUnitElementId) {
     if (adgGlobalConf.useAdUnitCodeAsAdUnitElementId === true || bid.params.useAdUnitCodeAsAdUnitElementId === true) {
       bid.params.adUnitElementId = bid.adUnitCode;
@@ -959,14 +960,14 @@ const OUTSTREAM_RENDERER = {
  * @returns
  */
 const _getFeatures = (bidRequest) => {
-  const f = { ...deepAccess(bidRequest, 'ortb2.ext.features', GlobalExchange.getOrSetGlobalFeatures()) } || {};
+  const f = { ...deepAccess(bidRequest, 'ortb2.site.ext.data.adg_rtd.features', GlobalExchange.getOrSetGlobalFeatures()) } || {};
 
   f.print_number = deepAccess(bidRequest, 'bidderRequestsCount', 1).toString();
 
   if (f.type === 'bidAdapter') {
     f.adunit_position = getSlotPosition(bidRequest.params.adUnitElementId)
   } else {
-    f.adunit_position = deepAccess(bidRequest, 'ortb2Imp.ext.data.adunit_position');
+    f.adunit_position = deepAccess(bidRequest, 'ortb2Imp.ext.data.adg_rtd.adunit_position');
   }
 
   Object.keys(f).forEach((prop) => {
@@ -1019,7 +1020,7 @@ export const spec = {
     // We don't validate the dsa object in adapter and let our server do it.
     const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
 
-    let rtdSamplingSession = deepAccess(bidderRequest, 'ortb2.ext.session');
+    let rtdSamplingSession = deepAccess(bidderRequest, 'ortb2.site.ext.data.adg_rtd.session');
     const dataExchange = (rtdSamplingSession) ? { session: rtdSamplingSession } : GlobalExchange.getExchangeData();
 
     const aucId = generateUUID()
