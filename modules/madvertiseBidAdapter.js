@@ -1,5 +1,4 @@
 import { parseSizesInput, _each } from '../src/utils.js';
-import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 /**
@@ -55,7 +54,7 @@ export const spec = {
       }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
-        src = src + '&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? '1' : '0') + '&consent[0][format]=' + config.getConfig('consentManagement.cmpApi') + '&consent[0][value]=' + bidderRequest.gdprConsent.consentString;
+        src = src + '&gdpr=' + (bidderRequest.gdprConsent.gdprApplies ? '1' : '0') + '&consent[0][format]=iab&consent[0][value]=' + bidderRequest.gdprConsent.consentString;
       }
 
       return {
