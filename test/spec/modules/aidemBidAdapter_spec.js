@@ -650,7 +650,7 @@ describe('Aidem adapter', () => {
       //     gdpr: {
       //       consentData: {
       //         getTCData: {
-      //           tcString: 'Q1BsRDRFVVBsRDRFVUVXQUFBRU5DWkNBQUFBQUFBQUFBQUFBQUFBQUFBQUEuSUk3TmRfWF9fYlg5bi1fN182ZnQwZVkxZjlfcjM3dVF6RGhmTnMtOEYzTF9XX0x3WDMyRTdORjM2dHE0S21SNGt1MWJCSVFOdEhNblVEVW14YW9sVnJ6SHNhazJjcHlOS0pfSmtrbnNaZTJkWUdGOVBuOWxELVlLWjdfNV85X2Y1MlRfOV85Xy0zOXozXzlmX19fZHZfLV9fLXZqZl81OTluX3Y5ZlZfNzhfS2Y5X19fX19fLV9fX19fX19fX19fXzhB'
+      //           tcString: 'test-gdpr-string'
       //         }
       //       }
       //     },
