@@ -117,7 +117,6 @@ describe('PubMatic adapter', function () {
             battr: [13, 14],
             linearity: 1,
             placement: 2,
-            // plcmt: 2,
             plcmt: 1,
             minbitrate: 10,
             maxbitrate: 10
@@ -171,7 +170,6 @@ describe('PubMatic adapter', function () {
             battr: [13, 14],
             linearity: 1,
             placement: 2,
-            // plcmt: 2,
             plcmt: 1,
             minbitrate: 100,
             maxbitrate: 4096
@@ -397,7 +395,6 @@ describe('PubMatic adapter', function () {
             battr: [13, 14],
             linearity: 1,
             placement: 2,
-            // plcmt: 2,
             plcmt: 1,
             minbitrate: 100,
             maxbitrate: 4096
@@ -526,7 +523,6 @@ describe('PubMatic adapter', function () {
             battr: [13, 14],
             linearity: 1,
             placement: 2,
-            // plcmt: 2,
             plcmt: 1,
             minbitrate: 100,
             maxbitrate: 4096
@@ -598,7 +594,6 @@ describe('PubMatic adapter', function () {
             battr: [13, 14],
             linearity: 1,
             placement: 2,
-            // plcmt: 2,
             plcmt: 1,
             minbitrate: 100,
             maxbitrate: 4096
