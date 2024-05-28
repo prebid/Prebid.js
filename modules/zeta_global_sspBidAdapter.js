@@ -3,7 +3,6 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {parseDomain} from '../src/refererDetection.js';
-import {ajax} from '../src/ajax.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -15,7 +14,6 @@ import {ajax} from '../src/ajax.js';
 
 const BIDDER_CODE = 'zeta_global_ssp';
 const ENDPOINT_URL = 'https://ssp.disqus.com/bid/prebid';
-const TIMEOUT_URL = 'https://ssp.disqus.com/timeout/prebid';
 const USER_SYNC_URL_IFRAME = 'https://ssp.disqus.com/sync?type=iframe';
 const USER_SYNC_URL_IMAGE = 'https://ssp.disqus.com/sync?type=image';
 const DEFAULT_CUR = 'USD';
@@ -267,25 +265,6 @@ export const spec = {
         type: 'image',
         url: USER_SYNC_URL_IMAGE + syncurl
       }];
-    }
-  },
-
-  onTimeout: function(timeoutData) {
-    if (timeoutData) {
-      const payload = timeoutData.map(d => ({
-        bidder: d?.bidder,
-        shortname: d?.params?.map(p => p?.tags?.shortname).find(p => p),
-        sid: d?.params?.map(p => p?.sid).find(p => p),
-        country: d?.ortb2?.device?.geo?.country,
-        devicetype: d?.ortb2?.device?.devicetype
-      }));
-      ajax(TIMEOUT_URL, null, JSON.stringify(payload), {
-        method: 'POST',
-        options: {
-          withCredentials: false,
-          contentType: 'application/json'
-        }
-      });
     }
   }
 }
