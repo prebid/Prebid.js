@@ -88,12 +88,11 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map(bid => {
       var finalRequest = {};
-      let bidfloor = getBidIdParameter('bidfloor', bid.params);
 
       const imp = {
         id: bid.bidId,
         secure: 1,
-        bidfloor: bidfloor || 0,
+        bidfloor: 0,
         displaymanager: 'Prebid.js',
         displaymanagerver: VERSION,
 
