@@ -12,7 +12,6 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  transformBidParams,
   isBannerBid
 };
 
