@@ -13,8 +13,6 @@ const LOCAL_BASE_URL = 'http://127.0.0.1:8787';
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO];
 const REQUIRED_VIDEO_PARAMS = [ 'mimes', 'protocols', 'context' ];
 
-const pbjsVersion = '$prebid.version$';
-
 export const ERROR_CODES = {
   BID_SIZE_INVALID_FORMAT: 1,
   BID_SIZE_NOT_INCLUDED: 2,
