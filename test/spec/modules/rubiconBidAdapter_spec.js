@@ -14,7 +14,7 @@ import * as utils from 'src/utils.js';
 import {find} from 'src/polyfill.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import 'modules/schain.js';
-import 'modules/consentManagement.js';
+import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/userId/index.js';
 import 'modules/priceFloors.js';

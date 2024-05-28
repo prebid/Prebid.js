@@ -49,7 +49,7 @@ In order to use the module please first obtain a Resource Key using the [Configu
 * ScreenInchesWidth
 * PixelRatio (optional)
 
-PixelRatio is desirable, but it's a paid property requiring a paid license.  Also free API service is limited to 500,000 requests per month - consider picking a [51Degrees pricing plan](https://51degrees.com/pricing) that fits your needs. 
+PixelRatio is desirable, but it's a paid property requiring a paid license.  Free API service is limited. Please check [51Degrees pricing](https://51degrees.com/pricing) to choose a plan that suits your needs.
 
 #### User Agent Client Hint (UA-CH) Permissions
 

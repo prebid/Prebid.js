@@ -10,7 +10,7 @@ import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
 import 'modules/priceFloors.js';
-import 'modules/consentManagement.js';
+import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
 import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
@@ -682,32 +682,9 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.app.content).does.exist.and.equal('XYZ');
     });
 
-    it('should not set site when app is defined in CONFIG', function () {
-      getConfigStub = sinon.stub(config, 'getConfig');
-      getConfigStub.withArgs('app').returns({ content: 'XYZ' });
-      let request = spec.buildRequests([simpleBidRequest], syncAddFPDToBidderRequest(bidderRequest))[0];
-      let payload = JSON.parse(request.data);
-      expect(payload.site).does.not.exist;
-      expect(payload.app).does.exist;
-      expect(payload.app.content).does.exist.and.equal('XYZ');
-    });
-
     it('should set correct site params', function () {
-      getConfigStub = sinon.stub(config, 'getConfig');
-      getConfigStub.withArgs('site').returns({
-        content: 'XYZ',
-        page: 'https://improveditigal.com/',
-        domain: 'improveditigal.com'
-      });
       let request = spec.buildRequests([simpleBidRequest], syncAddFPDToBidderRequest(bidderRequestReferrer))[0];
       let payload = JSON.parse(request.data);
-      expect(payload.site.content).does.exist.and.equal('XYZ');
-      expect(payload.site.page).does.exist.and.equal('https://improveditigal.com/');
-      expect(payload.site.domain).does.exist.and.equal('improveditigal.com');
-      getConfigStub.reset();
-
-      request = spec.buildRequests([simpleBidRequest], syncAddFPDToBidderRequest(bidderRequestReferrer))[0];
-      payload = JSON.parse(request.data);
       expect(payload.site.content).does.not.exist;
       expect(payload.site.page).does.exist.and.equal('https://blah.com/test.html');
       expect(payload.site.domain).does.exist.and.equal('blah.com');
@@ -718,16 +695,6 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.site.content).does.exist.and.equal('ZZZ');
       expect(payload.site.page).does.exist.and.equal('https://blah.com/test.html');
       expect(payload.site.domain).does.exist.and.equal('blah.com');
-    });
-
-    it('should set site when app not available', function () {
-      getConfigStub = sinon.stub(config, 'getConfig');
-      getConfigStub.withArgs('app').returns(undefined);
-      getConfigStub.withArgs('site').returns({});
-      let request = spec.buildRequests([simpleBidRequest], syncAddFPDToBidderRequest(bidderRequest))[0];
-      let payload = JSON.parse(request.data);
-      expect(payload.site).does.exist;
-      expect(payload.app).does.not.exist;
     });
 
     it('should call basic ads endpoint when no consent for purpose 1', function () {

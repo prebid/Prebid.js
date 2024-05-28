@@ -25,6 +25,7 @@ const CALLER_NAME = 'pbjs';
 const GVLID = 58;
 
 const STORAGE_FPID_KEY = '33acrossIdFp';
+const DEFAULT_1PID_SUPPORT = true;
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
@@ -164,7 +165,7 @@ export const thirthyThreeAcrossIdSubmodule = {
       return;
     }
 
-    const { pid, storeFpid, apiUrl = API_URL } = params;
+    const { pid, storeFpid = DEFAULT_1PID_SUPPORT, apiUrl = API_URL } = params;
 
     return {
       callback(cb) {

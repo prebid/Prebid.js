@@ -1,7 +1,7 @@
-import { pirIdSubmodule, storage, readId } from 'modules/pirIdSystem.js';
+import { ceeIdSubmodule, storage, readId } from 'modules/ceeIdSystem.js';
 import sinon from 'sinon';
 
-describe('pirIdSystem', () => {
+describe('ceeIdSystem', () => {
   let sandbox;
   let getCookieStub;
   let getDataFromLocalStorageStub;
@@ -17,31 +17,31 @@ describe('pirIdSystem', () => {
   });
 
   describe('getId', () => {
-    it('should return an object with id when pirIdToken is found', () => {
+    it('should return an object with id when ceeIdToken is found', () => {
       getDataFromLocalStorageStub.returns('testToken');
       getCookieStub.returns('testToken');
 
-      const result = pirIdSubmodule.getId();
+      const result = ceeIdSubmodule.getId();
 
       expect(result).to.deep.equal({ id: 'testToken' });
     });
 
-    it('should return undefined when pirIdToken is not found', () => {
-      const result = pirIdSubmodule.getId();
+    it('should return undefined when ceeIdToken is not found', () => {
+      const result = ceeIdSubmodule.getId();
 
       expect(result).to.be.undefined;
     });
   });
 
   describe('decode', () => {
-    it('should return an object with pirId when value is a string', () => {
-      const result = pirIdSubmodule.decode('testId');
+    it('should return an object with ceeId when value is a string', () => {
+      const result = ceeIdSubmodule.decode('testId');
 
-      expect(result).to.deep.equal({ pirId: 'testId' });
+      expect(result).to.deep.equal({ ceeId: 'testId' });
     });
 
     it('should return undefined when value is not a string', () => {
-      const result = pirIdSubmodule.decode({});
+      const result = ceeIdSubmodule.decode({});
 
       expect(result).to.be.undefined;
     });

@@ -21,7 +21,7 @@ import 'modules/currency.js'; // adServerCurrency test
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
 import 'modules/priceFloors.js';
-import 'modules/consentManagement.js';
+import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
 import 'modules/fledgeForGpt.js';
@@ -1021,12 +1021,18 @@ describe('S2S Adapter', function () {
     it('adds device and app objects to request', function () {
       const _config = {
         s2sConfig: CONFIG,
-        device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
-        app: { bundle: 'com.test.app' },
       };
-
       config.setConfig(_config);
-      adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
+      const s2sreq = addFpdEnrichmentsToS2SRequest({
+        ...REQUEST,
+        ortb2Fragments: {
+          global: {
+            device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
+            app: { bundle: 'com.test.app' },
+          }
+        }
+      }, BID_REQUESTS)
+      adapter.callBids(s2sreq, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(server.requests[0].requestBody);
       sinon.assert.match(requestBid.device, {
         ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
@@ -1045,15 +1051,20 @@ describe('S2S Adapter', function () {
           p1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
         }
       });
-
       const _config = {
         s2sConfig: s2sConfig,
-        device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
-        app: { bundle: 'com.test.app' },
       };
-
       config.setConfig(_config);
-      adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
+      const s2sReq = addFpdEnrichmentsToS2SRequest({
+        ...REQUEST,
+        ortb2Fragments: {
+          global: {
+            device: { ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC' },
+            app: { bundle: 'com.test.app' },
+          }
+        }
+      }, BID_REQUESTS)
+      adapter.callBids(s2sReq, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(server.requests[0].requestBody);
       sinon.assert.match(requestBid.device, {
         ifa: '6D92078A-8246-4BA4-AE5B-76104861E7DC',
@@ -1412,9 +1423,7 @@ describe('S2S Adapter', function () {
         it('adds device.w and device.h even if the config lacks a device object', function () {
           const _config = {
             s2sConfig: CONFIG,
-            app: { bundle: 'com.test.app' },
           };
-
           config.setConfig(_config);
           adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
           const requestBid = JSON.parse(server.requests[0].requestBody);
@@ -1422,10 +1431,6 @@ describe('S2S Adapter', function () {
             w: window.innerWidth,
             h: window.innerHeight
           })
-          sinon.assert.match(requestBid.app, {
-            bundle: 'com.test.app',
-            publisher: { 'id': '1' }
-          });
           expect(requestBid.imp[0].native.ver).to.equal('1.2');
         });
 
@@ -1509,19 +1514,26 @@ describe('S2S Adapter', function () {
     it('adds site if app is not present', function () {
       const _config = {
         s2sConfig: CONFIG,
-        site: {
-          publisher: {
-            id: '1234',
-            domain: 'test.com'
-          },
-          content: {
-            language: 'en'
-          }
-        }
       };
 
       config.setConfig(_config);
-      adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
+      const s2sReq = addFpdEnrichmentsToS2SRequest({
+        ...REQUEST,
+        ortb2Fragments: {
+          global: {
+            site: {
+              publisher: {
+                id: '1234',
+                domain: 'test.com'
+              },
+              content: {
+                language: 'en'
+              }
+            }
+          }
+        }
+      }, BID_REQUESTS);
+      adapter.callBids(s2sReq, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.site).to.exist.and.to.be.a('object');
       expect(requestBid.site.publisher).to.exist.and.to.be.a('object');
@@ -1546,23 +1558,31 @@ describe('S2S Adapter', function () {
     it('site should not be present when app is present', function () {
       const _config = {
         s2sConfig: CONFIG,
-        app: { bundle: 'com.test.app' },
-        site: {
-          publisher: {
-            id: '1234',
-            domain: 'test.com'
-          },
-          content: {
-            language: 'en'
-          }
-        }
       };
 
       config.setConfig(_config);
-      adapter.callBids(addFpdEnrichmentsToS2SRequest(REQUEST, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
+
+      const s2sReq = addFpdEnrichmentsToS2SRequest({
+        ...REQUEST,
+        ortb2Fragments: {
+          global: {
+            app: { bundle: 'com.test.app' },
+            site: {
+              publisher: {
+                id: '1234',
+                domain: 'test.com'
+              },
+              content: {
+                language: 'en'
+              }
+            }
+          }
+        }
+      }, BID_REQUESTS)
+      adapter.callBids(s2sReq, BID_REQUESTS, addBidResponse, done, ajax);
       const requestBid = JSON.parse(server.requests[0].requestBody);
       expect(requestBid.site).to.not.exist;
-      expect(requestBid.app).to.exist.and.to.be.a('object');
+      expect(requestBid.app.bundle).to.eql('com.test.app');
     });
 
     it('adds appnexus aliases to request', function () {
@@ -1724,39 +1744,6 @@ describe('S2S Adapter', function () {
           version: 'v$prebid.version$'
         }
       });
-    });
-
-    it('converts appnexus params to expected format for PBS', function () {
-      const s2sConfig = Object.assign({}, CONFIG, {
-        endpoint: {
-          p1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction'
-        }
-      });
-      config.setConfig({ s2sConfig: s2sConfig });
-
-      Object.assign(BID_REQUESTS[0].bids[0].params, {
-        usePaymentRule: true,
-        keywords: {
-          foo: ['bar', 'baz'],
-          fizz: ['buzz']
-        }
-      })
-
-      adapter.callBids(REQUEST, BID_REQUESTS, addBidResponse, done, ajax);
-      const requestBid = JSON.parse(server.requests[0].requestBody);
-
-      const requestParams = requestBid.imp[0].ext.prebid.bidder;
-      expect(requestParams.appnexus).to.exist;
-      expect(requestParams.appnexus.placement_id).to.exist.and.to.equal(10433394);
-      expect(requestParams.appnexus.use_pmt_rule).to.exist.and.to.be.true;
-      expect(requestParams.appnexus.member).to.exist;
-      expect(requestParams.appnexus.keywords).to.exist.and.to.deep.equal([{
-        key: 'foo',
-        value: ['bar', 'baz']
-      }, {
-        key: 'fizz',
-        value: ['buzz']
-      }]);
     });
 
     describe('cookie sync', () => {
@@ -1976,15 +1963,21 @@ describe('S2S Adapter', function () {
       it('and overrides publisher and page', function () {
         config.setConfig({
           s2sConfig: s2sConfig,
-          site: {
-            domain: 'nytimes.com',
-            page: 'http://www.nytimes.com',
-            publisher: { id: '2' }
-          },
-          device: device
         });
-
-        adapter.callBids(addFpdEnrichmentsToS2SRequest(s2sBidRequest, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
+        const s2sReq = addFpdEnrichmentsToS2SRequest({
+          ...s2sBidRequest,
+          ortb2Fragments: {
+            global: {
+              site: {
+                domain: 'nytimes.com',
+                page: 'http://www.nytimes.com',
+                publisher: { id: '2' }
+              },
+              device,
+            }
+          }
+        }, BID_REQUESTS);
+        adapter.callBids(s2sReq, BID_REQUESTS, addBidResponse, done, ajax);
         const requestBid = JSON.parse(server.requests[0].requestBody);
 
         expect(requestBid.site).to.exist.and.to.be.a('object');
@@ -1997,13 +1990,19 @@ describe('S2S Adapter', function () {
       it('and merges domain and page with the config site value', function () {
         config.setConfig({
           s2sConfig: s2sConfig,
-          site: {
-            foo: 'bar'
-          },
-          device: device
         });
-
-        adapter.callBids(addFpdEnrichmentsToS2SRequest(s2sBidRequest, BID_REQUESTS), BID_REQUESTS, addBidResponse, done, ajax);
+        const s2sReq = addFpdEnrichmentsToS2SRequest({
+          ...s2sBidRequest,
+          ortb2Fragments: {
+            global: {
+              site: {
+                foo: 'bar'
+              },
+              device: device
+            }
+          }
+        }, BID_REQUESTS);
+        adapter.callBids(s2sReq, BID_REQUESTS, addBidResponse, done, ajax);
 
         const requestBid = JSON.parse(server.requests[0].requestBody);
         expect(requestBid.site).to.exist.and.to.be.a('object');
