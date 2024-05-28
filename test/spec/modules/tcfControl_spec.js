@@ -1,16 +1,17 @@
 import {
   accessDeviceRule,
+  ACTIVE_RULES,
   enrichEidsRule,
   fetchBidsRule,
-  transmitEidsRule,
-  transmitPreciseGeoRule,
   getGvlid,
   getGvlidFromAnalyticsAdapter,
-  ACTIVE_RULES,
   reportAnalyticsRule,
   setEnforcementConfig,
   STRICT_STORAGE_ENFORCEMENT,
-  syncUserRule, ufpdRule,
+  syncUserRule,
+  transmitEidsRule,
+  transmitPreciseGeoRule,
+  ufpdRule,
   validateRules
 } from 'modules/tcfControl.js';
 import {config} from 'src/config.js';
@@ -26,8 +27,7 @@ import * as events from 'src/events.js';
 import 'modules/appnexusBidAdapter.js'; // some tests expect this to be in the adapter registry
 import 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
-import {GDPR_GVLIDS, VENDORLESS_GVLID, FIRST_PARTY_GVLID} from '../../../src/consentHandler.js';
-import {validateStorageEnforcement} from '../../../src/storageManager.js';
+import {GDPR_GVLIDS, VENDORLESS_GVLID} from '../../../src/consentHandler.js';
 import {activityParams} from '../../../src/activities/activityParams.js';
 
 describe('gdpr enforcement', function () {
@@ -762,46 +762,51 @@ describe('gdpr enforcement', function () {
       })
     })
 
-    describe('when module does not need vendor consent', () => {
+    describe('first party modules', () => {
       Object.entries({
-        'storage': 1,
-        'basicAds': 2,
-        'measurement': 7,
-        'personalizedAds': 4,
-      }).forEach(([purpose, purposeNo]) => {
-        describe(`for purpose ${purpose}`, () => {
+        'storage': {
+          purposeNo: 1,
+          allowsLI: false
+        },
+        'basicAds': {
+          purposeNo: 2,
+          allowsLI: true
+        },
+        'measurement': {
+          purposeNo: 7,
+          allowsLI: true
+        },
+        'personalizedAds': {
+          purposeNo: 4,
+          allowsLI: false
+        },
+      }).forEach(([purpose, {purposeNo, allowsLI}]) => {
+        describe(`purpose ${purpose}`, () => {
+          let consent;
+          beforeEach(() => {
+            consent = utils.deepClone(consentData);
+          })
           const rule = createGdprRule(purpose);
           Object.entries({
             'allowed': true,
             'not allowed': false
           }).forEach(([t, consentGiven]) => {
-            it(`should be ${t} when purpose is ${t}`, () => {
-              const consent = utils.deepClone(consentData);
-              consent.vendorData.purpose.consents[purposeNo] = consentGiven;
-              // take legitimate interest out of the picture for this test
-              consent.vendorData.purpose.legitimateInterests = {};
+            it(`should be ${t} when publisher is ${t}`, () => {
+              consent.vendorData.publisher.consents[purposeNo] = consentGiven;
+              consent.vendorData.publisher.legitimateInterests[purposeNo] = false;
               const actual = validateRules(rule, consent, 'mockModule', VENDORLESS_GVLID);
               expect(actual).to.equal(consentGiven);
-            })
+            });
+          })
+          it(`should ${allowsLI ? '' : 'NOT '}be allowed when publisher consent is not given, but LI is`, () => {
+            consent.vendorData.publisher.consents[purposeNo] = false;
+            consent.vendorData.publisher.legitimateInterests[purposeNo] = true;
+            const actual = validateRules(rule, consent, 'mockModule', VENDORLESS_GVLID);
+            expect(actual).to.equal(allowsLI);
           })
         })
       })
     })
-
-    it('if validateRules is passed FIRST_PARTY_GVLID, it will use publisher.consents', () => {
-      const rule = createGdprRule();
-      const consentData = {
-        'vendorData': {
-          'publisher': {
-            'consents': {
-              '1': true
-            }
-          },
-        },
-      };
-      const result = validateRules(rule, consentData, 'cdep', FIRST_PARTY_GVLID);
-      expect(result).to.equal(true);
-    });
 
     describe('validateRules', function () {
       Object.entries({
