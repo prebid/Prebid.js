@@ -10,7 +10,7 @@ import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
 import 'modules/priceFloors.js';
-import 'modules/consentManagement.js';
+import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
 import {deepClone} from 'src/utils.js';
@@ -1087,7 +1087,6 @@ describe('OpenxRtbAdapter', function () {
             skipafter: 4,
             minduration: 10,
             maxduration: 30,
-            placement: 4,
             protocols: [8],
             w: 300,
             h: 250

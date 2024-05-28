@@ -566,7 +566,7 @@ describe('adnuntiusBidAdapter', function () {
       expect(request[0].url).to.equal(ENDPOINT_URL_VIDEO);
     });
 
-    it('should pass segments if available in config', function () {
+    it('should pass segments if available in config and merge from targeting', function () {
       const ortb2 = {
         user: {
           data: [{
@@ -580,10 +580,16 @@ describe('adnuntiusBidAdapter', function () {
         }
       };
 
+      bidderRequests[0].params.targeting = {
+        segments: ['merge-this', 'and-this']
+      };
+
       const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, { ortb2 }));
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
-      expect(request[0].url).to.equal(ENDPOINT_URL_SEGMENTS);
+      expect(request[0].url).to.equal(ENDPOINT_URL_SEGMENTS.replace('segment3', 'segment3,merge-this,and-this'));
+
+      delete bidderRequests[0].params.targeting;
     });
 
     it('should pass site data ext as key values to ad server', function () {
@@ -592,20 +598,28 @@ describe('adnuntiusBidAdapter', function () {
           ext: {
             data: {
               '12345': 'true',
-              '45678': 'true'
+              '45678': 'true',
+              '9090': 'should-be-overwritten'
             }
           }
         }
       };
-
+      bidderRequests[0].params.targeting = {
+        kv: {
+          'merge': ['this'],
+          '9090': ['take it over']
+        }
+      };
       const request = config.runWithBidder('adnuntius', () => spec.buildRequests(bidderRequests, { ortb2 }));
       expect(request.length).to.equal(1);
       expect(request[0]).to.have.property('url')
       const data = JSON.parse(request[0].data);
-      expect(data.adUnits[0].kv).to.have.property('12345');
       expect(data.adUnits[0].kv['12345']).to.equal('true');
-      expect(data.adUnits[0].kv).to.have.property('45678');
       expect(data.adUnits[0].kv['45678']).to.equal('true');
+      expect(data.adUnits[0].kv['9090'][0]).to.equal('take it over');
+      expect(data.adUnits[0].kv['merge'][0]).to.equal('this');
+
+      delete bidderRequests[0].params.targeting;
     });
 
     it('should skip passing site data ext if missing', function () {

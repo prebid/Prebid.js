@@ -1,6 +1,6 @@
 # Overview
 
-Module Name: pirIDSystem
+Module Name: ceeIdSystem
 Module Type: UserID Module
 Maintainer: pawel.grudzien@grupawp.pl
 
@@ -14,13 +14,13 @@ User identification system for WPM
 pbjs.setConfig({
     userSync: {
         userIds: [{
-            name: 'pirID',
+            name: 'ceeId',
             storage: {
                 type: 'cookie',
-                name: 'pirIdToken',
+                name: 'ceeIdToken',
                 expires: 7,
                 refreshInSeconds: 360
-            },
+            }
         }]
     }
 });

@@ -13,6 +13,7 @@
  * @property {string} pubKey
  * @property {string} url
  * @property {?string} keyName
+ * @property {?string} splitKey
  */
 
 import {deepClone, deepSetValue, isFn, isGptPubadsDefined, isNumber, logError, logInfo, generateUUID} from '../src/utils.js';
@@ -33,6 +34,7 @@ import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 const MODULE_NAME = 'browsi';
 
 const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME});
+const RANDOM = Math.floor(Math.random() * 10) + 1;
 
 /** @type {ModuleParams} */
 let _moduleParams = {};
@@ -58,10 +60,20 @@ export function addBrowsiTag(data) {
   script.setAttribute('id', 'browsi-tag');
   script.setAttribute('src', data.u);
   script.prebidData = deepClone(typeof data === 'string' ? Object(data) : data)
+  script.brwRandom = RANDOM;
   if (_moduleParams.keyName) {
     script.prebidData.kn = _moduleParams.keyName;
   }
   return script;
+}
+
+export function setKeyValue(key) {
+  if (!key || typeof key !== 'string') return false;
+  window.googletag = window.googletag || {cmd: []};
+  window.googletag.cmd = window.googletag.cmd || [];
+  window.googletag.cmd.push(() => {
+    window.googletag.pubads().setTargeting(key, RANDOM.toString());
+  });
 }
 
 export function sendPageviewEvent(eventType) {
@@ -380,6 +392,7 @@ function init(moduleConfig) {
   _moduleParams = moduleConfig.params;
   if (_moduleParams && _moduleParams.siteKey && _moduleParams.pubKey && _moduleParams.url) {
     collectData();
+    setKeyValue(_moduleParams.splitKey);
   } else {
     logError('missing params for Browsi provider');
   }

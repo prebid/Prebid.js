@@ -23,7 +23,7 @@ export const appnexusAliases = [
   { code: 'beintoo', gvlid: 618 },
   { code: 'projectagora', gvlid: 1032 },
   { code: 'uol', gvlid: 32 },
-  { code: 'adzymic', gvlid: 32 },
+  { code: 'adzymic', gvlid: 723 },
 ];
 
 /**

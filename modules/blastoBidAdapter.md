@@ -1,14 +1,14 @@
 # Overview
 
 ```
-Module Name: BizzClick SSP Bidder Adapter
+Module Name: Blasto SSP Bidder Adapter
 Module Type: Bidder Adapter
-Maintainer: support@bizzclick.com
+Maintainer: support@blasto.ai
 ```
 
 # Description
 
-Module that connects to BizzClick SSP demand sources
+Module that connects to Blasto SSP demand sources
 
 # Test Parameters
 
@@ -26,7 +26,7 @@ const adUnits = [
     },
     bids: [
       {
-        bidder: "bizzclick",
+        bidder: "blasto",
         params: {
           placementId: "hash",
           accountId: "accountId",
@@ -68,7 +68,7 @@ const adUnits = [
     },
     bids: [
       {
-        bidder: "bizzclick",
+        bidder: "blasto",
         params: {
           placementId: "hash",
           accountId: "accountId",
@@ -96,7 +96,7 @@ const adUnits = [
     },
     bids: [
       {
-        bidder: "bizzclick",
+        bidder: "blasto",
         params: {
           placementId: "hash",
           accountId: "accountId",

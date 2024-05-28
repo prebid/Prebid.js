@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { config } from 'src/config.js';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
-import { spec } from 'modules/yahoosspBidAdapter.js';
+import { spec } from 'modules/yahooAdsBidAdapter.js';
 import {createEidsArray} from '../../../modules/userId/eids';
 
 const DEFAULT_BID_ID = '84ab500420319d';
