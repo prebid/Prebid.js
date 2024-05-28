@@ -1,24 +1,15 @@
-import { isFn, deepAccess, logInfo, replaceAuctionPrice } from '../src/utils.js';
+import { logMessage, isFn, deepAccess, logInfo } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-// import { config } from '../src/config.js';
+import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
 const BIDDER_CODE = 'preciso';
-const COOKIE_NAME = '_sharedid';
 const AD_URL = 'https://ssp-bidder.mndtrk.com/bid_request/openrtb';
-// const AD_URL = 'http://localhost:80/bid_request/openrtb';
 const URL_SYNC = 'https://ck.2trk.info/rtb/user/usersync.aspx?';
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE, VIDEO];
 const GVLID = 874;
 let userId = 'NA';
-let precisoId = 'NA';
-let sharedId = 'NA'
-
-export const storage2 = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: BIDDER_CODE });
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'sharedId' });
 
 export const spec = {
   code: BIDDER_CODE,
@@ -26,40 +17,44 @@ export const spec = {
   gvlid: GVLID,
 
   isBidRequestValid: (bid) => {
-    sharedId = readFromAllStorages(COOKIE_NAME);
-    let precisoBid = true;
-    const preCall = 'https://ssp-usersync.mndtrk.com/getUUID?sharedId=' + sharedId;
-    precisoId = window.localStorage.getItem('_pre|id');
-
-    if (Object.is(precisoId, 'NA') || Object.is(precisoId, null) || Object.is(precisoId, undefined)) {
-      if (!bid.precisoBid) {
-        precisoBid = false;
-        getapi(preCall);
-      }
-    }
-
-    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.publisherId) && precisoBid);
+    return Boolean(bid.bidId && bid.params && !isNaN(bid.params.publisherId) && bid.params.host == 'prebid');
   },
 
   buildRequests: (validBidRequests = [], bidderRequest) => {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-    if (validBidRequests !== 'undefined' && validBidRequests.length > 0) {
-      userId = validBidRequests[0].userId.pubcid;
-    }
-    // let winTop = window;
-    // let location;
+    // userId = validBidRequests[0].userId.pubcid;
+    let winTop = window;
+    let location;
+    var offset = new Date().getTimezoneOffset();
+    logInfo('timezone ' + offset);
     var city = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    logInfo('location test' + city)
+
+    const countryCode = getCountryCodeByTimezone(city);
+    logInfo(`The country code for ${city} is ${countryCode}`);
+
+    // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
+    try {
+      location = new URL(bidderRequest.refererInfo.page)
+      winTop = window.top;
+    } catch (e) {
+      location = winTop.location;
+      logMessage(e);
+    };
+
     let request = {
-      // bidRequest: bidderRequest,
-      id: validBidRequests[0].auctionId,
-      cur: validBidRequests[0].params.currency || ['USD'],
+      id: validBidRequests[0].bidderRequestId,
+
       imp: validBidRequests.map(request => {
-        const { bidId, sizes } = request
+        const { bidId, sizes, mediaType, ortb2 } = request
         const item = {
           id: bidId,
+          region: request.params.region,
+          traffic: mediaType,
           bidFloor: getBidFloor(request),
-          bidfloorcur: request.params.currency
+          ortb2: ortb2
+
         }
 
         if (request.mediaTypes.banner) {
@@ -67,28 +62,38 @@ export const spec = {
             format: (request.mediaTypes.banner.sizes || sizes).map(size => {
               return { w: size[0], h: size[1] }
             }),
-
           }
+        }
+
+        if (request.schain) {
+          item.schain = request.schain;
+        }
+
+        if (request.floorData) {
+          item.bidFloor = request.floorData.floorMin;
         }
         return item
       }),
-      user: {
-        id: validBidRequests[0].userId.pubcid || '',
-        buyeruid: window.localStorage.getItem('_pre|id'),
-        geo: {
-          region: validBidRequests[0].params.region || city,
-        },
-
-      },
-      device: validBidRequests[0].ortb2.device,
-      site: validBidRequests[0].ortb2.site,
-      source: validBidRequests[0].ortb2.source,
-      bcat: validBidRequests[0].ortb2.bcat || validBidRequests[0].params.bcat,
-      badv: validBidRequests[0].ortb2.badv || validBidRequests[0].params.badv,
-      wlang: validBidRequests[0].ortb2.wlang || validBidRequests[0].params.wlang
+      auctionId: validBidRequests[0].auctionId,
+      'deviceWidth': winTop.screen.width,
+      'deviceHeight': winTop.screen.height,
+      'language': (navigator && navigator.language) ? navigator.language : '',
+      geo: navigator.geolocation.getCurrentPosition(position => {
+        const { latitude, longitude } = position.coords;
+        return {
+          latitude: latitude,
+          longitude: longitude
+        }
+        // Show a map centered at latitude / longitude.
+      }) || { utcoffset: new Date().getTimezoneOffset() },
+      city: city,
+      'host': location.host,
+      'page': location.pathname,
+      'coppa': config.getConfig('coppa') === true ? 1 : 0
+      // userId: validBidRequests[0].userId
     };
 
-    //  request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
+    request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
     if (bidderRequest) {
       if (bidderRequest.uspConsent) {
         request.ccpa = bidderRequest.uspConsent;
@@ -122,21 +127,21 @@ export const spec = {
           width: bid.w,
           height: bid.h,
           creativeId: bid.crid,
-          ad: macroReplace(bid.adm, bid.price),
+          ad: bid.adm,
           currency: 'USD',
           netRevenue: true,
           ttl: 300,
           meta: {
-            advertiserDomains: bid.adomain || '',
+            advertiserDomains: bid.adomain || [],
           },
         })
       })
     })
+
     return bids
   },
 
   getUserSyncs: (syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '', gppConsent = '') => {
-    userId = sharedId;
     let syncs = [];
     let { gdprApplies, consentString = '' } = gdprConsent;
 
@@ -160,10 +165,31 @@ export const spec = {
 
 };
 
-/* replacing auction_price macro from adm */
-function macroReplace(adm, cpm) {
-  let replacedadm = replaceAuctionPrice(adm, cpm);
-  return replacedadm;
+function getCountryCodeByTimezone(city) {
+  try {
+    const now = new Date();
+    const options = {
+      timeZone: city,
+      timeZoneName: 'long',
+    };
+    const [timeZoneName] = new Intl.DateTimeFormat('en-US', options)
+      .formatToParts(now)
+      .filter((part) => part.type === 'timeZoneName');
+
+    if (timeZoneName) {
+      // Extract the country code from the timezone name
+      const parts = timeZoneName.value.split('-');
+      if (parts.length >= 2) {
+        return parts[1];
+      }
+    }
+  } catch (error) {
+    // Handle errors, such as an invalid timezone city
+    logInfo(error);
+  }
+
+  // Handle the case where the city is not found or an error occurred
+  return 'Unknown';
 }
 
 function getBidFloor(bid) {
@@ -181,36 +207,6 @@ function getBidFloor(bid) {
   } catch (_) {
     return 0
   }
-}
-
-async function getapi(url) {
-  try {
-    // Storing response
-    const response = await fetch(url);
-
-    // Storing data in form of JSON
-    var data = await response.json();
-
-    const dataMap = new Map(Object.entries(data));
-
-    const uuidValue = dataMap.get('UUID');
-
-    if (!Object.is(uuidValue, null) && !Object.is(uuidValue, undefined)) {
-      storage2.setDataInLocalStorage('_pre|id', uuidValue);
-      logInfo('DEBUG nonNull uuidValue:' + uuidValue);
-    }
-
-    return data;
-  } catch (error) {
-    logInfo('Error in preciso precall' + error);
-  }
-}
-
-function readFromAllStorages(name) {
-  const fromCookie = storage.getCookie(name);
-  const fromLocalStorage = storage.getDataFromLocalStorage(name);
-
-  return fromCookie || fromLocalStorage || undefined;
 }
 
 registerBidder(spec);
