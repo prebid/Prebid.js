@@ -57,19 +57,12 @@ function buildRequests(bidRequests, bidderRequest) {
     region,
   };
 
-  const loadScriptPromise = window.lucead_prebid_load_promise;
+  window.lucead_prebid_data = companionData;
+  const fn = window.lucead_prebid;
 
-  (async () => {
-    if (!loadScriptPromise) { logError(`Please include the ${bidderName} RTD Provider`); }
-    await loadScriptPromise;
-    const fn = window.lucead_prebid;
-
-    if (fn) {
-      fn(companionData);
-    } else {
-      logError(`Failed to load the ${bidderName} script.`);
-    }
-  })();
+  if (fn && typeof fn === 'function') {
+    fn(companionData);
+  }
 
   return {
     method: 'POST',
