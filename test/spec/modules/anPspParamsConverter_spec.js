@@ -5,7 +5,6 @@ import { config } from '../../../src/config.js';
 import { deepClone } from '../../../src/utils';
 import adapterManager from '../../../src/adapterManager.js';
 
-
 describe('anPspParamsConverter', function () {
   let configStub;
   let resolveAliasStub;
@@ -119,7 +118,7 @@ describe('anPspParamsConverter', function () {
       resolveAliasStub.callsFake(function () {
         return 'appnexus';
       });
-      
+
       const testBidderRequests = deepClone(bidderRequests);
       testBidderRequests.bidderCode = 'aliasBidderTest';
 
@@ -130,14 +129,13 @@ describe('anPspParamsConverter', function () {
   tests.forEach((testCfg) => {
     it(testCfg.testName, function () {
       configStub.callsFake(testCfg.fakeConfigFn);
-  
+
       const testBidderRequests = testCfg.applyBidderRequestChanges();
 
-  
       convertAnParams(function () {
         didHookRun = true;
       }, testBidderRequests);
-  
+
       expect(didHookRun).to.equal(true);
       const resultParams = testBidderRequests[0].bids[0].params;
       expect(resultParams.member).to.equal('958');
