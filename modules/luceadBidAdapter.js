@@ -4,12 +4,11 @@
 
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {getUniqueIdentifierStr, deepSetValue, logInfo, logError} from '../src/utils.js';
+import {getUniqueIdentifierStr, deepSetValue, logInfo} from '../src/utils.js';
 import {fetch} from '../src/ajax.js';
 
 const gvlid = 1309;
 const bidderCode = 'lucead';
-const bidderName = 'Lucead';
 const defaultCurrency = 'EUR';
 const defaultTtl = 500;
 const aliases = ['adliveplus'];
