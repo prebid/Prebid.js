@@ -1,5 +1,4 @@
 import { parseSizesInput, _each } from '../src/utils.js';
-import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 
 /**
