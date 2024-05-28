@@ -645,52 +645,51 @@ describe('Aidem adapter', () => {
     });
 
     it(`should set gdpr to true`, function () {
-      /* config.setConfig({
-        consentManagement: {
-        consentManagement: {
-          gdpr: {
-            consentData: {
-              getTCData: {
-                tcString: 'Q1BsRDRFVVBsRDRFVUVXQUFBRU5DWkNBQUFBQUFBQUFBQUFBQUFBQUFBQUEuSUk3TmRfWF9fYlg5bi1fN182ZnQwZVkxZjlfcjM3dVF6RGhmTnMtOEYzTF9XX0x3WDMyRTdORjM2dHE0S21SNGt1MWJCSVFOdEhNblVEVW14YW9sVnJ6SHNhazJjcHlOS0pfSmtrbnNaZTJkWUdGOVBuOWxELVlLWjdfNV85X2Y1MlRfOV85Xy0zOXozXzlmX19fZHZfLV9fLXZqZl81OTluX3Y5ZlZfNzhfS2Y5X19fX19fLV9fX19fX19fX19fXzhB'
-              }
-            }
-          },
-        }
-      }); */
+      // config.setConfig({
+      //   consentManagement: {
+      //     gdpr: {
+      //       consentData: {
+      //         getTCData: {
+      //           tcString: 'Q1BsRDRFVVBsRDRFVUVXQUFBRU5DWkNBQUFBQUFBQUFBQUFBQUFBQUFBQUEuSUk3TmRfWF9fYlg5bi1fN182ZnQwZVkxZjlfcjM3dVF6RGhmTnMtOEYzTF9XX0x3WDMyRTdORjM2dHE0S21SNGt1MWJCSVFOdEhNblVEVW14YW9sVnJ6SHNhazJjcHlOS0pfSmtrbnNaZTJkWUdGOVBuOWxELVlLWjdfNV85X2Y1MlRfOV85Xy0zOXozXzlmX19fZHZfLV9fLXZqZl81OTluX3Y5ZlZfNzhfS2Y5X19fX19fLV9fX19fX19fX19fXzhB'
+      //         }
+      //       }
+      //     },
+      //   }
+      // });
       const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_GDPR_BIDDER_REQUEST);
       expect(data.regs.gdpr_applies).to.equal(true)
     });
 
     it(`should set usp_consent string`, function () {
-      /* config.setConfig({
-        consentManagement: {
-          usp: {
-            cmpApi: 'static',
-            consentData: {
-              getUSPData: {
-                uspString: '1YYY'
-              }
-            }
-          }
-        }
-      }); */
+      // config.setConfig({
+      //   consentManagement: {
+      //     usp: {
+      //       cmpApi: 'static',
+      //       consentData: {
+      //         getUSPData: {
+      //           uspString: '1YYY'
+      //         }
+      //       }
+      //     }
+      //   }
+      // });
       const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_USP_BIDDER_REQUEST);
       expect(data.regs.us_privacy).to.equal('1YYY')
     });
 
     it(`should not set usp_consent string`, function () {
-      /*config.setConfig({
-        consentManagement: {
-          usp: {
-            cmpApi: 'iab',
-            consentData: {
-              getUSPData: {
-                uspString: '1YYY'
-              }
-            }
-          }
-        }
-      });*/
+      // config.setConfig({
+      //   consentManagement: {
+      //     usp: {
+      //       cmpApi: 'iab',
+      //       consentData: {
+      //         getUSPData: {
+      //           uspString: '1YYY'
+      //         }
+      //       }
+      //     }
+      //   }
+      // });
       const { data } = spec.buildRequests(DEFAULT_VALID_BANNER_REQUESTS, VALID_BIDDER_REQUEST);
       expect(data.regs.us_privacy).to.undefined
     });
