@@ -6,26 +6,9 @@
 
 ## Description
 
-Module that connects to Lucead demand source to fetch bids.
-
-In order to use this adapter, you also need to include the Lucead RTD Provider module into your Prebid build.
+Module that connects to Lucead demand source.
 
 ## Adapter configuration
-
-Here is the configuration you need to add to your Prebid integration, in order to use this adapter:
-
-```javascript
-pbjs.setConfig({
-    realTimeData: {
-        dataProviders: [
-            {
-                name: 'lucead',
-                waitForIt: true,
-            },
-        ],
-    },
-});
-```
 
 ## Ad units parameters
 
@@ -46,10 +29,10 @@ const adUnits=[
         sizes:[[300,250]],
         bids:[
             {
-                bidder:'lucead',
+                bidder: 'lucead',
                 params:{
-                    placementId:'1',
-                    region:'us', // optional: 'eu', 'us', 'ap'
+                    placementId: '1',
+                    region: 'us', // optional: 'eu', 'us', 'ap'
                 }
             }
         ]

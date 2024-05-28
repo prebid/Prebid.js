@@ -1,9 +1,5 @@
 /**
- * Lucead Bid Adapter
- * Must be used with the Lucead RTD Provider.
- *
  * @module modules/luceadBidAdapter
- * @requires module:modules/luceadRtdProvider
  */
 
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
