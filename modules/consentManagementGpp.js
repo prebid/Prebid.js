@@ -70,13 +70,18 @@ export class GPPClient {
    *  - a promise to GPP data.
    */
   static init(mkCmp = cmpClient) {
-    if (this.INST == null) {
-      this.INST = this.ping(mkCmp).catch(e => {
-        this.INST = null;
+    let inst = this.INST;
+    if (!inst) {
+      let err;
+      const reset = () => err && (this.INST = null);
+      inst = this.INST = this.ping(mkCmp).catch(e => {
+        err = true;
+        reset();
         throw e;
       });
+      reset();
     }
-    return this.INST.then(([client, pingData]) => [
+    return inst.then(([client, pingData]) => [
       client,
       client.initialized ? client.refresh() : client.init(pingData)
     ]);

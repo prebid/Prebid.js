@@ -18,6 +18,11 @@ const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_NET_REVENUE = true;
 const PANGLE_COOKIE = '_pangle_id';
 const COOKIE_EXP = 86400 * 1000 * 365 * 1; // 1 year
+const MEDIA_TYPES = {
+  Banner: 1,
+  Video: 2
+};
+
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: BIDDER_CODE })
 
 export function isValidUuid(uuid) {
@@ -104,12 +109,20 @@ const converter = ortbConverter({
     currency: DEFAULT_CURRENCY,
   },
   bidResponse(buildBidResponse, bid, context) {
-    const bidResponse = buildBidResponse(bid, context);
     const { bidRequest } = context;
-    if (bidRequest.mediaTypes.video?.context === 'outstream') {
-      const renderer = Renderer.install({id: bid.bidId, url: OUTSTREAM_RENDERER_URL, adUnitCode: bid.adUnitCode});
-      renderer.setRender(renderOutstream);
-      bidResponse.renderer = renderer;
+    let bidResponse;
+    if (bid.mtype === MEDIA_TYPES.Video) {
+      context.mediaType = VIDEO;
+      bidResponse = buildBidResponse(bid, context);
+      if (bidRequest.mediaTypes.video?.context === 'outstream') {
+        const renderer = Renderer.install({id: bid.bidId, url: OUTSTREAM_RENDERER_URL, adUnitCode: bid.adUnitCode});
+        renderer.setRender(renderOutstream);
+        bidResponse.renderer = renderer;
+      }
+    }
+    if (bid.mtype === MEDIA_TYPES.Banner) {
+      context.mediaType = BANNER;
+      bidResponse = buildBidResponse(bid, context);
     }
     return bidResponse;
   },

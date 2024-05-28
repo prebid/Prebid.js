@@ -14,6 +14,7 @@ const ALIASES = [
   {code: 'futureads', endpoint: 'https://ads.futureads.io/prebid.1.2.aspx'},
   {code: 'smn', endpoint: 'https://ads.smn.rs/prebid.1.2.aspx'},
   {code: 'admixeradx', endpoint: 'https://inv-nets.admixer.net/adxprebid.1.2.aspx'},
+  {code: 'admixerwl', endpoint: 'https://inv-nets-adxwl.admixer.com/adxwlprebid.aspx'},
 ];
 export const spec = {
   code: BIDDER_CODE,
@@ -23,7 +24,9 @@ export const spec = {
    * Determines whether or not the given bid request is valid.
    */
   isBidRequestValid: function (bid) {
-    return !!bid.params.zone;
+    return bid.bidder === 'admixerwl'
+      ? !!bid.params.clientId && !!bid.params.endpointId
+      : !!bid.params.zone;
   },
   /**
    * Make a server request from the list of BidRequests.
@@ -76,10 +79,11 @@ export const spec = {
       imp.ortb2 && delete imp.ortb2;
       payload.imps.push(imp);
     });
+
+    let urlForRequest = endpointUrl || getEndpointUrl(bidderRequest.bidderCode)
     return {
       method: 'POST',
-      url:
-        endpointUrl || getEndpointUrl(bidderRequest.bidderCode),
+      url: bidderRequest.bidderCode === 'admixerwl' ? `${urlForRequest}?client=${payload.imps[0]?.params?.clientId}` : urlForRequest,
       data: payload,
     };
   },

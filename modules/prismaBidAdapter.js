@@ -44,20 +44,20 @@ export const spec = {
   aliases: ['prismadirect'], // short code
   supportedMediaTypes: [BANNER, VIDEO],
   /**
-         * Determines whether or not the given bid request is valid.
-         *
-         * @param {BidRequest} bid The bid params to validate.
-         * @return boolean True if this is a valid bid, and false otherwise.
-         */
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid params to validate.
+   * @return boolean True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function(bid) {
     return !!(bid.params.account && bid.params.tagId);
   },
   /**
-         * Make a server request from the list of BidRequests.
-         *
-         * @param {validBidRequests[]} - an array of bids
-         * @return ServerRequest Info describing the request to the server.
-         */
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {validBidRequests[]} - an array of bids
+   * @return ServerRequest Info describing the request to the server.
+   */
   buildRequests: function(validBidRequests, bidderRequest) {
     const adUnits = [];
     const test = config.getConfig('debug') ? 1 : 0;
@@ -109,11 +109,11 @@ export const spec = {
     };
   },
   /**
-         * Unpack the response from the server into a list of bids.
-         *
-         * @param {ServerResponse} serverResponse A successful response from the server.
-         * @return {Bid[]} An array of bids which were nested inside the server.
-         */
+   * Unpack the response from the server into a list of bids.
+   *
+   * @param {ServerResponse} serverResponse A successful response from the server.
+   * @return {Bid[]} An array of bids which were nested inside the server.
+   */
   interpretResponse: function(serverResponse, bidRequest) {
     const serverBody = serverResponse.body;
     const bidResponses = [];
@@ -163,12 +163,12 @@ export const spec = {
   },
 
   /**
-     * Register the user sync pixels which should be dropped after the auction.
-     *
-     * @param {SyncOptions} syncOptions Which user syncs are allowed?
-     * @param {ServerResponse[]} serverResponses List of server's responses.
-     * @return {UserSync[]} The user syncs which should be dropped.
-     */
+   * Register the user sync pixels which should be dropped after the auction.
+   *
+   * @param {SyncOptions} syncOptions Which user syncs are allowed?
+   * @param {ServerResponse[]} serverResponses List of server's responses.
+   * @return {UserSync[]} The user syncs which should be dropped.
+   */
   getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
     if (typeof serverResponses === 'object' && serverResponses != null && serverResponses.length > 0 && serverResponses[0].hasOwnProperty('body') &&
         serverResponses[0].body.hasOwnProperty('cookies') && typeof serverResponses[0].body.cookies === 'object') {
@@ -179,9 +179,9 @@ export const spec = {
   },
 
   /**
-     * Register bidder specific code, which will execute if a bid from this bidder won the auction
-     * @param {Bid} The bid that won the auction
-     */
+   * Register bidder specific code, which will execute if a bid from this bidder won the auction
+   * @param {Bid} The bid that won the auction
+   */
   onBidWon: function(bid) {
     // fires a pixel to confirm a winning bid
     const params = { type: 'prebid', mediatype: 'banner' };

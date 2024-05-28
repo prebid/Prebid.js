@@ -178,6 +178,16 @@ describe('minutemediaAdapter', function () {
       expect(request.data.bids[1].mediaType).to.equal(BANNER)
     });
 
+    it('should send the correct currency in bid request', function () {
+      const bid = utils.deepClone(bidRequests[0]);
+      bid.params = {
+        'currency': 'EUR'
+      };
+      const expectedCurrency = bid.params.currency;
+      const request = spec.buildRequests([bid], bidderRequest);
+      expect(request.data.bids[0].currency).to.equal(expectedCurrency);
+    });
+
     it('should respect syncEnabled option', function() {
       config.setConfig({
         userSync: {

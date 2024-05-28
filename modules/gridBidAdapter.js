@@ -18,7 +18,7 @@ import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'grid';
 const ENDPOINT_URL = 'https://grid.bidswitch.net/hbjson';
-const USP_DELETE_DATA_HANDLER = 'https://media.grid.bidswitch.net/uspapi_delete'
+const USP_DELETE_DATA_HANDLER = 'https://media.grid.bidswitch.net/uspapi_delete_c2s'
 
 const SYNC_URL = 'https://x.bidswitch.net/sync?ssp=themediagrid';
 const TIME_TO_LIVE = 360;
@@ -464,16 +464,7 @@ export const spec = {
   },
 
   onDataDeletionRequest: function(data) {
-    const uids = [];
-    const aliases = [spec.code, ...spec.aliases.map((alias) => alias.code || alias)];
-    data.forEach(({ bids }) => bids && bids.forEach(({ bidder, params }) => {
-      if (aliases.includes(bidder) && params && params.uid) {
-        uids.push(params.uid);
-      }
-    }));
-    if (uids.length) {
-      spec.ajaxCall(USP_DELETE_DATA_HANDLER, () => {}, JSON.stringify({ uids }), {contentType: 'application/json', method: 'POST'});
-    }
+    spec.ajaxCall(USP_DELETE_DATA_HANDLER, null, null, {method: 'GET'});
   }
 };
 

@@ -207,7 +207,7 @@ getConfig('s2sConfig', ({s2sConfig}) => setS2sConfig(s2sConfig));
 
 /**
  * resets the _synced variable back to false, primiarily used for testing purposes
-*/
+ */
 export function resetSyncedStatus() {
   _syncCount = 0;
 }
@@ -478,13 +478,13 @@ export function PrebidServer() {
               adapterMetrics
             });
           }
-          done();
+          done(false);
           doClientSideSyncs(requestedBidders, gdprConsent, uspConsent, gppConsent);
         },
         onError(msg, error) {
           logError(`Prebid server call failed: '${msg}'`, error);
           bidRequests.forEach(bidderRequest => events.emit(CONSTANTS.EVENTS.BIDDER_ERROR, {error, bidderRequest}));
-          done();
+          done(error.timedOut);
         },
         onBid: function ({adUnit, bid}) {
           const metrics = bid.metrics = s2sBidRequest.metrics.fork().renameWith();
@@ -593,7 +593,7 @@ function shouldEmitNonbids(s2sConfig, response) {
 /**
  * Global setter that sets eids permissions for bidders
  * This setter is to be used by userId module when included
- * @param {array} newEidPermissions
+ * @param {Array} newEidPermissions
  */
 function setEidPermissions(newEidPermissions) {
   eidPermissions = newEidPermissions;

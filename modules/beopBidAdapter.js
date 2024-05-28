@@ -23,11 +23,11 @@ export const spec = {
   gvlid: TCF_VENDOR_ID,
   aliases: ['bp'],
   /**
-    * Test if the bid request is valid.
-    *
-    * @param {bid} : The Bid params
-    * @return boolean true if the bid request is valid (aka contains a valid accountId or networkId and is open for BANNER), false otherwise.
-    */
+   * Test if the bid request is valid.
+   *
+   * @param {bid} : The Bid params
+   * @return boolean true if the bid request is valid (aka contains a valid accountId or networkId and is open for BANNER), false otherwise.
+   */
   isBidRequestValid: function(bid) {
     const id = bid.params.accountId || bid.params.networkId;
     if (id === null || typeof id === 'undefined') {
@@ -39,12 +39,12 @@ export const spec = {
     return bid.mediaTypes.banner !== null && typeof bid.mediaTypes.banner !== 'undefined';
   },
   /**
-    * Create a BeOp server request from a list of BidRequest
-    *
-    * @param {validBidRequests[], ...} : The array of validated bidRequests
-    * @param {... , bidderRequest} : Common params for each bidRequests
-    * @return ServerRequest Info describing the request to the BeOp's server
-    */
+   * Create a BeOp server request from a list of BidRequest
+   *
+   * @param {validBidRequests[], ...} : The array of validated bidRequests
+   * @param {... , bidderRequest} : Common params for each bidRequests
+   * @return ServerRequest Info describing the request to the BeOp's server
+   */
   buildRequests: function(validBidRequests, bidderRequest) {
     const slots = validBidRequests.map(beOpRequestSlotsMaker);
     const firstPartyData = bidderRequest.ortb2 || {};

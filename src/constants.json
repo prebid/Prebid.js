@@ -46,7 +46,8 @@
     "AUCTION_DEBUG": "auctionDebug",
     "BID_VIEWABLE": "bidViewable",
     "STALE_RENDER": "staleRender",
-    "BILLABLE_EVENT": "billableEvent"
+    "BILLABLE_EVENT": "billableEvent",
+    "BID_ACCEPTED": "bidAccepted"
   },
   "AD_RENDER_FAILED_REASON": {
     "PREVENT_WRITING_ON_MAIN_DOCUMENT": "preventWritingOnMainDocument",
@@ -176,6 +177,8 @@
 	"AD_UNIT": "adUnit",
 	"SET_CONFIG": "setConfig",
 	"FETCH": "fetch",
-	"SUCCESS": "success"
+	"SUCCESS": "success",
+	"ERROR": "error",
+	"TIMEOUT": "timeout"
   }
 }

@@ -588,6 +588,43 @@ describe('sharethrough adapter spec', function () {
         });
       });
 
+      describe('cookie deprecation', () => {
+        it('should not add cdep if we do not get it in an impression request', () => {
+          const builtRequests = spec.buildRequests(bidRequests, {
+            auctionId: 'new-auction-id',
+            ortb2: {
+              device: {
+                ext: {
+                  propThatIsNotCdep: 'value-we-dont-care-about',
+                },
+              },
+            },
+          });
+          const noCdep = builtRequests.every((builtRequest) => {
+            const ourCdepValue = builtRequest.data.device?.ext?.cdep;
+            return ourCdepValue === undefined;
+          });
+          expect(noCdep).to.be.true;
+        });
+
+        it('should add cdep if we DO get it in an impression request', () => {
+          const builtRequests = spec.buildRequests(bidRequests, {
+            auctionId: 'new-auction-id',
+            ortb2: {
+              device: {
+                ext: {
+                  cdep: 'cdep-value',
+                },
+              },
+            },
+          });
+          const cdepPresent = builtRequests.every((builtRequest) => {
+            return builtRequest.data.device.ext.cdep === 'cdep-value';
+          });
+          expect(cdepPresent).to.be.true;
+        });
+      });
+
       describe('first party data', () => {
         const firstPartyData = {
           site: {

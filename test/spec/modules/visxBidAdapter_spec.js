@@ -1257,6 +1257,7 @@ describe('VisxAdapter', function () {
       const request = spec.buildRequests(bidRequests);
       const pendingUrl = 'https://t.visx.net/track/pending/123123123';
       const winUrl = 'https://t.visx.net/track/win/53245341';
+      const runtimeUrl = 'https://t.visx.net/track/status/12345678';
       const expectedResponse = [
         {
           'requestId': '300bfeb0d71a5b',
@@ -1281,7 +1282,8 @@ describe('VisxAdapter', function () {
           'ext': {
             'events': {
               'pending': pendingUrl,
-              'win': winUrl
+              'win': winUrl,
+              'runtime': runtimeUrl
             },
             'targeting': {
               'hb_visx_product': 'understitial',
@@ -1297,6 +1299,9 @@ describe('VisxAdapter', function () {
       utils.deepSetValue(serverResponse.bid[0], 'ext.prebid.events', {
         pending: pendingUrl,
         win: winUrl,
+      });
+      utils.deepSetValue(serverResponse.bid[0], 'ext.visx.events', {
+        runtime: runtimeUrl
       });
       const result = spec.interpretResponse({'body': {'seatbid': [serverResponse]}}, request);
       expect(result).to.deep.equal(expectedResponse);
@@ -1323,6 +1328,39 @@ describe('VisxAdapter', function () {
       const bid = { ext: { events: { win: trackUrl } } };
       spec.onBidWon(bid);
       expect(utils.triggerPixel.calledOnceWith(trackUrl)).to.equal(true);
+    });
+
+    it('onBidWon with runtime tracker (0 < timeToRespond <= 5000 )', function () {
+      const trackUrl = 'https://t.visx.net/track/win/123123123';
+      const runtimeUrl = 'https://t.visx.net/track/status/12345678/{STATUS_CODE}';
+      const bid = { auctionId: '1', ext: { events: { win: trackUrl, runtime: runtimeUrl } }, timeToRespond: 100 };
+      spec.onBidWon(bid);
+      expect(utils.triggerPixel.calledTwice).to.equal(true);
+      expect(utils.triggerPixel.calledWith(trackUrl)).to.equal(true);
+      expect(utils.triggerPixel.calledWith(runtimeUrl.replace('{STATUS_CODE}', 999002))).to.equal(true);
+    });
+
+    it('onBidWon with runtime tracker (timeToRespond <= 0 )', function () {
+      const runtimeUrl = 'https://t.visx.net/track/status/12345678/{STATUS_CODE}';
+      const bid = { auctionId: '2', ext: { events: { runtime: runtimeUrl } }, timeToRespond: 0 };
+      spec.onBidWon(bid);
+      expect(utils.triggerPixel.calledOnceWith(runtimeUrl.replace('{STATUS_CODE}', 999000))).to.equal(true);
+    });
+
+    it('onBidWon with runtime tracker (timeToRespond > 5000 )', function () {
+      const runtimeUrl = 'https://t.visx.net/track/status/12345678/{STATUS_CODE}';
+      const bid = { auctionId: '3', ext: { events: { runtime: runtimeUrl } }, timeToRespond: 5001 };
+      spec.onBidWon(bid);
+      expect(utils.triggerPixel.calledOnceWith(runtimeUrl.replace('{STATUS_CODE}', 999100))).to.equal(true);
+    });
+
+    it('onBidWon runtime tracker should be called once per auction', function () {
+      const runtimeUrl = 'https://t.visx.net/track/status/12345678/{STATUS_CODE}';
+      const bid1 = { auctionId: '4', ext: { events: { runtime: runtimeUrl } }, timeToRespond: 100 };
+      spec.onBidWon(bid1);
+      const bid2 = { auctionId: '4', ext: { events: { runtime: runtimeUrl } }, timeToRespond: 200 };
+      spec.onBidWon(bid2);
+      expect(utils.triggerPixel.calledOnceWith(runtimeUrl.replace('{STATUS_CODE}', 999002))).to.equal(true);
     });
 
     it('onTimeout', function () {

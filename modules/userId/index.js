@@ -668,8 +668,8 @@ function encryptSignals(signals, version = 1) {
 }
 
 /**
-* This function will be exposed in the global-name-space so that publisher can register the signals-ESP.
-*/
+ * This function will be exposed in the global-name-space so that publisher can register the signals-ESP.
+ */
 function registerSignalSources() {
   if (!isGptPubadsDefined()) {
     return;
@@ -886,14 +886,12 @@ function updateInitializedSubmodules(dest, submodule) {
 
 /**
  * list of submodule configurations with valid 'storage' or 'value' obj definitions
- * * storage config: contains values for storing/retrieving User ID data in browser storage
- * * value config: object properties that are copied to bids (without saving to storage)
+ * storage config: contains values for storing/retrieving User ID data in browser storage
+ * value config: object properties that are copied to bids (without saving to storage)
  * @param {SubmoduleConfig[]} configRegistry
- * @param {Submodule[]} submoduleRegistry
- * @param {string[]} activeStorageTypes
  * @returns {SubmoduleConfig[]}
  */
-function getValidSubmoduleConfigs(configRegistry, submoduleRegistry) {
+function getValidSubmoduleConfigs(configRegistry) {
   if (!Array.isArray(configRegistry)) {
     return [];
   }
@@ -958,7 +956,7 @@ function updateEIDConfig(submodules) {
  */
 function updateSubmodules() {
   updateEIDConfig(submoduleRegistry);
-  const configs = getValidSubmoduleConfigs(configRegistry, submoduleRegistry);
+  const configs = getValidSubmoduleConfigs(configRegistry);
   if (!configs.length) {
     return;
   }

@@ -4,6 +4,8 @@ import {
   spec
 } from 'modules/richaudienceBidAdapter.js';
 import {config} from 'src/config.js';
+import * as utils from 'src/utils.js';
+import sinon from 'sinon';
 
 describe('Richaudience adapter tests', function () {
   var DEFAULT_PARAMS_NEW_SIZES = [{
@@ -63,6 +65,30 @@ describe('Richaudience adapter tests', function () {
     transactionId: '29df2112-348b-4961-8863-1b33684d95e6',
     user: {}
   }];
+
+  var DEFAULT_PARAMS_VIDEO_TIMEOUT = [{
+    adUnitCode: 'test-div',
+    bidId: '2c7c8e9c900244',
+    mediaTypes: {
+      video: {
+        context: 'instream',
+        playerSize: [640, 480],
+        mimes: ['video/mp4']
+      }
+    },
+    bidder: 'richaudience',
+    params: [{
+      bidfloor: 0.5,
+      pid: 'ADb1f40rmi',
+      supplyType: 'site'
+    }],
+    timeout: 3000,
+    auctionId: '0cb3144c-d084-4686-b0d6-f5dbe917c563',
+    bidRequestsCount: 1,
+    bidderRequestId: '1858b7382993ca',
+    transactionId: '29df2112-348b-4961-8863-1b33684d95e6',
+    user: {}
+  }]
 
   var DEFAULT_PARAMS_VIDEO_IN = [{
     adUnitCode: 'test-div',
@@ -878,6 +904,24 @@ describe('Richaudience adapter tests', function () {
     const requestContent = JSON.parse(request[0].data);
     expect(requestContent).to.have.property('gpid').and.to.equal('/19968336/header-bid-tag-1#example-2');
   })
+
+  describe('onTimeout', function () {
+    beforeEach(function() {
+      sinon.stub(utils, 'triggerPixel');
+    });
+
+    afterEach(function() {
+      utils.triggerPixel.restore();
+    });
+    it('onTimeout exist as a function', () => {
+      expect(spec.onTimeout).to.exist.and.to.be.a('function');
+    });
+    it('should send timeout', function () {
+      spec.onTimeout(DEFAULT_PARAMS_VIDEO_TIMEOUT);
+      expect(utils.triggerPixel.called).to.equal(true);
+      expect(utils.triggerPixel.firstCall.args[0]).to.equal('https://s.richaudience.com/err/?ec=6&ev=3000&pla=ADb1f40rmi&int=PREBID&pltfm=&node=&dm=localhost:9876');
+    });
+  });
 
   describe('userSync', function () {
     it('Verifies user syncs iframe include', function () {

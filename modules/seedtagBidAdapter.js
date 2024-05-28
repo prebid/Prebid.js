@@ -107,7 +107,6 @@ function buildBidRequest(validBidRequest) {
       return mediaTypesMap[pbjsType];
     }
   );
-
   const bidRequest = {
     id: validBidRequest.bidId,
     transactionId: validBidRequest.ortb2Imp?.ext?.tid,
@@ -115,6 +114,7 @@ function buildBidRequest(validBidRequest) {
     supplyTypes: mediaTypes,
     adUnitId: params.adUnitId,
     adUnitCode: validBidRequest.adUnitCode,
+    geom: geom(validBidRequest.adUnitCode),
     placement: params.placement,
     requestCount: validBidRequest.bidderRequestsCount || 1, // FIXME : in unit test the parameter bidderRequestsCount is undefined
   };
@@ -196,6 +196,27 @@ function ttfb() {
   // @see https://github.com/googleChrome/web-vitals/issues/162
   //      https://github.com/googleChrome/web-vitals/issues/137
   return ttfb >= 0 && ttfb <= performance.now() ? ttfb : 0;
+}
+
+function geom(adunitCode) {
+  const slot = document.getElementById(adunitCode);
+  if (slot) {
+    const scrollY = window.scrollY;
+    const { top, left, width, height } = slot.getBoundingClientRect();
+    const viewport = {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+
+    return {
+      scrollY,
+      top,
+      left,
+      width,
+      height,
+      viewport,
+    };
+  }
 }
 
 export function getTimeoutUrl(data) {

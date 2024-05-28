@@ -159,7 +159,6 @@ export const spec = {
               withCredentials: true,
             },
             bidder: 'theadx',
-            // TODO: is 'page' the right value here?
             referrer: encodeURIComponent(bidderRequest.refererInfo.page || ''),
             data: generatePayload(bidRequest, bidderRequest),
             mediaTypes: bidRequest['mediaTypes'],
@@ -261,6 +260,7 @@ export const spec = {
           ad: creative,
           ttl: ttl || 3000,
           creativeId: bid.crid,
+          dealId: bid.dealid || null,
           netRevenue: true,
           currency: responseBody.cur,
           mediaType: mediaType,
@@ -466,11 +466,19 @@ let generateImpBody = (bidRequest, bidderRequest) => {
   } else if (mediaTypes && mediaTypes.native) {
     native = generateNativeComponent(bidRequest, bidderRequest);
   }
-
   const result = {
     id: bidRequest.index,
     tagid: bidRequest.params.tagId + '',
   };
+
+  // deals support
+  if (bidRequest.params.deals && Array.isArray(bidRequest.params.deals) && bidRequest.params.deals.length > 0) {
+    result.pmp = {
+      deals: bidRequest.params.deals,
+      private_auction: 0,
+    };
+  }
+
   if (banner) {
     result['banner'] = banner;
   }

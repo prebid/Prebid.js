@@ -47,7 +47,7 @@ describe('YieldmoAdapter', function () {
       video: {
         playerSize: [640, 480],
         context: 'instream',
-        mimes: ['video/mp4']
+        mimes: ['video/mp4'],
       },
     },
     params: {
@@ -61,11 +61,11 @@ describe('YieldmoAdapter', function () {
         api: [2, 3],
         skipppable: true,
         playbackmethod: [1, 2],
-        ...videoParams
-      }
+        ...videoParams,
+      },
     },
     transactionId: '54a58774-7a41-494e-8cbc-fa7b79164f0c',
-    ...rootParams
+    ...rootParams,
   });
 
   const mockBidderRequest = (params = {}, bids = [mockBannerBid()]) => ({
@@ -458,6 +458,16 @@ describe('YieldmoAdapter', function () {
       it('should add mediaTypes.video.mimes prop to the imp.video', function () {
         utils.deepAccess(videoBid, 'mediaTypes.video')['minduration'] = ['video/mp4'];
         expect(buildVideoBidAndGetVideoParam().minduration).to.deep.equal(['video/mp4']);
+      });
+
+      it('should add plcmt value to the imp.video', function () {
+        const videoBid = mockVideoBid({}, {}, { plcmt: 1 });
+        expect(utils.deepAccess(videoBid, 'params.video')['plcmt']).to.equal(1);
+      });
+
+      it('should add start delay if plcmt value is not 1', function () {
+        const videoBid = mockVideoBid({}, {}, { plcmt: 2 });
+        expect(build([videoBid])[0].data.imp[0].video.startdelay).to.equal(0);
       });
 
       it('should override mediaTypes.video.mimes prop if params.video.mimes is present', function () {

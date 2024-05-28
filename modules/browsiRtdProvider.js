@@ -25,6 +25,11 @@ import {getGlobal} from '../src/prebidGlobal.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
+
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 const MODULE_NAME = 'browsi';
 
 const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: MODULE_NAME});
@@ -88,6 +93,7 @@ export function collectData() {
   let predictorData = {
     ...{
       sk: _moduleParams.siteKey,
+      pk: _moduleParams.pubKey,
       sw: (win.screen && win.screen.width) || -1,
       sh: (win.screen && win.screen.height) || -1,
       url: `${doc.location.protocol}//${doc.location.host}${doc.location.pathname}`,
@@ -134,7 +140,6 @@ function getRTD(auc) {
       const adSlot = getSlotByCode(uc);
       const identifier = adSlot ? getMacroId(_browsiData['pmd'], adSlot) : uc;
       const _pd = _bp[identifier];
-      rp[uc] = getKVObject(-1);
       if (!_pd) {
         return rp
       }
@@ -275,7 +280,7 @@ function getPredictionsFromServer(url) {
         if (req.status === 200) {
           try {
             const data = JSON.parse(response);
-            if (data && data.p && data.kn) {
+            if (data) {
               setData({p: data.p, kn: data.kn, pmd: data.pmd, bet: data.bet});
             } else {
               setData({});

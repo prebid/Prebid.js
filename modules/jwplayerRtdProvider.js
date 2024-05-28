@@ -16,6 +16,11 @@ import {deepAccess, logError} from '../src/utils.js';
 import {find} from '../src/polyfill.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ * @typedef {import('../modules/rtdModule/index.js').adUnit} adUnit
+ */
+
 const SUBMODULE_NAME = 'jwplayer';
 const JWPLAYER_DOMAIN = SUBMODULE_NAME + '.com';
 const segCache = {};
@@ -26,16 +31,16 @@ let resumeBidRequest;
 /** @type {RtdSubmodule} */
 export const jwplayerSubmodule = {
   /**
-     * used to link submodule with realTimeData
-     * @type {string}
-     */
+   * used to link submodule with realTimeData
+   * @type {string}
+   */
   name: SUBMODULE_NAME,
   /**
-     * add targeting data to bids and signal completion to realTimeData module
-     * @function
-     * @param {Obj} bidReqConfig
-     * @param {function} onDone
-     */
+   * add targeting data to bids and signal completion to realTimeData module
+   * @function
+   * @param {Obj} bidReqConfig
+   * @param {function} onDone
+   */
   getBidRequestData: enrichBidRequest,
   init
 };

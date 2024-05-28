@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "8.25.0-pre",
+  "version": "8.33.0",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -58,6 +58,7 @@
     "eslint": "^7.27.0",
     "eslint-config-standard": "^10.2.1",
     "eslint-plugin-import": "^2.20.2",
+    "eslint-plugin-jsdoc": "^38.1.6",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prebid": "file:./plugins/eslint",
     "eslint-plugin-promise": "^5.1.0",
@@ -133,7 +134,7 @@
     "express": "^4.15.4",
     "fun-hooks": "^0.9.9",
     "just-clone": "^1.0.2",
-    "live-connect-js": "^6.3.0"
+    "live-connect-js": "^6.3.4"
   },
   "optionalDependencies": {
     "fsevents": "^2.3.2"

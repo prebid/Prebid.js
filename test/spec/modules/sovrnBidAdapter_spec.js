@@ -318,6 +318,41 @@ describe('sovrnBidAdapter', function() {
       expect(data.regs.ext['us_privacy']).to.equal(bidderRequest.uspConsent)
     })
 
+    it('should not set coppa when coppa is undefined', function () {
+      const bidderRequest = {
+        ...baseBidderRequest,
+        bidderCode: 'sovrn',
+        auctionId: '1d1a030790a475',
+        bidderRequestId: '22edbae2733bf6',
+        timeout: 3000,
+        bids: [baseBidRequest],
+        gdprConsent: {
+          consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==',
+          gdprApplies: true
+        },
+      }
+      const {regs} = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+      expect(regs.coppa).to.be.undefined
+    })
+
+    it('should set coppa to 1 when coppa is provided with value true', function () {
+      const bidderRequest = {
+        ...baseBidderRequest,
+        ortb2: {
+          regs: {
+            coppa: true
+          }
+        },
+        bidderCode: 'sovrn',
+        auctionId: '1d1a030790a475',
+        bidderRequestId: '22edbae2733bf6',
+        timeout: 3000,
+        bids: [baseBidRequest]
+      }
+      const {regs} = JSON.parse(spec.buildRequests([baseBidRequest], bidderRequest).data)
+      expect(regs.coppa).to.equal(1)
+    })
+
     it('should send gpp info in OpenRTB 2.6 location when gppConsent defined', function () {
       const bidderRequest = {
         ...baseBidderRequest,

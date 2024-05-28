@@ -38,7 +38,7 @@ var nativeAssetMap = {
 
 /**
  * return native asset type, based on asset id
- * @param {int} id - native asset id
+ * @param {number} id - native asset id
  * @returns {string} asset type
  */
 const getNativeAssetType = id => {
@@ -164,7 +164,7 @@ const applyClientHints = ortbRequest => {
     Check / generate page view id
     Should be generated dureing first call to applyClientHints(),
     and re-generated if pathname has changed
-  */
+   */
   if (!pageView.id || location.pathname !== pageView.path) {
     pageView.path = location.pathname;
     pageView.id = Math.floor(1E20 * Math.random()).toString();

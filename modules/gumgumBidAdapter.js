@@ -345,15 +345,15 @@ function buildRequests(validBidRequests, bidderRequest) {
     // ADTS-134 Retrieve ID envelopes
     for (const eid in eids) data[eid] = eids[eid];
 
-    // ADJS-1024 & ADSS-1297 & ADTS-175
-    gpid && (data.gpid = gpid);
-
     if (mediaTypes.banner) {
       sizes = mediaTypes.banner.sizes;
     } else if (mediaTypes.video) {
       sizes = mediaTypes.video.playerSize;
       data = _getVidParams(mediaTypes.video);
     }
+
+    // ADJS-1024 & ADSS-1297 & ADTS-175
+    gpid && (data.gpid = gpid);
 
     if (pageViewId) {
       data.pv = pageViewId;

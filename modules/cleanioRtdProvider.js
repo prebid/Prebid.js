@@ -12,6 +12,10 @@ import { logError, generateUUID, insertElement } from '../src/utils.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 // ============================ MODULE STATE ===============================
 
 /**

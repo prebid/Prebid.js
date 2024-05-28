@@ -14,6 +14,13 @@ import {formatQS, isNumber, isPlainObject, logError, parseUrl} from '../src/util
 import {uspDataHandler, gppDataHandler} from '../src/adapterManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
+
 const MODULE_NAME = 'connectId';
 const STORAGE_EXPIRY_DAYS = 365;
 const STORAGE_DURATION = 60 * 60 * 24 * 1000 * STORAGE_EXPIRY_DAYS;

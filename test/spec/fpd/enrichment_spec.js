@@ -3,7 +3,10 @@ import {hook} from '../../../src/hook.js';
 import {expect} from 'chai/index.mjs';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
+import * as activities from 'src/activities/rules.js'
 import {CLIENT_SECTIONS} from '../../../src/fpd/oneClient.js';
+import {ACTIVITY_ACCESS_DEVICE} from '../../../src/activities/activities.js';
+import {ACTIVITY_PARAM_COMPONENT} from '../../../src/activities/params.js';
 
 describe('FPD enrichment', () => {
   let sandbox;
@@ -213,7 +216,7 @@ describe('FPD enrichment', () => {
             ua: 'ua'
           })
         })
-      })
+      });
     });
   });
 
@@ -306,6 +309,71 @@ describe('FPD enrichment', () => {
       });
       return fpd().then(ortb2 => {
         expect(ortb2.device.sua).to.eql({hints: ['h1', 'h2']})
+      })
+    });
+  });
+
+  describe('privacy sandbox cookieDeprecationLabel', () => {
+    let isAllowed, cdep, shouldCleanupNav = false;
+
+    before(() => {
+      if (!navigator.cookieDeprecationLabel) {
+        navigator.cookieDeprecationLabel = {};
+        shouldCleanupNav = true;
+      }
+    });
+
+    after(() => {
+      if (shouldCleanupNav) {
+        delete navigator.cookieDeprecationLabel;
+      }
+    });
+
+    beforeEach(() => {
+      isAllowed = true;
+      sandbox.stub(activities, 'isActivityAllowed').callsFake((activity, params) => {
+        if (activity === ACTIVITY_ACCESS_DEVICE && params[ACTIVITY_PARAM_COMPONENT] === 'prebid.cdep') {
+          return isAllowed;
+        } else {
+          throw new Error('Unexpected activity check');
+        }
+      });
+      sandbox.stub(window.navigator, 'cookieDeprecationLabel').value({
+        getValue: sinon.stub().callsFake(() => cdep)
+      })
+    })
+
+    it('enrichment sets device.ext.cdep when allowed and navigator.getCookieDeprecationLabel exists', () => {
+      cdep = Promise.resolve('example-test-label');
+      return fpd().then(ortb2 => {
+        expect(ortb2.device.ext.cdep).to.eql('example-test-label');
+      })
+    });
+
+    Object.entries({
+      'not allowed'() {
+        isAllowed = false;
+      },
+      'not supported'() {
+        delete navigator.cookieDeprecationLabel
+      }
+    }).forEach(([t, setup]) => {
+      it(`if ${t}, the navigator API is not called and no enrichment happens`, () => {
+        setup();
+        cdep = Promise.resolve('example-test-label');
+        return fpd().then(ortb2 => {
+          expect(ortb2.device.ext).to.not.exist;
+          if (navigator.cookieDeprecationLabel) {
+            sinon.assert.notCalled(navigator.cookieDeprecationLabel.getValue);
+          }
+        })
+      });
+    })
+
+    it('if the navigator API returns a promise that rejects, the enrichment does not halt forever', () => {
+      cdep = Promise.reject(new Error('oops, something went wrong'));
+      return fpd().then(ortb2 => {
+        expect(ortb2.device.ext).to.not.exist;
       })
     });
   });

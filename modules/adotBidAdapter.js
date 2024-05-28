@@ -9,6 +9,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'adot';
 const ADAPTER_VERSION = 'v2.0.0';
+const GVLID = 272;
 const BID_METHOD = 'POST';
 const BIDDER_URL = 'https://dsp.adotmob.com/headerbidding{PUBLISHER_PATH}/bidrequest';
 const REQUIRED_VIDEO_PARAMS = ['mimes', 'protocols'];
@@ -635,7 +636,8 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getFloor
+  getFloor,
+  gvlid: GVLID
 };
 
 registerBidder(spec);

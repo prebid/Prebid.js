@@ -535,7 +535,7 @@ function isValidSize(size) {
  * Determines whether or not the given size object is an element of the size
  * array.
  *
- * @param  {array}  sizeArray The size array.
+ * @param  {Array}  sizeArray The size array.
  * @param  {object} size      The size object.
  * @return {boolean}          True if the size object is an element of the size array, and false
  *                            otherwise.
@@ -590,7 +590,7 @@ function checkVideoParams(mediaTypeVideoRef, paramsVideoRef) {
  * Get One size from Size Array
  * [[250,350]] -> [250, 350]
  * [250, 350]  -> [250, 350]
- * @param {array} sizes array of sizes
+ * @param {Array} sizes array of sizes
  */
 function getFirstSize(sizes = []) {
   if (isValidSize(sizes)) {
@@ -607,7 +607,7 @@ function getFirstSize(sizes = []) {
  *
  * @param  {number}  bidFloor    The bidFloor parameter inside bid request config.
  * @param  {number}  bidFloorCur The bidFloorCur parameter inside bid request config.
- * @return {bool}                True if this is a valid bidFloor parameters format, and false
+ * @return {boolean}                True if this is a valid bidFloor parameters format, and false
  *                               otherwise.
  */
 function isValidBidFloorParams(bidFloor, bidFloorCur) {
@@ -630,7 +630,7 @@ function nativeMediaTypeValid(bid) {
  * Get bid request object with the associated id.
  *
  * @param  {*}      id          Id of the impression.
- * @param  {array}  impressions List of impressions sent in the request.
+ * @param  {Array}  impressions List of impressions sent in the request.
  * @return {object}             The impression with the associated id.
  */
 function getBidRequest(id, impressions, validBidRequests) {
@@ -648,7 +648,7 @@ function getBidRequest(id, impressions, validBidRequests) {
 /**
  * From the userIdAsEids array, filter for the ones our adserver can use, and modify them
  * for our purposes, e.g. add rtiPartner
- * @param {array} allEids userIdAsEids passed in by prebid
+ * @param {Array} allEids userIdAsEids passed in by prebid
  * @return {object} contains toSend (eids to send to the adserver) and seenSources (used to filter
  *                  identity info from IX Library)
  */
@@ -676,11 +676,11 @@ function getEidInfo(allEids) {
 /**
  * Builds a request object to be sent to the ad server based on bid requests.
  *
- * @param  {array}  validBidRequests A list of valid bid request config objects.
+ * @param  {Array}  validBidRequests A list of valid bid request config objects.
  * @param  {object} bidderRequest    An object containing other info like gdprConsent.
  * @param  {object} impressions      An object containing a list of impression objects describing the bids for each transaction
- * @param  {array}  version          Endpoint version denoting banner, video or native.
- * @return {array}                   List of objects describing the request to the server.
+ * @param  {Array}  version          Endpoint version denoting banner, video or native.
+ * @return {Array}                   List of objects describing the request to the server.
  *
  */
 function buildRequest(validBidRequests, bidderRequest, impressions, version) {
@@ -789,8 +789,8 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
 /**
  * addRTI adds RTI info of the partner to retrieved user IDs from prebid ID module.
  *
- * @param {array} userEids userEids info retrieved from prebid
- * @param {array} eidInfo eidInfo info from prebid
+ * @param {Array} userEids userEids info retrieved from prebid
+ * @param {Array} eidInfo eidInfo info from prebid
  */
 function addRTI(userEids, eidInfo) {
   let identityInfo = window.headertag.getIdentityInfo();
@@ -809,7 +809,7 @@ function addRTI(userEids, eidInfo) {
 
 /**
  * createRequest creates the base request object
- * @param  {array}  validBidRequests A list of valid bid request config objects.
+ * @param  {Array}  validBidRequests A list of valid bid request config objects.
  * @return {object}                  Object describing the request to the server.
  */
 function createRequest(validBidRequests) {
@@ -849,9 +849,9 @@ function addRequestedFeatureToggles(r, requestedFeatureToggles) {
  *
  * @param  {object} r                Base reuqest object.
  * @param  {object} bidderRequest    An object containing other info like gdprConsent.
- * @param  {array}  impressions      A list of impressions to be added to the request.
- * @param  {array}  validBidRequests A list of valid bid request config objects.
- * @param  {array}  userEids         User ID info retrieved from Prebid ID module.
+ * @param  {Array}  impressions      A list of impressions to be added to the request.
+ * @param  {Array}  validBidRequests A list of valid bid request config objects.
+ * @param  {Array}  userEids         User ID info retrieved from Prebid ID module.
  * @return {object}                  Enriched object describing the request to the server.
  */
 function enrichRequest(r, bidderRequest, impressions, validBidRequests, userEids) {
@@ -958,10 +958,10 @@ function applyRegulations(r, bidderRequest) {
 /**
  * addImpressions adds impressions to request object
  *
- * @param  {array}  impressions        List of impressions to be added to the request.
- * @param  {array}  impKeys            List of impression keys.
+ * @param  {Array}  impressions        List of impressions to be added to the request.
+ * @param  {Array}  impKeys            List of impression keys.
  * @param  {object} r                  Reuqest object.
- * @param  {int}    adUnitIndex        Index of the current add unit
+ * @param  {number}    adUnitIndex        Index of the current add unit
  * @return {object}                    Reqyest object with added impressions describing the request to the server.
  */
 function addImpressions(impressions, impKeys, r, adUnitIndex) {
@@ -1113,7 +1113,7 @@ This function retrieves the page URL and appends first party data query paramete
 to it without adding duplicate query parameters. Returns original referer URL if no IX FPD exists.
 @param {Object} bidderRequest - The bidder request object containing information about the bid and the page.
 @returns {string} - The modified page URL with first party data query parameters appended.
-*/
+ */
 function getIxFirstPartyDataPageUrl (bidderRequest) {
   // Parse additional runtime configs.
   const bidderCode = (bidderRequest && bidderRequest.bidderCode) || 'ix';
@@ -1143,7 +1143,7 @@ This function appends the provided query parameters to the given URL without add
 @param {string} url - The base URL to which query parameters will be appended.
 @param {Object} params - An object containing key-value pairs of query parameters to append.
 @returns {string} - The modified URL with the provided query parameters appended.
-*/
+ */
 function appendIXQueryParams(bidderRequest, url, params) {
   let urlObj;
   try {
@@ -1228,10 +1228,10 @@ function addAdUnitFPD(imp, bid) {
 /**
  * addIdentifiersInfo adds indentifier info to ixDaig.
  *
- * @param  {array}  impressions        List of impressions to be added to the request.
+ * @param  {Array}  impressions        List of impressions to be added to the request.
  * @param  {object} r                  Reuqest object.
- * @param  {array}  impKeys            List of impression keys.
- * @param  {int}    adUnitIndex        Index of the current add unit
+ * @param  {Array}  impKeys            List of impression keys.
+ * @param  {number}    adUnitIndex        Index of the current add unit
  * @param  {object} payload            Request payload object.
  * @param  {string} baseUrl            Base exchagne URL.
  * @return {object}                    Reqyest object with added indentigfier info to ixDiag.
@@ -1254,7 +1254,7 @@ function addIdentifiersInfo(impressions, r, impKeys, adUnitIndex, payload, baseU
 /**
  * Return an object of user IDs stored by Prebid User ID module
  *
- * @returns {array} ID providers that are present in userIds
+ * @returns {Array} ID providers that are present in userIds
  */
 function _getUserIds(bidRequest) {
   const userIds = bidRequest.userId || {};
@@ -1265,8 +1265,8 @@ function _getUserIds(bidRequest) {
 /**
  * Calculates IX diagnostics values and packages them into an object
  *
- * @param {array} validBidRequests - The valid bid requests from prebid
- * @param {bool} fledgeEnabled - Flag indicating if protected audience (fledge) is enabled
+ * @param {Array} validBidRequests - The valid bid requests from prebid
+ * @param {boolean} fledgeEnabled - Flag indicating if protected audience (fledge) is enabled
  * @return {Object} IX diag values for ad units
  */
 function buildIXDiag(validBidRequests, fledgeEnabled) {
@@ -1327,8 +1327,8 @@ function buildIXDiag(validBidRequests, fledgeEnabled) {
 
 /**
  *
- * @param  {array}   bannerSizeList list of banner sizes
- * @param  {array}   bannerSize the size to be removed
+ * @param  {Array}   bannerSizeList list of banner sizes
+ * @param  {Array}   bannerSize the size to be removed
  * @return {boolean} true if successfully removed, false if not found
  */
 
@@ -1487,7 +1487,7 @@ function updateMissingSizes(validBidRequest, missingBannerSizes, imp) {
 /**
  * @param  {object} bid      ValidBidRequest object, used to adjust floor
  * @param  {object} imp      Impression object to be modified
- * @param  {array}  newSize  The new size to be applied
+ * @param  {Array}  newSize  The new size to be applied
  * @return {object} newImp   Updated impression object
  */
 function createMissingBannerImp(bid, imp, newSize) {
@@ -1786,7 +1786,7 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param  {array}  validBidRequests A list of valid bid request config objects.
+   * @param  {Array}  validBidRequests A list of valid bid request config objects.
    * @param  {object} bidderRequest    A object contains bids and other info like gdprConsent.
    * @return {object}                  Info describing the request to the server.
    */
@@ -1874,7 +1874,7 @@ export const spec = {
    *
    * @param  {object} serverResponse A successful response from the server.
    * @param  {object} bidderRequest  The bid request sent to the server.
-   * @return {array}                 An array of bids which were nested inside the server.
+   * @return {Array}                 An array of bids which were nested inside the server.
    */
   interpretResponse: function (serverResponse, bidderRequest) {
     const bids = [];
@@ -1966,8 +1966,8 @@ export const spec = {
   /**
    * Determine which user syncs should occur
    * @param {object} syncOptions
-   * @param {array} serverResponses
-   * @returns {array} User sync pixels
+   * @param {Array} serverResponses
+   * @returns {Array} User sync pixels
    */
   getUserSyncs: function (syncOptions, serverResponses) {
     const syncs = [];
@@ -2008,11 +2008,11 @@ export const spec = {
 };
 
 /**
-   * Build img user sync url
-   * @param {int} syncsPerBidder number of syncs Per Bidder
-   * @param {int} index index to pass
-   * @returns {string} img user sync url
-   */
+ * Build img user sync url
+ * @param {number} syncsPerBidder number of syncs Per Bidder
+ * @param {number} index index to pass
+ * @returns {string} img user sync url
+ */
 function buildImgSyncUrl(syncsPerBidder, index) {
   let consentString = '';
   let gdprApplies = '0';
@@ -2029,7 +2029,7 @@ function buildImgSyncUrl(syncsPerBidder, index) {
 
 /**
  * Combines all imps into a single object
- * @param {array} imps array of imps
+ * @param {Array} imps array of imps
  * @returns object
  */
 export function combineImps(imps) {

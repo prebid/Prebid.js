@@ -12,6 +12,7 @@ const BIDDER_CODE = 'vox';
 const SSP_ENDPOINT = 'https://ssp.hybrid.ai/auction/prebid';
 const VIDEO_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
 const TTL = 60;
+const GVLID = 206;
 
 function buildBidRequests(validBidRequests) {
   return _map(validBidRequests, function(bid) {
@@ -183,6 +184,7 @@ function wrapBanner(bid, bidData) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO],
 
   /**

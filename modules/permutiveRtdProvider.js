@@ -12,6 +12,10 @@ import {deepAccess, deepSetValue, isFn, logError, mergeDeep, isPlainObject, safe
 import {includes} from '../src/polyfill.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 const MODULE_NAME = 'permutive'
 
 const logger = prefixLog('[PermutiveRTD]')

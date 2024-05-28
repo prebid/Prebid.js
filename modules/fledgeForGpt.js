@@ -20,8 +20,8 @@ export let isEnabled = false;
 config.getConfig('fledgeForGpt', config => init(config.fledgeForGpt));
 
 /**
-  * Module init.
-  */
+ * Module init.
+ */
 export function init(cfg) {
   if (cfg && cfg.enabled === true) {
     if (!isEnabled) {

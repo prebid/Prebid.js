@@ -71,7 +71,7 @@ export function addFragment(base, path, addition) {
 /**
  * Concatenate a base array and an array within an object
  * non-array bases will be arrays, non-arrays at object key will be discarded
- * @param {array} base base array to add to
+ * @param {Array} base base array to add to
  * @param {object} source object to get an array from
  * @param {string} key dot-notated path to array within object
  * @returns base + source[key] if that's an array

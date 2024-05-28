@@ -319,7 +319,7 @@ export function checkAdUnitSetupHook(fn, adUnits) {
  * @param {Object} videoMediaType 'mediaTypes.video' associated to bidResponse
  * @param {Object} bidResponse incoming bidResponse being evaluated by bidderFactory
  * @returns {boolean} return false if bid duration is deemed invalid as per adUnit configuration; return true if fine
-*/
+ */
 function checkBidDuration(videoMediaType, bidResponse) {
   const buffer = 2;
   let bidDuration = deepAccess(bidResponse, 'video.durationSeconds');

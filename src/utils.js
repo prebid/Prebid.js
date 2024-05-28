@@ -653,7 +653,7 @@ export function checkCookieSupport() {
  *
  * @param {function} func The function which should be executed, once the returned function has been executed
  *   numRequiredCalls times.
- * @param {int} numRequiredCalls The number of times which the returned function needs to be called before
+ * @param {number} numRequiredCalls The number of times which the returned function needs to be called before
  *   func is.
  */
 export function delayExecution(func, numRequiredCalls) {
@@ -672,7 +672,7 @@ export function delayExecution(func, numRequiredCalls) {
 /**
  * https://stackoverflow.com/a/34890276/428704
  * @export
- * @param {array} xs
+ * @param {Array} xs
  * @param {string} key
  * @returns {Object} {${key_value}: ${groupByArray}, key_value: {groupByArray}}
  */

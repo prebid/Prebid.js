@@ -124,7 +124,24 @@ describe('Zeta Ssp Bid Adapter', function () {
     uspConsent: 'someCCPAString',
     params: params,
     userIdAsEids: eids,
-    timeout: 500
+    timeout: 500,
+    ortb2: {
+      user: {
+        data: [
+          {
+            ext: {
+              segtax: 600,
+              segclass: 'classifier_v1'
+            },
+            segment: [
+              { id: '3' },
+              { id: '44' },
+              { id: '59' }
+            ]
+          }
+        ]
+      }
+    }
   }];
 
   const bannerWithFewSizesRequest = [{
@@ -605,5 +622,14 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(bidResponse[0].mediaType).to.eql(BANNER);
     expect(bidResponse[0].ad).to.eql(zetaResponse.body.seatbid[0].bid[0].adm);
     expect(bidResponse[0].vastXml).to.be.undefined;
+  });
+
+  it('Test provide segments into the request', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+    expect(payload.user.data[0].segment.length).to.eql(3);
+    expect(payload.user.data[0].segment[0].id).to.eql('3');
+    expect(payload.user.data[0].segment[1].id).to.eql('44');
+    expect(payload.user.data[0].segment[2].id).to.eql('59');
   });
 });

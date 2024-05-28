@@ -134,8 +134,8 @@ function canAccessTopWindow() {
 }
 
 /**
-  * domLoading feature is computed on window.top if reachable.
-  */
+ * domLoading feature is computed on window.top if reachable.
+ */
 export function getDomLoadingDuration() {
   let domLoadingDuration = -1;
   let performance;

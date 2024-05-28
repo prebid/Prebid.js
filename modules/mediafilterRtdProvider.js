@@ -16,9 +16,9 @@ import { loadExternalScript } from '../src/adloader.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 
-/** @const {string} MEDIAFILTER_EVENT_TYPE - The event type for Media Filter. */
+/** The event type for Media Filter. */
 export const MEDIAFILTER_EVENT_TYPE = 'com.mediatrust.pbjs.';
-/** @const {string} MEDIAFILTER_BASE_URL - The base URL for Media Filter scripts. */
+/** The base URL for Media Filter scripts. */
 export const MEDIAFILTER_BASE_URL = 'https://scripts.webcontentassessor.com/scripts/';
 
 export const MediaFilter = {

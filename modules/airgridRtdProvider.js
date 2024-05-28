@@ -11,6 +11,10 @@ import {getStorageManager} from '../src/storageManager.js';
 import {loadExternalScript} from '../src/adloader.js';
 import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'airgrid';
 const AG_TCF_ID = 782;

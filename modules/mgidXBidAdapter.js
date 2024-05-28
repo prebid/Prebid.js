@@ -166,9 +166,14 @@ export const spec = {
       placements,
       coppa: config.getConfig('coppa') === true ? 1 : 0,
       ccpa: bidderRequest.uspConsent || undefined,
-      gdpr: bidderRequest.gdprConsent || undefined,
       tmax: config.getConfig('bidderTimeout')
     };
+
+    if (bidderRequest.gdprConsent) {
+      request.gdpr = {
+        consentString: bidderRequest.gdprConsent.consentString
+      };
+    }
 
     const len = validBidRequests.length;
     for (let i = 0; i < len; i++) {

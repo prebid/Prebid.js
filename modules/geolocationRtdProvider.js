@@ -4,6 +4,7 @@ import { ACTIVITY_TRANSMIT_PRECISE_GEO } from '../src/activities/activities.js';
 import { MODULE_TYPE_RTD } from '../src/activities/modules.js';
 import { isActivityAllowed } from '../src/activities/rules.js';
 import { activityParams } from '../src/activities/activityParams.js';
+import {VENDORLESS_GVLID} from '../src/consentHandler.js';
 
 let permissionsAvailable = true;
 let geolocation;
@@ -54,6 +55,7 @@ function init(moduleConfig) {
 }
 export const geolocationSubmodule = {
   name: 'geolocation',
+  gvlid: VENDORLESS_GVLID,
   getBidRequestData: getGeolocationData,
   init: init,
 };

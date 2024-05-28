@@ -297,6 +297,14 @@ describe('gumgumAdapter', function () {
       expect(bidRequest.data.gpid).to.equal(pbadslot);
     });
 
+    it('should set the global placement id (gpid) if media type is video', function () {
+      const pbadslot = 'cde456'
+      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: { pbadslot } } }, params: zoneParam, mediaTypes: vidMediaTypes }
+      const bidRequest = spec.buildRequests([req])[0];
+      expect(bidRequest.data).to.have.property('gpid');
+      expect(bidRequest.data.gpid).to.equal(pbadslot);
+    });
+
     it('should set the bid floor if getFloor module is not present but static bid floor is defined', function () {
       const req = { ...bidRequests[0], params: { bidfloor: 42 } }
       const bidRequest = spec.buildRequests([req])[0];

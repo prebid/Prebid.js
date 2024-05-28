@@ -6,6 +6,10 @@ import {config} from '../config.js';
 import {getHighEntropySUA, getLowEntropySUA} from './sua.js';
 import {GreedyPromise} from '../utils/promise.js';
 import {CLIENT_SECTIONS, clientSectionChecker, hasSection} from './oneClient.js';
+import {isActivityAllowed} from '../activities/rules.js';
+import {activityParams} from '../activities/activityParams.js';
+import {ACTIVITY_ACCESS_DEVICE} from '../activities/activities.js';
+import {MODULE_TYPE_PREBID} from '../activities/modules.js';
 
 export const dep = {
   getRefererInfo,
@@ -24,8 +28,10 @@ const oneClient = clientSectionChecker('FPD')
  * @returns: {Promise[{}]}: a promise to an enriched ortb2 object.
  */
 export const enrichFPD = hook('sync', (fpd) => {
-  return GreedyPromise.all([fpd, getSUA().catch(() => null)])
-    .then(([ortb2, sua]) => {
+  const promArr = [fpd, getSUA().catch(() => null), tryToGetCdepLabel().catch(() => null)];
+
+  return GreedyPromise.all(promArr)
+    .then(([ortb2, sua, cdep]) => {
       const ri = dep.getRefererInfo();
       mergeLegacySetConfigs(ortb2);
       Object.entries(ENRICHMENTS).forEach(([section, getEnrichments]) => {
@@ -34,9 +40,18 @@ export const enrichFPD = hook('sync', (fpd) => {
           ortb2[section] = mergeDeep({}, data, ortb2[section]);
         }
       });
+
       if (sua) {
         deepSetValue(ortb2, 'device.sua', Object.assign({}, sua, ortb2.device.sua));
       }
+
+      if (cdep) {
+        const ext = {
+          cdep
+        }
+        deepSetValue(ortb2, 'device.ext', Object.assign({}, ext, ortb2.device.ext));
+      }
+
       ortb2 = oneClient(ortb2);
       for (let section of CLIENT_SECTIONS) {
         if (hasSection(ortb2, section)) {
@@ -44,6 +59,7 @@ export const enrichFPD = hook('sync', (fpd) => {
           break;
         }
       }
+
       return ortb2;
     });
 });
@@ -78,6 +94,10 @@ function removeUndef(obj) {
   return getDefinedParams(obj, Object.keys(obj))
 }
 
+function tryToGetCdepLabel() {
+  return GreedyPromise.resolve('cookieDeprecationLabel' in navigator && isActivityAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(MODULE_TYPE_PREBID, 'cdep')) && navigator.cookieDeprecationLabel.getValue());
+}
+
 const ENRICHMENTS = {
   site(ortb2, ri) {
     if (CLIENT_SECTIONS.filter(p => p !== 'site').some(hasSection.bind(null, ortb2))) {
@@ -93,6 +113,7 @@ const ENRICHMENTS = {
     return winFallback((win) => {
       const w = win.innerWidth || win.document.documentElement.clientWidth || win.document.body.clientWidth;
       const h = win.innerHeight || win.document.documentElement.clientHeight || win.document.body.clientHeight;
+
       return {
         w,
         h,

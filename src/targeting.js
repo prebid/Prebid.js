@@ -85,26 +85,26 @@ export const getHighestCpmBidsFromBidPool = hook('sync', function(bidsReceived, 
 });
 
 /**
-* A descending sort function that will sort the list of objects based on the following two dimensions:
-*  - bids with a deal are sorted before bids w/o a deal
-*  - then sort bids in each grouping based on the hb_pb value
-* eg: the following list of bids would be sorted like:
-*  [{
-*    "hb_adid": "vwx",
-*    "hb_pb": "28",
-*    "hb_deal": "7747"
-*  }, {
-*    "hb_adid": "jkl",
-*    "hb_pb": "10",
-*    "hb_deal": "9234"
-*  }, {
-*    "hb_adid": "stu",
-*    "hb_pb": "50"
-*  }, {
-*    "hb_adid": "def",
-*    "hb_pb": "2"
-*  }]
-*/
+ * A descending sort function that will sort the list of objects based on the following two dimensions:
+ *  - bids with a deal are sorted before bids w/o a deal
+ *  - then sort bids in each grouping based on the hb_pb value
+ * eg: the following list of bids would be sorted like:
+ *  [{
+ *    "hb_adid": "vwx",
+ *    "hb_pb": "28",
+ *    "hb_deal": "7747"
+ *  }, {
+ *    "hb_adid": "jkl",
+ *    "hb_pb": "10",
+ *    "hb_deal": "9234"
+ *  }, {
+ *    "hb_adid": "stu",
+ *    "hb_pb": "50"
+ *  }, {
+ *    "hb_adid": "def",
+ *    "hb_pb": "2"
+ *  }]
+ */
 export function sortByDealAndPriceBucketOrCpm(useCpm = false) {
   return function(a, b) {
     if (a.adserverTargeting.hb_deal !== undefined && b.adserverTargeting.hb_deal === undefined) {
@@ -497,7 +497,7 @@ export function newTargeting(auctionManager) {
   };
 
   /**
-   * @param  {(string|string[])} adUnitCode adUnitCode or array of adUnitCodes
+   * @param  {(string|string[])} adUnitCodes adUnitCode or array of adUnitCodes
    * Sets targeting for AST
    */
   targeting.setTargetingForAst = function(adUnitCodes) {
@@ -530,7 +530,7 @@ export function newTargeting(auctionManager) {
 
   /**
    * Get targeting key value pairs for winning bid.
-   * @param {string[]}    AdUnit code array
+   * @param {string[]}    adUnitCodes code array
    * @return {targetingArray}   winning bids targeting
    */
   function getWinningBidTargeting(adUnitCodes, bidsReceived) {
@@ -630,7 +630,7 @@ export function newTargeting(auctionManager) {
 
   /**
    * Get custom targeting key value pairs for bids.
-   * @param {string[]}    AdUnit code array
+   * @param {string[]}    adUnitCodes code array
    * @return {targetingArray}   bids with custom targeting defined in bidderSettings
    */
   function getCustomBidTargeting(adUnitCodes, bidsReceived) {
@@ -644,7 +644,7 @@ export function newTargeting(auctionManager) {
 
   /**
    * Get targeting key value pairs for non-winning bids.
-   * @param {string[]}    AdUnit code array
+   * @param {string[]}    adUnitCodes code array
    * @return {targetingArray}   all non-winning bids targeting
    */
   function getBidLandscapeTargeting(adUnitCodes, bidsReceived) {

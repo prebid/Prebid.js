@@ -250,6 +250,31 @@ describe('Adkernel adapter', function () {
       }],
       bidid: 'pTuOlf5KHUo',
       cur: 'EUR'
+    },
+    multiformat_response = {
+      id: '47ce4badcf7482',
+      seatbid: [{
+        bid: [{
+          id: 'sZSYq5zYMxo_0',
+          impid: 'Bid_01b__mf',
+          crid: '100_003',
+          price: 0.00145,
+          adid: '158801',
+          adm: '<!-- admarkup -->',
+          nurl: 'https://rtb.com/win?i=sZSYq5zYMxo_0&f=nurl',
+          cid: '16855'
+        }, {
+          id: 'sZSYq5zYMxo_1',
+          impid: 'Bid_01v__mf',
+          crid: '100_003',
+          price: 0.25,
+          adid: '158801',
+          nurl: 'https://rtb.com/win?i=sZSYq5zYMxo_1&f=nurl',
+          cid: '16855'
+        }]
+      }],
+      bidid: 'pTuOlf5KHUo',
+      cur: 'USD'
     };
 
   var sandbox;
@@ -460,18 +485,29 @@ describe('Adkernel adapter', function () {
   });
 
   describe('multiformat request building', function () {
-    let _, bidRequests;
+    let pbRequests, bidRequests;
     before(function () {
-      [_, bidRequests] = buildRequest([bid_multiformat]);
+      [pbRequests, bidRequests] = buildRequest([bid_multiformat]);
     });
     it('should contain single request', function () {
       expect(bidRequests).to.have.length(1);
-      expect(bidRequests[0].imp).to.have.length(1);
     });
-    it('should contain banner-only impression', function () {
-      expect(bidRequests[0].imp).to.have.length(1);
+    it('should contain both impression', function () {
+      expect(bidRequests[0].imp).to.have.length(2);
       expect(bidRequests[0].imp[0]).to.have.property('banner');
-      expect(bidRequests[0].imp[0]).to.not.have.property('video');
+      expect(bidRequests[0].imp[1]).to.have.property('video');
+      // check that splitted imps do not share same impid
+      expect(bidRequests[0].imp[0].id).to.be.not.eql('Bid_01');
+      expect(bidRequests[0].imp[1].id).to.be.not.eql('Bid_01');
+      expect(bidRequests[0].imp[1].id).to.be.not.eql(bidRequests[0].imp[0].id);
+    });
+    it('x', function() {
+      let bids = spec.interpretResponse({body: multiformat_response}, pbRequests[0]);
+      expect(bids).to.have.length(2);
+      expect(bids[0].requestId).to.be.eql('Bid_01');
+      expect(bids[0].mediaType).to.be.eql('banner');
+      expect(bids[1].requestId).to.be.eql('Bid_01');
+      expect(bids[1].mediaType).to.be.eql('video');
     });
   });
 

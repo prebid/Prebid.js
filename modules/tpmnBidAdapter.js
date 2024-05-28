@@ -108,8 +108,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   return {
     method: 'POST',
     url: BIDDER_ENDPOINT_URL + '?v=' + ADAPTER_VERSION,
-    data: rtbData,
-    options: { contentType: 'application/json;charset=UTF-8', withCredentials: false }
+    data: rtbData
   }
 }
 
@@ -185,7 +184,7 @@ function createRenderer(bid) {
 
 function outstreamRender(bid, doc) {
   bid.renderer.push(() => {
-    const win = utils.getWindowFromDocument(doc) || window;
+    const win = (doc) ? doc.defaultView : window;
     win.ANOutstreamVideo.renderAd({
       sizes: [bid.playerWidth, bid.playerHeight],
       targetId: bid.adUnitCode,

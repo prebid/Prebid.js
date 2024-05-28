@@ -11,6 +11,10 @@ import {loadExternalScript} from '../src/adloader.js';
 import * as events from '../src/events.js';
 import CONSTANTS from '../src/constants.json';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 const MODULE_NAME = 'brandmetrics'
 const MODULE_CODE = MODULE_NAME
 const RECEIVED_EVENTS = []
@@ -72,10 +76,10 @@ function checkConsent (userConsent) {
 }
 
 /**
-* Add event- listeners to hook in to brandmetrics events
-* @param {Object} reqBidsConfigObj
-* @param {function} callback
-*/
+ * Add event- listeners to hook in to brandmetrics events
+ * @param {Object} reqBidsConfigObj
+ * @param {function} callback
+ */
 function processBrandmetricsEvents (reqBidsConfigObj, moduleConfig, callback) {
   const callBidTargeting = (event) => {
     if (event.available && event.conf) {
@@ -139,8 +143,8 @@ function initializeBrandmetrics(scriptId) {
 }
 
 /**
-* Hook in to brandmetrics creative_in_view- event and emit billable- event for creatives measured by brandmetrics.
-*/
+ * Hook in to brandmetrics creative_in_view- event and emit billable- event for creatives measured by brandmetrics.
+ */
 function initializeBillableEvents() {
   if (!billableEventsInitialized) {
     window._brandmetrics.push({
