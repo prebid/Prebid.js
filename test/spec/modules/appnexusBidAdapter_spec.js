@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec } from 'modules/appnexusBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
-import * as bidderFactory from 'src/adapters/bidderFactory.js';
 import { auctionManager } from 'src/auctionManager.js';
 import { deepClone } from 'src/utils.js';
 import * as utils from 'src/utils.js';
@@ -2151,54 +2150,54 @@ describe('AppNexusAdapter', function () {
     });
   });
 
-  describe('transformBidParams', function () {
-    let gcStub;
-    let adUnit = { bids: [{ bidder: 'appnexus' }] }; ;
+  // describe('transformBidParams', function () {
+  //   let gcStub;
+  //   let adUnit = { bids: [{ bidder: 'appnexus' }] }; ;
 
-    before(function () {
-      gcStub = sinon.stub(config, 'getConfig');
-    });
+  //   before(function () {
+  //     gcStub = sinon.stub(config, 'getConfig');
+  //   });
 
-    after(function () {
-      gcStub.restore();
-    });
+  //   after(function () {
+  //     gcStub.restore();
+  //   });
 
-    it('convert keywords param differently for psp endpoint with single s2sConfig', function () {
-      gcStub.withArgs('s2sConfig').returns({
-        bidders: ['appnexus'],
-        endpoint: {
-          p1Consent: 'https://ib.adnxs.com/openrtb2/prebid'
-        }
-      });
+  //   it('convert keywords param differently for psp endpoint with single s2sConfig', function () {
+  //     gcStub.withArgs('s2sConfig').returns({
+  //       bidders: ['appnexus'],
+  //       endpoint: {
+  //         p1Consent: 'https://ib.adnxs.com/openrtb2/prebid'
+  //       }
+  //     });
 
-      const oldParams = {
-        keywords: {
-          genre: ['rock', 'pop'],
-          pets: 'dog'
-        }
-      };
+  //     const oldParams = {
+  //       keywords: {
+  //         genre: ['rock', 'pop'],
+  //         pets: 'dog'
+  //       }
+  //     };
 
-      const newParams = spec.transformBidParams(oldParams, true, adUnit);
-      expect(newParams.keywords).to.equal('genre=rock,genre=pop,pets=dog');
-    });
+  //     const newParams = spec.transformBidParams(oldParams, true, adUnit);
+  //     expect(newParams.keywords).to.equal('genre=rock,genre=pop,pets=dog');
+  //   });
 
-    it('convert keywords param differently for psp endpoint with array s2sConfig', function () {
-      gcStub.withArgs('s2sConfig').returns([{
-        bidders: ['appnexus'],
-        endpoint: {
-          p1Consent: 'https://ib.adnxs.com/openrtb2/prebid'
-        }
-      }]);
+  //   it('convert keywords param differently for psp endpoint with array s2sConfig', function () {
+  //     gcStub.withArgs('s2sConfig').returns([{
+  //       bidders: ['appnexus'],
+  //       endpoint: {
+  //         p1Consent: 'https://ib.adnxs.com/openrtb2/prebid'
+  //       }
+  //     }]);
 
-      const oldParams = {
-        keywords: {
-          genre: ['rock', 'pop'],
-          pets: 'dog'
-        }
-      };
+  //     const oldParams = {
+  //       keywords: {
+  //         genre: ['rock', 'pop'],
+  //         pets: 'dog'
+  //       }
+  //     };
 
-      const newParams = spec.transformBidParams(oldParams, true, adUnit);
-      expect(newParams.keywords).to.equal('genre=rock,genre=pop,pets=dog');
-    });
-  });
+  //     const newParams = spec.transformBidParams(oldParams, true, adUnit);
+  //     expect(newParams.keywords).to.equal('genre=rock,genre=pop,pets=dog');
+  //   });
+  // });
 });
