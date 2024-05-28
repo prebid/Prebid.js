@@ -5,10 +5,16 @@ import {config} from '../src/config.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
 const BIDDER_CODE = 'smarthub';
-const ALIASES = [{code: 'markapp', skipPbsAliasing: true}];
+const ALIASES = [
+  {code: 'markapp', skipPbsAliasing: true},
+  {code: 'jdpmedia', skipPbsAliasing: true},
+  {code: 'tredio', skipPbsAliasing: true},
+];
 const BASE_URLS = {
   smarthub: 'https://prebid.smart-hub.io/pbjs',
-  markapp: 'https://markapp-prebid.smart-hub.io/pbjs'
+  markapp: 'https://markapp-prebid.smart-hub.io/pbjs',
+  jdpmedia: 'https://jdpmedia-prebid.smart-hub.io/pbjs',
+  tredio: 'https://tredio-prebid.smart-hub.io/pbjs'
 };
 
 function getUrl(partnerName) {
