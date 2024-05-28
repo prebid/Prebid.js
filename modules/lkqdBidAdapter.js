@@ -47,7 +47,7 @@ export const spec = {
       const GDPR = BIDDER_GDPR || bid.params.gdpr || null;
       const GDPRS = BIDDER_GDPRS || bid.params.gdprs || null;
       const DNT = bid.params.dnt || null;
-      const BID_FLOOR = bid.params.flrd > bid.params.flrmp ? bid.params.flrd : bid.params.flrmp;
+      const BID_FLOOR = 0;
       const VIDEO_BID = bid.video ? bid.video : {};
 
       const requestData = {

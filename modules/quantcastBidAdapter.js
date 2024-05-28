@@ -58,7 +58,7 @@ function makeVideoImp(bid) {
   return {
     video: videoCopy,
     placementCode: bid.placementCode,
-    bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
+    bidFloor: DEFAULT_BID_FLOOR
   };
 }
 
@@ -76,7 +76,7 @@ function makeBannerImp(bid) {
       })
     },
     placementCode: bid.placementCode,
-    bidFloor: bid.params.bidFloor || DEFAULT_BID_FLOOR
+    bidFloor: DEFAULT_BID_FLOOR
   };
 }
 
