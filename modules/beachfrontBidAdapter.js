@@ -15,7 +15,7 @@ import {Renderer} from '../src/Renderer.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {find, includes} from '../src/polyfill.js';
 
-const ADAPTER_VERSION = '1.20';
+const ADAPTER_VERSION = '1.21';
 const ADAPTER_NAME = 'BFIO_PREBID';
 const OUTSTREAM = 'outstream';
 const CURRENCY = 'USD';
@@ -26,7 +26,7 @@ export const OUTSTREAM_SRC = 'https://player-cdn.beachfrontmedia.com/playerapi/l
 export const SYNC_IFRAME_ENDPOINT = 'https://sync.bfmio.com/sync_iframe';
 export const SYNC_IMAGE_ENDPOINT = 'https://sync.bfmio.com/syncb';
 
-export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'placement', 'skip', 'skipmin', 'skipafter'];
+export const VIDEO_TARGETING = ['mimes', 'playbackmethod', 'maxduration', 'placement', 'plcmt', 'skip', 'skipmin', 'skipafter'];
 export const DEFAULT_MIMES = ['video/mp4', 'application/javascript'];
 
 export const SUPPORTED_USER_IDS = [
