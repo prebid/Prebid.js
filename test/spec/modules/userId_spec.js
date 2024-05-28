@@ -1829,6 +1829,88 @@ describe('User ID', function () {
         }, {adUnits});
       });
 
+      it('test hook from pubcommonid cookie&html5', function (done) {
+        const expiration = new Date(Date.now() + 100000).toUTCString();
+        coreStorage.setCookie('pubcid', 'testpubcid', expiration);
+        localStorage.setItem('pubcid', 'testpubcid');
+        localStorage.setItem('pubcid_exp', expiration);
+
+        init(config);
+        setSubmoduleRegistry([sharedIdSystemSubmodule]);
+        config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie&html5']));
+
+        requestBidsHook(function () {
+          adUnits.forEach(unit => {
+            unit.bids.forEach(bid => {
+              expect(bid).to.have.deep.nested.property('userId.pubcid');
+              expect(bid.userId.pubcid).to.equal('testpubcid');
+              expect(bid.userIdAsEids[0]).to.deep.equal({
+                source: 'pubcid.org',
+                uids: [{id: 'testpubcid', atype: 1}]
+              });
+            });
+          });
+
+          coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+          localStorage.removeItem('pubcid');
+          localStorage.removeItem('pubcid_exp');
+
+          done();
+        }, {adUnits});
+      });
+
+      it('test hook from pubcommonid cookie&html5, no cookie present', function (done) {
+        localStorage.setItem('pubcid', 'testpubcid');
+        localStorage.setItem('pubcid_exp', new Date(Date.now() + 100000).toUTCString());
+
+        init(config);
+        setSubmoduleRegistry([sharedIdSystemSubmodule]);
+        config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie&html5']));
+
+        requestBidsHook(function () {
+          adUnits.forEach(unit => {
+            unit.bids.forEach(bid => {
+              expect(bid).to.have.deep.nested.property('userId.pubcid');
+              expect(bid.userId.pubcid).to.equal('testpubcid');
+              expect(bid.userIdAsEids[0]).to.deep.equal({
+                source: 'pubcid.org',
+                uids: [{id: 'testpubcid', atype: 1}]
+              });
+            });
+          });
+
+          localStorage.removeItem('pubcid');
+          localStorage.removeItem('pubcid_exp');
+
+          done();
+        }, {adUnits});
+      });
+
+      it('test hook from pubcommonid cookie&html5, no local storage entry', function (done) {
+        coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 100000).toUTCString()));
+
+        init(config);
+        setSubmoduleRegistry([sharedIdSystemSubmodule]);
+        config.setConfig(getConfigMock(['pubCommonId', 'pubcid', 'cookie&html5']));
+
+        requestBidsHook(function () {
+          adUnits.forEach(unit => {
+            unit.bids.forEach(bid => {
+              expect(bid).to.have.deep.nested.property('userId.pubcid');
+              expect(bid.userId.pubcid).to.equal('testpubcid');
+              expect(bid.userIdAsEids[0]).to.deep.equal({
+                source: 'pubcid.org',
+                uids: [{id: 'testpubcid', atype: 1}]
+              });
+            });
+          });
+
+          coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
+
+          done();
+        }, {adUnits});
+      });
+
       it('test hook from pubcommonid config value object', function (done) {
         init(config);
         setSubmoduleRegistry([sharedIdSystemSubmodule]);
@@ -3146,7 +3228,8 @@ describe('User ID', function () {
           },
           storageMgr: {
             setCookie: sinon.stub()
-          }
+          },
+          enabledStorageTypes: [ 'cookie' ]
         }
         setStoredValue(submodule, 'bar');
         expect(submodule.storageMgr.setCookie.getCall(0).args[4]).to.equal('foo.com');
@@ -3163,7 +3246,8 @@ describe('User ID', function () {
           },
           storageMgr: {
             setCookie: sinon.stub()
-          }
+          },
+          enabledStorageTypes: [ 'cookie' ]
         }
         setStoredValue(submodule, 'bar');
         expect(submodule.storageMgr.setCookie.getCall(0).args[4]).to.equal(null);
@@ -3310,6 +3394,20 @@ describe('User ID', function () {
           sinon.assert.calledOnce(mockExtendId);
         });
       });
+
+      it('calls getId with the list of enabled storage types', function() {
+        setStorage({lastDelta: 1000});
+        config.setConfig(userIdConfig);
+
+        let innerAdUnits;
+        return runBidsHook((config) => {
+          innerAdUnits = config.adUnits
+        }, {adUnits}).then(() => {
+          sinon.assert.calledOnce(mockGetId);
+
+          expect(mockGetId.getCall(0).args[0].enabledStorageTypes).to.deep.equal([ userIdConfig.userSync.userIds[0].storage.type ]);
+        });
+      });
     });
 
     describe('requestDataDeletion', () => {
@@ -3325,21 +3423,23 @@ describe('User ID', function () {
           onDataDeletionRequest: sinon.stub()
         }
       }
-      let mod1, mod2, mod3, cfg1, cfg2, cfg3;
+      let mod1, mod2, mod3, mod4, cfg1, cfg2, cfg3, cfg4;
 
       beforeEach(() => {
         init(config);
         mod1 = idMod('id1', 'val1');
         mod2 = idMod('id2', 'val2');
         mod3 = idMod('id3', 'val3');
+        mod4 = idMod('id4', 'val4');
         cfg1 = getStorageMock('id1', 'id1', 'cookie');
         cfg2 = getStorageMock('id2', 'id2', 'html5');
-        cfg3 = {name: 'id3', value: {id3: 'val3'}};
-        setSubmoduleRegistry([mod1, mod2, mod3]);
+        cfg3 = getStorageMock('id3', 'id3', 'cookie&html5');
+        cfg4 = {name: 'id4', value: {id4: 'val4'}};
+        setSubmoduleRegistry([mod1, mod2, mod3, mod4]);
         config.setConfig({
           auctionDelay: 1,
           userSync: {
-            userIds: [cfg1, cfg2, cfg3]
+            userIds: [cfg1, cfg2, cfg3, cfg4]
           }
         });
         return getGlobal().refreshUserIds();
@@ -3348,16 +3448,21 @@ describe('User ID', function () {
       it('deletes stored IDs', () => {
         expect(coreStorage.getCookie('id1')).to.exist;
         expect(coreStorage.getDataFromLocalStorage('id2')).to.exist;
+        expect(coreStorage.getCookie('id3')).to.exist;
+        expect(coreStorage.getDataFromLocalStorage('id3')).to.exist;
         requestDataDeletion(sinon.stub());
         expect(coreStorage.getCookie('id1')).to.not.exist;
         expect(coreStorage.getDataFromLocalStorage('id2')).to.not.exist;
+        expect(coreStorage.getCookie('id3')).to.not.exist;
+        expect(coreStorage.getDataFromLocalStorage('id3')).to.not.exist;
       });
 
       it('invokes onDataDeletionRequest', () => {
         requestDataDeletion(sinon.stub());
         sinon.assert.calledWith(mod1.onDataDeletionRequest, cfg1, {id1: 'val1'});
-        sinon.assert.calledWith(mod2.onDataDeletionRequest, cfg2, {id2: 'val2'})
-        sinon.assert.calledWith(mod3.onDataDeletionRequest, cfg3, {id3: 'val3'})
+        sinon.assert.calledWith(mod2.onDataDeletionRequest, cfg2, {id2: 'val2'});
+        sinon.assert.calledWith(mod3.onDataDeletionRequest, cfg3, {id3: 'val3'});
+        sinon.assert.calledWith(mod4.onDataDeletionRequest, cfg4, {id4: 'val4'});
       });
 
       describe('does not choke when onDataDeletionRequest', () => {
@@ -3372,6 +3477,7 @@ describe('User ID', function () {
             requestDataDeletion(next, arg);
             sinon.assert.calledOnce(mod2.onDataDeletionRequest);
             sinon.assert.calledOnce(mod3.onDataDeletionRequest);
+            sinon.assert.calledOnce(mod4.onDataDeletionRequest);
             sinon.assert.calledWith(next, arg);
           })
         })
