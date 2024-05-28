@@ -45,7 +45,6 @@ const SUPPORTED_USER_ID_SOURCES = [
   'neustar.biz',
   'nextroll.com',
   'novatiq.com',
-  'parrable.com',
   'pubcid.org',
   'quantcast.com',
   'tapad.com',
