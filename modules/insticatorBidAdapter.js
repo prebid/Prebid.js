@@ -1,7 +1,7 @@
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums, deepSetValue} from '../src/utils.js';
+import {deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums, deepSetValue, isFn, logWarn} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {find} from '../src/polyfill.js';
 
@@ -170,12 +170,68 @@ function buildImpression(bidRequest) {
     },
   }
 
+  let bidFloor = parseFloat(deepAccess(bidRequest, 'params.floor'));
+
+  if (!isNaN(bidFloor)) {
+    imp.bidfloor = deepAccess(bidRequest, 'params.floor');
+    imp.bidfloorcur = 'USD';
+    const bidfloorcur = deepAccess(bidRequest, 'params.bidfloorcur')
+    if (bidfloorcur && bidfloorcur !== 'USD') {
+      delete imp.bidfloor;
+      delete imp.bidfloorcur;
+      logWarn('insticator: bidfloorcur supported by insticator is USD only. ignoring bidfloor and bidfloorcur params');
+    }
+  }
+
   if (deepAccess(bidRequest, 'mediaTypes.banner')) {
     imp.banner = buildBanner(bidRequest);
   }
 
   if (deepAccess(bidRequest, 'mediaTypes.video')) {
     imp.video = buildVideo(bidRequest);
+  }
+
+  if (isFn(bidRequest.getFloor)) {
+    let moduleBidFloor;
+
+    const mediaType = deepAccess(bidRequest, 'mediaTypes.banner') ? 'banner' : deepAccess(bidRequest, 'mediaTypes.video') ? 'video' : undefined;
+
+    let _mediaType = mediaType;
+    let _size = '*';
+
+    if (mediaType && ['banner', 'video'].includes(mediaType)) {
+      if (mediaType === 'banner') {
+        const { w: width, h: height } = imp[mediaType];
+        if (width && height) {
+          _size = [width, height];
+        } else {
+          const sizes = deepAccess(bidRequest, 'mediaTypes.banner.format');
+          if (sizes && sizes.length > 0) {
+            const {w: width, h: height} = sizes[0];
+            _size = [width, height];
+          }
+        }
+      } else if (mediaType === 'video') {
+        const { w: width, h: height } = imp[mediaType];
+        _mediaType = mediaType;
+        _size = [width, height];
+      }
+    }
+    try {
+      moduleBidFloor = bidRequest.getFloor({
+        currency: 'USD',
+        mediaType: _mediaType,
+        size: _size
+      });
+    } catch (err) {
+      // continue with no module floors
+      logWarn('priceFloors module call getFloor failed, error : ', err);
+    }
+
+    if (moduleBidFloor) {
+      imp.bidfloor = moduleBidFloor.floor;
+      imp.bidfloorcur = moduleBidFloor.currency;
+    }
   }
 
   return imp;

@@ -83,7 +83,8 @@ describe('MGIDXBidAdapter', function () {
     },
     refererInfo: {
       referer: 'https://test.com'
-    }
+    },
+    timeout: 1000
   };
 
   describe('isBidRequestValid', function () {
