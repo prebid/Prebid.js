@@ -1,6 +1,14 @@
-import {deepAccess, isArray, isBoolean, isNumber, isStr, logWarn} from '../src/utils.js';
+import {deepAccess, isArray, isBoolean, isNumber, isStr, logWarn, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').Bids} Bids
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
 
 const BIDDER_CODE = 'zmaticoo';
 const ENDPOINT_URL = 'https://bid.zmaticoo.com/prebid/bid';
@@ -46,18 +54,13 @@ export const spec = {
       logWarn('Invalid bid request - missing required mediaTypes');
       return false;
     }
-    if (!(bid && bid.bidId && bid.params)) {
+    if (!(bid && bid.params)) {
       logWarn('Invalid bid request - missing required bid data');
       return false;
     }
 
     if (!(bid.params.pubId)) {
       logWarn('Invalid bid request - missing required field pubId');
-      return false;
-    }
-
-    if (!(bid.params.device)) {
-      logWarn('Invalid bid request - missing required device data');
       return false;
     }
     return true;
@@ -180,6 +183,7 @@ export const spec = {
             ttl: TTL,
             creativeId: zmBid.crid,
             netRevenue: NET_REV,
+            nurl: zmBid.nurl,
           };
           bid.meta = {
             advertiserDomains: (zmBid.adomain && zmBid.adomain.length) ? zmBid.adomain : []
@@ -187,11 +191,41 @@ export const spec = {
           if (zmBid.ext && zmBid.ext.vast_url) {
             bid.vastXml = zmBid.ext.vast_url;
           }
+          if (zmBid.ext && zmBid.ext.prebid) {
+            bid.mediaType = zmBid.ext.prebid.type
+          } else {
+            bid.mediaType = BANNER
+          }
           bidResponses.push(bid);
         })
       })
     }
     return bidResponses;
+  },
+  onBidWon: function (bid) {
+    if (!bid['nurl']) {
+      return false
+    }
+    const winCpm = (bid.hasOwnProperty('originalCpm')) ? bid.originalCpm : bid.cpm
+    const winCurr = (bid.hasOwnProperty('originalCurrency') && bid.hasOwnProperty('originalCpm')) ? bid.originalCurrency : bid.currency
+    const winUrl = bid.nurl.replace(
+      /\$\{AUCTION_PRICE\}/,
+      winCpm
+    ).replace(
+      /\$\{AUCTION_IMP_ID\}/,
+      bid.requestId
+    ).replace(
+      /\$\{AUCTION_CURRENCY\}/,
+      winCurr
+    ).replace(
+      /\$\{AUCTON_BID_ID\}/,
+      bid.bidId
+    ).replace(
+      /\$\{AUCTION_ID\}/,
+      bid.auctionId
+    )
+    triggerPixel(winUrl);
+    return true
   }
 }
 

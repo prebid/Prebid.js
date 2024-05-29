@@ -64,7 +64,7 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {validBidRequests} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function(validBidRequests, bidderRequest) {
@@ -189,7 +189,7 @@ export const spec = {
 
   /**
    * Register bidder specific code, which will execute if a bid from this bidder won the auction
-   * @param {Bid} The bid that won the auction
+   * @param {Bid} bid the bid that won the auction
    */
   onBidWon: function(bid) {
     // fires a pixel to confirm a winning bid

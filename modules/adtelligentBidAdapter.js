@@ -9,6 +9,7 @@ import {chunk} from '../libraries/chunk/chunk.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
  */
 
 const subdomainSuffixes = ['', 1, 2];
@@ -119,7 +120,7 @@ export const spec = {
   /**
    * Unpack the response from the server into a list of bids
    * @param serverResponse
-   * @param bidderRequest
+   * @param adapterRequest
    * @return {Bid[]} An array of bids which were nested inside the server
    */
   interpretResponse: function (serverResponse, { adapterRequest }) {

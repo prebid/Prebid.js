@@ -49,11 +49,17 @@ describe('Zeta Ssp Bid Adapter', function () {
     },
     tags: {
       someTag: 444,
+      emptyTag: {},
+      nullTag: null,
+      complexEmptyTag: {
+        empty: {},
+        nullValue: null
+      }
     },
     sid: 'publisherId',
     tagid: 'test_tag_id',
     site: {
-      page: 'testPage'
+      page: 'http://www.zetaglobal.com/page?param=value'
     },
     app: {
       bundle: 'testBundle'
@@ -203,6 +209,7 @@ describe('Zeta Ssp Bid Adapter', function () {
       id: '12345',
       seatbid: [
         {
+          seat: '1',
           bid: [
             {
               id: 'auctionId',
@@ -228,7 +235,7 @@ describe('Zeta Ssp Bid Adapter', function () {
       id: '123',
       site: {
         id: 'SITE_ID',
-        page: 'page.com',
+        page: 'http://www.zetaglobal.com/page?param=value',
         domain: 'domain.com'
       },
       user: {
@@ -256,7 +263,7 @@ describe('Zeta Ssp Bid Adapter', function () {
       id: '123',
       site: {
         id: 'SITE_ID',
-        page: 'page.com',
+        page: 'http://www.zetaglobal.com/page?param=value',
         domain: 'domain.com'
       },
       user: {
@@ -305,7 +312,7 @@ describe('Zeta Ssp Bid Adapter', function () {
   it('Test page and domain in site', function () {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
     const payload = JSON.parse(request.data);
-    expect(payload.site.page).to.eql('http://www.zetaglobal.com/page?param=value');
+    expect(payload.site.page).to.eql('zetaglobal.com/page');
     expect(payload.site.domain).to.eql('zetaglobal.com');
   });
 
@@ -535,11 +542,6 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(payload.imp[0].bidfloor).to.eql(params.bidfloor);
   });
 
-  it('Timeout should exists and be a function', function () {
-    expect(spec.onTimeout).to.exist.and.to.be.a('function');
-    expect(spec.onTimeout({ timeout: 1000 })).to.be.undefined;
-  });
-
   it('Test schain provided', function () {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
     const payload = JSON.parse(request.data);
@@ -595,6 +597,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(bidResponse[0].mediaType).to.eql(BANNER);
     expect(bidResponse[0].ad).to.eql(zetaResponse.body.seatbid[0].bid[0].adm);
     expect(bidResponse[0].vastXml).to.be.undefined;
+    expect(bidResponse[0].dspId).to.eql(zetaResponse.body.seatbid[0].seat);
   });
 
   it('Test the response default mediaType:video', function () {
@@ -604,6 +607,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(bidResponse[0].mediaType).to.eql(VIDEO);
     expect(bidResponse[0].ad).to.eql(zetaResponse.body.seatbid[0].bid[0].adm);
     expect(bidResponse[0].vastXml).to.eql(zetaResponse.body.seatbid[0].bid[0].adm);
+    expect(bidResponse[0].dspId).to.eql(zetaResponse.body.seatbid[0].seat);
   });
 
   it('Test the response mediaType:video from ext param', function () {
@@ -618,6 +622,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(bidResponse[0].mediaType).to.eql(VIDEO);
     expect(bidResponse[0].ad).to.eql(zetaResponse.body.seatbid[0].bid[0].adm);
     expect(bidResponse[0].vastXml).to.eql(zetaResponse.body.seatbid[0].bid[0].adm);
+    expect(bidResponse[0].dspId).to.eql(zetaResponse.body.seatbid[0].seat);
   });
 
   it('Test the response mediaType:banner from ext param', function () {
@@ -632,6 +637,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(bidResponse[0].mediaType).to.eql(BANNER);
     expect(bidResponse[0].ad).to.eql(zetaResponse.body.seatbid[0].bid[0].adm);
     expect(bidResponse[0].vastXml).to.be.undefined;
+    expect(bidResponse[0].dspId).to.eql(zetaResponse.body.seatbid[0].seat);
   });
 
   it('Test provide segments into the request', function () {
@@ -656,5 +662,16 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(payload.device.language).to.not.be.undefined;
     expect(payload.device.w).to.not.be.undefined;
     expect(payload.device.h).to.not.be.undefined;
+  });
+
+  it('Test that all empties are removed', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    expect(payload.ext.tags.someTag).to.eql(444);
+
+    expect(payload.ext.tags.emptyTag).to.be.undefined;
+    expect(payload.ext.tags.nullTag).to.be.undefined;
+    expect(payload.ext.tags.complexEmptyTag).to.be.undefined;
   });
 });

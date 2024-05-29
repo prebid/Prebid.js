@@ -143,10 +143,7 @@ describe('YieldmoAdapter', function () {
 
       it('should return false when required bid.params.video.* is not found', function () {
         const getBidAndExclude = paramToRemove => getVideoBidWithoutParam('params.video', paramToRemove);
-
-        expect(spec.isBidRequestValid(getBidAndExclude('placement'))).to.be.false;
         expect(spec.isBidRequestValid(getBidAndExclude('maxduration'))).to.be.false;
-        expect(spec.isBidRequestValid(getBidAndExclude('startdelay'))).to.be.false;
         expect(spec.isBidRequestValid(getBidAndExclude('protocols'))).to.be.false;
         expect(spec.isBidRequestValid(getBidAndExclude('api'))).to.be.false;
       });
@@ -406,11 +403,31 @@ describe('YieldmoAdapter', function () {
             },
           ],
         }}}));
-        expect(biddata[0].data.topics).to.deep.equal({
+
+        expect(biddata[0].data.topics).to.equal(JSON.stringify({
           taxonomy: 600,
           classifier: '2206021246',
           topics: [7, 8, 9],
-        });
+        }));
+      });
+
+      it('should add cdep to the banner bid request', function () {
+        const biddata = build(
+          [mockBannerBid()],
+          mockBidderRequest({
+            ortb2: {
+              device: {
+                ext: {
+                  cdep: 'test_cdep'
+                },
+              },
+            },
+          })
+        );
+
+        expect(biddata[0].data.cdep).to.equal(
+          'test_cdep'
+        );
       });
 
       it('should send gpc in the banner bid request', function () {
@@ -509,20 +526,6 @@ describe('YieldmoAdapter', function () {
         utils.deepAccess(videoBid, 'mediaTypes.video')['mimes'] = ['video/mp4'];
         utils.deepAccess(videoBid, 'params.video')['mimes'] = ['video/mkv'];
         expect(buildVideoBidAndGetVideoParam().mimes).to.deep.equal(['video/mkv']);
-      });
-
-      it('should validate protocol in video bid request', function () {
-        expect(
-          spec.isBidRequestValid(
-            mockVideoBid({}, {}, { protocols: [2, 3, 11] })
-          )
-        ).to.be.true;
-
-        expect(
-          spec.isBidRequestValid(
-            mockVideoBid({}, {}, { protocols: [2, 3, 10] })
-          )
-        ).to.be.false;
       });
 
       describe('video.skip state check', () => {

@@ -38,7 +38,66 @@ describe('The Criteo bidding adapter', function () {
     ajaxStub.restore();
   });
 
-  describe('getUserSyncs', function () {
+  describe('getUserSyncs in pixel mode', function () {
+    const syncOptions = {
+      pixelEnabled: true
+    };
+
+    it('should not trigger sync if publisher did not enable pixel based syncs', function () {
+      const userSyncs = spec.getUserSyncs({
+        iframeEnabled: false
+      }, undefined, undefined, undefined);
+
+      expect(userSyncs).to.eql([]);
+    });
+
+    it('should not trigger sync if purpose one is not granted', function () {
+      const gdprConsent = {
+        gdprApplies: true,
+        consentString: 'ABC',
+        vendorData: {
+          purpose: {
+            consents: {
+              1: false
+            }
+          }
+        }
+      };
+      const userSyncs = spec.getUserSyncs(syncOptions, undefined, gdprConsent, undefined);
+
+      expect(userSyncs).to.eql([]);
+    });
+
+    it('should trigger sync with consent data', function () {
+      const usPrivacy = 'usp_string';
+
+      const gppConsent = {
+        gppString: 'gpp_string',
+        applicableSections: [ 1, 2 ]
+      };
+
+      const gdprConsent = {
+        gdprApplies: true,
+        consentString: 'ABC',
+        vendorData: {
+          purpose: {
+            consents: {
+              1: true
+            }
+          }
+        }
+      };
+
+      const userSyncs = spec.getUserSyncs(syncOptions, undefined, gdprConsent, usPrivacy, gppConsent);
+
+      expect(userSyncs).to.eql([{
+        type: 'image',
+        url: 'https://ssp-sync.criteo.com/user-sync/redirect?profile=207&gdprapplies=true&gdpr=ABC&ccpa=usp_string&gpp=gpp_string&gpp_sid=1&gpp_sid=2'
+      }]);
+    });
+  });
+
+  describe('getUserSyncs in iframe mode', function () {
     const syncOptionsIframeEnabled = {
       iframeEnabled: true
     };
@@ -151,7 +210,7 @@ describe('The Criteo bidding adapter', function () {
 
       expect(userSyncs).to.eql([{
         type: 'iframe',
-        url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com#${JSON.stringify(expectedHashWithCookieData, Object.keys(expectedHashWithCookieData).sort()).replace(/"/g, '%22')}`
+        url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com&gpp=#${JSON.stringify(expectedHashWithCookieData, Object.keys(expectedHashWithCookieData).sort()).replace(/"/g, '%22')}`
       }]);
     });
 
@@ -175,7 +234,7 @@ describe('The Criteo bidding adapter', function () {
 
       expect(userSyncs).to.eql([{
         type: 'iframe',
-        url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com#${JSON.stringify(expectedHashWithLocalStorageData, Object.keys(expectedHashWithLocalStorageData).sort()).replace(/"/g, '%22')}`
+        url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com&gpp=#${JSON.stringify(expectedHashWithLocalStorageData, Object.keys(expectedHashWithLocalStorageData).sort()).replace(/"/g, '%22')}`
       }]);
     });
 
@@ -195,7 +254,7 @@ describe('The Criteo bidding adapter', function () {
 
       expect(userSyncs).to.eql([{
         type: 'iframe',
-        url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com&gdpr=1&gdpr_consent=ABC#${JSON.stringify(expectedHash).replace(/"/g, '%22')}`
+        url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com&gdpr=1&gdpr_consent=ABC&gpp=#${JSON.stringify(expectedHash).replace(/"/g, '%22')}`
       }]);
     });
 
@@ -204,7 +263,7 @@ describe('The Criteo bidding adapter', function () {
 
       expect(userSyncs).to.eql([{
         type: 'iframe',
-        url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com&us_privacy=ABC#${JSON.stringify(expectedHash).replace(/"/g, '%22')}`
+        url: `https://gum.criteo.com/syncframe?origin=criteoPrebidAdapter&topUrl=www.abc.com&us_privacy=ABC&gpp=#${JSON.stringify(expectedHash).replace(/"/g, '%22')}`
       }]);
     });
 
@@ -614,6 +673,25 @@ describe('The Criteo bidding adapter', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       const ortbRequest = request.data;
       expect(ortbRequest.source.tid).to.equal('abc');
+    });
+
+    it('should properly transmit tmax if available', function () {
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          transactionId: 'transaction-123',
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {}
+        },
+      ];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const ortbRequest = request.data;
+      expect(ortbRequest.tmax).to.equal(bidderRequest.timeout);
     });
 
     it('should properly transmit bidId if available', function () {
@@ -1949,6 +2027,62 @@ describe('The Criteo bidding adapter', function () {
       expect(request.data.slots[0].ext).to.not.have.property('ae');
     });
 
+    it('should properly transmit the pubid and slot uid if available', function () {
+      const bidderRequest = {
+        ortb2: {
+          site: {
+            publisher: {
+              id: 'pub-777'
+            }
+          }
+        }
+      };
+      const bidRequests = [
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-123',
+          ortb2Imp: {
+            ext: {
+              tid: 'transaction-123',
+            },
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [[728, 90]]
+            }
+          },
+          params: {
+            zoneId: 123,
+          },
+        },
+        {
+          bidder: 'criteo',
+          adUnitCode: 'bid-234',
+          ortb2Imp: {
+            ext: {
+              tid: 'transaction-234',
+            },
+          },
+          mediaTypes: {
+            banner: {
+              sizes: [[300, 250], [728, 90]]
+            }
+          },
+          params: {
+            networkId: 456,
+            pubid: 'pub-888',
+            uid: 888
+          },
+        },
+      ];
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const ortbRequest = request.data;
+      expect(ortbRequest.publisher.id).to.be.undefined;
+      expect(ortbRequest.site.publisher.id).to.equal('pub-888');
+      expect(request.data.slots[0].ext.bidder).to.be.undefined;
+      expect(request.data.slots[1].ext.bidder.uid).to.equal(888);
+    });
+
     it('should properly transmit device.ext.cdep if available', function () {
       const bidderRequest = {
         ortb2: {
@@ -2060,7 +2194,7 @@ describe('The Criteo bidding adapter', function () {
       };
       const bids = spec.interpretResponse(response, request);
       expect(bids).to.have.lengthOf(1);
-      expect(bids[0].meta.adrender).to.equal(1);
+      expect(bids[0].meta.dsa.adrender).to.equal(1);
     });
 
     it('should properly parse a bid response with a networkId with twin ad unit banner win', function () {
@@ -2538,46 +2672,102 @@ describe('The Criteo bidding adapter', function () {
     });
 
     it('should properly parse a bid response with FLEDGE auction configs', function () {
+      let auctionConfig1 = {
+        auctionSignals: {},
+        decisionLogicUrl: 'https://grid-mercury.criteo.com/fledge/decision',
+        interestGroupBuyers: ['https://first-buyer-domain.com', 'https://second-buyer-domain.com'],
+        perBuyerSignals: {
+          'https://first-buyer-domain.com': {
+            foo: 'bar',
+          },
+          'https://second-buyer-domain.com': {
+            foo: 'baz'
+          },
+        },
+        perBuyerTimeout: {
+          '*': 500,
+          'buyer1': 100,
+          'buyer2': 200
+        },
+        perBuyerGroupLimits: {
+          '*': 60,
+          'buyer1': 300,
+          'buyer2': 400
+        },
+        seller: 'https://seller-domain.com',
+        sellerTimeout: 500,
+        sellerSignals: {
+          foo: 'bar',
+          foo2: 'bar2',
+          floor: 1,
+          currency: 'USD',
+          perBuyerTimeout: {
+            'buyer1': 100,
+            'buyer2': 200
+          },
+          perBuyerGroupLimits: {
+            'buyer1': 300,
+            'buyer2': 400
+          },
+        },
+        sellerCurrency: 'USD',
+      };
+      let auctionConfig2 = {
+        auctionSignals: {},
+        decisionLogicUrl: 'https://grid-mercury.criteo.com/fledge/decision',
+        interestGroupBuyers: ['https://first-buyer-domain.com', 'https://second-buyer-domain.com'],
+        perBuyerSignals: {
+          'https://first-buyer-domain.com': {
+            foo: 'bar',
+          },
+          'https://second-buyer-domain.com': {
+            foo: 'baz'
+          },
+        },
+        perBuyerTimeout: {
+          '*': 500,
+          'buyer1': 100,
+          'buyer2': 200
+        },
+        perBuyerGroupLimits: {
+          '*': 60,
+          'buyer1': 300,
+          'buyer2': 400
+        },
+        seller: 'https://seller-domain.com',
+        sellerTimeout: 500,
+        sellerSignals: {
+          foo: 'bar',
+          floor: 1,
+          perBuyerTimeout: {
+            'buyer1': 100,
+            'buyer2': 200
+          },
+          perBuyerGroupLimits: {
+            'buyer1': 300,
+            'buyer2': 400
+          },
+        },
+        sellerCurrency: '???'
+      };
       const response = {
         body: {
           ext: {
-            igbid: [{
+            igi: [{
               impid: 'test-bidId',
-              igbuyer: [{
-                origin: 'https://first-buyer-domain.com',
-                buyerdata: {
-                  foo: 'bar',
-                },
-              }, {
-                origin: 'https://second-buyer-domain.com',
-                buyerdata: {
-                  foo: 'baz',
-                },
+              igs: [{
+                impid: 'test-bidId',
+                bidId: 'test-bidId',
+                config: auctionConfig1
               }]
             }, {
               impid: 'test-bidId-2',
-              igbuyer: [{
-                origin: 'https://first-buyer-domain.com',
-                buyerdata: {
-                  foo: 'bar',
-                },
-              }, {
-                origin: 'https://second-buyer-domain.com',
-                buyerdata: {
-                  foo: 'baz',
-                },
+              igs: [{
+                impid: 'test-bidId-2',
+                bidId: 'test-bidId-2',
+                config: auctionConfig2
               }]
-            }],
-            seller: 'https://seller-domain.com',
-            sellerTimeout: 500,
-            sellerSignals: {
-              foo: 'bar',
-            },
-            sellerSignalsPerImp: {
-              'test-bidId': {
-                foo2: 'bar2',
-              }
-            },
+            }]
           },
         },
       };
@@ -2628,50 +2818,13 @@ describe('The Criteo bidding adapter', function () {
       expect(interpretedResponse.fledgeAuctionConfigs).to.have.lengthOf(2);
       expect(interpretedResponse.fledgeAuctionConfigs[0]).to.deep.equal({
         bidId: 'test-bidId',
-        config: {
-          auctionSignals: {},
-          decisionLogicUrl: 'https://grid-mercury.criteo.com/fledge/decision',
-          interestGroupBuyers: ['https://first-buyer-domain.com', 'https://second-buyer-domain.com'],
-          perBuyerSignals: {
-            'https://first-buyer-domain.com': {
-              foo: 'bar',
-            },
-            'https://second-buyer-domain.com': {
-              foo: 'baz'
-            },
-          },
-          seller: 'https://seller-domain.com',
-          sellerTimeout: 500,
-          sellerSignals: {
-            foo: 'bar',
-            foo2: 'bar2',
-            floor: 1,
-            sellerCurrency: 'EUR',
-          },
-        },
+        impid: 'test-bidId',
+        config: auctionConfig1,
       });
       expect(interpretedResponse.fledgeAuctionConfigs[1]).to.deep.equal({
         bidId: 'test-bidId-2',
-        config: {
-          auctionSignals: {},
-          decisionLogicUrl: 'https://grid-mercury.criteo.com/fledge/decision',
-          interestGroupBuyers: ['https://first-buyer-domain.com', 'https://second-buyer-domain.com'],
-          perBuyerSignals: {
-            'https://first-buyer-domain.com': {
-              foo: 'bar',
-            },
-            'https://second-buyer-domain.com': {
-              foo: 'baz'
-            },
-          },
-          seller: 'https://seller-domain.com',
-          sellerTimeout: 500,
-          sellerSignals: {
-            foo: 'bar',
-            floor: 1,
-            sellerCurrency: 'EUR',
-          },
-        },
+        impid: 'test-bidId-2',
+        config: auctionConfig2,
       });
     });
 

@@ -7,7 +7,7 @@ import agmaAnalyticsAdapter, {
 import { gdprDataHandler } from '../../../src/adapterManager.js';
 import { expect } from 'chai';
 import * as events from '../../../src/events.js';
-import constants from '../../../src/constants.json';
+import { EVENTS } from '../../../src/constants.js';
 import { generateUUID } from '../../../src/utils.js';
 import { server } from '../../mocks/xhr.js';
 import { config } from 'src/config.js';
@@ -28,6 +28,8 @@ const extendedKey = [
   'referrer',
   'screenHeight',
   'screenWidth',
+  'deviceWidth',
+  'deviceHeight',
   'scriptVersion',
   'timestamp',
   'timezoneOffset',
@@ -279,22 +281,22 @@ describe('AGMA Analytics Adapter', () => {
         auctionId: generateUUID(),
       };
 
-      events.emit(constants.EVENTS.AUCTION_INIT, {
+      events.emit(EVENTS.AUCTION_INIT, {
         auctionId: generateUUID('1'),
         auction,
       });
 
       clock.tick(200);
 
-      events.emit(constants.EVENTS.AUCTION_INIT, {
+      events.emit(EVENTS.AUCTION_INIT, {
         auctionId: generateUUID('2'),
         auction,
       });
-      events.emit(constants.EVENTS.AUCTION_INIT, {
+      events.emit(EVENTS.AUCTION_INIT, {
         auctionId: generateUUID('3'),
         auction,
       });
-      events.emit(constants.EVENTS.AUCTION_INIT, {
+      events.emit(EVENTS.AUCTION_INIT, {
         auctionId: generateUUID('4'),
         auction,
       });
@@ -305,7 +307,7 @@ describe('AGMA Analytics Adapter', () => {
       const requestBody = JSON.parse(request.requestBody);
       expect(request.url).to.equal(INGEST_URL);
       expect(requestBody).to.have.all.keys(extendedKey);
-      expect(requestBody.triggerEvent).to.equal(constants.EVENTS.AUCTION_INIT);
+      expect(requestBody.triggerEvent).to.equal(EVENTS.AUCTION_INIT);
       expect(server.requests).to.have.length(1);
     });
 
@@ -325,14 +327,16 @@ describe('AGMA Analytics Adapter', () => {
         auctionId: generateUUID(),
       };
 
-      events.emit(constants.EVENTS.AUCTION_INIT, auction);
+      events.emit(EVENTS.AUCTION_INIT, auction);
       clock.tick(1100);
 
       const [request] = server.requests;
       const requestBody = JSON.parse(request.requestBody);
       expect(request.url).to.equal(INGEST_URL);
       expect(requestBody).to.have.all.keys(extendedKey);
-      expect(requestBody.triggerEvent).to.equal(constants.EVENTS.AUCTION_INIT);
+      expect(requestBody.triggerEvent).to.equal(EVENTS.AUCTION_INIT);
+      expect(requestBody.deviceWidth).to.equal(screen.width);
+      expect(requestBody.deviceHeight).to.equal(screen.height);
       expect(server.requests).to.have.length(1);
       expect(agmaAnalyticsAdapter.auctionIds).to.have.length(0);
     });
@@ -347,13 +351,13 @@ describe('AGMA Analytics Adapter', () => {
         auctionId: generateUUID(),
       };
 
-      events.emit(constants.EVENTS.AUCTION_INIT, auction);
+      events.emit(EVENTS.AUCTION_INIT, auction);
       clock.tick(1000);
 
       const [request] = server.requests;
       const requestBody = JSON.parse(request.requestBody);
       expect(request.url).to.equal(INGEST_URL);
-      expect(requestBody.triggerEvent).to.equal(constants.EVENTS.AUCTION_INIT);
+      expect(requestBody.triggerEvent).to.equal(EVENTS.AUCTION_INIT);
       expect(server.requests).to.have.length(1);
       expect(agmaAnalyticsAdapter.auctionIds).to.have.length(0);
     });
@@ -365,22 +369,22 @@ describe('AGMA Analytics Adapter', () => {
         provider: 'agma',
         options: {
           code: 'test',
-          triggerEvent: constants.EVENTS.AUCTION_END
+          triggerEvent: EVENTS.AUCTION_END
         },
       });
       const auction = {
         auctionId: generateUUID(),
       };
 
-      events.emit(constants.EVENTS.AUCTION_INIT, auction);
-      events.emit(constants.EVENTS.AUCTION_END, auction);
+      events.emit(EVENTS.AUCTION_INIT, auction);
+      events.emit(EVENTS.AUCTION_END, auction);
       clock.tick(1000);
 
       const [request] = server.requests;
       const requestBody = JSON.parse(request.requestBody);
       expect(request.url).to.equal(INGEST_URL);
       expect(requestBody.auctionIds).to.have.length(1);
-      expect(requestBody.triggerEvent).to.equal(constants.EVENTS.AUCTION_END);
+      expect(requestBody.triggerEvent).to.equal(EVENTS.AUCTION_END);
       expect(server.requests).to.have.length(1);
       expect(agmaAnalyticsAdapter.auctionIds).to.have.length(0);
     });

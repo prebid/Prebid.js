@@ -9,7 +9,6 @@ import {getBidIdParameter} from '../src/utils.js';
  */
 
 const BIDDER_CODE = 'eskimi';
-// const ENDPOINT = 'https://hb.eskimi.com/bids'
 const ENDPOINT = 'https://sspback.eskimi.com/bid-request'
 
 const DEFAULT_BID_TTL = 30;
@@ -21,7 +20,7 @@ const VIDEO_ORTB_PARAMS = [
   'mimes',
   'minduration',
   'maxduration',
-  'placement',
+  'plcmt',
   'protocols',
   'startdelay',
   'skip',
@@ -142,7 +141,7 @@ function buildVideoImp(bidRequest, imp) {
   });
 
   if (imp.video && videoParams?.context === 'outstream') {
-    imp.video.placement = imp.video.placement || 4;
+    imp.video.plcmt = imp.video.plcmt || 4;
   }
 
   return { ...imp };

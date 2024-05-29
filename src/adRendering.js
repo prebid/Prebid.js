@@ -1,18 +1,22 @@
-import {deepAccess, logError, logWarn, replaceMacros} from './utils.js';
+import {createIframe, deepAccess, inIframe, insertElement, logError, logWarn, replaceMacros} from './utils.js';
 import * as events from './events.js';
-import constants from './constants.json';
+import { AD_RENDER_FAILED_REASON, BID_STATUS, EVENTS, MESSAGES } from './constants.js';
 import {config} from './config.js';
 import {executeRenderer, isRendererRequired} from './Renderer.js';
 import {VIDEO} from './mediaTypes.js';
 import {auctionManager} from './auctionManager.js';
+import {getCreativeRenderer} from './creativeRenderers.js';
+import {hook} from './hook.js';
+import {fireNativeTrackers} from './native.js';
 
-const {AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON} = constants.EVENTS;
+const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON } = EVENTS;
+const { EXCEPTION } = AD_RENDER_FAILED_REASON;
 
 /**
  * Emit the AD_RENDER_FAILED event.
  *
  * @param {Object} data
- * @param data.reason one of the values in CONSTANTS.AD_RENDER_FAILED_REASON
+ * @param data.reason one of the values in AD_RENDER_FAILED_REASON
  * @param data.message failure description
  * @param [data.bid] bid response object that failed to render
  * @param [data.id] adId that failed to render
@@ -46,16 +50,108 @@ export function emitAdRenderSucceeded({ doc, bid, id }) {
   events.emit(AD_RENDER_SUCCEEDED, data);
 }
 
-export function handleRender(renderFn, {adId, options, bidResponse, doc}) {
+export function handleCreativeEvent(data, bidResponse) {
+  switch (data.event) {
+    case EVENTS.AD_RENDER_FAILED:
+      emitAdRenderFail({
+        bid: bidResponse,
+        id: bidResponse.adId,
+        reason: data.info.reason,
+        message: data.info.message
+      });
+      break;
+    case EVENTS.AD_RENDER_SUCCEEDED:
+      emitAdRenderSucceeded({
+        doc: null,
+        bid: bidResponse,
+        id: bidResponse.adId
+      });
+      break;
+    default:
+      logError(`Received event request for unsupported event: '${data.event}' (adId: '${bidResponse.adId}')`);
+  }
+}
+
+export function handleNativeMessage(data, bidResponse, {resizeFn, fireTrackers = fireNativeTrackers}) {
+  switch (data.action) {
+    case 'resizeNativeHeight':
+      resizeFn(data.width, data.height);
+      break;
+    default:
+      fireTrackers(data, bidResponse);
+  }
+}
+
+const HANDLERS = {
+  [MESSAGES.EVENT]: handleCreativeEvent
+}
+
+if (FEATURES.NATIVE) {
+  HANDLERS[MESSAGES.NATIVE] = handleNativeMessage;
+}
+
+function creativeMessageHandler(deps) {
+  return function (type, data, bidResponse) {
+    if (HANDLERS.hasOwnProperty(type)) {
+      HANDLERS[type](data, bidResponse, deps);
+    }
+  }
+}
+
+export const getRenderingData = hook('sync', function (bidResponse, options) {
+  const {ad, adUrl, cpm, originalCpm, width, height} = bidResponse
+  const repl = {
+    AUCTION_PRICE: originalCpm || cpm,
+    CLICKTHROUGH: options?.clickUrl || ''
+  }
+  return {
+    ad: replaceMacros(ad, repl),
+    adUrl: replaceMacros(adUrl, repl),
+    width,
+    height
+  };
+})
+
+export const doRender = hook('sync', function({renderFn, resizeFn, bidResponse, options}) {
+  if (FEATURES.VIDEO && bidResponse.mediaType === VIDEO) {
+    emitAdRenderFail({
+      reason: AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT,
+      message: 'Cannot render video ad',
+      bid: bidResponse,
+      id: bidResponse.adId
+    });
+    return;
+  }
+  const data = getRenderingData(bidResponse, options);
+  renderFn(Object.assign({adId: bidResponse.adId}, data));
+  const {width, height} = data;
+  if ((width ?? height) != null) {
+    resizeFn(width, height);
+  }
+});
+
+doRender.before(function (next, args) {
+  // run renderers from a high priority hook to allow the video module to insert itself between this and "normal" rendering.
+  const {bidResponse, doc} = args;
+  if (isRendererRequired(bidResponse.renderer)) {
+    executeRenderer(bidResponse.renderer, bidResponse, doc);
+    emitAdRenderSucceeded({doc, bid: bidResponse, id: bidResponse.adId})
+    next.bail();
+  } else {
+    next(args);
+  }
+}, 100)
+
+export function handleRender({renderFn, resizeFn, adId, options, bidResponse, doc}) {
   if (bidResponse == null) {
     emitAdRenderFail({
-      reason: constants.AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
+      reason: AD_RENDER_FAILED_REASON.CANNOT_FIND_AD,
       message: `Cannot find ad '${adId}'`,
       id: adId
     });
     return;
   }
-  if (bidResponse.status === constants.BID_STATUS.RENDERED) {
+  if (bidResponse.status === BID_STATUS.RENDERED) {
     logWarn(`Ad id ${adId} has been rendered before`);
     events.emit(STALE_RENDER, bidResponse);
     if (deepAccess(config.getConfig('auctionOptions'), 'suppressStaleRender')) {
@@ -63,44 +159,67 @@ export function handleRender(renderFn, {adId, options, bidResponse, doc}) {
     }
   }
   try {
-    const {adId, ad, adUrl, width, height, renderer, cpm, originalCpm, mediaType} = bidResponse;
-    // rendering for outstream safeframe
-    if (isRendererRequired(renderer)) {
-      executeRenderer(renderer, bidResponse, doc);
-      emitAdRenderSucceeded({doc, bid: bidResponse, id: adId})
-    } else if (adId) {
-      if (mediaType === VIDEO) {
-        emitAdRenderFail({
-          reason: constants.AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT,
-          message: 'Cannot render video ad',
-          bid: bidResponse,
-          id: adId
-        });
-        return;
-      }
-      const repl = {
-        AUCTION_PRICE: originalCpm || cpm,
-        CLICKTHROUGH: options?.clickUrl || ''
-      };
-      renderFn({
-        ad: replaceMacros(ad, repl),
-        adUrl: replaceMacros(adUrl, repl),
-        adId,
-        width,
-        height
-      });
-    }
+    doRender({renderFn, resizeFn, bidResponse, options, doc});
   } catch (e) {
     emitAdRenderFail({
-      reason: constants.AD_RENDER_FAILED_REASON.EXCEPTION,
+      reason: AD_RENDER_FAILED_REASON.EXCEPTION,
       message: e.message,
       id: adId,
       bid: bidResponse
     });
-    return;
   }
-  // save winning bids
   auctionManager.addWinningBid(bidResponse);
-
   events.emit(BID_WON, bidResponse);
+}
+
+export function renderAdDirect(doc, adId, options) {
+  let bid;
+  function fail(reason, message) {
+    emitAdRenderFail(Object.assign({id: adId, bid}, {reason, message}));
+  }
+  function resizeFn(width, height) {
+    if (doc.defaultView && doc.defaultView.frameElement) {
+      width && (doc.defaultView.frameElement.width = width);
+      height && (doc.defaultView.frameElement.height = height);
+    }
+  }
+  const messageHandler = creativeMessageHandler({resizeFn});
+  function renderFn(adData) {
+    if (adData.ad) {
+      doc.write(adData.ad);
+      doc.close();
+      emitAdRenderSucceeded({doc, bid, adId: bid.adId});
+    } else {
+      getCreativeRenderer(bid)
+        .then(render => render(adData, {
+          sendMessage: (type, data) => messageHandler(type, data, bid),
+          mkFrame: createIframe,
+        }, doc.defaultView))
+        .then(
+          () => emitAdRenderSucceeded({doc, bid, adId: bid.adId}),
+          (e) => {
+            fail(e?.reason || AD_RENDER_FAILED_REASON.EXCEPTION, e?.message)
+            e?.stack && logError(e);
+          }
+        );
+    }
+    // TODO: this is almost certainly the wrong way to do this
+    const creativeComment = document.createComment(`Creative ${bid.creativeId} served by ${bid.bidder} Prebid.js Header Bidding`);
+    insertElement(creativeComment, doc, 'html');
+  }
+  try {
+    if (!adId || !doc) {
+      fail(AD_RENDER_FAILED_REASON.MISSING_DOC_OR_ADID, `missing ${adId ? 'doc' : 'adId'}`);
+    } else {
+      bid = auctionManager.findBidByAdId(adId);
+
+      if ((doc === document && !inIframe())) {
+        fail(AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT, `renderAd was prevented from writing to the main document.`);
+      } else {
+        handleRender({renderFn, resizeFn, adId, options: {clickUrl: options?.clickThrough}, bidResponse: bid, doc});
+      }
+    }
+  } catch (e) {
+    fail(EXCEPTION, e.message);
+  }
 }

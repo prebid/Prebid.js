@@ -24,9 +24,6 @@ export const ADAPTER_VERSION = 36;
 const BIDDER_CODE = 'criteo';
 const CDB_ENDPOINT = 'https://bidder.criteo.com/cdb';
 const PROFILE_ID_INLINE = 207;
-const FLEDGE_SELLER_DOMAIN = 'https://grid-mercury.criteo.com';
-const FLEDGE_SELLER_TIMEOUT = 500;
-const FLEDGE_DECISION_LOGIC_URL = 'https://grid-mercury.criteo.com/fledge/decision';
 export const PROFILE_ID_PUBLISHERTAG = 185;
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const LOG_PREFIX = 'Criteo: ';
@@ -58,16 +55,18 @@ export const spec = {
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  getUserSyncs: function (syncOptions, _, gdprConsent, uspConsent) {
-    const fastBidVersion = config.getConfig('criteo.fastBidVersion');
-    if (canFastBid(fastBidVersion)) {
-      return [];
-    }
-
-    const refererInfo = getRefererInfo();
-    const origin = 'criteoPrebidAdapter';
+  getUserSyncs: function (syncOptions, _, gdprConsent, uspConsent, gppConsent = {}) {
+    let { gppString = '', applicableSections = [] } = gppConsent;
 
     if (syncOptions.iframeEnabled && hasPurpose1Consent(gdprConsent)) {
+      const fastBidVersion = config.getConfig('criteo.fastBidVersion');
+      if (canFastBid(fastBidVersion)) {
+        return [];
+      }
+
+      const refererInfo = getRefererInfo();
+      const origin = 'criteoPrebidAdapter';
+
       const queryParams = [];
       queryParams.push(`origin=${origin}`);
       queryParams.push(`topUrl=${refererInfo.domain}`);
@@ -81,6 +80,12 @@ export const spec = {
       }
       if (uspConsent) {
         queryParams.push(`us_privacy=${uspConsent}`);
+      }
+      queryParams.push(`gpp=${gppString}`);
+      if (Array.isArray(applicableSections)) {
+        for (const applicableSection of applicableSections) {
+          queryParams.push(`gpp_sid=${applicableSection}`);
+        }
       }
 
       const requestId = Math.random().toString();
@@ -128,6 +133,32 @@ export const spec = {
       return [{
         type: 'iframe',
         url: `https://gum.criteo.com/syncframe?${queryParams.join('&')}#${jsonHashSerialized}`
+      }];
+    } else if (syncOptions.pixelEnabled && hasPurpose1Consent(gdprConsent)) {
+      const queryParams = [];
+      queryParams.push(`profile=207`);
+      if (gdprConsent) {
+        if (gdprConsent.gdprApplies === true) {
+          queryParams.push(`gdprapplies=true`);
+        }
+        if (gdprConsent.consentString) {
+          queryParams.push(`gdpr=${gdprConsent.consentString}`);
+        }
+      }
+      if (uspConsent) {
+        queryParams.push(`ccpa=${uspConsent}`);
+      }
+      queryParams.push(`gpp=${gppString}`);
+      if (Array.isArray(applicableSections)) {
+        for (const applicableSection of applicableSections) {
+          queryParams.push(`gpp_sid=${applicableSection}`);
+        }
+      }
+      // gpp
+      // gpp_sid
+      return [{
+        type: 'image',
+        url: `https://ssp-sync.criteo.com/user-sync/redirect?${queryParams.join('&')}`
       }];
     }
     return [];
@@ -258,8 +289,8 @@ export const spec = {
           if (slot.ext?.meta?.networkName) {
             bid.meta = Object.assign({}, bid.meta, { networkName: slot.ext.meta.networkName })
           }
-          if (slot.ext?.dsa?.adrender) {
-            bid.meta = Object.assign({}, bid.meta, { adrender: slot.ext.dsa.adrender })
+          if (slot.ext?.dsa) {
+            bid.meta = Object.assign({}, bid.meta, { dsa: slot.ext.dsa })
           }
           if (slot.native) {
             if (bidRequest.params.nativeCallback) {
@@ -284,41 +315,13 @@ export const spec = {
       });
     }
 
-    if (isArray(body.ext?.igbid)) {
-      const seller = body.ext.seller || FLEDGE_SELLER_DOMAIN;
-      const sellerTimeout = body.ext.sellerTimeout || FLEDGE_SELLER_TIMEOUT;
-      body.ext.igbid.forEach((igbid) => {
-        const perBuyerSignals = {};
-        igbid.igbuyer.forEach(buyerItem => {
-          perBuyerSignals[buyerItem.origin] = buyerItem.buyerdata;
-        });
-        const bidRequest = request.bidRequests.find(b => b.bidId === igbid.impid);
-        const bidId = bidRequest.bidId;
-        let sellerSignals = body.ext.sellerSignals || {};
-        if (!sellerSignals.floor && bidRequest.params.bidFloor) {
-          sellerSignals.floor = bidRequest.params.bidFloor;
+    if (isArray(body.ext?.igi)) {
+      body.ext.igi.forEach((igi) => {
+        if (isArray(igi?.igs)) {
+          igi.igs.forEach((igs) => {
+            fledgeAuctionConfigs.push(igs);
+          });
         }
-        if (!sellerSignals.sellerCurrency && bidRequest.params.bidFloorCur) {
-          sellerSignals.sellerCurrency = bidRequest.params.bidFloorCur;
-        }
-        if (body?.ext?.sellerSignalsPerImp !== undefined) {
-          const sellerSignalsPerImp = body.ext.sellerSignalsPerImp[bidId];
-          if (sellerSignalsPerImp !== undefined) {
-            sellerSignals = {...sellerSignals, ...sellerSignalsPerImp};
-          }
-        }
-        fledgeAuctionConfigs.push({
-          bidId,
-          config: {
-            seller,
-            sellerSignals,
-            sellerTimeout,
-            perBuyerSignals,
-            auctionSignals: {},
-            decisionLogicUrl: FLEDGE_DECISION_LOGIC_URL,
-            interestGroupBuyers: Object.keys(perBuyerSignals),
-          },
-        });
       });
     }
 
@@ -504,6 +507,7 @@ function checkNativeSendId(bidRequest) {
  */
 function buildCdbRequest(context, bidRequests, bidderRequest) {
   let networkId;
+  let pubid;
   let schain;
   let userIdAsEids;
   let regs = Object.assign({}, {
@@ -521,6 +525,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
         userIdAsEids = bidRequest.userIdAsEids;
       }
       networkId = bidRequest.params.networkId || networkId;
+      pubid = bidRequest.params.pubid || pubid;
       schain = bidRequest.schain || schain;
       const slot = {
         slotid: bidRequest.bidId,
@@ -544,6 +549,10 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
       if (bidRequest.nativeOrtbRequest?.assets) {
         slot.ext = Object.assign({}, slot.ext, { assets: bidRequest.nativeOrtbRequest.assets });
       }
+      if (bidRequest.params.uid) {
+        slot.ext = Object.assign({}, slot.ext, { bidder: { uid: bidRequest.params.uid } });
+      }
+
       if (bidRequest.params.publisherSubId) {
         slot.publishersubid = bidRequest.params.publisherSubId;
       }
@@ -625,6 +634,12 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   request.user = bidderRequest.ortb2?.user || {};
   request.site = bidderRequest.ortb2?.site || {};
   request.app = bidderRequest.ortb2?.app || {};
+
+  if (pubid) {
+    request.site.publisher = {...request.site.publisher, ...{ id: pubid }};
+    request.app.publisher = {...request.app.publisher, ...{ id: pubid }};
+  }
+
   request.device = bidderRequest.ortb2?.device || {};
   if (bidderRequest && bidderRequest.ceh) {
     request.user.ceh = bidderRequest.ceh;
@@ -659,6 +674,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   if (bidderRequest && bidderRequest.ortb2?.bapp) {
     request.bapp = bidderRequest.ortb2.bapp;
   }
+  request.tmax = bidderRequest.timeout;
   return request;
 }
 

@@ -83,9 +83,11 @@ function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout
   const ptrace = getCacheOpt();
   const isStorageAllowed = bidderSettings.get(BIDDER_CODE, 'storageAllowed');
 
-  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid', deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', ''));
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', '');
   const cat = deepAccess(bidderRequest, 'ortb2.site.cat', []);
   const pagecat = deepAccess(bidderRequest, 'ortb2.site.pagecat', []);
+  const contentData = deepAccess(bidderRequest, 'ortb2.site.content.data', []);
+  const userData = deepAccess(bidderRequest, 'ortb2.user.data', []);
 
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
@@ -121,6 +123,8 @@ function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout
     isStorageAllowed: isStorageAllowed,
     gpid: gpid,
     cat: cat,
+    contentData,
+    userData: userData,
     pagecat: pagecat,
     transactionId: ortb2Imp?.ext?.tid,
     bidderRequestId: bidderRequestId,
@@ -157,6 +161,13 @@ function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout
   } else if (bidderRequest.ortb2?.regs?.gpp) {
     data.gppString = bidderRequest.ortb2.regs.gpp;
     data.gppSid = bidderRequest.ortb2.regs.gpp_sid;
+  }
+
+  if (bidderRequest.fledgeEnabled) {
+    const fledge = deepAccess(bidderRequest, 'ortb2Imp.ext.ae');
+    if (fledge) {
+      data.fledge = fledge;
+    }
   }
 
   _each(ext, (value, key) => {

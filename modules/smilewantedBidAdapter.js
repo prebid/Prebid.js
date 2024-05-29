@@ -11,6 +11,10 @@ const BIDDER_CODE = 'smilewanted';
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
  * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
 
 const GVL_ID = 639;

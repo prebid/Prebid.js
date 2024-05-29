@@ -4,6 +4,7 @@
       "33acrossIdSystem",
       "admixerIdSystem",
       "adtelligentIdSystem",
+      "adqueryIdSystem",
       "amxIdSystem",
       "britepoolIdSystem",
       "connectIdSystem",
@@ -13,9 +14,11 @@
       "deepintentDpesIdSystem",
       "dmdIdSystem",
       "fabrickIdSystem",
+      "freepassIdSystem",
       "hadronIdSystem",
       "id5IdSystem",
       "ftrackIdSystem",
+      "gravitoIdSystem",
       "identityLinkIdSystem",
       "idxIdSystem",
       "imuIdSystem",
@@ -23,13 +26,17 @@
       "justIdSystem",
       "kinessoIdSystem",
       "liveIntentIdSystem",
+      "lmpIdSystem",
+      "lockrAIMIdSystem",
       "lotamePanoramaIdSystem",
       "merkleIdSystem",
       "mwOpenLinkIdSystem",
+      "mygaruIdSystem",
       "naveggIdSystem",
       "netIdSystem",
       "novatiqIdSystem",
       "oneKeyIdSystem",
+      "operaadsIdSystem",
       "parrableIdSystem",
       "pubProvidedIdSystem",
       "publinkIdSystem",
@@ -39,16 +46,12 @@
       "teadsIdSystem",
       "tncIdSystem",
       "utiqSystem",
+      "utiqMtpIdSystem",
       "uid2IdSystem",
       "euidIdSystem",
       "unifiedIdSystem",
       "verizonMediaIdSystem",
-      "zeotapIdPlusIdSystem",
-      "adqueryIdSystem",
-      "gravitoIdSystem",
-      "freepassIdSystem",
-      "operaadsIdSystem",
-      "mygaruIdSystem"
+      "zeotapIdPlusIdSystem"
     ],
     "adpod": [
       "freeWheelAdserverVideo",
@@ -63,6 +66,7 @@
       "airgridRtdProvider",
       "akamaiDapRtdProvider",
       "arcspanRtdProvider",
+      "azerionedgeRtdProvider",
       "blueconicRtdProvider",
       "brandmetricsRtdProvider",
       "browsiRtdProvider",
@@ -88,6 +92,7 @@
       "optimeraRtdProvider",
       "oxxionRtdProvider",
       "permutiveRtdProvider",
+      "pubxaiRtdProvider",
       "qortexRtdProvider",
       "reconciliationRtdProvider",
       "relevadRtdProvider",
@@ -102,6 +107,9 @@
     "videoModule": [
       "jwplayerVideoProvider",
       "videojsVideoProvider"
+    ],
+    "paapi": [
+      "fledgeForGpt"
     ]
   }
 }

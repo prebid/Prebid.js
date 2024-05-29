@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    /* Paste JW Player script tag here */
+
+    <script async src="../../build/dev/prebid.js"></script>
+    <meta charset="UTF-8">
+    <title>JW Player RTD Provider Example</title>
+    <script>
+      var FAILSAFE_TIMEOUT = 3300;
+      var PREBID_TIMEOUT = 1000;
+
+      var adUnits = [{
+          code: 'video-ad-unit',
+          ortb2Imp: {
+              ext: {
+                  data: {
+                      jwTargeting: {
+                          // Note: the following Ids are placeholders and should be replaced with your Ids.
+                          playerID: '123',
+                          mediaID: 'abc'
+                      }
+                  }
+              }
+          },
+          mediaTypes: {
+              video: {
+                sizes: [[320, 460]],
+                mimes :  ["video/mp4"],
+                minduration : 3,
+                maxduration: 30,
+                protocols : [1,2]
+              }
+          },
+          // Replace this object to test a new Adapter!
+          bids: [{
+            bidder: 'jwplayer',
+            params: {
+              publisherId: 'test-publisher-id',
+              siteId: 'test-site-id',
+              placementId: 'test-placement-id'
+            }
+          }, {
+            bidder: 'ix',
+            params: {
+              siteId: '300',
+              video: {}
+            }
+          }]
+      }];
+
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+    </script>
+
+    <script>
+
+      pbjs.que.push(function() {
+        pbjs.setConfig({
+          realTimeData: {
+            auctionDelay: 100,
+            dataProviders: [{
+              name: "jwplayer",
+              waitForIt: true,
+              params: {
+                // Note: the following media Ids are placeholders and should be replaced with your Ids.
+                mediaIDs: ['abc', 'def', 'ghi', 'jkl']
+              }
+            }]
+          }
+        });
+        pbjs.addAdUnits(adUnits);
+        pbjs.requestBids({
+          bidsBackHandler: renderHighestBid,
+          timeout: PREBID_TIMEOUT
+        });
+      });
+
+      function renderHighestBid() {
+        const highestBids = pbjs.getHighestCpmBids('video-ad-unit');
+        const highestBid = highestBids && highestBids.length && highestBids[0];
+        if (!highestBid) {
+          return;
+        }
+
+        if (highestBid.vastXml) {
+          jwplayer().loadAdXml(highestBid.vastXml);
+        } else if (highestBid.vastUrl) {
+          jwplayer().loadAdTag(highestBid.vastUrl);
+        }
+      }
+
+    </script>
+</head>
+
+<body>
+</body>
+</html>

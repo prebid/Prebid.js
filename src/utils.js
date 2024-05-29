@@ -1,7 +1,7 @@
 import {config} from './config.js';
-import clone from 'just-clone';
+import {klona} from 'klona/json';
 import {includes} from './polyfill.js';
-import CONSTANTS from './constants.json';
+import { EVENTS, S2S } from './constants.js';
 import {GreedyPromise} from './utils/promise.js';
 import {getGlobal} from './prebidGlobal.js';
 
@@ -41,6 +41,7 @@ export const internal = {
   createTrackPixelIframeHtml,
   getWindowSelf,
   getWindowTop,
+  canAccessWindowTop,
   getWindowLocation,
   insertUserSyncIframe,
   insertElement,
@@ -180,6 +181,16 @@ export function getWindowLocation() {
   return window.location;
 }
 
+export function canAccessWindowTop() {
+  try {
+    if (internal.getWindowTop().location.href) {
+      return true;
+    }
+  } catch (e) {
+    return false;
+  }
+}
+
 /**
  * Wrappers to console.(log | info | warn | error). Takes N arguments, the same as the native methods
  */
@@ -202,7 +213,7 @@ export function logWarn() {
     // eslint-disable-next-line no-console
     console.warn.apply(console, decorateLog(arguments, 'WARNING:'));
   }
-  emitEvent(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'WARNING', arguments: arguments});
+  emitEvent(EVENTS.AUCTION_DEBUG, { type: 'WARNING', arguments: arguments });
 }
 
 export function logError() {
@@ -210,7 +221,7 @@ export function logError() {
     // eslint-disable-next-line no-console
     console.error.apply(console, decorateLog(arguments, 'ERROR:'));
   }
-  emitEvent(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'ERROR', arguments: arguments});
+  emitEvent(EVENTS.AUCTION_DEBUG, { type: 'ERROR', arguments: arguments });
 }
 
 export function prefixLog(prefix) {
@@ -252,25 +263,37 @@ export function debugTurnedOn() {
   return !!config.getConfig('debug');
 }
 
+export const createIframe = (() => {
+  const DEFAULTS = {
+    border: '0px',
+    hspace: '0',
+    vspace: '0',
+    marginWidth: '0',
+    marginHeight: '0',
+    scrolling: 'no',
+    frameBorder: '0',
+    allowtransparency: 'true'
+  }
+  return (doc, attrs, style = {}) => {
+    const f = doc.createElement('iframe');
+    Object.assign(f, Object.assign({}, DEFAULTS, attrs));
+    Object.assign(f.style, style);
+    return f;
+  }
+})();
+
 export function createInvisibleIframe() {
-  var f = document.createElement('iframe');
-  f.id = getUniqueIdentifierStr();
-  f.height = 0;
-  f.width = 0;
-  f.border = '0px';
-  f.hspace = '0';
-  f.vspace = '0';
-  f.marginWidth = '0';
-  f.marginHeight = '0';
-  f.style.border = '0';
-  f.scrolling = 'no';
-  f.frameBorder = '0';
-  f.src = 'about:blank';
-  f.style.display = 'none';
-  f.style.height = '0px';
-  f.style.width = '0px';
-  f.allowtransparency = 'true';
-  return f;
+  return createIframe(document, {
+    id: getUniqueIdentifierStr(),
+    width: 0,
+    height: 0,
+    src: 'about:blank'
+  }, {
+    display: 'none',
+    height: '0px',
+    width: '0px',
+    border: '0px'
+  });
 }
 
 /*
@@ -432,7 +455,7 @@ export function triggerPixel(url, done, timeout) {
 }
 
 export function callBurl({ source, burl }) {
-  if (source === CONSTANTS.S2S.SRC && burl) {
+  if (source === S2S.SRC && burl) {
     internal.triggerPixel(burl);
   }
 }
@@ -477,18 +500,31 @@ export function insertUserSyncIframe(url, done, timeout) {
 /**
  * Creates a snippet of HTML that retrieves the specified `url`
  * @param  {string} url URL to be requested
+ * @param encode
  * @return {string}     HTML snippet that contains the img src = set to `url`
  */
-export function createTrackPixelHtml(url) {
+export function createTrackPixelHtml(url, encode = encodeURI) {
   if (!url) {
     return '';
   }
 
-  let escapedUrl = encodeURI(url);
+  let escapedUrl = encode(url);
   let img = '<div style="position:absolute;left:0px;top:0px;visibility:hidden;">';
   img += '<img src="' + escapedUrl + '"></div>';
   return img;
 };
+
+/**
+ * encodeURI, but preserves macros of the form '${MACRO}' (e.g. '${AUCTION_PRICE}')
+ * @param url
+ * @return {string}
+ */
+export function encodeMacroURI(url) {
+  const macros = Array.from(url.matchAll(/\$({[^}]+})/g)).map(match => match[1]);
+  return macros.reduce((str, macro) => {
+    return str.replace('$' + encodeURIComponent(macro), '$' + macro)
+  }, encodeURI(url))
+}
 
 /**
  * Creates a snippet of Iframe HTML that retrieves the specified `url`
@@ -584,7 +620,7 @@ export function shuffle(array) {
 }
 
 export function deepClone(obj) {
-  return clone(obj);
+  return klona(obj) || {};
 }
 
 export function inIframe() {
@@ -593,6 +629,18 @@ export function inIframe() {
   } catch (e) {
     return true;
   }
+}
+
+/**
+ * https://iabtechlab.com/wp-content/uploads/2016/03/SafeFrames_v1.1_final.pdf
+ */
+export function isSafeFrameWindow() {
+  if (!inIframe()) {
+    return false;
+  }
+
+  const ws = internal.getWindowSelf();
+  return !!(ws.$sf && ws.$sf.ext);
 }
 
 export function isSafariBrowser() {

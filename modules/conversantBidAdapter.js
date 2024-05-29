@@ -15,7 +15,6 @@ import {
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 import {ORTB_MTYPES} from '../libraries/ortbConverter/processors/mediaType.js';
 
@@ -94,7 +93,10 @@ const converter = ortbConverter({
     const bidResponse = buildBidResponse(bid, context);
     return bidResponse;
   },
-
+  response(buildResponse, bidResponses, ortbResponse, context) {
+    const response = buildResponse(bidResponses, ortbResponse, context);
+    return response.bids;
+  },
   overrides: {
     imp: {
       banner(fillBannerImp, imp, bidRequest, context) {
@@ -175,20 +177,6 @@ export const spec = {
    */
   interpretResponse: function(serverResponse, bidRequest) {
     return converter.fromORTB({request: bidRequest.data, response: serverResponse.body});
-  },
-
-  /**
-   * Covert bid param types for S2S
-   * @param {Object} params bid params
-   * @param {Boolean} isOpenRtb boolean to check openrtb2 protocol
-   * @return {Object} params bid params
-   */
-  transformBidParams: function(params, isOpenRtb) {
-    return convertTypes({
-      'site_id': 'string',
-      'secure': 'number',
-      'mobile': 'number'
-    }, params);
   },
 
   /**
