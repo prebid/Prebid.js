@@ -62,6 +62,27 @@ function getVideoMetadata(bidRequest, bidderRequest) {
     title: videoParams.title || deepAccess(contentObj, 'title', ''),
     topics: videoParams.topics || '',
     xid: videoParams.xid || '',
+    isCreatedForKids: typeof videoParams.isCreatedForKids === 'boolean'
+      ? videoParams.isCreatedForKids
+      : null,
+    context: {
+      videoViewsInSession: (
+        typeof videoParams.videoViewsInSession === 'number' &&
+        videoParams.videoViewsInSession >= 0
+      )
+        ? videoParams.videoViewsInSession
+        : null,
+      autoplay: typeof videoParams.autoplay === 'boolean'
+        ? videoParams.autoplay
+        : null,
+      playerVolume: (
+        typeof videoParams.playerVolume === 'number' &&
+        videoParams.playerVolume >= 0 &&
+        videoParams.playerVolume <= 10
+      )
+        ? videoParams.playerVolume
+        : null,
+    },
   };
 
   return videoMetadata;
@@ -138,6 +159,12 @@ export const spec = {
       ...(!deepAccess(bidderRequest, 'ortb2.site') && !!deepAccess(bidderRequest, 'ortb2.app') ? {
         appBundle: deepAccess(bidderRequest, 'ortb2.app.bundle', ''),
         appStoreUrl: deepAccess(bidderRequest, 'ortb2.app.storeurl', ''),
+      } : {}),
+      ...(deepAccess(bidderRequest, 'ortb2.device') ? {
+        device: {
+          lmt: deepAccess(bidderRequest, 'ortb2.device.lmt', null),
+          ifa: deepAccess(bidderRequest, 'ortb2.device.ifa', ''),
+        },
       } : {}),
       request: {
         adUnitCode: deepAccess(bid, 'adUnitCode', ''),
