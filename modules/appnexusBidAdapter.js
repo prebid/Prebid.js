@@ -597,7 +597,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     cpm: rtbBid.cpm,
     creativeId: rtbBid.creative_id,
     dealId: rtbBid.deal_id,
-    currency: 'USD',
+    currency: rtbBid.publisher_currency_codename || 'USD',
     netRevenue: true,
     ttl: 300,
     adUnitCode: bidRequest.adUnitCode,

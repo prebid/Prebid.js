@@ -35,7 +35,6 @@ const _approvedLoadExternalJSList = [
   'tncId',
   'ftrackId',
   'id5',
-  'lucead',
   '51Degrees',
 ];
 
