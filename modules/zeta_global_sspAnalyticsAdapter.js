@@ -59,7 +59,8 @@ function auctionEndHandler(args) {
         auctionId: b?.auctionId,
         bidder: b?.bidder,
         mediaType: b?.mediaTypes?.video ? 'VIDEO' : (b?.mediaTypes?.banner ? 'BANNER' : undefined),
-        size: b?.sizes?.filter(s => s && s.length === 2).filter(s => Number.isInteger(s[0]) && Number.isInteger(s[1])).map(s => s[0] + 'x' + s[1]).find(s => s)
+        size: b?.sizes?.filter(s => s && s.length === 2).filter(s => Number.isInteger(s[0]) && Number.isInteger(s[1])).map(s => s[0] + 'x' + s[1]).find(s => s),
+        device: b?.ortb2?.device
       }))
     })),
     bidsReceived: args.bidsReceived?.map(br => ({

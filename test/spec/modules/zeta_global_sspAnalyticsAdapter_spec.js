@@ -107,7 +107,12 @@ const SAMPLE_EVENTS = {
             'src': 'client',
             'bidRequestsCount': 1,
             'bidderRequestsCount': 1,
-            'bidderWinsCount': 0
+            'bidderWinsCount': 0,
+            'ortb2': {
+              'device': {
+                'mobile': 1
+              }
+            }
           }
         ],
         'auctionStart': 1638441234544,
@@ -168,7 +173,12 @@ const SAMPLE_EVENTS = {
             'src': 'client',
             'bidRequestsCount': 1,
             'bidderRequestsCount': 1,
-            'bidderWinsCount': 0
+            'bidderWinsCount': 0,
+            'ortb2': {
+              'device': {
+                'mobile': 1
+              }
+            }
           }
         ],
         'auctionStart': 1638441234544,
@@ -408,7 +418,10 @@ describe('Zeta Global SSP Analytics Adapter', function () {
             auctionId: '75e394d9',
             bidder: 'zeta_global_ssp',
             mediaType: 'BANNER',
-            size: '300x250'
+            size: '300x250',
+            device: {
+              mobile: 1
+            }
           }]
         }, {
           bidderCode: 'appnexus',
@@ -419,7 +432,10 @@ describe('Zeta Global SSP Analytics Adapter', function () {
             auctionId: '75e394d9',
             bidder: 'appnexus',
             mediaType: 'BANNER',
-            size: '300x250'
+            size: '300x250',
+            device: {
+              mobile: 1
+            }
           }]
         }],
         bidsReceived: [{
