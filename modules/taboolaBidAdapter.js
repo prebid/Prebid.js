@@ -113,6 +113,9 @@ const converter = ortbConverter({
     const bidResponse = buildBidResponse(bid, context);
     bidResponse.nurl = bid.nurl;
     bidResponse.ad = replaceAuctionPrice(bid.adm, bid.price);
+    if (bid.ext && bid.ext.dchain) {
+      deepSetValue(bidResponse, 'meta.dchain', bid.ext.dchain);
+    }
     return bidResponse
   }
 });

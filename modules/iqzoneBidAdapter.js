@@ -1,4 +1,4 @@
-import { isFn, deepAccess, logMessage } from '../src/utils.js';
+import { logMessage, logError, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -9,8 +9,7 @@ const AD_URL = 'https://smartssp-us-east.iqzone.com/pbjs';
 const SYNC_URL = 'https://cs.smartssp.iqzone.com';
 
 function isBidResponseValid(bid) {
-  if (!bid.requestId || !bid.cpm || !bid.creativeId ||
-        !bid.ttl || !bid.currency) {
+  if (!bid.requestId || !bid.cpm || !bid.creativeId || !bid.ttl || !bid.currency) {
     return false;
   }
 
@@ -27,7 +26,7 @@ function isBidResponseValid(bid) {
 }
 
 function getPlacementReqData(bid) {
-  const { params, bidId, mediaTypes } = bid;
+  const { params, bidId, mediaTypes, transactionId, userIdAsEids } = bid;
   const schain = bid.schain || {};
   const { placementId, endpointId } = params;
   const bidfloor = getBidFloor(bid);
@@ -57,7 +56,7 @@ function getPlacementReqData(bid) {
     placement.mimes = mediaTypes[VIDEO].mimes;
     placement.protocols = mediaTypes[VIDEO].protocols;
     placement.startdelay = mediaTypes[VIDEO].startdelay;
-    placement.placement = mediaTypes[VIDEO].placement;
+    placement.plcmt = mediaTypes[VIDEO].plcmt;
     placement.skip = mediaTypes[VIDEO].skip;
     placement.skipafter = mediaTypes[VIDEO].skipafter;
     placement.minbitrate = mediaTypes[VIDEO].minbitrate;
@@ -71,14 +70,19 @@ function getPlacementReqData(bid) {
     placement.adFormat = NATIVE;
   }
 
+  if (transactionId) {
+    placement.ext = placement.ext || {};
+    placement.ext.tid = transactionId;
+  }
+
+  if (userIdAsEids && userIdAsEids.length) {
+    placement.eids = userIdAsEids;
+  }
+
   return placement;
 }
 
 function getBidFloor(bid) {
-  if (!isFn(bid.getFloor)) {
-    return deepAccess(bid, 'params.bidfloor', 0);
-  }
-
   try {
     const bidFloor = bid.getFloor({
       currency: 'USD',
@@ -86,8 +90,9 @@ function getBidFloor(bid) {
       size: '*',
     });
     return bidFloor.floor;
-  } catch (_) {
-    return 0
+  } catch (err) {
+    logError(err);
+    return 0;
   }
 }
 
@@ -151,11 +156,27 @@ export const spec = {
       host,
       page,
       placements,
-      coppa: config.getConfig('coppa') === true ? 1 : 0,
-      ccpa: bidderRequest.uspConsent || undefined,
-      gdpr: bidderRequest.gdprConsent || undefined,
+      coppa: deepAccess(bidderRequest, 'ortb2.regs.coppa') ? 1 : 0,
       tmax: bidderRequest.timeout
     };
+
+    if (bidderRequest.uspConsent) {
+      request.ccpa = bidderRequest.uspConsent;
+    }
+
+    if (bidderRequest.gdprConsent) {
+      request.gdpr = {
+        consentString: bidderRequest.gdprConsent.consentString
+      };
+    }
+
+    if (bidderRequest.gppConsent) {
+      request.gpp = bidderRequest.gppConsent.gppString;
+      request.gpp_sid = bidderRequest.gppConsent.applicableSections;
+    } else if (bidderRequest.ortb2?.regs?.gpp) {
+      request.gpp = bidderRequest.ortb2.regs.gpp;
+      request.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
+    }
 
     const len = validBidRequests.length;
     for (let i = 0; i < len; i++) {
@@ -184,9 +205,10 @@ export const spec = {
     return response;
   },
 
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
     let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
     let syncUrl = SYNC_URL + `/${syncType}?pbjs=1`;
+
     if (gdprConsent && gdprConsent.consentString) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
         syncUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
@@ -194,8 +216,14 @@ export const spec = {
         syncUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
       }
     }
+
     if (uspConsent && uspConsent.consentString) {
       syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
+    }
+
+    if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+      syncUrl += '&gpp=' + gppConsent.gppString;
+      syncUrl += '&gpp_sid=' + gppConsent.applicableSections.join(',');
     }
 
     const coppa = config.getConfig('coppa') ? 1 : 0;

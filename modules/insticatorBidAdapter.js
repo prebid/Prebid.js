@@ -1,7 +1,7 @@
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
-import {deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums, deepSetValue} from '../src/utils.js';
+import {deepAccess, generateUUID, logError, isArray, isInteger, isArrayOfNums, deepSetValue, isFn, logWarn} from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {find} from '../src/polyfill.js';
 
@@ -102,7 +102,7 @@ function buildVideo(bidRequest) {
   let w = deepAccess(bidRequest, 'mediaTypes.video.w');
   let h = deepAccess(bidRequest, 'mediaTypes.video.h');
   const mimes = deepAccess(bidRequest, 'mediaTypes.video.mimes');
-  const placement = deepAccess(bidRequest, 'mediaTypes.video.placement') || 3;
+  const placement = deepAccess(bidRequest, 'mediaTypes.video.placement');
   const plcmt = deepAccess(bidRequest, 'mediaTypes.video.plcmt') || undefined;
   const playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
   const context = deepAccess(bidRequest, 'mediaTypes.video.context');
@@ -136,6 +136,10 @@ function buildVideo(bidRequest) {
     }
   }
 
+  if (placement && typeof placement !== 'undefined' && typeof placement === 'number') {
+    optionalParams['placement'] = placement;
+  }
+
   if (plcmt) {
     optionalParams['plcmt'] = plcmt;
   }
@@ -145,7 +149,6 @@ function buildVideo(bidRequest) {
   }
 
   let videoObj = {
-    placement,
     mimes,
     w,
     h,
@@ -170,12 +173,68 @@ function buildImpression(bidRequest) {
     },
   }
 
+  let bidFloor = parseFloat(deepAccess(bidRequest, 'params.floor'));
+
+  if (!isNaN(bidFloor)) {
+    imp.bidfloor = deepAccess(bidRequest, 'params.floor');
+    imp.bidfloorcur = 'USD';
+    const bidfloorcur = deepAccess(bidRequest, 'params.bidfloorcur')
+    if (bidfloorcur && bidfloorcur !== 'USD') {
+      delete imp.bidfloor;
+      delete imp.bidfloorcur;
+      logWarn('insticator: bidfloorcur supported by insticator is USD only. ignoring bidfloor and bidfloorcur params');
+    }
+  }
+
   if (deepAccess(bidRequest, 'mediaTypes.banner')) {
     imp.banner = buildBanner(bidRequest);
   }
 
   if (deepAccess(bidRequest, 'mediaTypes.video')) {
     imp.video = buildVideo(bidRequest);
+  }
+
+  if (isFn(bidRequest.getFloor)) {
+    let moduleBidFloor;
+
+    const mediaType = deepAccess(bidRequest, 'mediaTypes.banner') ? 'banner' : deepAccess(bidRequest, 'mediaTypes.video') ? 'video' : undefined;
+
+    let _mediaType = mediaType;
+    let _size = '*';
+
+    if (mediaType && ['banner', 'video'].includes(mediaType)) {
+      if (mediaType === 'banner') {
+        const { w: width, h: height } = imp[mediaType];
+        if (width && height) {
+          _size = [width, height];
+        } else {
+          const sizes = deepAccess(bidRequest, 'mediaTypes.banner.format');
+          if (sizes && sizes.length > 0) {
+            const {w: width, h: height} = sizes[0];
+            _size = [width, height];
+          }
+        }
+      } else if (mediaType === 'video') {
+        const { w: width, h: height } = imp[mediaType];
+        _mediaType = mediaType;
+        _size = [width, height];
+      }
+    }
+    try {
+      moduleBidFloor = bidRequest.getFloor({
+        currency: 'USD',
+        mediaType: _mediaType,
+        size: _size
+      });
+    } catch (err) {
+      // continue with no module floors
+      logWarn('priceFloors module call getFloor failed, error : ', err);
+    }
+
+    if (moduleBidFloor) {
+      imp.bidfloor = moduleBidFloor.floor;
+      imp.bidfloorcur = moduleBidFloor.currency;
+    }
   }
 
   return imp;
@@ -536,13 +595,6 @@ function validateVideo(bid) {
 
   if (!Array.isArray(mimes) || mimes.length === 0) {
     logError('insticator: mimes not specified');
-    return false;
-  }
-
-  const placement = deepAccess(bid, 'mediaTypes.video.placement');
-
-  if (typeof placement !== 'undefined' && typeof placement !== 'number') {
-    logError('insticator: video placement is not a number');
     return false;
   }
 

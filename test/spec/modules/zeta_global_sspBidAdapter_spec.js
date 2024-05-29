@@ -542,11 +542,6 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(payload.imp[0].bidfloor).to.eql(params.bidfloor);
   });
 
-  it('Timeout should exists and be a function', function () {
-    expect(spec.onTimeout).to.exist.and.to.be.a('function');
-    expect(spec.onTimeout([{bidder: '1'}])).to.be.undefined;
-  });
-
   it('Test schain provided', function () {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
     const payload = JSON.parse(request.data);
