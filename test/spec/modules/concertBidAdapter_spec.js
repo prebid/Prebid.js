@@ -94,7 +94,7 @@ describe('ConcertAdapter', function () {
   });
 
   describe('spec.isBidRequestValid', function() {
-    it('should return when it recieved all the required params', function() {
+    it('should return when it received all the required params', function() {
       const bid = bidRequests[0];
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
@@ -247,6 +247,22 @@ describe('ConcertAdapter', function () {
       requiredFields.forEach(function(field) {
         expect(bids[0]).to.have.property(field);
       });
+    });
+
+    it('should include dealId when present in bidResponse', function() {
+      const bids = spec.interpretResponse({
+        body: {
+          bids: [
+            { ...bidResponse.body.bids[0], dealid: 'CON-123' }
+          ]
+        }
+      }, bidRequest);
+      expect(bids[0]).to.have.property('dealId');
+    });
+
+    it('should exclude dealId when absent in bidResponse', function() {
+      const bids = spec.interpretResponse(bidResponse, bidRequest);
+      expect(bids[0]).to.not.have.property('dealId');
     });
 
     it('should return empty bids if there is no response from server', function() {

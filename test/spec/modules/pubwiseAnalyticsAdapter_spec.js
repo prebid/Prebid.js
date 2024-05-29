@@ -2,10 +2,10 @@ import {expect} from 'chai';
 import pubwiseAnalytics from 'modules/pubwiseAnalyticsAdapter.js';
 import {expectEvents} from '../../helpers/analytics.js';
 import {server} from '../../mocks/xhr.js';
+import { EVENTS } from 'src/constants.js';
 
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;
-let constants = require('src/constants.json');
 
 describe('PubWise Prebid Analytics', function () {
   let requests;
@@ -54,14 +54,14 @@ describe('PubWise Prebid Analytics', function () {
       sandbox.spy(pubwiseAnalytics, 'track');
 
       expectEvents([
-        constants.EVENTS.AUCTION_INIT,
-        constants.EVENTS.BID_REQUESTED,
-        constants.EVENTS.BID_RESPONSE,
-        constants.EVENTS.BID_WON,
-        constants.EVENTS.AD_RENDER_FAILED,
-        constants.EVENTS.TCF2_ENFORCEMENT,
-        constants.EVENTS.BID_TIMEOUT,
-        constants.EVENTS.AUCTION_END,
+        EVENTS.AUCTION_INIT,
+        EVENTS.BID_REQUESTED,
+        EVENTS.BID_RESPONSE,
+        EVENTS.BID_WON,
+        EVENTS.AD_RENDER_FAILED,
+        EVENTS.TCF2_ENFORCEMENT,
+        EVENTS.BID_TIMEOUT,
+        EVENTS.AUCTION_END,
       ]).to.beTrackedBy(pubwiseAnalytics.track);
     });
 
@@ -69,10 +69,10 @@ describe('PubWise Prebid Analytics', function () {
       pubwiseAnalytics.enableAnalytics(mock.DEFAULT_PW_CONFIG);
 
       // sent
-      events.emit(constants.EVENTS.AUCTION_INIT, mock.AUCTION_INIT);
-      events.emit(constants.EVENTS.BID_REQUESTED, {});
-      events.emit(constants.EVENTS.BID_RESPONSE, {});
-      events.emit(constants.EVENTS.BID_WON, {});
+      events.emit(EVENTS.AUCTION_INIT, mock.AUCTION_INIT);
+      events.emit(EVENTS.BID_REQUESTED, {});
+      events.emit(EVENTS.BID_RESPONSE, {});
+      events.emit(EVENTS.BID_WON, {});
       // force flush
       clock.tick(500);
 
@@ -120,7 +120,7 @@ describe('PubWise Prebid Analytics', function () {
       pubwiseAnalytics.enableAnalytics(mock.DEFAULT_PW_CONFIG);
 
       // sent
-      events.emit(constants.EVENTS.AUCTION_INIT, mock.AUCTION_INIT_EXTRAS);
+      events.emit(EVENTS.AUCTION_INIT, mock.AUCTION_INIT_EXTRAS);
       // force flush
       clock.tick(500);
 

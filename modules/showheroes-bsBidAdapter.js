@@ -28,8 +28,11 @@ function getEnvURLs(isStage) {
   }
 }
 
+const GVLID = 111;
+
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ['showheroesBs'],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function(bid) {

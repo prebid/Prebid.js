@@ -1,16 +1,16 @@
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import {EVENTS} from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import {logInfo} from '../src/utils.js';
 import {find, findIndex} from '../src/polyfill.js';
 
 // Events used in adomik analytics adapter.
-const auctionInit = CONSTANTS.EVENTS.AUCTION_INIT;
-const auctionEnd = CONSTANTS.EVENTS.AUCTION_END;
-const bidRequested = CONSTANTS.EVENTS.BID_REQUESTED;
-const bidResponse = CONSTANTS.EVENTS.BID_RESPONSE;
-const bidWon = CONSTANTS.EVENTS.BID_WON;
-const bidTimeout = CONSTANTS.EVENTS.BID_TIMEOUT;
+const auctionInit = EVENTS.AUCTION_INIT;
+const auctionEnd = EVENTS.AUCTION_END;
+const bidRequested = EVENTS.BID_REQUESTED;
+const bidResponse = EVENTS.BID_RESPONSE;
+const bidWon = EVENTS.BID_WON;
+const bidTimeout = EVENTS.BID_TIMEOUT;
 const ua = navigator.userAgent;
 
 var _sampled = true;

@@ -11,7 +11,7 @@ import {
   timestamp
 } from '../../src/utils.js';
 import {config} from '../../src/config.js';
-import CONSTANTS from '../../src/constants.json';
+import { STATUS, S2S } from '../../src/constants.js';
 import {createBid} from '../../src/bidfactory.js';
 import {pbsExtensions} from '../../libraries/pbsExtensions/pbsExtensions.js';
 import {setImpBidParams} from '../../libraries/pbsExtensions/processors/params.js';
@@ -114,10 +114,11 @@ const PBS_CONVERTER = ortbConverter({
     // because core has special treatment for PBS adapter responses, we need some additional processing
     bidResponse.requestTimestamp = context.requestTimestamp;
     return {
-      bid: Object.assign(createBid(CONSTANTS.STATUS.GOOD, {
-        src: CONSTANTS.S2S.SRC,
+      bid: Object.assign(createBid(STATUS.GOOD, {
+        src: S2S.SRC,
         bidId: bidRequest ? (bidRequest.bidId || bidRequest.bid_Id) : null,
         transactionId: context.adUnit.transactionId,
+        adUnitId: context.adUnit.adUnitId,
         auctionId: context.bidderRequest.auctionId,
       }), bidResponse),
       adUnit: context.adUnit.code
@@ -196,9 +197,7 @@ const PBS_CONVERTER = ortbConverter({
         context.actualBidderRequests.forEach(req => orig(ortbRequest, req, context));
       },
       sourceExtSchain(orig, ortbRequest, proxyBidderRequest, context) {
-        // pass schains in ext.prebid.schains, with the most commonly used one in source.ext.schain
-        let mainChain;
-
+        // pass schains in ext.prebid.schains
         let chains = (deepAccess(ortbRequest, 'ext.prebid.schains') || []);
         const chainBidders = new Set(chains.flatMap((item) => item.bidders));
 
@@ -217,16 +216,9 @@ const PBS_CONVERTER = ortbConverter({
                 chains[key] = {bidders: new Set(), schain};
               }
               bidders.forEach((bidder) => chains[key].bidders.add(bidder));
-              if (mainChain == null || chains[key].bidders.size > mainChain.bidders.size) {
-                mainChain = chains[key]
-              }
               return chains;
             }, {})
         ).map(({bidders, schain}) => ({bidders: Array.from(bidders), schain}));
-
-        if (mainChain != null) {
-          deepSetValue(ortbRequest, 'source.ext.schain', mainChain.schain);
-        }
 
         if (chains.length) {
           deepSetValue(ortbRequest, 'ext.prebid.schains', chains);
@@ -240,7 +232,16 @@ const PBS_CONVERTER = ortbConverter({
       },
       fledgeAuctionConfigs(orig, response, ortbResponse, context) {
         const configs = Object.values(context.impContext)
-          .flatMap((impCtx) => (impCtx.fledgeConfigs || []).map(cfg => ({adUnitCode: impCtx.adUnit.code, config: cfg.config})));
+          .flatMap((impCtx) => (impCtx.fledgeConfigs || []).map(cfg => {
+            const bidderReq = impCtx.actualBidderRequests.find(br => br.bidderCode === cfg.bidder);
+            const bidReq = impCtx.actualBidRequests.get(cfg.bidder);
+            return {
+              adUnitCode: impCtx.adUnit.code,
+              ortb2: bidderReq?.ortb2,
+              ortb2Imp: bidReq?.ortb2Imp,
+              config: cfg.config
+            };
+          }));
         if (configs.length > 0) {
           response.fledgeAuctionConfigs = configs;
         }

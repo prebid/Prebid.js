@@ -1,6 +1,6 @@
 import AnalyticsAdapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import {prefixLog, isPlainObject} from '../src/utils.js';
-import * as CONSTANTS from '../src/constants.json';
+import {has as hasEvent} from '../src/events.js';
 import adapterManager from '../src/adapterManager.js';
 import {ajaxBuilder} from '../src/ajax.js';
 
@@ -48,12 +48,12 @@ export function GenericAnalytics() {
         return false;
       }
       for (const [event, handler] of Object.entries(options.events)) {
-        if (!CONSTANTS.EVENTS.hasOwnProperty(event)) {
+        if (!hasEvent(event)) {
           logWarn(`options.events.${event} does not match any known Prebid event`);
-          if (typeof handler !== 'function') {
-            logError(`options.events.${event} must be a function`);
-            return false;
-          }
+        }
+        if (typeof handler !== 'function') {
+          logError(`options.events.${event} must be a function`);
+          return false;
         }
       }
     }

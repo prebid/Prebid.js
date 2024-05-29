@@ -38,5 +38,14 @@ export const S2S_VENDORS = {
       noP1Consent: 'https://prebid.openx.net/cookie_sync'
     },
     timeout: 1000
+  },
+  'openwrap': {
+    adapter: 'prebidServer',
+    enabled: true,
+    endpoint: {
+      p1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs',
+      noP1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs'
+    },
+    timeout: 500
   }
 }
