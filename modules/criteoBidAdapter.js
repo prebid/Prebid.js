@@ -55,16 +55,18 @@ export const spec = {
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  getUserSyncs: function (syncOptions, _, gdprConsent, uspConsent) {
-    const fastBidVersion = config.getConfig('criteo.fastBidVersion');
-    if (canFastBid(fastBidVersion)) {
-      return [];
-    }
-
-    const refererInfo = getRefererInfo();
-    const origin = 'criteoPrebidAdapter';
+  getUserSyncs: function (syncOptions, _, gdprConsent, uspConsent, gppConsent = {}) {
+    let { gppString = '', applicableSections = [] } = gppConsent;
 
     if (syncOptions.iframeEnabled && hasPurpose1Consent(gdprConsent)) {
+      const fastBidVersion = config.getConfig('criteo.fastBidVersion');
+      if (canFastBid(fastBidVersion)) {
+        return [];
+      }
+
+      const refererInfo = getRefererInfo();
+      const origin = 'criteoPrebidAdapter';
+
       const queryParams = [];
       queryParams.push(`origin=${origin}`);
       queryParams.push(`topUrl=${refererInfo.domain}`);
@@ -78,6 +80,12 @@ export const spec = {
       }
       if (uspConsent) {
         queryParams.push(`us_privacy=${uspConsent}`);
+      }
+      queryParams.push(`gpp=${gppString}`);
+      if (Array.isArray(applicableSections)) {
+        for (const applicableSection of applicableSections) {
+          queryParams.push(`gpp_sid=${applicableSection}`);
+        }
       }
 
       const requestId = Math.random().toString();
@@ -125,6 +133,32 @@ export const spec = {
       return [{
         type: 'iframe',
         url: `https://gum.criteo.com/syncframe?${queryParams.join('&')}#${jsonHashSerialized}`
+      }];
+    } else if (syncOptions.pixelEnabled && hasPurpose1Consent(gdprConsent)) {
+      const queryParams = [];
+      queryParams.push(`profile=207`);
+      if (gdprConsent) {
+        if (gdprConsent.gdprApplies === true) {
+          queryParams.push(`gdprapplies=true`);
+        }
+        if (gdprConsent.consentString) {
+          queryParams.push(`gdpr=${gdprConsent.consentString}`);
+        }
+      }
+      if (uspConsent) {
+        queryParams.push(`ccpa=${uspConsent}`);
+      }
+      queryParams.push(`gpp=${gppString}`);
+      if (Array.isArray(applicableSections)) {
+        for (const applicableSection of applicableSections) {
+          queryParams.push(`gpp_sid=${applicableSection}`);
+        }
+      }
+      // gpp
+      // gpp_sid
+      return [{
+        type: 'image',
+        url: `https://ssp-sync.criteo.com/user-sync/redirect?${queryParams.join('&')}`
       }];
     }
     return [];
@@ -587,9 +621,6 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   if (networkId) {
     request.publisher.networkid = networkId;
   }
-  if (pubid) {
-    request.publisher.id = pubid;
-  }
 
   request.source = {
     tid: bidderRequest.ortb2?.source?.tid
@@ -603,6 +634,12 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   request.user = bidderRequest.ortb2?.user || {};
   request.site = bidderRequest.ortb2?.site || {};
   request.app = bidderRequest.ortb2?.app || {};
+
+  if (pubid) {
+    request.site.publisher = {...request.site.publisher, ...{ id: pubid }};
+    request.app.publisher = {...request.app.publisher, ...{ id: pubid }};
+  }
+
   request.device = bidderRequest.ortb2?.device || {};
   if (bidderRequest && bidderRequest.ceh) {
     request.user.ceh = bidderRequest.ceh;
@@ -637,6 +674,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   if (bidderRequest && bidderRequest.ortb2?.bapp) {
     request.bapp = bidderRequest.ortb2.bapp;
   }
+  request.tmax = bidderRequest.timeout;
   return request;
 }
 

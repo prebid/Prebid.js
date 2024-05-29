@@ -24,6 +24,8 @@ import {auctionManager} from '../../../../src/auctionManager.js';
 import {GDPR_GVLIDS} from '../../../../src/consentHandler.js';
 import {MODULE_TYPE_ANALYTICS, MODULE_TYPE_BIDDER} from '../../../../src/activities/modules.js';
 import {ACTIVITY_FETCH_BIDS, ACTIVITY_REPORT_ANALYTICS} from '../../../../src/activities/activities.js';
+import {reset as resetAdUnitCounters} from '../../../../src/adUnits.js';
+import {deepClone} from 'src/utils.js';
 var events = require('../../../../src/events');
 
 const CONFIG = {
@@ -1675,11 +1677,23 @@ describe('adapterManager tests', function () {
   describe('makeBidRequests', function () {
     let adUnits;
     beforeEach(function () {
+      resetAdUnitCounters();
       adUnits = utils.deepClone(getAdUnits()).map(adUnit => {
         adUnit.bids = adUnit.bids.filter(bid => includes(['appnexus', 'rubicon'], bid.bidder));
         return adUnit;
       })
     });
+
+    function makeBidRequests(au = adUnits) {
+      return adapterManager.makeBidRequests(
+        au,
+        Date.now(),
+        utils.getUniqueIdentifierStr(),
+        function callback() {
+        },
+        []
+      );
+    }
 
     if (FEATURES.NATIVE) {
       it('should add nativeParams to adUnits after BEFORE_REQUEST_BIDS', () => {
@@ -1692,14 +1706,7 @@ describe('adapterManager tests', function () {
         }
 
         events.on(EVENTS.BEFORE_REQUEST_BIDS, beforeReqBids);
-        adapterManager.makeBidRequests(
-          adUnits,
-          Date.now(),
-          utils.getUniqueIdentifierStr(),
-          function callback() {
-          },
-          []
-        );
+        makeBidRequests();
         events.off(EVENTS.BEFORE_REQUEST_BIDS, beforeReqBids);
         expect(adUnits.map((u) => u.nativeParams).some(i => i == null)).to.be.false;
       });
@@ -1708,13 +1715,7 @@ describe('adapterManager tests', function () {
     it('should make separate bidder request objects for each bidder', () => {
       adUnits = [utils.deepClone(getAdUnits()[0])];
 
-      let bidRequests = adapterManager.makeBidRequests(
-        adUnits,
-        Date.now(),
-        utils.getUniqueIdentifierStr(),
-        function callback() {},
-        []
-      );
+      let bidRequests = makeBidRequests();
 
       let sizes1 = bidRequests[1].bids[0].sizes;
       let sizes2 = bidRequests[0].bids[0].sizes;
@@ -1723,6 +1724,70 @@ describe('adapterManager tests', function () {
       sizes1.splice(0, 1);
 
       expect(sizes1).not.to.deep.equal(sizes2);
+    });
+
+    it('should set and increment bidRequestsCounter', () => {
+      const [au1, au2] = adUnits;
+      makeBidRequests([au1, au2]).flatMap(br => br.bids).forEach(bid => {
+        expect(bid.bidRequestsCount).to.eql(1);
+      })
+      makeBidRequests([au1]);
+      makeBidRequests([au1, au2]).flatMap(br => br.bids).forEach(bid => {
+        expect(bid.bidRequestsCount).to.eql(bid.adUnitCode === au1.code ? 3 : 2);
+      });
+    })
+
+    describe('bidderRequestsCounter', () => {
+      it('should be set and incremented', () => {
+        const [au1, au2] = adUnits;
+        makeBidRequests([au1, au2]).flatMap(br => br.bids).forEach(bid => {
+          expect(bid.bidderRequestsCount).to.eql(1);
+        });
+        const au3 = {
+          ...au2,
+          bids: [
+            au2.bids[0]
+          ]
+        }
+        makeBidRequests([au3]);
+        const counts = Object.fromEntries(
+          makeBidRequests([au1, au2])
+            .map(br => [br.bidderCode, Object.fromEntries(br.bids.map(bid => [bid.adUnitCode, bid.bidderRequestsCount]))])
+        );
+        expect(counts).to.eql({
+          rubicon: {
+            [au2.code]: 2
+          },
+          appnexus: {
+            [au1.code]: 2,
+            [au2.code]: 3
+          },
+        });
+      });
+
+      it('should NOT be incremented for s2s bids', () => {
+        config.setConfig({
+          s2sConfig: {
+            enabled: true,
+            adapter: 'rubicon',
+            bidders: ['appnexus']
+          }
+        });
+        function expectBidderCounts(bidders) {
+          makeBidRequests().forEach(br => {
+            br.bids.forEach(bid => expect(bid.bidderRequestsCount).to.exist.and.eql(bidders[br.bidderCode]));
+          })
+        }
+        expectBidderCounts({
+          appnexus: 0,
+          rubicon: 1
+        });
+        config.resetConfig();
+        expectBidderCounts({
+          appnexus: 1,
+          rubicon: 2
+        })
+      })
     });
 
     describe('and activity controls', () => {
@@ -1757,13 +1822,7 @@ describe('adapterManager tests', function () {
             componentType === MODULE_TYPE_BIDDER &&
             allowed.includes(componentName);
         });
-        let reqs = adapterManager.makeBidRequests(
-          adUnits,
-          Date.now(),
-          utils.getUniqueIdentifierStr(),
-          function callback() {},
-          []
-        );
+        let reqs = makeBidRequests();
         const bidders = Array.from(new Set(reqs.flatMap(br => br.bids).map(bid => bid.bidder)).keys());
         expect(bidders).to.have.members(allowed);
       });
@@ -1773,13 +1832,7 @@ describe('adapterManager tests', function () {
         adUnits = [
           {code: 'one', bids: [{bidder: 'mockBidder1'}]}
         ];
-        let reqs = adapterManager.makeBidRequests(
-          adUnits,
-          Date.now(),
-          utils.getUniqueIdentifierStr(),
-          function callback() {},
-          []
-        );
+        let reqs = makeBidRequests();
         sinon.assert.calledWith(redactBidRequest, reqs[0].bids[0]);
         sinon.assert.calledWith(redactOrtb2, reqs[0].ortb2);
       })
@@ -1812,13 +1865,7 @@ describe('adapterManager tests', function () {
             {code: 'two', bids: [{module: 'pbsBidAdapter', params: {configName: 'mock1'}}, {module: 'pbsBidAdapter', params: {configName: 'mock2'}}]}
           ]
           dep.isAllowed.callsFake(({componentType}) => componentType !== 'bidder');
-          let bidRequests = adapterManager.makeBidRequests(
-            adUnits,
-            Date.now(),
-            utils.getUniqueIdentifierStr(),
-            function callback() {},
-            []
-          );
+          let bidRequests = makeBidRequests();
           expect(new Set(bidRequests.map(br => br.uniquePbsTid)).size).to.equal(3);
         });
 
@@ -1835,14 +1882,7 @@ describe('adapterManager tests', function () {
             }
           ];
           dep.isAllowed.callsFake((_, {configName, componentName}) => !(componentName === 'pbsBidAdapter' && configName === 'mock1'));
-          let bidRequests = adapterManager.makeBidRequests(
-            adUnits,
-            Date.now(),
-            utils.getUniqueIdentifierStr(),
-            function callback() {
-            },
-            []
-          );
+          let bidRequests = makeBidRequests();
           expect(new Set(bidRequests.map(br => br.uniquePbsTid)).size).to.eql(2)
         });
       });

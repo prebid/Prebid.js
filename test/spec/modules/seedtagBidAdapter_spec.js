@@ -590,6 +590,42 @@ describe('Seedtag Adapter', function () {
         expect(data.user.eids).to.deep.equal(userIdAsEids);
       })
     });
+
+    describe('Blocking params', function () {
+      it('should add bcat param to payload when bidderRequest has ortb2 bcat info', function () {
+        const blockedCategories = ['IAB1', 'IAB2']
+        var ortb2 = {
+          bcat: blockedCategories
+        }
+        bidderRequest['ortb2'] = ortb2
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.bcat).to.deep.equal(blockedCategories);
+      });
+
+      it('should add badv param to payload when bidderRequest has ortb2 badv info', function () {
+        const blockedAdvertisers = ['blocked.com']
+        var ortb2 = {
+          badv: blockedAdvertisers
+        }
+        bidderRequest['ortb2'] = ortb2
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.badv).to.deep.equal(blockedAdvertisers);
+      });
+
+      it('should not add bcat and badv params to payload when bidderRequest does not have ortb2 badv and bcat info', function () {
+        var ortb2 = {}
+        bidderRequest['ortb2'] = ortb2
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.bcat).to.be.undefined;
+        expect(data.badv).to.be.undefined;
+      });
+    });
   })
   describe('interpret response method', function () {
     it('should return a void array, when the server response are not correct.', function () {

@@ -399,6 +399,7 @@ describe('NoBid Prebid Analytic', function () {
       expect(server.requests).to.have.length(1);
       const auctionEndRequest = JSON.parse(server.requests[0].requestBody);
       expect(auctionEndRequest).to.have.property('version', nobidAnalyticsVersion);
+      expect(auctionEndRequest).to.have.property('pbver', '$prebid.version$');
       expect(auctionEndRequest).to.have.property('auctionId', expectedOutgoingRequest.auctionId);
       expect(auctionEndRequest.bidderRequests).to.have.length(1);
       expect(auctionEndRequest.bidderRequests[0].bidderCode).to.equal(expectedOutgoingRequest.bidderRequests[0].bidderCode);
