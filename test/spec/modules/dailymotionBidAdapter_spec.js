@@ -99,10 +99,6 @@ describe('dailymotionBidAdapterTests', () => {
           startdelay: 0,
           w: 1280,
           h: 720,
-          isCreatedForKids: true,
-          videoViewsInSession: 2,
-          autoplay: true,
-          playerVolume: 8,
         },
       },
       sizes: [[1920, 1080]],
@@ -121,6 +117,10 @@ describe('dailymotionBidAdapterTests', () => {
           topics: 'topic_1, topic_2',
           xid: 'x123456',
           livestream: 1,
+          isCreatedForKids: true,
+          videoViewsInSession: 2,
+          autoplay: true,
+          playerVolume: 8,
         },
       },
     }];
@@ -220,11 +220,6 @@ describe('dailymotionBidAdapterTests', () => {
           startdelay: 0,
           w: 1280,
           h: 720,
-          // Test invalid values
-          isCreatedForKids: 'false',
-          videoViewsInSession: -1,
-          autoplay: 'true',
-          playerVolume: 12,
         },
       },
       sizes: [[1920, 1080]],
@@ -241,6 +236,11 @@ describe('dailymotionBidAdapterTests', () => {
           topics: 'topic_1, topic_2',
           xid: 'x123456',
           livestream: 1,
+          // Test invalid values
+          isCreatedForKids: 'false',
+          videoViewsInSession: -1,
+          autoplay: 'true',
+          playerVolume: 12,
         },
       },
     }];
@@ -489,9 +489,9 @@ describe('dailymotionBidAdapterTests', () => {
       livestream: !!bidderRequestData.ortb2.site.content.livestream,
       isCreatedForKids: bidRequestData[0].params.video.isCreatedForKids,
       context: {
-        videoViewsInSession: bidRequestData[0].params.video.isCreatedForKids,
-        autoplay: bidRequestData[0].params.video.isCreatedForKids,
-        playerVolume: bidRequestData[0].params.video.isCreatedForKids,
+        videoViewsInSession: bidRequestData[0].params.video.videoViewsInSession,
+        autoplay: bidRequestData[0].params.video.autoplay,
+        playerVolume: bidRequestData[0].params.video.playerVolume,
       },
     });
   });
