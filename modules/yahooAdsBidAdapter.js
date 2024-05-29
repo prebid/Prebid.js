@@ -370,6 +370,7 @@ function appendImpObject(bid, openRtbObject) {
         pos: deepAccess(bid, 'params.bidOverride.imp.video.pos') || bid.mediaTypes.video.pos || undefined,
         playbackmethod: deepAccess(bid, 'params.bidOverride.imp.video.playbackmethod') || bid.mediaTypes.video.playbackmethod || undefined,
         placement: deepAccess(bid, 'params.bidOverride.imp.video.placement') || bid.mediaTypes.video.placement || undefined,
+        plcmt: deepAccess(bid, 'params.bidOverride.imp.video.plcmt') || bid.mediaTypes.video.plcmt || undefined,
         linearity: deepAccess(bid, 'params.bidOverride.imp.video.linearity') || bid.mediaTypes.video.linearity || 1,
         protocols: deepAccess(bid, 'params.bidOverride.imp.video.protocols') || bid.mediaTypes.video.protocols || [2, 5],
         startdelay: deepAccess(bid, 'params.bidOverride.imp.video.startdelay') || bid.mediaTypes.video.startdelay || 0,
