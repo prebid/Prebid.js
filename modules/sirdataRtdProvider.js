@@ -284,7 +284,7 @@ export function removePII(content) {
  * @returns {Object} - The sanitized content
  */
 export function sanitizeContent(content) {
-  if (content && content.documentElement.innerText && content.documentElement.innerText.length > 500) {
+  if (content && content.documentElement.textContent && content.documentElement.textContent.length > 500) {
     // Reduce size by removing useless content
     // Allowed tags
     const allowedTags = [
