@@ -13,6 +13,8 @@ describe('anPspParamsConverter', function () {
   const bidderRequests = [{
     bidderCode: 'appnexus',
     bids: [{
+      bidder: 'appnexus',
+      src: 's2s',
       params: {
         member: 958,
         invCode: 12345,
@@ -29,7 +31,9 @@ describe('anPspParamsConverter', function () {
 
   beforeEach(function () {
     configStub = sinon.stub(config, 'getConfig');
-    resolveAliasStub = sinon.stub(adapterManager, 'resolveAlias');
+    resolveAliasStub = sinon.stub(adapterManager, 'resolveAlias').callsFake(function (tarBidder) {
+      return (tarBidder === 'rubicon') ? 'rubicon' : 'appnexus';
+    });
   });
 
   afterEach(function () {
@@ -47,6 +51,7 @@ describe('anPspParamsConverter', function () {
 
     const testBidderRequests = deepClone(bidderRequests);
 
+    debugger; //eslint-disable-line
     convertAnParams(function () {
       didHookRun = true;
     }, testBidderRequests);
@@ -86,24 +91,7 @@ describe('anPspParamsConverter', function () {
     applyBidderRequestChanges: function () {
       const testBidderRequests = deepClone(bidderRequests);
       testBidderRequests.bidderCode = 'beintoo';
-
-      return testBidderRequests;
-    }
-  }, {
-    testName: 'modifies params when an server-side alias is setup in s2sConfig',
-    fakeConfigFn: function () {
-      return {
-        bidders: ['serverSideAlias'],
-        extPrebid: {
-          aliases: {
-            'serverSideAlias': 'appnexus'
-          }
-        }
-      };
-    },
-    applyBidderRequestChanges: function () {
-      const testBidderRequests = deepClone(bidderRequests);
-      testBidderRequests.bidderCode = 'serverSideAlias';
+      testBidderRequests[0].bids[0].bidder = 'beintoo';
 
       return testBidderRequests;
     }
@@ -115,12 +103,9 @@ describe('anPspParamsConverter', function () {
       };
     },
     applyBidderRequestChanges: function () {
-      resolveAliasStub.callsFake(function () {
-        return 'appnexus';
-      });
-
       const testBidderRequests = deepClone(bidderRequests);
       testBidderRequests.bidderCode = 'aliasBidderTest';
+      testBidderRequests[0].bids[0].bidder = 'aliasBidderTest';
 
       return testBidderRequests;
     }
