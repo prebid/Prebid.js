@@ -42,7 +42,6 @@ let CONFIG = {
   accountId: '1',
   enabled: true,
   bidders: ['appnexus'],
-  timeout: 1000,
   cacheMarkup: 2,
   endpoint: {
     p1Consent: 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction',
@@ -770,6 +769,32 @@ describe('S2S Adapter', function () {
       const req = JSON.parse(server.requests[0].requestBody);
       expect(req.tmax).to.eql(123);
     });
+
+    describe('default tmax', () => {
+      [null, 3000].forEach(maxTimeout => {
+        describe(`when maxTimeout is ${maxTimeout}`, () => {
+          let cfg;
+
+          beforeEach(() => {
+            cfg = {accountId: '1', endpoint: 'mock-endpoint', maxTimeout};
+            config.setConfig({s2sConfig: cfg});
+            maxTimeout = maxTimeout ?? s2sDefaultConfig.maxTimeout
+          });
+
+          it('should cap tmax to maxTimeout', () => {
+            adapter.callBids({...REQUEST, requestBidsTimeout: maxTimeout * 2, s2sConfig: cfg}, BID_REQUESTS, addBidResponse, done, ajax);
+            const req = JSON.parse(server.requests[0].requestBody);
+            expect(req.tmax).to.eql(maxTimeout);
+          });
+
+          it('should be set to 0.75 * requestTimeout, if lower than maxTimeout', () => {
+            adapter.callBids({...REQUEST, requestBidsTimeout: maxTimeout / 2}, BID_REQUESTS, addBidResponse, done, ajax);
+            const req = JSON.parse(server.requests[0].requestBody);
+            expect(req.tmax).to.eql(maxTimeout / 2 * 0.75);
+          })
+        })
+      })
+    })
 
     it('should block request if config did not define p1Consent URL in endpoint object config', function () {
       let badConfig = utils.deepClone(CONFIG);
@@ -3678,181 +3703,135 @@ describe('S2S Adapter', function () {
       config.setConfig({ s2sConfig: options });
       sinon.assert.calledOnce(logErrorSpy);
     });
+    describe('vendor: appnexuspsp', () => {
+      it('should configure the s2sConfig object with appnexuspsp vendor defaults unless specified by user', function () {
+        const options = {
+          accountId: '123',
+          bidders: ['appnexus'],
+          defaultVendor: 'appnexuspsp',
+          timeout: 750
+        };
 
-    it('should configure the s2sConfig object with appnexuspsp vendor defaults unless specified by user', function () {
-      const options = {
-        accountId: '123',
-        bidders: ['appnexus'],
-        defaultVendor: 'appnexuspsp',
-        timeout: 750
-      };
+        config.setConfig({ s2sConfig: options });
+        sinon.assert.notCalled(logErrorSpy);
 
-      config.setConfig({ s2sConfig: options });
-      sinon.assert.notCalled(logErrorSpy);
-
-      let vendorConfig = config.getConfig('s2sConfig');
-      expect(vendorConfig).to.have.property('accountId', '123');
-      expect(vendorConfig).to.have.property('adapter', 'prebidServer');
-      expect(vendorConfig.bidders).to.deep.equal(['appnexus']);
-      expect(vendorConfig.enabled).to.be.true;
-      expect(vendorConfig.endpoint).to.deep.equal({
-        p1Consent: 'https://ib.adnxs.com/openrtb2/prebid',
-        noP1Consent: 'https://ib.adnxs-simple.com/openrtb2/prebid'
+        let vendorConfig = config.getConfig('s2sConfig');
+        expect(vendorConfig).to.have.property('accountId', '123');
+        expect(vendorConfig).to.have.property('adapter', 'prebidServer');
+        expect(vendorConfig.bidders).to.deep.equal(['appnexus']);
+        expect(vendorConfig.enabled).to.be.true;
+        expect(vendorConfig.endpoint).to.deep.equal({
+          p1Consent: 'https://ib.adnxs.com/openrtb2/prebid',
+          noP1Consent: 'https://ib.adnxs-simple.com/openrtb2/prebid'
+        });
+        expect(vendorConfig.syncEndpoint).to.deep.equal({
+          p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync',
+          noP1Consent: 'https://prebid.adnxs-simple.com/pbs/v1/cookie_sync'
+        });
+        expect(vendorConfig).to.have.property('timeout', 750);
       });
-      expect(vendorConfig.syncEndpoint).to.deep.equal({
-        p1Consent: 'https://prebid.adnxs.com/pbs/v1/cookie_sync',
-        noP1Consent: 'https://prebid.adnxs-simple.com/pbs/v1/cookie_sync'
-      });
-      expect(vendorConfig).to.have.property('timeout', 750);
-    });
+    })
 
-    it('should configure the s2sConfig object with rubicon vendor defaults unless specified by user', function () {
-      const options = {
-        accountId: 'abc',
-        bidders: ['rubicon'],
-        defaultVendor: 'rubicon',
-        timeout: 750
-      };
-
-      config.setConfig({ s2sConfig: options });
-      sinon.assert.notCalled(logErrorSpy);
-
-      let vendorConfig = config.getConfig('s2sConfig');
-      expect(vendorConfig).to.have.property('accountId', 'abc');
-      expect(vendorConfig).to.have.property('adapter', 'prebidServer');
-      expect(vendorConfig.bidders).to.deep.equal(['rubicon']);
-      expect(vendorConfig.enabled).to.be.true;
-      expect(vendorConfig.endpoint).to.deep.equal({
-        p1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction',
-        noP1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction'
-      });
-      expect(vendorConfig.syncEndpoint).to.deep.equal({
-        p1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync',
-        noP1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync'
-      });
-      expect(vendorConfig).to.have.property('timeout', 750);
-    });
-
-    it('should return proper defaults', function () {
-      const options = {
-        accountId: 'abc',
-        bidders: ['rubicon'],
-        defaultVendor: 'rubicon',
-        timeout: 750
-      };
-
-      config.setConfig({ s2sConfig: options });
-      expect(config.getConfig('s2sConfig')).to.deep.equal({
-        'accountId': 'abc',
-        'adapter': 'prebidServer',
-        'bidders': ['rubicon'],
-        'defaultVendor': 'rubicon',
-        'enabled': true,
-        'endpoint': {
-          p1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction',
-          noP1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction'
-        },
-        'syncEndpoint': {
-          p1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync',
-          noP1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync'
-        },
-        'timeout': 750
-      })
-    });
-
-    it('should return default adapterOptions if not set', function () {
-      config.setConfig({
-        s2sConfig: {
+    describe('vendor: rubicon', () => {
+      it('should configure the s2sConfig object with rubicon vendor defaults unless specified by user', function () {
+        const options = {
           accountId: 'abc',
           bidders: ['rubicon'],
           defaultVendor: 'rubicon',
           timeout: 750
-        }
-      });
-      expect(config.getConfig('s2sConfig')).to.deep.equal({
-        enabled: true,
-        timeout: 750,
-        adapter: 'prebidServer',
-        accountId: 'abc',
-        bidders: ['rubicon'],
-        defaultVendor: 'rubicon',
-        endpoint: {
+        };
+
+        config.setConfig({ s2sConfig: options });
+        sinon.assert.notCalled(logErrorSpy);
+
+        let vendorConfig = config.getConfig('s2sConfig');
+        expect(vendorConfig).to.have.property('accountId', 'abc');
+        expect(vendorConfig).to.have.property('adapter', 'prebidServer');
+        expect(vendorConfig.bidders).to.deep.equal(['rubicon']);
+        expect(vendorConfig.enabled).to.be.true;
+        expect(vendorConfig.endpoint).to.deep.equal({
           p1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction',
           noP1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction'
-        },
-        syncEndpoint: {
+        });
+        expect(vendorConfig.syncEndpoint).to.deep.equal({
           p1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync',
           noP1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync'
-        },
-      })
-    });
-
-    it('should configure the s2sConfig object with openwrap vendor defaults unless specified by user', function () {
-      const options = {
-        accountId: '1234',
-        bidders: ['pubmatic'],
-        defaultVendor: 'openwrap'
-      };
-
-      config.setConfig({ s2sConfig: options });
-      sinon.assert.notCalled(logErrorSpy);
-
-      let vendorConfig = config.getConfig('s2sConfig');
-      expect(vendorConfig).to.have.property('accountId', '1234');
-      expect(vendorConfig).to.have.property('adapter', 'prebidServer');
-      expect(vendorConfig.bidders).to.deep.equal(['pubmatic']);
-      expect(vendorConfig.enabled).to.be.true;
-      expect(vendorConfig.endpoint).to.deep.equal({
-        p1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs',
-        noP1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs'
+        });
+        expect(vendorConfig).to.have.property('timeout', 750);
       });
-      expect(vendorConfig).to.have.property('timeout', 500);
-    });
+      it('should return proper defaults', function () {
+        const options = {
+          accountId: 'abc',
+          bidders: ['rubicon'],
+          defaultVendor: 'rubicon',
+          timeout: 750
+        };
 
-    it('should return proper defaults', function () {
-      const options = {
-        accountId: '1234',
-        bidders: ['pubmatic'],
-        defaultVendor: 'openwrap',
-        timeout: 500
-      };
+        config.setConfig({ s2sConfig: options });
+        expect(config.getConfig('s2sConfig')).to.deep.equal({
+          'accountId': 'abc',
+          'adapter': 'prebidServer',
+          'bidders': ['rubicon'],
+          'defaultVendor': 'rubicon',
+          'enabled': true,
+          'endpoint': {
+            p1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction',
+            noP1Consent: 'https://prebid-server.rubiconproject.com/openrtb2/auction'
+          },
+          'syncEndpoint': {
+            p1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync',
+            noP1Consent: 'https://prebid-server.rubiconproject.com/cookie_sync'
+          },
+          'timeout': 750,
+          maxTimeout: 500,
+        })
+      });
+    })
 
-      config.setConfig({ s2sConfig: options });
-      expect(config.getConfig('s2sConfig')).to.deep.equal({
-        'accountId': '1234',
-        'adapter': 'prebidServer',
-        'bidders': ['pubmatic'],
-        'defaultVendor': 'openwrap',
-        'enabled': true,
-        'endpoint': {
+    describe('vendor: openwrap', () => {
+      it('should configure the s2sConfig object with openwrap vendor defaults unless specified by user', function () {
+        const options = {
+          accountId: '1234',
+          bidders: ['pubmatic'],
+          defaultVendor: 'openwrap'
+        };
+
+        config.setConfig({ s2sConfig: options });
+        sinon.assert.notCalled(logErrorSpy);
+
+        let vendorConfig = config.getConfig('s2sConfig');
+        expect(vendorConfig).to.have.property('accountId', '1234');
+        expect(vendorConfig).to.have.property('adapter', 'prebidServer');
+        expect(vendorConfig.bidders).to.deep.equal(['pubmatic']);
+        expect(vendorConfig.enabled).to.be.true;
+        expect(vendorConfig.endpoint).to.deep.equal({
           p1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs',
           noP1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs'
-        },
-        'timeout': 500
-      })
-    });
-
-    it('should return default adapterOptions if not set', function () {
-      config.setConfig({
-        s2sConfig: {
+        });
+      });
+      it('should return proper defaults', function () {
+        const options = {
           accountId: '1234',
           bidders: ['pubmatic'],
           defaultVendor: 'openwrap',
           timeout: 500
-        }
+        };
+
+        config.setConfig({ s2sConfig: options });
+        expect(config.getConfig('s2sConfig')).to.deep.equal({
+          'accountId': '1234',
+          'adapter': 'prebidServer',
+          'bidders': ['pubmatic'],
+          'defaultVendor': 'openwrap',
+          'enabled': true,
+          'endpoint': {
+            p1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs',
+            noP1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs'
+          },
+          'timeout': 500,
+          maxTimeout: 500,
+        })
       });
-      expect(config.getConfig('s2sConfig')).to.deep.equal({
-        enabled: true,
-        timeout: 500,
-        adapter: 'prebidServer',
-        accountId: '1234',
-        bidders: ['pubmatic'],
-        defaultVendor: 'openwrap',
-        endpoint: {
-          p1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs',
-          noP1Consent: 'https://ow.pubmatic.com/openrtb2/auction?source=pbjs'
-        },
-      })
     });
 
     it('should set adapterOptions', function () {
