@@ -40,6 +40,8 @@ const DEFAULT_MAXBID_VALUE = 5000
 
 const DEFAULT_TIMEOUTBUFFER = 400;
 
+const DEFAULT_IFRAMES_CONFIG = {};
+
 export const RANDOM = 'random';
 const FIXED = 'fixed';
 
@@ -59,35 +61,6 @@ const GRANULARITY_OPTIONS = {
 };
 
 const ALL_TOPICS = '*';
-
-const DEFAULT_IFRAMES_CONFIG = {
-  maxTopicCaller: 4,
-  bidders: [{
-    bidder: 'pubmatic',
-    iframeURL: 'https://ads.pubmatic.com/AdServer/js/topics/topics_frame.html'
-  }, {
-    bidder: 'rtbhouse',
-    iframeURL: 'https://topics.authorizedvault.com/topicsapi.html'
-  }, {
-    bidder: 'openx',
-    iframeURL: 'https://pa.openx.net/topics_frame.html'
-  }, {
-    bidder: 'improvedigital',
-    iframeURL: 'https://hb.360yield.com/privacy-sandbox/topics.html'
-  }, {
-    bidder: 'onetag',
-    iframeURL: 'https://onetag-sys.com/static/topicsapi.html'
-  }, {
-    bidder: 'taboola',
-    iframeURL: 'https://cdn.taboola.com/libtrc/static/topics/taboola-prebid-browsing-topics.html'
-  }, {
-    bidder: 'discovery',
-    iframeURL: 'https://api.popin.cc/topic/prebid-topics-frame.html'
-  }, {
-    bidder: 'undertone',
-    iframeURL: 'https://creative-p.undertone.com/spk-public/topics_frame.html'
-  }]
-}
 
 export function newConfig() {
   let listeners = [];
