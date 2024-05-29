@@ -2377,23 +2377,28 @@ describe('S2S Adapter', function () {
       ]);
     });
 
-    it('should "promote" the most reused bidder schain to source.ext.schain', () => {
-      const bidderReqs = [
-        {...deepClone(BID_REQUESTS[0]), bidderCode: 'A'},
-        {...deepClone(BID_REQUESTS[0]), bidderCode: 'B'},
-        {...deepClone(BID_REQUESTS[0]), bidderCode: 'C'}
-      ];
-      const chain1 = {chain: 1};
-      const chain2 = {chain: 2};
+    Object.entries({
+      'set': {},
+      'override': {source: {ext: {schain: 'pub-provided'}}}
+    }).forEach(([t, fpd]) => {
+      it(`should not ${t} source.ext.schain`, () => {
+        const bidderReqs = [
+          {...deepClone(BID_REQUESTS[0]), bidderCode: 'A'},
+          {...deepClone(BID_REQUESTS[0]), bidderCode: 'B'},
+          {...deepClone(BID_REQUESTS[0]), bidderCode: 'C'}
+        ];
+        const chain1 = {chain: 1};
+        const chain2 = {chain: 2};
 
-      bidderReqs[0].bids[0].schain = chain1;
-      bidderReqs[1].bids[0].schain = chain2;
-      bidderReqs[2].bids[0].schain = chain2;
+        bidderReqs[0].bids[0].schain = chain1;
+        bidderReqs[1].bids[0].schain = chain2;
+        bidderReqs[2].bids[0].schain = chain2;
 
-      adapter.callBids(REQUEST, bidderReqs, addBidResponse, done, ajax);
-      const req = JSON.parse(server.requests[0].requestBody);
-      expect(req.source.ext.schain).to.eql(chain2);
-    });
+        adapter.callBids({...REQUEST, ortb2Fragments: {global: fpd}}, bidderReqs, addBidResponse, done, ajax);
+        const req = JSON.parse(server.requests[0].requestBody);
+        expect(req.source?.ext?.schain).to.eql(fpd?.source?.ext?.schain);
+      })
+    })
 
     it('passes multibid array in request', function () {
       const bidRequests = utils.deepClone(BID_REQUESTS);
