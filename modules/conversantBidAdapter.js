@@ -95,7 +95,7 @@ const converter = ortbConverter({
   },
   response(buildResponse, bidResponses, ortbResponse, context) {
     const response = buildResponse(bidResponses, ortbResponse, context);
-    return response.bids;
+    return response;
   },
   overrides: {
     imp: {
@@ -176,7 +176,8 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: function(serverResponse, bidRequest) {
-    return converter.fromORTB({request: bidRequest.data, response: serverResponse.body});
+    const ortbBids = converter.fromORTB({request: bidRequest.data, response: serverResponse.body});
+    return ortbBids;
   },
 
   /**
