@@ -11,7 +11,7 @@ const BID_SCHEME = 'https://';
 const BID_DOMAIN = 'technoratimedia.com';
 const USER_SYNC_IFRAME_URL = 'https://ad-cdn.technoratimedia.com/html/usersync.html';
 const USER_SYNC_PIXEL_URL = 'https://sync.technoratimedia.com/services';
-const VIDEO_PARAMS = [ 'minduration', 'maxduration', 'startdelay', 'placement', 'linearity', 'mimes', 'protocols', 'api' ];
+const VIDEO_PARAMS = [ 'minduration', 'maxduration', 'startdelay', 'placement', 'plcmt', 'linearity', 'mimes', 'protocols', 'api' ];
 const BLOCKED_AD_SIZES = [
   '1x1',
   '1x2'
