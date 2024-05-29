@@ -51,20 +51,21 @@ Follow steps above for general review process. In addition, please verify the fo
 - If the adapter being submitted is an alias type, check with the bidder contact that is being aliased to make sure it's allowed.
 - All bidder parameter conventions must be followed:
     - Video params must be read from AdUnit.mediaTypes.video when available; however bidder config can override the ad unit. 
-    - First party data must be read from [getConfig('ortb2');](https://docs.prebid.org/dev-docs/publisher-api-reference/setConfig.html#setConfig-fpd).
+    - First party data must be read from the bid request object: bidrequest.ortb2
     - Adapters that accept a floor parameter must also support the [floors module](https://docs.prebid.org/dev-docs/modules/floors.html) -- look for a call to the `getFloor()` function.
     - Adapters cannot accept an schain parameter. Rather, they must look for the schain parameter at bidRequest.schain.
     - The bidderRequest.refererInfo.referer must be checked in addition to any bidder-specific parameter.
     - Page position must come from bidrequest.mediaTypes.banner.pos or bidrequest.mediaTypes.video.pos
-    - Global OpenRTB fields should come from [getConfig('ortb2');](https://docs.prebid.org/dev-docs/publisher-api-reference/setConfig.html#setConfig-fpd):
+    - Eids object is to be preferred to Userids object in the bid request, as the userid object may be removed in a future version
+    - Global OpenRTB fields should come from bidrequest.ortb2
         - bcat, battr, badv
     - Impression-specific OpenRTB fields should come from bidrequest.ortb2imp
         - instl
 - Below are some examples of bidder specific updates that should require docs update (in their dev-docs/bidders/BIDDER.md file):
-    - If they support the GDPR consentManagement module and TCF1, add `gdpr_supported: true`
-    - If they support the GDPR consentManagement module and TCF2, add `tcf2_supported: true`
+    - If they support the TCF consentManagementTcf module and TCF2, add `tcf2_supported: true`
     - If they support the US Privacy consentManagementUsp module, add `usp_supported: true`
-    - If they support one or more userId modules, add `userId: (list of supported vendors)`
+    - If they support the GPP consentManagementGpp module, add `gpp_supported: true`
+    - If they support one or more userId modules, add `userId: (list of supported vendors) or (all)`
     - If they support video and/or native mediaTypes add `media_types: video, native`. Note that display is added by default. If you don't support display, add "no-display" as the first entry, e.g. `media_types: no-display, native`
     - If they support COPPA, add `coppa_supported: true`
     - If they support SChain, add `schain_supported: true`
@@ -121,6 +122,7 @@ Follow steps above for general review process. In addition:
 - Confirm that the module
   - is not loading external code. If it is, escalate to the #prebid-js Slack channel. 
   - is reading `config` from the function signature rather than calling `getConfig`.
+  - Is practicing reasonable data minimization, eg not sending all eids over the wire without publisher whitelisting
   - is sending data to the bid request only as either First Party Data or in bidRequest.rtd.RTDPROVIDERCODE.
   - is making HTTPS requests as early as possible, but not more often than needed.
   - doesn't force bid adapters to load additional code.
