@@ -276,7 +276,7 @@ export const spec = {
         responseBody.creatives[0].expectedHashes.length ? responseBody.creatives[0].expectedHashes[0] : '',
       ]);
       let recentAdsPrebidFinal = JSON.stringify(recentAdsPrebid.slice(-100));
-      storage.setDataInLocalStorage(prefix + "recentAdsPrebid", recentAdsPrebidFinal);
+      storage.setDataInLocalStorage(prefix + 'recentAdsPrebid', recentAdsPrebidFinal);
     }
 
     const publisherURL = JSON.stringify(request.bidRequest.params.platformURL);
