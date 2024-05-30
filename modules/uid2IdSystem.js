@@ -109,6 +109,10 @@ function decodeImpl(value) {
     const result = { uid2: { id: value } };
     return result;
   }
+  if (value.latestToken === 'optout') {
+    _logInfo('Found optout token.  Refresh is unavailable for this token.');
+    return { uid2: { optout: true } };
+  }
   if (Date.now() < value.latestToken.identity_expires) {
     return { uid2: { id: value.latestToken.advertising_token } };
   }

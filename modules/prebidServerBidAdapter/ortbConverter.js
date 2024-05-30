@@ -198,9 +198,7 @@ const PBS_CONVERTER = ortbConverter({
         context.actualBidderRequests.forEach(req => orig(ortbRequest, req, context));
       },
       sourceExtSchain(orig, ortbRequest, proxyBidderRequest, context) {
-        // pass schains in ext.prebid.schains, with the most commonly used one in source.ext.schain
-        let mainChain;
-
+        // pass schains in ext.prebid.schains
         let chains = (deepAccess(ortbRequest, 'ext.prebid.schains') || []);
         const chainBidders = new Set(chains.flatMap((item) => item.bidders));
 
@@ -219,16 +217,9 @@ const PBS_CONVERTER = ortbConverter({
                 chains[key] = {bidders: new Set(), schain};
               }
               bidders.forEach((bidder) => chains[key].bidders.add(bidder));
-              if (mainChain == null || chains[key].bidders.size > mainChain.bidders.size) {
-                mainChain = chains[key]
-              }
               return chains;
             }, {})
         ).map(({bidders, schain}) => ({bidders: Array.from(bidders), schain}));
-
-        if (mainChain != null) {
-          deepSetValue(ortbRequest, 'source.ext.schain', mainChain.schain);
-        }
 
         if (chains.length) {
           deepSetValue(ortbRequest, 'ext.prebid.schains', chains);

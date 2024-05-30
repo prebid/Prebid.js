@@ -349,6 +349,39 @@ describe('Adagio bid adapter', () => {
       adagioMock.verify();
     });
 
+    describe('with Adagio Rtd Provider', function() {
+      it('it dont enqueue features from the bidder adapter', function() {
+        sandbox.stub(adagio, 'hasRtd').returns(true);
+        const bid01 = new BidRequestBuilder().withParams().build();
+        const bidderRequest = new BidderRequestBuilder().build();
+        spec.buildRequests([bid01], bidderRequest);
+        adagioMock.expects('enqueue').withArgs(sinon.match({ action: 'features' })).never();
+        adagioMock.verify();
+      });
+
+      it('get feature from ortb2', function() {
+        sandbox.stub(adagio, 'hasRtd').returns(true);
+        const bid01 = new BidRequestBuilder().withParams().build();
+        bid01.ortb2Imp = {
+          ext: { data: {adg_rtd: {adunit_position: '1x1'}} }
+        };
+        bid01.ortb2 = {
+          site: {
+            ext:
+            {
+              data: {
+                adg_rtd: { features: {} }
+              }
+            }
+          }
+        };
+        const bidderRequest = new BidderRequestBuilder().build();
+        const requests = spec.buildRequests([bid01], bidderRequest);
+        expect(requests[0].data.adUnits[0].features).to.exist;
+        expect(requests[0].data.adUnits[0].features.adunit_position).to.equal('1x1');
+      });
+    });
+
     it('should filter some props in case refererDetection.reachedTop is false', function() {
       const bid01 = new BidRequestBuilder().withParams().build();
       const bidderRequest = new BidderRequestBuilder({
