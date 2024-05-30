@@ -108,8 +108,9 @@ function setBrowsers(karmaConf, browserstack) {
 module.exports = function(codeCoverage, browserstack, watchMode, file, disableFeatures) {
   var webpackConfig = newWebpackConfig(codeCoverage, disableFeatures);
   var plugins = newPluginsArray(browserstack);
+  file = Array.isArray(file) ? file : ['test/pipeline_setup.js', ...file]
 
-  var files = file ? ['test/test_deps.js', file, 'test/helpers/hookSetup.js'].flatMap(f => f) : ['test/test_index.js'];
+  var files = file ? ['test/test_deps.js', ...file, 'test/helpers/hookSetup.js'].flatMap(f => f) : ['test/test_index.js'];
   // This file opens the /debug.html tab automatically.
   // It has no real value unless you're running --watch, and intend to do some debugging in the browser.
   if (watchMode) {
@@ -127,14 +128,14 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
     },
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['es5-shim', 'mocha', 'chai', 'sinon'],
+    frameworks: ['es5-shim', 'mocha', 'chai', 'sinon', 'webpack'],
 
     files: files,
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      'test/test_index.js': ['webpack', 'sourcemap']
+      'test/**/*.js': ['webpack', 'sourcemap']
     },
 
     // web server port
