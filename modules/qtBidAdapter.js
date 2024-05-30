@@ -1,12 +1,12 @@
 import { logMessage, logError, deepAccess } from '../src/utils.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
-const BIDDER_CODE = 'iqzone';
-const AD_URL = 'https://smartssp-us-east.iqzone.com/pbjs';
-const SYNC_URL = 'https://cs.smartssp.iqzone.com';
+const BIDDER_CODE = 'qt';
+const AD_URL = 'https://endpoint1.qt.io/pbjs';
+const SYNC_URL = 'https://cs.qt.io';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId || !bid.ttl || !bid.currency) {
