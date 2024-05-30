@@ -114,6 +114,7 @@ describe('dailymotionBidAdapterTests', () => {
           private: false,
           tags: 'tag_1,tag_2,tag_3',
           title: 'test video',
+          url: 'https://test.com/test',
           topics: 'topic_1, topic_2',
           xid: 'x123456',
           livestream: 1,
@@ -187,12 +188,14 @@ describe('dailymotionBidAdapterTests', () => {
       private: bidRequestData[0].params.video.private,
       tags: bidRequestData[0].params.video.tags,
       title: bidRequestData[0].params.video.title,
+      url: bidRequestData[0].params.video.url,
       topics: bidRequestData[0].params.video.topics,
       xid: bidRequestData[0].params.video.xid,
       duration: bidRequestData[0].params.video.duration,
       livestream: !!bidRequestData[0].params.video.livestream,
       isCreatedForKids: bidRequestData[0].params.video.isCreatedForKids,
       context: {
+        siteOrAppCat: '',
         videoViewsInSession: bidRequestData[0].params.video.videoViewsInSession,
         autoplay: bidRequestData[0].params.video.autoplay,
         playerVolume: bidRequestData[0].params.video.playerVolume,
@@ -233,6 +236,7 @@ describe('dailymotionBidAdapterTests', () => {
           private: false,
           tags: 'tag_1,tag_2,tag_3',
           title: 'test video',
+          url: 'https://test.com/test',
           topics: 'topic_1, topic_2',
           xid: 'x123456',
           livestream: 1,
@@ -266,6 +270,9 @@ describe('dailymotionBidAdapterTests', () => {
         device: {
           lmt: 1,
           ifa: 'xxx',
+          ext: {
+            atts: 2,
+          },
         },
         app: {
           bundle: 'app-bundle',
@@ -310,6 +317,7 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.appStoreUrl).to.eql(bidderRequestData.ortb2.app.storeurl);
     expect(reqData.device.lmt).to.eql(bidderRequestData.ortb2.device.lmt);
     expect(reqData.device.ifa).to.eql(bidderRequestData.ortb2.device.ifa);
+    expect(reqData.device.atts).to.eql(bidderRequestData.ortb2.device.ext.atts);
     expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId);
     expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
 
@@ -324,6 +332,7 @@ describe('dailymotionBidAdapterTests', () => {
       private: bidRequestData[0].params.video.private,
       tags: bidRequestData[0].params.video.tags,
       title: bidRequestData[0].params.video.title,
+      url: bidRequestData[0].params.video.url,
       topics: bidRequestData[0].params.video.topics,
       xid: bidRequestData[0].params.video.xid,
       // Overriden through bidder params
@@ -331,6 +340,7 @@ describe('dailymotionBidAdapterTests', () => {
       livestream: !!bidRequestData[0].params.video.livestream,
       isCreatedForKids: null,
       context: {
+        siteOrAppCat: '',
         videoViewsInSession: null,
         autoplay: null,
         playerVolume: null,
@@ -389,6 +399,7 @@ describe('dailymotionBidAdapterTests', () => {
             language: 'FR',
             keywords: 'tag_1,tag_2,tag_3',
             title: 'test video',
+            url: 'https://test.com/test',
             livestream: 1,
             cat: ['IAB-2'],
             data: [
@@ -483,12 +494,14 @@ describe('dailymotionBidAdapterTests', () => {
       private: bidRequestData[0].params.video.private,
       tags: bidderRequestData.ortb2.site.content.keywords,
       title: bidderRequestData.ortb2.site.content.title,
+      url: bidderRequestData.ortb2.site.content.url,
       topics: bidRequestData[0].params.video.topics,
       xid: bidRequestData[0].params.video.xid,
       duration: bidRequestData[0].params.video.duration,
       livestream: !!bidderRequestData.ortb2.site.content.livestream,
       isCreatedForKids: bidRequestData[0].params.video.isCreatedForKids,
       context: {
+        siteOrAppCat: bidderRequestData.ortb2.site.content.cat,
         videoViewsInSession: bidRequestData[0].params.video.videoViewsInSession,
         autoplay: bidRequestData[0].params.video.autoplay,
         playerVolume: bidRequestData[0].params.video.playerVolume,
@@ -565,11 +578,13 @@ describe('dailymotionBidAdapterTests', () => {
       private: false,
       tags: '',
       title: '',
+      url: '',
       topics: '',
       xid: '',
       livestream: false,
       isCreatedForKids: null,
       context: {
+        siteOrAppCat: '',
         videoViewsInSession: null,
         autoplay: null,
         playerVolume: null,

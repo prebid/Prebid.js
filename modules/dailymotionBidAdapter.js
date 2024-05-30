@@ -60,12 +60,14 @@ function getVideoMetadata(bidRequest, bidderRequest) {
     private: videoParams.private || false,
     tags: videoParams.tags || deepAccess(contentObj, 'keywords', ''),
     title: videoParams.title || deepAccess(contentObj, 'title', ''),
+    url: videoParams.url || deepAccess(contentObj, 'url', ''),
     topics: videoParams.topics || '',
     xid: videoParams.xid || '',
     isCreatedForKids: typeof videoParams.isCreatedForKids === 'boolean'
       ? videoParams.isCreatedForKids
       : null,
     context: {
+      siteOrAppCat: deepAccess(contentObj, 'cat', ''),
       videoViewsInSession: (
         typeof videoParams.videoViewsInSession === 'number' &&
         videoParams.videoViewsInSession >= 0
@@ -164,6 +166,7 @@ export const spec = {
         device: {
           lmt: deepAccess(bidderRequest, 'ortb2.device.lmt', null),
           ifa: deepAccess(bidderRequest, 'ortb2.device.ifa', ''),
+          atts: deepAccess(bidderRequest, 'ortb2.device.ext.atts', 0),
         },
       } : {}),
       request: {

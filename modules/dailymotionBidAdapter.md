@@ -179,6 +179,7 @@ Each of the following video metadata fields can be added in bids.params.video.
 * `private` - True if video is not publicly available
 * `tags` - Tags for the video, comma separated
 * `title` - Video title
+* `url` - URL of the content
 * `topics` - Main topics for the video, comma separated
 * `xid` - Dailymotion video identifier (only applicable if using the Dailymotion player)
 * `isCreatedForKids` - [The content is created for children as primary audience](https://faq.dailymotion.com/hc/en-us/articles/360020920159-Content-created-for-kids)
@@ -200,10 +201,12 @@ If you already specify [First-Party data](https://docs.prebid.org/features/first
 | `ortb2.site.content.livestream`                                                 | `livestream`    |
 | `ortb2.site.content.keywords`                                                   | `tags`          |
 | `ortb2.site.content.title`                                                      | `title`         |
+| `ortb2.site.content.url`                                                        | `url`           |
 | `ortb2.app.bundle`                                                              | N/A             |
 | `ortb2.app.storeurl`                                                            | N/A             |
 | `ortb2.device.lmt`                                                              | N/A             |
 | `ortb2.device.ifa`                                                              | N/A             |
+| `ortb2.device.ext.atts`                                                         | N/A             |
 
 # Integrating the adapter
 
