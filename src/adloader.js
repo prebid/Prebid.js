@@ -10,7 +10,6 @@ const _approvedLoadExternalJSList = [
   // Bid Modules:
   'adagio',
   'improvedigital',
-  'lucead',
   // RTD modules:
   'aaxBlockmeter',
   'adloox',
