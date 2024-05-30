@@ -8,6 +8,7 @@ const glob = require('glob');
  * TEST_CHUNKS: number of chunks to split tests into, or MAX to run each test suite in isolation
  * TEST_CHUNK: run only this chunk (e.g. TEST_CHUNKS=4 TEST_CHUNK=2 gulp test) will run only the second quarter
  * TEST_ALL: set to continue running remaining chunks after a previous chunk failed
+ * TEST_PATH: test file pattern (default is *_spec.js)
  */
 
 process.on('message', function (options) {
@@ -61,7 +62,8 @@ process.on('message', function (options) {
       chunks.push([options.file]);
     } else {
       const chunkNum = process.env['TEST_CHUNKS'] ?? 1;
-      const tests = glob.sync('test/**/*_spec.js').sort();
+      const pat = process.env['TEST_PAT'] ?? '*_spec.js'
+      const tests = glob.sync('test/**/' + pat).sort();
       const chunkLen = chunkNum === 'MAX' ? 0 : Math.floor(tests.length / Number(chunkNum));
       chunks.push([]);
       tests.forEach((fn) => {
