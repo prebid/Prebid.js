@@ -9,7 +9,7 @@ import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 /**
  * prebidmanagerAnalyticsAdapter.js - analytics adapter for prebidmanager
  */
-export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: 'prebidmanager'});
+export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: 'asteriobidpbm'});
 const DEFAULT_EVENT_URL = 'https://endpt.prebidmanager.com/endpoint';
 const analyticsType = 'endpoint';
 const analyticsName = 'Prebid Manager Analytics';
