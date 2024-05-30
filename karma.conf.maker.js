@@ -109,7 +109,7 @@ module.exports = function(codeCoverage, browserstack, watchMode, file, disableFe
   var webpackConfig = newWebpackConfig(codeCoverage, disableFeatures);
   var plugins = newPluginsArray(browserstack);
   if (file) {
-    file = Array.isArray(file) ? file : ['test/pipeline_setup.js', ...file]
+    file = Array.isArray(file) ? ['test/pipeline_setup.js', ...file] : [file]
   }
 
   var files = file ? ['test/test_deps.js', ...file, 'test/helpers/hookSetup.js'].flatMap(f => f) : ['test/test_index.js'];

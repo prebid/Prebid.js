@@ -8,7 +8,7 @@ const glob = require('glob');
  * TEST_CHUNKS: number of chunks to split tests into, or MAX to run each test suite in isolation
  * TEST_CHUNK: run only this chunk (e.g. TEST_CHUNKS=4 TEST_CHUNK=2 gulp test) will run only the second quarter
  * TEST_ALL: set to continue running remaining chunks after a previous chunk failed
- * TEST_PATH: test file pattern (default is *_spec.js)
+ * TEST_PAT: test file pattern (default is *_spec.js)
  */
 
 process.on('message', function (options) {
