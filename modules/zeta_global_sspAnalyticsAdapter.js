@@ -42,6 +42,9 @@ function adRenderSucceededHandler(args) {
       adomain: args.bid?.adserverTargeting?.hb_adomain,
       timeToRespond: args.bid?.timeToRespond,
       cpm: args.bid?.cpm
+    },
+    device: {
+      ua: navigator.userAgent
     }
   }
   sendEvent(EVENTS.AD_RENDER_SUCCEEDED, event);
