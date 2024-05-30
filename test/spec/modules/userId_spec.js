@@ -22,8 +22,6 @@ import * as events from 'src/events.js';
 import {EVENTS} from 'src/constants.js';
 import {getGlobal} from 'src/prebidGlobal.js';
 import {resetConsentData} from 'modules/consentManagement.js';
-import {server} from 'test/mocks/xhr.js';
-import {unifiedIdSubmodule} from 'modules/unifiedIdSystem.js';
 import {setEventFiredFlag as liveIntentIdSubmoduleDoNotFireEvent} from 'modules/liveIntentIdSystem.js';
 import {sharedIdSystemSubmodule} from 'modules/sharedIdSystem.js';
 import {pubProvidedIdSubmodule} from 'modules/pubProvidedIdSystem.js';
@@ -338,7 +336,7 @@ describe('User ID', function () {
       customConfig = addConfig(customConfig, 'params', {extend: true});
 
       init(config);
-      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule]);
 
       config.setConfig(customConfig);
       return expectImmediateBidHook((config) => {
@@ -364,7 +362,7 @@ describe('User ID', function () {
       customConfig = addConfig(customConfig, 'params', {create: false});
 
       init(config);
-      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule]);
 
       config.setConfig(customConfig);
       return expectImmediateBidHook((config) => {
@@ -755,7 +753,7 @@ describe('User ID', function () {
     it('should set googletag ppid correctly', function () {
       let adUnits = [getAdUnitMock()];
       init(config);
-      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule]);
 
       // before ppid should not be set
       expect(window.googletag._ppid).to.equal(undefined);
@@ -764,7 +762,6 @@ describe('User ID', function () {
         userSync: {
           ppid: 'pubcid.org',
           userIds: [
-            { name: 'unifiedId', value: {'unifiedId': 'unified-id-value-unified-id-value-unified-id-value'} },
             { name: 'pubCommonId', value: {'pubcid': 'pubCommon-id-value-pubCommon-id-value'} },
           ]
         }
@@ -1391,8 +1388,8 @@ describe('User ID', function () {
 
     it('config with 1 configurations should create 1 submodules', function () {
       init(config);
-      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule]);
-      config.setConfig(getConfigMock(['unifiedId', 'unifiedid', 'cookie']));
+      setSubmoduleRegistry([sharedIdSystemSubmodule, pubProvidedIdSubmodule]);
+      config.setConfig(getConfigMock(['pubCommonId', 'pubCommonId', 'cookie']));
 
       expect(utils.logInfo.args[0][0]).to.exist.and.to.contain('User ID - usersync config updated for 1 submodules');
     });
@@ -1413,15 +1410,15 @@ describe('User ID', function () {
 
     it('config with 2 configurations should result in 2 submodules add', function () {
       init(config);
-      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule, pubProvidedIdSubmodule]);
       config.setConfig({
         userSync: {
           syncDelay: 0,
           userIds: [{
             name: 'pubCommonId', value: {'pubcid': '11111'}
           }, {
-            name: 'unifiedId',
-            storage: {name: 'unifiedid', type: 'cookie'}
+            name: 'pubProvidedId',
+            storage: {name: 'pubProvidedId', type: 'cookie'}
           }]
         }
       });
@@ -1435,8 +1432,8 @@ describe('User ID', function () {
         userSync: {
           syncDelay: 99,
           userIds: [{
-            name: 'unifiedId',
-            storage: {name: 'unifiedid', type: 'cookie'}
+            name: 'pubCommonId',
+            storage: {name: 'pubCommonId', type: 'cookie'}
           }]
         }
       });
@@ -1445,13 +1442,13 @@ describe('User ID', function () {
 
     it('config auctionDelay updates module correctly', function () {
       init(config);
-      setSubmoduleRegistry([unifiedIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule]);
       config.setConfig({
         userSync: {
           auctionDelay: 100,
           userIds: [{
-            name: 'unifiedId',
-            storage: {name: 'unifiedid', type: 'cookie'}
+            name: 'pubCommonId',
+            storage: {name: 'pubCommonId', type: 'cookie'}
           }]
         }
       });
@@ -1460,13 +1457,13 @@ describe('User ID', function () {
 
     it('config auctionDelay defaults to 0 if not a number', function () {
       init(config);
-      setSubmoduleRegistry([unifiedIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule]);
       config.setConfig({
         userSync: {
           auctionDelay: '',
           userIds: [{
-            name: 'unifiedId',
-            storage: {name: 'unifiedid', type: 'cookie'}
+            name: 'pubCommonId',
+            storage: {name: 'pubCommonId', type: 'cookie'}
           }]
         }
       });
@@ -2143,16 +2140,12 @@ describe('User ID', function () {
         sinon.stub(events, 'getEvents').returns([]);
         sinon.stub(utils, 'triggerPixel');
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie('_parrable_eid', '', EXPIRED_COOKIE_DATE);
       });
 
       afterEach(function () {
         events.getEvents.restore();
         utils.triggerPixel.restore();
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie('unifiedid', '', EXPIRED_COOKIE_DATE);
-        coreStorage.setCookie('_parrable_eid', '', EXPIRED_COOKIE_DATE);
         resetConsentData();
         delete window.__tcfapi;
       });
@@ -2169,7 +2162,7 @@ describe('User ID', function () {
         customCfg = addConfig(customCfg, 'params', {pixelUrl: '/any/pubcid/url'});
 
         init(config);
-        setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule]);
+        setSubmoduleRegistry([sharedIdSystemSubmodule]);
         config.setConfig(customCfg);
         return runBidsHook((config) => {
           innerAdUnits = config.adUnits
@@ -2178,44 +2171,6 @@ describe('User ID', function () {
           return endAuction();
         }).then(() => {
           expect(utils.triggerPixel.getCall(0).args[0]).to.include('/any/pubcid/url');
-        });
-      });
-
-      it('unifiedid callback with url', function () {
-        let adUnits = [getAdUnitMock()];
-        let innerAdUnits;
-        let customCfg = getConfigMock(['unifiedId', 'unifiedid', 'cookie']);
-        addConfig(customCfg, 'params', {url: '/any/unifiedid/url'});
-
-        init(config);
-        setSubmoduleRegistry([unifiedIdSubmodule]);
-        config.setConfig(customCfg);
-        return runBidsHook((config) => {
-          innerAdUnits = config.adUnits
-        }, {adUnits}).then(() => {
-          expect(server.requests).to.be.empty;
-          return endAuction();
-        }).then(() => {
-          expect(server.requests[0].url).to.match(/\/any\/unifiedid\/url/);
-        });
-      });
-
-      it('unifiedid callback with partner', function () {
-        let adUnits = [getAdUnitMock()];
-        let innerAdUnits;
-        let customCfg = getConfigMock(['unifiedId', 'unifiedid', 'cookie']);
-        addConfig(customCfg, 'params', {partner: 'rubicon'});
-
-        init(config);
-        setSubmoduleRegistry([unifiedIdSubmodule]);
-        config.setConfig(customCfg);
-        return runBidsHook((config) => {
-          innerAdUnits = config.adUnits
-        }, {adUnits}).then(() => {
-          expect(server.requests).to.be.empty;
-          return endAuction();
-        }).then(() => {
-          expect(server.requests[0].url).to.equal('https://match.adsrvr.org/track/rid?ttd_pid=rubicon&fmt=json');
         });
       });
     });
@@ -2664,14 +2619,12 @@ describe('User ID', function () {
           ]
         }
         init(config);
-        setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule]);
+        setSubmoduleRegistry([sharedIdSystemSubmodule]);
         config.setConfig({
           userSync: {
             auctionDelay: 10,
             userIds: [{
               name: 'pubCommonId', value: {'pubcid': '11111'}
-            }, {
-              name: 'unifiedId', value: {'unifiedId': '1234'}
             }]
           }
         });

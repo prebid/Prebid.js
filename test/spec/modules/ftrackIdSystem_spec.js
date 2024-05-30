@@ -380,10 +380,10 @@ describe('FTRACK ID System', () => {
           }
         });
 
-        getGlobal().getUserIdsAsync().then(ids => {
-          expect(ids).to.deep.equal({
+        return getGlobal().getUserIdsAsync().then(ids => {
+          expect(ids.ftrackId).to.deep.equal({
             uid: 'device_test_id',
-            ftrackId: {
+            ext: {
               HHID: 'household_test_id',
               DeviceID: 'device_test_id',
               SingleDeviceID: 'single_device_test_id'
