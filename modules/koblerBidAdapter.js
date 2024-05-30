@@ -90,8 +90,6 @@ export const onTimeout = function (timeoutDataArray) {
     timeoutDataArray.forEach(timeoutData => {
       const query = parseQueryStringParameters({
         ad_unit_code: timeoutData.adUnitCode,
-        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
-        auction_id: timeoutData.auctionId,
         bid_id: timeoutData.bidId,
         timeout: timeoutData.timeout,
         page_url: pageUrl,
@@ -103,13 +101,6 @@ export const onTimeout = function (timeoutDataArray) {
 };
 
 function getPageUrlFromRequest(validBidRequest, bidderRequest) {
-  // pageUrl is considered only when testing to ensure that non-test requests always contain the correct URL
-  if (isTest(validBidRequest) && config.getConfig('pageUrl')) {
-    // TODO: it's not clear what the intent is here - but all adapters should always respect pageUrl.
-    // With prebid 7, using `refererInfo.page` will do that automatically.
-    return config.getConfig('pageUrl');
-  }
-
   return (bidderRequest.refererInfo && bidderRequest.refererInfo.page)
     ? bidderRequest.refererInfo.page
     : window.location.href;
@@ -125,7 +116,26 @@ function getPageUrlFromRefererInfo() {
 function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
   const imps = validBidRequests.map(buildOpenRtbImpObject);
   const timeout = bidderRequest.timeout;
-  const pageUrl = getPageUrlFromRequest(validBidRequests[0], bidderRequest)
+  const pageUrl = getPageUrlFromRequest(validBidRequests[0], bidderRequest);
+  // Kobler, a contextual advertising provider, does not process any personal data itself, so it is not part of TCF/GVL.
+  // However, it supports using select third-party creatives in its platform, some of which require certain permissions
+  // in order to be shown. Kobler's bidder checks if necessary permissions are present to avoid bidding
+  // with ineligible creatives.
+  let purpose2Given;
+  let purpose3Given;
+  if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.vendorData) {
+    const vendorData = bidderRequest.gdprConsent.vendorData
+    const purposeData = vendorData.purpose;
+    const restrictions = vendorData.publisher ? vendorData.publisher.restrictions : null;
+    const restrictionForPurpose2 = restrictions ? (restrictions[2] ? Object.values(restrictions[2])[0] : null) : null;
+    purpose2Given = restrictionForPurpose2 === 1 ? (
+      purposeData && purposeData.consents && purposeData.consents[2]
+    ) : (
+      restrictionForPurpose2 === 0
+        ? false : (purposeData && purposeData.legitimateInterests && purposeData.legitimateInterests[2])
+    );
+    purpose3Given = purposeData && purposeData.consents && purposeData.consents[3];
+  }
   const request = {
     id: bidderRequest.bidderRequestId,
     at: 1,
@@ -138,7 +148,13 @@ function buildOpenRtbBidRequestPayload(validBidRequests, bidderRequest) {
     site: {
       page: pageUrl,
     },
-    test: getTestAsNumber(validBidRequests[0])
+    test: getTestAsNumber(validBidRequests[0]),
+    ext: {
+      kobler: {
+        tcf_purpose_2_given: purpose2Given,
+        tcf_purpose_3_given: purpose3Given
+      }
+    }
   };
 
   return JSON.stringify(request);
