@@ -21,15 +21,12 @@ import {getPrebidInternal} from 'src/utils.js';
 import * as events from 'src/events.js';
 import {EVENTS} from 'src/constants.js';
 import {getGlobal} from 'src/prebidGlobal.js';
-import {resetConsentData,} from 'modules/consentManagement.js';
+import {resetConsentData} from 'modules/consentManagement.js';
 import {server} from 'test/mocks/xhr.js';
 import {unifiedIdSubmodule} from 'modules/unifiedIdSystem.js';
-import {identityLinkSubmodule} from 'modules/identityLinkIdSystem.js';
 import {setEventFiredFlag as liveIntentIdSubmoduleDoNotFireEvent} from 'modules/liveIntentIdSystem.js';
 import {sharedIdSystemSubmodule} from 'modules/sharedIdSystem.js';
 import {pubProvidedIdSubmodule} from 'modules/pubProvidedIdSystem.js';
-import {amxIdSubmodule} from '../../../modules/amxIdSystem.js';
-import {imuIdSubmodule} from 'modules/imuIdSystem.js';
 import * as mockGpt from '../integration/faker/googletag.js';
 import 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
@@ -758,7 +755,7 @@ describe('User ID', function () {
     it('should set googletag ppid correctly', function () {
       let adUnits = [getAdUnitMock()];
       init(config);
-      setSubmoduleRegistry([amxIdSubmodule, sharedIdSystemSubmodule, identityLinkSubmodule, imuIdSubmodule]);
+      setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule]);
 
       // before ppid should not be set
       expect(window.googletag._ppid).to.equal(undefined);
@@ -767,10 +764,8 @@ describe('User ID', function () {
         userSync: {
           ppid: 'pubcid.org',
           userIds: [
-            { name: 'amxId', value: {'amxId': 'amx-id-value-amx-id-value-amx-id-value'} },
+            { name: 'unifiedId', value: {'unifiedId': 'unified-id-value-unified-id-value-unified-id-value'} },
             { name: 'pubCommonId', value: {'pubcid': 'pubCommon-id-value-pubCommon-id-value'} },
-            { name: 'identityLink', value: {'idl_env': 'identityLink-id-value-identityLink-id-value'} },
-            { name: 'imuid', value: {'imppid': 'imppid-value-imppid-value-imppid-value'} },
           ]
         }
       });
@@ -919,29 +914,6 @@ describe('User ID', function () {
         const uid = 'thismustbelongerthan32characters'
         callback.yield({pubcid: uid});
         expect(window.googletag._ppid).to.equal(uid);
-      });
-    });
-
-    it('should set googletag ppid correctly for imuIdSubmodule', function () {
-      let adUnits = [getAdUnitMock()];
-      init(config);
-      setSubmoduleRegistry([imuIdSubmodule]);
-
-      // before ppid should not be set
-      expect(window.googletag._ppid).to.equal(undefined);
-
-      config.setConfig({
-        userSync: {
-          ppid: 'ppid.intimatemerger.com',
-          userIds: [
-            { name: 'imuid', value: {'imppid': 'imppid-value-imppid-value-imppid-value'} },
-          ]
-        }
-      });
-
-      return expectImmediateBidHook(() => {}, {adUnits}).then(() => {
-        // ppid should have been set without dashes and stuff
-        expect(window.googletag._ppid).to.equal('imppidvalueimppidvalueimppidvalue');
       });
     });
 
@@ -2216,7 +2188,7 @@ describe('User ID', function () {
         addConfig(customCfg, 'params', {url: '/any/unifiedid/url'});
 
         init(config);
-        setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule]);
+        setSubmoduleRegistry([unifiedIdSubmodule]);
         config.setConfig(customCfg);
         return runBidsHook((config) => {
           innerAdUnits = config.adUnits
@@ -2235,7 +2207,7 @@ describe('User ID', function () {
         addConfig(customCfg, 'params', {partner: 'rubicon'});
 
         init(config);
-        setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule]);
+        setSubmoduleRegistry([unifiedIdSubmodule]);
         config.setConfig(customCfg);
         return runBidsHook((config) => {
           innerAdUnits = config.adUnits
@@ -2692,14 +2664,14 @@ describe('User ID', function () {
           ]
         }
         init(config);
-        setSubmoduleRegistry([sharedIdSystemSubmodule, amxIdSubmodule]);
+        setSubmoduleRegistry([sharedIdSystemSubmodule, unifiedIdSubmodule]);
         config.setConfig({
           userSync: {
             auctionDelay: 10,
             userIds: [{
               name: 'pubCommonId', value: {'pubcid': '11111'}
             }, {
-              name: 'amxId', value: {'amxId': 'amx-id-value-amx-id-value-amx-id-value'}
+              name: 'unifiedId', value: {'unifiedId': '1234'}
             }]
           }
         });
