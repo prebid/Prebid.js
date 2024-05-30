@@ -12,7 +12,7 @@ import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 export const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: 'asteriobidpbm'});
 const DEFAULT_EVENT_URL = 'https://endpt.prebidmanager.com/endpoint';
 const analyticsType = 'endpoint';
-const analyticsName = 'Prebid Manager Analytics';
+const analyticsName = 'Asteriobid PBM Analytics';
 
 let ajax = ajaxBuilder(0);
 
