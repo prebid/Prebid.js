@@ -1,9 +1,20 @@
-import {_each, deepAccess, parseSizesInput, parseUrl, uniques, isFn} from '../src/utils.js';
+import {
+  _each,
+  deepAccess,
+  isFn,
+  parseSizesInput,
+  parseUrl,
+  uniques,
+  isArray,
+  formatQS,
+  triggerPixel
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {bidderSettings} from '../src/bidderSettings.js';
 import {config} from '../src/config.js';
+import {chunk} from '../libraries/chunk/chunk.js';
 
 const GVLID = 744;
 const DEFAULT_SUB_DOMAIN = 'prebid';
@@ -48,7 +59,7 @@ function isBidRequestValid(bid) {
   return !!(extractCID(params) && extractPID(params));
 }
 
-function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
+function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
   const {
     params,
     bidId,
@@ -56,8 +67,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     adUnitCode,
     schain,
     mediaTypes,
-    auctionId,
-    transactionId,
+    ortb2Imp,
     bidderRequestId,
     bidRequestsCount,
     bidderRequestsCount,
@@ -69,15 +79,15 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
   const dealId = getNextDealId(hashUrl);
   const uniqueDealId = getUniqueDealId(hashUrl);
   const sId = getVidazooSessionId();
-  const cId = extractCID(params);
   const pId = extractPID(params);
-  const subDomain = extractSubDomain(params);
   const ptrace = getCacheOpt();
   const isStorageAllowed = bidderSettings.get(BIDDER_CODE, 'storageAllowed');
 
-  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid', deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', ''));
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', '');
   const cat = deepAccess(bidderRequest, 'ortb2.site.cat', []);
   const pagecat = deepAccess(bidderRequest, 'ortb2.site.pagecat', []);
+  const contentData = deepAccess(bidderRequest, 'ortb2.site.content.data', []);
+  const userData = deepAccess(bidderRequest, 'ortb2.user.data', []);
 
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
@@ -113,9 +123,10 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     isStorageAllowed: isStorageAllowed,
     gpid: gpid,
     cat: cat,
+    contentData,
+    userData: userData,
     pagecat: pagecat,
-    auctionId: auctionId,
-    transactionId: transactionId,
+    transactionId: ortb2Imp?.ext?.tid,
     bidderRequestId: bidderRequestId,
     bidRequestsCount: bidRequestsCount,
     bidderRequestsCount: bidderRequestsCount,
@@ -152,17 +163,53 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     data.gppSid = bidderRequest.ortb2.regs.gpp_sid;
   }
 
+  if (bidderRequest.fledgeEnabled) {
+    const fledge = deepAccess(bidderRequest, 'ortb2Imp.ext.ae');
+    if (fledge) {
+      data.fledge = fledge;
+    }
+  }
+
+  _each(ext, (value, key) => {
+    data['ext.' + key] = value;
+  });
+
+  return data;
+}
+
+function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
+  const {params} = bid;
+  const cId = extractCID(params);
+  const subDomain = extractSubDomain(params);
+  const data = buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout);
   const dto = {
     method: 'POST',
     url: `${createDomain(subDomain)}/prebid/multi/${cId}`,
     data: data
   };
-
-  _each(ext, (value, key) => {
-    dto.data['ext.' + key] = value;
-  });
-
   return dto;
+}
+
+function buildSingleRequest(bidRequests, bidderRequest, topWindowUrl, bidderTimeout) {
+  const {params} = bidRequests[0];
+  const cId = extractCID(params);
+  const subDomain = extractSubDomain(params);
+  const data = bidRequests.map(bid => {
+    const sizes = parseSizesInput(bid.sizes);
+    return buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout)
+  });
+  const chunkSize = Math.min(20, config.getConfig('vidazoo.chunkSize') || 10);
+
+  const chunkedData = chunk(data, chunkSize);
+  return chunkedData.map(chunk => {
+    return {
+      method: 'POST',
+      url: `${createDomain(subDomain)}/prebid/multi/${cId}`,
+      data: {
+        bids: chunk
+      }
+    };
+  });
 }
 
 function appendUserIdsToRequestPayload(payloadRef, userIds) {
@@ -192,12 +239,34 @@ function buildRequests(validBidRequests, bidderRequest) {
   // TODO: does the fallback make sense here?
   const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
   const bidderTimeout = config.getConfig('bidderTimeout');
+
+  const singleRequestMode = config.getConfig('vidazoo.singleRequest');
+
   const requests = [];
-  validBidRequests.forEach(validBidRequest => {
-    const sizes = parseSizesInput(validBidRequest.sizes);
-    const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);
-    requests.push(request);
-  });
+
+  if (singleRequestMode) {
+    // banner bids are sent as a single request
+    const bannerBidRequests = validBidRequests.filter(bid => isArray(bid.mediaTypes) ? bid.mediaTypes.includes(BANNER) : bid.mediaTypes[BANNER] !== undefined);
+    if (bannerBidRequests.length > 0) {
+      const singleRequests = buildSingleRequest(bannerBidRequests, bidderRequest, topWindowUrl, bidderTimeout);
+      requests.push(...singleRequests);
+    }
+
+    // video bids are sent as a single request for each bid
+
+    const videoBidRequests = validBidRequests.filter(bid => bid.mediaTypes[VIDEO] !== undefined);
+    videoBidRequests.forEach(validBidRequest => {
+      const sizes = parseSizesInput(validBidRequest.sizes);
+      const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);
+      requests.push(request);
+    });
+  } else {
+    validBidRequests.forEach(validBidRequest => {
+      const sizes = parseSizesInput(validBidRequest.sizes);
+      const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);
+      requests.push(request);
+    });
+  }
   return requests;
 }
 
@@ -205,13 +274,15 @@ function interpretResponse(serverResponse, request) {
   if (!serverResponse || !serverResponse.body) {
     return [];
   }
-  const {bidId} = request.data;
+
+  const singleRequestMode = config.getConfig('vidazoo.singleRequest');
+  const reqBidId = deepAccess(request, 'data.bidId');
   const {results} = serverResponse.body;
 
   let output = [];
 
   try {
-    results.forEach(result => {
+    results.forEach((result, i) => {
       const {
         creativeId,
         ad,
@@ -220,6 +291,8 @@ function interpretResponse(serverResponse, request) {
         width,
         height,
         currency,
+        bidId,
+        nurl,
         advertiserDomains,
         metaData,
         mediaType = BANNER
@@ -229,7 +302,7 @@ function interpretResponse(serverResponse, request) {
       }
 
       const response = {
-        requestId: bidId,
+        requestId: (singleRequestMode && bidId) ? bidId : reqBidId,
         cpm: price,
         width: width,
         height: height,
@@ -238,6 +311,10 @@ function interpretResponse(serverResponse, request) {
         netRevenue: true,
         ttl: exp || TTL_SECONDS,
       };
+
+      if (nurl) {
+        response.nurl = nurl;
+      }
 
       if (metaData) {
         Object.assign(response, {
@@ -263,19 +340,27 @@ function interpretResponse(serverResponse, request) {
       }
       output.push(response);
     });
+
     return output;
   } catch (e) {
     return [];
   }
 }
 
-function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '') {
+function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '', gppConsent = {}) {
   let syncs = [];
   const {iframeEnabled, pixelEnabled} = syncOptions;
   const {gdprApplies, consentString = ''} = gdprConsent;
+  const {gppString, applicableSections} = gppConsent;
 
   const cidArr = responses.filter(resp => deepAccess(resp, 'body.cid')).map(resp => resp.body.cid).filter(uniques);
-  const params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`
+  let params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`;
+
+  if (gppString && applicableSections?.length) {
+    params += '&gpp=' + encodeURIComponent(gppString);
+    params += '&gpp_sid=' + encodeURIComponent(applicableSections.join(','));
+  }
+
   if (iframeEnabled) {
     syncs.push({
       type: 'iframe',
@@ -289,6 +374,33 @@ function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '')
     });
   }
   return syncs;
+}
+
+/**
+ * @param {Bid} bid
+ */
+function onBidWon(bid) {
+  if (!bid.nurl) {
+    return;
+  }
+  const wonBid = {
+    adId: bid.adId,
+    creativeId: bid.creativeId,
+    auctionId: bid.auctionId,
+    transactionId: bid.transactionId,
+    adUnitCode: bid.adUnitCode,
+    cpm: bid.cpm,
+    currency: bid.currency,
+    originalCpm: bid.originalCpm,
+    originalCurrency: bid.originalCurrency,
+    netRevenue: bid.netRevenue,
+    mediaType: bid.mediaType,
+    timeToRespond: bid.timeToRespond,
+    status: bid.status,
+  };
+  const qs = formatQS(wonBid);
+  const url = bid.nurl + (bid.nurl.indexOf('?') === -1 ? '?' : '&') + qs;
+  triggerPixel(url);
 }
 
 export function hashCode(s, prefix = '_') {
@@ -386,7 +498,8 @@ export const spec = {
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs
+  getUserSyncs,
+  onBidWon
 };
 
 registerBidder(spec);

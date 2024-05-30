@@ -60,7 +60,7 @@ describe('Dmd ID System', function () {
 
   it('Should invoke callback with response from API call', function () {
     const callbackSpy = sinon.spy();
-    const domain = utils.getWindowLocation()
+    const domain = utils.getWindowLocation().href;
     const callback = dmdIdSubmodule.getId(config).callback;
     callback(callbackSpy);
     const request = server.requests[0];
@@ -73,7 +73,7 @@ describe('Dmd ID System', function () {
 
   it('Should log error if API response is not valid', function () {
     const callbackSpy = sinon.spy();
-    const domain = utils.getWindowLocation()
+    const domain = utils.getWindowLocation().href;
     const callback = dmdIdSubmodule.getId(config).callback;
     callback(callbackSpy);
     const request = server.requests[0];

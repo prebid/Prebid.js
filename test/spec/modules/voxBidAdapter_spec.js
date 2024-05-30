@@ -1,5 +1,6 @@
 import { expect } from 'chai'
 import { spec } from 'modules/voxBidAdapter.js'
+import {config} from 'src/config.js'
 
 function getSlotConfigs(mediaTypes, params) {
   return {
@@ -174,6 +175,98 @@ describe('VOX Adapter', function() {
         expect(bid.placeId).to.equal(PLACE_ID)
         expect(bid.transactionId).to.equal('31a58515-3634-4e90-9c96-f86196db1459')
       })
+    })
+    it('should not set userid if not specified', function () {
+      const request = spec.buildRequests(validBidRequests, bidderRequest)
+      const data = JSON.parse(request.data)
+      data.bidRequests.forEach(bid => {
+        expect(bid.userId).to.be.undefined
+      })
+    })
+
+    it('should set userid if specified', function () {
+      const requests = validBidRequests.map(bid => ({
+        ...bid,
+        userId: {
+          tdid: 'TDID_USER_ID',
+          pubcid: 'PUBID_USER_ID'
+        }
+      }))
+      const request = spec.buildRequests(requests, bidderRequest)
+      const data = JSON.parse(request.data)
+      data.bidRequests.forEach(bid => {
+        expect(bid.userId.tdid).to.equal('TDID_USER_ID')
+        expect(bid.userId.pubcid).to.equal('PUBID_USER_ID')
+      })
+    })
+
+    it('should not set schain if not specified', function () {
+      const request = spec.buildRequests(validBidRequests, bidderRequest)
+      const data = JSON.parse(request.data)
+      data.bidRequests.forEach(bid => {
+        expect(bid.schain).to.be.undefined
+      })
+    })
+
+    it('should set schain if not specified', function () {
+      const requests = validBidRequests.map(bid => ({
+        ...bid,
+        schain: {
+          validation: 'strict',
+          config: {
+            ver: '1.0'
+          }
+        }
+      }))
+      const request = spec.buildRequests(requests, bidderRequest)
+      const data = JSON.parse(request.data)
+      data.bidRequests.forEach(bid => {
+        expect(bid.schain.validation).to.equal('strict')
+        expect(bid.schain.config.ver).to.equal('1.0')
+      })
+    })
+
+    describe('price floors', function () {
+      it('should be empty if floors module not configured', function () {
+        const request = spec.buildRequests(validBidRequests, bidderRequest)
+        const data = JSON.parse(request.data)
+        data.bidRequests.forEach(bid => {
+          expect(bid.floorInfo).to.be.empty
+        })
+      })
+
+      it('should add correct floor values', function () {
+        const expectedFloors = [ 2, 2.7, 1.4 ]
+        const validBidRequests = expectedFloors.map(getBidWithFloor)
+        const request = spec.buildRequests(validBidRequests, bidderRequest)
+        const data = JSON.parse(request.data)
+        expectedFloors.forEach((floor, index) => {
+          expect(data.bidRequests[index].floorInfo.floor).to.equal(floor)
+          expect(data.bidRequests[index].floorInfo.currency).to.equal('USD')
+        })
+      })
+
+      it('should request floor price in adserver currency', function () {
+        const configCurrency = 'DKK'
+        config.setConfig({ currency: { adServerCurrency: configCurrency } })
+        const request = spec.buildRequests([ getBidWithFloor() ], bidderRequest)
+        const data = JSON.parse(request.data)
+        data.bidRequests.forEach(bid => {
+          expect(bid.floorInfo.currency).to.equal(configCurrency)
+        })
+      })
+
+      function getBidWithFloor(floor) {
+        return {
+          ...validBidRequests[0],
+          getFloor: ({ currency }) => {
+            return {
+              currency: currency,
+              floor
+            }
+          }
+        }
+      }
     })
 
     describe('GDPR params', function() {

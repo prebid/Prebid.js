@@ -310,7 +310,7 @@ describe('CleanmedianetAdapter', () => {
       response = spec.buildRequests([bidRequest], bidRequest)[0];
       expect(response.method).to.equal('POST');
       expect(response.url).to.match(new RegExp(`^https://bidder\\.cleanmediaads\\.com/r/${supplyPartnerId}/bidr\\?rformat=open_rtb&reqformat=rtb_json&bidder=prebid$`, 'g'));
-      expect(response.data.id).to.equal(bidRequest.auctionId);
+      expect(response.data.id).to.equal(bidRequest.bidId);
       const bidRequestWithEndpoint = utils.deepClone(bidRequest);
       bidRequestWithEndpoint.params.rtbEndpoint = 'https://bidder.cleanmediaads.com/a12';
       response = spec.buildRequests([bidRequestWithEndpoint], bidRequest)[0];
@@ -330,7 +330,7 @@ describe('CleanmedianetAdapter', () => {
       expect(response.data.site.page).to.equal('http://www.test.com/page.html');
       expect(response.data.site.ref).to.equal('http://referrer.com');
       expect(response.data.imp.length).to.equal(1);
-      expect(response.data.imp[0].id).to.equal(bidRequest.transactionId);
+      expect(response.data.imp[0].id).to.equal(bidRequest.bidId);
       expect(response.data.imp[0].instl).to.equal(0);
       expect(response.data.imp[0].tagid).to.equal(bidRequest.adUnitCode);
       expect(response.data.imp[0].bidfloor).to.equal(0);

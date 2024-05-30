@@ -1,13 +1,59 @@
-import { formatQS, deepAccess, triggerPixel, _each, _map } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js'
+import { config } from '../src/config.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { _each, _map, deepAccess, deepSetValue, formatQS, triggerPixel } from '../src/utils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/auction.js').BidderRequest} BidderRequest
+ * @typedef {import('../src/mediaTypes.js').MediaType} MediaType
+ * @typedef {import('../src/utils.js').MediaTypes} MediaTypes
+ * @typedef {import('../modules/priceFloors.js').getFloor} GetFloor
+ */
+
+/**
+ * @typedef {Object} CustomServerRequestFields
+ * @property {BidRequest} bidRequest
+ */
+
+/**
+ * @typedef {ServerRequest & CustomServerRequestFields} YandexServerRequest
+ */
+
+/**
+ * Yandex bidder-specific params which the publisher used in their bid request.
+ *
+ * @typedef {Object} YandexBidRequestParams
+ * @property {string} placementId Possible formats: `R-I-123456-2`, `R-123456-1`, `123456-789`.
+ * @property {number} [pageId] Deprecated. Please use `placementId` instead.
+ * @property {number} [impId] Deprecated. Please use `placementId` instead.
+ */
+
+/**
+ * @typedef {Object} AdditionalBidRequestFields
+ * @property {GetFloor} [getFloor]
+ * @property {MediaTypes} [mediaTypes]
+ */
+
+/**
+ * @typedef {BidRequest & AdditionalBidRequestFields} ExtendedBidRequest
+ */
 
 const BIDDER_CODE = 'yandex';
 const BIDDER_URL = 'https://bs.yandex.ru/prebid';
 const DEFAULT_TTL = 180;
 const DEFAULT_CURRENCY = 'EUR';
-const SUPPORTED_MEDIA_TYPES = [ BANNER, NATIVE ];
+/**
+ * @type {MediaType[]}
+ */
+const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
 const SSP_ID = 10500;
 
 const IMAGE_ASSET_TYPES = {
@@ -41,11 +87,18 @@ export const NATIVE_ASSETS = {
 const NATIVE_ASSETS_IDS = {};
 _each(NATIVE_ASSETS, (asset, key) => { NATIVE_ASSETS_IDS[asset[0]] = key });
 
+/** @type {BidderSpec} */
 export const spec = {
   code: BIDDER_CODE,
   aliases: ['ya'], // short code
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
 
+  /**
+   * Determines whether or not the given bid request is valid.
+   *
+   * @param {BidRequest} bid The bid request to validate.
+   * @returns {boolean} True if this is a valid bid, and false otherwise.
+   */
   isBidRequestValid: function(bid) {
     const { params } = bid;
     if (!params) {
@@ -58,33 +111,34 @@ export const spec = {
     return true;
   },
 
+  /**
+   * Make a server request from the list of BidRequests.
+   *
+   * @param {ExtendedBidRequest[]} validBidRequests An array of bids.
+   * @param {BidderRequest} bidderRequest Bidder request object.
+   * @returns {YandexServerRequest[]} Objects describing the requests to the server.
+   */
   buildRequests: function(validBidRequests, bidderRequest) {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
-    let referrer = '';
-    let domain = '';
-    let page = '';
-
-    if (bidderRequest && bidderRequest.refererInfo) {
-      referrer = bidderRequest.refererInfo.ref;
-      domain = bidderRequest.refererInfo.domain;
-      page = bidderRequest.refererInfo.page;
-    }
+    const ortb2 = bidderRequest.ortb2;
 
     let timeout = null;
     if (bidderRequest) {
       timeout = bidderRequest.timeout;
     }
 
+    const adServerCurrency = config.getConfig('currency.adServerCurrency');
+
     return validBidRequests.map((bidRequest) => {
       const { params } = bidRequest;
-      const { targetRef, withCredentials = true } = params;
+      const { targetRef, withCredentials = true, cur } = params;
 
       const { pageId, impId } = extractPlacementIds(params);
 
       const queryParams = {
         'imp-id': impId,
-        'target-ref': targetRef || domain,
+        'target-ref': targetRef || ortb2?.site?.domain,
         'ssp-id': SSP_ID,
       };
 
@@ -107,20 +161,30 @@ export const spec = {
         imp.bidfloorcur = bidfloor.currency;
       }
 
+      const currency = cur || adServerCurrency;
+      if (currency) {
+        queryParams['ssp-cur'] = currency;
+      }
+
+      const data = {
+        id: bidRequest.bidId,
+        imp: [imp],
+        site: ortb2?.site,
+        tmax: timeout,
+        user: ortb2?.user,
+        device: ortb2?.device,
+      };
+
+      const eids = deepAccess(bidRequest, 'userIdAsEids');
+      if (eids && eids.length) {
+        deepSetValue(data, 'user.ext.eids', eids);
+      }
+
       const queryParamsString = formatQS(queryParams);
       return {
         method: 'POST',
         url: BIDDER_URL + `/${pageId}?${queryParamsString}`,
-        data: {
-          id: bidRequest.bidId,
-          imp: [imp],
-          site: {
-            ref: referrer,
-            page,
-            domain,
-          },
-          tmax: timeout,
-        },
+        data,
         options: {
           withCredentials,
         },
@@ -131,28 +195,24 @@ export const spec = {
 
   interpretResponse: interpretResponse,
 
-  onBidWon: function (bid) {
-    let nurl = bid['nurl'];
+  /**
+   * Register bidder specific code, which will execute if a bid from this bidder won the auction.
+   * @param {Bid} bid The bid that won the auction.
+   */
+  onBidWon: function(bid) {
+    const nurl = addRTT(bid['nurl'], bid.timeToRespond);
 
     if (!nurl) {
       return;
     }
 
-    let cpm, currency;
-    if (bid.hasOwnProperty('originalCurrency') && bid.hasOwnProperty('originalCpm')) {
-      cpm = bid.originalCpm;
-      currency = bid.originalCurrency;
-    } else {
-      cpm = bid.cpm;
-      currency = bid.currency;
-    }
-    cpm = deepAccess(bid, 'adserverTargeting.hb_pb') || cpm;
-
-    const pixel = replaceAuctionPrice(nurl, cpm, currency);
-    triggerPixel(pixel);
+    triggerPixel(nurl);
   }
 }
 
+/**
+ * @param {YandexBidRequestParams} bidRequestParams
+ */
 function extractPlacementIds(bidRequestParams) {
   const { placementId } = bidRequestParams;
   const result = { pageId: null, impId: null };
@@ -187,6 +247,9 @@ function extractPlacementIds(bidRequestParams) {
   return result;
 }
 
+/**
+ * @param {ExtendedBidRequest} bidRequest
+ */
 function getBidfloor(bidRequest) {
   const floors = [];
 
@@ -196,8 +259,8 @@ function getBidfloor(bidRequest) {
         const floorInfo = bidRequest.getFloor({
           currency: DEFAULT_CURRENCY,
           mediaType: type,
-          size: bidRequest.sizes || '*' }
-        )
+          size: bidRequest.sizes || '*'
+        })
         floors.push(floorInfo);
       }
     });
@@ -206,6 +269,9 @@ function getBidfloor(bidRequest) {
   return floors.sort((a, b) => b.floor - a.floor)[0];
 }
 
+/**
+ * @param {ExtendedBidRequest} bidRequest
+ */
 function mapBanner(bidRequest) {
   if (deepAccess(bidRequest, 'mediaTypes.banner')) {
     const sizes = bidRequest.sizes || bidRequest.mediaTypes.banner.sizes;
@@ -223,6 +289,9 @@ function mapBanner(bidRequest) {
   }
 }
 
+/**
+ * @param {ExtendedBidRequest} bidRequest
+ */
 function mapNative(bidRequest) {
   const adUnitNativeAssets = deepAccess(bidRequest, 'mediaTypes.native');
   if (adUnitNativeAssets) {
@@ -248,7 +317,7 @@ function mapNative(bidRequest) {
 }
 
 function mapAsset(assetCode, adUnitAssetParams, nativeAsset) {
-  const [ nativeAssetId, nativeAssetType ] = nativeAsset;
+  const [nativeAssetId, nativeAssetType] = nativeAsset;
   const asset = {
     id: nativeAssetId,
   };
@@ -295,6 +364,13 @@ function mapImageAsset(adUnitImageAssetParams, nativeAssetType) {
   return img;
 }
 
+/**
+ * Unpack the response from the server into a list of bids.
+ *
+ * @param {ServerResponse} serverResponse A successful response from the server.
+ * @param {YandexServerRequest} yandexServerRequest
+ * @return {Bid[]} An array of bids which were nested inside the server.
+ */
 function interpretResponse(serverResponse, { bidRequest }) {
   let response = serverResponse.body;
   if (!response.seatbid) {
@@ -309,6 +385,7 @@ function interpretResponse(serverResponse, { bidRequest }) {
 
   return bidsReceived.map(bidReceived => {
     const price = bidReceived.price;
+    /** @type {Bid} */
     let prBid = {
       requestId: bidRequest.bidId,
       cpm: price,
@@ -316,7 +393,7 @@ function interpretResponse(serverResponse, { bidRequest }) {
       width: bidReceived.w,
       height: bidReceived.h,
       creativeId: bidReceived.adid,
-      nurl: bidReceived.nurl,
+      nurl: replaceAuctionPrice(bidReceived.nurl, price, currency),
 
       netRevenue: true,
       ttl: DEFAULT_TTL,
@@ -379,6 +456,26 @@ function replaceAuctionPrice(url, price, currency) {
   return url
     .replace(/\${AUCTION_PRICE}/, price)
     .replace(/\${AUCTION_CURRENCY}/, currency);
+}
+
+function addRTT(url, rtt) {
+  if (!url) return;
+
+  if (url.indexOf(`\${RTT}`) > -1) {
+    return url.replace(/\${RTT}/, rtt ?? -1);
+  }
+
+  const urlObj = new URL(url);
+
+  if (Number.isInteger(rtt)) {
+    urlObj.searchParams.set('rtt', rtt);
+  } else {
+    urlObj.searchParams.delete('rtt');
+  }
+
+  url = urlObj.toString();
+
+  return url;
 }
 
 registerBidder(spec);

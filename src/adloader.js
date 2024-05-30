@@ -20,11 +20,21 @@ const _approvedLoadExternalJSList = [
   'hadron',
   'medianet',
   'improvedigital',
+  'azerionedge',
   'aaxBlockmeter',
   'confiant',
   'arcspan',
-  'clean.io'
-]
+  'airgrid',
+  'clean.io',
+  'a1Media',
+  'geoedge',
+  'mediafilter',
+  'qortex',
+  'dynamicAdBoost',
+  'contxtful',
+  'id5',
+  '51Degrees',
+];
 
 /**
  * Loads external javascript. Can only be used if external JS is approved by Prebid. See https://github.com/prebid/prebid-js-external-js-template#policy
@@ -33,7 +43,7 @@ const _approvedLoadExternalJSList = [
  * @param {string} moduleCode bidderCode or module code of the module requesting this resource
  * @param {function} [callback] callback function to be called after the script is loaded
  * @param {Document} [doc] the context document, in which the script will be loaded, defaults to loaded document
- * @param {object} an object of attributes to be added to the script with setAttribute by [key] and [value]; Only the attributes passed in the first request of a url will be added.
+ * @param {object} attributes an object of attributes to be added to the script with setAttribute by [key] and [value]; Only the attributes passed in the first request of a url will be added.
  */
 export function loadExternalScript(url, moduleCode, callback, doc, attributes) {
   if (!moduleCode || !url) {

@@ -112,13 +112,18 @@ describe('nativoBidAdapterTests', function () {
       bidRequests = [JSON.parse(bidRequestString)]
     })
 
-    it('url should contain query string parameters', function () {
+    it('Request should be POST, with JSON string payload and QS params should be added to the url', function () {
       const request = spec.buildRequests(bidRequests, {
         bidderRequestId: 123456,
         refererInfo: {
           referer: 'https://www.test.com',
         },
       })
+
+      expect(request.method).to.equal('POST')
+
+      expect(request.data).to.exist
+      expect(request.data).to.be.a('string')
 
       expect(request.url).to.exist
       expect(request.url).to.be.a('string')

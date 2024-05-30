@@ -19,8 +19,8 @@ setupTest({
   waitFor: CREATIVE_IFRAME_CSS_SELECTOR,
   expectGAMCreative: true
 }, 'Prebid.js Banner Ad Unit Test', function () {
-  it('should load the targeting keys with correct values', function () {
-    const result = browser.execute(function () {
+  it('should load the targeting keys with correct values', async function () {
+    const result = await browser.execute(function () {
       return window.pbjs.getAdserverTargeting('div-gpt-ad-1460505748561-1');
     });
     const targetingKeys = result['div-gpt-ad-1460505748561-1'];

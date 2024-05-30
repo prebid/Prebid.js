@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import {spec, REQUEST_URL, SYNC_URL, DEFAULT_PH} from 'modules/openxOrtbBidAdapter.js';
+import {spec, REQUEST_URL, SYNC_URL, DEFAULT_PH} from 'modules/openxBidAdapter.js';
 import {newBidder} from 'src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from 'src/mediaTypes.js';
 import {config} from 'src/config.js';
@@ -14,6 +14,7 @@ import 'modules/consentManagement.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
 import {deepClone} from 'src/utils.js';
+import {version} from 'package.json';
 import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {hook} from '../../../src/hook.js';
 
@@ -316,6 +317,7 @@ describe('OpenxRtbAdapter', function () {
         const request = spec.buildRequests(bidRequestsWithMediaTypes, mockBidderRequest);
         expect(request[0].url).to.equal(REQUEST_URL);
         expect(request[0].method).to.equal('POST');
+        expect(request[0].data.ext.pv).to.equal(version);
       });
 
       it('should send delivery domain, if available', function () {
@@ -1085,7 +1087,6 @@ describe('OpenxRtbAdapter', function () {
             skipafter: 4,
             minduration: 10,
             maxduration: 30,
-            placement: 4,
             protocols: [8],
             w: 300,
             h: 250
@@ -1506,6 +1507,25 @@ describe('OpenxRtbAdapter', function () {
         expect(response.fledgeAuctionConfigs.length).to.equal(1);
         expect(response.fledgeAuctionConfigs[0].bidId).to.equal('test-bid-id');
       });
+
+      it('should inject ortb2Imp in auctionSignals', function () {
+        const auctionConfig = response.fledgeAuctionConfigs[0].config;
+        expect(auctionConfig).to.deep.include({
+          auctionSignals: {
+            ortb2Imp: {
+              id: 'test-bid-id',
+              tagid: '12345678',
+              banner: {
+                topframe: 0,
+                format: bidRequestConfigs[0].mediaTypes.banner.sizes.map(([w, h]) => ({w, h}))
+              },
+              ext: {
+                divid: 'adunit-code',
+              }
+            }
+          }
+        });
+      })
     });
   });
 

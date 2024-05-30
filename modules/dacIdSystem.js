@@ -170,6 +170,12 @@ export const dacIdSystemSubmodule = {
     }
 
     return fetchAoneId(configParams.oid, cookie.fuuid);
+  },
+  eids: {
+    'dacId': {
+      source: 'impact-ad.jp',
+      atype: 1
+    },
   }
 };
 

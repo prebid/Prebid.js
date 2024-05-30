@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { BANNER, VIDEO } from 'src/mediaTypes.js';
 import { config } from 'src/config.js';
+import { deepClone } from 'src/utils.js';
 import { spec } from 'modules/smartadserverBidAdapter.js';
 
 // Default params with optional ones
@@ -29,7 +30,11 @@ describe('Smart bid adapter tests', function () {
       ckId: 42
     },
     requestId: 'efgh5678',
-    transactionId: 'zsfgzzg'
+    ortb2Imp: {
+      ext: {
+        tid: 'zsfgzzg'
+      }
+    },
   }];
 
   var DEFAULT_PARAMS_WITH_EIDS = [{
@@ -586,7 +591,11 @@ describe('Smart bid adapter tests', function () {
         }
       },
       requestId: 'efgh5678',
-      transactionId: 'zsfgzzg'
+      ortb2Imp: {
+        ext: {
+          tid: 'zsfgzzg',
+        }
+      },
     }];
 
     var INSTREAM_BID_RESPONSE = {
@@ -777,8 +786,8 @@ describe('Smart bid adapter tests', function () {
         expect(request[0]).to.have.property('method').and.to.equal('POST');
         const requestContent = JSON.parse(request[0].data);
         expect(requestContent).to.have.property('videoData');
-        expect(requestContent.videoData).to.have.property('videoProtocol').and.to.equal(null);
-        expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(2);
+        expect(requestContent.videoData).not.to.have.property('videoProtocol').eq(true);
+        expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(1);
       });
 
       it('Verify videoData params override meta values', function () {
@@ -824,6 +833,73 @@ describe('Smart bid adapter tests', function () {
         expect(requestContent.videoData).to.have.property('videoProtocol').and.to.equal(6);
         expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(3);
       });
+
+      it('should pass additional parameters', function () {
+        const request = spec.buildRequests([{
+          bidder: 'smartadserver',
+          mediaTypes: {
+            video: {
+              context: 'instream',
+              api: [1, 2, 3],
+              maxbitrate: 50,
+              minbitrate: 20,
+              maxduration: 30,
+              minduration: 5,
+              placement: 3,
+              playbackmethod: [2, 4],
+              playerSize: [[640, 480]],
+              plcmt: 1,
+              skip: 0
+            }
+          },
+          params: {
+            siteId: '123'
+          }
+        }]);
+        const requestContent = JSON.parse(request[0].data);
+
+        expect(requestContent.videoData).to.have.property('iabframeworks').and.to.equal('1,2,3');
+        expect(requestContent.videoData).not.to.have.property('skip');
+        expect(requestContent.videoData).to.have.property('vbrmax').and.to.equal(50);
+        expect(requestContent.videoData).to.have.property('vbrmin').and.to.equal(20);
+        expect(requestContent.videoData).to.have.property('vdmax').and.to.equal(30);
+        expect(requestContent.videoData).to.have.property('vdmin').and.to.equal(5);
+        expect(requestContent.videoData).to.have.property('vplcmt').and.to.equal(1);
+        expect(requestContent.videoData).to.have.property('vpmt').and.to.have.lengthOf(2);
+        expect(requestContent.videoData.vpmt[0]).to.equal(2);
+        expect(requestContent.videoData.vpmt[1]).to.equal(4);
+        expect(requestContent.videoData).to.have.property('vpt').and.to.equal(3);
+      });
+
+      it('should not pass not valuable parameters', function () {
+        const request = spec.buildRequests([{
+          bidder: 'smartadserver',
+          mediaTypes: {
+            video: {
+              context: 'instream',
+              maxbitrate: 20,
+              minbitrate: null,
+              maxduration: 0,
+              playbackmethod: [],
+              playerSize: [[640, 480]],
+              plcmt: 1
+            }
+          },
+          params: {
+            siteId: '123'
+          }
+        }]);
+        const requestContent = JSON.parse(request[0].data);
+
+        expect(requestContent.videoData).not.to.have.property('iabframeworks');
+        expect(requestContent.videoData).to.have.property('vbrmax').and.to.equal(20);
+        expect(requestContent.videoData).not.to.have.property('vbrmin');
+        expect(requestContent.videoData).not.to.have.property('vdmax');
+        expect(requestContent.videoData).not.to.have.property('vdmin');
+        expect(requestContent.videoData).to.have.property('vplcmt').and.to.equal(1);
+        expect(requestContent.videoData).not.to.have.property('vpmt');
+        expect(requestContent.videoData).not.to.have.property('vpt');
+      });
     });
   });
 
@@ -855,7 +931,11 @@ describe('Smart bid adapter tests', function () {
           protocol: 7
         }
       },
-      requestId: 'efgh5679',
+      ortb2Imp: {
+        ext: {
+          tid: 'efgh5679',
+        }
+      },
       transactionId: 'zsfgzzga'
     }];
 
@@ -1016,8 +1096,8 @@ describe('Smart bid adapter tests', function () {
       expect(request[0]).to.have.property('method').and.to.equal('POST');
       const requestContent = JSON.parse(request[0].data);
       expect(requestContent).to.have.property('videoData');
-      expect(requestContent.videoData).to.have.property('videoProtocol').and.to.equal(null);
-      expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(2);
+      expect(requestContent.videoData).not.to.have.property('videoProtocol').eq(true);
+      expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(1);
     });
 
     it('Verify videoData params override meta values', function () {
@@ -1062,6 +1142,50 @@ describe('Smart bid adapter tests', function () {
       expect(requestContent).to.have.property('videoData');
       expect(requestContent.videoData).to.have.property('videoProtocol').and.to.equal(6);
       expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(3);
+    });
+
+    it('should handle value of videoMediaType.startdelay', function () {
+      const request = spec.buildRequests([{
+        bidder: 'smartadserver',
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            playerSize: [[640, 480]],
+            startdelay: -2
+          }
+        },
+        params: {
+          siteId: 123,
+          pageId: 456,
+          formatId: 78
+        }
+      }]);
+
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent).to.have.property('videoData');
+      expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(3);
+    });
+
+    it('should return specified value of videoMediaType.startdelay', function () {
+      const request = spec.buildRequests([{
+        bidder: 'smartadserver',
+        mediaTypes: {
+          video: {
+            context: 'outstream',
+            playerSize: [[640, 480]],
+            startdelay: 60
+          }
+        },
+        params: {
+          siteId: 123,
+          pageId: 456,
+          formatId: 78
+        }
+      }]);
+
+      const requestContent = JSON.parse(request[0].data);
+      expect(requestContent).to.have.property('videoData');
+      expect(requestContent.videoData).to.have.property('adBreak').and.to.equal(2);
     });
   });
 
@@ -1337,6 +1461,84 @@ describe('Smart bid adapter tests', function () {
       expect(bannerRequest).to.have.property('siteid').and.to.equal('1234');
       expect(bannerRequest).to.have.property('pageid').and.to.equal('5678');
       expect(bannerRequest).to.have.property('formatid').and.to.equal('90');
+    });
+  });
+
+  describe('Global Placement ID (GPID)', function () {
+    it('should not include gpid by default', () => {
+      const request = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL);
+      const requestContent = JSON.parse(request[0].data);
+
+      expect(requestContent).to.not.have.property('gdid');
+    });
+
+    it('should include gpid if pbadslot in ortb2Imp', () => {
+      const gpid = '/19968336/header-bid-tag-1';
+      const bidRequests = deepClone(DEFAULT_PARAMS_WO_OPTIONAL);
+
+      bidRequests[0].ortb2Imp = {
+        ext: {
+          data: {
+            pbadslot: gpid
+          }
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests);
+      const requestContent = JSON.parse(request[0].data);
+
+      expect(requestContent).to.have.property('gpid').and.to.equal(gpid);
+    });
+
+    it('should include gpid if imp[].ext.gpid exists', () => {
+      const gpid = '/1111/homepage#div-leftnav';
+      const bidRequests = deepClone(DEFAULT_PARAMS_WO_OPTIONAL);
+
+      bidRequests[0].ortb2Imp = {
+        ext: { gpid }
+      };
+
+      const request = spec.buildRequests(bidRequests);
+      const requestContent = JSON.parse(request[0].data);
+
+      expect(requestContent).to.have.property('gpid').and.to.equal(gpid);
+    });
+  });
+
+  describe('#getValuableProperty method', function () {
+    it('should return an object when calling with a number value', () => {
+      const obj = spec.getValuableProperty('prop', 3);
+      expect(obj).to.deep.equal({ prop: 3 });
+    });
+
+    it('should return an empty object when calling with a string value', () => {
+      const obj = spec.getValuableProperty('prop', 'str');
+      expect(obj).to.deep.equal({});
+    });
+
+    it('should return an empty object when calling with a number property', () => {
+      const obj = spec.getValuableProperty(7, 'str');
+      expect(obj).to.deep.equal({});
+    });
+
+    it('should return an empty object when calling with a null value', () => {
+      const obj = spec.getValuableProperty('prop', null);
+      expect(obj).to.deep.equal({});
+    });
+
+    it('should return an empty object when calling with an object value', () => {
+      const obj = spec.getValuableProperty('prop', {});
+      expect(obj).to.deep.equal({});
+    });
+
+    it('should return an empty object when calling with a 0 value', () => {
+      const obj = spec.getValuableProperty('prop', 0);
+      expect(obj).to.deep.equal({});
+    });
+
+    it('should return an empty object when calling without the value argument', () => {
+      const obj = spec.getValuableProperty('prop');
+      expect(obj).to.deep.equal({});
     });
   });
 });

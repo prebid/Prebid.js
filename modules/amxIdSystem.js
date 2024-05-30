@@ -152,6 +152,12 @@ export const amxIdSubmodule = {
 
     return { callback };
   },
+  eids: {
+    amxId: {
+      source: 'amxdt.net',
+      atype: 1,
+    },
+  }
 };
 
 submodule('userId', amxIdSubmodule);

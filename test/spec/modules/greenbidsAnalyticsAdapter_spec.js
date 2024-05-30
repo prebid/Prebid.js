@@ -1,25 +1,28 @@
 import {
-  greenbidsAnalyticsAdapter, parseBidderCode,
+  greenbidsAnalyticsAdapter,
+  isSampled,
   ANALYTICS_VERSION, BIDDER_STATUS
 } from 'modules/greenbidsAnalyticsAdapter.js';
-
+import {
+  generateUUID
+} from '../../../src/utils.js';
+import * as utils from 'src/utils.js';
 import {expect} from 'chai';
 import sinon from 'sinon';
 
 const events = require('src/events');
-const constants = require('src/constants.json');
+const constants = require('src/constants.js');
 
 const pbuid = 'pbuid-AA778D8A796AEA7A0843E2BBEB677766';
 const auctionId = 'b0b39610-b941-4659-a87c-de9f62d3e13e';
 
 describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
-  describe('event tracking and message cache manager', function () {
+  describe('enableAnalytics and config parser', function () {
+    const configOptions = {
+      pbuid: pbuid,
+      greenbidsSampling: 1,
+    };
     beforeEach(function () {
-      const configOptions = {
-        pbuid: pbuid,
-        sampling: 0,
-      };
-
       greenbidsAnalyticsAdapter.enableAnalytics({
         provider: 'greenbidsAnalytics',
         options: configOptions
@@ -30,41 +33,36 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
       greenbidsAnalyticsAdapter.disableAnalytics();
     });
 
-    describe('#parseBidderCode()', function() {
-      it('should get lower case bidder code from bidderCode field value', function() {
-        const receivedBids = [
-          {
-            auctionId: auctionId,
-            adUnitCode: 'adunit_1',
-            bidder: 'greenbids',
-            bidderCode: 'GREENBIDS',
-            requestId: 'a1b2c3d4',
-            timeToRespond: 72,
-            cpm: 0.1,
-            currency: 'USD',
-            ad: '<html>fake ad1</html>'
-          },
-        ];
-        const result = parseBidderCode(receivedBids[0]);
-        expect(result).to.equal('greenbids');
+    it('should parse config correctly with optional values', function () {
+      expect(greenbidsAnalyticsAdapter.getAnalyticsOptions().options).to.deep.equal(configOptions);
+      expect(greenbidsAnalyticsAdapter.getAnalyticsOptions().pbuid).to.equal(configOptions.pbuid);
+    });
+
+    it('should not enable Analytics when pbuid is missing', function () {
+      const configOptions = {
+        options: {
+        }
+      };
+      const validConfig = greenbidsAnalyticsAdapter.initConfig(configOptions);
+      expect(validConfig).to.equal(false);
+    });
+  });
+
+  describe('event tracking and message cache manager', function () {
+    beforeEach(function () {
+      const configOptions = {
+        pbuid: pbuid,
+        greenbidsSampling: 1,
+      };
+
+      greenbidsAnalyticsAdapter.enableAnalytics({
+        provider: 'greenbidsAnalytics',
+        options: configOptions
       });
-      it('should get lower case bidder code from bidder field value as bidderCode field is missing', function() {
-        const receivedBids = [
-          {
-            auctionId: auctionId,
-            adUnitCode: 'adunit_1',
-            bidder: 'greenbids',
-            bidderCode: '',
-            requestId: 'a1b2c3d4',
-            timeToRespond: 72,
-            cpm: 0.1,
-            currency: 'USD',
-            ad: '<html>fake ad1</html>'
-          },
-        ];
-        const result = parseBidderCode(receivedBids[0]);
-        expect(result).to.equal('greenbids');
-      });
+    });
+
+    afterEach(function () {
+      greenbidsAnalyticsAdapter.disableAnalytics();
     });
 
     describe('#getCachedAuction()', function() {
@@ -146,7 +144,7 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
           auctionId: auctionId,
           pbuid: pbuid,
           referrer: window.location.href,
-          sampling: 0,
+          sampling: 1,
           prebid: '$prebid.version$',
         });
       }
@@ -246,6 +244,13 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
                     skip: 1,
                     protocols: [1, 2, 3, 4]
                   },
+                },
+                ortb2Imp: {
+                  ext: {
+                    data: {
+                      adunitDFP: 'adunitcustomPathExtension'
+                    }
+                  }
                 }
               },
             ],
@@ -253,7 +258,9 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
             noBids: noBids
           };
 
+          sinon.stub(greenbidsAnalyticsAdapter, 'getCachedAuction').returns({timeoutBids: timeoutBids});
           const result = greenbidsAnalyticsAdapter.createBidMessage(args, timeoutBids);
+          greenbidsAnalyticsAdapter.getCachedAuction.restore();
 
           assertHavingRequiredMessageFields(result);
           expect(result).to.deep.include({
@@ -266,6 +273,7 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
                     sizes: [[300, 250], [300, 600]]
                   }
                 },
+                ortb2Imp: {},
                 bidders: [
                   {
                     bidder: 'greenbids',
@@ -281,6 +289,13 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
               },
               {
                 code: 'adunit-2',
+                ortb2Imp: {
+                  ext: {
+                    data: {
+                      adunitDFP: 'adunitcustomPathExtension'
+                    }
+                  }
+                },
                 mediaTypes: {
                   banner: {
                     sizes: [[300, 250], [300, 600]]
@@ -315,7 +330,7 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
             timeout: 3000,
             auctionEnd: 1234567990,
             bidsReceived: receivedBids,
-            noBids: noBids
+            noBids: noBids,
           }];
 
           greenbidsAnalyticsAdapter.handleBidTimeout(args);
@@ -338,7 +353,7 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
   describe('greenbids Analytics Adapter track handler ', function () {
     const configOptions = {
       pbuid: pbuid,
-      sampling: 1,
+      greenbidsSampling: 1,
     };
 
     beforeEach(function () {
@@ -354,65 +369,72 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
       events.getEvents.restore();
     });
 
+    it('should call handleAuctionInit as AUCTION_INIT trigger event', function() {
+      sinon.spy(greenbidsAnalyticsAdapter, 'handleAuctionInit');
+      events.emit(constants.EVENTS.AUCTION_INIT, {auctionId: 'auctionId'});
+      sinon.assert.callCount(greenbidsAnalyticsAdapter.handleAuctionInit, 1);
+      greenbidsAnalyticsAdapter.handleAuctionInit.restore();
+    });
+
     it('should call handleBidTimeout as BID_TIMEOUT trigger event', function() {
       sinon.spy(greenbidsAnalyticsAdapter, 'handleBidTimeout');
-      events.emit(constants.EVENTS.BID_TIMEOUT, {});
+      events.emit(constants.EVENTS.BID_TIMEOUT, {auctionId: 'auctionId'});
       sinon.assert.callCount(greenbidsAnalyticsAdapter.handleBidTimeout, 1);
       greenbidsAnalyticsAdapter.handleBidTimeout.restore();
     });
 
     it('should call handleAuctionEnd as AUCTION_END trigger event', function() {
       sinon.spy(greenbidsAnalyticsAdapter, 'handleAuctionEnd');
-      events.emit(constants.EVENTS.AUCTION_END, {});
+      events.emit(constants.EVENTS.AUCTION_END, {auctionId: 'auctionId'});
       sinon.assert.callCount(greenbidsAnalyticsAdapter.handleAuctionEnd, 1);
       greenbidsAnalyticsAdapter.handleAuctionEnd.restore();
     });
+
+    it('should call handleBillable as BILLABLE_EVENT trigger event', function() {
+      sinon.spy(greenbidsAnalyticsAdapter, 'handleBillable');
+      events.emit(constants.EVENTS.BILLABLE_EVENT, {
+        type: 'auction',
+        billingId: generateUUID(),
+        auctionId: 'auctionId',
+        vendor: 'greenbidsRtdProvider'
+      });
+      sinon.assert.callCount(greenbidsAnalyticsAdapter.handleBillable, 1);
+      greenbidsAnalyticsAdapter.handleBillable.restore();
+    });
   });
 
-  describe('enableAnalytics and config parser', function () {
-    const configOptions = {
-      pbuid: pbuid,
-      sampling: 0,
-    };
-
-    beforeEach(function () {
-      greenbidsAnalyticsAdapter.enableAnalytics({
-        provider: 'greenbidsAnalytics',
-        options: configOptions
-      });
+  describe('isSampled', function() {
+    it('should return true for invalid sampling rates', function() {
+      expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', -1, 0.0)).to.be.true;
+      expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 1.2, 0.0)).to.be.true;
     });
 
-    afterEach(function () {
-      greenbidsAnalyticsAdapter.disableAnalytics();
+    it('should return determinist falsevalue for valid sampling rate given the predifined id and rate', function() {
+      expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.0001, 0.0)).to.be.false;
     });
 
-    it('should parse config correctly with optional values', function () {
-      expect(greenbidsAnalyticsAdapter.getAnalyticsOptions().options).to.deep.equal(configOptions);
-      expect(greenbidsAnalyticsAdapter.getAnalyticsOptions().pbuid).to.equal(configOptions.pbuid);
-      expect(greenbidsAnalyticsAdapter.getAnalyticsOptions().sampled).to.equal(false);
+    it('should return determinist true value for valid sampling rate given the predifined id and rate', function() {
+      expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.9999, 0.0)).to.be.true;
     });
 
-    it('should not enable Analytics when pbuid is missing', function () {
-      const configOptions = {
-        options: {
-        }
-      };
-      const validConfig = greenbidsAnalyticsAdapter.initConfig(configOptions);
-      expect(validConfig).to.equal(false);
+    it('should return determinist true value for valid sampling rate given the predifined id and rate when we split to non exploration first', function() {
+      expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.9999, 0.0, 1.0)).to.be.true;
     });
-    it('should fall back to default value when sampling factor is not number', function () {
-      const configOptions = {
-        options: {
-          pbuid: pbuid,
-          sampling: 'string',
-        }
-      };
-      greenbidsAnalyticsAdapter.enableAnalytics({
-        provider: 'greenbidsAnalytics',
-        options: configOptions
-      });
 
-      expect(greenbidsAnalyticsAdapter.getAnalyticsOptions().sampled).to.equal(false);
+    it('should return determinist false value for valid sampling rate given the predifined id and rate when we split to non exploration first', function() {
+      expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.0001, 0.0, 1.0)).to.be.false;
+    });
+  });
+
+  describe('isSampled when analytic isforced', function() {
+    before(() => {
+      sinon.stub(utils, 'getParameterByName').callsFake(par => par === 'greenbids_force_sampling' ? true : undefined);
+    });
+    it('should return determinist true when sampling flag activated', function() {
+      expect(isSampled('ce1f3692-632c-4cfd-9e40-0c2ad625ec56', 0.0001, 0.0)).to.be.true;
+    });
+    after(() => {
+      utils.getParameterByName.restore();
     });
   });
 });

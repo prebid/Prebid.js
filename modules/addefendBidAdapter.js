@@ -30,6 +30,7 @@ export const spec = {
     for (var i = 0; i < validBidRequests.length; i++) {
       let vb = validBidRequests[i];
       let o = vb.params;
+      // TODO: fix auctionId/transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
       bid.auctionId = vb.auctionId;
       o.bidId = vb.bidId;
       o.transactionId = vb.transactionId;

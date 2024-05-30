@@ -3,6 +3,10 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {includes} from '../src/polyfill.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ */
+
 const BIDDER_CODE = 'stv';
 const ENDPOINT_URL = 'https://ads.smartstream.tv/r/';
 const ENDPOINT_URL_DEV = 'https://ads.smartstream.tv/r/';
@@ -50,9 +54,21 @@ export const spec = {
         ref: referrer,
         bid_id: bidId,
         pbver: '$prebid.version$',
+        schain: '',
+        uids: '',
       };
       if (!isVideoRequest(bidRequest)) {
         payload._f = 'html';
+      }
+      if (bidRequest.schain) {
+        payload.schain = serializeSChain(bidRequest.schain);
+      } else {
+        delete payload.schain;
+      }
+
+      payload.uids = serializeUids(bidRequest);
+      if (payload.uids == '') {
+        delete payload.uids;
       }
 
       payload.pfilter = { ...params };
@@ -195,10 +211,84 @@ function objectToQueryString(obj, prefix) {
       let v = obj[p];
       str.push((v !== null && typeof v === 'object')
         ? objectToQueryString(v, k)
-        : encodeURIComponent(k) + '=' + encodeURIComponent(v));
+        : (k == 'schain' || k == 'uids' ? k + '=' + v : encodeURIComponent(k) + '=' + encodeURIComponent(v)));
     }
   }
   return str.join('&');
+}
+
+function serializeSChain(schain) {
+  let ret = '';
+
+  ret += encodeURIComponent(schain.ver);
+  ret += ',';
+  ret += encodeURIComponent(schain.complete);
+
+  for (let node of schain.nodes) {
+    ret += '!';
+    ret += encodeURIComponent(node.asi);
+    ret += ',';
+    ret += encodeURIComponent(node.sid);
+    ret += ',';
+    ret += encodeURIComponent(node.hp);
+    ret += ',';
+    ret += encodeURIComponent(node.rid ?? '');
+    ret += ',';
+    ret += encodeURIComponent(node.name ?? '');
+    ret += ',';
+    ret += encodeURIComponent(node.domain ?? '');
+    if (node.ext) {
+      ret += ',';
+      ret += encodeURIComponent(node.ext ?? '');
+    }
+  }
+
+  return ret;
+}
+
+function serializeUids(bidRequest) {
+  let uids = [];
+
+  let id5 = deepAccess(bidRequest, 'userId.id5id.uid');
+  if (id5) {
+    uids.push(encodeURIComponent('id5:' + id5));
+    let id5Linktype = deepAccess(bidRequest, 'userId.id5id.ext.linkType');
+    if (id5Linktype) {
+      uids.push(encodeURIComponent('id5_linktype:' + id5Linktype));
+    }
+  }
+  let netId = deepAccess(bidRequest, 'userId.netId');
+  if (netId) {
+    uids.push(encodeURIComponent('netid:' + netId));
+  }
+  let uId2 = deepAccess(bidRequest, 'userId.uid2.id');
+  if (uId2) {
+    uids.push(encodeURIComponent('uid2:' + uId2));
+  }
+  let sharedId = deepAccess(bidRequest, 'userId.sharedid.id');
+  if (sharedId) {
+    uids.push(encodeURIComponent('sharedid:' + sharedId));
+  }
+  let liverampId = deepAccess(bidRequest, 'userId.idl_env');
+  if (liverampId) {
+    uids.push(encodeURIComponent('liverampid:' + liverampId));
+  }
+  let criteoId = deepAccess(bidRequest, 'userId.criteoId');
+  if (criteoId) {
+    uids.push(encodeURIComponent('criteoid:' + criteoId));
+  }
+  // documentation missing...
+  let utiqId = deepAccess(bidRequest, 'userId.utiq.id');
+  if (utiqId) {
+    uids.push(encodeURIComponent('utiq:' + utiqId));
+  } else {
+    utiqId = deepAccess(bidRequest, 'userId.utiq');
+    if (utiqId) {
+      uids.push(encodeURIComponent('utiq:' + utiqId));
+    }
+  }
+
+  return uids.join(',');
 }
 
 /**

@@ -6,6 +6,13 @@ import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const VERSION = '0.3.0';
 const GVLID = 842;
 const NET_REVENUE = true;
@@ -173,7 +180,7 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {validBidRequests} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -194,7 +201,7 @@ export const spec = {
       _parseAdSlot(bid);
 
       conf = _handleCustomParams(bid.params, conf);
-      conf.transactionId = bid.transactionId;
+      conf.transactionId = bid.ortb2Imp?.ext?.tid;
       bidCurrency = bid.params.currency || UNDEFINED;
       bid.params.currency = bidCurrency;
 
@@ -224,8 +231,9 @@ export const spec = {
     payload.site.publisher.id = bid.params.siteId.trim();
     payload.user.gender = (conf.gender ? conf.gender.trim() : UNDEFINED);
     payload.user.geo = {};
-    payload.user.geo.lat = _parseSlotParam('lat', conf.lat);
-    payload.user.geo.lon = _parseSlotParam('lon', conf.lon);
+    // TODO: fix lat and long to only come from ortb2 object so publishers can control precise location
+    payload.user.geo.lat = _parseSlotParam('lat', 0);
+    payload.user.geo.lon = _parseSlotParam('lon', 0);
     payload.user.yob = _parseSlotParam('yob', conf.yob);
     payload.device.geo = payload.user.geo;
     payload.site.page = payload.site?.page?.trim();
@@ -242,7 +250,7 @@ export const spec = {
     }
 
     // passing transactionId in source.tid
-    deepSetValue(payload, 'source.tid', bidderRequest?.auctionId);
+    deepSetValue(payload, 'source.tid', bidderRequest?.ortb2?.source?.tid);
 
     // schain
     if (validBidRequests[0].schain) {
@@ -528,7 +536,7 @@ function _createImpressionObject(bid, conf) {
     secure: 1,
     bidfloorcur: bid.params.currency ? _parseSlotParam('currency', bid.params.currency) : DEFAULT_CURRENCY, // capitalization dicated by 3.2.4 spec
     ext: {
-      tid: (bid.transactionId ? bid.transactionId : '')
+      tid: bid.ortb2Imp?.ext?.tid || ''
     }
   };
 

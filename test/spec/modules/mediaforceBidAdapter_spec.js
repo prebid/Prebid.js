@@ -97,7 +97,11 @@ describe('mediaforce bid adapter', function () {
           }
         }
       },
-      transactionId: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+      ortb2Imp: {
+        ext: {
+          tid: 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b',
+        }
+      }
     };
 
     const multiBid = [
@@ -127,7 +131,11 @@ describe('mediaforce bid adapter', function () {
             sizes: [[300, 250], [600, 400]]
           }
         },
-        transactionId: transactionId || 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
+        ortb2Imp: {
+          ext: {
+            tid: transactionId || 'd45dd707-a418-42ec-b8a7-b70a6c6fab0b'
+          }
+        },
       }
     });
 
@@ -196,7 +204,7 @@ describe('mediaforce bid adapter', function () {
           bidfloor: bid.params.bidfloor,
           ext: {
             mediaforce: {
-              transactionId: bid.transactionId
+              transactionId: bid.ortb2Imp.ext.tid,
             }
           },
           banner: {w: 300, h: 250},

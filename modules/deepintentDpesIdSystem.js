@@ -8,6 +8,13 @@
 import { submodule } from '../src/hook.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+import {isPlainObject} from '../src/utils.js';
+
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ */
 
 const MODULE_NAME = 'deepintentId';
 export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
@@ -39,8 +46,19 @@ export const deepintentDpesSubmodule = {
    */
   getId(config, consentData, cacheIdObj) {
     return cacheIdObj;
-  }
-
+  },
+  eids: {
+    'deepintentId': {
+      source: 'deepintent.com',
+      atype: 3,
+      getValue: (userIdData) => {
+        if (isPlainObject(userIdData) && userIdData?.id) {
+          return userIdData.id;
+        }
+        return userIdData;
+      }
+    },
+  },
 };
 
 submodule('userId', deepintentDpesSubmodule);

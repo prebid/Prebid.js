@@ -1,16 +1,12 @@
-import pubxaiAnalyticsAdapter from 'modules/pubxaiAnalyticsAdapter.js';
-import { getDeviceType, getBrowser, getOS } from 'modules/pubxaiAnalyticsAdapter.js';
-import {
-  expect
-} from 'chai';
+import pubxaiAnalyticsAdapter, {getBrowser, getDeviceType, getOS} from 'modules/pubxaiAnalyticsAdapter.js';
+import {expect} from 'chai';
 import adapterManager from 'src/adapterManager.js';
 import * as utils from 'src/utils.js';
-import {
-  server
-} from 'test/mocks/xhr.js';
+import {server} from 'test/mocks/xhr.js';
+import {getGptSlotInfoForAdUnitCode} from '../../../libraries/gptUtils/gptUtils.js';
+import { EVENTS } from 'src/constants.js';
 
 let events = require('src/events');
-let constants = require('src/constants.json');
 
 describe('pubxai analytics adapter', function() {
   beforeEach(function() {
@@ -527,7 +523,7 @@ describe('pubxai analytics adapter', function() {
         'bidderCode': 'appnexus',
         'bidId': '248f9a4489835e',
         'adUnitCode': '/19968336/header-bid-tag-1',
-        'gptSlotCode': utils.getGptSlotInfoForAdUnitCode('/19968336/header-bid-tag-1').gptSlot || null,
+        'gptSlotCode': getGptSlotInfoForAdUnitCode('/19968336/header-bid-tag-1').gptSlot || null,
         'auctionId': 'bc3806e4-873e-453c-8ae5-204f35e923b4',
         'sizes': '300x250',
         'renderStatus': 2,
@@ -596,7 +592,7 @@ describe('pubxai analytics adapter', function() {
     let expectedAfterBidWon = {
       'winningBid': {
         'adUnitCode': '/19968336/header-bid-tag-1',
-        'gptSlotCode': utils.getGptSlotInfoForAdUnitCode('/19968336/header-bid-tag-1').gptSlot || null,
+        'gptSlotCode': getGptSlotInfoForAdUnitCode('/19968336/header-bid-tag-1').gptSlot || null,
         'auctionId': 'bc3806e4-873e-453c-8ae5-204f35e923b4',
         'bidderCode': 'appnexus',
         'bidId': '248f9a4489835e',
@@ -675,19 +671,19 @@ describe('pubxai analytics adapter', function() {
 
     it('builds and sends auction data', function() {
       // Step 1: Send auction init event
-      events.emit(constants.EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
+      events.emit(EVENTS.AUCTION_INIT, prebidEvent['auctionInit']);
 
       // Step 2: Send bid requested event
-      events.emit(constants.EVENTS.BID_REQUESTED, prebidEvent['bidRequested']);
+      events.emit(EVENTS.BID_REQUESTED, prebidEvent['bidRequested']);
 
       // Step 3: Send bid response event
-      events.emit(constants.EVENTS.BID_RESPONSE, prebidEvent['bidResponse']);
+      events.emit(EVENTS.BID_RESPONSE, prebidEvent['bidResponse']);
 
       // Step 4: Send bid time out event
-      events.emit(constants.EVENTS.BID_TIMEOUT, prebidEvent['bidTimeout']);
+      events.emit(EVENTS.BID_TIMEOUT, prebidEvent['bidTimeout']);
 
       // Step 5: Send auction end event
-      events.emit(constants.EVENTS.AUCTION_END, prebidEvent['auctionEnd']);
+      events.emit(EVENTS.AUCTION_END, prebidEvent['auctionEnd']);
 
       expect(server.requests.length).to.equal(1);
 
@@ -696,7 +692,7 @@ describe('pubxai analytics adapter', function() {
       expect(realAfterBid).to.deep.equal(expectedAfterBid);
 
       // Step 6: Send auction bid won event
-      events.emit(constants.EVENTS.BID_WON, prebidEvent['bidWon']);
+      events.emit(EVENTS.BID_WON, prebidEvent['bidWon']);
 
       expect(server.requests.length).to.equal(2);
 

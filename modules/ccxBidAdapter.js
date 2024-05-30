@@ -178,7 +178,7 @@ export const spec = {
       requestBody.imp = []
       requestBody.site = _getSiteObj(bidderRequest)
       requestBody.device = _getDeviceObj()
-      requestBody.id = bidderRequest.bids[0].auctionId
+      requestBody.id = bidderRequest.bidderRequestId;
       requestBody.ext = {'ce': (storage.cookiesAreEnabled() ? 1 : 0)}
 
       // Attaching GDPR Consent Params

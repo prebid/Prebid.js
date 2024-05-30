@@ -4,6 +4,11 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'videoheroes';
 const DEFAULT_CUR = 'USD';
 const ENDPOINT_URL = `https://point.contextualadv.com/?t=2&partner=hash`;
@@ -57,6 +62,8 @@ export const spec = {
         impObject.video = createVideoRequest(br);
       } else if (br.mediaTypes.native) {
         impObject.native = {
+          // TODO: fix transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
+          // Also, `id` is not in the ORTB native spec
           id: br.transactionId,
           ver: '1.2',
           request: createNativeRequest(br)

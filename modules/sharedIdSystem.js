@@ -13,7 +13,15 @@ import {VENDORLESS_GVLID} from '../src/consentHandler.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 import {domainOverrideToRootDomain} from '../libraries/domainOverrideToRootDomain/index.js';
 
-export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: 'pubCommonId'});
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').SubmoduleParams} SubmoduleParams
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
+
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: 'sharedId'});
 const COOKIE = 'cookie';
 const LOCAL_STORAGE = 'html5';
 const OPTOUT_NAME = '_pubcid_optout';
@@ -174,6 +182,12 @@ export const sharedIdSystemSubmodule = {
   },
 
   domainOverride: domainOverrideToRootDomain(storage, 'sharedId'),
+  eids: {
+    'pubcid': {
+      source: 'pubcid.org',
+      atype: 1
+    },
+  }
 };
 
 submodule('userId', sharedIdSystemSubmodule);

@@ -1,16 +1,15 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import {
-  registerBidder
-} from '../src/adapters/bidderFactory.js';
-import { NATIVE, BANNER, VIDEO } from '../src/mediaTypes.js';
-import { OUTSTREAM } from '../src/video.js';
-import { deepAccess, deepSetValue, replaceAuctionPrice, _map, isArray, logWarn } from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { Renderer } from '../src/Renderer.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+import {OUTSTREAM} from '../src/video.js';
+import {_map, deepAccess, deepSetValue, isArray, logWarn, replaceAuctionPrice} from '../src/utils.js';
+import {ajax} from '../src/ajax.js';
+import {config} from '../src/config.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {Renderer} from '../src/Renderer.js';
 
 const BIDDER_CODE = 'outbrain';
 const GVLID = 164;
@@ -25,6 +24,9 @@ const NATIVE_PARAMS = {
   cta: { id: 1, type: 12, name: 'data' }
 };
 const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
+const OB_USER_TOKEN_KEY = 'OB-USER-TOKEN';
+
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
@@ -107,7 +109,7 @@ export const spec = {
     });
 
     const request = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       site: { page, publisher },
       device: { ua },
       source: { fd: 1 },
@@ -132,6 +134,11 @@ export const spec = {
       request.test = 1;
     }
 
+    const obUserToken = storage.getDataFromLocalStorage(OB_USER_TOKEN_KEY)
+    if (obUserToken) {
+      deepSetValue(request, 'user.ext.obusertoken', obUserToken)
+    }
+
     if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
       deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
       deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1)
@@ -141,6 +148,13 @@ export const spec = {
     }
     if (config.getConfig('coppa') === true) {
       deepSetValue(request, 'regs.coppa', config.getConfig('coppa') & 1)
+    }
+    if (bidderRequest.gppConsent) {
+      deepSetValue(request, 'regs.ext.gpp', bidderRequest.gppConsent.gppString)
+      deepSetValue(request, 'regs.ext.gpp_sid', bidderRequest.gppConsent.applicableSections)
+    } else if (deepAccess(bidderRequest, 'ortb2.regs.gpp')) {
+      deepSetValue(request, 'regs.ext.gpp', bidderRequest.ortb2.regs.gpp)
+      deepSetValue(request, 'regs.ext.gpp_sid', bidderRequest.ortb2.regs.gpp_sid)
     }
 
     if (eids) {
@@ -205,7 +219,7 @@ export const spec = {
       }
     }).filter(Boolean);
   },
-  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
     const syncs = [];
     let syncUrl = config.getConfig('outbrain.usersyncUrl');
 
@@ -217,6 +231,10 @@ export const spec = {
       }
       if (uspConsent) {
         query.push('us_privacy=' + encodeURIComponent(uspConsent));
+      }
+      if (gppConsent) {
+        query.push('gpp=' + encodeURIComponent(gppConsent.gppString));
+        query.push('gpp_sid=' + encodeURIComponent(gppConsent.applicableSections.join(',')));
       }
 
       syncs.push({

@@ -1,7 +1,9 @@
-import { deepSetValue, convertTypes, tryAppendQueryString, logWarn } from '../src/utils.js';
+import { deepSetValue, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js'
 import {config} from '../src/config.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
+import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 const BIDDER_CODE = 'connectad';
 const BIDDER_CODE_ALIAS = 'connectadrealtime';
 const ENDPOINT_URL = 'https://i.connectad.io/api/v2';
@@ -77,6 +79,7 @@ export const spec = {
 
     validBidRequests.map(bid => {
       const placement = Object.assign({
+        // TODO: fix transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
         id: bid.transactionId,
         divName: bid.bidId,
         pisze: bid.mediaTypes.banner.sizes[0] || bid.sizes[0],

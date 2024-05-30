@@ -1,9 +1,11 @@
 import bidwatchAnalytics from 'modules/bidwatchAnalyticsAdapter.js';
+import {dereferenceWithoutRenderer} from 'modules/bidwatchAnalyticsAdapter.js';
 import { expect } from 'chai';
 import { server } from 'test/mocks/xhr.js';
+import { EVENTS } from 'src/constants.js';
+
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
-let constants = require('src/constants.json');
 
 describe('BidWatch Analytics', function () {
   let timestamp = new Date() - 256;
@@ -155,7 +157,7 @@ describe('BidWatch Analytics', function () {
         'requestId': '34a63e5d5378a3',
         'transactionId': 'de664ccb-e18b-4436-aeb0-362382eb1b40',
         'auctionId': '1e8b993d-8f0a-4232-83eb-3639ddf3a44b',
-        'mediaType': 'banner',
+        'mediaType': 'video',
         'source': 'client',
         'cpm': 27.4276,
         'creativeId': '158534630',
@@ -168,6 +170,7 @@ describe('BidWatch Analytics', function () {
             'example.com'
           ]
         },
+        'renderer': 'something',
         'originalCpm': 25.02521,
         'originalCurrency': 'EUR',
         'responseTimestamp': 1647424261559,
@@ -221,6 +224,7 @@ describe('BidWatch Analytics', function () {
         'example.com'
       ]
     },
+    'renderer': 'something',
     'originalCpm': 25.02521,
     'originalCurrency': 'EUR',
     'responseTimestamp': 1647424261558,
@@ -267,7 +271,24 @@ describe('BidWatch Analytics', function () {
       bidwatchAnalytics.disableAnalytics();
       bidwatchAnalytics.track.restore();
     });
+    it('test dereferenceWithoutRenderer', function () {
+      adapterManager.registerAnalyticsAdapter({
+        code: 'bidwatch',
+        adapter: bidwatchAnalytics
+      });
 
+      adapterManager.enableAnalytics({
+        provider: 'bidwatch',
+        options: {
+          domain: 'test'
+        }
+      });
+      let resultBidWon = JSON.parse(dereferenceWithoutRenderer(bidWon));
+      expect(resultBidWon).not.to.have.property('renderer');
+      let resultBid = JSON.parse(dereferenceWithoutRenderer(auctionEnd));
+      expect(resultBid).to.have.property('bidsReceived').and.to.have.lengthOf(1);
+      expect(resultBid.bidsReceived[0]).not.to.have.property('renderer');
+    });
     it('test auctionEnd', function () {
       adapterManager.registerAnalyticsAdapter({
         code: 'bidwatch',
@@ -281,10 +302,10 @@ describe('BidWatch Analytics', function () {
         }
       });
 
-      events.emit(constants.EVENTS.BID_REQUESTED, auctionEnd['bidderRequests'][0]);
-      events.emit(constants.EVENTS.BID_RESPONSE, auctionEnd['bidsReceived'][0]);
-      events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeout);
-      events.emit(constants.EVENTS.AUCTION_END, auctionEnd);
+      events.emit(EVENTS.BID_REQUESTED, auctionEnd['bidderRequests'][0]);
+      events.emit(EVENTS.BID_RESPONSE, auctionEnd['bidsReceived'][0]);
+      events.emit(EVENTS.BID_TIMEOUT, bidTimeout);
+      events.emit(EVENTS.AUCTION_END, auctionEnd);
       expect(server.requests.length).to.equal(1);
       let message = JSON.parse(server.requests[0].requestBody);
       expect(message).to.have.property('auctionEnd').exist;
@@ -311,7 +332,7 @@ describe('BidWatch Analytics', function () {
           domain: 'test'
         }
       });
-      events.emit(constants.EVENTS.BID_WON, bidWon);
+      events.emit(EVENTS.BID_WON, bidWon);
       expect(server.requests.length).to.equal(1);
       let message = JSON.parse(server.requests[0].requestBody);
       expect(message).not.to.have.property('ad');

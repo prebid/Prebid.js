@@ -1,8 +1,7 @@
 import {
   deepAccess,
   deepClone,
-  deepSetValue,
-  getBidIdParameter,
+  deepSetValue, getBidIdParameter,
   inIframe,
   isArray,
   isEmpty,
@@ -59,7 +58,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const payload = createOrtbTemplate();
 
-    deepSetValue(payload, 'id', bidderRequest.auctionId);
+    deepSetValue(payload, 'id', bidderRequest.bidderRequestId);
 
     validBidRequests.forEach((validBid) => {
       let bid = deepClone(validBid);
@@ -116,7 +115,6 @@ export const spec = {
           bidderSeat.bid.forEach((bid) => {
             const newBid = {
               requestId: bid.impid,
-              bidderCode: spec.code,
               cpm: bid.price || 0,
               width: bid.w,
               height: bid.h,
@@ -243,7 +241,7 @@ function createImp(bid) {
  *
  * @param {*} bid a Prebid.js bid (request) object
  * @param {string} mediaType the mediaType or the wildcard '*'
- * @param {string|array} size the size array or the wildcard '*'
+ * @param {string|Array} size the size array or the wildcard '*'
  * @returns {number|boolean}
  */
 function getFloor(bid, mediaType, size = '*') {

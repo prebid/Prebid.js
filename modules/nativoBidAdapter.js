@@ -2,7 +2,20 @@ import { deepAccess, isEmpty } from '../src/utils.js'
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { BANNER } from '../src/mediaTypes.js'
 import { getGlobal } from '../src/prebidGlobal.js'
-// import { config } from 'src/config'
+import { ortbConverter } from '../libraries/ortbConverter/converter.js'
+
+const converter = ortbConverter({
+  context: {
+    // `netRevenue` and `ttl` are required properties of bid responses - provide a default for them
+    netRevenue: true, // or false if your adapter should set bidResponse.netRevenue = false
+    ttl: 30 // default bidResponse.ttl (when not specified in ORTB response.seatbid[].bid[].exp)
+  },
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+    imp.tagid = bidRequest.adUnitCode
+    return imp;
+  }
+});
 
 const BIDDER_CODE = 'nativo'
 const BIDDER_ENDPOINT = 'https://exchange.postrelease.com/prebid'
@@ -136,6 +149,10 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
+    // Get OpenRTB Data
+    const openRTBData = converter.toORTB({bidRequests: validBidRequests, bidderRequest})
+    const openRTBDataString = JSON.stringify(openRTBData)
+
     const requestData = new RequestData()
     requestData.addBidRequestDataSource(new UserEIDs())
 
@@ -271,8 +288,9 @@ export const spec = {
     const requestUrl = buildRequestUrl(BIDDER_ENDPOINT, qsParamStrings)
 
     let serverRequest = {
-      method: 'GET',
-      url: requestUrl
+      method: 'POST',
+      url: requestUrl,
+      data: openRTBDataString,
     }
 
     return serverRequest

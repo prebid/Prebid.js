@@ -1,6 +1,12 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { isEmpty, getAdUnitSizes, parseSizesInput, deepAccess } from '../src/utils.js';
+import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import {
+  isEmpty,
+  parseSizesInput,
+  deepAccess
+} from '../src/utils.js';
+import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
+import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
 
 const BIDDER_CODE = 'ras';
 const VERSION = '1.0';
@@ -39,8 +45,9 @@ function parseParams(params, bidderRequest) {
   if (pageContext.dv) {
     newParams.DV = pageContext.dv;
   }
-  if (pageContext.keyWords && Array.isArray(pageContext.keyWords)) {
-    newParams.kwrd = pageContext.keyWords.join('+');
+  const keywords = getAllOrtbKeywords(bidderRequest?.ortb2, pageContext.keyWords)
+  if (keywords.length > 0) {
+    newParams.kwrd = keywords.join('+')
   }
   if (pageContext.capping) {
     newParams.local_capping = pageContext.capping;
@@ -53,28 +60,156 @@ function parseParams(params, bidderRequest) {
       }
     }
   }
+  if (bidderRequest?.ortb2?.regs?.ext?.dsa?.required !== undefined) {
+    newParams.dsainfo = bidderRequest?.ortb2?.regs?.ext?.dsa?.required;
+  }
   return newParams;
 }
 
-const buildBid = (ad) => {
-  if (ad.type === 'empty') {
+/**
+ * @param url string
+ * @param type number // 1 - img, 2 - js
+ * @returns an object { event: 1, method: 1 or 2, url: 'string' }
+ */
+function prepareItemEventtrackers(url, type) {
+  return {
+    event: 1,
+    method: type,
+    url: url
+  };
+}
+
+function prepareEventtrackers(emsLink, imp, impression, impression1, impressionJs1) {
+  const eventtrackers = [prepareItemEventtrackers(emsLink, 1)];
+
+  if (imp) {
+    eventtrackers.push(prepareItemEventtrackers(imp, 1));
+  }
+
+  if (impression) {
+    eventtrackers.push(prepareItemEventtrackers(impression, 1));
+  }
+
+  if (impression1) {
+    eventtrackers.push(prepareItemEventtrackers(impression1, 1));
+  }
+
+  if (impressionJs1) {
+    eventtrackers.push(prepareItemEventtrackers(impressionJs1, 2));
+  }
+
+  return eventtrackers;
+}
+
+function parseOrtbResponse(ad) {
+  if (!(ad.data?.fields && ad.data?.meta)) {
+    return false;
+  }
+
+  const { image, Image, title, url, Headline, Thirdpartyclicktracker, imp, impression, impression1, impressionJs1 } = ad.data.fields;
+  const { dsaurl, height, width, adclick } = ad.data.meta;
+  const emsLink = ad.ems_link;
+  const link = adclick + (url || Thirdpartyclicktracker);
+  const eventtrackers = prepareEventtrackers(emsLink, imp, impression, impression1, impressionJs1);
+  const ortb = {
+    ver: '1.2',
+    assets: [
+      {
+        id: 2,
+        img: {
+          url: image || Image || '',
+          w: width,
+          h: height
+        }
+      },
+      {
+        id: 4,
+        title: {
+          text: title || Headline || ''
+        }
+      },
+      {
+        id: 3,
+        data: {
+          value: deepAccess(ad, 'data.meta.advertiser_name', null),
+          type: 1
+        }
+      }
+    ],
+    link: {
+      url: link
+    },
+    eventtrackers
+  };
+
+  if (dsaurl) {
+    ortb.privacy = dsaurl
+  }
+
+  return ortb
+}
+
+function parseNativeResponse(ad) {
+  if (!(ad.data?.fields && ad.data?.meta)) {
+    return false;
+  }
+
+  const { image, Image, title, leadtext, url, Calltoaction, Body, Headline, Thirdpartyclicktracker } = ad.data.fields;
+  const { dsaurl, height, width, adclick } = ad.data.meta;
+  const link = adclick + (url || Thirdpartyclicktracker);
+  const nativeResponse = {
+    sendTargetingKeys: false,
+    title: title || Headline || '',
+    image: {
+      url: image || Image || '',
+      width,
+      height
+    },
+
+    clickUrl: link,
+    cta: Calltoaction || '',
+    body: leadtext || Body || '',
+    sponsoredBy: deepAccess(ad, 'data.meta.advertiser_name', null) || '',
+    ortb: parseOrtbResponse(ad)
+  };
+
+  if (dsaurl) {
+    nativeResponse.privacyLink = dsaurl;
+  }
+
+  return nativeResponse
+}
+
+const buildBid = (ad, mediaType) => {
+  if (ad.type === 'empty' || mediaType === undefined) {
     return null;
   }
-  return {
+
+  const data = {
     requestId: ad.id,
     cpm: ad.bid_rate ? ad.bid_rate.toFixed(2) : 0,
-    width: ad.width || 0,
-    height: ad.height || 0,
     ttl: 300,
     creativeId: ad.adid ? parseInt(ad.adid.split(',')[2], 10) : 0,
     netRevenue: true,
     currency: ad.currency || 'USD',
     dealId: null,
-    meta: {
-      mediaType: BANNER
-    },
-    ad: ad.html || null
-  };
+    actgMatch: ad.actg_match || 0,
+    meta: { mediaType: BANNER },
+    mediaType: BANNER,
+    ad: ad.html || null,
+    width: ad.width || 0,
+    height: ad.height || 0
+  }
+
+  if (mediaType === 'native') {
+    data.meta = { mediaType: NATIVE };
+    data.mediaType = NATIVE;
+    data.native = parseNativeResponse(ad) || {};
+
+    delete data.ad;
+  }
+
+  return data;
 };
 
 const getContextParams = (bidRequests, bidderRequest) => {
@@ -99,18 +234,24 @@ const getSlots = (bidRequests) => {
   for (let i = 0; i < batchSize; i++) {
     const adunit = bidRequests[i];
     const slotSequence = deepAccess(adunit, 'params.slotSequence');
-
-    const sizes = parseSizesInput(getAdUnitSizes(adunit)).join(',');
+    const creFormat = getAdUnitCreFormat(adunit);
+    const sizes = creFormat === 'native' ? 'fluid' : parseSizesInput(getAdUnitSizes(adunit)).join(',');
 
     queryString += `&slot${i}=${encodeURIComponent(adunit.params.slot)}&id${i}=${encodeURIComponent(adunit.bidId)}&composition${i}=CHILD`;
 
-    if (sizes.length) {
+    if (creFormat === 'native') {
+      queryString += `&cre_format${i}=native`;
+    }
+
+    if (sizes) {
       queryString += `&iusizes${i}=${encodeURIComponent(sizes)}`;
     }
-    if (slotSequence !== undefined) {
+
+    if (slotSequence !== undefined && slotSequence !== null) {
       queryString += `&pos${i}=${encodeURIComponent(slotSequence)}`;
     }
   }
+
   return queryString;
 };
 
@@ -127,9 +268,54 @@ const getGdprParams = (bidderRequest) => {
   return queryString;
 };
 
+const parseAuctionConfigs = (serverResponse, bidRequest) => {
+  if (isEmpty(bidRequest)) {
+    return null;
+  }
+  const auctionConfigs = [];
+  const gctx = serverResponse && serverResponse.body?.gctx;
+
+  bidRequest.bidIds.filter(bid => bid.fledgeEnabled).forEach((bid) => {
+    auctionConfigs.push({
+      'bidId': bid.bidId,
+      'config': {
+        'seller': 'https://csr.onet.pl',
+        'decisionLogicUrl': `https://csr.onet.pl/${encodeURIComponent(bid.params.network)}/v1/protected-audience-api/decision-logic.js`,
+        'interestGroupBuyers': ['https://csr.onet.pl'],
+        'auctionSignals': {
+          'params': bid.params,
+          'sizes': bid.sizes,
+          'gctx': gctx
+        }
+      }
+    });
+  });
+
+  if (auctionConfigs.length === 0) {
+    return null;
+  } else {
+    return auctionConfigs;
+  }
+}
+
+const getAdUnitCreFormat = (adUnit) => {
+  if (!adUnit) {
+    return;
+  }
+
+  let creFormat = 'html';
+  let mediaTypes = Object.keys(adUnit.mediaTypes);
+
+  if (mediaTypes && mediaTypes.length === 1 && mediaTypes.includes('native')) {
+    creFormat = 'native';
+  }
+
+  return creFormat;
+}
+
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER],
+  supportedMediaTypes: [BANNER, NATIVE],
 
   isBidRequestValid: function (bidRequest) {
     if (!bidRequest || !bidRequest.params || typeof bidRequest.params !== 'object') {
@@ -143,8 +329,17 @@ export const spec = {
     const slotsQuery = getSlots(bidRequests);
     const contextQuery = getContextParams(bidRequests, bidderRequest);
     const gdprQuery = getGdprParams(bidderRequest);
-    const bidIds = bidRequests.map((bid) => ({ slot: bid.params.slot, bidId: bid.bidId }));
+    const fledgeEligible = Boolean(bidderRequest && bidderRequest.fledgeEnabled);
     const network = bidRequests[0].params.network;
+    const bidIds = bidRequests.map((bid) => ({
+      slot: bid.params.slot,
+      bidId: bid.bidId,
+      sizes: getAdUnitSizes(bid),
+      params: bid.params,
+      fledgeEnabled: fledgeEligible,
+      mediaType: (bid.mediaTypes && bid.mediaTypes.banner) ? 'display' : NATIVE
+    }));
+
     return [{
       method: 'GET',
       url: getEndpoint(network) + contextQuery + slotsQuery + gdprQuery,
@@ -154,10 +349,18 @@ export const spec = {
 
   interpretResponse: function (serverResponse, bidRequest) {
     const response = serverResponse.body;
-    if (!response || !response.ads || response.ads.length === 0) {
-      return [];
+    const fledgeAuctionConfigs = parseAuctionConfigs(serverResponse, bidRequest);
+    const bids = (!response || !response.ads || response.ads.length === 0) ? [] : response.ads.map((ad, index) => buildBid(
+      ad,
+      bidRequest?.bidIds?.[index]?.mediaType || 'banner'
+    )).filter((bid) => !isEmpty(bid));
+
+    if (fledgeAuctionConfigs) {
+      // Return a tuple of bids and auctionConfigs. It is possible that bids could be null.
+      return {bids, fledgeAuctionConfigs};
+    } else {
+      return bids;
     }
-    return response.ads.map(buildBid).filter((bid) => !isEmpty(bid));
   }
 };
 

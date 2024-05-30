@@ -1,100 +1,109 @@
 /**
- * Fledge modules is responsible for registering fledged auction configs into the GPT slot;
- * GPT is resposible to run the fledge auction.
+ * GPT-specific slot configuration logic for PAAPI.
  */
-import { config } from '../src/config.js';
-import { getHook } from '../src/hook.js';
-import { getGptSlotForAdUnitCode, logInfo, logWarn } from '../src/utils.js';
-import {IMP, PBS, registerOrtbProcessor, RESPONSE} from '../src/pbjsORTB.js';
+import {submodule} from '../src/hook.js';
+import {deepAccess, logInfo, logWarn} from '../src/utils.js';
+import {getGptSlotForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+import {config} from '../src/config.js';
+import {getGlobal} from '../src/prebidGlobal.js';
 
-const MODULE = 'fledgeForGpt'
+// import parent module to keep backwards-compat for NPM consumers after paapi was split from fledgeForGpt
+// there's a special case in webpack.conf.js to avoid duplicating build output on non-npm builds
+// TODO: remove this in prebid 9
+// eslint-disable-next-line prebid/validate-imports
+import './paapi.js';
+const MODULE = 'fledgeForGpt';
 
-export let isEnabled = false;
+let getPAAPIConfig;
 
-config.getConfig('fledgeForGpt', config => init(config.fledgeForGpt));
+// for backwards compat, we attempt to automatically set GPT configuration as soon as we
+// have the auction configs available. Disabling this allows one to call pbjs.setPAAPIConfigForGPT at their
+// own pace.
+let autoconfig = true;
 
-/**
-  * Module init.
-  */
-export function init(cfg) {
-  if (cfg && cfg.enabled === true) {
-    if (!isEnabled) {
-      getHook('addComponentAuction').before(addComponentAuctionHook);
-      isEnabled = true;
+Object.entries({
+  [MODULE]: MODULE,
+  'paapi': 'paapi.gpt'
+}).forEach(([topic, ns]) => {
+  const configKey = `${ns}.autoconfig`;
+  config.getConfig(topic, (cfg) => {
+    autoconfig = deepAccess(cfg, configKey, true);
+  });
+});
+
+export function slotConfigurator() {
+  const PREVIOUSLY_SET = {};
+  return function setComponentAuction(adUnitCode, auctionConfigs, reset = true) {
+    const gptSlot = getGptSlotForAdUnitCode(adUnitCode);
+    if (gptSlot && gptSlot.setConfig) {
+      let previous = PREVIOUSLY_SET[adUnitCode] ?? {};
+      let configsBySeller = Object.fromEntries(auctionConfigs.map(cfg => [cfg.seller, cfg]));
+      const sellers = Object.keys(configsBySeller);
+      if (reset) {
+        configsBySeller = Object.assign(previous, configsBySeller);
+        previous = Object.fromEntries(sellers.map(seller => [seller, null]));
+      } else {
+        sellers.forEach(seller => {
+          previous[seller] = null;
+        });
+      }
+      Object.keys(previous).length ? PREVIOUSLY_SET[adUnitCode] = previous : delete PREVIOUSLY_SET[adUnitCode];
+      const componentAuction = Object.entries(configsBySeller)
+        .map(([configKey, auctionConfig]) => ({configKey, auctionConfig}));
+      if (componentAuction.length > 0) {
+        gptSlot.setConfig({componentAuction});
+        logInfo(MODULE, `register component auction configs for: ${adUnitCode}: ${gptSlot.getAdUnitPath()}`, auctionConfigs);
+      }
+    } else if (auctionConfigs.length > 0) {
+      logWarn(MODULE, `unable to register component auction config for ${adUnitCode}`, auctionConfigs);
     }
-    logInfo(`${MODULE} enabled (browser ${isFledgeSupported() ? 'supports' : 'does NOT support'} fledge)`, cfg);
-  } else {
-    if (isEnabled) {
-      getHook('addComponentAuction').getHooks({hook: addComponentAuctionHook}).remove();
-      isEnabled = false;
+  };
+}
+
+const setComponentAuction = slotConfigurator();
+
+export function onAuctionConfigFactory(setGptConfig = setComponentAuction) {
+  return function onAuctionConfig(auctionId, configsByAdUnit, markAsUsed) {
+    if (autoconfig) {
+      Object.entries(configsByAdUnit).forEach(([adUnitCode, cfg]) => {
+        setGptConfig(adUnitCode, cfg?.componentAuctions ?? []);
+        markAsUsed(adUnitCode);
+      });
     }
-    logInfo(`${MODULE} disabled`, cfg);
   }
 }
 
-export function addComponentAuctionHook(next, adUnitCode, componentAuctionConfig) {
-  const seller = componentAuctionConfig.seller;
-  const gptSlot = getGptSlotForAdUnitCode(adUnitCode);
-  if (gptSlot && gptSlot.setConfig) {
-    gptSlot.setConfig({
-      componentAuction: [{
-        configKey: seller,
-        auctionConfig: componentAuctionConfig
-      }]
-    });
-    logInfo(MODULE, `register component auction config for: ${adUnitCode} x ${seller}: ${gptSlot.getAdUnitPath()}`, componentAuctionConfig);
-  } else {
-    logWarn(MODULE, `unable to register component auction config for: ${adUnitCode} x ${seller}.`);
-  }
-
-  next(adUnitCode, componentAuctionConfig);
-}
-
-function isFledgeSupported() {
-  return 'runAdAuction' in navigator && 'joinAdInterestGroup' in navigator
-}
-
-export function markForFledge(next, bidderRequests) {
-  if (isFledgeSupported()) {
-    bidderRequests.forEach((req) => {
-      req.fledgeEnabled = config.runWithBidder(req.bidderCode, () => config.getConfig('fledgeEnabled'))
+export function setPAAPIConfigFactory(
+  getConfig = (filters) => getPAAPIConfig(filters, true),
+  setGptConfig = setComponentAuction) {
+  /**
+   * Configure GPT slots with PAAPI auction configs.
+   * `filters` are the same filters accepted by `pbjs.getPAAPIConfig`;
+   */
+  return function(filters = {}) {
+    let some = false;
+    Object.entries(
+      getConfig(filters) || {}
+    ).forEach(([au, config]) => {
+      if (config != null) {
+        some = true;
+      }
+      setGptConfig(au, config?.componentAuctions || [], true);
     })
-  }
-  next(bidderRequests);
-}
-getHook('makeBidRequests').after(markForFledge);
-
-export function setImpExtAe(imp, bidRequest, context) {
-  if (!context.bidderRequest.fledgeEnabled) {
-    delete imp.ext?.ae;
-  }
-}
-registerOrtbProcessor({type: IMP, name: 'impExtAe', fn: setImpExtAe});
-
-// to make it easier to share code between the PBS adapter and adapters whose backend is PBS, break up
-// fledge response processing in two steps: first aggregate all the auction configs by their imp...
-
-export function parseExtPrebidFledge(response, ortbResponse, context) {
-  (ortbResponse.ext?.prebid?.fledge?.auctionconfigs || []).forEach((cfg) => {
-    const impCtx = context.impContext[cfg.impid];
-    if (!impCtx?.imp?.ext?.ae) {
-      logWarn('Received fledge auction configuration for an impression that was not in the request or did not ask for it', cfg, impCtx?.imp);
-    } else {
-      impCtx.fledgeConfigs = impCtx.fledgeConfigs || [];
-      impCtx.fledgeConfigs.push(cfg);
+    if (!some) {
+      logInfo(`${MODULE}: No component auctions available to set`);
     }
-  })
-}
-registerOrtbProcessor({type: RESPONSE, name: 'extPrebidFledge', fn: parseExtPrebidFledge, dialects: [PBS]});
-
-// ...then, make them available in the adapter's response. This is the client side version, for which the
-// interpretResponse api is {fledgeAuctionConfigs: [{bidId, config}]}
-
-export function setResponseFledgeConfigs(response, ortbResponse, context) {
-  const configs = Object.values(context.impContext)
-    .flatMap((impCtx) => (impCtx.fledgeConfigs || []).map(cfg => ({bidId: impCtx.bidRequest.bidId, config: cfg.config})));
-  if (configs.length > 0) {
-    response.fledgeAuctionConfigs = configs;
   }
 }
-registerOrtbProcessor({type: RESPONSE, name: 'fledgeAuctionConfigs', priority: -1, fn: setResponseFledgeConfigs, dialects: [PBS]})
+/**
+ * Configure GPT slots with PAAPI component auctions. Accepts the same filter arguments as `pbjs.getPAAPIConfig`.
+ */
+getGlobal().setPAAPIConfigForGPT = setPAAPIConfigFactory();
+
+submodule('paapi', {
+  name: 'gpt',
+  onAuctionConfig: onAuctionConfigFactory(),
+  init(params) {
+    getPAAPIConfig = params.getPAAPIConfig;
+  }
+});

@@ -483,15 +483,6 @@ describe('AdrelevantisAdapter', function () {
   })
 
   describe('interpretResponse', function () {
-    let bfStub;
-    before(function() {
-      bfStub = sinon.stub(bidderFactory, 'getIabSubCategory');
-    });
-
-    after(function() {
-      bfStub.restore();
-    });
-
     let response = {
       'version': '3.0.0',
       'tags': [

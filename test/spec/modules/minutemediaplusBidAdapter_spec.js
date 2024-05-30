@@ -35,7 +35,6 @@ const BID = {
     }
   },
   'placementCode': 'div-gpt-ad-1460505748561-0',
-  'transactionId': 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
   'sizes': [[300, 250], [300, 600]],
   'bidderRequestId': '1fdb5ff1b6eaa7',
   'auctionId': 'auction_id',
@@ -47,7 +46,8 @@ const BID = {
   'mediaTypes': [BANNER],
   'ortb2Imp': {
     'ext': {
-      'gpid': '1234567890'
+      'gpid': '1234567890',
+      tid: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
     }
   }
 };
@@ -60,7 +60,11 @@ const VIDEO_BID = {
   'bidRequestsCount': 4,
   'bidderRequestsCount': 3,
   'bidderWinsCount': 1,
-  'transactionId': '56e184c6-bde9-497b-b9b9-cf47a61381ee',
+  ortb2Imp: {
+    ext: {
+      tid: '56e184c6-bde9-497b-b9b9-cf47a61381ee',
+    }
+  },
   'schain': 'a0819c69-005b-41ed-af06-1be1e0aefefc',
   'params': {
     'subDomain': SUB_DOMAIN,
@@ -419,6 +423,25 @@ describe('MinuteMediaPlus Bid Adapter', function () {
         'type': 'image'
       }]);
     })
+
+    it('should generate url with consent data', function () {
+      const gdprConsent = {
+        gdprApplies: true,
+        consentString: 'consent_string'
+      };
+      const uspConsent = 'usp_string';
+      const gppConsent = {
+        gppString: 'gpp_string',
+        applicableSections: [7]
+      }
+
+      const result = adapter.getUserSyncs({pixelEnabled: true}, [SERVER_RESPONSE], gdprConsent, uspConsent, gppConsent);
+
+      expect(result).to.deep.equal([{
+        'url': 'https://sync.minutemedia-prebid.com/api/sync/image/?cid=testcid123&gdpr=1&gdpr_consent=consent_string&us_privacy=usp_string&gpp=gpp_string&gpp_sid=7',
+        'type': 'image'
+      }]);
+    });
   });
 
   describe('interpret response', function () {

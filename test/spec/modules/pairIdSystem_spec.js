@@ -3,11 +3,11 @@ import * as utils from 'src/utils.js';
 
 describe('pairId', function () {
   let sandbox;
-  let logErrorStub;
+  let logInfoStub;
 
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
-    logErrorStub = sandbox.stub(utils, 'logError');
+    logInfoStub = sandbox.stub(utils, 'logInfo');
   });
   afterEach(() => {
     sandbox.restore();
@@ -15,7 +15,7 @@ describe('pairId', function () {
 
   it('should log an error if no ID is found when getId', function() {
     pairIdSubmodule.getId({ params: {} });
-    expect(logErrorStub.calledOnce).to.be.true;
+    expect(logInfoStub.calledOnce).to.be.true;
   });
 
   it('should read pairId from local storage if exists', function() {
@@ -64,5 +64,18 @@ describe('pairId', function () {
         }
       }})
     expect(id).to.be.deep.equal({id: pairIds})
+  })
+
+  it('should not get data from storage if local storage and cookies are disabled', function () {
+    sandbox.stub(storage, 'localStorageIsEnabled').returns(false);
+    sandbox.stub(storage, 'cookiesAreEnabled').returns(false);
+    let id = pairIdSubmodule.getId({
+      params: {
+        liveramp: {
+          storageKey: 'lr_pairId_custom'
+        }
+      }
+    })
+    expect(id).to.equal(undefined)
   })
 });

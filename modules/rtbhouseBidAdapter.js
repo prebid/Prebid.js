@@ -1,19 +1,28 @@
-import {deepAccess, mergeDeep, isArray, logError, logInfo} from '../src/utils.js';
-import { getOrigin } from '../libraries/getOrigin/index.js';
+import {deepAccess, deepClone, isArray, logError, logInfo, mergeDeep, isEmpty, isPlainObject, isNumber, isStr} from '../src/utils.js';
+import {getOrigin} from '../libraries/getOrigin/index.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {includes} from '../src/polyfill.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
-import { config } from '../src/config.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {config} from '../src/config.js';
 
 const BIDDER_CODE = 'rtbhouse';
 const REGIONS = ['prebid-eu', 'prebid-us', 'prebid-asia'];
 const ENDPOINT_URL = 'creativecdn.com/bidder/prebid/bids';
 const FLEDGE_ENDPOINT_URL = 'creativecdn.com/bidder/prebidfledge/bids';
+const FLEDGE_SELLER_URL = 'https://fledge-ssp.creativecdn.com';
+const FLEDGE_DECISION_LOGIC_URL = 'https://fledge-ssp.creativecdn.com/component-seller-prebid.js';
+
 const DEFAULT_CURRENCY_ARR = ['USD']; // NOTE - USD is the only supported currency right now; Hardcoded for bids
 const SUPPORTED_MEDIA_TYPES = [BANNER, NATIVE];
 const TTL = 55;
 const GVLID = 16;
+
+const DSA_ATTRIBUTES = [
+  { name: 'dsarequired', 'min': 0, 'max': 3 },
+  { name: 'pubrender', 'min': 0, 'max': 2 },
+  { name: 'datatopub', 'min': 0, 'max': 2 }
+];
 
 // Codes defined by OpenRTB Native Ads 1.1 specification
 export const OPENRTB = {
@@ -51,7 +60,7 @@ export const spec = {
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
     const request = {
-      id: validBidRequests[0].auctionId,
+      id: bidderRequest.bidderRequestId,
       imp: validBidRequests.map(slot => mapImpression(slot, bidderRequest)),
       site: mapSite(validBidRequests, bidderRequest),
       cur: DEFAULT_CURRENCY_ARR,
@@ -92,10 +101,25 @@ export const spec = {
       }
     });
 
+    const dsa = deepAccess(ortb2Params, 'regs.ext.dsa');
+    if (validateDSA(dsa)) {
+      mergeDeep(request, {
+        regs: {
+          ext: {
+            dsa
+          }
+        }
+      });
+    }
+
     let computedEndpointUrl = ENDPOINT_URL;
 
-    const fledgeConfig = config.getConfig('fledgeConfig');
-    if (bidderRequest.fledgeEnabled && fledgeConfig) {
+    if (bidderRequest.fledgeEnabled) {
+      const fledgeConfig = config.getConfig('fledgeConfig') || {
+        seller: FLEDGE_SELLER_URL,
+        decisionLogicUrl: FLEDGE_DECISION_LOGIC_URL,
+        sellerTimeout: 500
+      };
       mergeDeep(request, { ext: { fledge_config: fledgeConfig } });
       computedEndpointUrl = FLEDGE_ENDPOINT_URL;
     }
@@ -126,7 +150,13 @@ export const spec = {
       } else {
         interpretedBid = interpretBannerBid(serverBid);
       }
-      if (serverBid.ext) interpretedBid.ext = serverBid.ext;
+
+      if (serverBid.ext) {
+        interpretedBid.ext = deepClone(serverBid.ext);
+        if (serverBid.ext.dsa) {
+          interpretedBid.meta = Object.assign({}, interpretedBid.meta, { dsa: serverBid.ext.dsa });
+        }
+      }
 
       bids.push(interpretedBid);
     });
@@ -135,6 +165,7 @@ export const spec = {
   interpretResponse: function (serverResponse, originalRequest) {
     let bids;
 
+    const fledgeInterestGroupBuyers = config.getConfig('fledgeConfig.interestGroupBuyers') || [];
     const responseBody = serverResponse.body;
     let fledgeAuctionConfigs = null;
 
@@ -156,7 +187,7 @@ export const spec = {
           {
             seller,
             decisionLogicUrl,
-            interestGroupBuyers: Object.keys(perBuyerSignals),
+            interestGroupBuyers: [...fledgeInterestGroupBuyers, ...Object.keys(perBuyerSignals)],
             perBuyerSignals,
           },
           sellerTimeout
@@ -188,7 +219,7 @@ registerBidder(spec);
 
 /**
  * @param {object} slot Ad Unit Params by Prebid
- * @returns {int} floor by imp type
+ * @returns {number} floor by imp type
  */
 function applyFloor(slot) {
   const floors = [];
@@ -343,7 +374,7 @@ function mapNative(slot) {
 
 /**
  * @param {object} slot Slot config by Prebid
- * @returns {array} Request Assets by OpenRTB Native Ads 1.1 §4.2
+ * @returns {Array} Request Assets by OpenRTB Native Ads 1.1 §4.2
  */
 function mapNativeAssets(slot) {
   const params = slot.nativeParams || deepAccess(slot, 'mediaTypes.native');
@@ -406,7 +437,7 @@ function mapNativeAssets(slot) {
 
 /**
  * @param {object} image Prebid native.image/icon
- * @param {int} type Image or icon code
+ * @param {number} type Image or icon code
  * @returns {object} Request Image by OpenRTB Native Ads 1.1 §4.4
  */
 function mapNativeImage(image, type) {
@@ -510,4 +541,28 @@ function interpretNativeAd(adm) {
     }
   });
   return result;
+}
+
+/**
+ * https://github.com/InteractiveAdvertisingBureau/openrtb/blob/main/extensions/community_extensions/dsa_transparency.md
+ *
+ * @param {object} dsa
+ * @returns {boolean} whether dsa object contains valid attributes values
+ */
+function validateDSA(dsa) {
+  if (isEmpty(dsa) || !isPlainObject(dsa)) return false;
+
+  return DSA_ATTRIBUTES.reduce((prev, attr) => {
+    const dsaEntry = dsa[attr.name];
+    return prev && (
+      !dsa.hasOwnProperty(attr.name) ||
+      (isNumber(dsaEntry) && dsaEntry >= attr.min && dsaEntry <= attr.max)
+    )
+  }, true) &&
+    (!dsa.hasOwnProperty('transparency') ||
+      (isArray(dsa.transparency) && dsa.transparency.every(
+        v => isPlainObject(v) && isStr(v.domain) && v.domain && isArray(v.dsaparams) &&
+          v.dsaparams.every(x => isNumber(x))
+      ))
+    )
 }

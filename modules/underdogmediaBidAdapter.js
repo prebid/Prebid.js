@@ -4,7 +4,6 @@ import {
   getWindowSelf,
   getWindowTop,
   isGptPubadsDefined,
-  isSlotMatchingAdUnitCode,
   logInfo,
   logMessage,
   logWarn,
@@ -12,6 +11,7 @@ import {
 } from '../src/utils.js';
 import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {isSlotMatchingAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 const BIDDER_CODE = 'underdogmedia';
 const UDM_ADAPTER_VERSION = '7.30V';
@@ -71,7 +71,7 @@ export const spec = {
     let data = {
       dt: 10,
       gdpr: {},
-      pbTimeout: config.getConfig('bidderTimeout'),
+      pbTimeout: +config.getConfig('bidderTimeout') || 3001, // KP: convert to number and if NaN we default to 3001. Particular value to let us know that there was a problem in converting pbTimeout
       pbjsVersion: prebidVersion,
       placements: [],
       ref: deepAccess(bidderRequest, 'refererInfo.page') ? bidderRequest.refererInfo.page : undefined,
@@ -185,7 +185,6 @@ export const spec = {
 
       const bidResponse = {
         requestId: bidParam.bidId,
-        bidderCode: spec.code,
         cpm: parseFloat(mid.cpm),
         width: mid.width,
         height: mid.height,

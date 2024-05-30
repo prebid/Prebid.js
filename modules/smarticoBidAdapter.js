@@ -66,6 +66,7 @@ export const spec = {
       method: SMARTICO_CONFIG.method,
       url: SMARTICO_CONFIG.bidRequestUrl,
       bids: validBidRequests,
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       data: {bidParams: bidParams, auctionId: bidderRequest.auctionId}
     }
     return ServerRequestObjects;

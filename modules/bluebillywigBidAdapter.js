@@ -276,9 +276,9 @@ export const spec = {
     });
 
     const request = {
-      id: bidderRequest.auctionId,
-      source: {tid: bidderRequest.auctionId},
-      tmax: BB_CONSTANTS.DEFAULT_TIMEOUT,
+      id: bidderRequest.bidderRequestId,
+      source: {tid: bidderRequest.ortb2?.source?.tid},
+      tmax: Math.min(BB_CONSTANTS.DEFAULT_TIMEOUT, bidderRequest.timeout),
       imp: imps,
       test: DEV_MODE ? 1 : 0,
       ext: {
