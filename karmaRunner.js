@@ -14,12 +14,12 @@ const glob = require('glob');
 process.on('message', function (options) {
   function info(msg) {
     // eslint-disable-next-line no-console
-    console.log('\x1b[46m%s\x1b[0m', msg);
+    console.log('\x1b[46m\x1b[30m%s\x1b[0m', msg);
   }
 
   function error(msg) {
     // eslint-disable-next-line no-console
-    console.log('\x1b[41m%s\x1b[0m', msg);
+    console.log('\x1b[41m\x1b[37m%s\x1b[0m', msg);
   }
 
   function chunkDesc(chunk) {
