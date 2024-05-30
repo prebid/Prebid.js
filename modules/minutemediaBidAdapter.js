@@ -19,7 +19,7 @@ const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'minutemedia';
 const ADAPTER_VERSION = '6.0.0';
 const TTL = 360;
-const CURRENCY = 'USD';
+const DEFAULT_CURRENCY = 'USD';
 const SELLER_ENDPOINT = 'https://hb.minutemedia-prebid.com/';
 const MODES = {
   PRODUCTION: 'hb-mm-multi',
@@ -72,11 +72,11 @@ export const spec = {
         const bidResponse = {
           requestId: adUnit.requestId,
           cpm: adUnit.cpm,
-          currency: adUnit.currency || CURRENCY,
+          currency: adUnit.currency || DEFAULT_CURRENCY,
           width: adUnit.width,
           height: adUnit.height,
           ttl: adUnit.ttl || TTL,
-          creativeId: adUnit.requestId,
+          creativeId: adUnit.creativeId,
           netRevenue: adUnit.netRevenue || true,
           nurl: adUnit.nurl,
           mediaType: adUnit.mediaType,
@@ -146,11 +146,11 @@ function getFloor(bid, mediaType) {
     return 0;
   }
   let floorResult = bid.getFloor({
-    currency: CURRENCY,
+    currency: DEFAULT_CURRENCY,
     mediaType: mediaType,
     size: '*'
   });
-  return floorResult.currency === CURRENCY && floorResult.floor ? floorResult.floor : 0;
+  return floorResult.currency === DEFAULT_CURRENCY && floorResult.floor ? floorResult.floor : 0;
 }
 
 /**
@@ -301,7 +301,7 @@ function generateBidParameters(bid, bidderRequest) {
     loop: getBidIdParameter('bidderRequestsCount', bid),
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
     transactionId: bid.ortb2Imp?.ext?.tid || '',
-    coppa: 0
+    coppa: 0,
   };
 
   const pos = deepAccess(bid, `mediaTypes.${mediaType}.pos`);
@@ -456,6 +456,14 @@ function generateGeneralParams(generalObject, bidderRequest) {
   if (bidderRequest && bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies) {
     generalParams.gdpr = bidderRequest.gdprConsent.gdprApplies;
     generalParams.gdpr_consent = bidderRequest.gdprConsent.consentString;
+  }
+
+  if (bidderRequest.gppConsent) {
+    generalParams.gpp = bidderRequest.gppConsent.gppString;
+    generalParams.gpp_sid = bidderRequest.gppConsent.applicableSections;
+  } else if (bidderRequest.ortb2?.regs?.gpp) {
+    generalParams.gpp = bidderRequest.ortb2.regs.gpp;
+    generalParams.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
   }
 
   if (generalBidParams.ifa) {

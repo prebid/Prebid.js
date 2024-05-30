@@ -94,7 +94,7 @@ export const spec = {
   gvlid: 1100,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  /** We need both params.placementId + a complete configuration (pbsHost + accountId) to continue **/
+  /** We need both params.placementId + a complete configuration (pbsHost + accountId) to continue */
   isBidRequestValid: (bid) => bid.params?.placementId && getBidderConfig([bid]).complete,
 
   /** Trigger impression-pixel */
@@ -199,24 +199,6 @@ export const spec = {
       }
     });
     return syncs;
-  },
-
-  /** If server side, transform bid params if needed */
-  transformBidParams(params, isOrtb, adUnit, bidRequests) {
-    if (!params.placementId) {
-      return;
-    }
-    const bid = bidRequests.flatMap(req => req.adUnitsS2SCopy || []).flatMap((adUnit) => adUnit.bids).find((bid) => bid.params?.placementId === params.placementId);
-    if (!bid) {
-      return;
-    }
-    const cfg = getBidderConfig([bid]);
-    FIELDS.forEach(({ name }) => {
-      if (cfg[name] && !params[name]) {
-        params[name] = cfg[name];
-      }
-    });
-    return params;
   },
 };
 

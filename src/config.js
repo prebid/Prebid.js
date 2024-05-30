@@ -27,15 +27,16 @@ import {
   logWarn,
   mergeDeep
 } from './utils.js';
-import CONSTANTS from './constants.json';
+import {DEBUG_MODE} from './constants.js';
 
-const DEFAULT_DEBUG = getParameterByName(CONSTANTS.DEBUG_MODE).toUpperCase() === 'TRUE';
+const DEFAULT_DEBUG = getParameterByName(DEBUG_MODE).toUpperCase() === 'TRUE';
 const DEFAULT_BIDDER_TIMEOUT = 3000;
 const DEFAULT_ENABLE_SEND_ALL_BIDS = true;
 const DEFAULT_DISABLE_AJAX_TIMEOUT = false;
 const DEFAULT_BID_CACHE = false;
 const DEFAULT_DEVICE_ACCESS = true;
 const DEFAULT_MAX_NESTED_IFRAMES = 10;
+const DEFAULT_MAXBID_VALUE = 5000
 
 const DEFAULT_TIMEOUTBUFFER = 400;
 
@@ -58,13 +59,6 @@ const GRANULARITY_OPTIONS = {
 };
 
 const ALL_TOPICS = '*';
-
-/**
- * @typedef {object} PrebidConfig
- *
- * @property {string} cache.url Set a url if we should use prebid-cache to store video bids before adding
- *   bids to the auction. **NOTE** This must be set if you want to use the dfpAdServerVideo module.
- */
 
 export function newConfig() {
   let listeners = [];
@@ -167,6 +161,9 @@ export function newConfig() {
 
       // default max nested iframes for referer detection
       maxNestedIframes: DEFAULT_MAX_NESTED_IFRAMES,
+
+      // default max bid
+      maxBid: DEFAULT_MAXBID_VALUE
     };
 
     Object.defineProperties(newConfig,
@@ -551,4 +548,8 @@ export function newConfig() {
   };
 }
 
+/**
+ * Set a `cache.url` if we should use prebid-cache to store video bids before adding bids to the auction.
+ * This must be set if you want to use the dfpAdServerVideo module.
+ */
 export const config = newConfig();

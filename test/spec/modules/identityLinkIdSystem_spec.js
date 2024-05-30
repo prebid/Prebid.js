@@ -75,24 +75,6 @@ describe('IdentityLinkId tests', function () {
     expect(submoduleCallback).to.be.undefined;
   });
 
-  it('should call the LiveRamp envelope endpoint with IAB consent string v1', function () {
-    let callBackSpy = sinon.spy();
-    let consentData = {
-      gdprApplies: true,
-      consentString: 'BOkIpDSOkIpDSADABAENCc-AAAApOAFAAMAAsAMIAcAA_g'
-    };
-    let submoduleCallback = identityLinkSubmodule.getId(defaultConfigParams, consentData).callback;
-    submoduleCallback(callBackSpy);
-    let request = server.requests[0];
-    expect(request.url).to.be.eq('https://api.rlcdn.com/api/identity/envelope?pid=14&ct=1&cv=BOkIpDSOkIpDSADABAENCc-AAAApOAFAAMAAsAMIAcAA_g');
-    request.respond(
-      200,
-      responseHeader,
-      JSON.stringify({})
-    );
-    expect(callBackSpy.calledOnce).to.be.true;
-  });
-
   it('should call the LiveRamp envelope endpoint with IAB consent string v2', function () {
     let callBackSpy = sinon.spy();
     let consentData = {

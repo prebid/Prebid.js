@@ -8,6 +8,13 @@
 import * as ajax from '../src/ajax.js';
 import { submodule } from '../src/hook.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
+
 const gvlid = 410;
 const moduleName = 'adtelligent';
 const syncUrl = 'https://idrs.adtelligent.com/get';

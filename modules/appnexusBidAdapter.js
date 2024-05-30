@@ -38,12 +38,17 @@ import {convertCamelToUnderscore, fill} from '../libraries/appnexusUtils/anUtils
 import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const BIDDER_CODE = 'appnexus';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
 const URL_SIMPLE = 'https://ib.adnxs-simple.com/ut/v3/prebid';
 const VIDEO_TARGETING = ['id', 'minduration', 'maxduration',
   'skippable', 'playback_method', 'frameworks', 'context', 'skipoffset'];
-const VIDEO_RTB_TARGETING = ['minduration', 'maxduration', 'skip', 'skipafter', 'playbackmethod', 'api', 'startdelay'];
+const VIDEO_RTB_TARGETING = ['minduration', 'maxduration', 'skip', 'skipafter', 'playbackmethod', 'api', 'startdelay', 'placement', 'plcmt'];
 const USER_PARAMS = ['age', 'externalUid', 'external_uid', 'segments', 'gender', 'dnt', 'language'];
 const APP_DEVICE_PARAMS = ['geo', 'device_id']; // appid is collected separately
 const DEBUG_PARAMS = ['enabled', 'dongle', 'member_id', 'debug_timeout'];
@@ -67,7 +72,12 @@ const VIDEO_MAPPING = {
     'mid_roll': 2,
     'post_roll': 3,
     'outstream': 4,
-    'in-banner': 5
+    'in-banner': 5,
+    'in-feed': 6,
+    'interstitial': 7,
+    'accompanying_content_pre_roll': 8,
+    'accompanying_content_mid_roll': 9,
+    'accompanying_content_post_roll': 10
   }
 };
 const NATIVE_MAPPING = {
@@ -101,6 +111,7 @@ export const spec = {
   aliases: [
     { code: 'appnexusAst', gvlid: 32 },
     { code: 'emxdigital', gvlid: 183 },
+    { code: 'emetriq', gvlid: 213 },
     { code: 'pagescience', gvlid: 32 },
     { code: 'gourmetads', gvlid: 32 },
     { code: 'matomy', gvlid: 32 },
@@ -110,7 +121,7 @@ export const spec = {
     { code: 'beintoo', gvlid: 618 },
     { code: 'projectagora', gvlid: 1032 },
     { code: 'uol', gvlid: 32 },
-    { code: 'adzymic', gvlid: 32 },
+    { code: 'adzymic', gvlid: 723 },
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -346,6 +357,30 @@ export const spec = {
       }
     }
 
+    if (bidderRequest?.ortb2?.regs?.ext?.dsa) {
+      const pubDsaObj = bidderRequest.ortb2.regs.ext.dsa;
+      const dsaObj = {};
+      ['dsarequired', 'pubrender', 'datatopub'].forEach((dsaKey) => {
+        if (isNumber(pubDsaObj[dsaKey])) {
+          dsaObj[dsaKey] = pubDsaObj[dsaKey];
+        }
+      });
+
+      if (isArray(pubDsaObj.transparency) && pubDsaObj.transparency.every((v) => isPlainObject(v))) {
+        const tpData = [];
+        pubDsaObj.transparency.forEach((tpObj) => {
+          if (isStr(tpObj.domain) && tpObj.domain != '' && isArray(tpObj.dsaparams) && tpObj.dsaparams.every((v) => isNumber(v))) {
+            tpData.push(tpObj);
+          }
+        });
+        if (tpData.length > 0) {
+          dsaObj.transparency = tpData;
+        }
+      }
+
+      if (!isEmpty(dsaObj)) payload.dsa = dsaObj;
+    }
+
     if (tags[0].publisher_id) {
       payload.publisher_id = tags[0].publisher_id;
     }
@@ -404,11 +439,7 @@ export const spec = {
 
   getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     function checkGppStatus(gppConsent) {
-      // this is a temporary measure to supress usersync in US-based GPP regions
-      // this logic will be revised when proper signals (akin to purpose1 from TCF2) can be determined for US GPP
-      if (gppConsent && Array.isArray(gppConsent.applicableSections)) {
-        return gppConsent.applicableSections.every(sec => typeof sec === 'number' && sec <= 5);
-      }
+      // user sync suppression for adapters is handled in activity controls and not needed in adapters
       return true;
     }
 
@@ -566,7 +597,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     cpm: rtbBid.cpm,
     creativeId: rtbBid.creative_id,
     dealId: rtbBid.deal_id,
-    currency: 'USD',
+    currency: rtbBid.publisher_currency_codename || 'USD',
     netRevenue: true,
     ttl: 300,
     adUnitCode: bidRequest.adUnitCode,
@@ -583,6 +614,10 @@ function newBid(serverBid, rtbBid, bidderRequest) {
 
   if (rtbBid.advertiser_id) {
     bid.meta = Object.assign({}, bid.meta, { advertiserId: rtbBid.advertiser_id });
+  }
+
+  if (rtbBid.dsa) {
+    bid.meta = Object.assign({}, bid.meta, { dsa: rtbBid.dsa });
   }
 
   // temporary function; may remove at later date if/when adserver fully supports dchain
@@ -739,6 +774,18 @@ function bidToTag(bid) {
   } else {
     tag.code = bid.params.inv_code;
   }
+  // Xandr expects GET variable to be in a following format:
+  // page.html?ast_override_div=divId:creativeId,divId2:creativeId2
+  const overrides = getParameterByName('ast_override_div');
+  if (isStr(overrides) && overrides !== '') {
+    const adUnitOverride = overrides.split(',').find((pair) => pair.startsWith(`${bid.adUnitCode}:`));
+    if (adUnitOverride) {
+      const forceCreativeId = adUnitOverride.split(':')[1];
+      if (forceCreativeId) {
+        tag.force_creative_id = parseInt(forceCreativeId, 10);
+      }
+    }
+  }
   tag.allow_smaller_sizes = bid.params.allow_smaller_sizes || false;
   tag.use_pmt_rule = (typeof bid.params.use_payment_rule === 'boolean') ? bid.params.use_payment_rule
     : (typeof bid.params.use_pmt_rule === 'boolean') ? bid.params.use_pmt_rule : false;
@@ -887,15 +934,15 @@ function bidToTag(bid) {
                 tag['video_frameworks'] = apiTmp;
               }
               break;
-
             case 'startdelay':
+            case 'plcmt':
             case 'placement':
-              const contextKey = 'context';
-              if (typeof tag.video[contextKey] !== 'number') {
+              if (typeof tag.video.context !== 'number') {
+                const plcmt = videoMediaType['plcmt'];
                 const placement = videoMediaType['placement'];
                 const startdelay = videoMediaType['startdelay'];
-                const context = getContextFromPlacement(placement) || getContextFromStartDelay(startdelay);
-                tag.video[contextKey] = VIDEO_MAPPING[contextKey][context];
+                const contextVal = getContextFromPlcmt(plcmt, startdelay) || getContextFromPlacement(placement) || getContextFromStartDelay(startdelay);
+                tag.video.context = VIDEO_MAPPING.context[contextVal];
               }
               break;
           }
@@ -954,8 +1001,12 @@ function getContextFromPlacement(ortbPlacement) {
 
   if (ortbPlacement === 2) {
     return 'in-banner';
-  } else if (ortbPlacement > 2) {
+  } else if (ortbPlacement === 3) {
     return 'outstream';
+  } else if (ortbPlacement === 4) {
+    return 'in-feed';
+  } else if (ortbPlacement === 5) {
+    return 'intersitial';
   }
 }
 
@@ -970,6 +1021,29 @@ function getContextFromStartDelay(ortbStartDelay) {
     return 'mid_roll';
   } else if (ortbStartDelay === -2) {
     return 'post_roll';
+  }
+}
+
+function getContextFromPlcmt(ortbPlcmt, ortbStartDelay) {
+  if (!ortbPlcmt) {
+    return;
+  }
+
+  if (ortbPlcmt === 2) {
+    if (typeof ortbStartDelay === 'undefined') {
+      return;
+    }
+    if (ortbStartDelay === 0) {
+      return 'accompanying_content_pre_roll';
+    } else if (ortbStartDelay === -1) {
+      return 'accompanying_content_mid_roll';
+    } else if (ortbStartDelay === -2) {
+      return 'accompanying_content_post_roll';
+    }
+  } else if (ortbPlcmt === 3) {
+    return 'interstitial';
+  } else if (ortbPlcmt === 4) {
+    return 'outstream';
   }
 }
 

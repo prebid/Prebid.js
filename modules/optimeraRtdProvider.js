@@ -23,6 +23,10 @@ import { logInfo, logError } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 /** @type {ModuleParams} */
 let _moduleParams = {};
 
@@ -30,7 +34,8 @@ let _moduleParams = {};
  * Default Optimera Key Name
  * This can default to hb_deal_optimera for publishers
  * who used the previous Optimera Bidder Adapter.
- * @type {string} */
+ * @type {string}
+ */
 export let optimeraKeyName = 'hb_deal_optimera';
 
 /**
@@ -182,7 +187,11 @@ export function setScoresURL() {
   if (apiVersion === 'v1') {
     newScoresURL = `${baseUrl}api/products/scores?c=${clientID}&h=${optimeraHost}&p=${optimeraPathName}&s=${device}`;
   } else {
-    newScoresURL = `${baseUrl}${clientID}/${optimeraHost}${optimeraPathName}.js`;
+    let encoded = encodeURIComponent(`${optimeraHost}${optimeraPathName}`)
+      .replaceAll('%2F', '/')
+      .replaceAll('%20', '+');
+
+    newScoresURL = `${baseUrl}${clientID}/${encoded}.js`;
   }
 
   if (scoresURL !== newScoresURL) {

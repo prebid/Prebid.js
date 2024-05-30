@@ -140,7 +140,7 @@ describe('lkqdBidAdapter', () => {
     });
 
     it('should not populate unspecified parameters', () => {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, { timeout: 1000 });
 
       const serverRequestObject = requests[0];
       expect(serverRequestObject.data.device.dnt).to.be.a('undefined');

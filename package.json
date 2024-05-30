@@ -1,6 +1,6 @@
 {
   "name": "prebid.js",
-  "version": "8.27.0-pre",
+  "version": "8.52.0-pre",
   "description": "Header Bidding Management Library",
   "main": "src/prebid.js",
   "scripts": {
@@ -33,17 +33,16 @@
   "author": "the prebid.js contributors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=8.9.0"
+    "node": ">=12.0.0"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.16.5",
-    "@wdio/browserstack-service": "~7.16.0",
-    "@wdio/cli": "~7.5.2",
-    "@wdio/concise-reporter": "~7.5.2",
-    "@wdio/local-runner": "~7.5.2",
-    "@wdio/mocha-framework": "~7.5.2",
-    "@wdio/spec-reporter": "~7.19.0",
-    "@wdio/sync": "~7.5.2",
+    "@wdio/browserstack-service": "^8.29.0",
+    "@wdio/cli": "^8.29.0",
+    "@wdio/concise-reporter": "^8.29.0",
+    "@wdio/local-runner": "^8.29.0",
+    "@wdio/mocha-framework": "^8.29.0",
+    "@wdio/spec-reporter": "^8.29.0",
     "ajv": "6.12.3",
     "assert": "^2.0.0",
     "babel-loader": "^8.0.5",
@@ -58,6 +57,7 @@
     "eslint": "^7.27.0",
     "eslint-config-standard": "^10.2.1",
     "eslint-plugin-import": "^2.20.2",
+    "eslint-plugin-jsdoc": "^38.1.6",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prebid": "file:./plugins/eslint",
     "eslint-plugin-promise": "^5.1.0",
@@ -72,6 +72,7 @@
     "gulp-eslint": "^6.0.0",
     "gulp-if": "^3.0.0",
     "gulp-js-escape": "^1.0.1",
+    "gulp-rename": "^2.0.0",
     "gulp-replace": "^1.0.0",
     "gulp-shell": "^0.8.0",
     "gulp-sourcemaps": "^3.0.0",
@@ -132,8 +133,9 @@
     "dset": "3.1.2",
     "express": "^4.15.4",
     "fun-hooks": "^0.9.9",
-    "just-clone": "^1.0.2",
-    "live-connect-js": "^6.3.0"
+    "gulp-wrap": "^0.15.0",
+    "klona": "^2.0.6",
+    "live-connect-js": "^6.7.3"
   },
   "optionalDependencies": {
     "fsevents": "^2.3.2"

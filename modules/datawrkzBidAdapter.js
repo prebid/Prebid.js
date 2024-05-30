@@ -12,8 +12,13 @@ import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { createBid } from '../src/bidfactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import CONSTANTS from '../src/constants.json';
+import { STATUS } from '../src/constants.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const BIDDER_CODE = 'datawrkz';
 const ALIASES = [];
@@ -222,7 +227,6 @@ function buildVideoRequest(bidRequest, bidderRequest) {
     maxbitrate: deepAccess(bidRequest, 'mediaTypes.video.maxbitrate'),
     delivery: deepAccess(bidRequest, 'mediaTypes.video.delivery'),
     linearity: deepAccess(bidRequest, 'mediaTypes.video.linearity'),
-    placement: deepAccess(bidRequest, 'mediaTypes.video.placement'),
     skip: deepAccess(bidRequest, 'mediaTypes.video.skip'),
     skipafter: deepAccess(bidRequest, 'mediaTypes.video.skipafter')
   };
@@ -411,7 +415,7 @@ function buildBannerResponse(bidRequest, bidResponse) {
     if (bidRequest) {
       let bidResponse = createBid(1);
       placementCode = bidRequest.placementCode;
-      bidRequest.status = CONSTANTS.STATUS.GOOD;
+      bidRequest.status = STATUS.GOOD;
       responseCPM = parseFloat(bidderBid.price);
       if (responseCPM === 0 || isNaN(responseCPM)) {
         let bid = createBid(2);
@@ -452,7 +456,7 @@ function buildNativeResponse(bidRequest, response) {
     if (bidRequest) {
       let bidResponse = createBid(1);
       placementCode = bidRequest.placementCode;
-      bidRequest.status = CONSTANTS.STATUS.GOOD;
+      bidRequest.status = STATUS.GOOD;
       responseCPM = parseFloat(bidderBid.price);
       if (responseCPM === 0 || isNaN(responseCPM)) {
         let bid = createBid(2);
@@ -501,7 +505,7 @@ function buildVideoResponse(bidRequest, response) {
     if (bidRequest) {
       let bidResponse = createBid(1);
       placementCode = bidRequest.placementCode;
-      bidRequest.status = CONSTANTS.STATUS.GOOD;
+      bidRequest.status = STATUS.GOOD;
       responseCPM = parseFloat(bidderBid.price);
       if (responseCPM === 0 || isNaN(responseCPM)) {
         let bid = createBid(2);

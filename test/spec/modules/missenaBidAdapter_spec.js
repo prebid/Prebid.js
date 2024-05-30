@@ -2,6 +2,10 @@ import { expect } from 'chai';
 import { spec, storage } from 'modules/missenaBidAdapter.js';
 import { BANNER } from '../../../src/mediaTypes.js';
 
+const REFERRER = 'https://referer';
+const REFERRER2 = 'https://referer2';
+const COOKIE_DEPRECATION_LABEL = 'test';
+
 describe('Missena Adapter', function () {
   $$PREBID_GLOBAL$$.bidderSettings = {
     missena: {
@@ -15,6 +19,11 @@ describe('Missena Adapter', function () {
     bidId: bidId,
     sizes: [[1, 1]],
     mediaTypes: { banner: { sizes: [[1, 1]] } },
+    ortb2: {
+      device: {
+        ext: { cdep: COOKIE_DEPRECATION_LABEL },
+      },
+    },
     params: {
       apiKey: 'PA-34745704',
       placement: 'sticky',
@@ -50,7 +59,7 @@ describe('Missena Adapter', function () {
       gdprApplies: true,
     },
     refererInfo: {
-      topmostLocation: 'https://referer',
+      topmostLocation: REFERRER,
       canonicalUrl: 'https://canonical',
     },
   };
@@ -112,7 +121,7 @@ describe('Missena Adapter', function () {
     });
 
     it('should send referer information to the request', function () {
-      expect(payload.referer).to.equal('https://referer');
+      expect(payload.referer).to.equal(REFERRER);
       expect(payload.referer_canonical).to.equal('https://canonical');
     });
 
@@ -127,6 +136,10 @@ describe('Missena Adapter', function () {
     it('should not send floor data if not available', function () {
       expect(payloadNoFloor.floor).to.equal(undefined);
       expect(payloadNoFloor.floor_currency).to.equal(undefined);
+    });
+    it('should send the idempotency key', function () {
+      expect(window.msna_ik).to.not.equal(undefined);
+      expect(payload.ik).to.equal(window.msna_ik);
     });
 
     getDataFromLocalStorageStub.restore();
@@ -145,6 +158,48 @@ describe('Missena Adapter', function () {
 
     it('should not participate if capped', function () {
       expect(cappedRequests.length).to.equal(0);
+    });
+
+    const localStorageDataSamePage = {
+      [`missena.missena.capper.remove-bubble.${bid.params.apiKey}`]:
+        JSON.stringify({
+          expiry: new Date().getTime() + 600_000, // 10 min into the future
+          referer: REFERRER,
+        }),
+    };
+
+    getDataFromLocalStorageStub.callsFake(
+      (key) => localStorageDataSamePage[key],
+    );
+    const cappedRequestsSamePage = spec.buildRequests(bids, bidderRequest);
+
+    it('should not participate if capped on same page', function () {
+      expect(cappedRequestsSamePage.length).to.equal(0);
+    });
+
+    const localStorageDataOtherPage = {
+      [`missena.missena.capper.remove-bubble.${bid.params.apiKey}`]:
+        JSON.stringify({
+          expiry: new Date().getTime() + 600_000, // 10 min into the future
+          referer: REFERRER2,
+        }),
+    };
+
+    getDataFromLocalStorageStub.callsFake(
+      (key) => localStorageDataOtherPage[key],
+    );
+    const cappedRequestsOtherPage = spec.buildRequests(bids, bidderRequest);
+
+    it('should participate if capped on a different page', function () {
+      expect(cappedRequestsOtherPage.length).to.equal(2);
+    });
+
+    it('should send the prebid version', function () {
+      expect(payload.version).to.equal('$prebid.version$');
+    });
+
+    it('should send cookie deprecation', function () {
+      expect(payload.cdep).to.equal(COOKIE_DEPRECATION_LABEL);
     });
   });
 

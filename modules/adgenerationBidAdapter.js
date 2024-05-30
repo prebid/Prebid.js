@@ -6,6 +6,14 @@ import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 import {escapeUnsafeChars} from '../libraries/htmlEscape/htmlEscape.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
+
 const ADG_BIDDER_CODE = 'adgeneration';
 
 export const spec = {
@@ -30,7 +38,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-    const ADGENE_PREBID_VERSION = '1.6.2';
+    const ADGENE_PREBID_VERSION = '1.6.3';
     let serverRequests = [];
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const validReq = validBidRequests[i];
@@ -72,12 +80,12 @@ export const spec = {
       }
 
       data = tryAppendQueryString(data, 'tp', bidderRequest.refererInfo.page);
-      if (isIos()) {
-        const hyperId = getHyperId(validReq);
-        if (hyperId != null) {
-          data = tryAppendQueryString(data, 'hyper_id', hyperId);
-        }
+
+      const hyperId = getHyperId(validReq);
+      if (hyperId != null) {
+        data = tryAppendQueryString(data, 'hyper_id', hyperId);
       }
+
       // remove the trailing "&"
       if (data.lastIndexOf('&') === data.length - 1) {
         data = data.substring(0, data.length - 1);
@@ -327,10 +335,6 @@ function getHyperId(validReq) {
     return validReq.userId.novatiq.snowflake.id;
   }
   return null;
-}
-
-function isIos() {
-  return (/(ios|ipod|ipad|iphone)/i).test(window.navigator.userAgent);
 }
 
 registerBidder(spec);
