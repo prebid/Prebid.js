@@ -1,9 +1,15 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { isFn, isPlainObject } from '../src/utils.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getGlobal } from '../src/prebidGlobal.js';
 
-const storageManager = getStorageManager();
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+const storageManager = getStorageManager({ bidderCode: 'orbidder' });
 
 /**
  * Determines whether or not the given bid response is valid.
@@ -38,6 +44,7 @@ function isBidResponseValid(bidResponse) {
 
 export const spec = {
   code: 'orbidder',
+  gvlid: 559,
   hostname: 'https://orbidder.otto.de',
   supportedMediaTypes: [BANNER, NATIVE],
 
@@ -66,7 +73,7 @@ export const spec = {
     return !!(bid.sizes && bid.bidId && bid.params &&
       (bid.params.accountId && (typeof bid.params.accountId === 'string')) &&
       (bid.params.placementId && (typeof bid.params.placementId === 'string')) &&
-      ((typeof bid.params.profile === 'undefined') || (typeof bid.params.profile === 'object')));
+      ((typeof bid.params.keyValues === 'undefined') || (typeof bid.params.keyValues === 'object')));
   },
 
   /**
@@ -77,11 +84,14 @@ export const spec = {
    * @return The requests for the orbidder /bid endpoint, i.e. the server.
    */
   buildRequests(validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const hostname = this.getHostname();
     return validBidRequests.map((bidRequest) => {
       let referer = '';
       if (bidderRequest && bidderRequest.refererInfo) {
-        referer = bidderRequest.refererInfo.referer || '';
+        referer = bidderRequest.refererInfo.page || '';
       }
 
       bidRequest.params.bidfloor = getBidFloor(bidRequest);
@@ -91,16 +101,9 @@ export const spec = {
         method: 'POST',
         options: { withCredentials: true },
         data: {
-          v: $$PREBID_GLOBAL$$.version,
+          v: getGlobal().version,
           pageUrl: referer,
-          bidId: bidRequest.bidId,
-          auctionId: bidRequest.auctionId,
-          transactionId: bidRequest.transactionId,
-          adUnitCode: bidRequest.adUnitCode,
-          bidRequestCount: bidRequest.bidRequestCount,
-          params: bidRequest.params,
-          sizes: bidRequest.sizes,
-          mediaTypes: bidRequest.mediaTypes
+          ...bidRequest // get all data provided by bid request
         }
       };
 
@@ -145,7 +148,7 @@ export const spec = {
  * @returns {float||undefined}
  */
 function getBidFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
+  if (!isFn(bid.getFloor)) {
     return bid.params.bidfloor;
   }
 
@@ -154,7 +157,7 @@ function getBidFloor(bid) {
     mediaType: '*',
     size: '*'
   });
-  if (utils.isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'EUR') {
+  if (isPlainObject(floor) && !isNaN(floor.floor) && floor.currency === 'EUR') {
     return floor.floor;
   }
   return undefined;

@@ -1,6 +1,6 @@
+import { logInfo, logError, isNumber, isStr, isEmpty } from '../src/utils.js';
 import { registerVideoSupport } from '../src/adServerManager.js';
 import { targeting } from '../src/targeting.js';
-import * as utils from '../src/utils.js';
 import { config } from '../src/config.js';
 import { ajaxBuilder } from '../src/ajax.js';
 import { getPriceBucketString } from '../src/cpmBucketManager.js';
@@ -49,12 +49,12 @@ function addLogLabel(args) {
   return args;
 }
 
-function logInfo() {
-  utils.logInfo(...addLogLabel(arguments));
+function _logInfo() {
+  logInfo(...addLogLabel(arguments));
 }
 
-function logError() {
-  utils.logError(...addLogLabel(arguments));
+function _logError() {
+  logError(...addLogLabel(arguments));
 }
 
 function sendRequest ({ host = SERVER_HOST, protocol = SERVER_PROTOCOL, method = 'GET', path, payload, callbacks, timeout }) {
@@ -113,7 +113,7 @@ function setDefaultKCpmToBid(bid, winnerBid, priceGranularity) {
 }
 
 function addKCpmToBid(kCpm, bid, winnerBid, priceGranularity) {
-  if (utils.isNumber(kCpm)) {
+  if (isNumber(kCpm)) {
     bid.kCpm = kCpm;
     const priceStringsObj = getPriceBucketString(
       kCpm,
@@ -134,7 +134,7 @@ function addKCpmToBid(kCpm, bid, winnerBid, priceGranularity) {
 }
 
 function addKonduitCacheKeyToBid(cacheKey, bid, winnerBid) {
-  if (utils.isStr(cacheKey)) {
+  if (isStr(cacheKey)) {
     bid.konduitCacheKey = cacheKey;
 
     if (config.getConfig(SEND_ALL_BIDS_CONFIG)) {
@@ -163,7 +163,7 @@ export function processBids(options = {}) {
   options = options || {};
 
   if (!konduitId) {
-    logError(errorMessages.NO_KONDUIT_ID);
+    _logError(errorMessages.NO_KONDUIT_ID);
 
     if (options.callback) {
       options.callback(new Error(errorMessages.NO_KONDUIT_ID), []);
@@ -184,7 +184,7 @@ export function processBids(options = {}) {
   }
 
   if (!bids.length) {
-    logError(errorMessages.NO_BIDS);
+    _logError(errorMessages.NO_BIDS);
 
     if (options.callback) {
       options.callback(new Error(errorMessages.NO_BIDS), []);
@@ -216,11 +216,11 @@ export function processBids(options = {}) {
     callbacks: {
       success: (data) => {
         let error = null;
-        logInfo('Bids processed successfully ', data);
+        _logInfo('Bids processed successfully ', data);
         try {
           const { kCpmData, cacheData } = JSON.parse(data);
 
-          if (utils.isEmpty(cacheData)) {
+          if (isEmpty(cacheData)) {
             throw new Error(errorMessages.CACHE_FAILURE);
           }
 
@@ -234,7 +234,7 @@ export function processBids(options = {}) {
           })
         } catch (err) {
           error = err;
-          logError('Error parsing JSON response for bidsProcessor data: ', err)
+          _logError('Error parsing JSON response for bidsProcessor data: ', err)
         }
 
         if (options.callback) {
@@ -242,9 +242,9 @@ export function processBids(options = {}) {
         }
       },
       error: (error) => {
-        logError('Bids were not processed successfully ', error);
+        _logError('Bids were not processed successfully ', error);
         if (options.callback) {
-          options.callback(utils.isStr(error) ? new Error(error) : error, bids);
+          options.callback(isStr(error) ? new Error(error) : error, bids);
         }
       }
     }

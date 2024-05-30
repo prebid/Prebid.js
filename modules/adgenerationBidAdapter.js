@@ -1,7 +1,18 @@
-import * as utils from '../src/utils.js';
+import {deepAccess, getBidIdParameter} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
+import {escapeUnsafeChars} from '../libraries/htmlEscape/htmlEscape.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
 
 const ADG_BIDDER_CODE = 'adgeneration';
 
@@ -20,36 +31,61 @@ export const spec = {
   },
   /**
    * Make a server request from the list of BidRequests.
-   *
-   * @param {validBidRequests[]} - an array of bids
+   * @param validBidRequests
+   * @param bidderRequest
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    const ADGENE_PREBID_VERSION = '1.1.0';
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+    const ADGENE_PREBID_VERSION = '1.6.3';
     let serverRequests = [];
     for (let i = 0, len = validBidRequests.length; i < len; i++) {
       const validReq = validBidRequests[i];
       const DEBUG_URL = 'https://api-test.scaleout.jp/adsv/v1';
       const URL = 'https://d.socdm.com/adsv/v1';
       const url = validReq.params.debug ? DEBUG_URL : URL;
+      const criteoId = getCriteoId(validReq);
+      const id5id = getId5Id(validReq);
+      const id5LinkType = getId5LinkType(validReq);
+      const imuid = deepAccess(validReq, 'userId.imuid');
+      const gpid = deepAccess(validReq, 'ortb2Imp.ext.gpid');
+      const sua = deepAccess(validReq, 'ortb2.device.sua');
+      const uid2 = deepAccess(validReq, 'userId.uid2.id');
       let data = ``;
-      data = utils.tryAppendQueryString(data, 'posall', 'SSPLOC');
-      const id = utils.getBidIdParameter('id', validReq.params);
-      data = utils.tryAppendQueryString(data, 'id', id);
-      data = utils.tryAppendQueryString(data, 'sdktype', '0');
-      data = utils.tryAppendQueryString(data, 'hb', 'true');
-      data = utils.tryAppendQueryString(data, 't', 'json3');
-      data = utils.tryAppendQueryString(data, 'transactionid', validReq.transactionId);
-      data = utils.tryAppendQueryString(data, 'sizes', getSizes(validReq));
-      data = utils.tryAppendQueryString(data, 'currency', getCurrencyType());
-      data = utils.tryAppendQueryString(data, 'pbver', '$prebid.version$');
-      data = utils.tryAppendQueryString(data, 'sdkname', 'prebidjs');
-      data = utils.tryAppendQueryString(data, 'adapterver', ADGENE_PREBID_VERSION);
+      data = tryAppendQueryString(data, 'posall', 'SSPLOC');
+      const id = getBidIdParameter('id', validReq.params);
+      data = tryAppendQueryString(data, 'id', id);
+      data = tryAppendQueryString(data, 'sdktype', '0');
+      data = tryAppendQueryString(data, 'hb', 'true');
+      data = tryAppendQueryString(data, 't', 'json3');
+      data = tryAppendQueryString(data, 'transactionid', validReq.ortb2Imp?.ext?.tid);
+      data = tryAppendQueryString(data, 'sizes', getSizes(validReq));
+      data = tryAppendQueryString(data, 'currency', getCurrencyType());
+      data = tryAppendQueryString(data, 'pbver', '$prebid.version$');
+      data = tryAppendQueryString(data, 'sdkname', 'prebidjs');
+      data = tryAppendQueryString(data, 'adapterver', ADGENE_PREBID_VERSION);
+      data = tryAppendQueryString(data, 'adgext_criteo_id', criteoId);
+      data = tryAppendQueryString(data, 'adgext_id5_id', id5id);
+      data = tryAppendQueryString(data, 'adgext_id5_id_link_type', id5LinkType);
+      data = tryAppendQueryString(data, 'adgext_imuid', imuid);
+      data = tryAppendQueryString(data, 'adgext_uid2', uid2);
+      data = tryAppendQueryString(data, 'gpid', gpid);
+      data = tryAppendQueryString(data, 'uach', sua ? JSON.stringify(sua) : null);
+      data = tryAppendQueryString(data, 'schain', validReq.schain ? JSON.stringify(validReq.schain) : null);
+
       // native以外にvideo等の対応が入った場合は要修正
       if (!validReq.mediaTypes || !validReq.mediaTypes.native) {
-        data = utils.tryAppendQueryString(data, 'imark', '1');
+        data = tryAppendQueryString(data, 'imark', '1');
       }
-      data = utils.tryAppendQueryString(data, 'tp', bidderRequest.refererInfo.referer);
+
+      data = tryAppendQueryString(data, 'tp', bidderRequest.refererInfo.page);
+
+      const hyperId = getHyperId(validReq);
+      if (hyperId != null) {
+        data = tryAppendQueryString(data, 'hyper_id', hyperId);
+      }
+
       // remove the trailing "&"
       if (data.lastIndexOf('&') === data.length - 1) {
         data = data.substring(0, data.length - 1);
@@ -118,11 +154,23 @@ export const spec = {
 function createAd(body, bidRequest) {
   let ad = body.ad;
   if (body.vastxml && body.vastxml.length > 0) {
-    ad = `<body><div id="apvad-${bidRequest.bidId}"></div>${createAPVTag()}${insertVASTMethod(bidRequest.bidId, body.vastxml)}</body>`;
+    if (isUpperBillboard(body)) {
+      const marginTop = bidRequest.params.marginTop ? bidRequest.params.marginTop : '0';
+      ad = `<body>${createADGBrowserMTag()}${insertVASTMethodForADGBrowserM(body.vastxml, marginTop)}</body>`;
+    } else {
+      ad = `<body><div id="apvad-${bidRequest.bidId}"></div>${createAPVTag()}${insertVASTMethodForAPV(bidRequest.bidId, body.vastxml)}</body>`;
+    }
   }
   ad = appendChildToBody(ad, body.beacon);
   if (removeWrapper(ad)) return removeWrapper(ad);
   return ad;
+}
+
+function isUpperBillboard(body) {
+  if (body.location_params && body.location_params.option && body.location_params.option.ad_type) {
+    return body.location_params.option.ad_type === 'upper_billboard';
+  }
+  return false;
 }
 
 function isNative(body) {
@@ -171,7 +219,7 @@ function createNativeAd(body) {
     native.clickTrackers = body.native_ad.link.clicktrackers || [];
     native.impressionTrackers = body.native_ad.imptrackers || [];
     if (body.beaconurl && body.beaconurl != '') {
-      native.impressionTrackers.push(body.beaconurl)
+      native.impressionTrackers.push(body.beaconurl);
     }
   }
   return native;
@@ -181,23 +229,45 @@ function appendChildToBody(ad, data) {
   return ad.replace(/<\/\s?body>/, `${data}</body>`);
 }
 
+/**
+ * create APVTag
+ * @return {string}
+ */
 function createAPVTag() {
   const APVURL = 'https://cdn.apvdr.com/js/VideoAd.min.js';
-  let apvScript = document.createElement('script');
-  apvScript.type = 'text/javascript';
-  apvScript.id = 'apv';
-  apvScript.src = APVURL;
-  return apvScript.outerHTML;
+  return `<script type="text/javascript" id="apv" src="${APVURL}"></script>`
 }
 
-function insertVASTMethod(targetId, vastXml) {
+/**
+ * create ADGBrowserMTag
+ * @return {string}
+ */
+function createADGBrowserMTag() {
+  const ADGBrowserMURL = 'https://i.socdm.com/sdk/js/adg-browser-m.js';
+  return `<script type="text/javascript" src="${ADGBrowserMURL}"></script>`;
+}
+
+/**
+ * create APVTag & insertVast
+ * @param targetId
+ * @param vastXml
+ * @return {string}
+ */
+function insertVASTMethodForAPV(targetId, vastXml) {
   let apvVideoAdParam = {
     s: targetId
   };
-  let script = document.createElement(`script`);
-  script.type = 'text/javascript';
-  script.innerHTML = `(function(){ new APV.VideoAd(${JSON.stringify(apvVideoAdParam)}).load('${vastXml.replace(/\r?\n/g, '')}'); })();`;
-  return script.outerHTML;
+  return `<script type="text/javascript">(function(){ new APV.VideoAd(${escapeUnsafeChars(JSON.stringify(apvVideoAdParam))}).load('${vastXml.replace(/\r?\n/g, '')}'); })();</script>`
+}
+
+/**
+ * create ADGBrowserMTag & insertVast
+ * @param vastXml
+ * @param marginTop
+ * @return {string}
+ */
+function insertVASTMethodForADGBrowserM(vastXml, marginTop) {
+  return `<script type="text/javascript">window.ADGBrowserM.init({vastXml: '${vastXml.replace(/\r?\n/g, '')}', marginTop: '${marginTop}'});</script>`
 }
 
 /**
@@ -237,6 +307,34 @@ function getSizes(validReq) {
 function getCurrencyType() {
   if (config.getConfig('currency.adServerCurrency') && config.getConfig('currency.adServerCurrency').toUpperCase() === 'USD') return 'USD';
   return 'JPY';
+}
+
+/**
+ *
+ * @param validReq request
+ * @return {null|string}
+ */
+function getCriteoId(validReq) {
+  return (validReq.userId && validReq.userId.criteoId) ? validReq.userId.criteoId : null
+}
+
+function getId5Id(validReq) {
+  return validId5(validReq) ? validReq.userId.id5id.uid : null
+}
+
+function getId5LinkType(validReq) {
+  return validId5(validReq) ? validReq.userId.id5id.ext.linkType : null
+}
+
+function validId5(validReq) {
+  return validReq.userId && validReq.userId.id5id && validReq.userId.id5id.uid && validReq.userId.id5id.ext.linkType
+}
+
+function getHyperId(validReq) {
+  if (validReq.userId && validReq.userId.novatiq && validReq.userId.novatiq.snowflake.syncResponse === 1) {
+    return validReq.userId.novatiq.snowflake.id;
+  }
+  return null;
 }
 
 registerBidder(spec);

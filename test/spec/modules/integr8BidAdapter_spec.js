@@ -72,7 +72,7 @@ describe('integr8AdapterTest', () => {
     });
 
     it('bidRequest url', () => {
-      const endpointUrl = 'https://integr8.central.gjirafa.tech/bid';
+      const endpointUrl = 'https://central.sea.integr8.digital/bid';
       const requests = spec.buildRequests(bidRequests);
       requests.forEach(function (requestItem) {
         expect(requestItem.url).to.match(new RegExp(`${endpointUrl}`));
@@ -113,7 +113,7 @@ describe('integr8AdapterTest', () => {
   describe('interpretResponse', () => {
     const bidRequest = {
       'method': 'POST',
-      'url': 'https://integr8.central.gjirafa.tech/bid',
+      'url': 'https://central.sea.integr8.digital/bid',
       'data': {
         'sizes': '728x90',
         'adUnitId': 'hb-leaderboard',

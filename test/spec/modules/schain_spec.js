@@ -469,6 +469,15 @@ describe('#makeBidRequestsHook', function() {
     makeBidRequestsHook(testCallback, testBidderRequests);
   });
 
+  it('should not share the same schain object between different bid requests', (done) => {
+    config.setBidderConfig(goodStrictBidderConfig);
+    makeBidRequestsHook((requests) => {
+      requests[0].bids[0].schain.field = 'value';
+      expect(requests[1].bids[0].schain.field).to.not.exist;
+      done();
+    }, deepClone(bidderRequests))
+  });
+
   it('should reject bad strict config but allow a bad relaxed config for bidders trying to override it', function () {
     function testCallback(bidderRequests) {
       expect(bidderRequests[0].bids[0].schain).to.exist;

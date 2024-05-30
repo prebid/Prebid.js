@@ -99,3 +99,7 @@ Dailyhunt bid adapter supports Banner, Native and Video.
         }
     ];
 ```
+
+## latest commit has all the required support for latest version of prebid above 6.x
+## Dailyhunt adapter was there till 4.x and then removed in version 5.x of prebid.
+## this doc has been also submitted to https://github.com/prebid/prebid.github.io

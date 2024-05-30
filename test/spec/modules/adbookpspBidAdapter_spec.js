@@ -504,9 +504,11 @@ describe('adbookpsp bid adapter', () => {
           ad: '<div>ad</div>',
           adId: '5',
           adserverTargeting: {
+            hb_ad_ord_adbookpsp: '0_0', // the value to the left of the underscore represents the index of the ad id and the number to the right represents the order index
             hb_adid_c_adbookpsp: '5',
             hb_deal_adbookpsp: 'werwetwerw',
             hb_liid_adbookpsp: '2342345',
+            hb_ordid_adbookpsp: '567843',
           },
           referrer: 'http://prebid-test-page.io:8080/banner.html',
           lineItemId: '2342345',
@@ -516,9 +518,11 @@ describe('adbookpsp bid adapter', () => {
           adId: '10',
           adUnitCode: 'div-gpt-ad-837465923534-0',
           adserverTargeting: {
+            hb_ad_ord_adbookpsp: '0_0',
             hb_adid_c_adbookpsp: '10',
             hb_deal_adbookpsp: 'dsfxcxcvxc',
             hb_liid_adbookpsp: '2121221',
+            hb_ordid_adbookpsp: '5678234',
           },
           bidId: 'bid4321',
           bidderRequestId: '999ccceeee11',
@@ -556,14 +560,18 @@ describe('adbookpsp bid adapter', () => {
 
       expect(bids).to.have.length(2);
       expect(bids[0].adserverTargeting).to.deep.equal({
+        hb_ad_ord_adbookpsp: '0_0',
+        hb_adid_c_adbookpsp: '5',
         hb_deal_adbookpsp: 'werwetwerw',
         hb_liid_adbookpsp: '2342345',
-        hb_adid_c_adbookpsp: '5',
+        hb_ordid_adbookpsp: '567843',
       });
       expect(bids[1].adserverTargeting).to.deep.equal({
+        hb_ad_ord_adbookpsp: '0_0',
+        hb_adid_c_adbookpsp: '10',
         hb_deal_adbookpsp: 'dsfxcxcvxc',
         hb_liid_adbookpsp: '2121221',
-        hb_adid_c_adbookpsp: '10',
+        hb_ordid_adbookpsp: '5678234',
       });
     });
 
@@ -580,9 +588,11 @@ describe('adbookpsp bid adapter', () => {
       expect(bids).to.have.length(2);
       for (const bid of bids) {
         expect(bid.adserverTargeting).to.deep.equal({
+          hb_ad_ord_adbookpsp: '0_0,1_0',
+          hb_adid_c_adbookpsp: '5,10',
           hb_deal_adbookpsp: 'werwetwerw,dsfxcxcvxc',
           hb_liid_adbookpsp: '2342345,2121221',
-          hb_adid_c_adbookpsp: '5,10',
+          hb_ordid_adbookpsp: '567843,5678234',
         });
       }
     });
@@ -670,9 +680,11 @@ describe('adbookpsp bid adapter', () => {
       );
 
       expect(bids[0].adserverTargeting).to.deep.equal({
+        hb_ad_ord_adbookpsp: '0_0',
         hb_adid_c_adbookpsp: '10',
         hb_deal_adbookpsp: 'dsfxcxcvxc',
         hb_liid_adbookpsp: '2121221',
+        hb_ordid_adbookpsp: '5678234',
       });
     });
 
@@ -939,13 +951,20 @@ const bidderRequest = {
   bidderRequestId: '999ccceeee11',
   timeout: 200,
   refererInfo: {
-    referer: 'http://example-domain.com/foo',
+    page: 'http://mock-page.com',
+    domain: 'mock-page.com',
+    ref: 'http://example-domain.com/foo',
   },
   gdprConsent: {
     gdprApplies: 1,
     consentString: 'gdprConsentString',
   },
   uspConsent: 'uspConsentString',
+  ortb2: {
+    source: {
+      tid: 'aaccee333311'
+    }
+  }
 };
 
 const bannerBid = {
@@ -987,8 +1006,8 @@ const bannerExchangeRequest = {
     },
   },
   site: {
-    domain: location.hostname,
-    page: location.href,
+    domain: 'mock-page.com',
+    page: 'http://mock-page.com',
     ref: 'http://example-domain.com/foo',
   },
   source: {
@@ -1077,8 +1096,8 @@ const videoExchangeRequest = {
     },
   },
   site: {
-    domain: location.hostname,
-    page: location.href,
+    domain: 'mock-page.com',
+    page: 'http://mock-page.com',
     ref: 'http://example-domain.com/foo',
   },
   source: {
@@ -1159,8 +1178,8 @@ const mixedExchangeRequest = {
     },
   },
   site: {
-    domain: location.hostname,
-    page: location.href,
+    domain: 'mock-page.com',
+    page: 'http://mock-page.com',
     ref: 'http://example-domain.com/foo',
   },
   source: {
@@ -1279,6 +1298,7 @@ const exchangeResponse = {
           nurl: 'http://win.example.url',
           ext: {
             liid: '2342345',
+            ordid: '567843',
           },
           cat: ['IAB2-1', 'IAB2-2', 'IAB2-3'],
           adomain: ['advertiser.com'],
@@ -1301,6 +1321,7 @@ const exchangeResponse = {
           nurl: 'http://win.example.url',
           ext: {
             liid: '2121221',
+            ordid: '5678234',
           },
           cat: ['IAB2-3'],
           adomain: ['advertiser.com', 'campaign.advertiser.com'],

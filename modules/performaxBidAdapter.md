@@ -19,18 +19,18 @@ Performax bid adapter supports Banner.
     var adUnits = [
         {
             code: 'performax-div',
-            sizes: [[300, 300]],
+            mediaTypes: {
+                banner: {sizes: [[300, 300]]},
+            },
             bids: [
                 {
                     bidder: "performax",
                     params: {
-                        slotId: 28   // required
+                        tagid: "sample"   // required
                     }
                 }
             ]
-        }
+        },
     ];
 ```
 
-Where:
-* slotId - id of slot in PX system

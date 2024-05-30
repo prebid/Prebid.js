@@ -1,6 +1,10 @@
+import {getBidIdParameter, isFn, isInteger} from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { isInteger } from '../src/utils.js';
-import * as utils from '../src/utils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const BIDDER_CODE = 'getintent';
 const IS_NET_REVENUE = true;
@@ -39,7 +43,7 @@ export const spec = {
    *
    * @param {BidRequest} bid The bid to validate.
    * @return {boolean} True if this is a valid bid, and false otherwise.
-   * */
+   */
   isBidRequestValid: function(bid) {
     return !!(bid && bid.params && bid.params.pid && bid.params.tid);
   },
@@ -98,7 +102,7 @@ export const spec = {
     return bids;
   }
 
-}
+};
 
 function buildUrl(bid) {
   return 'https://' + BID_HOST + (bid.is_video ? BID_VIDEO_PATH : BID_BANNER_PATH);
@@ -107,9 +111,9 @@ function buildUrl(bid) {
 /**
  * Builds GI bid request from BidRequest.
  *
- * @param {BidRequest} bidRequest.
- * @return {object} GI bid request.
- * */
+ * @param {BidRequest} bidRequest
+ * @return {object} GI bid request
+ */
 function buildGiBidRequest(bidRequest) {
   let giBidRequest = {
     bid_id: bidRequest.bidId,
@@ -124,7 +128,7 @@ function buildGiBidRequest(bidRequest) {
     giBidRequest.size = produceSize(bidRequest.sizes);
   }
 
-  const currency = utils.getBidIdParameter(CURRENCY_PARAM, bidRequest.params);
+  const currency = getBidIdParameter(CURRENCY_PARAM, bidRequest.params);
   const floorInfo = getBidFloor(bidRequest, currency);
   if (floorInfo.floor) {
     giBidRequest[FLOOR_PARAM] = floorInfo.floor;
@@ -143,7 +147,7 @@ function buildGiBidRequest(bidRequest) {
 function getBidFloor(bidRequest, currency) {
   let floorInfo = {};
 
-  if (utils.isFn(bidRequest.getFloor)) {
+  if (isFn(bidRequest.getFloor)) {
     floorInfo = bidRequest.getFloor({
       currency: currency || DEFAULT_CURRENCY,
       mediaType: bidRequest.mediaType,
@@ -192,7 +196,7 @@ function addOptional(params, request, props) {
 /**
  * @param {String} s The string representing a size (e.g. "300x250").
  * @return {Number[]} An array with two elements: [width, height] (e.g.: [300, 250]).
- * */
+ */
 function parseSize(s) {
   return s.split('x').map(Number);
 }
@@ -201,7 +205,7 @@ function parseSize(s) {
  * @param {Array} sizes An array of sizes/numbers to be joined into single string.
  *                      May be an array (e.g. [300, 250]) or array of arrays (e.g. [[300, 250], [640, 480]].
  * @return {String} The string with sizes, e.g. array of sizes [[50, 50], [80, 80]] becomes "50x50,80x80" string.
- * */
+ */
 function produceSize (sizes) {
   function sizeToStr(s) {
     if (Array.isArray(s) && s.length === 2 && isInteger(s[0]) && isInteger(s[1])) {

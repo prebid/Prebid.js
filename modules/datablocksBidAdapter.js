@@ -1,10 +1,13 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import * as utils from '../src/utils.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
-import { getStorageManager } from '../src/storageManager.js';
-import { ajax } from '../src/ajax.js';
-export const storage = getStorageManager();
+import {deepAccess, getWindowTop, isEmpty, isGptPubadsDefined} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {ajax} from '../src/ajax.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+
+export const storage = getStorageManager({bidderCode: 'datablocks'});
 
 const NATIVE_ID_MAP = {};
 const NATIVE_PARAMS = {
@@ -94,7 +97,7 @@ export const spec = {
   code: 'datablocks',
 
   // DATABLOCKS SCOPED OBJECT
-  db_obj: {metrics_host: 'prebid.datablocks.net', metrics: [], metrics_timer: null, metrics_queue_time: 1000, vis_optout: false, source_id: 0},
+  db_obj: {metrics_host: 'prebid.dblks.net', metrics: [], metrics_timer: null, metrics_queue_time: 1000, vis_optout: false, source_id: 0},
 
   // STORE THE DATABLOCKS BUYERID IN STORAGE
   store_dbid: function(dbid) {
@@ -199,7 +202,7 @@ export const spec = {
   // GET BASIC CLIENT INFORMATION
   get_client_info: function () {
     let botTest = new BotClientTests();
-    let win = utils.getWindowTop();
+    let win = getWindowTop();
     return {
       'wiw': win.innerWidth,
       'wih': win.innerHeight,
@@ -226,8 +229,9 @@ export const spec = {
 
       // ADD GPT EVENT LISTENERS
       let scope = this;
-      if (utils.isGptPubadsDefined()) {
+      if (isGptPubadsDefined()) {
         if (typeof window['googletag'].pubads().addEventListener == 'function') {
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           window['googletag'].pubads().addEventListener('impressionViewable', function(event) {
             scope.queue_metric({type: 'slot_view', source_id: scope.db_obj.source_id, auction_id: bid.auctionId, div_id: event.slot.getSlotElementId(), slot_id: event.slot.getSlotId().getAdUnitPath()});
           });
@@ -252,6 +256,9 @@ export const spec = {
 
   // GENERATE THE RTB REQUEST
   buildRequests: function(validRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validRequests = convertOrtbRequestToProprietaryNative(validRequests);
+
     // RETURN EMPTY IF THERE ARE NO VALID REQUESTS
     if (!validRequests.length) {
       return [];
@@ -306,7 +313,7 @@ export const spec = {
         tagid: bidRequest.params.tagid || bidRequest.adUnitCode,
         placement_id: bidRequest.params.placement_id || 0,
         secure: window.location.protocol == 'https:',
-        ortb2: utils.deepAccess(bidRequest, `ortb2Imp`) || {},
+        ortb2: deepAccess(bidRequest, `ortb2Imp`) || {},
         floor: {}
       }
 
@@ -320,8 +327,8 @@ export const spec = {
       }
 
       // BUILD THE SIZES
-      if (utils.deepAccess(bidRequest, `mediaTypes.banner`)) {
-        let sizes = utils.getAdUnitSizes(bidRequest);
+      if (deepAccess(bidRequest, `mediaTypes.banner`)) {
+        let sizes = getAdUnitSizes(bidRequest);
         if (sizes.length) {
           imp.banner = {
             w: sizes[0][0],
@@ -332,7 +339,7 @@ export const spec = {
           // ADD TO THE LIST OF IMP REQUESTS
           imps.push(imp);
         }
-      } else if (utils.deepAccess(bidRequest, `mediaTypes.native`)) {
+      } else if (deepAccess(bidRequest, `mediaTypes.native`)) {
         // ADD TO THE LIST OF IMP REQUESTS
         imp.native = createNativeRequest(bidRequest);
         imps.push(imp);
@@ -347,16 +354,17 @@ export const spec = {
     // GENERATE SITE OBJECT
     let site = {
       domain: window.location.host,
-      page: bidderRequest.refererInfo.referer,
+      // TODO: is 'page' the right value here?
+      page: bidderRequest.refererInfo.page,
       schain: validRequests[0].schain || {},
       ext: {
-        p_domain: config.getConfig('publisherDomain'),
+        p_domain: bidderRequest.refererInfo.domain,
         rt: bidderRequest.refererInfo.reachedTop,
         frames: bidderRequest.refererInfo.numIframes,
         stack: bidderRequest.refererInfo.stack,
         timeout: config.getConfig('bidderTimeout')
       },
-    }
+    };
 
     // ADD REF URL IF FOUND
     if (self === top && document.referrer) {
@@ -383,19 +391,19 @@ export const spec = {
         gdpr: bidderRequest.gdprConsent || {},
         usp: bidderRequest.uspConsent || {},
         client_info: this.get_client_info(),
-        ortb2: config.getConfig('ortb2') || {}
+        ortb2: bidderRequest.ortb2 || {}
       }
     };
 
     let sourceId = validRequests[0].params.source_id || 0;
-    let host = validRequests[0].params.host || 'prebid.datablocks.net';
+    let host = validRequests[0].params.host || 'prebid.dblks.net';
 
     // RETURN WITH THE REQUEST AND PAYLOAD
     return {
       method: 'POST',
-      url: `https://${sourceId}.${host}/openrtb/?sid=${sourceId}`,
+      url: `https://${host}/openrtb/?sid=${sourceId}`,
       data: {
-        id: bidderRequest.auctionId,
+        id: bidderRequest.bidderRequestId,
         imp: imps,
         site: site,
         device: device
@@ -521,15 +529,15 @@ export const spec = {
         const {id, img, data, title} = asset;
         const key = NATIVE_ID_MAP[id];
         if (key) {
-          if (!utils.isEmpty(title)) {
+          if (!isEmpty(title)) {
             result.title = title.text
-          } else if (!utils.isEmpty(img)) {
+          } else if (!isEmpty(img)) {
             result[key] = {
               url: img.url,
               height: img.h,
               width: img.w
             }
-          } else if (!utils.isEmpty(data)) {
+          } else if (!isEmpty(data)) {
             result[key] = data.value;
           }
         }
@@ -539,11 +547,11 @@ export const spec = {
     }
 
     let bids = [];
-    let resBids = utils.deepAccess(rtbResponse, 'body.seatbid') || [];
+    let resBids = deepAccess(rtbResponse, 'body.seatbid') || [];
     resBids.forEach(bid => {
       let resultItem = {requestId: bid.id, cpm: bid.price, creativeId: bid.crid, currency: bid.currency || 'USD', netRevenue: true, ttl: bid.ttl || 360, meta: {advertiserDomains: bid.adomain}};
 
-      let mediaType = utils.deepAccess(bid, 'ext.mtype') || '';
+      let mediaType = deepAccess(bid, 'ext.mtype') || '';
       switch (mediaType) {
         case 'banner':
           bids.push(Object.assign({}, resultItem, {mediaType: BANNER, width: bid.w, height: bid.h, ad: bid.adm}));

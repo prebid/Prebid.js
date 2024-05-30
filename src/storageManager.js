@@ -1,51 +1,49 @@
-import {hook} from './hook.js';
-import * as utils from './utils.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {checkCookieSupport, hasDeviceAccess, logError} from './utils.js';
+import {bidderSettings} from './bidderSettings.js';
+import {MODULE_TYPE_BIDDER, MODULE_TYPE_PREBID} from './activities/modules.js';
+import {isActivityAllowed, registerActivityControl} from './activities/rules.js';
+import {
+  ACTIVITY_PARAM_ADAPTER_CODE,
+  ACTIVITY_PARAM_COMPONENT_TYPE,
+  ACTIVITY_PARAM_STORAGE_TYPE
+} from './activities/params.js';
 
-const moduleTypeWhiteList = ['core', 'prebid-module'];
+import {ACTIVITY_ACCESS_DEVICE} from './activities/activities.js';
+import {config} from './config.js';
+import adapterManager from './adapterManager.js';
+import {activityParams} from './activities/activityParams.js';
+
+export const STORAGE_TYPE_LOCALSTORAGE = 'html5';
+export const STORAGE_TYPE_COOKIES = 'cookie';
 
 export let storageCallbacks = [];
 
-/**
- * Storage options
- * @typedef {Object} storageOptions
- * @property {Number=} gvlid - Vendor id
- * @property {string} moduleName - Module name
- * @property {string=} moduleType - Module type, value can be anyone of core or prebid-module
+/*
+ *  Storage manager constructor. Consumers should prefer one of `getStorageManager` or `getCoreStorageManager`.
  */
+export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = isActivityAllowed} = {}) {
+  function isValid(cb, storageType) {
+    let mod = moduleName;
+    const curBidder = config.getCurrentBidder();
+    if (curBidder && moduleType === MODULE_TYPE_BIDDER && adapterManager.aliasRegistry[curBidder] === moduleName) {
+      mod = curBidder;
+    }
+    const result = {
+      valid: isAllowed(ACTIVITY_ACCESS_DEVICE, activityParams(moduleType, mod, {
+        [ACTIVITY_PARAM_STORAGE_TYPE]: storageType
+      }))
+    };
+    return cb(result);
+  }
 
-/**
- * Returns list of storage related functions with gvlid, module name and module type in its scope.
- * All three argument are optional here. Below shows the usage of of these
- * - GVL Id: Pass GVL id if you are a vendor
- * - Module name: All modules need to pass module name
- * - Module type: Some modules may need these functions but are not vendor. e.g prebid core files in src and modules like currency.
- * @param {storageOptions} options
- */
-export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
-  function isValid(cb) {
-    if (includes(moduleTypeWhiteList, moduleType)) {
-      let result = {
-        valid: true
-      }
-      return cb(result);
-    } else {
-      let value;
-      let hookDetails = {
-        hasEnforcementHook: false
-      }
-      validateStorageEnforcement(gvlid, moduleName, hookDetails, function(result) {
-        if (result && result.hasEnforcementHook) {
-          value = cb(result);
-        } else {
-          let result = {
-            hasEnforcementHook: false,
-            valid: utils.hasDeviceAccess()
-          }
-          value = cb(result);
-        }
+  function schedule(operation, storageType, done) {
+    if (done && typeof done === 'function') {
+      storageCallbacks.push(function() {
+        let result = isValid(operation, storageType);
+        done(result);
       });
-      return value;
+    } else {
+      return isValid(operation, storageType);
     }
   }
 
@@ -69,14 +67,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
         document.cookie = `${key}=${encodeURIComponent(value)}${expiresPortion}; path=/${domainPortion}${sameSite ? `; SameSite=${sameSite}` : ''}${secure}`;
       }
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_COOKIES, done);
   };
 
   /**
@@ -91,14 +82,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
       }
       return null;
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_COOKIES, done);
   };
 
   /**
@@ -119,14 +103,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
       }
       return false;
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
   }
 
   /**
@@ -135,22 +112,11 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
   const cookiesAreEnabled = function (done) {
     let cb = function (result) {
       if (result && result.valid) {
-        if (utils.checkCookieSupport()) {
-          return true;
-        }
-        window.document.cookie = 'prebid.cookieTest';
-        return window.document.cookie.indexOf('prebid.cookieTest') !== -1;
+        return checkCookieSupport();
       }
       return false;
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_COOKIES, done);
   }
 
   /**
@@ -163,14 +129,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
         window.localStorage.setItem(key, value);
       }
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
   }
 
   /**
@@ -184,14 +143,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
       }
       return null;
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
   }
 
   /**
@@ -203,14 +155,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
         window.localStorage.removeItem(key);
       }
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
   }
 
   /**
@@ -222,19 +167,12 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
         try {
           return !!window.localStorage;
         } catch (e) {
-          utils.logError('Local storage api disabled');
+          logError('Local storage api disabled');
         }
       }
       return false;
     }
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_LOCALSTORAGE, done);
   }
 
   /**
@@ -247,7 +185,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
     let cb = function (result) {
       if (result && result.valid) {
         const all = [];
-        if (utils.hasDeviceAccess()) {
+        if (hasDeviceAccess()) {
           const cookies = document.cookie.split(';');
           while (cookies.length) {
             const cookie = cookies.pop();
@@ -263,14 +201,7 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
       }
     }
 
-    if (done && typeof done === 'function') {
-      storageCallbacks.push(function() {
-        let result = isValid(cb);
-        done(result);
-      });
-    } else {
-      return isValid(cb);
-    }
+    return schedule(cb, STORAGE_TYPE_COOKIES, done);
   }
 
   return {
@@ -287,29 +218,65 @@ export function newStorageManager({gvlid, moduleName, moduleType} = {}) {
 }
 
 /**
- * This hook validates the storage enforcement if gdprEnforcement module is included
+ * Get a storage manager for a particular module.
+ *
+ * Either bidderCode or a combination of moduleType + moduleName must be provided. The former is a shorthand
+ *  for `{moduleType: 'bidder', moduleName: bidderCode}`.
+ *
  */
-export const validateStorageEnforcement = hook('async', function(gvlid, moduleName, hookDetails, callback) {
-  callback(hookDetails);
-}, 'validateStorageEnforcement');
+export function getStorageManager({moduleType, moduleName, bidderCode} = {}) {
+  function err() {
+    throw new Error(`Invalid invocation for getStorageManager: must set either bidderCode, or moduleType + moduleName`)
+  }
+  if (bidderCode) {
+    if ((moduleType && moduleType !== MODULE_TYPE_BIDDER) || moduleName) err()
+    moduleType = MODULE_TYPE_BIDDER;
+    moduleName = bidderCode;
+  } else if (!moduleName || !moduleType) {
+    err()
+  }
+  return newStorageManager({moduleType, moduleName});
+}
 
 /**
- * This function returns storage functions to access cookies and localstorage. This function will bypass the gdpr enforcement requirement. Prebid as a software needs to use storage in some scenarios and is not a vendor so GDPR enforcement rules does not apply on Prebid.
+ * Get a storage manager for "core" (vendorless, or first-party) modules. Shorthand for `getStorageManager({moduleName, moduleType: 'core'})`.
+ *
  * @param {string} moduleName Module name
  */
 export function getCoreStorageManager(moduleName) {
-  return newStorageManager({moduleName: moduleName, moduleType: 'core'});
+  return newStorageManager({moduleName: moduleName, moduleType: MODULE_TYPE_PREBID});
 }
 
 /**
- * Note: Core modules or Prebid modules like Currency, SizeMapping should use getCoreStorageManager
- * This function returns storage functions to access cookies and localstorage. Bidders and User id modules should import this and use it in their module if needed. GVL ID and Module name are optional param but gvl id is needed for when gdpr enforcement module is used.
- * @param {Number=} gvlid Vendor id
- * @param {string=} moduleName BidderCode or module name
+ * Block all access to storage when deviceAccess = false
  */
-export function getStorageManager(gvlid, moduleName) {
-  return newStorageManager({gvlid: gvlid, moduleName: moduleName});
+export function deviceAccessRule() {
+  if (!hasDeviceAccess()) {
+    return {allow: false}
+  }
 }
+registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'deviceAccess config', deviceAccessRule);
+
+/**
+ * By default, deny bidders accessDevice unless they enable it through bidderSettings
+ *
+ * // TODO: for backwards compat, the check is done on the adapter - rather than bidder's code.
+ */
+export function storageAllowedRule(params, bs = bidderSettings) {
+  if (params[ACTIVITY_PARAM_COMPONENT_TYPE] !== MODULE_TYPE_BIDDER) return;
+  let allow = bs.get(params[ACTIVITY_PARAM_ADAPTER_CODE], 'storageAllowed');
+  if (!allow || allow === true) {
+    allow = !!allow
+  } else {
+    const storageType = params[ACTIVITY_PARAM_STORAGE_TYPE];
+    allow = Array.isArray(allow) ? allow.some((e) => e === storageType) : allow === storageType;
+  }
+  if (!allow) {
+    return {allow};
+  }
+}
+
+registerActivityControl(ACTIVITY_ACCESS_DEVICE, 'bidderSettings.*.storageAllowed', storageAllowedRule);
 
 export function resetData() {
   storageCallbacks = [];

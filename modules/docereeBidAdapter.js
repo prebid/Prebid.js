@@ -1,9 +1,11 @@
-import * as utils from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
+import { triggerPixel } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { BANNER } from '../src/mediaTypes.js';
+import {tryAppendQueryString} from '../libraries/urlUtils/urlUtils.js';
 const BIDDER_CODE = 'doceree';
 const END_POINT = 'https://bidder.doceree.com'
+const TRACKING_END_POINT = 'https://tracking.doceree.com'
 
 export const spec = {
   code: BIDDER_CODE,
@@ -14,24 +16,34 @@ export const spec = {
     const { placementId } = bid.params;
     return !!placementId
   },
+  isGdprConsentPresent: (bid) => {
+    const { gdpr, gdprConsent } = bid.params;
+    if (gdpr == '1') {
+      return !!gdprConsent
+    }
+    return true
+  },
   buildRequests: (validBidRequests) => {
     const serverRequests = [];
     const { data } = config.getConfig('doceree.user')
+    // TODO: this should probably look at refererInfo
     const { page, domain, token } = config.getConfig('doceree.context')
     const encodedUserInfo = window.btoa(encodeURIComponent(JSON.stringify(data)))
 
     validBidRequests.forEach(function(validBidRequest) {
-      const { publisherUrl, placementId } = validBidRequest.params;
+      const { publisherUrl, placementId, gdpr, gdprConsent } = validBidRequest.params;
       const url = publisherUrl || page
       let queryString = '';
-      queryString = utils.tryAppendQueryString(queryString, 'id', placementId);
-      queryString = utils.tryAppendQueryString(queryString, 'publisherDomain', domain);
-      queryString = utils.tryAppendQueryString(queryString, 'pubRequestedURL', encodeURIComponent(url));
-      queryString = utils.tryAppendQueryString(queryString, 'loggedInUser', encodedUserInfo);
-      queryString = utils.tryAppendQueryString(queryString, 'currentUrl', url);
-      queryString = utils.tryAppendQueryString(queryString, 'prebidjs', true);
-      queryString = utils.tryAppendQueryString(queryString, 'token', token);
-      queryString = utils.tryAppendQueryString(queryString, 'requestId', validBidRequest.bidId);
+      queryString = tryAppendQueryString(queryString, 'id', placementId);
+      queryString = tryAppendQueryString(queryString, 'publisherDomain', domain);
+      queryString = tryAppendQueryString(queryString, 'pubRequestedURL', encodeURIComponent(url));
+      queryString = tryAppendQueryString(queryString, 'loggedInUser', encodedUserInfo);
+      queryString = tryAppendQueryString(queryString, 'currentUrl', url);
+      queryString = tryAppendQueryString(queryString, 'prebidjs', true);
+      queryString = tryAppendQueryString(queryString, 'token', token);
+      queryString = tryAppendQueryString(queryString, 'requestId', validBidRequest.bidId);
+      queryString = tryAppendQueryString(queryString, 'gdpr', gdpr);
+      queryString = tryAppendQueryString(queryString, 'gdpr_consent', gdprConsent);
 
       serverRequests.push({
         method: 'GET',
@@ -59,6 +71,33 @@ export const spec = {
       }
     };
     return [bidResponse];
+  },
+  onTimeout: function(timeoutData) {
+    if (timeoutData == null || !timeoutData.length) {
+      return;
+    }
+    timeoutData.forEach(td => {
+      const encodedBuf = window.btoa(encodeURIComponent(JSON.stringify({
+        bidId: td.bidId,
+        timeout: td.timeout,
+      })));
+      triggerPixel(TRACKING_END_POINT + '/v1/hbTimeout?adp=prebidjs&data=' + encodedBuf);
+    })
+  },
+  onBidWon: function (bidWon) {
+    if (bidWon == null) {
+      return;
+    }
+    const encodedBuf = window.btoa(encodeURIComponent(JSON.stringify({
+      requestId: bidWon.requestId,
+      cpm: bidWon.cpm,
+      adId: bidWon.adId,
+      currency: bidWon.currency,
+      netRevenue: bidWon.netRevenue,
+      status: bidWon.status,
+      hb_pb: bidWon.adserverTargeting && bidWon.adserverTargeting.hb_pb,
+    })));
+    triggerPixel(TRACKING_END_POINT + '/v1/hbBidWon?adp=prebidjs&data=' + encodedBuf);
   }
 };
 

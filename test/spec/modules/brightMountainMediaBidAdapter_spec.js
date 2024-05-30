@@ -2,8 +2,6 @@ import { expect } from 'chai';
 import { spec } from '../../../modules/brightMountainMediaBidAdapter.js';
 
 const BIDDER_CODE = 'bmtm';
-const ENDPOINT_URL = 'https://one.elitebidder.com/api/hb';
-const ENDPOINT_URL_SYNC = 'https://console.brightmountainmedia.com:8443/cookieSync';
 const PLACEMENT_ID = 329;
 
 describe('brightMountainMediaBidAdapter_spec', function () {
@@ -22,6 +20,47 @@ describe('brightMountainMediaBidAdapter_spec', function () {
       }
     },
     transactionId: '3bb2f6da-87a6-4029-aeb0-bfe951372e62',
+    getFloor: function () {
+      return {
+        currency: 'USD',
+        floor: 0.5,
+      }
+    },
+    schain: {
+      ver: '1.0',
+      complete: 1,
+      nodes: [
+        {
+          asi: 'directseller.com',
+          sid: '00001',
+          rid: 'BidRequest1',
+          hp: 1
+        }
+      ]
+    },
+    userIdAsEids: [
+      {
+        'source': 'id5-sync.com',
+        'uids': [
+          {
+            'id': 'ID5-ZHMOaW5vh_TJhKVSaTWmuoTpwqjGGwx5v0WbaSV8yw',
+            'atype': 1,
+            'ext': {
+              'linkType': 2
+            }
+          }
+        ]
+      },
+      {
+        'source': 'pubcid.org',
+        'uids': [
+          {
+            'id': '00000000000000000000000000',
+            'atype': 1
+          }
+        ]
+      }
+    ]
   };
 
   let bidVideo = {
@@ -56,7 +95,12 @@ describe('brightMountainMediaBidAdapter_spec', function () {
     refererInfo: {
       referer: 'http://www.example.com',
       reachedTop: true,
-    }
+    },
+    gdprConsent: {
+      consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==',
+      gdprApplies: true
+    },
+    bids: [bidBanner],
   };
 
   describe('isBidRequestValid', function () {
@@ -64,119 +108,60 @@ describe('brightMountainMediaBidAdapter_spec', function () {
       expect(spec.isBidRequestValid(bidBanner)).to.be.true;
     });
     it('Should return false when required params are not passed', function () {
-      bidBanner.params = {}
+      bidBanner.params = {};
       expect(spec.isBidRequestValid(bidBanner)).to.be.false;
     });
   });
 
-  function testServerRequestBody(serverRequest) {
+  describe('buildRequests', function () {
+    let request = spec.buildRequests([bidBanner], bidderRequest)[0];
+    let data = JSON.parse(request.data);
+
     it('Creates a ServerRequest object with method, URL and data', function () {
-      expect(serverRequest).to.exist;
-      expect(serverRequest.method).to.exist;
-      expect(serverRequest.url).to.exist;
-      expect(serverRequest.data).to.exist;
-    });
-    it('Returns POST method', function () {
-      expect(serverRequest.method).to.equal('POST');
-    });
-    it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal(ENDPOINT_URL);
+      expect(request).to.exist;
+      expect(request.method).to.exist;
+      expect(request.url).to.exist;
+      expect(request.data).to.exist;
+      expect(request.method).to.be.a('string');
+      expect(request.url).to.be.a('string');
+      expect(request.data).to.be.an('string');
     });
 
     it('Returns valid data if array of bids is valid', function () {
-      let data = serverRequest.data;
       expect(data).to.be.an('object');
-      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'prebidVersion', 'placements');
-      expect(data.deviceWidth).to.be.a('number');
-      expect(data.deviceHeight).to.be.a('number');
-      expect(data.language).to.be.a('string');
-      expect(data.secure).to.be.within(0, 1);
-      expect(data.host).to.be.a('string');
-      expect(data.page).to.be.a('string');
-      let placements = data['placements'];
-      expect(placements).to.be.an('array');
-    });
-  }
-
-  describe('buildRequests', function () {
-    bidderRequest['bids'] = [bidBanner];
-    let serverRequest = spec.buildRequests([bidBanner], bidderRequest);
-    testServerRequestBody(serverRequest);
-
-    it('sends bidfloor param if present', function () {
-      bidBanner.getFloor = function () {
-        return {
-          currency: 'USD',
-          floor: 0.5,
-        }
-      };
-      const request = spec.buildRequests([bidBanner], bidderRequest);
-      expect(request.data.placements[0].floor['300x250']).to.equal(0.5);
+      expect(data).to.have.all.keys('at', 'site', 'device', 'cur', 'tmax', 'regs', 'user', 'source', 'imp', 'id');
+      expect(data.at).to.be.a('number');
+      expect(data.site).to.be.an('object');
+      expect(data.device).to.be.an('object');
+      expect(data.cur).to.be.an('array');
+      expect(data.tmax).to.be.a('number');
+      expect(data.regs).to.be.an('object');
+      expect(data.user).to.be.an('object');
+      expect(data.source).to.be.an('object');
+      expect(data.imp).to.be.an('array');
+      expect(data.id).to.be.a('string');
     });
 
-    it('sends gdpr info if exists', function () {
-      const gdprConsent = {
-        consentString: 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==',
-        gdprApplies: true
-      };
-
-      bidderRequest['gdprConsent'] = gdprConsent;
-      const request = spec.buildRequests([bidBanner], bidderRequest);
-
-      expect(request.data.gdpr_require).to.exist.and.to.be.a('number');
-      expect(request.data.gdpr_consent).to.exist.and.to.be.a('string');
+    it('Sends bidfloor param if present', function () {
+      expect(data.imp[0].bidfloor).to.equal(0.5);
     });
 
-    it('sends schain info if exists', function () {
-      const schain = {
-        ver: '1.0',
-        complete: 1,
-        nodes: [
-          {
-            asi: 'directseller.com',
-            sid: '00001',
-            rid: 'BidRequest1',
-            hp: 1
-          }
-        ]
-      };
-      bidBanner.schain = schain;
-      const request = spec.buildRequests([bidBanner], bidderRequest);
-      expect(request.data.placements[0].schain).to.be.an('object');
+    it('Sends regs info if exists', function () {
+      expect(data.regs.ext.gdpr).to.exist.and.to.be.a('number');
+      expect(data.regs.ext.gdprConsentString).to.exist.and.to.be.a('string');
+      expect(data.regs.ext.us_privacy).to.exist.and.to.be.a('string');
+    });
+
+    it('Sends schain info if exists', function () {
+      expect(data.source.ext).to.be.an('object');
     });
 
     it('sends userId info if exists', function () {
-      const userIdAsEids = [
-        {
-          'source': 'id5-sync.com',
-          'uids': [
-            {
-              'id': 'ID5-ZHMOaW5vh_TJhKVSaTWmuoTpwqjGGwx5v0WbaSV8yw',
-              'atype': 1,
-              'ext': {
-                'linkType': 2
-              }
-            }
-          ]
-        },
-        {
-          'source': 'pubcid.org',
-          'uids': [
-            {
-              'id': '00000000000000000000000000',
-              'atype': 1
-            }
-          ]
-        }
-      ];
-      bidBanner.userIdAsEids = userIdAsEids;
-      const request = spec.buildRequests([bidBanner], bidderRequest);
-
-      expect(request.data.placements[0]).to.have.property('userIds');
-      expect(request.data.placements[0].userIds).to.not.equal(null).and.to.not.be.undefined;
-      expect(request.data.placements[0].userIds.eids.length).to.greaterThan(0);
-      for (let index in request.data.placements[0].userIds.eids) {
-        let eid = request.data.placements[0].userIds.eids[index];
+      expect(data.user.ext).to.have.property('eids');
+      expect(data.user.ext.eids).to.not.equal(null).and.to.not.be.undefined;
+      expect(data.user.ext.eids.length).to.greaterThan(0);
+      for (let index in data.user.ext.eids) {
+        let eid = data.user.ext.eids[index];
         expect(eid.source).to.not.equal(null).and.to.not.be.undefined;
         expect(eid.uids).to.not.equal(null).and.to.not.be.undefined;
         for (let uidsIndex in eid.uids) {
@@ -186,22 +171,97 @@ describe('brightMountainMediaBidAdapter_spec', function () {
       }
     });
 
-    bidderRequest['bids'] = [bidVideo];
-    serverRequest = spec.buildRequests([bidVideo], bidderRequest);
-    testServerRequestBody(serverRequest);
+    it('Returns valid data if array of bids is valid for banner', function () {
+      expect(data).to.be.an('object');
+      expect(data).to.have.property('imp');
+      expect(data.imp.length).to.greaterThan(0);
+      expect(data.imp[0]).to.have.property('banner');
+      expect(data.imp[0].banner).to.be.an('object');
+      expect(data.imp[0].banner.h).to.exist.and.to.be.a('number');
+      expect(data.imp[0].banner.w).to.exist.and.to.be.a('number');
+    });
 
-    it('Returns empty data if no valid requests are passed', function () {
-      serverRequest = spec.buildRequests([]);
-      let data = serverRequest.data;
-      expect(data.placements).to.be.an('array').that.is.empty;
+    it('Returns valid data if array of bids is valid for video', function () {
+      bidderRequest.bids = [bidVideo];
+      let serverRequest = spec.buildRequests([bidVideo], bidderRequest)[0];
+      let data = JSON.parse(serverRequest.data);
+      expect(data).to.be.an('object');
+      expect(data).to.have.property('imp');
+      expect(data.imp.length).to.greaterThan(0);
+      expect(data.imp[0]).to.have.property('video');
+      expect(data.imp[0].video).to.be.an('object');
+      expect(data.imp[0].video.h).to.exist.and.to.be.a('number');
+      expect(data.imp[0].video.w).to.exist.and.to.be.a('number');
     });
   });
 
-  function testServerResponse(serverResponses) {
-    it('Returns an array of valid server responses if response object is valid', function () {
-      expect(serverResponses).to.be.an('array').that.is.not.empty;
-      for (let i = 0; i < serverResponses.length; i++) {
-        let dataItem = serverResponses[i];
+  describe('interpretResponse', function () {
+    let resObjectBanner = {
+      'id': '2763-05f22da29b3ffb6-6959',
+      'bidid': 'e5b41111bec9e4a4e94b85d082f8fb08',
+      'seatbid': [
+        {
+          'bid': [
+            {
+              'id': '9550c3e641761cfbf2a4dd672b50ddb9',
+              'impid': '968',
+              'price': 0.3,
+              'w': 300,
+              'h': 250,
+              'nurl': 'https://example.com/?w=nr&pf=${AUCTION_PRICE}&type=b&uq=483531c101942cbb270cd088b2eec43f',
+              'adomain': [
+                'example.com'
+              ],
+              'cid': '3845_105654',
+              'crid': '3845_305654',
+              'adm': '<h1>Test Ad</h1>',
+              'adid': '17794c46ca26',
+              'iurl': 'https://example.com/?t=preview2&k=17794c46ca26'
+            }
+          ],
+          'seat': '3845'
+        }
+      ],
+      'cur': 'USD'
+    };
+
+    let resObjectVideo = {
+      'id': '2763-05f22da29b3ffb6-6959',
+      'bidid': 'e5b41111bec9e4a4e94b85d082f8fb08',
+      'seatbid': [
+        {
+          'bid': [
+            {
+              'id': '9550c3e641761cfbf2a4dd672b50ddb9',
+              'impid': '968',
+              'price': 0.3,
+              'w': 300,
+              'h': 250,
+              'nurl': 'https://example.com/?w=nr&pf=${AUCTION_PRICE}&type=b&uq=483531c101942cbb270cd088b2eec43f',
+              'adomain': [
+                'example.com'
+              ],
+              'cid': '3845_105654',
+              'crid': '3845_305654',
+              'adm': '<VAST></VAST>',
+              'adid': '17794c46ca26',
+              'iurl': 'https://example.com/?t=preview2&k=17794c46ca26'
+            }
+          ],
+          'seat': '3845'
+        }
+      ],
+      'cur': 'USD'
+    };
+
+    it('Returns an array of valid response if response object is valid for banner', function () {
+      const bidResponse = spec.interpretResponse({
+        body: resObjectBanner
+      }, { bidRequest: bidBanner });
+
+      expect(bidResponse).to.be.an('array').that.is.not.empty;
+      for (let i = 0; i < bidResponse.length; i++) {
+        let dataItem = bidResponse[i];
         expect(dataItem.requestId).to.be.a('string');
         expect(dataItem.cpm).to.be.a('number');
         expect(dataItem.width).to.be.a('number');
@@ -215,49 +275,34 @@ describe('brightMountainMediaBidAdapter_spec', function () {
         expect(dataItem.meta.advertiserDomains[0]).to.be.a('string');
       }
     });
-  }
 
-  describe('interpretResponse', function () {
-    let resObjectBanner = {
-      body: [{
-        requestId: '123',
-        mediaType: 'banner',
-        cpm: 0.3,
-        width: 320,
-        height: 50,
-        ad: '<h1>Hello ad</h1>',
-        ttl: 1000,
-        creativeId: '123asd',
-        netRevenue: true,
-        currency: 'USD',
-        adomain: ['adomain.com'],
-      }]
-    };
+    it('Returns an array of valid response if response object is valid for video', function () {
+      const bidResponse = spec.interpretResponse({
+        body: resObjectVideo
+      }, { bidRequest: bidVideo });
 
-    let resObjectVideo = {
-      body: [{
-        requestId: '123',
-        mediaType: 'video',
-        cpm: 1.5,
-        width: 320,
-        height: 50,
-        ad: '<h1>Hello ad</h1>',
-        ttl: 1000,
-        creativeId: '123asd',
-        netRevenue: true,
-        currency: 'USD',
-        adomain: ['adomain.com'],
-      }]
-    };
-    let serverResponses = spec.interpretResponse(resObjectBanner);
-    testServerResponse(serverResponses);
-
-    serverResponses = spec.interpretResponse(resObjectVideo);
-    testServerResponse(serverResponses);
+      expect(bidResponse).to.be.an('array').that.is.not.empty;
+      for (let i = 0; i < bidResponse.length; i++) {
+        let dataItem = bidResponse[i];
+        expect(dataItem.requestId).to.be.a('string');
+        expect(dataItem.cpm).to.be.a('number');
+        expect(dataItem.width).to.be.a('number');
+        expect(dataItem.height).to.be.a('number');
+        expect(dataItem.vastXml).to.be.a('string');
+        expect(dataItem.ttl).to.be.a('number');
+        expect(dataItem.creativeId).to.be.a('string');
+        expect(dataItem.netRevenue).to.be.a('boolean');
+        expect(dataItem.currency).to.be.a('string');
+        expect(dataItem.mediaType).to.be.a('string');
+        expect(dataItem.meta.advertiserDomains[0]).to.be.a('string');
+      }
+    });
 
     it('Returns an empty array if invalid response is passed', function () {
-      serverResponses = spec.interpretResponse('invalid_response');
-      expect(serverResponses).to.be.an('array').that.is.empty;
+      const bidResponse = spec.interpretResponse({
+        body: ''
+      }, { bidRequest: bidBanner });
+      expect(bidResponse).to.be.an('array').that.is.empty;
     });
   });
 
@@ -270,7 +315,7 @@ describe('brightMountainMediaBidAdapter_spec', function () {
       expect(spec.getUserSyncs(syncoptionsIframe)[0].type).to.exist;
       expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.exist;
       expect(spec.getUserSyncs(syncoptionsIframe)[0].type).to.equal('iframe')
-      expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.equal(ENDPOINT_URL_SYNC)
+      expect(spec.getUserSyncs(syncoptionsIframe)[0].url).to.equal('https://console.brightmountainmedia.com:8443/cookieSync')
     });
   });
 });

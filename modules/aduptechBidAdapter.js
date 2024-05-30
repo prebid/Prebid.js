@@ -1,9 +1,16 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js'
-import * as utils from '../src/utils.js';
+import {deepClone, isArray, isBoolean, isEmpty, isFn, isPlainObject} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ */
 
 export const BIDDER_CODE = 'aduptech';
+export const GVLID = 647;
 export const ENDPOINT_URL_PUBLISHER_PLACEHOLDER = '{PUBLISHER}';
 export const ENDPOINT_URL = 'https://rtb.d.adup-tech.com/prebid/' + ENDPOINT_URL_PUBLISHER_PLACEHOLDER + '_bid';
 export const ENDPOINT_METHOD = 'POST';
@@ -20,14 +27,14 @@ export const internal = {
    * @returns {null|Object.<string, string|boolean>}
    */
   extractGdpr: (bidderRequest) => {
-    if (bidderRequest && bidderRequest.gdprConsent) {
-      return {
-        consentString: bidderRequest.gdprConsent.consentString,
-        consentRequired: (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean') ? bidderRequest.gdprConsent.gdprApplies : true
-      };
+    if (!bidderRequest?.gdprConsent) {
+      return null;
     }
 
-    return null;
+    return {
+      consentString: bidderRequest.gdprConsent.consentString,
+      consentRequired: (isBoolean(bidderRequest.gdprConsent.gdprApplies)) ? bidderRequest.gdprConsent.gdprApplies : true
+    };
   },
 
   /**
@@ -37,19 +44,8 @@ export const internal = {
    * @returns {string}
    */
   extractPageUrl: (bidderRequest) => {
-    if (bidderRequest && utils.deepAccess(bidderRequest, 'refererInfo.canonicalUrl')) {
-      return bidderRequest.refererInfo.canonicalUrl;
-    }
-
-    if (config && config.getConfig('pageUrl')) {
-      return config.getConfig('pageUrl');
-    }
-
-    try {
-      return utils.getWindowTop().location.href;
-    } catch (e) {
-      return utils.getWindowSelf().location.href;
-    }
+    // TODO: does it make sense to fall back here?
+    return bidderRequest?.refererInfo?.page || window.location.href;
   },
 
   /**
@@ -59,15 +55,8 @@ export const internal = {
    * @returns {string}
    */
   extractReferrer: (bidderRequest) => {
-    if (bidderRequest && utils.deepAccess(bidderRequest, 'refererInfo.referer')) {
-      return bidderRequest.refererInfo.referer;
-    }
-
-    try {
-      return utils.getWindowTop().document.referrer;
-    } catch (e) {
-      return utils.getWindowSelf().document.referrer;
-    }
+    // TODO: does it make sense to fall back here?
+    return bidderRequest?.refererInfo?.ref || window.document.referrer;
   },
 
   /**
@@ -77,12 +66,34 @@ export const internal = {
    * @returns {null|Object.<string, *>}
    */
   extractBannerConfig: (bidRequest) => {
-    const sizes = utils.getAdUnitSizes(bidRequest);
-    if (Array.isArray(sizes) && sizes.length > 0) {
-      return { sizes: sizes };
+    const adUnitSizes = getAdUnitSizes(bidRequest);
+    if (!isArray(adUnitSizes) || isEmpty(adUnitSizes)) {
+      return null;
     }
 
-    return null;
+    const banner = { sizes: [] };
+
+    adUnitSizes.forEach(adUnitSize => {
+      const size = deepClone(adUnitSize);
+
+      // try to add floor for each banner size
+      const floor = internal.getFloor(bidRequest, { mediaType: BANNER, size: adUnitSize });
+      if (floor) {
+        size.push(floor.floor);
+        size.push(floor.currency);
+      }
+
+      banner.sizes.push(size);
+    });
+
+    // try to add default floor for banner
+    const floor = internal.getFloor(bidRequest, { mediaType: BANNER, size: '*' });
+    if (floor) {
+      banner.floorPrice = floor.floor;
+      banner.floorCurrency = floor.currency;
+    }
+
+    return banner;
   },
 
   /**
@@ -92,11 +103,20 @@ export const internal = {
    * @returns {null|Object.<string, *>}
    */
   extractNativeConfig: (bidRequest) => {
-    if (bidRequest && utils.deepAccess(bidRequest, 'mediaTypes.native')) {
-      return bidRequest.mediaTypes.native;
+    if (!bidRequest?.mediaTypes?.native) {
+      return null;
     }
 
-    return null;
+    const native = deepClone(bidRequest.mediaTypes.native);
+
+    // try to add default floor for native
+    const floor = internal.getFloor(bidRequest, { mediaType: NATIVE, size: '*' });
+    if (floor) {
+      native.floorPrice = floor.floor;
+      native.floorCurrency = floor.currency;
+    }
+
+    return native;
   },
 
   /**
@@ -106,9 +126,31 @@ export const internal = {
    * @returns {null|Object.<string, *>}
    */
   extractParams: (bidRequest) => {
-    if (bidRequest && bidRequest.params) {
-      return bidRequest.params
+    if (!bidRequest?.params) {
+      return null;
     }
+
+    return deepClone(bidRequest.params);
+  },
+
+  /**
+   * Try to get floor information via bidRequest.getFloor()
+   *
+   * @param {BidRequest} bidRequest
+   * @param {Object<string, *>} options
+   * @returns {null|Object.<string, *>}
+   */
+  getFloor: (bidRequest, options) => {
+    if (!isFn(bidRequest?.getFloor)) {
+      return null;
+    }
+
+    try {
+      const floor = bidRequest.getFloor(options);
+      if (isPlainObject(floor) && !isNaN(floor.floor)) {
+        return floor;
+      }
+    } catch {}
 
     return null;
   },
@@ -122,11 +164,11 @@ export const internal = {
   groupBidRequestsByPublisher: (bidRequests) => {
     const groupedBidRequests = {};
 
-    if (!bidRequests || bidRequests.length === 0) {
+    if (!bidRequests || isEmpty(bidRequests)) {
       return groupedBidRequests;
     }
 
-    bidRequests.forEach((bidRequest) => {
+    bidRequests.forEach(bidRequest => {
       const publisher = internal.extractParams(bidRequest).publisher;
       if (!publisher) {
         return;
@@ -159,6 +201,7 @@ export const internal = {
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, NATIVE],
+  gvlid: GVLID,
 
   /**
    * Validate given bid request
@@ -193,10 +236,13 @@ export const spec = {
    * @returns {Object[]}
    */
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     const requests = [];
 
     // stop here on invalid or empty data
-    if (!bidderRequest || !validBidRequests || validBidRequests.length === 0) {
+    if (!bidderRequest || !validBidRequests || isEmpty(validBidRequests)) {
       return requests;
     }
 
@@ -215,6 +261,7 @@ export const spec = {
         url: internal.buildEndpointUrl(publisher),
         method: ENDPOINT_METHOD,
         data: {
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           auctionId: auctionId,
           pageUrl: pageUrl,
           referrer: referrer,
@@ -228,10 +275,10 @@ export const spec = {
       }
 
       // handle multiple bids per request
-      groupedBidRequests[publisher].forEach((bidRequest) => {
+      groupedBidRequests[publisher].forEach(bidRequest => {
         const bid = {
           bidId: bidRequest.bidId,
-          transactionId: bidRequest.transactionId,
+          transactionId: bidRequest.ortb2Imp?.ext?.tid,
           adUnitCode: bidRequest.adUnitCode,
           params: internal.extractParams(bidRequest)
         };
@@ -246,6 +293,13 @@ export const spec = {
         const nativeConfig = internal.extractNativeConfig(bidRequest);
         if (nativeConfig) {
           bid.native = nativeConfig;
+        }
+
+        // try to add default floor
+        const floor = internal.getFloor(bidRequest, { mediaType: '*', size: '*' });
+        if (floor) {
+          bid.floorPrice = floor.floor;
+          bid.floorCurrency = floor.currency;
         }
 
         request.data.imp.push(bid);
@@ -267,12 +321,12 @@ export const spec = {
     const bidResponses = [];
 
     // stop here on invalid or empty data
-    if (!response || !utils.deepAccess(response, 'body.bids') || response.body.bids.length === 0) {
+    if (!response?.body?.bids || isEmpty(response.body.bids)) {
       return bidResponses;
     }
 
     // parse multiple bids per response
-    response.body.bids.forEach((bid) => {
+    response.body.bids.forEach(bid => {
       if (!bid || !bid.bid || !bid.creative) {
         return;
       }

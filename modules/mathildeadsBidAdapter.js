@@ -1,7 +1,8 @@
+import { isFn, deepAccess, logMessage } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
 import {config} from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'mathildeads';
 const AD_URL = 'https://endpoint2.mathilde-ads.com/pbjs';
@@ -71,8 +72,8 @@ function getPlacementReqData (bid) {
 }
 
 function getBidFloor(bid) {
-  if (!utils.isFn(bid.getFloor)) {
-    return utils.deepAccess(bid, 'params.bidfloor', 0);
+  if (!isFn(bid.getFloor)) {
+    return deepAccess(bid, 'params.bidfloor', 0);
   }
 
   try {
@@ -111,6 +112,9 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest = {}) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     let deviceWidth = 0;
     let deviceHeight = 0;
 
@@ -121,18 +125,19 @@ export const spec = {
       deviceHeight = winTop.screen.height;
       winLocation = winTop.location;
     } catch (e) {
-      utils.logMessage(e);
+      logMessage(e);
       winLocation = window.location;
     }
 
-    const refferUrl = bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
+    const refferUrl = bidderRequest?.refererInfo?.page;
     let refferLocation;
     try {
       refferLocation = refferUrl && new URL(refferUrl);
     } catch (e) {
-      utils.logMessage(e);
+      logMessage(e);
     }
 
+    // TODO: does the fallback make sense here?
     let location = refferLocation || winLocation;
     const language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
     const host = location.host;
@@ -150,7 +155,7 @@ export const spec = {
       coppa: config.getConfig('coppa') === true ? 1 : 0,
       ccpa: bidderRequest.uspConsent || undefined,
       gdpr: bidderRequest.gdprConsent || undefined,
-      tmax: config.getConfig('bidderTimeout')
+      tmax: bidderRequest.timeout
     };
 
     const len = validBidRequests.length;

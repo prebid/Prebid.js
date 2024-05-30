@@ -1,22 +1,24 @@
 import sovrnAnalyticsAdapter from '../../../modules/sovrnAnalyticsAdapter.js';
-import { expect } from 'chai';
+import {expect} from 'chai';
 import {config} from 'src/config.js';
 import adaptermanager from 'src/adapterManager.js';
-import { server } from 'test/mocks/xhr.js';
+import {server} from 'test/mocks/xhr.js';
+import {expectEvents, fireEvents} from '../../helpers/analytics.js';
+import { EVENTS } from 'src/constants.js';
+
 var assert = require('assert');
 
 let events = require('src/events');
-let constants = require('src/constants.json');
 
 /**
  * Emit analytics events
- * @param {array} eventArr - array of objects to define the events that will fire
- *    @param {object} eventObj - key is eventType, value is event
+ * @param {Array} eventType - array of objects to define the events that will fire
+ * @param {object} event - key is eventType, value is event
  * @param {string} auctionId - the auction id to attached to the events
  */
 function emitEvent(eventType, event, auctionId) {
   event.auctionId = auctionId;
-  events.emit(constants.EVENTS[eventType], event);
+  events.emit(EVENTS[eventType], event);
 }
 
 let auctionStartTimestamp = Date.now();
@@ -195,14 +197,7 @@ describe('Sovrn Analytics Adapter', function () {
           sovrnId: 123
         }
       });
-
-      events.emit(constants.EVENTS.AUCTION_INIT, {});
-      events.emit(constants.EVENTS.AUCTION_END, {});
-      events.emit(constants.EVENTS.BID_REQUESTED, {});
-      events.emit(constants.EVENTS.BID_RESPONSE, {});
-      events.emit(constants.EVENTS.BID_WON, {});
-
-      sinon.assert.callCount(sovrnAnalyticsAdapter.track, 5);
+      expectEvents().to.beTrackedBy(sovrnAnalyticsAdapter.track);
     });
 
     it('should catch no events if no affiliate id', function () {
@@ -211,13 +206,7 @@ describe('Sovrn Analytics Adapter', function () {
         options: {
         }
       });
-
-      events.emit(constants.EVENTS.AUCTION_INIT, {});
-      events.emit(constants.EVENTS.AUCTION_END, {});
-      events.emit(constants.EVENTS.BID_REQUESTED, {});
-      events.emit(constants.EVENTS.BID_RESPONSE, {});
-      events.emit(constants.EVENTS.BID_WON, {});
-
+      fireEvents();
       sinon.assert.callCount(sovrnAnalyticsAdapter.track, 0);
     });
   });

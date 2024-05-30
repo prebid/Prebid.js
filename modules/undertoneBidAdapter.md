@@ -1,9 +1,13 @@
 # Overview
 
 ```
-Module Name: Example Bidder Adapter
+Module Name: Undertone Bidder Adapter
 Module Type: Bidder Adapter
 Maintainer: RampProgrammatic@perion.com
+gdpr_supported: true
+usp_supported: true
+schain_supported: true
+media_types: video, native
 ```
 # Description
 
@@ -19,7 +23,7 @@ Module that connects to Undertone's demand sources
            {
              bidder: "undertone",
              params: {
-               placementId: '10433394',
+               placementId: 1234,
                publisherId: 12345
                }
            }

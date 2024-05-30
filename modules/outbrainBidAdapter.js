@@ -1,13 +1,15 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import {
-  registerBidder
-} from '../src/adapters/bidderFactory.js';
-import { NATIVE, BANNER } from '../src/mediaTypes.js';
-import * as utils from '../src/utils.js';
-import { ajax } from '../src/ajax.js';
-import { config } from '../src/config.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import { getStorageManager } from '../src/storageManager.js';
+import {OUTSTREAM} from '../src/video.js';
+import {_map, deepAccess, deepSetValue, isArray, logWarn, replaceAuctionPrice} from '../src/utils.js';
+import {ajax} from '../src/ajax.js';
+import {config} from '../src/config.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
+import {Renderer} from '../src/Renderer.js';
 
 const BIDDER_CODE = 'outbrain';
 const GVLID = 164;
@@ -21,25 +23,53 @@ const NATIVE_PARAMS = {
   body: { id: 4, name: 'data', type: 2 },
   cta: { id: 1, type: 12, name: 'data' }
 };
+const OUTSTREAM_RENDERER_URL = 'https://acdn.adnxs.com/video/outstream/ANOutstreamVideo.js';
+const OB_USER_TOKEN_KEY = 'OB-USER-TOKEN';
+
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  supportedMediaTypes: [ NATIVE, BANNER ],
+  supportedMediaTypes: [ NATIVE, BANNER, VIDEO ],
   isBidRequestValid: (bid) => {
+    if (typeof bid.params !== 'object') {
+      return false;
+    }
+
+    if (typeof deepAccess(bid, 'params.publisher.id') !== 'string') {
+      return false;
+    }
+
+    if (!!bid.params.tagid && typeof bid.params.tagid !== 'string') {
+      return false;
+    }
+
+    if (!!bid.params.bcat && (typeof bid.params.bcat !== 'object' || !bid.params.bcat.every(item => typeof item === 'string'))) {
+      return false;
+    }
+
+    if (!!bid.params.badv && (typeof bid.params.badv !== 'object' || !bid.params.badv.every(item => typeof item === 'string'))) {
+      return false;
+    }
+
     return (
       !!config.getConfig('outbrain.bidderUrl') &&
-      !!utils.deepAccess(bid, 'params.publisher.id') &&
-      !!(bid.nativeParams || bid.sizes)
+      (!!(bid.nativeParams || bid.sizes) || isValidVideoRequest(bid))
     );
   },
   buildRequests: (validBidRequests, bidderRequest) => {
-    const page = bidderRequest.refererInfo.referer;
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+    const ortb2 = bidderRequest.ortb2 || {};
+    const page = bidderRequest.refererInfo.page;
     const ua = navigator.userAgent;
     const test = setOnAny(validBidRequests, 'params.test');
     const publisher = setOnAny(validBidRequests, 'params.publisher');
-    const bcat = setOnAny(validBidRequests, 'params.bcat');
-    const badv = setOnAny(validBidRequests, 'params.badv');
+    const bcat = ortb2.bcat || setOnAny(validBidRequests, 'params.bcat');
+    const badv = ortb2.badv || setOnAny(validBidRequests, 'params.badv');
+    const eids = setOnAny(validBidRequests, 'userIdAsEids');
+    const wlang = ortb2.wlang;
     const cur = CURRENCY;
     const endpointUrl = config.getConfig('outbrain.bidderUrl');
     const timeout = bidderRequest.timeout;
@@ -60,9 +90,18 @@ export const spec = {
             assets: getNativeAssets(bid)
           })
         }
+      } else if (isVideoRequest(bid)) {
+        imp.video = getVideoAsset(bid);
       } else {
         imp.banner = {
           format: transformSizes(bid.sizes)
+        }
+      }
+
+      if (typeof bid.getFloor === 'function') {
+        const floor = _getFloor(bid, bid.nativeParams ? NATIVE : BANNER);
+        if (floor) {
+          imp.bidfloor = floor;
         }
       }
 
@@ -70,7 +109,7 @@ export const spec = {
     });
 
     const request = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       site: { page, publisher },
       device: { ua },
       source: { fd: 1 },
@@ -79,6 +118,7 @@ export const spec = {
       imp: imps,
       bcat: bcat,
       badv: badv,
+      wlang: wlang,
       ext: {
         prebid: {
           channel: {
@@ -94,15 +134,31 @@ export const spec = {
       request.test = 1;
     }
 
-    if (utils.deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
-      utils.deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
-      utils.deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1)
+    const obUserToken = storage.getDataFromLocalStorage(OB_USER_TOKEN_KEY)
+    if (obUserToken) {
+      deepSetValue(request, 'user.ext.obusertoken', obUserToken)
+    }
+
+    if (deepAccess(bidderRequest, 'gdprConsent.gdprApplies')) {
+      deepSetValue(request, 'user.ext.consent', bidderRequest.gdprConsent.consentString)
+      deepSetValue(request, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies & 1)
     }
     if (bidderRequest.uspConsent) {
-      utils.deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent)
+      deepSetValue(request, 'regs.ext.us_privacy', bidderRequest.uspConsent)
     }
     if (config.getConfig('coppa') === true) {
-      utils.deepSetValue(request, 'regs.coppa', config.getConfig('coppa') & 1)
+      deepSetValue(request, 'regs.coppa', config.getConfig('coppa') & 1)
+    }
+    if (bidderRequest.gppConsent) {
+      deepSetValue(request, 'regs.ext.gpp', bidderRequest.gppConsent.gppString)
+      deepSetValue(request, 'regs.ext.gpp_sid', bidderRequest.gppConsent.applicableSections)
+    } else if (deepAccess(bidderRequest, 'ortb2.regs.gpp')) {
+      deepSetValue(request, 'regs.ext.gpp', bidderRequest.ortb2.regs.gpp)
+      deepSetValue(request, 'regs.ext.gpp_sid', bidderRequest.ortb2.regs.gpp_sid)
+    }
+
+    if (eids) {
+      deepSetValue(request, 'user.ext.eids', eids);
     }
 
     return {
@@ -126,7 +182,12 @@ export const spec = {
     return bids.map((bid, id) => {
       const bidResponse = bidResponses[id];
       if (bidResponse) {
-        const type = bid.nativeParams ? NATIVE : BANNER;
+        let type = BANNER;
+        if (bid.nativeParams) {
+          type = NATIVE;
+        } else if (isVideoRequest(bid)) {
+          type = VIDEO;
+        }
         const bidObject = {
           requestId: bid.bidId,
           cpm: bidResponse.price,
@@ -139,10 +200,16 @@ export const spec = {
         };
         if (type === NATIVE) {
           bidObject.native = parseNative(bidResponse);
-        } else {
+        } else if (type === BANNER) {
           bidObject.ad = bidResponse.adm;
           bidObject.width = bidResponse.w;
           bidObject.height = bidResponse.h;
+        } else if (type === VIDEO) {
+          bidObject.vastXml = bidResponse.adm;
+          const videoContext = deepAccess(bid, 'mediaTypes.video.context');
+          if (videoContext === OUTSTREAM) {
+            bidObject.renderer = createRenderer(bid);
+          }
         }
         bidObject.meta = {};
         if (bidResponse.adomain && bidResponse.adomain.length > 0) {
@@ -152,7 +219,7 @@ export const spec = {
       }
     }).filter(Boolean);
   },
-  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent) => {
+  getUserSyncs: (syncOptions, responses, gdprConsent, uspConsent, gppConsent) => {
     const syncs = [];
     let syncUrl = config.getConfig('outbrain.usersyncUrl');
 
@@ -164,6 +231,10 @@ export const spec = {
       }
       if (uspConsent) {
         query.push('us_privacy=' + encodeURIComponent(uspConsent));
+      }
+      if (gppConsent) {
+        query.push('gpp=' + encodeURIComponent(gppConsent.gppString));
+        query.push('gpp_sid=' + encodeURIComponent(gppConsent.applicableSections.join(',')));
       }
 
       syncs.push({
@@ -177,7 +248,7 @@ export const spec = {
     // for native requests we put the nurl as an imp tracker, otherwise if the auction takes place on prebid server
     // the server JS adapter puts the nurl in the adm as a tracking pixel and removes the attribute
     if (bid.nurl) {
-      ajax(utils.replaceAuctionPrice(bid.nurl, bid.originalCpm))
+      ajax(replaceAuctionPrice(bid.nurl, bid.originalCpm))
     }
   }
 };
@@ -185,7 +256,7 @@ export const spec = {
 registerBidder(spec);
 
 function parseNative(bid) {
-  const { assets, link, eventtrackers } = JSON.parse(bid.adm);
+  const { assets, link, privacy, eventtrackers } = JSON.parse(bid.adm);
   const result = {
     clickUrl: link.url,
     clickTrackers: link.clicktrackers || undefined
@@ -197,6 +268,9 @@ function parseNative(bid) {
       result[kind] = content.text || content.value || { url: content.url, width: content.w, height: content.h };
     }
   });
+  if (privacy) {
+    result.privacyLink = privacy;
+  }
   if (eventtrackers) {
     result.impressionTrackers = [];
     eventtrackers.forEach(tracker => {
@@ -216,7 +290,7 @@ function parseNative(bid) {
 
 function setOnAny(collection, key) {
   for (let i = 0, result; i < collection.length; i++) {
-    result = utils.deepAccess(collection[i], key);
+    result = deepAccess(collection[i], key);
     if (result) {
       return result;
     }
@@ -228,7 +302,7 @@ function flatten(arr) {
 }
 
 function getNativeAssets(bid) {
-  return utils._map(bid.nativeParams, (bidParams, key) => {
+  return _map(bid.nativeParams, (bidParams, key) => {
     const props = NATIVE_PARAMS[key];
     const asset = {
       required: bidParams.required & 1,
@@ -246,8 +320,8 @@ function getNativeAssets(bid) {
 
       if (bidParams.sizes) {
         const sizes = flatten(bidParams.sizes);
-        w = sizes[0];
-        h = sizes[1];
+        w = parseInt(sizes[0], 10);
+        h = parseInt(sizes[1], 10);
       }
 
       asset[props.name] = {
@@ -264,18 +338,39 @@ function getNativeAssets(bid) {
   }).filter(Boolean);
 }
 
+function getVideoAsset(bid) {
+  const sizes = flatten(bid.mediaTypes.video.playerSize);
+  return {
+    w: parseInt(sizes[0], 10),
+    h: parseInt(sizes[1], 10),
+    protocols: bid.mediaTypes.video.protocols,
+    playbackmethod: bid.mediaTypes.video.playbackmethod,
+    mimes: bid.mediaTypes.video.mimes,
+    skip: bid.mediaTypes.video.skip,
+    delivery: bid.mediaTypes.video.delivery,
+    api: bid.mediaTypes.video.api,
+    minbitrate: bid.mediaTypes.video.minbitrate,
+    maxbitrate: bid.mediaTypes.video.maxbitrate,
+    minduration: bid.mediaTypes.video.minduration,
+    maxduration: bid.mediaTypes.video.maxduration,
+    startdelay: bid.mediaTypes.video.startdelay,
+    placement: bid.mediaTypes.video.plcmt ?? bid.mediaTypes.video.placement,
+    linearity: bid.mediaTypes.video.linearity
+  };
+}
+
 /* Turn bid request sizes into ut-compatible format */
 function transformSizes(requestSizes) {
-  if (!utils.isArray(requestSizes)) {
+  if (!isArray(requestSizes)) {
     return [];
   }
 
-  if (requestSizes.length === 2 && !utils.isArray(requestSizes[0])) {
+  if (requestSizes.length === 2 && !isArray(requestSizes[0])) {
     return [{
       w: parseInt(requestSizes[0], 10),
       h: parseInt(requestSizes[1], 10)
     }];
-  } else if (utils.isArray(requestSizes[0])) {
+  } else if (isArray(requestSizes[0])) {
     return requestSizes.map(item =>
       ({
         w: parseInt(item[0], 10),
@@ -285,4 +380,76 @@ function transformSizes(requestSizes) {
   }
 
   return [];
+}
+
+function _getFloor(bid, type) {
+  const floorInfo = bid.getFloor({
+    currency: CURRENCY,
+    mediaType: type,
+    size: '*'
+  });
+  if (typeof floorInfo === 'object' && floorInfo.currency === CURRENCY && !isNaN(parseFloat(floorInfo.floor))) {
+    return parseFloat(floorInfo.floor);
+  }
+  return null;
+}
+
+function isVideoRequest(bid) {
+  return bid.mediaType === 'video' || !!deepAccess(bid, 'mediaTypes.video');
+}
+
+function createRenderer(bid) {
+  let config = {};
+  let playerUrl = OUTSTREAM_RENDERER_URL;
+  let render = function (bid) {
+    bid.renderer.push(() => {
+      window.ANOutstreamVideo.renderAd({
+        sizes: bid.sizes,
+        targetId: bid.adUnitCode,
+        adResponse: { content: bid.vastXml }
+      });
+    });
+  };
+
+  let externalRenderer = deepAccess(bid, 'mediaTypes.video.renderer');
+  if (!externalRenderer) {
+    externalRenderer = deepAccess(bid, 'renderer');
+  }
+
+  if (externalRenderer) {
+    config = externalRenderer.options;
+    playerUrl = externalRenderer.url;
+    render = externalRenderer.render;
+  }
+
+  const renderer = Renderer.install({
+    id: bid.adUnitCode,
+    url: playerUrl,
+    config: config,
+    adUnitCode: bid.adUnitCode,
+    loaded: false
+  });
+  try {
+    renderer.setRender(render);
+  } catch (err) {
+    logWarn('Prebid Error calling setRender on renderer', err);
+  }
+  return renderer;
+}
+
+function isValidVideoRequest(bid) {
+  const videoAdUnit = deepAccess(bid, 'mediaTypes.video')
+  if (!videoAdUnit) {
+    return false;
+  }
+
+  if (!Array.isArray(videoAdUnit.playerSize)) {
+    return false;
+  }
+
+  if (videoAdUnit.context == '') {
+    return false;
+  }
+
+  return true;
 }

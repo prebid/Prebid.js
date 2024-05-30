@@ -15,7 +15,7 @@ selenium*.log
 integrationExamples/gpt/gpt.html
 integrationExamples/gpt/*-test.html
 integrationExamples/implementations/
-src/adapters/analytics/libraries
+libraries/analyticsAdapter/examples/libraries
 
 # Coverage reports
 build/coverage/

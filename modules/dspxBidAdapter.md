@@ -57,7 +57,8 @@ DSPx adapter for Prebid.
             bids: [{
                 bidder: 'dspx',
                 params: {
-                    placement: '106'
+                    placement: '106',
+                    vastFormat: 'vast2|vast4' // set vast format
                 }
             }]
         }

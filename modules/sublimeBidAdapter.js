@@ -1,6 +1,12 @@
+import { logInfo, generateUUID, formatQS, triggerPixel, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
-import * as utils from '../src/utils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ */
 
 const BIDDER_CODE = 'sublime';
 const BIDDER_GVLID = 114;
@@ -9,16 +15,16 @@ const DEFAULT_CURRENCY = 'EUR';
 const DEFAULT_PROTOCOL = 'https';
 const DEFAULT_TTL = 600;
 const SUBLIME_ANTENNA = 'antenna.ayads.co';
-const SUBLIME_VERSION = '0.7.3';
+const SUBLIME_VERSION = '0.8.0';
 
 /**
  * Identify the current device type
  * @returns {string}
  */
 function detectDevice() {
-  const isMobile = /(?:phone|windowss+phone|ipod|blackberry|Galaxy Nexus|SM-G892A|(?:android|bbd+|meego|silk|googlebot) .+?mobile|palm|windowss+ce|opera mini|avantgo|docomo)/i;
+  const isMobile = /(?:phone|windows\s+phone|ipod|blackberry|Galaxy Nexus|SM-G892A|(?:android|bbd+|meego|silk|googlebot) .+?mobile|palm|windows\s+ce|opera mini|avantgo|docomo)/i;
 
-  const isTablet = /(?:ipad|playbook|Tablet|(?:android|bb\\d+|meego|silk)(?! .+? mobile))/i;
+  const isTablet = /(?:ipad|playbook|Tablet|(?:android|bb\d+|meego|silk)(?! .+? mobile))/i;
 
   return (
     (isMobile.test(navigator.userAgent) && 'm') || // mobile
@@ -27,13 +33,23 @@ function detectDevice() {
   );
 }
 
+const UUID_V4_RE = /^[0-9A-F]{8}-[0-9A-F]{4}-[4][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i;
+/**
+ * Checks whether a notifyId is well-formed
+ * @param {*} value
+ * @returns {boolean}
+ */
+function isValidNotifyId(value) {
+  return UUID_V4_RE.test(value);
+}
+
 /**
  * Debug log message
  * @param {String} msg
  * @param {Object=} obj
  */
 export function log(msg, obj) {
-  utils.logInfo('SublimeBidAdapter - ' + msg, obj);
+  logInfo('SublimeBidAdapter - ' + msg, obj);
 }
 
 // Default state
@@ -51,6 +67,26 @@ export const state = {
 export function setState(value) {
   Object.assign(state, value);
   log('State has been updated :', state);
+}
+
+/**
+ * Get a notifyId from bid params or from sublime global
+ * @param {Object} params - The bid params
+ * @return {string}
+ */
+function getNotifyId(params) {
+  const sublime = window.sublime = window.sublime || {};
+
+  let notifyId = params.notifyId || sublime.notifyId;
+  if (!notifyId) {
+    notifyId = generateUUID();
+    log('generating a notifyId', notifyId);
+  }
+  if (!sublime.notifyId) {
+    sublime.notifyId = notifyId;
+  }
+
+  return notifyId;
 }
 
 /**
@@ -80,8 +116,8 @@ export function sendEvent(eventName, sspName) {
 
   log('Sending pixel for event: ' + eventName, eventObject);
 
-  const queryString = utils.formatQS(eventObject);
-  utils.triggerPixel('https://' + SUBLIME_ANTENNA + '/?' + queryString);
+  const queryString = formatQS(eventObject);
+  triggerPixel('https://' + SUBLIME_ANTENNA + '/?' + queryString);
 }
 
 /**
@@ -91,6 +127,16 @@ export function sendEvent(eventName, sspName) {
  * @return {Boolean} True if this is a valid bid, and false otherwise.
  */
 function isBidRequestValid(bid) {
+  const notifyId = getNotifyId(bid.params);
+  if (!isValidNotifyId(notifyId)) {
+    log(`invalid notifyId format, got "${notifyId}"`);
+    return false;
+  }
+  if (notifyId !== window.sublime.notifyId) {
+    log(`notifyId mismatch: params [${bid.params.notifyId}] / sublime [${window.sublime.notifyId}]`);
+    return false;
+  }
+
   return !!Number(bid.params.zoneId);
 }
 
@@ -114,7 +160,8 @@ function buildRequests(validBidRequests, bidderRequest) {
 
   // RefererInfo
   if (bidderRequest && bidderRequest.refererInfo) {
-    commonPayload.referer = bidderRequest.refererInfo.referer;
+    // TODO: is 'topmostLocation' the right value here?
+    commonPayload.referer = bidderRequest.refererInfo.topmostLocation;
     commonPayload.numIframes = bidderRequest.refererInfo.numIframes;
   }
   // GDPR handling
@@ -127,15 +174,18 @@ function buildRequests(validBidRequests, bidderRequest) {
     const bidHost = bid.params.bidHost || DEFAULT_BID_HOST;
     const protocol = bid.params.protocol || DEFAULT_PROTOCOL;
 
+    const notifyId = getNotifyId(bid.params);
+
     setState({
       transactionId: bid.transactionId,
-      notifyId: bid.params.notifyId,
+      notifyId,
       zoneId: bid.params.zoneId,
       debug: bid.params.debug || false,
     });
 
     const bidPayload = {
       adUnitCode: bid.adUnitCode,
+      // TODO: fix auctionId/transactionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auctionId: bid.auctionId,
       bidder: bid.bidder,
       bidderRequestId: bid.bidderRequestId,
@@ -146,7 +196,7 @@ function buildRequests(validBidRequests, bidderRequest) {
         h: size[1],
       })),
       transactionId: bid.transactionId,
-      notifyId: bid.params.notifyId,
+      notifyId,
       zoneId: bid.params.zoneId,
     };
 
@@ -238,7 +288,7 @@ function onBidWon(bid) {
 function onTimeout(timeoutData) {
   log('Timeout from adapter', timeoutData);
 
-  const timeout = utils.deepAccess(timeoutData, '0.timeout');
+  const timeout = deepAccess(timeoutData, '0.timeout');
   if (timeout) {
     // Set timeout to the one we got from the bid
     setState({ timeout });
@@ -250,15 +300,18 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: BIDDER_GVLID,
   aliases: [],
-  isBidRequestValid: isBidRequestValid,
-  buildRequests: buildRequests,
-  interpretResponse: interpretResponse,
-  onBidWon: onBidWon,
-  onTimeout: onTimeout,
+  isBidRequestValid,
+  buildRequests,
+  interpretResponse,
+  onBidWon,
+  onTimeout,
   // Exposed for test purpose
-  sendEvent: sendEvent,
-  setState: setState,
-  state: state,
+  sendEvent,
+  setState,
+  state,
+  detectDevice,
+  getNotifyId,
+  isValidNotifyId,
 };
 
 registerBidder(spec);

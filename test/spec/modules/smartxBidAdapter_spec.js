@@ -145,7 +145,7 @@ describe('The smartx adapter', function () {
       bid = getValidBidObject();
       bidRequestObj = {
         refererInfo: {
-          referer: 'prebid.js'
+          page: 'prebid.js'
         }
       };
     });
@@ -189,6 +189,14 @@ describe('The smartx adapter', function () {
         domain: '',
         publisher: {
           id: '__name__'
+        },
+        content: {
+          ext: {
+            prebid: {
+              name: 'pbjs',
+              version: '$prebid.version$'
+            }
+          }
         }
       });
     });
@@ -333,6 +341,48 @@ describe('The smartx adapter', function () {
 
       expect(request.data.imp[0].video.minduration).to.equal(3);
       expect(request.data.imp[0].video.maxduration).to.equal(15);
+    });
+
+    it('should pass schain param', function () {
+      var request;
+
+      bid.schain = {
+        complete: 1,
+        nodes: [
+          {
+            asi: 'indirectseller.com',
+            sid: '00001',
+            hp: 1
+          }
+        ]
+      }
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.source).to.deep.equal({
+        ext: {
+          schain: {
+            complete: 1,
+            nodes: [
+              {
+                asi: 'indirectseller.com',
+                sid: '00001',
+                hp: 1
+              }
+            ]
+          }
+        }
+      })
+    });
+
+    it('should pass sitekey param', function () {
+      var request;
+
+      bid.params.sitekey = 'foo'
+
+      request = spec.buildRequests([bid], bidRequestObj)[0];
+
+      expect(request.data.site.content.ext.sitekey).to.equal('foo');
     });
   });
 
@@ -495,7 +545,7 @@ describe('The smartx adapter', function () {
       };
     });
 
-    it('should attempt to insert the script', function () {
+    it('should attempt to insert the script without outstream config options set', function () {
       var scriptTag;
       sinon.stub(window.document, 'getElementById').returns({
         appendChild: sinon.stub().callsFake(function (script) {
@@ -506,9 +556,53 @@ describe('The smartx adapter', function () {
 
       responses[0].renderer.render(responses[0]);
 
-      // expect(scriptTag.getAttribute('type')).to.equal('text/javascript');
-      // expect(scriptTag.getAttribute('src')).to.equal('https://dco.smartclip.net/?plc=7777778');
-      expect(responses[0].renderer.url).to.equal('https://dco.smartclip.net/?plc=7777778');
+      expect(responses[0].renderer.url).to.equal('https://dco.smartclip.net/?plc=7777779');
+
+      window.document.getElementById.restore();
+    });
+
+    it('should attempt to insert the script with outstream config options set', function () {
+      var scriptTag;
+      sinon.stub(window.document, 'getElementById').returns({
+        appendChild: sinon.stub().callsFake(function (script) {
+          scriptTag = script
+        })
+      });
+      var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
+
+      bidderRequestObj.bidRequest.bids[0].params.outstream_options.startOpen = 'true';
+      bidderRequestObj.bidRequest.bids[0].params.outstream_options.endingScreen = 'true';
+      bidderRequestObj.bidRequest.bids[0].params.outstream_options.title = 'abc';
+      bidderRequestObj.bidRequest.bids[0].params.outstream_options.skipOffset = 2;
+      bidderRequestObj.bidRequest.bids[0].params.outstream_options.desiredBitrate = 123;
+      bidderRequestObj.bidRequest.bids[0].params.outstream_options.visibilityThreshold = 30;
+
+      responses[0].renderer.render(responses[0]);
+
+      bidderRequestObj.bidRequest.bids[0].params.outstream_options.startOpen = 'false';
+      bidderRequestObj.bidRequest.bids[0].params.outstream_options.endingScreen = 'false';
+
+      responses[0].renderer.render(responses[0]);
+
+      expect(responses[0].renderer.url).to.equal('https://dco.smartclip.net/?plc=7777779');
+
+      window.document.getElementById.restore();
+    });
+
+    it('should attempt to insert the script without defined slot', function () {
+      var scriptTag;
+      sinon.stub(window.document, 'getElementById').returns({
+        appendChild: sinon.stub().callsFake(function (script) {
+          scriptTag = script
+        })
+      });
+      var responses = spec.interpretResponse(serverResponse, bidderRequestObj);
+
+      delete bidderRequestObj.bidRequest.bids[0].params.outstream_options.slot;
+
+      responses[0].renderer.render(responses[0]);
+
+      expect(responses[0].renderer.url).to.equal('https://dco.smartclip.net/?plc=7777779');
 
       window.document.getElementById.restore();
     });
@@ -522,7 +616,7 @@ describe('The smartx adapter', function () {
       bid = getValidBidObject();
       bidRequestObj = {
         refererInfo: {
-          referer: 'prebid.js'
+          page: 'prebid.js'
         }
       };
       delete bid.params.bidfloor;
@@ -540,7 +634,7 @@ describe('The smartx adapter', function () {
       expect(payload.data.imp[0]).to.have.property('bidfloor', 3.21);
     });
 
-    it('obtain floor from params', function() {
+    it('obtain floor from params', function () {
       bid.getFloor = () => {
         return {
           currency: 'EUR',
@@ -553,7 +647,7 @@ describe('The smartx adapter', function () {
       expect(payload.data.imp[0]).to.have.property('bidfloor', 0.64);
     });
 
-    it('check currency USD', function() {
+    it('check currency USD', function () {
       bid.getFloor = () => {
         return {
           currency: 'USD',
@@ -567,7 +661,7 @@ describe('The smartx adapter', function () {
       expect(payload.data.imp[0]).to.have.property('bidfloor', 1.23);
     });
 
-    it('check defaut currency EUR', function() {
+    it('check defaut currency EUR', function () {
       delete bid.params.bidfloorcur;
 
       bid.getFloor = () => {
@@ -582,7 +676,7 @@ describe('The smartx adapter', function () {
       expect(payload.data.imp[0]).to.have.property('bidfloor', 4.56);
     });
 
-    it('bad floor value', function() {
+    it('bad floor value', function () {
       bid.getFloor = () => {
         return {
           currency: 'EUR',
@@ -594,7 +688,7 @@ describe('The smartx adapter', function () {
       expect(payload.data.imp[0]).to.have.property('bidfloor', 0);
     });
 
-    it('empty floor object', function() {
+    it('empty floor object', function () {
       bid.getFloor = () => {
         return {};
       };
@@ -603,7 +697,7 @@ describe('The smartx adapter', function () {
       expect(payload.data.imp[0]).to.have.property('bidfloor', 0);
     });
 
-    it('undefined floor result', function() {
+    it('undefined floor result', function () {
       bid.getFloor = () => {};
 
       const payload = spec.buildRequests([bid], bidRequestObj)[0];

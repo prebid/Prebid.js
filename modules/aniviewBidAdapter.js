@@ -1,7 +1,7 @@
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { Renderer } from '../src/Renderer.js';
-import * as utils from '../src/utils.js';
+import { logError } from '../src/utils.js';
 
 const BIDDER_CODE = 'aniview';
 const GVLID = 780;
@@ -106,11 +106,8 @@ function buildRequests(validBidRequests, bidderRequest) {
 
       if (s2sParams.AV_APPPKGNAME && !s2sParams.AV_URL) { s2sParams.AV_URL = s2sParams.AV_APPPKGNAME; }
       if (!s2sParams.AV_IDFA && !s2sParams.AV_URL) {
-        if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-          s2sParams.AV_URL = bidderRequest.refererInfo.referer;
-        } else {
-          s2sParams.AV_URL = window.location.href;
-        }
+        // TODO: does it make sense to fall back to window.location here?
+        s2sParams.AV_URL = bidderRequest?.refererInfo?.page || window.location.href;
       }
       if (s2sParams.AV_IDFA && !s2sParams.AV_AID) { s2sParams.AV_AID = s2sParams.AV_IDFA; }
       if (s2sParams.AV_AID && !s2sParams.AV_IDFA) { s2sParams.AV_IDFA = s2sParams.AV_AID; }
@@ -206,7 +203,7 @@ function interpretResponse(serverResponse, bidRequest) {
           let xml = new window.DOMParser().parseFromString(xmlStr, 'text/xml');
           if (xml && xml.getElementsByTagName('parsererror').length == 0) {
             let cpmData = getCpmData(xml);
-            if (cpmData && cpmData.cpm > 0) {
+            if (cpmData.cpm > 0) {
               bidResponse.requestId = bidRequest.data.bidId;
               bidResponse.ad = '';
               bidResponse.cpm = cpmData.cpm;
@@ -224,7 +221,7 @@ function interpretResponse(serverResponse, bidRequest) {
                   });
                   bidResponse.vastUrl = window.URL.createObjectURL(blob);
                 } catch (ex) {
-                  utils.logError('Aniview Debug create vastXml error:\n\n' + ex);
+                  logError('Aniview Debug create vastXml error:\n\n' + ex);
                 }
                 bidResponse.vastXml = xmlStr;
                 if (bidRequest.bidRequest && bidRequest.bidRequest.mediaTypes && bidRequest.bidRequest.mediaTypes.video && bidRequest.bidRequest.mediaTypes.video.context === 'outstream') {
@@ -309,7 +306,7 @@ function getUserSyncs(syncOptions, serverResponses) {
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: ['avantisvideo', 'selectmediavideo', 'vidcrunch', 'openwebvideo'],
+  aliases: ['avantisvideo', 'selectmediavideo', 'vidcrunch', 'openwebvideo', 'didnavideo', 'ottadvisors', 'pgammedia'],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid,
   buildRequests,

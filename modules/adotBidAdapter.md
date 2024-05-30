@@ -6,7 +6,7 @@ Adot Bidder Adapter is a module that enables the communication between the Prebi
 
 - Module name: Adot Bidder Adapter
 - Module type: Bidder Adapter
-- Maintainer: `aurelien.giudici@adotmob.com`
+- Maintainer: `alexandre.lorin@adotmob.com`
 - Supported media types: `banner`, `video`, `native`
 
 ## Example ad units
@@ -34,9 +34,9 @@ const adUnit = {
 
 ### Video ad unit
 
-#### Outstream video ad unit
+#### Video ad unit
 
-Adot Bidder Adapter accepts outstream video ad units using the following ad unit format:
+Adot Bidder Adapter accepts video ad units using the following ad unit format:
 
 ```javascript
 const adUnit = {
@@ -51,9 +51,9 @@ const adUnit = {
             // Content MIME types supported by the ad unit.
             mimes: ['video/mp4'],
             // Minimum accepted video ad duration (in seconds).
-            minDuration: 5,
+            minduration: 5,
             // Maximum accepted video ad duration (in seconds).
-            maxDuration: 35,
+            maxduration: 35,
             // Video protocols supported by the ad unit (see the OpenRTB 2.5 specifications,
             // section 5.8).
             protocols: [2, 3]
@@ -61,45 +61,7 @@ const adUnit = {
     },
     bids: [{
         bidder: 'adot',
-        params: {
-            video: {}
-        }
-    }]
-}
-```
-
-#### Instream video ad unit
-
-Adot Bidder Adapter accepts instream video ad units using the following ad unit format:
-
-```javascript
-const adUnit = {
-    code: 'test-div',
-    mediaTypes: {
-        video: {
-            // Video context. Must be 'instream'.
-            context: 'instream',
-            // Video dimensions supported by the video ad unit.
-            // Each ad unit size is formatted as follows: [width, height].
-            playerSize: [[300, 250]],
-            // Content MIME types supported by the ad unit.
-            mimes: ['video/mp4'],
-            // Minimum accepted video ad duration (in seconds).
-            minDuration: 5,
-            // Maximum accepted video ad duration (in seconds).
-            maxDuration: 35,
-            // Video protocols supported by the ad unit (see the OpenRTB 2.5 specifications,
-            // section 5.8).
-            protocols: [2, 3]
-        }
-    },
-    bids: [{
-        bidder: 'adot',
-        params: {
-            video: {
-                instreamContext: 'pre-roll'
-            }
-        }
+        params: {}
     }]
 }
 ```

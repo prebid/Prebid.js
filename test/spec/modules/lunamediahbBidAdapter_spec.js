@@ -80,7 +80,7 @@ describe('LunamediaHBBidAdapter', function () {
       expect(data).to.be.an('object');
       let placement = data['placements'][0];
       expect(placement).to.be.an('object');
-      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'wPlayer', 'hPlayer', 'schain');
+      expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'wPlayer', 'hPlayer', 'schain', 'videoContext');
       expect(placement.traffic).to.equal(VIDEO);
       expect(placement.wPlayer).to.equal(playerSize[0]);
       expect(placement.hPlayer).to.equal(playerSize[1]);
@@ -299,6 +299,32 @@ describe('LunamediaHBBidAdapter', function () {
       };
       let serverResponses = spec.interpretResponse(invalid);
       expect(serverResponses).to.be.an('array').that.is.empty;
+    });
+  });
+
+  describe('getUserSyncs', function() {
+    it('Should return array of objects with proper sync config , include GDPR', function() {
+      const syncData = spec.getUserSyncs({}, {}, {
+        consentString: 'ALL',
+        gdprApplies: true,
+      }, {});
+      expect(syncData).to.be.an('array').which.is.not.empty;
+      expect(syncData[0]).to.be.an('object')
+      expect(syncData[0].type).to.be.a('string')
+      expect(syncData[0].type).to.equal('image')
+      expect(syncData[0].url).to.be.a('string')
+      expect(syncData[0].url).to.equal('https://cookie.lmgssp.com/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
+    });
+    it('Should return array of objects with proper sync config , include CCPA', function() {
+      const syncData = spec.getUserSyncs({}, {}, {}, {
+        consentString: '1---'
+      });
+      expect(syncData).to.be.an('array').which.is.not.empty;
+      expect(syncData[0]).to.be.an('object')
+      expect(syncData[0].type).to.be.a('string')
+      expect(syncData[0].type).to.equal('image')
+      expect(syncData[0].url).to.be.a('string')
+      expect(syncData[0].url).to.equal('https://cookie.lmgssp.com/image?pbjs=1&ccpa_consent=1---&coppa=0')
     });
   });
 });

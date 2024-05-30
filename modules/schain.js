@@ -1,6 +1,19 @@
-import { config } from '../src/config.js';
+import {config} from '../src/config.js';
 import adapterManager from '../src/adapterManager.js';
-import { isNumber, isStr, isArray, isPlainObject, hasOwn, logError, isInteger, _each, logWarn } from '../src/utils.js';
+import {
+  _each,
+  deepAccess,
+  deepClone,
+  deepSetValue,
+  isArray,
+  isInteger,
+  isNumber,
+  isPlainObject,
+  isStr,
+  logError,
+  logWarn
+} from '../src/utils.js';
+import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 
 // https://github.com/InteractiveAdvertisingBureau/openrtb/blob/master/supplychainobject.md
 
@@ -19,7 +32,7 @@ _each(MODE, mode => MODES.push(mode));
 
 // validate the supply chain object
 export function isSchainObjectValid(schainObject, returnOnError) {
-  let failPrefix = 'Detected something wrong within an schain config:'
+  let failPrefix = 'Detected something wrong within an schain config:';
   let failMsg = '';
 
   function appendFailMsg(msg) {
@@ -51,7 +64,7 @@ export function isSchainObjectValid(schainObject, returnOnError) {
   }
 
   // ext: Object [optional]
-  if (hasOwn(schainObject, 'ext')) {
+  if (schainObject.hasOwnProperty('ext')) {
     if (!isPlainObject(schainObject.ext)) {
       appendFailMsg(`schain.config.ext` + shouldBeAnObject);
     }
@@ -80,28 +93,28 @@ export function isSchainObjectValid(schainObject, returnOnError) {
       }
 
       // rid: String [Optional]
-      if (hasOwn(node, 'rid')) {
+      if (node.hasOwnProperty('rid')) {
         if (!isStr(node.rid)) {
           appendFailMsg(`schain.config.nodes[${index}].rid` + shouldBeAString);
         }
       }
 
       // name: String [Optional]
-      if (hasOwn(node, 'name')) {
+      if (node.hasOwnProperty('name')) {
         if (!isStr(node.name)) {
           appendFailMsg(`schain.config.nodes[${index}].name` + shouldBeAString);
         }
       }
 
       // domain: String [Optional]
-      if (hasOwn(node, 'domain')) {
+      if (node.hasOwnProperty('domain')) {
         if (!isStr(node.domain)) {
           appendFailMsg(`schain.config.nodes[${index}].domain` + shouldBeAString);
         }
       }
 
       // ext: Object [Optional]
-      if (hasOwn(node, 'ext')) {
+      if (node.hasOwnProperty('ext')) {
         if (!isPlainObject(node.ext)) {
           appendFailMsg(`schain.config.nodes[${index}].ext` + shouldBeAnObject);
         }
@@ -168,7 +181,7 @@ export function makeBidRequestsHook(fn, bidderRequests) {
     bidderRequest.bids.forEach(bid => {
       let result = resolveSchainConfig(schainConfig, bidder);
       if (result) {
-        bid.schain = result;
+        bid.schain = deepClone(result);
       }
     });
   });
@@ -181,3 +194,14 @@ export function init() {
 }
 
 init()
+
+export function setOrtbSourceExtSchain(ortbRequest, bidderRequest, context) {
+  if (!deepAccess(ortbRequest, 'source.ext.schain')) {
+    const schain = deepAccess(context, 'bidRequests.0.schain');
+    if (schain) {
+      deepSetValue(ortbRequest, 'source.ext.schain', schain);
+    }
+  }
+}
+
+registerOrtbProcessor({type: REQUEST, name: 'sourceExtSchain', fn: setOrtbSourceExtSchain});

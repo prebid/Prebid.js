@@ -1,4 +1,4 @@
-var utils = require('./utils.js');
+import { getUniqueIdentifierStr } from './utils.js';
 
 /**
  Required paramaters
@@ -14,18 +14,23 @@ var utils = require('./utils.js');
  dealId,
  priceKeyString;
  */
-function Bid(statusCode, bidRequest) {
-  var _bidSrc = (bidRequest && bidRequest.src) || 'client';
+function Bid(statusCode, {src = 'client', bidder = '', bidId, transactionId, adUnitId, auctionId} = {}) {
+  var _bidSrc = src;
   var _statusCode = statusCode || 0;
 
-  this.bidderCode = (bidRequest && bidRequest.bidder) || '';
-  this.width = 0;
-  this.height = 0;
-  this.statusMessage = _getStatus();
-  this.adId = utils.getUniqueIdentifierStr();
-  this.requestId = bidRequest && bidRequest.bidId;
-  this.mediaType = 'banner';
-  this.source = _bidSrc;
+  Object.assign(this, {
+    bidderCode: bidder,
+    width: 0,
+    height: 0,
+    statusMessage: _getStatus(),
+    adId: getUniqueIdentifierStr(),
+    requestId: bidId,
+    transactionId,
+    adUnitId,
+    auctionId,
+    mediaType: 'banner',
+    source: _bidSrc
+  })
 
   function _getStatus() {
     switch (_statusCode) {
@@ -48,9 +53,20 @@ function Bid(statusCode, bidRequest) {
   this.getSize = function () {
     return this.width + 'x' + this.height;
   };
+
+  this.getIdentifiers = function () {
+    return {
+      src: this.source,
+      bidder: this.bidderCode,
+      bidId: this.requestId,
+      transactionId: this.transactionId,
+      adUnitId: this.adUnitId,
+      auctionId: this.auctionId
+    }
+  };
 }
 
 // Bid factory function.
-export function createBid(statusCode, bidRequest) {
-  return new Bid(statusCode, bidRequest);
+export function createBid(statusCode, identifiers) {
+  return new Bid(statusCode, identifiers);
 }

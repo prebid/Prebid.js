@@ -1,24 +1,25 @@
 /* Sigmoid Analytics Adapter for prebid.js v1.1.0-pre
 Updated : 2018-03-28 */
-import includes from 'core-js-pure/features/array/includes.js';
-import adapter from '../src/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import {includes} from '../src/polyfill.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {generateUUID, logError, logInfo} from '../src/utils.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
-const storage = getStorageManager();
-
-const utils = require('../src/utils.js');
+const MODULE_CODE = 'sigmoid';
+const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
 
 const url = 'https://kinesis.us-east-1.amazonaws.com/';
 const analyticsType = 'endpoint';
 
-const auctionInitConst = CONSTANTS.EVENTS.AUCTION_INIT;
-const auctionEndConst = CONSTANTS.EVENTS.AUCTION_END;
-const bidWonConst = CONSTANTS.EVENTS.BID_WON;
-const bidRequestConst = CONSTANTS.EVENTS.BID_REQUESTED;
-const bidAdjustmentConst = CONSTANTS.EVENTS.BID_ADJUSTMENT;
-const bidResponseConst = CONSTANTS.EVENTS.BID_RESPONSE;
+const auctionInitConst = EVENTS.AUCTION_INIT;
+const auctionEndConst = EVENTS.AUCTION_END;
+const bidWonConst = EVENTS.BID_WON;
+const bidRequestConst = EVENTS.BID_REQUESTED;
+const bidAdjustmentConst = EVENTS.BID_ADJUSTMENT;
+const bidResponseConst = EVENTS.BID_RESPONSE;
 
 let initOptions = { publisherIds: [], utmTagData: [], adUnits: [] };
 let bidWon = {options: {}, events: []};
@@ -56,7 +57,7 @@ function buildSessionIdTimeoutLocalStorageKey() {
 
 function updateSessionId() {
   if (isSessionIdTimeoutExpired()) {
-    let newSessionId = utils.generateUUID();
+    let newSessionId = generateUUID();
     storage.setDataInLocalStorage(buildSessionIdLocalStorageKey(), newSessionId);
   }
   initOptions.sessionId = getSessionId();
@@ -206,7 +207,7 @@ sigmoidAdapter.originEnableAnalytics = sigmoidAdapter.enableAnalytics;
 sigmoidAdapter.enableAnalytics = function (config) {
   initOptions = config.options;
   initOptions.utmTagData = this.buildUtmTagData();
-  utils.logInfo('Sigmoid Analytics enabled with config', initOptions);
+  logInfo('Sigmoid Analytics enabled with config', initOptions);
   sigmoidAdapter.originEnableAnalytics(config);
 };
 
@@ -246,7 +247,7 @@ function send(eventType, data, sendDataType) {
   AWS.config.credentials.get(function(err) {
     // attach event listener
     if (err) {
-      utils.logError(err);
+      logError(err);
       return;
     }
     // create kinesis service object
@@ -286,7 +287,7 @@ function pushEvent(eventType, args) {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: sigmoidAdapter,
-  code: 'sigmoid'
+  code: MODULE_CODE,
 });
 
 export default sigmoidAdapter;

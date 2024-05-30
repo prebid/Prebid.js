@@ -1,12 +1,14 @@
+import { deepAccess, parseSizesInput, getWindowLocation, buildUrl } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
-import CONSTANTS from '../src/constants.json';
-import * as utils from '../src/utils.js';
+import { EVENTS } from '../src/constants.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
-const pubxaiAnalyticsVersion = 'v1.1.0';
+const pubxaiAnalyticsVersion = 'v1.2.0';
 const defaultHost = 'api.pbxai.com';
 const auctionPath = '/analytics/auction';
 const winningBidPath = '/analytics/bidwon';
@@ -21,6 +23,14 @@ let events = {
   deviceDetail: {}
 };
 
+function getStorage() {
+  try {
+    return window.top['sessionStorage'];
+  } catch (e) {
+    return null;
+  }
+}
+
 var pubxaiAnalyticsAdapter = Object.assign(adapter(
   {
     emptyUrl,
@@ -28,26 +38,26 @@ var pubxaiAnalyticsAdapter = Object.assign(adapter(
   }), {
   track({ eventType, args }) {
     if (typeof args !== 'undefined') {
-      if (eventType === CONSTANTS.EVENTS.BID_TIMEOUT) {
+      if (eventType === EVENTS.BID_TIMEOUT) {
         args.forEach(item => { mapBidResponse(item, 'timeout'); });
-      } else if (eventType === CONSTANTS.EVENTS.AUCTION_INIT) {
+      } else if (eventType === EVENTS.AUCTION_INIT) {
         events.auctionInit = args;
         events.floorDetail = {};
         events.bids = [];
-        const floorData = utils.deepAccess(args, 'bidderRequests.0.bids.0.floorData');
+        const floorData = deepAccess(args, 'bidderRequests.0.bids.0.floorData');
         if (typeof floorData !== 'undefined') {
           Object.assign(events.floorDetail, floorData);
         }
         auctionTimestamp = args.timestamp;
-      } else if (eventType === CONSTANTS.EVENTS.BID_RESPONSE) {
+      } else if (eventType === EVENTS.BID_RESPONSE) {
         mapBidResponse(args, 'response');
-      } else if (eventType === CONSTANTS.EVENTS.BID_WON) {
+      } else if (eventType === EVENTS.BID_WON) {
         send({
           winningBid: mapBidResponse(args, 'bidwon')
         }, 'bidwon');
       }
     }
-    if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
+    if (eventType === EVENTS.AUCTION_END) {
       send(events, 'auctionEnd');
     }
   }
@@ -57,7 +67,7 @@ function mapBidResponse(bidResponse, status) {
   if (typeof bidResponse !== 'undefined') {
     let bid = {
       adUnitCode: bidResponse.adUnitCode,
-      gptSlotCode: utils.getGptSlotInfoForAdUnitCode(bidResponse.adUnitCode).gptSlot || null,
+      gptSlotCode: getGptSlotInfoForAdUnitCode(bidResponse.adUnitCode).gptSlot || null,
       auctionId: bidResponse.auctionId,
       bidderCode: bidResponse.bidder,
       cpm: bidResponse.cpm,
@@ -77,15 +87,20 @@ function mapBidResponse(bidResponse, status) {
       Object.assign(bid, {
         bidId: status === 'timeout' ? bidResponse.bidId : bidResponse.requestId,
         renderStatus: status === 'timeout' ? 3 : 2,
-        sizes: utils.parseSizesInput(bidResponse.size).toString(),
+        sizes: parseSizesInput(bidResponse.size).toString(),
       });
       events.bids.push(bid);
     } else {
       Object.assign(bid, {
         bidId: bidResponse.requestId,
-        floorProvider: events.floorDetail ? events.floorDetail.floorProvider : null,
+        floorProvider: events.floorDetail?.floorProvider || null,
+        floorFetchStatus: events.floorDetail?.fetchStatus || null,
+        floorLocation: events.floorDetail?.location || null,
+        floorModelVersion: events.floorDetail?.modelVersion || null,
+        floorSkipRate: events.floorDetail?.skipRate || 0,
+        isFloorSkipped: events.floorDetail?.skipped || false,
         isWinningBid: true,
-        placementId: bidResponse.params ? utils.deepAccess(bidResponse, 'params.0.placementId') : null,
+        placementId: bidResponse.params ? deepAccess(bidResponse, 'params.0.placementId') : null,
         renderedSize: bidResponse.size,
         renderStatus: 4
       });
@@ -127,21 +142,30 @@ export function getOS() {
 // add sampling rate
 pubxaiAnalyticsAdapter.shouldFireEventRequest = function (samplingRate = 1) {
   return (Math.floor((Math.random() * samplingRate + 1)) === parseInt(samplingRate));
-}
+};
 
 function send(data, status) {
   if (pubxaiAnalyticsAdapter.shouldFireEventRequest(initOptions.samplingRate)) {
-    let location = utils.getWindowLocation();
+    let location = getWindowLocation();
+    const storage = getStorage();
     data.initOptions = initOptions;
+    data.pageDetail = {};
+    Object.assign(data.pageDetail, {
+      host: location.host,
+      path: location.pathname,
+      search: location.search
+    });
     if (typeof data !== 'undefined' && typeof data.auctionInit !== 'undefined') {
-      Object.assign(data.pageDetail, {
-        host: location.host,
-        path: location.pathname,
-        search: location.search,
-        adUnitCount: data.auctionInit.adUnitCodes ? data.auctionInit.adUnitCodes.length : null
-      });
+      data.pageDetail.adUnits = data.auctionInit.adUnitCodes;
       data.initOptions.auctionId = data.auctionInit.auctionId;
       delete data.auctionInit;
+
+      data.pmcDetail = {};
+      Object.assign(data.pmcDetail, {
+        bidDensity: storage ? storage.getItem('pbx:dpbid') : null,
+        maxBid: storage ? storage.getItem('pbx:mxbid') : null,
+        auctionId: storage ? storage.getItem('pbx:aucid') : null,
+      });
     }
     data.deviceDetail = {};
     Object.assign(data.deviceDetail, {
@@ -150,14 +174,15 @@ function send(data, status) {
       deviceOS: getOS(),
       browser: getBrowser()
     });
-    let pubxaiAnalyticsRequestUrl = utils.buildUrl({
+
+    let pubxaiAnalyticsRequestUrl = buildUrl({
       protocol: 'https',
       hostname: (initOptions && initOptions.hostName) || defaultHost,
       pathname: status == 'bidwon' ? winningBidPath : auctionPath,
       search: {
         auctionTimestamp: auctionTimestamp,
         pubxaiAnalyticsVersion: pubxaiAnalyticsVersion,
-        prebidVersion: $$PREBID_GLOBAL$$.version
+        prebidVersion: getGlobal().version
       }
     });
     if (status == 'bidwon') {

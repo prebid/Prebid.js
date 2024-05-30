@@ -1,7 +1,7 @@
 import {createEidsArray} from 'modules/userId/eids.js';
 import {expect} from 'chai';
 
-//  Note: In unit tets cases for bidders, call the createEidsArray function over userId object that is used for calling fetchBids
+//  Note: In unit test cases for bidders, call the createEidsArray function over userId object that is used for calling fetchBids
 //      this way the request will stay consistent and unit test cases will not need lots of changes.
 
 describe('eids array generation for known sub-modules', function() {
@@ -26,6 +26,18 @@ describe('eids array generation for known sub-modules', function() {
     expect(newEids[0]).to.deep.equal({
       source: 'adserver.org',
       uids: [{id: 'some-random-id-value', atype: 1, ext: { rtiPartner: 'TDID' }}]
+    });
+  });
+
+  it('unifiedId: ext generation with provider', function() {
+    const userId = {
+      tdid: {'id': 'some-sample_id', 'ext': {'provider': 'some.provider.com'}}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'adserver.org',
+      uids: [{id: 'some-sample_id', atype: 1, ext: { rtiPartner: 'TDID', provider: 'some.provider.com' }}]
     });
   });
 
@@ -82,20 +94,65 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('merkleId', function() {
+  it('merkleId (legacy) - supports single id', function() {
     const userId = {
       merkleId: {
         id: 'some-random-id-value', keyID: 1
       }
     };
     const newEids = createEidsArray(userId);
+
     expect(newEids.length).to.equal(1);
     expect(newEids[0]).to.deep.equal({
       source: 'merkleinc.com',
+      uids: [{
+        id: 'some-random-id-value',
+        atype: 3,
+        ext: { keyID: 1 }
+      }]
+    });
+  });
+
+  it('merkleId supports multiple source providers', function() {
+    const userId = {
+      merkleId: [{
+        id: 'some-random-id-value', ext: { enc: 1, keyID: 16, idName: 'pamId', ssp: 'ssp1' }
+      }, {
+        id: 'another-random-id-value',
+        ext: {
+          enc: 1,
+          idName: 'pamId',
+          third: 4,
+          ssp: 'ssp2'
+        }
+      }]
+    }
+
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(2);
+    expect(newEids[0]).to.deep.equal({
+      source: 'ssp1.merkleinc.com',
       uids: [{id: 'some-random-id-value',
         atype: 3,
-        ext: { keyID: 1
-        }}]
+        ext: {
+          enc: 1,
+          keyID: 16,
+          idName: 'pamId',
+          ssp: 'ssp1'
+        }
+      }]
+    });
+    expect(newEids[1]).to.deep.equal({
+      source: 'ssp2.merkleinc.com',
+      uids: [{id: 'another-random-id-value',
+        atype: 3,
+        ext: {
+          third: 4,
+          enc: 1,
+          idName: 'pamId',
+          ssp: 'ssp2'
+        }
+      }]
     });
   });
 
@@ -124,6 +181,251 @@ describe('eids array generation for known sub-modules', function() {
       source: 'liveintent.com',
       uids: [{id: 'some-random-id-value', atype: 3}],
       ext: {segments: ['s1', 's2']}
+    });
+  });
+
+  it('fpid; getValue call', function() {
+    const userId = {
+      fpid: {
+        id: 'some-random-id-value'
+      }
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'fpid.liveintent.com',
+      uids: [{id: 'some-random-id-value', atype: 1}]
+    });
+  });
+
+  it('bidswitch', function() {
+    const userId = {
+      bidswitch: {'id': 'sample_id'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'bidswitch.net',
+      uids: [{
+        id: 'sample_id',
+        atype: 3
+      }]
+    });
+  });
+
+  it('bidswitch with ext', function() {
+    const userId = {
+      bidswitch: {'id': 'sample_id', 'ext': {'provider': 'some.provider.com'}}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'bidswitch.net',
+      uids: [{
+        id: 'sample_id',
+        atype: 3,
+        ext: {
+          provider: 'some.provider.com'
+        }
+      }]
+    });
+  });
+
+  it('medianet', function() {
+    const userId = {
+      medianet: {'id': 'sample_id'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'media.net',
+      uids: [{
+        id: 'sample_id',
+        atype: 3
+      }]
+    });
+  });
+
+  it('medianet with ext', function() {
+    const userId = {
+      medianet: {'id': 'sample_id', 'ext': {'provider': 'some.provider.com'}}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'media.net',
+      uids: [{
+        id: 'sample_id',
+        atype: 3,
+        ext: {
+          provider: 'some.provider.com'
+        }
+      }]
+    });
+  });
+
+  it('sovrn', function() {
+    const userId = {
+      sovrn: {'id': 'sample_id'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'liveintent.sovrn.com',
+      uids: [{
+        id: 'sample_id',
+        atype: 3
+      }]
+    });
+  });
+
+  it('sovrn with ext', function() {
+    const userId = {
+      sovrn: {'id': 'sample_id', 'ext': {'provider': 'some.provider.com'}}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'liveintent.sovrn.com',
+      uids: [{
+        id: 'sample_id',
+        atype: 3,
+        ext: {
+          provider: 'some.provider.com'
+        }
+      }]
+    });
+  });
+
+  it('magnite', function() {
+    const userId = {
+      magnite: {'id': 'sample_id'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'rubiconproject.com',
+      uids: [{
+        id: 'sample_id',
+        atype: 3
+      }]
+    });
+  });
+
+  it('magnite with ext', function() {
+    const userId = {
+      magnite: {'id': 'sample_id', 'ext': {'provider': 'some.provider.com'}}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'rubiconproject.com',
+      uids: [{
+        id: 'sample_id',
+        atype: 3,
+        ext: {
+          provider: 'some.provider.com'
+        }
+      }]
+    });
+  });
+
+  it('index', function() {
+    const userId = {
+      index: {'id': 'sample_id'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'liveintent.indexexchange.com',
+      uids: [{
+        id: 'sample_id',
+        atype: 3
+      }]
+    });
+  });
+
+  it('index with ext', function() {
+    const userId = {
+      index: {'id': 'sample_id', 'ext': {'provider': 'some.provider.com'}}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'liveintent.indexexchange.com',
+      uids: [{
+        id: 'sample_id',
+        atype: 3,
+        ext: {
+          provider: 'some.provider.com'
+        }
+      }]
+    });
+  });
+
+  it('openx', function () {
+    const userId = {
+      openx: { 'id': 'sample_id' }
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'openx.net',
+      uids: [{
+        id: 'sample_id',
+        atype: 3
+      }]
+    });
+  });
+
+  it('openx with ext', function () {
+    const userId = {
+      openx: { 'id': 'sample_id', 'ext': { 'provider': 'some.provider.com' } }
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'openx.net',
+      uids: [{
+        id: 'sample_id',
+        atype: 3,
+        ext: {
+          provider: 'some.provider.com'
+        }
+      }]
+    });
+  });
+
+  it('pubmatic', function() {
+    const userId = {
+      pubmatic: {'id': 'sample_id'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'pubmatic.com',
+      uids: [{
+        id: 'sample_id',
+        atype: 3
+      }]
+    });
+  });
+
+  it('pubmatic with ext', function() {
+    const userId = {
+      pubmatic: {'id': 'sample_id', 'ext': {'provider': 'some.provider.com'}}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'pubmatic.com',
+      uids: [{
+        id: 'sample_id',
+        atype: 3,
+        ext: {
+          provider: 'some.provider.com'
+        }
+      }]
     });
   });
 
@@ -213,18 +515,6 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('NextRollId', function() {
-    const userId = {
-      nextrollId: 'some-random-id-value'
-    };
-    const newEids = createEidsArray(userId);
-    expect(newEids.length).to.equal(1);
-    expect(newEids[0]).to.deep.equal({
-      source: 'nextroll.com',
-      uids: [{id: 'some-random-id-value', atype: 1}]
-    });
-  });
-
   it('zeotapIdPlus', function() {
     const userId = {
       IDP: 'some-random-id-value'
@@ -240,9 +530,9 @@ describe('eids array generation for known sub-modules', function() {
     });
   });
 
-  it('haloId', function() {
+  it('hadronId', function() {
     const userId = {
-      haloId: 'some-random-id-value'
+      hadronId: 'some-random-id-value'
     };
     const newEids = createEidsArray(userId);
     expect(newEids.length).to.equal(1);
@@ -269,6 +559,7 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
+
   it('uid2', function() {
     const userId = {
       uid2: {'id': 'Sample_AD_Token'}
@@ -283,6 +574,70 @@ describe('eids array generation for known sub-modules', function() {
       }]
     });
   });
+
+  it('uid2 with ext', function() {
+    const userId = {
+      uid2: {'id': 'Sample_AD_Token', 'ext': {'provider': 'some.provider.com'}}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'uidapi.com',
+      uids: [{
+        id: 'Sample_AD_Token',
+        atype: 3,
+        ext: {
+          provider: 'some.provider.com'
+        }
+      }]
+    });
+  });
+
+  it('euid', function() {
+    const userId = {
+      euid: {'id': 'Sample_AD_Token'}
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'euid.eu',
+      uids: [{
+        id: 'Sample_AD_Token',
+        atype: 3
+      }]
+    });
+  });
+
+  it('kpuid', function() {
+    const userId = {
+      kpuid: 'Sample_Token'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'kpuid.com',
+      uids: [{
+        id: 'Sample_Token',
+        atype: 3
+      }]
+    });
+  });
+
+  it('tncid', function() {
+    const userId = {
+      tncid: 'TEST_TNCID'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'thenewco.it',
+      uids: [{
+        id: 'TEST_TNCID',
+        atype: 3
+      }]
+    });
+  });
+
   it('pubProvidedId', function() {
     const userId = {
       pubProvidedId: [{
@@ -327,15 +682,138 @@ describe('eids array generation for known sub-modules', function() {
 
     const [eid] = createEidsArray(userId);
     expect(eid).to.deep.equal({
-      source: 'amxrtb.com',
+      source: 'amxdt.net',
       uids: [{
         atype: 1,
         id,
       }]
     });
   });
+
+  it('qid', function() {
+    const userId = {
+      qid: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 'adquery.io',
+      uids: [{
+        id: 'some-random-id-value',
+        atype: 1
+      }]
+    });
+  });
+
+  it('operaId', function() {
+    const userId = {
+      operaId: 'some-random-id-value'
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: 't.adx.opera.com',
+      uids: [{
+        id: 'some-random-id-value',
+        atype: 1
+      }]
+    });
+  });
+
+  it('33acrossId', function() {
+    const userId = {
+      '33acrossId': {
+        envelope: 'some-random-id-value'
+      }
+    };
+    const newEids = createEidsArray(userId);
+    expect(newEids.length).to.equal(1);
+    expect(newEids[0]).to.deep.equal({
+      source: '33across.com',
+      uids: [{
+        id: 'some-random-id-value',
+        atype: 1
+      }]
+    });
+  });
+
+  it('czechAdId', () => {
+    const id = 'some-random-id-value'
+    const userId = { czechAdId: id };
+    const [eid] = createEidsArray(userId);
+    expect(eid).to.deep.equal({
+      source: 'czechadid.cz',
+      uids: [{ id: 'some-random-id-value', atype: 1 }]
+    });
+  });
+
+  describe('ftrackId', () => {
+    it('should return the correct EID schema', () => {
+      // This is the schema returned from the ftrack decode() method
+      expect(createEidsArray({
+        ftrackId: {
+          uid: 'test-device-id',
+          ext: {
+            DeviceID: 'test-device-id',
+            SingleDeviceID: 'test-single-device-id',
+            HHID: 'test-household-id'
+          }
+        },
+        foo: {
+          bar: 'baz'
+        },
+        lorem: {
+          ipsum: ''
+        }
+      })).to.deep.equal([{
+        source: 'flashtalking.com',
+        uids: [{
+          atype: 1,
+          id: 'test-device-id',
+          ext: {
+            DeviceID: 'test-device-id',
+            SingleDeviceID: 'test-single-device-id',
+            HHID: 'test-household-id'
+          }
+        }]
+      }]);
+    });
+  });
+
+  describe('imuid', function() {
+    it('should return the correct EID schema with imuid', function() {
+      const userId = {
+        imuid: 'testimuid'
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'intimatemerger.com',
+        uids: [{
+          id: 'testimuid',
+          atype: 1
+        }]
+      });
+    });
+
+    it('should return the correct EID schema with imppid', function() {
+      const userId = {
+        imppid: 'imppid-value-imppid-value-imppid-value'
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'ppid.intimatemerger.com',
+        uids: [{
+          id: 'imppid-value-imppid-value-imppid-value',
+          atype: 1
+        }]
+      });
+    });
+  });
 });
-describe('Negative case', function() {
+
+describe('Negative case', function () {
   it('eids array generation for UN-known sub-module', function() {
     // UnknownCommonId
     const userId = {

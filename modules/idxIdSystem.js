@@ -4,13 +4,19 @@
  * @module modules/idxIdSystem
  * @requires module:modules/userId
  */
-import * as utils from '../src/utils.js'
+import { isStr, isPlainObject, logError } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ */
 
 const IDX_MODULE_NAME = 'idx';
 const IDX_COOKIE_NAME = '_idx';
-export const storage = getStorageManager();
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: IDX_MODULE_NAME});
 
 function readIDxFromCookie() {
   return storage.cookiesAreEnabled ? storage.getCookie(IDX_COOKIE_NAME) : null;
@@ -34,7 +40,7 @@ export const idxIdSubmodule = {
    * @return { Object | string | undefined }
    */
   decode(value) {
-    const idxVal = value ? utils.isStr(value) ? value : utils.isPlainObject(value) ? value.id : undefined : undefined;
+    const idxVal = value ? isStr(value) ? value : isPlainObject(value) ? value.id : undefined : undefined;
     return idxVal ? {
       'idx': idxVal
     } : undefined;
@@ -52,10 +58,16 @@ export const idxIdSubmodule = {
         const idxObj = JSON.parse(idxString);
         return idxObj && idxObj.idx ? { id: idxObj.idx } : undefined;
       } catch (error) {
-        utils.logError(error);
+        logError(error);
       }
     }
     return undefined;
+  },
+  eids: {
+    'idx': {
+      source: 'idx.lat',
+      atype: 1
+    },
   }
 };
 submodule('userId', idxIdSubmodule);

@@ -1,4 +1,4 @@
-import * as utils from '../src/utils.js';
+import { parseSizesInput, timestamp } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'innity';
@@ -11,25 +11,26 @@ export const spec = {
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     return validBidRequests.map(bidRequest => {
-      let parseSized = utils.parseSizesInput(bidRequest.sizes);
+      let parseSized = parseSizesInput(bidRequest.sizes);
       let arrSize = parseSized[0].split('x');
       return {
         method: 'GET',
         url: ENDPOINT,
         data: {
-          cb: utils.timestamp(),
+          cb: timestamp(),
           ver: 2,
           hb: 1,
           output: 'js',
           pub: bidRequest.params.pub,
           zone: bidRequest.params.zone,
-          url: bidderRequest && bidderRequest.refererInfo ? encodeURIComponent(bidderRequest.refererInfo.referer) : '',
+          url: bidderRequest && bidderRequest.refererInfo ? encodeURIComponent(bidderRequest.refererInfo.page) : '',
           width: arrSize[0],
           height: arrSize[1],
           vpw: window.screen.width,
           vph: window.screen.height,
           callback: 'json',
           callback_uid: bidRequest.bidId,
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           auction: bidRequest.auctionId,
         },
       };
@@ -37,6 +38,9 @@ export const spec = {
   },
   interpretResponse: function(serverResponse, request) {
     const res = serverResponse.body;
+    if (Object.keys(res).length === 0) {
+      return [];
+    }
     const bidResponse = {
       requestId: res.callback_uid,
       cpm: parseFloat(res.cpm) / 100,

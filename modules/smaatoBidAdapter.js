@@ -1,187 +1,128 @@
-import * as utils from '../src/utils.js';
+import {deepAccess, deepSetValue, getDNT, isEmpty, isNumber, logError, logInfo} from '../src/utils.js';
+import {find} from '../src/polyfill.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
-import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.js';
+import {ADPOD, BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
+import {NATIVE_IMAGE_TYPES} from '../src/constants.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
+import {fill} from '../libraries/appnexusUtils/anUtils.js';
+import {chunk} from '../libraries/chunk/chunk.js';
+import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
 
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
-const SMAATO_CLIENT = 'prebid_js_$prebid.version$_1.4'
+const SMAATO_CLIENT = 'prebid_js_$prebid.version$_3.0'
+const TTL = 300;
 const CURRENCY = 'USD';
-
-const buildOpenRtbBidRequest = (bidRequest, bidderRequest) => {
-  const requestTemplate = {
-    id: bidderRequest.auctionId,
-    at: 1,
-    cur: [CURRENCY],
-    tmax: bidderRequest.timeout,
-    site: {
-      id: window.location.hostname,
-      publisher: {
-        id: utils.deepAccess(bidRequest, 'params.publisherId')
-      },
-      domain: window.location.hostname,
-      page: window.location.href,
-      ref: bidderRequest.refererInfo.referer
-    },
-    device: {
-      language: (navigator && navigator.language) ? navigator.language.split('-')[0] : '',
-      ua: navigator.userAgent,
-      dnt: utils.getDNT() ? 1 : 0,
-      h: screen.height,
-      w: screen.width
-    },
-    regs: {
-      coppa: config.getConfig('coppa') === true ? 1 : 0,
-      ext: {}
-    },
-    user: {
-      ext: {}
-    },
-    ext: {
-      client: SMAATO_CLIENT
-    }
-  };
-
-  let ortb2 = config.getConfig('ortb2') || {};
-  Object.assign(requestTemplate.user, ortb2.user);
-  Object.assign(requestTemplate.site, ortb2.site);
-
-  if (bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies === true) {
-    utils.deepSetValue(requestTemplate, 'regs.ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
-    utils.deepSetValue(requestTemplate, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
-  }
-
-  if (bidderRequest.uspConsent !== undefined) {
-    utils.deepSetValue(requestTemplate, 'regs.ext.us_privacy', bidderRequest.uspConsent);
-  }
-
-  if (utils.deepAccess(bidRequest, 'params.app')) {
-    const geo = utils.deepAccess(bidRequest, 'params.app.geo');
-    utils.deepSetValue(requestTemplate, 'device.geo', geo);
-    const ifa = utils.deepAccess(bidRequest, 'params.app.ifa')
-    utils.deepSetValue(requestTemplate, 'device.ifa', ifa);
-  }
-
-  const eids = utils.deepAccess(bidRequest, 'userIdAsEids');
-  if (eids && eids.length) {
-    utils.deepSetValue(requestTemplate, 'user.ext.eids', eids);
-  }
-
-  let requests = [];
-
-  if (utils.deepAccess(bidRequest, 'mediaTypes.banner')) {
-    const bannerRequest = Object.assign({}, requestTemplate, createBannerImp(bidRequest));
-    requests.push(bannerRequest);
-  }
-
-  const videoMediaType = utils.deepAccess(bidRequest, 'mediaTypes.video');
-  if (videoMediaType) {
-    if (videoMediaType.context === ADPOD) {
-      const adPodRequest = Object.assign({}, requestTemplate, createAdPodImp(bidRequest, videoMediaType));
-      addOptionalAdpodParameters(adPodRequest, videoMediaType);
-      requests.push(adPodRequest);
-    } else {
-      const videoRequest = Object.assign({}, requestTemplate, createVideoImp(bidRequest, videoMediaType));
-      requests.push(videoRequest);
-    }
-  }
-
-  return requests;
-}
-
-const buildServerRequest = (validBidRequest, data) => {
-  utils.logInfo('[SMAATO] OpenRTB Request:', data);
-  return {
-    method: 'POST',
-    url: validBidRequest.params.endpoint || SMAATO_ENDPOINT,
-    data: JSON.stringify(data),
-    options: {
-      withCredentials: true,
-      crossOrigin: true,
-    }
-  };
-}
+const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE];
 
 export const spec = {
   code: BIDDER_CODE,
-  supportedMediaTypes: [BANNER, VIDEO],
+  supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
+  gvlid: 82,
 
   /**
-   * Determines whether or not the given bid request is valid.
+   * Determines whether the given bid request is valid.
    *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
    */
   isBidRequestValid: (bid) => {
     if (typeof bid.params !== 'object') {
-      utils.logError('[SMAATO] Missing params object');
+      logError('[SMAATO] Missing params object');
       return false;
     }
 
     if (typeof bid.params.publisherId !== 'string') {
-      utils.logError('[SMAATO] Missing mandatory publisherId param');
+      logError('[SMAATO] Missing mandatory publisherId param');
       return false;
     }
 
-    if (utils.deepAccess(bid, 'mediaTypes.video.context') === ADPOD) {
-      utils.logInfo('[SMAATO] Verifying adpod bid request');
+    if (deepAccess(bid, 'mediaTypes.video.context') === ADPOD) {
+      logInfo('[SMAATO] Verifying adpod bid request');
 
       if (typeof bid.params.adbreakId !== 'string') {
-        utils.logError('[SMAATO] Missing for adpod request mandatory adbreakId param');
+        logError('[SMAATO] Missing for adpod request mandatory adbreakId param');
         return false;
       }
 
       if (bid.params.adspaceId) {
-        utils.logError('[SMAATO] The adspaceId param is not allowed in an adpod bid request');
+        logError('[SMAATO] The adspaceId param is not allowed in an adpod bid request');
         return false;
       }
     } else {
-      utils.logInfo('[SMAATO] Verifying a non adpod bid request');
+      logInfo('[SMAATO] Verifying a non adpod bid request');
 
       if (typeof bid.params.adspaceId !== 'string') {
-        utils.logError('[SMAATO] Missing mandatory adspaceId param');
+        logError('[SMAATO] Missing mandatory adspaceId param');
         return false;
       }
 
       if (bid.params.adbreakId) {
-        utils.logError('[SMAATO] The adbreakId param is only allowed in an adpod bid request');
+        logError('[SMAATO] The adbreakId param is only allowed in an adpod bid request');
         return false;
       }
     }
 
-    utils.logInfo('[SMAATO] Verification done, all good');
+    logInfo('[SMAATO] Verification done, all good');
     return true;
   },
 
-  buildRequests: (validBidRequests, bidderRequest) => {
-    utils.logInfo('[SMAATO] Client version:', SMAATO_CLIENT);
+  buildRequests: (bidRequests, bidderRequest) => {
+    logInfo('[SMAATO] Client version:', SMAATO_CLIENT);
 
-    return validBidRequests.map((validBidRequest) => {
-      const openRtbBidRequests = buildOpenRtbBidRequest(validBidRequest, bidderRequest);
-      return openRtbBidRequests.map((openRtbBidRequest) => buildServerRequest(validBidRequest, openRtbBidRequest));
-    }).reduce((acc, item) => item != null && acc.concat(item), []);
+    let requests = [];
+    bidRequests.forEach(bid => {
+      // separate requests per mediaType
+      SUPPORTED_MEDIA_TYPES.forEach(mediaType => {
+        if ((bid.mediaTypes && bid.mediaTypes[mediaType]) || (mediaType === NATIVE && bid.nativeOrtbRequest)) {
+          const data = converter.toORTB({bidderRequest, bidRequests: [bid], context: {mediaType}});
+          requests.push({
+            method: 'POST',
+            url: bid.params.endpoint || SMAATO_ENDPOINT,
+            data: JSON.stringify(data),
+            options: {
+              withCredentials: true,
+              crossOrigin: true,
+            },
+            bidderRequest
+          })
+        }
+      });
+    });
+
+    return requests;
   },
   /**
    * Unpack the response from the server into a list of bids.
    *
    * @param {ServerResponse} serverResponse A successful response from the server.
+   * @param {BidRequest} bidRequest
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: (serverResponse, bidRequest) => {
     // response is empty (HTTP 204)
-    if (utils.isEmpty(serverResponse.body)) {
-      utils.logInfo('[SMAATO] Empty response body HTTP 204, no bids');
+    if (isEmpty(serverResponse.body)) {
+      logInfo('[SMAATO] Empty response body HTTP 204, no bids');
       return []; // no bids
     }
 
     const serverResponseHeaders = serverResponse.headers;
 
     const smtExpires = serverResponseHeaders.get('X-SMT-Expires');
-    utils.logInfo('[SMAATO] Expires:', smtExpires);
+    logInfo('[SMAATO] Expires:', smtExpires);
     const ttlInSec = smtExpires ? Math.floor((smtExpires - Date.now()) / 1000) : 300;
 
     const response = serverResponse.body;
-    utils.logInfo('[SMAATO] OpenRTB Response:', response);
+    logInfo('[SMAATO] OpenRTB Response:', response);
 
     const smtAdType = serverResponseHeaders.get('X-SMT-ADTYPE');
     const bids = [];
@@ -195,8 +136,8 @@ export const spec = {
           ttl: ttlInSec,
           creativeId: bid.crid,
           dealId: bid.dealid || null,
-          netRevenue: utils.deepAccess(bid, 'ext.net', true),
-          currency: response.cur,
+          netRevenue: deepAccess(bid, 'ext.net', true),
+          currency: CURRENCY,
           meta: {
             advertiserDomains: bid.adomain,
             networkName: bid.bidderName,
@@ -204,7 +145,7 @@ export const spec = {
           }
         };
 
-        const videoContext = utils.deepAccess(JSON.parse(bidRequest.data).imp[0], 'video.ext.context')
+        const videoContext = deepAccess(JSON.parse(bidRequest.data).imp[0], 'video.ext.context');
         if (videoContext === ADPOD) {
           resultingBid.vastXml = bid.adm;
           resultingBid.mediaType = VIDEO;
@@ -219,12 +160,8 @@ export const spec = {
         } else {
           switch (smtAdType) {
             case 'Img':
-              resultingBid.ad = createImgAd(bid.adm);
-              resultingBid.mediaType = BANNER;
-              bids.push(resultingBid);
-              break;
             case 'Richmedia':
-              resultingBid.ad = createRichmediaAd(bid.adm);
+              resultingBid.ad = createBannerAd(bid);
               resultingBid.mediaType = BANNER;
               bids.push(resultingBid);
               break;
@@ -233,15 +170,20 @@ export const spec = {
               resultingBid.mediaType = VIDEO;
               bids.push(resultingBid);
               break;
+            case 'Native':
+              resultingBid.native = createNativeAd(bid.adm);
+              resultingBid.mediaType = NATIVE;
+              bids.push(resultingBid);
+              break;
             default:
-              utils.logInfo('[SMAATO] Invalid ad type:', smtAdType);
+              logInfo('[SMAATO] Invalid ad type:', smtAdType);
           }
         }
         resultingBid.meta.mediaType = resultingBid.mediaType;
       });
     });
 
-    utils.logInfo('[SMAATO] Prebid bids:', bids);
+    logInfo('[SMAATO] Prebid bids:', bids);
     return bids;
   },
 
@@ -258,114 +200,220 @@ export const spec = {
 }
 registerBidder(spec);
 
-const createImgAd = (adm) => {
-  const image = JSON.parse(adm).image;
+const converter = ortbConverter({
+  context: {
+    netRevenue: true,
+    ttl: TTL,
+    currency: CURRENCY
+  },
+  request(buildRequest, imps, bidderRequest, context) {
+    function isGdprApplicable() {
+      return bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies;
+    }
 
-  let clickEvent = '';
-  image.clicktrackers.forEach(src => {
-    clickEvent += `fetch(decodeURIComponent('${encodeURIComponent(src)}'), {cache: 'no-cache'});`;
-  })
-
-  let markup = `<div style="cursor:pointer" onclick="${clickEvent};window.open(decodeURIComponent('${encodeURIComponent(image.img.ctaurl)}'));"><img src="${image.img.url}" width="${image.img.w}" height="${image.img.h}"/>`;
-
-  image.impressiontrackers.forEach(src => {
-    markup += `<img src="${src}" alt="" width="0" height="0"/>`;
-  });
-
-  return markup + '</div>';
-};
-
-const createRichmediaAd = (adm) => {
-  const rich = JSON.parse(adm).richmedia;
-  let clickEvent = '';
-  rich.clicktrackers.forEach(src => {
-    clickEvent += `fetch(decodeURIComponent('${encodeURIComponent(src)}'), {cache: 'no-cache'});`;
-  })
-
-  let markup = `<div onclick="${clickEvent}">${rich.mediadata.content}`;
-
-  rich.impressiontrackers.forEach(src => {
-    markup += `<img src="${src}" alt="" width="0" height="0"/>`;
-  });
-
-  return markup + '</div>';
-};
-
-function createBannerImp(bidRequest) {
-  const adUnitSizes = utils.getAdUnitSizes(bidRequest);
-  const sizes = adUnitSizes.map((size) => ({w: size[0], h: size[1]}));
-  return {
-    imp: [{
-      id: bidRequest.bidId,
-      tagid: utils.deepAccess(bidRequest, 'params.adspaceId'),
-      bidfloor: getBidFloor(bidRequest, BANNER, adUnitSizes),
-      banner: {
-        w: sizes[0].w,
-        h: sizes[0].h,
-        format: sizes
-      }
-    }]
-  };
-}
-
-function createVideoImp(bidRequest, videoMediaType) {
-  return {
-    imp: [{
-      id: bidRequest.bidId,
-      tagid: utils.deepAccess(bidRequest, 'params.adspaceId'),
-      bidfloor: getBidFloor(bidRequest, VIDEO, videoMediaType.playerSize),
-      video: {
-        mimes: videoMediaType.mimes,
-        minduration: videoMediaType.minduration,
-        startdelay: videoMediaType.startdelay,
-        linearity: videoMediaType.linearity,
-        w: videoMediaType.playerSize[0][0],
-        h: videoMediaType.playerSize[0][1],
-        maxduration: videoMediaType.maxduration,
-        skip: videoMediaType.skip,
-        protocols: videoMediaType.protocols,
-        ext: {
-          rewarded: videoMediaType.ext && videoMediaType.ext.rewarded ? videoMediaType.ext.rewarded : 0
-        },
-        skipmin: videoMediaType.skipmin,
-        api: videoMediaType.api
-      }
-    }]
-  };
-}
-
-function createAdPodImp(bidRequest, videoMediaType) {
-  const tagid = utils.deepAccess(bidRequest, 'params.adbreakId')
-  const bce = config.getConfig('adpod.brandCategoryExclusion')
-  let imp = {
-    id: bidRequest.bidId,
-    tagid: tagid,
-    bidfloor: getBidFloor(bidRequest, VIDEO, videoMediaType.playerSize),
-    video: {
-      w: videoMediaType.playerSize[0][0],
-      h: videoMediaType.playerSize[0][1],
-      mimes: videoMediaType.mimes,
-      startdelay: videoMediaType.startdelay,
-      linearity: videoMediaType.linearity,
-      skip: videoMediaType.skip,
-      protocols: videoMediaType.protocols,
-      skipmin: videoMediaType.skipmin,
-      api: videoMediaType.api,
-      ext: {
-        context: ADPOD,
-        brandcategoryexclusion: bce !== undefined && bce
+    const request = buildRequest(imps, bidderRequest, context);
+    const bidRequest = context.bidRequests[0];
+    let siteContent;
+    const mediaType = context.mediaType;
+    if (mediaType === VIDEO) {
+      const videoParams = bidRequest.mediaTypes[VIDEO];
+      if (videoParams.context === ADPOD) {
+        request.imp = createAdPodImp(request.imp[0], videoParams);
+        siteContent = addOptionalAdpodParameters(videoParams);
       }
     }
+
+    request.at = 1;
+
+    if (request.user) {
+      if (isGdprApplicable()) {
+        deepSetValue(request.user, 'ext.consent', bidderRequest.gdprConsent.consentString);
+      }
+    } else {
+      const eids = deepAccess(bidRequest, 'userIdAsEids');
+      request.user = {
+        ext: {
+          consent: isGdprApplicable() ? bidderRequest.gdprConsent.consentString : null,
+          eids: (eids && eids.length) ? eids : null
+        }
+      }
+    }
+
+    if (request.site) {
+      request.site.id = window.location.hostname
+      if (siteContent) {
+        request.site.content = siteContent;
+      }
+    } else {
+      request.site = {
+        id: window.location.hostname,
+        domain: bidderRequest.refererInfo.domain || window.location.hostname,
+        page: bidderRequest.refererInfo.page || window.location.href,
+        ref: bidderRequest.refererInfo.ref,
+        content: siteContent || null
+      }
+    }
+    deepSetValue(request.site, 'publisher.id', bidRequest.params.publisherId);
+
+    if (request.regs) {
+      if (isGdprApplicable()) {
+        deepSetValue(request.regs, 'ext.gdpr', bidderRequest.gdprConsent.gdprApplies ? 1 : 0);
+      }
+      if (bidderRequest.uspConsent !== undefined) {
+        deepSetValue(request.regs, 'ext.us_privacy', bidderRequest.uspConsent);
+      }
+      if (request.regs?.gpp) {
+        deepSetValue(request.regs, 'ext.gpp', request.regs.gpp);
+        deepSetValue(request.regs, 'ext.gpp_sid', request.regs.gpp_sid);
+      }
+    } else {
+      request.regs = {
+        coppa: config.getConfig('coppa') === true ? 1 : 0,
+        ext: {
+          gdpr: isGdprApplicable() ? bidderRequest.gdprConsent.gdprApplies ? 1 : 0 : null,
+          us_privacy: bidderRequest.uspConsent
+        }
+      }
+    }
+
+    if (request.device) {
+      if (bidRequest.params.app) {
+        if (!deepAccess(request.device, 'geo')) {
+          const geo = deepAccess(bidRequest, 'params.app.geo');
+          deepSetValue(request.device, 'geo', geo);
+        }
+        if (!deepAccess(request.device, 'ifa')) {
+          const ifa = deepAccess(bidRequest, 'params.app.ifa');
+          deepSetValue(request.device, 'ifa', ifa);
+        }
+      }
+    } else {
+      request.device = {
+        language: (navigator && navigator.language) ? navigator.language.split('-')[0] : '',
+        ua: navigator.userAgent,
+        dnt: getDNT() ? 1 : 0,
+        h: screen.height,
+        w: screen.width
+      }
+      if (!deepAccess(request.device, 'geo')) {
+        const geo = deepAccess(bidRequest, 'params.app.geo');
+        deepSetValue(request.device, 'geo', geo);
+      }
+      if (!deepAccess(request.device, 'ifa')) {
+        const ifa = deepAccess(bidRequest, 'params.app.ifa');
+        deepSetValue(request.device, 'ifa', ifa);
+      }
+    }
+
+    request.source = {
+      ext: {
+        schain: bidRequest.schain
+      }
+    };
+    request.ext = {
+      client: SMAATO_CLIENT
+    }
+    return request;
+  },
+
+  imp(buildImp, bidRequest, context) {
+    const imp = buildImp(bidRequest, context);
+    deepSetValue(imp, 'tagid', bidRequest.params.adbreakId || bidRequest.params.adspaceId);
+    if (imp.bidfloorcur && imp.bidfloorcur !== CURRENCY) {
+      delete imp.bidfloor;
+      delete imp.bidfloorcur;
+    }
+    return imp;
+  },
+
+  overrides: {
+    imp: {
+      banner(orig, imp, bidRequest, context) {
+        const mediaType = context.mediaType;
+
+        if (mediaType === BANNER) {
+          imp.bidfloor = getBidFloor(bidRequest, BANNER, getAdUnitSizes(bidRequest));
+        }
+
+        orig(imp, bidRequest, context);
+      },
+
+      video(orig, imp, bidRequest, context) {
+        const mediaType = context.mediaType;
+        if (mediaType === VIDEO) {
+          const videoParams = bidRequest.mediaTypes[VIDEO];
+          imp.bidfloor = getBidFloor(bidRequest, VIDEO, videoParams.playerSize);
+          if (videoParams.context !== ADPOD) {
+            deepSetValue(imp, 'video.ext', {
+              rewarded: videoParams.ext && videoParams.ext.rewarded ? videoParams.ext.rewarded : 0
+            })
+          }
+        }
+
+        orig(imp, bidRequest, context);
+      },
+
+      native(orig, imp, bidRequest, context) {
+        const mediaType = context.mediaType;
+
+        if (mediaType === NATIVE) {
+          imp.bidfloor = getBidFloor(bidRequest, NATIVE, getNativeMainImageSize(bidRequest.nativeOrtbRequest));
+        }
+
+        orig(imp, bidRequest, context);
+      }
+    },
+  }
+});
+
+const createBannerAd = (bid) => {
+  let clickEvent = '';
+  if (bid.ext && bid.ext.curls) {
+    let clicks = ''
+    bid.ext.curls.forEach(src => {
+      clicks += `fetch(decodeURIComponent('${encodeURIComponent(src)}'), {cache: 'no-cache'});`;
+    })
+    clickEvent = `onclick="${clicks}"`
   }
 
+  return `<div style="cursor:pointer" ${clickEvent}>${bid.adm}</div>`;
+};
+
+const createNativeAd = (adm) => {
+  const nativeResponse = JSON.parse(adm).native;
+  return {
+    ortb: nativeResponse
+  }
+};
+
+function getNativeMainImageSize(nativeRequest) {
+  const mainImage = find(nativeRequest.assets, asset => asset.hasOwnProperty('img') && asset.img.type === NATIVE_IMAGE_TYPES.MAIN)
+  if (mainImage) {
+    if (isNumber(mainImage.img.w) && isNumber(mainImage.img.h)) {
+      return [[mainImage.img.w, mainImage.img.h]]
+    }
+    if (isNumber(mainImage.img.wmin) && isNumber(mainImage.img.hmin)) {
+      return [[mainImage.img.wmin, mainImage.img.hmin]]
+    }
+  }
+  return []
+}
+
+function createAdPodImp(imp, videoMediaType) {
+  const bce = config.getConfig('adpod.brandCategoryExclusion')
+  imp.video.ext = {
+    context: ADPOD,
+    brandcategoryexclusion: bce !== undefined && bce
+  };
+
   const numberOfPlacements = getAdPodNumberOfPlacements(videoMediaType)
-  let imps = utils.fill(imp, numberOfPlacements)
+  let imps = fill(imp, numberOfPlacements)
 
   const durationRangeSec = videoMediaType.durationRangeSec
   if (videoMediaType.requireExactDuration) {
     // equal distribution of numberOfPlacement over all available durations
     const divider = Math.ceil(numberOfPlacements / durationRangeSec.length)
-    const chunked = utils.chunk(imps, divider)
+    const chunked = chunk(imps, divider)
 
     // each configured duration is set as min/maxduration for a subset of requests
     durationRangeSec.forEach((duration, index) => {
@@ -378,7 +426,7 @@ function createAdPodImp(bidRequest, videoMediaType) {
     });
   } else {
     // all maxdurations should be the same
-    const maxDuration = utils.getMaxValueFromArray(durationRangeSec);
+    const maxDuration = Math.max(...durationRangeSec);
     imps.map((imp, index) => {
       const sequence = index + 1;
       imp.video.maxduration = maxDuration
@@ -386,14 +434,12 @@ function createAdPodImp(bidRequest, videoMediaType) {
     });
   }
 
-  return {
-    imp: imps
-  }
+  return imps
 }
 
 function getAdPodNumberOfPlacements(videoMediaType) {
   const {adPodDurationSec, durationRangeSec, requireExactDuration} = videoMediaType
-  const minAllowedDuration = utils.getMinValueFromArray(durationRangeSec)
+  const minAllowedDuration = Math.min(...durationRangeSec)
   const numberOfPlacements = Math.floor(adPodDurationSec / minAllowedDuration)
 
   return requireExactDuration
@@ -401,7 +447,7 @@ function getAdPodNumberOfPlacements(videoMediaType) {
     : numberOfPlacements
 }
 
-const addOptionalAdpodParameters = (request, videoMediaType) => {
+const addOptionalAdpodParameters = (videoMediaType) => {
   const content = {}
 
   if (videoMediaType.tvSeriesName) {
@@ -423,8 +469,8 @@ const addOptionalAdpodParameters = (request, videoMediaType) => {
     content.livestream = videoMediaType.contentMode === 'live' ? 1 : 0
   }
 
-  if (!utils.isEmpty(content)) {
-    request.site.content = content
+  if (!isEmpty(content)) {
+    return content
   }
 }
 

@@ -1,10 +1,6 @@
 [![Build Status](https://circleci.com/gh/prebid/Prebid.js.svg?style=svg)](https://circleci.com/gh/prebid/Prebid.js)
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Percentage of issues still open")
-[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/prebid/Prebid.js.svg)](http://isitmaintained.com/project/prebid/Prebid.js "Average time to resolve an issue")
-[![Code Climate](https://codeclimate.com/github/prebid/Prebid.js/badges/gpa.svg)](https://codeclimate.com/github/prebid/Prebid.js)
 [![Coverage Status](https://coveralls.io/repos/github/prebid/Prebid.js/badge.svg)](https://coveralls.io/github/prebid/Prebid.js)
-[![devDependencies Status](https://david-dm.org/prebid/Prebid.js/dev-status.svg)](https://david-dm.org/prebid/Prebid.js?type=dev)
-[![Total Alerts](https://img.shields.io/lgtm/alerts/g/prebid/Prebid.js.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/prebid/Prebid.js/alerts/)
 
 # Prebid.js
 
@@ -60,6 +56,8 @@ module.exports = {
           loader: 'babel-loader',
           // presets and plugins for Prebid.js must be manually specified separate from your other babel rule.
           // this can be accomplished by requiring prebid's .babelrc.js file (requires Babel 7 and Node v8.9.0+)
+          // as of Prebid 6, babelrc.js only targets modern browsers. One can change the targets and build for
+          // older browsers if they prefer, but integration tests on ie11 were removed in Prebid.js 6.0
           options: require('prebid.js/.babelrc.js')
         }
       }
@@ -90,7 +88,7 @@ Or for Babel 6:
             }
 ```
 
-Then you can use Prebid.js as any other npm depedendency
+Then you can use Prebid.js as any other npm dependency
 
 ```javascript
 import pbjs from 'prebid.js';
@@ -109,6 +107,8 @@ pbjs.requestBids({
 <a name="Install"></a>
 
 ## Install
+
+
 
     $ git clone https://github.com/prebid/Prebid.js.git
     $ cd Prebid.js
@@ -129,16 +129,22 @@ Once setup, run the following command to globally install the `gulp-cli` package
 
 ## Build for Development
 
-To build the project on your local machine, run:
+To build the project on your local machine we recommend, running:
 
-    $ gulp serve
+    $ gulp serve-and-test --file <spec_file.js>
 
-This runs some code quality checks, starts a web server at `http://localhost:9999` serving from the project root and generates the following files:
+This will run testing but not linting. A web server will start at `http://localhost:9999` serving from the project root and generates the following files:
 
 + `./build/dev/prebid.js` - Full source code for dev and debug
 + `./build/dev/prebid.js.map` - Source map for dev and debug
-+ `./build/dist/prebid.js` - Minified production code
-+ `./prebid.js_<version>.zip` - Distributable zip archive
++ `./build/dev/prebid-core.js`
++ `./build/dev/prebid-core.js.map`
+
+
+Development may be a bit slower but if you prefer linting and additional watch files you can also still run just:
+
+    $ gulp serve 
+
 
 ### Build Optimization
 
@@ -152,7 +158,7 @@ Building with just these adapters will result in a smaller bundle which should a
 
 **Build standalone prebid.js**
 
-- Clone the repo, run `npm install`
+- Clone the repo, run `npm ci`
 - Then run the build:
 
         $ gulp build --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter
@@ -186,7 +192,52 @@ Most likely your custom `prebid.js` will only change when there's:
 
 Having said that, you are probably safe to check your custom bundle into your project.  You can also generate it in your build process.
 
+**Build once, bundle multiple times**
+
+If you need to generate multiple distinct bundles from the same Prebid version, you can reuse a single build with:
+
+```
+gulp build
+gulp bundle --tag one --modules=one.json
+gulp bundle --tag two --modules=two.json
+```
+
+This generates slightly larger files, but has the advantage of being much faster to run (after the initial `gulp build`). It's also the method used by [the Prebid.org download page](https://docs.prebid.org/download.html).  
+
 <a name="Run"></a>
+
+### Excluding particular features from the build
+
+Since version 7.2.0, you may instruct the build to exclude code for some features - for example, if you don't need support for native ads:
+
+```
+gulp build --disable NATIVE --modules=openxBidAdapter,rubiconBidAdapter,sovrnBidAdapter # substitute your module list
+```
+
+Or, if you are consuming Prebid through npm, with the `disableFeatures` option in your Prebid rule:
+
+```javascript
+  {
+    test: /.js$/,
+    include: new RegExp(`\\${path.sep}prebid\\.js`),
+    use: {
+      loader: 'babel-loader',
+      options: require('prebid.js/babelConfig.js')({disableFeatures: ['NATIVE']})
+    }
+  }
+```
+
+**Note**: this is still a work in progress - at the moment, `NATIVE` is the only feature that can be disabled this way, resulting in a minimal decrease in size (but you can expect that to improve over time).
+
+## Unminified code
+
+You can get a version of the code that's unminified for debugging with `build-bundle-dev`:
+
+```bash
+gulp build-bundle-dev --modules=bidderA,module1,...
+```
+
+The results will be in build/dev/prebid.js.
 
 ## Test locally
 
@@ -194,6 +245,12 @@ To lint the code:
 
 ```bash
 gulp lint
+```
+
+To lint and only show errors
+
+```bash
+gulp lint --no-lint-warnings
 ```
 
 To run the unit tests:
@@ -204,7 +261,7 @@ gulp test
 
 To run the unit tests for a particular file (example for pubmaticBidAdapter_spec.js):
 ```bash
-gulp test --file "test/spec/modules/pubmaticBidAdapter_spec.js"
+gulp test --file "test/spec/modules/pubmaticBidAdapter_spec.js" --nolint
 ```
 
 To generate and view the code coverage reports:
@@ -212,6 +269,12 @@ To generate and view the code coverage reports:
 ```bash
 gulp test-coverage
 gulp view-coverage
+```
+
+Local end-to-end testing can be done with:
+
+```bash
+gulp e2e-test --local
 ```
 
 For Prebid.org members with access to BrowserStack, additional end-to-end testing can be done with:
@@ -273,7 +336,7 @@ As you make code changes, the bundles will be rebuilt and the page reloaded auto
 
 ## Contribute
 
-Many SSPs, bidders, and publishers have contributed to this project. [Hundreds of bidders](https://github.com/prebid/Prebid.js/tree/master/src/adapters) are supported by Prebid.js.
+Many SSPs, bidders, and publishers have contributed to this project. [Hundreds of bidders](https://github.com/prebid/Prebid.js/tree/master/modules) are supported by Prebid.js.
 
 For guidelines, see [Contributing](./CONTRIBUTING.md).
 
@@ -315,7 +378,8 @@ For instructions on writing tests for Prebid.js, see [Testing Prebid.js](http://
 
 ### Supported Browsers
 
-Prebid.js is supported on IE11 and modern browsers.
+Prebid.js is supported on IE11 and modern browsers until 5.x. 6.x+ transpiles to target >0.25%; not Opera Mini; not IE11. 
 
 ### Governance
 Review our governance model [here](https://github.com/prebid/Prebid.js/tree/master/governance.md).
+### END

@@ -1,71 +1,31 @@
-import adapter from '../src/AnalyticsAdapter.js'
-import adaptermanager from '../src/adapterManager.js'
-import CONSTANTS from '../src/constants.json'
-import {ajaxBuilder} from '../src/ajax.js'
-import * as utils from '../src/utils.js'
-import {config} from '../src/config.js'
-import find from 'core-js-pure/features/array/find.js'
-import includes from 'core-js-pure/features/array/includes.js'
+import {logError, timestamp} from '../src/utils.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import adaptermanager from '../src/adapterManager.js';
+import { EVENTS } from '../src/constants.js';
+import {ajaxBuilder} from '../src/ajax.js';
+import {config} from '../src/config.js';
+import {find, includes} from '../src/polyfill.js';
+import {getRefererInfo} from '../src/refererDetection.js';
 
 const ajax = ajaxBuilder(0)
 
 const {
-  EVENTS: {
-    AUCTION_END,
-    BID_REQUESTED,
-    BID_ADJUSTMENT,
-    BID_RESPONSE,
-    BID_WON
-  }
-} = CONSTANTS
+  AUCTION_END,
+  BID_REQUESTED,
+  BID_ADJUSTMENT,
+  BID_RESPONSE,
+  BID_WON
+} = EVENTS;
 
 let pbaUrl = 'https://pba.aws.lijit.com/analytics'
 let currentAuctions = {};
 const analyticsType = 'endpoint'
 
-const getClosestTop = () => {
-  let topFrame = window;
-  let err = false;
-  try {
-    while (topFrame.parent.document !== topFrame.document) {
-      if (topFrame.parent.document) {
-        topFrame = topFrame.parent;
-      } else {
-        throw new Error();
-      }
-    }
-  } catch (e) {
-    // bException = true;
-  }
-
-  return {
-    topFrame,
-    err
-  };
-};
-
-const getBestPageUrl = ({err: crossDomainError, topFrame}) => {
-  let sBestPageUrl = '';
-
-  if (!crossDomainError) {
-    // easy case- we can get top frame location
-    sBestPageUrl = topFrame.location.href;
-  } else {
-    try {
-      try {
-        sBestPageUrl = window.top.location.href;
-      } catch (e) {
-        let aOrigins = window.location.ancestorOrigins;
-        sBestPageUrl = aOrigins[aOrigins.length - 1];
-      }
-    } catch (e) {
-      sBestPageUrl = topFrame.document.referrer;
-    }
-  }
-
-  return sBestPageUrl;
-};
-const rootURL = getBestPageUrl(getClosestTop())
+const rootURL = (() => {
+  const ref = getRefererInfo();
+  // TODO: does the fallback make sense here?
+  return ref.page || ref.topmostLocation;
+})();
 
 let sovrnAnalyticsAdapter = Object.assign(adapter({url: pbaUrl, analyticsType}), {
   track({ eventType, args }) {
@@ -112,7 +72,7 @@ sovrnAnalyticsAdapter.enableAnalytics = function (config) {
   if (config && config.options && (config.options.sovrnId || config.options.affiliateId)) {
     sovrnId = config.options.sovrnId || config.options.affiliateId;
   } else {
-    utils.logError('Need Sovrn Id to log auction results. Please contact a Sovrn representative if you do not know your Sovrn Id.')
+    logError('Need Sovrn Id to log auction results. Please contact a Sovrn representative if you do not know your Sovrn Id.')
     return
   }
   sovrnAnalyticsAdapter.sovrnId = sovrnId;
@@ -149,7 +109,7 @@ class BidWinner {
    * Sends the auction to the the ingest server
    */
   send() {
-    this.body.ts = utils.timestamp()
+    this.body.ts = timestamp()
     ajax(
       pbaUrl,
       null,
@@ -269,7 +229,7 @@ class AuctionData {
     Object.keys(maxBids).forEach(unit => {
       maxBids[unit].isAuctionWinner = true
     })
-    this.auction.ts = utils.timestamp()
+    this.auction.ts = timestamp()
     ajax(
       pbaUrl,
       () => {
@@ -311,7 +271,7 @@ class LogError {
     if (ErrorEvent.data && this.error.data.ad) {
       delete this.error.data.ad
     }
-    this.error.ts = utils.timestamp()
+    this.error.ts = timestamp()
     ajax(
       pbaUrl,
       null,

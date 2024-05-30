@@ -1,7 +1,8 @@
-import { submodule } from '../src/hook.js';
-import * as utils from '../src/utils.js';
-import { getGlobal } from '../src/prebidGlobal.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {isEmptyStr, isFn, isStr, logError, mergeDeep} from '../src/utils.js';
+import {loadExternalScript} from '../src/adloader.js';
+import {submodule} from '../src/hook.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {includes} from '../src/polyfill.js';
 
 const MODULE_NAME = 'medianet';
 const SOURCE = MODULE_NAME + 'rtd';
@@ -15,8 +16,8 @@ window.mnjs.que = window.mnjs.que || [];
 
 function init(config) {
   const customerId = config.params && config.params.cid;
-  if (!customerId || !utils.isStr(customerId) || utils.isEmptyStr(customerId)) {
-    utils.logError(`${SOURCE}: cid should be a string`);
+  if (!customerId || !isStr(customerId) || isEmptyStr(customerId)) {
+    logError(`${SOURCE}: cid should be a string`);
     return false;
   }
 
@@ -40,8 +41,8 @@ function getBidRequestData(requestBidsProps, callback, config, userConsent) {
     const success = (adUnitProps, openRtbProps) => {
       adUnits.forEach(adUnit => {
         adUnit[OPEN_RTB_FIELD] = adUnit[OPEN_RTB_FIELD] || {};
-        utils.mergeDeep(adUnit[OPEN_RTB_FIELD], openRtbProps[adUnit.code]);
-        utils.mergeDeep(adUnit, adUnitProps[adUnit.code]);
+        mergeDeep(adUnit[OPEN_RTB_FIELD], openRtbProps[adUnit.code]);
+        mergeDeep(adUnit, adUnitProps[adUnit.code]);
       });
       callback();
     };
@@ -58,14 +59,14 @@ function onAuctionInitEvent(auctionInit) {
   }, SOURCE));
 }
 
-function getTargetingData(adUnitCode) {
-  const adUnits = getAdUnits(undefined, adUnitCode);
+function getTargetingData(adUnitCodes, config, consent, auction) {
+  const adUnits = getAdUnits(auction.adUnits, adUnitCodes);
   let targetingData = {};
-  if (window.mnjs.loaded && utils.isFn(window.mnjs.getTargetingData)) {
-    targetingData = window.mnjs.getTargetingData(adUnitCode, adUnits, SOURCE) || {};
+  if (window.mnjs.loaded && isFn(window.mnjs.getTargetingData)) {
+    targetingData = window.mnjs.getTargetingData(adUnitCodes, adUnits, SOURCE) || {};
   }
   const targeting = {};
-  adUnitCode.forEach(adUnitCode => {
+  adUnitCodes.forEach(adUnitCode => {
     targeting[adUnitCode] = targeting[adUnitCode] || {};
     targetingData[adUnitCode] = targetingData[adUnitCode] || {};
     targeting[adUnitCode] = {
@@ -82,11 +83,8 @@ function executeCommand(command) {
 }
 
 function loadRtdScript(customerId) {
-  const script = document.createElement('script');
-  script.type = 'text/javascript';
-  script.async = true;
-  script.src = getClientUrl(customerId, window.location.hostname);
-  utils.insertElement(script, window.document, 'head');
+  const url = getClientUrl(customerId, window.location.hostname);
+  loadExternalScript(url, MODULE_NAME)
 }
 
 function getAdUnits(adUnits, adUnitCodes) {
