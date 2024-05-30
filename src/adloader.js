@@ -30,12 +30,12 @@ const _approvedLoadExternalJSList = [
   'geoedge',
   'qortex',
   'dynamicAdBoost',
+  '51Degrees',
   // UserId Submodules
   'justtag',
   'tncId',
   'ftrackId',
   'id5',
-  '51Degrees',
 ];
 
 /**
