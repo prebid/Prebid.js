@@ -2111,5 +2111,54 @@ describe('VisxAdapter', function () {
       getDataFromLocalStorageStub && getDataFromLocalStorageStub.restore();
       $$PREBID_GLOBAL$$.bidderSettings = {};
     });
+
+    it('should not pass user id if both cookies and local storage are not available', function () {
+      cookiesAreEnabledStub.returns(false);
+      localStorageIsEnabledStub.returns(false);
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+
+      expect(request.data.user).to.be.undefined;
+    });
+
+    it('should get user id from cookie if available', function () {
+      cookiesAreEnabledStub.returns(true);
+      localStorageIsEnabledStub.returns(false);
+      getCookieStub = sinon.stub(storage, 'getCookie');
+      getCookieStub.withArgs(USER_ID_KEY).returns(USER_ID_DUMMY_VALUE_COOKIE);
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+
+      expect(request.data.user.ext.vads).to.equal(USER_ID_DUMMY_VALUE_COOKIE);
+    });
+
+    it('should get user id from local storage if available', function () {
+      cookiesAreEnabledStub.returns(false);
+      localStorageIsEnabledStub.returns(true);
+      getDataFromLocalStorageStub = sinon.stub(storage, 'getDataFromLocalStorage');
+      getDataFromLocalStorageStub.withArgs(USER_ID_KEY).returns(USER_ID_DUMMY_VALUE_LOCAL_STORAGE);
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+
+      expect(request.data.user.ext.vads).to.equal(USER_ID_DUMMY_VALUE_LOCAL_STORAGE);
+    });
+
+    it('should create user id and store it in cookies (if user id does not exist)', function () {
+      cookiesAreEnabledStub.returns(true);
+      localStorageIsEnabledStub.returns(false);
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(storage.getCookie(USER_ID_KEY)).to.be.a('string');
+      expect(request.data.user.ext.vads).to.be.a('string');
+    });
+
+    it('should create user id and store it in local storage (if user id does not exist)', function () {
+      cookiesAreEnabledStub.returns(false);
+      localStorageIsEnabledStub.returns(true);
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(storage.getDataFromLocalStorage(USER_ID_KEY)).to.be.a('string');
+      expect(request.data.user.ext.vads).to.be.a('string');
+    });
   });
 });

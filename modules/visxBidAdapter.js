@@ -67,7 +67,6 @@ export const spec = {
     let timeout;
     let payloadDevice;
     let payloadSite;
-    let payloadUser;
     let payloadRegs;
     let payloadContent;
 
@@ -116,15 +115,12 @@ export const spec = {
       }
 
       const { ortb2 } = bidderRequest;
-      const { device, site, user, regs, content } = ortb2;
+      const { device, site, regs, content } = ortb2;
       if (device) {
         payloadDevice = device;
       }
       if (site) {
         payloadSite = site;
-      }
-      if (user) {
-        payloadUser = user;
       }
       if (regs) {
         payloadRegs = regs;
@@ -144,16 +140,13 @@ export const spec = {
     };
 
     const vads = _getUserId();
-
-    if (payloadUser === undefined) {
-      payloadUser = {
-        ext: {
-          ...(payloadUserEids && { eids: payloadUserEids }),
-          ...(payload.gdpr_consent && { consent: payload.gdpr_consent }),
-          ...(vads && { vads })
-        }
-      };
-    }
+    const user = {
+      ext: {
+        ...(payloadUserEids && { eids: payloadUserEids }),
+        ...(payload.gdpr_consent && { consent: payload.gdpr_consent }),
+        ...(vads && { vads })
+      }
+    };
     if (payloadRegs === undefined) {
       payloadRegs = ('gdpr_applies' in payload) && {
         ext: {
@@ -168,7 +161,7 @@ export const spec = {
       tmax,
       cur: [currency],
       source,
-      ...(Object.keys(payloadUser.ext).length && {user: payloadUser}),
+      ...(Object.keys(user.ext).length && { user }),
       ...(payloadRegs && {regs: payloadRegs}),
       ...(payloadDevice && { device: payloadDevice }),
       ...(payloadSite && { site: payloadSite }),
