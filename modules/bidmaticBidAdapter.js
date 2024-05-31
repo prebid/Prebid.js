@@ -1,13 +1,13 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { replaceAuctionPrice } from '../src/utils.js';
+import { replaceAuctionPrice, isNumber, deepAccess } from '../src/utils.js';
 
 const BIDDER_CODE = 'bidmatic';
-const END_POINT = 'https://ghb.bidmatic.io/pbs/ortb';
+const END_POINT = 'https://ads45.bidmatic.io/ortb-client/';
 const DEFAULT_CURRENCY = 'USD';
 
-const converter = ortbConverter({
+export const converter = ortbConverter({
   context: {
     netRevenue: true,
     ttl: 290,
@@ -16,9 +16,11 @@ const converter = ortbConverter({
     const imp = buildImp(bidRequest, context);
     if (!imp.bidfloor) {
       imp.bidfloor = bidRequest.params.bidfloor || 0;
-      imp.bidfloorcur = bidRequest.params.currency || DEFAULT_CURRENCY;
+      imp.bidfloorcur = DEFAULT_CURRENCY;
     }
-    imp.ext.source = bidRequest.params.aid
+    imp.tagid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || bidRequest.adUnitCode;
+    imp.ext.souce = bidRequest.params.source;
+
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
@@ -32,48 +34,54 @@ const converter = ortbConverter({
   bidResponse(buildBidResponse, bid, context) {
     const { bidRequest } = context;
 
-    // let resMediaType;
-    // const reqMediaTypes = Object.keys(bidRequest.mediaTypes);
-    // if (reqMediaTypes.length === 1) {
-    //   resMediaType = reqMediaTypes[0];
-    // } else {
-    //   if (bid.adm.search(/^(<\?xml|<vast)/i) !== -1) {
-    //     resMediaType = VIDEO;
-    //   } else if (bid.adm[0] === '{') {
-    //     resMediaType = NATIVE;
-    //   } else {
-    //     resMediaType = BANNER;
-    //   }
-    // }
-    //
-    // context.mediaType = resMediaType;
-    // context.cpm = bid.price;
+    let resMediaType;
+    const reqMediaTypes = Object.keys(bidRequest.mediaTypes);
+    if (reqMediaTypes.length === 1) {
+      resMediaType = reqMediaTypes[0];
+    } else {
+      if (bid.adm.search(/^(<\?xml|<vast)/i) !== -1) {
+        resMediaType = VIDEO;
+      } else {
+        resMediaType = BANNER;
+      }
+    }
 
-    const bidResponse = buildBidResponse(bid, context);
-    return bidResponse;
+    context.mediaType = resMediaType;
+
+    return buildBidResponse(bid, context);
   }
 });
 
 export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO],
-
+  gvlid: 1134,
   isBidRequestValid: function (bid) {
-    return true;
+    if (isNumber(bid.params.source)) {
+      return true;
+    }
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
-    const data = converter.toORTB({ validBidRequests, bidderRequest });
-    const url = new URL(END_POINT);
-    url.searchParams.append('aid', validBidRequests[0].params.aid);
-    return {
-      method: 'POST',
-      url: url.toString(),
-      data: data,
-      options: {
-        withCredentials: false,
-      }
-    };
+    const requestsBySource = validBidRequests.reduce((acc, bidRequest) => {
+      acc[bidRequest.params.source] = acc[bidRequest.params.source] || [];
+      acc[bidRequest.params.source].push(bidRequest);
+      return acc;
+    }, {});
+
+    return Object.entries(requestsBySource).map(([source, bidRequests]) => {
+      const data = converter.toORTB({ bidRequests, bidderRequest });
+      const url = new URL(END_POINT);
+      url.searchParams.append('source', source);
+      return {
+        method: 'POST',
+        url: url.toString(),
+        data: data,
+        options: {
+          withCredentials: false,
+        }
+      };
+    });
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
@@ -84,15 +92,14 @@ export const spec = {
         adm: replaceAuctionPrice(bidItem.adm, bidItem.price),
         nurl: replaceAuctionPrice(bidItem.nurl, bidItem.price)
       }));
-      return {...seatbidItem, bid: parsedBid};
+      return { ...seatbidItem, bid: parsedBid };
     });
 
-    const responseBody = {...serverResponse.body, seatbid: parsedSeatbid};
-    const bids = converter.fromORTB({
+    const responseBody = { ...serverResponse.body, seatbid: parsedSeatbid };
+    return converter.fromORTB({
       response: responseBody,
       request: bidRequest.data,
     }).bids;
-    return bids;
   },
 
 };
