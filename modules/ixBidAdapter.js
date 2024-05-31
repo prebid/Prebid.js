@@ -974,6 +974,7 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
   const tid = impressions[impKeys[adUnitIndex]].tid;
   const sid = impressions[impKeys[adUnitIndex]].sid;
   const auctionEnvironment = impressions[impKeys[adUnitIndex]].ae;
+  const paapi = impressions[impKeys[adUnitIndex]].paapi;
   const bannerImpressions = impressionObjects.filter(impression => BANNER in impression);
   const otherImpressions = impressionObjects.filter(impression => !(BANNER in impression));
 
@@ -1023,7 +1024,7 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
         _bannerImpression.banner.pos = position;
       }
 
-      if (dfpAdUnitCode || gpid || tid || sid || auctionEnvironment || externalID) {
+      if (dfpAdUnitCode || gpid || tid || sid || auctionEnvironment || externalID || paapi) {
         _bannerImpression.ext = {};
 
         _bannerImpression.ext.dfp_ad_unit_code = dfpAdUnitCode;
@@ -1035,6 +1036,7 @@ function addImpressions(impressions, impKeys, r, adUnitIndex) {
         // enable fledge auction
         if (auctionEnvironment == 1) {
           _bannerImpression.ext.ae = 1;
+          _bannerImpression.ext.paapi = paapi;
         }
       }
 
@@ -1440,6 +1442,10 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidde
   const fledgeEnabled = deepAccess(bidderRequest, 'fledgeEnabled')
   if (fledgeEnabled) {
     const auctionEnvironment = deepAccess(validBidRequest, 'ortb2Imp.ext.ae')
+    const paapi = deepAccess(validBidRequest, 'ortb2Imp.ext.paapi')
+    if (paapi) {
+      bannerImps[validBidRequest.adUnitCode].paapi = paapi
+    }
     if (auctionEnvironment) {
       if (isInteger(auctionEnvironment)) {
         bannerImps[validBidRequest.adUnitCode].ae = auctionEnvironment;
