@@ -167,6 +167,7 @@ describe('dailymotionBidAdapterTests', () => {
 
     expect(request.url).to.equal('https://pb.dmxleo.com');
 
+    expect(reqData.pbv).to.eql('$prebid.version$');
     expect(reqData.bidder_request).to.eql({
       refererInfo: bidderRequestData.refererInfo,
       uspConsent: bidderRequestData.uspConsent,
@@ -305,6 +306,7 @@ describe('dailymotionBidAdapterTests', () => {
 
     expect(request.url).to.equal('https://pb.dmxleo.com');
 
+    expect(reqData.pbv).to.eql('$prebid.version$');
     expect(reqData.bidder_request).to.eql({
       refererInfo: bidderRequestData.refererInfo,
       uspConsent: bidderRequestData.uspConsent,
@@ -456,6 +458,7 @@ describe('dailymotionBidAdapterTests', () => {
 
     expect(request.url).to.equal('https://pb.dmxleo.com');
 
+    expect(reqData.pbv).to.eql('$prebid.version$');
     expect(reqData.bidder_request).to.eql({
       refererInfo: bidderRequestData.refererInfo,
       uspConsent: bidderRequestData.uspConsent,
@@ -528,6 +531,7 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.config.api_key).to.eql(bidRequestDataWithApi[0].params.apiKey);
     expect(reqData.coppa).to.be.false;
 
+    expect(reqData.pbv).to.eql('$prebid.version$');
     expect(reqData.bidder_request).to.eql({
       gdprConsent: {
         apiVersion: 1,

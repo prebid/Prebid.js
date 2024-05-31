@@ -134,6 +134,7 @@ export const spec = {
     method: 'POST',
     url: 'https://pb.dmxleo.com',
     data: {
+      pbv: '$prebid.version$',
       bidder_request: {
         gdprConsent: {
           apiVersion: deepAccess(bidderRequest, 'gdprConsent.apiVersion', 1),
