@@ -298,7 +298,7 @@ describe('BlueBillywigAdapter', () => {
       expect(payload.id).to.exist;
       expect(payload.source).to.be.an('object');
       expect(payload.source.tid).to.equal(validBidderRequest.ortb2.source.tid);
-      expect(payload.tmax).to.equal(BB_CONSTANTS.DEFAULT_TIMEOUT);
+      expect(payload.tmax).to.equal(3000);
       expect(payload.imp).to.be.an('array');
       expect(payload.test).to.be.a('number');
       expect(payload).to.have.nested.property('ext.prebid.targeting');

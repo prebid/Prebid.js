@@ -3,7 +3,7 @@ import * as utils from 'src/utils.js';
 
 import spec, {self as exports} from 'modules/automatadAnalyticsAdapter.js';
 
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 import { expect } from 'chai';
 
 const obj = {
@@ -28,7 +28,7 @@ const {
   BID_TIMEOUT,
   BID_WON,
   NO_BID
-} = CONSTANTS.EVENTS
+} = EVENTS
 
 const CONFIG_WITH_DEBUG = {
   provider: 'atmtdAnalyticsAdapter',

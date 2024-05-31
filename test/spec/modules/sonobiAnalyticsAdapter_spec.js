@@ -1,9 +1,10 @@
 import sonobiAnalytics, {DEFAULT_EVENT_URL} from 'modules/sonobiAnalyticsAdapter.js';
 import {expect} from 'chai';
 import {server} from 'test/mocks/xhr.js';
+import { EVENTS } from 'src/constants.js';
+
 let events = require('src/events');
 let adapterManager = require('src/adapterManager').default;
-let constants = require('src/constants.json');
 
 describe('Sonobi Prebid Analytic', function () {
   var clock;
@@ -55,25 +56,25 @@ describe('Sonobi Prebid Analytic', function () {
       });
 
       // Step 2: Send init auction event
-      events.emit(constants.EVENTS.AUCTION_INIT, {config: initOptions, auctionId: '13', timestamp: Date.now()});
+      events.emit(EVENTS.AUCTION_INIT, { config: initOptions, auctionId: '13', timestamp: Date.now() });
 
       expect(sonobiAnalytics.initOptions).to.have.property('pubId', 'A3B254F');
       expect(sonobiAnalytics.initOptions).to.have.property('siteId', '1234');
       expect(sonobiAnalytics.initOptions).to.have.property('delay', 100);
       // Step 3: Send bid requested event
-      events.emit(constants.EVENTS.BID_REQUESTED, { bids: [bid], auctionId: '13' });
+      events.emit(EVENTS.BID_REQUESTED, { bids: [bid], auctionId: '13' });
 
       // Step 4: Send bid response event
-      events.emit(constants.EVENTS.BID_RESPONSE, bid);
+      events.emit(EVENTS.BID_RESPONSE, bid);
 
       // Step 5: Send bid won event
-      events.emit(constants.EVENTS.BID_WON, bid);
+      events.emit(EVENTS.BID_WON, bid);
 
       // Step 6: Send bid timeout event
-      events.emit(constants.EVENTS.BID_TIMEOUT, {auctionId: '13'});
+      events.emit(EVENTS.BID_TIMEOUT, { auctionId: '13' });
 
       // Step 7: Send auction end event
-      events.emit(constants.EVENTS.AUCTION_END, {auctionId: '13', bidsReceived: [bid]});
+      events.emit(EVENTS.AUCTION_END, { auctionId: '13', bidsReceived: [bid] });
 
       clock.tick(5000);
       const req = server.requests.find(req => req.url.indexOf(DEFAULT_EVENT_URL) !== -1);

@@ -14,7 +14,7 @@ export const ORTB_VIDEO_PARAMS = {
   'w': (value) => isInteger(value),
   'h': (value) => isInteger(value),
   'startdelay': (value) => isInteger(value),
-  'placement': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 5),
+  'plcmt': (value) => Array.isArray(value) && value.every(v => v >= 1 && v <= 5),
   'linearity': (value) => [1, 2].indexOf(value) !== -1,
   'skip': (value) => [0, 1].indexOf(value) !== -1,
   'skipmin': (value) => isInteger(value),
@@ -96,6 +96,20 @@ export const spec = {
     if (bidderRequest && bidderRequest.gdprConsent) {
       deepSetValue(openRtbBidRequest, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
       deepSetValue(openRtbBidRequest, 'regs.ext.gdpr', (bidderRequest.gdprConsent.gdprApplies ? 1 : 0));
+    }
+
+    // GPP Consent
+    if (bidderRequest?.gppConsent?.gppString) {
+      deepSetValue(openRtbBidRequest, 'regs.gpp', bidderRequest.gppConsent.gppString);
+      deepSetValue(openRtbBidRequest, 'regs.gpp_sid', bidderRequest.gppConsent.applicableSections);
+    } else if (bidderRequest?.ortb2?.regs?.gpp) {
+      deepSetValue(openRtbBidRequest, 'regs.gpp', bidderRequest.ortb2.regs.gpp);
+      deepSetValue(openRtbBidRequest, 'regs.gpp_sid', bidderRequest.ortb2.regs.gpp_sid);
+    }
+
+    // coppa compliance
+    if (bidderRequest?.ortb2?.regs?.coppa) {
+      deepSetValue(openRtbBidRequest, 'regs.coppa', 1);
     }
 
     injectEids(openRtbBidRequest, validBidRequests);

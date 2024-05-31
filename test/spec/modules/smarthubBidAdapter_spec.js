@@ -4,6 +4,7 @@ import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
 const bidder = 'smarthub'
+const bidderAlias = 'markapp'
 
 describe('SmartHubBidAdapter', function () {
   const bids = [
@@ -21,6 +22,22 @@ describe('SmartHubBidAdapter', function () {
         token: 'testBanner',
         iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
         minBidfloor: 10,
+        pos: 1,
+      }
+    },
+    {
+      bidId: getUniqueIdentifierStr(),
+      bidder: bidderAlias,
+      mediaTypes: {
+        [BANNER]: {
+          sizes: [[400, 350]]
+        }
+      },
+      params: {
+        seat: 'testSeat',
+        token: 'testBanner',
+        iabCat: ['IAB1-1', 'IAB3-1', 'IAB4-3'],
+        minBidfloor: 9,
         pos: 1,
       }
     },
@@ -105,7 +122,7 @@ describe('SmartHubBidAdapter', function () {
   });
 
   describe('buildRequests', function () {
-    let [serverRequest] = spec.buildRequests(bids, bidderRequest);
+    let [serverRequest, requestAlias] = spec.buildRequests(bids, bidderRequest);
 
     it('Creates a ServerRequest object with method, URL and data', function () {
       expect(serverRequest).to.exist;
@@ -119,7 +136,11 @@ describe('SmartHubBidAdapter', function () {
     });
 
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://testname-prebid.smart-hub.io/pbjs');
+      expect(serverRequest.url).to.equal(`https://prebid.smart-hub.io/pbjs?partnerName=testname`);
+    });
+
+    it('Returns valid URL if alias', function () {
+      expect(requestAlias.url).to.equal(`https://${bidderAlias}-prebid.smart-hub.io/pbjs`);
     });
 
     it('Returns general data valid', function () {

@@ -13,8 +13,10 @@ import {
 } from './utils.js';
 import {includes} from './polyfill.js';
 import {auctionManager} from './auctionManager.js';
-import CONSTANTS from './constants.json';
+import {NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS} from './constants.js';
 import {NATIVE} from './mediaTypes.js';
+import {getRenderingData} from './adRendering.js';
+import {getCreativeRendererSource} from './creativeRenderers.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -23,8 +25,8 @@ import {NATIVE} from './mediaTypes.js';
 
 export const nativeAdapters = [];
 
-export const NATIVE_TARGETING_KEYS = Object.keys(CONSTANTS.NATIVE_KEYS).map(
-  key => CONSTANTS.NATIVE_KEYS[key]
+export const NATIVE_TARGETING_KEYS = Object.keys(NATIVE_KEYS).map(
+  key => NATIVE_KEYS[key]
 );
 
 export const IMAGE = {
@@ -83,8 +85,6 @@ export const IMAGE = {
 const SUPPORTED_TYPES = {
   image: IMAGE
 };
-
-const { NATIVE_ASSET_TYPES, NATIVE_IMAGE_TYPES, PREBID_NATIVE_DATA_KEYS_TO_ORTB, NATIVE_KEYS_THAT_ARE_NOT_ASSETS, NATIVE_KEYS } = CONSTANTS;
 
 // inverse native maps useful for converting to legacy
 const PREBID_NATIVE_DATA_KEYS_TO_ORTB_INVERSE = inverse(PREBID_NATIVE_DATA_KEYS_TO_ORTB);
@@ -425,7 +425,7 @@ export function getNativeRenderingData(bid, adUnit, keys) {
   const data = {
     ...getDefinedParams(bid.native, ['rendererUrl', 'adTemplate']),
     assets: getNativeAssets(bid.native, keys),
-    nativeKeys: CONSTANTS.NATIVE_KEYS
+    nativeKeys: NATIVE_KEYS
   };
   if (bid.native.ortb) {
     data.ortb = bid.native.ortb;
@@ -436,14 +436,27 @@ export function getNativeRenderingData(bid, adUnit, keys) {
 }
 
 function assetsMessage(data, adObject, keys, {index = auctionManager.index} = {}) {
-  return {
+  const msg = {
     message: 'assetResponse',
     adId: data.adId,
-    ...getNativeRenderingData(adObject, index.getAdUnit(adObject), keys)
   };
+  let renderData = getRenderingData(adObject).native;
+  if (renderData) {
+    // if we have native rendering data (set up by the nativeRendering module)
+    // include it in full ("all assets") together with the renderer.
+    // this is to allow PUC to use dynamic renderers without requiring changes in creative setup
+    msg.native = Object.assign({}, renderData);
+    msg.renderer = getCreativeRendererSource(adObject);
+    if (keys != null) {
+      renderData.assets = renderData.assets.filter(({key}) => keys.includes(key))
+    }
+  } else {
+    renderData = getNativeRenderingData(adObject, index.getAdUnit(adObject), keys);
+  }
+  return Object.assign(msg, renderData);
 }
 
-const NATIVE_KEYS_INVERTED = Object.fromEntries(Object.entries(CONSTANTS.NATIVE_KEYS).map(([k, v]) => [v, k]));
+const NATIVE_KEYS_INVERTED = Object.fromEntries(Object.entries(NATIVE_KEYS).map(([k, v]) => [v, k]));
 
 /**
  * Constructs a message object containing asset values for each of the
@@ -476,7 +489,7 @@ function getNativeKeys(adUnit) {
   }
 
   return {
-    ...CONSTANTS.NATIVE_KEYS,
+    ...NATIVE_KEYS,
     ...extraNativeKeys
   }
 }
