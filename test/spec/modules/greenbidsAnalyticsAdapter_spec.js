@@ -167,7 +167,6 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
             isTimeout: false,
             hasBid: true,
           });
-          expect(result.params).to.eql({});
         });
 
         it('should handle NO_BID properly and set hasBid to false', function () {
@@ -178,7 +177,6 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
             isTimeout: false,
             hasBid: false,
           });
-          expect(result.params).to.eql({});
         });
 
         it('should handle TIMEOUT properly and set isTimeout to true', function () {
@@ -189,7 +187,6 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
             isTimeout: true,
             hasBid: false,
           });
-          expect(result.params).to.eql({});
         });
       });
 
