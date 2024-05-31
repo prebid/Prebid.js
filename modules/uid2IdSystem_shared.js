@@ -187,11 +187,15 @@ if (FEATURES.UID2_CSTG) {
   clientSideTokenGenerator = {
     isCSTGOptionsValid(maybeOpts, _logWarn) {
       if (typeof maybeOpts !== 'object' || maybeOpts === null) {
-        _logWarn('CSTG opts must be an object');
+        _logWarn('CSTG is not being used, but is included in the Prebid.js bundle. You can reduce the bundle size by passing "--disable UID2_CSTG" to the Prebid.js build.');
         return false;
       }
 
       const opts = maybeOpts;
+      if (!opts.serverPublicKey && !opts.subscriptionId) {
+        _logWarn('CSTG has been enabled but its parameters have not been set.');
+        return false;
+      }
       if (typeof opts.serverPublicKey !== 'string') {
         _logWarn('CSTG opts.serverPublicKey must be a string');
         return false;
