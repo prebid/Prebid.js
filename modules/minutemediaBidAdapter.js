@@ -1,4 +1,16 @@
-import { logWarn, logInfo, isArray, isFn, deepAccess, isEmpty, contains, timestamp, getBidIdParameter, triggerPixel, isInteger } from '../src/utils.js';
+import {
+  logWarn,
+  logInfo,
+  isArray,
+  isFn,
+  deepAccess,
+  isEmpty,
+  contains,
+  timestamp,
+  triggerPixel,
+  isInteger,
+  getBidIdParameter
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -7,7 +19,7 @@ const SUPPORTED_AD_TYPES = [BANNER, VIDEO];
 const BIDDER_CODE = 'minutemedia';
 const ADAPTER_VERSION = '6.0.0';
 const TTL = 360;
-const CURRENCY = 'USD';
+const DEFAULT_CURRENCY = 'USD';
 const SELLER_ENDPOINT = 'https://hb.minutemedia-prebid.com/';
 const MODES = {
   PRODUCTION: 'hb-mm-multi',
@@ -60,11 +72,11 @@ export const spec = {
         const bidResponse = {
           requestId: adUnit.requestId,
           cpm: adUnit.cpm,
-          currency: adUnit.currency || CURRENCY,
+          currency: adUnit.currency || DEFAULT_CURRENCY,
           width: adUnit.width,
           height: adUnit.height,
           ttl: adUnit.ttl || TTL,
-          creativeId: adUnit.requestId,
+          creativeId: adUnit.creativeId,
           netRevenue: adUnit.netRevenue || true,
           nurl: adUnit.nurl,
           mediaType: adUnit.mediaType,
@@ -134,11 +146,11 @@ function getFloor(bid, mediaType) {
     return 0;
   }
   let floorResult = bid.getFloor({
-    currency: CURRENCY,
+    currency: DEFAULT_CURRENCY,
     mediaType: mediaType,
     size: '*'
   });
-  return floorResult.currency === CURRENCY && floorResult.floor ? floorResult.floor : 0;
+  return floorResult.currency === DEFAULT_CURRENCY && floorResult.floor ? floorResult.floor : 0;
 }
 
 /**
@@ -288,7 +300,8 @@ function generateBidParameters(bid, bidderRequest) {
     bidId: getBidIdParameter('bidId', bid),
     loop: getBidIdParameter('bidderRequestsCount', bid),
     bidderRequestId: getBidIdParameter('bidderRequestId', bid),
-    transactionId: getBidIdParameter('transactionId', bid),
+    transactionId: bid.ortb2Imp?.ext?.tid || '',
+    coppa: 0,
   };
 
   const pos = deepAccess(bid, `mediaTypes.${mediaType}.pos`);
@@ -304,6 +317,25 @@ function generateBidParameters(bid, bidderRequest) {
   const placementId = params.placementId || deepAccess(bid, `mediaTypes.${mediaType}.name`);
   if (placementId) {
     bidObject.placementId = placementId;
+  }
+
+  const mimes = deepAccess(bid, `mediaTypes.${mediaType}.mimes`);
+  if (mimes) {
+    bidObject.mimes = mimes;
+  }
+  const api = deepAccess(bid, `mediaTypes.${mediaType}.api`);
+  if (api) {
+    bidObject.api = api;
+  }
+
+  const sua = deepAccess(bid, `ortb2.device.sua`);
+  if (sua) {
+    bidObject.sua = sua;
+  }
+
+  const coppa = deepAccess(bid, `ortb2.regs.coppa`)
+  if (coppa) {
+    bidObject.coppa = 1;
   }
 
   if (mediaType === VIDEO) {
@@ -346,6 +378,16 @@ function generateBidParameters(bid, bidderRequest) {
     if (linearity) {
       bidObject.linearity = linearity;
     }
+
+    const protocols = deepAccess(bid, `mediaTypes.video.protocols`);
+    if (protocols) {
+      bidObject.protocols = protocols;
+    }
+
+    const plcmt = deepAccess(bid, `mediaTypes.video.plcmt`);
+    if (plcmt) {
+      bidObject.plcmt = plcmt;
+    }
   }
 
   return bidObject;
@@ -366,7 +408,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
   const {syncEnabled, filterSettings} = config.getConfig('userSync') || {};
   const {bidderCode} = bidderRequest;
   const generalBidParams = generalObject.params;
-  const timeout = config.getConfig('bidderTimeout');
+  const timeout = bidderRequest.timeout;
 
   // these params are snake_case instead of camelCase to allow backwards compatability on the server.
   // in the future, these will be converted to camelCase to match our convention.
@@ -382,7 +424,8 @@ function generateGeneralParams(generalObject, bidderRequest) {
     dnt: (navigator.doNotTrack == 'yes' || navigator.doNotTrack == '1' || navigator.msDoNotTrack == '1') ? 1 : 0,
     device_type: getDeviceType(navigator.userAgent),
     ua: navigator.userAgent,
-    session_id: getBidIdParameter('auctionId', generalObject),
+    is_wrapper: !!generalBidParams.isWrapper,
+    session_id: generalBidParams.sessionId || getBidIdParameter('bidderRequestId', generalObject),
     tmax: timeout
   }
 
@@ -415,6 +458,14 @@ function generateGeneralParams(generalObject, bidderRequest) {
     generalParams.gdpr_consent = bidderRequest.gdprConsent.consentString;
   }
 
+  if (bidderRequest.gppConsent) {
+    generalParams.gpp = bidderRequest.gppConsent.gppString;
+    generalParams.gpp_sid = bidderRequest.gppConsent.applicableSections;
+  } else if (bidderRequest.ortb2?.regs?.gpp) {
+    generalParams.gpp = bidderRequest.ortb2.regs.gpp;
+    generalParams.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
+  }
+
   if (generalBidParams.ifa) {
     generalParams.ifa = generalBidParams.ifa;
   }
@@ -425,7 +476,7 @@ function generateGeneralParams(generalObject, bidderRequest) {
 
   if (bidderRequest && bidderRequest.refererInfo) {
     generalParams.referrer = deepAccess(bidderRequest, 'refererInfo.ref');
-    generalParams.page_url = deepAccess(bidderRequest, 'refererInfo.page') || window.location.href
+    generalParams.page_url = deepAccess(bidderRequest, 'refererInfo.page') || deepAccess(window, 'location.href');
   }
 
   return generalParams

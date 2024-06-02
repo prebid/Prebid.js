@@ -106,8 +106,11 @@ describe('AdmanAdapter', function () {
       let placements = data['placements'];
       for (let i = 0; i < placements.length; i++) {
         let placement = placements[i];
-        expect(placement).to.have.all.keys('placementId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'bidFloor');
+        expect(placement).to.have.all.keys('placementId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'bidFloor', 'ext');
         expect(placement.schain).to.be.an('object')
+        expect(placement.ext).to.be.an('object')
+        expect(placement.ext).to.have.key('tid')
+        expect(placement.ext.tid).to.equal(bidBanner.transactionId);
         expect(placement.placementId).to.be.a('number');
         expect(placement.bidId).to.be.a('string');
         expect(placement.traffic).to.be.a('string');
@@ -130,14 +133,16 @@ describe('AdmanAdapter', function () {
       let placements = data['placements'];
       for (let i = 0; i < placements.length; i++) {
         let placement = placements[i];
-        expect(placement).to.have.all.keys('placementId', 'eids', 'bidId', 'traffic', 'sizes', 'schain', 'bidFloor',
+        expect(placement).to.have.all.keys('placementId', 'eids', 'bidId', 'traffic', 'schain', 'bidFloor',
           'playerSize', 'minduration', 'maxduration', 'mimes', 'protocols', 'startdelay', 'placement', 'skip',
-          'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity');
+          'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity', 'ext');
+        expect(placement.ext).to.be.an('object')
+        expect(placement.ext).to.have.key('tid')
+        expect(placement.ext.tid).to.equal(bidBanner.transactionId);
         expect(placement.schain).to.be.an('object')
         expect(placement.placementId).to.be.a('number');
         expect(placement.bidId).to.be.a('string');
         expect(placement.traffic).to.be.a('string');
-        expect(placement.sizes).to.be.an('array');
         expect(placement.bidFloor).to.be.an('number');
       }
     });

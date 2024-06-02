@@ -18,4 +18,16 @@ describe('pbjs - ortb user eids', () => {
     setOrtbUserExtEids(req, {}, [{}]);
     expect(req).to.eql({});
   })
+
+  it('has no effect if user.ext.eids is an empty array', () => {
+    const req = {};
+    setOrtbUserExtEids(req, {}, {
+      bidRequests: [
+        {
+          userIdAsEids: []
+        }
+      ]
+    });
+    expect(req).to.eql({});
+  });
 })

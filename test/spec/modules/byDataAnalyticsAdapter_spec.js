@@ -1,8 +1,9 @@
 import ascAdapter from 'modules/byDataAnalyticsAdapter';
 import { expect } from 'chai';
+import {EVENTS} from 'src/constants.js';
+
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
-let constants = require('src/constants.json');
 let auctionId = 'b70ef967-5c5b-4602-831e-f2cf16e59af2';
 const initOptions = {
   clientId: 'asc00000',
@@ -96,7 +97,7 @@ let expectedDataArgs = {
     aus: '300x250',
     bidadv: 'appnexus',
     bid: '14480e9832f2d2b',
-    inb: 0,
+    inb: 1,
     ito: 0,
     ipwb: 0,
     iwb: 0,
@@ -107,7 +108,7 @@ let expectedDataArgs = {
     aus: '250x250',
     bidadv: 'appnexus',
     bid: '14480e9832f2d2b',
-    inb: 0,
+    inb: 1,
     ito: 0,
     ipwb: 0,
     iwb: 0,
@@ -167,16 +168,18 @@ describe('byData Analytics Adapter ', () => {
   });
 
   describe('track-events', function () {
-    ascAdapter.enableAnalytics(initOptions)
-    // Step 1: Initialize adapter
-    adapterManager.enableAnalytics({
-      provider: 'bydata',
-      options: initOptions
+    before(() => {
+      ascAdapter.enableAnalytics(initOptions)
+      // Step 1: Initialize adapter
+      adapterManager.enableAnalytics({
+        provider: 'bydata',
+        options: initOptions
+      });
     });
     it('sends and formatted auction data ', function () {
-      events.emit(constants.EVENTS.BID_TIMEOUT, bidTimeoutArgs);
-      events.emit(constants.EVENTS.NO_BID, noBidArgs);
-      events.emit(constants.EVENTS.BID_WON, bidWonArgs)
+      events.emit(EVENTS.BID_TIMEOUT, bidTimeoutArgs);
+      events.emit(EVENTS.NO_BID, noBidArgs);
+      events.emit(EVENTS.BID_WON, bidWonArgs)
       var userToken = ascAdapter.getVisitorData(userData);
       var newAuData = ascAdapter.dataProcess(auctionEndArgs);
       var newBwData = ascAdapter.getBidWonData(bidWonArgs);

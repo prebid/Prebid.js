@@ -522,6 +522,19 @@ describe('consentManagement', function () {
         setConsentConfig(goodConfig);
         expect(uspDataHandler.getConsentData()).to.eql('string');
       });
+
+      it('does not invoke registerDeletion if the CMP calls back with an error', () => {
+        sandbox.stub(window, '__uspapi').callsFake((cmd, _, cb) => {
+          if (cmd === 'registerDeletion') {
+            cb(null, false);
+          } else {
+            // eslint-disable-next-line standard/no-callback-literal
+            cb({uspString: 'string'}, true);
+          }
+        });
+        setConsentConfig(goodConfig);
+        sinon.assert.notCalled(adapterManager.callDataDeletionRequest);
+      })
     });
   });
 });

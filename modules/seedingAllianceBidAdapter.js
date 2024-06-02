@@ -1,11 +1,11 @@
 // jshint esversion: 6, es3: false, node: true
 'use strict';
 
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { NATIVE, BANNER } from '../src/mediaTypes.js';
-import { _map, isArray, isEmpty, deepSetValue, replaceAuctionPrice } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import {_map, deepSetValue, isArray, isEmpty, replaceAuctionPrice} from '../src/utils.js';
+import {config} from '../src/config.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
 const GVL_ID = 371;
 const BIDDER_CODE = 'seedingAlliance';
@@ -110,7 +110,7 @@ export const spec = {
     });
 
     const request = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       site: {
         page: url
       },
@@ -167,7 +167,6 @@ export const spec = {
             netRevenue: true,
             currency: cur,
             mediaType: type,
-            bidderCode: BIDDER_CODE,
             meta: {
               advertiserDomains: bidResponse.adomain && bidResponse.adomain.length > 0 ? bidResponse.adomain : []
             }

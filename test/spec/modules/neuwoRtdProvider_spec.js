@@ -60,7 +60,6 @@ describe('neuwoRtdProvider', function () {
         neuwo.injectTopics(topics, bidsConfig, () => { })
         expect(bidsConfig.ortb2Fragments.global.site.content.data[0].name, 'name of first content data object').to.equal(neuwo.DATA_PROVIDER)
         expect(bidsConfig.ortb2Fragments.global.site.content.data[0].segment[0].id, 'id of first segment in content.data').to.equal(TAX_ID)
-        expect(bidsConfig.ortb2Fragments.global.site.cattax, 'category taxonomy code for pagecat').to.equal(6) // CATTAX_IAB
         expect(bidsConfig.ortb2Fragments.global.site.pagecat[0], 'category taxonomy code for pagecat').to.equal(TAX_ID)
       })
 

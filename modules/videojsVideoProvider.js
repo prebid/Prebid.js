@@ -35,7 +35,7 @@ https://github.com/Conviva/conviva-js-videojs/blob/master/conviva-videojs-module
 const setupFailMessage = 'Failed to instantiate the player';
 const AD_MANAGER_EVENTS = [AD_LOADED, AD_STARTED, AD_IMPRESSION, AD_PLAY, AD_PAUSE, AD_TIME, AD_COMPLETE, AD_SKIPPED];
 
-export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStorage_, utils) {
+export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, callbackStorage_, utils) {
   let vjs = vjs_;
   // Supplied callbacks are typically wrapped by handlers
   // we use this dict to keep track of these pairings
@@ -46,7 +46,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
   let player = null;
   let playerVersion = null;
   let playerIsSetup = false;
-  const {playerConfig, divId} = config;
+  const {playerConfig, divId} = providerConfig;
   let isMuted;
   let previousLastTimePosition = 0;
   let lastTimePosition = 0;
@@ -201,8 +201,15 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       return;
     }
 
-    player.ima.changeAdTag(adTagUrl);
-    player.ima.requestAds();
+    // The VideoJS IMA plugin version 1.11.0 will throw when the ad is empty.
+    try {
+      player.ima.changeAdTag(adTagUrl);
+      player.ima.requestAds();
+    } catch (e) {
+      /*
+      Handling is not required; ad errors are emitted automatically by video.js
+       */
+    }
   }
 
   function onEvent(type, callback, payload) {
@@ -521,7 +528,7 @@ export function VideojsProvider(config, vjs_, adState_, timeState_, callbackStor
       return;
     }
 
-    const adConfig = utils.getAdConfig(config);
+    const adConfig = utils.getAdConfig(playerConfig);
     player.ima(adConfig);
   }
 
@@ -628,6 +635,8 @@ export const utils = {
         return 'adserror';
       case CONTENT_LOADED:
         return 'loadstart';
+      case ERROR:
+        return ['error', 'aderror', 'contenterror'];
       case PLAY:
         return PLAY + 'ing';
       case PLAYBACK_REQUEST:

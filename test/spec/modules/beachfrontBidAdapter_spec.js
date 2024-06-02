@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec, VIDEO_ENDPOINT, BANNER_ENDPOINT, OUTSTREAM_SRC, DEFAULT_MIMES } from 'modules/beachfrontBidAdapter.js';
-import { config } from 'src/config.js';
-import { parseUrl, deepAccess } from 'src/utils.js';
+import { parseUrl } from 'src/utils.js';
 
 describe('BeachfrontAdapter', function () {
   let bidRequests;
@@ -246,14 +245,14 @@ describe('BeachfrontAdapter', function () {
         const mimes = ['video/webm'];
         const playbackmethod = 2;
         const maxduration = 30;
-        const placement = 4;
+        const plcmt = 4;
         const skip = 1;
         bidRequest.mediaTypes = {
-          video: { mimes, playbackmethod, maxduration, placement, skip }
+          video: { mimes, playbackmethod, maxduration, plcmt, skip }
         };
         const requests = spec.buildRequests([ bidRequest ], {});
         const data = requests[0].data;
-        expect(data.imp[0].video).to.deep.contain({ mimes, playbackmethod, maxduration, placement, skip });
+        expect(data.imp[0].video).to.deep.contain({ mimes, playbackmethod, maxduration, plcmt, skip });
       });
 
       it('must override video params from the bidder object', function () {
@@ -261,13 +260,13 @@ describe('BeachfrontAdapter', function () {
         const mimes = ['video/webm'];
         const playbackmethod = 2;
         const maxduration = 30;
-        const placement = 4;
+        const plcmt = 4;
         const skip = 1;
-        bidRequest.mediaTypes = { video: { placement: 3, skip: 0 } };
-        bidRequest.params.video = { mimes, playbackmethod, maxduration, placement, skip };
+        bidRequest.mediaTypes = { video: { plcmt: 3, skip: 0 } };
+        bidRequest.params.video = { mimes, playbackmethod, maxduration, plcmt, skip };
         const requests = spec.buildRequests([ bidRequest ], {});
         const data = requests[0].data;
-        expect(data.imp[0].video).to.deep.contain({ mimes, playbackmethod, maxduration, placement, skip });
+        expect(data.imp[0].video).to.deep.contain({ mimes, playbackmethod, maxduration, plcmt, skip });
       });
 
       it('must add US privacy data to the request', function () {
@@ -294,6 +293,23 @@ describe('BeachfrontAdapter', function () {
         const data = requests[0].data;
         expect(data.regs.ext.gdpr).to.equal(1);
         expect(data.user.ext.consent).to.equal(consentString);
+      });
+
+      it('must add GPP consent data to the request', function () {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { video: {} };
+        const gppString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+        const applicableSections = [1, 2, 3];
+        const bidderRequest = {
+          gppConsent: {
+            gppString,
+            applicableSections
+          }
+        };
+        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+        const data = requests[0].data;
+        expect(data.regs.gpp).to.equal(gppString);
+        expect(data.regs.gpp_sid).to.deep.equal(applicableSections);
       });
 
       it('must add schain data to the request', () => {
@@ -517,6 +533,23 @@ describe('BeachfrontAdapter', function () {
         expect(data.gdprConsent).to.equal(consentString);
       });
 
+      it('must add GPP consent data to the request', function () {
+        const bidRequest = bidRequests[0];
+        bidRequest.mediaTypes = { banner: {} };
+        const gppString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+        const applicableSections = [1, 2, 3];
+        const bidderRequest = {
+          gppConsent: {
+            gppString,
+            applicableSections
+          }
+        };
+        const requests = spec.buildRequests([ bidRequest ], bidderRequest);
+        const data = requests[0].data;
+        expect(data.gpp).to.equal(gppString);
+        expect(data.gppSid).to.deep.equal(applicableSections);
+      });
+
       it('must add schain data to the request', () => {
         const schain = {
           ver: '1.0',
@@ -695,7 +728,6 @@ describe('BeachfrontAdapter', function () {
         const bidResponse = spec.interpretResponse({ body: serverResponse }, { bidRequest });
         expect(bidResponse).to.deep.equal({
           requestId: bidRequest.bidId,
-          bidderCode: spec.code,
           cpm: serverResponse.bidPrice,
           creativeId: serverResponse.crid,
           vastUrl: serverResponse.url,

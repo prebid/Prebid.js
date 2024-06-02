@@ -59,7 +59,8 @@ describe('minutemediaAdapter', function () {
         'mediaTypes': {
           'video': {
             'playerSize': [[640, 480]],
-            'context': 'instream'
+            'context': 'instream',
+            'plcmt': 1
           }
         },
         'vastXml': '"<VAST version=\\\"2.0\\\">...</VAST>"'
@@ -103,11 +104,26 @@ describe('minutemediaAdapter', function () {
       bidderCode: 'minutemedia',
     }
     const placementId = '12345678';
+    const api = [1, 2];
+    const mimes = ['application/javascript', 'video/mp4', 'video/quicktime'];
+    const protocols = [2, 3, 5, 6];
 
     it('sends the placementId to ENDPOINT via POST', function () {
       bidRequests[0].params.placementId = placementId;
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.bids[0].placementId).to.equal(placementId);
+    });
+
+    it('sends the plcmt to ENDPOINT via POST', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.bids[0].plcmt).to.equal(1);
+    });
+
+    it('sends the is_wrapper parameter to ENDPOINT via POST', function() {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.have.property('is_wrapper');
+      expect(request.data.params.is_wrapper).to.equal(false);
     });
 
     it('sends bid request to ENDPOINT via POST', function () {
@@ -125,6 +141,27 @@ describe('minutemediaAdapter', function () {
     it('should send the correct bid Id', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.bids[0].bidId).to.equal('299ffc8cca0b87');
+    });
+
+    it('should send the correct supported api array', function () {
+      bidRequests[0].mediaTypes.video.api = api;
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.bids[0].api).to.be.an('array');
+      expect(request.data.bids[0].api).to.eql([1, 2]);
+    });
+
+    it('should send the correct mimes array', function () {
+      bidRequests[1].mediaTypes.banner.mimes = mimes;
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.bids[1].mimes).to.be.an('array');
+      expect(request.data.bids[1].mimes).to.eql(['application/javascript', 'video/mp4', 'video/quicktime']);
+    });
+
+    it('should send the correct protocols array', function () {
+      bidRequests[0].mediaTypes.video.protocols = protocols;
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.bids[0].protocols).to.be.an('array');
+      expect(request.data.bids[0].protocols).to.eql([2, 3, 5, 6]);
     });
 
     it('should send the correct sizes array', function () {
@@ -254,6 +291,22 @@ describe('minutemediaAdapter', function () {
       expect(request.data.params).to.have.property('gdpr_consent', 'test-consent-string');
     });
 
+    it('should not send the gpp param if gppConsent is false in the bidRequest', function () {
+      const bidderRequestWithGPP = Object.assign({gppConsent: false}, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.not.have.property('gpp');
+      expect(request.data.params).to.not.have.property('gpp_sid');
+    });
+
+    it('should send the gpp param if gppConsent is true in the bidRequest', function () {
+      const bidderRequestWithGPP = Object.assign({gppConsent: {gppString: 'test-consent-string', applicableSections: [7]}}, bidderRequest);
+      const request = spec.buildRequests(bidRequests, bidderRequestWithGPP);
+      expect(request.data.params).to.be.an('object');
+      expect(request.data.params).to.have.property('gpp', 'test-consent-string');
+      expect(request.data.params.gpp_sid[0]).to.be.equal(7);
+    });
+
     it('should have schain param if it is available in the bidRequest', () => {
       const schain = {
         ver: '1.0',
@@ -293,6 +346,86 @@ describe('minutemediaAdapter', function () {
       expect(request.data.bids[0]).to.be.an('object');
       expect(request.data.bids[0]).to.have.property('floorPrice', 1.5);
     });
+
+    it('should check sua param in bid request', function() {
+      const sua = {
+        'platform': {
+          'brand': 'macOS',
+          'version': ['12', '4', '0']
+        },
+        'browsers': [
+          {
+            'brand': 'Chromium',
+            'version': [ '106', '0', '5249', '119' ]
+          },
+          {
+            'brand': 'Google Chrome',
+            'version': [ '106', '0', '5249', '119' ]
+          },
+          {
+            'brand': 'Not;A=Brand',
+            'version': [ '99', '0', '0', '0' ]
+          }
+        ],
+        'mobile': 0,
+        'model': '',
+        'bitness': '64',
+        'architecture': 'x86'
+      }
+      const bid = utils.deepClone(bidRequests[0]);
+      bid.ortb2 = {
+        'device': {
+          'sua': {
+            'platform': {
+              'brand': 'macOS',
+              'version': [ '12', '4', '0' ]
+            },
+            'browsers': [
+              {
+                'brand': 'Chromium',
+                'version': [ '106', '0', '5249', '119' ]
+              },
+              {
+                'brand': 'Google Chrome',
+                'version': [ '106', '0', '5249', '119' ]
+              },
+              {
+                'brand': 'Not;A=Brand',
+                'version': [ '99', '0', '0', '0' ]
+              }
+            ],
+            'mobile': 0,
+            'model': '',
+            'bitness': '64',
+            'architecture': 'x86'
+          }
+        }
+      }
+      const requestWithSua = spec.buildRequests([bid], bidderRequest);
+      const data = requestWithSua.data;
+      expect(data.bids[0].sua).to.exist;
+      expect(data.bids[0].sua).to.deep.equal(sua);
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.bids[0].sua).to.not.exist;
+    });
+
+    describe('COPPA Param', function() {
+      it('should set coppa equal 0 in bid request if coppa is set to false', function() {
+        const request = spec.buildRequests(bidRequests, bidderRequest);
+        expect(request.data.bids[0].coppa).to.be.equal(0);
+      });
+
+      it('should set coppa equal 1 in bid request if coppa is set to true', function() {
+        const bid = utils.deepClone(bidRequests[0]);
+        bid.ortb2 = {
+          'regs': {
+            'coppa': true,
+          }
+        };
+        const request = spec.buildRequests([bid], bidderRequest);
+        expect(request.data.bids[0].coppa).to.be.equal(1);
+      });
+    });
   });
 
   describe('interpretResponse', function () {
@@ -307,6 +440,8 @@ describe('minutemediaAdapter', function () {
         width: 640,
         height: 480,
         requestId: '21e12606d47ba7',
+        creativeId: 'creative-id',
+        nurl: 'http://example.com/win/1234',
         adomain: ['abc.com'],
         mediaType: VIDEO
       },
@@ -316,6 +451,8 @@ describe('minutemediaAdapter', function () {
         width: 300,
         height: 250,
         requestId: '21e12606d47ba7',
+        creativeId: 'creative-id',
+        nurl: 'http://example.com/win/1234',
         adomain: ['abc.com'],
         mediaType: BANNER
       }]
@@ -328,7 +465,7 @@ describe('minutemediaAdapter', function () {
       width: 640,
       height: 480,
       ttl: TTL,
-      creativeId: '21e12606d47ba7',
+      creativeId: 'creative-id',
       netRevenue: true,
       nurl: 'http://example.com/win/1234',
       mediaType: VIDEO,
@@ -343,10 +480,10 @@ describe('minutemediaAdapter', function () {
       requestId: '21e12606d47ba7',
       cpm: 12.5,
       currency: 'USD',
-      width: 640,
-      height: 480,
+      width: 300,
+      height: 250,
       ttl: TTL,
-      creativeId: '21e12606d47ba7',
+      creativeId: 'creative-id',
       netRevenue: true,
       nurl: 'http://example.com/win/1234',
       mediaType: BANNER,
@@ -359,8 +496,8 @@ describe('minutemediaAdapter', function () {
 
     it('should get correct bid response', function () {
       const result = spec.interpretResponse({ body: response });
-      expect(Object.keys(result[0])).to.deep.equal(Object.keys(expectedVideoResponse));
-      expect(Object.keys(result[1])).to.deep.equal(Object.keys(expectedBannerResponse));
+      expect(result[0]).to.deep.equal(expectedVideoResponse);
+      expect(result[1]).to.deep.equal(expectedBannerResponse);
     });
 
     it('video type should have vastXml key', function () {

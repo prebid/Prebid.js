@@ -48,6 +48,7 @@ export const spec = {
     const eids = getFirstWithKey(validBidRequests, 'userIdAsEids');
     const schain = getFirstWithKey(validBidRequests, 'schain');
     const request = {
+      // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
       auctionId: bidderRequest.auctionId,
       currency,
       hb_version: '$prebid.version$',

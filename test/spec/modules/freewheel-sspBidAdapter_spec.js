@@ -1,8 +1,11 @@
 import { expect } from 'chai';
 import { spec } from 'modules/freewheel-sspBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { createEidsArray } from 'modules/userId/eids.js';
+import { config } from 'src/config.js';
 
 const ENDPOINT = '//ads.stickyadstv.com/www/delivery/swfIndex.php';
+const PREBID_VERSION = '$prebid.version$';
 
 describe('freewheelSSP BidAdapter Test', () => {
   const adapter = newBidder(spec);
@@ -131,6 +134,22 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload._fw_bidfloorcur).to.deep.equal('USD');
     });
 
+    it('should pass 3rd party IDs with the request when present', function () {
+      const bidRequest = bidRequests[0];
+      bidRequest.userIdAsEids = [
+        {source: 'adserver.org', uids: [{id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: {rtiPartner: 'TDID'}}]},
+        {source: 'admixer.net', uids: [{id: 'admixerId_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'adtelligent.com', uids: [{id: 'adtelligentId_FROM_USER_ID_MODULE', atype: 3}]},
+      ];
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload._fw_prebid_3p_UID).to.deep.equal(JSON.stringify([
+        {source: 'adserver.org', uids: [{id: 'TTD_ID_FROM_USER_ID_MODULE', atype: 1, ext: {rtiPartner: 'TDID'}}]},
+        {source: 'admixer.net', uids: [{id: 'admixerId_FROM_USER_ID_MODULE', atype: 3}]},
+        {source: 'adtelligent.com', uids: [{id: 'adtelligentId_FROM_USER_ID_MODULE', atype: 3}]},
+      ]));
+    });
+
     it('should return empty bidFloorCurrency when bidfloor <= 0', () => {
       const bidRequest = bidRequests[0];
       bidRequest.getFloor = () => ({ currency: 'USD', floor: -1 });
@@ -149,6 +168,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.componentId).to.equal('prebid');
       expect(payload.componentSubId).to.equal('mustang');
       expect(payload.playerSize).to.equal('300x600');
+      expect(payload.pbjs_version).to.equal(PREBID_VERSION);
     });
 
     it('should return a properly formatted request with schain defined', function () {
@@ -184,6 +204,14 @@ describe('freewheelSSP BidAdapter Test', () => {
       let bidderRequest = {
         'gdprConsent': {
           'consentString': gdprConsentString
+        },
+        'ortb2': {
+          'site': {
+            'content': {
+              'test': 'news',
+              'test2': 'param'
+            }
+          }
         }
       };
 
@@ -197,6 +225,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.playerSize).to.equal('300x600');
       expect(payload._fw_gdpr_consent).to.exist.and.to.be.a('string');
       expect(payload._fw_gdpr_consent).to.equal(gdprConsentString);
+      expect(payload._fw_prebid_content).to.deep.equal('{\"test\":\"news\",\"test2\":\"param\"}');
 
       let gdprConsent = {
         'gdprApplies': true,
@@ -205,10 +234,39 @@ describe('freewheelSSP BidAdapter Test', () => {
       let syncOptions = {
         'pixelEnabled': true
       }
-      const userSyncs = spec.getUserSyncs(syncOptions, null, gdprConsent, null);
+      const userSyncs = spec.getUserSyncs(syncOptions, null, gdprConsent, null, null);
       expect(userSyncs).to.deep.equal([{
         type: 'image',
         url: 'https://ads.stickyadstv.com/auto-user-sync?gdpr=1&gdpr_consent=1FW-SSP-gdprConsent-'
+      }]);
+    });
+
+    it('should add gpp information to the request via bidderRequest.gppConsent', function () {
+      let consentString = 'abc1234';
+      let bidderRequest = {
+        'gppConsent': {
+          'gppString': consentString,
+          'applicableSections': [8]
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = request[0].data;
+
+      expect(payload.gpp).to.equal(consentString);
+      expect(payload.gpp_sid).to.deep.equal([8]);
+
+      let gppConsent = {
+        'applicableSections': [8],
+        'gppString': consentString
+      }
+      let syncOptions = {
+        'pixelEnabled': true
+      }
+      const userSyncs = spec.getUserSyncs(syncOptions, null, null, null, gppConsent);
+      expect(userSyncs).to.deep.equal([{
+        type: 'image',
+        url: 'https://ads.stickyadstv.com/auto-user-sync?gpp=abc1234&gpp_sid[]=8'
       }]);
     });
   })
@@ -232,6 +290,14 @@ describe('freewheelSSP BidAdapter Test', () => {
         'auctionId': '1d1a030790a475',
       }
     ];
+
+    it('should return context and placement with default values', () => {
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload.video_context).to.equal(''); ;
+      expect(payload.video_placement).to.equal(null);
+      expect(payload.video_plcmt).to.equal(null);
+    });
 
     it('should add parameters to the tag', () => {
       const request = spec.buildRequests(bidRequests);
@@ -292,11 +358,43 @@ describe('freewheelSSP BidAdapter Test', () => {
       let syncOptions = {
         'pixelEnabled': true
       }
-      const userSyncs = spec.getUserSyncs(syncOptions, null, gdprConsent, null);
+      const userSyncs = spec.getUserSyncs(syncOptions, null, gdprConsent, null, null);
       expect(userSyncs).to.deep.equal([{
         type: 'image',
         url: 'https://ads.stickyadstv.com/auto-user-sync?gdpr=1&gdpr_consent=1FW-SSP-gdprConsent-'
       }]);
+    });
+  })
+
+  describe('buildRequestsForVideoWithContextAndPlacement', () => {
+    let bidRequests = [
+      {
+        'bidder': 'freewheel-ssp',
+        'params': {
+          'zoneId': '277225'
+        },
+        'adUnitCode': 'adunit-code',
+        'mediaTypes': {
+          'video': {
+            'context': 'outstream',
+            'placement': 2,
+            'plcmt': 3,
+            'playerSize': [300, 600],
+          }
+        },
+        'sizes': [[300, 250], [300, 600]],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475',
+      }
+    ];
+
+    it('should return input context and placement', () => {
+      const request = spec.buildRequests(bidRequests);
+      const payload = request[0].data;
+      expect(payload.video_context).to.equal('outstream'); ;
+      expect(payload.video_placement).to.equal(2);
+      expect(payload.video_plcmt).to.equal(3);
     });
   })
 

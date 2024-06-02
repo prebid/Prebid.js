@@ -3,6 +3,12 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE} from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
+
 const BIDDER_CODE = 'mediaforce';
 const ENDPOINT_URL = 'https://rtb.mfadsrvr.com/header_bid';
 const TEST_ENDPOINT_URL = 'https://rtb.mfadsrvr.com/header_bid?debug_key=abcdefghijklmnop';
@@ -137,7 +143,7 @@ export const spec = {
         bidfloor: bidfloor,
         ext: {
           mediaforce: {
-            transactionId: bid.transactionId
+            transactionId: bid.ortb2Imp?.ext?.tid,
           }
         }
 
@@ -177,6 +183,7 @@ export const spec = {
           },
           ext: {
             mediaforce: {
+              // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
               hb_key: auctionId
             }
           },

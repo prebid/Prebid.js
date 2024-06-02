@@ -12,13 +12,14 @@ const SYNC_URL = 'https://ssp.wp.pl/bidder/usersync';
 const NOTIFY_URL = 'https://ssp.wp.pl/bidder/notify';
 const GVLID = 676;
 const TMAX = 450;
-const BIDDER_VERSION = '5.8';
+const BIDDER_VERSION = '5.93';
 const DEFAULT_CURRENCY = 'PLN';
 const W = window;
 const { navigator } = W;
 const oneCodeDetection = {};
 const adUnitsCalled = {};
 const adSizesCalled = {};
+const bidderRequestsMap = {};
 const pageView = {};
 var consentApiVersion;
 
@@ -37,7 +38,7 @@ var nativeAssetMap = {
 
 /**
  * return native asset type, based on asset id
- * @param {int} id - native asset id
+ * @param {number} id - native asset id
  * @returns {string} asset type
  */
 const getNativeAssetType = id => {
@@ -76,7 +77,7 @@ const getContentLanguage = () => {
 
 /**
  * Get Bid parameters - returns bid params from Object, or 1el array
- * @param {*} bidData - bid (bidWon), or array of bids (timeout)
+ * @param {*} bidParams - bid (bidWon), or array of bids (timeout)
  * @returns {object} params object
  */
 const unpackParams = (bidParams) => {
@@ -93,18 +94,17 @@ const getNotificationPayload = bidData => {
     const bids = isArray(bidData) ? bidData : [bidData];
     if (bids.length > 0) {
       let result = {
-        requestId: undefined,
         siteId: [],
         slotId: [],
         tagid: [],
       }
       bids.forEach(bid => {
-        const { adUnitCode, auctionId, cpm, creativeId, meta, params: bidParams, requestId, timeout } = bid;
+        const { adUnitCode, cpm, creativeId, meta, mediaType, params: bidParams, bidderRequestId, requestId, timeout } = bid;
         const params = unpackParams(bidParams);
 
         // basic notification data
         const bidBasicData = {
-          requestId: auctionId || result.requestId,
+          requestId: bidderRequestId || bidderRequestsMap[requestId],
           timeout: timeout || result.timeout,
           pvid: pageView.id,
         }
@@ -126,12 +126,14 @@ const getNotificationPayload = bidData => {
 
         if (cpm) {
           // non-empty bid data
+          const { advertiserDomains = [], networkName, pricepl } = meta;
           const bidNonEmptyData = {
             cpm,
-            cpmpl: meta && meta.pricepl,
+            cpmpl: pricepl,
             creativeId,
-            adomain: meta && meta.advertiserDomains && meta.advertiserDomains[0],
-            networkName: meta && meta.networkName,
+            adomain: advertiserDomains[0],
+            adtype: mediaType,
+            networkName,
           }
           result = { ...result, ...bidNonEmptyData }
         }
@@ -162,7 +164,7 @@ const applyClientHints = ortbRequest => {
     Check / generate page view id
     Should be generated dureing first call to applyClientHints(),
     and re-generated if pathname has changed
-  */
+   */
   if (!pageView.id || location.pathname !== pageView.path) {
     pageView.path = location.pathname;
     pageView.id = Math.floor(1E20 * Math.random()).toString();
@@ -197,9 +199,28 @@ const applyClientHints = ortbRequest => {
   ortbRequest.user = { ...ortbRequest.user, ...ch };
 };
 
+const applyTopics = (validBidRequest, ortbRequest) => {
+  const userData = validBidRequest.ortb2?.user?.data || [];
+  const topicsData = userData.filter(dataObj => {
+    const segtax = dataObj.ext?.segtax;
+    return segtax >= 600 && segtax <= 609;
+  })[0];
+
+  // format topics obj for exchange
+  if (topicsData) {
+    topicsData.id = `${topicsData.ext.segtax}`;
+    topicsData.name = 'topics';
+    delete (topicsData.ext);
+    ortbRequest.user.data.push(topicsData);
+  }
+};
+
 const applyUserIds = (validBidRequest, ortbRequest) => {
-  const eids = validBidRequest.userIdAsEids
-  if (eids && eids.length) {
+  const { userIdAsEids: eidsVbr = [], ortb2 = {} } = validBidRequest;
+  const eidsOrtb = ortb2.user?.ext?.data?.eids || [];
+  const eids = [...eidsVbr, ...eidsOrtb];
+
+  if (eids.length) {
     const ids = { eids };
     ortbRequest.user = { ...ortbRequest.user, ...ids };
   }
@@ -225,7 +246,7 @@ const applyGdpr = (bidderRequest, ortbRequest) => {
  * returns floor = 0 if getFloor() is not defined
  *
  * @param {object} slot bid request adslot
- * @returns {float} floorprice
+ * @returns {number} floorprice
  */
 const getHighestFloor = (slot) => {
   const currency = getCurrency();
@@ -446,9 +467,14 @@ var mapVideo = (slot, videoFromBid) => {
 };
 
 const mapImpression = slot => {
-  const { adUnitCode, bidId, params = {}, ortb2Imp = {} } = slot;
+  const { adUnitCode, bidderRequestId, bidId, params = {}, ortb2Imp = {} } = slot;
   const { id, siteId, video } = params;
   const { ext = {} } = ortb2Imp;
+
+  /*
+    store bidId <-> bidderRequestId mapping for bidWon notification
+  */
+  bidderRequestsMap[bidId] = bidderRequestId;
 
   /*
      check max size for this imp, and check/store number this size was called (for current view)
@@ -483,7 +509,7 @@ const mapImpression = slot => {
 }
 
 const isVideoAd = bid => {
-  const xmlTester = new RegExp(/^<\?xml/);
+  const xmlTester = new RegExp(/^<\?xml|<VAST/, 'i');
   return bid.adm && bid.adm.match(xmlTester);
 }
 
@@ -493,15 +519,20 @@ const isNativeAd = bid => {
   return bid.admNative || (bid.adm && bid.adm.match(xmlTester));
 }
 
-const parseNative = (nativeData) => {
+const parseNative = (nativeData, adUnitCode) => {
   const { link = {}, imptrackers: impressionTrackers, jstracker } = nativeData;
   const { url: clickUrl, clicktrackers: clickTrackers = [] } = link;
+  const macroReplacer = tracker => tracker.replace(new RegExp('%native_dom_id%', 'g'), adUnitCode);
+  let javascriptTrackers = isArray(jstracker) ? jstracker : jstracker && [jstracker];
+
+  // replace known macros in js trackers
+  javascriptTrackers = javascriptTrackers && javascriptTrackers.map(macroReplacer);
 
   const result = {
     clickUrl,
     clickTrackers,
     impressionTrackers,
-    javascriptTrackers: isArray(jstracker) ? jstracker : jstracker && [jstracker],
+    javascriptTrackers,
   };
 
   nativeData.assets.forEach(asset => {
@@ -542,6 +573,7 @@ const parseNative = (nativeData) => {
 }
 
 const renderCreative = (site, auctionId, bid, seat, request) => {
+  const { adLabel, id, slot, sn, page, publisherId, ref } = site;
   let gam;
 
   const mcad = {
@@ -591,16 +623,16 @@ const renderCreative = (site, auctionId, bid, seat, request) => {
   }
 </style>
   <script>
-  window.rekid = ${site.id};
-  window.slot = ${parseInt(site.slot, 10)};
+  window.rekid = ${id};
+  window.slot = ${parseInt(slot, 10)};
   window.responseTimestamp = ${Date.now()};
-  window.wp_sn = "${site.sn}";
+  window.wp_sn = "${sn}";
   window.mcad = JSON.parse(decodeURI(atob("${mcbase}")));
-  window.gdpr = ${JSON.stringify(request.gdprConsent)};
-  window.page = "${site.page}";
-  window.ref = "${site.ref}";
-  window.adlabel = "${site.adLabel ? site.adLabel : ''}";
-  window.pubid = "${site.publisherId ? site.publisherId : ''}";
+  window.tcString = "${request.gdprConsent?.consentString || ''}";
+  window.page = "${page}";
+  window.ref = "${ref}";
+  window.adlabel = "${adLabel || ''}";
+  window.pubid = "${publisherId || ''}";
   window.requestPVID = "${pageView.id}";
   `;
 
@@ -633,6 +665,7 @@ const spec = {
       return false;
     }
 
+    const ortb2 = setOnAny(validBidRequests, 'ortb2');
     const siteId = setOnAny(validBidRequests, 'params.siteId');
     const publisherId = setOnAny(validBidRequests, 'params.publisherId');
     const page = setOnAny(validBidRequests, 'params.page') || bidderRequest.refererInfo.page;
@@ -641,9 +674,10 @@ const spec = {
     const pbver = '$prebid.version$';
     const testMode = setOnAny(validBidRequests, 'params.test') ? 1 : undefined;
     const ref = bidderRequest.refererInfo.ref;
+    const { regs = {} } = ortb2 || {};
 
     const payload = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       site: {
         id: siteId ? `${siteId}` : undefined,
         publisher: publisherId ? { id: publisherId } : undefined,
@@ -656,7 +690,7 @@ const spec = {
       cur: [getCurrency()],
       tmax,
       user: {},
-      regs: {},
+      regs,
       device: {
         language: getBrowserLanguage(),
         w: screen.width,
@@ -668,6 +702,7 @@ const spec = {
     applyGdpr(bidderRequest, payload);
     applyClientHints(payload);
     applyUserIds(validBidRequests[0], payload);
+    applyTopics(bidderRequest, payload);
 
     return {
       method: 'POST',
@@ -709,7 +744,7 @@ const spec = {
           const { bidId } = bidRequest || {};
 
           // get ext data from bid
-          const { siteid = site.id, slotid = site.slot, pubid, adlabel, cache: creativeCache, vurls = [] } = ext;
+          const { siteid = site.id, slotid = site.slot, pubid, adlabel, cache: creativeCache, vurls = [], dsa } = ext;
 
           // update site data
           site = {
@@ -724,6 +759,7 @@ const spec = {
 
           if (bidRequest && site.id && !strIncludes(site.id, 'bidid')) {
             // found a matching request; add this bid
+            const { adUnitCode } = bidRequest;
 
             // store site data for future notification
             oneCodeDetection[bidId] = [site.id, site.slot];
@@ -736,11 +772,11 @@ const spec = {
               ttl: exp,
               width: w,
               height: h,
-              bidderCode: BIDDER_CODE,
               meta: {
                 advertiserDomains: adomain,
                 networkName: seat,
                 pricepl: ext && ext.pricepl,
+                dsa,
               },
               netRevenue: true,
               vurls,
@@ -760,7 +796,7 @@ const spec = {
               // check native object
               try {
                 const nativeData = serverBid.admNative || JSON.parse(serverBid.adm).native;
-                bid.native = parseNative(nativeData);
+                bid.native = parseNative(nativeData, adUnitCode);
                 bid.width = 1;
                 bid.height = 1;
               } catch (err) {
@@ -802,6 +838,15 @@ const spec = {
     const payload = getNotificationPayload(timeoutData);
     if (payload) {
       payload.event = 'timeout';
+      sendNotification(payload);
+      return payload;
+    }
+  },
+
+  onBidViewable(bid) {
+    const payload = getNotificationPayload(bid);
+    if (payload) {
+      payload.event = 'bidViewable';
       sendNotification(payload);
       return payload;
     }

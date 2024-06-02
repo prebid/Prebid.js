@@ -3,20 +3,23 @@ import Base64 from 'crypto-js/enc-base64';
 import hmacSHA512 from 'crypto-js/hmac-sha512';
 import enc from 'crypto-js/enc-utf8';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS, BID_STATUS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { ajax } from '../src/ajax.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
 const versionCode = '4.4.1'
 const secretKey = 'bydata@123456'
-const { EVENTS: { NO_BID, BID_TIMEOUT, AUCTION_END, AUCTION_INIT, BID_WON } } = CONSTANTS
+const { NO_BID, BID_TIMEOUT, AUCTION_END, AUCTION_INIT, BID_WON } = EVENTS
 const DEFAULT_EVENT_URL = 'https://pbjs-stream.bydata.com/topics/prebid'
 const analyticsType = 'endpoint'
 const isBydata = isKeyInUrl('bydata_debug')
 const adunitsMap = {}
-const storage = getStorageManager();
+const MODULE_CODE = 'bydata';
+const storage = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
+
 let initOptions = {}
 var payload = {}
 var winPayload = {}
@@ -339,7 +342,7 @@ ascAdapter.dataProcess = function (t) {
     })
   });
 
-  var prebidWinningBids = auctionManager.getBidsReceived().filter(bid => bid.status === CONSTANTS.BID_STATUS.BID_TARGETING_SET);
+  var prebidWinningBids = auctionManager.getBidsReceived().filter(bid => bid.status === BID_STATUS.BID_TARGETING_SET);
   prebidWinningBids && prebidWinningBids.length > 0 && prebidWinningBids.forEach(pbbid => {
     payload['auctionData'] && payload['auctionData'].forEach(rwData => {
       if (rwData['bid'] === pbbid.requestId && rwData['brs'] === pbbid.size) {
@@ -391,7 +394,7 @@ function sendDataOnKf(dataObj) {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: ascAdapter,
-  code: 'bydata'
+  code: MODULE_CODE,
 });
 
 function _logInfo(message, meta) {
