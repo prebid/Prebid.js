@@ -2,8 +2,8 @@ import * as utils from 'src/utils.js';
 import { expect } from 'chai';
 import optimonAnalyticsAdapter from '../../../modules/optimonAnalyticsAdapter.js';
 import adapterManager from 'src/adapterManager';
-import events from 'src/events';
-import constants from 'src/constants.json'
+import * as events from 'src/events';
+import {expectEvents} from '../../helpers/analytics.js';
 
 const AD_UNIT_CODE = 'demo-adunit-1';
 const PUBLISHER_CONFIG = {
@@ -14,14 +14,12 @@ const PUBLISHER_CONFIG = {
 
 describe('Optimon Analytics Adapter', () => {
   const optmn_currentWindow = utils.getWindowSelf();
-  let optmn_queue = [];
 
   beforeEach(() => {
-    optmn_currentWindow.OptimonAnalyticsAdapter = (...optmn_args) => optmn_queue.push(optmn_args);
+    optmn_currentWindow.OptimonAnalyticsAdapter = sinon.stub()
     adapterManager.enableAnalytics({
       provider: 'optimon'
     });
-    optmn_queue = []
   });
 
   afterEach(() => {
@@ -29,12 +27,6 @@ describe('Optimon Analytics Adapter', () => {
   });
 
   it('should forward all events to the queue', () => {
-    const optmn_arguments = [AD_UNIT_CODE, PUBLISHER_CONFIG];
-
-    events.emit(constants.EVENTS.AUCTION_END, optmn_arguments)
-    events.emit(constants.EVENTS.BID_TIMEOUT, optmn_arguments)
-    events.emit(constants.EVENTS.BID_WON, optmn_arguments)
-
-    expect(optmn_queue.length).to.eql(3);
+    expectEvents().to.beBundledTo(optmn_currentWindow.OptimonAnalyticsAdapter);
   });
 });

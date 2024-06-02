@@ -14,12 +14,10 @@ For more information, please visit [Adserver.Online](https://adserver.online).
 
 # Parameters
 
-| Name          | Scope    | Description             | Example   | Type      |
-|---------------|----------|-------------------------|-----------|-----------|
-| `zone`        | required | Zone ID                 | `73815`   | `Integer` |
-| `attr`        | optional | Custom targeting params | `{keywords: ["a", "b"]}` | `Object` |
-
-
+| Name      | Scope    | Description             | Example                | Type       |
+|-----------|----------|-------------------------|------------------------|------------|
+| `zone`    | required | Zone ID                 | `73815`                | `Integer`  |
+| `server`  | optional | Custom bidder endpoint  | `https://endpoint.url` | `String`   |
 
 # Test parameters for banner
 ```js
@@ -50,6 +48,9 @@ var videoAdUnit = [
         code: 'video1',
         mediaTypes: {
             video: {
+                mimes: [
+                   "video/mp4"
+                ],
                 playerSize: [[640, 480]],
                 context: 'instream' // or 'outstream'
             }
@@ -70,7 +71,6 @@ The Adserver.Online Bid Adapter expects Prebid Cache (for video) to be enabled.
 
 ```
 pbjs.setConfig({
-    usePrebidCache: true,
     cache: {
         url: 'https://prebid.adnxs.com/pbc/v1/cache'
     }

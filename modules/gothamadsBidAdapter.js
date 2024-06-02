@@ -2,6 +2,12 @@ import { logMessage, deepSetValue, deepAccess, _map, logWarn } from '../src/util
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const BIDDER_CODE = 'gothamads';
 const ACCOUNTID_MACROS = '[account_id]';
@@ -68,14 +74,18 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     if (validBidRequests && validBidRequests.length === 0) return []
     let accuontId = validBidRequests[0].params.accountId;
     const endpointURL = URL_ENDPOINT.replace(ACCOUNTID_MACROS, accuontId);
 
     let winTop = window;
     let location;
+    // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
     try {
-      location = new URL(bidderRequest.refererInfo.referer)
+      location = new URL(bidderRequest.refererInfo.page)
       winTop = window.top;
     } catch (e) {
       location = winTop.location;
@@ -99,7 +109,7 @@ export const spec = {
           host: location.host
         },
         source: {
-          tid: bidRequest.transactionId
+          tid: bidderRequest?.ortb2?.source?.tid,
         },
         regs: {
           coppa: config.getConfig('coppa') === true ? 1 : 0,
@@ -134,7 +144,7 @@ export const spec = {
    * @return {Bid[]} An array of bids which were nested inside the server.
    */
   interpretResponse: (serverResponse) => {
-    if (!serverResponse || !serverResponse.body) return []
+    if (!serverResponse || !serverResponse.body) return [];
     let GothamAdsResponse = serverResponse.body;
 
     let bids = [];
@@ -219,7 +229,7 @@ const parseNative = admObject => {
 
 const prepareImpObject = (bidRequest) => {
   let impObject = {
-    id: bidRequest.transactionId,
+    id: bidRequest.bidId,
     secure: 1,
     ext: {
       placementId: bidRequest.params.placementId
@@ -242,7 +252,8 @@ const prepareImpObject = (bidRequest) => {
 
 const addNativeParameters = bidRequest => {
   let impObject = {
-    id: bidRequest.transactionId,
+    // TODO: this is not an "impObject", and `id` is not part of the ORTB native spec
+    id: bidRequest.bidId,
     ver: NATIVE_VERSION,
   };
 
@@ -268,7 +279,7 @@ const addNativeParameters = bidRequest => {
         hmin = sizes[1];
       }
 
-      asset[props.name] = {}
+      asset[props.name] = {};
 
       if (bidParams.len) asset[props.name]['len'] = bidParams.len;
       if (props.type) asset[props.name]['type'] = props.type;

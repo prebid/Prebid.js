@@ -8,25 +8,24 @@
 import { timestamp, logError } from '../src/utils.js';
 import { ajax } from '../src/ajax.js'
 import { submodule } from '../src/hook.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
-export const storage = getStorageManager();
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ */
+
+const MODULE_NAME = 'imuid';
+
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 export const storageKey = '__im_uid';
+export const storagePpKey = '__im_ppid';
 export const cookieKey = '_im_vid';
-export const apiUrl = 'https://audiencedata.im-apps.net/imuid/get';
+export const apiDomain = 'sync6.im-apps.net';
 const storageMaxAge = 1800000; // 30 minites (30 * 60 * 1000)
 const cookiesMaxAge = 97200000000; // 37 months ((365 * 3 + 30) * 24 * 60 * 60 * 1000)
-
-export function setImDataInLocalStorage(value) {
-  storage.setDataInLocalStorage(storageKey, value);
-  storage.setDataInLocalStorage(`${storageKey}_mt`, new Date(timestamp()).toUTCString());
-}
-
-export function removeImDataFromLocalStorage() {
-  storage.removeDataFromLocalStorage(storageKey);
-  storage.removeDataFromLocalStorage(`${storageKey}_mt`);
-}
 
 function setImDataInCookie(value) {
   storage.setCookie(
@@ -37,6 +36,12 @@ function setImDataInCookie(value) {
   );
 }
 
+export function removeImDataFromLocalStorage() {
+  storage.removeDataFromLocalStorage(storageKey);
+  storage.removeDataFromLocalStorage(`${storageKey}_mt`);
+  storage.removeDataFromLocalStorage(storagePpKey);
+}
+
 export function getLocalData() {
   const mt = storage.getDataFromLocalStorage(`${storageKey}_mt`);
   let expired = true;
@@ -45,17 +50,27 @@ export function getLocalData() {
   }
   return {
     id: storage.getDataFromLocalStorage(storageKey),
+    ppid: storage.getDataFromLocalStorage(storagePpKey),
     vid: storage.getCookie(cookieKey),
     expired: expired
   };
+}
+
+export function getApiUrl(cid, url) {
+  if (url) {
+    return `${url}?cid=${cid}`;
+  }
+  return `https://${apiDomain}/${cid}/pid`;
 }
 
 export function apiSuccessProcess(jsonResponse) {
   if (!jsonResponse) {
     return;
   }
-  if (jsonResponse.uid) {
-    setImDataInLocalStorage(jsonResponse.uid);
+  if (jsonResponse.uid && jsonResponse.ppid) {
+    storage.setDataInLocalStorage(storageKey, jsonResponse.uid);
+    storage.setDataInLocalStorage(`${storageKey}_mt`, new Date(timestamp()).toUTCString());
+    storage.setDataInLocalStorage(storagePpKey, jsonResponse.ppid);
     if (jsonResponse.vid) {
       setImDataInCookie(jsonResponse.vid);
     }
@@ -77,7 +92,11 @@ export function getApiCallback(callback) {
         }
       }
       if (callback && responseObj.uid) {
-        callback(responseObj.uid);
+        const callbackObj = {
+          imuid: responseObj.uid,
+          imppid: responseObj.ppid
+        };
+        callback(callbackObj);
       }
     },
     error: error => {
@@ -95,35 +114,31 @@ export function callImuidApi(apiUrl) {
   };
 }
 
-export function getApiUrl(cid, url) {
-  if (url) {
-    return `${url}?cid=${cid}`;
-  }
-  return `${apiUrl}?cid=${cid}`;
-}
-
 /** @type {Submodule} */
 export const imuIdSubmodule = {
   /**
    * used to link submodule with config
    * @type {string}
    */
-  name: 'imuid',
+  name: MODULE_NAME,
   /**
    * decode the stored id value for passing to bid requests
    * @function
-   * @returns {{imuid: string} | undefined}
+   * @returns {{imuid: string, imppid: string} | undefined}
    */
-  decode(id) {
-    if (id && typeof id === 'string') {
-      return {imuid: id};
+  decode(ids) {
+    if (ids && typeof ids === 'object') {
+      return {
+        imuid: ids.imuid,
+        imppid: ids.imppid
+      };
     }
     return undefined;
   },
   /**
    * @function
    * @param {SubmoduleConfig} [config]
-   * @returns {{id: string} | undefined | {callback:function}}}
+   * @returns {{id:{imuid: string, imppid: string}} | undefined | {callback:function}}}
    */
   getId(config) {
     const configParams = (config && config.params) || {};
@@ -139,12 +154,27 @@ export const imuIdSubmodule = {
     }
 
     if (!localData.id) {
-      return {callback: callImuidApi(apiUrl)}
+      return {callback: callImuidApi(apiUrl)};
     }
     if (localData.expired) {
       callImuidApi(apiUrl)();
     }
-    return {id: localData.id};
+    return {
+      id: {
+        imuid: localData.id,
+        imppid: localData.ppid
+      }
+    };
+  },
+  eids: {
+    'imppid': {
+      source: 'ppid.intimatemerger.com',
+      atype: 1
+    },
+    'imuid': {
+      source: 'intimatemerger.com',
+      atype: 1
+    },
   }
 };
 

@@ -1,7 +1,7 @@
-import { logInfo } from '../src/utils.js';
-import {registerBidder} from '../src/adapters/bidderFactory.js'
-import {BANNER} from '../src/mediaTypes.js'
-import {ajax} from '../src/ajax.js'
+import {logInfo} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER} from '../src/mediaTypes.js';
+import {ajax} from '../src/ajax.js';
 
 const BIDDER = 'automatad'
 
@@ -18,7 +18,7 @@ export const spec = {
 
   isBidRequestValid: function (bid) {
     // will receive request bid. check if have necessary params for bidding
-    return (bid && bid.hasOwnProperty('params') && bid.params.hasOwnProperty('siteId') && bid.params.hasOwnProperty('placementId') && bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty('banner'))
+    return (bid && bid.hasOwnProperty('params') && bid.params.hasOwnProperty('siteId') && bid.params.siteId != null && bid.hasOwnProperty('mediaTypes') && bid.mediaTypes.hasOwnProperty('banner') && typeof bid.mediaTypes.banner == 'object')
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -29,28 +29,41 @@ export const spec = {
     const siteId = validBidRequests[0].params.siteId
 
     const impressions = validBidRequests.map(bidRequest => {
-      return {
-        id: bidRequest.bidId,
-        adUnitCode: bidRequest.adUnitCode,
-        placement: bidRequest.params.placementId,
-        banner: {
-          format: bidRequest.sizes.map(sizeArr => ({
-            w: sizeArr[0],
-            h: sizeArr[1],
-          }))
-        },
+      if (bidRequest.params.hasOwnProperty('placementId')) {
+        return {
+          id: bidRequest.bidId,
+          adUnitCode: bidRequest.adUnitCode,
+          placement: bidRequest.params.placementId,
+          banner: {
+            format: bidRequest.sizes.map(sizeArr => ({
+              w: sizeArr[0],
+              h: sizeArr[1],
+            }))
+          },
+        }
+      } else {
+        return {
+          id: bidRequest.bidId,
+          adUnitCode: bidRequest.adUnitCode,
+          banner: {
+            format: bidRequest.sizes.map(sizeArr => ({
+              w: sizeArr[0],
+              h: sizeArr[1],
+            }))
+          },
+        }
       }
     })
 
     // params from bid request
     const openrtbRequest = {
-      id: validBidRequests[0].auctionId,
+      id: bidderRequest.bidderRequestId,
       imp: impressions,
       site: {
         id: siteId,
-        domain: window.location.hostname,
-        page: window.location.href,
-        ref: bidderRequest.refererInfo ? bidderRequest.refererInfo.referer || null : null,
+        domain: bidderRequest.refererInfo?.domain,
+        page: bidderRequest.refererInfo?.page,
+        ref: bidderRequest.refererInfo?.ref
       },
     }
 
@@ -61,7 +74,7 @@ export const spec = {
       data: payloadString,
       options: {
         contentType: 'application/json',
-        withCredentials: false,
+        withCredentials: true,
         crossOrigin: true,
       },
     }
@@ -101,7 +114,7 @@ export const spec = {
   },
   onTimeout: function(timeoutData) {
     const timeoutUrl = ENDPOINT_URL + '/timeout'
-    ajax(timeoutUrl, null, JSON.stringify(timeoutData))
+    spec.ajaxCall(timeoutUrl, null, JSON.stringify(timeoutData), {method: 'POST', withCredentials: true})
   },
   onBidWon: function(bid) {
     if (!bid.nurl) { return }
@@ -123,11 +136,15 @@ export const spec = {
       /\$\{AUCTION_ID\}/,
       bid.auctionId
     )
-    spec.ajaxCall(winUrl, null)
+    spec.ajaxCall(winUrl, null, null, {method: 'GET', withCredentials: true})
     return true
   },
-  ajaxCall: function(endpoint, data) {
-    ajax(endpoint, data)
+
+  ajaxCall: function(endpoint, callback, data, options = {}) {
+    if (data) {
+      options.contentType = 'application/json'
+    }
+    ajax(endpoint, callback, data, options)
   },
 
 }

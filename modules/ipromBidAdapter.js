@@ -3,13 +3,15 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 
 const BIDDER_CODE = 'iprom';
 const ENDPOINT_URL = 'https://core.iprom.net/programmatic';
-const VERSION = 'v1.0.2';
+const VERSION = 'v1.0.3';
 const DEFAULT_CURRENCY = 'EUR';
 const DEFAULT_NETREVENUE = true;
 const DEFAULT_TTL = 360;
+const IAB_GVL_ID = 811;
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: IAB_GVL_ID,
   isBidRequestValid: function ({ bidder, params = {} } = {}) {
     // id parameter checks
     if (!params.id) {
@@ -34,7 +36,8 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const payload = {
       bids: validBidRequests,
-      referer: bidderRequest.refererInfo,
+      // TODO: please do not send internal data structures over the network
+      referer: bidderRequest.refererInfo.legacy,
       version: VERSION
     };
     const payloadString = JSON.stringify(payload);

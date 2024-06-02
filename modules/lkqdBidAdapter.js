@@ -36,9 +36,9 @@ export const spec = {
     const serverRequestObjects = [];
     const UTC_OFFSET = new Date().getTimezoneOffset();
     const UA = navigator.userAgent;
-    const IP = navigator.ip ? navigator.ip : 'prebid.js';
     const USP = BIDDER_REQUEST.uspConsent || null;
-    const REFERER = BIDDER_REQUEST.refererInfo ? new URL(BIDDER_REQUEST.refererInfo.referer).hostname : window.location.hostname;
+    // TODO: does the fallback make sense here?
+    const REFERER = BIDDER_REQUEST?.refererInfo?.domain || window.location.host;
     const BIDDER_GDPR = BIDDER_REQUEST.gdprConsent && BIDDER_REQUEST.gdprConsent.gdprApplies ? 1 : null;
     const BIDDER_GDPRS = BIDDER_REQUEST.gdprConsent && BIDDER_REQUEST.gdprConsent.consentString ? BIDDER_REQUEST.gdprConsent.consentString : null;
 
@@ -60,22 +60,21 @@ export const spec = {
           ua: UA,
           geo: {
             utcoffset: UTC_OFFSET
-          },
-          ip: IP
+          }
         },
         user: {
           ext: {}
         },
         test: 0,
         at: 2,
-        tmax: bid.params.timeout || config.getConfig('bidderTimeout') || 100,
+        tmax: bidderRequest.timeout,
         cur: ['USD'],
         regs: {
           ext: {
             us_privacy: USP
           }
         }
-      }
+      };
 
       if (isSet(DNT)) {
         requestData.device.dnt = DNT;
@@ -95,7 +94,7 @@ export const spec = {
           id: bid.params.aid,
           name: bid.params.appname,
           bundle: bid.params.bundleid
-        }
+        };
 
         if (bid.params.contentId) {
           requestData.app.content = {

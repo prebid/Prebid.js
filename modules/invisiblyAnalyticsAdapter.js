@@ -2,35 +2,33 @@
  * invisiblyAdapterAdapter.js - analytics adapter for Invisibly
  */
 import { ajaxBuilder } from '../src/ajax.js';
-import adapter from '../src/AnalyticsAdapter.js';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 
 import { generateUUID, logInfo } from '../src/utils.js';
+import { EVENTS } from '../src/constants.js';
 
 const DEFAULT_EVENT_URL = 'https://api.pymx5.com/v1/' + 'sites/events';
 const analyticsType = 'endpoint';
 const analyticsName = 'Invisibly Analytics Adapter:';
-const CONSTANTS = require('../src/constants.json');
 const ajax = ajaxBuilder(0);
 
 // Events needed
 const {
-  EVENTS: {
-    AUCTION_INIT,
-    AUCTION_END,
-    BID_ADJUSTMENT,
-    BID_TIMEOUT,
-    BID_REQUESTED,
-    BID_RESPONSE,
-    NO_BID,
-    BID_WON,
-    BIDDER_DONE,
-    SET_TARGETING,
-    REQUEST_BIDS,
-    ADD_AD_UNITS,
-    AD_RENDER_FAILED,
-  },
-} = CONSTANTS;
+  AUCTION_INIT,
+  AUCTION_END,
+  BID_ADJUSTMENT,
+  BID_TIMEOUT,
+  BID_REQUESTED,
+  BID_RESPONSE,
+  NO_BID,
+  BID_WON,
+  BIDDER_DONE,
+  SET_TARGETING,
+  REQUEST_BIDS,
+  ADD_AD_UNITS,
+  AD_RENDER_FAILED,
+} = EVENTS;
 
 const _VERSION = 1;
 const _pageViewId = generateUUID();

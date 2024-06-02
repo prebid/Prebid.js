@@ -13,11 +13,11 @@ Grid bid adapter supports Banner and Video (instream and outstream).
 You can allow writing in localStorage `pbjs.setBidderConfig` for the bidder `grid`
 ```
 pbjs.setBidderConfig({
-        bidders: ["grid"],
-        config: {
-            localStorageWriteAllowed: true
-        }
-      })
+    bidders: ["grid"],
+    config: {
+        localStorageWriteAllowed: true
+    }
+})
 ```
 
 # Test Parameters
@@ -25,7 +25,11 @@ pbjs.setBidderConfig({
     var adUnits = [
            {
                code: 'test-div',
-               sizes: [[300, 250]],
+               mediaTypes: {
+                   banner: {
+                       sizes: [[300, 250], [300,600]],
+                   }
+               },
                bids: [
                    {
                        bidder: "grid",
@@ -37,15 +41,19 @@ pbjs.setBidderConfig({
                ]
            },{
                code: 'test-div',
-               sizes: [[728, 90]],
                bids: [
                    {
                        bidder: "grid",
                        params: {
                            uid: 2,
                            keywords: {
-                               brandsafety: ['disaster'],
-                               topic: ['stress', 'fear']
+                               site: {
+                                  publisher: [{
+                                    name: 'someKeywordsName',
+                                    brandsafety: ['disaster'],
+                                    topic: ['stress', 'fear']
+                                  }]
+                                }
                            }
                        }
                    }
@@ -54,7 +62,12 @@ pbjs.setBidderConfig({
            {
                code: 'test-div',
                sizes: [[728, 90]],
-               mediaTypes: { video: {} },
+               mediaTypes: {
+                   video: {
+                       playerSize: [1280, 720],
+                       context: 'instream'
+                   }
+               },
                bids: [
                    {
                        bidder: "grid",

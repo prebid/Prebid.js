@@ -1,9 +1,15 @@
-import { _map, logWarn, deepAccess, isArray } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js'
-import { auctionManager } from '../src/auctionManager.js'
-import { BANNER, VIDEO } from '../src/mediaTypes.js'
+import {_map, deepAccess, isArray, logWarn} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
-import find from 'core-js-pure/features/array/find.js';
+import {find} from '../src/polyfill.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
 
 const BIDDER_CODE = 'hybrid';
 const DSP_ENDPOINT = 'https://hbe198.hybrid.ai/prebidhb';
@@ -25,7 +31,7 @@ function buildBidRequests(validBidRequests) {
     const params = validBidRequest.params;
     const bidRequest = {
       bidId: validBidRequest.bidId,
-      transactionId: validBidRequest.transactionId,
+      transactionId: validBidRequest.ortb2Imp?.ext?.tid,
       sizes: validBidRequest.sizes,
       placement: placementTypes[params.placement],
       placeId: params.placeId,
@@ -88,15 +94,13 @@ function buildBid(bidData) {
     bid.vastXml = bidData.content;
     bid.mediaType = VIDEO;
 
-    let adUnit = find(auctionManager.getAdUnits(), function (unit) {
-      return unit.transactionId === bidData.transactionId;
-    });
+    const video = bidData.mediaTypes?.video;
 
-    if (adUnit) {
-      bid.width = adUnit.mediaTypes.video.playerSize[0][0];
-      bid.height = adUnit.mediaTypes.video.playerSize[0][1];
+    if (video) {
+      bid.width = video.playerSize[0][0];
+      bid.height = video.playerSize[0][1];
 
-      if (adUnit.mediaTypes.video.context === 'outstream') {
+      if (video.context === 'outstream') {
         bid.renderer = createRenderer(bid);
       }
     }
@@ -204,7 +208,8 @@ export const spec = {
    */
   buildRequests(validBidRequests, bidderRequest) {
     const payload = {
-      url: bidderRequest.refererInfo.referer,
+      // TODO: is 'page' the right value here?
+      url: bidderRequest.refererInfo.page,
       cmp: !!bidderRequest.gdprConsent,
       trafficType: TRAFFIC_TYPE_WEB,
       bidRequests: buildBidRequests(validBidRequests)
@@ -243,7 +248,6 @@ export const spec = {
           return item.bidId === bid.bidId;
         });
         bid.placement = rawBid.placement;
-        bid.transactionId = rawBid.transactionId;
         bid.placeId = rawBid.placeId;
         return buildBid(bid);
       });

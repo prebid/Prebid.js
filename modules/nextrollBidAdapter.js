@@ -1,19 +1,25 @@
 import {
-  deepAccess,
-  parseUrl,
-  isNumber,
-  getBidIdParameter,
-  isPlainObject,
-  isFn,
-  isStr,
-  replaceAuctionPrice,
+  deepAccess, getBidIdParameter,
   isArray,
+  isFn,
+  isNumber,
+  isPlainObject,
+  isStr,
+  parseUrl,
+  replaceAuctionPrice,
 } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, NATIVE} from '../src/mediaTypes.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
-import find from 'core-js-pure/features/array/find.js';
+import {find} from '../src/polyfill.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
 const BIDDER_CODE = 'nextroll';
 const BIDDER_ENDPOINT = 'https://d.adroll.com/bid/prebid/';
 const ADAPTER_VERSION = 5;
@@ -39,7 +45,10 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    let topLocation = parseUrl(deepAccess(bidderRequest, 'refererInfo.referer'));
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+    // TODO: is 'page' the right value here?
+    let topLocation = parseUrl(deepAccess(bidderRequest, 'refererInfo.page'));
 
     return validBidRequests.map((bidRequest) => {
       return {
@@ -65,7 +74,6 @@ export const spec = {
             }
           },
 
-          user: _getUser(validBidRequests),
           site: _getSite(bidRequest, topLocation),
           seller: _getSeller(bidRequest),
           device: _getDevice(bidRequest),
@@ -186,22 +194,6 @@ function _getNativeAssets(mediaTypeNative) {
     .filter(asset => asset !== undefined);
 }
 
-function _getUser(requests) {
-  const id = deepAccess(requests, '0.userId.nextrollId');
-  if (id === undefined) {
-    return;
-  }
-
-  return {
-    ext: {
-      eid: [{
-        'source': 'nextroll',
-        id
-      }]
-    }
-  };
-}
-
 function _getFloor(bidRequest) {
   if (!isFn(bidRequest.getFloor)) {
     return (bidRequest.params.bidfloor) ? bidRequest.params.bidfloor : null;
@@ -244,8 +236,8 @@ function _buildResponse(bidResponse, bid) {
   return response;
 }
 
-const privacyLink = 'https://info.evidon.com/pub_info/573';
-const privacyIcon = 'https://c.betrad.com/pub/icon1.png';
+const privacyLink = 'https://app.adroll.com/optout/personalized';
+const privacyIcon = 'https://s.adroll.com/j/ad-choices-small.png';
 
 function _getNativeResponse(adm, price) {
   let baseResponse = {

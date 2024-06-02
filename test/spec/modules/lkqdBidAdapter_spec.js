@@ -140,7 +140,7 @@ describe('lkqdBidAdapter', () => {
     });
 
     it('should not populate unspecified parameters', () => {
-      const requests = spec.buildRequests(bidRequests);
+      const requests = spec.buildRequests(bidRequests, { timeout: 1000 });
 
       const serverRequestObject = requests[0];
       expect(serverRequestObject.data.device.dnt).to.be.a('undefined');
@@ -226,7 +226,6 @@ describe('lkqdBidAdapter', () => {
           'utcoffset': -420,
         },
         'dnt': 0,
-        'ip': '184.103.177.205',
         'ifa': 'f4254ada-4174-6cfd-83c7-2f999c457c1d'
       },
       'user': {

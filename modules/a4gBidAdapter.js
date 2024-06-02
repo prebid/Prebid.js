@@ -44,7 +44,7 @@ export const spec = {
 
     let data = {
       [IFRAME_PARAM_NAME]: 0,
-      [LOCATION_PARAM_NAME]: (bidderRequest.refererInfo && bidderRequest.refererInfo.referer) ? bidderRequest.refererInfo.referer : window.location.href,
+      [LOCATION_PARAM_NAME]: bidderRequest.refererInfo?.page,
       [SIZE_PARAM_NAME]: sizeParams.join(ARRAY_PARAM_SEPARATOR),
       [ID_PARAM_NAME]: idParams.join(ARRAY_PARAM_SEPARATOR),
       [ZONE_ID_PARAM_NAME]: zoneIds.join(ARRAY_PARAM_SEPARATOR)

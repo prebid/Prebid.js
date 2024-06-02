@@ -1,9 +1,7 @@
-import { isEmpty, deepAccess, isFn, parseSizesInput, generateUUID, parseUrl } from '../src/utils.js';
-import { config } from '../src/config.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { VIDEO, BANNER } from '../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js';
-import includes from 'core-js-pure/features/array/includes.js';
+import {deepAccess, generateUUID, isEmpty, isFn, parseSizesInput, parseUrl} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {find, includes} from '../src/polyfill.js';
 
 const ADAPTER_VERSION = '1.0';
 const BIDDER_CODE = 'advangelists';
@@ -60,7 +58,6 @@ export const spec = {
       if (isVideoBid(bidRequest)) {
         let bidResponse = {
           requestId: response.id,
-          bidderCode: BIDDER_CODE,
           cpm: response.seatbid[0].bid[0].price,
           width: response.seatbid[0].bid[0].w,
           height: response.seatbid[0].bid[0].h,
@@ -201,12 +198,8 @@ function getBannerSizes(bid) {
   return parseSizes(deepAccess(bid, 'mediaTypes.banner.sizes') || bid.sizes);
 }
 
-function getTopWindowReferrer() {
-  try {
-    return window.top.document.referrer;
-  } catch (e) {
-    return '';
-  }
+function getTopWindowReferrer(bidderRequest) {
+  return bidderRequest?.refererInfo?.ref || '';
 }
 
 function getVideoTargetingParams(bid) {
@@ -227,7 +220,7 @@ function getVideoTargetingParams(bid) {
 
 function createVideoRequestData(bid, bidderRequest) {
   let topLocation = getTopWindowLocation(bidderRequest);
-  let topReferrer = getTopWindowReferrer();
+  let topReferrer = getTopWindowReferrer(bidderRequest);
 
   let sizes = getVideoSizes(bid);
   let firstSize = getFirstSize(sizes);
@@ -243,7 +236,7 @@ function createVideoRequestData(bid, bidderRequest) {
     },
     'at': 2,
     'site': {},
-    'tmax': 3000,
+    'tmax': Math.min(3000, bidderRequest.timeout),
     'cur': ['USD'],
     'id': bid.bidId,
     'imp': [],
@@ -310,13 +303,12 @@ function createVideoRequestData(bid, bidderRequest) {
 }
 
 function getTopWindowLocation(bidderRequest) {
-  let url = bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer;
-  return parseUrl(config.getConfig('pageUrl') || url, { decodeSearchAsString: true });
+  return parseUrl(bidderRequest?.refererInfo?.page, {decodeSearchAsString: true});
 }
 
 function createBannerRequestData(bid, bidderRequest) {
   let topLocation = getTopWindowLocation(bidderRequest);
-  let topReferrer = getTopWindowReferrer();
+  let topReferrer = getTopWindowReferrer(bidderRequest);
 
   let sizes = getBannerSizes(bid);
   let bidfloor = (getBannerBidFloor(bid) == null || typeof getBannerBidFloor(bid) == 'undefined') ? 2 : getBannerBidFloor(bid);
@@ -330,7 +322,7 @@ function createBannerRequestData(bid, bidderRequest) {
     },
     'at': 2,
     'site': {},
-    'tmax': 3000,
+    'tmax': Math.min(3000, bidderRequest.timeout),
     'cur': ['USD'],
     'id': bid.bidId,
     'imp': [],

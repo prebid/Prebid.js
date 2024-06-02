@@ -24,7 +24,12 @@ var adUnits = [{
         params: {
             host: 'exchange-9qao.ortb.net',
             adUnitId: 0,
-            adUnitType: 'banner'
+            adUnitType: 'banner',
+            custom1: 'custom1',
+            custom2: 'custom2',
+            custom3: 'custom3',
+            custom4: 'custom4',
+            custom5: 'custom5'
         }
     }]
 }];
@@ -40,7 +45,12 @@ var videoAdUnit = [{
         params: {
             host: 'exchange-9qao.ortb.net',
             adUnitId: 0,
-            adUnitType: 'video'
+            adUnitType: 'video',
+            custom1: 'custom1',
+            custom2: 'custom2',
+            custom3: 'custom3',
+            custom4: 'custom4',
+            custom5: 'custom5'
         }
     }]
 }];

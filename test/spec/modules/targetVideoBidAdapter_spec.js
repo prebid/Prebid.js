@@ -58,7 +58,7 @@ describe('TargetVideo Bid Adapter', function() {
         'uuid': '84ab500420319d',
         'ads': [{
           'ad_type': 'video',
-          'cpm': 0.500000,
+          'cpm': 0.675000,
           'notify_url': 'https://www.target-video.com/',
           'rtb': {
             'video': {
@@ -87,10 +87,53 @@ describe('TargetVideo Bid Adapter', function() {
 
     const bid = bidResponse[0];
     expect(bid).to.not.be.empty;
-    expect(bid.cpm).to.equal(0.675);
+    expect(bid.cpm).to.equal(0.5);
     expect(bid.width).to.equal(300);
     expect(bid.height).to.equal(250);
     expect(bid.ad).to.include('<script src="https://player.target-video.com/custom/targetvideo-banner.js"></script>')
     expect(bid.ad).to.include('initPlayer')
+  });
+
+  it('Test GDPR consent information is present in the request', function () {
+    let consentString = 'BOJ8RZsOJ8RZsABAB8AAAAAZ+A==';
+    let bidderRequest = {
+      'bidderCode': 'targetVideo',
+      'auctionId': '1d1a030790a475',
+      'bidderRequestId': '22edbae2733bf6',
+      'timeout': 3000,
+      'gdprConsent': {
+        consentString: consentString,
+        gdprApplies: true,
+        addtlConsent: '1~7.12.35.62.66.70.89.93.108'
+      }
+    };
+    bidderRequest.bids = bannerRequest;
+
+    const request = spec.buildRequests(bannerRequest, bidderRequest);
+    expect(request.options).to.deep.equal({withCredentials: true});
+    const payload = JSON.parse(request.data);
+
+    expect(payload.gdpr_consent).to.exist;
+    expect(payload.gdpr_consent.consent_string).to.exist.and.to.equal(consentString);
+    expect(payload.gdpr_consent.consent_required).to.exist.and.to.be.true;
+    expect(payload.gdpr_consent.addtl_consent).to.exist.and.to.deep.equal([7, 12, 35, 62, 66, 70, 89, 93, 108]);
+  });
+
+  it('Test US Privacy string is present in the request', function() {
+    let consentString = '1YA-';
+    let bidderRequest = {
+      'bidderCode': 'targetVideo',
+      'auctionId': '1d1a030790a475',
+      'bidderRequestId': '22edbae2733bf6',
+      'timeout': 3000,
+      'uspConsent': consentString
+    };
+    bidderRequest.bids = bannerRequest;
+
+    const request = spec.buildRequests(bannerRequest, bidderRequest);
+    const payload = JSON.parse(request.data);
+
+    expect(payload.us_privacy).to.exist;
+    expect(payload.us_privacy).to.exist.and.to.equal(consentString);
   });
 });

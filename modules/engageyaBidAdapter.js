@@ -1,9 +1,8 @@
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
 import { createTrackPixelHtml } from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
-const {
-  registerBidder
-} = require('../src/adapters/bidderFactory.js');
 const BIDDER_CODE = 'engageya';
 const ENDPOINT_URL = 'https://recs.engageya.com/rec-api/getrecs.json';
 const ENDPOINT_METHOD = 'GET';
@@ -16,9 +15,10 @@ function getPageUrl(bidRequest, bidderRequest) {
   if (bidRequest.params.pageUrl && bidRequest.params.pageUrl != '[PAGE_URL]') {
     return bidRequest.params.pageUrl;
   }
-  if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.referer) {
-    return bidderRequest.refererInfo.referer;
+  if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
+    return bidderRequest.refererInfo.page;
   }
+  // TODO: does this fallback make sense?
   const pageUrl = (isInIframe() && document.referrer)
     ? document.referrer
     : window.location.href;
@@ -81,7 +81,7 @@ function parseBannerResponse(rec, response) {
   const title = rec.title && rec.title.trim() ? `<div class="eng_tag_ttl" style="display: none">${rec.title}</div>` : '';
   const displayName = rec.displayName && title ? `<div class="eng_tag_brnd" style="display: none">${rec.displayName}</div>` : '';
   const trackers = getImpressionTrackers(rec, response)
-    .map(createTrackPixelHtml)
+    .map((url) => createTrackPixelHtml(url))
     .join('');
   return `<html><body>${style}<div id="ENG_TAG"><a href="${rec.clickUrl}" target=_blank><img class="eng_tag_img" src="${getImageSrc(rec)}" style="width:${response.imageWidth}px;height:${response.imageHeight}px;" alt="${rec.title}"/>${displayName}${title}</a>${trackers}</div></body></html>`;
 }
@@ -128,6 +128,9 @@ export const spec = {
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
+    // convert Native ORTB definition to old-style prebid native definition
+    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+
     if (!validBidRequests) {
       return [];
     }

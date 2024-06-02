@@ -2,7 +2,7 @@
 
 Module Name: Integral Ad Science(IAS) Rtd Provider
 Module Type: Rtd Provider
-Maintainer: raguilar@integralads.com
+Maintainer: punereporting@integralads.com
 
 # Description
 

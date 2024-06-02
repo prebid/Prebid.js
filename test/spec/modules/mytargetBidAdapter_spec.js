@@ -46,7 +46,7 @@ describe('MyTarget Adapter', function() {
     ];
     let bidderRequest = {
       refererInfo: {
-        referer: 'https://example.com?param=value'
+        page: 'https://example.com?param=value'
       }
     };
 

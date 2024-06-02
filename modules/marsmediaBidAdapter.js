@@ -31,6 +31,7 @@ function MarsmediaAdapter() {
     var isSecure = 0;
     if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.stack.length) {
       // clever trick to get the protocol
+      // TODO: this should probably use parseUrl
       var el = document.createElement('a');
       el.href = bidderRequest.refererInfo.stack[0];
       isSecure = (el.protocol == 'https:') ? 1 : 0;
@@ -68,12 +69,15 @@ function MarsmediaAdapter() {
     }
     if (bidderRequest && bidderRequest.refererInfo) {
       var ri = bidderRequest.refererInfo;
-      site.ref = ri.referer;
+      // TODO: is 'ref' the right value here?
+      site.ref = ri.ref;
 
       if (ri.stack.length) {
         site.page = ri.stack[ri.stack.length - 1];
 
         // clever trick to get the domain
+        // TODO: does this logic make sense? why should domain be set to the lowermost frame's?
+        // TODO: this should probably use parseUrl
         var el = document.createElement('a');
         el.href = ri.stack[0];
         site.domain = el.hostname;

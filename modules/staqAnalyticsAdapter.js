@@ -1,12 +1,14 @@
 import { logInfo, logError, parseUrl, _each } from '../src/utils.js';
-import adapter from '../src/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
 import { ajax } from '../src/ajax.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
-const storageObj = getStorageManager();
+const MODULE_CODE = 'staq';
+const storageObj = getStorageManager({moduleType: MODULE_TYPE_ANALYTICS, moduleName: MODULE_CODE});
 
 const ANALYTICS_VERSION = '1.0.0';
 const DEFAULT_QUEUE_TIMEOUT = 4000;
@@ -21,12 +23,13 @@ const STAQ_EVENTS = {
   BID_WON: 'bidWon',
   AUCTION_END: 'auctionEnd',
   TIMEOUT: 'adapterTimedOut'
-}
+};
 
 function buildRequestTemplate(connId) {
-  const url = staqAdapterRefWin.referer;
-  const ref = staqAdapterRefWin.referer;
-  const topLocation = staqAdapterRefWin.referer;
+  // TODO: what should these pick from refererInfo?
+  const url = staqAdapterRefWin.topmostLocation;
+  const ref = staqAdapterRefWin.topmostLocation;
+  const topLocation = staqAdapterRefWin.topmostLocation;
 
   return {
     ver: ANALYTICS_VERSION,
@@ -52,25 +55,25 @@ let analyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }), {
     }
     let handler = null;
     switch (eventType) {
-      case CONSTANTS.EVENTS.AUCTION_INIT:
+      case EVENTS.AUCTION_INIT:
         if (analyticsAdapter.context.queue) {
           analyticsAdapter.context.queue.init();
         }
         handler = trackAuctionInit;
         break;
-      case CONSTANTS.EVENTS.BID_REQUESTED:
+      case EVENTS.BID_REQUESTED:
         handler = trackBidRequest;
         break;
-      case CONSTANTS.EVENTS.BID_RESPONSE:
+      case EVENTS.BID_RESPONSE:
         handler = trackBidResponse;
         break;
-      case CONSTANTS.EVENTS.BID_WON:
+      case EVENTS.BID_WON:
         handler = trackBidWon;
         break;
-      case CONSTANTS.EVENTS.BID_TIMEOUT:
+      case EVENTS.BID_TIMEOUT:
         handler = trackBidTimeout;
         break;
-      case CONSTANTS.EVENTS.AUCTION_END:
+      case EVENTS.AUCTION_END:
         handler = trackAuctionEnd;
         break;
     }
@@ -78,11 +81,11 @@ let analyticsAdapter = Object.assign(adapter({ analyticsType: 'endpoint' }), {
       let events = handler(args);
       if (analyticsAdapter.context.queue) {
         analyticsAdapter.context.queue.push(events);
-        if (eventType === CONSTANTS.EVENTS.BID_WON) {
+        if (eventType === EVENTS.BID_WON) {
           analyticsAdapter.context.queue.updateWithWins(events);
         }
       }
-      if (eventType === CONSTANTS.EVENTS.AUCTION_END) {
+      if (eventType === EVENTS.AUCTION_END) {
         sendAll();
       }
     }
@@ -116,7 +119,7 @@ analyticsAdapter.enableAnalytics = (config) => {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: analyticsAdapter,
-  code: 'staq'
+  code: MODULE_CODE,
 });
 
 export default analyticsAdapter;

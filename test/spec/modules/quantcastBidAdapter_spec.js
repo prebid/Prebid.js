@@ -19,7 +19,15 @@ describe('Quantcast adapter', function () {
   let bidRequest;
   let bidderRequest;
 
+  afterEach(function () {
+    $$PREBID_GLOBAL$$.bidderSettings = {};
+  });
   beforeEach(function () {
+    $$PREBID_GLOBAL$$.bidderSettings = {
+      quantcast: {
+        storageAllowed: true
+      }
+    };
     bidRequest = {
       bidder: 'quantcast',
       bidId: '2f7b179d443f14',
@@ -39,8 +47,9 @@ describe('Quantcast adapter', function () {
 
     bidderRequest = {
       refererInfo: {
-        referer: 'http://example.com/hello.html',
-        canonicalUrl: 'http://example.com/hello.html'
+        page: 'http://example.com/hello.html',
+        ref: 'http://example.com/hello.html',
+        domain: 'example.com'
       }
     };
 
@@ -436,74 +445,6 @@ describe('Quantcast adapter', function () {
 
     expect(parsed.gdprSignal).to.equal(1);
     expect(parsed.gdprConsent).to.equal('consentString');
-  });
-
-  it('allows TCF v1 request with consent for purpose 1', function () {
-    const bidderRequest = {
-      gdprConsent: {
-        gdprApplies: true,
-        consentString: 'consentString',
-        vendorData: {
-          vendorConsents: {
-            '11': true
-          },
-          purposeConsents: {
-            '1': true
-          }
-        },
-        apiVersion: 1
-      }
-    };
-
-    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
-    const parsed = JSON.parse(requests[0].data);
-
-    expect(parsed.gdprSignal).to.equal(1);
-    expect(parsed.gdprConsent).to.equal('consentString');
-  });
-
-  it('blocks TCF v1 request without vendor consent', function () {
-    const bidderRequest = {
-      gdprConsent: {
-        gdprApplies: true,
-        consentString: 'consentString',
-        vendorData: {
-          vendorConsents: {
-            '11': false
-          },
-          purposeConsents: {
-            '1': true
-          }
-        },
-        apiVersion: 1
-      }
-    };
-
-    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
-
-    expect(requests).to.equal(undefined);
-  });
-
-  it('blocks TCF v1 request without consent for purpose 1', function () {
-    const bidderRequest = {
-      gdprConsent: {
-        gdprApplies: true,
-        consentString: 'consentString',
-        vendorData: {
-          vendorConsents: {
-            '11': true
-          },
-          purposeConsents: {
-            '1': false
-          }
-        },
-        apiVersion: 1
-      }
-    };
-
-    const requests = qcSpec.buildRequests([bidRequest], bidderRequest);
-
-    expect(requests).to.equal(undefined);
   });
 
   it('allows TCF v2 request when Quantcast has consent for purpose 1', function() {
