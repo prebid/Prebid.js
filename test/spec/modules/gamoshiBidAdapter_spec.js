@@ -408,7 +408,7 @@ describe('GamoshiAdapter', () => {
           playerSize: [302, 252],
           mimes: ['video/mpeg'],
           skip: 1,
-          plcmt : 1,
+          plcmt: 1,
           minduration: 1,
           playbackmethod: 1,
           startdelay: 1,
