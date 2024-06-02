@@ -18,15 +18,21 @@ import {
   isFn
 } from '../src/utils.js'
 import {submodule} from '../src/hook.js';
+import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
+
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
 
 export const imUidLocalName = '__im_uid';
 export const imVidCookieName = '_im_vid';
 export const imRtdLocalName = '__im_sids';
-export const storage = getStorageManager();
 const submoduleName = 'im';
 const segmentsMaxAge = 3600000; // 1 hour (30 * 60 * 1000)
 const uidMaxAge = 1800000; // 30 minites (30 * 60 * 1000)
 const vidMaxAge = 97200000000; // 37 months ((365 * 3 + 30) * 24 * 60 * 60 * 1000)
+
+export const storage = getStorageManager({moduleType: MODULE_TYPE_RTD, moduleName: submoduleName});
 
 function setImDataInCookie(value) {
   storage.setCookie(
@@ -48,8 +54,8 @@ function getSegments(segments, moduleConfig) {
 }
 
 /**
-* @param {string} bidderName
-*/
+ * @param {string} bidderName
+ */
 export function getBidderFunction(bidderName) {
   const biddersFunction = {
     pubmatic: function (bid, data, moduleConfig) {

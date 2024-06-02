@@ -3,6 +3,13 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js'
 import { config } from '../src/config.js'
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderSpec} BidderSpec
+ */
+
 const BIDDER_CODE = 'cointraffic';
 const ENDPOINT_URL = 'https://apps-pbd.ctraffic.io/pb/tmp';
 const DEFAULT_CURRENCY = 'EUR';

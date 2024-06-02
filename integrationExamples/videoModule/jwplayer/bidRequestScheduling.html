@@ -20,7 +20,7 @@
               divId: 'player',
               vendorCode: 1, // JW Player vendorCode
               playerConfig: {
-                licenseKey: 'IAjLREYRLylTWsfLN3FoN/O3iQLbs+AfgZLlkAoyH8gSf7TnNtmOLcR8CUY=',
+                licenseKey: 'zwqnWJlovTKhXv2JIcKBj0Si//K7cVPmBDEyaILcAMw+nVKaizsJRA==',
                 params: {
                   vendorConfig: {
                     file: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
@@ -50,12 +50,17 @@
                           mediationLayerAdServer: "dfp",
                           bidTimeout: 2000
                         },
-                        bidders: [
-                          {
+                        bidders: [{
+                          bidder: 'jwplayer',
+                          params: {
+                            publisherId: 'test-publisher-id',
+                            siteId: 'test-site-id',
+                            placementId: 'test-placement-id'
+                          }
+                        }, {
                             name: "ix",
                             siteId: "300"
-                          }
-                        ]
+                        }]
                       }
                     }
                   }

@@ -4,7 +4,7 @@
 
 import {config} from '../src/config.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import {isFn, logWarn, triggerPixel} from '../src/utils.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import adapterManager, {gdprDataHandler, uspDataHandler, gppDataHandler} from '../src/adapterManager.js';
@@ -67,6 +67,8 @@ export let logWinningBidNotFound = (slot) => {
 
 export let impressionViewableHandler = (globalModuleConfig, slot, event) => {
   let respectiveBid = getMatchingWinningBidForGPTSlot(globalModuleConfig, slot);
+  let respectiveDeferredAdUnit = getGlobal().adUnits.find(adUnit => adUnit.deferBilling && respectiveBid.adUnitCode === adUnit.code);
+
   if (respectiveBid === null) {
     logWinningBidNotFound(slot);
   } else {
@@ -74,13 +76,18 @@ export let impressionViewableHandler = (globalModuleConfig, slot, event) => {
     fireViewabilityPixels(globalModuleConfig, respectiveBid);
     // trigger respective bidder's onBidViewable handler
     adapterManager.callBidViewableBidder(respectiveBid.adapterCode || respectiveBid.bidder, respectiveBid);
+
+    if (respectiveDeferredAdUnit) {
+      adapterManager.callBidBillableBidder(respectiveBid);
+    }
+
     // emit the BID_VIEWABLE event with bid details, this event can be consumed by bidders and analytics pixels
-    events.emit(CONSTANTS.EVENTS.BID_VIEWABLE, respectiveBid);
+    events.emit(EVENTS.BID_VIEWABLE, respectiveBid);
   }
 };
 
 export let init = () => {
-  events.on(CONSTANTS.EVENTS.AUCTION_INIT, () => {
+  events.on(EVENTS.AUCTION_INIT, () => {
     // read the config for the module
     const globalModuleConfig = config.getConfig(MODULE_NAME) || {};
     // do nothing if module-config.enabled is not set to true

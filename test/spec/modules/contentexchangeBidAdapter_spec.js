@@ -79,7 +79,8 @@ describe('ContentexchangeBidAdapter', function () {
     gdprConsent: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
     refererInfo: {
       referer: 'https://test.com'
-    }
+    },
+    timeout: 500
   };
 
   describe('isBidRequestValid', function () {

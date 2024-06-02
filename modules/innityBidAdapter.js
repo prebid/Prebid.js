@@ -30,6 +30,7 @@ export const spec = {
           vph: window.screen.height,
           callback: 'json',
           callback_uid: bidRequest.bidId,
+          // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
           auction: bidRequest.auctionId,
         },
       };
@@ -37,6 +38,9 @@ export const spec = {
   },
   interpretResponse: function(serverResponse, request) {
     const res = serverResponse.body;
+    if (Object.keys(res).length === 0) {
+      return [];
+    }
     const bidResponse = {
       requestId: res.callback_uid,
       cpm: parseFloat(res.cpm) / 100,

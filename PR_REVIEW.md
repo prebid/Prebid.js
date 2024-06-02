@@ -55,7 +55,6 @@ Follow steps above for general review process. In addition, please verify the fo
     - Adapters that accept a floor parameter must also support the [floors module](https://docs.prebid.org/dev-docs/modules/floors.html) -- look for a call to the `getFloor()` function.
     - Adapters cannot accept an schain parameter. Rather, they must look for the schain parameter at bidRequest.schain.
     - The bidderRequest.refererInfo.referer must be checked in addition to any bidder-specific parameter.
-    - If they're getting the COPPA flag, it must come from config.getConfig('coppa');
     - Page position must come from bidrequest.mediaTypes.banner.pos or bidrequest.mediaTypes.video.pos
     - Global OpenRTB fields should come from [getConfig('ortb2');](https://docs.prebid.org/dev-docs/publisher-api-reference/setConfig.html#setConfig-fpd):
         - bcat, battr, badv

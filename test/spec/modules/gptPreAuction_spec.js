@@ -97,6 +97,18 @@ describe('GPT pre-auction module', () => {
       expect(adUnit.ortb2Imp.ext.data.adserver).to.deep.equal({ name: 'gam', adslot: 'slotCode2' });
     });
 
+    it('should add adServer object to context if matching slot is found (in case of twin ad unit)', () => {
+      window.googletag.pubads().setSlots(testSlots);
+      const adUnit1 = { code: 'slotCode2', ortb2Imp: { ext: { data: {} } } };
+      const adUnit2 = { code: 'slotCode2', ortb2Imp: { ext: { data: {} } } };
+      appendGptSlots([adUnit1, adUnit2]);
+      expect(adUnit1.ortb2Imp.ext.data.adserver).to.be.an('object');
+      expect(adUnit1.ortb2Imp.ext.data.adserver).to.deep.equal({ name: 'gam', adslot: 'slotCode2' });
+
+      expect(adUnit2.ortb2Imp.ext.data.adserver).to.be.an('object');
+      expect(adUnit2.ortb2Imp.ext.data.adserver).to.deep.equal({ name: 'gam', adslot: 'slotCode2' });
+    });
+
     it('will trim child id if mcmEnabled is set to true', () => {
       config.setConfig({ gptPreAuction: { enabled: true, mcmEnabled: true } });
       window.googletag.pubads().setSlots([

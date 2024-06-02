@@ -1,7 +1,6 @@
 import {
   buildUrl,
   deepAccess,
-  getGptSlotInfoForAdUnitCode,
   getWindowTop,
   isArray,
   isEmpty,
@@ -17,9 +16,19 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {Renderer} from '../src/Renderer.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {getGlobal} from '../src/prebidGlobal.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').TimedOutBid} TimedOutBid
+ */
 
 const BIDDER_CODE = 'medianet';
+const TRUSTEDSTACK_CODE = 'trustedstack';
 const BID_URL = 'https://prebid.media.net/rtb/prebid';
+const TRUSTEDSTACK_URL = 'https://prebid.trustedstack.com/rtb/trustedstack';
 const PLAYER_URL = 'https://prebid.media.net/video/bundle.js';
 const SLOT_VISIBILITY = {
   NOT_DETERMINED: 0,
@@ -48,10 +57,10 @@ mnData.urlData = {
 };
 
 const aliases = [
-  { code: 'aax', gvlid: 720 },
+  { code: TRUSTEDSTACK_CODE, gvlid: 1288 },
 ];
 
-$$PREBID_GLOBAL$$.medianetGlobals = $$PREBID_GLOBAL$$.medianetGlobals || {};
+getGlobal().medianetGlobals = getGlobal().medianetGlobals || {};
 
 function getTopWindowReferrer() {
   try {
@@ -177,7 +186,7 @@ function extParams(bidRequest, bidderRequests) {
   const coppaApplies = !!(config.getConfig('coppa'));
   return Object.assign({},
     { customer_id: params.cid },
-    { prebid_version: $$PREBID_GLOBAL$$.version },
+    { prebid_version: getGlobal().version },
     { gdpr_applies: gdprApplies },
     (gdprApplies) && { gdpr_consent_string: gdpr.consentString || '' },
     { usp_applies: uspApplies },
@@ -185,16 +194,16 @@ function extParams(bidRequest, bidderRequests) {
     {coppa_applies: coppaApplies},
     windowSize.w !== -1 && windowSize.h !== -1 && { screen: windowSize },
     userId && { user_id: userId },
-    $$PREBID_GLOBAL$$.medianetGlobals.analyticsEnabled && { analytics: true },
+    getGlobal().medianetGlobals.analyticsEnabled && { analytics: true },
     !isEmpty(sChain) && {schain: sChain}
   );
 }
 
-function slotParams(bidRequest) {
+function slotParams(bidRequest, bidderRequests) {
   // check with Media.net Account manager for  bid floor and crid parameters
   let params = {
     id: bidRequest.bidId,
-    transactionId: bidRequest.transactionId,
+    transactionId: bidRequest.ortb2Imp?.ext?.tid,
     ext: {
       dfp_id: bidRequest.adUnitCode,
       display_count: bidRequest.bidRequestsCount
@@ -252,7 +261,9 @@ function slotParams(bidRequest) {
   if (floorInfo && floorInfo.length > 0) {
     params.bidfloors = floorInfo;
   }
-
+  if (bidderRequests.fledgeEnabled) {
+    params.ext.ae = bidRequest?.ortb2Imp?.ext?.ae;
+  }
   return params;
 }
 
@@ -322,18 +333,20 @@ function normalizeCoordinates(coordinates) {
   }
 }
 
-function getBidderURL(cid) {
-  return BID_URL + '?cid=' + encodeURIComponent(cid);
+function getBidderURL(bidderCode, cid) {
+  const url = (bidderCode === TRUSTEDSTACK_CODE) ? TRUSTEDSTACK_URL : BID_URL;
+  return url + '?cid=' + encodeURIComponent(cid);
 }
 
 function generatePayload(bidRequests, bidderRequests) {
   return {
     site: siteDetails(bidRequests[0].params.site, bidderRequests),
     ext: extParams(bidRequests[0], bidderRequests),
+    // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     id: bidRequests[0].auctionId,
-    imp: bidRequests.map(request => slotParams(request)),
+    imp: bidRequests.map(request => slotParams(request, bidderRequests)),
     ortb2: bidderRequests.ortb2,
-    tmax: bidderRequests.timeout || config.getConfig('bidderTimeout')
+    tmax: bidderRequests.timeout
   }
 }
 
@@ -358,7 +371,7 @@ function getLoggingData(event, data) {
   params.evtid = 'projectevents';
   params.project = 'prebid';
   params.acid = deepAccess(data, '0.auctionId') || '';
-  params.cid = $$PREBID_GLOBAL$$.medianetGlobals.cid || '';
+  params.cid = getGlobal().medianetGlobals.cid || '';
   params.crid = data.map((adunit) => deepAccess(adunit, 'params.0.crid') || adunit.adUnitCode).join('|');
   params.adunit_count = data.length || 0;
   params.dn = mnData.urlData.domain || '';
@@ -442,7 +455,7 @@ export const spec = {
       return false;
     }
 
-    Object.assign($$PREBID_GLOBAL$$.medianetGlobals, !$$PREBID_GLOBAL$$.medianetGlobals.cid && {cid: bid.params.cid});
+    Object.assign(getGlobal().medianetGlobals, !getGlobal().medianetGlobals.cid && {cid: bid.params.cid});
 
     return true;
   },
@@ -461,7 +474,7 @@ export const spec = {
     let payload = generatePayload(bidRequests, bidderRequests);
     return {
       method: 'POST',
-      url: getBidderURL(payload.ext.customer_id),
+      url: getBidderURL(bidderRequests.bidderCode, payload.ext.customer_id),
       data: JSON.stringify(payload)
     };
   },
@@ -470,26 +483,33 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {*} serverResponse A successful response from the server.
-   * @return {Bid[]} An array of bids which were nested inside the server.
+   * @returns {{bids: *[], fledgeAuctionConfigs: *[]} | *[]} An object containing bids and fledgeAuctionConfigs if present, otherwise an array of bids.
    */
   interpretResponse: function(serverResponse, request) {
     let validBids = [];
-
     if (!serverResponse || !serverResponse.body) {
       logInfo(`${BIDDER_CODE} : response is empty`);
       return validBids;
     }
-
     let bids = serverResponse.body.bidList;
     if (!isArray(bids) || bids.length === 0) {
       logInfo(`${BIDDER_CODE} : no bids`);
+    } else {
+      validBids = bids.filter(bid => isValidBid(bid));
+      validBids.forEach(addRenderer);
+    }
+    const fledgeAuctionConfigs = deepAccess(serverResponse, 'body.ext.paApiAuctionConfigs') || [];
+    const ortbAuctionConfigs = deepAccess(serverResponse, 'body.ext.igi') || [];
+    if (fledgeAuctionConfigs.length === 0 && ortbAuctionConfigs.length === 0) {
       return validBids;
     }
-    validBids = bids.filter(bid => isValidBid(bid));
-
-    validBids.forEach(addRenderer);
-
-    return validBids;
+    if (ortbAuctionConfigs.length > 0) {
+      fledgeAuctionConfigs.push(...ortbAuctionConfigs.map(({igs}) => igs || []).flat());
+    }
+    return {
+      bids: validBids,
+      fledgeAuctionConfigs,
+    }
   },
   getUserSyncs: function(syncOptions, serverResponses) {
     let cookieSyncUrls = fetchCookieSyncUrls(serverResponses);

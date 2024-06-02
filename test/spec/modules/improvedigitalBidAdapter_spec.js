@@ -1,9 +1,9 @@
-import { expect } from 'chai';
+import {expect} from 'chai';
 import {CONVERTER, spec} from 'modules/improvedigitalBidAdapter.js';
-import { config } from 'src/config.js';
-import { deepClone } from 'src/utils.js';
+import {config} from 'src/config.js';
+import {deepClone} from 'src/utils.js';
 import {BANNER, NATIVE, VIDEO} from '../../../src/mediaTypes';
-import { deepSetValue } from '../../../src/utils';
+import {deepSetValue} from '../../../src/utils';
 // load modules that register ORTB processors
 import 'src/prebid.js';
 import 'modules/currency.js';
@@ -13,8 +13,7 @@ import 'modules/priceFloors.js';
 import 'modules/consentManagement.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
-import {decorateAdUnitsWithNativeParams, toLegacyResponse} from '../../../src/native.js';
-import {createEidsArray} from '../../../modules/userId/eids.js';
+import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
 import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {hook} from '../../../src/hook.js';
 
@@ -120,6 +119,11 @@ describe('Improve Digital Adapter Tests', function () {
   };
 
   const bidderRequest = {
+    ortb2: {
+      source: {
+        tid: 'mock-tid'
+      }
+    },
     bids: [simpleBidRequest],
   };
 
@@ -237,7 +241,7 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.tmax).not.to.exist;
       expect(payload.regs).to.not.exist;
       expect(payload.schain).to.not.exist;
-      sinon.assert.match(payload.source, {tid: 'f183e871-fbed-45f0-a427-c8a63c4c01eb'})
+      sinon.assert.match(payload.source, {tid: 'mock-tid'})
       expect(payload.device).to.be.an('object');
       expect(payload.user).to.not.exist;
       sinon.assert.match(payload.imp, [
@@ -278,12 +282,14 @@ describe('Improve Digital Adapter Tests', function () {
               placementId: 1053688,
             }
           },
-          video: {
-            placement: OUTSTREAM_TYPE,
-            w: 640,
-            h: 480,
-            mimes: ['video/mp4'],
-          },
+          ...(FEATURES.VIDEO && {
+            video: {
+              placement: OUTSTREAM_TYPE,
+              w: 640,
+              h: 480,
+              mimes: ['video/mp4'],
+            }
+          }),
           banner: {
             format: [
               {w: 300, h: 250},
@@ -399,8 +405,7 @@ describe('Improve Digital Adapter Tests', function () {
       const payload = JSON.parse(spec.buildRequests([bidRequest], syncAddFPDToBidderRequest(bidderRequestGdpr))[0].data);
       expect(payload.regs.ext.gdpr).to.exist.and.to.equal(1);
       expect(payload.user.ext.consent).to.equal('CONSENT');
-      expect(payload.user.ext.ConsentedProvidersSettings).to.not.exist;
-      expect(payload.user.ext.consented_providers_settings.consented_providers).to.exist.and.to.deep.equal([1, 35, 41, 101]);
+      expect(payload.user.ext.ConsentedProvidersSettings.consented_providers).to.exist.and.to.deep.equal('1~1.35.41.101');
     });
 
     it('should not add consented providers when empty', function () {
@@ -468,102 +473,104 @@ describe('Improve Digital Adapter Tests', function () {
       expect(payload.imp[0].video).to.not.exist;
     });
 
-    it('should add correct placement value for instream and outstream video', function () {
-      let bidRequest = deepClone(simpleBidRequest);
-      let payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
-      expect(payload.imp[0].video).to.not.exist;
+    if (FEATURES.VIDEO) {
+      it('should add correct placement value for instream and outstream video', function () {
+        let bidRequest = deepClone(simpleBidRequest);
+        let payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+        expect(payload.imp[0].video).to.not.exist;
 
-      bidRequest = deepClone(simpleBidRequest);
-      bidRequest.mediaTypes = {
-        video: {
-          context: 'instream',
-          playerSize: [640, 480]
+        bidRequest = deepClone(simpleBidRequest);
+        bidRequest.mediaTypes = {
+          video: {
+            context: 'instream',
+            playerSize: [640, 480]
+          }
+        };
+        payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+        expect(payload.imp[0].video.placement).to.exist.and.equal(1);
+        bidRequest.mediaTypes.video.context = 'outstream';
+        payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
+        expect(payload.imp[0].video.placement).to.exist.and.equal(3);
+      });
+
+      it('should set video params for instream', function() {
+        const bidRequest = deepClone(instreamBidRequest);
+        delete bidRequest.mediaTypes.video.playerSize;
+        const videoParams = {
+          mimes: ['video/mp4'],
+          skip: 1,
+          skipmin: 5,
+          skipafter: 30,
+          minduration: 15,
+          maxduration: 60,
+          startdelay: 5,
+          minbitrate: 500,
+          maxbitrate: 2000,
+          w: 1024,
+          h: 640,
+          placement: INSTREAM_TYPE,
+        };
+        bidRequest.params.video = videoParams;
+        const request = spec.buildRequests([bidRequest], bidderRequest)[0];
+        const payload = JSON.parse(request.data);
+        expect(payload.imp[0].video).to.deep.equal(videoParams);
+      });
+
+      it('should set video playerSize over video params', () => {
+        const bidRequest = deepClone(instreamBidRequest);
+        bidRequest.params.video = {
+          w: 1024, h: 640
         }
-      };
-      payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
-      expect(payload.imp[0].video.placement).to.exist.and.equal(1);
-      bidRequest.mediaTypes.video.context = 'outstream';
-      payload = JSON.parse(spec.buildRequests([bidRequest], bidderRequest)[0].data);
-      expect(payload.imp[0].video.placement).to.exist.and.equal(3);
-    });
+        const request = spec.buildRequests([bidRequest], bidderRequest)[0];
+        const payload = JSON.parse(request.data);
+        expect(payload.imp[0].video.h).equal(480);
+        expect(payload.imp[0].video.w).equal(640);
+      });
 
-    it('should set video params for instream', function() {
-      const bidRequest = deepClone(instreamBidRequest);
-      delete bidRequest.mediaTypes.video.playerSize;
-      const videoParams = {
-        mimes: ['video/mp4'],
-        skip: 1,
-        skipmin: 5,
-        skipafter: 30,
-        minduration: 15,
-        maxduration: 60,
-        startdelay: 5,
-        minbitrate: 500,
-        maxbitrate: 2000,
-        w: 1024,
-        h: 640,
-        placement: INSTREAM_TYPE,
-      };
-      bidRequest.params.video = videoParams;
-      const request = spec.buildRequests([bidRequest], bidderRequest)[0];
-      const payload = JSON.parse(request.data);
-      expect(payload.imp[0].video).to.deep.equal(videoParams);
-    });
+      it('should ignore invalid/unexpected video params', function() {
+        const bidRequest = deepClone(instreamBidRequest);
+        // 1
+        const videoTest = {
+          skip: 1,
+          skipmin: 5,
+          skipafter: 30
+        }
+        const videoTestInvParam = Object.assign({}, videoTest);
+        videoTestInvParam.blah = 1;
+        bidRequest.params.video = videoTestInvParam;
+        let request = spec.buildRequests([bidRequest], {})[0];
+        let payload = JSON.parse(request.data);
+        expect(payload.imp[0].video.blah).not.to.exist;
+      });
 
-    it('should set video playerSize over video params', () => {
-      const bidRequest = deepClone(instreamBidRequest);
-      bidRequest.params.video = {
-        w: 1024, h: 640
-      }
-      const request = spec.buildRequests([bidRequest], bidderRequest)[0];
-      const payload = JSON.parse(request.data);
-      expect(payload.imp[0].video.h).equal(480);
-      expect(payload.imp[0].video.w).equal(640);
-    });
-
-    it('should ignore invalid/unexpected video params', function() {
-      const bidRequest = deepClone(instreamBidRequest);
-      // 1
-      const videoTest = {
-        skip: 1,
-        skipmin: 5,
-        skipafter: 30
-      }
-      const videoTestInvParam = Object.assign({}, videoTest);
-      videoTestInvParam.blah = 1;
-      bidRequest.params.video = videoTestInvParam;
-      let request = spec.buildRequests([bidRequest], {})[0];
-      let payload = JSON.parse(request.data);
-      expect(payload.imp[0].video.blah).not.to.exist;
-    });
-
-    it('should set video params for outstream', function() {
-      const bidRequest = deepClone(outstreamBidRequest);
-      bidRequest.params.video = videoParams;
-      const request = spec.buildRequests([bidRequest], {})[0];
-      const payload = JSON.parse(request.data);
-      expect(payload.imp[0].video).to.deep.equal({...{
-        mimes: ['video/mp4'],
-        placement: OUTSTREAM_TYPE,
-        w: bidRequest.mediaTypes.video.playerSize[0],
-        h: bidRequest.mediaTypes.video.playerSize[1],
-      },
-      ...videoParams});
-    });
-    //
-    it('should set video params for multi-format', function() {
-      const bidRequest = deepClone(multiFormatBidRequest);
-      bidRequest.params.video = videoParams;
-      const request = spec.buildRequests([bidRequest], {})[0];
-      const payload = JSON.parse(request.data);
-      const testVideoParams = Object.assign({
-        placement: OUTSTREAM_TYPE,
-        w: 640,
-        h: 480,
-        mimes: ['video/mp4'],
-      }, videoParams);
-      expect(payload.imp[0].video).to.deep.equal(testVideoParams);
-    });
+      it('should set video params for outstream', function() {
+        const bidRequest = deepClone(outstreamBidRequest);
+        bidRequest.params.video = videoParams;
+        const request = spec.buildRequests([bidRequest], {})[0];
+        const payload = JSON.parse(request.data);
+        expect(payload.imp[0].video).to.deep.equal({...{
+          mimes: ['video/mp4'],
+          placement: OUTSTREAM_TYPE,
+          w: bidRequest.mediaTypes.video.playerSize[0],
+          h: bidRequest.mediaTypes.video.playerSize[1],
+        },
+        ...videoParams});
+      });
+      //
+      it('should set video params for multi-format', function() {
+        const bidRequest = deepClone(multiFormatBidRequest);
+        bidRequest.params.video = videoParams;
+        const request = spec.buildRequests([bidRequest], {})[0];
+        const payload = JSON.parse(request.data);
+        const testVideoParams = Object.assign({
+          placement: OUTSTREAM_TYPE,
+          w: 640,
+          h: 480,
+          mimes: ['video/mp4'],
+        }, videoParams);
+        expect(payload.imp[0].video).to.deep.equal(testVideoParams);
+      });
+    }
 
     it('should add schain', function () {
       const schain = '{"ver":"1.0","complete":1,"nodes":[{"asi":"headerlift.com","sid":"xyz","hp":1}]}';
@@ -575,7 +582,15 @@ describe('Improve Digital Adapter Tests', function () {
     });
 
     it('should add eids', function () {
-      const userId = { id5id:	{ uid: '1111' } };
+      const userIdAsEids = [
+        {
+          source: 'id5-sync.com',
+          uids: [{
+            atype: 1,
+            id: '1111'
+          }]
+        }
+      ];
       const expectedUserObject = { ext: { eids: [{
         source: 'id5-sync.com',
         uids: [{
@@ -584,7 +599,7 @@ describe('Improve Digital Adapter Tests', function () {
         }]
       }]}};
       const bidRequest = Object.assign({}, simpleBidRequest);
-      bidRequest.userIdAsEids = createEidsArray(userId);
+      bidRequest.userIdAsEids = userIdAsEids;
       const request = spec.buildRequests([bidRequest], bidderRequestReferrer)[0];
       const payload = JSON.parse(request.data);
       expect(payload.user).to.deep.equal(expectedUserObject);
@@ -609,7 +624,7 @@ describe('Improve Digital Adapter Tests', function () {
       const request = JSON.parse(requests[0].data);
       expect(request.imp.length).to.equal(2);
       expect(request.imp[0].banner).to.exist;
-      expect(request.imp[1].video).to.exist;
+      if (FEATURES.VIDEO) { expect(request.imp[1].video).to.exist; }
     });
 
     it('should create one request per endpoint in a single request mode', function () {
@@ -623,7 +638,7 @@ describe('Improve Digital Adapter Tests', function () {
       const adServerRequest = JSON.parse(requests[1].data);
       expect(adServerRequest.imp.length).to.equal(2);
       expect(adServerRequest.imp[0].banner).to.exist;
-      expect(adServerRequest.imp[1].video).to.exist;
+      if (FEATURES.VIDEO) { expect(adServerRequest.imp[1].video).to.exist; }
     });
 
     it('should set Prebid sizes in bid request', function () {
@@ -670,7 +685,7 @@ describe('Improve Digital Adapter Tests', function () {
     it('should not set site when app is defined in CONFIG', function () {
       getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.withArgs('app').returns({ content: 'XYZ' });
-      let request = spec.buildRequests([simpleBidRequest], bidderRequest)[0];
+      let request = spec.buildRequests([simpleBidRequest], syncAddFPDToBidderRequest(bidderRequest))[0];
       let payload = JSON.parse(request.data);
       expect(payload.site).does.not.exist;
       expect(payload.app).does.exist;
@@ -709,7 +724,7 @@ describe('Improve Digital Adapter Tests', function () {
       getConfigStub = sinon.stub(config, 'getConfig');
       getConfigStub.withArgs('app').returns(undefined);
       getConfigStub.withArgs('site').returns({});
-      let request = spec.buildRequests([simpleBidRequest], bidderRequest)[0];
+      let request = spec.buildRequests([simpleBidRequest], syncAddFPDToBidderRequest(bidderRequest))[0];
       let payload = JSON.parse(request.data);
       expect(payload.site).does.exist;
       expect(payload.app).does.not.exist;
@@ -1055,7 +1070,7 @@ describe('Improve Digital Adapter Tests', function () {
         width: 728,
         height: 90,
         ttl: 300,
-        ad: '<html><body style="margin:0%">\x3Cscript>window.__razr_config = {"prebid":{"bidRequest":{"bidder":"improvedigital","params":{"placementId":1053688,"keyValues":{"testKey":["testValue"]},"bidFloor":0.05,"bidFloorCur":"eUR","size":{"w":800,"h":600}},"adUnitCode":"div-gpt-ad-1499748733608-0","transactionId":"f183e871-fbed-45f0-a427-c8a63c4c01eb","bidId":"33e9500b21129f","bidderRequestId":"2772c1e566670b","auctionId":"192721e36a0239","mediaTypes":{"banner":{"sizes":[[300,250],[160,600]]}},"sizes":[[300,250],[160,600]]},"bid":{"mediaType":"banner","ad":"<html><body style=\\"margin:0%\\"><a href=\\"https://na-ice.360yield.com/click/wIUgWAXQ-Teg9bFreqmjvvwpXD86tInZbesBQgOtGBHqZatmIY9C1mo-1kWRx32zN2mfOxtmyaaHpr.Qh5pspzJarrsm08TtkRSeTc2mnsRuQ2MKzCTvbospesMJR28YLZ.3g06DwS6c5XOJuesd0eODk7GCqtmJ18c6CTmdWDUdDxiknLAPHVXAfvlDH5AA9utF7TNNGjaxvyMpQD51.Dt5GFjcJLnwWnGSajoSr9JfomoGenbLkabLmzylSXd1p9xyrzTmWU39FvagEOZnMb2ixlc.JDxXA1ZnaR.e7ywkwiJnDtg1Om0EJAYOmUh0oTozbXeo26iwLLZxVxV0owOHY61zhHYyHcpBakqtelYPWZcmBJEXfl5KIekB2CiLQqxCi3TKdg5FztAQY0Tf3mTmiGZev0RkeiX5fnxS8jbWSD-cCgB51PNLn0X5EEkUPkOJh9JV713OOcyDhsgaFPezUcvuD7nNrxB71aWcH6MMfk1BFQ7kSVi9WHQvauaTxrWm//https%3A%2F%2Fazerion.com\\" target=\\"_blank\\"><img style=\\"border: 0;\\" border=\\"0\\" width=728 height=90 src=\\"https://creative.360yield.com/file/241121/728x90.jpg\\" alt=\\" \\"/></a><img src=\\"https://na-ice.360yield.com/imp_pixel?ic=wIUgWDjQ.pQrjtYOEKs44M3pIqNnfojBPkSd3WRdHnRawHiRiER7A-0RowzsOtOLq7MWtEFnWsRXYZZmJcZPGft0cNSs8lNOVZnXWHLDv3Dyqo8VGI4737RieGIK0DrIjlVXzFmuYeXufriRfPHVGiV-hz6VIateQ6I7.xR5O.48..ZoEGfRpIJGzqeqz12cWnFUPhBScQ6sPLlb6B1RiTpNh170OhIVfX80N2g4jn-U.xJ262ND29bBvImQsJjz29o8mmGL3TfbzUHzr.ob-ozfP9.ZHh.B5tD-M5qG9rAlIU6Q7I-zchnhv1W5OzU5mfMYy9yMLKqBemQGJA1KaiZJV79lwnDki-6PIg1v09h86eJqXYHHsUobx4Np5lMT6-5UdHXZPpR8T08b4keLREQw-lpqKum92pwUCVAYPeFdmTeKk1gUKPcaWxN8QfaQeoLJfb.88n3-vp.-aBCkxlZwXjXSd55QV.uwi-bTtFwaZjGHpNkIBG3D19kNl.Yb55Rk\\" alt=\\" \\" style=\\"display:none\\"/><improvedigital_ad_output_information tp_id=\\"\\" buyer_id=\\"0\\" rtb_advertiser=\\"\\" campaign_id=\\"123159\\" line_item_id=\\"320896\\" creative_id=\\"510265\\" crid=\\"0\\" placement_id=\\"22135702\\"></improvedigital_ad_output_information></body></html>","requestId":"33e9500b21129f","seatBidId":"35adfe19-d6e9-46b9-9f7d-20da7026b965","cpm":1.9200543539802946,"currency":"EUR","width":728,"height":90,"creative_id":"510265","creativeId":"510265","ttl":300,"meta":{},"dealId":320896,"netRevenue":false}}};\x3C/script><a href="https://na-ice.360yield.com/click/wIUgWAXQ-Teg9bFreqmjvvwpXD86tInZbesBQgOtGBHqZatmIY9C1mo-1kWRx32zN2mfOxtmyaaHpr.Qh5pspzJarrsm08TtkRSeTc2mnsRuQ2MKzCTvbospesMJR28YLZ.3g06DwS6c5XOJuesd0eODk7GCqtmJ18c6CTmdWDUdDxiknLAPHVXAfvlDH5AA9utF7TNNGjaxvyMpQD51.Dt5GFjcJLnwWnGSajoSr9JfomoGenbLkabLmzylSXd1p9xyrzTmWU39FvagEOZnMb2ixlc.JDxXA1ZnaR.e7ywkwiJnDtg1Om0EJAYOmUh0oTozbXeo26iwLLZxVxV0owOHY61zhHYyHcpBakqtelYPWZcmBJEXfl5KIekB2CiLQqxCi3TKdg5FztAQY0Tf3mTmiGZev0RkeiX5fnxS8jbWSD-cCgB51PNLn0X5EEkUPkOJh9JV713OOcyDhsgaFPezUcvuD7nNrxB71aWcH6MMfk1BFQ7kSVi9WHQvauaTxrWm//https%3A%2F%2Fazerion.com" target="_blank"><img style="border: 0;" border="0" width=728 height=90 src="https://creative.360yield.com/file/241121/728x90.jpg" alt=" "/></a><img src="https://na-ice.360yield.com/imp_pixel?ic=wIUgWDjQ.pQrjtYOEKs44M3pIqNnfojBPkSd3WRdHnRawHiRiER7A-0RowzsOtOLq7MWtEFnWsRXYZZmJcZPGft0cNSs8lNOVZnXWHLDv3Dyqo8VGI4737RieGIK0DrIjlVXzFmuYeXufriRfPHVGiV-hz6VIateQ6I7.xR5O.48..ZoEGfRpIJGzqeqz12cWnFUPhBScQ6sPLlb6B1RiTpNh170OhIVfX80N2g4jn-U.xJ262ND29bBvImQsJjz29o8mmGL3TfbzUHzr.ob-ozfP9.ZHh.B5tD-M5qG9rAlIU6Q7I-zchnhv1W5OzU5mfMYy9yMLKqBemQGJA1KaiZJV79lwnDki-6PIg1v09h86eJqXYHHsUobx4Np5lMT6-5UdHXZPpR8T08b4keLREQw-lpqKum92pwUCVAYPeFdmTeKk1gUKPcaWxN8QfaQeoLJfb.88n3-vp.-aBCkxlZwXjXSd55QV.uwi-bTtFwaZjGHpNkIBG3D19kNl.Yb55Rk" alt=" " style="display:none"/><improvedigital_ad_output_information tp_id="" buyer_id="0" rtb_advertiser="" campaign_id="123159" line_item_id="320896" creative_id="510265" crid="0" placement_id="22135702"></improvedigital_ad_output_information></body></html>',
+        ad: '\x3Cscript>window.__razr_config = {"prebid":{"bidRequest":{"bidder":"improvedigital","params":{"placementId":1053688,"keyValues":{"testKey":["testValue"]},"bidFloor":0.05,"bidFloorCur":"eUR","size":{"w":800,"h":600}},"adUnitCode":"div-gpt-ad-1499748733608-0","transactionId":"f183e871-fbed-45f0-a427-c8a63c4c01eb","bidId":"33e9500b21129f","bidderRequestId":"2772c1e566670b","auctionId":"192721e36a0239","mediaTypes":{"banner":{"sizes":[[300,250],[160,600]]}},"sizes":[[300,250],[160,600]]},"bid":{"mediaType":"banner","ad":"<html><body style=\\"margin:0%\\"><a href=\\"https://na-ice.360yield.com/click/wIUgWAXQ-Teg9bFreqmjvvwpXD86tInZbesBQgOtGBHqZatmIY9C1mo-1kWRx32zN2mfOxtmyaaHpr.Qh5pspzJarrsm08TtkRSeTc2mnsRuQ2MKzCTvbospesMJR28YLZ.3g06DwS6c5XOJuesd0eODk7GCqtmJ18c6CTmdWDUdDxiknLAPHVXAfvlDH5AA9utF7TNNGjaxvyMpQD51.Dt5GFjcJLnwWnGSajoSr9JfomoGenbLkabLmzylSXd1p9xyrzTmWU39FvagEOZnMb2ixlc.JDxXA1ZnaR.e7ywkwiJnDtg1Om0EJAYOmUh0oTozbXeo26iwLLZxVxV0owOHY61zhHYyHcpBakqtelYPWZcmBJEXfl5KIekB2CiLQqxCi3TKdg5FztAQY0Tf3mTmiGZev0RkeiX5fnxS8jbWSD-cCgB51PNLn0X5EEkUPkOJh9JV713OOcyDhsgaFPezUcvuD7nNrxB71aWcH6MMfk1BFQ7kSVi9WHQvauaTxrWm//https%3A%2F%2Fazerion.com\\" target=\\"_blank\\"><img style=\\"border: 0;\\" border=\\"0\\" width=728 height=90 src=\\"https://creative.360yield.com/file/241121/728x90.jpg\\" alt=\\" \\"/></a><img src=\\"https://na-ice.360yield.com/imp_pixel?ic=wIUgWDjQ.pQrjtYOEKs44M3pIqNnfojBPkSd3WRdHnRawHiRiER7A-0RowzsOtOLq7MWtEFnWsRXYZZmJcZPGft0cNSs8lNOVZnXWHLDv3Dyqo8VGI4737RieGIK0DrIjlVXzFmuYeXufriRfPHVGiV-hz6VIateQ6I7.xR5O.48..ZoEGfRpIJGzqeqz12cWnFUPhBScQ6sPLlb6B1RiTpNh170OhIVfX80N2g4jn-U.xJ262ND29bBvImQsJjz29o8mmGL3TfbzUHzr.ob-ozfP9.ZHh.B5tD-M5qG9rAlIU6Q7I-zchnhv1W5OzU5mfMYy9yMLKqBemQGJA1KaiZJV79lwnDki-6PIg1v09h86eJqXYHHsUobx4Np5lMT6-5UdHXZPpR8T08b4keLREQw-lpqKum92pwUCVAYPeFdmTeKk1gUKPcaWxN8QfaQeoLJfb.88n3-vp.-aBCkxlZwXjXSd55QV.uwi-bTtFwaZjGHpNkIBG3D19kNl.Yb55Rk\\" alt=\\" \\" style=\\"display:none\\"/><improvedigital_ad_output_information tp_id=\\"\\" buyer_id=\\"0\\" rtb_advertiser=\\"\\" campaign_id=\\"123159\\" line_item_id=\\"320896\\" creative_id=\\"510265\\" crid=\\"0\\" placement_id=\\"22135702\\"></improvedigital_ad_output_information></body></html>","requestId":"33e9500b21129f","seatBidId":"35adfe19-d6e9-46b9-9f7d-20da7026b965","cpm":1.9200543539802946,"currency":"EUR","width":728,"height":90,"creative_id":"510265","creativeId":"510265","ttl":300,"meta":{},"dealId":320896,"netRevenue":false}}};\x3C/script><html><body style="margin:0%"><a href="https://na-ice.360yield.com/click/wIUgWAXQ-Teg9bFreqmjvvwpXD86tInZbesBQgOtGBHqZatmIY9C1mo-1kWRx32zN2mfOxtmyaaHpr.Qh5pspzJarrsm08TtkRSeTc2mnsRuQ2MKzCTvbospesMJR28YLZ.3g06DwS6c5XOJuesd0eODk7GCqtmJ18c6CTmdWDUdDxiknLAPHVXAfvlDH5AA9utF7TNNGjaxvyMpQD51.Dt5GFjcJLnwWnGSajoSr9JfomoGenbLkabLmzylSXd1p9xyrzTmWU39FvagEOZnMb2ixlc.JDxXA1ZnaR.e7ywkwiJnDtg1Om0EJAYOmUh0oTozbXeo26iwLLZxVxV0owOHY61zhHYyHcpBakqtelYPWZcmBJEXfl5KIekB2CiLQqxCi3TKdg5FztAQY0Tf3mTmiGZev0RkeiX5fnxS8jbWSD-cCgB51PNLn0X5EEkUPkOJh9JV713OOcyDhsgaFPezUcvuD7nNrxB71aWcH6MMfk1BFQ7kSVi9WHQvauaTxrWm//https%3A%2F%2Fazerion.com" target="_blank"><img style="border: 0;" border="0" width=728 height=90 src="https://creative.360yield.com/file/241121/728x90.jpg" alt=" "/></a><img src="https://na-ice.360yield.com/imp_pixel?ic=wIUgWDjQ.pQrjtYOEKs44M3pIqNnfojBPkSd3WRdHnRawHiRiER7A-0RowzsOtOLq7MWtEFnWsRXYZZmJcZPGft0cNSs8lNOVZnXWHLDv3Dyqo8VGI4737RieGIK0DrIjlVXzFmuYeXufriRfPHVGiV-hz6VIateQ6I7.xR5O.48..ZoEGfRpIJGzqeqz12cWnFUPhBScQ6sPLlb6B1RiTpNh170OhIVfX80N2g4jn-U.xJ262ND29bBvImQsJjz29o8mmGL3TfbzUHzr.ob-ozfP9.ZHh.B5tD-M5qG9rAlIU6Q7I-zchnhv1W5OzU5mfMYy9yMLKqBemQGJA1KaiZJV79lwnDki-6PIg1v09h86eJqXYHHsUobx4Np5lMT6-5UdHXZPpR8T08b4keLREQw-lpqKum92pwUCVAYPeFdmTeKk1gUKPcaWxN8QfaQeoLJfb.88n3-vp.-aBCkxlZwXjXSd55QV.uwi-bTtFwaZjGHpNkIBG3D19kNl.Yb55Rk" alt=" " style="display:none"/><improvedigital_ad_output_information tp_id="" buyer_id="0" rtb_advertiser="" campaign_id="123159" line_item_id="320896" creative_id="510265" crid="0" placement_id="22135702"></improvedigital_ad_output_information></body></html>',
         creativeId: '510265',
         dealId: 320896,
         netRevenue: false,
@@ -1065,7 +1080,7 @@ describe('Improve Digital Adapter Tests', function () {
 
     const multiFormatExpectedBid = [
       Object.assign({}, expectedBid[0], {
-        ad: '<html><body style="margin:0%">\x3Cscript>window.__razr_config = {"prebid":{"bidRequest":{"bidder":"improvedigital","params":{"placementId":1053688},"adUnitCode":"div-gpt-ad-1499748733608-0","transactionId":"f183e871-fbed-45f0-a427-c8a63c4c01eb","bidId":"33e9500b21129f","bidderRequestId":"2772c1e566670b","auctionId":"192721e36a0239","mediaTypes":{"banner":{"sizes":[[300,250],[160,600]]},"native":{},"video":{"context":"outstream","playerSize":[640,480]}},"sizes":[[300,250],[160,600]],"nativeParams":{"body":{"required":true}}},"bid":{"mediaType":"banner","ad":"<html><body style=\\"margin:0%\\"><a href=\\"https://na-ice.360yield.com/click/wIUgWAXQ-Teg9bFreqmjvvwpXD86tInZbesBQgOtGBHqZatmIY9C1mo-1kWRx32zN2mfOxtmyaaHpr.Qh5pspzJarrsm08TtkRSeTc2mnsRuQ2MKzCTvbospesMJR28YLZ.3g06DwS6c5XOJuesd0eODk7GCqtmJ18c6CTmdWDUdDxiknLAPHVXAfvlDH5AA9utF7TNNGjaxvyMpQD51.Dt5GFjcJLnwWnGSajoSr9JfomoGenbLkabLmzylSXd1p9xyrzTmWU39FvagEOZnMb2ixlc.JDxXA1ZnaR.e7ywkwiJnDtg1Om0EJAYOmUh0oTozbXeo26iwLLZxVxV0owOHY61zhHYyHcpBakqtelYPWZcmBJEXfl5KIekB2CiLQqxCi3TKdg5FztAQY0Tf3mTmiGZev0RkeiX5fnxS8jbWSD-cCgB51PNLn0X5EEkUPkOJh9JV713OOcyDhsgaFPezUcvuD7nNrxB71aWcH6MMfk1BFQ7kSVi9WHQvauaTxrWm//https%3A%2F%2Fazerion.com\\" target=\\"_blank\\"><img style=\\"border: 0;\\" border=\\"0\\" width=728 height=90 src=\\"https://creative.360yield.com/file/241121/728x90.jpg\\" alt=\\" \\"/></a><img src=\\"https://na-ice.360yield.com/imp_pixel?ic=wIUgWDjQ.pQrjtYOEKs44M3pIqNnfojBPkSd3WRdHnRawHiRiER7A-0RowzsOtOLq7MWtEFnWsRXYZZmJcZPGft0cNSs8lNOVZnXWHLDv3Dyqo8VGI4737RieGIK0DrIjlVXzFmuYeXufriRfPHVGiV-hz6VIateQ6I7.xR5O.48..ZoEGfRpIJGzqeqz12cWnFUPhBScQ6sPLlb6B1RiTpNh170OhIVfX80N2g4jn-U.xJ262ND29bBvImQsJjz29o8mmGL3TfbzUHzr.ob-ozfP9.ZHh.B5tD-M5qG9rAlIU6Q7I-zchnhv1W5OzU5mfMYy9yMLKqBemQGJA1KaiZJV79lwnDki-6PIg1v09h86eJqXYHHsUobx4Np5lMT6-5UdHXZPpR8T08b4keLREQw-lpqKum92pwUCVAYPeFdmTeKk1gUKPcaWxN8QfaQeoLJfb.88n3-vp.-aBCkxlZwXjXSd55QV.uwi-bTtFwaZjGHpNkIBG3D19kNl.Yb55Rk\\" alt=\\" \\" style=\\"display:none\\"/><improvedigital_ad_output_information tp_id=\\"\\" buyer_id=\\"0\\" rtb_advertiser=\\"\\" campaign_id=\\"123159\\" line_item_id=\\"320896\\" creative_id=\\"510265\\" crid=\\"0\\" placement_id=\\"22135702\\"></improvedigital_ad_output_information></body></html>","requestId":"33e9500b21129f","seatBidId":"35adfe19-d6e9-46b9-9f7d-20da7026b965","cpm":1.9200543539802946,"currency":"EUR","width":728,"height":90,"creative_id":"510265","creativeId":"510265","ttl":300,"meta":{},"dealId":320896,"netRevenue":false}}};\x3C/script><a href="https://na-ice.360yield.com/click/wIUgWAXQ-Teg9bFreqmjvvwpXD86tInZbesBQgOtGBHqZatmIY9C1mo-1kWRx32zN2mfOxtmyaaHpr.Qh5pspzJarrsm08TtkRSeTc2mnsRuQ2MKzCTvbospesMJR28YLZ.3g06DwS6c5XOJuesd0eODk7GCqtmJ18c6CTmdWDUdDxiknLAPHVXAfvlDH5AA9utF7TNNGjaxvyMpQD51.Dt5GFjcJLnwWnGSajoSr9JfomoGenbLkabLmzylSXd1p9xyrzTmWU39FvagEOZnMb2ixlc.JDxXA1ZnaR.e7ywkwiJnDtg1Om0EJAYOmUh0oTozbXeo26iwLLZxVxV0owOHY61zhHYyHcpBakqtelYPWZcmBJEXfl5KIekB2CiLQqxCi3TKdg5FztAQY0Tf3mTmiGZev0RkeiX5fnxS8jbWSD-cCgB51PNLn0X5EEkUPkOJh9JV713OOcyDhsgaFPezUcvuD7nNrxB71aWcH6MMfk1BFQ7kSVi9WHQvauaTxrWm//https%3A%2F%2Fazerion.com" target="_blank"><img style="border: 0;" border="0" width=728 height=90 src="https://creative.360yield.com/file/241121/728x90.jpg" alt=" "/></a><img src="https://na-ice.360yield.com/imp_pixel?ic=wIUgWDjQ.pQrjtYOEKs44M3pIqNnfojBPkSd3WRdHnRawHiRiER7A-0RowzsOtOLq7MWtEFnWsRXYZZmJcZPGft0cNSs8lNOVZnXWHLDv3Dyqo8VGI4737RieGIK0DrIjlVXzFmuYeXufriRfPHVGiV-hz6VIateQ6I7.xR5O.48..ZoEGfRpIJGzqeqz12cWnFUPhBScQ6sPLlb6B1RiTpNh170OhIVfX80N2g4jn-U.xJ262ND29bBvImQsJjz29o8mmGL3TfbzUHzr.ob-ozfP9.ZHh.B5tD-M5qG9rAlIU6Q7I-zchnhv1W5OzU5mfMYy9yMLKqBemQGJA1KaiZJV79lwnDki-6PIg1v09h86eJqXYHHsUobx4Np5lMT6-5UdHXZPpR8T08b4keLREQw-lpqKum92pwUCVAYPeFdmTeKk1gUKPcaWxN8QfaQeoLJfb.88n3-vp.-aBCkxlZwXjXSd55QV.uwi-bTtFwaZjGHpNkIBG3D19kNl.Yb55Rk" alt=" " style="display:none"/><improvedigital_ad_output_information tp_id="" buyer_id="0" rtb_advertiser="" campaign_id="123159" line_item_id="320896" creative_id="510265" crid="0" placement_id="22135702"></improvedigital_ad_output_information></body></html>',
+        ad: '\x3Cscript>window.__razr_config = {"prebid":{"bidRequest":{"bidder":"improvedigital","params":{"placementId":1053688},"adUnitCode":"div-gpt-ad-1499748733608-0","transactionId":"f183e871-fbed-45f0-a427-c8a63c4c01eb","bidId":"33e9500b21129f","bidderRequestId":"2772c1e566670b","auctionId":"192721e36a0239","mediaTypes":{"banner":{"sizes":[[300,250],[160,600]]},"native":{},"video":{"context":"outstream","playerSize":[640,480]}},"sizes":[[300,250],[160,600]],"nativeParams":{"body":{"required":true}}},"bid":{"mediaType":"banner","ad":"<html><body style=\\"margin:0%\\"><a href=\\"https://na-ice.360yield.com/click/wIUgWAXQ-Teg9bFreqmjvvwpXD86tInZbesBQgOtGBHqZatmIY9C1mo-1kWRx32zN2mfOxtmyaaHpr.Qh5pspzJarrsm08TtkRSeTc2mnsRuQ2MKzCTvbospesMJR28YLZ.3g06DwS6c5XOJuesd0eODk7GCqtmJ18c6CTmdWDUdDxiknLAPHVXAfvlDH5AA9utF7TNNGjaxvyMpQD51.Dt5GFjcJLnwWnGSajoSr9JfomoGenbLkabLmzylSXd1p9xyrzTmWU39FvagEOZnMb2ixlc.JDxXA1ZnaR.e7ywkwiJnDtg1Om0EJAYOmUh0oTozbXeo26iwLLZxVxV0owOHY61zhHYyHcpBakqtelYPWZcmBJEXfl5KIekB2CiLQqxCi3TKdg5FztAQY0Tf3mTmiGZev0RkeiX5fnxS8jbWSD-cCgB51PNLn0X5EEkUPkOJh9JV713OOcyDhsgaFPezUcvuD7nNrxB71aWcH6MMfk1BFQ7kSVi9WHQvauaTxrWm//https%3A%2F%2Fazerion.com\\" target=\\"_blank\\"><img style=\\"border: 0;\\" border=\\"0\\" width=728 height=90 src=\\"https://creative.360yield.com/file/241121/728x90.jpg\\" alt=\\" \\"/></a><img src=\\"https://na-ice.360yield.com/imp_pixel?ic=wIUgWDjQ.pQrjtYOEKs44M3pIqNnfojBPkSd3WRdHnRawHiRiER7A-0RowzsOtOLq7MWtEFnWsRXYZZmJcZPGft0cNSs8lNOVZnXWHLDv3Dyqo8VGI4737RieGIK0DrIjlVXzFmuYeXufriRfPHVGiV-hz6VIateQ6I7.xR5O.48..ZoEGfRpIJGzqeqz12cWnFUPhBScQ6sPLlb6B1RiTpNh170OhIVfX80N2g4jn-U.xJ262ND29bBvImQsJjz29o8mmGL3TfbzUHzr.ob-ozfP9.ZHh.B5tD-M5qG9rAlIU6Q7I-zchnhv1W5OzU5mfMYy9yMLKqBemQGJA1KaiZJV79lwnDki-6PIg1v09h86eJqXYHHsUobx4Np5lMT6-5UdHXZPpR8T08b4keLREQw-lpqKum92pwUCVAYPeFdmTeKk1gUKPcaWxN8QfaQeoLJfb.88n3-vp.-aBCkxlZwXjXSd55QV.uwi-bTtFwaZjGHpNkIBG3D19kNl.Yb55Rk\\" alt=\\" \\" style=\\"display:none\\"/><improvedigital_ad_output_information tp_id=\\"\\" buyer_id=\\"0\\" rtb_advertiser=\\"\\" campaign_id=\\"123159\\" line_item_id=\\"320896\\" creative_id=\\"510265\\" crid=\\"0\\" placement_id=\\"22135702\\"></improvedigital_ad_output_information></body></html>","requestId":"33e9500b21129f","seatBidId":"35adfe19-d6e9-46b9-9f7d-20da7026b965","cpm":1.9200543539802946,"currency":"EUR","width":728,"height":90,"creative_id":"510265","creativeId":"510265","ttl":300,"meta":{},"dealId":320896,"netRevenue":false}}};\x3C/script><html><body style="margin:0%"><a href="https://na-ice.360yield.com/click/wIUgWAXQ-Teg9bFreqmjvvwpXD86tInZbesBQgOtGBHqZatmIY9C1mo-1kWRx32zN2mfOxtmyaaHpr.Qh5pspzJarrsm08TtkRSeTc2mnsRuQ2MKzCTvbospesMJR28YLZ.3g06DwS6c5XOJuesd0eODk7GCqtmJ18c6CTmdWDUdDxiknLAPHVXAfvlDH5AA9utF7TNNGjaxvyMpQD51.Dt5GFjcJLnwWnGSajoSr9JfomoGenbLkabLmzylSXd1p9xyrzTmWU39FvagEOZnMb2ixlc.JDxXA1ZnaR.e7ywkwiJnDtg1Om0EJAYOmUh0oTozbXeo26iwLLZxVxV0owOHY61zhHYyHcpBakqtelYPWZcmBJEXfl5KIekB2CiLQqxCi3TKdg5FztAQY0Tf3mTmiGZev0RkeiX5fnxS8jbWSD-cCgB51PNLn0X5EEkUPkOJh9JV713OOcyDhsgaFPezUcvuD7nNrxB71aWcH6MMfk1BFQ7kSVi9WHQvauaTxrWm//https%3A%2F%2Fazerion.com" target="_blank"><img style="border: 0;" border="0" width=728 height=90 src="https://creative.360yield.com/file/241121/728x90.jpg" alt=" "/></a><img src="https://na-ice.360yield.com/imp_pixel?ic=wIUgWDjQ.pQrjtYOEKs44M3pIqNnfojBPkSd3WRdHnRawHiRiER7A-0RowzsOtOLq7MWtEFnWsRXYZZmJcZPGft0cNSs8lNOVZnXWHLDv3Dyqo8VGI4737RieGIK0DrIjlVXzFmuYeXufriRfPHVGiV-hz6VIateQ6I7.xR5O.48..ZoEGfRpIJGzqeqz12cWnFUPhBScQ6sPLlb6B1RiTpNh170OhIVfX80N2g4jn-U.xJ262ND29bBvImQsJjz29o8mmGL3TfbzUHzr.ob-ozfP9.ZHh.B5tD-M5qG9rAlIU6Q7I-zchnhv1W5OzU5mfMYy9yMLKqBemQGJA1KaiZJV79lwnDki-6PIg1v09h86eJqXYHHsUobx4Np5lMT6-5UdHXZPpR8T08b4keLREQw-lpqKum92pwUCVAYPeFdmTeKk1gUKPcaWxN8QfaQeoLJfb.88n3-vp.-aBCkxlZwXjXSd55QV.uwi-bTtFwaZjGHpNkIBG3D19kNl.Yb55Rk" alt=" " style="display:none"/><improvedigital_ad_output_information tp_id="" buyer_id="0" rtb_advertiser="" campaign_id="123159" line_item_id="320896" creative_id="510265" crid="0" placement_id="22135702"></improvedigital_ad_output_information></body></html>',
       })
     ];
 
@@ -1078,7 +1093,7 @@ describe('Improve Digital Adapter Tests', function () {
         width: 300,
         height: 250,
         ttl: 300,
-        ad: '<html><body style="margin:0%">\x3Cscript>window.__razr_config = {"prebid":{"bidRequest":{"bidder":"improvedigital","params":{"placementId":1053688,"keyValues":{"testKey":["testValue"]},"bidFloor":0.05,"bidFloorCur":"eUR","size":{"w":800,"h":600}},"adUnitCode":"div-gpt-ad-1499748733608-0","transactionId":"f183e871-fbed-45f0-a427-c8a63c4c01eb","bidId":"33e9500b21129f","bidderRequestId":"2772c1e566670b","auctionId":"192721e36a0239","mediaTypes":{"banner":{"sizes":[[300,250],[160,600]]}},"sizes":[[300,250],[160,600]]},"bid":{"mediaType":"banner","ad":"<html><body style=\\"margin:0%\\"><a href=\\"https://na-ice.360yield.com/click/.2RC3VhfEsdhtcsRiT8bWksMTmBbkfnj1AaD3C6Bht.Bp85KK5vjzZvJMpigI4ECdhllWuzbk2UhQt8VEGq1tg8m1OEot7Gs94PplWYs2ESdXpGAPFHiqdbZstOOhfiWL4D.k6lXfgNmbRhpL.SktYeEAiRaOZHQAX.22IEQ0swRnEdNyjHXYEkNIgpvMLqkZTv.JYM.iW9NwyJLIqk4Djh8X301iRLxexGBTl7-.n93WbkSCVY6uwdXSzoQrtK1r3fTrS34rdgpqFt6ZIBLKWI2ByLM2.aQqfvev5BCMOeyEKY8CcSg9SoDiPyQsvcz9bTckLtqs3AD3Qu8I.2rGn1NID7ljgg6-dERrorPK9A5XK67Pv34UqUe2xILQ6wvi52dX4p5d3yxsI9BMfnxzkn7MullVJdn-NiSB2rTe2MFozJc5G1nEwtpsMwZpBxl00PCcMsyETtaKbhqa3Gq5nCuce4AEhL6109IrZscUUzBMSKLSX16HlFfmPZ.gDnWCI3lO35UbGdL7lKjbT9mHYQ-//http%3A%2F%2Fblah.com\\" target=\\"_blank\\"><img style=\\"border: 0;\\" border=\\"0\\" width=300 height=250 src=\\"https://creative.360yield.com/file/238052/test_ads-300x250.jpg\\" alt=\\" \\"/></a><img src=\\"https://na-ice.360yield.com/imp_pixel?ic=.2RC3VqxeCtOU3G5i6Wejh69dm5JnKlRXeieMtJA63nfGMyuFoWTTjSU5PfHLg2PtnmDRFgHJgGE19QyjAGj6ZQVy0iUk-HF-.zsAlx.7Fx3m5fPE7RIYw.kjy-BvuprFqfU-qlm03KTks6zVLDSIspuxemNQ1HBhq6QZSm9qqAVY-1XS-KbImfb.fll3VvhJXy7Ru.KstgDfAJwt5vYxVab6efvjAIhOrrv6uXaywFVTtu9-gK5pKgIkdixxuYE2jLUyEh9GiRyRCH0jhhUVUmSfrjE4OuTq-7TmCYXQQ5Vk9AqOV.JybF8d35IeyAbF2aywwdZA2SGGEGeYIoOy.7D8TpuVqXxvnUyeKXlCfmzXcJs27W2sKGUTfpWc-TyhAOHKzwqrxP-QN5D1QRCXFWgAm.rwUBguE-oL1Q7NOaCsaRwINRwvQrastWNFUDEYzrB32NL-wIkILdh9e96JwhKiwGwJ1VqH.6RDDutUi9CLreYQl348exTfqL44Ia5VTLn7e0rA6s9V1tg55V7TX36\\" alt=\\" \\" style=\\"display:none\\"/><improvedigital_ad_output_information tp_id=\\"\\" buyer_id=\\"0\\" rtb_advertiser=\\"\\" campaign_id=\\"123159\\" line_item_id=\\"320896\\" creative_id=\\"479163\\" crid=\\"0\\" placement_id=\\"22135702\\"></improvedigital_ad_output_information></body></html>","requestId":"33e9500b21129f","seatBidId":"83c8d524-0955-4d0c-b558-4c9f3600e09b","cpm":1.9200543539802946,"currency":"EUR","width":300,"height":250,"creative_id":"479163","creativeId":"479163","ttl":300,"meta":{},"dealId":320896,"netRevenue":false}}};\x3C/script><a href="https://na-ice.360yield.com/click/.2RC3VhfEsdhtcsRiT8bWksMTmBbkfnj1AaD3C6Bht.Bp85KK5vjzZvJMpigI4ECdhllWuzbk2UhQt8VEGq1tg8m1OEot7Gs94PplWYs2ESdXpGAPFHiqdbZstOOhfiWL4D.k6lXfgNmbRhpL.SktYeEAiRaOZHQAX.22IEQ0swRnEdNyjHXYEkNIgpvMLqkZTv.JYM.iW9NwyJLIqk4Djh8X301iRLxexGBTl7-.n93WbkSCVY6uwdXSzoQrtK1r3fTrS34rdgpqFt6ZIBLKWI2ByLM2.aQqfvev5BCMOeyEKY8CcSg9SoDiPyQsvcz9bTckLtqs3AD3Qu8I.2rGn1NID7ljgg6-dERrorPK9A5XK67Pv34UqUe2xILQ6wvi52dX4p5d3yxsI9BMfnxzkn7MullVJdn-NiSB2rTe2MFozJc5G1nEwtpsMwZpBxl00PCcMsyETtaKbhqa3Gq5nCuce4AEhL6109IrZscUUzBMSKLSX16HlFfmPZ.gDnWCI3lO35UbGdL7lKjbT9mHYQ-//http%3A%2F%2Fblah.com" target="_blank"><img style="border: 0;" border="0" width=300 height=250 src="https://creative.360yield.com/file/238052/test_ads-300x250.jpg" alt=" "/></a><img src="https://na-ice.360yield.com/imp_pixel?ic=.2RC3VqxeCtOU3G5i6Wejh69dm5JnKlRXeieMtJA63nfGMyuFoWTTjSU5PfHLg2PtnmDRFgHJgGE19QyjAGj6ZQVy0iUk-HF-.zsAlx.7Fx3m5fPE7RIYw.kjy-BvuprFqfU-qlm03KTks6zVLDSIspuxemNQ1HBhq6QZSm9qqAVY-1XS-KbImfb.fll3VvhJXy7Ru.KstgDfAJwt5vYxVab6efvjAIhOrrv6uXaywFVTtu9-gK5pKgIkdixxuYE2jLUyEh9GiRyRCH0jhhUVUmSfrjE4OuTq-7TmCYXQQ5Vk9AqOV.JybF8d35IeyAbF2aywwdZA2SGGEGeYIoOy.7D8TpuVqXxvnUyeKXlCfmzXcJs27W2sKGUTfpWc-TyhAOHKzwqrxP-QN5D1QRCXFWgAm.rwUBguE-oL1Q7NOaCsaRwINRwvQrastWNFUDEYzrB32NL-wIkILdh9e96JwhKiwGwJ1VqH.6RDDutUi9CLreYQl348exTfqL44Ia5VTLn7e0rA6s9V1tg55V7TX36" alt=" " style="display:none"/><improvedigital_ad_output_information tp_id="" buyer_id="0" rtb_advertiser="" campaign_id="123159" line_item_id="320896" creative_id="479163" crid="0" placement_id="22135702"></improvedigital_ad_output_information></body></html>',
+        ad: '\x3Cscript>window.__razr_config = {"prebid":{"bidRequest":{"bidder":"improvedigital","params":{"placementId":1053688,"keyValues":{"testKey":["testValue"]},"bidFloor":0.05,"bidFloorCur":"eUR","size":{"w":800,"h":600}},"adUnitCode":"div-gpt-ad-1499748733608-0","transactionId":"f183e871-fbed-45f0-a427-c8a63c4c01eb","bidId":"33e9500b21129f","bidderRequestId":"2772c1e566670b","auctionId":"192721e36a0239","mediaTypes":{"banner":{"sizes":[[300,250],[160,600]]}},"sizes":[[300,250],[160,600]]},"bid":{"mediaType":"banner","ad":"<html><body style=\\"margin:0%\\"><a href=\\"https://na-ice.360yield.com/click/.2RC3VhfEsdhtcsRiT8bWksMTmBbkfnj1AaD3C6Bht.Bp85KK5vjzZvJMpigI4ECdhllWuzbk2UhQt8VEGq1tg8m1OEot7Gs94PplWYs2ESdXpGAPFHiqdbZstOOhfiWL4D.k6lXfgNmbRhpL.SktYeEAiRaOZHQAX.22IEQ0swRnEdNyjHXYEkNIgpvMLqkZTv.JYM.iW9NwyJLIqk4Djh8X301iRLxexGBTl7-.n93WbkSCVY6uwdXSzoQrtK1r3fTrS34rdgpqFt6ZIBLKWI2ByLM2.aQqfvev5BCMOeyEKY8CcSg9SoDiPyQsvcz9bTckLtqs3AD3Qu8I.2rGn1NID7ljgg6-dERrorPK9A5XK67Pv34UqUe2xILQ6wvi52dX4p5d3yxsI9BMfnxzkn7MullVJdn-NiSB2rTe2MFozJc5G1nEwtpsMwZpBxl00PCcMsyETtaKbhqa3Gq5nCuce4AEhL6109IrZscUUzBMSKLSX16HlFfmPZ.gDnWCI3lO35UbGdL7lKjbT9mHYQ-//http%3A%2F%2Fblah.com\\" target=\\"_blank\\"><img style=\\"border: 0;\\" border=\\"0\\" width=300 height=250 src=\\"https://creative.360yield.com/file/238052/test_ads-300x250.jpg\\" alt=\\" \\"/></a><img src=\\"https://na-ice.360yield.com/imp_pixel?ic=.2RC3VqxeCtOU3G5i6Wejh69dm5JnKlRXeieMtJA63nfGMyuFoWTTjSU5PfHLg2PtnmDRFgHJgGE19QyjAGj6ZQVy0iUk-HF-.zsAlx.7Fx3m5fPE7RIYw.kjy-BvuprFqfU-qlm03KTks6zVLDSIspuxemNQ1HBhq6QZSm9qqAVY-1XS-KbImfb.fll3VvhJXy7Ru.KstgDfAJwt5vYxVab6efvjAIhOrrv6uXaywFVTtu9-gK5pKgIkdixxuYE2jLUyEh9GiRyRCH0jhhUVUmSfrjE4OuTq-7TmCYXQQ5Vk9AqOV.JybF8d35IeyAbF2aywwdZA2SGGEGeYIoOy.7D8TpuVqXxvnUyeKXlCfmzXcJs27W2sKGUTfpWc-TyhAOHKzwqrxP-QN5D1QRCXFWgAm.rwUBguE-oL1Q7NOaCsaRwINRwvQrastWNFUDEYzrB32NL-wIkILdh9e96JwhKiwGwJ1VqH.6RDDutUi9CLreYQl348exTfqL44Ia5VTLn7e0rA6s9V1tg55V7TX36\\" alt=\\" \\" style=\\"display:none\\"/><improvedigital_ad_output_information tp_id=\\"\\" buyer_id=\\"0\\" rtb_advertiser=\\"\\" campaign_id=\\"123159\\" line_item_id=\\"320896\\" creative_id=\\"479163\\" crid=\\"0\\" placement_id=\\"22135702\\"></improvedigital_ad_output_information></body></html>","requestId":"33e9500b21129f","seatBidId":"83c8d524-0955-4d0c-b558-4c9f3600e09b","cpm":1.9200543539802946,"currency":"EUR","width":300,"height":250,"creative_id":"479163","creativeId":"479163","ttl":300,"meta":{},"dealId":320896,"netRevenue":false}}};\x3C/script><html><body style="margin:0%"><a href="https://na-ice.360yield.com/click/.2RC3VhfEsdhtcsRiT8bWksMTmBbkfnj1AaD3C6Bht.Bp85KK5vjzZvJMpigI4ECdhllWuzbk2UhQt8VEGq1tg8m1OEot7Gs94PplWYs2ESdXpGAPFHiqdbZstOOhfiWL4D.k6lXfgNmbRhpL.SktYeEAiRaOZHQAX.22IEQ0swRnEdNyjHXYEkNIgpvMLqkZTv.JYM.iW9NwyJLIqk4Djh8X301iRLxexGBTl7-.n93WbkSCVY6uwdXSzoQrtK1r3fTrS34rdgpqFt6ZIBLKWI2ByLM2.aQqfvev5BCMOeyEKY8CcSg9SoDiPyQsvcz9bTckLtqs3AD3Qu8I.2rGn1NID7ljgg6-dERrorPK9A5XK67Pv34UqUe2xILQ6wvi52dX4p5d3yxsI9BMfnxzkn7MullVJdn-NiSB2rTe2MFozJc5G1nEwtpsMwZpBxl00PCcMsyETtaKbhqa3Gq5nCuce4AEhL6109IrZscUUzBMSKLSX16HlFfmPZ.gDnWCI3lO35UbGdL7lKjbT9mHYQ-//http%3A%2F%2Fblah.com" target="_blank"><img style="border: 0;" border="0" width=300 height=250 src="https://creative.360yield.com/file/238052/test_ads-300x250.jpg" alt=" "/></a><img src="https://na-ice.360yield.com/imp_pixel?ic=.2RC3VqxeCtOU3G5i6Wejh69dm5JnKlRXeieMtJA63nfGMyuFoWTTjSU5PfHLg2PtnmDRFgHJgGE19QyjAGj6ZQVy0iUk-HF-.zsAlx.7Fx3m5fPE7RIYw.kjy-BvuprFqfU-qlm03KTks6zVLDSIspuxemNQ1HBhq6QZSm9qqAVY-1XS-KbImfb.fll3VvhJXy7Ru.KstgDfAJwt5vYxVab6efvjAIhOrrv6uXaywFVTtu9-gK5pKgIkdixxuYE2jLUyEh9GiRyRCH0jhhUVUmSfrjE4OuTq-7TmCYXQQ5Vk9AqOV.JybF8d35IeyAbF2aywwdZA2SGGEGeYIoOy.7D8TpuVqXxvnUyeKXlCfmzXcJs27W2sKGUTfpWc-TyhAOHKzwqrxP-QN5D1QRCXFWgAm.rwUBguE-oL1Q7NOaCsaRwINRwvQrastWNFUDEYzrB32NL-wIkILdh9e96JwhKiwGwJ1VqH.6RDDutUi9CLreYQl348exTfqL44Ia5VTLn7e0rA6s9V1tg55V7TX36" alt=" " style="display:none"/><improvedigital_ad_output_information tp_id="" buyer_id="0" rtb_advertiser="" campaign_id="123159" line_item_id="320896" creative_id="479163" crid="0" placement_id="22135702"></improvedigital_ad_output_information></body></html>',
         creativeId: '479163',
         dealId: 320896,
         netRevenue: false,
@@ -1165,6 +1180,16 @@ describe('Improve Digital Adapter Tests', function () {
       expect(bids[0].dealId).to.equal(268515);
     });
 
+    it('should set deal type targeting KV for PG', function () {
+      const request = makeRequest(bidderRequest);
+      const response = deepClone(serverResponse);
+      let bids;
+
+      response.body.seatbid[0].bid[0].ext.improvedigital.pg = 1;
+      bids = spec.interpretResponse(response, request);
+      expect(bids[0].adserverTargeting.hb_deal_type_improve).to.equal('pg');
+    });
+
     it('should set currency', function () {
       const response = deepClone(serverResponse);
       response.body.cur = 'EUR';
@@ -1238,32 +1263,34 @@ describe('Improve Digital Adapter Tests', function () {
     }
 
     // Video
-    it('should return a well-formed instream video bid', function () {
-      const bids = spec.interpretResponse(serverResponseVideo, makeRequest(instreamBidderRequest));
-      expectMatch(bids, expectedBidInstreamVideo);
-    });
+    if (FEATURES.VIDEO) {
+      it('should return a well-formed instream video bid', function () {
+        const bids = spec.interpretResponse(serverResponseVideo, makeRequest(instreamBidderRequest));
+        expectMatch(bids, expectedBidInstreamVideo);
+      });
 
-    it('should return a well-formed outstream video bid', function () {
-      const bids = spec.interpretResponse(serverResponseVideo, makeRequest(outstreamBidderRequest));
-      expect(bids[0].renderer).to.exist;
-      expectMatch(bids, expectedBidOutstreamVideo);
-    });
+      it('should return a well-formed outstream video bid', function () {
+        const bids = spec.interpretResponse(serverResponseVideo, makeRequest(outstreamBidderRequest));
+        expect(bids[0].renderer).to.exist;
+        expectMatch(bids, expectedBidOutstreamVideo);
+      });
 
-    it('should return a well-formed outstream video bid for multi-format ad unit', function () {
-      const request = makeRequest(multiFormatBidderRequest);
-      const videoResponse = deepClone(serverResponseVideo);
-      let bids = spec.interpretResponse(videoResponse, request);
-      expect(bids[0].renderer).to.exist;
-      expectMatch(bids, expectedBidOutstreamVideo);
+      it('should return a well-formed outstream video bid for multi-format ad unit', function () {
+        const request = makeRequest(multiFormatBidderRequest);
+        const videoResponse = deepClone(serverResponseVideo);
+        let bids = spec.interpretResponse(videoResponse, request);
+        expect(bids[0].renderer).to.exist;
+        expectMatch(bids, expectedBidOutstreamVideo);
 
-      videoResponse.body.seatbid[0].bid[0].adm = '<vAst';
-      bids = spec.interpretResponse(videoResponse, request);
-      expect(bids[0].mediaType).to.equal(VIDEO);
+        videoResponse.body.seatbid[0].bid[0].adm = '<vAst';
+        bids = spec.interpretResponse(videoResponse, request);
+        expect(bids[0].mediaType).to.equal(VIDEO);
 
-      videoResponse.body.seatbid[0].bid[0].adm = '<?xml';
-      bids = spec.interpretResponse(videoResponse, request);
-      expect(bids[0].mediaType).to.equal(VIDEO);
-    });
+        videoResponse.body.seatbid[0].bid[0].adm = '<?xml';
+        bids = spec.interpretResponse(videoResponse, request);
+        expect(bids[0].mediaType).to.equal(VIDEO);
+      });
+    }
   });
 
   describe('getUserSyncs', function () {

@@ -2,6 +2,13 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {generateUUID, getParameterByName, isNumber, logError, logInfo} from '../src/utils.js';
+import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ */
 
 // ------------------------------------
 const BIDDER_CODE = 'cwire';
@@ -9,6 +16,7 @@ const CWID_KEY = 'cw_cwid';
 
 export const BID_ENDPOINT = 'https://prebid.cwi.re/v1/bid';
 export const EVENT_ENDPOINT = 'https://prebid.cwi.re/v1/event';
+export const GVL_ID = 1081;
 
 /**
  * Allows limiting ad impressions per site render. Unique per prebid instance ID.
@@ -133,6 +141,7 @@ function getCwExtension() {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVL_ID,
   supportedMediaTypes: [BANNER],
 
   /**
@@ -229,6 +238,24 @@ export const spec = {
     }
     navigator.sendBeacon(EVENT_ENDPOINT, JSON.stringify(event))
   },
+
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+    logInfo('Collecting user-syncs: ', JSON.stringify({syncOptions, gdprConsent, uspConsent, serverResponses}));
+
+    const syncs = []
+    if (hasPurpose1Consent(gdprConsent)) {
+      logInfo('GDPR purpose 1 consent was given, adding user-syncs')
+      let type = (syncOptions.pixelEnabled) ? 'image' : null ?? (syncOptions.iframeEnabled) ? 'iframe' : null
+      if (type) {
+        syncs.push({
+          type: type,
+          url: 'https://ib.adnxs.com/getuid?https://prebid.cwi.re/v1/cookiesync?xandrId=$UID'
+        })
+      }
+    }
+    logInfo('Collected user-syncs: ', JSON.stringify({syncs}))
+    return syncs
+  }
 
 };
 registerBidder(spec);

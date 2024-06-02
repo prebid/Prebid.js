@@ -1,14 +1,14 @@
 import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import adapterManager from '../src/adapterManager.js';
 import {logInfo, logWarn, logError, logMessage, deepAccess, isInteger} from '../src/utils.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 
-const {
-  EVENTS: { AUCTION_END, AD_RENDER_FAILED, BID_TIMEOUT, BID_WON, BIDDER_ERROR }
-} = CONSTANTS;
+// Maintainer: mediapsr@epsilon.com
+
+const { AUCTION_END, AD_RENDER_FAILED, BID_TIMEOUT, BID_WON, BIDDER_ERROR } = EVENTS;
 // STALE_RENDER, TCF2_ENFORCEMENT would need to add extra calls for these as they likely occur after AUCTION_END?
 const GVLID = 24;
 const ANALYTICS_TYPE = 'endpoint';
@@ -18,6 +18,7 @@ const DOMAIN = 'https://web.hb.ad.cpe.dotomi.com/';
 const ANALYTICS_URL = DOMAIN + 'cvx/event/prebidanalytics';
 const ERROR_URL = DOMAIN + 'cvx/event/prebidanalyticerrors';
 const ANALYTICS_CODE = 'conversant';
+const ANALYTICS_ALIASES = [ANALYTICS_CODE, 'epsilon', 'cnvr'];
 
 export const CNVR_CONSTANTS = {
   LOG_PREFIX: 'Conversant analytics adapter: ',
@@ -688,11 +689,12 @@ conversantAnalytics.disableAnalytics = function () {
   conversantAnalyticsEnabled = false;
   conversantAnalytics.originDisableAnalytics();
 };
-
-adapterManager.registerAnalyticsAdapter({
-  adapter: conversantAnalytics,
-  code: ANALYTICS_CODE,
-  gvlid: GVLID
+ANALYTICS_ALIASES.forEach(alias => {
+  adapterManager.registerAnalyticsAdapter({
+    adapter: conversantAnalytics,
+    code: alias,
+    gvlid: GVLID
+  });
 });
 
 export default conversantAnalytics;

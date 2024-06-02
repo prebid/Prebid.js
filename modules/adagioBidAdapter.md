@@ -61,6 +61,8 @@ Below, the list of Adagio params and where they can be set.
 | debug                          |               | x             |
 | video                          |               | x             |
 | native                         |               | x             |
+| splitKeyword                   |               | x             |
+| dataLayer                      |               | x             |
 
 _* These params are deprecated in favor the Global configuration setup, see below._
 
@@ -105,16 +107,21 @@ var adUnits = [
           cpm: 3.00 // default to 1.00
         },
         video: {
-          api: [2, 7], // Required - Your video player must at least support the value 2 and/or 7.
+          api: [2], // Required - Your video player must at least support the value 2
           playbackMethod: [6], // Highly recommended
           skip: 0
-          // OpenRTB video options defined here override ones defined in mediaTypes.
+          // OpenRTB 2.5 video options defined here override ones defined in mediaTypes.
+          // Not supported: 'protocol', 'companionad', 'companiontype', 'ext'
         },
         native: {
           // Optional OpenRTB Native 1.2 request object. Only `context`, `plcmttype` fields are supported.
           context: 1,
           plcmttype: 2
         },
+        splitKeyword: 'splitrule-one',
+        dl: {
+          placement: '1234'
+        }
       }
     }]
   }
@@ -187,6 +194,8 @@ If the FPD value is an array, the 1st value of this array will be used.
           placement: 'in_article',
           adUnitElementId: 'article_outstream',
           video: {
+            api: [2],
+            playbackMethod: [6],
             skip: 0
           },
           debug: {

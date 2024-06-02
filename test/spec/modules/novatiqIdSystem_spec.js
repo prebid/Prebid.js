@@ -138,16 +138,31 @@ describe('novatiqIdSystem', function () {
   });
 
   describe('decode', function() {
-    it('should log message if novatiqId has wrong format', function() {
+    it('should return the same novatiqId as passed in if not async', function() {
       const novatiqId = '81b001ec-8914-488c-a96e-8c220d4ee08895ef';
       const response = novatiqIdSubmodule.decode(novatiqId);
       expect(response.novatiq.snowflake).to.have.length(40);
     });
 
-    it('should log message if novatiqId has wrong format', function() {
-      const novatiqId = '81b001ec-8914-488c-a96e-8c220d4ee08895ef';
+    it('should change the result format if async', function() {
+      let novatiqId = {};
+      novatiqId.id = '81b001ec-8914-488c-a96e-8c220d4ee08895ef';
+      novatiqId.syncResponse = 2;
       const response = novatiqIdSubmodule.decode(novatiqId);
-      expect(response.novatiq.snowflake).should.be.not.empty;
+      expect(response.novatiq.ext.syncResponse).should.be.not.empty;
+      expect(response.novatiq.snowflake.id).should.be.not.empty;
+      expect(response.novatiq.snowflake.syncResponse).should.be.not.empty;
+    });
+
+    it('should remove syncResponse if removeAdditionalInfo true', function() {
+      let novatiqId = {};
+      novatiqId.id = '81b001ec-8914-488c-a96e-8c220d4ee08895ef';
+      novatiqId.syncResponse = 2;
+      var config = {params: {removeAdditionalInfo: true}};
+      const response = novatiqIdSubmodule.decode(novatiqId, config);
+      expect(response.novatiq.ext.syncResponse).should.be.not.empty;
+      expect(response.novatiq.snowflake.id).should.be.not.empty;
+      should.equal(response.novatiq.snowflake.syncResponse, undefined);
     });
   });
 })

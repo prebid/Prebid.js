@@ -7,7 +7,13 @@
 import { isStr, isPlainObject, logError } from '../src/utils.js';
 import { submodule } from '../src/hook.js';
 import { ajax } from '../src/ajax.js';
-import { getStorageManager } from '../src/storageManager.js';
+import {getStorageManager} from '../src/storageManager.js';
+import {MODULE_TYPE_UID} from '../src/activities/modules.js';
+
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ */
 
 const MODULE_NAME = 'naveggId';
 const OLD_NAVEGG_ID = 'nid';
@@ -16,7 +22,7 @@ const BASE_URL = 'https://id.navegg.com/uid/';
 const DEFAULT_EXPIRE = 8 * 24 * 3600 * 1000;
 const INVALID_EXPIRE = 3600 * 1000;
 
-export const storage = getStorageManager();
+export const storage = getStorageManager({moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME});
 
 function getNaveggIdFromApi() {
   const callbacks = {
@@ -73,16 +79,16 @@ function readnavIDFromCookie() {
 /** @type {Submodule} */
 export const naveggIdSubmodule = {
   /**
-  * used to link submodule with config
-  * @type {string}
-  */
+   * used to link submodule with config
+   * @type {string}
+   */
   name: MODULE_NAME,
   /**
-  * decode the stored id value for passing to bid requests
-  * @function
-  * @param { Object | string | undefined } value
-  * @return { Object | string | undefined }
-  */
+   * decode the stored id value for passing to bid requests
+   * @function
+   * @param { Object | string | undefined } value
+   * @return { Object | string | undefined }
+   */
   decode(value) {
     const naveggIdVal = value ? isStr(value) ? value : isPlainObject(value) ? value.id : undefined : undefined;
     return naveggIdVal ? {
@@ -90,11 +96,11 @@ export const naveggIdSubmodule = {
     } : undefined;
   },
   /**
-  * performs action to obtain id and return a value in the callback's response argument
-  * @function
-  * @param {SubmoduleConfig} config
-  * @return {{id: string | undefined } | undefined}
-  */
+   * performs action to obtain id and return a value in the callback's response argument
+   * @function
+   * @param {SubmoduleConfig} config
+   * @return {{id: string | undefined } | undefined}
+   */
   getId() {
     const naveggIdString = readnaveggIdFromLocalStorage() || readnaveggIDFromCookie() || getNaveggIdFromApi() || readoldnaveggIDFromCookie() || readnvgIDFromCookie() || readnavIDFromCookie();
 
@@ -106,6 +112,12 @@ export const naveggIdSubmodule = {
       }
     }
     return undefined;
+  },
+  eids: {
+    'naveggId': {
+      source: 'navegg.com',
+      atype: 1
+    },
   }
 };
 submodule('userId', naveggIdSubmodule);
