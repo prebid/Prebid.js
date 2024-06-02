@@ -9,9 +9,9 @@ import CONSTANTS from '../src/constants.json';
  * prebidmanagerAnalyticsAdapter.js - analytics adapter for prebidmanager
  */
 export const storage = getStorageManager({gvlid: undefined, moduleName: 'prebidmanager'});
-const DEFAULT_EVENT_URL = 'https://endpoint.prebidmanager.com/endpoint';
+const DEFAULT_EVENT_URL = 'https://endpt.prebidmanager.com/endpoint';
 const analyticsType = 'endpoint';
-const analyticsName = 'Prebid Manager Analytics: ';
+const analyticsName = 'Prebid Manager Analytics';
 
 let ajax = ajaxBuilder(0);
 
@@ -28,8 +28,8 @@ var w = window;
 var d = document;
 var e = d.documentElement;
 var g = d.getElementsByTagName('body')[0];
-var x = w.innerWidth || e.clientWidth || g.clientWidth;
-var y = w.innerHeight || e.clientHeight || g.clientHeight;
+var x = (w && w.innerWidth) || (e && e.clientWidth) || (g && g.clientWidth);
+var y = (w && w.innerHeight) || (e && e.clientHeight) || (g && g.clientHeight);
 
 var _pageView = {
   eventType: 'pageView',
@@ -56,13 +56,20 @@ prebidmanagerAnalytics.originEnableAnalytics = prebidmanagerAnalytics.enableAnal
 prebidmanagerAnalytics.enableAnalytics = function (config) {
   initOptions = config.options || {};
   initOptions.url = initOptions.url || DEFAULT_EVENT_URL;
-  pmAnalyticsEnabled = true;
+  initOptions.sampling = initOptions.sampling || 1;
+
+  if (Math.floor(Math.random() * initOptions.sampling) === 0) {
+    pmAnalyticsEnabled = true;
+    flushInterval = setInterval(flush, 1000);
+  } else {
+    logInfo(`${analyticsName} isn't enabled because of sampling`);
+  }
+
   prebidmanagerAnalytics.originEnableAnalytics(config);
-  flushInterval = setInterval(flush, 1000);
 };
 
 prebidmanagerAnalytics.originDisableAnalytics = prebidmanagerAnalytics.disableAnalytics;
-prebidmanagerAnalytics.disableAnalytics = function() {
+prebidmanagerAnalytics.disableAnalytics = function () {
   if (!pmAnalyticsEnabled) {
     return;
   }
@@ -95,7 +102,7 @@ function collectUtmTagData() {
       });
     }
   } catch (e) {
-    logError(`${analyticsName}Error`, e);
+    logError(`${analyticsName} Error`, e);
     pmUtmTags['error_utm'] = 1;
   }
   return pmUtmTags;
@@ -126,6 +133,16 @@ function flush() {
       pageInfo: collectPageInfo(),
     };
 
+    if ('version' in initOptions) {
+      data.version = initOptions.version;
+    }
+    if ('tcf_compliant' in initOptions) {
+      data.tcf_compliant = initOptions.tcf_compliant;
+    }
+    if ('sampling' in initOptions) {
+      data.sampling = initOptions.sampling;
+    }
+
     ajax(
       initOptions.url,
       () => logInfo(`${analyticsName} sent events batch`),
@@ -142,65 +159,156 @@ function flush() {
   }
 }
 
+function trimAdUnit(adUnit) {
+  if (!adUnit) return adUnit;
+  const res = {};
+  res.code = adUnit.code;
+  res.sizes = adUnit.sizes;
+  return res;
+}
+
+function trimBid(bid) {
+  if (!bid) return bid;
+  const res = {};
+  res.auctionId = bid.auctionId;
+  res.bidder = bid.bidder;
+  res.bidderRequestId = bid.bidderRequestId;
+  res.bidId = bid.bidId;
+  res.crumbs = bid.crumbs;
+  res.cpm = bid.cpm;
+  res.currency = bid.currency;
+  res.mediaTypes = bid.mediaTypes;
+  res.sizes = bid.sizes;
+  res.transactionId = bid.transactionId;
+  res.adUnitCode = bid.adUnitCode;
+  res.bidRequestsCount = bid.bidRequestsCount;
+  res.serverResponseTimeMs = bid.serverResponseTimeMs;
+  return res;
+}
+
+function trimBidderRequest(bidderRequest) {
+  if (!bidderRequest) return bidderRequest;
+  const res = {};
+  res.auctionId = bidderRequest.auctionId;
+  res.auctionStart = bidderRequest.auctionStart;
+  res.bidderRequestId = bidderRequest.bidderRequestId;
+  res.bidderCode = bidderRequest.bidderCode;
+  res.bids = bidderRequest.bids && bidderRequest.bids.map(trimBid);
+  return res;
+}
+
 function handleEvent(eventType, eventArgs) {
-  eventArgs = eventArgs ? JSON.parse(JSON.stringify(eventArgs)) : {};
-  var pmEvent = {};
+  try {
+    eventArgs = eventArgs ? JSON.parse(JSON.stringify(eventArgs)) : {};
+  } catch (e) {
+    // keep eventArgs as is
+  }
+
+  const pmEvent = {};
 
   switch (eventType) {
     case CONSTANTS.EVENTS.AUCTION_INIT: {
-      pmEvent = eventArgs;
+      pmEvent.auctionId = eventArgs.auctionId;
+      pmEvent.timeout = eventArgs.timeout;
+      pmEvent.eventType = eventArgs.eventType;
+      pmEvent.adUnits = eventArgs.adUnits && eventArgs.adUnits.map(trimAdUnit)
+      pmEvent.bidderRequests = eventArgs.bidderRequests && eventArgs.bidderRequests.map(trimBidderRequest)
       _startAuction = pmEvent.timestamp;
       _bidRequestTimeout = pmEvent.timeout;
       break;
     }
     case CONSTANTS.EVENTS.AUCTION_END: {
-      pmEvent = eventArgs;
+      pmEvent.auctionId = eventArgs.auctionId;
+      pmEvent.end = eventArgs.end;
+      pmEvent.start = eventArgs.start;
+      pmEvent.adUnitCodes = eventArgs.adUnitCodes;
+      pmEvent.bidsReceived = eventArgs.bidsReceived && eventArgs.bidsReceived.map(trimBid);
       pmEvent.start = _startAuction;
       pmEvent.end = Date.now();
       break;
     }
     case CONSTANTS.EVENTS.BID_ADJUSTMENT: {
-      pmEvent.bidders = eventArgs;
       break;
     }
     case CONSTANTS.EVENTS.BID_TIMEOUT: {
-      pmEvent.bidders = eventArgs;
+      pmEvent.bidders = eventArgs && eventArgs.map ? eventArgs.map(trimBid) : eventArgs;
       pmEvent.duration = _bidRequestTimeout;
       break;
     }
     case CONSTANTS.EVENTS.BID_REQUESTED: {
-      pmEvent = eventArgs;
+      pmEvent.auctionId = eventArgs.auctionId;
+      pmEvent.bidderCode = eventArgs.bidderCode;
+      pmEvent.doneCbCallCount = eventArgs.doneCbCallCount;
+      pmEvent.start = eventArgs.start;
+      pmEvent.bidderRequestId = eventArgs.bidderRequestId;
+      pmEvent.bids = eventArgs.bids && eventArgs.bids.map(trimBid);
+      pmEvent.auctionStart = eventArgs.auctionStart;
+      pmEvent.timeout = eventArgs.timeout;
       break;
     }
     case CONSTANTS.EVENTS.BID_RESPONSE: {
-      pmEvent = eventArgs;
-      delete pmEvent.ad;
+      pmEvent.bidderCode = eventArgs.bidderCode;
+      pmEvent.width = eventArgs.width;
+      pmEvent.height = eventArgs.height;
+      pmEvent.adId = eventArgs.adId;
+      pmEvent.mediaType = eventArgs.mediaType;
+      pmEvent.cpm = eventArgs.cpm;
+      pmEvent.currency = eventArgs.currency;
+      pmEvent.requestId = eventArgs.requestId;
+      pmEvent.adUnitCode = eventArgs.adUnitCode;
+      pmEvent.auctionId = eventArgs.auctionId;
+      pmEvent.timeToRespond = eventArgs.timeToRespond;
+      pmEvent.responseTimestamp = eventArgs.responseTimestamp;
+      pmEvent.requestTimestamp = eventArgs.requestTimestamp;
+      pmEvent.netRevenue = eventArgs.netRevenue;
+      pmEvent.size = eventArgs.size;
+      pmEvent.adserverTargeting = eventArgs.adserverTargeting;
       break;
     }
     case CONSTANTS.EVENTS.BID_WON: {
-      pmEvent = eventArgs;
-      delete pmEvent.ad;
-      delete pmEvent.adUrl;
+      pmEvent.auctionId = eventArgs.auctionId;
+      pmEvent.adId = eventArgs.adId;
+      pmEvent.adserverTargeting = eventArgs.adserverTargeting;
+      pmEvent.adUnitCode = eventArgs.adUnitCode;
+      pmEvent.bidderCode = eventArgs.bidderCode;
+      pmEvent.height = eventArgs.height;
+      pmEvent.mediaType = eventArgs.mediaType;
+      pmEvent.netRevenue = eventArgs.netRevenue;
+      pmEvent.cpm = eventArgs.cpm;
+      pmEvent.requestTimestamp = eventArgs.requestTimestamp;
+      pmEvent.responseTimestamp = eventArgs.responseTimestamp;
+      pmEvent.size = eventArgs.size;
+      pmEvent.width = eventArgs.width;
+      pmEvent.currency = eventArgs.currency;
+      pmEvent.bidder = eventArgs.bidder;
       break;
     }
     case CONSTANTS.EVENTS.BIDDER_DONE: {
-      pmEvent = eventArgs;
+      pmEvent.auctionId = eventArgs.auctionId;
+      pmEvent.auctionStart = eventArgs.auctionStart;
+      pmEvent.bidderCode = eventArgs.bidderCode;
+      pmEvent.bidderRequestId = eventArgs.bidderRequestId;
+      pmEvent.bids = eventArgs.bids && eventArgs.bids.map(trimBid);
+      pmEvent.doneCbCallCount = eventArgs.doneCbCallCount;
+      pmEvent.start = eventArgs.start;
+      pmEvent.timeout = eventArgs.timeout;
+      pmEvent.tid = eventArgs.tid;
+      pmEvent.src = eventArgs.src;
       break;
     }
     case CONSTANTS.EVENTS.SET_TARGETING: {
-      pmEvent.targetings = eventArgs;
       break;
     }
     case CONSTANTS.EVENTS.REQUEST_BIDS: {
-      pmEvent = eventArgs;
       break;
     }
     case CONSTANTS.EVENTS.ADD_AD_UNITS: {
-      pmEvent = eventArgs;
       break;
     }
     case CONSTANTS.EVENTS.AD_RENDER_FAILED: {
-      pmEvent = eventArgs;
+      pmEvent.bid = eventArgs.bid;
+      pmEvent.message = eventArgs.message;
+      pmEvent.reason = eventArgs.reason;
       break;
     }
     default:
@@ -215,7 +323,7 @@ function handleEvent(eventType, eventArgs) {
 
 function sendEvent(event) {
   _eventQueue.push(event);
-  logInfo(`${analyticsName}Event ${event.eventType}:`, event);
+  logInfo(`${analyticsName} Event ${event.eventType}:`, event);
 
   if (event.eventType === CONSTANTS.EVENTS.AUCTION_END) {
     flush();

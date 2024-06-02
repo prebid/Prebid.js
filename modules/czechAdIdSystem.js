@@ -1,7 +1,7 @@
 /**
  * This module adds 'caid' to the User ID module
  * The {@link module:modules/userId} module is required
- * @module modules/cpexIdSystem
+ * @module modules/czechAdIdSystem
  * @requires module:modules/userId
  */
 
@@ -9,19 +9,19 @@ import { submodule } from '../src/hook.js'
 import { getStorageManager } from '../src/storageManager.js'
 
 // Returns StorageManager
-export const storage = getStorageManager({ gvlid: 570, moduleName: 'cpexId' })
+export const storage = getStorageManager({ gvlid: 570, moduleName: 'czechAdId' })
 
 // Returns the id string from either cookie or localstorage
 const readId = () => { return storage.getCookie('czaid') || storage.getDataFromLocalStorage('czaid') }
 
 /** @type {Submodule} */
-export const cpexIdSubmodule = {
-  version: '0.0.5',
+export const czechAdIdSubmodule = {
+  version: '0.1.0',
   /**
    * used to link submodule with config
    * @type {string}
    */
-  name: 'cpexId',
+  name: 'czechAdId',
   /**
    * Vendor ID of Czech Publisher Exchange
    * @type {Number}
@@ -32,7 +32,7 @@ export const cpexIdSubmodule = {
    * @function decode
    * @returns {(Object|undefined)}
    */
-  decode () { return { cpexId: readId() } },
+  decode () { return { czechAdId: readId() } },
   /**
    * performs action to obtain id and return a value in the callback's response argument
    * @function
@@ -44,4 +44,4 @@ export const cpexIdSubmodule = {
   }
 }
 
-submodule('userId', cpexIdSubmodule)
+submodule('userId', czechAdIdSubmodule)

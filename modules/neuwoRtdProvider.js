@@ -18,6 +18,10 @@ function init(config = {}, userConsent = '') {
     logError('publicToken missing', 'NeuwoRTDModule', 'config.params.publicToken')
     return false;
   }
+  if (!config.params.apiUrl) {
+    logError('apiUrl missing', 'NeuwoRTDModule', 'config.params.apiUrl')
+    return false;
+  }
   return true;
 }
 
@@ -26,7 +30,7 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
   logInfo('NeuwoRTDModule', 'starting getBidRequestData')
 
   const wrappedArgUrl = encodeURIComponent(config.params.argUrl || getRefererInfo().page);
-  const url = 'https://m1apidev.neuwo.ai/edge/GetAiTopics?' + [
+  const url = config.params.apiUrl + [
     'token=' + config.params.publicToken,
     'lang=en',
     'url=' + wrappedArgUrl

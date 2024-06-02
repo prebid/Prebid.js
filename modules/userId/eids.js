@@ -345,8 +345,8 @@ export const USER_IDS_CONFIG = {
     atype: 1
   },
 
-  // cpexId
-  'cpexId': {
+  // czechAdId
+  'czechAdId': {
     source: 'czechadid.cz',
     atype: 1
   },
