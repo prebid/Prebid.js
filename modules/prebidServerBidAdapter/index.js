@@ -19,7 +19,7 @@ import {
 import { EVENTS, REJECTION_REASON, S2S } from '../../src/constants.js';
 import adapterManager, {s2sActivityParams} from '../../src/adapterManager.js';
 import {config} from '../../src/config.js';
-import {addComponentAuction, isValid} from '../../src/adapters/bidderFactory.js';
+import {addPaapiConfig, isValid} from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
 import {includes} from '../../src/polyfill.js';
 import {S2S_VENDORS} from './config.js';
@@ -510,7 +510,7 @@ export function PrebidServer() {
           }
         },
         onFledge: (params) => {
-          addComponentAuction({auctionId: bidRequests[0].auctionId, ...params}, params.config);
+          addPaapiConfig({auctionId: bidRequests[0].auctionId, ...params}, {config: params.config});
         }
       })
     }
