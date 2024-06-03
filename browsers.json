@@ -31,9 +31,9 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_safari_latest_mac_bigsur": {
+  "bs_safari_latest_mac_ventura": {
     "base": "BrowserStack",
-    "os_version": "Big Sur",
+    "os_version": "Ventura",
     "browser": "safari",
     "browser_version": "latest",
     "device": null,
