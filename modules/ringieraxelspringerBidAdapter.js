@@ -8,7 +8,7 @@ import {
 import { getAllOrtbKeywords } from '../libraries/keywords/keywords.js';
 import { getAdUnitSizes } from '../libraries/sizeUtils/sizeUtils.js';
 
-const BIDDER_CODE = 'ras';
+const BIDDER_CODE = 'ringieraxelspringer';
 const VERSION = '1.0';
 
 const getEndpoint = (network) => {
@@ -106,38 +106,66 @@ function parseOrtbResponse(ad) {
     return false;
   }
 
-  const { image, Image, title, url, Headline, Thirdpartyclicktracker, imp, impression, impression1, impressionJs1 } = ad.data.fields;
+  const { image, Image, title, url, Headline, Thirdpartyclicktracker, thirdPartyClickTracker2, imp, impression, impression1, impressionJs1, partner_logo: partnerLogo, adInfo, body } = ad.data.fields;
   const { dsaurl, height, width, adclick } = ad.data.meta;
   const emsLink = ad.ems_link;
   const link = adclick + (url || Thirdpartyclicktracker);
   const eventtrackers = prepareEventtrackers(emsLink, imp, impression, impression1, impressionJs1);
+  const clicktrackers = thirdPartyClickTracker2 ? [thirdPartyClickTracker2] : [];
+
   const ortb = {
     ver: '1.2',
     assets: [
       {
-        id: 2,
+        id: 0,
+        data: {
+          value: body || '',
+          type: 2
+        },
+      },
+      {
+        id: 1,
+        data: {
+          value: adInfo || '',
+          // Body2 type
+          type: 10
+        },
+      },
+      {
+        id: 3,
         img: {
-          url: image || Image || '',
+          type: 1,
+          url: partnerLogo || '',
           w: width,
           h: height
         }
       },
       {
         id: 4,
-        title: {
-          text: title || Headline || ''
+        img: {
+          type: 3,
+          url: image || Image || '',
+          w: width,
+          h: height
         }
       },
       {
-        id: 3,
+        id: 5,
         data: {
           value: deepAccess(ad, 'data.meta.advertiser_name', null),
           type: 1
         }
-      }
+      },
+      {
+        id: 6,
+        title: {
+          text: title || Headline || ''
+        }
+      },
     ],
     link: {
-      url: link
+      url: link,
+      clicktrackers
     },
     eventtrackers
   };
@@ -154,7 +182,7 @@ function parseNativeResponse(ad) {
     return false;
   }
 
-  const { image, Image, title, leadtext, url, Calltoaction, Body, Headline, Thirdpartyclicktracker } = ad.data.fields;
+  const { image, Image, title, leadtext, url, Calltoaction, Body, Headline, Thirdpartyclicktracker, adInfo, partner_logo: partnerLogo } = ad.data.fields;
   const { dsaurl, height, width, adclick } = ad.data.meta;
   const link = adclick + (url || Thirdpartyclicktracker);
   const nativeResponse = {
@@ -165,10 +193,15 @@ function parseNativeResponse(ad) {
       width,
       height
     },
-
+    icon: {
+      url: partnerLogo || '',
+      width,
+      height
+    },
     clickUrl: link,
     cta: Calltoaction || '',
     body: leadtext || Body || '',
+    body2: adInfo || '',
     sponsoredBy: deepAccess(ad, 'data.meta.advertiser_name', null) || '',
     ortb: parseOrtbResponse(ad)
   };
@@ -192,7 +225,7 @@ const buildBid = (ad, mediaType) => {
     creativeId: ad.adid ? parseInt(ad.adid.split(',')[2], 10) : 0,
     netRevenue: true,
     currency: ad.currency || 'USD',
-    dealId: null,
+    dealId: ad.prebid_deal || null,
     actgMatch: ad.actg_match || 0,
     meta: { mediaType: BANNER },
     mediaType: BANNER,
@@ -242,6 +275,8 @@ const getSlots = (bidRequests) => {
     if (creFormat === 'native') {
       queryString += `&cre_format${i}=native`;
     }
+
+    queryString += `&kvhb_format${i}=${creFormat === 'native' ? 'native' : 'banner'}`;
 
     if (sizes) {
       queryString += `&iusizes${i}=${encodeURIComponent(sizes)}`;

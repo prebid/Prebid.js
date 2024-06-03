@@ -1,10 +1,10 @@
 import { expect } from 'chai';
-import { spec } from 'modules/rasBidAdapter.js';
+import { spec } from 'modules/ringieraxelspringerBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 
 const CSR_ENDPOINT = 'https://csr.onet.pl/4178463/csr-006/csr.json?nid=4178463&';
 
-describe('rasBidAdapter', function () {
+describe('ringieraxelspringerBidAdapter', function () {
   const adapter = newBidder(spec);
 
   describe('inherited functions', function () {
@@ -17,7 +17,7 @@ describe('rasBidAdapter', function () {
     it('should return true when required params found', function () {
       const bid = {
         sizes: [[300, 250], [300, 600]],
-        bidder: 'ras',
+        bidder: 'ringieraxelspringer',
         params: {
           slot: 'slot',
           area: 'areatest',
@@ -31,7 +31,7 @@ describe('rasBidAdapter', function () {
     it('should return false when required params not found', function () {
       const failBid = {
         sizes: [[300, 250], [300, 300]],
-        bidder: 'ras',
+        bidder: 'ringieraxelspringer',
         params: {
           site: 'test',
           network: '4178463'
@@ -43,7 +43,7 @@ describe('rasBidAdapter', function () {
     it('should return nothing when bid request is malformed', function () {
       const failBid = {
         sizes: [[300, 250], [300, 300]],
-        bidder: 'ras',
+        bidder: 'ringieraxelspringer',
       };
       expect(spec.isBidRequestValid(failBid)).to.equal(undefined);
     });
@@ -52,7 +52,7 @@ describe('rasBidAdapter', function () {
   describe('buildRequests', function () {
     const bid = {
       sizes: [[300, 250], [300, 600]],
-      bidder: 'ras',
+      bidder: 'ringieraxelspringer',
       bidId: 1,
       params: {
         slot: 'test',
@@ -81,7 +81,7 @@ describe('rasBidAdapter', function () {
     };
     const bid2 = {
       sizes: [[750, 300]],
-      bidder: 'ras',
+      bidder: 'ringieraxelspringer',
       bidId: 2,
       params: {
         slot: 'test2',
@@ -157,8 +157,10 @@ describe('rasBidAdapter', function () {
       expect(requests[0].url).to.have.string('id0=1');
       expect(requests[0].url).to.have.string('iusizes0=300x250%2C300x600');
       expect(requests[0].url).to.have.string('slot1=test2');
+      expect(requests[0].url).to.have.string('kvhb_format0=banner');
       expect(requests[0].url).to.have.string('id1=2');
       expect(requests[0].url).to.have.string('iusizes1=750x300');
+      expect(requests[0].url).to.have.string('kvhb_format1=banner');
       expect(requests[0].url).to.have.string('site=test');
       expect(requests[0].url).to.have.string('area=areatest');
       expect(requests[0].url).to.have.string('cre_format=html');
@@ -306,7 +308,7 @@ describe('rasBidAdapter', function () {
   describe('buildNativeRequests', function () {
     const bid = {
       sizes: 'fluid',
-      bidder: 'ras',
+      bidder: 'ringieraxelspringer',
       bidId: 1,
       params: {
         slot: 'nativestd',
@@ -365,6 +367,7 @@ describe('rasBidAdapter', function () {
       expect(requests[0].url).to.have.string('dr=https%3A%2F%2Fexample.org%2F');
       expect(requests[0].url).to.have.string('test=name%3Dvalue');
       expect(requests[0].url).to.have.string('cre_format0=native');
+      expect(requests[0].url).to.have.string('kvhb_format0=native');
       expect(requests[0].url).to.have.string('iusizes0=fluid');
     });
   });
@@ -407,6 +410,8 @@ describe('rasBidAdapter', function () {
               title: 'Headline',
               image: '//img.url',
               url: '//link.url',
+              partner_logo: '//logo.url',
+              adInfo: 'REKLAMA',
               impression: '//impression.url',
               impression1: '//impression1.url',
               impressionJs1: '//impressionJs1.url'
@@ -444,9 +449,10 @@ describe('rasBidAdapter', function () {
               Calltoaction: 'Calltoaction',
               Headline: 'Headline',
               Image: '//img.url',
-              Sponsorlabel: 'nie',
+              adInfo: 'REKLAMA',
               Thirdpartyclicktracker: '//link.url',
-              imp: '//imp.url'
+              imp: '//imp.url',
+              thirdPartyClickTracker2: '//thirdPartyClickTracker.url'
             },
             meta: {
               slot: 'nativestd',
@@ -465,29 +471,54 @@ describe('rasBidAdapter', function () {
       ver: '1.2',
       assets: [
         {
-          id: 2,
+          id: 0,
+          data: {
+            value: '',
+            type: 2
+          },
+        },
+        {
+          id: 1,
+          data: {
+            value: 'REKLAMA',
+            type: 10
+          },
+        },
+        {
+          id: 3,
           img: {
-            url: '//img.url',
+            type: 1,
+            url: '//logo.url',
             w: 1,
             h: 1
           }
         },
         {
           id: 4,
+          img: {
+            type: 3,
+            url: '//img.url',
+            w: 1,
+            h: 1
+          }
+        },
+        {
+          id: 5,
+          data: {
+            value: 'Test Onet',
+            type: 1
+          },
+        },
+        {
+          id: 6,
           title: {
             text: 'Headline'
           }
         },
-        {
-          id: 3,
-          data: {
-            value: 'Test Onet',
-            type: 1
-          }
-        }
       ],
       link: {
-        url: '//adclick.url//link.url'
+        url: '//adclick.url//link.url',
+        clicktrackers: []
       },
       eventtrackers: [
         {
@@ -521,9 +552,15 @@ describe('rasBidAdapter', function () {
         width: 1,
         height: 1
       },
+      icon: {
+        url: '//logo.url',
+        width: 1,
+        height: 1
+      },
       clickUrl: '//adclick.url//link.url',
       cta: '',
       body: 'BODY',
+      body2: 'REKLAMA',
       sponsoredBy: 'Test Onet',
       ortb: expectedTeaserStandardOrtbResponse,
       privacyLink: '//dsa.url'
@@ -532,29 +569,54 @@ describe('rasBidAdapter', function () {
       ver: '1.2',
       assets: [
         {
-          id: 2,
+          id: 0,
+          data: {
+            value: '',
+            type: 2
+          },
+        },
+        {
+          id: 1,
+          data: {
+            value: 'REKLAMA',
+            type: 10
+          },
+        },
+        {
+          id: 3,
           img: {
-            url: '//img.url',
+            type: 1,
+            url: '',
             w: 1,
             h: 1
           }
         },
         {
           id: 4,
+          img: {
+            type: 3,
+            url: '//img.url',
+            w: 1,
+            h: 1
+          }
+        },
+        {
+          id: 5,
+          data: {
+            value: 'Test Onet',
+            type: 1
+          },
+        },
+        {
+          id: 6,
           title: {
             text: 'Headline'
           }
         },
-        {
-          id: 3,
-          data: {
-            value: 'Test Onet',
-            type: 1
-          }
-        }
       ],
       link: {
-        url: '//adclick.url//link.url'
+        url: '//adclick.url//link.url',
+        clicktrackers: ['//thirdPartyClickTracker.url']
       },
       eventtrackers: [
         {
@@ -578,9 +640,15 @@ describe('rasBidAdapter', function () {
         width: 1,
         height: 1
       },
+      icon: {
+        url: '',
+        width: 1,
+        height: 1
+      },
       clickUrl: '//adclick.url//link.url',
       cta: 'Calltoaction',
       body: 'BODY',
+      body2: 'REKLAMA',
       sponsoredBy: 'Test Onet',
       ortb: expectedNativeInFeedOrtbResponse,
       privacyLink: '//dsa.url'
