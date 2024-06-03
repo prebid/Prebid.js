@@ -763,12 +763,40 @@ describe('S2S Adapter', function () {
       });
     })
 
-    it('should set tmax to s2sConfig.timeout', () => {
-      const cfg = {...CONFIG, timeout: 123};
-      config.setConfig({s2sConfig: cfg});
-      adapter.callBids({...REQUEST, s2sConfig: cfg}, BID_REQUESTS, addBidResponse, done, ajax);
+    it('should set tmaxmax correctly when publisher has specified it', () => {
+      const cfg = {...CONFIG};
+
+      // publisher has specified a tmaxmax in their setup
+      const ortb2Fragments = {
+        global: {
+          ext: {
+            tmaxmax: 4242
+          }
+        }
+      };
+      const s2sCfg = {...REQUEST, cfg}
+      const payloadWithFragments = { ...s2sCfg, ortb2Fragments };
+
+      adapter.callBids(payloadWithFragments, BID_REQUESTS, addBidResponse, done, ajax);
       const req = JSON.parse(server.requests[0].requestBody);
-      expect(req.tmax).to.eql(123);
+
+      expect(req.ext.tmaxmax).to.eql(4242);
+    });
+
+    it('should set tmaxmax correctly when publisher has not specified it', () => {
+      const cfg = {...CONFIG};
+
+      // publisher has not specified a tmaxmax in their setup - so we should be 
+      // falling back to requestBidsTimeout
+      const ortb2Fragments = {};
+      const s2sCfg = {...REQUEST, cfg};
+      const requestBidsTimeout = 808;
+      const payloadWithFragments = { ...s2sCfg, ortb2Fragments, requestBidsTimeout };
+
+      adapter.callBids(payloadWithFragments, BID_REQUESTS, addBidResponse, done, ajax);
+      const req = JSON.parse(server.requests[0].requestBody);
+
+      expect(req.ext.tmaxmax).to.eql(808);
     });
 
     it('should block request if config did not define p1Consent URL in endpoint object config', function () {
