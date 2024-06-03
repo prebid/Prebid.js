@@ -166,8 +166,6 @@ export function newConfig() {
 
       // default max bid
       maxBid: DEFAULT_MAXBID_VALUE,
-      // default bidders iframes urls
-      
       userSync: {
         topics: DEFAULT_IFRAMES_CONFIG
       }
