@@ -1,5 +1,6 @@
 import * as id5System from '../../../modules/id5IdSystem.js';
 import {
+  attachIdSystem,
   coreStorage,
   getConsentHash,
   init,
@@ -17,6 +18,7 @@ import {mockGdprConsent} from '../../helpers/consentData.js';
 import {server} from '../../mocks/xhr.js';
 import {expect} from 'chai';
 import {GreedyPromise} from '../../../src/utils/promise.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
 
 const IdFetchFlow = id5System.IdFetchFlow;
 
@@ -1123,4 +1125,45 @@ describe('ID5 ID System', function () {
       });
     });
   });
+  describe('eid', () => {
+    before(() => {
+      attachIdSystem(id5System);
+    });
+    it('does not include an ext if not provided', function() {
+      const userId = {
+        id5id: {
+          uid: 'some-random-id-value'
+        }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'id5-sync.com',
+        uids: [{ id: 'some-random-id-value', atype: 1 }]
+      });
+    });
+
+    it('includes ext if provided', function() {
+      const userId = {
+        id5id: {
+          uid: 'some-random-id-value',
+          ext: {
+            linkType: 0
+          }
+        }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'id5-sync.com',
+        uids: [{
+          id: 'some-random-id-value',
+          atype: 1,
+          ext: {
+            linkType: 0
+          }
+        }]
+      });
+    });
+  })
 });
