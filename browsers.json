@@ -1,15 +1,15 @@
 {
-  "bs_edge_latest_windows_10": {
+  "bs_edge_latest_windows_11": {
     "base": "BrowserStack",
-    "os_version": "10",
+    "os_version": "11",
     "browser": "edge",
     "browser_version": "latest",
     "device": null,
     "os": "Windows"
   },
-  "bs_chrome_latest_windows_10": {
+  "bs_chrome_latest_windows_11": {
     "base": "BrowserStack",
-    "os_version": "10",
+    "os_version": "11",
     "browser": "chrome",
     "browser_version": "latest",
     "device": null,
@@ -23,9 +23,9 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_firefox_latest_windows_10": {
+  "bs_firefox_latest_windows_11": {
     "base": "BrowserStack",
-    "os_version": "10",
+    "os_version": "11",
     "browser": "firefox",
     "browser_version": "latest",
     "device": null,
