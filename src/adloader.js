@@ -8,10 +8,10 @@ const _approvedLoadExternalJSList = [
   'debugging',
   'outstream',
   // Bid Modules:
-  'adagio',
   'improvedigital',
   // RTD modules:
   'aaxBlockmeter',
+  'adagio',
   'adloox',
   'akamaidap',
   'arcspan',
