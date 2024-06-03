@@ -43,7 +43,7 @@
     "base": "BrowserStack",
     "os_version": "Catalina",
     "browser": "safari",
-    "browser_version": "13.1",
+    "browser_version": "15.6",
     "device": null,
     "os": "OS X"
   }
