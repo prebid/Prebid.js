@@ -39,10 +39,10 @@
   ],
   "globalVarName": "pbjs",
   "defineGlobal": true,
-  "author": "the prebid.js contributors",
+  "author": "The prebid.js contributors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=20.14.0"
+    "node": ">=20.0.0"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.16.5",
