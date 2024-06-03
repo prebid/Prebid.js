@@ -5,6 +5,11 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 import {ortbConverter} from '../libraries/ortbConverter/converter.js';
+/**
+ * See https://github.com/prebid/Prebid.js/pull/8827 for details on linting exception
+ * ImproveDigital only imports after winning a bid and only if the creative cannot reach top
+ */
+// eslint-disable-next-line prebid/validate-imports
 import {loadExternalScript} from '../src/adloader.js';
 
 /**
