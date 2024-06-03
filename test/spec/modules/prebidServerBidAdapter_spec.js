@@ -24,14 +24,14 @@ import 'modules/priceFloors.js';
 import 'modules/consentManagement.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
-import 'modules/fledgeForGpt.js';
+import 'modules/paapi.js';
 import * as redactor from 'src/activities/redactor.js';
 import * as activityRules from 'src/activities/rules.js';
 import {hook} from '../../../src/hook.js';
 import {decorateAdUnitsWithNativeParams} from '../../../src/native.js';
 import {auctionManager} from '../../../src/auctionManager.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
-import {addComponentAuction, registerBidder} from 'src/adapters/bidderFactory.js';
+import {addPaapiConfig, registerBidder} from 'src/adapters/bidderFactory.js';
 import {getGlobal} from '../../../src/prebidGlobal.js';
 import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {deepSetValue} from '../../../src/utils.js';
@@ -2377,23 +2377,28 @@ describe('S2S Adapter', function () {
       ]);
     });
 
-    it('should "promote" the most reused bidder schain to source.ext.schain', () => {
-      const bidderReqs = [
-        {...deepClone(BID_REQUESTS[0]), bidderCode: 'A'},
-        {...deepClone(BID_REQUESTS[0]), bidderCode: 'B'},
-        {...deepClone(BID_REQUESTS[0]), bidderCode: 'C'}
-      ];
-      const chain1 = {chain: 1};
-      const chain2 = {chain: 2};
+    Object.entries({
+      'set': {},
+      'override': {source: {ext: {schain: 'pub-provided'}}}
+    }).forEach(([t, fpd]) => {
+      it(`should not ${t} source.ext.schain`, () => {
+        const bidderReqs = [
+          {...deepClone(BID_REQUESTS[0]), bidderCode: 'A'},
+          {...deepClone(BID_REQUESTS[0]), bidderCode: 'B'},
+          {...deepClone(BID_REQUESTS[0]), bidderCode: 'C'}
+        ];
+        const chain1 = {chain: 1};
+        const chain2 = {chain: 2};
 
-      bidderReqs[0].bids[0].schain = chain1;
-      bidderReqs[1].bids[0].schain = chain2;
-      bidderReqs[2].bids[0].schain = chain2;
+        bidderReqs[0].bids[0].schain = chain1;
+        bidderReqs[1].bids[0].schain = chain2;
+        bidderReqs[2].bids[0].schain = chain2;
 
-      adapter.callBids(REQUEST, bidderReqs, addBidResponse, done, ajax);
-      const req = JSON.parse(server.requests[0].requestBody);
-      expect(req.source.ext.schain).to.eql(chain2);
-    });
+        adapter.callBids({...REQUEST, ortb2Fragments: {global: fpd}}, bidderReqs, addBidResponse, done, ajax);
+        const req = JSON.parse(server.requests[0].requestBody);
+        expect(req.source?.ext?.schain).to.eql(fpd?.source?.ext?.schain);
+      })
+    })
 
     it('passes multibid array in request', function () {
       const bidRequests = utils.deepClone(BID_REQUESTS);
@@ -3482,11 +3487,11 @@ describe('S2S Adapter', function () {
       }
 
       before(() => {
-        addComponentAuction.before(fledgeHook);
+        addPaapiConfig.before(fledgeHook);
       });
 
       after(() => {
-        addComponentAuction.getHooks({hook: fledgeHook}).remove();
+        addPaapiConfig.getHooks({hook: fledgeHook}).remove();
       })
 
       beforeEach(function () {
@@ -3515,8 +3520,8 @@ describe('S2S Adapter', function () {
 
       function expectFledgeCalls() {
         const auctionId = bidderRequests[0].auctionId;
-        sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: bidderRequests[0].ortb2, ortb2Imp: bidderRequests[0].bids[0].ortb2Imp}), {id: 1})
-        sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: undefined, ortb2Imp: undefined}), {id: 2})
+        sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: bidderRequests[0].ortb2, ortb2Imp: bidderRequests[0].bids[0].ortb2Imp}), {config: {id: 1}})
+        sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: undefined, ortb2Imp: undefined}), {config: {id: 2}})
       }
 
       it('calls addComponentAuction alongside addBidResponse', function () {

@@ -47,6 +47,9 @@ const bidderIframeList = {
   }, {
     bidder: 'undertone',
     iframeURL: 'https://creative-p.undertone.com/spk-public/topics_frame.html'
+  }, {
+    bidder: 'vidazoo',
+    iframeURL: 'https://static.vidazoo.com/topics_api/topics_frame.html'
   }]
 }
 
