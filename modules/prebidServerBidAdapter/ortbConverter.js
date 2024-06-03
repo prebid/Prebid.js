@@ -232,7 +232,7 @@ const PBS_CONVERTER = ortbConverter({
       },
       fledgeAuctionConfigs(orig, response, ortbResponse, context) {
         const configs = Object.values(context.impContext)
-          .flatMap((impCtx) => (impCtx.fledgeConfigs || []).map(cfg => {
+          .flatMap((impCtx) => (impCtx.paapiConfigs || []).map(cfg => {
             const bidderReq = impCtx.actualBidderRequests.find(br => br.bidderCode === cfg.bidder);
             const bidReq = impCtx.actualBidRequests.get(cfg.bidder);
             return {
