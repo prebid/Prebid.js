@@ -266,10 +266,11 @@ export function partitionBuyersByBidder(igbRequests) {
 /**
  * Get PAAPI auction configuration.
  *
- * @param auctionId? optional auction filter; if omitted, the latest auction for each ad unit is used
- * @param adUnitCode? optional ad unit filter
- * @param includeBlanks if true, include null entries for ad units that match the given filters but do not have any available auction configs.
- * @returns {{}} a map from ad unit code to auction config for the ad unit.
+ * @param {Object} [options] - Options object.
+ * @param {string} [options.auctionId] - Optional auction filter; if omitted, the latest auction for each ad unit is used.
+ * @param {string} [options.adUnitCode] - Optional ad unit filter.
+ * @param {boolean} [includeBlanks=false] - If true, include null entries for ad units that match the given filters but do not have any available auction configs.
+ * @returns {Object} - A map from ad unit code to auction config for the ad unit.
  */
 export function getPAAPIConfig({auctionId, adUnitCode} = {}, includeBlanks = false) {
   const output = {};
