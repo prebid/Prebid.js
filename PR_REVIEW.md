@@ -101,7 +101,7 @@ Follow steps above for general review process. In addition:
   - modules/userId/userId.md
 - tests can go either within the userId_spec.js file or in their own _spec file if they wish
 - GVLID is recommended in the *IdSystem file if they operate in EU
-- make sure example configurations align to the actual code (some modules use the userId storage settings and allow pub configuration, while others handle reading/writing cookies on their own, so should not include the storage params in examples)
+- make sure example configurations align to the actual code (some modules use the userId storage settings and allow pub configuration, while others handle reading/writing cookies on their own, so should not include the storage params in examples). This ability to write will be removed in a future version, see https://github.com/prebid/Prebid.js/issues/10710
 - the 3 available methods (getId, extendId, decode) should be used as they were intended
   - decode (required method) should not be making requests to retrieve a new ID, it should just be decoding a response
   - extendId (optional method) should not be making requests to retrieve a new ID, it should just be adding additional data to the id object
