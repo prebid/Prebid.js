@@ -6,7 +6,8 @@ const _requestCache = new WeakMap();
 const _approvedLoadExternalJSList = [
   // Prebid maintained modules:
   'debugging',
-  // Bid Modules - only exception is on rendering edge cases, to clean up in Prebid 10:
+  'outstream',
+  // Bid Modules:
   'improvedigital',
   'showheroes-bs',
   // RTD modules:
