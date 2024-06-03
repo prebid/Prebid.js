@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { deepAccess, getWindowTop, isArray, logWarn } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { config } from '../src/config.js';
@@ -97,7 +98,6 @@ const getNotificationPayload = bidData => {
         siteId: [],
         slotId: [],
         tagid: [],
-        platform: 'wpartner',
       }
       bids.forEach(bid => {
         const { adUnitCode, cpm, creativeId, meta, mediaType, params: bidParams, bidderRequestId, requestId, timeout } = bid;
@@ -127,7 +127,7 @@ const getNotificationPayload = bidData => {
 
         if (cpm) {
           // non-empty bid data
-          const { advertiserDomains = [], networkName, pricepl, platform } = meta;
+          const { advertiserDomains = [], networkName, pricepl } = meta;
           const bidNonEmptyData = {
             cpm,
             cpmpl: pricepl,
@@ -135,7 +135,6 @@ const getNotificationPayload = bidData => {
             adomain: advertiserDomains[0],
             adtype: mediaType,
             networkName,
-            platform,
           }
           result = { ...result, ...bidNonEmptyData }
         }
@@ -237,8 +236,8 @@ const applyGdpr = (bidderRequest, ortbRequest) => {
   if (gdprConsent) {
     const { apiVersion, gdprApplies, consentString } = gdprConsent;
     consentApiVersion = apiVersion;
-    ortbRequest.regs = Object.assign(ortbRequest.regs, { 'gdpr': gdprApplies ? 1 : 0 });
-    ortbRequest.user = Object.assign(ortbRequest.user, { 'consent': consentString });
+    ortbRequest.regs = Object.assign(ortbRequest.regs || {}, { 'gdpr': gdprApplies ? 1 : 0 });
+    ortbRequest.user = Object.assign(ortbRequest.user || {}, { 'consent': consentString });
   }
 }
 
@@ -521,6 +520,11 @@ const isNativeAd = bid => {
   return bid.admNative || (bid.adm && bid.adm.match(xmlTester));
 }
 
+const isHTML = bid => {
+  const xmlTester = new RegExp(/^<html|<iframe/, 'i');
+  return bid.adm && bid.adm.match(xmlTester);
+}
+
 const parseNative = (nativeData, adUnitCode) => {
   const { link = {}, imptrackers: impressionTrackers, jstracker } = nativeData;
   const { url: clickUrl, clicktrackers: clickTrackers = [] } = link;
@@ -746,7 +750,7 @@ const spec = {
           const { bidId } = bidRequest || {};
 
           // get ext data from bid
-          const { siteid = site.id, slotid = site.slot, pubid, adlabel, cache: creativeCache, vurls = [], dsa, pricepl, platform } = ext;
+          const { siteid = site.id, slotid = site.slot, pubid, adlabel, cache: creativeCache, vurls = [], dsa } = ext;
 
           // update site data
           site = {
@@ -777,8 +781,7 @@ const spec = {
               meta: {
                 advertiserDomains: adomain,
                 networkName: seat,
-                platform,
-                pricepl,
+                pricepl: ext && ext.pricepl,
                 dsa,
               },
               netRevenue: true,
@@ -793,6 +796,8 @@ const spec = {
               bid.vastXml = serverBid.adm;
               bid.vastContent = serverBid.adm;
               bid.vastUrl = creativeCache;
+
+              logWarn(`Bid ${bid.creativeId} as a video ad`);
             } else if (isNativeAd(serverBid)) {
               // native
               bid.mediaType = 'native';
@@ -806,10 +811,17 @@ const spec = {
                 logWarn('Could not parse native data', serverBid.adm);
                 bid.cpm = 0;
               }
+              logWarn(`Bid ${bid.creativeId} as a native ad`);
+            } else if (isHTML(serverBid)) {
+              // banner ad (preformatted)
+              bid.mediaType = 'banner';
+              logWarn(`Bid ${bid.creativeId} as a preformatted banner`);
             } else {
-              // banner ad (default)
+              // banner ad (has to be prepared)
+              // wait for changes on backend and discard this case (set bid.cpm to zero and report error)
               bid.mediaType = 'banner';
               bid.ad = renderCreative(site, response.id, serverBid, seat, bidderRequest);
+              logWarn(`Bid ${bid.creativeId} as a standard banner`);
             }
 
             if (bid.cpm > 0) {
