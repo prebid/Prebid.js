@@ -30,6 +30,10 @@ aliases:
       name: Install gulp cli
       command: sudo npm install -g gulp-cli
 
+  - &run_update_browserslist
+      name: Update Browserslist DB
+      command: npx update-browserslist-db@latest
+
   - &run_unit_test
       name: BrowserStack testing
       command: gulp test --browserstack --nolintfix
