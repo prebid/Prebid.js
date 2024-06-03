@@ -513,6 +513,17 @@ gulp.task(watch);
 gulp.task(clean);
 
 gulp.task(escapePostbidConfig);
+gulp.task('update-browserslist-db', (done) => {
+  exec('npx update-browserslist-db@latest', (err, stdout, stderr) => {
+    if (err) {
+      console.error(`Error updating browserslist DB: ${stderr}`);
+      done(err);
+    } else {
+      console.log(`Browserslist DB updated: ${stdout}`);
+      done();
+    }
+  });
+});
 
 gulp.task('build-creative-dev', gulp.series(buildCreative(argv.creativeDev ? 'development' : 'production'), updateCreativeRenderers));
 gulp.task('build-creative-prod', gulp.series(buildCreative(), updateCreativeRenderers));
