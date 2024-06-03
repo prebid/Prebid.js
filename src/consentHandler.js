@@ -167,7 +167,7 @@ export function gvlidRegistry() {
      * Get a module's GVL ID(s).
      *
      * @param {string} moduleName
-     * @return {{modules: {[moduleType]: number}, gvlid?: number}} an object where:
+     * @return {{modules: {[key: string]: number}, gvlid?: number}} an object where:
      *   `modules` is a map from module type to that module's GVL ID;
      *   `gvlid` is the single GVL ID for this family of modules (only defined
      *   if all modules with this name declared the same ID).
