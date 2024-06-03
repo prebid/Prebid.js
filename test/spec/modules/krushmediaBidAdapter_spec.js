@@ -12,8 +12,7 @@ describe('KrushmediabBidAdapter', function () {
       }
     },
     params: {
-      key: 783,
-      traffic: BANNER
+      key: 783
     }
   };
 
