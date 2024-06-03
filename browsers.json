@@ -41,9 +41,9 @@
   },
   "bs_safari_15_catalina": {
     "base": "BrowserStack",
-    "os_version": "Catalina",
+    "os_version": "Monterey",
     "browser": "safari",
-    "browser_version": "15.6",
+    "browser_version": "16.5",
     "device": null,
     "os": "OS X"
   }
