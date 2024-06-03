@@ -20,6 +20,54 @@ describe('Utils', function () {
     type_array = 'Array',
     type_function = 'Function';
 
+  describe('canAccessWindowTop', function () {
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.sandbox.create();
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+    it('should return true if window.top is accessible', function () {
+      assert.equal(utils.canAccessWindowTop(), true);
+    });
+
+    it('should return false if window.top is not accessible', function () {
+      sandbox.stub(utils.internal, 'getWindowTop').returns(false);
+      assert.equal(utils.canAccessWindowTop(), false);
+    });
+  });
+
+  describe('isSafeFrameWindow', function () {
+    // SafeFrames implementation
+    // https://iabtechlab.com/wp-content/uploads/2016/03/SafeFrames_v1.1_final.pdf
+    const $sf = {
+      ext: {
+        geom: function() {}
+      }
+    };
+
+    afterEach(function() {
+      delete window.$sf;
+    })
+
+    it('should return true if window.$sf is accessible', function () {
+      window.$sf = $sf;
+      assert.equal(utils.isSafeFrameWindow(), true);
+    });
+
+    it('should return false if window.$sf is missimplemented', function () {
+      window.$sf = {};
+      assert.equal(utils.isSafeFrameWindow(), false);
+    });
+
+    it('should return false if window.$sf is missing', function () {
+      assert.equal(utils.isSafeFrameWindow(), false);
+    });
+  });
+
   describe('getBidIdParameter', function () {
     it('should return value of the key in input object', function () {
       var obj = {

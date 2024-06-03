@@ -1,5 +1,5 @@
 import {config} from './config.js';
-import clone from 'just-clone';
+import {klona} from 'klona/json';
 import {includes} from './polyfill.js';
 import { EVENTS, S2S } from './constants.js';
 import {GreedyPromise} from './utils/promise.js';
@@ -41,6 +41,7 @@ export const internal = {
   createTrackPixelIframeHtml,
   getWindowSelf,
   getWindowTop,
+  canAccessWindowTop,
   getWindowLocation,
   insertUserSyncIframe,
   insertElement,
@@ -196,6 +197,16 @@ export function getWindowSelf() {
 
 export function getWindowLocation() {
   return window.location;
+}
+
+export function canAccessWindowTop() {
+  try {
+    if (internal.getWindowTop().location.href) {
+      return true;
+    }
+  } catch (e) {
+    return false;
+  }
 }
 
 /**
@@ -627,7 +638,7 @@ export function shuffle(array) {
 }
 
 export function deepClone(obj) {
-  return clone(obj);
+  return klona(obj) || {};
 }
 
 export function inIframe() {
@@ -636,6 +647,18 @@ export function inIframe() {
   } catch (e) {
     return true;
   }
+}
+
+/**
+ * https://iabtechlab.com/wp-content/uploads/2016/03/SafeFrames_v1.1_final.pdf
+ */
+export function isSafeFrameWindow() {
+  if (!inIframe()) {
+    return false;
+  }
+
+  const ws = internal.getWindowSelf();
+  return !!(ws.$sf && ws.$sf.ext);
 }
 
 export function isSafariBrowser() {

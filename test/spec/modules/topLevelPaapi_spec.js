@@ -1,5 +1,5 @@
 import {
-  addComponentAuctionHook,
+  addPaapiConfigHook,
   getPAAPIConfig,
   registerSubmodule,
   reset as resetPaapi
@@ -20,7 +20,7 @@ import {expect} from 'chai/index.js';
 import {getBidToRender} from '../../../src/adRendering.js';
 
 describe('topLevelPaapi', () => {
-  let sandbox, paapiConfig, next, auctionId, auctions;
+  let sandbox, auctionConfig, next, auctionId, auctions;
   before(() => {
     resetPaapi();
   });
@@ -36,7 +36,7 @@ describe('topLevelPaapi', () => {
     sandbox.stub(auctionManager.index, 'getAuction').callsFake(({auctionId}) => auctions[auctionId]?.auction);
     next = sinon.stub();
     auctionId = 'auct';
-    paapiConfig = {
+    auctionConfig = {
       seller: 'mock.seller'
     };
     config.setConfig({
@@ -74,10 +74,12 @@ describe('topLevelPaapi', () => {
         }
       };
     }
-    addComponentAuctionHook(next, {adUnitCode, auctionId: _auctionId}, {
-      ...auctionConfig,
-      auctionId: _auctionId,
-      adUnitCode
+    addPaapiConfigHook(next, {adUnitCode, auctionId: _auctionId}, {
+      config: {
+        ...auctionConfig,
+        auctionId: _auctionId,
+        adUnitCode
+      }
     });
   }
 
@@ -105,7 +107,7 @@ describe('topLevelPaapi', () => {
     });
 
     it('should augment config returned by getPAAPIConfig', () => {
-      addPaapiConfig('au', paapiConfig);
+      addPaapiConfig('au', auctionConfig);
       endAuctions();
       sinon.assert.match(getPAAPIConfig().au, auctionConfig);
     });
@@ -114,13 +116,13 @@ describe('topLevelPaapi', () => {
       const cfg = config.getConfig('paapi');
       delete cfg.topLevelSeller.auctionConfig;
       config.setConfig(cfg);
-      addPaapiConfig('au', paapiConfig);
+      addPaapiConfig('au', auctionConfig);
       endAuctions();
       expect(getPAAPIConfig().au.componentAuctions).to.exist;
     });
 
     it('should default resolveToConfig: false', () => {
-      addPaapiConfig('au', paapiConfig);
+      addPaapiConfig('au', auctionConfig);
       endAuctions();
       expect(getPAAPIConfig()['au'].resolveToConfig).to.eql(false);
     });
@@ -143,7 +145,7 @@ describe('topLevelPaapi', () => {
             }
           }
         })
-        addPaapiConfig('au', paapiConfig);
+        addPaapiConfig('au', auctionConfig);
         endAuctions();
         sinon.assert.called(navigator.runAdAuction);
       });
@@ -190,14 +192,14 @@ describe('topLevelPaapi', () => {
 
           describe('with one auction config', () => {
             beforeEach(() => {
-              addPaapiConfig('au', paapiConfig, 'auct');
+              addPaapiConfig('au', auctionConfig, 'auct');
               endAuctions();
             });
             it('should resolve to raa result', () => {
               return getBids({adUnitCode: 'au', auctionId}).then(result => {
                 sinon.assert.calledWith(raa, sinon.match({
                   ...auctionConfig,
-                  componentAuctions: sinon.match(cmp => cmp.find(cfg => sinon.match(cfg, paapiConfig)))
+                  componentAuctions: sinon.match(cmp => cmp.find(cfg => sinon.match(cfg, auctionConfig)))
                 }));
                 expectBids(result, {au: 'raa-au-auct'});
               });
@@ -366,7 +368,7 @@ describe('topLevelPaapi', () => {
               auct2: ['au1', 'au3']
             };
             Object.entries(targets).forEach(([auctionId, adUnitCodes]) => {
-              adUnitCodes.forEach(au => addPaapiConfig(au, paapiConfig, auctionId));
+              adUnitCodes.forEach(au => addPaapiConfig(au, auctionConfig, auctionId));
             });
             endAuctions();
             return Promise.all(
@@ -412,7 +414,7 @@ describe('topLevelPaapi', () => {
 
   describe('when not configured', () => {
     it('should not alter configs returned by getPAAPIConfig', () => {
-      addPaapiConfig('au', paapiConfig);
+      addPaapiConfig('au', auctionConfig);
       endAuctions();
       expect(getPAAPIConfig().au.seller).to.not.exist;
     });

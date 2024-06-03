@@ -2,9 +2,29 @@ import {deepAccess, isFn, logError, logMessage} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 
 const BIDDER_CODE = 'smarthub';
+const ALIASES = [
+  {code: 'markapp', skipPbsAliasing: true},
+  {code: 'jdpmedia', skipPbsAliasing: true},
+  {code: 'tredio', skipPbsAliasing: true},
+];
+const BASE_URLS = {
+  smarthub: 'https://prebid.smart-hub.io/pbjs',
+  markapp: 'https://markapp-prebid.smart-hub.io/pbjs',
+  jdpmedia: 'https://jdpmedia-prebid.smart-hub.io/pbjs',
+  tredio: 'https://tredio-prebid.smart-hub.io/pbjs'
+};
+
+function getUrl(partnerName) {
+  const aliases = ALIASES.map(el => el.code);
+  if (aliases.includes(partnerName)) {
+    return BASE_URLS[partnerName];
+  }
+
+  return `${BASE_URLS[BIDDER_CODE]}?partnerName=${partnerName}`;
+}
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId || !bid.ttl || !bid.currency || !bid.hasOwnProperty('netRevenue')) {
@@ -23,13 +43,13 @@ function isBidResponseValid(bid) {
 }
 
 function getPlacementReqData(bid) {
-  const { params, bidId, mediaTypes } = bid;
+  const { params, bidId, mediaTypes, bidder } = bid;
   const schain = bid.schain || {};
   const { partnerName, seat, token, iabCat, minBidfloor, pos } = params;
   const bidfloor = getBidFloor(bid);
 
   const placement = {
-    partnerName: partnerName.toLowerCase(),
+    partnerName: String(partnerName || bidder).toLowerCase(),
     seat,
     token,
     iabCat,
@@ -37,7 +57,7 @@ function getPlacementReqData(bid) {
     pos,
     bidId,
     schain,
-    bidfloor
+    bidfloor,
   };
 
   if (mediaTypes && mediaTypes[BANNER]) {
@@ -131,11 +151,12 @@ function buildRequestParams(bidderRequest = {}, placements = []) {
 
 export const spec = {
   code: BIDDER_CODE,
+  aliases: ALIASES,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid = {}) => {
     const { params, bidId, mediaTypes } = bid;
-    let valid = Boolean(bidId && params && params.partnerName && params.seat && params.token);
+    let valid = Boolean(bidId && params && params.seat && params.token);
 
     if (mediaTypes && mediaTypes[BANNER]) {
       valid = valid && Boolean(mediaTypes[BANNER] && mediaTypes[BANNER].sizes);
@@ -166,7 +187,7 @@ export const spec = {
       const request = buildRequestParams(bidderRequest, tempObj[key]);
       return {
         method: 'POST',
-        url: `https://${key}-prebid.smart-hub.io/pbjs`,
+        url: getUrl(key),
         data: request,
       }
     });

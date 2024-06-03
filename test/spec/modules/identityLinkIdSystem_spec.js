@@ -4,6 +4,9 @@ import {server} from 'test/mocks/xhr.js';
 import {getCoreStorageManager} from '../../../src/storageManager.js';
 import {stub} from 'sinon';
 import { gppDataHandler } from '../../../src/adapterManager.js';
+import {attachIdSystem} from '../../../modules/userId/index.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
+import {expect} from 'chai/index.mjs';
 
 const storage = getCoreStorageManager();
 
@@ -237,5 +240,22 @@ describe('IdentityLinkId tests', function () {
     submoduleCallback(callBackSpy);
     expect(envelopeValueFromStorage).to.be.a('string');
     expect(envelopeValueFromStorage).to.be.eq(testEnvelopeValue);
+  })
+
+  describe('eid', () => {
+    before(() => {
+      attachIdSystem(identityLinkSubmodule);
+    });
+    it('identityLink', function() {
+      const userId = {
+        idl_env: 'some-random-id-value'
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'liveramp.com',
+        uids: [{id: 'some-random-id-value', atype: 3}]
+      });
+    });
   })
 });
