@@ -13,7 +13,7 @@ import { VIDEO, BANNER } from '../src/mediaTypes.js';
  * See https://github.com/prebid/Prebid.js/pull/4222 for details on linting exception
  * ShowHeroes only imports after winning a bid
  */
-// eslint-disable-next-line prebid/validate-imports
+// eslint-disable-next-line no-restricted-imports
 import { loadExternalScript } from '../src/adloader.js';
 
 const PROD_ENDPOINT = 'https://bs.showheroes.com/api/v1/bid';
