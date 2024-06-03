@@ -36,7 +36,6 @@
       "novatiqIdSystem",
       "oneKeyIdSystem",
       "operaadsIdSystem",
-      "parrableIdSystem",
       "pubProvidedIdSystem",
       "publinkIdSystem",
       "quantcastIdSystem",
@@ -44,7 +43,7 @@
       "tapadIdSystem",
       "teadsIdSystem",
       "tncIdSystem",
-      "utiqSystem",
+      "utiqIdSystem",
       "utiqMtpIdSystem",
       "uid2IdSystem",
       "euidIdSystem",
@@ -54,7 +53,7 @@
     ],
     "adpod": [
       "freeWheelAdserverVideo",
-      "dfpAdServerVideo"
+      "dfpAdpod"
     ],
     "rtdModule": [
       "1plusXRtdProvider",

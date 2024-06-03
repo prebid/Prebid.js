@@ -6,13 +6,12 @@ const _requestCache = new WeakMap();
 const _approvedLoadExternalJSList = [
   // Prebid maintained modules:
   'debugging',
-  'outstream',
-  // Bid Modules:
-  'adagio',
+  // Bid Modules - only exception is on rendering edge cases, to clean up in Prebid 10:
   'improvedigital',
-  'lucead',
+  'showheroes-bs',
   // RTD modules:
   'aaxBlockmeter',
+  'adagio',
   'adloox',
   'akamaidap',
   'arcspan',
@@ -30,13 +29,12 @@ const _approvedLoadExternalJSList = [
   'geoedge',
   'qortex',
   'dynamicAdBoost',
+  '51Degrees',
   // UserId Submodules
   'justtag',
   'tncId',
   'ftrackId',
   'id5',
-  'lucead',
-  '51Degrees',
 ];
 
 /**

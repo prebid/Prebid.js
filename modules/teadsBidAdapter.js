@@ -81,6 +81,18 @@ export const spec = {
       payload.schain = firstBidRequest.schain;
     }
 
+    let gpp = bidderRequest.gppConsent;
+    if (bidderRequest && gpp) {
+      let isValidConsentString = typeof gpp.gppString === 'string';
+      let validateApplicableSections =
+        Array.isArray(gpp.applicableSections) &&
+        gpp.applicableSections.every((section) => typeof (section) === 'number')
+      payload.gpp = {
+        consentString: isValidConsentString ? gpp.gppString : '',
+        applicableSectionIds: validateApplicableSections ? gpp.applicableSections : [],
+      };
+    }
+
     let gdpr = bidderRequest.gdprConsent;
     if (bidderRequest && gdpr) {
       let isCmp = typeof gdpr.gdprApplies === 'boolean';

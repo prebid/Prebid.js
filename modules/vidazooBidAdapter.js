@@ -217,14 +217,8 @@ function appendUserIdsToRequestPayload(payloadRef, userIds) {
   _each(userIds, (userId, idSystemProviderName) => {
     key = `uid.${idSystemProviderName}`;
     switch (idSystemProviderName) {
-      case 'digitrustid':
-        payloadRef[key] = deepAccess(userId, 'data.id');
-        break;
       case 'lipb':
         payloadRef[key] = userId.lipbid;
-        break;
-      case 'parrableId':
-        payloadRef[key] = userId.eid;
         break;
       case 'id5id':
         payloadRef[key] = userId.uid;

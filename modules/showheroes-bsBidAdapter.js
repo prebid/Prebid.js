@@ -9,6 +9,12 @@ import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
+/**
+ * See https://github.com/prebid/Prebid.js/pull/4222 for details on linting exception
+ * ShowHeroes only imports after winning a bid
+ * Also see https://github.com/prebid/Prebid.js/issues/11656
+ */
+// eslint-disable-next-line no-restricted-imports
 import { loadExternalScript } from '../src/adloader.js';
 
 const PROD_ENDPOINT = 'https://bs.showheroes.com/api/v1/bid';
@@ -332,7 +338,7 @@ function createOutstreamEmbedCode(bid) {
 
   const fragment = window.document.createDocumentFragment();
 
-  let script = loadExternalScript(urls.pubTag, 'outstream', function () {
+  let script = loadExternalScript(urls.pubTag, 'showheroes-bs', function () {
     window.ShowheroesTag = this;
   });
   script.setAttribute('data-player-host', urls.vlHost);
