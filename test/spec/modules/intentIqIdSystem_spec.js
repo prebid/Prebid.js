@@ -101,12 +101,8 @@ describe('IntentIQ tests', function () {
 
   afterEach(function () {
     logErrorStub.restore();
-    config.getConfig.restore();
-    events.getEvents.restore();
-    iiqAnalyticsAnalyticsAdapter.disableAnalytics();
-    if (iiqAnalyticsAnalyticsAdapter.track.restore) {
-      iiqAnalyticsAnalyticsAdapter.track.restore();
-    }
+    clearAllCookies();
+    localStorage.clear();
   });
 
   it('IIQ Analytical Adapter bid win report', function () {
