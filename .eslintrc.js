@@ -102,7 +102,8 @@ module.exports = {
     rules: {
       'no-restricted-imports': [
         'error', {
-          patterns: ["**/src/events.js"]
+          patterns: ["**/src/events.js",
+          "**/src/adloader.js"]
         }
       ]
     }
