@@ -9,7 +9,7 @@ import {ortbConverter} from '../libraries/ortbConverter/converter.js';
  * See https://github.com/prebid/Prebid.js/pull/8827 for details on linting exception
  * ImproveDigital only imports after winning a bid and only if the creative cannot reach top
  */
-// eslint-disable-next-line prebid/validate-imports
+// eslint-disable-next-line no-restricted-imports
 import {loadExternalScript} from '../src/adloader.js';
 
 /**
