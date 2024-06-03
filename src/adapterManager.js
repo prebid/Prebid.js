@@ -230,6 +230,8 @@ export function getS2SBidderSet(s2sConfigs) {
 }
 
 /**
+ * @param {Array} adUnits - The ad units to be processed.
+ * @param {Object} s2sConfigs - The server-to-server configurations.
  * @returns {{[PARTITIONS.CLIENT]: Array<String>, [PARTITIONS.SERVER]: Array<String>}}
  *           All the bidder codes in the given `adUnits`, divided in two arrays -
  *           those that should be routed to client, and server adapters (according to the configuration in `s2sConfigs`).
