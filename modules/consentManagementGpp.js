@@ -436,7 +436,6 @@ function processCmpData(consentData) {
 /**
  * Stores CMP data locally in module to make information available in adaptermanager.js for later in the auction
  * @param {{}} gppData the result of calling a CMP's `getGPPData` (or equivalent)
- * @param {{}} sectionData map from GPP section name to the result of calling a CMP's `getSection` (or equivalent)
  */
 export function storeConsentData(gppData = {}) {
   consentData = {
