@@ -1,4 +1,4 @@
-import { thirthyThreeAcrossIdSubmodule, storage } from 'modules/33acrossIdSystem.js';
+import { thirthyThreeAcrossIdSubmodule, storage, domainUtils } from 'modules/33acrossIdSystem.js';
 import * as utils from 'src/utils.js';
 
 import { server } from 'test/mocks/xhr.js';
@@ -55,7 +55,7 @@ describe('33acrossIdSystem', () => {
 
     context('if the use of a first-party ID has been enabled', () => {
       context('and the response includes a first-party ID', () => {
-        context('and the storage type is "cookie"', () => {
+        context('and the enabled storage types include "cookie"', () => {
           it('should store the provided first-party ID in a cookie', () => {
             const completeCallback = () => {};
 
@@ -64,10 +64,8 @@ describe('33acrossIdSystem', () => {
                 pid: '12345',
                 storeFpid: true
               },
-              storage: {
-                type: 'cookie',
-                expires: 30
-              }
+              enabledStorageTypes: [ 'cookie' ],
+              storage: { expires: 30 }
             });
 
             callback(completeCallback);
@@ -76,6 +74,7 @@ describe('33acrossIdSystem', () => {
 
             const setCookie = sinon.stub(storage, 'setCookie');
             const cookiesAreEnabled = sinon.stub(storage, 'cookiesAreEnabled').returns(true);
+            sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
 
             request.respond(200, {
               'Content-Type': 'application/json'
@@ -88,14 +87,15 @@ describe('33acrossIdSystem', () => {
               expires: 1645667805067
             }));
 
-            expect(setCookie.calledOnceWithExactly('33acrossIdFp', 'bar', sinon.match.string, 'Lax')).to.be.true;
+            expect(setCookie.calledWithExactly('33acrossIdFp', 'bar', sinon.match.string, 'Lax', 'foo.com')).to.be.true;
 
             setCookie.restore();
             cookiesAreEnabled.restore();
+            domainUtils.domainOverride.restore();
           });
         });
 
-        context('and the storage type is "html5"', () => {
+        context('and the enabled storage types include "html5"', () => {
           it('should store the provided first-party ID in local storage', () => {
             const completeCallback = () => {};
 
@@ -104,9 +104,8 @@ describe('33acrossIdSystem', () => {
                 pid: '12345',
                 storeFpid: true
               },
-              storage: {
-                type: 'html5'
-              }
+              enabledStorageTypes: [ 'html5' ],
+              storage: {}
             });
 
             callback(completeCallback);
@@ -131,6 +130,49 @@ describe('33acrossIdSystem', () => {
             setDataInLocalStorage.restore();
           });
         });
+
+        context('and the enabled storage types are "cookie" and "html5"', () => {
+          it('should store the provided first-party ID in each storage type', () => {
+            const completeCallback = () => {};
+
+            const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+              params: {
+                pid: '12345',
+                storeFpid: true
+              },
+              enabledStorageTypes: [ 'cookie', 'html5' ],
+              storage: {}
+            });
+
+            callback(completeCallback);
+
+            const [request] = server.requests;
+
+            const setCookie = sinon.stub(storage, 'setCookie');
+            const cookiesAreEnabled = sinon.stub(storage, 'cookiesAreEnabled').returns(true);
+            sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
+            const setDataInLocalStorage = sinon.stub(storage, 'setDataInLocalStorage');
+
+            request.respond(200, {
+              'Content-Type': 'application/json'
+            }, JSON.stringify({
+              succeeded: true,
+              data: {
+                envelope: 'foo',
+                fp: 'bar'
+              },
+              expires: 1645667805067
+            }));
+
+            expect(setCookie.calledWithExactly('33acrossIdFp', 'bar', sinon.match.string, 'Lax', 'foo.com')).to.be.true;
+            expect(setDataInLocalStorage.calledOnceWithExactly('33acrossIdFp', 'bar')).to.be.true;
+
+            setCookie.restore();
+            cookiesAreEnabled.restore();
+            domainUtils.domainOverride.restore();
+            setDataInLocalStorage.restore();
+          });
+        });
       });
 
       context('and the response lacks a first-party ID', () => {
@@ -142,9 +184,8 @@ describe('33acrossIdSystem', () => {
               pid: '12345',
               storeFpid: true
             },
-            storage: {
-              type: 'html5'
-            }
+            enabledStorageTypes: [ 'html5' ],
+            storage: {}
           });
 
           callback(completeCallback);
@@ -154,6 +195,7 @@ describe('33acrossIdSystem', () => {
           const removeDataFromLocalStorage = sinon.stub(storage, 'removeDataFromLocalStorage');
           const setCookie = sinon.stub(storage, 'setCookie');
           const cookiesAreEnabled = sinon.stub(storage, 'cookiesAreEnabled').returns(true);
+          sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
 
           request.respond(200, {
             'Content-Type': 'application/json'
@@ -166,11 +208,12 @@ describe('33acrossIdSystem', () => {
           }));
 
           expect(removeDataFromLocalStorage.calledOnceWithExactly('33acrossIdFp')).to.be.true;
-          expect(setCookie.calledOnceWithExactly('33acrossIdFp', '', sinon.match.string, 'Lax')).to.be.true;
+          expect(setCookie.calledWithExactly('33acrossIdFp', '', sinon.match.string, 'Lax', 'foo.com')).to.be.true;
 
           removeDataFromLocalStorage.restore();
           setCookie.restore();
           cookiesAreEnabled.restore();
+          domainUtils.domainOverride.restore();
         });
       });
     });
@@ -185,8 +228,8 @@ describe('33acrossIdSystem', () => {
               pid: '12345'
               // no storeFpid param
             },
+            enabledStorageTypes: [ 'cookie' ],
             storage: {
-              type: 'cookie',
               expires: 30
             }
           });
@@ -197,6 +240,7 @@ describe('33acrossIdSystem', () => {
 
           const setCookie = sinon.stub(storage, 'setCookie');
           const cookiesAreEnabled = sinon.stub(storage, 'cookiesAreEnabled').returns(true);
+          sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
 
           request.respond(200, {
             'Content-Type': 'application/json'
@@ -209,10 +253,11 @@ describe('33acrossIdSystem', () => {
             expires: 1645667805067
           }));
 
-          expect(setCookie.calledOnceWithExactly('33acrossIdFp', 'bar', sinon.match.string, 'Lax')).to.be.false;
+          expect(setCookie.calledWithExactly('33acrossIdFp', 'bar', sinon.match.string, 'Lax', 'foo.com')).to.be.false;
 
           setCookie.restore();
           cookiesAreEnabled.restore();
+          domainUtils.domainOverride.restore();
         });
 
         it('should not store the provided first-party ID in local storage', () => {
@@ -223,9 +268,8 @@ describe('33acrossIdSystem', () => {
               pid: '12345'
               // no storeFpid param
             },
-            storage: {
-              type: 'html5'
-            }
+            enabledStorageTypes: [ 'html5' ],
+            storage: {}
           });
 
           callback(completeCallback);
@@ -260,9 +304,8 @@ describe('33acrossIdSystem', () => {
           params: {
             pid: '12345'
           },
-          storage: {
-            type: 'html5'
-          }
+          enabledStorageTypes: [ 'html5' ],
+          storage: {}
         });
 
         callback(completeCallback);
@@ -272,6 +315,7 @@ describe('33acrossIdSystem', () => {
         const removeDataFromLocalStorage = sinon.stub(storage, 'removeDataFromLocalStorage');
         const setCookie = sinon.stub(storage, 'setCookie');
         const cookiesAreEnabled = sinon.stub(storage, 'cookiesAreEnabled').returns(true);
+        sinon.stub(domainUtils, 'domainOverride').returns('foo.com');
 
         request.respond(200, {
           'Content-Type': 'application/json'
@@ -284,11 +328,12 @@ describe('33acrossIdSystem', () => {
         }));
 
         expect(removeDataFromLocalStorage.calledWith('33acrossId')).to.be.true;
-        expect(setCookie.calledWith('33acrossId', '', sinon.match.string, 'Lax')).to.be.true;
+        expect(setCookie.calledWithExactly('33acrossId', '', sinon.match.string, 'Lax', 'foo.com')).to.be.true;
 
         removeDataFromLocalStorage.restore();
         setCookie.restore();
         cookiesAreEnabled.restore();
+        domainUtils.domainOverride.restore();
       });
     });
 
@@ -502,9 +547,8 @@ describe('33acrossIdSystem', () => {
           params: {
             pid: '12345'
           },
-          storage: {
-            type: 'html5'
-          }
+          enabledStorageTypes: [ 'html5' ],
+          storage: {}
         });
 
         sinon.stub(storage, 'getDataFromLocalStorage')
@@ -528,12 +572,39 @@ describe('33acrossIdSystem', () => {
           params: {
             pid: '12345'
           },
-          storage: {
-            type: 'cookie'
-          }
+          enabledStorageTypes: [ 'cookie' ],
+          storage: {}
         });
 
         sinon.stub(storage, 'getCookie')
+          .withArgs('33acrossIdFp')
+          .returns('33acrossIdFpValue');
+
+        callback(completeCallback);
+
+        const [request] = server.requests;
+
+        expect(request.url).to.contain('fp=33acrossIdFpValue');
+
+        storage.getCookie.restore();
+      });
+    });
+
+    context('when a first-party ID is present only in one of the enabled storage types', () => {
+      it('should call endpoint with the first-party ID found', () => {
+        const completeCallback = () => {};
+        const { callback } = thirthyThreeAcrossIdSubmodule.getId({
+          params: {
+            pid: '12345'
+          },
+          enabledStorageTypes: [ 'cookie', 'html5' ],
+          storage: {}
+        });
+
+        sinon.stub(storage, 'getCookie')
+          .withArgs('33acrossIdFp')
+          .returns('');
+        sinon.stub(storage, 'getDataFromLocalStorage')
           .withArgs('33acrossIdFp')
           .returns('33acrossIdFpValue');
 
