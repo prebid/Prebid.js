@@ -103,7 +103,7 @@ describe('paapiForGpt module', () => {
   });
   describe('onAuctionConfig', () => {
     Object.entries({
-      'omitted': [undefined, true],
+      'omitted': [undefined, false],
       'enabled': [true, true],
       'disabled': [false, false]
     }).forEach(([t, [autoconfig, shouldSetConfig]]) => {

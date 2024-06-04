@@ -12,13 +12,10 @@ const MODULE = 'paapiForGpt';
 
 let getPAAPIConfig;
 
-// for backwards compat, we attempt to automatically set GPT configuration as soon as we
-// have the auction configs available. Disabling this allows one to call pbjs.setPAAPIConfigForGPT at their
-// own pace.
-let autoconfig = true;
+let autoconfig = false;
 
 config.getConfig('paapi', (cfg) => {
-  autoconfig = deepAccess(cfg, 'paapi.gpt.autoconfig', true);
+  autoconfig = deepAccess(cfg, 'paapi.gpt.autoconfig', false);
 });
 
 export function slotConfigurator() {
