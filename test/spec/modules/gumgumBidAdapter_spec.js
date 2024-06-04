@@ -254,36 +254,6 @@ describe('gumgumAdapter', function () {
       expect(legReq.data.si).to.equal(invalidSlotId);
     });
 
-    it('should set the iriscat param when found', function () {
-      const request = { ...bidRequests[0], params: { iriscat: 'abc123' } }
-      const bidRequest = spec.buildRequests([request])[0];
-      expect(bidRequest.data).to.have.property('iriscat');
-    });
-
-    it('should not set the iriscat param when not found', function () {
-      const request = { ...bidRequests[0] }
-      const bidRequest = spec.buildRequests([request])[0];
-      expect(bidRequest.data).to.not.have.property('iriscat');
-    });
-
-    it('should set the irisid param when found', function () {
-      const request = { ...bidRequests[0], params: { irisid: 'abc123' } }
-      const bidRequest = spec.buildRequests([request])[0];
-      expect(bidRequest.data).to.have.property('irisid');
-    });
-
-    it('should not set the irisid param when not found', function () {
-      const request = { ...bidRequests[0] }
-      const bidRequest = spec.buildRequests([request])[0];
-      expect(bidRequest.data).to.not.have.property('irisid');
-    });
-
-    it('should not set the irisid param when not of type string', function () {
-      const request = { ...bidRequests[0], params: { irisid: 123456 } }
-      const bidRequest = spec.buildRequests([request])[0];
-      expect(bidRequest.data).to.not.have.property('irisid');
-    });
-
     it('should set the global placement id (gpid) if in adserver property', function () {
       const req = { ...bidRequests[0],
         ortb2Imp: {
