@@ -3,7 +3,7 @@ import {
   onAuctionConfigFactory,
   setPAAPIConfigFactory,
   slotConfigurator
-} from 'modules/fledgeForGpt.js';
+} from 'modules/paapiForGpt.js';
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
 import 'modules/appnexusBidAdapter.js';
 import 'modules/rubiconBidAdapter.js';

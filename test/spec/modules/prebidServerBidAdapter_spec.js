@@ -3550,9 +3550,10 @@ describe('S2S Adapter', function () {
 
       beforeEach(function () {
         fledgeStub = sinon.stub();
-        config.setConfig({CONFIG});
+        config.setConfig({
+          s2sConfig: CONFIG,
+        });
         bidderRequests = deepClone(BID_REQUESTS);
-        AU
         bidderRequests.forEach(req => {
           Object.assign(req, {
             paapi: {
@@ -3565,7 +3566,7 @@ describe('S2S Adapter', function () {
           req.bids.forEach(bid => {
             Object.assign(bid, {
               ortb2Imp: {
-                fpd: 2
+                fpd: 2,
               }
             })
           })
@@ -3576,8 +3577,8 @@ describe('S2S Adapter', function () {
 
       function expectFledgeCalls() {
         const auctionId = bidderRequests[0].auctionId;
-        sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: bidderRequests[0].ortb2, ortb2Imp: bidderRequests[0].bids[0].ortb2Imp}), {config: {id: 1}})
-        sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: undefined, ortb2Imp: undefined}), {config: {id: 2}})
+        sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: bidderRequests[0].ortb2, ortb2Imp: bidderRequests[0].bids[0].ortb2Imp}), sinon.match({config: {id: 1}}))
+        sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: undefined, ortb2Imp: undefined}), sinon.match({config: {id: 2}}))
       }
 
       it('calls addComponentAuction alongside addBidResponse', function () {
