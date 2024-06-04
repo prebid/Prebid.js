@@ -58,6 +58,7 @@ const PBS_CONVERTER = ortbConverter({
       const request = buildRequest(imps, proxyBidderRequest, context);
 
       request.tmax = s2sBidRequest.s2sConfig.timeout;
+      request.ext.tmaxmax = request.ext.tmaxmax || context.s2sBidRequest.requestBidsTimeout;
 
       [request.app, request.dooh, request.site].forEach(section => {
         if (section && !section.publisher?.id) {
@@ -232,7 +233,7 @@ const PBS_CONVERTER = ortbConverter({
       },
       fledgeAuctionConfigs(orig, response, ortbResponse, context) {
         const configs = Object.values(context.impContext)
-          .flatMap((impCtx) => (impCtx.fledgeConfigs || []).map(cfg => {
+          .flatMap((impCtx) => (impCtx.paapiConfigs || []).map(cfg => {
             const bidderReq = impCtx.actualBidderRequests.find(br => br.bidderCode === cfg.bidder);
             const bidReq = impCtx.actualBidRequests.get(cfg.bidder);
             return {

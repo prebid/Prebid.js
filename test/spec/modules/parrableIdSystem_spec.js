@@ -5,10 +5,13 @@ import * as utils from 'src/utils.js';
 import { newStorageManager } from 'src/storageManager.js';
 import { getRefererInfo } from 'src/refererDetection.js';
 import { uspDataHandler } from 'src/adapterManager.js';
-import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
+import {attachIdSystem, init, requestBidsHook, setSubmoduleRegistry} from 'modules/userId/index.js';
 import { parrableIdSubmodule } from 'modules/parrableIdSystem.js';
 import { server } from 'test/mocks/xhr.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
+import 'src/prebid.js';
+import {merkleIdSubmodule} from '../../../modules/merkleIdSystem.js';
 
 const storage = newStorageManager();
 
@@ -759,4 +762,23 @@ describe('Parrable ID System', function() {
       });
     });
   });
+
+  describe('eid', () => {
+    before(() => {
+      attachIdSystem(merkleIdSubmodule);
+    })
+    it('parrableId', function() {
+      const userId = {
+        parrableId: {
+          eid: 'some-random-id-value'
+        }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'parrable.com',
+        uids: [{id: 'some-random-id-value', atype: 1}]
+      });
+    });
+  })
 });

@@ -90,14 +90,15 @@ export const spec = {
       const placement = {
         key: bid.params.key,
         bidId: bid.bidId,
-        traffic: bid.params.traffic || BANNER,
         schain: bid.schain || {},
         bidFloor: getBidFloor(bid)
       };
 
       if (bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
+        placement.traffic = BANNER;
         placement.sizes = bid.mediaTypes[BANNER].sizes;
       } else if (bid.mediaTypes && bid.mediaTypes[VIDEO] && bid.mediaTypes[VIDEO].playerSize) {
+        placement.traffic = VIDEO;
         placement.wPlayer = bid.mediaTypes[VIDEO].playerSize[0];
         placement.hPlayer = bid.mediaTypes[VIDEO].playerSize[1];
         placement.minduration = bid.mediaTypes[VIDEO].minduration;
@@ -115,6 +116,7 @@ export const spec = {
         placement.api = bid.mediaTypes[VIDEO].api;
         placement.linearity = bid.mediaTypes[VIDEO].linearity;
       } else if (bid.mediaTypes && bid.mediaTypes[NATIVE]) {
+        placement.traffic = NATIVE;
         placement.native = bid.mediaTypes[NATIVE];
       }
       placements.push(placement);

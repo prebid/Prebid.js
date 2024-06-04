@@ -315,7 +315,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     } = bidRequest;
     const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
     const eids = getEids(userId);
-    const gpid = deepAccess(ortb2Imp, 'ext.data.pbadslot') || deepAccess(ortb2Imp, 'ext.data.adserver.adslot');
+    const gpid = deepAccess(ortb2Imp, 'ext.gpid') || deepAccess(ortb2Imp, 'ext.data.pbadslot');
     let sizes = [1, 1];
     let data = {};
     data.displaymanager = 'Prebid.js - gumgum';
