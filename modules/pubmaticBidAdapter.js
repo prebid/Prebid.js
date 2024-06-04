@@ -663,7 +663,7 @@ function _createImpressionObject(bid, bidderRequest) {
   var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
   var mediaTypes = '';
   var format = [];
-  var isFledgeEnabled = bidderRequest?.fledgeEnabled;
+  var isFledgeEnabled = bidderRequest?.paapi?.enabled;
 
   impObj = {
     id: bid.bidId,

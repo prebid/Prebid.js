@@ -301,7 +301,9 @@ export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requeste
 
   const proxyBidderRequest = {
     ...Object.fromEntries(Object.entries(bidderRequests[0]).filter(([k]) => !BIDDER_SPECIFIC_REQUEST_PROPS.has(k))),
-    fledgeEnabled: bidderRequests.some(req => req.fledgeEnabled)
+    paapi: {
+      enabled: bidderRequests.some(br => br.paapi?.enabled)
+    }
   }
 
   return PBS_CONVERTER.toORTB({

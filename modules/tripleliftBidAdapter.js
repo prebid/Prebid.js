@@ -58,8 +58,8 @@ export const tripleliftAdapterSpec = {
       tlCall = tryAppendQueryString(tlCall, 'us_privacy', bidderRequest.uspConsent);
     }
 
-    if (bidderRequest && bidderRequest.fledgeEnabled) {
-      tlCall = tryAppendQueryString(tlCall, 'fledge', bidderRequest.fledgeEnabled);
+    if (bidderRequest?.paapi?.enabled) {
+      tlCall = tryAppendQueryString(tlCall, 'fledge', bidderRequest.paapi.enabled);
     }
 
     if (config.getConfig('coppa') === true) {

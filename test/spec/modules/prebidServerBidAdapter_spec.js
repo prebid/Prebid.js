@@ -764,6 +764,7 @@ describe('S2S Adapter', function () {
 
     it('should set tmaxmax correctly when publisher has specified it', () => {
       const cfg = {...CONFIG};
+      config.setConfig({s2sConfig: cfg})
 
       // publisher has specified a tmaxmax in their setup
       const ortb2Fragments = {
@@ -784,8 +785,9 @@ describe('S2S Adapter', function () {
 
     it('should set tmaxmax correctly when publisher has not specified it', () => {
       const cfg = {...CONFIG};
+      config.setConfig({s2sConfig: cfg})
 
-      // publisher has not specified a tmaxmax in their setup - so we should be 
+      // publisher has not specified a tmaxmax in their setup - so we should be
       // falling back to requestBidsTimeout
       const ortb2Fragments = {};
       const s2sCfg = {...REQUEST, cfg};
@@ -3553,7 +3555,9 @@ describe('S2S Adapter', function () {
         AU
         bidderRequests.forEach(req => {
           Object.assign(req, {
-            fledgeEnabled: true,
+            paapi: {
+              enabled: true
+            },
             ortb2: {
               fpd: 1
             }

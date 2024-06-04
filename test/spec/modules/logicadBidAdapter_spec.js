@@ -182,7 +182,9 @@ describe('LogicadAdapter', function () {
       stack: []
     },
     auctionStart: 1563337198010,
-    fledgeEnabled: true
+    paapi: {
+      enabled: true
+    }
   };
   const serverResponse = {
     body: {

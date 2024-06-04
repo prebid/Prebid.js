@@ -671,11 +671,9 @@ describe('paapi module', () => {
 
         function expectFledgeFlags(...enableFlags) {
           const bidRequests = mark();
-          expect(bidRequests.appnexus.fledgeEnabled).to.eql(enableFlags[0].enabled);
           expect(bidRequests.appnexus.paapi?.enabled).to.eql(enableFlags[0].enabled);
           bidRequests.appnexus.bids.forEach(bid => expect(bid.ortb2Imp.ext.ae).to.eql(enableFlags[0].ae));
 
-          expect(bidRequests.rubicon.fledgeEnabled).to.eql(enableFlags[1].enabled);
           expect(bidRequests.rubicon.paapi?.enabled).to.eql(enableFlags[1].enabled);
           bidRequests.rubicon.bids.forEach(bid => expect(bid.ortb2Imp?.ext?.ae).to.eql(enableFlags[1].ae));
 
@@ -690,7 +688,7 @@ describe('paapi module', () => {
         }
 
         describe('with setBidderConfig()', () => {
-          it('should set fledgeEnabled correctly per bidder', function () {
+          it('should set paapi.enabled correctly per bidder', function () {
             config.setBidderConfig({
               bidders: ['appnexus'],
               config: {
@@ -703,7 +701,7 @@ describe('paapi module', () => {
         });
 
         describe('with setConfig()', () => {
-          it('should set fledgeEnabled correctly per bidder', function () {
+          it('should set paapi.enabled correctly per bidder', function () {
             config.setConfig({
               bidderSequence: 'fixed',
               [configNS]: {
@@ -715,7 +713,7 @@ describe('paapi module', () => {
             expectFledgeFlags({enabled: true, ae: 1}, {enabled: false, ae: undefined});
           });
 
-          it('should set fledgeEnabled correctly for all bidders', function () {
+          it('should set paapi.enabled correctly for all bidders', function () {
             config.setConfig({
               bidderSequence: 'fixed',
               [configNS]: {
@@ -1093,7 +1091,7 @@ describe('paapi module', () => {
     });
     it('imp.ext.ae should be left intact if fledge is enabled', () => {
       const imp = {ext: {ae: 2, igs: {biddable: 0}}};
-      setImpExtAe(imp, {}, {bidderRequest: {fledgeEnabled: true}});
+      setImpExtAe(imp, {}, {bidderRequest: {paapi: {enabled: true}}});
       expect(imp.ext).to.eql({
         ae: 2,
         igs: {

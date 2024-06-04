@@ -343,7 +343,6 @@ export function markForFledge(next, bidderRequests) {
       config.runWithBidder(bidderReq.bidderCode, () => {
         const {enabled, ae} = getFledgeConfig();
         Object.assign(bidderReq, {
-          fledgeEnabled: enabled,
           paapi: {
             enabled,
             componentSeller: !!moduleConfig.componentSeller?.auctionConfig
@@ -378,7 +377,7 @@ export function markForFledge(next, bidderRequests) {
 }
 
 export function setImpExtAe(imp, bidRequest, context) {
-  if (!context.bidderRequest.fledgeEnabled) {
+  if (!context.bidderRequest.paapi?.enabled) {
     delete imp.ext?.ae;
     delete imp.ext?.igs;
   }

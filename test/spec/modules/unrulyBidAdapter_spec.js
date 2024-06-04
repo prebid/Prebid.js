@@ -696,7 +696,9 @@ describe('UnrulyAdapter', function () {
       it('should return an array with 2 items and enabled protected audience', function () {
         mockBidRequests = {
           'bidderCode': 'unruly',
-          'fledgeEnabled': true,
+          'paapi': {
+            enabled: true
+          },
           'bids': [
             {
               'bidder': 'unruly',
@@ -782,7 +784,9 @@ describe('UnrulyAdapter', function () {
       it('should return an array with 2 items and enabled protected audience on only one unit', function () {
         mockBidRequests = {
           'bidderCode': 'unruly',
-          'fledgeEnabled': true,
+          'paapi': {
+            enabled: true
+          },
           'bids': [
             {
               'bidder': 'unruly',

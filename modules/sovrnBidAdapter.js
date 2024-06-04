@@ -139,7 +139,7 @@ export const spec = {
         }
 
         const auctionEnvironment = bid?.ortb2Imp?.ext?.ae
-        if (bidderRequest.fledgeEnabled && isInteger(auctionEnvironment)) {
+        if (bidderRequest.paapi?.enabled && isInteger(auctionEnvironment)) {
           imp.ext = imp.ext || {}
           imp.ext.ae = auctionEnvironment
         } else {

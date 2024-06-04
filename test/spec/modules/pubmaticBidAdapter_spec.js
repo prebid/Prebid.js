@@ -2948,7 +2948,7 @@ describe('PubMatic adapter', function () {
           bidRequest[0].ortb2Imp = {
             ext: { ae: 1 }
           };
-          const req = spec.buildRequests(bidRequest, { ...bidRequest, fledgeEnabled: false });
+          const req = spec.buildRequests(bidRequest, { ...bidRequest, paapi: {enabled: false} });
           let data = JSON.parse(req.data);
           if (data.imp[0].ext) {
             expect(data.imp[0].ext).to.not.have.property('ae');
@@ -2961,7 +2961,7 @@ describe('PubMatic adapter', function () {
           bidRequest[0].ortb2Imp = {
             ext: { ae: 1 }
           };
-          const req = spec.buildRequests(bidRequest, { ...bidRequest, fledgeEnabled: true });
+          const req = spec.buildRequests(bidRequest, { ...bidRequest, paapi: {enabled: true} });
           let data = JSON.parse(req.data);
           expect(data.imp[0].ext.ae).to.equal(1);
         });

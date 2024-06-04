@@ -874,7 +874,7 @@ describe('triplelift adapter', function () {
       expect(url).to.match(/(\?|&)us_privacy=1YYY/);
     });
     it('should pass fledge signal when Triplelift is eligible for fledge', function() {
-      bidderRequest.fledgeEnabled = true;
+      bidderRequest.paapi = {enabled: true};
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const url = request.url;
       expect(url).to.match(/(\?|&)fledge=true/);

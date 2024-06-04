@@ -364,7 +364,7 @@ export const spec = {
     const slotsQuery = getSlots(bidRequests);
     const contextQuery = getContextParams(bidRequests, bidderRequest);
     const gdprQuery = getGdprParams(bidderRequest);
-    const fledgeEligible = Boolean(bidderRequest && bidderRequest.fledgeEnabled);
+    const fledgeEligible = Boolean(bidderRequest?.paapi?.enabled);
     const network = bidRequests[0].params.network;
     const bidIds = bidRequests.map((bid) => ({
       slot: bid.params.slot,

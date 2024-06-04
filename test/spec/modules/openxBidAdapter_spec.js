@@ -13,11 +13,12 @@ import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
+import 'modules/paapi.js';
+
 import {deepClone} from 'src/utils.js';
 import {version} from 'package.json';
 import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {hook} from '../../../src/hook.js';
-
 const DEFAULT_SYNC = SYNC_URL + '?ph=' + DEFAULT_PH;
 
 const BidRequestBuilder = function BidRequestBuilder(options) {
@@ -1037,7 +1038,9 @@ describe('OpenxRtbAdapter', function () {
         it('when FLEDGE is enabled, should send whatever is set in ortb2imp.ext.ae in all bid requests', function () {
           const request = spec.buildRequests(bidRequestsWithMediaTypes, {
             ...mockBidderRequest,
-            fledgeEnabled: true
+            paapi: {
+              enabled: true
+            }
           });
           expect(request[0].data.imp[0].ext.ae).to.equal(2);
         });

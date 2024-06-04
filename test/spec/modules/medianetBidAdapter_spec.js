@@ -1768,12 +1768,12 @@ describe('Media.net bid adapter', function () {
     });
 
     it('should have valid payload when PAAPI is enabled', function () {
-      let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, fledgeEnabled: true});
+      let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_PAAPI);
     });
 
     it('should send whatever is set in ortb2imp.ext.ae in all bid requests when PAAPI is enabled', function () {
-      let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, fledgeEnabled: true});
+      let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
       let data = JSON.parse(bidReq.data);
       expect(data).to.deep.equal(VALID_PAYLOAD_PAAPI);
       expect(data.imp[0].ext).to.have.property('ae');

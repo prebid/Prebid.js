@@ -261,7 +261,7 @@ function slotParams(bidRequest, bidderRequests) {
   if (floorInfo && floorInfo.length > 0) {
     params.bidfloors = floorInfo;
   }
-  if (bidderRequests.fledgeEnabled) {
+  if (bidderRequests.paapi?.enabled) {
     params.ext.ae = bidRequest?.ortb2Imp?.ext?.ae;
   }
   return params;
