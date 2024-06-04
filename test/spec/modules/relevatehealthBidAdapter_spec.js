@@ -16,7 +16,7 @@ describe('relevatehealth adapter', function () {
           }
         },
         params: {
-          placementId: 110011,
+          placement_id: 110011,
           user_id: '11211',
           width: 160,
           height: 600,
@@ -78,31 +78,58 @@ describe('relevatehealth adapter', function () {
   });
 
   describe('validations', function () {
-    it('isBidValid : placementId and user_id are passed', function () {
+    it('isBidValid : placement_id and user_id are passed', function () {
       let bid = {
           bidder: 'relevatehealth',
           params: {
-            placementId: 110011,
+            placement_id: 110011,
             user_id: '11211'
           }
         },
         isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(true);
     });
-    it('isBidValid : placementId and user_id are not passed', function () {
+    it('isBidValid : placement_id and user_id are not passed', function () {
       let bid = {
           bidder: 'relevatehealth',
           params: {
             width: 160,
             height: 600,
             domain: '',
-            bid_floor: 0.5,
-            user_id: ''
+            bid_floor: 0.5
           }
         },
         isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(false);
     });
+    it('isBidValid : placement_id is passed but user_id is not passed', function () {
+        let bid = {
+            bidder: 'relevatehealth',
+            params: {
+              placement_id: 110011,  
+              width: 160,
+              height: 600,
+              domain: '',
+              bid_floor: 0.5
+            }
+          },
+          isValid = spec.isBidRequestValid(bid);
+        expect(isValid).to.equals(false);
+      });
+      it('isBidValid : user_id is passed but placement_id is not passed', function () {
+        let bid = {
+            bidder: 'relevatehealth',
+            params: {
+              width: 160,
+              height: 600,
+              domain: '',
+              bid_floor: 0.5,
+              user_id: '11211'
+            }
+          },
+          isValid = spec.isBidRequestValid(bid);
+        expect(isValid).to.equals(false);
+      });
   });
   describe('Validate Request', function () {
     it('Immutable bid request validate', function () {
@@ -151,8 +178,6 @@ describe('relevatehealth adapter', function () {
   });
   describe('Validate response ', function () {
     it('Validate bid response : valid bid response', function () {
-      let bRequest = spec.buildRequests(request);
-      let data = JSON.parse(bRequest.data);
       let bResponse = spec.interpretResponse(bannerResponse, request);
       expect(bResponse).to.be.an('array').with.length.above(0);
       expect(bResponse[0].requestId).to.equal(bannerResponse.body.seatbid[0].bid[0].impid);
