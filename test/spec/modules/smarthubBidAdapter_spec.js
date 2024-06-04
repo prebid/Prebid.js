@@ -49,6 +49,7 @@ describe('SmartHubBidAdapter', function () {
           playerSize: [[300, 300]],
           minduration: 5,
           maxduration: 60,
+          plcmt: 1,
         }
       },
       params: {
@@ -197,6 +198,7 @@ describe('SmartHubBidAdapter', function () {
             expect(placement.playerSize).to.be.an('array');
             expect(placement.minduration).to.be.an('number');
             expect(placement.maxduration).to.be.an('number');
+            expect(placement.plcmt).to.be.an('number');
             break;
           case NATIVE:
             expect(placement.native).to.be.an('object');
