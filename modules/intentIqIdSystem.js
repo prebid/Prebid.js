@@ -306,8 +306,8 @@ export const intentIqIdSubmodule = {
 
     // Check if current browser is in blacklist
     if (browserBlackList?.includes(currentBrowserLowerCase)) {
-      if (configParams.callback) configParams.callback('', BLACK_LIST);
       logError('User ID - intentIqId submodule: browser is in blacklist!');
+      if (configParams.callback) configParams.callback('', BLACK_LIST);
       return;
     }
 
@@ -406,7 +406,7 @@ export const intentIqIdSubmodule = {
     url += (partnerData.cttl) ? '&cttl=' + encodeURIComponent(partnerData.cttl) : '';
     url += (partnerData.rrtt) ? '&rrtt=' + encodeURIComponent(partnerData.rrtt) : '';
     url += firstPartyData.pcidDate ? '&iiqpciddate=' + encodeURIComponent(firstPartyData.pcidDate) : '';
-    url += cmpData.us_privacy ? '&us_privacy=' + encodeURIComponent(cmpData.us_privacy) : '';
+    url += cmpData.us_privacy ? '&pa=' + encodeURIComponent(cmpData.us_privacy) : '';
     url += cmpData.gpp ? '&gpv=' + encodeURIComponent(cmpData.gpp) : '';
     url += clientHints ? '&uh=' + encodeURIComponent(clientHints) : '';
 
