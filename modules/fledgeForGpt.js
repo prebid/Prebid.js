@@ -13,7 +13,7 @@ import {getGlobal} from '../src/prebidGlobal.js';
 // eslint-disable-next-line prebid/validate-imports
 import './paapi.js';
 import {keyCompare} from '../src/utils/reducers.js';
-const MODULE = 'fledgeForGpt';
+const MODULE = 'paapiForGpt';
 
 let getPAAPIConfig;
 
@@ -22,14 +22,8 @@ let getPAAPIConfig;
 // own pace.
 let autoconfig = true;
 
-Object.entries({
-  [MODULE]: MODULE,
-  'paapi': 'paapi.gpt'
-}).forEach(([topic, ns]) => {
-  const configKey = `${ns}.autoconfig`;
-  config.getConfig(topic, (cfg) => {
-    autoconfig = deepAccess(cfg, configKey, true);
-  });
+config.getConfig('paapi', (cfg) => {
+  autoconfig = deepAccess(cfg, 'paapi.gpt.autoconfig', true);
 });
 
 export function slotConfigurator() {

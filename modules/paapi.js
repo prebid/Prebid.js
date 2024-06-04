@@ -34,10 +34,8 @@ const pendingBuyersForAuction = auctionStore();
 let latestAuctionForAdUnit = {};
 let moduleConfig = {};
 
-['paapi', 'fledgeForGpt'].forEach(ns => {
-  config.getConfig(ns, config => {
-    init(config[ns], ns);
-  });
+config.getConfig('paapi', config => {
+  init(config.paapi);
 });
 
 export function reset() {
@@ -45,10 +43,7 @@ export function reset() {
   latestAuctionForAdUnit = {};
 }
 
-export function init(cfg, configNamespace) {
-  if (configNamespace !== 'paapi') {
-    logWarn(`'${configNamespace}' configuration options will be renamed to 'paapi'; consider using setConfig({paapi: [...]}) instead`);
-  }
+export function init(cfg) {
   if (cfg && cfg.enabled === true) {
     moduleConfig = cfg;
     logInfo(`${MODULE} enabled (browser ${isFledgeSupported() ? 'supports' : 'does NOT support'} runAdAuction)`, cfg);

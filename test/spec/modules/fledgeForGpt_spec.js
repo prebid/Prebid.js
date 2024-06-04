@@ -10,7 +10,7 @@ import 'modules/rubiconBidAdapter.js';
 import {deepSetValue} from '../../../src/utils.js';
 import {config} from 'src/config.js';
 
-describe('fledgeForGpt module', () => {
+describe('paapiForGpt module', () => {
   let sandbox, fledgeAuctionConfig;
 
   beforeEach(() => {
@@ -102,42 +102,35 @@ describe('fledgeForGpt module', () => {
     });
   });
   describe('onAuctionConfig', () => {
-    [
-      'fledgeForGpt',
-      'paapi.gpt'
-    ].forEach(namespace => {
-      describe(`using ${namespace} config`, () => {
-        Object.entries({
-          'omitted': [undefined, true],
-          'enabled': [true, true],
-          'disabled': [false, false]
-        }).forEach(([t, [autoconfig, shouldSetConfig]]) => {
-          describe(`when autoconfig is ${t}`, () => {
-            beforeEach(() => {
-              const cfg = {};
-              deepSetValue(cfg, `${namespace}.autoconfig`, autoconfig);
-              config.setConfig(cfg);
-            });
-            afterEach(() => {
-              config.resetConfig();
-            });
+    Object.entries({
+      'omitted': [undefined, true],
+      'enabled': [true, true],
+      'disabled': [false, false]
+    }).forEach(([t, [autoconfig, shouldSetConfig]]) => {
+      describe(`when autoconfig is ${t}`, () => {
+        beforeEach(() => {
+          const cfg = {};
+          deepSetValue(cfg, `paapi.gpt.autoconfig`, autoconfig);
+          config.setConfig(cfg);
+        });
+        afterEach(() => {
+          config.resetConfig();
+        });
 
-            it(`should ${shouldSetConfig ? '' : 'NOT'} set GPT slot configuration`, () => {
-              const auctionConfig = {componentAuctions: [{seller: 'mock1'}, {seller: 'mock2'}]};
-              const setGptConfig = sinon.stub();
-              const markAsUsed = sinon.stub();
-              onAuctionConfigFactory(setGptConfig)('aid', {au1: auctionConfig, au2: null}, markAsUsed);
-              if (shouldSetConfig) {
-                sinon.assert.calledWith(setGptConfig, 'au1', auctionConfig.componentAuctions);
-                sinon.assert.calledWith(setGptConfig, 'au2', []);
-                sinon.assert.calledWith(markAsUsed, 'au1');
-              } else {
-                sinon.assert.notCalled(setGptConfig);
-                sinon.assert.notCalled(markAsUsed);
-              }
-            });
-          })
-        })
+        it(`should ${shouldSetConfig ? '' : 'NOT'} set GPT slot configuration`, () => {
+          const auctionConfig = {componentAuctions: [{seller: 'mock1'}, {seller: 'mock2'}]};
+          const setGptConfig = sinon.stub();
+          const markAsUsed = sinon.stub();
+          onAuctionConfigFactory(setGptConfig)('aid', {au1: auctionConfig, au2: null}, markAsUsed);
+          if (shouldSetConfig) {
+            sinon.assert.calledWith(setGptConfig, 'au1', auctionConfig.componentAuctions);
+            sinon.assert.calledWith(setGptConfig, 'au2', []);
+            sinon.assert.calledWith(markAsUsed, 'au1');
+          } else {
+            sinon.assert.notCalled(setGptConfig);
+            sinon.assert.notCalled(markAsUsed);
+          }
+        });
       })
     })
   });
