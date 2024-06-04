@@ -1,6 +1,15 @@
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { BANNER } from '../src/mediaTypes.js';
-import { deepAccess, generateUUID, isArray, logError } from '../src/utils.js';
+import {
+    registerBidder
+} from '../src/adapters/bidderFactory.js';
+import {
+    BANNER
+} from '../src/mediaTypes.js';
+import {
+    deepAccess,
+    generateUUID,
+    isArray,
+    logError
+} from '../src/utils.js';
 
 const BIDDER_CODE = 'relevatehealth';
 
