@@ -192,6 +192,8 @@ describe('gumgumAdapter', function () {
       const request = { ...bidRequests[0] };
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data.aun).to.equal(bidRequests[0].adUnitCode);
+      expect(bidRequest.data.displaymanager).to.equal('Prebid.js - gumgum');
+      expect(bidRequest.data.displaymanagerver).to.equal(JCSI.pbv);
     });
     it('should set pubProvidedId if the uid and  pubProvidedId are available', function () {
       const request = { ...bidRequests[0] };
@@ -283,10 +285,21 @@ describe('gumgumAdapter', function () {
     });
 
     it('should set the global placement id (gpid) if in adserver property', function () {
-      const req = { ...bidRequests[0], ortb2Imp: { ext: { data: { adserver: { name: 'test', adslot: 123456 } } } } }
+      const req = { ...bidRequests[0],
+        ortb2Imp: {
+          ext: {
+            gpid: '/17037559/jeusol/jeusol_D_1',
+            data: {
+              adserver: {
+                name: 'test',
+                adslot: 123456
+              }
+            }
+          }
+        } }
       const bidRequest = spec.buildRequests([req])[0];
       expect(bidRequest.data).to.have.property('gpid');
-      expect(bidRequest.data.gpid).to.equal(123456);
+      expect(bidRequest.data.gpid).to.equal('/17037559/jeusol/jeusol_D_1');
     });
 
     it('should set the global placement id (gpid) if in pbadslot property', function () {
@@ -586,6 +599,29 @@ describe('gumgumAdapter', function () {
       const bidRequest = spec.buildRequests(bidRequests, fakeBidRequest)[0];
       expect(bidRequest.data.gppString).to.eq('')
       expect(bidRequest.data.gppSid).to.eq('')
+    });
+    it('should add DSA information to payload if available', function () {
+      // Define the sample ORTB2 object with DSA information
+      const ortb2 = {
+        regs: {
+          ext: {
+            dsa: {
+              dsarequired: '1',
+              pubrender: '2',
+              datatopub: '3',
+              transparency: [{
+                domain: 'test.com',
+                dsaparams: [1, 2, 3]
+              }]
+            }
+          }
+        }
+      };
+      const fakeBidRequest = { ortb2 };
+      // Call the buildRequests function to generate the bid request
+      const [bidRequest] = spec.buildRequests(bidRequests, fakeBidRequest);
+      // Assert that the DSA information in the bid request matches the provided ORTB2 data
+      expect(bidRequest.data.dsa).to.deep.equal(JSON.stringify(fakeBidRequest.ortb2.regs.ext.dsa));
     });
     it('should not set coppa parameter if coppa config is set to false', function () {
       config.setConfig({

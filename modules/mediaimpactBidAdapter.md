@@ -35,7 +35,8 @@ About us : https://mediaimpact.com.ua
                 {
                     bidder: "mediaimpact",
                     params: {
-                        partnerId: 6698
+                        partnerId: 6698,
+                        sizes: [[300, 600]],
                     }
                 }
             ]

@@ -3,6 +3,9 @@ import * as utils from 'src/utils.js';
 
 import { server } from 'test/mocks/xhr.js';
 import { uspDataHandler, coppaDataHandler, gppDataHandler } from 'src/adapterManager.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
+import {expect} from 'chai/index.mjs';
+import {attachIdSystem} from '../../../modules/userId/index.js';
 
 describe('33acrossIdSystem', () => {
   describe('name', () => {
@@ -493,7 +496,7 @@ describe('33acrossIdSystem', () => {
     });
 
     context('when a first-party ID is present in local storage', () => {
-      it('should call endpoint with the first-party ID included', () => {
+      it('should call endpoint with the encoded first-party ID included', () => {
         const completeCallback = () => {};
         const { callback } = thirthyThreeAcrossIdSubmodule.getId({
           params: {
@@ -506,13 +509,13 @@ describe('33acrossIdSystem', () => {
 
         sinon.stub(storage, 'getDataFromLocalStorage')
           .withArgs('33acrossIdFp')
-          .returns('33acrossIdFpValue');
+          .returns('33acrossIdFpValue+');
 
         callback(completeCallback);
 
         const [request] = server.requests;
 
-        expect(request.url).to.contain('fp=33acrossIdFpValue');
+        expect(request.url).to.contain('fp=33acrossIdFpValue%2B');
 
         storage.getDataFromLocalStorage.restore();
       });
@@ -817,4 +820,25 @@ describe('33acrossIdSystem', () => {
       });
     });
   });
+  describe('eid', () => {
+    before(() => {
+      attachIdSystem(thirthyThreeAcrossIdSubmodule);
+    })
+    it('33acrossId', function() {
+      const userId = {
+        '33acrossId': {
+          envelope: 'some-random-id-value'
+        }
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: '33across.com',
+        uids: [{
+          id: 'some-random-id-value',
+          atype: 1
+        }]
+      });
+    });
+  })
 });

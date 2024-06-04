@@ -12,7 +12,7 @@ import {
 import { getStorageManager } from '../src/storageManager.js';
 
 const BIDDER_CODE = 'pstudio';
-const ENDPOINT = 'https://nft-exchange.pre-prod.pstudio.tadex.id/prebid-bid'
+const ENDPOINT = 'https://exchange.pstudio.tadex.id/prebid-bid'
 const TIME_TO_LIVE = 300;
 // in case that the publisher limits number of user syncs, thisse syncs will be discarded from the end of the list
 // so more improtant syncing calls should be at the start of the list

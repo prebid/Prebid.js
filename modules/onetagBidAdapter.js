@@ -291,6 +291,7 @@ function setGeneralInfo(bidRequest) {
   this['gpid'] = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
   this['pubId'] = params.pubId;
   this['ext'] = params.ext;
+  this['ortb2Imp'] = deepAccess(bidRequest, 'ortb2Imp');
   if (params.pubClick) {
     this['click'] = params.pubClick;
   }
