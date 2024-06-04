@@ -297,6 +297,8 @@ export const intentIqIdSubmodule = {
     let rrttStrtTime = 0;
     let partnerData = {};
     let shouldCallServer = false
+    let decryptedData, callbackTimeoutID;
+    let callbackFired = false
 
     const currentBrowserLowerCase = detectBrowser();
     const browserBlackList = typeof configParams.browserBlackList === 'string' ? configParams.browserBlackList.toLowerCase() : '';
@@ -358,42 +360,60 @@ export const intentIqIdSubmodule = {
 
     // Read Intent IQ 1st party id or generate it if none exists
     let firstPartyData = tryParse(readData(FIRST_PARTY_KEY));
+
+    const firePartnerCallback = () => {
+      if (configParams.callback && !callbackFired) {
+        callbackFired = true
+        configParams.callback(decryptedData, firstPartyData?.group || NOT_YET_DEFINED);
+      }
+    }
+
+    callbackTimeoutID = setTimeout(
+      firePartnerCallback,
+      configParams.timeoutInMillis || 500
+    );
+
     if (!firstPartyData?.pcid) {
       const firstPartyId = generateGUID();
       firstPartyData = { pcid: firstPartyId, pcidDate: Date.now(), group: NOT_YET_DEFINED };
       storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), cookieStorageEnabled);
     } else if (!firstPartyData.pcidDate) {
       firstPartyData.pcidDate = Date.now();
-      // TODO add expiring condition
       storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), cookieStorageEnabled);
     }
 
     if (firstPartyData?.group == WITHOUT_IIQ) {
-      logInfo(MODULE_NAME + 'Group "B". Passive Mode ON.');
-      if (configParams.callback) configParams.callback({}, WITHOUT_IIQ);
-      return true;
+      if (firstPartyData.cttl && Date.now() - firstPartyData.date > firstPartyData.cttl) {
+        shouldCallServer = true
+      } else {
+        logInfo(MODULE_NAME + 'Group "B". Passive Mode ON.');
+        firePartnerCallback();
+        return;
+      }
     }
+
+    if (firstPartyData.uspapi_value !== cmpData.us_privacy || firstPartyData.gpp_value !== cmpData.gpp) {
+      firstPartyData.uspapi_value = cmpData.us_privacy;
+      firstPartyData.gpp_value = cmpData.gpp;
+      shouldCallServer = true;
+      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), cookieStorageEnabled);
+    } else if (firstPartyData.isOptedOut) {
+      firePartnerCallback()
+      return
+    }
+
     const savedData = tryParse(readData(FIRST_PARTY_DATA_KEY))
     if (savedData) {
       partnerData = savedData;
     } else shouldCallServer = true;
 
-    if (cmpData.gpp && firstPartyData?.gpp_value !== cmpData.gpp) {
-      shouldCallServer = true;
-      firstPartyData.gpp_value = cmpData.gpp;
-      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), cookieStorageEnabled);
-    }
-
-    if (!shouldCallServer && partnerData.data) {
-      if (partnerData.date && Date.now() - partnerData.date < currentDataTTl) {
-        if (partnerData.data.length) { // encrypted data
-          const decryptedData = tryParse(decryptData(partnerData.data));
-          if (configParams.callback) configParams.callback(decryptedData, firstPartyData.group);
-          return { id: decryptedData };
-        } else { // empty string or empty object
-          if (configParams.callback) configParams.callback(partnerData.data, firstPartyData.group);
-          return partnerData.data;
-        }
+    if (partnerData.data) {
+      if (partnerData.data.length) { // encrypted data
+        decryptedData = tryParse(decryptData(partnerData.data));
+      }
+      if (!shouldCallServer && partnerData.date && Date.now() - partnerData.date < currentDataTTl) {
+        firePartnerCallback();
+        return { id: decryptedData };
       }
     }
 
@@ -412,6 +432,7 @@ export const intentIqIdSubmodule = {
 
     const storeFirstPartyData = () => {
       partnerData.date = Date.now();
+      firstPartyData.date = Date.now();
       storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), cookieStorageEnabled);
       storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), cookieStorageEnabled);
     }
@@ -422,6 +443,7 @@ export const intentIqIdSubmodule = {
           let respJson = tryParse(response);
           // If response is a valid json and should save is true
           if (respJson) {
+            if (callbackTimeoutID) clearTimeout(callbackTimeoutID)
             if ('isOptedOut' in respJson) {
               if (respJson.isOptedOut !== firstPartyData.isOptedOut) {
                 firstPartyData.isOptedOut = respJson.isOptedOut;
@@ -437,7 +459,7 @@ export const intentIqIdSubmodule = {
               firstPartyData.pid = respJson.pid;
             }
             if ('cttl' in respJson) {
-              partnerData.cttl = respJson.cttl;
+              firstPartyData.cttl = respJson.cttl;
             }
             // If should save and data is empty, means we should save as INVALID_ID
             if (respJson.ls && respJson.data == '') {
@@ -463,6 +485,7 @@ export const intentIqIdSubmodule = {
             }
 
             if (respJson.data?.eids) {
+              decryptedData = respJson.data.eids
               callback(respJson.data.eids);
               const encryptedData = encryptData(JSON.stringify(respJson.data.eids))
               partnerData.data = encryptedData;
@@ -474,7 +497,7 @@ export const intentIqIdSubmodule = {
           } else {
             callback();
           }
-          if (configParams.callback) configParams.callback(respJson.data, firstPartyData.group);
+          firePartnerCallback()
         },
         error: error => {
           logError(MODULE_NAME + ': ID fetch encountered an error', error);
@@ -487,7 +510,9 @@ export const intentIqIdSubmodule = {
         ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
       }
     };
-    return { callback: resp };
+    const respObj = { callback: resp };
+    if (decryptedData) respObj.id = decryptedData;
+    return respObj
   },
   eids: {
     'intentIqId': {
