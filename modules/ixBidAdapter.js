@@ -707,7 +707,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   r = addRequestedFeatureToggles(r, FEATURE_TOGGLES.REQUESTED_FEATURE_TOGGLES)
 
   // getting ixdiags for adunits of the video, outstream & multi format (MF) style
-  const fledgeEnabled = deepAccess(bidderRequest, 'fledgeEnabled')
+  const fledgeEnabled = deepAccess(bidderRequest, 'paapi.enabled')
   let ixdiag = buildIXDiag(validBidRequests, fledgeEnabled);
   for (let key in ixdiag) {
     r.ext.ixdiag[key] = ixdiag[key];
@@ -1438,7 +1438,7 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidde
   bannerImps[validBidRequest.adUnitCode].pos = deepAccess(validBidRequest, 'mediaTypes.banner.pos');
 
   // Add Fledge flag if enabled
-  const fledgeEnabled = deepAccess(bidderRequest, 'fledgeEnabled')
+  const fledgeEnabled = deepAccess(bidderRequest, 'paapi.enabled')
   if (fledgeEnabled) {
     const auctionEnvironment = deepAccess(validBidRequest, 'ortb2Imp.ext.ae')
     const paapi = deepAccess(validBidRequest, 'ortb2Imp.ext.paapi')
@@ -1451,8 +1451,6 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidde
       } else {
         logWarn('error setting auction environment flag - must be an integer')
       }
-    } else if (deepAccess(bidderRequest, 'defaultForSlots') == 1) {
-      bannerImps[validBidRequest.adUnitCode].ae = 1
     }
   }
 
@@ -1864,7 +1862,7 @@ export const spec = {
       try {
         return {
           bids,
-          fledgeAuctionConfigs,
+          paapi: fledgeAuctionConfigs,
         };
       } catch (error) {
         logWarn('Error attaching AuctionConfigs', error);

@@ -821,8 +821,9 @@ describe('IndexexchangeAdapter', function () {
         tid: 'mock-tid'
       }
     },
-    fledgeEnabled: true,
-    defaultForSlots: 1
+    paapi: {
+      enabled: true
+    },
   };
 
   const DEFAULT_OPTION_FLEDGE_ENABLED = {
@@ -843,7 +844,9 @@ describe('IndexexchangeAdapter', function () {
         tid: 'mock-tid'
       }
     },
-    fledgeEnabled: true
+    paapi: {
+      enabled: true
+    }
   };
 
   const DEFAULT_IDENTITY_RESPONSE = {
@@ -3464,16 +3467,7 @@ describe('IndexexchangeAdapter', function () {
       expect(impression.ext.ae).to.equal(1);
     });
 
-    it('impression should have ae=1 in ext when fledge module is enabled globally and default is set through setConfig', function () {
-      const bidderRequest = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED_GLOBALLY);
-      const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID[0]);
-      const requestBidFloor = spec.buildRequests([bid], bidderRequest)[0];
-      const impression = extractPayload(requestBidFloor).imp[0];
-
-      expect(impression.ext.ae).to.equal(1);
-    });
-
-    it('impression should have ae=1 in ext when fledge module is enabled globally but no default set through setConfig but set at ad unit level', function () {
+    it('impression should have ae=1 in ext when request has paapi.enabled = true and ext.ae = 1', function () {
       const bidderRequest = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
       const bid = utils.deepClone(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0]);
       const requestBidFloor = spec.buildRequests([bid], bidderRequest)[0];
@@ -4180,7 +4174,7 @@ describe('IndexexchangeAdapter', function () {
 
       beforeEach(() => {
         bidderRequestWithFledgeEnabled = spec.buildRequests(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED, {})[0];
-        bidderRequestWithFledgeEnabled.fledgeEnabled = true;
+        bidderRequestWithFledgeEnabled.paapi = {enabled: true};
 
         serverResponseWithoutFledgeConfigs = {
           body: {
@@ -4244,17 +4238,17 @@ describe('IndexexchangeAdapter', function () {
             }
           }
         ];
-        expect(result.fledgeAuctionConfigs).to.deep.equal(expectedOutput);
+        expect(result.paapi).to.deep.equal(expectedOutput);
       });
 
       it('should correctly interpret response without auction configs', () => {
         const result = spec.interpretResponse(serverResponseWithoutFledgeConfigs, bidderRequestWithFledgeEnabled);
-        expect(result.fledgeAuctionConfigs).to.be.undefined;
+        expect(result.paapi).to.be.undefined;
       });
 
       it('should handle malformed auction configs gracefully', () => {
         const result = spec.interpretResponse(serverResponseWithMalformedAuctionConfig, bidderRequestWithFledgeEnabled);
-        expect(result.fledgeAuctionConfigs).to.be.empty;
+        expect(result.paapi).to.be.empty;
       });
 
       it('should log warning for malformed auction configs', () => {
@@ -4266,7 +4260,7 @@ describe('IndexexchangeAdapter', function () {
 
       it('should return bids when protected audience auction conigs is malformed', () => {
         const result = spec.interpretResponse(serverResponseWithMalformedAuctionConfigs, bidderRequestWithFledgeEnabled);
-        expect(result.fledgeAuctionConfigs).to.be.undefined;
+        expect(result.paapi).to.be.undefined;
         expect(result.length).to.be.greaterThan(0);
       });
     });
@@ -4285,7 +4279,7 @@ describe('IndexexchangeAdapter', function () {
         };
 
         bidderRequestWithFledgeEnabled = spec.buildRequests(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED, {})[0];
-        bidderRequestWithFledgeEnabled.fledgeEnabled = true;
+        bidderRequestWithFledgeEnabled.paapi = {enabled: true};
 
         bidderRequestWithoutFledgeEnabled = spec.buildRequests(DEFAULT_BANNER_VALID_BID, {})[0];
       });

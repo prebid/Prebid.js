@@ -7,29 +7,15 @@ import {getGptSlotForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
-// import parent module to keep backwards-compat for NPM consumers after paapi was split from fledgeForGpt
-// there's a special case in webpack.conf.js to avoid duplicating build output on non-npm builds
-// TODO: remove this in prebid 9
-// eslint-disable-next-line prebid/validate-imports
-import './paapi.js';
 import {keyCompare} from '../src/utils/reducers.js';
-const MODULE = 'fledgeForGpt';
+const MODULE = 'paapiForGpt';
 
 let getPAAPIConfig;
 
-// for backwards compat, we attempt to automatically set GPT configuration as soon as we
-// have the auction configs available. Disabling this allows one to call pbjs.setPAAPIConfigForGPT at their
-// own pace.
-let autoconfig = true;
+let autoconfig = false;
 
-Object.entries({
-  [MODULE]: MODULE,
-  'paapi': 'paapi.gpt'
-}).forEach(([topic, ns]) => {
-  const configKey = `${ns}.autoconfig`;
-  config.getConfig(topic, (cfg) => {
-    autoconfig = deepAccess(cfg, configKey, true);
-  });
+config.getConfig('paapi', (cfg) => {
+  autoconfig = deepAccess(cfg, 'paapi.gpt.autoconfig', false);
 });
 
 export function slotConfigurator() {

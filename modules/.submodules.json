@@ -107,7 +107,8 @@
       "videojsVideoProvider"
     ],
     "paapi": [
-      "fledgeForGpt"
+      "paapiForGpt",
+      "topLevelPaapi"
     ]
   }
 }

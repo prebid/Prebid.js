@@ -392,7 +392,7 @@ export const spec = {
     if (fledgeAuctionConfigs?.length) {
       return {
         bids,
-        fledgeAuctionConfigs,
+        paapi: fledgeAuctionConfigs,
       };
     }
 
@@ -449,7 +449,7 @@ function buildContext(bidRequests, bidderRequest) {
     url: bidderRequest?.refererInfo?.page || '',
     debug: queryString['pbt_debug'] === '1',
     noLog: queryString['pbt_nolog'] === '1',
-    fledgeEnabled: bidderRequest.fledgeEnabled,
+    fledgeEnabled: bidderRequest.paapi?.enabled,
     amp: bidRequests.some(bidRequest => bidRequest.params.integrationMode === 'amp'),
     networkId: bidRequests.find(bidRequest => bidRequest.params?.networkId)?.params.networkId,
     publisherId: bidRequests.find(bidRequest => bidRequest.params?.pubid)?.params.pubid,

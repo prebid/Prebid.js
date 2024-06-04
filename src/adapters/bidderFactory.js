@@ -361,18 +361,7 @@ export function newBidder(spec) {
   }
 }
 
-// Transition from 'fledge' to 'paapi'
-// TODO: remove this in prebid 9
-const PAAPI_PROPS = ['paapi', 'fledgeAuctionConfigs'];
-const RESPONSE_PROPS = ['bids'].concat(PAAPI_PROPS);
-
-function getPaapiConfigs(adapterResponse) {
-  const [paapi, fledge] = PAAPI_PROPS.map(prop => adapterResponse[prop]);
-  if (paapi != null && fledge != null) {
-    throw new Error(`Adapter response should use ${PAAPI_PROPS[0]} over ${PAAPI_PROPS[1]}, not both`);
-  }
-  return paapi ?? fledge;
-}
+const RESPONSE_PROPS = ['bids', 'paapi']
 
 /**
  * Run a set of bid requests - that entails converting them to HTTP requests, sending
@@ -443,7 +432,7 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
       let bids, paapiConfigs;
       if (response && !Object.keys(response).some(key => !RESPONSE_PROPS.includes(key))) {
         bids = response.bids;
-        paapiConfigs = getPaapiConfigs(response);
+        paapiConfigs = response.paapi;
       } else {
         bids = response;
       }
