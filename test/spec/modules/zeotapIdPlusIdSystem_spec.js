@@ -1,10 +1,12 @@
 import { expect } from 'chai';
 import {find} from 'src/polyfill.js';
 import { config } from 'src/config.js';
-import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
+import {attachIdSystem, init, requestBidsHook, setSubmoduleRegistry} from 'modules/userId/index.js';
 import { storage, getStorage, zeotapIdPlusSubmodule } from 'modules/zeotapIdPlusIdSystem.js';
 import * as storageManager from 'src/storageManager.js';
 import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
+import 'src/prebid.js';
 
 const ZEOTAP_COOKIE_NAME = 'IDP';
 const ZEOTAP_COOKIE = 'THIS-IS-A-DUMMY-COOKIE';
@@ -191,6 +193,25 @@ describe('Zeotap ID System', function() {
         });
         done();
       }, { adUnits });
+    });
+  });
+  describe('eids', () => {
+    before(() => {
+      attachIdSystem(zeotapIdPlusSubmodule);
+    });
+    it('zeotapIdPlus', function() {
+      const userId = {
+        IDP: 'some-random-id-value'
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'zeotap.com',
+        uids: [{
+          id: 'some-random-id-value',
+          atype: 1
+        }]
+      });
     });
   });
 });

@@ -143,10 +143,7 @@ describe('YieldmoAdapter', function () {
 
       it('should return false when required bid.params.video.* is not found', function () {
         const getBidAndExclude = paramToRemove => getVideoBidWithoutParam('params.video', paramToRemove);
-
-        expect(spec.isBidRequestValid(getBidAndExclude('placement'))).to.be.false;
         expect(spec.isBidRequestValid(getBidAndExclude('maxduration'))).to.be.false;
-        expect(spec.isBidRequestValid(getBidAndExclude('startdelay'))).to.be.false;
         expect(spec.isBidRequestValid(getBidAndExclude('protocols'))).to.be.false;
         expect(spec.isBidRequestValid(getBidAndExclude('api'))).to.be.false;
       });

@@ -407,7 +407,6 @@ describe('stroeerCore bid adapter', function () {
           'timeout': expectedTimeout,
           'ref': 'https://www.example.com/?search=monkey',
           'mpa': true,
-          'ssl': false,
           'url': 'https://www.example.com/monkey/index.html',
           'bids': [{
             'sid': 'NDA=',

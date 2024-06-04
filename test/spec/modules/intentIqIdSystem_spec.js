@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { intentIqIdSubmodule, storage } from 'modules/intentIqIdSystem.js';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
+import {clearAllCookies} from '../../helpers/cookies.js';
 
 const partner = 10;
 const pai = '11';
@@ -44,6 +45,8 @@ describe('IntentIQ tests', function () {
 
   afterEach(function () {
     logErrorStub.restore();
+    clearAllCookies();
+    localStorage.clear();
   });
 
   it('should log an error if no configParams were passed when getId', function () {

@@ -130,22 +130,6 @@ const storageTool = (function () {
     return (meta && meta.usi) ? meta.usi : false
   }
 
-  const getSegmentsFromOrtb = function (ortb2) {
-    const userData = deepAccess(ortb2, 'user.data');
-    let segments = [];
-    if (userData) {
-      userData.forEach(userdat => {
-        if (userdat.segment) {
-          segments.push(...userdat.segment.map((segment) => {
-            if (isStr(segment)) return segment;
-            if (isStr(segment.id)) return segment.id;
-          }).filter((seg) => !!seg));
-        }
-      });
-    }
-    return segments
-  }
-
   return {
     refreshStorage: function (bidderRequest) {
       const ortb2 = bidderRequest.ortb2 || {};
@@ -162,22 +146,67 @@ const storageTool = (function () {
           return voidAuId.auId;
         });
       }
-      metaInternal.segments = getSegmentsFromOrtb(ortb2);
     },
     saveToStorage: function (serverData, network) {
       setMetaInternal(serverData, network);
     },
     getUrlRelatedData: function () {
       // getting the URL information is theoretically not network-specific
-      const { segments, usi, voidAuIdsArray } = metaInternal;
-      return { segments, usi, voidAuIdsArray };
+      const { usi, voidAuIdsArray } = metaInternal;
+      return { usi, voidAuIdsArray };
     },
     getPayloadRelatedData: function (network) {
       // getting the payload data should be network-specific
-      const { segments, usi, userId, voidAuIdsArray, voidAuIds, ...payloadRelatedData } = getMetaDataFromLocalStorage(network).reduce((a, entry) => ({...a, [entry.key]: entry.value}), {});
+      const { segments, usi, userId, voidAuIdsArray, voidAuIds, ...payloadRelatedData } = getMetaDataFromLocalStorage(network).reduce((a, entry) => ({ ...a, [entry.key]: entry.value }), {});
       return payloadRelatedData;
     }
   };
+})();
+
+const targetingTool = (function() {
+  const getSegmentsFromOrtb = function(bidderRequest) {
+    const userData = deepAccess(bidderRequest.ortb2 || {}, 'user.data');
+    let segments = [];
+    if (userData) {
+      userData.forEach(userdat => {
+        if (userdat.segment) {
+          segments.push(...userdat.segment.map((segment) => {
+            if (isStr(segment)) return segment;
+            if (isStr(segment.id)) return segment.id;
+          }).filter((seg) => !!seg));
+        }
+      });
+    }
+    return segments
+  };
+
+  const getKvsFromOrtb = function(bidderRequest) {
+    return deepAccess(bidderRequest.ortb2 || {}, 'site.ext.data');
+  };
+
+  return {
+    addSegmentsToUrlData: function (validBids, bidderRequest, existingUrlRelatedData) {
+      let segments = getSegmentsFromOrtb(bidderRequest || {});
+
+      for (let i = 0; i < validBids.length; i++) {
+        const bid = validBids[i];
+        const targeting = bid.params.targeting || {};
+        if (Array.isArray(targeting.segments)) {
+          segments = segments.concat(targeting.segments);
+          delete bid.params.targeting.segments;
+        }
+      }
+
+      existingUrlRelatedData.segments = segments;
+    },
+    mergeKvsFromOrtb: function(bidTargeting, bidderRequest) {
+      const kv = getKvsFromOrtb(bidderRequest || {});
+      if (!kv) {
+        return;
+      }
+      bidTargeting.kv = {...kv, ...bidTargeting.kv};
+    }
+  }
 })();
 
 const validateBidType = function (bidTypeOption) {
@@ -217,6 +246,7 @@ export const spec = {
     storageTool.refreshStorage(bidderRequest);
 
     const urlRelatedMetaData = storageTool.getUrlRelatedData();
+    targetingTool.addSegmentsToUrlData(validBidRequests, bidderRequest, urlRelatedMetaData);
     if (urlRelatedMetaData.segments.length > 0) queryParamsAndValues.push('segments=' + urlRelatedMetaData.segments.join(','));
     if (urlRelatedMetaData.usi) queryParamsAndValues.push('userId=' + urlRelatedMetaData.usi);
 
@@ -251,8 +281,9 @@ export const spec = {
         networks[network].metaData = payloadRelatedData;
       }
 
-      const targeting = bid.params.targeting || {};
-      const adUnit = { ...targeting, auId: bid.params.auId, targetId: bid.params.targetId || bid.bidId };
+      const bidTargeting = {...bid.params.targeting || {}};
+      targetingTool.mergeKvsFromOrtb(bidTargeting, bidderRequest);
+      const adUnit = { ...bidTargeting, auId: bid.params.auId, targetId: bid.params.targetId || bid.bidId };
       const maxDeals = Math.max(0, Math.min(bid.params.maxDeals || 0, MAXIMUM_DEALS_LIMIT));
       if (maxDeals > 0) {
         adUnit.maxDeals = maxDeals;
