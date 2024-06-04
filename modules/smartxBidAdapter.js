@@ -120,10 +120,10 @@ export const spec = {
       const api = getBidIdParameter('api', bid.params) || [2];
       const protocols = getBidIdParameter('protocols', bid.params) || [2, 3, 5, 6];
       var contextcustom = deepAccess(bid, 'mediaTypes.video.context');
-      var placement = 1;
+      var plcmt = 1;
 
       if (contextcustom === 'outstream') {
-        placement = 3;
+        plcmt = 3;
       }
 
       let smartxReq = [{
@@ -144,7 +144,7 @@ export const spec = {
           maxbitrate: maxbitrate,
           delivery: delivery,
           pos: pos,
-          placement: placement,
+          plcmt: plcmt,
           api: api,
           ext: ext
         },

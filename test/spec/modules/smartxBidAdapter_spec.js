@@ -178,7 +178,7 @@ describe('The smartx adapter', function () {
           2, 3, 5, 6
         ],
         startdelay: 0,
-        placement: 1,
+        plcmt: 1,
         pos: 1
       });
 
@@ -209,7 +209,7 @@ describe('The smartx adapter', function () {
       });
 
       expect(request.data.imp[0].video).to.contain({
-        placement: 1
+        plcmt: 1
       });
 
       bid.mediaTypes.video.context = 'outstream';
@@ -252,7 +252,7 @@ describe('The smartx adapter', function () {
       expect(request.data.imp[0].video.startdelay).to.equal(1);
 
       expect(request.data.imp[0].video).to.contain({
-        placement: 3
+        plcmt: 3
       });
 
       expect(request.data.imp[0].bidfloor).to.equal(55);
