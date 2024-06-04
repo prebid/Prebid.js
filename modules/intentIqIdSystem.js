@@ -306,7 +306,7 @@ export const intentIqIdSubmodule = {
 
     // Check if current browser is in blacklist
     if (browserBlackList?.includes(currentBrowserLowerCase)) {
-      if (configParams.callback) this.callback('', BLACK_LIST);
+      if (configParams.callback) configParams.callback('', BLACK_LIST);
       logError('User ID - intentIqId submodule: browser is in blacklist!');
       return;
     }
