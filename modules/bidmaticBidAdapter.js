@@ -3,8 +3,8 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { replaceAuctionPrice, isNumber, deepAccess } from '../src/utils.js';
 
+export const END_POINT = 'https://ads45.bidmatic.io/ortb-client';
 const BIDDER_CODE = 'bidmatic';
-const END_POINT = 'https://ads45.bidmatic.io/ortb-client/';
 const DEFAULT_CURRENCY = 'USD';
 
 export const converter = ortbConverter({
@@ -19,15 +19,13 @@ export const converter = ortbConverter({
       imp.bidfloorcur = DEFAULT_CURRENCY;
     }
     imp.tagid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || bidRequest.adUnitCode;
-    imp.ext.souce = bidRequest.params.source;
 
     return imp;
   },
   request(buildRequest, imps, bidderRequest, context) {
     const request = buildRequest(imps, bidderRequest, context);
-    const bid = context.bidRequests[0];
     if (!request.cur) {
-      request.cur = [bid.params.currency || DEFAULT_CURRENCY];
+      request.cur = [DEFAULT_CURRENCY];
     }
     return request;
   },
@@ -57,9 +55,7 @@ export const spec = {
   supportedMediaTypes: [BANNER, VIDEO],
   gvlid: 1134,
   isBidRequestValid: function (bid) {
-    if (isNumber(bid.params.source)) {
-      return true;
-    }
+    return isNumber(deepAccess(bid, 'params.source'))
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -78,14 +74,14 @@ export const spec = {
         url: url.toString(),
         data: data,
         options: {
-          withCredentials: false,
+          withCredentials: true,
         }
       };
     });
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
-    if (!serverResponse.body) return [];
+    if (!serverResponse || !serverResponse.body) return [];
     const parsedSeatbid = serverResponse.body.seatbid.map(seatbidItem => {
       const parsedBid = seatbidItem.bid.map((bidItem) => ({
         ...bidItem,
@@ -94,7 +90,6 @@ export const spec = {
       }));
       return { ...seatbidItem, bid: parsedBid };
     });
-
     const responseBody = { ...serverResponse.body, seatbid: parsedSeatbid };
     return converter.fromORTB({
       response: responseBody,
