@@ -1,6 +1,4 @@
-/* eslint-disable no-console */
-
-import {coreStorage, init, setSubmoduleRegistry} from 'modules/userId/index.js';
+import {attachIdSystem, coreStorage, init, setSubmoduleRegistry} from 'modules/userId/index.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { uid2IdSubmodule } from 'modules/uid2IdSystem.js';
@@ -12,6 +10,7 @@ import { cookieHelpers, runAuction, apiHelpers, setGdprApplies } from './uid2IdS
 import {hook} from 'src/hook.js';
 import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
 import {server} from 'test/mocks/xhr';
+import {createEidsArray} from '../../../modules/userId/eids.js';
 
 let expect = require('chai').expect;
 
@@ -25,6 +24,7 @@ const initialToken = `initial-advertising-token`;
 const legacyToken = 'legacy-advertising-token';
 const refreshedToken = 'refreshed-advertising-token';
 const clientSideGeneratedToken = 'client-side-generated-advertising-token';
+const optoutToken = 'optout-token';
 
 const legacyConfigParams = {storage: null};
 const serverCookieConfigParams = { uid2ServerCookie: publisherCookieName };
@@ -32,6 +32,7 @@ const newServerCookieConfigParams = { uid2Cookie: publisherCookieName };
 const cstgConfigParams = { serverPublicKey: 'UID2-X-L-24B8a/eLYBmRkXA9yPgRZt+ouKbXewG2OPs23+ov3JC8mtYJBCx6AxGwJ4MlwUcguebhdDp2CvzsCgS9ogwwGA==', subscriptionId: 'subscription-id' }
 
 const makeUid2IdentityContainer = (token) => ({uid2: {id: token}});
+const makeUid2OptoutContainer = (token) => ({uid2: {optout: true}});
 let useLocalStorage = false;
 const makePrebidConfig = (params = null, extraSettings = {}, debug = false) => ({
   userSync: { auctionDelay: auctionDelayMs, userIds: [{name: 'uid2', params: {storage: useLocalStorage ? 'localStorage' : 'cookie', ...params}}] }, debug, ...extraSettings
@@ -49,6 +50,7 @@ const getFromAppropriateStorage = () => {
 const expectToken = (bid, token) => expect(bid?.userId ?? {}).to.deep.include(makeUid2IdentityContainer(token));
 const expectLegacyToken = (bid) => expect(bid.userId).to.deep.include(makeUid2IdentityContainer(legacyToken));
 const expectNoIdentity = (bid) => expect(bid).to.not.haveOwnProperty('userId');
+const expectOptout = (bid, token) => expect(bid?.userId ?? {}).to.deep.include(makeUid2OptoutContainer(token));
 const expectGlobalToHaveToken = (token) => expect(getGlobal().getUserIds()).to.deep.include(makeUid2IdentityContainer(token));
 const expectGlobalToHaveNoUid2 = () => expect(getGlobal().getUserIds()).to.not.haveOwnProperty('uid2');
 const expectNoLegacyToken = (bid) => expect(bid.userId).to.not.deep.include(makeUid2IdentityContainer(legacyToken));
@@ -64,6 +66,7 @@ const apiUrl = 'https://prod.uidapi.com/v2/token'
 const refreshApiUrl = `${apiUrl}/refresh`;
 const headers = { 'Content-Type': 'application/json' };
 const makeSuccessResponseBody = (responseToken) => btoa(JSON.stringify({ status: 'success', body: { ...apiHelpers.makeTokenResponse(initialToken), advertising_token: responseToken } }));
+const makeOptoutResponseBody = (token) => btoa(JSON.stringify({ status: 'optout', body: { ...apiHelpers.makeTokenResponse(initialToken), advertising_token: token } }));
 const cstgApiUrl = `${apiUrl}/client-generate`;
 
 const testCookieAndLocalStorage = (description, test, only = false) => {
@@ -91,6 +94,7 @@ describe(`UID2 module`, function () {
     timerSpy = configureTimerInterceptors(debugOutput);
     hook.ready();
     uninstallGdprEnforcement();
+    attachIdSystem(uid2IdSubmodule);
 
     suiteSandbox = sinon.sandbox.create();
     // I'm unable to find an authoritative source, but apparently subtle isn't available in some test stacks for security reasons.
@@ -120,6 +124,7 @@ describe(`UID2 module`, function () {
   const configureUid2Response = (apiUrl, httpStatus, response) => server.respondWith('POST', apiUrl, (xhr) => xhr.respond(httpStatus, headers, response));
   const configureUid2ApiSuccessResponse = (apiUrl, responseToken) => configureUid2Response(apiUrl, 200, makeSuccessResponseBody(responseToken));
   const configureUid2ApiFailResponse = (apiUrl) => configureUid2Response(apiUrl, 500, 'Error');
+  const configureUid2CstgResponse = (httpStatus, response) => server.respondWith('POST', cstgApiUrl, (xhr) => xhr.respond(httpStatus, headers, response));
   // Runs the provided test twice - once with a successful API mock, once with one which returns a server error
   const testApiSuccessAndFailure = (act, apiUrl, testDescription, failTestDescription, only = false, responseToken = refreshedToken) => {
     const testFn = only ? it.only : it;
@@ -228,7 +233,6 @@ describe(`UID2 module`, function () {
 
       const bid = await runAuction();
 
-      console.log('Storage', coreStorage.getDataFromLocalStorage(moduleCookieName));
       init(config);
       setSubmoduleRegistry([uid2IdSubmodule]);
       config.setConfig(makePrebidConfig(legacyConfigParams));
@@ -244,7 +248,6 @@ describe(`UID2 module`, function () {
       name: 'Token provided in config call',
       setConfig: (token, extraConfig = {}) => {
         const gen = makePrebidConfig({uid2Token: token}, extraConfig);
-        console.log('GENERATED CONFIG', gen.userSync.userIds[0].params);
         return config.setConfig(gen);
       },
     },
@@ -442,6 +445,15 @@ describe(`UID2 module`, function () {
           });
         });
       });
+      it('Should receive an optout response when the user has opted out.', async function() {
+        const uid2Token = apiHelpers.makeTokenResponse(initialToken, true, true);
+        configureUid2CstgResponse(200, makeOptoutResponseBody(optoutToken));
+        config.setConfig(makePrebidConfig({ uid2Token, ...cstgConfigParams, email: 'optout@test.com' }));
+        apiHelpers.respondAfterDelay(1, server);
+
+        const bid = await runAuction();
+        expectOptout(bid, optoutToken);
+      });
       describe(`when the response doesn't arrive before the auction timer`, function() {
         testApiSuccessAndFailure(async function() {
           config.setConfig(makePrebidConfig({ ...cstgConfigParams, email: 'test@test.com' }));
@@ -626,5 +638,39 @@ describe(`UID2 module`, function () {
       const bid = await runAuction();
       expectNoIdentity(bid);
     })
+  });
+  describe('eid', () => {
+    it('uid2', function() {
+      const userId = {
+        uid2: {'id': 'Sample_AD_Token'}
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'uidapi.com',
+        uids: [{
+          id: 'Sample_AD_Token',
+          atype: 3
+        }]
+      });
+    });
+
+    it('uid2 with ext', function() {
+      const userId = {
+        uid2: {'id': 'Sample_AD_Token', 'ext': {'provider': 'some.provider.com'}}
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'uidapi.com',
+        uids: [{
+          id: 'Sample_AD_Token',
+          atype: 3,
+          ext: {
+            provider: 'some.provider.com'
+          }
+        }]
+      });
+    });
   })
 });

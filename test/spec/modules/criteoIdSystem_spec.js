@@ -2,6 +2,9 @@ import { criteoIdSubmodule, storage } from 'modules/criteoIdSystem.js';
 import * as utils from 'src/utils.js';
 import { gdprDataHandler, uspDataHandler, gppDataHandler } from '../../../src/adapterManager.js';
 import { server } from '../../mocks/xhr';
+import {attachIdSystem} from '../../../modules/userId/index.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
+import {expect} from 'chai/index.mjs';
 
 const pastDateString = new Date(0).toString()
 
@@ -358,4 +361,20 @@ describe('CriteoId module', function () {
 
     expect(callBackSpy.calledOnce).to.be.true;
   }));
+  describe('eid', () => {
+    before(() => {
+      attachIdSystem(criteoIdSubmodule);
+    });
+    it('criteo', function() {
+      const userId = {
+        criteoId: 'some-random-id-value'
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'criteo.com',
+        uids: [{id: 'some-random-id-value', atype: 1}]
+      });
+    });
+  })
 });

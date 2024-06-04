@@ -175,25 +175,6 @@ describe('InsticatorBidAdapter', function () {
       })).to.be.true;
     })
 
-    it('should return false if video placement is not a number', () => {
-      expect(spec.isBidRequestValid({
-        ...bidRequest,
-        ...{
-          mediaTypes: {
-            video: {
-              mimes: [
-                'video/mp4',
-                'video/mpeg',
-              ],
-              w: 250,
-              h: 300,
-              placement: 'NaN',
-            },
-          }
-        }
-      })).to.be.false;
-    });
-
     it('should return false if video plcmt is not a number', () => {
       expect(spec.isBidRequestValid({
         ...bidRequest,
@@ -224,7 +205,7 @@ describe('InsticatorBidAdapter', function () {
                 'video/mpeg',
               ],
               playerSize: [250, 300],
-              placement: 1,
+              plcmt: 1,
             },
           }
         }
@@ -293,7 +274,7 @@ describe('InsticatorBidAdapter', function () {
                 'video/mpeg',
               ],
               playerSize: [250, 300],
-              placement: 1,
+              plcmt: 1,
             },
           }
         },
@@ -306,7 +287,7 @@ describe('InsticatorBidAdapter', function () {
               'video/x-flv',
               'video/webm',
             ],
-            placement: 2,
+            plcmt: 2,
           },
         }
       })).to.be.true;
