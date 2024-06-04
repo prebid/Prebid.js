@@ -782,9 +782,9 @@ describe('RTBHouseAdapter', () => {
 
       it('should return FLEDGE auction_configs alongside bids', function () {
         expect(response).to.have.property('bids');
-        expect(response).to.have.property('fledgeAuctionConfigs');
-        expect(response.fledgeAuctionConfigs.length).to.equal(1);
-        expect(response.fledgeAuctionConfigs[0].bidId).to.equal('test-bid-id');
+        expect(response).to.have.property('paapi');
+        expect(response.paapi.length).to.equal(1);
+        expect(response.paapi[0].bidId).to.equal('test-bid-id');
       });
     });
 

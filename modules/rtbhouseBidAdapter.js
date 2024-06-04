@@ -209,7 +209,7 @@ export const spec = {
       logInfo('Response with FLEDGE:', { bids, fledgeAuctionConfigs });
       return {
         bids,
-        fledgeAuctionConfigs,
+        paapi: fledgeAuctionConfigs,
       }
     }
     return bids;

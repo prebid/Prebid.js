@@ -1862,7 +1862,7 @@ export const spec = {
       try {
         return {
           bids,
-          fledgeAuctionConfigs,
+          paapi: fledgeAuctionConfigs,
         };
       } catch (error) {
         logWarn('Error attaching AuctionConfigs', error);

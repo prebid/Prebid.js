@@ -487,7 +487,7 @@ describe('onetag', function () {
       expect(fledgeInterpretedResponse.bids).to.satisfy(function (value) {
         return value === null || Array.isArray(value);
       });
-      expect(fledgeInterpretedResponse.fledgeAuctionConfigs).to.be.an('array').that.is.not.empty;
+      expect(fledgeInterpretedResponse.paapi).to.be.an('array').that.is.not.empty;
       for (let i = 0; i < interpretedResponse.length; i++) {
         let dataItem = interpretedResponse[i];
         expect(dataItem).to.include.all.keys('requestId', 'cpm', 'width', 'height', 'ttl', 'creativeId', 'netRevenue', 'currency', 'meta', 'dealId');

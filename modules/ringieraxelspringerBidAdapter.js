@@ -392,7 +392,7 @@ export const spec = {
 
     if (fledgeAuctionConfigs) {
       // Return a tuple of bids and auctionConfigs. It is possible that bids could be null.
-      return {bids, fledgeAuctionConfigs};
+      return {bids, paapi: fledgeAuctionConfigs};
     } else {
       return bids;
     }

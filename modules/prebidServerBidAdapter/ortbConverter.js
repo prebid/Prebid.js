@@ -232,7 +232,7 @@ const PBS_CONVERTER = ortbConverter({
         // override to process each request
         context.actualBidderRequests.forEach(req => orig(response, ortbResponse, {...context, bidderRequest: req, bidRequests: req.bids}));
       },
-      fledgeAuctionConfigs(orig, response, ortbResponse, context) {
+      paapiConfigs(orig, response, ortbResponse, context) {
         const configs = Object.values(context.impContext)
           .flatMap((impCtx) => (impCtx.paapiConfigs || []).map(cfg => {
             const bidderReq = impCtx.actualBidderRequests.find(br => br.bidderCode === cfg.bidder);
@@ -245,7 +245,7 @@ const PBS_CONVERTER = ortbConverter({
             };
           }));
         if (configs.length > 0) {
-          response.fledgeAuctionConfigs = configs;
+          response.paapi = configs;
         }
       }
     }

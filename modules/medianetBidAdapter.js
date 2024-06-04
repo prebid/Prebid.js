@@ -508,7 +508,7 @@ export const spec = {
     }
     return {
       bids: validBids,
-      fledgeAuctionConfigs,
+      paapi: fledgeAuctionConfigs,
     }
   },
   getUserSyncs: function(syncOptions, serverResponses) {

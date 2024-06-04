@@ -448,7 +448,7 @@ export function setResponsePaapiConfigs(response, ortbResponse, context) {
 
 registerOrtbProcessor({
   type: RESPONSE,
-  name: 'fledgeAuctionConfigs',
+  name: 'paapiConfigs',
   priority: -1,
   fn: setResponsePaapiConfigs,
 });

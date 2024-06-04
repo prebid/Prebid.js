@@ -288,7 +288,7 @@ export const spec = {
         })
         return {
           bids,
-          fledgeAuctionConfigs,
+          paapi: fledgeAuctionConfigs,
         }
       }
       return bids

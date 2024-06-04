@@ -4238,17 +4238,17 @@ describe('IndexexchangeAdapter', function () {
             }
           }
         ];
-        expect(result.fledgeAuctionConfigs).to.deep.equal(expectedOutput);
+        expect(result.paapi).to.deep.equal(expectedOutput);
       });
 
       it('should correctly interpret response without auction configs', () => {
         const result = spec.interpretResponse(serverResponseWithoutFledgeConfigs, bidderRequestWithFledgeEnabled);
-        expect(result.fledgeAuctionConfigs).to.be.undefined;
+        expect(result.paapi).to.be.undefined;
       });
 
       it('should handle malformed auction configs gracefully', () => {
         const result = spec.interpretResponse(serverResponseWithMalformedAuctionConfig, bidderRequestWithFledgeEnabled);
-        expect(result.fledgeAuctionConfigs).to.be.empty;
+        expect(result.paapi).to.be.empty;
       });
 
       it('should log warning for malformed auction configs', () => {
@@ -4260,7 +4260,7 @@ describe('IndexexchangeAdapter', function () {
 
       it('should return bids when protected audience auction conigs is malformed', () => {
         const result = spec.interpretResponse(serverResponseWithMalformedAuctionConfigs, bidderRequestWithFledgeEnabled);
-        expect(result.fledgeAuctionConfigs).to.be.undefined;
+        expect(result.paapi).to.be.undefined;
         expect(result.length).to.be.greaterThan(0);
       });
     });

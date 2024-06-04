@@ -261,7 +261,7 @@ export const adapter = {
 
     return {
       bids,
-      fledgeAuctionConfigs
+      paapi: fledgeAuctionConfigs
     };
   }
 };

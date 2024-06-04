@@ -242,7 +242,7 @@ export const sharethroughAdapterSpec = {
     if (fledgeAuctionEnabled) {
       return {
         bids: bidsFromExchange,
-        fledgeAuctionConfigs: body.ext?.auctionConfigs || {},
+        paapi: body.ext?.auctionConfigs || {},
       };
     } else {
       return bidsFromExchange;

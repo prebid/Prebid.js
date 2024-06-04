@@ -96,7 +96,7 @@ export const tripleliftAdapterSpec = {
       logMessage('Response with FLEDGE:', { bids, fledgeAuctionConfigs });
       return {
         bids,
-        fledgeAuctionConfigs
+        paapi: fledgeAuctionConfigs
       };
     } else {
       return bids;

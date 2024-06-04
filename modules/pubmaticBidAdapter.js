@@ -1419,7 +1419,7 @@ export const spec = {
         });
         return {
           bids: bidResponses,
-          fledgeAuctionConfigs,
+          paapi: fledgeAuctionConfigs,
         }
       }
     } catch (error) {

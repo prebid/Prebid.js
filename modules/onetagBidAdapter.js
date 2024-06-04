@@ -156,7 +156,7 @@ function interpretResponse(serverResponse, bidderRequest) {
     const fledgeAuctionConfigs = body.fledgeAuctionConfigs
     return {
       bids,
-      fledgeAuctionConfigs,
+      paapi: fledgeAuctionConfigs,
     }
   } else {
     return bids;

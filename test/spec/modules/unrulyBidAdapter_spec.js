@@ -1047,7 +1047,7 @@ describe('UnrulyAdapter', function () {
             mediaType: 'video'
           }
         ],
-        'fledgeAuctionConfigs': [{
+        'paapi': [{
           'bidId': bidId,
           'config': {
             'seller': 'https://nexxen.tech',
@@ -1111,7 +1111,7 @@ describe('UnrulyAdapter', function () {
 
       expect(adapter.interpretResponse(mockServerResponse, originalRequest)).to.deep.equal({
         'bids': [],
-        'fledgeAuctionConfigs': [{
+        'paapi': [{
           'bidId': bidId,
           'config': {
             'seller': 'https://nexxen.tech',
