@@ -11,7 +11,8 @@ import { submodule } from '../src/hook.js'
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { gppDataHandler, uspDataHandler } from '../src/consentHandler.js';
-import CryptoJS from 'crypto-js';
+import AES from 'crypto-js/aes.js';
+import Utf8 from 'crypto-js/enc-utf8.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -67,7 +68,7 @@ function generateGUID() {
  * @returns {string} The encrypted text as a base64 string.
  */
 function encryptData(plainText) {
-  return CryptoJS.AES.encrypt(plainText, MODULE_NAME).toString();
+  return AES.encrypt(plainText, MODULE_NAME).toString();
 }
 
 /**
@@ -76,8 +77,8 @@ function encryptData(plainText) {
  * @returns {string} The decrypted plaintext.
  */
 function decryptData(encryptedText) {
-  const bytes = CryptoJS.AES.decrypt(encryptedText, MODULE_NAME);
-  return bytes.toString(CryptoJS.enc.Utf8);
+  const bytes = AES.decrypt(encryptedText, MODULE_NAME);
+  return bytes.toString(Utf8);
 }
 
 /**
@@ -363,14 +364,16 @@ export const intentIqIdSubmodule = {
 
     const firePartnerCallback = () => {
       if (configParams.callback && !callbackFired) {
+        if (callbackTimeoutID) clearTimeout(callbackTimeoutID)
         callbackFired = true
         configParams.callback(decryptedData, firstPartyData?.group || NOT_YET_DEFINED);
       }
     }
 
-    callbackTimeoutID = setTimeout(
-      firePartnerCallback,
-      configParams.timeoutInMillis || 500
+    callbackTimeoutID = setTimeout(() => {
+      firePartnerCallback()
+    },
+    configParams.timeoutInMillis || 500
     );
 
     if (!firstPartyData?.pcid) {
