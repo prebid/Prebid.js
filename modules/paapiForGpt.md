@@ -12,7 +12,7 @@ Publishers wishing to enable FLEDGE support must do two things. First, they must
 This is accomplished by adding the `fledgeForGpt` module to the list of modules they are already using:
 
 ```
-gulp build --modules=fledgeForGpt,...
+gulp build --modules=paapiForGpt,...
 ```
 
 Second, they must enable FLEDGE in their Prebid.js configuration. 
@@ -34,7 +34,7 @@ bidders to apply these settings to may be provided:
 ```js
 pbjs.que.push(function() {
   pbjs.setConfig({
-    fledgeForGpt: {
+    paapi: {
       enabled: true,
       bidders: ['openx', 'rtbhouse'],
       defaultForSlots: 1
