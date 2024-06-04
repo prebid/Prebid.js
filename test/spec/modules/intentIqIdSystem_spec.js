@@ -74,6 +74,7 @@ describe('IntentIQ tests all', function () {
   let logErrorStub;
 
   beforeEach(function () {
+    localStorage.clear();
     logErrorStub = sinon.stub(utils, 'logError');
     sinon.stub(config, 'getConfig').withArgs('userSync.userIds').returns(USERID_CONFIG);
     sinon.stub(events, 'getEvents').returns([]);
@@ -173,5 +174,83 @@ describe('IntentIQ tests all', function () {
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup).to.equal('B');
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.currentPercentage).to.equal(50);
     expect(iiqAnalyticsAnalyticsAdapter.initOptions.fpid).to.be.not.null;
+  });
+
+  it('should handle encrypted data correctly', function () {
+    let encryptedData = AES.encrypt('test_personid', MODULE_NAME).toString();
+    localStorage.setItem(FIRST_PARTY_DATA_KEY + '_' + partner, JSON.stringify({ data: encryptedData }));
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    expect(callBackSpy.calledOnce).to.be.true;
+    expect(callBackSpy.args[0][0]).to.equal('test_personid');
+  });
+
+  it('should handle getId with high entropy values', function (done) {
+    let callBackSpy = sinon.spy();
+    sinon.stub(navigator.userAgentData, 'getHighEntropyValues').returns(Promise.resolve({
+      brands: [{ brand: 'Google Chrome', version: '89' }],
+      mobile: false,
+      platform: 'Windows',
+      architecture: 'x86',
+      bitness: '64',
+      model: '',
+      platformVersion: '10.0',
+      wow64: false,
+      fullVersionList: [{ brand: 'Google Chrome', version: '89' }]
+    }));
+    let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    setTimeout(() => {
+      expect(callBackSpy.calledOnce).to.be.true;
+      navigator.userAgentData.getHighEntropyValues.restore();
+      done();
+    }, 1000);
+  });
+
+  it('should store and read data with cookie storage enabled through getId', function () {
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = intentIqIdSubmodule.getId(enableCookieConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&iiqidtype=2&iiqpcid=');
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: true })
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
+    // Now check if data is stored correctly in cookies
+    const cookieValue = storage.getCookie('_iiq_fdata_' + partner);
+    expect(cookieValue).to.not.equal(null);
+    expect(JSON.parse(cookieValue).data).to.be.equal('test_personid');
+  });
+
+  it('should handle browser blacklisting', function () {
+    let callBackSpy = sinon.spy();
+    let configParamsWithBlacklist = {
+      params: { partner: partner, browserBlackList: 'chrome' }
+    };
+    sinon.stub(navigator, 'userAgent').value('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+    let submoduleCallback = intentIqIdSubmodule.getId(configParamsWithBlacklist);
+    expect(logErrorStub.calledOnce).to.be.true;
+    expect(submoduleCallback).to.be.undefined;
+    navigator.userAgent.restore();
+  });
+
+  it('should handle invalid JSON in readData', function () {
+    localStorage.setItem('_iiq_fdata_' + partner, 'invalid_json');
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&iiqidtype=2&iiqpcid=');
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify({})
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
+    expect(logErrorStub.called).to.be.true;
   });
 });
