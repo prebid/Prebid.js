@@ -3,6 +3,15 @@ import {BANNER} from '../src/mediaTypes.js';
 import {deepAccess, parseSizesInput} from '../src/utils.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const BIDDER_CODE = 'optidigital';
 const GVL_ID = 915;
 const ENDPOINT_URL = 'https://pbs.optidigital.com/bidder';
@@ -83,12 +92,24 @@ export const spec = {
       }
     }
 
+    if (bidderRequest?.gppConsent?.gppString) {
+      payload.gpp = {
+        consent: bidderRequest.gppConsent.gppString,
+        sid: bidderRequest.gppConsent.applicableSections
+      }
+    } else if (bidderRequest?.ortb2?.regs?.gpp) {
+      payload.gpp = {
+        consent: bidderRequest.ortb2.regs.gpp,
+        sid: bidderRequest.ortb2.regs.gpp_sid
+      }
+    }
+
     if (window.location.href.indexOf('optidigitalTestMode=true') !== -1) {
       payload.testMode = true;
     }
 
     if (bidderRequest && bidderRequest.uspConsent) {
-      payload.uspConsent = bidderRequest.uspConsent;
+      payload.us_privacy = bidderRequest.uspConsent;
     }
 
     if (_getEids(validBidRequests[0])) {
@@ -144,7 +165,7 @@ export const spec = {
    * @param {ServerResponse[]} serverResponses List of server's responses.
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent) {
+  getUserSyncs: function(syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
     let syncurl = '';
     if (!isSynced) {
       // Attaching GDPR Consent Params in UserSync url
@@ -152,8 +173,12 @@ export const spec = {
         syncurl += '&gdpr=' + (gdprConsent.gdprApplies ? 1 : 0);
         syncurl += '&gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '');
       }
-      if (uspConsent && uspConsent.consentString) {
-        syncurl += `&ccpa_consent=${uspConsent.consentString}`;
+      if (uspConsent) {
+        syncurl += '&us_privacy=' + encodeURIComponent(uspConsent);
+      }
+      if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+        syncurl += '&gpp=' + encodeURIComponent(gppConsent.gppString);
+        syncurl += '&gpp_sid=' + encodeURIComponent(gppConsent?.applicableSections?.join(','));
       }
 
       if (syncOptions.iframeEnabled) {

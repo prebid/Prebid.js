@@ -2,7 +2,7 @@
  * events.js
  */
 import * as utils from './utils.js'
-import CONSTANTS from './constants.json';
+import { EVENTS, EVENT_ID_PATHS } from './constants.js';
 import {ttlCollection} from './utils/ttlCollection.js';
 import {config} from './config.js';
 const TTL_CONFIG = 'eventHistoryTTL';
@@ -28,9 +28,9 @@ let slice = Array.prototype.slice;
 let push = Array.prototype.push;
 
 // define entire events
-let allEvents = Object.values(CONSTANTS.EVENTS);
+let allEvents = Object.values(EVENTS);
 
-const idPaths = CONSTANTS.EVENT_ID_PATHS;
+const idPaths = EVENT_ID_PATHS;
 
 const _public = (function () {
   let _handlers = {};

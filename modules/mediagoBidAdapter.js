@@ -8,6 +8,13 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 // import { config } from '../src/config.js';
 // import { isPubcidEnabled } from './pubCommonId.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').mediaType} mediaType
+ */
+
 const BIDDER_CODE = 'mediago';
 // const PROTOCOL = window.document.location.protocol;
 const ENDPOINT_URL = 'https://gbid.mediago.io/api/bid?tn=';

@@ -354,7 +354,7 @@ function getVideoAsset(bid) {
     minduration: bid.mediaTypes.video.minduration,
     maxduration: bid.mediaTypes.video.maxduration,
     startdelay: bid.mediaTypes.video.startdelay,
-    placement: bid.mediaTypes.video.placement,
+    placement: bid.mediaTypes.video.plcmt ?? bid.mediaTypes.video.placement,
     linearity: bid.mediaTypes.video.linearity
   };
 }

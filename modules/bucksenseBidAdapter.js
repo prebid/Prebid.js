@@ -2,6 +2,11 @@ import { logInfo } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER } from '../src/mediaTypes.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
+
 const WHO = 'BKSHBID-005';
 const BIDDER_CODE = 'bucksense';
 const URL = 'https://directo.prebidserving.com/prebidjs/';

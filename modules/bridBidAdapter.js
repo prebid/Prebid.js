@@ -3,13 +3,19 @@ import {VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').BidderRequest} BidderRequest
+ */
+
 const SOURCE = 'pbjs';
 const BIDDER_CODE = 'brid';
 const ENDPOINT_URL = 'https://pbs.prebrid.tv/openrtb2/auction';
 const GVLID = 934;
 const TIME_TO_LIVE = 300;
 const VIDEO_PARAMS = [
-  'api', 'linearity', 'maxduration', 'mimes', 'minduration', 'placement',
+  'api', 'linearity', 'maxduration', 'mimes', 'minduration', 'plcmt',
   'playbackmethod', 'protocols', 'startdelay'
 ];
 

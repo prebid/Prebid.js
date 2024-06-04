@@ -1,6 +1,5 @@
 import {
   _each,
-  cleanObj,
   contains,
   createTrackPixelHtml,
   deepAccess,
@@ -20,22 +19,25 @@ import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {find} from '../src/polyfill.js';
 import {config} from '../src/config.js';
-import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
 import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
-/*
+/**
  * In case you're AdKernel whitelable platform's client who needs branded adapter to
  * work with Adkernel platform - DO NOT COPY THIS ADAPTER UNDER NEW NAME
  *
- * Please contact prebid@adkernel.com and we'll add your adapter as an alias.
+ * Please contact prebid@adkernel.com and we'll add your adapter as an alias
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
  */
+
 const VIDEO_PARAMS = ['pos', 'context', 'placement', 'plcmt', 'api', 'mimes', 'protocols', 'playbackmethod', 'minduration', 'maxduration',
   'startdelay', 'linearity', 'skip', 'skipmin', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackend', 'boxingallowed'];
 const VIDEO_FPD = ['battr', 'pos'];
 const NATIVE_FPD = ['battr', 'api'];
 const BANNER_PARAMS = ['pos'];
 const BANNER_FPD = ['btype', 'battr', 'pos', 'api'];
-const VERSION = '1.6';
+const VERSION = '1.7';
 const SYNC_IFRAME = 1;
 const SYNC_IMAGE = 2;
 const SYNC_TYPES = {
@@ -44,33 +46,16 @@ const SYNC_TYPES = {
 };
 const GVLID = 14;
 
-const NATIVE_MODEL = [
-  {name: 'title', assetType: 'title'},
-  {name: 'icon', assetType: 'img', type: 1},
-  {name: 'image', assetType: 'img', type: 3},
-  {name: 'body', assetType: 'data', type: 2},
-  {name: 'body2', assetType: 'data', type: 10},
-  {name: 'sponsoredBy', assetType: 'data', type: 1},
-  {name: 'phone', assetType: 'data', type: 8},
-  {name: 'address', assetType: 'data', type: 9},
-  {name: 'price', assetType: 'data', type: 6},
-  {name: 'salePrice', assetType: 'data', type: 7},
-  {name: 'cta', assetType: 'data', type: 12},
-  {name: 'rating', assetType: 'data', type: 3},
-  {name: 'downloads', assetType: 'data', type: 5},
-  {name: 'likes', assetType: 'data', type: 4},
-  {name: 'displayUrl', assetType: 'data', type: 11}
-];
-
-const NATIVE_INDEX = NATIVE_MODEL.reduce((acc, val, idx) => {
-  acc[val.name] = {id: idx, ...val};
-  return acc;
-}, {});
-
 const MULTI_FORMAT_SUFFIX = '__mf';
 const MULTI_FORMAT_SUFFIX_BANNER = 'b' + MULTI_FORMAT_SUFFIX;
 const MULTI_FORMAT_SUFFIX_VIDEO = 'v' + MULTI_FORMAT_SUFFIX;
 const MULTI_FORMAT_SUFFIX_NATIVE = 'n' + MULTI_FORMAT_SUFFIX;
+
+const MEDIA_TYPES = {
+  BANNER: 1,
+  VIDEO: 2,
+  NATIVE: 4
+};
 
 /**
  * Adapter for requesting bids from AdKernel white-label display platform
@@ -107,7 +92,10 @@ export const spec = {
     {code: 'didnadisplay'},
     {code: 'qortex'},
     {code: 'adpluto'},
-    {code: 'headbidder'}
+    {code: 'headbidder'},
+    {code: 'digiad'},
+    {code: 'monetix'},
+    {code: 'hyperbrainz'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -133,9 +121,6 @@ export const spec = {
    * @returns {ServerRequest[]}
    */
   buildRequests: function (bidRequests, bidderRequest) {
-    // convert Native ORTB definition to old-style prebid native definition
-    bidRequests = convertOrtbRequestToProprietaryNative(bidRequests);
-
     let impGroups = groupImpressionsByHostZone(bidRequests, bidderRequest.refererInfo);
     let requests = [];
     let schain = bidRequests[0].schain;
@@ -181,19 +166,21 @@ export const spec = {
       if (prBid.requestId.endsWith(MULTI_FORMAT_SUFFIX)) {
         prBid.requestId = stripMultiformatSuffix(prBid.requestId);
       }
-      if ('banner' in imp) {
+      if (rtbBid.mtype === MEDIA_TYPES.BANNER) {
         prBid.mediaType = BANNER;
         prBid.width = rtbBid.w;
         prBid.height = rtbBid.h;
         prBid.ad = formatAdMarkup(rtbBid);
-      } else if ('video' in imp) {
+      } else if (rtbBid.mtype === MEDIA_TYPES.VIDEO) {
         prBid.mediaType = VIDEO;
         prBid.vastUrl = rtbBid.nurl;
         prBid.width = imp.video.w;
         prBid.height = imp.video.h;
-      } else if ('native' in imp) {
+      } else if (rtbBid.mtype === MEDIA_TYPES.NATIVE) {
         prBid.mediaType = NATIVE;
-        prBid.native = buildNativeAd(JSON.parse(rtbBid.adm));
+        prBid.native = {
+          ortb: buildNativeAd(rtbBid.adm)
+        };
       }
       if (isStr(rtbBid.dealid)) {
         prBid.dealId = rtbBid.dealid;
@@ -339,11 +326,9 @@ function buildImps(bidRequest, secure) {
     } else {
       typedImp = imp;
     }
-    let nativeRequest = buildNativeRequest(mediaTypes.native);
     typedImp.native = {
       ...getDefinedParamsOrEmpty(bidRequest.ortb2Imp, NATIVE_FPD),
-      ver: '1.1',
-      request: JSON.stringify(nativeRequest)
+      request: JSON.stringify(bidRequest.nativeOrtbRequest)
     };
     initImpBidfloor(typedImp, bidRequest, sizes, isMultiformat ? '*' : NATIVE);
     result.push(typedImp);
@@ -363,51 +348,6 @@ function getDefinedParamsOrEmpty(object, params) {
     return {};
   }
   return getDefinedParams(object, params);
-}
-
-/**
- * Builds native request from native adunit
- */
-function buildNativeRequest(nativeReq) {
-  let request = {ver: '1.1', assets: []};
-  for (let k of Object.keys(nativeReq)) {
-    let v = nativeReq[k];
-    let desc = NATIVE_INDEX[k];
-    if (desc === undefined) {
-      continue;
-    }
-    let assetRoot = {
-      id: desc.id,
-      required: ~~v.required,
-    };
-    if (desc.assetType === 'img') {
-      assetRoot[desc.assetType] = buildImageAsset(desc, v);
-    } else if (desc.assetType === 'data') {
-      assetRoot.data = cleanObj({type: desc.type, len: v.len});
-    } else if (desc.assetType === 'title') {
-      assetRoot.title = {len: v.len || 90};
-    } else {
-      return;
-    }
-    request.assets.push(assetRoot);
-  }
-  return request;
-}
-
-/**
- *  Builds image asset request
- */
-function buildImageAsset(desc, val) {
-  let img = {
-    type: desc.type
-  };
-  if (val.sizes) {
-    [img.w, img.h] = val.sizes;
-  } else if (val.aspect_ratios) {
-    img.wmin = val.aspect_ratios[0].min_width;
-    img.hmin = val.aspect_ratios[0].min_height;
-  }
-  return cleanObj(img);
 }
 
 /**
@@ -534,12 +474,11 @@ function makeRegulations(bidderRequest) {
  * @returns
  */
 function makeBaseRequest(bidderRequest, imps, fpd) {
-  let {timeout} = bidderRequest;
   let request = {
     'id': bidderRequest.bidderRequestId,
     'imp': imps,
     'at': 1,
-    'tmax': parseInt(timeout)
+    'tmax': parseInt(bidderRequest.timeout)
   };
   if (!isEmpty(fpd.bcat)) {
     request.bcat = fpd.bcat;
@@ -659,26 +598,15 @@ function validateNativeImageSize(img) {
 }
 
 /**
- * Creates native ad for native 1.1 response
+ * Creates native ad for native 1.2 response
  */
-function buildNativeAd(nativeResp) {
-  const {assets, link, imptrackers, jstracker, privacy} = nativeResp.native;
-  let nativeAd = {
-    clickUrl: link.url,
-    impressionTrackers: imptrackers,
-    javascriptTrackers: jstracker ? [jstracker] : undefined,
-    privacyLink: privacy,
-  };
-  _each(assets, asset => {
-    let assetName = NATIVE_MODEL[asset.id].name;
-    let assetType = NATIVE_MODEL[asset.id].assetType;
-    nativeAd[assetName] = asset[assetType].text || asset[assetType].value || cleanObj({
-      url: asset[assetType].url,
-      width: asset[assetType].w,
-      height: asset[assetType].h
-    });
-  });
-  return cleanObj(nativeAd);
+function buildNativeAd(adm) {
+  let resp = JSON.parse(adm);
+  // temporary workaround for top-level native object wrapper
+  if ('native' in resp) {
+    resp = resp.native;
+  }
+  return resp;
 }
 
 function stripMultiformatSuffix(impid) {

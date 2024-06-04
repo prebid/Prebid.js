@@ -1,23 +1,21 @@
 import {ajax} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
-import {deepClone, generateUUID, logError, logInfo, logWarn} from '../src/utils.js';
+import {deepClone, generateUUID, logError, logInfo, logWarn, getParameterByName} from '../src/utils.js';
 
 const analyticsType = 'endpoint';
 
-export const ANALYTICS_VERSION = '2.0.0';
+export const ANALYTICS_VERSION = '2.2.1';
 
 const ANALYTICS_SERVER = 'https://a.greenbids.ai';
 
 const {
-  EVENTS: {
-    AUCTION_INIT,
-    AUCTION_END,
-    BID_TIMEOUT,
-    BILLABLE_EVENT,
-  }
-} = CONSTANTS;
+  AUCTION_INIT,
+  AUCTION_END,
+  BID_TIMEOUT,
+  BILLABLE_EVENT,
+} = EVENTS;
 
 export const BIDDER_STATUS = {
   BID: 'bid',
@@ -27,19 +25,29 @@ export const BIDDER_STATUS = {
 
 const analyticsOptions = {};
 
-export const isSampled = function(greenbidsId, samplingRate) {
+export const isSampled = function(greenbidsId, samplingRate, exploratorySamplingSplit) {
+  const isSamplingForced = getParameterByName('greenbids_force_sampling');
+  if (isSamplingForced) {
+    logInfo('Greenbids Analytics: sampling flag detected, forcing analytics');
+    return true;
+  }
   if (samplingRate < 0 || samplingRate > 1) {
     logWarn('Sampling rate must be between 0 and 1');
     return true;
   }
+  const exploratorySamplingRate = samplingRate * exploratorySamplingSplit;
+  const throttledSamplingRate = samplingRate * (1.0 - exploratorySamplingSplit);
   const hashInt = parseInt(greenbidsId.slice(-4), 16);
-
-  return hashInt < samplingRate * (0xFFFF + 1);
+  const isPrimarySampled = hashInt < exploratorySamplingRate * (0xFFFF + 1);
+  if (isPrimarySampled) return true;
+  const isExtraSampled = hashInt >= (1 - throttledSamplingRate) * (0xFFFF + 1);
+  return isExtraSampled;
 }
 
 export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER, analyticsType}), {
 
   cachedAuctions: {},
+  exploratorySamplingSplit: 0.9,
 
   initConfig(config) {
     analyticsOptions.options = deepClone(config.options);
@@ -59,8 +67,6 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
     if (typeof analyticsOptions.options.sampling === 'number') {
       logWarn('"options.sampling" is deprecated, please use "greenbidsSampling" instead.');
       analyticsOptions.options.greenbidsSampling = analyticsOptions.options.sampling;
-      // Set sampling to null to prevent prebid analytics integrated sampling to happen
-      analyticsOptions.options.sampling = null;
     }
 
     /**
@@ -69,6 +75,14 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
     if (typeof analyticsOptions.options.greenbidsSampling !== 'number' || analyticsOptions.options.greenbidsSampling >= 1) {
       logWarn('"options.greenbidsSampling" is not set or >=1, using this analytics module unsampled is discouraged.');
       analyticsOptions.options.greenbidsSampling = 1;
+    }
+
+    /**
+     *  Add optional debug parameter to override exploratorySamplingSplit
+     */
+    if (typeof analyticsOptions.options.exploratorySamplingSplit === 'number') {
+      logInfo('Greenbids Analytics: Overriding "exploratorySamplingSplit".');
+      this.exploratorySamplingSplit = analyticsOptions.options.exploratorySamplingSplit;
     }
 
     analyticsOptions.pbuid = config.options.pbuid
@@ -175,7 +189,7 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
       logInfo("Couldn't find Greenbids RTD info, assuming analytics only");
       cachedAuction.greenbidsId = generateUUID();
     }
-    cachedAuction.isSampled = isSampled(cachedAuction.greenbidsId, analyticsOptions.options.greenbidsSampling);
+    cachedAuction.isSampled = isSampled(cachedAuction.greenbidsId, analyticsOptions.options.greenbidsSampling, this.exploratorySamplingSplit);
   },
   handleAuctionEnd(auctionEndArgs) {
     const cachedAuction = this.getCachedAuction(auctionEndArgs.auctionId);
@@ -228,6 +242,10 @@ greenbidsAnalyticsAdapter.originEnableAnalytics = greenbidsAnalyticsAdapter.enab
 
 greenbidsAnalyticsAdapter.enableAnalytics = function(config) {
   this.initConfig(config);
+  if (typeof config.options.sampling === 'number') {
+    // Set sampling to 1 to prevent prebid analytics integrated sampling to happen
+    config.options.sampling = 1;
+  }
   logInfo('loading greenbids analytics');
   greenbidsAnalyticsAdapter.originEnableAnalytics(config);
 };

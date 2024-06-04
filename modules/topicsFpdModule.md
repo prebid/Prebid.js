@@ -41,12 +41,36 @@ pbjs.setConfig({
                 iframeURL: 'https://topics.authorizedvault.com/topicsapi.html',
                 expiry: 7 // Configurable expiry days
             },{
+                bidder: 'openx',
+                iframeURL: 'https://pa.openx.net/topics_frame.html',
+                expiry: 7 // Configurable expiry days
+            },{
                 bidder: 'rubicon',
                 iframeURL: 'https://rubicon.com:8080/topics/fpd/topic.html', // dummy URL
                 expiry: 7 // Configurable expiry days
             },{
                 bidder: 'appnexus',
                 iframeURL: 'https://appnexus.com:8080/topics/fpd/topic.html', // dummy URL
+                expiry: 7 // Configurable expiry days
+            }, {
+                bidder: 'onetag',
+                iframeURL: 'https://onetag-sys.com/static/topicsapi.html',
+                expiry: 7 // Configurable expiry days
+            }, {
+                bidder: 'taboola',
+                iframeURL: 'https://cdn.taboola.com/libtrc/static/topics/taboola-prebid-browsing-topics.html',
+                expiry: 7 // Configurable expiry days
+            }, {
+                bidder: 'discovery',
+                iframeURL: 'https://api.popin.cc/topic/prebid-topics-frame.html',
+                expiry: 7 // Configurable expiry days
+            }, {
+                bidder: 'undertone',
+                iframeURL: 'https://creative-p.undertone.com/spk-public/topics_frame.html',
+                expiry: 7 // Configurable expiry days
+            },{
+                bidder: 'vidazoo',
+                iframeURL: 'https://static.vidazoo.com/topics_api/topics_frame.html',
                 expiry: 7 // Configurable expiry days
             }]
         }

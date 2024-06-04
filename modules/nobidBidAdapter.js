@@ -5,10 +5,19 @@ import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { hasPurpose1Consent } from '../src/utils/gpdr.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const GVLID = 816;
 const BIDDER_CODE = 'nobid';
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
-window.nobidVersion = '1.3.3';
+window.nobidVersion = '1.3.4';
 window.nobid = window.nobid || {};
 window.nobid.bidResponses = window.nobid.bidResponses || {};
 window.nobid.timeoutTotal = 0;
@@ -152,6 +161,7 @@ function nobidBuildRequests(bids, bidderRequest) {
     state['gdpr'] = gdprConsent(bidderRequest);
     state['usp'] = uspConsent(bidderRequest);
     state['pjbdr'] = (bidderRequest && bidderRequest.bidderCode) ? bidderRequest.bidderCode : 'nobid';
+    state['pbver'] = '$prebid.version$';
     const sch = schain(bids);
     if (sch) state['schain'] = sch;
     const cop = coppa();
@@ -374,7 +384,8 @@ export const spec = {
    */
   isBidRequestValid: function(bid) {
     log('isBidRequestValid', bid);
-    return !!bid.params.siteId;
+    if (bid?.params?.siteId) return true;
+    return false;
   },
   /**
    * Make a server request from the list of BidRequests.

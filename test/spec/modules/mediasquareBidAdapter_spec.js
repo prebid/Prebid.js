@@ -102,10 +102,34 @@ describe('MediaSquare bid adapter tests', function () {
       'context': 'instream',
       'increment': 1.0,
       'ova': 'cleared',
+      'dsa': {
+        'behalf': 'some-behalf',
+        'paid': 'some-paid',
+        'transparency': [{
+          'domain': 'test.com',
+          'dsaparams': [1, 2, 3]
+        }],
+        'adrender': 1
+      }
     }],
   }};
 
   const DEFAULT_OPTIONS = {
+    ortb2: {
+      regs: {
+        ext: {
+          dsa: {
+            dsarequired: '1',
+            pubrender: '2',
+            datatopub: '3',
+            transparency: [{
+              domain: 'test.com',
+              dsaparams: [1, 2, 3]
+            }]
+          }
+        }
+      }
+    },
     gdprConsent: {
       gdprApplies: true,
       consentString: 'BOzZdA0OzZdA0AGABBENDJ-AAAAvh7_______9______9uz_Ov_v_f__33e8__9v_l_7_-___u_-33d4-_1vf99yfm1-7ftr3tp_87ues2_Xur__79__3z3_9pxP78k89r7337Mw_v-_v-b7JCPN_Y3v-8Kg',
@@ -144,10 +168,12 @@ describe('MediaSquare bid adapter tests', function () {
     expect(requestContent.codes[0]).to.have.property('mediatypes').exist;
     expect(requestContent.codes[0]).to.have.property('floor').exist;
     expect(requestContent.codes[0].floor).to.deep.equal({});
+    expect(requestContent).to.have.property('dsa');
     const requestfloor = spec.buildRequests(FLOORS_PARAMS, DEFAULT_OPTIONS);
     const responsefloor = JSON.parse(requestfloor.data);
     expect(responsefloor.codes[0]).to.have.property('floor').exist;
     expect(responsefloor.codes[0].floor).to.have.property('300x250').and.to.have.property('floor').and.to.equal(1);
+    expect(responsefloor.codes[0].floor).to.have.property('*');
   });
 
   it('Verify parse response', function () {
@@ -176,6 +202,7 @@ describe('MediaSquare bid adapter tests', function () {
     expect(bid.meta).to.exist;
     expect(bid.meta.advertiserDomains).to.exist;
     expect(bid.meta.advertiserDomains).to.have.lengthOf(1);
+    expect(bid.meta.dsa).to.exist;
   });
   it('Verifies match', function () {
     const request = spec.buildRequests(DEFAULT_PARAMS, DEFAULT_OPTIONS);

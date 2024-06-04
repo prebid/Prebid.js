@@ -327,7 +327,7 @@ export function validateGeoObject(geo) {
  * Get bid floor from Price Floors Module
  *
  * @param {Object} bid
- * @returns {float||null}
+ * @returns {?number}
  */
 function getBidFloor(bid) {
   if (!isFn(bid.getFloor)) {

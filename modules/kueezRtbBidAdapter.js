@@ -65,7 +65,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
   const pId = extractPID(params);
   const subDomain = extractSubDomain(params);
 
-  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid', deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', ''));
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', '');
 
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
@@ -173,7 +173,7 @@ function appendUserIdsToRequestPayload(payloadRef, userIds) {
 
 function buildRequests(validBidRequests, bidderRequest) {
   const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
-  const bidderTimeout = config.getConfig('bidderTimeout');
+  const bidderTimeout = bidderRequest.timeout ?? config.getConfig('bidderTimeout');
   const requests = [];
   validBidRequests.forEach(validBidRequest => {
     const sizes = parseSizesInput(validBidRequest.sizes);

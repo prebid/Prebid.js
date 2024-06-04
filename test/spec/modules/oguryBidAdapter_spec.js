@@ -80,6 +80,7 @@ describe('OguryBidAdapter', function () {
     bidderRequestId: 'mock-uuid',
     auctionId: bidRequests[0].auctionId,
     gdprConsent: {consentString: 'myConsentString', vendorData: {}, gdprApplies: true},
+    timeout: 1000
   };
 
   describe('isBidRequestValid', function () {

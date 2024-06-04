@@ -14,9 +14,13 @@ import {BANNER} from '../src/mediaTypes.js';
 import {find, includes} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
-import {getANKeywordParam, transformBidderParamKeywords} from '../libraries/appnexusUtils/anKeywords.js';
+import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
 import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
-import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ */
 
 const BIDDER_CODE = 'winr';
 const URL = 'https://ib.adnxs.com/ut/v3/prebid';
@@ -306,39 +310,6 @@ export const spec = {
         },
       ];
     }
-  },
-
-  transformBidParams: function (params, isOpenRtb) {
-    params = convertTypes(
-      {
-        member: 'string',
-        invCode: 'string',
-        placementId: 'number',
-        keywords: transformBidderParamKeywords,
-        publisherId: 'number',
-      },
-      params
-    );
-
-    if (isOpenRtb) {
-      params.use_pmt_rule =
-        typeof params.usePaymentRule === 'boolean'
-          ? params.usePaymentRule
-          : false;
-      if (params.usePaymentRule) {
-        delete params.usePaymentRule;
-      }
-
-      Object.keys(params).forEach((paramKey) => {
-        let convertedKey = convertCamelToUnderscore(paramKey);
-        if (convertedKey !== paramKey) {
-          params[convertedKey] = params[paramKey];
-          delete params[paramKey];
-        }
-      });
-    }
-
-    return params;
   },
 };
 
