@@ -1,6 +1,6 @@
 /**
  * @typedef {Object} OrtbParams
- * @property {OrtbVideoParamst} video
+ * @property {OrtbVideoParams} video
  * @property {OrtbContentParams} content
  */
 
