@@ -1,7 +1,7 @@
 import { ortbConverter } from '../libraries/ortbConverter/converter.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { replaceAuctionPrice, isNumber, deepAccess } from '../src/utils.js';
+import { replaceAuctionPrice, isNumber, deepAccess, isFn } from '../src/utils.js';
 
 export const END_POINT = 'https://adapter.bidmatic.io/ortb-client';
 const BIDDER_CODE = 'bidmatic';
@@ -14,9 +14,18 @@ export const converter = ortbConverter({
   },
   imp(buildImp, bidRequest, context) {
     const imp = buildImp(bidRequest, context);
-    if (!imp.bidfloor) {
-      imp.bidfloor = bidRequest.params.bidfloor || 0;
-      imp.bidfloorcur = DEFAULT_CURRENCY;
+    const floorInfo = isFn(bidRequest.getFloor) ? bidRequest.getFloor({
+      currency: context.currency || 'USD',
+      size: '*',
+      mediaType: '*'
+    }) : {
+      floor: imp.bidfloor || deepAccess(bidRequest, 'params.bidfloor') || 0,
+      currency: DEFAULT_CURRENCY
+    };
+
+    if (floorInfo) {
+      imp.bidfloor = floorInfo.floor;
+      imp.bidfloorcur = floorInfo.currency;
     }
     imp.tagid = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || bidRequest.adUnitCode;
 
