@@ -3,7 +3,7 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { replaceAuctionPrice, isNumber, deepAccess } from '../src/utils.js';
 
-export const END_POINT = 'https://ads45.bidmatic.io/ortb-client';
+export const END_POINT = 'https://adapter.bidmatic.io/ortb-client';
 const BIDDER_CODE = 'bidmatic';
 const DEFAULT_CURRENCY = 'USD';
 
