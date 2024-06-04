@@ -3517,6 +3517,22 @@ describe('IndexexchangeAdapter', function () {
       expect(logWarnSpy.calledWith('error setting auction environment flag - must be an integer')).to.be.true;
       logWarnSpy.restore();
     });
+
+    it('impression should have paapi extension when passed', function () {
+      const bidderRequest = deepClone(DEFAULT_OPTION_FLEDGE_ENABLED);
+      let bid = utils.deepClone(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED[0]);
+      bid.ortb2Imp.ext.ae = 1
+      bid.ortb2Imp.ext.paapi = {
+        requestedSize: {
+          width: 300,
+          height: 250
+        }
+      }
+      const requestBidFloor = spec.buildRequests([bid], bidderRequest)[0];
+      const impression = extractPayload(requestBidFloor).imp[0];
+      expect(impression.ext.paapi.requestedSize.width).to.equal(300);
+      expect(impression.ext.paapi.requestedSize.height).to.equal(250);
+    });
   });
 
   describe('integration through exchangeId and externalId', function () {
