@@ -130,37 +130,55 @@ export function transformAdServerTargetingObj(targeting) {
 }
 
 /**
+ * Parse a GPT-Style general size Array like `[[300, 250]]` or `"300x250,970x90"` into an array of width, height tuples `[[300, 250]]` or '[[300,250], [970,90]]'
+ */
+export function sizesToSizeTuples(sizes) {
+  if (typeof sizes === 'string') {
+    // multiple sizes will be comma-separated
+    return sizes
+      .split(/\s*,\s*/)
+      .map(sz => sz.match(/^(\d+)x(\d+)$/i))
+      .filter(match => match)
+      .map(([_, w, h]) => [parseInt(w, 10), parseInt(h, 10)])
+  } else if (Array.isArray(sizes)) {
+    if (isValidGPTSingleSize(sizes)) {
+      return [sizes]
+    }
+    return sizes.filter(isValidGPTSingleSize);
+  }
+  return [];
+}
+
+/**
  * Parse a GPT-Style general size Array like `[[300, 250]]` or `"300x250,970x90"` into an array of sizes `["300x250"]` or '['300x250', '970x90']'
  * @param  {(Array.<number[]>|Array.<number>)} sizeObj Input array or double array [300,250] or [[300,250], [728,90]]
  * @return {Array.<string>}  Array of strings like `["300x250"]` or `["300x250", "728x90"]`
  */
 export function parseSizesInput(sizeObj) {
-  if (typeof sizeObj === 'string') {
-    // multiple sizes will be comma-separated
-    return sizeObj.split(',').filter(sz => sz.match(/^(\d)+x(\d)+$/i))
-  } else if (typeof sizeObj === 'object') {
-    if (sizeObj.length === 2 && typeof sizeObj[0] === 'number' && typeof sizeObj[1] === 'number') {
-      return [parseGPTSingleSizeArray(sizeObj)];
-    } else {
-      return sizeObj.map(parseGPTSingleSizeArray)
-    }
-  }
-  return [];
+  return sizesToSizeTuples(sizeObj).map(sizeTupleToSizeString);
+}
+
+export function sizeTupleToSizeString(size) {
+  return size[0] + 'x' + size[1]
 }
 
 // Parse a GPT style single size array, (i.e [300, 250])
 // into an AppNexus style string, (i.e. 300x250)
 export function parseGPTSingleSizeArray(singleSize) {
   if (isValidGPTSingleSize(singleSize)) {
-    return singleSize[0] + 'x' + singleSize[1];
+    return sizeTupleToSizeString(singleSize);
   }
+}
+
+export function sizeTupleToRtbSize(size) {
+  return {w: size[0], h: size[1]};
 }
 
 // Parse a GPT style single size array, (i.e [300, 250])
 // into OpenRTB-compatible (imp.banner.w/h, imp.banner.format.w/h, imp.video.w/h) object(i.e. {w:300, h:250})
 export function parseGPTSingleSizeArrayToRtbSize(singleSize) {
   if (isValidGPTSingleSize(singleSize)) {
-    return {w: singleSize[0], h: singleSize[1]};
+    return sizeTupleToRtbSize(singleSize)
   }
 }
 
