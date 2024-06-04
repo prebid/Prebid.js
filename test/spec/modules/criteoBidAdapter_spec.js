@@ -1808,7 +1808,9 @@ describe('The Criteo bidding adapter', function () {
 
     it('should properly build a request when FLEDGE is disabled', function () {
       const bidderRequest = {
-        fledgeEnabled: false,
+        paapi: {
+          enabled: false
+        },
       };
       const bidRequests = [
         {

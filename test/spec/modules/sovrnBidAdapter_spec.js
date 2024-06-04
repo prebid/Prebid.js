@@ -273,7 +273,9 @@ describe('sovrnBidAdapter', function() {
       it('when FLEDGE is enabled, but env is malformed, should not send ortb2imp.ext.ae', function () {
         const bidderRequest = {
           ...baseBidderRequest,
-          fledgeEnabled: true
+          paapi: {
+            enabled: true
+          }
         }
         const bidRequest = {
           ...baseBidRequest,

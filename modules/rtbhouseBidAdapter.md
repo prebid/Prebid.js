@@ -82,10 +82,10 @@ module documentation.
 
     a. Make sure to enable RTB House bidder to participate in FLEDGE. If there are any other bidders to be allowed for that, add them to the **bidders** array:
     ```javascript
-    pbjs.setBidderConfig({
-        bidders: ["rtbhouse"],
-        config: {
-            fledgeEnabled: true
+    pbjs.setConfig({
+        paapi: {
+            bidders: ["rtbhouse"],
+            enabled: true
         }
     });
     ```
@@ -93,15 +93,15 @@ module documentation.
     b. If you as a publisher have your own [decisionLogicUrl](https://github.com/WICG/turtledove/blob/main/FLEDGE.md#21-initiating-an-on-device-auction)
     you may utilize it by setting up a dedicated `fledgeConfig` object:
     ```javascript
-    pbjs.setBidderConfig({
-        bidders: ["rtbhouse"],
-        config: {
-            fledgeEnabled: true,
-            fledgeConfig: {
-                seller: 'https://seller.domain',
-                decisionLogicUrl: 'https://seller.domain/decisionLogicFile.js',
-                sellerTimeout: 100
-            }
+    pbjs.setConfig({
+        paapi: {
+            bidders: ["rtbhouse"],
+            enabled: true
+        },
+        fledgeConfig: {
+            seller: 'https://seller.domain',
+            decisionLogicUrl: 'https://seller.domain/decisionLogicFile.js',
+            sellerTimeout: 100
         }
     });
     ```

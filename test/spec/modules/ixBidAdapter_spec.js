@@ -4174,7 +4174,7 @@ describe('IndexexchangeAdapter', function () {
 
       beforeEach(() => {
         bidderRequestWithFledgeEnabled = spec.buildRequests(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED, {})[0];
-        bidderRequestWithFledgeEnabled.fledgeEnabled = true;
+        bidderRequestWithFledgeEnabled.paapi = {enabled: true};
 
         serverResponseWithoutFledgeConfigs = {
           body: {
@@ -4279,7 +4279,7 @@ describe('IndexexchangeAdapter', function () {
         };
 
         bidderRequestWithFledgeEnabled = spec.buildRequests(DEFAULT_BANNER_VALID_BID_WITH_FLEDGE_ENABLED, {})[0];
-        bidderRequestWithFledgeEnabled.fledgeEnabled = true;
+        bidderRequestWithFledgeEnabled.paapi = {enabled: true};
 
         bidderRequestWithoutFledgeEnabled = spec.buildRequests(DEFAULT_BANNER_VALID_BID, {})[0];
       });

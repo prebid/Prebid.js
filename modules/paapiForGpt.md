@@ -16,7 +16,7 @@ gulp build --modules=paapiForGpt,...
 ```
 
 Second, they must enable FLEDGE in their Prebid.js configuration. 
-This is done through module level configuration, but to provide a high degree of flexiblity for testing, FLEDGE settings also exist at the bidder level and slot level.
+This is done through module level configuration, but to provide a high degree of flexiblity for testing, FLEDGE settings also exist the slot level.
 
 ### Module Configuration
 This module exposes the following settings:
@@ -28,8 +28,7 @@ This module exposes the following settings:
 |defaultForSlots | Number |Default value for `imp.ext.ae` in requests for specified bidders |Should be 1 |
 
 As noted above, FLEDGE support is disabled by default. To enable it, set the `enabled` value to `true` for this module and configure `defaultForSlots` to be `1` (meaning _Client-side auction_).
-using the `setConfig` method of Prebid.js. Optionally, a list of 
-bidders to apply these settings to may be provided:
+using the `setConfig` method of Prebid.js. Optionally, a list of bidders to apply these settings to may be provided:
 
 ```js
 pbjs.que.push(function() {
@@ -40,27 +39,6 @@ pbjs.que.push(function() {
       defaultForSlots: 1
     }
   });
-});
-```
-
-### Bidder Configuration
-This module adds the following setting for bidders:
-
-|Name |Type |Description |Notes |
-| :------------ | :------------ | :------------ |:------------ |
-| fledgeEnabled | Boolean | Enable/disable a bidder to participate in FLEDGE | Defaults to `false` |
-|defaultForSlots | Number |Default value for `imp.ext.ae` in requests for specified bidders |Should be 1|
-
-Individual bidders may be further included or excluded here using the `setBidderConfig` method
-of Prebid.js:
-
-```js
-pbjs.setBidderConfig({
-    bidders: ["openx"],
-    config: {
-        fledgeEnabled: true,
-        defaultForSlots: 1
-    }
 });
 ```
 

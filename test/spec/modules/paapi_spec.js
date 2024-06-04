@@ -683,19 +683,6 @@ describe('paapi module', () => {
         });
       }
 
-      describe('with setBidderConfig()', () => {
-        it('should set paapi.enabled correctly per bidder', function () {
-          config.setBidderConfig({
-            bidders: ['appnexus'],
-            config: {
-              defaultForSlots: 1,
-              fledgeEnabled: true
-            }
-          });
-          expectFledgeFlags({enabled: true, ae: 1}, {enabled: void 0, ae: void 0});
-        });
-      });
-
       describe('with setConfig()', () => {
         it('should set paapi.enabled correctly per bidder', function () {
           config.setConfig({

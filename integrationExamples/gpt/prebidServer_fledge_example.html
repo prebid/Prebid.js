@@ -45,7 +45,7 @@
     pbjs.que.push(function() {
       pbjs.setConfig({
         paapi: {
-          enabled: true
+          enabled: true,
         },
         s2sConfig: [{
           accountId : '1',
@@ -55,13 +55,6 @@
           timeout : 1500,
           adapter : 'prebidServer'
         }]
-      });
-
-      pbjs.setBidderConfig({
-        bidders: ['openx'],
-        config: {
-          fledgeEnabled: true
-        }
       });
 
       pbjs.addAdUnits(adUnits);
