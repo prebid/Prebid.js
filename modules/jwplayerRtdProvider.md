@@ -12,16 +12,20 @@ Publishers must register JW Player as a real time data provider by setting up a 
 following structure:
 
 ```javascript
-const jwplayerDataProvider = {
-  name: "jwplayer"
-};
-
 pbjs.setConfig({
     ...,
     realTimeData: {
-      dataProviders: [
-          jwplayerDataProvider
-      ]
+      dataProviders: [{
+        name: 'jwplayer',
+        waitForIt: true,
+        params: {
+          mediaIDs: ['abc', 'def', 'ghi', 'jkl'],
+          overrideContentId: 'always',
+          overrideContentUrl: 'always',
+          overrideContentTitle: 'always',
+          overrideContentDescription: 'always'
+        }
+      }]
     }
 });
 ```
@@ -155,7 +159,7 @@ To view an example:
 
 - in your browser, navigate to:
 
-`http://localhost:9999/integrationExamples/gpt/jwplayerRtdProvider_example.html`
+`http://localhost:9999/integrationExamples/realTimeData/jwplayerRtdProvider_example.html`
 
 **Note:** the mediaIds in the example are placeholder values; replace them with your existing IDs.
 
