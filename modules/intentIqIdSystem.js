@@ -314,6 +314,12 @@ export const intentIqIdSubmodule = {
       return;
     }
 
+    callbackTimeoutID = setTimeout(() => {
+      firePartnerCallback()
+    },
+    configParams.timeoutInMillis || 500
+    );
+
     // Get consent information
     const cmpData = {};
     const uspData = uspDataHandler.getConsentData();
@@ -369,12 +375,6 @@ export const intentIqIdSubmodule = {
         configParams.callback(decryptedData, firstPartyData?.group || NOT_YET_DEFINED);
       }
     }
-
-    callbackTimeoutID = setTimeout(() => {
-      firePartnerCallback()
-    },
-    configParams.timeoutInMillis || 500
-    );
 
     if (!firstPartyData?.pcid) {
       const firstPartyId = generateGUID();
