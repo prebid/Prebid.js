@@ -7,17 +7,30 @@ import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
 import {keyCompare} from '../src/utils/reducers.js';
-import {getGPTSlotsForAdUnits} from '../src/targeting.js';
+import {getGPTSlotsForAdUnits, targeting} from '../src/targeting.js';
 
 const MODULE = 'paapiForGpt';
 
 let getPAAPIConfig;
 
-let configWithTargeting = false;
-
 config.getConfig('paapi', (cfg) => {
-  configWithTargeting = deepAccess(cfg, 'paapi.gpt.configWithTargeting', false);
+  if (deepAccess(cfg, 'paapi.gpt.configWithTargeting', false)) {
+    logInfo(MODULE, 'enabling PAAPI configuration with setTargetingForGPTAsync')
+    targeting.setTargetingForGPT.before(setTargetingHook);
+  } else {
+    targeting.setTargetingForGPT.getHooks({hook: setTargetingHook}).remove();
+  }
 });
+
+export function setTargetingHookFactory(setPaapiConfig = getGlobal().setPAAPIConfigForGPT) {
+  return function(next, adUnit, customSlotMatching) {
+    const adUnitCodes = Array.isArray(adUnit) ? adUnit : [adUnit]
+    adUnitCodes
+      .map(adUnitCode => adUnitCode == null ? undefined : {adUnitCode})
+      .forEach(filters => setPaapiConfig(filters, customSlotMatching))
+    next(adUnit, customSlotMatching);
+  }
+}
 
 export function slotConfigurator() {
   const PREVIOUSLY_SET = {};
@@ -141,6 +154,7 @@ export function setPAAPIConfigFactory(
  * Configure GPT slots with PAAPI component auctions. Accepts the same filter arguments as `pbjs.getPAAPIConfig`.
  */
 getGlobal().setPAAPIConfigForGPT = setPAAPIConfigFactory();
+const setTargetingHook = setTargetingHookFactory();
 
 submodule('paapi', {
   name: 'gpt',

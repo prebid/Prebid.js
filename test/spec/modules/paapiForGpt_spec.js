@@ -1,7 +1,7 @@
 import {
   getPAAPISizeHook,
   onAuctionConfigFactory,
-  setPAAPIConfigFactory,
+  setPAAPIConfigFactory, setTargetingHookFactory,
   slotConfigurator
 } from 'modules/paapiForGpt.js';
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
@@ -114,39 +114,36 @@ describe('paapiForGpt module', () => {
       })
     })
   });
-  describe('onAuctionConfig', () => {
-    Object.entries({
-      'omitted': [undefined, false],
-      'enabled': [true, true],
-      'disabled': [false, false]
-    }).forEach(([t, [autoconfig, shouldSetConfig]]) => {
-      describe(`when autoconfig is ${t}`, () => {
-        beforeEach(() => {
-          const cfg = {};
-          deepSetValue(cfg, `paapi.gpt.autoconfig`, autoconfig);
-          config.setConfig(cfg);
-        });
-        afterEach(() => {
-          config.resetConfig();
-        });
-
-        it(`should ${shouldSetConfig ? '' : 'NOT'} set GPT slot configuration`, () => {
-          const auctionConfig = {componentAuctions: [{seller: 'mock1'}, {seller: 'mock2'}]};
-          const setGptConfig = sinon.stub();
-          const markAsUsed = sinon.stub();
-          onAuctionConfigFactory(setGptConfig)('aid', {au1: auctionConfig, au2: null}, markAsUsed);
-          if (shouldSetConfig) {
-            sinon.assert.calledWith(setGptConfig, 'au1', auctionConfig.componentAuctions);
-            sinon.assert.calledWith(setGptConfig, 'au2', []);
-            sinon.assert.calledWith(markAsUsed, 'au1');
-          } else {
-            sinon.assert.notCalled(setGptConfig);
-            sinon.assert.notCalled(markAsUsed);
-          }
-        });
+  describe('setTargeting hook', () => {
+    let setPaapiConfig, setTargetingHook, next;
+    beforeEach(() => {
+      setPaapiConfig = sinon.stub()
+      setTargetingHook = setTargetingHookFactory(setPaapiConfig);
+      next = sinon.stub();
+    });
+    function expectFilters(...filters) {
+      expect(setPaapiConfig.args.length).to.eql(filters.length)
+      filters.forEach(filter => {
+        sinon.assert.calledWith(setPaapiConfig, filter, 'mock-matcher')
       })
+    }
+    function runHook(adUnit) {
+      setTargetingHook(next, adUnit, 'mock-matcher');
+      sinon.assert.calledWith(next, adUnit, 'mock-matcher');
+    }
+    it('should invoke with no filters when adUnit is undef', () => {
+      runHook();
+      expectFilters(undefined);
+    });
+    it('should invoke once when adUnit is a string', () => {
+      runHook('mock-au');
+      expectFilters({adUnitCode: 'mock-au'})
+    });
+    it('should invoke once per ad unit when an array', () => {
+      runHook(['au1', 'au2']);
+      expectFilters({adUnitCode: 'au1'}, {adUnitCode: 'au2'});
     })
-  });
+  })
   describe('setPAAPIConfigForGpt', () => {
     let getPAAPIConfig, setGptConfig, getSlots, setPAAPIConfigForGPT;
     beforeEach(() => {

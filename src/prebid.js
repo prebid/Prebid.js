@@ -423,26 +423,7 @@ pbjsInstance.setTargetingForGPTAsync = function (adUnit, customSlotMatching) {
     logError('window.googletag is not defined on the page');
     return;
   }
-
-  // get our ad unit codes
-  let targetingSet = targeting.getAllTargeting(adUnit);
-
-  // first reset any old targeting
-  targeting.resetPresetTargeting(adUnit, customSlotMatching);
-
-  // now set new targeting keys
-  targeting.setTargetingForGPT(targetingSet, customSlotMatching);
-
-  Object.keys(targetingSet).forEach((adUnitCode) => {
-    Object.keys(targetingSet[adUnitCode]).forEach((targetingKey) => {
-      if (targetingKey === 'hb_adid') {
-        auctionManager.setStatusForBids(targetingSet[adUnitCode][targetingKey], BID_STATUS.BID_TARGETING_SET);
-      }
-    });
-  });
-
-  // emit event
-  events.emit(SET_TARGETING, targetingSet);
+  targeting.setTargetingForGPT(adUnit, customSlotMatching);
 };
 
 /**
