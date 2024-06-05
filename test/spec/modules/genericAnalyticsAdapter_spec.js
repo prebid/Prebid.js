@@ -265,7 +265,7 @@ describe('Generic analytics', () => {
           handler([payload, {}]);
           sinon.assert.calledWith(ajax, url, sinon.match.any,
             sinon.match(data => sinon.match(payload).test(parse(data))),
-            {method}
+            {method, keepalive: true}
           );
         });
 
@@ -275,7 +275,7 @@ describe('Generic analytics', () => {
           handler(payload);
           sinon.assert.calledWith(ajax, url, sinon.match.any,
             sinon.match(data => sinon.match(payload).test(parse(data))),
-            {method}
+            {method, keepalive: true}
           );
         });
       });

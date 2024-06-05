@@ -272,11 +272,11 @@ function expandFilters({auctionId, adUnitCode} = {}) {
 /**
  * Get PAAPI auction configuration.
  *
- * @param filters
- * @param filters.auctionId? optional auction filter; if omitted, the latest auction for each ad unit is used
- * @param filters.adUnitCode? optional ad unit filter
- * @param includeBlanks if true, include null entries for ad units that match the given filters but do not have any available auction configs.
- * @returns {{}} a map from ad unit code to auction config for the ad unit.
+ * @param {Object} [filters] - Filters object
+ * @param {string} [filters.auctionId] optional auction filter; if omitted, the latest auction for each ad unit is used
+ * @param {string} [filters.adUnitCode] optional ad unit filter
+ * @param {boolean} [includeBlanks=false] if true, include null entries for ad units that match the given filters but do not have any available auction configs.
+ * @returns {Object} a map from ad unit code to auction config for the ad unit.
  */
 export function getPAAPIConfig(filters = {}, includeBlanks = false) {
   const output = {};
