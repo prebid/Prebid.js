@@ -25,11 +25,7 @@ const EXTEND_URL = 'https://pbs.360yield.com/openrtb2/auction';
 const IFRAME_SYNC_URL = 'https://hb.360yield.com/prebid-universal-creative/load-cookie.html';
 
 const VIDEO_PARAMS = {
-  DEFAULT_MIMES: ['video/mp4'],
-  PLACEMENT_TYPE: {
-    INSTREAM: 1,
-    OUTSTREAM: 3,
-  }
+  DEFAULT_MIMES: ['video/mp4']
 };
 
 export const spec = {
@@ -232,10 +228,6 @@ export const CONVERTER = ortbConverter({
           context
         );
         deepSetValue(imp, 'ext.is_rewarded_inventory', (video.rewarded === 1 || deepAccess(video, 'ext.rewarded') === 1) || undefined);
-        if (!imp.video.placement && ID_REQUEST.isOutstreamVideo(bidRequest)) {
-          // fillImpVideo will have already set placement = 1 for instream
-          imp.video.placement = VIDEO_PARAMS.PLACEMENT_TYPE.OUTSTREAM;
-        }
       }
     }
   }
