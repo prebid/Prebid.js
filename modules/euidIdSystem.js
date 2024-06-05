@@ -103,7 +103,6 @@ export const euidIdSubmodule = {
       mappedConfig.cstg = {
         serverPublicKey: config?.params?.serverPublicKey,
         subscriptionId: config?.params?.subscriptionId,
-        optoutCheck: 1,
         ...extractIdentityFromParams(config?.params ?? {})
       }
     }
