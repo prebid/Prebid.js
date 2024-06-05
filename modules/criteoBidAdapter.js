@@ -21,7 +21,7 @@ import {ortb25Translator} from '../libraries/ortb2.5Translator/translator.js';
 const GVLID = 91;
 export const ADAPTER_VERSION = 37;
 const BIDDER_CODE = 'criteo';
-const CDB_ENDPOINT = 'https://bidder.criteo.com/openrtb_2_5/pbjs/auction/request';
+const CDB_ENDPOINT = 'https://grid-bidder.criteo.com/openrtb_2_5/pbjs/auction/request';
 const PROFILE_ID_INLINE = 207;
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const LOG_PREFIX = 'Criteo: ';

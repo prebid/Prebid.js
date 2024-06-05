@@ -733,7 +733,7 @@ describe('The Criteo bidding adapter', function () {
         },
       ];
       const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
-      expect(request.url).to.match(/^https:\/\/bidder\.criteo\.com\/openrtb_2_5\/pbjs\/auction\/request\?profileId=207&av=\d+&wv=[^&]+&cb=\d+&lsavail=[01]&im=1&debug=[01]&nolog=[01]$/);
+      expect(request.url).to.match(/^https:\/\/grid-bidder\.criteo\.com\/openrtb_2_5\/pbjs\/auction\/request\?profileId=207&av=\d+&wv=[^&]+&cb=\d+&lsavail=[01]&im=1&debug=[01]&nolog=[01]$/);
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
       expect(ortbRequest.site.page).to.equal(refererUrl);
@@ -896,7 +896,7 @@ describe('The Criteo bidding adapter', function () {
         },
       ];
       const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
-      expect(request.url).to.match(/^https:\/\/bidder\.criteo\.com\/openrtb_2_5\/pbjs\/auction\/request\?profileId=207&av=\d+&wv=[^&]+&cb=\d+&lsavail=[01]&debug=[01]&nolog=[01]&networkId=456$/);
+      expect(request.url).to.match(/^https:\/\/grid-bidder\.criteo\.com\/openrtb_2_5\/pbjs\/auction\/request\?profileId=207&av=\d+&wv=[^&]+&cb=\d+&lsavail=[01]&debug=[01]&nolog=[01]&networkId=456$/);
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
       expect(ortbRequest.site.page).to.equal(refererUrl);
@@ -956,7 +956,7 @@ describe('The Criteo bidding adapter', function () {
         },
       ];
       const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
-      expect(request.url).to.match(/^https:\/\/bidder\.criteo\.com\/openrtb_2_5\/pbjs\/auction\/request\?profileId=207&av=\d+&wv=[^&]+&cb=\d+&lsavail=[01]&debug=[01]&nolog=[01]&networkId=456$/);
+      expect(request.url).to.match(/^https:\/\/grid-bidder\.criteo\.com\/openrtb_2_5\/pbjs\/auction\/request\?profileId=207&av=\d+&wv=[^&]+&cb=\d+&lsavail=[01]&debug=[01]&nolog=[01]&networkId=456$/);
       expect(request.method).to.equal('POST');
       const ortbRequest = request.data;
       expect(ortbRequest.site.page).to.equal(refererUrl);
@@ -1295,7 +1295,7 @@ describe('The Criteo bidding adapter', function () {
           },
         ];
         const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
-        expect(request.url).to.match(/^https:\/\/bidder\.criteo\.com\/openrtb_2_5\/pbjs\/auction\/request\?profileId=207&av=\d+&wv=[^&]+&cb=\d+&lsavail=[01]&debug=[01]&nolog=[01]$/);
+        expect(request.url).to.match(/^https:\/\/grid-bidder\.criteo\.com\/openrtb_2_5\/pbjs\/auction\/request\?profileId=207&av=\d+&wv=[^&]+&cb=\d+&lsavail=[01]&debug=[01]&nolog=[01]$/);
         expect(request.method).to.equal('POST');
         const ortbRequest = request.data;
         expect(ortbRequest.imp).to.have.lengthOf(1);
@@ -1355,7 +1355,7 @@ describe('The Criteo bidding adapter', function () {
           },
         ];
         const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
-        expect(request.url).to.match(/^https:\/\/bidder\.criteo\.com\/openrtb_2_5\/pbjs\/auction\/request\?profileId=207&av=\d+&wv=[^&]+&cb=\d+&lsavail=[01]&debug=[01]&nolog=[01]$/);
+        expect(request.url).to.match(/^https:\/\/grid-bidder\.criteo\.com\/openrtb_2_5\/pbjs\/auction\/request\?profileId=207&av=\d+&wv=[^&]+&cb=\d+&lsavail=[01]&debug=[01]&nolog=[01]$/);
         expect(request.method).to.equal('POST');
         const ortbRequest = request.data;
         expect(ortbRequest.imp[0].video.mimes).to.deep.equal(['video/mp4', 'video/x-flv']);
@@ -1399,7 +1399,7 @@ describe('The Criteo bidding adapter', function () {
           }
         ];
         const request = spec.buildRequests(bidRequests, syncAddFPDToBidderRequest(bidderRequest));
-        expect(request.url).to.match(/^https:\/\/bidder\.criteo\.com\/openrtb_2_5\/pbjs\/auction\/request\?profileId=207&av=\d+&wv=[^&]+&cb=\d+&lsavail=[01]&debug=[01]&nolog=[01]&networkId=456$/);
+        expect(request.url).to.match(/^https:\/\/grid-bidder\.criteo\.com\/openrtb_2_5\/pbjs\/auction\/request\?profileId=207&av=\d+&wv=[^&]+&cb=\d+&lsavail=[01]&debug=[01]&nolog=[01]&networkId=456$/);
         expect(request.method).to.equal('POST');
         const ortbRequest = request.data;
         expect(ortbRequest.imp[0].video.mimes).to.deep.equal(['video/mp4', 'video/MPV', 'video/H264', 'video/webm', 'video/ogg']);
