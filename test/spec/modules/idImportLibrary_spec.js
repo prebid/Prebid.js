@@ -186,7 +186,7 @@ describe('IdImportLibrary Tests', function () {
       idImportlibrary.setConfig(config);
       expect(config.inputscan).to.be.equal(true);
       input.setAttribute('value', 'text@text.com');
-      const inputEvent = new InputEvent('blur');
+      const inputEvent = new InputEvent('submit');
       input.dispatchEvent(inputEvent);
       expect(refreshUserIdSpy.calledOnce).to.equal(true);
     });
