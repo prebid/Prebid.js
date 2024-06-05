@@ -21,7 +21,7 @@ import {ADPOD} from './mediaTypes.js';
 import {hook} from './hook.js';
 import {bidderSettings} from './bidderSettings.js';
 import {find, includes} from './polyfill.js';
-import { BID_STATUS, JSON_MAPPING, DEFAULT_TARGETING_KEYS, TARGETING_KEYS, NATIVE_KEYS, STATUS } from './constants.js';
+import {BID_STATUS, DEFAULT_TARGETING_KEYS, JSON_MAPPING, NATIVE_KEYS, STATUS, TARGETING_KEYS} from './constants.js';
 import {getHighestCpm, getOldestHighestCpmBid} from './utils/reducers.js';
 import {getTTL} from './bidTTL.js';
 
@@ -125,6 +125,22 @@ export function sortByDealAndPriceBucketOrCpm(useCpm = false) {
 }
 
 /**
+ * Return a map where each code in `adUnitCodes` maps to a list of GPT slots that match it.
+ *
+ * @param {Array<String>} adUnitCodes
+ * @param customSlotMatching
+ * @param getSlots
+ * @return {{[p: string]: any}}
+ */
+export function getGPTSlotsForAdUnits(adUnitCodes, customSlotMatching, getSlots = () => window.googletag.pubads().getSlots()) {
+  return getSlots().reduce((auToSlots, slot) => {
+    const customMatch = isFn(customSlotMatching) && customSlotMatching(slot);
+    Object.keys(auToSlots).filter(isFn(customMatch) ? customMatch : isAdUnitCodeMatchingSlot(slot)).forEach(au => auToSlots[au].push(slot));
+    return auToSlots;
+  }, Object.fromEntries(adUnitCodes.map(au => [au, []])));
+}
+
+/**
  * @typedef {Object.<string,string>} targeting
  * @property {string} targeting_key
  */
@@ -144,22 +160,13 @@ export function newTargeting(auctionManager) {
   targeting.resetPresetTargeting = function(adUnitCode, customSlotMatching) {
     if (isGptPubadsDefined()) {
       const adUnitCodes = getAdUnitCodes(adUnitCode);
-      const adUnits = auctionManager.getAdUnits().filter(adUnit => includes(adUnitCodes, adUnit.code));
       let unsetKeys = pbTargetingKeys.reduce((reducer, key) => {
         reducer[key] = null;
         return reducer;
       }, {});
-      window.googletag.pubads().getSlots().forEach(slot => {
-        let customSlotMatchingFunc = isFn(customSlotMatching) && customSlotMatching(slot);
-        // reset only registered adunits
-        adUnits.forEach(unit => {
-          if (unit.code === slot.getAdUnitPath() ||
-              unit.code === slot.getSlotElementId() ||
-              (isFn(customSlotMatchingFunc) && customSlotMatchingFunc(unit.code))) {
-            slot.updateTargetingFromMap(unsetKeys);
-          }
-        });
-      });
+      Object.values(getGPTSlotsForAdUnits(adUnitCodes, customSlotMatching)).forEach((slots) => {
+        slots.forEach(slot => slot.updateTargetingFromMap(unsetKeys))
+      })
     }
   };
 
@@ -420,20 +427,19 @@ export function newTargeting(auctionManager) {
    * @param {Object.<string,Object.<string,string>>} targetingConfig
    */
   targeting.setTargetingForGPT = function(targetingConfig, customSlotMatching) {
-    window.googletag.pubads().getSlots().forEach(slot => {
-      Object.keys(targetingConfig).filter(customSlotMatching ? customSlotMatching(slot) : isAdUnitCodeMatchingSlot(slot))
-        .forEach(targetId => {
-          Object.keys(targetingConfig[targetId]).forEach(key => {
-            let value = targetingConfig[targetId][key];
-            if (typeof value === 'string' && value.indexOf(',') !== -1) {
-              // due to the check the array will be formed only if string has ',' else plain string will be assigned as value
-              value = value.split(',');
-            }
-            targetingConfig[targetId][key] = value;
-          });
-          logMessage(`Attempting to set targeting-map for slot: ${slot.getSlotElementId()} with targeting-map:`, targetingConfig[targetId]);
-          slot.updateTargetingFromMap(targetingConfig[targetId])
-        })
+    Object.entries(getGPTSlotsForAdUnits(Object.keys(targetingConfig), customSlotMatching)).forEach(([targetId, slots]) => {
+      slots.forEach(slot => {
+        Object.keys(targetingConfig[targetId]).forEach(key => {
+          let value = targetingConfig[targetId][key];
+          if (typeof value === 'string' && value.indexOf(',') !== -1) {
+            // due to the check the array will be formed only if string has ',' else plain string will be assigned as value
+            value = value.split(',');
+          }
+          targetingConfig[targetId][key] = value;
+        });
+        logMessage(`Attempting to set targeting-map for slot: ${slot.getSlotElementId()} with targeting-map:`, targetingConfig[targetId]);
+        slot.updateTargetingFromMap(targetingConfig[targetId])
+      })
     })
   };
 

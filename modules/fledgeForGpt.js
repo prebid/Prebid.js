@@ -3,7 +3,6 @@
  */
 import {getHook, submodule} from '../src/hook.js';
 import {deepAccess, logInfo, logWarn, sizeTupleToSizeString} from '../src/utils.js';
-import {getGptSlotForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
@@ -13,6 +12,8 @@ import {getGlobal} from '../src/prebidGlobal.js';
 // eslint-disable-next-line prebid/validate-imports
 import './paapi.js';
 import {keyCompare} from '../src/utils/reducers.js';
+import {getGPTSlotsForAdUnits} from '../src/targeting.js';
+import {getGptSlotForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 const MODULE = 'fledgeForGpt';
 
 let getPAAPIConfig;
@@ -34,9 +35,8 @@ Object.entries({
 
 export function slotConfigurator() {
   const PREVIOUSLY_SET = {};
-  return function setComponentAuction(adUnitCode, auctionConfigs, reset = true) {
-    const gptSlot = getGptSlotForAdUnitCode(adUnitCode);
-    if (gptSlot && gptSlot.setConfig) {
+  return function setComponentAuction(adUnitCode, gptSlots, auctionConfigs, reset = true) {
+    if (gptSlots.length > 0) {
       let previous = PREVIOUSLY_SET[adUnitCode] ?? {};
       let configsBySeller = Object.fromEntries(auctionConfigs.map(cfg => [cfg.seller, cfg]));
       const sellers = Object.keys(configsBySeller);
@@ -52,8 +52,10 @@ export function slotConfigurator() {
       const componentAuction = Object.entries(configsBySeller)
         .map(([configKey, auctionConfig]) => ({configKey, auctionConfig}));
       if (componentAuction.length > 0) {
-        gptSlot.setConfig({componentAuction});
-        logInfo(MODULE, `register component auction configs for: ${adUnitCode}: ${gptSlot.getAdUnitPath()}`, auctionConfigs);
+        gptSlots.forEach(gptSlot => {
+          gptSlot.setConfig({componentAuction});
+          logInfo(MODULE, `register component auction configs for: ${adUnitCode}: ${gptSlot.getAdUnitPath()}`, auctionConfigs);
+        });
       }
     } else if (auctionConfigs.length > 0) {
       logWarn(MODULE, `unable to register component auction config for ${adUnitCode}`, auctionConfigs);
@@ -63,11 +65,11 @@ export function slotConfigurator() {
 
 const setComponentAuction = slotConfigurator();
 
-export function onAuctionConfigFactory(setGptConfig = setComponentAuction) {
+export function onAuctionConfigFactory(setGptConfig = setComponentAuction, getSlot = getGptSlotForAdUnitCode) {
   return function onAuctionConfig(auctionId, configsByAdUnit, markAsUsed) {
     if (autoconfig) {
       Object.entries(configsByAdUnit).forEach(([adUnitCode, cfg]) => {
-        setGptConfig(adUnitCode, cfg?.componentAuctions ?? []);
+        setGptConfig(adUnitCode, [getSlot(adUnitCode)], cfg?.componentAuctions ?? []);
         markAsUsed(adUnitCode);
       });
     }
@@ -138,20 +140,22 @@ export const getPAAPISizeHook = (() => {
 
 export function setPAAPIConfigFactory(
   getConfig = (filters) => getPAAPIConfig(filters, true),
-  setGptConfig = setComponentAuction) {
+  setGptConfig = setComponentAuction,
+  getSlots = getGPTSlotsForAdUnits) {
   /**
    * Configure GPT slots with PAAPI auction configs.
    * `filters` are the same filters accepted by `pbjs.getPAAPIConfig`;
    */
-  return function(filters = {}) {
+  return function(filters = {}, customSlotMatching) {
     let some = false;
-    Object.entries(
-      getConfig(filters) || {}
-    ).forEach(([au, config]) => {
+    const cfg = getConfig(filters) || {};
+    const auToSlots = getSlots(Object.keys(cfg), customSlotMatching);
+
+    Object.entries(cfg).forEach(([au, config]) => {
       if (config != null) {
         some = true;
       }
-      setGptConfig(au, config?.componentAuctions || [], true);
+      setGptConfig(au, auToSlots[au], config?.componentAuctions || [], true);
     })
     if (!some) {
       logInfo(`${MODULE}: No component auctions available to set`);
