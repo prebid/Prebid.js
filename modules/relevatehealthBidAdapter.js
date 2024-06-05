@@ -12,7 +12,7 @@ import {
 } from '../src/utils.js';
 const BIDDER_CODE = 'relevatehealth';
 const ENDPOINT_URL = 'https://rtb.relevate.health/prebid/relevate';
-  
+
 function buildRequests(bidRequests, bidderRequest) {
   const requests = [];
   // Loop through each bid request
@@ -156,5 +156,5 @@ export const spec = {
   buildRequests,
   interpretResponse
 }
-  
+
 registerBidder(spec);
