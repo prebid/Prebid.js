@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * This module adds IntentIqId to the User ID module
  * The {@link module:modules/userId} module is required
@@ -67,7 +68,7 @@ function generateGUID() {
  * @param {string} plainText The plaintext to encrypt.
  * @returns {string} The encrypted text as a base64 string.
  */
-function encryptData(plainText) {
+export function encryptData(plainText) {
   return AES.encrypt(plainText, MODULE_NAME).toString();
 }
 
@@ -76,7 +77,7 @@ function encryptData(plainText) {
  * @param {string} encryptedText The encrypted text as a base64 string.
  * @returns {string} The decrypted plaintext.
  */
-function decryptData(encryptedText) {
+export function decryptData(encryptedText) {
   const bytes = AES.decrypt(encryptedText, MODULE_NAME);
   return bytes.toString(Utf8);
 }
@@ -105,15 +106,15 @@ export function readData(key) {
  * @param key
  * @param {string} value IntentIQ ID value to sintentIqIdSystem_spec.jstore
  */
-function storeData(key, value, cookieStorageEnabled = false) {
+export function storeData(key, value, cookieStorageEnabled = false) {
   try {
     logInfo(MODULE_NAME + ': storing data: key=' + key + ' value=' + value);
     if (value) {
       if (storage.hasLocalStorage()) {
         storage.setDataInLocalStorage(key, value);
       }
-      const expiresStr = (new Date(Date.now() + (PCID_EXPIRY * (60 * 60 * 24 * 1000)))).toUTCString();
       if (storage.cookiesAreEnabled() && cookieStorageEnabled) {
+        const expiresStr = (new Date(Date.now() + (PCID_EXPIRY * (60 * 60 * 24 * 1000)))).toUTCString();
         storage.setCookie(key, value, expiresStr, 'LAX');
       }
     }
@@ -159,7 +160,7 @@ function tryParse(data) {
  * @param {Object} data
  * @return {string} The JSON string representation of the input data.
  */
-function handleGPPData(data = {}) {
+export function handleGPPData(data = {}) {
   if (Array.isArray(data)) {
     let obj = {};
     for (const element of data) {
@@ -192,7 +193,7 @@ function detectBrowser() {
  * @param {string} userAgent - The user agent string from the browser
  * @return {string} The name of the detected browser or 'unknown' if unable to detect
  */
-function detectBrowserFromUserAgent(userAgent) {
+export function detectBrowserFromUserAgent(userAgent) {
   const browserRegexPatterns = {
     opera: /Opera|OPR/,
     edge: /Edg/,
@@ -227,7 +228,7 @@ function detectBrowserFromUserAgent(userAgent) {
  * @param {NavigatorUAData} userAgentData - The user agent data object from the browser
  * @return {string} The name of the detected browser or 'unknown' if unable to detect
  */
-function detectBrowserFromUserAgentData(userAgentData) {
+export function detectBrowserFromUserAgentData(userAgentData) {
   const brandNames = userAgentData.brands.map(brand => brand.brand);
 
   if (brandNames.includes('Microsoft Edge')) {
@@ -495,11 +496,10 @@ export const intentIqIdSubmodule = {
               callback(respJson.data.eids);
               const encryptedData = encryptData(JSON.stringify(respJson.data.eids))
               partnerData.data = encryptedData;
-              storeFirstPartyData()
             } else {
               callback();
-              storeFirstPartyData()
             }
+            storeFirstPartyData();
           } else {
             callback();
           }
