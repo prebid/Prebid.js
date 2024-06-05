@@ -43,6 +43,7 @@ const VIDEO_PARAMS = [
   'h',
   'startdelay',
   'placement',
+  'plcmt',
   'linearity',
   'skip',
   'skipmin',
