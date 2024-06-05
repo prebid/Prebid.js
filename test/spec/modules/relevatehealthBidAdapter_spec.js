@@ -150,7 +150,6 @@ describe('relevatehealth adapter', function() {
         it('Validate bid request : Impression', function() {
             let _Request = spec.buildRequests(request);
             let data = JSON.parse(_Request.data);
-            //   expect(data.at).to.equal(1); // auction type
             expect(data[0].imp[0].id).to.equal(request[0].bidId);
             expect(data[0].placementId).to.equal(110011);
         });
@@ -174,10 +173,6 @@ describe('relevatehealth adapter', function() {
             let _Request = spec.buildRequests(request, bidRequest);
             let data = JSON.parse(_Request.data);
             expect(data[0].us_privacy).to.equal('1NYN');
-            //   let _bidRequest = {};
-            //   let _Request1 = spec.buildRequests(request, _bidRequest);
-            //   let data1 = JSON.parse(_Request1.data);
-            //   expect(data1.regs).to.equal(undefined);
         });
     });
     describe('Validate response ', function() {

@@ -10,9 +10,7 @@ import {
     isArray,
     logError
 } from '../src/utils.js';
-
 const BIDDER_CODE = 'relevatehealth';
-
 const ENDPOINT_URL = 'https://rtb.relevate.health/prebid/relevate';
 
 function buildRequests(bidRequests, bidderRequest) {
@@ -31,7 +29,6 @@ function buildRequests(bidRequests, bidderRequest) {
             site: getSite(bidderRequest),
             user: buildUser(bid)
         };
-
         // Get uspConsent from bidderRequest
         if (bidderRequest && bidderRequest.uspConsent) {
             request.us_privacy = bidderRequest.uspConsent;
@@ -44,7 +41,6 @@ function buildRequests(bidRequests, bidderRequest) {
             request.gpp = bidderRequest.ortb2.regs.gpp;
             request.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
         }
-
         // Get coppa compliance from bidderRequest
         if (bidderRequest?.ortb2?.regs?.coppa) {
             request.coppa = 1;
@@ -62,7 +58,6 @@ function buildRequests(bidRequests, bidderRequest) {
         }
     };
 }
-
 // Format the response as per the standards
 function interpretResponse(bidResponse, bidRequest) {
     let resp = [];
@@ -82,12 +77,10 @@ function interpretResponse(bidResponse, bidRequest) {
     }
     return resp;
 }
-
 // Function to check if Bid is valid
 function isBidRequestValid(bid) {
     return !!(bid.params.placement_id && bid.params.user_id);
 }
-
 // Function to get banner details
 function getBanner(bid) {
     if (deepAccess(bid, 'mediaTypes.banner')) {
@@ -98,17 +91,16 @@ function getBanner(bid) {
                 return {
                     h: sizes[0][1],
                     w: sizes[0][0]
-                }
+                };
             }
         } else {
             return {
                 h: bid.params.height,
                 w: bid.params.width
-            }
+            };
         }
     }
 }
-
 //Function to get bid_floor
 function getFloor(bid) {
     if (bid.params && bid.params.bid_floor) {
@@ -117,7 +109,6 @@ function getFloor(bid) {
         return 0;
     }
 }
-
 // Function to get site details
 function getSite(bidderRequest) {
     let site = {};
@@ -128,7 +119,7 @@ function getSite(bidderRequest) {
     }
     return site;
 }
-
+// Function to format response
 function formatResponse(bid) {
     return {
         requestId: bid && bid.impid ? bid.impid : undefined,
@@ -144,9 +135,9 @@ function formatResponse(bid) {
         currency: bid && bid.cur ? bid.cur : 'USD',
         ttl: 300,
         dealId: bid && bid.dealId ? bid.dealId : undefined
-    }
+    };
 }
-
+// Function to build the user object
 function buildUser(bid) {
     if (bid && bid.params) {
         return {
@@ -154,10 +145,10 @@ function buildUser(bid) {
             buyeruid: localStorage.getItem('adx_profile_guid') ? localStorage.getItem('adx_profile_guid') : '',
             keywords: bid.params.keywords && typeof bid.params.keywords == 'string' ? bid.params.keywords : '',
             customdata: bid.params.customdata && typeof bid.params.customdata == 'string' ? bid.params.customdata : ''
-        }
+        };
     }
 }
-
+// Export const spec
 export const spec = {
     code: BIDDER_CODE,
     supportedMediaTypes: BANNER,
