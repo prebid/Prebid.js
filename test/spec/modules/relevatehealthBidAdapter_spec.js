@@ -5,11 +5,11 @@ import {
   spec
 } from '../../../modules/relevatehealthBidAdapter.js';
 import * as utils from '../../../src/utils.js';
-  
+
 describe('relevatehealth adapter', function() {
   let request;
   let bannerResponse, invalidResponse;
-  
+
   beforeEach(function() {
     request = [{
       bidder: 'relevatehealth',
@@ -80,7 +80,7 @@ describe('relevatehealth adapter', function() {
       }
     };
   });
-  
+
   describe('validations', function() {
     it('isBidValid : placement_id and user_id are passed', function() {
       let bid = {
@@ -130,8 +130,8 @@ describe('relevatehealth adapter', function() {
             bid_floor: 0.5,
             user_id: '11211'
           }
-      },
-      isValid = spec.isBidRequestValid(bid);
+        },
+        isValid = spec.isBidRequestValid(bid);
       expect(isValid).to.equals(false);
     });
   });
