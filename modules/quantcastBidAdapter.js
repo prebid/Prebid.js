@@ -49,7 +49,6 @@ function makeVideoImp(bid) {
     maxbitrate: video.maxbitrate,
     playbackmethod: video.playbackmethod,
     delivery: video.delivery,
-    placement: video.placement,
     api: video.api,
     w: video.w,
     h: video.h
