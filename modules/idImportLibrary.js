@@ -91,8 +91,7 @@ function addInputElementsElementListner() {
 
   for (var i = 0; i < inputs.length; i++) {
     _logInfo(`Original Value in Input = ${inputs[i].value}`);
-    inputs[i].addEventListener('change', event => processInputChange(event));
-    inputs[i].addEventListener('blur', event => processInputChange(event));
+    inputs[i].addEventListener('submit', event => processInputChange(event));
   }
 }
 
@@ -105,8 +104,7 @@ function addFormInputElementsElementListner(id) {
   }
   _logInfo('Adding input element listeners');
   const input = document.getElementById(id);
-  input.addEventListener('change', event => processInputChange(event));
-  input.addEventListener('blur', event => processInputChange(event));
+  input.addEventListener('submit', event => processInputChange(event));
 }
 
 function removeInputElementsElementListner() {
@@ -114,8 +112,7 @@ function removeInputElementsElementListner() {
   const inputs = document.querySelectorAll('input[type=text], input[type=email]');
 
   for (var i = 0; i < inputs.length; i++) {
-    inputs[i].removeEventListener('change', event => processInputChange(event));
-    inputs[i].removeEventListener('blur', event => processInputChange(event));
+    inputs[i].removeEventListener('submit', event => processInputChange(event));
   }
 }
 
