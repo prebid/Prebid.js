@@ -34,14 +34,7 @@ export const spec = {
     const countryCode = getCountryCodeByTimezone(city);
     logInfo(`The country code for ${city} is ${countryCode}`);
 
-    // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
-    try {
-      location = new URL(bidderRequest.refererInfo.page)
-      winTop = window.top;
-    } catch (e) {
-      location = winTop.location;
-      logMessage(e);
-    };
+    location = bidderRequest.refererInfo;
 
     let request = {
       id: validBidRequests[0].bidderRequestId,
@@ -87,8 +80,8 @@ export const spec = {
         // Show a map centered at latitude / longitude.
       }) || { utcoffset: new Date().getTimezoneOffset() },
       city: city,
-      'host': location.host,
-      'page': location.pathname,
+      'host': location.domain,
+      'page': location.page,
       'coppa': config.getConfig('coppa') === true ? 1 : 0
       // userId: validBidRequests[0].userId
     };
