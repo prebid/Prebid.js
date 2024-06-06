@@ -201,8 +201,7 @@ describe('ApacdexBidAdapter', function () {
       },
       'bidder': 'apacdex',
       'params': {
-        'siteId': '1a2b3c4d5e6f1a2b3c4d',
-        'geo': { 'lat': 123.13123456, 'lon': 54.23467311, 'accuracy': 60 }
+        'siteId': '1a2b3c4d5e6f1a2b3c4d'
       },
       'adUnitCode': 'adunit-code-1',
       'sizes': [[300, 250], [300, 600]],
