@@ -21,7 +21,7 @@ import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { find } from '../src/polyfill.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { OUTSTREAM } from '../src/video.js';
+import { INSTREAM, OUTSTREAM } from '../src/video.js';
 import { Renderer } from '../src/Renderer.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
@@ -258,13 +258,17 @@ export function bidToVideoImp(bid) {
 
   // if placement not already defined, pick one based on `context`
   if (context && !imp.video.hasOwnProperty('placement')) {
-    if (context === OUTSTREAM) {
+    if (context === INSTREAM) {
+      imp.video.placement = 1;
+    } else if (context === OUTSTREAM) {
       if (deepAccess(videoParamRef, 'playerConfig.floatOnScroll')) {
         imp.video.placement = 5;
       } else {
         imp.video.placement = 3;
         defaultVideoPlacement = true;
       }
+    } else {
+      logWarn(`IX Bid Adapter: Video context '${context}' is not supported`);
     }
   }
 
