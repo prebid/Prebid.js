@@ -1,11 +1,11 @@
-import {addComponentAuction, isValid, newBidder, registerBidder} from 'src/adapters/bidderFactory.js';
+import {addPaapiConfig, addIGBuyer, isValid, newBidder, registerBidder} from 'src/adapters/bidderFactory.js';
 import adapterManager from 'src/adapterManager.js';
 import * as ajax from 'src/ajax.js';
 import {expect} from 'chai';
 import {userSync} from 'src/userSync.js';
 import * as utils from 'src/utils.js';
 import {config} from 'src/config.js';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 import * as events from 'src/events.js';
 import {hook} from '../../../../src/hook.js';
 import {auctionManager} from '../../../../src/auctionManager.js';
@@ -552,7 +552,7 @@ describe('bidderFactory', () => {
 
         expect(ajaxStub.calledTwice).to.equal(true);
         expect(eventEmitterSpy.getCalls()
-          .filter(call => call.args[0] === CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP)
+          .filter(call => call.args[0] === EVENTS.BEFORE_BIDDER_HTTP)
         ).to.length(2);
 
         eventEmitterSpy.restore();
@@ -863,7 +863,7 @@ describe('bidderFactory', () => {
         expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
         expect(callBidderErrorStub.firstCall.args[1]).to.equal(xhrErrorMock);
         expect(callBidderErrorStub.firstCall.args[2]).to.equal(MOCK_BIDS_REQUEST);
-        sinon.assert.calledWith(eventEmitterStub, CONSTANTS.EVENTS.BIDDER_ERROR, {
+        sinon.assert.calledWith(eventEmitterStub, EVENTS.BIDDER_ERROR, {
           error: xhrErrorMock,
           bidderRequest: MOCK_BIDS_REQUEST
         });
@@ -889,7 +889,7 @@ describe('bidderFactory', () => {
         expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
         expect(callBidderErrorStub.firstCall.args[1]).to.equal(xhrErrorMock);
         expect(callBidderErrorStub.firstCall.args[2]).to.equal(MOCK_BIDS_REQUEST);
-        sinon.assert.calledWith(eventEmitterStub, CONSTANTS.EVENTS.BIDDER_ERROR, {
+        sinon.assert.calledWith(eventEmitterStub, EVENTS.BIDDER_ERROR, {
           error: xhrErrorMock,
           bidderRequest: MOCK_BIDS_REQUEST
         });
@@ -915,7 +915,7 @@ describe('bidderFactory', () => {
         expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
         expect(callBidderErrorStub.firstCall.args[1]).to.equal(xhrErrorMock);
         expect(callBidderErrorStub.firstCall.args[2]).to.equal(MOCK_BIDS_REQUEST);
-        sinon.assert.calledWith(eventEmitterStub, CONSTANTS.EVENTS.BIDDER_ERROR, {
+        sinon.assert.calledWith(eventEmitterStub, EVENTS.BIDDER_ERROR, {
           error: xhrErrorMock,
           bidderRequest: MOCK_BIDS_REQUEST
         });
@@ -941,7 +941,7 @@ describe('bidderFactory', () => {
         expect(callBidderErrorStub.firstCall.args[0]).to.equal(CODE);
         expect(callBidderErrorStub.firstCall.args[1]).to.equal(xhrErrorMock);
         expect(callBidderErrorStub.firstCall.args[2]).to.equal(MOCK_BIDS_REQUEST);
-        sinon.assert.calledWith(eventEmitterStub, CONSTANTS.EVENTS.BIDDER_ERROR, {
+        sinon.assert.calledWith(eventEmitterStub, EVENTS.BIDDER_ERROR, {
           error: xhrErrorMock,
           bidderRequest: MOCK_BIDS_REQUEST
         });
@@ -1460,6 +1460,9 @@ describe('bidderFactory', () => {
         bidId: '1',
         config: {
           foo: 'bar'
+        },
+        igb: {
+          foo: 'bar'
         }
       }
 
@@ -1482,72 +1485,69 @@ describe('bidderFactory', () => {
         sinon.assert.calledWith(addBidResponseStub, 'mock/placement', sinon.match(bid));
       })
 
-      describe('when response has PAAPI auction config', function() {
+      describe('when response has PAAPI config', function() {
         let paapiStub;
 
         function paapiHook(next, ...args) {
           paapiStub(...args);
         }
 
+        function runBidder(response) {
+          const bidder = newBidder(spec);
+          spec.interpretResponse.returns(response);
+          bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
+        }
+
         before(() => {
-          addComponentAuction.before(paapiHook);
+          addPaapiConfig.before(paapiHook);
         });
 
         after(() => {
-          addComponentAuction.getHooks({hook: paapiHook}).remove();
+          addPaapiConfig.getHooks({hook: paapiHook}).remove();
         })
 
         beforeEach(function () {
           paapiStub = sinon.stub();
         });
 
-        const PAAPI_PROPS = ['fledgeAuctionConfigs', 'paapiAuctionConfigs'];
+        const PAAPI_PROPS = ['fledgeAuctionConfigs', 'paapi'];
 
         it(`should not accept both ${PAAPI_PROPS.join(' and ')}`, () => {
-          const bidder = newBidder(spec);
-          spec.interpretResponse.returns(Object.fromEntries(PAAPI_PROPS.map(prop => [prop, [paapiConfig]])))
           expect(() => {
-            bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-          }).to.throw;
+            runBidder(Object.fromEntries(PAAPI_PROPS.map(prop => [prop, [paapiConfig]])))
+          }).to.throw();
         })
 
         PAAPI_PROPS.forEach(paapiProp => {
           describe(`using ${paapiProp}`, () => {
-            it('should call paapi hook with PAAPI configs', function() {
-              const bidder = newBidder(spec);
-              spec.interpretResponse.returns({
+            it('should call paapi config hook with auction configs', function() {
+              runBidder({
                 bids: bids,
                 [paapiProp]: [paapiConfig]
-              });
-              bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-
+              })
               expect(paapiStub.calledOnce).to.equal(true);
-              sinon.assert.calledWith(paapiStub, bidRequest.bids[0], paapiConfig.config);
-              expect(addBidResponseStub.calledOnce).to.equal(true);
-              expect(addBidResponseStub.firstCall.args[0]).to.equal('mock/placement');
+              sinon.assert.calledWith(paapiStub, bidRequest.bids[0], paapiConfig);
+              sinon.assert.calledWith(addBidResponseStub, 'mock/placement', sinon.match(bids[0]));
             })
 
             Object.entries({
               'missing': undefined,
               'an empty array': []
             }).forEach(([t, bids]) => {
-              it(`should call paapi hook with PAAPI configs even when bids is ${t}`, function() {
-                const bidder = newBidder(spec);
-                spec.interpretResponse.returns({
+              it(`should call paapi config hook with PAAPI configs even when bids is ${t}`, function() {
+                runBidder({
                   bids,
                   [paapiProp]: [paapiConfig]
-                });
-                bidder.callBids(bidRequest, addBidResponseStub, doneStub, ajaxStub, onTimelyResponseStub, wrappedCallback);
-
+                })
                 expect(paapiStub.calledOnce).to.be.true;
-                sinon.assert.calledWith(paapiStub, bidRequest.bids[0], paapiConfig.config);
+                sinon.assert.calledWith(paapiStub, bidRequest.bids[0], paapiConfig);
                 expect(addBidResponseStub.calledOnce).to.equal(false);
-              })
-            })
-          })
-        })
-      })
-    })
+              });
+            });
+          });
+        });
+      });
+    });
   });
 
   describe('bid response isValid', () => {

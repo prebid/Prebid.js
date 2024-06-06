@@ -5,7 +5,7 @@ import {createBid} from '../bidfactory.js';
 import {userSync} from '../userSync.js';
 import {nativeBidIsValid} from '../native.js';
 import {isValidVideoBid} from '../video.js';
-import CONSTANTS from '../constants.json';
+import { EVENTS, STATUS, REJECTION_REASON } from '../constants.js';
 import * as events from '../events.js';
 import {includes} from '../polyfill.js';
 import {
@@ -256,7 +256,7 @@ export function newBidder(spec) {
         if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnitCode, bid))) {
           addBidResponse(adUnitCode, bid);
         } else {
-          addBidResponse.reject(adUnitCode, bid, CONSTANTS.REJECTION_REASON.INVALID)
+          addBidResponse.reject(adUnitCode, bid, REJECTION_REASON.INVALID)
         }
       }
 
@@ -266,7 +266,7 @@ export function newBidder(spec) {
       function afterAllResponses() {
         done();
         config.runWithBidder(spec.code, () => {
-          events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest);
+          events.emit(EVENTS.BIDDER_DONE, bidderRequest);
           registerSyncs(responses, bidderRequest.gdprConsent, bidderRequest.uspConsent, bidderRequest.gppConsent);
         });
       }
@@ -288,7 +288,7 @@ export function newBidder(spec) {
       });
 
       processBidderRequests(spec, validBidRequests.map(tidGuard.bidRequest), tidGuard.bidderRequest(bidderRequest), ajax, configEnabledCallback, {
-        onRequest: requestObject => events.emit(CONSTANTS.EVENTS.BEFORE_BIDDER_HTTP, bidderRequest, requestObject),
+        onRequest: requestObject => events.emit(EVENTS.BEFORE_BIDDER_HTTP, bidderRequest, requestObject),
         onResponse: (resp) => {
           onTimelyResponse(spec.code);
           responses.push(resp)
@@ -296,7 +296,7 @@ export function newBidder(spec) {
         onPaapi: (paapiConfig) => {
           const bidRequest = bidRequestMap[paapiConfig.bidId];
           if (bidRequest) {
-            addComponentAuction(bidRequest, paapiConfig.config);
+            addPaapiConfig(bidRequest, paapiConfig);
           } else {
             logWarn('Received fledge auction configuration for an unknown bidId', paapiConfig);
           }
@@ -307,7 +307,7 @@ export function newBidder(spec) {
             onTimelyResponse(spec.code);
           }
           adapterManager.callBidderError(spec.code, error, bidderRequest)
-          events.emit(CONSTANTS.EVENTS.BIDDER_ERROR, { error, bidderRequest });
+          events.emit(EVENTS.BIDDER_ERROR, { error, bidderRequest });
           logError(`Server call for ${spec.code} failed: ${errorMessage} ${error.status}. Continuing without bids.`);
         },
         onBid: (bid) => {
@@ -316,18 +316,18 @@ export function newBidder(spec) {
             bid.adapterCode = bidRequest.bidder;
             if (isInvalidAlternateBidder(bid.bidderCode, bidRequest.bidder)) {
               logWarn(`${bid.bidderCode} is not a registered partner or known bidder of ${bidRequest.bidder}, hence continuing without bid. If you wish to support this bidder, please mark allowAlternateBidderCodes as true in bidderSettings.`);
-              addBidResponse.reject(bidRequest.adUnitCode, bid, CONSTANTS.REJECTION_REASON.BIDDER_DISALLOWED)
+              addBidResponse.reject(bidRequest.adUnitCode, bid, REJECTION_REASON.BIDDER_DISALLOWED)
               return;
             }
             // creating a copy of original values as cpm and currency are modified later
             bid.originalCpm = bid.cpm;
             bid.originalCurrency = bid.currency;
             bid.meta = bid.meta || Object.assign({}, bid[bidRequest.bidder]);
-            const prebidBid = Object.assign(createBid(CONSTANTS.STATUS.GOOD, bidRequest), bid, pick(bidRequest, TIDS));
+            const prebidBid = Object.assign(createBid(STATUS.GOOD, bidRequest), bid, pick(bidRequest, TIDS));
             addBidWithCode(bidRequest.adUnitCode, prebidBid);
           } else {
             logWarn(`Bidder ${spec.code} made bid for unknown request ID: ${bid.requestId}. Ignoring.`);
-            addBidResponse.reject(null, bid, CONSTANTS.REJECTION_REASON.INVALID_REQUEST_ID);
+            addBidResponse.reject(null, bid, REJECTION_REASON.INVALID_REQUEST_ID);
           }
         },
         onCompletion: afterAllResponses,
@@ -363,12 +363,13 @@ export function newBidder(spec) {
 
 // Transition from 'fledge' to 'paapi'
 // TODO: remove this in prebid 9
-const PAAPI_RESPONSE_PROPS = ['paapiAuctionConfigs', 'fledgeAuctionConfigs'];
-const RESPONSE_PROPS = ['bids'].concat(PAAPI_RESPONSE_PROPS);
+const PAAPI_PROPS = ['paapi', 'fledgeAuctionConfigs'];
+const RESPONSE_PROPS = ['bids'].concat(PAAPI_PROPS);
+
 function getPaapiConfigs(adapterResponse) {
-  const [paapi, fledge] = PAAPI_RESPONSE_PROPS.map(prop => adapterResponse[prop]);
+  const [paapi, fledge] = PAAPI_PROPS.map(prop => adapterResponse[prop]);
   if (paapi != null && fledge != null) {
-    throw new Error(`Adapter response should use ${PAAPI_RESPONSE_PROPS[0]} over ${PAAPI_RESPONSE_PROPS[1]}, not both`);
+    throw new Error(`Adapter response should use ${PAAPI_PROPS[0]} over ${PAAPI_PROPS[1]}, not both`);
   }
   return paapi ?? fledge;
 }
@@ -437,7 +438,7 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
       // adapters can reply with:
       // a single bid
       // an array of bids
-      // a BidderAuctionResponse object ({bids: [*], paapiAuctionConfigs: [*]})
+      // a BidderAuctionResponse object
 
       let bids, paapiConfigs;
       if (response && !Object.keys(response).some(key => !RESPONSE_PROPS.includes(key))) {
@@ -548,8 +549,8 @@ export const registerSyncInner = hook('async', function(spec, responses, gdprCon
   }
 }, 'registerSyncs')
 
-export const addComponentAuction = hook('sync', (request, fledgeAuctionConfig) => {
-}, 'addComponentAuction');
+export const addPaapiConfig = hook('sync', (request, paapiConfig) => {
+}, 'addPaapiConfig');
 
 // check that the bid has a width and height set
 function validBidSize(adUnitCode, bid, {index = auctionManager.index} = {}) {

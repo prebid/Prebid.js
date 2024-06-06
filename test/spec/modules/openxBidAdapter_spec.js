@@ -1087,7 +1087,6 @@ describe('OpenxRtbAdapter', function () {
             skipafter: 4,
             minduration: 10,
             maxduration: 30,
-            placement: 4,
             protocols: [8],
             w: 300,
             h: 250

@@ -414,7 +414,7 @@ function getItems(validBidRequests, bidderRequest) {
 
 export const buildUTMTagData = (url) => {
   if (!storage.cookiesAreEnabled()) return;
-  const urlParams = utils.parseUrl(url).search;
+  const urlParams = utils.parseUrl(url).search || {};
   const UTMParams = {};
   Object.keys(urlParams).forEach(key => {
     if (/^utm_/.test(key)) {
@@ -486,6 +486,7 @@ function getParam(validBidRequests, bidderRequest) {
         ssppid: storage.getCookie(COOKIE_KEY_SSPPID) || undefined,
         pmguid: getPmgUID(),
         tpData,
+        utm: storage.getCookie(UTM_KEY),
         page: {
           title: title ? title.slice(0, 100) : undefined,
           desc: desc ? desc.slice(0, 300) : undefined,
