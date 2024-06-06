@@ -119,7 +119,6 @@ export const spec = {
       const pos = getBidIdParameter('pos', bid.params) || 1;
       const api = getBidIdParameter('api', bid.params) || [2];
       const protocols = getBidIdParameter('protocols', bid.params) || [2, 3, 5, 6];
-      var contextcustom = deepAccess(bid, 'mediaTypes.video.context');
 
       let smartxReq = [{
         id: bid.bidId,
