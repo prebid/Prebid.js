@@ -80,7 +80,7 @@ describe('KrushmediabBidAdapter', function () {
       let placement = data['placements'][0];
       expect(placement).to.be.an('object');
       expect(placement).to.have.keys('key', 'bidId', 'traffic', 'wPlayer', 'hPlayer', 'schain', 'bidFloor',
-        'minduration', 'maxduration', 'mimes', 'protocols', 'startdelay', 'placement', 'skip',
+        'minduration', 'maxduration', 'mimes', 'protocols', 'startdelay', 'placement', 'plcmt', 'skip',
         'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity');
       expect(placement.traffic).to.equal(VIDEO);
       expect(placement.wPlayer).to.equal(playerSize[0]);
