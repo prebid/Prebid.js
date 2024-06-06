@@ -107,6 +107,7 @@ export const spec = {
         placement.protocols = bid.mediaTypes[VIDEO].protocols;
         placement.startdelay = bid.mediaTypes[VIDEO].startdelay;
         placement.placement = bid.mediaTypes[VIDEO].placement;
+        placement.plcmt = bid.mediaTypes[VIDEO].plcmt;
         placement.skip = bid.mediaTypes[VIDEO].skip;
         placement.skipafter = bid.mediaTypes[VIDEO].skipafter;
         placement.minbitrate = bid.mediaTypes[VIDEO].minbitrate;
