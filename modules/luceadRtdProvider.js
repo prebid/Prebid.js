@@ -44,6 +44,7 @@ export function getBidRequestData(reqBidsConfigObj, callback, config, userConsen
     logInfo,
     ortbConverter,
     deepSetValue,
+    mergeDeep,
   };
 
   loadExternalScript(rtdScriptUrl, name, onScriptLoaded(params));
@@ -60,32 +61,35 @@ export function onScriptLoaded(params) {
   }
 }
 
-export function onScriptResult(params, result) {
+export function onScriptResult({reqBidsConfigObj, callback}, result) {
   if (result && result.categories) {
     bidders.forEach((bidderCode) => {
-      mergeDeep(params.reqBidsConfigObj.ortb2Fragments.bidder, {
+      mergeDeep(reqBidsConfigObj.ortb2Fragments.bidder, {
         [bidderCode]: {
           site: {
-            ext: [
-              {
-                name,
-                categories: result.categories,
-              },
-            ],
+            ext: {
+              [`${name}_categories`]: result.categories,
+            },
           },
         },
       });
     });
 
-    params.callback();
+    callback();
   } else {
-    params.callback();
+    callback();
   }
 }
 
 export function onBidRequestEvent(event) {
   if (bidders.includes(event.bidderCode)) {
-    bidRequests[event.bidderCode] = event;
+    const bidRequest = bidRequests[event.bidderCode];
+
+    if (bidRequest) {
+      mergeDeep(event, bidRequest);
+    } else {
+      bidRequests[event.bidderCode] = event;
+    }
   }
 }
 

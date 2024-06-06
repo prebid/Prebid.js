@@ -34,6 +34,7 @@ const _approvedLoadExternalJSList = [
   'contxtful',
   'id5',
   '51Degrees',
+  'lucead',
 ];
 
 /**

@@ -21,6 +21,7 @@ Replace the `bidders` param with the bidders you want to work with.
 ```javascript
 pbjs.setConfig({
     realTimeData: {
+        auctionDelay: 1000,
         dataProviders: [
             {
                 name: 'lucead',
