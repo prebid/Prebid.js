@@ -519,6 +519,12 @@ describe('Consumable BidAdapter', function () {
       expect(data1.placements[0].bidfloor).to.equal(0.05);
       expect(data2.placements[0].bidfloor).to.equal(0.15);
     });
+    it('should contain the language param', function () {
+      let request = spec.buildRequests(BIDDER_REQUEST_1.bidRequest, BIDDER_REQUEST_1);
+      let data = JSON.parse(request.data);
+
+      expect(data.lang).to.be.a('string');
+    });
   });
   describe('interpretResponse validation', function () {
     it('response should have valid bidderCode', function () {
