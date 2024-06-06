@@ -61,7 +61,8 @@ export const spec = {
       source: [{
         'name': 'prebidjs',
         'version': '$prebid.version$'
-      }]
+      }],
+      lang: (navigator && navigator.language) ? navigator.language.split('-')[0] : ''
     }, validBidRequests[0].params);
 
     if (bidderRequest && bidderRequest.gdprConsent) {
