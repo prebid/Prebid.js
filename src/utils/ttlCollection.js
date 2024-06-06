@@ -18,12 +18,12 @@ import {binarySearch, logError, timestamp} from '../utils.js';
  * @param {number} [slack=5000] - Maximum duration (in milliseconds) that an item is allowed to persist
  *   once past its TTL. This is also roughly the interval between "garbage collection" sweeps.
  * @returns {Object} A set-like collection with automatic TTL expiration.
- * @returns {function(*)} return.add - Add an item to the collection.
- * @returns {function()} return.clear - Clear the collection.
+ * @returns {function(*): void} return.add - Add an item to the collection.
+ * @returns {function(): void} return.clear - Clear the collection.
  * @returns {function(): Array<*>} return.toArray - Get all the items in the collection, in insertion order.
- * @returns {function()} return.refresh - Refresh the TTL for each item in the collection.
- * @returns {function(function(*))} return.onExpiry - Register a callback to be run when an item has expired and is about to be
- *   removed from the collection.
+ * @returns {function(): void} return.refresh - Refresh the TTL for each item in the collection.
+ * @returns {function(function(*)): function(): void} return.onExpiry - Register a callback to be run when an item has expired and is about to be
+ *   removed from the collection. Returns an un-registration function
  */
 export function ttlCollection(
   {

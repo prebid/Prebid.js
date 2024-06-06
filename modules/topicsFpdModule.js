@@ -201,7 +201,8 @@ export function receiveMessage(evt) {
 
 /**
 Function to store Topics data received from iframe in storage(name: "prebid:topics")
- * @param {Topics} topics
+ * @param {string} bidder
+ * @param {object} topics
  */
 export function storeInLocalStorage(bidder, topics) {
   const storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
