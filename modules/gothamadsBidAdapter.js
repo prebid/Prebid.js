@@ -1,4 +1,4 @@
-import { logMessage, deepSetValue, deepAccess, _map, logWarn } from '../src/utils.js';
+import { deepSetValue, deepAccess, _map, logWarn } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -82,8 +82,7 @@ export const spec = {
     const endpointURL = URL_ENDPOINT.replace(ACCOUNTID_MACROS, accuontId);
     let winTop= window;
     let location;
-    location = bidderRequest.refererInfo
-    
+    location = bidderRequest.refererInfo;
     let bids = [];
     for (let bidRequest of validBidRequests) {
       let impObject = prepareImpObject(bidRequest);
