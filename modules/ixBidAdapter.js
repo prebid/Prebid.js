@@ -258,17 +258,13 @@ export function bidToVideoImp(bid) {
 
   // if placement not already defined, pick one based on `context`
   if (context && !imp.video.hasOwnProperty('placement')) {
-    if (context === INSTREAM) {
-      imp.video.placement = 1;
-    } else if (context === OUTSTREAM) {
+    if (context === OUTSTREAM) {
       if (deepAccess(videoParamRef, 'playerConfig.floatOnScroll')) {
         imp.video.placement = 5;
       } else {
         imp.video.placement = 3;
         defaultVideoPlacement = true;
       }
-    } else {
-      logWarn(`IX Bid Adapter: Video context '${context}' is not supported`);
     }
   }
 
