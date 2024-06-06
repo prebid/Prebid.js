@@ -34,7 +34,7 @@ export const spec = {
     const countryCode = getCountryCodeByTimezone(city);
     logInfo(`The country code for ${city} is ${countryCode}`);
 
-    location = bidderRequest.refererInfo;
+    location = bidderRequest?.refererInfo ?? null;
 
     let request = {
       id: validBidRequests[0].bidderRequestId,
@@ -80,8 +80,8 @@ export const spec = {
         // Show a map centered at latitude / longitude.
       }) || { utcoffset: new Date().getTimezoneOffset() },
       city: city,
-      'host': location.domain,
-      'page': location.page,
+      'host': location?.domain,
+      'page': location?.page,
       'coppa': config.getConfig('coppa') === true ? 1 : 0
       // userId: validBidRequests[0].userId
     };
