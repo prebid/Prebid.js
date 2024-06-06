@@ -1,7 +1,7 @@
 import {
   SETUP_COMPLETE, SETUP_FAILED, DESTROYED,
   PLAYLIST, PLAYBACK_REQUEST, CONTENT_LOADED, PLAY, PAUSE, TIME, SEEK_START, SEEK_END, MUTE, VOLUME, ERROR, COMPLETE,
-  FULLSCREEN, PLAYER_RESIZE,
+  FULLSCREEN, PLAYER_RESIZE, PLCMT,
   AD_REQUEST, AD_IMPRESSION, AD_TIME, AD_COMPLETE, AD_SKIPPED, AD_CLICK, AD_STARTED, AD_ERROR, AD_LOADED, AD_PLAY, AD_PAUSE
 } from '../libraries/video/constants/events.js';
 // missing events: , AD_BREAK_START, , AD_BREAK_END, VIEWABLE, BUFFER, CAST, PLAYLIST_COMPLETE, RENDITION_UPDATE, PLAY_ATTEMPT_FAILED, AUTOSTART_BLOCKED
@@ -147,6 +147,10 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     // Still cannot reliably check what type of placement the player is if its outstream
     // i.e. we can't tell if its interstitial, in article, etc.
     // update: cannot infer instream ever, always need declarations
+    if (player.src()) {
+      video.plcmt = PLCMT.ACCOMPANYING_CONTENT;
+    }
+
     // Placement according to IQG Guidelines 4.2.8
     // https://cdn2.hubspot.net/hubfs/2848641/TrustworthyAccountabilityGroup_May2017/Docs/TAG-Inventory-Quality-Guidelines-v2_2-10-18-2016.pdf?t=1509469105938
     const findPosition = vjs.dom.findPosition;
