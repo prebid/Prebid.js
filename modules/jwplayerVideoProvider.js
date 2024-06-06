@@ -656,11 +656,6 @@ export const utils = {
    * @return {PLACEMENT|OrtbVideoParams.placement|undefined}
    */
   getPlacement: function(adConfig, player) {
-    if (!adConfig.outstream) {
-      // https://developer.jwplayer.com/jwplayer/docs/jw8-embed-an-outstream-player for more info on outstream
-      return PLACEMENT.INSTREAM;
-    }
-
     if (player.getFloating()) {
       return PLACEMENT.FLOATING;
     }
