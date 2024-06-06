@@ -73,15 +73,15 @@ export const spec = {
 
     let winTop = window;
     let location;
-    location = bidderRequest.refererInfo;
+    location = bidderRequest?.refererInfo ?? null;
     let placements = [];
     let request = {
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
       'language': (navigator && navigator.language) ? navigator.language : '',
       'secure': 1,
-      'host': location.domain,
-      'page': location.page,
+      'host': location?.domain,
+      'page': location?.page,
       'coppa': config.getConfig('coppa') === true ? 1 : 0,
       'placements': placements,
       'eeid': validBidRequests[0]?.userIdAsEids,
