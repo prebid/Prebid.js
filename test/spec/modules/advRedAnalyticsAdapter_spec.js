@@ -81,7 +81,7 @@ describe('AdvRed Analytics Adapter', function () {
       expect(message.events[0].adUrl).to.be.undefined;
     });
 
-    it('track event without errors', function () {
+    it('track event', function () {
       sinon.spy(advRedAnalytics, 'track');
 
       advRedAnalytics.enableAnalytics({
