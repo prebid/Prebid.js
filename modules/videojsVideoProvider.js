@@ -146,7 +146,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     // ~ Sort of resolved check if the player has a source to tell if the placement is instream
     // Still cannot reliably check what type of placement the player is if its outstream
     // i.e. we can't tell if its interstitial, in article, etc.
-    // update: cannot infer instream ever, always need declarations 
+    // update: cannot infer instream ever, always need declarations
     // Placement according to IQG Guidelines 4.2.8
     // https://cdn2.hubspot.net/hubfs/2848641/TrustworthyAccountabilityGroup_May2017/Docs/TAG-Inventory-Quality-Guidelines-v2_2-10-18-2016.pdf?t=1509469105938
     const findPosition = vjs.dom.findPosition;
