@@ -430,6 +430,32 @@ export const spec = {
         requestParams.loc = location;
       }
 
+      // Adds device data to the request,
+      // properties are only added if they are not null
+      const deviceData = bidderRequest?.ortb2?.device;
+      const deviceDataProperties = {
+        ortb2DeviceDevicetype: deviceData?.devicetype,
+        ortb2DeviceMake: deviceData?.make,
+        ortb2DeviceModel: deviceData?.model,
+        ortb2DeviceOs: deviceData?.os,
+        ortb2DeviceOsv: deviceData?.osv,
+        ortb2DeviceH: deviceData?.h,
+        ortb2DeviceW: deviceData?.w,
+        ortb2DevicePxratio: deviceData?.pxratio,
+        ortb2DevicePpi: deviceData?.ppi,
+        ortb2DeviceExtFiftyonedegreesDeviceId: deviceData?.ext?.fiftyonedegrees_deviceId,
+      };
+      const filteredDeviceDataProperties = Object
+        .keys(deviceDataProperties)
+        .reduce((r, key) => {
+          if (deviceDataProperties[key]) {
+            r[key] = deviceDataProperties[key];
+          }
+          return r;
+        }, {});
+
+      requestParams = {...requestParams, ...filteredDeviceDataProperties};
+
       var playerSize = [];
       if (currentBidRequest.mediaTypes.video && currentBidRequest.mediaTypes.video.playerSize) {
         // If mediaTypes is video, get size from mediaTypes.video.playerSize per http://prebid.org/blog/pbjs-3
