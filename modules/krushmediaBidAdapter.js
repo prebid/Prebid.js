@@ -1,4 +1,4 @@
-import { isFn, deepAccess, logMessage } from '../src/utils.js';
+import { isFn, deepAccess } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
@@ -55,23 +55,15 @@ export const spec = {
 
     let winTop = window;
     let location;
-    // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
-    try {
-      location = new URL(bidderRequest.refererInfo.page);
-      winTop = window.top;
-    } catch (e) {
-      location = winTop.location;
-      logMessage(e);
-    };
-
+    location = bidderRequest?.refererInfo ?? null;
     const placements = [];
     const request = {
       deviceWidth: winTop.screen.width,
       deviceHeight: winTop.screen.height,
       language: (navigator && navigator.language) ? navigator.language.split('-')[0] : '',
       secure: 1,
-      host: location.host,
-      page: location.pathname,
+      host: location?.domain ?? '',
+      page: location?.page ?? '',
       placements: placements
     };
 
