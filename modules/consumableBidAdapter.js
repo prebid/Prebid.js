@@ -62,7 +62,7 @@ export const spec = {
         'name': 'prebidjs',
         'version': '$prebid.version$'
       }],
-      lang: (navigator && navigator.language) ? navigator.language.split('-')[0] : ''
+      lang: bidderRequest.ortb2.device.language,
     }, validBidRequests[0].params);
 
     if (bidderRequest && bidderRequest.gdprConsent) {
