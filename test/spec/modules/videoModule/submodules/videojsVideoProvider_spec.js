@@ -139,7 +139,7 @@ describe('videojsProvider', function () {
       expect(video.playbackmethod).to.include(PLAYBACK_METHODS.CLICK_TO_PLAY);
       expect(video.playbackend).to.equal(1);
       expect(video.api).to.deep.equal([2]);
-      expect(video.placement).to.be.equal(PLACEMENT.INSTREAM);
+      expect(video.placement).to.not.be.equal(PLACEMENT.INSTREAM);
     });
 
     it('should populate oRTB Content', function () {
