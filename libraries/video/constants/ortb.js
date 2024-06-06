@@ -100,7 +100,7 @@ export const PLACEMENT = {
 
 /**
  * ADCOM - https://github.com/InteractiveAdvertisingBureau/AdCOM/blob/develop/AdCOM%20v1.0%20FINAL.md#list_plcmtsubtypesvideo
- * @enum OrtbVideoParams.placement
+ * @enum OrtbVideoParams.plcmt
  */
 export const PLCMT = {
   INSTREAM: 1,
