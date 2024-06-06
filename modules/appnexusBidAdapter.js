@@ -15,7 +15,8 @@ import {
   logError,
   logInfo,
   logMessage,
-  logWarn
+  logWarn,
+  mergeDeep
 } from '../src/utils.js';
 import {Renderer} from '../src/Renderer.js';
 import {config} from '../src/config.js';
@@ -260,6 +261,12 @@ export const spec = {
     }
     if (appIdObjBid) {
       payload.app = appIdObj;
+    }
+
+    // if present, merge device object from ortb2 into `payload.device`
+    if (bidderRequest?.ortb2?.device) {
+      payload.device = payload.device || {};
+      mergeDeep(payload.device, bidderRequest.ortb2.device);
     }
 
     // grab the ortb2 keyword data (if it exists) and convert from the comma list string format to object format
