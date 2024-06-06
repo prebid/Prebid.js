@@ -1,5 +1,5 @@
 import {config} from './config.js';
-import clone from 'just-clone';
+import {klona} from 'klona/json';
 import {includes} from './polyfill.js';
 import { EVENTS, S2S } from './constants.js';
 import {GreedyPromise} from './utils/promise.js';
@@ -41,6 +41,7 @@ export const internal = {
   createTrackPixelIframeHtml,
   getWindowSelf,
   getWindowTop,
+  canAccessWindowTop,
   getWindowLocation,
   insertUserSyncIframe,
   insertElement,
@@ -129,37 +130,55 @@ export function transformAdServerTargetingObj(targeting) {
 }
 
 /**
+ * Parse a GPT-Style general size Array like `[[300, 250]]` or `"300x250,970x90"` into an array of width, height tuples `[[300, 250]]` or '[[300,250], [970,90]]'
+ */
+export function sizesToSizeTuples(sizes) {
+  if (typeof sizes === 'string') {
+    // multiple sizes will be comma-separated
+    return sizes
+      .split(/\s*,\s*/)
+      .map(sz => sz.match(/^(\d+)x(\d+)$/i))
+      .filter(match => match)
+      .map(([_, w, h]) => [parseInt(w, 10), parseInt(h, 10)])
+  } else if (Array.isArray(sizes)) {
+    if (isValidGPTSingleSize(sizes)) {
+      return [sizes]
+    }
+    return sizes.filter(isValidGPTSingleSize);
+  }
+  return [];
+}
+
+/**
  * Parse a GPT-Style general size Array like `[[300, 250]]` or `"300x250,970x90"` into an array of sizes `["300x250"]` or '['300x250', '970x90']'
  * @param  {(Array.<number[]>|Array.<number>)} sizeObj Input array or double array [300,250] or [[300,250], [728,90]]
  * @return {Array.<string>}  Array of strings like `["300x250"]` or `["300x250", "728x90"]`
  */
 export function parseSizesInput(sizeObj) {
-  if (typeof sizeObj === 'string') {
-    // multiple sizes will be comma-separated
-    return sizeObj.split(',').filter(sz => sz.match(/^(\d)+x(\d)+$/i))
-  } else if (typeof sizeObj === 'object') {
-    if (sizeObj.length === 2 && typeof sizeObj[0] === 'number' && typeof sizeObj[1] === 'number') {
-      return [parseGPTSingleSizeArray(sizeObj)];
-    } else {
-      return sizeObj.map(parseGPTSingleSizeArray)
-    }
-  }
-  return [];
+  return sizesToSizeTuples(sizeObj).map(sizeTupleToSizeString);
+}
+
+export function sizeTupleToSizeString(size) {
+  return size[0] + 'x' + size[1]
 }
 
 // Parse a GPT style single size array, (i.e [300, 250])
 // into an AppNexus style string, (i.e. 300x250)
 export function parseGPTSingleSizeArray(singleSize) {
   if (isValidGPTSingleSize(singleSize)) {
-    return singleSize[0] + 'x' + singleSize[1];
+    return sizeTupleToSizeString(singleSize);
   }
+}
+
+export function sizeTupleToRtbSize(size) {
+  return {w: size[0], h: size[1]};
 }
 
 // Parse a GPT style single size array, (i.e [300, 250])
 // into OpenRTB-compatible (imp.banner.w/h, imp.banner.format.w/h, imp.video.w/h) object(i.e. {w:300, h:250})
 export function parseGPTSingleSizeArrayToRtbSize(singleSize) {
   if (isValidGPTSingleSize(singleSize)) {
-    return {w: singleSize[0], h: singleSize[1]};
+    return sizeTupleToRtbSize(singleSize)
   }
 }
 
@@ -178,6 +197,16 @@ export function getWindowSelf() {
 
 export function getWindowLocation() {
   return window.location;
+}
+
+export function canAccessWindowTop() {
+  try {
+    if (internal.getWindowTop().location.href) {
+      return true;
+    }
+  } catch (e) {
+    return false;
+  }
 }
 
 /**
@@ -353,7 +382,8 @@ export function isEmptyStr(str) {
  * Iterate object with the function
  * falls back to es5 `forEach`
  * @param {Array|Object} object
- * @param {Function(value, key, object)} fn
+ * @param {Function} fn - The function to execute for each element. It receives three arguments: value, key, and the original object.
+ * @returns {void}
  */
 export function _each(object, fn) {
   if (isFn(object?.forEach)) return object.forEach(fn, this);
@@ -368,7 +398,7 @@ export function contains(a, obj) {
  * Map an array or object into another array
  * given a function
  * @param {Array|Object} object
- * @param {Function(value, key, object)} callback
+ * @param {Function} callback - The function to execute for each element. It receives three arguments: value, key, and the original object.
  * @return {Array}
  */
 export function _map(object, callback) {
@@ -471,7 +501,6 @@ export function insertHtmlIntoIframe(htmlCode) {
 /**
  * Inserts empty iframe with the specified `url` for cookie sync
  * @param  {string} url URL to be requested
- * @param  {string} encodeUri boolean if URL should be encoded before inserted. Defaults to true
  * @param  {function} [done] an optional exit callback, used when this usersync pixel is added during an async process
  * @param  {Number} [timeout] an optional timeout in milliseconds for the iframe to load before calling `done`
  */
@@ -489,18 +518,31 @@ export function insertUserSyncIframe(url, done, timeout) {
 /**
  * Creates a snippet of HTML that retrieves the specified `url`
  * @param  {string} url URL to be requested
+ * @param encode
  * @return {string}     HTML snippet that contains the img src = set to `url`
  */
-export function createTrackPixelHtml(url) {
+export function createTrackPixelHtml(url, encode = encodeURI) {
   if (!url) {
     return '';
   }
 
-  let escapedUrl = encodeURI(url);
+  let escapedUrl = encode(url);
   let img = '<div style="position:absolute;left:0px;top:0px;visibility:hidden;">';
   img += '<img src="' + escapedUrl + '"></div>';
   return img;
 };
+
+/**
+ * encodeURI, but preserves macros of the form '${MACRO}' (e.g. '${AUCTION_PRICE}')
+ * @param url
+ * @return {string}
+ */
+export function encodeMacroURI(url) {
+  const macros = Array.from(url.matchAll(/\$({[^}]+})/g)).map(match => match[1]);
+  return macros.reduce((str, macro) => {
+    return str.replace('$' + encodeURIComponent(macro), '$' + macro)
+  }, encodeURI(url))
+}
 
 /**
  * Creates a snippet of Iframe HTML that retrieves the specified `url`
@@ -596,7 +638,7 @@ export function shuffle(array) {
 }
 
 export function deepClone(obj) {
-  return clone(obj);
+  return klona(obj) || {};
 }
 
 export function inIframe() {
@@ -605,6 +647,18 @@ export function inIframe() {
   } catch (e) {
     return true;
   }
+}
+
+/**
+ * https://iabtechlab.com/wp-content/uploads/2016/03/SafeFrames_v1.1_final.pdf
+ */
+export function isSafeFrameWindow() {
+  if (!inIframe()) {
+    return false;
+  }
+
+  const ws = internal.getWindowSelf();
+  return !!(ws.$sf && ws.$sf.ext);
 }
 
 export function isSafariBrowser() {
@@ -683,7 +737,6 @@ export function delayExecution(func, numRequiredCalls) {
 
 /**
  * https://stackoverflow.com/a/34890276/428704
- * @export
  * @param {Array} xs
  * @param {string} key
  * @returns {Object} {${key_value}: ${groupByArray}, key_value: {groupByArray}}
@@ -899,9 +952,9 @@ export function buildUrl(obj) {
  * This function deeply compares two objects checking for their equivalence.
  * @param {Object} obj1
  * @param {Object} obj2
- * @param checkTypes {boolean} if set, two objects with identical properties but different constructors will *not*
- * be considered equivalent.
- * @returns {boolean}
+ * @param {Object} [options] - Options for comparison.
+ * @param {boolean} [options.checkTypes=false] - If set, two objects with identical properties but different constructors will *not* be considered equivalent.
+ * @returns {boolean} - Returns `true` if the objects are equivalent, `false` otherwise.
  */
 export function deepEqual(obj1, obj2, {checkTypes = false} = {}) {
   if (obj1 === obj2) return true;
@@ -1036,7 +1089,7 @@ export function memoize(fn, key = function (arg) { return arg; }) {
 
 /**
  * Sets dataset attributes on a script
- * @param {Script} script
+ * @param {HTMLScriptElement} script
  * @param {object} attributes
  */
 export function setScriptAttributes(script, attributes) {

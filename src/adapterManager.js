@@ -27,7 +27,12 @@ import {ajaxBuilder} from './ajax.js';
 import {config, RANDOM} from './config.js';
 import {hook} from './hook.js';
 import {find, includes} from './polyfill.js';
-import {adunitCounter} from './adUnits.js';
+import {
+  getBidderRequestsCounter,
+  getBidderWinsCounter,
+  getRequestsCounter, incrementBidderRequestsCounter,
+  incrementBidderWinsCounter, incrementRequestsCounter
+} from './adUnits.js';
 import {getRefererInfo} from './refererDetection.js';
 import {GDPR_GVLIDS, gdprDataHandler, gppDataHandler, uspDataHandler, } from './consentHandler.js';
 import * as events from './events.js';
@@ -112,6 +117,10 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}
           );
         }
 
+        if (src === 'client') {
+          incrementBidderRequestsCounter(adUnit.code, bidderCode);
+        }
+
         bids.push(Object.assign({}, bid, {
           adUnitCode: adUnit.code,
           transactionId: adUnit.transactionId,
@@ -122,9 +131,9 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}
           auctionId,
           src,
           metrics,
-          bidRequestsCount: adunitCounter.getRequestsCounter(adUnit.code),
-          bidderRequestsCount: adunitCounter.getBidderRequestsCounter(adUnit.code, bid.bidder),
-          bidderWinsCount: adunitCounter.getBidderWinsCounter(adUnit.code, bid.bidder),
+          bidRequestsCount: getRequestsCounter(adUnit.code),
+          bidderRequestsCount: getBidderRequestsCounter(adUnit.code, bid.bidder),
+          bidderWinsCount: getBidderWinsCounter(adUnit.code, bid.bidder),
         }));
         return bids;
       }, [])
@@ -221,9 +230,11 @@ export function getS2SBidderSet(s2sConfigs) {
 }
 
 /**
- * @returns {{[PARTITIONS.CLIENT]: Array<String>, [PARTITIONS.SERVER]: Array<String>}}
- *           All the bidder codes in the given `adUnits`, divided in two arrays -
- *           those that should be routed to client, and server adapters (according to the configuration in `s2sConfigs`).
+ * @param {Array} adUnits - The ad units to be processed.
+ * @param {Object} s2sConfigs - The server-to-server configurations.
+ * @returns {Object} - An object containing arrays of bidder codes for client and server.
+ * @returns {Object} return.client - Array of bidder codes that should be routed to client adapters.
+ * @returns {Object} return.server - Array of bidder codes that should be routed to server adapters.
  */
 export function _partitionBidders (adUnits, s2sConfigs, {getS2SBidders = getS2SBidderSet} = {}) {
   const serverBidders = getS2SBidders(s2sConfigs);
@@ -253,6 +264,7 @@ adapterManager.makeBidRequests = hook('sync', function (adUnits, auctionStart, a
     }
     // filter out bidders that cannot participate in the auction
     au.bids = au.bids.filter((bid) => !bid.bidder || dep.isAllowed(ACTIVITY_FETCH_BIDS, activityParams(MODULE_TYPE_BIDDER, bid.bidder)))
+    incrementRequestsCounter(au.code);
   });
 
   adUnits = setupAdUnitMediaTypes(adUnits, labels);
@@ -410,7 +422,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       let uniqueServerRequests = serverBidderRequests.filter(serverBidRequest => serverBidRequest.uniquePbsTid === uniquePbsTid);
 
       if (s2sAdapter) {
-        let s2sBidRequest = {'ad_units': adUnitsS2SCopy, s2sConfig, ortb2Fragments};
+        let s2sBidRequest = {'ad_units': adUnitsS2SCopy, s2sConfig, ortb2Fragments, requestBidsTimeout};
         if (s2sBidRequest.ad_units.length) {
           let doneCbs = uniqueServerRequests.map(bidRequest => {
             bidRequest.start = timestamp();
@@ -655,7 +667,7 @@ adapterManager.callTimedOutBidders = function(adUnits, timedOutBidders, cbTimeou
 adapterManager.callBidWonBidder = function(bidder, bid, adUnits) {
   // Adding user configured params to bidWon event data
   bid.params = getUserConfiguredParams(adUnits, bid.adUnitCode, bid.bidder);
-  adunitCounter.incrementBidderWinsCounter(bid.adUnitCode, bid.bidder);
+  incrementBidderWinsCounter(bid.adUnitCode, bid.bidder);
   tryCallBidderMethod(bidder, 'onBidWon', bid);
 };
 

@@ -1,9 +1,8 @@
 import {getAdServerTargeting} from 'test/fixtures/fixtures.js';
 import {expect} from 'chai';
-import { TARGETING_KEYS } from 'src/constants.js';
+import {TARGETING_KEYS} from 'src/constants.js';
 import * as utils from 'src/utils.js';
-import {getHighestCpm, getLatestHighestCpmBid, getOldestHighestCpmBid} from '../../src/utils/reducers.js';
-import {binarySearch, deepEqual, memoize, waitForElementToLoad} from 'src/utils.js';
+import {binarySearch, deepEqual, encodeMacroURI, memoize, sizesToSizeTuples, waitForElementToLoad} from 'src/utils.js';
 import {convertCamelToUnderscore} from '../../libraries/appnexusUtils/anUtils.js';
 
 var assert = require('assert');
@@ -20,6 +19,54 @@ describe('Utils', function () {
     type_object = 'Object',
     type_array = 'Array',
     type_function = 'Function';
+
+  describe('canAccessWindowTop', function () {
+    let sandbox;
+
+    beforeEach(function () {
+      sandbox = sinon.sandbox.create();
+    });
+
+    afterEach(function () {
+      sandbox.restore();
+    });
+    it('should return true if window.top is accessible', function () {
+      assert.equal(utils.canAccessWindowTop(), true);
+    });
+
+    it('should return false if window.top is not accessible', function () {
+      sandbox.stub(utils.internal, 'getWindowTop').returns(false);
+      assert.equal(utils.canAccessWindowTop(), false);
+    });
+  });
+
+  describe('isSafeFrameWindow', function () {
+    // SafeFrames implementation
+    // https://iabtechlab.com/wp-content/uploads/2016/03/SafeFrames_v1.1_final.pdf
+    const $sf = {
+      ext: {
+        geom: function() {}
+      }
+    };
+
+    afterEach(function() {
+      delete window.$sf;
+    })
+
+    it('should return true if window.$sf is accessible', function () {
+      window.$sf = $sf;
+      assert.equal(utils.isSafeFrameWindow(), true);
+    });
+
+    it('should return false if window.$sf is missimplemented', function () {
+      window.$sf = {};
+      assert.equal(utils.isSafeFrameWindow(), false);
+    });
+
+    it('should return false if window.$sf is missing', function () {
+      assert.equal(utils.isSafeFrameWindow(), false);
+    });
+  });
 
   describe('getBidIdParameter', function () {
     it('should return value of the key in input object', function () {
@@ -118,6 +165,43 @@ describe('Utils', function () {
       assert.deepEqual(output, target);
     });
   });
+
+  describe('sizesToSizeTuples', () => {
+    Object.entries({
+      'single size, numerical': {
+        in: [1, 2],
+        out: [[1, 2]]
+      },
+      'single size, numerical, nested': {
+        in: [[1, 2]],
+        out: [[1, 2]]
+      },
+      'multiple sizes, numerical': {
+        in: [[1, 2], [3, 4]],
+        out: [[1, 2], [3, 4]]
+      },
+      'single size, string': {
+        in: '1x2',
+        out: [[1, 2]]
+      },
+      'multiple sizes, string': {
+        in: '1x2, 4x3',
+        out: [[1, 2], [4, 3]]
+      },
+      'incorrect size, numerical': {
+        in: [1],
+        out: []
+      },
+      'incorrect size, string': {
+        in: '1x',
+        out: []
+      }
+    }).forEach(([t, {in: input, out}]) => {
+      it(`can parse ${t}`, () => {
+        expect(sizesToSizeTuples(input)).to.eql(out);
+      })
+    })
+  })
 
   describe('parseSizesInput', function () {
     it('should return query string using multi size array', function () {
@@ -778,6 +862,22 @@ describe('Utils', function () {
         expect(parsed.search).to.equal('?search=test&foo=bar&bar=foo&foo=xxx');
       });
     });
+
+    describe('encodeMacroURI', () => {
+      [
+        ['https://www.example.com', 'https://www.example.com'],
+        ['https://www.example/${MACRO}', 'https://www.example/${MACRO}'],
+        ['http://www.example/è', `http://www.example/${encodeURIComponent('è')}`],
+        ['https://www.${MACRO_1}/${MACRO_1}/${MACRO_2}è', 'https://www.${MACRO_1}/${MACRO_1}/${MACRO_2}' + encodeURIComponent('è')],
+        ['http://${MACRO}${MACRO}/${MACRO}', 'http://${MACRO}${MACRO}/${MACRO}'],
+        ['{MACRO}${MACRO}', `${encodeURIComponent('{MACRO}')}\${MACRO}`],
+        ['https://www.example.com?p=${AUCTION_PRICE}', 'https://www.example.com?p=${AUCTION_PRICE}']
+      ].forEach(([input, expected]) => {
+        it(`can encode ${input} -> ${expected}`, () => {
+          expect(encodeMacroURI(input)).to.eql(expected);
+        })
+      })
+    })
   });
 
   describe('insertElement', function () {

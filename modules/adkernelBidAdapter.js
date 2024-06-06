@@ -51,6 +51,12 @@ const MULTI_FORMAT_SUFFIX_BANNER = 'b' + MULTI_FORMAT_SUFFIX;
 const MULTI_FORMAT_SUFFIX_VIDEO = 'v' + MULTI_FORMAT_SUFFIX;
 const MULTI_FORMAT_SUFFIX_NATIVE = 'n' + MULTI_FORMAT_SUFFIX;
 
+const MEDIA_TYPES = {
+  BANNER: 1,
+  VIDEO: 2,
+  NATIVE: 4
+};
+
 /**
  * Adapter for requesting bids from AdKernel white-label display platform
  */
@@ -88,7 +94,8 @@ export const spec = {
     {code: 'adpluto'},
     {code: 'headbidder'},
     {code: 'digiad'},
-    {code: 'monetix'}
+    {code: 'monetix'},
+    {code: 'hyperbrainz'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -159,17 +166,17 @@ export const spec = {
       if (prBid.requestId.endsWith(MULTI_FORMAT_SUFFIX)) {
         prBid.requestId = stripMultiformatSuffix(prBid.requestId);
       }
-      if ('banner' in imp) {
+      if (rtbBid.mtype === MEDIA_TYPES.BANNER) {
         prBid.mediaType = BANNER;
         prBid.width = rtbBid.w;
         prBid.height = rtbBid.h;
         prBid.ad = formatAdMarkup(rtbBid);
-      } else if ('video' in imp) {
+      } else if (rtbBid.mtype === MEDIA_TYPES.VIDEO) {
         prBid.mediaType = VIDEO;
         prBid.vastUrl = rtbBid.nurl;
         prBid.width = imp.video.w;
         prBid.height = imp.video.h;
-      } else if ('native' in imp) {
+      } else if (rtbBid.mtype === MEDIA_TYPES.NATIVE) {
         prBid.mediaType = NATIVE;
         prBid.native = {
           ortb: buildNativeAd(rtbBid.adm)

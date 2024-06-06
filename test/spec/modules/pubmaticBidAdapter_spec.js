@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { spec, checkVideoPlacement, _getDomainFromURL, assignDealTier, prepareMetaObject } from 'modules/pubmaticBidAdapter.js';
+import { spec, checkVideoPlacement, _getDomainFromURL, assignDealTier, prepareMetaObject, getDeviceConnectionType } from 'modules/pubmaticBidAdapter.js';
 import * as utils from 'src/utils.js';
 import { config } from 'src/config.js';
 import { createEidsArray } from 'modules/userId/eids.js';
@@ -1187,6 +1187,8 @@ describe('PubMatic adapter', function () {
         expect(data.imp[0].bidfloorcur).to.equal(bidRequests[0].params.currency);
         expect(data.source.ext.schain).to.deep.equal(bidRequests[0].schain);
         expect(data.ext.epoch).to.exist;
+        expect(data.imp[0].displaymanager).to.equal('Prebid.js');
+        expect(data.imp[0].displaymanagerver).to.equal('$prebid.version$');
   		});
 
       it('Set tmax from global config if not set by requestBids method', function() {
@@ -2964,6 +2966,14 @@ describe('PubMatic adapter', function () {
           expect(data.imp[0].ext.ae).to.equal(1);
         });
       });
+
+      it('should send connectiontype parameter if browser contains navigator.connection property', function () {
+        const bidRequest = spec.buildRequests(bidRequests);
+        let data = JSON.parse(bidRequest.data);
+        if (window.navigator && window.navigator.connection) {
+          expect(data.device).to.include.any.keys('connectiontype');
+        }
+      });
   	});
 
     it('Request params dctr check', function () {
@@ -4020,11 +4030,26 @@ describe('PubMatic adapter', function () {
       });
     });
 
+    describe('getDeviceConnectionType', function() {
+      it('is a function', function(done) {
+        getDeviceConnectionType.should.be.a('function');
+        done();
+      });
+
+      it('should return matched value if navigator.connection is present', function(done) {
+        const connectionValue = getDeviceConnectionType();
+        if (window?.navigator?.connection) {
+          expect(connectionValue).to.be.a('number');
+        }
+        done();
+      });
+    });
+
     if (FEATURES.VIDEO) {
-      describe('Checking for Video.Placement property', function() {
+      describe('Checking for Video.plcmt property', function() {
         let sandbox, utilsMock;
         const adUnit = 'Div1';
-        const msg_placement_missing = 'Video.Placement param missing for Div1';
+        const msg_placement_missing = 'Video.plcmt param missing for Div1';
         let videoData = {
           battr: [6, 7],
           skipafter: 15,
@@ -4048,12 +4073,12 @@ describe('PubMatic adapter', function () {
           sandbox.restore();
         })
 
-        it('should log Video.Placement param missing', function() {
+        it('should log Video.plcmt param missing', function() {
           checkVideoPlacement(videoData, adUnit);
           sinon.assert.calledWith(utils.logWarn, msg_placement_missing);
         })
-        it('shoud not log Video.Placement param missing', function() {
-          videoData['placement'] = 1;
+        it('shoud not log Video.plcmt param missing', function() {
+          videoData['plcmt'] = 1;
           checkVideoPlacement(videoData, adUnit);
           sinon.assert.neverCalledWith(utils.logWarn, msg_placement_missing);
         })

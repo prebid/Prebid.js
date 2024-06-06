@@ -64,6 +64,14 @@ pbjs.setConfig({
                 bidder: 'discovery',
                 iframeURL: 'https://api.popin.cc/topic/prebid-topics-frame.html',
                 expiry: 7 // Configurable expiry days
+            }, {
+                bidder: 'undertone',
+                iframeURL: 'https://creative-p.undertone.com/spk-public/topics_frame.html',
+                expiry: 7 // Configurable expiry days
+            },{
+                bidder: 'vidazoo',
+                iframeURL: 'https://static.vidazoo.com/topics_api/topics_frame.html',
+                expiry: 7 // Configurable expiry days
             }]
         }
         ....

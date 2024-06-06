@@ -52,6 +52,9 @@ export function toFetchRequest(url, data, options = {}) {
     // but we're not in a secure context
     rqOpts.browsingTopics = true;
   }
+  if (options.keepalive) {
+    rqOpts.keepalive = true;
+  }
   return dep.makeRequest(url, rqOpts);
 }
 
