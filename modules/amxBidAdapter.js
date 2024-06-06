@@ -455,7 +455,7 @@ export const spec = {
     }
 
     const bidderSettings = config.getConfig('bidderSettings');
-    const settings = bidderSettings?.amx ?? bidderSettings?.standard ?? {};;
+    const settings = bidderSettings?.amx ?? bidderSettings?.standard ?? {};
     const allowAlternateBidderCodes = !!settings.allowAlternateBidderCodes;
 
     return flatMap(Object.keys(response.r), (bidID) => {
@@ -473,7 +473,7 @@ export const spec = {
           const { bc: bidderCode, ds: demandSource } = bid.ext ?? {};
 
           return {
-            ...(bidderCode != null && allowAlternateBidderCodes ?  { bidderCode } : {}),
+            ...(bidderCode != null && allowAlternateBidderCodes ? { bidderCode } : {}),
             requestId: bidID,
             cpm: bid.price,
             width: size[0],
