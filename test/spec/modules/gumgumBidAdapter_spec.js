@@ -100,6 +100,28 @@ describe('gumgumAdapter', function () {
 
   describe('buildRequests', function () {
     let sizesArray = [[300, 250], [300, 600]];
+    const bidderRequest = {
+      ortb2: {
+        site: {
+          content: {
+            data: [{
+              name: 'www.iris.com',
+              ext: {
+                segtax: 500,
+                cids: ['iris_c73g5jq96mwso4d8']
+              }
+            }]
+          },
+          page: 'http://pub.com/news',
+          ref: 'http://google.com',
+          publisher: {
+            id: 'p10000',
+            domain: 'pub.com'
+          }
+        }
+      }
+    };
+
     let bidRequests = [
       {
         gppString: 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN',
@@ -259,19 +281,17 @@ describe('gumgumAdapter', function () {
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data).to.have.property('iriscat');
     });
+    it('should set the irisid param when found iris_c73g5jq96mwso4d8', function() {
+      const request = { ...bidRequests[0], params: { irisid: 'abc123' } };
+      const bidRequest = spec.buildRequests([request], bidderRequest)[0];
+      expect(bidRequest.data).to.have.property('irisid', 'iris_c73g5jq96mwso4d8');
+    });
 
     it('should not set the iriscat param when not found', function () {
       const request = { ...bidRequests[0] }
       const bidRequest = spec.buildRequests([request])[0];
       expect(bidRequest.data).to.not.have.property('iriscat');
     });
-
-    it('should set the irisid param when found', function () {
-      const request = { ...bidRequests[0], params: { irisid: 'abc123' } }
-      const bidRequest = spec.buildRequests([request])[0];
-      expect(bidRequest.data).to.have.property('irisid');
-    });
-
     it('should not set the irisid param when not found', function () {
       const request = { ...bidRequests[0] }
       const bidRequest = spec.buildRequests([request])[0];
