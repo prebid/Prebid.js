@@ -274,6 +274,11 @@ export const spec = {
         userExt.device = { ...ortb2UserExtDevice };
       }
 
+      // if present, add device data object from ortb2 to the request
+      if (bidderRequest?.ortb2?.device) {
+        request.device = bidderRequest.ortb2.device;
+      }
+
       if (userIdAsEids && userIdAsEids.length) {
         userExt = userExt || {};
         userExt.eids = [...userIdAsEids];
