@@ -1,4 +1,4 @@
-import { logMessage, isFn, deepAccess, logInfo } from '../src/utils.js';
+import { isFn, deepAccess, logInfo } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
