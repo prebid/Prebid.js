@@ -81,17 +81,9 @@ export const spec = {
     let accuontId = validBidRequests[0].params.accountId;
     const endpointURL = URL_ENDPOINT.replace(ACCOUNTID_MACROS, accuontId);
 
-    let winTop = window;
     let location;
-    // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
-    try {
-      location = new URL(bidderRequest.refererInfo.page)
-      winTop = window.top;
-    } catch (e) {
-      location = winTop.location;
-      logMessage(e);
-    };
-
+    location = bidderRequest.refererInfo
+    
     let bids = [];
     for (let bidRequest of validBidRequests) {
       let impObject = prepareImpObject(bidRequest);
@@ -105,8 +97,8 @@ export const spec = {
           language: (navigator && navigator.language) ? navigator.language.indexOf('-') != -1 ? navigator.language.split('-')[0] : navigator.language : '',
         },
         site: {
-          page: location.pathname,
-          host: location.host
+          page: location.page,
+          host: location.domain
         },
         source: {
           tid: bidderRequest?.ortb2?.source?.tid,
@@ -332,7 +324,7 @@ const parseSizes = (bid, mediaType) => {
 
 const addVideoParameters = (bidRequest) => {
   let videoObj = {};
-  let supportParamsList = ['mimes', 'minduration', 'maxduration', 'protocols', 'startdelay', 'placement', 'skip', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity']
+  let supportParamsList = ['mimes', 'minduration', 'maxduration', 'protocols', 'startdelay', 'skip', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity']
 
   for (let param of supportParamsList) {
     if (bidRequest.mediaTypes.video[param] !== undefined) {
