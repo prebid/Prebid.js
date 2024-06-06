@@ -80,7 +80,7 @@ export const spec = {
     if (validBidRequests && validBidRequests.length === 0) return []
     let accuontId = validBidRequests[0].params.accountId;
     const endpointURL = URL_ENDPOINT.replace(ACCOUNTID_MACROS, accuontId);
-
+    let winTop= window;
     let location;
     location = bidderRequest.refererInfo
     
