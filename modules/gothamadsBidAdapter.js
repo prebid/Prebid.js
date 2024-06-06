@@ -82,7 +82,7 @@ export const spec = {
     const endpointURL = URL_ENDPOINT.replace(ACCOUNTID_MACROS, accuontId);
     let winTop = window;
     let location;
-    location = bidderRequest.refererInfo;
+    location = bidderRequest?.refererInfo ?? null;
     let bids = [];
     for (let bidRequest of validBidRequests) {
       let impObject = prepareImpObject(bidRequest);
@@ -96,8 +96,8 @@ export const spec = {
           language: (navigator && navigator.language) ? navigator.language.indexOf('-') != -1 ? navigator.language.split('-')[0] : navigator.language : '',
         },
         site: {
-          page: location.page,
-          host: location.domain
+          page: location?.page,
+          host: location?.domain
         },
         source: {
           tid: bidderRequest?.ortb2?.source?.tid,
