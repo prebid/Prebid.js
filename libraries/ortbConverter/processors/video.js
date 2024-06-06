@@ -26,8 +26,8 @@ const ORTB_VIDEO_PARAMS = new Set([
   'playbackend'
 ]);
 
-const PLACEMENT = {
-  'instream': 1,
+const PLCMT = {
+  'outstream': 4,
 }
 
 export function fillVideoImp(imp, bidRequest, context) {
@@ -46,9 +46,9 @@ export function fillVideoImp(imp, bidRequest, context) {
       }
       Object.assign(video, format[0]);
     }
-    const placement = PLACEMENT[videoParams.context];
-    if (placement != null) {
-      video.placement = placement;
+    const plcmt = PLCMT[videoParams.context];
+    if (plcmt != null) {
+      video.plcmt = plcmt;
     }
     imp.video = mergeDeep(video, imp.video);
   }
