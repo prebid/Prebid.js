@@ -6,7 +6,7 @@ import {
 } from '../libraries/video/constants/events.js';
 // missing events: , AD_BREAK_START, , AD_BREAK_END, VIEWABLE, BUFFER, CAST, PLAYLIST_COMPLETE, RENDITION_UPDATE, PLAY_ATTEMPT_FAILED, AUTOSTART_BLOCKED
 import {
-  PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, PLCMT, VPAID_MIME_TYPE, AD_POSITION, PLAYBACK_END
+  PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, VPAID_MIME_TYPE, AD_POSITION, PLAYBACK_END
 } from '../libraries/video/constants/ortb.js';
 import { VIDEO_JS_VENDOR } from '../libraries/video/constants/vendorCodes.js';
 import { submodule } from '../src/hook.js';
@@ -146,10 +146,7 @@ export function VideojsProvider(providerConfig, vjs_, adState_, timeState_, call
     // ~ Sort of resolved check if the player has a source to tell if the placement is instream
     // Still cannot reliably check what type of placement the player is if its outstream
     // i.e. we can't tell if its interstitial, in article, etc.
-    if (player.src()) {
-      video.placement = PLACEMENT.INSTREAM;
-    }
-
+    // update: cannot infer instream ever, always need declarations 
     // Placement according to IQG Guidelines 4.2.8
     // https://cdn2.hubspot.net/hubfs/2848641/TrustworthyAccountabilityGroup_May2017/Docs/TAG-Inventory-Quality-Guidelines-v2_2-10-18-2016.pdf?t=1509469105938
     const findPosition = vjs.dom.findPosition;
