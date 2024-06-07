@@ -6,7 +6,7 @@ import {
 const {VideojsProvider, utils} = require('modules/videojsVideoProvider');
 
 const {
-  PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLACEMENT, VPAID_MIME_TYPE, AD_POSITION
+  PROTOCOLS, API_FRAMEWORKS, VIDEO_MIME_TYPE, PLAYBACK_METHODS, PLCMT, VPAID_MIME_TYPE, AD_POSITION
 } = require('libraries/video/constants/ortb.js');
 
 const videojs = require('video.js').default;
@@ -139,7 +139,7 @@ describe('videojsProvider', function () {
       expect(video.playbackmethod).to.include(PLAYBACK_METHODS.CLICK_TO_PLAY);
       expect(video.playbackend).to.equal(1);
       expect(video.api).to.deep.equal([2]);
-      expect(video.placement).to.be.equal(PLACEMENT.INSTREAM);
+      expect(video.plcmt).to.be.equal(PLCMT.ACCOMPANYING_CONTENT);
     });
 
     it('should populate oRTB Content', function () {

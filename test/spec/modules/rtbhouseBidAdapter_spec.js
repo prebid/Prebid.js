@@ -43,12 +43,14 @@ describe('RTBHouseAdapter', () => {
     });
 
     it('should return false when required params are not passed', function () {
+
       let invalidBid = Object.assign({}, bid);
       delete invalidBid.params;
       invalidBid.params = {
         'someIncorrectParam': 0
       };
       expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
+
     });
   });
 
@@ -460,7 +462,7 @@ describe('RTBHouseAdapter', () => {
         let bidRequest = Object.assign([], bidRequests);
         delete bidRequest[0].params.test;
         config.setConfig({ fledgeConfig: true });
-        const request = spec.buildRequests(bidRequest, { ...bidderRequest, fledgeEnabled: true });
+        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: {enabled: true} });
         expect(request.url).to.equal('https://prebid-eu.creativecdn.com/bidder/prebidfledge/bids');
         expect(request.method).to.equal('POST');
       });
@@ -470,7 +472,7 @@ describe('RTBHouseAdapter', () => {
         delete bidRequest[0].params.test;
 
         config.setConfig({ fledgeConfig: false });
-        const request = spec.buildRequests(bidRequest, { ...bidderRequest, fledgeEnabled: true });
+        const request = spec.buildRequests(bidRequest, {...bidderRequest, paapi: {enabled: true}});
         const data = JSON.parse(request.data);
         expect(data.ext).to.exist.and.to.be.a('object');
         expect(data.ext.fledge_config).to.exist.and.to.be.a('object');
@@ -490,7 +492,7 @@ describe('RTBHouseAdapter', () => {
             decisionLogicUrl: 'https://sellers.domain/decision.url'
           }
         });
-        const request = spec.buildRequests(bidRequest, { ...bidderRequest, fledgeEnabled: true });
+        const request = spec.buildRequests(bidRequest, {...bidderRequest, paapi: {enabled: true}});
         const data = JSON.parse(request.data);
         expect(data.ext).to.exist.and.to.be.a('object');
         expect(data.ext.fledge_config).to.exist.and.to.be.a('object');
@@ -506,7 +508,7 @@ describe('RTBHouseAdapter', () => {
         bidRequest[0].ortb2Imp = {
           ext: { ae: 2 }
         };
-        const request = spec.buildRequests(bidRequest, { ...bidderRequest, fledgeEnabled: false });
+        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: {enabled: false} });
         let data = JSON.parse(request.data);
         if (data.imp[0].ext) {
           expect(data.imp[0].ext).to.not.have.property('ae');
@@ -519,7 +521,7 @@ describe('RTBHouseAdapter', () => {
         bidRequest[0].ortb2Imp = {
           ext: { ae: 2 }
         };
-        const request = spec.buildRequests(bidRequest, { ...bidderRequest, fledgeEnabled: true });
+        const request = spec.buildRequests(bidRequest, { ...bidderRequest, paapi: {enabled: true} });
         let data = JSON.parse(request.data);
         expect(data.imp[0].ext.ae).to.equal(2);
       });
@@ -782,9 +784,9 @@ describe('RTBHouseAdapter', () => {
 
       it('should return FLEDGE auction_configs alongside bids', function () {
         expect(response).to.have.property('bids');
-        expect(response).to.have.property('fledgeAuctionConfigs');
-        expect(response.fledgeAuctionConfigs.length).to.equal(1);
-        expect(response.fledgeAuctionConfigs[0].bidId).to.equal('test-bid-id');
+        expect(response).to.have.property('paapi');
+        expect(response.paapi.length).to.equal(1);
+        expect(response.paapi[0].bidId).to.equal('test-bid-id');
       });
     });
 

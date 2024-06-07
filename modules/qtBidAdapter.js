@@ -1,4 +1,4 @@
-import { logMessage, logError, deepAccess } from '../src/utils.js';
+import { logMessage, deepAccess } from '../src/utils.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
@@ -91,7 +91,6 @@ function getBidFloor(bid) {
     });
     return bidFloor.floor;
   } catch (err) {
-    logError(err);
     return 0;
   }
 }

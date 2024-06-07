@@ -764,6 +764,7 @@ describe('S2S Adapter', function () {
 
     it('should set tmaxmax correctly when publisher has specified it', () => {
       const cfg = {...CONFIG};
+      config.setConfig({s2sConfig: cfg})
 
       // publisher has specified a tmaxmax in their setup
       const ortb2Fragments = {
@@ -784,8 +785,9 @@ describe('S2S Adapter', function () {
 
     it('should set tmaxmax correctly when publisher has not specified it', () => {
       const cfg = {...CONFIG};
+      config.setConfig({s2sConfig: cfg})
 
-      // publisher has not specified a tmaxmax in their setup - so we should be 
+      // publisher has not specified a tmaxmax in their setup - so we should be
       // falling back to requestBidsTimeout
       const ortb2Fragments = {};
       const s2sCfg = {...REQUEST, cfg};
@@ -889,22 +891,6 @@ describe('S2S Adapter', function () {
         expect(requestBid.imp[0].video).to.exist;
       });
 
-      it('should default video placement if not defined and instream', function () {
-        let ortb2Config = utils.deepClone(CONFIG);
-        ortb2Config.endpoint.p1Consent = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
-
-        config.setConfig({ s2sConfig: ortb2Config });
-
-        let videoBid = utils.deepClone(VIDEO_REQUEST);
-        videoBid.ad_units[0].mediaTypes.video.context = 'instream';
-        adapter.callBids(videoBid, BID_REQUESTS, addBidResponse, done, ajax);
-
-        const requestBid = JSON.parse(server.requests[0].requestBody);
-        expect(requestBid.imp[0].banner).to.not.exist;
-        expect(requestBid.imp[0].video).to.exist;
-        expect(requestBid.imp[0].video.placement).to.equal(1);
-      });
-
       it('converts video mediaType properties into openRTB format', function () {
         let ortb2Config = utils.deepClone(CONFIG);
         ortb2Config.endpoint.p1Consent = 'https://prebid.adnxs.com/pbs/v1/openrtb2/auction';
@@ -918,7 +904,6 @@ describe('S2S Adapter', function () {
         const requestBid = JSON.parse(server.requests[0].requestBody);
         expect(requestBid.imp[0].banner).to.not.exist;
         expect(requestBid.imp[0].video).to.exist;
-        expect(requestBid.imp[0].video.placement).to.equal(1);
         expect(requestBid.imp[0].video.w).to.equal(640);
         expect(requestBid.imp[0].video.h).to.equal(480);
         expect(requestBid.imp[0].video.playerSize).to.be.undefined;
@@ -3548,12 +3533,15 @@ describe('S2S Adapter', function () {
 
       beforeEach(function () {
         fledgeStub = sinon.stub();
-        config.setConfig({CONFIG});
+        config.setConfig({
+          s2sConfig: CONFIG,
+        });
         bidderRequests = deepClone(BID_REQUESTS);
-        AU
         bidderRequests.forEach(req => {
           Object.assign(req, {
-            fledgeEnabled: true,
+            paapi: {
+              enabled: true
+            },
             ortb2: {
               fpd: 1
             }
@@ -3561,7 +3549,7 @@ describe('S2S Adapter', function () {
           req.bids.forEach(bid => {
             Object.assign(bid, {
               ortb2Imp: {
-                fpd: 2
+                fpd: 2,
               }
             })
           })
@@ -3572,8 +3560,8 @@ describe('S2S Adapter', function () {
 
       function expectFledgeCalls() {
         const auctionId = bidderRequests[0].auctionId;
-        sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: bidderRequests[0].ortb2, ortb2Imp: bidderRequests[0].bids[0].ortb2Imp}), {config: {id: 1}})
-        sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: undefined, ortb2Imp: undefined}), {config: {id: 2}})
+        sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: bidderRequests[0].ortb2, ortb2Imp: bidderRequests[0].bids[0].ortb2Imp}), sinon.match({config: {id: 1}}))
+        sinon.assert.calledWith(fledgeStub, sinon.match({auctionId, adUnitCode: AU, ortb2: undefined, ortb2Imp: undefined}), sinon.match({config: {id: 2}}))
       }
 
       it('calls addComponentAuction alongside addBidResponse', function () {

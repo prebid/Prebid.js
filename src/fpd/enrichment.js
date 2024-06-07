@@ -23,9 +23,9 @@ export const dep = {
 const oneClient = clientSectionChecker('FPD')
 
 /**
- * Enrich an ortb2 object with first party data.
- * @param {Promise[{}]} fpd: a promise to an ortb2 object.
- * @returns: {Promise[{}]}: a promise to an enriched ortb2 object.
+ * Enrich an ortb2 object with first-party data.
+ * @param {Promise<Object>} fpd - A promise that resolves to an ortb2 object.
+ * @returns {Promise<Object>} - A promise that resolves to an enriched ortb2 object.
  */
 export const enrichFPD = hook('sync', (fpd) => {
   const promArr = [fpd, getSUA().catch(() => null), tryToGetCdepLabel().catch(() => null)];

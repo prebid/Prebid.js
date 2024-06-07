@@ -1,4 +1,4 @@
-# Overview
+### Overview
 
 ```
 Module Name: Dailymotion Bid Adapter
@@ -6,12 +6,12 @@ Module Type: Bidder Adapter
 Maintainer: ad-leo-engineering@dailymotion.com
 ```
 
-# Description
+### Description
 
 Dailymotion prebid adapter.
 Supports video ad units in instream context.
 
-# Configuration options
+### Configuration options
 
 Before calling this adapter, you need to at least set a video adUnit in an instream context and the API key in the bid parameters:
 
@@ -36,7 +36,29 @@ const adUnits = [
 
 `apiKey` is your publisher API key. For testing purpose, you can use "dailymotion-testing".
 
-# Test Parameters
+#### User Sync
+
+To enable user synchronization, add the following code. Dailymotion highly recommends using iframes and/or pixels for user syncing. This feature enhances DSP user match rates, resulting in higher bid rates and bid prices. Ensure that `pbjs.setConfig()` is called only once.
+
+```javascript
+pbjs.setConfig({
+  userSync: {
+    syncEnabled: true,
+    filterSettings: {
+      iframe: {
+        bidders: '*', // Or add dailymotion to your list included bidders
+        filter: 'include'
+      },
+      image: {
+        bidders: '*', // Or add dailymotion to your list of included bidders
+        filter: 'include'
+      },
+    },
+  },
+});
+```
+
+### Test Parameters
 
 By setting the following bid parameters, you'll get a constant response to any request, to validate your adapter integration:
 
@@ -61,7 +83,7 @@ const adUnits = [
 
 Please note that failing to set these will result in the adapter not bidding at all.
 
-# Sample video AdUnit
+### Sample video AdUnit
 
 To allow better targeting, you should provide as much context about the video as possible.
 There are three ways of doing this depending on if you're using Dailymotion player or a third party one.
@@ -118,6 +140,10 @@ const adUnits = [
           tags: 'tag_1,tag_2,tag_3',
           title: 'test video',
           topics: 'topic_1, topic_2',
+          isCreatedForKids: false,
+          videoViewsInSession: 1,
+          autoplay: false,
+          playerVolume: 8
         }
       }
     }],
@@ -126,6 +152,12 @@ const adUnits = [
       video: {
         api: [2, 7],
         context: 'instream',
+        mimes: ['video/mp4'],
+        minduration: 5,
+        maxduration: 30,
+        playbackmethod: [3],
+        plcmt: 1,
+        protocols: [7, 8, 11, 12, 13, 14]
         startdelay: 0,
         w: 1280,
         h: 720,
@@ -147,10 +179,18 @@ Each of the following video metadata fields can be added in bids.params.video.
 * `private` - True if video is not publicly available
 * `tags` - Tags for the video, comma separated
 * `title` - Video title
+* `url` - URL of the content
 * `topics` - Main topics for the video, comma separated
 * `xid` - Dailymotion video identifier (only applicable if using the Dailymotion player)
+* `isCreatedForKids` - [The content is created for children as primary audience](https://faq.dailymotion.com/hc/en-us/articles/360020920159-Content-created-for-kids)
 
-If you already specify [First-Party data](https://docs.prebid.org/features/firstPartyData.html) through the `ortb2` object when calling [`pbjs.requestBids(requestObj)`](https://docs.prebid.org/dev-docs/publisher-api-reference/requestBids.html), we will fallback to those values when possible. See the mapping below.
+The following contextual informations can also be added in bids.params.video.
+
+* `videoViewsInSession` - Number of videos viewed within the current user session
+* `autoplay` - Playback was launched without user interaction
+* `playerVolume` - Player volume between 0 (muted, 0%) and 10 (100%)
+
+If you already specify [First-Party data](https://docs.prebid.org/features/firstPartyData.html) through the `ortb2` object when calling [`pbjs.requestBids(requestObj)`](https://docs.prebid.org/dev-docs/publisher-api-reference/requestBids.html), we will collect the following values and fallback to bids.params.video values when applicable. See the mapping below.
 
 | From ortb2                                                                      | Metadata fields |
 |---------------------------------------------------------------------------------|-----------------|
@@ -161,8 +201,14 @@ If you already specify [First-Party data](https://docs.prebid.org/features/first
 | `ortb2.site.content.livestream`                                                 | `livestream`    |
 | `ortb2.site.content.keywords`                                                   | `tags`          |
 | `ortb2.site.content.title`                                                      | `title`         |
+| `ortb2.site.content.url`                                                        | `url`           |
+| `ortb2.app.bundle`                                                              | N/A             |
+| `ortb2.app.storeurl`                                                            | N/A             |
+| `ortb2.device.lmt`                                                              | N/A             |
+| `ortb2.device.ifa`                                                              | N/A             |
+| `ortb2.device.ext.atts`                                                         | N/A             |
 
-# Integrating the adapter
+### Integrating the adapter
 
 To use the adapter with any non-test request, you first need to ask an API key from Dailymotion. Please contact us through **DailymotionPrebid.js@dailymotion.com**.
 
