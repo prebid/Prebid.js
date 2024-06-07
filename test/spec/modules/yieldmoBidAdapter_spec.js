@@ -680,7 +680,7 @@ describe('YieldmoAdapter', function () {
         );
         let payload = buildAndGetData([mockVideoBid({...params})], 0, videoBidder);
         expect(payload.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
-        expect(payload.user.eids).to.eql(params.fakeUserIdAsEids);
+        expect(payload.user.ext.eids).to.eql(params.fakeUserIdAsEids);
       });
 
       it('should add eids to the video bid request', function () {
@@ -702,7 +702,7 @@ describe('YieldmoAdapter', function () {
             }]
           }]
         };
-        expect(buildAndGetData([mockVideoBid({...params})]).user.eids).to.eql(params.fakeUserIdAsEids);
+        expect(buildAndGetData([mockVideoBid({...params})]).user.ext.eids).to.eql(params.fakeUserIdAsEids);
       });
 
       it('should add topics to the bid request', function () {
