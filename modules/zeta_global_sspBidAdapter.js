@@ -147,6 +147,18 @@ export const spec = {
     payload.device.w = screen.width;
     payload.device.h = screen.height;
 
+    if (bidderRequest.ortb2?.user?.geo && bidderRequest.ortb2?.device?.geo) {
+      payload.device.geo = { ...payload.device.geo, ...bidderRequest.ortb2?.device.geo };
+      payload.user.geo = { ...payload.user.geo, ...bidderRequest.ortb2?.user.geo };
+    } else {
+      if (bidderRequest.ortb2?.user?.geo) {
+        payload.user.geo = payload.device.geo = { ...payload.user.geo, ...bidderRequest.ortb2?.user.geo };
+      }
+      if (bidderRequest.ortb2?.device?.geo) {
+        payload.user.geo = payload.device.geo = { ...payload.user.geo, ...bidderRequest.ortb2?.device.geo };
+      }
+    }
+
     if (bidderRequest?.ortb2?.device?.sua) {
       payload.device.sua = bidderRequest.ortb2.device.sua;
     }

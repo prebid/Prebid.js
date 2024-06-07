@@ -26,7 +26,6 @@ import { Renderer } from '../src/Renderer.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 const BIDDER_CODE = 'ix';
-const ALIAS_BIDDER_CODE = 'roundel';
 const GLOBAL_VENDOR_ID = 10;
 const SECURE_BID_URL = 'https://htlb.casalemedia.com/openrtb/pbjs';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE];
@@ -693,11 +692,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   // and if the data for the partner exist
   if (window.headertag && typeof window.headertag.getIdentityInfo === 'function') {
     addRTI(userEids, eidInfo);
-  }
-
-  // If `roundel` alias bidder, only send requests if liveramp ids exist.
-  if (bidderRequest && bidderRequest.bidderCode === ALIAS_BIDDER_CODE && !eidInfo.seenSources['liveramp.com']) {
-    return [];
   }
 
   const requests = [];
@@ -1606,11 +1600,6 @@ export const spec = {
 
   code: BIDDER_CODE,
   gvlid: GLOBAL_VENDOR_ID,
-  aliases: [{
-    code: ALIAS_BIDDER_CODE,
-    gvlid: GLOBAL_VENDOR_ID,
-    skipPbsAliasing: false
-  }],
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   /**
