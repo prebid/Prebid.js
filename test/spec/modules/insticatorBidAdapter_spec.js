@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { spec, storage } from '../../../modules/insticatorBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js'
-import { logInfo } from '../../../src/utils.js';
 
 const USER_ID_KEY = 'hb_insticator_uid';
 const USER_ID_DUMMY_VALUE = '74f78609-a92d-4cf1-869f-1b244bbfb5d2';
@@ -18,7 +17,6 @@ describe('InsticatorBidAdapter', function () {
     adUnitCode: 'adunit-code',
     params: {
       adUnitId: '1a2b3c4d5e6f1a2b3c4d',
-      publisherId: '1a2b3c4d5e6f1a2b3c4d',
       user: {
         yob: 1984,
         gender: 'M'
@@ -388,8 +386,6 @@ describe('InsticatorBidAdapter', function () {
       expect(data.site.domain).not.to.be.empty;
       expect(data.site.page).not.to.be.empty;
       expect(data.site.ref).to.equal(bidderRequest.refererInfo.ref);
-      expect(data.site.publisher).to.be.an('object');
-      expect(data.site.publisher.id).to.equal(bidRequest.params.publisherId);
       expect(data.device).to.be.an('object');
       expect(data.device.w).to.equal(window.innerWidth);
       expect(data.device.h).to.equal(window.innerHeight);
@@ -769,6 +765,24 @@ describe('InsticatorBidAdapter', function () {
       expect(data.regs.ext).to.have.property('gdpr');
       expect(data.regs.ext).to.have.property('us_privacy');
       expect(data.regs.ext).to.have.property('gppSid');
+    });
+
+    it('should return true if publisherId is absent', () => {
+      expect(spec.isBidRequestValid(bidRequest)).to.be.true;
+    })
+
+    it('should have publisher object with id in site object, if publisherId present in params', function () {
+      const tempBiddRequest = {
+        ...bidRequest,
+      }
+      tempBiddRequest.params = {
+        ...tempBiddRequest.params,
+        publisherId: '86dd03a1-053f-4e3e-90e7-389070a0c62c'
+      }
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.site.publisher).to.be.an('object');
+      expect(data.site.publisher.id).to.equal(tempBiddRequest.params.publisherId)
     });
   });
 
