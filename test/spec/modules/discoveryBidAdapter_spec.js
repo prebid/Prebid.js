@@ -11,11 +11,9 @@ import {
   COOKIE_KEY_MGUID,
   getCurrentTimeToUTCString,
   buildUTMTagData,
-  getHLen,
-  getHC,
-  getDM,
 } from 'modules/discoveryBidAdapter.js';
 import * as utils from 'src/utils.js';
+import { getHLen, getHC, getDM } from '../../../src/fpd/navigator.js';
 
 describe('discovery:BidAdapterTests', function () {
   let sandbox;

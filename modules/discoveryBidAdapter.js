@@ -2,6 +2,7 @@ import * as utils from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { getHLen, getHC, getDM } from '../src/fpd/navigator.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -114,36 +115,6 @@ export function getPageKeywords(win = window) {
   }
 
   return (element && element.content) || '';
-}
-
-export function getHLen(win = window) {
-  let hLen;
-  try {
-    hLen = win.top.history.length;
-  } catch (error) {
-    hLen = undefined;
-  }
-  return hLen;
-}
-
-export function getHC(win = window) {
-  let hc;
-  try {
-    hc = win.top.navigator.hardwareConcurrency;
-  } catch (error) {
-    hc = undefined;
-  }
-  return hc;
-}
-
-export function getDM(win = window) {
-  let dm;
-  try {
-    dm = win.top.navigator.deviceMemory;
-  } catch (error) {
-    dm = undefined;
-  }
-  return dm;
 }
 
 /**
