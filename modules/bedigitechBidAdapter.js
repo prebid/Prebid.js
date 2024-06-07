@@ -26,7 +26,7 @@ function interpretResponse(placementResponse, bids) {
       mediaType: BANNER,
     },
   };
-  bids.push(bid);
+    bids.push(bid);
 }
 
 export const spec = {
