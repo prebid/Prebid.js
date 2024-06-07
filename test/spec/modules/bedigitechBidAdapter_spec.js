@@ -13,7 +13,7 @@ describe('BedigitechAdapter', function () {
   });
 
   describe('isBidRequestValid', function () {
-    const bid = {
+    const invalidBid = {
       bidder: 'bedigitech',
       adUnitCode: 'adunit-code',
       mediaTypes: {
@@ -26,11 +26,11 @@ describe('BedigitechAdapter', function () {
       auctionId: '1d1a030790a475',
       params: {
         placementId: 309
-    },
+      },
     };
 
     it('should return true when required params found', function () {
-      expect(spec.isBidRequestValid(bid)).to.equal(true);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(true);
     });
 
     it('should return false when required params are not passed', function () {
