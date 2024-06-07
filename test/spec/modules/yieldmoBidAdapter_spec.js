@@ -264,7 +264,11 @@ describe('YieldmoAdapter', function () {
           vendorData: {blerp: 1},
           gdprApplies: true,
         };
-        const data = buildAndGetData([mockBannerBid()], 0, mockBidderRequest({gdprConsent}));
+        const data = buildAndGetData(
+          [mockBannerBid()],
+          0,
+          mockBidderRequest({ gdprConsent })
+        );
         expect(data.userConsent).equal(
           JSON.stringify({
             gdprApplies: true,
@@ -638,6 +642,45 @@ describe('YieldmoAdapter', function () {
           ext: { data: { pbadslot: '/6355419/Travel/Europe/France/Paris' } },
         };
         expect(buildAndGetData([mockVideoBid({ortb2Imp})]).imp[0].ext.gpid).to.be.equal(ortb2Imp.ext.data.pbadslot);
+      });
+
+      it('should pass consent in video bid along with eids', () => {
+        const params = {
+          userIdAsEids: [
+            {
+              source: 'pubcid.org',
+              uids: [
+                {
+                  id: 'fake_pubcid',
+                  atype: 1,
+                },
+              ],
+            },
+          ],
+          fakeUserIdAsEids: [
+            {
+              source: 'pubcid.org',
+              uids: [
+                {
+                  id: 'fake_pubcid',
+                  atype: 1,
+                },
+              ],
+            },
+          ],
+        };
+        let videoBidder = mockBidderRequest(
+          {
+            gdprConsent: {
+              gdprApplies: 1,
+              consentString: 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==',
+            },
+          },
+          [mockVideoBid()]
+        );
+        let payload = buildAndGetData([mockVideoBid({...params})], 0, videoBidder);
+        expect(payload.user.ext.consent).to.equal('BOJ/P2HOJ/P2HABABMAAAAAZ+A==');
+        expect(payload.user.eids).to.eql(params.fakeUserIdAsEids);
       });
 
       it('should add eids to the video bid request', function () {
