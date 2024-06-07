@@ -4,6 +4,7 @@ import { getGlobal } from '../../src/prebidGlobal.js';
 /**
  * @constructor
  * @param {Object} dfpModule_ - the DFP ad server module
+ * @returns {AdServerProvider}
  */
 function GamAdServerProvider(dfpModule_) {
   const dfp = dfpModule_;

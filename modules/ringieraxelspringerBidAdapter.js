@@ -364,7 +364,7 @@ export const spec = {
     const slotsQuery = getSlots(bidRequests);
     const contextQuery = getContextParams(bidRequests, bidderRequest);
     const gdprQuery = getGdprParams(bidderRequest);
-    const fledgeEligible = Boolean(bidderRequest?.paapi?.enabled);
+    const fledgeEligible = Boolean(bidderRequest && bidderRequest.fledgeEnabled);
     const network = bidRequests[0].params.network;
     const bidIds = bidRequests.map((bid) => ({
       slot: bid.params.slot,
@@ -392,7 +392,7 @@ export const spec = {
 
     if (fledgeAuctionConfigs) {
       // Return a tuple of bids and auctionConfigs. It is possible that bids could be null.
-      return {bids, paapi: fledgeAuctionConfigs};
+      return {bids, fledgeAuctionConfigs};
     } else {
       return bids;
     }

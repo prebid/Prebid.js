@@ -1,21 +1,34 @@
 /**
  * GPT-specific slot configuration logic for PAAPI.
  */
-import {getHook, submodule} from '../src/hook.js';
-import {deepAccess, logInfo, logWarn, sizeTupleToSizeString} from '../src/utils.js';
+import {submodule} from '../src/hook.js';
+import {deepAccess, logInfo, logWarn} from '../src/utils.js';
 import {getGptSlotForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 import {config} from '../src/config.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 
-import {keyCompare} from '../src/utils/reducers.js';
-const MODULE = 'paapiForGpt';
+// import parent module to keep backwards-compat for NPM consumers after paapi was split from fledgeForGpt
+// there's a special case in webpack.conf.js to avoid duplicating build output on non-npm builds
+// TODO: remove this in prebid 9
+// eslint-disable-next-line prebid/validate-imports
+import './paapi.js';
+const MODULE = 'fledgeForGpt';
 
 let getPAAPIConfig;
 
-let autoconfig = false;
+// for backwards compat, we attempt to automatically set GPT configuration as soon as we
+// have the auction configs available. Disabling this allows one to call pbjs.setPAAPIConfigForGPT at their
+// own pace.
+let autoconfig = true;
 
-config.getConfig('paapi', (cfg) => {
-  autoconfig = deepAccess(cfg, 'paapi.gpt.autoconfig', false);
+Object.entries({
+  [MODULE]: MODULE,
+  'paapi': 'paapi.gpt'
+}).forEach(([topic, ns]) => {
+  const configKey = `${ns}.autoconfig`;
+  config.getConfig(topic, (cfg) => {
+    autoconfig = deepAccess(cfg, configKey, true);
+  });
 });
 
 export function slotConfigurator() {
@@ -60,68 +73,6 @@ export function onAuctionConfigFactory(setGptConfig = setComponentAuction) {
   }
 }
 
-export const getPAAPISizeHook = (() => {
-  /*
-    https://github.com/google/ads-privacy/tree/master/proposals/fledge-multiple-seller-testing#faq
-    https://support.google.com/admanager/answer/1100453?hl=en
-
-    Ignore any placeholder sizes, where placeholder is defined as a square creative with a side of <= 5 pixels
-    Look if there are any sizes that are part of the set of supported ad sizes defined here. If there are, choose the largest supported size by area (width * height)
-        For clarity, the set of supported ad sizes includes all of the ad sizes listed under “Top-performing ad sizes”, “Other supported ad sizes”, and “Regional ad sizes”.
-    If not, choose the largest remaining size (i.e. that isn’t in the list of supported ad sizes) by area (width * height)
-   */
-  const SUPPORTED_SIZES = [
-    [728, 90],
-    [336, 280],
-    [300, 250],
-    [300, 50],
-    [160, 600],
-    [1024, 768],
-    [970, 250],
-    [970, 90],
-    [768, 1024],
-    [480, 320],
-    [468, 60],
-    [320, 480],
-    [320, 100],
-    [320, 50],
-    [300, 600],
-    [300, 100],
-    [250, 250],
-    [234, 60],
-    [200, 200],
-    [180, 150],
-    [125, 125],
-    [120, 600],
-    [120, 240],
-    [120, 60],
-    [88, 31],
-    [980, 120],
-    [980, 90],
-    [950, 90],
-    [930, 180],
-    [750, 300],
-    [750, 200],
-    [750, 100],
-    [580, 400],
-    [250, 360],
-    [240, 400],
-  ].sort(keyCompare(([w, h]) => -(w * h)))
-    .map(size => [size, sizeTupleToSizeString(size)]);
-
-  return function(next, sizes) {
-    if (sizes?.length) {
-      const sizeStrings = new Set(sizes.map(sizeTupleToSizeString));
-      const preferredSize = SUPPORTED_SIZES.find(([_, sizeStr]) => sizeStrings.has(sizeStr));
-      if (preferredSize) {
-        next.bail(preferredSize[0]);
-        return;
-      }
-    }
-    next(sizes);
-  }
-})();
-
 export function setPAAPIConfigFactory(
   getConfig = (filters) => getPAAPIConfig(filters, true),
   setGptConfig = setComponentAuction) {
@@ -154,6 +105,5 @@ submodule('paapi', {
   onAuctionConfig: onAuctionConfigFactory(),
   init(params) {
     getPAAPIConfig = params.getPAAPIConfig;
-    getHook('getPAAPISize').before(getPAAPISizeHook);
   }
 });

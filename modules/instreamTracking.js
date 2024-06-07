@@ -41,10 +41,9 @@ const whitelistedResources = /video|fetch|xmlhttprequest|other/;
  *
  * Note: this is a workaround till a better approach is engineered.
  *
- * @param {object} config
- * @param {Array<AdUnit>} config.adUnits
- * @param {Array<Bid>} config.bidsReceived
- * @param {Array<BidRequest>} config.bidderRequests
+ * @param {Array<AdUnit>} adUnits
+ * @param {Array<Bid>} bidsReceived
+ * @param {Array<BidRequest>} bidderRequests
  *
  * @return {boolean} returns TRUE if tracking started
  */

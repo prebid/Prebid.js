@@ -155,7 +155,7 @@ function buildVideoParams(videoMediaType, videoParams) {
     'maxduration',
     'protocols',
     'startdelay',
-    'plcmt',
+    'placement',
     'skip',
     'skipafter',
     'minbitrate',
@@ -165,6 +165,17 @@ function buildVideoParams(videoMediaType, videoParams) {
     'api',
     'linearity',
   ]);
+
+  switch (videoMediaType.context) {
+    case 'instream':
+      params.placement = 1;
+      break;
+    case 'outstream':
+      params.placement = 2;
+      break;
+    default:
+      break;
+  }
 
   if (videoMediaType.playerSize) {
     params.w = videoMediaType.playerSize[0][0];
@@ -290,7 +301,8 @@ function isValidBanner(banner) {
 function isValidVideo(videoMediaType, videoParams) {
   const params = buildVideoParams(videoMediaType, videoParams);
 
-  return !!(isValidSize([params.w, params.h]) &&
+  return !!(params.placement &&
+    isValidSize([params.w, params.h]) &&
     params.mimes && params.mimes.length &&
     isArrayOfNums(params.protocols) && params.protocols.length);
 }

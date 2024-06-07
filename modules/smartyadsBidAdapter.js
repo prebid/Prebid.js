@@ -1,3 +1,4 @@
+import { logMessage } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -73,15 +74,23 @@ export const spec = {
 
     let winTop = window;
     let location;
-    location = bidderRequest?.refererInfo ?? null;
+    // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
+    try {
+      location = new URL(bidderRequest.refererInfo.page)
+      winTop = window.top;
+    } catch (e) {
+      location = winTop.location;
+      logMessage(e);
+    };
+
     let placements = [];
     let request = {
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
       'language': (navigator && navigator.language) ? navigator.language : '',
       'secure': 1,
-      'host': location?.domain ?? '',
-      'page': location?.page ?? '',
+      'host': location.host,
+      'page': location.pathname,
       'coppa': config.getConfig('coppa') === true ? 1 : 0,
       'placements': placements,
       'eeid': validBidRequests[0]?.userIdAsEids,

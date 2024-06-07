@@ -629,7 +629,7 @@ describe('jwplayerRtdProvider', function() {
 
       expect(ortb2Fragments.global).to.have.property('site');
       expect(ortb2Fragments.global.site).to.have.property('content');
-      expect(ortb2Fragments.global.site.content).to.have.property('id', 'randomContentId');
+      expect(ortb2Fragments.global.site.content).to.have.property('id', 'jw_' + testIdForSuccess);
       expect(ortb2Fragments.global.site.content).to.have.property('data');
       const data = ortb2Fragments.global.site.content.data;
       expect(data).to.have.length(3);
@@ -801,7 +801,7 @@ describe('jwplayerRtdProvider', function() {
   describe(' Add Ortb Site Content', function () {
     beforeEach(() => {
       setOverrides({
-        overrideContentId: 'whenEmpty',
+        overrideContentId: 'always',
         overrideContentUrl: 'whenEmpty',
         overrideContentTitle: 'whenEmpty',
         overrideContentDescription: 'whenEmpty'
@@ -865,16 +865,16 @@ describe('jwplayerRtdProvider', function() {
         }
       };
 
-      const newId = 'newId';
+      const expectedId = 'expectedId';
       const expectedUrl = 'expectedUrl';
       const expectedTitle = 'expectedTitle';
       const expectedDescription = 'expectedDescription';
       const expectedData = { datum: 'datum' };
-      addOrtbSiteContent(ortb2, newId, expectedData, expectedTitle, expectedDescription, expectedUrl);
+      addOrtbSiteContent(ortb2, expectedId, expectedData, expectedTitle, expectedDescription, expectedUrl);
       expect(ortb2).to.have.nested.property('site.random.random_sub', 'randomSub');
       expect(ortb2).to.have.nested.property('app.content.id', 'appId');
       expect(ortb2).to.have.nested.property('site.content.ext.random_field', 'randomField');
-      expect(ortb2).to.have.nested.property('site.content.id', 'oldId');
+      expect(ortb2).to.have.nested.property('site.content.id', expectedId);
       expect(ortb2).to.have.nested.property('site.content.url', expectedUrl);
       expect(ortb2).to.have.nested.property('site.content.title', expectedTitle);
       expect(ortb2).to.have.nested.property('site.content.ext.description', expectedDescription);
@@ -889,7 +889,7 @@ describe('jwplayerRtdProvider', function() {
       expect(ortb2).to.have.nested.property('site.content.id', expectedId);
     });
 
-    it('should keep old content id by default', function () {
+    it('should override content id by default', function () {
       const ortb2 = {
         site: {
           content: {
@@ -898,8 +898,9 @@ describe('jwplayerRtdProvider', function() {
         }
       };
 
-      addOrtbSiteContent(ortb2, 'newId');
-      expect(ortb2).to.have.nested.property('site.content.id', 'oldId');
+      const expectedId = 'expectedId';
+      addOrtbSiteContent(ortb2, expectedId);
+      expect(ortb2).to.have.nested.property('site.content.id', expectedId);
     });
 
     it('should keep previous content id when new value is not available', function () {

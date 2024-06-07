@@ -663,7 +663,7 @@ function _createImpressionObject(bid, bidderRequest) {
   var sizes = bid.hasOwnProperty('sizes') ? bid.sizes : [];
   var mediaTypes = '';
   var format = [];
-  var isFledgeEnabled = bidderRequest?.paapi?.enabled;
+  var isFledgeEnabled = bidderRequest?.fledgeEnabled;
 
   impObj = {
     id: bid.bidId,
@@ -1094,6 +1094,7 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
+   * @param {validBidRequests} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: (validBidRequests, bidderRequest) => {
@@ -1418,7 +1419,7 @@ export const spec = {
         });
         return {
           bids: bidResponses,
-          paapi: fledgeAuctionConfigs,
+          fledgeAuctionConfigs,
         }
       }
     } catch (error) {

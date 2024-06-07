@@ -157,6 +157,7 @@ export const spec = {
             h: sizes[1],
             skip: VIDEO_BID.skip || 0,
             playbackmethod: VIDEO_BID.playbackmethod || [1],
+            placement: (bid.params.execution === 'outstream' || VIDEO_BID.context === 'outstream') ? 5 : 1,
             ext: {
               lkqdcustomparameters: {}
             },

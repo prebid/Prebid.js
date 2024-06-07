@@ -12,8 +12,6 @@ import 'modules/priceFloors.js';
 import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
-import 'modules/paapi.js';
-
 import {deepClone} from 'src/utils.js';
 import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {hook} from '../../../src/hook.js';
@@ -1019,9 +1017,7 @@ describe('TrafficgateOpenxRtbAdapter', function () {
         it('when FLEDGE is enabled, should send whatever is set in ortb2imp.ext.ae in all bid requests', function () {
           const request = spec.buildRequests(bidRequestsWithMediaTypes, {
             ...mockBidderRequest,
-            paapi: {
-              enabled: true
-            }
+            fledgeEnabled: true
           });
           expect(request[0].data.imp[0].ext.ae).to.equal(2);
         });

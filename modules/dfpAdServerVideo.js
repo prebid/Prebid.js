@@ -205,7 +205,7 @@ if (config.getConfig('brandCategoryTranslation.translationFile')) { getHook('reg
  * Builds a video url from a base dfp video url and a winning bid, appending
  * Prebid-specific key-values.
  * @param {Object} components base video adserver url parsed into components object
- * @param {Object} bid winning bid object to append parameters from
+ * @param {AdapterBidResponse} bid winning bid object to append parameters from
  * @param {Object} options Options which should be used to construct the URL (used for custom params).
  * @return {string} video url
  */
@@ -222,7 +222,7 @@ function buildUrlFromAdserverUrlComponents(components, bid, options) {
 /**
  * Returns the encoded vast url if it exists on a bid object, only if prebid-cache
  * is disabled, and description_url is not already set on a given input
- * @param {Object} bid object to check for vast url
+ * @param {AdapterBidResponse} bid object to check for vast url
  * @param {Object} components the object to check that description_url is NOT set on
  * @param {string} prop the property of components that would contain description_url
  * @return {string | undefined} The encoded vast url if it exists, or undefined
@@ -233,7 +233,7 @@ function getDescriptionUrl(bid, components, prop) {
 
 /**
  * Returns the encoded `cust_params` from the bid.adserverTargeting and adds the `hb_uuid`, and `hb_cache_id`. Optionally the options.params.cust_params
- * @param {Object} bid
+ * @param {AdapterBidResponse} bid
  * @param {Object} options this is the options passed in from the `buildDfpVideoUrl` function
  * @return {Object} Encoded key value pairs for cust_params
  */

@@ -41,11 +41,7 @@ export const EVENTS = {
   BID_VIEWABLE: 'bidViewable',
   STALE_RENDER: 'staleRender',
   BILLABLE_EVENT: 'billableEvent',
-  BID_ACCEPTED: 'bidAccepted',
-  RUN_PAAPI_AUCTION: 'paapiRunAuction',
-  PAAPI_BID: 'paapiBid',
-  PAAPI_NO_BID: 'paapiNoBid',
-  PAAPI_ERROR: 'paapiError',
+  BID_ACCEPTED: 'bidAccepted'
 };
 
 export const AD_RENDER_FAILED_REASON = {

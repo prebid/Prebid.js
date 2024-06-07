@@ -35,7 +35,7 @@ export const spec = {
       return { bidId: impid, config }
     })
 
-    return { bids, paapi: auctionConfigs }
+    return { bids, fledgeAuctionConfigs: auctionConfigs }
   },
   supportedMediaTypes: [BANNER]
 }

@@ -259,7 +259,6 @@ describe('viantOrtbBidAdapter', function () {
               'skip': 1,
               'skipafter': 5,
               'minduration': 10,
-              'placement': 1,
               'maxduration': 31
             }
           },

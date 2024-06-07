@@ -1,4 +1,4 @@
-import { isFn, deepAccess } from '../src/utils.js';
+import { isFn, deepAccess, logMessage } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
@@ -55,15 +55,23 @@ export const spec = {
 
     let winTop = window;
     let location;
-    location = bidderRequest?.refererInfo ?? null;
+    // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
+    try {
+      location = new URL(bidderRequest.refererInfo.page);
+      winTop = window.top;
+    } catch (e) {
+      location = winTop.location;
+      logMessage(e);
+    };
+
     const placements = [];
     const request = {
       deviceWidth: winTop.screen.width,
       deviceHeight: winTop.screen.height,
       language: (navigator && navigator.language) ? navigator.language.split('-')[0] : '',
       secure: 1,
-      host: location?.domain ?? '',
-      page: location?.page ?? '',
+      host: location.host,
+      page: location.pathname,
       placements: placements
     };
 
@@ -99,7 +107,6 @@ export const spec = {
         placement.protocols = bid.mediaTypes[VIDEO].protocols;
         placement.startdelay = bid.mediaTypes[VIDEO].startdelay;
         placement.placement = bid.mediaTypes[VIDEO].placement;
-        placement.plcmt = bid.mediaTypes[VIDEO].plcmt;
         placement.skip = bid.mediaTypes[VIDEO].skip;
         placement.skipafter = bid.mediaTypes[VIDEO].skipafter;
         placement.minbitrate = bid.mediaTypes[VIDEO].minbitrate;

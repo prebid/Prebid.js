@@ -1149,7 +1149,7 @@ describe('Taboola Adapter', function () {
             },
           }
         ],
-        'paapi': [
+        'fledgeAuctionConfigs': [
           {
             'impId': request.bids[0].bidId,
             'config': {
@@ -1222,7 +1222,7 @@ describe('Taboola Adapter', function () {
             },
           }
         ],
-        'paapi': [
+        'fledgeAuctionConfigs': [
           {
             'impId': request.bids[0].bidId,
             'config': {

@@ -755,7 +755,7 @@ describe('sharethrough adapter spec', function () {
           const EXPECTED_AE_VALUE = 1;
 
           // ACT
-          bidderRequest.paapi = {enabled: true};
+          bidderRequest['fledgeEnabled'] = true;
           const builtRequests = spec.buildRequests(bidRequests, bidderRequest);
           const ACTUAL_AE_VALUE = builtRequests[0].data.imp[0].ext.ae;
 

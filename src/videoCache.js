@@ -39,7 +39,7 @@ const ttlBufferInSeconds = 15;
  * Function which wraps a URI that serves VAST XML, so that it can be loaded.
  *
  * @param {string} uri The URI where the VAST content can be found.
- * @param {(string|string[])} impTrackerURLs An impression tracker URL for the delivery of the video ad
+ * @param {string} impUrl An impression tracker URL for the delivery of the video ad
  * @return A VAST URL which loads XML from the given URI.
  */
 function wrapURI(uri, impTrackerURLs) {
@@ -65,9 +65,7 @@ function wrapURI(uri, impTrackerURLs) {
  * the bid can't be converted cleanly.
  *
  * @param {CacheableBid} bid
- * @param {Object} [options] - Options object.
- * @param {Object} [options.index=auctionManager.index] - Index object, defaulting to `auctionManager.index`.
- * @return {Object|null} - The payload to be sent to the prebid-server endpoints, or null if the bid can't be converted cleanly.
+ * @param index
  */
 function toStorageRequest(bid, {index = auctionManager.index} = {}) {
   const vastValue = bid.vastXml ? bid.vastXml : wrapURI(bid.vastUrl, bid.vastImpUrl);

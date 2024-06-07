@@ -206,7 +206,7 @@ export const spec = {
     if (fledgeAuctionConfigs.length) {
       return {
         bids,
-        paapi: fledgeAuctionConfigs,
+        fledgeAuctionConfigs,
       };
     }
     return bids;
