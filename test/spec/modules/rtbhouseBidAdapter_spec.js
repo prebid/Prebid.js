@@ -43,12 +43,12 @@ describe('RTBHouseAdapter', () => {
     });
 
     it('should return false when required params are not passed', function () {
-      let bid2 = Object.assign({}, bid);
-      delete bid2.params;
-      bid2.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         'someIncorrectParam': 0
       };
-      expect(spec.isBidRequestValid(bid2)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 

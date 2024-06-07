@@ -188,9 +188,9 @@ describe('OpenxRtbAdapter', function () {
         });
 
         it('should return false when required params are not passed', function () {
-          let videoBidWithMediaTypes = Object.assign({}, videoBidWithMediaTypes);
-          videoBidWithMediaTypes.params = {};
-          expect(spec.isBidRequestValid(videoBidWithMediaTypes)).to.equal(false);
+          let invalidVideoBidWithMediaTypes = Object.assign({}, videoBidWithMediaTypes);
+          invalidVideoBidWithMediaTypes.params = {};
+          expect(spec.isBidRequestValid(invalidVideoBidWithMediaTypes)).to.equal(false);
         });
       });
       describe('and request config uses both delDomain and platform', () => {
@@ -217,9 +217,9 @@ describe('OpenxRtbAdapter', function () {
         });
 
         it('should return false when required params are not passed', function () {
-          let videoBidWithMediaTypes = Object.assign({}, videoBidWithDelDomainAndPlatform);
-          videoBidWithMediaTypes.params = {};
-          expect(spec.isBidRequestValid(videoBidWithMediaTypes)).to.equal(false);
+          let invalidVideoBidWithMediaTypes = Object.assign({}, videoBidWithDelDomainAndPlatform);
+          invalidVideoBidWithMediaTypes.params = {};
+          expect(spec.isBidRequestValid(invalidVideoBidWithMediaTypes)).to.equal(false);
         });
       });
       describe('and request config uses mediaType', () => {
@@ -242,10 +242,10 @@ describe('OpenxRtbAdapter', function () {
         });
 
         it('should return false when required params are not passed', function () {
-          let videoBidWithMediaType = Object.assign({}, videoBidWithMediaType);
-          delete videoBidWithMediaType.params;
-          videoBidWithMediaType.params = {};
-          expect(spec.isBidRequestValid(videoBidWithMediaType)).to.equal(false);
+          let invalidVideoBidWithMediaType = Object.assign({}, videoBidWithMediaType);
+          delete invalidVideoBidWithMediaType.params;
+          invalidVideoBidWithMediaType.params = {};
+          expect(spec.isBidRequestValid(invalidVideoBidWithMediaType)).to.equal(false);
         });
       });
     });
