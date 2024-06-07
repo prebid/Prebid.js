@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec, storage } from '../../../modules/insticatorBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js'
+import { logInfo } from '../../../src/utils.js';
 
 const USER_ID_KEY = 'hb_insticator_uid';
 const USER_ID_DUMMY_VALUE = '74f78609-a92d-4cf1-869f-1b244bbfb5d2';
@@ -17,6 +18,7 @@ describe('InsticatorBidAdapter', function () {
     adUnitCode: 'adunit-code',
     params: {
       adUnitId: '1a2b3c4d5e6f1a2b3c4d',
+      publisherId: '1a2b3c4d5e6f1a2b3c4d',
       user: {
         yob: 1984,
         gender: 'M'
@@ -386,6 +388,8 @@ describe('InsticatorBidAdapter', function () {
       expect(data.site.domain).not.to.be.empty;
       expect(data.site.page).not.to.be.empty;
       expect(data.site.ref).to.equal(bidderRequest.refererInfo.ref);
+      expect(data.site.publisher).to.be.an('object');
+      expect(data.site.publisher.id).to.equal(bidRequest.params.publisherId);
       expect(data.device).to.be.an('object');
       expect(data.device.w).to.equal(window.innerWidth);
       expect(data.device.h).to.equal(window.innerHeight);
