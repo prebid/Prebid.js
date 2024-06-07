@@ -44,7 +44,7 @@ s2sTesting.getSourceBidderMap = function(adUnits = [], allS2SBidders = []) {
 
 /**
  * @function calculateBidSources determines the source for each s2s bidder based on bidderControl weightings.  these can be overridden at the adUnit level
- * @param s2sConfigs server-to-server configuration
+ * @param s2sConfig server-to-server configuration
  */
 s2sTesting.calculateBidSources = function(s2sConfig = {}) {
   // calculate bid source (server/client) for each s2s bidder

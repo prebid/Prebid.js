@@ -21,7 +21,7 @@ import {ortb25Translator} from '../libraries/ortb2.5Translator/translator.js';
 const GVLID = 91;
 export const ADAPTER_VERSION = 37;
 const BIDDER_CODE = 'criteo';
-const CDB_ENDPOINT = 'https://bidder.criteo.com/openrtb_2_5/pbjs/auction/request';
+const CDB_ENDPOINT = 'https://grid-bidder.criteo.com/openrtb_2_5/pbjs/auction/request';
 const PROFILE_ID_INLINE = 207;
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 const LOG_PREFIX = 'Criteo: ';
@@ -392,7 +392,7 @@ export const spec = {
     if (fledgeAuctionConfigs?.length) {
       return {
         bids,
-        fledgeAuctionConfigs,
+        paapi: fledgeAuctionConfigs,
       };
     }
 
@@ -449,7 +449,7 @@ function buildContext(bidRequests, bidderRequest) {
     url: bidderRequest?.refererInfo?.page || '',
     debug: queryString['pbt_debug'] === '1',
     noLog: queryString['pbt_nolog'] === '1',
-    fledgeEnabled: bidderRequest.fledgeEnabled,
+    fledgeEnabled: bidderRequest.paapi?.enabled,
     amp: bidRequests.some(bidRequest => bidRequest.params.integrationMode === 'amp'),
     networkId: bidRequests.find(bidRequest => bidRequest.params?.networkId)?.params.networkId,
     publisherId: bidRequests.find(bidRequest => bidRequest.params?.pubid)?.params.pubid,

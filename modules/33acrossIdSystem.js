@@ -11,6 +11,7 @@ import { submodule } from '../src/hook.js';
 import { uspDataHandler, coppaDataHandler, gppDataHandler } from '../src/adapterManager.js';
 import { getStorageManager, STORAGE_TYPE_COOKIES, STORAGE_TYPE_LOCALSTORAGE } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
+import { domainOverrideToRootDomain } from '../libraries/domainOverrideToRootDomain/index.js';
 
 /**
  * @typedef {import('../modules/userId/index.js').Submodule} Submodule
@@ -30,6 +31,10 @@ const DEFAULT_1PID_SUPPORT = true;
 const DEFAULT_TPID_SUPPORT = true;
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
+
+export const domainUtils = {
+  domainOverride: domainOverrideToRootDomain(storage, MODULE_NAME)
+};
 
 function calculateResponseObj(response) {
   if (!response.succeeded) {
@@ -54,7 +59,7 @@ function calculateResponseObj(response) {
   };
 }
 
-function calculateQueryStringParams(pid, gdprConsentData, storageConfig) {
+function calculateQueryStringParams(pid, gdprConsentData, enabledStorageTypes) {
   const uspString = uspDataHandler.getConsentData();
   const coppaValue = coppaDataHandler.getCoppa();
   const gppConsent = gppDataHandler.getConsentData();
@@ -82,12 +87,12 @@ function calculateQueryStringParams(pid, gdprConsentData, storageConfig) {
     params.gdpr_consent = gdprConsentData.consentString;
   }
 
-  const fp = getStoredValue(STORAGE_FPID_KEY, storageConfig);
+  const fp = getStoredValue(STORAGE_FPID_KEY, enabledStorageTypes);
   if (fp) {
     params.fp = encodeURIComponent(fp);
   }
 
-  const tp = getStoredValue(STORAGE_TPID_KEY, storageConfig);
+  const tp = getStoredValue(STORAGE_TPID_KEY, enabledStorageTypes);
   if (tp) {
     params.tp = encodeURIComponent(tp);
   }
@@ -99,32 +104,42 @@ function deleteFromStorage(key) {
   if (storage.cookiesAreEnabled()) {
     const expiredDate = new Date(0).toUTCString();
 
-    storage.setCookie(key, '', expiredDate, 'Lax');
+    storage.setCookie(key, '', expiredDate, 'Lax', domainUtils.domainOverride());
   }
 
   storage.removeDataFromLocalStorage(key);
 }
 
-function storeValue(key, value, storageConfig = {}) {
-  if (storageConfig.type === STORAGE_TYPE_COOKIES && storage.cookiesAreEnabled()) {
-    const expirationInMs = 60 * 60 * 24 * 1000 * storageConfig.expires;
-    const expirationTime = new Date(Date.now() + expirationInMs);
+function storeValue(key, value, { enabledStorageTypes, expires }) {
+  enabledStorageTypes.forEach(storageType => {
+    if (storageType === STORAGE_TYPE_COOKIES) {
+      const expirationInMs = 60 * 60 * 24 * 1000 * expires;
+      const expirationTime = new Date(Date.now() + expirationInMs);
 
-    storage.setCookie(key, value, expirationTime.toUTCString(), 'Lax');
-  } else if (storageConfig.type === STORAGE_TYPE_LOCALSTORAGE) {
-    storage.setDataInLocalStorage(key, value);
-  }
+      storage.setCookie(key, value, expirationTime.toUTCString(), 'Lax', domainUtils.domainOverride());
+    } else if (storageType === STORAGE_TYPE_LOCALSTORAGE) {
+      storage.setDataInLocalStorage(key, value);
+    }
+  });
 }
 
-function getStoredValue(key, storageConfig = {}) {
-  if (storageConfig.type === STORAGE_TYPE_COOKIES && storage.cookiesAreEnabled()) {
-    return storage.getCookie(key);
-  } else if (storageConfig.type === STORAGE_TYPE_LOCALSTORAGE) {
-    return storage.getDataFromLocalStorage(key);
-  }
+function getStoredValue(key, enabledStorageTypes) {
+  let storedValue;
+
+  enabledStorageTypes.find(storageType => {
+    if (storageType === STORAGE_TYPE_COOKIES) {
+      storedValue = storage.getCookie(key);
+    } else if (storageType === STORAGE_TYPE_LOCALSTORAGE) {
+      storedValue = storage.getDataFromLocalStorage(key);
+    }
+
+    return !!storedValue;
+  });
+
+  return storedValue;
 }
 
-function handleSupplementalId(key, id, storageConfig = {}) {
+function handleSupplementalId(key, id, storageConfig) {
   id
     ? storeValue(key, id, storageConfig)
     : deleteFromStorage(key);
@@ -160,7 +175,7 @@ export const thirthyThreeAcrossIdSubmodule = {
    * @param {SubmoduleConfig} [config]
    * @returns {IdResponse|undefined}
    */
-  getId({ params = { }, storage: storageConfig }, gdprConsentData) {
+  getId({ params = { }, enabledStorageTypes = [], storage: storageConfig = {} }, gdprConsentData) {
     if (typeof params.pid !== 'string') {
       logError(`${MODULE_NAME}: Submodule requires a partner ID to be defined`);
 
@@ -192,11 +207,17 @@ export const thirthyThreeAcrossIdSubmodule = {
             }
 
             if (storeFpid) {
-              handleSupplementalId(STORAGE_FPID_KEY, responseObj.fp, storageConfig);
+              handleSupplementalId(STORAGE_FPID_KEY, responseObj.fp, {
+                enabledStorageTypes,
+                expires: storageConfig.expires
+              });
             }
 
             if (storeTpid) {
-              handleSupplementalId(STORAGE_TPID_KEY, responseObj.tp, storageConfig);
+              handleSupplementalId(STORAGE_TPID_KEY, responseObj.tp, {
+                enabledStorageTypes,
+                expires: storageConfig.expires
+              });
             }
 
             cb(responseObj.envelope);
@@ -206,10 +227,14 @@ export const thirthyThreeAcrossIdSubmodule = {
 
             cb();
           }
-        }, calculateQueryStringParams(pid, gdprConsentData, storageConfig), { method: 'GET', withCredentials: true });
+        }, calculateQueryStringParams(pid, gdprConsentData, enabledStorageTypes), {
+          method: 'GET',
+          withCredentials: true
+        });
       }
     };
   },
+  domainOverride: domainUtils.domainOverride,
   eids: {
     '33acrossId': {
       source: '33across.com',

@@ -301,7 +301,7 @@ describe('ringieraxelspringerBidAdapter', function () {
         }
       }];
       const resp = spec.interpretResponse({body: {gctx: '1234567890'}}, bidRequest);
-      expect(resp).to.deep.equal({bids: [], fledgeAuctionConfigs: auctionConfigs});
+      expect(resp).to.deep.equal({bids: [], paapi: auctionConfigs});
     });
   });
 

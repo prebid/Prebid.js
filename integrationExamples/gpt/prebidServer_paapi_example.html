@@ -3,7 +3,7 @@
   <!--
     FLEDGE (Protected Audience API) configuration with GPT and Prebid-Server
 
-    gulp serve --modules=fledgeForGpt,prebidServerBidAdapter
+    gulp serve --modules=paapiForGpt,prebidServerBidAdapter
   -->
   <script async src="../../build/dev/prebid.js"></script>
   <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
@@ -44,8 +44,8 @@
 
     pbjs.que.push(function() {
       pbjs.setConfig({
-        fledgeForGpt: {
-          enabled: true
+        paapi: {
+          enabled: true,
         },
         s2sConfig: [{
           accountId : '1',
@@ -55,13 +55,6 @@
           timeout : 1500,
           adapter : 'prebidServer'
         }]
-      });
-
-      pbjs.setBidderConfig({
-        bidders: ['openx'],
-        config: {
-          fledgeEnabled: true
-        }
       });
 
       pbjs.addAdUnits(adUnits);

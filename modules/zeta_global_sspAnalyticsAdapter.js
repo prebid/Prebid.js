@@ -42,6 +42,9 @@ function adRenderSucceededHandler(args) {
       adomain: args.bid?.adserverTargeting?.hb_adomain,
       timeToRespond: args.bid?.timeToRespond,
       cpm: args.bid?.cpm
+    },
+    device: {
+      ua: navigator.userAgent
     }
   }
   sendEvent(EVENTS.AD_RENDER_SUCCEEDED, event);
@@ -59,7 +62,8 @@ function auctionEndHandler(args) {
         auctionId: b?.auctionId,
         bidder: b?.bidder,
         mediaType: b?.mediaTypes?.video ? 'VIDEO' : (b?.mediaTypes?.banner ? 'BANNER' : undefined),
-        size: b?.sizes?.filter(s => s && s.length === 2).filter(s => Number.isInteger(s[0]) && Number.isInteger(s[1])).map(s => s[0] + 'x' + s[1]).find(s => s)
+        size: b?.sizes?.filter(s => s && s.length === 2).filter(s => Number.isInteger(s[0]) && Number.isInteger(s[1])).map(s => s[0] + 'x' + s[1]).find(s => s),
+        device: b?.ortb2?.device
       }))
     })),
     bidsReceived: args.bidsReceived?.map(br => ({
@@ -80,6 +84,8 @@ function auctionEndHandler(args) {
 function bidTimeoutHandler(args) {
   const event = {
     zetaParams: zetaParams,
+    domain: args.find(t => t?.ortb2?.site?.domain),
+    page: args.find(t => t?.ortb2?.site?.page),
     timeouts: args.map(t => ({
       bidId: t?.bidId,
       auctionId: t?.auctionId,
