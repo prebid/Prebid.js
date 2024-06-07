@@ -142,6 +142,59 @@ describe('teadsBidAdapter', () => {
       expect(payload.us_privacy).to.equal(usPrivacy);
     });
 
+    it('should send GPP values to endpoint when available and valid', function () {
+      let consentString = 'DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1YNN';
+      let applicableSectionIds = [7, 8];
+      let bidderRequest = {
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'gppConsent': {
+          'gppString': consentString,
+          'applicableSections': applicableSectionIds
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.gpp).to.exist;
+      expect(payload.gpp.consentString).to.equal(consentString);
+      expect(payload.gpp.applicableSectionIds).to.have.members(applicableSectionIds);
+    });
+
+    it('should send default GPP values to endpoint when available but invalid', function () {
+      let bidderRequest = {
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000,
+        'gppConsent': {
+          'gppString': undefined,
+          'applicableSections': ['a']
+        }
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.gpp).to.exist;
+      expect(payload.gpp.consentString).to.equal('');
+      expect(payload.gpp.applicableSectionIds).to.have.members([]);
+    });
+
+    it('should not set the GPP object in the request sent to the endpoint when not present', function () {
+      let bidderRequest = {
+        'auctionId': '1d1a030790a475',
+        'bidderRequestId': '22edbae2733bf6',
+        'timeout': 3000
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      const payload = JSON.parse(request.data);
+
+      expect(payload.gpp).to.not.exist;
+    });
+
     it('should send GDPR to endpoint', function() {
       let consentString = 'JRJ8RKfDeBNsERRDCSAAZ+A==';
       let bidderRequest = {

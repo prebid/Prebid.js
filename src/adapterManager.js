@@ -230,9 +230,11 @@ export function getS2SBidderSet(s2sConfigs) {
 }
 
 /**
- * @returns {{[PARTITIONS.CLIENT]: Array<String>, [PARTITIONS.SERVER]: Array<String>}}
- *           All the bidder codes in the given `adUnits`, divided in two arrays -
- *           those that should be routed to client, and server adapters (according to the configuration in `s2sConfigs`).
+ * @param {Array} adUnits - The ad units to be processed.
+ * @param {Object} s2sConfigs - The server-to-server configurations.
+ * @returns {Object} - An object containing arrays of bidder codes for client and server.
+ * @returns {Object} return.client - Array of bidder codes that should be routed to client adapters.
+ * @returns {Object} return.server - Array of bidder codes that should be routed to server adapters.
  */
 export function _partitionBidders (adUnits, s2sConfigs, {getS2SBidders = getS2SBidderSet} = {}) {
   const serverBidders = getS2SBidders(s2sConfigs);
@@ -420,7 +422,7 @@ adapterManager.callBids = (adUnits, bidRequests, addBidResponse, doneCb, request
       let uniqueServerRequests = serverBidderRequests.filter(serverBidRequest => serverBidRequest.uniquePbsTid === uniquePbsTid);
 
       if (s2sAdapter) {
-        let s2sBidRequest = {'ad_units': adUnitsS2SCopy, s2sConfig, ortb2Fragments};
+        let s2sBidRequest = {'ad_units': adUnitsS2SCopy, s2sConfig, ortb2Fragments, requestBidsTimeout};
         if (s2sBidRequest.ad_units.length) {
           let doneCbs = uniqueServerRequests.map(bidRequest => {
             bidRequest.start = timestamp();

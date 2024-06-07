@@ -1,5 +1,8 @@
 import {britepoolIdSubmodule} from 'modules/britepoolIdSystem.js';
 import * as utils from '../../../src/utils.js';
+import {attachIdSystem} from '../../../modules/userId/index.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
+import {expect} from 'chai/index.mjs';
 
 describe('BritePool Submodule', () => {
   const api_key = '1111';
@@ -126,4 +129,20 @@ describe('BritePool Submodule', () => {
       done();
     });
   });
+  describe('eid', () => {
+    before(() => {
+      attachIdSystem(britepoolIdSubmodule);
+    });
+    it('britepoolId', function() {
+      const userId = {
+        britepoolid: 'some-random-id-value'
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'britepool.com',
+        uids: [{id: 'some-random-id-value', atype: 3}]
+      });
+    });
+  })
 });

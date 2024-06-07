@@ -147,7 +147,7 @@ export const spec = {
       if (bid.schain) {
         placement.schain = bid.schain;
       }
-      let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+      let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
       if (gpid) {
         placement.gpid = gpid;
       }
@@ -173,7 +173,7 @@ export const spec = {
         placement.mimes = mediaTypes[VIDEO].mimes;
         placement.protocols = mediaTypes[VIDEO].protocols;
         placement.startdelay = mediaTypes[VIDEO].startdelay;
-        placement.placement = mediaTypes[VIDEO].placement;
+        placement.placement = mediaTypes[VIDEO].plcmt;
         placement.skip = mediaTypes[VIDEO].skip;
         placement.skipafter = mediaTypes[VIDEO].skipafter;
         placement.minbitrate = mediaTypes[VIDEO].minbitrate;

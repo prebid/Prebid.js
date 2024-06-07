@@ -180,4 +180,24 @@ var adUnits = [{
 }];    
 </script>
 <!-- End Prebid Config section -->
+```
 
+# Protected Audience API (FLEDGE)
+
+In order to enable PAAPI auctions follow the instructions below:
+
+1. Add the fledgeForGpt and paapi modules to your prebid bundle.
+2. Add the following configuration for the module
+```
+pbjs.que.push(function() {
+  pbjs.setConfig({
+    fledgeForGpt: {
+      enabled: true,
+      bidders: ['medianet'],
+      defaultForSlots: 1
+    }
+  });
+});
+```
+
+For a detailed guide to enabling PAAPI auctions follow Prebid's documentation on [fledgeForGpt](https://docs.prebid.org/dev-docs/modules/fledgeForGpt.html)
