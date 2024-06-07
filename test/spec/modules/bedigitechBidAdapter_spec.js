@@ -25,8 +25,8 @@ describe('BedigitechAdapter', function () {
       bidderRequestId: '22edbae2733bf6',
       auctionId: '1d1a030790a475',
       params: {
-        placementId: 309
-    },
+        placementId: 309,
+      },
     };
 
     it('should return true when required params found', function () {
