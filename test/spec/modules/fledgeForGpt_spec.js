@@ -1,16 +1,11 @@
-import {
-  getPAAPISizeHook,
-  onAuctionConfigFactory,
-  setPAAPIConfigFactory,
-  slotConfigurator
-} from 'modules/paapiForGpt.js';
+import {onAuctionConfigFactory, setPAAPIConfigFactory, slotConfigurator} from 'modules/fledgeForGpt.js';
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
 import 'modules/appnexusBidAdapter.js';
 import 'modules/rubiconBidAdapter.js';
 import {deepSetValue} from '../../../src/utils.js';
 import {config} from 'src/config.js';
 
-describe('paapiForGpt module', () => {
+describe('fledgeForGpt module', () => {
   let sandbox, fledgeAuctionConfig;
 
   beforeEach(() => {
@@ -102,35 +97,42 @@ describe('paapiForGpt module', () => {
     });
   });
   describe('onAuctionConfig', () => {
-    Object.entries({
-      'omitted': [undefined, false],
-      'enabled': [true, true],
-      'disabled': [false, false]
-    }).forEach(([t, [autoconfig, shouldSetConfig]]) => {
-      describe(`when autoconfig is ${t}`, () => {
-        beforeEach(() => {
-          const cfg = {};
-          deepSetValue(cfg, `paapi.gpt.autoconfig`, autoconfig);
-          config.setConfig(cfg);
-        });
-        afterEach(() => {
-          config.resetConfig();
-        });
+    [
+      'fledgeForGpt',
+      'paapi.gpt'
+    ].forEach(namespace => {
+      describe(`using ${namespace} config`, () => {
+        Object.entries({
+          'omitted': [undefined, true],
+          'enabled': [true, true],
+          'disabled': [false, false]
+        }).forEach(([t, [autoconfig, shouldSetConfig]]) => {
+          describe(`when autoconfig is ${t}`, () => {
+            beforeEach(() => {
+              const cfg = {};
+              deepSetValue(cfg, `${namespace}.autoconfig`, autoconfig);
+              config.setConfig(cfg);
+            });
+            afterEach(() => {
+              config.resetConfig();
+            });
 
-        it(`should ${shouldSetConfig ? '' : 'NOT'} set GPT slot configuration`, () => {
-          const auctionConfig = {componentAuctions: [{seller: 'mock1'}, {seller: 'mock2'}]};
-          const setGptConfig = sinon.stub();
-          const markAsUsed = sinon.stub();
-          onAuctionConfigFactory(setGptConfig)('aid', {au1: auctionConfig, au2: null}, markAsUsed);
-          if (shouldSetConfig) {
-            sinon.assert.calledWith(setGptConfig, 'au1', auctionConfig.componentAuctions);
-            sinon.assert.calledWith(setGptConfig, 'au2', []);
-            sinon.assert.calledWith(markAsUsed, 'au1');
-          } else {
-            sinon.assert.notCalled(setGptConfig);
-            sinon.assert.notCalled(markAsUsed);
-          }
-        });
+            it(`should ${shouldSetConfig ? '' : 'NOT'} set GPT slot configuration`, () => {
+              const auctionConfig = {componentAuctions: [{seller: 'mock1'}, {seller: 'mock2'}]};
+              const setGptConfig = sinon.stub();
+              const markAsUsed = sinon.stub();
+              onAuctionConfigFactory(setGptConfig)('aid', {au1: auctionConfig, au2: null}, markAsUsed);
+              if (shouldSetConfig) {
+                sinon.assert.calledWith(setGptConfig, 'au1', auctionConfig.componentAuctions);
+                sinon.assert.calledWith(setGptConfig, 'au2', []);
+                sinon.assert.calledWith(markAsUsed, 'au1');
+              } else {
+                sinon.assert.notCalled(setGptConfig);
+                sinon.assert.notCalled(markAsUsed);
+              }
+            });
+          })
+        })
       })
     })
   });
@@ -171,29 +173,5 @@ describe('paapiForGpt module', () => {
         sinon.assert.calledWith(setGptConfig, au, config?.componentAuctions ?? [], true);
       })
     });
-  });
-
-  describe('getPAAPISizeHook', () => {
-    let next;
-    beforeEach(() => {
-      next = sinon.stub();
-      next.bail = sinon.stub();
-    });
-
-    it('should pick largest supported size over larger unsupported size', () => {
-      getPAAPISizeHook(next, [[999, 999], [300, 250], [300, 600], [1234, 4321]]);
-      sinon.assert.calledWith(next.bail, [300, 600]);
-    });
-
-    Object.entries({
-      'present': [],
-      'supported': [[123, 4], [321, 5]],
-      'defined': undefined,
-    }).forEach(([t, sizes]) => {
-      it(`should defer to next when no size is ${t}`, () => {
-        getPAAPISizeHook(next, sizes);
-        sinon.assert.calledWith(next, sizes);
-      })
-    })
   })
 });

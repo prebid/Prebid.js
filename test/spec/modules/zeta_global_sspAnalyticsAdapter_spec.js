@@ -107,12 +107,7 @@ const SAMPLE_EVENTS = {
             'src': 'client',
             'bidRequestsCount': 1,
             'bidderRequestsCount': 1,
-            'bidderWinsCount': 0,
-            'ortb2': {
-              'device': {
-                'mobile': 1
-              }
-            }
+            'bidderWinsCount': 0
           }
         ],
         'auctionStart': 1638441234544,
@@ -173,12 +168,7 @@ const SAMPLE_EVENTS = {
             'src': 'client',
             'bidRequestsCount': 1,
             'bidderRequestsCount': 1,
-            'bidderWinsCount': 0,
-            'ortb2': {
-              'device': {
-                'mobile': 1
-              }
-            }
+            'bidderWinsCount': 0
           }
         ],
         'auctionStart': 1638441234544,
@@ -405,6 +395,8 @@ describe('Zeta Global SSP Analytics Adapter', function () {
 
       expect(requests.length).to.equal(2);
       const auctionEnd = JSON.parse(requests[0].requestBody);
+      const auctionSucceeded = JSON.parse(requests[1].requestBody);
+
       expect(auctionEnd).to.be.deep.equal({
         zetaParams: {sid: 111, tags: {position: 'top', shortname: 'name'}},
         bidderRequests: [{
@@ -416,10 +408,7 @@ describe('Zeta Global SSP Analytics Adapter', function () {
             auctionId: '75e394d9',
             bidder: 'zeta_global_ssp',
             mediaType: 'BANNER',
-            size: '300x250',
-            device: {
-              mobile: 1
-            }
+            size: '300x250'
           }]
         }, {
           bidderCode: 'appnexus',
@@ -430,10 +419,7 @@ describe('Zeta Global SSP Analytics Adapter', function () {
             auctionId: '75e394d9',
             bidder: 'appnexus',
             mediaType: 'BANNER',
-            size: '300x250',
-            device: {
-              mobile: 1
-            }
+            size: '300x250'
           }]
         }],
         bidsReceived: [{
@@ -448,29 +434,23 @@ describe('Zeta Global SSP Analytics Adapter', function () {
           cpm: 2.258302852806723
         }]
       });
-      const auctionSucceeded = JSON.parse(requests[1].requestBody);
-      expect(auctionSucceeded.zetaParams).to.be.deep.equal({
-        sid: 111,
-        tags: {
-          position: 'top',
-          shortname: 'name'
+      expect(auctionSucceeded).to.be.deep.equal({
+        zetaParams: {sid: 111, tags: {position: 'top', shortname: 'name'}},
+        domain: 'test-zeta-ssp.net',
+        page: 'test-zeta-ssp.net/zeta-ssp/ssp/_dev/examples/page_banner.html',
+        bid: {
+          adId: '5759bb3ef7be1e8',
+          requestId: '206be9a13236af',
+          auctionId: '75e394d9',
+          creativeId: '456456456',
+          bidder: 'zeta_global_ssp',
+          mediaType: 'banner',
+          size: '480x320',
+          adomain: 'example.adomain',
+          timeToRespond: 123,
+          cpm: 2.258302852806723
         }
       });
-      expect(auctionSucceeded.domain).to.eql('test-zeta-ssp.net');
-      expect(auctionSucceeded.page).to.eql('test-zeta-ssp.net/zeta-ssp/ssp/_dev/examples/page_banner.html');
-      expect(auctionSucceeded.bid).to.be.deep.equal({
-        adId: '5759bb3ef7be1e8',
-        requestId: '206be9a13236af',
-        auctionId: '75e394d9',
-        creativeId: '456456456',
-        bidder: 'zeta_global_ssp',
-        mediaType: 'banner',
-        size: '480x320',
-        adomain: 'example.adomain',
-        timeToRespond: 123,
-        cpm: 2.258302852806723
-      });
-      expect(auctionSucceeded.device.ua).to.not.be.empty;
     });
   });
 });

@@ -28,7 +28,6 @@ const ORTB_VIDEO_PARAMS = {
   'h': (value) => isInteger(value),
   'startdelay': (value) => isInteger(value),
   'placement': (value) => isInteger(value) && value >= 1 && value <= 5,
-  'plcmt': (value) => isInteger(value) && value >= 1 && value <= 4,
   'linearity': (value) => [1, 2].indexOf(value) !== -1,
   'skip': (value) => [0, 1].indexOf(value) !== -1,
   'skipmin': (value) => isInteger(value),
@@ -140,7 +139,7 @@ export const spec = {
         }
 
         const auctionEnvironment = bid?.ortb2Imp?.ext?.ae
-        if (bidderRequest.paapi?.enabled && isInteger(auctionEnvironment)) {
+        if (bidderRequest.fledgeEnabled && isInteger(auctionEnvironment)) {
           imp.ext = imp.ext || {}
           imp.ext.ae = auctionEnvironment
         } else {
@@ -289,7 +288,7 @@ export const spec = {
         })
         return {
           bids,
-          paapi: fledgeAuctionConfigs,
+          fledgeAuctionConfigs,
         }
       }
       return bids

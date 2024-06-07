@@ -83,7 +83,7 @@ describe('MobfoxHBBidAdapter', function () {
       let placement = data['placements'][0];
       expect(placement).to.be.an('object');
       expect(placement).to.have.keys('placementId', 'bidId', 'traffic', 'playerSize', 'wPlayer', 'hPlayer', 'schain', 'bidfloor',
-        'minduration', 'maxduration', 'mimes', 'protocols', 'startdelay', 'placement', 'plcmt',
+        'minduration', 'maxduration', 'mimes', 'protocols', 'startdelay', 'placement',
         'skip', 'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity');
       expect(placement.traffic).to.equal(VIDEO);
       expect(placement.wPlayer).to.equal(playerSize[0]);

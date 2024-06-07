@@ -52,6 +52,7 @@ export const spec = {
     const basePayload = {
       id: generateUUID(),
       ref: refererInfo.ref,
+      ssl: isSecureWindow(),
       mpa: isMainPageAccessible(),
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
       url: refererInfo.page,
@@ -145,6 +146,8 @@ export const spec = {
     return [];
   }
 };
+
+const isSecureWindow = () => getWindowSelf().location.protocol === 'https:';
 
 const isMainPageAccessible = () => {
   try {

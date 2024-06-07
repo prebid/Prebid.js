@@ -1539,6 +1539,7 @@ describe('33acrossBidAdapter:', function () {
             .withProduct('instream')
             .build();
 
+          ttxRequest.imp[0].video.plcmt = 1;
           ttxRequest.imp[0].video.startdelay = 0;
 
           const serverRequest = new ServerRequestBuilder()
@@ -1557,7 +1558,7 @@ describe('33acrossBidAdapter:', function () {
           );
 
           const ttxRequest = new TtxRequestBuilder()
-            .withVideo({startdelay: -2})
+            .withVideo({startdelay: -2, plcmt: 1})
             .withProduct('instream')
             .build();
 
@@ -1566,8 +1567,36 @@ describe('33acrossBidAdapter:', function () {
           expect(JSON.parse(builtServerRequest.data)).to.deep.equal(ttxRequest);
         });
 
+        it('overrides the placement value', function() {
+          const bidRequests = (
+            new BidRequestsBuilder()
+              .withVideo({
+                plcmt: 2, // Incorrect placement value for an instream video
+                placement: 2, // Placement specified in the DEPRECATED field.
+                context: 'instream'
+              })
+              .build()
+          );
+
+          const ttxRequest = new TtxRequestBuilder()
+            .withVideo()
+            .withProduct('instream')
+            .build();
+
+          ttxRequest.imp[0].video.plcmt = 1;
+          ttxRequest.imp[0].video.placement = 1;
+          ttxRequest.imp[0].video.startdelay = 0;
+
+          const serverRequest = new ServerRequestBuilder()
+            .withData(ttxRequest)
+            .build();
+          const [ builtServerRequest ] = spec.buildRequests(bidRequests, bidderRequest);
+
+          expect(JSON.parse(builtServerRequest.data)).to.deep.equal(ttxRequest);
+        });
+
         context('when the placement is still specified in the DEPRECATED `placement` field', function() {
-          it('does not overwrite its value and does not set it in the recent `plcmt` field as well', function() {
+          it('overwrites its value and sets it in the recent `plcmt` field as well', function() {
             const bidRequests = (
               new BidRequestsBuilder()
                 .withVideo({
@@ -1582,7 +1611,8 @@ describe('33acrossBidAdapter:', function () {
               .withProduct('instream')
               .build();
 
-            ttxRequest.imp[0].video.placement = 2;
+            ttxRequest.imp[0].video.plcmt = 1;
+            ttxRequest.imp[0].video.placement = 1;
             ttxRequest.imp[0].video.startdelay = 0;
 
             const serverRequest = new ServerRequestBuilder()

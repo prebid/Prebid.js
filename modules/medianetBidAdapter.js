@@ -261,7 +261,7 @@ function slotParams(bidRequest, bidderRequests) {
   if (floorInfo && floorInfo.length > 0) {
     params.bidfloors = floorInfo;
   }
-  if (bidderRequests.paapi?.enabled) {
+  if (bidderRequests.fledgeEnabled) {
     params.ext.ae = bidRequest?.ortb2Imp?.ext?.ae;
   }
   return params;
@@ -508,7 +508,7 @@ export const spec = {
     }
     return {
       bids: validBids,
-      paapi: fledgeAuctionConfigs,
+      fledgeAuctionConfigs,
     }
   },
   getUserSyncs: function(syncOptions, serverResponses) {

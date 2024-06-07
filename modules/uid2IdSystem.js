@@ -69,7 +69,7 @@ export const uid2IdSubmodule = {
   /**
    * performs action to obtain id and return a value.
    * @function
-   * @param {SubmoduleConfig} config
+   * @param {SubmoduleConfig} [configparams]
    * @param {ConsentData|undefined} consentData
    * @returns {uid2Id}
    */

@@ -560,10 +560,10 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
           let result;
           try {
             result = JSON.parse(response);
-            const {bids, paapi} = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request));
+            const {bids, fledgeAuctionConfigs} = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request));
             bids.forEach(onBid);
-            if (paapi) {
-              paapi.forEach(onFledge);
+            if (fledgeAuctionConfigs) {
+              fledgeAuctionConfigs.forEach(onFledge);
             }
           } catch (error) {
             logError(error);

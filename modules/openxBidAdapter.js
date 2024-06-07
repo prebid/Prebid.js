@@ -114,7 +114,7 @@ const converter = ortbConverter({
       });
       return {
         bids: response.bids,
-        paapi: fledgeAuctionConfigs,
+        fledgeAuctionConfigs,
       }
     } else {
       return response.bids

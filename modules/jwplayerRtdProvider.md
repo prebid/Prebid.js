@@ -12,20 +12,16 @@ Publishers must register JW Player as a real time data provider by setting up a 
 following structure:
 
 ```javascript
+const jwplayerDataProvider = {
+  name: "jwplayer"
+};
+
 pbjs.setConfig({
     ...,
     realTimeData: {
-      dataProviders: [{
-        name: 'jwplayer',
-        waitForIt: true,
-        params: {
-          mediaIDs: ['abc', 'def', 'ghi', 'jkl'],
-          overrideContentId: 'always',
-          overrideContentUrl: 'always',
-          overrideContentTitle: 'always',
-          overrideContentDescription: 'always'
-        }
-      }]
+      dataProviders: [
+          jwplayerDataProvider
+      ]
     }
 });
 ```
@@ -90,7 +86,7 @@ realTimeData = {
 | waitForIt | Boolean | Required to ensure that the auction is delayed until prefetch is complete | Optional. Defaults to false |
 | params | Object | | |
 | params.mediaIDs | Array of Strings | Media Ids for prefetching | Optional |
-| params.overrideContentId | String enum: 'always', 'whenEmpty' or 'never' | Determines when the module should update the oRTB site.content.id  | Defaults to 'whenEmpty' |
+| params.overrideContentId | String enum: 'always', 'whenEmpty' or 'never' | Determines when the module should update the oRTB site.content.id  | Defaults to 'always' |
 | params.overrideContentUrl | String enum: 'always', 'whenEmpty' or 'never' | Determines when the module should update the oRTB site.content.url | Defaults to 'whenEmpty' |
 | params.overrideContentTitle | String enum: 'always', 'whenEmpty' or 'never' | Determines when the module should update the oRTB site.content.title | Defaults to 'whenEmpty' |
 | params.overrideContentDescription | String enum: 'always', 'whenEmpty' or 'never' | Determines when the module should update the oRTB site.content.ext.description | Defaults to 'whenEmpty' |
@@ -159,7 +155,7 @@ To view an example:
 
 - in your browser, navigate to:
 
-`http://localhost:9999/integrationExamples/realTimeData/jwplayerRtdProvider_example.html`
+`http://localhost:9999/integrationExamples/gpt/jwplayerRtdProvider_example.html`
 
 **Note:** the mediaIds in the example are placeholder values; replace them with your existing IDs.
 

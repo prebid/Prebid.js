@@ -1,6 +1,6 @@
 /**
  * @typedef {Object} OrtbParams
- * @property {OrtbVideoParams} video
+ * @property {OrtbVideoParamst} video
  * @property {OrtbContentParams} content
  */
 
@@ -13,8 +13,7 @@
  * @property {number} w - Width of the video player in device independent pixels (DIPS).
  * @property {number} h - Height of the video player in device independent pixels (DIPS).
  * @property {number|undefined} startdelay - Indicates the offset of the ad placement.
- * @property {number|undefined} placement - Legacy Placement type for the impression.
- * @property {number|undefined} plcmt - Modern placement type for the impression.
+ * @property {number|undefined} placement - Placement type for the impression.
  * @property {number|undefined} linearity - Indicates if the impression must be linear, nonlinear, etc. If omitted, assume all are allowed.
  * @property {number} skip - Indicates if the player can allow the video to be skipped, where 0 is no, 1 is yes.
  * @property {number|undefined} skipmin - Only ad creatives with a duration greater than this value can be skippable; only applicable if the ad is skippable.
@@ -96,18 +95,6 @@ export const PLACEMENT = {
   SLIDER: 5,
   FLOATING: 5,
   INTERSTITIAL_SLIDER_FLOATING: 5
-};
-
-/**
- * ADCOM - https://github.com/InteractiveAdvertisingBureau/AdCOM/blob/develop/AdCOM%20v1.0%20FINAL.md#list_plcmtsubtypesvideo
- * @enum OrtbVideoParams.plcmt
- */
-export const PLCMT = {
-  INSTREAM: 1,
-  ACCOMPANYING_CONTENT: 2,
-  INTERSTITIAL: 3,
-  OUTSTREAM: 4,
-  NO_CONTENT: 4
 };
 
 /**
