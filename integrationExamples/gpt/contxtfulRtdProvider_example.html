@@ -1,91 +1,212 @@
+<!DOCTYPE html>
 <html>
-
 <head>
-  <script src="http://localhost:9999/build/dev/prebid.js" async></script>
-  <script async src="https://www.googletagservices.com/tag/js/gpt.js"></script>
-  <script async>
-    const FAILSAFE_TIMEOUT = 8000;
-    const PREBID_TIMEOUT = 5000;
+<script async src=
+"https://www.googletagservices.com/tag/js/gpt.js"></script>
+<script async src="http://localhost:9999/build/dev/prebid.js"></script>
+<title>Contxtful Rtd Provider Example</title>
+<script>
+var div1Sizes = [
+  [300, 250],
+  [300, 600]
+];
+var div2Sizes = [
+  [728, 90 ],
+  [970, 250]  
+];
 
-    const bidders = [
+var PREBID_TIMEOUT = 1000;
+var FAILSAFE_TIMEOUT = 3000;
+
+var adUnits = [
+  {
+    code: '/19968336/header-bid-tag-0',
+    mediaTypes: {
+      banner: {
+        sizes: div1Sizes
+      },
+    },
+
+    bids: [
       {
         bidder: 'appnexus',
         params: {
-          placementId: 13144370
-        }
-      }
-    ];
-
-    var adUnits = [
-      {
-        code: 'div-gpt-ad-1460505748561-0',
-        mediaTypes: {
-          banner: {
-            sizes: [[300, 250], [300, 600]],
-          }
+          placementId: 13144370,
         },
-        bids: bidders,
-      }
-    ];
+      },
+      {
+        bidder: 'rubicon',
+        params: {
+          accountId: 14062,
+          siteId: 70608,
+          zoneId: 498816,
+        },
+      },
+      {
+        bidder: 'sharethrough',
+        params: {
 
+          placementId: 13144370,
+          // REQUIRED - The placement key
+          pkey: 'LuB3vxGGFrBZJa6tifXW4xgK',
 
-    var pbjs = pbjs || {};
-    pbjs.que = pbjs.que || [];
-    var googletag = googletag || {};
-    googletag.cmd = googletag.cmd || [];
-    googletag.cmd.push(function () {
-      googletag.pubads().disableInitialLoad();
-      googletag.defineSlot('/19968336/header-bid-tag-0', [[300, 250], [300, 600]], 'div-gpt-ad-1460505748561-0').addService(googletag.pubads());
-      googletag.pubads().enableSingleRequest();
-      googletag.enableServices();
-    });
+          // OPTIONAL - Blocked Advertiser Domains
+          badv: ['domain1.com', 'domain2.com'],
 
-    pbjs.que.push(function () {
-      pbjs.setConfig({
-        debug: true,
-        realTimeData: {
-          auctionDelay: 100,
-          dataProviders: [
-            {
-              name: "contxtful",
-              waitForIt: true,
-              params: {
-                version: "Contact contact@contxtful.com for the API version",
-                customer: "Contact contact@contxtful.com for the customer ID"
-              }
-            }
-          ]
+          // OPTIONAL - Blocked Categories (IAB codes)
+          bcat: ['IAB1-1', 'IAB1-2'],
+
+          // OPTIONAL - default bid floor, if not specified in bid request (USD)
+          floor: 0.1,
         }
-      });
-      pbjs.addAdUnits(adUnits);
-      pbjs.requestBids({
-        bidsBackHandler: sendAdserverRequest,
-        timeout: PREBID_TIMEOUT
-      });
+      },
+    ],
+  },
+  {
+    code: '/19968336/header-bid-tag-1',
+    mediaTypes: {
+      banner: {
+        sizes: div2Sizes,
+      }
+    },
+
+    bids: [
+      {
+        bidder: 'rubicon',
+        params: {
+          accountId: 14062,
+          siteId: 70608,
+          zoneId: 498816,
+        },
+      },
+      {
+        bidder: 'sharethrough',
+        params: {
+
+          placementId: 13144370,
+          // REQUIRED - The placement key
+          pkey: 'LuB3vxGGFrBZJa6tifXW4xgK',
+
+          // OPTIONAL - Blocked Advertiser Domains
+          badv: ['domain1.com', 'domain2.com'],
+
+          // OPTIONAL - Blocked Categories (IAB codes)
+          bcat: ['IAB1-1', 'IAB1-2'],
+
+          // OPTIONAL - default bid floor, if not specified in bid request (USD)
+          floor: 0.1,
+        }
+      },
+    ]
+  },
+];
+
+var pbjs = pbjs || {};
+pbjs.que = pbjs.que || [];
+
+var googletag = googletag || {};
+googletag.cmd = googletag.cmd || [];
+googletag.cmd.push(function () {
+  googletag.pubads().disableInitialLoad();
+});
+
+pbjs.que.push(function() {
+  pbjs.setConfig({
+    debug: true,
+    realTimeData: {
+      auctionDelay: 100,
+      dataProviders: [
+        {
+          name: 'contxtful',
+          waitForIt: true,
+          params:
+        {
+          'version': 'Contact contact@contxtful.com for the API version',
+          'customer': 'Contact contact@contxtful.com for the customer ID',
+          'hostname': 'api.receptivity.io',
+          'adServerTargeting': true,
+          'bidders': ['sharethrough']
+        }
+        }
+      ]}
+  });
+
+  pbjs.addAdUnits(adUnits);
+
+  // Initial bids
+  pbjs.requestBids({
+    bidsBackHandler: initAdserver,
+    timeout: PREBID_TIMEOUT
+  });
+});
+
+function refreshBids() {
+  pbjs.que.push(function () {
+    pbjs.requestBids({
+      bidsBackHandler: initAdserver,
+      timeout: PREBID_TIMEOUT,
     });
+  });
+}
 
-    function sendAdserverRequest() {
-      if (pbjs.adserverRequestSent) return;
-      pbjs.adserverRequestSent = true;
-      googletag.cmd.push(function () {
-        pbjs.que.push(function () {
-          pbjs.setTargetingForGPTAsync();
-          googletag.pubads().refresh();
-        });
-      });
-    }
+function initAdserver() {
+  googletag.cmd.push(function () {
+    pbjs.que.push(function () {
+      pbjs.setTargetingForGPTAsync();
+      googletag.pubads().refresh();
+    });
+  });
+}
 
-    setTimeout(function () {
-      sendAdserverRequest();
-    }, FAILSAFE_TIMEOUT);
+setTimeout(function () {
+  initAdserver();
+}, FAILSAFE_TIMEOUT);
 
-  </script>
+googletag.cmd.push(function () {
+  googletag
+    .defineSlot('/19968336/header-bid-tag-0',
+      div1Sizes, 'div-1')
+    .addService(googletag.pubads());
+  googletag.pubads().enableSingleRequest();
+  googletag.enableServices();
+});
+
+googletag.cmd.push(function () {
+  googletag
+    .defineSlot('/19968336/header-bid-tag-1',
+      div2Sizes, 'div-2')
+    .addService(googletag.pubads());
+  googletag.pubads().enableSingleRequest();
+  googletag.enableServices();
+});
+
+</script>
 </head>
-
 <body>
-  <h2>Contxtful RTD Provider</h2>
-  <div id='div-gpt-ad-1460505748561-0'></div>
-  </div>
-</body>
+<h2>Contxtful Rtd Provider Example</h2>
 
+<p><button onclick="refreshBids()">Refresh Ad Units</button></p>
+
+<h5>Div-1</h5>
+<div id='div-1'>
+    <script type='text/javascript'>
+        googletag.cmd.push(function() {
+            googletag.display('div-1');
+        });
+
+    </script>
+</div>
+
+<br>
+
+<h5>Div-2</h5>
+<div id='div-2'>
+    <script type='text/javascript'>
+        googletag.cmd.push(function() {
+            googletag.display('div-2');
+        });
+
+    </script>
+</div>
+</body>
 </html>

@@ -121,7 +121,7 @@ export const spec = {
     { code: 'beintoo', gvlid: 618 },
     { code: 'projectagora', gvlid: 1032 },
     { code: 'uol', gvlid: 32 },
-    { code: 'adzymic', gvlid: 32 },
+    { code: 'adzymic', gvlid: 723 },
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
@@ -597,7 +597,7 @@ function newBid(serverBid, rtbBid, bidderRequest) {
     cpm: rtbBid.cpm,
     creativeId: rtbBid.creative_id,
     dealId: rtbBid.deal_id,
-    currency: 'USD',
+    currency: rtbBid.publisher_currency_codename || 'USD',
     netRevenue: true,
     ttl: 300,
     adUnitCode: bidRequest.adUnitCode,

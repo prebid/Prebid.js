@@ -674,6 +674,7 @@ function buildCdbRequest(context, bidRequests, bidderRequest) {
   if (bidderRequest && bidderRequest.ortb2?.bapp) {
     request.bapp = bidderRequest.ortb2.bapp;
   }
+  request.tmax = bidderRequest.timeout;
   return request;
 }
 

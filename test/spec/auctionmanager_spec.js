@@ -24,6 +24,9 @@ import {expect} from 'chai';
 import {deepClone} from '../../src/utils.js';
 import { IMAGE as ortbNativeRequest } from 'src/native.js';
 import {PrebidServer} from '../../modules/prebidServerBidAdapter/index.js';
+import '../../modules/currency.js'
+import { setConfig as setCurrencyConfig } from '../../modules/currency.js';
+import { REJECTION_REASON } from '../../src/constants.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -1467,6 +1470,16 @@ describe('auctionmanager.js', function () {
       config.getConfig.restore();
       store.store.restore();
     });
+
+    it('should reject bid for price higher than limit for the same currency', () => {
+      sinon.stub(auction, 'addBidRejected');
+      config.setConfig({
+        maxBid: 1
+      });
+
+      auction.callBids();
+      sinon.assert.calledWith(auction.addBidRejected, sinon.match({rejectionReason: REJECTION_REASON.PRICE_TOO_HIGH}));
+    })
   });
 
   describe('addBidRequests', function () {
