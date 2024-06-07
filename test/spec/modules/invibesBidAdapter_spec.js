@@ -1172,6 +1172,37 @@ describe('invibesBidAdapter:', function () {
       let request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.oi).to.equal(0);
     });
+
+    it('should send ORTB2 device data if available', function () {
+      const bidderRequest = {
+        ortb2: {
+          device: {
+            w: 980,
+            h: 1720,
+            dnt: 0,
+            ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+            language: 'en',
+            devicetype: 1,
+            make: 'Apple',
+            model: 'iPhone 12 Pro Max',
+            os: 'iOS',
+            osv: '17.4'
+          },
+        },
+        refererInfo: {
+          page: 'https://randomWeb.com?someFakePara=fakeValue&secondParam=secondValue'
+        },
+      };
+
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.ortb2DeviceDevicetype).to.equal(bidderRequest.ortb2.device.devicetype);
+      expect(request.data.ortb2DeviceMake).to.equal(bidderRequest.ortb2.device.make);
+      expect(request.data.ortb2DeviceModel).to.equal(bidderRequest.ortb2.device.model);
+      expect(request.data.ortb2DeviceOs).to.equal(bidderRequest.ortb2.device.os);
+      expect(request.data.ortb2DeviceOsv).to.equal(bidderRequest.ortb2.device.osv);
+      expect(request.data.ortb2DeviceH).to.equal(bidderRequest.ortb2.device.h);
+      expect(request.data.ortb2DeviceW).to.equal(bidderRequest.ortb2.device.w);
+    });
   });
 
   describe('interpretResponse', function () {
