@@ -784,6 +784,19 @@ describe('InsticatorBidAdapter', function () {
       expect(data.site.publisher).to.be.an('object');
       expect(data.site.publisher.id).to.equal(tempBiddRequest.params.publisherId)
     });
+
+    it('should have publisher object should be empty, if publisherId is empty string', function () {
+      const tempBiddRequest = {
+        ...bidRequest,
+      }
+      tempBiddRequest.params = {
+        ...tempBiddRequest.params,
+        publisherId: ''
+      }
+      const requests = spec.buildRequests([tempBiddRequest], bidderRequest);
+      const data = JSON.parse(requests[0].data);
+      expect(data.site.publisher).to.not.an('object');
+    });
   });
 
   describe('interpretResponse', function () {
