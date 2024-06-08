@@ -24,9 +24,22 @@ jobs:
       run: |
         npm install -g jscpd diff-so-fancy
 
-    - name: Run jscpd on entire codebase
+    - name: Create jscpd config file
       run: |
-        jscpd --threshold 20 --min-tokens 50 --reporters json --output jscpd-report.json --exclude "**/*spec.js"
+        echo '{
+          "threshold": 20,
+          "minTokens": 50,
+          "reporters": [
+            "json"
+          ],
+          "output": "jscpd-report.json",
+          "exclude": [
+            "**/*spec.js"
+          ]
+        }' > .jscpd.json
+
+    - name: Run jscpd on entire codebase
+      run: jscpd
 
     - name: Get the diff
       run: git diff origin/master...HEAD --name-only > changed_files.txt
