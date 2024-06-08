@@ -39,6 +39,9 @@ jobs:
           echo '{}' > jscpd-report.json
         fi
 
+    - name: List generated files (debug)
+      run: ls -l
+
     - name: Upload jscpd report
       if: always()
       uses: actions/upload-artifact@v3
@@ -46,9 +49,13 @@ jobs:
         name: jscpd-report
         path: jscpd-report.json
 
-    - name: Parse jscpd report and post comment
-      id: post-comment
+    - name: Parse jscpd report and set output
+      id: parse-report
       run: |
+        if [ ! -f jscpd-report.json ]; then
+          echo "jscpd-report.json not found"
+          exit 1
+        fi
         DUPLICATIONS=$(jq '.duplicates | length' jscpd-report.json)
         if [ "$DUPLICATIONS" -gt 0 ]; then
           COMMENT="Found $DUPLICATIONS duplications in the codebase:\n\n"
@@ -57,6 +64,8 @@ jobs:
           echo "$COMMENT" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
           exit 1
+        else
+          echo "No duplications found."
         fi
 
     - name: Post GitHub comment
