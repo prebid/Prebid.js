@@ -47,7 +47,7 @@ jobs:
 
     - name: Filter JavaScript files
       run: |
-        grep -E '\.js$' changed_files.txt | grep -v 'spec.js' > js_files.txt || true
+        grep -E '\.js$' changed_files.txt > js_files.txt || true
 
     - name: List generated files (debug)
       run: ls -l
