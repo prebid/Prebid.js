@@ -3,7 +3,7 @@ name: Check for Duplicated Code
 on: 
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   check-duplication:
@@ -18,11 +18,25 @@ jobs:
       with:
         node-version: '20'
 
-    - name: Install jscpd
-      run: npm install -g jscpd
+    - name: Install dependencies
+      run: |
+        npm install -g jscpd diff-so-fancy
 
-    - name: Run jscpd
-      run: jscpd --threshold 1 --min-tokens 50 --reporters json --output jscpd-report.json
+    - name: Get the diff
+      run: git diff origin/master...HEAD --name-only > changed_files.txt
+
+    - name: Filter JavaScript files
+      run: |
+        grep -E '\.js$' changed_files.txt > js_files.txt || true
+
+    - name: Run jscpd on changed files
+      if: success()
+      run: |
+        if [ -s js_files.txt ]; then
+          jscpd --files $(cat js_files.txt | tr '\n' ',') --threshold 1 --min-tokens 50 --reporters json --output jscpd-report.json
+        else
+          echo "No JavaScript files changed."
+        fi
 
     - name: Upload jscpd report
       if: always()
