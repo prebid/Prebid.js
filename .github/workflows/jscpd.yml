@@ -33,10 +33,9 @@ jobs:
             "json"
           ],
           "output": "jscpd-report.json",
-          "patterns": [
-            "**/*.js",
-            "!**/*spec.js"
-          ]
+          "pattern": "**/*.js",
+          "ignore": "**/*spec.js"
+          
         }' > .jscpd.json
 
     - name: Run jscpd on entire codebase
