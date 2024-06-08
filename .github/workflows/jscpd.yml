@@ -32,14 +32,12 @@ jobs:
         grep -E '\.js$' changed_files.txt > js_files.txt || true
 
     - name: Run jscpd on changed files
-      id: run-jscpd
-      if: success() && -s js_files.txt
       run: |
-        jscpd --files $(cat js_files.txt | tr '\n' ',') --threshold 1 --min-tokens 50 --reporters json --output jscpd-report.json
-
-    - name: Create empty report if no JS files
-      if: success() && !steps.run-jscpd.outputs.success
-      run: echo '{}' > jscpd-report.json
+        if [ -s js_files.txt ]; then
+          jscpd --files $(cat js_files.txt | tr '\n' ',') --threshold 1 --min-tokens 50 --reporters json --output jscpd-report.json
+        else
+          echo '{}' > jscpd-report.json
+        fi
 
     - name: Upload jscpd report
       if: always()
