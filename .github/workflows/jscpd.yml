@@ -40,6 +40,13 @@ jobs:
     - name: Run jscpd on entire codebase
       run: jscpd
 
+    - name: Get the diff
+      run: git diff origin/master...HEAD --name-only > changed_files.txt
+
+    - name: Filter JavaScript files
+      run: |
+        grep -E '\.js$' changed_files.txt | grep -v 'spec.js' > js_files.txt || true
+
     - name: List generated files (debug)
       run: ls -l
 
@@ -54,7 +61,7 @@ jobs:
         if [ "$DUPLICATIONS" -gt 0 ]; then
           COMMENT="Found $DUPLICATIONS duplications in the codebase:\n\n"
           while read -r file; do
-            COMMENT+=$(jq -r --arg file "$file" '.duplicates[] | select(.firstFile == $file or .secondFile == $file) | "- `\(.firstFile):\(.lines[0])-\(.lines[1])` duplicated in `\(.secondFile):\(.lines[0])-\(.lines[1])`"' jscpd-report.json)
+            COMMENT+=$(jq -r --arg file "$file" '.duplicates[] | select(.firstFile == $file or .secondFile == $file) | "- `\(.firstFile):\(.lines[0])-\(.lines[1])` duplicated in `\(.secondFile):\(.lines[0])-\(.lines[1])`"' ./jscpd-report.json/jscpd-report.json)
           done < js_files.txt
           if [ -z "$COMMENT" ]; then
             echo "No duplications found in changed files."
