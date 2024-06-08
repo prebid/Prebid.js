@@ -34,7 +34,7 @@ jobs:
     - name: Run jscpd on changed files
       run: |
         if [ -s js_files.txt ]; then
-          jscpd $(cat js_files.txt | tr '\n' ',') --threshold 1 --min-tokens 50 --reporters json --output jscpd-report.json
+          jscpd $(cat js_files.txt | tr '\n' ' ') --threshold 1 --min-tokens 50 --reporters json --output jscpd-report.json
         else
           echo '{}' > jscpd-report.json
         fi
