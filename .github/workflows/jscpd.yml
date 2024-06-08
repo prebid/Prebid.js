@@ -24,39 +24,19 @@ jobs:
       run: |
         npm install -g jscpd diff-so-fancy
 
+    - name: Run jscpd on entire codebase
+      run: |
+        jscpd --threshold 1 --min-tokens 50 --reporters json --output jscpd-report.json
+
     - name: Get the diff
       run: git diff origin/master...HEAD --name-only > changed_files.txt
-
-    - name: Display changed files (debug)
-      run: cat changed_files.txt
 
     - name: Filter JavaScript files
       run: |
         grep -E '\.js$' changed_files.txt > js_files.txt || true
 
-    - name: Display JavaScript files (debug)
-      run: cat js_files.txt
-
-    - name: Run jscpd on changed files
-      run: |
-        if [ -s js_files.txt ]; then
-          jscpd $(cat js_files.txt | tr '\n' ' ') --threshold 1 --min-tokens 50 --reporters json --output jscpd-report.json
-        else
-          echo '{}' > jscpd-report.json
-        fi
-
     - name: List generated files (debug)
       run: ls -l
-
-    - name: Display jscpd report content (debug)
-      run: cat jscpd-report.json || echo "jscpd-report.json not found or empty"
-
-    - name: Upload jscpd report
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: jscpd-report
-        path: jscpd-report.json
 
     - name: Parse jscpd report and set output
       id: parse-report
@@ -68,7 +48,13 @@ jobs:
         DUPLICATIONS=$(jq '.duplicates | length' jscpd-report.json)
         if [ "$DUPLICATIONS" -gt 0 ]; then
           COMMENT="Found $DUPLICATIONS duplications in the codebase:\n\n"
-          COMMENT+=$(jq -r '.duplicates[] | "- `\(.firstFile):\(.lines[0])-\(.lines[1])` duplicated in `\(.secondFile):\(.lines[0])-\(.lines[1])`"' jscpd-report.json)
+          while read -r file; do
+            COMMENT+=$(jq -r --arg file "$file" '.duplicates[] | select(.firstFile == $file or .secondFile == $file) | "- `\(.firstFile):\(.lines[0])-\(.lines[1])` duplicated in `\(.secondFile):\(.lines[0])-\(.lines[1])`"' jscpd-report.json)
+          done < js_files.txt
+          if [ -z "$COMMENT" ]; then
+            echo "No duplications found in changed files."
+            exit 0
+          fi
           echo "comment<<EOF" >> $GITHUB_ENV
           echo "$COMMENT" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
