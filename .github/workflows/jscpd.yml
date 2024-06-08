@@ -33,8 +33,9 @@ jobs:
             "json"
           ],
           "output": "jscpd-report.json",
-          "exclude": [
-            "**/*spec.js"
+          "patterns": [
+            "**/*.js",
+            "!**/*spec.js"
           ]
         }' > .jscpd.json
 
