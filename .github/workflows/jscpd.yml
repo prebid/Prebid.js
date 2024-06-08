@@ -32,7 +32,7 @@ jobs:
           "reporters": [
             "json"
           ],
-          "output": "jscpd-report.json",
+          "output": "./",
           "pattern": "**/*.js",
           "ignore": "**/*spec.js"        
         }' > .jscpd.json
@@ -53,15 +53,15 @@ jobs:
     - name: Parse jscpd report and set output
       id: parse-report
       run: |
-        if [ ! -f ./jscpd-report.json/jscpd-report.json ]; then
+        if [ ! -f ./jscpd-report.json ]; then
           echo "jscpd-report.json not found"
           exit 1
         fi
-        DUPLICATIONS=$(jq '.duplicates | length' ./jscpd-report.json/jscpd-report.json)
+        DUPLICATIONS=$(jq '.duplicates | length' ./jscpd-report.json)
         if [ "$DUPLICATIONS" -gt 0 ]; then
           COMMENT="Found $DUPLICATIONS duplications in the codebase:\n\n"
           while read -r file; do
-            COMMENT+=$(jq -r --arg file "$file" '.duplicates[] | select(.firstFile == $file or .secondFile == $file) | "- `\(.firstFile):\(.lines[0])-\(.lines[1])` duplicated in `\(.secondFile):\(.lines[0])-\(.lines[1])`"' ./jscpd-report.json/jscpd-report.json)
+            COMMENT+=$(jq -r --arg file "$file" '.duplicates[] | select(.firstFile == $file or .secondFile == $file) | "- `\(.firstFile):\(.lines[0])-\(.lines[1])` duplicated in `\(.secondFile):\(.lines[0])-\(.lines[1])`"' ./jscpd-report.json)
           done < js_files.txt
           if [ -z "$COMMENT" ]; then
             echo "No duplications found in changed files."
@@ -74,15 +74,3 @@ jobs:
         else
           echo "No duplications found."
         fi
-
-    - name: Post GitHub comment
-      if: failure()
-      uses: actions/github-script@v6
-      with:
-        script: |
-          github.rest.issues.createComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: context.issue.number,
-            body: process.env.comment
-          })
