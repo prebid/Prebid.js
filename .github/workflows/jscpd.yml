@@ -16,10 +16,35 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '16'
+        node-version: '20'
 
     - name: Install jscpd
       run: npm install -g jscpd
 
     - name: Run jscpd
-      run: jscpd --threshold 1 --min-tokens 50 --reporters console
+      run: jscpd --threshold 1 --min-tokens 50 --reporters json --output jscpd-report.json
+
+    - name: Parse jscpd report and post comment
+      id: post-comment
+      run: |
+        DUPLICATIONS=$(jq '.duplicates | length' jscpd-report.json)
+        if [ "$DUPLICATIONS" -gt 0 ]; then
+          COMMENT="Found $DUPLICATIONS duplications in the codebase:\n\n"
+          COMMENT+=$(jq -r '.duplicates[] | "- `\(.firstFile):\(.lines[0])-\(.lines[1])` duplicated in `\(.secondFile):\(.lines[0])-\(.lines[1])`"' jscpd-report.json)
+          echo "comment<<EOF" >> $GITHUB_ENV
+          echo "$COMMENT" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+          exit 1
+        fi
+
+    - name: Post GitHub comment
+      if: failure()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            body: process.env.comment
+          })
