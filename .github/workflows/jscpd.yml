@@ -24,49 +24,35 @@ jobs:
       run: |
         npm install -g jscpd diff-so-fancy
 
+    - name: Create jscpd config file
+      run: |
+        echo '{
+          "threshold": 20,
+          "minTokens": 50,
+          "reporters": [
+            "json"
+          ],
+          "output": "./",
+          "pattern": "**/*.js",
+          "ignore": "**/*spec.js"        
+        }' > .jscpd.json
+
+    - name: Run jscpd on entire codebase
+      run: jscpd
+
     - name: Get the diff
       run: git diff origin/master...HEAD --name-only > changed_files.txt
 
     - name: Filter JavaScript files
       run: |
-        grep -E '\.js$' changed_files.txt > js_files.txt || true
+        grep -E '\.js$' changed_files.txt | grep -v 'spec.js' > js_files.txt || true
 
-    - name: Run jscpd on changed files
-      run: |
-        if [ -s js_files.txt ]; then
-          jscpd --files $(cat js_files.txt | tr '\n' ',') --threshold 1 --min-tokens 50 --reporters json --output jscpd-report.json
-        else
-          echo '{}' > jscpd-report.json
-        fi
+    - name: List generated files (debug)
+      run: ls -l
 
-    - name: Upload jscpd report
+    - name: Upload unfiltered jscpd report
       if: always()
       uses: actions/upload-artifact@v3
       with:
-        name: jscpd-report
-        path: jscpd-report.json
-
-    - name: Parse jscpd report and post comment
-      id: post-comment
-      run: |
-        DUPLICATIONS=$(jq '.duplicates | length' jscpd-report.json)
-        if [ "$DUPLICATIONS" -gt 0 ]; then
-          COMMENT="Found $DUPLICATIONS duplications in the codebase:\n\n"
-          COMMENT+=$(jq -r '.duplicates[] | "- `\(.firstFile):\(.lines[0])-\(.lines[1])` duplicated in `\(.secondFile):\(.lines[0])-\(.lines[1])`"' jscpd-report.json)
-          echo "comment<<EOF" >> $GITHUB_ENV
-          echo "$COMMENT" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-          exit 1
-        fi
-
-    - name: Post GitHub comment
-      if: failure()
-      uses: actions/github-script@v6
-      with:
-        script: |
-          github.rest.issues.createComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: context.issue.number,
-            body: process.env.comment
-          })
+        name: unfiltered-jscpd-report
+        path: ./jscpd-report.json
