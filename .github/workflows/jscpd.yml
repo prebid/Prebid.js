@@ -27,9 +27,15 @@ jobs:
     - name: Get the diff
       run: git diff origin/master...HEAD --name-only > changed_files.txt
 
+    - name: Display changed files (debug)
+      run: cat changed_files.txt
+
     - name: Filter JavaScript files
       run: |
         grep -E '\.js$' changed_files.txt > js_files.txt || true
+
+    - name: Display JavaScript files (debug)
+      run: cat js_files.txt
 
     - name: Run jscpd on changed files
       run: |
@@ -41,6 +47,9 @@ jobs:
 
     - name: List generated files (debug)
       run: ls -l
+
+    - name: Display jscpd report content (debug)
+      run: cat jscpd-report.json || echo "jscpd-report.json not found or empty"
 
     - name: Upload jscpd report
       if: always()
