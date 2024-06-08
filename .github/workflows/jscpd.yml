@@ -64,6 +64,6 @@ jobs:
           exit 1
         fi
         echo "Filtering jscpd report for changed files..."
-        CHANGED_FILES=$(cat js_files.txt | jq -R -s -c 'split("\n")[:-1]')
-        jq --argjson changed_files "$CHANGED_FILES" '.duplicates[] | select(.firstFile as $file | $changed_files | index($file) or .secondFile as $file | $changed_files | index($file))' ./jscpd-report.json > filtered-jscpd-report.json
+        CHANGED_FILES=$(jq -R -s -c 'split("\n")[:-1]' js_files.txt)
+        jq --argjson changed_files "$CHANGED_FILES" '.duplicates | map(select($changed_files | index(.firstFile) or $changed_files | index(.secondFile)))' ./jscpd-report.json > filtered-jscpd-report.json
         cat filtered-jscpd-report.json
