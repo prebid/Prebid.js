@@ -50,6 +50,13 @@ jobs:
     - name: List generated files (debug)
       run: ls -l
 
+    - name: Upload unfiltered jscpd report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: unfiltered-jscpd-report
+        path: ./jscpd-report.json
+
     - name: Filter jscpd report for changed files
       run: |
         if [ ! -f ./jscpd-report.json ]; then
@@ -57,5 +64,6 @@ jobs:
           exit 1
         fi
         echo "Filtering jscpd report for changed files..."
-        jq -r '.duplicates[] | select(.firstFile as $file | $file | index(inputs)) or select(.secondFile as $file | $file | index(inputs))' ./jscpd-report.json js_files.txt > filtered-jscpd-report.json
+        CHANGED_FILES=$(cat js_files.txt | jq -R -s -c 'split("\n")[:-1]')
+        jq --argjson changed_files "$CHANGED_FILES" '.duplicates[] | select(.firstFile as $file | $changed_files | index($file) or .secondFile as $file | $changed_files | index($file))' ./jscpd-report.json > filtered-jscpd-report.json
         cat filtered-jscpd-report.json
