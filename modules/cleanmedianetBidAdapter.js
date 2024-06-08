@@ -157,7 +157,7 @@ export const spec = {
               maxduration: bidRequest.mediaTypes.video.maxduration,
               api: bidRequest.mediaTypes.video.api,
               skip: bidRequest.mediaTypes.video.skip || bidRequest.params.video.skip,
-              placement: bidRequest.mediaTypes.video.placement || bidRequest.params.video.placement,
+              placement: bidRequest.mediaTypes.video.plcmt || bidRequest.params.video.plcmt,
               minduration: bidRequest.mediaTypes.video.minduration || bidRequest.params.video.minduration,
               playbackmethod: bidRequest.mediaTypes.video.playbackmethod || bidRequest.params.video.playbackmethod,
               startdelay: bidRequest.mediaTypes.video.startdelay || bidRequest.params.video.startdelay
