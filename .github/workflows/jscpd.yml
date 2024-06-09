@@ -64,9 +64,10 @@ jobs:
         echo "Changed files: $CHANGED_FILES"
         jq --argjson changed_files "$CHANGED_FILES" '
           .duplicates | map(select(
-            any($changed_files[]; . == .firstFile.name) or
-            any($changed_files[]; . == .secondFile.name)
-          ))
+            .firstFile.name as $fname | $changed_files | any(. == $fname) or
+            .secondFile.name as $sname | $changed_files | any(. == $sname)
+          )
+        )
         ' ./jscpd-report.json > filtered-jscpd-report.json
         cat filtered-jscpd-report.json
 
