@@ -2,8 +2,9 @@ import { expect } from 'chai';
 import { intentIqIdSubmodule, storage } from 'modules/intentIqIdSystem.js';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
-import { FIRST_PARTY_KEY, decryptData, detectBrowserFromUserAgent, detectBrowserFromUserAgentData, handleGPPData } from '../../../modules/intentIqIdSystem';
+import { CLIENT_HINTS_KEY, FIRST_PARTY_KEY, decryptData, detectBrowserFromUserAgent, detectBrowserFromUserAgentData, handleClientHints, handleGPPData, readData } from '../../../modules/intentIqIdSystem';
 import { gppDataHandler, uspDataHandler } from '../../../src/consentHandler';
+import { logInfo } from '../../../src/utils';
 
 const partner = 10;
 const pai = '11';
@@ -15,6 +16,36 @@ const pcidConfigParams = { params: { partner: partner, pcid: pcid } };
 const enableCookieConfigParams = { params: { partner: partner, enableCookieStorage: enableCookieStorage } };
 const allConfigParams = { params: { partner: partner, pai: pai, pcid: pcid, enableCookieStorage: enableCookieStorage } };
 const responseHeader = { 'Content-Type': 'application/json' }
+
+export const testClientHints = {
+  architecture: 'x86',
+  bitness: '64',
+  brands: [
+    {
+      brand: 'Not(A:Brand',
+      version: '24'
+    },
+    {
+      brand: 'Chromium',
+      version: '122'
+    }
+  ],
+  fullVersionList: [
+    {
+      brand: 'Not(A:Brand',
+      version: '24.0.0.0'
+    },
+    {
+      brand: 'Chromium',
+      version: '122.0.6261.128'
+    }
+  ],
+  mobile: false,
+  model: '',
+  platform: 'Linux',
+  platformVersion: '6.5.0',
+  wow64: false
+};
 
 describe('IntentIQ tests', function () {
   let logErrorStub;
@@ -451,5 +482,17 @@ describe('IntentIQ tests', function () {
       const firstPartyData = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
       expect(firstPartyData.gpp_value).to.equal('');
     });
+  });
+
+  it('should get and save client hints to storge', async () => {
+    // Client hints are async function, thats why async/await is using
+    localStorage.clear();
+    Object.defineProperty(navigator, 'userAgentData', {
+      value: { getHighEntropyValues: async () => testClientHints },
+      configurable: true
+    });
+    await intentIqIdSubmodule.getId(defaultConfigParams);
+    const savedClientHints = readData(CLIENT_HINTS_KEY);
+    expect(savedClientHints).to.equal(handleClientHints(testClientHints));
   });
 });
