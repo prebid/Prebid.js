@@ -23,6 +23,58 @@ const BIDDER_CODE = 'missena';
 const ENDPOINT_URL = 'https://bid.missena.io/';
 const EVENTS_DOMAIN = 'events.missena.io';
 const EVENTS_DOMAIN_DEV = 'events.staging.missena.xyz';
+const USER_ID_KEY = 'hb_missena_uid';
+const USER_ID_COOKIE_EXP = 2592000000;
+
+function validateUUID(uuid) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    uuid
+  );
+}
+
+function getUserIdFromStorage() {
+  const id = storage.localStorageIsEnabled()
+    ? storage.getDataFromLocalStorage(USER_ID_KEY)
+    : storage.getCookie(USER_ID_KEY);
+
+  if (!validateUUID(id)) {
+    return;
+  }
+
+  return id;
+}
+
+function setUserId(userId) {
+  if (storage.localStorageIsEnabled()) {
+    storage.setDataInLocalStorage(USER_ID_KEY, userId);
+  }
+
+  if (storage.cookiesAreEnabled()) {
+    const expires = new Date(Date.now() + USER_ID_COOKIE_EXP).toISOString();
+
+    storage.setCookie(USER_ID_KEY, userId, expires);
+  }
+}
+
+function getUserId() {
+  const id = getUserIdFromStorage() || common.generateUUID();
+
+  setUserId(id);
+
+  return id;
+}
+
+function buildUser(bidderRequest) {
+  const user = {
+    id: getUserId(),
+  };
+
+  if (bidderRequest.gdprConsent) {
+    user.gdprConsentString = bidderRequest.gdprConsent.consentString || '';
+  }
+
+  return user;
+}
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 window.msna_ik = window.msna_ik || generateUUID();
@@ -68,7 +120,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const capKey = `missena.missena.capper.remove-bubble.${validBidRequests[0]?.params.apiKey}`;
     const capping = safeJSONParse(storage.getDataFromLocalStorage(capKey));
-    const referer = bidderRequest?.refererInfo?.topmostLocation;
+    const referer = bidderRequest?.refererInfo?.referer;
     if (
       typeof capping?.expiry === 'number' &&
       new Date().getTime() < capping?.expiry &&
@@ -87,9 +139,9 @@ export const spec = {
       };
 
       if (bidderRequest && bidderRequest.refererInfo) {
-        // TODO: is 'topmostLocation' the right value here?
-        payload.referer = bidderRequest.refererInfo.topmostLocation;
+        payload.referer = bidderRequest.refererInfo.ref;
         payload.referer_canonical = bidderRequest.refererInfo.canonicalUrl;
+        payload.location = bidderRequest.refererInfo.topmostLocation;
       }
 
       if (bidderRequest && bidderRequest.gdprConsent) {
@@ -113,6 +165,7 @@ export const spec = {
         payload.cdep = bidRequest.ortb2?.device?.ext?.cdep;
       }
       payload.userEids = bidRequest.userIdAsEids || [];
+      payload.user = buildUser(bidderRequest);
       payload.version = '$prebid.version$';
 
       const bidFloor = getFloor(bidRequest);
@@ -200,3 +253,12 @@ export const spec = {
 };
 
 registerBidder(spec);
+
+export const common = {
+  generateUUID: function () {
+    return generateUUID();
+  },
+  getConfig: function (property) {
+    return config.getConfig(property);
+  }
+};
