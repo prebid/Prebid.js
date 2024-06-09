@@ -64,9 +64,9 @@ jobs:
         jq --argjson changed_files "$CHANGED_FILES" '.duplicates | map(select($changed_files | index(.firstFile) or $changed_files | index(.secondFile)))' ./jscpd-report.json > filtered-jscpd-report.json
         cat filtered-jscpd-report.json
 
-     - name: Upload filtered jscpd report
-       if: always()
-       uses: actions/upload-artifact@v4
-       with:
-         name: filtered-jscpd-report
-         path: ./filtered-jscpd-report.json
+    - name: Upload filtered jscpd report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: filtered-jscpd-report
+        path: ./filtered-jscpd-report.json
