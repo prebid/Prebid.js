@@ -22,7 +22,9 @@ jobs:
 
     - name: Install dependencies
       run: |
-        npm install -g jscpd diff-so-fancy jq
+        sudo apt-get update
+        sudo apt-get install -y jq
+        npm install -g jscpd diff-so-fancy
 
     - name: Create jscpd config file
       run: |
