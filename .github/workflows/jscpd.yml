@@ -73,7 +73,7 @@ jobs:
     - name: Check if filtered jscpd report exists
       id: check_filtered_report
       run: |
-        if [ -s ./filtered-jscpd-report.json ]; then
+        if [ $(wc -l < ./filtered-jscpd-report.json) -gt 1 ]; then
           echo "filtered_report_exists=true" >> $GITHUB_ENV
         else
           echo "filtered_report_exists=false" >> $GITHUB_ENV
