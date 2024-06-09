@@ -43,10 +43,6 @@ jobs:
     - name: Get the diff
       run: git diff origin/master...HEAD --name-only > changed_files.txt
 
-    - name: Filter JavaScript files
-      run: |
-        grep -E '\.js$' changed_files.txt | grep -v 'spec.js' > js_files.txt || true
-
     - name: List generated files (debug)
       run: ls -l
 
@@ -56,3 +52,58 @@ jobs:
       with:
         name: unfiltered-jscpd-report
         path: ./jscpd-report.json
+
+    - name: Filter jscpd report for changed files
+      run: |
+        if [ ! -f ./jscpd-report.json ]; then
+          echo "jscpd-report.json not found"
+          exit 1
+        fi
+        echo "Filtering jscpd report for changed files..."
+        CHANGED_FILES=$(jq -R -s -c 'split("\n")[:-1]' changed_files.txt)
+        echo "Changed files: $CHANGED_FILES"
+        jq --argjson changed_files "$CHANGED_FILES" '
+          .duplicates | map(select(
+            (.firstFile?.name as $fname | $changed_files | any(. == $fname)) or
+            (.secondFile?.name as $sname | $changed_files | any(. == $sname))
+          ))
+        ' ./jscpd-report.json > filtered-jscpd-report.json
+        cat filtered-jscpd-report.json
+
+    - name: Check if filtered jscpd report exists
+      id: check_filtered_report
+      run: |
+        if [ -s ./filtered-jscpd-report.json ]; then
+          echo "filtered_report_exists=true" >> $GITHUB_ENV
+        else
+          echo "filtered_report_exists=false" >> $GITHUB_ENV
+        fi
+
+    - name: Upload filtered jscpd report
+      if: env.filtered_report_exists == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: filtered-jscpd-report
+        path: ./filtered-jscpd-report.json
+
+    - name: Post GitHub comment
+      if: env.filtered_report_exists == 'true'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const filteredReport = JSON.parse(fs.readFileSync('filtered-jscpd-report.json', 'utf8'));
+          let comment = "Whoa there, partner! 🌵🤠 We wrangled some duplicated code in your PR:\n\n";
+          filteredReport.forEach(duplication => {
+            const firstFile = duplication.firstFile.name;
+            const secondFile = duplication.secondFile.name;
+            const lines = duplication.lines;
+            comment += `- \`${firstFile}\` has ${lines} duplicated lines with \`${secondFile}\`\n`;
+          });
+          comment += "\nReducing code duplication by importing common functions from a library not only makes our code cleaner but also easier to maintain. Keep up the great work! 🚀";
+          github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            body: comment
+          });
