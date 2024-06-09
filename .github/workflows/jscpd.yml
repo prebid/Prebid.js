@@ -108,8 +108,6 @@ jobs:
             body: comment
           });
 
-
-
     - name: Fail if duplications are found
       if: env.filtered_report_exists == 'true'
       run: |
