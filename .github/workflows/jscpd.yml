@@ -62,11 +62,25 @@ jobs:
         echo "Filtering jscpd report for changed files..."
         CHANGED_FILES=$(jq -R -s -c 'split("\n")[:-1]' changed_files.txt)
         echo "Changed files: $CHANGED_FILES"
-        jq --argjson changed_files "$CHANGED_FILES" '.duplicates | map(select($changed_files | index(.firstFile) or $changed_files | index(.secondFile)))' ./jscpd-report.json > filtered-jscpd-report.json
+        jq --argjson changed_files "$CHANGED_FILES" '
+          .duplicates | map(select(
+            ($changed_files | index(.firstFile.name)) or 
+            ($changed_files | index(.secondFile.name))
+          ))
+        ' ./jscpd-report.json > filtered-jscpd-report.json
         cat filtered-jscpd-report.json
 
+    - name: Check if filtered jscpd report exists
+      id: check_filtered_report
+      run: |
+        if [ -f ./filtered-jscpd-report.json ]; then
+          echo "filtered_report_exists=true" >> $GITHUB_ENV
+        else
+          echo "filtered_report_exists=false" >> $GITHUB_ENV
+        fi
+
     - name: Upload filtered jscpd report
-      if: always()
+      if: env.filtered_report_exists == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: filtered-jscpd-report
