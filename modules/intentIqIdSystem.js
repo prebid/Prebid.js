@@ -26,7 +26,6 @@ const PCID_EXPIRY = 365;
 const MODULE_NAME = 'intentIqId';
 export const FIRST_PARTY_KEY = '_iiq_fdata';
 export let FIRST_PARTY_DATA_KEY = '_iiq_fdata';
-export const GROUP_LS_KEY = '_iiq_group';
 export const WITH_IIQ = 'A';
 export const WITHOUT_IIQ = 'B';
 export const NOT_YET_DEFINED = 'U';
@@ -128,7 +127,7 @@ export function storeData(key, value, cookieStorageEnabled = false) {
  * @param key
  */
 
-export function removeData(key) {
+export function removeDataByKey(key) {
   try {
     if (storage.hasLocalStorage()) {
       storage.removeDataFromLocalStorage(key);
@@ -139,6 +138,16 @@ export function removeData(key) {
     }
   } catch (error) {
     logError(error);
+  }
+}
+
+export function deleteDataFromStore() {
+  try {
+    [FIRST_PARTY_DATA_KEY, CLIENT_HINTS_KEY].forEach(key => {
+      removeDataByKey(key)
+    })
+  } catch (error) {
+    logError(error)
   }
 }
 
@@ -247,7 +256,7 @@ export function detectBrowserFromUserAgentData(userAgentData) {
  * @param {object} clientHints - Raw client hints data
  * @return {string} A JSON string of processed client hints or an empty string if no hints
  */
-function handleClientHints(clientHints) {
+export function handleClientHints(clientHints) {
   const chParams = {};
   for (const key in clientHints) {
     if (clientHints.hasOwnProperty(key) && clientHints[key] !== '') {
@@ -318,7 +327,7 @@ export const intentIqIdSubmodule = {
     callbackTimeoutID = setTimeout(() => {
       firePartnerCallback()
     },
-    configParams.timeoutInMillis || 500
+      configParams.timeoutInMillis || 500
     );
 
     // Get consent information
@@ -386,11 +395,11 @@ export const intentIqIdSubmodule = {
       storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), cookieStorageEnabled);
     }
 
-    if (firstPartyData?.group == WITHOUT_IIQ) {
+    if (![WITH_IIQ, NOT_YET_DEFINED].includes(firstPartyData?.group)) {
       if (firstPartyData.cttl && Date.now() - firstPartyData.date > firstPartyData.cttl) {
         shouldCallServer = true
       } else {
-        logInfo(MODULE_NAME + 'Group "B". Passive Mode ON.');
+        logInfo(MODULE_NAME + `Group "${firstPartyData?.group}". Passive Mode ON.`);
         firePartnerCallback();
         return;
       }
@@ -447,16 +456,33 @@ export const intentIqIdSubmodule = {
           let respJson = tryParse(response);
           // If response is a valid json and should save is true
           if (respJson) {
+            const defineEmptyDataAndFireCallback = () => {
+              respJson.data = partnerData.data = decryptedData = {};
+              deleteDataFromStore()
+              firePartnerCallback()
+              callback()
+            }
             if (callbackTimeoutID) clearTimeout(callbackTimeoutID)
+            if ('tc' in respJson) {
+              partnerData.terminationCause = respJson.tc;
+              if (respJson.tc == 41) {
+                firstPartyData.group = WITHOUT_IIQ;
+                storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), cookieStorageEnabled);
+                defineEmptyDataAndFireCallback();
+                return;
+              } else {
+                firstPartyData.group = WITH_IIQ;
+              }
+            }
             if ('isOptedOut' in respJson) {
               if (respJson.isOptedOut !== firstPartyData.isOptedOut) {
                 firstPartyData.isOptedOut = respJson.isOptedOut;
-                if (respJson.isOptedOut) firstPartyData.group = OPT_OUT;
               }
-
               if (respJson.isOptedOut === true) {
-                respJson.data = {};
-                partnerData.data = {};
+                firstPartyData.group = OPT_OUT;
+                storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), cookieStorageEnabled);
+                defineEmptyDataAndFireCallback()
+                return;
               }
             }
             if ('pid' in respJson) {
@@ -465,30 +491,25 @@ export const intentIqIdSubmodule = {
             if ('cttl' in respJson) {
               firstPartyData.cttl = respJson.cttl;
             }
-            if ('eidl' in respJson) {
-              partnerData.eidl = respJson.eidl;
-            }
-            // If should save and data is empty, means we should save as INVALID_ID
-            if (respJson.ls && respJson.data == '') {
-              respJson.data = INVALID_ID;
-            } else {
-              // If data is an encrypted string, assume it is an id with source intentiq.com
-              if (respJson.data && typeof respJson.data === 'string') {
-                respJson.data = { eids: [respJson.data] }
+            if ('ls' in respJson) {
+              if (respJson.ls === false) {
+                defineEmptyDataAndFireCallback()
+                return
+              }
+              // If data is empty, means we should save as INVALID_ID
+              if (respJson.data == '') {
+                respJson.data = INVALID_ID;
+              } else {
+                // If data is a single string, assume it is an id with source intentiq.com
+                if (respJson.data && typeof respJson.data === 'string') {
+                  respJson.data = { eids: [respJson.data] }
+                }
               }
               partnerData.data = respJson.data;
             }
+
             if (rrttStrtTime && rrttStrtTime > 0) {
               partnerData.rrtt = Date.now() - rrttStrtTime;
-            }
-            if ('tc' in respJson) {
-              partnerData.terminationCause = respJson.tc;
-              if (respJson.tc == 41) {
-                firstPartyData.group = WITHOUT_IIQ;
-                respJson.data = partnerData.data = {};
-              } else {
-                firstPartyData.group = WITH_IIQ;
-              }
             }
 
             if (respJson.data?.eids) {

@@ -2,12 +2,9 @@ import { expect } from 'chai';
 import iiqAnalyticsAnalyticsAdapter from 'modules/intentIqAnalyticsAdapter.js';
 import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
-import { config } from 'src/config.js';
-import { EVENTS } from 'src/constants.js';
-import * as events from 'src/events.js';
-import { getStorageManager } from 'src/storageManager.js';
-import sinon from 'sinon';
-import { FIRST_PARTY_KEY } from '../../../modules/intentIqIdSystem';
+import { CLIENT_HINTS_KEY, FIRST_PARTY_KEY, decryptData, detectBrowserFromUserAgent, detectBrowserFromUserAgentData, handleClientHints, handleGPPData, readData } from '../../../modules/intentIqIdSystem';
+import { gppDataHandler, uspDataHandler } from '../../../src/consentHandler';
+import { logInfo } from '../../../src/utils';
 
 const partner = 10;
 const pai = '11';
@@ -18,59 +15,37 @@ const FIRST_PARTY_DATA_KEY = '_iiq_fdata';
 const PERCENT_LS_KEY = '_iiq_percent';
 const GROUP_LS_KEY = '_iiq_group';
 
-const storage = getStorageManager({ moduleType: 'analytics', moduleName: 'iiqAnalytics' });
-
-const USERID_CONFIG = [
-  {
-    'name': 'intentIqId',
-    'params': {
-      'partner': partner,
-      'unpack': null,
-      'percentage': defaultPercentage,
+export const testClientHints = {
+  architecture: 'x86',
+  bitness: '64',
+  brands: [
+    {
+      brand: 'Not(A:Brand',
+      version: '24'
     },
-    'storage': {
-      'type': 'html5',
-      'name': 'intentIqId',
-      'expires': 60,
-      'refreshInSeconds': 14400
+    {
+      brand: 'Chromium',
+      version: '122'
     }
-  }
-];
-
-let wonRequest = {
-  'bidderCode': 'pubmatic',
-  'width': 728,
-  'height': 90,
-  'statusMessage': 'Bid available',
-  'adId': '23caeb34c55da51',
-  'requestId': '87615b45ca4973',
-  'transactionId': '5e69fd76-8c86-496a-85ce-41ae55787a50',
-  'auctionId': '0cbd3a43-ff45-47b8-b002-16d3946b23bf',
-  'mediaType': 'banner',
-  'source': 'client',
-  'cpm': 5,
-  'currency': 'USD',
-  'ttl': 300,
-  'referrer': '',
-  'adapterCode': 'pubmatic',
-  'originalCpm': 5,
-  'originalCurrency': 'USD',
-  'responseTimestamp': 1669644710345,
-  'requestTimestamp': 1669644710109,
-  'bidder': 'testbidder',
-  'adUnitCode': 'addUnitCode',
-  'timeToRespond': 236,
-  'pbLg': '5.00',
-  'pbMg': '5.00',
-  'pbHg': '5.00',
-  'pbAg': '5.00',
-  'pbDg': '5.00',
-  'pbCg': '',
-  'size': '728x90',
-  'status': 'rendered'
+  ],
+  fullVersionList: [
+    {
+      brand: 'Not(A:Brand',
+      version: '24.0.0.0'
+    },
+    {
+      brand: 'Chromium',
+      version: '122.0.6261.128'
+    }
+  ],
+  mobile: false,
+  model: '',
+  platform: 'Linux',
+  platformVersion: '6.5.0',
+  wow64: false
 };
 
-describe('IntentIQ tests all', function () {
+describe('IntentIQ tests', function () {
   let logErrorStub;
 
   beforeEach(function () {
@@ -429,5 +404,17 @@ describe('IntentIQ tests all', function () {
       const firstPartyData = JSON.parse(localStorage.getItem(FIRST_PARTY_KEY));
       expect(firstPartyData.gpp_value).to.equal('');
     });
+  });
+
+  it('should get and save client hints to storge', async () => {
+    // Client hints are async function, thats why async/await is using
+    localStorage.clear();
+    Object.defineProperty(navigator, 'userAgentData', {
+      value: { getHighEntropyValues: async () => testClientHints },
+      configurable: true
+    });
+    await intentIqIdSubmodule.getId(defaultConfigParams);
+    const savedClientHints = readData(CLIENT_HINTS_KEY);
+    expect(savedClientHints).to.equal(handleClientHints(testClientHints));
   });
 });
