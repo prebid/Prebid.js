@@ -64,17 +64,16 @@ jobs:
         echo "Changed files: $CHANGED_FILES"
         jq --argjson changed_files "$CHANGED_FILES" '
           .duplicates | map(select(
-            .firstFile?.name? as $fname | $changed_files | any(. == $fname) or
-            .secondFile?.name? as $sname | $changed_files | any(. == $sname)
-          )
-        )
+            (.firstFile?.name as $fname | $changed_files | any(. == $fname)) or
+            (.secondFile?.name as $sname | $changed_files | any(. == $sname))
+          ))
         ' ./jscpd-report.json > filtered-jscpd-report.json
         cat filtered-jscpd-report.json
 
     - name: Check if filtered jscpd report exists
       id: check_filtered_report
       run: |
-        if [ -f ./filtered-jscpd-report.json ]; then
+        if [ -s ./filtered-jscpd-report.json ]; then
           echo "filtered_report_exists=true" >> $GITHUB_ENV
         else
           echo "filtered_report_exists=false" >> $GITHUB_ENV
@@ -87,7 +86,7 @@ jobs:
         name: filtered-jscpd-report
         path: ./filtered-jscpd-report.json
 
-      - name: Post GitHub comment
+    - name: Post GitHub comment
       if: env.filtered_report_exists == 'true'
       uses: actions/github-script@v6
       with:
