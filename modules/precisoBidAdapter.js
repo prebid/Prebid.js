@@ -51,26 +51,26 @@ export const spec = {
     // let winTop = window;
     // let location;
     var city = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    let request = {
+    let bid_request = {
       // bidRequest: bidderRequest,
       id: validBidRequests[0].auctionId,
       cur: validBidRequests[0].params.currency || ['USD'],
-      imp: validBidRequests.map(request => {
-        const { bidId, sizes } = request
-        const item = {
+      imp: validBidRequests.map(bid_request => {
+        const { bidId, sizes } = bid_request
+        const imp_item = {
           id: bidId,
-          bidFloor: getBidFloor(request),
-          bidfloorcur: request.params.currency
+          bidFloor: getBidFloor(bid_request),
+          bidfloorcur: bid_request.params.currency
         }
-        if (request.mediaTypes.banner) {
-          item.banner = {
-            format: (request.mediaTypes.banner.sizes || sizes).map(size => {
+        if (bid_request.mediaTypes.banner) {
+          imp_item.banner = {
+            format: (bid_request.mediaTypes.banner.sizes || sizes).map(size => {
               return { w: size[0], h: size[1] }
             }),
 
           }
         }
-        return item
+        return imp_item
       }),
       user: {
         id: validBidRequests[0].userId.pubcid || '',
@@ -87,27 +87,27 @@ export const spec = {
       badv: validBidRequests[0].ortb2.badv || validBidRequests[0].params.badv,
       wlang: validBidRequests[0].ortb2.wlang || validBidRequests[0].params.wlang,
     };
-    request.site.publisher = {
+    bid_request.site.publisher = {
       publisherId: validBidRequests[0].params.publisherId
     };
 
-    //  request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
+    //  bid_request.language.indexOf('-') != -1 && (bid_request.language = bid_request.language.split('-')[0])
     if (bidderRequest) {
       if (bidderRequest.uspConsent) {
-        request.ccpa = bidderRequest.uspConsent;
+        bid_request.ccpa = bidderRequest.uspConsent;
       }
       if (bidderRequest.gdprConsent) {
-        request.gdpr = bidderRequest.gdprConsent
+        bid_request.gdpr = bidderRequest.gdprConsent
       }
       if (bidderRequest.gppConsent) {
-        request.gpp = bidderRequest.gppConsent;
+        bid_request.gpp = bidderRequest.gppConsent;
       }
     }
 
     return {
       method: 'POST',
       url: AD_URL,
-      data: request,
+      data: bid_request,
 
     };
   },
