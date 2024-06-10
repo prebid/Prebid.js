@@ -62,7 +62,6 @@ export const spec = {
           bidFloor: getBidFloor(request),
           bidfloorcur: request.params.currency
         }
-
         if (request.mediaTypes.banner) {
           item.banner = {
             format: (request.mediaTypes.banner.sizes || sizes).map(size => {
