@@ -57,20 +57,20 @@ export const spec = {
       cur: validBidRequests[0].params.currency || ['USD'],
       imp: validBidRequests.map(req => {
         const { bidId, sizes } = req
-        const imp_item = {
+        const impValue = {
           id: bidId,
-          bidFloor: getBidFloor(req),
+          bidFloor: getBidFloorPrice(req),
           bidfloorcur: req.params.currency
         }
         if (req.mediaTypes.banner) {
-          imp_item.banner = {
+          impValue.banner = {
             format: (req.mediaTypes.banner.sizes || sizes).map(size => {
               return { w: size[0], h: size[1] }
             }),
 
           }
         }
-        return imp_item
+        return impValue
       }),
       user: {
         id: validBidRequests[0].userId.pubcid || '',
@@ -174,18 +174,18 @@ function macroReplace(adm, cpm) {
   return replacedadm;
 }
 
-function getBidFloor(bid) {
+function getBidFloorPrice(bid) {
   if (!isFn(bid.getFloor)) {
     return deepAccess(bid, 'params.bidFloor', 0);
   }
 
   try {
-    const bidFloor = bid.getFloor({
+    const bidFloorPrice = bid.getFloor({
       currency: 'USD',
       mediaType: '*',
       size: '*',
     });
-    return bidFloor.floor;
+    return bidFloorPrice.floor;
   } catch (_) {
     return 0
   }
