@@ -3,6 +3,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 
 const BIDDER_CODE = 'etarget';
+const GVL_ID = 29;
 const countryMap = {
   1: 'sk',
   2: 'cz',
@@ -19,6 +20,7 @@ const countryMap = {
 }
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVL_ID,
   supportedMediaTypes: [ BANNER, VIDEO ],
   isBidRequestValid: function (bid) {
     return !!(bid.params.refid && bid.params.country);

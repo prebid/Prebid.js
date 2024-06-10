@@ -1,35 +1,80 @@
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
-import { isFn, deepAccess, logMessage } from '../src/utils.js';
+import { deepAccess, logMessage, logError } from '../src/utils.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'e_volution';
+const GVLID = 957;
 const AD_URL = 'https://service.e-volution.ai/?c=o&m=multi';
-const URL_SYNC = 'https://service.e-volution.ai/?c=o&m=sync';
-const NO_SYNC = true;
 
 function isBidResponseValid(bid) {
-  if (!bid.requestId || !bid.cpm || !bid.creativeId ||
-    !bid.ttl || !bid.currency) {
+  if (!bid.requestId || !bid.cpm || !bid.creativeId || !bid.ttl || !bid.currency) {
     return false;
   }
+
   switch (bid.mediaType) {
     case BANNER:
       return Boolean(bid.width && bid.height && bid.ad);
     case VIDEO:
-      return Boolean(bid.vastUrl);
+      return Boolean(bid.vastUrl || bid.vastXml);
     case NATIVE:
-      return Boolean(bid.native && bid.native.title && bid.native.image && bid.native.impressionTrackers);
+      return Boolean(bid.native && bid.native.impressionTrackers && bid.native.impressionTrackers.length);
     default:
       return false;
   }
 }
 
-function getBidFloor(bid) {
-  if (!isFn(bid.getFloor)) {
-    return deepAccess(bid, 'params.bidfloor', 0);
+function getPlacementReqData(bid) {
+  const { params, bidId, mediaTypes, transactionId, userIdAsEids } = bid;
+  const schain = bid.schain || {};
+  const { placementId } = params;
+  const bidfloor = getBidFloor(bid);
+
+  const placement = {
+    placementId,
+    bidId,
+    schain,
+    bidfloor
+  };
+
+  if (mediaTypes && mediaTypes[BANNER]) {
+    placement.adFormat = BANNER;
+    placement.sizes = mediaTypes[BANNER].sizes;
+  } else if (mediaTypes && mediaTypes[VIDEO]) {
+    placement.adFormat = VIDEO;
+    placement.playerSize = mediaTypes[VIDEO].playerSize;
+    placement.minduration = mediaTypes[VIDEO].minduration;
+    placement.maxduration = mediaTypes[VIDEO].maxduration;
+    placement.mimes = mediaTypes[VIDEO].mimes;
+    placement.protocols = mediaTypes[VIDEO].protocols;
+    placement.startdelay = mediaTypes[VIDEO].startdelay;
+    placement.plcmt = mediaTypes[VIDEO].plcmt;
+    placement.skip = mediaTypes[VIDEO].skip;
+    placement.skipafter = mediaTypes[VIDEO].skipafter;
+    placement.minbitrate = mediaTypes[VIDEO].minbitrate;
+    placement.maxbitrate = mediaTypes[VIDEO].maxbitrate;
+    placement.delivery = mediaTypes[VIDEO].delivery;
+    placement.playbackmethod = mediaTypes[VIDEO].playbackmethod;
+    placement.api = mediaTypes[VIDEO].api;
+    placement.linearity = mediaTypes[VIDEO].linearity;
+  } else if (mediaTypes && mediaTypes[NATIVE]) {
+    placement.native = mediaTypes[NATIVE];
+    placement.adFormat = NATIVE;
   }
 
+  if (transactionId) {
+    placement.ext = placement.ext || {};
+    placement.ext.tid = transactionId;
+  }
+
+  if (userIdAsEids && userIdAsEids.length) {
+    placement.eids = userIdAsEids;
+  }
+
+  return placement;
+}
+
+function getBidFloor(bid) {
   try {
     const bidFloor = bid.getFloor({
       currency: 'USD',
@@ -37,113 +82,101 @@ function getBidFloor(bid) {
       size: '*',
     });
     return bidFloor.floor;
-  } catch (_) {
-    return 0
-  }
-}
-
-function getUserId(eids, id, source, uidExt) {
-  if (id) {
-    var uid = { id };
-    if (uidExt) {
-      uid.ext = uidExt;
-    }
-    eids.push({
-      source,
-      uids: [ uid ]
-    });
+  } catch (err) {
+    logError(err);
+    return 0;
   }
 }
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
-  noSync: NO_SYNC,
 
-  isBidRequestValid: (bid) => {
-    return Boolean(bid.bidId && bid.params && !isNaN(parseInt(bid.params.placementId)));
+  isBidRequestValid: (bid = {}) => {
+    const { params, bidId, mediaTypes } = bid;
+    let valid = Boolean(bidId && params && params.placementId);
+
+    if (mediaTypes && mediaTypes[BANNER]) {
+      valid = valid && Boolean(mediaTypes[BANNER] && mediaTypes[BANNER].sizes);
+    } else if (mediaTypes && mediaTypes[VIDEO]) {
+      valid = valid && Boolean(mediaTypes[VIDEO] && mediaTypes[VIDEO].playerSize);
+    } else if (mediaTypes && mediaTypes[NATIVE]) {
+      valid = valid && Boolean(mediaTypes[NATIVE]);
+    } else {
+      valid = false;
+    }
+    return valid;
   },
 
-  buildRequests: (validBidRequests = [], bidderRequest) => {
+  buildRequests: (validBidRequests = [], bidderRequest = {}) => {
     // convert Native ORTB definition to old-style prebid native definition
     validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
 
-    let winTop = window;
-    let location;
-    // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
+    let deviceWidth = 0;
+    let deviceHeight = 0;
+
+    let winLocation;
     try {
-      location = new URL(bidderRequest.refererInfo.page);
-      winTop = window.top;
+      const winTop = window.top;
+      deviceWidth = winTop.screen.width;
+      deviceHeight = winTop.screen.height;
+      winLocation = winTop.location;
     } catch (e) {
-      location = winTop.location;
       logMessage(e);
-    };
-    let placements = [];
-    let request = {
-      'deviceWidth': winTop.screen.width,
-      'deviceHeight': winTop.screen.height,
-      'language': (navigator && navigator.language) ? navigator.language.split('-')[0] : '',
-      'secure': 1,
-      'host': location.host,
-      'page': location.pathname,
-      'placements': placements
-    };
-    if (bidderRequest) {
-      if (bidderRequest.uspConsent) {
-        request.ccpa = bidderRequest.uspConsent;
-      }
-      if (bidderRequest.gdprConsent) {
-        request.gdpr = bidderRequest.gdprConsent;
-      }
+      winLocation = window.location;
     }
-    const len = validBidRequests.length;
 
-    for (let i = 0; i < len; i++) {
-      let bid = validBidRequests[i];
+    const refferUrl = bidderRequest.refererInfo && bidderRequest.refererInfo.page;
+    let refferLocation;
+    try {
+      refferLocation = refferUrl && new URL(refferUrl);
+    } catch (e) {
+      logMessage(e);
+    }
 
-      const placement = {
-        placementId: bid.params.placementId,
-        bidId: bid.bidId,
-        bidfloor: getBidFloor(bid),
-        eids: []
+    let location = refferLocation || winLocation;
+    const language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
+    const host = location.host;
+    const page = location.pathname;
+    const secure = location.protocol === 'https:' ? 1 : 0;
+    const placements = [];
+    const request = {
+      deviceWidth,
+      deviceHeight,
+      language,
+      secure,
+      host,
+      page,
+      placements,
+      coppa: deepAccess(bidderRequest, 'ortb2.regs.coppa') ? 1 : 0,
+      tmax: bidderRequest.timeout
+    };
+
+    if (bidderRequest.uspConsent) {
+      request.ccpa = bidderRequest.uspConsent;
+    }
+
+    if (bidderRequest.gdprConsent) {
+      request.gdpr = {
+        consentString: bidderRequest.gdprConsent.consentString
       };
-
-      if (bid.userId) {
-        getUserId(placement.eids, bid.userId.id5id, 'id5-sync.com');
-      }
-
-      if (bid.mediaTypes && bid.mediaTypes[BANNER] && bid.mediaTypes[BANNER].sizes) {
-        placement.traffic = BANNER;
-        placement.sizes = bid.mediaTypes[BANNER].sizes;
-      } else if (bid.mediaTypes && bid.mediaTypes[VIDEO] && bid.mediaTypes[VIDEO].playerSize) {
-        placement.traffic = VIDEO;
-        placement.wPlayer = bid.mediaTypes[VIDEO].playerSize[0];
-        placement.hPlayer = bid.mediaTypes[VIDEO].playerSize[1];
-        placement.minduration = bid.mediaTypes[VIDEO].minduration;
-        placement.maxduration = bid.mediaTypes[VIDEO].maxduration;
-        placement.mimes = bid.mediaTypes[VIDEO].mimes;
-        placement.protocols = bid.mediaTypes[VIDEO].protocols;
-        placement.startdelay = bid.mediaTypes[VIDEO].startdelay;
-        placement.placement = bid.mediaTypes[VIDEO].placement;
-        placement.skip = bid.mediaTypes[VIDEO].skip;
-        placement.skipafter = bid.mediaTypes[VIDEO].skipafter;
-        placement.minbitrate = bid.mediaTypes[VIDEO].minbitrate;
-        placement.maxbitrate = bid.mediaTypes[VIDEO].maxbitrate;
-        placement.delivery = bid.mediaTypes[VIDEO].delivery;
-        placement.playbackmethod = bid.mediaTypes[VIDEO].playbackmethod;
-        placement.api = bid.mediaTypes[VIDEO].api;
-        placement.linearity = bid.mediaTypes[VIDEO].linearity;
-      } else if (bid.mediaTypes && bid.mediaTypes[NATIVE]) {
-        placement.traffic = NATIVE;
-        placement.native = bid.mediaTypes[NATIVE];
-      }
-
-      if (bid.schain) {
-        placements.schain = bid.schain;
-      }
-
-      placements.push(placement);
     }
+
+    if (bidderRequest.gppConsent) {
+      request.gpp = bidderRequest.gppConsent.gppString;
+      request.gpp_sid = bidderRequest.gppConsent.applicableSections;
+    } else if (bidderRequest.ortb2?.regs?.gpp) {
+      request.gpp = bidderRequest.ortb2.regs.gpp;
+      request.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
+    }
+
+    const len = validBidRequests.length;
+    for (let i = 0; i < len; i++) {
+      const bid = validBidRequests[i];
+      placements.push(getPlacementReqData(bid));
+    }
+
     return {
       method: 'POST',
       url: AD_URL,
@@ -163,19 +196,7 @@ export const spec = {
       }
     }
     return response;
-  },
-
-  getUserSyncs: (syncOptions, serverResponses) => {
-    if (NO_SYNC) {
-      return false
-    } else {
-      return [{
-        type: 'image',
-        url: URL_SYNC
-      }];
-    }
   }
-
 };
 
 registerBidder(spec);

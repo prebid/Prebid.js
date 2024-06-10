@@ -5,7 +5,7 @@ import * as utils from 'src/utils.js';
 import * as sinon from 'sinon';
 import {expect, spy} from 'chai';
 import * as prebidGlobal from 'src/prebidGlobal.js';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 import adapterManager, { gdprDataHandler, uspDataHandler } from 'src/adapterManager.js';
 import parse from 'url-parse';
 
@@ -292,9 +292,9 @@ describe('#bidViewability', function() {
       let call = callBidViewableBidderSpy.getCall(0);
       expect(call.args[0]).to.equal(PBJS_WINNING_BID.bidder);
       expect(call.args[1]).to.deep.equal(PBJS_WINNING_BID);
-      // CONSTANTS.EVENTS.BID_VIEWABLE is triggered
+      // EVENTS.BID_VIEWABLE is triggered
       call = eventsEmitSpy.getCall(0);
-      expect(call.args[0]).to.equal(CONSTANTS.EVENTS.BID_VIEWABLE);
+      expect(call.args[0]).to.equal(EVENTS.BID_VIEWABLE);
       expect(call.args[1]).to.deep.equal(PBJS_WINNING_BID);
     });
 
@@ -303,7 +303,7 @@ describe('#bidViewability', function() {
       expect(triggerPixelSpy.callCount).to.equal(0);
       // adapterManager.callBidViewableBidder is NOT called
       expect(callBidViewableBidderSpy.callCount).to.equal(0);
-      // CONSTANTS.EVENTS.BID_VIEWABLE is NOT triggered
+      // EVENTS.BID_VIEWABLE is NOT triggered
       expect(eventsEmitSpy.callCount).to.equal(0);
     });
 

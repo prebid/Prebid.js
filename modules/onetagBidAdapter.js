@@ -63,7 +63,8 @@ function buildRequests(validBidRequests, bidderRequest) {
   if (bidderRequest && bidderRequest.gdprConsent) {
     payload.gdprConsent = {
       consentString: bidderRequest.gdprConsent.consentString,
-      consentRequired: bidderRequest.gdprConsent.gdprApplies
+      consentRequired: bidderRequest.gdprConsent.gdprApplies,
+      addtlConsent: bidderRequest.gdprConsent.addtlConsent
     };
   }
   if (bidderRequest && bidderRequest.gppConsent) {
@@ -290,6 +291,7 @@ function setGeneralInfo(bidRequest) {
   this['gpid'] = deepAccess(bidRequest, 'ortb2Imp.ext.gpid') || deepAccess(bidRequest, 'ortb2Imp.ext.data.pbadslot');
   this['pubId'] = params.pubId;
   this['ext'] = params.ext;
+  this['ortb2Imp'] = deepAccess(bidRequest, 'ortb2Imp');
   if (params.pubClick) {
     this['click'] = params.pubClick;
   }
