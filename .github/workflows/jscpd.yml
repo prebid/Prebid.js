@@ -90,6 +90,7 @@ jobs:
       if: env.filtered_report_exists == 'true'
       uses: actions/github-script@v7
       with:
+        github-token: ${{ secrets.PAT_TOKEN }}
         script: |
           const fs = require('fs');
           const filteredReport = JSON.parse(fs.readFileSync('filtered-jscpd-report.json', 'utf8'));
