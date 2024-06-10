@@ -6,7 +6,7 @@ import {deepClone, generateUUID, logError, logInfo, logWarn, getParameterByName}
 
 const analyticsType = 'endpoint';
 
-export const ANALYTICS_VERSION = '2.2.1';
+export const ANALYTICS_VERSION = '2.3.0';
 
 const ANALYTICS_SERVER = 'https://a.greenbids.ai';
 
@@ -135,6 +135,8 @@ export const greenbidsAnalyticsAdapter = Object.assign(adapter({ANALYTICS_SERVER
     } else {
       if (status === BIDDER_STATUS.BID) {
         message.adUnits[adUnitIndex].bidders[bidderIndex].hasBid = true;
+        message.adUnits[adUnitIndex].bidders[bidderIndex].cpm = bid.cpm;
+        message.adUnits[adUnitIndex].bidders[bidderIndex].currency = bid.currency;
       } else if (status === BIDDER_STATUS.TIMEOUT) {
         message.adUnits[adUnitIndex].bidders[bidderIndex].isTimeout = true;
       }
