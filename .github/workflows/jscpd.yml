@@ -1,7 +1,7 @@
 name: Check for Duplicated Code
 
 on: 
-  pull_request:
+  pull_request_target:
     branches:
       - master
 
