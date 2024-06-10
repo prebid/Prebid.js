@@ -7,7 +7,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 
-const BIDDER_CODE = 'preciso';
+const BIDDER__CODE = 'preciso';
 const COOKIE_NAME = '_sharedid';
 const AD_URL = 'https://ssp-bidder.mndtrk.com/bid_request/openrtb';
 // const AD_URL = 'http://localhost:80/bid_request/openrtb';
@@ -18,11 +18,11 @@ let userId = 'NA';
 let precisoId = 'NA';
 let sharedId = 'NA'
 
-export const storage2 = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: BIDDER_CODE });
+export const storage2 = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: BIDDER__CODE });
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'sharedId' });
 
 export const spec = {
-  code: BIDDER_CODE,
+  code: BIDDER__CODE,
   supportedMediaTypes: SUPPORTED_MEDIA_TYPES,
   gvlid: GVLID,
 
