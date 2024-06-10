@@ -1,43 +1,77 @@
-import { yandexIdSubmodule, storage } from '../../../modules/yandexIdSystem.js';
+// @ts-check
 
-const MIN_METRICA_ID_LEN = 17;
+import { yandexIdSubmodule, PREBID_STORAGE, BIDDER_CODE, YANDEX_USER_ID_KEY, YANDEX_COOKIE_STORAGE_TYPE, YANDEX_MIN_EXPIRE_DAYS } from '../../../modules/yandexIdSystem.js';
+import {createSandbox} from 'sinon'
+import * as utils from '../../../src/utils.js';
 
 /**
  * @typedef {import('sinon').SinonStub} SinonStub
+ * @typedef {import('sinon').SinonSpy} SinonSpy
  * @typedef {import('sinon').SinonSandbox} SinonSandbox
  */
+
+const MIN_METRICA_ID_LEN = 17;
+
+/** @satisfies {import('../../../modules/userId/index.js').SubmoduleConfig} */
+const CORRECT_SUBMODULE_CONFIG = {
+  name: BIDDER_CODE,
+  storage: {
+    expires: YANDEX_MIN_EXPIRE_DAYS,
+    name: YANDEX_USER_ID_KEY,
+    type: YANDEX_COOKIE_STORAGE_TYPE,
+    refreshInSeconds: undefined,
+  },
+  params: undefined,
+  value: undefined,
+};
+
+/** @type {import('../../../modules/userId/index.js').SubmoduleConfig[]} */
+const INCORRECT_SUBMODULE_CONFIGS = [
+  {
+    ...CORRECT_SUBMODULE_CONFIG,
+    storage: {
+      ...CORRECT_SUBMODULE_CONFIG.storage,
+      expires: 0,
+    }
+  },
+  {
+    ...CORRECT_SUBMODULE_CONFIG,
+    storage: {
+      ...CORRECT_SUBMODULE_CONFIG.storage,
+      type: 'html5'
+    }
+  },
+  {
+    ...CORRECT_SUBMODULE_CONFIG,
+    storage: {
+      ...CORRECT_SUBMODULE_CONFIG.storage,
+      name: 'custom_key'
+    }
+  },
+];
 
 describe('YandexId module', () => {
   /** @type {SinonSandbox} */
   let sandbox;
   /** @type {SinonStub} */
-  let setCookieStub;
-  /** @type {SinonStub} */
-  let getCookieStub;
-  /** @type {SinonStub} */
-  let getLocalStorageStub;
-  /** @type {SinonStub} */
-  let setLocalStorageStub;
-  /** @type {SinonStub} */
-  let cookiesAreEnabledStub;
-  /** @type {SinonStub} */
   let getCryptoRandomValuesStub;
   /** @type {SinonStub} */
   let randomStub;
+  /** @type {SinonSpy} */
+  let logErrorSpy;
 
   beforeEach(() => {
-    sandbox = sinon.sandbox.create();
-    getCookieStub = sandbox.stub(storage, 'getCookie');
-    setCookieStub = sandbox.stub(storage, 'setCookie');
-    getLocalStorageStub = sandbox.stub(storage, 'getDataFromLocalStorage');
-    setLocalStorageStub = sandbox.stub(storage, 'setDataInLocalStorage');
-    cookiesAreEnabledStub = sandbox.stub(storage, 'cookiesAreEnabled');
-    cookiesAreEnabledStub.returns(true);
+    sandbox = createSandbox();
+    logErrorSpy = sandbox.spy(utils, 'logError');
 
     getCryptoRandomValuesStub = sandbox
       .stub(window.crypto, 'getRandomValues')
       .callsFake((bufferView) => {
-        bufferView[0] = 10000;
+        if (bufferView != null) {
+          bufferView[0] = 10000;
+        }
+
+        return null;
       });
     randomStub = sandbox.stub(window.Math, 'random').returns(0.555);
   });
@@ -47,97 +81,45 @@ describe('YandexId module', () => {
   });
 
   describe('getId()', () => {
-    describe('user id format', () => {
-      it('matches Yandex Metrica format', () => {
-        const generatedId = yandexIdSubmodule.getId().id;
-        expect(isNaN(generatedId)).to.be.false;
-        expect(generatedId).to.have.length.greaterThanOrEqual(
-          MIN_METRICA_ID_LEN
-        );
-      });
+    it('user id matches Yandex Metrica format', () => {
+      const generatedId = yandexIdSubmodule.getId(CORRECT_SUBMODULE_CONFIG)?.id;
+
+      expect(isNaN(Number(generatedId))).to.be.false;
+      expect(generatedId).to.have.length.greaterThanOrEqual(
+        MIN_METRICA_ID_LEN
+      );
     });
 
-    describe('when user id is set', () => {
-      const dummyId = Array(MIN_METRICA_ID_LEN).fill(1).join('');
+    it('uses stored id', () => {
+      const storedId = '11111111111111111';
+      const generatedId = yandexIdSubmodule.getId(CORRECT_SUBMODULE_CONFIG, undefined, storedId)?.id;
 
-      beforeEach(() => {
-        getCookieStub.returns(dummyId);
-      });
+      expect(generatedId).to.be.equal(storedId);
+    })
 
-      it('returns id', () => {
-        const { id } = yandexIdSubmodule.getId();
+    describe('config validation', () => {
+      INCORRECT_SUBMODULE_CONFIGS.forEach((config, i) => {
+        it(`invalid config #${i} fails`, () => {
+          const generatedId = yandexIdSubmodule.getId(config)?.id;
 
-        expect(id).to.equal(dummyId);
-      });
-
-      it('does not change existing id', () => {
-        yandexIdSubmodule.getId();
-
-        expect(setCookieStub.lastCall.args[1]).to.equal(dummyId);
-      });
-    });
-
-    describe('when user id is not set', () => {
-      beforeEach(() => {
-        getCookieStub.returns(undefined);
-      });
-
-      it('returns id', () => {
-        const id = yandexIdSubmodule.getId();
-
-        expect(id).not.to.be.undefined;
-      });
-
-      it('sets id', () => {
-        yandexIdSubmodule.getId()
-
-        expect(setCookieStub.calledOnce).to.be.true;
-      });
-    });
-
-    describe('storage interaction', () => {
-      describe('when cookie storage is disabled', () => {
-        it('should not use storage api', () => {
-          cookiesAreEnabledStub.returns(false);
-
-          yandexIdSubmodule.getId();
-
-          expect(cookiesAreEnabledStub.called).to.be.true;
-          expect(getCookieStub.called).to.be.false;
-          expect(setCookieStub.called).to.be.false;
-          expect(getLocalStorageStub.called).to.be.false;
-          expect(setLocalStorageStub.called).to.be.false;
-        });
-      });
-
-      it('should use cookie', () => {
-        yandexIdSubmodule.getId();
-
-        expect(cookiesAreEnabledStub.called).to.be.true;
-        expect(getCookieStub.calledOnce).to.be.true;
-        expect(setCookieStub.calledOnce).to.be.true;
-      });
-
-      it('should not use localStorage', () => {
-        yandexIdSubmodule.getId();
-
-        expect(getLocalStorageStub.called).to.be.false;
-        expect(setLocalStorageStub.called).to.be.false;
-      });
-    });
+          expect(generatedId).to.be.undefined;
+          expect(logErrorSpy.called).to.be.true;
+        })
+      })
+    })
 
     describe('crypto', () => {
       it('uses Math.random when crypto is not available', () => {
         sandbox.stub(window, 'crypto').value(undefined);
 
-        yandexIdSubmodule.getId();
+        yandexIdSubmodule.getId(CORRECT_SUBMODULE_CONFIG);
 
         expect(randomStub.calledOnce).to.be.true;
         expect(getCryptoRandomValuesStub.called).to.be.false;
       });
 
       it('uses crypto when it is available', () => {
-        yandexIdSubmodule.getId();
+        yandexIdSubmodule.getId(CORRECT_SUBMODULE_CONFIG);
 
         expect(randomStub.called).to.be.false;
         expect(getCryptoRandomValuesStub.calledOnce).to.be.true;

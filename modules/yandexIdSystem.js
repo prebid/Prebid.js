@@ -4,21 +4,26 @@
  * @requires module:modules/userId
  */
 
+// @ts-check
+
 import { MODULE_TYPE_UID } from '../src/activities/modules.js';
 import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { logInfo } from '../src/utils.js';
+import { logError, logInfo } from '../src/utils.js';
 
-const BIDDER_CODE = 'yandex';
+// .com suffix is just a convention for naming the bidder eids
+// See https://github.com/prebid/Prebid.js/pull/11196#discussion_r1591165139
 const BIDDER_EID_KEY = 'yandex.com';
 const YANDEX_ID_KEY = 'yandexId';
+export const BIDDER_CODE = 'yandex';
+export const YANDEX_USER_ID_KEY = '_ym_uid';
+export const YANDEX_COOKIE_STORAGE_TYPE = 'cookie';
+export const YANDEX_MIN_EXPIRE_DAYS = 30;
 
-const USER_ID_KEY = '_ym_uid';
-const USER_ID_COOKIE_EXP_MS = 31536000000; // 365 days
-
-export const storage = getStorageManager({
+export const PREBID_STORAGE = getStorageManager({
   moduleType: MODULE_TYPE_UID,
   moduleName: BIDDER_CODE,
+  bidderCode: undefined
 });
 
 export const yandexIdSubmodule = {
@@ -36,15 +41,24 @@ export const yandexIdSubmodule = {
 
     return { [YANDEX_ID_KEY]: value };
   },
-  getId() {
-    const yandexUidStorage = new YandexUidStorage(storage);
-
-    if (!yandexUidStorage.checkIsAvailable()) {
+  /**
+   * @param {import('./userId/index.js').SubmoduleConfig} submoduleConfig
+   * @param {unknown} [_consentData]
+   * @param {string} [storedId] Id that was saved by the core previously.
+   */
+  getId(submoduleConfig, _consentData, storedId) {
+    if (checkConfigHasErrorsAndReport(submoduleConfig)) {
       return;
     }
 
+    if (storedId) {
+      return {
+        id: storedId
+      };
+    }
+
     return {
-      id: yandexUidStorage.getUid(),
+      id: new YandexUidGenerator().generateUid(),
     };
   },
   eids: {
@@ -55,43 +69,36 @@ export const yandexIdSubmodule = {
   },
 };
 
-class YandexUidStorage {
-  /**
-   * @param {typeof cookieStorage} cookieStorage
-   */
-  constructor(cookieStorage) {
-    this._cookieStorage = cookieStorage;
+/**
+ * @param {import('./userId/index.js').SubmoduleConfig} submoduleConfig
+ * @returns {boolean} `true` - when there are errors, `false` - otherwise.
+ */
+function checkConfigHasErrorsAndReport(submoduleConfig) {
+  let error = false;
+
+  const READABLE_MODULE_NAME = 'Yandex ID module';
+
+  if (submoduleConfig.storage == null) {
+    logError(`Misconfigured ${READABLE_MODULE_NAME}. "storage" is required.`)
+    return true;
   }
 
-  _generateUid() {
-    return new YandexUidGenerator().generateUid();
+  if (submoduleConfig.storage?.name !== YANDEX_USER_ID_KEY) {
+    logError(`Misconfigured ${READABLE_MODULE_NAME}, "storage.name" is required to be "${YANDEX_USER_ID_KEY}"`);
+    error = true;
   }
 
-  _getUserIdFromStorage() {
-    const id = this._cookieStorage.getCookie(USER_ID_KEY);
-
-    return id;
+  if (submoduleConfig.storage?.type !== YANDEX_COOKIE_STORAGE_TYPE) {
+    logError(`Misconfigured ${READABLE_MODULE_NAME}, "storage.type" is required to be "${YANDEX_COOKIE_STORAGE_TYPE}"`);
+    error = true;
   }
 
-  _setUid(userId) {
-    if (this._cookieStorage.cookiesAreEnabled()) {
-      const expires = new Date(Date.now() + USER_ID_COOKIE_EXP_MS).toString();
-
-      this._cookieStorage.setCookie(USER_ID_KEY, userId, expires);
-    }
+  if ((submoduleConfig.storage?.expires ?? 0) < YANDEX_MIN_EXPIRE_DAYS) {
+    logError(`Misconfigured ${READABLE_MODULE_NAME}, "storage.expires" is required to be not less than "${YANDEX_MIN_EXPIRE_DAYS}"`);
+    error = true;
   }
 
-  checkIsAvailable() {
-    return this._cookieStorage.cookiesAreEnabled();
-  }
-
-  getUid() {
-    const id = this._getUserIdFromStorage() || this._generateUid();
-
-    this._setUid(id);
-
-    return id;
-  }
+  return error;
 }
 
 /**
