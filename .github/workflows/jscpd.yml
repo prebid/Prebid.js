@@ -90,6 +90,7 @@ jobs:
       if: env.filtered_report_exists == 'true'
       uses: actions/github-script@v7
       with:
+        github-token: ${{ secrets.PAT_TOKEN }}
         script: |
           const fs = require('fs');
           const filteredReport = JSON.parse(fs.readFileSync('filtered-jscpd-report.json', 'utf8'));
@@ -100,7 +101,7 @@ jobs:
             const lines = duplication.lines;
             comment += `- \`${firstFile}\` has ${lines} duplicated lines with \`${secondFile}\`\n`;
           });
-          comment += "\nReducing code duplication by importing common functions from a library not only makes our code cleaner but also easier to maintain. Keep up the great work! 🚀";
+          comment += "\nReducing code duplication by importing common functions from a library not only makes our code cleaner but also easier to maintain. Please move the common code from both files into a library and import it in each. Keep up the great work! 🚀";
           github.rest.issues.createComment({
             owner: context.repo.owner,
             repo: context.repo.repo,
