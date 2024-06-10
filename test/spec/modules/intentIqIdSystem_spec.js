@@ -9,11 +9,11 @@ import { logInfo } from '../../../src/utils';
 const partner = 10;
 const pai = '11';
 const pcid = '12';
-const userPercentage = 0;
-const defaultPercentage = 100;
-const FIRST_PARTY_DATA_KEY = '_iiq_fdata';
-const PERCENT_LS_KEY = '_iiq_percent';
-const GROUP_LS_KEY = '_iiq_group';
+const defaultConfigParams = { params: { partner: partner } };
+const paiConfigParams = { params: { partner: partner, pai: pai } };
+const pcidConfigParams = { params: { partner: partner, pcid: pcid } };
+const allConfigParams = { params: { partner: partner, pai: pai, pcid: pcid } };
+const responseHeader = { 'Content-Type': 'application/json' }
 
 export const testClientHints = {
   architecture: 'x86',
@@ -47,6 +47,27 @@ export const testClientHints = {
 
 describe('IntentIQ tests', function () {
   let logErrorStub;
+  let testLSValue = {
+    'date': Date.now(),
+    'cttl': 2000,
+    'rrtt': 123
+  }
+  let testLSValueWithData = {
+    'date': Date.now(),
+    'cttl': 9999999999999,
+    'rrtt': 123,
+    'data': 'U2FsdGVkX18AKRyhEPdiL9kuxSigBrlqLaDJWvwSird2O5TdBW67gX+xbL4nYxHDjdS5G5FpdhtpouZiBFw2FBjyUyobZheM857G5q4BapdiA8z3K6j0W+r0im30Ak2SSn2NBfFwxcCgP/UAF5/ddxIIaeWl1yBMZBO+Gic6us2JUg86paAtp3Sk4unCvg1G+4myYYSKgGi/Vrw51ye/jAGn4AdAbFOCojENhV+Ts/XyVK0AQGdC3wqnQUId9MZpB2VoTA9wgXeYEzjpDDJmcKQ18V3WTKnK/H1FBVZa1vovOj13ZUeuMUZbZL83NFE/PkCrzJjRy14orcdnGbDUaxXUBBulDCr21gNnc0mLbYj7b18OQQ75/GhX80HroxbMEyc5tiECBrE/JsW+2sQ4MwoqePPPj/f5Bf4wJ4z3UphjK6maypoWaXsZCZTp2mJYmsf0XsNHLpt1MUrBeAmy6Bewkb+WEAeVe6/b53DQDlo2LQXpSzDPVucMn3CQOWFv1Bvz5cLIZRD8/NtDjgYzWNXHRRAGhhN19yew0ZyeS09x3UBiwER6A6ppv2qQVGs8QNsif3z7pkhkNoETcXQKyv1xa5X87tLvXkO4FYDQQvXEGInyPuNmkFtsZS5FJl+TYrdyaEiCOwRgkshwCU4s93WrfRUtPHtd4zNiA1LWAKGKeBEK6woeFn1YU1YIqsvx9wXfkCbqNkHTi2mD1Eb85a2niSK9BzDdbxwv6EzZ+f9j6esEVdBUIiYmsUuOfTp/ftOHKjBKi1lbeC5imAzZfV/AKvqS5opAVGp7Y9pq976sYblCrPBQ0PYI+Cm2ZNhG1vKc2Pa0rjwJwvusZp2Wvw9zSbnoZUeBi1O+XGYqGhkqYVvH3rXvrFiSmA7pk5Buz6vPd6YV1d55PVahv/4u3jksEI/ZN8QNshrM0foJ4tE/q4x8EKx22txb6433QQybwFfExdmA/XaPqM0rwqTm4qyK0mbX984A8niQka5T5pPkEfL4ALqlIgJ2Fo7X/s6FRU/sZq72JWKcVET4edebD0w5mjeotsjUz5EGT0jRSWRba0yxe4myNaAyY7Y0NTNY9J9Q0JLDFh9Hb05Ejt0Jeoq4Olv8/zFWObBoQtkQyeeRB8L7XIari/xgl191J6euhe5+8vu3ta3tX+XGk+gqdfip1R11tEYpW/XPsV+6DBEfS/8icDHiwK7sPpAgTx7GuJGL1U3Hbg7P/2zUU6xMSR5In/Oa5i1B9FtayGd+utiqrGJsqg8IyFlAt1B9B11k/wJFnWWevMly+y+Ko75ShF7UzfcNR2s41doov+2DEz/YiKH1qHjVOXjslBTYjceB3xqa8sSPDt/vQDDUIX5CPLyVBZj7AeeB/IKDFjZVovBDH92Xl8JTNILRuDHsWmSwNI1DUzgus6ox4u9Mi439caK6KnpNYso+ksLXNEQCm0m15WV2NC+fjkEwLV6hGNbz'
+  }
+  let testResponseWithValues = {
+    'abPercentage': 90,
+    'adt': 1,
+    'ct': 2,
+    'data': 'testdata',
+    'dbsaved': 'false',
+    'ls': true,
+    'mde': true,
+    'tc': 4
+  }
 
   beforeEach(function () {
     localStorage.clear();
@@ -118,45 +139,7 @@ describe('IntentIQ tests', function () {
     expect(request.url).to.contain('&jsver=5.3&source=pbjs&payload=');
   });
 
-  it('should handle BID_WON event with default percentage configuration', function () {
-    localStorage.setItem(PERCENT_LS_KEY + '_' + partner, defaultPercentage);
-    localStorage.setItem(GROUP_LS_KEY + '_' + partner, 'A');
-    localStorage.setItem(FIRST_PARTY_DATA_KEY + '_' + partner, '{"pcid":"defaultpcid"}');
-
-    events.emit(EVENTS.BID_WON, wonRequest);
-
-    expect(server.requests.length).to.be.above(0);
-    const request = server.requests[0];
-    expect(request.url).to.contain('https://reports.intentiq.com/report?pid=' + partner + '&mct=1&agid=');
-    expect(request.url).to.contain('&jsver=5.3&source=pbjs&payload=');
-  });
-
-  it('should not send request if manualReport is true', function () {
-    iiqAnalyticsAnalyticsAdapter.initOptions.manualReport = true;
-    events.emit(EVENTS.BID_WON, wonRequest);
-    expect(server.requests.length).to.equal(0);
-  });
-
-  it('should read data from local storage', function () {
-    localStorage.setItem(FIRST_PARTY_DATA_KEY + '_' + partner, '{"data":"testpcid", "eidl": 10}');
-    events.emit(EVENTS.BID_WON, wonRequest);
-    expect(iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs).to.equal('testpcid');
-    expect(iiqAnalyticsAnalyticsAdapter.initOptions.eidl).to.equal(10);
-  });
-
-  it('should handle initialization values from local storage', function () {
-    localStorage.setItem(PERCENT_LS_KEY + '_' + partner, 50);
-    localStorage.setItem(GROUP_LS_KEY + '_' + partner, 'B');
-    localStorage.setItem(FIRST_PARTY_KEY, '{"pcid":"testpcid"}');
-    events.emit(EVENTS.BID_WON, wonRequest); // This will call initLsValues internally
-    expect(iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup).to.equal('B');
-    expect(iiqAnalyticsAnalyticsAdapter.initOptions.currentPercentage).to.equal(50);
-    expect(iiqAnalyticsAnalyticsAdapter.initOptions.fpid).to.be.not.null;
-  });
-
-  it('should handle encrypted data correctly', function () {
-    let encryptedData = AES.encrypt('test_personid', MODULE_NAME).toString();
-    localStorage.setItem(FIRST_PARTY_DATA_KEY + '_' + partner, JSON.stringify({ data: encryptedData }));
+  it('should not save data in cookie if relevant type not set', function () {
     let callBackSpy = sinon.spy();
     let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
@@ -198,10 +181,169 @@ describe('IntentIQ tests', function () {
       JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: true })
     );
     expect(callBackSpy.calledOnce).to.be.true;
-    // Now check if data is stored correctly in cookies
+    expect(storage.getCookie('_iiq_fdata_' + partner)).to.equal(null);
+  });
+
+  it('should save data in cookie if storage type is "cookie"', function () {
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = intentIqIdSubmodule.getId({ ...allConfigParams, enabledStorageTypes: ['cookie'] }).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pcid=12&pai=11&iiqidtype=2&iiqpcid=');
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: true })
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
     const cookieValue = storage.getCookie('_iiq_fdata_' + partner);
     expect(cookieValue).to.not.equal(null);
-    expect(JSON.parse(cookieValue).data).to.be.equal('test_personid');
+    const decryptedData = JSON.parse(decryptData(JSON.parse(cookieValue).data));
+    expect(decryptedData).to.deep.equal(['test_personid']);
+  });
+
+  it('should call the IntentIQ endpoint with only partner', function () {
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&iiqidtype=2&iiqpcid=');
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify({})
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
+  });
+
+  it('should ignore INVALID_ID and invalid responses in decode', function () {
+    expect(intentIqIdSubmodule.decode('INVALID_ID')).to.equal(undefined);
+    expect(intentIqIdSubmodule.decode('')).to.equal(undefined);
+    expect(intentIqIdSubmodule.decode(undefined)).to.equal(undefined);
+  });
+
+  it('should call the IntentIQ endpoint with only partner, pai', function () {
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = intentIqIdSubmodule.getId(paiConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pai=11&iiqidtype=2&iiqpcid=');
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify({})
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
+  });
+
+  it('should call the IntentIQ endpoint with only partner, pcid', function () {
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = intentIqIdSubmodule.getId(pcidConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pcid=12&iiqidtype=2&iiqpcid=');
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify({})
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
+  });
+
+  it('should call the IntentIQ endpoint with partner, pcid, pai', function () {
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pcid=12&pai=11&iiqidtype=2&iiqpcid=');
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify({})
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
+  });
+
+  it('should not throw Uncaught TypeError when IntentIQ endpoint returns empty response', function () {
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&iiqidtype=2&iiqpcid=');
+    request.respond(
+      204,
+      responseHeader,
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
+  });
+
+  it('should log an error and continue to callback if ajax request errors', function () {
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&iiqidtype=2&iiqpcid=');
+    request.respond(
+      503,
+      responseHeader,
+      'Unavailable'
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
+  });
+
+  it('save result if ls=true', function () {
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pcid=12&pai=11&iiqidtype=2&iiqpcid=');
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: true })
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
+    expect(callBackSpy.args[0][0]).to.deep.equal(['test_personid']);
+  });
+
+  it('dont save result if ls=false', function () {
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pcid=12&pai=11&iiqidtype=2&iiqpcid=');
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify({ pid: 'test_pid', data: 'test_personid', ls: false })
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
+    expect(callBackSpy.args[0][0]).to.be.undefined;
+  });
+
+  it('send addition parameters if were found in localstorage', function () {
+    localStorage.setItem('_iiq_fdata_' + partner, JSON.stringify(testLSValue))
+    let callBackSpy = sinon.spy();
+    let submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
+    submoduleCallback(callBackSpy);
+    let request = server.requests[0];
+
+    expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pcid=12&pai=11&iiqidtype=2&iiqpcid=');
+    expect(request.url).to.contain('cttl=' + testLSValue.cttl);
+    expect(request.url).to.contain('rrtt=' + testLSValue.rrtt);
+    request.respond(
+      200,
+      responseHeader,
+      JSON.stringify(testResponseWithValues)
+    );
+    expect(callBackSpy.calledOnce).to.be.true;
+    expect(callBackSpy.args[0][0]).to.deep.equal([testResponseWithValues.data]);
+  });
+
+  it('return data stored in local storage ', function () {
+    localStorage.setItem('_iiq_fdata_' + partner, JSON.stringify(testLSValueWithData));
+    let returnedValue = intentIqIdSubmodule.getId(allConfigParams);
+    expect(JSON.stringify(returnedValue.id)).to.equal(decryptData(testLSValueWithData.data));
   });
 
   it('should handle browser blacklisting', function () {
@@ -414,7 +556,7 @@ describe('IntentIQ tests', function () {
       configurable: true
     });
     await intentIqIdSubmodule.getId(defaultConfigParams);
-    const savedClientHints = readData(CLIENT_HINTS_KEY);
+    const savedClientHints = readData(CLIENT_HINTS_KEY, ['html5']);
     expect(savedClientHints).to.equal(handleClientHints(testClientHints));
   });
 });
