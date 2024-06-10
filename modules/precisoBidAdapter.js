@@ -114,7 +114,7 @@ export const spec = {
 
   interpretResponse: function (serverResponse) {
     const bidsValue = []
-    const bidResponse = serverResponse.body    
+    const bidResponse = serverResponse.body
     bidResponse.seatbid.forEach(seat => {
       seat.bid.forEach(bid => {
         bidsValue.push({
