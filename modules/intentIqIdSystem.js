@@ -45,6 +45,7 @@ const encoderCH = {
   fullVersionList: 8
 };
 const INVALID_ID = 'INVALID_ID';
+const SUPPORTED_TYPES = ['html5', 'cookie']
 
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: MODULE_NAME });
 
@@ -82,16 +83,16 @@ export function decryptData(encryptedText) {
 }
 
 /**
- * Read Intent IQ data from cookie or local storage
+ * Read Intent IQ data from local storage or cookie
  * @param key
  * @return {string}
  */
-export function readData(key) {
+export function readData(key, allowedStorage) {
   try {
-    if (storage.hasLocalStorage()) {
+    if (storage.hasLocalStorage() && allowedStorage.includes('html5')) {
       return storage.getDataFromLocalStorage(key);
     }
-    if (storage.cookiesAreEnabled()) {
+    if (storage.cookiesAreEnabled() && allowedStorage.includes('cookie')) {
       return storage.getCookie(key);
     }
   } catch (error) {
@@ -100,19 +101,20 @@ export function readData(key) {
 }
 
 /**
- * Store Intent IQ data in either cookie or local storage
+ * Store Intent IQ data in cookie, local storage or both of them
  * expiration date: 365 days
  * @param key
  * @param {string} value IntentIQ ID value to sintentIqIdSystem_spec.jstore
  */
-export function storeData(key, value, cookieStorageEnabled = false) {
+export function storeData(key, value, allowedStorage) {
   try {
     logInfo(MODULE_NAME + ': storing data: key=' + key + ' value=' + value);
     if (value) {
-      if (storage.hasLocalStorage()) {
+      if (storage.hasLocalStorage() && allowedStorage.includes('html5')) {
         storage.setDataInLocalStorage(key, value);
       }
-      if (storage.cookiesAreEnabled() && cookieStorageEnabled) {
+      if (storage.cookiesAreEnabled() && allowedStorage.includes('cookie')) {
+        console.log('Yeeees')
         const expiresStr = (new Date(Date.now() + (PCID_EXPIRY * (60 * 60 * 24 * 1000)))).toUTCString();
         storage.setCookie(key, value, expiresStr, 'LAX');
       }
@@ -277,6 +279,12 @@ export function handleClientHints(clientHints) {
   return Object.keys(chParams).length ? JSON.stringify(chParams) : '';
 }
 
+function defineStorageType(params) {
+  if (!params || !Array.isArray(params)) return ['html5']; // use locale storage be default
+  const filteredArr = params.filter(item => SUPPORTED_TYPES.includes(item));
+  return filteredArr.length ? filteredArr : ['html5'];
+}
+
 /** @type {Submodule} */
 export const intentIqIdSubmodule = {
   /**
@@ -300,6 +308,7 @@ export const intentIqIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config) {
+    console.log(config)
     const configParams = (config?.params) || {};
     if (typeof configParams.partner !== 'number') {
       logError('User ID - intentIqId submodule requires a valid partner to be defined');
@@ -313,7 +322,7 @@ export const intentIqIdSubmodule = {
 
     const currentBrowserLowerCase = detectBrowser();
     const browserBlackList = typeof configParams.browserBlackList === 'string' ? configParams.browserBlackList.toLowerCase() : '';
-    const cookieStorageEnabled = typeof configParams.enableCookieStorage === 'boolean' ? configParams.enableCookieStorage : false;
+    const allowedStorage = defineStorageType(config.enabledStorageTypes);
     const currentDataTTl =
       typeof configParams.refreshInMillis === 'number' ? configParams.refreshInMillis : 43200000; // 12 hours
 
@@ -326,8 +335,7 @@ export const intentIqIdSubmodule = {
 
     callbackTimeoutID = setTimeout(() => {
       firePartnerCallback()
-    },
-      configParams.timeoutInMillis || 500
+    }, configParams.timeoutInMillis || 500
     );
 
     // Get consent information
@@ -349,7 +357,7 @@ export const intentIqIdSubmodule = {
     }
 
     // Read client hints from storage
-    let clientHints = readData(CLIENT_HINTS_KEY);
+    let clientHints = readData(CLIENT_HINTS_KEY, allowedStorage);
 
     // Get client hints and save to storage
     if (navigator.userAgentData) {
@@ -367,7 +375,7 @@ export const intentIqIdSubmodule = {
         ])
         .then(ch => {
           clientHints = handleClientHints(ch);
-          storeData(CLIENT_HINTS_KEY, clientHints)
+          storeData(CLIENT_HINTS_KEY, clientHints, allowedStorage)
         });
     }
 
@@ -376,7 +384,7 @@ export const intentIqIdSubmodule = {
     }
 
     // Read Intent IQ 1st party id or generate it if none exists
-    let firstPartyData = tryParse(readData(FIRST_PARTY_KEY));
+    let firstPartyData = tryParse(readData(FIRST_PARTY_KEY, allowedStorage));
 
     const firePartnerCallback = () => {
       if (configParams.callback && !callbackFired) {
@@ -389,10 +397,10 @@ export const intentIqIdSubmodule = {
     if (!firstPartyData?.pcid) {
       const firstPartyId = generateGUID();
       firstPartyData = { pcid: firstPartyId, pcidDate: Date.now(), group: NOT_YET_DEFINED };
-      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), cookieStorageEnabled);
+      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
     } else if (!firstPartyData.pcidDate) {
       firstPartyData.pcidDate = Date.now();
-      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), cookieStorageEnabled);
+      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
     }
 
     if (![WITH_IIQ, NOT_YET_DEFINED].includes(firstPartyData?.group)) {
@@ -409,13 +417,13 @@ export const intentIqIdSubmodule = {
       firstPartyData.uspapi_value = cmpData.us_privacy;
       firstPartyData.gpp_value = cmpData.gpp;
       shouldCallServer = true;
-      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), cookieStorageEnabled);
+      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
     } else if (firstPartyData.isOptedOut) {
       firePartnerCallback()
       return
     }
 
-    const savedData = tryParse(readData(FIRST_PARTY_DATA_KEY))
+    const savedData = tryParse(readData(FIRST_PARTY_DATA_KEY, allowedStorage))
     if (savedData) {
       partnerData = savedData;
     } else shouldCallServer = true;
@@ -446,8 +454,8 @@ export const intentIqIdSubmodule = {
     const storeFirstPartyData = () => {
       partnerData.date = Date.now();
       firstPartyData.date = Date.now();
-      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), cookieStorageEnabled);
-      storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), cookieStorageEnabled);
+      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
+      storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage);
     }
 
     const resp = function (callback) {
@@ -467,7 +475,7 @@ export const intentIqIdSubmodule = {
               partnerData.terminationCause = respJson.tc;
               if (respJson.tc == 41) {
                 firstPartyData.group = WITHOUT_IIQ;
-                storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), cookieStorageEnabled);
+                storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
                 defineEmptyDataAndFireCallback();
                 return;
               } else {
@@ -480,7 +488,7 @@ export const intentIqIdSubmodule = {
               }
               if (respJson.isOptedOut === true) {
                 firstPartyData.group = OPT_OUT;
-                storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), cookieStorageEnabled);
+                storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
                 defineEmptyDataAndFireCallback()
                 return;
               }
