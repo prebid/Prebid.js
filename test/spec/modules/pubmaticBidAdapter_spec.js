@@ -2378,6 +2378,40 @@ describe('PubMatic adapter', function () {
         expect(data.device.ext).to.deep.equal(cdepObj);
       });
 
+      it('should pass enriched device data from ortb2 object if present in bidderRequest fpd', function () {
+        const fpdBidderRequest = {
+          auctionId: 'new-auction-id',
+          ortb2: {
+            device: {
+              w: 980,
+              h: 1720,
+              dnt: 0,
+              ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+              language: 'en',
+              devicetype: 1,
+              make: 'Apple',
+              model: 'iPhone 12 Pro Max',
+              os: 'iOS',
+              osv: '17.4',
+            }
+          },
+        };
+
+        const request = spec.buildRequests(multipleMediaRequests, fpdBidderRequest);
+        const data = JSON.parse(request.data);
+
+        expect(data.device.w).to.equal(fpdBidderRequest.ortb2.device.w);
+        expect(data.device.h).to.equal(fpdBidderRequest.ortb2.device.h);
+        expect(data.device.dnt).to.equal(fpdBidderRequest.ortb2.device.dnt);
+        expect(data.device.ua).to.equal(fpdBidderRequest.ortb2.device.ua);
+        expect(data.device.language).to.equal(fpdBidderRequest.ortb2.device.language);
+        expect(data.device.devicetype).to.equal(fpdBidderRequest.ortb2.device.devicetype);
+        expect(data.device.make).to.equal(fpdBidderRequest.ortb2.device.make);
+        expect(data.device.model).to.equal(fpdBidderRequest.ortb2.device.model);
+        expect(data.device.os).to.equal(fpdBidderRequest.ortb2.device.os);
+        expect(data.device.osv).to.equal(fpdBidderRequest.ortb2.device.osv);
+      });
+
       it('Request params should have valid native bid request for all valid params', function () {
         let request = spec.buildRequests(nativeBidRequests, {
           auctionId: 'new-auction-id'
