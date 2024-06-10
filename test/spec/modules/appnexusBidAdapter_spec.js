@@ -432,6 +432,31 @@ describe('AppNexusAdapter', function () {
         expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
       });
 
+      it('should include ORTB2 device data when available', function () {
+        const bidRequest = deepClone(bidRequests[0]);
+        const bidderRequest = {
+          ortb2: {
+            device: {
+              w: 980,
+              h: 1720,
+              dnt: 0,
+              ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/125.0.6422.80 Mobile/15E148 Safari/604.1',
+              language: 'en',
+              devicetype: 1,
+              make: 'Apple',
+              model: 'iPhone 12 Pro Max',
+              os: 'iOS',
+              osv: '17.4',
+            },
+          },
+        };
+
+        const request = spec.buildRequests([bidRequest], bidderRequest);
+        const payload = JSON.parse(request.data);
+
+        expect(payload.device).to.deep.equal(bidderRequest.ortb2.device);
+      });
+
       it('should add video property when adUnit includes a renderer', function () {
         const videoData = {
           mediaTypes: {
