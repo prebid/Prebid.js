@@ -126,7 +126,6 @@ export const spec = {
       deviceHeight = winTop.screen.height;
       winLocation = winTop.location;
     } catch (e) {
-      logMessage(e);
       winLocation = window.location;
     }
 
