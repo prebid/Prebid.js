@@ -9,12 +9,10 @@ import { logInfo } from '../../../src/utils';
 const partner = 10;
 const pai = '11';
 const pcid = '12';
-const enableCookieStorage = true;
 const defaultConfigParams = { params: { partner: partner } };
 const paiConfigParams = { params: { partner: partner, pai: pai } };
 const pcidConfigParams = { params: { partner: partner, pcid: pcid } };
-const enableCookieConfigParams = { params: { partner: partner, enableCookieStorage: enableCookieStorage } };
-const allConfigParams = { params: { partner: partner, pai: pai, pcid: pcid, enableCookieStorage: enableCookieStorage } };
+const allConfigParams = { params: { partner: partner, pai: pai, pcid: pcid } };
 const responseHeader = { 'Content-Type': 'application/json' }
 
 export const testClientHints = {
@@ -50,15 +48,15 @@ export const testClientHints = {
 describe('IntentIQ tests', function () {
   let logErrorStub;
   let testLSValue = {
-    'date': 1651945280759,
+    'date': Date.now(),
     'cttl': 2000,
     'rrtt': 123
   }
   let testLSValueWithData = {
-    'date': 1651945280759,
+    'date': Date.now(),
     'cttl': 9999999999999,
     'rrtt': 123,
-    'data': 'previousTestData'
+    'data': 'U2FsdGVkX18AKRyhEPdiL9kuxSigBrlqLaDJWvwSird2O5TdBW67gX+xbL4nYxHDjdS5G5FpdhtpouZiBFw2FBjyUyobZheM857G5q4BapdiA8z3K6j0W+r0im30Ak2SSn2NBfFwxcCgP/UAF5/ddxIIaeWl1yBMZBO+Gic6us2JUg86paAtp3Sk4unCvg1G+4myYYSKgGi/Vrw51ye/jAGn4AdAbFOCojENhV+Ts/XyVK0AQGdC3wqnQUId9MZpB2VoTA9wgXeYEzjpDDJmcKQ18V3WTKnK/H1FBVZa1vovOj13ZUeuMUZbZL83NFE/PkCrzJjRy14orcdnGbDUaxXUBBulDCr21gNnc0mLbYj7b18OQQ75/GhX80HroxbMEyc5tiECBrE/JsW+2sQ4MwoqePPPj/f5Bf4wJ4z3UphjK6maypoWaXsZCZTp2mJYmsf0XsNHLpt1MUrBeAmy6Bewkb+WEAeVe6/b53DQDlo2LQXpSzDPVucMn3CQOWFv1Bvz5cLIZRD8/NtDjgYzWNXHRRAGhhN19yew0ZyeS09x3UBiwER6A6ppv2qQVGs8QNsif3z7pkhkNoETcXQKyv1xa5X87tLvXkO4FYDQQvXEGInyPuNmkFtsZS5FJl+TYrdyaEiCOwRgkshwCU4s93WrfRUtPHtd4zNiA1LWAKGKeBEK6woeFn1YU1YIqsvx9wXfkCbqNkHTi2mD1Eb85a2niSK9BzDdbxwv6EzZ+f9j6esEVdBUIiYmsUuOfTp/ftOHKjBKi1lbeC5imAzZfV/AKvqS5opAVGp7Y9pq976sYblCrPBQ0PYI+Cm2ZNhG1vKc2Pa0rjwJwvusZp2Wvw9zSbnoZUeBi1O+XGYqGhkqYVvH3rXvrFiSmA7pk5Buz6vPd6YV1d55PVahv/4u3jksEI/ZN8QNshrM0foJ4tE/q4x8EKx22txb6433QQybwFfExdmA/XaPqM0rwqTm4qyK0mbX984A8niQka5T5pPkEfL4ALqlIgJ2Fo7X/s6FRU/sZq72JWKcVET4edebD0w5mjeotsjUz5EGT0jRSWRba0yxe4myNaAyY7Y0NTNY9J9Q0JLDFh9Hb05Ejt0Jeoq4Olv8/zFWObBoQtkQyeeRB8L7XIari/xgl191J6euhe5+8vu3ta3tX+XGk+gqdfip1R11tEYpW/XPsV+6DBEfS/8icDHiwK7sPpAgTx7GuJGL1U3Hbg7P/2zUU6xMSR5In/Oa5i1B9FtayGd+utiqrGJsqg8IyFlAt1B9B11k/wJFnWWevMly+y+Ko75ShF7UzfcNR2s41doov+2DEz/YiKH1qHjVOXjslBTYjceB3xqa8sSPDt/vQDDUIX5CPLyVBZj7AeeB/IKDFjZVovBDH92Xl8JTNILRuDHsWmSwNI1DUzgus6ox4u9Mi439caK6KnpNYso+ksLXNEQCm0m15WV2NC+fjkEwLV6hGNbz'
   }
   let testResponseWithValues = {
     'abPercentage': 90,
@@ -101,7 +99,7 @@ describe('IntentIQ tests', function () {
     expect(submodule).to.be.undefined;
   });
 
-  it('should not save data in cookie if enableCookieStorage configParam not set', function () {
+  it('should not save data in cookie if relevant type not set', function () {
     let callBackSpy = sinon.spy();
     let submoduleCallback = intentIqIdSubmodule.getId(defaultConfigParams).callback;
     submoduleCallback(callBackSpy);
@@ -116,9 +114,9 @@ describe('IntentIQ tests', function () {
     expect(storage.getCookie('_iiq_fdata_' + partner)).to.equal(null);
   });
 
-  it('should save data in cookie if enableCookieStorage configParam set to true', function () {
+  it('should save data in cookie if storage type is "cookie"', function () {
     let callBackSpy = sinon.spy();
-    let submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
+    let submoduleCallback = intentIqIdSubmodule.getId({ ...allConfigParams, enabledStorageTypes: ['cookie'] }).callback;
     submoduleCallback(callBackSpy);
     let request = server.requests[0];
     expect(request.url).to.contain('https://api.intentiq.com/profiles_engine/ProfilesEngineServlet?at=39&mi=10&dpi=10&pt=17&dpn=1&pcid=12&pai=11&iiqidtype=2&iiqpcid=');
@@ -273,13 +271,9 @@ describe('IntentIQ tests', function () {
   });
 
   it('return data stored in local storage ', function () {
-    localStorage.setItem('_iiq_fdata_' + partner, JSON.stringify(testLSValueWithData))
-    let callBackSpy = sinon.spy();
-    let submoduleCallback = intentIqIdSubmodule.getId(allConfigParams).callback;
-    submoduleCallback(callBackSpy);
-    expect(server.requests.length).to.be.equal(0);
-    expect(callBackSpy.calledOnce).to.be.true;
-    expect(callBackSpy.args[0][0]).to.deep.equal(testLSValueWithData.data);
+    localStorage.setItem('_iiq_fdata_' + partner, JSON.stringify(testLSValueWithData));
+    let returnedValue = intentIqIdSubmodule.getId(allConfigParams);
+    expect(JSON.stringify(returnedValue.id)).to.equal(decryptData(testLSValueWithData.data));
   });
 
   it('should handle browser blacklisting', function () {
@@ -492,7 +486,7 @@ describe('IntentIQ tests', function () {
       configurable: true
     });
     await intentIqIdSubmodule.getId(defaultConfigParams);
-    const savedClientHints = readData(CLIENT_HINTS_KEY);
+    const savedClientHints = readData(CLIENT_HINTS_KEY, ['html5']);
     expect(savedClientHints).to.equal(handleClientHints(testClientHints));
   });
 });

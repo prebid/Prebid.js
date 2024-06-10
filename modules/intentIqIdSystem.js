@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * This module adds IntentIqId to the User ID module
  * The {@link module:modules/userId} module is required
@@ -32,6 +31,7 @@ export const NOT_YET_DEFINED = 'U';
 export const OPT_OUT = 'O';
 export const BLACK_LIST = 'L';
 export const CLIENT_HINTS_KEY = '_iiq_ch';
+export const EMPTY = 'EMPTY'
 
 const encoderCH = {
   brands: 0,
@@ -114,7 +114,6 @@ export function storeData(key, value, allowedStorage) {
         storage.setDataInLocalStorage(key, value);
       }
       if (storage.cookiesAreEnabled() && allowedStorage.includes('cookie')) {
-        console.log('Yeeees')
         const expiresStr = (new Date(Date.now() + (PCID_EXPIRY * (60 * 60 * 24 * 1000)))).toUTCString();
         storage.setCookie(key, value, expiresStr, 'LAX');
       }
@@ -129,27 +128,17 @@ export function storeData(key, value, allowedStorage) {
  * @param key
  */
 
-export function removeDataByKey(key) {
+export function removeDataByKey(key, allowedStorage) {
   try {
-    if (storage.hasLocalStorage()) {
+    if (storage.hasLocalStorage() && allowedStorage.includes('html5')) {
       storage.removeDataFromLocalStorage(key);
     }
-    if (storage.cookiesAreEnabled()) {
+    if (storage.cookiesAreEnabled() && allowedStorage.includes('cookie')) {
       const expiredDate = new Date(0).toUTCString();
       storage.setCookie(key, '', expiredDate, 'LAX');
     }
   } catch (error) {
     logError(error);
-  }
-}
-
-export function deleteDataFromStore() {
-  try {
-    [FIRST_PARTY_DATA_KEY, CLIENT_HINTS_KEY].forEach(key => {
-      removeDataByKey(key)
-    })
-  } catch (error) {
-    logError(error)
   }
 }
 
@@ -308,23 +297,36 @@ export const intentIqIdSubmodule = {
    * @returns {IdResponse|undefined}
    */
   getId(config) {
-    console.log(config)
     const configParams = (config?.params) || {};
+    let decryptedData, callbackTimeoutID;
+    let callbackFired = false
+    let runtimeEids = {}
+
+    const firePartnerCallback = () => {
+      if (configParams.callback && !callbackFired) {
+        if (callbackTimeoutID) clearTimeout(callbackTimeoutID)
+        callbackFired = true
+        configParams.callback(decryptedData, firstPartyData?.group || NOT_YET_DEFINED);
+      }
+    }
+
+    callbackTimeoutID = setTimeout(() => {
+      firePartnerCallback()
+    }, configParams.timeoutInMillis || 500
+    );
+
     if (typeof configParams.partner !== 'number') {
       logError('User ID - intentIqId submodule requires a valid partner to be defined');
+      firePartnerCallback()
       return;
     }
     let rrttStrtTime = 0;
     let partnerData = {};
     let shouldCallServer = false
-    let decryptedData, callbackTimeoutID;
-    let callbackFired = false
 
     const currentBrowserLowerCase = detectBrowser();
     const browserBlackList = typeof configParams.browserBlackList === 'string' ? configParams.browserBlackList.toLowerCase() : '';
     const allowedStorage = defineStorageType(config.enabledStorageTypes);
-    const currentDataTTl =
-      typeof configParams.refreshInMillis === 'number' ? configParams.refreshInMillis : 43200000; // 12 hours
 
     // Check if current browser is in blacklist
     if (browserBlackList?.includes(currentBrowserLowerCase)) {
@@ -332,11 +334,6 @@ export const intentIqIdSubmodule = {
       if (configParams.callback) configParams.callback('', BLACK_LIST);
       return;
     }
-
-    callbackTimeoutID = setTimeout(() => {
-      firePartnerCallback()
-    }, configParams.timeoutInMillis || 500
-    );
 
     // Get consent information
     const cmpData = {};
@@ -386,41 +383,13 @@ export const intentIqIdSubmodule = {
     // Read Intent IQ 1st party id or generate it if none exists
     let firstPartyData = tryParse(readData(FIRST_PARTY_KEY, allowedStorage));
 
-    const firePartnerCallback = () => {
-      if (configParams.callback && !callbackFired) {
-        if (callbackTimeoutID) clearTimeout(callbackTimeoutID)
-        callbackFired = true
-        configParams.callback(decryptedData, firstPartyData?.group || NOT_YET_DEFINED);
-      }
-    }
-
     if (!firstPartyData?.pcid) {
       const firstPartyId = generateGUID();
-      firstPartyData = { pcid: firstPartyId, pcidDate: Date.now(), group: NOT_YET_DEFINED };
+      firstPartyData = { pcid: firstPartyId, pcidDate: Date.now(), group: NOT_YET_DEFINED, cttl: 0, uspapi_value: EMPTY, gpp_value: EMPTY, date: Date.now() };
       storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
     } else if (!firstPartyData.pcidDate) {
       firstPartyData.pcidDate = Date.now();
       storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
-    }
-
-    if (![WITH_IIQ, NOT_YET_DEFINED].includes(firstPartyData?.group)) {
-      if (firstPartyData.cttl && Date.now() - firstPartyData.date > firstPartyData.cttl) {
-        shouldCallServer = true
-      } else {
-        logInfo(MODULE_NAME + `Group "${firstPartyData?.group}". Passive Mode ON.`);
-        firePartnerCallback();
-        return;
-      }
-    }
-
-    if (firstPartyData.uspapi_value !== cmpData.us_privacy || firstPartyData.gpp_value !== cmpData.gpp) {
-      firstPartyData.uspapi_value = cmpData.us_privacy;
-      firstPartyData.gpp_value = cmpData.gpp;
-      shouldCallServer = true;
-      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
-    } else if (firstPartyData.isOptedOut) {
-      firePartnerCallback()
-      return
     }
 
     const savedData = tryParse(readData(FIRST_PARTY_DATA_KEY, allowedStorage))
@@ -431,11 +400,25 @@ export const intentIqIdSubmodule = {
     if (partnerData.data) {
       if (partnerData.data.length) { // encrypted data
         decryptedData = tryParse(decryptData(partnerData.data));
+        runtimeEids = decryptedData;
       }
-      if (!shouldCallServer && partnerData.date && Date.now() - partnerData.date < currentDataTTl) {
-        firePartnerCallback();
-        return { id: decryptedData };
-      }
+    }
+
+    if (!firstPartyData.cttl || Date.now() - firstPartyData.date > firstPartyData.cttl || firstPartyData.uspapi_value !== cmpData.us_privacy || firstPartyData.gpp_value !== cmpData.gpp) {
+      firstPartyData.uspapi_value = cmpData.us_privacy;
+      firstPartyData.gpp_value = cmpData.gpp;
+      firstPartyData.isOptedOut = false
+      shouldCallServer = true;
+      partnerData.data = {}
+      storeData(FIRST_PARTY_KEY, JSON.stringify(firstPartyData), allowedStorage);
+      storeData(FIRST_PARTY_DATA_KEY, JSON.stringify(partnerData), allowedStorage);
+    } else if (firstPartyData.isOptedOut) {
+      firePartnerCallback()
+    }
+
+    if (!shouldCallServer && runtimeEids && Object.keys(runtimeEids).length) {
+      firePartnerCallback();
+      return { id: runtimeEids };
     }
 
     // use protocol relative urls for http or https
@@ -465,8 +448,8 @@ export const intentIqIdSubmodule = {
           // If response is a valid json and should save is true
           if (respJson) {
             const defineEmptyDataAndFireCallback = () => {
-              respJson.data = partnerData.data = decryptedData = {};
-              deleteDataFromStore()
+              respJson.data = partnerData.data = runtimeEids = {};
+              removeDataByKey(FIRST_PARTY_DATA_KEY, allowedStorage)
               firePartnerCallback()
               callback()
             }
@@ -498,10 +481,10 @@ export const intentIqIdSubmodule = {
             }
             if ('cttl' in respJson) {
               firstPartyData.cttl = respJson.cttl;
-            }
+            } else firstPartyData.cttl = 86400000;
             if ('ls' in respJson) {
               if (respJson.ls === false) {
-                defineEmptyDataAndFireCallback()
+                defineEmptyDataAndFireCallback();
                 return
               }
               // If data is empty, means we should save as INVALID_ID
@@ -521,7 +504,7 @@ export const intentIqIdSubmodule = {
             }
 
             if (respJson.data?.eids) {
-              decryptedData = respJson.data.eids
+              runtimeEids = respJson.data.eids
               callback(respJson.data.eids);
               const encryptedData = encryptData(JSON.stringify(respJson.data.eids))
               partnerData.data = encryptedData;
@@ -539,14 +522,11 @@ export const intentIqIdSubmodule = {
           callback();
         }
       };
-      if (partnerData.date && partnerData.cttl && partnerData.data &&
-        Date.now() - partnerData.date < partnerData.cttl) { callback(partnerData.data); } else {
-        rrttStrtTime = Date.now();
-        ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
-      }
+
+      ajax(url, callbacks, undefined, { method: 'GET', withCredentials: true });
     };
     const respObj = { callback: resp };
-    if (decryptedData) respObj.id = decryptedData;
+    if (runtimeEids?.length) respObj.id = decryptedData;
     return respObj
   },
   eids: {
