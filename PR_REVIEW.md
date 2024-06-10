@@ -23,11 +23,11 @@ General gulp commands include separate commands for serving the codebase on a bu
 - Checkout the branch (these instructions are available on the GitHub PR page as well).
 - Verify PR is a single change type. Example, refactor OR bugfix. If more than 1 type, ask submitter to break out requests.
 - Verify code under review has at least 80% unit test coverage. If legacy code doesn't have enough unit test coverage, require that additional unit tests to be included in the PR.
-- Verify tests are green in Travis-ci + local build by running `gulp serve` | `gulp test`
+- Verify tests are green in circle-ci + local build by running `gulp serve` | `gulp test`
 - Verify no code quality violations are present from linting (should be reported in terminal)
 - Make sure the code is not setting cookies or localstorage directly -- it must use the `StorageManager`.
 - Review for obvious errors or bad coding practice / use best judgement here.
-- Don't allow needless code duplication with other js files; require both files import common code.
+- Don't allow needless code duplication with other js files; require both files import common code. Do not allow commits designed to fool the code duplication checker.
 - If the change is a new feature / change to core prebid.js - review the change with a Tech Lead on the project and make sure they agree with the nature of change.
 - If the change results in needing updates to docs (such as public API change, module interface etc), add a label for "needs docs" and inform the submitter they must submit a docs PR to update the appropriate area of Prebid.org **before the PR can merge**. Help them with finding where the docs are located on prebid.org if needed. 
 - If all above is good, add a `LGTM` comment and, if the change is in PBS-core or is an important module like the prebidServerBidAdapter, request 1 additional core member to review.
