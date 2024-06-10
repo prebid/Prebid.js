@@ -77,7 +77,7 @@ describe('TargetVideo Ad Server Video', function() {
 
     const url = buildVideoUrl({ params, bid, adUnit });
 
-    expect(url).to.equal('https://go-eu.dipcod.com/ads/bid?iu=/video&hb_adid=value1&hb_cache=value2');
+    expect(url).to.equal('https://tvserve.io/ads/bid?iu=/video&hb_adid=value1&hb_cache=value2');
   });
 
   it('should append only valid parameters', function() {

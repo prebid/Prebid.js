@@ -48,7 +48,7 @@ export function buildVideoUrl(options) {
 
   return buildUrl({
     protocol: 'https',
-    host: 'go-eu.dipcod.com',
+    host: 'tvserve.io',
     pathname: '/ads/bid',
     search
   });
