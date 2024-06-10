@@ -163,10 +163,12 @@ export const requestBidsHook = timedAuctionHook('usp', function requestBidsHook(
 /**
  * This function checks the consent data provided by USPAPI to ensure it's in an expected state.
  * If it's bad, we exit the module depending on config settings.
- * If it's good, then we store the value and exits the module.
- * @param {object} consentObject required; object returned by USPAPI that contains user's consent choices
- * @param {function(string)} onSuccess callback accepting the resolved consent USP consent string
- * @param {function(string, ...{}?)} onError callback accepting error message and any extra error arguments (used purely for logging)
+ * If it's good, then we store the value and exit the module.
+ *
+ * @param {Object} consentObject - The object returned by USPAPI that contains the user's consent choices.
+ * @param {Object} callbacks - An object containing the callback functions.
+ * @param {function(string): void} callbacks.onSuccess - Callback accepting the resolved USP consent string.
+ * @param {function(string, ...Object?): void} callbacks.onError - Callback accepting an error message and any extra error arguments (used purely for logging).
  */
 function processUspData(consentObject, {onSuccess, onError}) {
   const valid = !!(consentObject && consentObject.usPrivacy);
