@@ -51,20 +51,20 @@ export const spec = {
     // let winTop = window;
     // let location;
     var city = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    let bid_request = {
+    let req = {
       // bidRequest: bidderRequest,
       id: validBidRequests[0].auctionId,
       cur: validBidRequests[0].params.currency || ['USD'],
-      imp: validBidRequests.map(bid_request => {
-        const { bidId, sizes } = bid_request
+      imp: validBidRequests.map(req => {
+        const { bidId, sizes } = req
         const imp_item = {
           id: bidId,
-          bidFloor: getBidFloor(bid_request),
-          bidfloorcur: bid_request.params.currency
+          bidFloor: getBidFloor(req),
+          bidfloorcur: req.params.currency
         }
-        if (bid_request.mediaTypes.banner) {
+        if (req.mediaTypes.banner) {
           imp_item.banner = {
-            format: (bid_request.mediaTypes.banner.sizes || sizes).map(size => {
+            format: (req.mediaTypes.banner.sizes || sizes).map(size => {
               return { w: size[0], h: size[1] }
             }),
 
@@ -87,39 +87,37 @@ export const spec = {
       badv: validBidRequests[0].ortb2.badv || validBidRequests[0].params.badv,
       wlang: validBidRequests[0].ortb2.wlang || validBidRequests[0].params.wlang,
     };
-    bid_request.site.publisher = {
+    req.site.publisher = {
       publisherId: validBidRequests[0].params.publisherId
     };
 
-    //  bid_request.language.indexOf('-') != -1 && (bid_request.language = bid_request.language.split('-')[0])
+    //  req.language.indexOf('-') != -1 && (req.language = req.language.split('-')[0])
     if (bidderRequest) {
       if (bidderRequest.uspConsent) {
-        bid_request.ccpa = bidderRequest.uspConsent;
+        req.ccpa = bidderRequest.uspConsent;
       }
       if (bidderRequest.gdprConsent) {
-        bid_request.gdpr = bidderRequest.gdprConsent
+        req.gdpr = bidderRequest.gdprConsent
       }
       if (bidderRequest.gppConsent) {
-        bid_request.gpp = bidderRequest.gppConsent;
+        req.gpp = bidderRequest.gppConsent;
       }
     }
 
     return {
       method: 'POST',
       url: AD_URL,
-      data: bid_request,
+      data: req,
 
     };
   },
 
   interpretResponse: function (serverResponse) {
-    const response = serverResponse.body
-
-    const bids = []
-
-    response.seatbid.forEach(seat => {
+    const bidsValue = []
+    const bidResponse = serverResponse.body    
+    bidResponse.seatbid.forEach(seat => {
       seat.bid.forEach(bid => {
-        bids.push({
+        bidsValue.push({
           requestId: bid.impid,
           cpm: bid.price,
           width: bid.w,
@@ -135,7 +133,7 @@ export const spec = {
         })
       })
     })
-    return bids
+    return bidsValue
   },
 
   onBidWon: (bid) => {
