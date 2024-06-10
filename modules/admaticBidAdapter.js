@@ -40,7 +40,8 @@ export const spec = {
   code: BIDDER_CODE,
   gvlid: 1281,
   aliases: [
-    {code: 'pixad', gvlid: 1281}
+    {code: 'pixad', gvlid: 1281},
+    {code: 'monetixads', gvlid: 1281}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
   /**
@@ -140,11 +141,14 @@ export const spec = {
 
     if (payload) {
       switch (bidderName) {
+        case 'monetixads':
+          SYNC_URL = 'https://static.cdn.monetixads.com/sync.html';
+          break;
         case 'pixad':
           SYNC_URL = 'https://static.cdn.pixad.com.tr/sync.html';
           break;
         default:
-          SYNC_URL = 'https://cdn.serve.admatic.com.tr/showad/sync.html';
+          SYNC_URL = 'https://static.cdn.admatic.com.tr/sync.html';
           break;
       }
 

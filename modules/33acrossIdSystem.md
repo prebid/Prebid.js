@@ -14,7 +14,7 @@ pbjs.setConfig({
         name: "33acrossId",
         storage: {
           name: "33acrossId",
-          type: "html5",
+          type: "cookie&html5",
           expires: 30,
           refreshInSeconds: 8*3600
         },
@@ -40,7 +40,7 @@ The following settings are available for the `storage` property in the `userSync
 | Param name | Scope | Type | Description | Example   |
 | --- | --- | --- | --- | --- |
 | name | Required | String| Name of the cookie or HTML5 local storage where the user ID will be stored | `"33acrossId"` |
-| type | Required | String | `"html5"` (preferred)  or `"cookie"` | `"html5"` |
+| type | Required | String | `"cookie&html5"` (preferred)  or `"cookie"` or `"html5"` | `"cookie&html5"` |
 | expires | Strongly Recommended | Number | How long (in days) the user ID information will be stored. 33Across recommends `30`. | `30` |
 | refreshInSeconds | Strongly Recommended | Number | The interval (in seconds) for refreshing the user ID. 33Across recommends no more than 8 hours between refreshes. | `8*3600` |
 

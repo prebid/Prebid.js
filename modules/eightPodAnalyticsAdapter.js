@@ -9,6 +9,7 @@ import {getStorageManager} from '../src/storageManager.js';
 const analyticsType = 'endpoint';
 const MODULE_NAME = `eightPod`;
 const MODULE = `${MODULE_NAME}AnalyticProvider`;
+let interval;
 
 /**
  * Custom tracking server that gets internal events from EightPod's ad unit
@@ -64,7 +65,9 @@ let eightPodAnalytics = Object.assign(adapter({ analyticsType }), {
     });
 
     // Send queue of event every 10 seconds
-    setInterval(sendEvents, 10_000);
+    if (!interval) {
+      interval = setInterval(sendEvents, 10_000);
+    }
   },
   resetQueue() {
     queue = [];
@@ -174,6 +177,16 @@ eightPodAnalytics.enableAnalytics = function (config) {
   eightPodAnalytics.originEnableAnalytics(config);
   logInfo(MODULE, 'init', config);
 };
+
+eightPodAnalytics.disableAnalytics = (function (orig) {
+  return function (...args) {
+    if (interval) {
+      clearInterval(interval);
+      interval = null;
+    }
+    return orig.apply(this, args);
+  };
+})(eightPodAnalytics.disableAnalytics);
 
 /**
  * Register Analytics Adapter

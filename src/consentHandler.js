@@ -164,13 +164,18 @@ export function gvlidRegistry() {
       }
     },
     /**
+     * @typedef {Object} GvlIdResult
+     * @property {Object.<string, number>} modules - A map from module type to that module's GVL ID.
+     * @property {number} [gvlid] - The single GVL ID for this family of modules (only defined if all modules with this name declared the same ID).
+     */
+
+    /**
      * Get a module's GVL ID(s).
      *
-     * @param {string} moduleName
-     * @return {{modules: {[moduleType]: number}, gvlid?: number}} an object where:
+     * @param {string} moduleName - The name of the module.
+     * @return {GvlIdResult} An object where:
      *   `modules` is a map from module type to that module's GVL ID;
-     *   `gvlid` is the single GVL ID for this family of modules (only defined
-     *   if all modules with this name declared the same ID).
+     *   `gvlid` is the single GVL ID for this family of modules (only defined if all modules with this name declare the same ID).
      */
     get(moduleName) {
       const result = {modules: registry[moduleName] || {}};

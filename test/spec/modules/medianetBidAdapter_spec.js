@@ -174,6 +174,37 @@ let VALID_BID_REQUEST = [{
     },
     'bidRequestsCount': 1
   }],
+  // Protected Audience API Request
+  VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP = [{
+    'bidder': 'medianet',
+    'params': {
+      'crid': 'crid',
+      'cid': 'customer_id',
+      'site': {
+        'page': 'http://media.net/prebidtest',
+        'domain': 'media.net',
+        'ref': 'http://media.net/prebidtest',
+        'isTop': true
+      }
+    },
+    'adUnitCode': 'div-gpt-ad-1460505748561-0',
+    'mediaTypes': {
+      'banner': {
+        'sizes': [[300, 250]],
+      }
+    },
+    'bidId': '28f8f8130a583e',
+    'bidderRequestId': '1e9b1f07797c1c',
+    'auctionId': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
+    'ortb2Imp': {
+      'ext': {
+        'tid': '277b631f-92f5-4844-8b19-ea13c095d3f1',
+        'ae': 1
+      }
+    },
+    'bidRequestsCount': 1
+  }],
+
   VALID_BID_REQUEST_WITH_USERID = [{
     'bidder': 'medianet',
     'params': {
@@ -875,6 +906,75 @@ let VALID_BID_REQUEST = [{
     }],
     'tmax': config.getConfig('bidderTimeout')
   },
+  // Protected Audience API Valid Payload
+  VALID_PAYLOAD_PAAPI = {
+    'site': {
+      'domain': 'media.net',
+      'page': 'http://media.net/prebidtest',
+      'ref': 'http://media.net/prebidtest',
+      'topMostLocation': 'http://media.net/topmost',
+      'isTop': true
+    },
+    'ext': {
+      'customer_id': 'customer_id',
+      'prebid_version': $$PREBID_GLOBAL$$.version,
+      'gdpr_applies': false,
+      'usp_applies': false,
+      'coppa_applies': false,
+      'screen': {
+        'w': 1000,
+        'h': 1000
+      },
+    },
+    'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
+    'imp': [
+      {
+        'id': '28f8f8130a583e',
+        'transactionId': '277b631f-92f5-4844-8b19-ea13c095d3f1',
+        'ext': {
+          'ae': 1,
+          'dfp_id': 'div-gpt-ad-1460505748561-0',
+          'display_count': 1,
+          'coordinates': {
+            'top_left': {
+              'x': 50,
+              'y': 50
+            },
+            'bottom_right': {
+              'x': 100,
+              'y': 100
+            }
+          },
+          'viewability': 1,
+          'visibility': 1
+        },
+        'all': {
+          'cid': 'customer_id',
+          'crid': 'crid',
+          'site': {
+            'domain': 'media.net',
+            'isTop': true,
+            'page': 'http://media.net/prebidtest',
+            'ref': 'http://media.net/prebidtest'
+          }
+        },
+        'ortb2Imp': {
+          'ext': {
+            'tid': '277b631f-92f5-4844-8b19-ea13c095d3f1',
+            'ae': 1
+          }
+        },
+        'banner': [
+          {
+            'w': 300,
+            'h': 250
+          }
+        ],
+        'tagid': 'crid'
+      }
+    ],
+    'tmax': 3000
+  },
 
   VALID_VIDEO_BID_REQUEST = [{
     'bidder': 'medianet',
@@ -1104,6 +1204,126 @@ let VALID_BID_REQUEST = [{
       }
     }
   },
+  // Protected Audience API Response
+  SERVER_RESPONSE_PAAPI = {
+    body: {
+      'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
+      'bidList': [{
+        'no_bid': false,
+        'requestId': '28f8f8130a583e',
+        'ad': 'ad',
+        'width': 300,
+        'height': 250,
+        'creativeId': 'crid',
+        'netRevenue': true,
+        'cpm': 0.1
+      }],
+      'ext': {
+        'paApiAuctionConfigs': [
+          {
+            'bidId': '28f8f8130a583e',
+            'config': {
+              'seller': 'https://hbx.test.media.net',
+              'decisionLogicUrl': 'https://hbx.test.media.net/decision-logic.js',
+              'interestGroupBuyers': ['https://buyer.test.media.net'],
+              'auctionSignals': {
+                'logging_params': {
+                  'cid': 'customer_id',
+                  'crid': 'crid',
+                  'bid_uuid': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
+                  'browser_id': 2,
+                  'dfpid': 'div-gpt-ad-1460505748561-0'
+                },
+                'pvidLookup': {
+                  'https://buyer.test.media.net': {
+                    'pvid': '172',
+                    'seat': 'quantcast-qc1'
+                  }
+                },
+                'bidFlr': 0.0
+              },
+              'sellerTimout': 1000,
+              'sellerSignals': {
+                'callbackURL': 'https://test.com/paapi/v1/abcd'
+              },
+              'perBuyerSignals': {
+                'https://buyer.test.media.net': [ 'test_buyer_signals' ]
+              },
+              'perBuyerTimeouts': {
+                '*': 200
+              }
+            }
+          }
+        ],
+        'csUrl': [{
+          'type': 'iframe',
+          'url': 'http://contextual.media.net/checksync.php?&vsSync=1'
+        }]
+      }
+    }
+  },
+  // Protected Audience API OpenRTB Response
+  SERVER_RESPONSE_PAAPI_ORTB = {
+    body: {
+      'id': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
+      'bidList': [{
+        'no_bid': false,
+        'requestId': '28f8f8130a583e',
+        'ad': 'ad',
+        'width': 300,
+        'height': 250,
+        'creativeId': 'crid',
+        'netRevenue': true,
+        'cpm': 0.1
+      }],
+      'ext': {
+        'igi': [{
+          'igs': [
+            {
+              'impid': '28f8f8130a583e',
+              'bidId': '28f8f8130a583e',
+              'config': {
+                'seller': 'https://hbx.test.media.net',
+                'decisionLogicUrl': 'https://hbx.test.media.net/decision-logic.js',
+                'interestGroupBuyers': ['https://buyer.test.media.net'],
+                'auctionSignals': {
+                  'logging_params': {
+                    'cid': 'customer_id',
+                    'crid': 'crid',
+                    'bid_uuid': 'aafabfd0-28c0-4ac0-aa09-99689e88b81d',
+                    'browser_id': 2,
+                    'dfpid': 'div-gpt-ad-1460505748561-0'
+                  },
+                  'pvidLookup': {
+                    'https://buyer.test.media.net': {
+                      'pvid': '172',
+                      'seat': 'quantcast-qc1'
+                    }
+                  },
+                  'bidFlr': 0.0
+                },
+                'sellerTimout': 1000,
+                'sellerSignals': {
+                  'callbackURL': 'https://test.com/paapi/v1/abcd'
+                },
+                'perBuyerSignals': {
+                  'https://buyer.test.media.net': [ 'test_buyer_signals' ]
+                },
+                'perBuyerTimeouts': {
+                  '*': 200
+                }
+              }
+            }
+          ],
+        }],
+        'csUrl': [{
+          'type': 'iframe',
+          'url': 'http://contextual.media.net/checksync.php?&vsSync=1'
+        }]
+      }
+    }
+  },
+
   SERVER_VIDEO_OUTSTREAM_RESPONSE_VALID_BID = {
     body: {
       'id': 'd90ca32f-3877-424a-b2f2-6a68988df57a',
@@ -1547,6 +1767,19 @@ describe('Media.net bid adapter', function () {
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_WITH_USERID);
     });
 
+    it('should have valid payload when PAAPI is enabled', function () {
+      let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, fledgeEnabled: true});
+      expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_PAAPI);
+    });
+
+    it('should send whatever is set in ortb2imp.ext.ae in all bid requests when PAAPI is enabled', function () {
+      let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, fledgeEnabled: true});
+      let data = JSON.parse(bidReq.data);
+      expect(data).to.deep.equal(VALID_PAYLOAD_PAAPI);
+      expect(data.imp[0].ext).to.have.property('ae');
+      expect(data.imp[0].ext.ae).to.equal(1);
+    });
+
     describe('build requests: when page meta-data is available', () => {
       beforeEach(() => {
         spec.clearMnData();
@@ -1720,6 +1953,32 @@ describe('Media.net bid adapter', function () {
       let validBids = [];
       let bids = spec.interpretResponse(SERVER_RESPONSE_EMPTY_BIDLIST, []);
       expect(bids).to.deep.equal(validBids);
+    });
+
+    it('should return fledgeAuctionConfigs if PAAPI response is received', function() {
+      let response = spec.interpretResponse(SERVER_RESPONSE_PAAPI, []);
+      expect(response).to.have.property('bids');
+      expect(response).to.have.property('fledgeAuctionConfigs');
+      expect(response.fledgeAuctionConfigs[0]).to.deep.equal(SERVER_RESPONSE_PAAPI.body.ext.paApiAuctionConfigs[0]);
+    });
+
+    it('should return fledgeAuctionConfigs if openRTB PAAPI response received', function () {
+      let response = spec.interpretResponse(SERVER_RESPONSE_PAAPI_ORTB, []);
+      expect(response).to.have.property('bids');
+      expect(response).to.have.property('fledgeAuctionConfigs');
+      expect(response.fledgeAuctionConfigs[0]).to.deep.equal(SERVER_RESPONSE_PAAPI_ORTB.body.ext.igi[0].igs[0])
+    });
+
+    it('should have the correlation between fledgeAuctionConfigs[0].bidId and bidreq.imp[0].id', function() {
+      let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, fledgeEnabled: true});
+      let bidRes = spec.interpretResponse(SERVER_RESPONSE_PAAPI, []);
+      expect(bidRes.fledgeAuctionConfigs[0].bidId).to.equal(JSON.parse(bidReq.data).imp[0].id)
+    });
+
+    it('should have the correlation between fledgeAuctionConfigs[0].bidId and bidreq.imp[0].id for openRTB response', function() {
+      let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, fledgeEnabled: true});
+      let bidRes = spec.interpretResponse(SERVER_RESPONSE_PAAPI_ORTB, []);
+      expect(bidRes.fledgeAuctionConfigs[0].bidId).to.equal(JSON.parse(bidReq.data).imp[0].id)
     });
   });
 
