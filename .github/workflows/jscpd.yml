@@ -46,7 +46,7 @@ jobs:
         git fetch origin +refs/pull/${{ github.event.pull_request.number }}/merge:refs/remotes/pull/${{ github.event.pull_request.number }}/merge
 
     - name: Get the diff
-      run: git diff origin/master...HEAD --name-only > changed_files.txtgit diff --name-only origin/${{ github.event.pull_request.base.ref }}...refs/remotes/pull/${{ github.event.pull_request.number }}/merge > changed_files.txt
+      run: git diff --name-only origin/${{ github.event.pull_request.base.ref }}...refs/remotes/pull/${{ github.event.pull_request.number }}/merge > changed_files.txt
 
     - name: List generated files (debug)
       run: ls -l
