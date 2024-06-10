@@ -7,7 +7,7 @@ module.exports = {
   ],
   'src': [
     'fun-hooks/no-eval',
-    'just-clone',
+    'klona',
     'dlv',
     'dset'
   ],

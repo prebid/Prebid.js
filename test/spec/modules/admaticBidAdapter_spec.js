@@ -130,7 +130,7 @@ describe('admaticBidAdapter', () => {
         ],
         'mediatype': {},
         'type': 'banner',
-        'id': '2205da7a81846b',
+        'id': 1,
         'floors': {
           'banner': {
             '300x250': { 'currency': 'USD', 'floor': 1 },
@@ -434,7 +434,7 @@ describe('admaticBidAdapter', () => {
             'h': 90
           }
         ],
-        'id': '2205da7a81846b',
+        'id': 1,
         'mediatype': {},
         'type': 'banner',
         'floors': {
@@ -802,7 +802,10 @@ describe('admaticBidAdapter', () => {
             'price': 0.01,
             'type': 'banner',
             'bidder': 'admatic',
-            'mime_type': 'iframe',
+            'mime_type': {
+              'name': 'backfill',
+              'force': false
+            },
             'adomain': ['admatic.com.tr'],
             'party_tag': '<div></div>',
             'iurl': 'https://www.admatic.com.tr'
@@ -814,7 +817,10 @@ describe('admaticBidAdapter', () => {
             'height': 250,
             'price': 0.01,
             'type': 'video',
-            'mime_type': 'iframe',
+            'mime_type': {
+              'name': 'backfill',
+              'force': false
+            },
             'bidder': 'admatic',
             'adomain': ['admatic.com.tr'],
             'party_tag': '<VAST></VAST>',
@@ -822,25 +828,15 @@ describe('admaticBidAdapter', () => {
           },
           {
             'id': 3,
-            'creative_id': '3741',
-            'width': 300,
-            'height': 250,
-            'price': 0.01,
-            'type': 'video',
-            'mime_type': 'iframe',
-            'bidder': 'admatic',
-            'adomain': ['admatic.com.tr'],
-            'party_tag': 'https://www.admatic.com.tr',
-            'iurl': 'https://www.admatic.com.tr'
-          },
-          {
-            'id': 4,
             'creative_id': '3742',
             'width': 1,
             'height': 1,
             'price': 0.01,
             'type': 'native',
-            'mime_type': 'iframe',
+            'mime_type': {
+              'name': 'backfill',
+              'force': false
+            },
             'bidder': 'admatic',
             'adomain': ['admatic.com.tr'],
             'party_tag': '{"native":{"ver":"1.1","assets":[{"id":1,"title":{"text":"title"}},{"id":4,"data":{"value":"body"}},{"id":5,"data":{"value":"sponsored"}},{"id":6,"data":{"value":"cta"}},{"id":2,"img":{"url":"https://www.admatic.com.tr","w":1200,"h":628}},{"id":3,"img":{"url":"https://www.admatic.com.tr","w":640,"h":480}}],"link":{"url":"https://www.admatic.com.tr"},"imptrackers":["https://www.admatic.com.tr"]}}',
@@ -863,7 +859,10 @@ describe('admaticBidAdapter', () => {
           ad: '<div></div>',
           creativeId: '374',
           meta: {
-            model: 'iframe',
+            model: {
+              'name': 'backfill',
+              'force': false
+            },
             advertiserDomains: ['admatic.com.tr']
           },
           ttl: 60,
@@ -877,11 +876,13 @@ describe('admaticBidAdapter', () => {
           currency: 'TRY',
           mediaType: 'video',
           netRevenue: true,
-          vastImpUrl: 'https://www.admatic.com.tr',
           vastXml: '<VAST></VAST>',
           creativeId: '3741',
           meta: {
-            model: 'iframe',
+            model: {
+              'name': 'backfill',
+              'force': false
+            },
             advertiserDomains: ['admatic.com.tr']
           },
           ttl: 60,
@@ -889,24 +890,6 @@ describe('admaticBidAdapter', () => {
         },
         {
           requestId: 3,
-          cpm: 0.01,
-          width: 300,
-          height: 250,
-          currency: 'TRY',
-          mediaType: 'video',
-          netRevenue: true,
-          vastImpUrl: 'https://www.admatic.com.tr',
-          vastXml: 'https://www.admatic.com.tr',
-          creativeId: '3741',
-          meta: {
-            model: 'iframe',
-            advertiserDomains: ['admatic.com.tr']
-          },
-          ttl: 60,
-          bidder: 'admatic'
-        },
-        {
-          requestId: 4,
           cpm: 0.01,
           width: 1,
           height: 1,
@@ -933,7 +916,10 @@ describe('admaticBidAdapter', () => {
           },
           creativeId: '3742',
           meta: {
-            model: 'iframe',
+            model: {
+              'name': 'backfill',
+              'force': false
+            },
             advertiserDomains: ['admatic.com.tr']
           },
           ttl: 60,
@@ -944,8 +930,206 @@ describe('admaticBidAdapter', () => {
         ext: {
           'cur': 'TRY',
           'type': 'admatic'
-        }
+        },
+        imp: [
+          {
+            'size': [
+              {
+                'w': 320,
+                'h': 100
+              }
+            ],
+            'type': 'banner',
+            'mediatype': {},
+            'ext': {
+              'instl': 0,
+              'gpid': 'desktop-standard',
+              'pxid': [
+                '1111111111'
+              ],
+              'pxtype': 'pixad',
+              'ortbstatus': true,
+              'viewability': 100,
+              'data': {
+                'pbadslot': 'desktop-standard'
+              },
+              'ae': 1
+            },
+            'id': 1,
+            'floors': {
+              'banner': {
+                '320x100': {
+                  'floor': 0.1,
+                  'currency': 'TRY'
+                }
+              }
+            }
+          },
+          {
+            'size': [
+              {
+                'w': 320,
+                'h': 100
+              }
+            ],
+            'type': 'video',
+            'mediatype': {
+              'context': 'instream',
+              'mimes': [
+                'video/mp4'
+              ],
+              'maxduration': 240,
+              'api': [
+                1,
+                2
+              ],
+              'playerSize': [
+                [
+                  320,
+                  100
+                ]
+              ],
+              'protocols': [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8
+              ],
+              'skip': 0,
+              'playbackmethod': [
+                2
+              ],
+              'linearity': 1,
+              'placement': 2,
+              'plcmt': 4
+            },
+            'ext': {
+              'gpid': 'outstream-desktop-standard',
+              'pxtype': 'pixad',
+              'pxid': [
+                '1111111111'
+              ],
+              'ortbstatus': true,
+              'viewability': 100,
+              'data': {
+                'pbadslot': 'outstream-desktop-standard'
+              },
+              'ae': 1
+            },
+            'id': 2,
+            'floors': {
+              'video': {
+                '320x100': {
+                  'floor': 0.1,
+                  'currency': 'TRY'
+                }
+              }
+            }
+          },
+          {
+            'size': [
+              {
+                'w': 1,
+                'h': 1
+              }
+            ],
+            'type': 'native',
+            'mediatype': {
+              'sendTargetingKeys': false,
+              'ortb': {
+                'ver': '1.1',
+                'context': 2,
+                'plcmttype': 1,
+                'privacy': 1,
+                'assets': [
+                  {
+                    'id': 1,
+                    'required': 1,
+                    'title': {
+                      'len': 120
+                    }
+                  },
+                  {
+                    'id': 2,
+                    'required': 1,
+                    'img': {
+                      'type': 3,
+                      'w': 640,
+                      'h': 480
+                    }
+                  },
+                  {
+                    'id': 3,
+                    'required': 0,
+                    'img': {
+                      'type': 1,
+                      'w': 640,
+                      'h': 480
+                    }
+                  },
+                  {
+                    'id': 4,
+                    'required': 0,
+                    'data': {
+                      'type': 2
+                    }
+                  },
+                  {
+                    'id': 5,
+                    'required': 0,
+                    'data': {
+                      'type': 1
+                    }
+                  },
+                  {
+                    'id': 6,
+                    'required': 0,
+                    'data': {
+                      'type': 11
+                    }
+                  }
+                ],
+                'eventtrackers': [
+                  {
+                    'event': 1,
+                    'methods': [
+                      1,
+                      2
+                    ]
+                  }
+                ]
+              }
+            },
+            'ext': {
+              'gpid': 'native-desktop-standard',
+              'pxtype': 'pixad',
+              'pxid': [
+                '1111111111'
+              ],
+              'ortbstatus': true,
+              'viewability': 100,
+              'data': {
+                'pbadslot': 'native-desktop-standard'
+              },
+              'ae': 1
+            },
+            'id': 3,
+            'floors': {
+              'native': {
+                '*': {
+                  'floor': 0.1,
+                  'currency': 'TRY'
+                }
+              }
+            }
+          }
+        ]
       };
+
       let result = spec.interpretResponse(bids, {data: request});
       expect(result).to.eql(expectedResponse);
     });

@@ -59,7 +59,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     sid: 'publisherId',
     tagid: 'test_tag_id',
     site: {
-      page: 'testPage'
+      page: 'http://www.zetaglobal.com/page?param=value'
     },
     app: {
       bundle: 'testBundle'
@@ -155,7 +155,17 @@ describe('Zeta Ssp Bid Adapter', function () {
               { id: '59' }
             ]
           }
-        ]
+        ],
+        geo: {
+          lat: 40.0,
+          lon: -80.0,
+          type: 2,
+          country: 'USA',
+          region: 'NY',
+          metro: '501',
+          city: 'New York',
+          zip: '10001',
+        }
       }
     }
   }];
@@ -235,7 +245,7 @@ describe('Zeta Ssp Bid Adapter', function () {
       id: '123',
       site: {
         id: 'SITE_ID',
-        page: 'page.com',
+        page: 'http://www.zetaglobal.com/page?param=value',
         domain: 'domain.com'
       },
       user: {
@@ -263,7 +273,7 @@ describe('Zeta Ssp Bid Adapter', function () {
       id: '123',
       site: {
         id: 'SITE_ID',
-        page: 'page.com',
+        page: 'http://www.zetaglobal.com/page?param=value',
         domain: 'domain.com'
       },
       user: {
@@ -312,7 +322,7 @@ describe('Zeta Ssp Bid Adapter', function () {
   it('Test page and domain in site', function () {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
     const payload = JSON.parse(request.data);
-    expect(payload.site.page).to.eql('http://www.zetaglobal.com/page?param=value');
+    expect(payload.site.page).to.eql('zetaglobal.com/page');
     expect(payload.site.domain).to.eql('zetaglobal.com');
   });
 
@@ -542,11 +552,6 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(payload.imp[0].bidfloor).to.eql(params.bidfloor);
   });
 
-  it('Timeout should exists and be a function', function () {
-    expect(spec.onTimeout).to.exist.and.to.be.a('function');
-    expect(spec.onTimeout({ timeout: 1000 })).to.be.undefined;
-  });
-
   it('Test schain provided', function () {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
     const payload = JSON.parse(request.data);
@@ -663,10 +668,35 @@ describe('Zeta Ssp Bid Adapter', function () {
     expect(payload.device.sua.platform.brand).to.eql('Chrome');
     expect(payload.device.sua.platform.version[0]).to.eql('102');
 
+    // expecting the same values for user.geo and device.geo
+    expect(payload.device.geo.type).to.eql(2);
+    expect(payload.device.geo.lat).to.eql(40.0);
+    expect(payload.device.geo.lon).to.eql(-80.0);
+    expect(payload.device.geo.country).to.eql('USA');
+    expect(payload.device.geo.region).to.eql('NY');
+    expect(payload.device.geo.metro).to.eql('501');
+    expect(payload.device.geo.city).to.eql('New York');
+    expect(payload.device.geo.zip).to.eql('10001');
+
     expect(payload.device.ua).to.not.be.undefined;
     expect(payload.device.language).to.not.be.undefined;
     expect(payload.device.w).to.not.be.undefined;
     expect(payload.device.h).to.not.be.undefined;
+  });
+
+  it('Test provide user params', function () {
+    const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
+    const payload = JSON.parse(request.data);
+
+    // expecting the same values for user.geo and device.geo
+    expect(payload.user.geo.type).to.eql(2);
+    expect(payload.user.geo.lat).to.eql(40.0);
+    expect(payload.user.geo.lon).to.eql(-80.0);
+    expect(payload.user.geo.country).to.eql('USA');
+    expect(payload.user.geo.region).to.eql('NY');
+    expect(payload.user.geo.metro).to.eql('501');
+    expect(payload.user.geo.city).to.eql('New York');
+    expect(payload.user.geo.zip).to.eql('10001');
   });
 
   it('Test that all empties are removed', function () {

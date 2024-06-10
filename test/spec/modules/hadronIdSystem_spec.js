@@ -1,6 +1,9 @@
 import { hadronIdSubmodule, storage } from 'modules/hadronIdSystem.js';
 import { server } from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
+import {attachIdSystem} from '../../../modules/userId/index.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
+import {expect} from 'chai/index.mjs';
 
 describe('HadronIdSystem', function () {
   describe('getId', function() {
@@ -52,4 +55,24 @@ describe('HadronIdSystem', function () {
       expect(callbackSpy.lastCall.lastArg).to.deep.equal({ id: { hadronId: 'testHadronId1' } });
     });
   });
+
+  describe('eids', () => {
+    before(() => {
+      attachIdSystem(hadronIdSubmodule);
+    });
+    it('hadronId', function() {
+      const userId = {
+        hadronId: 'some-random-id-value'
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'audigent.com',
+        uids: [{
+          id: 'some-random-id-value',
+          atype: 1
+        }]
+      });
+    });
+  })
 });

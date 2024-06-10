@@ -1,4 +1,9 @@
-import {onAuctionConfigFactory, setPAAPIConfigFactory, slotConfigurator} from 'modules/fledgeForGpt.js';
+import {
+  getPAAPISizeHook,
+  onAuctionConfigFactory,
+  setPAAPIConfigFactory,
+  slotConfigurator
+} from 'modules/fledgeForGpt.js';
 import * as gptUtils from '../../../libraries/gptUtils/gptUtils.js';
 import 'modules/appnexusBidAdapter.js';
 import 'modules/rubiconBidAdapter.js';
@@ -173,5 +178,29 @@ describe('fledgeForGpt module', () => {
         sinon.assert.calledWith(setGptConfig, au, config?.componentAuctions ?? [], true);
       })
     });
+  });
+
+  describe('getPAAPISizeHook', () => {
+    let next;
+    beforeEach(() => {
+      next = sinon.stub();
+      next.bail = sinon.stub();
+    });
+
+    it('should pick largest supported size over larger unsupported size', () => {
+      getPAAPISizeHook(next, [[999, 999], [300, 250], [300, 600], [1234, 4321]]);
+      sinon.assert.calledWith(next.bail, [300, 600]);
+    });
+
+    Object.entries({
+      'present': [],
+      'supported': [[123, 4], [321, 5]],
+      'defined': undefined,
+    }).forEach(([t, sizes]) => {
+      it(`should defer to next when no size is ${t}`, () => {
+        getPAAPISizeHook(next, sizes);
+        sinon.assert.calledWith(next, sizes);
+      })
+    })
   })
 });

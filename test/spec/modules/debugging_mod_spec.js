@@ -103,8 +103,8 @@ describe('bid interceptor', () => {
   });
 
   describe('rule', () => {
-    function matchingRule({replace, options}) {
-      setRules({when: {}, then: replace, options: options});
+    function matchingRule({replace, options, paapi}) {
+      setRules({when: {}, then: replace, options: options, paapi});
       return interceptor.match({});
     }
 
@@ -164,6 +164,48 @@ describe('bid interceptor', () => {
       });
     });
 
+    describe('paapi', () => {
+      it('should accept literals', () => {
+        const mockConfig = [
+          {config: {paapi: 1}},
+          {config: {paapi: 2}}
+        ]
+        const paapi = matchingRule({paapi: mockConfig}).paapi({});
+        expect(paapi).to.eql(mockConfig);
+      });
+
+      it('should accept a function and pass extra args to it', () => {
+        const paapiDef = sinon.stub();
+        const args = [{}, {}, {}];
+        matchingRule({paapi: paapiDef}).paapi(...args);
+        expect(paapiDef.calledOnceWith(...args.map(sinon.match.same))).to.be.true;
+      });
+
+      Object.entries({
+        'literal': (cfg) => [cfg],
+        'function': (cfg) => () => [cfg]
+      }).forEach(([t, makeConfigs]) => {
+        describe(`when paapi is defined as a ${t}`, () => {
+          it('should wrap top-level configs in "config"', () => {
+            const cfg = {decisionLogicURL: 'example'};
+            expect(matchingRule({paapi: makeConfigs(cfg)}).paapi({})).to.eql([{
+              config: cfg
+            }])
+          });
+
+          Object.entries({
+            'config': {config: 1},
+            'igb': {igb: 1},
+            'config and igb': {config: 1, igb: 2}
+          }).forEach(([t, cfg]) => {
+            it(`should not wrap configs that define top-level ${t}`, () => {
+              expect(matchingRule({paapi: makeConfigs(cfg)}).paapi({})).to.eql([cfg]);
+            })
+          })
+        })
+      })
+    })
+
     describe('.options', () => {
       it('should include default rule options', () => {
         const optDef = {someOption: 'value'};
@@ -181,16 +223,17 @@ describe('bid interceptor', () => {
   });
 
   describe('intercept()', () => {
-    let done, addBid;
+    let done, addBid, addPaapiConfig;
 
     function intercept(args = {}) {
       const bidRequest = {bids: args.bids || []};
-      return interceptor.intercept(Object.assign({bidRequest, done, addBid}, args));
+      return interceptor.intercept(Object.assign({bidRequest, done, addBid, addPaapiConfig}, args));
     }
 
     beforeEach(() => {
       done = sinon.spy();
       addBid = sinon.spy();
+      addPaapiConfig = sinon.spy();
     });
 
     describe('on no match', () => {
@@ -252,6 +295,29 @@ describe('bid interceptor', () => {
           expect(mockSetTimeout.calledWith(sinon.match.any, delay)).to.be.true;
         });
       });
+
+      it('should call addPaapiConfigs when provided', () => {
+        const mockPaapiConfigs = [
+          {config: {paapi: 1}},
+          {config: {paapi: 2}}
+        ]
+        setRules({
+          when: {id: 2},
+          paapi: mockPaapiConfigs,
+        });
+        intercept({bidRequest: REQUEST});
+        expect(addPaapiConfig.callCount).to.eql(2);
+        mockPaapiConfigs.forEach(cfg => sinon.assert.calledWith(addPaapiConfig, cfg))
+      })
+
+      it('should not call onBid when then is null', () => {
+        setRules({
+          when: {id: 2},
+          then: null
+        });
+        intercept({bidRequest: REQUEST});
+        sinon.assert.notCalled(addBid);
+      })
 
       it('should call done()', () => {
         intercept({bidRequest: REQUEST});
