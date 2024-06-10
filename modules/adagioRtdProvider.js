@@ -278,6 +278,7 @@ function onGetBidRequestData(bidReqConfig, callback, config) {
   const features = _internal.getFeatures().get();
   const ext = {
     uid: generateUUID(),
+    pageviewId: _ADAGIO.pageviewId,
     features: { ...features },
     session: { ..._SESSION.get() }
   };
