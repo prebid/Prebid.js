@@ -16,12 +16,9 @@ const REPORTER_ID = Date.now() + '_' + getRandom(0, 1000);
 
 const FIRST_PARTY_KEY = '_iiq_fdata';
 const FIRST_PARTY_DATA_KEY = '_iiq_fdata';
-const GROUP_LS_KEY = '_iiq_group';
-const PERCENT_LS_KEY = '_iiq_percent';
 const JSVERSION = 5.3
 
 const PARAMS_NAMES = {
-  abPercentage: 'abPercentage',
   abTestGroup: 'abGroup',
   pbPauseUntill: 'pbPauseUntil',
   pbMonitoringEnabled: 'pbMonitoringEnabled',
@@ -29,7 +26,6 @@ const PARAMS_NAMES = {
   enhanceRequests: 'enhanceRequests',
   wasSubscribedForPrebid: 'wasSubscribedForPrebid',
   hadEids: 'hadEids',
-  userActualPercentage: 'userPercentage',
   ABTestingConfigurationSource: 'ABTestingConfigurationSource',
   lateConfiguration: 'lateConfiguration',
   jsverion: 'jsversion',
@@ -63,9 +59,7 @@ let iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({ defaultUrl, analytics
     partner: null,
     fpid: null,
     userGroup: null,
-    userPercentage: null,
     currentGroup: null,
-    currentPercentage: null,
     dataInLs: null,
     eidl: null,
     lsIdsInitialized: false,
@@ -110,8 +104,7 @@ function initLsValues() {
     iiqArr.push({
       'params': {
         'partner': -1,
-        'group': 'U',
-        'percentage': -1
+        'group': 'U'
       }
     })
   }
@@ -119,10 +112,6 @@ function initLsValues() {
     if (iiqArr[0].params && iiqArr[0].params.partner && !isNaN(iiqArr[0].params.partner)) {
       iiqAnalyticsAnalyticsAdapter.initOptions.partner = iiqArr[0].params.partner;
       iiqAnalyticsAnalyticsAdapter.initOptions.userGroup = iiqArr[0].params.group || 'U';
-      iiqAnalyticsAnalyticsAdapter.initOptions.userPercentage = iiqArr[0].params.percentage || '-1';
-
-      iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = readData(GROUP_LS_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner);
-      iiqAnalyticsAnalyticsAdapter.initOptions.currentPercentage = +readData(PERCENT_LS_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner);
     }
   }
 }
@@ -137,6 +126,7 @@ function initReadLsIds() {
       let pData = JSON.parse(iData);
       iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs = pData.data;
       iiqAnalyticsAnalyticsAdapter.initOptions.eidl = pData.eidl || -1;
+      iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = pData.group;
     }
   } catch (e) {
     logError(e)
@@ -163,11 +153,9 @@ function preparePayload(data) {
   result[PARAMS_NAMES.partnerId] = iiqAnalyticsAnalyticsAdapter.initOptions.partner;
   result[PARAMS_NAMES.prebidVersion] = prebidVersion;
   result[PARAMS_NAMES.refferer] = getRefferer();
-  result[PARAMS_NAMES.userActualPercentage] = iiqAnalyticsAnalyticsAdapter.initOptions.userPercentage;
 
-  if (iiqAnalyticsAnalyticsAdapter.initOptions.userGroup && iiqAnalyticsAnalyticsAdapter.initOptions.userGroup != '') { result[PARAMS_NAMES.ABTestingConfigurationSource] = 'group'; } else if (iiqAnalyticsAnalyticsAdapter.initOptions.userPercentage && !isNaN(iiqAnalyticsAnalyticsAdapter.initOptions.userPercentage)) { result[PARAMS_NAMES.ABTestingConfigurationSource] = 'percentage'; }
+  if (iiqAnalyticsAnalyticsAdapter.initOptions.userGroup && iiqAnalyticsAnalyticsAdapter.initOptions.userGroup != '') { result[PARAMS_NAMES.ABTestingConfigurationSource] = 'group'; }
 
-  result[PARAMS_NAMES.abPercentage] = iiqAnalyticsAnalyticsAdapter.initOptions.currentPercentage;
   result[PARAMS_NAMES.abTestGroup] = iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup;
 
   result[PARAMS_NAMES.isInTestGroup] = iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup == 'A';
@@ -207,9 +195,7 @@ function getDefaultDataObject() {
     'pbjsver': prebidVersion,
     'partnerAuctionId': 'BW',
     'reportSource': 'pbjs',
-    'abPercentage': -1,
     'abGroup': 'U',
-    'userPercentage': -1,
     'jsversion': JSVERSION,
     'partnerId': -1,
     'biddingPlatformId': 1,
