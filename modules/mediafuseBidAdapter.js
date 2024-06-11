@@ -1036,7 +1036,7 @@ function hideSASIframe(elementId) {
 function outstreamRender(bid) {
   hidedfpContainer(bid.adUnitCode);
   hideSASIframe(bid.adUnitCode);
-  // push to render queue because ANOutstreamVideo may not be loaded yet
+  // push to render queue because ANOutstreamVideo may not be loaded
   bid.renderer.push(() => {
     window.ANOutstreamVideo.renderAd({
       tagId: bid.adResponse.tag_id,

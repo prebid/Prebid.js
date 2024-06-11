@@ -16,14 +16,13 @@ import {domainOverrideToRootDomain} from '../libraries/domainOverrideToRootDomai
  */
 
 const MODULE_NAME = 'ceeId';
-const ID_TOKEN = 'WPxid';
 export const storage = getStorageManager({ moduleName: MODULE_NAME, moduleType: MODULE_TYPE_UID });
 
 /**
  * Reads the ID token from local storage or cookies.
  * @returns {string|undefined} The ID token, or undefined if not found.
  */
-export const readId = () => storage.getDataFromLocalStorage(ID_TOKEN) || storage.getCookie(ID_TOKEN);
+export const readId = tokenName => storage.getDataFromLocalStorage(tokenName) || storage.getCookie(tokenName);
 
 /** @type {Submodule} */
 export const ceeIdSubmodule = {
@@ -44,9 +43,11 @@ export const ceeIdSubmodule = {
    * performs action to obtain id and return a value
    * @function
    * @returns {(IdResponse|undefined)}
-   */
-  getId() {
-    const ceeIdToken = readId();
+  */
+  getId(config) {
+    const { params = {} } = config;
+    const { tokenName, value } = params
+    const ceeIdToken = value || readId(tokenName);
 
     return ceeIdToken ? { id: ceeIdToken } : undefined;
   },

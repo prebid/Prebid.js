@@ -177,7 +177,7 @@ export const spec = {
         serverRequest.topics = topicsData;
       }
       if (eids.length) {
-        serverRequest.user = { eids };
+        deepSetValue(serverRequest, 'user.ext.eids', eids);
       };
       serverRequests.push({
         method: 'POST',
