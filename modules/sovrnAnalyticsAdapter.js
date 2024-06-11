@@ -1,4 +1,4 @@
-import {logError, timestamp} from '../src/utils.js';
+import {deepClone, logError, timestamp} from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adaptermanager from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
@@ -99,7 +99,7 @@ class BidWinner {
     // eslint-disable-next-line no-undef
     this.body.prebidVersion = $$REPO_AND_VERSION$$
     this.body.sovrnId = sovrnId
-    this.body.winningBid = JSON.parse(JSON.stringify(event))
+    this.body.winningBid = deepClone(event)
     this.body.url = rootURL
     this.body.payload = 'winner'
     delete this.body.winningBid.ad
@@ -156,7 +156,7 @@ class AuctionData {
    * @param {*} event - the args object from the auction event
    */
   bidRequested(event) {
-    const eventCopy = JSON.parse(JSON.stringify(event))
+    const eventCopy = deepClone(event)
     delete eventCopy.doneCbCallCount
     delete eventCopy.auctionId
     this.auction.requests.push(eventCopy)
@@ -170,13 +170,13 @@ class AuctionData {
   findBid(event) {
     const bidder = find(this.auction.requests, r => (r.bidderCode === event.bidderCode))
     if (!bidder) {
-      this.auction.unsynced.push(JSON.parse(JSON.stringify(event)))
+      this.auction.unsynced.push(deepClone(event))
     }
     let bid = find(bidder.bids, b => (b.bidId === event.requestId))
 
     if (!bid) {
       event.unmatched = true
-      bidder.bids.push(JSON.parse(JSON.stringify(event)))
+      bidder.bids.push(deepClone(event))
     }
     return bid
   }
@@ -190,7 +190,7 @@ class AuctionData {
   originalBid(event) {
     let bid = this.findBid(event)
     if (bid) {
-      Object.assign(bid, JSON.parse(JSON.stringify(event)))
+      Object.assign(bid, deepClone(event))
       this.dropBidFields.forEach((f) => delete bid[f])
     }
   }
