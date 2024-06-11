@@ -4,7 +4,7 @@ import * as utils from 'src/utils.js';
 import { server } from 'test/mocks/xhr.js';
 import { CLIENT_HINTS_KEY, FIRST_PARTY_KEY, decryptData, detectBrowserFromUserAgent, detectBrowserFromUserAgentData, handleClientHints, handleGPPData, readData } from '../../../modules/intentIqIdSystem';
 import { gppDataHandler, uspDataHandler } from '../../../src/consentHandler';
-import { logInfo } from '../../../src/utils';
+import { clearAllCookies } from '../../helpers/cookies';
 
 const partner = 10;
 const pai = '11';
