@@ -1,5 +1,4 @@
 import { logMessage, logError, deepAccess } from '../src/utils.js';
-import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -117,44 +116,24 @@ export const spec = {
   },
 
   buildRequests: (validBidRequests = [], bidderRequest = {}) => {
-    // convert Native ORTB definition to old-style prebid native definition
-    validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
+    const device = deepAccess(bidderRequest, 'ortb2.device');
+    const page = deepAccess(bidderRequest, 'refererInfo.page', '');
 
-    let deviceWidth = 0;
-    let deviceHeight = 0;
-
-    let winLocation;
+    let pageURL;
     try {
-      const winTop = window.top;
-      deviceWidth = winTop.screen.width;
-      deviceHeight = winTop.screen.height;
-      winLocation = winTop.location;
-    } catch (e) {
-      logMessage(e);
-      winLocation = window.location;
-    }
-
-    const refferUrl = bidderRequest.refererInfo && bidderRequest.refererInfo.page;
-    let refferLocation;
-    try {
-      refferLocation = refferUrl && new URL(refferUrl);
+      pageURL = page && new URL(page);
     } catch (e) {
       logMessage(e);
     }
 
-    let location = refferLocation || winLocation;
-    const language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
-    const host = location.host;
-    const page = location.pathname;
-    const secure = location.protocol === 'https:' ? 1 : 0;
     const placements = [];
     const request = {
-      deviceWidth,
-      deviceHeight,
-      language,
-      secure,
-      host,
-      page,
+      deviceWidth: device?.w || 0,
+      deviceHeight: device?.h || 0,
+      language: device?.language?.split('-')[0] || '',
+      secure: pageURL.protocol === 'https:' ? 1 : 0,
+      host: pageURL.host,
+      page: pageURL.href,
       placements,
       coppa: deepAccess(bidderRequest, 'ortb2.regs.coppa') ? 1 : 0,
       tmax: bidderRequest.timeout

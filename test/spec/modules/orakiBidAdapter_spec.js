@@ -91,7 +91,15 @@ describe('OrakiBidAdapter', function () {
       vendorData: {}
     },
     refererInfo: {
-      referer: 'https://test.com'
+      referer: 'https://test.com',
+      page: 'https://test.com'
+    },
+    ortb2: {
+      device: {
+        w: 1512,
+        h: 982,
+        language: 'en-UK',
+      }
     },
     timeout: 500
   };
@@ -122,7 +130,8 @@ describe('OrakiBidAdapter', function () {
     it('Returns general data valid', function () {
       let data = serverRequest.data;
       expect(data).to.be.an('object');
-      expect(data).to.have.all.keys('deviceWidth',
+      expect(data).to.have.all.keys(
+        'deviceWidth',
         'deviceHeight',
         'language',
         'secure',
