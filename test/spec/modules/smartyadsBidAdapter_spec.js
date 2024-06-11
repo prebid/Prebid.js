@@ -52,12 +52,16 @@ describe('SmartyadsAdapter', function () {
       expect(serverRequest.method).to.equal('POST');
     });
     it('Returns valid URL', function () {
-      expect(serverRequest.url).to.equal('https://n1.smartyads.com/?c=o&m=prebid&secret_key=prebid_js');
+      expect(serverRequest.url).to.be.oneOf([
+        'https://n1.smartyads.com/?c=o&m=prebid&secret_key=prebid_js',
+        'https://n2.smartyads.com/?c=o&m=prebid&secret_key=prebid_js',
+        'https://n6.smartyads.com/?c=o&m=prebid&secret_key=prebid_js'
+      ]);
     });
     it('Returns valid data if array of bids is valid', function () {
       let data = serverRequest.data;
       expect(data).to.be.an('object');
-      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'coppa');
+      expect(data).to.have.all.keys('deviceWidth', 'deviceHeight', 'language', 'secure', 'host', 'page', 'placements', 'coppa', 'eeid', 'ifa');
       expect(data.deviceWidth).to.be.a('number');
       expect(data.deviceHeight).to.be.a('number');
       expect(data.coppa).to.be.a('number');
@@ -280,7 +284,21 @@ describe('SmartyadsAdapter', function () {
     });
 
     it('should send a valid bid won notice', function () {
-      spec.onBidWon(bidResponse);
+      const bid = {
+        'c': 'o',
+        'm': 'prebid',
+        'secret_key': 'prebid_js',
+        'winTest': '1',
+        'postData': [{
+          'bidder': 'smartyads',
+          'params': [
+            {'host': 'prebid',
+              'accountid': '123',
+              'sourceid': '12345'
+            }]
+        }]
+      };
+      spec.onBidWon(bid);
       expect(server.requests.length).to.equal(1);
     });
   });
@@ -291,7 +309,21 @@ describe('SmartyadsAdapter', function () {
     });
 
     it('should send a valid bid timeout notice', function () {
-      spec.onTimeout({});
+      const bid = {
+        'c': 'o',
+        'm': 'prebid',
+        'secret_key': 'prebid_js',
+        'bidTimeout': '1',
+        'postData': [{
+          'bidder': 'smartyads',
+          'params': [
+            {'host': 'prebid',
+              'accountid': '123',
+              'sourceid': '12345'
+            }]
+        }]
+      };
+      spec.onTimeout(bid);
       expect(server.requests.length).to.equal(1);
     });
   });
@@ -302,7 +334,21 @@ describe('SmartyadsAdapter', function () {
     });
 
     it('should send a valid bidder error notice', function () {
-      spec.onBidderError({});
+      const bid = {
+        'c': 'o',
+        'm': 'prebid',
+        'secret_key': 'prebid_js',
+        'bidderError': '1',
+        'postData': [{
+          'bidder': 'smartyads',
+          'params': [
+            {'host': 'prebid',
+              'accountid': '123',
+              'sourceid': '12345'
+            }]
+        }]
+      };
+      spec.onBidderError(bid);
       expect(server.requests.length).to.equal(1);
     });
   });

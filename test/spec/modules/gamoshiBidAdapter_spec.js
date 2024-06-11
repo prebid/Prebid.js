@@ -379,7 +379,7 @@ describe('GamoshiAdapter', () => {
       const bidRequestWithVideo = utils.deepClone(bidRequest);
 
       bidRequestWithVideo.params.video = {
-        placement: 1,
+        plcmt: 1,
         minduration: 1,
       }
 
@@ -408,7 +408,7 @@ describe('GamoshiAdapter', () => {
           playerSize: [302, 252],
           mimes: ['video/mpeg'],
           skip: 1,
-          placement: 1,
+          plcmt: 1,
           minduration: 1,
           playbackmethod: 1,
           startdelay: 1,
@@ -431,7 +431,7 @@ describe('GamoshiAdapter', () => {
           context: 'instream',
           mimes: ['video/mpeg'],
           skip: 1,
-          placement: 1,
+          plcmt: 1,
           minduration: 1,
           playbackmethod: 1,
           startdelay: 1,
@@ -439,6 +439,7 @@ describe('GamoshiAdapter', () => {
       };
       let response = spec.buildRequests([bidRequestWithVideo], bidRequest)[0];
       expect(response.data.imp[0].video.ext.context).to.equal('instream');
+      bidRequestWithVideo.mediaTypes.video.context = 'outstream';
       bidRequestWithVideo.mediaTypes.video.context = 'outstream';
 
       const bidRequestWithPosEquals1 = utils.deepClone(bidRequestWithVideo);
@@ -460,7 +461,7 @@ describe('GamoshiAdapter', () => {
         context: 'instream',
         mimes: ['video/mpeg'],
         skip: 1,
-        placement: 1,
+        plcmt: 1,
         minduration: 1,
         playbackmethod: 1,
         startdelay: 1,

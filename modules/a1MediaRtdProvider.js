@@ -4,6 +4,10 @@ import { submodule } from '../src/hook.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { isEmptyStr, mergeDeep } from '../src/utils.js';
 
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
+
 const REAL_TIME_MODULE = 'realTimeData';
 const MODULE_NAME = 'a1Media';
 const SCRIPT_URL = 'https://linkback.contentsfeed.com/src';

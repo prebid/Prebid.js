@@ -4,7 +4,16 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import {isNumber} from '../src/utils.js';
 
-const BIDADAPTERVERSION = 'TTD-PREBID-2022.06.28';
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerRequest} ServerRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').SyncOptions} SyncOptions
+ * @typedef {import('../src/adapters/bidderFactory.js').UserSync} UserSync
+ */
+
+const BIDADAPTERVERSION = 'TTD-PREBID-2023.09.05';
 const BIDDER_CODE = 'ttd';
 const BIDDER_CODE_LONG = 'thetradedesk';
 const BIDDER_ENDPOINT = 'https://direct.adsrvr.org/bid/bidder/';
@@ -406,7 +415,7 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const firstPartyData = bidderRequest.ortb2 || {};
     let topLevel = {
-      id: bidderRequest.auctionId,
+      id: bidderRequest.bidderRequestId,
       imp: validBidRequests.map(bidRequest => getImpression(bidRequest)),
       site: getSite(bidderRequest, firstPartyData),
       device: getDevice(firstPartyData),

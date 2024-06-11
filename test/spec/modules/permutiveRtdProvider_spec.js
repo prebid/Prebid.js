@@ -212,6 +212,28 @@ describe('permutiveRtdProvider', function () {
               return { id: seg }
             }),
           },
+          {
+            name: 'permutive.com',
+            ext: {
+              segtax: 600
+            },
+            segment: [
+              { id: '1' },
+              { id: '2' },
+              { id: '3' },
+            ],
+          },
+          {
+            name: 'permutive.com',
+            ext: {
+              segtax: 601
+            },
+            segment: [
+              { id: '100' },
+              { id: '101' },
+              { id: '102' },
+            ],
+          },
         ])
       })
     })
@@ -553,6 +575,10 @@ describe('permutiveRtdProvider', function () {
       for (const key in segments) {
         if (key === 'ssp') {
           expect(segments[key].cohorts).to.have.length(max)
+        } else if (key === 'topics') {
+          for (const topic in segments[key]) {
+            expect(segments[key][topic]).to.have.length(max)
+          }
         } else {
           expect(segments[key]).to.have.length(max)
         }
@@ -684,6 +710,7 @@ function transformedTargeting (data = getTargetingData()) {
     rubicon: data._prubicons,
     gam: data._pdfps,
     ssp: data._pssps,
+    topics: data._ppsts,
   }
 }
 
@@ -696,7 +723,8 @@ function getTargetingData () {
     _ppam: ['ppam1', 'ppam2'],
     _pindexs: ['pindex1', 'pindex2'],
     _pcrprs: ['pcrprs1', 'pcrprs2', 'dup'],
-    _pssps: { ssps: ['xyz', 'abc', 'dup'], cohorts: ['123', 'abc'] }
+    _pssps: { ssps: ['xyz', 'abc', 'dup'], cohorts: ['123', 'abc'] },
+    _ppsts: { '600': [1, 2, 3], '601': [100, 101, 102] },
   }
 }
 

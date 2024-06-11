@@ -1,10 +1,9 @@
 import {
   deepAccess,
-  getBidIdParameter,
   getWindowTop,
   triggerPixel,
   logInfo,
-  logError
+  logError, getBidIdParameter
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
@@ -29,8 +28,11 @@ function getEnvURLs(isStage) {
   }
 }
 
+const GVLID = 111;
+
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   aliases: ['showheroesBs'],
   supportedMediaTypes: [VIDEO, BANNER],
   isBidRequestValid: function(bid) {

@@ -19,6 +19,7 @@ import {version} from 'package.json';
 import {useFakeTimers} from 'sinon';
 import {BANNER, VIDEO} from '../../../src/mediaTypes';
 import {config} from '../../../src/config';
+import {deepSetValue} from 'src/utils.js';
 
 export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
 
@@ -108,7 +109,19 @@ const BIDDER_REQUEST = {
   'ortb2': {
     'site': {
       'cat': ['IAB2'],
-      'pagecat': ['IAB2-2']
+      'pagecat': ['IAB2-2'],
+      'content': {
+        'data': [{
+          'name': 'example.com',
+          'ext': {
+            'segtax': 7
+          },
+          'segments': [
+            {'id': 'segId1'},
+            {'id': 'segId2'}
+          ]
+        }]
+      }
     },
     'regs': {
       'gpp': 'gpp_string',
@@ -131,6 +144,15 @@ const BIDDER_REQUEST = {
         'bitness': '64',
         'architecture': ''
       }
+    },
+    user: {
+      data: [
+        {
+          ext: {segtax: 600, segclass: '1'},
+          name: 'example.com',
+          segment: [{id: '243'}],
+        },
+      ],
     }
   },
 };
@@ -318,6 +340,23 @@ describe('VidazooBidAdapter', function () {
             'bitness': '64',
             'architecture': ''
           },
+          contentData: [{
+            'name': 'example.com',
+            'ext': {
+              'segtax': 7
+            },
+            'segments': [
+              {'id': 'segId1'},
+              {'id': 'segId2'}
+            ]
+          }],
+          userData: [
+            {
+              ext: {segtax: 600, segclass: '1'},
+              name: 'example.com',
+              segment: [{id: '243'}],
+            },
+          ],
           uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
           uqs: getTopWindowQueryParams(),
           isStorageAllowed: true,
@@ -340,7 +379,8 @@ describe('VidazooBidAdapter', function () {
             }
           }
         }
-      });
+      })
+      ;
     });
 
     it('should build banner request for each size', function () {
@@ -405,6 +445,23 @@ describe('VidazooBidAdapter', function () {
           gpid: '1234567890',
           cat: ['IAB2'],
           pagecat: ['IAB2-2'],
+          contentData: [{
+            'name': 'example.com',
+            'ext': {
+              'segtax': 7
+            },
+            'segments': [
+              {'id': 'segId1'},
+              {'id': 'segId2'}
+            ]
+          }],
+          userData: [
+            {
+              ext: {segtax: 600, segclass: '1'},
+              name: 'example.com',
+              segment: [{id: '243'}],
+            },
+          ],
           webSessionId: webSessionId
         }
       });
@@ -478,6 +535,23 @@ describe('VidazooBidAdapter', function () {
         gpid: '1234567890',
         cat: ['IAB2'],
         pagecat: ['IAB2-2'],
+        contentData: [{
+          'name': 'example.com',
+          'ext': {
+            'segtax': 7
+          },
+          'segments': [
+            {'id': 'segId1'},
+            {'id': 'segId2'}
+          ]
+        }],
+        userData: [
+          {
+            ext: {segtax: 600, segclass: '1'},
+            name: 'example.com',
+            segment: [{id: '243'}],
+          },
+        ],
         webSessionId: webSessionId
       };
 
@@ -521,6 +595,15 @@ describe('VidazooBidAdapter', function () {
 
       const requests = adapter.buildRequests([BID, BID, BID, BID], BIDDER_REQUEST);
       expect(requests).to.have.length(2);
+    });
+
+    it('should set fledge correctly if enabled', function () {
+      config.resetConfig();
+      const bidderRequest = utils.deepClone(BIDDER_REQUEST);
+      bidderRequest.fledgeEnabled = true;
+      deepSetValue(bidderRequest, 'ortb2Imp.ext.ae', 1);
+      const requests = adapter.buildRequests([BID], bidderRequest);
+      expect(requests[0].data.fledge).to.equal(1);
     });
 
     after(function () {
@@ -647,6 +730,14 @@ describe('VidazooBidAdapter', function () {
       const responses = adapter.interpretResponse(serverResponse, REQUEST);
       expect(responses).to.have.length(1);
       expect(responses[0].ttl).to.equal(300);
+    });
+
+    it('should add nurl if exists on response', function () {
+      const serverResponse = utils.deepClone(SERVER_RESPONSE);
+      serverResponse.body.results[0].nurl = 'https://test.com/win-notice?test=123';
+      const responses = adapter.interpretResponse(serverResponse, REQUEST);
+      expect(responses).to.have.length(1);
+      expect(responses[0].nurl).to.equal('https://test.com/win-notice?test=123');
     });
   });
 
@@ -831,6 +922,68 @@ describe('VidazooBidAdapter', function () {
       const parsed = tryParseJSON(value);
       expect(typeof parsed).to.be.equal('number');
       expect(parsed).to.be.equal(value);
+    });
+  });
+
+  describe('validate onBidWon', function () {
+    beforeEach(function () {
+      sinon.stub(utils, 'triggerPixel');
+    });
+    afterEach(function () {
+      utils.triggerPixel.restore();
+    });
+
+    it('should call triggerPixel if nurl exists', function () {
+      const bid = {
+        adUnitCode: 'div-gpt-ad-12345-0',
+        adId: '2d52001cabd527',
+        auctionId: '1fdb5ff1b6eaa7',
+        transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+        status: 'rendered',
+        timeToRespond: 100,
+        cpm: 0.8,
+        originalCpm: 0.8,
+        creativeId: '12610997325162499419',
+        currency: 'USD',
+        originalCurrency: 'USD',
+        height: 250,
+        mediaType: 'banner',
+        nurl: 'https://test.com/win-notice?test=123',
+        netRevenue: true,
+        requestId: '2d52001cabd527',
+        ttl: 30,
+        width: 300
+      };
+      adapter.onBidWon(bid);
+      expect(utils.triggerPixel.called).to.be.true;
+
+      const url = utils.triggerPixel.args[0];
+
+      expect(url[0]).to.be.equal('https://test.com/win-notice?test=123&adId=2d52001cabd527&creativeId=12610997325162499419&auctionId=1fdb5ff1b6eaa7&transactionId=c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf&adUnitCode=div-gpt-ad-12345-0&cpm=0.8&currency=USD&originalCpm=0.8&originalCurrency=USD&netRevenue=true&mediaType=banner&timeToRespond=100&status=rendered');
+    });
+
+    it('should not call triggerPixel if nurl does not exist', function () {
+      const bid = {
+        adUnitCode: 'div-gpt-ad-12345-0',
+        adId: '2d52001cabd527',
+        auctionId: '1fdb5ff1b6eaa7',
+        transactionId: 'c881914b-a3b5-4ecf-ad9c-1c2f37c6aabf',
+        status: 'rendered',
+        timeToRespond: 100,
+        cpm: 0.8,
+        originalCpm: 0.8,
+        creativeId: '12610997325162499419',
+        currency: 'USD',
+        originalCurrency: 'USD',
+        height: 250,
+        mediaType: 'banner',
+        netRevenue: true,
+        requestId: '2d52001cabd527',
+        ttl: 30,
+        width: 300
+      };
+      adapter.onBidWon(bid);
+      expect(utils.triggerPixel.called).to.be.false;
     });
   });
 });

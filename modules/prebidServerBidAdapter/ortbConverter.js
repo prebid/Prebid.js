@@ -11,19 +11,20 @@ import {
   timestamp
 } from '../../src/utils.js';
 import {config} from '../../src/config.js';
-import CONSTANTS from '../../src/constants.json';
+import { STATUS, S2S } from '../../src/constants.js';
 import {createBid} from '../../src/bidfactory.js';
 import {pbsExtensions} from '../../libraries/pbsExtensions/pbsExtensions.js';
 import {setImpBidParams} from '../../libraries/pbsExtensions/processors/params.js';
 import {SUPPORTED_MEDIA_TYPES} from '../../libraries/pbsExtensions/processors/mediaType.js';
 import {IMP, REQUEST, RESPONSE} from '../../src/pbjsORTB.js';
-import {beConvertCurrency} from '../../src/utils/currency.js';
 import {redactor} from '../../src/activities/redactor.js';
 import {s2sActivityParams} from '../../src/adapterManager.js';
 import {activityParams} from '../../src/activities/activityParams.js';
 import {MODULE_TYPE_BIDDER} from '../../src/activities/modules.js';
 import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_TRANSMIT_TID} from '../../src/activities/activities.js';
+import {currencyCompare} from '../../libraries/currencyUtils/currency.js';
+import {minimum} from '../../src/utils/reducers.js';
 
 const DEFAULT_S2S_TTL = 60;
 const DEFAULT_S2S_CURRENCY = 'USD';
@@ -57,6 +58,7 @@ const PBS_CONVERTER = ortbConverter({
       const request = buildRequest(imps, proxyBidderRequest, context);
 
       request.tmax = s2sBidRequest.s2sConfig.timeout;
+      request.ext.tmaxmax = request.ext.tmaxmax || context.s2sBidRequest.requestBidsTimeout;
 
       [request.app, request.dooh, request.site].forEach(section => {
         if (section && !section.publisher?.id) {
@@ -113,10 +115,11 @@ const PBS_CONVERTER = ortbConverter({
     // because core has special treatment for PBS adapter responses, we need some additional processing
     bidResponse.requestTimestamp = context.requestTimestamp;
     return {
-      bid: Object.assign(createBid(CONSTANTS.STATUS.GOOD, {
-        src: CONSTANTS.S2S.SRC,
+      bid: Object.assign(createBid(STATUS.GOOD, {
+        src: S2S.SRC,
         bidId: bidRequest ? (bidRequest.bidId || bidRequest.bid_Id) : null,
         transactionId: context.adUnit.transactionId,
+        adUnitId: context.adUnit.adUnitId,
         auctionId: context.bidderRequest.auctionId,
       }), bidResponse),
       adUnit: context.adUnit.code
@@ -141,6 +144,7 @@ const PBS_CONVERTER = ortbConverter({
       bidfloor(orig, imp, proxyBidRequest, context) {
         // for bid floors, we pass each bidRequest associated with this imp through normal bidfloor processing,
         // and aggregate all of them into a single, minimum floor to put in the request
+        const getMin = minimum(currencyCompare(floor => [floor.bidfloor, floor.bidfloorcur]));
         let min;
         for (const req of context.actualBidRequests.values()) {
           const floor = {};
@@ -149,14 +153,8 @@ const PBS_CONVERTER = ortbConverter({
           if (floor.bidfloorcur == null || floor.bidfloor == null) {
             min = null;
             break;
-          } else if (min == null) {
-            min = floor;
-          } else {
-            const value = beConvertCurrency(floor.bidfloor, floor.bidfloorcur, min.bidfloorcur);
-            if (value != null && value < min.bidfloor) {
-              min = floor;
-            }
           }
+          min = min == null ? floor : getMin(min, floor);
         }
         if (min != null) {
           Object.assign(imp, min);
@@ -167,6 +165,10 @@ const PBS_CONVERTER = ortbConverter({
       fpd(orig, ortbRequest, proxyBidderRequest, context) {
         // FPD is handled different for PBS - the base request will only contain global FPD;
         // bidder-specific values are set in ext.prebid.bidderconfig
+
+        if (context.transmitTids) {
+          deepSetValue(ortbRequest, 'source.tid', proxyBidderRequest.auctionId);
+        }
 
         mergeDeep(ortbRequest, context.s2sBidRequest.ortb2Fragments?.global);
 
@@ -196,9 +198,7 @@ const PBS_CONVERTER = ortbConverter({
         context.actualBidderRequests.forEach(req => orig(ortbRequest, req, context));
       },
       sourceExtSchain(orig, ortbRequest, proxyBidderRequest, context) {
-        // pass schains in ext.prebid.schains, with the most commonly used one in source.ext.schain
-        let mainChain;
-
+        // pass schains in ext.prebid.schains
         let chains = (deepAccess(ortbRequest, 'ext.prebid.schains') || []);
         const chainBidders = new Set(chains.flatMap((item) => item.bidders));
 
@@ -217,16 +217,9 @@ const PBS_CONVERTER = ortbConverter({
                 chains[key] = {bidders: new Set(), schain};
               }
               bidders.forEach((bidder) => chains[key].bidders.add(bidder));
-              if (mainChain == null || chains[key].bidders.size > mainChain.bidders.size) {
-                mainChain = chains[key]
-              }
               return chains;
             }, {})
         ).map(({bidders, schain}) => ({bidders: Array.from(bidders), schain}));
-
-        if (mainChain != null) {
-          deepSetValue(ortbRequest, 'source.ext.schain', mainChain.schain);
-        }
 
         if (chains.length) {
           deepSetValue(ortbRequest, 'ext.prebid.schains', chains);
@@ -240,7 +233,16 @@ const PBS_CONVERTER = ortbConverter({
       },
       fledgeAuctionConfigs(orig, response, ortbResponse, context) {
         const configs = Object.values(context.impContext)
-          .flatMap((impCtx) => (impCtx.fledgeConfigs || []).map(cfg => ({adUnitCode: impCtx.adUnit.code, config: cfg.config})));
+          .flatMap((impCtx) => (impCtx.paapiConfigs || []).map(cfg => {
+            const bidderReq = impCtx.actualBidderRequests.find(br => br.bidderCode === cfg.bidder);
+            const bidReq = impCtx.actualBidRequests.get(cfg.bidder);
+            return {
+              adUnitCode: impCtx.adUnit.code,
+              ortb2: bidderReq?.ortb2,
+              ortb2Imp: bidReq?.ortb2Imp,
+              config: cfg.config
+            };
+          }));
         if (configs.length > 0) {
           response.fledgeAuctionConfigs = configs;
         }

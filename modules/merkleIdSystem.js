@@ -11,6 +11,13 @@ import {submodule} from '../src/hook.js'
 import {getStorageManager} from '../src/storageManager.js';
 import {MODULE_TYPE_UID} from '../src/activities/modules.js';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').IdResponse} IdResponse
+ */
+
 const MODULE_NAME = 'merkleId';
 const ID_URL = 'https://prebid.sv.rkdms.com/identity/';
 const DEFAULT_REFRESH = 7 * 3600;
@@ -87,17 +94,17 @@ function generateId(configParams, configStorage) {
 /** @type {Submodule} */
 export const merkleIdSubmodule = {
   /**
-     * used to link submodule with config
-     * @type {string}
-     */
+   * used to link submodule with config
+   * @type {string}
+   */
   name: MODULE_NAME,
 
   /**
-     * decode the stored id value for passing to bid requests
-     * @function
-     * @param {string} value
-     * @returns {{eids:arrayofields}}
-     */
+   * decode the stored id value for passing to bid requests
+   * @function
+   * @param {string} value
+   * @returns {{eids:arrayofields}}
+   */
   decode(value) {
     // Legacy support for a single id
     const id = (value && value.pam_id && typeof value.pam_id.id === 'string') ? value.pam_id : undefined;
@@ -115,12 +122,12 @@ export const merkleIdSubmodule = {
   },
 
   /**
-     * performs action to obtain id and return a value in the callback's response argument
-     * @function
-     * @param {SubmoduleConfig} [config]
-     * @param {ConsentData} [consentData]
-     * @returns {IdResponse|undefined}
-     */
+   * performs action to obtain id and return a value in the callback's response argument
+   * @function
+   * @param {SubmoduleConfig} [config]
+   * @param {ConsentData} [consentData]
+   * @returns {IdResponse|undefined}
+   */
   getId(config, consentData) {
     logInfo('User ID - merkleId generating id');
 

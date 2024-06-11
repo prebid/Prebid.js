@@ -1,9 +1,10 @@
 'use strict';
 
 import {BANNER} from '../src/mediaTypes.js';
-import {getAdUnitSizes, getWindowSelf, getWindowTop, isFn, logWarn} from '../src/utils.js';
+import {getWindowSelf, getWindowTop, isFn, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {ajax} from '../src/ajax.js';
+import {getAdUnitSizes} from '../libraries/sizeUtils/sizeUtils.js';
 
 const BIDDER_CODE = 'ogury';
 const GVLID = 31;
@@ -11,7 +12,7 @@ const DEFAULT_TIMEOUT = 1000;
 const BID_HOST = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_MONITORING_HOST = 'https://ms-ads-monitoring-events.presage.io';
 const MS_COOKIE_SYNC_DOMAIN = 'https://ms-cookie-sync.presage.io';
-const ADAPTER_VERSION = '1.5.0';
+const ADAPTER_VERSION = '1.6.0';
 
 function getClientWidth() {
   const documentElementClientWidth = window.top.document.documentElement.clientWidth
@@ -80,7 +81,7 @@ function getUserSyncs(syncOptions, serverResponses, gdprConsent, uspConsent) {
 function buildRequests(validBidRequests, bidderRequest) {
   const openRtbBidRequestBanner = {
     id: bidderRequest.bidderRequestId,
-    tmax: DEFAULT_TIMEOUT,
+    tmax: Math.min(DEFAULT_TIMEOUT, bidderRequest.timeout),
     at: 1,
     regs: {
       ext: {
@@ -120,6 +121,13 @@ function buildRequests(validBidRequests, bidderRequest) {
       bidRequest.mediaTypes.hasOwnProperty('banner')) {
       openRtbBidRequestBanner.site.id = bidRequest.params.assetKey;
       const floor = getFloor(bidRequest);
+
+      if (bidRequest.userId) {
+        openRtbBidRequestBanner.user.ext.uids = bidRequest.userId
+      }
+      if (bidRequest.userIdAsEids) {
+        openRtbBidRequestBanner.user.ext.eids = bidRequest.userIdAsEids
+      }
 
       openRtbBidRequestBanner.imp.push({
         id: bidRequest.bidId,

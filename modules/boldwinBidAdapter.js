@@ -5,7 +5,7 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
 const BIDDER_CODE = 'boldwin';
 const AD_URL = 'https://ssp.videowalldirect.com/pbjs';
-const SYNC_URL = 'https://cs.videowalldirect.com'
+const SYNC_URL = 'https://sync.videowalldirect.com';
 
 function isBidResponseValid(bid) {
   if (!bid.requestId || !bid.cpm || !bid.creativeId ||
@@ -79,6 +79,15 @@ export const spec = {
       }
       if (bidderRequest.gdprConsent) {
         request.gdpr = bidderRequest.gdprConsent;
+      }
+
+      // Add GPP consent
+      if (bidderRequest.gppConsent) {
+        request.gpp = bidderRequest.gppConsent.gppString;
+        request.gpp_sid = bidderRequest.gppConsent.applicableSections;
+      } else if (bidderRequest.ortb2?.regs?.gpp) {
+        request.gpp = bidderRequest.ortb2.regs.gpp;
+        request.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
       }
     }
     const len = validBidRequests.length;

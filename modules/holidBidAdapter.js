@@ -1,13 +1,12 @@
 import {
   deepAccess,
-  deepSetValue,
-  getBidIdParameter,
+  deepSetValue, getBidIdParameter,
   isStr,
   logMessage,
   triggerPixel,
 } from '../src/utils.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import {BANNER} from '../src/mediaTypes.js';
 
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -20,7 +19,7 @@ const TIME_TO_LIVE = 300
 const TMAX = 500
 let wurlMap = {}
 
-events.on(CONSTANTS.EVENTS.BID_WON, bidWonHandler)
+events.on(EVENTS.BID_WON, bidWonHandler)
 
 export const spec = {
   code: BIDDER_CODE,

@@ -5,8 +5,12 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
-import {parseDomain} from '../src/refererDetection.js';
-import {getGlobal} from '../src/prebidGlobal.js';
+import { parseDomain } from '../src/refererDetection.js';
+import { getGlobal } from '../src/prebidGlobal.js';
+
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ */
 
 const BIDDER_CODE = 'tappx';
 const GVLID_CODE = 628;
@@ -35,7 +39,7 @@ const VIDEO_CUSTOM_PARAMS = {
   'h': DATA_TYPES.NUMBER,
   'battr': DATA_TYPES.ARRAY,
   'linearity': DATA_TYPES.NUMBER,
-  'placement': DATA_TYPES.NUMBER,
+  'plcmt': DATA_TYPES.NUMBER,
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER,
   'skip': DATA_TYPES.NUMBER
@@ -53,7 +57,7 @@ export const spec = {
    *
    * @param {BidRequest} bid The bid params to validate.
    * @return boolean True if this is a valid bid, and false otherwise.
-  */
+   */
   isBidRequestValid: function(bid) {
     // bid.params.host
     if ((new RegExp(`^(vz.*|zz.*)\\.*$`, 'i')).test(bid.params.host)) { // New endpoint
@@ -234,12 +238,12 @@ function interpretBid(serverBid, request) {
 }
 
 /**
-* Build and makes the request
-*
-* @param {*} validBidRequests
-* @param {*} bidderRequest
-* @return response ad
-*/
+ * Build and makes the request
+ *
+ * @param {*} validBidRequests
+ * @param {*} bidderRequest
+ * @return response ad
+ */
 function buildOneRequest(validBidRequests, bidderRequest) {
   let hostInfo = _getHostInfo(validBidRequests);
   const ENDPOINT = hostInfo.endpoint;
@@ -276,7 +280,11 @@ function buildOneRequest(validBidRequests, bidderRequest) {
     site.name = bundle;
     site.page = bidderRequest?.refererInfo?.page || deepAccess(validBidRequests, 'params.site.page') || bidderRequest?.refererInfo?.topmostLocation || window.location.href || bundle;
     site.domain = bundle;
-    site.ref = bidderRequest?.refererInfo?.ref || window.top.document.referrer || '';
+    try {
+      site.ref = bidderRequest?.refererInfo?.ref || window.top.document.referrer || '';
+    } catch (e) {
+      site.ref = bidderRequest?.refererInfo?.ref || window.document.referrer || '';
+    }
     site.ext = {};
     site.ext.is_amp = bidderRequest?.refererInfo?.isAmp || 0;
     site.ext.page_da = deepAccess(validBidRequests, 'params.site.page') || '-';

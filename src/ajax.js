@@ -52,6 +52,9 @@ export function toFetchRequest(url, data, options = {}) {
     // but we're not in a secure context
     rqOpts.browsingTopics = true;
   }
+  if (options.keepalive) {
+    rqOpts.keepalive = true;
+  }
   return dep.makeRequest(url, rqOpts);
 }
 
@@ -89,6 +92,17 @@ export function fetcherFactory(timeout = 3000, {request, done} = {}) {
 
 function toXHR({status, statusText = '', headers, url}, responseText) {
   let xml = 0;
+  function getXML(onError) {
+    if (xml === 0) {
+      try {
+        xml = new DOMParser().parseFromString(responseText, headers?.get(CTYPE)?.split(';')?.[0])
+      } catch (e) {
+        xml = null;
+        onError && onError(e)
+      }
+    }
+    return xml;
+  }
   return {
     readyState: XMLHttpRequest.DONE,
     status,
@@ -98,17 +112,13 @@ function toXHR({status, statusText = '', headers, url}, responseText) {
     responseType: '',
     responseURL: url,
     get responseXML() {
-      if (xml === 0) {
-        try {
-          xml = new DOMParser().parseFromString(responseText, headers?.get(CTYPE)?.split(';')?.[0])
-        } catch (e) {
-          xml = null;
-          logError(e);
-        }
-      }
-      return xml;
+      return getXML(logError);
     },
     getResponseHeader: (header) => headers?.has(header) ? headers.get(header) : null,
+    toJSON() {
+      return Object.assign({responseXML: getXML()}, this)
+    },
+    timedOut: false
   }
 }
 
@@ -124,7 +134,10 @@ export function attachCallbacks(fetchPm, callback) {
     .then(([response, responseText]) => {
       const xhr = toXHR(response, responseText);
       response.ok || response.status === 304 ? success(responseText, xhr) : error(response.statusText, xhr);
-    }, () => error('', toXHR({status: 0}, '')));
+    }, (reason) => error('', Object.assign(
+      toXHR({status: 0}, ''),
+      {reason, timedOut: reason?.name === 'AbortError'}))
+    );
 }
 
 export function ajaxBuilder(timeout = 3000, {request, done} = {}) {

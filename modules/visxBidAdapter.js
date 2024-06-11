@@ -1,9 +1,11 @@
-import { triggerPixel, parseSizesInput, deepAccess, logError, getGptSlotInfoForAdUnitCode } from '../src/utils.js';
-import { registerBidder } from '../src/adapters/bidderFactory.js';
-import { config } from '../src/config.js';
-import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import { INSTREAM as VIDEO_INSTREAM } from '../src/video.js';
+import {deepAccess, logError, parseSizesInput, triggerPixel} from '../src/utils.js';
+import {registerBidder} from '../src/adapters/bidderFactory.js';
+import {config} from '../src/config.js';
+import {BANNER, VIDEO} from '../src/mediaTypes.js';
+import {INSTREAM as VIDEO_INSTREAM} from '../src/video.js';
 import {getStorageManager} from '../src/storageManager.js';
+import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
+
 const BIDDER_CODE = 'visx';
 const GVLID = 154;
 const BASE_URL = 'https://t.visx.net';
@@ -13,6 +15,7 @@ const TIME_TO_LIVE = 360;
 const DEFAULT_CUR = 'EUR';
 const ADAPTER_SYNC_PATH = '/push_sync';
 const TRACK_TIMEOUT_PATH = '/track/bid_timeout';
+const RUNTIME_STATUS_RESPONSE_TIME = 999000;
 const LOG_ERROR_MESS = {
   noAuid: 'Bid from response has no auid parameter - ',
   noAdm: 'Bid from response has no adm parameter - ',
@@ -31,6 +34,7 @@ const LOG_ERROR_MESS = {
 };
 const currencyWhiteList = ['EUR', 'USD', 'GBP', 'PLN'];
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+const _bidResponseTimeLogged = [];
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
@@ -55,11 +59,16 @@ export const spec = {
       config.getConfig('currency.adServerCurrency') ||
       DEFAULT_CUR;
 
+    let request;
     let reqId;
     let payloadSchain;
     let payloadUserId;
     let payloadUserEids;
     let timeout;
+    let payloadDevice;
+    let payloadSite;
+    let payloadRegs;
+    let payloadContent;
 
     if (currencyWhiteList.indexOf(currency) === -1) {
       logError(LOG_ERROR_MESS.notAllowedCurrency + currency);
@@ -76,9 +85,7 @@ export const spec = {
         imp.push(impObj);
         bidsMap[bid.bidId] = bid;
       }
-
       const { params: { uid }, schain, userId, userIdAsEids } = bid;
-
       if (!payloadSchain && schain) {
         payloadSchain = schain;
       }
@@ -89,6 +96,7 @@ export const spec = {
       if (!payloadUserId && userId) {
         payloadUserId = userId;
       }
+
       auids.push(uid);
     });
 
@@ -96,10 +104,7 @@ export const spec = {
 
     if (bidderRequest) {
       timeout = bidderRequest.timeout;
-      if (bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
-        // TODO: is 'page' the right value here?
-        payload.u = bidderRequest.refererInfo.page;
-      }
+
       if (bidderRequest.gdprConsent) {
         if (bidderRequest.gdprConsent.consentString) {
           payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
@@ -108,10 +113,24 @@ export const spec = {
             (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
               ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
       }
+
+      const { ortb2 } = bidderRequest;
+      const { device, site, regs, content } = ortb2;
+      if (device) {
+        payloadDevice = device;
+      }
+      if (site) {
+        payloadSite = site;
+      }
+      if (regs) {
+        payloadRegs = regs;
+      }
+      if (content) {
+        payloadContent = content;
+      }
     }
 
-    const bidderTimeout = Number(config.getConfig('bidderTimeout')) || timeout;
-    const tmax = timeout ? Math.min(bidderTimeout, timeout) : bidderTimeout;
+    const tmax = timeout;
     const source = {
       ext: {
         wrapperType: 'Prebid_js',
@@ -128,21 +147,25 @@ export const spec = {
         ...(vads && { vads })
       }
     };
-    const regs = ('gdpr_applies' in payload) && {
-      ext: {
-        gdpr: payload.gdpr_applies
-      }
-    };
+    if (payloadRegs === undefined) {
+      payloadRegs = ('gdpr_applies' in payload) && {
+        ext: {
+          gdpr: payload.gdpr_applies
+        }
+      };
+    }
 
-    const request = {
+    request = {
       id: reqId,
       imp,
       tmax,
       cur: [currency],
       source,
-      site: { page: payload.u },
       ...(Object.keys(user.ext).length && { user }),
-      ...(regs && { regs })
+      ...(payloadRegs && {regs: payloadRegs}),
+      ...(payloadDevice && { device: payloadDevice }),
+      ...(payloadSite && { site: payloadSite }),
+      ...(payloadContent && { content: payloadContent }),
     };
 
     return {
@@ -205,6 +228,12 @@ export const spec = {
     // Call '/track/win' with the corresponding bid.requestId
     if (bid.ext && bid.ext.events && bid.ext.events.win) {
       triggerPixel(bid.ext.events.win);
+    }
+    // Call 'track/runtime' with the corresponding bid.requestId - only once per auction
+    if (bid.ext && bid.ext.events && bid.ext.events.runtime && !_bidResponseTimeLogged.includes(bid.auctionId)) {
+      _bidResponseTimeLogged.push(bid.auctionId);
+      const _roundedTime = _roundResponseTime(bid.timeToRespond, 50);
+      triggerPixel(bid.ext.events.runtime.replace('{STATUS_CODE}', RUNTIME_STATUS_RESPONSE_TIME + _roundedTime));
     }
   },
   onTimeout: function(timeoutData) {
@@ -319,6 +348,10 @@ function _addBidResponse(serverBid, bidsMap, currency, bidResponses) {
 
         if (serverBid.ext && serverBid.ext.prebid) {
           bidResponse.ext = serverBid.ext.prebid;
+          if (serverBid.ext.visx && serverBid.ext.visx.events) {
+            const prebidExtEvents = bidResponse.ext.events || {};
+            bidResponse.ext.events = Object.assign(prebidExtEvents, serverBid.ext.visx.events);
+          }
         }
 
         const visxTargeting = deepAccess(serverBid, 'ext.prebid.targeting');
@@ -430,6 +463,17 @@ function _getUserId() {
   }
 
   return null;
+}
+
+function _roundResponseTime(time, timeRange) {
+  if (time <= 0) {
+    return 0; // Special code for scriptLoadTime of 0 ms or less
+  } else if (time > 5000) {
+    return 100; // Constant code for scriptLoadTime greater than 5000 ms
+  } else {
+    const roundedValue = Math.floor((time - 1) / timeRange) + 1;
+    return roundedValue;
+  }
 }
 
 registerBidder(spec);

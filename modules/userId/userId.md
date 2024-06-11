@@ -158,6 +158,9 @@ pbjs.setConfig({
         },
         {
             name: "gravitompId"
+        },
+        {
+            name: "mygaruId"
         }
         ],
         syncDelay: 5000,
@@ -355,6 +358,9 @@ pbjs.setConfig({
         },
         {
             name: 'naveggId',
+        },
+        {
+            name: 'lmpid',
         }],
         syncDelay: 5000
     }

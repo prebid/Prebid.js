@@ -262,6 +262,11 @@ describe('ttdBidAdapter', function () {
       expect(request.data).to.be.not.null;
     });
 
+    it('sets bidrequest.id to bidderRequestId', function () {
+      const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
+      expect(requestBody.id).to.equal('18084284054531');
+    });
+
     it('sets impression id to ad unit\'s bid id', function () {
       const requestBody = testBuildRequests(baseBannerBidRequests, baseBidderRequest).data;
       expect(requestBody.imp[0].id).to.equal('243310435309b5');

@@ -70,13 +70,18 @@ export class GPPClient {
    *  - a promise to GPP data.
    */
   static init(mkCmp = cmpClient) {
-    if (this.INST == null) {
-      this.INST = this.ping(mkCmp).catch(e => {
-        this.INST = null;
+    let inst = this.INST;
+    if (!inst) {
+      let err;
+      const reset = () => err && (this.INST = null);
+      inst = this.INST = this.ping(mkCmp).catch(e => {
+        err = true;
+        reset();
         throw e;
       });
+      reset();
     }
-    return this.INST.then(([client, pingData]) => [
+    return inst.then(([client, pingData]) => [
       client,
       client.initialized ? client.refresh() : client.init(pingData)
     ]);
@@ -247,7 +252,7 @@ class GPP10Client extends GPPClient {
 
   getGPPData(pingData) {
     const parsedSections = GreedyPromise.all(
-      pingData.supportedAPIs.map((api) => this.cmp({
+      (pingData.supportedAPIs || pingData.apiSupport || []).map((api) => this.cmp({
         command: 'getSection',
         parameter: api
       }).catch(err => {
@@ -299,8 +304,10 @@ class GPP11Client extends GPPClient {
  * This function handles interacting with an IAB compliant CMP to obtain the consent information of the user.
  * Given the async nature of the CMP's API, we pass in acting success/error callback functions to exit this function
  * based on the appropriate result.
- * @param {function({})} onSuccess acts as a success callback when CMP returns a value; pass along consentObjectfrom CMP
- * @param {function(string, ...{}?)} cmpError acts as an error callback while interacting with CMP; pass along an error message (string) and any extra error arguments (purely for logging)
+ * @param {Object} options - An object containing the callbacks.
+ * @param {function(Object): void} options.onSuccess - Acts as a success callback when CMP returns a value; pass along consentObject from CMP.
+ * @param {function(string, ...Object?): void} options.onError - Acts as an error callback while interacting with CMP; pass along an error message (string) and any extra error arguments (purely for logging).
+ * @param {function(): Object} [mkCmp=cmpClient] - A function to create the CMP client. Defaults to `cmpClient`.
  */
 export function lookupIabConsent({onSuccess, onError}, mkCmp = cmpClient) {
   pipeCallbacks(() => GPPClient.init(mkCmp).then(([client, gppDataPm]) => gppDataPm), {onSuccess, onError});
@@ -418,13 +425,17 @@ function processCmpData(consentData) {
   ) {
     throw new GPPError('CMP returned unexpected value during lookup process.', consentData);
   }
+  ['usnatv1', 'uscav1'].forEach(section => {
+    if (consentData?.parsedSections?.[section]) {
+      logWarn(`Received invalid section from cmp: '${section}'. Some functionality may not work as expected`, consentData)
+    }
+  })
   return storeConsentData(consentData);
 }
 
 /**
  * Stores CMP data locally in module to make information available in adaptermanager.js for later in the auction
  * @param {{}} gppData the result of calling a CMP's `getGPPData` (or equivalent)
- * @param {{}} sectionData map from GPP section name to the result of calling a CMP's `getSection` (or equivalent)
  */
 export function storeConsentData(gppData = {}) {
   consentData = {
@@ -450,7 +461,7 @@ export function resetConsentData() {
 
 /**
  * A configuration function that initializes some module variables, as well as add a hook into the requestBids function
- * @param {{cmp:string, timeout:number, allowAuctionWithoutConsent:boolean, defaultGdprScope:boolean}} config required; consentManagement module config settings; cmp (string), timeout (int), allowAuctionWithoutConsent (boolean)
+ * @param {{cmp:string, timeout:number, defaultGdprScope:boolean}} config required; consentManagement module config settings; cmp (string), timeout (int))
  */
 export function setConsentConfig(config) {
   config = config && config.gpp;

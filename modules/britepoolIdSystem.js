@@ -10,6 +10,13 @@ import {ajax} from '../src/ajax.js';
 import {submodule} from '../src/hook.js';
 const PIXEL = 'https://px.britepool.com/new?partner_id=t';
 
+/**
+ * @typedef {import('../modules/userId/index.js').Submodule} Submodule
+ * @typedef {import('../modules/userId/index.js').SubmoduleConfig} SubmoduleConfig
+ * @typedef {import('../modules/userId/index.js').ConsentData} ConsentData
+ * @typedef {import('../modules/userId/index.js').SubmoduleParams} SubmoduleParams
+ */
+
 /** @type {Submodule} */
 export const britepoolIdSubmodule = {
   /**
@@ -31,7 +38,7 @@ export const britepoolIdSubmodule = {
    * @function
    * @param {SubmoduleConfig} [submoduleConfig]
    * @param {ConsentData|undefined} consentData
-   * @returns {function(callback:function)}
+   * @returns {function}
    */
   getId(submoduleConfig, consentData) {
     const submoduleConfigParams = (submoduleConfig && submoduleConfig.params) || {};
