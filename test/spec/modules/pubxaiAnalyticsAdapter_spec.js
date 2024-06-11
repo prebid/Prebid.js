@@ -565,6 +565,7 @@ describe('pubxai analytics adapter', () => {
           },
           placementId: null,
           timeToRespond: 267,
+          source: 'client',
           responseTimestamp: 1616654313071,
         },
       ],
@@ -660,6 +661,7 @@ describe('pubxai analytics adapter', () => {
         status: 'rendered',
         statusMessage: 'Bid available',
         timeToRespond: 267,
+        source: 'client',
       },
       auctionDetail: {
         adUnitCodes: ['/19968336/header-bid-tag-1'],
