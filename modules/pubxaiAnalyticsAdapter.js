@@ -164,6 +164,7 @@ const extractBid = (bidResponse) => {
     placementId: bidResponse.params
       ? deepAccess(bidResponse, 'params.0.placementId')
       : null,
+    source: bidResponse.source || 'null',
   };
 };
 
