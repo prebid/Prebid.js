@@ -1,7 +1,7 @@
 name: Check for Duplicated Code
 
 on: 
-  pull_request:
+  pull_request_target:
     branches:
       - master
 
@@ -40,8 +40,13 @@ jobs:
     - name: Run jscpd on entire codebase
       run: jscpd
 
+    - name: Fetch base and target branches
+      run: |
+        git fetch origin +refs/heads/${{ github.event.pull_request.base.ref }}:refs/remotes/origin/${{ github.event.pull_request.base.ref }}
+        git fetch origin +refs/pull/${{ github.event.pull_request.number }}/merge:refs/remotes/pull/${{ github.event.pull_request.number }}/merge
+
     - name: Get the diff
-      run: git diff origin/master...HEAD --name-only > changed_files.txt
+      run: git diff --name-only origin/${{ github.event.pull_request.base.ref }}...refs/remotes/pull/${{ github.event.pull_request.number }}/merge > changed_files.txt
 
     - name: List generated files (debug)
       run: ls -l
@@ -88,7 +93,7 @@ jobs:
 
     - name: Post GitHub comment
       if: env.filtered_report_exists == 'true'
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         script: |
           const fs = require('fs');
@@ -100,7 +105,7 @@ jobs:
             const lines = duplication.lines;
             comment += `- \`${firstFile}\` has ${lines} duplicated lines with \`${secondFile}\`\n`;
           });
-          comment += "\nReducing code duplication by importing common functions from a library not only makes our code cleaner but also easier to maintain. Keep up the great work! 🚀";
+          comment += "\nReducing code duplication by importing common functions from a library not only makes our code cleaner but also easier to maintain. Please move the common code from both files into a library and import it in each. Keep up the great work! 🚀";
           github.rest.issues.createComment({
             owner: context.repo.owner,
             repo: context.repo.repo,
