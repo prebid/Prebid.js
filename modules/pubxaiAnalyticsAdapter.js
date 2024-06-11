@@ -13,15 +13,19 @@ import {
   getGptSlotInfoForAdUnitCode,
   getGptSlotForAdUnitCode,
 } from '../libraries/gptUtils/gptUtils.js';
+import { getStorageManager } from '../src/storageManager.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 
 let initOptions;
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
+const adapterCode = 'pubxai';
 const pubxaiAnalyticsVersion = 'v2.0.0';
 const defaultHost = 'api.pbxai.com';
 const auctionPath = '/analytics/auction';
 const winningBidPath = '/analytics/bidwon';
+const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: adapterCode })
 
 /**
  * The sendCache is a global cache object which tracks the pending sends
@@ -75,7 +79,7 @@ export const auctionCache = new Proxy(
           consentDetail: {
             consentTypes: Object.keys(getGlobal().getConsentMetadata?.() || {}),
           },
-          pmacDetail: JSON.parse(getStorage()?.getItem('pubx:pmac')) || {}, // {auction_1: {floor:0.23,maxBid:0.34,bidCount:3},auction_2:{floor:0.13,maxBid:0.14,bidCount:2}
+          pmacDetail: JSON.parse(storage.getDataFromLocalStorage('pubx:pmac')) || {}, // {auction_1: {floor:0.23,maxBid:0.34,bidCount:3},auction_2:{floor:0.13,maxBid:0.14,bidCount:2}
           initOptions: {
             ...initOptions,
             auctionId: name, // back-compat
@@ -119,18 +123,6 @@ const getAdServerDataForBid = (bid) => {
     );
   }
   return {}; // TODO: support more ad servers
-};
-
-/**
- * Access sessionStorage
- * @returns {Storage}
- */
-const getStorage = () => {
-  try {
-    return window.top['sessionStorage'];
-  } catch (e) {
-    return null;
-  }
 };
 
 /**
@@ -424,7 +416,7 @@ pubxaiAnalyticsAdapter.enableAnalytics = (config) => {
 
 adapterManager.registerAnalyticsAdapter({
   adapter: pubxaiAnalyticsAdapter,
-  code: 'pubxai',
+  code: adapterCode,
 });
 
 export default pubxaiAnalyticsAdapter;
