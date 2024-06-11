@@ -40,6 +40,7 @@ Please find below list of paramters that could be used in configuring Intent IQ 
 | params.pai                     | Optional | String   | This is the partner customer ID / advertiser ID, it is a dynamic value attached to the request.                                     | `"advertiser1"`                                 |
 | params.callback                | Required | Function | This is a callback which is trigered with data and AB group                                                                         | `(data, group) => console.log({ data, group })` |
 | params.timeoutInMillis         | Optional | Number   | This is the timeout in milliseconds, which defines the maximum duration before the callback is triggered. The default value is 500. | `450`                                           |
+| params.browserBlackList        | Optional |  String  | This is the name of a browser that can be added to a blacklist.                                                                     | `"chrome"`                                      |
 
 ### Configuration example
 
@@ -76,6 +77,7 @@ pbjs.setConfig({
                 pcid: PCID_VARIABLE,   // string value, dynamically loaded into a variable before setting the configuration
                 pai: PAI_VARIABLE ,  // string value, dynamically loaded into a variable before setting the configuration
                 timeoutInMillis: 500,
+                browserBlackList: "chrome",
                 callback: (data, group) => window.pbjs.requestBids()
             },
             storage: {
