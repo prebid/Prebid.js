@@ -16,6 +16,8 @@ const REPORTER_ID = Date.now() + '_' + getRandom(0, 1000);
 
 const FIRST_PARTY_KEY = '_iiq_fdata';
 const FIRST_PARTY_DATA_KEY = '_iiq_fdata';
+const GROUP_LS_KEY = '_iiq_group';
+const PERCENT_LS_KEY = '_iiq_percent';
 const JSVERSION = 5.3
 
 const PARAMS_NAMES = {
@@ -58,7 +60,10 @@ let iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({ defaultUrl, analytics
     lsValueInitialized: false,
     partner: null,
     fpid: null,
+    userGroup: null,
+    userPercentage: null,
     currentGroup: null,
+    currentPercentage: null,
     dataInLs: null,
     eidl: null,
     lsIdsInitialized: false,
@@ -95,7 +100,7 @@ function readData(key) {
 
 function initLsValues() {
   if (iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized) return;
-  iiqAnalyticsAnalyticsAdapter.initOptions.fpid = JSON.parse(readData(FIRST_PARTY_KEY));
+  iiqAnalyticsAnalyticsAdapter.initOptions.fpid = readData(FIRST_PARTY_KEY);
   let iiqArr = config.getConfig('userSync.userIds').filter(m => m.name == 'intentIqId');
   if (iiqArr && iiqArr.length > 0) iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized = true;
   if (!iiqArr) iiqArr = [];
@@ -103,14 +108,19 @@ function initLsValues() {
     iiqArr.push({
       'params': {
         'partner': -1,
-        'group': 'U'
+        'group': 'U',
+        'percentage': -1
       }
     })
   }
   if (iiqArr && iiqArr.length > 0) {
     if (iiqArr[0].params && iiqArr[0].params.partner && !isNaN(iiqArr[0].params.partner)) {
       iiqAnalyticsAnalyticsAdapter.initOptions.partner = iiqArr[0].params.partner;
-      iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = iiqAnalyticsAnalyticsAdapter.initOptions.fpid.group;
+      iiqAnalyticsAnalyticsAdapter.initOptions.userGroup = iiqArr[0].params.group || 'U';
+      iiqAnalyticsAnalyticsAdapter.initOptions.userPercentage = iiqArr[0].params.percentage || '-1';
+
+      iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = readData(GROUP_LS_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner);
+      iiqAnalyticsAnalyticsAdapter.initOptions.currentPercentage = +readData(PERCENT_LS_KEY + '_' + iiqAnalyticsAnalyticsAdapter.initOptions.partner);
     }
   }
 }
@@ -151,7 +161,11 @@ function preparePayload(data) {
   result[PARAMS_NAMES.partnerId] = iiqAnalyticsAnalyticsAdapter.initOptions.partner;
   result[PARAMS_NAMES.prebidVersion] = prebidVersion;
   result[PARAMS_NAMES.refferer] = getRefferer();
+  result[PARAMS_NAMES.userActualPercentage] = iiqAnalyticsAnalyticsAdapter.initOptions.userPercentage;
 
+  if (iiqAnalyticsAnalyticsAdapter.initOptions.userGroup && iiqAnalyticsAnalyticsAdapter.initOptions.userGroup != '') { result[PARAMS_NAMES.ABTestingConfigurationSource] = 'group'; } else if (iiqAnalyticsAnalyticsAdapter.initOptions.userPercentage && !isNaN(iiqAnalyticsAnalyticsAdapter.initOptions.userPercentage)) { result[PARAMS_NAMES.ABTestingConfigurationSource] = 'percentage'; }
+
+  result[PARAMS_NAMES.abPercentage] = iiqAnalyticsAnalyticsAdapter.initOptions.currentPercentage;
   result[PARAMS_NAMES.abTestGroup] = iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup;
 
   result[PARAMS_NAMES.isInTestGroup] = iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup == 'A';
@@ -191,7 +205,9 @@ function getDefaultDataObject() {
     'pbjsver': prebidVersion,
     'partnerAuctionId': 'BW',
     'reportSource': 'pbjs',
+    'abPercentage': -1,
     'abGroup': 'U',
+    'userPercentage': -1,
     'jsversion': JSVERSION,
     'partnerId': -1,
     'biddingPlatformId': 1,

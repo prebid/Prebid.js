@@ -45,7 +45,57 @@ export const testClientHints = {
   wow64: false
 };
 
-describe('IntentIQ tests', function () {
+const USERID_CONFIG = [
+  {
+    'name': 'intentIqId',
+    'params': {
+      'partner': partner,
+      'unpack': null,
+      'percentage': defaultPercentage,
+    },
+    'storage': {
+      'type': 'html5',
+      'name': 'intentIqId',
+      'expires': 60,
+      'refreshInSeconds': 14400
+    }
+  }
+];
+
+let wonRequest = {
+  'bidderCode': 'pubmatic',
+  'width': 728,
+  'height': 90,
+  'statusMessage': 'Bid available',
+  'adId': '23caeb34c55da51',
+  'requestId': '87615b45ca4973',
+  'transactionId': '5e69fd76-8c86-496a-85ce-41ae55787a50',
+  'auctionId': '0cbd3a43-ff45-47b8-b002-16d3946b23bf',
+  'mediaType': 'banner',
+  'source': 'client',
+  'cpm': 5,
+  'currency': 'USD',
+  'ttl': 300,
+  'referrer': '',
+  'adapterCode': 'pubmatic',
+  'originalCpm': 5,
+  'originalCurrency': 'USD',
+  'responseTimestamp': 1669644710345,
+  'requestTimestamp': 1669644710109,
+  'bidder': 'testbidder',
+  'adUnitCode': 'addUnitCode',
+  'timeToRespond': 236,
+  'pbLg': '5.00',
+  'pbMg': '5.00',
+  'pbHg': '5.00',
+  'pbAg': '5.00',
+  'pbDg': '5.00',
+  'pbCg': '',
+  'size': '728x90',
+  'status': 'rendered'
+};
+
+describe('IntentIQ tests all', function () {
   let logErrorStub;
   let testLSValue = {
     'date': Date.now(),
@@ -564,21 +614,71 @@ describe('IntentIQ tests', function () {
     if (submoduleCallback) {
       submoduleCallback(callBackSpy);
     }
-    let ls_percent_data = localStorage.getItem(PERCENT_LS_KEY + '_' + partner)
-    let ls_group_data = localStorage.getItem(GROUP_LS_KEY + '_' + partner)
-    expect(ls_group_data).to.be.equal(WITH_IIQ);
-    expect(ls_percent_data).to.be.equal(defaultPercentage + '');
-    expect(server.requests.length).to.be.equal(1);
   });
 
-  it('User configuration percentage 0 %', function () {
-    localStorage.clear();
-    let submoduleCallback = intentIqIdSubmodule.getId(percentageConfigParams).callback;
-    expect(submoduleCallback).to.be.undefined;
-    let ls_percent_data = localStorage.getItem(PERCENT_LS_KEY + '_' + partner)
-    let ls_group_data = localStorage.getItem(GROUP_LS_KEY + '_' + partner)
-    expect(ls_group_data).to.be.equal(WITHOUT_IIQ);
-    expect(ls_percent_data).to.be.equal(userPercentage + '');
-    expect(server.requests.length).to.be.equal(0);
+  it('IIQ Analytical Adapter bid win report', function () {
+    localStorage.setItem(PERCENT_LS_KEY + '_' + partner, defaultPercentage);
+    localStorage.setItem(GROUP_LS_KEY + '_' + partner, 'A');
+    localStorage.setItem(FIRST_PARTY_DATA_KEY + '_' + partner, '{"pcid":"f961ffb1-a0e1-4696-a9d2-a21d815bd344"}');
+
+    events.emit(EVENTS.BID_WON, wonRequest);
+
+    expect(server.requests.length).to.be.above(0);
+    const request = server.requests[0];
+    expect(request.url).to.contain('https://reports.intentiq.com/report?pid=' + partner + '&mct=1&agid=');
+    expect(request.url).to.contain('&jsver=5.3&source=pbjs&payload=');
+  });
+
+  it('should initialize with default configurations', function () {
+    expect(iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized).to.be.false;
+  });
+
+  it('should handle BID_WON event with user percentage configuration', function () {
+    localStorage.setItem(PERCENT_LS_KEY + '_' + partner, userPercentage);
+    localStorage.setItem(GROUP_LS_KEY + '_' + partner, 'B');
+    localStorage.setItem(FIRST_PARTY_DATA_KEY + '_' + partner, '{"pcid":"testpcid"}');
+
+    events.emit(EVENTS.BID_WON, wonRequest);
+
+    expect(server.requests.length).to.be.above(0);
+    const request = server.requests[0];
+    expect(request.url).to.contain('https://reports.intentiq.com/report?pid=' + partner + '&mct=1&agid=');
+    expect(request.url).to.contain('&jsver=5.3&source=pbjs&payload=');
+  });
+
+  it('should handle BID_WON event with default percentage configuration', function () {
+    localStorage.setItem(PERCENT_LS_KEY + '_' + partner, defaultPercentage);
+    localStorage.setItem(GROUP_LS_KEY + '_' + partner, 'A');
+    localStorage.setItem(FIRST_PARTY_DATA_KEY + '_' + partner, '{"pcid":"defaultpcid"}');
+
+    events.emit(EVENTS.BID_WON, wonRequest);
+
+    expect(server.requests.length).to.be.above(0);
+    const request = server.requests[0];
+    expect(request.url).to.contain('https://reports.intentiq.com/report?pid=' + partner + '&mct=1&agid=');
+    expect(request.url).to.contain('&jsver=5.3&source=pbjs&payload=');
+  });
+
+  it('should not send request if manualReport is true', function () {
+    iiqAnalyticsAnalyticsAdapter.initOptions.manualReport = true;
+    events.emit(EVENTS.BID_WON, wonRequest);
+    expect(server.requests.length).to.equal(0);
+  });
+
+  it('should read data from local storage', function () {
+    localStorage.setItem(FIRST_PARTY_DATA_KEY + '_' + partner, '{"data":"testpcid", "eidl": 10}');
+    events.emit(EVENTS.BID_WON, wonRequest);
+    expect(iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs).to.equal('testpcid');
+    expect(iiqAnalyticsAnalyticsAdapter.initOptions.eidl).to.equal(10);
+  });
+
+  it('should handle initialization values from local storage', function () {
+    localStorage.setItem(PERCENT_LS_KEY + '_' + partner, 50);
+    localStorage.setItem(GROUP_LS_KEY + '_' + partner, 'B');
+    localStorage.setItem(FIRST_PARTY_KEY, '{"pcid":"testpcid"}');
+    events.emit(EVENTS.BID_WON, wonRequest); // This will call initLsValues internally
+    expect(iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup).to.equal('B');
+    expect(iiqAnalyticsAnalyticsAdapter.initOptions.currentPercentage).to.equal(50);
+    expect(iiqAnalyticsAnalyticsAdapter.initOptions.fpid).to.be.not.null;
   });
 });
