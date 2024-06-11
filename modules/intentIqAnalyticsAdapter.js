@@ -58,7 +58,6 @@ let iiqAnalyticsAnalyticsAdapter = Object.assign(adapter({ defaultUrl, analytics
     lsValueInitialized: false,
     partner: null,
     fpid: null,
-    userGroup: null,
     currentGroup: null,
     dataInLs: null,
     eidl: null,
@@ -96,7 +95,7 @@ function readData(key) {
 
 function initLsValues() {
   if (iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized) return;
-  iiqAnalyticsAnalyticsAdapter.initOptions.fpid = readData(FIRST_PARTY_KEY);
+  iiqAnalyticsAnalyticsAdapter.initOptions.fpid = JSON.parse(readData(FIRST_PARTY_KEY));
   let iiqArr = config.getConfig('userSync.userIds').filter(m => m.name == 'intentIqId');
   if (iiqArr && iiqArr.length > 0) iiqAnalyticsAnalyticsAdapter.initOptions.lsValueInitialized = true;
   if (!iiqArr) iiqArr = [];
@@ -111,7 +110,7 @@ function initLsValues() {
   if (iiqArr && iiqArr.length > 0) {
     if (iiqArr[0].params && iiqArr[0].params.partner && !isNaN(iiqArr[0].params.partner)) {
       iiqAnalyticsAnalyticsAdapter.initOptions.partner = iiqArr[0].params.partner;
-      iiqAnalyticsAnalyticsAdapter.initOptions.userGroup = iiqArr[0].params.group || 'U';
+      iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = iiqAnalyticsAnalyticsAdapter.initOptions.fpid.group;
     }
   }
 }
@@ -126,7 +125,6 @@ function initReadLsIds() {
       let pData = JSON.parse(iData);
       iiqAnalyticsAnalyticsAdapter.initOptions.dataInLs = pData.data;
       iiqAnalyticsAnalyticsAdapter.initOptions.eidl = pData.eidl || -1;
-      iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup = pData.group;
     }
   } catch (e) {
     logError(e)
@@ -153,8 +151,6 @@ function preparePayload(data) {
   result[PARAMS_NAMES.partnerId] = iiqAnalyticsAnalyticsAdapter.initOptions.partner;
   result[PARAMS_NAMES.prebidVersion] = prebidVersion;
   result[PARAMS_NAMES.refferer] = getRefferer();
-
-  if (iiqAnalyticsAnalyticsAdapter.initOptions.userGroup && iiqAnalyticsAnalyticsAdapter.initOptions.userGroup != '') { result[PARAMS_NAMES.ABTestingConfigurationSource] = 'group'; }
 
   result[PARAMS_NAMES.abTestGroup] = iiqAnalyticsAnalyticsAdapter.initOptions.currentGroup;
 
