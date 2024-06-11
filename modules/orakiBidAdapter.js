@@ -1,4 +1,4 @@
-import { logMessage, logError, deepAccess } from '../src/utils.js';
+import { logMessage, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -89,8 +89,7 @@ function getBidFloor(bid) {
       size: '*',
     });
     return bidFloor.floor;
-  } catch (err) {
-    logError(err);
+  } catch {
     return 0;
   }
 }
