@@ -8,9 +8,21 @@ import {auctionManager} from './auctionManager.js';
 import {getCreativeRenderer} from './creativeRenderers.js';
 import {hook} from './hook.js';
 import {fireNativeTrackers} from './native.js';
+import {GreedyPromise} from './utils/promise.js';
 
 const { AD_RENDER_FAILED, AD_RENDER_SUCCEEDED, STALE_RENDER, BID_WON } = EVENTS;
 const { EXCEPTION } = AD_RENDER_FAILED_REASON;
+
+export const getBidToRender = hook('sync', function (adId, forRender = true, override = GreedyPromise.resolve()) {
+  return override
+    .then(bid => bid ?? auctionManager.findBidByAdId(adId))
+    .catch(() => {})
+})
+
+export const markWinningBid = hook('sync', function (bid) {
+  events.emit(BID_WON, bid);
+  auctionManager.addWinningBid(bid);
+})
 
 /**
  * Emit the AD_RENDER_FAILED event.
@@ -168,8 +180,7 @@ export function handleRender({renderFn, resizeFn, adId, options, bidResponse, do
       bid: bidResponse
     });
   }
-  auctionManager.addWinningBid(bidResponse);
-  events.emit(BID_WON, bidResponse);
+  markWinningBid(bidResponse);
 }
 
 export function renderAdDirect(doc, adId, options) {
@@ -211,12 +222,13 @@ export function renderAdDirect(doc, adId, options) {
     if (!adId || !doc) {
       fail(AD_RENDER_FAILED_REASON.MISSING_DOC_OR_ADID, `missing ${adId ? 'doc' : 'adId'}`);
     } else {
-      bid = auctionManager.findBidByAdId(adId);
-
       if ((doc === document && !inIframe())) {
         fail(AD_RENDER_FAILED_REASON.PREVENT_WRITING_ON_MAIN_DOCUMENT, `renderAd was prevented from writing to the main document.`);
       } else {
-        handleRender({renderFn, resizeFn, adId, options: {clickUrl: options?.clickThrough}, bidResponse: bid, doc});
+        getBidToRender(adId).then(bidResponse => {
+          bid = bidResponse;
+          handleRender({renderFn, resizeFn, adId, options: {clickUrl: options?.clickThrough}, bidResponse, doc});
+        });
       }
     }
   } catch (e) {

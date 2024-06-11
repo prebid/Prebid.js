@@ -79,6 +79,8 @@ describe('IntentIQ tests', function () {
 
   afterEach(function () {
     logErrorStub.restore();
+    clearAllCookies();
+    localStorage.clear();
   });
 
   it('should log an error if no configParams were passed when getId', function () {
