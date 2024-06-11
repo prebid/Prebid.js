@@ -3,6 +3,7 @@ import pubxaiAnalyticsAdapter, {
   getOS,
   getBrowser,
   auctionCache,
+  storage,
 } from 'modules/pubxaiAnalyticsAdapter.js';
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
@@ -42,7 +43,6 @@ describe('pubxai analytics adapter', () => {
     let originalVS;
 
     let location = utils.getWindowLocation();
-    let storage = window.top['sessionStorage'];
 
     const replaceProperty = (obj, params) => {
       let strObj = JSON.stringify(obj);
@@ -600,7 +600,7 @@ describe('pubxai analytics adapter', () => {
       consentDetail: {
         consentTypes: Object.keys(getGlobal().getConsentMetadata?.() || {}),
       },
-      pmacDetail: JSON.parse(storage.getItem('pbx:pmac')) || {},
+      pmacDetail: JSON.parse(storage.getDataFromLocalStorage('pubx:pmac')) || {},
       initOptions: {
         ...initOptions,
         auctionId: 'bc3806e4-873e-453c-8ae5-204f35e923b4',
@@ -693,7 +693,7 @@ describe('pubxai analytics adapter', () => {
       consentDetail: {
         consentTypes: Object.keys(getGlobal().getConsentMetadata?.() || {}),
       },
-      pmacDetail: JSON.parse(storage.getItem('pbx:pmac')) || {},
+      pmacDetail: JSON.parse(storage.getDataFromLocalStorage('pubx:pmac')) || {},
       initOptions: {
         ...initOptions,
         auctionId: 'bc3806e4-873e-453c-8ae5-204f35e923b4',
