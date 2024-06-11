@@ -3,7 +3,6 @@ import pubxaiAnalyticsAdapter, {
   getOS,
   getBrowser,
   auctionCache,
-  storage,
 } from 'modules/pubxaiAnalyticsAdapter.js';
 import { expect } from 'chai';
 import adapterManager from 'src/adapterManager.js';
@@ -600,7 +599,7 @@ describe('pubxai analytics adapter', () => {
       consentDetail: {
         consentTypes: Object.keys(getGlobal().getConsentMetadata?.() || {}),
       },
-      pmacDetail: JSON.parse(storage.getDataFromLocalStorage('pubx:pmac')) || {},
+      pmacDetail: {},
       initOptions: {
         ...initOptions,
         auctionId: 'bc3806e4-873e-453c-8ae5-204f35e923b4',
@@ -693,7 +692,7 @@ describe('pubxai analytics adapter', () => {
       consentDetail: {
         consentTypes: Object.keys(getGlobal().getConsentMetadata?.() || {}),
       },
-      pmacDetail: JSON.parse(storage.getDataFromLocalStorage('pubx:pmac')) || {},
+      pmacDetail: {},
       initOptions: {
         ...initOptions,
         auctionId: 'bc3806e4-873e-453c-8ae5-204f35e923b4',
@@ -765,7 +764,7 @@ describe('pubxai analytics adapter', () => {
         expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
           auctionTimestamp: '1616654312804',
           pubxaiAnalyticsVersion: 'v2.0.0',
-          prebidVersion: getGlobal()?.version,
+          prebidVersion: String(getGlobal().version),
         });
         expect(expectedData.type).to.equal('text/json');
         expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([
@@ -808,7 +807,7 @@ describe('pubxai analytics adapter', () => {
       expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
         auctionTimestamp: '1616654312804',
         pubxaiAnalyticsVersion: 'v2.0.0',
-        prebidVersion: getGlobal()?.version,
+        prebidVersion: String(getGlobal().version),
       });
 
       // Step 9: check that the data sent in the request is correct
@@ -933,7 +932,7 @@ describe('pubxai analytics adapter', () => {
         expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
           auctionTimestamp: '1616654312804',
           pubxaiAnalyticsVersion: 'v2.0.0',
-          prebidVersion: getGlobal()?.version,
+          prebidVersion: String(getGlobal().version),
         });
         expect(expectedData.type).to.equal('text/json');
         expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([
@@ -1049,7 +1048,7 @@ describe('pubxai analytics adapter', () => {
         expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
           auctionTimestamp: '1616654312804',
           pubxaiAnalyticsVersion: 'v2.0.0',
-          prebidVersion: getGlobal()?.version,
+          prebidVersion: String(getGlobal().version),
         });
         expect(expectedData.type).to.equal('text/json');
         expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([

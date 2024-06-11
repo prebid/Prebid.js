@@ -25,8 +25,7 @@ const pubxaiAnalyticsVersion = 'v2.0.0';
 const defaultHost = 'api.pbxai.com';
 const auctionPath = '/analytics/auction';
 const winningBidPath = '/analytics/bidwon';
-
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: adapterCode })
+const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: adapterCode })
 
 /**
  * The sendCache is a global cache object which tracks the pending sends
