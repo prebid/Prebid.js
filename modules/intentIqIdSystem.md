@@ -1,3 +1,11 @@
+```
+Module Name: IntentIQ Id System
+Module Type: Id System
+Maintainer: julian@intentiq.com, dmytro.piskun@intentiq.com
+usp_supported: true
+gpp_sids: usnat
+```
+
 # Intent IQ Universal ID module
 
 By leveraging the Intent IQ identity graph, our module helps publishers, SSPs, and DSPs overcome the challenges of monetizing cookie-less inventory and preparing for a future without 3rd-party cookies. Our solution implements 1st-party data clustering and provides Intent IQ person IDs with over 90% coverage and unmatched accuracy in supported countries while remaining privacy-friendly and CCPA compliant. This results in increased CPMs, higher fill rates, and, ultimately, lifting overall revenue
