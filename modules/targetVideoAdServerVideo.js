@@ -48,7 +48,7 @@ export function buildVideoUrl(options) {
 
   return buildUrl({
     protocol: 'https',
-    host: 'tvserve.io',
+    host: 'vid.tvserve.io',
     pathname: '/ads/bid',
     search
   });
