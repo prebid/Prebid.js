@@ -393,7 +393,6 @@ if (FEATURES.UID2_CSTG) {
       this._baseUrl = opts.baseUrl;
       this._serverPublicKey = opts.cstg.serverPublicKey;
       this._subscriptionId = opts.cstg.subscriptionId;
-      this._optoutCheck = opts.cstg.optoutCheck;
       this._logInfo = logInfo;
       this._logWarn = logWarn;
     }
@@ -451,8 +450,7 @@ if (FEATURES.UID2_CSTG) {
     }
 
     async generateToken(cstgIdentity) {
-      const requestIdentity = await this.generateCstgRequest(cstgIdentity);
-      const request = { optout_check: this._optoutCheck, ...requestIdentity };
+      const request = await this.generateCstgRequest(cstgIdentity);
       this._logInfo('Building CSTG request for', request);
       const box = await UID2CstgBox.build(
         this.stripPublicKeyPrefix(this._serverPublicKey)
