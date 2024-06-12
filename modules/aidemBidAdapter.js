@@ -1,4 +1,4 @@
-import {deepAccess, deepSetValue, isBoolean, isNumber, isStr, logError, logInfo} from '../src/utils.js';
+import {deepAccess, deepClone, deepSetValue, isBoolean, isNumber, isStr, logError, logInfo} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -132,7 +132,7 @@ function getRegs(bidderRequest) {
 }
 
 function setPrebidRequestEnvironment(payload) {
-  const __navigator = JSON.parse(JSON.stringify(recur(navigator)));
+  const __navigator = deepClone(recur(navigator));
   delete __navigator.plugins;
   deepSetValue(payload, 'environment.ri', getRefererInfo());
   deepSetValue(payload, 'environment.hl', window.history.length);
