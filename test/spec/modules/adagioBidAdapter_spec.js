@@ -277,8 +277,6 @@ describe('Adagio bid adapter', () => {
     it('should send bid request to ENDPOINT_PB via POST', function() {
       sandbox.stub(_internal, 'getDevice').returns({ a: 'a' });
       sandbox.stub(_internal, 'getSite').returns({ domain: 'adagio.io', 'page': 'https://adagio.io/hb' });
-      // sandbox.stub(_internal, 'getPageviewId').returns('1234-567');
-      // sandbox.stub(utils, 'generateUUID').returns('blabla');
 
       const bid01 = new BidRequestBuilder().withParams().build();
       const bidderRequest = new BidderRequestBuilder().build();
@@ -293,8 +291,7 @@ describe('Adagio bid adapter', () => {
     });
 
     it('should use a custom generated auctionId and remove transactionId', function() {
-      const expectedAuctionId = '373bcda7-9794-4f1c-be2c-0d223d11d579'
-      sandbox.stub(utils, 'generateUUID').returns(expectedAuctionId);
+      const expectedAuctionId = '4fd1ca2d-846c-4211-b9e5-321dfe1709c9'
 
       const bid01 = new BidRequestBuilder().withParams().build();
       const bidderRequest = new BidderRequestBuilder().build();
@@ -305,9 +302,7 @@ describe('Adagio bid adapter', () => {
     });
 
     it('should enrich prebid bid requests params', function() {
-      const expectedAuctionId = '373bcda7-9794-4f1c-be2c-0d223d11d579'
       const expectedPageviewId = '56befc26-8cf0-472d-b105-73896df8eb89';
-      sandbox.stub(utils, 'generateUUID').returns(expectedAuctionId);
       sandbox.stub(_internal, 'getAdagioNs').returns({ pageviewId: expectedPageviewId });
 
       const bid01 = new BidRequestBuilder().withParams().build();
@@ -315,7 +310,6 @@ describe('Adagio bid adapter', () => {
 
       spec.buildRequests([bid01], bidderRequest);
 
-      expect(bid01.params.adagioAuctionId).eq(expectedAuctionId);
       expect(bid01.params.pageviewId).eq(expectedPageviewId);
     });
 

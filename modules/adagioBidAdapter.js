@@ -576,13 +576,8 @@ export const spec = {
       sessionData.rnd = Math.random()
     }
 
-    const aucId = deepAccess(bidderRequest, 'ortb2.site.ext.data.adg_rtd.uid') || generateUUID()
-
     const adUnits = validBidRequests.map(rawBidRequest => {
       const bidRequest = deepClone(rawBidRequest);
-
-      // Fix https://github.com/prebid/Prebid.js/issues/9781
-      bidRequest.auctionId = aucId
 
       // Force the Split Keyword to be a String
       if (bidRequest.params.splitKeyword) {
@@ -724,7 +719,6 @@ export const spec = {
     // Those params are not sent to the server.
     // They are used for further operations on analytics adapter.
     validBidRequests.forEach(rawBidRequest => {
-      rawBidRequest.params.adagioAuctionId = aucId
       rawBidRequest.params.pageviewId = pageviewId
     });
 
