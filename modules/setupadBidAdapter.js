@@ -230,8 +230,6 @@ export const spec = {
 
     if (!placementIds) return;
 
-    let extraBidParams = '';
-
     // find the winning bidder by using creativeId as identification
     if (biddersCreativeIds.hasOwnProperty(bid.creativeId) && biddersCreativeIds[bid.creativeId]) {
       bidder = biddersCreativeIds[bid.creativeId];
