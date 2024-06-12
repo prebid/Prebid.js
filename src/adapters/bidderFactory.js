@@ -296,7 +296,7 @@ export function newBidder(spec) {
         onPaapi: (paapiConfig) => {
           const bidRequest = bidRequestMap[paapiConfig.bidId];
           if (bidRequest) {
-            addComponentAuction(bidRequest, paapiConfig.config);
+            addPaapiConfig(bidRequest, paapiConfig);
           } else {
             logWarn('Received fledge auction configuration for an unknown bidId', paapiConfig);
           }
@@ -363,12 +363,13 @@ export function newBidder(spec) {
 
 // Transition from 'fledge' to 'paapi'
 // TODO: remove this in prebid 9
-const PAAPI_RESPONSE_PROPS = ['paapiAuctionConfigs', 'fledgeAuctionConfigs'];
-const RESPONSE_PROPS = ['bids'].concat(PAAPI_RESPONSE_PROPS);
+const PAAPI_PROPS = ['paapi', 'fledgeAuctionConfigs'];
+const RESPONSE_PROPS = ['bids'].concat(PAAPI_PROPS);
+
 function getPaapiConfigs(adapterResponse) {
-  const [paapi, fledge] = PAAPI_RESPONSE_PROPS.map(prop => adapterResponse[prop]);
+  const [paapi, fledge] = PAAPI_PROPS.map(prop => adapterResponse[prop]);
   if (paapi != null && fledge != null) {
-    throw new Error(`Adapter response should use ${PAAPI_RESPONSE_PROPS[0]} over ${PAAPI_RESPONSE_PROPS[1]}, not both`);
+    throw new Error(`Adapter response should use ${PAAPI_PROPS[0]} over ${PAAPI_PROPS[1]}, not both`);
   }
   return paapi ?? fledge;
 }
@@ -437,7 +438,7 @@ export const processBidderRequests = hook('sync', function (spec, bids, bidderRe
       // adapters can reply with:
       // a single bid
       // an array of bids
-      // a BidderAuctionResponse object ({bids: [*], paapiAuctionConfigs: [*]})
+      // a BidderAuctionResponse object
 
       let bids, paapiConfigs;
       if (response && !Object.keys(response).some(key => !RESPONSE_PROPS.includes(key))) {
@@ -548,8 +549,8 @@ export const registerSyncInner = hook('async', function(spec, responses, gdprCon
   }
 }, 'registerSyncs')
 
-export const addComponentAuction = hook('sync', (request, fledgeAuctionConfig) => {
-}, 'addComponentAuction');
+export const addPaapiConfig = hook('sync', (request, paapiConfig) => {
+}, 'addPaapiConfig');
 
 // check that the bid has a width and height set
 function validBidSize(adUnitCode, bid, {index = auctionManager.index} = {}) {

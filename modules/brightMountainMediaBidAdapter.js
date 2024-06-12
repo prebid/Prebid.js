@@ -31,7 +31,7 @@ export const spec = {
       site: buildSite(bidderRequest),
       device: buildDevice(),
       cur: [CURRENCY],
-      tmax: 1000,
+      tmax: Math.min(1000, bidderRequest.timeout),
       regs: buildRegs(bidderRequest),
       user: {},
       source: {},

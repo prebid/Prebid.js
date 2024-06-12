@@ -482,7 +482,8 @@ export function newTargeting(auctionManager) {
   /**
    * Returns top bids for a given adUnit or set of adUnits.
    * @param  {(string|string[])} adUnitCode adUnitCode or array of adUnitCodes
-   * @return {[type]}            [description]
+   * @param  {Array} [bidsReceived=getBidsReceived()] - The received bids, defaulting to the result of getBidsReceived().
+   * @return {Array<Object>} - An array of winning bids.
    */
   targeting.getWinningBids = function(adUnitCode, bidsReceived = getBidsReceived()) {
     const adUnitCodes = getAdUnitCodes(adUnitCode);

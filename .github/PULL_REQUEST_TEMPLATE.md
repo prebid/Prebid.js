@@ -16,7 +16,8 @@ For any user facing change, submit a link to a PR on the docs repo at https://gi
 <!-- Remove items that don't apply and/or select an item by changing [ ] to [x] -->
 - [ ] Bugfix
 - [ ] Feature
-- [ ] New bidder adapter  <!--  IMPORTANT: if checking here, also submit your bidder params documentation here https://github.com/prebid/prebid.github.io/tree/master/dev-docs/bidders --> 
+- [ ] New bidder adapter  <!--  IMPORTANT: also submit your bidder parameter documentation as noted in https://docs.prebid.org/dev-docs/bidder-adaptor.html#submitting-your-adapter -->
+- [ ] Updated bidder adapter  <!--  IMPORTANT: (1) consider whether you need to upgrade your bidder parameter documentation in https://github.com/prebid/prebid.github.io/tree/master/dev-docs/bidders and (2) if you have a Prebid Server adapter, please consider whether that should be updated as well. --> 
 - [ ] Code style update (formatting, local variables)
 - [ ] Refactoring (no functional changes, no api changes)
 - [ ] Build related changes

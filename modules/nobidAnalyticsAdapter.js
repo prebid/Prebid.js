@@ -6,7 +6,7 @@ import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import {MODULE_TYPE_ANALYTICS} from '../src/activities/modules.js';
 
-const VERSION = '2.0.1';
+const VERSION = '2.0.2';
 const MODULE_NAME = 'nobidAnalyticsAdapter';
 const ANALYTICS_OPT_FLUSH_TIMEOUT_SECONDS = 5 * 1000;
 const RETENTION_SECONDS = 1 * 24 * 3600;
@@ -53,6 +53,7 @@ function sendEvent (event, eventType) {
   }
   try {
     event.version = VERSION;
+    event.pbver = '$prebid.version$';
     const endpoint = `${resolveEndpoint()}/event/${eventType}?pubid=${nobidAnalytics.initOptions.siteId}`;
     ajax(endpoint,
       function (response) {
@@ -175,10 +176,9 @@ nobidAnalytics = {
   ANALYTICS_DATA_NAME: 'analytics.nobid.io',
   ANALYTICS_OPT_NAME: 'analytics.nobid.io.optData'
 }
-
 adapterManager.registerAnalyticsAdapter({
   adapter: nobidAnalytics,
-  code: 'nobidAnalytics',
+  code: 'nobid',
   gvlid: GVLID
 });
 nobidAnalytics.originalAdUnits = {};
@@ -241,7 +241,7 @@ window.nobidCarbonizer = {
       adunit.bids = allowedBidders;
     }
     for (const adunit of adunits) {
-      if (!nobidAnalytics.originalAdUnits[adunit.code]) nobidAnalytics.originalAdUnits[adunit.code] = JSON.parse(JSON.stringify(adunit));
+      if (!nobidAnalytics.originalAdUnits[adunit.code]) nobidAnalytics.originalAdUnits[adunit.code] = deepClone(adunit);
     };
     if (this.isActive()) {
       // 5% of the time do not block;

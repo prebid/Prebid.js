@@ -324,6 +324,14 @@ export const spec = {
       payload.user.eids = validBidRequests[0].userIdAsEids
     }
 
+    if (bidderRequest.ortb2?.bcat) {
+      payload.bcat = bidderRequest.ortb2?.bcat
+    }
+
+    if (bidderRequest.ortb2?.badv) {
+      payload.badv = bidderRequest.ortb2?.badv
+    }
+
     const payloadString = JSON.stringify(payload);
 
     return {
