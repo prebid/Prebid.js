@@ -38,6 +38,11 @@ const ADAGIO_BIDDER_CODE = 'adagio';
 const GVLID = 617;
 const SCRIPT_URL = 'https://script.4dex.io/a/latest/adagio.js';
 const SESS_DURATION = 30 * 60 * 1000;
+export const PLACEMENT_SOURCES = {
+  ORTB: 'ortb', // implicit default, not used atm.
+  ADUNITCODE: 'code',
+  GPID: 'gpid'
+};
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
 
 const { logError, logWarn } = prefixLog('AdagioRtdProvider:');
@@ -259,6 +264,7 @@ function onBidRequest(bidderRequest, config, _userConsent) {
  * @param {*} config
  */
 function onGetBidRequestData(bidReqConfig, callback, config) {
+  const configParams = deepAccess(config, 'params', {});
   const { site: ortb2Site } = bidReqConfig.ortb2Fragments.global;
   const features = _internal.getFeatures().get();
   const ext = {
@@ -283,8 +289,26 @@ function onGetBidRequestData(bidReqConfig, callback, config) {
     const slotPosition = getSlotPosition(adUnit);
     deepSetValue(ortb2Imp, `ext.data.adg_rtd.adunit_position`, slotPosition);
 
-    // We expect `pagetype` `category` are defined in FPD `ortb2.site.ext.data` object.
-    // `placement` is expected in FPD `adUnits[].ortb2Imp.ext.data` object. (Please note that this `placement` is not related to the oRTB video property.)
+    // It is expected that the publisher set a `adUnits[].ortb2Imp.ext.data.placement` value.
+    // Btw, We allow fallback sources to programmatically set this value.
+    // The source is defined in the `config.params.placementSource` and the possible values are `code` or `gpid`.
+    // (Please note that this `placement` is not related to the oRTB video property.)
+    if (!deepAccess(ortb2Imp, 'ext.data.placement')) {
+      const { placementSource = '' } = configParams;
+
+      switch (placementSource.toLowerCase()) {
+        case PLACEMENT_SOURCES.ADUNITCODE:
+          deepSetValue(ortb2Imp, 'ext.data.placement', adUnit.code);
+          break;
+        case PLACEMENT_SOURCES.GPID:
+          deepSetValue(ortb2Imp, 'ext.data.placement', deepAccess(ortb2Imp, 'ext.gpid'));
+          break;
+        default:
+          logWarn('`ortb2Imp.ext.data.placement` is missing and `params.definePlacement` is not set in the config.');
+      }
+    }
+
+    // We expect that `pagetype`, `category`, `placement` are defined in FPD `ortb2.site.ext.data` and `adUnits[].ortb2Imp.ext.data` objects.
     // Btw, we have to ensure compatibility with publishers that use the "legacy" adagio params at the adUnit.params level.
     const adagioBid = adUnit.bids.find(bid => _internal.isAdagioBidder(bid.bidder));
     if (adagioBid) {
@@ -305,9 +329,6 @@ function onGetBidRequestData(bidReqConfig, callback, config) {
         if (adagioBid.params.placement) {
           deepSetValue(ortb2Imp, 'ext.data.placement', adagioBid.params.placement);
           mustWarnOrtb2Imp = true;
-        } else {
-          // If the placement is not defined, we fallback to the adUnit code.
-          deepSetValue(ortb2Imp, 'ext.data.placement', adUnit.code);
         }
       }
 
