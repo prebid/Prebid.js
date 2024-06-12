@@ -148,18 +148,19 @@ export const spec = {
         payload.consent_string = bidderRequest.gdprConsent.consentString;
         payload.consent_required = bidderRequest.gdprConsent.gdprApplies;
       }
-      const baseUrl = bidRequest.params.baseUrl || ENDPOINT_URL;
-      if (bidRequest.params.test) {
-        payload.test = bidRequest.params.test;
+      const bidParams = bidRequest.params;
+      const baseUrl = bidParams.baseUrl || ENDPOINT_URL;
+      if (bidParams.test) {
+        payload.test = bidParams.test;
       }
-      if (bidRequest.params.placement) {
-        payload.placement = bidRequest.params.placement;
+      if (bidParams.placement) {
+        payload.placement = bidParams.placement;
       }
-      if (bidRequest.params.formats) {
-        payload.formats = bidRequest.params.formats;
+      if (bidParams.formats) {
+        payload.formats = bidParams.formats;
       }
-      if (bidRequest.params.isInternal) {
-        payload.is_internal = bidRequest.params.isInternal;
+      if (bidParams.isInternal) {
+        payload.is_internal = bidParams.isInternal;
       }
       if (bidRequest.ortb2?.device?.ext?.cdep) {
         payload.cdep = bidRequest.ortb2?.device?.ext?.cdep;
@@ -175,7 +176,7 @@ export const spec = {
 
       return {
         method: 'POST',
-        url: baseUrl + '?' + formatQS({ t: bidRequest.params.apiKey }),
+        url: baseUrl + '?' + formatQS({ t: bidParams.apiKey }),
         data: JSON.stringify(payload),
       };
     });
