@@ -52,7 +52,6 @@ export const spec = {
     const basePayload = {
       id: generateUUID(),
       ref: refererInfo.ref,
-      ssl: isSecureWindow(),
       mpa: isMainPageAccessible(),
       timeout: bidderRequest.timeout - (Date.now() - bidderRequest.auctionStart),
       url: refererInfo.page,
@@ -76,11 +75,13 @@ export const spec = {
       };
     }
 
-    const DSA_KEY = 'ortb2.regs.ext.dsa';
-    const dsa = deepAccess(bidderRequest, DSA_KEY);
-    if (dsa) {
-      deepSetValue(basePayload, DSA_KEY, dsa);
-    }
+    const ORTB2_KEYS = ['regs.ext.dsa', 'device.ext.cdep'];
+    ORTB2_KEYS.forEach(key => {
+      const value = deepAccess(bidderRequest.ortb2, key);
+      if (value !== undefined) {
+        deepSetValue(basePayload, `ortb2.${key}`, value);
+      }
+    });
 
     const bannerBids = validBidRequests
       .filter(hasBanner)
@@ -144,8 +145,6 @@ export const spec = {
     return [];
   }
 };
-
-const isSecureWindow = () => getWindowSelf().location.protocol === 'https:';
 
 const isMainPageAccessible = () => {
   try {

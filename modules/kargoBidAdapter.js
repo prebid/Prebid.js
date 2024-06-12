@@ -95,16 +95,13 @@ function buildRequests(validBidRequests, bidderRequest) {
       ]
     },
     imp: impressions,
-    user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids, bidderRequest.gppConsent)
+    user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids, bidderRequest.gppConsent),
+    ext: getExtensions(firstBidRequest.ortb2, bidderRequest?.refererInfo)
   });
 
-  // Add full ortb2 object as backup
-  if (firstBidRequest.ortb2) {
-    const siteCat = firstBidRequest.ortb2.site?.cat;
-    if (siteCat != null) {
-      krakenParams.site = { cat: siteCat };
-    }
-    krakenParams.ext = { ortb2: firstBidRequest.ortb2 };
+  // Add site.cat if it exists
+  if (firstBidRequest.ortb2?.site?.cat != null) {
+    krakenParams.site = { cat: firstBidRequest.ortb2.site.cat };
   }
 
   // Add schain
@@ -186,6 +183,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     krakenParams.page = page;
   }
 
+  if (krakenParams.ext && Object.keys(krakenParams.ext).length === 0) {
+    delete krakenParams.ext;
+  }
+
   return Object.assign({}, bidderRequest, {
     method: BIDDER.REQUEST_METHOD,
     url: `https://${BIDDER.HOST}${BIDDER.REQUEST_ENDPOINT}`,
@@ -195,25 +196,20 @@ function buildRequests(validBidRequests, bidderRequest) {
 }
 
 function interpretResponse(response, bidRequest) {
-  let bids = response.body;
+  const bids = response.body;
+  const fledgeAuctionConfigs = [];
   const bidResponses = [];
 
-  if (isEmpty(bids)) {
+  if (isEmpty(bids) || typeof bids !== 'object') {
     return bidResponses;
   }
 
-  if (typeof bids !== 'object') {
-    return bidResponses;
-  }
-
-  Object.entries(bids).forEach((entry) => {
-    const [bidID, adUnit] = entry;
-
+  for (const [bidID, adUnit] of Object.entries(bids)) {
     let meta = {
       mediaType: adUnit.mediaType && BIDDER.SUPPORTED_MEDIA_TYPES.includes(adUnit.mediaType) ? adUnit.mediaType : BANNER
     };
 
-    if (adUnit.metadata && adUnit.metadata.landingPageDomain) {
+    if (adUnit.metadata?.landingPageDomain) {
       meta.clickUrl = adUnit.metadata.landingPageDomain[0];
       meta.advertiserDomains = adUnit.metadata.landingPageDomain;
     }
@@ -243,9 +239,23 @@ function interpretResponse(response, bidRequest) {
     }
 
     bidResponses.push(bidResponse);
-  })
 
-  return bidResponses;
+    if (adUnit.auctionConfig) {
+      fledgeAuctionConfigs.push({
+        bidId: bidID,
+        config: adUnit.auctionConfig
+      })
+    }
+  }
+
+  if (fledgeAuctionConfigs.length > 0) {
+    return {
+      bids: bidResponses,
+      fledgeAuctionConfigs
+    }
+  } else {
+    return bidResponses;
+  }
 }
 
 function getUserSyncs(syncOptions, _, gdprConsent, usPrivacy, gppConsent) {
@@ -289,6 +299,13 @@ function onTimeout(timeoutData) {
   timeoutData.forEach((bid) => {
     sendTimeoutData(bid.auctionId, bid.timeout);
   });
+}
+
+function getExtensions(ortb2, refererInfo) {
+  const ext = {};
+  if (ortb2) ext.ortb2 = ortb2;
+  if (refererInfo) ext.refererInfo = refererInfo;
+  return ext;
 }
 
 function _generateRandomUUID() {

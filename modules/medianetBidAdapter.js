@@ -57,7 +57,7 @@ mnData.urlData = {
 };
 
 const aliases = [
-  { code: TRUSTEDSTACK_CODE },
+  { code: TRUSTEDSTACK_CODE, gvlid: 1288 },
 ];
 
 getGlobal().medianetGlobals = getGlobal().medianetGlobals || {};
@@ -199,7 +199,7 @@ function extParams(bidRequest, bidderRequests) {
   );
 }
 
-function slotParams(bidRequest) {
+function slotParams(bidRequest, bidderRequests) {
   // check with Media.net Account manager for  bid floor and crid parameters
   let params = {
     id: bidRequest.bidId,
@@ -261,7 +261,9 @@ function slotParams(bidRequest) {
   if (floorInfo && floorInfo.length > 0) {
     params.bidfloors = floorInfo;
   }
-
+  if (bidderRequests.fledgeEnabled) {
+    params.ext.ae = bidRequest?.ortb2Imp?.ext?.ae;
+  }
   return params;
 }
 
@@ -342,7 +344,7 @@ function generatePayload(bidRequests, bidderRequests) {
     ext: extParams(bidRequests[0], bidderRequests),
     // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
     id: bidRequests[0].auctionId,
-    imp: bidRequests.map(request => slotParams(request)),
+    imp: bidRequests.map(request => slotParams(request, bidderRequests)),
     ortb2: bidderRequests.ortb2,
     tmax: bidderRequests.timeout
   }
@@ -481,26 +483,33 @@ export const spec = {
    * Unpack the response from the server into a list of bids.
    *
    * @param {*} serverResponse A successful response from the server.
-   * @return {Bid[]} An array of bids which were nested inside the server.
+   * @returns {{bids: *[], fledgeAuctionConfigs: *[]} | *[]} An object containing bids and fledgeAuctionConfigs if present, otherwise an array of bids.
    */
   interpretResponse: function(serverResponse, request) {
     let validBids = [];
-
     if (!serverResponse || !serverResponse.body) {
       logInfo(`${BIDDER_CODE} : response is empty`);
       return validBids;
     }
-
     let bids = serverResponse.body.bidList;
     if (!isArray(bids) || bids.length === 0) {
       logInfo(`${BIDDER_CODE} : no bids`);
+    } else {
+      validBids = bids.filter(bid => isValidBid(bid));
+      validBids.forEach(addRenderer);
+    }
+    const fledgeAuctionConfigs = deepAccess(serverResponse, 'body.ext.paApiAuctionConfigs') || [];
+    const ortbAuctionConfigs = deepAccess(serverResponse, 'body.ext.igi') || [];
+    if (fledgeAuctionConfigs.length === 0 && ortbAuctionConfigs.length === 0) {
       return validBids;
     }
-    validBids = bids.filter(bid => isValidBid(bid));
-
-    validBids.forEach(addRenderer);
-
-    return validBids;
+    if (ortbAuctionConfigs.length > 0) {
+      fledgeAuctionConfigs.push(...ortbAuctionConfigs.map(({igs}) => igs || []).flat());
+    }
+    return {
+      bids: validBids,
+      fledgeAuctionConfigs,
+    }
   },
   getUserSyncs: function(syncOptions, serverResponses) {
     let cookieSyncUrls = fetchCookieSyncUrls(serverResponses);

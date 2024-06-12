@@ -4,11 +4,11 @@ import {config} from 'src/config.js';
 import adaptermanager from 'src/adapterManager.js';
 import {server} from 'test/mocks/xhr.js';
 import {expectEvents, fireEvents} from '../../helpers/analytics.js';
+import { EVENTS } from 'src/constants.js';
 
 var assert = require('assert');
 
 let events = require('src/events');
-let constants = require('src/constants.json');
 
 /**
  * Emit analytics events
@@ -18,7 +18,7 @@ let constants = require('src/constants.json');
  */
 function emitEvent(eventType, event, auctionId) {
   event.auctionId = auctionId;
-  events.emit(constants.EVENTS[eventType], event);
+  events.emit(EVENTS[eventType], event);
 }
 
 let auctionStartTimestamp = Date.now();
