@@ -14,6 +14,8 @@ describe('Azerion Edge RTD submodule', function () {
   const process = { key: 'value' };
   const dataProvider = { name: 'azerionedge', waitForIt: true };
   const tcfGDPRNotApplicable = { gdprApplies: false };
+  const uspNotProvided = { usp: undefined };
+  const ignoreConsent = {gdpr: tcfGDPRNotApplicable, usp: uspNotProvided};
 
   let reqBidsConfigObj;
   let storageStub;
@@ -34,7 +36,7 @@ describe('Azerion Edge RTD submodule', function () {
     let returned;
 
     beforeEach(function () {
-      returned = azerionedgeRTD.azerionedgeSubmodule.init(dataProvider, {gdpr: tcfGDPRNotApplicable});
+      returned = azerionedgeRTD.azerionedgeSubmodule.init(dataProvider, ignoreConsent);
     });
 
     it('should return true', function () {
@@ -61,7 +63,7 @@ describe('Azerion Edge RTD submodule', function () {
         returned = azerionedgeRTD.azerionedgeSubmodule.init({
           ...dataProvider,
           params: { key },
-        }, {gdpr: tcfGDPRNotApplicable});
+        }, ignoreConsent);
       });
 
       it('should return true', function () {
@@ -81,7 +83,7 @@ describe('Azerion Edge RTD submodule', function () {
         returned = azerionedgeRTD.azerionedgeSubmodule.init({
           ...dataProvider,
           params: { process },
-        }, {gdpr: tcfGDPRNotApplicable});
+        }, ignoreConsent);
       });
 
       it('should return true', function () {
@@ -117,7 +119,7 @@ describe('Azerion Edge RTD submodule', function () {
       });
 
       it(`for ${info} should load=${expected} the external script`, () => {
-        azerionedgeRTD.azerionedgeSubmodule.init(dataProvider, {gdpr});
+        azerionedgeRTD.azerionedgeSubmodule.init(dataProvider, {gdpr, usp: uspNotProvided});
         expect(loadExternalScript.called).to.equal(expected);
       });
 
@@ -126,7 +128,62 @@ describe('Azerion Edge RTD submodule', function () {
 
         beforeEach(function () {
           callbackStub = sinon.mock();
-          azerionedgeRTD.azerionedgeSubmodule.getBidRequestData(reqBidsConfigObj, callbackStub, dataProvider, {gdpr});
+          azerionedgeRTD.azerionedgeSubmodule.getBidRequestData(reqBidsConfigObj, callbackStub, dataProvider, {gdpr, usp: uspNotProvided});
+        });
+
+        it(`does call=${expected} the local storage looking for audiences`, function () {
+          expect(storageStub.called).to.equal(expected);
+        });
+
+        it('calls callback always', function () {
+          expect(callbackStub.called).to.be.true;
+        });
+      });
+    });
+  });
+
+  describe('USP acccess', () => {
+    const uspMalformed = -1;
+    const uspNotApplicable = '1---';
+    const uspUserNotifiedOptedOut = '1YY-';
+    const uspUserNotifiedNotOptedOut = '1YN-';
+    const uspUserNotifiedUnknownOptedOut = '1Y--';
+    const uspUserNotNotifiedOptedOut = '1NY-';
+    const uspUserNotNotifiedNotOptedOut = '1NN-';
+    const uspUserNotNotifiedUnknownOptedOut = '1N--';
+    const uspUserUnknownNotifiedOptedOut = '1-Y-';
+    const uspUserUnknownNotifiedNotOptedOut = '1-N-';
+    const uspUserUnknownNotifiedUnknownOptedOut = '1---';
+
+    [
+      ['malformed', uspMalformed, true],
+      ['not applicable', uspNotApplicable, true],
+      ['not provided', uspNotProvided, true],
+      ['user notified and opted out', uspUserNotifiedOptedOut, false],
+      ['user notified and not opted out', uspUserNotifiedNotOptedOut, true],
+      ['user notified and unknown opted out', uspUserNotifiedUnknownOptedOut, true],
+      ['user not notified and opted out', uspUserNotNotifiedOptedOut, false],
+      ['user not notified and not opted out', uspUserNotNotifiedNotOptedOut, false],
+      ['user not notified and unknown opted out', uspUserNotNotifiedUnknownOptedOut, false],
+      ['user unknown notified and opted out', uspUserUnknownNotifiedOptedOut, false],
+      ['user unknown notified and not opted out', uspUserUnknownNotifiedNotOptedOut, true],
+      ['user unknown notified and unknown opted out', uspUserUnknownNotifiedUnknownOptedOut, true],
+    ].forEach(([info, usp, expected]) => {
+      it(`for ${info} should return ${expected}`, () => {
+        expect(azerionedgeRTD.hasUSPAccess({usp})).to.equal(expected);
+      });
+
+      it(`for ${info} should load=${expected} the external script`, () => {
+        azerionedgeRTD.azerionedgeSubmodule.init(dataProvider, {gdpr: tcfGDPRNotApplicable, usp});
+        expect(loadExternalScript.called).to.equal(expected);
+      });
+
+      describe('for bid request data', function () {
+        let callbackStub;
+
+        beforeEach(function () {
+          callbackStub = sinon.mock();
+          azerionedgeRTD.azerionedgeSubmodule.getBidRequestData(reqBidsConfigObj, callbackStub, dataProvider, {gdpr: tcfGDPRNotApplicable, usp});
         });
 
         it(`does call=${expected} the local storage looking for audiences`, function () {

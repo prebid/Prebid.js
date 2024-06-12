@@ -109,7 +109,7 @@ export function setAudiencesToBidders(reqBidsConfigObj, config, audiences) {
  * @return {boolean}
  */
 function init(config, userConsent) {
-  if (hasGDPRAccess(userConsent)) {
+  if (hasUserConsented(userConsent)) {
     attachScript(config);
   }
   return true;
@@ -158,6 +158,31 @@ export function hasGDPRAccess(userConsent) {
 }
 
 /**
+ * Checks if USP gives us access through the userConsent object.
+ *
+ * @param {Object} userConsent
+ *
+ * @return {boolean}
+ */
+export function hasUSPAccess(userConsent) {
+  const uspProvided = userConsent?.usp;
+  const hasProvidedUserNotice = uspProvided?.[1] !== 'N';
+  const hasNotOptedOut = uspProvided?.[2] !== 'Y';
+  return !uspProvided || (hasProvidedUserNotice && hasNotOptedOut);
+}
+
+/**
+ * Checks if GDPR/USP gives us access through the userConsent object.
+ *
+ * @param {Object} userConsent
+ *
+ * @return {boolean}
+ */
+export function hasUserConsented(userConsent) {
+  return hasGDPRAccess(userConsent) && hasUSPAccess(userConsent);
+}
+
+/**
  * Real-time user audiences retrieval
  *
  * @param {Object} reqBidsConfigObj
@@ -173,7 +198,7 @@ export function getBidRequestData(
   config,
   userConsent
 ) {
-  if (hasGDPRAccess(userConsent)) {
+  if (hasUserConsented(userConsent)) {
     const audiences = getAudiences();
     if (audiences.length > 0) {
       setAudiencesToBidders(reqBidsConfigObj, config, audiences);
