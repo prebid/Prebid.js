@@ -16,6 +16,7 @@ import {
   deepSetValue,
   generateUUID,
   getDomLoadingDuration,
+  getSafeframeGeometry,
   getUniqueIdentifierStr,
   getWindowSelf,
   getWindowTop,
@@ -432,16 +433,14 @@ function getSlotPosition(adUnit) {
   const position = { x: 0, y: 0 };
 
   if (isSafeFrameWindow()) {
-    const ws = getWindowSelf();
+    const { self } = getSafeframeGeometry() || {};
 
-    const sfGeom = (typeof ws.$sf.ext.geom === 'function') ? ws.$sf.ext.geom() : null;
-
-    if (!sfGeom || !sfGeom.self) {
+    if (!self) {
       return '';
     }
 
-    position.x = Math.round(sfGeom.self.t);
-    position.y = Math.round(sfGeom.self.l);
+    position.x = Math.round(self.t);
+    position.y = Math.round(self.l);
   } else {
     try {
       // window.top based computing
@@ -517,16 +516,14 @@ function getViewPortDimensions() {
   const viewportDims = { w: 0, h: 0 };
 
   if (isSafeFrameWindow()) {
-    const ws = getWindowSelf();
+    const { win } = getSafeframeGeometry() || {};
 
-    const sfGeom = (typeof ws.$sf.ext.geom === 'function') ? ws.$sf.ext.geom() : null;
-
-    if (!sfGeom || !sfGeom.win) {
+    if (!win) {
       return '';
     }
 
-    viewportDims.w = Math.round(sfGeom.win.w);
-    viewportDims.h = Math.round(sfGeom.win.h);
+    viewportDims.w = Math.round(win.w);
+    viewportDims.h = Math.round(win.h);
   } else {
     // window.top based computing
     const wt = getWindowTop();
