@@ -235,16 +235,12 @@ export const getDeviceType = () => {
     /ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(
       navigator.userAgent.toLowerCase()
     )
-  ) {
-    return 'tablet';
-  }
+  ) return 'tablet';
   if (
     /iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(
       navigator.userAgent.toLowerCase()
     )
-  ) {
-    return 'mobile';
-  }
+  ) return 'mobile';
   return 'desktop';
 };
 
@@ -279,12 +275,24 @@ export const getBrowser = () => {
  * @returns {string}
  */
 export const getOS = () => {
-  if (navigator.userAgent.indexOf('Android') != -1) return 'Android';
-  if (navigator.userAgent.indexOf('like Mac') != -1) return 'iOS';
-  if (navigator.userAgent.indexOf('Win') != -1) return 'Windows';
-  if (navigator.userAgent.indexOf('Mac') != -1) return 'Macintosh';
-  if (navigator.userAgent.indexOf('Linux') != -1) return 'Linux';
-  if (navigator.appVersion.indexOf('X11') != -1) return 'Unix';
+  if (navigator.userAgent.indexOf('Android') != -1) {
+    return 'Android';
+  }
+  if (navigator.userAgent.indexOf('like Mac') != -1) {
+    return 'iOS';
+  }
+  if (navigator.userAgent.indexOf('Win') != -1) {
+    return 'Windows';
+  }
+  if (navigator.userAgent.indexOf('Mac') != -1) {
+    return 'Macintosh';
+  }
+  if (navigator.userAgent.indexOf('Linux') != -1) {
+    return 'Linux';
+  }
+  if (navigator.appVersion.indexOf('X11') != -1) {
+    return 'Unix';
+  }
   return 'Others';
 };
 
