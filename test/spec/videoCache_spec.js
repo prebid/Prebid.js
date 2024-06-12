@@ -1,9 +1,10 @@
 import chai from 'chai';
-import {batchingCache, getCacheUrl, store} from 'src/videoCache.js';
+import {batchingCache, getCacheUrl, store, _internal, storeBatch} from 'src/videoCache.js';
 import {config} from 'src/config.js';
 import {server} from 'test/mocks/xhr.js';
 import {auctionManager} from '../../src/auctionManager.js';
 import {AuctionIndex} from '../../src/auctionIndex.js';
+import * as utils from 'src/utils.js';
 
 const should = chai.should();
 
@@ -366,6 +367,35 @@ describe('The video cache', function () {
       return callback;
     }
   });
+
+  describe('storeBatch', () => {
+    let sandbox;
+    let err, cacheIds
+    beforeEach(() => {
+      err = null;
+      cacheIds = [];
+      sandbox = sinon.createSandbox();
+      sandbox.stub(utils, 'logError');
+      sandbox.stub(_internal, 'store').callsFake((_, cb) => cb(err, cacheIds));
+    });
+    afterEach(() => {
+      sandbox.restore();
+    })
+    it('should log an error when store replies with an error', () => {
+      err = new Error('err');
+      storeBatch([]);
+      sinon.assert.called(utils.logError);
+    });
+    it('should not process returned uuids if they do not match the batch size', () => {
+      const el = {auctionInstance: {}, bidResponse: {}, afterBidAdded: sinon.stub()}
+      const batch = [el, el];
+      cacheIds = [{uuid: 'mock-id'}]
+      storeBatch(batch);
+      expect(el.bidResponse.videoCacheKey).to.not.exist;
+      sinon.assert.notCalled(batch[0].afterBidAdded);
+      sinon.assert.called(utils.logError);
+    })
+  })
 });
 
 describe('The getCache function', function () {

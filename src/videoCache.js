@@ -12,7 +12,7 @@
 import {ajaxBuilder} from './ajax.js';
 import {config} from './config.js';
 import {auctionManager} from './auctionManager.js';
-import {logWarn} from './utils.js';
+import {logError, logWarn} from './utils.js';
 import {addBidToAuction} from './auction.js';
 
 /**
@@ -166,13 +166,19 @@ export const _internal = {
   store
 }
 
-const storeInCache = (batch) => {
-  _internal.store(batch.map(entry => entry.bidResponse), function (error, cacheIds) {
-    cacheIds.forEach((cacheId, i) => {
-      const {auctionInstance, bidResponse, afterBidAdded} = batch[i];
-      if (error) {
-        logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
-      } else {
+export function storeBatch(batch) {
+  const bids = batch.map(entry => entry.bidResponse)
+  function err(msg) {
+    logError(`Failed to save to the video cache: ${msg}. Video bids will be discarded:`, bids)
+  }
+  _internal.store(bids, function (error, cacheIds) {
+    if (error) {
+      err(error)
+    } else if (batch.length !== cacheIds.length) {
+      logError(`expected ${batch.length} cache IDs, got ${cacheIds.length} instead`)
+    } else {
+      cacheIds.forEach((cacheId, i) => {
+        const {auctionInstance, bidResponse, afterBidAdded} = batch[i];
         if (cacheId.uuid === '') {
           logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
         } else {
@@ -183,8 +189,8 @@ const storeInCache = (batch) => {
           addBidToAuction(auctionInstance, bidResponse);
           afterBidAdded();
         }
-      }
-    });
+      });
+    }
   });
 };
 
@@ -200,7 +206,7 @@ if (FEATURES.VIDEO) {
   });
 }
 
-export const batchingCache = (timeout = setTimeout, cache = storeInCache) => {
+export const batchingCache = (timeout = setTimeout, cache = storeBatch) => {
   let batches = [[]];
   let debouncing = false;
   const noTimeout = cb => cb();
