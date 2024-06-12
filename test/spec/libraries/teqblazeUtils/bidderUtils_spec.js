@@ -1,11 +1,14 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/qtBidAdapter.js';
-import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
-import { getUniqueIdentifierStr } from '../../../src/utils.js';
+import { isBidRequestValid, buildRequests, interpretResponse, getUserSyncs } from '../../../../libraries/teqblazeUtils/bidderUtils.js';
+import { BANNER, VIDEO, NATIVE } from '../../../../src/mediaTypes.js';
+import { getUniqueIdentifierStr } from '../../../../src/utils.js';
 
-const bidder = 'qt';
+const bidder = 'bidder';
+const DOMAIN = 'test.org';
+const AD_URL = `https://${DOMAIN}/pbjs`;
+const SYNC_URL = `https://${DOMAIN}`;
 
-describe('QTBidAdapter', function () {
+describe('TeqBlazeBidderUtils', function () {
   const userIdAsEids = [{
     source: 'test.org',
     uids: [{
@@ -102,6 +105,13 @@ describe('QTBidAdapter', function () {
       }
     },
     timeout: 500
+  };
+
+  const spec = {
+    isBidRequestValid,
+    buildRequests: buildRequests(AD_URL),
+    interpretResponse,
+    getUserSyncs: getUserSyncs(SYNC_URL)
   };
 
   describe('isBidRequestValid', function () {
@@ -480,7 +490,7 @@ describe('QTBidAdapter', function () {
       expect(syncData[0].type).to.be.a('string')
       expect(syncData[0].type).to.equal('image')
       expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://cs.qt.io/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0')
+      expect(syncData[0].url).to.equal(`https://${DOMAIN}/image?pbjs=1&gdpr=1&gdpr_consent=ALL&coppa=0`)
     });
     it('Should return array of objects with proper sync config , include CCPA', function() {
       const syncData = spec.getUserSyncs({}, {}, {}, {
@@ -491,7 +501,7 @@ describe('QTBidAdapter', function () {
       expect(syncData[0].type).to.be.a('string')
       expect(syncData[0].type).to.equal('image')
       expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://cs.qt.io/image?pbjs=1&ccpa_consent=1---&coppa=0')
+      expect(syncData[0].url).to.equal(`https://${DOMAIN}/image?pbjs=1&ccpa_consent=1---&coppa=0`)
     });
     it('Should return array of objects with proper sync config , include GPP', function() {
       const syncData = spec.getUserSyncs({}, {}, {}, {}, {
@@ -503,7 +513,7 @@ describe('QTBidAdapter', function () {
       expect(syncData[0].type).to.be.a('string')
       expect(syncData[0].type).to.equal('image')
       expect(syncData[0].url).to.be.a('string')
-      expect(syncData[0].url).to.equal('https://cs.qt.io/image?pbjs=1&gpp=abc123&gpp_sid=8&coppa=0')
+      expect(syncData[0].url).to.equal(`https://${DOMAIN}/image?pbjs=1&gpp=abc123&gpp_sid=8&coppa=0`)
     });
   });
 });
