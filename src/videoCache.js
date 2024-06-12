@@ -166,7 +166,7 @@ export const _internal = {
   store
 }
 
-const _storeInCache = (batch) => {
+const storeInCache = (batch) => {
   _internal.store(batch.map(entry => entry.bidResponse), function (error, cacheIds) {
     cacheIds.forEach((cacheId, i) => {
       const {auctionInstance, bidResponse, afterBidAdded} = batch[i];
@@ -187,5 +187,41 @@ const _storeInCache = (batch) => {
     });
   });
 };
-export const storeInCache = FEATURES.VIDEO ? _storeInCache : () => {
+
+let batchSize, batchTimeout;
+if (FEATURES.VIDEO) {
+  config.getConfig('cache', (cacheConfig) => {
+    batchSize = typeof cacheConfig.cache.batchSize === 'number' && cacheConfig.cache.batchSize > 0
+      ? cacheConfig.cache.batchSize
+      : 1;
+    batchTimeout = typeof cacheConfig.cache.batchTimeout === 'number' && cacheConfig.cache.batchTimeout > 0
+      ? cacheConfig.cache.batchTimeout
+      : 0;
+  });
+}
+
+export const batchingCache = (timeout = setTimeout, cache = storeInCache) => {
+  let batches = [[]];
+  let debouncing = false;
+  const noTimeout = cb => cb();
+
+  return function (auctionInstance, bidResponse, afterBidAdded) {
+    const batchFunc = batchTimeout > 0 ? timeout : noTimeout;
+    if (batches[batches.length - 1].length >= batchSize) {
+      batches.push([]);
+    }
+
+    batches[batches.length - 1].push({auctionInstance, bidResponse, afterBidAdded});
+
+    if (!debouncing) {
+      debouncing = true;
+      batchFunc(() => {
+        batches.forEach(cache);
+        batches = [[]];
+        debouncing = false;
+      }, batchTimeout);
+    }
+  };
 };
+
+export const batchAndStore = batchingCache();

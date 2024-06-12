@@ -82,7 +82,7 @@ import {
 } from './utils.js';
 import {getPriceBucketString} from './cpmBucketManager.js';
 import {getNativeTargeting, isNativeResponse, setNativeResponseProperties} from './native.js';
-import {storeInCache} from './videoCache.js';
+import {batchAndStore} from './videoCache.js';
 import {Renderer} from './Renderer.js';
 import {config} from './config.js';
 import {userSync} from './userSync.js';
@@ -580,44 +580,10 @@ function tryAddVideoBid(auctionInstance, bidResponse, afterBidAdded, {index = au
   }
 }
 
-let batchSize, batchTimeout;
-config.getConfig('cache', (cacheConfig) => {
-  batchSize = typeof cacheConfig.cache.batchSize === 'number' && cacheConfig.cache.batchSize > 0
-    ? cacheConfig.cache.batchSize
-    : 1;
-  batchTimeout = typeof cacheConfig.cache.batchTimeout === 'number' && cacheConfig.cache.batchTimeout > 0
-    ? cacheConfig.cache.batchTimeout
-    : 0;
-});
-
-export const batchingCache = (timeout = setTimeout, cache = storeInCache) => {
-  let batches = [[]];
-  let debouncing = false;
-  const noTimeout = cb => cb();
-
-  return function(auctionInstance, bidResponse, afterBidAdded) {
-    const batchFunc = batchTimeout > 0 ? timeout : noTimeout;
-    if (batches[batches.length - 1].length >= batchSize) {
-      batches.push([]);
-    }
-
-    batches[batches.length - 1].push({auctionInstance, bidResponse, afterBidAdded});
-
-    if (!debouncing) {
-      debouncing = true;
-      batchFunc(() => {
-        batches.forEach(cache);
-        batches = [[]];
-        debouncing = false;
-      }, batchTimeout);
-    }
-  }
-};
-
-const batchAndStore = batchingCache();
-
 export const callPrebidCache = hook('async', function(auctionInstance, bidResponse, afterBidAdded, videoMediaType) {
-  batchAndStore(auctionInstance, bidResponse, afterBidAdded);
+  if (FEATURES.VIDEO) {
+    batchAndStore(auctionInstance, bidResponse, afterBidAdded);
+  }
 }, 'callPrebidCache');
 
 /**
