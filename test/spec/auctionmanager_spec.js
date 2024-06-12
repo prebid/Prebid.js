@@ -852,30 +852,6 @@ describe('auctionmanager.js', function () {
         config.resetConfig();
       });
 
-      it('are dropped after their last bid becomes stale (if minBidCacheTTL is set)', () => {
-        config.setConfig({
-          minBidCacheTTL: 0
-        });
-        bids = [
-          {
-            adUnitCode: ADUNIT_CODE,
-            adUnitId: ADUNIT_CODE,
-            ttl: 10
-          }, {
-            adUnitCode: ADUNIT_CODE,
-            adUnitId: ADUNIT_CODE,
-            ttl: 100
-          }
-        ];
-        auction.callBids();
-        return auction.end.then(() => {
-          clock.tick(50 * 1000);
-          expect(auctionManager.getBidsReceived().length).to.equal(2);
-          clock.tick(56 * 1000);
-          expect(auctionManager.getBidsReceived()).to.eql([]);
-        });
-      });
-
       it('are dropped after `minBidCacheTTL` seconds if they had no bid', () => {
         auction.callBids();
         config.setConfig({
@@ -887,31 +863,43 @@ describe('auctionmanager.js', function () {
           expect(auctionManager.getNoBids().length).to.eql(0);
         })
       });
+    });
 
-      Object.entries({
-        'bids': {
-          bd: [{
+    describe('stale bids', () => {
+      let clock, auction;
+      beforeEach(() => {
+        clock = sinon.useFakeTimers();
+        auction = auctionManager.createAuction({adUnits});
+        indexAuctions.push(auction);
+      });
+      afterEach(() => {
+        clock.restore();
+        config.resetConfig();
+      });
+
+      it('are dropped after they expire', () => {
+        bids = [
+          {
+            adId: '1',
             adUnitCode: ADUNIT_CODE,
             adUnitId: ADUNIT_CODE,
             ttl: 10
-          }],
-          entries: () => auctionManager.getBidsReceived()
-        },
-        'no bids': {
-          bd: [],
-          entries: () => auctionManager.getNoBids()
-        }
-      }).forEach(([t, {bd, entries}]) => {
-        it(`with ${t} are never dropped if minBidCacheTTL is not set`, () => {
-          bids = bd;
-          auction.callBids();
-          return auction.end.then(() => {
-            clock.tick(100 * 1000);
-            expect(entries().length > 0).to.be.true;
-          })
-        })
+          }, {
+            adId: '2',
+            adUnitCode: ADUNIT_CODE,
+            adUnitId: ADUNIT_CODE,
+            ttl: 100
+          }
+        ];
+        auction.callBids();
+        return auction.end.then(() => {
+          clock.tick(10 * 1000);
+          expect(auctionManager.getBidsReceived().length).to.equal(1);
+          clock.tick(90 * 1000);
+          expect(auctionManager.getBidsReceived()).to.eql([]);
+        });
       });
-    })
+    });
   });
 
   describe('addBidResponse #1', function () {
