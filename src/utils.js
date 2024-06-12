@@ -1150,3 +1150,42 @@ export function binarySearch(arr, el, key = (el) => el) {
   }
   return left;
 }
+
+/**
+ * Checks if an object has non-serializable properties.
+ * Non-serializable properties are functions and RegExp objects.
+ *
+ * @param {Object} obj - The object to check.
+ * @param {Set} checkedObjects - A set of properties that have already been checked.
+ * @returns {boolean} - Returns true if the object has non-serializable properties, false otherwise.
+ */
+export function hasNonSerializableProperty(obj, checkedObjects = new Set()) {
+  for (const key in obj) {
+    const value = obj[key];
+    const type = typeof value;
+
+    if (
+      value === undefined ||
+      type === 'function' ||
+      type === 'symbol' ||
+      value instanceof RegExp ||
+      value instanceof Map ||
+      value instanceof Set ||
+      value instanceof Date ||
+      (value !== null && type === 'object' && value.hasOwnProperty('toJSON'))
+    ) {
+      return true;
+    }
+    if (value !== null && type === 'object' && value.constructor === Object) {
+      if (checkedObjects.has(value)) {
+        // circular reference, means we have a non-serializable property
+        return true;
+      }
+      checkedObjects.add(value);
+      if (hasNonSerializableProperty(value, checkedObjects)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
