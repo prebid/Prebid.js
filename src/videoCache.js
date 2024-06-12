@@ -12,6 +12,8 @@
 import {ajaxBuilder} from './ajax.js';
 import {config} from './config.js';
 import {auctionManager} from './auctionManager.js';
+import {logWarn} from './utils.js';
+import {addBidToAuction} from './auction.js';
 
 /**
  * Might be useful to be configurable in the future
@@ -159,3 +161,31 @@ export function store(bids, done, getAjax = ajaxBuilder) {
 export function getCacheUrl(id) {
   return `${config.getConfig('cache.url')}?uuid=${id}`;
 }
+
+export const _internal = {
+  store
+}
+
+const _storeInCache = (batch) => {
+  _internal.store(batch.map(entry => entry.bidResponse), function (error, cacheIds) {
+    cacheIds.forEach((cacheId, i) => {
+      const {auctionInstance, bidResponse, afterBidAdded} = batch[i];
+      if (error) {
+        logWarn(`Failed to save to the video cache: ${error}. Video bid must be discarded.`);
+      } else {
+        if (cacheId.uuid === '') {
+          logWarn(`Supplied video cache key was already in use by Prebid Cache; caching attempt was rejected. Video bid must be discarded.`);
+        } else {
+          bidResponse.videoCacheKey = cacheId.uuid;
+          if (!bidResponse.vastUrl) {
+            bidResponse.vastUrl = getCacheUrl(bidResponse.videoCacheKey);
+          }
+          addBidToAuction(auctionInstance, bidResponse);
+          afterBidAdded();
+        }
+      }
+    });
+  });
+};
+export const storeInCache = FEATURES.VIDEO ? _storeInCache : () => {
+};
