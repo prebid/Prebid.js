@@ -16,7 +16,7 @@ export function setRequestExtPrebidAliases(ortbRequest, bidderRequest, context, 
       );
 
       // set alias gvlids if present also
-      const gvlId = bidder?.getSpec?.().gvlid || config.getConfig(`gvlMapping.${bidderRequest.bidderCode}`);
+      const gvlId = config.getConfig(`gvlMapping.${bidderRequest.bidderCode}`) || bidder?.getSpec?.().gvlid;
       if (gvlId) {
         deepSetValue(
           ortbRequest,

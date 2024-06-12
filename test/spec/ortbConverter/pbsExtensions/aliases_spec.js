@@ -99,4 +99,25 @@ describe('PBS - ortb ext.prebid.aliases', () => {
       }
     })
   });
+
+  it('prefers ext.prebid.aliasgvlids.BIDDER set on config over spec', () => {
+    config.setConfig({
+      gvlMapping: {
+        alias: 888
+      }
+    });
+    initAlias({ gvlid: 24 });
+    expect(setAliases({ bidderCode: 'alias' })).to.eql({
+      ext: {
+        prebid: {
+          aliases: {
+            alias: 'bidder'
+          },
+          aliasgvlids: {
+            alias: 888
+          }
+        }
+      }
+    })
+  });
 })
