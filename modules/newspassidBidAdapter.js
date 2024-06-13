@@ -465,10 +465,6 @@ export const spec = {
       if (id5id) {
         ret['id5id'] = id5id;
       }
-      let parrableId = deepAccess(bidRequest.userId, 'parrableId.eid');
-      if (parrableId) {
-        ret['parrableId'] = parrableId;
-      }
       let sharedid = deepAccess(bidRequest.userId, 'sharedid.id');
       if (sharedid) {
         ret['sharedid'] = sharedid;

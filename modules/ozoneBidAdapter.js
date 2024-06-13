@@ -685,10 +685,6 @@ export const spec = {
       if (id5id) {
         ret['id5id'] = id5id;
       }
-      let parrableId = deepAccess(bidRequest.userId, 'parrableId.eid');
-      if (parrableId) {
-        ret['parrableId'] = parrableId;
-      }
       let sharedid = deepAccess(bidRequest.userId, 'sharedid.id');
       if (sharedid) {
         ret['sharedid'] = sharedid;
@@ -768,7 +764,7 @@ export const spec = {
     return ret;
   },
   _unpackVideoConfigIntoIABformat(ret, objConfig) {
-    let arrVideoKeysAllowed = ['mimes', 'minduration', 'maxduration', 'protocols', 'w', 'h', 'startdelay', 'placement', 'linearity', 'skip', 'skipmin', 'skipafter', 'sequence', 'battr', 'maxextended', 'minbitrate', 'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend', 'delivery', 'pos', 'companionad', 'api', 'companiontype'];
+    let arrVideoKeysAllowed = ['mimes', 'minduration', 'maxduration', 'protocols', 'w', 'h', 'startdelay', 'placement', 'plcmt', 'linearity', 'skip', 'skipmin', 'skipafter', 'sequence', 'battr', 'maxextended', 'minbitrate', 'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend', 'delivery', 'pos', 'companionad', 'api', 'companiontype'];
     for (const key in objConfig) {
       var found = false;
       arrVideoKeysAllowed.forEach(function(arg) {
