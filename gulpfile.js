@@ -147,6 +147,17 @@ function makeVerbose(config = webpackConfig) {
   });
 }
 
+function prebidSource(webpackCfg) {
+  var externalModules = helpers.getArgModules();
+
+  const analyticsSources = helpers.getAnalyticsSources();
+  const moduleSources = helpers.getModulePaths(externalModules);
+
+  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+    .pipe(helpers.nameModules(externalModules))
+    .pipe(webpackStream(webpackCfg, webpack));
+}
+
 function makeDevpackPkg(config = webpackConfig) {
   return function() {
     var cloned = _.cloneDeep(config);
@@ -163,14 +174,7 @@ function makeDevpackPkg(config = webpackConfig) {
       .filter((use) => use.loader === 'babel-loader')
       .forEach((use) => use.options = Object.assign({}, use.options, babelConfig));
 
-    var externalModules = helpers.getArgModules();
-
-    const analyticsSources = helpers.getAnalyticsSources();
-    const moduleSources = helpers.getModulePaths(externalModules);
-
-    return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
-      .pipe(helpers.nameModules(externalModules))
-      .pipe(webpackStream(cloned, webpack))
+    return prebidSource(cloned)
       .pipe(gulp.dest('build/dev'))
       .pipe(connect.reload());
   }
@@ -183,14 +187,7 @@ function makeWebpackPkg(config = webpackConfig) {
   }
 
   return function buildBundle() {
-    var externalModules = helpers.getArgModules();
-
-    const analyticsSources = helpers.getAnalyticsSources();
-    const moduleSources = helpers.getModulePaths(externalModules);
-
-    return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
-      .pipe(helpers.nameModules(externalModules))
-      .pipe(webpackStream(cloned, webpack))
+    return prebidSource(cloned)
       .pipe(gulp.dest('build/dist'));
   }
 }
