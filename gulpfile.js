@@ -413,7 +413,9 @@ function runKarma(options, done) {
   // the karma server appears to leak memory; starting it multiple times in a row will run out of heap
   // here we run it in a separate process to bypass the problem
   options = Object.assign({browsers: helpers.parseBrowserArgs(argv)}, options)
-  const child = fork('./karmaRunner.js');
+  const child = fork('./karmaRunner.js', null, {
+    env: Object.assign({}, options.env, process.env)
+  });
   child.on('exit', (exitCode) => {
     if (exitCode) {
       done(new Error('Karma tests failed with exit code ' + exitCode));
@@ -426,7 +428,15 @@ function runKarma(options, done) {
 
 // If --file "<path-to-test-file>" is given, the task will only run tests in the specified file.
 function testCoverage(done) {
-  runKarma({coverage: true, browserstack: false, watch: false, file: argv.file}, done);
+  runKarma({
+    coverage: true,
+    browserstack: false,
+    watch: false,
+    file: argv.file,
+    env: {
+      NODE_OPTIONS: '--max-old-space-size=8096'
+    }
+  }, done);
 }
 
 function coveralls() { // 2nd arg is a dependency: 'test' must be finished
