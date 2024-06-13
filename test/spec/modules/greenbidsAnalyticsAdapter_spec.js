@@ -318,6 +318,7 @@ describe('Greenbids Prebid AnalyticsAdapter Testing', function () {
                     hasBid: true,
                     cpm: 0.09,
                     currency: 'USD',
+                    params: {}
                   }
                 ]
               }
