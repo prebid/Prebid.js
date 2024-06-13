@@ -1,6 +1,6 @@
 name: Check for Duplicated Code
 
-on:
+on: 
   pull_request_target:
     branches:
       - master
@@ -23,10 +23,6 @@ jobs:
     - name: Install dependencies
       run: |
         npm install -g jscpd diff-so-fancy
-
-    - name: Check out PR
-      run: |
-        git checkout ${{ github.event.pull_request.head.sha }}
 
     - name: Create jscpd config file
       run: |
