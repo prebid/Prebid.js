@@ -14,7 +14,7 @@ const MODULE = 'paapiForGpt';
 let getPAAPIConfig;
 
 config.getConfig('paapi', (cfg) => {
-  if (deepAccess(cfg, 'paapi.gpt.configWithTargeting', false)) {
+  if (deepAccess(cfg, 'paapi.gpt.configWithTargeting', true)) {
     logInfo(MODULE, 'enabling PAAPI configuration with setTargetingForGPTAsync')
     targeting.setTargetingForGPT.before(setTargetingHook);
   } else {
