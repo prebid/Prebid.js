@@ -3,7 +3,7 @@ import {
   spec,
   getBidFloor as connatixGetBidFloor
 } from '../../../modules/connatixBidAdapter.js';
-import { BANNER } from '../../../src/mediaTypes.js';
+import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
 
 describe('connatixBidAdapter', function () {
   let bid;
@@ -23,6 +23,16 @@ describe('connatixBidAdapter', function () {
       mediaTypes
     };
   };
+
+  function addVideoToBidMock(bid) {
+    const mediaTypes = {
+      video: {
+        context: 'instream',
+      }
+    }
+
+    bid.mediaTypes = mediaTypes;
+  }
 
   describe('isBidRequestValid', function () {
     this.beforeEach(function () {
@@ -52,7 +62,7 @@ describe('connatixBidAdapter', function () {
       delete bid.mediaTypes;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
-    it('Should return false if banner is missing from mediaTypes ', function () {
+    it('Should return false if banner and video is missing from mediaTypes ', function () {
       delete bid.mediaTypes.banner;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
@@ -66,6 +76,15 @@ describe('connatixBidAdapter', function () {
     });
     it('Should return false if sizes is an empty array', function () {
       bid.mediaTypes.banner.sizes = [];
+      expect(spec.isBidRequestValid(bid)).to.be.false;
+    });
+    it('Should return true if video is set correctly', function () {
+      addVideoToBidMock(bid);
+      expect(spec.isBidRequestValid(bid)).to.be.true;
+    });
+    it('Should return false if context is set to adpod on video media type', function() {
+      addVideoToBidMock(bid);
+      bid.mediaTypes.video.context = 'adpod';
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
     it('Should return true if add an extra field was added to the bidRequest', function () {
@@ -191,6 +210,30 @@ describe('connatixBidAdapter', function () {
 
       expect(bidResponses[0].cpm).to.equal(firstBidCpm);
       expect(bidResponses[1].cpm).to.equal(secondBidCpm);
+    });
+
+    it('Should contain specific values for banner bids', function () {
+      const adHtml = 'ad html'
+      serverResponse.body.Bids = [ { ...Bid, Ad: adHtml } ];
+
+      const bidResponses = spec.interpretResponse(serverResponse);
+      const [ bidResponse ] = bidResponses;
+
+      expect(bidResponse.vastXml).to.be.undefined;
+      expect(bidResponse.ad).to.equal(adHtml);
+      expect(bidResponse.mediaType).to.equal(BANNER);
+    });
+
+    it('Should contain specific values for video bids', function () {
+      const adVastXml = 'ad vast xml'
+      serverResponse.body.Bids = [ { ...Bid, VastXml: adVastXml } ];
+
+      const bidResponses = spec.interpretResponse(serverResponse);
+      const [ bidResponse ] = bidResponses;
+
+      expect(bidResponse.ad).to.be.undefined;
+      expect(bidResponse.vastXml).to.equal(adVastXml);
+      expect(bidResponse.mediaType).to.equal(VIDEO);
     });
   });
 
