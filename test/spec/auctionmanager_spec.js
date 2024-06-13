@@ -27,6 +27,7 @@ import {PrebidServer} from '../../modules/prebidServerBidAdapter/index.js';
 import '../../modules/currency.js'
 import { setConfig as setCurrencyConfig } from '../../modules/currency.js';
 import { REJECTION_REASON } from '../../src/constants.js';
+import { setDocumentHidden } from './unit/utils/deferredTimeout_spec.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -885,6 +886,20 @@ describe('auctionmanager.js', function () {
           expect(auctionManager.getNoBids().length).to.eql(1);
           clock.tick(10 * 10000);
           expect(auctionManager.getNoBids().length).to.eql(0);
+        })
+      });
+
+      it('are not dropped after `minBidCacheTTL` seconds if the page was hidden', () => {
+        auction.callBids();
+        config.setConfig({
+          minBidCacheTTL: 10
+        });
+        return auction.end.then(() => {
+          expect(auctionManager.getNoBids().length).to.eql(1);
+          setDocumentHidden(true);
+          clock.tick(10 * 10000);
+          setDocumentHidden(false);
+          expect(auctionManager.getNoBids().length).to.eql(1);
         })
       });
 
