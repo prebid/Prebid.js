@@ -1758,17 +1758,10 @@ describe('magnite analytics adapter', function () {
       });
     });
     describe('cookieless', () => {
-      // beforeEach(() => {
-      //   magniteAdapter.enableAnalytics({
-      //     options: {
-      //       cookieles: undefined
-      //     }
-      //   });
-      // })
       afterEach(() => {
         magniteAdapter.disableAnalytics();
       })
-      it('should not add cokieless and preserve original rule name', () => {
+      it('should not add cookieless and preserve original rule name', () => {
         // Set the confs
         config.setConfig({
           rubicon: {
