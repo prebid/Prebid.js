@@ -13,5 +13,9 @@ Analytics adapter for Adagio
 ```js
   pbjs.enableAnalytics({
     provider: 'adagio',
+    options: {
+      organizationId: "16421", // provided during integration
+      site: "my-website", // provided during integration
+    }
   });
 ```
