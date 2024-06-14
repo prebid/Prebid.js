@@ -262,21 +262,15 @@ function getBidders(serverResponse) {
 }
 
 function getAd(bid) {
-  let ad, adUrl;
+  const { adm, nurl } = bid;
+  let ad = adm;
 
-  switch (deepAccess(bid, 'ext.prebid.type')) {
-    default:
-      if (bid.adm && bid.nurl) {
-        ad = bid.adm;
-        ad += createTrackPixelHtml(decodeURIComponent(bid.nurl));
-      } else if (bid.adm) {
-        ad = bid.adm;
-      } else if (bid.nurl) {
-        adUrl = bid.nurl;
-      }
+  if (nurl) {
+    const trackingPixel = createTrackPixelHtml(decodeURIComponent(nurl));
+    ad += trackingPixel;
   }
 
-  return { ad, adUrl };
+  return { ad };
 }
 
 registerBidder(spec);
