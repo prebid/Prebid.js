@@ -1,7 +1,6 @@
 import {
   deepAccess,
   logMessage,
-  logError,
   isPlainObject,
   isNumber,
   isArray,
