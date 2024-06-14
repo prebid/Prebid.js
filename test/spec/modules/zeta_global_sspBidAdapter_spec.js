@@ -717,7 +717,7 @@ describe('Zeta Ssp Bid Adapter', function () {
     const request = spec.buildRequests(bannerRequest, bannerRequest[0]);
     const payload = JSON.parse(request.data);
 
-    expect(payload.site.page).to.eql('http://www.zetaglobal.com/page?param=value');
+    expect(payload.site.page).to.eql('zetaglobal.com/page');
     expect(payload.site.inventorypartnerdomain).to.eql('disqus.com');
   });
 });
