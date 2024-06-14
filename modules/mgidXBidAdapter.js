@@ -1,7 +1,6 @@
 import {
   deepAccess,
   logMessage,
-  logError,
   isPlainObject,
   isNumber,
   isArray,
@@ -104,7 +103,6 @@ function getBidFloor(bid) {
     });
     return bidFloor.floor;
   } catch (err) {
-    logError(err);
     return 0;
   }
 }
