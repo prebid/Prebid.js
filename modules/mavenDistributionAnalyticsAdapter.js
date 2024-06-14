@@ -48,6 +48,14 @@ const MAX_BATCH_SIZE_PER_EVENT_TYPE = 32
  * }} AuctionEventArgs
  */
 
+export const getFloor = (fbr) => {
+  let floor = fbr?.getFloor?.()?.floor ?? null;
+  if (floor) {
+    floor = Math.round((floor || 0) * 1000);
+  }
+  return floor
+}
+
 export const getAdIndex = (adUnit) =>
   adUnit.model ? Number(adUnit.model.index) : null
 
@@ -137,11 +145,7 @@ export function summarizeAuctionInit(args, adapterConfig) {
     flattenedBidRequests.forEach(fbr => {
       if (fbr.adUnitCode === adUnit.code) {
         bidders.push(fbr.bidder)
-        let floor = fbr?.getFloor?.()?.floor ?? null;
-        if (floor) {
-          floor = Math.round((floor || 0) * 1000);
-        }
-        floors.push(floor)
+        floors.push(getFloor(fbr))
       }
     })
     bidderss.push(bidders)
@@ -231,6 +235,7 @@ export function summarizeAuctionEnd(args, adapterConfig) {
   const bidStatusss = []
   const bidAmountss = []
   const bidResponseTimess = []
+  const floorss = []
   const flattenedBidRequests = args.bidderRequests.reduce((total, curr) => {
     return [...total, ...curr.bids]
   }, [])
@@ -244,6 +249,7 @@ export function summarizeAuctionEnd(args, adapterConfig) {
     const bidStatuss = []
     const bidAmounts = []
     const bidResponseTimes = []
+    const floors = []
     flattenedBidRequests.forEach(fbr => {
       if (fbr.adUnitCode === adUnit.code) {
         bidders.push(fbr.bidder)
@@ -265,6 +271,7 @@ export function summarizeAuctionEnd(args, adapterConfig) {
             break
           }
         }
+        floors.push(getFloor(fbr))
         bidStatuss.push(bidStatus)
         bidAmounts.push(bidAmount)
         bidResponseTimes.push(bidResponseTime)
@@ -274,6 +281,7 @@ export function summarizeAuctionEnd(args, adapterConfig) {
     bidStatusss.push(bidStatuss)
     bidAmountss.push(bidAmounts)
     bidResponseTimess.push(bidResponseTimes)
+    floorss.push(floors)
   })
 
   args.bidsReceived.forEach(bid => {
@@ -301,6 +309,7 @@ export function summarizeAuctionEnd(args, adapterConfig) {
   eventToSend.bid_statusss = bidStatusss
   eventToSend.bid_amountss = bidAmountss
   eventToSend.bid_response_timess = bidResponseTimess
+  eventToSend.floor_pricess = floorss
   return eventToSend
 }
 
