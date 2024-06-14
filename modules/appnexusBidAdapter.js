@@ -31,10 +31,9 @@ import {APPNEXUS_CATEGORY_MAPPING} from '../libraries/categoryTranslationMapping
 import {
   convertKeywordStringToANMap,
   getANKewyordParamFromMaps,
-  getANKeywordParam,
-  transformBidderParamKeywords
+  getANKeywordParam
 } from '../libraries/appnexusUtils/anKeywords.js';
-import {convertCamelToUnderscore, fill} from '../libraries/appnexusUtils/anUtils.js';
+import {convertCamelToUnderscore, fill, appnexusAliases} from '../libraries/appnexusUtils/anUtils.js';
 import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 
@@ -108,21 +107,7 @@ const storage = getStorageManager({bidderCode: BIDDER_CODE});
 export const spec = {
   code: BIDDER_CODE,
   gvlid: GVLID,
-  aliases: [
-    { code: 'appnexusAst', gvlid: 32 },
-    { code: 'emxdigital', gvlid: 183 },
-    { code: 'emetriq', gvlid: 213 },
-    { code: 'pagescience', gvlid: 32 },
-    { code: 'gourmetads', gvlid: 32 },
-    { code: 'matomy', gvlid: 32 },
-    { code: 'featureforward', gvlid: 32 },
-    { code: 'oftmedia', gvlid: 32 },
-    { code: 'adasta', gvlid: 32 },
-    { code: 'beintoo', gvlid: 618 },
-    { code: 'projectagora', gvlid: 1032 },
-    { code: 'uol', gvlid: 32 },
-    { code: 'adzymic', gvlid: 723 },
-  ],
+  aliases: appnexusAliases,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   /**
@@ -449,51 +434,6 @@ export const spec = {
         url: 'https://acdn.adnxs.com/dmp/async_usersync.html'
       }];
     }
-  },
-
-  transformBidParams: function (params, isOpenRtb, adUnit, bidRequests) {
-    let conversionFn = transformBidderParamKeywords;
-    if (isOpenRtb === true) {
-      let s2sEndpointUrl = null;
-      let s2sConfig = config.getConfig('s2sConfig');
-
-      if (isPlainObject(s2sConfig)) {
-        s2sEndpointUrl = deepAccess(s2sConfig, 'endpoint.p1Consent');
-      } else if (isArray(s2sConfig)) {
-        s2sConfig.forEach(s2sCfg => {
-          if (includes(s2sCfg.bidders, adUnit.bids[0].bidder)) {
-            s2sEndpointUrl = deepAccess(s2sCfg, 'endpoint.p1Consent');
-          }
-        });
-      }
-
-      if (s2sEndpointUrl && s2sEndpointUrl.match('/openrtb2/prebid')) {
-        conversionFn = convertKeywordsToString;
-      }
-    }
-
-    params = convertTypes({
-      'member': 'string',
-      'invCode': 'string',
-      'placementId': 'number',
-      'keywords': conversionFn,
-      'publisherId': 'number'
-    }, params);
-
-    if (isOpenRtb) {
-      Object.keys(params).forEach(paramKey => {
-        let convertedKey = convertCamelToUnderscore(paramKey);
-        if (convertedKey !== paramKey) {
-          params[convertedKey] = params[paramKey];
-          delete params[paramKey];
-        }
-      });
-
-      params.use_pmt_rule = (typeof params.use_payment_rule === 'boolean') ? params.use_payment_rule : false;
-      if (params.use_payment_rule) { delete params.use_payment_rule; }
-    }
-
-    return params;
   }
 };
 
@@ -1254,33 +1194,6 @@ function getBidFloor(bid) {
     return floor.floor;
   }
   return null;
-}
-
-// keywords: { 'genre': ['rock', 'pop'], 'pets': ['dog'] } goes to 'genre=rock,genre=pop,pets=dog'
-function convertKeywordsToString(keywords) {
-  let result = '';
-  Object.keys(keywords).forEach(key => {
-    // if 'text' or ''
-    if (isStr(keywords[key])) {
-      if (keywords[key] !== '') {
-        result += `${key}=${keywords[key]},`
-      } else {
-        result += `${key},`;
-      }
-    } else if (isArray(keywords[key])) {
-      if (keywords[key][0] === '') {
-        result += `${key},`
-      } else {
-        keywords[key].forEach(val => {
-          result += `${key}=${val},`
-        });
-      }
-    }
-  });
-
-  // remove last trailing comma
-  result = result.substring(0, result.length - 1);
-  return result;
 }
 
 registerBidder(spec);

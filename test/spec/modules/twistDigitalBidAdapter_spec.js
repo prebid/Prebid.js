@@ -588,7 +588,7 @@ describe('TwistDigitalBidAdapter', function () {
     it('should set fledge correctly if enabled', function () {
       config.resetConfig();
       const bidderRequest = utils.deepClone(BIDDER_REQUEST);
-      bidderRequest.fledgeEnabled = true;
+      bidderRequest.paapi = {enabled: true};
       deepSetValue(bidderRequest, 'ortb2Imp.ext.ae', 1);
       const requests = adapter.buildRequests([BID], bidderRequest);
       expect(requests[0].data.fledge).to.equal(1);

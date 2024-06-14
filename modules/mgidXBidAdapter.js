@@ -1,7 +1,6 @@
 import {
   deepAccess,
   logMessage,
-  logError,
   isPlainObject,
   isNumber,
   isArray,
@@ -68,6 +67,7 @@ function getPlacementReqData(bid) {
     placement.mimes = mediaTypes[VIDEO].mimes;
     placement.protocols = mediaTypes[VIDEO].protocols;
     placement.startdelay = mediaTypes[VIDEO].startdelay;
+    placement.placement = mediaTypes[VIDEO].placement;
     placement.plcmt = mediaTypes[VIDEO].plcmt;
     placement.skip = mediaTypes[VIDEO].skip;
     placement.skipafter = mediaTypes[VIDEO].skipafter;
@@ -103,7 +103,6 @@ function getBidFloor(bid) {
     });
     return bidFloor.floor;
   } catch (err) {
-    logError(err);
     return 0;
   }
 }
