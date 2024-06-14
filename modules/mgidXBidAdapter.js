@@ -104,7 +104,6 @@ function getBidFloor(bid) {
     });
     return bidFloor.floor;
   } catch (err) {
-    logError(err);
     return 0;
   }
 }
