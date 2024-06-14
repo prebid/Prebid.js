@@ -1,19 +1,19 @@
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
-
 export const MOBIAN_URL = 'http://impact-analytics-staging.themobian.com';
 
 export const mobianBrandSafetySubmodule = {
   name: 'mobianBrandSafety',
   gvlid: null,
   init: init,
-  getTargetingData: getTargetingData
+  getBidRequestData: getBidRequestData
 };
 
 function init() {
   return true;
 }
-function getTargetingData() {
+function getBidRequestData(bidReqConfig, callback, config) {
+  const { site: ortb2Site } = bidReqConfig.ortb2Fragments.global;
   const pageUrl = encodeURIComponent(getPageUrl());
   const requestUrl = `${MOBIAN_URL}?url=${pageUrl}`;
 
@@ -32,12 +32,11 @@ function getTargetingData() {
             break;
           }
         }
-
-        const targeting = {
+        const risk = {
           'mobianGarmRisk': mobianGarmRisk
         };
-
-        resolve(targeting);
+        resolve(risk);
+        ortb2Site.ext.data['mobian'] = risk
       },
       error: function () {
         resolve({});

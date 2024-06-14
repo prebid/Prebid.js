@@ -5,6 +5,21 @@ import * as ajax from 'src/ajax.js';
 
 describe('Mobian RTD Submodule', function () {
   let ajaxStub;
+  let bidReqConfig;
+
+  beforeEach(function () {
+    bidReqConfig = {
+      ortb2Fragments: {
+        global: {
+          site: {
+            ext: {
+              data: {}
+            }
+          }
+        }
+      }
+    };
+  });
 
   afterEach(function () {
     ajaxStub.restore();
@@ -20,13 +35,14 @@ describe('Mobian RTD Submodule', function () {
       });
     });
 
-    return mobianBrandSafetySubmodule.getTargetingData().then((targeting) => {
-      expect(targeting).to.have.property('mobianGarmRisk');
-      expect(targeting['mobianGarmRisk']).to.equal('no_risk');
+    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
+      expect(risk).to.have.property('mobianGarmRisk');
+      expect(risk['mobianGarmRisk']).to.equal('no_risk');
+      expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
     });
   });
 
-  it('should return low_risk when server responds with garm_low_risk', function () {
+  it('should return low_risk when server responds with garm_no_risk', function () {
     ajaxStub = sinon.stub(ajax, 'ajaxBuilder').returns(function(url, callbacks) {
       callbacks.success({
         garm_no_risk: false,
@@ -36,9 +52,10 @@ describe('Mobian RTD Submodule', function () {
       });
     });
 
-    return mobianBrandSafetySubmodule.getTargetingData().then((targeting) => {
-      expect(targeting).to.have.property('mobianGarmRisk');
-      expect(targeting['mobianGarmRisk']).to.equal('low_risk');
+    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
+      expect(risk).to.have.property('mobianGarmRisk');
+      expect(risk['mobianGarmRisk']).to.equal('low_risk');
+      expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
     });
   });
 
@@ -52,9 +69,10 @@ describe('Mobian RTD Submodule', function () {
       });
     });
 
-    return mobianBrandSafetySubmodule.getTargetingData().then((targeting) => {
-      expect(targeting).to.have.property('mobianGarmRisk');
-      expect(targeting['mobianGarmRisk']).to.equal('medium_risk');
+    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
+      expect(risk).to.have.property('mobianGarmRisk');
+      expect(risk['mobianGarmRisk']).to.equal('medium_risk');
+      expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
     });
   });
 
@@ -68,9 +86,10 @@ describe('Mobian RTD Submodule', function () {
       });
     });
 
-    return mobianBrandSafetySubmodule.getTargetingData().then((targeting) => {
-      expect(targeting).to.have.property('mobianGarmRisk');
-      expect(targeting['mobianGarmRisk']).to.equal('high_risk');
+    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
+      expect(risk).to.have.property('mobianGarmRisk');
+      expect(risk['mobianGarmRisk']).to.equal('high_risk');
+      expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
     });
   });
 
@@ -79,9 +98,10 @@ describe('Mobian RTD Submodule', function () {
       callbacks.success('unexpected output not even of the right type');
     });
 
-    return mobianBrandSafetySubmodule.getTargetingData().then((targeting) => {
-      expect(targeting).to.have.property('mobianGarmRisk');
-      expect(targeting['mobianGarmRisk']).to.equal('unknown');
+    return mobianBrandSafetySubmodule.getBidRequestData(bidReqConfig, {}, {}).then((risk) => {
+      expect(risk).to.have.property('mobianGarmRisk');
+      expect(risk['mobianGarmRisk']).to.equal('unknown');
+      expect(bidReqConfig.ortb2Fragments.global.site.ext.data.mobian).to.deep.equal(risk);
     });
   });
 });
