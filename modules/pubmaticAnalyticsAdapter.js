@@ -281,7 +281,7 @@ function isOWPubmaticBid(adapterName) {
   })
 }
 
-function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
+function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid, e) {
   highestBid = (highestBid && highestBid.length > 0) ? highestBid[0] : null;
   return Object.keys(adUnit.bids).reduce(function(partnerBids, bidId) {
     adUnit.bids[bidId].forEach(function(bid) {
@@ -290,6 +290,16 @@ function gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestBid) {
         return;
       }
       const pg = window.parseFloat(Number(bid.bidResponse?.adserverTargeting?.hb_pb || bid.bidResponse?.adserverTargeting?.pwtpb).toFixed(BID_PRECISION));
+
+      const prebidBidsReceived = e?.bidsReceived;
+      if (isArray(prebidBidsReceived) && prebidBidsReceived.length > 0) {
+        prebidBidsReceived.forEach(function(iBid) {
+          if (iBid.adId === bid.adId) {
+            bid.bidderCode = iBid.bidderCode;
+          }
+        });
+      }
+
       partnerBids.push({
         'pn': adapterName,
         'bc': bid.bidderCode || bid.bidder,
@@ -407,7 +417,7 @@ function executeBidsLoggerCall(e, highestCpmBids) {
       'au': origAdUnit.owAdUnitId || getGptSlotInfoForAdUnitCode(adUnitId)?.gptSlot || adUnitId,
       'mt': getAdUnitAdFormats(origAdUnit),
       'sz': getSizesForAdUnit(adUnit, adUnitId),
-      'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId)),
+      'ps': gatherPartnerBidsForAdUnitForLogger(adUnit, adUnitId, highestCpmBids.filter(bid => bid.adUnitCode === adUnitId), e),
       'fskp': floorData && floorFetchStatus ? (floorData.floorRequestData ? (floorData.floorRequestData.skipped == false ? 0 : 1) : undefined) : undefined,
       'sid': generateUUID()
     };
