@@ -27,7 +27,7 @@ import {PrebidServer} from '../../modules/prebidServerBidAdapter/index.js';
 import '../../modules/currency.js'
 import { setConfig as setCurrencyConfig } from '../../modules/currency.js';
 import { REJECTION_REASON } from '../../src/constants.js';
-import { setDocumentHidden } from './unit/utils/deferredTimeout_spec.js';
+import { setDocumentHidden } from './unit/utils/focusTimeout_spec.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
