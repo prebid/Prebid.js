@@ -34,6 +34,8 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const requests = [];
 
+    const requestsMap = new Map();
+
     _each(validBidRequests, function (bid) {
       const id = getBidIdParameter('placement_id', bid.params);
       const accountId = getBidIdParameter('account_id', bid.params);
@@ -66,6 +68,7 @@ export const spec = {
         device,
         site,
         imp: [],
+        test: 1,
       };
 
       const imp = {
@@ -85,7 +88,16 @@ export const spec = {
         };
       }
 
-      payload.imp.push(imp);
+      // Check if a request already exists for the current bidderRequestId
+      const existingRequest = requestsMap.get(bid.bidderRequestId);
+      if (existingRequest) {
+        // Append the new imp to the existing payload.imp array
+        existingRequest.payload.imp.push(imp);
+      } else {
+        // Create a new request with the current payload
+        payload.imp.push(imp);
+        requestsMap.set(bid.bidderRequestId, { payload, bidId, auctionId, params: bid.params });
+      }
 
       const gdprConsent = bidderRequest && bidderRequest.gdprConsent;
       const uspConsent = bidderRequest && bidderRequest.uspConsent;
@@ -105,8 +117,11 @@ export const spec = {
           }
         }
       }
-      const params = bid.params;
+    });
 
+    // Push all the requests from the Map to the requests array
+    requestsMap.forEach((requestData) => {
+      const { payload, bidId, auctionId, params } = requestData;
       requests.push({
         method: 'POST',
         url: ENDPOINT,
@@ -115,12 +130,13 @@ export const spec = {
           contentType: 'text/plain',
           withCredentials: true,
         },
-
         bidId,
         params,
         auctionId,
       });
     });
+
+    logWarn(requests);
 
     return requests;
   },
@@ -149,8 +165,8 @@ export const spec = {
           requestId,
           params,
           cpm: bid.price,
-          width: bid.w,
-          height: bid.h,
+          width: bid.w || 300,
+          height: bid.h || 600,
           creativeId: bid.id,
           currency: serverBody.cur,
           netRevenue: true,
