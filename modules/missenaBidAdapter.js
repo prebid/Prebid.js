@@ -138,16 +138,17 @@ export const spec = {
         timeout: bidderRequest.timeout,
       };
 
-      if (bidderRequest && bidderRequest.refererInfo) {
+      if (bidderRequest?.refererInfo) {
         payload.referer = bidderRequest.refererInfo.ref;
         payload.referer_canonical = bidderRequest.refererInfo.canonicalUrl;
         payload.location = bidderRequest.refererInfo.topmostLocation;
       }
 
-      if (bidderRequest && bidderRequest.gdprConsent) {
+      if (bidderRequest?.gdprConsent) {
         payload.consent_string = bidderRequest.gdprConsent.consentString;
         payload.consent_required = bidderRequest.gdprConsent.gdprApplies;
       }
+
       const bidParams = bidRequest.params;
       const baseUrl = bidParams.baseUrl || ENDPOINT_URL;
       if (bidParams.test) {
