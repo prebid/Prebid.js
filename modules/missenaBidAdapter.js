@@ -26,22 +26,10 @@ const EVENTS_DOMAIN_DEV = 'events.staging.missena.xyz';
 const USER_ID_KEY = 'hb_missena_uid';
 const USER_ID_COOKIE_EXP = 2592000000;
 
-function validateUUID(uuid) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    uuid
-  );
-}
-
 function getUserIdFromStorage() {
-  const id = storage.localStorageIsEnabled()
+  return storage.localStorageIsEnabled()
     ? storage.getDataFromLocalStorage(USER_ID_KEY)
     : storage.getCookie(USER_ID_KEY);
-
-  if (!validateUUID(id)) {
-    return;
-  }
-
-  return id;
 }
 
 function setUserId(userId) {
