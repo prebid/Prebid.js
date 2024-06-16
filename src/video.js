@@ -25,7 +25,8 @@ export function fillVideoDefaults(adUnit) {
 /**
  * Validate that the assets required for video context are present on the bid
  * @param {VideoBid} bid Video bid to validate
- * @param index
+ * @param {Object} [options] - Options object
+ * @param {Object} [options.index=auctionManager.index] - Index object, defaulting to `auctionManager.index`
  * @return {Boolean} If object is valid
  */
 export function isValidVideoBid(bid, {index = auctionManager.index} = {}) {

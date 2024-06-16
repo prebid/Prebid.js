@@ -1,4 +1,3 @@
-import { logMessage } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -74,24 +73,19 @@ export const spec = {
 
     let winTop = window;
     let location;
-    // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
-    try {
-      location = new URL(bidderRequest.refererInfo.page)
-      winTop = window.top;
-    } catch (e) {
-      location = winTop.location;
-      logMessage(e);
-    };
+    location = bidderRequest?.refererInfo ?? null;
     let placements = [];
     let request = {
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
       'language': (navigator && navigator.language) ? navigator.language : '',
       'secure': 1,
-      'host': location.host,
-      'page': location.pathname,
+      'host': location?.domain ?? '',
+      'page': location?.page ?? '',
       'coppa': config.getConfig('coppa') === true ? 1 : 0,
-      'placements': placements
+      'placements': placements,
+      'eeid': validBidRequests[0]?.userIdAsEids,
+      'ifa': bidderRequest?.ortb2?.device?.ifa,
     };
     request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
     if (bidderRequest) {
@@ -111,8 +105,10 @@ export const spec = {
 
     for (let i = 0; i < len; i++) {
       let bid = validBidRequests[i];
+
       if (i === 0) adUrl = getAdUrlByRegion(bid);
-      let traff = bid.params.traffic || BANNER
+
+      let traff = bid.params.traffic || BANNER;
       placements.push({
         placementId: bid.params.sourceid,
         bidId: bid.bidId,

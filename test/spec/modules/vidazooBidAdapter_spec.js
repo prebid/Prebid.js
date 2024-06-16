@@ -21,7 +21,7 @@ import {BANNER, VIDEO} from '../../../src/mediaTypes';
 import {config} from '../../../src/config';
 import {deepSetValue} from 'src/utils.js';
 
-export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
+export const TEST_ID_SYSTEMS = ['criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'pubcid', 'tdid', 'pubProvidedId'];
 
 const SUB_DOMAIN = 'openrtb';
 
@@ -600,7 +600,7 @@ describe('VidazooBidAdapter', function () {
     it('should set fledge correctly if enabled', function () {
       config.resetConfig();
       const bidderRequest = utils.deepClone(BIDDER_REQUEST);
-      bidderRequest.fledgeEnabled = true;
+      bidderRequest.paapi = {enabled: true};
       deepSetValue(bidderRequest, 'ortb2Imp.ext.ae', 1);
       const requests = adapter.buildRequests([BID], bidderRequest);
       expect(requests[0].data.fledge).to.equal(1);
@@ -750,8 +750,6 @@ describe('VidazooBidAdapter', function () {
         switch (idSystemProvider) {
           case 'lipb':
             return {lipbid: id};
-          case 'parrableId':
-            return {eid: id};
           case 'id5id':
             return {uid: id};
           default:

@@ -83,7 +83,7 @@ function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout
   const ptrace = getCacheOpt();
   const isStorageAllowed = bidderSettings.get(BIDDER_CODE, 'storageAllowed');
 
-  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid', deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', ''));
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', '');
   const cat = deepAccess(bidderRequest, 'ortb2.site.cat', []);
   const pagecat = deepAccess(bidderRequest, 'ortb2.site.pagecat', []);
   const contentData = deepAccess(bidderRequest, 'ortb2.site.content.data', []);
@@ -163,7 +163,7 @@ function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout
     data.gppSid = bidderRequest.ortb2.regs.gpp_sid;
   }
 
-  if (bidderRequest.fledgeEnabled) {
+  if (bidderRequest.paapi?.enabled) {
     const fledge = deepAccess(bidderRequest, 'ortb2Imp.ext.ae');
     if (fledge) {
       data.fledge = fledge;
@@ -217,14 +217,8 @@ function appendUserIdsToRequestPayload(payloadRef, userIds) {
   _each(userIds, (userId, idSystemProviderName) => {
     key = `uid.${idSystemProviderName}`;
     switch (idSystemProviderName) {
-      case 'digitrustid':
-        payloadRef[key] = deepAccess(userId, 'data.id');
-        break;
       case 'lipb':
         payloadRef[key] = userId.lipbid;
-        break;
-      case 'parrableId':
-        payloadRef[key] = userId.eid;
         break;
       case 'id5id':
         payloadRef[key] = userId.uid;

@@ -113,6 +113,7 @@ module.exports = {
     files: key + '/**/*.js',
     rules: {
       'prebid/validate-imports': ['error', allowedModules[key]],
+      'prebid/no-innerText': ['error', allowedModules[key]],
       'no-restricted-globals': [
         'error',
         {
@@ -125,5 +126,16 @@ module.exports = {
     // code in other packages (such as plugins/eslint) is not "seen" by babel and its parser will complain.
     files: 'plugins/*/**/*.js',
     parser: 'esprima'
+  }, 
+  {
+    files: '**BidAdapter.js',
+    rules: {
+      'no-restricted-imports': [
+        'error', {
+          patterns: ["**/src/events.js",
+          "**/src/adloader.js"]
+        }
+      ]
+    }
   }])
 };

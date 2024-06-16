@@ -6,7 +6,7 @@ import magniteAdapter, {
   detectBrowserFromUa,
   callPrebidCacheHook
 } from '../../../modules/magniteAnalyticsAdapter.js';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import * as mockGpt from '../integration/faker/googletag.js';
@@ -17,19 +17,17 @@ let events = require('src/events.js');
 let utils = require('src/utils.js');
 
 const {
-  EVENTS: {
-    AUCTION_INIT,
-    AUCTION_END,
-    BID_REQUESTED,
-    BID_RESPONSE,
-    BIDDER_DONE,
-    BID_WON,
-    BID_TIMEOUT,
-    BILLABLE_EVENT,
-    SEAT_NON_BID,
-    BID_REJECTED
-  }
-} = CONSTANTS;
+  AUCTION_INIT,
+  AUCTION_END,
+  BID_REQUESTED,
+  BID_RESPONSE,
+  BIDDER_DONE,
+  BID_WON,
+  BID_TIMEOUT,
+  BILLABLE_EVENT,
+  SEAT_NON_BID,
+  BID_REJECTED
+} = EVENTS;
 
 const STUBBED_UUID = '12345678-1234-1234-1234-123456789abc';
 
@@ -241,6 +239,7 @@ const ANALYTICS_MESSAGE = {
   },
   'auctions': [
     {
+      'auctionIndex': 1,
       'auctionId': '99785e47-a7c8-4c8a-ae05-ef1c717a4b4d',
       'auctionStart': 1658868383741,
       'samplingFactor': 1,
@@ -603,7 +602,22 @@ describe('magnite analytics adapter', function () {
       it(`should parse browser from ${testData.expected} user agent correctly`, function () {
         expect(detectBrowserFromUa(testData.ua)).to.equal(testData.expected);
       });
-    })
+    });
+
+    it('should increment auctionIndex each auction', function () {
+      // run 3 auctions
+      performStandardAuction();
+      performStandardAuction();
+      performStandardAuction();
+
+      expect(server.requests.length).to.equal(3);
+      server.requests.forEach((request, index) => {
+        let message = JSON.parse(request.requestBody);
+
+        // should be index of array + 1
+        expect(message?.auctions?.[0].auctionIndex).to.equal(index + 1);
+      });
+    });
 
     it('should pass along 1x1 size if no sizes in adUnit', function () {
       const auctionInit = utils.deepClone(MOCK.AUCTION_INIT);
@@ -1522,6 +1536,8 @@ describe('magnite analytics adapter', function () {
 
       // bid source should be 'server'
       expectedMessage.auctions[0].adUnits[0].bids[0].source = 'server';
+      // if one of bids.source === server should add pbsRequest flag to adUnit
+      expectedMessage.auctions[0].adUnits[0].pbsRequest = 1;
       expectedMessage.bidsWon[0].source = 'server';
       expect(message).to.deep.equal(expectedMessage);
     });
@@ -1742,15 +1758,31 @@ describe('magnite analytics adapter', function () {
       });
     });
     describe('cookieless', () => {
-      beforeEach(() => {
-        magniteAdapter.enableAnalytics({
-          options: {
-            cookieles: undefined
-          }
-        });
-      })
       afterEach(() => {
         magniteAdapter.disableAnalytics();
+      })
+      it('should not add cookieless and preserve original rule name', () => {
+        // Set the confs
+        config.setConfig({
+          rubicon: {
+            wrapperName: '1001_general',
+            wrapperFamily: 'general',
+            rule_name: 'desktop-magnite.com',
+          }
+        });
+        performStandardAuction();
+
+        expect(server.requests.length).to.equal(1);
+        let request = server.requests[0];
+
+        expect(request.url).to.match(/\/\/localhost:9999\/event/);
+
+        let message = JSON.parse(request.requestBody);
+        expect(message.wrapper).to.deep.equal({
+          name: '1001_general',
+          family: 'general',
+          rule: 'desktop-magnite.com',
+        });
       })
       it('should add sufix _cookieless to the wrapper.rule if ortb2.device.ext.cdep start with "treatment" or  "control_2"', () => {
         // Set the confs

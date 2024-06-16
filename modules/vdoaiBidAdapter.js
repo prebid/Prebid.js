@@ -48,7 +48,6 @@ export const spec = {
         id: bidRequest.auctionId,
         mediaType: bidRequest.mediaTypes.video ? 'video' : 'banner'
       };
-      bidRequest.params.bidFloor && (payload['bidFloor'] = bidRequest.params.bidFloor);
       return {
         method: 'POST',
         url: ENDPOINT_URL,

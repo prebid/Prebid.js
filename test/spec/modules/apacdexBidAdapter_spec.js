@@ -201,8 +201,7 @@ describe('ApacdexBidAdapter', function () {
       },
       'bidder': 'apacdex',
       'params': {
-        'siteId': '1a2b3c4d5e6f1a2b3c4d',
-        'geo': { 'lat': 123.13123456, 'lon': 54.23467311, 'accuracy': 60 }
+        'siteId': '1a2b3c4d5e6f1a2b3c4d'
       },
       'adUnitCode': 'adunit-code-1',
       'sizes': [[300, 250], [300, 600]],
@@ -320,10 +319,6 @@ describe('ApacdexBidAdapter', function () {
     it('should return a properly formatted request with eids defined', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
       expect(bidRequests.data.eids).to.deep.equal(bidRequest[0].userIdAsEids)
-    });
-    it('should fail to return a properly formatted request with geo defined', function () {
-      const bidRequests = spec.buildRequests(bidRequest, bidderRequests);
-      expect(bidRequests.data.geo).to.not.deep.equal(bidRequest[0].params.geo)
     });
     it('should return a properly formatted request with us_privacy included', function () {
       const bidRequests = spec.buildRequests(bidRequest, bidderRequests);

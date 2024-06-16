@@ -64,6 +64,7 @@ function getPlacementReqData(bid) {
     placement.protocols = mediaTypes[VIDEO].protocols;
     placement.startdelay = mediaTypes[VIDEO].startdelay;
     placement.placement = mediaTypes[VIDEO].placement;
+    placement.plcmt = mediaTypes[VIDEO].plcmt;
     placement.skip = mediaTypes[VIDEO].skip;
     placement.skipafter = mediaTypes[VIDEO].skipafter;
     placement.minbitrate = mediaTypes[VIDEO].minbitrate;
@@ -171,10 +172,26 @@ export const spec = {
       page,
       placements,
       coppa: config.getConfig('coppa') === true ? 1 : 0,
-      ccpa: bidderRequest.uspConsent || undefined,
-      gdpr: bidderRequest.gdprConsent || undefined,
       tmax: bidderRequest.timeout
     };
+
+    if (bidderRequest.uspConsent) {
+      request.ccpa = bidderRequest.uspConsent;
+    }
+
+    if (bidderRequest.gdprConsent) {
+      request.gdpr = {
+        consentString: bidderRequest.gdprConsent.consentString
+      };
+    }
+
+    if (bidderRequest.gppConsent) {
+      request.gpp = bidderRequest.gppConsent.gppString;
+      request.gpp_sid = bidderRequest.gppConsent.applicableSections;
+    } else if (bidderRequest.ortb2?.regs?.gpp) {
+      request.gpp = bidderRequest.ortb2.regs.gpp;
+      request.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
+    }
 
     const len = validBidRequests.length;
     for (let i = 0; i < len; i++) {
@@ -203,9 +220,10 @@ export const spec = {
     return response;
   },
 
-  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent) => {
+  getUserSyncs: (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
     let syncType = syncOptions.iframeEnabled ? 'iframe' : 'image';
     let syncUrl = SYNC_URL + `/${syncType}?pbjs=1`;
+
     if (gdprConsent && gdprConsent.consentString) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
         syncUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
@@ -213,8 +231,14 @@ export const spec = {
         syncUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
       }
     }
+
     if (uspConsent && uspConsent.consentString) {
       syncUrl += `&ccpa_consent=${uspConsent.consentString}`;
+    }
+
+    if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+      syncUrl += '&gpp=' + gppConsent.gppString;
+      syncUrl += '&gpp_sid=' + gppConsent.applicableSections.join(',');
     }
 
     const coppa = config.getConfig('coppa') ? 1 : 0;

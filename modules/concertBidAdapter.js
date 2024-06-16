@@ -128,7 +128,8 @@ export const spec = {
         meta: { advertiserDomains: bid && bid.adomain ? bid.adomain : [] },
         creativeId: bid.creativeId,
         netRevenue: bid.netRevenue,
-        currency: bid.currency
+        currency: bid.currency,
+        ...(bid.dealid && { dealId: bid.dealid }),
       };
     });
 
