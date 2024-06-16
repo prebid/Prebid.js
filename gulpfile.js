@@ -16,7 +16,7 @@ var helpers = require('./gulpHelpers.js');
 var concat = require('gulp-concat');
 var replace = require('gulp-replace');
 var shell = require('gulp-shell');
-var eslint = require('gulp-eslint');
+var eslint = require('gulp-eslint-new');
 var gulpif = require('gulp-if');
 var sourcemaps = require('gulp-sourcemaps');
 var through = require('through2');
@@ -24,10 +24,12 @@ var fs = require('fs');
 var jsEscape = require('gulp-js-escape');
 const path = require('path');
 const execa = require('execa');
-const {minify} = require('terser');
+const { minify } = require('terser');
 const Vinyl = require('vinyl');
 const wrap = require('gulp-wrap');
 const rename = require('gulp-rename');
+var ts = require('gulp-typescript');
+var tsProject = ts.createProject('tsconfig.json');
 
 var prebid = require('./package.json');
 var port = 9999;
@@ -75,12 +77,13 @@ function escapePostbidConfig() {
 };
 escapePostbidConfig.displayName = 'escape-postbid-config';
 
+const isFixed = function (file) {
+  return file.eslint != null && file.eslint.fixed;
+}
+
 function lint(done) {
   if (argv.nolint) {
     return done();
-  }
-  const isFixed = function (file) {
-    return file.eslint != null && file.eslint.fixed;
   }
   return gulp.src([
     'src/**/*.js',
@@ -89,8 +92,13 @@ function lint(done) {
     'creative/**/*.js',
     'test/**/*.js',
     'plugins/**/*.js',
-    '!plugins/**/node_modules/**',
-    './*.js'
+    'src/**/*.ts',
+    'modules/**/*.ts',
+    'libraries/**/*.ts',
+    'creative/**/*.ts',
+    'test/**/*.ts',
+    'plugins/**/*.ts',
+    '!plugins/**/node_modules/**'
   ], { base: './' })
     .pipe(eslint({ fix: !argv.nolintfix, quiet: !(typeof argv.lintWarnings === 'boolean' ? argv.lintWarnings : true) }))
     .pipe(eslint.format('stylish'))
@@ -128,6 +136,25 @@ function viewReview(done) {
 
 viewReview.displayName = 'view-review';
 
+function transpile() {
+  var externalModules = helpers.getArgModules();
+  const analyticsSources = helpers.getAnalyticsSources();
+  const moduleSources = helpers.getModulePaths(externalModules);
+
+  const tsFiles = [].concat(moduleSources, analyticsSources, 'src/prebid.ts').filter(file => file.endsWith('.ts'));
+
+  gutil.log('transpiling ' + tsFiles.length + ' ts files ');
+  gutil.log(tsFiles.join('\n'));
+
+  return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.ts').filter(file => file.endsWith('.ts')))
+    .pipe(tsProject()).js
+    // the generated files should all be fixed
+    .pipe(eslint({ fix: true, quiet: true }))
+    .pipe(eslint.format('stylish'))
+    // pipe the files next to their ts file so they can be imported by other js files during the migration period
+    .pipe(gulp.dest(file => file.base));
+}
+
 function makeVerbose(config = webpackConfig) {
   return _.merge({}, config, {
     optimization: {
@@ -154,19 +181,20 @@ function prebidSource(webpackCfg) {
   const moduleSources = helpers.getModulePaths(externalModules);
 
   return gulp.src([].concat(moduleSources, analyticsSources, 'src/prebid.js'))
+    .pipe(tsProject()).js
     .pipe(helpers.nameModules(externalModules))
     .pipe(webpackStream(webpackCfg, webpack));
 }
 
 function makeDevpackPkg(config = webpackConfig) {
-  return function() {
+  return function () {
     var cloned = _.cloneDeep(config);
     Object.assign(cloned, {
       devtool: 'source-map',
       mode: 'development'
     })
 
-    const babelConfig = require('./babelConfig.js')({disableFeatures: helpers.getDisabledFeatures(), prebidDistUrlBase: argv.distUrlBase || '/build/dev/'});
+    const babelConfig = require('./babelConfig.js')({ disableFeatures: helpers.getDisabledFeatures(), prebidDistUrlBase: argv.distUrlBase || '/build/dev/' });
 
     // update babel config to set local dist url
     cloned.module.rules
@@ -193,11 +221,11 @@ function makeWebpackPkg(config = webpackConfig) {
 }
 
 function buildCreative(mode = 'production') {
-  const opts = {mode};
+  const opts = { mode };
   if (mode === 'development') {
     opts.devtool = 'inline-source-map'
   }
-  return function() {
+  return function () {
     return gulp.src(['**/*'])
       .pipe(webpackStream(Object.assign(require('./webpack.creative.js'), opts)))
       .pipe(gulp.dest('build/creative'))
@@ -269,7 +297,7 @@ function wrapWithHeaderAndFooter(dev, modules) {
       modules: getModulesListToAddInBanner(modules),
       enable: !argv.manualEnable
     });
-    (dev ? Promise.resolve(tpl) : minify(tpl, {format: {comments: true}}).then((res) => res.code))
+    (dev ? Promise.resolve(tpl) : minify(tpl, { format: { comments: true } }).then((res) => res.code))
       .then((tpl) => {
         // wrap source placeholder in an IIFE to make it an expression (so that it works with minify output)
         const parts = tpl.replace(placeholder, `(function(){$$${placeholder}$$})()`).split(placeholder);
@@ -278,7 +306,7 @@ function wrapWithHeaderAndFooter(dev, modules) {
         }
         const [header, footer] = parts;
         wrapped.push(memoryVinyl('prebid-header.js', header));
-        stream.pipe(wrapped, {end: false});
+        stream.pipe(wrapped, { end: false });
         stream.on('end', () => {
           wrapped.push(memoryVinyl('prebid-footer.js', footer));
           wrapped.push(null);
@@ -382,7 +410,7 @@ function e2eTestTaskMaker() {
   }
 }
 
-function runWebdriver({file}) {
+function runWebdriver({ file }) {
   process.env.TEST_SERVER_HOST = argv.host || 'localhost';
 
   let local = argv.local || false;
@@ -409,7 +437,7 @@ function runWebdriver({file}) {
 function runKarma(options, done) {
   // the karma server appears to leak memory; starting it multiple times in a row will run out of heap
   // here we run it in a separate process to bypass the problem
-  options = Object.assign({browsers: helpers.parseBrowserArgs(argv)}, options)
+  options = Object.assign({ browsers: helpers.parseBrowserArgs(argv) }, options)
   const child = fork('./karmaRunner.js', null, {
     env: Object.assign({}, options.env, process.env)
   });
@@ -510,8 +538,8 @@ function watchTaskMaker(options = {}) {
   }
 }
 
-const watch = watchTaskMaker({alsoWatch: ['test/**/*.js'], task: () => gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev', test))});
-const watchFast = watchTaskMaker({livereload: false, task: () => gulp.series('build-bundle-dev')});
+const watch = watchTaskMaker({ alsoWatch: ['test/**/*.js'], task: () => gulp.series(clean, gulp.parallel(lint, 'build-bundle-dev', test)) });
+const watchFast = watchTaskMaker({ livereload: false, task: () => gulp.series('build-bundle-dev') });
 
 // support tasks
 gulp.task(lint);
@@ -524,35 +552,36 @@ gulp.task(escapePostbidConfig);
 gulp.task('build-creative-dev', gulp.series(buildCreative(argv.creativeDev ? 'development' : 'production'), updateCreativeRenderers));
 gulp.task('build-creative-prod', gulp.series(buildCreative(), updateCreativeRenderers));
 
-gulp.task('build-bundle-dev', gulp.series('build-creative-dev', makeDevpackPkg(standaloneDebuggingConfig), makeDevpackPkg(), gulpBundle.bind(null, true)));
-gulp.task('build-bundle-prod', gulp.series('build-creative-prod', makeWebpackPkg(standaloneDebuggingConfig), makeWebpackPkg(), gulpBundle.bind(null, false)));
+gulp.task('build-bundle-dev', gulp.series(transpile, 'build-creative-dev', makeDevpackPkg(standaloneDebuggingConfig), makeDevpackPkg(), gulpBundle.bind(null, true)));
+gulp.task('build-bundle-prod', gulp.series(transpile, 'build-creative-prod', makeWebpackPkg(standaloneDebuggingConfig), makeWebpackPkg(), gulpBundle.bind(null, false)));
 // build-bundle-verbose - prod bundle except names and comments are preserved. Use this to see the effects
 // of dead code elimination.
 gulp.task('build-bundle-verbose', gulp.series('build-creative-dev', makeWebpackPkg(makeVerbose(standaloneDebuggingConfig)), makeWebpackPkg(makeVerbose()), gulpBundle.bind(null, true)));
 
 // public tasks (dependencies are needed for each task since they can be ran on their own)
+gulp.task('transpile', gulp.series(transpile));
 gulp.task('test-only', test);
-gulp.task('test-all-features-disabled', testTaskMaker({disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false}));
-gulp.task('test', gulp.series(clean, lint, 'test-all-features-disabled', 'test-only'));
+gulp.task('test-all-features-disabled', testTaskMaker({ disableFeatures: require('./features.json'), oneBrowser: 'chrome', watch: false }));
+gulp.task('test', gulp.series(clean, transpile, lint, 'test-all-features-disabled', 'test-only'));
 
 gulp.task('test-coverage', gulp.series(clean, testCoverage));
 gulp.task(viewCoverage);
 
 gulp.task('coveralls', gulp.series('test-coverage', coveralls));
 
-gulp.task('build', gulp.series(clean, 'build-bundle-prod', updateCreativeExample));
+gulp.task('build', gulp.series(clean, transpile, 'build-bundle-prod', updateCreativeExample));
 gulp.task('build-postbid', gulp.series(escapePostbidConfig, buildPostbid));
 
-gulp.task('serve', gulp.series(clean, lint, gulp.parallel('build-bundle-dev', watch, test)));
+gulp.task('serve', gulp.series(clean, transpile, lint, gulp.parallel('build-bundle-dev', watch, test)));
 gulp.task('serve-fast', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast)));
 gulp.task('serve-prod', gulp.series(clean, gulp.parallel('build-bundle-prod', startLocalServer)));
-gulp.task('serve-and-test', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast, testTaskMaker({watch: true}))));
+gulp.task('serve-and-test', gulp.series(clean, gulp.parallel('build-bundle-dev', watchFast, testTaskMaker({ watch: true }))));
 gulp.task('serve-e2e', gulp.series(clean, 'build-bundle-prod', gulp.parallel(() => startIntegServer(), startLocalServer)));
 gulp.task('serve-e2e-dev', gulp.series(clean, 'build-bundle-dev', gulp.parallel(() => startIntegServer(true), startLocalServer)));
 
 gulp.task('default', gulp.series(clean, 'build-bundle-prod'));
 
-gulp.task('e2e-test-only', gulp.series(requireNodeVersion(16), () => runWebdriver({file: argv.file})));
+gulp.task('e2e-test-only', gulp.series(requireNodeVersion(16), () => runWebdriver({ file: argv.file })));
 gulp.task('e2e-test', gulp.series(requireNodeVersion(16), clean, 'build-bundle-prod', e2eTestTaskMaker()));
 
 // other tasks
