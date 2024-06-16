@@ -47,11 +47,8 @@ function getUserIdFromStorage() {
 function setUserId(userId) {
   if (storage.localStorageIsEnabled()) {
     storage.setDataInLocalStorage(USER_ID_KEY, userId);
-  }
-
-  if (storage.cookiesAreEnabled()) {
-    const expires = new Date(Date.now() + USER_ID_COOKIE_EXP).toISOString();
-
+  } else if (storage.cookiesAreEnabled()) {
+    const expires = new Date(Date.now() + USER_ID_COOKIE_EXP).toUTCString();
     storage.setCookie(USER_ID_KEY, userId, expires);
   }
 }
