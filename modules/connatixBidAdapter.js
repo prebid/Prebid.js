@@ -73,15 +73,15 @@ export const spec = {
    */
   isBidRequestValid: (bid = {}) => {
     const bidId = deepAccess(bid, 'bidId');
-    const mediaTypes = deepAccess(bid, 'mediaTypes', null);
+    const mediaTypes = deepAccess(bid, 'mediaTypes', {});
     const params = deepAccess(bid, 'params', {});
     const bidder = deepAccess(bid, 'bidder');
 
     const hasBidId = Boolean(bidId);
     const isValidBidder = (bidder === BIDDER_CODE);
     const hasMediaTypes = Boolean(mediaTypes) && (Boolean(mediaTypes[BANNER]) || Boolean(mediaTypes[VIDEO]));
-    const isValidBanner = hasMediaTypes ? validateBanner(mediaTypes) : false;
-    const isValidVideo = hasMediaTypes ? validateVideo(mediaTypes) : false;
+    const isValidBanner = validateBanner(mediaTypes);
+    const isValidVideo = validateVideo(mediaTypes);
     const hasRequiredBidParams = Boolean(params.placementId);
 
     const isValid = isValidBidder && hasBidId && hasMediaTypes && isValidBanner && isValidVideo && hasRequiredBidParams;
