@@ -52,7 +52,7 @@ export function validateBanner(mediaTypes) {
 }
 
 export function validateVideo(mediaTypes) {
-  if (!mediaTypes[VIDEO] || !mediaTypes[VIDEO].context) {
+  if (!mediaTypes[VIDEO]) {
     return true;
   }
 
