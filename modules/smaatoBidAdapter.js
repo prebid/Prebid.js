@@ -19,7 +19,7 @@ import {ortbConverter} from '../libraries/ortbConverter/converter.js';
 
 const BIDDER_CODE = 'smaato';
 const SMAATO_ENDPOINT = 'https://prebid.ad.smaato.net/oapi/prebid';
-const SMAATO_CLIENT = 'prebid_js_$prebid.version$_3.0'
+const SMAATO_CLIENT = 'prebid_js_$prebid.version$_3.1'
 const TTL = 300;
 const CURRENCY = 'USD';
 const SUPPORTED_MEDIA_TYPES = [BANNER, VIDEO, NATIVE];
@@ -141,7 +141,8 @@ export const spec = {
           meta: {
             advertiserDomains: bid.adomain,
             networkName: bid.bidderName,
-            agencyId: seatbid.seat
+            agencyId: seatbid.seat,
+            ...(bid.ext?.dsa && {dsa: bid.ext.dsa})
           }
         };
 
@@ -276,18 +277,7 @@ const converter = ortbConverter({
       }
     }
 
-    if (request.device) {
-      if (bidRequest.params.app) {
-        if (!deepAccess(request.device, 'geo')) {
-          const geo = deepAccess(bidRequest, 'params.app.geo');
-          deepSetValue(request.device, 'geo', geo);
-        }
-        if (!deepAccess(request.device, 'ifa')) {
-          const ifa = deepAccess(bidRequest, 'params.app.ifa');
-          deepSetValue(request.device, 'ifa', ifa);
-        }
-      }
-    } else {
+    if (!request.device) {
       request.device = {
         language: (navigator && navigator.language) ? navigator.language.split('-')[0] : '',
         ua: navigator.userAgent,
@@ -295,6 +285,8 @@ const converter = ortbConverter({
         h: screen.height,
         w: screen.width
       }
+    }
+    if (bidRequest.params.app) {
       if (!deepAccess(request.device, 'geo')) {
         const geo = deepAccess(bidRequest, 'params.app.geo');
         deepSetValue(request.device, 'geo', geo);

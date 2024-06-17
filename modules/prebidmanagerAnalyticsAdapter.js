@@ -1,4 +1,4 @@
-import { generateUUID, getParameterByName, logError, parseUrl, logInfo } from '../src/utils.js';
+import { deepClone, generateUUID, getParameterByName, hasNonSerializableProperty, logError, parseUrl, logInfo } from '../src/utils.js';
 import {ajaxBuilder} from '../src/ajax.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
@@ -199,10 +199,10 @@ function trimBidderRequest(bidderRequest) {
 }
 
 function handleEvent(eventType, eventArgs) {
-  try {
-    eventArgs = eventArgs ? JSON.parse(JSON.stringify(eventArgs)) : {};
-  } catch (e) {
-    // keep eventArgs as is
+  if (eventArgs) {
+    eventArgs = hasNonSerializableProperty(eventArgs) ? eventArgs : deepClone(eventArgs)
+  } else {
+    eventArgs = {}
   }
 
   const pmEvent = {};

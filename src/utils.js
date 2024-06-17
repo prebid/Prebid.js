@@ -1088,6 +1088,33 @@ export function memoize(fn, key = function (arg) { return arg; }) {
 }
 
 /**
+ * Returns a Unix timestamp for given time value and unit.
+ * @param {number} timeValue numeric value, defaults to 0 (which means now)
+ * @param {string} timeUnit defaults to days (or 'd'), use 'm' for minutes. Any parameter that isn't 'd' or 'm' will return Date.now().
+ * @returns {number}
+ */
+export function getUnixTimestampFromNow(timeValue = 0, timeUnit = 'd') {
+  const acceptableUnits = ['m', 'd'];
+  if (acceptableUnits.indexOf(timeUnit) < 0) {
+    return Date.now();
+  }
+  const multiplication = timeValue / (timeUnit === 'm' ? 1440 : 1);
+  return Date.now() + (timeValue && timeValue > 0 ? (1000 * 60 * 60 * 24 * multiplication) : 0);
+}
+
+/**
+ * Converts given object into an array, so {key: 1, anotherKey: 'fred', third: ['fred']} is turned
+ * into [{key: 1}, {anotherKey: 'fred'}, {third: ['fred']}]
+ * @param {Object} obj the object
+ * @returns {Array}
+ */
+export function convertObjectToArray(obj) {
+  return Object.keys(obj).map(key => {
+    return {[key]: obj[key]};
+  });
+}
+
+/**
  * Sets dataset attributes on a script
  * @param {HTMLScriptElement} script
  * @param {object} attributes
@@ -1122,4 +1149,43 @@ export function binarySearch(arr, el, key = (el) => el) {
     left++;
   }
   return left;
+}
+
+/**
+ * Checks if an object has non-serializable properties.
+ * Non-serializable properties are functions and RegExp objects.
+ *
+ * @param {Object} obj - The object to check.
+ * @param {Set} checkedObjects - A set of properties that have already been checked.
+ * @returns {boolean} - Returns true if the object has non-serializable properties, false otherwise.
+ */
+export function hasNonSerializableProperty(obj, checkedObjects = new Set()) {
+  for (const key in obj) {
+    const value = obj[key];
+    const type = typeof value;
+
+    if (
+      value === undefined ||
+      type === 'function' ||
+      type === 'symbol' ||
+      value instanceof RegExp ||
+      value instanceof Map ||
+      value instanceof Set ||
+      value instanceof Date ||
+      (value !== null && type === 'object' && value.hasOwnProperty('toJSON'))
+    ) {
+      return true;
+    }
+    if (value !== null && type === 'object' && value.constructor === Object) {
+      if (checkedObjects.has(value)) {
+        // circular reference, means we have a non-serializable property
+        return true;
+      }
+      checkedObjects.add(value);
+      if (hasNonSerializableProperty(value, checkedObjects)) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
