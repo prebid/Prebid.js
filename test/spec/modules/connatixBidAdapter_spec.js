@@ -28,6 +28,16 @@ describe('connatixBidAdapter', function () {
     const mediaTypes = {
       video: {
         context: 'instream',
+        w: 1280,
+        h: 720,
+        playerSize: [1280, 720],
+        placement: 1,
+        plcmt: 1,
+        api: [1, 2],
+        mimes: ['video/mp4', 'application/javascript'],
+        minduration: 30,
+        maxduration: 60,
+        startdelay: 0,
       }
     }
 
