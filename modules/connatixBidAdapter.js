@@ -11,6 +11,7 @@ import {
 } from '../src/utils.js';
 
 import {
+  ADPOD,
   BANNER,
   VIDEO,
 } from '../src/mediaTypes.js';
@@ -57,7 +58,7 @@ export function validateVideo(mediaTypes) {
   }
 
   const video = deepAccess(mediaTypes, VIDEO, {});
-  return video.context !== 'adpod';
+  return video.context !== ADPOD;
 }
 
 export const spec = {
