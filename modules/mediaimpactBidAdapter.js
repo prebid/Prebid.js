@@ -115,8 +115,8 @@ export const spec = {
       creativeId: ad.creativeId,
       netRevenue: ad.netRevenue,
       currency: ad.currency,
-      winNotification: ad.winNotification,
-    };
+      winNotification: ad.winNotification
+    }
 
     bidObject.meta = {};
     if (ad.adomain && ad.adomain.length > 0) {
