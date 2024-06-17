@@ -1,5 +1,3 @@
-// eslint-disable-next-line prebid/validate-imports
-// eslint-disable-next-line prebid/validate-imports
 import { registerBidder } from '../src/adapters/bidderFactory.js'
 import { config } from '../src/config.js'
 import { _each, deepAccess, deepSetValue, getWindowSelf, getWindowTop } from '../src/utils.js'

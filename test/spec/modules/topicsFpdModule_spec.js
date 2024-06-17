@@ -360,9 +360,21 @@ describe('topics', () => {
           }]]
         );
         storage.setDataInLocalStorage(topicStorageName, storedSegments);
+        config.setConfig({
+          userSync: {
+            topics: {
+              maxTopicCaller: 4,
+              bidders: [{
+                bidder: 'pubmatic',
+                iframeURL: 'https://ads.pubmatic.com/AdServer/js/topics/topics_frame.html'
+              }]
+            }
+          }
+        })
       });
       afterEach(() => {
         sandbox.restore();
+        config.resetConfig();
       });
 
       it('should return segments for bidder if transmitUfpd is allowed', () => {

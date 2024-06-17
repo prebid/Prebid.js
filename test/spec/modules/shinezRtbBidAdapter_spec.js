@@ -18,7 +18,7 @@ import {BANNER, VIDEO} from '../../../src/mediaTypes';
 import {config} from '../../../src/config';
 import {deepAccess} from 'src/utils.js';
 
-export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId', 'digitrustid'];
+export const TEST_ID_SYSTEMS = ['criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'pubcid', 'tdid', 'pubProvidedId'];
 
 const SUB_DOMAIN = 'exchange';
 
@@ -511,12 +511,8 @@ describe('ShinezRtbBidAdapter', function () {
 
       const userId = (function () {
         switch (idSystemProvider) {
-          case 'digitrustid':
-            return {data: {id}};
           case 'lipb':
             return {lipbid: id};
-          case 'parrableId':
-            return {eid: id};
           case 'id5id':
             return {uid: id};
           default:

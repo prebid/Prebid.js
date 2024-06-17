@@ -92,11 +92,26 @@ describe('SetupadAdapter', function () {
       bidder: 'setupad',
       params: {
         placement_id: '123',
+        account_id: '123',
       },
     };
+
     it('should return true when required params found', function () {
       expect(spec.isBidRequestValid(bid)).to.equal(true);
     });
+
+    it('should return false when placement_id is missing', function () {
+      const bidWithoutPlacementId = { ...bid };
+      delete bidWithoutPlacementId.params.placement_id;
+      expect(spec.isBidRequestValid(bidWithoutPlacementId)).to.equal(false);
+    });
+
+    it('should return false when account_id is missing', function () {
+      const bidWithoutAccountId = { ...bid };
+      delete bidWithoutAccountId.params.account_id;
+      expect(spec.isBidRequestValid(bidWithoutAccountId)).to.equal(false);
+    });
+
     it('should return false when required params are not passed', function () {
       delete bid.params.placement_id;
       expect(spec.isBidRequestValid(bid)).to.equal(false);

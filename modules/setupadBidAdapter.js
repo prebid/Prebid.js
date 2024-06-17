@@ -13,7 +13,7 @@ import { BANNER } from '../src/mediaTypes.js';
 const BIDDER_CODE = 'setupad';
 const ENDPOINT = 'https://prebid.setupad.io/openrtb2/auction';
 const SYNC_ENDPOINT = 'https://cookie.stpd.cloud/sync?';
-const REPORT_ENDPOINT = 'https://adapter-analytics.setupad.io/api/adapter-analytics';
+const REPORT_ENDPOINT = 'https://adapter-analytics.setupad.io/api/adapter-analytics?';
 const GVLID = 1241;
 const TIME_TO_LIVE = 360;
 const biddersCreativeIds = {};
@@ -28,7 +28,12 @@ export const spec = {
   gvlid: GVLID,
 
   isBidRequestValid: function (bid) {
-    return !!(bid.params.placement_id && isStr(bid.params.placement_id));
+    return !!(
+      bid.params.placement_id &&
+      isStr(bid.params.placement_id) &&
+      bid.params.account_id &&
+      isStr(bid.params.account_id)
+    );
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
@@ -241,17 +246,23 @@ export const spec = {
 
     if (!placementIds) return;
 
-    let extraBidParams = '';
-
     // find the winning bidder by using creativeId as identification
     if (biddersCreativeIds.hasOwnProperty(bid.creativeId) && biddersCreativeIds[bid.creativeId]) {
       bidder = biddersCreativeIds[bid.creativeId];
     }
 
-    // Add extra parameters
-    extraBidParams = `&cpm=${bid.originalCpm}&currency=${bid.originalCurrency}`;
+    const queryParams = [];
+    queryParams.push(`event=bidWon`);
+    queryParams.push('bidder=' + bidder);
+    queryParams.push('placementIds=' + placementIds);
+    queryParams.push('auctionId=' + auctionId);
+    queryParams.push('cpm=' + bid.originalCpm);
+    queryParams.push('currency=' + bid.originalCurrency);
+    queryParams.push('timestamp=' + Date.now());
 
-    const url = `${REPORT_ENDPOINT}?event=bidWon&bidder=${bidder}&placementIds=${placementIds}&auctionId=${auctionId}${extraBidParams}&timestamp=${Date.now()}`;
+    const strQueryParams = queryParams.join('&');
+
+    const url = REPORT_ENDPOINT + strQueryParams;
     triggerPixel(url);
   },
 };
@@ -267,21 +278,15 @@ function getBidders(serverResponse) {
 }
 
 function getAd(bid) {
-  let ad, adUrl;
+  const { adm, nurl } = bid;
+  let ad = adm;
 
-  switch (deepAccess(bid, 'ext.prebid.type')) {
-    default:
-      if (bid.adm && bid.nurl) {
-        ad = bid.adm;
-        ad += createTrackPixelHtml(decodeURIComponent(bid.nurl));
-      } else if (bid.adm) {
-        ad = bid.adm;
-      } else if (bid.nurl) {
-        adUrl = bid.nurl;
-      }
+  if (nurl) {
+    const trackingPixel = createTrackPixelHtml(decodeURIComponent(nurl));
+    ad += trackingPixel;
   }
 
-  return { ad, adUrl };
+  return { ad };
 }
 
 registerBidder(spec);

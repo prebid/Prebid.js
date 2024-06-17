@@ -1,26 +1,25 @@
 import {
+  createBidReceived,
   getAdServerTargeting,
+  getAdUnits,
   getBidRequests,
   getBidResponses,
   getBidResponsesFromAPI,
   getTargetingKeys,
-  getTargetingKeysBidLandscape,
-  getAdUnits,
-  createBidReceived
+  getTargetingKeysBidLandscape
 } from 'test/fixtures/fixtures.js';
-import { auctionManager, newAuctionManager } from 'src/auctionManager.js';
-import { targeting, newTargeting, filters } from 'src/targeting.js';
-import { config as configObj } from 'src/config.js';
+import {auctionManager, newAuctionManager} from 'src/auctionManager.js';
+import {filters, newTargeting, targeting} from 'src/targeting.js';
+import {config as configObj} from 'src/config.js';
 import * as ajaxLib from 'src/ajax.js';
 import * as auctionModule from 'src/auction.js';
-import { registerBidder } from 'src/adapters/bidderFactory.js';
-import {resizeRemoteCreative} from 'src/secureCreatives.js';
+import {resetAuctionState} from 'src/auction.js';
+import {registerBidder} from 'src/adapters/bidderFactory.js';
 import {find} from 'src/polyfill.js';
 import * as pbjsModule from 'src/prebid.js';
+import $$PREBID_GLOBAL$$ from 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
 import {reset as resetDebugging} from '../../../src/debugging.js';
-import $$PREBID_GLOBAL$$ from 'src/prebid.js';
-import {resetAuctionState} from 'src/auction.js';
 import {stubAuctionIndex} from '../../helpers/indexStub.js';
 import {createBid} from '../../../src/bidfactory.js';
 import {enrichFPD} from '../../../src/fpd/enrichment.js';
@@ -2502,6 +2501,52 @@ describe('Unit: Prebid Module', function () {
               assert.ok(logErrorSpy.calledWith('Please use an array of sizes for native.icon.sizes field.  Removing invalid mediaTypes.native.icon.sizes property from request.'));
             }
           });
+
+          if (FEATURES.NATIVE) {
+            Object.entries({
+              missing: {},
+              negative: {id: -1},
+              'not an integer': {id: 1.23},
+              NaN: {id: 'garbage'}
+            }).forEach(([t, props]) => {
+              it(`should reject native ortb when asset ID is ${t}`, () => {
+                const adUnit = {
+                  code: 'au',
+                  mediaTypes: {
+                    native: {
+                      ortb: {
+                        assets: [props]
+                      }
+                    }
+                  },
+                  bids: [{bidder: 'appnexus'}]
+                };
+                $$PREBID_GLOBAL$$.requestBids({
+                  adUnits: [adUnit]
+                });
+                expect(auctionArgs.adUnits[0].bids.length).to.equal(0);
+              });
+            });
+
+            ['sendTargetingKeys', 'types'].forEach(key => {
+              it(`should reject native that includes both ortb and ${key}`, () => {
+                const adUnit = {
+                  code: 'au',
+                  mediaTypes: {
+                    native: {
+                      ortb: {},
+                      [key]: {}
+                    }
+                  },
+                  bids: [{bidder: 'appnexus'}]
+                };
+                $$PREBID_GLOBAL$$.requestBids({
+                  adUnits: [adUnit]
+                });
+                expect(auctionArgs.adUnits[0].bids.length).to.equal(0);
+              })
+            });
+          }
 
           it('should throw error message and remove adUnit if adUnit.bids is not defined correctly', function () {
             const adUnits = [{

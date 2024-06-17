@@ -1,4 +1,4 @@
-import { deepAccess, isPlainObject, isArray, replaceAuctionPrice, isFn, logError } from '../src/utils.js';
+import { deepAccess, isPlainObject, isArray, replaceAuctionPrice, isFn, logError, deepClone } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import {hasPurpose1Consent} from '../src/utils/gpdr.js';
@@ -85,7 +85,7 @@ export const spec = {
         bidReq.bidFloor = bidFloor;
       }
 
-      bids.push(JSON.parse(JSON.stringify(bidReq)));
+      bids.push(deepClone(bidReq));
     });
 
     const payload = {};
