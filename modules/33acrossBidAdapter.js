@@ -36,6 +36,7 @@ const VIDEO_ORTB_PARAMS = [
   'minduration',
   'maxduration',
   'placement',
+  'plcmt',
   'protocols',
   'startdelay',
   'skip',
@@ -140,10 +141,10 @@ function _validateVideo(bid) {
   }
 
   // If placement if defined, it must be a number
-  if (
-    typeof videoParams.placement !== 'undefined' &&
-    typeof videoParams.placement !== 'number'
-  ) {
+  if ([ videoParams.placement, videoParams.plcmt ].some(value => (
+    typeof value !== 'undefined' &&
+    typeof value !== 'number'
+  ))) {
     return false;
   }
 
@@ -490,12 +491,27 @@ function _buildVideoORTB(bidRequest) {
 
   // Placement Inference Rules:
   // - If no placement is defined then default to 2 (In Banner)
+  // - If the old deprecated field is defined, use its value for the recent placement field
   // - If product is instream (for instream context) then override placement to 1
-  video.placement = video.placement || 2;
+
+  const calculatePlacementValue = () => {
+    const IN_BANNER_PLACEMENT_VALUE = 2;
+
+    if (video.placement) {
+      logWarn('[33Across Adapter] The ORTB field `placement` is deprecated, please use `plcmt` instead');
+
+      return video.placement;
+    }
+
+    return IN_BANNER_PLACEMENT_VALUE;
+  }
+
+  video.plcmt ??= calculatePlacementValue();
 
   if (product === PRODUCT.INSTREAM) {
     video.startdelay = video.startdelay || 0;
-    video.placement = 1;
+    video.plcmt = 1;
+    video.placement &&= 1;
   }
 
   // bidfloors

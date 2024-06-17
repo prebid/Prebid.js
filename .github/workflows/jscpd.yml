@@ -1,0 +1,58 @@
+name: Check for Duplicated Code
+
+on: 
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  check-duplication:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # Fetch all history for all branches
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+
+    - name: Install dependencies
+      run: |
+        npm install -g jscpd diff-so-fancy
+
+    - name: Create jscpd config file
+      run: |
+        echo '{
+          "threshold": 20,
+          "minTokens": 50,
+          "reporters": [
+            "json"
+          ],
+          "output": "./",
+          "pattern": "**/*.js",
+          "ignore": "**/*spec.js"        
+        }' > .jscpd.json
+
+    - name: Run jscpd on entire codebase
+      run: jscpd
+
+    - name: Get the diff
+      run: git diff origin/master...HEAD --name-only > changed_files.txt
+
+    - name: Filter JavaScript files
+      run: |
+        grep -E '\.js$' changed_files.txt | grep -v 'spec.js' > js_files.txt || true
+
+    - name: List generated files (debug)
+      run: ls -l
+
+    - name: Upload unfiltered jscpd report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: unfiltered-jscpd-report
+        path: ./jscpd-report.json

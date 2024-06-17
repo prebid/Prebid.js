@@ -90,13 +90,15 @@ describe('dailymotionBidAdapterTests', () => {
           mimes: ['video/mp4'],
           minduration: 5,
           maxduration: 30,
+          playbackmethod: [3],
+          plcmt: 1,
           protocols: [1, 2, 3, 4, 5, 6, 7, 8],
           skip: 1,
           skipafter: 5,
           skipmin: 10,
           startdelay: 0,
           w: 1280,
-          h: 720
+          h: 720,
         },
       },
       sizes: [[1920, 1080]],
@@ -112,9 +114,14 @@ describe('dailymotionBidAdapterTests', () => {
           private: false,
           tags: 'tag_1,tag_2,tag_3',
           title: 'test video',
+          url: 'https://test.com/test',
           topics: 'topic_1, topic_2',
           xid: 'x123456',
           livestream: 1,
+          isCreatedForKids: true,
+          videoViewsInSession: 2,
+          autoplay: true,
+          playerVolume: 8,
         },
       },
     }];
@@ -160,6 +167,7 @@ describe('dailymotionBidAdapterTests', () => {
 
     expect(request.url).to.equal('https://pb.dmxleo.com');
 
+    expect(reqData.pbv).to.eql('$prebid.version$');
     expect(reqData.bidder_request).to.eql({
       refererInfo: bidderRequestData.refererInfo,
       uspConsent: bidderRequestData.uspConsent,
@@ -170,9 +178,8 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.coppa).to.be.true;
     expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId);
     expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
-    expect(reqData.request.mediaTypes.video.api).to.eql(bidRequestData[0].mediaTypes.video.api);
-    expect(reqData.request.mediaTypes.video.playerSize).to.eql(bidRequestData[0].mediaTypes.video.playerSize);
-    expect(reqData.request.mediaTypes.video.startdelay).to.eql(bidRequestData[0].mediaTypes.video.startdelay);
+
+    expect(reqData.request.mediaTypes.video).to.eql(bidRequestData[0].mediaTypes.video);
     expect(reqData.video_metadata).to.eql({
       description: bidRequestData[0].params.video.description,
       iabcat1: ['IAB-1'],
@@ -182,10 +189,18 @@ describe('dailymotionBidAdapterTests', () => {
       private: bidRequestData[0].params.video.private,
       tags: bidRequestData[0].params.video.tags,
       title: bidRequestData[0].params.video.title,
+      url: bidRequestData[0].params.video.url,
       topics: bidRequestData[0].params.video.topics,
       xid: bidRequestData[0].params.video.xid,
       duration: bidRequestData[0].params.video.duration,
       livestream: !!bidRequestData[0].params.video.livestream,
+      isCreatedForKids: bidRequestData[0].params.video.isCreatedForKids,
+      context: {
+        siteOrAppCat: '',
+        videoViewsInSession: bidRequestData[0].params.video.videoViewsInSession,
+        autoplay: bidRequestData[0].params.video.autoplay,
+        playerVolume: bidRequestData[0].params.video.playerVolume,
+      },
     });
   });
 
@@ -200,6 +215,8 @@ describe('dailymotionBidAdapterTests', () => {
           mimes: ['video/mp4'],
           minduration: 5,
           maxduration: 30,
+          playbackmethod: [3],
+          plcmt: 1,
           protocols: [1, 2, 3, 4, 5, 6, 7, 8],
           skip: 1,
           skipafter: 5,
@@ -220,9 +237,15 @@ describe('dailymotionBidAdapterTests', () => {
           private: false,
           tags: 'tag_1,tag_2,tag_3',
           title: 'test video',
+          url: 'https://test.com/test',
           topics: 'topic_1, topic_2',
           xid: 'x123456',
           livestream: 1,
+          // Test invalid values
+          isCreatedForKids: 'false',
+          videoViewsInSession: -1,
+          autoplay: 'true',
+          playerVolume: 12,
         },
       },
     }];
@@ -244,6 +267,13 @@ describe('dailymotionBidAdapterTests', () => {
       ortb2: {
         regs: {
           coppa: 1,
+        },
+        device: {
+          lmt: 1,
+          ifa: 'xxx',
+          ext: {
+            atts: 2,
+          },
         },
         app: {
           bundle: 'app-bundle',
@@ -276,6 +306,7 @@ describe('dailymotionBidAdapterTests', () => {
 
     expect(request.url).to.equal('https://pb.dmxleo.com');
 
+    expect(reqData.pbv).to.eql('$prebid.version$');
     expect(reqData.bidder_request).to.eql({
       refererInfo: bidderRequestData.refererInfo,
       uspConsent: bidderRequestData.uspConsent,
@@ -286,19 +317,14 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.coppa).to.be.true;
     expect(reqData.appBundle).to.eql(bidderRequestData.ortb2.app.bundle);
     expect(reqData.appStoreUrl).to.eql(bidderRequestData.ortb2.app.storeurl);
+    expect(reqData.device.lmt).to.eql(bidderRequestData.ortb2.device.lmt);
+    expect(reqData.device.ifa).to.eql(bidderRequestData.ortb2.device.ifa);
+    expect(reqData.device.atts).to.eql(bidderRequestData.ortb2.device.ext.atts);
     expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId);
     expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
-    expect(reqData.request.mediaTypes.video.api).to.eql(bidRequestData[0].mediaTypes.video.api);
-    expect(reqData.request.mediaTypes.video.mimes).to.eql(bidRequestData[0].mediaTypes.video.mimes);
-    expect(reqData.request.mediaTypes.video.minduration).to.eql(bidRequestData[0].mediaTypes.video.minduration);
-    expect(reqData.request.mediaTypes.video.maxduration).to.eql(bidRequestData[0].mediaTypes.video.maxduration);
-    expect(reqData.request.mediaTypes.video.protocols).to.eql(bidRequestData[0].mediaTypes.video.protocols);
-    expect(reqData.request.mediaTypes.video.skip).to.eql(bidRequestData[0].mediaTypes.video.skip);
-    expect(reqData.request.mediaTypes.video.skipafter).to.eql(bidRequestData[0].mediaTypes.video.skipafter);
-    expect(reqData.request.mediaTypes.video.skipmin).to.eql(bidRequestData[0].mediaTypes.video.skipmin);
-    expect(reqData.request.mediaTypes.video.startdelay).to.eql(bidRequestData[0].mediaTypes.video.startdelay);
-    expect(reqData.request.mediaTypes.video.w).to.eql(bidRequestData[0].mediaTypes.video.w);
-    expect(reqData.request.mediaTypes.video.h).to.eql(bidRequestData[0].mediaTypes.video.h);
+
+    expect(reqData.request.mediaTypes.video).to.eql(bidRequestData[0].mediaTypes.video);
+
     expect(reqData.video_metadata).to.eql({
       description: bidRequestData[0].params.video.description,
       iabcat1: ['IAB-1'],
@@ -308,11 +334,19 @@ describe('dailymotionBidAdapterTests', () => {
       private: bidRequestData[0].params.video.private,
       tags: bidRequestData[0].params.video.tags,
       title: bidRequestData[0].params.video.title,
+      url: bidRequestData[0].params.video.url,
       topics: bidRequestData[0].params.video.topics,
       xid: bidRequestData[0].params.video.xid,
       // Overriden through bidder params
       duration: bidderRequestData.ortb2.app.content.len,
       livestream: !!bidRequestData[0].params.video.livestream,
+      isCreatedForKids: null,
+      context: {
+        siteOrAppCat: '',
+        videoViewsInSession: null,
+        autoplay: null,
+        playerVolume: null,
+      },
     });
   });
 
@@ -337,6 +371,10 @@ describe('dailymotionBidAdapterTests', () => {
           title: 'test video',
           topics: 'topic_1, topic_2',
           xid: 'x123456',
+          isCreatedForKids: false,
+          videoViewsInSession: 10,
+          autoplay: false,
+          playerVolume: 0,
         },
       },
     }];
@@ -363,6 +401,7 @@ describe('dailymotionBidAdapterTests', () => {
             language: 'FR',
             keywords: 'tag_1,tag_2,tag_3',
             title: 'test video',
+            url: 'https://test.com/test',
             livestream: 1,
             cat: ['IAB-2'],
             data: [
@@ -419,6 +458,7 @@ describe('dailymotionBidAdapterTests', () => {
 
     expect(request.url).to.equal('https://pb.dmxleo.com');
 
+    expect(reqData.pbv).to.eql('$prebid.version$');
     expect(reqData.bidder_request).to.eql({
       refererInfo: bidderRequestData.refererInfo,
       uspConsent: bidderRequestData.uspConsent,
@@ -432,9 +472,22 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.coppa).to.be.false;
     expect(reqData.request.auctionId).to.eql(bidRequestData[0].auctionId);
     expect(reqData.request.bidId).to.eql(bidRequestData[0].bidId);
-    expect(reqData.request.mediaTypes.video.api).to.eql(bidRequestData[0].mediaTypes.video.api);
-    expect(reqData.request.mediaTypes.video.playerSize).to.eql(bidRequestData[0].mediaTypes.video.playerSize);
-    expect(reqData.request.mediaTypes.video.startdelay).to.eql(bidRequestData[0].mediaTypes.video.startdelay);
+
+    expect(reqData.request.mediaTypes.video).to.eql({
+      ...bidRequestData[0].mediaTypes.video,
+      mimes: [],
+      minduration: 0,
+      maxduration: 0,
+      playbackmethod: [],
+      plcmt: 1,
+      protocols: [],
+      skip: 0,
+      skipafter: 0,
+      skipmin: 0,
+      w: 0,
+      h: 0,
+    });
+
     expect(reqData.video_metadata).to.eql({
       description: bidRequestData[0].params.video.description,
       iabcat1: ['IAB-2'],
@@ -444,10 +497,18 @@ describe('dailymotionBidAdapterTests', () => {
       private: bidRequestData[0].params.video.private,
       tags: bidderRequestData.ortb2.site.content.keywords,
       title: bidderRequestData.ortb2.site.content.title,
+      url: bidderRequestData.ortb2.site.content.url,
       topics: bidRequestData[0].params.video.topics,
       xid: bidRequestData[0].params.video.xid,
       duration: bidRequestData[0].params.video.duration,
       livestream: !!bidderRequestData.ortb2.site.content.livestream,
+      isCreatedForKids: bidRequestData[0].params.video.isCreatedForKids,
+      context: {
+        siteOrAppCat: bidderRequestData.ortb2.site.content.cat,
+        videoViewsInSession: bidRequestData[0].params.video.videoViewsInSession,
+        autoplay: bidRequestData[0].params.video.autoplay,
+        playerVolume: bidRequestData[0].params.video.playerVolume,
+      },
     });
   });
 
@@ -470,6 +531,7 @@ describe('dailymotionBidAdapterTests', () => {
     expect(reqData.config.api_key).to.eql(bidRequestDataWithApi[0].params.apiKey);
     expect(reqData.coppa).to.be.false;
 
+    expect(reqData.pbv).to.eql('$prebid.version$');
     expect(reqData.bidder_request).to.eql({
       gdprConsent: {
         apiVersion: 1,
@@ -496,6 +558,8 @@ describe('dailymotionBidAdapterTests', () => {
           mimes: [],
           minduration: 0,
           maxduration: 0,
+          playbackmethod: [],
+          plcmt: 1,
           protocols: [],
           skip: 0,
           skipafter: 0,
@@ -518,9 +582,17 @@ describe('dailymotionBidAdapterTests', () => {
       private: false,
       tags: '',
       title: '',
+      url: '',
       topics: '',
       xid: '',
       livestream: false,
+      isCreatedForKids: null,
+      context: {
+        siteOrAppCat: '',
+        videoViewsInSession: null,
+        autoplay: null,
+        playerVolume: null,
+      },
     });
   });
 
@@ -556,5 +628,84 @@ describe('dailymotionBidAdapterTests', () => {
     expect(spec.interpretResponse({})).to.have.lengthOf(0);
 
     expect(spec.interpretResponse(undefined)).to.have.lengthOf(0);
+  });
+
+  it('validates getUserSyncs', () => {
+    // Nothing sent in getUserSyncs
+    expect(config.runWithBidder('dailymotion', () => spec.getUserSyncs())).to.eql([]);
+
+    // No server response
+    {
+      const responses = [];
+      const syncOptions = { iframeEnabled: true, pixelEnabled: true };
+
+      expect(config.runWithBidder(
+        'dailymotion',
+        () => spec.getUserSyncs(syncOptions, responses),
+      )).to.eql([]);
+    }
+
+    // No permissions
+    {
+      const responses = [{ user_syncs: [{ url: 'https://usersyncurl.com', type: 'image' }] }];
+      const syncOptions = { iframeEnabled: false, pixelEnabled: false };
+
+      expect(config.runWithBidder(
+        'dailymotion',
+        () => spec.getUserSyncs(syncOptions, responses),
+      )).to.eql([]);
+    }
+
+    // Has permissions but no user_syncs urls
+    {
+      const responses = [{}];
+      const syncOptions = { iframeEnabled: false, pixelEnabled: true };
+
+      expect(config.runWithBidder(
+        'dailymotion',
+        () => spec.getUserSyncs(syncOptions, responses),
+      )).to.eql([]);
+    }
+
+    // Return user_syncs urls for pixels
+    {
+      const responses = [{
+        user_syncs: [
+          { url: 'https://usersyncurl.com', type: 'image' },
+          { url: 'https://usersyncurl2.com', type: 'image' },
+          { url: 'https://usersyncurl3.com', type: 'iframe' }
+        ],
+      }];
+
+      const syncOptions = { iframeEnabled: false, pixelEnabled: true };
+
+      expect(config.runWithBidder(
+        'dailymotion',
+        () => spec.getUserSyncs(syncOptions, responses),
+      )).to.eql([
+        { type: 'image', url: 'https://usersyncurl.com' },
+        { type: 'image', url: 'https://usersyncurl2.com' },
+      ]);
+    }
+
+    // Return user_syncs urls for iframes
+    {
+      const responses = [{
+        user_syncs: [
+          { url: 'https://usersyncurl.com', type: 'image' },
+          { url: 'https://usersyncurl2.com', type: 'image' },
+          { url: 'https://usersyncurl3.com', type: 'iframe' }
+        ],
+      }];
+
+      const syncOptions = { iframeEnabled: true, pixelEnabled: true };
+
+      expect(config.runWithBidder(
+        'dailymotion',
+        () => spec.getUserSyncs(syncOptions, responses),
+      )).to.eql([
+        { type: 'iframe', url: 'https://usersyncurl3.com' },
+      ]);
+    }
   });
 });

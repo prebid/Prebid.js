@@ -122,9 +122,6 @@ describe('Adagio bid adapter', () => {
     GlobalExchange.clearFeatures();
     GlobalExchange.clearExchangeData();
 
-    adagioMock = sinon.mock(adagio);
-    utilsMock = sinon.mock(utils);
-
     $$PREBID_GLOBAL$$.bidderSettings = {
       adagio: {
         storageAllowed: true
@@ -132,14 +129,13 @@ describe('Adagio bid adapter', () => {
     };
 
     sandbox = sinon.createSandbox();
+    adagioMock = sandbox.mock(adagio);
+    utilsMock = sandbox.mock(utils);
   });
 
   afterEach(() => {
     window.ADAGIO = undefined;
     $$PREBID_GLOBAL$$.bidderSettings = {};
-
-    adagioMock.restore();
-    utilsMock.restore();
 
     sandbox.restore();
   });
@@ -267,6 +263,7 @@ describe('Adagio bid adapter', () => {
       'schain',
       'prebidVersion',
       'featuresVersion',
+      'hasRtd',
       'data',
       'usIfr',
       'adgjs',
@@ -350,6 +347,39 @@ describe('Adagio bid adapter', () => {
       expect(requests[0].data).to.have.all.keys(expectedDataKeys);
 
       adagioMock.verify();
+    });
+
+    describe('with Adagio Rtd Provider', function() {
+      it('it dont enqueue features from the bidder adapter', function() {
+        sandbox.stub(adagio, 'hasRtd').returns(true);
+        const bid01 = new BidRequestBuilder().withParams().build();
+        const bidderRequest = new BidderRequestBuilder().build();
+        spec.buildRequests([bid01], bidderRequest);
+        adagioMock.expects('enqueue').withArgs(sinon.match({ action: 'features' })).never();
+        adagioMock.verify();
+      });
+
+      it('get feature from ortb2', function() {
+        sandbox.stub(adagio, 'hasRtd').returns(true);
+        const bid01 = new BidRequestBuilder().withParams().build();
+        bid01.ortb2Imp = {
+          ext: { data: {adg_rtd: {adunit_position: '1x1'}} }
+        };
+        bid01.ortb2 = {
+          site: {
+            ext:
+            {
+              data: {
+                adg_rtd: { features: {} }
+              }
+            }
+          }
+        };
+        const bidderRequest = new BidderRequestBuilder().build();
+        const requests = spec.buildRequests([bid01], bidderRequest);
+        expect(requests[0].data.adUnits[0].features).to.exist;
+        expect(requests[0].data.adUnits[0].features.adunit_position).to.equal('1x1');
+      });
     });
 
     it('should filter some props in case refererDetection.reachedTop is false', function() {
@@ -1625,7 +1655,7 @@ describe('Adagio bid adapter', () => {
 
   describe('Adagio features when prebid in crossdomain iframe', function() {
     it('should return all expected features', function() {
-      sandbox.stub(utils, 'getWindowTop').throws();
+      sandbox.stub(utils, 'canAccessWindowTop').returns(false);
 
       const bidRequest = new BidRequestBuilder({
         'mediaTypes': {
@@ -1669,7 +1699,7 @@ describe('Adagio bid adapter', () => {
     });
 
     it('should returns domain and page in a cross-domain w/ top domain reached context', function() {
-      sandbox.stub(utils, 'getWindowTop').throws();
+      sandbox.stub(utils, 'canAccessWindowTop').returns(false);
       sandbox.stub(utils, 'getWindowSelf').returns({
         document: {
           referrer: 'https://google.com'
@@ -1704,7 +1734,7 @@ describe('Adagio bid adapter', () => {
     });
 
     it('should return info in a cross-domain w/o top domain reached and w/o ancestor context', function() {
-      sandbox.stub(utils, 'getWindowTop').throws();
+      sandbox.stub(utils, 'canAccessWindowTop').returns(false);
 
       const info = {
         numIframes: 2,

@@ -25,6 +25,7 @@ const DEFAULT_CREATIVE_TYPE = 'NativeX';
 const VALID_CREATIVE_TYPES = ['DTX', 'NativeX'];
 const FLIPP_USER_KEY = 'flipp-uid';
 const COMPACT_DEFAULT_HEIGHT = 600;
+const STANDARD_DEFAULT_HEIGHT = 1800;
 
 let userKey = null;
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
@@ -166,7 +167,10 @@ export const spec = {
     if (!isEmpty(res) && !isEmpty(res.decisions) && !isEmpty(res.decisions.inline)) {
       return res.decisions.inline.map(decision => {
         const placement = placements.find(p => p.prebid.requestId === decision.prebid?.requestId);
-        const height = placement.options?.startCompact ? COMPACT_DEFAULT_HEIGHT : decision.height;
+        const customData = decision.contents[0]?.data?.customData;
+        const height = placement.options?.startCompact
+          ? customData?.compactHeight ?? COMPACT_DEFAULT_HEIGHT
+          : customData?.standardHeight ?? STANDARD_DEFAULT_HEIGHT;
         return {
           bidderCode: BIDDER_CODE,
           requestId: decision.prebid?.requestId,
