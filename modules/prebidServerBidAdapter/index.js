@@ -82,6 +82,7 @@ let eidPermissions;
  * @property {string} [syncEndpoint] endpoint URL for syncing cookies
  * @property {Object} [extPrebid] properties will be merged into request.ext.prebid
  * @property {Object} [ortbNative] base value for imp.native.request
+ * @property {Number} [maxTimeout]
  */
 
 /**
@@ -89,7 +90,6 @@ let eidPermissions;
  */
 export const s2sDefaultConfig = {
   bidders: Object.freeze([]),
-  timeout: 1000,
   syncTimeout: 1000,
   maxBids: 1,
   adapter: 'prebidServer',
@@ -100,7 +100,8 @@ export const s2sDefaultConfig = {
     eventtrackers: [
       {event: 1, methods: [1, 2]}
     ],
-  }
+  },
+  maxTimeout: 1500
 };
 
 config.setDefaults({
@@ -559,10 +560,10 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
           let result;
           try {
             result = JSON.parse(response);
-            const {bids, fledgeAuctionConfigs} = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request));
+            const {bids, paapi} = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request));
             bids.forEach(onBid);
-            if (fledgeAuctionConfigs) {
-              fledgeAuctionConfigs.forEach(onFledge);
+            if (paapi) {
+              paapi.forEach(onFledge);
             }
           } catch (error) {
             logError(error);

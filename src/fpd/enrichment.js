@@ -33,7 +33,6 @@ export const enrichFPD = hook('sync', (fpd) => {
   return GreedyPromise.all(promArr)
     .then(([ortb2, sua, cdep]) => {
       const ri = dep.getRefererInfo();
-      mergeLegacySetConfigs(ortb2);
       Object.entries(ENRICHMENTS).forEach(([section, getEnrichments]) => {
         const data = getEnrichments(ortb2, ri);
         if (data && Object.keys(data).length > 0) {
@@ -63,17 +62,6 @@ export const enrichFPD = hook('sync', (fpd) => {
       return ortb2;
     });
 });
-
-function mergeLegacySetConfigs(ortb2) {
-  // merge in values from "legacy" setConfig({app, site, device})
-  // TODO: deprecate these eventually
-  ['app', 'site', 'device'].forEach(prop => {
-    const cfg = config.getConfig(prop);
-    if (cfg != null) {
-      ortb2[prop] = mergeDeep({}, cfg, ortb2[prop]);
-    }
-  })
-}
 
 function winFallback(fn) {
   try {

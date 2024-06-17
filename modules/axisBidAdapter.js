@@ -53,6 +53,7 @@ function getPlacementReqData(bid) {
     placement.mimes = mediaTypes[VIDEO].mimes;
     placement.protocols = mediaTypes[VIDEO].protocols;
     placement.startdelay = mediaTypes[VIDEO].startdelay;
+    placement.plcmt = mediaTypes[VIDEO].plcmt;
     placement.placement = mediaTypes[VIDEO].placement;
     placement.skip = mediaTypes[VIDEO].skip;
     placement.skipafter = mediaTypes[VIDEO].skipafter;
