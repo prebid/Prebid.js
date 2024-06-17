@@ -72,7 +72,7 @@ describe('connatixBidAdapter', function () {
       delete bid.mediaTypes;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
-    it('Should return false if banner and video is missing from mediaTypes ', function () {
+    it('Should return false if both banner and video are missing from mediaTypes', function () {
       delete bid.mediaTypes.banner;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
