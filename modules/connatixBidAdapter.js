@@ -53,11 +53,11 @@ export function validateBanner(mediaTypes) {
 }
 
 export function validateVideo(mediaTypes) {
-  if (!mediaTypes[VIDEO]) {
+  const video = mediaTypes[VIDEO];
+  if (!video) {
     return true;
   }
 
-  const video = deepAccess(mediaTypes, VIDEO, {});
   return video.context !== ADPOD;
 }
 
