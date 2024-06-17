@@ -114,7 +114,7 @@ export const spec = {
 
     let computedEndpointUrl = ENDPOINT_URL;
 
-    if (bidderRequest.fledgeEnabled) {
+    if (bidderRequest.paapi?.enabled) {
       const fledgeConfig = config.getConfig('fledgeConfig') || {
         seller: FLEDGE_SELLER_URL,
         decisionLogicUrl: FLEDGE_DECISION_LOGIC_URL,
@@ -209,7 +209,7 @@ export const spec = {
       logInfo('Response with FLEDGE:', { bids, fledgeAuctionConfigs });
       return {
         bids,
-        fledgeAuctionConfigs,
+        paapi: fledgeAuctionConfigs,
       }
     }
     return bids;
@@ -250,7 +250,7 @@ function mapImpression(slot, bidderRequest) {
     imp.bidfloor = bidfloor;
   }
 
-  if (bidderRequest.fledgeEnabled) {
+  if (bidderRequest.paapi?.enabled) {
     imp.ext = imp.ext || {};
     imp.ext.ae = slot?.ortb2Imp?.ext?.ae
   } else {

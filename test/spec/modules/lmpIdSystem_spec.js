@@ -4,6 +4,7 @@ import { config } from 'src/config.js';
 import { init, requestBidsHook, setSubmoduleRegistry } from 'modules/userId/index.js';
 import { storage, lmpIdSubmodule } from 'modules/lmpIdSystem.js';
 import { mockGdprConsent } from '../../helpers/consentData.js';
+import 'src/prebid.js';
 
 function getConfigMock() {
   return {

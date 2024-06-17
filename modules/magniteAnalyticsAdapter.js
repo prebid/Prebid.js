@@ -47,13 +47,13 @@ const pbsErrorMap = {
   4: 'request-error',
   999: 'generic-error'
 }
-let cookieless;
 
 let browser;
 let pageReferer;
 let auctionIndex = 0; // count of auctions on page
 let accountId;
 let endpoint;
+let cookieless;
 
 let prebidGlobal = getGlobal();
 const {
@@ -334,9 +334,9 @@ const getTopLevelDetails = () => {
 
   // Add DM wrapper details
   if (rubiConf.wrapperName) {
-    let rule;
+    let rule = rubiConf.rule_name;
     if (cookieless) {
-      rule = rubiConf.rule_name ? rubiConf.rule_name.concat('_cookieless') : 'cookieless';
+      rule = rule ? rule.concat('_cookieless') : 'cookieless';
     }
     payload.wrapper = {
       name: rubiConf.wrapperName,
@@ -703,6 +703,7 @@ magniteAdapter.disableAnalytics = function () {
   magniteAdapter._oldEnable = enableMgniAnalytics;
   endpoint = undefined;
   accountId = undefined;
+  cookieless = undefined;
   auctionIndex = 0;
   resetConfs();
   getHook('callPrebidCache').getHooks({ hook: callPrebidCacheHook }).remove();

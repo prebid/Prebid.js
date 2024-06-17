@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import {spec, storage} from 'modules/conversantBidAdapter.js';
 import * as utils from 'src/utils.js';
+import {deepSetValue} from 'src/utils.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import {deepAccess} from 'src/utils';
 // load modules that register ORTB processors
@@ -8,7 +9,7 @@ import 'src/prebid.js'
 import 'modules/currency.js';
 import 'modules/userId/index.js'; // handles eids
 import 'modules/priceFloors.js';
-import 'modules/consentManagement.js';
+import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js'; // handles schain
 import {hook} from '../../../src/hook.js'
@@ -465,7 +466,7 @@ describe('Conversant adapter tests', function() {
 
     before(() => {
       request = spec.buildRequests(bidRequests, {});
-      response = spec.interpretResponse(bidResponses, request);
+      response = spec.interpretResponse(bidResponses, request).bids;
     });
 
     it('Banner', function() {

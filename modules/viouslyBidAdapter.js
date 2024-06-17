@@ -2,7 +2,7 @@ import { deepAccess, logError, parseUrl, parseSizesInput, triggerPixel } from '.
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
-import find from 'core-js-pure/features/array/find.js'; // eslint-disable-line prebid/validate-imports
+import {find} from '../src/polyfill.js';
 
 const BIDDER_CODE = 'viously';
 const GVLID = 1028;

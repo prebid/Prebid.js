@@ -155,7 +155,7 @@ function handleTargetElement() {
 
   const targetElement = document.getElementById(conf.target);
   if (targetElement) {
-    email = targetElement.innerText;
+    email = targetElement.textContent;
 
     if (!email) {
       _logInfo('Finding the email with observer');
