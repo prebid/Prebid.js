@@ -3,7 +3,7 @@ import {
   spec,
   getBidFloor as connatixGetBidFloor
 } from '../../../modules/connatixBidAdapter.js';
-import { BANNER, VIDEO } from '../../../src/mediaTypes.js';
+import { ADPOD, BANNER, VIDEO } from '../../../src/mediaTypes.js';
 
 describe('connatixBidAdapter', function () {
   let bid;
@@ -94,7 +94,7 @@ describe('connatixBidAdapter', function () {
     });
     it('Should return false if context is set to adpod on video media type', function() {
       addVideoToBidMock(bid);
-      bid.mediaTypes.video.context = 'adpod';
+      bid.mediaTypes.video.context = ADPOD;
       expect(spec.isBidRequestValid(bid)).to.be.false;
     });
     it('Should return true if add an extra field was added to the bidRequest', function () {
