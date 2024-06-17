@@ -1,6 +1,7 @@
 import adagioAnalyticsAdapter from 'modules/adagioAnalyticsAdapter.js';
 import { expect } from 'chai';
 import * as utils from 'src/utils.js';
+import { config } from 'src/config.js';
 import { server } from 'test/mocks/xhr.js';
 import * as prebidGlobal from 'src/prebidGlobal.js';
 import { EVENTS } from 'src/constants.js';
@@ -16,6 +17,7 @@ describe('adagio analytics adapter - adagio.js', () => {
     sandbox = sinon.createSandbox();
 
     sandbox.stub(events, 'getEvents').returns([]);
+    config.setConfig({enableTIDs: true});
 
     const w = utils.getWindowTop();
 
@@ -93,7 +95,6 @@ describe('adagio analytics adapter - adagio.js', () => {
 
       // Step 1-3: Send events
       Object.entries(testEvents).forEach(([ev, payload]) => events.emit(ev, payload));
-
       function eventItem(eventName, args) {
         return sinon.match({
           action: 'pb-analytics-event',
@@ -616,6 +617,7 @@ const MOCK = {
 describe('adagio analytics adapter', () => {
   let sandbox;
 
+  config.setConfig({enableTIDs: true});
   beforeEach(() => {
     sandbox = sinon.sandbox.create();
 
@@ -848,6 +850,54 @@ describe('adagio analytics adapter', () => {
         expect(search.bdrs_bid).to.equal('1,1,0');
         expect(search.bdrs_cpm).to.equal('1.42,,');
       }
+    });
+  });
+});
+
+describe('adagio analytics adapter with enableTIDs = false', () => {
+  let sandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.sandbox.create();
+
+    sandbox.stub(events, 'getEvents').returns([]);
+    config.setConfig({enableTIDs: false});
+
+    adapterManager.registerAnalyticsAdapter({
+      code: 'adagio',
+      adapter: adagioAnalyticsAdapter
+    });
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
+  describe('track adagio only', () => {
+    beforeEach(() => {
+      adapterManager.enableAnalytics({
+        provider: 'adagio',
+        options: {
+          organizationId: '1001',
+          site: 'test-com',
+          analyzeAdagioOnly: true,
+        }
+      });
+    });
+
+    afterEach(() => {
+      adagioAnalyticsAdapter.disableAnalytics();
+    });
+
+    it('builds and sends auction data', () => {
+      events.emit(EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT.another);
+      events.emit(EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.adagio);
+      events.emit(EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.another);
+      events.emit(EVENTS.AUCTION_END, MOCK.AUCTION_END.another);
+      events.emit(EVENTS.BID_WON, MOCK.BID_WON.another);
+      events.emit(EVENTS.AD_RENDER_SUCCEEDED, MOCK.AD_RENDER_SUCCEEDED.another);
+
+      expect(server.requests.length).to.equal(0, 'requests count');
     });
   });
 });

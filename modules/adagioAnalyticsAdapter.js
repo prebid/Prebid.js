@@ -9,6 +9,7 @@ import { ajax } from '../src/ajax.js';
 import { BANNER } from '../src/mediaTypes.js';
 import { getWindowTop, getWindowSelf, deepAccess, logInfo, logError } from '../src/utils.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { config } from '../src/config.js';
 
 const emptyUrl = '';
 const analyticsType = 'endpoint';
@@ -404,7 +405,12 @@ let adagioAdapter = Object.assign(adapter({ emptyUrl, analyticsType }), {
 
 adagioAdapter.originEnableAnalytics = adagioAdapter.enableAnalytics;
 
-adagioAdapter.enableAnalytics = config => {
+adagioAdapter.enableAnalytics = adapterConfig => {
+  if (config.getConfig('enableTIDs') !== true) {
+    logError('Adagio Analytics Adapter requires prebid settings enableTIDs to be true. No beacon will be sent');
+    return;
+  }
+
   const w = (canAccessTopWindow()) ? getWindowTop() : getWindowSelf();
   currentWindow = w;
 
@@ -413,7 +419,7 @@ adagioAdapter.enableAnalytics = config => {
   w.ADAGIO.versions = w.ADAGIO.versions || {};
   w.ADAGIO.versions.adagioAnalyticsAdapter = VERSION;
 
-  adagioAdapter.originEnableAnalytics(config);
+  adagioAdapter.originEnableAnalytics(adapterConfig);
 }
 
 adapterManager.registerAnalyticsAdapter({
