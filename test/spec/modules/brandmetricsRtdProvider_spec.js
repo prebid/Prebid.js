@@ -67,6 +67,8 @@ const NO_USP_CONSENT = {
   usp: '1NYY'
 };
 
+const UNDEFINED_USER_CONSENT = {};
+
 function mockSurveyLoaded(surveyConf) {
   const commands = window._brandmetrics || [];
   commands.forEach(command => {
@@ -119,6 +121,10 @@ describe('BrandmetricsRTD module', () => {
 
   it('should not init when there is no usp- consent', () => {
     expect(brandmetricsRTD.brandmetricsSubmodule.init(VALID_CONFIG, NO_USP_CONSENT)).to.equal(false);
+  });
+
+  it('should init if there are no consent- objects defined', () => {
+    expect(brandmetricsRTD.brandmetricsSubmodule.init(VALID_CONFIG, UNDEFINED_USER_CONSENT)).to.equal(true);
   });
 });
 

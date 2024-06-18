@@ -65,7 +65,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
   const pId = extractPID(params);
   const subDomain = extractSubDomain(params);
 
-  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid', deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', ''));
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', '');
 
   if (isFn(bid.getFloor)) {
     const floorInfo = bid.getFloor({
@@ -173,7 +173,7 @@ function appendUserIdsToRequestPayload(payloadRef, userIds) {
 
 function buildRequests(validBidRequests, bidderRequest) {
   const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
-  const bidderTimeout = config.getConfig('bidderTimeout');
+  const bidderTimeout = bidderRequest.timeout ?? config.getConfig('bidderTimeout');
   const requests = [];
   validBidRequests.forEach(validBidRequest => {
     const sizes = parseSizesInput(validBidRequest.sizes);
@@ -251,13 +251,20 @@ function interpretResponse(serverResponse, request) {
   }
 }
 
-function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '') {
+function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '', gppConsent = {}) {
   let syncs = [];
   const {iframeEnabled, pixelEnabled} = syncOptions;
   const {gdprApplies, consentString = ''} = gdprConsent;
+  const {gppString, applicableSections} = gppConsent;
 
   const cidArr = responses.filter(resp => deepAccess(resp, 'body.cid')).map(resp => resp.body.cid).filter(uniques);
-  const params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`
+  let params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`
+
+  if (gppString && applicableSections?.length) {
+    params += '&gpp=' + encodeURIComponent(gppString);
+    params += '&gpp_sid=' + encodeURIComponent(applicableSections.join(','));
+  }
+
   if (iframeEnabled) {
     syncs.push({
       type: 'iframe',

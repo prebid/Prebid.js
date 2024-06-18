@@ -1,7 +1,7 @@
 import {ajax} from '../src/ajax.js';
 import { generateUUID, logInfo, logWarn } from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
 import adapterManager from '../src/adapterManager.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { getRefererInfo } from '../src/refererDetection.js';
@@ -10,11 +10,8 @@ const ANALYTICS_TYPE = 'endpoint';
 const URL = 'https://wba.liadm.com/analytic-events';
 const GVL_ID = 148;
 const ADAPTER_CODE = 'liveintent';
-const DEFAULT_SAMPLING = 0.1;
 const DEFAULT_BID_WON_TIMEOUT = 2000;
-const { EVENTS: { AUCTION_END } } = CONSTANTS;
-let initOptions = {};
-let isSampled;
+const { AUCTION_END } = EVENTS;
 let bidWonTimeout;
 
 function handleAuctionEnd(args) {
@@ -123,19 +120,15 @@ function ignoreUndefined(data) {
 
 let liAnalytics = Object.assign(adapter({URL, ANALYTICS_TYPE}), {
   track({ eventType, args }) {
-    if (eventType == AUCTION_END && args && isSampled) { handleAuctionEnd(args); }
+    if (eventType == AUCTION_END && args) { handleAuctionEnd(args); }
   }
 });
 
 // save the base class function
 liAnalytics.originEnableAnalytics = liAnalytics.enableAnalytics;
-
 // override enableAnalytics so we can get access to the config passed in from the page
 liAnalytics.enableAnalytics = function (config) {
-  initOptions = config.options;
-  const sampling = (initOptions && initOptions.sampling) ?? DEFAULT_SAMPLING;
-  isSampled = Math.random() < parseFloat(sampling);
-  bidWonTimeout = (initOptions && initOptions.bidWonTimeout) ?? DEFAULT_BID_WON_TIMEOUT;
+  bidWonTimeout = config?.options?.bidWonTimeout ?? DEFAULT_BID_WON_TIMEOUT;
   liAnalytics.originEnableAnalytics(config); // call the base class function
 };
 

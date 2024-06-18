@@ -5,11 +5,15 @@
  * @module modules/brandmetricsRtdProvider
  * @requires module:modules/realTimeData
  */
-import {submodule} from '../src/hook.js';
-import {deepAccess, deepSetValue, logError, mergeDeep, generateUUID} from '../src/utils.js';
-import {loadExternalScript} from '../src/adloader.js';
+import { submodule } from '../src/hook.js';
+import { deepAccess, deepSetValue, logError, mergeDeep, generateUUID } from '../src/utils.js';
+import { loadExternalScript } from '../src/adloader.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json';
+import { EVENTS } from '../src/constants.js';
+
+/**
+ * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
+ */
 
 const MODULE_NAME = 'brandmetrics'
 const MODULE_CODE = MODULE_NAME
@@ -21,13 +25,14 @@ let billableEventsInitialized = false
 
 function init (config, userConsent) {
   const hasConsent = checkConsent(userConsent)
+  const initialize = hasConsent !== false
 
-  if (hasConsent) {
+  if (initialize) {
     const moduleConfig = getMergedConfig(config)
     initializeBrandmetrics(moduleConfig.params.scriptId)
     initializeBillableEvents()
   }
-  return hasConsent
+  return initialize
 }
 
 /**
@@ -36,43 +41,46 @@ function init (config, userConsent) {
  * @returns {boolean}
  */
 function checkConsent (userConsent) {
-  let consent = false
+  let consent
 
-  if (userConsent && userConsent.gdpr && userConsent.gdpr.gdprApplies) {
-    const gdpr = userConsent.gdpr
+  if (userConsent) {
+    if (userConsent.gdpr && userConsent.gdpr.gdprApplies) {
+      const gdpr = userConsent.gdpr
 
-    if (gdpr.vendorData) {
-      const vendor = gdpr.vendorData.vendor
-      const purpose = gdpr.vendorData.purpose
+      if (gdpr.vendorData) {
+        const vendor = gdpr.vendorData.vendor
+        const purpose = gdpr.vendorData.purpose
 
-      let vendorConsent = false
-      if (vendor.consents) {
-        vendorConsent = vendor.consents[GVL_ID]
+        let vendorConsent = false
+        if (vendor.consents) {
+          vendorConsent = vendor.consents[GVL_ID]
+        }
+
+        if (vendor.legitimateInterests) {
+          vendorConsent = vendorConsent || vendor.legitimateInterests[GVL_ID]
+        }
+
+        const purposes = TCF_PURPOSES.map(id => {
+          return (purpose.consents && purpose.consents[id]) || (purpose.legitimateInterests && purpose.legitimateInterests[id])
+        })
+        const purposesValid = purposes.filter(p => p === true).length === TCF_PURPOSES.length
+        consent = vendorConsent && purposesValid
       }
-
-      if (vendor.legitimateInterests) {
-        vendorConsent = vendorConsent || vendor.legitimateInterests[GVL_ID]
-      }
-
-      const purposes = TCF_PURPOSES.map(id => {
-        return (purpose.consents && purpose.consents[id]) || (purpose.legitimateInterests && purpose.legitimateInterests[id])
-      })
-      const purposesValid = purposes.filter(p => p === true).length === TCF_PURPOSES.length
-      consent = vendorConsent && purposesValid
+    } else if (userConsent.usp) {
+      const usp = userConsent.usp
+      consent = usp[1] !== 'N' && usp[2] !== 'Y'
     }
-  } else if (userConsent.usp) {
-    const usp = userConsent.usp
-    consent = usp[1] !== 'N' && usp[2] !== 'Y'
   }
 
   return consent
 }
 
 /**
-* Add event- listeners to hook in to brandmetrics events
-* @param {Object} reqBidsConfigObj
-* @param {function} callback
-*/
+ * Add event- listeners to hook in to brandmetrics events
+ * @param {Object} reqBidsConfigObj
+ * @param {Object} moduleConfig
+ * @param {function} callback
+ */
 function processBrandmetricsEvents (reqBidsConfigObj, moduleConfig, callback) {
   const callBidTargeting = (event) => {
     if (event.available && event.conf) {
@@ -107,6 +115,7 @@ function processBrandmetricsEvents (reqBidsConfigObj, moduleConfig, callback) {
 /**
  * Sets bid targeting of specific bidders
  * @param {Object} reqBidsConfigObj
+ * @param {Object} moduleConfig
  * @param {string} key Targeting key
  * @param {string} val Targeting value
  */
@@ -136,8 +145,8 @@ function initializeBrandmetrics(scriptId) {
 }
 
 /**
-* Hook in to brandmetrics creative_in_view- event and emit billable- event for creatives measured by brandmetrics.
-*/
+ * Hook in to brandmetrics creative_in_view- event and emit billable- event for creatives measured by brandmetrics.
+ */
 function initializeBillableEvents() {
   if (!billableEventsInitialized) {
     window._brandmetrics.push({
@@ -147,7 +156,7 @@ function initializeBillableEvents() {
         handler: (ev) => {
           if (ev.source && ev.source.type === 'pbj') {
             const bid = ev.source.data;
-            events.emit(CONSTANTS.EVENTS.BILLABLE_EVENT, {
+            events.emit(EVENTS.BILLABLE_EVENT, {
               vendor: 'brandmetrics',
               type: 'creative_in_view',
               measurementId: ev.mid,
@@ -193,7 +202,7 @@ export const brandmetricsSubmodule = {
       logError(e)
     }
   },
-  init: init
+  init
 }
 
 submodule('realTimeData', brandmetricsSubmodule)

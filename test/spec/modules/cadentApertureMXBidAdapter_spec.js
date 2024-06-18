@@ -1,7 +1,8 @@
-import { expect } from 'chai';
-import { spec } from 'modules/cadentApertureMXBidAdapter.js';
 import * as utils from 'src/utils.js';
+
+import { expect } from 'chai';
 import { newBidder } from 'src/adapters/bidderFactory.js';
+import { spec } from 'modules/cadentApertureMXBidAdapter.js';
 
 describe('cadent_aperture_mx Adapter', function () {
   describe('callBids', function () {
@@ -236,228 +237,329 @@ describe('cadent_aperture_mx Adapter', function () {
         'bidId': '30b31c2501de1e',
         'auctionId': 'e19f1eff-8b27-42a6-888d-9674e5a6130c',
         'transactionId': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ec',
+        'ortb2Imp': {
+          'ext': {
+            'tid': 'd7b773de-ceaa-484d-89ca-d9f51b8d61ed',
+          },
+        },
       }]
     };
     let request = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
-    it('sends bid request to ENDPOINT via POST', function () {
-      expect(request.method).to.equal('POST');
-    });
+    describe('non-gpp tests', function() {
+      it('sends bid request to ENDPOINT via POST', function () {
+        expect(request.method).to.equal('POST');
+      });
 
-    it('contains the correct options', function () {
-      expect(request.options.withCredentials).to.equal(true);
-    });
+      it('contains the correct options', function () {
+        expect(request.options.withCredentials).to.equal(true);
+      });
 
-    it('contains a properly formatted endpoint url', function () {
-      const url = request.url.split('?');
-      const queryParams = url[1].split('&');
-      expect(queryParams[0]).to.match(new RegExp('^t=\d*', 'g'));
-      expect(queryParams[1]).to.match(new RegExp('^ts=\d*', 'g'));
-    });
+      it('contains a properly formatted endpoint url', function () {
+        const url = request.url.split('?');
+        const queryParams = url[1].split('&');
+        expect(queryParams[0]).to.match(new RegExp('^t=\d*', 'g'));
+        expect(queryParams[1]).to.match(new RegExp('^ts=\d*', 'g'));
+      });
 
-    it('builds bidfloor value from bid param when getFloor function does not exist', function () {
-      const bidRequestWithFloor = utils.deepClone(bidderRequest.bids);
-      bidRequestWithFloor[0].params.bidfloor = 1;
-      const requestWithFloor = spec.buildRequests(bidRequestWithFloor, bidderRequest);
-      const data = JSON.parse(requestWithFloor.data);
-      expect(data.imp[0].bidfloor).to.equal(bidRequestWithFloor[0].params.bidfloor);
-    });
+      it('builds bidfloor value from bid param when getFloor function does not exist', function () {
+        const bidRequestWithFloor = utils.deepClone(bidderRequest.bids);
+        bidRequestWithFloor[0].params.bidfloor = 1;
+        const requestWithFloor = spec.buildRequests(bidRequestWithFloor, bidderRequest);
+        const data = JSON.parse(requestWithFloor.data);
+        expect(data.imp[0].bidfloor).to.equal(bidRequestWithFloor[0].params.bidfloor);
+      });
 
-    it('builds bidfloor value from getFloor function when it exists', function () {
-      const floorResponse = { currency: 'USD', floor: 3 };
-      const bidRequestWithGetFloor = utils.deepClone(bidderRequest.bids);
-      bidRequestWithGetFloor[0].getFloor = () => floorResponse;
-      const requestWithGetFloor = spec.buildRequests(bidRequestWithGetFloor, bidderRequest);
-      const data = JSON.parse(requestWithGetFloor.data);
-      expect(data.imp[0].bidfloor).to.equal(3);
-    });
+      it('builds bidfloor value from getFloor function when it exists', function () {
+        const floorResponse = { currency: 'USD', floor: 3 };
+        const bidRequestWithGetFloor = utils.deepClone(bidderRequest.bids);
+        bidRequestWithGetFloor[0].getFloor = () => floorResponse;
+        const requestWithGetFloor = spec.buildRequests(bidRequestWithGetFloor, bidderRequest);
+        const data = JSON.parse(requestWithGetFloor.data);
+        expect(data.imp[0].bidfloor).to.equal(3);
+      });
 
-    it('builds bidfloor value from getFloor when both floor and getFloor function exists', function () {
-      const floorResponse = { currency: 'USD', floor: 3 };
-      const bidRequestWithBothFloors = utils.deepClone(bidderRequest.bids);
-      bidRequestWithBothFloors[0].params.bidfloor = 1;
-      bidRequestWithBothFloors[0].getFloor = () => floorResponse;
-      const requestWithBothFloors = spec.buildRequests(bidRequestWithBothFloors, bidderRequest);
-      const data = JSON.parse(requestWithBothFloors.data);
-      expect(data.imp[0].bidfloor).to.equal(3);
-    });
+      it('builds bidfloor value from getFloor when both floor and getFloor function exists', function () {
+        const floorResponse = { currency: 'USD', floor: 3 };
+        const bidRequestWithBothFloors = utils.deepClone(bidderRequest.bids);
+        bidRequestWithBothFloors[0].params.bidfloor = 1;
+        bidRequestWithBothFloors[0].getFloor = () => floorResponse;
+        const requestWithBothFloors = spec.buildRequests(bidRequestWithBothFloors, bidderRequest);
+        const data = JSON.parse(requestWithBothFloors.data);
+        expect(data.imp[0].bidfloor).to.equal(3);
+      });
 
-    it('empty bidfloor value when floor and getFloor is not defined', function () {
-      const bidRequestWithoutFloor = utils.deepClone(bidderRequest.bids);
-      const requestWithoutFloor = spec.buildRequests(bidRequestWithoutFloor, bidderRequest);
-      const data = JSON.parse(requestWithoutFloor.data);
-      expect(data.imp[0].bidfloor).to.not.exist;
-    });
+      it('empty bidfloor value when floor and getFloor is not defined', function () {
+        const bidRequestWithoutFloor = utils.deepClone(bidderRequest.bids);
+        const requestWithoutFloor = spec.buildRequests(bidRequestWithoutFloor, bidderRequest);
+        const data = JSON.parse(requestWithoutFloor.data);
+        expect(data.imp[0].bidfloor).to.not.exist;
+      });
 
-    it('builds request properly', function () {
-      const data = JSON.parse(request.data);
-      expect(Array.isArray(data.imp)).to.equal(true);
-      expect(data.id).to.equal(bidderRequest.auctionId);
-      expect(data.imp.length).to.equal(1);
-      expect(data.imp[0].id).to.equal('30b31c2501de1e');
-      expect(data.imp[0].tid).to.equal('d7b773de-ceaa-484d-89ca-d9f51b8d61ec');
-      expect(data.imp[0].tagid).to.equal('25251');
-      expect(data.imp[0].secure).to.equal(0);
-      expect(data.imp[0].vastXml).to.equal(undefined);
-    });
+      it('builds request properly', function () {
+        const data = JSON.parse(request.data);
+        expect(Array.isArray(data.imp)).to.equal(true);
+        expect(data.id).to.equal(bidderRequest.auctionId);
+        expect(data.imp.length).to.equal(1);
+        expect(data.imp[0].id).to.equal('30b31c2501de1e');
+        expect(data.imp[0].tid).to.equal('d7b773de-ceaa-484d-89ca-d9f51b8d61ed');
+        expect(data.imp[0].tagid).to.equal('25251');
+        expect(data.imp[0].secure).to.equal(0);
+        expect(data.imp[0].vastXml).to.equal(undefined);
+      });
 
-    it('properly sends site information and protocol', function () {
-      request = spec.buildRequests(bidderRequest.bids, bidderRequest);
-      request = JSON.parse(request.data);
-      expect(request.site).to.have.property('domain', 'example.com');
-      expect(request.site).to.have.property('page', 'https://example.com/index.html?pbjs_debug=true');
-      expect(request.site).to.have.property('ref', 'https://referrer.com');
-    });
+      it('populates id even when auctionId is not available', function () {
+        // addressing https://github.com/prebid/Prebid.js/issues/9781
+        bidderRequest.auctionId = null;
+        request = spec.buildRequests(bidderRequest.bids, bidderRequest);
 
-    it('builds correctly formatted request banner object', function () {
-      let bidRequestWithBanner = utils.deepClone(bidderRequest.bids);
-      let request = spec.buildRequests(bidRequestWithBanner, bidderRequest);
-      const data = JSON.parse(request.data);
-      expect(data.imp[0].video).to.equal(undefined);
-      expect(data.imp[0].banner).to.exist.and.to.be.a('object');
-      expect(data.imp[0].banner.w).to.equal(bidRequestWithBanner[0].mediaTypes.banner.sizes[0][0]);
-      expect(data.imp[0].banner.h).to.equal(bidRequestWithBanner[0].mediaTypes.banner.sizes[0][1]);
-      expect(data.imp[0].banner.format[0].w).to.equal(bidRequestWithBanner[0].mediaTypes.banner.sizes[0][0]);
-      expect(data.imp[0].banner.format[0].h).to.equal(bidRequestWithBanner[0].mediaTypes.banner.sizes[0][1]);
-      expect(data.imp[0].banner.format[1].w).to.equal(bidRequestWithBanner[0].mediaTypes.banner.sizes[1][0]);
-      expect(data.imp[0].banner.format[1].h).to.equal(bidRequestWithBanner[0].mediaTypes.banner.sizes[1][1]);
-    });
+        const data = JSON.parse(request.data);
+        expect(data.id).not.to.be.null;
+        expect(data.id).not.to.equal(bidderRequest.auctionId);
+      });
 
-    it('builds correctly formatted request video object for instream', function () {
-      let bidRequestWithVideo = utils.deepClone(bidderRequest.bids);
-      bidRequestWithVideo[0].mediaTypes = {
-        video: {
-          context: 'instream',
-          playerSize: [[640, 480]]
-        },
-      };
-      bidRequestWithVideo[0].params.video = {};
-      let request = spec.buildRequests(bidRequestWithVideo, bidderRequest);
-      const data = JSON.parse(request.data);
-      expect(data.imp[0].video).to.exist.and.to.be.a('object');
-      expect(data.imp[0].video.w).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][0]);
-      expect(data.imp[0].video.h).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][1]);
-    });
+      it('properly sends site information and protocol', function () {
+        request = spec.buildRequests(bidderRequest.bids, bidderRequest);
+        request = JSON.parse(request.data);
+        expect(request.site).to.have.property('domain', 'example.com');
+        expect(request.site).to.have.property('page', 'https://example.com/index.html?pbjs_debug=true');
+        expect(request.site).to.have.property('ref', 'https://referrer.com');
+      });
 
-    it('builds correctly formatted request video object for outstream', function () {
-      let bidRequestWithOutstreamVideo = utils.deepClone(bidderRequest.bids);
-      bidRequestWithOutstreamVideo[0].mediaTypes = {
-        video: {
-          context: 'outstream',
-          playerSize: [[640, 480]]
-        },
-      };
-      bidRequestWithOutstreamVideo[0].params.video = {};
-      let request = spec.buildRequests(bidRequestWithOutstreamVideo, bidderRequest);
-      const data = JSON.parse(request.data);
-      expect(data.imp[0].video).to.exist.and.to.be.a('object');
-      expect(data.imp[0].video.w).to.equal(bidRequestWithOutstreamVideo[0].mediaTypes.video.playerSize[0][0]);
-      expect(data.imp[0].video.h).to.equal(bidRequestWithOutstreamVideo[0].mediaTypes.video.playerSize[0][1]);
-    });
+      it('builds correctly formatted request banner object', function () {
+        let bidRequestWithBanner = utils.deepClone(bidderRequest.bids);
+        let request = spec.buildRequests(bidRequestWithBanner, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.imp[0].video).to.equal(undefined);
+        expect(data.imp[0].banner).to.exist.and.to.be.a('object');
+        expect(data.imp[0].banner.w).to.equal(bidRequestWithBanner[0].mediaTypes.banner.sizes[0][0]);
+        expect(data.imp[0].banner.h).to.equal(bidRequestWithBanner[0].mediaTypes.banner.sizes[0][1]);
+        expect(data.imp[0].banner.format[0].w).to.equal(bidRequestWithBanner[0].mediaTypes.banner.sizes[0][0]);
+        expect(data.imp[0].banner.format[0].h).to.equal(bidRequestWithBanner[0].mediaTypes.banner.sizes[0][1]);
+        expect(data.imp[0].banner.format[1].w).to.equal(bidRequestWithBanner[0].mediaTypes.banner.sizes[1][0]);
+        expect(data.imp[0].banner.format[1].h).to.equal(bidRequestWithBanner[0].mediaTypes.banner.sizes[1][1]);
+      });
 
-    it('shouldn\'t contain a user obj without GDPR information', function () {
-      let request = spec.buildRequests(bidderRequest.bids, bidderRequest)
-      request = JSON.parse(request.data)
-      expect(request).to.not.have.property('user');
-    });
+      it('builds correctly formatted request video object for instream', function () {
+        let bidRequestWithVideo = utils.deepClone(bidderRequest.bids);
+        bidRequestWithVideo[0].mediaTypes = {
+          video: {
+            context: 'instream',
+            playerSize: [[640, 480]]
+          },
+        };
+        bidRequestWithVideo[0].params.video = {};
+        let request = spec.buildRequests(bidRequestWithVideo, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.imp[0].video).to.exist.and.to.be.a('object');
+        expect(data.imp[0].video.w).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][0]);
+        expect(data.imp[0].video.h).to.equal(bidRequestWithVideo[0].mediaTypes.video.playerSize[0][1]);
+      });
 
-    it('should have the right gdpr info when enabled', function () {
-      let consentString = 'OIJSZsOAFsABAB8EMXZZZZZ+A==';
-      const gdprBidderRequest = utils.deepClone(bidderRequest);
-      gdprBidderRequest.gdprConsent = {
-        'consentString': consentString,
-        'gdprApplies': true
-      };
-      let request = spec.buildRequests(gdprBidderRequest.bids, gdprBidderRequest);
+      it('builds correctly formatted request video object for outstream', function () {
+        let bidRequestWithOutstreamVideo = utils.deepClone(bidderRequest.bids);
+        bidRequestWithOutstreamVideo[0].mediaTypes = {
+          video: {
+            context: 'outstream',
+            playerSize: [[640, 480]]
+          },
+        };
+        bidRequestWithOutstreamVideo[0].params.video = {};
+        let request = spec.buildRequests(bidRequestWithOutstreamVideo, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.imp[0].video).to.exist.and.to.be.a('object');
+        expect(data.imp[0].video.w).to.equal(bidRequestWithOutstreamVideo[0].mediaTypes.video.playerSize[0][0]);
+        expect(data.imp[0].video.h).to.equal(bidRequestWithOutstreamVideo[0].mediaTypes.video.playerSize[0][1]);
+      });
 
-      request = JSON.parse(request.data)
-      expect(request.regs.ext).to.have.property('gdpr', 1);
-      expect(request.user.ext).to.have.property('consent', consentString);
-    });
+      it('shouldn\'t contain a user obj without GDPR information', function () {
+        let request = spec.buildRequests(bidderRequest.bids, bidderRequest)
+        request = JSON.parse(request.data)
+        expect(request).to.not.have.property('user');
+      });
 
-    it('should\'t contain consent string if gdpr isn\'t applied', function () {
-      const nonGdprBidderRequest = utils.deepClone(bidderRequest);
-      nonGdprBidderRequest.gdprConsent = {
-        'gdprApplies': false
-      };
-      let request = spec.buildRequests(nonGdprBidderRequest.bids, nonGdprBidderRequest);
-      request = JSON.parse(request.data)
-      expect(request.regs.ext).to.have.property('gdpr', 0);
-      expect(request).to.not.have.property('user');
-    });
+      it('should have the right gdpr info when enabled', function () {
+        let consentString = 'OIJSZsOAFsABAB8EMXZZZZZ+A==';
+        const gdprBidderRequest = utils.deepClone(bidderRequest);
+        gdprBidderRequest.gdprConsent = {
+          'consentString': consentString,
+          'gdprApplies': true
+        };
+        let request = spec.buildRequests(gdprBidderRequest.bids, gdprBidderRequest);
 
-    it('should add us privacy info to request', function() {
-      const uspBidderRequest = utils.deepClone(bidderRequest);
-      let consentString = '1YNN';
-      uspBidderRequest.uspConsent = consentString;
-      let request = spec.buildRequests(uspBidderRequest.bids, uspBidderRequest);
-      request = JSON.parse(request.data);
-      expect(request.us_privacy).to.exist;
-      expect(request.us_privacy).to.exist.and.to.equal(consentString);
-    });
+        request = JSON.parse(request.data)
+        expect(request.regs.ext).to.have.property('gdpr', 1);
+        expect(request.user.ext).to.have.property('consent', consentString);
+      });
 
-    it('should add schain object to request', function() {
-      const schainBidderRequest = utils.deepClone(bidderRequest);
-      schainBidderRequest.bids[0].schain = {
-        'complete': 1,
-        'ver': '1.0',
-        'nodes': [
-          {
-            'asi': 'testing.com',
-            'sid': 'abc',
-            'hp': 1
-          }
-        ]
-      };
-      let request = spec.buildRequests(schainBidderRequest.bids, schainBidderRequest);
-      request = JSON.parse(request.data);
-      expect(request.source.ext.schain).to.exist;
-      expect(request.source.ext.schain).to.have.property('complete', 1);
-      expect(request.source.ext.schain).to.have.property('ver', '1.0');
-      expect(request.source.ext.schain.nodes[0].asi).to.equal(schainBidderRequest.bids[0].schain.nodes[0].asi);
-    });
+      it('should\'t contain consent string if gdpr isn\'t applied', function () {
+        const nonGdprBidderRequest = utils.deepClone(bidderRequest);
+        nonGdprBidderRequest.gdprConsent = {
+          'gdprApplies': false
+        };
+        let request = spec.buildRequests(nonGdprBidderRequest.bids, nonGdprBidderRequest);
+        request = JSON.parse(request.data)
+        expect(request.regs.ext).to.have.property('gdpr', 0);
+        expect(request).to.not.have.property('user');
+      });
 
-    it('should add liveramp identitylink id to request', () => {
-      const idl_env = '123';
-      const bidRequestWithID = utils.deepClone(bidderRequest);
-      bidRequestWithID.userId = { idl_env };
-      let requestWithID = spec.buildRequests(bidRequestWithID.bids, bidRequestWithID);
-      requestWithID = JSON.parse(requestWithID.data);
-      expect(requestWithID.user.ext.eids[0]).to.deep.equal({
-        source: 'liveramp.com',
-        uids: [{
-          id: idl_env,
-          ext: {
-            rtiPartner: 'idl'
-          }
-        }]
+      it('should add us privacy info to request', function() {
+        const uspBidderRequest = utils.deepClone(bidderRequest);
+        let consentString = '1YNN';
+        uspBidderRequest.uspConsent = consentString;
+        let request = spec.buildRequests(uspBidderRequest.bids, uspBidderRequest);
+        request = JSON.parse(request.data);
+        expect(request.us_privacy).to.exist;
+        expect(request.us_privacy).to.exist.and.to.equal(consentString);
+      });
+
+      it('should add schain object to request', function() {
+        const schainBidderRequest = utils.deepClone(bidderRequest);
+        schainBidderRequest.bids[0].schain = {
+          'complete': 1,
+          'ver': '1.0',
+          'nodes': [
+            {
+              'asi': 'testing.com',
+              'sid': 'abc',
+              'hp': 1
+            }
+          ]
+        };
+        let request = spec.buildRequests(schainBidderRequest.bids, schainBidderRequest);
+        request = JSON.parse(request.data);
+        expect(request.source.ext.schain).to.exist;
+        expect(request.source.ext.schain).to.have.property('complete', 1);
+        expect(request.source.ext.schain).to.have.property('ver', '1.0');
+        expect(request.source.ext.schain.nodes[0].asi).to.equal(schainBidderRequest.bids[0].schain.nodes[0].asi);
+      });
+
+      it('should add liveramp identitylink id to request', () => {
+        const idl_env = '123';
+        const bidRequestWithID = utils.deepClone(bidderRequest);
+        bidRequestWithID.userId = { idl_env };
+        let requestWithID = spec.buildRequests(bidRequestWithID.bids, bidRequestWithID);
+        requestWithID = JSON.parse(requestWithID.data);
+        expect(requestWithID.user.ext.eids[0]).to.deep.equal({
+          source: 'liveramp.com',
+          uids: [{
+            id: idl_env,
+            ext: {
+              rtiPartner: 'idl'
+            }
+          }]
+        });
+      });
+
+      it('should add gpid to request if present in ext.gpid', () => {
+        const gpid = '/12345/my-gpt-tag-0';
+        let bid = utils.deepClone(bidderRequest.bids[0]);
+        bid.ortb2Imp = { ext: { gpid, data: { adserver: { adslot: gpid + '1' }, pbadslot: gpid + '2' } } };
+        let requestWithGPID = spec.buildRequests([bid], bidderRequest);
+        requestWithGPID = JSON.parse(requestWithGPID.data);
+        expect(requestWithGPID.imp[0].ext.gpid).to.exist.and.equal(gpid);
+      });
+
+      it('should add gpid to request if present in ext.data.adserver.adslot', () => {
+        const gpid = '/12345/my-gpt-tag-0';
+        let bid = utils.deepClone(bidderRequest.bids[0]);
+        bid.ortb2Imp = { ext: { data: { adserver: { adslot: gpid }, pbadslot: gpid + '1' } } };
+        let requestWithGPID = spec.buildRequests([bid], bidderRequest);
+        requestWithGPID = JSON.parse(requestWithGPID.data);
+        expect(requestWithGPID.imp[0].ext.gpid).to.exist.and.equal(gpid);
+      });
+
+      it('should add gpid to request if present in ext.data.pbadslot', () => {
+        const gpid = '/12345/my-gpt-tag-0';
+        let bid = utils.deepClone(bidderRequest.bids[0]);
+        bid.ortb2Imp = { ext: { data: { pbadslot: gpid } } };
+        let requestWithGPID = spec.buildRequests([bid], bidderRequest);
+        requestWithGPID = JSON.parse(requestWithGPID.data);
+        expect(requestWithGPID.imp[0].ext.gpid).to.exist.and.equal(gpid);
+      });
+
+      it('should add UID 2.0 to request', () => {
+        const uid2 = { id: '456' };
+        const bidRequestWithUID = utils.deepClone(bidderRequest);
+        bidRequestWithUID.userId = { uid2 };
+        let requestWithUID = spec.buildRequests(bidRequestWithUID.bids, bidRequestWithUID);
+        requestWithUID = JSON.parse(requestWithUID.data);
+        expect(requestWithUID.user.ext.eids[0]).to.deep.equal({
+          source: 'uidapi.com',
+          uids: [{
+            id: uid2.id,
+            ext: {
+              rtiPartner: 'UID2'
+            }
+          }]
+        });
       });
     });
 
-    it('should add gpid to request if present', () => {
-      const gpid = '/12345/my-gpt-tag-0';
-      let bid = utils.deepClone(bidderRequest.bids[0]);
-      bid.ortb2Imp = { ext: { data: { adserver: { adslot: gpid } } } };
-      bid.ortb2Imp = { ext: { data: { pbadslot: gpid } } };
-      let requestWithGPID = spec.buildRequests([bid], bidderRequest);
-      requestWithGPID = JSON.parse(requestWithGPID.data);
-      expect(requestWithGPID.imp[0].ext.gpid).to.exist.and.equal(gpid);
-    });
+    describe('gpp tests', function() {
+      describe('when gppConsent is not present on bid request', () => {
+        it('should return request with no gpp or gpp_sid properties', function() {
+          const gppCompliantBidderRequest = utils.deepClone(bidderRequest);
 
-    it('should add UID 2.0 to request', () => {
-      const uid2 = { id: '456' };
-      const bidRequestWithUID = utils.deepClone(bidderRequest);
-      bidRequestWithUID.userId = { uid2 };
-      let requestWithUID = spec.buildRequests(bidRequestWithUID.bids, bidRequestWithUID);
-      requestWithUID = JSON.parse(requestWithUID.data);
-      expect(requestWithUID.user.ext.eids[0]).to.deep.equal({
-        source: 'uidapi.com',
-        uids: [{
-          id: uid2.id,
-          ext: {
-            rtiPartner: 'UID2'
-          }
-        }]
+          let request = spec.buildRequests(gppCompliantBidderRequest.bids, gppCompliantBidderRequest);
+          request = JSON.parse(request.data);
+          expect(request?.regs?.gpp).to.be.undefined;
+          expect(request?.regs?.gpp_sid).to.be.undefined;
+        });
+      });
+
+      describe('when gppConsent is present on bid request', () => {
+        describe('gppString', () => {
+          describe('is not defined on request', () => {
+            it('should return request with gpp undefined', () => {
+              const gppCompliantBidderRequest = utils.deepClone(bidderRequest);
+
+              let request = spec.buildRequests(gppCompliantBidderRequest.bids, gppCompliantBidderRequest);
+              request = JSON.parse(request.data);
+              expect(request?.regs?.gpp).to.be.undefined;
+            });
+          });
+
+          describe('is defined on request', () => {
+            it('should return request with gpp set correctly', () => {
+              const gppCompliantBidderRequest = utils.deepClone(bidderRequest);
+              const gppString = 'abcdefgh';
+              gppCompliantBidderRequest.gppConsent = {
+                gppString
+              }
+
+              let request = spec.buildRequests(gppCompliantBidderRequest.bids, gppCompliantBidderRequest);
+              request = JSON.parse(request.data);
+              expect(request.regs.gpp).to.exist.and.to.equal(gppString);
+            });
+          });
+        });
+
+        describe('applicableSections', () => {
+          describe('is not defined on request', () => {
+            it('should return request with gpp_sid undefined', () => {
+              const gppCompliantBidderRequest = utils.deepClone(bidderRequest);
+
+              let request = spec.buildRequests(gppCompliantBidderRequest.bids, gppCompliantBidderRequest);
+              request = JSON.parse(request.data);
+              expect(request?.regs?.gpp_sid).to.be.undefined;
+            });
+          });
+
+          describe('is defined on request', () => {
+            it('should return request with gpp_sid set correctly', () => {
+              const gppCompliantBidderRequest = utils.deepClone(bidderRequest);
+              const applicableSections = [8];
+              gppCompliantBidderRequest.gppConsent = {
+                applicableSections
+              }
+
+              let request = spec.buildRequests(gppCompliantBidderRequest.bids, gppCompliantBidderRequest);
+              request = JSON.parse(request.data);
+              expect(request.regs.gpp_sid).to.deep.equal(applicableSections);
+            });
+          });
+        });
       });
     });
   });
@@ -763,6 +865,39 @@ describe('cadent_aperture_mx Adapter', function () {
       expect(syncs[0].url).to.contains('gdpr=1');
       expect(syncs[0].url).to.contains('usp=test');
       expect(syncs[0].url).to.equal('https://biddr.brealtime.com/check.html?gdpr=1&gdpr_consent=test&usp=test')
+    });
+
+    it('should pass gpp string and section id', function() {
+      let syncs = spec.getUserSyncs({iframeEnabled: true}, {}, {}, {}, {
+        gppString: 'abcdefgs',
+        applicableSections: [1, 2, 4]
+      });
+      expect(syncs).to.not.be.an('undefined');
+      expect(syncs[0].url).to.contains('gpp=abcdefgs')
+      expect(syncs[0].url).to.contains('gpp_sid=1,2,4')
+    });
+
+    it('should pass us_privacy and gdpr string and gpp string', function () {
+      let syncs = spec.getUserSyncs({ iframeEnabled: true }, {},
+        {
+          gdprApplies: true,
+          consentString: 'test'
+        },
+        {
+          consentString: 'test'
+        },
+        {
+          gppString: 'abcdefgs',
+          applicableSections: [1, 2, 4]
+        }
+      );
+      expect(syncs).to.not.be.an('undefined');
+      expect(syncs).to.have.lengthOf(1);
+      expect(syncs[0].type).to.equal('iframe');
+      expect(syncs[0].url).to.contains('gdpr=1');
+      expect(syncs[0].url).to.contains('usp=test');
+      expect(syncs[0].url).to.contains('gpp=abcdefgs');
+      expect(syncs[0].url).to.equal('https://biddr.brealtime.com/check.html?gdpr=1&gdpr_consent=test&usp=test&gpp=abcdefgs&gpp_sid=1,2,4');
     });
   });
 });

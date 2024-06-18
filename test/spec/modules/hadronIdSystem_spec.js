@@ -1,6 +1,9 @@
 import { hadronIdSubmodule, storage } from 'modules/hadronIdSystem.js';
 import { server } from 'test/mocks/xhr.js';
 import * as utils from 'src/utils.js';
+import {attachIdSystem} from '../../../modules/userId/index.js';
+import {createEidsArray} from '../../../modules/userId/eids.js';
+import {expect} from 'chai/index.mjs';
 
 describe('HadronIdSystem', function () {
   describe('getId', function() {
@@ -22,7 +25,7 @@ describe('HadronIdSystem', function () {
       const callback = hadronIdSubmodule.getId(config).callback;
       callback(callbackSpy);
       const request = server.requests[0];
-      expect(request.url).to.eq(`https://id.hadron.ad.gt/api/v1/pbhid?partner_id=0&_it=prebid`);
+      expect(request.url).to.match(/^https:\/\/id\.hadron\.ad\.gt\/api\/v1\/pbhid/);
       request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({ hadronId: 'testHadronId1' }));
       expect(callbackSpy.lastCall.lastArg).to.deep.equal({ id: { hadronId: 'testHadronId1' } });
     });
@@ -47,9 +50,29 @@ describe('HadronIdSystem', function () {
       const callback = hadronIdSubmodule.getId(config).callback;
       callback(callbackSpy);
       const request = server.requests[0];
-      expect(request.url).to.eq('https://hadronid.publync.com?partner_id=0&_it=prebid');
+      expect(request.url).to.match(/^https:\/\/hadronid\.publync\.com\//);
       request.respond(200, { 'Content-Type': 'application/json' }, JSON.stringify({ hadronId: 'testHadronId1' }));
       expect(callbackSpy.lastCall.lastArg).to.deep.equal({ id: { hadronId: 'testHadronId1' } });
     });
   });
+
+  describe('eids', () => {
+    before(() => {
+      attachIdSystem(hadronIdSubmodule);
+    });
+    it('hadronId', function() {
+      const userId = {
+        hadronId: 'some-random-id-value'
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'audigent.com',
+        uids: [{
+          id: 'some-random-id-value',
+          atype: 1
+        }]
+      });
+    });
+  })
 });

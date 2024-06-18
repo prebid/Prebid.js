@@ -1,6 +1,6 @@
 import Adapter from '../../src/adapter.js';
 import {
-  bind,
+  deepAccess,
   deepClone,
   flatten,
   generateUUID,
@@ -15,12 +15,11 @@ import {
   logWarn,
   triggerPixel,
   uniques,
-  deepAccess,
 } from '../../src/utils.js';
-import CONSTANTS from '../../src/constants.json';
-import adapterManager from '../../src/adapterManager.js';
+import { EVENTS, REJECTION_REASON, S2S } from '../../src/constants.js';
+import adapterManager, {s2sActivityParams} from '../../src/adapterManager.js';
 import {config} from '../../src/config.js';
-import {addComponentAuction, isValid} from '../../src/adapters/bidderFactory.js';
+import {addPaapiConfig, isValid} from '../../src/adapters/bidderFactory.js';
 import * as events from '../../src/events.js';
 import {includes} from '../../src/polyfill.js';
 import {S2S_VENDORS} from './config.js';
@@ -29,10 +28,12 @@ import {hook} from '../../src/hook.js';
 import {hasPurpose1Consent} from '../../src/utils/gpdr.js';
 import {buildPBSRequest, interpretPBSResponse} from './ortbConverter.js';
 import {useMetrics} from '../../src/utils/perfMetrics.js';
+import {isActivityAllowed} from '../../src/activities/rules.js';
+import {ACTIVITY_TRANSMIT_UFPD} from '../../src/activities/activities.js';
 
 const getConfig = config.getConfig;
 
-const TYPE = CONSTANTS.S2S.SRC;
+const TYPE = S2S.SRC;
 let _syncCount = 0;
 let _s2sConfigs;
 
@@ -81,6 +82,7 @@ let eidPermissions;
  * @property {string} [syncEndpoint] endpoint URL for syncing cookies
  * @property {Object} [extPrebid] properties will be merged into request.ext.prebid
  * @property {Object} [ortbNative] base value for imp.native.request
+ * @property {Number} [maxTimeout]
  */
 
 /**
@@ -88,7 +90,6 @@ let eidPermissions;
  */
 export const s2sDefaultConfig = {
   bidders: Object.freeze([]),
-  timeout: 1000,
   syncTimeout: 1000,
   maxBids: 1,
   adapter: 'prebidServer',
@@ -99,7 +100,8 @@ export const s2sDefaultConfig = {
     eventtrackers: [
       {event: 1, methods: [1, 2]}
     ],
-  }
+  },
+  maxTimeout: 1500
 };
 
 config.setDefaults({
@@ -206,7 +208,7 @@ getConfig('s2sConfig', ({s2sConfig}) => setS2sConfig(s2sConfig));
 
 /**
  * resets the _synced variable back to false, primiarily used for testing purposes
-*/
+ */
 export function resetSyncedStatus() {
   _syncCount = 0;
 }
@@ -295,7 +297,7 @@ function doAllSyncs(bidders, s2sConfig) {
 
   // if PBS reports this bidder doesn't have an ID, then call the sync and recurse to the next sync entry
   if (thisSync.no_cookie) {
-    doPreBidderSync(thisSync.usersync.type, thisSync.usersync.url, thisSync.bidder, bind.call(doAllSyncs, null, bidders, s2sConfig), s2sConfig);
+    doPreBidderSync(thisSync.usersync.type, thisSync.usersync.url, thisSync.bidder, doAllSyncs.bind(null, bidders, s2sConfig), s2sConfig);
   } else {
     // bidder already has an ID, so just recurse to the next sync entry
     doAllSyncs(bidders, s2sConfig);
@@ -354,8 +356,7 @@ function doClientSideSyncs(bidders, gdprConsent, uspConsent, gppConsent) {
     if (clientAdapter && clientAdapter.registerSyncs) {
       config.runWithBidder(
         bidder,
-        bind.call(
-          clientAdapter.registerSyncs,
+        clientAdapter.registerSyncs.bind(
           clientAdapter,
           [],
           gdprConsent,
@@ -426,7 +427,12 @@ function bidWonHandler(bid) {
 }
 
 function getMatchingConsentUrl(urlProp, gdprConsent) {
-  return hasPurpose1Consent(gdprConsent) ? urlProp.p1Consent : urlProp.noP1Consent;
+  const hasPurpose = hasPurpose1Consent(gdprConsent);
+  const url = hasPurpose ? urlProp.p1Consent : urlProp.noP1Consent
+  if (!url) {
+    logWarn('Missing matching consent URL when gdpr=' + hasPurpose);
+  }
+  return url;
 }
 
 function getConsentData(bidRequests) {
@@ -467,10 +473,10 @@ export function PrebidServer() {
       processPBSRequest(s2sBidRequest, bidRequests, ajax, {
         onResponse: function (isValid, requestedBidders, response) {
           if (isValid) {
-            bidRequests.forEach(bidderRequest => events.emit(CONSTANTS.EVENTS.BIDDER_DONE, bidderRequest));
+            bidRequests.forEach(bidderRequest => events.emit(EVENTS.BIDDER_DONE, bidderRequest));
           }
           if (shouldEmitNonbids(s2sBidRequest.s2sConfig, response)) {
-            events.emit(CONSTANTS.EVENTS.SEAT_NON_BID, {
+            events.emit(EVENTS.SEAT_NON_BID, {
               seatnonbid: response.ext.seatnonbid,
               auctionId: bidRequests[0].auctionId,
               requestedBidders,
@@ -478,16 +484,20 @@ export function PrebidServer() {
               adapterMetrics
             });
           }
-          done();
+          done(false);
           doClientSideSyncs(requestedBidders, gdprConsent, uspConsent, gppConsent);
         },
-        onError: done,
+        onError(msg, error) {
+          logError(`Prebid server call failed: '${msg}'`, error);
+          bidRequests.forEach(bidderRequest => events.emit(EVENTS.BIDDER_ERROR, { error, bidderRequest }));
+          done(error.timedOut);
+        },
         onBid: function ({adUnit, bid}) {
           const metrics = bid.metrics = s2sBidRequest.metrics.fork().renameWith();
           metrics.checkpoint('addBidResponse');
           if ((bid.requestId == null || bid.requestBidder == null) && !s2sBidRequest.s2sConfig.allowUnknownBidderCodes) {
             logWarn(`PBS adapter received bid from unknown bidder (${bid.bidder}), but 's2sConfig.allowUnknownBidderCodes' is not set. Ignoring bid.`);
-            addBidResponse.reject(adUnit, bid, CONSTANTS.REJECTION_REASON.BIDDER_DISALLOWED);
+            addBidResponse.reject(adUnit, bid, REJECTION_REASON.BIDDER_DISALLOWED);
           } else {
             if (metrics.measureTime('addBidResponse.validate', () => isValid(adUnit, bid))) {
               addBidResponse(adUnit, bid);
@@ -495,19 +505,19 @@ export function PrebidServer() {
                 addWurl(bid.auctionId, bid.adId, bid.pbsWurl);
               }
             } else {
-              addBidResponse.reject(adUnit, bid, CONSTANTS.REJECTION_REASON.INVALID);
+              addBidResponse.reject(adUnit, bid, REJECTION_REASON.INVALID);
             }
           }
         },
-        onFledge: ({adUnitCode, config}) => {
-          addComponentAuction(adUnitCode, config);
+        onFledge: (params) => {
+          addPaapiConfig({auctionId: bidRequests[0].auctionId, ...params}, {config: params.config});
         }
       })
     }
   };
 
   // Listen for bid won to call wurl
-  events.on(CONSTANTS.EVENTS.BID_WON, bidWonHandler);
+  events.on(EVENTS.BID_WON, bidWonHandler);
 
   return Object.assign(this, {
     callBids: baseAdapter.callBids,
@@ -550,10 +560,10 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
           let result;
           try {
             result = JSON.parse(response);
-            const {bids, fledgeAuctionConfigs} = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request));
+            const {bids, paapi} = s2sBidRequest.metrics.measureTime('interpretResponse', () => interpretPBSResponse(result, request));
             bids.forEach(onBid);
-            if (fledgeAuctionConfigs) {
-              fledgeAuctionConfigs.forEach(onFledge);
+            if (paapi) {
+              paapi.forEach(onFledge);
             }
           } catch (error) {
             logError(error);
@@ -571,7 +581,11 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
         }
       },
       requestJson,
-      {contentType: 'text/plain', withCredentials: true}
+      {
+        contentType: 'text/plain',
+        withCredentials: true,
+        browsingTopics: isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, s2sActivityParams(s2sBidRequest.s2sConfig))
+      }
     );
   } else {
     logError('PBS request not made.  Check endpoints.');
@@ -585,7 +599,7 @@ function shouldEmitNonbids(s2sConfig, response) {
 /**
  * Global setter that sets eids permissions for bidders
  * This setter is to be used by userId module when included
- * @param {array} newEidPermissions
+ * @param {Array} newEidPermissions
  */
 function setEidPermissions(newEidPermissions) {
   eidPermissions = newEidPermissions;

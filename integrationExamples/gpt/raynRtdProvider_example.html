@@ -1,0 +1,167 @@
+<html>
+  <head>
+    <script>
+      var segments = {
+        "4": {
+          "3": ["264", "267", "261"],
+          "4": ["438"]
+        },
+        "903555595": {
+          "7": {
+            "2": ["51", "246"]
+          }
+        },
+      };
+      window.localStorage.setItem(
+        "rayn-segtax",
+        JSON.stringify(segments)
+      );
+    </script>
+    <script>
+      var FAILSAFE_TIMEOUT = 2000;
+
+      var test_div_sizes = [
+        [300, 250],
+        [300, 600]
+      ];
+
+      var adUnits = [
+        {
+          code: "test-div",
+          mediaTypes: {
+            banner: {
+              sizes: test_div_sizes,
+            },
+          },
+          bids: [
+            {
+              bidder: "appnexus",
+              params: {
+                placementId: 13144370,
+              },
+            },
+          ],
+        },
+      ];
+
+      var pbjs = pbjs || {};
+      pbjs.que = pbjs.que || [];
+    </script>
+    <script src="../../build/dev/prebid.js" async></script>
+
+    <script>
+      var googletag = googletag || {};
+      var AUCTION_DELAY = 2000;
+      googletag.cmd = googletag.cmd || [];
+      googletag.cmd.push(function () {
+        googletag.pubads().disableInitialLoad();
+      });
+
+      pbjs.que.push(function () {
+        pbjs.setConfig({
+          debug: true,
+          realTimeData: {
+            auctionDelay: AUCTION_DELAY,
+            dataProviders: [
+              {
+                name: "rayn",
+                waitForIt: true,
+                params: {
+                  bidders: ['appnexus'],
+                  integration: {
+                    iabAudienceCategories: {
+                      v1_1: {
+                        tier: 3,
+                        enabled: true,
+                      },
+                    },
+                    iabContentCategories: {
+                      v3_0: {
+                        tier: 2,
+                        enabled: true,
+                      },
+                      v2_2: {
+                        tier: 1,
+                        enabled: false,
+                      },
+                    },
+                  }
+                },
+              },
+            ],
+          },
+        });
+        pbjs.setBidderConfig({
+          bidders: ["appnexus", "pubmatic"],
+          config: {
+            ortb2: {
+              user: {
+                ext: {
+                  data: {
+                    registered: true,
+                    interests: ["cars"],
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        pbjs.addAdUnits(adUnits);
+        pbjs.requestBids({ bidsBackHandler: sendAdserverRequest });
+      });
+
+      function sendAdserverRequest() {
+        document.getElementById("rayn-segments").innerHTML =
+          window.localStorage.getItem("rayn-segtax");
+
+        if (pbjs.adserverRequestSent) return;
+        pbjs.adserverRequestSent = true;
+        googletag.cmd.push(function () {
+          pbjs.que.push(function () {
+            pbjs.setTargetingForGPTAsync();
+            googletag.pubads().refresh();
+          });
+        });
+      }
+
+      setTimeout(function () {
+        sendAdserverRequest();
+      }, FAILSAFE_TIMEOUT);
+    </script>
+
+    <script>
+      (function () {
+        var gads = document.createElement("script");
+        gads.async = true;
+        gads.type = "text/javascript";
+        gads.src = 'https://securepubads.g.doubleclick.net/tag/js/gpt.js';
+        var node = document.getElementsByTagName("script")[0];
+        node.parentNode.insertBefore(gads, node);
+      })();
+    </script>
+
+    <script>
+      googletag.cmd.push(function () {
+        googletag.defineSlot('/19968336/header-bid-tag-1', test_div_sizes, "test-div").addService(googletag.pubads());
+        googletag.pubads().enableSingleRequest();
+        googletag.enableServices();
+      });
+    </script>
+  </head>
+
+  <body>
+    <h2>Rayn RTD Prebid</h2>
+
+    <div id="test-div">
+      <script>
+        googletag.cmd.push(function () {
+          googletag.display("test-div");
+        });
+      </script>
+    </div>
+
+    Rayn Segments:
+    <div id="rayn-segments"></div>
+  </body>
+</html>

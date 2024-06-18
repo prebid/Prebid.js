@@ -6,6 +6,13 @@ import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { OUTSTREAM, INSTREAM } from '../src/video.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').ServerResponse} ServerResponse
+ * @typedef {import('../src/adapters/bidderFactory.js').validBidRequests} validBidRequests
+ */
+
 const VERSION = '0.3.0';
 const GVLID = 842;
 const NET_REVENUE = true;
@@ -56,6 +63,7 @@ const VIDEO_CUSTOM_PARAMS = {
   'battr': DATA_TYPES.ARRAY,
   'linearity': DATA_TYPES.NUMBER,
   'placement': DATA_TYPES.NUMBER,
+  'plcmt': DATA_TYPES.NUMBER,
   'minbitrate': DATA_TYPES.NUMBER,
   'maxbitrate': DATA_TYPES.NUMBER,
   'skip': DATA_TYPES.NUMBER
@@ -173,7 +181,7 @@ export const spec = {
   /**
    * Make a server request from the list of BidRequests.
    *
-   * @param {validBidRequests[]} - an array of bids
+   * @param {validBidRequests} - an array of bids
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {

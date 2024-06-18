@@ -139,6 +139,7 @@ export const spec = {
         domain: domain,
         placementId: bidReq.params.placementId != undefined ? bidReq.params.placementId : null,
         publisherId: bidReq.params.publisherId,
+        gpid: deepAccess(bidReq, 'ortb2Imp.ext.gpid', deepAccess(bidReq, 'ortb2Imp.ext.data.pbadslot', '')),
         sizes: bidReq.sizes,
         params: bidReq.params
       };

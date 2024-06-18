@@ -12,12 +12,12 @@ export const SYNC_URL = 'https://u.openx.net/w/1.0/pd';
 export const DEFAULT_PH = '2d1251ae-7f3a-47cf-bd2a-2f288854a0ba';
 export const spec = {
   code: 'openx',
+  gvlid: 69,
   supportedMediaTypes: [BANNER, VIDEO],
   isBidRequestValid,
   buildRequests,
   interpretResponse,
-  getUserSyncs,
-  transformBidParams
+  getUserSyncs
 };
 
 registerBidder(spec);
@@ -48,7 +48,8 @@ const converter = ortbConverter({
     mergeDeep(req, {
       at: 1,
       ext: {
-        bc: `${bidderConfig}_${bidderVersion}`
+        bc: `${bidderConfig}_${bidderVersion}`,
+        pv: '$prebid.version$'
       }
     })
     const bid = context.bidRequests[0];
@@ -104,14 +105,16 @@ const converter = ortbConverter({
       fledgeAuctionConfigs = Object.entries(fledgeAuctionConfigs).map(([bidId, cfg]) => {
         return {
           bidId,
-          config: Object.assign({
-            auctionSignals: {},
-          }, cfg)
+          config: mergeDeep(Object.assign({}, cfg), {
+            auctionSignals: {
+              ortb2Imp: context.impContext[bidId]?.imp,
+            },
+          }),
         }
       });
       return {
         bids: response.bids,
-        fledgeAuctionConfigs,
+        paapi: fledgeAuctionConfigs,
       }
     } else {
       return response.bids
@@ -139,21 +142,11 @@ const converter = ortbConverter({
             bidRequest = {...bidRequest, mediaTypes: {[VIDEO]: videoParams}}
           }
           orig(imp, bidRequest, context);
-          if (imp.video && videoParams?.context === 'outstream') {
-            imp.video.placement = imp.video.placement || 4;
-          }
         }
       }
     }
   }
 });
-
-function transformBidParams(params, isOpenRtb) {
-  return utils.convertTypes({
-    'unit': 'string',
-    'customFloor': 'number'
-  }, params);
-}
 
 function isBidRequestValid(bidRequest) {
   const hasDelDomainOrPlatform = bidRequest.params.delDomain ||

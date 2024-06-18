@@ -130,8 +130,8 @@ import {find, includes} from '../../src/polyfill.js';
 import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
-import adapterManager, {gdprDataHandler, gppDataHandler} from '../../src/adapterManager.js';
-import CONSTANTS from '../../src/constants.json';
+import adapterManager, {gdprDataHandler} from '../../src/adapterManager.js';
+import { EVENTS } from '../../src/constants.js';
 import {module, ready as hooksReady} from '../../src/hook.js';
 import {buildEidPermissions, createEidsArray, EID_CONFIG} from './eids.js';
 import {
@@ -141,7 +141,6 @@ import {
   STORAGE_TYPE_LOCALSTORAGE
 } from '../../src/storageManager.js';
 import {
-  cyrb53Hash,
   deepAccess,
   deepSetValue,
   delayExecution,
@@ -162,21 +161,16 @@ import {defer, GreedyPromise} from '../../src/utils/promise.js';
 import {registerOrtbProcessor, REQUEST} from '../../src/pbjsORTB.js';
 import {newMetrics, timedAuctionHook, useMetrics} from '../../src/utils/perfMetrics.js';
 import {findRootDomain} from '../../src/fpd/rootDomain.js';
-import {GDPR_GVLIDS} from '../../src/consentHandler.js';
+import {allConsent, GDPR_GVLIDS} from '../../src/consentHandler.js';
 import {MODULE_TYPE_UID} from '../../src/activities/modules.js';
 import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_ENRICH_EIDS} from '../../src/activities/activities.js';
 import {activityParams} from '../../src/activities/activityParams.js';
+import {USERSYNC_DEFAULT_CONFIG} from '../../src/userSync.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;
 const LOCAL_STORAGE = STORAGE_TYPE_LOCALSTORAGE;
-const DEFAULT_SYNC_DELAY = 500;
-const NO_AUCTION_DELAY = 0;
-const CONSENT_DATA_COOKIE_STORAGE_CONFIG = {
-  name: '_pbjs_userid_consent_data',
-  expires: 30 // 30 days expiration, which should match how often consent is refreshed by CMPs
-};
 export const PBJS_USER_ID_OPTOUT_NAME = '_pbjs_id_optout';
 export const coreStorage = getCoreStorageManager('userId');
 export const dep = {
@@ -244,6 +238,29 @@ function cookieSetter(submodule, storageMgr) {
   }
 }
 
+function setValueInCookie(submodule, valueStr, expiresStr) {
+  const storage = submodule.config.storage;
+  const setCookie = cookieSetter(submodule);
+
+  setCookie(null, valueStr, expiresStr);
+  setCookie('_cst', getConsentHash(), expiresStr);
+  if (typeof storage.refreshInSeconds === 'number') {
+    setCookie('_last', new Date().toUTCString(), expiresStr);
+  }
+}
+
+function setValueInLocalStorage(submodule, valueStr, expiresStr) {
+  const storage = submodule.config.storage;
+  const mgr = submodule.storageMgr;
+
+  mgr.setDataInLocalStorage(`${storage.name}_exp`, expiresStr);
+  mgr.setDataInLocalStorage(`${storage.name}_cst`, getConsentHash());
+  mgr.setDataInLocalStorage(storage.name, encodeURIComponent(valueStr));
+  if (typeof storage.refreshInSeconds === 'number') {
+    mgr.setDataInLocalStorage(`${storage.name}_last`, new Date().toUTCString());
+  }
+}
+
 /**
  * @param {SubmoduleContainer} submodule
  * @param {(Object|string)} value
@@ -253,52 +270,62 @@ export function setStoredValue(submodule, value) {
    * @type {SubmoduleStorage}
    */
   const storage = submodule.config.storage;
-  const mgr = submodule.storageMgr;
 
   try {
     const expiresStr = (new Date(Date.now() + (storage.expires * (60 * 60 * 24 * 1000)))).toUTCString();
     const valueStr = isPlainObject(value) ? JSON.stringify(value) : value;
-    if (storage.type === COOKIE) {
-      const setCookie = cookieSetter(submodule);
-      setCookie(null, valueStr, expiresStr);
-      if (typeof storage.refreshInSeconds === 'number') {
-        setCookie('_last', new Date().toUTCString(), expiresStr);
+
+    submodule.enabledStorageTypes.forEach(storageType => {
+      switch (storageType) {
+        case COOKIE:
+          setValueInCookie(submodule, valueStr, expiresStr);
+          break;
+        case LOCAL_STORAGE:
+          setValueInLocalStorage(submodule, valueStr, expiresStr);
+          break;
       }
-    } else if (storage.type === LOCAL_STORAGE) {
-      mgr.setDataInLocalStorage(`${storage.name}_exp`, expiresStr);
-      mgr.setDataInLocalStorage(storage.name, encodeURIComponent(valueStr));
-      if (typeof storage.refreshInSeconds === 'number') {
-        mgr.setDataInLocalStorage(`${storage.name}_last`, new Date().toUTCString());
-      }
-    }
+    });
   } catch (error) {
     logError(error);
   }
 }
 
+function deleteValueFromCookie(submodule) {
+  const setCookie = cookieSetter(submodule, coreStorage);
+  const expiry = (new Date(Date.now() - 1000 * 60 * 60 * 24)).toUTCString();
+
+  ['', '_last', '_cst'].forEach(suffix => {
+    try {
+      setCookie(suffix, '', expiry);
+    } catch (e) {
+      logError(e);
+    }
+  })
+}
+
+function deleteValueFromLocalStorage(submodule) {
+  ['', '_last', '_exp', '_cst'].forEach(suffix => {
+    try {
+      coreStorage.removeDataFromLocalStorage(submodule.config.storage.name + suffix);
+    } catch (e) {
+      logError(e);
+    }
+  });
+}
+
 export function deleteStoredValue(submodule) {
-  let deleter, suffixes;
-  switch (submodule.config?.storage?.type) {
-    case COOKIE:
-      const setCookie = cookieSetter(submodule, coreStorage);
-      const expiry = (new Date(Date.now() - 1000 * 60 * 60 * 24)).toUTCString();
-      deleter = (suffix) => setCookie(suffix, '', expiry)
-      suffixes = ['', '_last'];
-      break;
-    case LOCAL_STORAGE:
-      deleter = (suffix) => coreStorage.removeDataFromLocalStorage(submodule.config.storage.name + suffix)
-      suffixes = ['', '_last', '_exp'];
-      break;
-  }
-  if (deleter) {
-    suffixes.forEach(suffix => {
-      try {
-        deleter(suffix)
-      } catch (e) {
-        logError(e);
-      }
-    });
-  }
+  populateEnabledStorageTypes(submodule);
+
+  submodule.enabledStorageTypes.forEach(storageType => {
+    switch (storageType) {
+      case COOKIE:
+        deleteValueFromCookie(submodule);
+        break;
+      case LOCAL_STORAGE:
+        deleteValueFromLocalStorage(submodule);
+        break;
+    }
+  });
 }
 
 function setPrebidServerEidPermissions(initializedSubmodules) {
@@ -308,30 +335,46 @@ function setPrebidServerEidPermissions(initializedSubmodules) {
   }
 }
 
+function getValueFromCookie(submodule, storedKey) {
+  return submodule.storageMgr.getCookie(storedKey)
+}
+
+function getValueFromLocalStorage(submodule, storedKey) {
+  const mgr = submodule.storageMgr;
+  const storage = submodule.config.storage;
+  const storedValueExp = mgr.getDataFromLocalStorage(`${storage.name}_exp`);
+
+  // empty string means no expiration set
+  if (storedValueExp === '') {
+    return mgr.getDataFromLocalStorage(storedKey);
+  } else if (storedValueExp && ((new Date(storedValueExp)).getTime() - Date.now() > 0)) {
+    return decodeURIComponent(mgr.getDataFromLocalStorage(storedKey));
+  }
+}
+
 /**
  * @param {SubmoduleContainer} submodule
  * @param {String|undefined} key optional key of the value
  * @returns {string}
  */
 function getStoredValue(submodule, key = undefined) {
-  const mgr = submodule.storageMgr;
   const storage = submodule.config.storage;
   const storedKey = key ? `${storage.name}_${key}` : storage.name;
   let storedValue;
   try {
-    if (storage.type === COOKIE) {
-      storedValue = mgr.getCookie(storedKey);
-    } else if (storage.type === LOCAL_STORAGE) {
-      const storedValueExp = mgr.getDataFromLocalStorage(`${storage.name}_exp`);
-      // empty string means no expiration set
-      if (storedValueExp === '') {
-        storedValue = mgr.getDataFromLocalStorage(storedKey);
-      } else if (storedValueExp) {
-        if ((new Date(storedValueExp)).getTime() - Date.now() > 0) {
-          storedValue = decodeURIComponent(mgr.getDataFromLocalStorage(storedKey));
-        }
+    submodule.enabledStorageTypes.find(storageType => {
+      switch (storageType) {
+        case COOKIE:
+          storedValue = getValueFromCookie(submodule, storedKey);
+          break;
+        case LOCAL_STORAGE:
+          storedValue = getValueFromLocalStorage(submodule, storedKey);
+          break;
       }
-    }
+
+      return !!storedValue;
+    });
+
     // support storing a string or a stringified object
     if (typeof storedValue === 'string' && storedValue.trim().charAt(0) === '{') {
       storedValue = JSON.parse(storedValue);
@@ -340,70 +383,6 @@ function getStoredValue(submodule, key = undefined) {
     logError(e);
   }
   return storedValue;
-}
-
-/**
- * makes an object that can be stored with only the keys we need to check.
- * excluding the vendorConsents object since the consentString is enough to know
- * if consent has changed without needing to have all the details in an object
- * @param consentData
- * @returns {{apiVersion: number, gdprApplies: boolean, consentString: string}}
- */
-function makeStoredConsentDataHash(consentData) {
-  const storedConsentData = {
-    consentString: '',
-    gdprApplies: false,
-    apiVersion: 0
-  };
-
-  if (consentData) {
-    storedConsentData.consentString = consentData.consentString;
-    storedConsentData.gdprApplies = consentData.gdprApplies;
-    storedConsentData.apiVersion = consentData.apiVersion;
-  }
-
-  return cyrb53Hash(JSON.stringify(storedConsentData));
-}
-
-/**
- * puts the current consent data into cookie storage
- * @param consentData
- */
-export function setStoredConsentData(consentData) {
-  try {
-    const expiresStr = (new Date(Date.now() + (CONSENT_DATA_COOKIE_STORAGE_CONFIG.expires * (60 * 60 * 24 * 1000)))).toUTCString();
-    coreStorage.setCookie(CONSENT_DATA_COOKIE_STORAGE_CONFIG.name, makeStoredConsentDataHash(consentData), expiresStr, 'Lax');
-  } catch (error) {
-    logError(error);
-  }
-}
-
-/**
- * get the stored consent data from local storage, if any
- * @returns {string}
- */
-function getStoredConsentData() {
-  try {
-    return coreStorage.getCookie(CONSENT_DATA_COOKIE_STORAGE_CONFIG.name);
-  } catch (e) {
-    logError(e);
-  }
-}
-
-/**
- * test if the consent object stored locally matches the current consent data. if they
- * don't match or there is nothing stored locally, it means a refresh of the user id
- * submodule is needed
- * @param storedConsentData
- * @param consentData
- * @returns {boolean}
- */
-function storedConsentDataMatchesConsentData(storedConsentData, consentData) {
-  return (
-    typeof storedConsentData !== 'undefined' &&
-    storedConsentData !== null &&
-    storedConsentData === makeStoredConsentDataHash(consentData)
-  );
 }
 
 /**
@@ -573,18 +552,15 @@ function idSystemInitializer({delay = GreedyPromise.timeout} = {}) {
     }
   }
 
-  function timeGdpr() {
-    return gdprDataHandler.promise.finally(initMetrics.startTiming('userId.init.gdpr'));
-  }
-  function timeGpp() {
-    return gppDataHandler.promise.finally(initMetrics.startTiming('userId.init.gpp'))
+  function timeConsent() {
+    return allConsent.promise.finally(initMetrics.startTiming('userId.init.consent'))
   }
 
   let done = cancelAndTry(
     GreedyPromise.all([hooksReady, startInit.promise])
-      .then(() => GreedyPromise.all([timeGdpr(), timeGpp()]).then(([gdpr]) => gdpr))
-      .then(checkRefs((consentData) => {
-        initSubmodules(initModules, allModules, consentData);
+      .then(timeConsent)
+      .then(checkRefs(() => {
+        initSubmodules(initModules, allModules);
       }))
       .then(() => startCallbacks.promise.finally(initMetrics.startTiming('userId.callbacks.pending')))
       .then(checkRefs(() => {
@@ -608,8 +584,8 @@ function idSystemInitializer({delay = GreedyPromise.timeout} = {}) {
       if (auctionDelay > 0) {
         startCallbacks.resolve();
       } else {
-        events.on(CONSTANTS.EVENTS.AUCTION_END, function auctionEndHandler() {
-          events.off(CONSTANTS.EVENTS.AUCTION_END, auctionEndHandler);
+        events.on(EVENTS.AUCTION_END, function auctionEndHandler() {
+          events.off(EVENTS.AUCTION_END, auctionEndHandler);
           delay(syncDelay).then(startCallbacks.resolve);
         });
       }
@@ -618,12 +594,11 @@ function idSystemInitializer({delay = GreedyPromise.timeout} = {}) {
       done = cancelAndTry(
         done
           .catch(() => null)
-          .then(timeGdpr) // fetch again in case a refresh was forced before this was resolved
-          .then(checkRefs((consentData) => {
+          .then(timeConsent) // fetch again in case a refresh was forced before this was resolved
+          .then(checkRefs(() => {
             const cbModules = initSubmodules(
               initModules,
               allModules.filter((sm) => submoduleNames == null || submoduleNames.includes(sm.submodule.name)),
-              consentData,
               true
             ).filter((sm) => {
               return sm.callback != null;
@@ -739,8 +714,8 @@ function encryptSignals(signals, version = 1) {
 }
 
 /**
-* This function will be exposed in the global-name-space so that publisher can register the signals-ESP.
-*/
+ * This function will be exposed in the global-name-space so that publisher can register the signals-ESP.
+ */
 function registerSignalSources() {
   if (!isGptPubadsDefined()) {
     return;
@@ -812,7 +787,27 @@ function getUserIdsAsync() {
   );
 }
 
-function populateSubmoduleId(submodule, consentData, storedConsentData, forceRefresh, allSubmodules) {
+export function getConsentHash() {
+  // transform decimal string into base64 to save some space on cookies
+  let hash = Number(allConsent.hash);
+  const bytes = [];
+  while (hash > 0) {
+    bytes.push(String.fromCharCode(hash & 255));
+    hash = hash >>> 8;
+  }
+  return btoa(bytes.join());
+}
+
+function consentChanged(submodule) {
+  const storedConsent = getStoredValue(submodule, 'cst');
+  return !storedConsent || storedConsent !== getConsentHash();
+}
+
+function populateSubmoduleId(submodule, forceRefresh, allSubmodules) {
+  // TODO: the ID submodule API only takes GDPR consent; it should be updated now that GDPR
+  // is only a tiny fraction of a vast consent universe
+  const gdprConsent = gdprDataHandler.getConsentData();
+
   // There are two submodule configuration types to handle: storage or value
   // 1. storage: retrieve user id data from cookie/html storage or with the submodule's getId method
   // 2. value: pass directly to bids
@@ -826,12 +821,14 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
       refreshNeeded = storedDate && (Date.now() - storedDate.getTime() > submodule.config.storage.refreshInSeconds * 1000);
     }
 
-    if (!storedId || refreshNeeded || forceRefresh || !storedConsentDataMatchesConsentData(storedConsentData, consentData)) {
+    if (!storedId || refreshNeeded || forceRefresh || consentChanged(submodule)) {
+      const extendedConfig = Object.assign({ enabledStorageTypes: submodule.enabledStorageTypes }, submodule.config);
+
       // No id previously saved, or a refresh is needed, or consent has changed. Request a new id from the submodule.
-      response = submodule.submodule.getId(submodule.config, consentData, storedId);
+      response = submodule.submodule.getId(extendedConfig, gdprConsent, storedId);
     } else if (typeof submodule.submodule.extendId === 'function') {
       // If the id exists already, give submodule a chance to decide additional actions that need to be taken
-      response = submodule.submodule.extendId(submodule.config, consentData, storedId);
+      response = submodule.submodule.extendId(submodule.config, gdprConsent, storedId);
     }
 
     if (isPlainObject(response)) {
@@ -855,7 +852,7 @@ function populateSubmoduleId(submodule, consentData, storedConsentData, forceRef
     // cache decoded value (this is copied to every adUnit bid)
     submodule.idObj = submodule.config.value;
   } else {
-    const response = submodule.submodule.getId(submodule.config, consentData, undefined);
+    const response = submodule.submodule.getId(submodule.config, gdprConsent, undefined);
     if (isPlainObject(response)) {
       if (typeof response.callback === 'function') { submodule.callback = response.callback; }
       if (response.id) { submodule.idObj = submodule.submodule.decode(response.id, submodule.config); }
@@ -881,9 +878,11 @@ function updatePPID(userIds = getUserIds()) {
   }
 }
 
-function initSubmodules(dest, submodules, consentData, forceRefresh = false) {
+function initSubmodules(dest, submodules, forceRefresh = false) {
   return uidMetrics().fork().measureTime('userId.init.modules', function () {
     if (!submodules.length) return []; // to simplify log messages from here on
+
+    submodules.forEach(submod => populateEnabledStorageTypes(submod));
 
     /**
      * filter out submodules that:
@@ -901,14 +900,10 @@ function initSubmodules(dest, submodules, consentData, forceRefresh = false) {
       return [];
     }
 
-    // we always want the latest consentData stored, even if we don't execute any submodules
-    const storedConsentData = getStoredConsentData();
-    setStoredConsentData(consentData);
-
     const initialized = submodules.reduce((carry, submodule) => {
       return submoduleMetrics(submodule.submodule.name).measureTime('init', () => {
         try {
-          populateSubmoduleId(submodule, consentData, storedConsentData, forceRefresh, submodules);
+          populateSubmoduleId(submodule, forceRefresh, submodules);
           carry.push(submodule);
         } catch (e) {
           logError(`Error in userID module '${submodule.submodule.name}':`, e);
@@ -939,16 +934,24 @@ function updateInitializedSubmodules(dest, submodule) {
   }
 }
 
+function getConfiguredStorageTypes(config) {
+  return config?.storage?.type?.trim().split(/\s*&\s*/) || [];
+}
+
+function hasValidStorageTypes(config) {
+  const storageTypes = getConfiguredStorageTypes(config);
+
+  return storageTypes.every(storageType => ALL_STORAGE_TYPES.has(storageType));
+}
+
 /**
  * list of submodule configurations with valid 'storage' or 'value' obj definitions
- * * storage config: contains values for storing/retrieving User ID data in browser storage
- * * value config: object properties that are copied to bids (without saving to storage)
+ * storage config: contains values for storing/retrieving User ID data in browser storage
+ * value config: object properties that are copied to bids (without saving to storage)
  * @param {SubmoduleConfig[]} configRegistry
- * @param {Submodule[]} submoduleRegistry
- * @param {string[]} activeStorageTypes
  * @returns {SubmoduleConfig[]}
  */
-function getValidSubmoduleConfigs(configRegistry, submoduleRegistry) {
+function getValidSubmoduleConfigs(configRegistry) {
   if (!Array.isArray(configRegistry)) {
     return [];
   }
@@ -962,7 +965,7 @@ function getValidSubmoduleConfigs(configRegistry, submoduleRegistry) {
     if (config.storage &&
       !isEmptyStr(config.storage.type) &&
       !isEmptyStr(config.storage.name) &&
-      ALL_STORAGE_TYPES.has(config.storage.type)) {
+      hasValidStorageTypes(config)) {
       carry.push(config);
     } else if (isPlainObject(config.value)) {
       carry.push(config);
@@ -975,28 +978,53 @@ function getValidSubmoduleConfigs(configRegistry, submoduleRegistry) {
 
 const ALL_STORAGE_TYPES = new Set([LOCAL_STORAGE, COOKIE]);
 
-function canUseStorage(submodule) {
-  switch (submodule.config?.storage?.type) {
-    case LOCAL_STORAGE:
-      if (submodule.storageMgr.localStorageIsEnabled()) {
-        if (coreStorage.getDataFromLocalStorage(PBJS_USER_ID_OPTOUT_NAME)) {
-          logInfo(`${MODULE_NAME} - opt-out localStorage found, storage disabled`);
-          return false
-        }
-        return true;
-      }
-      break;
-    case COOKIE:
-      if (submodule.storageMgr.cookiesAreEnabled()) {
-        if (coreStorage.getCookie(PBJS_USER_ID_OPTOUT_NAME)) {
-          logInfo(`${MODULE_NAME} - opt-out cookie found, storage disabled`);
-          return false;
-        }
-        return true
-      }
-      break;
+function canUseLocalStorage(submodule) {
+  if (!submodule.storageMgr.localStorageIsEnabled()) {
+    return false;
   }
-  return false;
+
+  if (coreStorage.getDataFromLocalStorage(PBJS_USER_ID_OPTOUT_NAME)) {
+    logInfo(`${MODULE_NAME} - opt-out localStorage found, storage disabled`);
+    return false
+  }
+
+  return true;
+}
+
+function canUseCookies(submodule) {
+  if (!submodule.storageMgr.cookiesAreEnabled()) {
+    return false;
+  }
+
+  if (coreStorage.getCookie(PBJS_USER_ID_OPTOUT_NAME)) {
+    logInfo(`${MODULE_NAME} - opt-out cookie found, storage disabled`);
+    return false;
+  }
+
+  return true
+}
+
+function populateEnabledStorageTypes(submodule) {
+  if (submodule.enabledStorageTypes) {
+    return;
+  }
+
+  const storageTypes = getConfiguredStorageTypes(submodule.config);
+
+  submodule.enabledStorageTypes = storageTypes.filter(type => {
+    switch (type) {
+      case LOCAL_STORAGE:
+        return canUseLocalStorage(submodule);
+      case COOKIE:
+        return canUseCookies(submodule);
+    }
+
+    return false;
+  });
+}
+
+function canUseStorage(submodule) {
+  return !!submodule.enabledStorageTypes.length;
 }
 
 function updateEIDConfig(submodules) {
@@ -1013,7 +1041,7 @@ function updateEIDConfig(submodules) {
  */
 function updateSubmodules() {
   updateEIDConfig(submoduleRegistry);
-  const configs = getValidSubmoduleConfigs(configRegistry, submoduleRegistry);
+  const configs = getValidSubmoduleConfigs(configRegistry);
   if (!configs.length) {
     return;
   }
@@ -1028,7 +1056,6 @@ function updateSubmodules() {
     const submoduleConfig = find(configs, j => j.name && (j.name.toLowerCase() === i.name.toLowerCase() ||
       (i.aliasName && j.name.toLowerCase() === i.aliasName.toLowerCase())));
     if (submoduleConfig && i.name !== submoduleConfig.name) submoduleConfig.name = i.name;
-    i.findRootDomain = findRootDomain;
     return submoduleConfig ? {
       submodule: i,
       config: submoduleConfig,
@@ -1088,6 +1115,7 @@ export function requestDataDeletion(next, ...args) {
  * @param {Submodule} submodule
  */
 export function attachIdSystem(submodule) {
+  submodule.findRootDomain = findRootDomain;
   if (!find(submoduleRegistry, i => i.name === submodule.name)) {
     submoduleRegistry.push(submodule);
     GDPR_GVLIDS.register(MODULE_TYPE_UID, submodule.name, submodule.gvlid)
@@ -1131,8 +1159,8 @@ export function init(config, {delay = GreedyPromise.timeout} = {}) {
       ppidSource = userSync.ppid;
       if (userSync.userIds) {
         configRegistry = userSync.userIds;
-        syncDelay = isNumber(userSync.syncDelay) ? userSync.syncDelay : DEFAULT_SYNC_DELAY;
-        auctionDelay = isNumber(userSync.auctionDelay) ? userSync.auctionDelay : NO_AUCTION_DELAY;
+        syncDelay = isNumber(userSync.syncDelay) ? userSync.syncDelay : USERSYNC_DEFAULT_CONFIG.syncDelay
+        auctionDelay = isNumber(userSync.auctionDelay) ? userSync.auctionDelay : USERSYNC_DEFAULT_CONFIG.auctionDelay;
         updateSubmodules();
         updateIdPriority(userSync.idPriority, submodules);
         initIdSystem({ready: true});
@@ -1153,7 +1181,7 @@ export function init(config, {delay = GreedyPromise.timeout} = {}) {
 // init config update listener to start the application
 init(config);
 
-module('userId', attachIdSystem);
+module('userId', attachIdSystem, { postInstallAllowed: true });
 
 export function setOrtbUserExtEids(ortbRequest, bidderRequest, context) {
   const eids = deepAccess(context, 'bidRequests.0.userIdAsEids');

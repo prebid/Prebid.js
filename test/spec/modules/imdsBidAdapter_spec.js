@@ -585,7 +585,7 @@ describe('imdsBidAdapter ', function () {
             maxduration: 45,
             startdelay: 1,
             linearity: 1,
-            placement: 1,
+            plcmt: 1,
             mimes: ['video/mp4'],
             protocols: [1],
             api: 1
@@ -622,7 +622,7 @@ describe('imdsBidAdapter ', function () {
             maxduration: 45,
             startdelay: 1,
             linearity: 1,
-            placement: 1,
+            plcmt: 1,
             mimes: ['video/mp4'],
             protocols: [1],
             api: 1
@@ -651,7 +651,7 @@ describe('imdsBidAdapter ', function () {
             playerSize: [[640, 480]],
             startdelay: 1,
             linearity: 1,
-            placement: 1,
+            plcmt: 1,
             mimes: ['video/mp4']
           }
         },
@@ -680,7 +680,7 @@ describe('imdsBidAdapter ', function () {
             maxduration: 45,
             startdelay: 1,
             linearity: 1,
-            placement: 1,
+            plcmt: 1,
             mimes: ['video/mp4'],
             protocols: [1],
             api: 1
@@ -703,7 +703,7 @@ describe('imdsBidAdapter ', function () {
             playerSize: [[ 640, 480 ]],
             startdelay: 1,
             linearity: 1,
-            placement: 1,
+            plcmt: 1,
             mimes: ['video/mp4']
           }
         },
@@ -726,7 +726,7 @@ describe('imdsBidAdapter ', function () {
             w: 640,
             startdelay: 1,
             linearity: 1,
-            placement: 1,
+            plcmt: 1,
             mimes: ['video/mp4']
           },
           id: 'v2624fabbb078e8-640x480',
@@ -1362,17 +1362,17 @@ describe('imdsBidAdapter ', function () {
       expect(usersyncs[0].url).to.contain('https://ad-cdn.technoratimedia.com/html/usersync.html');
     });
 
-    it('should return a pixel usersync when pixels is enabled', function () {
+    it('should return an image usersync when pixels are enabled', function () {
       let usersyncs = spec.getUserSyncs({
         pixelEnabled: true
       }, null);
       expect(usersyncs).to.be.an('array').with.lengthOf(1);
-      expect(usersyncs[0]).to.have.property('type', 'pixel');
+      expect(usersyncs[0]).to.have.property('type', 'image');
       expect(usersyncs[0]).to.have.property('url');
       expect(usersyncs[0].url).to.contain('https://sync.technoratimedia.com/services');
     });
 
-    it('should return an iframe usersync when both iframe and pixels is enabled', function () {
+    it('should return an iframe usersync when both iframe and pixel are enabled', function () {
       let usersyncs = spec.getUserSyncs({
         iframeEnabled: true,
         pixelEnabled: true

@@ -4,6 +4,7 @@ import { isFn, deepAccess, logMessage } from '../src/utils.js';
 import {config} from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 
+const GVLID = 149;
 const BIDDER_CODE = 'adman';
 const AD_URL = 'https://pub.admanmedia.com/?c=o&m=multi';
 const URL_SYNC = 'https://sync.admanmedia.com';
@@ -57,6 +58,7 @@ function getUserId(eids, id, source, uidExt) {
 
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid) => {
@@ -94,7 +96,9 @@ export const spec = {
         request.ccpa = bidderRequest.uspConsent;
       }
       if (bidderRequest.gdprConsent) {
-        request.gdpr = bidderRequest.gdprConsent
+        request.gdpr = {
+          consentString: bidderRequest.gdprConsent.consentString
+        };
       }
       if (content) {
         request.content = content;
@@ -140,6 +144,7 @@ export const spec = {
         placement.protocols = mediaTypes[VIDEO].protocols;
         placement.startdelay = mediaTypes[VIDEO].startdelay;
         placement.placement = mediaTypes[VIDEO].placement;
+        placement.plcmt = mediaTypes[VIDEO].plcmt;
         placement.skip = mediaTypes[VIDEO].skip;
         placement.skipafter = mediaTypes[VIDEO].skipafter;
         placement.minbitrate = mediaTypes[VIDEO].minbitrate;

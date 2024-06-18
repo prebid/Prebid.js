@@ -1,4 +1,11 @@
-import {deepAccess, isAdUnitCodeMatchingSlot, isGptPubadsDefined, logInfo, pick} from '../src/utils.js';
+import {
+  deepAccess,
+  isAdUnitCodeMatchingSlot,
+  isGptPubadsDefined,
+  logInfo,
+  pick,
+  deepSetValue, logWarn
+} from '../src/utils.js';
 import {config} from '../src/config.js';
 import {getHook} from '../src/hook.js';
 import {find} from '../src/polyfill.js';
@@ -15,7 +22,8 @@ export const appendGptSlots = adUnits => {
   }
 
   const adUnitMap = adUnits.reduce((acc, adUnit) => {
-    acc[adUnit.code] = adUnit;
+    acc[adUnit.code] = acc[adUnit.code] || [];
+    acc[adUnit.code].push(adUnit);
     return acc;
   }, {});
 
@@ -25,15 +33,13 @@ export const appendGptSlots = adUnits => {
       : isAdUnitCodeMatchingSlot(slot));
 
     if (matchingAdUnitCode) {
-      const adUnit = adUnitMap[matchingAdUnitCode];
-      adUnit.ortb2Imp = adUnit.ortb2Imp || {};
-      adUnit.ortb2Imp.ext = adUnit.ortb2Imp.ext || {};
-      adUnit.ortb2Imp.ext.data = adUnit.ortb2Imp.ext.data || {};
-
-      const context = adUnit.ortb2Imp.ext.data;
-      context.adserver = context.adserver || {};
-      context.adserver.name = 'gam';
-      context.adserver.adslot = sanitizeSlotPath(slot.getAdUnitPath());
+      const adserver = {
+        name: 'gam',
+        adslot: sanitizeSlotPath(slot.getAdUnitPath())
+      };
+      adUnitMap[matchingAdUnitCode].forEach((adUnit) => {
+        deepSetValue(adUnit, 'ortb2Imp.ext.data.adserver', Object.assign({}, adUnit.ortb2Imp?.ext?.data?.adserver, adserver));
+      });
     }
   });
 };
@@ -107,6 +113,10 @@ export const appendPbAdSlot = adUnit => {
   return true;
 };
 
+function warnDeprecation(adUnit) {
+  logWarn(`pbadslot is deprecated and will soon be removed, use gpid instead`, adUnit)
+}
+
 export const makeBidRequestsHook = (fn, adUnits, ...args) => {
   appendGptSlots(adUnits);
   const { useDefaultPreAuction, customPreAuction } = _currentConfig;
@@ -116,15 +126,18 @@ export const makeBidRequestsHook = (fn, adUnits, ...args) => {
     adUnit.ortb2Imp.ext = adUnit.ortb2Imp.ext || {};
     adUnit.ortb2Imp.ext.data = adUnit.ortb2Imp.ext.data || {};
     const context = adUnit.ortb2Imp.ext;
-
     // if neither new confs set do old stuff
     if (!customPreAuction && !useDefaultPreAuction) {
+      warnDeprecation(adUnit);
       const usedAdUnitCode = appendPbAdSlot(adUnit);
       // gpid should be set to itself if already set, or to what pbadslot was (as long as it was not adUnit code)
       if (!context.gpid && !usedAdUnitCode) {
         context.gpid = context.data.pbadslot;
       }
     } else {
+      if (context.data?.pbadslot) {
+        warnDeprecation(adUnit);
+      }
       let adserverSlot = deepAccess(context, 'data.adserver.adslot');
       let result;
       if (customPreAuction) {
@@ -147,7 +160,7 @@ const handleSetGptConfig = moduleConfig => {
       typeof customGptSlotMatching === 'function' && customGptSlotMatching,
     'customPbAdSlot', customPbAdSlot => typeof customPbAdSlot === 'function' && customPbAdSlot,
     'customPreAuction', customPreAuction => typeof customPreAuction === 'function' && customPreAuction,
-    'useDefaultPreAuction', useDefaultPreAuction => useDefaultPreAuction === true,
+    'useDefaultPreAuction', useDefaultPreAuction => useDefaultPreAuction ?? true,
   ]);
 
   if (_currentConfig.enabled) {

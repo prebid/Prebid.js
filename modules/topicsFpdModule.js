@@ -12,27 +12,19 @@ import {MODULE_TYPE_BIDDER} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'topicsFpd';
 const DEFAULT_EXPIRATION_DAYS = 21;
+const DEFAULT_FETCH_RATE_IN_DAYS = 1;
 let LOAD_TOPICS_INITIALISE = false;
+let iframeLoadedURL = [];
 
 export function reset() {
   LOAD_TOPICS_INITIALISE = false;
+  iframeLoadedURL = [];
 }
 
-const bidderIframeList = {
-  maxTopicCaller: 2,
-  bidders: [{
-    bidder: 'pubmatic',
-    iframeURL: 'https://ads.pubmatic.com/AdServer/js/topics/topics_frame.html'
-  }, {
-    bidder: 'rtbhouse',
-    iframeURL: 'https://topics.authorizedvault.com/topicsapi.html'
-  }]
-}
 export const coreStorage = getCoreStorageManager(MODULE_NAME);
 export const topicStorageName = 'prebid:topics';
 export const lastUpdated = 'lastUpdated';
 
-const iframeLoadedURL = [];
 const TAXONOMIES = {
   // map from topic taxonomyVersion to IAB segment taxonomy
   '1': 600,
@@ -85,6 +77,7 @@ export function getTopicsData(name, topics, taxonomies = TAXONOMIES) {
           if (name != null) {
             datum.name = name;
           }
+
           return datum;
         })
     );
@@ -96,6 +89,7 @@ function isTopicsSupported(doc = document) {
 
 export function getTopics(doc = document) {
   let topics = null;
+
   try {
     if (isTopicsSupported(doc)) {
       topics = GreedyPromise.resolve(doc.browsingTopics());
@@ -106,6 +100,7 @@ export function getTopics(doc = document) {
   if (topics == null) {
     topics = GreedyPromise.resolve([]);
   }
+
   return topics;
 }
 
@@ -134,7 +129,7 @@ export function processFpd(config, {global}, {data = topicsData} = {}) {
  */
 export function getCachedTopics() {
   let cachedTopicData = [];
-  const topics = config.getConfig('userSync.topics') || bidderIframeList;
+  const topics = config.getConfig('userSync.topics');
   const bidderList = topics.bidders || [];
   let storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
   storedSegments && storedSegments.forEach((value, cachedBidder) => {
@@ -156,7 +151,7 @@ export function getCachedTopics() {
 }
 
 /**
- * Recieve messages from iframe loaded for bidders to fetch topic
+ * Receive messages from iframe loaded for bidders to fetch topic
  * @param {MessageEvent} evt
  */
 export function receiveMessage(evt) {
@@ -165,7 +160,7 @@ export function receiveMessage(evt) {
       let data = safeJSONParse(evt.data);
       if (includes(getLoadedIframeURL(), evt.origin) && data && data.segment && !isEmpty(data.segment.topics)) {
         const {domain, topics, bidder} = data.segment;
-        const iframeTopicsData = getTopicsData(domain, topics)[0];
+        const iframeTopicsData = getTopicsData(domain, topics);
         iframeTopicsData && storeInLocalStorage(bidder, iframeTopicsData);
       }
     } catch (err) { }
@@ -173,18 +168,21 @@ export function receiveMessage(evt) {
 }
 
 /**
-Function to store Topics data recieved from iframe in storage(name: "prebid:topics")
-* @param {Topics} topics
-*/
+Function to store Topics data received from iframe in storage(name: "prebid:topics")
+ * @param {string} bidder
+ * @param {object} topics
+ */
 export function storeInLocalStorage(bidder, topics) {
   const storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
-  if (storedSegments.has(bidder)) {
-    storedSegments.get(bidder)[topics['ext']['segclass']] = topics;
-    storedSegments.get(bidder)[lastUpdated] = new Date().getTime();
-    storedSegments.set(bidder, storedSegments.get(bidder));
-  } else {
-    storedSegments.set(bidder, {[topics.ext.segclass]: topics, [lastUpdated]: new Date().getTime()})
-  }
+  const topicsObj = {
+    [lastUpdated]: new Date().getTime()
+  };
+
+  topics.forEach((topic) => {
+    topicsObj[topic.ext.segclass] = topic;
+  });
+
+  storedSegments.set(bidder, topicsObj);
   coreStorage.setDataInLocalStorage(topicStorageName, JSON.stringify([...storedSegments]));
 }
 
@@ -196,8 +194,8 @@ function isCachedDataExpired(storedTime, cacheTime) {
 }
 
 /**
-* Function to get random bidders based on count passed with array of bidders
-**/
+ * Function to get random bidders based on count passed with array of bidders
+ */
 function getRandomBidders(arr, count) {
   return ([...arr].sort(() => 0.5 - Math.random())).slice(0, count)
 }
@@ -214,11 +212,12 @@ function listenMessagesFromTopicIframe() {
  */
 export function loadTopicsForBidders(doc = document) {
   if (!isTopicsSupported(doc)) return;
-  const topics = config.getConfig('userSync.topics') || bidderIframeList;
+  const topics = config.getConfig('userSync.topics');
+
   if (topics) {
     listenMessagesFromTopicIframe();
     const randomBidders = getRandomBidders(topics.bidders || [], topics.maxTopicCaller || 1)
-    randomBidders && randomBidders.forEach(({ bidder, iframeURL }) => {
+    randomBidders && randomBidders.forEach(({ bidder, iframeURL, fetchUrl, fetchRate }) => {
       if (bidder && iframeURL) {
         let ifrm = doc.createElement('iframe');
         ifrm.name = 'ifrm_'.concat(bidder);
@@ -226,6 +225,25 @@ export function loadTopicsForBidders(doc = document) {
         ifrm.style.display = 'none';
         setLoadedIframeURL(new URL(iframeURL).origin);
         iframeURL && doc.documentElement.appendChild(ifrm);
+      }
+
+      if (bidder && fetchUrl) {
+        let storedSegments = new Map(safeJSONParse(coreStorage.getDataFromLocalStorage(topicStorageName)));
+        const bidderLsEntry = storedSegments.get(bidder);
+
+        if (!bidderLsEntry || (bidderLsEntry && isCachedDataExpired(bidderLsEntry[lastUpdated], fetchRate || DEFAULT_FETCH_RATE_IN_DAYS))) {
+          window.fetch(`${fetchUrl}?bidder=${bidder}`, {browsingTopics: true})
+            .then(response => {
+              return response.json();
+            })
+            .then(data => {
+              if (data && data.segment && !isEmpty(data.segment.topics)) {
+                const {domain, topics, bidder} = data.segment;
+                const fetchTopicsData = getTopicsData(domain, topics);
+                fetchTopicsData && storeInLocalStorage(bidder, fetchTopicsData);
+              }
+            });
+        }
       }
     })
   } else {

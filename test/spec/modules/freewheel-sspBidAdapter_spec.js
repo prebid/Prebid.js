@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { spec } from 'modules/freewheel-sspBidAdapter.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import { createEidsArray } from 'modules/userId/eids.js';
+import { config } from 'src/config.js';
 
 const ENDPOINT = '//ads.stickyadstv.com/www/delivery/swfIndex.php';
 const PREBID_VERSION = '$prebid.version$';
@@ -40,12 +41,12 @@ describe('freewheelSSP BidAdapter Test', () => {
     });
 
     it('should return false when required params are not passed', () => {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         wrong: 'missing zone id'
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -72,12 +73,12 @@ describe('freewheelSSP BidAdapter Test', () => {
     });
 
     it('should return false when required params are not passed', () => {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         wrong: 'missing zone id'
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
   });
 
@@ -203,6 +204,14 @@ describe('freewheelSSP BidAdapter Test', () => {
       let bidderRequest = {
         'gdprConsent': {
           'consentString': gdprConsentString
+        },
+        'ortb2': {
+          'site': {
+            'content': {
+              'test': 'news',
+              'test2': 'param'
+            }
+          }
         }
       };
 
@@ -216,6 +225,7 @@ describe('freewheelSSP BidAdapter Test', () => {
       expect(payload.playerSize).to.equal('300x600');
       expect(payload._fw_gdpr_consent).to.exist.and.to.be.a('string');
       expect(payload._fw_gdpr_consent).to.equal(gdprConsentString);
+      expect(payload._fw_prebid_content).to.deep.equal('{\"test\":\"news\",\"test2\":\"param\"}');
 
       let gdprConsent = {
         'gdprApplies': true,

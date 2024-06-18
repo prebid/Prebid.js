@@ -1,4 +1,4 @@
-import {deepAccess, isFn, isPlainObject, isStr} from '../../src/utils.js';
+import {deepAccess, deepClone, isFn, isPlainObject, isStr} from '../../src/utils.js';
 
 export const EID_CONFIG = new Map();
 
@@ -32,34 +32,23 @@ function createEidObject(userIdData, subModuleKey) {
   return null;
 }
 
-// this function will generate eids array for all available IDs in bidRequest.userId
-// this function will be called by userId module
-// if any adapter does not want any particular userId to be passed then adapter can use Array.filter(e => e.source != 'tdid')
 export function createEidsArray(bidRequestUserId) {
-  let eids = [];
-
-  for (const subModuleKey in bidRequestUserId) {
-    if (bidRequestUserId.hasOwnProperty(subModuleKey)) {
-      if (subModuleKey === 'pubProvidedId') {
-        eids = eids.concat(bidRequestUserId['pubProvidedId']);
-      } else if (Array.isArray(bidRequestUserId[subModuleKey])) {
-        bidRequestUserId[subModuleKey].forEach((config, index, arr) => {
-          const eid = createEidObject(config, subModuleKey);
-
-          if (eid) {
-            eids.push(eid);
-          }
-        })
-      } else {
-        const eid = createEidObject(bidRequestUserId[subModuleKey], subModuleKey);
-        if (eid) {
-          eids.push(eid);
-        }
-      }
+  const allEids = {};
+  function collect(eid) {
+    const key = JSON.stringify([eid.source?.toLowerCase(), eid.ext]);
+    if (allEids.hasOwnProperty(key)) {
+      allEids[key].uids.push(...eid.uids);
+    } else {
+      allEids[key] = eid;
     }
   }
 
-  return eids;
+  Object.entries(bidRequestUserId).forEach(([name, values]) => {
+    values = Array.isArray(values) ? values : [values];
+    const eids = name === 'pubProvidedId' ? deepClone(values) : values.map(value => createEidObject(value, name));
+    eids.filter(eid => eid != null).forEach(collect);
+  })
+  return Object.values(allEids);
 }
 
 /**

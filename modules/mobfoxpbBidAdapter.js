@@ -71,6 +71,15 @@ export const spec = {
       if (bidderRequest.gdprConsent) {
         request.gdpr = bidderRequest.gdprConsent;
       }
+
+      // Add GPP consent
+      if (bidderRequest.gppConsent) {
+        request.gpp = bidderRequest.gppConsent.gppString;
+        request.gpp_sid = bidderRequest.gppConsent.applicableSections;
+      } else if (bidderRequest.ortb2?.regs?.gpp) {
+        request.gpp = bidderRequest.ortb2.regs.gpp;
+        request.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
+      }
     }
 
     const len = validBidRequests.length;
@@ -98,6 +107,7 @@ export const spec = {
         placement.protocols = mediaType[VIDEO].protocols;
         placement.startdelay = mediaType[VIDEO].startdelay;
         placement.placement = mediaType[VIDEO].placement;
+        placement.plcmt = mediaType[VIDEO].plcmt;
         placement.skip = mediaType[VIDEO].skip;
         placement.skipafter = mediaType[VIDEO].skipafter;
         placement.minbitrate = mediaType[VIDEO].minbitrate;

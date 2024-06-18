@@ -1,4 +1,4 @@
-import {deepAccess, isStr} from '../src/utils.js';
+import {deepAccess, isStr, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -37,7 +37,6 @@ export const spec = {
         pid: bid.params.pid,
         supplyType: bid.params.supplyType,
         currencyCode: config.getConfig('currency.adServerCurrency'),
-        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: bid.auctionId,
         bidId: bid.bidId,
         BidRequestsCount: bid.bidRequestsCount,
@@ -45,11 +44,10 @@ export const spec = {
         bidderRequestId: bid.bidderRequestId,
         tagId: bid.adUnitCode,
         sizes: raiGetSizes(bid),
-        // TODO: is 'page' the right value here?
         referer: (typeof bidderRequest.refererInfo.page != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.page) : null),
         numIframes: (typeof bidderRequest.refererInfo.numIframes != 'undefined' ? bidderRequest.refererInfo.numIframes : null),
         transactionId: bid.ortb2Imp?.ext?.tid,
-        timeout: config.getConfig('bidderTimeout'),
+        timeout: bidderRequest.timeout || 600,
         user: raiSetEids(bid),
         demand: raiGetDemandType(bid),
         videoData: raiGetVideoInfo(bid),
@@ -60,7 +58,6 @@ export const spec = {
         gpid: raiSetPbAdSlot(bid)
       };
 
-      // TODO: is 'page' the right value here?
       REFERER = (typeof bidderRequest.refererInfo.page != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.page) : null)
 
       payload.gdpr_consent = '';
@@ -72,6 +69,18 @@ export const spec = {
         }
         if (typeof bidderRequest.gdprConsent.consentString != 'undefined') {
           payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
+        }
+      }
+
+      if (bidderRequest?.gppConsent) {
+        payload.privacy = {
+          gpp: bidderRequest.gppConsent.gppString,
+          gpp_sid: bidderRequest.gppConsent.applicableSections
+        }
+      } else if (bidderRequest?.ortb2?.regs?.gpp) {
+        payload.privacy = {
+          gpp: bidderRequest.ortb2.regs.gpp,
+          gpp_sid: bidderRequest.ortb2.regs.gpp_sid
         }
       }
 
@@ -145,12 +154,13 @@ export const spec = {
    * @param {gdprConsent} GPDR consent object
    * @returns {Array}
    */
-  getUserSyncs: function (syncOptions, serverResponses, gdprConsent) {
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent, gppConsent) {
     const syncs = [];
 
     var rand = Math.floor(Math.random() * 9999999999);
     var syncUrl = '';
     var consent = '';
+    var consentGPP = '';
 
     var raiSync = {};
 
@@ -160,10 +170,19 @@ export const spec = {
       consent = `consentString=${gdprConsent.consentString}`
     }
 
+    // GPP Consent
+    if (gppConsent?.gppString && gppConsent?.applicableSections?.length) {
+      consentGPP = 'gpp=' + encodeURIComponent(gppConsent.gppString);
+      consentGPP += '&gpp_sid=' + encodeURIComponent(gppConsent?.applicableSections?.join(','));
+    }
+
     if (syncOptions.iframeEnabled && raiSync.raiIframe != 'exclude') {
       syncUrl = 'https://sync.richaudience.com/dcf3528a0b8aa83634892d50e91c306e/?ord=' + rand
       if (consent != '') {
         syncUrl += `&${consent}`
+      }
+      if (consentGPP != '') {
+        syncUrl += `&${consentGPP}`
       }
       syncs.push({
         type: 'iframe',
@@ -176,6 +195,9 @@ export const spec = {
       if (consent != '') {
         syncUrl += `&${consent}`
       }
+      if (consentGPP != '') {
+        syncUrl += `&${consentGPP}`
+      }
       syncs.push({
         type: 'image',
         url: syncUrl
@@ -183,6 +205,13 @@ export const spec = {
     }
     return syncs
   },
+
+  onTimeout: function (data) {
+    let url = raiGetTimeoutURL(data);
+    if (url) {
+      triggerPixel(url);
+    }
+  }
 };
 
 registerBidder(spec);
@@ -331,4 +360,16 @@ function raiGetFloor(bid, config) {
   } catch (e) {
     return 0
   }
+}
+
+function raiGetTimeoutURL(data) {
+  let {params, timeout} = data[0]
+  let url = 'https://s.richaudience.com/err/?ec=6&ev=[timeout_publisher]&pla=[placement_hash]&int=PREBID&pltfm=&node=&dm=[domain]';
+
+  url = url.replace('[timeout_publisher]', timeout)
+  url = url.replace('[placement_hash]', params[0].pid)
+  if (document.location.host != null) {
+    url = url.replace('[domain]', document.location.host)
+  }
+  return url
 }

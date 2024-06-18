@@ -1,8 +1,6 @@
 import {
-  isFn,
   deepAccess,
   logMessage,
-  logError,
   isPlainObject,
   isNumber,
   isArray,
@@ -17,7 +15,7 @@ import { USERSYNC_DEFAULT_CONFIG } from '../src/userSync.js';
 
 const BIDDER_CODE = 'mgidX';
 const GVLID = 358;
-const AD_URL = 'https://us-east-x.mgid.com/pbjs';
+const AD_URL = 'https://#{REGION}#.mgid.com/pbjs';
 const PIXEL_SYNC_URL = 'https://cm.mgid.com/i.gif';
 const IFRAME_SYNC_URL = 'https://cm.mgid.com/i.html';
 
@@ -39,7 +37,7 @@ function isBidResponseValid(bid) {
 }
 
 function getPlacementReqData(bid) {
-  const { params, bidId, mediaTypes } = bid;
+  const { params, bidId, mediaTypes, transactionId, userIdAsEids } = bid;
   const schain = bid.schain || {};
   const { placementId, endpointId } = params;
   const bidfloor = getBidFloor(bid);
@@ -70,6 +68,7 @@ function getPlacementReqData(bid) {
     placement.protocols = mediaTypes[VIDEO].protocols;
     placement.startdelay = mediaTypes[VIDEO].startdelay;
     placement.placement = mediaTypes[VIDEO].placement;
+    placement.plcmt = mediaTypes[VIDEO].plcmt;
     placement.skip = mediaTypes[VIDEO].skip;
     placement.skipafter = mediaTypes[VIDEO].skipafter;
     placement.minbitrate = mediaTypes[VIDEO].minbitrate;
@@ -83,14 +82,19 @@ function getPlacementReqData(bid) {
     placement.adFormat = NATIVE;
   }
 
+  if (transactionId) {
+    placement.ext = placement.ext || {};
+    placement.ext.tid = transactionId;
+  }
+
+  if (userIdAsEids && userIdAsEids.length) {
+    placement.eids = userIdAsEids;
+  }
+
   return placement;
 }
 
 function getBidFloor(bid) {
-  if (!isFn(bid.getFloor)) {
-    return deepAccess(bid, 'params.bidfloor', 0);
-  }
-
   try {
     const bidFloor = bid.getFloor({
       currency: 'USD',
@@ -99,7 +103,6 @@ function getBidFloor(bid) {
     });
     return bidFloor.floor;
   } catch (err) {
-    logError(err);
     return 0;
   }
 }
@@ -150,6 +153,7 @@ export const spec = {
     } catch (e) {
       logMessage(e);
     }
+
     let location = refferLocation || winLocation;
     const language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
     const host = location.host;
@@ -164,11 +168,27 @@ export const spec = {
       host,
       page,
       placements,
-      coppa: config.getConfig('coppa') === true ? 1 : 0,
-      ccpa: bidderRequest.uspConsent || undefined,
-      gdpr: bidderRequest.gdprConsent || undefined,
-      tmax: config.getConfig('bidderTimeout')
+      coppa: deepAccess(bidderRequest, 'ortb2.regs.coppa') ? 1 : 0,
+      tmax: bidderRequest.timeout
     };
+
+    if (bidderRequest.uspConsent) {
+      request.ccpa = bidderRequest.uspConsent;
+    }
+
+    if (bidderRequest.gdprConsent) {
+      request.gdpr = {
+        consentString: bidderRequest.gdprConsent.consentString
+      };
+    }
+
+    if (bidderRequest.gppConsent) {
+      request.gpp = bidderRequest.gppConsent.gppString;
+      request.gpp_sid = bidderRequest.gppConsent.applicableSections;
+    } else if (bidderRequest.ortb2?.regs?.gpp) {
+      request.gpp = bidderRequest.ortb2.regs.gpp;
+      request.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
+    }
 
     const len = validBidRequests.length;
     for (let i = 0; i < len; i++) {
@@ -176,9 +196,18 @@ export const spec = {
       placements.push(getPlacementReqData(bid));
     }
 
+    const region = validBidRequests[0].params?.region;
+
+    let url;
+    if (region === 'eu') {
+      url = AD_URL.replace('#{REGION}#', 'eu');
+    } else {
+      url = AD_URL.replace('#{REGION}#', 'us-east-x');
+    }
+
     return {
       method: 'POST',
-      url: AD_URL,
+      url: url,
       data: request
     };
   },

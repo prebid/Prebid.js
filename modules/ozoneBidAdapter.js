@@ -1,4 +1,5 @@
 import {
+  deepClone,
   logInfo,
   logError,
   deepAccess,
@@ -22,10 +23,10 @@ const AUCTIONURI = '/openrtb2/auction';
 const OZONECOOKIESYNC = '/static/load-cookie.html';
 const OZONE_RENDERER_URL = 'https://prebid.the-ozone-project.com/ozone-renderer.js';
 const ORIGIN_DEV = 'https://test.ozpr.net';
-const OZONEVERSION = '2.9.0';
+const OZONEVERSION = '2.9.1';
 export const spec = {
   gvlid: 524,
-  aliases: [{code: 'lmc', gvlid: 524}],
+  aliases: [{code: 'lmc', gvlid: 524}, {code: 'venatus', gvlid: 524}],
   version: OZONEVERSION,
   code: BIDDER_CODE,
   supportedMediaTypes: [VIDEO, BANNER],
@@ -42,12 +43,12 @@ export const spec = {
   },
   loadWhitelabelData(bid) {
     if (this.propertyBag.whitelabel) { return; }
-    this.propertyBag.whitelabel = JSON.parse(JSON.stringify(this.whitelabel_defaults));
+    this.propertyBag.whitelabel = deepClone(this.whitelabel_defaults);
     let bidder = bid.bidder || 'ozone'; // eg. ozone
     this.propertyBag.whitelabel.logId = bidder.toUpperCase();
     this.propertyBag.whitelabel.bidder = bidder;
     let bidderConfig = config.getConfig(bidder) || {};
-    logInfo('got bidderConfig: ', JSON.parse(JSON.stringify(bidderConfig)));
+    logInfo('got bidderConfig: ', deepClone(bidderConfig));
     if (bidderConfig.kvpPrefix) {
       this.propertyBag.whitelabel.keyPrefix = bidderConfig.kvpPrefix;
     }
@@ -78,6 +79,9 @@ export const spec = {
     if (bidderConfig.hasOwnProperty('batchRequests')) {
       this.propertyBag.whitelabel.batchRequests = bidderConfig.batchRequests;
     }
+    if (arr.hasOwnProperty('batchRequests')) {
+      this.propertyBag.whitelabel.batchRequests = true;
+    }
     try {
       if (arr.hasOwnProperty('auction') && arr.auction === 'dev') {
         logInfo('GET: auction=dev');
@@ -100,6 +104,7 @@ export const spec = {
     return this.propertyBag.whitelabel.rendererUrl;
   },
   isBatchRequests() {
+    logInfo('isBatchRequests going to return ', this.propertyBag.whitelabel.batchRequests);
     return this.propertyBag.whitelabel.batchRequests;
   },
   isBidRequestValid(bid) {
@@ -173,7 +178,7 @@ export const spec = {
     this.propertyBag.buildRequestsStart = new Date().getTime();
     let whitelabelBidder = this.propertyBag.whitelabel.bidder; // by default = ozone
     let whitelabelPrefix = this.propertyBag.whitelabel.keyPrefix;
-    logInfo(`buildRequests time: ${this.propertyBag.buildRequestsStart} v ${OZONEVERSION} validBidRequests`, JSON.parse(JSON.stringify(validBidRequests)), 'bidderRequest', JSON.parse(JSON.stringify(bidderRequest)));
+    logInfo(`buildRequests time: ${this.propertyBag.buildRequestsStart} v ${OZONEVERSION} validBidRequests`, deepClone(validBidRequests), 'bidderRequest', deepClone(bidderRequest));
     if (this.blockTheRequest()) {
       return [];
     }
@@ -399,7 +404,7 @@ export const spec = {
         data: JSON.stringify(ozoneRequest),
         bidderRequest: bidderRequest
       };
-      logInfo('buildRequests request data for single = ', JSON.parse(JSON.stringify(ozoneRequest)));
+      logInfo('buildRequests request data for single = ', deepClone(ozoneRequest));
       this.propertyBag.buildRequestsEnd = new Date().getTime();
       logInfo(`buildRequests going to return for single at time ${this.propertyBag.buildRequestsEnd} (took ${this.propertyBag.buildRequestsEnd - this.propertyBag.buildRequestsStart}ms): `, ret);
       return ret;
@@ -440,7 +445,7 @@ export const spec = {
     if (mediaTypesSizes.native) {
       ret.native = bidRequestRef.getFloor({mediaType: 'native', currency: 'USD', size: mediaTypesSizes.native});
     }
-    logInfo('getFloorObjectForAuction returning : ', JSON.parse(JSON.stringify(ret)));
+    logInfo('getFloorObjectForAuction returning : ', deepClone(ret));
     return ret;
   },
   interpretResponse(serverResponse, request) {
@@ -449,7 +454,7 @@ export const spec = {
     let whitelabelBidder = this.propertyBag.whitelabel.bidder; // by default = ozone
     let whitelabelPrefix = this.propertyBag.whitelabel.keyPrefix;
     logInfo(`interpretResponse time: ${startTime} . Time between buildRequests done and interpretResponse start was ${startTime - this.propertyBag.buildRequestsEnd}ms`);
-    logInfo(`serverResponse, request`, JSON.parse(JSON.stringify(serverResponse)), JSON.parse(JSON.stringify(request)));
+    logInfo(`serverResponse, request`, deepClone(serverResponse), deepClone(request));
     serverResponse = serverResponse.body || {};
     let aucId = serverResponse.id; // this will be correct for single requests and non-single
     if (!serverResponse.hasOwnProperty('seatbid')) {
@@ -569,7 +574,7 @@ export const spec = {
     }
     let endTime = new Date().getTime();
     logInfo(`interpretResponse going to return at time ${endTime} (took ${endTime - startTime}ms) Time from buildRequests Start -> interpretRequests End = ${endTime - this.propertyBag.buildRequestsStart}ms`);
-    logInfo('interpretResponse arrAllBids (serialised): ', JSON.parse(JSON.stringify(arrAllBids))); // this is ok to log because the renderer has not been attached yet
+    logInfo('interpretResponse arrAllBids (serialised): ', deepClone(arrAllBids)); // this is ok to log because the renderer has not been attached yet
     return arrAllBids;
   },
   setBidMediaTypeIfNotExist(thisBid, mediaType) {
@@ -680,10 +685,6 @@ export const spec = {
       if (id5id) {
         ret['id5id'] = id5id;
       }
-      let parrableId = deepAccess(bidRequest.userId, 'parrableId.eid');
-      if (parrableId) {
-        ret['parrableId'] = parrableId;
-      }
       let sharedid = deepAccess(bidRequest.userId, 'sharedid.id');
       if (sharedid) {
         ret['sharedid'] = sharedid;
@@ -763,7 +764,7 @@ export const spec = {
     return ret;
   },
   _unpackVideoConfigIntoIABformat(ret, objConfig) {
-    let arrVideoKeysAllowed = ['mimes', 'minduration', 'maxduration', 'protocols', 'w', 'h', 'startdelay', 'placement', 'linearity', 'skip', 'skipmin', 'skipafter', 'sequence', 'battr', 'maxextended', 'minbitrate', 'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend', 'delivery', 'pos', 'companionad', 'api', 'companiontype'];
+    let arrVideoKeysAllowed = ['mimes', 'minduration', 'maxduration', 'protocols', 'w', 'h', 'startdelay', 'placement', 'plcmt', 'linearity', 'skip', 'skipmin', 'skipafter', 'sequence', 'battr', 'maxextended', 'minbitrate', 'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend', 'delivery', 'pos', 'companionad', 'api', 'companiontype'];
     for (const key in objConfig) {
       var found = false;
       arrVideoKeysAllowed.forEach(function(arg) {
@@ -1035,7 +1036,7 @@ function newRenderer(adUnitCode, rendererOptions = {}) {
 }
 function outstreamRender(bid) {
   logInfo('outstreamRender called. Going to push the call to window.ozoneVideo.outstreamRender(bid) bid = (first static, then reference)');
-  logInfo(JSON.parse(JSON.stringify(spec.getLoggableBidObject(bid))));
+  logInfo(deepClone(spec.getLoggableBidObject(bid)));
   bid.renderer.push(() => {
     logInfo('Going to execute window.ozoneVideo.outstreamRender');
     window.ozoneVideo.outstreamRender(bid);

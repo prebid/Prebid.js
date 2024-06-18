@@ -4,11 +4,15 @@ import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {Renderer} from '../src/Renderer.js';
 import {includes} from '../src/polyfill.js';
 
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ */
+
 const BIDDER_CODE = 'dspx';
 const ENDPOINT_URL = 'https://buyer.dspx.tv/request/';
 const ENDPOINT_URL_DEV = 'https://dcbuyer.dspx.tv/request/';
 const GVLID = 602;
-const VIDEO_ORTB_PARAMS = ['mimes', 'minduration', 'maxduration', 'protocols', 'w', 'h', 'startdelay', 'placement', 'linearity', 'skip', 'skipmin',
+const VIDEO_ORTB_PARAMS = ['mimes', 'minduration', 'maxduration', 'protocols', 'w', 'h', 'startdelay', 'placement', 'plcmt', 'linearity', 'skip', 'skipmin',
   'skipafter', 'sequence', 'battr', 'maxextended', 'minbitrate', 'maxbitrate', 'boxingallowed', 'playbackmethod', 'playbackend', 'delivery', 'pos', 'companionad',
   'api', 'companiontype', 'ext'];
 
@@ -327,8 +331,8 @@ function getBannerSizes(bid) {
 
 /**
  * Parse size
- * @param sizes
- * @returns {width: number, h: height}
+ * @param size
+ * @returns {object} sizeObj
  */
 function parseSize(size) {
   let sizeObj = {}

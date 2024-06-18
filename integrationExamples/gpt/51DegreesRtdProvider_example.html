@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Delegate-CH" content="sec-ch-ua-full-version-list https://cloud.51degrees.com; sec-ch-ua-model https://cloud.51degrees.com; sec-ch-ua-platform https://cloud.51degrees.com; sec-ch-ua-platform-version https://cloud.51degrees.com">
+    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+    <script async src="../../build/dev/prebid.js"></script>
+    <meta charset="utf-8">
+    <style>
+        body {
+            color: #555;
+            font-family: sans-serif;
+        }
+    </style>
+    <script>
+        var PREBID_TIMEOUT = 1000;
+        var FAILSAFE_TIMEOUT = 3000;
+
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        function initAdserver() {
+            if (pbjs.initAdserverSet) return;
+
+            googletag.cmd.push(function () {
+                pbjs.que.push(function () {
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
+                });
+            });
+
+            pbjs.initAdserverSet = true;
+        }
+
+        pbjs.que.push(function () {
+            var adUnits = [{
+                code: 'div-banner-native-1',
+                mediaTypes: {
+                    banner: {
+                        sizes: [
+                            [300, 250]
+                        ]
+                    },
+                    native: {
+                        type: 'image'
+                    },
+                },
+                bids: [{
+                    bidder: 'appnexus',
+                    params: {
+                        placementId: 13232392,
+                    }
+                }]
+            },
+                {
+                    code: 'div-banner-native-2',
+                    mediaTypes: {
+                        banner: {
+                            sizes: [
+                                [300, 250]
+                            ]
+                        },
+                        native: {
+                            title: {
+                                required: true
+                            },
+                            image: {
+                                required: true
+                            },
+                            sponsoredBy: {
+                                required: true
+                            }
+                        }
+                    },
+                    bids: [{
+                        bidder: 'appnexus',
+                        params: {
+                            placementId: 13232392,
+                        }
+                    }]
+                }
+            ];
+
+            pbjs.setConfig({
+                debug: true, // use only for testing, remove in production
+                realTimeData: {
+                    auctionDelay: 1000, // should be set lower in production use
+                    dataProviders: [
+                        {
+                            name: '51Degrees',
+                            waitForIt: true,
+                            params: {
+                                // Get your resource key from https://configure.51degrees.com/tWrhNfY6
+                                resourceKey: '<YOUR_RESOURCE_KEY>',
+                                // alternatively, you can use the on-premise version of the 51Degrees service and connect to your chosen end point
+                                // onPremiseJSUrl: 'https://localhost/51Degrees.core.js'
+                            }
+                        }
+                    ]
+                },
+            });
+
+            pbjs.addAdUnits(adUnits);
+
+            pbjs.onEvent('bidRequested', function (data) {
+              try {
+                fod.complete(() => {
+                  document.getElementById('enriched-51').style.display = 'block';
+                  document.getElementById('enriched-51-data').textContent = JSON.stringify(data.ortb2.device, null, 2);
+                });
+              } catch (e) {
+                console.error('Error while trying to display enriched data', e);
+              }
+            });
+
+            pbjs.requestBids({
+                timeout: PREBID_TIMEOUT,
+                bidsBackHandler: function (bidResponses) {
+                    initAdserver();
+                }
+            });
+        });
+        setTimeout(initAdserver, FAILSAFE_TIMEOUT);
+    </script>
+
+    <script>
+        googletag.cmd.push(function () {
+            googletag
+                .defineSlot(
+                    '/19968336/prebid_multiformat_test', [
+                        [300, 250],
+                        [360, 360]
+                    ],
+                    'div-banner-native-1'
+                )
+                .addService(googletag.pubads());
+
+            googletag
+                .defineSlot(
+                    '/19968336/prebid_multiformat_test', [
+                        [300, 250],
+                        [360, 360]
+                    ],
+                    'div-banner-native-2'
+                )
+                .addService(googletag.pubads());
+
+            googletag.pubads().disableInitialLoad();
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+    <title>51Degrees RTD submodule example - Prebid.js</title>
+</head>
+<body>
+    <h2>51Degrees RTD submodule - example of usage</h2>
+
+    <h3>div-banner-native-1</h3>
+    <div id='div-banner-native-1'>
+        <p>No response</p>
+        <script type='text/javascript'>
+            googletag.cmd.push(function () {
+                googletag.display('div-banner-native-1');
+            });
+        </script>
+    </div>
+
+    <h3>div-banner-native-2</h3>
+    <div id='div-banner-native-2'>
+        <p>No response</p>
+        <script type='text/javascript'>
+            googletag.cmd.push(function () {
+                googletag.display('div-banner-native-2');
+            });
+        </script>
+    </div>
+
+    <div id="debug">
+        <h3>Testing/Debugging Guidance</h3>
+        <ol>
+            <li>Make sure you have <code>debug: true</code> under <code>pbjs.setConfig</code> in this example code (be sure to remove it for production!)
+            <li>Make sure you have replaced <code>&lt;YOUR RESOURCE KEY&gt;</code> in this example code with the one you have obtained 
+            from the <a href="https://configure.51degrees.com/tWrhNfY6" target="blank;">51Degrees Configurator Tool</a></li>
+            <li>Open DevTools Console in your browser and refresh the page</li>
+            <li>Observe the enriched ortb device data shown below and also in the console as part of the <code>[51Degrees RTD Submodule]: reqBidsConfigObj:</code> message (under <code>reqBidsConfigObj.global.device</code>)</li>
+        </ol>
+        
+    </div>
+    <div id="enriched-51" style="display: none">
+        <h3>Enriched ORTB2 device data</h3>
+        <pre id="enriched-51-data"></pre>
+    </div>
+</body>
+</html>

@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { spec } from 'modules/oguryBidAdapter';
 import * as utils from 'src/utils.js';
+import {server} from '../../mocks/xhr.js';
 
 const BID_URL = 'https://mweb-hb.presage.io/api/header-bidding-request';
 const TIMEOUT_URL = 'https://ms-ads-monitoring-events.presage.io/bid_timeout'
@@ -41,7 +42,21 @@ describe('OguryBidAdapter', function () {
 
         return floorResult;
       },
-      transactionId: 'transactionId'
+      transactionId: 'transactionId',
+      userId: {
+        pubcid: '2abb10e5-c4f6-4f70-9f45-2200e4487714'
+      },
+      userIdAsEids: [
+        {
+          source: 'pubcid.org',
+          uids: [
+            {
+              id: '2abb10e5-c4f6-4f70-9f45-2200e4487714',
+              atype: 1
+            }
+          ]
+        }
+      ]
     },
     {
       adUnitCode: 'adUnitCode2',
@@ -65,6 +80,7 @@ describe('OguryBidAdapter', function () {
     bidderRequestId: 'mock-uuid',
     auctionId: bidRequests[0].auctionId,
     gdprConsent: {consentString: 'myConsentString', vendorData: {}, gdprApplies: true},
+    timeout: 1000
   };
 
   describe('isBidRequestValid', function () {
@@ -406,12 +422,26 @@ describe('OguryBidAdapter', function () {
       },
       user: {
         ext: {
-          consent: bidderRequest.gdprConsent.consentString
+          consent: bidderRequest.gdprConsent.consentString,
+          uids: {
+            pubcid: '2abb10e5-c4f6-4f70-9f45-2200e4487714'
+          },
+          eids: [
+            {
+              source: 'pubcid.org',
+              uids: [
+                {
+                  id: '2abb10e5-c4f6-4f70-9f45-2200e4487714',
+                  atype: 1
+                }
+              ]
+            }
+          ],
         },
       },
       ext: {
         prebidversion: '$prebid.version$',
-        adapterversion: '1.5.0'
+        adapterversion: '1.6.0'
       },
       device: {
         w: stubbedWidth,
@@ -636,7 +666,9 @@ describe('OguryBidAdapter', function () {
         },
         user: {
           ext: {
-            consent: ''
+            consent: '',
+            uids: expectedRequestObject.user.ext.uids,
+            eids: expectedRequestObject.user.ext.eids
           },
         }
       };
@@ -662,7 +694,9 @@ describe('OguryBidAdapter', function () {
         },
         user: {
           ext: {
-            consent: ''
+            consent: '',
+            uids: expectedRequestObject.user.ext.uids,
+            eids: expectedRequestObject.user.ext.eids
           },
         }
       };
@@ -688,7 +722,9 @@ describe('OguryBidAdapter', function () {
         },
         user: {
           ext: {
-            consent: ''
+            consent: '',
+            uids: expectedRequestObject.user.ext.uids,
+            eids: expectedRequestObject.user.ext.eids
           },
         }
       };
@@ -698,6 +734,48 @@ describe('OguryBidAdapter', function () {
       const request = spec.buildRequests(validBidRequests, bidderRequestWithoutGdpr);
       expect(request.data).to.deep.equal(expectedRequestObjectWithoutGdpr);
       expect(request.data.regs.ext.gdpr).to.be.a('number');
+    });
+
+    it('should should not add uids infos if userId is undefined', () => {
+      const expectedRequestWithUndefinedUserId = {
+        ...expectedRequestObject,
+        user: {
+          ext: {
+            consent: expectedRequestObject.user.ext.consent,
+            eids: expectedRequestObject.user.ext.eids
+          }
+        }
+      };
+
+      const validBidRequests = utils.deepClone(bidRequests);
+      validBidRequests[0] = {
+        ...validBidRequests[0],
+        userId: undefined
+      };
+
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      expect(request.data).to.deep.equal(expectedRequestWithUndefinedUserId);
+    });
+
+    it('should should not add uids infos if userIdAsEids is undefined', () => {
+      const expectedRequestWithUndefinedUserIdAsEids = {
+        ...expectedRequestObject,
+        user: {
+          ext: {
+            consent: expectedRequestObject.user.ext.consent,
+            uids: expectedRequestObject.user.ext.uids
+          }
+        }
+      };
+
+      const validBidRequests = utils.deepClone(bidRequests);
+      validBidRequests[0] = {
+        ...validBidRequests[0],
+        userIdAsEids: undefined
+      };
+
+      const request = spec.buildRequests(validBidRequests, bidderRequest);
+      expect(request.data).to.deep.equal(expectedRequestWithUndefinedUserIdAsEids);
     });
 
     it('should handle bidFloor undefined', () => {
@@ -813,7 +891,7 @@ describe('OguryBidAdapter', function () {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[0].adomain
         },
         nurl: openRtbBidResponse.body.seatbid[0].bid[0].nurl,
-        adapterVersion: '1.5.0',
+        adapterVersion: '1.6.0',
         prebidVersion: '$prebid.version$'
       }, {
         requestId: openRtbBidResponse.body.seatbid[0].bid[1].impid,
@@ -830,7 +908,7 @@ describe('OguryBidAdapter', function () {
           advertiserDomains: openRtbBidResponse.body.seatbid[0].bid[1].adomain
         },
         nurl: openRtbBidResponse.body.seatbid[0].bid[1].nurl,
-        adapterVersion: '1.5.0',
+        adapterVersion: '1.6.0',
         prebidVersion: '$prebid.version$'
       }]
 
@@ -851,20 +929,11 @@ describe('OguryBidAdapter', function () {
   });
 
   describe('onBidWon', function() {
-    const nurl = 'https://fakewinurl.test';
-    let xhr;
+    const nurl = 'https://fakewinurl.test/';
     let requests;
 
     beforeEach(function() {
-      xhr = sinon.useFakeXMLHttpRequest();
-      requests = [];
-      xhr.onCreate = (xhr) => {
-        requests.push(xhr);
-      };
-    })
-
-    afterEach(function() {
-      xhr.restore()
+      requests = server.requests;
     })
 
     it('Should not create nurl request if bid is undefined', function() {
@@ -932,19 +1001,13 @@ describe('OguryBidAdapter', function () {
   })
 
   describe('onTimeout', function () {
-    let xhr;
     let requests;
 
     beforeEach(function() {
-      xhr = sinon.useFakeXMLHttpRequest();
-      requests = [];
-      xhr.onCreate = (xhr) => {
+      requests = server.requests;
+      server.onCreate = (xhr) => {
         requests.push(xhr);
       };
-    })
-
-    afterEach(function() {
-      xhr.restore()
     })
 
     it('should send on bid timeout notification', function() {

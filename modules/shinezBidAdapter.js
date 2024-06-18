@@ -1,4 +1,16 @@
-import { logWarn, logInfo, isArray, isFn, deepAccess, isEmpty, contains, timestamp, getBidIdParameter, triggerPixel, isInteger } from '../src/utils.js';
+import {
+  logWarn,
+  logInfo,
+  isArray,
+  isFn,
+  deepAccess,
+  isEmpty,
+  contains,
+  timestamp,
+  triggerPixel,
+  isInteger,
+  getBidIdParameter
+} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -324,7 +336,10 @@ function generateBidParameters(bid, bidderRequest) {
     if (placement) {
       bidObject.placement = placement;
     }
-
+    const plcmt = deepAccess(bid, `mediaTypes.video.plcmt`);
+    if (plcmt) {
+      bidObject.plcmt = plcmt;
+    }
     const minDuration = deepAccess(bid, `mediaTypes.video.minduration`);
     if (minDuration) {
       bidObject.minDuration = minDuration;

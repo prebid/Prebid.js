@@ -3,11 +3,17 @@ import { config } from '../src/config.js';
 import { auctionManager } from '../src/auctionManager.js';
 import { INSTREAM } from '../src/video.js';
 import * as events from '../src/events.js';
-import CONSTANTS from '../src/constants.json'
+import { EVENTS, TARGETING_KEYS, BID_STATUS } from '../src/constants.js'
 
-const {CACHE_ID, UUID} = CONSTANTS.TARGETING_KEYS;
-const {BID_WON, AUCTION_END} = CONSTANTS.EVENTS;
-const {RENDERED} = CONSTANTS.BID_STATUS;
+/**
+ * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
+ * @typedef {import('../src/adapters/bidderFactory.js').Bid} Bid
+ * @typedef {import('../src/adapters/bidderFactory.js').AdUnit} AdUnit
+ */
+
+const { CACHE_ID, UUID } = TARGETING_KEYS;
+const { BID_WON, AUCTION_END } = EVENTS;
+const { RENDERED } = BID_STATUS;
 
 const INSTREAM_TRACKING_DEFAULT_CONFIG = {
   enabled: false,
@@ -35,9 +41,10 @@ const whitelistedResources = /video|fetch|xmlhttprequest|other/;
  *
  * Note: this is a workaround till a better approach is engineered.
  *
- * @param {Array<AdUnit>} adUnits
- * @param {Array<Bid>} bidsReceived
- * @param {Array<BidRequest>} bidderRequests
+ * @param {object} config
+ * @param {Array<AdUnit>} config.adUnits
+ * @param {Array<Bid>} config.bidsReceived
+ * @param {Array<BidRequest>} config.bidderRequests
  *
  * @return {boolean} returns TRUE if tracking started
  */

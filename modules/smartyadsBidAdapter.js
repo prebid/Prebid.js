@@ -1,4 +1,3 @@
-import { logMessage } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
@@ -6,7 +5,13 @@ import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { ajax } from '../src/ajax.js';
 
 const BIDDER_CODE = 'smartyads';
-const AD_URL = 'https://n1.smartyads.com/?c=o&m=prebid&secret_key=prebid_js';
+const GVLID = 534;
+const adUrls = {
+  US_EAST: 'https://n1.smartyads.com/?c=o&m=prebid&secret_key=prebid_js',
+  EU: 'https://n2.smartyads.com/?c=o&m=prebid&secret_key=prebid_js',
+  SGP: 'https://n6.smartyads.com/?c=o&m=prebid&secret_key=prebid_js'
+}
+
 const URL_SYNC = 'https://as.ck-ie.com/prebidjs?p=7c47322e527cf8bdeb7facc1bb03387a';
 
 function isBidResponseValid(bid) {
@@ -26,8 +31,36 @@ function isBidResponseValid(bid) {
   }
 }
 
+function getAdUrlByRegion(bid) {
+  let adUrl;
+
+  if (bid.params.region && adUrls[bid.params.region]) {
+    adUrl = adUrls[bid.params.region];
+  } else {
+    try {
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const region = timezone.split('/')[0];
+
+      switch (region) {
+        case 'Europe':
+          adUrl = adUrls['EU'];
+          break;
+        case 'Asia':
+          adUrl = adUrls['SGP'];
+          break;
+        default: adUrl = adUrls['US_EAST'];
+      }
+    } catch (err) {
+      adUrl = adUrls['US_EAST'];
+    }
+  }
+
+  return adUrl;
+}
+
 export const spec = {
   code: BIDDER_CODE,
+  gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
   isBidRequestValid: (bid) => {
@@ -40,24 +73,19 @@ export const spec = {
 
     let winTop = window;
     let location;
-    // TODO: this odd try-catch block was copied in several adapters; it doesn't seem to be correct for cross-origin
-    try {
-      location = new URL(bidderRequest.refererInfo.page)
-      winTop = window.top;
-    } catch (e) {
-      location = winTop.location;
-      logMessage(e);
-    };
+    location = bidderRequest?.refererInfo ?? null;
     let placements = [];
     let request = {
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
       'language': (navigator && navigator.language) ? navigator.language : '',
       'secure': 1,
-      'host': location.host,
-      'page': location.pathname,
+      'host': location?.domain ?? '',
+      'page': location?.page ?? '',
       'coppa': config.getConfig('coppa') === true ? 1 : 0,
-      'placements': placements
+      'placements': placements,
+      'eeid': validBidRequests[0]?.userIdAsEids,
+      'ifa': bidderRequest?.ortb2?.device?.ifa,
     };
     request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
     if (bidderRequest) {
@@ -73,9 +101,14 @@ export const spec = {
     }
     const len = validBidRequests.length;
 
+    let adUrl;
+
     for (let i = 0; i < len; i++) {
       let bid = validBidRequests[i];
-      let traff = bid.params.traffic || BANNER
+
+      if (i === 0) adUrl = getAdUrlByRegion(bid);
+
+      let traff = bid.params.traffic || BANNER;
       placements.push({
         placementId: bid.params.sourceid,
         bidId: bid.bidId,
@@ -87,11 +120,12 @@ export const spec = {
         placements.schain = bid.schain;
       }
     }
+
     return {
       method: 'POST',
-      url: AD_URL,
+      url: adUrl,
       data: request
-    };
+    }
   },
 
   interpretResponse: (serverResponse) => {
@@ -129,16 +163,22 @@ export const spec = {
     if (bid.winUrl) {
       ajax(bid.winUrl, () => {}, JSON.stringify(bid));
     } else {
-      ajax('https://et-nd43.itdsmr.com/?c=o&m=prebid&secret_key=prebid_js&winTest=1', () => {}, JSON.stringify(bid));
+      if (bid?.postData && bid?.postData[0] && bid?.postData[0].params && bid?.postData[0].params[0].host == 'prebid') {
+        ajax('https://et-nd43.itdsmr.com/?c=o&m=prebid&secret_key=prebid_js&winTest=1', () => {}, JSON.stringify(bid));
+      }
     }
   },
 
   onTimeout: function(bid) {
-    ajax('https://et-nd43.itdsmr.com/?c=o&m=prebid&secret_key=prebid_js&bidTimeout=1', () => {}, JSON.stringify(bid));
+    if (bid?.postData && bid?.postData[0] && bid?.postData[0].params && bid?.postData[0].params[0].host == 'prebid') {
+      ajax('https://et-nd43.itdsmr.com/?c=o&m=prebid&secret_key=prebid_js&bidTimeout=1', () => {}, JSON.stringify(bid));
+    }
   },
 
   onBidderError: function(bid) {
-    ajax('https://et-nd43.itdsmr.com/?c=o&m=prebid&secret_key=prebid_js&bidderError=1', () => {}, JSON.stringify(bid));
+    if (bid?.postData && bid?.postData[0] && bid?.postData[0].params && bid?.postData[0].params[0].host == 'prebid') {
+      ajax('https://et-nd43.itdsmr.com/?c=o&m=prebid&secret_key=prebid_js&bidderError=1', () => {}, JSON.stringify(bid));
+    }
   },
 
 };
