@@ -26,6 +26,7 @@ const DEAL_ID_EXPIRY = 1000 * 60 * 15;
 const UNIQUE_DEAL_ID_EXPIRY = 1000 * 60 * 60;
 const SESSION_ID_KEY = 'vidSid';
 const OPT_CACHE_KEY = 'vdzwopt';
+const OPT_TIME_KEY = 'vdzHum';
 export const webSessionId = 'wsid_' + parseInt(Date.now() * Math.random());
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
@@ -80,7 +81,8 @@ function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout
   const uniqueDealId = getUniqueDealId(hashUrl);
   const sId = getVidazooSessionId();
   const pId = extractPID(params);
-  const ptrace = getCacheOpt();
+  const ptrace = getCacheOpt(OPT_CACHE_KEY);
+  const vdzhum = getCacheOpt(OPT_TIME_KEY);
   const isStorageAllowed = bidderSettings.get(BIDDER_CODE, 'storageAllowed');
 
   const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', '');
@@ -120,6 +122,7 @@ function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout
     schain: schain,
     mediaTypes: mediaTypes,
     ptrace: ptrace,
+    vdzhum: vdzhum,
     isStorageAllowed: isStorageAllowed,
     gpid: gpid,
     cat: cat,
@@ -448,11 +451,11 @@ export function getVidazooSessionId() {
   return getStorageItem(SESSION_ID_KEY) || '';
 }
 
-export function getCacheOpt() {
-  let data = storage.getDataFromLocalStorage(OPT_CACHE_KEY);
+export function getCacheOpt(useKey) {
+  let data = storage.getDataFromLocalStorage(useKey, null);
   if (!data) {
     data = String(Date.now());
-    storage.setDataInLocalStorage(OPT_CACHE_KEY, data);
+    storage.setDataInLocalStorage(useKey, data, null);
   }
 
   return data;
@@ -460,7 +463,7 @@ export function getCacheOpt() {
 
 export function getStorageItem(key) {
   try {
-    return tryParseJSON(storage.getDataFromLocalStorage(key));
+    return tryParseJSON(storage.getDataFromLocalStorage(key, null));
   } catch (e) {
   }
 
