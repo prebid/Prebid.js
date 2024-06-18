@@ -27,6 +27,31 @@ const auctionPath = '/analytics/auction';
 const winningBidPath = '/analytics/bidwon';
 const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: adapterCode })
 
+const deviceTypes = Object.freeze({
+  DESKTOP: 0,
+  MOBILE: 1,
+  TABLET: 2,
+})
+
+const browserTypes = Object.freeze({
+  CHROME: 0,
+  FIREFOX: 1,
+  SAFARI: 2,
+  EDGE: 3,
+  INTERNET_EXPLORER: 4,
+  OTHER: 5
+})
+
+const osTypes = Object.freeze({
+  WINDOWS: 0,
+  MAC: 1,
+  LINUX: 2,
+  UNIX: 3,
+  IOS: 4,
+  ANDROID: 5,
+  OTHER: 6
+})
+
 /**
  * The sendCache is a global cache object which tracks the pending sends
  * back to pubx.ai. The data may be removed from this cache, post send.
@@ -236,17 +261,13 @@ export const getDeviceType = () => {
     /ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(
       navigator.userAgent.toLowerCase()
     )
-  ) {
-    return 'tablet';
-  }
+  ) return deviceTypes.TABLET;
   if (
     /iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(
       navigator.userAgent.toLowerCase()
     )
-  ) {
-    return 'mobile';
-  }
-  return 'desktop';
+  ) return deviceTypes.MOBILE;
+  return deviceTypes.DESKTOP;
 };
 
 /**
@@ -254,25 +275,22 @@ export const getDeviceType = () => {
  * @returns {string}
  */
 export const getBrowser = () => {
-  if (/Edg/.test(navigator.userAgent)) return 'Microsoft Edge';
+  if (/Edg/.test(navigator.userAgent)) return browserTypes.EDGE;
   else if (
     /Chrome/.test(navigator.userAgent) &&
     /Google Inc/.test(navigator.vendor)
-  ) {
-    return 'Chrome';
-  } else if (navigator.userAgent.match('CriOS')) return 'Chrome';
-  else if (/Firefox/.test(navigator.userAgent)) return 'Firefox';
+  ) return browserTypes.CHROME;
+  else if (navigator.userAgent.match('CriOS')) return browserTypes.CHROME;
+  else if (/Firefox/.test(navigator.userAgent)) return browserTypes.FIREFOX;
   else if (
     /Safari/.test(navigator.userAgent) &&
     /Apple Computer/.test(navigator.vendor)
-  ) {
-    return 'Safari';
-  } else if (
+  ) return browserTypes.SAFARI
+  else if (
     /Trident/.test(navigator.userAgent) ||
     /MSIE/.test(navigator.userAgent)
-  ) {
-    return 'Internet Explorer';
-  } else return 'Others';
+  ) return browserTypes.INTERNET_EXPLORER
+  else return browserTypes.OTHER;
 };
 
 /**
@@ -280,13 +298,13 @@ export const getBrowser = () => {
  * @returns {string}
  */
 export const getOS = () => {
-  if (navigator.userAgent.indexOf('Android') != -1) return 'Android';
-  if (navigator.userAgent.indexOf('like Mac') != -1) return 'iOS';
-  if (navigator.userAgent.indexOf('Win') != -1) return 'Windows';
-  if (navigator.userAgent.indexOf('Mac') != -1) return 'Macintosh';
-  if (navigator.userAgent.indexOf('Linux') != -1) return 'Linux';
-  if (navigator.appVersion.indexOf('X11') != -1) return 'Unix';
-  return 'Others';
+  if (navigator.userAgent.indexOf('Android') != -1) return osTypes.ANDROID
+  if (navigator.userAgent.indexOf('like Mac') != -1) return osTypes.IOS
+  if (navigator.userAgent.indexOf('Win') != -1) return osTypes.WINDOWS
+  if (navigator.userAgent.indexOf('Mac') != -1) return osTypes.MAC
+  if (navigator.userAgent.indexOf('Linux') != -1) return osTypes.LINUX
+  if (navigator.appVersion.indexOf('X11') != -1) return osTypes.UNIX
+  return osTypes.OTHER;
 };
 
 /**
