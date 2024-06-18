@@ -22,6 +22,7 @@ export let userCMP;
 export let consentTimeout;
 export let gdprScope;
 export let staticConsentData;
+let dsaPlatform = false;
 let actionTimeout;
 
 let consentData;
@@ -282,6 +283,7 @@ export function setConsentConfig(config) {
 
   // if true, then gdprApplies should be set to true
   gdprScope = config.defaultGdprScope === true;
+  dsaPlatform = !!config.dsaPlatform;
 
   logInfo('consentManagement module has been activated...');
 
@@ -314,6 +316,9 @@ export function enrichFPDHook(next, fpd) {
         deepSetValue(ortb2, 'regs.ext.gdpr', consent.gdprApplies ? 1 : 0);
       }
       deepSetValue(ortb2, 'user.ext.consent', consent.consentString);
+    }
+    if (dsaPlatform) {
+      deepSetValue(ortb2, 'regs.ext.dsa.dsarequired', 3);
     }
     return ortb2;
   }));
