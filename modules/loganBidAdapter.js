@@ -99,6 +99,7 @@ export const spec = {
         placement.protocols = mediaType[VIDEO].protocols;
         placement.startdelay = mediaType[VIDEO].startdelay;
         placement.placement = mediaType[VIDEO].placement;
+        placement.plcmt = mediaType[VIDEO].plcmt;
         placement.skip = mediaType[VIDEO].skip;
         placement.skipafter = mediaType[VIDEO].skipafter;
         placement.minbitrate = mediaType[VIDEO].minbitrate;

@@ -17,7 +17,7 @@ import {useFakeTimers} from 'sinon';
 import {BANNER, VIDEO} from '../../../src/mediaTypes';
 import {config} from '../../../src/config';
 
-export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
+export const TEST_ID_SYSTEMS = ['criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'pubcid', 'tdid', 'pubProvidedId'];
 
 const SUB_DOMAIN = 'exchange';
 
@@ -510,8 +510,6 @@ describe('IlluminBidAdapter', function () {
         switch (idSystemProvider) {
           case 'lipb':
             return {lipbid: id};
-          case 'parrableId':
-            return {eid: id};
           case 'id5id':
             return {uid: id};
           default:

@@ -1,17 +1,16 @@
-/* eslint-disable no-console */
-
-import {coreStorage, init, setSubmoduleRegistry} from 'modules/userId/index.js';
+import {attachIdSystem, coreStorage, init, setSubmoduleRegistry} from 'modules/userId/index.js';
 import {config} from 'src/config.js';
 import * as utils from 'src/utils.js';
 import { uid2IdSubmodule } from 'modules/uid2IdSystem.js';
 import 'src/prebid.js';
-import 'modules/consentManagement.js';
+import 'modules/consentManagementTcf.js';
 import { getGlobal } from 'src/prebidGlobal.js';
 import { configureTimerInterceptors } from 'test/mocks/timers.js';
 import { cookieHelpers, runAuction, apiHelpers, setGdprApplies } from './uid2IdSystem_helpers.js';
 import {hook} from 'src/hook.js';
-import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
+import {uninstall as uninstallTcfControl} from 'modules/tcfControl.js';
 import {server} from 'test/mocks/xhr';
+import {createEidsArray} from '../../../modules/userId/eids.js';
 
 let expect = require('chai').expect;
 
@@ -94,7 +93,8 @@ describe(`UID2 module`, function () {
   before(function () {
     timerSpy = configureTimerInterceptors(debugOutput);
     hook.ready();
-    uninstallGdprEnforcement();
+    uninstallTcfControl();
+    attachIdSystem(uid2IdSubmodule);
 
     suiteSandbox = sinon.sandbox.create();
     // I'm unable to find an authoritative source, but apparently subtle isn't available in some test stacks for security reasons.
@@ -233,7 +233,6 @@ describe(`UID2 module`, function () {
 
       const bid = await runAuction();
 
-      console.log('Storage', coreStorage.getDataFromLocalStorage(moduleCookieName));
       init(config);
       setSubmoduleRegistry([uid2IdSubmodule]);
       config.setConfig(makePrebidConfig(legacyConfigParams));
@@ -249,7 +248,6 @@ describe(`UID2 module`, function () {
       name: 'Token provided in config call',
       setConfig: (token, extraConfig = {}) => {
         const gen = makePrebidConfig({uid2Token: token}, extraConfig);
-        console.log('GENERATED CONFIG', gen.userSync.userIds[0].params);
         return config.setConfig(gen);
       },
     },
@@ -640,5 +638,39 @@ describe(`UID2 module`, function () {
       const bid = await runAuction();
       expectNoIdentity(bid);
     })
+  });
+  describe('eid', () => {
+    it('uid2', function() {
+      const userId = {
+        uid2: {'id': 'Sample_AD_Token'}
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'uidapi.com',
+        uids: [{
+          id: 'Sample_AD_Token',
+          atype: 3
+        }]
+      });
+    });
+
+    it('uid2 with ext', function() {
+      const userId = {
+        uid2: {'id': 'Sample_AD_Token', 'ext': {'provider': 'some.provider.com'}}
+      };
+      const newEids = createEidsArray(userId);
+      expect(newEids.length).to.equal(1);
+      expect(newEids[0]).to.deep.equal({
+        source: 'uidapi.com',
+        uids: [{
+          id: 'Sample_AD_Token',
+          atype: 3,
+          ext: {
+            provider: 'some.provider.com'
+          }
+        }]
+      });
+    });
   })
 });

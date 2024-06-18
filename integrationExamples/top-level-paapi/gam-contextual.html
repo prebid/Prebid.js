@@ -1,0 +1,134 @@
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+    <script src="shared/example-setup.js"></script>
+    <script src="../../build/dev/prebid.js"></script>
+
+    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+
+    <script>
+        var FAILSAFE_TIMEOUT = 3300;
+        var PREBID_TIMEOUT = 3000;
+        var adUnits = [{
+                code: 'div-1',
+                mediaTypes: {
+                    banner: {
+                        sizes: [[300, 250]],
+                    }
+                },
+                ortb2Imp: {
+                    ext: {
+                        ae: 1
+                    }
+                },
+                bids: [
+                    {
+                        bidder: 'optable',
+                        params: {
+                            site: 'daa30ba1-5613-4a2c-b7f0-34e2c033202a'
+                        },
+                    },
+                    {
+                        bidder: 'contextual',
+                        params: {
+                            site: 'daa30ba1-5613-4a2c-b7f0-34e2c033202a'
+                        }
+                    }
+                ],
+            }
+            ]
+        ;
+
+        var pbjs = pbjs || {};
+        pbjs.que = pbjs.que || [];
+
+        var googletag = googletag || {};
+        googletag.cmd = googletag.cmd || [];
+        googletag.cmd.push(function () {
+            googletag.pubads().disableInitialLoad();
+        });
+
+        pbjs.que.push(function () {
+            pbjs.setConfig({
+                debug: true,
+                paapi: {
+                    enabled: true,
+                    gpt: {
+                        autoconfig: false
+                    },
+                    topLevelSeller: {
+                        auctionConfig: {
+                            seller: window.location.origin,
+                            decisionLogicURL: new URL('shared/decisionLogic.js', window.location).toString(),
+                        },
+                        overrideWinner: true
+                    }
+                },
+            });
+
+            pbjs.addAdUnits(adUnits);
+            requestBids();
+        });
+
+        function requestBids() {
+            pbjs.adserverRequestSent = false;
+            pbjs.requestBids({
+                bidsBackHandler: sendAdserverRequest,
+                timeout: PREBID_TIMEOUT
+            });
+        }
+
+        function sendAdserverRequest() {
+            if (pbjs.adserverRequestSent) return;
+            pbjs.adserverRequestSent = true;
+            googletag.cmd.push(function () {
+                pbjs.que.push(function () {
+                    pbjs.setTargetingForGPTAsync();
+                    googletag.pubads().refresh();
+                });
+            });
+        }
+
+        setTimeout(function () {
+            sendAdserverRequest();
+        }, FAILSAFE_TIMEOUT);
+
+        googletag.cmd.push(function () {
+            googletag.defineSlot('/41758329/integ-test', [[300, 250], [300, 600]], 'div-1').setTargeting('creative', 'banner-safeframe').addService(googletag.pubads());
+
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+</head>
+
+<body>
+<h2>GAM contextual + Publisher as top level PAAPI seller example</h2>
+
+<p>
+   This example starts PAAPI auctions at the same time as GAM targeting. The flow is
+    similar to a typical GAM auction, but if Prebid wins, and got a
+    PAAPI bid, it is rendered instead of the contextual bid.
+</p>
+<div id="controls">
+    <script>addExampleControls(requestBids)</script>
+</div>
+<h5>Div-1</h5>
+<div id="div-1" style='min-width: 300px; min-height: 250px;'>
+    <script type='text/javascript'>
+        googletag.cmd.push(function () {
+            googletag.display('div-1');
+        });
+    </script>
+</div>
+<div style="margin-top: 20px">
+<h2>Instructions</h2>
+<p>Start local server with:</p>
+<code>gulp serve-fast --https</code>
+<p>Chrome flags:</p>
+<code>--enable-features=CookieDeprecationFacilitatedTesting:label/treatment_1.2/force_eligible/true
+    --privacy-sandbox-enrollment-overrides=https://localhost:9999</code>
+<p>Join interest group at <a href="https://www.optable.co/">https://www.optable.co/</a>
+</p>
+</div>
+</body>
+</html>
