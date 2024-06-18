@@ -1,31 +1,3 @@
-
-
-6 of many
-2.9.2 latest
-External
-Inbox
-
-mark birch
-Attachments
-2:56 PM (3 hours ago)
-to me
-
-- removed the cookie sync mapping (cookie sync keys will now be eid values)
-- using deepClone instead of JSON methods where appropriate
-
-- all tests pass 
-
-demo page: https://www.ardm.io/ozone/2.9.2/20240618-pairid-test.html?pbjs_debug=true
-
---
-
-Regards
-Mark Birch
----
-
- 2 Attachments
-  •  Scanned by Gmail
-Thanks, I'll check it out.Fixed!Great!
 import { expect } from 'chai';
 import { spec, getWidthAndHeightFromVideoObject, playerSizeIsNestedArray, defaultSize } from 'modules/ozoneBidAdapter.js';
 import { config } from 'src/config.js';
