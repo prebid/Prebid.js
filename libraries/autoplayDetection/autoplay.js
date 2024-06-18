@@ -32,7 +32,8 @@ function startDetection() {
     .play()
     .then(() => {
       autoplayEnabled = true;
-      videoElement.pause();
+      // if the video is played on a WebView with playsinline = false, this stops the video, to prevent it from being displayed fullscreen
+      videoElement.src = '';
     })
     .catch(() => {
       autoplayEnabled = false;
