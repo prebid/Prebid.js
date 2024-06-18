@@ -3,7 +3,7 @@
 ```
 Module Name: BI.Garage Rich Media
 Module Type: Bidder Adapter
-Maintainer: mediaconsortium-develop@bi.garage.co.jp
+Maintainer: mediaconsortium-develop@bi.garage.co.jp 
 ```
 
 # Description
