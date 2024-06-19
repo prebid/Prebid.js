@@ -37,7 +37,7 @@ pbjs.setConfig({
         type: 'html5',           // "html5" is the required storage type
         name: 'id5id',           // "id5id" is the required storage name
         expires: 90,             // storage lasts for 90 days
-        refreshInSeconds: 8*3600 // refresh ID every 8 hours to ensure it's fresh
+        refreshInSeconds: 7200   // refresh ID every 2 hours to ensure it's fresh
       }
     }],
     auctionDelay: 50             // 50ms maximum auction delay, applies to all userId modules
@@ -61,7 +61,7 @@ pbjs.setConfig({
 | storage.type | Required | String | This is where the results of the user ID will be stored. ID5 **requires** `"html5"`.                                                                                                                                                                                           | `"html5"` |
 | storage.name | Required | String | The name of the local storage where the user ID will be stored. ID5 **requires** `"id5id"`.                                                                                                                                                                                    | `"id5id"` |
 | storage.expires | Optional | Integer | How long (in days) the user ID information will be stored. ID5 recommends `90`.                                                                                                                                                                                                | `90` |
-| storage.refreshInSeconds | Optional | Integer | How many seconds until the ID5 ID will be refreshed. ID5 strongly recommends 8 hours between refreshes                                                                                                                                                                         | `8*3600` |
+| storage.refreshInSeconds | Optional | Integer | How many seconds until the ID5 ID will be refreshed. ID5 strongly recommends 2 hours between refreshes                                                                                                                                                                         | `7200` |
 
 **ATTENTION:** As of Prebid.js v4.14.0, ID5 requires `storage.type` to be `"html5"` and `storage.name` to be `"id5id"`. Using other values will display a warning today, but in an upcoming release, it will prevent the ID5 module from loading. This change is to ensure the ID5 module in Prebid.js interoperates properly with the [ID5 API](https://github.com/id5io/id5-api.js) and to reduce the size of publishers' first-party cookies that are sent to their web servers. If you have any questions, please reach out to us at [prebid@id5.io](mailto:prebid@id5.io).
 
@@ -125,7 +125,7 @@ The id from `uidapi.com` will be available if the partner that is used in ID5 us
 
 ### Providing TrueLinkId as a Google PPID
 
-TrueLinkId can be provided as a PPID - to use it the `true-link-id5-sync.com` needs to be provided as a ppid source in prebid userSync configuration:
+TrueLinkId can be provided as a PPID - to use, it the `true-link-id5-sync.com` needs to be provided as a ppid source in prebid userSync configuration:
 
 ```javascript
 pbjs.setConfig({
