@@ -108,7 +108,7 @@ export const sharethroughAdapterSpec = {
 
         const videoRequest = deepAccess(bidReq, 'mediaTypes.video');
 
-        if (bidderRequest.fledgeEnabled && bidReq.mediaTypes.banner) {
+        if (bidderRequest.paapi?.enabled && bidReq.mediaTypes.banner) {
           mergeDeep(impression, { ext: { ae: 1 } }); // ae = auction environment; if this is 1, ad server knows we have a fledge auction
         }
 
@@ -242,7 +242,7 @@ export const sharethroughAdapterSpec = {
     if (fledgeAuctionEnabled) {
       return {
         bids: bidsFromExchange,
-        fledgeAuctionConfigs: body.ext?.auctionConfigs || {},
+        paapi: body.ext?.auctionConfigs || {},
       };
     } else {
       return bidsFromExchange;

@@ -729,7 +729,7 @@ function bidToTag(bid) {
   if (!isEmpty(bid.params.keywords)) {
     tag.keywords = getANKewyordParamFromMaps(bid.params.keywords);
   }
-  let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
   if (gpid) {
     tag.gpid = gpid;
   }
@@ -1036,7 +1036,7 @@ function hideSASIframe(elementId) {
 function outstreamRender(bid) {
   hidedfpContainer(bid.adUnitCode);
   hideSASIframe(bid.adUnitCode);
-  // push to render queue because ANOutstreamVideo may not be loaded yet
+  // push to render queue because ANOutstreamVideo may not be loaded
   bid.renderer.push(() => {
     window.ANOutstreamVideo.renderAd({
       tagId: bid.adResponse.tag_id,

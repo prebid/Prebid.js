@@ -102,7 +102,7 @@ function buildVideo(bidRequest) {
   let w = deepAccess(bidRequest, 'mediaTypes.video.w');
   let h = deepAccess(bidRequest, 'mediaTypes.video.h');
   const mimes = deepAccess(bidRequest, 'mediaTypes.video.mimes');
-  const placement = deepAccess(bidRequest, 'mediaTypes.video.placement') || 3;
+  const placement = deepAccess(bidRequest, 'mediaTypes.video.placement');
   const plcmt = deepAccess(bidRequest, 'mediaTypes.video.plcmt') || undefined;
   const playerSize = deepAccess(bidRequest, 'mediaTypes.video.playerSize');
   const context = deepAccess(bidRequest, 'mediaTypes.video.context');
@@ -136,6 +136,10 @@ function buildVideo(bidRequest) {
     }
   }
 
+  if (placement && typeof placement !== 'undefined' && typeof placement === 'number') {
+    optionalParams['placement'] = placement;
+  }
+
   if (plcmt) {
     optionalParams['plcmt'] = plcmt;
   }
@@ -145,7 +149,6 @@ function buildVideo(bidRequest) {
   }
 
   let videoObj = {
-    placement,
     mimes,
     w,
     h,
@@ -436,6 +439,10 @@ function buildRequest(validBidRequests, bidderRequest) {
     deepSetValue(req, 'user.ext.consent', bidderRequest.gdprConsent.consentString);
   }
 
+  if (validBidRequests[0]?.params?.publisherId) {
+    deepSetValue(req, 'site.publisher.id', validBidRequests[0].params.publisherId);
+  }
+
   return req;
 }
 
@@ -592,13 +599,6 @@ function validateVideo(bid) {
 
   if (!Array.isArray(mimes) || mimes.length === 0) {
     logError('insticator: mimes not specified');
-    return false;
-  }
-
-  const placement = deepAccess(bid, 'mediaTypes.video.placement');
-
-  if (typeof placement !== 'undefined' && typeof placement !== 'number') {
-    logError('insticator: video placement is not a number');
     return false;
   }
 

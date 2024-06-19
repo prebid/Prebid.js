@@ -243,7 +243,7 @@ describe('sovrnBidAdapter', function() {
       it('when FLEDGE is enabled, should send ortb2imp.ext.ae', function () {
         const bidderRequest = {
           ...baseBidderRequest,
-          fledgeEnabled: true
+          paapi: {enabled: true}
         }
         const bidRequest = {
           ...baseBidRequest,
@@ -273,7 +273,9 @@ describe('sovrnBidAdapter', function() {
       it('when FLEDGE is enabled, but env is malformed, should not send ortb2imp.ext.ae', function () {
         const bidderRequest = {
           ...baseBidderRequest,
-          fledgeEnabled: true
+          paapi: {
+            enabled: true
+          }
         }
         const bidRequest = {
           ...baseBidRequest,
@@ -968,9 +970,9 @@ describe('sovrnBidAdapter', function() {
     it('should return valid fledge auction configs alongside bids', function () {
       const result = spec.interpretResponse(fledgeResponse)
       expect(result).to.have.property('bids')
-      expect(result).to.have.property('fledgeAuctionConfigs')
-      expect(result.fledgeAuctionConfigs.length).to.equal(2)
-      expect(result.fledgeAuctionConfigs).to.deep.equal(expectedFledgeResponse)
+      expect(result).to.have.property('paapi')
+      expect(result.paapi.length).to.equal(2)
+      expect(result.paapi).to.deep.equal(expectedFledgeResponse)
     })
     it('should ignore empty fledge auction configs array', function () {
       const result = spec.interpretResponse(emptyFledgeResponse)
