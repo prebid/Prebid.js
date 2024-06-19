@@ -206,6 +206,8 @@ function handlerAuctionInit(event) {
     logInfo(`Adagio is not on the bid requests for auction '${prebidAuctionId}'`)
     return;
   }
+  const rtdUid = deepAccess(adagioBidRequest, 'ortb2.site.ext.data.adg_rtd.uid');
+  cache.addPrebidAuctionIdRef(prebidAuctionId, rtdUid);
 
   cache.auctions[prebidAuctionId] = {};
 
@@ -250,14 +252,14 @@ function handlerAuctionInit(event) {
     // We assume that all Adagio bids for a same adunit have the same params.
     const params = adagioAdUnitBids[0].params;
 
-    const adagioAuctionId = params.adagioAuctionId;
-    cache.addPrebidAuctionIdRef(prebidAuctionId, adagioAuctionId);
-
     // Get all media types requested for Adagio.
     const adagioMediaTypes = removeDuplicates(
       adagioAdUnitBids.map(bid => Object.keys(bid.mediaTypes)).flat(),
       mediaTypeKey => mediaTypeKey
     ).flat().map(mediaType => getMediaTypeAlias(mediaType)).sort();
+
+    // if adagio was involved in the auction we identified it with rtdUid, if not use the prebid auctionId
+    let auctionId = rtdUid || prebidAuctionId;
 
     const qp = {
       v: 0,
@@ -265,7 +267,7 @@ function handlerAuctionInit(event) {
       org_id: params.organizationId,
       site: params.site,
       pv_id: params.pageviewId,
-      auct_id: adagioAuctionId,
+      auct_id: auctionId,
       adu_code: adUnitCode,
       url_dmn: w.location.hostname,
       pgtyp: params.pagetype,
@@ -344,7 +346,6 @@ function handlerBidWon(event) {
     (event.latestTargetedAuctionId && event.latestTargetedAuctionId !== event.auctionId)
       ? cache.getAdagioAuctionId(event.auctionId)
       : null);
-
   cache.updateAuction(auctionId, event.adUnitCode, {
     win_bdr: event.bidder,
     win_mt: getMediaTypeAlias(event.mediaType),
