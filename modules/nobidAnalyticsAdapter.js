@@ -1,5 +1,6 @@
 import {deepClone, logError, getParameterByName} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
+import { logMessage } from '../src/utils.js';
 import {getStorageManager} from '../src/storageManager.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import { EVENTS } from '../src/constants.js';
@@ -26,8 +27,7 @@ const {
   AD_RENDER_SUCCEEDED
 } = EVENTS;
 function log (msg) {
-  // eslint-disable-next-line no-console
-  console.log(`%cNoBid Analytics ${VERSION}`, 'padding: 2px 8px 2px 8px; background-color:#f50057; color: white', msg);
+  logMessage(`%cNoBid Analytics ${VERSION}: ${msg}`);
 }
 function isJson (str) {
   return str && str.startsWith('{') && str.endsWith('}');
