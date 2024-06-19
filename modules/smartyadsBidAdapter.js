@@ -14,21 +14,26 @@ const adUrls = {
 const URL_SYNC = 'https://as.ck-ie.com/prebidjs?p=7c47322e527cf8bdeb7facc1bb03387a';
 
 function isBidResponseValid(bid) {
-  if (!bid.requestId || !bid.cpm || !bid.creativeId ||
-    !bid.ttl || !bid.currency) {
-    return false;
-  }
-  switch (bid['mediaType']) {
+  if (!bid) return false;
+
+  const { requestId, cpm, creativeId, ttl, currency } = bid;
+
+  const isValid = [requestId, cpm, creativeId, ttl, currency].every(item => !!item);
+  if (!isValid) return false;
+
+  switch (bid.mediaType) {
     case BANNER:
-      return Boolean(bid.width && bid.height && bid.ad);
+      return !!(bid.ad && bid.width && bid.height);
     case VIDEO:
-      return Boolean(bid.vastUrl) || Boolean(bid.vastXml);
+      return !!(bid.vastUrl || bid.vastXml);
     case NATIVE:
-      return Boolean(bid.native && bid.native.title && bid.native.image && bid.native.impressionTrackers);
+      const native = bid.native;
+      return !!(native && native.image && native.impressionTrackers);
     default:
       return false;
   }
 }
+
 
 function getAdUrlByRegion(bid) {
   let adUrl;
