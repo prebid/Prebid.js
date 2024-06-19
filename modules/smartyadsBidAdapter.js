@@ -146,7 +146,6 @@ export const spec = {
     const url = `${URL_SYNC}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&type=${type}&us_privacy=&gpp=${gppConsent}`;
 
     syncs.push({ type, url });
-
     return syncs
   },
 };
