@@ -34,7 +34,6 @@ function isBidResponseValid(bid) {
   }
 }
 
-
 function getAdUrlByRegion(bid) {
   let adUrl;
 
@@ -79,7 +78,6 @@ export const spec = {
     let location;
     location = bidderRequest?.refererInfo ?? null;
     let placements = [];
-    
     let request = {
       'placements': placements,
       'deviceWidth': winTop.screen.width,
