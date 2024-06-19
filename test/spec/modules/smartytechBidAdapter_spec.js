@@ -214,7 +214,7 @@ function mockResponseData(requestData) {
   return {
     body: data
   }
-};
+}
 
 describe('SmartyTechDSPAdapter: buildRequests', () => {
   let mockBidRequest;
