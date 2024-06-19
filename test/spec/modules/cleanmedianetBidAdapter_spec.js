@@ -376,7 +376,7 @@ describe('CleanmedianetAdapter', () => {
       const bidRequestWithVideo = utils.deepClone(bidRequest);
 
       bidRequestWithVideo.params.video = {
-        placement: 1,
+        plcmt: 1,
         minduration: 1,
       }
 
@@ -405,7 +405,7 @@ describe('CleanmedianetAdapter', () => {
           playerSize: [302, 252],
           mimes: ['video/mpeg'],
           skip: 1,
-          placement: 1,
+          plcmt: 1,
           minduration: 1,
           playbackmethod: 1,
           startdelay: 1,
@@ -428,7 +428,7 @@ describe('CleanmedianetAdapter', () => {
           context: 'instream',
           mimes: ['video/mpeg'],
           skip: 1,
-          placement: 1,
+          plcmt: 1,
           minduration: 1,
           playbackmethod: 1,
           startdelay: 1,
@@ -457,7 +457,7 @@ describe('CleanmedianetAdapter', () => {
         context: 'instream',
         mimes: ['video/mpeg'],
         skip: 1,
-        placement: 1,
+        plcmt: 1,
         minduration: 1,
         playbackmethod: 1,
         startdelay: 1,

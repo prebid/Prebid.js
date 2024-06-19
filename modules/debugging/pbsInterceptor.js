@@ -29,7 +29,7 @@ export function makePbsInterceptor({createBid}) {
             adUnitCode: bidRequest.adUnitCode,
             ortb2: bidderRequest.ortb2,
             ortb2Imp: bidRequest.ortb2Imp,
-            config
+            ...config
           })
         },
         done

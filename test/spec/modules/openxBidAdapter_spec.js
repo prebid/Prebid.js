@@ -10,14 +10,15 @@ import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
 import 'modules/priceFloors.js';
-import 'modules/consentManagement.js';
+import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
+import 'modules/paapi.js';
+
 import {deepClone} from 'src/utils.js';
 import {version} from 'package.json';
 import {syncAddFPDToBidderRequest} from '../../helpers/fpd.js';
 import {hook} from '../../../src/hook.js';
-
 const DEFAULT_SYNC = SYNC_URL + '?ph=' + DEFAULT_PH;
 
 const BidRequestBuilder = function BidRequestBuilder(options) {
@@ -187,9 +188,9 @@ describe('OpenxRtbAdapter', function () {
         });
 
         it('should return false when required params are not passed', function () {
-          let videoBidWithMediaTypes = Object.assign({}, videoBidWithMediaTypes);
-          videoBidWithMediaTypes.params = {};
-          expect(spec.isBidRequestValid(videoBidWithMediaTypes)).to.equal(false);
+          let invalidVideoBidWithMediaTypes = Object.assign({}, videoBidWithMediaTypes);
+          invalidVideoBidWithMediaTypes.params = {};
+          expect(spec.isBidRequestValid(invalidVideoBidWithMediaTypes)).to.equal(false);
         });
       });
       describe('and request config uses both delDomain and platform', () => {
@@ -216,9 +217,9 @@ describe('OpenxRtbAdapter', function () {
         });
 
         it('should return false when required params are not passed', function () {
-          let videoBidWithMediaTypes = Object.assign({}, videoBidWithDelDomainAndPlatform);
-          videoBidWithMediaTypes.params = {};
-          expect(spec.isBidRequestValid(videoBidWithMediaTypes)).to.equal(false);
+          let invalidVideoBidWithMediaTypes = Object.assign({}, videoBidWithDelDomainAndPlatform);
+          invalidVideoBidWithMediaTypes.params = {};
+          expect(spec.isBidRequestValid(invalidVideoBidWithMediaTypes)).to.equal(false);
         });
       });
       describe('and request config uses mediaType', () => {
@@ -241,10 +242,10 @@ describe('OpenxRtbAdapter', function () {
         });
 
         it('should return false when required params are not passed', function () {
-          let videoBidWithMediaType = Object.assign({}, videoBidWithMediaType);
-          delete videoBidWithMediaType.params;
-          videoBidWithMediaType.params = {};
-          expect(spec.isBidRequestValid(videoBidWithMediaType)).to.equal(false);
+          let invalidVideoBidWithMediaType = Object.assign({}, videoBidWithMediaType);
+          delete invalidVideoBidWithMediaType.params;
+          invalidVideoBidWithMediaType.params = {};
+          expect(spec.isBidRequestValid(invalidVideoBidWithMediaType)).to.equal(false);
         });
       });
     });
@@ -1037,7 +1038,9 @@ describe('OpenxRtbAdapter', function () {
         it('when FLEDGE is enabled, should send whatever is set in ortb2imp.ext.ae in all bid requests', function () {
           const request = spec.buildRequests(bidRequestsWithMediaTypes, {
             ...mockBidderRequest,
-            fledgeEnabled: true
+            paapi: {
+              enabled: true
+            }
           });
           expect(request[0].data.imp[0].ext.ae).to.equal(2);
         });
@@ -1503,13 +1506,13 @@ describe('OpenxRtbAdapter', function () {
 
       it('should return FLEDGE auction_configs alongside bids', function () {
         expect(response).to.have.property('bids');
-        expect(response).to.have.property('fledgeAuctionConfigs');
-        expect(response.fledgeAuctionConfigs.length).to.equal(1);
-        expect(response.fledgeAuctionConfigs[0].bidId).to.equal('test-bid-id');
+        expect(response).to.have.property('paapi');
+        expect(response.paapi.length).to.equal(1);
+        expect(response.paapi[0].bidId).to.equal('test-bid-id');
       });
 
       it('should inject ortb2Imp in auctionSignals', function () {
-        const auctionConfig = response.fledgeAuctionConfigs[0].config;
+        const auctionConfig = response.paapi[0].config;
         expect(auctionConfig).to.deep.include({
           auctionSignals: {
             ortb2Imp: {

@@ -95,16 +95,13 @@ function buildRequests(validBidRequests, bidderRequest) {
       ]
     },
     imp: impressions,
-    user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids, bidderRequest.gppConsent)
+    user: getUserIds(tdidAdapter, bidderRequest.uspConsent, bidderRequest.gdprConsent, firstBidRequest.userIdAsEids, bidderRequest.gppConsent),
+    ext: getExtensions(firstBidRequest.ortb2, bidderRequest?.refererInfo)
   });
 
-  // Add full ortb2 object as backup
-  if (firstBidRequest.ortb2) {
-    const siteCat = firstBidRequest.ortb2.site?.cat;
-    if (siteCat != null) {
-      krakenParams.site = { cat: siteCat };
-    }
-    krakenParams.ext = { ortb2: firstBidRequest.ortb2 };
+  // Add site.cat if it exists
+  if (firstBidRequest.ortb2?.site?.cat != null) {
+    krakenParams.site = { cat: firstBidRequest.ortb2.site.cat };
   }
 
   // Add schain
@@ -186,6 +183,10 @@ function buildRequests(validBidRequests, bidderRequest) {
     krakenParams.page = page;
   }
 
+  if (krakenParams.ext && Object.keys(krakenParams.ext).length === 0) {
+    delete krakenParams.ext;
+  }
+
   return Object.assign({}, bidderRequest, {
     method: BIDDER.REQUEST_METHOD,
     url: `https://${BIDDER.HOST}${BIDDER.REQUEST_ENDPOINT}`,
@@ -250,7 +251,7 @@ function interpretResponse(response, bidRequest) {
   if (fledgeAuctionConfigs.length > 0) {
     return {
       bids: bidResponses,
-      fledgeAuctionConfigs
+      paapi: fledgeAuctionConfigs
     }
   } else {
     return bidResponses;
@@ -298,6 +299,13 @@ function onTimeout(timeoutData) {
   timeoutData.forEach((bid) => {
     sendTimeoutData(bid.auctionId, bid.timeout);
   });
+}
+
+function getExtensions(ortb2, refererInfo) {
+  const ext = {};
+  if (ortb2) ext.ortb2 = ortb2;
+  if (refererInfo) ext.refererInfo = refererInfo;
+  return ext;
 }
 
 function _generateRandomUUID() {

@@ -163,7 +163,7 @@ function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout
     data.gppSid = bidderRequest.ortb2.regs.gpp_sid;
   }
 
-  if (bidderRequest.fledgeEnabled) {
+  if (bidderRequest.paapi?.enabled) {
     const fledge = deepAccess(bidderRequest, 'ortb2Imp.ext.ae');
     if (fledge) {
       data.fledge = fledge;
@@ -217,14 +217,8 @@ function appendUserIdsToRequestPayload(payloadRef, userIds) {
   _each(userIds, (userId, idSystemProviderName) => {
     key = `uid.${idSystemProviderName}`;
     switch (idSystemProviderName) {
-      case 'digitrustid':
-        payloadRef[key] = deepAccess(userId, 'data.id');
-        break;
       case 'lipb':
         payloadRef[key] = userId.lipbid;
-        break;
-      case 'parrableId':
-        payloadRef[key] = userId.eid;
         break;
       case 'id5id':
         payloadRef[key] = userId.uid;

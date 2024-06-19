@@ -2948,7 +2948,7 @@ describe('PubMatic adapter', function () {
           bidRequest[0].ortb2Imp = {
             ext: { ae: 1 }
           };
-          const req = spec.buildRequests(bidRequest, { ...bidRequest, fledgeEnabled: false });
+          const req = spec.buildRequests(bidRequest, { ...bidRequest, paapi: {enabled: false} });
           let data = JSON.parse(req.data);
           if (data.imp[0].ext) {
             expect(data.imp[0].ext).to.not.have.property('ae');
@@ -2961,7 +2961,7 @@ describe('PubMatic adapter', function () {
           bidRequest[0].ortb2Imp = {
             ext: { ae: 1 }
           };
-          const req = spec.buildRequests(bidRequest, { ...bidRequest, fledgeEnabled: true });
+          const req = spec.buildRequests(bidRequest, { ...bidRequest, paapi: {enabled: true} });
           let data = JSON.parse(req.data);
           expect(data.imp[0].ext.ae).to.equal(1);
         });
@@ -3786,9 +3786,9 @@ describe('PubMatic adapter', function () {
       response = spec.interpretResponse({ body: bidResponse }, bidRequest);
       it('should return FLEDGE auction_configs alongside bids', function () {
         expect(response).to.have.property('bids');
-        expect(response).to.have.property('fledgeAuctionConfigs');
-        expect(response.fledgeAuctionConfigs.length).to.equal(1);
-        expect(response.fledgeAuctionConfigs[0].bidId).to.equal('test_bid_id');
+        expect(response).to.have.property('paapi');
+        expect(response.paapi.length).to.equal(1);
+        expect(response.paapi[0].bidId).to.equal('test_bid_id');
       });
     });
 
@@ -4046,10 +4046,10 @@ describe('PubMatic adapter', function () {
     });
 
     if (FEATURES.VIDEO) {
-      describe('Checking for Video.Placement property', function() {
+      describe('Checking for Video.plcmt property', function() {
         let sandbox, utilsMock;
         const adUnit = 'Div1';
-        const msg_placement_missing = 'Video.Placement param missing for Div1';
+        const msg_placement_missing = 'Video.plcmt param missing for Div1';
         let videoData = {
           battr: [6, 7],
           skipafter: 15,
@@ -4073,12 +4073,12 @@ describe('PubMatic adapter', function () {
           sandbox.restore();
         })
 
-        it('should log Video.Placement param missing', function() {
+        it('should log Video.plcmt param missing', function() {
           checkVideoPlacement(videoData, adUnit);
           sinon.assert.calledWith(utils.logWarn, msg_placement_missing);
         })
-        it('shoud not log Video.Placement param missing', function() {
-          videoData['placement'] = 1;
+        it('shoud not log Video.plcmt param missing', function() {
+          videoData['plcmt'] = 1;
           checkVideoPlacement(videoData, adUnit);
           sinon.assert.neverCalledWith(utils.logWarn, msg_placement_missing);
         })
