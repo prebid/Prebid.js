@@ -18,7 +18,7 @@ const GVLID = 1241;
 const TIME_TO_LIVE = 360;
 export const biddersCreativeIds = {}; // export only for tests
 const NET_REVENUE = true;
-const TEST_REQUEST = 1; // used only for testing
+const TEST_REQUEST = 0; // used only for testing
 
 const converter = ortbConverter({
   context: {

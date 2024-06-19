@@ -215,7 +215,7 @@ describe('SetupadAdapter', function () {
     // Change this to 1 whenever TEST_REQUEST = 1. This is allowed only for testing requests locally
     it('should return correct test attribute value from global value', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
-      expect(request.data.test).to.equal(1);
+      expect(request.data.test).to.equal(0);
     });
   });
 
