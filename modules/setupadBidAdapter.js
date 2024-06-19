@@ -45,6 +45,7 @@ const converter = ortbConverter({
         bidderRequest.bids.find((bid) => bid.hasOwnProperty('params')).params
       )
     );
+    deepSetValue(request, 'setupad', 'adapter');
     return request;
   },
 });

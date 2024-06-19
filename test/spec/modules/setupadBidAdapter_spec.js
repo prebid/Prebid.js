@@ -212,6 +212,11 @@ describe('SetupadAdapter', function () {
       expect(request.data.ext.prebid.storedrequest.id).to.equal('test-account-id');
     });
 
+    it('should return setupad custom adapter param', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.setupad).to.equal('adapter');
+    });
+
     // Change this to 1 whenever TEST_REQUEST = 1. This is allowed only for testing requests locally
     it('should return correct test attribute value from global value', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
