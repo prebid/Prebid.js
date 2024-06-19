@@ -15,6 +15,7 @@ import {
   deepAccess,
   deepSetValue,
   generateUUID,
+  getDomLoadingDuration,
   getUniqueIdentifierStr,
   getWindowSelf,
   getWindowTop,
@@ -131,12 +132,14 @@ const _FEATURES = (function() {
       features.data = {};
     },
     get: function() {
+      const w = (canAccessWindowTop()) ? getWindowTop() : getWindowSelf();
+
       if (!features.initialized) {
         features.data = {
           page_dimensions: getPageDimensions().toString(),
           viewport_dimensions: getViewPortDimensions().toString(),
           user_timestamp: getTimestampUTC().toString(),
-          dom_loading: getDomLoadingDuration().toString(),
+          dom_loading: getDomLoadingDuration(w).toString(),
         };
         features.initialized = true;
       }
@@ -536,22 +539,6 @@ function getViewPortDimensions() {
 function getTimestampUTC() {
   // timestamp returned in seconds
   return Math.floor(new Date().getTime() / 1000) - new Date().getTimezoneOffset() * 60;
-}
-
-function getDomLoadingDuration() {
-  const w = (canAccessWindowTop()) ? getWindowTop() : getWindowSelf();
-  const performance = w.performance;
-
-  let domLoadingDuration = -1;
-
-  if (performance && performance.timing && performance.timing.navigationStart > 0) {
-    const val = performance.timing.domLoading - performance.timing.navigationStart;
-    if (val > 0) {
-      domLoadingDuration = val;
-    }
-  }
-
-  return domLoadingDuration;
 }
 
 /**
