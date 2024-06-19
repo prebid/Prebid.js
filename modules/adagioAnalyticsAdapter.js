@@ -36,15 +36,6 @@ const cache = {
       ...values
     };
   },
-
-  // Map prebid auction id to adagio auction id
-  auctionIdReferences: {},
-  addPrebidAuctionIdRef(auctionId, adagioAuctionId) {
-    this.auctionIdReferences[auctionId] = adagioAuctionId;
-  },
-  getAdagioAuctionId(auctionId) {
-    return this.auctionIdReferences[auctionId];
-  }
 };
 const enc = window.encodeURIComponent;
 
@@ -250,9 +241,6 @@ function handlerAuctionInit(event) {
     // We assume that all Adagio bids for a same adunit have the same params.
     const params = adagioAdUnitBids[0].params;
 
-    const adagioAuctionId = params.adagioAuctionId;
-    cache.addPrebidAuctionIdRef(prebidAuctionId, adagioAuctionId);
-
     // Get all media types requested for Adagio.
     const adagioMediaTypes = removeDuplicates(
       adagioAdUnitBids.map(bid => Object.keys(bid.mediaTypes)).flat(),
@@ -265,7 +253,7 @@ function handlerAuctionInit(event) {
       org_id: params.organizationId,
       site: params.site,
       pv_id: params.pageviewId,
-      auct_id: adagioAuctionId,
+      auct_id: prebidAuctionId,
       adu_code: adUnitCode,
       url_dmn: w.location.hostname,
       pgtyp: params.pagetype,
@@ -342,9 +330,8 @@ function handlerBidWon(event) {
 
   const adagioAuctionCacheId = (
     (event.latestTargetedAuctionId && event.latestTargetedAuctionId !== event.auctionId)
-      ? cache.getAdagioAuctionId(event.auctionId)
+      ? event.auctionId
       : null);
-
   cache.updateAuction(auctionId, event.adUnitCode, {
     win_bdr: event.bidder,
     win_mt: getMediaTypeAlias(event.mediaType),

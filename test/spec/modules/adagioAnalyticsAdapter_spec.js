@@ -178,9 +178,7 @@ describe('adagio analytics adapter - adagio.js', () => {
 });
 
 const AUCTION_ID = '25c6d7f5-699a-4bfc-87c9-996f915341fa';
-const AUCTION_ID_ADAGIO = '6fc53663-bde5-427b-ab63-baa9ed296f47'
 const AUCTION_ID_CACHE = 'b43d24a0-13d4-406d-8176-3181402bafc4';
-const AUCTION_ID_CACHE_ADAGIO = 'a9cae98f-efb5-477e-9259-27350044f8db';
 
 const BID_ADAGIO = {
   bidder: 'adagio',
@@ -395,8 +393,7 @@ const AUCTION_INIT_ANOTHER = {
     'bids': [ {
       'bidder': 'adagio',
       'params': {
-        ...PARAMS_ADG,
-        adagioAuctionId: AUCTION_ID_ADAGIO
+        ...PARAMS_ADG
       },
       'mediaTypes': {
         'banner': {
@@ -532,8 +529,7 @@ const AUCTION_INIT_CACHE = {
     'bids': [ {
       'bidder': 'adagio',
       'params': {
-        ...PARAMS_ADG,
-        adagioAuctionId: AUCTION_ID_CACHE_ADAGIO
+        ...PARAMS_ADG
       },
       'mediaTypes': {
         'banner': {
@@ -676,7 +672,7 @@ describe('adagio analytics adapter', () => {
         expect(pathname).to.equal('/pba.gif');
         expect(search.v).to.equal('1');
         expect(search.pbjsv).to.equal('$prebid.version$');
-        expect(search.auct_id).to.equal(AUCTION_ID_ADAGIO);
+        expect(search.auct_id).to.equal(AUCTION_ID);
         expect(search.adu_code).to.equal('/19968336/header-bid-tag-1');
         expect(search.org_id).to.equal('1001');
         expect(search.site).to.equal('test-com');
@@ -708,7 +704,7 @@ describe('adagio analytics adapter', () => {
         expect(hostname).to.equal('c.4dex.io');
         expect(pathname).to.equal('/pba.gif');
         expect(search.v).to.equal('3');
-        expect(search.auct_id).to.equal(AUCTION_ID_ADAGIO);
+        expect(search.auct_id).to.equal(AUCTION_ID);
         expect(search.adu_code).to.equal('/19968336/header-bid-tag-1');
         expect(search.win_bdr).to.equal('another');
         expect(search.win_mt).to.equal('ban');
@@ -749,7 +745,7 @@ describe('adagio analytics adapter', () => {
         expect(pathname).to.equal('/pba.gif');
         expect(search.v).to.equal('1');
         expect(search.pbjsv).to.equal('$prebid.version$');
-        expect(search.auct_id).to.equal(AUCTION_ID_CACHE_ADAGIO);
+        expect(search.auct_id).to.equal(AUCTION_ID_CACHE);
         expect(search.adu_code).to.equal('/19968336/header-bid-tag-1');
         expect(search.org_id).to.equal('1001');
         expect(search.site).to.equal('test-com');
@@ -772,7 +768,7 @@ describe('adagio analytics adapter', () => {
         expect(pathname).to.equal('/pba.gif');
         expect(search.v).to.equal('1');
         expect(search.pbjsv).to.equal('$prebid.version$');
-        expect(search.auct_id).to.equal(AUCTION_ID_ADAGIO);
+        expect(search.auct_id).to.equal(AUCTION_ID);
         expect(search.adu_code).to.equal('/19968336/header-bid-tag-1');
         expect(search.org_id).to.equal('1001');
         expect(search.site).to.equal('test-com');
@@ -804,8 +800,8 @@ describe('adagio analytics adapter', () => {
         expect(hostname).to.equal('c.4dex.io');
         expect(pathname).to.equal('/pba.gif');
         expect(search.v).to.equal('3');
-        expect(search.auct_id).to.equal(AUCTION_ID_ADAGIO);
-        expect(search.auct_id_c).to.equal(AUCTION_ID_CACHE_ADAGIO);
+        expect(search.auct_id).to.equal(AUCTION_ID);
+        expect(search.auct_id_c).to.equal(AUCTION_ID_CACHE);
         expect(search.adu_code).to.equal('/19968336/header-bid-tag-1');
         expect(search.win_bdr).to.equal('adagio');
         expect(search.win_mt).to.equal('ban');
@@ -821,8 +817,8 @@ describe('adagio analytics adapter', () => {
         expect(hostname).to.equal('c.4dex.io');
         expect(pathname).to.equal('/pba.gif');
         expect(search.v).to.equal('4');
-        expect(search.auct_id).to.equal(AUCTION_ID_ADAGIO);
-        expect(search.auct_id_c).to.equal(AUCTION_ID_CACHE_ADAGIO);
+        expect(search.auct_id).to.equal(AUCTION_ID);
+        expect(search.auct_id_c).to.equal(AUCTION_ID_CACHE);
         expect(search.adu_code).to.equal('/19968336/header-bid-tag-1');
         expect(search.rndr).to.equal('0');
       }
