@@ -1,6 +1,6 @@
 import {GreedyPromise} from './promise.js';
 import {binarySearch, logError, timestamp} from '../utils.js';
-import setFocusTimeout, { clearFocusTimeout } from './focusTimeout.js';
+import setFocusTimeout from './focusTimeout.js';
 
 /**
  * Create a set-like collection that automatically forgets items after a certain time.
@@ -43,11 +43,11 @@ export function ttlCollection(
   let nextPurge, task;
 
   function reschedulePurge() {
-    task && clearFocusTimeout(task);
+    task && clearTimeout(task);
     if (pendingPurge.length > 0) {
       const now = timestamp();
       nextPurge = Math.max(now, pendingPurge[0].expiry + slack);
-      const getTaskId = setFocusTimeout(() => {
+      task = setFocusTimeout(() => {
         const now = timestamp();
         let cnt = 0;
         for (const entry of pendingPurge) {
@@ -66,7 +66,6 @@ export function ttlCollection(
         task = null;
         reschedulePurge();
       }, nextPurge - now);
-      task = getTaskId();
     } else {
       task = null;
     }
