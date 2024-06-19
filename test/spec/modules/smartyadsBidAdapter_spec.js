@@ -263,7 +263,7 @@ describe('SmartyadsAdapter', function () {
     });
   });
   describe('getUserSyncs', function () {
-    const syncUrl = 'https://as.ck-ie.com/prebidjs?p=7c47322e527cf8bdeb7facc1bb03387a&gdpr=0&gdpr_consent=&type=iframe&us_privacy=&gpp=';
+    const syncUrl = 'https://as.ck-ie.com/prebidjs?p=7c47322e527cf8bdeb7facc1bb03387a&gdpr=0&gdpr_consent=&type=iframe&gpp=';
     const syncOptions = {
       iframeEnabled: true
     };
@@ -275,81 +275,6 @@ describe('SmartyadsAdapter', function () {
       expect(userSync).to.deep.equal([
         { type: 'iframe', url: syncUrl }
       ]);
-    });
-  });
-
-  describe('onBidWon', function () {
-    it('should exists', function () {
-      expect(spec.onBidWon).to.exist.and.to.be.a('function');
-    });
-
-    it('should send a valid bid won notice', function () {
-      const bid = {
-        'c': 'o',
-        'm': 'prebid',
-        'secret_key': 'prebid_js',
-        'winTest': '1',
-        'postData': [{
-          'bidder': 'smartyads',
-          'params': [
-            {'host': 'prebid',
-              'accountid': '123',
-              'sourceid': '12345'
-            }]
-        }]
-      };
-      spec.onBidWon(bid);
-      expect(server.requests.length).to.equal(1);
-    });
-  });
-
-  describe('onTimeout', function () {
-    it('should exists', function () {
-      expect(spec.onTimeout).to.exist.and.to.be.a('function');
-    });
-
-    it('should send a valid bid timeout notice', function () {
-      const bid = {
-        'c': 'o',
-        'm': 'prebid',
-        'secret_key': 'prebid_js',
-        'bidTimeout': '1',
-        'postData': [{
-          'bidder': 'smartyads',
-          'params': [
-            {'host': 'prebid',
-              'accountid': '123',
-              'sourceid': '12345'
-            }]
-        }]
-      };
-      spec.onTimeout(bid);
-      expect(server.requests.length).to.equal(1);
-    });
-  });
-
-  describe('onBidderError', function () {
-    it('should exists', function () {
-      expect(spec.onBidderError).to.exist.and.to.be.a('function');
-    });
-
-    it('should send a valid bidder error notice', function () {
-      const bid = {
-        'c': 'o',
-        'm': 'prebid',
-        'secret_key': 'prebid_js',
-        'bidderError': '1',
-        'postData': [{
-          'bidder': 'smartyads',
-          'params': [
-            {'host': 'prebid',
-              'accountid': '123',
-              'sourceid': '12345'
-            }]
-        }]
-      };
-      spec.onBidderError(bid);
-      expect(server.requests.length).to.equal(1);
     });
   });
 });
