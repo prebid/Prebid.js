@@ -132,7 +132,7 @@ export const spec = {
     const respData = response.body;
 
     respData.forEach(resp => {
-      if (isBidResponseValid(resp)) response.push(resp);
+      if (isBidResponseValid(resp)) result.push(resp);
     });
 
     return result;
