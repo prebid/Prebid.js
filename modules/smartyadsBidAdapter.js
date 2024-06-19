@@ -79,19 +79,19 @@ export const spec = {
     let location;
     location = bidderRequest?.refererInfo ?? null;
     let placements = [];
+    
     let request = {
+      'placements': placements,
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
+      'host': location?.domain,
+      'page': location?.page,
       'language': (navigator && navigator.language) ? navigator.language : '',
-      'secure': 1,
-      'host': location?.domain ?? '',
-      'page': location?.page ?? '',
       'coppa': config.getConfig('coppa') === true ? 1 : 0,
-      'placements': placements,
       'eeid': validBidRequests[0]?.userIdAsEids,
       'ifa': bidderRequest?.ortb2?.device?.ifa,
     };
-    request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
+
     if (bidderRequest) {
       if (bidderRequest.gdprConsent) {
         request.gdpr = bidderRequest.gdprConsent
@@ -129,16 +129,15 @@ export const spec = {
     }
   },
 
-  interpretResponse: (serverResponse) => {
-    let response = [];
-    serverResponse = serverResponse.body;
-    for (let i = 0; i < serverResponse.length; i++) {
-      let resItem = serverResponse[i];
-      if (isBidResponseValid(resItem)) {
-        response.push(resItem);
-      }
-    }
-    return response;
+  interpretResponse: (response) => {
+    let result = [];
+    const respData = response.body;
+
+    respData.forEach(resp => {
+      if (isBidResponseValid(resp)) response.push(resp);
+    });
+
+    return result;
   },
 
   getUserSyncs: (syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '', gppConsent = '') => {
