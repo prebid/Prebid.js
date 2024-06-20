@@ -45,4 +45,16 @@ describe('focusTimeout', () => {
     clock.tick(2000);
     expect(callback.called).to.be.true;
   });
+
+  it('should return updated timerId after page was showed again', () => {
+    let callback = sinon.stub();
+    const getCurrentTimerId = setFocusTimeout(callback, 4000);
+    const oldTimerId = getCurrentTimerId();
+    clock.tick(2000);
+    setDocumentHidden(true);
+    clock.tick(2000);
+    setDocumentHidden(false);
+    const newTimerId = getCurrentTimerId();
+    expect(oldTimerId).to.not.equal(newTimerId);
+  });
 });

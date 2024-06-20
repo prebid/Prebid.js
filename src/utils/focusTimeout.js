@@ -7,7 +7,7 @@ document.addEventListener('visibilitychange', () => {
     outOfFocusStart = Date.now()
   } else {
     timeOutOfFocus += Date.now() - outOfFocusStart
-    suspendedTimeouts.forEach(({ callback, startTime }) => setFocusTimeout(callback, timeOutOfFocus - startTime))
+    suspendedTimeouts.forEach(({ callback, startTime, setTimerId }) => setTimerId(setFocusTimeout(callback, timeOutOfFocus - startTime)()))
     outOfFocusStart = null;
   }
 });
@@ -17,19 +17,25 @@ document.addEventListener('visibilitychange', () => {
  *
  * @param {function(*): ()} [callback] - A function that will be invoked after passed time
  * @param {number} [milliseconds] - Minimum duration (in milliseconds) that the callback will be executed after
- * @returns {number} - timer id
+ * @returns {function(*): (number)} - Getter function for current timer id
  */
 export default function setFocusTimeout(callback, milliseconds) {
   const startTime = timeOutOfFocus;
-  const timerId = setTimeout(() => {
+  let timerId = setTimeout(() => {
     if (timeOutOfFocus === startTime && outOfFocusStart == null) {
       callback();
     } else if (outOfFocusStart != null) {
       // case when timeout ended during page is out of focus
-      suspendedTimeouts.push({ callback, startTime })
+      suspendedTimeouts.push({
+        callback,
+        startTime,
+        setTimerId(newId) {
+          timerId = newId;
+        }
+      })
     } else {
-      setFocusTimeout(callback, timeOutOfFocus - startTime);
+      timerId = setFocusTimeout(callback, timeOutOfFocus - startTime)();
     }
   }, milliseconds);
-  return timerId;
+  return () => timerId;
 }
