@@ -10,6 +10,8 @@ function useLocal(module) {
 }
 
 module.exports = function (options = {}) {
+  const isES6 = options.target === 'es6';
+
   return {
     'presets': [
       [
@@ -19,6 +21,11 @@ module.exports = function (options = {}) {
           'corejs': '3.13.0',
           // a lot of tests use sinon.stub & others that stopped working on ES6 modules with webpack 5
           'modules': options.test ? 'commonjs' : 'auto',
+          targets: isES6 ? {
+            browsers: [
+              '> 1%',
+            ]
+          } : undefined
         }
       ]
     ],

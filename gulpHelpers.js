@@ -13,6 +13,8 @@ const BUILD_PATH = './build/dist';
 const DEV_PATH = './build/dev';
 const ANALYTICS_PATH = '../analytics';
 
+const ext = argv.target === 'es6' ? '.mjs' : '.js';
+
 // get only subdirectories that contain package.json with 'main' property
 function isModuleDirectory(filePath) {
   try {
@@ -114,11 +116,11 @@ module.exports = {
     if (Array.isArray(externalModules)) {
       modules = _.intersection(modules, externalModules);
     }
-    return modules.map(name => this.getBuiltPath(dev, name + '.js'));
+    return modules.map(name => this.getBuiltPath(dev, name + ext));
   },
 
   getBuiltPrebidCoreFile: function(dev) {
-    return this.getBuiltPath(dev, 'prebid-core.js')
+    return this.getBuiltPath(dev, `prebid-core${ext}`)
   },
 
   getModulePaths: function(externalModules) {
