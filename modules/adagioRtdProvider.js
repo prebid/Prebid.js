@@ -26,6 +26,7 @@ import {
   isStr,
   prefixLog
 } from '../src/utils.js';
+import { _ADAGIO, getBestWindowForAdagio } from '../libraries/adagioUtils/adagioUtils.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 
 /**
@@ -43,23 +44,6 @@ const { logError, logWarn } = prefixLog('AdagioRtdProvider:');
 
 // Guard to avoid storing the same bid data several times.
 const guard = new Set();
-
-/**
- * Returns the window.ADAGIO global object used to store Adagio data.
- * This object is created in window.top if possible, otherwise in window.self.
- */
-const _ADAGIO = (function() {
-  const w = (canAccessWindowTop()) ? getWindowTop() : getWindowSelf();
-
-  w.ADAGIO = w.ADAGIO || {};
-  w.ADAGIO.pageviewId = w.ADAGIO.pageviewId || generateUUID();
-  w.ADAGIO.adUnits = w.ADAGIO.adUnits || {};
-  w.ADAGIO.pbjsAdUnits = w.ADAGIO.pbjsAdUnits || [];
-  w.ADAGIO.queue = w.ADAGIO.queue || [];
-  w.ADAGIO.windows = w.ADAGIO.windows || [];
-
-  return w.ADAGIO;
-})();
 
 /**
  * Store the sampling data.
@@ -133,7 +117,7 @@ const _FEATURES = (function() {
       features.data = {};
     },
     get: function() {
-      const w = (canAccessWindowTop()) ? getWindowTop() : getWindowSelf();
+      const w = getBestWindowForAdagio();
 
       if (!features.initialized) {
         features.data = {
