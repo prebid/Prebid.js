@@ -38,7 +38,7 @@ export const spec = {
       url: baseUrl,
       method: 'POST',
       data: {
-        v: '$prebid.version$',
+        v: 'v' + '$prebid.version$',
         bids: bids,
         url: bidderRequest.refererInfo.page || '',
         referer: bidderRequest.refererInfo.ref || '',
