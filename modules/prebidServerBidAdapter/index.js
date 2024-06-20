@@ -550,6 +550,7 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
   const requestJson = request && JSON.stringify(request);
   logInfo('BidRequest: ' + requestJson);
   const endpointUrl = getMatchingConsentUrl(s2sBidRequest.s2sConfig.endpoint, gdprConsent);
+  const customHeaders = deepAccess(s2sBidRequest, 's2sConfig.customHeaders', {});
   if (request && requestJson && endpointUrl) {
     const networkDone = s2sBidRequest.metrics.startTiming('net');
     ajax(
@@ -584,7 +585,8 @@ export const processPBSRequest = hook('sync', function (s2sBidRequest, bidReques
       {
         contentType: 'text/plain',
         withCredentials: true,
-        browsingTopics: isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, s2sActivityParams(s2sBidRequest.s2sConfig))
+        browsingTopics: isActivityAllowed(ACTIVITY_TRANSMIT_UFPD, s2sActivityParams(s2sBidRequest.s2sConfig)),
+        customHeaders
       }
     );
   } else {
