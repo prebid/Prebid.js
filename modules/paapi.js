@@ -160,7 +160,7 @@ export function addPaapiConfigHook(next, request, paapiConfig) {
       config.auctionSignals = setFPD(config.auctionSignals || {}, request);
       const pbs = config.perBuyerSignals = config.perBuyerSignals ?? {};
       (config.interestGroupBuyers || []).forEach(buyer => {
-        pbs[buyer] = setFPD(config.perBuyerSignals?.[buyer] || {}, request);
+        pbs[buyer] = setFPD(pbs[buyer] ?? {}, request);
       })
       storePendingData(pendingConfigsForAuction, config);
     }
