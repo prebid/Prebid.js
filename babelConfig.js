@@ -23,12 +23,9 @@ module.exports = function (options = {}) {
           'modules': options.test ? 'commonjs' : 'auto',
           targets: isES6 ? {
             browsers: [
-              'Chrome >= 61',
-              'Firefox >= 57',
-              'Safari >= 10.1',
-              'iOS >= 10.3',
-              'Edge >= 15',
-              '> 1%'
+              '> 0.25%',
+              'not IE 11',
+              'not op_mini all'
             ]
           } : undefined
         }
