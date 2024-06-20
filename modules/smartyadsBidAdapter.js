@@ -1,4 +1,4 @@
-import {registerBidder} from '../src/adapters/bidderFactory.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
@@ -77,7 +77,6 @@ export const spec = {
     let request = {
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
-      'language': (navigator && navigator.language) ? navigator.language : '',
       'host': location?.domain ?? '',
       'page': location?.page ?? '',
       'coppa': config.getConfig('coppa') === true ? 1 : 0,
@@ -85,7 +84,7 @@ export const spec = {
       'eeid': validBidRequests[0]?.userIdAsEids,
       'ifa': bidderRequest?.ortb2?.device?.ifa,
     };
-    request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
+
     if (bidderRequest) {
       if (bidderRequest.gdprConsent) {
         request.gdpr = bidderRequest.gdprConsent
