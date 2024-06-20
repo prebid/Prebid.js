@@ -23,7 +23,12 @@ module.exports = function (options = {}) {
           'modules': options.test ? 'commonjs' : 'auto',
           targets: isES6 ? {
             browsers: [
-              '> 1%',
+              'Chrome >= 61',
+              'Firefox >= 57',
+              'Safari >= 10.1',
+              'iOS >= 10.3',
+              'Edge >= 15',
+              '> 1%'
             ]
           } : undefined
         }
