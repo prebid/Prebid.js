@@ -14,21 +14,17 @@ const adUrls = {
 const URL_SYNC = 'https://as.ck-ie.com/prebidjs?p=7c47322e527cf8bdeb7facc1bb03387a';
 
 function isBidResponseValid(bid) {
-  if (!bid) return false;
-
-  const { requestId, cpm, creativeId, ttl, currency } = bid;
-
-  const isValid = [requestId, cpm, creativeId, ttl, currency].every(item => !!item);
-  if (!isValid) return false;
-
-  switch (bid.mediaType) {
+  if (!bid.requestId || !bid.cpm || !bid.creativeId ||
+    !bid.ttl || !bid.currency) {
+    return false;
+  }
+  switch (bid['mediaType']) {
     case BANNER:
-      return !!(bid.ad && bid.width && bid.height);
+      return Boolean(bid.width && bid.height && bid.ad);
     case VIDEO:
-      return !!(bid.vastUrl || bid.vastXml);
+      return Boolean(bid.vastUrl) || Boolean(bid.vastXml);
     case NATIVE:
-      const native = bid.native;
-      return !!(native && native.image && native.impressionTrackers);
+      return Boolean(bid.native && bid.native.title && bid.native.image && bid.native.impressionTrackers);
     default:
       return false;
   }
@@ -79,17 +75,17 @@ export const spec = {
     location = bidderRequest?.refererInfo ?? null;
     let placements = [];
     let request = {
-      'placements': placements,
       'deviceWidth': winTop.screen.width,
       'deviceHeight': winTop.screen.height,
-      'host': location?.domain || '',
-      'page': location?.page || '',
       'language': (navigator && navigator.language) ? navigator.language : '',
+      'host': location?.domain ?? '',
+      'page': location?.page ?? '',
       'coppa': config.getConfig('coppa') === true ? 1 : 0,
+      'placements': placements,
       'eeid': validBidRequests[0]?.userIdAsEids,
       'ifa': bidderRequest?.ortb2?.device?.ifa,
     };
-
+    request.language.indexOf('-') != -1 && (request.language = request.language.split('-')[0])
     if (bidderRequest) {
       if (bidderRequest.gdprConsent) {
         request.gdpr = bidderRequest.gdprConsent
@@ -127,25 +123,34 @@ export const spec = {
     }
   },
 
-  interpretResponse: (response) => {
-    let result = [];
-    const respData = response.body;
-
-    respData.forEach(resp => {
-      if (isBidResponseValid(resp)) result.push(resp);
-    });
-
-    return result;
+  interpretResponse: (serverResponse) => {
+    let response = [];
+    serverResponse = serverResponse.body;
+    for (let i = 0; i < serverResponse.length; i++) {
+      let resItem = serverResponse[i];
+      if (isBidResponseValid(resItem)) {
+        response.push(resItem);
+      }
+    }
+    return response;
   },
 
   getUserSyncs: (syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '', gppConsent = '') => {
     let syncs = [];
     let { gdprApplies, consentString = '' } = gdprConsent;
 
-    const type = syncOptions.iframeEnabled ? 'iframe' : 'image';
-    const url = `${URL_SYNC}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&type=${type}&us_privacy=&gpp=${gppConsent}`;
+    if (syncOptions.iframeEnabled) {
+      syncs.push({
+        type: 'iframe',
+        url: `${URL_SYNC}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&type=iframe&us_privacy=&gpp=${gppConsent}`
+      });
+    } else {
+      syncs.push({
+        type: 'image',
+        url: `${URL_SYNC}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&type=image&us_privacy=&gpp=${gppConsent}`
+      });
+    }
 
-    syncs.push({ type, url });
     return syncs
   },
 };
