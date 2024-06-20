@@ -2,14 +2,10 @@ import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
+import { getAdUrlByRegion } from '../libraries/smartyadsUtils/getAdUrlByRegion.js';
 
 const BIDDER_CODE = 'smartyads';
 const GVLID = 534;
-const adUrls = {
-  US_EAST: 'https://n1.smartyads.com/?c=o&m=prebid&secret_key=prebid_js',
-  EU: 'https://n2.smartyads.com/?c=o&m=prebid&secret_key=prebid_js',
-  SGP: 'https://n6.smartyads.com/?c=o&m=prebid&secret_key=prebid_js'
-}
 
 const URL_SYNC = 'https://as.ck-ie.com/prebidjs?p=7c47322e527cf8bdeb7facc1bb03387a';
 
@@ -28,33 +24,6 @@ function isBidResponseValid(bid) {
     default:
       return false;
   }
-}
-
-function getAdUrlByRegion(bid) {
-  let adUrl;
-
-  if (bid.params.region && adUrls[bid.params.region]) {
-    adUrl = adUrls[bid.params.region];
-  } else {
-    try {
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const region = timezone.split('/')[0];
-
-      switch (region) {
-        case 'Europe':
-          adUrl = adUrls['EU'];
-          break;
-        case 'Asia':
-          adUrl = adUrls['SGP'];
-          break;
-        default: adUrl = adUrls['US_EAST'];
-      }
-    } catch (err) {
-      adUrl = adUrls['US_EAST'];
-    }
-  }
-
-  return adUrl;
 }
 
 export const spec = {
