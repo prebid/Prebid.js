@@ -2,7 +2,7 @@ import { deviceTypes, browserTypes, osTypes } from './userAgentTypes.enums.js';
 
 /**
  * Get the approximate device type enum from the user agent
- * @returns {string}
+ * @returns {number}
  */
 export const getDeviceType = () => {
   if (
@@ -21,7 +21,7 @@ export const getDeviceType = () => {
 /**
  * Get the approximate browser type enum from the user agent (or vendor
  * if available)
- * @returns {string}
+ * @returns {number}
  */
 export const getBrowser = () => {
   if (/Edg/.test(navigator.userAgent)) return browserTypes.EDGE;
@@ -45,7 +45,7 @@ export const getBrowser = () => {
 /**
  * Get the approximate OS enum from the user agent (or app version,
  * if available)
- * @returns {string}
+ * @returns {number}
  */
 export const getOS = () => {
   if (navigator.userAgent.indexOf('Android') != -1) return osTypes.ANDROID;
