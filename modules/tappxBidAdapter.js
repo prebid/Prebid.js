@@ -493,7 +493,7 @@ function buildOneRequest(validBidRequests, bidderRequest) {
   payload.regs = regs;
   // < Payload
 
-  let pbjsv = 'v' + '$prebid.version$' : -1;
+  let pbjsv = 'v' + '$prebid.version$';
 
   return {
     method: 'POST',
