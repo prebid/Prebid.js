@@ -376,7 +376,7 @@ const prepareSend = (auctionId) => {
       search: {
         auctionTimestamp: auctionData.auctionDetail.timestamp,
         pubxaiAnalyticsVersion: pubxaiAnalyticsVersion,
-        prebidVersion: getGlobal().version,
+        prebidVersion: '$prebid.version$',
       },
     });
     sendCache[pubxaiAnalyticsRequestUrl].push(data);

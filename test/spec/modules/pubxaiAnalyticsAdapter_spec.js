@@ -766,7 +766,7 @@ describe('pubxai analytics adapter', () => {
         expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
           auctionTimestamp: '1616654312804',
           pubxaiAnalyticsVersion: 'v2.0.0',
-          prebidVersion: String(getGlobal().version),
+          prebidVersion: '$prebid.version$',
         });
         expect(expectedData.type).to.equal('text/json');
         expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([
@@ -809,7 +809,7 @@ describe('pubxai analytics adapter', () => {
       expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
         auctionTimestamp: '1616654312804',
         pubxaiAnalyticsVersion: 'v2.0.0',
-        prebidVersion: String(getGlobal().version),
+        prebidVersion: '$prebid.version$',
       });
 
       // Step 9: check that the data sent in the request is correct
@@ -934,7 +934,7 @@ describe('pubxai analytics adapter', () => {
         expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
           auctionTimestamp: '1616654312804',
           pubxaiAnalyticsVersion: 'v2.0.0',
-          prebidVersion: String(getGlobal().version),
+          prebidVersion: '$prebid.version$',
         });
         expect(expectedData.type).to.equal('text/json');
         expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([
@@ -1050,7 +1050,7 @@ describe('pubxai analytics adapter', () => {
         expect(Object.fromEntries(parsedUrl.searchParams)).to.deep.equal({
           auctionTimestamp: '1616654312804',
           pubxaiAnalyticsVersion: 'v2.0.0',
-          prebidVersion: String(getGlobal().version),
+          prebidVersion: '$prebid.version$',
         });
         expect(expectedData.type).to.equal('text/json');
         expect(JSON.parse(await readBlobSafariCompat(expectedData))).to.deep.equal([
