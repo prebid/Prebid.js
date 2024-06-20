@@ -31,7 +31,7 @@
     "device": null,
     "os": "Windows"
   },
-  "bs_safari_latest_mac_ventura": {
+  "bs_safari_latest_mac": {
     "base": "BrowserStack",
     "os_version": "Sonoma",
     "browser": "safari",
