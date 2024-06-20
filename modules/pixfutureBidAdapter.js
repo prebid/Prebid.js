@@ -125,7 +125,7 @@ export const spec = {
         method: 'POST',
         options: {withCredentials: true},
         data: {
-          v: 'v' + '$pbjs.version$',
+          v: 'v' + '$prebid.version$',
           pageUrl: referer,
           bidId: bidRequest.bidId,
           // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
