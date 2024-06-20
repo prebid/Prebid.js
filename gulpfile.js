@@ -316,7 +316,8 @@ function bundle(dev, moduleArr) {
   });
   const entries = _.uniq([coreFile].concat(Array.from(dependencies), moduleFiles));
 
-  var outputFileName = argv.bundleName ? argv.bundleName : 'prebid.js';
+  const ext = argv.target === 'es6' ? '.mjs' : '.js';
+  var outputFileName = argv.bundleName ? argv.bundleName : `prebid${ext}`;
 
   // change output filename if argument --tag given
   if (argv.tag && argv.tag.length) {
