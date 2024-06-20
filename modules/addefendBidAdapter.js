@@ -16,7 +16,7 @@ export const spec = {
   },
   buildRequests: function(validBidRequests, bidderRequest) {
     let bid = {
-      v: '$prebid.version$',
+      v: 'v' + '$prebid.version$',
       auctionId: false,
       pageId: false,
       gdpr_applies: bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies ? bidderRequest.gdprConsent.gdprApplies : 'true',
