@@ -525,7 +525,6 @@ function createImp(bidRequest) {
       playbackmethod: videoReq.playbackmethod || VIDEO_DEFAULTS.PLAYBACK_METHODS,
       delivery: videoReq.delivery || VIDEO_DEFAULTS.DELIVERY,
       api: videoReq.api || VIDEO_DEFAULTS.API,
-      placement: videoReq.context === OUTSTREAM ? 3 : 1,
     };
 
     mediaType = VIDEO;

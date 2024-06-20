@@ -251,7 +251,7 @@ function interpretResponse(response, bidRequest) {
   if (fledgeAuctionConfigs.length > 0) {
     return {
       bids: bidResponses,
-      fledgeAuctionConfigs
+      paapi: fledgeAuctionConfigs
     }
   } else {
     return bidResponses;

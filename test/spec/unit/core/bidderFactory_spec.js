@@ -1510,39 +1510,29 @@ describe('bidderFactory', () => {
           paapiStub = sinon.stub();
         });
 
-        const PAAPI_PROPS = ['fledgeAuctionConfigs', 'paapi'];
+        describe(`when response has paapi`, () => {
+          it('should call paapi config hook with auction configs', function () {
+            runBidder({
+              bids: bids,
+              paapi: [paapiConfig]
+            });
+            expect(paapiStub.calledOnce).to.equal(true);
+            sinon.assert.calledWith(paapiStub, bidRequest.bids[0], paapiConfig);
+            sinon.assert.calledWith(addBidResponseStub, 'mock/placement', sinon.match(bids[0]));
+          });
 
-        it(`should not accept both ${PAAPI_PROPS.join(' and ')}`, () => {
-          expect(() => {
-            runBidder(Object.fromEntries(PAAPI_PROPS.map(prop => [prop, [paapiConfig]])))
-          }).to.throw();
-        })
-
-        PAAPI_PROPS.forEach(paapiProp => {
-          describe(`using ${paapiProp}`, () => {
-            it('should call paapi config hook with auction configs', function() {
+          Object.entries({
+            'missing': undefined,
+            'an empty array': []
+          }).forEach(([t, bids]) => {
+            it(`should call paapi config hook with PAAPI configs even when bids is ${t}`, function () {
               runBidder({
-                bids: bids,
-                [paapiProp]: [paapiConfig]
-              })
-              expect(paapiStub.calledOnce).to.equal(true);
-              sinon.assert.calledWith(paapiStub, bidRequest.bids[0], paapiConfig);
-              sinon.assert.calledWith(addBidResponseStub, 'mock/placement', sinon.match(bids[0]));
-            })
-
-            Object.entries({
-              'missing': undefined,
-              'an empty array': []
-            }).forEach(([t, bids]) => {
-              it(`should call paapi config hook with PAAPI configs even when bids is ${t}`, function() {
-                runBidder({
-                  bids,
-                  [paapiProp]: [paapiConfig]
-                })
-                expect(paapiStub.calledOnce).to.be.true;
-                sinon.assert.calledWith(paapiStub, bidRequest.bids[0], paapiConfig);
-                expect(addBidResponseStub.calledOnce).to.equal(false);
+                bids,
+                paapi: [paapiConfig]
               });
+              expect(paapiStub.calledOnce).to.be.true;
+              sinon.assert.calledWith(paapiStub, bidRequest.bids[0], paapiConfig);
+              expect(addBidResponseStub.calledOnce).to.equal(false);
             });
           });
         });

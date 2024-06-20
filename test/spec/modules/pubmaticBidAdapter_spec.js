@@ -2948,7 +2948,7 @@ describe('PubMatic adapter', function () {
           bidRequest[0].ortb2Imp = {
             ext: { ae: 1 }
           };
-          const req = spec.buildRequests(bidRequest, { ...bidRequest, fledgeEnabled: false });
+          const req = spec.buildRequests(bidRequest, { ...bidRequest, paapi: {enabled: false} });
           let data = JSON.parse(req.data);
           if (data.imp[0].ext) {
             expect(data.imp[0].ext).to.not.have.property('ae');
@@ -2961,7 +2961,7 @@ describe('PubMatic adapter', function () {
           bidRequest[0].ortb2Imp = {
             ext: { ae: 1 }
           };
-          const req = spec.buildRequests(bidRequest, { ...bidRequest, fledgeEnabled: true });
+          const req = spec.buildRequests(bidRequest, { ...bidRequest, paapi: {enabled: true} });
           let data = JSON.parse(req.data);
           expect(data.imp[0].ext.ae).to.equal(1);
         });
@@ -3786,9 +3786,9 @@ describe('PubMatic adapter', function () {
       response = spec.interpretResponse({ body: bidResponse }, bidRequest);
       it('should return FLEDGE auction_configs alongside bids', function () {
         expect(response).to.have.property('bids');
-        expect(response).to.have.property('fledgeAuctionConfigs');
-        expect(response.fledgeAuctionConfigs.length).to.equal(1);
-        expect(response.fledgeAuctionConfigs[0].bidId).to.equal('test_bid_id');
+        expect(response).to.have.property('paapi');
+        expect(response.paapi.length).to.equal(1);
+        expect(response.paapi[0].bidId).to.equal('test_bid_id');
       });
     });
 

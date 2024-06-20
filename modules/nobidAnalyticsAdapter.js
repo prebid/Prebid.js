@@ -241,7 +241,7 @@ window.nobidCarbonizer = {
       adunit.bids = allowedBidders;
     }
     for (const adunit of adunits) {
-      if (!nobidAnalytics.originalAdUnits[adunit.code]) nobidAnalytics.originalAdUnits[adunit.code] = JSON.parse(JSON.stringify(adunit));
+      if (!nobidAnalytics.originalAdUnits[adunit.code]) nobidAnalytics.originalAdUnits[adunit.code] = deepClone(adunit);
     };
     if (this.isActive()) {
       // 5% of the time do not block;

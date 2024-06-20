@@ -130,7 +130,7 @@ export function attachCallbacks(fetchPm, callback) {
     success: typeof callback === 'function' ? callback : () => null,
     error: (e, x) => logError('Network error', e, x)
   };
-  fetchPm.then(response => response.text().then((responseText) => [response, responseText]))
+  return fetchPm.then(response => response.text().then((responseText) => [response, responseText]))
     .then(([response, responseText]) => {
       const xhr = toXHR(response, responseText);
       response.ok || response.status === 304 ? success(responseText, xhr) : error(response.statusText, xhr);

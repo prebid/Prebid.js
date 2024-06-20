@@ -1,5 +1,5 @@
 import {gdprDataHandler} from '../../../src/adapterManager.js';
-import {enrichFPDHook} from '../../../modules/consentManagement.js';
+import {enrichFPDHook} from '../../../modules/consentManagementTcf.js';
 
 describe('GDPR FPD enrichment', () => {
   let sandbox, consent;

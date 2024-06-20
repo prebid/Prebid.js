@@ -412,6 +412,7 @@ describe('Zeta Global SSP Analytics Adapter', function () {
           domain: 'test-zeta-ssp.net:63342',
           page: 'http://test-zeta-ssp.net:63342/zeta-ssp/ssp/_dev/examples/page_banner.html',
           bids: [{
+            adUnitCode: '/19968336/header-bid-tag-0',
             bidId: '206be9a13236af',
             auctionId: '75e394d9',
             bidder: 'zeta_global_ssp',
@@ -426,6 +427,7 @@ describe('Zeta Global SSP Analytics Adapter', function () {
           domain: 'test-zeta-ssp.net:63342',
           page: 'http://test-zeta-ssp.net:63342/zeta-ssp/ssp/_dev/examples/page_banner.html',
           bids: [{
+            adUnitCode: '/19968336/header-bid-tag-0',
             bidId: '41badc0e164c758',
             auctionId: '75e394d9',
             bidder: 'appnexus',
@@ -437,6 +439,7 @@ describe('Zeta Global SSP Analytics Adapter', function () {
           }]
         }],
         bidsReceived: [{
+          adUnitCode: '/19968336/header-bid-tag-0',
           adId: '5759bb3ef7be1e8',
           requestId: '206be9a13236af',
           creativeId: '456456456',
@@ -459,6 +462,7 @@ describe('Zeta Global SSP Analytics Adapter', function () {
       expect(auctionSucceeded.domain).to.eql('test-zeta-ssp.net');
       expect(auctionSucceeded.page).to.eql('test-zeta-ssp.net/zeta-ssp/ssp/_dev/examples/page_banner.html');
       expect(auctionSucceeded.bid).to.be.deep.equal({
+        adUnitCode: '/19968336/header-bid-tag-0',
         adId: '5759bb3ef7be1e8',
         requestId: '206be9a13236af',
         auctionId: '75e394d9',

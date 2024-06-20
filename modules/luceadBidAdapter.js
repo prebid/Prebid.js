@@ -134,7 +134,7 @@ function interpretResponse(serverResponse, bidRequest) {
     }
   }));
 
-  return {bids, fledgeAuctionConfigs};
+  return {bids, paapi: fledgeAuctionConfigs};
 }
 
 function report(type, data) {

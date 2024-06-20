@@ -134,7 +134,7 @@ describe('AdmanAdapter', function () {
       for (let i = 0; i < placements.length; i++) {
         let placement = placements[i];
         expect(placement).to.have.all.keys('placementId', 'eids', 'bidId', 'traffic', 'schain', 'bidFloor',
-          'playerSize', 'minduration', 'maxduration', 'mimes', 'protocols', 'startdelay', 'placement', 'skip',
+          'playerSize', 'minduration', 'maxduration', 'mimes', 'protocols', 'startdelay', 'placement', 'plcmt', 'skip',
           'skipafter', 'minbitrate', 'maxbitrate', 'delivery', 'playbackmethod', 'api', 'linearity', 'ext');
         expect(placement.ext).to.be.an('object')
         expect(placement.ext).to.have.key('tid')

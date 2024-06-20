@@ -14,7 +14,7 @@ import * as utils from 'src/utils.js';
 import {find} from 'src/polyfill.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import 'modules/schain.js';
-import 'modules/consentManagement.js';
+import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/userId/index.js';
 import 'modules/priceFloors.js';
@@ -3695,14 +3695,14 @@ describe('the rubicon adapter', function () {
             }]
           };
 
-          let {bids, fledgeAuctionConfigs} = spec.interpretResponse({body: response}, {
+          let {bids, paapi} = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
 
           expect(bids).to.be.lengthOf(1);
-          expect(fledgeAuctionConfigs[0].bidId).to.equal('5432');
-          expect(fledgeAuctionConfigs[0].config.random).to.equal('value');
-          expect(fledgeAuctionConfigs[1].bidId).to.equal('6789');
+          expect(paapi[0].bidId).to.equal('5432');
+          expect(paapi[0].config.random).to.equal('value');
+          expect(paapi[1].bidId).to.equal('6789');
         });
 
         it('should handle an error', function () {
