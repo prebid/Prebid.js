@@ -514,7 +514,7 @@ cnvrHelper.createPayload = function(payloadType, auctionId, timestamp) {
     cnvrSampleRate: initOptions.cnvr_sample_rate,
     auction: {
       auctionId: auctionId,
-      preBidVersion: 'v' + '$prebid.version$',
+      preBidVersion: '$prebid.version$',
       sid: initOptions.site_id,
       auctionTimestamp: timestamp
     },
