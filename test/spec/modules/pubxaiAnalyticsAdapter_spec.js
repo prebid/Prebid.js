@@ -1,17 +1,15 @@
+/* globals describe, beforeEach, afterEach, sinon */
+import { expect } from 'chai';
+import { getGptSlotInfoForAdUnitCode } from 'libraries/gptUtils/gptUtils.js';
+import { getDeviceType, getBrowser, getOS } from 'libraries/userAgentUtils';
 import pubxaiAnalyticsAdapter, {
-  getDeviceType,
-  getOS,
-  getBrowser,
   auctionCache,
 } from 'modules/pubxaiAnalyticsAdapter.js';
-import { expect } from 'chai';
+import { EVENTS } from 'src/constants.js';
 import adapterManager from 'src/adapterManager.js';
-import * as utils from 'src/utils.js';
-import { getGlobal } from '../../../src/prebidGlobal.js';
-import { getGptSlotInfoForAdUnitCode } from '../../../libraries/gptUtils/gptUtils.js';
-import { EVENTS } from '../../../src/constants.js';
-
-let events = require('src/events');
+import { getWindowLocation } from 'src/utils.js';
+import { getGlobal } from 'src/prebidGlobal.js';
+import * as events from 'src/events.js'
 
 const readBlobSafariCompat = (blob) => {
   return new Promise((resolve, reject) => {
@@ -25,7 +23,6 @@ const readBlobSafariCompat = (blob) => {
 describe('pubxai analytics adapter', () => {
   beforeEach(() => {
     sinon.stub(events, 'getEvents').returns([]);
-    sinon.stub()
   });
 
   afterEach(() => {
@@ -38,10 +35,9 @@ describe('pubxai analytics adapter', () => {
       pubxId: '6c415fc0-8b0e-4cf5-be73-01526a4db625',
     };
 
-    let originalHD;
     let originalVS;
 
-    let location = utils.getWindowLocation();
+    let location = getWindowLocation();
 
     const replaceProperty = (obj, params) => {
       let strObj = JSON.stringify(obj);

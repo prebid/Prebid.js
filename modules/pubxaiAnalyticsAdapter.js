@@ -9,6 +9,7 @@ import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
 import adapterManager from '../src/adapterManager.js';
 import { EVENTS } from '../src/constants.js';
 import { getGlobal } from '../src/prebidGlobal.js';
+import { getDeviceType, getBrowser, getOS } from '../libraries/userAgentUtils/index.js';
 import {
   getGptSlotInfoForAdUnitCode,
   getGptSlotForAdUnitCode,
@@ -26,31 +27,6 @@ const defaultHost = 'api.pbxai.com';
 const auctionPath = '/analytics/auction';
 const winningBidPath = '/analytics/bidwon';
 const storage = getStorageManager({ moduleType: MODULE_TYPE_ANALYTICS, moduleName: adapterCode })
-
-const deviceTypes = Object.freeze({
-  DESKTOP: 0,
-  MOBILE: 1,
-  TABLET: 2,
-})
-
-const browserTypes = Object.freeze({
-  CHROME: 0,
-  FIREFOX: 1,
-  SAFARI: 2,
-  EDGE: 3,
-  INTERNET_EXPLORER: 4,
-  OTHER: 5
-})
-
-const osTypes = Object.freeze({
-  WINDOWS: 0,
-  MAC: 1,
-  LINUX: 2,
-  UNIX: 3,
-  IOS: 4,
-  ANDROID: 5,
-  OTHER: 6
-})
 
 /**
  * The sendCache is a global cache object which tracks the pending sends
@@ -250,61 +226,6 @@ const track = ({ eventType, args }) => {
     default:
       break;
   }
-};
-
-/**
- * Get the approximate device type from the user agent
- * @returns {string}
- */
-export const getDeviceType = () => {
-  if (
-    /ipad|android 3.0|xoom|sch-i800|playbook|tablet|kindle/i.test(
-      navigator.userAgent.toLowerCase()
-    )
-  ) return deviceTypes.TABLET;
-  if (
-    /iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(
-      navigator.userAgent.toLowerCase()
-    )
-  ) return deviceTypes.MOBILE;
-  return deviceTypes.DESKTOP;
-};
-
-/**
- * Get the approximate browser type from the user agent (or vendor if available)
- * @returns {string}
- */
-export const getBrowser = () => {
-  if (/Edg/.test(navigator.userAgent)) return browserTypes.EDGE;
-  else if (
-    /Chrome/.test(navigator.userAgent) &&
-    /Google Inc/.test(navigator.vendor)
-  ) return browserTypes.CHROME;
-  else if (navigator.userAgent.match('CriOS')) return browserTypes.CHROME;
-  else if (/Firefox/.test(navigator.userAgent)) return browserTypes.FIREFOX;
-  else if (
-    /Safari/.test(navigator.userAgent) &&
-    /Apple Computer/.test(navigator.vendor)
-  ) return browserTypes.SAFARI
-  else if (
-    /Trident/.test(navigator.userAgent) ||
-    /MSIE/.test(navigator.userAgent)
-  ) return browserTypes.INTERNET_EXPLORER
-  else return browserTypes.OTHER;
-};
-
-/**
- * Get the approximate OS from the user agent (or app version, if available)
- * @returns {string}
- */
-export const getOS = () => {
-  if (navigator.userAgent.indexOf('Android') != -1) return osTypes.ANDROID
-  if (navigator.userAgent.indexOf('like Mac') != -1) return osTypes.IOS
-  if (navigator.userAgent.indexOf('Win') != -1) return osTypes.WINDOWS
-  if (navigator.userAgent.indexOf('Mac') != -1) return osTypes.MAC
-  if (navigator.userAgent.indexOf('Linux') != -1) return osTypes.LINUX
-  if (navigator.appVersion.indexOf('X11') != -1) return osTypes.UNIX
-  return osTypes.OTHER;
 };
 
 /**
