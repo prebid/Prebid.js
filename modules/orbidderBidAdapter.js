@@ -100,7 +100,7 @@ export const spec = {
         method: 'POST',
         options: { withCredentials: true },
         data: {
-          v: '$prebid.version$',
+          v: 'v' + '$prebid.version$',
           pageUrl: referer,
           ...bidRequest // get all data provided by bid request
         }
