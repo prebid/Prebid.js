@@ -1,4 +1,5 @@
 import { submodule } from '../src/hook.js';
+import { fetch } from '../src/ajax.js';
 import {
   mergeDeep,
   prefixLog,
