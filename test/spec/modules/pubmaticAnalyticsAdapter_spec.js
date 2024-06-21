@@ -568,7 +568,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.tgid).to.equal(15);
       expect(data.fmv).to.equal('floorModelTest');
       expect(data.ft).to.equal(1);
-      expect(data.pbv).to.equal(getGlobal()?.version || '-1');
+      expect(data.pbv).to.equal('$prebid.version$' || '-1');
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
       // slot 1
@@ -786,7 +786,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.pid).to.equal('1111');
       expect(data.fmv).to.equal('floorModelTest');
       expect(data.ft).to.equal(1);
-      expect(data.pbv).to.equal(getGlobal()?.version || '-1');
+      expect(data.pbv).to.equal('$prebid.version$' || '-1');
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
       expect(data.tgid).to.equal(0);
@@ -866,7 +866,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.tgid).to.equal(0);// test group id should be between 0-15 else set to 0
       expect(data.fmv).to.equal('floorModelTest');
       expect(data.ft).to.equal(1);
-      expect(data.pbv).to.equal(getGlobal()?.version || '-1');
+      expect(data.pbv).to.equal('$prebid.version$' || '-1');
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
       // slot 1
@@ -1434,7 +1434,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.tst).to.equal(1519767016);
       expect(data.tgid).to.equal(15);
       expect(data.fmv).to.equal('floorModelTest');
-      expect(data.pbv).to.equal(getGlobal()?.version || '-1');
+      expect(data.pbv).to.equal('$prebid.version$' || '-1');
       expect(data.ft).to.equal(1);
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
@@ -1566,7 +1566,7 @@ describe('pubmatic analytics adapter', function () {
       expect(data.tst).to.equal(1519767016);
       expect(data.tgid).to.equal(15);
       expect(data.fmv).to.equal('floorModelTest');
-      expect(data.pbv).to.equal(getGlobal()?.version || '-1');
+      expect(data.pbv).to.equal('$prebid.version$' || '-1');
       expect(data.ft).to.equal(1);
       expect(data.s).to.be.an('array');
       expect(data.s.length).to.equal(2);
