@@ -26,9 +26,9 @@ Module that connects to audiencelogy's demand sources.
         {
             bidder: 'audiencelogy',
             params: {
-                placement_id: 584,  // Required parameter
                 user_id: '1111111' // Required parameter
-                nid: 1  // Required parameter
+                nid: 1,  // Required parameter
+                placement_id: 584,  // Required parameter
                 width: 160,   // Optional parameter 
                 height: 600, // Optional parameter
                 domain: '', // Optional parameter

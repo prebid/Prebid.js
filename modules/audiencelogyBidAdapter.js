@@ -16,25 +16,21 @@ const ENDPOINT_URL = 'https://rtb.audiencelogy.com/prebid';
 function buildRequests(bidRequests, bidderRequest) {
   const requests = [];
   let nid = 0;
-  // Loop through each bid request
+  // Loop for each bid request
   bidRequests.forEach(bid => {
-    // Construct the bid request object
+    // Create the bid request object
     const request = {
       id: generateUUID(),
-      placementId: bid.params.placement_id,
       imp: [{
         id: bid.bidId,
-        banner: getBanner(bid),
-        bidfloor: getFloor(bid)
+        bidfloor: fetchFloor(bid),
+        banner: fetchBanner(bid)
       }],
-      site: getSite(bidderRequest),
-      user: buildUser(bid)
+      placementId: bid.params.placement_id,
+      site: fetchSite(bidderRequest),
+      user: setUser(bid)
     };
-    // Get uspConsent from bidderRequest
-    if (bidderRequest && bidderRequest.uspConsent) {
-      request.us_privacy = bidderRequest.uspConsent;
-    }
-    // Get GPP Consent from bidderRequest
+    // Fetch GPP Consent from bidderRequest
     if (bidderRequest?.gppConsent?.gppString) {
       request.gpp = bidderRequest.gppConsent.gppString;
       request.gpp_sid = bidderRequest.gppConsent.applicableSections;
@@ -42,11 +38,15 @@ function buildRequests(bidRequests, bidderRequest) {
       request.gpp = bidderRequest.ortb2.regs.gpp;
       request.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
     }
-    // Get coppa compliance from bidderRequest
+    // Fetch coppa compliance from bidderRequest
     if (bidderRequest?.ortb2?.regs?.coppa) {
       request.coppa = 1;
     }
-    // Push the constructed bid request to the requests array
+    // Fetch uspConsent from bidderRequest
+    if (bidderRequest && bidderRequest.uspConsent) {
+      request.us_privacy = bidderRequest.uspConsent;
+    }
+    // Push the created bid request to the requests array
     requests.push(request);
     // Set nid value
     nid = bid.params.nid;
@@ -69,7 +69,7 @@ function interpretResponse(bidResponse, bidRequest) {
       let bids = bidResponse.body.seatbid && bidResponse.body.seatbid[0] ? bidResponse.body.seatbid[0].bid : [];
       if (bids) {
         bids.forEach(bidObj => {
-          let newBid = formatResponse(bidObj);
+          let newBid = buildResponse(bidObj);
           newBid.mediaType = BANNER;
           resp.push(newBid);
         });
@@ -80,12 +80,20 @@ function interpretResponse(bidResponse, bidRequest) {
   }
   return resp;
 }
-// Function to check if Bid is valid
+// Function for checking validity of Bid
 function isBidRequestValid(bid) {
   return !!(bid.params.placement_id && bid.params.user_id && bid.params.nid);
 }
-// Function to get banner details
-function getBanner(bid) {
+// Function to fetch bid_floor
+function fetchFloor(bid) {
+  if (bid.params && bid.params.bid_floor) {
+    return bid.params.bid_floor;
+  } else {
+    return 0;
+  }
+}
+// Function to fetch banner details
+function fetchBanner(bid) {
   if (deepAccess(bid, 'mediaTypes.banner')) {
     // Fetch width and height from MediaTypes object, if not provided in bid params
     if (deepAccess(bid, 'mediaTypes.banner.sizes') && !bid.params.height && !bid.params.width) {
@@ -104,16 +112,8 @@ function getBanner(bid) {
     }
   }
 }
-// Function to get bid_floor
-function getFloor(bid) {
-  if (bid.params && bid.params.bid_floor) {
-    return bid.params.bid_floor;
-  } else {
-    return 0;
-  }
-}
-// Function to get site details
-function getSite(bidderRequest) {
+// Function to fetch site details
+function fetchSite(bidderRequest) {
   let site = {};
   if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
     site.name = bidderRequest.refererInfo.domain;
@@ -122,30 +122,30 @@ function getSite(bidderRequest) {
   }
   return site;
 }
-// Function to format response
-function formatResponse(bid) {
+// Function to create response
+function buildResponse(bid) {
   return {
     requestId: bid && bid.impid ? bid.impid : undefined,
-    cpm: bid && bid.price ? bid.price : 0.0,
     width: bid && bid.w ? bid.w : 0,
     height: bid && bid.h ? bid.h : 0,
+    cpm: bid && bid.price ? bid.price : 0.0,
     ad: bid && bid.adm ? bid.adm : '',
+    creativeId: bid && bid.crid ? bid.crid : undefined,
     meta: {
       advertiserDomains: bid && bid.adomain ? bid.adomain : []
     },
-    creativeId: bid && bid.crid ? bid.crid : undefined,
     netRevenue: false,
     currency: bid && bid.cur ? bid.cur : 'USD',
-    ttl: 300,
-    dealId: bid && bid.dealId ? bid.dealId : undefined
+    dealId: bid && bid.dealId ? bid.dealId : undefined,
+    ttl: 300
   };
 }
 // Function to build the user object
-function buildUser(bid) {
+function setUser(bid) {
   if (bid && bid.params) {
     return {
-      id: bid.params.user_id && typeof bid.params.user_id == 'string' ? bid.params.user_id : '',
       buyeruid: localStorage.getItem('adx_profile_guid') ? localStorage.getItem('adx_profile_guid') : '',
+      id: bid.params.user_id && typeof bid.params.user_id == 'string' ? bid.params.user_id : '',
       keywords: bid.params.keywords && typeof bid.params.keywords == 'string' ? bid.params.keywords : '',
       customdata: bid.params.customdata && typeof bid.params.customdata == 'string' ? bid.params.customdata : ''
     };
