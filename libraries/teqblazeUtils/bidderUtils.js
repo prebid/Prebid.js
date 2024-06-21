@@ -1,6 +1,8 @@
 import { BANNER, NATIVE, VIDEO } from '../../src/mediaTypes.js';
-import { deepAccess, logMessage } from '../../src/utils.js';
+import { deepAccess } from '../../src/utils.js';
 import { config } from '../../src/config.js';
+
+const PROTOCOL_PATTERN = /^[a-z0-9.+-]+:/i;
 
 const isBidResponseValid = (bid) => {
   if (!bid.requestId || !bid.cpm || !bid.creativeId || !bid.ttl || !bid.currency) {
@@ -19,10 +21,23 @@ const isBidResponseValid = (bid) => {
   }
 };
 
-const getPlacementReqData = (bid) => {
-  const { params, bidId, mediaTypes, transactionId, userIdAsEids } = bid;
+const getBidFloor = (bid) => {
+  try {
+    const bidFloor = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*',
+    });
+
+    return bidFloor.floor;
+  } catch (err) {
+    return 0;
+  }
+};
+
+const createBasePlacement = (bid) => {
+  const { bidId, mediaTypes, transactionId, userIdAsEids } = bid;
   const schain = bid.schain || {};
-  const { placementId, endpointId } = params;
   const bidfloor = getBidFloor(bid);
 
   const placement = {
@@ -30,14 +45,6 @@ const getPlacementReqData = (bid) => {
     schain,
     bidfloor
   };
-
-  if (placementId) {
-    placement.placementId = placementId;
-    placement.type = 'publisher';
-  } else if (endpointId) {
-    placement.endpointId = endpointId;
-    placement.type = 'network';
-  }
 
   if (mediaTypes && mediaTypes[BANNER]) {
     placement.adFormat = BANNER;
@@ -50,6 +57,7 @@ const getPlacementReqData = (bid) => {
     placement.mimes = mediaTypes[VIDEO].mimes;
     placement.protocols = mediaTypes[VIDEO].protocols;
     placement.startdelay = mediaTypes[VIDEO].startdelay;
+    placement.placement = mediaTypes[VIDEO].placement;
     placement.plcmt = mediaTypes[VIDEO].plcmt;
     placement.skip = mediaTypes[VIDEO].skip;
     placement.skipafter = mediaTypes[VIDEO].skipafter;
@@ -76,17 +84,15 @@ const getPlacementReqData = (bid) => {
   return placement;
 };
 
-const getBidFloor = (bid) => {
-  try {
-    const bidFloor = bid.getFloor({
-      currency: 'USD',
-      mediaType: '*',
-      size: '*',
-    });
+const defaultPlacementType = (bid, bidderRequest, placement) => {
+  const { placementId, endpointId } = bid.params;
 
-    return bidFloor.floor;
-  } catch (err) {
-    return 0;
+  if (placementId) {
+    placement.placementId = placementId;
+    placement.type = 'publisher';
+  } else if (endpointId) {
+    placement.endpointId = endpointId;
+    placement.type = 'network';
   }
 };
 
@@ -107,25 +113,27 @@ export const isBidRequestValid = (bid = {}) => {
   return valid;
 };
 
-export const buildRequests = (adUrl) => (validBidRequests = [], bidderRequest = {}) => {
+/**
+ * @param {{ adUrl, validBidRequests, bidderRequest, placementProcessingFunction }} config
+ * @returns {function}
+ */
+export const buildRequestsBase = (config) => {
+  const { adUrl, validBidRequests, bidderRequest } = config;
+  const placementProcessingFunction = config.placementProcessingFunction || buildPlacementProcessingFunction();
   const device = deepAccess(bidderRequest, 'ortb2.device');
   const page = deepAccess(bidderRequest, 'refererInfo.page', '');
 
-  let pageURL;
-  try {
-    pageURL = page && new URL(page);
-  } catch (e) {
-    logMessage(e);
-  }
+  const proto = PROTOCOL_PATTERN.exec(page);
+  const protocol = proto?.[0];
 
   const placements = [];
   const request = {
     deviceWidth: device?.w || 0,
     deviceHeight: device?.h || 0,
     language: device?.language?.split('-')[0] || '',
-    secure: pageURL.protocol === 'https:' ? 1 : 0,
-    host: pageURL.host,
-    page: pageURL.href,
+    secure: protocol === 'https:' ? 1 : 0,
+    host: deepAccess(bidderRequest, 'refererInfo.domain', ''),
+    page,
     placements,
     coppa: deepAccess(bidderRequest, 'ortb2.regs.coppa') ? 1 : 0,
     tmax: bidderRequest.timeout
@@ -152,7 +160,7 @@ export const buildRequests = (adUrl) => (validBidRequests = [], bidderRequest = 
   const len = validBidRequests.length;
   for (let i = 0; i < len; i++) {
     const bid = validBidRequests[i];
-    placements.push(getPlacementReqData(bid));
+    placements.push(placementProcessingFunction(bid, bidderRequest));
   }
 
   return {
@@ -160,6 +168,10 @@ export const buildRequests = (adUrl) => (validBidRequests = [], bidderRequest = 
     url: adUrl,
     data: request
   };
+};
+
+export const buildRequests = (adUrl) => (validBidRequests = [], bidderRequest = {}) => {
+  return buildRequestsBase({ adUrl, validBidRequests, bidderRequest });
 };
 
 export const interpretResponse = (serverResponse) => {
@@ -178,7 +190,7 @@ export const interpretResponse = (serverResponse) => {
 };
 
 export const getUserSyncs = (syncUrl) => (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
-  let type = syncOptions.iframeEnabled ? 'iframe' : 'image';
+  const type = syncOptions.iframeEnabled ? 'iframe' : 'image';
   let url = syncUrl + `/${type}?pbjs=1`;
 
   if (gdprConsent && gdprConsent.consentString) {
@@ -205,4 +217,23 @@ export const getUserSyncs = (syncUrl) => (syncOptions, serverResponses, gdprCons
     type,
     url
   }];
+};
+
+/**
+ *
+ * @param {{ addPlacementType?: function, addCustomFieldsToPlacement?: function }} [config]
+ * @returns {function(object, object): object}
+ */
+export const buildPlacementProcessingFunction = (config) => (bid, bidderRequest) => {
+  const addPlacementType = config?.addPlacementType ?? defaultPlacementType;
+
+  const placement = createBasePlacement(bid);
+
+  addPlacementType(bid, bidderRequest, placement);
+
+  if (config?.addCustomFieldsToPlacement) {
+    config.addCustomFieldsToPlacement(bid, bidderRequest, placement);
+  }
+
+  return placement;
 };
