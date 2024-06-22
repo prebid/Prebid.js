@@ -11,7 +11,7 @@ export const spec = {
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  isBidRequestValid,
+  isBidRequestValid: isBidRequestValid(),
   buildRequests: buildRequests(AD_URL),
   interpretResponse
 };

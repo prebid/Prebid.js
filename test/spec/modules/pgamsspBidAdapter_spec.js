@@ -3,7 +3,7 @@ import { spec } from '../../../modules/pgamsspBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
-const bidder = 'pgamssp'
+const bidder = 'pgamssp';
 
 describe('PGAMBidAdapter', function () {
   const userIdAsEids = [{
@@ -26,7 +26,7 @@ describe('PGAMBidAdapter', function () {
         }
       },
       params: {
-        placementId: 'testBanner',
+        placementId: 'testBanner'
       },
       userIdAsEids
     },

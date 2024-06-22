@@ -13,6 +13,7 @@ const AD_URL = 'https://ads4.krushmedia.com/?c=rtb&m=hb';
 const SYNC_URL = 'https://cs.krushmedia.com';
 
 const addCustomFieldsToPlacement = (bid, bidderRequest, placement) => {
+  placement.key = bid.params.key;
   placement.traffic = placement.adFormat;
   if (placement.adFormat === VIDEO) {
     placement.wPlayer = placement.playerSize?.[0]?.[0];
@@ -30,7 +31,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  isBidRequestValid,
+  isBidRequestValid: isBidRequestValid(['key']),
   buildRequests,
   interpretResponse,
   getUserSyncs: getUserSyncs(SYNC_URL)

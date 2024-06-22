@@ -26,7 +26,7 @@ describe('KrushmediabBidAdapter', function () {
         }
       },
       params: {
-        placementId: 'testBanner'
+        key: 783
       },
       userIdAsEids
     },
@@ -41,7 +41,7 @@ describe('KrushmediabBidAdapter', function () {
         }
       },
       params: {
-        placementId: 'testVideo'
+        key: 783
       },
       userIdAsEids
     },
@@ -65,7 +65,7 @@ describe('KrushmediabBidAdapter', function () {
         }
       },
       params: {
-        placementId: 'testNative'
+        key: 783
       },
       userIdAsEids
     }
@@ -164,12 +164,11 @@ describe('KrushmediabBidAdapter', function () {
 
       for (let i = 0, len = placements.length; i < len; i++) {
         const placement = placements[i];
-        expect(placement.placementId).to.be.oneOf(['testBanner', 'testVideo', 'testNative']);
+        expect(placement.key).to.be.equal(783);
         expect(placement.traffic).to.be.oneOf([BANNER, VIDEO, NATIVE]);
         expect(placement.bidId).to.be.a('string');
         expect(placement.schain).to.be.an('object');
         expect(placement.bidfloor).to.exist.and.to.equal(0);
-        expect(placement.type).to.exist.and.to.equal('publisher');
         expect(placement.eids).to.exist.and.to.be.deep.equal(userIdAsEids);
 
         if (placement.traffic === BANNER) {

@@ -29,7 +29,7 @@ describe('TeqBlazeBidderUtils', function () {
         }
       },
       params: {
-        placementId: 'testBanner',
+        placementId: 'testBanner'
       },
       userIdAsEids
     },
@@ -44,7 +44,7 @@ describe('TeqBlazeBidderUtils', function () {
         }
       },
       params: {
-        placementId: 'testVideo',
+        placementId: 'testVideo'
       },
       userIdAsEids
     },
@@ -101,14 +101,14 @@ describe('TeqBlazeBidderUtils', function () {
       device: {
         w: 1512,
         h: 982,
-        language: 'en-UK',
+        language: 'en-UK'
       }
     },
     timeout: 500
   };
 
   const spec = {
-    isBidRequestValid,
+    isBidRequestValid: isBidRequestValid(),
     buildRequests: buildRequests(AD_URL),
     interpretResponse,
     getUserSyncs: getUserSyncs(SYNC_URL)

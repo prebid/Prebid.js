@@ -42,7 +42,7 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  isBidRequestValid,
+  isBidRequestValid: isBidRequestValid(['placementId']),
   buildRequests,
   interpretResponse,
   getUserSyncs: getUserSyncs(SYNC_URL)

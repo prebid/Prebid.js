@@ -4,6 +4,7 @@ import {
   isBidRequestValid,
   buildRequestsBase,
   interpretResponse,
+  getUserSyncs,
   buildPlacementProcessingFunction,
 } from '../libraries/teqblazeUtils/bidderUtils.js';
 
@@ -28,16 +29,10 @@ export const spec = {
   code: BIDDER_CODE,
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
-  isBidRequestValid,
+  isBidRequestValid: isBidRequestValid(),
   buildRequests,
   interpretResponse,
-
-  getUserSyncs: () => {
-    return [{
-      type: 'image',
-      url: SYNC_URL
-    }];
-  }
+  getUserSyncs: getUserSyncs(SYNC_URL)
 };
 
 registerBidder(spec);

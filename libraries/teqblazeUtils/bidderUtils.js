@@ -96,9 +96,21 @@ const defaultPlacementType = (bid, bidderRequest, placement) => {
   }
 };
 
-export const isBidRequestValid = (bid = {}) => {
+const checkIfObjectHasKey = (keys, obj, mode = 'some') => {
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i];
+    const val = obj[key];
+
+    if (mode === 'some' && val) return true;
+    if (!val) return false;
+  }
+
+  return mode === 'every';
+}
+
+export const isBidRequestValid = (keys = ['placementId', 'endpointId'], mode) => (bid = {}) => {
   const { params, bidId, mediaTypes } = bid;
-  let valid = Boolean(bidId && params && (params.placementId || params.endpointId));
+  let valid = Boolean(bidId && params && checkIfObjectHasKey(keys, params, mode));
 
   if (mediaTypes && mediaTypes[BANNER]) {
     valid = valid && Boolean(mediaTypes[BANNER] && mediaTypes[BANNER].sizes);
