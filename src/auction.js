@@ -163,10 +163,16 @@ export function newAuction({adUnits, adUnitCodes, callback, cbTimeout, labels, a
   let _nonBids = [];
 
   function addBidRequests(bidderRequests) { _bidderRequests = _bidderRequests.concat(bidderRequests); }
-  function addBidReceived(bidsReceived) { _bidsReceived = _bidsReceived.concat(bidsReceived); }
+  function addBidReceived(bidResponse) { _bidsReceived = _bidsReceived.concat(bidResponse); purgeBidOnExpiration(bidResponse); }
   function addBidRejected(bidsRejected) { _bidsRejected = _bidsRejected.concat(bidsRejected); }
   function addNoBid(noBid) { _noBids = _noBids.concat(noBid); }
   function addNonBids(seatnonbids) { _nonBids = _nonBids.concat(seatnonbids); }
+
+  function purgeBidOnExpiration(bidResponse) {
+    setTimeout(() => {
+      _bidsReceived = _bidsReceived.filter(bid => bid.adId !== bidResponse.adId);
+    }, bidResponse.ttl * 1000);
+  }
 
   function getProperties() {
     return {
