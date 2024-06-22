@@ -13,11 +13,6 @@ const BIDDER_CODE = 'adprime';
 const AD_URL = 'https://delta.adprime.com/pbjs';
 const SYNC_URL = 'https://sync.adprime.com';
 
-const addPlacementType = (bid, bidderRequest, placement) => {
-  placement.placementId = bid.params.placementId;
-  placement.type = 'publisher';
-};
-
 const addCustomFieldsToPlacement = (bid, bidderRequest, placement) => {
   if (placement.adFormat === VIDEO) {
     placement.wPlayer = placement.playerSize?.[0]?.[0];
@@ -32,7 +27,7 @@ const addCustomFieldsToPlacement = (bid, bidderRequest, placement) => {
   placement.audiences = bid.params.audiences || [];
 };
 
-const placementProcessingFunction = buildPlacementProcessingFunction({ addPlacementType, addCustomFieldsToPlacement });
+const placementProcessingFunction = buildPlacementProcessingFunction({ addCustomFieldsToPlacement });
 
 const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
   return buildRequestsBase({ adUrl: AD_URL, validBidRequests, bidderRequest, placementProcessingFunction });

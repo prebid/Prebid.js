@@ -15,11 +15,6 @@ const BIDDER_CODE = 'adman';
 const AD_URL = 'https://pub.admanmedia.com/?c=o&m=multi';
 const SYNC_URL = 'https://sync.admanmedia.com';
 
-const addPlacementType = (bid, bidderRequest, placement) => {
-  placement.placementId = bid.params.placementId;
-  placement.type = 'publisher';
-};
-
 const addCustomFieldsToPlacement = (bid, bidderRequest, placement) => {
   placement.traffic = placement.adFormat;
 
@@ -29,7 +24,7 @@ const addCustomFieldsToPlacement = (bid, bidderRequest, placement) => {
   }
 };
 
-const placementProcessingFunction = buildPlacementProcessingFunction({ addPlacementType, addCustomFieldsToPlacement });
+const placementProcessingFunction = buildPlacementProcessingFunction({ addCustomFieldsToPlacement });
 
 const buildRequests = (validBidRequests = [], bidderRequest = {}) => {
   const request = buildRequestsBase({ adUrl: AD_URL, validBidRequests, bidderRequest, placementProcessingFunction });

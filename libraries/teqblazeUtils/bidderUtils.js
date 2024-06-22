@@ -183,7 +183,9 @@ export const buildRequestsBase = (config) => {
 };
 
 export const buildRequests = (adUrl) => (validBidRequests = [], bidderRequest = {}) => {
-  return buildRequestsBase({ adUrl, validBidRequests, bidderRequest });
+  const placementProcessingFunction = buildPlacementProcessingFunction();
+
+  return buildRequestsBase({ adUrl, validBidRequests, bidderRequest, placementProcessingFunction });
 };
 
 export const interpretResponse = (serverResponse) => {
