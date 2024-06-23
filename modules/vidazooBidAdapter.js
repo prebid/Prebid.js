@@ -3,11 +3,8 @@ import {
   deepAccess,
   isFn,
   parseSizesInput,
-  parseUrl,
   uniques,
   isArray,
-  formatQS,
-  triggerPixel
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -15,49 +12,37 @@ import {getStorageManager} from '../src/storageManager.js';
 import {bidderSettings} from '../src/bidderSettings.js';
 import {config} from '../src/config.js';
 import {chunk} from '../libraries/chunk/chunk.js';
+import {
+  createSessionId,
+  getTopWindowQueryParams,
+  extractCID,
+  extractPID,
+  extractSubDomain,
+  isBidRequestValid,
+  getStorageItem,
+  getCacheOpt,
+  getUniqueDealId,
+  getNextDealId,
+  hashCode,
+  onBidWon
+} from '../libraries/vidazooUtils/bidderUtils.js';
+import {
+  CURRENCY,
+  TTL_SECONDS,
+  SESSION_ID_KEY,
+  OPT_CACHE_KEY,
+  OPT_TIME_KEY
+} from '../libraries/vidazooUtils/constants.js';
 
 const GVLID = 744;
 const DEFAULT_SUB_DOMAIN = 'prebid';
 const BIDDER_CODE = 'vidazoo';
 const BIDDER_VERSION = '1.0.0';
-const CURRENCY = 'USD';
-const TTL_SECONDS = 60 * 5;
-const DEAL_ID_EXPIRY = 1000 * 60 * 15;
-const UNIQUE_DEAL_ID_EXPIRY = 1000 * 60 * 60;
-const SESSION_ID_KEY = 'vidSid';
-const OPT_CACHE_KEY = 'vdzwopt';
-const OPT_TIME_KEY = 'vdzHum';
-export const webSessionId = 'wsid_' + parseInt(Date.now() * Math.random());
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
-
-function getTopWindowQueryParams() {
-  try {
-    const parsedUrl = parseUrl(window.top.document.URL, {decodeSearchAsString: true});
-    return parsedUrl.search;
-  } catch (e) {
-    return '';
-  }
-}
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const webSessionId = createSessionId();
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.cootlogix.com`;
-}
-
-export function extractCID(params) {
-  return params.cId || params.CID || params.cID || params.CId || params.cid || params.ciD || params.Cid || params.CiD;
-}
-
-export function extractPID(params) {
-  return params.pId || params.PID || params.pID || params.PId || params.pid || params.piD || params.Pid || params.PiD;
-}
-
-export function extractSubDomain(params) {
-  return params.subDomain || params.SubDomain || params.Subdomain || params.subdomain || params.SUBDOMAIN || params.subDOMAIN;
-}
-
-function isBidRequestValid(bid) {
-  const params = bid.params || {};
-  return !!(extractCID(params) && extractPID(params));
 }
 
 function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
@@ -77,12 +62,12 @@ function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout
   const {ext} = params;
   let {bidFloor} = params;
   const hashUrl = hashCode(topWindowUrl);
-  const dealId = getNextDealId(hashUrl);
-  const uniqueDealId = getUniqueDealId(hashUrl);
+  const dealId = getNextDealId(storage, hashUrl);
+  const uniqueDealId = getUniqueDealId(storage, hashUrl);
   const sId = getVidazooSessionId();
   const pId = extractPID(params);
-  const ptrace = getCacheOpt(OPT_CACHE_KEY);
-  const vdzhum = getCacheOpt(OPT_TIME_KEY);
+  const ptrace = getCacheOpt(storage, OPT_CACHE_KEY);
+  const vdzhum = getCacheOpt(storage, OPT_TIME_KEY);
   const isStorageAllowed = bidderSettings.get(BIDDER_CODE, 'storageAllowed');
 
   const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', '');
@@ -373,118 +358,8 @@ function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '',
   return syncs;
 }
 
-/**
- * @param {Bid} bid
- */
-function onBidWon(bid) {
-  if (!bid.nurl) {
-    return;
-  }
-  const wonBid = {
-    adId: bid.adId,
-    creativeId: bid.creativeId,
-    auctionId: bid.auctionId,
-    transactionId: bid.transactionId,
-    adUnitCode: bid.adUnitCode,
-    cpm: bid.cpm,
-    currency: bid.currency,
-    originalCpm: bid.originalCpm,
-    originalCurrency: bid.originalCurrency,
-    netRevenue: bid.netRevenue,
-    mediaType: bid.mediaType,
-    timeToRespond: bid.timeToRespond,
-    status: bid.status,
-  };
-  const qs = formatQS(wonBid);
-  const url = bid.nurl + (bid.nurl.indexOf('?') === -1 ? '?' : '&') + qs;
-  triggerPixel(url);
-}
-
-export function hashCode(s, prefix = '_') {
-  const l = s.length;
-  let h = 0
-  let i = 0;
-  if (l > 0) {
-    while (i < l) {
-      h = (h << 5) - h + s.charCodeAt(i++) | 0;
-    }
-  }
-  return prefix + h;
-}
-
-export function getNextDealId(key, expiry = DEAL_ID_EXPIRY) {
-  try {
-    const data = getStorageItem(key);
-    let currentValue = 0;
-    let timestamp;
-
-    if (data && data.value && Date.now() - data.created < expiry) {
-      currentValue = data.value;
-      timestamp = data.created;
-    }
-
-    const nextValue = currentValue + 1;
-    setStorageItem(key, nextValue, timestamp);
-    return nextValue;
-  } catch (e) {
-    return 0;
-  }
-}
-
-export function getUniqueDealId(key, expiry = UNIQUE_DEAL_ID_EXPIRY) {
-  const storageKey = `u_${key}`;
-  const now = Date.now();
-  const data = getStorageItem(storageKey);
-  let uniqueId;
-
-  if (!data || !data.value || now - data.created > expiry) {
-    uniqueId = `${key}_${now.toString()}`;
-    setStorageItem(storageKey, uniqueId);
-  } else {
-    uniqueId = data.value;
-  }
-
-  return uniqueId;
-}
-
 export function getVidazooSessionId() {
-  return getStorageItem(SESSION_ID_KEY) || '';
-}
-
-export function getCacheOpt(useKey) {
-  let data = storage.getDataFromLocalStorage(useKey, null);
-  if (!data) {
-    data = String(Date.now());
-    storage.setDataInLocalStorage(useKey, data, null);
-  }
-
-  return data;
-}
-
-export function getStorageItem(key) {
-  try {
-    return tryParseJSON(storage.getDataFromLocalStorage(key, null));
-  } catch (e) {
-  }
-
-  return null;
-}
-
-export function setStorageItem(key, value, timestamp) {
-  try {
-    const created = timestamp || Date.now();
-    const data = JSON.stringify({value, created});
-    storage.setDataInLocalStorage(key, data);
-  } catch (e) {
-  }
-}
-
-export function tryParseJSON(value) {
-  try {
-    return JSON.parse(value);
-  } catch (e) {
-    return value;
-  }
+  return getStorageItem(storage, SESSION_ID_KEY) || '';
 }
 
 export const spec = {
