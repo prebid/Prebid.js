@@ -825,6 +825,20 @@ describe('S2S Adapter', function () {
         })
       })
     })
+    
+    it('should set customHeaders correctly when publisher has provided it', () => {
+      let configWithCustomHeaders = utils.deepClone(CONFIG);
+      configWithCustomHeaders.customHeaders = { customHeader1: 'customHeader1Value' };
+      config.setConfig({ s2sConfig: configWithCustomHeaders });
+
+      let reqWithNewConfig = utils.deepClone(REQUEST);
+      reqWithNewConfig.s2sConfig = configWithCustomHeaders;
+
+      adapter.callBids(reqWithNewConfig, BID_REQUESTS, addBidResponse, done, ajax);
+      const reqHeaders = server.requests[0].requestHeaders
+      expect(reqHeaders.customHeader1).to.exist;
+      expect(reqHeaders.customHeader1).to.equal('customHeader1Value');
+    });
 
     it('should block request if config did not define p1Consent URL in endpoint object config', function () {
       let badConfig = utils.deepClone(CONFIG);

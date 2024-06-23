@@ -24,11 +24,7 @@ let events = {
 };
 
 function getStorage() {
-  try {
-    return window.top['sessionStorage'];
-  } catch (e) {
-    return null;
-  }
+  return null;
 }
 
 var pubxaiAnalyticsAdapter = Object.assign(adapter(
