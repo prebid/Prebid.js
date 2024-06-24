@@ -1,6 +1,6 @@
 import { submodule } from '../src/hook.js';
 import { ajaxBuilder } from '../src/ajax.js';
-export const MOBIAN_URL = 'http://impact-analytics-staging.themobian.com';
+export const MOBIAN_URL = 'https://impact-api-prod.themobian.com/brand_safety';
 
 export const mobianBrandSafetySubmodule = {
   name: 'mobianBrandSafety',
@@ -15,7 +15,7 @@ function init() {
 function getBidRequestData(bidReqConfig, callback, config) {
   const { site: ortb2Site } = bidReqConfig.ortb2Fragments.global;
   const pageUrl = encodeURIComponent(getPageUrl());
-  const requestUrl = `${MOBIAN_URL}?url=${pageUrl}`;
+  const requestUrl = `${MOBIAN_URL}/by_url?url=${pageUrl}`;
 
   const ajax = ajaxBuilder();
 
