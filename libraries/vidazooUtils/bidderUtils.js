@@ -1,4 +1,15 @@
-import {_each, deepAccess, formatQS, isFn, parseUrl, triggerPixel, uniques} from '../../src/utils.js';
+import {
+  _each,
+  deepAccess,
+  formatQS,
+  isArray,
+  isFn,
+  parseSizesInput,
+  parseUrl,
+  triggerPixel,
+  uniques
+} from '../../src/utils.js';
+import {chunk} from '../chunk/chunk.js';
 import {CURRENCY, DEAL_ID_EXPIRY, SESSION_ID_KEY, TTL_SECONDS, UNIQUE_DEAL_ID_EXPIRY} from './constants.js';
 import {bidderSettings} from '../../src/bidderSettings.js';
 import {config} from '../../src/config.js';
@@ -396,5 +407,75 @@ export function createInterpretResponseFn(bidderCode) {
     } catch (e) {
       return [];
     }
+  }
+}
+
+export function createBuildRequestsFn(createRequestDomain, createUniqueRequestData, webSessionId, storage, bidderCode, bidderVersion) {
+  function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
+    const {params} = bid;
+    const cId = extractCID(params);
+    const subDomain = extractSubDomain(params);
+    const data = buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, webSessionId, storage, bidderVersion, bidderCode, createUniqueRequestData);
+    const dto = {
+      method: 'POST', url: `${createRequestDomain(subDomain)}/prebid/multi/${cId}`, data: data
+    };
+    return dto;
+  }
+
+  function buildSingleRequest(bidRequests, bidderRequest, topWindowUrl, bidderTimeout) {
+    const {params} = bidRequests[0];
+    const cId = extractCID(params);
+    const subDomain = extractSubDomain(params);
+    const data = bidRequests.map(bid => {
+      const sizes = parseSizesInput(bid.sizes);
+      return buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, webSessionId, storage, bidderVersion, bidderCode, createUniqueRequestData)
+    });
+    const chunkSize = Math.min(20, config.getConfig(`${bidderCode}.chunkSize`) || 10);
+
+    const chunkedData = chunk(data, chunkSize);
+    return chunkedData.map(chunk => {
+      return {
+        method: 'POST',
+        url: `${createRequestDomain(subDomain)}/prebid/multi/${cId}`,
+        data: {
+          bids: chunk
+        }
+      };
+    });
+  }
+
+  return function buildRequests(validBidRequests, bidderRequest) {
+    // TODO: does the fallback make sense here?
+    const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
+    const bidderTimeout = config.getConfig('bidderTimeout');
+
+    const singleRequestMode = config.getConfig('vidazoo.singleRequest');
+
+    const requests = [];
+
+    if (singleRequestMode) {
+      // banner bids are sent as a single request
+      const bannerBidRequests = validBidRequests.filter(bid => isArray(bid.mediaTypes) ? bid.mediaTypes.includes(BANNER) : bid.mediaTypes[BANNER] !== undefined);
+      if (bannerBidRequests.length > 0) {
+        const singleRequests = buildSingleRequest(bannerBidRequests, bidderRequest, topWindowUrl, bidderTimeout);
+        requests.push(...singleRequests);
+      }
+
+      // video bids are sent as a single request for each bid
+
+      const videoBidRequests = validBidRequests.filter(bid => bid.mediaTypes[VIDEO] !== undefined);
+      videoBidRequests.forEach(validBidRequest => {
+        const sizes = parseSizesInput(validBidRequest.sizes);
+        const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);
+        requests.push(request);
+      });
+    } else {
+      validBidRequests.forEach(validBidRequest => {
+        const sizes = parseSizesInput(validBidRequest.sizes);
+        const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);
+        requests.push(request);
+      });
+    }
+    return requests;
   }
 }

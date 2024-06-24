@@ -1,20 +1,15 @@
-import {parseSizesInput, isArray} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {config} from '../src/config.js';
-import {chunk} from '../libraries/chunk/chunk.js';
 import {
   createSessionId,
-  extractCID,
-  extractSubDomain,
   isBidRequestValid,
   getCacheOpt,
   getNextDealId,
   onBidWon,
   createUserSyncGetter,
   getVidazooSessionId,
-  buildRequestData,
+  createBuildRequestsFn,
   createInterpretResponseFn
 } from '../libraries/vidazooUtils/bidderUtils.js';
 import {OPT_CACHE_KEY, OPT_TIME_KEY} from '../libraries/vidazooUtils/constants.js';
@@ -30,7 +25,7 @@ export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.cootlogix.com`;
 }
 
-function getUniqueRequestData(hashUrl) {
+function createUniqueRequestData(hashUrl) {
   const dealId = getNextDealId(storage, hashUrl);
   const sessionId = getVidazooSessionId(storage);
   const ptrace = getCacheOpt(storage, OPT_CACHE_KEY);
@@ -41,76 +36,8 @@ function getUniqueRequestData(hashUrl) {
   };
 }
 
-function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
-  const {params} = bid;
-  const cId = extractCID(params);
-  const subDomain = extractSubDomain(params);
-  const data = buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, webSessionId, storage, BIDDER_VERSION, BIDDER_CODE, getUniqueRequestData);
-  const dto = {
-    method: 'POST', url: `${createDomain(subDomain)}/prebid/multi/${cId}`, data: data
-  };
-  return dto;
-}
-
-function buildSingleRequest(bidRequests, bidderRequest, topWindowUrl, bidderTimeout) {
-  const {params} = bidRequests[0];
-  const cId = extractCID(params);
-  const subDomain = extractSubDomain(params);
-  const data = bidRequests.map(bid => {
-    const sizes = parseSizesInput(bid.sizes);
-    return buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, webSessionId, storage, BIDDER_VERSION, BIDDER_CODE, getUniqueRequestData)
-  });
-  const chunkSize = Math.min(20, config.getConfig('vidazoo.chunkSize') || 10);
-
-  const chunkedData = chunk(data, chunkSize);
-  return chunkedData.map(chunk => {
-    return {
-      method: 'POST',
-      url: `${createDomain(subDomain)}/prebid/multi/${cId}`,
-      data: {
-        bids: chunk
-      }
-    };
-  });
-}
-
-function buildRequests(validBidRequests, bidderRequest) {
-  // TODO: does the fallback make sense here?
-  const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
-  const bidderTimeout = config.getConfig('bidderTimeout');
-
-  const singleRequestMode = config.getConfig('vidazoo.singleRequest');
-
-  const requests = [];
-
-  if (singleRequestMode) {
-    // banner bids are sent as a single request
-    const bannerBidRequests = validBidRequests.filter(bid => isArray(bid.mediaTypes) ? bid.mediaTypes.includes(BANNER) : bid.mediaTypes[BANNER] !== undefined);
-    if (bannerBidRequests.length > 0) {
-      const singleRequests = buildSingleRequest(bannerBidRequests, bidderRequest, topWindowUrl, bidderTimeout);
-      requests.push(...singleRequests);
-    }
-
-    // video bids are sent as a single request for each bid
-
-    const videoBidRequests = validBidRequests.filter(bid => bid.mediaTypes[VIDEO] !== undefined);
-    videoBidRequests.forEach(validBidRequest => {
-      const sizes = parseSizesInput(validBidRequest.sizes);
-      const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);
-      requests.push(request);
-    });
-  } else {
-    validBidRequests.forEach(validBidRequest => {
-      const sizes = parseSizesInput(validBidRequest.sizes);
-      const request = buildRequest(validBidRequest, topWindowUrl, sizes, bidderRequest, bidderTimeout);
-      requests.push(request);
-    });
-  }
-  return requests;
-}
-
+const buildRequests = createBuildRequestsFn(createDomain, createUniqueRequestData, webSessionId, storage, BIDDER_CODE, BIDDER_VERSION);
 const interpretResponse = createInterpretResponseFn(BIDDER_CODE);
-
 const getUserSyncs = createUserSyncGetter({
   iframeSyncUrl: 'https://sync.cootlogix.com/api/sync/iframe', imageSyncUrl: 'https://sync.cootlogix.com/api/sync/image'
 });
