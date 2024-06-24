@@ -628,6 +628,33 @@ describe('Seedtag Adapter', function () {
         expect(data.badv).to.be.undefined;
       });
     });
+
+    describe("device.sua param", function () {
+      it('should add device.sua param to payload when bidderRequest has ortb2 device.sua info', function () {
+        const sua = 1
+        var ortb2 = {
+          device: {
+            sua: sua
+          }
+        }
+        bidderRequest['ortb2'] = ortb2
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.device.sua).to.equal(sua);
+      });
+
+      it('should not add device.sua param to payload when bidderRequest does not have ortb2 device.sua info', function () {
+        var ortb2 = {
+          device: {}
+        }
+        bidderRequest['ortb2'] = ortb2
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.device.sua).to.be.undefined;
+      });
+    });
   })
   describe('interpret response method', function () {
     it('should return a void array, when the server response are not correct.', function () {
