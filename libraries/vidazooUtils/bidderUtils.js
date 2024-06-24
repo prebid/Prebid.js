@@ -1,6 +1,8 @@
 import {_each, deepAccess, formatQS, isFn, parseUrl, triggerPixel, uniques} from '../../src/utils.js';
-import {DEAL_ID_EXPIRY, SESSION_ID_KEY, UNIQUE_DEAL_ID_EXPIRY} from './constants.js';
+import {CURRENCY, DEAL_ID_EXPIRY, SESSION_ID_KEY, TTL_SECONDS, UNIQUE_DEAL_ID_EXPIRY} from './constants.js';
 import {bidderSettings} from '../../src/bidderSettings.js';
+import {config} from '../../src/config.js';
+import {BANNER, VIDEO} from '../../src/mediaTypes.js';
 
 export function createSessionId() {
   return 'wsid_' + parseInt(Date.now() * Math.random());
@@ -316,4 +318,83 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   });
 
   return data;
+}
+
+export function createInterpretResponseFn(bidderCode) {
+  return function interpretResponse(serverResponse, request) {
+    if (!serverResponse || !serverResponse.body) {
+      return [];
+    }
+
+    const singleRequestMode = config.getConfig(`${bidderCode}.singleRequest`);
+    const reqBidId = deepAccess(request, 'data.bidId');
+    const {results} = serverResponse.body;
+
+    let output = [];
+
+    try {
+      results.forEach((result, i) => {
+        const {
+          creativeId,
+          ad,
+          price,
+          exp,
+          width,
+          height,
+          currency,
+          bidId,
+          nurl,
+          advertiserDomains,
+          metaData,
+          mediaType = BANNER
+        } = result;
+        if (!ad || !price) {
+          return;
+        }
+
+        const response = {
+          requestId: (singleRequestMode && bidId) ? bidId : reqBidId,
+          cpm: price,
+          width: width,
+          height: height,
+          creativeId: creativeId,
+          currency: currency || CURRENCY,
+          netRevenue: true,
+          ttl: exp || TTL_SECONDS,
+        };
+
+        if (nurl) {
+          response.nurl = nurl;
+        }
+
+        if (metaData) {
+          Object.assign(response, {
+            meta: metaData
+          })
+        } else {
+          Object.assign(response, {
+            meta: {
+              advertiserDomains: advertiserDomains || []
+            }
+          })
+        }
+
+        if (mediaType === BANNER) {
+          Object.assign(response, {
+            ad: ad,
+          });
+        } else {
+          Object.assign(response, {
+            vastXml: ad,
+            mediaType: VIDEO
+          });
+        }
+        output.push(response);
+      });
+
+      return output;
+    } catch (e) {
+      return [];
+    }
+  }
 }

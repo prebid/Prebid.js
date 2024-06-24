@@ -1,8 +1,4 @@
-import {
-  deepAccess,
-  parseSizesInput,
-  isArray,
-} from '../src/utils.js';
+import {parseSizesInput, isArray} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
@@ -18,14 +14,10 @@ import {
   onBidWon,
   createUserSyncGetter,
   getVidazooSessionId,
-  buildRequestData
+  buildRequestData,
+  createInterpretResponseFn
 } from '../libraries/vidazooUtils/bidderUtils.js';
-import {
-  CURRENCY,
-  TTL_SECONDS,
-  OPT_CACHE_KEY,
-  OPT_TIME_KEY
-} from '../libraries/vidazooUtils/constants.js';
+import {OPT_CACHE_KEY, OPT_TIME_KEY} from '../libraries/vidazooUtils/constants.js';
 
 const GVLID = 744;
 const DEFAULT_SUB_DOMAIN = 'prebid';
@@ -45,10 +37,7 @@ function getUniqueRequestData(hashUrl) {
   const vdzhum = getCacheOpt(storage, OPT_TIME_KEY);
 
   return {
-    dealId: dealId,
-    sessionId: sessionId,
-    ptrace: ptrace,
-    vdzhum: vdzhum
+    dealId: dealId, sessionId: sessionId, ptrace: ptrace, vdzhum: vdzhum
   };
 }
 
@@ -58,9 +47,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
   const subDomain = extractSubDomain(params);
   const data = buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, webSessionId, storage, BIDDER_VERSION, BIDDER_CODE, getUniqueRequestData);
   const dto = {
-    method: 'POST',
-    url: `${createDomain(subDomain)}/prebid/multi/${cId}`,
-    data: data
+    method: 'POST', url: `${createDomain(subDomain)}/prebid/multi/${cId}`, data: data
   };
   return dto;
 }
@@ -122,86 +109,10 @@ function buildRequests(validBidRequests, bidderRequest) {
   return requests;
 }
 
-function interpretResponse(serverResponse, request) {
-  if (!serverResponse || !serverResponse.body) {
-    return [];
-  }
-
-  const singleRequestMode = config.getConfig('vidazoo.singleRequest');
-  const reqBidId = deepAccess(request, 'data.bidId');
-  const {results} = serverResponse.body;
-
-  let output = [];
-
-  try {
-    results.forEach((result, i) => {
-      const {
-        creativeId,
-        ad,
-        price,
-        exp,
-        width,
-        height,
-        currency,
-        bidId,
-        nurl,
-        advertiserDomains,
-        metaData,
-        mediaType = BANNER
-      } = result;
-      if (!ad || !price) {
-        return;
-      }
-
-      const response = {
-        requestId: (singleRequestMode && bidId) ? bidId : reqBidId,
-        cpm: price,
-        width: width,
-        height: height,
-        creativeId: creativeId,
-        currency: currency || CURRENCY,
-        netRevenue: true,
-        ttl: exp || TTL_SECONDS,
-      };
-
-      if (nurl) {
-        response.nurl = nurl;
-      }
-
-      if (metaData) {
-        Object.assign(response, {
-          meta: metaData
-        })
-      } else {
-        Object.assign(response, {
-          meta: {
-            advertiserDomains: advertiserDomains || []
-          }
-        })
-      }
-
-      if (mediaType === BANNER) {
-        Object.assign(response, {
-          ad: ad,
-        });
-      } else {
-        Object.assign(response, {
-          vastXml: ad,
-          mediaType: VIDEO
-        });
-      }
-      output.push(response);
-    });
-
-    return output;
-  } catch (e) {
-    return [];
-  }
-}
+const interpretResponse = createInterpretResponseFn(BIDDER_CODE);
 
 const getUserSyncs = createUserSyncGetter({
-  iframeSyncUrl: 'https://sync.cootlogix.com/api/sync/iframe',
-  imageSyncUrl: 'https://sync.cootlogix.com/api/sync/image'
+  iframeSyncUrl: 'https://sync.cootlogix.com/api/sync/iframe', imageSyncUrl: 'https://sync.cootlogix.com/api/sync/image'
 });
 
 export const spec = {
