@@ -1,28 +1,24 @@
 import {
-  _each,
   deepAccess,
-  isFn,
   parseSizesInput,
   isArray,
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {bidderSettings} from '../src/bidderSettings.js';
 import {config} from '../src/config.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 import {
   createSessionId,
-  getTopWindowQueryParams,
   extractCID,
-  extractPID,
   extractSubDomain,
   isBidRequestValid,
   getCacheOpt,
-  getUniqueDealId,
   getNextDealId,
-  hashCode,
-  onBidWon, createUserSyncGetter, appendUserIdsToRequestPayload, getVidazooSessionId
+  onBidWon,
+  createUserSyncGetter,
+  getVidazooSessionId,
+  buildRequestData
 } from '../libraries/vidazooUtils/bidderUtils.js';
 import {
   CURRENCY,
@@ -42,131 +38,25 @@ export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.cootlogix.com`;
 }
 
-function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
-  const {
-    params,
-    bidId,
-    userId,
-    adUnitCode,
-    schain,
-    mediaTypes,
-    ortb2Imp,
-    bidderRequestId,
-    bidRequestsCount,
-    bidderRequestsCount,
-    bidderWinsCount
-  } = bid;
-  const {ext} = params;
-  let {bidFloor} = params;
-  const hashUrl = hashCode(topWindowUrl);
+function getUniqueRequestData(hashUrl) {
   const dealId = getNextDealId(storage, hashUrl);
-  const uniqueDealId = getUniqueDealId(storage, hashUrl);
-  const sId = getVidazooSessionId(storage);
-  const pId = extractPID(params);
+  const sessionId = getVidazooSessionId(storage);
   const ptrace = getCacheOpt(storage, OPT_CACHE_KEY);
   const vdzhum = getCacheOpt(storage, OPT_TIME_KEY);
-  const isStorageAllowed = bidderSettings.get(BIDDER_CODE, 'storageAllowed');
 
-  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', '');
-  const cat = deepAccess(bidderRequest, 'ortb2.site.cat', []);
-  const pagecat = deepAccess(bidderRequest, 'ortb2.site.pagecat', []);
-  const contentData = deepAccess(bidderRequest, 'ortb2.site.content.data', []);
-  const userData = deepAccess(bidderRequest, 'ortb2.user.data', []);
-
-  if (isFn(bid.getFloor)) {
-    const floorInfo = bid.getFloor({
-      currency: 'USD',
-      mediaType: '*',
-      size: '*'
-    });
-
-    if (floorInfo.currency === 'USD') {
-      bidFloor = floorInfo.floor;
-    }
-  }
-
-  let data = {
-    url: encodeURIComponent(topWindowUrl),
-    uqs: getTopWindowQueryParams(),
-    cb: Date.now(),
-    bidFloor: bidFloor,
-    bidId: bidId,
-    referrer: bidderRequest.refererInfo.ref,
-    adUnitCode: adUnitCode,
-    publisherId: pId,
-    sessionId: sId,
-    sizes: sizes,
+  return {
     dealId: dealId,
-    uniqueDealId: uniqueDealId,
-    bidderVersion: BIDDER_VERSION,
-    prebidVersion: '$prebid.version$',
-    res: `${screen.width}x${screen.height}`,
-    schain: schain,
-    mediaTypes: mediaTypes,
+    sessionId: sessionId,
     ptrace: ptrace,
-    vdzhum: vdzhum,
-    isStorageAllowed: isStorageAllowed,
-    gpid: gpid,
-    cat: cat,
-    contentData,
-    userData: userData,
-    pagecat: pagecat,
-    transactionId: ortb2Imp?.ext?.tid,
-    bidderRequestId: bidderRequestId,
-    bidRequestsCount: bidRequestsCount,
-    bidderRequestsCount: bidderRequestsCount,
-    bidderWinsCount: bidderWinsCount,
-    bidderTimeout: bidderTimeout,
-    webSessionId: webSessionId
+    vdzhum: vdzhum
   };
-
-  appendUserIdsToRequestPayload(data, userId);
-
-  const sua = deepAccess(bidderRequest, 'ortb2.device.sua');
-
-  if (sua) {
-    data.sua = sua;
-  }
-
-  if (bidderRequest.gdprConsent) {
-    if (bidderRequest.gdprConsent.consentString) {
-      data.gdprConsent = bidderRequest.gdprConsent.consentString;
-    }
-    if (bidderRequest.gdprConsent.gdprApplies !== undefined) {
-      data.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
-    }
-  }
-  if (bidderRequest.uspConsent) {
-    data.usPrivacy = bidderRequest.uspConsent;
-  }
-
-  if (bidderRequest.gppConsent) {
-    data.gppString = bidderRequest.gppConsent.gppString;
-    data.gppSid = bidderRequest.gppConsent.applicableSections;
-  } else if (bidderRequest.ortb2?.regs?.gpp) {
-    data.gppString = bidderRequest.ortb2.regs.gpp;
-    data.gppSid = bidderRequest.ortb2.regs.gpp_sid;
-  }
-
-  if (bidderRequest.paapi?.enabled) {
-    const fledge = deepAccess(bidderRequest, 'ortb2Imp.ext.ae');
-    if (fledge) {
-      data.fledge = fledge;
-    }
-  }
-
-  _each(ext, (value, key) => {
-    data['ext.' + key] = value;
-  });
-
-  return data;
 }
 
 function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
   const {params} = bid;
   const cId = extractCID(params);
   const subDomain = extractSubDomain(params);
-  const data = buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout);
+  const data = buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, webSessionId, storage, BIDDER_VERSION, BIDDER_CODE, getUniqueRequestData);
   const dto = {
     method: 'POST',
     url: `${createDomain(subDomain)}/prebid/multi/${cId}`,
@@ -181,7 +71,7 @@ function buildSingleRequest(bidRequests, bidderRequest, topWindowUrl, bidderTime
   const subDomain = extractSubDomain(params);
   const data = bidRequests.map(bid => {
     const sizes = parseSizesInput(bid.sizes);
-    return buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout)
+    return buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, webSessionId, storage, BIDDER_VERSION, BIDDER_CODE, getUniqueRequestData)
   });
   const chunkSize = Math.min(20, config.getConfig('vidazoo.chunkSize') || 10);
 

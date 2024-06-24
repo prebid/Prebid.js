@@ -1,5 +1,6 @@
-import {_each, deepAccess, formatQS, parseUrl, triggerPixel, uniques} from '../../src/utils.js';
+import {_each, deepAccess, formatQS, isFn, parseUrl, triggerPixel, uniques} from '../../src/utils.js';
 import {DEAL_ID_EXPIRY, SESSION_ID_KEY, UNIQUE_DEAL_ID_EXPIRY} from './constants.js';
+import {bidderSettings} from '../../src/bidderSettings.js';
 
 export function createSessionId() {
   return 'wsid_' + parseInt(Date.now() * Math.random());
@@ -201,4 +202,118 @@ export function appendUserIdsToRequestPayload(payloadRef, userIds) {
 
 export function getVidazooSessionId(storage) {
   return getStorageItem(storage, SESSION_ID_KEY) || '';
+}
+
+export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, webSessionId, storage, bidderVersion, bidderCode, getUniqueRequestData) {
+  const {
+    params,
+    bidId,
+    userId,
+    adUnitCode,
+    schain,
+    mediaTypes,
+    ortb2Imp,
+    bidderRequestId,
+    bidRequestsCount,
+    bidderRequestsCount,
+    bidderWinsCount
+  } = bid;
+  const {ext} = params;
+  let {bidFloor} = params;
+  const hashUrl = hashCode(topWindowUrl);
+  const uniqueRequestData = isFn(getUniqueRequestData) ? getUniqueRequestData(hashUrl) : {};
+  const uniqueDealId = getUniqueDealId(storage, hashUrl);
+  const pId = extractPID(params);
+  const isStorageAllowed = bidderSettings.get(bidderCode, 'storageAllowed');
+
+  const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', '');
+  const cat = deepAccess(bidderRequest, 'ortb2.site.cat', []);
+  const pagecat = deepAccess(bidderRequest, 'ortb2.site.pagecat', []);
+  const contentData = deepAccess(bidderRequest, 'ortb2.site.content.data', []);
+  const userData = deepAccess(bidderRequest, 'ortb2.user.data', []);
+
+  if (isFn(bid.getFloor)) {
+    const floorInfo = bid.getFloor({
+      currency: 'USD',
+      mediaType: '*',
+      size: '*'
+    });
+
+    if (floorInfo.currency === 'USD') {
+      bidFloor = floorInfo.floor;
+    }
+  }
+
+  let data = {
+    url: encodeURIComponent(topWindowUrl),
+    uqs: getTopWindowQueryParams(),
+    cb: Date.now(),
+    bidFloor: bidFloor,
+    bidId: bidId,
+    referrer: bidderRequest.refererInfo.ref,
+    adUnitCode: adUnitCode,
+    publisherId: pId,
+    sizes: sizes,
+    uniqueDealId: uniqueDealId,
+    bidderVersion: bidderVersion,
+    prebidVersion: '$prebid.version$',
+    res: `${screen.width}x${screen.height}`,
+    schain: schain,
+    mediaTypes: mediaTypes,
+    isStorageAllowed: isStorageAllowed,
+    gpid: gpid,
+    cat: cat,
+    contentData,
+    userData: userData,
+    pagecat: pagecat,
+    transactionId: ortb2Imp?.ext?.tid,
+    bidderRequestId: bidderRequestId,
+    bidRequestsCount: bidRequestsCount,
+    bidderRequestsCount: bidderRequestsCount,
+    bidderWinsCount: bidderWinsCount,
+    bidderTimeout: bidderTimeout,
+    webSessionId: webSessionId,
+    ...uniqueRequestData
+  };
+
+  appendUserIdsToRequestPayload(data, userId);
+
+  const sua = deepAccess(bidderRequest, 'ortb2.device.sua');
+
+  if (sua) {
+    data.sua = sua;
+  }
+
+  if (bidderRequest.gdprConsent) {
+    if (bidderRequest.gdprConsent.consentString) {
+      data.gdprConsent = bidderRequest.gdprConsent.consentString;
+    }
+    if (bidderRequest.gdprConsent.gdprApplies !== undefined) {
+      data.gdpr = bidderRequest.gdprConsent.gdprApplies ? 1 : 0;
+    }
+  }
+  if (bidderRequest.uspConsent) {
+    data.usPrivacy = bidderRequest.uspConsent;
+  }
+
+  if (bidderRequest.gppConsent) {
+    data.gppString = bidderRequest.gppConsent.gppString;
+    data.gppSid = bidderRequest.gppConsent.applicableSections;
+  } else if (bidderRequest.ortb2?.regs?.gpp) {
+    data.gppString = bidderRequest.ortb2.regs.gpp;
+    data.gppSid = bidderRequest.ortb2.regs.gpp_sid;
+  }
+
+  if (bidderRequest.paapi?.enabled) {
+    const fledge = deepAccess(bidderRequest, 'ortb2Imp.ext.ae');
+    if (fledge) {
+      data.fledge = fledge;
+    }
+  }
+
+  _each(ext, (value, key) => {
+    data['ext.' + key] = value;
+  });
+
+  return data;
 }
