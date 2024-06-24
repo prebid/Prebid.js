@@ -629,7 +629,7 @@ describe('Seedtag Adapter', function () {
       });
     });
 
-    describe("device.sua param", function () {
+    describe('device.sua param', function () {
       it('should add device.sua param to payload when bidderRequest has ortb2 device.sua info', function () {
         const sua = 1
         var ortb2 = {
