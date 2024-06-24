@@ -321,7 +321,8 @@ function bundle(dev, moduleArr) {
 
   // change output filename if argument --tag given
   if (argv.tag && argv.tag.length) {
-    outputFileName = outputFileName.replace(/\.js$/, `.${argv.tag}.js`);
+    const regex = new RegExp(`${ext}$`);
+    outputFileName = outputFileName.replace(regex, `.${argv.tag}${ext}`);
   }
 
   gutil.log('Concatenating files:\n', entries);
