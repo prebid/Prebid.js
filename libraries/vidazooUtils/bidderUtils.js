@@ -1,5 +1,5 @@
-import {formatQS, parseUrl, triggerPixel} from '../../src/utils.js';
-import {DEAL_ID_EXPIRY, UNIQUE_DEAL_ID_EXPIRY} from './constants.js';
+import {_each, deepAccess, formatQS, parseUrl, triggerPixel, uniques} from '../../src/utils.js';
+import {DEAL_ID_EXPIRY, SESSION_ID_KEY, UNIQUE_DEAL_ID_EXPIRY} from './constants.js';
 
 export function createSessionId() {
   return 'wsid_' + parseInt(Date.now() * Math.random());
@@ -136,4 +136,69 @@ export function onBidWon(bid) {
   const qs = formatQS(wonBid);
   const url = bid.nurl + (bid.nurl.indexOf('?') === -1 ? '?' : '&') + qs;
   triggerPixel(url);
+}
+
+/**
+ * Create the spec function for getting user syncs
+ *
+ * The options object accepts the following fields:
+ *
+ *  - iframeSyncUrl
+ *  - imageSyncUrl
+ *
+ * @param options
+ */
+export function createUserSyncGetter(options = {
+  iframeSyncUrl: '',
+  imageSyncUrl: ''
+}) {
+  return function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '', gppConsent = {}) {
+    const syncs = [];
+    const {iframeEnabled, pixelEnabled} = syncOptions;
+    const {gdprApplies, consentString = ''} = gdprConsent;
+    const {gppString, applicableSections} = gppConsent;
+
+    const cidArr = responses.filter(resp => deepAccess(resp, 'body.cid')).map(resp => resp.body.cid).filter(uniques);
+    let params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`;
+
+    if (gppString && applicableSections?.length) {
+      params += '&gpp=' + encodeURIComponent(gppString);
+      params += '&gpp_sid=' + encodeURIComponent(applicableSections.join(','));
+    }
+
+    if (iframeEnabled && options.iframeSyncUrl) {
+      syncs.push({
+        type: 'iframe',
+        url: `${options.iframeSyncUrl}/${params}`
+      });
+    }
+    if (pixelEnabled && options.imageSyncUrl) {
+      syncs.push({
+        type: 'image',
+        url: `${options.imageSyncUrl}/${params}`
+      });
+    }
+    return syncs;
+  }
+}
+
+export function appendUserIdsToRequestPayload(payloadRef, userIds) {
+  let key;
+  _each(userIds, (userId, idSystemProviderName) => {
+    key = `uid.${idSystemProviderName}`;
+    switch (idSystemProviderName) {
+      case 'lipb':
+        payloadRef[key] = userId.lipbid;
+        break;
+      case 'id5id':
+        payloadRef[key] = userId.uid;
+        break;
+      default:
+        payloadRef[key] = userId;
+    }
+  });
+}
+
+export function getVidazooSessionId(storage) {
+  return getStorageItem(storage, SESSION_ID_KEY) || '';
 }

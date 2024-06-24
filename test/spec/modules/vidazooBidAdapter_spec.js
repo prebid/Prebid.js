@@ -3,7 +3,6 @@ import {
   spec as adapter,
   storage,
   createDomain,
-  getVidazooSessionId,
   webSessionId
 } from 'modules/vidazooBidAdapter.js';
 import {
@@ -16,7 +15,8 @@ import {
   tryParseJSON,
   getUniqueDealId,
   getNextDealId,
-  getTopWindowQueryParams
+  getTopWindowQueryParams,
+  getVidazooSessionId
 } from 'libraries/vidazooUtils/bidderUtils.js'
 import * as utils from 'src/utils.js';
 import {version} from 'package.json';
@@ -798,14 +798,14 @@ describe('VidazooBidAdapter', function () {
       $$PREBID_GLOBAL$$.bidderSettings = {};
     });
     it('should get undefined vidazoo session id', function () {
-      const sessionId = getVidazooSessionId();
+      const sessionId = getVidazooSessionId(storage);
       expect(sessionId).to.be.empty;
     });
 
     it('should get vidazoo session id from storage', function () {
       const vidSid = '1234-5678';
       window.localStorage.setItem('vidSid', vidSid);
-      const sessionId = getVidazooSessionId();
+      const sessionId = getVidazooSessionId(storage);
       expect(sessionId).to.be.equal(vidSid);
     });
   });

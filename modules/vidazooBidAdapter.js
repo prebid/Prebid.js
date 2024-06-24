@@ -3,7 +3,6 @@ import {
   deepAccess,
   isFn,
   parseSizesInput,
-  uniques,
   isArray,
 } from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
@@ -19,17 +18,15 @@ import {
   extractPID,
   extractSubDomain,
   isBidRequestValid,
-  getStorageItem,
   getCacheOpt,
   getUniqueDealId,
   getNextDealId,
   hashCode,
-  onBidWon
+  onBidWon, createUserSyncGetter, appendUserIdsToRequestPayload, getVidazooSessionId
 } from '../libraries/vidazooUtils/bidderUtils.js';
 import {
   CURRENCY,
   TTL_SECONDS,
-  SESSION_ID_KEY,
   OPT_CACHE_KEY,
   OPT_TIME_KEY
 } from '../libraries/vidazooUtils/constants.js';
@@ -64,7 +61,7 @@ function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout
   const hashUrl = hashCode(topWindowUrl);
   const dealId = getNextDealId(storage, hashUrl);
   const uniqueDealId = getUniqueDealId(storage, hashUrl);
-  const sId = getVidazooSessionId();
+  const sId = getVidazooSessionId(storage);
   const pId = extractPID(params);
   const ptrace = getCacheOpt(storage, OPT_CACHE_KEY);
   const vdzhum = getCacheOpt(storage, OPT_TIME_KEY);
@@ -200,23 +197,6 @@ function buildSingleRequest(bidRequests, bidderRequest, topWindowUrl, bidderTime
   });
 }
 
-function appendUserIdsToRequestPayload(payloadRef, userIds) {
-  let key;
-  _each(userIds, (userId, idSystemProviderName) => {
-    key = `uid.${idSystemProviderName}`;
-    switch (idSystemProviderName) {
-      case 'lipb':
-        payloadRef[key] = userId.lipbid;
-        break;
-      case 'id5id':
-        payloadRef[key] = userId.uid;
-        break;
-      default:
-        payloadRef[key] = userId;
-    }
-  });
-}
-
 function buildRequests(validBidRequests, bidderRequest) {
   // TODO: does the fallback make sense here?
   const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
@@ -329,38 +309,10 @@ function interpretResponse(serverResponse, request) {
   }
 }
 
-function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '', gppConsent = {}) {
-  let syncs = [];
-  const {iframeEnabled, pixelEnabled} = syncOptions;
-  const {gdprApplies, consentString = ''} = gdprConsent;
-  const {gppString, applicableSections} = gppConsent;
-
-  const cidArr = responses.filter(resp => deepAccess(resp, 'body.cid')).map(resp => resp.body.cid).filter(uniques);
-  let params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`;
-
-  if (gppString && applicableSections?.length) {
-    params += '&gpp=' + encodeURIComponent(gppString);
-    params += '&gpp_sid=' + encodeURIComponent(applicableSections.join(','));
-  }
-
-  if (iframeEnabled) {
-    syncs.push({
-      type: 'iframe',
-      url: `https://sync.cootlogix.com/api/sync/iframe/${params}`
-    });
-  }
-  if (pixelEnabled) {
-    syncs.push({
-      type: 'image',
-      url: `https://sync.cootlogix.com/api/sync/image/${params}`
-    });
-  }
-  return syncs;
-}
-
-export function getVidazooSessionId() {
-  return getStorageItem(storage, SESSION_ID_KEY) || '';
-}
+const getUserSyncs = createUserSyncGetter({
+  iframeSyncUrl: 'https://sync.cootlogix.com/api/sync/iframe',
+  imageSyncUrl: 'https://sync.cootlogix.com/api/sync/image'
+});
 
 export const spec = {
   code: BIDDER_CODE,
