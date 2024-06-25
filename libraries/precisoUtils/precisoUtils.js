@@ -1,24 +1,10 @@
 import { convertOrtbRequestToProprietaryNative } from '../../src/native.js';
 import { isFn, deepAccess, replaceAuctionPrice } from '../../src/utils.js';
-import {ajax} from '../../src/ajax.js';
-import { getStorageManager } from '../../src/storageManager.js';
-import { MODULE_TYPE_UID } from '../../src/activities/modules.js';
+import { ajax } from '../../src/ajax.js';
 
-const COOKIE_NAME = '_sharedid';
-const AD_URL = 'https://ssp-bidder.mndtrk.com/bid_request/openrtb';
-// const AD_URL = 'http://localhost:80/bid_request/openrtb';
-const URL_SYNC = 'https://ck.2trk.info/rtb/user/usersync.aspx?';
-
-export const storage = getStorageManager({ moduleType: MODULE_TYPE_UID, moduleName: 'sharedId' });
-
-export function buildRequests(validBidRequests = [], bidderRequest) {
+export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest) => {
   // convert Native ORTB definition to old-style prebid native definition
   validBidRequests = convertOrtbRequestToProprietaryNative(validBidRequests);
-  // if (validBidRequests !== 'undefined' && validBidRequests.length > 0) {
-  //   userId = validBidRequests[0].userId.pubcid;
-  // }
-  // let winTop = window;
-  // let location;
   var city = Intl.DateTimeFormat().resolvedOptions().timeZone;
   let req = {
     // bidRequest: bidderRequest,
@@ -75,7 +61,7 @@ export function buildRequests(validBidRequests = [], bidderRequest) {
 
   return {
     method: 'POST',
-    url: AD_URL,
+    url: endpoint,
     data: req,
 
   };
@@ -104,24 +90,33 @@ export function interpretResponse(serverResponse) {
   })
   return bidsValue
 }
-export function getUserSyncs (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) {
-  // let userId = sharedId;
-  let userId = readFromAllStorages(COOKIE_NAME);
-  let syncs = [];
-  let { gdprApplies, consentString = '' } = gdprConsent;
 
-  // if (serverResponses.length > 0) {
-  //   logInfo('preciso bidadapter getusersync serverResponses:' + serverResponses.toString);
-  // }
+export const getUserSyncs = (syncEndpoint, strId, storage) => (syncOptions, serverResponses, gdprConsent, uspConsent, gppConsent) => {
+  // let userId = sharedId;
+  let userId = readFromAllStorages(strId, storage);
+  let syncs = [];
+  let syncUrl = `${syncEndpoint}id=${userId}`
+
+  if (gdprConsent) {
+    syncUrl = syncUrl + `&gdpr=${Number(gdprConsent.gdprApplies && 1)}&gdpr_consent=${encodeURIComponent(gdprConsent.consentString || '')}`;
+  } else {
+    syncUrl = syncUrl + `&gdpr=0&gdpr_consent=`
+  }
+  if (uspConsent) {
+    syncUrl = syncUrl + `&us_privacy=${uspConsent}`
+  } else {
+    syncUrl = syncUrl + `&us_privacy=`
+  }
+
   if (syncOptions.iframeEnabled) {
     syncs.push({
       type: 'iframe',
-      url: `${URL_SYNC}id=${userId}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&us_privacy=${uspConsent}&t=4`
+      url: syncUrl + `&t=4`
     });
   } else {
     syncs.push({
       type: 'image',
-      url: `${URL_SYNC}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&us_privacy=${uspConsent}&t=2`
+      url: syncUrl + `&t=2`
     });
   }
 
@@ -158,7 +153,7 @@ function macroReplace(adm, cpm) {
   return replacedadm;
 }
 
-export function readFromAllStorages(name) {
+export function readFromAllStorages(name, storage) {
   const fromCookie = storage.getCookie(name);
   const fromLocalStorage = storage.getDataFromLocalStorage(name);
 
