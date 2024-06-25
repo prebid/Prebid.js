@@ -1,11 +1,11 @@
 import { expect } from 'chai';
-import { spec } from '../../../modules/copper6sspBidAdapter';
-import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes';
-import { getUniqueIdentifierStr } from '../../../src/utils';
+import { spec } from '../../../modules/copper6sspBidAdapter.js';
+import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
+import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
 const bidder = 'copper6ssp';
 
-describe('Copper6BidAdapter', function () {
+describe('Copper6SSPBidAdapter', function () {
   const userIdAsEids = [{
     source: 'test.org',
     uids: [{
@@ -26,7 +26,7 @@ describe('Copper6BidAdapter', function () {
         }
       },
       params: {
-        placementId: 'testBanner',
+        placementId: 'testBanner'
       },
       userIdAsEids
     },
@@ -41,7 +41,7 @@ describe('Copper6BidAdapter', function () {
         }
       },
       params: {
-        placementId: 'testVideo',
+        placementId: 'testVideo'
       },
       userIdAsEids
     },
@@ -98,7 +98,7 @@ describe('Copper6BidAdapter', function () {
       device: {
         w: 1512,
         h: 982,
-        language: 'en-UK',
+        language: 'en-UK'
       }
     },
     timeout: 500
@@ -125,6 +125,10 @@ describe('Copper6BidAdapter', function () {
 
     it('Returns POST method', function () {
       expect(serverRequest.method).to.equal('POST');
+    });
+
+    it('Returns valid URL', function () {
+      expect(serverRequest.url).to.equal('https://endpoint.copper6.com/pbjs');
     });
 
     it('Returns general data valid', function () {
