@@ -89,12 +89,14 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   let imp = data.imp || [];
   let dealsMap = new Map();
   let privateAuctions = new Map();
-  bidderRequest.bids.forEach(bid => {
-    if (bid.params.pmp !== undefined) {
-      dealsMap.set(bid.bidId, bid.params.pmp);
-      privateAuctions.set(bid.bidId, bid.params.private_auction || 0);
-    }
-  });
+  if (bidderRequest.bids) {
+    bidderRequest.bids.forEach(bid => {
+      if (bid.params && bid.params.pmp) {
+        dealsMap.set(bid.bidId, bid.params.pmp);
+        privateAuctions.set(bid.bidId, bid.params.private_auction || 0);
+      }
+    });
+  }
   imp.forEach((element) => {
     let deals = dealsMap.get(element.id);
     if (deals) {
