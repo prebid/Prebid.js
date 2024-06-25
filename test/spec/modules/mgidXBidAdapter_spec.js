@@ -5,7 +5,7 @@ import { getUniqueIdentifierStr } from '../../../src/utils.js';
 import { config } from '../../../src/config';
 import { USERSYNC_DEFAULT_CONFIG } from '../../../src/userSync';
 
-const bidder = 'mgidX'
+const bidder = 'mgidX';
 
 describe('MGIDXBidAdapter', function () {
   const userIdAsEids = [{
@@ -95,9 +95,17 @@ describe('MGIDXBidAdapter', function () {
       vendorData: {}
     },
     refererInfo: {
-      referer: 'https://test.com'
+      referer: 'https://test.com',
+      page: 'https://test.com'
     },
-    timeout: 1000
+    ortb2: {
+      device: {
+        w: 1512,
+        h: 982,
+        language: 'en-UK'
+      }
+    },
+    timeout: 500
   };
 
   describe('isBidRequestValid', function () {

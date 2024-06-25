@@ -93,6 +93,9 @@ export const spec = {
       if (bidderRequest && bidderRequest.refererInfo) {
         referer = bidderRequest.refererInfo.page || '';
       }
+      if (bidRequest?.mediaTypes?.video) {
+        delete bidRequest.mediaTypes.video;
+      }
 
       bidRequest.params.bidfloor = getBidFloor(bidRequest);
 
