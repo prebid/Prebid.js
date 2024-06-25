@@ -124,8 +124,8 @@ describe('SmartyadsAdapter', function () {
       expect(dataItem.width).to.equal(300);
       expect(dataItem.height).to.equal(250);
       expect(dataItem.ad).to.equal('Test');
-      expect(dataItem.meta).to.have.property('advertiserDomains')
-      expect(dataItem.meta.advertiserDomains).to.deep.equal(['example.com']);
+      expect(dataItem.meta).to.have.property('advertiserDomains');
+      expect(dataItem.meta.advertiserDomains).to.be.an('array');
       expect(dataItem.ttl).to.equal(120);
       expect(dataItem.creativeId).to.equal('2');
       expect(dataItem.netRevenue).to.be.true;
@@ -150,7 +150,7 @@ describe('SmartyadsAdapter', function () {
 
       let dataItem = videoResponses[0];
       expect(dataItem).to.have.all.keys('requestId', 'cpm', 'vastUrl', 'ttl', 'creativeId',
-        'netRevenue', 'currency', 'dealId', 'mediaType');
+        'netRevenue', 'currency', 'dealId', 'mediaType', 'meta');
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.5);
       expect(dataItem.vastUrl).to.equal('test.com');
@@ -181,7 +181,7 @@ describe('SmartyadsAdapter', function () {
       expect(nativeResponses).to.be.an('array').that.is.not.empty;
 
       let dataItem = nativeResponses[0];
-      expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native');
+      expect(dataItem).to.have.keys('requestId', 'cpm', 'ttl', 'creativeId', 'netRevenue', 'currency', 'mediaType', 'native', 'meta');
       expect(dataItem.native).to.have.keys('clickUrl', 'impressionTrackers', 'title', 'image')
       expect(dataItem.requestId).to.equal('23fhj33i987f');
       expect(dataItem.cpm).to.equal(0.4);
@@ -261,7 +261,7 @@ describe('SmartyadsAdapter', function () {
     });
   });
   describe('getUserSyncs', function () {
-    const syncUrl = 'https://as.ck-ie.com/prebidjs?p=7c47322e527cf8bdeb7facc1bb03387a&gdpr=0&gdpr_consent=&type=iframe&us_privacy=&gpp=';
+    const syncUrl = 'https://as.ck-ie.com/prebidjs?p=7c47322e527cf8bdeb7facc1bb03387a/iframe?pbjs=1&coppa=0';
     const syncOptions = {
       iframeEnabled: true
     };

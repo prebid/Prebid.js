@@ -3,28 +3,12 @@ import { BANNER, NATIVE, VIDEO } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { convertOrtbRequestToProprietaryNative } from '../src/native.js';
 import { getAdUrlByRegion } from '../libraries/smartyadsUtils/getAdUrlByRegion.js';
+import { interpretResponse, getUserSyncs } from '../libraries/teqblazeUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'smartyads';
 const GVLID = 534;
 
 const URL_SYNC = 'https://as.ck-ie.com/prebidjs?p=7c47322e527cf8bdeb7facc1bb03387a';
-
-function isBidResponseValid(bid) {
-  if (!bid.requestId || !bid.cpm || !bid.creativeId ||
-    !bid.ttl || !bid.currency) {
-    return false;
-  }
-  switch (bid['mediaType']) {
-    case BANNER:
-      return Boolean(bid.width && bid.height && bid.ad);
-    case VIDEO:
-      return Boolean(bid.vastUrl) || Boolean(bid.vastXml);
-    case NATIVE:
-      return Boolean(bid.native && bid.native.title && bid.native.image && bid.native.impressionTrackers);
-    default:
-      return false;
-  }
-}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -91,36 +75,8 @@ export const spec = {
     }
   },
 
-  interpretResponse: (serverResponse) => {
-    let response = [];
-    serverResponse = serverResponse.body;
-    for (let i = 0; i < serverResponse.length; i++) {
-      let resItem = serverResponse[i];
-      if (isBidResponseValid(resItem)) {
-        response.push(resItem);
-      }
-    }
-    return response;
-  },
-
-  getUserSyncs: (syncOptions, serverResponses = [], gdprConsent = {}, uspConsent = '', gppConsent = '') => {
-    let syncs = [];
-    let { gdprApplies, consentString = '' } = gdprConsent;
-
-    if (syncOptions.iframeEnabled) {
-      syncs.push({
-        type: 'iframe',
-        url: `${URL_SYNC}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&type=iframe&us_privacy=&gpp=${gppConsent}`
-      });
-    } else {
-      syncs.push({
-        type: 'image',
-        url: `${URL_SYNC}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${consentString}&type=image&us_privacy=&gpp=${gppConsent}`
-      });
-    }
-
-    return syncs
-  },
+  interpretResponse,
+  getUserSyncs: getUserSyncs(URL_SYNC),
 };
 
 registerBidder(spec);
