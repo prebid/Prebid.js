@@ -86,7 +86,6 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     if (!data.regs.ext) data.regs.ext = {};
     data.regs.ext.us_privacy = bidderRequest.uspConsent;
   }
-
   let imp = data.imp || [];
   let dealsMap = new Map();
   let privateAuctions = new Map();
@@ -96,7 +95,6 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
       privateAuctions.set(bid.bidId, bid.params.private_auction || 0);
     }
   });
-
   imp.forEach((element) => {
     if (dealsMap.size > 0) {
       let deals = dealsMap.get(element.id);
@@ -107,12 +105,10 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     }
     element.pmp.private_auction = privateAuctions.get(element.id);
   });
-
   data.ext = data.ext || {};
   data.ext.viant = {
     adapterVersion: ADAPTER_VERSION
   };
-  
   return {
     method: 'POST',
     url: ENDPOINT,
