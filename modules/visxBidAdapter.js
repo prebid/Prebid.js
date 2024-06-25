@@ -1,4 +1,4 @@
-import {deepAccess, logError, parseSizesInput, triggerPixel} from '../src/utils.js';
+import {deepAccess, logError, mergeDeep, parseSizesInput, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -131,7 +131,7 @@ export const spec = {
         };
       }
       if (user) {
-        userReq = {...user, ...userOrtb2};
+        userReq = mergeDeep(user, userOrtb2);
       } else {
         userReq = userOrtb2;
       }
