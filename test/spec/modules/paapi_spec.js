@@ -91,10 +91,10 @@ describe('paapi module', () => {
           let igb1, igb2, buyerAuctionConfig;
           beforeEach(() => {
             igb1 = {
-              origin: 'buyer1'
+              origin: 'buyer.1'
             };
             igb2 = {
-              origin: 'buyer2'
+              origin: 'buyer.2'
             };
             buyerAuctionConfig = {
               seller: 'seller',
@@ -263,11 +263,11 @@ describe('paapi module', () => {
           });
 
           it('should be added to perBuyerSignals', () => {
-            auctionConfig.interestGroupBuyers = ['buyer1', 'buyer2'];
+            auctionConfig.interestGroupBuyers = ['buyer.1', 'buyer.2'];
             const pbs = getComponentAuctionConfig().perBuyerSignals;
             sinon.assert.match(pbs, {
-              buyer1: {prebid: {ortb2, ortb2Imp}},
-              buyer2: {prebid: {ortb2, ortb2Imp}}
+              'buyer.1': {prebid: {ortb2, ortb2Imp}},
+              'buyer.2': {prebid: {ortb2, ortb2Imp}}
             });
           });
 
