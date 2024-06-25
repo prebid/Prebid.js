@@ -96,14 +96,12 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     }
   });
   imp.forEach((element) => {
-    if (dealsMap.size > 0) {
-      let deals = dealsMap.get(element.id);
-      if (deals) {
-        element.pmp = element.pmp || {};
-        element.pmp = deals;
-      }
+    let deals = dealsMap.get(element.id);
+    if (deals) {
+      element.pmp = deals;
     }
-    element.pmp.private_auction = privateAuctions.get(element.id) || 0;
+    element.pmp = element.pmp || {};
+    element.pmp.private_auction = privateAuctions.get(element.id);
   });
   data.ext = data.ext || {};
   data.ext.viant = {
