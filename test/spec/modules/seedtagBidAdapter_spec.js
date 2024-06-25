@@ -641,7 +641,7 @@ describe('Seedtag Adapter', function () {
 
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
-        expect(data.device.sua).to.equal(sua);
+        expect(data.sua).to.equal(sua);
       });
 
       it('should not add device.sua param to payload when bidderRequest does not have ortb2 device.sua info', function () {
@@ -652,7 +652,7 @@ describe('Seedtag Adapter', function () {
 
         const request = spec.buildRequests(validBidRequests, bidderRequest);
         const data = JSON.parse(request.data);
-        expect(data.device.sua).to.be.undefined;
+        expect(data.sua).to.be.undefined;
       });
     });
   })
