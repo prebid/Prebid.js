@@ -736,7 +736,7 @@ export const spec = {
     });
 
     if (fledgeAuctionConfigs) {
-      return { bids, fledgeAuctionConfigs };
+      return { bids, paapi: fledgeAuctionConfigs };
     } else {
       return bids;
     }

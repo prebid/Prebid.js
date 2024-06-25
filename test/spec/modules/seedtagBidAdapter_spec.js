@@ -37,6 +37,7 @@ function getSlotConfigs(mediaTypes, params) {
     ortb2Imp: {
       ext: {
         tid: 'd704d006-0d6e-4a09-ad6c-179e7e758096',
+        gpid: 'some-gpid'
       }
     },
     adUnitCode: adUnitCode,
@@ -299,6 +300,7 @@ describe('Seedtag Adapter', function () {
       expect(data.ttfb).to.be.greaterThanOrEqual(0);
 
       expect(data.bidRequests[0].adUnitCode).to.equal(adUnitCode);
+      expect(data.bidRequests[0].gpid).to.equal('some-gpid');
     });
 
     describe('GDPR params', function () {

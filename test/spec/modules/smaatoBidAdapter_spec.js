@@ -8,7 +8,7 @@ import 'modules/currency.js';
 import 'modules/userId/index.js';
 import 'modules/multibid/index.js';
 import 'modules/priceFloors.js';
-import 'modules/consentManagement.js';
+import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/schain.js';
 
@@ -296,6 +296,33 @@ describe('smaatoBidAdapterTest', () => {
         expect(req.site.page).to.equal(page);
         expect(req.site.ref).to.equal(ref);
         expect(req.site.publisher.id).to.equal('publisherId');
+        expect(req.dooh).to.be.undefined;
+      })
+
+      it('sends correct dooh from ortb2', () => {
+        const name = 'name';
+        const domain = 'domain';
+        const keywords = 'keyword1,keyword2';
+        const venuetypetax = 1;
+        const ortb2 = {
+          dooh: {
+            name: name,
+            domain: domain,
+            keywords: keywords,
+            venuetypetax: venuetypetax
+          },
+        };
+
+        const reqs = spec.buildRequests([singleBannerBidRequest], {...defaultBidderRequest, ortb2});
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.dooh.id).to.exist.and.to.be.a('string');
+        expect(req.dooh.name).to.equal(name);
+        expect(req.dooh.domain).to.equal(domain);
+        expect(req.dooh.keywords).to.equal(keywords);
+        expect(req.dooh.venuetypetax).to.equal(venuetypetax);
+        expect(req.dooh.publisher.id).to.equal('publisherId');
+        expect(req.site).to.be.undefined;
       })
 
       it('sends correct device from ortb2', () => {
@@ -461,6 +488,48 @@ describe('smaatoBidAdapterTest', () => {
 
         const req = extractPayloadOfFirstAndOnlyRequest(reqs);
         expect(req.user.ext.eids).to.not.exist;
+      });
+
+      it('sends dsa', () => {
+        const ortb2 = {
+          regs: {
+            ext: {
+              dsa: {
+                dsarequired: 2,
+                pubrender: 0,
+                datatopub: 1,
+                transparency: [
+                  {
+                    domain: 'testdomain.com',
+                    dsaparams: [1, 2, 3]
+                  }
+                ]
+              }
+            }
+          }
+        };
+
+        const reqs = spec.buildRequests([singleBannerBidRequest], {...defaultBidderRequest, ortb2});
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.regs.ext.dsa.dsarequired).to.eql(2);
+        expect(req.regs.ext.dsa.pubrender).to.eql(0);
+        expect(req.regs.ext.dsa.datatopub).to.eql(1);
+        expect(req.regs.ext.dsa.transparency[0].domain).to.eql('testdomain.com');
+        expect(req.regs.ext.dsa.transparency[0].dsaparams).to.eql([1, 2, 3]);
+      });
+
+      it('sends no dsa', () => {
+        const ortb2 = {
+          regs: {
+            ext: {}
+          }
+        };
+
+        const reqs = spec.buildRequests([singleBannerBidRequest], {...defaultBidderRequest, ortb2});
+
+        const req = extractPayloadOfFirstAndOnlyRequest(reqs);
+        expect(req.regs.ext.dsa).to.be.undefined;
       });
     });
 
@@ -1565,6 +1634,35 @@ describe('smaatoBidAdapterTest', () => {
       const bids = spec.interpretResponse(resp, buildBidRequest());
 
       expect(bids[0].netRevenue).to.equal(false);
+    });
+
+    it('uses dsa object sent from server', () => {
+      const resp = buildOpenRtbBidResponse(ADTYPE_IMG);
+      const dsa = {
+        behalf: 'advertiser',
+        paid: 'advertiser',
+        adrender: 1,
+        transparency: [
+          {
+            domain: 'dsp1domain.com',
+            dsaparams: [1, 2]
+          }
+        ]
+      };
+      resp.body.seatbid[0].bid[0].ext.dsa = dsa;
+
+      const bids = spec.interpretResponse(resp, buildBidRequest());
+
+      expect(bids[0].meta.dsa).to.deep.equal(dsa);
+    });
+
+    it('does not use dsa object if not sent from server', () => {
+      const resp = buildOpenRtbBidResponse(ADTYPE_IMG);
+      resp.body.seatbid[0].bid[0].ext = {}
+
+      const bids = spec.interpretResponse(resp, buildBidRequest());
+
+      expect(bids[0].meta.dsa).to.be.undefined;
     });
   });
 

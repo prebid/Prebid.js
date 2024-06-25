@@ -155,7 +155,7 @@ function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout
     data.gppSid = bidderRequest.ortb2.regs.gpp_sid;
   }
 
-  if (bidderRequest.fledgeEnabled) {
+  if (bidderRequest.paapi?.enabled) {
     const fledge = deepAccess(bidderRequest, 'ortb2Imp.ext.ae');
     if (fledge) {
       data.fledge = fledge;
