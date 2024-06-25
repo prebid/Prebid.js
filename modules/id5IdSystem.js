@@ -41,6 +41,7 @@ const LOCAL_STORAGE = 'html5';
 const LOG_PREFIX = 'User ID - ID5 submodule: ';
 const ID5_API_CONFIG_URL = 'https://id5-sync.com/api/config/prebid';
 const ID5_DOMAIN = 'id5-sync.com';
+const TRUE_LINK_SOURCE = 'true-link-id5-sync.com';
 
 // order the legacy cookie names in reverse priority order so the last
 // cookie in the array is the most preferred to use
@@ -134,12 +135,13 @@ export const id5IdSubmodule = {
    * @returns {(Object|undefined)}
    */
   decode(value, config) {
-    let universalUid;
+    let universalUid, publisherTrueLinkId;
     let ext = {};
 
     if (value && typeof value.universal_uid === 'string') {
       universalUid = value.universal_uid;
       ext = value.ext || ext;
+      publisherTrueLinkId = value.publisherTrueLinkId;
     } else {
       return undefined;
     }
@@ -156,6 +158,12 @@ export const id5IdSubmodule = {
         uid: ext.euid.uids[0].id,
         source: ext.euid.source,
         ext: {provider: ID5_DOMAIN}
+      };
+    }
+
+    if (publisherTrueLinkId) {
+      responseObj.trueLinkId = {
+        uid: publisherTrueLinkId,
       };
     }
 
@@ -263,7 +271,22 @@ export const id5IdSubmodule = {
           return data.ext;
         }
       }
+    },
+    'trueLinkId': {
+      getValue: function (data) {
+        return data.uid;
+      },
+      getSource: function (data) {
+        return TRUE_LINK_SOURCE;
+      },
+      atype: 1,
+      getUidExt: function (data) {
+        if (data.ext) {
+          return data.ext;
+        }
+      }
     }
+
   }
 };
 
@@ -380,6 +403,8 @@ export class IdFetchFlow {
     const referer = getRefererInfo();
     const signature = (this.cacheIdObj && this.cacheIdObj.signature) ? this.cacheIdObj.signature : getLegacyCookieSignature();
     const nbPage = incrementAndResetNb(params.partner);
+    const trueLinkInfo = window.id5Bootstrap ? window.id5Bootstrap.getTrueLinkInfo() : {booted: false};
+
     const data = {
       'partner': params.partner,
       'gdpr': hasGdpr,
@@ -392,7 +417,8 @@ export class IdFetchFlow {
       'u': referer.stack[0] || window.location.href,
       'v': '$prebid.version$',
       'storage': this.submoduleConfig.storage,
-      'localStorage': storage.localStorageIsEnabled() ? 1 : 0
+      'localStorage': storage.localStorageIsEnabled() ? 1 : 0,
+      'true_link': trueLinkInfo
     };
 
     // pass in optional data, but only if populated
@@ -431,6 +457,9 @@ export class IdFetchFlow {
     try {
       if (fetchCallResponse.privacy) {
         storeInLocalStorage(ID5_PRIVACY_STORAGE_NAME, JSON.stringify(fetchCallResponse.privacy), NB_EXP_DAYS);
+        if (window.id5Bootstrap && window.id5Bootstrap.setPrivacy) {
+          window.id5Bootstrap.setPrivacy(fetchCallResponse.privacy);
+        }
       }
     } catch (error) {
       logError(LOG_PREFIX + 'Error while writing privacy info into local storage.', error);
