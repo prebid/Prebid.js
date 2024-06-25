@@ -6,6 +6,7 @@ import {deepAccess, getBidIdParameter, logError} from '../src/utils.js';
 
 const BIDDER_CODE = 'viant';
 const ENDPOINT = 'https://bidders-us-east-1.adelphic.net/d/rtb/v25/prebid/bidder'
+const ADAPTER_VERSION = '2.0.0';
 
 const DEFAULT_BID_TTL = 300;
 const DEFAULT_CURRENCY = 'USD';
@@ -85,6 +86,33 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     if (!data.regs.ext) data.regs.ext = {};
     data.regs.ext.us_privacy = bidderRequest.uspConsent;
   }
+
+  let imp = data.imp || [];
+  let dealsMap = new Map();
+  let privateAuctions = new Map();
+  bidderRequest.bids.forEach(bid => {
+    if (bid.params.pmp !== undefined) {
+      dealsMap.set(bid.bidId, bid.params.pmp);
+      privateAuctions.set(bid.bidId, bid.params.private_auction || 0);
+    }
+  });
+
+  imp.forEach((element) => {
+    if (dealsMap.size > 0) {
+      let deals = dealsMap.get(element.id);
+      if (deals) {
+        element.pmp = element.pmp || {};
+        element.pmp = deals;
+        element.pmp.private_auction = privateAuctions.get(element.id);
+      }
+    }
+  });
+
+  data.ext = data.ext || {};
+  data.ext.viant = {
+    adapterVersion: ADAPTER_VERSION
+  };
+  
   return {
     method: 'POST',
     url: ENDPOINT,
