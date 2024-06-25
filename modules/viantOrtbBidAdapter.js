@@ -103,7 +103,7 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
         element.pmp = deals;
       }
     }
-    element.pmp.private_auction = privateAuctions.get(element.id);
+    element.pmp.private_auction = privateAuctions.get(element.id) || 0;
   });
   data.ext = data.ext || {};
   data.ext.viant = {
