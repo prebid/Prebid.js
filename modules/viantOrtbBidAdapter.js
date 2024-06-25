@@ -103,9 +103,9 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
       if (deals) {
         element.pmp = element.pmp || {};
         element.pmp = deals;
-        element.pmp.private_auction = privateAuctions.get(element.id);
       }
     }
+    element.pmp.private_auction = privateAuctions.get(element.id);
   });
 
   data.ext = data.ext || {};
