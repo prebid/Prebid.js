@@ -3,9 +3,19 @@ import { spec } from '../../../modules/axisBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
-const bidder = 'axis'
+const bidder = 'axis';
 
 describe('AxisBidAdapter', function () {
+  const userIdAsEids = [{
+    source: 'test.org',
+    uids: [{
+      id: '01**********',
+      atype: 1,
+      ext: {
+        third: '01***********'
+      }
+    }]
+  }];
   const bids = [
     {
       bidId: getUniqueIdentifierStr(),
@@ -19,7 +29,8 @@ describe('AxisBidAdapter', function () {
       params: {
         integration: '000000',
         token: '000000'
-      }
+      },
+      userIdAsEids
     },
     {
       bidId: getUniqueIdentifierStr(),
@@ -35,7 +46,8 @@ describe('AxisBidAdapter', function () {
       params: {
         integration: '000000',
         token: '000000'
-      }
+      },
+      userIdAsEids
     },
     {
       bidId: getUniqueIdentifierStr(),
@@ -59,7 +71,8 @@ describe('AxisBidAdapter', function () {
       params: {
         integration: '000000',
         token: '000000'
-      }
+      },
+      userIdAsEids
     }
   ];
 
@@ -78,15 +91,25 @@ describe('AxisBidAdapter', function () {
 
   const bidderRequest = {
     uspConsent: '1---',
-    gdprConsent: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
+    gdprConsent: {
+      consentString: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
+      vendorData: {}
+    },
     refererInfo: {
-      referer: 'https://test.com'
+      referer: 'https://test.com',
+      page: 'https://test.com'
     },
     ortb2: {
       site: {
         cat: ['IAB24']
+      },
+      device: {
+        w: 1512,
+        h: 982,
+        language: 'en-UK'
       }
-    }
+    },
+    timeout: 500
   };
 
   describe('isBidRequestValid', function () {
@@ -139,7 +162,7 @@ describe('AxisBidAdapter', function () {
       expect(data.host).to.be.a('string');
       expect(data.page).to.be.a('string');
       expect(data.coppa).to.be.a('number');
-      expect(data.gdpr).to.be.a('string');
+      expect(data.gdpr).to.be.a('object');
       expect(data.ccpa).to.be.a('string');
       expect(data.tmax).to.be.a('number');
       expect(data.iabCat).to.have.lengthOf(1);
@@ -156,6 +179,7 @@ describe('AxisBidAdapter', function () {
         expect(placement.token).to.be.a('string');
         expect(placement.schain).to.be.an('object');
         expect(placement.bidfloor).to.exist.and.to.equal(0);
+        expect(placement.eids).to.exist.and.to.be.deep.equal(userIdAsEids);
 
         if (placement.adFormat === BANNER) {
           expect(placement.sizes).to.be.an('array');
@@ -183,8 +207,10 @@ describe('AxisBidAdapter', function () {
       serverRequest = spec.buildRequests(bids, bidderRequest);
       let data = serverRequest.data;
       expect(data.gdpr).to.exist;
-      expect(data.gdpr).to.be.a('string');
-      expect(data.gdpr).to.equal(bidderRequest.gdprConsent);
+      expect(data.gdpr).to.be.a('object');
+      expect(data.gdpr).to.have.property('consentString');
+      expect(data.gdpr).to.not.have.property('vendorData');
+      expect(data.gdpr.consentString).to.equal(bidderRequest.gdprConsent.consentString);
       expect(data.ccpa).to.not.exist;
       delete bidderRequest.gdprConsent;
     });
@@ -199,12 +225,38 @@ describe('AxisBidAdapter', function () {
       expect(data.ccpa).to.equal(bidderRequest.uspConsent);
       expect(data.gdpr).to.not.exist;
     });
+  });
 
-    it('Returns empty data if no valid requests are passed', function () {
-      serverRequest = spec.buildRequests([], bidderRequest);
+  describe('gpp consent', function () {
+    it('bidderRequest.gppConsent', () => {
+      bidderRequest.gppConsent = {
+        gppString: 'abc123',
+        applicableSections: [8]
+      };
+
+      let serverRequest = spec.buildRequests(bids, bidderRequest);
       let data = serverRequest.data;
-      expect(data.placements).to.be.an('array').that.is.empty;
-    });
+      expect(data).to.be.an('object');
+      expect(data).to.have.property('gpp');
+      expect(data).to.have.property('gpp_sid');
+
+      delete bidderRequest.gppConsent;
+    })
+
+    it('bidderRequest.ortb2.regs.gpp', () => {
+      bidderRequest.ortb2 = bidderRequest.ortb2 || {};
+      bidderRequest.ortb2.regs = bidderRequest.ortb2.regs || {};
+      bidderRequest.ortb2.regs.gpp = 'abc123';
+      bidderRequest.ortb2.regs.gpp_sid = [8];
+
+      let serverRequest = spec.buildRequests(bids, bidderRequest);
+      let data = serverRequest.data;
+      expect(data).to.be.an('object');
+      expect(data).to.have.property('gpp');
+      expect(data).to.have.property('gpp_sid');
+
+      bidderRequest.ortb2;
+    })
   });
 
   describe('interpretResponse', function () {
@@ -409,6 +461,18 @@ describe('AxisBidAdapter', function () {
       expect(syncData[0].type).to.equal('image')
       expect(syncData[0].url).to.be.a('string')
       expect(syncData[0].url).to.equal('https://cs.axis-marketplace.com/image?pbjs=1&ccpa=1---&coppa=0')
+    });
+    it('Should return array of objects with proper sync config , include GPP', function() {
+      const syncData = spec.getUserSyncs({}, {}, {}, {}, {
+        gppString: 'abc123',
+        applicableSections: [8]
+      });
+      expect(syncData).to.be.an('array').which.is.not.empty;
+      expect(syncData[0]).to.be.an('object')
+      expect(syncData[0].type).to.be.a('string')
+      expect(syncData[0].type).to.equal('image')
+      expect(syncData[0].url).to.be.a('string')
+      expect(syncData[0].url).to.equal('https://cs.axis-marketplace.com/image?pbjs=1&gpp=abc123&gpp_sid=8&coppa=0')
     });
   });
 });

@@ -196,7 +196,7 @@ describe('dailymotionBidAdapterTests', () => {
       livestream: !!bidRequestData[0].params.video.livestream,
       isCreatedForKids: bidRequestData[0].params.video.isCreatedForKids,
       context: {
-        siteOrAppCat: '',
+        siteOrAppCat: [],
         videoViewsInSession: bidRequestData[0].params.video.videoViewsInSession,
         autoplay: bidRequestData[0].params.video.autoplay,
         playerVolume: bidRequestData[0].params.video.playerVolume,
@@ -342,7 +342,7 @@ describe('dailymotionBidAdapterTests', () => {
       livestream: !!bidRequestData[0].params.video.livestream,
       isCreatedForKids: null,
       context: {
-        siteOrAppCat: '',
+        siteOrAppCat: [],
         videoViewsInSession: null,
         autoplay: null,
         playerVolume: null,
@@ -588,7 +588,7 @@ describe('dailymotionBidAdapterTests', () => {
       livestream: false,
       isCreatedForKids: null,
       context: {
-        siteOrAppCat: '',
+        siteOrAppCat: [],
         videoViewsInSession: null,
         autoplay: null,
         playerVolume: null,
