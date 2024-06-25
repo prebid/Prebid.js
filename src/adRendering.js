@@ -251,14 +251,10 @@ export function renderAdDirect(doc, adId, options) {
  * This is necessary because in some situations creatives may be rendered inside nested iframes - Prebid is not necessarily
  * in the immediate parent window.
  */
-export const insertLocatorFrame = (() => {
-  let done = false;
-  return () => {
-    if (!done) {
-      done = true;
-      const frame = createInvisibleIframe();
-      frame.name = PB_LOCATOR;
-      document.body.appendChild(frame);
-    }
+export function insertLocatorFrame() {
+  if (!window.frames[PB_LOCATOR]) {
+    const frame = createInvisibleIframe();
+    frame.name = PB_LOCATOR;
+    document.body.appendChild(frame);
   }
-})();
+}

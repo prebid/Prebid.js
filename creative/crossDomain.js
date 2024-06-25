@@ -32,8 +32,7 @@ function isPrebidWindow(win) {
 
 export function renderer(win) {
   let target = win.parent;
-  while (target !== win.top) {
-    if (isPrebidWindow(target)) break;
+  while (target !== win.top && !isPrebidWindow(target)) {
     target = target.parent;
   }
   if (!isPrebidWindow(target)) target = win.parent;
