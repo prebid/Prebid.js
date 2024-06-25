@@ -117,17 +117,24 @@ export const spec = {
 
       const { ortb2 } = bidderRequest;
       const { device, site, regs, content } = ortb2;
-      let userOrtb2 = ortb2.user;
+      const userOrtb2 = ortb2.user;
+      let user;
+      let userReq;
       const vads = _getUserId();
-
-      let user = {
-        ext: {
-          ...({ eids: payloadUserEids }),
-          ...({ consent: payload.gdpr_consent }),
-          ...({ vads })
-        }
-      };
-      user = {...user, ...userOrtb2};
+      if (payloadUserEids || payload.gdpr_consent || vads) {
+        user = {
+          ext: {
+            ...(payloadUserEids && { eids: payloadUserEids }),
+            ...(payload.gdpr_consent && { consent: payload.gdpr_consent }),
+            ...(vads && { vads })
+          }
+        };
+      }
+      if (user) {
+        userReq = {...user, ...userOrtb2};
+      } else {
+        userReq = userOrtb2;
+      }
       if (device) {
         payloadDevice = device;
       }
@@ -140,8 +147,8 @@ export const spec = {
       if (content) {
         payloadContent = content;
       }
-      if (user) {
-        payloadUser = user;
+      if (userReq) {
+        payloadUser = userReq;
       }
     }
 
