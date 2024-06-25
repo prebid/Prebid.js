@@ -69,6 +69,7 @@ export const spec = {
     let payloadSite;
     let payloadRegs;
     let payloadContent;
+    let payloadUser;
 
     if (currencyWhiteList.indexOf(currency) === -1) {
       logError(LOG_ERROR_MESS.notAllowedCurrency + currency);
@@ -115,7 +116,7 @@ export const spec = {
       }
 
       const { ortb2 } = bidderRequest;
-      const { device, site, regs, content } = ortb2;
+      const { device, site, regs, content, user } = ortb2;
       if (device) {
         payloadDevice = device;
       }
@@ -128,6 +129,9 @@ export const spec = {
       if (content) {
         payloadContent = content;
       }
+      if (user) {
+        payloadUser = user;
+      }
     }
 
     const tmax = timeout;
@@ -139,14 +143,6 @@ export const spec = {
       }
     };
 
-    const vads = _getUserId();
-    const user = {
-      ext: {
-        ...(payloadUserEids && { eids: payloadUserEids }),
-        ...(payload.gdpr_consent && { consent: payload.gdpr_consent }),
-        ...(vads && { vads })
-      }
-    };
     if (payloadRegs === undefined) {
       payloadRegs = ('gdpr_applies' in payload) && {
         ext: {
@@ -161,7 +157,7 @@ export const spec = {
       tmax,
       cur: [currency],
       source,
-      ...(Object.keys(user.ext).length && { user }),
+      ...(payloadUser && { user: payloadUser }),
       ...(payloadRegs && {regs: payloadRegs}),
       ...(payloadDevice && { device: payloadDevice }),
       ...(payloadSite && { site: payloadSite }),
