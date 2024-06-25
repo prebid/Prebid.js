@@ -9,6 +9,7 @@ import { BANNER } from '../src/mediaTypes.js'
  */
 
 const BIDDER_CODE = 'ownadx';
+// const ENDPOINT_URL = 'https://rtb-prebid.demandconsole.com/publisher/prebid?token=';
 const DEFAULT_CURRENCY = 'USD';
 const CREATIVE_TTL = 300;
 
@@ -77,16 +78,16 @@ export const spec = {
       return bids;
     }
     const responseBid = {
+      width: response.width,
+      height: response.height,
       token: response.tokenId,
-      requestId: response.slotBidId,
-      cpm: response.cpm,
-      currency: response.currency || DEFAULT_CURRENCY,
-      adType: response.adType || '1',
-      width: response.adWidth,
-      height: response.adHeight,
       ttl: CREATIVE_TTL,
+      requestId: response.slotBidId,
+      aType: response.adType || '1',
+      cpm: response.cpm,
       creativeId: response.creativeId || 0,
       netRevenue: response.netRevenue || false,
+      currency: response.currency || DEFAULT_CURRENCY,
       meta: {
         mediaType: response.mediaType || BANNER,
         advertiserDomains: response.advertiserDomains || []
