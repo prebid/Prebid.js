@@ -116,7 +116,18 @@ export const spec = {
       }
 
       const { ortb2 } = bidderRequest;
-      const { device, site, regs, content, user } = ortb2;
+      const { device, site, regs, content } = ortb2;
+      let userOrtb2 = ortb2.user;
+      const vads = _getUserId();
+
+      let user = {
+        ext: {
+          ...({ eids: payloadUserEids }),
+          ...({ consent: payload.gdpr_consent }),
+          ...({ vads })
+        }
+      };
+      user = {...user, ...userOrtb2};
       if (device) {
         payloadDevice = device;
       }
