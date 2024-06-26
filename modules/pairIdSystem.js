@@ -50,9 +50,11 @@ export const pairIdSubmodule = {
     return value && Array.isArray(value) ? {'pairId': value} : undefined
   },
   /**
-   * performs action to obtain id and return a value in the callback's response argument
-   * @function
-   * @returns {id: string | undefined }
+   * Performs action to obtain ID and return a value in the callback's response argument.
+   * @function getId
+   * @param {Object} config - The configuration object.
+   * @param {Object} config.params - The parameters from the configuration.
+   * @returns {{id: string[] | undefined}} The obtained IDs or undefined if no IDs are found.
    */
   getId(config) {
     const pairIdsString = pairIdFromLocalStorage(PAIR_ID_KEY) || pairIdFromCookie(PAIR_ID_KEY)
