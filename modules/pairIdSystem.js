@@ -88,7 +88,7 @@ export const pairIdSubmodule = {
         logInfo('Error parsing JSON: ', error);
       }
     } else {
-      logInfo('liverampValue is empty or null');
+      logInfo('liverampValue for pairId from storage is empty or null');
      }
    }
 
