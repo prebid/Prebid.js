@@ -1,39 +1,39 @@
 {
-  "bs_edge_latest_windows_10": {
+  "bs_edge_latest_windows_11": {
     "base": "BrowserStack",
-    "os_version": "10",
+    "os_version": "11",
     "browser": "edge",
     "browser_version": "latest",
     "device": null,
     "os": "Windows"
   },
-  "bs_chrome_latest_windows_10": {
+  "bs_chrome_latest_windows_11": {
     "base": "BrowserStack",
-    "os_version": "10",
+    "os_version": "11",
     "browser": "chrome",
     "browser_version": "latest",
     "device": null,
     "os": "Windows"
   },
-  "bs_chrome_87_windows_10": {
+  "bs_chrome_107_windows_10": {
     "base": "BrowserStack",
     "os_version": "10",
     "browser": "chrome",
-    "browser_version": "87.0",
+    "browser_version": "107.0",
     "device": null,
     "os": "Windows"
   },
-  "bs_firefox_latest_windows_10": {
+  "bs_firefox_latest_windows_11": {
     "base": "BrowserStack",
-    "os_version": "10",
+    "os_version": "11",
     "browser": "firefox",
     "browser_version": "latest",
     "device": null,
     "os": "Windows"
   },
-  "bs_safari_latest_mac_bigsur": {
+  "bs_safari_latest_mac": {
     "base": "BrowserStack",
-    "os_version": "Big Sur",
+    "os_version": "Sonoma",
     "browser": "safari",
     "browser_version": "latest",
     "device": null,
@@ -41,11 +41,11 @@
   },
   "bs_safari_15_catalina": {
     "base": "BrowserStack",
-    "os_version": "Catalina",
+    "os_version": "Monterey",
     "browser": "safari",
-    "browser_version": "13.1",
+    "browser_version": "15.6",
     "device": null,
     "os": "OS X"
   }
-  
+
 }

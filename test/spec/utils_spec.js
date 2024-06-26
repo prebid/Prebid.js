@@ -1170,6 +1170,44 @@ describe('Utils', function () {
     });
   });
 
+  describe('getUnixTimestampFromNow', () => {
+    it('correctly obtains unix timestamp', () => {
+      const nowValue = new Date('2024-01-01').valueOf();
+      sinon.stub(Date, 'now').returns(nowValue);
+      let val = utils.getUnixTimestampFromNow();
+      expect(val).equal(nowValue);
+
+      val = utils.getUnixTimestampFromNow(1);
+      expect(val).equal(nowValue + (1000 * 60 * 60 * 24));
+
+      val = utils.getUnixTimestampFromNow(1, 'd');
+      expect(val).equal(nowValue + (1000 * 60 * 60 * 24));
+
+      val = utils.getUnixTimestampFromNow(1, 'm');
+      expect(val).equal(nowValue + (1000 * 60 * 60 * 24 / 1440));
+
+      val = utils.getUnixTimestampFromNow(2, 'm');
+      expect(val).equal(nowValue + (1000 * 60 * 60 * 24 * 2 / 1440));
+
+      // any value that isn't 'm' or 'd' gets treated as Date.now();
+      val = utils.getUnixTimestampFromNow(10, 'o');
+      expect(val).equal(nowValue);
+    });
+  });
+
+  describe('convertObjectToArray', () => {
+    it('correctly converts object to array', () => {
+      const obj = {key: 1, anotherKey: 'fred', third: ['fred'], fourth: {sub: {obj: 'test'}}};
+      const array = utils.convertObjectToArray(obj);
+
+      expect(JSON.stringify(array[0])).equal(JSON.stringify({'key': 1}))
+      expect(JSON.stringify(array[1])).equal(JSON.stringify({'anotherKey': 'fred'}))
+      expect(JSON.stringify(array[2])).equal(JSON.stringify({'third': ['fred']}))
+      expect(JSON.stringify(array[3])).equal(JSON.stringify({'fourth': {sub: {obj: 'test'}}}));
+      expect(array.length).to.equal(4);
+    });
+  });
+
   describe('setScriptAttributes', () => {
     it('correctly adds attributes from an object', () => {
       const script = document.createElement('script'),

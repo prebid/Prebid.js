@@ -166,12 +166,11 @@ import {MODULE_TYPE_UID} from '../../src/activities/modules.js';
 import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_ENRICH_EIDS} from '../../src/activities/activities.js';
 import {activityParams} from '../../src/activities/activityParams.js';
+import {USERSYNC_DEFAULT_CONFIG} from '../../src/userSync.js';
 
 const MODULE_NAME = 'User ID';
 const COOKIE = STORAGE_TYPE_COOKIES;
 const LOCAL_STORAGE = STORAGE_TYPE_LOCALSTORAGE;
-const DEFAULT_SYNC_DELAY = 500;
-const NO_AUCTION_DELAY = 0;
 export const PBJS_USER_ID_OPTOUT_NAME = '_pbjs_id_optout';
 export const coreStorage = getCoreStorageManager('userId');
 export const dep = {
@@ -1160,8 +1159,8 @@ export function init(config, {delay = GreedyPromise.timeout} = {}) {
       ppidSource = userSync.ppid;
       if (userSync.userIds) {
         configRegistry = userSync.userIds;
-        syncDelay = isNumber(userSync.syncDelay) ? userSync.syncDelay : DEFAULT_SYNC_DELAY;
-        auctionDelay = isNumber(userSync.auctionDelay) ? userSync.auctionDelay : NO_AUCTION_DELAY;
+        syncDelay = isNumber(userSync.syncDelay) ? userSync.syncDelay : USERSYNC_DEFAULT_CONFIG.syncDelay
+        auctionDelay = isNumber(userSync.auctionDelay) ? userSync.auctionDelay : USERSYNC_DEFAULT_CONFIG.auctionDelay;
         updateSubmodules();
         updateIdPriority(userSync.idPriority, submodules);
         initIdSystem({ready: true});

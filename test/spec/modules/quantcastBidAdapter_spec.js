@@ -181,7 +181,6 @@ describe('Quantcast adapter', function () {
         maxbitrate: 10, // optional
         playbackmethod: [1], // optional
         delivery: [1], // optional
-        placement: 1, // optional
         api: [2, 3] // optional
       }, {
         context: 'instream',
@@ -205,7 +204,6 @@ describe('Quantcast adapter', function () {
               maxbitrate: 10,
               playbackmethod: [1],
               delivery: [1],
-              placement: 1,
               api: [2, 3],
               w: 600,
               h: 300
@@ -242,7 +240,6 @@ describe('Quantcast adapter', function () {
         maxbitrate: 10, // optional
         playbackmethod: [1], // optional
         delivery: [1], // optional
-        placement: 1, // optional
         api: [2, 3], // optional
         context: 'instream',
         playerSize: [600, 300]
@@ -265,7 +262,6 @@ describe('Quantcast adapter', function () {
               maxbitrate: 10,
               playbackmethod: [1],
               delivery: [1],
-              placement: 1,
               api: [2, 3],
               w: 600,
               h: 300

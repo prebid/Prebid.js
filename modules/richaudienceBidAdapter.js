@@ -37,7 +37,6 @@ export const spec = {
         pid: bid.params.pid,
         supplyType: bid.params.supplyType,
         currencyCode: config.getConfig('currency.adServerCurrency'),
-        // TODO: fix auctionId leak: https://github.com/prebid/Prebid.js/issues/9781
         auctionId: bid.auctionId,
         bidId: bid.bidId,
         BidRequestsCount: bid.bidRequestsCount,
@@ -45,7 +44,6 @@ export const spec = {
         bidderRequestId: bid.bidderRequestId,
         tagId: bid.adUnitCode,
         sizes: raiGetSizes(bid),
-        // TODO: is 'page' the right value here?
         referer: (typeof bidderRequest.refererInfo.page != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.page) : null),
         numIframes: (typeof bidderRequest.refererInfo.numIframes != 'undefined' ? bidderRequest.refererInfo.numIframes : null),
         transactionId: bid.ortb2Imp?.ext?.tid,
@@ -60,7 +58,6 @@ export const spec = {
         gpid: raiSetPbAdSlot(bid)
       };
 
-      // TODO: is 'page' the right value here?
       REFERER = (typeof bidderRequest.refererInfo.page != 'undefined' ? encodeURIComponent(bidderRequest.refererInfo.page) : null)
 
       payload.gdpr_consent = '';

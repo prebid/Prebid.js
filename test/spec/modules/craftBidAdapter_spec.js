@@ -40,21 +40,21 @@ describe('craftAdapter', function () {
     });
 
     it('should return false when params.sitekey not found', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         placementId: '1234abcd'
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when params.placementId not found', function () {
-      let bid = Object.assign({}, bid);
-      delete bid.params;
-      bid.params = {
+      let invalidBid = Object.assign({}, bid);
+      delete invalidBid.params;
+      invalidBid.params = {
         sitekey: 'craft-prebid-example'
       };
-      expect(spec.isBidRequestValid(bid)).to.equal(false);
+      expect(spec.isBidRequestValid(invalidBid)).to.equal(false);
     });
 
     it('should return false when AMP cotext found', function () {
