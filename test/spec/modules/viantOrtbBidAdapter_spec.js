@@ -180,6 +180,54 @@ describe('viantOrtbBidAdapter', function () {
       'src': 'client',
       'bidRequestsCount': 1
     }];
+    const basePMPDealsBidRequests = [{
+      'bidder': 'viant',
+      'params': {
+        'publisherId': '464',
+        'placementId': '1',
+        'pmp': {
+          'deals': [
+            {
+              'id': '1234567',
+              'at': 3,
+              'bidfloor': 25,
+              'bidfloorcur': 'USD',
+              'ext': {
+                'must_bid': 1,
+                'private_auction': 1
+              }
+            },
+            {
+              'id': '1234568',
+              'at': 3,
+              'bidfloor': 25,
+              'bidfloorcur': 'USD',
+              'ext': {
+                'must_bid': 0
+              }
+            }
+          ]
+        }
+      },
+      'mediaTypes': {
+        'banner': {
+          'sizes': [[728, 90]]
+        }
+      },
+      'gdprConsent': {
+        'consentString': 'consentString',
+        'gdprApplies': true,
+      },
+      'uspConsent': '1YYY',
+      'sizes': [[728, 90]],
+      'transactionId': '1111474f-58b1-4368-b812-84f8c937a099',
+      'adUnitCode': 'div-gpt-ad-1460505748561-0',
+      'bidId': '243310435309b5',
+      'bidderRequestId': '18084284054531',
+      'auctionId': 'e7b34fa3-8654-424e-8c49-03e509e53d8c',
+      'src': 'client',
+      'bidRequestsCount': 1
+    }];
 
     const testWindow = buildWindowTree(['https://www.example.com/test', 'https://www.example.com/other/page', 'https://www.example.com/third/page'], 'https://othersite.com/', 'https://example.com/canonical/page');
     const baseBidderRequestReferer = detectReferer(testWindow)();
@@ -236,6 +284,11 @@ describe('viantOrtbBidAdapter', function () {
       const requestBody = testBuildRequests(clonedBannerRequests, baseBidderRequest)[0].data;
       expect(requestBody.imp[0].banner.pos).to.equal(1);
     });
+  });
+
+  it('includes the deals in the bid request', function () {
+    const requestBody = testBuildRequests(basePMPDealsBidRequests, baseBidderRequest)[0].data;
+    expect(requestBody.imp[0].pmp).to.be.not.null;
   });
 
   if (FEATURES.VIDEO) {
