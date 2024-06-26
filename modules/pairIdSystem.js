@@ -70,27 +70,27 @@ export const pairIdSubmodule = {
       let LRStorageLocation = configParams.liveramp.storageKey || DEFAULT_LIVERAMP_PAIR_ID_KEY;
       const liverampValue = pairIdFromLocalStorage(LRStorageLocation) || pairIdFromCookie(LRStorageLocation);
 
-    if (liverampValue) {
-      try {
-        const parsedValue = atob(liverampValue);
-        if (parsedValue) {
-          const obj = JSON.parse(parsedValue);
+      if (liverampValue) {
+        try {
+          const parsedValue = atob(liverampValue);
+          if (parsedValue) {
+            const obj = JSON.parse(parsedValue);
 
-          if (obj && typeof obj === 'object' && obj.envelope) {
-            ids = ids.concat(obj.envelope);
+            if (obj && typeof obj === 'object' && obj.envelope) {
+              ids = ids.concat(obj.envelope);
+            } else {
+              logInfo('Pairid: Parsed object is not valid or does not contain envelope');
+            }
           } else {
-            logInfo('Pairid: Parsed object is not valid or does not contain envelope');
+            logInfo('Pairid: Decoded value is empty');
           }
-        } else {
-          logInfo('Pairid: Decoded value is empty');
+        } catch (error) {
+          logInfo('Pairid: Error parsing JSON: ', error);
         }
-      } catch (error) {
-        logInfo('Pairid: Error parsing JSON: ', error);
+      } else {
+        logInfo('Pairid: liverampValue for pairId from storage is empty or null');
       }
-    } else {
-      logInfo('Pairid: liverampValue for pairId from storage is empty or null');
-     }
-   }
+    }
 
     if (ids.length == 0) {
       logInfo('PairId not found.')
