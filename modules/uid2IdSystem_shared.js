@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { ajax } from '../src/ajax.js';
 import { cyrb53Hash } from '../src/utils.js';
 
