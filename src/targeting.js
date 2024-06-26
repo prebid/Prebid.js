@@ -33,6 +33,7 @@ import {
 import {getHighestCpm, getOldestHighestCpmBid} from './utils/reducers.js';
 import {getTTL} from './bidTTL.js';
 import * as events from './events.js';
+import { getFpdIntersection, getSignals } from './pps.js';
 
 var pbTargetingKeys = [];
 
@@ -209,7 +210,7 @@ export function newTargeting(auctionManager) {
   /**
    * Returns targeting for any bids which have deals if alwaysIncludeDeals === true
    */
-  function getDealBids(adUnitCodes, bidsReceived) {
+  function getDealBids(adUnitCodes, bidsReceived, bidsAddedToTargeting) {
     if (config.getConfig('targetingControls.alwaysIncludeDeals') === true) {
       const standardKeys = FEATURES.NATIVE ? TARGETING_KEYS_ARR.concat(NATIVE_TARGETING_KEYS) : TARGETING_KEYS_ARR.slice();
 
@@ -219,6 +220,7 @@ export function newTargeting(auctionManager) {
       // populate targeting keys for the remaining bids if they have a dealId
       return bids.map(bid => {
         if (bid.dealId && bidShouldBeAddedToTargeting(bid, adUnitCodes)) {
+          bidsAddedToTargeting.push(bid)
           return {
             [bid.adUnitCode]: getTargetingMap(bid, standardKeys.filter(
               key => typeof bid.adserverTargeting[key] !== 'undefined')
@@ -280,12 +282,22 @@ export function newTargeting(auctionManager) {
   targeting.getAllTargeting = function(adUnitCode, bidsReceived = getBidsReceived()) {
     const adUnitCodes = getAdUnitCodes(adUnitCode);
 
+    const bidsAddedToTargeting = [];
+
     // Get targeting for the winning bid. Add targeting for any bids that have
     // `alwaysUseBid=true`. If sending all bids is enabled, add targeting for losing bids.
-    var targeting = getWinningBidTargeting(adUnitCodes, bidsReceived)
-      .concat(getCustomBidTargeting(adUnitCodes, bidsReceived))
-      .concat(config.getConfig('enableSendAllBids') ? getBidLandscapeTargeting(adUnitCodes, bidsReceived) : getDealBids(adUnitCodes, bidsReceived))
+    var targeting = getWinningBidTargeting(adUnitCodes, bidsReceived, bidsAddedToTargeting)
+      .concat(getCustomBidTargeting(adUnitCodes, bidsReceived, bidsAddedToTargeting))
+      .concat(config.getConfig('enableSendAllBids') ? getBidLandscapeTargeting(adUnitCodes, bidsReceived, bidsAddedToTargeting) : getDealBids(adUnitCodes, bidsReceived, bidsAddedToTargeting))
       .concat(getAdUnitTargeting(adUnitCodes));
+
+    const fpdArray = bidsAddedToTargeting
+      .map(bid => auctionManager.index.getAuction(bid || {})?.getFPD()?.global)
+      .filter(fpd => fpd);
+
+    const commonFpd = getFpdIntersection(fpdArray);
+    const signals = getSignals(commonFpd);
+    //@TODO: what to do with signals? 
 
     // store a reference of the targeting keys
     targeting.map(adUnitCode => {
@@ -562,9 +574,11 @@ export function newTargeting(auctionManager) {
    * @param {string[]}    adUnitCodes code array
    * @return {targetingArray}   winning bids targeting
    */
-  function getWinningBidTargeting(adUnitCodes, bidsReceived) {
+  function getWinningBidTargeting(adUnitCodes, bidsReceived, bidsAddedToTargeting) {
     let winners = targeting.getWinningBids(adUnitCodes, bidsReceived);
     let standardKeys = getStandardKeys();
+
+    bidsAddedToTargeting.push(...winners);
 
     winners = winners.map(winner => {
       return {
@@ -662,10 +676,14 @@ export function newTargeting(auctionManager) {
    * @param {string[]}    adUnitCodes code array
    * @return {targetingArray}   bids with custom targeting defined in bidderSettings
    */
-  function getCustomBidTargeting(adUnitCodes, bidsReceived) {
+  function getCustomBidTargeting(adUnitCodes, bidsReceived, bidsAddedToTargeting) {
     return bidsReceived
       .filter(bid => includes(adUnitCodes, bid.adUnitCode))
-      .map(bid => Object.assign({}, bid))
+      .map(bid => {
+        const newBid = Object.assign({}, bid);
+        bidsAddedToTargeting(newBid);
+        return newBid;
+      })
       .reduce(mergeAdServerTargeting, [])
       .map(truncateCustomKeys)
       .filter(bid => bid); // removes empty elements in array;
@@ -676,7 +694,7 @@ export function newTargeting(auctionManager) {
    * @param {string[]}    adUnitCodes code array
    * @return {targetingArray}   all non-winning bids targeting
    */
-  function getBidLandscapeTargeting(adUnitCodes, bidsReceived) {
+  function getBidLandscapeTargeting(adUnitCodes, bidsReceived, bidsAddedToTargeting) {
     const standardKeys = FEATURES.NATIVE ? TARGETING_KEYS_ARR.concat(NATIVE_TARGETING_KEYS) : TARGETING_KEYS_ARR.slice();
     const adUnitBidLimit = config.getConfig('sendBidsControl.bidLimit');
     const bids = getHighestCpmBidsFromBidPool(bidsReceived, getHighestCpm, adUnitBidLimit);
@@ -689,6 +707,7 @@ export function newTargeting(auctionManager) {
     // populate targeting keys for the remaining bids
     return bids.map(bid => {
       if (bidShouldBeAddedToTargeting(bid, adUnitCodes)) {
+        bidsAddedToTargeting.push(bid);
         return {
           [bid.adUnitCode]: getTargetingMap(bid, standardKeys.filter(
             key => typeof bid.adserverTargeting[key] !== 'undefined' &&
