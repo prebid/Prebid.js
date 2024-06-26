@@ -79,16 +79,16 @@ export const pairIdSubmodule = {
           if (obj && typeof obj === 'object' && obj.envelope) {
             ids = ids.concat(obj.envelope);
           } else {
-            logInfo('Parsed object is not valid or does not contain envelope');
+            logInfo('Pairid: Parsed object is not valid or does not contain envelope');
           }
         } else {
-          logInfo('Decoded value is empty');
+          logInfo('Pairid: Decoded value is empty');
         }
       } catch (error) {
-        logInfo('Error parsing JSON: ', error);
+        logInfo('Pairid: Error parsing JSON: ', error);
       }
     } else {
-      logInfo('liverampValue for pairId from storage is empty or null');
+      logInfo('Pairid: liverampValue for pairId from storage is empty or null');
      }
    }
 
