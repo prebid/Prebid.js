@@ -1,4 +1,4 @@
-import {buildVideo, deepSetValue, isArray, logWarn} from '../src/utils.js';
+import {deepAccess, deepSetValue, isArray, isBoolean, isNumber, isStr, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
@@ -19,6 +19,32 @@ const USER_SYNC_URL_IMAGE = 'https://ssp.disqus.com/sync?type=image';
 const DEFAULT_CUR = 'USD';
 const TTL = 300;
 const NET_REV = true;
+
+const DATA_TYPES = {
+  'NUMBER': 'number',
+  'STRING': 'string',
+  'BOOLEAN': 'boolean',
+  'ARRAY': 'array',
+  'OBJECT': 'object'
+};
+const VIDEO_CUSTOM_PARAMS = {
+  'mimes': DATA_TYPES.ARRAY,
+  'minduration': DATA_TYPES.NUMBER,
+  'maxduration': DATA_TYPES.NUMBER,
+  'startdelay': DATA_TYPES.NUMBER,
+  'playbackmethod': DATA_TYPES.ARRAY,
+  'api': DATA_TYPES.ARRAY,
+  'protocols': DATA_TYPES.ARRAY,
+  'w': DATA_TYPES.NUMBER,
+  'h': DATA_TYPES.NUMBER,
+  'battr': DATA_TYPES.ARRAY,
+  'linearity': DATA_TYPES.NUMBER,
+  'placement': DATA_TYPES.NUMBER,
+  'plcmt': DATA_TYPES.NUMBER,
+  'minbitrate': DATA_TYPES.NUMBER,
+  'maxbitrate': DATA_TYPES.NUMBER,
+  'skip': DATA_TYPES.NUMBER
+}
 
 export const spec = {
   code: BIDDER_CODE,
@@ -280,6 +306,49 @@ function buildBanner(request) {
       h: sizes[0][1]
     }
   }
+}
+
+function buildVideo(request) {
+  let video = {};
+  const videoParams = deepAccess(request, 'mediaTypes.video', {});
+  for (const key in VIDEO_CUSTOM_PARAMS) {
+    if (videoParams.hasOwnProperty(key)) {
+      video[key] = checkParamDataType(key, videoParams[key], VIDEO_CUSTOM_PARAMS[key]);
+    }
+  }
+  if (videoParams.playerSize) {
+    if (isArray(videoParams.playerSize[0])) {
+      video.w = parseInt(videoParams.playerSize[0][0], 10);
+      video.h = parseInt(videoParams.playerSize[0][1], 10);
+    } else if (isNumber(videoParams.playerSize[0])) {
+      video.w = parseInt(videoParams.playerSize[0], 10);
+      video.h = parseInt(videoParams.playerSize[1], 10);
+    }
+  }
+  return video;
+}
+
+function checkParamDataType(key, value, datatype) {
+  let functionToExecute;
+  switch (datatype) {
+    case DATA_TYPES.BOOLEAN:
+      functionToExecute = isBoolean;
+      break;
+    case DATA_TYPES.NUMBER:
+      functionToExecute = isNumber;
+      break;
+    case DATA_TYPES.STRING:
+      functionToExecute = isStr;
+      break;
+    case DATA_TYPES.ARRAY:
+      functionToExecute = isArray;
+      break;
+  }
+  if (functionToExecute(value)) {
+    return value;
+  }
+  logWarn('Ignoring param key: ' + key + ', expects ' + datatype + ', found ' + typeof value);
+  return undefined;
 }
 
 function provideEids(request, payload) {
