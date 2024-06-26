@@ -7,8 +7,11 @@ import {hasPurpose1Consent} from '../src/utils/gpdr.js';
 
 const INTEGRATION_METHOD = 'prebid.js';
 const BIDDER_CODE = 'yahooAds';
-const BIDDER_ALIASES = ['yahoossp', 'yahooAdvertising']
 const GVLID = 25;
+const BIDDER_ALIASES = [
+    { code: 'yahoossp', gvlid: 25 },
+    { code: 'yahooAdvertising', gvlid: 25 }
+];
 const ADAPTER_VERSION = '1.1.0';
 const PREBID_VERSION = '$prebid.version$';
 const DEFAULT_BID_TTL = 300;
