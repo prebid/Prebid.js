@@ -441,6 +441,13 @@ describe('Conversant adapter tests', function() {
     expect(payload.site.content).to.have.property('title');
   });
 
+  it('Verify currency', () => {
+    const bidderRequest = { timeout: 9999, ortb2: {cur: ['EUR']} };
+    const request = spec.buildRequests(bidRequests, bidderRequest);
+    const payload = request.data;
+    expect(payload.cur).deep.equal(['USD']);
+  })
+
   it('Verify supply chain data', () => {
     const bidderRequest = {refererInfo: {page: 'http://test.com?a=b&c=123'}};
     const schain = {complete: 1, ver: '1.0', nodes: [{asi: 'bidderA.com', sid: '00001', hp: 1}]};

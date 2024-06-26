@@ -8,11 +8,11 @@ import {deepSetValue, isNumber, isPlainObject, isStr, logError, logInfo, logWarn
 import {config} from '../src/config.js';
 import {gdprDataHandler} from '../src/adapterManager.js';
 import {includes} from '../src/polyfill.js';
-import {timedAuctionHook} from '../src/utils/perfMetrics.js';
 import {registerOrtbProcessor, REQUEST} from '../src/pbjsORTB.js';
 import {enrichFPD} from '../src/fpd/enrichment.js';
 import {getGlobal} from '../src/prebidGlobal.js';
 import {cmpClient} from '../libraries/cmp/cmpClient.js';
+import {consentManagementHook} from '../libraries/consentManagement/cmUtils.js';
 
 const DEFAULT_CMP = 'iab';
 const DEFAULT_CONSENT_TIMEOUT = 10000;
@@ -22,6 +22,7 @@ export let userCMP;
 export let consentTimeout;
 export let gdprScope;
 export let staticConsentData;
+let dsaPlatform = false;
 let actionTimeout;
 
 let consentData;
@@ -157,20 +158,6 @@ function loadConsentData(cb) {
 }
 
 /**
- * Like `loadConsentData`, but cache and re-use previously loaded data.
- * @param cb
- */
-function loadIfMissing(cb) {
-  if (consentData) {
-    logInfo('User consent information already known.  Pulling internally stored information...');
-    // eslint-disable-next-line standard/no-callback-literal
-    cb(false);
-  } else {
-    loadConsentData(cb);
-  }
-}
-
-/**
  * If consentManagement module is enabled (ie included in setConfig), this hook function will attempt to fetch the
  * user's encoded consent string from the supported CMP.  Once obtained, the module will store this
  * data as part of a gdprConsent object which gets transferred to adapterManager's gdprDataHandler object.
@@ -178,29 +165,7 @@ function loadIfMissing(cb) {
  * @param {object} reqBidsConfigObj required; This is the same param that's used in pbjs.requestBids.
  * @param {function} fn required; The next function in the chain, used by hook.js
  */
-export const requestBidsHook = timedAuctionHook('gdpr', function requestBidsHook(fn, reqBidsConfigObj) {
-  loadIfMissing(function (shouldCancelAuction, errMsg, ...extraArgs) {
-    if (errMsg) {
-      let log = logWarn;
-      if (shouldCancelAuction) {
-        log = logError;
-        errMsg = `${errMsg} Canceling auction as per consentManagement config.`;
-      }
-      log(errMsg, ...extraArgs);
-    }
-
-    if (shouldCancelAuction) {
-      fn.stopTiming();
-      if (typeof reqBidsConfigObj.bidsBackHandler === 'function') {
-        reqBidsConfigObj.bidsBackHandler();
-      } else {
-        logError('Error executing bidsBackHandler');
-      }
-    } else {
-      fn.call(this, reqBidsConfigObj);
-    }
-  });
-});
+export const requestBidsHook = consentManagementHook('gdpr', () => consentData, loadConsentData);
 
 /**
  * This function checks the consent data provided by CMP to ensure it's in an expected state.
@@ -282,6 +247,7 @@ export function setConsentConfig(config) {
 
   // if true, then gdprApplies should be set to true
   gdprScope = config.defaultGdprScope === true;
+  dsaPlatform = !!config.dsaPlatform;
 
   logInfo('consentManagement module has been activated...');
 
@@ -314,6 +280,9 @@ export function enrichFPDHook(next, fpd) {
         deepSetValue(ortb2, 'regs.ext.gdpr', consent.gdprApplies ? 1 : 0);
       }
       deepSetValue(ortb2, 'user.ext.consent', consent.consentString);
+    }
+    if (dsaPlatform) {
+      deepSetValue(ortb2, 'regs.ext.dsa.dsarequired', 3);
     }
     return ortb2;
   }));
