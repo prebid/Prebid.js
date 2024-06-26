@@ -88,12 +88,10 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
   }
   let imp = data.imp || [];
   let dealsMap = new Map();
-  let privateAuctions = new Map();
   if (bidderRequest.bids) {
     bidderRequest.bids.forEach(bid => {
-      if (bid.params && bid.params.pmp) {
-        dealsMap.set(bid.bidId, bid.params.pmp);
-        privateAuctions.set(bid.bidId, bid.params.private_auction || 0);
+      if (bid.ortb2Imp && bid.ortb2Imp.pmp) {
+        dealsMap.set(bid.bidId, bid.ortb2Imp.pmp);
       }
     });
   }
@@ -102,8 +100,6 @@ function createRequest(bidRequests, bidderRequest, mediaType) {
     if (deals) {
       element.pmp = deals;
     }
-    element.pmp = element.pmp || {};
-    element.pmp.private_auction = privateAuctions.get(element.id);
   });
   data.ext = data.ext || {};
   data.ext.viant = {

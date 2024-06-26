@@ -186,8 +186,11 @@ describe('viantOrtbBidAdapter', function () {
       'bidder': 'viant',
       'params': {
         'publisherId': '464',
-        'placementId': '1',
+        'placementId': '1'
+      },
+      'ortb2Imp': {
         'pmp': {
+          'private_auction': 0,
           'deals': [
             {
               'id': '1234567',
@@ -209,7 +212,7 @@ describe('viantOrtbBidAdapter', function () {
               }
             }
           ]
-        }
+        },
       },
       'mediaTypes': {
         'banner': {
