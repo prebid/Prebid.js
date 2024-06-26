@@ -2,14 +2,14 @@ import {config} from 'src/config.js';
 import {
   dapUtils,
   generateRealTimeData,
-  akamaiDapRtdSubmodule,
+  symitriDapRtdSubmodule,
   storage, DAP_MAX_RETRY_TOKENIZE, DAP_SS_ID, DAP_TOKEN, DAP_MEMBERSHIP, DAP_ENCRYPTED_MEMBERSHIP
-} from 'modules/akamaiDapRtdProvider.js';
+} from 'modules/symitriDapRtdProvider.js';
 import {server} from 'test/mocks/xhr.js';
 import {hook} from '../../../src/hook.js';
 const responseHeader = {'Content-Type': 'application/json'};
 
-describe('akamaiDapRtdProvider', function() {
+describe('symitriDapRtdProvider', function() {
   const testReqBidsConfigObj = {
     adUnits: [
       {
@@ -151,9 +151,9 @@ describe('akamaiDapRtdProvider', function() {
   afterEach(function () {
   });
 
-  describe('akamaiDapRtdSubmodule', function() {
+  describe('symitriDapRtdSubmodule', function() {
     it('successfully instantiates', function () {
-      expect(akamaiDapRtdSubmodule.init()).to.equal(true);
+      expect(symitriDapRtdSubmodule.init()).to.equal(true);
     });
   });
 
@@ -194,7 +194,7 @@ describe('akamaiDapRtdProvider', function() {
         membershipRequest.respond(200, responseHeader, JSON.stringify(membership));
         let tokenWithExpiry = 'Sample-token-with-exp'
         let tokenizeRequest = server.requests[1];
-        responseHeader['Akamai-DAP-Token'] = tokenWithExpiry;
+        responseHeader['Symitri-DAP-Token'] = tokenWithExpiry;
         tokenizeRequest.respond(200, responseHeader, JSON.stringify(tokenWithExpiry));
         let data = dapUtils.dapGetRtdObj(membership, cmoduleConfig.params.segtax);
         expect(ortb2.user.data).to.deep.include.members(data.rtd.ortb2.user.data);
@@ -211,11 +211,11 @@ describe('akamaiDapRtdProvider', function() {
         dapUtils.callDapAPIs(bidConfig, () => {}, emoduleConfig, {});
         let encMembership = 'Sample-enc-token';
         let membershipRequest = server.requests[0];
-        responseHeader['Akamai-DAP-Token'] = encMembership;
+        responseHeader['Symitri-DAP-Token'] = encMembership;
         membershipRequest.respond(200, responseHeader, JSON.stringify(encMembership));
         let tokenWithExpiry = 'Sample-token-with-exp'
         let tokenizeRequest = server.requests[1];
-        responseHeader['Akamai-DAP-Token'] = tokenWithExpiry;
+        responseHeader['Symitri-DAP-Token'] = tokenWithExpiry;
         tokenizeRequest.respond(200, responseHeader, JSON.stringify(tokenWithExpiry));
         let data = dapUtils.dapGetEncryptedRtdObj({'encryptedSegments': encMembership}, emoduleConfig.params.segtax);
         expect(ortb2.user.data).to.deep.include.members(data.rtd.ortb2.user.data);
@@ -427,7 +427,7 @@ describe('akamaiDapRtdProvider', function() {
     it('test dapRefreshToken success response', function () {
       dapUtils.dapRefreshToken(ortb2, sampleConfig, true, onDone)
       let request = server.requests[0];
-      responseHeader['Akamai-DAP-Token'] = sampleCachedToken.token;
+      responseHeader['Symitri-DAP-Token'] = sampleCachedToken.token;
       request.respond(200, responseHeader, JSON.stringify(sampleCachedToken.token));
       expect(JSON.parse(storage.getDataFromLocalStorage(DAP_TOKEN)).token).to.be.equal(sampleCachedToken.token);
     });
@@ -435,7 +435,7 @@ describe('akamaiDapRtdProvider', function() {
     it('test dapRefreshToken success response with deviceid 100', function () {
       dapUtils.dapRefreshToken(ortb2, esampleConfig, true, onDone)
       let request = server.requests[0];
-      responseHeader['Akamai-DAP-100'] = sampleCachedToken.token;
+      responseHeader['Symitri-DAP-100'] = sampleCachedToken.token;
       request.respond(200, responseHeader, '');
       expect(storage.getDataFromLocalStorage('dap_deviceId100')).to.be.equal(sampleCachedToken.token);
     });
@@ -444,7 +444,7 @@ describe('akamaiDapRtdProvider', function() {
       dapUtils.dapRefreshToken(ortb2, sampleConfig, true, onDone)
       let request = server.requests[0];
       let tokenWithExpiry = 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoicGFzc3dvcmQxIiwiZXhwIjoxNjQzODMwMzY5fQ..hTbcSQgmmO0HUJJrQ5fRHw.7zjrQXNNVkb-GD0ZhIVhEPcWbyaDBilHTWv-bp1lFZ9mdkSC0QbcAvUbYteiTD7ya23GUwcL2WOW8WgRSHaWHOJe0B5NDqfdUGTzElWfu7fFodRxRgGmwG8Rq5xxteFKLLGHLf1mFYRJKDtjtgajGNUKIDfn9AEt-c5Qz4KU8VolG_KzrLROx-f6Z7MnoPTcwRCj0WjXD6j2D6RAZ80-mKTNIsMIELdj6xiabHcjDJ1WzwtwCZSE2y2nMs451pSYp8W-bFPfZmDDwrkjN4s9ASLlIXcXgxK-H0GsiEbckQOZ49zsIKyFtasBvZW8339rrXi1js-aBh99M7aS5w9DmXPpUDmppSPpwkeTfKiqF0cQiAUq8tpeEQrGDJuw3Qt2.XI8h9Xw-VZj_NOmKtV19wLM63S4snos7rzkoHf9FXCw'
-      responseHeader['Akamai-DAP-Token'] = tokenWithExpiry;
+      responseHeader['Symitri-DAP-Token'] = tokenWithExpiry;
       request.respond(200, responseHeader, JSON.stringify(tokenWithExpiry));
       expect(JSON.parse(storage.getDataFromLocalStorage(DAP_TOKEN)).expires_at).to.be.equal(1643830359);
     });
@@ -464,7 +464,7 @@ describe('akamaiDapRtdProvider', function() {
       let encMembership = 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoic29tZXNlY3JldGludmF1bHQifQ..f8_At4OqeQXyQcSwThOJ_w.69ImVQ3bEZ6QP7ROCRpAJjNcKY49SEPYR6qTp_8l7L8kQdPbpi4wmuOzt78j7iBrX64k2wltzmQFjDmVKSxDhrEguxpgx6t-L1tT8ZA0UosMWpVsgmKEZxOn2e9ES3jw8RNCS4WSWocSPQX33xSb51evXjm9E1s0tGoLnwXl0GsUvzRsSU86wQG6RZnAQTi7s-r-M2TKibdDjUqgIt62vJ-aBZ7RWw91MINgOdmDNs1bFfbBX5Cy1kd4-kjvRDz_aJ6zHX4sK_7EmQhGEY3tW-A3_l2I88mw-RSJaPkb_IWg0QpVwXDaE2F2g8NpY1PzCRvG_NIE8r28eK5q44OMVitykHmKmBXGDj7z2JVgoXkfo5u0I-dypZARn4GP_7niK932avB-9JD7Mz3TrlU4GZ7IpYfJ91PMsRhrs5xNPQwLZbpuhF76A7Dp7iss71UjkGCiPTU6udfRb4foyf_7xEF66m1eQVcVaMdxEbMuu9GBfdr-d04TbtJhPfUV8JfxTenvRYoi13n0j5kH0M5OgaSQD9kQ3Mrd9u-Cms-BGtT0vf-N8AaFZY_wn0Y4rkpv5HEaH7z3iT4RCHINWrXb_D0WtjLTKQi2YmF8zMlzUOewNJGwZRwbRwxc7JoDIKEc5RZkJYevfJXOEEOPGXZ7AGZxOEsJawPqFqd_nOUosCZS4akHhcDPcVowoecVAV0hhhoS6JEY66PhPp1snbt6yqA-fQhch7z8Y-DZT3Scibvffww3Scg_KFANWp0KeEvHG0vyv9R2F4o66viSS8y21MDnM7Yjk8C-j7aNMldUQbjN_7Yq1nkfe0jiBX_hsINBRPgJHUY4zCaXuyXs-JZZfU92nwG0RT3A_3RP2rpY8-fXp9d3C2QJjEpnmHvTMsuAZCQSBe5DVrJwN_UKedxcJEoOt0wLz6MaCMyYZPd8tnQeqYK1cd3RgQDXtzKC0HDw1En489DqJXEst4eSSkaaW1lImLeaF8XCOaIqPqoyGk4_6KVLw5Q7OnpczuXqYKMd9UTMovGeuTuo1k0ddfEqTq9QwxkwZL51AiDRnwTCAeYBU1krV8FCJQx-mH_WPB5ftZj-o_3pbvANeRk27QBVmjcS-tgDllJkWBxX-4axRXzLw8pUUUZUT_NOL0OiqUCWVm0qMBEpgRQ57Se42-hkLMTzLhhGJOnVcaXU1j4ep-N7faNvbgREBjf_LgzvaWS90a2NJ9bB_J9FyXelhCN_AMLfdOS3fHkeWlZ0u0PMbn5DxXRMe0l9jB-2VJZhcPQRlWoYyoCO3l4F5ZmuQP5Xh9CU4tvSWih6jlwMDgdVWuTpdfPD5bx8ccog3JDq87enx-QtPzLU3gMgouNARJGgNwKS_GJSE1uPrt2oiqgZ3Z0u_I5MKvPdQPV3o-4rsaE730eB4OwAOF-mkGWpzy8Pbl-Qe5PR9mHBhuyJgZ-WDSCHl5yvet2kfO9mPXZlqBQ26fzTcUYH94MULAZn36og6w.3iKGv-Le-AvRmi26W1v6ibRLGbwKbCR92vs-a9t55hw';
       dapUtils.dapRefreshEncryptedMembership(ortb2, esampleConfig, sampleCachedToken.token, onDone)
       let request = server.requests[0];
-      responseHeader['Akamai-DAP-Token'] = encMembership;
+      responseHeader['Symitri-DAP-Token'] = encMembership;
       request.respond(200, responseHeader, encMembership);
       let rtdObj = dapUtils.dapGetEncryptedRtdObj({'encryptedSegments': encMembership}, 504)
       expect(ortb2.user.data).to.deep.include.members(rtdObj.rtd.ortb2.user.data);
@@ -475,7 +475,7 @@ describe('akamaiDapRtdProvider', function() {
       let encMembership = 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoic29tZXNlY3JldGludmF1bHQiLCJleHAiOjE2NDM4MzA2NDB9..inYoxwht_aqTIWqGhEm_Gw.wDcCUOCwtqgnNUouaD723gKfm7X7bgkHgtiX4mr07P3tWk25PUQunmwTLhWBB5CYzzGIfIvveG_u4glNRLi_eRSQV4ihKKk1AN-BSSJ3d0CLAdY9I1WG5vX1VmopXyKnV90bl9SLNqnhg4Vxe6YU4ogTYxsKHuIN1EeIH4hpl-HbCQWQ1DQt4mB-MQF8V9AWTfU0D7sFMSK8f9qj6NGmf1__oHdHUlws0t5V2UAn_dhJexsuREK_gh65pczCuly5eEcziZ82LeP-nOhKWSRHB_tS_mKXrRU6_At_EVDgtfA3PSBJ6eQylCii6bTL42vZzz4jZhJv_3eLfRdKqpVT5CWNBzcDoQ2VcQgKgIBtPJ45KFfAYTQ6kdl21QMSjqtu8GTsv1lEZtrqHY6zRiG8_Mu28-PmjEw4LDdZmBDOeroue_MJD6wuE_jlE7J2iVdo8CkVnoRgzFwNbKBo7CK4z0WahV9rhuOm0LKAN5H0jF_gj696U-3fVTDTIb8ndNKNI2_xAhvWs00BFGtUtWgr8QGDGRTDCNGsDgnb_Vva9xCqVOyAE9O3Fq1QYl-tMA-KkBt3zzvmFFpOxpOyH-lUubKLKlsrxKc3GSyVEQ9DDLhrXXJgR5H5BSE4tjlK7p3ODF5qz0FHtIj7oDcgLazFO7z2MuFy2LjJmd3hKl6ujcfYEDiQ4D3pMIo7oiU33aFBD1YpzI4-WzNfJlUt1FoK0-DAXpbbV95s8p08GOD4q81rPw5hRADKJEr0QzrbDwplTWCzT2fKXMg_dIIc5AGqGKnVRUS6UyF1DnHpudNIJWxyWZjWIEw_QNjU0cDFmyPSyKxNrnfq9w8WE2bfbS5KTicxei5QHnC-cnL7Nh7IXp7WOW6R1YHbNPT7Ad4OhnlV-jjrXwkSv4wMAbfwAWoSCchGh7uvENNAeJymuponlJbOgw_GcYM73hMs8Z8W9qxRfbyF4WX5fDKXg61mMlaieHkc0EnoC5q7uKyXuZUehHZ76JLDFmewslLkQq5SkVCttzJePBnY1ouPEHw5ZTzUnG5f01QQOVcjIN-AqXNDbG5IOwq0heyS6vVfq7lZKJdLDVQ21qRjazGPaqYwLzugkWkzCOzPTgyFdbXzgjfmJwylHSOM5Jpnul84GzxEQF-1mHP2A8wtIT-M7_iX24It2wwWvc8qLA6GEqruWCtNyoug8CXo44mKdSSCGeEZHtfMbzXdLIBHCy2jSHz5i8S7DU_R7rE_5Ssrb81CqIYbgsAQBHtOYoyvzduTOruWcci4De0QcULloqImIEHUuIe2lnYO889_LIx5p7nE3UlSvLBo0sPexavFUtHqI6jdG6ye9tdseUEoNBDXW0aWD4D-KXX1JLtAgToPVUtEaXCJI7QavwO9ZG6UZM6jbfuJ5co0fvUXp6qYrFxPQo2dYHkar0nT6s1Zg5l2g8yWlLUJrHdHAzAw_NScUp71OpM4TmNsLnYaPVPcOxMvtJXTanbNWr0VKc8gy9q3k_1XxAnQwiduNs7f5bA-6qCVpayHv5dE7mUhFEwyh1_w95jEaURsQF_hnnd2OqRkADfiok4ZiPU2b38kFW1LXjpI39XXES3JU0e08Rq2uuelyLbCLWuJWq_axuKSZbZvpYeqWtIAde8FjCiO7RPlEc0nyzWBst8RBxQ-Bekg9UXPhxBRcm0HwA.Q2cBSFOQAC-QKDwmjrQXnVQd3jNOppMl9oZfd2yuKeY';
       dapUtils.dapRefreshEncryptedMembership(ortb2, esampleConfig, sampleCachedToken.token, onDone)
       let request = server.requests[0];
-      responseHeader['Akamai-DAP-Token'] = encMembership;
+      responseHeader['Symitri-DAP-Token'] = encMembership;
       request.respond(200, responseHeader, encMembership);
       let rtdObj = dapUtils.dapGetEncryptedRtdObj({'encryptedSegments': encMembership}, 504)
       expect(ortb2.user.data).to.deep.include.members(rtdObj.rtd.ortb2.user.data);
@@ -494,7 +494,7 @@ describe('akamaiDapRtdProvider', function() {
       let request = server.requests[0];
       request.respond(403, responseHeader, 'error');
       let requestTokenize = server.requests[1];
-      responseHeader['Akamai-DAP-Token'] = sampleCachedToken.token;
+      responseHeader['Symitri-DAP-Token'] = sampleCachedToken.token;
       requestTokenize.respond(200, responseHeader, '');
       let requestMembership = server.requests[2];
       requestMembership.respond(403, responseHeader, 'error');
@@ -551,25 +551,25 @@ describe('akamaiDapRtdProvider', function() {
     });
   });
 
-  describe('Akamai-DAP-SS-ID test', function () {
-    it('Akamai-DAP-SS-ID present in response header', function () {
+  describe('Symitri-DAP-SS-ID test', function () {
+    it('Symitri-DAP-SS-ID present in response header', function () {
       let expiry = Math.round(Date.now() / 1000.0) + 300; // in seconds
       dapUtils.dapRefreshToken(ortb2, sampleConfig, false, onDone)
       let request = server.requests[0];
       let sampleSSID = 'Test_SSID_Spec';
-      responseHeader['Akamai-DAP-Token'] = sampleCachedToken.token;
-      responseHeader['Akamai-DAP-SS-ID'] = sampleSSID;
+      responseHeader['Symitri-DAP-Token'] = sampleCachedToken.token;
+      responseHeader['Symitri-DAP-SS-ID'] = sampleSSID;
       request.respond(200, responseHeader, '');
       expect(storage.getDataFromLocalStorage(DAP_SS_ID)).to.be.equal(JSON.stringify(sampleSSID));
     });
 
-    it('Test if Akamai-DAP-SS-ID is present in request header', function () {
+    it('Test if Symitri-DAP-SS-ID is present in request header', function () {
       let expiry = Math.round(Date.now() / 1000.0) + 100; // in seconds
       storage.setDataInLocalStorage(DAP_SS_ID, JSON.stringify('Test_SSID_Spec'))
       dapUtils.dapRefreshToken(ortb2, sampleConfig, false, onDone)
       let request = server.requests[0];
-      let ssidHeader = request.requestHeaders['Akamai-DAP-SS-ID'];
-      responseHeader['Akamai-DAP-Token'] = sampleCachedToken.token;
+      let ssidHeader = request.requestHeaders['Symitri-DAP-SS-ID'];
+      responseHeader['Symitri-DAP-Token'] = sampleCachedToken.token;
       request.respond(200, responseHeader, '');
       expect(ssidHeader).to.be.equal('Test_SSID_Spec');
     });
@@ -577,24 +577,24 @@ describe('akamaiDapRtdProvider', function() {
 
   describe('Test gdpr and usp consent handling', function () {
     it('Gdpr applies and gdpr consent string not present', function () {
-      expect(akamaiDapRtdSubmodule.init(null, sampleGdprConsentConfig)).to.equal(false);
+      expect(symitriDapRtdSubmodule.init(null, sampleGdprConsentConfig)).to.equal(false);
     });
 
     it('Gdpr applies and gdpr consent string is present', function () {
       sampleGdprConsentConfig.gdpr.consentString = 'BOJ/P2HOJ/P2HABABMAAAAAZ+A==';
-      expect(akamaiDapRtdSubmodule.init(null, sampleGdprConsentConfig)).to.equal(true);
+      expect(symitriDapRtdSubmodule.init(null, sampleGdprConsentConfig)).to.equal(true);
     });
 
     it('USP consent present and user have opted out', function () {
-      expect(akamaiDapRtdSubmodule.init(null, sampleUspConsentConfig)).to.equal(false);
+      expect(symitriDapRtdSubmodule.init(null, sampleUspConsentConfig)).to.equal(false);
     });
 
     it('USP consent present and user have not been provided with option to opt out', function () {
-      expect(akamaiDapRtdSubmodule.init(null, {'usp': '1NYY'})).to.equal(false);
+      expect(symitriDapRtdSubmodule.init(null, {'usp': '1NYY'})).to.equal(false);
     });
 
     it('USP consent present and user have not opted out', function () {
-      expect(akamaiDapRtdSubmodule.init(null, {'usp': '1YNY'})).to.equal(true);
+      expect(symitriDapRtdSubmodule.init(null, {'usp': '1YNY'})).to.equal(true);
     });
   });
 });

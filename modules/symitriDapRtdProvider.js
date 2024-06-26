@@ -1,8 +1,8 @@
 /**
- * This module adds the Akamai DAP RTD provider to the real time data module
+ * This module adds the Symitri DAP RTD provider to the real time data module
  * The {@link module:modules/realTimeData} module is required
  * The module will fetch real-time data from DAP
- * @module modules/akamaiDapRtdProvider
+ * @module modules/symitriDapRtdProvider
  * @requires module:modules/realTimeData
  */
 import {ajax} from '../src/ajax.js';
@@ -18,7 +18,7 @@ import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 
 const MODULE_NAME = 'realTimeData';
 const SUBMODULE_NAME = 'dap';
-const MODULE_CODE = 'akamaidap';
+const MODULE_CODE = 'symitri';
 
 export const DAP_TOKEN = 'async_dap_token';
 export const DAP_MEMBERSHIP = 'async_dap_membership';
@@ -143,13 +143,13 @@ function init(provider, userConsent) {
 }
 
 /** @type {RtdSubmodule} */
-export const akamaiDapRtdSubmodule = {
+export const symitriDapRtdSubmodule = {
   name: SUBMODULE_NAME,
   getBidRequestData: getRealTimeData,
   init: init
 };
 
-submodule(MODULE_NAME, akamaiDapRtdSubmodule);
+submodule(MODULE_NAME, symitriDapRtdSubmodule);
 export const dapUtils = {
 
   callDapAPIs: function(bidConfig, onDone, rtdConfig, userConsent) {
@@ -213,11 +213,11 @@ export const dapUtils = {
         item.token = token;
         storage.setDataInLocalStorage(DAP_TOKEN, JSON.stringify(item));
         dapUtils.dapLog('Successfully updated and stored token; expires at ' + item.expires_at);
-        let dapSSID = xhr.getResponseHeader('Akamai-DAP-SS-ID');
+        let dapSSID = xhr.getResponseHeader('Symitri-DAP-SS-ID');
         if (dapSSID) {
           storage.setDataInLocalStorage(DAP_SS_ID, JSON.stringify(dapSSID));
         }
-        let deviceId100 = xhr.getResponseHeader('Akamai-DAP-100');
+        let deviceId100 = xhr.getResponseHeader('Symitri-DAP-100');
         if (deviceId100 != null) {
           storage.setDataInLocalStorage('dap_deviceId100', deviceId100);
           dapUtils.dapLog('Successfully stored DAP 100 Device ID: ' + deviceId100);
@@ -357,7 +357,7 @@ export const dapUtils = {
    */
   dapGetRtdObj: function(membership, segtax) {
     let segment = {
-      name: 'dap.akamai.com',
+      name: 'dap.symitri.com',
       ext: {
         'segtax': segtax
       },
@@ -397,7 +397,7 @@ export const dapUtils = {
    */
   dapGetEncryptedRtdObj: function(encToken, segtax) {
     let segment = {
-      name: 'dap.akamai.com',
+      name: 'dap.symitri.com',
       ext: {
         'segtax': segtax
       },
@@ -475,7 +475,7 @@ export const dapUtils = {
       const hasGdpr = (gdpr && typeof gdpr.gdprApplies === 'boolean' && gdpr.gdprApplies) ? 1 : 0;
       const gdprConsentString = hasGdpr ? gdpr.consentString : '';
       if (hasGdpr && (!gdprConsentString || gdprConsentString === '')) {
-        logError('akamaiDapRtd submodule requires consent string to call API');
+        logError('symitriDapRtd submodule requires consent string to call API');
         consent = false;
       }
     } else if (userConsent && userConsent.usp) {
@@ -609,7 +609,7 @@ export const dapUtils = {
     let customHeaders = {'Content-Type': 'application/json'};
     let dapSSID = JSON.parse(storage.getDataFromLocalStorage(DAP_SS_ID));
     if (dapSSID) {
-      customHeaders['Akamai-DAP-SS-ID'] = dapSSID;
+      customHeaders['Symitri-DAP-SS-ID'] = dapSSID;
     }
 
     let url = 'https://' + config.api_hostname + path;
@@ -619,7 +619,7 @@ export const dapUtils = {
         switch (config.api_version) {
           case 'x1':
           case 'x1-dev':
-            token = request.getResponseHeader('Akamai-DAP-Token');
+            token = request.getResponseHeader('Symitri-DAP-Token');
             break;
         }
         onSuccess(token, request.status, request, onDone);
@@ -788,7 +788,7 @@ export const dapUtils = {
 
     let cb = {
       success: (response, request) => {
-        let encToken = request.getResponseHeader('Akamai-DAP-Token');
+        let encToken = request.getResponseHeader('Symitri-DAP-Token');
         onSuccess(encToken, request.status, request, onDone);
       },
       error: (error, request) => {
