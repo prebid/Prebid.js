@@ -2161,4 +2161,129 @@ describe('VisxAdapter', function () {
       expect(request.data.user.ext.vads).to.be.a('string');
     });
   });
+
+  describe('ortb2 data', function () {
+    const bidRequests = [
+      {
+        'bidder': 'visx',
+        'params': {
+          'uid': 903535
+        },
+        'adUnitCode': 'adunit-code-1',
+        'sizes': [[300, 250], [300, 600]],
+        'bidId': '30b31c1838de1e',
+        'bidderRequestId': '22edbae2733bf6',
+        'auctionId': '1d1a030790a475'
+      }
+    ];
+    const bidderRequest = {
+      timeout: 3000,
+      refererInfo: {
+        page: 'https://example.com'
+      },
+      'ortb2': {
+        'device': {
+          'w': 1259,
+          'h': 934,
+          'dnt': 0,
+          'ua': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'language': 'tr',
+          'sua': {
+            'source': 1,
+            'platform': {
+              'brand': 'macOS'
+            },
+            'browsers': [
+              {
+                'brand': 'Chromium',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Google Chrome',
+                'version': [ '124' ]
+              },
+              {
+                'brand': 'Not-A.Brand',
+                'version': [ '99' ]
+              }
+            ],
+            'mobile': 0
+          },
+          'ext': {
+            'cdep': 'treatment_1.1'
+          }
+        },
+        'site': {
+          'domain': 'localhost:9999',
+          'publisher': {
+            'domain': 'localhost:9999'
+          },
+          'page': 'http://localhost:9999/integrationExamples/gpt/hello_world.html'
+        },
+        'user': {
+          'keywords': 'x,y',
+          'data': [
+            {
+              'name': 'exampleprovider.de',
+              'ext': {
+                'segtax': 5
+              },
+              'segment': [
+                {
+                  'id': '1'
+                }
+              ]
+            },
+            {
+              'ext': {
+                'segtax': 601,
+                'segclass': '5'
+              },
+              'segment': [
+                {
+                  'id': '140'
+                }
+              ],
+              'name': 'pa.openx.net'
+            },
+            {
+              'ext': {
+                'segtax': 601,
+                'segclass': '5'
+              },
+              'segment': [
+                {
+                  'id': '140'
+                }
+              ],
+              'name': 'ads.pubmatic.com'
+            }
+          ],
+          'ext': {
+            'data': {
+              'registered': true,
+              'interests': [
+                'ads'
+              ]
+            }
+          }
+        }
+      }
+    };
+
+    it('should pass interests if ortb2 has interests in user data', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.user.ext.data.interests).not.to.be.undefined;
+    });
+
+    it('should pass device if ortb2 has device', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.device).not.to.be.undefined;
+    });
+
+    it('should pass site if ortb2 has site', function () {
+      const request = spec.buildRequests(bidRequests, bidderRequest);
+      expect(request.data.site).not.to.be.undefined;
+    });
+  });
 });
