@@ -186,7 +186,7 @@ function extParams(bidRequest, bidderRequests) {
   const coppaApplies = !!(config.getConfig('coppa'));
   return Object.assign({},
     { customer_id: params.cid },
-    { prebid_version: getGlobal().version },
+    { prebid_version: 'v' + '$prebid.version$' },
     { gdpr_applies: gdprApplies },
     (gdprApplies) && { gdpr_consent_string: gdpr.consentString || '' },
     { usp_applies: uspApplies },

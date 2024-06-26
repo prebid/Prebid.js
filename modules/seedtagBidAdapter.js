@@ -333,6 +333,10 @@ export const spec = {
       payload.badv = bidderRequest.ortb2?.badv
     }
 
+    if (bidderRequest.ortb2?.device?.sua) {
+      payload.sua = bidderRequest.ortb2.device.sua
+    }
+
     const payloadString = JSON.stringify(payload);
 
     return {
