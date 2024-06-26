@@ -289,7 +289,31 @@ describe('viantOrtbBidAdapter', function () {
   it('includes the deals in the bid request', function () {
     const requestBody = testBuildRequests(basePMPDealsBidRequests, baseBidderRequest)[0].data;
     expect(requestBody.imp[0].pmp).to.be.not.null;
-  });
+    expect(requestBody.imp[0].pmp).to.deep.equal({
+      'private_auction': 0,
+      'deals': [
+        {
+          'id': '1234567',
+          'at': 3,
+          'bidfloor': 25,
+          'bidfloorcur': 'USD',
+          'ext': {
+            'must_bid': 1,
+            'private_auction': 1
+          }
+        },
+        {
+          'id': '1234568',
+          'at': 3,
+          'bidfloor': 25,
+          'bidfloorcur': 'USD',
+          'ext': {
+            'must_bid': 0
+          }
+        }
+      ]
+    });
+});
 
   if (FEATURES.VIDEO) {
     describe('buildRequests-video', function () {
