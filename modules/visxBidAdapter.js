@@ -1,4 +1,4 @@
-import {deepAccess, logError, mergeDeep, parseSizesInput, triggerPixel} from '../src/utils.js';
+import {deepAccess, getBidFromResponse, logError, mergeDeep, parseSizesInput, sizeTupleToRtbSize, sizesToSizeTuples, triggerPixel} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {config} from '../src/config.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
@@ -204,7 +204,7 @@ export const spec = {
 
     if (!errorMessage && serverResponse.seatbid) {
       serverResponse.seatbid.forEach(respItem => {
-        _addBidResponse(_getBidFromResponse(respItem), bidsMap, currency, bidResponses);
+        _addBidResponse(getBidFromResponse(respItem, LOG_ERROR_MESS), bidsMap, currency, bidResponses);
       });
     }
     if (errorMessage) logError(errorMessage);
@@ -274,13 +274,7 @@ function makeBanner(bannerParams) {
   if (bannerSizes) {
     const sizes = parseSizesInput(bannerSizes);
     if (sizes.length) {
-      const format = sizes.map(size => {
-        const [ width, height ] = size.split('x');
-        const w = parseInt(width, 10);
-        const h = parseInt(height, 10);
-        return { w, h };
-      });
-
+      const format = sizesToSizeTuples(bannerSizes).map(sizeTupleToRtbSize);
       return { format };
     }
   }
@@ -318,17 +312,6 @@ function buildImpObject(bid) {
   if (impObject.ext.bidder.uid && (impObject.banner || impObject.video)) {
     return impObject;
   }
-}
-
-function _getBidFromResponse(respItem) {
-  if (!respItem) {
-    logError(LOG_ERROR_MESS.emptySeatbid);
-  } else if (!respItem.bid) {
-    logError(LOG_ERROR_MESS.hasNoArrayOfBids + JSON.stringify(respItem));
-  } else if (!respItem.bid[0]) {
-    logError(LOG_ERROR_MESS.noBid);
-  }
-  return respItem && respItem.bid && respItem.bid[0];
 }
 
 function _addBidResponse(serverBid, bidsMap, currency, bidResponses) {
