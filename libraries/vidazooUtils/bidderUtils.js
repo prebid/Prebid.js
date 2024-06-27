@@ -200,12 +200,19 @@ export function appendUserIdsToRequestPayload(payloadRef, userIds) {
   let key;
   _each(userIds, (userId, idSystemProviderName) => {
     key = `uid.${idSystemProviderName}`;
+
     switch (idSystemProviderName) {
       case 'lipb':
         payloadRef[key] = userId.lipbid;
         break;
       case 'id5id':
         payloadRef[key] = userId.uid;
+        break;
+      case 'parrableId':
+        payloadRef[key] = userId.eid;
+        break;
+      case 'digitrustid':
+        payloadRef[key] = deepAccess(userId, 'data.id');
         break;
       default:
         payloadRef[key] = userId;
@@ -217,7 +224,7 @@ export function getVidazooSessionId(storage) {
   return getStorageItem(storage, SESSION_ID_KEY) || '';
 }
 
-export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, webSessionId, storage, bidderVersion, bidderCode, getUniqueRequestData) {
+export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, storage, bidderVersion, bidderCode, getUniqueRequestData) {
   const {
     params,
     bidId,
@@ -285,7 +292,6 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     bidderRequestsCount: bidderRequestsCount,
     bidderWinsCount: bidderWinsCount,
     bidderTimeout: bidderTimeout,
-    webSessionId: webSessionId,
     ...uniqueRequestData
   };
 
@@ -410,12 +416,12 @@ export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
   }
 }
 
-export function createBuildRequestsFn(createRequestDomain, createUniqueRequestData, webSessionId, storage, bidderCode, bidderVersion, allowSingleRequest) {
+export function createBuildRequestsFn(createRequestDomain, createUniqueRequestData, storage, bidderCode, bidderVersion, allowSingleRequest) {
   function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     const {params} = bid;
     const cId = extractCID(params);
     const subDomain = extractSubDomain(params);
-    const data = buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, webSessionId, storage, bidderVersion, bidderCode, createUniqueRequestData);
+    const data = buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, storage, bidderVersion, bidderCode, createUniqueRequestData);
     const dto = {
       method: 'POST', url: `${createRequestDomain(subDomain)}/prebid/multi/${cId}`, data: data
     };
@@ -428,7 +434,7 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
     const subDomain = extractSubDomain(params);
     const data = bidRequests.map(bid => {
       const sizes = parseSizesInput(bid.sizes);
-      return buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, webSessionId, storage, bidderVersion, bidderCode, createUniqueRequestData)
+      return buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout, storage, bidderVersion, bidderCode, createUniqueRequestData)
     });
     const chunkSize = Math.min(20, config.getConfig(`${bidderCode}.chunkSize`) || 10);
 
@@ -445,7 +451,6 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
   }
 
   return function buildRequests(validBidRequests, bidderRequest) {
-    // TODO: does the fallback make sense here?
     const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
     const bidderTimeout = config.getConfig('bidderTimeout');
 
