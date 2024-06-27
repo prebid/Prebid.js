@@ -1,5 +1,5 @@
 import { convertOrtbRequestToProprietaryNative } from '../../src/native.js';
-import { isFn, deepAccess, replaceAuctionPrice } from '../../src/utils.js';
+import { replaceAuctionPrice } from '../../src/utils.js';
 import { ajax } from '../../src/ajax.js';
 
 export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest) => {
@@ -14,7 +14,7 @@ export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest
       const { bidId, sizes } = req
       const impValue = {
         id: bidId,
-        bidFloor: getBidFloorPrice(req),
+        bidfloor: req.params.bidFloor,
         bidfloorcur: req.params.currency
       }
       if (req.mediaTypes.banner) {
@@ -41,6 +41,11 @@ export const buildRequests = (endpoint) => (validBidRequests = [], bidderRequest
     bcat: validBidRequests[0].ortb2.bcat || validBidRequests[0].params.bcat,
     badv: validBidRequests[0].ortb2.badv || validBidRequests[0].params.badv,
     wlang: validBidRequests[0].ortb2.wlang || validBidRequests[0].params.wlang,
+  };
+  if (req.device && req.device != 'undefined') {
+    req.device.geo = {
+      country: req.user.geo.country
+    };
   };
   req.site.publisher = {
     publisherId: validBidRequests[0].params.publisherId
@@ -127,23 +132,6 @@ export function onBidWon(bid) {
   if (bid.nurl) {
     const resolvedNurl = replaceAuctionPrice(bid.nurl, bid.price);
     ajax(resolvedNurl);
-  }
-}
-
-function getBidFloorPrice(bid) {
-  if (!isFn(bid.getFloor)) {
-    return deepAccess(bid, 'params.bidFloor', 0);
-  }
-
-  try {
-    const bidFloorPrice = bid.getFloor({
-      currency: 'USD',
-      mediaType: '*',
-      size: '*',
-    });
-    return bidFloorPrice.floor;
-  } catch (_) {
-    return 0
   }
 }
 
