@@ -1768,12 +1768,12 @@ describe('Media.net bid adapter', function () {
     });
 
     it('should have valid payload when PAAPI is enabled', function () {
-      let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, fledgeEnabled: true});
+      let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
       expect(JSON.parse(bidReq.data)).to.deep.equal(VALID_PAYLOAD_PAAPI);
     });
 
     it('should send whatever is set in ortb2imp.ext.ae in all bid requests when PAAPI is enabled', function () {
-      let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, fledgeEnabled: true});
+      let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
       let data = JSON.parse(bidReq.data);
       expect(data).to.deep.equal(VALID_PAYLOAD_PAAPI);
       expect(data.imp[0].ext).to.have.property('ae');
@@ -1955,30 +1955,30 @@ describe('Media.net bid adapter', function () {
       expect(bids).to.deep.equal(validBids);
     });
 
-    it('should return fledgeAuctionConfigs if PAAPI response is received', function() {
+    it('should return paapi if PAAPI response is received', function() {
       let response = spec.interpretResponse(SERVER_RESPONSE_PAAPI, []);
       expect(response).to.have.property('bids');
-      expect(response).to.have.property('fledgeAuctionConfigs');
-      expect(response.fledgeAuctionConfigs[0]).to.deep.equal(SERVER_RESPONSE_PAAPI.body.ext.paApiAuctionConfigs[0]);
+      expect(response).to.have.property('paapi');
+      expect(response.paapi[0]).to.deep.equal(SERVER_RESPONSE_PAAPI.body.ext.paApiAuctionConfigs[0]);
     });
 
-    it('should return fledgeAuctionConfigs if openRTB PAAPI response received', function () {
+    it('should return paapi if openRTB PAAPI response received', function () {
       let response = spec.interpretResponse(SERVER_RESPONSE_PAAPI_ORTB, []);
       expect(response).to.have.property('bids');
-      expect(response).to.have.property('fledgeAuctionConfigs');
-      expect(response.fledgeAuctionConfigs[0]).to.deep.equal(SERVER_RESPONSE_PAAPI_ORTB.body.ext.igi[0].igs[0])
+      expect(response).to.have.property('paapi');
+      expect(response.paapi[0]).to.deep.equal(SERVER_RESPONSE_PAAPI_ORTB.body.ext.igi[0].igs[0])
     });
 
-    it('should have the correlation between fledgeAuctionConfigs[0].bidId and bidreq.imp[0].id', function() {
-      let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, fledgeEnabled: true});
+    it('should have the correlation between paapi[0].bidId and bidreq.imp[0].id', function() {
+      let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
       let bidRes = spec.interpretResponse(SERVER_RESPONSE_PAAPI, []);
-      expect(bidRes.fledgeAuctionConfigs[0].bidId).to.equal(JSON.parse(bidReq.data).imp[0].id)
+      expect(bidRes.paapi[0].bidId).to.equal(JSON.parse(bidReq.data).imp[0].id)
     });
 
-    it('should have the correlation between fledgeAuctionConfigs[0].bidId and bidreq.imp[0].id for openRTB response', function() {
-      let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, fledgeEnabled: true});
+    it('should have the correlation between paapi[0].bidId and bidreq.imp[0].id for openRTB response', function() {
+      let bidReq = spec.buildRequests(VALID_BID_REQUEST_WITH_AE_IN_ORTB2IMP, {...VALID_AUCTIONDATA, paapi: {enabled: true}});
       let bidRes = spec.interpretResponse(SERVER_RESPONSE_PAAPI_ORTB, []);
-      expect(bidRes.fledgeAuctionConfigs[0].bidId).to.equal(JSON.parse(bidReq.data).imp[0].id)
+      expect(bidRes.paapi[0].bidId).to.equal(JSON.parse(bidReq.data).imp[0].id)
     });
   });
 

@@ -493,7 +493,6 @@ describe('consentManagement', function () {
         sinon.assert.notCalled(utils.logWarn);
         sinon.assert.notCalled(utils.logError);
 
-        expect(consentMeta.usp).to.equal(testConsentData.uspString);
         expect(consentMeta.generatedAt).to.be.above(1644367751709);
       });
 

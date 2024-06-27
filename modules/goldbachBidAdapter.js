@@ -742,7 +742,7 @@ function bidToTag(bid) {
   }
   tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords);
 
-  let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
   if (gpid) {
     tag.gpid = gpid;
   }

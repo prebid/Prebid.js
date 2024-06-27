@@ -34,10 +34,8 @@ const pendingBuyersForAuction = auctionStore();
 let latestAuctionForAdUnit = {};
 let moduleConfig = {};
 
-['paapi', 'fledgeForGpt'].forEach(ns => {
-  config.getConfig(ns, config => {
-    init(config[ns], ns);
-  });
+config.getConfig('paapi', config => {
+  init(config.paapi);
 });
 
 export function reset() {
@@ -45,10 +43,7 @@ export function reset() {
   latestAuctionForAdUnit = {};
 }
 
-export function init(cfg, configNamespace) {
-  if (configNamespace !== 'paapi') {
-    logWarn(`'${configNamespace}' configuration options will be renamed to 'paapi'; consider using setConfig({paapi: [...]}) instead`);
-  }
+export function init(cfg) {
   if (cfg && cfg.enabled === true) {
     moduleConfig = cfg;
     logInfo(`${MODULE} enabled (browser ${isFledgeSupported() ? 'supports' : 'does NOT support'} runAdAuction)`, cfg);
@@ -147,7 +142,7 @@ function setFPD(target, {ortb2, ortb2Imp}) {
 }
 
 export function addPaapiConfigHook(next, request, paapiConfig) {
-  if (getFledgeConfig().enabled) {
+  if (getFledgeConfig(config.getCurrentBidder()).enabled) {
     const {adUnitCode, auctionId} = request;
 
     // eslint-disable-next-line no-inner-declarations
@@ -163,8 +158,9 @@ export function addPaapiConfigHook(next, request, paapiConfig) {
     const {config, igb} = paapiConfig;
     if (config) {
       config.auctionSignals = setFPD(config.auctionSignals || {}, request);
+      const pbs = config.perBuyerSignals = config.perBuyerSignals ?? {};
       (config.interestGroupBuyers || []).forEach(buyer => {
-        deepSetValue(config, `perBuyerSignals.${buyer}`, setFPD(config.perBuyerSignals?.[buyer] || {}, request));
+        pbs[buyer] = setFPD(pbs[buyer] ?? {}, request);
       })
       storePendingData(pendingConfigsForAuction, config);
     }
@@ -305,12 +301,11 @@ function isFledgeSupported() {
   return 'runAdAuction' in navigator && 'joinAdInterestGroup' in navigator;
 }
 
-function getFledgeConfig() {
-  const bidder = config.getCurrentBidder();
-  const useGlobalConfig = moduleConfig.enabled && (bidder == null || !moduleConfig.bidders?.length || moduleConfig.bidders?.includes(bidder));
+function getFledgeConfig(bidder) {
+  const enabled = moduleConfig.enabled && (bidder == null || !moduleConfig.bidders?.length || moduleConfig.bidders?.includes(bidder));
   return {
-    enabled: config.getConfig('fledgeEnabled') ?? useGlobalConfig,
-    ae: config.getConfig('defaultForSlots') ?? (useGlobalConfig ? moduleConfig.defaultForSlots : undefined)
+    enabled,
+    ae: enabled ? moduleConfig.defaultForSlots : undefined
   };
 }
 
@@ -340,37 +335,34 @@ function getRequestedSize(adUnit) {
 export function markForFledge(next, bidderRequests) {
   if (isFledgeSupported()) {
     bidderRequests.forEach((bidderReq) => {
-      config.runWithBidder(bidderReq.bidderCode, () => {
-        const {enabled, ae} = getFledgeConfig();
-        Object.assign(bidderReq, {
-          fledgeEnabled: enabled,
-          paapi: {
-            enabled,
-            componentSeller: !!moduleConfig.componentSeller?.auctionConfig
+      const {enabled, ae} = getFledgeConfig(bidderReq.bidderCode);
+      Object.assign(bidderReq, {
+        paapi: {
+          enabled,
+          componentSeller: !!moduleConfig.componentSeller?.auctionConfig
+        }
+      });
+      bidderReq.bids.forEach(bidReq => {
+        // https://github.com/InteractiveAdvertisingBureau/openrtb/blob/main/extensions/community_extensions/Protected%20Audience%20Support.md
+        const igsAe = bidReq.ortb2Imp?.ext?.igs != null
+          ? bidReq.ortb2Imp.ext.igs.ae || 1
+          : null;
+        const extAe = bidReq.ortb2Imp?.ext?.ae;
+        if (igsAe !== extAe && igsAe != null && extAe != null) {
+          logWarn(MODULE, `Bid request defines conflicting ortb2Imp.ext.ae and ortb2Imp.ext.igs, using the latter`, bidReq);
+        }
+        const bidAe = igsAe ?? extAe ?? ae;
+        if (bidAe) {
+          deepSetValue(bidReq, 'ortb2Imp.ext.ae', bidAe);
+          bidReq.ortb2Imp.ext.igs = Object.assign({
+            ae: bidAe,
+            biddable: 1
+          }, bidReq.ortb2Imp.ext.igs);
+          const requestedSize = getRequestedSize(bidReq);
+          if (requestedSize) {
+            deepSetValue(bidReq, 'ortb2Imp.ext.paapi.requestedSize', requestedSize);
           }
-        });
-        bidderReq.bids.forEach(bidReq => {
-          // https://github.com/InteractiveAdvertisingBureau/openrtb/blob/main/extensions/community_extensions/Protected%20Audience%20Support.md
-          const igsAe = bidReq.ortb2Imp?.ext?.igs != null
-            ? bidReq.ortb2Imp.ext.igs.ae || 1
-            : null
-          const extAe = bidReq.ortb2Imp?.ext?.ae;
-          if (igsAe !== extAe && igsAe != null && extAe != null) {
-            logWarn(MODULE, `Bid request defines conflicting ortb2Imp.ext.ae and ortb2Imp.ext.igs, using the latter`, bidReq);
-          }
-          const bidAe = igsAe ?? extAe ?? ae;
-          if (bidAe) {
-            deepSetValue(bidReq, 'ortb2Imp.ext.ae', bidAe);
-            bidReq.ortb2Imp.ext.igs = Object.assign({
-              ae: bidAe,
-              biddable: 1
-            }, bidReq.ortb2Imp.ext.igs)
-            const requestedSize = getRequestedSize(bidReq);
-            if (requestedSize) {
-              deepSetValue(bidReq, 'ortb2Imp.ext.paapi.requestedSize', requestedSize);
-            }
-          }
-        });
+        }
       });
     });
   }
@@ -378,7 +370,7 @@ export function markForFledge(next, bidderRequests) {
 }
 
 export function setImpExtAe(imp, bidRequest, context) {
-  if (!context.bidderRequest.fledgeEnabled) {
+  if (!context.bidderRequest.paapi?.enabled) {
     delete imp.ext?.ae;
     delete imp.ext?.igs;
   }
@@ -449,7 +441,7 @@ export function setResponsePaapiConfigs(response, ortbResponse, context) {
 
 registerOrtbProcessor({
   type: RESPONSE,
-  name: 'fledgeAuctionConfigs',
+  name: 'paapiConfigs',
   priority: -1,
   fn: setResponsePaapiConfigs,
 });

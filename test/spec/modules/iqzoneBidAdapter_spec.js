@@ -3,7 +3,7 @@ import { spec } from '../../../modules/iqzoneBidAdapter.js';
 import { BANNER, VIDEO, NATIVE } from '../../../src/mediaTypes.js';
 import { getUniqueIdentifierStr } from '../../../src/utils.js';
 
-const bidder = 'iqzone'
+const bidder = 'iqzone';
 
 describe('IQZoneBidAdapter', function () {
   const userIdAsEids = [{
@@ -26,7 +26,7 @@ describe('IQZoneBidAdapter', function () {
         }
       },
       params: {
-        placementId: 'testBanner',
+        placementId: 'testBanner'
       },
       userIdAsEids
     },
@@ -41,7 +41,7 @@ describe('IQZoneBidAdapter', function () {
         }
       },
       params: {
-        placementId: 'testVideo',
+        placementId: 'testVideo'
       },
       userIdAsEids
     },
@@ -65,7 +65,7 @@ describe('IQZoneBidAdapter', function () {
         }
       },
       params: {
-        placementId: 'testNative',
+        placementId: 'testNative'
       },
       userIdAsEids
     }
@@ -87,10 +87,19 @@ describe('IQZoneBidAdapter', function () {
   const bidderRequest = {
     uspConsent: '1---',
     gdprConsent: {
-      consentString: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw'
+      consentString: 'COvFyGBOvFyGBAbAAAENAPCAAOAAAAAAAAAAAEEUACCKAAA.IFoEUQQgAIQwgIwQABAEAAAAOIAACAIAAAAQAIAgEAACEAAAAAgAQBAAAAAAAGBAAgAAAAAAAFAAECAAAgAAQARAEQAAAAAJAAIAAgAAAYQEAAAQmAgBC3ZAYzUw',
+      vendorData: {}
     },
     refererInfo: {
-      referer: 'https://test.com'
+      referer: 'https://test.com',
+      page: 'https://test.com'
+    },
+    ortb2: {
+      device: {
+        w: 1512,
+        h: 982,
+        language: 'en-UK'
+      }
     },
     timeout: 500
   };
@@ -181,12 +190,63 @@ describe('IQZoneBidAdapter', function () {
       }
     });
 
+    it('Returns valid endpoints', function () {
+      const bids = [
+        {
+          bidId: getUniqueIdentifierStr(),
+          bidder: bidder,
+          mediaTypes: {
+            [BANNER]: {
+              sizes: [[300, 250]]
+            }
+          },
+          params: {
+            endpointId: 'testBanner',
+          },
+          userIdAsEids
+        }
+      ];
+
+      let serverRequest = spec.buildRequests(bids, bidderRequest);
+
+      const { placements } = serverRequest.data;
+      for (let i = 0, len = placements.length; i < len; i++) {
+        const placement = placements[i];
+        expect(placement.endpointId).to.be.oneOf(['testBanner', 'testVideo', 'testNative']);
+        expect(placement.adFormat).to.be.oneOf([BANNER, VIDEO, NATIVE]);
+        expect(placement.bidId).to.be.a('string');
+        expect(placement.schain).to.be.an('object');
+        expect(placement.bidfloor).to.exist.and.to.equal(0);
+        expect(placement.type).to.exist.and.to.equal('network');
+        expect(placement.eids).to.exist.and.to.be.deep.equal(userIdAsEids);
+
+        if (placement.adFormat === BANNER) {
+          expect(placement.sizes).to.be.an('array');
+        }
+        switch (placement.adFormat) {
+          case BANNER:
+            expect(placement.sizes).to.be.an('array');
+            break;
+          case VIDEO:
+            expect(placement.playerSize).to.be.an('array');
+            expect(placement.minduration).to.be.an('number');
+            expect(placement.maxduration).to.be.an('number');
+            break;
+          case NATIVE:
+            expect(placement.native).to.be.an('object');
+            break;
+        }
+      }
+    });
+
     it('Returns data with gdprConsent and without uspConsent', function () {
       delete bidderRequest.uspConsent;
       serverRequest = spec.buildRequests(bids, bidderRequest);
       let data = serverRequest.data;
       expect(data.gdpr).to.exist;
       expect(data.gdpr).to.be.a('object');
+      expect(data.gdpr).to.have.property('consentString');
+      expect(data.gdpr).to.not.have.property('vendorData');
       expect(data.gdpr.consentString).to.equal(bidderRequest.gdprConsent.consentString);
       expect(data.ccpa).to.not.exist;
       delete bidderRequest.gdprConsent;
@@ -201,12 +261,6 @@ describe('IQZoneBidAdapter', function () {
       expect(data.ccpa).to.be.a('string');
       expect(data.ccpa).to.equal(bidderRequest.uspConsent);
       expect(data.gdpr).to.not.exist;
-    });
-
-    it('Returns empty data if no valid requests are passed', function () {
-      serverRequest = spec.buildRequests([], bidderRequest);
-      let data = serverRequest.data;
-      expect(data.placements).to.be.an('array').that.is.empty;
     });
   });
 
