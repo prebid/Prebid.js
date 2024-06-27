@@ -540,9 +540,16 @@ function hasValidVideoMediaType(bidRequest) {
   var requiredMediaTypesParams = ['mimes', 'playerSize', 'maxduration', 'protocols', 'api', 'skip', 'placement', 'playbackmethod'];
 
   requiredMediaTypesParams.forEach(function (param) {
-    if (deepAccess(bidRequest, 'mediaTypes.video.' + param) === undefined && deepAccess(bidRequest, 'params.video.' + param) === undefined) {
-      isValid = false;
-      logError('Criteo Bid Adapter: mediaTypes.video.' + param + ' is required');
+    if (param === 'placement') {
+      if (deepAccess(bidRequest, 'mediaTypes.video.' + param) === undefined && deepAccess(bidRequest, 'params.video.' + param) === undefined && deepAccess(bidRequest, 'mediaTypes.video.plcmt') === undefined && deepAccess(bidRequest, 'params.video.plcmt') === undefined) {
+        isValid = false;
+        logError('Criteo Bid Adapter: mediaTypes.video.' + param + ' or mediaTypes.video.plcmt is required');
+      }
+    } else {
+      if (deepAccess(bidRequest, 'mediaTypes.video.' + param) === undefined && deepAccess(bidRequest, 'params.video.' + param) === undefined) {
+        isValid = false;
+        logError('Criteo Bid Adapter: mediaTypes.video.' + param + ' is required');
+      }
     }
   });
 
