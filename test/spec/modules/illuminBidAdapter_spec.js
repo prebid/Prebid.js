@@ -328,7 +328,12 @@ describe('IlluminBidAdapter', function () {
               startdelay: 0
             }
           },
-          gpid: '0123456789'
+          gpid: '0123456789',
+          cat: [],
+          contentData: [],
+          isStorageAllowed: true,
+          pagecat: [],
+          userData: []
         }
       });
     });
@@ -390,6 +395,11 @@ describe('IlluminBidAdapter', function () {
           uqs: getTopWindowQueryParams(),
           'ext.param1': 'loremipsum',
           'ext.param2': 'dolorsitamet',
+          cat: [],
+          contentData: [],
+          isStorageAllowed: true,
+          pagecat: [],
+          userData: []
         }
       });
     });

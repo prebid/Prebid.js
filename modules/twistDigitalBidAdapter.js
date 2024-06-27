@@ -15,7 +15,7 @@ import {getStorageManager} from '../src/storageManager.js';
 import {bidderSettings} from '../src/bidderSettings.js';
 import {config} from '../src/config.js';
 import {chunk} from '../libraries/chunk/chunk.js';
-import {extractCID, extractPID, extractSubDomain} from '../libraries/vidazooUtils/bidderUtils.js';
+import {extractCID, extractPID, extractSubDomain, isBidRequestValid} from '../libraries/vidazooUtils/bidderUtils.js';
 
 const GVLID = 1292;
 const DEFAULT_SUB_DOMAIN = 'exchange';
@@ -39,11 +39,6 @@ function getTopWindowQueryParams() {
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.twist.win`;
-}
-
-function isBidRequestValid(bid) {
-  const params = bid.params || {};
-  return !!(extractCID(params) && extractPID(params));
 }
 
 function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
