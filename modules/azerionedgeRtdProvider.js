@@ -212,6 +212,7 @@ export const azerionedgeSubmodule = {
   name: SUBREAL_TIME_MODULE,
   init: init,
   getBidRequestData: getBidRequestData,
+  gvlid: IMPROVEDIGITAL_GVLID,
 };
 
 submodule(REAL_TIME_MODULE, azerionedgeSubmodule);

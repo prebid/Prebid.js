@@ -8,7 +8,7 @@ describe('Azerion Edge RTD submodule', function () {
     { id: '1', visits: 123 },
     { id: '2', visits: 456 },
   ];
-
+  const IMPROVEDIGITAL_GVLID = '253';
   const key = 'publisher123';
   const bidders = ['appnexus', 'improvedigital'];
   const process = { key: 'value' };
@@ -37,6 +37,12 @@ describe('Azerion Edge RTD submodule', function () {
 
     beforeEach(function () {
       returned = azerionedgeRTD.azerionedgeSubmodule.init(dataProvider, ignoreConsent);
+    });
+
+    it('should have the correct gvlid', () => {
+      expect(azerionedgeRTD.azerionedgeSubmodule.gvlid).to.equal(
+        IMPROVEDIGITAL_GVLID
+      );
     });
 
     it('should return true', function () {
