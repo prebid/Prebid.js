@@ -1,8 +1,17 @@
-import {_each, deepAccess, parseSizesInput, parseUrl, uniques, isFn} from '../src/utils.js';
+import {_each, deepAccess, parseSizesInput, parseUrl, isFn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';
 import {getStorageManager} from '../src/storageManager.js';
 import {config} from '../src/config.js';
+import {
+  appendUserIdsToRequestPayload,
+  extractCID,
+  extractPID,
+  extractSubDomain,
+  isBidRequestValid,
+  hashCode,
+  getUniqueDealId, createUserSyncGetter
+} from '../libraries/vidazooUtils/bidderUtils.js';
 
 const DEFAULT_SUB_DOMAIN = 'exchange';
 const BIDDER_CODE = 'illumin';
@@ -10,8 +19,7 @@ const BIDDER_VERSION = '1.0.0';
 const GVLID = 149;
 const CURRENCY = 'USD';
 const TTL_SECONDS = 60 * 5;
-const UNIQUE_DEAL_ID_EXPIRY = 1000 * 60 * 15;
-const storage = getStorageManager({bidderCode: BIDDER_CODE});
+export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 
 function getTopWindowQueryParams() {
   try {
@@ -24,23 +32,6 @@ function getTopWindowQueryParams() {
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.illumin.com`;
-}
-
-export function extractCID(params) {
-  return params.cId;
-}
-
-export function extractPID(params) {
-  return params.pId;
-}
-
-export function extractSubDomain(params) {
-  return params.subDomain;
-}
-
-function isBidRequestValid(bid) {
-  const params = bid.params || {};
-  return !!(extractCID(params) && extractPID(params));
 }
 
 function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
@@ -59,7 +50,7 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
   } = bid;
   let {bidFloor, ext} = params;
   const hashUrl = hashCode(topWindowUrl);
-  const uniqueDealId = getUniqueDealId(hashUrl);
+  const uniqueDealId = getUniqueDealId(storage, hashUrl);
   const cId = extractCID(params);
   const pId = extractPID(params);
   const subDomain = extractSubDomain(params);
@@ -144,24 +135,6 @@ function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
   return dto;
 }
 
-function appendUserIdsToRequestPayload(payloadRef, userIds) {
-  let key;
-  _each(userIds, (userId, idSystemProviderName) => {
-    key = `uid.${idSystemProviderName}`;
-
-    switch (idSystemProviderName) {
-      case 'lipb':
-        payloadRef[key] = userId.lipbid;
-        break;
-      case 'id5id':
-        payloadRef[key] = userId.uid;
-        break;
-      default:
-        payloadRef[key] = userId;
-    }
-  });
-}
-
 function buildRequests(validBidRequests, bidderRequest) {
   const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
   const bidderTimeout = config.getConfig('bidderTimeout');
@@ -242,81 +215,10 @@ function interpretResponse(serverResponse, request) {
   }
 }
 
-function getUserSyncs(syncOptions, responses, gdprConsent = {}, uspConsent = '') {
-  let syncs = [];
-  const {iframeEnabled, pixelEnabled} = syncOptions;
-  const {gdprApplies, consentString = ''} = gdprConsent;
-
-  const cidArr = responses.filter(resp => deepAccess(resp, 'body.cid')).map(resp => resp.body.cid).filter(uniques);
-  const params = `?cid=${encodeURIComponent(cidArr.join(','))}&gdpr=${gdprApplies ? 1 : 0}&gdpr_consent=${encodeURIComponent(consentString || '')}&us_privacy=${encodeURIComponent(uspConsent || '')}`
-  if (iframeEnabled) {
-    syncs.push({
-      type: 'iframe',
-      url: `https://sync.illumin.com/api/sync/iframe/${params}`
-    });
-  }
-  if (pixelEnabled) {
-    syncs.push({
-      type: 'image',
-      url: `https://sync.illumin.com/api/sync/image/${params}`
-    });
-  }
-  return syncs;
-}
-
-export function hashCode(s, prefix = '_') {
-  const l = s.length;
-  let h = 0
-  let i = 0;
-  if (l > 0) {
-    while (i < l) {
-      h = (h << 5) - h + s.charCodeAt(i++) | 0;
-    }
-  }
-  return prefix + h;
-}
-
-export function getUniqueDealId(key, expiry = UNIQUE_DEAL_ID_EXPIRY) {
-  const storageKey = `u_${key}`;
-  const now = Date.now();
-  const data = getStorageItem(storageKey);
-  let uniqueId;
-
-  if (!data || !data.value || now - data.created > expiry) {
-    uniqueId = `${key}_${now.toString()}`;
-    setStorageItem(storageKey, uniqueId);
-  } else {
-    uniqueId = data.value;
-  }
-
-  return uniqueId;
-}
-
-export function getStorageItem(key) {
-  try {
-    return tryParseJSON(storage.getDataFromLocalStorage(key));
-  } catch (e) {
-  }
-
-  return null;
-}
-
-export function setStorageItem(key, value, timestamp) {
-  try {
-    const created = timestamp || Date.now();
-    const data = JSON.stringify({value, created});
-    storage.setDataInLocalStorage(key, data);
-  } catch (e) {
-  }
-}
-
-export function tryParseJSON(value) {
-  try {
-    return JSON.parse(value);
-  } catch (e) {
-    return value;
-  }
-}
+const getUserSyncs = createUserSyncGetter({
+  iframeSyncUrl: 'https://sync.illumin.com/api/sync/iframe',
+  imageSyncUrl: 'https://sync.illumin.com/api/sync/image'
+});
 
 export const spec = {
   code: BIDDER_CODE,

@@ -2,6 +2,14 @@ import {expect} from 'chai';
 import {
   spec as adapter,
   createDomain,
+  storage
+} from 'modules/illuminBidAdapter.js';
+import * as utils from 'src/utils.js';
+import {version} from 'package.json';
+import {useFakeTimers} from 'sinon';
+import {BANNER, VIDEO} from '../../../src/mediaTypes';
+import {config} from '../../../src/config';
+import {
   hashCode,
   extractPID,
   extractCID,
@@ -10,12 +18,7 @@ import {
   setStorageItem,
   tryParseJSON,
   getUniqueDealId,
-} from 'modules/illuminBidAdapter.js';
-import * as utils from 'src/utils.js';
-import {version} from 'package.json';
-import {useFakeTimers} from 'sinon';
-import {BANNER, VIDEO} from '../../../src/mediaTypes';
-import {config} from '../../../src/config';
+} from '../../../libraries/vidazooUtils/bidderUtils.js';
 
 export const TEST_ID_SYSTEMS = ['criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'pubcid', 'tdid', 'pubProvidedId'];
 
@@ -562,13 +565,13 @@ describe('IlluminBidAdapter', function () {
     const key = 'myKey';
     let uniqueDealId;
     beforeEach(() => {
-      uniqueDealId = getUniqueDealId(key, 0);
+      uniqueDealId = getUniqueDealId(storage, key, 0);
     })
 
     it('should get current unique deal id', function (done) {
       // waiting some time so `now` will become past
       setTimeout(() => {
-        const current = getUniqueDealId(key);
+        const current = getUniqueDealId(storage, key);
         expect(current).to.be.equal(uniqueDealId);
         done();
       }, 200);
@@ -576,7 +579,7 @@ describe('IlluminBidAdapter', function () {
 
     it('should get new unique deal id on expiration', function (done) {
       setTimeout(() => {
-        const current = getUniqueDealId(key, 100);
+        const current = getUniqueDealId(storage, key, 100);
         expect(current).to.not.be.equal(uniqueDealId);
         done();
       }, 200)
@@ -600,8 +603,8 @@ describe('IlluminBidAdapter', function () {
         shouldAdvanceTime: true,
         now
       });
-      setStorageItem('myKey', 2020);
-      const {value, created} = getStorageItem('myKey');
+      setStorageItem(storage, 'myKey', 2020);
+      const {value, created} = getStorageItem(storage, 'myKey');
       expect(created).to.be.equal(now);
       expect(value).to.be.equal(2020);
       expect(typeof value).to.be.equal('number');
@@ -612,7 +615,7 @@ describe('IlluminBidAdapter', function () {
     it('should get external stored value', function () {
       const value = 'superman'
       window.localStorage.setItem('myExternalKey', value);
-      const item = getStorageItem('myExternalKey');
+      const item = getStorageItem(storage, 'myExternalKey');
       expect(item).to.be.equal(value);
     });
 
