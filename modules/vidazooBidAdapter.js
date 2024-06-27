@@ -36,8 +36,8 @@ function createUniqueRequestData(hashUrl) {
   };
 }
 
-const buildRequests = createBuildRequestsFn(createDomain, createUniqueRequestData, webSessionId, storage, BIDDER_CODE, BIDDER_VERSION);
-const interpretResponse = createInterpretResponseFn(BIDDER_CODE);
+const buildRequests = createBuildRequestsFn(createDomain, createUniqueRequestData, webSessionId, storage, BIDDER_CODE, BIDDER_VERSION, true);
+const interpretResponse = createInterpretResponseFn(BIDDER_CODE, true);
 const getUserSyncs = createUserSyncGetter({
   iframeSyncUrl: 'https://sync.cootlogix.com/api/sync/iframe', imageSyncUrl: 'https://sync.cootlogix.com/api/sync/image'
 });

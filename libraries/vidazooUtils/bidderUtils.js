@@ -331,13 +331,13 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   return data;
 }
 
-export function createInterpretResponseFn(bidderCode) {
+export function createInterpretResponseFn(bidderCode, allowSingleRequest) {
   return function interpretResponse(serverResponse, request) {
     if (!serverResponse || !serverResponse.body) {
       return [];
     }
 
-    const singleRequestMode = config.getConfig(`${bidderCode}.singleRequest`);
+    const singleRequestMode = allowSingleRequest && config.getConfig(`${bidderCode}.singleRequest`);
     const reqBidId = deepAccess(request, 'data.bidId');
     const {results} = serverResponse.body;
 
@@ -410,7 +410,7 @@ export function createInterpretResponseFn(bidderCode) {
   }
 }
 
-export function createBuildRequestsFn(createRequestDomain, createUniqueRequestData, webSessionId, storage, bidderCode, bidderVersion) {
+export function createBuildRequestsFn(createRequestDomain, createUniqueRequestData, webSessionId, storage, bidderCode, bidderVersion, allowSingleRequest) {
   function buildRequest(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout) {
     const {params} = bid;
     const cId = extractCID(params);
@@ -449,7 +449,7 @@ export function createBuildRequestsFn(createRequestDomain, createUniqueRequestDa
     const topWindowUrl = bidderRequest.refererInfo.page || bidderRequest.refererInfo.topmostLocation;
     const bidderTimeout = config.getConfig('bidderTimeout');
 
-    const singleRequestMode = config.getConfig('vidazoo.singleRequest');
+    const singleRequestMode = allowSingleRequest && config.getConfig(`${bidderCode}.singleRequest`);
 
     const requests = [];
 
