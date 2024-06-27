@@ -1736,6 +1736,14 @@ describe('adapterManager tests', function () {
       expect(sizes1).not.to.deep.equal(sizes2);
     });
 
+    it('should transfer deferBilling from ad unit', () => {
+      adUnits[0].deferBilling = true;
+      const requests = makeBidRequests();
+      requests.flatMap(req => req.bids).forEach(bidRequest => {
+        expect(bidRequest.deferBilling).to.equal(bidRequest.adUnitCode === adUnits[0].code);
+      })
+    })
+
     it('should set and increment bidRequestsCounter', () => {
       const [au1, au2] = adUnits;
       makeBidRequests([au1, au2]).flatMap(br => br.bids).forEach(bid => {

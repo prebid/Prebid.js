@@ -134,6 +134,7 @@ function getBids({bidderCode, auctionId, bidderRequestId, adUnits, src, metrics}
           bidRequestsCount: getRequestsCounter(adUnit.code),
           bidderRequestsCount: getBidderRequestsCounter(adUnit.code, bid.bidder),
           bidderWinsCount: getBidderWinsCounter(adUnit.code, bid.bidder),
+          deferBilling: !!adUnit.deferBilling
         }));
         return bids;
       }, [])
