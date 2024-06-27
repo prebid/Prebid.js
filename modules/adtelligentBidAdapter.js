@@ -4,7 +4,6 @@ import {ADPOD, BANNER, VIDEO} from '../src/mediaTypes.js';
 import {config} from '../src/config.js';
 import {Renderer} from '../src/Renderer.js';
 import {find} from '../src/polyfill.js';
-import {convertTypes} from '../libraries/transformParamsUtils/convertTypes.js';
 import {chunk} from '../libraries/chunk/chunk.js';
 
 /**
@@ -138,11 +137,6 @@ export const spec = {
     return bids;
   },
 
-  transformBidParams(params) {
-    return convertTypes({
-      'aid': 'number',
-    }, params);
-  }
 };
 
 function parseRTBResponse(serverResponse, adapterRequest) {

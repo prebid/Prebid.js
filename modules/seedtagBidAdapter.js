@@ -119,6 +119,7 @@ function buildBidRequest(validBidRequest) {
   const bidRequest = {
     id: validBidRequest.bidId,
     transactionId: validBidRequest.ortb2Imp?.ext?.tid,
+    gpid: validBidRequest.ortb2Imp?.ext?.gpid,
     sizes: validBidRequest.sizes,
     supplyTypes: mediaTypes,
     adUnitId: params.adUnitId,
@@ -330,6 +331,10 @@ export const spec = {
 
     if (bidderRequest.ortb2?.badv) {
       payload.badv = bidderRequest.ortb2?.badv
+    }
+
+    if (bidderRequest.ortb2?.device?.sua) {
+      payload.sua = bidderRequest.ortb2.device.sua
     }
 
     const payloadString = JSON.stringify(payload);

@@ -336,7 +336,10 @@ function generateBidParameters(bid, bidderRequest) {
     if (placement) {
       bidObject.placement = placement;
     }
-
+    const plcmt = deepAccess(bid, `mediaTypes.video.plcmt`);
+    if (plcmt) {
+      bidObject.plcmt = plcmt;
+    }
     const minDuration = deepAccess(bid, `mediaTypes.video.minduration`);
     if (minDuration) {
       bidObject.minDuration = minDuration;

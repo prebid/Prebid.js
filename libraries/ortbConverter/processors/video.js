@@ -26,10 +26,6 @@ const ORTB_VIDEO_PARAMS = new Set([
   'playbackend'
 ]);
 
-const PLACEMENT = {
-  'instream': 1,
-}
-
 export function fillVideoImp(imp, bidRequest, context) {
   if (context.mediaType && context.mediaType !== VIDEO) return;
 
@@ -46,10 +42,7 @@ export function fillVideoImp(imp, bidRequest, context) {
       }
       Object.assign(video, format[0]);
     }
-    const placement = PLACEMENT[videoParams.context];
-    if (placement != null) {
-      video.placement = placement;
-    }
+
     imp.video = mergeDeep(video, imp.video);
   }
 }

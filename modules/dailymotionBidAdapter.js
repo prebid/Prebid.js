@@ -67,7 +67,7 @@ function getVideoMetadata(bidRequest, bidderRequest) {
       ? videoParams.isCreatedForKids
       : null,
     context: {
-      siteOrAppCat: deepAccess(contentObj, 'cat', ''),
+      siteOrAppCat: deepAccess(contentObj, 'cat', []),
       videoViewsInSession: (
         typeof videoParams.videoViewsInSession === 'number' &&
         videoParams.videoViewsInSession >= 0

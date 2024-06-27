@@ -15,6 +15,7 @@ import {getStorageManager} from '../src/storageManager.js';
 import {bidderSettings} from '../src/bidderSettings.js';
 import {config} from '../src/config.js';
 import {chunk} from '../libraries/chunk/chunk.js';
+import {extractCID, extractPID, extractSubDomain} from '../libraries/vidazooUtils/bidderUtils.js';
 
 const GVLID = 1292;
 const DEFAULT_SUB_DOMAIN = 'exchange';
@@ -38,18 +39,6 @@ function getTopWindowQueryParams() {
 
 export function createDomain(subDomain = DEFAULT_SUB_DOMAIN) {
   return `https://${subDomain}.twist.win`;
-}
-
-export function extractCID(params) {
-  return params.cId || params.CID || params.cID || params.CId || params.cid || params.ciD || params.Cid || params.CiD;
-}
-
-export function extractPID(params) {
-  return params.pId || params.PID || params.pID || params.PId || params.pid || params.piD || params.Pid || params.PiD;
-}
-
-export function extractSubDomain(params) {
-  return params.subDomain || params.SubDomain || params.Subdomain || params.subdomain || params.SUBDOMAIN || params.subDOMAIN;
 }
 
 function isBidRequestValid(bid) {
@@ -155,7 +144,7 @@ function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidderTimeout
     data.gppSid = bidderRequest.ortb2.regs.gpp_sid;
   }
 
-  if (bidderRequest.fledgeEnabled) {
+  if (bidderRequest.paapi?.enabled) {
     const fledge = deepAccess(bidderRequest, 'ortb2Imp.ext.ae');
     if (fledge) {
       data.fledge = fledge;

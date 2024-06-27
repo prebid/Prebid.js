@@ -43,7 +43,7 @@ export const ceeIdSubmodule = {
    * performs action to obtain id and return a value
    * @function
    * @returns {(IdResponse|undefined)}
-  */
+   */
   getId(config) {
     const { params = {} } = config;
     const { tokenName, value } = params
