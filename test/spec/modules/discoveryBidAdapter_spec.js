@@ -22,6 +22,7 @@ describe('discovery:BidAdapterTests', function () {
     sandbox = sinon.sandbox.create();
     sandbox.stub(storage, 'getCookie');
     sandbox.stub(storage, 'setCookie');
+    sandbox.stub(storage, 'getDataFromLocalStorage');
     sandbox.stub(utils, 'generateUUID').returns('new-uuid');
     sandbox.stub(utils, 'parseUrl').returns({
       search: {
@@ -259,7 +260,8 @@ describe('discovery:BidAdapterTests', function () {
         expect(storage.setCookie.calledOnce).to.be.false;
       });
       it('should return other ID from storage and cookie', () => {
-        expect(storage.setCookie.called).to.be.true;
+        spec.buildRequests(bidRequestData.bids, bidRequestData);
+        expect(storage.getCookie.called).to.be.true;
         expect(storage.getDataFromLocalStorage.called).to.be.true;
       });
     })
