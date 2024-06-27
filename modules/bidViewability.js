@@ -67,7 +67,6 @@ export let logWinningBidNotFound = (slot) => {
 
 export let impressionViewableHandler = (globalModuleConfig, slot, event) => {
   let respectiveBid = getMatchingWinningBidForGPTSlot(globalModuleConfig, slot);
-  let respectiveDeferredAdUnit = getGlobal().adUnits.find(adUnit => adUnit.deferBilling && respectiveBid.adUnitCode === adUnit.code);
 
   if (respectiveBid === null) {
     logWinningBidNotFound(slot);
@@ -77,8 +76,8 @@ export let impressionViewableHandler = (globalModuleConfig, slot, event) => {
     // trigger respective bidder's onBidViewable handler
     adapterManager.callBidViewableBidder(respectiveBid.adapterCode || respectiveBid.bidder, respectiveBid);
 
-    if (respectiveDeferredAdUnit) {
-      adapterManager.callBidBillableBidder(respectiveBid);
+    if (respectiveBid.deferBilling) {
+      adapterManager.triggerBilling(respectiveBid);
     }
 
     // emit the BID_VIEWABLE event with bid details, this event can be consumed by bidders and analytics pixels

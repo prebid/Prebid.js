@@ -82,6 +82,7 @@ describe('adapterManager tests', function () {
   let orgPrebidServerAdapter;
   let orgRubiconAdapter;
   let orgBadBidderAdapter;
+  let sandbox;
   before(function () {
     orgAppnexusAdapter = adapterManager.bidderRegistry['appnexus'];
     orgAdequantAdapter = adapterManager.bidderRegistry['adequant'];
@@ -99,8 +100,12 @@ describe('adapterManager tests', function () {
     config.setConfig({s2sConfig: { enabled: false }});
   });
 
+  beforeEach(() => {
+    sandbox = sinon.sandbox.create();
+  });
   afterEach(() => {
     s2sTesting.clientTestBidders.clear();
+    sandbox.restore();
   });
 
   describe('callBids', function () {
@@ -392,11 +397,51 @@ describe('adapterManager tests', function () {
       });
 
       it('should NOT call onBidWon when the bid is S2S', () => {
-        bids[0].src = S2S.SRC
+        bids[0].source = S2S.SRC
         adapterManager.callBidWonBidder(bids[0].bidder, bids[0], adUnits);
         sinon.assert.notCalled(criteoSpec.onBidWon);
       })
     });
+
+    describe('triggerBilling', () => {
+      beforeEach(() => {
+        criteoSpec.onBidBillable = sinon.spy();
+        sandbox.stub(utils.internal, 'triggerPixel');
+      });
+      describe('on client bids', () => {
+        it('should call bidder\'s onBidBillable, and ignore burl', () => {
+          adapterManager.triggerBilling(bids[0]);
+          sinon.assert.called(criteoSpec.onBidBillable);
+          sinon.assert.notCalled(utils.internal.triggerPixel)
+        });
+        it('should not call again on second trigger', () => {
+          adapterManager.triggerBilling(bids[0]);
+          adapterManager.triggerBilling(bids[0]);
+          sinon.assert.calledOnce(criteoSpec.onBidBillable);
+        });
+      })
+      describe('on s2s bids', () => {
+        beforeEach(() => {
+          bids[0].source = S2S.SRC;
+        });
+        it('should call burl and not onBidBillable', () => {
+          bids[0].burl = 'burl';
+          adapterManager.triggerBilling(bids[0]);
+          sinon.assert.notCalled(criteoSpec.onBidBillable);
+          sinon.assert.calledWith(utils.internal.triggerPixel, 'burl');
+        });
+        it('should not call burl if not present', () => {
+          adapterManager.triggerBilling(bids[0]);
+          sinon.assert.notCalled(utils.internal.triggerPixel);
+        });
+        it('should not call burl again on second triggerBilling', () => {
+          bids[0].burl = 'burl';
+          adapterManager.triggerBilling(bids[0]);
+          adapterManager.triggerBilling(bids[0]);
+          sinon.assert.calledOnce(utils.internal.triggerPixel)
+        });
+      });
+    })
 
     describe('onSetTargeting', function () {
       beforeEach(() => {
@@ -409,7 +454,7 @@ describe('adapterManager tests', function () {
       });
 
       it('should NOT call onSetTargeting when bid is S2S', () => {
-        bids[0].src = S2S.SRC;
+        bids[0].source = S2S.SRC;
         adapterManager.callSetTargetingBidder(bids[0].bidder, bids[0], adUnits);
         sinon.assert.notCalled(criteoSpec.onSetTargeting);
       })
@@ -423,7 +468,7 @@ describe('adapterManager tests', function () {
         sinon.assert.called(criteoSpec.onBidViewable);
       });
       it('should NOT call onBidViewable when bid is S2S', () => {
-        bids[0].src = S2S.SRC;
+        bids[0].source = S2S.SRC;
         adapterManager.callBidViewableBidder(bids[0].bidder, bids[0]);
         sinon.assert.notCalled(criteoSpec.onBidViewable);
       })
