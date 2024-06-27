@@ -179,7 +179,7 @@ function setS2sConfig(options) {
 
   const activeBidders = [];
   const optionsValid = normalizedOptions.every((option, i, array) => {
-    formatUrlParams(options);
+    formatUrlParams(option);
     const updateSuccess = updateConfigDefaultVendor(option);
     if (updateSuccess !== false) {
       const valid = validateConfigRequiredProps(option);
