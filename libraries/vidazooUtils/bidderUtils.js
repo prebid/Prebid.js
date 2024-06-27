@@ -241,7 +241,7 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
   const {ext} = params;
   let {bidFloor} = params;
   const hashUrl = hashCode(topWindowUrl);
-  const uniqueRequestData = isFn(getUniqueRequestData) ? getUniqueRequestData(hashUrl) : {};
+  const uniqueRequestData = isFn(getUniqueRequestData) ? getUniqueRequestData(hashUrl, bid) : {};
   const uniqueDealId = getUniqueDealId(storage, hashUrl);
   const pId = extractPID(params);
   const isStorageAllowed = bidderSettings.get(bidderCode, 'storageAllowed');
