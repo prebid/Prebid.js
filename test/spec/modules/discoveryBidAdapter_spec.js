@@ -258,6 +258,10 @@ describe('discovery:BidAdapterTests', function () {
         getPmgUID();
         expect(storage.setCookie.calledOnce).to.be.false;
       });
+      it('should return other ID from storage and cookie', () => {
+        expect(storage.setCookie.called).to.be.true;
+        expect(storage.getDataFromLocalStorage.called).to.be.true;
+      });
     })
     describe('buildUTMTagData function', function() {
       it('should set UTM cookie', () => {

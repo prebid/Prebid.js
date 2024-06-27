@@ -22,6 +22,9 @@ const MEDIATYPE = [BANNER, NATIVE];
 const COOKIE_KEY_SSPPID = '_ss_pp_id';
 export const COOKIE_KEY_MGUID = '__mguid_';
 const COOKIE_KEY_PMGUID = '__pmguid_';
+const COOKIE_KEY_PBUID = 'pub_pp_tag';
+const STORAGE_KEY_FTUID = 'fluct_ppUUIDv4';
+const STORAGE_KEY_IMUID = '__im_ppid';
 const COOKIE_RETENTION_TIME = 365 * 24 * 60 * 60 * 1000; // 1 year
 const COOKY_SYNC_IFRAME_URL = 'https://asset.popin.cc/js/cookieSync.html';
 export const THIRD_PARTY_COOKIE_ORIGIN = 'https://asset.popin.cc';
@@ -466,6 +469,9 @@ function getParam(validBidRequests, bidderRequest) {
       firstPartyData,
       ssppid: storage.getCookie(COOKIE_KEY_SSPPID) || undefined,
       pmguid: getPmgUID(),
+      ssftUid: storage.getDataFromLocalStorage(STORAGE_KEY_FTUID) || undefined,
+      ssimUid: storage.getDataFromLocalStorage(STORAGE_KEY_IMUID) || undefined,
+      sspbid: storage.getCookie(COOKIE_KEY_PBUID) || undefined,
       tpData,
       utm: storage.getCookie(UTM_KEY),
       page: {
