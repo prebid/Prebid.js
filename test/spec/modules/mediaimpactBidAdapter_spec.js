@@ -139,9 +139,9 @@ describe('MediaimpactAdapter', function () {
             'width': 300,
             'height': 250,
             'creativeId': '8:123456',
-            'adomain': [
-              'test.domain'
-            ],
+            'meta': {
+              'advertiserDomains': ['test.domain']
+            },
             'syncs': [
               {'type': 'image', 'url': 'https://test.domain/tracker_1.gif'},
               {'type': 'image', 'url': 'https://test.domain/tracker_2.gif'},
@@ -200,9 +200,9 @@ describe('MediaimpactAdapter', function () {
       'cpm': 0.01,
       'currency': 'USD',
       'netRevenue': true,
-      'adomain': [
-        'test.domain'
-      ],
+      'meta': {
+        'advertiserDomains': ['test.domain']
+      },
     };
 
     it('fill ad for response', function () {
@@ -263,9 +263,9 @@ describe('MediaimpactAdapter', function () {
             'width': 300,
             'height': 250,
             'creativeId': '8:123456',
-            'adomain': [
-              'test.domain'
-            ],
+            'meta': {
+              'advertiserDomains': ['test.domain']
+            },
             'syncs': [
               {'type': 'image', 'link': 'https://test.domain/tracker_1.gif'},
               {'type': 'image', 'link': 'https://test.domain/tracker_2.gif'},

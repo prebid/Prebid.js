@@ -28,6 +28,7 @@ export let responseReady = defer();
 
 /**
  * Configuration function for currency
+ * @param {object} config
  * @param  {string} [config.adServerCurrency = 'USD']
  *  ISO 4217 3-letter currency code that represents the target currency. (e.g. 'EUR').  If this value is present,
  *  the currency conversion feature is activated.

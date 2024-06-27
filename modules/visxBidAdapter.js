@@ -59,11 +59,16 @@ export const spec = {
       config.getConfig('currency.adServerCurrency') ||
       DEFAULT_CUR;
 
+    let request;
     let reqId;
     let payloadSchain;
     let payloadUserId;
     let payloadUserEids;
     let timeout;
+    let payloadDevice;
+    let payloadSite;
+    let payloadRegs;
+    let payloadContent;
 
     if (currencyWhiteList.indexOf(currency) === -1) {
       logError(LOG_ERROR_MESS.notAllowedCurrency + currency);
@@ -80,9 +85,7 @@ export const spec = {
         imp.push(impObj);
         bidsMap[bid.bidId] = bid;
       }
-
       const { params: { uid }, schain, userId, userIdAsEids } = bid;
-
       if (!payloadSchain && schain) {
         payloadSchain = schain;
       }
@@ -93,6 +96,7 @@ export const spec = {
       if (!payloadUserId && userId) {
         payloadUserId = userId;
       }
+
       auids.push(uid);
     });
 
@@ -100,10 +104,7 @@ export const spec = {
 
     if (bidderRequest) {
       timeout = bidderRequest.timeout;
-      if (bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
-        // TODO: is 'page' the right value here?
-        payload.u = bidderRequest.refererInfo.page;
-      }
+
       if (bidderRequest.gdprConsent) {
         if (bidderRequest.gdprConsent.consentString) {
           payload.gdpr_consent = bidderRequest.gdprConsent.consentString;
@@ -111,6 +112,21 @@ export const spec = {
         payload.gdpr_applies =
             (typeof bidderRequest.gdprConsent.gdprApplies === 'boolean')
               ? Number(bidderRequest.gdprConsent.gdprApplies) : 1;
+      }
+
+      const { ortb2 } = bidderRequest;
+      const { device, site, regs, content } = ortb2;
+      if (device) {
+        payloadDevice = device;
+      }
+      if (site) {
+        payloadSite = site;
+      }
+      if (regs) {
+        payloadRegs = regs;
+      }
+      if (content) {
+        payloadContent = content;
       }
     }
 
@@ -131,21 +147,25 @@ export const spec = {
         ...(vads && { vads })
       }
     };
-    const regs = ('gdpr_applies' in payload) && {
-      ext: {
-        gdpr: payload.gdpr_applies
-      }
-    };
+    if (payloadRegs === undefined) {
+      payloadRegs = ('gdpr_applies' in payload) && {
+        ext: {
+          gdpr: payload.gdpr_applies
+        }
+      };
+    }
 
-    const request = {
+    request = {
       id: reqId,
       imp,
       tmax,
       cur: [currency],
       source,
-      site: { page: payload.u },
       ...(Object.keys(user.ext).length && { user }),
-      ...(regs && { regs })
+      ...(payloadRegs && {regs: payloadRegs}),
+      ...(payloadDevice && { device: payloadDevice }),
+      ...(payloadSite && { site: payloadSite }),
+      ...(payloadContent && { content: payloadContent }),
     };
 
     return {
