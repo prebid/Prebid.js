@@ -3694,68 +3694,29 @@ describe('Unit: Prebid Module', function () {
       auctionManagerStub.returns(bidsReceived)
       let bids = $$PREBID_GLOBAL$$.getAllPrebidWinningBids();
 
-      expect(bids.length).to.equal(1);
+      expect(bids.length).to.equal(1); sandbox
       expect(bids[0].adId).to.equal('adid-1');
     });
   });
 
   describe('deferred billing', function () {
-    const sandbox = sinon.createSandbox();
-
-    let adUnits = [
-      {
-        code: 'adUnit-code-1',
-        mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } },
-        adUnitId: '1234567890',
-        bids: [
-          { bidder: 'pubmatic', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code-1' }
-        ]
-      },
-      {
-        code: 'adUnit-code-2',
-        deferBilling: true,
-        mediaTypes: { banner: { sizes: [[300, 250], [300, 600]] } },
-        adUnitId: '0987654321',
-        bids: [
-          { bidder: 'pubmatic', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code-2' }
-        ]
-      }
-    ];
-
-    let winningBid1 = { adapterCode: 'pubmatic', bidder: 'pubmatic', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code-1', adUnitId: '1234567890', adId: 'abcdefg' }
-    let winningBid2 = { adapterCode: 'pubmatic', bidder: 'pubmatic', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code-2', adUnitId: '0987654321' }
-    let adUnitCodes = ['adUnit-code-1', 'adUnit-code-2'];
-    let auction = auctionModule.newAuction({adUnits, adUnitCodes, callback: function() {}, cbTimeout: 2000});
+    let bid;
 
     beforeEach(function () {
-      sandbox.spy(adapterManager, 'callBidWonBidder');
-      sandbox.spy(adapterManager, 'callBidBillableBidder');
-      sandbox.stub(auctionManager, 'getBidsReceived').returns([winningBid1]);
+      bid = { adapterCode: 'pubmatic', bidder: 'pubmatic', params: {placementId: '10433394'}, adUnitCode: 'adUnit-code-1', adUnitId: '1234567890', adId: 'abcdefg' };
+      sandbox.spy(adapterManager, 'triggerBilling');
+      sandbox.stub(auctionManager, 'getAllWinningBids').returns([bid]);
     });
 
-    afterEach(function () {
-      sandbox.resetHistory();
-      sandbox.restore();
-    });
-
-    it('should by default invoke callBidWonBidder and callBidBillableBidder', function () {
-      auction.addWinningBid(winningBid1);
-      sinon.assert.calledOnce(adapterManager.callBidWonBidder);
-      sinon.assert.calledOnce(adapterManager.callBidBillableBidder);
-    });
-
-    it('should only invoke callBidWonBidder and NOT callBidBillableBidder if deferBilling is present and true within the winning adUnit object', function () {
-      auction.addWinningBid(winningBid2);
-      sinon.assert.calledOnce(adapterManager.callBidWonBidder);
-      sinon.assert.notCalled(adapterManager.callBidBillableBidder);
-    });
-
-    it('should invoke callBidBillableBidder when pbjs.triggerBilling is invoked', function () {
-      $$PREBID_GLOBAL$$.triggerBilling(winningBid1);
-      sinon.assert.calledOnce(auctionManager.getBidsReceived);
-      sinon.assert.notCalled(adapterManager.callBidWonBidder);
-      sinon.assert.calledOnce(adapterManager.callBidBillableBidder);
-    });
+    Object.entries({
+      'bid': () => bid,
+      'adUnitCode': () => ({adUnitCode: bid.adUnitCode})
+    }).forEach(([t, val]) => {
+      it(`should trigger billing when invoked with ${t}`, () => {
+        $$PREBID_GLOBAL$$.triggerBilling(val());
+        sinon.assert.calledWith(adapterManager.triggerBilling, bid);
+      })
+    })
   });
 
   describe('clearAllAuctions', () => {
