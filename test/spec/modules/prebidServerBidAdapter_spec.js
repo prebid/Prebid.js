@@ -825,7 +825,7 @@ describe('S2S Adapter', function () {
         })
       })
     })
-    
+
     it('should set customHeaders correctly when publisher has provided it', () => {
       let configWithCustomHeaders = utils.deepClone(CONFIG);
       configWithCustomHeaders.customHeaders = { customHeader1: 'customHeader1Value' };
@@ -3473,6 +3473,18 @@ describe('S2S Adapter', function () {
 
       const response = addBidResponse.firstCall.args[1];
       expect(response).to.have.property('adapterCode', 'appnexus2');
+    });
+
+    it('should set deferBilling and deferRendering to true when request has deferBilling = true', () => {
+      config.setConfig({ CONFIG });
+      const req = deepClone(REQUEST);
+      req.ad_units.forEach(au => au.deferBilling = true);
+      adapter.callBids(req, BID_REQUESTS, addBidResponse, done, ajax);
+      server.requests[0].respond(200, {}, JSON.stringify(RESPONSE_OPENRTB));
+      sinon.assert.match(addBidResponse.firstCall.args[1], {
+        deferBilling: true,
+        deferRendering: true
+      });
     });
 
     describe('on sync requested with no cookie', () => {
