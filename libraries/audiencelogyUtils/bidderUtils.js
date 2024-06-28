@@ -1,10 +1,42 @@
 import {
-    deepAccess,
-    isArray,
+  deepAccess,
+  generateUUID,
+  isArray,
 } from '../../src/utils.js';
-
+  
+// Function to get Request
+export const getRequest = (bid, bidderRequest) => {
+  let request = {
+    id: generateUUID(),
+    imp: [{
+      id: bid.bidId,
+      bidfloor: getFloor(bid),
+      banner: getBanner(bid)
+    }],
+    placementId: bid.params.placement_id,
+    site: getSite(bidderRequest),
+    user: buildUser(bid)
+  };
+  // Get GPP Consent from bidderRequest
+  if (bidderRequest?.gppConsent?.gppString) {
+    request.gpp = bidderRequest.gppConsent.gppString;
+    request.gpp_sid = bidderRequest.gppConsent.applicableSections;
+  } else if (bidderRequest?.ortb2?.regs?.gpp) {
+    request.gpp = bidderRequest.ortb2.regs.gpp;
+    request.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
+  }
+  // Get coppa compliance from bidderRequest
+  if (bidderRequest?.ortb2?.regs?.coppa) {
+    request.coppa = 1;
+  }
+  // Get uspConsent from bidderRequest
+  if (bidderRequest && bidderRequest.uspConsent) {
+    request.us_privacy = bidderRequest.uspConsent;
+  }
+  return request;
+}
 // Function to get banner details
-export const getBanner = (bid) => {
+const getBanner = (bid) => {
   if (deepAccess(bid, 'mediaTypes.banner')) {
     // Fetch width and height from MediaTypes object, if not provided in bid params
     if (deepAccess(bid, 'mediaTypes.banner.sizes') && !bid.params.height && !bid.params.width) {
@@ -24,7 +56,7 @@ export const getBanner = (bid) => {
   }
 }
 // Function to get bid_floor
-export const getFloor = (bid) => {
+const getFloor = (bid) => {
   if (bid.params && bid.params.bid_floor) {
     return bid.params.bid_floor;
   } else {
@@ -32,7 +64,7 @@ export const getFloor = (bid) => {
   }
 }
 // Function to get site details
-export const getSite = (bidderRequest) => {
+const getSite = (bidderRequest) => {
   let site = {};
   if (bidderRequest && bidderRequest.refererInfo && bidderRequest.refererInfo.page) {
     site.name = bidderRequest.refererInfo.domain;
@@ -60,7 +92,7 @@ export const formatResponse = (bid) => {
   return response;
 }
 // Function to build the user object
-export const buildUser = (bid) => {
+const buildUser = (bid) => {
   let user = {};
   if (bid && bid.params) {
     user.id = bid.params.user_id && typeof bid.params.user_id == 'string' ? bid.params.user_id : '';

@@ -1,5 +1,4 @@
 import {
-  generateUUID,
   logError
 } from '../src/utils.js';
 import {
@@ -9,11 +8,8 @@ import {
   registerBidder
 } from '../src/adapters/bidderFactory.js';
 import {
-  getBanner,
-  getFloor,
-  getSite,
+  getRequest,
   formatResponse,
-  buildUser
 } from '../libraries/audiencelogyUtils/bidderUtils.js';
 
 const BIDDER_CODE = 'audiencelogy';
@@ -33,34 +29,8 @@ export const spec = {
     let nid = 0;
     // Loop for each bid request
     bidRequests.forEach(bid => {
-      // Create the bid request object
-      const request = {
-        id: generateUUID(),
-        imp: [{
-          id: bid.bidId,
-          bidfloor: getFloor(bid),
-          banner: getBanner(bid)
-        }],
-        placementId: bid.params.placement_id,
-        site: getSite(bidderRequest),
-        user: buildUser(bid)
-      };
-      // Get GPP Consent from bidderRequest
-      if (bidderRequest?.gppConsent?.gppString) {
-        request.gpp = bidderRequest.gppConsent.gppString;
-        request.gpp_sid = bidderRequest.gppConsent.applicableSections;
-      } else if (bidderRequest?.ortb2?.regs?.gpp) {
-        request.gpp = bidderRequest.ortb2.regs.gpp;
-        request.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
-      }
-      // Get coppa compliance from bidderRequest
-      if (bidderRequest?.ortb2?.regs?.coppa) {
-        request.coppa = 1;
-      }
-      // Get uspConsent from bidderRequest
-      if (bidderRequest && bidderRequest.uspConsent) {
-        request.us_privacy = bidderRequest.uspConsent;
-      }
+      // Get the bid request object
+      const request = getRequest(bid,bidderRequest);
       // Push the created bid request to the requests array
       requests.push(request);
       // Set nid value
