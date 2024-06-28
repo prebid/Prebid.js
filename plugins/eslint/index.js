@@ -163,9 +163,8 @@ module.exports = {
           description: 'Disallow direct use of network requests methods (navigator.sendBeacon, XMLHttpRequest, fetch)'
         },
         messages: {
-          noSendBeacon: 'Usage of navigator.sendBeacon is not allowed',
-          noXMLHttpRequest: 'Usage of XMLHttpRequest is not allowed',
-          noFetch: 'Usage of fetch is not allowed',
+          noSendBeacon: 'Usage of navigator.sendBeacon and window.fetch are not allowed',
+          noXMLHttpRequest: 'Usage of XMLHttpRequest is not allowed'
         }
       },
       create: function(context) {
@@ -177,10 +176,11 @@ module.exports = {
         }
         return {
           MemberExpression(node) {
-            if (node.object.name === 'navigator' && node.property.name === 'sendBeacon') {
+            if (node.object.name === 'navigator' && node.property.name === 'sendBeacon') ||
+            (node.object.name === 'window' && node.property.name === 'fetch') {
               context.report({
                 node,
-                messageId: 'noSendBeacon',
+                messageId: 'noSendBeacon or window.fetch',
               });
             }
           },
@@ -189,15 +189,6 @@ module.exports = {
               context.report({
                 node,
                 messageId: 'noXMLHttpRequest',
-              });
-            }
-          },
-          CallExpression(node) {
-            const calleeName = node.callee.name;
-            if (calleeName === 'fetch') {
-              context.report({
-                node,
-                messageId: 'noFetch',
               });
             }
           }
