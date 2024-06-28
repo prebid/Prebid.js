@@ -108,6 +108,51 @@ module.exports = {
           }
         }
       }
+    },
+    'no-dom-manipulation': {
+      meta: {
+        docs: {
+          description: 'Disallow use of methods to insert elements into the document in files matching *BidAdapter.js'
+        },
+        messages: {
+          noInsertElement: 'Usage of insertElement is not allowed in *BidAdapter.js files.',
+          noAppendChild: 'Usage of appendChild is not allowed in *BidAdapter.js files.',
+          noDomManipulation: 'Direct DOM manipulation is not allowed in *BidAdapter.js files.'
+        }
+      },
+      create: function(context) {
+        const filename = context.getFilename();
+        const isBidAdapterFile = /.*BidAdapter\.js$/.test(filename);
+
+        if (!isBidAdapterFile) {
+          return {};
+        }
+
+        return {
+          CallExpression(node) {
+            const calleeName = node.callee.name;
+            if (calleeName === 'insertElement' || calleeName === 'appendChild' ||
+                calleeName === 'insertBefore' || calleeName === 'replaceChild' ||
+                calleeName === 'createElement' || calleeName === 'createElementNS' ||
+                calleeName === 'createDocumentFragment' ||
+                calleeName === 'innerHTML') {
+              context.report({
+                node,
+                messageId: calleeName === 'insertElement' ? 'noInsertElement' :
+                          calleeName === 'appendChild' ? 'noAppendChild' : 'noDomManipulation'
+              });
+            }
+          },
+          MemberExpression(node) {
+            if (node.property && node.property.name === 'innerHTML') {
+              context.report({
+                node: node.property,
+                messageId: 'noDomManipulation',
+              });
+            }
+          }
+        }
+      }
     }
   }
 };
