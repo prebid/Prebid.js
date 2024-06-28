@@ -75,11 +75,11 @@ module.exports = {
     'no-cookie-or-localstorage': {
       meta: {
         docs: {
-          description: 'Disallow use of document.cookie or localStorage in files matching *BidAdapter.js'
+          description: 'Disallow use of document.cookie or localStorage in files matching *Adapter.js'
         },
         messages: {
-          noCookie: 'Usage of document.cookie is not allowed in *BidAdapter.js files. Use storageManager instead.',
-          noLocalStorage: 'Usage of localStorage is not allowed in *BidAdapter.js files. Use storageManager instead.',
+          noCookie: 'Usage of document.cookie is not allowed in *Adapter.js files. Use storageManager instead.',
+          noLocalStorage: 'Usage of localStorage is not allowed in *Adapter.js files. Use storageManager instead.',
         }
       },
       create: function(context) {
@@ -161,7 +161,7 @@ module.exports = {
     'no-direct-network-requests': {
       meta: {
         docs: {
-          description: 'Disallow direct use of network requests methods (navigator.sendBeacon, XMLHttpRequest, fetch) in files matching *BidAdapter.js'
+          description: 'Disallow direct use of network requests methods (navigator.sendBeacon, XMLHttpRequest, fetch) in files matching *Adapter.js'
         },
         messages: {
           noSendBeacon: 'Usage of navigator.sendBeacon is not allowed in *Adapter.js files.',
