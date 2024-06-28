@@ -93,7 +93,7 @@ function trim(string) {
   }
   return string.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
 }
-
+/*
 function parseCookies(cookie) {
   let values = {};
   let arr, item;
@@ -125,6 +125,7 @@ function parseCookies(cookie) {
 
   return values;
 }
+*/
 
 function getRandAsStr(digits) {
   let str = '';
