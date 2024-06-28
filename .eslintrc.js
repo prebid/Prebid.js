@@ -83,7 +83,11 @@ module.exports = {
     files: key + '/**/*.js',
     rules: {
       'prebid/validate-imports': ['error', allowedModules[key]],
-      'prebid/no-innerText': ['error', allowedModules[key]],
+      'prebid/no-innerText': 'error',
+      'prebid/no-outerText': 'error',
+      'prebid/no-cookie-or-localstorage': 'error',
+      'prebid/no-dom-manipulation': 'error',
+      'prebid/no-direct-network-requests': 'error',
       'no-restricted-globals': [
         'error',
         {
