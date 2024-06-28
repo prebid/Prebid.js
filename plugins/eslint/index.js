@@ -9,7 +9,7 @@ module.exports = {
           description: '.outerText property on DOM elements should not be used due to performance issues'
         },
         messages: {
-          noInnerText: 'Use of `.outerText` is not allowed. Use `.textContent` instead.',
+          noOuterText: 'Use of `.outerText` is not allowed. Use `.textContent` instead.',
         }
       },
       create: function(context) {
@@ -22,7 +22,7 @@ module.exports = {
               });
             }
           }
-        }
+        };
       }
     },
     'no-innerText': {
@@ -44,7 +44,7 @@ module.exports = {
               });
             }
           }
-        }
+        };
       }
     },
     'validate-imports': {
@@ -69,7 +69,7 @@ module.exports = {
             let importPath = node.source.value.trim();
             flagErrors(context, node, importPath);
           }
-        }
+        };
       }
     },
     'no-cookie-or-localstorage': {
@@ -83,22 +83,30 @@ module.exports = {
         }
       },
       create: function(context) {
+        const filename = context.getFilename();
+        const isBidAdapterFile = /.*BidAdapter\.js$/.test(filename);
+
+        if (!isBidAdapterFile) {
+          return {};
+        }
+
         return {
           MemberExpression(node) {
-            if (node.object.name === 'document' && node.property.name === 'cookie') {
+            if (
+              (node.object.name === 'document' && node.property.name === 'cookie') ||
+              (node.object.name === 'localStorage' &&
+                (node.property.name === 'getItem' ||
+                 node.property.name === 'setItem' ||
+                 node.property.name === 'removeItem' ||
+                 node.property.name === 'clear'))
+            ) {
               context.report({
                 node,
-                messageId: 'noCookie',
-              });
-            }
-            if (node.object.name === 'localStorage') {
-              context.report({
-                node,
-                messageId: 'noLocalStorage',
+                messageId: node.object.name === 'document' ? 'noCookie' : 'noLocalStorage',
               });
             }
           }
-        }
+        };
       }
     },
     'no-dom-manipulation': {
@@ -123,11 +131,12 @@ module.exports = {
         return {
           CallExpression(node) {
             const calleeName = node.callee.name;
-            if (calleeName === 'insertElement' || calleeName === 'appendChild' ||
-                calleeName === 'insertBefore' || calleeName === 'replaceChild' ||
-                calleeName === 'createElement' || calleeName === 'createElementNS' ||
-                calleeName === 'createDocumentFragment' ||
-                calleeName === 'innerHTML') {
+            if (
+              calleeName === 'insertElement' || calleeName === 'appendChild' ||
+              calleeName === 'insertBefore' || calleeName === 'replaceChild' ||
+              calleeName === 'createElement' || calleeName === 'createElementNS' ||
+              calleeName === 'createDocumentFragment' || calleeName === 'innerHTML'
+            ) {
               context.report({
                 node,
                 messageId:
@@ -147,7 +156,7 @@ module.exports = {
               });
             }
           }
-        }
+        };
       }
     },
     'no-direct-network-requests': {
@@ -195,7 +204,7 @@ module.exports = {
               });
             }
           }
-        }
+        };
       }
     }
   }
