@@ -49,6 +49,7 @@ function pageInitStepPreloadScript(scriptURL) {
   linkElement.href = scriptURL;
   linkElement.onload = () => { preloadStatus = 1; };
   linkElement.onerror = () => { preloadStatus = -1; };
+  // eslint-disable-next-line prebid/no-dom-manipulation
   insertElement(linkElement);
 }
 
