@@ -186,7 +186,7 @@ function extParams(bidRequest, bidderRequests) {
   const coppaApplies = !!(config.getConfig('coppa'));
   return Object.assign({},
     { customer_id: params.cid },
-    { prebid_version: getGlobal().version },
+    { prebid_version: 'v' + '$prebid.version$' },
     { gdpr_applies: gdprApplies },
     (gdprApplies) && { gdpr_consent_string: gdpr.consentString || '' },
     { usp_applies: uspApplies },
@@ -261,7 +261,7 @@ function slotParams(bidRequest, bidderRequests) {
   if (floorInfo && floorInfo.length > 0) {
     params.bidfloors = floorInfo;
   }
-  if (bidderRequests.fledgeEnabled) {
+  if (bidderRequests.paapi?.enabled) {
     params.ext.ae = bidRequest?.ortb2Imp?.ext?.ae;
   }
   return params;
@@ -508,7 +508,7 @@ export const spec = {
     }
     return {
       bids: validBids,
-      fledgeAuctionConfigs,
+      paapi: fledgeAuctionConfigs,
     }
   },
   getUserSyncs: function(syncOptions, serverResponses) {
