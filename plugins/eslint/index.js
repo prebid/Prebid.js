@@ -83,6 +83,12 @@ module.exports = {
         }
       },
       create: function(context) {
+        const filename = context.getFilename();
+        const isAdapterFile = /.*Adapter\.js$/.test(filename);
+
+        if (!isAdapterFile) {
+          return {};
+        }
         return {
           MemberExpression(node) {
             if (
@@ -114,6 +120,12 @@ module.exports = {
         }
       },
       create: function(context) {
+        const filename = context.getFilename();
+        const isAdapterFile = /.*Adapter\.js$/.test(filename);
+
+        if (!isAdapterFile) {
+          return {};
+        }
         return {
           CallExpression(node) {
             const calleeName = node.callee.name;
@@ -156,6 +168,12 @@ module.exports = {
         }
       },
       create: function(context) {
+        const filename = context.getFilename();
+        const isAdapterFile = /.*Adapter\.js$/.test(filename);
+
+        if (!isAdapterFile) {
+          return {};
+        }
         return {
           MemberExpression(node) {
             if (
