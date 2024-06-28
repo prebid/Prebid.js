@@ -30,7 +30,7 @@ export const spec = {
     // Loop for each bid request
     bidRequests.forEach(bid => {
       // Get the bid request object
-      const request = getRequest(bid,bidderRequest);
+      const request = getRequest(bid, bidderRequest);
       // Push the created bid request to the requests array
       requests.push(request);
       // Set nid value

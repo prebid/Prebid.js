@@ -3,7 +3,7 @@ import {
   generateUUID,
   isArray,
 } from '../../src/utils.js';
-  
+
 // Function to get Request
 export const getRequest = (bid, bidderRequest) => {
   let request = {
