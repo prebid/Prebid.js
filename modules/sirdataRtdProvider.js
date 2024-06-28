@@ -1,3 +1,4 @@
+/* eslint-disable prebid/no-dom-manipulation */
 /**
  * This module adds Sirdata provider to the real time data module
  * and now supports Seller Defined Audience
@@ -219,6 +220,8 @@ export function postContentForSemanticAnalysis(postContentToken, actualUrl) {
 
       // Use the Beacon API if supported to send the payload
       if ('sendBeacon' in navigator) {
+        // TODO FIX RULES VIOLATION
+        // es-lint-disable-next-line prebid/no-direct-network-requests
         navigator.sendBeacon(url, payload);
       } else {
         // Fallback to using AJAX if Beacon API is not supported
