@@ -278,15 +278,18 @@ function onGetBidRequestData(bidReqConfig, callback, config) {
 
   const adUnits = bidReqConfig.adUnits || getGlobal().adUnits || [];
   adUnits.forEach(adUnit => {
+    adUnit.ortb2Imp = adUnit.ortb2Imp || {};
     const ortb2Imp = deepAccess(adUnit, 'ortb2Imp');
+
     // A divId is required to compute the slot position and later to track viewability.
     // If nothing has been explicitly set, we try to get the divId from the GPT slot and fallback to the adUnit code in last resort.
-    if (!deepAccess(ortb2Imp, 'ext.data.divId')) {
-      const divId = getGptSlotInfoForAdUnitCode(adUnit.code).divId;
+    let divId = deepAccess(ortb2Imp, 'ext.data.divId')
+    if (!divId) {
+      divId = getGptSlotInfoForAdUnitCode(adUnit.code).divId;
       deepSetValue(ortb2Imp, `ext.data.divId`, divId || adUnit.code);
     }
 
-    const slotPosition = getSlotPosition(adUnit);
+    const slotPosition = getSlotPosition(divId);
     deepSetValue(ortb2Imp, `ext.data.adg_rtd.adunit_position`, slotPosition);
 
     // It is expected that the publisher set a `adUnits[].ortb2Imp.ext.data.placement` value.
@@ -430,7 +433,7 @@ function getElementFromTopWindow(element, currentWindow) {
   }
 };
 
-function getSlotPosition(adUnit) {
+function getSlotPosition(divId) {
   if (!isSafeFrameWindow() && !canAccessWindowTop()) {
     return '';
   }
@@ -451,16 +454,15 @@ function getSlotPosition(adUnit) {
       // window.top based computing
       const wt = getWindowTop();
       const d = wt.document;
-      const adUnitElementId = deepAccess(adUnit, 'ortb2Imp.ext.data.divId');
 
       let domElement;
 
       if (inIframe() === true) {
         const ws = getWindowSelf();
-        const currentElement = ws.document.getElementById(adUnitElementId);
+        const currentElement = ws.document.getElementById(divId);
         domElement = getElementFromTopWindow(currentElement, ws);
       } else {
-        domElement = wt.document.getElementById(adUnitElementId);
+        domElement = wt.document.getElementById(divId);
       }
 
       if (!domElement) {

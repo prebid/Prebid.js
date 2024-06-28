@@ -436,6 +436,18 @@ describe('Adagio Rtd Provider', function () {
         expect(bidRequest.adUnits[0]).to.have.property('ortb2Imp');
         expect(bidRequest.adUnits[0].ortb2Imp.ext.data.placement).to.not.exist;
       });
+
+      it('ensure we create the `ortb2Imp` object if it does not exist', function() {
+        const configCopy = utils.deepClone(config);
+        configCopy.params.placementSource = PLACEMENT_SOURCES.ADUNITCODE;
+
+        const bidRequest = utils.deepClone(bidReqConfig);
+        delete bidRequest.adUnits[0].ortb2Imp;
+
+        adagioRtdSubmodule.getBidRequestData(bidRequest, cb, configCopy);
+        expect(bidRequest.adUnits[0]).to.have.property('ortb2Imp');
+        expect(bidRequest.adUnits[0].ortb2Imp.ext.data.placement).to.equal('div-gpt-ad-1460505748561-0');
+      });
     });
   });
 
