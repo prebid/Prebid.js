@@ -292,6 +292,7 @@ export function parseXML(xml, bid) {
     if (ct) {
       const companion = xml.getElementsByTagName('Companion')[0];
       const htmlResource = companion.getElementsByTagName('HTMLResource')[0];
+      // eslint-disable-next-line no-dom-manipulation
       const htmlContent = document.createElement('html');
       htmlContent.innerHTML = htmlResource.textContent;
 
