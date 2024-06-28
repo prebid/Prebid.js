@@ -157,6 +157,55 @@ module.exports = {
           }
         }
       }
+    },
+    'no-direct-network-requests': {
+      meta: {
+        docs: {
+          description: 'Disallow direct use of network requests methods (navigator.sendBeacon, XMLHttpRequest, fetch) in files matching *BidAdapter.js'
+        },
+        messages: {
+          noSendBeacon: 'Usage of navigator.sendBeacon is not allowed in *BidAdapter.js files.',
+          noXMLHttpRequest: 'Usage of XMLHttpRequest is not allowed in *BidAdapter.js files.',
+          noFetch: 'Usage of fetch is not allowed in *BidAdapter.js files.',
+        }
+      },
+      create: function(context) {
+        const filename = context.getFilename();
+        const isBidAdapterFile = /.*BidAdapter\.js$/.test(filename);
+
+        if (!isBidAdapterFile) {
+          return {};
+        }
+
+        return {
+          MemberExpression(node) {
+            if (node.object.name === 'navigator' && node.property.name === 'sendBeacon') {
+              context.report({
+                node,
+                messageId: 'noSendBeacon',
+              });
+            }
+          },
+          NewExpression(node) {
+            if (node.callee.name === 'XMLHttpRequest') {
+              context.report({
+                node,
+                messageId: 'noXMLHttpRequest',
+              });
+            }
+          },
+          CallExpression(node) {
+            const calleeName = node.callee.name;
+            if (calleeName === 'fetch') {
+              context.report({
+                node,
+                messageId: 'noFetch',
+              });
+            }
+          }
+        }
+      }
     }
   }
 };
+
