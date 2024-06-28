@@ -23,6 +23,43 @@ const BIDDER_CODE = 'missena';
 const ENDPOINT_URL = 'https://bid.missena.io/';
 const EVENTS_DOMAIN = 'events.missena.io';
 const EVENTS_DOMAIN_DEV = 'events.staging.missena.xyz';
+const USER_ID_KEY = 'hb_missena_uid';
+const USER_ID_COOKIE_EXP = 2592000000;
+
+function getUserIdFromStorage() {
+  return storage.localStorageIsEnabled()
+    ? storage.getDataFromLocalStorage(USER_ID_KEY)
+    : storage.getCookie(USER_ID_KEY);
+}
+
+function setUserId(userId) {
+  if (storage.localStorageIsEnabled()) {
+    storage.setDataInLocalStorage(USER_ID_KEY, userId);
+  } else if (storage.cookiesAreEnabled()) {
+    const expires = new Date(Date.now() + USER_ID_COOKIE_EXP).toUTCString();
+    storage.setCookie(USER_ID_KEY, userId, expires);
+  }
+}
+
+function getUserId() {
+  const id = getUserIdFromStorage() || common.generateUUID();
+
+  setUserId(id);
+
+  return id;
+}
+
+function buildUser(bidderRequest) {
+  const user = {
+    id: getUserId(),
+  };
+
+  if (bidderRequest.gdprConsent) {
+    user.gdprConsentString = bidderRequest.gdprConsent.consentString || '';
+  }
+
+  return user;
+}
 
 export const storage = getStorageManager({ bidderCode: BIDDER_CODE });
 window.msna_ik = window.msna_ik || generateUUID();
@@ -68,7 +105,8 @@ export const spec = {
   buildRequests: function (validBidRequests, bidderRequest) {
     const capKey = `missena.missena.capper.remove-bubble.${validBidRequests[0]?.params.apiKey}`;
     const capping = safeJSONParse(storage.getDataFromLocalStorage(capKey));
-    const referer = bidderRequest?.refererInfo?.topmostLocation;
+    const referer = bidderRequest?.refererInfo?.ref;
+
     if (
       typeof capping?.expiry === 'number' &&
       new Date().getTime() < capping?.expiry &&
@@ -86,33 +124,36 @@ export const spec = {
         timeout: bidderRequest.timeout,
       };
 
-      if (bidderRequest && bidderRequest.refererInfo) {
-        // TODO: is 'topmostLocation' the right value here?
-        payload.referer = bidderRequest.refererInfo.topmostLocation;
+      if (bidderRequest?.refererInfo) {
+        payload.referer = bidderRequest.refererInfo.ref;
         payload.referer_canonical = bidderRequest.refererInfo.canonicalUrl;
+        payload.location = bidderRequest.refererInfo.topmostLocation;
       }
 
-      if (bidderRequest && bidderRequest.gdprConsent) {
+      if (bidderRequest?.gdprConsent) {
         payload.consent_string = bidderRequest.gdprConsent.consentString;
         payload.consent_required = bidderRequest.gdprConsent.gdprApplies;
       }
-      const baseUrl = bidRequest.params.baseUrl || ENDPOINT_URL;
-      if (bidRequest.params.test) {
-        payload.test = bidRequest.params.test;
+
+      const bidParams = bidRequest.params;
+      const baseUrl = bidParams.baseUrl || ENDPOINT_URL;
+      if (bidParams.test) {
+        payload.test = bidParams.test;
       }
-      if (bidRequest.params.placement) {
-        payload.placement = bidRequest.params.placement;
+      if (bidParams.placement) {
+        payload.placement = bidParams.placement;
       }
-      if (bidRequest.params.formats) {
-        payload.formats = bidRequest.params.formats;
+      if (bidParams.formats) {
+        payload.formats = bidParams.formats;
       }
-      if (bidRequest.params.isInternal) {
-        payload.is_internal = bidRequest.params.isInternal;
+      if (bidParams.isInternal) {
+        payload.is_internal = bidParams.isInternal;
       }
       if (bidRequest.ortb2?.device?.ext?.cdep) {
         payload.cdep = bidRequest.ortb2?.device?.ext?.cdep;
       }
       payload.userEids = bidRequest.userIdAsEids || [];
+      payload.user = buildUser(bidderRequest);
       payload.version = '$prebid.version$';
 
       const bidFloor = getFloor(bidRequest);
@@ -122,7 +163,7 @@ export const spec = {
 
       return {
         method: 'POST',
-        url: baseUrl + '?' + formatQS({ t: bidRequest.params.apiKey }),
+        url: baseUrl + '?' + formatQS({ t: bidParams.apiKey }),
         data: JSON.stringify(payload),
       };
     });
@@ -200,3 +241,12 @@ export const spec = {
 };
 
 registerBidder(spec);
+
+export const common = {
+  generateUUID: function () {
+    return generateUUID();
+  },
+  getConfig: function (property) {
+    return config.getConfig(property);
+  }
+};
