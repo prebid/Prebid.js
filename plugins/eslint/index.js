@@ -94,10 +94,10 @@ module.exports = {
           MemberExpression(node) {
             if (
               (node.object.name === 'document' && node.property.name === 'cookie') ||
-              (node.object.name === 'localStorage' && 
-                (node.property.name === 'getItem' || 
-                 node.property.name === 'setItem' || 
-                 node.property.name === 'removeItem' || 
+              (node.object.name === 'localStorage' &&
+                (node.property.name === 'getItem' ||
+                 node.property.name === 'setItem' ||
+                 node.property.name === 'removeItem' ||
                  node.property.name === 'clear'))
             ) {
               context.report({
