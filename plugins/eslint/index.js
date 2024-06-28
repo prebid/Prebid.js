@@ -78,8 +78,8 @@ module.exports = {
           description: 'Disallow use of document.cookie or localStorage in files matching *BidAdapter.js'
         },
         messages: {
-          noCookie: 'Usage of document.cookie is not allowed in *BidAdapter.js files.',
-          noLocalStorage: 'Usage of localStorage is not allowed in *BidAdapter.js files.',
+          noCookie: 'Usage of document.cookie is not allowed in *BidAdapter.js files. Use storageManager instead.',
+          noLocalStorage: 'Usage of localStorage is not allowed in *BidAdapter.js files. Use storageManager instead.',
         }
       },
       create: function(context) {
@@ -115,9 +115,9 @@ module.exports = {
           description: 'Disallow use of methods to insert elements into the document in files matching *BidAdapter.js'
         },
         messages: {
-          noInsertElement: 'Usage of insertElement is not allowed in *BidAdapter.js files.',
-          noAppendChild: 'Usage of appendChild is not allowed in *BidAdapter.js files.',
-          noDomManipulation: 'Direct DOM manipulation is not allowed in *BidAdapter.js files.'
+          noInsertElement: 'Usage of insertElement is not allowed in *BidAdapter.js files. Import our methods instead.',
+          noAppendChild: 'Usage of appendChild is not allowed in *BidAdapter.js files. Import our methods instead.',
+          noDomManipulation: 'Direct DOM manipulation is not allowed in *BidAdapter.js files. Import our methods instead.'
         }
       },
       create: function(context) {
@@ -138,8 +138,12 @@ module.exports = {
                 calleeName === 'innerHTML') {
               context.report({
                 node,
-                messageId: calleeName === 'insertElement' ? 'noInsertElement' :
-                          calleeName === 'appendChild' ? 'noAppendChild' : 'noDomManipulation'
+                messageId:
+                  calleeName === 'insertElement'
+                    ? 'noInsertElement'
+                    : calleeName === 'appendChild'
+                    ? 'noAppendChild'
+                    : 'noDomManipulation'
               });
             }
           },
