@@ -164,14 +164,14 @@ module.exports = {
           description: 'Disallow direct use of network requests methods (navigator.sendBeacon, XMLHttpRequest, fetch) in files matching *BidAdapter.js'
         },
         messages: {
-          noSendBeacon: 'Usage of navigator.sendBeacon is not allowed in *BidAdapter.js files.',
-          noXMLHttpRequest: 'Usage of XMLHttpRequest is not allowed in *BidAdapter.js files.',
-          noFetch: 'Usage of fetch is not allowed in *BidAdapter.js files.',
+          noSendBeacon: 'Usage of navigator.sendBeacon is not allowed in *Adapter.js files.',
+          noXMLHttpRequest: 'Usage of XMLHttpRequest is not allowed in *Adapter.js files.',
+          noFetch: 'Usage of fetch is not allowed in *Adapter.js files.',
         }
       },
       create: function(context) {
         const filename = context.getFilename();
-        const isBidAdapterFile = /.*BidAdapter\.js$/.test(filename);
+        const isBidAdapterFile = /.*Adapter\.js$/.test(filename);
 
         if (!isBidAdapterFile) {
           return {};
@@ -208,4 +208,3 @@ module.exports = {
     }
   }
 };
-
