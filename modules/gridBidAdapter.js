@@ -7,8 +7,7 @@ import {
   mergeDeep,
   logWarn,
   isNumber,
-  isStr,
-  getBidFromResponse
+  isStr
 } from '../src/utils.js';
 import { ajax } from '../src/ajax.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
@@ -16,6 +15,7 @@ import { Renderer } from '../src/Renderer.js';
 import { VIDEO, BANNER } from '../src/mediaTypes.js';
 import { config } from '../src/config.js';
 import { getStorageManager } from '../src/storageManager.js';
+import { getBidFromResponse } from '../libraries/processResponse/index.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

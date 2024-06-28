@@ -4,6 +4,7 @@ import { config } from 'src/config.js';
 import { newBidder } from 'src/adapters/bidderFactory.js';
 import * as utils from 'src/utils.js';
 import { makeSlot } from '../integration/faker/googletag.js';
+import { mergeDeep } from '../../../src/utils.js';
 
 describe('VisxAdapter', function () {
   const adapter = newBidder(spec);
@@ -2284,6 +2285,60 @@ describe('VisxAdapter', function () {
     it('should pass site if ortb2 has site', function () {
       const request = spec.buildRequests(bidRequests, bidderRequest);
       expect(request.data.site).not.to.be.undefined;
+    });
+
+    it('should merge if user object exists', function () {
+      const user = {
+        'ext': {
+          'vads': 'cXaIRA425BmynEN1ratEnc_5e',
+          'data': {
+            'registered': true,
+            'interests': [
+              'ads'
+            ]
+          }
+        },
+        'keywords': 'x,y',
+        'data': [
+          {
+            'name': 'exampleprovider.de',
+            'ext': {
+              'segtax': 5
+            },
+            'segment': [
+              {
+                'id': '1'
+              }
+            ]
+          }
+        ]
+      };
+      const userOrtb2 = {
+        'keywords': 'x,y',
+        'data': [
+          {
+            'name': 'exampleprovider.de',
+            'ext': {
+              'segtax': 5
+            },
+            'segment': [
+              {
+                'id': '1'
+              }
+            ]
+          }
+        ],
+        'ext': {
+          'data': {
+            'registered': true,
+            'interests': [
+              'ads'
+            ]
+          }
+        }
+      }
+      const userReq = mergeDeep(user, userOrtb2);
+      expect(userReq.ext.vads).not.to.be.undefined;
     });
   });
 });
