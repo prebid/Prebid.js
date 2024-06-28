@@ -131,7 +131,7 @@ import {config} from '../../src/config.js';
 import * as events from '../../src/events.js';
 import {getGlobal} from '../../src/prebidGlobal.js';
 import adapterManager, {gdprDataHandler} from '../../src/adapterManager.js';
-import { EVENTS } from '../../src/constants.js';
+import {EVENTS} from '../../src/constants.js';
 import {module, ready as hooksReady} from '../../src/hook.js';
 import {buildEidPermissions, createEidsArray, EID_CONFIG} from './eids.js';
 import {
@@ -147,7 +147,6 @@ import {
   getPrebidInternal,
   isArray,
   isEmpty,
-  isEmptyStr,
   isFn,
   isGptPubadsDefined,
   isNumber,
@@ -951,29 +950,40 @@ function hasValidStorageTypes(config) {
  * @param {SubmoduleConfig[]} configRegistry
  * @returns {SubmoduleConfig[]}
  */
-function getValidSubmoduleConfigs(configRegistry) {
+export function getValidSubmoduleConfigs(configRegistry) {
+  function err(msg, ...args) {
+    logWarn(`Invalid userSync.userId config: ${msg}`, ...args)
+  }
   if (!Array.isArray(configRegistry)) {
+    if (configRegistry != null) {
+      err('must be an array', configRegistry);
+    }
     return [];
   }
-  return configRegistry.reduce((carry, config) => {
-    // every submodule config obj must contain a valid 'name'
-    if (!config || isEmptyStr(config.name)) {
-      return carry;
+  return configRegistry.filter(config => {
+    if (!config?.name) {
+      return err('must specify "name"', config);
+    } else if (config.storage) {
+      if (!config.storage.name || !config.storage.type) {
+        return err('must specify "storage.name" and "storage.type"', config);
+      } else if (!hasValidStorageTypes(config)) {
+        return err('invalid "storage.type"', config)
+      }
+      ['expires', 'refreshInSeconds'].forEach(param => {
+        let value = config.storage[param];
+        if (value != null && typeof value !== 'number') {
+          value = Number(value)
+          if (isNaN(value)) {
+            err(`storage.${param} must be a number and will be ignored`, config);
+            delete config.storage[param];
+          } else {
+            config.storage[param] = value;
+          }
+        }
+      });
     }
-    // Validate storage config contains 'type' and 'name' properties with non-empty string values
-    // 'type' must be one of html5, cookies
-    if (config.storage &&
-      !isEmptyStr(config.storage.type) &&
-      !isEmptyStr(config.storage.name) &&
-      hasValidStorageTypes(config)) {
-      carry.push(config);
-    } else if (isPlainObject(config.value)) {
-      carry.push(config);
-    } else if (!config.storage && !config.value) {
-      carry.push(config);
-    }
-    return carry;
-  }, []);
+    return true;
+  })
 }
 
 const ALL_STORAGE_TYPES = new Set([LOCAL_STORAGE, COOKIE]);

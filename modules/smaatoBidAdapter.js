@@ -212,15 +212,19 @@ const converter = ortbConverter({
       return bidderRequest.gdprConsent && bidderRequest.gdprConsent.gdprApplies;
     }
 
+    function setPublisherId(node) {
+      deepSetValue(node, 'publisher.id', bidRequest.params.publisherId);
+    }
+
     const request = buildRequest(imps, bidderRequest, context);
     const bidRequest = context.bidRequests[0];
-    let siteContent;
+    let content;
     const mediaType = context.mediaType;
     if (mediaType === VIDEO) {
       const videoParams = bidRequest.mediaTypes[VIDEO];
       if (videoParams.context === ADPOD) {
         request.imp = createAdPodImp(request.imp[0], videoParams);
-        siteContent = addOptionalAdpodParameters(videoParams);
+        content = addOptionalAdpodParameters(videoParams);
       }
     }
 
@@ -242,19 +246,26 @@ const converter = ortbConverter({
 
     if (request.site) {
       request.site.id = window.location.hostname
-      if (siteContent) {
-        request.site.content = siteContent;
+      if (content) {
+        request.site.content = content;
       }
+      setPublisherId(request.site);
+    } else if (request.dooh) {
+      request.dooh.id = window.location.hostname
+      if (content) {
+        request.dooh.content = content;
+      }
+      setPublisherId(request.dooh);
     } else {
       request.site = {
         id: window.location.hostname,
         domain: bidderRequest.refererInfo.domain || window.location.hostname,
         page: bidderRequest.refererInfo.page || window.location.href,
         ref: bidderRequest.refererInfo.ref,
-        content: siteContent || null
+        content: content || null
       }
+      setPublisherId(request.site);
     }
-    deepSetValue(request.site, 'publisher.id', bidRequest.params.publisherId);
 
     if (request.regs) {
       if (isGdprApplicable()) {

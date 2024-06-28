@@ -15,6 +15,8 @@ import {
   deepAccess,
   deepSetValue,
   generateUUID,
+  getDomLoadingDuration,
+  getSafeframeGeometry,
   getUniqueIdentifierStr,
   getWindowSelf,
   getWindowTop,
@@ -24,6 +26,7 @@ import {
   isStr,
   prefixLog
 } from '../src/utils.js';
+import { _ADAGIO, getBestWindowForAdagio } from '../libraries/adagioUtils/adagioUtils.js';
 import { getGptSlotInfoForAdUnitCode } from '../libraries/gptUtils/gptUtils.js';
 
 /**
@@ -35,29 +38,17 @@ const ADAGIO_BIDDER_CODE = 'adagio';
 const GVLID = 617;
 const SCRIPT_URL = 'https://script.4dex.io/a/latest/adagio.js';
 const SESS_DURATION = 30 * 60 * 1000;
+export const PLACEMENT_SOURCES = {
+  ORTB: 'ortb', // implicit default, not used atm.
+  ADUNITCODE: 'code',
+  GPID: 'gpid'
+};
 export const storage = getStorageManager({ moduleType: MODULE_TYPE_RTD, moduleName: SUBMODULE_NAME });
 
 const { logError, logWarn } = prefixLog('AdagioRtdProvider:');
 
 // Guard to avoid storing the same bid data several times.
 const guard = new Set();
-
-/**
- * Returns the window.ADAGIO global object used to store Adagio data.
- * This object is created in window.top if possible, otherwise in window.self.
- */
-const _ADAGIO = (function() {
-  const w = (canAccessWindowTop()) ? getWindowTop() : getWindowSelf();
-
-  w.ADAGIO = w.ADAGIO || {};
-  w.ADAGIO.pageviewId = w.ADAGIO.pageviewId || generateUUID();
-  w.ADAGIO.adUnits = w.ADAGIO.adUnits || {};
-  w.ADAGIO.pbjsAdUnits = w.ADAGIO.pbjsAdUnits || [];
-  w.ADAGIO.queue = w.ADAGIO.queue || [];
-  w.ADAGIO.windows = w.ADAGIO.windows || [];
-
-  return w.ADAGIO;
-})();
 
 /**
  * Store the sampling data.
@@ -131,12 +122,14 @@ const _FEATURES = (function() {
       features.data = {};
     },
     get: function() {
+      const w = getBestWindowForAdagio();
+
       if (!features.initialized) {
         features.data = {
           page_dimensions: getPageDimensions().toString(),
           viewport_dimensions: getViewPortDimensions().toString(),
           user_timestamp: getTimestampUTC().toString(),
-          dom_loading: getDomLoadingDuration().toString(),
+          dom_loading: getDomLoadingDuration(w).toString(),
         };
         features.initialized = true;
       }
@@ -271,10 +264,12 @@ function onBidRequest(bidderRequest, config, _userConsent) {
  * @param {*} config
  */
 function onGetBidRequestData(bidReqConfig, callback, config) {
+  const configParams = deepAccess(config, 'params', {});
   const { site: ortb2Site } = bidReqConfig.ortb2Fragments.global;
   const features = _internal.getFeatures().get();
   const ext = {
     uid: generateUUID(),
+    pageviewId: _ADAGIO.pageviewId,
     features: { ...features },
     session: { ..._SESSION.get() }
   };
@@ -294,8 +289,26 @@ function onGetBidRequestData(bidReqConfig, callback, config) {
     const slotPosition = getSlotPosition(adUnit);
     deepSetValue(ortb2Imp, `ext.data.adg_rtd.adunit_position`, slotPosition);
 
-    // We expect `pagetype` `category` are defined in FPD `ortb2.site.ext.data` object.
-    // `placement` is expected in FPD `adUnits[].ortb2Imp.ext.data` object. (Please note that this `placement` is not related to the oRTB video property.)
+    // It is expected that the publisher set a `adUnits[].ortb2Imp.ext.data.placement` value.
+    // Btw, We allow fallback sources to programmatically set this value.
+    // The source is defined in the `config.params.placementSource` and the possible values are `code` or `gpid`.
+    // (Please note that this `placement` is not related to the oRTB video property.)
+    if (!deepAccess(ortb2Imp, 'ext.data.placement')) {
+      const { placementSource = '' } = configParams;
+
+      switch (placementSource.toLowerCase()) {
+        case PLACEMENT_SOURCES.ADUNITCODE:
+          deepSetValue(ortb2Imp, 'ext.data.placement', adUnit.code);
+          break;
+        case PLACEMENT_SOURCES.GPID:
+          deepSetValue(ortb2Imp, 'ext.data.placement', deepAccess(ortb2Imp, 'ext.gpid'));
+          break;
+        default:
+          logWarn('`ortb2Imp.ext.data.placement` is missing and `params.definePlacement` is not set in the config.');
+      }
+    }
+
+    // We expect that `pagetype`, `category`, `placement` are defined in FPD `ortb2.site.ext.data` and `adUnits[].ortb2Imp.ext.data` objects.
     // Btw, we have to ensure compatibility with publishers that use the "legacy" adagio params at the adUnit.params level.
     const adagioBid = adUnit.bids.find(bid => _internal.isAdagioBidder(bid.bidder));
     if (adagioBid) {
@@ -316,9 +329,6 @@ function onGetBidRequestData(bidReqConfig, callback, config) {
         if (adagioBid.params.placement) {
           deepSetValue(ortb2Imp, 'ext.data.placement', adagioBid.params.placement);
           mustWarnOrtb2Imp = true;
-        } else {
-          // If the placement is not defined, we fallback to the adUnit code.
-          deepSetValue(ortb2Imp, 'ext.data.placement', adUnit.code);
         }
       }
 
@@ -428,16 +438,14 @@ function getSlotPosition(adUnit) {
   const position = { x: 0, y: 0 };
 
   if (isSafeFrameWindow()) {
-    const ws = getWindowSelf();
+    const { self } = getSafeframeGeometry() || {};
 
-    const sfGeom = (typeof ws.$sf.ext.geom === 'function') ? ws.$sf.ext.geom() : null;
-
-    if (!sfGeom || !sfGeom.self) {
+    if (!self) {
       return '';
     }
 
-    position.x = Math.round(sfGeom.self.t);
-    position.y = Math.round(sfGeom.self.l);
+    position.x = Math.round(self.t);
+    position.y = Math.round(self.l);
   } else {
     try {
       // window.top based computing
@@ -513,16 +521,14 @@ function getViewPortDimensions() {
   const viewportDims = { w: 0, h: 0 };
 
   if (isSafeFrameWindow()) {
-    const ws = getWindowSelf();
+    const { win } = getSafeframeGeometry() || {};
 
-    const sfGeom = (typeof ws.$sf.ext.geom === 'function') ? ws.$sf.ext.geom() : null;
-
-    if (!sfGeom || !sfGeom.win) {
+    if (!win) {
       return '';
     }
 
-    viewportDims.w = Math.round(sfGeom.win.w);
-    viewportDims.h = Math.round(sfGeom.win.h);
+    viewportDims.w = Math.round(win.w);
+    viewportDims.h = Math.round(win.h);
   } else {
     // window.top based computing
     const wt = getWindowTop();
@@ -536,22 +542,6 @@ function getViewPortDimensions() {
 function getTimestampUTC() {
   // timestamp returned in seconds
   return Math.floor(new Date().getTime() / 1000) - new Date().getTimezoneOffset() * 60;
-}
-
-function getDomLoadingDuration() {
-  const w = (canAccessWindowTop()) ? getWindowTop() : getWindowSelf();
-  const performance = w.performance;
-
-  let domLoadingDuration = -1;
-
-  if (performance && performance.timing && performance.timing.navigationStart > 0) {
-    const val = performance.timing.domLoading - performance.timing.navigationStart;
-    if (val > 0) {
-      domLoadingDuration = val;
-    }
-  }
-
-  return domLoadingDuration;
 }
 
 /**
