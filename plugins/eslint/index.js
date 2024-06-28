@@ -105,7 +105,7 @@ module.exports = {
     'no-dom-manipulation': {
       meta: {
         docs: {
-          description: 'Disallow use of methods to insert elements into the document in files matching *BidAdapter.js'
+          description: 'Disallow use of methods to insert elements into the document'
         },
         messages: {
           noInsertElement: 'Usage of insertElement is not allowed. Import our methods instead.',
