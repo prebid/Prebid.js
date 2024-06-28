@@ -294,6 +294,7 @@ export function parseXML(xml, bid) {
       const htmlResource = companion.getElementsByTagName('HTMLResource')[0];
       // eslint-disable-next-line prebid/no-dom-manipulation
       const htmlContent = document.createElement('html');
+      // eslint-disable-next-line prebid/no-dom-manipulation
       htmlContent.innerHTML = htmlResource.textContent;
 
       ret.cpm = extractCPM(htmlContent, ct, ret.cpm);
