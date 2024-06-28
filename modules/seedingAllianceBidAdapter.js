@@ -93,9 +93,7 @@ export const spec = {
         }).filter(Boolean);
 
         imp.native = {
-          request: {
-            assets
-          }
+          request: JSON.stringify({assets})
         };
       } else {
         let sizes = transformSizes(bidRequest.sizes);
@@ -263,7 +261,19 @@ function flatten(arr) {
 }
 
 function parseNative(bid) {
-  const { assets, link, imptrackers } = bid.adm.native;
+  let native;
+
+  if (typeof bid.adm === 'string') {
+    try {
+      native = JSON.parse(bid.adm).native;
+    } catch (e) {
+      return;
+    }
+  } else {
+    native = bid.adm.native;
+  }
+
+  const { assets, link, imptrackers } = native;
 
   let clickUrl = link.url.replace(/\$\{AUCTION_PRICE\}/g, bid.price);
 
