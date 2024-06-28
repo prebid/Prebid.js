@@ -225,7 +225,7 @@ export const spec = {
       }
     }
     // TODO FIX THIS RULES VIOLATION
-    // eslint-disable-next-line no-direct-network-requests
+    // eslint-disable-next-line prebid/no-direct-network-requests
     navigator.sendBeacon(EVENT_ENDPOINT, JSON.stringify(event))
   },
 
@@ -239,7 +239,7 @@ export const spec = {
       }
     }
     // TODO FIX THIS RULES VIOLATION
-    // eslint-disable-next-line no-direct-network-requests
+    // eslint-disable-next-line prebid/no-direct-network-requests
     navigator.sendBeacon(EVENT_ENDPOINT, JSON.stringify(event))
   },
 
