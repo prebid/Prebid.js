@@ -83,12 +83,6 @@ module.exports = {
         }
       },
       create: function(context) {
-        const filename = context.getFilename();
-        const isAdapterFile = /.*Adapter\.js$/.test(filename);
-
-        if (!isAdapterFile) {
-          return {};
-        }
         return {
           MemberExpression(node) {
             if (
@@ -120,12 +114,6 @@ module.exports = {
         }
       },
       create: function(context) {
-        const filename = context.getFilename();
-        const isAdapterFile = /.*Adapter\.js$/.test(filename);
-
-        if (!isAdapterFile) {
-          return {};
-        }
         return {
           CallExpression(node) {
             const calleeName = node.callee.name;
@@ -168,21 +156,15 @@ module.exports = {
         }
       },
       create: function(context) {
-        const filename = context.getFilename();
-        const isAdapterFile = /.*Adapter\.js$/.test(filename);
-
-        if (!isAdapterFile) {
-          return {};
-        }
         return {
           MemberExpression(node) {
             if (
               (node.object.name === 'navigator' && node.property.name === 'sendBeacon') ||
               (node.object.name === 'window' && node.property.name === 'fetch')
-              ) {
+            ) {
               context.report({
                 node,
-                messageId: 'noSendBeacon or window.fetch',
+                messageId: 'noSendBeacon',
               });
             }
           },
