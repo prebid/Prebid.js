@@ -75,11 +75,11 @@ module.exports = {
     'no-cookie-or-localstorage': {
       meta: {
         docs: {
-          description: 'Disallow use of document.cookie or localStorage in files matching *Adapter.js'
+          description: 'Disallow use of document.cookie or localStorage in files matching *BidAdapter.js'
         },
         messages: {
-          noCookie: 'Usage of document.cookie is not allowed in *Adapter.js files. Use storageManager instead.',
-          noLocalStorage: 'Usage of localStorage is not allowed in *Adapter.js files. Use storageManager instead.',
+          noCookie: 'Usage of document.cookie is not allowed in *BidAdapter.js files.',
+          noLocalStorage: 'Usage of localStorage is not allowed in *BidAdapter.js files.',
         }
       },
       create: function(context) {
@@ -92,17 +92,16 @@ module.exports = {
 
         return {
           MemberExpression(node) {
-            if (
-              (node.object.name === 'document' && node.property.name === 'cookie') ||
-              (node.object.name === 'localStorage' &&
-                (node.property.name === 'getItem' ||
-                 node.property.name === 'setItem' ||
-                 node.property.name === 'removeItem' ||
-                 node.property.name === 'clear'))
-            ) {
+            if (node.object.name === 'document' && node.property.name === 'cookie') {
               context.report({
                 node,
-                messageId: node.object.name === 'document' ? 'noCookie' : 'noLocalStorage',
+                messageId: 'noCookie',
+              });
+            }
+            if (node.object.name === 'localStorage') {
+              context.report({
+                node,
+                messageId: 'noLocalStorage',
               });
             }
           }
