@@ -68,12 +68,7 @@ function initFirstVisit() {
   let now;
   let visitDate;
   let cookies;
-
-  try {
-    cookies = parseCookies(document.cookie);
-  } catch (a) {
-    cookies = {};
-  }
+  cookies = {};
 
   visitDate = cookies[ FIRST_VISIT_DATE ];
 
@@ -171,11 +166,7 @@ function initSession() {
   let sessionDuration;
   let isNew = false;
 
-  try {
-    cookies = parseCookies(document.cookie);
-  } catch (a) {
-    cookies = {};
-  }
+  cookies = {};
 
   sessionId = cookies[ SESSION_ID ];
 
@@ -263,7 +254,7 @@ function getTrackRequestLastTime() {
       );
     }
 
-    cookie = parseCookies(document.cookie);
+    cookie = {};
     cookie = cookie[ TRACK_TIME_KEY ];
     if (cookie) {
       return parseInt(cookie, 10);
