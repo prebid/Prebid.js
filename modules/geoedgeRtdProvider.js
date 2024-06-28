@@ -102,6 +102,7 @@ export function markAsLoaded() {
 export function preloadClient(key) {
   let iframe = createInvisibleIframe();
   iframe.id = 'grumiFrame';
+  // eslint-disable-next-line prebid/no-dom-manipulation
   insertElement(iframe);
   iframe.contentWindow.grumi = getInitialParams(key);
   let url = getClientUrl(key);
