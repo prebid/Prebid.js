@@ -75,21 +75,14 @@ module.exports = {
     'no-cookie-or-localstorage': {
       meta: {
         docs: {
-          description: 'Disallow use of document.cookie or localStorage in files matching *BidAdapter.js'
+          description: 'Disallow use of document.cookie or localStorage'
         },
         messages: {
-          noCookie: 'Usage of document.cookie is not allowed in *BidAdapter.js files.',
-          noLocalStorage: 'Usage of localStorage is not allowed in *BidAdapter.js files.',
+          noCookie: 'Usage of document.cookie is not allowed',
+          noLocalStorage: 'Usage of localStorage is not allowed',
         }
       },
       create: function(context) {
-        const filename = context.getFilename();
-        const isBidAdapterFile = /.*BidAdapter\.js$/.test(filename);
-
-        if (!isBidAdapterFile) {
-          return {};
-        }
-
         return {
           MemberExpression(node) {
             if (
@@ -115,19 +108,12 @@ module.exports = {
           description: 'Disallow use of methods to insert elements into the document in files matching *BidAdapter.js'
         },
         messages: {
-          noInsertElement: 'Usage of insertElement is not allowed in *BidAdapter.js files. Import our methods instead.',
-          noAppendChild: 'Usage of appendChild is not allowed in *BidAdapter.js files. Import our methods instead.',
-          noDomManipulation: 'Direct DOM manipulation is not allowed in *BidAdapter.js files. Import our methods instead.'
+          noInsertElement: 'Usage of insertElement is not allowed. Import our methods instead.',
+          noAppendChild: 'Usage of appendChild is not allowed. Import our methods instead.',
+          noDomManipulation: 'Direct DOM manipulation is not allowed. Import our methods instead.'
         }
       },
       create: function(context) {
-        const filename = context.getFilename();
-        const isBidAdapterFile = /.*BidAdapter\.js$/.test(filename);
-
-        if (!isBidAdapterFile) {
-          return {};
-        }
-
         return {
           CallExpression(node) {
             const calleeName = node.callee.name;
@@ -162,22 +148,15 @@ module.exports = {
     'no-direct-network-requests': {
       meta: {
         docs: {
-          description: 'Disallow direct use of network requests methods (navigator.sendBeacon, XMLHttpRequest, fetch) in files matching *Adapter.js'
+          description: 'Disallow direct use of network requests methods (navigator.sendBeacon, XMLHttpRequest, fetch)'
         },
         messages: {
-          noSendBeacon: 'Usage of navigator.sendBeacon is not allowed in *Adapter.js files.',
-          noXMLHttpRequest: 'Usage of XMLHttpRequest is not allowed in *Adapter.js files.',
-          noFetch: 'Usage of fetch is not allowed in *Adapter.js files.',
+          noSendBeacon: 'Usage of navigator.sendBeacon is not allowed',
+          noXMLHttpRequest: 'Usage of XMLHttpRequest is not allowed',
+          noFetch: 'Usage of fetch is not allowed',
         }
       },
       create: function(context) {
-        const filename = context.getFilename();
-        const isBidAdapterFile = /.*Adapter\.js$/.test(filename);
-
-        if (!isBidAdapterFile) {
-          return {};
-        }
-
         return {
           MemberExpression(node) {
             if (node.object.name === 'navigator' && node.property.name === 'sendBeacon') {
