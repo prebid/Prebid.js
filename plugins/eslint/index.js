@@ -142,8 +142,8 @@ module.exports = {
                   calleeName === 'insertElement'
                     ? 'noInsertElement'
                     : calleeName === 'appendChild'
-                    ? 'noAppendChild'
-                    : 'noDomManipulation'
+                      ? 'noAppendChild'
+                      : 'noDomManipulation'
               });
             }
           },
