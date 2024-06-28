@@ -85,8 +85,10 @@ module.exports = {
       create: function(context) {
         const filename = context.getFilename();
         const isAdapterFile = /.*Adapter\.js$/.test(filename);
+        const isProviderFile = /.*Provider\.js$/.test(filename);
+        const isIdSystemFile = /.*IdSystem\.js$/.test(filename);
 
-        if (!isAdapterFile) {
+        if (!isAdapterFile && !isProviderFile && !isIdSystemFile) {
           return {};
         }
         return {
@@ -122,8 +124,10 @@ module.exports = {
       create: function(context) {
         const filename = context.getFilename();
         const isAdapterFile = /.*Adapter\.js$/.test(filename);
+        const isProviderFile = /.*Provider\.js$/.test(filename);
+        const isIdSystemFile = /.*IdSystem\.js$/.test(filename);
 
-        if (!isAdapterFile) {
+        if (!isAdapterFile && !isProviderFile && !isIdSystemFile) {
           return {};
         }
         return {
@@ -170,8 +174,10 @@ module.exports = {
       create: function(context) {
         const filename = context.getFilename();
         const isAdapterFile = /.*Adapter\.js$/.test(filename);
+        const isProviderFile = /.*Provider\.js$/.test(filename);
+        const isIdSystemFile = /.*IdSystem\.js$/.test(filename);
 
-        if (!isAdapterFile) {
+        if (!isAdapterFile && !isProviderFile && !isIdSystemFile) {
           return {};
         }
         return {
