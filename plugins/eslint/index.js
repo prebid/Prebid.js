@@ -176,8 +176,10 @@ module.exports = {
         }
         return {
           MemberExpression(node) {
-            if (node.object.name === 'navigator' && node.property.name === 'sendBeacon') ||
-            (node.object.name === 'window' && node.property.name === 'fetch') {
+            if (
+              (node.object.name === 'navigator' && node.property.name === 'sendBeacon') ||
+              (node.object.name === 'window' && node.property.name === 'fetch')
+              ) {
               context.report({
                 node,
                 messageId: 'noSendBeacon or window.fetch',
