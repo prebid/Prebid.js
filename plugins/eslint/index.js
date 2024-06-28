@@ -83,13 +83,6 @@ module.exports = {
         }
       },
       create: function(context) {
-        const filename = context.getFilename();
-        const isBidAdapterFile = /.*BidAdapter\.js$/.test(filename);
-
-        if (!isBidAdapterFile) {
-          return {};
-        }
-
         return {
           MemberExpression(node) {
             if (node.object.name === 'document' && node.property.name === 'cookie') {
