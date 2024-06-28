@@ -44,7 +44,6 @@ export const spec = {
     return ((typeof bid.params.placementId === 'string') && !!bid.params.placementId.length) || (typeof bid.params.placementId === 'number');
   },
 
-
   buildRequests: function (validBidRequests, bidderRequest) {
     var requests = [];
 
