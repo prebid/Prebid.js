@@ -86,14 +86,14 @@ function initFirstVisit() {
 
   return visitDate;
 }
-
+/*
 function trim(string) {
   if (string.trim) {
     return string.trim();
   }
   return string.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
 }
-/*
+
 function parseCookies(cookie) {
   let values = {};
   let arr, item;
