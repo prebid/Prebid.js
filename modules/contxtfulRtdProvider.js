@@ -37,20 +37,6 @@ function getRxEngineReceptivity(requester) {
 
 function loadSessionReceptivity(requester) {
   return null;
-
-  try {
-    // Check expiration of the cached value
-    let sessionStorageReceptivity = JSON.parse(sessionStorageValue);
-    let expiration = parseInt(sessionStorageReceptivity?.exp);
-    if (expiration < new Date().getTime()) {
-      return null;
-    }
-
-    let rx = sessionStorageReceptivity?.rx;
-    return rx;
-  } catch {
-    return null;
-  }
 };
 
 /**
