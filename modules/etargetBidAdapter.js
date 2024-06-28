@@ -89,6 +89,7 @@ export const spec = {
             }
           }
         }
+        // eslint-disable-next-line no-dom-manipulation
         mts['title'] = [(document.getElementsByTagName('title')[0] || []).innerHTML];
         mts['base'] = [(document.getElementsByTagName('base')[0] || {}).href];
         mts['referer'] = [document.location.href];
