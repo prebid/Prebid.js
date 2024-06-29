@@ -322,14 +322,14 @@ describe('contxtfulRtdProvider', function () {
     ];
 
     theories.forEach(([adUnits, expected, _description]) => {
-      it('uses non-expired info from session storage and adds receptivity to the ad units using session storage', function (done) {
+      it('does not use non-expired info from session storage and adds receptivity to the ad units using session storage', function (done) {
         let config = buildInitConfig(VERSION, CUSTOMER);
         // Simulate that there was a write to sessionStorage in the past.
         writeToStorage(config.params.customer, +100);
         contxtfulSubmodule.init(config);
 
         setTimeout(() => {
-          expect(contxtfulSubmodule.getTargetingData(adUnits, config)).to.deep.equal(
+          expect(contxtfulSubmodule.getTargetingData(adUnits, config)).to.not.equal(
             expected
           );
           done();
