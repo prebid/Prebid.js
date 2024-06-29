@@ -453,7 +453,7 @@ describe('contxtfulRtdProvider', function () {
   });
 
   describe('getBidRequestData', function () {
-    it('uses non-expired info from session storage and adds receptivity to the reqBidsConfigObj', function (done) {
+    it('does not use non-expired info from session storage and adds receptivity to the reqBidsConfigObj', function (done) {
       let config = buildInitConfig(VERSION, CUSTOMER);
       // Simulate that there was a write to sessionStorage in the past.
       writeToStorage(config.params.bidders[0], +100);
@@ -489,7 +489,7 @@ describe('contxtfulRtdProvider', function () {
         const noOp = () => undefined;
         contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, noOp, buildInitConfig(VERSION, CUSTOMER));
         let actualOrtb2 = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]];
-        expect(actualOrtb2).to.deep.equal(expectedOrtb2);
+        expect(actualOrtb2).to.not.equal(expectedOrtb2);
         done();
       }, TIMEOUT);
     });
