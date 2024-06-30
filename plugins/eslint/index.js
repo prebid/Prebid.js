@@ -1,6 +1,14 @@
 const _ = require('lodash');
 const { flagErrors } = require('./validateImports.js');
 
+function isMatchingFile(context) {
+  const filename = context.getFilename();
+  const isAdapterFile = /.*Adapter\.js$/.test(filename);
+  const isProviderFile = /.*Provider\.js$/.test(filename);
+  const isIdSystemFile = /.*IdSystem\.js$/.test(filename);
+  return isAdapterFile || isProviderFile || isIdSystemFile;
+}
+
 module.exports = {
   rules: {
     'no-outerText': {
@@ -83,12 +91,7 @@ module.exports = {
         }
       },
       create: function(context) {
-        const filename = context.getFilename();
-        const isAdapterFile = /.*Adapter\.js$/.test(filename);
-        const isProviderFile = /.*Provider\.js$/.test(filename);
-        const isIdSystemFile = /.*IdSystem\.js$/.test(filename);
-
-        if (!isAdapterFile && !isProviderFile && !isIdSystemFile) {
+        if (!isMatchingFile(context)) {
           return {};
         }
         return {
@@ -122,12 +125,7 @@ module.exports = {
         }
       },
       create: function(context) {
-        const filename = context.getFilename();
-        const isAdapterFile = /.*Adapter\.js$/.test(filename);
-        const isProviderFile = /.*Provider\.js$/.test(filename);
-        const isIdSystemFile = /.*IdSystem\.js$/.test(filename);
-
-        if (!isAdapterFile && !isProviderFile && !isIdSystemFile) {
+        if (!isMatchingFile(context)) {
           return {};
         }
         return {
@@ -172,12 +170,7 @@ module.exports = {
         }
       },
       create: function(context) {
-        const filename = context.getFilename();
-        const isAdapterFile = /.*Adapter\.js$/.test(filename);
-        const isProviderFile = /.*Provider\.js$/.test(filename);
-        const isIdSystemFile = /.*IdSystem\.js$/.test(filename);
-
-        if (!isAdapterFile && !isProviderFile && !isIdSystemFile) {
+        if (!isMatchingFile(context)) {
           return {};
         }
         return {
