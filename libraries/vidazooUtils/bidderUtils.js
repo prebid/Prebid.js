@@ -208,12 +208,6 @@ export function appendUserIdsToRequestPayload(payloadRef, userIds) {
       case 'id5id':
         payloadRef[key] = userId.uid;
         break;
-      case 'parrableId':
-        payloadRef[key] = userId.eid;
-        break;
-      case 'digitrustid':
-        payloadRef[key] = deepAccess(userId, 'data.id');
-        break;
       default:
         payloadRef[key] = userId;
     }
