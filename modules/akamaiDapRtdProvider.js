@@ -6,20 +6,16 @@
  * @requires module:modules/realTimeData
  */
 
-/**
- * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
- */
-
-const MODULE_NAME = 'realTimeData';
-
-import {submodule} from '../src/hook.js';
 import { 
+  createRtdProvider
+} from './symitriDapRtdProvider'/* eslint prebid/validate-imports: "off" */
+
+export const { 
   addRealTimeData, 
   getRealTimeData, 
   generateRealTimeData, 
+  rtdSubmodule: akamaiDapRtdSubmodule, 
   storage,
-  dapUtils,
-  symitriDapRtdSubmodule,
   DAP_TOKEN,
   DAP_MEMBERSHIP,
   DAP_ENCRYPTED_MEMBERSHIP,
@@ -27,19 +23,4 @@ import {
   DAP_DEFAULT_TOKEN_TTL,
   DAP_MAX_RETRY_TOKENIZE,
   DAP_CLIENT_ENTROPY
-} from './symitriDapRtdProvider'/* eslint prebid/validate-imports: "off" */
-
-/**
- * Module init
- * @param {Object} provider
- * @param {Object} userConsent
- * @return {boolean}
- */
-function init(provider, userConsent) {
-  if (dapUtils.checkConsent(userConsent) === false) {
-    return false;
-  }
-  return true;
-}
-
-submodule(MODULE_NAME, symitriDapRtdSubmodule);
+} = createRtdProvider('dap');
