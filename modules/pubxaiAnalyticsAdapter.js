@@ -1,20 +1,16 @@
-import {
-  deepAccess,
-  parseSizesInput,
-  getWindowLocation,
-  buildUrl,
-  cyrb53Hash,
-} from '../src/utils.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
+import {
+  getGptSlotInfoForAdUnitCode, getGptSlotForAdUnitCode
+} from '../libraries/gptUtils/gptUtils.js';
+import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
 import adapterManager from '../src/adapterManager.js';
+import { sendBeacon } from '../src/ajax.js'
 import { EVENTS } from '../src/constants.js';
 import { getGlobal } from '../src/prebidGlobal.js';
-import {
-  getGptSlotInfoForAdUnitCode,
-  getGptSlotForAdUnitCode,
-} from '../libraries/gptUtils/gptUtils.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { MODULE_TYPE_ANALYTICS } from '../src/activities/modules.js';
+import {
+  deepAccess, parseSizesInput, getWindowLocation, buildUrl, cyrb53Hash
+} from '../src/utils.js';
 
 let initOptions;
 
@@ -116,17 +112,6 @@ export const auctionCache = new Proxy(
     },
   }
 );
-
-/**
- *
- * @returns {boolean} whether or not the browser session supports sendBeacon
- */
-const hasSendBeaconSupport = () => {
-  if (!navigator.sendBeacon || !document.visibilityState) {
-    return false;
-  }
-  return true;
-};
 
 /**
  * Fetch extra ad server data for a specific ad slot (bid)
@@ -395,7 +380,7 @@ const send = () => {
       const payloadTooLarge = toBlob(payload).size > 65536;
 
       if (payloadTooLarge || index + 1 === arr.length) {
-        navigator.sendBeacon(
+        sendBeacon(
           requestUrl,
           toBlob(payloadTooLarge ? payload.slice(0, -1) : payload)
         );
@@ -408,7 +393,7 @@ const send = () => {
 };
 
 // register event listener to send logs when user leaves page
-if (hasSendBeaconSupport()) {
+if (document.visibilityState) {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') {
       send();
