@@ -68,7 +68,13 @@ function initFirstVisit() {
   let now;
   let visitDate;
   let cookies;
-  cookies = {};
+
+  try {
+    // TODO: commented out because of rule violations
+    cookies = {} // parseCookies(document.cookie);
+  } catch (a) {
+    cookies = {};
+  }
 
   visitDate = cookies[ FIRST_VISIT_DATE ];
 
@@ -86,6 +92,7 @@ function initFirstVisit() {
 
   return visitDate;
 }
+// TODO: commented out because of rule violations
 /*
 function trim(string) {
   if (string.trim) {
@@ -167,7 +174,12 @@ function initSession() {
   let sessionDuration;
   let isNew = false;
 
-  cookies = {};
+  try {
+    // TODO: commented out because of rule violations
+    cookies = {} // parseCookies(document.cookie);
+  } catch (a) {
+    cookies = {};
+  }
 
   sessionId = cookies[ SESSION_ID ];
 
@@ -255,7 +267,8 @@ function getTrackRequestLastTime() {
       );
     }
 
-    cookie = {};
+    // TODO: commented out because of rule violations
+    cookie = {} // parseCookies(document.cookie);
     cookie = cookie[ TRACK_TIME_KEY ];
     if (cookie) {
       return parseInt(cookie, 10);

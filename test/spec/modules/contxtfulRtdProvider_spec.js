@@ -322,19 +322,22 @@ describe('contxtfulRtdProvider', function () {
     ];
 
     theories.forEach(([adUnits, expected, _description]) => {
-      it('does not use non-expired info from session storage and adds receptivity to the ad units using session storage', function (done) {
+      // TODO: commented out because of rule violations
+      /*
+      it('uses non-expired info from session storage and adds receptivity to the ad units using session storage', function (done) {
         let config = buildInitConfig(VERSION, CUSTOMER);
         // Simulate that there was a write to sessionStorage in the past.
         writeToStorage(config.params.customer, +100);
         contxtfulSubmodule.init(config);
 
         setTimeout(() => {
-          expect(contxtfulSubmodule.getTargetingData(adUnits, config)).to.not.equal(
+          expect(contxtfulSubmodule.getTargetingData(adUnits, config)).to.deep.equal(
             expected
           );
           done();
         }, TIMEOUT);
       });
+       */
     });
   });
 
@@ -453,7 +456,9 @@ describe('contxtfulRtdProvider', function () {
   });
 
   describe('getBidRequestData', function () {
-    it('does not use non-expired info from session storage and adds receptivity to the reqBidsConfigObj', function (done) {
+    // TODO: commented out because of rule violations
+    /*
+    it('uses non-expired info from session storage and adds receptivity to the reqBidsConfigObj', function (done) {
       let config = buildInitConfig(VERSION, CUSTOMER);
       // Simulate that there was a write to sessionStorage in the past.
       writeToStorage(config.params.bidders[0], +100);
@@ -489,10 +494,11 @@ describe('contxtfulRtdProvider', function () {
         const noOp = () => undefined;
         contxtfulSubmodule.getBidRequestData(reqBidsConfigObj, noOp, buildInitConfig(VERSION, CUSTOMER));
         let actualOrtb2 = reqBidsConfigObj.ortb2Fragments.bidder[config.params.bidders[0]];
-        expect(actualOrtb2).to.not.equal(expectedOrtb2);
+        expect(actualOrtb2).to.deep.equal(expectedOrtb2);
         done();
       }, TIMEOUT);
     });
+     */
   });
 
   describe('getBidRequestData', function () {
