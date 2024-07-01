@@ -390,7 +390,8 @@ describe('Outbrain Adapter', function () {
                 minduration: 3,
                 maxduration: 10,
                 startdelay: 2,
-                placement: 4,
+                placement: 5,
+                plcmt: 4,
                 linearity: 1
               }
             }
