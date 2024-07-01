@@ -65,7 +65,7 @@ jobs:
                 Object.entries(new_)
                   .map(([file, {errors, warnings}]) => {
                     const {errors: oldErrors, warnings: oldWarnings} = old[file] || {};
-                    return [file, {errors: errors - (oldErrors ?? 0), warnings: warnings - (oldWarnings ?? 0)}]
+                    return [file, {errors: Math.max(0, errors - (oldErrors ?? 0)), warnings: Math.max(0, warnings - (oldWarnings ?? 0))}]
                   })
                   .filter(([_, {errors, warnings}]) => errors > 0 || warnings > 0)
               )
