@@ -33,13 +33,13 @@ jobs:
         run: git diff --name-only origin/${{ github.event.pull_request.base.ref }}...refs/remotes/pull/${{ github.event.pull_request.number }}/merge > __changed_files.txt
 
       - name: Run linter on base branch
-        run: npx eslint --no-inline-config --format json $(cat __changed_files.txt) > __base.json
+        run: npx eslint --no-inline-config --format json $(cat __changed_files.txt | xargs stat --printf '%n\n' 2> /dev/null) > __base.json
 
       - name: Check out PR
         run: git checkout ${{ github.event.pull_request.head.sha }}
 
       - name: Run linter on PR
-        run: npx eslint --no-inline-config --format json $(cat __changed_files.txt) > __pr.json
+        run: npx eslint --no-inline-config --format json $(cat __changed_files.txt | xargs stat --printf '%n\n' 2> /dev/null) > __pr.json
 
       - name: Compare them and post comment if necessary
         if: env.filtered_report_exists == 'true'
