@@ -87,7 +87,7 @@ module.exports = {
         },
         messages: {
           noCookie: 'Usage of document.cookie is not allowed',
-          noLocalStorage: 'Usage of localStorage is not allowed',
+          noLocalStorage: 'Usage of localStorage or sessionStorage is not allowed',
         }
       },
       create: function(context) {
@@ -99,6 +99,11 @@ module.exports = {
             if (
               (node.object.name === 'document' && node.property.name === 'cookie') ||
               (node.object.name === 'localStorage' &&
+                (node.property.name === 'getItem' ||
+                 node.property.name === 'setItem' ||
+                 node.property.name === 'removeItem' ||
+                 node.property.name === 'clear')) ||
+              (node.object.name === 'sessionStorage' &&
                 (node.property.name === 'getItem' ||
                  node.property.name === 'setItem' ||
                  node.property.name === 'removeItem' ||
