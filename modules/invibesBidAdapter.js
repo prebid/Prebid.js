@@ -792,7 +792,6 @@ let keywords = (function () {
     prefix = prefix || '';
     let title = document.title || headTag
       ? headTag.getElementsByTagName('title')[0]
-        // eslint-disable-next-line prebid/no-dom-manipulation
         ? headTag.getElementsByTagName('title')[0].innerHTML
         : ''
       : '';

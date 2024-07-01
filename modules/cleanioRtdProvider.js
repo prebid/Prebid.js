@@ -43,13 +43,13 @@ let preloadStatus = 0;
  * @param {string} scriptURL The script URL to preload
  */
 function pageInitStepPreloadScript(scriptURL) {
+  // TODO: this bypasses adLoader
   const linkElement = document.createElement('link');
   linkElement.rel = 'preload';
   linkElement.as = 'script';
   linkElement.href = scriptURL;
   linkElement.onload = () => { preloadStatus = 1; };
   linkElement.onerror = () => { preloadStatus = -1; };
-  // eslint-disable-next-line prebid/no-dom-manipulation
   insertElement(linkElement);
 }
 

@@ -1,4 +1,3 @@
-/* eslint-disable prebid/no-dom-manipulation */
 import {deepAccess, getBidIdParameter, isFn, logError, logMessage, logWarn} from '../src/utils.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, VIDEO} from '../src/mediaTypes.js';

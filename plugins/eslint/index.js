@@ -1,60 +1,13 @@
 const _ = require('lodash');
 const { flagErrors } = require('./validateImports.js');
+const noGlobal = require('eslint/lib/rules/no-restricted-globals.js');
 
-function isMatchingFile(context) {
-  const filename = context.getFilename();
-  const isAdapterFile = /.*Adapter\.js$/.test(filename);
-  const isProviderFile = /.*Provider\.js$/.test(filename);
-  const isIdSystemFile = /.*IdSystem\.js$/.test(filename);
-  return isAdapterFile || isProviderFile || isIdSystemFile;
+function getName(node) {
+  return node.type === 'Literal' ? node.value : node.name;
 }
 
 module.exports = {
   rules: {
-    'no-outerText': {
-      meta: {
-        docs: {
-          description: '.outerText property on DOM elements should not be used due to performance issues'
-        },
-        messages: {
-          noOuterText: 'Use of `.outerText` is not allowed. Use `.textContent` instead.',
-        }
-      },
-      create: function(context) {
-        return {
-          MemberExpression(node) {
-            if (node.property && node.property.name === 'outerText') {
-              context.report({
-                node: node.property,
-                messageId: 'noOuterText',
-              });
-            }
-          }
-        };
-      }
-    },
-    'no-innerText': {
-      meta: {
-        docs: {
-          description: '.innerText property on DOM elements should not be used due to performance issues'
-        },
-        messages: {
-          noInnerText: 'Use of `.innerText` is not allowed. Use `.textContent` instead.',
-        }
-      },
-      create: function(context) {
-        return {
-          MemberExpression(node) {
-            if (node.property && node.property.name === 'innerText') {
-              context.report({
-                node: node.property,
-                messageId: 'noInnerText',
-              });
-            }
-          }
-        };
-      }
-    },
     'validate-imports': {
       meta: {
         docs: {
@@ -80,126 +33,72 @@ module.exports = {
         };
       }
     },
-    'no-cookie-or-localstorage': {
+    'no-member': {
       meta: {
-        docs: {
-          description: 'Disallow use of document.cookie or localStorage'
+        schema: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              target: { type: 'string' },
+              name: { type: 'string' },
+              message: { type: 'string' }
+            },
+            required: ['name', 'message'],
+            additionalProperties: false
+          },
+          uniqueItems: true,
+          minItems: 1
         },
+
         messages: {
-          noCookie: 'Usage of document.cookie is not allowed',
-          noLocalStorage: 'Usage of localStorage or sessionStorage is not allowed',
+          noMember: "Unexpected use of '{{target}}.{{name}}'. {{message}}",
         }
       },
-      create: function(context) {
-        if (!isMatchingFile(context)) {
-          return {};
-        }
+
+      create(context) {
         return {
           MemberExpression(node) {
-            if (
-              (node.object.name === 'document' && node.property.name === 'cookie') ||
-              (node.object.name === 'localStorage' &&
-                (node.property.name === 'getItem' ||
-                 node.property.name === 'setItem' ||
-                 node.property.name === 'removeItem' ||
-                 node.property.name === 'clear')) ||
-              (node.object.name === 'sessionStorage' &&
-                (node.property.name === 'getItem' ||
-                 node.property.name === 'setItem' ||
-                 node.property.name === 'removeItem' ||
-                 node.property.name === 'clear'))
-            ) {
-              context.report({
-                node,
-                messageId: node.object.name === 'document' ? 'noCookie' : 'noLocalStorage',
-              });
-            }
+            context.options.forEach(({name, target, message}) => {
+              if (target === node.object.name && getName(node.property) === name) {
+                context.report({
+                  node,
+                  messageId: 'noMember',
+                  data: {
+                    name,
+                    target: target || '',
+                    message
+                  }
+                });
+              }
+            });
           }
-        };
+        }
       }
     },
-    'no-dom-manipulation': {
-      meta: {
-        docs: {
-          description: 'Disallow use of methods to insert elements into the document'
-        },
-        messages: {
-          noInsertElement: 'Usage of insertElement is not allowed. Import our methods instead.',
-          noAppendChild: 'Usage of appendChild is not allowed. Import our methods instead.',
-          noDomManipulation: 'Direct DOM manipulation is not allowed. Import our methods instead.'
-        }
-      },
-      create: function(context) {
-        if (!isMatchingFile(context)) {
-          return {};
-        }
-        return {
-          CallExpression(node) {
-            const calleeName = node.callee.name;
-            if (
-              calleeName === 'insertElement' || calleeName === 'appendChild' ||
-              calleeName === 'insertBefore' || calleeName === 'replaceChild' ||
-              calleeName === 'createElement' || calleeName === 'createElementNS' ||
-              calleeName === 'createDocumentFragment' || calleeName === 'innerHTML'
-            ) {
+    'no-global': Object.assign({}, noGlobal, {
+      // no-restricted-global that also looks for `window.GLOBAL`
+      create(context) {
+        const globals = Object.fromEntries(
+          context.options.map(option => typeof option === 'string' ? [option, null] : [option.name, option.message])
+        )
+        return Object.assign(noGlobal.create(context), {
+          MemberExpression(node) {
+            const name = getName(node.property);
+            if (node.object.name === 'window' && globals.hasOwnProperty(name)) {
+              const customMessage = globals[name];
               context.report({
                 node,
-                messageId:
-                  calleeName === 'insertElement'
-                    ? 'noInsertElement'
-                    : calleeName === 'appendChild'
-                      ? 'noAppendChild'
-                      : 'noDomManipulation'
-              });
-            }
-          },
-          MemberExpression(node) {
-            if (node.property && node.property.name === 'innerHTML') {
-              context.report({
-                node: node.property,
-                messageId: 'noDomManipulation',
-              });
+                messageId: customMessage == null ? 'defaultMessage' : 'customMessage',
+                data: {
+                  name,
+                  customMessage
+                }
+              })
             }
           }
-        };
+        })
       }
-    },
-    'no-direct-network-requests': {
-      meta: {
-        docs: {
-          description: 'Disallow direct use of network requests methods (navigator.sendBeacon, XMLHttpRequest, fetch)'
-        },
-        messages: {
-          noSendBeacon: 'Usage of navigator.sendBeacon and window.fetch are not allowed',
-          noXMLHttpRequest: 'Usage of XMLHttpRequest is not allowed'
-        }
-      },
-      create: function(context) {
-        if (!isMatchingFile(context)) {
-          return {};
-        }
-        return {
-          MemberExpression(node) {
-            if (
-              (node.object.name === 'navigator' && node.property.name === 'sendBeacon') ||
-              (node.object.name === 'window' && node.property.name === 'fetch')
-            ) {
-              context.report({
-                node,
-                messageId: 'noSendBeacon',
-              });
-            }
-          },
-          NewExpression(node) {
-            if (node.callee.name === 'XMLHttpRequest') {
-              context.report({
-                node,
-                messageId: 'noXMLHttpRequest',
-              });
-            }
-          }
-        };
-      }
-    }
+    }),
   }
 };

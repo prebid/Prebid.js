@@ -425,6 +425,7 @@ function loadOrCreateFirstPartyData() {
   var readData = function (key) {
     if (hasLocalStorage()) {
       // TODO FIX RULES VIOLATION
+      // eslint-disable-next-line prebid/no-global
       return window.localStorage.getItem(key);
     }
     return null;
@@ -445,6 +446,7 @@ function loadOrCreateFirstPartyData() {
     try {
       if (hasLocalStorage()) {
         // TODO FIX RULES VIOLATION
+        // eslint-disable-next-line prebid/no-global
         window.localStorage.setItem(key, value);
       }
     } catch (error) {

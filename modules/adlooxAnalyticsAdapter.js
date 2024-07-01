@@ -233,7 +233,6 @@ analyticsAdapter[`handle_${EVENTS.AUCTION_END}`] = function(auctionDetails) {
   link.setAttribute('rel', 'preload');
   link.setAttribute('as', 'script');
   // TODO fix rules violation
-  // eslint-disable-next-line prebid/no-dom-manipulation
   insertElement(link);
 }
 
