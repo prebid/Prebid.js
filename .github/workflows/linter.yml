@@ -84,7 +84,7 @@ jobs:
               const summary = [];
               if (errors) summary.push(`**${errors}** linter ${pl('error', errors)}`)
               if (warnings) summary.push(`**${warnings}** linter ${pl('warning', warnings)}`)
-              let cm = `This PR adds ${summary.join(' and ')} (possibly disabled through directives):\n\n`;
+              let cm = `Tread carefully! This PR adds ${summary.join(' and ')} (possibly disabled through directives):\n\n`;
               Object.entries(files).forEach(([file, {errors, warnings}]) => {
                 const summary = [];
                 if (errors) summary.push(`+${errors} ${pl('error', errors)}`);
