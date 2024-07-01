@@ -70,7 +70,7 @@ export function createRtdProvider(moduleName) {
    * @param {Object} rtdConfig
    * @param {Object} userConsent
    */
-  export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
+  function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
     let entropyDict = JSON.parse(storage.getDataFromLocalStorage(DAP_CLIENT_ENTROPY));
     let loadScriptPromise = new Promise((resolve, reject) => {
       if (rtdConfig && rtdConfig.params && rtdConfig.params.dapEntropyTimeout && Number.isInteger(rtdConfig.params.dapEntropyTimeout)) {
@@ -812,7 +812,7 @@ export const {
   addRealTimeData, 
   getRealTimeData, 
   generateRealTimeData, 
-  rtdSubmodule: akamaiDapRtdSubmodule, 
+  rtdSubmodule: symitriDapRtdSubmodule, 
   storage,
   DAP_TOKEN,
   DAP_MEMBERSHIP,
