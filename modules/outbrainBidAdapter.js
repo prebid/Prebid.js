@@ -111,7 +111,7 @@ export const spec = {
     const request = {
       id: bidderRequest.bidderRequestId,
       site: { page, publisher },
-      device: { ua },
+      device: ortb2?.device || { ua },
       source: { fd: 1 },
       cur: [cur],
       tmax: timeout,
