@@ -4,6 +4,7 @@ import {config} from '../src/config.js';
 import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import {INSTREAM, OUTSTREAM} from '../src/video.js';
+import {serializeSupplyChain} from '../libraries/schainSerializer/schainSerializer.js'
 import {convertOrtbRequestToProprietaryNative, toOrtbNativeRequest, toLegacyResponse} from '../src/native.js';
 
 const BIDDER_CODE = 'smilewanted';
@@ -82,7 +83,8 @@ export const spec = {
         or from mediaTypes.banner.pos
          */
         positionType: bid.params.positionType || '',
-        prebidVersion: '$prebid.version$'
+        prebidVersion: '$prebid.version$',
+        schain: serializeSupplyChain(bid.schain, ['asi', 'sid', 'hp', 'rid', 'name', 'domain', 'ext']),
       };
 
       const floor = getBidFloor(bid);
@@ -154,16 +156,16 @@ export const spec = {
       if (response) {
         const dealId = response.dealId || '';
         const bidResponse = {
-          requestId: bidRequestData.bidId,
-          cpm: response.cpm,
-          width: response.width,
-          height: response.height,
-          creativeId: response.creativeId,
-          dealId: response.dealId,
-          currency: response.currency,
-          netRevenue: response.isNetCpm,
-          ttl: response.ttl,
           ad: response.ad,
+          cpm: response.cpm,
+          creativeId: response.creativeId,
+          currency: response.currency,
+          dealId: response.dealId,
+          height: response.height,
+          netRevenue: response.isNetCpm,
+          requestId: bidRequestData.bidId,
+          ttl: response.ttl,
+          width: response.width,
         };
 
         if (response.formatTypeSw === 'video_instream' || response.formatTypeSw === 'video_outstream') {
@@ -209,28 +211,30 @@ export const spec = {
    * @param {Object} uspConsent The USP consent parameters
    * @return {UserSync[]} The user syncs which should be dropped.
    */
-  getUserSyncs: function(syncOptions, responses, gdprConsent, uspConsent) {
-    let params = '';
-
-    if (gdprConsent && typeof gdprConsent.consentString === 'string') {
-      // add 'gdpr' only if 'gdprApplies' is defined
-      if (typeof gdprConsent.gdprApplies === 'boolean') {
-        params += `?gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
-      } else {
-        params += `?gdpr_consent=${gdprConsent.consentString}`;
-      }
-    }
-
-    if (uspConsent) {
-      params += `${params ? '&' : '?'}us_privacy=${encodeURIComponent(uspConsent)}`;
-    }
-
-    const syncs = []
+  getUserSyncs: function (syncOptions, responses, gdprConsent, uspConsent) {
+    const syncs = [];
 
     if (syncOptions.iframeEnabled) {
+      let params = [];
+
+      if (gdprConsent && typeof gdprConsent.consentString === 'string') {
+        // add 'gdpr' only if 'gdprApplies' is defined
+        if (typeof gdprConsent.gdprApplies === 'boolean') {
+          params.push(`gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`);
+        } else {
+          params.push(`gdpr_consent=${gdprConsent.consentString}`);
+        }
+      }
+
+      if (uspConsent) {
+        params.push(`us_privacy=${encodeURIComponent(uspConsent)}`);
+      }
+
+      const paramsStr = params.length > 0 ? '?' + params.join('&') : '';
+
       syncs.push({
         type: 'iframe',
-        url: 'https://csync.smilewanted.com' + params
+        url: 'https://csync.smilewanted.com' + paramsStr
       });
     }
 
