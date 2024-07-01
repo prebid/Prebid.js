@@ -5,7 +5,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {OUTSTREAM} from '../src/video.js';
-import {_map, deepAccess, deepSetValue, isArray, logWarn, replaceAuctionPrice} from '../src/utils.js';
+import {_map, deepAccess, deepSetValue, isArray, logWarn, replaceAuctionPrice, setOnAny} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
@@ -174,7 +174,7 @@ export const spec = {
     }
     const { seatbid, cur } = serverResponse.body;
 
-    const bidResponses = flatten(seatbid.map(seat => seat.bid)).reduce((result, bid) => {
+    const bidResponses = seatbid.map(seat => seat.bid).flat().reduce((result, bid) => {
       result[bid.impid - 1] = bid;
       return result;
     }, []);
@@ -288,19 +288,6 @@ function parseNative(bid) {
   return result;
 }
 
-function setOnAny(collection, key) {
-  for (let i = 0, result; i < collection.length; i++) {
-    result = deepAccess(collection[i], key);
-    if (result) {
-      return result;
-    }
-  }
-}
-
-function flatten(arr) {
-  return [].concat(...arr);
-}
-
 function getNativeAssets(bid) {
   return _map(bid.nativeParams, (bidParams, key) => {
     const props = NATIVE_PARAMS[key];
@@ -319,7 +306,7 @@ function getNativeAssets(bid) {
       }
 
       if (bidParams.sizes) {
-        const sizes = flatten(bidParams.sizes);
+        const sizes = bidParams.sizes.flat();
         w = parseInt(sizes[0], 10);
         h = parseInt(sizes[1], 10);
       }
@@ -339,7 +326,7 @@ function getNativeAssets(bid) {
 }
 
 function getVideoAsset(bid) {
-  const sizes = flatten(bid.mediaTypes.video.playerSize);
+  const sizes = bid.mediaTypes.video.playerSize.flat();
   return {
     w: parseInt(sizes[0], 10),
     h: parseInt(sizes[1], 10),

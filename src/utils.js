@@ -4,8 +4,9 @@ import {includes} from './polyfill.js';
 import { EVENTS, S2S } from './constants.js';
 import {GreedyPromise} from './utils/promise.js';
 import {getGlobal} from './prebidGlobal.js';
+import { default as deepAccess } from 'dlv/index.js';
 
-export { default as deepAccess } from 'dlv/index.js';
+export { deepAccess };
 export { dset as deepSetValue } from 'dset';
 
 var tStr = 'String';
@@ -1230,4 +1231,21 @@ export function hasNonSerializableProperty(obj, checkedObjects = new Set()) {
     }
   }
   return false;
+}
+
+/**
+ * Returns the value of a nested property in an array of objects.
+ *
+ * @param {Array} collection - Array of objects.
+ * @param {String} key - Key of nested property.
+ * @returns {any, null} - Value of nested property.
+ */
+export function setOnAny(collection, key) {
+  for (let i = 0, result; i < collection.length; i++) {
+    result = deepAccess(collection[i], key);
+    if (result) {
+      return result;
+    }
+  }
+  return null;
 }
