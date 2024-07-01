@@ -515,7 +515,9 @@ export function PrebidServer() {
           }
         },
         onFledge: (params) => {
-          addPaapiConfig({auctionId: bidRequests[0].auctionId, ...params}, {config: params.config});
+          config.runWithBidder(params.bidder, () => {
+            addPaapiConfig({auctionId: bidRequests[0].auctionId, ...params}, {config: params.config});
+          })
         }
       })
     }
