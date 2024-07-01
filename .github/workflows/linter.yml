@@ -77,15 +77,18 @@ jobs:
             }
             
             function mkComment({errors, warnings, files}) {
+              function pl(noun, number) {
+                return noun + (number === 1 ? '' : 's')
+              }
               if (errors === 0 && warnings === 0) return;
               const summary = [];
-              if (errors) summary.push(`**${errors}** linter errors`)
-              if (warnings) summary.push(`**${warnings}** linter warnings`)
-              let cm = `This pr adds ${summary.join(' and ')} (possibly disabled through directives):\n\n`;
+              if (errors) summary.push(`**${errors}** linter ${pl('error', errors)}`)
+              if (warnings) summary.push(`**${warnings}** linter ${pl('warning', warnings)}`)
+              let cm = `This PR adds ${summary.join(' and ')} (possibly disabled through directives):\n\n`;
               Object.entries(files).forEach(([file, {errors, warnings}]) => {
                 const summary = [];
-                if (errors) summary.push(`+${errors} errors`);
-                if (warnings) summary.push(`+${warnings} warnings`)
+                if (errors) summary.push(`+${errors} ${pl('error', errors)}`);
+                if (warnings) summary.push(`+${warnings} ${pl('warning', warnings)}`)
                 cm += ` * \`${file}\` (${summary.join(', ')})\n`
               })
               return cm;
