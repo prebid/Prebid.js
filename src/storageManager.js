@@ -18,6 +18,8 @@ export const STORAGE_TYPE_COOKIES = 'cookie';
 
 export let storageCallbacks = [];
 
+/* eslint-disable prebid/no-global */
+
 /*
  *  Storage manager constructor. Consumers should prefer one of `getStorageManager` or `getCoreStorageManager`.
  */
@@ -64,6 +66,7 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
         const expiresPortion = (expires && expires !== '') ? ` ;expires=${expires}` : '';
         const isNone = (sameSite != null && sameSite.toLowerCase() == 'none')
         const secure = (isNone) ? '; Secure' : '';
+        // eslint-disable-next-line prebid/no-member
         document.cookie = `${key}=${encodeURIComponent(value)}${expiresPortion}; path=/${domainPortion}${sameSite ? `; SameSite=${sameSite}` : ''}${secure}`;
       }
     }
@@ -186,6 +189,7 @@ export function newStorageManager({moduleName, moduleType} = {}, {isAllowed = is
       if (result && result.valid) {
         const all = [];
         if (hasDeviceAccess()) {
+          // eslint-disable-next-line prebid/no-member
           const cookies = document.cookie.split(';');
           while (cookies.length) {
             const cookie = cookies.pop();

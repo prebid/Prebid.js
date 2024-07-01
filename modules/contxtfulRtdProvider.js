@@ -36,6 +36,8 @@ function getRxEngineReceptivity(requester) {
 }
 
 function loadSessionReceptivity(requester) {
+  // TODO: commented out because of rule violations
+  /*
   let sessionStorageValue = sessionStorage.getItem(requester);
   if (!sessionStorageValue) {
     return null;
@@ -54,7 +56,8 @@ function loadSessionReceptivity(requester) {
   } catch {
     return null;
   }
-};
+   */
+}
 
 /**
  * Prepare a receptivity batch

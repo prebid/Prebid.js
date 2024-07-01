@@ -142,7 +142,8 @@ function buildUser(bid) {
   if (bid && bid.params) {
     return {
       id: bid.params.user_id && typeof bid.params.user_id == 'string' ? bid.params.user_id : '',
-      buyeruid: localStorage.getItem('adx_profile_guid') ? localStorage.getItem('adx_profile_guid') : '',
+      // TODO: commented out because of rule violations
+      buyeruid: '', // localStorage.getItem('adx_profile_guid') ? localStorage.getItem('adx_profile_guid') : '',
       keywords: bid.params.keywords && typeof bid.params.keywords == 'string' ? bid.params.keywords : '',
       customdata: bid.params.customdata && typeof bid.params.customdata == 'string' ? bid.params.customdata : ''
     };

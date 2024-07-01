@@ -101,7 +101,7 @@ jobs:
           const filteredReport = JSON.parse(fs.readFileSync('filtered-jscpd-report.json', 'utf8'));
           let comment = "Whoa there, partner! 🌵🤠 We wrangled some duplicated code in your PR:\n\n";
           function link(dup) {
-             return `https://github.com/${{ github.event.repository.full_name }}/blob/${{ github.event.pull_request.head.sha }}/${dup.name}#L${dup.start}-L${dup.end - 1}`
+             return `https://github.com/${{ github.event.repository.full_name }}/blob/${{ github.event.pull_request.head.sha }}/${dup.name}#L${dup.start + 1}-L${dup.end - 1}`
           }
           filteredReport.forEach(duplication => {
             const firstFile = duplication.firstFile;

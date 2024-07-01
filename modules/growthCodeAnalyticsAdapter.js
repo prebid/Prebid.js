@@ -140,7 +140,7 @@ function logToServer() {
   if (pid === DEFAULT_PID) return;
   if (eventQueue.length >= 1) {
     // Get the correct GCID
-    let gcid = localStorage.getItem('gcid')
+    let gcid = storage.getDataFromLocalStorage('gcid');
 
     let data = {
       session: sessionId,

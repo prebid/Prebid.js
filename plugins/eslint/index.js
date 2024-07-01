@@ -1,52 +1,13 @@
 const _ = require('lodash');
 const { flagErrors } = require('./validateImports.js');
+const noGlobal = require('eslint/lib/rules/no-restricted-globals.js');
+
+function getName(node) {
+  return node.type === 'Literal' ? node.value : node.name;
+}
 
 module.exports = {
   rules: {
-    'no-outerText': {
-      meta: {
-        docs: {
-          description: '.outerText property on DOM elements should not be used due to performance issues'
-        },
-        messages: {
-          noInnerText: 'Use of `.outerText` is not allowed. Use `.textContent` instead.',
-        }
-      },
-      create: function(context) {
-        return {
-          MemberExpression(node) {
-            if (node.property && node.property.name === 'outerText') {
-              context.report({
-                node: node.property,
-                messageId: 'noOuterText',
-              });
-            }
-          }
-        }
-      }
-    },
-    'no-innerText': {
-      meta: {
-        docs: {
-          description: '.innerText property on DOM elements should not be used due to performance issues'
-        },
-        messages: {
-          noInnerText: 'Use of `.innerText` is not allowed. Use `.textContent` instead.',
-        }
-      },
-      create: function(context) {
-        return {
-          MemberExpression(node) {
-            if (node.property && node.property.name === 'innerText') {
-              context.report({
-                node: node.property,
-                messageId: 'noInnerText',
-              });
-            }
-          }
-        }
-      }
-    },
     'validate-imports': {
       meta: {
         docs: {
@@ -69,8 +30,75 @@ module.exports = {
             let importPath = node.source.value.trim();
             flagErrors(context, node, importPath);
           }
+        };
+      }
+    },
+    'no-member': {
+      meta: {
+        schema: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              target: { type: 'string' },
+              name: { type: 'string' },
+              message: { type: 'string' }
+            },
+            required: ['name', 'message'],
+            additionalProperties: false
+          },
+          uniqueItems: true,
+          minItems: 1
+        },
+
+        messages: {
+          noMember: "Unexpected use of '{{target}}.{{name}}'. {{message}}",
+        }
+      },
+
+      create(context) {
+        return {
+          MemberExpression(node) {
+            context.options.forEach(({name, target, message}) => {
+              if (target === node.object.name && getName(node.property) === name) {
+                context.report({
+                  node,
+                  messageId: 'noMember',
+                  data: {
+                    name,
+                    target: target || '',
+                    message
+                  }
+                });
+              }
+            });
+          }
         }
       }
-    }
+    },
+    'no-global': Object.assign({}, noGlobal, {
+      // no-restricted-global that also looks for `window.GLOBAL`
+      create(context) {
+        const globals = Object.fromEntries(
+          context.options.map(option => typeof option === 'string' ? [option, null] : [option.name, option.message])
+        )
+        return Object.assign(noGlobal.create(context), {
+          MemberExpression(node) {
+            const name = getName(node.property);
+            if (node.object.name === 'window' && globals.hasOwnProperty(name)) {
+              const customMessage = globals[name];
+              context.report({
+                node,
+                messageId: customMessage == null ? 'defaultMessage' : 'customMessage',
+                data: {
+                  name,
+                  customMessage
+                }
+              })
+            }
+          }
+        })
+      }
+    }),
   }
 };
