@@ -5,7 +5,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER, NATIVE, VIDEO} from '../src/mediaTypes.js';
 import { getStorageManager } from '../src/storageManager.js';
 import {OUTSTREAM} from '../src/video.js';
-import {_map, deepAccess, deepSetValue, isArray, logWarn, replaceAuctionPrice, setOnAny} from '../src/utils.js';
+import {_map, deepAccess, deepSetValue, logWarn, replaceAuctionPrice, setOnAny, parseGPTSingleSizeArrayToRtbSize} from '../src/utils.js';
 import {ajax} from '../src/ajax.js';
 import {config} from '../src/config.js';
 import {convertOrtbRequestToProprietaryNative} from '../src/native.js';
@@ -94,7 +94,7 @@ export const spec = {
         imp.video = getVideoAsset(bid);
       } else {
         imp.banner = {
-          format: transformSizes(bid.sizes)
+          format: bid.sizes?.map((size) => parseGPTSingleSizeArrayToRtbSize(size))
         }
       }
 
@@ -345,29 +345,6 @@ function getVideoAsset(bid) {
     plcmt: bid.mediaTypes.video.plcmt,
     linearity: bid.mediaTypes.video.linearity
   };
-}
-
-/* Turn bid request sizes into ut-compatible format */
-function transformSizes(requestSizes) {
-  if (!isArray(requestSizes)) {
-    return [];
-  }
-
-  if (requestSizes.length === 2 && !isArray(requestSizes[0])) {
-    return [{
-      w: parseInt(requestSizes[0], 10),
-      h: parseInt(requestSizes[1], 10)
-    }];
-  } else if (isArray(requestSizes[0])) {
-    return requestSizes.map(item =>
-      ({
-        w: parseInt(item[0], 10),
-        h: parseInt(item[1], 10)
-      })
-    );
-  }
-
-  return [];
 }
 
 function _getFloor(bid, type) {

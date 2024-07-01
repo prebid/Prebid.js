@@ -1238,7 +1238,7 @@ export function hasNonSerializableProperty(obj, checkedObjects = new Set()) {
  *
  * @param {Array} collection - Array of objects.
  * @param {String} key - Key of nested property.
- * @returns {any, null} - Value of nested property.
+ * @returns {any, undefined} - Value of nested property.
  */
 export function setOnAny(collection, key) {
   for (let i = 0, result; i < collection.length; i++) {
@@ -1247,5 +1247,5 @@ export function setOnAny(collection, key) {
       return result;
     }
   }
-  return null;
+  return undefined;
 }
