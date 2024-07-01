@@ -26,7 +26,6 @@ import { Renderer } from '../src/Renderer.js';
 import {getGptSlotInfoForAdUnitCode} from '../libraries/gptUtils/gptUtils.js';
 
 const BIDDER_CODE = 'ix';
-const ALIAS_BIDDER_CODE = 'roundel';
 const GLOBAL_VENDOR_ID = 10;
 const SECURE_BID_URL = 'https://htlb.casalemedia.com/openrtb/pbjs';
 const SUPPORTED_AD_TYPES = [BANNER, VIDEO, NATIVE];
@@ -74,7 +73,6 @@ const SOURCE_RTI_MAPPING = {
   'google.com': ''
 };
 const PROVIDERS = [
-  'britepoolid',
   'lipbid',
   'criteoId',
   'merkleId',
@@ -696,11 +694,6 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
     addRTI(userEids, eidInfo);
   }
 
-  // If `roundel` alias bidder, only send requests if liveramp ids exist.
-  if (bidderRequest && bidderRequest.bidderCode === ALIAS_BIDDER_CODE && !eidInfo.seenSources['liveramp.com']) {
-    return [];
-  }
-
   const requests = [];
   let r = createRequest(validBidRequests);
 
@@ -708,7 +701,7 @@ function buildRequest(validBidRequests, bidderRequest, impressions, version) {
   r = addRequestedFeatureToggles(r, FEATURE_TOGGLES.REQUESTED_FEATURE_TOGGLES)
 
   // getting ixdiags for adunits of the video, outstream & multi format (MF) style
-  const fledgeEnabled = deepAccess(bidderRequest, 'fledgeEnabled')
+  const fledgeEnabled = deepAccess(bidderRequest, 'paapi.enabled')
   let ixdiag = buildIXDiag(validBidRequests, fledgeEnabled);
   for (let key in ixdiag) {
     r.ext.ixdiag[key] = ixdiag[key];
@@ -1439,7 +1432,7 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidde
   bannerImps[validBidRequest.adUnitCode].pos = deepAccess(validBidRequest, 'mediaTypes.banner.pos');
 
   // Add Fledge flag if enabled
-  const fledgeEnabled = deepAccess(bidderRequest, 'fledgeEnabled')
+  const fledgeEnabled = deepAccess(bidderRequest, 'paapi.enabled')
   if (fledgeEnabled) {
     const auctionEnvironment = deepAccess(validBidRequest, 'ortb2Imp.ext.ae')
     const paapi = deepAccess(validBidRequest, 'ortb2Imp.ext.paapi')
@@ -1452,8 +1445,6 @@ function createBannerImps(validBidRequest, missingBannerSizes, bannerImps, bidde
       } else {
         logWarn('error setting auction environment flag - must be an integer')
       }
-    } else if (deepAccess(bidderRequest, 'defaultForSlots') == 1) {
-      bannerImps[validBidRequest.adUnitCode].ae = 1
     }
   }
 
@@ -1609,11 +1600,6 @@ export const spec = {
 
   code: BIDDER_CODE,
   gvlid: GLOBAL_VENDOR_ID,
-  aliases: [{
-    code: ALIAS_BIDDER_CODE,
-    gvlid: GLOBAL_VENDOR_ID,
-    skipPbsAliasing: false
-  }],
   supportedMediaTypes: SUPPORTED_AD_TYPES,
 
   /**
@@ -1865,7 +1851,7 @@ export const spec = {
       try {
         return {
           bids,
-          fledgeAuctionConfigs,
+          paapi: fledgeAuctionConfigs,
         };
       } catch (error) {
         logWarn('Error attaching AuctionConfigs', error);

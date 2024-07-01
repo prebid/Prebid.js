@@ -35,7 +35,7 @@ config.getConfig('sizeConfig', config => setSizeConfig(config.sizeConfig));
  * Returns object describing the status of labels on the adUnit or bidder along with labels passed into requestBids
  * @param bidOrAdUnit the bidder or adUnit to get label info on
  * @param activeLabels the labels passed to requestBids
- * @returns {LabelDescriptor}
+ * @returns {object}
  */
 export function getLabels(bidOrAdUnit, activeLabels) {
   if (bidOrAdUnit.labelAll) {
@@ -66,14 +66,18 @@ if (FEATURES.VIDEO) {
 }
 
 /**
- * Resolves the unique set of the union of all sizes and labels that are active from a SizeConfig.mediaQuery match
- * @param {Array<string>} labels Labels specified on adUnit or bidder
- * @param {boolean} labelAll if true, all labels must match to be enabled
- * @param {Array<string>} activeLabels Labels passed in through requestBids
- * @param {object} mediaTypes A mediaTypes object describing the various media types (banner, video, native)
- * @param {Array<Array<number>>} sizes Sizes specified on adUnit (deprecated)
- * @param {Array<SizeConfig>} configs
- * @returns {{labels: Array<string>, sizes: Array<Array<number>>}}
+ * Resolves the unique set of the union of all sizes and labels that are active from a SizeConfig.mediaQuery match.
+ *
+ * @param {Object} options - The options object.
+ * @param {Array<string>} [options.labels=[]] - Labels specified on adUnit or bidder.
+ * @param {boolean} [options.labelAll=false] - If true, all labels must match to be enabled.
+ * @param {Array<string>} [options.activeLabels=[]] - Labels passed in through requestBids.
+ * @param {Object} mediaTypes - A mediaTypes object describing the various media types (banner, video, native).
+ * @param {Array<SizeConfig>} configs - An array of SizeConfig objects.
+ * @returns {Object} - An object containing the active status, media types, and filter results.
+ * @returns {boolean} return.active - Whether the media types are active.
+ * @returns {Object} return.mediaTypes - The media types object.
+ * @returns {Object} [return.filterResults] - The filter results before and after applying size filtering.
  */
 export function resolveStatus({labels = [], labelAll = false, activeLabels = []} = {}, mediaTypes, configs = sizeConfig) {
   let maps = evaluateSizeConfig(configs);

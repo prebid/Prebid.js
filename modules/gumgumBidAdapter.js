@@ -373,15 +373,12 @@ function buildRequests(validBidRequests, bidderRequest) {
       data.fp = floor;
       data.fpc = currency;
     }
-
+    if (bidderRequest && bidderRequest.ortb2 && bidderRequest.ortb2.site) {
+      setIrisId(data, bidderRequest.ortb2.site, params);
+    }
     if (params.iriscat && typeof params.iriscat === 'string') {
       data.iriscat = params.iriscat;
     }
-
-    if (params.irisid && typeof params.irisid === 'string') {
-      data.irisid = params.irisid;
-    }
-
     if (params.zone || params.pubId) {
       params.zone ? (data.t = params.zone) : (data.pubId = params.pubId);
 
@@ -446,6 +443,27 @@ function buildRequests(validBidRequests, bidderRequest) {
     });
   });
   return bids;
+}
+export function getCids(site) {
+  if (site.content && Array.isArray(site.content.data)) {
+    for (const dataItem of site.content.data) {
+      if (dataItem.name.includes('iris.com') || dataItem.name.includes('iris.tv')) {
+        return dataItem.ext.cids.join(',');
+      }
+    }
+  }
+  return null;
+}
+export function setIrisId(data, site, params) {
+  let irisID = getCids(site);
+  if (irisID) {
+    data.irisid = irisID;
+  } else {
+    // Just adding this chechk for safty and if needed  we can remove
+    if (params.irisid && typeof params.irisid === 'string') {
+      data.irisid = params.irisid;
+    }
+  }
 }
 
 function handleLegacyParams(params, sizes) {
