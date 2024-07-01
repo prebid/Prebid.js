@@ -15,12 +15,10 @@ import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
-
-export function createRtdProvider(moduleName) {
-
+export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
   const MODULE_NAME = 'realTimeData';
-  const SUBMODULE_NAME = 'dap';
-  const MODULE_CODE = 'symitri';
+  const SUBMODULE_NAME = moduleName;
+  const MODULE_CODE = moduleCode;
 
   const DAP_TOKEN = 'async_dap_token';
   const DAP_MEMBERSHIP = 'async_dap_membership';
@@ -70,7 +68,7 @@ export function createRtdProvider(moduleName) {
    * @param {Object} rtdConfig
    * @param {Object} userConsent
    */
-  export function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
+  function getRealTimeData(bidConfig, onDone, rtdConfig, userConsent) {
     let entropyDict = JSON.parse(storage.getDataFromLocalStorage(DAP_CLIENT_ENTROPY));
     let loadScriptPromise = new Promise((resolve, reject) => {
       if (rtdConfig && rtdConfig.params && rtdConfig.params.dapEntropyTimeout && Number.isInteger(rtdConfig.params.dapEntropyTimeout)) {
@@ -145,13 +143,13 @@ export function createRtdProvider(moduleName) {
   }
 
   /** @type {RtdSubmodule} */
-  const symitriDapRtdSubmodule = {
+  const rtdSubmodule = {
     name: SUBMODULE_NAME,
     getBidRequestData: getRealTimeData,
     init: init
   };
 
-  submodule(MODULE_NAME, symitriDapRtdSubmodule);
+  submodule(MODULE_NAME, rtdSubmodule);
   const dapUtils = {
 
     callDapAPIs: function(bidConfig, onDone, rtdConfig, userConsent) {
@@ -215,11 +213,11 @@ export function createRtdProvider(moduleName) {
           item.token = token;
           storage.setDataInLocalStorage(DAP_TOKEN, JSON.stringify(item));
           dapUtils.dapLog('Successfully updated and stored token; expires at ' + item.expires_at);
-          let dapSSID = xhr.getResponseHeader('Symitri-DAP-SS-ID');
+          let dapSSID = xhr.getResponseHeader(headerPrefix + '-DAP-SS-ID');
           if (dapSSID) {
             storage.setDataInLocalStorage(DAP_SS_ID, JSON.stringify(dapSSID));
           }
-          let deviceId100 = xhr.getResponseHeader('Symitri-DAP-100');
+          let deviceId100 = xhr.getResponseHeader(headerPrefix + '-DAP-100');
           if (deviceId100 != null) {
             storage.setDataInLocalStorage('dap_deviceId100', deviceId100);
             dapUtils.dapLog('Successfully stored DAP 100 Device ID: ' + deviceId100);
@@ -494,6 +492,40 @@ export function createRtdProvider(moduleName) {
      *
      ******************************************************************************/
 
+    dapValidationHelper: function(config, onDone, token, onError) {
+      if (onError == null) {
+        onError = function(xhr, status, error, onDone) {};
+      }
+
+      if (config == null || typeof (config) == typeof (undefined)) {
+        onError(null, 'Invalid config object', 'ClientError', onDone);
+        return [ config, true ];
+      }
+
+      if (!('api_version' in config) || (typeof (config.api_version) == 'string' && config.api_version.length == 0)) {
+        config.api_version = 'x1';
+      }
+
+      if (typeof (config.api_version) != 'string') {
+        onError(null, "Invalid api_version: must be a string like 'x1', etc.", 'ClientError', onDone);
+        return [ config, true ];
+      }
+
+      if (!(('api_hostname') in config) || typeof (config.api_hostname) != 'string' || config.api_hostname.length == 0) {
+        onError(null, 'Invalid api_hostname: must be a non-empty string', 'ClientError', onDone);
+        return [ config, true ];
+      }
+
+      if (token) {
+        if (typeof (token) != 'string') {
+          onError(null, 'Invalid token: must be a non-null string', 'ClientError', onDone);
+          return [ config, true ];
+        }
+      }
+
+      return [ config, false ];
+    },
+
     /**
      * SYNOPSIS
      *
@@ -534,14 +566,9 @@ export function createRtdProvider(moduleName) {
      *      function( xhr, status, error ) { ; } // handle error
      */
     dapTokenize: function(config, identity, onDone, onSuccess = null, onError = null) {
-      if (onError == null) {
-        onError = function(xhr, status, error, onDone) {};
-      }
-
-      if (config == null || typeof (config) == typeof (undefined)) {
-        onError(null, 'Invalid config object', 'ClientError', onDone);
-        return;
-      }
+      let hasTokenizeError;
+      [ config, hasTokenizeError ] = this.dapValidationHelper(config, onDone, null, onError);
+      if (hasTokenizeError) { return; }
 
       if (typeof (config.domain) != 'string') {
         onError(null, 'Invalid config.domain: must be a string', 'ClientError', onDone);
@@ -550,20 +577,6 @@ export function createRtdProvider(moduleName) {
 
       if (config.domain.length <= 0) {
         onError(null, 'Invalid config.domain: must have non-zero length', 'ClientError', onDone);
-        return;
-      }
-
-      if (!('api_version' in config) || (typeof (config.api_version) == 'string' && config.api_version.length == 0)) {
-        config.api_version = 'x1';
-      }
-
-      if (typeof (config.api_version) != 'string') {
-        onError(null, "Invalid api_version: must be a string like 'x1', etc.", 'ClientError', onDone);
-        return;
-      }
-
-      if (!(('api_hostname') in config) || typeof (config.api_hostname) != 'string' || config.api_hostname.length == 0) {
-        onError(null, 'Invalid api_hostname: must be a non-empty string', 'ClientError', onDone);
         return;
       }
 
@@ -611,7 +624,7 @@ export function createRtdProvider(moduleName) {
       let customHeaders = {'Content-Type': 'application/json'};
       let dapSSID = JSON.parse(storage.getDataFromLocalStorage(DAP_SS_ID));
       if (dapSSID) {
-        customHeaders['Symitri-DAP-SS-ID'] = dapSSID;
+        customHeaders[headerPrefix + '-DAP-SS-ID'] = dapSSID;
       }
 
       let url = 'https://' + config.api_hostname + path;
@@ -621,7 +634,7 @@ export function createRtdProvider(moduleName) {
           switch (config.api_version) {
             case 'x1':
             case 'x1-dev':
-              token = request.getResponseHeader('Symitri-DAP-Token');
+              token = request.getResponseHeader(headerPrefix + '-DAP-Token');
               break;
           }
           onSuccess(token, request.status, request, onDone);
@@ -671,33 +684,15 @@ export function createRtdProvider(moduleName) {
      *
      */
     dapMembership: function(config, token, onDone, onSuccess = null, onError = null) {
-      if (onError == null) {
-        onError = function(xhr, status, error, onDone) {};
-      }
+      let hasMembershipError;
+      [ config, hasMembershipError ] = this.dapValidationHelper(config, onDone, token, onError);
+      if (hasMembershipError) { return; }
 
-      if (config == null || typeof (config) == typeof (undefined)) {
-        onError(null, 'Invalid config object', 'ClientError', onDone);
+      if (typeof (config.domain) != 'string') {
+        onError(null, 'Invalid config.domain: must be a string', 'ClientError', onDone);
         return;
       }
 
-      if (!('api_version' in config) || (typeof (config.api_version) == 'string' && config.api_version.length == 0)) {
-        config.api_version = 'x1';
-      }
-
-      if (typeof (config.api_version) != 'string') {
-        onError(null, "Invalid api_version: must be a string like 'x1', etc.", 'ClientError', onDone);
-        return;
-      }
-
-      if (!(('api_hostname') in config) || typeof (config.api_hostname) != 'string' || config.api_hostname.length == 0) {
-        onError(null, 'Invalid api_hostname: must be a non-empty string', 'ClientError', onDone);
-        return;
-      }
-
-      if (token == null || typeof (token) != 'string') {
-        onError(null, 'Invalid token: must be a non-null string', 'ClientError', onDone);
-        return;
-      }
       let path = '/data-activation/' +
         config.api_version +
         '/token/' + token +
@@ -754,33 +749,18 @@ export function createRtdProvider(moduleName) {
      *
      */
     dapEncryptedMembership: function(config, token, onDone, onSuccess = null, onError = null) {
-      if (onError == null) {
-        onError = function(xhr, status, error, onDone) {};
-      }
+      let hasEncryptedMembershipError;
+      [ config, hasEncryptedMembershipError ] = this.dapValidationHelper(config, onDone, token, onError);
+      if (hasEncryptedMembershipError) { return; }
 
-      if (config == null || typeof (config) == typeof (undefined)) {
-        onError(null, 'Invalid config object', 'ClientError', onDone);
-        return;
-      }
+      let cb = {
+        success: (response, request) => {
+          let encToken = request.getResponseHeader(headerPrefix + '-DAP-Token');
+          onSuccess(encToken, request.status, request, onDone);
+        },
+        error: (error, request) => { onError(request, request.status, error, onDone); }
+      };
 
-      if (!('api_version' in config) || (typeof (config.api_version) == 'string' && config.api_version.length == 0)) {
-        config.api_version = 'x1';
-      }
-
-      if (typeof (config.api_version) != 'string') {
-        onError(null, "Invalid api_version: must be a string like 'x1', etc.", 'ClientError', onDone);
-        return;
-      }
-
-      if (!(('api_hostname') in config) || typeof (config.api_hostname) != 'string' || config.api_hostname.length == 0) {
-        onError(null, 'Invalid api_hostname: must be a non-empty string', 'ClientError', onDone);
-        return;
-      }
-
-      if (token == null || typeof (token) != 'string') {
-        onError(null, 'Invalid token: must be a non-null string', 'ClientError', onDone);
-        return;
-      }
       let path = '/data-activation/' +
         config.api_version +
         '/token/' + token +
@@ -788,15 +768,6 @@ export function createRtdProvider(moduleName) {
 
       let url = 'https://' + config.api_hostname + path;
 
-      let cb = {
-        success: (response, request) => {
-          let encToken = request.getResponseHeader('Symitri-DAP-Token');
-          onSuccess(encToken, request.status, request, onDone);
-        },
-        error: (error, request) => {
-          onError(request, request.status, error, onDone);
-        }
-      };
       ajax(url, cb, undefined, {
         method: 'GET',
         customHeaders: {
@@ -806,14 +777,31 @@ export function createRtdProvider(moduleName) {
       });
     }
   }
+
+  return {
+    addRealTimeData,
+    getRealTimeData,
+    generateRealTimeData,
+    rtdSubmodule,
+    storage,
+    dapUtils,
+    DAP_TOKEN,
+    DAP_MEMBERSHIP,
+    DAP_ENCRYPTED_MEMBERSHIP,
+    DAP_SS_ID,
+    DAP_DEFAULT_TOKEN_TTL,
+    DAP_MAX_RETRY_TOKENIZE,
+    DAP_CLIENT_ENTROPY
+  };
 }
 
-export const { 
-  addRealTimeData, 
-  getRealTimeData, 
-  generateRealTimeData, 
-  rtdSubmodule: akamaiDapRtdSubmodule, 
+export const {
+  addRealTimeData,
+  getRealTimeData,
+  generateRealTimeData,
+  rtdSubmodule: symitriDapRtdSubmodule,
   storage,
+  dapUtils,
   DAP_TOKEN,
   DAP_MEMBERSHIP,
   DAP_ENCRYPTED_MEMBERSHIP,
@@ -821,4 +809,4 @@ export const {
   DAP_DEFAULT_TOKEN_TTL,
   DAP_MAX_RETRY_TOKENIZE,
   DAP_CLIENT_ENTROPY
-} = createRtdProvider('symitriDap');
+} = createRtdProvider('symitriDap', 'symitridap', 'Symitri');
