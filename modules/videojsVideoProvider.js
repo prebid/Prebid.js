@@ -762,6 +762,14 @@ export default videojsSubmoduleFactory;
 // STATE
 
 /**
+ * @typedef {Object} State
+ * @summary simple state object. Can be subclassed
+ * @function updateState
+ * @function getState
+ * @function clearState
+ */
+
+/**
  * @returns {State}
  */
 export function adStateFactory() {
