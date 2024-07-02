@@ -492,6 +492,31 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
      *
      ******************************************************************************/
 
+    dapFunctionHelpers: function(config, onDone, onError = null) {
+      if (onError == null) {
+        onError = function(xhr, status, error, onDone) {};
+      }
+
+      if (config == null || typeof (config) == typeof (undefined)) {
+        onError(null, 'Invalid config object', 'ClientError', onDone);
+        return;
+      }
+
+      if (!('api_version' in config) || (typeof (config.api_version) == 'string' && config.api_version.length == 0)) {
+        config.api_version = 'x1';
+      }
+
+      if (typeof (config.api_version) != 'string') {
+        onError(null, "Invalid api_version: must be a string like 'x1', etc.", 'ClientError', onDone);
+        return;
+      }
+
+      if (!(('api_hostname') in config) || typeof (config.api_hostname) != 'string' || config.api_hostname.length == 0) {
+        onError(null, 'Invalid api_hostname: must be a non-empty string', 'ClientError', onDone);
+        return;
+      }
+    },
+
     /**
      * SYNOPSIS
      *
@@ -532,14 +557,8 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
      *      function( xhr, status, error ) { ; } // handle error
      */
     dapTokenize: function(config, identity, onDone, onSuccess = null, onError = null) {
-      if (onError == null) {
-        onError = function(xhr, status, error, onDone) {};
-      }
-
-      if (config == null || typeof (config) == typeof (undefined)) {
-        onError(null, 'Invalid config object', 'ClientError', onDone);
-        return;
-      }
+      
+      dapFunctionHelpers(config, onDone, onError);
 
       if (typeof (config.domain) != 'string') {
         onError(null, 'Invalid config.domain: must be a string', 'ClientError', onDone);
@@ -548,20 +567,6 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
 
       if (config.domain.length <= 0) {
         onError(null, 'Invalid config.domain: must have non-zero length', 'ClientError', onDone);
-        return;
-      }
-
-      if (!('api_version' in config) || (typeof (config.api_version) == 'string' && config.api_version.length == 0)) {
-        config.api_version = 'x1';
-      }
-
-      if (typeof (config.api_version) != 'string') {
-        onError(null, "Invalid api_version: must be a string like 'x1', etc.", 'ClientError', onDone);
-        return;
-      }
-
-      if (!(('api_hostname') in config) || typeof (config.api_hostname) != 'string' || config.api_hostname.length == 0) {
-        onError(null, 'Invalid api_hostname: must be a non-empty string', 'ClientError', onDone);
         return;
       }
 
@@ -669,28 +674,8 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
      *
      */
     dapMembership: function(config, token, onDone, onSuccess = null, onError = null) {
-      if (onError == null) {
-        onError = function(xhr, status, error, onDone) {};
-      }
 
-      if (config == null || typeof (config) == typeof (undefined)) {
-        onError(null, 'Invalid config object', 'ClientError', onDone);
-        return;
-      }
-
-      if (!('api_version' in config) || (typeof (config.api_version) == 'string' && config.api_version.length == 0)) {
-        config.api_version = 'x1';
-      }
-
-      if (typeof (config.api_version) != 'string') {
-        onError(null, "Invalid api_version: must be a string like 'x1', etc.", 'ClientError', onDone);
-        return;
-      }
-
-      if (!(('api_hostname') in config) || typeof (config.api_hostname) != 'string' || config.api_hostname.length == 0) {
-        onError(null, 'Invalid api_hostname: must be a non-empty string', 'ClientError', onDone);
-        return;
-      }
+      dapFunctionHelpers(config, onDone, onError);
 
       if (token == null || typeof (token) != 'string') {
         onError(null, 'Invalid token: must be a non-null string', 'ClientError', onDone);
@@ -752,28 +737,8 @@ export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
      *
      */
     dapEncryptedMembership: function(config, token, onDone, onSuccess = null, onError = null) {
-      if (onError == null) {
-        onError = function(xhr, status, error, onDone) {};
-      }
 
-      if (config == null || typeof (config) == typeof (undefined)) {
-        onError(null, 'Invalid config object', 'ClientError', onDone);
-        return;
-      }
-
-      if (!('api_version' in config) || (typeof (config.api_version) == 'string' && config.api_version.length == 0)) {
-        config.api_version = 'x1';
-      }
-
-      if (typeof (config.api_version) != 'string') {
-        onError(null, "Invalid api_version: must be a string like 'x1', etc.", 'ClientError', onDone);
-        return;
-      }
-
-      if (!(('api_hostname') in config) || typeof (config.api_hostname) != 'string' || config.api_hostname.length == 0) {
-        onError(null, 'Invalid api_hostname: must be a non-empty string', 'ClientError', onDone);
-        return;
-      }
+      dapFunctionHelpers(config, onDone, onError);
 
       if (token == null || typeof (token) != 'string') {
         onError(null, 'Invalid token: must be a non-null string', 'ClientError', onDone);
