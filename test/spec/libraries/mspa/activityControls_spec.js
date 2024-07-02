@@ -214,7 +214,10 @@ describe('setupRules', () => {
           {
             mock: 'consent'
           }
-        ]
+        ],
+        uscav1: {
+          mock: 'consent2'
+        }
       }
     };
   });
@@ -225,6 +228,12 @@ describe('setupRules', () => {
 
   it('should use flatten section data for the given api', () => {
     runSetup('mockApi', [1]);
+    expect(isAllowed('mockActivity', {})).to.equal(false);
+    sinon.assert.calledWith(rules.mockActivity, {mock: 'consent'})
+  });
+
+  it('should check consent starts with api key prefix', () => {
+    runSetup('usca', [1]);
     expect(isAllowed('mockActivity', {})).to.equal(false);
     sinon.assert.calledWith(rules.mockActivity, {mock: 'consent'})
   });
@@ -245,6 +254,14 @@ describe('setupRules', () => {
     runSetup('mockApi', [1], normalize);
     expect(isAllowed('mockActivity', {})).to.equal(false);
     sinon.assert.calledWith(normalize, {mock: 'consent'});
+    sinon.assert.calledWith(rules.mockActivity, {normalized: 'consent'});
+  });
+
+  it('should not choke when consent is already flattened', () => {
+    const normalize = sinon.stub().returns({normalized: 'consent'})
+    runSetup('usca', [1], normalize);
+    expect(isAllowed('mockActivity', {})).to.equal(false);
+    sinon.assert.calledWith(normalize, {mock: 'consent2'});
     sinon.assert.calledWith(rules.mockActivity, {normalized: 'consent'});
   });
 

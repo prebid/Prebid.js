@@ -105,10 +105,16 @@ export function mspaRule(sids, getConsent, denies, applicableSids = () => gppDat
 }
 
 function flatSection(subsections) {
-  if (subsections == null) return subsections;
+  if (subsections === null || !Array.isArray(subsections)) return subsections;
   return subsections.reduceRight((subsection, consent) => {
     return Object.assign(consent, subsection);
   }, {});
+}
+
+function getApiSection(parsedSections, api) {
+    if (!parsedSections) return null;
+    const apiKey = Object.keys(parsedSections).find(key => key.startsWith(api));
+    return apiKey ? parsedSections[apiKey] : null;
 }
 
 export function setupRules(api, sids, normalizeConsent = (c) => c, rules = CONSENT_RULES, registerRule = registerActivityControl, getConsentData = () => gppDataHandler.getConsentData()) {
@@ -116,9 +122,12 @@ export function setupRules(api, sids, normalizeConsent = (c) => c, rules = CONSE
   const ruleName = `MSPA (GPP '${api}' for section${sids.length > 1 ? 's' : ''} ${sids.join(', ')})`;
   logInfo(`Enabling activity controls for ${ruleName}`)
   Object.entries(rules).forEach(([activity, denies]) => {
+    const consentData = getConsentData();
+    const parsedSections = consentData?.parsedSections;
+    const apiSection = getApiSection(parsedSections, api);
     unreg.push(registerRule(activity, ruleName, mspaRule(
       sids,
-      () => normalizeConsent(flatSection(getConsentData()?.parsedSections?.[api])),
+      () => normalizeConsent(flatSection(apiSection)),
       denies,
       () => getConsentData()?.applicableSections || []
     )));
