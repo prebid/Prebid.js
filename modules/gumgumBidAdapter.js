@@ -316,6 +316,7 @@ function buildRequests(validBidRequests, bidderRequest) {
     const { currency, floor } = _getFloor(mediaTypes, params.bidfloor, bidRequest);
     const eids = getEids(userId);
     const gpid = deepAccess(ortb2Imp, 'ext.gpid') || deepAccess(ortb2Imp, 'ext.data.pbadslot');
+    const paapiEligible = deepAccess(ortb2Imp, 'ext.ae') === 1
     let sizes = [1, 1];
     let data = {};
     data.displaymanager = 'Prebid.js - gumgum';
@@ -402,7 +403,9 @@ function buildRequests(validBidRequests, bidderRequest) {
     } else { // legacy params
       data = { ...data, ...handleLegacyParams(params, sizes) };
     }
-
+    if (paapiEligible) {
+      data.ae = paapiEligible
+    }
     if (gdprConsent) {
       data.gdprApplies = gdprConsent.gdprApplies ? 1 : 0;
     }
