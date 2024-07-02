@@ -12,9 +12,7 @@ describe('Mobian RTD Submodule', function () {
       ortb2Fragments: {
         global: {
           site: {
-            ext: {
-              data: {}
-            }
+            ext: {}
           }
         }
       }
