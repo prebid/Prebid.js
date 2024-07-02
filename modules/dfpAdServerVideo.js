@@ -25,6 +25,7 @@ import {getPPID} from '../src/adserver.js';
 import {getRefererInfo} from '../src/refererDetection.js';
 import {CLIENT_SECTIONS} from '../src/fpd/oneClient.js';
 import {DEFAULT_DFP_PARAMS, DFP_ENDPOINT} from '../libraries/dfpUtils/dfpUtils.js';
+import { getSegments, getSignals } from '../src/pps.js';
 /**
  * @typedef {Object} DfpVideoParams
  *
@@ -170,21 +171,8 @@ export function buildDfpVideoUrl(options) {
   });
   const fpd = auctionManager.index.getBidRequest(options.bid || {})?.ortb2 ??
     auctionManager.index.getAuction(options.bid || {})?.getFPD()?.global;
-
-  function getSegments(sections, segtax) {
-    return sections
-      .flatMap(section => deepAccess(fpd, section) || [])
-      .filter(datum => datum.ext?.segtax === segtax)
-      .flatMap(datum => datum.segment?.map(seg => seg.id))
-      .filter(ob => ob)
-      .filter(uniques)
-  }
-
-  const signals = Object.entries({
-    IAB_AUDIENCE_1_1: getSegments(['user.data'], 4),
-    IAB_CONTENT_2_2: getSegments(CLIENT_SECTIONS.map(section => `${section}.content.data`), 6)
-  }).map(([taxonomy, values]) => values.length ? {taxonomy, values} : null)
-    .filter(ob => ob);
+  
+  const signals = getSignals(fpd);
 
   if (signals.length) {
     queryParams.ppsj = btoa(JSON.stringify({
