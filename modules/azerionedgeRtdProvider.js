@@ -19,6 +19,8 @@ const REAL_TIME_MODULE = 'realTimeData';
 const SUBREAL_TIME_MODULE = 'azerionedge';
 export const STORAGE_KEY = 'ht-pa-v1-a';
 
+const IMPROVEDIGITAL_GVLID = '253';
+
 export const storage = getStorageManager({
   moduleType: MODULE_TYPE_RTD,
   moduleName: SUBREAL_TIME_MODULE,
@@ -42,14 +44,21 @@ function getScriptURL(config) {
  * Attach script tag to DOM
  *
  * @param {Object} config
+ * @param {Object} userConsent
  *
  * @return {void}
  */
-export function attachScript(config) {
+export function attachScript(config, userConsent) {
   const script = getScriptURL(config);
   loadExternalScript(script, SUBREAL_TIME_MODULE, () => {
     if (typeof window.azerionPublisherAudiences === 'function') {
-      window.azerionPublisherAudiences(config.params?.process || {});
+      const publisherConfig = config.params?.process || {};
+      window.azerionPublisherAudiences({
+        ...publisherConfig,
+        gdprApplies: userConsent?.gdpr?.gdprApplies,
+        gdprConsent: userConsent?.gdpr?.consentString,
+        uspConsent: userConsent?.usp,
+      });
     }
   });
 }
@@ -106,7 +115,7 @@ export function setAudiencesToBidders(reqBidsConfigObj, config, audiences) {
  * @return {boolean}
  */
 function init(config, userConsent) {
-  attachScript(config);
+  attachScript(config, userConsent);
   return true;
 }
 
@@ -138,6 +147,7 @@ export const azerionedgeSubmodule = {
   name: SUBREAL_TIME_MODULE,
   init: init,
   getBidRequestData: getBidRequestData,
+  gvlid: IMPROVEDIGITAL_GVLID,
 };
 
 submodule(REAL_TIME_MODULE, azerionedgeSubmodule);
