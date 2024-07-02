@@ -6,15 +6,15 @@
  * @requires module:modules/realTimeData
  */
 
-import { 
+import {
   createRtdProvider
-} from './symitriDapRtdProvider'/* eslint prebid/validate-imports: "off" */
+} from './symitriDapRtdProvider.js'/* eslint prebid/validate-imports: "off" */
 
-export const { 
-  addRealTimeData, 
-  getRealTimeData, 
-  generateRealTimeData, 
-  rtdSubmodule: akamaiDapRtdSubmodule, 
+export const {
+  addRealTimeData,
+  getRealTimeData,
+  generateRealTimeData,
+  rtdSubmodule: akamaiDapRtdSubmodule,
   storage,
   DAP_TOKEN,
   DAP_MEMBERSHIP,

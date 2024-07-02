@@ -15,12 +15,10 @@ import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
-
 export function createRtdProvider(moduleName) {
-
   const MODULE_NAME = 'realTimeData';
-  const SUBMODULE_NAME = 'dap';
-  const MODULE_CODE = 'symitri';
+  const SUBMODULE_NAME = moduleName;
+  const MODULE_CODE = 'symitridap';
 
   const DAP_TOKEN = 'async_dap_token';
   const DAP_MEMBERSHIP = 'async_dap_membership';
@@ -145,13 +143,13 @@ export function createRtdProvider(moduleName) {
   }
 
   /** @type {RtdSubmodule} */
-  const symitriDapRtdSubmodule = {
+  const rtdSubmodule = {
     name: SUBMODULE_NAME,
     getBidRequestData: getRealTimeData,
     init: init
   };
 
-  submodule(MODULE_NAME, symitriDapRtdSubmodule);
+  submodule(MODULE_NAME, rtdSubmodule);
   const dapUtils = {
 
     callDapAPIs: function(bidConfig, onDone, rtdConfig, userConsent) {
@@ -806,13 +804,28 @@ export function createRtdProvider(moduleName) {
       });
     }
   }
+
+  return {
+    addRealTimeData,
+    getRealTimeData,
+    generateRealTimeData,
+    rtdSubmodule,
+    storage,
+    DAP_TOKEN,
+    DAP_MEMBERSHIP,
+    DAP_ENCRYPTED_MEMBERSHIP,
+    DAP_SS_ID,
+    DAP_DEFAULT_TOKEN_TTL,
+    DAP_MAX_RETRY_TOKENIZE,
+    DAP_CLIENT_ENTROPY
+  };
 }
 
-export const { 
-  addRealTimeData, 
-  getRealTimeData, 
-  generateRealTimeData, 
-  rtdSubmodule: symitriDapRtdSubmodule, 
+export const {
+  addRealTimeData,
+  getRealTimeData,
+  generateRealTimeData,
+  rtdSubmodule: symitriDapRtdSubmodule,
   storage,
   DAP_TOKEN,
   DAP_MEMBERSHIP,
