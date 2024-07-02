@@ -22,6 +22,7 @@ describe('discovery:BidAdapterTests', function () {
     sandbox = sinon.sandbox.create();
     sandbox.stub(storage, 'getCookie');
     sandbox.stub(storage, 'setCookie');
+    sandbox.stub(storage, 'getDataFromLocalStorage');
     sandbox.stub(utils, 'generateUUID').returns('new-uuid');
     sandbox.stub(utils, 'parseUrl').returns({
       search: {
@@ -257,6 +258,11 @@ describe('discovery:BidAdapterTests', function () {
         storage.getCookie.callsFake(() => null);
         getPmgUID();
         expect(storage.setCookie.calledOnce).to.be.false;
+      });
+      it('should return other ID from storage and cookie', () => {
+        spec.buildRequests(bidRequestData.bids, bidRequestData);
+        expect(storage.getCookie.called).to.be.true;
+        expect(storage.getDataFromLocalStorage.called).to.be.true;
       });
     })
     describe('buildUTMTagData function', function() {

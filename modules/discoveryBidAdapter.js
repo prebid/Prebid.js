@@ -22,6 +22,9 @@ const MEDIATYPE = [BANNER, NATIVE];
 const COOKIE_KEY_SSPPID = '_ss_pp_id';
 export const COOKIE_KEY_MGUID = '__mguid_';
 const COOKIE_KEY_PMGUID = '__pmguid_';
+const COOKIE_KEY_PBUID = 'pub_pp_tag';
+const STORAGE_KEY_FTUID = 'fluct_ppUUIDv4';
+const STORAGE_KEY_IMUID = '__im_ppid';
 const COOKIE_RETENTION_TIME = 365 * 24 * 60 * 60 * 1000; // 1 year
 const COOKY_SYNC_IFRAME_URL = 'https://asset.popin.cc/js/cookieSync.html';
 export const THIRD_PARTY_COOKIE_ORIGIN = 'https://asset.popin.cc';
@@ -68,48 +71,40 @@ const NATIVERET = {
   ext: {},
 };
 
-/**
- * get page title111
- * @returns {string}
- */
-
-export function getPageTitle(win = window) {
+// get page title
+export function getPageTitle(winOpt = window) {
   try {
-    const ogTitle = win.top.document.querySelector('meta[property="og:title"]')
-    return win.top.document.title || (ogTitle && ogTitle.content) || '';
-  } catch (e) {
+    const topDoc = winOpt.top.document;
+    const ogTitle = topDoc.querySelector('meta[property="og:title"]')
+    return topDoc.title || (ogTitle && ogTitle.content) || '';
+  } catch (err) {
     const ogTitle = document.querySelector('meta[property="og:title"]')
     return document.title || (ogTitle && ogTitle.content) || '';
   }
 }
 
-/**
- * get page description
- * @returns {string}
- */
-export function getPageDescription(win = window) {
+// get page description
+export function getPageDescription(winOpt = window) {
   let element;
 
   try {
-    element = win.top.document.querySelector('meta[name="description"]') ||
-      win.top.document.querySelector('meta[property="og:description"]')
+    const topDoc = winOpt.top.document;
+    element = topDoc.querySelector('meta[name="description"]') ||
+    topDoc.querySelector('meta[property="og:description"]')
   } catch (e) {
     element = document.querySelector('meta[name="description"]') ||
-      document.querySelector('meta[property="og:description"]')
+    document.querySelector('meta[property="og:description"]')
   }
 
   return (element && element.content) || '';
 }
 
-/**
- * get page keywords
- * @returns {string}
- */
-export function getPageKeywords(win = window) {
+// get page keywords
+export function getPageKeywords(winOpt = window) {
   let element;
 
   try {
-    element = win.top.document.querySelector('meta[name="keywords"]');
+    element = winOpt.top.document.querySelector('meta[name="keywords"]');
   } catch (e) {
     element = document.querySelector('meta[name="keywords"]');
   }
@@ -117,13 +112,10 @@ export function getPageKeywords(win = window) {
   return (element && element.content) || '';
 }
 
-/**
- * get connection downlink
- * @returns {number}
- */
-export function getConnectionDownLink(win = window) {
-  const nav = win.navigator || {};
-  return nav && nav.connection && nav.connection.downlink >= 0 ? nav.connection.downlink.toString() : undefined;
+// get connection downlink
+export function getConnectionDownLink(winOpt = window) {
+  const navOpt = winOpt.navigator || {};
+  return navOpt && navOpt.connection && navOpt.connection.downlink >= 0 ? navOpt.connection.downlink.toString() : undefined;
 }
 
 /**
@@ -166,51 +158,14 @@ function getKv(obj, ...keys) {
   return o;
 }
 
-/**
- * get device
- * @return {boolean}
- */
+// get device
 function getDevice() {
   let check = false;
-  (function (a) {
-    let reg1 = new RegExp(
-      [
-        '(android|bbd+|meego)',
-        '.+mobile|avantgo|bada/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)',
-        '|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone',
-        '|p(ixi|re)/|plucker|pocket|psp|series(4|6)0|symbian|treo|up.(browser|link)|vodafone|wap',
-        '|windows ce|xda|xiino|android|ipad|playbook|silk',
-      ].join(''),
-      'i'
-    );
-    let reg2 = new RegExp(
-      [
-        '1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s-)',
-        '|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|-m|r |s )',
-        '|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw-(n|u)|c55/|capi|ccwa|cdm-|cell',
-        '|chtm|cldc|cmd-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc-s|devi|dica|dmob|do(c|p)o|ds(12|-d)',
-        '|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(-|_)|g1 u|g560|gene',
-        '|gf-5|g-mo|go(.w|od)|gr(ad|un)|haie|hcit|hd-(m|p|t)|hei-|hi(pt|ta)|hp( i|ip)|hs-c',
-        '|ht(c(-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i-(20|go|ma)|i230|iac( |-|/)|ibro|idea|ig01|ikom',
-        '|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |/)|klon|kpt |kwc-|kyo(c|k)',
-        '|le(no|xi)|lg( g|/(k|l|u)|50|54|-[a-w])|libw|lynx|m1-w|m3ga|m50/|ma(te|ui|xo)|mc(01|21|ca)',
-        '|m-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]',
-        '|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)',
-        '|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|-([1-8]|c))|phil|pire|pl(ay|uc)|pn-2|po(ck|rt|se)|prox|psio',
-        '|pt-g|qa-a|qc(07|12|21|32|60|-[2-7]|i-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55/|sa(ge|ma|mm|ms',
-        '|ny|va)|sc(01|h-|oo|p-)|sdk/|se(c(-|0|1)|47|mc|nd|ri)|sgh-|shar|sie(-|m)|sk-0|sl(45|id)|sm(al',
-        '|ar|b3|it|t5)|so(ft|ny)|sp(01|h-|v-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl-|tdg-|tel(i|m)',
-        '|tim-|t-mo|to(pl|sh)|ts(70|m-|m3|m5)|tx-9|up(.b|g1|si)|utst|',
-        'v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|-v)',
-        '|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas-',
-        '|your|zeto|zte-',
-      ].join(''),
-      'i'
-    );
-    if (reg1.test(a) || reg2.test(a.substr(0, 4))) {
-      check = true;
-    }
-  })(navigator.userAgent || navigator.vendor || window.opera);
+  const ua = navigator.userAgent || navigator.vendor || window.opera;
+  const commonReg = /(android|bbd+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up.(browser|link)|vodafone|wap|windows ce|xda|xiino|android|ipad|playbook|silk/i;
+  const specReg = /1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw-(n|u)|c55\/|capi|ccwa|cdm-|cell|chtm|cldc|cmd-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc-s|devi|dica|dmob|do(c|p)o|ds(12|-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(-|_)|g1 u|g560|gene|gf-5|g-mo|go(.w|od)|gr(ad|un)|haie|hcit|hd-(m|p|t)|hei-|hi(pt|ta)|hp( i|ip)|hs-c|ht(c(-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i-(20|go|ma)|i230|iac( |-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|-[a-w])|libw|lynx|m1-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|-([1-8]|c))|phil|pire|pl(ay|uc)|pn-2|po(ck|rt|se)|prox|psio|pt-g|qa-a|qc(07|12|21|32|60|-[2-7]|i-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h-|oo|p-)|sdk\/|se(c(-|0|1)|47|mc|nd|ri)|sgh-|shar|sie(-|m)|sk-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h-|v-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl-|tdg-|tel(i|m)|tim-|t-mo|to(pl|sh)|ts(70|m-|m3|m5)|tx-9|up(.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas-|your|zeto|zte-/i;
+
+  check = commonReg.test(ua) || specReg.test(ua.substr(0, 4));
   return check;
 }
 
@@ -223,7 +178,9 @@ function getDevice() {
  */
 function getBidFloor(bid) {
   if (!utils.isFn(bid.getFloor)) {
-    return utils.deepAccess(bid, 'params.bidfloor', 0);
+    // default floor is 0
+    const floorOpt = utils.deepAccess(bid, 'params.bidfloor', 0);
+    return floorOpt;
   }
 
   try {
@@ -240,28 +197,28 @@ function getBidFloor(bid) {
 
 /**
  * get sizes for rtb
- * @param  {Array|Object} requestSizes
+ * @param  {Array|Object} bidReqSizes
  * @return {Object}
  */
-function transformSizes(requestSizes) {
+function transformSizes(bidReqSizes) {
   let sizes = [];
-  let sizeObj = {};
+  let adSize = {};
 
   if (
-    utils.isArray(requestSizes) &&
-    requestSizes.length === 2 &&
-    !utils.isArray(requestSizes[0])
+    utils.isArray(bidReqSizes) &&
+    bidReqSizes.length === 2 &&
+    !utils.isArray(bidReqSizes[0])
   ) {
-    sizeObj.width = parseInt(requestSizes[0], 10);
-    sizeObj.height = parseInt(requestSizes[1], 10);
-    sizes.push(sizeObj);
-  } else if (typeof requestSizes === 'object') {
-    for (let i = 0; i < requestSizes.length; i++) {
-      let size = requestSizes[i];
-      sizeObj = {};
-      sizeObj.width = parseInt(size[0], 10);
-      sizeObj.height = parseInt(size[1], 10);
-      sizes.push(sizeObj);
+    adSize.width = parseInt(bidReqSizes[0], 10);
+    adSize.height = parseInt(bidReqSizes[1], 10);
+    sizes.push(adSize);
+  } else if (typeof bidReqSizes === 'object') {
+    for (let i = 0; i < bidReqSizes.length; i++) {
+      let size = bidReqSizes[i];
+      adSize = {};
+      adSize.width = parseInt(size[0], 10);
+      adSize.height = parseInt(size[1], 10);
+      sizes.push(adSize);
     }
   }
 
@@ -271,14 +228,14 @@ function transformSizes(requestSizes) {
 // Support sizes
 const popInAdSize = [
   { w: 300, h: 250 },
+  { w: 320, h: 50 },
   { w: 300, h: 600 },
   { w: 728, h: 90 },
+  { w: 320, h: 100 },
   { w: 970, h: 250 },
-  { w: 320, h: 50 },
+  { w: 336, h: 280 },
   { w: 160, h: 600 },
   { w: 320, h: 180 },
-  { w: 320, h: 100 },
-  { w: 336, h: 280 },
 ];
 
 /**
@@ -296,13 +253,9 @@ function getScreenSize() {
  * @returns {string}
  */
 function getReferrer(bidRequest = {}, bidderRequest = {}) {
-  let pageUrl;
-  if (bidRequest.params && bidRequest.params.referrer) {
-    pageUrl = bidRequest.params.referrer;
-  } else {
-    pageUrl = utils.deepAccess(bidderRequest, 'refererInfo.page');
-  }
-  return pageUrl;
+  return bidRequest.params && bidRequest.params.referrer
+    ? bidRequest.params.referrer
+    : utils.deepAccess(bidderRequest, 'refererInfo.page');
 }
 
 /**
@@ -310,9 +263,9 @@ function getReferrer(bidRequest = {}, bidderRequest = {}) {
  * @returns utc string
  */
 export function getCurrentTimeToUTCString() {
-  const date = new Date();
-  date.setTime(date.getTime() + COOKIE_RETENTION_TIME);
-  return date.toUTCString();
+  const cookieTime = new Date();
+  cookieTime.setTime(cookieTime.getTime() + COOKIE_RETENTION_TIME);
+  return cookieTime.toUTCString();
 }
 
 /**
@@ -371,18 +324,18 @@ function getItems(validBidRequests, bidderRequest) {
     // banner
     if (mediaTypes.banner) {
       let sizes = transformSizes(getKv(req, 'sizes'));
-      let matchSize;
+      let matchADSize;
 
       for (let size of sizes) {
-        matchSize = popInAdSize.find(
+        matchADSize = popInAdSize.find(
           (item) => size.width === item.w && size.height === item.h
         );
-        if (matchSize) {
+        if (matchADSize) {
           break;
         }
       }
-      if (!matchSize) {
-        matchSize = sizes[0]
+      if (!matchADSize) {
+        matchADSize = sizes[0]
           ? { h: sizes[0].height || 0, w: sizes[0].width || 0 }
           : { h: 0, w: 0 };
       }
@@ -390,8 +343,8 @@ function getItems(validBidRequests, bidderRequest) {
         id: id,
         bidfloor: bidFloor,
         banner: {
-          h: matchSize.h,
-          w: matchSize.w,
+          h: matchADSize.h,
+          w: matchADSize.w,
           pos: 1,
           format: sizes,
         },
@@ -435,10 +388,10 @@ export const buildUTMTagData = (url) => {
  * @return {Object}
  */
 function getParam(validBidRequests, bidderRequest) {
-  const pubcid = utils.deepAccess(validBidRequests[0], 'crumbs.pubcid');
   const sharedid =
     utils.deepAccess(validBidRequests[0], 'userId.sharedid.id') ||
-    utils.deepAccess(validBidRequests[0], 'userId.pubcid');
+    utils.deepAccess(validBidRequests[0], 'userId.pubcid') ||
+    utils.deepAccess(validBidRequests[0], 'crumbs.pubcid');
   const eids = validBidRequests[0].userIdAsEids || validBidRequests[0].userId;
 
   let isMobile = getDevice() ? 1 : 0;
@@ -466,12 +419,15 @@ function getParam(validBidRequests, bidderRequest) {
       firstPartyData,
       ssppid: storage.getCookie(COOKIE_KEY_SSPPID) || undefined,
       pmguid: getPmgUID(),
+      ssftUid: storage.getDataFromLocalStorage(STORAGE_KEY_FTUID) || undefined,
+      ssimUid: storage.getDataFromLocalStorage(STORAGE_KEY_IMUID) || undefined,
+      sspbid: storage.getCookie(COOKIE_KEY_PBUID) || undefined,
       tpData,
       utm: storage.getCookie(UTM_KEY),
       page: {
+        keywords: keywords ? keywords.slice(0, 100) : undefined,
         title: title ? title.slice(0, 100) : undefined,
         desc: desc ? desc.slice(0, 300) : undefined,
-        keywords: keywords ? keywords.slice(0, 100) : undefined,
         hLen: getHLen(),
       },
       device: {
@@ -504,7 +460,7 @@ function getParam(validBidRequests, bidderRequest) {
       ext,
       user: {
         buyeruid: storage.getCookie(COOKIE_KEY_MGUID) || undefined,
-        id: sharedid || pubcid,
+        id: sharedid,
       },
       tmax: timeout,
       site: {
@@ -565,15 +521,16 @@ export const spec = {
    * @return ServerRequest Info describing the request to the server.
    */
   buildRequests: function (validBidRequests, bidderRequest) {
-    if (!globals['token']) return;
+    const pbToken = globals['token'];
+    if (!pbToken) return;
 
     let payload = getParam(validBidRequests, bidderRequest);
 
-    const payloadString = JSON.stringify(payload);
+    const payloadStr = JSON.stringify(payload);
     return {
       method: 'POST',
-      url: ENDPOINT_URL + globals['token'],
-      data: payloadString,
+      url: `${ENDPOINT_URL}${pbToken}`,
+      data: payloadStr,
     };
   },
 
@@ -671,38 +628,39 @@ export const spec = {
 
   getUserSyncs: function (syncOptions, serverResponse, gdprConsent, uspConsent, gppConsent) {
     const origin = encodeURIComponent(location.origin || `https://${location.host}`);
-    let syncParamUrl = `dm=${origin}`;
+    let userSyncParamUrl = `dm=${origin}`;
 
     if (gdprConsent && gdprConsent.consentString) {
       if (typeof gdprConsent.gdprApplies === 'boolean') {
-        syncParamUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
+        userSyncParamUrl += `&gdpr=${Number(gdprConsent.gdprApplies)}&gdpr_consent=${gdprConsent.consentString}`;
       } else {
-        syncParamUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
+        userSyncParamUrl += `&gdpr=0&gdpr_consent=${gdprConsent.consentString}`;
       }
     }
     if (uspConsent && uspConsent.consentString) {
-      syncParamUrl += `&ccpa_consent=${uspConsent.consentString}`;
+      userSyncParamUrl += `&ccpa_consent=${uspConsent.consentString}`;
     }
 
     if (syncOptions.iframeEnabled) {
-      window.addEventListener('message', function handler(event) {
-        if (!event.data || event.origin != THIRD_PARTY_COOKIE_ORIGIN) {
+      window.addEventListener('message', function handler(messageEvent) {
+        if (!messageEvent.data || messageEvent.origin != THIRD_PARTY_COOKIE_ORIGIN) {
           return;
         }
 
         this.removeEventListener('message', handler);
 
-        event.stopImmediatePropagation();
+        messageEvent.stopImmediatePropagation();
 
-        const response = event.data;
-        if (!response.optout && response.mguid) {
+        const response = messageEvent.data;
+        const { optout, mguid } = response;
+        if (!optout && mguid) {
           storage.setCookie(COOKIE_KEY_MGUID, response.mguid, getCurrentTimeToUTCString());
         }
       }, true);
       return [
         {
           type: 'iframe',
-          url: `${COOKY_SYNC_IFRAME_URL}?${syncParamUrl}`
+          url: `${COOKY_SYNC_IFRAME_URL}?${userSyncParamUrl}`
         }
       ];
     }
@@ -714,7 +672,6 @@ export const spec = {
    */
   onTimeout: function (data) {
     utils.logError('DiscoveryDSP adapter timed out for the auction.');
-    // TODO send request timeout to serve, the interface is not ready
   },
 
   /**
