@@ -96,56 +96,56 @@ function getBidFloor(bid) {
     return deepAccess(bid, 'params.bidfloor', 0);
   }
 
+  let bidFloor = 0;
   try {
-    const bidFloor = bid.getFloor({
-      currency: 'USD',
-      mediaType: '*',
-      size: '*',
-    });
-    return bidFloor.floor;
+    const bidFloorObj = bid.getFloor({ currency: 'USD', mediaType: '*', size: '*' });
+    bidFloor = bidFloorObj.floor;
+    return bidFloor;
   } catch (e) {
     logError(e);
-    return 0;
+    return bidFloor;
   }
 }
 
 function buildRequestParams(bidderRequest = {}, placements = []) {
-  let deviceWidth = 0;
-  let deviceHeight = 0;
+  let width = 0;
+  let height = 0;
 
-  let winLocation;
+  let windowLocation;
   try {
-    const winTop = window.top;
-    deviceWidth = winTop.screen.width;
-    deviceHeight = winTop.screen.height;
-    winLocation = winTop.location;
+    const windowTop = window.top;
+    width = windowTop.screen.width;
+    height = windowTop.screen.height;
+    windowLocation = windowTop.location;
   } catch (e) {
     logMessage(e);
-    winLocation = window.location;
+    windowLocation = window.location;
   }
 
-  const refferUrl = bidderRequest.refererInfo && bidderRequest.refererInfo.page;
-  let refferLocation;
+  const refererUrl = bidderRequest.refererInfo && bidderRequest.refererInfo.page;
+  let referLocation;
   try {
-    refferLocation = refferUrl && new URL(refferUrl);
+    referLocation = refererUrl && new URL(refererUrl);
   } catch (e) {
     logMessage(e);
   }
 
-  let location = refferLocation || winLocation;
-  const language = (navigator && navigator.language) ? navigator.language.split('-')[0] : '';
-  const host = location.host;
-  const page = location.pathname;
-  const secure = location.protocol === 'https:' ? 1 : 0;
+  let location = referLocation || windowLocation;
+  const isNavigator = navigator && navigator.language;
+  const language = isNavigator ? navigator.language.split('-')[0] : '';
+  const locationHost = location.host;
+  const locationPath = location.pathname;
+  const locationSecure = location.protocol === 'https:' ? 1 : 0;
+  const coppaStatus = config.getConfig('coppa') ? 1 : 0;
   return {
-    deviceWidth,
-    deviceHeight,
+    deviceWidth: width,
+    deviceHeight: height,
     language,
-    secure,
-    host,
-    page,
+    secure: locationSecure,
+    host: locationHost,
+    page: locationPath,
     placements,
-    coppa: config.getConfig('coppa') === true ? 1 : 0,
+    coppa: coppaStatus,
     ccpa: bidderRequest.uspConsent || undefined,
     gdpr: bidderRequest.gdprConsent || undefined,
     tmax: bidderRequest.timeout
@@ -159,18 +159,18 @@ export const spec = {
 
   isBidRequestValid: (bid = {}) => {
     const { params, bidId, mediaTypes } = bid;
-    let valid = Boolean(bidId && params && params.seat && params.token);
+    let validParams = Boolean(bidId && params && params.seat && params.token);
 
     if (mediaTypes && mediaTypes[BANNER]) {
-      valid = valid && Boolean(mediaTypes[BANNER] && mediaTypes[BANNER].sizes);
+      validParams = validParams && Boolean(mediaTypes[BANNER] && mediaTypes[BANNER].sizes);
     } else if (mediaTypes && mediaTypes[VIDEO]) {
-      valid = valid && Boolean(mediaTypes[VIDEO] && mediaTypes[VIDEO].playerSize);
+      validParams = validParams && Boolean(mediaTypes[VIDEO] && mediaTypes[VIDEO].playerSize);
     } else if (mediaTypes && mediaTypes[NATIVE]) {
-      valid = valid && Boolean(mediaTypes[NATIVE]);
+      validParams = validParams && Boolean(mediaTypes[NATIVE]);
     } else {
-      valid = false;
+      validParams = false;
     }
-    return valid;
+    return validParams;
   },
 
   buildRequests: (validBidRequests = [], bidderRequest = {}) => {
@@ -196,18 +196,18 @@ export const spec = {
     });
   },
 
-  interpretResponse: (serverResponse) => {
-    let response = [];
-    for (let i = 0; i < serverResponse.body.length; i++) {
-      let resItem = serverResponse.body[i];
+  interpretResponse: (response) => {
+    let responseArr = [];
+    for (let i = 0; i < response.body.length; i++) {
+      let resItem = response.body[i];
       if (isBidResponseValid(resItem)) {
         const advertiserDomains = resItem.adomain && resItem.adomain.length ? resItem.adomain : [];
         resItem.meta = { ...resItem.meta, advertiserDomains };
 
-        response.push(resItem);
+        responseArr.push(resItem);
       }
     }
-    return response;
+    return responseArr;
   }
 };
 
