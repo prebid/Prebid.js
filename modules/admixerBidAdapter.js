@@ -10,7 +10,6 @@ const ENDPOINT_URL = 'https://inv-nets.admixer.net/prebid.1.2.aspx';
 const ALIASES = [
   {code: 'go2net', endpoint: 'https://ads.go2net.com.ua/prebid.1.2.aspx'},
   'adblender',
-  {code: 'adsyield', endpoint: 'https://ads.adsyield.com/prebid.1.2.aspx'},
   {code: 'futureads', endpoint: 'https://ads.futureads.io/prebid.1.2.aspx'},
   {code: 'smn', endpoint: 'https://ads.smn.rs/prebid.1.2.aspx'},
   {code: 'admixeradx', endpoint: 'https://inv-nets.admixer.net/adxprebid.1.2.aspx'},

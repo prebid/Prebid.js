@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { ajax } from '../src/ajax.js';
 import { cyrb53Hash } from '../src/utils.js';
 
@@ -187,16 +186,20 @@ if (FEATURES.UID2_CSTG) {
   clientSideTokenGenerator = {
     isCSTGOptionsValid(maybeOpts, _logWarn) {
       if (typeof maybeOpts !== 'object' || maybeOpts === null) {
-        _logWarn('CSTG opts must be an object');
+        _logWarn('CSTG is not being used, but is included in the Prebid.js bundle. You can reduce the bundle size by passing "--disable UID2_CSTG" to the Prebid.js build.');
         return false;
       }
 
       const opts = maybeOpts;
+      if (!opts.serverPublicKey && !opts.subscriptionId) {
+        _logWarn('CSTG has been enabled but its parameters have not been set.');
+        return false;
+      }
       if (typeof opts.serverPublicKey !== 'string') {
         _logWarn('CSTG opts.serverPublicKey must be a string');
         return false;
       }
-      const serverPublicKeyPrefix = /^UID2-X-[A-Z]-.+/;
+      const serverPublicKeyPrefix = /^(UID2|EUID)-X-[A-Z]-.+/;
       if (!serverPublicKeyPrefix.test(opts.serverPublicKey)) {
         _logWarn(
           `CSTG opts.serverPublicKey must match the regular expression ${serverPublicKeyPrefix}`
@@ -389,7 +392,6 @@ if (FEATURES.UID2_CSTG) {
       this._baseUrl = opts.baseUrl;
       this._serverPublicKey = opts.cstg.serverPublicKey;
       this._subscriptionId = opts.cstg.subscriptionId;
-      this._optoutCheck = opts.cstg.optoutCheck;
       this._logInfo = logInfo;
       this._logWarn = logWarn;
     }
@@ -447,8 +449,7 @@ if (FEATURES.UID2_CSTG) {
     }
 
     async generateToken(cstgIdentity) {
-      const requestIdentity = await this.generateCstgRequest(cstgIdentity);
-      const request = { optout_check: this._optoutCheck, ...requestIdentity };
+      const request = await this.generateCstgRequest(cstgIdentity);
       this._logInfo('Building CSTG request for', request);
       const box = await UID2CstgBox.build(
         this.stripPublicKeyPrefix(this._serverPublicKey)

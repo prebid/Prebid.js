@@ -1,5 +1,7 @@
 import {gdprDataHandler} from '../../../src/adapterManager.js';
-import {enrichFPDHook} from '../../../modules/consentManagement.js';
+import {enrichFPDHook} from '../../../modules/consentManagementTcf.js';
+import {config} from 'src/config.js';
+import 'src/prebid.js';
 
 describe('GDPR FPD enrichment', () => {
   let sandbox, consent;
@@ -12,9 +14,9 @@ describe('GDPR FPD enrichment', () => {
     sandbox.restore();
   })
 
-  function callHook() {
+  function callHook(ortb2 = {}) {
     let result;
-    enrichFPDHook((res) => { result = res }, Promise.resolve({}));
+    enrichFPDHook((res) => { result = res }, Promise.resolve(ortb2));
     return result;
   }
 
@@ -43,5 +45,25 @@ describe('GDPR FPD enrichment', () => {
         }
       })
     })
+  });
+
+  describe('dsa', () => {
+    describe('when dsaPlaform is set', () => {
+      beforeEach(() => {
+        config.setConfig({
+          consentManagement: {
+            gdpr: {
+              dsaPlatform: true
+            }
+          }
+        });
+      });
+
+      it('sets dsarequired', () => {
+        return callHook().then(ortb2 => {
+          expect(ortb2.regs.ext.dsa.dsarequired).to.equal(3);
+        });
+      });
+    });
   });
 });

@@ -99,7 +99,13 @@ function registerBidInterceptor(getHookFn, interceptor) {
 
 export function bidderBidInterceptor(next, interceptBids, spec, bids, bidRequest, ajax, wrapCallback, cbs) {
   const done = delayExecution(cbs.onCompletion, 2);
-  ({bids, bidRequest} = interceptBids({bids, bidRequest, addBid: cbs.onBid, done}));
+  ({bids, bidRequest} = interceptBids({
+    bids,
+    bidRequest,
+    addBid: cbs.onBid,
+    addPaapiConfig: (config, bidRequest) => cbs.onPaapi({bidId: bidRequest.bidId, ...config}),
+    done
+  }));
   if (bids.length === 0) {
     done();
   } else {

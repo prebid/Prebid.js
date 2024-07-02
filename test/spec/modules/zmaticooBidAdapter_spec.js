@@ -1,9 +1,9 @@
 import {checkParamDataType, spec} from '../../../modules/zmaticooBidAdapter.js'
-import {deepClone} from '../../../src/utils';
+import utils, {deepClone} from '../../../src/utils';
+import {expect} from 'chai';
 
 describe('zMaticoo Bidder Adapter', function () {
   const bannerRequest = [{
-    bidId: '1234511',
     auctionId: '223',
     mediaTypes: {
       banner: {
@@ -17,12 +17,6 @@ describe('zMaticoo Bidder Adapter', function () {
       user: {
         uid: '12345',
         buyeruid: '12345'
-      },
-      device: {
-        ip: '111.222.33.44',
-        geo: {
-          country: 'USA'
-        }
       },
       pubId: 'prebid-test',
       test: 1,
@@ -31,7 +25,6 @@ describe('zMaticoo Bidder Adapter', function () {
     }
   }];
   const bannerRequest1 = [{
-    bidId: '1234511',
     auctionId: '223',
     mediaTypes: {
       banner: {
@@ -45,12 +38,6 @@ describe('zMaticoo Bidder Adapter', function () {
       user: {
         uid: '12345',
         buyeruid: '12345'
-      },
-      device: {
-        ip: '111.222.33.44',
-        geo: {
-          country: 'USA'
-        }
       },
       pubId: 'prebid-test',
       test: 1,
@@ -68,7 +55,6 @@ describe('zMaticoo Bidder Adapter', function () {
     },
   }];
   const videoRequest = [{
-    bidId: '1234511',
     auctionId: '223',
     mediaTypes: {
       video: {
@@ -94,12 +80,6 @@ describe('zMaticoo Bidder Adapter', function () {
         uid: '12345',
         buyeruid: '12345'
       },
-      device: {
-        ip: '111.222.33.44',
-        geo: {
-          country: 'USA'
-        }
-      },
       pubId: 'prebid-test',
       test: 1,
       tagid: 'test',
@@ -108,7 +88,6 @@ describe('zMaticoo Bidder Adapter', function () {
   }];
 
   const videoRequest1 = [{
-    bidId: '1234511',
     auctionId: '223',
     mediaTypes: {
       video: {
@@ -131,12 +110,6 @@ describe('zMaticoo Bidder Adapter', function () {
         uid: '12345',
         buyeruid: '12345'
       },
-      device: {
-        ip: '111.222.33.44',
-        geo: {
-          country: 'USA'
-        }
-      },
       pubId: 'prebid-test',
       test: 1,
       tagid: 'test',
@@ -153,21 +126,9 @@ describe('zMaticoo Bidder Adapter', function () {
       const invalidBid = spec.isBidRequestValid(null);
       expect(invalidBid).to.be.false;
     });
-    it('missing required bid.bidId', function () {
-      const request = deepClone(videoRequest[0])
-      delete request.bidId
-      const invalidBid = spec.isBidRequestValid(request);
-      expect(invalidBid).to.be.false;
-    });
     it('missing required params.pubId', function () {
       const request = deepClone(videoRequest[0])
       delete request.params.pubId
-      const invalidBid = spec.isBidRequestValid(request);
-      expect(invalidBid).to.be.false;
-    });
-    it('missing required device data', function () {
-      const request = deepClone(videoRequest[0])
-      delete request.params.device
       const invalidBid = spec.isBidRequestValid(request);
       expect(invalidBid).to.be.false;
     });
@@ -260,8 +221,12 @@ describe('zMaticoo Bidder Adapter', function () {
               adomain: ['test.com'],
               h: 50,
               w: 320,
+              nurl: 'https://gwbudgetali.iymedia.me/budget.php',
               ext: {
-                vast_url: '<vasturl>'
+                vast_url: '<vasturl>',
+                prebid: {
+                  type: 'banner'
+                }
               }
             }
           ]
@@ -284,6 +249,18 @@ describe('zMaticoo Bidder Adapter', function () {
       expect(bid.requestId).to.equal(receivedBid.impid);
       expect(bid.vastXml).to.equal(receivedBid.ext.vast_url);
       expect(bid.meta.advertiserDomains).to.equal(receivedBid.adomain);
+      expect(bid.mediaType).to.equal(receivedBid.ext.prebid.type);
+      expect(bid.nurl).to.equal(receivedBid.nurl);
     });
   });
+  describe('onBidWon', function () {
+    it('should make an ajax call with the original cpm', function () {
+      const bid = {
+        nurl: 'http://test.com/win?auctionPrice=${AUCTION_PRICE}',
+        cpm: 2.1,
+      }
+      const bidWonResult = spec.onBidWon(bid)
+      expect(bidWonResult).to.equal(true)
+    });
+  })
 });

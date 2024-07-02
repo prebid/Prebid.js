@@ -92,6 +92,10 @@ export const sharethroughAdapterSpec = {
       req.regs.ext.gpp_sid = bidderRequest.ortb2.regs.gpp_sid;
     }
 
+    if (bidderRequest?.ortb2?.regs?.ext?.dsa) {
+      req.regs.ext.dsa = bidderRequest.ortb2.regs.ext.dsa;
+    }
+
     const imps = bidRequests
       .map((bidReq) => {
         const impression = { ext: {} };
@@ -99,12 +103,12 @@ export const sharethroughAdapterSpec = {
         // mergeDeep(impression, bidReq.ortb2Imp); // leaving this out for now as we may want to leave stuff out on purpose
         const tid = deepAccess(bidReq, 'ortb2Imp.ext.tid');
         if (tid) impression.ext.tid = tid;
-        const gpid = deepAccess(bidReq, 'ortb2Imp.ext.gpid', deepAccess(bidReq, 'ortb2Imp.ext.data.pbadslot'));
+        const gpid = deepAccess(bidReq, 'ortb2Imp.ext.gpid') || deepAccess(bidReq, 'ortb2Imp.ext.data.pbadslot');
         if (gpid) impression.ext.gpid = gpid;
 
         const videoRequest = deepAccess(bidReq, 'mediaTypes.video');
 
-        if (bidderRequest.fledgeEnabled && bidReq.mediaTypes.banner) {
+        if (bidderRequest.paapi?.enabled && bidReq.mediaTypes.banner) {
           mergeDeep(impression, { ext: { ae: 1 } }); // ae = auction environment; if this is 1, ad server knows we have a fledge auction
         }
 
@@ -238,7 +242,7 @@ export const sharethroughAdapterSpec = {
     if (fledgeAuctionEnabled) {
       return {
         bids: bidsFromExchange,
-        fledgeAuctionConfigs: body.ext?.auctionConfigs || {},
+        paapi: body.ext?.auctionConfigs || {},
       };
     } else {
       return bidsFromExchange;

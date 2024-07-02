@@ -25,17 +25,10 @@ zMaticoo Bidder Adapter for Prebid.js.
                 bids: [
                     {
                         bidder: 'zmaticoo',
-                        bidId: '123456',
                         params: {
                             user: {
                                 uid: '12345',
                                 buyeruid: '12345'
-                            },
-                            device: {
-                                ip: '111.222.33.44',
-                                geo: {
-                                    country: 'USA'
-                                }
                             },
                             pubId: 'prebid-fgh',
                             test: 1
@@ -70,7 +63,6 @@ zMaticoo Bidder Adapter for Prebid.js.
     },
     bids: [{
         bidder: "zmaticoo",
-        bidId: '123456',
         params: {
             pubId: 'prebid-test',
             site: {domain: "test.com"}

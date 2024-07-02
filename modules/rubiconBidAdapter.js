@@ -201,9 +201,6 @@ export const converter = ortbConverter({
     const imp = buildImp(bidRequest, context);
     imp.id = bidRequest.adUnitCode;
     delete imp.banner;
-    if (config.getConfig('s2sConfig.defaultTtl')) {
-      imp.exp = config.getConfig('s2sConfig.defaultTtl');
-    };
     bidRequest.params.position === 'atf' && imp.video && (imp.video.pos = 1);
     bidRequest.params.position === 'btf' && imp.video && (imp.video.pos = 3);
     delete imp.ext?.prebid?.storedrequest;
@@ -237,7 +234,7 @@ export const converter = ortbConverter({
   },
   context: {
     netRevenue: rubiConf.netRevenue !== false, // If anything other than false, netRev is true
-    ttl: 300,
+    ttl: 360,
   },
   processors: pbsExtensions
 });
@@ -532,6 +529,8 @@ export const spec = {
     if (bidRequest?.ortb2Imp?.ext?.ae) {
       data['o_ae'] = 1;
     }
+
+    addDesiredSegtaxes(bidderRequest, data);
     // loop through userIds and add to request
     if (bidRequest.userIdAsEids) {
       bidRequest.userIdAsEids.forEach(eid => {
@@ -683,7 +682,7 @@ export const spec = {
           creativeId: ad.creative_id || `${ad.network || ''}-${ad.advertiser || ''}`,
           cpm: ad.cpm || 0,
           dealId: ad.deal,
-          ttl: 300, // 5 minutes
+          ttl: 360, // 6 minutes
           netRevenue: rubiConf.netRevenue !== false, // If anything other than false, netRev is true
           rubicon: {
             advertiserId: ad.advertiser, networkId: ad.network
@@ -737,7 +736,7 @@ export const spec = {
     });
 
     if (fledgeAuctionConfigs) {
-      return { bids, fledgeAuctionConfigs };
+      return { bids, paapi: fledgeAuctionConfigs };
     } else {
       return bids;
     }
@@ -983,11 +982,25 @@ function applyFPD(bidRequest, mediaType, data) {
         'transparency', (transparency) => {
           if (Array.isArray(transparency) && transparency.length) {
             data['dsatransparency'] = transparency.reduce((param, transp) => {
+              // make sure domain is there, otherwise skip entry
+              const domain = transp.domain || '';
+              if (!domain) {
+                return param;
+              }
+
+              // make sure dsaParam array is there (try both 'dsaparams' and 'params', but prefer dsaparams)
+              const dsaParamArray = transp.dsaparams || transp.params;
+              if (!Array.isArray(dsaParamArray) || dsaParamArray.length === 0) {
+                return param;
+              }
+
+              // finally we will add this one, if param has been added already, add our seperator
               if (param) {
                 param += '~~'
               }
-              return param += `${transp.domain}~${transp.dsaparams.join('_')}`
-            }, '')
+
+              return param += `${domain}~${dsaParamArray.join('_')}`;
+            }, '');
           }
         }
       ])
@@ -1034,6 +1047,27 @@ function applyFPD(bidRequest, mediaType, data) {
     }
 
     mergeDeep(data, fpd);
+  }
+}
+
+function addDesiredSegtaxes(bidderRequest, target) {
+  if (rubiConf.readTopics === false) {
+    return;
+  }
+  let iSegments = [1, 2, 5, 6, 7, 507].concat(rubiConf.sendSiteSegtax?.map(seg => Number(seg)) || []);
+  let vSegments = [4, 508].concat(rubiConf.sendUserSegtax?.map(seg => Number(seg)) || []);
+  let userData = bidderRequest.ortb2?.user?.data || [];
+  let siteData = bidderRequest.ortb2?.site?.content?.data || [];
+  userData.forEach(iterateOverSegmentData(target, 'v', vSegments));
+  siteData.forEach(iterateOverSegmentData(target, 'i', iSegments));
+}
+
+function iterateOverSegmentData(target, char, segments) {
+  return (topic) => {
+    const taxonomy = Number(topic.ext?.segtax);
+    if (segments.includes(taxonomy)) {
+      target[`tg_${char}.tax${taxonomy}`] = topic.segment?.map(seg => seg.id).join(',');
+    }
   }
 }
 

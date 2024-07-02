@@ -30,17 +30,16 @@ import {isBidUsable, targeting} from './targeting.js';
 import {hook, wrapHook} from './hook.js';
 import {loadSession} from './debugging.js';
 import {includes} from './polyfill.js';
-import {adunitCounter} from './adUnits.js';
 import {createBid} from './bidfactory.js';
 import {storageCallbacks} from './storageManager.js';
 import {default as adapterManager, getS2SBidderSet} from './adapterManager.js';
-import CONSTANTS from './constants.json';
+import { BID_STATUS, EVENTS, NATIVE_KEYS } from './constants.js';
 import * as events from './events.js';
 import {newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {defer, GreedyPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
 import {allConsent} from './consentHandler.js';
-import {renderAdDirect} from './adRendering.js';
+import {insertLocatorFrame, renderAdDirect} from './adRendering.js';
 import {getHighestCpm} from './utils/reducers.js';
 import {fillVideoDefaults} from './video.js';
 
@@ -48,7 +47,7 @@ const pbjsInstance = getGlobal();
 const { triggerUserSyncs } = userSync;
 
 /* private variables */
-const { ADD_AD_UNITS, REQUEST_BIDS, SET_TARGETING } = CONSTANTS.EVENTS;
+const { ADD_AD_UNITS, REQUEST_BIDS, SET_TARGETING } = EVENTS;
 
 const eventValidators = {
   bidWon: checkDefinedPlacement
@@ -139,17 +138,38 @@ function validateVideoMediaType(adUnit) {
 }
 
 function validateNativeMediaType(adUnit) {
+  function err(msg) {
+    logError(`Error in adUnit "${adUnit.code}": ${msg}. Removing native request from ad unit`, adUnit);
+    delete validatedAdUnit.mediaTypes.native;
+    return validatedAdUnit;
+  }
+  function checkDeprecated(onDeprecated) {
+    for (const key of ['sendTargetingKeys', 'types']) {
+      if (native.hasOwnProperty(key)) {
+        const res = onDeprecated(key);
+        if (res) return res;
+      }
+    }
+  }
   const validatedAdUnit = deepClone(adUnit);
   const native = validatedAdUnit.mediaTypes.native;
   // if native assets are specified in OpenRTB format, remove legacy assets and print a warn.
   if (native.ortb) {
-    const legacyNativeKeys = Object.keys(CONSTANTS.NATIVE_KEYS).filter(key => CONSTANTS.NATIVE_KEYS[key].includes('hb_native_'));
+    if (native.ortb.assets?.some(asset => !isNumber(asset.id) || asset.id < 0 || asset.id % 1 !== 0)) {
+      return err('native asset ID must be a nonnegative integer');
+    }
+    if (checkDeprecated(key => err(`ORTB native requests cannot specify "${key}"`))) {
+      return validatedAdUnit;
+    }
+    const legacyNativeKeys = Object.keys(NATIVE_KEYS).filter(key => NATIVE_KEYS[key].includes('hb_native_'));
     const nativeKeys = Object.keys(native);
     const intersection = nativeKeys.filter(nativeKey => legacyNativeKeys.includes(nativeKey));
     if (intersection.length > 0) {
       logError(`when using native OpenRTB format, you cannot use legacy native properties. Deleting ${intersection} keys from request.`);
       intersection.forEach(legacyKey => delete validatedAdUnit.mediaTypes.native[legacyKey]);
     }
+  } else {
+    checkDeprecated(key => `mediaTypes.native.${key} is deprecated, consider using native ORTB instead`, adUnit);
   }
   if (native.image && native.image.sizes && !Array.isArray(native.image.sizes)) {
     logError('Please use an array of sizes for native.image.sizes field.  Removing invalid mediaTypes.native.image.sizes property from request.');
@@ -173,7 +193,7 @@ function validateAdUnitPos(adUnit, mediaType) {
     let warning = `Value of property 'pos' on ad unit ${adUnit.code} should be of type: Number`;
 
     logWarn(warning);
-    events.emit(CONSTANTS.EVENTS.AUCTION_DEBUG, {type: 'WARNING', arguments: warning});
+    events.emit(EVENTS.AUCTION_DEBUG, { type: 'WARNING', arguments: warning });
     delete adUnit.mediaTypes[mediaType].pos;
   }
 
@@ -284,7 +304,7 @@ pbjsInstance.getAdserverTargetingForAdUnitCodeStr = function (adunitCode) {
 
 /**
  * This function returns the query string targeting parameters available at this moment for a given ad unit. Note that some bidder's response may not have been received if you call this function too quickly after the requests are sent.
- * @param adUnitCode {string} adUnitCode to get the bid responses for
+ * @param adunitCode {string} adUnitCode to get the bid responses for
  * @alias module:pbjs.getHighestUnusedBidResponseForAdUnitCode
  * @returns {Object}  returnObj return bid
  */
@@ -394,7 +414,7 @@ pbjsInstance.getBidResponsesForAdUnitCode = function (adUnitCode) {
 /**
  * Set query string targeting on one or more GPT ad units.
  * @param {(string|string[])} adUnit a single `adUnit.code` or multiple.
- * @param {function(object)} customSlotMatching gets a GoogleTag slot and returns a filter function for adUnitCode, so you can decide to match on either eg. return slot => { return adUnitCode => { return slot.getSlotElementId() === 'myFavoriteDivId'; } };
+ * @param {function(object): function(string): boolean} customSlotMatching gets a GoogleTag slot and returns a filter function for adUnitCode, so you can decide to match on either eg. return slot => { return adUnitCode => { return slot.getSlotElementId() === 'myFavoriteDivId'; } };
  * @alias module:pbjs.setTargetingForGPTAsync
  */
 pbjsInstance.setTargetingForGPTAsync = function (adUnit, customSlotMatching) {
@@ -403,31 +423,12 @@ pbjsInstance.setTargetingForGPTAsync = function (adUnit, customSlotMatching) {
     logError('window.googletag is not defined on the page');
     return;
   }
-
-  // get our ad unit codes
-  let targetingSet = targeting.getAllTargeting(adUnit);
-
-  // first reset any old targeting
-  targeting.resetPresetTargeting(adUnit, customSlotMatching);
-
-  // now set new targeting keys
-  targeting.setTargetingForGPT(targetingSet, customSlotMatching);
-
-  Object.keys(targetingSet).forEach((adUnitCode) => {
-    Object.keys(targetingSet[adUnitCode]).forEach((targetingKey) => {
-      if (targetingKey === 'hb_adid') {
-        auctionManager.setStatusForBids(targetingSet[adUnitCode][targetingKey], CONSTANTS.BID_STATUS.BID_TARGETING_SET);
-      }
-    });
-  });
-
-  // emit event
-  events.emit(SET_TARGETING, targetingSet);
+  targeting.setTargetingForGPT(adUnit, customSlotMatching);
 };
 
 /**
  * Set query string targeting on all AST (AppNexus Seller Tag) ad units. Note that this function has to be called after all ad units on page are defined. For working example code, see [Using Prebid.js with AppNexus Publisher Ad Server](http://prebid.org/dev-docs/examples/use-prebid-with-appnexus-ad-server.html).
- * @param  {(string|string[])} adUnitCode adUnitCode or array of adUnitCodes
+ * @param  {(string|string[])} adUnitCodes adUnitCode or array of adUnitCodes
  * @alias module:pbjs.setTargetingForAst
  */
 pbjsInstance.setTargetingForAst = function (adUnitCodes) {
@@ -593,11 +594,8 @@ export const startAuction = hook('async', function ({ bidsBackHandler, timeout: 
         // drop the bidder from the ad unit if it's not compatible
         logWarn(unsupportedBidderMessage(adUnit, bidder));
         adUnit.bids = adUnit.bids.filter(bid => bid.bidder !== bidder);
-      } else {
-        adunitCounter.incrementBidderRequestsCounter(adUnit.code, bidder);
       }
     });
-    adunitCounter.incrementRequestsCounter(adUnit.code);
   });
   if (!adUnits || adUnits.length === 0) {
     logMessage('No adUnits configured. No bids requested.');
@@ -645,7 +643,7 @@ export function executeCallbacks(fn, reqBidsConfigObj) {
   }
 }
 
-// This hook will execute all storage callbacks which were registered before gdpr enforcement hook was added. Some bidders, user id modules use storage functions when module is parsed but gdpr enforcement hook is not added at that stage as setConfig callbacks are yet to be called. Hence for such calls we execute all the stored callbacks just before requestBids. At this hook point we will know for sure that gdprEnforcement module is added or not
+// This hook will execute all storage callbacks which were registered before gdpr enforcement hook was added. Some bidders, user id modules use storage functions when module is parsed but gdpr enforcement hook is not added at that stage as setConfig callbacks are yet to be called. Hence for such calls we execute all the stored callbacks just before requestBids. At this hook point we will know for sure that tcfControl module is added or not
 pbjsInstance.requestBids.before(executeCallbacks, 49);
 
 /**
@@ -857,7 +855,7 @@ pbjsInstance.getAllWinningBids = function () {
  */
 pbjsInstance.getAllPrebidWinningBids = function () {
   return auctionManager.getBidsReceived()
-    .filter(bid => bid.status === CONSTANTS.BID_STATUS.BID_TARGETING_SET);
+    .filter(bid => bid.status === BID_STATUS.BID_TARGETING_SET);
 };
 
 /**
@@ -978,6 +976,7 @@ function processQueue(queue) {
  * @alias module:pbjs.processQueue
  */
 pbjsInstance.processQueue = function () {
+  insertLocatorFrame();
   hook.ready();
   processQueue(pbjsInstance.que);
   processQueue(pbjsInstance.cmd);

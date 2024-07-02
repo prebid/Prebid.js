@@ -140,19 +140,18 @@ export const spec = {
         groupId: bid.params.group_id,
         bidId: bid.bidId,
         tid: bid.ortb2Imp?.ext?.tid,
-        eids: [],
+        eids: bid.userIdAsEids || [],
         floor: {}
       };
 
       if (bid.schain) {
         placement.schain = bid.schain;
       }
-      let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+      let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
       if (gpid) {
         placement.gpid = gpid;
       }
       if (bid.userId) {
-        getUserId(placement.eids, bid.userId.britepoolid, 'britepool.com');
         getUserId(placement.eids, bid.userId.idl_env, 'identityLink');
         getUserId(placement.eids, bid.userId.id5id, 'id5-sync.com');
         getUserId(placement.eids, bid.userId.uid2 && bid.userId.uid2.id, 'uidapi.com');
@@ -173,7 +172,7 @@ export const spec = {
         placement.mimes = mediaTypes[VIDEO].mimes;
         placement.protocols = mediaTypes[VIDEO].protocols;
         placement.startdelay = mediaTypes[VIDEO].startdelay;
-        placement.placement = mediaTypes[VIDEO].placement;
+        placement.placement = mediaTypes[VIDEO].plcmt;
         placement.skip = mediaTypes[VIDEO].skip;
         placement.skipafter = mediaTypes[VIDEO].skipafter;
         placement.minbitrate = mediaTypes[VIDEO].minbitrate;

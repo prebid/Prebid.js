@@ -451,10 +451,27 @@ describe('cadent_aperture_mx Adapter', function () {
         });
       });
 
-      it('should add gpid to request if present', () => {
+      it('should add gpid to request if present in ext.gpid', () => {
         const gpid = '/12345/my-gpt-tag-0';
         let bid = utils.deepClone(bidderRequest.bids[0]);
-        bid.ortb2Imp = { ext: { data: { adserver: { adslot: gpid } } } };
+        bid.ortb2Imp = { ext: { gpid, data: { adserver: { adslot: gpid + '1' }, pbadslot: gpid + '2' } } };
+        let requestWithGPID = spec.buildRequests([bid], bidderRequest);
+        requestWithGPID = JSON.parse(requestWithGPID.data);
+        expect(requestWithGPID.imp[0].ext.gpid).to.exist.and.equal(gpid);
+      });
+
+      it('should add gpid to request if present in ext.data.adserver.adslot', () => {
+        const gpid = '/12345/my-gpt-tag-0';
+        let bid = utils.deepClone(bidderRequest.bids[0]);
+        bid.ortb2Imp = { ext: { data: { adserver: { adslot: gpid }, pbadslot: gpid + '1' } } };
+        let requestWithGPID = spec.buildRequests([bid], bidderRequest);
+        requestWithGPID = JSON.parse(requestWithGPID.data);
+        expect(requestWithGPID.imp[0].ext.gpid).to.exist.and.equal(gpid);
+      });
+
+      it('should add gpid to request if present in ext.data.pbadslot', () => {
+        const gpid = '/12345/my-gpt-tag-0';
+        let bid = utils.deepClone(bidderRequest.bids[0]);
         bid.ortb2Imp = { ext: { data: { pbadslot: gpid } } };
         let requestWithGPID = spec.buildRequests([bid], bidderRequest);
         requestWithGPID = JSON.parse(requestWithGPID.data);
