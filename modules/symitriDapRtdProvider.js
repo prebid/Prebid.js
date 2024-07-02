@@ -15,10 +15,10 @@ import {MODULE_TYPE_RTD} from '../src/activities/modules.js';
 /**
  * @typedef {import('../modules/rtdModule/index.js').RtdSubmodule} RtdSubmodule
  */
-export function createRtdProvider(moduleName) {
+export function createRtdProvider(moduleName, moduleCode, headerPrefix) {
   const MODULE_NAME = 'realTimeData';
   const SUBMODULE_NAME = moduleName;
-  const MODULE_CODE = 'symitridap';
+  const MODULE_CODE = moduleCode;
 
   const DAP_TOKEN = 'async_dap_token';
   const DAP_MEMBERSHIP = 'async_dap_membership';
@@ -213,11 +213,11 @@ export function createRtdProvider(moduleName) {
           item.token = token;
           storage.setDataInLocalStorage(DAP_TOKEN, JSON.stringify(item));
           dapUtils.dapLog('Successfully updated and stored token; expires at ' + item.expires_at);
-          let dapSSID = xhr.getResponseHeader('Symitri-DAP-SS-ID');
+          let dapSSID = xhr.getResponseHeader(headerPrefix + '-DAP-SS-ID');
           if (dapSSID) {
             storage.setDataInLocalStorage(DAP_SS_ID, JSON.stringify(dapSSID));
           }
-          let deviceId100 = xhr.getResponseHeader('Symitri-DAP-100');
+          let deviceId100 = xhr.getResponseHeader(headerPrefix + '-DAP-100');
           if (deviceId100 != null) {
             storage.setDataInLocalStorage('dap_deviceId100', deviceId100);
             dapUtils.dapLog('Successfully stored DAP 100 Device ID: ' + deviceId100);
@@ -609,7 +609,7 @@ export function createRtdProvider(moduleName) {
       let customHeaders = {'Content-Type': 'application/json'};
       let dapSSID = JSON.parse(storage.getDataFromLocalStorage(DAP_SS_ID));
       if (dapSSID) {
-        customHeaders['Symitri-DAP-SS-ID'] = dapSSID;
+        customHeaders[headerPrefix + '-DAP-SS-ID'] = dapSSID;
       }
 
       let url = 'https://' + config.api_hostname + path;
@@ -619,7 +619,7 @@ export function createRtdProvider(moduleName) {
           switch (config.api_version) {
             case 'x1':
             case 'x1-dev':
-              token = request.getResponseHeader('Symitri-DAP-Token');
+              token = request.getResponseHeader(headerPrefix + '-DAP-Token');
               break;
           }
           onSuccess(token, request.status, request, onDone);
@@ -788,7 +788,7 @@ export function createRtdProvider(moduleName) {
 
       let cb = {
         success: (response, request) => {
-          let encToken = request.getResponseHeader('Symitri-DAP-Token');
+          let encToken = request.getResponseHeader(headerPrefix + '-DAP-Token');
           onSuccess(encToken, request.status, request, onDone);
         },
         error: (error, request) => {
@@ -811,6 +811,7 @@ export function createRtdProvider(moduleName) {
     generateRealTimeData,
     rtdSubmodule,
     storage,
+    dapUtils,
     DAP_TOKEN,
     DAP_MEMBERSHIP,
     DAP_ENCRYPTED_MEMBERSHIP,
@@ -827,6 +828,7 @@ export const {
   generateRealTimeData,
   rtdSubmodule: symitriDapRtdSubmodule,
   storage,
+  dapUtils,
   DAP_TOKEN,
   DAP_MEMBERSHIP,
   DAP_ENCRYPTED_MEMBERSHIP,
@@ -834,4 +836,4 @@ export const {
   DAP_DEFAULT_TOKEN_TTL,
   DAP_MAX_RETRY_TOKENIZE,
   DAP_CLIENT_ENTROPY
-} = createRtdProvider('symitriDap');
+} = createRtdProvider('symitriDap', 'symitridap', 'Symitri');

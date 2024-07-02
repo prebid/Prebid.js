@@ -16,6 +16,7 @@ export const {
   generateRealTimeData,
   rtdSubmodule: akamaiDapRtdSubmodule,
   storage,
+  dapUtils,
   DAP_TOKEN,
   DAP_MEMBERSHIP,
   DAP_ENCRYPTED_MEMBERSHIP,
@@ -23,4 +24,4 @@ export const {
   DAP_DEFAULT_TOKEN_TTL,
   DAP_MAX_RETRY_TOKENIZE,
   DAP_CLIENT_ENTROPY
-} = createRtdProvider('dap');
+} = createRtdProvider('dap', 'akamaidap', 'Akamai');
