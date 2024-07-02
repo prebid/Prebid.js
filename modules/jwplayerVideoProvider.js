@@ -14,14 +14,8 @@ import { getEventHandler } from '../libraries/video/shared/eventHandler.js';
 import { submodule } from '../src/hook.js';
 /**
  * @typedef {import('../libraries/video/constants/ortb.js').OrtbVideoParams} OrtbVideoParams
- */
-/**
  * @typedef {import('../libraries/video/shared/state.js').State} State
- */
-/**
  * @typedef {import('../modules/videoModule/coreVideo.js').VideoProvider} VideoProvider
- */
-/**
  * @typedef {import('../modules/videoModule/coreVideo.js').videoProviderConfig} videoProviderConfig
  */
 
