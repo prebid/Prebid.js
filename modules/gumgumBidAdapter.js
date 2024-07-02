@@ -215,11 +215,12 @@ function _getVidParams(attributes) {
 }
 
 /**
- * Gets bidfloor
- * @param {Object} mediaTypes
- * @param {Number} bidfloor
- * @param {Object} bid
- * @returns {Number} floor
+ * Retrieves the bid floor value, which is the minimum acceptable bid for an ad unit.
+ * This function calculates the bid floor based on the given media types and other bidding parameters.
+ * @param {Object} mediaTypes - The media types specified for the bid, which might influence floor calculations.
+ * @param {number} staticBidFloor - The default or static bid floor set for the bid.
+ * @param {Object} bid - The bid object which may contain a method to get dynamic floor values.
+ * @returns {Object} An object containing the calculated bid floor and its currency.
  */
 function _getFloor(mediaTypes, staticBidFloor, bid) {
   const curMediaType = Object.keys(mediaTypes)[0] || 'banner';
@@ -290,10 +291,10 @@ function getEids(userId) {
 }
 
 /**
- * Make a server request from the list of BidRequests.
- *
- * @param {validBidRequests[]} - an array of bids
- * @return ServerRequest Info describing the request to the server.
+ * Builds requests for bids.
+ * @param {validBidRequests[]} validBidRequests - An array of valid bid requests.
+ * @param {Object} bidderRequest - The bidder's request information.
+ * @returns {Object[]} An array of server requests.
  */
 function buildRequests(validBidRequests, bidderRequest) {
   const bids = [];
