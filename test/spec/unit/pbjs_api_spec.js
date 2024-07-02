@@ -1413,18 +1413,14 @@ describe('Unit: Prebid Module', function () {
         spyAddWinningBid.resetHistory();
         onWonEvent.resetHistory();
         onStaleEvent.resetHistory();
-
-        // Second render should have a warning but still added to winning bids
+        doc.write.resetHistory();
         return renderAd(doc, bidId);
       }).then(() => {
+        // Second render should have a warning but still be rendered
         sinon.assert.calledWith(spyLogMessage, message);
         sinon.assert.calledWith(spyLogWarn, warning);
-
-        sinon.assert.calledOnce(spyAddWinningBid);
-        sinon.assert.calledWith(spyAddWinningBid, adResponse);
-
-        sinon.assert.calledWith(onWonEvent, adResponse);
         sinon.assert.calledWith(onStaleEvent, adResponse);
+        sinon.assert.called(doc.write);
 
         // Clean up
         $$PREBID_GLOBAL$$.offEvent(EVENTS.BID_WON, onWonEvent);
