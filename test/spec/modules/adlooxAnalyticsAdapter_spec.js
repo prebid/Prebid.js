@@ -3,7 +3,7 @@ import analyticsAdapter, { command as analyticsCommand, COMMAND } from 'modules/
 import { AUCTION_COMPLETED } from 'src/auction.js';
 import { expect } from 'chai';
 import * as events from 'src/events.js';
-import CONSTANTS from 'src/constants.json';
+import { EVENTS } from 'src/constants.js';
 import * as utils from 'src/utils.js';
 import { loadExternalScriptStub } from 'test/mocks/adloaderStub.js';
 
@@ -143,10 +143,10 @@ describe('Adloox Analytics Adapter', function () {
           return arg.tagName === 'LINK' && arg.getAttribute('rel') === 'preload' && arg.getAttribute('as') === 'script' && href_uri.href === uri.href;
         };
 
-        events.emit(CONSTANTS.EVENTS.AUCTION_END, auctionDetails);
+        events.emit(EVENTS.AUCTION_END, auctionDetails);
         expect(insertElementStub.calledWith(sinon.match(isLinkPreloadAsScript))).to.true;
 
-        events.emit(CONSTANTS.EVENTS.AUCTION_END, auctionDetails);
+        events.emit(EVENTS.AUCTION_END, auctionDetails);
         expect(insertElementStub.callCount).to.equal(1);
 
         done();
@@ -167,7 +167,7 @@ describe('Adloox Analytics Adapter', function () {
         const querySelectorStub = sandbox.stub(document, 'querySelector');
         querySelectorStub.withArgs(`#${bid.adUnitCode}`).returns(slot);
 
-        events.emit(CONSTANTS.EVENTS.BID_WON, bid);
+        events.emit(EVENTS.BID_WON, bid);
 
         const [urlInserted, moduleCode] = loadExternalScriptStub.getCall(0).args;
 
@@ -196,7 +196,7 @@ describe('Adloox Analytics Adapter', function () {
         const querySelectorStub = sandbox.stub(document, 'querySelector');
         querySelectorStub.withArgs(`#${bid.adUnitCode}`).returns(slot);
 
-        events.emit(CONSTANTS.EVENTS.BID_WON, bidIgnore);
+        events.emit(EVENTS.BID_WON, bidIgnore);
 
         expect(parent.querySelector('script')).is.null;
 
@@ -238,7 +238,7 @@ describe('Adloox Analytics Adapter', function () {
 
       it('should inject tracking event', function (done) {
         const data = {
-          eventType: CONSTANTS.EVENTS.BID_WON,
+          eventType: EVENTS.BID_WON,
           args: bid
         };
 

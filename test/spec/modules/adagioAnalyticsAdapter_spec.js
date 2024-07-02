@@ -1,12 +1,12 @@
 import adagioAnalyticsAdapter from 'modules/adagioAnalyticsAdapter.js';
 import { expect } from 'chai';
 import * as utils from 'src/utils.js';
-import { getGlobal } from 'src/prebidGlobal.js';
 import { server } from 'test/mocks/xhr.js';
+import * as prebidGlobal from 'src/prebidGlobal.js';
+import { EVENTS } from 'src/constants.js';
 
 let adapterManager = require('src/adapterManager').default;
 let events = require('src/events');
-let constants = require('src/constants.json');
 
 describe('adagio analytics adapter - adagio.js', () => {
   let sandbox;
@@ -86,9 +86,9 @@ describe('adagio analytics adapter - adagio.js', () => {
       };
 
       const testEvents = {
-        [constants.EVENTS.BID_REQUESTED]: bidRequest,
-        [constants.EVENTS.BID_RESPONSE]: bidResponse,
-        [constants.EVENTS.AUCTION_END]: {}
+        [EVENTS.BID_REQUESTED]: bidRequest,
+        [EVENTS.BID_RESPONSE]: bidResponse,
+        [EVENTS.AUCTION_END]: {}
       };
 
       // Step 1-3: Send events
@@ -162,13 +162,13 @@ describe('adagio analytics adapter - adagio.js', () => {
       };
 
       // Step 1: Send bid requested event
-      events.emit(constants.EVENTS.BID_REQUESTED, bidRequest);
+      events.emit(EVENTS.BID_REQUESTED, bidRequest);
 
       // Step 2: Send bid response event
-      events.emit(constants.EVENTS.BID_RESPONSE, bidResponse);
+      events.emit(EVENTS.BID_RESPONSE, bidResponse);
 
       // Step 3: Send auction end event
-      events.emit(constants.EVENTS.AUCTION_END, {});
+      events.emit(EVENTS.AUCTION_END, {});
 
       utils.getWindowTop.restore();
 
@@ -182,7 +182,7 @@ const AUCTION_ID_ADAGIO = '6fc53663-bde5-427b-ab63-baa9ed296f47'
 const AUCTION_ID_CACHE = 'b43d24a0-13d4-406d-8176-3181402bafc4';
 const AUCTION_ID_CACHE_ADAGIO = 'a9cae98f-efb5-477e-9259-27350044f8db';
 
-const BID_ADAGIO = Object.assign({}, BID_ADAGIO, {
+const BID_ADAGIO = {
   bidder: 'adagio',
   auctionId: AUCTION_ID,
   adUnitCode: '/19968336/header-bid-tag-1',
@@ -215,9 +215,9 @@ const BID_ADAGIO = Object.assign({}, BID_ADAGIO, {
     sid: '42',
     e_pba_test: true
   }
-});
+};
 
-const BID_ANOTHER = Object.assign({}, BID_ANOTHER, {
+const BID_ANOTHER = {
   bidder: 'another',
   auctionId: AUCTION_ID,
   adUnitCode: '/19968336/header-bid-tag-1',
@@ -246,7 +246,7 @@ const BID_ANOTHER = Object.assign({}, BID_ANOTHER, {
   meta: {
     advertiserDomains: ['example.com']
   }
-});
+};
 
 const BID_CACHED = Object.assign({}, BID_ADAGIO, {
   auctionId: AUCTION_ID_CACHE,
@@ -647,24 +647,26 @@ describe('adagio analytics adapter', () => {
     });
 
     it('builds and sends auction data', () => {
-      getGlobal().convertCurrency = (cpm, from, to) => {
-        const convKeys = {
-          'GBP-EUR': 0.7,
-          'EUR-GBP': 1.3,
-          'USD-EUR': 0.8,
-          'EUR-USD': 1.2,
-          'USD-GBP': 0.6,
-          'GBP-USD': 1.6,
-        };
-        return cpm * (convKeys[`${from}-${to}`] || 1);
-      };
+      sandbox.stub(prebidGlobal, 'getGlobal').returns({
+        convertCurrency: (cpm, from, to) => {
+          const convKeys = {
+            'GBP-EUR': 0.7,
+            'EUR-GBP': 1.3,
+            'USD-EUR': 0.8,
+            'EUR-USD': 1.2,
+            'USD-GBP': 0.6,
+            'GBP-USD': 1.6,
+          };
+          return cpm * (convKeys[`${from}-${to}`] || 1);
+        }
+      });
 
-      events.emit(constants.EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT.another);
-      events.emit(constants.EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.adagio);
-      events.emit(constants.EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.another);
-      events.emit(constants.EVENTS.AUCTION_END, MOCK.AUCTION_END.another);
-      events.emit(constants.EVENTS.BID_WON, MOCK.BID_WON.another);
-      events.emit(constants.EVENTS.AD_RENDER_SUCCEEDED, MOCK.AD_RENDER_SUCCEEDED.another);
+      events.emit(EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT.another);
+      events.emit(EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.adagio);
+      events.emit(EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.another);
+      events.emit(EVENTS.AUCTION_END, MOCK.AUCTION_END.another);
+      events.emit(EVENTS.BID_WON, MOCK.BID_WON.another);
+      events.emit(EVENTS.AD_RENDER_SUCCEEDED, MOCK.AD_RENDER_SUCCEEDED.another);
 
       expect(server.requests.length).to.equal(3, 'requests count');
       {
@@ -697,6 +699,7 @@ describe('adagio analytics adapter', () => {
         expect(search.e_sid).to.equal('42');
         expect(search.e_pba_test).to.equal('true');
         expect(search.bdrs_bid).to.equal('1,1,0');
+        expect(search.bdrs_cpm).to.equal('1.42,2.052,');
       }
 
       {
@@ -710,35 +713,33 @@ describe('adagio analytics adapter', () => {
         expect(search.win_bdr).to.equal('another');
         expect(search.win_mt).to.equal('ban');
         expect(search.win_ban_sz).to.equal('728x90');
-        expect(search.win_cpm).to.equal('1.71');
-        expect(search.cur).to.equal('EUR');
-        expect(search.cur_rate).to.equal('1.2');
-        expect(search.og_cpm).to.equal('1.62');
-        expect(search.og_cur).to.equal('GBP');
-        expect(search.og_cur_rate).to.equal('1.6');
+        expect(search.win_net_cpm).to.equal('2.052');
+        expect(search.win_og_cpm).to.equal('2.592');
       }
     });
 
     it('builds and sends auction data with a cached bid win', () => {
-      getGlobal().convertCurrency = (cpm, from, to) => {
-        const convKeys = {
-          'GBP-EUR': 0.7,
-          'EUR-GBP': 1.3,
-          'USD-EUR': 0.8,
-          'EUR-USD': 1.2,
-          'USD-GBP': 0.6,
-          'GBP-USD': 1.6,
-        };
-        return cpm * (convKeys[`${from}-${to}`] || 1);
-      };
+      sandbox.stub(prebidGlobal, 'getGlobal').returns({
+        convertCurrency: (cpm, from, to) => {
+          const convKeys = {
+            'GBP-EUR': 0.7,
+            'EUR-GBP': 1.3,
+            'USD-EUR': 0.8,
+            'EUR-USD': 1.2,
+            'USD-GBP': 0.6,
+            'GBP-USD': 1.6,
+          };
+          return cpm * (convKeys[`${from}-${to}`] || 1);
+        }
+      });
 
-      events.emit(constants.EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT.bidcached);
-      events.emit(constants.EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT.another);
-      events.emit(constants.EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.adagio);
-      events.emit(constants.EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.another);
-      events.emit(constants.EVENTS.AUCTION_END, MOCK.AUCTION_END.another_nobid);
-      events.emit(constants.EVENTS.BID_WON, MOCK.BID_WON.bidcached);
-      events.emit(constants.EVENTS.AD_RENDER_FAILED, MOCK.AD_RENDER_FAILED.bidcached);
+      events.emit(EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT.bidcached);
+      events.emit(EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT.another);
+      events.emit(EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.adagio);
+      events.emit(EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.another);
+      events.emit(EVENTS.AUCTION_END, MOCK.AUCTION_END.another_nobid);
+      events.emit(EVENTS.BID_WON, MOCK.BID_WON.bidcached);
+      events.emit(EVENTS.AD_RENDER_FAILED, MOCK.AD_RENDER_FAILED.bidcached);
 
       expect(server.requests.length).to.equal(5, 'requests count');
       {
@@ -794,6 +795,7 @@ describe('adagio analytics adapter', () => {
         expect(search.e_sid).to.equal('42');
         expect(search.e_pba_test).to.equal('true');
         expect(search.bdrs_bid).to.equal('0,0,0');
+        expect(search.bdrs_cpm).to.equal(',,');
       }
 
       {
@@ -808,12 +810,8 @@ describe('adagio analytics adapter', () => {
         expect(search.win_bdr).to.equal('adagio');
         expect(search.win_mt).to.equal('ban');
         expect(search.win_ban_sz).to.equal('728x90');
-        expect(search.win_cpm).to.equal('1.42');
-        expect(search.cur).to.equal('USD');
-        expect(search.cur_rate).to.equal('1');
-        expect(search.og_cpm).to.equal('1.42');
-        expect(search.og_cur).to.equal('USD');
-        expect(search.og_cur_rate).to.equal('1');
+        expect(search.win_net_cpm).to.equal('1.42');
+        expect(search.win_og_cpm).to.equal('1.42');
         expect(search.rndr).to.not.exist;
       }
 
@@ -827,6 +825,32 @@ describe('adagio analytics adapter', () => {
         expect(search.auct_id_c).to.equal(AUCTION_ID_CACHE_ADAGIO);
         expect(search.adu_code).to.equal('/19968336/header-bid-tag-1');
         expect(search.rndr).to.equal('0');
+      }
+    });
+
+    it('send an "empty" cpm when adserver currency != USD and convertCurrency() is undefined', () => {
+      sandbox.stub(prebidGlobal, 'getGlobal').returns({});
+
+      events.emit(EVENTS.AUCTION_INIT, MOCK.AUCTION_INIT.another);
+      events.emit(EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.adagio);
+      events.emit(EVENTS.BID_RESPONSE, MOCK.BID_RESPONSE.another);
+      events.emit(EVENTS.AUCTION_END, MOCK.AUCTION_END.another);
+      events.emit(EVENTS.BID_WON, MOCK.BID_WON.another);
+      events.emit(EVENTS.AD_RENDER_SUCCEEDED, MOCK.AD_RENDER_SUCCEEDED.another);
+
+      expect(server.requests.length).to.equal(3, 'requests count');
+
+      // fail to compute bidder cpm and send an "empty" cpm
+      {
+        const { protocol, hostname, pathname, search } = utils.parseUrl(server.requests[1].url);
+        expect(protocol).to.equal('https');
+        expect(hostname).to.equal('c.4dex.io');
+        expect(pathname).to.equal('/pba.gif');
+        expect(search.v).to.equal('2');
+        expect(search.e_sid).to.equal('42');
+        expect(search.e_pba_test).to.equal('true');
+        expect(search.bdrs_bid).to.equal('1,1,0');
+        expect(search.bdrs_cpm).to.equal('1.42,,');
       }
     });
   });
