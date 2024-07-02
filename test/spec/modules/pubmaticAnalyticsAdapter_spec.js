@@ -553,7 +553,7 @@ describe('pubmatic analytics adapter', function () {
       events.emit(BID_WON, MOCK.BID_WON[1]);
 
       clock.tick(2000 + 1000);
-      expect(requests.length).to.equal(1); // 1 logger and 2 win-tracker
+      expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
       let request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
       let data = getLoggerJsonFromRequest(request.requestBody);
@@ -738,7 +738,7 @@ describe('pubmatic analytics adapter', function () {
       events.emit(BID_WON, MOCK.BID_WON[1]);
 
       clock.tick(2000 + 1000);
-      expect(requests.length).to.equal(2); // 1 logger and 2 win-tracker
+      expect(requests.length).to.equal(3); // 1 logger and 2 win-tracker
       let request = requests[2]; // logger is executed late, trackers execute first
       expect(request.url).to.equal('https://t.pubmatic.com/wl?pubid=9999');
 
