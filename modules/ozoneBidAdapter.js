@@ -22,7 +22,7 @@ const AUCTIONURI = '/openrtb2/auction';
 const OZONECOOKIESYNC = '/static/load-cookie.html';
 const OZONE_RENDERER_URL = 'https://prebid.the-ozone-project.com/ozone-renderer.js';
 const ORIGIN_DEV = 'https://test.ozpr.net';
-const OZONEVERSION = '2.9.2';
+const OZONEVERSION = '2.9.3';
 export const spec = {
   gvlid: 524,
   aliases: [{code: 'lmc', gvlid: 524}, {code: 'venatus', gvlid: 524}],
@@ -535,7 +535,7 @@ export const spec = {
       for (let j = 0; j < sb.bid.length; j++) {
         let thisRequestBid = this.getBidRequestForBidId(sb.bid[j].impid, request.bidderRequest.bids);
         logInfo(`seatbid:${i}, bid:${j} Going to set default w h for seatbid/bidRequest`, sb.bid[j], thisRequestBid);
-        const {defaultWidth, defaultHeight} = defaultSize(thisRequestBid);
+        let {defaultWidth, defaultHeight} = defaultSize(thisRequestBid);
         let thisBid = ozoneAddStandardProperties(sb.bid[j], defaultWidth, defaultHeight);
         thisBid.meta = {advertiserDomains: thisBid.adomain || []};
         let videoContext = null;
@@ -567,8 +567,8 @@ export const spec = {
           this.setBidMediaTypeIfNotExist(thisBid, BANNER);
         }
         if (enhancedAdserverTargeting) {
-          let allBidsForThisBidid = ozoneGetAllBidsForBidId(thisBid.bidId, serverResponse.seatbid);
-          logInfo('Going to iterate allBidsForThisBidId', allBidsForThisBidid);
+          let allBidsForThisBidid = ozoneGetAllBidsForBidId(thisBid.bidId, serverResponse.seatbid, defaultWidth, defaultHeight);
+          logInfo('Going to iterate allBidsForThisBidId', deepClone(allBidsForThisBidid));
           Object.keys(allBidsForThisBidid).forEach((bidderName, index, ar2) => {
             logInfo(`adding adserverTargeting for ${bidderName} for bidId ${thisBid.bidId}`);
             adserverTargeting[whitelabelPrefix + '_' + bidderName] = bidderName;
@@ -606,6 +606,7 @@ export const spec = {
           }
         }
         let {seat: winningSeat, bid: winningBid} = ozoneGetWinnerForRequestBid(thisBid.bidId, serverResponse.seatbid);
+        winningBid = ozoneAddStandardProperties(winningBid, defaultWidth, defaultHeight);
         adserverTargeting[whitelabelPrefix + '_auc_id'] = String(aucId); // was request.bidderRequest.auctionId
         adserverTargeting[whitelabelPrefix + '_winner'] = String(winningSeat);
         adserverTargeting[whitelabelPrefix + '_bid'] = 'true';
@@ -899,7 +900,7 @@ export const spec = {
   }
 };
 export function injectAdIdsIntoAllBidResponses(seatbid) {
-  logInfo('injectAdIdsIntoAllBidResponses', seatbid);
+  logInfo('injectAdIdsIntoAllBidResponses', deepClone(seatbid));
   for (let i = 0; i < seatbid.length; i++) {
     let sb = seatbid[i];
     for (let j = 0; j < sb.bid.length; j++) {
@@ -951,7 +952,7 @@ export function ozoneGetWinnerForRequestBid(requestBidId, serverResponseSeatBid)
   }
   return {'seat': winningSeat, 'bid': thisBidWinner};
 }
-export function ozoneGetAllBidsForBidId(matchBidId, serverResponseSeatBid) {
+export function ozoneGetAllBidsForBidId(matchBidId, serverResponseSeatBid, defaultWidth, defaultHeight) {
   let objBids = {};
   for (let j = 0; j < serverResponseSeatBid.length; j++) {
     let theseBids = serverResponseSeatBid[j].bid;
@@ -960,10 +961,11 @@ export function ozoneGetAllBidsForBidId(matchBidId, serverResponseSeatBid) {
       if (theseBids[k].impid === matchBidId) {
         if (objBids.hasOwnProperty(thisSeat)) { // > 1 bid for an adunit from a bidder - only use the one with the highest bid
           if (objBids[thisSeat]['price'] < theseBids[k].price) {
-            objBids[thisSeat] = theseBids[k];
+            objBids[thisSeat] = ozoneAddStandardProperties(theseBids[k], defaultWidth, defaultHeight);
           }
         } else {
           objBids[thisSeat] = theseBids[k];
+          objBids[thisSeat] = ozoneAddStandardProperties(theseBids[k], defaultWidth, defaultHeight);
         }
       }
     }

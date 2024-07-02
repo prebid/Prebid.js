@@ -193,3 +193,5 @@ export const MESSAGES = {
   NATIVE: 'Prebid Native',
   EVENT: 'Prebid Event'
 };
+
+export const PB_LOCATOR = '__pb_locator__';

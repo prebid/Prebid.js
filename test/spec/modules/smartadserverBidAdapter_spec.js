@@ -458,6 +458,13 @@ describe('Smart bid adapter tests', function () {
     expect(syncs).to.have.lengthOf(0);
   });
 
+  it('should set browsingTopics=false in request.options', () => {
+    const requests = spec.buildRequests(DEFAULT_PARAMS_WO_OPTIONAL);
+    expect(requests[0]).to.have.property('options').and.to.deep.equal({
+      browsingTopics: false
+    });
+  });
+
   describe('gdpr tests', function () {
     afterEach(function () {
       config.setConfig({ ortb2: undefined });

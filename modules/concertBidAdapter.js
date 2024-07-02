@@ -1,7 +1,7 @@
 import { logWarn, logMessage, debugTurnedOn, generateUUID, deepAccess } from '../src/utils.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { getStorageManager } from '../src/storageManager.js';
-import { hasPurpose1Consent } from '../src/utils/gpdr.js';
+import { hasPurpose1Consent } from '../src/utils/gdpr.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest

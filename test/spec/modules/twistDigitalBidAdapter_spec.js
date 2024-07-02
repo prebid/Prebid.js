@@ -2,12 +2,7 @@ import {expect} from 'chai';
 import {
   spec as adapter,
   createDomain,
-  hashCode,
-  getStorageItem,
-  setStorageItem,
-  tryParseJSON,
-  getUniqueDealId,
-  webSessionId
+  storage
 } from 'modules/twistDigitalBidAdapter.js';
 import * as utils from 'src/utils.js';
 import {version} from 'package.json';
@@ -18,7 +13,12 @@ import {deepSetValue} from 'src/utils.js';
 import {
   extractPID,
   extractCID,
-  extractSubDomain
+  extractSubDomain,
+  hashCode,
+  getStorageItem,
+  setStorageItem,
+  tryParseJSON,
+  getUniqueDealId
 } from '../../../libraries/vidazooUtils/bidderUtils.js';
 
 export const TEST_ID_SYSTEMS = ['britepoolid', 'criteoId', 'id5id', 'idl_env', 'lipb', 'netId', 'parrableId', 'pubcid', 'tdid', 'pubProvidedId'];
@@ -357,7 +357,6 @@ describe('TwistDigitalBidAdapter', function () {
           uniqueDealId: `${hashUrl}_${Date.now().toString()}`,
           uqs: getTopWindowQueryParams(),
           isStorageAllowed: true,
-          webSessionId: webSessionId,
           mediaTypes: {
             video: {
               api: [2],
@@ -455,8 +454,7 @@ describe('TwistDigitalBidAdapter', function () {
               name: 'example.com',
               segment: [{id: '243'}],
             },
-          ],
-          webSessionId: webSessionId
+          ]
         }
       });
     });
@@ -542,8 +540,7 @@ describe('TwistDigitalBidAdapter', function () {
             name: 'example.com',
             segment: [{id: '243'}],
           },
-        ],
-        webSessionId: webSessionId
+        ]
       };
 
       const REQUEST_DATA2 = utils.deepClone(REQUEST_DATA);
@@ -740,8 +737,6 @@ describe('TwistDigitalBidAdapter', function () {
         switch (idSystemProvider) {
           case 'lipb':
             return {lipbid: id};
-          case 'parrableId':
-            return {eid: id};
           case 'id5id':
             return {uid: id};
           default:
@@ -807,13 +802,13 @@ describe('TwistDigitalBidAdapter', function () {
     const key = 'myKey';
     let uniqueDealId;
     beforeEach(() => {
-      uniqueDealId = getUniqueDealId(key, 0);
+      uniqueDealId = getUniqueDealId(storage, key, 0);
     })
 
     it('should get current unique deal id', function (done) {
       // waiting some time so `now` will become past
       setTimeout(() => {
-        const current = getUniqueDealId(key);
+        const current = getUniqueDealId(storage, key);
         expect(current).to.be.equal(uniqueDealId);
         done();
       }, 200);
@@ -821,7 +816,7 @@ describe('TwistDigitalBidAdapter', function () {
 
     it('should get new unique deal id on expiration', function (done) {
       setTimeout(() => {
-        const current = getUniqueDealId(key, 100);
+        const current = getUniqueDealId(storage, key, 100);
         expect(current).to.not.be.equal(uniqueDealId);
         done();
       }, 200)
@@ -845,8 +840,8 @@ describe('TwistDigitalBidAdapter', function () {
         shouldAdvanceTime: true,
         now
       });
-      setStorageItem('myKey', 2020);
-      const {value, created} = getStorageItem('myKey');
+      setStorageItem(storage, 'myKey', 2020);
+      const {value, created} = getStorageItem(storage, 'myKey');
       expect(created).to.be.equal(now);
       expect(value).to.be.equal(2020);
       expect(typeof value).to.be.equal('number');
@@ -857,7 +852,7 @@ describe('TwistDigitalBidAdapter', function () {
     it('should get external stored value', function () {
       const value = 'superman'
       window.localStorage.setItem('myExternalKey', value);
-      const item = getStorageItem('myExternalKey');
+      const item = getStorageItem(storage, 'myExternalKey');
       expect(item).to.be.equal(value);
     });
 

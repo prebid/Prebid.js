@@ -362,7 +362,7 @@ describe('PulsePoint Adapter Tests', function () {
     const bidderRequestGdpr = {
       gdprConsent: {
         gdprApplies: true,
-        consentString: 'serialized_gpdr_data'
+        consentString: 'serialized_gdpr_data'
       }
     };
     const request = spec.buildRequests(slotConfigs, syncAddFPDToBidderRequest(Object.assign({}, bidderRequest, bidderRequestGdpr)));
@@ -372,7 +372,7 @@ describe('PulsePoint Adapter Tests', function () {
     // user object
     expect(ortbRequest.user).to.not.equal(null);
     expect(ortbRequest.user.ext).to.not.equal(null);
-    expect(ortbRequest.user.ext.consent).to.equal('serialized_gpdr_data');
+    expect(ortbRequest.user.ext.consent).to.equal('serialized_gdpr_data');
     // regs object
     expect(ortbRequest.regs).to.not.equal(null);
     expect(ortbRequest.regs.ext).to.not.equal(null);
@@ -518,7 +518,7 @@ describe('PulsePoint Adapter Tests', function () {
       },
       gdprConsent: {
         gdprApplies: true,
-        consentString: 'serialized_gpdr_data'
+        consentString: 'serialized_gdpr_data'
       },
       ortb2: {
         user: {
@@ -545,7 +545,7 @@ describe('PulsePoint Adapter Tests', function () {
           registered: true,
           interests: ['cars']
         },
-        consent: 'serialized_gpdr_data'
+        consent: 'serialized_gdpr_data'
       }
     });
   });

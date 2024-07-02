@@ -576,7 +576,7 @@ export const spec = {
       sessionData.rnd = Math.random()
     }
 
-    const aucId = deepAccess('bidderRequest', 'ortb2.site.ext.data.adg_rtd.uid') || generateUUID()
+    const aucId = deepAccess(bidderRequest, 'ortb2.site.ext.data.adg_rtd.uid') || generateUUID()
 
     const adUnits = validBidRequests.map(rawBidRequest => {
       const bidRequest = deepClone(rawBidRequest);

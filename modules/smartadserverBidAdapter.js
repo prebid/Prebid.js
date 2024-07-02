@@ -156,6 +156,9 @@ export const spec = {
       method: 'POST',
       url: (domain !== undefined ? domain : 'https://prg.smartadserver.com') + '/prebid/v1',
       data: JSON.stringify(payload),
+      options: {
+        browsingTopics: false
+      }
     };
   },
 

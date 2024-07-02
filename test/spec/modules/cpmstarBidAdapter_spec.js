@@ -149,7 +149,7 @@ describe('Cpmstar Bid Adapter', function () {
     };
     var requests = spec.buildRequests(reqs, bidderRequest);
     expect(requests[0]).to.have.property('url');
-    expect(requests[0].url).to.include('&schain=1.0,1!exchange1.com,1234,1,,,!exchange2.com,abcd,1,,,');
+    expect(requests[0].url).to.include('&schain=1.0%2C1%21exchange1.com%2C1234%2C1%2C%2C%2C%21exchange2.com%2Cabcd%2C1%2C%2C%2C');
   });
 
   describe('interpretResponse', function () {

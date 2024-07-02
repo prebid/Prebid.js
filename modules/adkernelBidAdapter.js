@@ -95,7 +95,8 @@ export const spec = {
     {code: 'headbidder'},
     {code: 'digiad'},
     {code: 'monetix'},
-    {code: 'hyperbrainz'}
+    {code: 'hyperbrainz'},
+    {code: 'globalsun'}
   ],
   supportedMediaTypes: [BANNER, VIDEO, NATIVE],
 
