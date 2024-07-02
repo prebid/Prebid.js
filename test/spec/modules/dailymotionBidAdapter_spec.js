@@ -196,7 +196,7 @@ describe('dailymotionBidAdapterTests', () => {
       livestream: !!bidRequestData[0].params.video.livestream,
       isCreatedForKids: bidRequestData[0].params.video.isCreatedForKids,
       context: {
-        siteOrAppCat: '',
+        siteOrAppCat: [],
         videoViewsInSession: bidRequestData[0].params.video.videoViewsInSession,
         autoplay: bidRequestData[0].params.video.autoplay,
         playerVolume: bidRequestData[0].params.video.playerVolume,
@@ -342,7 +342,7 @@ describe('dailymotionBidAdapterTests', () => {
       livestream: !!bidRequestData[0].params.video.livestream,
       isCreatedForKids: null,
       context: {
-        siteOrAppCat: '',
+        siteOrAppCat: [],
         videoViewsInSession: null,
         autoplay: null,
         playerVolume: null,
@@ -588,7 +588,7 @@ describe('dailymotionBidAdapterTests', () => {
       livestream: false,
       isCreatedForKids: null,
       context: {
-        siteOrAppCat: '',
+        siteOrAppCat: [],
         videoViewsInSession: null,
         autoplay: null,
         playerVolume: null,
@@ -647,7 +647,7 @@ describe('dailymotionBidAdapterTests', () => {
 
     // No permissions
     {
-      const responses = [{ user_syncs: [{ url: 'https://usersyncurl.com', type: 'image' }] }];
+      const responses = [{ body: { userSyncs: [{ url: 'https://usersyncurl.com', type: 'image' }] } }];
       const syncOptions = { iframeEnabled: false, pixelEnabled: false };
 
       expect(config.runWithBidder(
@@ -656,7 +656,7 @@ describe('dailymotionBidAdapterTests', () => {
       )).to.eql([]);
     }
 
-    // Has permissions but no user_syncs urls
+    // Has permissions but no userSyncs urls
     {
       const responses = [{}];
       const syncOptions = { iframeEnabled: false, pixelEnabled: true };
@@ -667,14 +667,16 @@ describe('dailymotionBidAdapterTests', () => {
       )).to.eql([]);
     }
 
-    // Return user_syncs urls for pixels
+    // Return userSyncs urls for pixels
     {
       const responses = [{
-        user_syncs: [
-          { url: 'https://usersyncurl.com', type: 'image' },
-          { url: 'https://usersyncurl2.com', type: 'image' },
-          { url: 'https://usersyncurl3.com', type: 'iframe' }
-        ],
+        body: {
+          userSyncs: [
+            { url: 'https://usersyncurl.com', type: 'image' },
+            { url: 'https://usersyncurl2.com', type: 'image' },
+            { url: 'https://usersyncurl3.com', type: 'iframe' }
+          ],
+        }
       }];
 
       const syncOptions = { iframeEnabled: false, pixelEnabled: true };
@@ -688,14 +690,16 @@ describe('dailymotionBidAdapterTests', () => {
       ]);
     }
 
-    // Return user_syncs urls for iframes
+    // Return userSyncs urls for iframes
     {
       const responses = [{
-        user_syncs: [
-          { url: 'https://usersyncurl.com', type: 'image' },
-          { url: 'https://usersyncurl2.com', type: 'image' },
-          { url: 'https://usersyncurl3.com', type: 'iframe' }
-        ],
+        body: {
+          userSyncs: [
+            { url: 'https://usersyncurl.com', type: 'image' },
+            { url: 'https://usersyncurl2.com', type: 'image' },
+            { url: 'https://usersyncurl3.com', type: 'iframe' }
+          ],
+        }
       }];
 
       const syncOptions = { iframeEnabled: true, pixelEnabled: true };

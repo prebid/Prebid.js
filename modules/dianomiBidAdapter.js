@@ -10,6 +10,7 @@ import {
   parseSizesInput,
   deepSetValue,
   formatQS,
+  setOnAny
 } from '../src/utils.js';
 import { config } from '../src/config.js';
 import { Renderer } from '../src/Renderer.js';
@@ -353,15 +354,6 @@ function parseNative(bid) {
   });
 
   return result;
-}
-
-function setOnAny(collection, key) {
-  for (let i = 0, result; i < collection.length; i++) {
-    result = deepAccess(collection[i], key);
-    if (result) {
-      return result;
-    }
-  }
 }
 
 function flatten(arr) {

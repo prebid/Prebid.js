@@ -10,14 +10,6 @@ import {config} from './config.js';
  */
 export const VENDORLESS_GVLID = Object.freeze({});
 
-/**
- * Placeholder gvlid for when device.ext.cdep is present (Privacy Sandbox cookie deprecation label). When this value is used as gvlid, the gdpr
- * enforcement module will look to see that publisher consent was given.
- *
- * see https://github.com/prebid/Prebid.js/issues/10516
- */
-export const FIRST_PARTY_GVLID = Object.freeze({});
-
 export class ConsentHandler {
   #enabled;
   #data;
@@ -108,7 +100,6 @@ class UspConsentHandler extends ConsentHandler {
     const consentData = this.getConsentData();
     if (consentData && this.generatedTime) {
       return {
-        usp: consentData,
         generatedAt: this.generatedTime
       };
     }
