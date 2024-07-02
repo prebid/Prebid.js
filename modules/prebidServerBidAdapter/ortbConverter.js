@@ -241,6 +241,7 @@ const PBS_CONVERTER = ortbConverter({
               adUnitCode: impCtx.adUnit.code,
               ortb2: bidderReq?.ortb2,
               ortb2Imp: bidReq?.ortb2Imp,
+              bidder: cfg.bidder,
               config: cfg.config
             };
           }));
