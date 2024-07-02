@@ -39,7 +39,7 @@ import {newMetrics, useMetrics} from './utils/perfMetrics.js';
 import {defer, GreedyPromise} from './utils/promise.js';
 import {enrichFPD} from './fpd/enrichment.js';
 import {allConsent} from './consentHandler.js';
-import {renderAdDirect} from './adRendering.js';
+import {markBidAsRendered, renderAdDirect} from './adRendering.js';
 import {getHighestCpm} from './utils/reducers.js';
 import {fillVideoDefaults} from './video.js';
 
@@ -889,6 +889,7 @@ if (FEATURES.VIDEO) {
     }
     if (bids.length > 0) {
       auctionManager.addWinningBid(bids[0]);
+      markBidAsRendered(bids[0])
     }
   }
 }
