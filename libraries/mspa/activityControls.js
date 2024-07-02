@@ -112,9 +112,9 @@ function flatSection(subsections) {
 }
 
 function getApiSection(parsedSections, api) {
-    if (!parsedSections) return null;
-    const apiKey = Object.keys(parsedSections).find(key => key.startsWith(api));
-    return apiKey ? parsedSections[apiKey] : null;
+  if (!parsedSections) return null;
+  const apiKey = Object.keys(parsedSections).find(key => key.startsWith(api));
+  return apiKey ? parsedSections[apiKey] : null;
 }
 
 export function setupRules(api, sids, normalizeConsent = (c) => c, rules = CONSENT_RULES, registerRule = registerActivityControl, getConsentData = () => gppDataHandler.getConsentData()) {
