@@ -26,6 +26,7 @@ describe('ID5 ID System', function () {
   const ID5_MODULE_NAME = 'id5Id';
   const ID5_EIDS_NAME = ID5_MODULE_NAME.toLowerCase();
   const ID5_SOURCE = 'id5-sync.com';
+  const TRUE_LINK_SOURCE = 'true-link-id5-sync.com';
   const ID5_TEST_PARTNER_ID = 173;
   const ID5_ENDPOINT = `https://id5-sync.com/g/v2/${ID5_TEST_PARTNER_ID}.json`;
   const ID5_API_CONFIG_URL = `https://id5-sync.com/api/config/prebid`;
@@ -48,10 +49,8 @@ describe('ID5 ID System', function () {
   const EUID_STORED_ID = 'EUID_1';
   const EUID_SOURCE = 'uidapi.com';
   const ID5_STORED_OBJ_WITH_EUID = {
-    'universal_uid': ID5_STORED_ID,
-    'signature': ID5_STORED_SIGNATURE,
+    ...ID5_STORED_OBJ,
     'ext': {
-      'linkType': ID5_STORED_LINK_TYPE,
       'euid': {
         'source': EUID_SOURCE,
         'uids': [{
@@ -60,6 +59,11 @@ describe('ID5 ID System', function () {
         }]
       }
     }
+  };
+  const TRUE_LINK_STORED_ID = 'TRUE_LINK_1';
+  const ID5_STORED_OBJ_WITH_TRUE_LINK = {
+    ...ID5_STORED_OBJ,
+    publisherTrueLinkId: TRUE_LINK_STORED_ID
   };
   const ID5_RESPONSE_ID = 'newid5id';
   const ID5_RESPONSE_SIGNATURE = 'abcdef';
@@ -146,6 +150,16 @@ describe('ID5 ID System', function () {
         resolve(response);
       });
     });
+  }
+
+  function wrapAsyncExpects(done, expectsFn) {
+    return function () {
+      try {
+        expectsFn();
+      } catch (err) {
+        done(err);
+      }
+    }
   }
 
   class XhrServerMock {
@@ -837,6 +851,38 @@ describe('ID5 ID System', function () {
         id5System.id5IdSubmodule.getId(getId5FetchConfig());
       });
     });
+
+    it('should pass true link info to ID5 server even when true link is not booted', function () {
+      let xhrServerMock = new XhrServerMock(server);
+      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
+
+      return xhrServerMock.expectFetchRequest()
+        .then(fetchRequest => {
+          let requestBody = JSON.parse(fetchRequest.requestBody);
+          expect(requestBody.true_link).is.deep.equal({booted: false});
+          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+          return submoduleResponse;
+        });
+    });
+
+    it('should pass full true link info to ID5 server when true link is booted', function () {
+      let xhrServerMock = new XhrServerMock(server);
+      let trueLinkResponse = {booted: true, redirected: true, id: 'TRUE_LINK_ID'};
+      window.id5Bootstrap = {
+        getTrueLinkInfo: function () {
+          return trueLinkResponse;
+        }
+      };
+      let submoduleResponse = callSubmoduleGetId(getId5FetchConfig(), undefined, ID5_STORED_OBJ);
+
+      return xhrServerMock.expectFetchRequest()
+        .then(fetchRequest => {
+          let requestBody = JSON.parse(fetchRequest.requestBody);
+          expect(requestBody.true_link).is.deep.equal(trueLinkResponse);
+          fetchRequest.respond(200, responseHeader, JSON.stringify(ID5_JSON_RESPONSE));
+          return submoduleResponse;
+        });
+    });
   });
 
   describe('Local storage', () => {
@@ -950,6 +996,31 @@ describe('ID5 ID System', function () {
       }, {adUnits});
     });
 
+    it('should add stored TRUE_LINK_ID from cache to bids', function (done) {
+      id5System.storeInLocalStorage(id5System.ID5_STORAGE_NAME, JSON.stringify(ID5_STORED_OBJ_WITH_TRUE_LINK), 1);
+
+      init(config);
+      setSubmoduleRegistry([id5System.id5IdSubmodule]);
+      config.setConfig(getFetchLocalStorageConfig());
+
+      requestBidsHook(wrapAsyncExpects(done, function () {
+        adUnits.forEach(unit => {
+          unit.bids.forEach(bid => {
+            expect(bid).to.have.deep.nested.property(`userId.trueLinkId`);
+            expect(bid.userId.trueLinkId.uid).is.equal(TRUE_LINK_STORED_ID);
+            expect(bid.userIdAsEids[1]).is.deep.equal({
+              source: TRUE_LINK_SOURCE,
+              uids: [{
+                id: TRUE_LINK_STORED_ID,
+                atype: 1,
+              }]
+            });
+          });
+        });
+        done();
+      }), {adUnits});
+    });
+
     it('should add config value ID to bids', function (done) {
       init(config);
       setSubmoduleRegistry([id5System.id5IdSubmodule]);
@@ -1007,6 +1078,7 @@ describe('ID5 ID System', function () {
       id5System.storeNbInCache(ID5_TEST_PARTNER_ID, 1);
       let id5Config = getFetchLocalStorageConfig();
       id5Config.userSync.userIds[0].storage.refreshInSeconds = 2;
+      id5Config.userSync.auctionDelay = 0; // do not trigger callback before auction
       init(config);
       setSubmoduleRegistry([id5System.id5IdSubmodule]);
       config.setConfig(id5Config);
@@ -1053,6 +1125,11 @@ describe('ID5 ID System', function () {
         'source': EUID_SOURCE,
         'uid': EUID_STORED_ID,
         'ext': {'provider': ID5_SOURCE}
+      });
+    });
+    it('should decode trueLinkId from a stored object with trueLinkId', function () {
+      expect(id5System.id5IdSubmodule.decode(ID5_STORED_OBJ_WITH_TRUE_LINK, getId5FetchConfig()).trueLinkId).is.deep.equal({
+        'uid': TRUE_LINK_STORED_ID
       });
     });
   });

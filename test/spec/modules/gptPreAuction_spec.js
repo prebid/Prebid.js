@@ -188,7 +188,7 @@ describe('GPT pre-auction module', () => {
         customGptSlotMatching: false,
         customPbAdSlot: false,
         customPreAuction: false,
-        useDefaultPreAuction: false
+        useDefaultPreAuction: true
       });
     });
   });

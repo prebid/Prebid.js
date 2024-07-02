@@ -13,7 +13,7 @@ import {registerBidder} from '../src/adapters/bidderFactory.js';
 import {BANNER} from '../src/mediaTypes.js';
 import {find, includes} from '../src/polyfill.js';
 import {getStorageManager} from '../src/storageManager.js';
-import {hasPurpose1Consent} from '../src/utils/gpdr.js';
+import {hasPurpose1Consent} from '../src/utils/gdpr.js';
 import {getANKeywordParam} from '../libraries/appnexusUtils/anKeywords.js';
 import {convertCamelToUnderscore} from '../libraries/appnexusUtils/anUtils.js';
 
@@ -456,7 +456,7 @@ function bidToTag(bid) {
   }
   tag.keywords = getANKeywordParam(bid.ortb2, bid.params.keywords)
 
-  let gpid = deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
+  let gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
   if (gpid) {
     tag.gpid = gpid;
   }

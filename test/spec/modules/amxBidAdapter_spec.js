@@ -442,7 +442,6 @@ describe('AmxBidAdapter', () => {
     it('will collect & forward RTI user IDs', () => {
       const randomRTI = `greatRTI${Math.floor(Math.random() * 100)}`;
       const userId = {
-        britepoolid: 'sample-britepool',
         criteoId: 'sample-criteo',
         digitrustid: { data: { id: 'sample-digitrust' } },
         id5id: { uid: 'sample-id5' },

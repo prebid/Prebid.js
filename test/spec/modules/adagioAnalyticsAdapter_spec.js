@@ -182,7 +182,7 @@ const AUCTION_ID_ADAGIO = '6fc53663-bde5-427b-ab63-baa9ed296f47'
 const AUCTION_ID_CACHE = 'b43d24a0-13d4-406d-8176-3181402bafc4';
 const AUCTION_ID_CACHE_ADAGIO = 'a9cae98f-efb5-477e-9259-27350044f8db';
 
-const BID_ADAGIO = Object.assign({}, BID_ADAGIO, {
+const BID_ADAGIO = {
   bidder: 'adagio',
   auctionId: AUCTION_ID,
   adUnitCode: '/19968336/header-bid-tag-1',
@@ -215,9 +215,9 @@ const BID_ADAGIO = Object.assign({}, BID_ADAGIO, {
     sid: '42',
     e_pba_test: true
   }
-});
+};
 
-const BID_ANOTHER = Object.assign({}, BID_ANOTHER, {
+const BID_ANOTHER = {
   bidder: 'another',
   auctionId: AUCTION_ID,
   adUnitCode: '/19968336/header-bid-tag-1',
@@ -246,7 +246,7 @@ const BID_ANOTHER = Object.assign({}, BID_ANOTHER, {
   meta: {
     advertiserDomains: ['example.com']
   }
-});
+};
 
 const BID_CACHED = Object.assign({}, BID_ADAGIO, {
   auctionId: AUCTION_ID_CACHE,

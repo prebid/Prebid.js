@@ -874,7 +874,7 @@ describe('triplelift adapter', function () {
       expect(url).to.match(/(\?|&)us_privacy=1YYY/);
     });
     it('should pass fledge signal when Triplelift is eligible for fledge', function() {
-      bidderRequest.fledgeEnabled = true;
+      bidderRequest.paapi = {enabled: true};
       const request = tripleliftAdapterSpec.buildRequests(bidRequests, bidderRequest);
       const url = request.url;
       expect(url).to.match(/(\?|&)fledge=true/);
@@ -1411,11 +1411,11 @@ describe('triplelift adapter', function () {
       let result = tripleliftAdapterSpec.interpretResponse(response, {bidderRequest});
 
       expect(result).to.have.property('bids');
-      expect(result).to.have.property('fledgeAuctionConfigs');
-      expect(result.fledgeAuctionConfigs.length).to.equal(2);
-      expect(result.fledgeAuctionConfigs[0].bidId).to.equal('30b31c1838de1e');
-      expect(result.fledgeAuctionConfigs[1].bidId).to.equal('73edc0ba8de203');
-      expect(result.fledgeAuctionConfigs[0].config).to.deep.equal(
+      expect(result).to.have.property('paapi');
+      expect(result.paapi.length).to.equal(2);
+      expect(result.paapi[0].bidId).to.equal('30b31c1838de1e');
+      expect(result.paapi[1].bidId).to.equal('73edc0ba8de203');
+      expect(result.paapi[0].config).to.deep.equal(
         {
           'seller': 'https://3lift.com',
           'decisionLogicUrl': 'https://3lift.com/decision_logic.js',
@@ -1423,7 +1423,7 @@ describe('triplelift adapter', function () {
           'perBuyerSignals': { 'https://some_buyer.com': { 'a': 1 } }
         }
       );
-      expect(result.fledgeAuctionConfigs[1].config).to.deep.equal(
+      expect(result.paapi[1].config).to.deep.equal(
         {
           'seller': 'https://3lift.com',
           'decisionLogicUrl': 'https://3lift.com/decision_logic.js',
