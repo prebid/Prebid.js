@@ -2,7 +2,7 @@ import * as events from 'src/events.js';
 import * as utils from 'src/utils.js';
 import {
   deferRendering,
-  doRender, 
+  doRender,
   getBidToRender,
   emitAdRenderSucceeded,
   getRenderingData,
