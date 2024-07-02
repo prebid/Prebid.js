@@ -12,28 +12,17 @@ import stateFactory from '../libraries/video/shared/state.js';
 import { JWPLAYER_VENDOR } from '../libraries/video/constants/vendorCodes.js';
 import { getEventHandler } from '../libraries/video/shared/eventHandler.js';
 import { submodule } from '../src/hook.js';
-
 /**
- * Video Provider Submodule interface. All submodules of the Core Video module must adhere to this.
- * @description attached to a video player instance.
- * @typedef {Object} VideoProvider
- * @function init - Instantiates the Video Provider and the video player, if not already instantiated.
- * @function getId - retrieves the div id (unique identifier) of the attached player instance.
- * @function getOrtbVideo - retrieves the oRTB Video params for a player's current video session.
- * @function getOrtbContent - retrieves the oRTB Content params for a player's current video session.
- * @function setAdTagUrl - Requests that a player render the ad in the provided ad tag url.
- * @function onEvent - attaches an event listener to the player instance.
- * @function offEvent - removes event listener to the player instance.
- * @function destroy - deallocates the player instance
+ * @typedef {import('../libraries/video/constants/ortb.js').OrtbVideoParams} OrtbVideoParams
  */
-
 /**
- * @typedef {Object} videoProviderConfig
- * @name videoProviderConfig
- * @summary contains data indicating which submodule to create and which player instance to attach it to
- * @property {string} divId - unique identifier of the player instance
- * @property {number} vendorCode - numeric identifier of the Video Provider type i.e. video.js or jwplayer
- * @property {playerConfig} playerConfig
+ * @typedef {import('../libraries/video/shared/state.js').State} State
+ */
+/**
+ * @typedef {import('../modules/videoModule/coreVideo.js').VideoProvider} VideoProvider
+ */
+/**
+ * @typedef {import('../modules/videoModule/coreVideo.js').videoProviderConfig} videoProviderConfig
  */
 
 /**
@@ -673,37 +662,6 @@ export const utils = {
   },
 
   /**
-   * @typedef OrtbVideoParams
-   * @property {[string]} mimes - Content MIME types supported (e.g., “video/x-ms-wmv”, “video/mp4”).
-   * @property {number|undefined} minduration - Minimum video ad duration in seconds.
-   * @property {number|undefined} maxduration - Maximum video ad duration in seconds.
-   * @property {[number]} protocols - Supported video protocols. At least one supported protocol must be specified.
-   * @property {number} w - Width of the video player in device independent pixels (DIPS).
-   * @property {number} h - Height of the video player in device independent pixels (DIPS).
-   * @property {number|undefined} startdelay - Indicates the offset of the ad placement.
-   * @property {number|undefined} placement - Legacy Placement type for the impression.
-   * @property {number|undefined} plcmt - Modern placement type for the impression.
-   * @property {number|undefined} linearity - Indicates if the impression must be linear, nonlinear, etc. If omitted, assume all are allowed.
-   * @property {number} skip - Indicates if the player can allow the video to be skipped, where 0 is no, 1 is yes.
-   * @property {number|undefined} skipmin - Only ad creatives with a duration greater than this value can be skippable; only applicable if the ad is skippable.
-   * @property {number|undefined} skipafter - Number of seconds a video must play before skipping is enabled; only applicable if the ad is skippable.
-   * @property {number|undefined} sequence - If multiple ad impressions are offered in the same bid request, the sequence number will allow for the coordinated delivery of multiple creatives.
-   * @property {[number]|undefined} battr - Blocked creative attributes. Use this to indicate which creatives the player does not support.
-   * @property {number|undefined} maxextended - Maximum extended ad duration if extension is allowed.
-   * @property {number|undefined} minbitrate - Minimum bit rate in Kbps supported by the player.
-   * @property {number|undefined} maxbitrate - Maximum bit rate in Kbps supported by the player.
-   * @property {number|undefined} boxingallowed - Indicates if letter-boxing of 4:3 content into a 16:9 window is allowed. 0 is no, 1 is yes.
-   * @property {[number]|undefined} playbackmethod - Playback methods that may be in use.
-   * @property {number|undefined} playbackend - The scenario that causes playback to end.
-   * @property {[number]|undefined} delivery - Supported delivery methods (e.g., streaming, progressive).
-   * @property {number|undefined} pos - Ad position on screen.
-   * @property {[Object]|undefined} companionad - list of companion ads. Refer to Section 3.2.6 of the oRTB v2.5 spec for the interface of the companion ad object.
-   * @property {[number]|undefined} api - List of supported API frameworks for this impression.
-   * @property {[number]|undefined} companiontype - Supported VAST companion ad types. Refer to List 5.14 of the oRTB v2.5 spec for the interface.
-   * @property {Object|undefined} ext - Placeholder for exchange-specific extensions to OpenRTB.
-   */
-
-  /**
    * Determine the ad placement
    * @param {Object} adConfig
    * @param {Object} player
@@ -865,14 +823,6 @@ export function callbackStorageFactory() {
 }
 
 // STATE
-
-/**
- * @typedef {Object} State
- * @summary simple state object. Can be subclassed
- * @function updateState
- * @function getState
- * @function clearState
- */
 
 /**
  * @returns {State}

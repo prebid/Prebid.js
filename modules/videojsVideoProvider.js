@@ -13,6 +13,9 @@ import { submodule } from '../src/hook.js';
 import stateFactory from '../libraries/video/shared/state.js';
 import { PLAYBACK_MODE } from '../libraries/video/constants/constants.js';
 import { getEventHandler } from '../libraries/video/shared/eventHandler.js';
+/**
+ * @typedef {import('../libraries/video/shared/state.js').State} State
+ */
 
 /*
 Plugins of interest:
@@ -760,14 +763,6 @@ submodule('video', videojsSubmoduleFactory);
 export default videojsSubmoduleFactory;
 
 // STATE
-
-/**
- * @typedef {Object} State
- * @summary simple state object. Can be subclassed
- * @function updateState
- * @function getState
- * @function clearState
- */
 
 /**
  * @returns {State}
