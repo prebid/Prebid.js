@@ -173,6 +173,11 @@ describe('Taboola Adapter', function () {
         page: 'https://example.com/ref',
         ref: 'https://ref',
         domain: 'example.com',
+      },
+      ortb2: {
+        device: {
+          ua: navigator.userAgent,
+        },
       }
     }
 
@@ -197,9 +202,9 @@ describe('Taboola Adapter', function () {
           'bidfloorcur': 'USD',
           'ext': {}
         }],
-        id: 'mock-uuid',
-        'test': 0,
         'device': {'ua': navigator.userAgent},
+        'id': 'mock-uuid',
+        'test': 0,
         'user': {
           'buyeruid': 0,
           'ext': {},
