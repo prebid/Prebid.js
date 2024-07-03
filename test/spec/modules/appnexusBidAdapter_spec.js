@@ -432,7 +432,7 @@ describe('AppNexusAdapter', function () {
         expect(payload.tags[0].video_frameworks).to.deep.equal([1, 4])
       });
 
-      it('should include ORTB2 device data when available', function () {
+      it('should convert and include ORTB2 device data when available', function () {
         const bidRequest = deepClone(bidRequests[0]);
         const bidderRequest = {
           ortb2: {
@@ -451,10 +451,21 @@ describe('AppNexusAdapter', function () {
           },
         };
 
+        const expectedDeviceResult = {
+          useragent: bidderRequest.ortb2.device.ua,
+          devicetype: 'Mobile/Tablet - General',
+          make: bidderRequest.ortb2.device.make,
+          model: bidderRequest.ortb2.device.model,
+          os: bidderRequest.ortb2.device.os,
+          os_version: bidderRequest.ortb2.device.osv,
+          w: bidderRequest.ortb2.device.w,
+          h: bidderRequest.ortb2.device.h,
+        };
+
         const request = spec.buildRequests([bidRequest], bidderRequest);
         const payload = JSON.parse(request.data);
 
-        expect(payload.device).to.deep.equal(bidderRequest.ortb2.device);
+        expect(payload.device).to.deep.equal(expectedDeviceResult);
       });
 
       it('should add video property when adUnit includes a renderer', function () {

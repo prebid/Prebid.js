@@ -105,6 +105,28 @@ const VIEWABILITY_URL_START = /\/\/cdn\.adnxs\.com\/v|\/\/cdn\.adnxs\-simple\.co
 const VIEWABILITY_FILE_NAME = 'trk.js';
 const GVLID = 32;
 const storage = getStorageManager({bidderCode: BIDDER_CODE});
+// ORTB2 device types according to the OpenRTB specification
+const ORTB2_DEVICE_TYPE = {
+  MOBILE_TABLET: 1,
+  PERSONAL_COMPUTER: 2,
+  CONNECTED_TV: 3,
+  PHONE: 4,
+  TABLET: 5,
+  CONNECTED_DEVICE: 6,
+  SET_TOP_BOX: 7,
+  OOH_DEVICE: 8
+};
+// Map of ORTB2 device types to AppNexus device types
+const ORTB2_DEVICE_TYPE_MAP = new Map([
+  [ORTB2_DEVICE_TYPE.MOBILE_TABLET, 'Mobile/Tablet - General'],
+  [ORTB2_DEVICE_TYPE.PERSONAL_COMPUTER, 'Personal Computer'],
+  [ORTB2_DEVICE_TYPE.CONNECTED_TV, 'Connected TV'],
+  [ORTB2_DEVICE_TYPE.PHONE, 'Phone'],
+  [ORTB2_DEVICE_TYPE.TABLET, 'Tablet'],
+  [ORTB2_DEVICE_TYPE.CONNECTED_DEVICE, 'Connected Device'],
+  [ORTB2_DEVICE_TYPE.SET_TOP_BOX, 'Set Top Box'],
+  [ORTB2_DEVICE_TYPE.OOH_DEVICE, 'OOH Device'],
+]);
 
 export const spec = {
   code: BIDDER_CODE,
@@ -263,10 +285,10 @@ export const spec = {
       payload.app = appIdObj;
     }
 
-    // if present, merge device object from ortb2 into `payload.device`
+    // if present, convert and merge device object from ortb2 into `payload.device`
     if (bidderRequest?.ortb2?.device) {
       payload.device = payload.device || {};
-      mergeDeep(payload.device, bidderRequest.ortb2.device);
+      mergeDeep(payload.device, convertORTB2DeviceDataToAppNexusDeviceObject(bidderRequest.ortb2.device));
     }
 
     // grab the ortb2 keyword data (if it exists) and convert from the comma list string format to object format
@@ -1288,6 +1310,31 @@ function convertKeywordsToString(keywords) {
   // remove last trailing comma
   result = result.substring(0, result.length - 1);
   return result;
+}
+
+// Convert device data to a format that AppNexus expects
+function convertORTB2DeviceDataToAppNexusDeviceObject(ortb2DeviceData) {
+  const _device = {
+    useragent: ortb2DeviceData.ua,
+    devicetype: ORTB2_DEVICE_TYPE_MAP.get(ortb2DeviceData.devicetype),
+    make: ortb2DeviceData.make,
+    model: ortb2DeviceData.model,
+    os: ortb2DeviceData.os,
+    os_version: ortb2DeviceData.osv,
+    w: ortb2DeviceData.w,
+    h: ortb2DeviceData.h,
+    ppi: ortb2DeviceData.ppi,
+    pxratio: ortb2DeviceData.pxratio,
+  };
+
+  // filter out any empty values and return the object
+  return Object.keys(_device)
+    .reduce((r, key) => {
+      if (_device[key]) {
+        r[key] = _device[key];
+      }
+      return r;
+    }, {});
 }
 
 registerBidder(spec);
