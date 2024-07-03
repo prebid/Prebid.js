@@ -324,6 +324,17 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     }
   }
 
+  const api = deepAccess(mediaTypes, 'video.api', []);
+  if (api.includes(7)) {
+    const sourceExt = deepAccess(bidderRequest, 'ortb2.source.ext');
+    if (sourceExt?.omidpv) {
+      data.omidpv = sourceExt.omidpv;
+    }
+    if (sourceExt?.omidpn) {
+      data.omidpn = sourceExt.omidpn;
+    }
+  }
+
   _each(ext, (value, key) => {
     data['ext.' + key] = value;
   });
