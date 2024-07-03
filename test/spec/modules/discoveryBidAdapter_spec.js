@@ -3,15 +3,12 @@ import {
   spec,
   getPmgUID,
   storage,
-  getPageTitle,
-  getPageDescription,
-  getPageKeywords,
-  getConnectionDownLink,
   THIRD_PARTY_COOKIE_ORIGIN,
   COOKIE_KEY_MGUID,
   getCurrentTimeToUTCString,
   buildUTMTagData,
 } from 'modules/discoveryBidAdapter.js';
+import { getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLink } from '../../../libraries/fpdUtils/pageInfo.js';
 import * as utils from 'src/utils.js';
 import { getHLen, getHC, getDM } from '../../../src/fpd/navigator.js';
 
