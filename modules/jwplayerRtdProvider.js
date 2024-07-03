@@ -429,7 +429,7 @@ export function addTargetingToBid(bid, targeting) {
   bid.rtd = Object.assign({}, rtd, jwRtd);
 }
 
-function getPlayer(playerDivId) {
+export function getPlayer(playerDivId) {
   const jwplayer = window.jwplayer;
   if (!jwplayer) {
     logError(SUBMODULE_NAME + '.js was not found on page');
