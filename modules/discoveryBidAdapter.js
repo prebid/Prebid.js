@@ -2,6 +2,7 @@ import * as utils from '../src/utils.js';
 import { getStorageManager } from '../src/storageManager.js';
 import { registerBidder } from '../src/adapters/bidderFactory.js';
 import { BANNER, NATIVE } from '../src/mediaTypes.js';
+import { getHLen, getHC, getDM } from '../src/fpd/navigator.js';
 
 /**
  * @typedef {import('../src/adapters/bidderFactory.js').BidRequest} BidRequest
@@ -414,7 +415,7 @@ function getItems(validBidRequests, bidderRequest) {
 
 export const buildUTMTagData = (url) => {
   if (!storage.cookiesAreEnabled()) return;
-  const urlParams = utils.parseUrl(url).search;
+  const urlParams = utils.parseUrl(url).search || {};
   const UTMParams = {};
   Object.keys(urlParams).forEach(key => {
     if (/^utm_/.test(key)) {
@@ -455,11 +456,31 @@ function getParam(validBidRequests, bidderRequest) {
   const referer = utils.deepAccess(bidderRequest, 'refererInfo.ref');
   const firstPartyData = bidderRequest.ortb2;
   const tpData = utils.deepAccess(bidderRequest, 'ortb2.user.data') || undefined;
-  const topWindow = window.top;
   const title = getPageTitle();
   const desc = getPageDescription();
   const keywords = getPageKeywords();
-
+  let ext = {};
+  try {
+    ext = {
+      eids,
+      firstPartyData,
+      ssppid: storage.getCookie(COOKIE_KEY_SSPPID) || undefined,
+      pmguid: getPmgUID(),
+      tpData,
+      utm: storage.getCookie(UTM_KEY),
+      page: {
+        title: title ? title.slice(0, 100) : undefined,
+        desc: desc ? desc.slice(0, 300) : undefined,
+        keywords: keywords ? keywords.slice(0, 100) : undefined,
+        hLen: getHLen(),
+      },
+      device: {
+        nbw: getConnectionDownLink(),
+        hc: getHC(),
+        dm: getDM()
+      }
+    }
+  } catch (error) {}
   try {
     buildUTMTagData(page);
   } catch (error) { }
@@ -480,24 +501,7 @@ function getParam(validBidRequests, bidderRequest) {
         ua: navigator.userAgent,
         language: /en/.test(navigator.language) ? 'en' : navigator.language,
       },
-      ext: {
-        eids,
-        firstPartyData,
-        ssppid: storage.getCookie(COOKIE_KEY_SSPPID) || undefined,
-        pmguid: getPmgUID(),
-        tpData,
-        page: {
-          title: title ? title.slice(0, 100) : undefined,
-          desc: desc ? desc.slice(0, 300) : undefined,
-          keywords: keywords ? keywords.slice(0, 100) : undefined,
-          hLen: topWindow.history?.length || undefined,
-        },
-        device: {
-          nbw: getConnectionDownLink(),
-          hc: topWindow.navigator?.hardwareConcurrency || undefined,
-          dm: topWindow.navigator?.deviceMemory || undefined,
-        }
-      },
+      ext,
       user: {
         buyeruid: storage.getCookie(COOKIE_KEY_MGUID) || undefined,
         id: sharedid || pubcid,

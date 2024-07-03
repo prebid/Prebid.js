@@ -62,12 +62,6 @@ describe('VibrantMediaBidAdapter', function () {
     });
   });
 
-  describe('transformBidParams', function () {
-    it('transforms bid params correctly', function () {
-      expect(spec.transformBidParams(VALID_VIDEO_BID_PARAMS)).to.deep.equal(VALID_VIDEO_BID_PARAMS);
-    });
-  })
-
   let bidRequest;
 
   beforeEach(function () {
@@ -1077,13 +1071,9 @@ describe('VibrantMediaBidAdapter', function () {
   describe('Flow tests', function () {
     describe('For successive API calls to the public functions', function () {
       it('should succeed with one media type per bid', function () {
-        const transformedBannerBidParams = spec.transformBidParams(VALID_BANNER_BID_PARAMS);
-        const transformedVideoBidParams = spec.transformBidParams(VALID_VIDEO_BID_PARAMS);
-        const transformedNativeBidParams = spec.transformBidParams(VALID_NATIVE_BID_PARAMS);
-
         const bannerBid = {
           bidder: 'vibrantmedia',
-          params: transformedBannerBidParams,
+          params: VALID_BANNER_BID_PARAMS,
           mediaTypes: {
             banner: {
               sizes: DEFAULT_BID_SIZES,
@@ -1097,7 +1087,7 @@ describe('VibrantMediaBidAdapter', function () {
         };
         const videoBid = {
           bidder: 'vibrantmedia',
-          params: transformedVideoBidParams,
+          params: VALID_VIDEO_BID_PARAMS,
           mediaTypes: {
             video: {
               context: OUTSTREAM,
@@ -1112,7 +1102,7 @@ describe('VibrantMediaBidAdapter', function () {
         };
         const nativeBid = {
           bidder: 'vibrantmedia',
-          params: transformedNativeBidParams,
+          params: VALID_NATIVE_BID_PARAMS,
           mediaTypes: {
             native: {
               image: {
@@ -1178,10 +1168,9 @@ describe('VibrantMediaBidAdapter', function () {
       });
 
       it('should succeed with multiple media types for a single bid', function () {
-        const bidParams = spec.transformBidParams(VALID_VIDEO_BID_PARAMS);
         const bid = {
           bidder: 'vibrantmedia',
-          params: bidParams,
+          params: VALID_VIDEO_BID_PARAMS,
           mediaTypes: {
             banner: {
               sizes: DEFAULT_BID_SIZES

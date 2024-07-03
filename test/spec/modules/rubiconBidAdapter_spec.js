@@ -14,7 +14,7 @@ import * as utils from 'src/utils.js';
 import {find} from 'src/polyfill.js';
 import {createEidsArray} from 'modules/userId/eids.js';
 import 'modules/schain.js';
-import 'modules/consentManagement.js';
+import 'modules/consentManagementTcf.js';
 import 'modules/consentManagementUsp.js';
 import 'modules/userId/index.js';
 import 'modules/priceFloors.js';
@@ -1735,6 +1735,64 @@ describe('the rubicon adapter', function () {
                 }
               }
             }
+            it('should send valid dsaparams but filter out invalid ones', function () {
+              const ortb2Clone = JSON.parse(JSON.stringify(ortb2));
+              ortb2Clone.regs.ext.dsa.transparency = [
+                {
+                  domain: 'testdomain.com',
+                  dsaparams: [1],
+                },
+                {
+                  domain: '',
+                  dsaparams: [2],
+                }
+              ];
+
+              const expectedTransparency = 'testdomain.com~1';
+              const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({ ...b, ortb2: ortb2Clone })), bidderRequest);
+              const data = parseQuery(request.data);
+
+              expect(data['dsatransparency']).to.equal(expectedTransparency);
+            })
+            it('should send dsaparams if \"ortb2.regs.ext.dsa.transparancy[0].params\"', function() {
+              const ortb2Clone = JSON.parse(JSON.stringify(ortb2));
+
+              ortb2Clone.regs.ext.dsa.transparency = [{
+                domain: 'testdomain.com',
+                dsaparams: [1],
+              }];
+
+              const expectedTransparency = 'testdomain.com~1';
+              const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({...b, ortb2: ortb2Clone})), bidderRequest);
+              const data = parseQuery(request.data);
+
+              expect(data['dsatransparency']).to.equal(expectedTransparency);
+            })
+            it('should pass an empty transparency param if \"ortb2.regs.ext.dsa.transparency[0].params\" is empty', function() {
+              const ortb2Clone = JSON.parse(JSON.stringify(ortb2));
+
+              ortb2Clone.regs.ext.dsa.transparency = [{
+                domain: 'testdomain.com',
+                params: [],
+              }];
+
+              const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({...b, ortb2: ortb2Clone})), bidderRequest);
+              const data = parseQuery(request.data);
+              expect(data['dsatransparency']).to.be.undefined
+            })
+            it('should send an empty transparency if \"ortb2.regs.ext.dsa.transparency[0].domain\" is empty', function() {
+              const ortb2Clone = JSON.parse(JSON.stringify(ortb2));
+
+              ortb2Clone.regs.ext.dsa.transparency = [{
+                domain: '',
+                dsaparams: [1],
+              }];
+
+              const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({...b, ortb2: ortb2Clone})), bidderRequest);
+              const data = parseQuery(request.data);
+
+              expect(data['dsatransparency']).to.be.undefined
+            })
             it('should send dsa signals if \"ortb2.regs.ext.dsa\"', function() {
               const expectedTransparency = 'testdomain.com~1~~testdomain2.com~1_2'
               const [request] = spec.buildRequests(bidderRequest.bids.map((b) => ({...b, ortb2})), bidderRequest)
@@ -3637,14 +3695,14 @@ describe('the rubicon adapter', function () {
             }]
           };
 
-          let {bids, fledgeAuctionConfigs} = spec.interpretResponse({body: response}, {
+          let {bids, paapi} = spec.interpretResponse({body: response}, {
             bidRequest: bidderRequest.bids[0]
           });
 
           expect(bids).to.be.lengthOf(1);
-          expect(fledgeAuctionConfigs[0].bidId).to.equal('5432');
-          expect(fledgeAuctionConfigs[0].config.random).to.equal('value');
-          expect(fledgeAuctionConfigs[1].bidId).to.equal('6789');
+          expect(paapi[0].bidId).to.equal('5432');
+          expect(paapi[0].config.random).to.equal('value');
+          expect(paapi[1].bidId).to.equal('6789');
         });
 
         it('should handle an error', function () {

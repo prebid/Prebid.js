@@ -120,7 +120,7 @@ export const spec = {
         prebidVersion: '$prebid.version$',
         screenHeight: screen.height,
         screenWidth: screen.width,
-        tmax: config.getConfig('bidderTimeout'),
+        tmax: bidderRequest.timeout,
         ua: navigator.userAgent,
       };
 

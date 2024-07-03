@@ -33,7 +33,7 @@ const VIDEO_BID = {
       playbackmethod: [2, 4, 6],
       playerSize: [[1024, 768]],
       protocols: [3, 4, 7, 8, 10],
-      placement: 1,
+      plcmt: 1,
       minduration: 0,
       maxduration: 60,
       startdelay: 0
@@ -222,7 +222,7 @@ describe('Eskimi bid adapter', function () {
           mimes: ['video/mp4', 'video/x-flv'],
           playbackmethod: [3, 4],
           protocols: [5, 6],
-          placement: 1,
+          plcmt: 1,
           minduration: 0,
           maxduration: 60,
           w: 1024,
