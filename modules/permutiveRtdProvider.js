@@ -132,11 +132,11 @@ export function setBidderRtb (bidderOrtb2, moduleConfig, segmentData) {
  * Updates `user.data` object in existing bidder config with Permutive segments
  * @param {string} bidder - The bidder identifier
  * @param {Object} currConfig - Current bidder config
- * @param {Object[]} transformationConfigs - array of objects with `id` and `config` properties, used to determine
- *                                           the transformations on user data to include the ORTB2 object
  * @param {string[]} segmentIDs - Permutive segment IDs
  * @param {string[]} sspSegmentIDs - Permutive SSP segment IDs
  * @param {Object} topics - Privacy Sandbox Topics, keyed by IAB taxonomy version (600, 601, etc.)
+ * @param {Object[]} transformationConfigs - array of objects with `id` and `config` properties, used to determine
+ *                                           the transformations on user data to include the ORTB2 object
  * @param {Object} segmentData - The segments available for targeting
  * @return {Object} Merged ortb2 object
  */
