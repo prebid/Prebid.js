@@ -1,4 +1,4 @@
-import {setConsentConfig} from 'modules/consentManagement.js';
+import {setConsentConfig} from 'modules/consentManagementTcf.js';
 import {server} from 'test/mocks/xhr.js';
 import {coreStorage, requestBidsHook} from 'modules/userId/index.js';
 

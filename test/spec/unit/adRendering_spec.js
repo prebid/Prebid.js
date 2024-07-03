@@ -1,7 +1,7 @@
 import * as events from 'src/events.js';
 import * as utils from 'src/utils.js';
 import {
-  doRender,
+  doRender, getBidToRender,
   getRenderingData,
   handleCreativeEvent,
   handleNativeMessage,
@@ -24,6 +24,28 @@ describe('adRendering', () => {
     sandbox.restore();
   })
 
+  describe('getBidToRender', () => {
+    beforeEach(() => {
+      sandbox.stub(auctionManager, 'findBidByAdId').callsFake(() => 'auction-bid')
+    });
+    it('should default to bid from auctionManager', () => {
+      return getBidToRender('adId', true, Promise.resolve(null)).then((res) => {
+        expect(res).to.eql('auction-bid');
+        sinon.assert.calledWith(auctionManager.findBidByAdId, 'adId');
+      });
+    });
+    it('should give precedence to override promise', () => {
+      return getBidToRender('adId', true, Promise.resolve('override')).then((res) => {
+        expect(res).to.eql('override');
+        sinon.assert.notCalled(auctionManager.findBidByAdId);
+      })
+    });
+    it('should return undef when override rejects', () => {
+      return getBidToRender('adId', true, Promise.reject(new Error('any reason'))).then(res => {
+        expect(res).to.not.exist;
+      })
+    })
+  })
   describe('getRenderingData', () => {
     let bidResponse;
     beforeEach(() => {

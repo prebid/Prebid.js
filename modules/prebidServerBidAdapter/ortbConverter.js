@@ -25,6 +25,7 @@ import {isActivityAllowed} from '../../src/activities/rules.js';
 import {ACTIVITY_TRANSMIT_TID} from '../../src/activities/activities.js';
 import {currencyCompare} from '../../libraries/currencyUtils/currency.js';
 import {minimum} from '../../src/utils/reducers.js';
+import {s2sDefaultConfig} from './index.js';
 
 const DEFAULT_S2S_TTL = 60;
 const DEFAULT_S2S_CURRENCY = 'USD';
@@ -57,7 +58,8 @@ const PBS_CONVERTER = ortbConverter({
       let {s2sBidRequest, requestedBidders, eidPermissions} = context;
       const request = buildRequest(imps, proxyBidderRequest, context);
 
-      request.tmax = s2sBidRequest.s2sConfig.timeout;
+      request.tmax = s2sBidRequest.s2sConfig.timeout ?? Math.min(s2sBidRequest.requestBidsTimeout * 0.75, s2sBidRequest.s2sConfig.maxTimeout ?? s2sDefaultConfig.maxTimeout);
+      request.ext.tmaxmax = request.ext.tmaxmax || s2sBidRequest.requestBidsTimeout;
 
       [request.app, request.dooh, request.site].forEach(section => {
         if (section && !section.publisher?.id) {
@@ -197,9 +199,7 @@ const PBS_CONVERTER = ortbConverter({
         context.actualBidderRequests.forEach(req => orig(ortbRequest, req, context));
       },
       sourceExtSchain(orig, ortbRequest, proxyBidderRequest, context) {
-        // pass schains in ext.prebid.schains, with the most commonly used one in source.ext.schain
-        let mainChain;
-
+        // pass schains in ext.prebid.schains
         let chains = (deepAccess(ortbRequest, 'ext.prebid.schains') || []);
         const chainBidders = new Set(chains.flatMap((item) => item.bidders));
 
@@ -218,16 +218,9 @@ const PBS_CONVERTER = ortbConverter({
                 chains[key] = {bidders: new Set(), schain};
               }
               bidders.forEach((bidder) => chains[key].bidders.add(bidder));
-              if (mainChain == null || chains[key].bidders.size > mainChain.bidders.size) {
-                mainChain = chains[key]
-              }
               return chains;
             }, {})
         ).map(({bidders, schain}) => ({bidders: Array.from(bidders), schain}));
-
-        if (mainChain != null) {
-          deepSetValue(ortbRequest, 'source.ext.schain', mainChain.schain);
-        }
 
         if (chains.length) {
           deepSetValue(ortbRequest, 'ext.prebid.schains', chains);
@@ -239,9 +232,9 @@ const PBS_CONVERTER = ortbConverter({
         // override to process each request
         context.actualBidderRequests.forEach(req => orig(response, ortbResponse, {...context, bidderRequest: req, bidRequests: req.bids}));
       },
-      fledgeAuctionConfigs(orig, response, ortbResponse, context) {
+      paapiConfigs(orig, response, ortbResponse, context) {
         const configs = Object.values(context.impContext)
-          .flatMap((impCtx) => (impCtx.fledgeConfigs || []).map(cfg => {
+          .flatMap((impCtx) => (impCtx.paapiConfigs || []).map(cfg => {
             const bidderReq = impCtx.actualBidderRequests.find(br => br.bidderCode === cfg.bidder);
             const bidReq = impCtx.actualBidRequests.get(cfg.bidder);
             return {
@@ -252,7 +245,7 @@ const PBS_CONVERTER = ortbConverter({
             };
           }));
         if (configs.length > 0) {
-          response.fledgeAuctionConfigs = configs;
+          response.paapi = configs;
         }
       }
     }
@@ -308,7 +301,9 @@ export function buildPBSRequest(s2sBidRequest, bidderRequests, adUnits, requeste
 
   const proxyBidderRequest = {
     ...Object.fromEntries(Object.entries(bidderRequests[0]).filter(([k]) => !BIDDER_SPECIFIC_REQUEST_PROPS.has(k))),
-    fledgeEnabled: bidderRequests.some(req => req.fledgeEnabled)
+    paapi: {
+      enabled: bidderRequests.some(br => br.paapi?.enabled)
+    }
   }
 
   return PBS_CONVERTER.toORTB({

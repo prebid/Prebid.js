@@ -37,6 +37,7 @@ function getSlotConfigs(mediaTypes, params) {
     ortb2Imp: {
       ext: {
         tid: 'd704d006-0d6e-4a09-ad6c-179e7e758096',
+        gpid: 'some-gpid'
       }
     },
     adUnitCode: adUnitCode,
@@ -299,6 +300,7 @@ describe('Seedtag Adapter', function () {
       expect(data.ttfb).to.be.greaterThanOrEqual(0);
 
       expect(data.bidRequests[0].adUnitCode).to.equal(adUnitCode);
+      expect(data.bidRequests[0].gpid).to.equal('some-gpid');
     });
 
     describe('GDPR params', function () {
@@ -589,6 +591,69 @@ describe('Seedtag Adapter', function () {
         expect(data.user.eids).to.be.an('array').that.is.not.empty;
         expect(data.user.eids).to.deep.equal(userIdAsEids);
       })
+    });
+
+    describe('Blocking params', function () {
+      it('should add bcat param to payload when bidderRequest has ortb2 bcat info', function () {
+        const blockedCategories = ['IAB1', 'IAB2']
+        var ortb2 = {
+          bcat: blockedCategories
+        }
+        bidderRequest['ortb2'] = ortb2
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.bcat).to.deep.equal(blockedCategories);
+      });
+
+      it('should add badv param to payload when bidderRequest has ortb2 badv info', function () {
+        const blockedAdvertisers = ['blocked.com']
+        var ortb2 = {
+          badv: blockedAdvertisers
+        }
+        bidderRequest['ortb2'] = ortb2
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.badv).to.deep.equal(blockedAdvertisers);
+      });
+
+      it('should not add bcat and badv params to payload when bidderRequest does not have ortb2 badv and bcat info', function () {
+        var ortb2 = {}
+        bidderRequest['ortb2'] = ortb2
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.bcat).to.be.undefined;
+        expect(data.badv).to.be.undefined;
+      });
+    });
+
+    describe('device.sua param', function () {
+      it('should add device.sua param to payload when bidderRequest has ortb2 device.sua info', function () {
+        const sua = 1
+        var ortb2 = {
+          device: {
+            sua: sua
+          }
+        }
+        bidderRequest['ortb2'] = ortb2
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.sua).to.equal(sua);
+      });
+
+      it('should not add device.sua param to payload when bidderRequest does not have ortb2 device.sua info', function () {
+        var ortb2 = {
+          device: {}
+        }
+        bidderRequest['ortb2'] = ortb2
+
+        const request = spec.buildRequests(validBidRequests, bidderRequest);
+        const data = JSON.parse(request.data);
+        expect(data.sua).to.be.undefined;
+      });
     });
   })
   describe('interpret response method', function () {

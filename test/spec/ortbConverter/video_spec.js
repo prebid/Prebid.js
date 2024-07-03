@@ -30,7 +30,6 @@ describe('pbjs -> ortb video conversion', () => {
           h: 2,
           mimes: ['video/mp4'],
           skip: 1,
-          placement: 1,
         },
       },
     },

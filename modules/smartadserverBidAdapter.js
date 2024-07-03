@@ -156,6 +156,9 @@ export const spec = {
       method: 'POST',
       url: (domain !== undefined ? domain : 'https://prg.smartadserver.com') + '/prebid/v1',
       data: JSON.stringify(payload),
+      options: {
+        browsingTopics: false
+      }
     };
   },
 
@@ -196,7 +199,7 @@ export const spec = {
         sdc: sellerDefinedContext
       };
 
-      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid', deepAccess(bid, 'ortb2Imp.ext.data.pbadslot', ''));
+      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid') || deepAccess(bid, 'ortb2Imp.ext.data.pbadslot');
       if (gpid) {
         payload.gpid = gpid;
       }
