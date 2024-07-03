@@ -4,7 +4,6 @@
 import { EVENTS } from '../src/constants.js';
 import adaptermanager from '../src/adapterManager.js';
 import adapter from '../libraries/analyticsAdapter/AnalyticsAdapter.js';
-import { config } from '../src/config.js';
 import { logError, logInfo, logWarn } from '../src/utils.js';
 
 // Standard Analytics Adapter code
@@ -109,6 +108,13 @@ export function summarizeAuctionInit(args, adapterConfig) {
     someZoneNameNonNull = someZoneNameNonNull || zoneNameNonNull
     allZoneNamesNonNull = allZoneNamesNonNull && zoneNameNonNull
 
+    flattenedBidRequests.forEach(fbr => {
+      if (fbr.adUnitCode === adUnit.code) {
+        bidders.push(fbr.bidder)
+        floors.push(getFloor(fbr))
+      }
+    })
+
     // If video context is adpod we add to podPos array the ad position
     // in the pod. Also for every ad in the pod we add its cpmm,
     // index and zone.
@@ -118,22 +124,17 @@ export function summarizeAuctionInit(args, adapterConfig) {
         zoneIndexes.push(zoneIndex)
         zoneNames.push(zoneName)
         podPos.push(podIndex + 1)
+        bidderss.push(bidders)
+        floorss.push(floors)
       })
     } else {
       adUnitCodes.push(adUnit.code)
       zoneIndexes.push(zoneIndex)
       zoneNames.push(zoneName)
       podPos.push(0)
+      bidderss.push(bidders)
+      floorss.push(floors)
     }
-
-    flattenedBidRequests.forEach(fbr => {
-      if (fbr.adUnitCode === adUnit.code) {
-        bidders.push(fbr.bidder)
-        floors.push(getFloor(fbr))
-      }
-    })
-    bidderss.push(bidders)
-    floorss.push(floors)
   })
 
   /** @type {AuctionEndSummary} */
@@ -225,6 +226,7 @@ export function summarizeAuctionEnd(args, adapterConfig) {
   /** @type {{[code: string]: number}} */
   const cpmmsMap = {}
   /** @type {AuctionEndSummary} */
+  const cpmms = []
   const bidderss = []
   const bidStatusss = []
   const bidAmountss = []
@@ -242,6 +244,10 @@ export function summarizeAuctionEnd(args, adapterConfig) {
   let someZoneNameNonNull = false
   let allZoneNamesNonNull = true
 
+  args.bidsReceived.forEach(bid => {
+    cpmmsMap[bid.adUnitCode] = Math.max(cpmmsMap[bid.adUnitCode] || 0, Math.round(bid.cpm * 1000 || 0))
+  })
+
   args.adUnits.forEach(adUnit => {
     const zoneIndex = getAdIndex(adUnit)
     const zoneName = adUnit.model?.zone ?? null
@@ -252,33 +258,12 @@ export function summarizeAuctionEnd(args, adapterConfig) {
     someZoneNameNonNull = someZoneNameNonNull || zoneNameNonNull
     allZoneNamesNonNull = allZoneNamesNonNull && zoneNameNonNull
 
-    // If video context is adpod we add to podPos array the ad position
-    // in the pod. Also for every ad in the pod we add its cpmm,
-    // index and zone.
-    if (adUnit.mediaTypes.video?.context === 'adpod') {
-      adUnit.mediaTypes.video?.durationRangeSec.forEach((value, podIndex) => {
-        adUnitCodes.push(adUnit.code)
-        zoneIndexes.push(zoneIndex)
-        zoneNames.push(zoneName)
-        podPos.push(podIndex + 1)
-      })
-    } else {
-      adUnitCodes.push(adUnit.code)
-      zoneIndexes.push(zoneIndex)
-      zoneNames.push(zoneName)
-      podPos.push(0)
-    }
-
-    cpmmsMap[adUnit.code] = {}
-    cpmmsMap[adUnit.code].cpmm = 0
-    if (adUnit.mediaTypes.video?.context === 'adpod') {
-      cpmmsMap[adUnit.code].adPodLength = adUnit.mediaTypes.video.durationRangeSec
-    }
     const bidders = []
     const bidStatuss = []
     const bidAmounts = []
     const bidResponseTimes = []
     const floors = []
+
     flattenedBidRequests.forEach(fbr => {
       if (fbr.adUnitCode === adUnit.code) {
         bidders.push(fbr.bidder)
@@ -306,25 +291,35 @@ export function summarizeAuctionEnd(args, adapterConfig) {
         bidResponseTimes.push(bidResponseTime)
       }
     })
-    bidderss.push(bidders)
-    bidStatusss.push(bidStatuss)
-    bidAmountss.push(bidAmounts)
-    bidResponseTimess.push(bidResponseTimes)
-    floorss.push(floors)
-  })
+    // If video context is adpod we add to podPos array the ad position
+    // in the pod. Also for every ad in the pod we add its cpmm,
+    // index and zone.
+    if (adUnit.mediaTypes.video?.context === 'adpod') {
+      adUnit.mediaTypes.video?.durationRangeSec.forEach((value, podIndex) => {
+        adUnitCodes.push(adUnit.code)
+        zoneIndexes.push(zoneIndex)
+        zoneNames.push(zoneName)
+        podPos.push(podIndex + 1)
 
-  args.bidsReceived.forEach(bid => {
-    cpmmsMap[bid.adUnitCode].cpmm = Math.max(cpmmsMap[bid.adUnitCode].cpmm, Math.round(bid.cpm * 1000 || 0))
-  })
-
-  const cpmms = []
-  args.adUnits.forEach(adUnit => {
-    if (cpmmsMap[adUnit.code].adPodLength) {
-      cpmmsMap[adUnit.code].adPodLength.forEach(() => {
-        cpmms.push(cpmmsMap[adUnit.code].cpmm)
+        bidderss.push(bidders)
+        bidStatusss.push(bidStatuss)
+        bidAmountss.push(bidAmounts)
+        bidResponseTimess.push(bidResponseTimes)
+        floorss.push(floors)
+        cpmms.push(cpmmsMap[adUnit.code])
       })
     } else {
-      cpmms.push(cpmmsMap[adUnit.code].cpmm)
+      adUnitCodes.push(adUnit.code)
+      zoneIndexes.push(zoneIndex)
+      zoneNames.push(zoneName)
+      podPos.push(0)
+
+      bidderss.push(bidders)
+      bidStatusss.push(bidStatuss)
+      bidAmountss.push(bidAmounts)
+      bidResponseTimess.push(bidResponseTimes)
+      floorss.push(floors)
+      cpmms.push(cpmmsMap[adUnit.code])
     }
   })
 
