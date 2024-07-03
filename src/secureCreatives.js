@@ -144,7 +144,7 @@ export function resizeRemoteCreative({adId, adUnitCode, width, height}) {
       elementStyle.width = getDimension(width)
       elementStyle.height = getDimension(height);
     } else {
-      logWarn(`Unable to locate matching page element for adUnitCode ${adUnitCode}.  Can't resize it to ad's dimensions.  Please review setup.`);
+      logError(`Unable to locate matching page element for adUnitCode ${adUnitCode}.  Can't resize it to ad's dimensions.  Please review setup.`);
     }
   });
 

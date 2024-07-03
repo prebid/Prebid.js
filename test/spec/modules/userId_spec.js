@@ -4,7 +4,7 @@ import {
   coreStorage,
   dep,
   findRootDomain,
-  getConsentHash,
+  getConsentHash, getValidSubmoduleConfigs,
   init,
   PBJS_USER_ID_OPTOUT_NAME,
   requestBidsHook,
@@ -21,7 +21,7 @@ import {getPrebidInternal} from 'src/utils.js';
 import * as events from 'src/events.js';
 import {EVENTS} from 'src/constants.js';
 import {getGlobal} from 'src/prebidGlobal.js';
-import {resetConsentData} from 'modules/consentManagement.js';
+import {resetConsentData, } from 'modules/consentManagementTcf.js';
 import {setEventFiredFlag as liveIntentIdSubmoduleDoNotFireEvent} from 'modules/liveIntentIdSystem.js';
 import {sharedIdSystemSubmodule} from 'modules/sharedIdSystem.js';
 import {pubProvidedIdSubmodule} from 'modules/pubProvidedIdSystem.js';
@@ -30,7 +30,7 @@ import 'src/prebid.js';
 import {hook} from '../../../src/hook.js';
 import {mockGdprConsent} from '../../helpers/consentData.js';
 import {getPPID} from '../../../src/adserver.js';
-import {uninstall as uninstallGdprEnforcement} from 'modules/gdprEnforcement.js';
+import {uninstall as uninstallTcfControl} from 'modules/tcfControl.js';
 import {allConsent, GDPR_GVLIDS, gdprDataHandler} from '../../../src/consentHandler.js';
 import {MODULE_TYPE_UID} from '../../../src/activities/modules.js';
 import {ACTIVITY_ENRICH_EIDS} from '../../../src/activities/activities.js';
@@ -154,7 +154,7 @@ describe('User ID', function () {
 
   before(function () {
     hook.ready();
-    uninstallGdprEnforcement();
+    uninstallTcfControl();
     localStorage.removeItem(PBJS_USER_ID_OPTOUT_NAME);
     liveIntentIdSubmoduleDoNotFireEvent();
   });
@@ -173,6 +173,7 @@ describe('User ID', function () {
 
   afterEach(() => {
     sandbox.restore();
+    config.resetConfig();
   });
 
   describe('GVL IDs', () => {
@@ -186,6 +187,65 @@ describe('User ID', function () {
     it('are registered when ID submodule is registered', () => {
       attachIdSystem({name: 'gvlidMock', gvlid: 123});
       sinon.assert.calledWith(GDPR_GVLIDS.register, MODULE_TYPE_UID, 'gvlidMock', 123);
+    })
+  })
+
+  describe('userId config validation', () => {
+    beforeEach(() => {
+      sandbox.stub(utils, 'logWarn');
+    });
+
+    function mockConfig(storageConfig = {}) {
+      return {
+        name: 'mockModule',
+        storage: {
+          name: 'mockStorage',
+          type: 'cookie',
+          ...storageConfig
+        }
+      }
+    }
+
+    Object.entries({
+      'not an object': 'garbage',
+      'missing name': {},
+      'empty name': {name: ''},
+      'empty storage config': {name: 'mockId', storage: {}},
+      'storage type, but no storage name': mockConfig({name: ''}),
+      'storage name, but no storage type': mockConfig({type: undefined}),
+    }).forEach(([t, config]) => {
+      it(`should log a warning and reject configuration with ${t}`, () => {
+        expect(getValidSubmoduleConfigs([config]).length).to.equal(0);
+        sinon.assert.called(utils.logWarn);
+      });
+    });
+
+    it('should reject non-array userId configuration', () => {
+      expect(getValidSubmoduleConfigs({})).to.eql([]);
+      sinon.assert.called(utils.logWarn);
+    });
+
+    it('should accept null configuration', () => {
+      expect(getValidSubmoduleConfigs()).to.eql([]);
+      sinon.assert.notCalled(utils.logWarn);
+    });
+
+    ['refreshInSeconds', 'expires'].forEach(param => {
+      describe(`${param} parameter`, () => {
+        it('should be made a number, when possible', () => {
+          expect(getValidSubmoduleConfigs([mockConfig({[param]: '123'})])[0].storage[param]).to.equal(123);
+        });
+
+        it('should log a warning when not a number', () => {
+          expect(getValidSubmoduleConfigs([mockConfig({[param]: 'garbage'})])[0].storage[param]).to.not.exist;
+          sinon.assert.called(utils.logWarn)
+        });
+
+        it('should be left untouched when not specified', () => {
+          expect(getValidSubmoduleConfigs([mockConfig()])[0].storage[param]).to.not.exist;
+          sinon.assert.notCalled(utils.logWarn);
+        });
+      })
     })
   })
 
@@ -1310,7 +1370,6 @@ describe('User ID', function () {
       coreStorage.setCookie(PBJS_USER_ID_OPTOUT_NAME, '', EXPIRED_COOKIE_DATE);
       $$PREBID_GLOBAL$$.requestBids.removeAll();
       utils.logInfo.restore();
-      config.resetConfig();
     });
 
     it('does not fetch ids if opt out cookie exists', function () {
@@ -1340,7 +1399,6 @@ describe('User ID', function () {
     afterEach(function () {
       $$PREBID_GLOBAL$$.requestBids.removeAll();
       utils.logInfo.restore();
-      config.resetConfig();
     });
 
     it('handles config with no usersync object', function () {
@@ -1455,7 +1513,7 @@ describe('User ID', function () {
       expect(auctionDelay).to.equal(100);
     });
 
-    it('config auctionDelay defaults to 0 if not a number', function () {
+    it('config auctionDelay defaults to 500 if not a number', function () {
       init(config);
       setSubmoduleRegistry([sharedIdSystemSubmodule]);
       config.setConfig({
@@ -1467,7 +1525,7 @@ describe('User ID', function () {
           }]
         }
       });
-      expect(auctionDelay).to.equal(0);
+      expect(auctionDelay).to.equal(500);
     });
 
     describe('auction and user sync delays', function () {
@@ -1585,19 +1643,16 @@ describe('User ID', function () {
         });
       });
 
-      it('does not delay auction if not set, delays id fetch after auction ends with syncDelay', function () {
+      it('does not delay auction if set to 0, delays id fetch after auction ends with syncDelay', function () {
         config.setConfig({
           userSync: {
+            auctionDelay: 0,
             syncDelay: 77,
             userIds: [{
               name: 'mockId', storage: {name: 'MOCKID', type: 'cookie'}
             }]
           }
         });
-
-        // check config has been set correctly
-        expect(auctionDelay).to.equal(0);
-        expect(syncDelay).to.equal(77);
 
         return expectImmediateBidHook(auctionSpy, {adUnits})
           .then(() => {
@@ -1624,14 +1679,13 @@ describe('User ID', function () {
       it('does not delay user id sync after auction ends if set to 0', function () {
         config.setConfig({
           userSync: {
+            auctionDelay: 0,
             syncDelay: 0,
             userIds: [{
               name: 'mockId', storage: {name: 'MOCKID', type: 'cookie'}
             }]
           }
         });
-
-        expect(syncDelay).to.equal(0);
 
         return expectImmediateBidHook(auctionSpy, {adUnits})
           .then(() => {
@@ -2040,6 +2094,7 @@ describe('User ID', function () {
           done();
         }, {adUnits});
       });
+
       it('should add new id system ', function (done) {
         coreStorage.setCookie('pubcid', 'testpubcid', (new Date(Date.now() + 5000).toUTCString()));
 
@@ -2137,6 +2192,12 @@ describe('User ID', function () {
 
     describe('callbacks at the end of auction', function () {
       beforeEach(function () {
+        config.setConfig({
+          // callbacks run after auction end only when auctionDelay is 0
+          userSync: {
+            auctionDelay: 0,
+          }
+        })
         sinon.stub(events, 'getEvents').returns([]);
         sinon.stub(utils, 'triggerPixel');
         coreStorage.setCookie('pubcid', '', EXPIRED_COOKIE_DATE);
@@ -2156,17 +2217,13 @@ describe('User ID', function () {
       }
 
       it('pubcid callback with url', function () {
-        let adUnits = [getAdUnitMock()];
-        let innerAdUnits;
         let customCfg = getConfigMock(['pubCommonId', 'pubcid', 'cookie']);
         customCfg = addConfig(customCfg, 'params', {pixelUrl: '/any/pubcid/url'});
 
         init(config);
         setSubmoduleRegistry([sharedIdSystemSubmodule]);
-        config.setConfig(customCfg);
-        return runBidsHook((config) => {
-          innerAdUnits = config.adUnits
-        }, {adUnits}).then(() => {
+        config.mergeConfig(customCfg);
+        return runBidsHook({}).then(() => {
           expect(utils.triggerPixel.called).to.be.false;
           return endAuction();
         }).then(() => {
@@ -2175,60 +2232,40 @@ describe('User ID', function () {
       });
     });
 
-    describe('Set cookie behavior', function () {
-      let cookie, cookieStub;
-
-      beforeEach(function () {
-        setSubmoduleRegistry([sharedIdSystemSubmodule]);
-        init(config);
-        cookie = document.cookie;
-        cookieStub = sinon.stub(document, 'cookie');
-        cookieStub.get(() => cookie);
-        cookieStub.set((val) => cookie = val);
-      });
-
-      afterEach(function () {
-        cookieStub.restore();
-      });
-
-      it('should allow submodules to override the domain', function () {
-        const submodule = {
-          submodule: {
-            domainOverride: function () {
-              return 'foo.com'
-            }
-          },
-          config: {
-            name: 'mockId',
-            storage: {
-              type: 'cookie'
-            }
-          },
-          storageMgr: {
-            setCookie: sinon.stub()
-          },
-          enabledStorageTypes: [ 'cookie' ]
-        }
-        setStoredValue(submodule, 'bar');
-        expect(submodule.storageMgr.setCookie.getCall(0).args[4]).to.equal('foo.com');
-      });
-
-      it('should pass no domain if submodule does not override the domain', function () {
-        const submodule = {
+    describe('Submodule ID storage', () => {
+      let submodule;
+      beforeEach(() => {
+        submodule = {
           submodule: {},
           config: {
             name: 'mockId',
-            storage: {
-              type: 'cookie'
-            }
           },
           storageMgr: {
-            setCookie: sinon.stub()
+            setCookie: sinon.stub(),
+            setDataInLocalStorage: sinon.stub()
           },
-          enabledStorageTypes: [ 'cookie' ]
+          enabledStorageTypes: ['cookie', 'html5']
         }
-        setStoredValue(submodule, 'bar');
-        expect(submodule.storageMgr.setCookie.getCall(0).args[4]).to.equal(null);
+      });
+
+      describe('Set cookie behavior', function () {
+        beforeEach(() => {
+          submodule.config.storage = {
+            type: 'cookie'
+          }
+        });
+        it('should allow submodules to override the domain', function () {
+          submodule.submodule.domainOverride = function() {
+            return 'foo.com'
+          }
+          setStoredValue(submodule, 'bar');
+          expect(submodule.storageMgr.setCookie.getCall(0).args[4]).to.equal('foo.com');
+        });
+
+        it('should pass no domain if submodule does not override the domain', function () {
+          setStoredValue(submodule, 'bar');
+          expect(submodule.storageMgr.setCookie.getCall(0).args[4]).to.equal(null);
+        });
       });
     });
 

@@ -1832,7 +1832,7 @@ describe('kargo adapter tests', function() {
       });
     });
 
-    it('should return fledgeAuctionConfigs if provided in bid response', function () {
+    it('should return paapi if provided in bid response', function () {
       const auctionConfig = {
         seller: 'https://kargo.com',
         decisionLogicUrl: 'https://kargo.com/decision_logic.js',
@@ -1865,11 +1865,11 @@ describe('kargo adapter tests', function() {
         expect(bid).to.have.property('meta').that.is.an('object');
       });
 
-      // Test properties of fledgeAuctionConfigs
-      expect(result.fledgeAuctionConfigs).to.have.lengthOf(3);
+      // Test properties of paapi
+      expect(result.paapi).to.have.lengthOf(3);
 
       const expectedBidIds = ['1', '3', '5']; // Expected bidIDs
-      result.fledgeAuctionConfigs.forEach(config => {
+      result.paapi.forEach(config => {
         expect(config).to.have.property('bidId');
         expect(expectedBidIds).to.include(config.bidId);
 

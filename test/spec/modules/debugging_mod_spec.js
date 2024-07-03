@@ -37,7 +37,12 @@ describe('bid interceptor', () => {
   describe('serializeConfig', () => {
     Object.entries({
       regexes: /pat/,
-      functions: () => ({})
+      functions: () => ({}),
+      'undefined': undefined,
+      date: new Date(),
+      symbol: Symbol('test'),
+      map: new Map(),
+      set: new Set(),
     }).forEach(([test, arg]) => {
       it(`should filter out ${test}`, () => {
         const valid = [{key1: 'value'}, {key2: 'value'}];

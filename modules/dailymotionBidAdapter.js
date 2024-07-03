@@ -67,7 +67,7 @@ function getVideoMetadata(bidRequest, bidderRequest) {
       ? videoParams.isCreatedForKids
       : null,
     context: {
-      siteOrAppCat: deepAccess(contentObj, 'cat', ''),
+      siteOrAppCat: deepAccess(contentObj, 'cat', []),
       videoViewsInSession: (
         typeof videoParams.videoViewsInSession === 'number' &&
         videoParams.videoViewsInSession >= 0
@@ -224,7 +224,7 @@ export const spec = {
       const pixelSyncs = [];
 
       serverResponses.forEach((response) => {
-        (response.user_syncs || []).forEach((syncUrl) => {
+        (response?.body?.userSyncs || []).forEach((syncUrl) => {
           if (syncUrl.type === 'image') {
             pixelSyncs.push({ url: syncUrl.url, type: 'image' });
           }
