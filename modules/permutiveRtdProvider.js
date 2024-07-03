@@ -95,7 +95,8 @@ export function getModuleConfig(customModuleConfig) {
 /**
  * Sets ortb2 config for ac bidders
  * @param {Object} bidderOrtb2 - The ortb2 object for the all bidders
- * @param {Object} customModuleConfig - Publisher config for module
+ * @param {Object} moduleConfig - Publisher config for module
+ * @param {Object} segmentData - Segment data grouped by bidder or type
  */
 export function setBidderRtb (bidderOrtb2, moduleConfig, segmentData) {
   const acBidders = deepAccess(moduleConfig, 'params.acBidders')
@@ -129,7 +130,7 @@ export function setBidderRtb (bidderOrtb2, moduleConfig, segmentData) {
 
 /**
  * Updates `user.data` object in existing bidder config with Permutive segments
- * @param string bidder - The bidder
+ * @param {string} bidder - The bidder identifier
  * @param {Object} currConfig - Current bidder config
  * @param {Object[]} transformationConfigs - array of objects with `id` and `config` properties, used to determine
  *                                           the transformations on user data to include the ORTB2 object
@@ -442,7 +443,7 @@ function iabSegmentId(permutiveSegmentId, iabIds) {
  * Pull the latest configuration and cohort information and update accordingly.
  *
  * @param reqBidsConfigObj - Bidder provided config for request
- * @param customModuleConfig - Publisher provide config
+ * @param moduleConfig - Publisher provided config
  */
 export function readAndSetCohorts(reqBidsConfigObj, moduleConfig) {
   const segmentData = getSegments(deepAccess(moduleConfig, 'params.maxSegs'))
