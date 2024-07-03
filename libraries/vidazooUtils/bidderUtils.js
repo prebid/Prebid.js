@@ -335,6 +335,11 @@ export function buildRequestData(bid, topWindowUrl, sizes, bidderRequest, bidder
     }
   }
 
+  const dsa = deepAccess(bidderRequest, 'ortb2.regs.ext.dsa');
+  if (dsa) {
+    data.dsa = dsa;
+  }
+
   _each(ext, (value, key) => {
     data['ext.' + key] = value;
   });
