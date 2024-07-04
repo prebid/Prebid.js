@@ -61,7 +61,7 @@ Please use ```admixer``` as the bidder code.
                    {
                        bidder: "rtbstack",
                        params: {
-                           endpointId: 41512
+                           tagId: 41512
                        }
                    }
                ]
@@ -72,7 +72,7 @@ Please use ```admixer``` as the bidder code.
                    {
                        bidder: "rtbstack",
                        params: {
-                           endpointId: 41512
+                           tagId: 41512
                        }
                    }
                ]
@@ -84,7 +84,7 @@ Please use ```admixer``` as the bidder code.
                    {
                        bidder: "rtbstack",
                        params: {
-                           endpointId: 41512
+                           tagId: 41512
                        }
                    }
                ]
