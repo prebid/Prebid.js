@@ -259,6 +259,44 @@ describe('mediago:BidAdapterTests', function () {
   });
 });
 
+describe('mediago: getUserSyncs', function() {
+  const COOKY_SYNC_IFRAME_URL = 'https://cdn.mediago.io/js/cookieSync.html';
+  const IFRAME_ENABLED = {
+    iframeEnabled: true,
+    pixelEnabled: false,
+  };
+  const IFRAME_DISABLED = {
+    iframeEnabled: false,
+    pixelEnabled: false,
+  };
+  const GDPR_CONSENT = {
+    consentString: 'gdprConsentString',
+    gdprApplies: true
+  };
+  const USP_CONSENT = {
+    consentString: 'uspConsentString'
+  }
+
+  let syncParamUrl = `dm=${encodeURIComponent(location.origin || `https://${location.host}`)}`;
+  syncParamUrl += '&gdpr=1&gdpr_consent=gdprConsentString&ccpa_consent=uspConsentString';
+  const expectedIframeSyncs = [
+    {
+      type: 'iframe',
+      url: `${COOKY_SYNC_IFRAME_URL}?${syncParamUrl}`
+    }
+  ];
+
+  it('should return nothing if iframe is disabled', () => {
+    const userSyncs = spec.getUserSyncs(IFRAME_DISABLED, undefined, GDPR_CONSENT, USP_CONSENT, undefined);
+    expect(userSyncs).to.be.undefined;
+  });
+
+  it('should do userSyncs if iframe is enabled', () => {
+    const userSyncs = spec.getUserSyncs(IFRAME_ENABLED, undefined, GDPR_CONSENT, USP_CONSENT, undefined);
+    expect(userSyncs).to.deep.equal(expectedIframeSyncs);
+  });
+});
+
 describe('mediago Bid Adapter Tests', function () {
   describe('buildRequests', () => {
     describe('getPageTitle function', function() {
