@@ -557,8 +557,8 @@ function _createBannerRequest(bid) {
     bannerObj.topframe = inIframe() ? 0 : 1;
 
     // Adding Banner custom params
+    const bannerCustomParams = {...deepAccess(bid, 'ortb2Imp.banner')};
     for (let key in BANNER_CUSTOM_PARAMS) {
-      let bannerCustomParams = bid.mediaTypes.banner;
       if (bannerCustomParams.hasOwnProperty(key)) {
         bannerObj[key] = _checkParamDataType(key, bannerCustomParams[key], BANNER_CUSTOM_PARAMS[key]);
       }
