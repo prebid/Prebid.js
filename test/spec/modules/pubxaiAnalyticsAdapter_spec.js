@@ -22,6 +22,7 @@ const readBlobSafariCompat = (blob) => {
 
 describe('pubxai analytics adapter', () => {
   beforeEach(() => {
+    getGlobal().refreshUserIds()
     sinon.stub(events, 'getEvents').returns([]);
   });
 
@@ -591,7 +592,7 @@ describe('pubxai analytics adapter', () => {
         cdep: true,
       },
       userDetail: {
-        userIdTypes: [],
+        userIdTypes: Object.keys(getGlobal().getUserIds?.() || {}),
       },
       consentDetail: {
         consentTypes: Object.keys(getGlobal().getConsentMetadata?.() || {}),
@@ -685,7 +686,7 @@ describe('pubxai analytics adapter', () => {
         cdep: true,
       },
       userDetail: {
-        userIdTypes: [],
+        userIdTypes: Object.keys(getGlobal().getUserIds?.() || {}),
       },
       consentDetail: {
         consentTypes: Object.keys(getGlobal().getConsentMetadata?.() || {}),
