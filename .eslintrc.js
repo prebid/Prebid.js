@@ -121,12 +121,7 @@ module.exports = {
     // code in other packages (such as plugins/eslint) is not "seen" by babel and its parser will complain.
     files: 'plugins/*/**/*.js',
     parser: 'esprima'
-
   }, {
-
-
-
-
     files: '**BidAdapter.js',
     rules: {
       'no-restricted-imports': [
