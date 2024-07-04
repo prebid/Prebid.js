@@ -3,15 +3,12 @@ import {
   spec,
   getPmgUID,
   storage,
-  getPageTitle,
-  getPageDescription,
-  getPageKeywords,
-  getConnectionDownLink,
   THIRD_PARTY_COOKIE_ORIGIN,
   COOKIE_KEY_MGUID,
-  getCurrentTimeToUTCString,
+  getCookieTimeToUTCString,
   buildUTMTagData,
 } from 'modules/discoveryBidAdapter.js';
+import { getPageTitle, getPageDescription, getPageKeywords, getConnectionDownLink } from '../../../libraries/fpdUtils/pageInfo.js';
 import * as utils from 'src/utils.js';
 import { getHLen, getHC, getDM } from '../../../src/fpd/navigator.js';
 
@@ -22,6 +19,7 @@ describe('discovery:BidAdapterTests', function () {
     sandbox = sinon.sandbox.create();
     sandbox.stub(storage, 'getCookie');
     sandbox.stub(storage, 'setCookie');
+    sandbox.stub(storage, 'getDataFromLocalStorage');
     sandbox.stub(utils, 'generateUUID').returns('new-uuid');
     sandbox.stub(utils, 'parseUrl').returns({
       search: {
@@ -257,6 +255,11 @@ describe('discovery:BidAdapterTests', function () {
         storage.getCookie.callsFake(() => null);
         getPmgUID();
         expect(storage.setCookie.calledOnce).to.be.false;
+      });
+      it('should return other ID from storage and cookie', () => {
+        spec.buildRequests(bidRequestData.bids, bidRequestData);
+        expect(storage.getCookie.called).to.be.true;
+        expect(storage.getDataFromLocalStorage.called).to.be.true;
       });
     })
     describe('buildUTMTagData function', function() {
@@ -591,7 +594,7 @@ describe('discovery Bid Adapter Tests', function () {
 
         const response = event.data;
         if (!response.optout && response.mguid) {
-          storage.setCookie(COOKIE_KEY_MGUID, response.mguid, getCurrentTimeToUTCString());
+          storage.setCookie(COOKIE_KEY_MGUID, response.mguid, getCookieTimeToUTCString());
         }
       }
 

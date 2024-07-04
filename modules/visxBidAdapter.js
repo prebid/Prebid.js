@@ -33,7 +33,7 @@ const LOG_ERROR_MESS = {
   onlyVideoInstream: `Only video ${VIDEO_INSTREAM} supported`,
   videoMissing: 'Bid request videoType property is missing - '
 };
-const currencyWhiteList = ['EUR', 'USD', 'GBP', 'PLN'];
+const currencyWhiteList = ['EUR', 'USD', 'GBP', 'PLN', 'CHF', 'SEK'];
 export const storage = getStorageManager({bidderCode: BIDDER_CODE});
 const _bidResponseTimeLogged = [];
 export const spec = {
