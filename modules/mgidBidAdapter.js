@@ -86,7 +86,7 @@ _each(NATIVE_ASSETS, anAsset => { _NATIVE_ASSET_ID_TO_KEY_MAP[anAsset.ID] = anAs
 _each(NATIVE_ASSETS, anAsset => { _NATIVE_ASSET_KEY_TO_ASSET_MAP[anAsset.KEY] = anAsset });
 
 export const spec = {
-  VERSION: '1.6',
+  VERSION: '1.7',
   code: BIDDER_CODE,
   gvlid: GVLID,
   supportedMediaTypes: [BANNER, NATIVE],
@@ -167,6 +167,8 @@ export const spec = {
         tagid,
         secure,
       };
+      const gpid = deepAccess(bid, 'ortb2Imp.ext.gpid');
+      gpid && isStr(gpid) && deepSetValue(impObj, `ext.gpid`, gpid);
       const floorData = getBidFloor(bid, cur);
       if (floorData.floor) {
         impObj.bidfloor = floorData.floor;
